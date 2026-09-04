@@ -1,0 +1,59 @@
+---
+title: 传递函数入门
+description: 从微分方程到传递函数，理解经典控制的基础。
+---
+
+# 传递函数入门
+
+在经典控制理论中，线性时不变（LTI）系统常用**传递函数**描述。
+
+## 定义
+
+对微分方程
+
+$$
+a_2 \ddot{y}(t) + a_1 \dot{y}(t) + a_0 y(t) = b_0 u(t)
+$$
+
+在零初始条件下取拉普拉斯变换，可得
+
+$$
+G(s) = \frac{Y(s)}{U(s)} = \frac{b_0}{a_2 s^2 + a_1 s + a_0}
+$$
+
+## 二阶系统示例
+
+标准二阶系统传递函数为
+
+$$
+G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}
+$$
+
+其中 $\zeta$ 为阻尼比，$\omega_n$ 为自然频率。
+
+<Callout variant="tip">
+  尝试拖动下方滑块，观察阻尼比与自然频率对阶跃响应的影响。
+</Callout>
+
+<StepResponseSlider />
+
+## 代码示例
+
+下面用 Python 风格伪代码计算阶跃响应：
+
+```python
+import numpy as np
+from scipy.signal import lti, step
+
+sys = lti([wn**2], [1, 2*zeta*wn, wn**2])
+t, y = step(sys)
+```
+
+## 小结
+
+- 传递函数是 $s$ 域的系统输入输出模型。
+- 二阶系统的动态品质主要由 $\zeta$ 和 $\omega_n$ 决定。
+
+<Callout variant="warning">
+  实际工程中还需考虑饱和、时延等非线性因素。
+</Callout>
