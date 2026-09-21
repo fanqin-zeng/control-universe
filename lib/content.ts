@@ -8,6 +8,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 
 import { Callout } from "@/components/wiki/callout";
 import { StepResponseSlider } from "@/components/wiki/step-response-slider";
+import { JupyterNotebook } from "@/components/wiki/jupyter-notebook";
 import { logger } from "@/lib/logger";
 
 const contentDir = path.join(process.cwd(), "content");
@@ -54,7 +55,7 @@ async function compileLessonSource(source: string, fallbackTitle: string) {
           ],
         },
       },
-      components: { Callout, StepResponseSlider },
+      components: { Callout, StepResponseSlider, JupyterNotebook },
     });
 
     return {
