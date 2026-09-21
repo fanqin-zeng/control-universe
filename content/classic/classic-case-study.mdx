@@ -1,0 +1,109 @@
+---
+title: 经典控制综合案例
+description: 用经典控制方法设计直流电机速度控制系统。
+---
+
+# 经典控制综合案例
+
+本节以直流电机速度控制为例，综合运用经典控制方法完成系统设计。
+
+## 系统描述
+
+直流电机速度控制系统框图：
+
+$$
+U(s) \to \boxed{C(s)} \to \boxed{G_p(s)} \to \omega(s)
+$$
+
+电机传递函数（电枢电压到转速）：
+
+$$
+G_p(s) = \frac{K_m}{(L_a s + R_a)(Js + B) + K_m K_b}
+$$
+
+其中 $K_m$ 为转矩常数，$K_b$ 为反电动势常数，$L_a$、$R_a$ 为电枢电感和电阻，$J$ 为转动惯量，$B$ 为粘性摩擦系数。
+
+## 设计指标
+
+- 稳态误差：阶跃输入下 $e_{ss} < 1\%$
+- 超调量：$M_p < 10\%$
+- 调节时间：$t_s < 2$ s（2% 误差带）
+- 相位裕度：$PM > 45°$
+
+## 设计过程
+
+### 1. 系统建模
+
+取典型参数：$K_m = 0.1$，$K_b = 0.1$，$L_a = 0.01$ H，$R_a = 1$ Ω，$J = 0.01$ kg·m²，$B = 0.001$ N·m·s。
+
+$$
+G_p(s) = \frac{0.1}{(0.01s + 1)(0.01s + 0.001) + 0.01} = \frac{100}{s^2 + 101s + 101}
+$$
+
+### 2. 性能分析
+
+未校正系统的 Bode 图显示相位裕度不足，需设计校正器。
+
+### 3. PID 控制器设计
+
+采用 PID 控制器：
+
+$$
+C(s) = K_p + \frac{K_i}{s} + K_d s
+$$
+
+通过 Ziegler-Nichols 法或根轨迹法整定参数。
+
+### 4. 验证
+
+闭环传递函数：
+
+$$
+T(s) = \frac{C(s)G_p(s)}{1 + C(s)G_p(s)}
+$$
+
+检查阶跃响应是否满足设计指标。
+
+## 代码示例
+
+完整设计与仿真：
+
+```python
+import numpy as np
+from scipy.signal import lti, feedback, step, margin
+
+# 电机模型
+Km, Kb = 0.1, 0.1
+La, Ra = 0.01, 1.0
+J, B = 0.01, 0.001
+
+num = [Km]
+den = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
+plant = lti(num, den)
+
+# PID 控制器
+Kp, Ki, Kd = 5.0, 10.0, 0.5
+controller = lti([Kd, Kp, Ki], [1, 0])
+
+# 闭环系统
+closed_loop = feedback(controller * plant, 1)
+
+# 阶跃响应
+t, y = step(closed_loop, T=np.linspace(0, 5, 500))
+Mp = (y.max() - 1) * 100
+print(f"超调量: {Mp:.1f}%")
+
+# 稳定裕度
+gm, pm, wg, wc = margin(controller * plant)
+print(f"相位裕度: {pm:.1f}°")
+```
+
+## 小结
+
+- 经典控制设计流程：建模 → 分析 → 校正 → 验证。
+- PID 控制器可灵活调节动态和稳态性能。
+- 频域指标（相位裕度）与时域指标（超调量）相互关联。
+
+<Callout variant="tip">
+  实际工程中，控制器参数需结合仿真和实验反复调整，理论计算提供初始值。
+</Callout>

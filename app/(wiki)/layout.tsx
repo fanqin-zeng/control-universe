@@ -11,7 +11,9 @@ export default function WikiLayout({
     <AnnotationProvider>
       <div className="flex min-h-screen">
         <aside className="hidden lg:block w-64 shrink-0 border-r bg-muted/30 p-4">
-          <Sidebar />
+          <div className="sticky top-0 max-h-screen overflow-y-auto">
+            <Sidebar />
+          </div>
         </aside>
         <div className="flex flex-1 flex-col">
           <MobileHeader />

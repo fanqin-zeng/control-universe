@@ -1,0 +1,89 @@
+---
+title: 校正网络设计
+description: 用超前、滞后、超前-滞后校正改善系统性能。
+---
+
+# 校正网络设计
+
+当系统性能不满足要求时，通过串联校正网络改变开环频率特性，使闭环系统达到设计指标。
+
+## 超前校正
+
+超前校正传递函数：
+
+$$
+G_c(s) = \frac{1 + \alpha Ts}{1 + Ts}, \quad \alpha > 1
+$$
+
+最大超前相位角：
+
+$$
+\phi_m = \arcsin\frac{\alpha - 1}{\alpha + 1}
+$$
+
+发生在频率 $\omega_m = \frac{1}{T\sqrt{\alpha}}$ 处。
+
+**设计步骤**：
+
+1. 根据稳态误差要求确定开环增益 $K$
+2. 计算未校正系统的相位裕度 $PM_0$
+3. 确定需要补偿的相位 $\phi_m = PM_{req} - PM_0 + \epsilon$（$\epsilon$ 为余量，通常 5°~15°）
+4. 由 $\phi_m$ 计算 $\alpha$
+5. 确定 $\omega_m$ 使校正后增益穿越频率处幅值为 0 dB
+6. 计算 $T = \frac{1}{\omega_m\sqrt{\alpha}}$
+
+## 滞后校正
+
+滞后校正传递函数：
+
+$$
+G_c(s) = \frac{1 + \beta Ts}{1 + Ts}, \quad \beta < 1
+$$
+
+滞后校正不改变相位裕度，但降低高频增益，提高稳态精度。
+
+**设计要点**：
+
+- 转折频率 $\frac{1}{\beta T}$ 和 $\frac{1}{T}$ 远低于增益穿越频率
+- 通常取 $\frac{1}{\beta T} = \frac{\omega_c}{10}$
+
+## 超前-滞后校正
+
+结合两者优点：
+
+$$
+G_c(s) = \frac{(1 + \alpha T_1 s)(1 + \beta T_2 s)}{(1 + T_1 s)(1 + T_2 s)}
+$$
+
+超前部分改善动态性能，滞后部分提高稳态精度。
+
+## 代码示例
+
+超前校正设计：
+
+```python
+import numpy as np
+from scipy.signal import lti, bode, margin
+
+# 被控对象
+plant = lti([1], [1, 2, 1, 0])
+
+# 超前校正器 Gc(s) = (1 + 0.5s) / (1 + 0.1s)
+alpha, T = 5.0, 0.1
+controller = lti([alpha*T, 1], [T, 1])
+
+# 校正后开环系统
+open_loop = controller * plant
+gm, pm, wg, wc = margin(open_loop)
+print(f"校正后相位裕度: {pm:.1f}°")
+```
+
+## 小结
+
+- 超前校正增加相位裕度，改善动态性能。
+- 滞后校正提高低频增益，改善稳态精度。
+- 超前-滞后校正兼顾两者。
+
+<Callout variant="warning">
+  超前校正会放大高频噪声，实际应用中需权衡动态性能与噪声抑制。
+</Callout>

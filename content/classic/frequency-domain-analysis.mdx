@@ -1,0 +1,77 @@
+---
+title: 频域分析
+description: 用 Bode 图、Nyquist 图分析系统的频率特性。
+---
+
+# 频域分析
+
+频域分析研究系统对不同频率正弦输入的稳态响应，是经典控制的核心工具。
+
+## 频率响应函数
+
+将传递函数中的 $s$ 替换为 $j\omega$，得到频率响应函数：
+
+$$
+G(j\omega) = |G(j\omega)| e^{j\angle G(j\omega)}
+$$
+
+其中 $|G(j\omega)|$ 为幅频特性，$\angle G(j\omega)$ 为相频特性。
+
+## Bode 图
+
+Bode 图由两张图组成：
+
+- **幅频图**：$20\log_{10}|G(j\omega)|$ 对 $\log\omega$，单位 dB
+- **相频图**：$\angle G(j\omega)$ 对 $\log\omega$，单位度
+
+典型环节的 Bode 图特征：
+
+| 环节 | 幅频斜率 | 相位变化 |
+|------|---------|---------|
+| 比例 $K$ | 0 dB/dec | 0° |
+| 积分 $1/s$ | -20 dB/dec | -90° |
+| 微分 $s$ | +20 dB/dec | +90° |
+| 惯性 $1/(Ts+1)$ | -20 dB/dec | 0° → -90° |
+| 二阶振荡 | -40 dB/dec | 0° → -180° |
+
+## Nyquist 图
+
+Nyquist 图是 $G(j\omega)$ 在复平面上的轨迹，$\omega$ 从 $0$ 到 $+\infty$。
+
+Nyquist 稳定判据：
+
+$$
+Z = P - N
+$$
+
+其中 $Z$ 为闭环右半平面极点数，$P$ 为开环右半平面极点数，$N$ 为 Nyquist 曲线逆时针包围 $(-1, j0)$ 点的圈数。系统稳定当且仅当 $Z = 0$。
+
+## 代码示例
+
+绘制 Bode 图：
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import lti, bode
+
+sys = lti([1], [1, 0.5, 1])
+w, mag, phase = bode(sys, w=np.logspace(-2, 2, 500))
+
+fig, (ax1, ax2) = plt.subplots(2, 1)
+ax1.semilogx(w, mag)
+ax1.set_ylabel('Magnitude (dB)')
+ax2.semilogx(w, phase)
+ax2.set_ylabel('Phase (deg)')
+plt.show()
+```
+
+## 小结
+
+- 频率响应函数 $G(j\omega)$ 描述系统对正弦输入的稳态响应。
+- Bode 图用对数坐标直观展示幅频和相频特性。
+- Nyquist 图可用于判断闭环系统稳定性。
+
+<Callout variant="tip">
+  Bode 图的渐近线画法：先标出转折频率，再按各环节斜率叠加，最后修正误差。
+</Callout>

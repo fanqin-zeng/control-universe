@@ -1,0 +1,76 @@
+---
+title: PID控制器设计
+description: 理解 P、I、D 三项的作用，掌握 PID 参数整定方法。
+---
+
+# PID控制器设计
+
+PID 控制器是工业控制中应用最广泛的控制器，其结构简单、鲁棒性强。
+
+## PID 控制律
+
+PID 控制器的输出为：
+
+$$
+u(t) = K_p e(t) + K_i \int_0^t e(\tau)\,d\tau + K_d \frac{de(t)}{dt}
+$$
+
+传递函数形式：
+
+$$
+C(s) = K_p + \frac{K_i}{s} + K_d s = K_p\left(1 + \frac{1}{T_i s} + T_d s\right)
+$$
+
+其中 $T_i = K_p/K_i$ 为积分时间常数，$T_d = K_d/K_p$ 为微分时间常数。
+
+## 各项作用
+
+| 控制项 | 作用 | 缺点 |
+|--------|------|------|
+| 比例 $K_p$ | 加快响应，减小稳态误差 | 过大引起振荡 |
+| 积分 $K_i$ | 消除稳态误差 | 降低稳定性，引起积分饱和 |
+| 微分 $K_d$ | 预测趋势，抑制超调 | 放大高频噪声 |
+
+## Ziegler-Nichols 整定法
+
+**临界比例度法**步骤：
+
+1. 令 $K_i = 0$，$K_d = 0$，逐渐增大 $K_p$ 直到系统出现等幅振荡
+2. 记录临界增益 $K_u$ 和临界周期 $T_u$
+3. 按以下公式设置参数：
+
+| 控制器 | $K_p$ | $T_i$ | $T_d$ |
+|--------|-------|-------|-------|
+| P | $0.5K_u$ | — | — |
+| PI | $0.45K_u$ | $T_u/1.2$ | — |
+| PID | $0.6K_u$ | $T_u/2$ | $T_u/8$ |
+
+## 代码示例
+
+PID 控制器仿真：
+
+```python
+import numpy as np
+from scipy.signal import lti, feedback, step
+
+# 被控对象 G(s) = 1 / (s^2 + 2s + 1)
+plant = lti([1], [1, 2, 1])
+
+# PID 控制器 C(s) = 2 + 1/s + 0.5s
+Kp, Ki, Kd = 2.0, 1.0, 0.5
+controller = lti([Kd, Kp, Ki], [1, 0])
+
+# 闭环系统
+closed_loop = feedback(controller * plant, 1)
+t, y = step(closed_loop, T=np.linspace(0, 10, 500))
+```
+
+## 小结
+
+- PID 由比例、积分、微分三项组成，各有独特作用。
+- Ziegler-Nichols 法提供系统化的参数整定起点。
+- 实际应用中常需结合仿真和实验微调参数。
+
+<Callout variant="tip">
+  微分项易放大噪声，工程中常加低通滤波器：$C_d(s) = \frac{K_d s}{1 + T_f s}$，$T_f$ 为滤波时间常数。
+</Callout>

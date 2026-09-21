@@ -1,0 +1,72 @@
+---
+title: 根轨迹法
+description: 用根轨迹分析闭环极点随增益变化的轨迹。
+---
+
+# 根轨迹法
+
+根轨迹法由 Evans 于 1948 年提出，用于分析闭环极点随开环增益 $K$ 变化的轨迹。
+
+## 基本概念
+
+对单位反馈系统，开环传递函数为 $KG(s)H(s)$，闭环特征方程为：
+
+$$
+1 + KG(s)H(s) = 0
+$$
+
+根轨迹是当 $K$ 从 $0$ 变化到 $+\infty$ 时，闭环极点在 $s$ 平面上的轨迹。
+
+## 绘制规则
+
+根轨迹的绘制遵循以下规则：
+
+1. **起点与终点**：起于开环极点（$K=0$），终于开环零点或无穷远（$K \to \infty$）
+2. **分支数**：等于开环极点数 $n$
+3. **实轴上的根轨迹**：实轴上某段右侧的开环零极点总数为奇数时，该段在根轨迹上
+4. **渐近线**：$n-m$ 条渐近线，角度为 $\frac{(2k+1)\pi}{n-m}$，$k=0,1,\ldots,n-m-1$
+5. **分离点**：满足 $\frac{dK}{ds} = 0$ 的点
+
+## 渐近线计算
+
+渐近线交点（重心）：
+
+$$
+\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}
+$$
+
+渐近线角度：
+
+$$
+\phi_a = \frac{(2k+1)\pi}{n-m}, \quad k = 0, 1, \ldots, n-m-1
+$$
+
+## 代码示例
+
+绘制根轨迹：
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import lti, tf
+from control import root_locus
+
+# 开环传递函数 G(s) = 1 / (s(s+2)(s+4))
+num = [1]
+den = [1, 6, 8, 0]
+sys = tf(num, den)
+
+root_locus(sys)
+plt.title('Root Locus')
+plt.show()
+```
+
+## 小结
+
+- 根轨迹显示闭环极点随增益变化的轨迹。
+- 绘制规则包括起点终点、实轴段、渐近线、分离点等。
+- 根轨迹可直观判断系统稳定性和动态性能。
+
+<Callout variant="warning">
+  根轨迹法适用于单参数（增益）变化分析，多参数变化需用其他方法。
+</Callout>
