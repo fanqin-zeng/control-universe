@@ -11,6 +11,13 @@ export interface Chapter {
 
 export const catalog: Chapter[] = [
   {
+    slug: "math",
+    title: "数学基础",
+    lessons: [
+      { slug: "complex-numbers", title: "复数基础" },
+    ],
+  },
+  {
     slug: "classic",
     title: "经典控制",
     lessons: [
