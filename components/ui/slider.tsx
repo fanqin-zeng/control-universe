@@ -1,86 +1,84 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Slider as SliderPrimitive } from "@base-ui/react/slider"
-import { cn } from "cn"
+import { useCallback, useRef } from "react";
+import { cn } from "cn";
+
+interface SliderProps {
+  className?: string;
+  value?: readonly number[];
+  defaultValue?: readonly number[];
+  min?: number;
+  max?: number;
+  step?: number;
+  disabled?: boolean;
+  onValueChange?: (value: number | readonly number[]) => void;
+  onValueCommitted?: (value: number | readonly number[]) => void;
+}
 
 function Slider({
   className,
-  defaultValue,
   value,
+  defaultValue,
   min = 0,
   max = 100,
-  ...props
-}: SliderPrimitive.Root.Props) {
-  const rootRef = useRef<HTMLDivElement>(null);
+  step = 1,
+  disabled = false,
+  onValueChange,
+  onValueCommitted,
+}: SliderProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const currentVal = value ? value[0] : defaultValue ? defaultValue[0] : min;
+  const pct = ((currentVal - min) / (max - min)) * 100;
 
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const log = (type: string, e: Event) => {
-      const pe = e as PointerEvent;
-      console.debug(`[Slider][${type}]`, {
-        pointerId: pe.pointerId,
-        pointerType: pe.pointerType,
-        button: pe.button,
-        buttons: pe.buttons,
-        x: pe.clientX,
-        y: pe.clientY,
-        target: (pe.target as HTMLElement)?.tagName,
-        composedPath: e.composedPath().slice(0, 5).map((n) => (n as HTMLElement).tagName || (n as Node).nodeName),
-      });
-    };
-    const events = ["pointerdown", "pointermove", "pointerup", "pointercancel", "mousedown", "touchstart"];
-    const handlers = events.map((type) => {
-      const handler = (e: Event) => log(type, e);
-      el.addEventListener(type, handler, { capture: true });
-      return { type, handler };
-    });
-    console.debug("[Slider] Event listeners attached on", el.getBoundingClientRect());
-    return () => {
-      handlers.forEach(({ type, handler }) => el.removeEventListener(type, handler, { capture: true }));
-      console.debug("[Slider] Event listeners removed");
-    };
-  }, []);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = parseFloat(e.target.value);
+      onValueChange?.([v]);
+    },
+    [onValueChange]
+  );
 
-  const _values = Array.isArray(value)
-    ? value
-    : Array.isArray(defaultValue)
-      ? defaultValue
-      : [min, max]
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLInputElement>) => {
+      const v = parseFloat((e.target as HTMLInputElement).value);
+      onValueCommitted?.([v]);
+    },
+    [onValueCommitted]
+  );
 
   return (
-    <SliderPrimitive.Root
-      ref={rootRef}
-      className={cn("data-horizontal:w-full data-horizontal:py-3 data-vertical:h-full", className)}
-      data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
-      thumbAlignment="edge"
-      {...props}
+    <div
+      className={cn(
+        "relative flex w-full items-center py-3",
+        disabled && "opacity-50 cursor-not-allowed",
+        className
+      )}
     >
-      <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
-        <SliderPrimitive.Track
-          data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
-        >
-          <SliderPrimitive.Indicator
-            data-slot="slider-range"
-            className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"
-          />
-        </SliderPrimitive.Track>
-        {Array.from({ length: _values.length }, (_, index) => (
-          <SliderPrimitive.Thumb
-            data-slot="slider-thumb"
-            key={index}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
-          />
-        ))}
-      </SliderPrimitive.Control>
-    </SliderPrimitive.Root>
-  )
+      <div className="relative h-1 w-full rounded-full bg-muted">
+        <div
+          className="absolute h-full rounded-full bg-primary"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <input
+        ref={inputRef}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={currentVal}
+        disabled={disabled}
+        onChange={handleChange}
+        onMouseUp={handleMouseUp}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        style={{ margin: 0 }}
+      />
+      <div
+        className="pointer-events-none absolute size-3 -translate-x-1/2 rounded-full border border-ring bg-white ring-ring/50 shadow-sm"
+        style={{ left: `${pct}%` }}
+      />
+    </div>
+  );
 }
 
-export { Slider }
+export { Slider };

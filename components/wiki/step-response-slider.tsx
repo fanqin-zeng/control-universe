@@ -15,19 +15,6 @@ export function StepResponseSlider() {
   );
   const { containerRef, chartRef } = useECharts<HTMLDivElement>();
 
-  const handleZetaChange = (values: number | readonly number[]) => {
-    console.debug("[StepResponse] onValueChange(zeta)", { values, isArray: Array.isArray(values) });
-    setZeta(Array.isArray(values) ? values[0] : zeta);
-  };
-  const handleOmegaChange = (values: number | readonly number[]) => {
-    console.debug("[StepResponse] onValueChange(omega)", { values, isArray: Array.isArray(values) });
-    setOmega(Array.isArray(values) ? values[0] : omega);
-  };
-
-  useEffect(() => {
-    console.debug("[StepResponse] state", { zeta, omega });
-  }, [zeta, omega]);
-
   useEffect(() => {
     if (!chartRef.current) return;
     chartRef.current.setOption(
@@ -69,7 +56,7 @@ export function StepResponseSlider() {
               min={0.1}
               max={2}
               step={0.05}
-              onValueChange={handleZetaChange}
+              onValueChange={(v) => setZeta(Array.isArray(v) ? v[0] : zeta)}
             />
           </div>
           <div className="space-y-2">
@@ -82,7 +69,7 @@ export function StepResponseSlider() {
               min={0.5}
               max={10}
               step={0.5}
-              onValueChange={handleOmegaChange}
+              onValueChange={(v) => setOmega(Array.isArray(v) ? v[0] : omega)}
             />
           </div>
         </div>

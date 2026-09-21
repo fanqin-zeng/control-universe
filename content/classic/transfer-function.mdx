@@ -254,19 +254,13 @@ plt.show()
 
 ## 习题
 
-### 基础
-
 **1.** 悬挂系统的微分方程为 $m\ddot{y} + c\dot{y} + ky = F(t)$，其中 $m = 500\,\text{kg}$，$c = 2000\,\text{N·s/m}$，$k = 20000\,\text{N/m}$。写出系统的传递函数 $G(s) = Y(s)/F(s)$，并计算自然频率 $\omega_n$ 和阻尼比 $\zeta$。
 
 **2.** 某系统的传递函数为 $G(s) = \frac{10}{s^2 + 3s + 10}$。求该系统的极点，判断系统是否稳定，并计算 $\omega_n$ 和 $\zeta$。
 
-### 进阶
-
 **3.** 两个系统串联：$G_1(s) = \frac{1}{s+1}$，$G_2(s) = \frac{5}{s+2}$。求总传递函数 $G(s) = G_1(s) \cdot G_2(s)$。如果输入是单位阶跃信号 $U(s) = 1/s$，输出的稳态值是多少？（提示：用终值定理 $\lim_{t\to\infty} y(t) = \lim_{s\to 0} sY(s)$）
 
 **4.** RLC电路的传递函数为 $G(s) = \frac{1}{LCs^2 + RCs + 1}$。利用机电类比，指出对应的"质量""阻尼""刚度"分别是多少。如果 $L = 0.1\,\text{H}$，$R = 2\,\Omega$，$C = 0.01\,\text{F}$，计算电路的自然频率和阻尼比。
-
-### 挑战
 
 **5.** 单摆方程 $ml^2\ddot{\theta} + mgl\sin\theta = 0$ 是非线性的。在小角度假设下（$\sin\theta \approx \theta$），写出线性化后的微分方程，并求传递函数 $\Theta(s)/\Theta_0(s)$（其中 $\Theta_0$ 是初始角度扰动）。这个传递函数的极点在何处？系统稳定吗？
 
@@ -275,8 +269,6 @@ plt.show()
 </Callout>
 
 ## 答案
-
-### 基础
 
 **1.** 对微分方程 $500\ddot{y} + 2000\dot{y} + 20000y = F(t)$ 取拉普拉斯变换（零初始条件）：
 
@@ -309,8 +301,6 @@ $$s_{1,2} = \frac{-3 \pm \sqrt{9 - 40}}{2} = \frac{-3 \pm \sqrt{-31}}{2} = -1.5 
 $$\omega_n^2 = 10 \implies \omega_n = \sqrt{10} \approx 3.16 \text{ rad/s}$$
 
 $$2\zeta\omega_n = 3 \implies \zeta = \frac{3}{2\sqrt{10}} \approx 0.474$$
-
-### 进阶
 
 **3.** 串联总传递函数：
 
@@ -345,8 +335,6 @@ $$G(s) = \frac{1/LC}{s^2 + \frac{R}{L}s + \frac{1}{LC}}$$
 $$\omega_n = \sqrt{\frac{1}{LC}} = \sqrt{\frac{1}{0.1 \times 0.01}} = \sqrt{1000} \approx 31.6 \text{ rad/s}$$
 
 $$\zeta = \frac{R}{2}\sqrt{\frac{C}{L}} = \frac{2}{2}\sqrt{\frac{0.01}{0.1}} = \sqrt{0.1} \approx 0.316$$
-
-### 挑战
 
 **5.** 小角度假设 $\sin\theta \approx \theta$，线性化后的方程：
 
