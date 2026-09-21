@@ -6,10 +6,10 @@ import { Sidebar } from "./sidebar";
 
 export function MobileHeader() {
   return (
-    <header className="lg:hidden flex items-center justify-between border-b p-4">
-      <span className="font-bold">控制宇宙</span>
+    <header className="lg:hidden flex items-center justify-between border-b px-4 py-3">
+      <span className="text-lg font-bold tracking-tight">控制宇宙</span>
       <Sheet>
-        <SheetTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9">
+        <SheetTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background h-9 w-9 hover:bg-muted hover:border-foreground/20 transition-colors">
           <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-4">

@@ -45,14 +45,14 @@ export function TableOfContents() {
   return (
     <div className="border rounded-lg p-4 bg-muted/30">
       <p className="font-semibold mb-3 text-sm">目录</p>
-      <ul className="space-y-2 text-sm">
+      <ul className="space-y-1 text-sm">
         {headings.map((h) => (
           <li key={h.id} className={cn(h.level === 3 && "pl-4")}>
             <a
               href={`#${h.id}`}
               className={cn(
-                "block hover:text-primary",
-                activeId === h.id && "text-primary font-medium"
+                "block py-1 px-2 -mx-2 rounded-md text-foreground/70 hover:text-foreground hover:bg-muted transition-colors",
+                activeId === h.id && "text-foreground font-medium bg-muted"
               )}
             >
               {h.text}
