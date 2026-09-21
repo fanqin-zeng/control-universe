@@ -9,6 +9,10 @@ echo   Close this window to stop server
 echo ========================================
 echo.
 
+echo Checking port 8080...
+powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "try{$c=Get-NetTCPConnection -LocalPort 8080 -EA Stop; $pids=$c|%%{$_.OwningProcess}|Sort-Object -Unique; foreach($p in $pids){Stop-Process -Id $p -Force -EA SilentlyContinue}; if($pids){Write-Host 'Killed existing process on port 8080, restarting...'}else{Write-Host 'Port 8080 is free'}}catch{Write-Host 'Port 8080 is free'}"
+echo.
+
 set "tmp_ps=%temp%\cu_mon_%random%.ps1"
 
 echo $t = 'Control-Universe-Dev' > "%tmp_ps%"

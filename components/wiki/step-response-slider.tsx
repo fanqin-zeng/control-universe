@@ -15,6 +15,19 @@ export function StepResponseSlider() {
   );
   const { containerRef, chartRef } = useECharts<HTMLDivElement>();
 
+  const handleZetaChange = (values: number | readonly number[]) => {
+    console.debug("[StepResponse] onValueChange(zeta)", { values, isArray: Array.isArray(values) });
+    setZeta(Array.isArray(values) ? values[0] : zeta);
+  };
+  const handleOmegaChange = (values: number | readonly number[]) => {
+    console.debug("[StepResponse] onValueChange(omega)", { values, isArray: Array.isArray(values) });
+    setOmega(Array.isArray(values) ? values[0] : omega);
+  };
+
+  useEffect(() => {
+    console.debug("[StepResponse] state", { zeta, omega });
+  }, [zeta, omega]);
+
   useEffect(() => {
     if (!chartRef.current) return;
     chartRef.current.setOption(
@@ -39,13 +52,13 @@ export function StepResponseSlider() {
   }, [data]);
 
   return (
-    <Card className="my-6">
+    <Card className="my-6 overflow-visible">
       <CardHeader>
         <CardTitle className="text-base">二阶系统阶跃响应</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="h-64 w-full" ref={containerRef} />
-        <div className="space-y-4">
+        <div className="h-64 w-full relative overflow-hidden" ref={containerRef} />
+        <div className="space-y-4 relative z-10">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>阻尼比 ζ</span>
@@ -56,9 +69,7 @@ export function StepResponseSlider() {
               min={0.1}
               max={2}
               step={0.05}
-              onValueChange={(values) =>
-                setZeta(Array.isArray(values) ? values[0] : zeta)
-              }
+              onValueChange={handleZetaChange}
             />
           </div>
           <div className="space-y-2">
@@ -71,9 +82,7 @@ export function StepResponseSlider() {
               min={0.5}
               max={10}
               step={0.5}
-              onValueChange={(values) =>
-                setOmega(Array.isArray(values) ? values[0] : omega)
-              }
+              onValueChange={handleOmegaChange}
             />
           </div>
         </div>

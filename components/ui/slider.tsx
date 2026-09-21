@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 import { cn } from "cn"
 
@@ -9,6 +12,37 @@ function Slider({
   max = 100,
   ...props
 }: SliderPrimitive.Root.Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const log = (type: string, e: Event) => {
+      const pe = e as PointerEvent;
+      console.debug(`[Slider][${type}]`, {
+        pointerId: pe.pointerId,
+        pointerType: pe.pointerType,
+        button: pe.button,
+        buttons: pe.buttons,
+        x: pe.clientX,
+        y: pe.clientY,
+        target: (pe.target as HTMLElement)?.tagName,
+        composedPath: e.composedPath().slice(0, 5).map((n) => (n as HTMLElement).tagName || (n as Node).nodeName),
+      });
+    };
+    const events = ["pointerdown", "pointermove", "pointerup", "pointercancel", "mousedown", "touchstart"];
+    const handlers = events.map((type) => {
+      const handler = (e: Event) => log(type, e);
+      el.addEventListener(type, handler, { capture: true });
+      return { type, handler };
+    });
+    console.debug("[Slider] Event listeners attached on", el.getBoundingClientRect());
+    return () => {
+      handlers.forEach(({ type, handler }) => el.removeEventListener(type, handler, { capture: true }));
+      console.debug("[Slider] Event listeners removed");
+    };
+  }, []);
+
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
@@ -17,7 +51,8 @@ function Slider({
 
   return (
     <SliderPrimitive.Root
-      className={cn("data-horizontal:w-full data-vertical:h-full", className)}
+      ref={rootRef}
+      className={cn("data-horizontal:w-full data-horizontal:py-3 data-vertical:h-full", className)}
       data-slot="slider"
       defaultValue={defaultValue}
       value={value}

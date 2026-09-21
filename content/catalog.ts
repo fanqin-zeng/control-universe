@@ -21,8 +21,8 @@ export const catalog: Chapter[] = [
     slug: "classic",
     title: "经典控制",
     lessons: [
-      { slug: "transfer-function", title: "传递函数入门" },
       { slug: "system-modeling", title: "系统建模基础" },
+      { slug: "transfer-function", title: "传递函数入门" },
       { slug: "time-domain-analysis", title: "时域分析" },
       { slug: "frequency-domain-analysis", title: "频域分析" },
       { slug: "root-locus", title: "根轨迹法" },
