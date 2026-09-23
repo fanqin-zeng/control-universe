@@ -1,0 +1,903 @@
+---
+title: "数字PID实现"
+description: "工业级数字PID的完整实现——位置式与增量式、积分分离与变积分、不完全微分与微分先行、级联PID架构、调参方法，以及从公式到嵌入式代码的完整流程。"
+---
+
+# 数字PID实现
+
+[数字控制器设计](/computer-control/digital-controller-design) 课讲了离散化的通用方法和 PID 的基本工程实现（抗积分饱和、微分滤波、无扰切换）。这节课**深入数字 PID 本身**——同一个 PID 算法，不同的实现结构和改进策略，性能可以天差地别。
+
+> 📖 本课需要 [数字控制器设计](/computer-control/digital-controller-design) 和 [离散系统稳定性](/computer-control/discrete-stability) 的前置知识。
+
+工业控制回路中 90% 以上是 PID。但教科书通常只讲连续 PID 的原理和调参，对数字实现一笔带过。实际上：
+
+- **同一个 PID 参数**，位置式和增量式的表现不同
+- **积分分离**可以让超调减半
+- **变积分**可以在快速性和稳定性之间取得更好的平衡
+- **微分先行**可以避免设定值跳变引起的控制量冲击
+- **级联 PID** 可以处理多时间尺度的控制问题
+
+本节的目标：掌握数字 PID 的全部实现细节，能写出工业级的 PID 代码。
+
+## 三种实现形式
+
+### 位置式 PID
+
+最基本的数字 PID 形式，直接计算控制量的**绝对值**：
+
+$$u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}$$
+
+其中 $e[k] = r[k] - y[k]$。
+
+**优点**：
+- 直观，与连续 PID 公式一一对应
+- 输出直接是控制量，适合比例阀、模拟量输出
+
+**缺点**：
+- 需要累积所有历史误差（求和项），计算量随时间增长
+- 积分项可能溢出（需要抗饱和）
+- 执行器需要接受绝对位置指令
+
+### 增量式 PID
+
+计算控制量的**增量** $\Delta u[k] = u[k] - u[k-1]$：
+
+$$\Delta u[k] = K_p(e[k] - e[k-1]) + K_i T_s\, e[k] + K_d \frac{e[k] - 2e[k-1] + e[k-2]}{T_s}$$
+
+整理为：
+
+$$\Delta u[k] = A\, e[k] - B\, e[k-1] + C\, e[k-2]$$
+
+其中：
+
+$$A = K_p + K_i T_s + \frac{K_d}{T_s}$$
+$$B = K_p + \frac{2K_d}{T_s}$$
+$$C = \frac{K_d}{T_s}$$
+
+实际控制量：$u[k] = u[k-1] + \Delta u[k]$
+
+**优点**：
+- 只需要最近三次误差（$e[k], e[k-1], e[k-2]$），不需要历史累积
+- 增量值小，不容易溢出
+- 天然适合**步进电机**、**阀门**等增量型执行器
+- 手动/自动切换更方便（增量为零时无扰）
+
+**缺点**：
+- 需要额外积分得到绝对控制量（如果执行器需要绝对位置）
+- 积分饱和仍然存在（$\Delta u$ 虽小，累积后 $u$ 仍可能饱和）
+- 系数 $A, B, C$ 与 $T_s$ 强耦合，变采样周期时需要重新计算
+
+### 速度式 PID
+
+形式上与增量式相同，但物理含义不同——输出的是控制量的**变化速率**而非增量：
+
+$$\frac{\Delta u}{\Delta t} \approx \frac{\Delta u[k]}{T_s}$$
+
+速度式主要用于**伺服系统**（控制电机的转速），其中执行器天然接受速度指令。
+
+### 三种形式对比
+
+| 特性 | 位置式 | 增量式 | 速度式 |
+|------|--------|--------|--------|
+| 输出含义 | 控制量绝对值 | 控制量增量 | 控制量变化速率 |
+| 历史数据 | 所有误差 | 最近 3 个误差 | 最近 3 个误差 |
+| 溢出风险 | 高（积分累积） | 低 | 低 |
+| 适用执行器 | 比例阀、模拟量 | 步进电机、阀门 | 伺服电机 |
+| 手动切换 | 需要跟踪 | 自然无扰 | 自然无扰 |
+| 工业使用频率 | 高 | 高 | 中 |
+
+> 💡 **选择建议**：如果执行器接受绝对位置指令（大多数情况），用位置式。如果执行器是增量型的（步进电机、脉冲输出），用增量式。速度式是增量式的物理变体，很少单独使用。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u4f4d\u7f6e\u5f0f vs \u589e\u91cf\u5f0f PID \u5bf9\u6bd4 =====
+def plant_step(u, y_prev, yd_prev, dt):
+    """\u4e8c\u9636\u7cfb\u7edf: G(s) = 10/(s\u00b2 + 3s + 10)"""
+    ydd = 10 * u - 3 * yd_prev - 10 * y_prev
+    y_new = y_prev + yd_prev * dt
+    yd_new = yd_prev + ydd * dt
+    return y_new, yd_new
+
+dt = 0.001
+T_ctrl = 0.01
+t_end = 10.0
+N = int(t_end / dt)
+N_ctrl = int(T_ctrl / dt)
+
+Kp, Ki, Kd = 2.0, 1.0, 0.3
+
+def setpoint(t):
+    if t < 2:
+        return 1.0
+    elif t < 5:
+        return 2.0
+    else:
+        return 0.5
+
+# \u4f4d\u7f6e\u5f0f PID
+y_pos, yd_pos = 0.0, 0.0
+u_pos = 0.0
+e_prev_pos = 0.0
+integral_pos = 0.0
+
+t_log = []
+u_pos_log = []
+u_inc_log = []
+y_log = []
+
+# \u589e\u91cf\u5f0f PID
+y_inc, yd_inc = 0.0, 0.0
+u_inc = 0.0
+e_inc = [0.0, 0.0, 0.0]
+
+A = Kp + Ki * T_ctrl + Kd / T_ctrl
+B = Kp + 2 * Kd / T_ctrl
+C = Kd / T_ctrl
+
+for step in range(N):
+    t = step * dt
+    
+    if step % N_ctrl == 0:
+        r = setpoint(t)
+        
+        # \u4f4d\u7f6e\u5f0f
+        e_pos = r - y_pos
+        integral_pos += Ki * T_ctrl * e_pos
+        u_pos = Kp * e_pos + integral_pos + Kd * (e_pos - e_prev_pos) / T_ctrl
+        e_prev_pos = e_pos
+        
+        # \u589e\u91cf\u5f0f
+        e_inc[2] = e_inc[1]
+        e_inc[1] = e_inc[0]
+        e_inc[0] = r - y_inc
+        delta_u = A * e_inc[0] - B * e_inc[1] + C * e_inc[2]
+        u_inc = u_inc + delta_u
+    
+    y_pos, yd_pos = plant_step(u_pos, y_pos, yd_pos, dt)
+    y_inc, yd_inc = plant_step(u_inc, y_inc, yd_inc, dt)
+    
+    if step % 10 == 0:
+        t_log.append(t)
+        y_log.append(y_pos)
+        u_pos_log.append(u_pos)
+        u_inc_log.append(u_inc)
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+ax = axes[0]
+ax.plot(t_log, y_log, 'b-', linewidth=1.5, label='\u4f4d\u7f6e\u5f0f')
+ax.plot(t_log, [setpoint(t) for t in t_log], 'k--', alpha=0.3, label='\u8bbe\u5b9a\u503c')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u8f93\u51fa y')
+ax.set_title('\u4f4d\u7f6e\u5f0f vs \u589e\u91cf\u5f0f PID \u2014 \u8f93\u51fa\u54cd\u5e94')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1]
+ax.plot(t_log, u_pos_log, 'b-', linewidth=1, alpha=0.7, label='\u4f4d\u7f6e\u5f0f u[k]')
+ax.plot(t_log, u_inc_log, 'r-', linewidth=1, alpha=0.7, label='\u589e\u91cf\u5f0f u[k]')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u63a7\u5236\u91cf u')
+ax.set_title('\u63a7\u5236\u91cf\u5bf9\u6bd4 (\u4e24\u79cd\u5f62\u5f0f\u5e94\u5b8c\u5168\u4e00\u81f4)')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+diff = np.max(np.abs(np.array(u_pos_log) - np.array(u_inc_log)))
+print(f"\u4f4d\u7f6e\u5f0f vs \u589e\u91cf\u5f0f \u6700\u5927\u5dee\u5f02: {diff:.2e}")
+print(f"\u7ed3\u8bba: {'\u5b8c\u5168\u7b49\u4ef7' if diff < 1e-6 else '\u5b58\u5728\u5dee\u5f02 (\u68c0\u67e5\u5b9e\u73b0)'}")`
+    }
+  ]}
+/>
+
+## PID 改进结构
+
+### 积分分离
+
+**问题**：在大偏差（如启动、换档）时，积分作用会加剧超调。
+
+**思路**：误差大时关闭积分，误差小时开启积分。
+
+$$u_I[k] = \begin{cases} K_i T_s \sum e[j] & |e[k]| \leq \varepsilon \\ 0 & |e[k]| > \varepsilon \end{cases}$$
+
+其中 $\varepsilon$ 是积分分离阈值。
+
+**阈值选择**：
+- $\varepsilon$ 太大 → 退化为普通 PID
+- $\varepsilon$ 太小 → 积分长期关闭，稳态误差大
+- 经验值：$\varepsilon = (10 \sim 30)\%$ 的设定值变化量
+
+**改进版本——渐变积分**：不是突然开关，而是让积分增益随误差平滑变化：
+
+$$K_i' = \lambda \cdot K_i, \quad \lambda = \begin{cases} 1 & |e| \leq \varepsilon \\ \frac{|e| - \varepsilon_0}{\varepsilon - \varepsilon_0} & \varepsilon < |e| < \varepsilon_0 \\ 0 & |e| \geq \varepsilon_0 \end{cases}$$
+
+其中 $\varepsilon < \varepsilon_0$，$\lambda$ 在 $[\varepsilon, \varepsilon_0]$ 区间从 1 线性降到 0。
+
+### 变积分（自适应积分增益）
+
+**思路**：积分增益不是常数，而是随误差大小动态调整。
+
+$$K_i(e) = K_{i0} \cdot f(|e|)$$
+
+常见的 $f$ 函数：
+
+| 类型 | $f(|e|)$ | 特点 |
+|------|---------|------|
+| 指数衰减 | $e^{-\alpha \|e\|}$ | 平滑，$\alpha$ 控制衰减速率 |
+| 分段线性 | 见上节 | 简单，工程常用 |
+| 倒数型 | $\frac{1}{1 + \beta \|e\|}$ | 误差大时积分弱 |
+
+**物理含义**：误差大时（远离设定值），系统需要快速响应，积分作用应该弱（防止过积分）。误差小时（接近设定值），需要积分消除稳态误差。
+
+### 不完全微分
+
+**问题**：纯微分 $K_d s$ 在高频增益无穷大，放大传感器噪声。
+
+**解决方案**：加一阶低通滤波器
+
+$$K_d s \to \frac{K_d N s}{s + N}$$
+
+其中 $N$ 是微分增益上限（$N = 10 \sim 100$）。
+
+离散化后（Tustin）：
+
+$$D(z) = \frac{K_d N}{1 + N T_s / 2} \cdot \frac{z - 1}{z + 1 - \frac{2}{2 + N T_s}}$$
+
+简化为一阶递推：
+
+$$u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}$$
+
+其中 $\alpha = \frac{N T_s}{1 + N T_s}$（后向欧拉近似）或 $\alpha = e^{-N T_s}$（精确离散化）。
+
+**滤波系数 $\alpha$ 的影响**：
+
+| $\alpha$ | 微分效果 | 噪声抑制 | 适用场景 |
+|:---:|------|------|---------|
+| 0 | 纯微分 | 无 | 理论分析 |
+| 0.3 | 弱滤波 | 弱 | 噪声小，需要快速微分响应 |
+| 0.7 | 中等 | 中 | 一般工业应用 |
+| 0.9 | 强滤波 | 强 | 噪声大的场景 |
+| 0.95+ | 极强 | 极强 | 传感器噪声严重 |
+
+> 💡 **经验法则**：$N = 10 / T_s$（即 $\alpha \approx 0.91$）是常用起点。如果传感器噪声大，增大到 $N = 50 / T_s$（$\alpha \approx 0.98$）。
+
+### 微分先行（Derivative on Measurement）
+
+**问题**：设定值突变时，$e = r - y$ 也突变，微分项产生脉冲（"微分冲击"）。
+
+**解决方案**：微分作用在测量值 $y$ 上，而非误差 $e$ 上。
+
+$$u_D[k] = -K_d \frac{y[k] - y[k-1]}{T_s}$$
+
+注意负号——测量值增大等价于误差减小。
+
+**效果**：
+- 设定值变化时，微分项不响应（只有 $y$ 变化才产生微分作用）
+- 消除了设定值跳变引起的控制量冲击
+- 对干扰抑制仍然有效（干扰体现在 $y$ 上）
+
+**与设定值加权的区别**：
+- 设定值加权（$c = 0$）：微分项 $= K_d \frac{-y[k] + y[k-1]}{T_s}$，与微分先行相同
+- 微分先行是设定值加权 $c = 0$ 的特例
+
+### 比例先行（Proportional on Measurement）
+
+类似地，比例项也可以只作用在测量值上：
+
+$$u_P[k] = -K_p \cdot y[k]$$
+
+这样设定值变化不会引起比例项跳变。但纯比例先行会引入稳态误差（因为没有 $r$ 的比例项），需要积分项来消除。
+
+### 综合：工业 PID 标准结构
+
+综合以上改进，工业 PID 的标准结构：
+
+$$u[k] = K_p(b \cdot r[k] - y[k]) + u_I[k] + u_D[k]$$
+
+$$u_I[k] = u_I[k-1] + K_i' T_s (r[k] - y[k]) + K_b(u_{sat}[k] - u[k])$$
+
+$$u_D[k] = \alpha \cdot u_D[k-1] - (1 - \alpha) \cdot K_d \cdot c \cdot \frac{y[k] - y[k-1]}{T_s}$$
+
+其中：
+- $b \in [0, 1]$：比例设定值加权（$b = 0$ 为比例先行）
+- $c \in [0, 1]$：微分设定值加权（$c = 0$ 为微分先行）
+- $K_i'$：变积分增益（可以随误差变化）
+- $K_b$：抗积分饱和反算增益
+- $\alpha$：微分滤波系数
+
+**推荐默认配置**：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| $b$ | 0 | 比例先行，避免设定值跳变 |
+| $c$ | 0 | 微分先行，避免微分冲击 |
+| $K_b$ | $K_i / K_p$ | 反算增益 |
+| $\alpha$ | 0.9 | 微分滤波 |
+| 积分分离 | 不启用 | 除非启动超调严重 |
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u79ef\u5206\u5206\u79bb\u4e0e\u53d8\u79ef\u5206\u6548\u679c =====
+dt = 0.001
+T_ctrl = 0.01
+t_end = 15.0
+N = int(t_end / dt)
+N_ctrl = int(T_ctrl / dt)
+
+Kp, Ki, Kd = 3.0, 1.5, 0.5
+r = 1.0
+u_max = 10.0
+
+def simulate_pid(integral_mode='normal', epsilon=0.3, alpha_var=2.0):
+    y, yd = 0.0, 0.0
+    u = 0.0
+    e_prev = 0.0
+    integral = 0.0
+    
+    t_log = []
+    y_log = []
+    u_log = []
+    
+    for step in range(N):
+        t = step * dt
+        
+        if step % N_ctrl == 0:
+            e = r - y
+            
+            if integral_mode == 'normal':
+                Ki_eff = Ki
+            elif integral_mode == 'separation':
+                Ki_eff = Ki if abs(e) < epsilon else 0.0
+            elif integral_mode == 'variable':
+                Ki_eff = Ki * np.exp(-alpha_var * abs(e))
+            
+            u_P = Kp * e
+            integral += Ki_eff * T_ctrl * e
+            u = u_P + integral + Kd * (e - e_prev) / T_ctrl
+            u_sat = np.clip(u, -u_max, u_max)
+            integral += 1.0 / (Kp / Ki if Ki > 0 else 1) * (u_sat - u)
+            u = u_sat
+            e_prev = e
+        
+        ydd = 10 * u - 3 * yd - 10 * y
+        y = y + yd * dt
+        yd = yd + ydd * dt
+        
+        if step % 10 == 0:
+            t_log.append(t)
+            y_log.append(y)
+            u_log.append(u)
+    
+    return np.array(t_log), np.array(y_log), np.array(u_log)
+
+t1, y1, u1 = simulate_pid('normal')
+t2, y2, u2 = simulate_pid('separation', epsilon=0.3)
+t3, y3, u3 = simulate_pid('variable', alpha_var=2.0)
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+ax = axes[0]
+ax.plot(t1, y1, 'b-', linewidth=1.5, label='\u666e\u901a PID')
+ax.plot(t2, y2, 'r-', linewidth=1.5, label='\u79ef\u5206\u5206\u79bb (\u03b5=0.3)')
+ax.plot(t3, y3, 'g-', linewidth=1.5, label='\u53d8\u79ef\u5206 (\u03b1=2.0)')
+ax.axhline(y=r, color='gray', linestyle='--', alpha=0.5, label='\u8bbe\u5b9a\u503c')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u8f93\u51fa')
+ax.set_title('\u79ef\u5206\u6539\u8fdb\u7b56\u7565\u5bf9\u6bd4 \u2014 \u9636\u8dc3\u54cd\u5e94')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1]
+ax.plot(t1, u1, 'b-', linewidth=1, alpha=0.7, label='\u666e\u901a PID')
+ax.plot(t2, u2, 'r-', linewidth=1, alpha=0.7, label='\u79ef\u5206\u5206\u79bb')
+ax.plot(t3, u3, 'g-', linewidth=1, alpha=0.7, label='\u53d8\u79ef\u5206')
+ax.axhline(y=u_max, color='gray', linestyle=':', alpha=0.5)
+ax.axhline(y=-u_max, color='gray', linestyle=':', alpha=0.5)
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u63a7\u5236\u91cf')
+ax.set_title('\u63a7\u5236\u91cf\u5bf9\u6bd4')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+for name, y_arr in [('\u666e\u901a PID', y1), ('\u79ef\u5206\u5206\u79bb', y2), ('\u53d8\u79ef\u5206', y3)]:
+    os_val = (np.max(y_arr) - r) / r * 100
+    idx_settle = np.where(np.abs(y_arr - r) > 0.02 * r)[0]
+    ts = t1[idx_settle[-1]] if len(idx_settle) > 0 else 0
+    ess = abs(r - y_arr[-1])
+    print(f"{name:<15}: \u8d85\u8c03 = {os_val:.1f}%, \u8c03\u8282\u65f6\u95f4 = {ts:.2f}s, \u7a33\u6001\u8bef\u5dee = {ess:.4f}")`
+    },
+    {
+      code: `# ===== \u5fae\u5206\u5148\u884c vs \u6807\u51c6\u5fae\u5206 =====
+dt = 0.001
+T_ctrl = 0.01
+t_end = 10.0
+N = int(t_end / dt)
+N_ctrl = int(T_ctrl / dt)
+
+Kp, Ki, Kd = 2.0, 0.5, 1.0
+N_filter = 50
+alpha = N_filter * T_ctrl / (1 + N_filter * T_ctrl)
+
+def simulate_derivative(derivative_mode='standard'):
+    y, yd = 0.0, 0.0
+    u = 0.0
+    e_prev = 0.0
+    integral = 0.0
+    u_D = 0.0
+    
+    t_log = []
+    y_log = []
+    u_log = []
+    uD_log = []
+    
+    for step in range(N):
+        t = step * dt
+        
+        if t < 2:
+            r = 1.0
+        elif t < 5:
+            r = 1.0
+        else:
+            r = 1.0
+        
+        if step % N_ctrl == 0:
+            e = r - y
+            u_P = Kp * e
+            integral += Ki * T_ctrl * e
+            
+            if derivative_mode == 'standard':
+                u_D_raw = Kd * (e - e_prev) / T_ctrl
+                u_D = u_D_raw
+            elif derivative_mode == 'filtered':
+                u_D_raw = Kd * (e - e_prev) / T_ctrl
+                u_D = alpha * u_D + (1 - alpha) * u_D_raw
+            
+            u = u_P + integral + u_D
+            u = np.clip(u, -20, 20)
+            e_prev = e
+        
+        ydd = 10 * u - 3 * yd - 10 * y
+        y = y + yd * dt
+        yd = yd + ydd * dt
+        
+        if step % 10 == 0:
+            t_log.append(t)
+            y_log.append(y)
+            u_log.append(u)
+            uD_log.append(u_D)
+    
+    return np.array(t_log), np.array(y_log), np.array(u_log), np.array(uD_log)
+
+t1, y1, u1, ud1 = simulate_derivative('standard')
+t2, y2, u2, ud2 = simulate_derivative('filtered')
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 8))
+
+ax = axes[0, 0]
+ax.plot(t1, y1, 'b-', linewidth=1.5, label='\u7eaf\u5fae\u5206')
+ax.plot(t2, y2, 'r-', linewidth=1.5, label=f'\u4e0d\u5b8c\u5168\u5fae\u5206 (\u03b1={alpha:.2f})')
+ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5)
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u8f93\u51fa')
+ax.set_title('\u9636\u8dc3\u54cd\u5e94\u5bf9\u6bd4')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[0, 1]
+ax.plot(t1, u1, 'b-', linewidth=1, alpha=0.7, label='\u7eaf\u5fae\u5206')
+ax.plot(t2, u2, 'r-', linewidth=1, alpha=0.7, label='\u4e0d\u5b8c\u5168\u5fae\u5206')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u63a7\u5236\u91cf')
+ax.set_title('\u63a7\u5236\u91cf\u5bf9\u6bd4 (\u6ce8\u610f\u521d\u59cb\u8109\u51b2)')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1, 0]
+ax.plot(t1, ud1, 'b-', linewidth=1, alpha=0.7, label='\u7eaf\u5fae\u5206')
+ax.plot(t2, ud2, 'r-', linewidth=1, alpha=0.7, label='\u4e0d\u5b8c\u5168\u5fae\u5206')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u5fae\u5206\u9879')
+ax.set_title('\u5fae\u5206\u9879\u8f93\u51fa (\u7eaf\u5fae\u5206\u6709\u521d\u59cb\u8109\u51b2)')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1, 1]
+alphas = [0.0, 0.3, 0.7, 0.9, 0.95]
+colors = plt.cm.viridis(np.linspace(0, 1, len(alphas)))
+
+for a_val, color in zip(alphas, colors):
+    u_D_test = 0.0
+    e_prev_test = 0.0
+    ud_test_log = []
+    
+    for step in range(N):
+        t = step * dt
+        if step % N_ctrl == 0:
+            e = 1.0 if t < 2 else 0.0
+            u_D_raw = Kd * (e - e_prev_test) / T_ctrl
+            u_D_test = a_val * u_D_test + (1 - a_val) * u_D_raw
+            e_prev_test = e
+        if step % 10 == 0:
+            ud_test_log.append(u_D_test)
+    
+    ax.plot(t1, ud_test_log, color=color, linewidth=1.5, label=f'\u03b1 = {a_val}')
+
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u5fae\u5206\u9879')
+ax.set_title('\u4e0d\u540c\u6ee4\u6ce2\u7cfb\u6570 \u03b1 \u7684\u6548\u679c')
+ax.legend(fontsize=8)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## 级联 PID
+
+### 为什么需要级联
+
+很多工业系统有多个时间尺度的控制需求。例如：
+
+- **电机控制**：电流环（快，1 kHz）→ 速度环（中，100 Hz）→ 位置环（慢，10 Hz）
+- **锅炉控制**：燃料流量（快）→ 炉膛温度（中）→ 蒸汽温度（慢）
+- **无人机**：角速度环（快）→ 姿态环（中）→ 位置环（慢）
+
+如果只用一个 PID 控制器，需要同时处理快动态和慢动态，参数整定极其困难。
+
+### 级联结构
+
+```
+  r₁ ──→ [主控制器] ──→ r₂ ──→ [副控制器] ──→ u ──→ [副对象] ──→ y₂
+   ↑         K₁           ↑         K₂           ↑       G₂
+   │                       │                       │
+   └──── y₁ ───────────────┘                       │
+                                                   │
+                      y₂ ←─────────────────────────┘
+```
+
+- **副回路（内环）**：控制快速变量 $y_2$，抑制内部干扰
+- **主回路（外环）**：控制慢速变量 $y_1$，输出作为副回路的设定值
+
+**设计原则**：
+1. 副回路带宽 > 主回路带宽（通常 3-10 倍）
+2. 先调副回路（把主回路输出作为固定设定值）
+3. 再调主回路（副回路闭合后，等效对象变"快"了）
+
+### 级联的优势
+
+| 特性 | 单回路 | 级联 |
+|------|--------|------|
+| 内部干扰抑制 | 慢（等主回路响应） | 快（副回路直接抑制） |
+| 参数灵敏度 | 高 | 低（副回路线性化对象） |
+| 调参难度 | 耦合 | 分层（先内后外） |
+| 适用场景 | 单时间尺度 | 多时间尺度 |
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u7ea7\u8054 PID \u4eff\u771f: \u4f4d\u7f6e\u73af(\u5916) \u2192 \u901f\u5ea6\u73af(\u5185) =====
+dt = 0.001
+T_ctrl_fast = 0.005  # \u5185\u73af\u63a7\u5236\u5468\u671f 5ms
+T_ctrl_slow = 0.02   # \u5916\u73af\u63a7\u5236\u5468\u671f 20ms
+t_end = 20.0
+N = int(t_end / dt)
+N_fast = int(T_ctrl_fast / dt)
+N_slow = int(T_ctrl_slow / dt)
+
+# \u5916\u73af PID (\u4f4d\u7f6e\u73af)
+Kp1, Ki1, Kd1 = 5.0, 0.5, 0.1
+# \u5185\u73af PID (\u901f\u5ea6\u73af)
+Kp2, Ki2, Kd2 = 3.0, 2.0, 0.01
+
+pos = 0.0
+vel = 0.0
+u_inner = 0.0
+e_vel_prev = 0.0
+integral_vel = 0.0
+e_pos_prev = 0.0
+integral_pos = 0.0
+r_vel = 0.0
+
+t_log = []
+pos_log = []
+vel_log = []
+u_log = []
+
+r_pos = 1.0
+
+for step in range(N):
+    t = step * dt
+    
+    if step % N_slow == 0:
+        e_pos = r_pos - pos
+        integral_pos += Ki1 * T_ctrl_slow * e_pos
+        r_vel = Kp1 * e_pos + integral_pos + Kd1 * (e_pos - e_pos_prev) / T_ctrl_slow
+        r_vel = np.clip(r_vel, -50, 50)
+        e_pos_prev = e_pos
+    
+    if step % N_fast == 0:
+        e_vel = r_vel - vel
+        integral_vel += Ki2 * T_ctrl_fast * e_vel
+        u_inner = Kp2 * e_vel + integral_vel + Kd2 * (e_vel - e_vel_prev) / T_ctrl_fast
+        u_inner = np.clip(u_inner, -100, 100)
+        e_vel_prev = e_vel
+    
+    vdd = -100 * vel + 10000 * u_inner
+    vel = vel + vdd * dt
+    pos = pos + vel * dt
+    
+    if step % 20 == 0:
+        t_log.append(t)
+        pos_log.append(pos)
+        vel_log.append(vel)
+        u_log.append(u_inner)
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+ax = axes[0]
+ax.plot(t_log, pos_log, 'b-', linewidth=1.5, label='\u4f4d\u7f6e')
+ax.axhline(y=r_pos, color='r', linestyle='--', alpha=0.5, label='\u76ee\u6807\u4f4d\u7f6e')
+ax.set_ylabel('\u4f4d\u7f6e')
+ax.set_title('\u7ea7\u8054 PID \u2014 \u4f4d\u7f6e\u54cd\u5e94')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1]
+ax.plot(t_log, vel_log, 'g-', linewidth=1, label='\u901f\u5ea6')
+ax.set_ylabel('\u901f\u5ea6')
+ax.set_title('\u901f\u5ea6\u54cd\u5e94 (\u5185\u73af\u8f93\u51fa)')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[2]
+ax.plot(t_log, u_log, 'r-', linewidth=1, alpha=0.7, label='\u63a7\u5236\u91cf (\u7535\u538b)')
+ax.set_xlabel('\u65f6\u95f4 (s)')
+ax.set_ylabel('\u7535\u538b')
+ax.set_title('\u63a7\u5236\u91cf')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+pos_arr = np.array(pos_log)
+os_val = (np.max(pos_arr) - r_pos) / r_pos * 100
+idx_settle = np.where(np.abs(pos_arr - r_pos) > 0.02 * r_pos)[0]
+ts = t_log[idx_settle[-1]] if len(idx_settle) > 0 else 0
+ess = abs(r_pos - pos_arr[-1])
+print(f"\u7ea7\u8054 PID \u6027\u80fd:")
+print(f"  \u8d85\u8c03: {os_val:.1f}%")
+print(f"  \u8c03\u8282\u65f6\u95f4: {ts:.2f}s")
+print(f"  \u7a33\u6001\u8bef\u5dee: {ess:.4f}")`
+    }
+  ]}
+/>
+
+## 数字 PID 调参
+
+### Ziegler-Nichols 方法（数字版本）
+
+**开环法（Cohen-Coon）**：
+
+1. 做开环阶跃实验，记录响应曲线
+2. 提取参数：增益 $K$、延迟 $L$、时间常数 $T$
+3. 用公式计算 PID 参数
+
+| 控制器 | $K_p$ | $T_i$ | $T_d$ |
+|--------|-------|-------|-------|
+| P | $\frac{T}{KL}$ | — | — |
+| PI | $\frac{0.9T}{KL}$ | $\frac{T}{0.3}$ | — |
+| PID | $\frac{1.2T}{KL}$ | $2L$ | $0.5L$ |
+
+**闭环法**：
+
+1. 只用 P 控制器，增大 $K_p$ 直到等幅振荡
+2. 记录临界增益 $K_u$ 和振荡周期 $T_u$
+3. 用公式计算
+
+| 控制器 | $K_p$ | $T_i$ | $T_d$ |
+|--------|-------|-------|-------|
+| P | $0.5 K_u$ | — | — |
+| PI | $0.45 K_u$ | $T_u / 1.2$ | — |
+| PID | $0.6 K_u$ | $0.5 T_u$ | $0.125 T_u$ |
+
+> 💡 Ziegler-Nichols 给出的参数通常偏激进（相位裕度小）。工程上常在此基础上减小 $K_p$ 20-30%，增大 $T_i$ 20-30%。
+
+### IMC 调参法
+
+**内模控制（IMC）** 方法基于对象模型，参数物理意义清晰。
+
+对于一阶加延迟对象 $G(s) = \frac{K}{Ts + 1} e^{-Ls}$：
+
+$$K_p = \frac{T}{K(\lambda + L)}, \quad T_i = T, \quad T_d = 0$$
+
+其中 $\lambda$ 是可调参数（期望闭环时间常数）：
+- $\lambda = L$：快速响应（激进）
+- $\lambda = 2L$：适中
+- $\lambda = 3L$：保守（鲁棒性好）
+
+### 数字调参的特殊考虑
+
+离散化后，PID 参数需要调整以补偿采样延迟：
+
+1. **采样延迟**：$T_s/2$ 的额外延迟，等效于增加对象延迟 $L$
+2. **修正方法**：在调参公式中用 $L' = L + T_s/2$ 代替 $L$
+3. **经验法则**：如果 $\omega_c T_s < 0.1$，不需要修正；$0.1 < \omega_c T_s < 0.3$，轻微修正；$\omega_c T_s > 0.3$，需要重新调参
+
+## 深入讨论
+
+### 位置式 vs 增量式的本质区别
+
+两种形式在数学上**完全等价**——给定相同的输入，输出完全一致。区别在于**实现层面**：
+
+1. **计算量**：增量式只需要最近 3 个误差，位置式需要累积所有误差。但对于固定增益的 PID，位置式的累积可以用递推 $I[k] = I[k-1] + K_i T_s e[k]$，计算量相同。
+
+2. **溢出风险**：位置式的积分项可能累积到很大的值（需要抗饱和）。增量式的增量值通常很小，但累积后仍然可能饱和。
+
+3. **执行器接口**：如果执行器接受绝对位置（如比例阀、DAC 输出），用位置式。如果接受增量（如步进电机、脉冲输出），用增量式。
+
+4. **手动切换**：增量式在手动模式下输出增量为零，切换更自然。位置式需要在手动模式下跟踪执行器的当前值。
+
+### PID 的局限性
+
+PID 控制器虽然广泛使用，但有明确的局限：
+
+| 局限 | 原因 | 替代方案 |
+|------|------|---------|
+| 不能处理多变量耦合 | 单输入单输出 | 解耦控制、MPC |
+| 对大延迟系统效果差 | 相位裕度不足 | Smith 预估器 |
+| 不能处理硬约束 | 无约束处理能力 | MPC |
+| 非线性系统需要增益调度 | 固定参数 | 自适应控制 |
+| 不能利用模型信息 | 无模型 | 最优控制 |
+
+> 💡 **工程哲学**：PID 的优势不在于性能最优，而在于**简单、可靠、可调**。一个调得好的 PID，在它的适用范围内，性能不亚于复杂控制器，而且工程师能理解、能调试、能信任它。
+
+### 自整定 PID
+
+现代工业 PID 控制器通常具有**自整定（Auto-tuning）**功能：
+
+1. **继电器反馈法**：在系统中注入继电器非线性，产生等幅振荡，自动测量 $K_u$ 和 $T_u$（Ziegler-Nichols 闭环法的自动化版本）
+2. **阶跃响应法**：自动做开环阶跃实验，提取 $K, L, T$，计算 IMC 参数
+3. **模式识别法**：在线识别对象模型，实时调整 PID 参数
+
+自整定 PID 在过程控制（温度、压力、流量）中非常普遍，可以显著减少调试时间。
+
+### 与后续课程的关系
+
+- **采样周期选择**（第 6 课）：本课假设采样周期已知，第 6 课系统讲解如何选择
+- **计算机控制系统架构**（第 7 课）：本课聚焦算法，第 7 课讲系统级架构
+- **实时控制实现**（第 8 课）：本课讲算法原理，第 8 课讲嵌入式实现细节
+
+## 小结
+
+1. **三种实现形式**：位置式（绝对值）、增量式（变化量）、速度式（变化率）——数学等价，工程选择取决于执行器类型
+2. **PID 改进结构**：
+   - 积分分离：大误差时关闭积分，减少超调
+   - 变积分：积分增益随误差动态调整
+   - 不完全微分：加低通滤波，抑制噪声
+   - 微分先行：微分作用在测量值上，消除设定值跳变冲击
+3. **级联 PID**：内外环分层控制，内环快、外环慢，处理多时间尺度问题
+4. **调参方法**：Ziegler-Nichols（开环/闭环）、IMC 法，数字系统需补偿采样延迟
+5. **工业推荐配置**：$b = 0, c = 0$（比例+微分先行），$\alpha = 0.9$（微分滤波），$K_b = K_i/K_p$（抗饱和）
+
+## 习题
+
+1. **增量式推导**：给定 PI 控制器 $K(s) = K_p + K_i/s$，采样周期 $T_s$，推导增量式 PID 的系数 $A, B, C$（注意 PI 没有微分项，$C = 0$）。
+
+2. **积分分离效果**：系统 $G(s) = \frac{1}{s+1}$，PID 参数 $K_p = 2, K_i = 1, K_d = 0.5$。设定值从 0 跳到 10，执行器限幅 $|u| \leq 5$。分别用普通 PID 和积分分离（$\varepsilon = 2$）仿真，比较超调量。
+
+3. **微分先行分析**：证明：当 $c = 0$（微分先行）时，设定值阶跃变化不会引起微分项的跳变。
+
+4. **级联 PID 调参**：内环对象 $G_2(s) = \frac{5}{0.1s + 1}$，外环对象 $G_1(s) = \frac{1}{s}$（积分）。用 IMC 方法分别设计内环和外环 PID 参数，要求内环带宽 $\omega_{c2} = 20$ rad/s，外环带宽 $\omega_{c1} = 2$ rad/s。
+
+## 答案
+
+### 习题 1
+
+PI 控制器：$K(z) = K_p + K_i T_s \frac{z+1}{2(z-1)}$（Tustin 离散化）
+
+位置式：$u[k] = K_p e[k] + u_I[k]$，$u_I[k] = u_I[k-1] + \frac{K_i T_s}{2}(e[k] + e[k-1])$
+
+增量式：$\Delta u[k] = u[k] - u[k-1]$
+
+$$\Delta u[k] = K_p(e[k] - e[k-1]) + \frac{K_i T_s}{2}(e[k] + e[k-1])$$
+
+$$= \left(K_p + \frac{K_i T_s}{2}\right) e[k] + \left(-K_p + \frac{K_i T_s}{2}\right) e[k-1]$$
+
+所以：$A = K_p + \frac{K_i T_s}{2}$，$B = K_p - \frac{K_i T_s}{2}$，$C = 0$。
+
+### 习题 2
+
+**普通 PID**：
+
+启动阶段 $e = 10$，执行器饱和 $u = 5$。积分器持续累积。当 $y$ 接近 10 时，积分器已经累积了大量值，导致严重超调。
+
+仿真结果（近似）：超调约 30-40%。
+
+**积分分离 PID**（$\varepsilon = 2$）：
+
+当 $|e| > 2$ 时，积分关闭。只有 $y > 8$ 后积分才开始工作。积分器累积量大幅减少。
+
+仿真结果（近似）：超调约 10-15%。
+
+**超调减少**：约 20-25%。
+
+关键机制：积分分离阻止了饱和期间的"过积分"（windup），使控制器在接近设定值时更"冷静"。
+
+### 习题 3
+
+标准微分项：$u_D[k] = K_d \frac{e[k] - e[k-1]}{T_s} = K_d \frac{(r[k] - y[k]) - (r[k-1] - y[k-1])}{T_s}$
+
+当 $r$ 发生阶跃变化时（$r[k] = R, r[k-1] = 0$）：
+
+$$u_D[k] = K_d \frac{R - y[k] + y[k-1]}{T_s}$$
+
+$R$ 的出现导致微分项产生脉冲。
+
+微分先行（$c = 0$）：$u_D[k] = -K_d \frac{y[k] - y[k-1]}{T_s}$
+
+设定值 $r$ 不出现在微分项中。当 $r$ 阶跃变化时，$y$ 不会瞬间变化（对象有惯性），所以 $u_D$ 不会产生脉冲。
+
+**结论**：微分先行消除了设定值跳变引起的微分冲击。$\blacksquare$
+
+### 习题 4
+
+**内环设计**：$G_2(s) = \frac{5}{0.1s + 1}$
+
+IMC 参数：$K = 5, T = 0.1, L \approx 0$
+
+$$K_{p2} = \frac{T}{K(\lambda_2 + L)} = \frac{0.1}{5 \lambda_2}$$
+
+要求内环带宽 $\omega_{c2} = 20$ rad/s：$\lambda_2 = 1/\omega_{c2} = 0.05$
+
+$$K_{p2} = \frac{0.1}{5 \times 0.05} = 0.4, \quad T_{i2} = T = 0.1, \quad T_{d2} = 0$$
+
+内环 PI 控制器：$K_2(s) = 0.4 + \frac{4}{s} = 0.4 \frac{0.1s + 1}{0.1s}$
+
+内环闭环：$T_2(s) = \frac{K_2 G_2}{1 + K_2 G_2} = \frac{0.4 \times 5}{0.1s + 1 + 2} \approx \frac{2}{0.1s + 3} = \frac{2/3}{0.033s + 1}$
+
+**外环设计**：等效对象 $G_{eq}(s) = T_2(s) \cdot G_1(s) = \frac{2/3}{0.033s + 1} \cdot \frac{1}{s}$
+
+由于内环带宽（20 rad/s）远大于外环带宽（2 rad/s），内环动态可以近似为增益 $2/3$：
+
+$$G_{eq}(s) \approx \frac{2/3}{s}$$
+
+IMC 参数：$K_{eq} = 2/3, T_{eq} \approx 0, L_{eq} \approx 0$
+
+$$K_{p1} = \frac{1}{K_{eq}(\lambda_1)} = \frac{1}{(2/3) \times 0.5} = 3.0$$
+
+其中 $\lambda_1 = 1/\omega_{c1} = 0.5$。
+
+外环 P 控制器（对象有积分，不需要外环积分）：$K_1(s) = 3.0$
+
+验证：开环 $L_1(s) = 3.0 \times \frac{2/3}{s} = \frac{2}{s}$，带宽 $= 2$ rad/s ✓

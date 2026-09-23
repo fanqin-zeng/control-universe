@@ -5,10 +5,34 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
 
 import { Callout } from "@/components/wiki/callout";
-import { StepResponseSlider } from "@/components/wiki/step-response-slider";
 import { JupyterNotebook } from "@/components/wiki/jupyter-notebook";
+import { SuspensionExplorer } from "@/components/wiki/suspension-explorer";
+import { FirstOrderComparisonExplorer } from "@/components/wiki/first-order-comparison-explorer";
+import { PoleZeroExplorer } from "@/components/wiki/pole-zero-explorer";
+import { StepBodeExplorer } from "@/components/wiki/step-bode-explorer";
+import { ImpulseExplorer } from "@/components/wiki/impulse-explorer";
+import { FirstOrderStepExplorer } from "@/components/wiki/first-order-step-explorer";
+import { PerformanceMetricsExplorer } from "@/components/wiki/performance-metrics-explorer";
+import { SecondOrderStepExplorer } from "@/components/wiki/second-order-step-explorer";
+import { SuspensionTimeExplorer } from "@/components/wiki/suspension-time-explorer";
+import { BodeZetaExplorer } from "@/components/wiki/bode-zeta-explorer";
+import { NyquistZetaExplorer } from "@/components/wiki/nyquist-zeta-explorer";
+import { BandwidthCorrespondenceExplorer } from "@/components/wiki/bandwidth-correspondence-explorer";
+import { RCFilterBodeExplorer } from "@/components/wiki/rc-filter-bode-explorer";
+import { RootLocusKExplorer } from "@/components/wiki/root-locus-k-explorer";
+import { PidDerivativeFilterExplorer } from "@/components/wiki/pid-derivative-filter-explorer";
+import { PidKiKdExplorer } from "@/components/wiki/pid-ki-kd-explorer";
+import { StabilityThirdOrderExplorer } from "@/components/wiki/stability-third-order-explorer";
+import { StabilityDelayExplorer } from "@/components/wiki/stability-delay-explorer";
+import { LeadCompensatorExplorer } from "@/components/wiki/lead-compensator-explorer";
+import { LagCompensatorExplorer } from "@/components/wiki/lag-compensator-explorer";
+import { LeadLagCompensatorExplorer } from "@/components/wiki/lead-lag-compensator-explorer";
+import { AntiWindupExplorer } from "@/components/wiki/antiwindup-explorer";
+import { DescribingFunctionExplorer } from "@/components/wiki/describing-function-explorer";
+import { NyquistLimitCycleExplorer } from "@/components/wiki/nyquist-limit-cycle-explorer";
 import { logger } from "@/lib/logger";
 
 const contentDir = path.join(process.cwd(), "content");
@@ -52,10 +76,24 @@ async function compileLessonSource(source: string, fallbackTitle: string) {
             rehypeKatex as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [rehypePrettyCode, { theme: "github-light" }] as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rehypeSlug as any,
           ],
         },
       },
-      components: { Callout, StepResponseSlider, JupyterNotebook },
+      components: {
+        Callout, JupyterNotebook, SuspensionExplorer,
+        FirstOrderComparisonExplorer, PoleZeroExplorer, StepBodeExplorer,
+        ImpulseExplorer, FirstOrderStepExplorer, PerformanceMetricsExplorer,
+        SecondOrderStepExplorer, SuspensionTimeExplorer,
+        BodeZetaExplorer, NyquistZetaExplorer, BandwidthCorrespondenceExplorer,
+        RCFilterBodeExplorer, RootLocusKExplorer,
+        PidDerivativeFilterExplorer, PidKiKdExplorer,
+        StabilityThirdOrderExplorer, StabilityDelayExplorer,
+        LeadCompensatorExplorer, LagCompensatorExplorer,
+        LeadLagCompensatorExplorer, AntiWindupExplorer,
+        DescribingFunctionExplorer, NyquistLimitCycleExplorer,
+      },
     });
 
     return {

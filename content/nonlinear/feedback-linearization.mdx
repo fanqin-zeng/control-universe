@@ -1,0 +1,583 @@
+---
+title: "反馈线性化"
+description: "通过非线性反馈和坐标变换，将非线性系统精确转化为线性系统"
+---
+
+# 反馈线性化
+
+## 引言
+
+在李雅普诺夫稳定性分析中，我们通过能量函数判断系统的稳定性，但不涉及控制器设计。**反馈线性化**（Feedback Linearization）提供了一种系统化的控制器设计方法：通过非线性反馈律 $u = \alpha(x) + \beta(x)v$，将非线性系统 $\dot{x} = f(x) + g(x)u$ 转化为线性系统，然后用成熟的线性控制方法（如 PID、极点配置、LQR）设计 $v$。
+
+<img src="/images/feedback-linearization-concept.png" alt="反馈线性化概念：非线性反馈抵消系统非线性，得到线性输入输出关系" style={{ maxWidth: '100%', height: 'auto' }} />
+
+*图：反馈线性化概念——非线性反馈控制器抵消系统非线性，得到线性闭环动态*
+
+与 Jacobian 线性化（在工作点附近做泰勒展开，局部近似）不同，反馈线性化是**精确线性化**：在适当的坐标变换下，闭环系统在整个状态空间（或大部分区域）内表现为线性系统。但这要求模型精确，且需要处理内部动态（零动态）的稳定性。
+
+> 📐 本文用到了 Lie 导数和坐标变换，详见 [复数基础](/math/complex-numbers) 和 [线性代数基础](/math/linear-algebra)。
+
+## 基本概念
+
+### 仿射非线性系统
+
+考虑单输入单输出（SISO）仿射非线性系统：
+$$\dot{x} = f(x) + g(x)u, \quad y = h(x)$$
+
+其中 $x \in \mathbb{R}^n$ 为状态，$u \in \mathbb{R}$ 为输入，$y \in \mathbb{R}$ 为输出。$f(x)$ 和 $g(x)$ 是光滑向量场，$h(x)$ 是光滑标量函数。
+
+**仿射**的含义：输入 $u$ 以线性方式出现在动力学中（即 $g(x)u$），但状态动态 $f(x)$ 可以是非线性的。
+
+### Lie 导数
+
+**Lie 导数**（Lie Derivative）是反馈线性化的核心工具。对标量函数 $h(x)$ 和向量场 $f(x)$，Lie 导数定义为：
+$$L_f h(x) = \frac{\partial h}{\partial x}f(x) = \nabla h(x) \cdot f(x)$$
+
+直观理解：$L_f h$ 是 $h(x)$ 沿向量场 $f(x)$ 方向的变化率。
+
+高阶 Lie 导数通过迭代定义：
+$$L_f^2 h(x) = L_f(L_f h(x)) = \frac{\partial (L_f h)}{\partial x}f(x)$$
+$$L_f^k h(x) = L_f(L_f^{k-1} h(x))$$
+
+混合 Lie 导数 $L_g L_f h$ 表示先对 $h$ 求 $L_f$，再对结果求 $L_g$：
+$$L_g L_f h(x) = \frac{\partial (L_f h)}{\partial x}g(x)$$
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# 符号计算 Lie 导数（以单摆为例）
+# 单摆动力学：ẋ₁ = x₂, ẋ₂ = -g/l * sin(x₁) + u
+# 输出 y = x₁
+
+# 定义符号变量（用数值近似）
+def f(x):
+    """系统向量场 f(x)"""
+    g = 9.81
+    l = 1.0
+    return np.array([x[1], -g/l * np.sin(x[0])])
+
+def g_vec(x):
+    """输入向量场 g(x)"""
+    return np.array([0, 1])
+
+def h(x):
+    """输出函数 h(x) = x₁"""
+    return x[0]
+
+# 数值计算 Lie 导数（有限差分近似）
+def numerical_gradient(func, x, eps=1e-6):
+    """数值计算梯度"""
+    n = len(x)
+    grad = np.zeros(n)
+    for i in range(n):
+        x_plus = x.copy()
+        x_minus = x.copy()
+        x_plus[i] += eps
+        x_minus[i] -= eps
+        grad[i] = (func(x_plus) - func(x_minus)) / (2 * eps)
+    return grad
+
+# 在某点计算 Lie 导数
+x_test = np.array([np.pi/4, 0.5])  # θ=45°, θ̇=0.5 rad/s
+
+grad_h = numerical_gradient(h, x_test)
+L_f_h = grad_h @ f(x_test)
+L_g_h = grad_h @ g_vec(x_test)
+
+print(f"在 x = {x_test} 处:")
+print(f"∇h = {grad_h}")
+print(f"L_f h = {L_f_h:.4f}")
+print(f"L_g h = {L_g_h:.4f}")
+
+# 计算二阶 Lie 导数 L_f²h
+def L_f_h_func(x):
+    """L_f h 作为 x 的函数"""
+    grad_h = numerical_gradient(h, x)
+    return grad_h @ f(x)
+
+grad_L_f_h = numerical_gradient(L_f_h_func, x_test)
+L_f2_h = grad_L_f_h @ f(x_test)
+L_g_L_f_h = grad_L_f_h @ g_vec(x_test)
+
+print(f"\\nL_f²h = {L_f2_h:.4f}")
+print(f"L_g L_f h = {L_g_L_f_h:.4f}")
+print(f"\\n相对阶 r = 2（因为 L_g h = 0 但 L_g L_f h ≠ 0）")`}
+  ]}
+/>
+
+## 相对阶
+
+**相对阶**（Relative Degree）$r$ 是反馈线性化的关键概念。它定义为：需要对输出 $y$ 求导多少次，输入 $u$ 才会显式出现。
+
+### 严格定义
+
+对系统 $\dot{x} = f(x) + g(x)u$，$y = h(x)$，相对阶 $r$ 是满足以下条件的最小整数：
+$$L_g L_f^k h(x) = 0, \quad \forall k < r-1, \quad \text{且} \quad L_g L_f^{r-1} h(x) \neq 0$$
+
+**物理意义**：相对阶 $r$ 表示输入 $u$ 到输出 $y$ 之间的"积分链长度"。比如：
+- $r=1$：$\dot{y}$ 直接依赖 $u$（如速度控制系统）。
+- $r=2$：$\ddot{y}$ 依赖 $u$（如位置控制系统，力 → 加速度 → 速度 → 位置）。
+- $r=n$：相对阶等于系统阶数，系统可全状态线性化。
+
+### 手算例子：单摆系统
+
+单摆动力学：
+$$\ddot{\theta} + \frac{g}{l}\sin\theta = u$$
+
+取状态 $x_1 = \theta$，$x_2 = \dot{\theta}$，输出 $y = \theta$。写成标准形式：
+$$\begin{cases} \dot{x}_1 = x_2 \\ \dot{x}_2 = -\frac{g}{l}\sin x_1 + u \end{cases}$$
+
+即 $f(x) = \begin{bmatrix} x_2 \\ -\frac{g}{l}\sin x_1 \end{bmatrix}$，$g(x) = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$h(x) = x_1$。
+
+**步骤 1：计算 $L_g h$**
+$$\nabla h = \begin{bmatrix} 1 & 0 \end{bmatrix}$$
+$$L_g h = \nabla h \cdot g = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = 0$$
+
+由于 $L_g h = 0$，继续求导。
+
+**步骤 2：计算 $L_f h$**
+$$L_f h = \nabla h \cdot f = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} x_2 \\ -\frac{g}{l}\sin x_1 \end{bmatrix} = x_2$$
+
+**步骤 3：计算 $L_g L_f h$**
+$$\nabla(L_f h) = \nabla(x_2) = \begin{bmatrix} 0 & 1 \end{bmatrix}$$
+$$L_g L_f h = \nabla(L_f h) \cdot g = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = 1 \neq 0$$
+
+因此相对阶 $r=2$。
+
+## 输入-输出线性化
+
+一旦确定了相对阶 $r$，就可以设计控制律使输入输出关系线性化。
+
+### 相对阶 $r=1$ 的情况
+
+如果 $L_g h(x) \neq 0$，则：
+$$\dot{y} = L_f h(x) + L_g h(x) u$$
+
+设计控制律：
+$$u = \frac{-L_f h(x) + v}{L_g h(x)}$$
+
+代入得 $\dot{y} = v$，即输入输出关系为一阶积分器。
+
+### 相对阶 $r=2$ 的情况（单摆）
+
+对单摆，$r=2$，我们有：
+$$\dot{y} = L_f h(x) = x_2$$
+$$\ddot{y} = L_f^2 h(x) + L_g L_f h(x) u = -\frac{g}{l}\sin x_1 + u$$
+
+设计控制律：
+$$u = \frac{g}{l}\sin x_1 + v$$
+
+代入得 $\ddot{y} = v$，即输入输出关系为二阶积分器。
+
+然后可以设计外层控制器 $v$：
+- **镇定问题**：$v = -k_1 y - k_2 \dot{y} = -k_1 \theta - k_2 \dot{\theta}$（PD 控制）。
+- **跟踪问题**：$v = \ddot{y}_d - k_1(y - y_d) - k_2(\dot{y} - \dot{y}_d)$（前馈 + 反馈）。
+
+### 一般情况：相对阶 $r$
+
+对一般相对阶 $r$，有：
+$$y^{(r)} = L_f^r h(x) + L_g L_f^{r-1} h(x) u$$
+
+设计控制律：
+$$u = \frac{-L_f^r h(x) + v}{L_g L_f^{r-1} h(x)}$$
+
+代入得 $y^{(r)} = v$，即 $r$ 阶积分器。
+
+## 零动态与内部稳定性
+
+当相对阶 $r < n$（系统阶数）时，反馈线性化只线性化了输入输出关系，还有 $n-r$ 个内部状态未被线性化。这些内部状态的动态称为**零动态**（Zero Dynamics）。
+
+### 零动态的定义
+
+**零动态**：当输出 $y(t) \equiv 0$ 且其导数 $\dot{y} = \ddot{y} = \cdots = y^{(r-1)} = 0$ 时，系统内部状态的动态。
+
+### 稳定性分析
+
+- 如果零动态**渐近稳定**，系统是**最小相位**（minimum phase）的，反馈线性化安全。
+- 如果零动态**不稳定**，系统是**非最小相位**（non-minimum phase）的，反馈线性化会导致内部状态发散。
+
+### 例子：单摆的零动态
+
+对单摆，$r=2$，$n=2$，所以 $r=n$，没有零动态（全状态线性化）。
+
+但如果我们取输出 $y = \theta + \dot{\theta}$（角度加角速度），则相对阶可能降低，产生零动态。这时需要检查零动态的稳定性。
+
+## 全状态线性化
+
+当相对阶 $r = n$ 时，反馈线性化可以将整个系统转化为线性系统。通过坐标变换 $z = T(x)$，系统变为 **Brunovsky 标准型**：
+
+$$\begin{cases} \dot{z}_1 = z_2 \\ \dot{z}_2 = z_3 \\ \vdots \\ \dot{z}_{n-1} = z_n \\ \dot{z}_n = v \end{cases}$$
+
+即 $\dot{z} = Az + Bv$，其中：
+$$A = \begin{bmatrix} 0 & 1 & 0 & \cdots & 0 \\ 0 & 0 & 1 & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \cdots & 1 \\ 0 & 0 & 0 & \cdots & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}$$
+
+这是完全可控的线性系统，可以用任何线性控制方法设计 $v$。
+
+### 坐标变换
+
+坐标变换 $z = T(x)$ 的构造方法：
+$$\begin{cases} z_1 = h(x) \\ z_2 = L_f h(x) \\ z_3 = L_f^2 h(x) \\ \vdots \\ z_n = L_f^{n-1} h(x) \end{cases}$$
+
+这个变换必须是**微分同胚**（diffeomorphism），即光滑且可逆。充分条件是 Jacobian 矩阵 $\frac{\partial T}{\partial x}$ 非奇异。
+
+## 应用案例
+
+### 案例 1：单摆镇定控制
+
+**问题**：设计控制器使单摆稳定在倒立位置 $\theta = \pi$。
+
+**动力学**：
+$$\ddot{\theta} + \frac{g}{l}\sin\theta = u$$
+
+**步骤 1：坐标平移**
+
+将平衡点移到原点：令 $\phi = \theta - \pi$，则 $\sin\theta = \sin(\phi + \pi) = -\sin\phi$。动力学变为：
+$$\ddot{\phi} - \frac{g}{l}\sin\phi = u$$
+
+**步骤 2：反馈线性化**
+
+取输出 $y = \phi$，相对阶 $r=2$。控制律：
+$$u = -\frac{g}{l}\sin\phi + v$$
+
+闭环动态：$\ddot{\phi} = v$。
+
+**步骤 3：设计外层控制器**
+
+用 PD 控制：
+$$v = -k_1 \phi - k_2 \dot{\phi}$$
+
+选择 $k_1, k_2 > 0$ 使特征方程 $s^2 + k_2 s + k_1 = 0$ 的根具有负实部。
+
+**步骤 4：恢复原控制律**
+
+代回 $\phi = \theta - \pi$：
+$$u = -\frac{g}{l}\sin(\theta - \pi) - k_1(\theta - \pi) - k_2\dot{\theta} = \frac{g}{l}\sin\theta - k_1(\theta - \pi) - k_2\dot{\theta}$$
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# 单摆反馈线性化控制仿真
+
+g = 9.81
+l = 1.0
+
+# 原始非线性系统
+def pendulum_nonlinear(state, t, u_func=None):
+    theta, theta_dot = state
+    if u_func is None:
+        u = 0  # 无控制
+    else:
+        u = u_func(state, t)
+    dtheta_dt = theta_dot
+    dtheta_dot_dt = -g/l * np.sin(theta) + u
+    return [dtheta_dt, dtheta_dot_dt]
+
+# 反馈线性化控制器
+def feedback_linearizing_controller(state, t):
+    theta, theta_dot = state
+    k1 = 10.0  # 比例增益
+    k2 = 5.0   # 微分增益
+    # 镇定到 θ = π（倒立位置）
+    phi = theta - np.pi
+    v = -k1 * phi - k2 * theta_dot
+    u = g/l * np.sin(theta) + v
+    return u
+
+# 仿真时间
+t = np.linspace(0, 10, 1000)
+
+# 初始条件：从水平位置释放
+initial_state = [np.pi/2, 0]  # θ=90°, θ̇=0
+
+# 仿真 1：无控制
+sol_uncontrolled = odeint(pendulum_nonlinear, initial_state, t)
+
+# 仿真 2：反馈线性化控制
+sol_controlled = odeint(pendulum_nonlinear, initial_state, t, args=(feedback_linearizing_controller,))
+
+# 绘图
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# 角度响应
+ax = axes[0]
+ax.plot(t, sol_uncontrolled[:, 0], 'b-', linewidth=2, label='无控制')
+ax.plot(t, sol_controlled[:, 0], 'r-', linewidth=2, label='反馈线性化控制')
+ax.axhline(y=np.pi, color='g', linestyle='--', linewidth=1, label='目标位置 (π)')
+ax.set_xlabel('时间 t (s)', fontsize=12)
+ax.set_ylabel('角度 θ (rad)', fontsize=12)
+ax.set_title('单摆角度响应对比', fontsize=14)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+# 角速度响应
+ax = axes[1]
+ax.plot(t, sol_uncontrolled[:, 1], 'b-', linewidth=2, label='无控制')
+ax.plot(t, sol_controlled[:, 1], 'r-', linewidth=2, label='反馈线性化控制')
+ax.set_xlabel('时间 t (s)', fontsize=12)
+ax.set_ylabel('角速度 θ̇ (rad/s)', fontsize=12)
+ax.set_title('单摆角速度响应对比', fontsize=14)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# 打印最终状态
+print("无控制最终状态:")
+print(f"  θ = {sol_uncontrolled[-1, 0]:.4f} rad, θ̇ = {sol_uncontrolled[-1, 1]:.4f} rad/s")
+print("\\n反馈线性化控制最终状态:")
+print(f"  θ = {sol_controlled[-1, 0]:.4f} rad, θ̇ = {sol_controlled[-1, 1]:.4f} rad/s")
+print(f"  与目标 π 的误差: {abs(sol_controlled[-1, 0] - np.pi):.6f} rad")`}
+  ]}
+/>
+
+### 案例 2：球-梁系统（Ball-Beam System）
+
+球-梁系统由一个可旋转的梁和一个在梁上滚动的球组成。控制目标是调节梁的倾角，使球停在指定位置。
+
+**动力学**（简化模型）：
+$$\begin{cases} \ddot{r} = \frac{g}{J}\sin\theta \\ \ddot{\theta} = u \end{cases}$$
+
+其中 $r$ 为球的位置，$\theta$ 为梁的倾角，$u$ 为控制力矩，$J$ 为球的转动惯量系数。
+
+取状态 $x = [r, \dot{r}, \theta, \dot{\theta}]^T$，输出 $y = r$。
+
+**计算相对阶**：
+$$\dot{y} = \dot{r}$$
+$$\ddot{y} = \ddot{r} = \frac{g}{J}\sin\theta$$
+$$\dddot{y} = \frac{g}{J}\cos\theta \cdot \dot{\theta}$$
+$$y^{(4)} = \frac{g}{J}\left(-\sin\theta \cdot \dot{\theta}^2 + \cos\theta \cdot \ddot{\theta}\right) = \frac{g}{J}\left(-\sin\theta \cdot \dot{\theta}^2 + \cos\theta \cdot u\right)$$
+
+因此相对阶 $r=4$（等于系统阶数 $n=4$），可全状态线性化。
+
+**控制律**：
+$$u = \frac{J}{g\cos\theta}\left(v + \frac{g}{J}\sin\theta \cdot \dot{\theta}^2\right) = \frac{Jv}{g\cos\theta} + \tan\theta \cdot \dot{\theta}^2$$
+
+代入得 $y^{(4)} = v$，即四阶积分器。
+
+**注意**：当 $\theta = \pm \pi/2$ 时，$\cos\theta = 0$，控制律奇异。因此工作范围需限制在 $|\theta| < \pi/2$。
+
+### 案例 3：机器人计算力矩控制
+
+机器人关节动力学：
+$$M(q)\ddot{q} + C(q, \dot{q})\dot{q} + G(q) = \tau$$
+
+其中 $q$ 为关节角度，$M(q)$ 为惯性矩阵，$C(q, \dot{q})$ 为科氏力矩阵，$G(q)$ 为重力项，$\tau$ 为控制力矩。
+
+**计算力矩控制律**：
+$$\tau = M(q)v + C(q, \dot{q})\dot{q} + G(q)$$
+
+代入闭环动态：
+$$M(q)\ddot{q} + C(q, \dot{q})\dot{q} + G(q) = M(q)v + C(q, \dot{q})\dot{q} + G(q)$$
+$$\implies \ddot{q} = v$$
+
+每个关节解耦为双积分器 $\ddot{q}_i = v_i$，可用 PD 控制：
+$$v = \ddot{q}_d + K_d(\dot{q}_d - \dot{q}) + K_p(q_d - q)$$
+
+## 与 Jacobian 线性化的对比
+
+| 特性 | Jacobian 线性化 | 反馈线性化 |
+|------|-----------------|------------|
+| **线性化类型** | 局部近似（泰勒展开） | 全局精确（坐标变换） |
+| **适用范围** | 平衡点附近小范围 | 整个状态空间（或大部分） |
+| **模型要求** | 只需在工作点可微 | 需要全局模型精确 |
+| **内部动态** | 自动包含 | 需单独检查零动态 |
+| **鲁棒性** | 对模型误差不敏感 | 对模型误差敏感 |
+| **设计复杂度** | 简单（线性系统理论） | 复杂（需 Lie 导数计算） |
+
+**何时选用**：
+- 如果系统只在平衡点附近工作，且模型有不确定性，用 Jacobian 线性化。
+- 如果需要大范围运动（如机械臂轨迹跟踪），且模型精确，用反馈线性化。
+
+## 何时失效？
+
+反馈线性化有以下局限性：
+
+### 1. 模型不确定性
+
+如果 $f(x)$ 或 $g(x)$ 有误差，非线性抵消不完全：
+$$u = \frac{-\hat{L}_f^r h + v}{\hat{L}_g \hat{L}_f^{r-1} h}$$
+
+实际闭环动态：
+$$y^{(r)} = v + \text{误差项}$$
+
+误差项可能导致性能下降或不稳定。解决方法：自适应控制、鲁棒控制、滑模控制。
+
+### 2. 非最小相位系统
+
+如果零动态不稳定，反馈线性化会使内部状态发散。例如，某些飞行器姿态控制系统是非最小相位的，需要先稳定零动态或用其他方法。
+
+### 3. 控制奇异
+
+当 $L_g L_f^{r-1} h(x) = 0$ 时，控制律分母为零，无法计算。这通常发生在某些特殊状态（如球-梁系统的 $\theta = \pi/2$）。需要限制工作范围或设计切换控制律。
+
+### 4. 非仿射非线性
+
+如果系统不能写成 $\dot{x} = f(x) + g(x)u$ 的形式（如 $\dot{x} = f(x, u)$ 且 $u$ 非线性出现），反馈线性化不适用。需要用隐函数定理或其他方法。
+
+### 5. 计算复杂度
+
+对高维系统，Lie 导数的符号计算可能非常复杂。数值近似可以缓解，但会引入误差。
+
+## 小结
+
+反馈线性化通过非线性反馈律 $u = \alpha(x) + \beta(x)v$ 和坐标变换，将仿射非线性系统精确转化为线性系统。关键要点：
+
+- **相对阶**：输入 $u$ 到输出 $y$ 的积分链长度，决定需要求导多少次。
+- **输入-输出线性化**：设计控制律使 $y^{(r)} = v$，得到 $r$ 阶积分器。
+- **零动态**：当 $r < n$ 时，需检查内部状态的稳定性。
+- **全状态线性化**：当 $r = n$ 时，系统转化为 Brunovsky 标准型。
+- **局限性**：依赖精确模型、可能有控制奇异、不适用于非最小相位系统。
+
+> 🔗 下一课 [滑模控制](/nonlinear/sliding-mode-control) 将介绍一种鲁棒非线性控制方法，通过不连续控制律抑制模型不确定性和外部扰动。
+
+## 习题
+
+**习题 1**：计算下列系统的相对阶：
+$$\begin{cases} \dot{x}_1 = x_2 \\ \dot{x}_2 = x_1 x_2 + u \end{cases}, \quad y = x_1$$
+
+**习题 2**：对习题 1 的系统，设计反馈线性化控制律，使闭环系统变为 $\ddot{y} = v$。然后设计 $v$ 使系统镇定到原点。
+
+**习题 3**：考虑系统：
+$$\begin{cases} \dot{x}_1 = x_2 \\ \dot{x}_2 = -x_1 + x_2^2 + u \end{cases}, \quad y = x_1 + x_2$$
+
+计算相对阶，并设计反馈线性化控制律。该系统是否有零动态？为什么？
+
+**习题 4**：讨论反馈线性化控制对模型误差的敏感性。假设单摆的重力加速度标称值为 $g_0$，但实际值为 $g = g_0 + \Delta g$。推导闭环动态中的误差项，并分析其对稳定性的影响。
+
+**习题 5**：倒立摆在小车上的动力学为：
+$$\begin{cases} (M+m)\ddot{x} + ml\ddot{\theta}\cos\theta - ml\dot{\theta}^2\sin\theta = F \\ ml^2\ddot{\theta} + ml\ddot{x}\cos\theta - mgl\sin\theta = 0 \end{cases}$$
+
+其中 $x$ 为小车位置，$\theta$ 为摆角，$F$ 为控制力。取输出 $y = \theta$，定性分析该系统的相对阶和零动态特性。（提示：无需完整计算，给出物理直觉即可。）
+
+## 答案
+
+**答案 1**：
+
+系统为：
+$$\dot{x}_1 = x_2, \quad \dot{x}_2 = x_1 x_2 + u, \quad y = x_1$$
+
+即 $f(x) = \begin{bmatrix} x_2 \\ x_1 x_2 \end{bmatrix}$，$g(x) = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$h(x) = x_1$。
+
+计算 Lie 导数：
+$$\nabla h = \begin{bmatrix} 1 & 0 \end{bmatrix}$$
+$$L_g h = \nabla h \cdot g = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = 0$$
+
+继续求导：
+$$L_f h = \nabla h \cdot f = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} x_2 \\ x_1 x_2 \end{bmatrix} = x_2$$
+$$\nabla(L_f h) = \nabla(x_2) = \begin{bmatrix} 0 & 1 \end{bmatrix}$$
+$$L_g L_f h = \nabla(L_f h) \cdot g = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = 1 \neq 0$$
+
+因此相对阶 $r=2$。
+
+---
+
+**答案 2**：
+
+由习题 1，相对阶 $r=2$，有：
+$$\ddot{y} = L_f^2 h(x) + L_g L_f h(x) u$$
+
+计算 $L_f^2 h$：
+$$L_f^2 h = \nabla(L_f h) \cdot f = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} x_2 \\ x_1 x_2 \end{bmatrix} = x_1 x_2$$
+
+因此：
+$$\ddot{y} = x_1 x_2 + u$$
+
+设计控制律：
+$$u = -x_1 x_2 + v$$
+
+代入得 $\ddot{y} = v$。
+
+设计外层控制器（镇定到原点）：
+$$v = -k_1 y - k_2 \dot{y} = -k_1 x_1 - k_2 x_2$$
+
+选择 $k_1, k_2 > 0$ 使闭环稳定。完整控制律：
+$$u = -x_1 x_2 - k_1 x_1 - k_2 x_2$$
+
+---
+
+**答案 3**：
+
+系统为：
+$$\dot{x}_1 = x_2, \quad \dot{x}_2 = -x_1 + x_2^2 + u, \quad y = x_1 + x_2$$
+
+即 $f(x) = \begin{bmatrix} x_2 \\ -x_1 + x_2^2 \end{bmatrix}$，$g(x) = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$h(x) = x_1 + x_2$。
+
+计算 Lie 导数：
+$$\nabla h = \begin{bmatrix} 1 & 1 \end{bmatrix}$$
+$$L_g h = \nabla h \cdot g = \begin{bmatrix} 1 & 1 \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = 1 \neq 0$$
+
+因此相对阶 $r=1$。
+
+设计控制律：
+$$\dot{y} = L_f h + L_g h \cdot u$$
+$$L_f h = \nabla h \cdot f = \begin{bmatrix} 1 & 1 \end{bmatrix} \begin{bmatrix} x_2 \\ -x_1 + x_2^2 \end{bmatrix} = x_2 - x_1 + x_2^2$$
+
+控制律：
+$$u = \frac{-L_f h + v}{L_g h} = -(x_2 - x_1 + x_2^2) + v = -x_2 + x_1 - x_2^2 + v$$
+
+代入得 $\dot{y} = v$。
+
+**零动态分析**：由于 $r=1 < n=2$，存在 $n-r=1$ 维零动态。令 $y = x_1 + x_2 = 0$，即 $x_1 = -x_2$。代入系统：
+$$\dot{x}_1 = x_2$$
+$$\dot{x}_2 = -x_1 + x_2^2 + u$$
+
+但由于 $y \equiv 0$，有 $\dot{y} = \dot{x}_1 + \dot{x}_2 = 0$，即 $\dot{x}_2 = -\dot{x}_1 = -x_2$。
+
+代入第二个方程：
+$$-x_2 = -x_1 + x_2^2 + u \implies u = -x_2 + x_1 - x_2^2$$
+
+这与控制律一致（当 $v=0$ 时）。零动态为 $\dot{x}_2 = -x_2$，特征值为 $-1$，渐近稳定。因此系统是**最小相位**的。
+
+---
+
+**答案 4**：
+
+标称控制律（用 $g_0$）：
+$$u = \frac{g_0}{l}\sin\theta + v$$
+
+实际系统（用 $g = g_0 + \Delta g$）：
+$$\ddot{\theta} = -\frac{g_0 + \Delta g}{l}\sin\theta + u = -\frac{g_0 + \Delta g}{l}\sin\theta + \frac{g_0}{l}\sin\theta + v = -\frac{\Delta g}{l}\sin\theta + v$$
+
+误差项为 $-\frac{\Delta g}{l}\sin\theta$。
+
+如果设计 $v = -k_1 \theta - k_2 \dot{\theta}$，闭环动态为：
+$$\ddot{\theta} + k_2 \dot{\theta} + k_1 \theta = -\frac{\Delta g}{l}\sin\theta$$
+
+右边是扰动项。如果 $\Delta g$ 很小，可以用线性近似 $\sin\theta \approx \theta$：
+$$\ddot{\theta} + k_2 \dot{\theta} + \left(k_1 + \frac{\Delta g}{l}\right)\theta \approx 0$$
+
+等效刚度变为 $k_1 + \frac{\Delta g}{l}$。如果 $\Delta g > -k_1 l$，系统仍稳定；否则可能不稳定。
+
+**结论**：反馈线性化对模型误差敏感，特别是当误差影响非线性抵消项时。需要鲁棒控制或自适应控制来补偿。
+
+---
+
+**答案 5**：
+
+倒立摆系统的动力学耦合了小车位置 $x$ 和摆角 $\theta$。取输出 $y = \theta$。
+
+**物理直觉**：
+- 控制力 $F$ 直接影响小车加速度 $\ddot{x}$。
+- 小车加速度通过耦合项 $ml\ddot{x}\cos\theta$ 影响摆角加速度 $\ddot{\theta}$。
+- 因此，从 $F$ 到 $\theta$ 需要两次积分：$F \to \ddot{x} \to \ddot{\theta} \to \dot{\theta} \to \theta$。
+
+**相对阶**：预计 $r=2$（需要验证 Lie 导数）。
+
+**零动态**：由于系统总阶数 $n=4$（状态为 $x, \dot{x}, \theta, \dot{\theta}$），如果 $r=2$，则有 $n-r=2$ 维零动态。零动态对应于当 $\theta \equiv 0$ 时小车的运动。如果摆角保持为零，小车可以自由移动，零动态可能是积分器 $\ddot{x} = 0$，临界稳定。
+
+**工程意义**：如果只控制摆角而不控制小车位置，小车可能会漂移。实际应用中需要同时控制 $x$ 和 $\theta$（多输出反馈线性化），或加入额外约束。

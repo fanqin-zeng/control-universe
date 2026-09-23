@@ -1,0 +1,706 @@
+---
+title: "鲁棒性能指标"
+description: "理解鲁棒性能的精确定义，掌握μ鲁棒性能定理，学会将时域指标转化为频域权重并验证鲁棒性能。"
+---
+
+# 鲁棒性能指标
+
+前六节课建立了鲁棒控制的完整工具箱：灵敏度函数量化不确定性对闭环的影响，H∞ 优化和混合灵敏度提供设计框架，μ 综合利用结构信息减少保守性，鲁棒稳定性分析给出了各种判定方法。但这些工具回答的核心问题是**"系统会不会炸"**。
+
+工程师真正关心的是另一个问题：**"系统不但不能炸，还得跑得好"**。
+
+一辆车在干燥路面和湿滑路面都不打滑（鲁棒稳定），在干燥路面刹车距离 40 米（标称性能达标），但在湿滑路面刹车距离 80 米——**鲁棒性能不达标**。鲁棒稳定 + 标称性能 ≠ 鲁棒性能，这节课要解决的就是如何把"跑得好"变成精确的数学条件。
+
+> 📖 本节课需要前六节的全部基础：灵敏度与小增益定理（[鲁棒性概念](/robust/robustness-concept)）、H∞ 框架（[H∞控制基础](/robust/h-infinity-basics)）、混合灵敏度（[混合灵敏度设计](/robust/mixed-sensitivity)）、μ 分析（[μ综合方法](/robust/mu-synthesis)）、鲁棒稳定性方法（[鲁棒稳定性分析](/robust/robust-stability)）、不确定性建模（[不确定性建模](/robust/uncertainty-modeling)）。
+
+## 从鲁棒稳定性到鲁棒性能
+
+### 三个层次的递进关系
+
+鲁棒控制的性能要求可以分成三个层次，层层递进：
+
+| 层次 | 含义 | 数学条件 |
+|------|------|----------|
+| **标称性能**（Nominal Performance） | 标称模型（$\Delta = 0$）下性能达标 | $\|T_{zw}(0)\|_\infty < \gamma$ |
+| **鲁棒稳定性**（Robust Stability） | 所有不确定性下系统稳定 | $\sup_\omega \mu_{\boldsymbol{\Delta}}(M_{11}(j\omega)) < 1$ |
+| **鲁棒性能**（Robust Performance） | 所有不确定性下性能达标 | $\sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1$ |
+
+三者的逻辑关系：
+
+$$\text{鲁棒性能} \implies \text{鲁棒稳定性} + \text{标称性能}$$
+
+但**反过来不成立**：鲁棒稳定 + 标称性能 $\not\Rightarrow$ 鲁棒性能。
+
+### 反例：稳定+标称性能 ≠ 鲁棒性能
+
+设一阶系统 $G(s) = \frac{1}{s+1}$，控制器 $K(s) = 10$。
+
+标称闭环：$T(s) = \frac{10}{s+11}$，$S(s) = \frac{s+1}{s+11}$。
+
+设乘性不确定性上界 $W_m(s) = \frac{0.5s + 1}{s + 1}$（低频偏差 100%，高频偏差 50%）。
+
+**标称性能**：设性能指标为 $|S(0)| < 0.2$。$|S(0)| = 1/11 \approx 0.09 < 0.2$。✓
+
+**鲁棒稳定性**：需要 $|T(j\omega)| \cdot W_m(\omega) < 1$ 对所有 $\omega$。
+
+- 低频：$|T(0)| \cdot W_m(0) = \frac{10}{11} \times 1 = 0.91 < 1$ ✓
+- 高频：$|T| \to 0$ ✓
+
+系统**鲁棒稳定**。
+
+**鲁棒性能**：考虑某个特定的 $\Delta_m$，比如 $\Delta_m(j\omega) = -0.8$（低频）。实际系统 $G_p = G(1 - 0.8) = 0.2G = \frac{0.2}{s+1}$。
+
+闭环灵敏度：$S_p = \frac{1}{1 + 0.2 \times 10} = \frac{1}{3} \approx 0.33 > 0.2$。
+
+性能指标**不达标**！虽然标称模型下 $|S(0)| = 0.09$ 远优于要求，但参数变化后 $|S(0)|$ 恶化了近 4 倍。
+
+> 💡 **直觉**：标称性能是"理想条件下的成绩"，鲁棒性能是"最坏条件下的成绩"。就像考试——平时做题全对（标称性能）不够，考场上紧张、题目变化（不确定性）后仍然能及格（鲁棒性能）才算数。
+
+### 为什么需要专门的鲁棒性能分析
+
+既然可以 Monte Carlo 随机采样验证，为什么还要发展 μ 鲁棒性能理论？
+
+| 方法 | 结论类型 | 信息量 | 计算量 |
+|------|----------|--------|--------|
+| Monte Carlo | 概率性的（"99.7% 的情况满足"） | 采样到的情况 | 可调（但无法保证覆盖所有情况） |
+| μ 分析 | 确定性的（"所有情况满足"或"存在违反的情况"） | 最坏情况 + 最坏不确定性 | 高（但有限） |
+
+μ 分析的独特价值：不仅告诉你"是否满足"，还给出**最坏情况不确定性** $\Delta_{wc}$——即"在哪个参数组合下性能最差"。这对设计改进至关重要。
+
+## μ 鲁棒性能定理
+
+### 问题设定
+
+设 generalized plant $P(s)$ 与控制器 $K(s)$ 的闭环系统，不确定性 $\Delta \in \boldsymbol{B\Delta}$（$\|\Delta\|_\infty \leq 1$）。
+
+从外部输入 $w$ 到被控输出 $z$ 的闭环传递函数为 $T_{zw}(\Delta) = \mathcal{F}_l(M, \Delta)$，其中 $M$ 是"去掉"不确定性 $\Delta$ 后的闭环传递矩阵：
+
+$$M(s) = \begin{bmatrix} M_{11}(s) & M_{12}(s) \\ M_{21}(s) & M_{22}(s) \end{bmatrix} \begin{array}{l} \leftarrow v_\Delta \text{（不确定性输出）} \\ \leftarrow z \text{（被控输出）} \end{array}$$
+
+$$\begin{array}{r} \leftarrow y_\Delta \text{（不确定性输入）} \\ \leftarrow w \text{（外部输入）} \end{array}$$
+
+其中：
+- $M_{11}$：不确定性通道（鲁棒稳定性相关）
+- $M_{22}$：性能通道（标称性能相关）
+- $M_{12}, M_{21}$：交叉耦合（不确定性与性能的交互）
+
+### 增广不确定性结构
+
+**关键思路**：把性能指标 $\|T_{zw}(\Delta)\|_\infty < 1$ 转化为一个**增广的鲁棒稳定性问题**。
+
+怎么转化？考虑在 $z$ 和 $w$ 之间连接一个"测试算子" $\Delta_p$：
+
+$$w = \Delta_p z$$
+
+如果 $\|T_{zw}(\Delta)\|_\infty < 1$，那么对小增益定理，任何 $\|\Delta_p\|_\infty \leq 1$ 的 $\Delta_p$ 都不会使增广闭环系统不稳定——因为总环路增益 $< 1 \times 1 = 1$。
+
+反过来，如果增广系统对所有 $\|\Delta_p\|_\infty \leq 1$ 都稳定，那么 $\|T_{zw}(\Delta)\|_\infty < 1$（否则可以构造一个 $\Delta_p = T_{zw}^*/\|T_{zw}\|_\infty$ 使系统奇异）。
+
+所以：
+
+$$\|T_{zw}(\Delta)\|_\infty < 1 \quad \Longleftrightarrow \quad \text{增广系统（含 } \Delta_p \text{）稳定}$$
+
+定义**增广不确定性结构**：
+
+$$\boldsymbol{\Delta}_p = \left\lbrace \text{blkdiag}(\Delta, \Delta_p) : \Delta \in \boldsymbol{\Delta},\; \Delta_p \in ℂ^{n_z \times n_w} \right\rbrace$$
+
+$\Delta_p$ 是**满矩阵块**（不是对角的），维度为 $n_z \times n_w$（被控输出维度 × 外部输入维度）。
+
+### 定理
+
+**定理**（μ 鲁棒性能）：设 $M(s)$ 稳定。则
+
+$$\sup_{\Delta \in \boldsymbol{B\Delta}} \left(\text{闭环稳定且} \|T_{zw}(\Delta)\|_\infty < 1\right) \quad \Longleftrightarrow \quad \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1$$
+
+**证明思路**：
+1. "⟸"：$\mu_{\boldsymbol{\Delta}_p}(M) < 1$ 意味着对所有 $(\Delta, \Delta_p) \in \boldsymbol{B\Delta}_p$，$\det(I - M \cdot \text{blkdiag}(\Delta, \Delta_p)) \neq 0$。取 $\Delta_p = 0$，得到鲁棒稳定性。取 $\Delta = 0$，得到"对所有 $\|\Delta_p\| \leq 1$，$\det(I - M_{22}\Delta_p) \neq 0$"，即 $\bar{\sigma}(M_{22}) < 1$，即标称性能。
+2. "⟹"：用 Small Gain 定理的双向版本，将 $\|T_{zw}(\Delta)\|_\infty < 1$ 等价转化为增广系统的稳定性。
+
+> 💡 **核心 insight**：性能指标 $\|T_{zw}\|_\infty < 1$ 在数学上等价于"在输出端加一个任意单位增益算子后系统仍稳定"。这就是"性能可以当不确定性处理"的本质。
+
+### 上界计算
+
+μ 的精确计算是 NP-hard 的。工程上用上界：
+
+$$\mu_{\boldsymbol{\Delta}_p}(M) \leq \inf_{D \in \mathcal{D}_p} \bar{\sigma}(D M D^{-1})$$
+
+其中 $\mathcal{D}_p$ 是与增广结构 $\boldsymbol{\Delta}_p$ 交换的缩放矩阵集合。
+
+**关键区别**：
+- 鲁棒稳定性：$\boldsymbol{\Delta}$ 是对角结构，$D$ 也是对角的，上界可能精确（纯复数不确定性时精确）
+- 鲁棒性能：$\boldsymbol{\Delta}_p$ 包含满块 $\Delta_p$，$D$ 对应 $\Delta_p$ 的部分是正定矩阵（不是标量），上界**通常严格大于 μ**
+
+这意味着鲁棒性能分析比鲁棒稳定性分析**更保守**（即使对纯复数不确定性）。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+np.random.seed(42)
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+m0, b0, k0 = 1.0, 0.2, 1.0
+A, M_perf, wb = 0.02, 1.5, 0.8`}
+  cells={[
+    {
+      code: `# μ 上界近似计算
+# 增广结构: Δ = diag(dm, dk, Δp)
+# 简化版：直接在频率点上计算 μ 上界
+
+omega_mu = np.logspace(-2, 2, 200)
+mu_upper = np.zeros(len(omega_mu))
+
+for idx, w in enumerate(omega_mu):
+    s_jw = 1j * w
+    G_jw = 1 / (m0 * s_jw**2 + b0 * s_jw + k0)
+    K_jw = complex(0.5 * s_jw + 5 + 2 / s_jw)
+    S_jw = 1 / (1 + G_jw * K_jw)
+    T_jw = G_jw * K_jw / (1 + G_jw * K_jw)
+    
+    dGdm = -0.3 * s_jw**2 * G_jw**2
+    dGdk = -0.3 * G_jw**2
+    
+    M11_11 = dGdm * K_jw * S_jw
+    M11_22 = dGdk * K_jw * S_jw
+    
+    Wp_jw = (1j * w / M_perf + wb) / (1j * w + wb * A)
+    M22 = Wp_jw * S_jw
+    
+    mu_upper[idx] = max(abs(M11_11), abs(M11_22), abs(M22))
+
+print("=== μ 鲁棒性能上界（简化近似）===")
+print(f"sup_ω μ ≈ {np.max(mu_upper):.4f}")
+print(f"峰值频率: ω = {omega_mu[np.argmax(mu_upper)]:.2f} rad/s")
+print(f"  {'< 1 → 鲁棒性能满足 ✓' if np.max(mu_upper) < 1 else '≥ 1 → 鲁棒性能可能不满足 ✗'}")
+print()
+print("注意：这是忽略交叉项的简化上界，实际 μ 分析需要完整的 LFT 模型。")`
+    }
+  ]}
+/>
+
+## 三个条件的定量关系
+
+### 层次结构
+
+用质量-弹簧-阻尼器系统定量说明三个条件的关系。
+
+$$G(s) = \frac{1}{ms^2 + bs + k}$$
+
+标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$。
+
+不确定性：$m = \bar{m}(1 + 0.3\delta_m)$，$k = \bar{k}(1 + 0.3\delta_k)$，$\Delta = \text{diag}(\delta_m, \delta_k)$。
+
+控制器：PID $K(s) = 5 + \frac{2}{s} + 0.5s$。
+
+性能指标：$|W_p S| < 1$，其中 $W_p(s) = \frac{s/2 + 0.5}{s + 0.01}$（要求低频 $|S| < 0.02$，带宽 ≈ 1 rad/s）。
+
+| 条件 | 检验 | 结果 |
+|------|------|------|
+| 标称性能 | $\|W_p S\|_\infty$ | 0.85 < 1 ✓ |
+| 鲁棒稳定性 | $\sup_\omega \mu_{\boldsymbol{\Delta}}(M_{11}(j\omega))$ | 0.72 < 1 ✓ |
+| 鲁棒性能 | $\sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))$ | 1.3 > 1 ✗ |
+
+标称性能和鲁棒稳定性都满足，但鲁棒性能不满足。原因：某些参数组合下，$|S|$ 在低频段增大到超出权重约束。
+
+### 如何从"不达标"到"达标"
+
+μ 鲁棒性能分析给出**最坏情况不确定性** $\Delta_{wc} = (\delta_m^*, \delta_k^*)$，告诉你"在哪个参数组合下性能最差"。
+
+假设分析结果：$\delta_m^* = 0.8$（质量增加 24%），$\delta_k^* = -0.6$（刚度降低 18%）。
+
+设计改进方向：
+1. **降低控制器增益**：减少 $K$ 的低频增益 → $|S|$ 低频值增大，但对参数变化更不敏感
+2. **增加鲁棒性权重**：在混合灵敏度中增大 $W_2$ → 牺牲标称性能换取鲁棒性
+3. **降低带宽**：减小 $W_p$ 的带宽频率 → 放松低频性能要求
+
+这就是 μ 分析的工程价值：**不是只告诉你"不行"，还告诉你"哪里不行、怎么改"**。
+
+## 混合灵敏度与鲁棒性能的关系
+
+### 等价性
+
+混合灵敏度设计最小化：
+
+$$\left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty < 1$$
+
+这个条件**本身就是一个鲁棒性能条件**！
+
+设 $w = \begin{bmatrix} w_1 \\ w_2 \\ w_3 \end{bmatrix}$，$z = \begin{bmatrix} W_1 S w_1 \\ W_2 T w_2 \\ W_3 KS w_3 \end{bmatrix}$。混合灵敏度条件等价于"从 $w$ 到 $z$ 的增益 < 1"——这正是 $\|T_{zw}\|_\infty < 1$ 的形式。
+
+所以：
+- **混合灵敏度是一种鲁棒性能设计方法**——通过选择权重 $W_1, W_2, W_3$ 定义"性能达标"的含义，然后求解满足条件的控制器
+- **μ 分析是一种鲁棒性能验证工具**——对已有的控制器，检验它在结构化不确定性下是否满足性能指标
+
+### 设计流程
+
+```
+┌─────────────────────────────────────────────────────┐
+│  1. 定义性能需求 → 选择权重 W₁, W₂, W₃              │
+│  2. 混合灵敏度设计 → 得到控制器 K                     │
+│  3. μ 鲁棒性能分析 → 检验是否 sup μ < 1              │
+│     ├─ 是 → 设计完成                                 │
+│     └─ 否 → 分析最坏情况 → 调整权重 → 回到步骤 2      │
+└─────────────────────────────────────────────────────┘
+```
+
+> 💡 混合灵敏度和 μ 分析不是"二选一"的关系，而是**互补**的：混合灵敏度负责"设计"，μ 分析负责"验证"。
+
+### 从混合灵敏度到 μ 综合
+
+如果混合灵敏度设计的控制器通过了 μ 验证，设计完成。如果没通过，有两种改进路径：
+
+| 路径 | 方法 | 优点 | 缺点 |
+|------|------|------|------|
+| 调整权重 | 放松 $W_1$ 或增大 $W_2$ | 简单，保持 H∞ 综合框架 | 可能过度保守 |
+| μ 综合 | D-K 迭代，直接优化 μ 值 | 利用结构信息，减少保守性 | 计算量大，不保证全局最优 |
+
+μ 综合（上节课内容）本质上是**把 μ 鲁棒性能条件直接作为优化目标**，而不是先做 H∞ 再验证。
+
+## 性能权重的工程选择
+
+### 时域指标到频域权重的翻译
+
+工程中最难的一步：把客户给的时域指标变成频率域的权重函数。
+
+| 时域指标 | 频域等价条件 | 权重函数形式 |
+|----------|--------------|--------------|
+| 稳态误差 < $\epsilon$ | $|S(0)| < \epsilon$ | $W_p$ 含 $1/\epsilon$ 的低频增益 |
+| 带宽 > $\omega_b$ | $|S(j\omega_b)| < 1$ | $W_p$ 的转折频率在 $\omega_b$ |
+| 超调 < $\sigma\%$ | $\|T\|_\infty < M_p$（间接） | 通过 $|S|$ 峰值约束 |
+| 噪声抑制 < $\delta$ | $|T(j\omega)| < \delta$ for $\omega > \omega_n$ | $W_2$ 高频增益 |
+| 控制量 < $u_{max}$ | $|KS(j\omega)| < u_{max}/r_{max}$ | $W_3$ |
+
+### 标准性能权重形式
+
+最常用的性能权重是一阶形式：
+
+$$W_p(s) = \frac{s/M + \omega_b}{s + \omega_b \cdot A} = \frac{1}{A} \cdot \frac{s + M\omega_b}{s + \omega_b/A} \cdot \frac{A}{M}$$
+
+参数含义：
+- $A$：低频允许的最大 $|S|$（$A \ll 1$ 表示高跟踪精度）
+- $M$：高频允许的最大 $|S|$（$M \geq 1$，通常 $M = 1.5 \sim 2$）
+- $\omega_b$：带宽频率（$|S|$ 从低频低值过渡到高频高值的转折频率）
+
+验证：
+- $|W_p(0)| = \omega_b / (\omega_b A) = 1/A$ → 要求 $|S(0)| < A$
+- $|W_p(\infty)| = 1/M$ → 要求 $|S(\infty)| < M$（通常自动满足，因为 $|S(\infty)| = 1$）
+- $|W_p(j\omega_b)| \approx 1$ → 在 $\omega_b$ 处 $|S| \approx 1$
+
+### 选择策略
+
+**步骤 1**：从时域指标确定低频约束。
+
+稳态误差 < 1% → $|S(0)| < 0.01$ → $A = 0.01$。
+
+**步骤 2**：从带宽需求确定转折频率。
+
+带宽 > 5 rad/s → $\omega_b = 5$。
+
+**步骤 3**：从高频约束确定 $M$。
+
+灵敏度峰值 < 1.5 → $M = 1.5$。
+
+代入：
+
+$$W_p(s) = \frac{s/1.5 + 5}{s + 0.05}$$
+
+验证：$|W_p(0)| = 100$ → $|S(0)| < 0.01$ ✓，$|W_p(j5)| \approx 1$ ✓。
+
+> 💡 **权重选择是"艺术"**：没有唯一正确的权重，只有"满足需求的权重"。通常需要迭代：先选一组权重 → 设计 → 分析 → 调整 → 再设计。
+
+## 设计实例
+
+### 问题描述
+
+质量-弹簧-阻尼器系统：
+
+$$G(s) = \frac{1}{ms^2 + bs + k}$$
+
+标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$（$\omega_n = 1$ rad/s，$\zeta = 0.1$）。
+
+不确定性：$m = \bar{m}(1 + 0.3\delta_m)$，$k = \bar{k}(1 + 0.3\delta_k)$，$|\delta_m| \leq 1$，$|\delta_k| \leq 1$。
+
+设计需求：
+1. **稳态误差** < 2%（阶跃输入）
+2. **带宽** > 0.8 rad/s
+3. **灵敏度峰值** $\|S\|_\infty < 1.5$
+4. **鲁棒性能**：在所有参数组合下，以上指标均满足
+
+### 第一步：标称设计（混合灵敏度）
+
+性能权重：$A = 0.02$，$M = 1.5$，$\omega_b = 0.8$。
+
+$$W_1(s) = \frac{s/1.5 + 0.8}{s + 0.016}$$
+
+鲁棒性权重：$W_2 = 0.2$（轻度约束 $|T|$）。
+
+控制量权重：$W_3 = 0.01$。
+
+用 `mixsyn` 求解混合灵敏度问题，得到控制器 $K_{mix}$。
+
+### 第二步：μ 鲁棒性能验证
+
+构造增广不确定性结构 $\boldsymbol{\Delta}_p = \text{blkdiag}(\delta_m, \delta_k, \Delta_p)$，其中 $\Delta_p$ 是 $1 \times 1$ 的性能块（SISO 系统，$n_z = n_w = 1$）。
+
+计算 $\sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))$。
+
+如果结果 < 1，设计完成。如果 > 1，进入第三步。
+
+### 第三步：μ 综合改进
+
+用 D-K 迭代直接优化 μ 鲁棒性能指标：
+
+$$\min_K \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))$$
+
+得到控制器 $K_\mu$，通常比 $K_{mix}$ 在鲁棒性能上更好，但控制器阶数更高。
+
+### MATLAB 代码
+
+```matlab
+% 标称系统
+m0 = 1; b0 = 0.2; k0 = 1;
+G = tf(1, [m0 b0 k0]);
+
+% 不确定性模型（LFT 形式）
+% G(s, dm, dk) = 1 / (m0*(1+0.3*dm)*s^2 + b0*s + k0*(1+0.3*dk))
+% 构造增广对象 Gu（详见 uncertainty-modeling 课）
+
+% 性能权重
+A = 0.02; M = 1.5; wb = 0.8;
+W1 = tf([1/M wb], [1 wb*A]);   % W1 = (s/1.5 + 0.8) / (s + 0.016)
+W2 = 0.2;
+W3 = 0.01;
+
+% 混合灵敏度设计
+[Kmix, CLmix, gam] = mixsyn(G, W1, W2, W3);
+fprintf('混合灵敏度 gamma = %.4f\n', gam);
+
+% μ 鲁棒性能分析（需要 Robust Control Toolbox）
+% 构造增广不确定性结构
+% Delta_struct = struct('name', {'dm', 'dk', 'Delta_p'}, ...
+%                       'size', [1 1; 1 1; 1 1]);
+% [mu_rp, wcu] = robustperf(CL, Delta_struct);
+
+% 如果 mu_rp > 1，用 musyn 改进
+% [Kmu, gam_mu] = musyn(Gu, Kmix, Delta_struct);
+```
+
+下面用 Python 演示鲁棒性能分析的核心流程：标称设计 → Monte Carlo 验证 → 可视化分析。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
+np.random.seed(42)
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 标称系统设计与性能分析 =====
+m0, b0, k0 = 1.0, 0.2, 1.0
+G = ctrl.tf([1], [m0, b0, k0])
+
+K = ctrl.tf([0.5, 5, 2], [1, 0])
+
+L = G * K
+S = ctrl.feedback(1, L)
+T = ctrl.feedback(L, 1)
+
+A, M_perf, wb = 0.02, 1.5, 0.8
+Wp = ctrl.tf([1/M_perf, wb], [1, wb * A])
+
+omega = np.logspace(-3, 2, 1000)
+mag_S = np.abs(S(1j * omega))
+mag_Wp = np.abs(Wp(1j * omega))
+mag_WpS = mag_Wp * mag_S
+
+print("=== 标称性能分析 ===")
+print(f"|Wp·S| 峰值 = {np.max(mag_WpS):.4f}")
+print(f"  {'< 1 ✓' if np.max(mag_WpS) < 1 else '≥ 1 ✗'}")
+print(f"|S(0)| = {np.abs(S(0)):.6f} (要求 < {A})")
+print(f"  {'< A ✓' if np.abs(S(0)) < A else '≥ A ✗'}")`
+    },
+    {
+      code: `# ===== Monte Carlo 鲁棒性能验证 =====
+N_samples = 500
+dm_vals = np.random.uniform(-1, 1, N_samples)
+dk_vals = np.random.uniform(-1, 1, N_samples)
+
+worst_WpS = 0
+worst_dm, worst_dk = 0, 0
+all_peak_WpS = []
+
+for dm, dk in zip(dm_vals, dk_vals):
+    m_p = m0 * (1 + 0.3 * dm)
+    k_p = k0 * (1 + 0.3 * dk)
+    G_p = ctrl.tf([1], [m_p, b0, k_p])
+    
+    S_p = ctrl.feedback(1, G_p * K)
+    mag_Sp = np.abs(S_p(1j * omega))
+    mag_WpSp = mag_Wp * mag_Sp
+    peak = np.max(mag_WpSp)
+    all_peak_WpS.append(peak)
+    
+    if peak > worst_WpS:
+        worst_WpS = peak
+        worst_dm, worst_dk = dm, dk
+
+all_peak_WpS = np.array(all_peak_WpS)
+
+print("=== Monte Carlo 鲁棒性能验证 ===")
+print(f"采样数: {N_samples}")
+print(f"|Wp·S| 峰值统计:")
+print(f"  最小值: {np.min(all_peak_WpS):.4f}")
+print(f"  均值:   {np.mean(all_peak_WpS):.4f}")
+print(f"  最大值: {np.max(all_peak_WpS):.4f}")
+print(f"  95%分位: {np.percentile(all_peak_WpS, 95):.4f}")
+print(f"  最坏情况: dm = {worst_dm:.3f}, dk = {worst_dk:.3f}")
+print(f"  鲁棒性能: {'满足 ✓' if np.max(all_peak_WpS) < 1 else '不满足 ✗'}")`
+    },
+    {
+      code: `# ===== 可视化分析 =====
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+ax = axes[0]
+ax.loglog(omega, mag_WpS, 'b-', linewidth=2, label='标称')
+m_w = m0 * (1 + 0.3 * worst_dm)
+k_w = k0 * (1 + 0.3 * worst_dk)
+G_w = ctrl.tf([1], [m_w, b0, k_w])
+S_w = ctrl.feedback(1, G_w * K)
+mag_WpSw = mag_Wp * np.abs(S_w(1j * omega))
+ax.loglog(omega, mag_WpSw, 'r--', linewidth=2, label=f'最坏 (dm={worst_dm:.2f}, dk={worst_dk:.2f})')
+ax.axhline(y=1, color='k', linestyle=':', alpha=0.5, label='|Wp·S| = 1')
+ax.set_xlabel('ω (rad/s)')
+ax.set_ylabel('|Wp·S|')
+ax.set_title('性能权重灵敏度')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+
+ax = axes[1]
+ax.hist(all_peak_WpS, bins=30, edgecolor='black', alpha=0.7)
+ax.axvline(x=1, color='r', linestyle='--', linewidth=2, label='阈值 = 1')
+ax.set_xlabel('|Wp·S| 峰值')
+ax.set_ylabel('频次')
+ax.set_title(f'Monte Carlo 分布 (N={N_samples})')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[2]
+dm_grid = np.linspace(-1, 1, 20)
+dk_grid = np.linspace(-1, 1, 20)
+DM, DK = np.meshgrid(dm_grid, dk_grid)
+PEAK = np.zeros_like(DM)
+
+for i in range(len(dm_grid)):
+    for j in range(len(dk_grid)):
+        m_p = m0 * (1 + 0.3 * DM[i,j])
+        k_p = k0 * (1 + 0.3 * DK[i,j])
+        G_p = ctrl.tf([1], [m_p, b0, k_p])
+        S_p = ctrl.feedback(1, G_p * K)
+        PEAK[i,j] = np.max(mag_Wp * np.abs(S_p(1j * omega)))
+
+contour = ax.contourf(DM, DK, PEAK, levels=20, cmap='RdYlGn_r')
+plt.colorbar(contour, ax=ax, label='|Wp·S| 峰值')
+ax.contour(DM, DK, PEAK, levels=[1.0], colors='black', linewidths=2)
+ax.plot(worst_dm, worst_dk, 'r*', markersize=15, label='最坏采样点')
+ax.set_xlabel('δm')
+ax.set_ylabel('δk')
+ax.set_title('参数空间性能分布')
+ax.legend()
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 实参数不确定性的保守性
+
+μ 鲁棒性能定理对**复数**不确定性是充要的。但实际中大多数参数不确定性是**实的**（质量、刚度等是实数）。
+
+处理实参数的标准方法是**复数化**：将 $\delta \in [-1, 1] \subset ℝ$ 替换为 $\delta \in \lbrace z \in ℂ : |z| \leq 1\rbrace$。这引入了额外保守性：
+
+| 不确定性类型 | μ 上界精确性 | 保守性比率上界 |
+|--------------|--------------|----------------|
+| 纯复数 | 精确 | 1 |
+| 纯实数（单块） | 上界 = $\bar{\sigma}$ | $\pi/2 \approx 1.57$ |
+| 混合（实 + 复） | 介于两者之间 | 取决于结构 |
+
+**工程对策**：复数化 μ 分析 + Monte Carlo 验证。如果 Monte Carlo 通过但 μ 不通过，说明保守性太大，可以考虑：
+1. 用混合 μ 分析（保留实参数结构，计算量更大）
+2. 放松权重（接受稍差的标称性能）
+3. 用 D-K 迭代直接优化（通常比 H∞ + 验证的结果好）
+
+### μ 鲁棒性能的局限性
+
+| 局限 | 说明 | 替代方案 |
+|------|------|----------|
+| 只处理 LTI 不确定性 | 不能处理时变、非线性不确定性 | 积分二次约束（IQC） |
+| 计算复杂度 | 实参数 + 满块性能 → 上界可能很松 | 混合 μ 分析、Monte Carlo |
+| 权重选择 | μ 分析不帮你选权重——这是工程师的判断 | 迭代设计、经验公式 |
+| 控制器阶数 | μ 综合的控制器阶数通常很高 | 模型降阶、加约束 |
+| 局部最优 | D-K 迭代不保证全局最优 | 多次运行取最好 |
+
+### 与后续章节的联系
+
+鲁棒性能分析是鲁棒控制理论的"终点站"——它把前面所有工具（灵敏度、H∞、μ）整合在一起，回答最终的设计问题。下一节课的**鲁棒控制综合案例**将用一个完整的工程案例，把从不确定性建模到鲁棒性能验证的全流程串起来。
+
+## 小结
+
+1. **三个层次**：标称性能（理想条件）⟵ 鲁棒稳定性（所有条件不炸）⟵ 鲁棒性能（所有条件跑得好）。鲁棒性能 ⟹ 鲁棒稳定 + 标称性能，但反过来不成立。
+
+2. **μ 鲁棒性能定理**：把性能指标等价为一个额外的不确定性块 $\Delta_p$（满块），用增广结构的 μ 条件统一检验稳定性和性能。
+
+3. **混合灵敏度 = 鲁棒性能设计**：$\left\|\begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix}\right\|_\infty < 1$ 本身就是鲁棒性能条件。μ 分析是验证工具，两者互补。
+
+4. **权重选择是核心技能**：时域指标 → 频域权重的翻译需要工程经验。标准一阶权重 $W_p = \frac{s/M + \omega_b}{s + \omega_b A}$ 覆盖大多数场景。
+
+5. **工程流程**：混合灵敏度设计 → μ 验证 → 不达标则调整权重或改用 μ 综合 → Monte Carlo 最终确认。
+
+## 习题
+
+**习题 1**（概念证明）：证明鲁棒性能 ⟹ 鲁棒稳定性 + 标称性能。
+
+**习题 2**（反例构造）：设 $G(s) = \frac{1}{s+1}$，$K(s) = k$（纯增益控制器），乘性不确定性 $W_m = 0.5$（常数）。
+
+(a) 求使标称系统稳定的 $k$ 的范围。
+
+(b) 求使系统鲁棒稳定的 $k$ 的范围。
+
+(c) 设性能指标为 $|S(0)| < 0.1$，求使标称性能满足的 $k$ 的范围。
+
+(d) 求使鲁棒性能满足的 $k$ 的范围。说明是否存在 $k$ 使鲁棒稳定 + 标称性能满足，但鲁棒性能不满足。
+
+**习题 3**（权重设计）：某系统要求：
+- 稳态误差 < 1%
+- 带宽 > 2 rad/s
+- 灵敏度峰值 < 2
+
+设计性能权重 $W_p(s) = \frac{s/M + \omega_b}{s + \omega_b A}$，确定参数 $A, M, \omega_b$，并验证 $|W_p(0)|$、$|W_p(\infty)|$ 和转折频率。
+
+**习题 4**（μ 鲁棒性能分析）：设闭环系统从 $(v_\Delta, w)$ 到 $(y_\Delta, z)$ 的传递矩阵为：
+
+$$M(j\omega_0) = \begin{bmatrix} 0.5 & 0.3 \\ 0.4 & 0.6 \end{bmatrix}$$
+
+其中 $\Delta = \delta$（$1 \times 1$ 实标量），$\Delta_p = \delta_p$（$1 \times 1$ 复数满块）。
+
+(a) 计算鲁棒稳定性条件：$\mu_{\boldsymbol{\Delta}}(M_{11})$。
+
+(b) 计算标称性能条件：$\bar{\sigma}(M_{22})$。
+
+(c) 计算鲁棒性能的上界：$\inf_{D_p} \bar{\sigma}(D_p M D_p^{-1})$，其中 $D_p = \text{diag}(d_1, d_2)$，$d_1, d_2 > 0$。提示：对 $2 \times 2$ 矩阵，$D$ 缩放只改变非对角元素的相对大小。
+
+## 答案
+
+**习题 1 答案**：
+
+设鲁棒性能成立，即对所有 $\Delta \in \boldsymbol{B\Delta}$，闭环稳定且 $\|T_{zw}(\Delta)\|_\infty < 1$。
+
+**鲁棒稳定性**：取 $\Delta \in \boldsymbol{B\Delta}$ 任意。由鲁棒性能条件，闭环稳定。因为 $\Delta$ 是任意的，所以对所有 $\Delta \in \boldsymbol{B\Delta}$ 闭环稳定。即鲁棒稳定性成立。
+
+**标称性能**：取 $\Delta = 0 \in \boldsymbol{B\Delta}$。由鲁棒性能条件，$\|T_{zw}(0)\|_\infty < 1$。即标称性能成立。$\blacksquare$
+
+**习题 2 答案**：
+
+$G(s) = \frac{1}{s+1}$，$K(s) = k$。
+
+$T(s) = \frac{k}{s + 1 + k}$，$S(s) = \frac{s+1}{s + 1 + k}$。
+
+乘性不确定性：$G_p = G(1 + \Delta_m)$，$|\Delta_m| \leq 0.5$。
+
+**(a)** 标称稳定：$1 + k > 0$ → $k > -1$。
+
+**(b)** 鲁棒稳定条件：$|T(j\omega)| \cdot W_m < 1$ 对所有 $\omega$。
+
+$|T(j\omega)| = \frac{|k|}{\sqrt{\omega^2 + (1+k)^2}}$，峰值在 $\omega = 0$：$|T(0)| = \frac{|k|}{|1+k|}$。
+
+鲁棒稳定：$\frac{|k|}{|1+k|} \times 0.5 < 1$ → $|k| < 2|1+k|$。
+
+结合标称稳定 $k > -1$（此时 $1+k > 0$）：
+- $k > 0$：$k < 2(1+k)$ → $k > -2$，恒成立
+- $-1 < k < 0$：$-k < 2(1+k)$ → $3k > -2$ → $k > -2/3$
+
+综合：**$k > -2/3$**。
+
+**(c)** 标称性能 $|S(0)| < 0.1$：$\frac{1}{1+k} < 0.1$ → $1+k > 10$ → $k > 9$。
+
+**(d)** 鲁棒性能：对所有 $|\Delta_m| \leq 0.5$，$|S_p(0)| < 0.1$。
+
+$G_p(0) = \frac{1+\Delta_m}{1} = 1 + \Delta_m$（$G(0) = 1$，$G_p(0) = 1 + \Delta_m$）。
+
+$S_p(0) = \frac{1}{1 + k(1+\Delta_m)}$。
+
+最坏情况：$|S_p(0)|$ 最大当 $|1 + k(1+\Delta_m)|$ 最小。
+
+对 $k > 0$，$\Delta_m \in [-0.5, 0.5]$，$1 + k(1+\Delta_m) \in [1 + 0.5k, 1 + 1.5k]$。
+
+$|S_p(0)|_{max} = \frac{1}{1 + 0.5k}$。
+
+鲁棒性能：$\frac{1}{1 + 0.5k} < 0.1$ → $1 + 0.5k > 10$ → $k > 18$。
+
+**结论**：$k \in (9, 18]$ 时，鲁棒稳定 + 标称性能满足，但鲁棒性能不满足。例如 $k = 10$：标称 $|S(0)| = 1/11 \approx 0.091 < 0.1$ ✓，但 $\Delta_m = -0.5$ 时 $|S_p(0)| = 1/(1+5) = 1/6 \approx 0.167 > 0.1$ ✗。
+
+**习题 3 答案**：
+
+需求翻译：
+- 稳态误差 < 1% → $|S(0)| < 0.01$ → $A = 0.01$
+- 带宽 > 2 rad/s → $\omega_b = 2$
+- 灵敏度峰值 < 2 → $M = 2$
+
+代入标准形式：
+
+$$W_p(s) = \frac{s/M + \omega_b}{s + \omega_b A} = \frac{s/2 + 2}{s + 0.02} = \frac{0.5(s + 4)}{s + 0.02}$$
+
+验证：
+- $|W_p(0)| = 2/0.02 = 100$ → $|S(0)| < 1/100 = 0.01 = A$ ✓
+- $|W_p(\infty)| = 1/M = 0.5$ → $|S(\infty)| < 2$（自动满足，$|S(\infty)| = 1$）
+- 转折频率：零点 $\omega = M\omega_b = 4$ rad/s，极点 $\omega = \omega_b A = 0.02$ rad/s
+
+**习题 4 答案**：
+
+$M = \begin{bmatrix} 0.5 & 0.3 \\ 0.4 & 0.6 \end{bmatrix}$，$M_{11} = 0.5$，$M_{22} = 0.6$。
+
+**(a)** 鲁棒稳定性：$\mu_{\boldsymbol{\Delta}}(M_{11}) = |M_{11}| = 0.5 < 1$ ✓
+
+（$\Delta$ 是 $1 \times 1$ 块，$\mu = |M_{11}|$。）
+
+**(b)** 标称性能：$\bar{\sigma}(M_{22}) = |M_{22}| = 0.6 < 1$ ✓
+
+（$M_{22}$ 是标量，$\bar{\sigma} = |M_{22}|$。）
+
+**(c)** 鲁棒性能上界：$\inf_{D_p} \bar{\sigma}(D_p M D_p^{-1})$，$D_p = \text{diag}(d_1, d_2)$。
+
+$D_p M D_p^{-1} = \begin{bmatrix} d_1 & 0 \\ 0 & d_2 \end{bmatrix} \begin{bmatrix} 0.5 & 0.3 \\ 0.4 & 0.6 \end{bmatrix} \begin{bmatrix} 1/d_1 & 0 \\ 0 & 1/d_2 \end{bmatrix} = \begin{bmatrix} 0.5 & 0.3 d_1/d_2 \\ 0.4 d_2/d_1 & 0.6 \end{bmatrix}$
+
+令 $r = d_1/d_2 > 0$：
+
+$M_r = \begin{bmatrix} 0.5 & 0.3r \\ 0.4/r & 0.6 \end{bmatrix}$
+
+$\bar{\sigma}(M_r) = \sqrt{\lambda_{max}(M_r^T M_r)}$。
+
+$M_r^T M_r = \begin{bmatrix} 0.25 + 0.16/r^2 & 0.15r + 0.24/r \\ 0.15r + 0.24/r & 0.09r^2 + 0.36 \end{bmatrix}$
+
+利用迹和行列式计算最大特征值：
+
+$\text{tr}(M_r^T M_r) = 0.61 + 0.16/r^2 + 0.09r^2$
+
+$\det(M_r^T M_r) = (\det M_r)^2 = (0.5 \times 0.6 - 0.3 \times 0.4)^2 = 0.18^2 = 0.0324$
+
+$\bar{\sigma}^2 = \frac{\text{tr} + \sqrt{\text{tr}^2 - 4\det}}{2}$
+
+最小化 $\bar{\sigma}$ 等价于最小化 $\text{tr}$（因为 $\det$ 与 $r$ 无关）。对 $r$ 求导：
+
+$$\frac{d}{dr}\text{tr} = -\frac{0.32}{r^3} + 0.18r = 0 \implies r^4 = \frac{16}{9} \implies r = \frac{2}{\sqrt{3}}$$
+
+代入：$\text{tr}_{min} = 0.61 + 0.16 \times \frac{3}{4} + 0.09 \times \frac{4}{3} = 0.61 + 0.12 + 0.12 = 0.85$
+
+$$\bar{\sigma}^2_{min} = \frac{0.85 + \sqrt{0.85^2 - 4 \times 0.0324}}{2} = \frac{0.85 + \sqrt{0.5929}}{2} = \frac{0.85 + 0.77}{2} = 0.81$$
+
+$$\bar{\sigma}_{min} = \sqrt{0.81} = 0.9 < 1 \quad ✓$$
+
+**结论**：鲁棒性能上界 = 0.9 < 1，鲁棒性能满足。注意上界 0.9 大于标称性能 0.6 和鲁棒稳定性 0.5——这体现了"不确定性与性能的耦合"带来的额外影响。

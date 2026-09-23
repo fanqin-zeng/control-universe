@@ -1,0 +1,726 @@
+---
+title: 状态观测器设计
+description: 设计 Luenberger 观测器从输出测量中估计全部状态，掌握对偶原理和分离性原理，实现基于观测器的输出反馈控制。
+---
+
+# 状态观测器设计
+
+上一章，我们学会了用状态反馈 $\boldsymbol{u} = -K\boldsymbol{x}$ 任意配置闭环极点。但这个设计有一个**前提假设**：我们能测量到全部状态 $\boldsymbol{x}$。
+
+实际中，传感器往往只能测量**输出** $\boldsymbol{y}$。比如直流电机只装了编码器测角位置，角速度测不到；汽车悬挂只装了加速度计，位移和速度需要推算。状态反馈需要的全部状态，从哪里来？
+
+解决方案：**状态观测器**——用一个"虚拟系统"在线估计状态。观测器读取输入 $\boldsymbol{u}$ 和输出 $\boldsymbol{y}$，构造一个状态估计 $\hat{\boldsymbol{x}}$，让 $\hat{\boldsymbol{x}}$ 尽快逼近真实的 $\boldsymbol{x}$。然后用 $\hat{\boldsymbol{x}}$ 代替 $\boldsymbol{x}$ 做状态反馈。
+
+> 📖 本章需要前三章的基础：[状态空间表示](/modern/state-space)、[可控性与可观性](/modern/controllability-observability) 和 [状态反馈与极点配置](/modern/state-feedback)，特别是可观性、对偶原理和极点配置的概念。
+
+## 为什么需要状态观测器
+
+### 状态反馈的困境
+
+状态反馈控制律 $\boldsymbol{u} = -K\boldsymbol{x} + Nr$ 要求知道全部 $n$ 个状态变量。但实际系统中：
+
+- **传感器成本高**：每个传感器增加成本、重量和故障点
+- **物理上不可测**：某些状态没有对应的传感器（如内部温度分布、化学反应浓度）
+- **测量噪声**：即使有传感器，直接微分信号求导数会放大噪声
+
+既然只能测量 $\boldsymbol{y} = C\boldsymbol{x}$（$p$ 维输出，通常 $p \ll n$），能否从 $\boldsymbol{y}$ 和已知的 $\boldsymbol{u}$ 中**推算**出全部 $\boldsymbol{x}$？
+
+### 思路：构造一个"虚拟系统"
+
+如果知道系统模型 $(A, B, C)$，可以同时运行一个"副本"系统：
+
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u}
+$$
+
+如果初始时刻 $\hat{\boldsymbol{x}}(0) = \boldsymbol{x}(0)$，那么 $\hat{\boldsymbol{x}}(t) = \boldsymbol{x}(t)$ 永远成立——问题解决了。
+
+但问题是：**初始状态 $\boldsymbol{x}(0)$ 通常未知**。如果 $\hat{\boldsymbol{x}}(0) \neq \boldsymbol{x}(0)$，误差 $\boldsymbol{e}(t) = \hat{\boldsymbol{x}}(t) - \boldsymbol{x}(t)$ 满足：
+
+$$
+\dot{\boldsymbol{e}} = A\boldsymbol{e}
+$$
+
+误差的演化完全由 $A$ 的特征值决定。如果 $A$ 有不稳定特征值，误差会指数增长——这个"开环副本"完全不可用。
+
+### 关键改进：引入输出反馈
+
+我们需要利用**可测量的信息** $\boldsymbol{y}$ 来修正估计。定义输出估计误差：
+
+$$
+\tilde{\boldsymbol{y}} = \boldsymbol{y} - \hat{\boldsymbol{y}} = C\boldsymbol{x} - C\hat{\boldsymbol{x}} = -C\boldsymbol{e}
+$$
+
+把这个误差反馈到观测器中：
+
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - \hat{\boldsymbol{y}})
+$$
+
+其中 $L$ 是 $n \times p$ 的**观测器增益矩阵**。$L(\boldsymbol{y} - \hat{\boldsymbol{y}})$ 的作用是：当输出估计 $\hat{\boldsymbol{y}}$ 偏离真实输出 $\boldsymbol{y}$ 时，修正状态估计。
+
+这就是 **Luenberger 全阶观测器**。
+
+## 全阶观测器的设计
+
+### 观测器结构
+
+Luenberger 全阶观测器：
+
+$$
+\boxed{\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})}
+$$
+
+整理为：
+
+$$
+\dot{\hat{\boldsymbol{x}}} = (A - LC)\hat{\boldsymbol{x}} + B\boldsymbol{u} + L\boldsymbol{y}
+$$
+
+观测器的输入是 $\boldsymbol{u}$ 和 $\boldsymbol{y}$，输出是状态估计 $\hat{\boldsymbol{x}}$。
+
+### 误差动态
+
+定义估计误差 $\boldsymbol{e} = \hat{\boldsymbol{x}} - \boldsymbol{x}$。
+
+$$
+\dot{\boldsymbol{e}} = \dot{\hat{\boldsymbol{x}}} - \dot{\boldsymbol{x}} = (A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})) - (A\boldsymbol{x} + B\boldsymbol{u})
+$$
+
+$$
+= A(\hat{\boldsymbol{x}} - \boldsymbol{x}) + LC(\boldsymbol{x} - \hat{\boldsymbol{x}}) = A\boldsymbol{e} - LC\boldsymbol{e}
+$$
+
+$$
+\boxed{\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}}
+$$
+
+<Callout variant="tip">
+**核心结论**：误差动态完全由矩阵 $A - LC$ 决定，与输入 $\boldsymbol{u}$ 无关！只要选择合适的 $L$ 使 $A - LC$ 的特征值都在左半平面，误差就会指数衰减到零。
+</Callout>
+
+### 观测器极点配置
+
+问题变成：选择 $L$ 使得 $A - LC$ 的特征值为期望值 $\{\mu_1, \mu_2, \ldots, \mu_n\}$（全部在左半平面）。
+
+这和状态反馈的形式完全对称：
+- **状态反馈**：选择 $K$ 配置 $A - BK$ 的特征值 → 需要 $(A, B)$ **可控**
+- **观测器设计**：选择 $L$ 配置 $A - LC$ 的特征值 → 需要 $(A, C)$ **可观**
+
+> **定理**：系统 $(A, C)$ 可以通过观测器增益 $L$ 任意配置观测器极点的**充要条件**是 $(A, C)$ **完全可观**。
+
+### 例1：观测器设计
+
+设系统 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+
+**步骤1**：检查可观性。
+
+$$
+\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1 \neq 0$，**可观** ✓
+
+**步骤2**：设 $L = \begin{bmatrix} l_1 \\ l_2 \end{bmatrix}$（$2 \times 1$ 矩阵），计算 $A - LC$：
+
+$$
+A - LC = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix} - \begin{bmatrix} l_1 \\ l_2 \end{bmatrix}\begin{bmatrix} 1 & 0 \end{bmatrix} = \begin{bmatrix} -l_1 & 1 \\ -2-l_2 & -3 \end{bmatrix}
+$$
+
+特征多项式：
+
+$$
+\det(sI - (A-LC)) = \det\begin{bmatrix} s+l_1 & -1 \\ 2+l_2 & s+3 \end{bmatrix} = (s+l_1)(s+3) + (2+l_2)
+$$
+
+$$
+= s^2 + (l_1+3)s + (3l_1 + 2 + l_2)
+$$
+
+**步骤3**：期望观测器极点 $\mu_1 = \mu_2 = -10$（比控制极点快 2 倍）。
+
+期望多项式：$s^2 + 20s + 100$。
+
+比较系数：
+$$l_1 + 3 = 20 \implies l_1 = 17$$
+$$3l_1 + 2 + l_2 = 100 \implies 51 + 2 + l_2 = 100 \implies l_2 = 47$$
+
+$$L = \begin{bmatrix} 17 \\ 47 \end{bmatrix}
+$$
+
+验证：$A - LC = \begin{bmatrix} -17 & 1 \\ -49 & -3 \end{bmatrix}$，$\text{tr} = -20$，$\det = 51 + 49 = 100$。
+
+特征多项式：$s^2 + 20s + 100 = (s+10)^2$ ✓
+
+<Callout variant="info">
+**观察**：和上一章例1的状态反馈增益 $K = \begin{bmatrix} 23 & 7 \end{bmatrix}$ 对比——同一个系统，状态反馈和观测器设计都需要配置极点，但计算的是不同的增益矩阵。
+</Callout>
+
+## 对偶原理
+
+### 观测器设计 = "转置后的状态反馈"
+
+比较两个问题：
+
+| | 状态反馈 | 观测器设计 |
+|---|---|---|
+| 目标矩阵 | $A - BK$ | $A - LC$ |
+| 增益 | $K$（$1 \times n$） | $L$（$n \times 1$，SISO） |
+| 条件 | $(A, B)$ 可控 | $(A, C)$ 可观 |
+
+取转置：$(A - LC)^T = A^T - C^T L^T$。
+
+这和状态反馈的形式 $A^T - C^T K^T$ 完全一样！其中：
+- $A^T$ 对应 $A$
+- $C^T$ 对应 $B$
+- $L^T$ 对应 $K$
+
+这就是**对偶原理**的数学表达：
+
+> **对偶原理**：$(A, C)$ 的观测器设计等价于 $(A^T, C^T)$ 的状态反馈设计。具体地，$(A, C)$ 可观 $\iff$ $(A^T, C^T)$ 可控。
+
+### 利用对偶原理计算 $L$
+
+**方法**：
+
+1. 构造对偶系统：$\bar{A} = A^T$，$\bar{B} = C^T$
+2. 用状态反馈方法（Ackermann 公式或极点配置）求 $\bar{K}$，使 $\bar{A} - \bar{B}\bar{K}$ 的特征值为期望值
+3. $L = \bar{K}^T$
+
+### 例2：用对偶原理设计观测器
+
+沿用例1的系统：$A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。期望极点 $-10, -10$。
+
+**步骤1**：构造对偶系统。$\bar{A} = A^T = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix}$，$\bar{B} = C^T = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$。
+
+**步骤2**：检查对偶系统的可控性。
+
+$$
+\bar{\mathcal{C}} = \begin{bmatrix} \bar{B} & \bar{A}\bar{B} \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+$$
+
+可控 ✓（这也验证了 $(A, C)$ 可观。）
+
+**步骤3**：用极点配置求 $\bar{K}$。
+
+$\bar{A} - \bar{B}\bar{K} = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix} - \begin{bmatrix} 1 \\ 0 \end{bmatrix}\begin{bmatrix} \bar{k}_1 & \bar{k}_2 \end{bmatrix} = \begin{bmatrix} -\bar{k}_1 & -2-\bar{k}_2 \\ 1 & -3 \end{bmatrix}$
+
+特征多项式：$s^2 + (\bar{k}_1 + 3)s + (3\bar{k}_1 + 2 + \bar{k}_2)$。
+
+期望：$s^2 + 20s + 100$。
+
+$\bar{k}_1 = 17$，$\bar{k}_2 = 47$。$\bar{K} = \begin{bmatrix} 17 & 47 \end{bmatrix}$。
+
+**步骤4**：$L = \bar{K}^T = \begin{bmatrix} 17 \\ 47 \end{bmatrix}$。
+
+和例1的结果一致！
+
+<Callout variant="info">
+**实用技巧**：在 MATLAB/Python 中，可以直接用 `place` 函数设计观测器：`L = place(A', C', poles)'`。这就是利用对偶原理。
+</Callout>
+
+<JupyterNotebook
+  title=" 动手实验：观测器增益设计（对偶原理）"
+  setupCode={`import numpy as np
+from control import place`}
+  cells={[
+    { code: `# ===== 利用对偶原理设计观测器 =====
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+
+obs_poles = [-15, -15]
+
+# 利用对偶：place(A', C', poles) 给出 K_bar，L = K_bar'
+L = place(A.T, C.T, obs_poles).T
+print(f"观测器增益 L = \\n{L}")
+
+# 验证观测器极点
+A_LC = A - L @ C
+print(f"\\nA - LC 的特征值: {np.linalg.eigvals(A_LC)}")
+print(f"期望特征值: {obs_poles}")` },
+  ]}
+/>
+
+## 基于观测器的控制器——分离性原理
+
+### 组合结构
+
+实际中，我们用观测器的估计 $\hat{\boldsymbol{x}}$ 代替真实状态做状态反馈：
+
+$$
+\boldsymbol{u} = -K\hat{\boldsymbol{x}} + Nr
+$$
+
+整个系统由两部分组成：
+1. **控制器**（状态反馈 + 前馈）：$\boldsymbol{u} = -K\hat{\boldsymbol{x}} + Nr$
+2. **观测器**：$\dot{\hat{\boldsymbol{x}}} = (A - LC)\hat{\boldsymbol{x}} + B\boldsymbol{u} + L\boldsymbol{y}$
+
+### 闭环系统分析
+
+把控制律代入真实系统和观测器方程：
+
+**真实系统**：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B(-K\hat{\boldsymbol{x}} + Nr) = A\boldsymbol{x} - BK\hat{\boldsymbol{x}} + BNr$
+
+**观测器**：$\dot{\hat{\boldsymbol{x}}} = (A - LC)\hat{\boldsymbol{x}} + B(-K\hat{\boldsymbol{x}} + Nr) + LC\boldsymbol{x}$
+
+$$= (A - LC - BK)\hat{\boldsymbol{x}} + LC\boldsymbol{x} + BNr$$
+
+用误差 $\boldsymbol{e} = \hat{\boldsymbol{x}} - \boldsymbol{x}$ 替换 $\hat{\boldsymbol{x}} = \boldsymbol{x} + \boldsymbol{e}$：
+
+**真实系统**：$\dot{\boldsymbol{x}} = (A - BK)\boldsymbol{x} - BK\boldsymbol{e} + BNr$
+
+**误差系统**：$\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}$（和之前一样，与 $\boldsymbol{u}$ 无关）
+
+写成增广系统：
+
+$$
+\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{e}} \end{bmatrix} = \begin{bmatrix} A - BK & -BK \\ 0 & A - LC \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{e} \end{bmatrix} + \begin{bmatrix} B \\ 0 \end{bmatrix} Nr
+$$
+
+这是一个**上三角矩阵**！其特征值 = 对角块的特征值之和：
+
+$$
+\boxed{\text{闭环极点} = \underbrace{\text{eig}(A - BK)}_{\text{控制极点}} \cup \underbrace{\text{eig}(A - LC)}_{\text{观测器极点}}}
+$$
+
+> **定理（分离性原理）**：基于观测器的状态反馈控制系统的闭环极点，等于状态反馈的极点和观测器极点的**并集**。控制器设计（$K$）和观测器设计（$L$）可以**独立进行**。
+
+<Callout variant="tip">
+**分离性原理的工程意义**：
+1. 先设计状态反馈 $K$（假设全部状态可测），配置控制极点
+2. 再设计观测器 $L$，配置观测器极点
+3. 两步设计互不影响——可以分别优化
+4. 通常观测器极点比控制极点快 2~5 倍（让估计误差快速衰减，不影响主导动态）
+</Callout>
+
+### 例3：完整的基于观测器的控制器设计
+
+设系统 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+
+**设计要求**：闭环阻尼比 $\zeta = 0.7$，自然频率 $\omega_n = 3$。观测器极点在 $-15$（二重）。
+
+**步骤1**：设计状态反馈 $K$。
+
+期望控制极点：$s = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2} = -2.1 \pm j\sqrt{4.71}$。
+
+期望多项式：$s^2 + 2\zeta\omega_n s + \omega_n^2 = s^2 + 4.2s + 9$。
+
+$A - BK = \begin{bmatrix} 0 & 1 \\ -2-k_1 & -3-k_2 \end{bmatrix}$，特征多项式 $s^2 + (3+k_2)s + (2+k_1)$。
+
+$2 + k_1 = 9 \implies k_1 = 7$
+$3 + k_2 = 4.2 \implies k_2 = 1.2$
+
+$K = \begin{bmatrix} 7 & 1.2 \end{bmatrix}$
+
+**步骤2**：设计观测器 $L$（沿用例1的结果，但极点改为 $-15$）。
+
+期望观测器多项式：$s^2 + 30s + 225$。
+
+$l_1 + 3 = 30 \implies l_1 = 27$
+$3l_1 + 2 + l_2 = 225 \implies 81 + 2 + l_2 = 225 \implies l_2 = 142$
+
+$L = \begin{bmatrix} 27 \\ 142 \end{bmatrix}$
+
+**步骤3**：前馈增益 $N$。
+
+$A - BK = \begin{bmatrix} 0 & 1 \\ -9 & -4.2 \end{bmatrix}$，$(A-BK)^{-1} = \frac{1}{9}\begin{bmatrix} -4.2 & -1 \\ 9 & 0 \end{bmatrix}$
+
+$-C(A-BK)^{-1}B = -\begin{bmatrix} 1 & 0 \end{bmatrix}\frac{1}{9}\begin{bmatrix} -4.2 & -1 \\ 9 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -\frac{1}{9}(-1) = \frac{1}{9}$
+
+$N = 9$
+
+**步骤4**：验证分离性原理。
+
+闭环增广矩阵 $\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix}$ 是 $4 \times 4$ 矩阵。其特征值 = $\{-2.1 \pm j\sqrt{4.71}\} \cup \{-15, -15\}$。
+
+控制极点和观测器极点完全独立 ✓
+
+<JupyterNotebook
+  title=" 动手实验：基于观测器的控制器仿真"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from control import ss, place, step_response
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# ===== 基于观测器的控制器阶跃响应 =====
+A = np.array([[0, 1], [-2, -3]])
+B = np.array([[0], [1]])
+C = np.array([[1, 0]])
+
+# 观测器增益（例1结果）
+L = place(A.T, C.T, [-15, -15]).T
+
+# 状态反馈增益（上一章的结果）
+K = np.array([[7, 1.2]])
+N = 9  # 前馈增益
+
+# 构造 4 维增广系统 [x; e]
+A_cl = np.block([
+    [A - B @ K, -B @ K],
+    [np.zeros((2, 2)), A - L @ C]
+])
+B_cl = np.block([
+    [B * N],
+    [np.zeros((2, 1))]
+])
+C_cl = np.block([[np.array([[1, 0]]), np.zeros((1, 2))]])
+D_cl = np.array([[0]])
+
+sys_closed = ss(A_cl, B_cl, C_cl, D_cl)
+
+t = np.linspace(0, 3, 500)
+t_out, y_out = step_response(sys_closed, T=t)
+
+plt.figure(figsize=(10, 6))
+plt.plot(t_out, y_out[0], 'b-', linewidth=2, label='输出 y(t)')
+plt.axhline(y=1.0, color='k', linestyle=':', alpha=0.5, label='参考值 r=1')
+plt.xlabel('Time (s)', fontsize=12)
+plt.ylabel('y(t)', fontsize=12)
+plt.title('基于观测器的控制器 — 阶跃响应', fontsize=14)
+plt.legend(fontsize=11)
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# ===== 状态估计的收敛过程（交互）=====
+from scipy.integrate import solve_ivp
+from ipywidgets import interact, FloatSlider
+
+def plot_convergence(obs_speed):
+    obs_poles = [obs_speed, obs_speed]
+    L_local = place(A.T, C.T, obs_poles).T
+
+    def closed_loop(t, z):
+        x = z[:2]
+        x_hat = z[2:]
+        r = 1.0
+        y = C @ x
+        u = -K.flatten() @ x_hat + N * r
+        x_dot = A @ x + B.flatten() * u
+        xhat_dot = (A - L_local @ C) @ x_hat + B.flatten() * u + L_local.flatten() * y
+        return np.concatenate([x_dot, xhat_dot])
+
+    x0_true = np.array([1.0, -0.5])
+    x0_est = np.array([0.0, 0.0])
+    sol = solve_ivp(closed_loop, [0, 2], np.concatenate([x0_true, x0_est]),
+                    t_eval=np.linspace(0, 2, 500))
+
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(sol.t, sol.y[0], 'b-', linewidth=2, label='真实 x₁')
+    plt.plot(sol.t, sol.y[2], 'r--', linewidth=2, label='估计 x̂₁')
+    plt.xlabel('Time (s)')
+    plt.ylabel('x₁')
+    plt.title('状态 x₁ 的估计')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    plt.subplot(1, 2, 2)
+    plt.plot(sol.t, sol.y[1], 'b-', linewidth=2, label='真实 x₂')
+    plt.plot(sol.t, sol.y[3], 'r--', linewidth=2, label='估计 x̂₂')
+    plt.xlabel('Time (s)')
+    plt.ylabel('x₂')
+    plt.title('状态 x₂ 的估计')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    plt.suptitle(f'观测器极点 = {obs_speed:.0f} (控制极点实部 ≈ 2.1)', fontsize=13)
+    plt.tight_layout()
+    plt.show()
+
+interact(plot_convergence,
+    obs_speed=FloatSlider(min=-5, max=-30, step=1, value=-15,
+                          description='观测器极点'))` },
+  ]}
+/>
+
+## 降阶观测器
+
+### 为什么需要降阶观测器
+
+全阶观测器估计全部 $n$ 个状态。但如果输出 $\boldsymbol{y}$ 已经直接给出了 $p$ 个状态的线性组合，只需要估计 $n - p$ 个未知量。
+
+**降阶观测器**只估计不可直接测量的 $n - p$ 个状态，维度更低，计算量更小。
+
+### 基本思路（SISO，$p = 1$）
+
+设 $C = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix}$（通过坐标变换总可以做到），则 $y = x_1$——第一个状态直接可测。
+
+只需要估计 $x_2, \ldots, x_n$（$n-1$ 维）。定义变换后的变量，可以构造 $(n-1)$ 维的降阶观测器。
+
+降阶观测器的设计公式和全阶类似，但用 $(n-1)$ 维的子系统 $(A_{22}, A_{12})$ 代替 $(A, C)$：
+
+$$
+\dot{\hat{\boldsymbol{x}}}_r = (A_{22} - L_r A_{12})\hat{\boldsymbol{x}}_r + \cdots
+$$
+
+其中 $L_r$ 是 $(n-1) \times 1$ 的降阶观测器增益。
+
+<Callout variant="info">
+**降阶 vs 全阶**：
+- 降阶观测器维度低，计算快，但结构更复杂，对输出噪声更敏感（因为需要微分输出信号）
+- 全阶观测器虽然维度高，但结构统一，对噪声更鲁棒
+- 实际中**全阶观测器更常用**，除非 $n$ 很大而 $p$ 也很大
+</Callout>
+
+## 深入讨论
+
+### 观测器极点的选择
+
+观测器极点应该放多快？经验法则：**观测器极点实部 = 控制极点实部的 2~5 倍**。
+
+- **太快**：观测器带宽大，放大测量噪声。实际传感器都有噪声，过快的观测器会让控制量剧烈抖动
+- **太慢**：估计误差衰减慢，在误差消失之前系统的动态由"控制 + 观测器"的耦合决定，性能下降
+
+工程中通常先设计控制极点（根据性能需求），再选观测器极点为控制极点的 3 倍左右，然后在仿真中调整。
+
+### 观测器与卡尔曼滤波的关系
+
+Luenberger 观测器假设没有噪声。实际中：
+- **过程噪声**：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}$
+- **测量噪声**：$\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}$
+
+**卡尔曼滤波**是 Luenberger 观测器的随机推广——它在噪声环境下给出**最优**的状态估计（最小化估计误差的方差）。卡尔曼滤波的增益矩阵 $K_f$ 不是任意选的，而是由噪声统计特性自动确定。
+
+> 下一章 [卡尔曼滤波](/modern/kalman-filter) 将详细介绍。
+
+### 非线性系统的观测器
+
+Luenberger 观测器只适用于线性系统。对于非线性系统 $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，$\boldsymbol{y} = h(\boldsymbol{x})$：
+
+- **扩展观测器**：在工作点线性化，用 Luenberger 方法设计（局部有效）
+- **高增益观测器**：用大增益强制误差快速收敛（但放大噪声）
+- **滑模观测器**：利用滑模变结构控制的思想，对模型不确定具有鲁棒性
+
+### 与经典控制的对比
+
+| 特性 | 经典控制（PID） | 现代控制（观测器 + 状态反馈） |
+|------|----------------|---------------------------|
+| 反馈信号 | 输出 $y$ | 估计状态 $\hat{\boldsymbol{x}}$ |
+| 是否需要模型 | 不需要（基于误差调节） | 需要精确模型 $(A, B, C)$ |
+| 设计参数 | $K_p, K_i, K_d$（3 个） | $K$（$n$ 个）+ $L$（$n \times p$ 个） |
+| 对噪声的态度 | 较鲁棒（积分可能漂移） | 观测器放太大会放大噪声 |
+| MIMO 适用性 | 困难 | 自然支持 |
+
+### 分离性原理的局限
+
+分离性原理在以下条件下**不成立**：
+1. **输入约束/饱和**：当 $\boldsymbol{u}$ 饱和时，观测器和控制器的耦合不可忽略
+2. **非线性系统**：非线性系统的观测器和控制器不能独立设计
+3. **自适应控制**：当模型参数在线估计时，估计和控制的交互影响稳定性
+
+## 小结
+
+- **观测器**从输入 $\boldsymbol{u}$ 和输出 $\boldsymbol{y}$ 中估计全部状态 $\hat{\boldsymbol{x}}$
+- **Luenberger 全阶观测器**：$\dot{\hat{\boldsymbol{x}}} = (A - LC)\hat{\boldsymbol{x}} + B\boldsymbol{u} + L\boldsymbol{y}$
+- **误差动态**：$\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}$，由 $A - LC$ 的特征值决定
+- **可观性**是观测器设计的充要条件（类比：可控性是状态反馈的充要条件）
+- **对偶原理**：观测器设计 = 对偶系统的状态反馈设计，$L = \text{place}(A^T, C^T, \text{poles})^T$
+- **分离性原理**：基于观测器的控制器的闭环极点 = 控制极点 $\cup$ 观测器极点，$K$ 和 $L$ 可独立设计
+- 观测器极点通常比控制极点快 2~5 倍
+- 观测器是卡尔曼滤波的确定性版本
+
+## 习题
+
+**1.** 设系统 $A = \begin{bmatrix} 0 & 1 \\ -6 & -5 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+- (a) 判断可观性
+- (b) 求观测器增益 $L$，使观测器极点为 $-8, -8$
+- (c) 验证 $A - LC$ 的特征值
+
+**2.** 设系统 $A = \begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}$。
+- (a) 这是可观测标准型吗？
+- (b) 求 $L$ 使观测器极点为 $-10, -10, -10$
+
+**3.** 利用对偶原理，用 Ackermann 公式设计观测器。系统 $A = \begin{bmatrix} 1 & 2 \\ 0 & 3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 1 \end{bmatrix}$，期望观测器极点 $-2, -3$。
+
+**4.** 证明：系统 $(A, C)$ 可以通过观测器增益 $L$ 任意配置观测器极点的充要条件是 $(A, C)$ 完全可观。（提示：利用对偶原理转化为状态反馈的极点配置定理。）
+
+**5.** 设系统 $A = \begin{bmatrix} 0 & 1 \\ -1 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+- (a) 判断可控性和可观性
+- (b) 设计状态反馈 $K$ 使闭环极点为 $-3 \pm 3j$
+- (c) 设计观测器 $L$ 使观测器极点为 $-10, -10$
+- (d) 写出 4 维增广闭环系统的矩阵，验证其特征值等于控制极点和观测器极点的并集
+
+**6.** 证明分离性原理：对增广矩阵 $\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix}$，证明其特征多项式等于 $\det(sI - A + BK) \cdot \det(sI - A + LC)$。
+
+**7.** 直流电机模型：$A = \begin{bmatrix} 0 & 1 \\ 0 & -10 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 50 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$（状态为角位置和角速度，只测角位置）。
+- (a) 判断可观性
+- (b) 设计要求：闭环 $t_s < 0.5$ 秒（2%），$\sigma < 5\%$。设计状态反馈 $K$ 和观测器增益 $L$（观测器极点是控制极点实部的 3 倍）
+- (c) 求前馈增益 $N$
+
+**8.** 考虑系统 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。如果观测器的输出测量有恒定偏差 $d$（即测量值为 $y_m = y + d$），分析稳态估计误差。
+
+**9.** 证明：Luenberger 观测器的误差动态 $\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}$ 与输入 $\boldsymbol{u}(t)$ 无关。这个性质在什么条件下成立？
+
+**10.** 一个 MIMO 系统 $A = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 0 & 0 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}$。
+- (a) 判断可观性
+- (b) 能否设计观测器使所有极点为 $-5$？如果能，$L$ 的维度是多少？
+
+## 答案
+
+**1.** (a) 可观性矩阵 $\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$。$\det = 1 \neq 0$，**可观** ✓
+
+(b) $A - LC = \begin{bmatrix} -l_1 & 1 \\ -6-l_2 & -5 \end{bmatrix}$，特征多项式 $s^2 + (l_1+5)s + (5l_1 + 6 + l_2)$。
+
+期望：$s^2 + 16s + 64$。
+
+$l_1 + 5 = 16 \implies l_1 = 11$
+$5(11) + 6 + l_2 = 64 \implies l_2 = 3$
+
+$L = \begin{bmatrix} 11 \\ 3 \end{bmatrix}$
+
+(c) $A - LC = \begin{bmatrix} -11 & 1 \\ -9 & -5 \end{bmatrix}$，$\text{tr} = -16$，$\det = 55 + 9 = 64$。特征多项式 $s^2 + 16s + 64 = (s+8)^2$ ✓
+
+**2.** (a) $A$ 的结构：次对角线为 1，最后一列为 $[-6, -11, -6]^T$。$C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}$ 提取第一个状态。这是**可观测标准型**（转置的可控标准型）✓
+
+(b) 可观测标准型中，$L$ 的计算类似可控标准型中 $K$ 的计算。
+
+$CA = \begin{bmatrix} 0 & 1 & 0 \end{bmatrix}$，$CA^2 = \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}$。
+
+$\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix} = I$
+
+$A - LC$ 的第一列为 $\begin{bmatrix} -l_1 \\ -6-l_2 \\ -6-l_3 \end{bmatrix}$（$L$ 影响第一列），其余部分不变。
+
+特征多项式：$s^3 + (6+l_3)s^2 + (11+l_2)s + (6+l_1)$。
+
+期望：$(s+10)^3 = s^3 + 30s^2 + 300s + 1000$。
+
+$6 + l_1 = 1000 \implies l_1 = 994$
+$11 + l_2 = 300 \implies l_2 = 289$
+$6 + l_3 = 30 \implies l_3 = 24$
+
+$L = \begin{bmatrix} 994 \\ 289 \\ 24 \end{bmatrix}$
+
+**3.** 对偶系统：$\bar{A} = A^T = \begin{bmatrix} 1 & 0 \\ 2 & 3 \end{bmatrix}$，$\bar{B} = C^T = \begin{bmatrix} 1 \\ 1 \end{bmatrix}$。
+
+可控性：$\bar{\mathcal{C}} = \begin{bmatrix} 1 & 1 \\ 1 & 5 \end{bmatrix}$，$\det = 4 \neq 0$，可控 ✓（即 $(A, C)$ 可观）。
+
+期望多项式：$(s+2)(s+3) = s^2 + 5s + 6$。
+
+$\bar{A}^2 = \begin{bmatrix} 1 & 0 \\ 8 & 9 \end{bmatrix}$
+
+$p_d(\bar{A}) = \bar{A}^2 + 5\bar{A} + 6I = \begin{bmatrix} 1 & 0 \\ 8 & 9 \end{bmatrix} + \begin{bmatrix} 5 & 0 \\ 10 & 15 \end{bmatrix} + \begin{bmatrix} 6 & 0 \\ 0 & 6 \end{bmatrix} = \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix}$
+
+$\bar{\mathcal{C}}^{-1} = \frac{1}{4}\begin{bmatrix} 5 & -1 \\ -1 & 1 \end{bmatrix}$
+
+$\bar{K} = \begin{bmatrix} 0 & 1 \end{bmatrix} \frac{1}{4}\begin{bmatrix} 5 & -1 \\ -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} 6 & 30 \end{bmatrix} = \begin{bmatrix} 1.5 & 7.5 \end{bmatrix}$
+
+$L = \bar{K}^T = \begin{bmatrix} 1.5 \\ 7.5 \end{bmatrix}$
+
+验证：$A - LC = \begin{bmatrix} 1 & 2 \\ 0 & 3 \end{bmatrix} - \begin{bmatrix} 1.5 \\ 7.5 \end{bmatrix}\begin{bmatrix} 1 & 1 \end{bmatrix} = \begin{bmatrix} -0.5 & 0.5 \\ -7.5 & -4.5 \end{bmatrix}$
+
+$\text{tr} = -5$，$\det = 2.25 + 3.75 = 6$。特征多项式 $s^2 + 5s + 6 = (s+2)(s+3)$ ✓
+
+**4.** 利用对偶原理。$(A, C)$ 的观测器设计等价于 $(A^T, C^T)$ 的状态反馈设计：
+
+$(A - LC)^T = A^T - C^T L^T$
+
+配置 $A - LC$ 的特征值 $\iff$ 配置 $A^T - C^T L^T$ 的特征值。
+
+由极点配置定理，$(A^T, C^T)$ 可以任意配置极点的充要条件是 $(A^T, C^T)$ 完全可控。
+
+由对偶原理（上一章），$(A^T, C^T)$ 可控 $\iff$ $(A, C)$ 可观。
+
+因此，$(A, C)$ 可观 $\iff$ 可以任意配置观测器极点。证毕。
+
+**5.** (a) 可控性：$\mathcal{C} = \begin{bmatrix} 0 & 1 \\ 1 & 0 \end{bmatrix}$，$\det = -1 \neq 0$，**可控** ✓
+
+可观性：$\mathcal{O} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$，$\det = 1 \neq 0$，**可观** ✓
+
+(b) 期望多项式：$(s+3-3j)(s+3+3j) = s^2 + 6s + 18$。
+
+$A - BK = \begin{bmatrix} 0 & 1 \\ -1-k_1 & -k_2 \end{bmatrix}$，特征多项式 $s^2 + k_2 s + (1+k_1)$。
+
+$k_2 = 6$，$1 + k_1 = 18 \implies k_1 = 17$。$K = \begin{bmatrix} 17 & 6 \end{bmatrix}$。
+
+(c) $A - LC = \begin{bmatrix} -l_1 & 1 \\ -1-l_2 & 0 \end{bmatrix}$，特征多项式 $s^2 + l_1 s + (1+l_2)$。
+
+期望：$s^2 + 20s + 100$。
+
+$l_1 = 20$，$1 + l_2 = 100 \implies l_2 = 99$。$L = \begin{bmatrix} 20 \\ 99 \end{bmatrix}$。
+
+(d) 增广矩阵：
+
+$$
+\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix} = \begin{bmatrix} -17 & -5 & -17 & -6 \\ -18 & -6 & -18 & -6 \\ 0 & 0 & -20 & 1 \\ 0 & 0 & -100 & 0 \end{bmatrix}
+$$
+
+这是上三角分块矩阵，特征值 = $\text{eig}(A-BK) \cup \text{eig}(A-LC) = \{-3 \pm 3j\} \cup \{-10, -10\}$ ✓
+
+**6.** 设 $M = \begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix}$。
+
+$\det(sI - M) = \det\begin{bmatrix} sI-A+BK & BK \\ 0 & sI-A+LC \end{bmatrix}$
+
+由分块上三角矩阵的行列式性质：
+
+$\det(sI - M) = \det(sI - A + BK) \cdot \det(sI - A + LC)$
+
+即闭环特征多项式 = 控制特征多项式 $\times$ 观测器特征多项式。证毕。
+
+**7.** (a) $\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$，$\det = 1 \neq 0$，**可观** ✓
+
+(b) 开环传递函数 $G(s) = \frac{50}{s^2 + 10s}$（见上一章习题 9）。
+
+$t_s < 0.5$ 秒 $\implies \zeta\omega_n > 8$。$\sigma < 5\% \implies \zeta > 0.69$。
+
+选 $\zeta\omega_n = 10$，$\zeta = 0.707$。期望控制极点 $-10 \pm 10j$，期望多项式 $s^2 + 20s + 200$。
+
+$A - BK$：$50k_1 = 200 \implies k_1 = 4$，$10 + 50k_2 = 20 \implies k_2 = 0.2$。$K = \begin{bmatrix} 4 & 0.2 \end{bmatrix}$。
+
+观测器极点 = 控制极点实部的 3 倍 = $-30$（二重）。期望多项式 $s^2 + 60s + 900$。
+
+$A - LC = \begin{bmatrix} -l_1 & 1 \\ -l_2 & -10 \end{bmatrix}$，特征多项式 $s^2 + (l_1+10)s + (10l_1+l_2)$。
+
+$l_1 + 10 = 60 \implies l_1 = 50$
+$10(50) + l_2 = 900 \implies l_2 = 400$
+
+$L = \begin{bmatrix} 50 \\ 400 \end{bmatrix}$
+
+(c) $(A-BK)^{-1} = \frac{1}{200}\begin{bmatrix} -20 & -1 \\ 200 & 0 \end{bmatrix}$
+
+$-C(A-BK)^{-1}B = -\frac{1}{200}\begin{bmatrix} -20 & -1 \end{bmatrix}\begin{bmatrix} 0 \\ 50 \end{bmatrix} = \frac{50}{200} = \frac{1}{4}$
+
+$N = 4$
+
+**8.** 测量值 $y_m = y + d = C\boldsymbol{x} + d$。观测器方程变为：
+
+$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(y_m - C\hat{\boldsymbol{x}}) = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(C\boldsymbol{x} + d - C\hat{\boldsymbol{x}})$
+
+误差方程：$\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e} + Ld$
+
+稳态时 $\dot{\boldsymbol{e}} = 0$：$(A - LC)\boldsymbol{e}_{ss} = -Ld$
+
+$\boldsymbol{e}_{ss} = -(A - LC)^{-1}Ld$
+
+对于例1的系统（$A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$，$L = \begin{bmatrix} 17 \\ 47 \end{bmatrix}$）：
+
+$A - LC = \begin{bmatrix} -17 & 1 \\ -49 & -3 \end{bmatrix}$，$(A-LC)^{-1} = \frac{1}{100}\begin{bmatrix} -3 & -1 \\ 49 & -17 \end{bmatrix}$
+
+$\boldsymbol{e}_{ss} = -\frac{1}{100}\begin{bmatrix} -3 & -1 \\ 49 & -17 \end{bmatrix}\begin{bmatrix} 17 \\ 47 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -51-47 \\ 833-799 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -98 \\ 34 \end{bmatrix}d = \begin{bmatrix} 0.98 \\ -0.34 \end{bmatrix}d$
+
+输出估计误差：$C\boldsymbol{e}_{ss} = 0.98d$。
+
+**结论**：恒定测量偏差导致**非零稳态估计误差**。Luenberger 观测器无法消除恒定偏差——需要加入积分作用（类似 PID 中的 I 项）。
+
+**9.** 误差方程推导：
+
+$\dot{\boldsymbol{e}} = \dot{\hat{\boldsymbol{x}}} - \dot{\boldsymbol{x}} = [A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})] - [A\boldsymbol{x} + B\boldsymbol{u}]$
+
+$= A(\hat{\boldsymbol{x}} - \boldsymbol{x}) - LC(\hat{\boldsymbol{x}} - \boldsymbol{x}) = (A - LC)\boldsymbol{e}$
+
+$B\boldsymbol{u}$ 项在相减时**完全消去**，因此误差动态与 $\boldsymbol{u}(t)$ 无关。
+
+这个性质对**任何** $(A, B, C)$ 和 $L$ 都成立——它是 Luenberger 观测器结构的固有特性，不依赖额外条件。关键在于观测器中 $B\boldsymbol{u}$ 项和真实系统中的 $B\boldsymbol{u}$ 项使用完全相同的模型，因此输入的影响在误差中完全抵消。
+
+**10.** (a) $C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}$（测量第 1 和第 3 个状态）。
+
+$CA = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
+
+$\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
+
+这是行置换的单位矩阵，$\det = \pm 1 \neq 0$，$\text{rank} = 4$，**可观** ✓
+
+(b) 可以。$L$ 是 $4 \times 2$ 矩阵（$n \times p = 4 \times 2$），共 8 个自由参数，需配置 4 个极点。多余的 4 个自由度可用于优化噪声抑制等性能。

@@ -1,0 +1,513 @@
+---
+title: "描述函数法"
+description: "用基波增益近似非线性环节，预测极限环的振幅和频率"
+---
+
+# 描述函数法
+
+## 引言
+
+在相平面分析中，我们看到了二阶非线性系统如何产生极限环——一种稳定的周期振荡。但对于高阶系统，相平面法不再适用。**描述函数法**（Describing Function Method）提供了一种频域工具，将非线性环节近似为"基波增益"，从而用类似 Nyquist 判据的方法预测极限环的存在性、振幅和频率。
+
+直觉上，描述函数回答这个问题：**如果给非线性环节一个正弦输入 $u(t) = A\sin(\omega t)$，输出的基波分量有多大？相位偏移多少？** 这个"基波增益"就是描述函数 $N(A)$。它类似于线性系统的频率响应 $G(j\omega)$，但依赖的是振幅 $A$ 而非频率 $\omega$。
+
+> 📐 本文用到了傅里叶级数和 Nyquist 稳定判据，详见 [复数基础](/math/complex-numbers) 和 [频域分析](/classic/frequency-domain-analysis)。
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# 描述函数概念演示：正弦输入经过饱和非线性后的波形畸变
+
+def saturation(u, k=1, a=1):
+    """饱和非线性"""
+    return np.where(np.abs(u) <= a, k * u, k * a * np.sign(u))
+
+# 时间轴
+t = np.linspace(0, 4*np.pi, 1000)
+
+# 不同振幅的正弦输入
+A_values = [0.5, 1.0, 2.0]
+fig, axes = plt.subplots(3, 2, figsize=(12, 10))
+
+for idx, A in enumerate(A_values):
+    u = A * np.sin(t)
+    y = saturation(u, k=1, a=1)
+    
+    # 左图：输入输出波形
+    axes[idx, 0].plot(t, u, 'b-', linewidth=1.5, label=f'输入 u(t), A={A}')
+    axes[idx, 0].plot(t, y, 'r-', linewidth=1.5, label='输出 y(t)')
+    axes[idx, 0].set_xlabel('时间 t', fontsize=11)
+    axes[idx, 0].set_ylabel('幅值', fontsize=11)
+    axes[idx, 0].set_title(f'振幅 A={A} 时的波形', fontsize=12)
+    axes[idx, 0].legend(fontsize=10)
+    axes[idx, 0].grid(True, alpha=0.3)
+    axes[idx, 0].set_xlim([0, 4*np.pi])
+    
+    # 右图：输入输出特性曲线
+    u_range = np.linspace(-2.5, 2.5, 200)
+    y_range = saturation(u_range, k=1, a=1)
+    axes[idx, 1].plot(u_range, y_range, 'k-', linewidth=2, label='饱和特性')
+    # 标注当前振幅的工作范围
+    axes[idx, 1].plot([-A, A], saturation([-A, A], k=1, a=1), 'ro', markersize=8, label=f'A={A}')
+    axes[idx, 1].set_xlabel('输入 u', fontsize=11)
+    axes[idx, 1].set_ylabel('输出 y', fontsize=11)
+    axes[idx, 1].set_title('饱和非线性特性', fontsize=12)
+    axes[idx, 1].legend(fontsize=10)
+    axes[idx, 1].grid(True, alpha=0.3)
+    axes[idx, 1].set_xlim([-2.5, 2.5])
+    axes[idx, 1].set_ylim([-2.5, 2.5])
+
+plt.tight_layout()
+plt.show()
+
+print("观察：")
+print(f"A=0.5时：工作在线性区，输出无畸变")
+print(f"A=1.0时：刚好到达饱和点，输出开始畸变")
+print(f"A=2.0时：严重饱和，输出接近方波，高次谐波丰富")`}
+  ]}
+/>
+
+*图：不同振幅下，正弦输入经过饱和非线性后的波形畸变。振幅越大，削顶越严重，高次谐波越丰富。*
+
+## 描述函数的定义
+
+考虑静态非线性 $y = f(u)$，输入为正弦信号 $u(t) = A\sin(\omega t)$。输出 $y(t)$ 是周期为 $T = 2\pi/\omega$ 的周期函数，可以展开为傅里叶级数：
+
+$$y(t) = \frac{a_0}{2} + \sum_{n=1}^{\infty}\left[a_n\cos(n\omega t) + b_n\sin(n\omega t)\right]$$
+
+其中傅里叶系数为：
+
+$$a_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\cos(n\theta)d\theta$$
+
+$$b_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\sin(n\theta)d\theta$$
+
+**描述函数**定义为输出基波（$n=1$）的复振幅与输入振幅之比：
+
+$$N(A) = \frac{a_1 + jb_1}{A}$$
+
+这里采用控制理论的复数惯例（$e^{-j\omega t}$）。注意：
+
+- 对于**奇对称非线性**（$f(-u) = -f(u)$），$a_0 = a_1 = 0$，$N(A)$ 为纯虚数或实数。
+- 对于**含滞环的非线性**（多值映射），$N(A)$ 一般为复数，虚部反映相位滞后。
+- 描述函数只依赖振幅 $A$，与频率 $\omega$ 无关（因为非线性是静态的）。
+
+### 谐波平衡条件
+
+考虑闭环系统：线性部分 $G(s)$ 与非线性部分 $f(u)$ 串联，负反馈。假设系统处于周期运动状态，振荡频率为 $\omega$，振幅为 $A$。则非线性环节的输入为 $u(t) = A\sin(\omega t)$，输出基波为 $y_1(t) = |N(A)|A\sin(\omega t + \angle N(A))$。
+
+该基波经过线性部分 $G(j\omega)$ 后，得到反馈信号。闭环自激的条件是反馈信号与输入同相且等幅，即：
+
+$$N(A)G(j\omega) = -1$$
+
+这就是**谐波平衡条件**（Harmonic Balance Condition）。它可以重写为：
+
+$$G(j\omega) = -\frac{1}{N(A)}$$
+
+在 Nyquist 图上，这意味着 $G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹相交。交点对应的 $(A, \omega)$ 即为极限环的振幅和频率。
+
+> **为什么忽略高次谐波？** 关键在于线性部分 $G(s)$ 的低通滤波特性。如果 $G(j\omega)$ 在高频段（$3\omega, 5\omega, \ldots$）的增益远小于基波处的增益（比如衰减 20dB 以上），那么高次谐波经过 $G(s)$ 后会被大幅削弱，对闭环响应的贡献可以忽略。这就是描述函数法的**滤波假设**。定量判据：$|G(j3\omega)| < 0.1|G(j\omega)|$。
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy import integrate
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# 数值验证：计算饱和非线性的描述函数并与解析公式对比
+
+def saturation(u, k=1, a=1):
+    """饱和非线性"""
+    return np.where(np.abs(u) <= a, k * u, k * a * np.sign(u))
+
+def numerical_describing_function(A, k=1, a=1, N_points=1000):
+    """数值积分计算描述函数"""
+    theta = np.linspace(0, 2*np.pi, N_points)
+    u = A * np.sin(theta)
+    y = saturation(u, k, a)
+    
+    # 计算傅里叶系数
+    a1 = (1/np.pi) * np.trapz(y * np.cos(theta), theta)
+    b1 = (1/np.pi) * np.trapz(y * np.sin(theta), theta)
+    
+    return a1 + 1j * b1
+
+def analytical_describing_function(A, k=1, a=1):
+    """解析公式计算描述函数"""
+    if A <= a:
+        return k  # 线性区
+    alpha = np.arcsin(a / A)
+    return (2 * k / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+
+# 振幅范围
+A_values = np.linspace(0.5, 5, 50)
+k, a = 1, 1
+
+# 计算数值和解析结果
+N_numerical = []
+N_analytical = []
+
+for A in A_values:
+    N_num = numerical_describing_function(A, k, a)
+    N_ana = analytical_describing_function(A, k, a)
+    N_numerical.append(np.abs(N_num))
+    N_analytical.append(N_ana)
+
+# 绘图
+fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+
+ax.plot(A_values, N_numerical, 'ro', markersize=4, label='数值积分', alpha=0.6)
+ax.plot(A_values, N_analytical, 'b-', linewidth=2, label='解析公式')
+ax.set_xlabel('振幅 A', fontsize=12)
+ax.set_ylabel('|N(A)|', fontsize=12)
+ax.set_title('饱和非线性的描述函数：数值 vs 解析', fontsize=14)
+ax.legend(fontsize=11)
+ax.grid(True, alpha=0.3)
+ax.set_xlim([0.5, 5])
+ax.set_ylim([0, 1.2])
+
+plt.tight_layout()
+plt.show()
+
+# 打印误差统计
+errors = np.abs(np.array(N_numerical) - np.array(N_analytical))
+print(f"最大绝对误差：{np.max(errors):.6f}")
+print(f"平均绝对误差：{np.mean(errors):.6f}")
+print(f"\\n结论：数值积分与解析公式高度吻合，验证了公式的正确性")`}
+  ]}
+/>
+
+*图：饱和非线性描述函数的数值积分结果与解析公式对比，验证了理论推导的正确性。*
+
+## 常见非线性的描述函数
+
+### 理想继电器
+
+理想继电器的特性为：
+
+$$f(u) = \begin{cases} +M, & u > 0 \\ -M, & u < 0 \end{cases}$$
+
+输入 $u(t) = A\sin(\omega t)$ 时，输出为方波。方波的傅里叶级数为：
+
+$$y(t) = \frac{4M}{\pi}\left(\sin\omega t + \frac{1}{3}\sin 3\omega t + \frac{1}{5}\sin 5\omega t + \cdots\right)$$
+
+基波分量为 $\frac{4M}{\pi}\sin\omega t$，因此：
+
+$$N(A) = \frac{4M}{\pi A}$$
+
+**特点**：实数，与振幅 $A$ 成反比。振幅越大，等效增益越小。
+
+### 带滞环的继电器
+
+带滞环的继电器：当输入从负变正时，输出在 $u = +h$ 处跳变；从正变负时，在 $u = -h$ 处跳变。此时描述函数为复数：
+
+$$N(A) = \frac{4M}{\pi A}\sqrt{1 - \left(\frac{h}{A}\right)^2} - j\frac{4Mh}{\pi A^2}, \quad A > h$$
+
+当 $A \leq h$ 时，输入振幅不足以触发跳变，$N(A) = 0$（系统静止）。
+
+**特点**：虚部恒为负，反映滞环引起的相位滞后。
+
+### 饱和非线性
+
+饱和特性：当 $|u| \leq a$ 时 $y = ku$；当 $|u| > a$ 时 $y = ka\cdot\text{sgn}(u)$。令 $\alpha = \arcsin(a/A)$，则：
+
+$$N(A) = \frac{2k}{\pi}\left[\alpha + \sin\alpha\cos\alpha\right], \quad A \geq a$$
+
+**极限情况**：
+- 当 $A \ll a$ 时，$\alpha \approx \pi/2$，$N(A) \approx k$（线性区）。
+- 当 $A \gg a$ 时，$\alpha \approx a/A$，$N(A) \approx \frac{4ka}{\pi A}$（饱和区，增益随振幅衰减）。
+
+### 死区非线性
+
+死区特性：当 $|u| < a$ 时 $y = 0$；当 $|u| \geq a$ 时 $y = k(u - a\cdot\text{sgn}(u))$。令 $\alpha = \arcsin(a/A)$，则：
+
+$$N(A) = \frac{2k}{\pi}\left[\frac{\pi}{2} - \alpha - \sin\alpha\cos\alpha\right], \quad A \geq a$$
+
+当 $A < a$ 时，$N(A) = 0$（信号被死区完全阻挡）。
+
+**特点**：与饱和相反，小信号时增益为零，大信号时趋近于 $k$。
+
+### 间隙（Backlash）
+
+间隙非线性是动态的：输出不仅依赖当前输入，还依赖输入的变化方向。设间隙宽度为 $2b$，则描述函数为：
+
+$$N(A) = \frac{k}{\pi}\left[\frac{\pi}{2} + \beta + \sin\beta\cos\beta - j4\frac{b}{A}\left(1 - \frac{b}{A}\right)\right], \quad \beta = \arcsin\left(1 - 2\frac{b}{A}\right)$$
+
+**特点**：虚部恒为负，表示相位滞后。当 $A \leq b$ 时，$N(A) = 0$。
+
+<DescribingFunctionExplorer />
+
+*图：交互式探索不同非线性类型的描述函数 $N(A)$ 随振幅 $A$ 的变化。拖动滑块调节参数，观察曲线的变化趋势。*
+
+## 极限环预测：手算例子
+
+考虑一个简单的闭环系统：理想继电器（$M=1$）与三阶线性系统 $G(s) = \frac{1}{s(s+1)(0.5s+1)}$ 串联，负反馈。我们来预测是否存在极限环，以及其振幅和频率。
+
+**步骤 1：写出描述函数**
+
+理想继电器的描述函数为：
+$$N(A) = \frac{4}{\pi A}$$
+
+**步骤 2：写出谐波平衡条件**
+
+$$G(j\omega) = -\frac{1}{N(A)} = -\frac{\pi A}{4}$$
+
+**步骤 3：计算 $G(j\omega)$**
+
+$$G(j\omega) = \frac{1}{j\omega(j\omega + 1)(0.5j\omega + 1)}$$
+
+展开分母：
+$$(j\omega)(j\omega + 1)(0.5j\omega + 1) = j\omega(-\omega^2 + j1.5\omega + 1) = -j\omega^3 - 1.5\omega^2 + j\omega$$
+
+所以：
+$$G(j\omega) = \frac{1}{-1.5\omega^2 + j(\omega - \omega^3)} = \frac{-1.5\omega^2 - j(\omega - \omega^3)}{(-1.5\omega^2)^2 + (\omega - \omega^3)^2}$$
+
+其实部和虚部分别为：
+$$\text{Re}[G(j\omega)] = \frac{-1.5\omega^2}{2.25\omega^4 + (\omega - \omega^3)^2}$$
+$$\text{Im}[G(j\omega)] = \frac{-(\omega - \omega^3)}{2.25\omega^4 + (\omega - \omega^3)^2}$$
+
+**步骤 4：求解交点**
+
+由于 $N(A)$ 是实数，$-1/N(A)$ 也是实数（在负实轴上）。因此交点必须满足 $\text{Im}[G(j\omega)] = 0$，即：
+
+$$\omega - \omega^3 = 0 \implies \omega(1 - \omega^2) = 0$$
+
+解得 $\omega = 0$ 或 $\omega = 1$ rad/s。$\omega = 0$ 对应直流，舍去。取 $\omega = 1$ rad/s。
+
+代入实部：
+$$\text{Re}[G(j1)] = \frac{-1.5}{2.25 + 0} = -\frac{1.5}{2.25} = -\frac{2}{3} \approx -0.667$$
+
+**步骤 5：求解振幅 $A$**
+
+由谐波平衡条件：
+$$-\frac{\pi A}{4} = -0.667 \implies A = \frac{4 \times 0.667}{\pi} \approx 0.85$$
+
+**结论**：该系统存在极限环，预测振荡频率 $\omega = 1$ rad/s，振幅 $A \approx 0.85$。
+
+<NyquistLimitCycleExplorer />
+
+*图：Nyquist 图展示 $G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹的交点。拖动滑块调节增益 $K$ 和时间常数 $T_1, T_2$，观察交点位置的变化。绿色圆点标记预测的极限环。*
+
+### 稳定性判断
+
+在 Nyquist 图上，沿 $A$ 增大的方向画 $-1/N(A)$ 轨迹（从左向右移动，因为 $N(A)$ 随 $A$ 增大而减小，$-1/N(A)$ 从 $-\infty$ 趋向于 $0$）。
+
+**稳定性判据**：
+- 如果在交点处，$G(j\omega)$ 曲线从**左侧**穿过 $-1/N(A)$ 轨迹（即 $G(j\omega)$ 的相位比 $-1/N(A)$ 更负），则该极限环是**稳定的**。
+- 如果从**右侧**穿过，则极限环是**不稳定的**。
+
+**直观理解**：假设系统处于极限环状态，振幅为 $A_0$。如果受到扰动，振幅变为 $A_0 + \Delta A$：
+- 若 $N(A)$ 随 $A$ 增大而减小（如继电器），则环路增益下降，振幅会回到 $A_0$——稳定。
+- 若 $N(A)$ 随 $A$ 增大而增大，则环路增益上升，振幅会继续偏离——不稳定。
+
+在本例中，$G(j\omega)$ 从上向下穿过负实轴（相位从 $-90^\circ$ 变化到 $-270^\circ$），而 $-1/N(A)$ 沿负实轴从左向右移动。因此，$G(j\omega)$ 从左侧穿过，极限环**稳定**。
+
+## 应用案例
+
+### 案例 1：继电器反馈振荡器
+
+继电器反馈系统常用于产生方波振荡。考虑系统：理想继电器（$M=1$）与积分器 $G(s) = \frac{1}{s}$ 串联。
+
+**分析**：
+$$G(j\omega) = \frac{1}{j\omega} = -j\frac{1}{\omega}$$
+
+谐波平衡条件：
+$$\frac{4}{\pi A} \cdot \left(-j\frac{1}{\omega}\right) = -1$$
+
+分离实部和虚部：
+$$\text{实部：} 0 = -1 \quad \text{（矛盾！）}$$
+
+这说明**纯积分器无法与继电器形成稳定振荡**。需要加入相位补偿，比如 $G(s) = \frac{1}{s(s+1)}$。
+
+实际工程中，继电器反馈振荡器常用**施密特触发器**（带滞环的继电器）加 RC 低通滤波器实现。滞环提供相位滞后，RC 网络提供额外的相位偏移，两者配合产生稳定振荡。
+
+### 案例 2：饱和放大器的意外振荡
+
+某伺服系统的放大器增益 $k=10$，饱和电平 $\pm 1V$，被控对象为 $G(s) = \frac{1}{s(s+1)(0.1s+1)}$。系统在小信号时稳定，但在大指令下出现持续振荡。
+
+**用描述函数诊断**：
+
+1. 计算饱和的描述函数 $N(A)$。
+2. 画 Nyquist 图，找 $G(j\omega)$ 与 $-1/N(A)$ 的交点。
+3. 若存在交点，预测振荡频率 $\omega$ 和振幅 $A$。
+
+数值计算表明，在 $\omega \approx 3$ rad/s 处，$G(j\omega)$ 穿过负实轴，交点对应 $A \approx 0.5V$。这与实测振荡幅值吻合。
+
+**解决方案**：
+- 降低增益 $k$，使 Nyquist 曲线远离 $-1/N(A)$ 轨迹。
+- 加入超前校正，增加相位裕度。
+- 限制指令幅值，避免进入饱和区。
+
+### 案例 3：齿轮间隙导致的机械振荡
+
+机器人关节的齿轮箱存在间隙（backlash），宽度 $2b = 0.02$ rad。位置控制环的增益较高时，关节出现低频抖动（约 5 Hz）。
+
+**建模**：间隙非线性的描述函数为复数，虚部反映相位滞后。结合电机和负载的动力学模型 $G(s) = \frac{1}{Js^2 + Bs + K}$，其中 $J = 0.01$ kg·m²，$B = 0.5$ N·m·s/rad，$K = 100$ N·m/rad。
+
+用谐波平衡条件预测极限环。数值计算表明，在 $\omega \approx 30$ rad/s（约 5 Hz）处存在稳定极限环，振幅 $A \approx 0.015$ rad，与实测一致。
+
+**解决方案**：
+- 采用消隙齿轮或预紧机构，减小间隙宽度 $b$。
+- 降低控制带宽，避免激发间隙非线性。
+- 使用双环控制（位置环 + 速度环），提高阻尼。
+
+## 何时失效？
+
+描述函数法是近似方法，以下情况可能失效：
+
+### 1. 强非线性
+
+如果非线性很强（如继电器加积分器产生的滑动模态），高次谐波幅值很大，不能被线性部分充分衰减。此时需要保留更多谐波项（**多谐波平衡法**），或改用相平面法/数值仿真。
+
+**判断标准**：检查高次谐波的能量占比。如果三次谐波能量超过基波的 10%，则一阶近似不可靠。
+
+### 2. 弱低通滤波
+
+如果线性部分 $G(s)$ 的高频增益衰减不足（如谐振峰尖锐），高次谐波会通过 $G(s)$ 反馈到输入端，破坏正弦假设。
+
+**判断标准**：$|G(j3\omega)|$ 应比 $|G(j\omega)|$ 小至少 10 倍（20dB）。如果不满足，需要增加低通滤波器或提高系统阶数。
+
+### 3. 时变非线性
+
+描述函数假设非线性是静态的（无记忆）。如果非线性随时问变化（如磨损导致的间隙增大），描述函数不再是 $A$ 的单值函数，方法失效。
+
+**处理方法**：用时变描述函数或数值仿真。
+
+### 4. 多变量非线性
+
+如果系统中同时存在多个非线性环节（如饱和 + 死区），描述函数不再是标量，而是矩阵，计算复杂度大幅增加。此时需要用**增量描述函数**或数值方法。
+
+### 5. 混沌或拟周期运动
+
+描述函数只能预测周期解（极限环），不能分析混沌、拟周期运动或多重吸引子共存的情况。这些现象需要用相空间重构、Lyapunov 指数等工具。
+
+## 与相平面法的比较
+
+| 特性 | 相平面法 | 描述函数法 |
+|------|----------|------------|
+| **适用系统** | 二阶自治系统 | 任意阶系统（需低通滤波） |
+| **精度** | 精确（全局相轨迹） | 近似（基波近似） |
+| **信息量** | 完整相轨迹、平衡点类型 | 仅极限环的 $(A, \omega)$ |
+| **可视化** | 相平面图（几何直观） | Nyquist 图（频域直观） |
+| **计算复杂度** | 低（数值积分） | 中（傅里叶积分 + Nyquist） |
+| **外部输入** | 不适用（自治系统） | 可处理正弦激励 |
+
+**互补使用**：对于二阶系统，先用相平面法获得全局视图，再用描述函数验证极限环参数。对于高阶系统，只能用描述函数。
+
+## 小结
+
+描述函数法将非线性环节近似为"基波增益" $N(A)$，通过谐波平衡条件 $G(j\omega) = -1/N(A)$ 预测极限环的振幅和频率。关键要点：
+
+- **物理意义**：描述函数是非线性环节对正弦输入的基波响应，类似于线性系统的频率响应，但依赖振幅而非频率。
+- **常见非线性**：继电器（实数）、饱和（实数）、死区（实数）、间隙（复数）都有标准公式。
+- **稳定性判据**：在 Nyquist 图上，沿 $A$ 增大方向，若 $G(j\omega)$ 从左侧穿过 $-1/N(A)$，则极限环稳定。
+- **局限性**：要求线性部分有良好低通特性，不适用于强非线性、时变非线性或混沌系统。
+
+> 🔗 下一课 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability) 将从能量角度分析非线性系统的稳定性，不依赖正弦假设，适用于更广泛的场景。
+
+## 习题
+
+**习题 1**：计算理想继电器（$M=2$）的描述函数，并求当输入振幅 $A=1$ 时的等效增益。
+
+**习题 2**：考虑闭环系统：饱和非线性（$k=5, a=0.5$）与 $G(s) = \frac{1}{s(s+1)}$ 串联。用描述函数法预测是否存在极限环，若存在，估算振幅 $A$ 和频率 $\omega$。
+
+**习题 3**：在 Nyquist 图上，$G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹有两个交点，分别对应 $A_1 = 0.5$ 和 $A_2 = 2.0$。已知在 $A_1$ 处 $G(j\omega)$ 从右侧穿过，在 $A_2$ 处从左侧穿过。判断两个极限环的稳定性，并说明系统在受到大扰动后的行为。
+
+**习题 4**：带滞环的继电器（$M=1, h=0.3$）的描述函数在 $A=1$ 时为复数。计算 $N(1)$ 的实部、虚部和幅值、相位。
+
+**习题 5**：某系统同时存在饱和（$k=1, a=1$）和死区（$k_d=0.5, a_d=0.2$）两种非线性，串联连接。定性分析组合非线性的描述函数特性：小信号和大信号时的等效增益分别是多少？是否可能产生极限环？
+
+## 答案
+
+**答案 1**：
+
+理想继电器的描述函数为：
+$$N(A) = \frac{4M}{\pi A} = \frac{4 \times 2}{\pi \times 1} = \frac{8}{\pi} \approx 2.546$$
+
+等效增益为 $2.546$（实数）。
+
+---
+
+**答案 2**：
+
+饱和非线性的描述函数为：
+$$N(A) = \frac{2k}{\pi}\left[\alpha + \sin\alpha\cos\alpha\right], \quad \alpha = \arcsin(a/A)$$
+
+代入 $k=5, a=0.5$：
+$$N(A) = \frac{10}{\pi}\left[\arcsin\left(\frac{0.5}{A}\right) + \frac{0.5}{A}\sqrt{1 - \left(\frac{0.5}{A}\right)^2}\right]$$
+
+线性部分：
+$$G(j\omega) = \frac{1}{j\omega(j\omega + 1)} = -\frac{1}{\omega^2 + 1} - j\frac{1}{\omega(\omega^2 + 1)}$$
+
+谐波平衡条件要求 $G(j\omega)$ 为实数（因为 $N(A)$ 是实数），即虚部为零：
+$$-\frac{1}{\omega(\omega^2 + 1)} = 0$$
+
+这无解。但我们可以找 $G(j\omega)$ 相位最接近 $-180^\circ$ 的频率。数值计算表明，在 $\omega \approx 1$ rad/s 处，相位约为 $-135^\circ$，增益 $|G(j1)| = \frac{1}{\sqrt{2}} \approx 0.707$。
+
+要使 $N(A)G(j\omega) = -1$，需要：
+$$N(A) \cdot 0.707 = 1 \implies N(A) \approx 1.414$$
+
+代入饱和描述函数公式，数值求解得 $A \approx 0.8$。但由于相位不精确为 $-180^\circ$，**该系统不存在精确的极限环**，可能会有衰减振荡。
+
+---
+
+**答案 3**：
+
+- **$A_1 = 0.5$ 处**：$G(j\omega)$ 从右侧穿过，极限环**不稳定**。
+- **$A_2 = 2.0$ 处**：$G(j\omega)$ 从左侧穿过，极限环**稳定**。
+
+**系统行为**：如果初始扰动较小（振幅 $A < A_1$），系统会收敛到平衡点（原点）。如果扰动较大（$A_1 < A < A_2$），振幅会增长到 $A_2$，稳定在极限环上。如果扰动非常大（$A > A_2$），振幅会衰减回 $A_2$。因此，$A_1$ 是一个**分离线**（separatrix），区分了收敛到平衡点和收敛到极限环的区域。
+
+---
+
+**答案 4**：
+
+带滞环的继电器描述函数为：
+$$N(A) = \frac{4M}{\pi A}\sqrt{1 - \left(\frac{h}{A}\right)^2} - j\frac{4Mh}{\pi A^2}$$
+
+代入 $M=1, h=0.3, A=1$：
+
+实部：
+$$\text{Re}[N(1)] = \frac{4}{\pi}\sqrt{1 - 0.3^2} = \frac{4}{\pi}\sqrt{0.91} \approx 1.215$$
+
+虚部：
+$$\text{Im}[N(1)] = -\frac{4 \times 0.3}{\pi} = -\frac{1.2}{\pi} \approx -0.382$$
+
+幅值：
+$$|N(1)| = \sqrt{1.215^2 + 0.382^2} \approx 1.274$$
+
+相位：
+$$\angle N(1) = \arctan\left(\frac{-0.382}{1.215}\right) \approx -17.5^\circ$$
+
+---
+
+**答案 5**：
+
+串联非线性的描述函数近似为各环节描述函数的乘积（这是粗略近似，严格来说需要重新计算组合非线性的傅里叶系数）：
+
+$$N_{\text{total}}(A) \approx N_{\text{sat}}(A) \cdot N_{\text{dead}}(A)$$
+
+**小信号时**（$A < 0.2$）：
+- 死区的 $N_{\text{dead}}(A) = 0$（信号被阻挡）。
+- 因此 $N_{\text{total}}(A) = 0$，等效增益为零。
+
+**中等信号时**（$0.2 < A < 1$）：
+- 死区的 $N_{\text{dead}}(A)$ 从 $0$ 增长到约 $0.5$。
+- 饱和的 $N_{\text{sat}}(A) \approx 1$（未饱和）。
+- 组合增益约为 $0.5$。
+
+**大信号时**（$A > 1$）：
+- 死区的 $N_{\text{dead}}(A) \approx 0.5$（趋近线性增益）。
+- 饱和的 $N_{\text{sat}}(A)$ 从 $1$ 衰减到 $\frac{4}{\pi A}$。
+- 组合增益随 $A$ 增大而衰减。
+
+**极限环可能性**：由于组合描述函数随 $A$ 增大而单调递减（从 $0.5$ 衰减到 $0$），如果线性部分 $G(s)$ 的 Nyquist 曲线穿过负实轴，且穿过的增益值在 $[-2, 0]$ 范围内（对应 $N(A) \in [0, 0.5]$），则可能存在极限环。具体需要画 Nyquist 图判断。

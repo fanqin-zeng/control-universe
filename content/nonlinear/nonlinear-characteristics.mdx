@@ -1,0 +1,721 @@
+---
+title: "非线性系统特性"
+description: "理解什么是非线性系统，常见非线性类型及其分类，以及为什么线性化会失效"
+---
+
+# 非线性系统特性
+
+## 引言
+
+在前面的课程中，我们学习了线性系统的分析与设计方法：传递函数、根轨迹、频域响应、状态空间。这些方法的共同基础是**叠加原理**：如果输入 $u_1$ 产生输出 $y_1$，输入 $u_2$ 产生输出 $y_2$，那么输入 $au_1 + bu_2$ 会产生输出 $ay_1 + by_2$。
+
+但现实世界中的系统真的满足叠加原理吗？考虑一个简单的弹簧：在弹性范围内，力与位移成正比 $F = kx$，这是线性的。但如果弹簧被拉伸到塑性区，力-位移关系变成 $F = kx + \alpha x^3$，这时 $(x_1 + x_2)^3 \neq x_1^3 + x_2^3$，叠加原理被破坏。**这就是非线性**。
+
+> 🎯 本章目标：理解非线性的本质，识别常见非线性类型，掌握分类方法，认识线性化的局限性，知道何时需要非线性分析。
+
+## 什么是非线性系统？
+
+### 叠加原理的破坏
+
+**定义**：一个系统是线性的，当且仅当它同时满足：
+1. **齐次性**：输入放大 $a$ 倍，输出也放大 $a$ 倍
+2. **可加性**：两个输入之和的输出等于各自输出之和
+
+用数学语言：系统 $S$ 是线性的，如果 $S[au_1 + bu_2] = aS[u_1] + bS[u_2]$ 对所有 $a, b, u_1, u_2$ 成立。
+
+一旦这个条件被破坏，系统就是**非线性**的。
+
+**物理例子**：质量-弹簧-阻尼系统
+
+线性弹簧：$F_s = kx$，运动方程 $m\ddot{x} + c\dot{x} + kx = F$
+
+非线性弹簧（Duffing振子）：$F_s = kx + \alpha x^3$，运动方程 $m\ddot{x} + c\dot{x} + kx + \alpha x^3 = F$
+
+当 $\alpha > 0$ 时称为**硬弹簧**（hardening spring），刚度随位移增大；当 $\alpha < 0$ 时称为**软弹簧**（softening spring），刚度随位移减小。橡胶弹簧和大变形梁通常表现为硬弹簧，而某些复合材料结构可能表现为软弹簧。
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# Duffing振子：线性化 vs 非线性响应
+
+def duffing_linear(t, y):
+    """线性化Duffing振子: x'' + 0.2x' + x = 0"""
+    x, v = y
+    dxdt = v
+    dvdt = -0.2 * v - x
+    return [dxdt, dvdt]
+
+def duffing_nonlinear_hard(t, y):
+    """硬弹簧Duffing振子: x'' + 0.2x' + x + 0.5x^3 = 0"""
+    x, v = y
+    dxdt = v
+    dvdt = -0.2 * v - x - 0.5 * x**3
+    return [dxdt, dvdt]
+
+def duffing_nonlinear_soft(t, y):
+    """软弹簧Duffing振子: x'' + 0.2x' + x - 0.3x^3 = 0"""
+    x, v = y
+    dxdt = v
+    dvdt = -0.2 * v - x + 0.3 * x**3
+    return [dxdt, dvdt]
+
+# 初始条件
+x0 = 1.5  # 较大初始位移
+v0 = 0
+
+# 时间范围
+t_span = (0, 20)
+t_eval = np.linspace(0, 20, 1000)
+
+# 求解
+sol_linear = solve_ivp(duffing_linear, t_span, [x0, v0], t_eval=t_eval, method='RK45')
+sol_hard = solve_ivp(duffing_nonlinear_hard, t_span, [x0, v0], t_eval=t_eval, method='RK45')
+sol_soft = solve_ivp(duffing_nonlinear_soft, t_span, [x0, v0], t_eval=t_eval, method='RK45')
+
+# 绘图
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# 位移响应
+axes[0].plot(sol_linear.t, sol_linear.y[0], 'b-', linewidth=2, label='线性模型')
+axes[0].plot(sol_hard.t, sol_hard.y[0], 'r-', linewidth=2, label='硬弹簧 (α>0)')
+axes[0].plot(sol_soft.t, sol_soft.y[0], 'g-', linewidth=2, label='软弹簧 (α<0)')
+axes[0].set_xlabel('时间 t (s)', fontsize=12)
+axes[0].set_ylabel('位移 x(t)', fontsize=12)
+axes[0].set_title('Duffing振子响应比较 (x₀=1.5)', fontsize=14)
+axes[0].legend(fontsize=12)
+axes[0].grid(True, alpha=0.3)
+
+# 相平面
+axes[1].plot(sol_linear.y[0], sol_linear.y[1], 'b-', linewidth=2, label='线性模型')
+axes[1].plot(sol_hard.y[0], sol_hard.y[1], 'r-', linewidth=2, label='硬弹簧')
+axes[1].plot(sol_soft.y[0], sol_soft.y[1], 'g-', linewidth=2, label='软弹簧')
+axes[1].set_xlabel('位移 x', fontsize=12)
+axes[1].set_ylabel('速度 v', fontsize=12)
+axes[1].set_title('相平面比较', fontsize=14)
+axes[1].legend(fontsize=12)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"线性模型周期: ~{2*np.pi/1:.2f}s (ωₙ=1)")
+print(f"硬弹簧周期: 振幅越大，频率越高（周期变短）")
+print(f"软弹簧周期: 振幅越大，频率越低（周期变长）")`}
+  ]}
+/>
+
+从图中可以看到，硬弹簧的振荡频率比线性模型高（周期更短），而软弹簧的频率更低。更重要的是，**非线性系统的响应依赖于初始振幅**，这与线性系统完全不同——线性系统的固有频率是常数，与振幅无关。
+
+### 状态空间视角
+
+线性系统的状态方程：
+$$\dot{x} = Ax + Bu$$
+
+解可以写成闭式：
+$$x(t) = e^{At}x(0) + \int_0^t e^{A(t-\tau)}Bu(\tau)d\tau$$
+
+这个解的结构依赖于矩阵指数 $e^{At}$ 的性质，而矩阵指数的计算又依赖于特征值分解。
+
+非线性系统的状态方程：
+$$\dot{x} = f(x, u)$$
+
+其中 $f$ 是**非线性函数**。**关键区别**：
+- 没有通用的闭式解
+- 不能用矩阵指数
+- 不能做特征值分解
+- **不能有传递函数**（因为拉普拉斯变换依赖线性性质）
+
+这意味着分析范式完全改变：从"求解"转向"判断性质"（稳定性、周期性、是否存在极限环或混沌）。
+
+## 常见非线性类型
+
+工程中最常见的非线性来自硬件限制和物理效应。下面我们逐一介绍。
+
+### 饱和（Saturation）
+
+执行器和传感器都有物理上限。例如：
+- 电机电压：±24V（超过会过热）
+- 舵机角度：±90°（机械限位）
+- ADC输出：0-4095（12位量化）
+
+数学模型：
+$$y = \begin{cases} +M, & u > M \\ u, & -M \leq u \leq M \\ -M, & u < -M \end{cases}$$
+
+其中 $M$ 是饱和限。
+
+**工程影响**：饱和会导致积分windup（积分项持续累积），使PID控制器在大误差时产生严重超调。解决方案是抗饱和（anti-windup）策略。
+
+### 死区（Deadzone）
+
+当输入信号很小时，系统无响应。例如：
+- 阀门：小开度时流体不通
+- 传感器：噪声阈值以下的信号被忽略
+- 机械传动：小扭矩不足以克服静摩擦
+
+数学模型：
+$$y = \begin{cases} u - a, & u > a \\ 0, & -a \leq u \leq a \\ u + a, & u < -a \end{cases}$$
+
+其中 $2a$ 是死区宽度。
+
+**工程影响**：死区会导致稳态误差和极限环振荡。需要前馈补偿或自适应控制。
+
+### 继电器（Relay）
+
+输出只有两个状态：开或关。例如：
+- 温控器：温度低于设定值时加热，高于时关闭
+- 开关电源：PWM开关
+- 数字输出：0或1
+
+理想继电器模型：
+$$y = M \cdot \text{sgn}(u) = \begin{cases} +M, & u > 0 \\ -M, & u < 0 \end{cases}$$
+
+**工程影响**：继电器会产生高频切换（chattering），可能激发未建模动态。需要滞环或滑模控制来处理。
+
+### 间隙（Backlash）
+
+齿轮传动中，由于制造公差，主动轮转动一小段角度时从动轮不动。例如：
+- 精密减速器：间隙约0.01-0.05°
+- 普通齿轮：间隙可达0.1-0.5°
+- 机器人关节：谐波减速器约0.02°
+
+数学模型（简化）：
+$$y = \begin{cases} u - b, & \dot{u} > 0 \text{ 且 } u > y_{prev} + b \\ u + b, & \dot{u} < 0 \text{ 且 } u < y_{prev} - b \\ y_{prev}, & \text{otherwise} \end{cases}$$
+
+其中 $2b$ 是间隙宽度，$y_{prev}$ 是前一时刻输出。
+
+**工程影响**：间隙会导致位置误差和振动，尤其在反向运动时。需要消隙机构或双环控制。
+
+### 滞环（Hysteresis）
+
+输出不仅依赖当前输入，还依赖历史。例如：
+- 铁磁材料：B-H曲线
+- 压电陶瓷：电压-位移曲线
+- 生物肌肉：力-长度曲线
+
+简化模型：
+$$y = \begin{cases} ku + c, & \dot{u} > 0 \text{ （上升沿）} \\ ku - c, & \dot{u} < 0 \text{ （下降沿）} \end{cases}$$
+
+其中 $2c$ 是滞环宽度。
+
+**工程影响**：滞环会导致能量损耗和相位滞后，影响控制带宽。需要逆模型补偿。
+
+### 摩擦力（Friction）
+
+机械系统中的摩擦力包含多种成分：
+
+**库仑摩擦**（干摩擦）：
+$$F_c = \mu N \cdot \text{sgn}(\dot{x})$$
+
+在速度过零时不连续，导致"粘滑"现象（stick-slip）。
+
+**Stribeck效应**（低速摩擦）：
+$$F(v) = F_c + (F_s - F_c)e^{-|v|/v_s} + \sigma v$$
+
+其中：
+- $F_c$：库仑摩擦（动摩擦）
+- $F_s$：静摩擦（$F_s > F_c$）
+- $v_s$：Stribeck速度（典型值0.01-0.1 m/s）
+- $\sigma$：粘滞摩擦系数
+
+**工程影响**：摩擦力导致低速爬行、稳态误差、极限环。机器人关节控制中必须补偿摩擦。典型参数：ABB IRB 120机器人的关节摩擦系数约0.3 N·m·s/rad。
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# Stribeck摩擦曲线
+
+v = np.linspace(-0.5, 0.5, 400)
+
+# 参数
+Fc = 0.3   # 库仑摩擦 (N·m)
+Fs = 0.5   # 静摩擦 (N·m)
+vs = 0.05  # Stribeck速度 (rad/s)
+sigma = 0.02  # 粘滞摩擦系数 (N·m·s/rad)
+
+# Stribeck摩擦模型
+F_friction = np.sign(v) * (Fc + (Fs - Fc) * np.exp(-np.abs(v) / vs)) + sigma * v
+
+# 纯库仑摩擦（对比）
+F_coulomb = Fc * np.sign(v)
+
+# 绘图
+fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+
+ax.plot(v, F_friction, 'b-', linewidth=2, label='Stribeck摩擦')
+ax.plot(v, F_coulomb, 'r--', linewidth=1.5, alpha=0.7, label='纯库仑摩擦')
+ax.axhline(y=Fs, color='g', linestyle=':', alpha=0.5, label=f'静摩擦 Fs={Fs}')
+ax.axhline(y=Fc, color='orange', linestyle=':', alpha=0.5, label=f'库仑摩擦 Fc={Fc}')
+
+ax.set_xlabel('速度 v (rad/s)', fontsize=12)
+ax.set_ylabel('摩擦力 F (N·m)', fontsize=12)
+ax.set_title('Stribeck摩擦曲线', fontsize=14)
+ax.legend(fontsize=11)
+ax.grid(True, alpha=0.3)
+ax.set_xlim([-0.5, 0.5])
+ax.set_ylim([-0.6, 0.6])
+
+plt.tight_layout()
+plt.show()
+
+print(f"Stribeck效应：低速时摩擦力从Fs下降到Fc，然后随速度线性增加")
+print(f"这导致低速'爬行'现象和稳态误差")`}
+  ]}
+/>
+
+## 非线性的分类
+
+非线性可以根据不同的标准分类，这对选择分析工具很重要。
+
+### 按连续性分类
+
+| 类型 | 定义 | 例子 | 分析工具 |
+|------|------|------|----------|
+| **连续** | 函数处处连续 | 饱和、死区、$x^3$、$\sin x$ | 泰勒线性化、Lyapunov法 |
+| **不连续** | 存在跳跃间断点 | 理想继电器、库仑摩擦 | 描述函数、滑模控制、Filippov解 |
+
+连续非线性可以在工作点附近泰勒展开，局部线性化。不连续非线性必须用特殊方法。
+
+### 按光滑性分类
+
+| 类型 | 定义 | 例子 | 分析工具 |
+|------|------|------|----------|
+| **光滑** | 连续可微（$C^1$） | $x^3$、$\sin x$、$e^x$ | 泰勒展开、雅可比线性化 |
+| **非光滑** | 连续但不可微 | $|x|$、$\max(0,x)$（ReLU） | 次梯度、广义导数 |
+
+光滑非线性可以用导数分析局部行为。非光滑非线性在不可导点需要用次梯度（subgradient）或Clarke广义导数。
+
+### 按记忆性分类
+
+| 类型 | 定义 | 例子 | 分析工具 |
+|------|------|------|----------|
+| **静态** | 无记忆，$y=f(u)$ | 饱和、死区、继电器 | 代数分析、描述函数 |
+| **动态** | 有记忆，含微分/积分 | 摩擦、滞环、Duffing振子 | 相平面、状态空间、Lyapunov法 |
+
+静态非线性只依赖当前输入，动态非线性依赖历史（状态）。动态非线性需要微分方程工具。
+
+### 按对称性分类
+
+| 类型 | 定义 | 例子 |
+|------|------|------|
+| **奇对称** | $f(-u) = -f(u)$ | $x^3$、$\sin x$、理想继电器 |
+| **偶对称** | $f(-u) = f(u)$ | $x^2$、$|x|$ |
+| **非对称** | 无对称性 | 饱和、死区 |
+
+奇对称非线性的描述函数是实数，简化了谐波平衡分析。
+
+### 非线性类型与分析工具对照
+
+| 非线性类型 | 推荐分析工具 |
+|-----------|-------------|
+| 光滑连续 | 泰勒线性化、Lyapunov直接法、反馈线性化 |
+| 非光滑连续 | 次梯度、Filippov解、滑模控制 |
+| 不连续 | 描述函数、滑模控制、混合系统理论 |
+| 动态非线性 | 相平面、Lyapunov法、谐波平衡 |
+
+## 为什么线性化会失效？
+
+线性化是在工作点 $(x_0, u_0)$ 附近做泰勒展开：
+$$f(x, u) \approx f(x_0, u_0) + \frac{\partial f}{\partial x}\bigg|_{(x_0,u_0)}(x-x_0) + \frac{\partial f}{\partial u}\bigg|_{(x_0,u_0)}(u-u_0)$$
+
+令 $\delta x = x - x_0$，$\delta u = u - u_0$，得到线性近似：
+$$\delta\dot{x} = A\delta x + B\delta u$$
+
+其中 $A = \frac{\partial f}{\partial x}|_{(x_0,u_0)}$，$B = \frac{\partial f}{\partial u}|_{(x_0,u_0)}$。
+
+**线性化的局限性**：
+
+1. **局部有效性**：只在 $x_0$ 附近的小邻域内有效。偏离越远，误差越大。
+
+2. **小信号假设**：要求 $\|\delta x\|$ 和 $\|\delta u\|$ 很小。大信号时高阶项不可忽略。
+
+3. **丢失全局特性**：线性化无法捕捉多平衡点、极限环、混沌等全局现象。
+
+4. **不适用于不连续非线性**：继电器、库仑摩擦等在 $x_0$ 处不可导，无法线性化。
+
+**数值例子**：Duffing振子 $\ddot{x} + 0.2\dot{x} + x + 0.5x^3 = 0$
+
+在 $x_0=0$ 处线性化，忽略 $x^3$ 项，得到 $\ddot{x} + 0.2\dot{x} + x = 0$。
+
+当初始条件 $x(0)=0.1$ 时，线性化误差约1%（可接受）。
+
+当初始条件 $x(0)=1.5$ 时，线性化误差超过30%（不可接受）。
+
+前面的JupyterNotebook已经展示了这种差异。
+
+## 何时需要非线性分析？
+
+并非所有情况都需要非线性分析。以下是判断标准：
+
+### 需要非线性分析的场景
+
+1. **大范围运动**：系统状态远离工作点
+   
+   例子：无人机从悬停到高速飞行的过渡；机器人从A点到B点的全局轨迹规划
+   
+   案例：SpaceX猎鹰9号火箭着陆过程，从100km高空到地面，空气动力学强非线性（马赫数变化、攻角变化），必须用非线性MPC控制。
+
+2. **高精度要求**：线性化误差不可接受
+   
+   例子：半导体光刻机定位精度要求纳米级；天文望远镜指向精度要求角秒级
+   
+   判断标准：线性化误差 $>5\%$ 时需要非线性方法
+
+3. **安全关键系统**：必须保证全局稳定性
+   
+   例子：核电站反应堆控制；飞机飞控系统；医疗机器人
+   
+   理由：局部稳定性不足以保证极端工况下的安全
+
+4. **存在强非线性元件**：线性化完全失效
+   
+   例子：继电器控制；带间隙的齿轮传动；干摩擦主导的系统
+   
+   理由：不连续或强非线性无法用泰勒展开近似
+
+5. **变参数系统**：参数随时间或状态变化
+   
+   例子：火箭燃料消耗导致质量变化；飞机高度变化导致空气密度变化
+   
+   理由：虽然微分方程本身可能是线性的，但时变参数使系统等效为非线性的
+
+### 线性化足够的场景
+
+1. **小范围调节**：系统始终在工作点附近
+   
+   例子：恒温箱温度控制（设定点±1°C）；电压稳压（额定值±5%）
+
+2. **低精度要求**：线性化误差在允许范围内
+   
+   例子：家用空调；普通机床进给
+
+3. **快速原型**：先验证概念，再细化
+   
+   例子：课程项目；初步设计阶段
+
+**经验法则**：先用线性方法设计和验证，如果性能不达标或出现意外行为（如极限环、发散），再考虑非线性分析。
+
+## 实例与案例
+
+### 案例1：伺服电机饱和导致的积分Windup
+
+某位置伺服系统采用PI控制器，电机额定电压±24V。当设定值阶跃变化很大时，误差大，积分项迅速累积。即使误差变号，积分项仍保持很大值，导致电机持续以最大电压运转，产生严重超调。
+
+**仿真**：
+
+<JupyterNotebook 
+  language="python" 
+  setupCode={`import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {code: `# PI控制器 + 电机饱和仿真
+
+# 系统参数
+K_motor = 10  # 电机增益 (rad/s/V)
+T_motor = 0.1  # 电机时间常数 (s)
+
+# PI控制器参数
+Kp = 2
+Ki = 5
+
+# 饱和限
+M = 24  # 最大电压 (V)
+
+# 设定值
+r = 10  # 目标位置 (rad)
+
+def system_with_saturation(t, y):
+    """带饱和的闭环系统"""
+    x, x_int = y  # 位置和积分项
+    
+    error = r - x
+    
+    # PI控制器输出
+    u_raw = Kp * error + Ki * x_int
+    
+    # 饱和
+    u = np.clip(u_raw, -M, M)
+    
+    # 电机动态: T*x_dot + x = K*u
+    dxdt = (K_motor * u - x) / T_motor
+    
+    # 积分项更新（带抗饱和：饱和时停止积分）
+    if np.abs(u_raw) <= M:
+        dx_intdt = error
+    else:
+        dx_intdt = 0  # 停止积分
+    
+    return [dxdt, dx_intdt]
+
+def system_without_saturation(t, y):
+    """无限幅的理想系统（对比）"""
+    x, x_int = y
+    
+    error = r - x
+    u = Kp * error + Ki * x_int
+    
+    dxdt = (K_motor * u - x) / T_motor
+    dx_intdt = error
+    
+    return [dxdt, dx_intdt]
+
+# 初始条件
+y0 = [0, 0]  # 从原点开始
+
+# 时间范围
+t_span = (0, 5)
+t_eval = np.linspace(0, 5, 500)
+
+# 求解
+sol_sat = solve_ivp(system_with_saturation, t_span, y0, t_eval=t_eval, method='RK45')
+sol_ideal = solve_ivp(system_without_saturation, t_span, y0, t_eval=t_eval, method='RK45')
+
+# 绘图
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# 位置响应
+axes[0].plot(sol_sat.t, sol_sat.y[0], 'r-', linewidth=2, label='带饱和')
+axes[0].plot(sol_ideal.t, sol_ideal.y[0], 'b--', linewidth=1.5, alpha=0.7, label='无限幅')
+axes[0].axhline(y=r, color='k', linestyle=':', alpha=0.5, label='设定值')
+axes[0].set_xlabel('时间 t (s)', fontsize=12)
+axes[0].set_ylabel('位置 x (rad)', fontsize=12)
+axes[0].set_title('PI控制器：饱和 vs 无限幅', fontsize=14)
+axes[0].legend(fontsize=11)
+axes[0].grid(True, alpha=0.3)
+
+# 控制电压
+u_sat = Kp * (r - sol_sat.y[0]) + Ki * sol_sat.y[1]
+u_sat_clipped = np.clip(u_sat, -M, M)
+u_ideal = Kp * (r - sol_ideal.y[0]) + Ki * sol_ideal.y[1]
+
+axes[1].plot(sol_sat.t, u_sat_clipped, 'r-', linewidth=2, label='带饱和')
+axes[1].plot(sol_ideal.t, u_ideal, 'b--', linewidth=1.5, alpha=0.7, label='无限幅')
+axes[1].axhline(y=M, color='k', linestyle=':', alpha=0.5, label='饱和限')
+axes[1].axhline(y=-M, color='k', linestyle=':', alpha=0.5)
+axes[1].set_xlabel('时间 t (s)', fontsize=12)
+axes[1].set_ylabel('控制电压 u (V)', fontsize=12)
+axes[1].set_title('控制输入比较', fontsize=14)
+axes[1].legend(fontsize=11)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"带饱和系统超调: {100*(np.max(sol_sat.y[0])-r)/r:.1f}%")
+print(f"无限幅系统超调: {100*(np.max(sol_ideal.y[0])-r)/r:.1f}%")
+print("饱和导致积分windup，超调显著增大")`}
+  ]}
+/>
+
+**解决方案**：抗饱和（anti-windup）——当执行器饱和时，停止积分或反向积分。这将在补偿器设计章节详细讨论。
+
+### 案例2：齿轮间隙导致的反向误差
+
+某机器人关节采用谐波减速器（间隙0.02°），在往复运动时出现位置误差。正向运动时误差为+0.01°，反向运动时误差为-0.01°，形成滞环。
+
+**影响**：
+- 定位精度下降
+- 反向时产生冲击和振动
+- 轨迹跟踪误差增大
+
+**解决方案**：
+- 机械：采用消隙齿轮或预紧机构
+- 控制：双环控制（位置环+速度环），或在反向时加入前馈补偿
+
+### 案例3：变质量系统的等效非线性
+
+火箭垂直上升过程中，燃料消耗导致质量从 $m_0$ 减小到 $m_f$。运动方程：
+$$m(t)\dot{v} = F_{thrust} - mg - \frac{1}{2}\rho v^2 C_D A$$
+
+虽然这是线性微分方程（$\dot{v}$ 的系数是1），但 $m(t)$ 随时间变化，使得系统等效为非线性的。线性化只能在某一时刻的质量附近有效，全程控制需要增益调度或自适应控制。
+
+## 深入讨论
+
+### 非线性系统的独特现象
+
+非线性系统有一些线性系统永远不可能出现的现象：
+
+1. **多平衡点**：非线性系统可以有多个平衡点，有些稳定，有些不稳定。例如倒立摆有两个平衡点：向下（稳定）和向上（不稳定）。
+
+2. **极限环**：自持振荡，与初始条件无关。例如Van der Pol振子 $\ddot{x} - \mu(1-x^2)\dot{x} + x = 0$，无论初始条件如何，最终都收敛到稳定的极限环。
+
+3. **跳跃共振**（Jump Resonance）：非线性系统的频率响应曲线可能"折叠"，导致在某个频率处振幅突然跳跃。
+
+4. **混沌**：对初始条件极度敏感，长期预测不可能。例如Lorenz系统 $\dot{x} = \sigma(y-x)$, $\dot{y} = x(\rho-z)-y$, $\dot{z} = xy-\beta z$。
+
+5. **分岔**（Bifurcation）：参数变化导致系统定性行为突变。例如Hopf分岔产生极限环。
+
+这些现象将在后续课程（相平面、描述函数、Lyapunov稳定性）中深入探讨。
+
+### 非线性控制策略简介
+
+面对非线性，有哪些控制策略？
+
+1. **线性化 + 线性控制**：在工作点附近线性化，用PID或状态反馈。适用于小范围运动。
+
+2. **增益调度**（Gain Scheduling）：在不同工作点设计不同的线性控制器，根据工况切换。适用于变参数系统。
+
+3. **反馈线性化**：通过非线性坐标变换和控制律，将非线性系统转化为线性系统。适用于精确已知模型的情况。
+
+4. **滑模控制**（Sliding Mode Control）：设计滑动面，使系统状态在有限时间内到达并保持在面上。对不确定性和扰动鲁棒，但可能产生chattering。
+
+5. **自适应控制**：在线估计未知参数，调整控制律。适用于参数不确定或时变的系统。
+
+6. **鲁棒控制**：设计控制器保证在最坏情况下的性能。适用于有界不确定性的系统。
+
+7. **模型预测控制**（MPC）：在每个采样时刻求解优化问题，显式处理约束和非线性。适用于多变量、有约束的系统。
+
+这些策略将在非线性控制的后续章节详细介绍。
+
+## 小结
+
+本节课介绍了非线性系统的基本概念：
+
+**核心要点**：
+1. **非线性的定义**：叠加原理被破坏的系统
+2. **常见非线性类型**：饱和、死区、继电器、间隙、滞环、摩擦力
+3. **分类标准**：连续/不连续、光滑/非光滑、静态/动态、对称/非对称
+4. **线性化的局限**：局部有效、小信号假设、丢失全局特性
+5. **非线性分析的适用场景**：大范围运动、高精度、安全关键、强非线性、变参数
+
+**关键洞察**：
+- 所有真实系统都是非线性的，线性模型只是近似
+- 非线性不是"缺陷"，而是可以利用的特性（如有限时间收敛、全局稳定）
+- 选择分析方法前，先判断非线性的类型和强度
+
+**下一步**：相平面分析（phase-plane-analysis）将介绍如何用几何方法可视化二阶非线性系统的全局行为。
+
+## 习题
+
+**习题 1**：判断下列系统是否为线性系统，并说明理由：
+(a) $\dot{x} = -x + u^2$
+(b) $\dot{x} = -x^3 + u$
+(c) $\ddot{x} + 2\dot{x} + x = 0$
+(d) $y = \max(0, u)$（ReLU）
+
+**习题 2**：对下列非线性函数进行分类（连续/不连续、光滑/非光滑、静态/动态）：
+(a) 饱和函数
+(b) 理想继电器 $y = \text{sgn}(u)$
+(c) $y = |u|$
+(d) Duffing振子 $\ddot{x} + \delta\dot{x} + \alpha x + \beta x^3 = 0$
+
+**习题 3**：某系统在工作点 $x_0=1$ 附近的非线性函数为 $f(x) = x + 0.2x^3$。计算：
+(a) 在 $x_0=1$ 处的线性化模型
+(b) 当 $x=1.1$ 时，线性化模型的相对误差
+(c) 当 $x=1.5$ 时，线性化模型的相对误差
+(d) 根据误差大小，判断线性化在什么范围内可接受（假设容忍误差{'<'}5%）
+
+**习题 4**：解释为什么非线性系统可以有多个平衡点，而线性系统 $\dot{x}=Ax$（$A$ 非奇异）只有一个平衡点。给出一个具有三个平衡点的非线性系统例子，并判断各平衡点的稳定性（定性分析即可）。
+
+**习题 5**：某机器人关节的摩擦力遵循Stribeck模型，参数为：$F_c=0.3$ N·m，$F_s=0.5$ N·m，$v_s=0.05$ rad/s，$\sigma=0.02$ N·m·s/rad。计算：
+(a) 速度 $v=0.01$ rad/s 时的摩擦力
+(b) 速度 $v=0.1$ rad/s 时的摩擦力
+(c) 速度 $v=1.0$ rad/s 时的摩擦力
+(d) 解释为什么低速时摩擦力更大，以及这对控制的影响
+
+## 答案
+
+**答案 1**：
+
+(a) **非线性**。输入项 $u^2$ 破坏了齐次性：$S[au] = (au)^2 = a^2 u^2 \neq aS[u]$。
+
+(b) **非线性**。状态项 $x^3$ 破坏了可加性：$(x_1+x_2)^3 \neq x_1^3 + x_2^3$。
+
+(c) **线性**。这是标准的二阶线性微分方程，满足叠加原理。
+
+(d) **非线性**。ReLU函数不满足可加性：$\max(0, u_1+u_2) \neq \max(0, u_1) + \max(0, u_2)$（例如 $u_1=1, u_2=-1$ 时左边=0，右边=1）。
+
+---
+
+**答案 2**：
+
+(a) **饱和函数**：连续、非光滑（在饱和点不可导）、静态
+
+(b) **理想继电器**：不连续、非光滑、静态
+
+(c) **$y=|u|$**：连续、非光滑（在 $u=0$ 处不可导）、静态
+
+(d) **Duffing振子**：连续、光滑（$x^3$ 处处可导）、动态（含微分项）
+
+---
+
+**答案 3**：
+
+(a) 线性化：在 $x_0=1$ 处，$f(x_0) = 1 + 0.2(1)^3 = 1.2$，$f'(x) = 1 + 0.6x^2$，$f'(1) = 1.6$。
+
+线性化模型：$f(x) \approx 1.2 + 1.6(x-1) = 1.6x - 0.4$
+
+(b) 当 $x=1.1$ 时：
+- 真实值：$f(1.1) = 1.1 + 0.2(1.1)^3 = 1.1 + 0.2662 = 1.3662$
+- 线性化：$f_{lin}(1.1) = 1.6(1.1) - 0.4 = 1.36$
+- 相对误差：$\frac{|1.3662 - 1.36|}{1.3662} \times 100\% \approx 0.45\%$
+
+(c) 当 $x=1.5$ 时：
+- 真实值：$f(1.5) = 1.5 + 0.2(1.5)^3 = 1.5 + 0.675 = 2.175$
+- 线性化：$f_{lin}(1.5) = 1.6(1.5) - 0.4 = 2.0$
+- 相对误差：$\frac{|2.175 - 2.0|}{2.175} \times 100\% \approx 8.05\%$
+
+(d) 要使误差{'<'}5%，需要 $x$ 接近 $x_0=1$。通过数值计算，当 $|x-1| < 0.12$ 时（即 $x \in [0.88, 1.12]$），误差{'<'}5%。因此线性化在约±12%的范围内可接受。
+
+---
+
+**答案 4**：
+
+**原因**：线性系统 $\dot{x}=Ax$ 的平衡点满足 $Ax_e=0$。如果 $A$ 非奇异（行列式不为零），则唯一解是 $x_e=0$。而非线性系统 $\dot{x}=f(x)$ 的平衡点满足 $f(x_e)=0$，非线性方程可以有多个根。
+
+**例子**：倒立摆的运动方程（无量纲化）：
+$$\ddot{\theta} + \delta\dot{\theta} - \sin\theta = 0$$
+
+平衡点满足 $\sin\theta_e = 0$，即 $\theta_e = 0, \pm\pi, \pm2\pi, \ldots$
+
+在 $[-\pi, \pi]$ 区间内有三个平衡点：$\theta_e = -\pi, 0, \pi$（注意 $-\pi$ 和 $\pi$ 物理上等价）。
+
+**稳定性**（定性）：
+- $\theta_e = 0$（向下）：稳定平衡点（势能极小值）
+- $\theta_e = \pm\pi$（向上）：不稳定平衡点（势能极大值）
+
+可以用能量观点理解：小球在碗底（稳定）vs 球在山顶（不稳定）。
+
+---
+
+**答案 5**：
+
+使用Stribeck公式：$F(v) = F_c + (F_s - F_c)e^{-|v|/v_s} + \sigma|v|$
+
+(a) $v=0.01$ rad/s：
+$$F(0.01) = 0.3 + (0.5-0.3)e^{-0.01/0.05} + 0.02\times0.01 = 0.3 + 0.2e^{-0.2} + 0.0002$$
+$$= 0.3 + 0.2\times0.8187 + 0.0002 \approx 0.3 + 0.1637 + 0.0002 = 0.4639 \text{ N·m}$$
+
+(b) $v=0.1$ rad/s：
+$$F(0.1) = 0.3 + 0.2e^{-0.1/0.05} + 0.02\times0.1 = 0.3 + 0.2e^{-2} + 0.002$$
+$$= 0.3 + 0.2\times0.1353 + 0.002 \approx 0.3 + 0.0271 + 0.002 = 0.3291 \text{ N·m}$$
+
+(c) $v=1.0$ rad/s：
+$$F(1.0) = 0.3 + 0.2e^{-1.0/0.05} + 0.02\times1.0 = 0.3 + 0.2e^{-20} + 0.02$$
+$$\approx 0.3 + 0 + 0.02 = 0.32 \text{ N·m}$$
+（$e^{-20} \approx 2\times10^{-9}$，可忽略）
+
+(d) **解释**：低速时（$v<v_s$），摩擦力从静摩擦 $F_s$ 逐渐下降到库仑摩擦 $F_c$，这是因为表面微观凸起的"粘着"效应在低速时更显著。随着速度增加，粘着效应减弱，摩擦力下降。高速时，粘滞摩擦 $\sigma v$ 占主导，摩擦力随速度线性增加。
+
+**对控制的影响**：
+- 低速时摩擦力大，需要更大的控制力矩才能启动运动，导致"爬行"现象
+- 速度过零时摩擦力突变（从正到负），可能导致极限环振荡
+- 需要摩擦力补偿（前馈）来提高低速跟踪精度
+- 常用策略：在低速时加入额外的控制增益或使用观测器估计摩擦

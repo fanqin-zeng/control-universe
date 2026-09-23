@@ -1,0 +1,724 @@
+---
+title: 鲁棒性概念
+description: 理解控制系统鲁棒性的含义，掌握不确定性的分类与数学描述、灵敏度函数、H∞ 范数和小增益定理。
+---
+
+# 鲁棒性概念
+
+前面二十节课，无论是经典控制的传递函数、PID 设计，还是现代控制的状态空间、LQR，都有一个隐含假设——**模型是准的**。仿真里效果完美的控制器，上了实际系统却可能振荡甚至发散。
+
+为什么？因为**模型永远是错的**。
+
+电机标称转动惯量 $J = 0.01$ kg·m²，实际负载变化后可能变成 $0.05$；线性化模型忽略了高频共振模态；传感器有 1ms 延迟但模型里没有。这些"模型与现实的差距"就是**不确定性**（uncertainty）。
+
+**鲁棒控制**（Robust Control）研究的核心问题：**当被控对象存在不确定性时，控制系统能否仍然保持稳定性和性能？**
+
+> 📖 本章需要传递函数、闭环系统、Bode 图和稳定裕度的基础：[传递函数入门](/classic/transfer-function)、[频域分析](/classic/frequency-domain-analysis)、[稳定性分析](/classic/stability-analysis)。现代控制中的 LQR 鲁棒性保证也与此相关：[LQR 控制器](/modern/lqr-controller)。
+
+## 什么是鲁棒性
+
+### 定义
+
+> **鲁棒性**（Robustness）：控制系统在被控对象模型存在不确定性或受到外部扰动时，仍能维持期望性能的能力。
+
+鲁棒性包含两个层面：
+
+| 层面 | 含义 | 要求 |
+|------|------|------|
+| **鲁棒稳定**（Robust Stability） | 即使对象有偏差，闭环系统仍稳定 | 最基本的要求 |
+| **鲁棒性能**（Robust Performance） | 即使对象有偏差，闭环性能仍满足指标 | 更高的要求 |
+
+鲁棒稳定是鲁棒性能的必要条件——系统都不稳定了，性能无从谈起。
+
+### 一个直觉例子
+
+考虑一个电机位置控制系统。标称模型：
+
+$$G(s) = \frac{1}{Js^2 + bs}$$
+
+其中 $J = 0.01$ kg·m² 为转动惯量，$b = 0.1$ N·m·s/rad 为阻尼系数。用 PID 控制器 $C(s) = 50 + \frac{10}{s} + 0.5s$ 设计，标称情况下相位裕度 $PM = 45.6°$，阶跃响应超调 30.2%。
+
+但如果电机负载变化，实际转动惯量可能偏离标称值。下面代码展示了不同 $J$ 下的表现：
+
+| 转动惯量 $J$ | 相位裕度 $PM$ | 超调量 |
+|:---:|:---:|:---:|
+| 0.005（轻载） | 60.5° | 19.1% |
+| 0.01（标称） | 45.6° | 30.2% |
+| 0.05（重载） | 21.1° | 57.6% |
+| 0.10（极重载） | 14.8° | 67.9% |
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `b = 0.1
+Kp, Ki, Kd = 50, 10, 0.5
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+
+J_values = [0.005, 0.01, 0.05, 0.1]
+labels = ['J=0.005 (轻载)', 'J=0.01 (标称)', 'J=0.05 (重载)', 'J=0.10 (极重载)']
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+t = np.linspace(0, 2, 1000)
+for J_val, label in zip(J_values, labels):
+    G = 1 / (J_val * s**2 + b * s)
+    L = C * G
+    T_cl = ctrl.feedback(L, 1)
+    t_out, y = ctrl.step_response(T_cl, T=t)
+    axes[0].plot(t_out, y, linewidth=2, label=label)
+
+axes[0].set_xlabel('时间 (s)')
+axes[0].set_ylabel('输出 y')
+axes[0].set_title('PID 控制下不同负载的阶跃响应')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+axes[0].set_ylim(0, 2.5)
+
+print("=== 不同负载下的稳定裕度 ===")
+omega = np.logspace(-1, 4, 500)
+for J_val, label in zip(J_values, labels):
+    G = 1 / (J_val * s**2 + b * s)
+    L = C * G
+    gm, pm, wgm, wpc = ctrl.margin(L)
+    print(f"{label}: GM={gm:.1f} dB, PM={pm:.1f}°")
+    mag, phase, w = ctrl.bode(L, omega, plot=False)
+    axes[1].semilogx(w, mag, linewidth=1.5, label=label)
+
+axes[1].axhline(0, color='k', linestyle='--', alpha=0.5)
+axes[1].set_xlabel('频率 (rad/s)')
+axes[1].set_ylabel('幅值 (dB)')
+axes[1].set_title('开环回路增益 |L(jω)|')
+axes[1].legend(fontsize=8)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+$J$ 增大 10 倍，相位裕度从 45.6° 暴跌到 14.8°，超调从 30% 飙升到 68%。如果 $J$ 继续增大，系统可能完全不稳定。
+
+**这个控制器对转动惯量的变化不够鲁棒。** 如何定量分析这种"对模型偏差的容忍度"？这正是本章要建立的工具。
+
+## 不确定性的分类
+
+实际系统中的不确定性来源很多，数学描述方式也不同。主要分为三类。
+
+### 参数不确定性（Parametric Uncertainty）
+
+模型的结构已知，但参数有偏差。这是最简单的不确定性形式。
+
+**例子**：一阶系统 $G(s) = \frac{K}{Ts + 1}$，其中增益 $K$ 和时间常数 $T$ 不精确已知：
+
+$$K \in [K_0 - \Delta K,\; K_0 + \Delta K], \quad T \in [T_0 - \Delta T,\; T_0 + \Delta T]$$
+
+数学描述：定义参数集合 $\mathcal{G} = \{G(s, \theta) : \theta \in \Theta\}$，其中 $\Theta$ 是参数的可能范围。实际对象是集合中的某一个，但我们不知道是哪一个。
+
+**特点**：
+- 低频段为主（参数偏差主要影响低频增益）
+- 可以用**参数空间**的方法分析（如 Routh 判据求稳定范围）
+- 适合用根轨迹分析（把参数变化看作 $K$ 的变化）
+
+### 未建模动态（Unmodeled Dynamics）
+
+模型的结构本身就不对——有些动态被忽略了。这是更危险的不确定性形式。
+
+常见的未建模动态来源：
+- **高频共振模态**：机械结构有无穷多个振动模态，但模型只保留了低频的几个
+- **传感器/执行器延迟**：$e^{-Ls}$ 在模型中被忽略或近似
+- **非线性效应的残余**：线性化后剩余的高阶项
+
+数学描述有两种常用形式：
+
+**加性不确定性**：
+
+$$G_{\text{actual}}(s) = G(s) + \Delta(s), \quad |\Delta(j\omega)| \leq W_a(\omega)$$
+
+$G(s)$ 是标称模型，$\Delta(s)$ 是未知的偏差，$W_a(\omega)$ 是频率相关的上界。
+
+**乘性不确定性**：
+
+$$G_{\text{actual}}(s) = G(s)[1 + \Delta_m(s)], \quad |\Delta_m(j\omega)| \leq W_m(\omega)$$
+
+等价地写成 $G_{\text{actual}}(s) = G(s) + G(s)\Delta_m(s)$，偏差与标称模型成比例。
+
+> 💡 **什么时候用加性、什么时候用乘性？** 如果不确定性的幅值大致固定（与频率有关但与标称增益无关），用加性。如果不确定性与标称增益成比例（比如参数变化 ±50%），用乘性。工程中最常用的是乘性形式。
+
+下面用仿真验证未建模高频共振的影响。标称模型不含共振，实际系统包含一个共振频率 $\omega_n$、阻尼 $\zeta_{\text{res}}$ 的未建模模态。拖动滑块观察共振参数如何影响闭环响应：
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider, FloatLogSlider
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `from IPython.display import display
+
+b = 0.1
+Kp, Ki, Kd = 50, 10, 0.5
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+J0 = 0.01
+G_nom = 1 / (J0 * s**2 + b * s)
+
+def plot_unmodeled(omega_n=300.0, zeta_res=0.1):
+    G_res = omega_n**2 / (s**2 + 2*zeta_res*omega_n*s + omega_n**2)
+    G_actual = G_nom * G_res
+    omega_plot = np.logspace(-1, 4, 1000)
+    G_res_jw = G_res(1j * omega_plot)
+    Delta_m = G_res_jw - 1
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    axes[0].semilogx(omega_plot, 20*np.log10(np.abs(Delta_m)), 'r-', linewidth=2)
+    axes[0].set_xlabel('频率 (rad/s)')
+    axes[0].set_ylabel('|Δm(jω)| (dB)')
+    axes[0].set_title(f'乘性不确定性 |Δm|（ω_n={omega_n:.0f}, ζ_res={zeta_res:.2f}）')
+    axes[0].grid(True, alpha=0.3)
+    axes[0].axvline(omega_n, color='k', linestyle=':', alpha=0.5, label=f'ω_n={omega_n:.0f}')
+    axes[0].legend()
+
+    L_nom = C * G_nom
+    L_act = C * G_actual
+    T_nom = ctrl.feedback(L_nom, 1)
+    T_act = ctrl.feedback(L_act, 1)
+    t_step = np.linspace(0, 1, 2000)
+    t_out, y_nom = ctrl.step_response(ctrl.ss(T_nom), T=t_step)
+    _, y_act = ctrl.step_response(ctrl.ss(T_act), T=t_step)
+    axes[1].plot(t_out, y_nom, 'b-', linewidth=2, label='标称模型')
+    axes[1].plot(t_out, y_act, 'r--', linewidth=2, label='含未建模共振')
+    axes[1].set_xlabel('时间 (s)')
+    axes[1].set_ylabel('输出 y')
+    axes[1].set_title('未建模高频共振对闭环响应的影响')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+    gamma_m = np.max(np.abs(Delta_m))
+    T_jw = T_nom(1j * omega_plot)
+    T_inf = np.max(np.abs(T_jw))
+    poles = ctrl.poles(ctrl.ss(T_act))
+    stable = all(p.real < 0 for p in poles)
+    print(f"γ_m = {gamma_m:.3f} ({20*np.log10(gamma_m):.1f} dB) | "
+          f"||T||_∞ = {T_inf:.3f} | "
+          f"||T||·γ_m = {T_inf*gamma_m:.2f} | "
+          f"{'✓ 鲁棒稳定' if T_inf < 1/gamma_m else '✗ 条件不满足'} | "
+          f"实际{'稳定' if stable else '不稳定'}")
+
+display(interact(plot_unmodeled,
+    omega_n=FloatSlider(value=300, min=50, max=800, step=10, description='ω_n', continuous_update=False),
+    zeta_res=FloatSlider(value=0.1, min=0.01, max=0.5, step=0.01, description='ζ_res', continuous_update=False)
+))`
+    }
+  ]}
+/>
+
+### 外部扰动
+
+扰动不是模型的一部分，但影响系统行为。例如：
+- 风力对无人机的影响
+- 负载力矩对电机的影响
+- 温度变化对化学反应的影响
+
+扰动分析在灵敏度函数的框架中自然出现。
+
+### 不确定性的频率特征
+
+不同类型的不确定性在频率上有不同的特征：
+
+| 频率范围 | 主要不确定性来源 | 典型特征 |
+|----------|------------------|----------|
+| 低频 | 参数偏差（质量、阻尼、增益） | 幅值偏差为主 |
+| 中频 | 线性化误差、工作点变化 | 幅值和相位都有偏差 |
+| 高频 | 未建模共振、延迟、采样效应 | 相位偏差为主 |
+
+这个频率特征对控制设计有直接指导意义：低频不确定性通过高增益抑制，高频不确定性通过低通滤波回避。
+
+## 灵敏度函数
+
+灵敏度函数是鲁棒控制的核心语言。它定量描述了"模型偏差如何影响闭环性能"。
+
+### 定义
+
+考虑标准单位负反馈系统：
+
+$$\boxed{Y(s) = T(s)R(s) + S(s)D(s) - T(s)N(s)}$$
+
+其中：
+
+$$S(s) = \frac{1}{1 + G(s)C(s)}$$
+
+$$T(s) = \frac{G(s)C(s)}{1 + G(s)C(s)}$$
+
+- $S(s)$：**灵敏度函数**（Sensitivity Function）
+- $T(s)$：**补灵敏度函数**（Complementary Sensitivity Function）
+
+### 基本关系
+
+$$\boxed{S(s) + T(s) = 1}$$
+
+证明：$S + T = \frac{1}{1+GC} + \frac{GC}{1+GC} = \frac{1+GC}{1+GC} = 1$。
+
+这个"平凡的"代数恒等式蕴含了控制设计的**根本矛盾**：
+
+| 目标 | 要求 | 物理意义 |
+|------|------|----------|
+| 好的跟踪性能 | $|T(j\omega)| \approx 1$（低频） | 输出准确跟随参考 |
+| 好的扰动抑制 | $|S(j\omega)| \ll 1$（低频） | 扰动被衰减 |
+| 好的噪声抑制 | $|T(j\omega)| \ll 1$（高频） | 高频噪声不传到输出 |
+| 好的鲁棒稳定性 | $|T(j\omega)|$ 不能太大（中频谐振峰） | 对象偏差不会导致不稳定 |
+
+因为 $S + T = 1$，**不可能在所有频率上同时让 $S$ 和 $T$ 都小**。设计就是在这两个函数之间做权衡。
+
+### $S$ 和 $T$ 的物理意义
+
+**$S(s)$ 的三个角色**：
+
+1. **扰动传递**：$D \to Y$ 的传递函数就是 $S(s)$。$|S(j\omega)|$ 小意味着频率 $\omega$ 的扰动被衰减
+2. **参考跟踪误差**：$E(s) = R(s) - Y(s) = S(s)R(s)$。$|S|$ 小意味着跟踪误差小
+3. **对对象变化的灵敏度**：$S$ 的名字由此而来——$\frac{d T/T}{d G/G} = S$。$|S|$ 小说明闭环对对象变化不敏感
+
+**$T(s)$ 的三个角色**：
+
+1. **参考传递**：$R \to Y$ 的传递函数就是 $T(s)$
+2. **噪声传递**：$N \to Y$ 的传递函数是 $-T(s)$。$|T|$ 小意味着测量噪声被抑制
+3. **控制 effort**：$U(s) = C(s)S(s)[R(s) - N(s)]$，间接与 $T$ 相关
+
+### 频率整形（Loop Shaping）的直觉
+
+好的控制设计在 Bode 图上的"理想形状"：
+
+| 频率范围 | $|L(j\omega)| = |G(j\omega)C(j\omega)|$ | $|S|$ | $|T|$ | 目的 |
+|----------|------------------------------------------|-------|-------|------|
+| 低频 | 大（$\gg 1$） | $\approx 1/|L| \ll 1$ | $\approx 1$ | 好的跟踪和扰动抑制 |
+| 中频 | 适中（$\approx 1$） | 适中 | 适中 | 保证稳定裕度 |
+| 高频 | 小（$\ll 1$） | $\approx 1$ | $\approx |L| \ll 1$ | 好的噪声抑制 |
+
+当 $|L| \gg 1$ 时：$S \approx 1/L$，$T \approx 1$。
+当 $|L| \ll 1$ 时：$S \approx 1$，$T \approx L$。
+
+> 💡 **核心思想**：低频高增益 → 好性能；高频低增益 → 好鲁棒性。中频段的穿越特性决定了稳定裕度。这就是 Bode 的理想回路整形（loop shaping）。
+
+### $\|S\|_\infty$ 与稳定裕度的关系
+
+定义 $M_S = \|S\|_\infty = \max_\omega |S(j\omega)|$。
+
+$M_S$ 的几何意义：Nyquist 曲线上离临界点 $(-1, 0)$ 的最近距离的倒数。$M_S$ 越小，Nyquist 曲线离 $(-1, 0)$ 越远，稳定裕度越大。
+
+工程经验值：
+
+| $M_S$ | 对应的典型 $PM$ | 对应的典型 $GM$ | 评价 |
+|--------|-----------------|-----------------|------|
+| 1.0 | $\infty$ | $\infty$ | 不可能实现（需要 $|L| = \infty$） |
+| 1.2 | $\approx 55°$ | $\approx 6$ dB | 优秀 |
+| 1.4 | $\approx 45°$ | $\approx 4$ dB | 良好 |
+| 2.0 | $\approx 30°$ | $\approx 2$ dB | 可接受的最低限 |
+
+> 💡 这就是为什么前面频域分析那节课说"$PM > 45°$ 较好"——等价于要求 $\|S\|_\infty < 1.4$。
+
+下面用标称模型（$J = 0.01$）计算 $S$ 和 $T$，验证 $S + T = 1$ 并观察 Nyquist 图与 $M_S$ 圆的几何关系：
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `b = 0.1
+Kp, Ki, Kd = 50, 10, 0.5
+s = ctrl.tf('s')
+C = Kp + Ki/s + Kd*s
+J0 = 0.01
+G = 1 / (J0 * s**2 + b * s)
+L = C * G
+
+omega = np.logspace(-2, 4, 1000)
+L_jw = L(1j * omega)
+S_jw = 1.0 / (1.0 + L_jw)
+T_jw = L_jw / (1.0 + L_jw)
+
+residual = np.max(np.abs(S_jw + T_jw - 1))
+Ms = np.max(np.abs(S_jw))
+Mt = np.max(np.abs(T_jw))
+gm, pm, _, wpc = ctrl.margin(L)
+
+print(f"S + T = 1 验证: 最大残差 = {residual:.2e}")
+print(f"||S||_∞ = {Ms:.4f} ({20*np.log10(Ms):.2f} dB)")
+print(f"||T||_∞ = {Mt:.4f} ({20*np.log10(Mt):.2f} dB)")
+print(f"稳定裕度: GM={gm:.1f} dB, PM={pm:.1f}°, ω_c={wpc:.1f} rad/s")
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+axes[0, 0].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2)
+axes[0, 0].axhline(0, color='k', linestyle='--', alpha=0.5)
+axes[0, 0].set_xlabel('频率 (rad/s)')
+axes[0, 0].set_ylabel('|S(jω)| (dB)')
+axes[0, 0].set_title(f'灵敏度函数 |S| (峰值 Ms = {Ms:.2f})')
+axes[0, 0].grid(True, alpha=0.3)
+
+axes[0, 1].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2)
+axes[0, 1].axhline(0, color='k', linestyle='--', alpha=0.5)
+axes[0, 1].set_xlabel('频率 (rad/s)')
+axes[0, 1].set_ylabel('|T(jω)| (dB)')
+axes[0, 1].set_title(f'补灵敏度函数 |T| (峰值 = {Mt:.2f})')
+axes[0, 1].grid(True, alpha=0.3)
+
+axes[1, 0].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S|')
+axes[1, 0].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r--', linewidth=2, label='|T|')
+axes[1, 0].axhline(0, color='k', linestyle='--', alpha=0.5)
+axes[1, 0].set_xlabel('频率 (rad/s)')
+axes[1, 0].set_ylabel('幅值 (dB)')
+axes[1, 0].set_title('S 和 T 的权衡：低频 |S| 小，高频 |T| 小')
+axes[1, 0].legend()
+axes[1, 0].grid(True, alpha=0.3)
+
+L_real = np.real(L_jw)
+L_imag = np.imag(L_jw)
+axes[1, 1].plot(L_real, L_imag, 'b-', linewidth=2)
+axes[1, 1].plot(-1, 0, 'rx', markersize=12, markeredgewidth=3, label='临界点 (-1,0)')
+r_ms = 1 / (2 * Ms**2)
+cx_ms = -1 + r_ms
+theta = np.linspace(0, 2*np.pi, 100)
+axes[1, 1].plot(cx_ms + r_ms*np.cos(theta), r_ms*np.sin(theta), 'g--', linewidth=1.5,
+               label=f'Ms 圆 (r={r_ms:.3f})')
+axes[1, 1].set_xlabel('实部')
+axes[1, 1].set_ylabel('虚部')
+axes[1, 1].set_title(f'Nyquist 图与 Ms 圆 (Ms={Ms:.2f})')
+axes[1, 1].legend()
+axes[1, 1].grid(True, alpha=0.3)
+axes[1, 1].set_aspect('equal')
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## $\mathcal{H}_\infty$ 范数
+
+鲁棒控制中衡量"最坏情况"的数学工具。
+
+### 定义
+
+对于一个稳定传递函数 $G(s)$：
+
+$$\|G\|_\infty = \sup_{\omega \in \mathbb{R}} |G(j\omega)|$$
+
+直觉：**$\|G\|_\infty$ 是系统对正弦输入的最大放大倍数**。如果输入 $r(t) = A\sin(\omega_0 t)$，稳态输出的峰值为 $|G(j\omega_0)| \cdot A \leq \|G\|_\infty \cdot A$。
+
+### 与 Bode 图的关系
+
+在 Bode 幅频图上，$\|G\|_\infty$ 就是整条曲线的**最高点**（以线性刻度衡量）。
+
+如果 $\|G\|_\infty$ 出现在谐振峰处，说明系统对某个频率的正弦输入有最大的放大。
+
+### 为什么需要 $\mathcal{H}_\infty$ 范数
+
+在鲁棒控制中，不确定性 $\Delta(s)$ 是未知的，只知道它的"大小"有上界。用 $\mathcal{H}_\infty$ 范数描述：
+
+$$\|\Delta\|_\infty \leq \gamma$$
+
+意思是：**对所有频率，$|\Delta(j\omega)| \leq \gamma$**。
+
+小增益定理就是用 $\mathcal{H}_\infty$ 范数来判断闭环稳定性的。
+
+## 小增益定理
+
+小增益定理是鲁棒稳定性分析的基础工具。它给出了一个简单而强大的**充分条件**。
+
+### 定理陈述
+
+考虑反馈系统，其中 $M(s)$ 是已知的稳定传递函数，$\Delta(s)$ 是未知的稳定传递函数（代表不确定性）。反馈连接如图所示：
+
+$$z = M w, \quad w = \Delta z$$
+
+> **小增益定理**：如果 $\|M\|_\infty \cdot \|\Delta\|_\infty < 1$，则闭环系统稳定。
+
+等价地：$\|M\|_\infty < \frac{1}{\|\Delta\|_\infty}$。
+
+直觉：**如果"已知部分"的增益和"未知部分"的增益之积小于 1，信号绕一圈回来会变小，不会发散**。
+
+### 应用到鲁棒稳定性
+
+**乘性不确定性**的情况：实际对象 $G_p = G(1 + \Delta_m)$，其中 $\|\Delta_m\|_\infty \leq \gamma_m$。
+
+闭环稳定的充分条件：
+
+$$\|T\|_\infty < \frac{1}{\gamma_m}$$
+
+其中 $T(s) = \frac{GC}{1+GC}$ 是补灵敏度函数。
+
+推导思路：将闭环系统重写为 $M$-$\Delta$ 结构，可以证明 $M = T$。然后直接应用小增益定理。
+
+**加性不确定性**的情况：实际对象 $G_p = G + \Delta_a$，其中 $\|\Delta_a\|_\infty \leq \gamma_a$。
+
+闭环稳定的充分条件：
+
+$$\|CS\|_\infty < \frac{1}{\gamma_a}$$
+
+其中 $C(s)S(s)$ 是控制信号对扰动的传递函数。
+
+### 保守性问题
+
+小增益定理给出的是**充分条件**，不是必要条件。也就是说：
+
+- $\|M\|_\infty \cdot \|\Delta\|_\infty < 1$ → **一定稳定**
+- $\|M\|_\infty \cdot \|\Delta\|_\infty \geq 1$ → **不一定不稳定**（可能稳定，也可能不稳定）
+
+原因：小增益定理对 $\Delta(s)$ 做了最坏假设——$\Delta$ 可以是**任意**满足范数约束的稳定传递函数。如果 $\Delta$ 有特殊的结构（比如是实参数变化），实际允许的不确定性范围更大。
+
+> 💡 这就是为什么后面会学到 $\mu$ 分析——它考虑了不确定性的结构，得到更小保守性的结果。
+
+## 回顾：LQR 的鲁棒性
+
+在 [LQR 控制器](/modern/lqr-controller)那节课中，我们提到 LQR 有良好的鲁棒性保证。现在可以用灵敏度函数来理解这些保证。
+
+**LQR 的鲁棒性定理**：对于连续时间 LQR，回路传递函数 $L(s) = K(sI-A)^{-1}B$ 满足：
+
+$$|1 + L(j\omega)| \geq 1 \quad \forall \omega$$
+
+等价地：$|S(j\omega)| \leq 1 \quad \forall \omega$，即 $\|S\|_\infty \leq 1$。
+
+这意味着：
+- Nyquist 曲线始终在以 $(-1, 0)$ 为圆心、半径为 1 的圆**外**
+- 增益裕度：$[1/2, \infty)$（增益可以减半到无穷大都稳定）
+- 相位裕度：$\geq 60°$
+
+LQR 的 $\|S\|_\infty \leq 1$ 是**理论上最优的**——不可能做得更好了。但这是在全状态反馈的理想假设下。如果使用观测器（输出反馈），这些保证不再成立。
+
+## 深入讨论
+
+### 小增益定理的保守性
+
+上面未建模动态的仿真展示了小增益定理的保守性：$\|T\|_\infty = 1.51$，$\gamma_m = 5.12$，条件 $\|T\|_\infty < 1/\gamma_m = 0.66$ 远远不满足（乘积达 7.75）。但实际闭环系统**仍然是稳定的**——只是性能有所下降（超调从 31% 增大到 49%）。
+
+为什么？因为小增益定理假设 $\Delta_m(s)$ 可以是**任意**满足 $\|\Delta_m\|_\infty \leq \gamma_m$ 的稳定传递函数。但实际的 $\Delta_m(s) = G_{\text{res}}(s) - 1$ 是一个特定的传递函数——它在低频几乎为零，只在 $\omega_n = 300$ rad/s 附近有峰值。而 $\|T\|_\infty$ 的峰值出现在中频段（$\approx 55$ rad/s），与 $\Delta_m$ 的峰值频率错开。小增益定理用两者的**全局最大值**相乘，自然过于保守。
+
+后面课程会学到：
+- **$\mu$ 分析**：考虑不确定性的结构，得到更紧的鲁棒稳定性条件
+- **结构化奇异值**（Structured Singular Value）：$\mu$ 的核心工具
+
+### 从鲁棒性到控制器设计
+
+这节课建立了鲁棒性的分析框架，但还没有讲"怎么设计鲁棒的控制器"。后续课程会逐步展开：
+
+| 课程 | 核心方法 | 解决的问题 |
+|------|----------|------------|
+| [H∞控制基础](/robust/h-infinity-basics) | $\mathcal{H}_\infty$ 优化 | 最小化 $\|T\|_\infty$ 或 $\|S\|_\infty$ |
+| [混合灵敏度设计](/robust/mixed-sensitivity) | 多目标优化 | 同时约束 $\|S\|_\infty$、$\|T\|_\infty$、$\|CS\|_\infty$ |
+| [μ综合](/robust/mu-synthesis) | 结构化不确定性 | 利用不确定性结构，减小保守性 |
+
+### 鲁棒性与自适应控制的对比
+
+处理不确定性的另一条路是**自适应控制**——在线估计参数，实时更新控制器。
+
+| 方法 | 思路 | 优点 | 缺点 |
+|------|------|------|------|
+| 鲁棒控制 | 设计一个"固定"控制器，覆盖所有可能的不确定性 | 简单可靠，理论保证强 | 保守性大，性能有上限 |
+| 自适应控制 | 在线辨识 + 实时更新控制器 | 性能好，能跟踪变化 | 复杂，稳定性证明困难 |
+
+工程中两者经常结合使用：鲁棒控制保证基本的安全边界，自适应控制在边界内追求更优性能。
+
+## 小结
+
+1. **鲁棒性**是控制系统在模型不确定性和外部扰动下维持性能的能力，分为鲁棒稳定和鲁棒性能两个层面。
+
+2. **不确定性分三类**：参数不确定性（结构化）、未建模动态（非结构化）、外部扰动。乘性不确定性 $G_p = G(1+\Delta_m)$ 是最常用的数学描述。
+
+3. **灵敏度函数** $S = 1/(1+GC)$ 和补灵敏度函数 $T = GC/(1+GC)$ 满足 $S + T = 1$，体现了性能与鲁棒性的根本矛盾。
+
+4. **$\mathcal{H}_\infty$ 范数** $\|G\|_\infty = \sup_\omega |G(j\omega)|$ 衡量系统的最大放大倍数，是鲁棒控制的核心工具。
+
+5. **小增益定理**：$\|M\|_\infty \cdot \|\Delta\|_\infty < 1 \Rightarrow$ 闭环稳定。是充分条件，有保守性。
+
+6. **LQR 的鲁棒性**：$\|S\|_\infty \leq 1$，增益裕度 $[1/2, \infty)$，相位裕度 $\geq 60°$——理论上最优，但仅在全状态反馈下成立。
+
+## 习题
+
+**1. 灵敏度计算**
+
+设开环传递函数 $L(s) = \frac{10}{s(s+2)}$。
+
+(a) 求灵敏度函数 $S(s)$ 和补灵敏度函数 $T(s)$。
+
+(b) 求 $\|S\|_\infty$。
+
+(c) 在 $\omega = 1$ rad/s 处，$|S(j\omega)|$ 和 $|T(j\omega)|$ 各是多少？验证 $S(j\omega) + T(j\omega) = 1$。
+
+**2. 参数不确定性与鲁棒稳定**
+
+设被控对象 $G(s) = \frac{K}{s+1}$，其中 $K \in [0.5, 2.0]$（标称值 $K_0 = 1$）。使用控制器 $C(s) = \frac{5}{s}$。
+
+(a) 求标称闭环系统的传递函数 $T_0(s)$。
+
+(b) 将参数变化写成乘性不确定性形式 $G_p = G_0(1 + \Delta_m)$，求 $\Delta_m$ 和它的上界 $\gamma_m$。
+
+(c) 用小增益定理判断：对所有 $K \in [0.5, 2.0]$，闭环是否鲁棒稳定？
+
+**3. $\|S\|_\infty$ 的谐振峰**
+
+设单位负反馈系统的开环传递函数为 $L(s) = \frac{\omega_n^2}{s(s + 2\zeta\omega_n)}$（二阶标准型）。
+
+(a) 求 $S(s)$ 的表达式。
+
+(b) 令 $u = (\omega/\omega_n)^2$，证明 $|S(j\omega)|^2$ 对 $u$ 的导数为零时，满足 $u^2 - u - 2\zeta^2 = 0$，并由此求出使 $|S(j\omega)|$ 取最大值的 $u$。
+
+(c) 当 $\zeta = 0.5$ 时，求 $\|S\|_\infty$ 的精确值和近似值。
+
+**4. 概念辨析**
+
+判断以下说法是否正确，并说明理由：
+
+(a) 如果 $\|T\|_\infty < 1$，则闭环系统对任意乘性不确定性都鲁棒稳定。
+
+(b) 灵敏度函数 $S(s)$ 在低频段的幅值越小，系统的扰动抑制能力越强。
+
+(c) 小增益定理给出的鲁棒稳定性条件是必要且充分的。
+
+## 答案
+
+**1. 灵敏度计算**
+
+(a) $L(s) = \frac{10}{s(s+2)} = \frac{10}{s^2 + 2s}$
+
+$$S(s) = \frac{1}{1+L} = \frac{s^2+2s}{s^2+2s+10}$$
+
+$$T(s) = \frac{L}{1+L} = \frac{10}{s^2+2s+10}$$
+
+验证：$S + T = \frac{s^2+2s+10}{s^2+2s+10} = 1$ ✓
+
+(b) 令 $s = j\omega$：
+
+$$|S(j\omega)|^2 = \frac{\omega^4 + 4\omega^2}{(10-\omega^2)^2 + 4\omega^2}$$
+
+令 $x = \omega^2$，$f(x) = \frac{x^2+4x}{x^2-16x+100}$。对 $x$ 求导令为零：
+
+$$f'(x) = \frac{(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16)}{(x^2-16x+100)^2} = 0$$
+
+分子展开化简：
+
+$$(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16) = -20x^2 + 200x + 400 = 0$$
+
+$$x^2 - 10x - 20 = 0 \implies x = 5 + 3\sqrt{5} \approx 11.71$$
+
+（取正值，$x = 5 - 3\sqrt{5} < 0$ 舍去。）
+
+代入 $f(x)$：
+
+$$|S|^2_{\max} = \frac{(5+3\sqrt{5})^2 + 4(5+3\sqrt{5})}{(5+3\sqrt{5})^2 - 16(5+3\sqrt{5}) + 100} = \frac{90 + 42\sqrt{5}}{70 - 36\sqrt{5}}$$
+
+化简（分子分母同乘 $70+36\sqrt{5}$）得：
+
+$$\|S\|_\infty^2 = \frac{171 + 78\sqrt{5}}{50} = 9 + 4\sqrt{5} \approx 17.944^{0.5 \times 2}$$
+
+$$\boxed{\|S\|_\infty = \sqrt{9 + 4\sqrt{5}} \approx 1.923 \quad (5.68 \text{ dB})}$$
+
+峰值频率 $\omega_{\text{peak}} = \sqrt{5+3\sqrt{5}} \approx 3.42$ rad/s。
+
+(c) $\omega = 1$：
+
+$$S(j) = \frac{-1+2j}{-1+2j+10} = \frac{-1+2j}{9+2j} = \frac{(-1+2j)(9-2j)}{81+4} = \frac{-5+20j}{85}$$
+
+$$|S(j)| = \frac{\sqrt{25+400}}{85} = \frac{\sqrt{425}}{85} \approx 0.243$$
+
+$$T(j) = 1 - S(j) = \frac{90-20j}{85}$$
+
+$$|T(j)| = \frac{\sqrt{8100+400}}{85} = \frac{\sqrt{8500}}{85} \approx 1.085$$
+
+验证：$S(j) + T(j) = \frac{-5+20j+90-20j}{85} = \frac{85}{85} = 1$ ✓
+
+**2. 参数不确定性与鲁棒稳定**
+
+(a) 标称 $K_0 = 1$：$G_0(s) = \frac{1}{s+1}$，$C(s) = \frac{5}{s}$
+
+$$T_0(s) = \frac{G_0 C}{1 + G_0 C} = \frac{\frac{5}{s(s+1)}}{1 + \frac{5}{s(s+1)}} = \frac{5}{s^2+s+5}$$
+
+(b) $G_p = \frac{K}{s+1} = \frac{K_0}{s+1} \cdot \frac{K}{K_0} = G_0 \cdot \frac{K}{K_0}$
+
+乘性不确定性：$G_p = G_0(1+\Delta_m)$，所以 $1+\Delta_m = K/K_0 = K$。
+
+$\Delta_m = K - 1$，$K \in [0.5, 2.0]$，所以 $\Delta_m \in [-0.5, 1.0]$。
+
+上界：$\gamma_m = \max(|-0.5|, |1.0|) = 1.0$。
+
+(c) 小增益定理条件：$\|T_0\|_\infty < 1/\gamma_m = 1$。
+
+$T_0(s) = \frac{5}{s^2+s+5}$，$\omega_n^2 = 5$，$2\zeta\omega_n = 1$，$\zeta = \frac{1}{2\sqrt{5}} \approx 0.224$。
+
+$\|T_0\|_\infty$：因为 $\zeta < 1/\sqrt{2}$，$T_0$ 有谐振峰。
+
+$$\|T_0\|_\infty = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.224 \times \sqrt{1-0.05}} = \frac{1}{0.447 \times 0.975} \approx 2.29$$
+
+$2.29 > 1 = 1/\gamma_m$，小增益定理条件**不满足**。
+
+结论：小增益定理**无法保证**对所有 $K \in [0.5, 2.0]$ 鲁棒稳定。但这不意味着系统真的不稳定——小增益定理只是充分条件。实际上可以验证，$K=0.5$ 和 $K=2.0$ 时闭环都稳定（特征方程 $s^2+s+5K=0$ 的根都在左半平面）。
+
+**3. $\|S\|_\infty$ 的谐振峰**
+
+(a) $L(s) = \frac{\omega_n^2}{s^2+2\zeta\omega_n s}$
+
+$$S(s) = \frac{1}{1+L} = \frac{s^2+2\zeta\omega_n s}{s^2+2\zeta\omega_n s + \omega_n^2}$$
+
+(b) 令 $s = j\omega$，$u = (\omega/\omega_n)^2$：
+
+$$|S(j\omega)|^2 = \frac{\omega^4 + 4\zeta^2\omega_n^2\omega^2}{(\omega_n^2-\omega^2)^2 + 4\zeta^2\omega_n^2\omega^2} = \frac{u^2 + 4\zeta^2 u}{(1-u)^2 + 4\zeta^2 u} = \frac{u^2+4\zeta^2 u}{u^2+(4\zeta^2-2)u+1}$$
+
+令 $f(u) = \frac{u^2+4\zeta^2 u}{u^2+(4\zeta^2-2)u+1}$，令 $f'(u) = 0$：
+
+$$(2u+4\zeta^2)[u^2+(4\zeta^2-2)u+1] - (u^2+4\zeta^2 u)(2u+4\zeta^2-2) = 0$$
+
+展开并化简（令 $c = 4\zeta^2$，$d = c-2$）：
+
+$$(2u+c)(u^2+du+1) - (u^2+cu)(2u+d) = (d-c)u^2 + 2u + c = -2u^2 + 2u + 4\zeta^2 = 0$$
+
+$$\boxed{u^2 - u - 2\zeta^2 = 0}$$
+
+解得（取正值）：
+
+$$u_{\text{peak}} = \frac{1 + \sqrt{1+8\zeta^2}}{2}$$
+
+(c) 当 $\zeta = 0.5$ 时：
+
+$$u_{\text{peak}} = \frac{1+\sqrt{3}}{2} \approx 1.366$$
+
+代入 $|S|^2$ 表达式（注意 $4\zeta^2 = 1$）：
+
+$$\|S\|_\infty^2 = \frac{u^2 + u}{(1-u)^2 + u}$$
+
+分子：$u^2 + u = u(u+1) = \frac{1+\sqrt{3}}{2} \cdot \frac{3+\sqrt{3}}{2} = \frac{3+2\sqrt{3}}{2}$
+
+分母：$(1-u)^2 + u = \frac{(\sqrt{3}-1)^2}{4} + \frac{1+\sqrt{3}}{2} = \frac{4-2\sqrt{3}}{4} + \frac{2+2\sqrt{3}}{4} = \frac{6}{4} = \frac{3}{2}$
+
+$$\|S\|_\infty^2 = \frac{(3+2\sqrt{3})/2}{3/2} = \frac{3+2\sqrt{3}}{3} \approx 2.155$$
+
+$$\boxed{\|S\|_\infty = \sqrt{\frac{3+2\sqrt{3}}{3}} \approx 1.468 \quad (3.33 \text{ dB})}$$
+
+$M_S = 1.468$ 对应典型相位裕度约 $45°$，属于良好水平。
+
+> 💡 **注意**：$\|S\|_\infty$ 的公式与 $\|T\|_\infty = \frac{1}{2\zeta\sqrt{1-\zeta^2}}$ 不同。后者是标准二阶 $T(s) = \frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}$ 的谐振峰公式。$S(s)$ 的分子多了一个零点，峰值位置和大小都不同。
+
+**4. 概念辨析**
+
+(a) **错误**。$\|T\|_\infty < 1$ 意味着 $1/\|T\|_\infty > 1$，所以小增益定理条件 $\|T\|_\infty < 1/\gamma_m$ 只在 $\gamma_m < 1/\|T\|_\infty$ 时成立。但"任意"乘性不确定性的上界 $\gamma_m$ 可以任意大（比如 $\gamma_m = 100$），此时条件不满足。正确说法：$\|T\|_\infty < 1/\gamma_m$ 才是对**特定**上界 $\gamma_m$ 的鲁棒稳定条件。
+
+(b) **正确**。$S(s)$ 是扰动到输出的传递函数。$|S(j\omega)|$ 在低频段越小，意味着低频扰动被衰减得越多，扰动抑制能力越强。这正是低频高增益设计的核心目标。
+
+(c) **错误**。小增益定理给出的是**充分条件**，不是必要条件。$\|M\|_\infty \cdot \|\Delta\|_\infty \geq 1$ 时，系统可能稳定也可能不稳定——取决于 $\Delta$ 的具体形式。这是因为小增益定理对 $\Delta$ 做了最坏假设（任意满足范数约束的传递函数），忽略了可能的结构信息。Cell 3 的数值例子已经展示了这一点：$\|T\|_\infty \cdot \gamma_m = 7.75 \gg 1$，但系统仍然稳定。

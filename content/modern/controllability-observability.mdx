@@ -1,0 +1,819 @@
+---
+title: 可控性与可观性
+description: 定义可控性和可观性两个现代控制的核心概念，掌握秩判据与PBH判据，理解对偶原理与结构分解。
+---
+
+# 可控性与可观性
+
+上一章我们建立了状态空间表示 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$。但这里隐藏着一个关键问题：**状态空间中的每一个状态变量，是否都"有用"？**
+
+有些状态可能完全不受输入影响——你无论怎么操作控制器，都改变不了它。有些状态可能完全不出现在输出中——你无论怎么测量，都推断不出它的值。这两种情况分别叫做**不可控**和**不可观**。
+
+> 📖 本章需要上一章 [状态空间表示](/modern/state-space) 的基础，特别是状态方程、传递函数与状态空间的关系、以及特征值的概念。
+
+## 为什么需要可控性与可观性
+
+### 一个直觉例子
+
+想象一个双质量块系统：两个质量块 $m_1$ 和 $m_2$ 通过弹簧 $k$ 连接，但外力 $F$ 只作用在 $m_1$ 上。
+
+```
+  F → [m₁] ～k～ [m₂]
+```
+
+你能控制 $m_1$ 的位置——力直接作用在它上面。通过弹簧的耦合，$m_2$ 也会被带动。看起来一切正常。
+
+但如果弹簧断了（$k = 0$），$m_2$ 就和 $m_1$ 完全解耦了。此时无论你如何施加力 $F$，$m_2$ 的运动完全不受影响——$m_2$ 相关的状态**不可控**。
+
+反过来，假设你只能测量 $m_1$ 的位置。弹簧连接时，你能从 $m_1$ 的运动中间接推断 $m_2$ 的状态。但弹簧断了之后，$m_2$ 的运动完全不影响 $m_1$——$m_2$ 相关的状态**不可观**。
+
+这个例子说明：**可控性和可观性不是"控制器设计得好不好"的问题，而是系统本身的结构属性**。如果系统不可控，再高级的控制器也无能为力；如果系统不可观，再多的信号处理也推断不出隐藏的状态。
+
+### 工程中的后果
+
+**不可控的危险**：
+- 飞机方向舵卡死→偏航模态不可控→飞机可能失控
+- 卫星某个反作用轮故障→某个旋转自由度不可控→姿态无法维持
+
+**不可观的危险**：
+- 只测量电机转速，但内部有一个不可观的电气振荡模式→振荡越来越大→电机烧毁
+- 桥梁只测量某几个点的振动，但有些模态在传感器位置恰好是节点→不可观的模态共振→结构破坏
+
+因此，在设计控制系统之前，**必须先检查系统的可控性和可观性**。这就像盖房子之前先检查地基——不可控/不可观的系统需要重新设计执行器/传感器布局，而不是硬上控制器。
+
+## 可控性
+
+### 定义
+
+> **定义（状态可控性）**：线性时不变系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$ 称为**完全状态可控**（controllable），如果存在有限时间 $t_1 > 0$ 和一个容许控制 $\boldsymbol{u}(t)$（$t \in [0, t_1]$），使得从任意初始状态 $\boldsymbol{x}(0)$ 出发，都能在 $t_1$ 时刻到达原点 $\boldsymbol{x}(t_1) = \boldsymbol{0}$。
+
+直觉解读：不管系统现在处于什么状态，你都能找到一个控制输入序列，把它"推"到零状态。如果能做到这一点，系统就是可控的。
+
+<Callout variant="tip">
+**注意**：可控性是系统 $(A, B)$ 的属性，与控制器无关。它回答的问题是"这个系统**能不能**被控制"，而不是"怎么控制"。
+</Callout>
+
+### 可控性秩判据
+
+最常用的判定方法：
+
+> **定理（可控性秩判据）**：系统 $(A, B)$ 完全可控的充要条件是**可控性矩阵**
+> $$\mathcal{C} = \begin{bmatrix} B & AB & A^2B & \cdots & A^{n-1}B \end{bmatrix}$$
+> 满秩，即 $\text{rank}(\mathcal{C}) = n$。
+
+其中 $n$ 是状态维数（$A$ 的维度 $n \times n$）。
+
+**为什么只需要到 $A^{n-1}B$？** 由 Cayley-Hamilton 定理，$A^n$ 可以表示为 $I, A, A^2, \ldots, A^{n-1}$ 的线性组合，所以 $A^n B, A^{n+1}B, \ldots$ 都不会给 $\mathcal{C}$ 的列空间增加新的方向。
+
+### 例1：判断可控性
+
+设系统 $A = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$。
+
+计算可控性矩阵：
+
+$$
+AB = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}\begin{bmatrix} 1 \\ 0 \end{bmatrix} = \begin{bmatrix} 1 \\ 0 \end{bmatrix}
+$$
+
+$$
+\mathcal{C} = \begin{bmatrix} B & AB \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 0 & 0 \end{bmatrix}
+$$
+
+$\text{rank}(\mathcal{C}) = 1 < 2 = n$，系统**不可控**。
+
+**物理解释**：$B$ 只影响第一个状态 $x_1$。$A$ 的结构是上三角的——$x_2$ 的方程 $\dot{x}_2 = 2x_2$ 中没有 $x_1$，所以输入对 $x_2$ 完全没有影响。$x_2$ 是一个不可控的模式。
+
+### 例2：判断可控性
+
+设 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$。
+
+$$
+AB = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = \begin{bmatrix} 1 \\ -3 \end{bmatrix}
+$$
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 1 \\ 1 & -3 \end{bmatrix}
+$$
+
+$\det(\mathcal{C}) = 0 \times (-3) - 1 \times 1 = -1 \neq 0$，$\text{rank}(\mathcal{C}) = 2 = n$，系统**可控**。
+
+**物理解释**：输入通过 $B$ 直接影响 $x_2$（$\dot{x}_1 = x_2$ 中有 $x_2$），而 $x_2$ 又通过 $A$ 影响 $x_1$。两步"接力"，输入间接控制了所有状态。
+
+<JupyterNotebook
+  title=" 动手实验：可控性与可观性判定"
+  setupCode={`import numpy as np
+from control import ctrb, obsv`}
+  cells={[
+    { code: `# ===== 例1：不可控系统 =====
+A1 = np.array([[1, 1], [0, 2]])
+B1 = np.array([[1], [0]])
+C1 = np.array([[1, 0]])
+
+C_mat1 = ctrb(A1, B1)
+O_mat1 = obsv(A1, C1)
+print("系统1 (A=[[1,1],[0,2]], B=[1;0], C=[1,0]):")
+print(f"  可控性矩阵 rank = {np.linalg.matrix_rank(C_mat1)} (n=2) → {'可控' if np.linalg.matrix_rank(C_mat1)==2 else '不可控'}")
+print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat1)} (n=2) → {'可观' if np.linalg.matrix_rank(O_mat1)==2 else '不可观'}")
+print()
+
+# ===== 例2：可控系统 =====
+A2 = np.array([[0, 1], [-2, -3]])
+B2 = np.array([[0], [1]])
+C2 = np.array([[1, 0]])
+
+C_mat2 = ctrb(A2, B2)
+O_mat2 = obsv(A2, C2)
+print("系统2 (A=[[0,1],[-2,-3]], B=[0;1], C=[1,0]):")
+print(f"  可控性矩阵 rank = {np.linalg.matrix_rank(C_mat2)} (n=2) → {'可控' if np.linalg.matrix_rank(C_mat2)==2 else '不可控'}")
+print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat2)} (n=2) → {'可观' if np.linalg.matrix_rank(O_mat2)==2 else '不可观'}")` },
+  ]}
+/>
+
+### PBH 判据
+
+秩判据需要计算矩阵乘积和秩，有时不方便。**PBH 判据**（Popov-Belevitch-Hautus）提供了另一种视角：
+
+> **定理（PBH 判据）**：系统 $(A, B)$ 完全可控的充要条件是：对所有复数 $s$，
+> $$\text{rank}\begin{bmatrix} sI - A & B \end{bmatrix} = n$$
+>
+> 等价地：$A$ 的每个**左特征向量** $\boldsymbol{v}^T$（满足 $\boldsymbol{v}^T A = \lambda \boldsymbol{v}^T$）都不能与 $B$ 正交，即 $\boldsymbol{v}^T B \neq \boldsymbol{0}$。
+
+PBH 判据只需要检查 $A$ 的特征值处的秩条件（其他 $s$ 自动满足），因此计算量更小。更重要的是，它揭示了不可控的**本质**：
+
+> 如果存在 $A$ 的特征值 $\lambda$ 和对应的左特征向量 $\boldsymbol{v}$，使得 $\boldsymbol{v}^T B = 0$，那么与 $\lambda$ 对应的模态不可控。
+
+### 例3：用 PBH 判据判断可控性
+
+回到例1：$A = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$。
+
+$A$ 的特征值 $\lambda_1 = 1, \lambda_2 = 2$。
+
+对 $\lambda_2 = 2$：左特征向量 $\boldsymbol{v}^T A = 2\boldsymbol{v}^T$，解得 $\boldsymbol{v} = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$（或任何倍数）。
+
+$$
+\boldsymbol{v}^T B = \begin{bmatrix} 0 & 1 \end{bmatrix}\begin{bmatrix} 1 \\ 0 \end{bmatrix} = 0
+$$
+
+左特征向量与 $B$ 正交！所以 $\lambda_2 = 2$ 对应的模态不可控。与秩判据的结论一致。
+
+<Callout variant="info">
+**PBH 判据的优势**：不仅能判断"是否可控"，还能指出**哪个模态不可控**。在工程中，这帮助你定位问题——是执行器布局不合理，还是某个物理模态天然不可控。
+</Callout>
+
+<JupyterNotebook
+  title=" 动手实验：PBH 判据与不可控模态定位"
+  setupCode={`import numpy as np`}
+  cells={[
+    { code: `# ===== 例3：PBH 判据 =====
+A = np.array([[1, 1], [0, 2]])
+B = np.array([[1], [0]])
+
+eigenvalues, eigvecs = np.linalg.eig(A)
+print("特征值:", eigenvalues)
+print()
+
+# 左特征向量 = A^T 的右特征向量
+eigenvalues_L, eigvecs_L = np.linalg.eig(A.T)
+
+for i, (lam, v) in enumerate(zip(eigenvalues_L, eigvecs_L.T)):
+    vB = v @ B.flatten()
+    print(f"λ={lam:.1f}: 左特征向量 v = [{v[0]:.3f}, {v[1]:.3f}]")
+    print(f"  v^T B = {vB:.3f} → {'不可控!' if abs(vB) < 1e-10 else '可控'}")
+    print()` },
+  ]}
+/>
+
+### 可控性的物理含义
+
+可控性矩阵 $\mathcal{C} = [B, AB, A^2B, \ldots]$ 的列空间有一个清晰的物理含义：
+
+- $B$ 的列：输入**直接**影响的状态方向
+- $AB$ 的列：经过一步动态 $A$ 后，输入**间接**影响的状态方向
+- $A^2B$ 的列：经过两步动态后，输入间接影响的状态方向
+- ……
+
+如果这些方向合起来能充满整个 $\mathbb{R}^n$（即 $\mathcal{C}$ 满秩），那么输入通过"直接推动 + 动态传递"可以影响所有状态——系统可控。
+
+## 可观性
+
+### 定义
+
+> **定义（状态可观性）**：线性时不变系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$ 称为**完全状态可观**（observable），如果存在有限时间 $t_1 > 0$，使得通过观测 $[0, t_1]$ 上的输入 $\boldsymbol{u}(t)$ 和输出 $\boldsymbol{y}(t)$，能唯一确定初始状态 $\boldsymbol{x}(0)$。
+
+直觉解读：如果你能通过输入和输出的"记录"反推出系统一开始处于什么状态，系统就是可观的。
+
+### 可观性秩判据
+
+> **定理（可观性秩判据）**：系统 $(A, C)$ 完全可观的充要条件是**可观性矩阵**
+> $$\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}$$
+> 满秩，即 $\text{rank}(\mathcal{O}) = n$。
+
+### 例4：判断可观性
+
+设 $A = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+
+$$
+CA = \begin{bmatrix} 1 & 0 \end{bmatrix}\begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix} = \begin{bmatrix} 1 & 1 \end{bmatrix}
+$$
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 0 \\ 1 & 1 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1 \neq 0$，系统**可观**。
+
+**物理解释**：输出 $y = x_1$ 直接给出 $x_1$。而 $\dot{x}_1 = x_1 + x_2$，所以从 $x_1$ 和 $\dot{x}_1$ 的变化中可以推断 $x_2$。
+
+### 例5：不可观的例子
+
+同样的 $A = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}$，但 $C = \begin{bmatrix} 0 & 1 \end{bmatrix}$（只测量 $x_2$）。
+
+$$
+CA = \begin{bmatrix} 0 & 1 \end{bmatrix}\begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix} = \begin{bmatrix} 0 & 2 \end{bmatrix}
+$$
+
+$$
+\mathcal{O} = \begin{bmatrix} 0 & 1 \\ 0 & 2 \end{bmatrix}
+$$
+
+$\text{rank}(\mathcal{O}) = 1 < 2$，系统**不可观**。
+
+**物理解释**：$y = x_2$，而 $\dot{x}_2 = 2x_2$——$x_2$ 的动态完全不涉及 $x_1$。从 $x_2$ 的测量中永远无法推断 $x_1$ 的值。$x_1$ 是不可观的。
+
+### PBH 判据（可观性版本）
+
+> **定理**：系统 $(A, C)$ 完全可观的充要条件是：对所有 $A$ 的特征值 $\lambda_i$，
+> $$\text{rank}\begin{bmatrix} \lambda_i I - A \\ C \end{bmatrix} = n$$
+>
+> 等价地：$A$ 的每个**右特征向量** $\boldsymbol{w}$（满足 $A\boldsymbol{w} = \lambda\boldsymbol{w}$）都不能被 $C$ "消灭"，即 $C\boldsymbol{w} \neq \boldsymbol{0}$。
+
+物理含义：如果某个特征向量方向上的状态变化完全不出现在输出中（$C\boldsymbol{w} = 0$），那个模态就不可观。
+
+## 对偶原理
+
+可控性和可观性之间存在一个优美的对称关系：
+
+> **定理（对偶原理）**：系统 $(A, B, C)$ 完全可控 $\iff$ 对偶系统 $(A^T, C^T, B^T)$ 完全可观。
+
+证明思路：把 $(A, B)$ 的可控性矩阵转置：
+
+$$
+\mathcal{C}^T = \begin{bmatrix} B^T \\ (AB)^T \\ \vdots \\ (A^{n-1}B)^T \end{bmatrix} = \begin{bmatrix} B^T \\ B^T A^T \\ \vdots \\ B^T (A^T)^{n-1} \end{bmatrix}
+$$
+
+这正是对偶系统 $(A^T, C^T)$ 的可观性矩阵（将 $B^T$ 视为对偶系统的"输出矩阵"）。因此 $(A, B)$ 的可控性矩阵满秩 $\iff$ $(A^T, C^T)$ 的可观性矩阵满秩。
+
+对偶原理的意义：
+- **理论层面**：可控性和可观性本质上是同一个概念的两个面。关于可控性的定理，转置后就得到可观性的对应定理，反之亦然。
+- **工程层面**：设计控制器（利用可控性）和设计观测器（利用可观性）是对偶的问题。这为后续"状态反馈"和"状态观测器"两章的统一处理奠定基础。
+
+<Callout variant="tip">
+**记忆技巧**：对偶原理就是把所有矩阵转置，然后"可控"和"可观"互换。如果你证明了关于可控性的某个结论，转置后就自动得到可观性的对应结论——省一半的力气。
+</Callout>
+
+### 例6：验证对偶原理
+
+回到例1和例5：$A = \begin{bmatrix} 1 & 1 \\ 0 & 2 \end{bmatrix}$。
+
+- $(A, B=\begin{bmatrix}1\\0\end{bmatrix})$ **不可控**（例1）
+- $(A, C=\begin{bmatrix}0 & 1\end{bmatrix})$ **不可观**（例5）
+
+对偶：$(A^T, C^T=\begin{bmatrix}0\\1\end{bmatrix})$ 的可控性——
+
+$$
+\mathcal{C}_{\text{dual}} = \begin{bmatrix} C^T & A^T C^T \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ 1 & 2 \end{bmatrix}
+$$
+
+$\text{rank} = 1 < 2$，不可控。与 $(A, B)$ 不可控一致 ✓
+
+$(A^T, B^T=\begin{bmatrix}1 & 0\end{bmatrix})$ 的可观性——
+
+$$
+\mathcal{O}_{\text{dual}} = \begin{bmatrix} B^T \\ B^T A^T \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 1 & 0 \end{bmatrix}
+$$
+
+$\text{rank} = 1 < 2$，不可观。与 $(A, C)$ 不可观一致 ✓
+
+## 可控/可观分解与最小实现
+
+### 四个子空间
+
+一个 $n$ 维系统可能同时包含可控和不可控、可观和不可观的状态。线性代数告诉我们，状态空间可以分解为四个子空间：
+
+| 子空间 | 含义 | 维度 |
+|--------|------|------|
+| $S_{co}$ | 可控且可观 | $n_{co}$ |
+| $S_{c\bar{o}}$ | 可控但不可观 | $n_{c\bar{o}}$ |
+| $S_{\bar{c}o}$ | 不可控但可观 | $n_{\bar{c}o}$ |
+| $S_{\bar{c}\bar{o}}$ | 不可控且不可观 | $n_{\bar{c}\bar{o}}$ |
+
+通过适当的坐标变换（相似变换），系统可以分解为：
+
+$$
+\dot{\boldsymbol{z}} = \bar{A}\boldsymbol{z} + \bar{B}\boldsymbol{u}, \quad \boldsymbol{y} = \bar{C}\boldsymbol{z} + D\boldsymbol{u}
+$$
+
+其中 $\boldsymbol{z} = T\boldsymbol{x}$，矩阵具有如下分块结构：
+
+$$
+\bar{A} = \begin{bmatrix} A_{co} & 0 & A_{13} & 0 \\ A_{21} & A_{c\bar{o}} & A_{23} & A_{24} \\ 0 & 0 & A_{\bar{c}o} & 0 \\ 0 & 0 & A_{43} & A_{\bar{c}\bar{o}} \end{bmatrix}
+$$
+
+$$
+\bar{B} = \begin{bmatrix} B_{co} \\ B_{c\bar{o}} \\ 0 \\ 0 \end{bmatrix}, \quad \bar{C} = \begin{bmatrix} C_{co} & 0 & C_{\bar{c}o} & 0 \end{bmatrix}
+$$
+
+<Callout variant="warning">
+**关键观察**：
+- $\bar{B}$ 的下面两块为零 → 第三、四子空间不可控（输入影响不到）
+- $\bar{C}$ 的第二、四块为零 → 第二、四子空间不可观（输出看不到）
+- 只有 $S_{co}$（可控且可观）子空间同时出现在 $B$ 和 $C$ 中
+</Callout>
+
+### 传递函数只反映可控可观部分
+
+一个深刻的结论：**传递函数 $G(s) = C(sI-A)^{-1}B + D$ 只反映可控且可观的子空间 $S_{co}$ 的动态**。
+
+不可控或不可观的模态不会出现在传递函数中——它们被"隐藏"了。这就是为什么上一章提到"极零对消"时，两个不同的内部结构可能给出相同的传递函数：对消掉的极点对应的就是不可控或不可观的模态。
+
+### 最小实现
+
+> **定义（最小实现）**：给定传递函数 $G(s)$，阶数最低的状态空间表示 $(A, B, C, D)$ 称为 $G(s)$ 的**最小实现**。
+
+> **定理**：$G(s)$ 的最小实现 $\iff$ 实现是可控的且可观的。最小实现的阶数等于 $G(s)$ 分母多项式的阶数（假设 $G(s)$ 已化为最简分式）。
+
+如果从传递函数转换得到的状态空间表示不是最小实现（比如存在极零对消），可以通过删除不可控或不可观的状态来"降阶"。
+
+### 例7：分解与最小实现
+
+设系统：
+
+$$
+A = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 3 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 & 1 \end{bmatrix}
+$$
+
+**可控性**：
+
+$$
+\mathcal{C} = \begin{bmatrix} B & AB & A^2B \end{bmatrix} = \begin{bmatrix} 1 & 1 & 1 \\ 1 & 2 & 4 \\ 0 & 0 & 0 \end{bmatrix}
+$$
+
+$\text{rank}(\mathcal{C}) = 2 < 3$，不可控。第三行全零 → $x_3$ 不可控。
+
+**可观性**：
+
+$$
+\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \end{bmatrix} = \begin{bmatrix} 1 & 0 & 1 \\ 1 & 0 & 3 \\ 1 & 0 & 9 \end{bmatrix}
+$$
+
+第二列全零 → $x_2$ 不可观。$\text{rank}(\mathcal{O}) = 2 < 3$，不可观。
+
+**分析四个子空间**：
+- $x_1$：可控（$B_1 = 1 \neq 0$）且可观（$C_1 = 1 \neq 0$）→ $S_{co}$
+- $x_2$：可控（$B_2 = 1 \neq 0$）但不可观（$C_2 = 0$）→ $S_{c\bar{o}}$
+- $x_3$：不可控（$B_3 = 0$）但可观（$C_3 = 1 \neq 0$）→ $S_{\bar{c}o}$
+- $S_{\bar{c}\bar{o}}$：空
+
+**传递函数**：
+
+$$
+G(s) = C(sI-A)^{-1}B = \frac{1}{s-1} \cdot 1 \cdot 1 + \frac{1}{s-2} \cdot 1 \cdot 0 + \frac{1}{s-3} \cdot 0 \cdot 1 = \frac{1}{s-1}
+$$
+
+传递函数只保留了 $\lambda = 1$（可控且可观的模态）。$\lambda = 2$（可控不可观）和 $\lambda = 3$（不可控可观）都被"隐藏"了。
+
+**最小实现**：只保留可控可观部分，即 $A_{min} = 1, B_{min} = 1, C_{min} = 1, D_{min} = 0$。这是一阶系统，阶数等于 $G(s)$ 分母的阶数。
+
+<JupyterNotebook
+  title=" 动手实验：结构分解与最小实现"
+  setupCode={`import numpy as np
+from control import ss, tf, ctrb, obsv`}
+  cells={[
+    { code: `# ===== 例7：结构分解与最小实现 =====
+A = np.diag([1.0, 2.0, 3.0])
+B = np.array([[1], [1], [0]])
+C = np.array([[1, 0, 1]])
+
+# 可控性
+C_mat = ctrb(A, B)
+rank_c = np.linalg.matrix_rank(C_mat)
+print(f"可控性 rank = {rank_c}/3")
+
+# 可观性
+O_mat = obsv(A, C)
+rank_o = np.linalg.matrix_rank(O_mat)
+print(f"可观性 rank = {rank_o}/3")
+print()
+
+# 传递函数
+sys = ss(A, B, C, np.array([[0]]))
+G = tf(sys)
+print(f"传递函数: G(s) = {G}")
+print()
+
+# 奇异值分析
+U, S, Vt = np.linalg.svd(C_mat)
+print("可控性矩阵奇异值:", S)
+print("→ 第三个奇异值为零，对应不可控方向")
+
+U2, S2, Vt2 = np.linalg.svd(O_mat)
+print("可观性矩阵奇异值:", S2)
+print("→ 第三个奇异值为零，对应不可观方向")` },
+  ]}
+/>
+
+## 深入讨论
+
+### 可控性与执行器布局
+
+在工程设计中，可控性直接决定了**执行器应该放在哪里**。
+
+以柔性结构（如卫星太阳能板、大型空间天线）为例：结构有成百上千个振动模态，但执行器（如反作用轮、推力器）数量有限。放置执行器时，必须确保关键模态是可控的。如果执行器恰好放在某个模态的节点上，那个模态就不可控——这是灾难性的。
+
+这就是为什么大型空间结构的执行器布局是一个独立的优化问题，而不是等结构设计完了再"凑合"放几个执行器。
+
+### 可观性与传感器布局
+
+类似地，可观性决定了**传感器应该放在哪里、需要几个**。
+
+一个经典的例子：如果只测量结构某几个点的位移，而某些振动模态在这些点恰好是节点（振幅为零），那些模态就不可观。解决方案：增加传感器数量，或者改变传感器位置。
+
+在航天器导航中，GPS 提供位置信息，IMU 提供加速度信息。两者的组合确保了所有状态（位置、速度、姿态）都是可观的。如果只用 GPS（位置），速度的可观性依赖于动态模型——如果模型不准，速度估计就会漂移。
+
+### Gramian 方法
+
+除了秩判据和 PBH 判据，还有一种基于**Gramian 矩阵**的方法：
+
+**可控性 Gramian**：$W_c = \int_0^\infty e^{At}BB^T e^{A^Tt} dt$（稳定系统）
+
+$W_c$ 满足 Lyapunov 方程：$AW_c + W_c A^T + BB^T = 0$
+
+$W_c$ 正定 $\iff$ 系统可控。
+
+**可观性 Gramian**：$W_o = \int_0^\infty e^{A^Tt}C^T C e^{At} dt$
+
+$W_o$ 满足 Lyapunov 方程：$A^T W_o + W_o A + C^T C = 0$
+
+$W_o$ 正定 $\iff$ 系统可观。
+
+Gramian 方法的优势：
+- $W_c$ 的最小特征值量化了"离不可控有多远"——不只是"是/否"，而是"程度"
+- 在模型降阶（balanced truncation）中，$W_c$ 和 $W_o$ 的乘积的特征值（Hankel 奇异值）决定了每个状态的重要性
+- 数值计算比秩判据更稳定
+
+### 可控性与传递函数的零点
+
+传递函数的**零点**与可控/可观性有深刻联系。当传递函数出现极零对消时，被对消的极点就是不可控或不可观的模态。
+
+具体来说：
+- 如果 $G(s)$ 的零点恰好等于某个极点 $s = p$，对消后 $p$ 不出现在传递函数中
+- 这个被隐藏的极点 $p$ 要么不可控，要么不可观（或两者兼有）
+- 如果 $p$ 在右半平面（不稳定），即使传递函数看起来稳定，系统内部也可能在发散
+
+这就是**内部稳定性**与**外部稳定性**的区别——传递函数只反映外部稳定性，而状态空间方法能揭示内部稳定性。
+
+## 小结
+
+- **可控性**：输入能否影响所有状态。秩判据 $\text{rank}(\mathcal{C}) = n$，PBH 判据检查左特征向量与 $B$ 的正交性
+- **可观性**：输出能否反映所有状态。秩判据 $\text{rank}(\mathcal{O}) = n$，PBH 判据检查右特征向量是否被 $C$ 消灭
+- **对偶原理**：$(A, B)$ 可控 $\iff$ $(A^T, C^T)$ 可观——两个概念本质相同
+- **结构分解**：状态空间可分为四个子空间（可控可观、可控不可观、不可控可观、不可控不可观）
+- **传递函数只反映可控可观部分**：不可控或不可观的模态被"隐藏"，不出现在 $G(s)$ 中
+- **最小实现**：既可控又可观的最低阶状态空间表示，阶数等于 $G(s)$ 分母阶数
+- 可控性决定执行器布局，可观性决定传感器布局——这是系统设计阶段的硬约束
+
+## 习题
+
+**1.** 判断以下系统的可控性和可观性：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}
+$$
+
+**2.** 判断以下系统的可控性，并用 PBH 判据指出哪个模态不可控：
+
+$$
+A = \begin{bmatrix} 2 & 0 & 0 \\ 0 & 3 & 0 \\ 0 & 0 & 5 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 1 \\ 0 \end{bmatrix}
+$$
+
+**3.** 一个系统 $A = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 & -2\zeta\omega_n \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。证明：当 $\omega_n \neq 0$ 时系统可控且可观。这与经典控制中二阶系统的结论一致吗？
+
+**4.** 给定系统：
+
+$$
+A = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 2 & 1 \\ 0 & 0 & 2 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 1 & 0 \end{bmatrix}
+$$
+
+- (a) 判断可控性
+- (b) 判断可观性
+- (c) 求传递函数 $G(s)$，验证它只反映可控可观部分的动态
+
+**5.** 证明对偶原理的一个推论：如果 $(A, B)$ 可控，则存在状态反馈 $\boldsymbol{u} = K\boldsymbol{x}$ 使得闭环系统 $A + BK$ 的特征值可以任意配置。（提示：先考虑可控标准型的情况。）
+
+**6.** 一个 MIMO 系统：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \\ 1 & 0 & -1 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 0 & 0 \\ 0 & 0 \\ 1 & 0 \\ 0 & 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}
+$$
+
+- (a) 判断可控性和可观性
+- (b) 这个系统有几个可控可观的模态？
+
+**7.** 考虑传递函数 $G(s) = \frac{s+1}{(s+1)(s+2)(s+3)}$。
+- (a) 化简后写出最小实现的状态空间模型
+- (b) 如果不化简，直接按可控标准型写出三阶实现，指出哪个模态不可控或不可观
+- (c) 计算三阶实现的传递函数，验证极零对消确实发生
+
+**8.** 证明：如果系统 $(A, B, C)$ 既可控又可观，则传递函数 $G(s) = C(sI-A)^{-1}B$ 没有极零对消。
+
+**9.** 一个弹簧-质量系统：两个质量 $m_1 = m_2 = 1$，弹簧 $k_1 = k_2 = 1$。$m_1$ 连接墙壁（弹簧 $k_1$），$m_1$ 和 $m_2$ 之间连接弹簧 $k_2$。力 $F$ 只作用在 $m_1$ 上，只测量 $m_1$ 的位移。
+- (a) 建立状态空间模型（状态变量 $x_1 = y_1, x_2 = \dot{y}_1, x_3 = y_2, x_4 = \dot{y}_2$）
+- (b) 判断可控性和可观性
+- (c) 如果同时测量 $y_1$ 和 $y_2$（$C = \begin{bmatrix}1&0&0&0\\0&0&1&0\end{bmatrix}$），可观性是否改善？
+
+**10.** 可控性 Gramian $W_c$ 满足 $AW_c + W_cA^T + BB^T = 0$。对系统 $A = \begin{bmatrix}-1&0\\0&-2\end{bmatrix}$，$B = \begin{bmatrix}1\\1\end{bmatrix}$，求解 $W_c$ 并验证它是否正定。
+
+## 答案
+
+**1.** 这是可控标准型（$B$ 只有最后一个元素非零，$A$ 最后一行是分母系数负值）。
+
+可控性矩阵：
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 0 & 1 \\ 0 & 1 & -6 \\ 1 & -6 & 25 \end{bmatrix}
+$$
+
+$\det(\mathcal{C}) = -1 \neq 0$，$\text{rank} = 3 = n$，**可控**。
+
+可观性矩阵：
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & -6 & 1 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1 \neq 0$，$\text{rank} = 3 = n$，**可观**。
+
+（可控标准型天然是可控的；可观标准型天然是可观的。此系统同时是可控标准型且 $C = [1, 0, 0]$ 使得可观性矩阵也满秩。）
+
+**2.** $A$ 是对角矩阵，特征值 $\lambda_1 = 2, \lambda_2 = 3, \lambda_3 = 5$。
+
+可控性矩阵：
+
+$$
+\mathcal{C} = \begin{bmatrix} 1 & 2 & 4 \\ 1 & 3 & 9 \\ 0 & 0 & 0 \end{bmatrix}
+$$
+
+$\text{rank} = 2 < 3$，**不可控**。
+
+PBH 判据：左特征向量就是标准基向量 $\boldsymbol{e}_i$（因为 $A$ 是对角的）。
+
+- $\lambda_1 = 2$：$\boldsymbol{e}_1^T B = 1 \neq 0$ → 可控
+- $\lambda_2 = 3$：$\boldsymbol{e}_2^T B = 1 \neq 0$ → 可控
+- $\lambda_3 = 5$：$\boldsymbol{e}_3^T B = 0$ → **不可控**
+
+$\lambda_3 = 5$ 对应的模态不可控。物理解释：$B$ 的第三个分量为零，输入对 $x_3$ 没有直接影响；$A$ 是对角的，$x_3$ 也不受 $x_1, x_2$ 影响。所以 $x_3$ 完全不可控。
+
+**3.** 可控性矩阵：
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 1 \\ 1 & -2\zeta\omega_n \end{bmatrix}
+$$
+
+$\det(\mathcal{C}) = -1 \neq 0$（与 $\omega_n, \zeta$ 无关），系统**可控**。
+
+可观性矩阵：
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} = I
+$$
+
+$\text{rank} = 2$，系统**可观**。
+
+$C = [1, 0]$ 直接测量 $x_1$，而 $\dot{x}_1 = x_2$，所以 $x_2$ 也可观。
+
+当 $\omega_n \neq 0$ 时，系统可控可观。这与经典控制一致：二阶传递函数 $G(s) = \frac{1}{s^2 + 2\zeta\omega_n s + \omega_n^2}$ 的阶数为2，最小实现就是2阶——可控且可观。
+
+**4.** (a) 可控性矩阵：
+
+$$
+AB = \begin{bmatrix} 1 \\ 0 \\ 1 \end{bmatrix}, \quad A^2B = \begin{bmatrix} 1 \\ 1 \\ 1 \end{bmatrix}
+$$
+
+$$
+\mathcal{C} = \begin{bmatrix} 1 & 1 & 1 \\ 0 & 0 & 1 \\ 1 & 1 & 1 \end{bmatrix}
+$$
+
+第一行和第三行相同，$\text{rank}(\mathcal{C}) = 2 < 3$，**不可控**。
+
+(b) 可观性矩阵：
+
+$$
+CA = \begin{bmatrix} 1 & 1 & 0 \end{bmatrix}\begin{bmatrix} 1 & 0 & 0 \\ 0 & 2 & 1 \\ 0 & 0 & 2 \end{bmatrix} = \begin{bmatrix} 1 & 2 & 1 \end{bmatrix}
+$$
+
+$$
+CA^2 = \begin{bmatrix} 1 & 2 & 1 \end{bmatrix}\begin{bmatrix} 1 & 0 & 0 \\ 0 & 2 & 1 \\ 0 & 0 & 2 \end{bmatrix} = \begin{bmatrix} 1 & 4 & 3 \end{bmatrix}
+$$
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 1 & 0 \\ 1 & 2 & 1 \\ 1 & 4 & 3 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1(6-4) - 1(3-1) + 0 = 2 - 2 = 0$，$\text{rank} = 2 < 3$，**不可观**。
+
+(c) $G(s) = C(sI-A)^{-1}B$。
+
+$$
+(sI-A)^{-1} = \begin{bmatrix} \frac{1}{s-1} & 0 & 0 \\ 0 & \frac{1}{s-2} & \frac{1}{(s-2)^2} \\ 0 & 0 & \frac{1}{s-2} \end{bmatrix}
+$$
+
+$$
+(sI-A)^{-1}B = \begin{bmatrix} \frac{1}{s-1} \\ \frac{1}{(s-2)^2} \\ \frac{1}{s-2} \end{bmatrix}
+$$
+
+$$
+G(s) = C(sI-A)^{-1}B = \frac{1}{s-1} + \frac{1}{(s-2)^2}
+$$
+
+传递函数只包含极点 $s=1$ 和 $s=2$（二阶），但系统是三阶的。隐藏的极点对应不可控/不可观的模态。
+
+具体地，通分后 $G(s) = \frac{(s-2)^2 + (s-1)}{(s-1)(s-2)^2} = \frac{s^2 - 3s + 3}{(s-1)(s-2)^2}$。分子没有 $(s-1)$ 或 $(s-2)$ 因子，所以没有极零对消——但传递函数只反映可控可观部分的动态。
+
+用 PBH 判据分析 $\lambda = 2$（二重特征值，Jordan 块）：
+- 特征向量 $\boldsymbol{w}_1 = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}$：$\boldsymbol{w}_1^T B = 0$（不可控），$C\boldsymbol{w}_1 = 1 \neq 0$（可观）→ 不可控可观模态
+- 广义特征向量 $(A-2I)\boldsymbol{w}_2 = \boldsymbol{w}_1$，解得 $\boldsymbol{w}_2 = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}$：$\boldsymbol{w}_2^T B = 1 \neq 0$（可控），$C\boldsymbol{w}_2 = 0$（不可观）→ 可控不可观模态
+
+两个 $\lambda = 2$ 的模态一个不可控、一个不可观，都不出现在传递函数中。$\lambda = 1$ 的模态既可控又可观，完整出现在 $G(s)$ 中。
+
+**5.** 证明思路：对可控系统 $(A, B)$，通过相似变换化为可控标准型。在可控标准型中，$A$ 的最后一行包含特征多项式系数，$B = [0, \ldots, 0, 1]^T$。
+
+设期望的闭环特征多项式为 $s^n + \alpha_{n-1}s^{n-1} + \cdots + \alpha_0$。选择反馈增益 $K = [\alpha_0 - a_0, \alpha_1 - a_1, \ldots, \alpha_{n-1} - a_{n-1}]$，则 $A + BK$ 的最后一行变为 $[-\alpha_0, -\alpha_1, \ldots, -\alpha_{n-1}]$，闭环特征多项式恰好是期望的多项式。
+
+由于相似变换不改变特征值，在原坐标系中 $K_{\text{orig}} = K T^{-1}$（$T$ 为变换矩阵）也能实现任意极点配置。证毕。
+
+**6.** (a) 可控性矩阵 $\mathcal{C} = [B, AB, A^2B, A^3B]$，维度 $4 \times 8$。
+
+$$
+AB = \begin{bmatrix} 0 & 0 \\ 1 & 0 \\ 0 & 1 \\ 1 & 0 \end{bmatrix}, \quad A^2B = \begin{bmatrix} 0 & 1 \\ 0 & 1 \\ 1 & 0 \\ -1 & 0 \end{bmatrix}
+$$
+
+合并所有列，$\text{rank}(\mathcal{C}) = 4 = n$，**可控**。
+
+可观性矩阵 $\mathcal{O}$，维度 $8 \times 4$：
+
+$$
+CA = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
+$$
+
+$$
+CA^2 = \begin{bmatrix} 0 & 0 & 1 & 0 \\ 1 & 0 & -1 & 0 \end{bmatrix}
+$$
+
+合并 $\mathcal{O} = [C^T, (CA)^T, (CA^2)^T, (CA^3)^T]^T$，$\text{rank}(\mathcal{O}) = 4 = n$，**可观**。
+
+(b) 系统完全可控且完全可观，4个模态都是可控可观的。
+
+**7.** (a) 化简：$G(s) = \frac{1}{(s+2)(s+3)} = \frac{1}{s^2 + 5s + 6}$。
+
+最小实现（可控标准型，二阶）：
+
+$$
+A = \begin{bmatrix} 0 & 1 \\ -6 & -5 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad D = 0
+$$
+
+(b) 不化简，$G(s) = \frac{s+1}{s^3 + 6s^2 + 11s + 6}$，分子 $b_2 = 0, b_1 = 1, b_0 = 1$，分母 $a_2 = 6, a_1 = 11, a_0 = 6$。
+
+可控标准型：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 1 & 0 \end{bmatrix}
+$$
+
+可控标准型天然可控。检查可观性：
+
+$$
+CA = \begin{bmatrix} 1 & 1 & 0 \end{bmatrix}\begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix} = \begin{bmatrix} 0 & 1 & 1 \end{bmatrix}
+$$
+
+$$
+CA^2 = \begin{bmatrix} 0 & 1 & 1 \end{bmatrix}\begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix} = \begin{bmatrix} -6 & -11 & -5 \end{bmatrix}
+$$
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 1 & 0 \\ 0 & 1 & 1 \\ -6 & -11 & -5 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1(-5+11) - 1(0+6) + 0 = 6 - 6 = 0$，$\text{rank} = 2 < 3$，**不可观**。
+
+用 PBH 判据定位不可观模态。$\lambda = -1$ 的右特征向量：$(A+I)\boldsymbol{w} = 0$，
+
+$$
+\begin{bmatrix} 1 & 1 & 0 \\ 0 & 1 & 1 \\ -6 & -11 & -5 \end{bmatrix}\boldsymbol{w} = 0 \implies w_1 + w_2 = 0,\ w_2 + w_3 = 0
+$$
+
+取 $w_3 = 1$，则 $\boldsymbol{w} = \begin{bmatrix} 1 \\ -1 \\ 1 \end{bmatrix}$。$C\boldsymbol{w} = 1 - 1 + 0 = 0$，所以 $\lambda = -1$ 不可观 ✓
+
+（这正是极零对消中被隐藏的模态。）
+
+(c) 三阶实现的传递函数：
+
+$$
+G(s) = \frac{s+1}{s^3+6s^2+11s+6} = \frac{s+1}{(s+1)(s+2)(s+3)} = \frac{1}{(s+2)(s+3)}
+$$
+
+分子分母的 $(s+1)$ 对消——极零对消确实发生 ✓
+
+**8.** 证明（反证法）：假设 $(A, B, C)$ 可控可观，但 $G(s) = C(sI-A)^{-1}B$ 有极零对消。
+
+设极零对消发生在 $s = \lambda$，即 $\lambda$ 是 $A$ 的特征值（极点），同时 $G(s)$ 在 $s = \lambda$ 处有零点。
+
+$G(s)$ 可写为 $G(s) = \frac{N(s)}{D(s)}$，其中 $D(s) = \det(sI - A)$。$G(\lambda) = 0$ 意味着 $N(\lambda) = 0$。
+
+由 Rosenbrock 的系统矩阵理论，$G(s)$ 在 $s = \lambda$ 处有零点的充要条件是：
+
+$$
+\text{rank}\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix} < n + \min(p, q)
+$$
+
+对 SISO 系统（$p = q = 1$），这等价于 $\text{rank}\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix} < n + 1$。
+
+由于 $\lambda$ 是 $A$ 的特征值，$\text{rank}(\lambda I - A) < n$，存在右特征向量 $\boldsymbol{w}$ 使得 $(\lambda I - A)\boldsymbol{w} = 0$。
+
+如果 $C\boldsymbol{w} \neq 0$（可观性保证），则 $\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix}\begin{bmatrix} \boldsymbol{w} \\ 0 \end{bmatrix} = \begin{bmatrix} 0 \\ C\boldsymbol{w} \end{bmatrix} \neq 0$，这说明系统矩阵的零空间不包含 $\begin{bmatrix} \boldsymbol{w} \\ 0 \end{bmatrix}$。
+
+但 $G(\lambda) = 0$ 要求系统矩阵秩亏，这与可控可观矛盾。因此，可控可观的系统传递函数没有极零对消。证毕。
+
+**9.** (a) 运动方程：
+
+$$
+m_1\ddot{y}_1 = -k_1 y_1 - k_2(y_1 - y_2) + F = -2y_1 + y_2 + F
+$$
+
+$$
+m_2\ddot{y}_2 = -k_2(y_2 - y_1) = y_1 - y_2
+$$
+
+状态变量 $x_1 = y_1, x_2 = \dot{y}_1, x_3 = y_2, x_4 = \dot{y}_2$：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 & 0 \\ -2 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \\ 1 & 0 & -1 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \\ 0 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 & 0 & 0 \end{bmatrix}
+$$
+
+(b) 可控性矩阵 $\mathcal{C}$（$4 \times 4$）：
+
+$$
+B = \begin{bmatrix}0\\1\\0\\0\end{bmatrix}, AB = \begin{bmatrix}1\\0\\0\\0\end{bmatrix}, A^2B = \begin{bmatrix}0\\-2\\0\\1\end{bmatrix}, A^3B = \begin{bmatrix}-2\\0\\1\\0\end{bmatrix}
+$$
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 1 & 0 & -2 \\ 1 & 0 & -2 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
+$$
+
+$\det(\mathcal{C}) = 1 \cdot \det\begin{bmatrix}1&0&-2\\0&1&0\\0&0&1\end{bmatrix} = 1 \neq 0$（按第一列展开），$\text{rank} = 4$，**可控**。
+
+可观性矩阵 $\mathcal{O}$：
+
+$$
+C = \begin{bmatrix}1&0&0&0\end{bmatrix}, CA = \begin{bmatrix}0&1&0&0\end{bmatrix}
+$$
+
+$$
+CA^2 = \begin{bmatrix}-2&0&1&0\end{bmatrix}, CA^3 = \begin{bmatrix}0&-2&0&1\end{bmatrix}
+$$
+
+$$
+\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ -2 & 0 & 1 & 0 \\ 0 & -2 & 0 & 1 \end{bmatrix}
+$$
+
+$\det(\mathcal{O}) = 1 \neq 0$，**可观**。
+
+(c) 如果 $C = \begin{bmatrix}1&0&0&0\\0&0&1&0\end{bmatrix}$（同时测量 $y_1$ 和 $y_2$），可观性矩阵变为 $8 \times 4$：
+
+$$
+\mathcal{O}_{\text{new}} = \begin{bmatrix} C_1 \\ C_2 \\ C_1 A \\ C_2 A \\ C_1 A^2 \\ C_2 A^2 \\ C_1 A^3 \\ C_2 A^3 \end{bmatrix}
+$$
+
+其中 $C_1 = \begin{bmatrix}1&0&0&0\end{bmatrix}$（原来的），$C_2 = \begin{bmatrix}0&0&1&0\end{bmatrix}$（新增的）。
+
+由于原来单传感器 $C_1$ 时 $\mathcal{O}$ 已经满秩（$\text{rank} = 4$），新增的行只会增加或保持秩——不会减少。因此 $\text{rank}(\mathcal{O}_{\text{new}}) \geq \text{rank}(\mathcal{O}_{\text{old}}) = 4$，系统仍然可观。
+
+物理含义：原来只测 $y_1$ 就能推断全部状态（因为弹簧耦合把 $y_2$ 的信息传递到了 $y_1$）。现在直接测量 $y_2$，信息更丰富，可观性不会变差。
+
+**10.** $A = \begin{bmatrix}-1&0\\0&-2\end{bmatrix}$，$B = \begin{bmatrix}1\\1\end{bmatrix}$，$BB^T = \begin{bmatrix}1&1\\1&1\end{bmatrix}$。
+
+设 $W_c = \begin{bmatrix}w_{11}&w_{12}\\w_{12}&w_{22}\end{bmatrix}$，代入 Lyapunov 方程 $AW_c + W_cA^T + BB^T = 0$：
+
+$$
+\begin{bmatrix}-1&0\\0&-2\end{bmatrix}\begin{bmatrix}w_{11}&w_{12}\\w_{12}&w_{22}\end{bmatrix} + \begin{bmatrix}w_{11}&w_{12}\\w_{12}&w_{22}\end{bmatrix}\begin{bmatrix}-1&0\\0&-2\end{bmatrix} + \begin{bmatrix}1&1\\1&1\end{bmatrix} = 0
+$$
+
+逐元素：
+- $(1,1)$：$-2w_{11} + 1 = 0 \Rightarrow w_{11} = 1/2$
+- $(1,2)$：$-3w_{12} + 1 = 0 \Rightarrow w_{12} = 1/3$
+- $(2,2)$：$-4w_{22} + 1 = 0 \Rightarrow w_{22} = 1/4$
+
+$$
+W_c = \begin{bmatrix} 1/2 & 1/3 \\ 1/3 & 1/4 \end{bmatrix}
+$$
+
+验证正定性：$w_{11} = 1/2 > 0$，$\det(W_c) = 1/8 - 1/9 = 1/72 > 0$。$W_c$ 正定，系统可控 ✓

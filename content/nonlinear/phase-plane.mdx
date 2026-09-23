@@ -1,0 +1,488 @@
+---
+title: "相平面分析"
+description: "二维非线性系统的几何化分析——平衡点分类、nullclines、Poincaré-Bendixson定理、极限环；Van der Pol振子、倒立摆、Lotka-Volterra模型的相平面解读。"
+---
+
+# 相平面分析
+
+线性系统可以用特征值、传递函数、频域响应等工具全面分析。但非线性系统呢？当系统包含饱和、死区、继电器或非线性弹簧时，线性化工具只能给出局部信息。
+
+**相平面分析**（Phase Plane Analysis）是二维非线性系统的几何化工具——把状态 $(x_1, x_2)$ 画在平面上，用向量场展示动态，用相轨迹展示演化。就像看地图上的河流流向，你能直观看到系统"流"向哪里：稳定平衡点、振荡极限环、还是发散到无穷。
+
+> 📖 本文需要 [常微分方程基础](/math/ode-basics)、[线性系统特征值分析](/modern/linear-system-theory) 的前置知识。
+
+相平面只适用于**二阶自治系统**（autonomous system，即 $\dot{x} = f(x)$ 不显含时间 $t$）。对于高阶系统，需用中心流形降维或Poincaré截面。但二阶已覆盖大量工程问题：机械振子、电路LC振荡、生物种群、机器人关节。
+
+## 相平面基础
+
+### 二阶自治系统
+
+标准形式：
+
+$$\dot{x}_1 = f_1(x_1, x_2)$$
+$$\dot{x}_2 = f_2(x_1, x_2)$$
+
+其中 $f_1, f_2$ 是非线性函数。**自治**意味着方程右边不显含时间 $t$。
+
+**相平面**：以 $x_1$ 为横轴，$x_2$ 为纵轴的平面。每一点 $(x_1, x_2)$ 对应一个速度向量：
+
+$$\vec{v} = \begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} = \begin{bmatrix} f_1(x_1, x_2) \\ f_2(x_1, x_2) \end{bmatrix}$$
+
+**相轨迹**：从初始点 $(x_1(0), x_2(0))$ 出发的曲线，其切线方向始终是向量场方向。数学上，相轨迹满足微分方程：
+
+$$\frac{dx_2}{dx_1} = \frac{\dot{x}_2}{\dot{x}_1} = \frac{f_2(x_1, x_2)}{f_1(x_1, x_2)}$$
+
+> 💡 **关键洞察**：相轨迹不依赖时间参数化——它只展示状态的几何路径。同一条轨迹，不同初值可能以不同速度 traversed，但路径形状相同。
+
+### Nullclines（零斜线）
+
+**Nullcline** 是相平面上某一状态变量导数为零的曲线：
+
+- **$x_1$-nullcline**：$\dot{x}_1 = f_1(x_1, x_2) = 0$ 的曲线。在此曲线上，相轨迹**竖直**运动（只有 $x_2$ 变化）。
+- **$x_2$-nullcline**：$\dot{x}_2 = f_2(x_1, x_2) = 0$ 的曲线。在此曲线上，相轨迹**水平**运动（只有 $x_1$ 变化）。
+
+**平衡点**：两条 nullcline 的交点，满足 $\dot{x}_1 = 0$ 且 $\dot{x}_2 = 0$。在平衡点，速度为零，系统静止。
+
+> 💡 **绘制技巧**：先画 nullclines，它们将相平面划分为若干区域。在每个区域内，$\dot{x}_1$ 和 $\dot{x}_2$ 的符号固定，可判断相轨迹的大致走向（右上、左下等）。
+
+### 向量场绘制
+
+数值绘制相平面向量场的方法：
+
+1. 在网格点 $(x_{1,i}, x_{2,j})$ 计算速度向量 $(\dot{x}_1, \dot{x}_2)$
+2. 归一化向量长度（避免箭头过长）
+3. 用 `quiver` 或 `streamplot` 绘制
+
+相轨迹通过数值积分获得：给定初值 $(x_1(0), x_2(0))$，用 Runge-Kutta 方法求解 ODE，得到 $(x_1(t), x_2(t))$ 的参数曲线。
+
+## 平衡点分类
+
+### Jacobian线性化
+
+在平衡点 $(x_1^*, x_2^*)$ 附近做 Taylor 展开，保留一阶项：
+
+$$\delta \dot{x} = J \delta x, \quad J = \begin{bmatrix} \frac{\partial f_1}{\partial x_1} & \frac{\partial f_1}{\partial x_2} \\ \frac{\partial f_2}{\partial x_1} & \frac{\partial f_2}{\partial x_2} \end{bmatrix}\bigg|_{(x_1^*, x_2^*)}$$
+
+其中 $\delta x = x - x^*$ 是小偏差。Jacobian 矩阵 $J$ 的特征值 $\lambda_1, \lambda_2$ 决定平衡点的**局部**行为。
+
+### 六类平衡点
+
+设 $\lambda_1, \lambda_2$ 是 $J$ 的特征值，$\text{tr}(J) = \lambda_1 + \lambda_2$ 是迹，$\det(J) = \lambda_1 \lambda_2$ 是行列式。
+
+| 特征值 | 类型 | 稳定性 | 相图形状 | 判据 |
+|--------|------|--------|----------|------|
+| $\lambda_1 < \lambda_2 < 0$（实负） | 稳定节点 | 渐近稳定 | 直线趋近 | $\text{tr} < 0$, $\det > 0$, $\text{tr}^2 > 4\det$ |
+| $\lambda_1 > \lambda_2 > 0$（实正） | 不稳定节点 | 不稳定 | 直线发散 | $\text{tr} > 0$, $\det > 0$, $\text{tr}^2 > 4\det$ |
+| $\lambda_{1,2} = \alpha \pm j\beta$, $\alpha < 0$ | 稳定焦点 | 渐近稳定 | 螺旋趋近 | $\text{tr} < 0$, $\det > 0$, $\text{tr}^2 < 4\det$ |
+| $\lambda_{1,2} = \alpha \pm j\beta$, $\alpha > 0$ | 不稳定焦点 | 不稳定 | 螺旋发散 | $\text{tr} > 0$, $\det > 0$, $\text{tr}^2 < 4\det$ |
+| $\lambda_1 > 0 > \lambda_2$（异号） | 鞍点 | 不稳定 | 双曲线 | $\det < 0$ |
+| $\lambda_{1,2} = \pm j\beta$（纯虚） | 中心 | Lyapunov稳定 | 闭合椭圆 | $\text{tr} = 0$, $\det > 0$ |
+
+> 💡 **记忆技巧**：
+> - 节点（Node）：特征值实部同号，轨迹直线趋近/发散
+> - 焦点（Focus）：特征值有虚部，轨迹螺旋
+> - 鞍点（Saddle）：特征值异号，一个方向吸引、一个方向排斥
+> - 中心（Center）：纯虚特征值，闭合轨道（线性系统特有，非线性系统中可能变为焦点）
+
+**鞍点的 Separatrix**：鞍点有两条特殊轨迹——**稳定流形**（stable manifold，沿负特征值方向趋近鞍点）和**不稳定流形**（unstable manifold，沿正特征值方向远离鞍点）。这两条流形称为 **separatrices**（分界线），它们划分相平面为不同吸引域。
+
+> 💡 **物理意义**：倒立摆的鞍点（直立位置）的 separatrix 划分了"摆动"和"旋转"两种运动模式。若初值在 separatrix 内，摆锤来回摆动；若在外部，摆锤绕支点旋转。
+
+## Poincaré-Bendixson定理
+
+### 定理陈述
+
+**Poincaré-Bendixson定理** 是二维非线性系统的核心结果，保证极限环的存在性。
+
+**定理**：考虑二阶自治系统 $\dot{x} = f(x)$，$f$ 连续可微。若存在一个**有界闭区域** $R \subset \mathbb{R}^2$，满足：
+
+1. 轨迹一旦进入 $R$，就永不离开（正向不变集）
+2. $R$ 内**没有平衡点**（或只有一个不稳定平衡点）
+
+则 $R$ 内至少存在一个**闭合轨道**（极限环）。
+
+> 💡 **直观理解**：若轨迹被困在有界区域内，且无处停留（无平衡点），则它必须转圈——形成周期振荡。
+
+### 极限环
+
+**极限环**（Limit Cycle）是孤立的闭合轨道。"孤立"意味着附近没有其他闭合轨道。
+
+极限环的稳定性：
+- **稳定极限环**：附近轨迹螺旋趋近于它（自激振荡）
+- **不稳定极限环**：附近轨迹螺旋远离它
+- **半稳定极限环**：一侧趋近、一侧远离
+
+> 💡 **与线性中心的区别**：线性系统的中心（如无阻尼振子 $\ddot{x} + x = 0$）有一族闭合轨道，振幅由初值决定，不是孤立的。非线性系统的极限环是孤立的，振幅由系统参数决定，与初值无关（只要初值在吸引域内）。
+
+### 应用示例：Van der Pol振子
+
+Van der Pol方程：
+
+$$\ddot{x} - \mu(1 - x^2)\dot{x} + x = 0, \quad \mu > 0$$
+
+写成状态空间：
+
+$$\dot{x}_1 = x_2$$
+$$\dot{x}_2 = \mu(1 - x_1^2)x_2 - x_1$$
+
+**平衡点**：$(0, 0)$。Jacobian：
+
+$$J = \begin{bmatrix} 0 & 1 \\ -1 - 2\mu x_1 x_2 & \mu(1 - x_1^2) \end{bmatrix}\bigg|_{(0,0)} = \begin{bmatrix} 0 & 1 \\ -1 & \mu \end{bmatrix}$$
+
+特征值：$\lambda^2 - \mu\lambda + 1 = 0 \Rightarrow \lambda = \frac{\mu \pm \sqrt{\mu^2 - 4}}{2}$。
+
+当 $\mu > 0$ 时，$\text{tr}(J) = \mu > 0$，$\det(J) = 1 > 0$。若 $\mu < 2$，特征值为复数，原点是**不稳定焦点**。
+
+**极限环存在性**：构造环形区域 $R = \{(x_1, x_2) : r_1 \leq \sqrt{x_1^2 + x_2^2} \leq r_2\}$。选择适当的 $r_1, r_2$，可证轨迹从外边界进入、从内边界穿出，且 $R$ 内无平衡点（原点不稳定）。由 Poincaré-Bendixson，存在稳定极限环。
+
+物理意义：Van der Pol振子模拟电子管振荡器。无论初值如何，系统最终都以固定振幅振荡——这就是**自激振荡**。
+
+## 数值例子：完整手算相平面
+
+### 系统定义
+
+考虑非线性振子：
+
+$$\ddot{x} + 0.5\dot{x} + x - 0.2x^3 = 0$$
+
+写成状态空间（$x_1 = x$, $x_2 = \dot{x}$）：
+
+$$\dot{x}_1 = x_2$$
+$$\dot{x}_2 = -x_1 - 0.5x_2 + 0.2x_1^3$$
+
+### Step 1: 求平衡点
+
+令 $\dot{x}_1 = 0 \Rightarrow x_2 = 0$。
+
+令 $\dot{x}_2 = 0 \Rightarrow -x_1 - 0 + 0.2x_1^3 = 0 \Rightarrow x_1(0.2x_1^2 - 1) = 0$。
+
+解得：$x_1 = 0$ 或 $x_1^2 = 5 \Rightarrow x_1 = \pm\sqrt{5} \approx \pm 2.236$。
+
+三个平衡点：$(0, 0)$, $(\sqrt{5}, 0)$, $(-\sqrt{5}, 0)$。
+
+### Step 2: Nullclines
+
+**$x_1$-nullcline**：$\dot{x}_1 = x_2 = 0$，即 $x_2 = 0$（横轴）。
+
+**$x_2$-nullcline**：$\dot{x}_2 = -x_1 - 0.5x_2 + 0.2x_1^3 = 0 \Rightarrow x_2 = \frac{-x_1 + 0.2x_1^3}{0.5} = -2x_1 + 0.4x_1^3$。
+
+这是一条三次曲线，过原点，在 $x_1 = \pm\sqrt{5}$ 处与横轴相交（即平衡点）。
+
+### Step 3: Jacobian与平衡点分类
+
+Jacobian：
+
+$$J = \begin{bmatrix} \frac{\partial \dot{x}_1}{\partial x_1} & \frac{\partial \dot{x}_1}{\partial x_2} \\ \frac{\partial \dot{x}_2}{\partial x_1} & \frac{\partial \dot{x}_2}{\partial x_2} \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -1 + 0.6x_1^2 & -0.5 \end{bmatrix}$$
+
+**平衡点 $(0, 0)$**：
+
+$$J = \begin{bmatrix} 0 & 1 \\ -1 & -0.5 \end{bmatrix}$$
+
+特征方程：$\lambda^2 + 0.5\lambda + 1 = 0 \Rightarrow \lambda = \frac{-0.5 \pm \sqrt{0.25 - 4}}{2} = -0.25 \pm j0.968$。
+
+$\text{tr} = -0.5 < 0$, $\det = 1 > 0$, $\text{tr}^2 = 0.25 < 4\det = 4$。
+
+**结论**：$(0, 0)$ 是**稳定焦点**（螺旋趋近）。
+
+**平衡点 $(\sqrt{5}, 0)$**：
+
+$$J = \begin{bmatrix} 0 & 1 \\ -1 + 0.6 \cdot 5 & -0.5 \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ 2 & -0.5 \end{bmatrix}$$
+
+特征方程：$\lambda^2 + 0.5\lambda - 2 = 0 \Rightarrow \lambda = \frac{-0.5 \pm \sqrt{0.25 + 8}}{2} = \frac{-0.5 \pm 2.872}{2}$。
+
+$\lambda_1 \approx 1.186 > 0$, $\lambda_2 \approx -1.686 < 0$。
+
+$\det = -2 < 0$。
+
+**结论**：$(\sqrt{5}, 0)$ 是**鞍点**（不稳定）。
+
+**平衡点 $(-\sqrt{5}, 0)$**：由对称性，同样是**鞍点**。
+
+### Step 4: 相图定性分析
+
+- 原点 $(0, 0)$ 是稳定焦点：附近轨迹螺旋趋近。
+- 两个鞍点 $(\pm\sqrt{5}, 0)$：每个鞍点有一条稳定流形和一条不稳定流形。
+- Separatrices：鞍点的稳定流形划分相平面为三个吸引域：
+  - 中间区域：轨迹趋近原点
+  - 左侧区域：轨迹趋向 $-\infty$
+  - 右侧区域：轨迹趋向 $+\infty$
+
+> 💡 **物理意义**：这是一个"双势阱"振子（如 Duffing 振子）。原点对应中间的低能量状态，两个鞍点对应势垒顶部。若能量不足以越过势垒，振子在中间振荡；若能量足够，它会滚向一侧无穷远。
+
+## 典型案例分析
+
+### Van der Pol振子
+
+方程：$\ddot{x} - \mu(1-x^2)\dot{x} + x = 0$，$\mu > 0$。
+
+**特点**：
+- 唯一平衡点 $(0, 0)$，当 $\mu > 0$ 时不稳定
+- 存在唯一稳定极限环，振幅约 2（与 $\mu$ 弱相关）
+- 阻尼项 $\mu(1-x^2)\dot{x}$：当 $|x| < 1$ 时负阻尼（能量输入），当 $|x| > 1$ 时正阻尼（能量耗散）
+
+**应用**：电子管振荡器、心脏起搏模型、神经元放电。
+
+<JupyterNotebook language="python" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp`} cells={[{code: `# Van der Pol振子相平面
+mu = 1.0
+
+def vanderpol(t, state):
+    x1, x2 = state
+    dx1dt = x2
+    dx2dt = mu * (1 - x1**2) * x2 - x1
+    return [dx1dt, dx2dt]
+
+# 生成网格用于向量场
+x1 = np.linspace(-3, 3, 20)
+x2 = np.linspace(-3, 3, 20)
+X1, X2 = np.meshgrid(x1, x2)
+DX1 = X2
+DX2 = mu * (1 - X1**2) * X2 - X1
+
+# 绘制向量场
+plt.figure(figsize=(10, 8))
+plt.streamplot(X1, X2, DX1, DX2, color='gray', alpha=0.5, density=1.5)
+
+# 多条相轨迹
+initial_conditions = [[0.5, 0], [1.5, 0], [2.5, 0], [0, 1], [0, 2]]
+for ic in initial_conditions:
+    sol = solve_ivp(vanderpol, [0, 50], ic, t_eval=np.linspace(0, 50, 1000), method='RK45')
+    plt.plot(sol.y[0], sol.y[1], 'b-', linewidth=1.5, alpha=0.7)
+    plt.plot(sol.y[0, 0], sol.y[1, 0], 'go', markersize=5)  # 起点
+    plt.plot(sol.y[0, -1], sol.y[1, -1], 'ro', markersize=5)  # 终点
+
+# 平衡点
+plt.plot(0, 0, 'kx', markersize=15, markeredgewidth=3, label='平衡点 (0,0)')
+
+plt.xlabel('$x_1$ (位置)', fontsize=12)
+plt.ylabel('$x_2$ (速度)', fontsize=12)
+plt.title(f'Van der Pol振子相平面 ($\\mu={mu}$)', fontsize=14)
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.axis('equal')
+plt.show()`}]} />
+
+### 倒立摆
+
+动力学方程：
+
+$$\ddot{\theta} + b\dot{\theta} + \frac{g}{L}\sin\theta = 0$$
+
+状态空间（$x_1 = \theta$, $x_2 = \dot{\theta}$）：
+
+$$\dot{x}_1 = x_2$$
+$$\dot{x}_2 = -\frac{g}{L}\sin x_1 - b x_2$$
+
+**平衡点**：$\sin x_1 = 0 \Rightarrow x_1 = n\pi$, $x_2 = 0$。
+
+- $(0, 0)$：下垂位置，**稳定焦点**（若有阻尼）
+- $(\pi, 0)$：直立位置，**鞍点**（不稳定）
+
+**Separatrix**：鞍点 $(\pi, 0)$ 的稳定流形划分相平面：
+- 内部：摆动运动（来回振荡）
+- 外部：旋转运动（绕支点转圈）
+
+### Lotka-Volterra捕食者-猎物模型
+
+$$\dot{x} = \alpha x - \beta xy \quad \text{（猎物）}$$
+$$\dot{y} = -\gamma y + \delta xy \quad \text{（捕食者）}$$
+
+**平衡点**：$(0, 0)$（灭绝，鞍点）和 $(\gamma/\delta, \alpha/\beta)$（共存，中心）。
+
+**相图**：围绕共存平衡点的一族闭合轨道——种群数量周期性振荡。这是生态学中的经典结果：捕食者和猎物数量此消彼长，形成周期循环。
+
+## 高维系统的推广
+
+### 局限性
+
+相平面只适用于二阶系统。对于 $n > 2$ 的系统：
+- 无法在二维平面上完整可视化
+- Poincaré-Bendixson 定理不再成立（高维系统可有混沌 attractor）
+
+### Poincaré截面
+
+**Poincaré截面**（Poincaré section）是高维相空间的降维可视化工具：
+
+1. 选择一个超平面 $\Sigma \subset \mathbb{R}^n$（如 $x_1 = 0$）
+2. 记录轨迹每次穿过 $\Sigma$ 的点
+3. 这些离散点构成 Poincaré map
+
+若原系统是周期轨道，Poincaré map 是一个不动点；若是准周期轨道，map 是一个闭合曲线；若是混沌，map 是分形。
+
+### 中心流形定理
+
+对于高维系统 $\dot{x} = f(x)$，$x \in \mathbb{R}^n$，在平衡点附近可将系统分解为：
+- **稳定流形**（stable manifold）：沿负实部特征值方向
+- **不稳定流形**（unstable manifold）：沿正实部特征值方向
+- **中心流形**（center manifold）：沿零实部特征值方向
+
+若中心流形是二维的，可在其上应用相平面分析。这是研究高维非线性系统局部分岔的标准方法。
+
+## 交互式可视化
+
+以下交互组件允许你探索不同非线性系统的相平面：
+
+- 调整系统参数（如 Van der Pol 的 $\mu$）
+- 改变初始条件，观察相轨迹收敛行为
+- 显示/隐藏 nullclines、向量场、平衡点
+
+> 🎨 **可视化说明**：相平面图中，蓝色曲线是相轨迹，红色叉号是平衡点，灰色箭头是向量场，虚线是 nullclines。
+
+## 软件工具
+
+| 工具 | 语言 | 特点 | 适用场景 |
+|------|------|------|----------|
+| **MATLAB quiver/streamplot** | MATLAB | 内置函数，易用 | 教学、快速原型 |
+| **Python matplotlib** | Python | 灵活、开源 | 学术研究、自定义可视化 |
+| **PhasePlane** | Python库 | 专用相平面工具 | 教学 |
+| **XPP/AUTO** | C | 分岔分析、 continuation | 深入研究 |
+| **Manlab** | MATLAB | 流形计算 | 高维系统 |
+
+## 工业应用
+
+### 机器人步态分析
+
+双足机器人的行走可建模为被动动力 walker，其步态对应相空间中的**稳定极限环**。
+
+**分析方法**：
+1. 建立混合动力学模型（连续动态 + 足地碰撞离散事件）
+2. 寻找周期轨道（limit cycle）
+3. 用 Poincaré map 分析稳定性（map 的特征值在单位圆内则稳定）
+
+**设计启示**：通过调整腿长、质量分布、髋关节扭矩，可优化极限环的稳定性和能耗。
+
+### 电子振荡器设计
+
+LC振荡器、Colpitts振荡器、Ring振荡器等都可用相平面分析。
+
+**关键指标**：
+- 极限环振幅（输出信号幅度）
+- 收敛速度（启动时间）
+- 频率稳定性（对参数变化的鲁棒性）
+
+**设计流程**：①建立电路微分方程；②绘制相平面，确认极限环存在；③用谐波平衡法近似计算振幅和频率；④仿真验证。
+
+## 深入讨论
+
+### 从相平面到Lyapunov函数
+
+相平面是**定性**工具——它能告诉你系统是否稳定，但不能给出定量界限。若需证明全局稳定性或估计吸引域大小，需构造 **Lyapunov函数** $V(x_1, x_2)$。
+
+**关系**：若相平面显示所有轨迹趋近原点，则可尝试 $V = x_1^2 + x_2^2$ 作为Lyapunov候选。若 $\dot{V} < 0$ 处处成立，则全局渐近稳定。
+
+### 分岔与相图变化
+
+当系统参数变化时，相图可能发生**拓扑变化**——平衡点出现/消失、稳定性切换、极限环诞生/湮灭。这就是**分岔**（bifurcation）。
+
+常见分岔：
+- **Saddle-node**：一对平衡点（一个鞍点、一个节点）碰撞消失
+- **Hopf**：平衡点失稳，诞生极限环
+- **Homoclinic**：鞍点的稳定和不稳定流形连接，导致大幅振荡
+
+相平面是理解分岔的直观工具：参数变化时，观察 nullclines 的移动、平衡点的合并/分裂、separatrices 的重连。
+
+## 小结
+
+相平面分析是二维非线性系统的几何化工具，通过向量场和相轨迹直观展示系统动态。
+
+**核心要点**：
+- 相平面适用于二阶自治系统 $\dot{x} = f(x)$
+- Nullclines（$\dot{x}_i = 0$ 的曲线）帮助定位平衡点和判断轨迹走向
+- 平衡点通过 Jacobian 线性化分类：节点、焦点、鞍点、中心
+- Poincaré-Bendixson 定理保证：有界区域内若无平衡点，则存在极限环
+- 极限环是孤立闭合轨道，对应自激振荡
+- Separatrices（鞍点的流形）划分相平面为不同吸引域
+- 高维系统需用 Poincaré 截面或中心流形降维
+
+**工程价值**：相平面提供直觉——一眼看出系统是稳定、振荡、还是发散。它是非线性控制设计的第一步，后续可结合 Lyapunov 函数、反馈线性化、滑模控制等方法实现精确控制。
+
+## 习题
+
+1. **Nullcline计算**：对于系统 $\dot{x}_1 = x_2$, $\dot{x}_2 = -x_1 - x_1^3 - x_2$，求所有平衡点，画出 nullclines，并用箭头标注相轨迹在各区域的走向。
+
+2. **平衡点分类**：对于 Van der Pol 振子 $\dot{x}_1 = x_2$, $\dot{x}_2 = \mu(1-x_1^2)x_2 - x_1$，计算原点处的 Jacobian 和特征值。当 $\mu = 0.5$ 和 $\mu = 2$ 时，原点分别是什么类型的平衡点？
+
+3. **Poincaré-Bendixson应用**：考虑系统 $\dot{x}_1 = x_2$, $\dot{x}_2 = -x_1 + x_2(1 - x_1^2 - x_2^2)$。证明存在一个环形区域 $R = \{(x_1, x_2) : r_1 \leq \sqrt{x_1^2+x_2^2} \leq r_2\}$ 满足 Poincaré-Bendixson 定理的条件，从而推断存在极限环。
+
+4. **倒立摆相平面**：绘制倒立摆 $\ddot{\theta} + 0.1\dot{\theta} + \sin\theta = 0$ 的相平面（范围 $\theta \in [-2\pi, 2\pi]$）。标出所有平衡点及其类型，画出 separatrices，区分摆动区和旋转区。
+
+5. **扩展思考**：对于三维系统 $\dot{x} = f(x,y,z)$, $\dot{y} = g(x,y,z)$, $\dot{z} = h(x,y,z)$，相平面方法失效。请调研 Poincaré 截面的原理，并说明如何用 Poincaré map 判断周期轨道的稳定性。若 Poincaré map 有一个特征值在单位圆外，系统行为如何？
+
+## 答案
+
+### 习题1解答
+
+**平衡点**：令 $\dot{x}_1 = 0 \Rightarrow x_2 = 0$。令 $\dot{x}_2 = 0 \Rightarrow -x_1 - x_1^3 = 0 \Rightarrow x_1(1+x_1^2) = 0$。唯一实解 $x_1 = 0$。平衡点：$(0, 0)$。
+
+**Nullclines**：
+- $x_1$-nullcline：$x_2 = 0$（横轴）
+- $x_2$-nullcline：$x_2 = -x_1 - x_1^3$（三次曲线，过原点）
+
+**区域划分**：$x_2$-nullcline 将平面分为上下两部分。
+- 上方（$x_2 > -x_1 - x_1^3$）：$\dot{x}_2 < 0$，向下
+- 下方：$\dot{x}_2 > 0$，向上
+- 右半平面（$x_2 > 0$）：$\dot{x}_1 > 0$，向右
+- 左半平面（$x_2 < 0$）：$\dot{x}_1 < 0$，向左
+
+综合判断：第一象限轨迹向右上，第二象限向左上，等等。所有轨迹螺旋趋近原点。
+
+### 习题2解答
+
+Jacobian：
+
+$$J = \begin{bmatrix} 0 & 1 \\ -1 - 2\mu x_1 x_2 & \mu(1-x_1^2) \end{bmatrix}\bigg|_{(0,0)} = \begin{bmatrix} 0 & 1 \\ -1 & \mu \end{bmatrix}$$
+
+特征方程：$\lambda^2 - \mu\lambda + 1 = 0$。
+
+**$\mu = 0.5$**：$\lambda = \frac{0.5 \pm \sqrt{0.25 - 4}}{2} = 0.25 \pm j0.968$。
+
+$\text{tr} = 0.5 > 0$, $\det = 1 > 0$, $\text{tr}^2 = 0.25 < 4$。
+
+**结论**：不稳定焦点。
+
+**$\mu = 2$**：$\lambda = \frac{2 \pm \sqrt{4 - 4}}{2} = 1$（重根）。
+
+$\text{tr} = 2 > 0$, $\det = 1 > 0$, $\text{tr}^2 = 4 = 4\det$。
+
+**结论**：不稳定退化节点（临界阻尼情况）。
+
+### 习题3解答
+
+构造极坐标 $r = \sqrt{x_1^2 + x_2^2}$。计算 $\dot{r}$：
+
+$$\dot{r} = \frac{x_1\dot{x}_1 + x_2\dot{x}_2}{r} = \frac{x_1 x_2 + x_2(-x_1 + x_2(1-r^2))}{r} = \frac{x_2^2(1-r^2)}{r}$$
+
+当 $r < 1$ 时，$\dot{r} > 0$（若 $x_2 \neq 0$），半径增大。
+当 $r > 1$ 时，$\dot{r} < 0$，半径减小。
+
+选择 $r_1 = 0.5$, $r_2 = 1.5$。在 $r = r_1$ 上，$\dot{r} > 0$，轨迹向外；在 $r = r_2$ 上，$\dot{r} < 0$，轨迹向内。环形区域 $R$ 是正向不变集。
+
+$R$ 内唯一平衡点是原点。检查原点稳定性：Jacobian 在原点为 $\begin{bmatrix} 0 & 1 \\ -1 & 1 \end{bmatrix}$，特征值 $\lambda = \frac{1 \pm \sqrt{1-4}}{2} = 0.5 \pm j0.866$，不稳定焦点。
+
+由 Poincaré-Bendixson，$R$ 内存在稳定极限环（实际就是单位圆 $r=1$）。
+
+### 习题4解答
+
+平衡点：$\sin\theta = 0 \Rightarrow \theta = n\pi$。
+
+- $(0, 0)$：Jacobian $\begin{bmatrix} 0 & 1 \\ -1 & -0.1 \end{bmatrix}$，特征值 $-0.05 \pm j0.999$，稳定焦点。
+- $(\pi, 0)$：Jacobian $\begin{bmatrix} 0 & 1 \\ 1 & -0.1 \end{bmatrix}$，特征值 $\frac{-0.1 \pm \sqrt{0.01+4}}{2} \approx 0.95, -1.05$，鞍点。
+- $(-\pi, 0)$：同理，鞍点。
+- $(2\pi, 0)$：同 $(0, 0)$，稳定焦点。
+
+Separatrices：从 $(\pi, 0)$ 和 $(-\pi, 0)$ 出发的不稳定流形形成闭合曲线，包围原点。内部是摆动区（来回振荡），外部是旋转区（$\theta$ 单调增加或减少）。
+
+### 习题5解答
+
+**Poincaré截面原理**：对于三维系统，选择平面 $\Sigma = \{(x,y,z) : z = 0, \dot{z} > 0\}$（或其他合适平面）。记录轨迹第 $k$ 次穿过 $\Sigma$ 的点 $p_k = (x_k, y_k)$。这定义了离散映射 $p_{k+1} = P(p_k)$，称为 Poincaré map。
+
+**稳定性判断**：若原系统有周期轨道，Poincaré map 有不动点 $p^* = P(p^*)$。线性化 $DP(p^*)$，计算其特征值（称为 Floquet 乘子）$\mu_1, \mu_2$。
+
+- 若 $|\mu_i| < 1$（所有），周期轨道稳定
+- 若有 $|\mu_i| > 1$，周期轨道不稳定
+- 若 $\mu_i$ 穿越单位圆，发生分岔
+
+**特征值在单位圆外**：若 Poincaré map 有一个特征值 $|\mu| > 1$，则周期轨道不稳定，附近轨迹指数远离。这可能意味着：①系统趋向另一个稳定周期轨道；②系统进入混沌（若有多个不稳定方向，形成 strange attractor）；③系统发散到无穷。
+
+例如，Lorenz 系统的 Poincaré map 有两个不稳定方向和一个稳定方向，导致混沌行为。

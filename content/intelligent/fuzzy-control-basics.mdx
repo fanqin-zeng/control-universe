@@ -1,0 +1,1198 @@
+---
+title: "模糊控制基础"
+description: "介绍模糊集合与隶属度函数、语言变量、模糊推理机制、解模糊化方法，以及Mamdani和Takagi-Sugeno两种经典模糊控制器架构"
+---
+
+# 模糊控制基础
+
+## 引言
+
+在前面的章节中，我们学习了基于精确数学模型的控制方法：从经典控制的传递函数到现代控制的状态空间，从最优控制到自适应控制。这些方法的共同前提是：**系统可以用精确的微分方程描述**。
+
+然而，在真实世界中，许多系统难以用精确数学模型刻画：
+
+- **人类专家经验**："如果温度偏高，则减小加热功率"——什么是"偏高"？减小多少？
+- **复杂非线性**：化工过程中的反应速率受多种因素影响，难以建立精确机理模型
+- **不确定环境**：移动机器人在未知环境中导航，障碍物位置不完全已知
+- **感知信息模糊**：摄像头识别的"前方有障碍物"是一个模糊概念，距离和大小都不确定
+
+**模糊控制**（Fuzzy Control）的核心思想是：模仿人类的模糊推理能力，用**语言规则**（linguistic rules）而非精确方程来设计控制器。它不依赖于被控对象的数学模型，而是基于操作者的经验和直觉。
+
+> **直觉理解**：想象你驾驶汽车接近红灯。你不会计算精确的刹车力矩公式，而是根据经验判断："距离较近且速度较快 → 用力刹车"，"距离较远且速度较慢 → 轻踩刹车"。模糊控制器就是将这种经验规则形式化。
+
+模糊控制由Lotfi Zadeh于1965年提出模糊集合论奠基，1974年Ebrahim Mamdani首次将其应用于蒸汽机控制。如今，模糊控制已广泛应用于：
+- 家用电器（洗衣机、空调、电饭煲）
+- 工业自动化（水泥窑控制、污水处理）
+- 交通运输（地铁自动运行、汽车防抱死制动）
+- 医疗设备（麻醉深度控制）
+
+本章将系统介绍模糊控制的基本理论，包括模糊集合、隶属度函数、模糊推理、解模糊化等核心概念，并详细讲解两种经典架构：Mamdani型和Takagi-Sugeno型模糊控制器。
+
+## 模糊集合与隶属度函数
+
+### 从经典集合到模糊集合
+
+**经典集合**（Crisp Set）：一个元素要么属于集合，要么不属于，没有中间状态。例如，定义"高温"为温度 $T > 80^\circ\text{C}$，则 $T=85^\circ\text{C}$ 属于高温（ membership = 1），$T=75^\circ\text{C}$ 不属于高温（membership = 0）。
+
+这种**硬边界**（hard boundary）不符合人类的思维方式。实际上，$79^\circ\text{C}$ 和 $81^\circ\text{C}$ 的差别微乎其微，但经典集合将它们划分为完全不同的类别。
+
+**模糊集合**（Fuzzy Set）：允许元素**部分属于**集合，用**隶属度**（membership degree）表示属于程度，取值范围为 $[0, 1]$。
+
+> **关键洞察**：模糊集合不是"概率"。概率描述事件发生的不确定性（随机性），而隶属度描述概念的模糊性（vagueness）。例如，"温度是高温"的隶属度为0.8，不是说有80%的概率是高温，而是说它在很大程度上符合"高温"这个概念。
+
+### 隶属度函数
+
+**隶属度函数**（Membership Function, MF）：描述输入变量属于某个模糊集合的程度。记作 $\mu_A(x)$，表示元素 $x$ 属于模糊集合 $A$ 的隶属度。
+
+常见的隶属度函数形状：
+
+#### 1. 三角形隶属度函数（Triangular MF）
+
+$$\mu_{\text{tri}}(x; a, b, c) = \begin{cases} 0 & x \leq a \\ \frac{x-a}{b-a} & a < x \leq b \\ \frac{c-x}{c-b} & b < x < c \\ 0 & x \geq c \end{cases}$$
+
+其中 $a < b < c$，$b$ 是峰值点（$\mu=1$），$a$ 和 $c$ 是边界点（$\mu=0$）。
+
+**特点**：计算简单，最常用。
+
+#### 2. 梯形隶属度函数（Trapezoidal MF）
+
+$$\mu_{\text{trap}}(x; a, b, c, d) = \begin{cases} 0 & x \leq a \\ \frac{x-a}{b-a} & a < x \leq b \\ 1 & b < x \leq c \\ \frac{d-x}{d-c} & c < x < d \\ 0 & x \geq d \end{cases}$$
+
+其中 $a < b \leq c < d$。当 $b=c$ 时退化为三角形。
+
+**特点**：顶部平坦区域表示"完全属于"的范围。
+
+#### 3. 高斯隶属度函数（Gaussian MF）
+
+$$\mu_{\text{gauss}}(x; \sigma, c) = e^{-\frac{(x-c)^2}{2\sigma^2}}$$
+
+其中 $c$ 是中心，$\sigma$ 控制宽度。
+
+**特点**：光滑可微，适合需要导数的应用（如自适应模糊控制）。
+
+#### 4. S形隶属度函数（Sigmoidal MF）
+
+$$\mu_{\text{sig}}(x; a, c) = \begin{cases} 0 & x \leq a \\ 2\left(\frac{x-a}{c-a}\right)^2 & a < x \leq \frac{a+c}{2} \\ 1 - 2\left(\frac{x-c}{c-a}\right)^2 & \frac{a+c}{2} < x < c \\ 1 & x \geq c \end{cases}$$
+
+或简化版：$\mu_{\text{sig}}(x) = \frac{1}{1 + e^{-k(x-c)}}$
+
+**特点**：单调递增/递减，适合定义"大"、"小"等单边概念。
+
+### 语言变量与语言值
+
+**语言变量**（Linguistic Variable）：用自然语言词汇描述的变量。例如：
+- 温度：很低、低、适中、高、很高
+- 速度：慢、中等、快
+- 误差：负大、负小、零、正小、正大
+
+**语言值**（Linguistic Value）：语言变量的具体取值，每个语言值对应一个模糊集合（隶属度函数）。
+
+**设计原则**：
+1. **覆盖范围**：所有语言值的隶属度函数应覆盖整个输入范围
+2. **重叠度**：相邻语言值的MF应有适当重叠（通常25%-50%），避免控制死区
+3. **对称性**：对于误差等关于零对称的变量，MF通常对称分布
+4. **数量选择**：通常3-7个语言值。太少导致粗糙，太多增加复杂度
+
+<JupyterNotebook language="python" setupCode={`import numpy as np
+import matplotlib.pyplot as plt`} cells={[{code: `# 可视化常见隶属度函数
+
+def triangular_mf(x, a, b, c):
+    """三角形隶属度函数"""
+    if x <= a or x >= c:
+        return 0.0
+    elif a < x <= b:
+        return (x - a) / (b - a)
+    else:  # b < x < c
+        return (c - x) / (c - b)
+
+def trapezoidal_mf(x, a, b, c, d):
+    """梯形隶属度函数"""
+    if x <= a or x >= d:
+        return 0.0
+    elif a < x <= b:
+        return (x - a) / (b - a)
+    elif b < x <= c:
+        return 1.0
+    else:  # c < x < d
+        return (d - x) / (d - c)
+
+def gaussian_mf(x, sigma, c):
+    """高斯隶属度函数"""
+    return np.exp(-((x - c)**2) / (2 * sigma**2))
+
+def sigmoidal_mf(x, a, c):
+    """S形隶属度函数"""
+    if x <= a:
+        return 0.0
+    elif x >= c:
+        return 1.0
+    elif a < x <= (a + c) / 2:
+        return 2 * ((x - a) / (c - a))**2
+    else:
+        return 1 - 2 * ((x - c) / (c - a))**2
+
+# 生成x轴数据
+x = np.linspace(0, 10, 500)
+
+# 图1：三角形隶属度函数族（用于温度变量）
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# 三角形MF
+ax = axes[0, 0]
+tri_params = [(0, 0, 2.5), (0, 2.5, 5), (2.5, 5, 7.5), (5, 7.5, 10), (7.5, 10, 10)]
+labels = ['很低', '低', '适中', '高', '很高']
+colors = ['blue', 'cyan', 'green', 'orange', 'red']
+
+for params, label, color in zip(tri_params, labels, colors):
+    mu = [triangular_mf(xi, *params) for xi in x]
+    ax.plot(x, mu, linewidth=2, label=label, color=color)
+
+ax.set_xlabel('Temperature (°C)', fontsize=11)
+ax.set_ylabel('Membership Degree', fontsize=11)
+ax.set_title('Triangular Membership Functions', fontsize=12, fontweight='bold')
+ax.legend(fontsize=9)
+ax.grid(True, alpha=0.3)
+ax.set_ylim([0, 1.1])
+
+# 梯形MF
+ax = axes[0, 1]
+trap_params = [(0, 0, 2, 3), (1, 2, 3, 4), (2, 3, 4, 5), (3, 4, 5, 6), (4, 5, 6, 6)]
+for params, label, color in zip(trap_params, labels, colors):
+    mu = [trapezoidal_mf(xi, *params) for xi in x]
+    ax.plot(x, mu, linewidth=2, label=label, color=color)
+
+ax.set_xlabel('Input', fontsize=11)
+ax.set_ylabel('Membership Degree', fontsize=11)
+ax.set_title('Trapezoidal Membership Functions', fontsize=12, fontweight='bold')
+ax.legend(fontsize=9)
+ax.grid(True, alpha=0.3)
+ax.set_ylim([0, 1.1])
+
+# 高斯MF
+ax = axes[1, 0]
+centers = [1, 2.5, 4, 5.5, 7]
+sigma = 0.8
+for c, label, color in zip(centers, labels, colors):
+    mu = [gaussian_mf(xi, sigma, c) for xi in x]
+    ax.plot(x, mu, linewidth=2, label=label, color=color)
+
+ax.set_xlabel('Input', fontsize=11)
+ax.set_ylabel('Membership Degree', fontsize=11)
+ax.set_title('Gaussian Membership Functions', fontsize=12, fontweight='bold')
+ax.legend(fontsize=9)
+ax.grid(True, alpha=0.3)
+ax.set_ylim([0, 1.1])
+
+# S形MF
+ax = axes[1, 1]
+# 两个S形函数：一个递增，一个递减
+mu_sig_inc = [sigmoidal_mf(xi, 2, 6) for xi in x]  # 递增
+mu_sig_dec = [sigmoidal_mf(xi, 6, 2) for xi in x]  # 递减（交换参数实现）
+
+ax.plot(x, mu_sig_inc, linewidth=2, label='大 (Large)', color='red')
+ax.plot(x, mu_sig_dec, linewidth=2, label='小 (Small)', color='blue')
+
+ax.set_xlabel('Input', fontsize=11)
+ax.set_ylabel('Membership Degree', fontsize=11)
+ax.set_title('Sigmoidal Membership Functions', fontsize=12, fontweight='bold')
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.3)
+ax.set_ylim([0, 1.1])
+
+plt.tight_layout()
+plt.savefig('/tmp/membership_functions.png', dpi=150, bbox_inches='tight')
+plt.show()`}]}/>
+
+## 模糊推理机制
+
+模糊控制器的核心是**模糊推理引擎**（Fuzzy Inference Engine），它模拟人类的模糊逻辑思维，将输入的语言值通过规则库映射到输出的语言值。
+
+### 模糊逻辑运算
+
+在经典逻辑中，命题的真值为0或1。在模糊逻辑中，命题的真度（truth degree）可以是 $[0, 1]$ 之间的任意值。
+
+**基本运算**：
+
+| 逻辑运算 | 符号 | 经典逻辑 | 模糊逻辑（Zadeh算子） | 其他常用算子 |
+|---------|------|---------|---------------------|------------|
+| 非（NOT） | $\neg A$ | $1 - \mu_A$ | $1 - \mu_A(x)$ | $1 - \mu_A(x)$ |
+| 与（AND） | $A \land B$ | $\min(\mu_A, \mu_B)$ | $\min(\mu_A(x), \mu_B(x))$ | 乘积：$\mu_A(x) \cdot \mu_B(x)$ |
+| 或（OR） | $A \lor B$ | $\max(\mu_A, \mu_B)$ | $\max(\mu_A(x), \mu_B(x))$ | 代数和：$\mu_A + \mu_B - \mu_A\mu_B$ |
+
+**示例**：假设 $\mu_{\text{热}}(T=35^\circ\text{C}) = 0.7$，$\mu_{\text{潮湿}}(H=80\%) = 0.6$
+
+- NOT 热：$\mu_{\neg\text{热}} = 1 - 0.7 = 0.3$
+- 热 AND 潮湿：$\min(0.7, 0.6) = 0.6$（或 $0.7 \times 0.6 = 0.42$）
+- 热 OR 潮湿：$\max(0.7, 0.6) = 0.7$
+
+### 模糊规则库
+
+**模糊规则**（Fuzzy Rule）的形式通常为：
+
+$$\text{IF } x_1 \text{ is } A_1 \text{ AND } x_2 \text{ is } A_2 \text{ THEN } y \text{ is } B$$
+
+其中：
+- $x_1, x_2$ 是输入变量（前提部，antecedent）
+- $y$ 是输出变量（结论部，consequent）
+- $A_1, A_2, B$ 是语言值（模糊集合）
+
+**规则库示例**（空调温度控制）：
+
+| 规则编号 | IF (温度) | AND (湿度) | THEN (风扇速度) |
+|---------|----------|-----------|---------------|
+| R1 | 冷 | — | 低 |
+| R2 | 适中 | 干燥 | 中 |
+| R3 | 适中 | 潮湿 | 高 |
+| R4 | 热 | — | 很高 |
+
+（"—"表示该条件不适用，即规则只依赖温度）
+
+**规则设计原则**：
+1. **完备性**：规则库应覆盖所有可能的输入组合，避免出现"控制真空"
+2. **一致性**：规则之间不应矛盾（如同一前提下推出不同结论）
+3. **简洁性**：避免冗余规则
+4. **可解释性**：每条规则应对应明确的操作经验
+
+### 模糊推理过程
+
+模糊推理分为三个步骤：**模糊化** → **推理** → **解模糊化**。
+
+#### 步骤1：模糊化（Fuzzification）
+
+将精确的输入值转换为对各模糊集合的隶属度。
+
+**示例**：假设当前温度 $T=28^\circ\text{C}$，湿度 $H=65\%$。
+
+对温度变量：
+- $\mu_{\text{冷}}(28) = 0.0$
+- $\mu_{\text{适中}}(28) = 0.6$
+- $\mu_{\text{热}}(28) = 0.4$
+
+对湿度变量：
+- $\mu_{\text{干燥}}(65) = 0.3$
+- $\mu_{\text{潮湿}}(65) = 0.7$
+
+#### 步骤2：规则激活强度计算
+
+对每条规则，计算前提部的满足程度（firing strength）。
+
+**R2**：IF 温度是适中 AND 湿度是干燥 THEN 风扇速度是中
+
+前提部满足程度：$\alpha_2 = \min(\mu_{\text{适中}}(28), \mu_{\text{干燥}}(65)) = \min(0.6, 0.3) = 0.3$
+
+**R3**：IF 温度是适中 AND 湿度是潮湿 THEN 风扇速度是高
+
+前提部满足程度：$\alpha_3 = \min(\mu_{\text{适中}}(28), \mu_{\text{潮湿}}(65)) = \min(0.6, 0.7) = 0.6$
+
+**R4**：IF 温度是热 THEN 风扇速度是很高
+
+前提部满足程度：$\alpha_4 = \mu_{\text{热}}(28) = 0.4$（单前提规则）
+
+#### 步骤3：结论部裁剪/缩放
+
+根据规则激活强度，修改结论部隶属度函数。有两种常用方法：
+
+**Mamdani法（裁剪）**：用 $\alpha_i$ 截断结论部MF：
+
+$$\mu_{B_i'}(y) = \min(\alpha_i, \mu_{B_i}(y))$$
+
+**Sugeno法（缩放）**：用 $\alpha_i$ 乘以结论部MF：
+
+$$\mu_{B_i'}(y) = \alpha_i \cdot \mu_{B_i}(y)$$
+
+#### 步骤4：聚合（Aggregation）
+
+将所有激活规则的结论部合并为一个总输出模糊集合：
+
+$$\mu_{B'}(y) = \max_i \mu_{B_i'}(y)$$
+
+（也可以用代数和等其他聚合算子）
+
+#### 步骤5：解模糊化（Defuzzification）
+
+将聚合后的模糊输出转换为精确的控制量。常用方法见下一节。
+
+## 解模糊化方法
+
+解模糊化（Defuzzification）是将模糊输出集合 $B'$ 转换为精确数值 $y^*$ 的过程。
+
+### 1. 重心法（Centroid / Center of Gravity, COG）
+
+$$y^* = \frac{\int y \cdot \mu_{B'}(y) dy}{\int \mu_{B'}(y) dy}$$
+
+**几何意义**：输出模糊集合的面积重心。
+
+**优点**：考虑了全部信息，输出平滑。
+
+**缺点**：计算量大（需数值积分）。
+
+**离散近似**：
+
+$$y^* \approx \frac{\sum_{j=1}^N y_j \cdot \mu_{B'}(y_j)}{\sum_{j=1}^N \mu_{B'}(y_j)}$$
+
+其中 $y_j$ 是输出域的离散采样点。
+
+### 2. 平分法（Bisector）
+
+找到一点 $y^*$ 使得其左右两侧面积相等：
+
+$$\int_{-\infty}^{y^*} \mu_{B'}(y) dy = \int_{y^*}^{\infty} \mu_{B'}(y) dy$$
+
+**优点**：直观（将模糊集合"平分"）。
+
+**缺点**：计算复杂，可能不唯一。
+
+### 3. 最大隶属度平均法（Mean of Maximum, MOM）
+
+$$y^* = \frac{\sum_{y \in Y_{\max}} y}{|Y_{\max}|}$$
+
+其中 $Y_{\max} = \{y \mid \mu_{B'}(y) = \max_z \mu_{B'}(z)\}$ 是隶属度达到最大值的点集。
+
+**特例**：若最大值唯一，则 $y^* = \arg\max_y \mu_{B'}(y)$。
+
+**优点**：计算简单。
+
+**缺点**：忽略了其他信息，可能出现不连续跳跃。
+
+### 4. 加权平均法（Weighted Average）— 仅适用于Sugeno型
+
+对于Takagi-Sugeno型模糊系统（见后文），结论部是精确值而非模糊集合，解模糊化简化为加权平均：
+
+$$y^* = \frac{\sum_{i=1}^R \alpha_i z_i}{\sum_{i=1}^R \alpha_i}$$
+
+其中 $R$ 是规则数，$\alpha_i$ 是第 $i$ 条规则的激活强度，$z_i$ 是第 $i$ 条规则的精确输出。
+
+**优点**：计算高效，无需积分。
+
+**缺点**：仅适用于Sugeno型。
+
+### 方法对比
+
+<JupyterNotebook language="python" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy import integrate`} cells={[{code: `# 比较不同解模糊化方法
+
+# 定义一个简单的输出模糊集合（三个三角形的并集）
+def output_mf(y):
+    """聚合后的输出隶属度函数（示例）"""
+    # 规则1结论：低速度，激活强度0.3
+    mu1 = max(0, min(0.3, triangular_mf(y, 0, 2, 4)))
+    # 规则2结论：中速度，激活强度0.6
+    mu2 = max(0, min(0.6, triangular_mf(y, 3, 5, 7)))
+    # 规则3结论：高速度，激活强度0.4
+    mu3 = max(0, min(0.4, triangular_mf(y, 6, 8, 10)))
+    
+    # 聚合（取最大值）
+    return max(mu1, mu2, mu3)
+
+# 输出域
+y = np.linspace(0, 10, 1000)
+mu = [output_mf(yi) for yi in y]
+
+# 方法1：重心法（数值积分）
+numerator = integrate.trapz([yi * mui for yi, mui in zip(y, mu)], y)
+denominator = integrate.trapz(mu, y)
+y_cog = numerator / denominator
+
+# 方法2：平分法
+total_area = denominator
+half_area = total_area / 2
+cumulative_area = 0
+y_bisector = None
+for i in range(len(y)-1):
+    cumulative_area += mu[i] * (y[i+1] - y[i])
+    if cumulative_area >= half_area:
+        y_bisector = y[i]
+        break
+
+# 方法3：最大隶属度平均法
+max_mu = max(mu)
+max_indices = [i for i, mui in enumerate(mu) if abs(mui - max_mu) < 1e-6]
+y_mom = np.mean([y[i] for i in max_indices])
+
+# 绘图
+plt.figure(figsize=(10, 6))
+plt.plot(y, mu, 'b-', linewidth=3, label='$\\mu_{B\\' }(y)$ (Aggregated Output)')
+plt.fill_between(y, mu, alpha=0.3)
+
+# 标记三种方法的结果
+plt.axvline(x=y_cog, color='red', linestyle='--', linewidth=2, label=f'Centroid: {y_cog:.2f}')
+plt.axvline(x=y_bisector, color='green', linestyle='--', linewidth=2, label=f'Bisector: {y_bisector:.2f}')
+plt.axvline(x=y_mom, color='orange', linestyle='--', linewidth=2, label=f'Mean of Max: {y_mom:.2f}')
+
+plt.xlabel('Output (Fan Speed)', fontsize=11)
+plt.ylabel('Membership Degree', fontsize=11)
+plt.title('Defuzzification Methods Comparison', fontsize=12, fontweight='bold')
+plt.legend(fontsize=10)
+plt.grid(True, alpha=0.3)
+plt.ylim([0, 1.1])
+
+plt.tight_layout()
+plt.savefig('/tmp/defuzzification_methods.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f"Centroid (COG):     y* = {y_cog:.4f}")
+print(f"Bisector:           y* = {y_bisector:.4f}")
+print(f"Mean of Maximum:    y* = {y_mom:.4f}")`}]}/>
+
+**选择建议**：
+- **实时控制**：优先选MOM（最快）或Sugeno型加权平均
+- **平滑性能要求高**：选重心法（最平滑）
+- **工程实践**：重心法最常用，性能和复杂度平衡
+
+## Mamdani型模糊控制器
+
+### 架构概述
+
+**Mamdani型**（1974）是最早的模糊控制器架构，也是最直观的。其特点是：**前提部和结论部都是模糊集合**。
+
+**结构框图**：
+
+```
+精确输入 → [模糊化] → 模糊输入 → [模糊推理引擎] → 模糊输出 → [解模糊化] → 精确输出
+              ↑                        ↑
+         隶属度函数库            模糊规则库
+```
+
+### 设计步骤
+
+以**倒立摆平衡控制**为例，说明Mamdani型模糊控制器的完整设计流程。
+
+**系统描述**：倒立摆的角度 $\theta$ 和角速度 $\dot{\theta}$ 为输入，施加在小车上的力 $F$ 为输出。控制目标是保持摆杆竖直（$\theta=0$）。
+
+#### 步骤1：定义输入/输出变量及语言值
+
+**输入1：角度 $\theta$**（单位：度）
+- 范围：$[-30^\circ, 30^\circ]$
+- 语言值：NB(负大)、NS(负小)、ZO(零)、PS(正小)、PB(正大)
+- 隶属度函数：三角形，均匀分布
+
+**输入2：角速度 $\dot{\theta}$**（单位：度/秒）
+- 范围：$[-60, 60]$
+- 语言值：NB、NS、ZO、PS、PB
+- 隶属度函数：三角形
+
+**输出：力 $F$**（单位：牛顿）
+- 范围：$[-50, 50]$
+- 语言值：NB、NS、ZO、PS、PB
+- 隶属度函数：三角形
+
+#### 步骤2：建立模糊规则库
+
+基于操作经验："如果摆杆向右倾斜且继续向右倒下，则施加向左的力"。
+
+典型规则：
+
+| 规则 | IF $\theta$ | AND $\dot{\theta}$ | THEN $F$ |
+|------|-----------|------------------|---------|
+| R1 | NB | NB | NB |
+| R2 | NB | NS | NB |
+| R3 | NB | ZO | NS |
+| R4 | NB | PS | NS |
+| R5 | NB | PB | ZO |
+| ... | ... | ... | ... |
+| R13 | ZO | ZO | ZO |
+| ... | ... | ... | ... |
+| R25 | PB | PB | PB |
+
+共 $5 \times 5 = 25$ 条规则，构成**模糊关联矩阵**（Fuzzy Associative Memory Matrix, FAMM）：
+
+$$\begin{array}{c|ccccc} \dot{\theta} \backslash \theta & \text{NB} & \text{NS} & \text{ZO} & \text{PS} & \text{PB} \\ \hline \text{NB} & \text{NB} & \text{NB} & \text{NS} & \text{ZO} & \text{PS} \\ \text{NS} & \text{NB} & \text{NS} & \text{ZO} & \text{PS} & \text{PB} \\ \text{ZO} & \text{NS} & \text{ZO} & \text{ZO} & \text{ZO} & \text{NS} \\ \text{PS} & \text{NS} & \text{ZO} & \text{PS} & \text{PB} & \text{PB} \\ \text{PB} & \text{ZO} & \text{PS} & \text{PB} & \text{PB} & \text{PB} \end{array}$$
+
+> **观察**：矩阵关于对角线对称，反映了系统的物理对称性。
+
+#### 步骤3：模糊化
+
+假设当前测量值：$\theta = 5^\circ$，$\dot{\theta} = 10^\circ/\text{s}$。
+
+对角度 $\theta=5^\circ$：
+- $\mu_{\text{NB}}(5) = 0$
+- $\mu_{\text{NS}}(5) = 0$
+- $\mu_{\text{ZO}}(5) = 0.5$（假设ZO的中心在0，宽度为10）
+- $\mu_{\text{PS}}(5) = 0.5$
+- $\mu_{\text{PB}}(5) = 0$
+
+对角速度 $\dot{\theta}=10$：
+- $\mu_{\text{NB}}(10) = 0$
+- $\mu_{\text{NS}}(10) = 0$
+- $\mu_{\text{ZO}}(10) = 0.5$
+- $\mu_{\text{PS}}(10) = 0.5$
+- $\mu_{\text{PB}}(10) = 0$
+
+#### 步骤4：规则激活
+
+只有同时满足两个前提的规则才会被激活。可能的组合：
+- ZO AND ZO → ZO（规则R13）
+- ZO AND PS → ZO（规则R14）
+- PS AND ZO → ZO（规则R18）
+- PS AND PS → PB（规则R19）
+
+计算激活强度（用min算子）：
+- $\alpha_{13} = \min(0.5, 0.5) = 0.5$
+- $\alpha_{14} = \min(0.5, 0.5) = 0.5$
+- $\alpha_{18} = \min(0.5, 0.5) = 0.5$
+- $\alpha_{19} = \min(0.5, 0.5) = 0.5$
+
+#### 步骤5：结论部裁剪
+
+假设输出语言值ZO、PB的隶属度函数分别为三角形 $( -10, 0, 10)$ 和 $(30, 40, 50)$。
+
+裁剪后：
+- $\mu_{\text{ZO}'}(F) = \min(0.5, \mu_{\text{ZO}}(F))$
+- $\mu_{\text{PB}'}(F) = \min(0.5, \mu_{\text{PB}}(F))$
+
+（注意：多条规则指向同一结论时，先取max再裁剪）
+
+#### 步骤6：聚合
+
+$$\mu_{B'}(F) = \max(\mu_{\text{ZO}'}, \mu_{\text{PB}'})$$
+
+#### 步骤7：解模糊化
+
+用重心法计算精确输出 $F^*$。假设数值积分结果为 $F^* = 12.5\text{N}$（正值表示向右推）。
+
+### Mamdani型的优缺点
+
+**优点**：
+- 直观易懂，规则形式接近人类思维
+- 结论部是模糊集合，语义清晰
+- 适用于专家经验主导的系统
+
+**缺点**：
+- 计算量大（需数值积分进行解模糊化）
+- 难以与优化算法结合（不可微）
+- 规则数随输入变量指数增长（"维数灾难"）
+
+## Takagi-Sugeno型模糊控制器
+
+### 架构概述
+
+**Takagi-Sugeno型**（TS型，1985）改进了Mamdani型，将结论部改为**精确函数**（通常是线性函数）。
+
+**规则形式**：
+
+$$\text{IF } x_1 \text{ is } A_1 \text{ AND } x_2 \text{ is } A_2 \text{ THEN } z = f(x_1, x_2)$$
+
+其中 $f(x_1, x_2)$ 通常是线性函数：$z = p_0 + p_1 x_1 + p_2 x_2$。
+
+**零阶Sugeno**：$f(x) = c$（常数），等价于Mamdani型用单点作为结论部MF。
+
+**一阶Sugeno**：$f(x) = p_0 + p_1 x_1 + p_2 x_2$（线性），最常用。
+
+### 推理过程
+
+TS型的推理大大简化，因为结论部是精确值，无需解模糊化中的积分运算。
+
+**步骤**：
+1. **模糊化**：同Mamdani型
+2. **规则激活强度**：$\alpha_i = \min(\mu_{A_{i1}}(x_1), \mu_{A_{i2}}(x_2), \dots)$
+3. **计算每条规则的输出**：$z_i = f_i(x_1, x_2)$
+4. **加权平均**：
+
+$$z^* = \frac{\sum_{i=1}^R \alpha_i z_i}{\sum_{i=1}^R \alpha_i}$$
+
+### TS型 vs Mamdani型对比
+
+| 特性 | Mamdani型 | Takagi-Sugeno型 |
+|------|----------|----------------|
+| **结论部** | 模糊集合 | 精确函数（通常线性） |
+| **解模糊化** | 需数值积分（重心法等） | 加权平均（解析计算） |
+| **计算效率** | 较低 | 高（适合实时控制） |
+| **可解释性** | 强（规则语义清晰） | 较弱（需理解线性函数） |
+| **优化友好** | 差（不可微） | 好（一阶Sugeno可微） |
+| **逼近能力** | 通用逼近器 | 通用逼近器（更高效） |
+| **参数学习** | 困难 | 可用最小二乘法、梯度下降 |
+| **工程应用** | 家电、简单工业控制 | 复杂系统建模、自适应控制 |
+
+### TS型实例：非线性函数逼近
+
+考虑逼近非线性函数 $y = \sin(x)$，$x \in [-\pi, \pi]$。
+
+**规则设计**（三条规则）：
+
+- R1：IF $x$ is Negative THEN $z_1 = a_1 x + b_1$
+- R2：IF $x$ is Zero THEN $z_2 = a_2 x + b_2$
+- R3：IF $x$ is Positive THEN $z_3 = a_3 x + b_3$
+
+**隶属度函数**：
+- $\mu_{\text{Negative}}(x)$：S形递减，从 $x=-\pi$ 处的1降到 $x=0$ 处的0
+- $\mu_{\text{Zero}}(x)$：三角形，中心在0，宽度为 $\pi$
+- $\mu_{\text{Positive}}(x)$：S形递增，从 $x=0$ 处的0升到 $x=\pi$ 处的1
+
+**参数辨识**：用最小二乘法拟合 $a_i, b_i$，使得TS型输出在全局上最佳逼近 $\sin(x)$。
+
+结果可能为：
+- R1：$z_1 = 0.9x + 0.1$（在负区间近似正弦的线性段）
+- R2：$z_2 = x$（在原点附近，$\sin(x) \approx x$）
+- R3：$z_3 = 0.9x - 0.1$
+
+**输出**：
+
+$$z^* = \frac{\alpha_1 z_1 + \alpha_2 z_2 + \alpha_3 z_3}{\alpha_1 + \alpha_2 + \alpha_3}$$
+
+<JupyterNotebook language="python" setupCode={`import numpy as np
+import matplotlib.pyplot as plt`} cells={[{code: `# Takagi-Sugeno型模糊系统逼近 sin(x)
+
+def ts_fuzzy_approximation(x):
+    """
+    一阶Takagi-Sugeno模糊系统逼近 sin(x)
+    三条规则：Negative, Zero, Positive
+    """
+    # 隶属度函数
+    if x <= -np.pi:
+        mu_neg = 1.0
+        mu_zero = 0.0
+        mu_pos = 0.0
+    elif -np.pi < x <= 0:
+        mu_neg = -x / np.pi  # 从1降到0
+        mu_zero = 1 + x / (np.pi/2) if x > -np.pi/2 else 0  # 三角形
+        mu_pos = 0.0
+    elif 0 < x <= np.pi:
+        mu_neg = 0.0
+        mu_zero = 1 - x / (np.pi/2) if x < np.pi/2 else 0
+        mu_pos = x / np.pi  # 从0升到1
+    else:
+        mu_neg = 0.0
+        mu_zero = 0.0
+        mu_pos = 1.0
+    
+    # 归一化（确保 sum(mu) = 1，简化计算）
+    mu_sum = mu_neg + mu_zero + mu_pos
+    if mu_sum > 0:
+        mu_neg /= mu_sum
+        mu_zero /= mu_sum
+        mu_pos /= mu_sum
+    
+    # 规则结论（线性函数）
+    z1 = 0.9 * x + 0.1   # Negative
+    z2 = x                # Zero (sin(x) ≈ x near 0)
+    z3 = 0.9 * x - 0.1   # Positive
+    
+    # 加权平均
+    z_star = mu_neg * z1 + mu_zero * z2 + mu_pos * z3
+    
+    return z_star, mu_neg, mu_zero, mu_pos
+
+# 生成数据
+x = np.linspace(-np.pi, np.pi, 500)
+y_true = np.sin(x)
+y_ts = np.array([ts_fuzzy_approximation(xi)[0] for xi in x])
+
+# 计算误差
+error = y_true - y_ts
+mse = np.mean(error**2)
+
+# 绘图
+fig, axes = plt.subplots(2, 1, figsize=(10, 7))
+
+# 图1：函数逼近对比
+axes[0].plot(x, y_true, 'b-', linewidth=2, label='$\\sin(x)$ (True)')
+axes[0].plot(x, y_ts, 'r--', linewidth=2, label='TS Fuzzy Approximation')
+axes[0].fill_between(x, y_true, y_ts, alpha=0.2, color='gray', label='Error')
+axes[0].set_xlabel('$x$', fontsize=11)
+axes[0].set_ylabel('$y$', fontsize=11)
+axes[0].set_title('Takagi-Sugeno Fuzzy System Approximating sin(x)', fontsize=12, fontweight='bold')
+axes[0].legend(fontsize=10)
+axes[0].grid(True, alpha=0.3)
+axes[0].axhline(y=0, color='k', linestyle=':', linewidth=0.5)
+
+# 图2：逼近误差
+axes[1].plot(x, error, 'g-', linewidth=2)
+axes[1].axhline(y=0, color='k', linestyle=':', linewidth=1)
+axes[1].fill_between(x, error, alpha=0.3, color='green')
+axes[1].set_xlabel('$x$', fontsize=11)
+axes[1].set_ylabel('Error', fontsize=11)
+axes[1].set_title(f'Approximation Error (MSE = {mse:.6f})', fontsize=12, fontweight='bold')
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/tmp/ts_fuzzy_approximation.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f"Mean Squared Error: {mse:.6f}")
+print(f"Max Absolute Error: {np.max(np.abs(error)):.6f}")
+
+# 显示几个点的隶属度
+test_points = [-2, -1, 0, 1, 2]
+print("\nMembership degrees at test points:")
+for xp in test_points:
+    _, mu_neg, mu_zero, mu_pos = ts_fuzzy_approximation(xp)
+    print(f"x = {xp:4.1f}: μ_Neg={mu_neg:.3f}, μ_Zero={mu_zero:.3f}, μ_Pos={mu_pos:.3f}")`}]}/>
+
+从仿真可见，仅用3条线性规则，TS型模糊系统就能较好地逼近正弦函数。增加规则数或使用更复杂的结论函数可进一步提高精度。
+
+## 应用案例
+
+### 案例1：洗衣机模糊控制
+
+**问题**：传统洗衣机按固定时间洗涤，无法适应不同污渍程度的衣物。
+
+**模糊控制器设计**：
+
+**输入变量**：
+1. **污渍程度**（通过光学传感器检测水的浊度）：少、中、多
+2. **衣物量**（通过电机电流估算）：少、中、多
+
+**输出变量**：
+- **洗涤时间**（分钟）：短、中、长
+
+**模糊规则库**（部分）：
+
+| IF 污渍 | AND 衣物量 | THEN 洗涤时间 |
+|--------|----------|-------------|
+| 少 | 少 | 短（15分钟） |
+| 少 | 多 | 中（30分钟） |
+| 中 | 中 | 中（30分钟） |
+| 多 | 少 | 长（45分钟） |
+| 多 | 多 | 很长（60分钟） |
+
+**实现细节**：
+- 采用Mamdani型，重心法解模糊化
+- 隶属度函数：三角形，手动调参
+- 规则数：$3 \times 3 = 9$ 条
+
+**效果**：相比固定时间洗涤，节水约20%，节电约15%，洗净度提高。
+
+### 案例2：汽车ABS防抱死制动系统
+
+**问题**：紧急制动时车轮抱死导致失控，需在最大化制动力和防止抱死之间平衡。
+
+**模糊控制器设计**：
+
+**输入变量**：
+1. **滑移率** $s = \frac{v - r\omega}{v}$（$v$车速，$\omega$轮速，$r$轮半径）：很小、小、适中、大、很大
+2. **滑移率变化率** $\dot{s}$：快速减小、减小、稳定、增大、快速增大
+
+**输出变量**：
+- **制动压力调整**：大幅减压、减压、保持、增压、大幅增压
+
+**关键规则**：
+- IF 滑移率是大 AND 正在快速增大 THEN 大幅减压（防止抱死）
+- IF 滑移率是适中 AND 稳定 THEN 保持（维持最佳制动力）
+- IF 滑移率是小 AND 正在减小 THEN 增压（增加制动力）
+
+**实现细节**：
+- 采用TS型（一阶），结论部为制动压力的线性函数
+- 采样频率：100Hz（实时性要求高）
+- 规则数：$5 \times 5 = 25$ 条
+
+**效果**：制动距离缩短10%-20%，方向稳定性显著提高。
+
+## 与其他控制方法的对比
+
+### 模糊控制 vs PID控制
+
+| 特性 | PID控制 | 模糊控制 |
+|------|--------|---------|
+| **模型需求** | 无需模型（黑箱） | 无需模型（黑箱） |
+| **设计依据** | 试错法/Ziegler-Nichols | 专家经验/操作直觉 |
+| **非线性处理** | 差（线性控制器） | 好（天然非线性） |
+| **鲁棒性** | 中等（需重新整定） | 强（规则覆盖范围广） |
+| **可调参数** | 3个（$K_p, K_i, K_d$） | 多个（MF形状、规则库） |
+| **稳定性分析** | 成熟（频域/根轨迹） | 困难（缺乏系统理论） |
+| **工程成熟度** | 极高（工业标准） | 中等（家电/汽车常用） |
+| **适用场景** | 线性/弱非线性系统 | 强非线性/难建模系统 |
+
+**选择建议**：
+- 若系统近似线性且模型已知 → PID（简单可靠）
+- 若系统强非线性且有专家经验 → 模糊控制
+- **混合方案**：模糊自整定PID（用模糊逻辑在线调整PID增益）
+
+### 模糊控制 vs 神经网络
+
+| 特性 | 模糊控制 | 神经网络 |
+|------|---------|---------|
+| **知识表达** | 显式规则（可解释） | 隐式权重（黑箱） |
+| **学习方式** | 手动设计规则 | 数据驱动学习 |
+| **泛化能力** | 依赖规则完备性 | 强（从数据学习） |
+| **收敛保证** | 无（启发式） | 有（梯度下降理论） |
+| **硬件实现** | 简单（查表+插值） | 复杂（矩阵运算） |
+| **融合可能** | 神经模糊系统（ANFIS） | 神经模糊系统（ANFIS） |
+
+> **神经模糊系统**（Neuro-Fuzzy Systems）：结合两者的优点——用神经网络的学习能力自动调整模糊规则的参数（如隶属度函数的形状）。代表算法：ANFIS（Adaptive Neuro-Fuzzy Inference System）。
+
+### 模糊控制 vs 滑模控制/反步法
+
+| 特性 | 模糊控制 | 滑模/反步法 |
+|------|---------|-----------|
+| **理论基础** | 启发式（缺乏严格稳定性证明） | Lyapunov理论（严格稳定） |
+| **抖振/高频切换** | 无（输出平滑） | 滑模有抖振问题 |
+| **参数不确定性** | 天然鲁棒（规则覆盖） | 需自适应扩展 |
+| **设计复杂度** | 低（基于经验） | 高（需数学推导） |
+| **适用对象** | 无模型/难建模系统 | 有参数化模型的系统 |
+
+**混合策略**：模糊滑模控制（Fuzzy Sliding Mode Control）——用模糊逻辑平滑滑模控制的切换项，减少抖振同时保持鲁棒性。
+
+## 局限性讨论
+
+尽管模糊控制在工程中广泛应用，但其理论局限性不容忽视：
+
+### 1. 稳定性分析困难
+
+与基于Lyapunov理论的经典控制不同，模糊控制系统缺乏统一的稳定性判据。虽然有一些充分条件（如寻找公共Lyapunov函数），但这些条件往往过于保守，难以实际应用。
+
+**缓解方法**：
+- 采用TS型模糊系统，利用线性矩阵不等式（LMI）进行稳定性分析
+- 将模糊控制器视为非线性控制器，应用非线性控制理论（如Popov判据）
+- 通过大量仿真验证稳定性（工程实践常用）
+
+### 2. 规则爆炸（Rule Explosion）
+
+对于多输入系统，规则数随输入变量和语言值数量指数增长。若有 $n$ 个输入，每个输入有 $m$ 个语言值，则全组合规则数为 $m^n$。
+
+**示例**：6个输入，每个5个语言值 → $5^6 = 15625$ 条规则！
+
+**缓解方法**：
+- **分层模糊系统**（Hierarchical Fuzzy Systems）：将输入分组，每层处理少数变量
+- **稀疏规则库**：仅定义重要规则，未定义区域用插值
+- **TS型**：结论部线性函数具有全局影响，可减少规则数
+
+### 3. 参数整定依赖经验
+
+隶属度函数的形状（宽度、重叠度）和规则库的设计高度依赖专家经验，缺乏系统化设计方法。
+
+**缓解方法**：
+- **数据驱动优化**：用遗传算法、粒子群优化等自动调参
+- **神经模糊学习**：ANFIS从输入-输出数据中学习MF和规则参数
+- **聚类方法**：用模糊C均值聚类（FCM）从数据中提取初始规则
+
+### 4. 稳态精度有限
+
+模糊控制本质上是基于规则的近似，难以达到高精度控制（如纳米级定位）。
+
+**缓解方法**：
+- 在模糊控制基础上叠加高精度反馈（如PID）
+- 使用高分辨率隶属度函数（增加语言值数量）
+- 采用增量式模糊控制（控制变化量而非绝对量）
+
+### 5. 缺乏自适应能力
+
+传统模糊控制器的规则和参数固定，无法适应系统参数的慢时变。
+
+**缓解方法**：
+- **自适应模糊控制**：在线调整隶属度函数参数或规则权重
+- **模糊自适应控制**：用模糊逻辑调整常规自适应控制器的增益
+- 结合强化学习：根据性能反馈自动优化规则库
+
+## 小结
+
+模糊控制提供了一种基于人类经验的控制设计范式，特别适用于难以建立精确数学模型的复杂非线性系统。本章核心要点：
+
+**基本概念**：
+- **模糊集合**：允许部分隶属，用隶属度函数描述
+- **语言变量**：用自然语言词汇（如"高"、"低"）描述变量
+- **模糊逻辑运算**：NOT、AND、OR的模糊推广
+
+**模糊推理流程**：
+1. **模糊化**：精确输入 → 隶属度
+2. **规则激活**：计算前提部满足程度
+3. **结论部修改**：裁剪或缩放
+4. **聚合**：合并所有规则的输出
+5. **解模糊化**：模糊输出 → 精确控制量（重心法、平分法、MOM等）
+
+**两种经典架构**：
+- **Mamdani型**：结论部是模糊集合，直观但计算量大
+- **Takagi-Sugeno型**：结论部是线性函数，高效且易于优化
+
+**应用领域**：
+- 家用电器（洗衣机、空调）
+- 汽车工业（ABS、发动机控制）
+- 工业自动化（过程控制、机器人）
+
+**局限性**：
+- 稳定性分析困难
+- 规则爆炸问题
+- 参数整定依赖经验
+- 稳态精度有限
+- 缺乏自适应能力
+
+**未来方向**：
+- 神经模糊系统（ANFIS）：结合学习能力
+- 模糊自适应控制：在线调整参数
+- 模糊与其他智能方法融合（遗传算法、粒子群、深度学习）
+
+模糊控制不是要取代传统控制，而是为其提供一种补充工具。在实际工程中，常常将模糊逻辑与PID、滑模、自适应等方法结合，发挥各自优势。下一章将深入探讨**模糊控制器设计**的高级主题，包括系统化设计方法、参数优化技术和稳定性分析。
+
+## 习题
+
+**习题1**（隶属度函数设计）：设计一个温度变量的模糊划分，范围为 $[0^\circ\text{C}, 100^\circ\text{C}]$，语言值为冷、凉、舒适、暖、热。要求：(a) 画出三角形隶属度函数，标明参数；(b) 计算 $T=22^\circ\text{C}$ 时各语言值的隶属度；(c) 若要使"舒适"的范围更宽，应如何调整参数？
+
+**习题2**（模糊推理手算）：考虑以下模糊规则库（单输入单输出）：
+- R1：IF $x$ is Small THEN $y$ is Low
+- R2：IF $x$ is Medium THEN $y$ is Medium
+- R3：IF $x$ is Large THEN $y$ is High
+
+隶属度函数均为三角形：
+- Small: $(0, 0, 5)$，Medium: $(0, 5, 10)$，Large: $(5, 10, 10)$
+- Low: $(0, 0, 5)$，Medium: $(0, 5, 10)$，High: $(5, 10, 10)$
+
+当输入 $x=3$ 时，用Mamdani推理（min算子，重心法解模糊化）计算输出 $y^*$。请给出详细计算步骤。
+
+**习题3**（TS型模糊系统）：考虑二输入一阶TS型模糊系统：
+- R1：IF $x_1$ is Negative AND $x_2$ is Negative THEN $z_1 = 0.5x_1 + 0.3x_2 + 1$
+- R2：IF $x_1$ is Negative AND $x_2$ is Positive THEN $z_2 = 0.4x_1 - 0.2x_2 + 0.5$
+- R3：IF $x_1$ is Positive AND $x_2$ is Negative THEN $z_3 = -0.3x_1 + 0.5x_2 + 0.8$
+- R4：IF $x_1$ is Positive AND $x_2$ is Positive THEN $z_4 = -0.2x_1 - 0.4x_2 + 1.2$
+
+隶属度函数：
+- $\mu_{\text{Negative}}(x) = \frac{1}{1+e^{2x}}$（Sigmoidal递减）
+- $\mu_{\text{Positive}}(x) = \frac{1}{1+e^{-2x}}$（Sigmoidal递增）
+
+当 $(x_1, x_2) = (0.5, -0.3)$ 时，计算TS型输出 $z^*$。
+
+**习题4**（模糊PID整定）：设计一个模糊自整定PID控制器，用模糊逻辑在线调整 $K_p$。规则如下：
+- IF $|e|$ is Large THEN increase $K_p$ significantly
+- IF $|e|$ is Small AND $|\dot{e}|$ is Small THEN keep $K_p$ unchanged
+- IF $|e|$ is Small AND $|\dot{e}|$ is Large THEN decrease $K_p$ slightly
+
+请：(a) 定义输入变量 $|e|$ 和 $|\dot{e}|$ 的语言值和MF；(b) 定义输出 $\Delta K_p$ 的语言值和MF；(c) 写出完整的模糊规则库；(d) 讨论这种方法的优缺点。
+
+**习题5**（稳定性分析挑战）：考虑一阶TS型模糊系统：
+- R1：IF $x$ is Negative THEN $\dot{x} = -x + 1$
+- R2：IF $x$ is Positive THEN $\dot{x} = -2x - 1$
+
+隶属度函数：$\mu_{\text{Neg}}(x) = \frac{1}{1+e^{x}}$，$\mu_{\text{Pos}}(x) = \frac{1}{1+e^{-x}}$。
+
+(a) 写出闭环动态方程 $\dot{x} = f(x)$ 的解析表达式。
+(b) 求平衡点（$\dot{x}=0$ 的解）。
+(c) 尝试构造Lyapunov函数 $V(x) = \frac{1}{2}x^2$，分析 $\dot{V}$ 的符号。能否证明全局渐近稳定？
+(d) 数值仿真验证 $x(0)=5$ 时的响应。
+
+## 答案
+
+**答案1**：
+
+**(a) 隶属度函数设计**：
+
+选择三角形MF，均匀分布：
+- 冷：$(0, 0, 25)$ — 峰值在0，右边界25
+- 凉：$(0, 25, 50)$ — 峰值在25
+- 舒适：$(25, 50, 75)$ — 峰值在50
+- 暖：$(50, 75, 100)$ — 峰值在75
+- 热：$(75, 100, 100)$ — 峰值在100
+
+**(b) $T=22^\circ\text{C}$ 的隶属度**：
+
+- $\mu_{\text{冷}}(22) = \frac{25-22}{25-0} = \frac{3}{25} = 0.12$
+- $\mu_{\text{凉}}(22) = \frac{22-0}{25-0} = \frac{22}{25} = 0.88$
+- $\mu_{\text{舒适}}(22) = 0$（因为 $22 < 25$）
+- $\mu_{\text{暖}}(22) = 0$
+- $\mu_{\text{热}}(22) = 0$
+
+**(c) 拓宽"舒适"范围**：
+
+将舒适MF改为 $(15, 50, 85)$，即左边界从25移到15，右边界从75移到85。这样舒适区域从原来的 $[25, 75]$（宽度50）扩展到 $[15, 85]$（宽度70）。相应地，需调整相邻MF以避免过大间隙。
+
+**答案2**：
+
+**步骤1：模糊化**
+
+输入 $x=3$：
+- $\mu_{\text{Small}}(3) = \frac{3-0}{5-0} = 0.6$（因为 $0 < 3 \leq 5$）
+- $\mu_{\text{Medium}}(3) = \frac{3-0}{5-0} = 0.6$（因为 $0 < 3 \leq 5$，在上升沿）
+- $\mu_{\text{Large}}(3) = 0$（因为 $3 < 5$）
+
+**步骤2：规则激活强度**
+
+- R1：$\alpha_1 = \mu_{\text{Small}}(3) = 0.6$
+- R2：$\alpha_2 = \mu_{\text{Medium}}(3) = 0.6$
+- R3：$\alpha_3 = \mu_{\text{Large}}(3) = 0$（未激活）
+
+**步骤3：结论部裁剪**
+
+- R1结论：Low，裁剪后 $\mu_{\text{Low}'}(y) = \min(0.6, \mu_{\text{Low}}(y))$
+- R2结论：Medium，裁剪后 $\mu_{\text{Med}'}(y) = \min(0.6, \mu_{\text{Medium}}(y))$
+
+**步骤4：聚合**
+
+$$\mu_{B'}(y) = \max(\mu_{\text{Low}'}, \mu_{\text{Med}'})$$
+
+**步骤5：重心法解模糊化**
+
+需计算：
+
+$$y^* = \frac{\int_0^{10} y \cdot \mu_{B'}(y) dy}{\int_0^{10} \mu_{B'}(y) dy}$$
+
+由于解析积分复杂，我们用离散近似（采样点 $y=0, 1, 2, \dots, 10$）：
+
+计算各点的 $\mu_{B'}(y)$：
+- $y=0$: $\mu_{\text{Low}}(0)=1$, $\mu_{\text{Med}}(0)=0$ → $\mu_{B'}=\min(0.6,1)=0.6$
+- $y=1$: $\mu_{\text{Low}}(1)=0.8$, $\mu_{\text{Med}}(1)=0.2$ → $\mu_{B'}=\max(\min(0.6,0.8), \min(0.6,0.2)) = \max(0.6, 0.2) = 0.6$
+- $y=2$: $\mu_{\text{Low}}(2)=0.6$, $\mu_{\text{Med}}(2)=0.4$ → $\mu_{B'}=\max(0.6, 0.4)=0.6$
+- $y=3$: $\mu_{\text{Low}}(3)=0.4$, $\mu_{\text{Med}}(3)=0.6$ → $\mu_{B'}=\max(0.4, 0.6)=0.6$
+- $y=4$: $\mu_{\text{Low}}(4)=0.2$, $\mu_{\text{Med}}(4)=0.8$ → $\mu_{B'}=\max(0.2, 0.6)=0.6$
+- $y=5$: $\mu_{\text{Low}}(5)=0$, $\mu_{\text{Med}}(5)=1$ → $\mu_{B'}=\max(0, 0.6)=0.6$
+- $y=6$: $\mu_{\text{Low}}(6)=0$, $\mu_{\text{Med}}(6)=0.8$ → $\mu_{B'}=\max(0, \min(0.6,0.8))=0.6$
+- $y=7$: $\mu_{\text{Low}}(7)=0$, $\mu_{\text{Med}}(7)=0.6$ → $\mu_{B'}=0.6$
+- $y=8$: $\mu_{\text{Low}}(8)=0$, $\mu_{\text{Med}}(8)=0.4$ → $\mu_{B'}=\min(0.6,0.4)=0.4$
+- $y=9$: $\mu_{\text{Low}}(9)=0$, $\mu_{\text{Med}}(9)=0.2$ → $\mu_{B'}=0.2$
+- $y=10$: $\mu_{\text{Low}}(10)=0$, $\mu_{\text{Med}}(10)=0$ → $\mu_{B'}=0$
+
+分子：$\sum y \cdot \mu_{B'} = 0\cdot0.6 + 1\cdot0.6 + 2\cdot0.6 + \dots + 9\cdot0.2 + 10\cdot0 = 27.0$
+
+分母：$\sum \mu_{B'} = 0.6\times8 + 0.4 + 0.2 + 0 = 5.4$
+
+$$y^* \approx \frac{27.0}{5.4} = 5.0$$
+
+**精确解**（解析积分）约为 $y^* \approx 4.8$（离散近似有误差）。
+
+**答案3**：
+
+**步骤1：计算隶属度**
+
+$x_1 = 0.5$：
+- $\mu_{\text{Neg}}(0.5) = \frac{1}{1+e^{2\times0.5}} = \frac{1}{1+e^1} = \frac{1}{1+2.718} \approx 0.269$
+- $\mu_{\text{Pos}}(0.5) = \frac{1}{1+e^{-2\times0.5}} = \frac{1}{1+e^{-1}} = \frac{1}{1+0.368} \approx 0.731$
+
+$x_2 = -0.3$：
+- $\mu_{\text{Neg}}(-0.3) = \frac{1}{1+e^{2\times(-0.3)}} = \frac{1}{1+e^{-0.6}} = \frac{1}{1+0.549} \approx 0.646$
+- $\mu_{\text{Pos}}(-0.3) = \frac{1}{1+e^{-2\times(-0.3)}} = \frac{1}{1+e^{0.6}} = \frac{1}{1+1.822} \approx 0.354$
+
+**步骤2：规则激活强度**（用乘积算子）
+
+- R1：$\alpha_1 = \mu_{\text{Neg}}(0.5) \times \mu_{\text{Neg}}(-0.3) = 0.269 \times 0.646 \approx 0.174$
+- R2：$\alpha_2 = \mu_{\text{Neg}}(0.5) \times \mu_{\text{Pos}}(-0.3) = 0.269 \times 0.354 \approx 0.095$
+- R3：$\alpha_3 = \mu_{\text{Pos}}(0.5) \times \mu_{\text{Neg}}(-0.3) = 0.731 \times 0.646 \approx 0.472$
+- R4：$\alpha_4 = \mu_{\text{Pos}}(0.5) \times \mu_{\text{Pos}}(-0.3) = 0.731 \times 0.354 \approx 0.259$
+
+**步骤3：规则输出**
+
+- $z_1 = 0.5(0.5) + 0.3(-0.3) + 1 = 0.25 - 0.09 + 1 = 1.16$
+- $z_2 = 0.4(0.5) - 0.2(-0.3) + 0.5 = 0.2 + 0.06 + 0.5 = 0.76$
+- $z_3 = -0.3(0.5) + 0.5(-0.3) + 0.8 = -0.15 - 0.15 + 0.8 = 0.5$
+- $z_4 = -0.2(0.5) - 0.4(-0.3) + 1.2 = -0.1 + 0.12 + 1.2 = 1.22$
+
+**步骤4：加权平均**
+
+$$z^* = \frac{\alpha_1 z_1 + \alpha_2 z_2 + \alpha_3 z_3 + \alpha_4 z_4}{\alpha_1 + \alpha_2 + \alpha_3 + \alpha_4}$$
+
+分子：$0.174\times1.16 + 0.095\times0.76 + 0.472\times0.5 + 0.259\times1.22$
+$= 0.202 + 0.072 + 0.236 + 0.316 = 0.826$
+
+分母：$0.174 + 0.095 + 0.472 + 0.259 = 1.0$
+
+$$z^* = \frac{0.826}{1.0} = 0.826$$
+
+**答案4**：
+
+**(a) 输入变量定义**：
+
+$|e|$ 的语言值和MF（三角形）：
+- Small (S): $(0, 0, E_{\max}/2)$
+- Large (L): $(E_{\max}/2, E_{\max}, E_{\max})$
+
+$|\dot{e}|$ 的语言值和MF（三角形）：
+- Small (S): $(0, 0, \dot{E}_{\max}/2)$
+- Large (L): $(\dot{E}_{\max}/2, \dot{E}_{\max}, \dot{E}_{\max})$
+
+其中 $E_{\max}$ 和 $\dot{E}_{\max}$ 是预期的最大误差和误差变化率。
+
+**(b) 输出变量定义**：
+
+$\Delta K_p$ 的语言值和MF（三角形）：
+- Negative Big (NB): $(-\Delta K_{\max}, -\Delta K_{\max}, -\Delta K_{\max}/2)$
+- Negative Small (NS): $(-\Delta K_{\max}, -\Delta K_{\max}/2, 0)$
+- Zero (ZO): $(-\Delta K_{\max}/2, 0, \Delta K_{\max}/2)$
+- Positive Small (PS): $(0, \Delta K_{\max}/2, \Delta K_{\max})$
+- Positive Big (PB): $(\Delta K_{\max}/2, \Delta K_{\max}, \Delta K_{\max})$
+
+**(c) 模糊规则库**：
+
+| IF $|e|$ | AND $|\dot{e}|$ | THEN $\Delta K_p$ |
+|---------|---------------|-----------------|
+| Large | — | PB（大幅增加） |
+| Small | Small | ZO（保持不变） |
+| Small | Large | NS（小幅减小） |
+
+（"—"表示不考虑 $|\dot{e}|$，实际可拆分为两条规则：Large AND Small → PB，Large AND Large → PB）
+
+**(d) 优缺点讨论**：
+
+**优点**：
+- 自动适应不同工况：误差大时快速响应，误差小时避免超调
+- 无需精确模型，基于操作直觉
+- 比固定增益PID鲁棒性强
+
+**缺点**：
+- 参数众多（MF形状、规则），整定复杂
+- 缺乏稳定性保证
+- 实时计算量比固定PID大
+- 可能引入高频噪声（若MF过陡）
+
+**改进方向**：
+- 用遗传算法自动优化MF参数
+- 加入死区防止小误差时的频繁调整
+- 限制 $\Delta K_p$ 的变化速率避免突变
+
+**答案5**：
+
+**(a) 闭环动态方程**：
+
+TS型输出为加权平均：
+
+$$\dot{x} = \frac{\mu_{\text{Neg}}(x)(-x+1) + \mu_{\text{Pos}}(x)(-2x-1)}{\mu_{\text{Neg}}(x) + \mu_{\text{Pos}}(x)}$$
+
+注意到 $\mu_{\text{Neg}}(x) + \mu_{\text{Pos}}(x) = \frac{1}{1+e^x} + \frac{1}{1+e^{-x}} = 1$（恒成立），因此：
+
+$$\dot{x} = \frac{-x+1}{1+e^x} + \frac{-2x-1}{1+e^{-x}}$$
+
+化简第二项：$\frac{-2x-1}{1+e^{-x}} = \frac{(-2x-1)e^x}{e^x+1}$
+
+故：
+
+$$\dot{x} = \frac{-x+1 + (-2x-1)e^x}{1+e^x} = \frac{-x+1 -2xe^x - e^x}{1+e^x}$$
+
+**(b) 平衡点**：
+
+令 $\dot{x}=0$：
+
+$$-x+1 -2xe^x - e^x = 0$$
+$$1 - x = e^x(2x + 1)$$
+
+这是超越方程，需数值求解。显然 $x=0$ 不是解（左边=1，右边=1，哦，$x=0$ 确实是解：$1-0=e^0(0+1) \Rightarrow 1=1$ ✓）。
+
+用牛顿法可找到另一解约为 $x \approx -0.7$（需验证）。
+
+**(c) Lyapunov分析**：
+
+$V(x) = \frac{1}{2}x^2$，则 $\dot{V} = x\dot{x}$。
+
+代入 $\dot{x}$ 的表达式，符号不易直接判断。数值检验：
+- $x=1$: $\dot{x} \approx -0.5$（负），$\dot{V} = 1\times(-0.5) < 0$ ✓
+- $x=-1$: $\dot{x} \approx 0.3$（正），$\dot{V} = -1\times0.3 < 0$ ✓
+- $x=5$: $\dot{x} \approx -1.8$（负），$\dot{V} < 0$ ✓
+
+看起来 $\dot{V} < 0$ 对所有 $x \neq 0$，但**严格证明**需要分析 $\dot{x}$ 的符号与 $x$ 的关系，这很复杂。TS型系统通常用LMI方法寻找公共Lyapunov函数，但这超出了本题范围。
+
+**结论**：数值证据表明系统可能是全局渐近稳定的，但 $V=x^2/2$ 无法提供严格证明。
+
+**(d) 数值仿真**：
+
+```python
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+def ts_system(t, x):
+    mu_neg = 1 / (1 + np.exp(x))
+    mu_pos = 1 / (1 + np.exp(-x))
+    
+    dxdt_neg = -x + 1
+    dxdt_pos = -2*x - 1
+    
+    dxdt = mu_neg * dxdt_neg + mu_pos * dxdt_pos
+    return [dxdt]
+
+sol = solve_ivp(ts_system, (0, 10), [5.0], t_eval=np.linspace(0, 10, 500))
+
+plt.plot(sol.t, sol.y[0], 'b-', linewidth=2)
+plt.xlabel('Time', fontsize=11)
+plt.ylabel('$x(t)$', fontsize=11)
+plt.title('TS Fuzzy System Response from x(0)=5', fontsize=12, fontweight='bold')
+plt.grid(True, alpha=0.3)
+plt.axhline(y=0, color='r', linestyle='--', linewidth=1, label='Equilibrium')
+plt.legend()
+plt.show()
+```
+
+**结果**：$x(t)$ 从5单调递减到0，证实了稳定性。

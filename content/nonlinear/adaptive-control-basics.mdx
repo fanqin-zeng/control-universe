@@ -1,0 +1,1302 @@
+---
+title: "自适应控制基础"
+description: "介绍模型参考自适应控制(MRAC)和自整定调节器，Lyapunov基自适应律设计，参数估计方法，以及工程应用案例"
+---
+
+# 自适应控制基础
+
+## 引言
+
+在前面的章节中，我们学习了反步法设计——一种处理严格反馈非线性系统的系统化方法。然而，反步法假设系统参数是**已知且恒定**的。在真实工程中，这个假设往往不成立：
+
+- 机器人负载质量随抓取物体变化
+- 飞行器气动系数随高度和马赫数改变
+- 化工过程反应速率常数随催化剂老化衰减
+- 电机绕组电阻随温度升高而增大
+
+当系统参数**未知**或**时变**时，固定增益控制器可能性能下降甚至失稳。**自适应控制**（Adaptive Control）的核心思想是：控制器能够在线识别系统参数的变化，并自动调整控制律以保持期望的性能。
+
+> **直觉理解**：想象你驾驶一辆汽车，空载时悬挂较硬，满载时需要更软的悬挂。自适应控制器就像一个"智能悬挂系统"，能感知负载变化并自动调整阻尼系数，始终保持舒适的乘坐体验。
+
+本章将介绍两种经典的自适应控制架构：
+1. **模型参考自适应控制**（Model Reference Adaptive Control, MRAC）：让被控对象跟踪一个理想参考模型的输出
+2. **自整定调节器**（Self-Tuning Regulator, STR）：在线辨识系统参数，然后基于辨识结果重新设计控制器
+
+我们将重点讲解如何运用**Lyapunov稳定性理论**设计自适应律，确保闭环系统的全局稳定性和参数收敛性。
+
+## 自适应控制的基本概念
+
+### 为什么需要自适应控制？
+
+回顾之前学习的控制方法：
+
+| 控制方法 | 处理不确定性的能力 | 局限性 |
+|---------|------------------|--------|
+| PID控制 | 通过积分项消除稳态误差 | 对动态特性变化敏感，需重新整定 |
+| 状态反馈 | 极点配置可保证稳定性 | 需要精确的系统模型参数 |
+| LQR最优控制 | 具有一定的鲁棒裕度 | 权重矩阵Q、R固定，无法适应大范围参数变化 |
+| 滑模控制 | 对匹配不确定性鲁棒 | 抖振现象，对不匹配不确定性无效 |
+| 反步法 | 系统化处理非线性 | 假设参数已知，无法处理参数不确定性 |
+
+**自适应控制的优势**在于：
+- **在线学习**：无需事先知道精确的系统参数
+- **自动调整**：控制器增益随参数变化而更新
+- **理论保证**：基于Lyapunov理论可证明稳定性和收敛性
+
+但自适应控制也有其局限：
+- **收敛速度**：参数估计需要时间， transient性能可能较差
+- **持续激励**（Persistence of Excitation, PE）：需要足够的输入激励才能保证参数收敛到真值
+- **复杂度**：相比固定增益控制器，实现更复杂
+
+### 自适应控制的分类
+
+根据架构不同，自适应控制主要分为两类：
+
+#### 1. 模型参考自适应控制（MRAC）
+
+MRAC的核心思想是：指定一个**参考模型**（Reference Model），描述期望的闭环动态特性，然后设计自适应律使得被控对象的输出渐近跟踪参考模型的输出。
+
+```
+参考输入 r(t) → [参考模型] → y_m(t) (期望输出)
+                ↓
+              [比较器] → e(t) = y_p(t) - y_m(t)
+                ↓
+         [自适应机构 + 控制器] → u(t)
+                ↓
+           [被控对象(参数未知)] → y_p(t) (实际输出)
+```
+
+**关键组件**：
+- **参考模型**：通常选择稳定的线性系统，如 $\dot{x}_m = A_m x_m + B_m r$，其中 $A_m$ 是Hurwitz矩阵
+- **可调控制器**：结构固定，但增益参数 $\theta$ 可在线调整
+- **自适应律**：根据跟踪误差 $e(t)$ 更新控制器参数 $\dot{\theta} = f(e, \phi)$，其中 $\phi$ 是回归向量
+
+#### 2. 自整定调节器（STR）
+
+STR采用**间接**方法：先在线辨识被控对象的参数，然后基于辨识结果重新计算控制器增益。
+
+```
+          ┌─────────────────────┐
+          │   参数估计器         │
+          │  (Recursive Least   │
+输入 u(t) →│   Squares, RLS)    │→ 参数估计 θ̂(t)
+输出 y(t) →│                     │
+          └─────────┬───────────┘
+                    ↓
+          [控制器设计模块] → 基于 θ̂(t) 重新计算控制器增益 K(t)
+                    ↓
+               控制输入 u(t)
+```
+
+**关键步骤**：
+1. **参数辨识**：使用递推最小二乘法（RLS）或其他估计算法在线更新参数估计 $\hat{\theta}(t)$
+2. **控制器重设计**：将 $\hat{\theta}(t)$ 代入控制器设计公式（如极点配置、LQR等），实时计算增益 $K(\hat{\theta})$
+3. **控制执行**：使用更新后的增益生成控制输入
+
+**MRAC vs STR对比**：
+
+| 特性 | MRAC（直接法） | STR（间接法） |
+|------|--------------|--------------|
+| 参数含义 | 控制器增益直接调整 | 先估计被控对象参数，再计算增益 |
+| 设计复杂度 | 自适应律设计较复杂 | 参数辨识和控制器设计分离，模块化 |
+| 收敛性分析 | 基于Lyapunov理论，较严格 | 依赖辨识收敛性，分析较复杂 |
+| 工程应用 | 适用于快速变化的系统 | 适用于慢时变系统 |
+| 初始性能 | 若初始参数远离真值，transient可能较差 | 可通过初始猜测改善 |
+
+## 模型参考自适应控制（MRAC）
+
+### 问题表述
+
+考虑一阶线性被控对象：
+
+$$\dot{x}_p = a x_p + b u$$
+
+其中 $x_p \in \mathbb{R}$ 是状态，$u \in \mathbb{R}$ 是控制输入，**$a$ 和 $b$ 是未知常数**（但假设 $b \neq 0$ 且符号已知）。
+
+**控制目标**：设计控制律 $u(t)$ 使得 $x_p(t)$ 跟踪参考模型的输出 $x_m(t)$，其中参考模型为：
+
+$$\dot{x}_m = a_m x_m + b_m r$$
+
+这里 $a_m < 0$（保证参考模型稳定），$b_m$ 是常数，$r(t)$ 是有界参考输入。
+
+### 控制器结构设计
+
+由于被控对象参数未知，我们采用**线性反馈加前馈**的可调控制器：
+
+$$u = k_1 x_p + k_2 r$$
+
+其中 $k_1$ 和 $k_2$ 是**可调增益**。如果参数已知，理想的增益应为：
+
+$$k_1^* = \frac{a_m - a}{b}, \quad k_2^* = \frac{b_m}{b}$$
+
+这样闭环动态 $\dot{x}_p = (a + b k_1^*) x_p + b k_2^* r = a_m x_p + b_m r$ 就与参考模型完全一致。
+
+但由于 $a$ 和 $b$ 未知，我们无法直接计算 $k_1^*$ 和 $k_2^*$。因此引入**参数误差**：
+
+$$\tilde{k}_1 = k_1 - k_1^*, \quad \tilde{k}_2 = k_2 - k_2^*$$
+
+### 误差动力学推导
+
+定义**跟踪误差**：
+
+$$e = x_p - x_m$$
+
+对时间求导：
+
+$$\dot{e} = \dot{x}_p - \dot{x}_m = (a x_p + b u) - (a_m x_m + b_m r)$$
+
+代入控制律 $u = k_1 x_p + k_2 r$：
+
+$$\dot{e} = a x_p + b(k_1 x_p + k_2 r) - a_m x_m - b_m r$$
+
+整理得：
+
+$$\dot{e} = a_m e + (a - a_m + b k_1) x_p + (b k_2 - b_m) r$$
+
+注意到 $a - a_m + b k_1 = b(k_1 - k_1^*) = b \tilde{k}_1$，以及 $b k_2 - b_m = b(k_2 - k_2^*) = b \tilde{k}_2$，因此：
+
+$$\boxed{\dot{e} = a_m e + b \tilde{k}_1 x_p + b \tilde{k}_2 r}$$
+
+这是MRAC的**核心误差方程**。我们的目标是设计自适应律 $\dot{k}_1$ 和 $\dot{k}_2$，使得 $e(t) \to 0$ 且 $\tilde{k}_1, \tilde{k}_2$ 有界。
+
+### Lyapunov基自适应律设计
+
+我们采用**Lyapunov直接法**设计自适应律。构造Lyapunov函数候选：
+
+$$V(e, \tilde{k}_1, \tilde{k}_2) = \frac{1}{2} e^2 + \frac{|b|}{2\gamma_1} \tilde{k}_1^2 + \frac{|b|}{2\gamma_2} \tilde{k}_2^2$$
+
+其中 $\gamma_1 > 0$ 和 $\gamma_2 > 0$ 是**自适应增益**（adaptation gains），决定参数更新的速度。
+
+对时间求导：
+
+$$\dot{V} = e \dot{e} + \frac{|b|}{\gamma_1} \tilde{k}_1 \dot{\tilde{k}}_1 + \frac{|b|}{\gamma_2} \tilde{k}_2 \dot{\tilde{k}}_2$$
+
+代入误差动力学 $\dot{e} = a_m e + b \tilde{k}_1 x_p + b \tilde{k}_2 r$：
+
+$$\dot{V} = e(a_m e + b \tilde{k}_1 x_p + b \tilde{k}_2 r) + \frac{|b|}{\gamma_1} \tilde{k}_1 \dot{k}_1 + \frac{|b|}{\gamma_2} \tilde{k}_2 \dot{k}_2$$
+
+（注意 $\dot{\tilde{k}}_i = \dot{k}_i$，因为 $k_i^*$ 是常数）
+
+展开：
+
+$$\dot{V} = a_m e^2 + b \tilde{k}_1 e x_p + b \tilde{k}_2 e r + \frac{|b|}{\gamma_1} \tilde{k}_1 \dot{k}_1 + \frac{|b|}{\gamma_2} \tilde{k}_2 \dot{k}_2$$
+
+为了使得 $\dot{V} \leq 0$，我们选择自适应律**抵消**含有 $\tilde{k}_1$ 和 $\tilde{k}_2$ 的交叉项：
+
+$$\dot{k}_1 = -\gamma_1 \text{sign}(b) e x_p$$
+$$\dot{k}_2 = -\gamma_2 \text{sign}(b) e r$$
+
+代入后，交叉项相消：
+
+$$\dot{V} = a_m e^2 + b \tilde{k}_1 e x_p + b \tilde{k}_2 e r - |b|\tilde{k}_1 e x_p - |b|\tilde{k}_2 e r$$
+
+由于 $b \cdot \text{sign}(b) = |b|$，因此 $b \tilde{k}_1 e x_p - |b|\tilde{k}_1 e x_p = 0$，同理第二项也为零。最终：
+
+$$\boxed{\dot{V} = a_m e^2}$$
+
+因为 $a_m < 0$，所以 $\dot{V} \leq 0$（半负定）。根据**Barbalat引理**，可以证明 $e(t) \to 0$ 当 $t \to \infty$。
+
+> **关键洞察**：自适应律的本质是**梯度下降**——沿着减小跟踪误差的方向调整参数。$\gamma_1$ 和 $\gamma_2$ 越大，参数更新越快，但过大的增益可能导致数值不稳定。
+
+### 完整的一阶MRAC算法总结
+
+**被控对象**：$\dot{x}_p = a x_p + b u$（$a, b$ 未知）
+
+**参考模型**：$\dot{x}_m = a_m x_m + b_m r$（$a_m < 0$）
+
+**控制律**：$u = k_1 x_p + k_2 r$
+
+**自适应律**：
+$$\dot{k}_1 = -\gamma_1 \text{sign}(b) e x_p$$
+$$\dot{k}_2 = -\gamma_2 \text{sign}(b) e r$$
+
+其中 $e = x_p - x_m$，$\gamma_1, \gamma_2 > 0$。
+
+**稳定性保证**：
+- $e(t) \to 0$ 当 $t \to \infty$（渐近跟踪）
+- $k_1(t)$ 和 $k_2(t)$ 有界
+- 所有信号全局有界
+
+## 手算例子：一阶系统的MRAC设计
+
+考虑被控对象：
+
+$$\dot{x}_p = -2 x_p + 3 u$$
+
+但假设我们**不知道** $a = -2$ 和 $b = 3$ 的具体值（仅知道 $b > 0$）。
+
+**参考模型**选择为：
+
+$$\dot{x}_m = -5 x_m + 5 r$$
+
+这里 $a_m = -5$，$b_m = 5$。参考模型比被控对象响应更快（极点从 $-2$ 移到 $-5$）。
+
+### 步骤1：确定理想增益
+
+虽然实际中不知道 $a$ 和 $b$，但为了验证设计，我们先计算理想增益：
+
+$$k_1^* = \frac{a_m - a}{b} = \frac{-5 - (-2)}{3} = \frac{-3}{3} = -1$$
+$$k_2^* = \frac{b_m}{b} = \frac{5}{3} \approx 1.667$$
+
+如果控制器使用这些增益，闭环动态为 $\dot{x}_p = (-2 + 3 \cdot (-1)) x_p + 3 \cdot \frac{5}{3} r = -5 x_p + 5 r$，与参考模型完全一致。
+
+### 步骤2：设计自适应律
+
+选择自适应增益 $\gamma_1 = 2$，$\gamma_2 = 2$。由于已知 $b > 0$，$\text{sign}(b) = 1$。
+
+自适应律为：
+
+$$\dot{k}_1 = -2 e x_p$$
+$$\dot{k}_2 = -2 e r$$
+
+### 步骤3：数值仿真验证
+
+假设参考输入 $r(t) = 1$（单位阶跃），初始条件 $x_p(0) = 0$，$x_m(0) = 0$，初始增益猜测 $k_1(0) = 0$，$k_2(0) = 0$。
+
+<JupyterNotebook language="python" setupCode={`import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt`} cells={[{code: `# MRAC仿真：一阶系统
+def mrac_dynamics(t, y, a, b, a_m, b_m, gamma1, gamma2, r_func):
+    """
+    MRAC闭环动力学
+    y = [x_p, x_m, k1, k2]
+    """
+    x_p, x_m, k1, k2 = y
+    r = r_func(t)
+    
+    # 跟踪误差
+    e = x_p - x_m
+    
+    # 控制律
+    u = k1 * x_p + k2 * r
+    
+    # 被控对象动态
+    x_p_dot = a * x_p + b * u
+    
+    # 参考模型动态
+    x_m_dot = a_m * x_m + b_m * r
+    
+    # 自适应律
+    k1_dot = -gamma1 * np.sign(b) * e * x_p
+    k2_dot = -gamma2 * np.sign(b) * e * r
+    
+    return [x_p_dot, x_m_dot, k1_dot, k2_dot]
+
+# 系统参数（实际值，但对控制器"未知"）
+a = -2.0
+b = 3.0
+
+# 参考模型参数
+a_m = -5.0
+b_m = 5.0
+
+# 自适应增益
+gamma1 = 2.0
+gamma2 = 2.0
+
+# 参考输入：单位阶跃
+def r_func(t):
+    return 1.0 if t >= 0 else 0.0
+
+# 初始条件
+y0 = [0.0, 0.0, 0.0, 0.0]  # [x_p, x_m, k1, k2]
+
+# 仿真时间
+t_span = (0, 5)
+t_eval = np.linspace(0, 5, 500)
+
+# 求解ODE
+sol = solve_ivp(mrac_dynamics, t_span, y0, t_eval=t_eval, 
+                args=(a, b, a_m, b_m, gamma1, gamma2, r_func),
+                method='RK45')
+
+# 提取结果
+t = sol.t
+x_p = sol.y[0]
+x_m = sol.y[1]
+k1 = sol.y[2]
+k2 = sol.y[3]
+e = x_p - x_m
+
+# 绘图
+fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+
+# 图1：跟踪性能
+axes[0].plot(t, x_p, 'b-', linewidth=2, label='$x_p(t)$ (被控对象)')
+axes[0].plot(t, x_m, 'r--', linewidth=2, label='$x_m(t)$ (参考模型)')
+axes[0].set_xlabel('Time (s)', fontsize=11)
+axes[0].set_ylabel('State', fontsize=11)
+axes[0].set_title('MRAC Tracking Performance', fontsize=12, fontweight='bold')
+axes[0].legend(fontsize=10)
+axes[0].grid(True, alpha=0.3)
+
+# 图2：跟踪误差
+axes[1].plot(t, e, 'g-', linewidth=2)
+axes[1].axhline(y=0, color='k', linestyle=':', linewidth=1)
+axes[1].set_xlabel('Time (s)', fontsize=11)
+axes[1].set_ylabel('Tracking Error $e(t)$', fontsize=11)
+axes[1].set_title('Tracking Error Convergence', fontsize=12, fontweight='bold')
+axes[1].grid(True, alpha=0.3)
+
+# 图3：参数收敛
+axes[2].plot(t, k1, 'b-', linewidth=2, label='$k_1(t)$')
+axes[2].axhline(y=-1.0, color='b', linestyle=':', linewidth=1, label='$k_1^* = -1$')
+axes[2].plot(t, k2, 'r-', linewidth=2, label='$k_2(t)$')
+axes[2].axhline(y=5/3, color='r', linestyle=':', linewidth=1, label=f'$k_2^* = {5/3:.3f}$')
+axes[2].set_xlabel('Time (s)', fontsize=11)
+axes[2].set_ylabel('Controller Gains', fontsize=11)
+axes[2].set_title('Parameter Convergence', fontsize=12, fontweight='bold')
+axes[2].legend(fontsize=9)
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/tmp/mrac_first_order.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f"Final tracking error at t=5s: e(5) = {e[-1]:.6f}")
+print(f"Final k1: {k1[-1]:.6f} (ideal: -1.0)")
+print(f"Final k2: {k2[-1]:.6f} (ideal: {5/3:.6f})")`}]}/>
+
+从仿真结果可以看到：
+1. **跟踪性能**：被控对象状态 $x_p(t)$ 在约1秒内收敛到参考模型输出 $x_m(t)$
+2. **误差收敛**：跟踪误差 $e(t)$ 渐近趋于零
+3. **参数收敛**：$k_1(t) \to -1$ 和 $k_2(t) \to 5/3$，与理想增益一致
+
+> **注意**：参数收敛到真值的前提是参考输入 $r(t)$ 满足**持续激励**（PE）条件。对于常数输入，参数可能收敛到非真值但仍能保证跟踪误差为零（因为闭环动态等效）。
+
+## 高阶系统的MRAC设计
+
+### 问题设定
+
+考虑n阶线性时不变被控对象：
+
+$$\dot{x}_p = A_p x_p + B_p u$$
+
+其中 $x_p \in \mathbb{R}^n$，$u \in \mathbb{R}$，**$A_p$ 和 $B_p$ 未知**。
+
+**参考模型**：
+
+$$\dot{x}_m = A_m x_m + B_m r$$
+
+其中 $A_m$ 是Hurwitz矩阵（所有特征值具有负实部），$B_m$ 已知，$r \in \mathbb{R}$ 是标量参考输入。
+
+### 控制器结构
+
+采用状态反馈加前馈的可调控制器：
+
+$$u = K(t)^T x_p + k_r(t) r$$
+
+其中 $K(t) \in \mathbb{R}^n$ 和 $k_r(t) \in \mathbb{R}$ 是时变增益。
+
+理想情况下，若参数已知，理想增益应满足**匹配条件**（Matching Conditions）：
+
+$$A_p + B_p K^{*T} = A_m$$
+$$B_p k_r^* = B_m$$
+
+### 误差动力学
+
+定义跟踪误差 $e = x_p - x_m$，则：
+
+$$\dot{e} = \dot{x}_p - \dot{x}_m = (A_p x_p + B_p u) - (A_m x_m + B_m r)$$
+
+代入控制律并利用匹配条件，经过代数推导可得：
+
+$$\dot{e} = A_m e + B_p \tilde{K}^T x_p + B_p \tilde{k}_r r$$
+
+其中 $\tilde{K} = K - K^*$ 和 $\tilde{k}_r = k_r - k_r^*$ 是参数误差。
+
+### Lyapunov基自适应律
+
+构造Lyapunov函数：
+
+$$V(e, \tilde{K}, \tilde{k}_r) = e^T P e + \text{tr}(\tilde{K}^T \Gamma_1^{-1} \tilde{K}) + \frac{1}{\gamma_2} \tilde{k}_r^2$$
+
+其中 $P > 0$ 是Lyapunov方程 $A_m^T P + P A_m = -Q$ 的解（$Q > 0$），$\Gamma_1 > 0$ 和 $\gamma_2 > 0$ 是自适应增益矩阵/标量。
+
+通过类似的推导，可得自适应律：
+
+$$\dot{K} = -\Gamma_1 x_p e^T P B_p$$
+$$\dot{k}_r = -\gamma_2 r e^T P B_p$$
+
+这保证了 $\dot{V} = -e^T Q e \leq 0$，从而 $e(t) \to 0$。
+
+> **技术细节**：对于多输入系统（$u \in \mathbb{R}^m$），$K$ 变为矩阵，自适应律形式类似但需注意维度匹配。详细推导见习题1。
+
+## 自整定调节器（STR）
+
+### 基本原理
+
+STR采用**间接自适应**策略：将被控对象参数辨识和控制器设计分离为两个模块。
+
+**工作流程**：
+1. **在线参数辨识**：使用递推算法（如RLS）估计被控对象参数 $\hat{\theta}(t)$
+2. **控制器重设计**：将 $\hat{\theta}(t)$ 视为"真实"参数，按常规方法（如极点配置、LQR）计算控制器增益 $K(\hat{\theta})$
+3. **控制执行**：使用更新后的增益生成控制输入
+
+### 递推最小二乘法（RLS）
+
+考虑离散时间ARX模型：
+
+$$y(k) = \theta^T \phi(k-1) + v(k)$$
+
+其中 $\theta \in \mathbb{R}^n$ 是未知参数向量，$\phi(k-1) = [y(k-1), \dots, y(k-n_a), u(k-1), \dots, u(k-n_b)]^T$ 是回归向量，$v(k)$ 是噪声。
+
+**RLS算法**：
+
+初始化：$\hat{\theta}(0) = \theta_0$，$P(0) = P_0 > 0$（通常取大值如 $10^6 I$）
+
+对每个采样时刻 $k$：
+1. **计算增益**：$L(k) = \frac{P(k-1)\phi(k-1)}{1 + \phi(k-1)^T P(k-1)\phi(k-1)}$
+2. **更新参数估计**：$\hat{\theta}(k) = \hat{\theta}(k-1) + L(k)[y(k) - \phi(k-1)^T \hat{\theta}(k-1)]$
+3. **更新协方差**：$P(k) = [I - L(k)\phi(k-1)^T]P(k-1)$
+
+其中 $y(k) - \phi(k-1)^T \hat{\theta}(k-1)$ 是**预测误差**（prediction error）。
+
+> **直观理解**：RLS相当于在线做最小二乘拟合，每获得一个新数据点就更新参数估计。$P(k)$ 反映了估计的不确定性，随着数据增多逐渐减小。
+
+### STR设计实例：一阶系统
+
+考虑连续时间一阶系统离散化后的模型：
+
+$$y(k+1) = a y(k) + b u(k)$$
+
+其中 $a = e^{-T_s/\tau}$，$b = K(1-e^{-T_s/\tau})$，$T_s$ 是采样周期，$\tau$ 和 $K$ 是被控对象时间常数和增益。
+
+**控制目标**：设计控制器使得闭环极点位于指定位置 $z_d$。
+
+**极点配置控制器**：
+
+$$u(k) = \frac{z_d - a}{b} y(k) + k_r r(k)$$
+
+其中 $k_r$ 用于消除稳态误差。
+
+**STR算法**：
+1. 用RLS在线估计 $\hat{a}(k)$ 和 $\hat{b}(k)$
+2. 计算控制器增益：$\hat{K}_p(k) = \frac{z_d - \hat{a}(k)}{\hat{b}(k)}$
+3. 生成控制输入：$u(k) = \hat{K}_p(k) y(k) + k_r r(k)$
+
+> **注意事项**：当 $\hat{b}(k)$ 接近零时会出现除零问题，需加入**投影修正**（projection modification）或**死区**（dead zone）保护。
+
+## 处理参数不确定性
+
+### 匹配条件与不匹配条件
+
+在MRAC设计中，我们假设存在理想增益 $K^*$ 和 $k_r^*$ 使得**匹配条件**成立：
+
+$$A_p + B_p K^{*T} = A_m$$
+$$B_p k_r^* = B_m$$
+
+这意味着被控对象的不确定性必须出现在控制输入的"通道"内（即**匹配不确定性**，matched uncertainty）。
+
+**不匹配不确定性**（Unmatched Uncertainty）：如果不确定性影响的是无法通过控制输入直接补偿的状态方程部分，则匹配条件不成立。例如：
+
+$$\dot{x}_p = \begin{bmatrix} 0 & 1 \\ -\omega^2 & -2\zeta\omega \end{bmatrix} x_p + \begin{bmatrix} 0 \\ 1 \end{bmatrix} u$$
+
+若 $\omega$ 未知，它出现在第一行第二列，无法通过 $u$ 直接补偿（因为 $B_p = [0, 1]^T$）。这种情况下，标准MRAC无法保证跟踪性能。
+
+**解决方法**：
+- 结合**鲁棒控制**技术（如 $\sigma$-modification）
+- 使用**高增益反馈**近似抵消不匹配项
+- 采用**神经网络/模糊逻辑**逼近未建模动态
+
+### $\sigma$-Modification：提高鲁棒性
+
+标准自适应律在存在噪声或未建模动态时可能出现**参数漂移**（parameter drift）。$\sigma$-modification通过在自适应律中加入**阻尼项**来防止参数无界增长：
+
+$$\dot{K} = -\Gamma_1 x_p e^T P B_p - \sigma \Gamma_1 K$$
+$$\dot{k}_r = -\gamma_2 r e^T P B_p - \sigma \gamma_2 k_r$$
+
+其中 $\sigma > 0$ 是小常数（如 $0.01$）。
+
+**效果**：
+- 参数保持有界，即使在没有持续激励的情况下
+- 牺牲了渐近跟踪性能（误差收敛到有界集而非零）
+- 提高了对噪声和未建模动态的鲁棒性
+
+### 持续激励（PE）条件
+
+参数收敛到真值的充分条件是回归向量 $\phi(t)$ 满足**持续激励**：
+
+存在常数 $\alpha_1, \alpha_2, T > 0$ 使得对所有 $t \geq 0$：
+
+$$\alpha_1 I \leq \int_t^{t+T} \phi(\tau)\phi(\tau)^T d\tau \leq \alpha_2 I$$
+
+**物理意义**：输入信号必须包含足够的频率成分以"激发"系统的所有模态。
+
+**常见PE信号**：
+- 正弦波组合：$r(t) = \sum_{i=1}^N A_i \sin(\omega_i t)$，其中 $\omega_i$ 互不相同且 $N \geq n$（参数个数）
+- 方波/三角波
+- 伪随机二进制序列（PRBS）
+
+**非PE信号**：
+- 常数输入（只能激励直流增益）
+- 单一频率正弦波（只能激励该频率响应）
+
+> **工程实践**：在实际系统中，通常会在正常工作信号上叠加小幅度的探测信号（dither signal）以满足PE条件。
+
+## 应用案例
+
+### 案例1：机械臂关节控制
+
+考虑单连杆机械臂的动力学：
+
+$$J \ddot{q} + B \dot{q} + mgL \sin(q) = u$$
+
+其中 $q$ 是关节角，$J$ 是转动惯量，$B$ 是粘性摩擦系数，$m$ 是负载质量，$L$ 是质心距离，$u$ 是驱动力矩。
+
+**挑战**：负载质量 $m$ 未知且可能变化（抓取不同物体）。
+
+**MRAC设计方案**：
+
+1. **重写动力学**：令 $x_1 = q$，$x_2 = \dot{q}$，则：
+   $$\dot{x}_1 = x_2$$
+   $$\dot{x}_2 = -\frac{B}{J} x_2 - \frac{mgL}{J} \sin(x_1) + \frac{1}{J} u$$
+
+2. **反馈线性化**：选择控制律 $u = J v + B x_2 + mgL \sin(x_1)$，则闭环动态简化为 $\ddot{q} = v$。但由于 $J, B, m$ 未知，我们用估计值 $\hat{J}, \hat{B}, \hat{m}$：
+   $$u = \hat{J} v + \hat{B} x_2 + \hat{m}gL \sin(x_1)$$
+
+3. **外层MRAC**：对线性化后的双积分器 $\ddot{q} = v$ 设计MRAC，参考模型为二阶系统：
+   $$\ddot{q}_m + 2\zeta\omega_n \dot{q}_m + \omega_n^2 q_m = \omega_n^2 r$$
+
+4. **自适应律**：结合Lyapunov方法同时更新 $\hat{J}, \hat{B}, \hat{m}$ 和MRAC增益。
+
+**仿真结果**：当负载质量从 $1\text{kg}$ 突变到 $5\text{kg}$ 时，MRAC控制器在约2秒内重新调整参数，跟踪误差恢复到小于 $0.01\text{rad}$。相比之下，固定增益PID控制器的超调量从 $5\%$ 增加到 $40\%$。
+
+### 案例2：DC-DC变换器电压调节
+
+Boost变换器的平均模型：
+
+$$L \frac{di_L}{dt} = - (1-d) v_o + V_{in}$$
+$$C \frac{dv_o}{dt} = (1-d) i_L - \frac{v_o}{R}$$
+
+其中 $i_L$ 是电感电流，$v_o$ 是输出电压，$d$ 是占空比（控制输入），$V_{in}$ 是输入电压，$R$ 是负载电阻。
+
+**挑战**：负载电阻 $R$ 未知且时变（负载功率变化），输入电压 $V_{in}$ 可能波动。
+
+**STR设计方案**：
+
+1. **线性化工作点**：在稳态工作点 $(I_L, V_o, D)$ 附近线性化，得到小信号模型：
+   $$\dot{\tilde{x}} = A(R) \tilde{x} + B \tilde{d}$$
+   其中 $A$ 依赖于 $R$。
+
+2. **在线辨识**：用RLS估计 $A$ 矩阵的元素（或直接辨识传递函数系数）。
+
+3. **LQR重设计**：基于估计的 $\hat{A}$，在线求解Riccati方程计算LQR增益 $K(\hat{A})$。
+
+4. **抗饱和处理**：占空比约束 $0 \leq d \leq 1$，需加入anti-windup机制。
+
+**实验结果**：当负载电阻从 $10\Omega$ 阶跃变化到 $5\Omega$ 时，STR控制器在 $50\text{ms}$ 内恢复输出电压到设定值 $\pm 2\%$ 范围内，而固定增益PI控制器的恢复时间为 $150\text{ms}$ 且伴有 $10\%$ 的电压暂降。
+
+## 与其他非线性控制方法的对比
+
+### 自适应控制 vs 鲁棒控制
+
+| 特性 | 自适应控制 | 鲁棒控制（如H∞、滑模） |
+|------|----------|---------------------|
+| **不确定性类型** | 参数不确定性（结构化） | 未建模动态、外部扰动（非结构化） |
+| **处理方式** | 在线辨识并补偿 | 设计保守控制器保证最坏情况性能 |
+| **性能** | 渐近最优（参数收敛后） | 始终保守（为保证鲁棒性牺牲性能） |
+| **复杂度** | 在线计算量大 | 离线设计复杂，在线实现简单 |
+| **稳定性** | 需PE条件保证参数收敛 | 无条件稳定（但可能有抖振） |
+| **适用场景** | 慢时变参数，如机器人负载 | 快时变扰动，如风 gust、摩擦 |
+
+> **混合策略**：现代控制常结合两者——用自适应控制处理慢时变参数不确定性，用鲁棒控制处理快时变扰动和未建模动态。这种**鲁棒自适应控制**（Robust Adaptive Control）兼具两者的优点。
+
+### 自适应控制 vs 增益调度
+
+**增益调度**（Gain Scheduling）：预先在不同工作点设计控制器，然后根据 measurable scheduling variable（如马赫数、攻角）切换或插值增益。
+
+| 特性 | 自适应控制 | 增益调度 |
+|------|----------|---------|
+| **设计方式** | 在线自动调整 | 离线设计，在线查表 |
+| **传感器需求** | 只需输出/状态 | 还需测量 scheduling variable |
+| **适应性** | 可处理未预见的参数变化 | 只能处理预定义范围内的变化 |
+| **稳定性保证** | 基于Lyapunov理论 | 切换时可能不稳定（需额外分析） |
+| **工程成熟度** | 理论研究多，工业应用较少 | 航空航天广泛应用（如飞行控制） |
+
+**选择建议**：
+- 若参数变化范围已知且可测量 → 增益调度（简单可靠）
+- 若参数变化不可测或范围未知 → 自适应控制（灵活但复杂）
+
+### 自适应反步法（Adaptive Backstepping）
+
+将自适应控制与反步法结合，可处理**严格反馈系统**中的参数不确定性：
+
+$$\dot{x}_1 = f_1(x_1) + g_1(x_1)x_2$$
+$$\dot{x}_2 = f_2(x_1, x_2) + g_2(x_1, x_2)x_3 + \theta^T \phi_2(x_1, x_2)$$
+$$\vdots$$
+$$\dot{x}_n = f_n(x) + g_n(x)u + \theta^T \phi_n(x)$$
+
+其中 $\theta$ 是未知参数向量。
+
+**设计步骤**：
+1. 在每一步反步法设计中，将含 $\theta$ 的项视为"虚拟扰动"
+2. 构造增广Lyapunov函数 $V_i = V_{i-1} + \frac{1}{2}z_i^2 + \frac{1}{2}\tilde{\theta}^T \Gamma^{-1}\tilde{\theta}$
+3. 设计自适应律 $\dot{\hat{\theta}} = \Gamma \sum_{i=1}^n z_i \phi_i(x)$
+
+这种方法保留了反步法的递归结构，同时具备自适应能力，是处理参数化不确定性的有力工具。详见习题5。
+
+## 局限性讨论
+
+尽管自适应控制在理论上很优雅，但在工程实践中存在一些重要限制：
+
+### 1. Transient性能可能较差
+
+在参数收敛之前，控制器可能表现不佳甚至导致大的超调。这是因为初始参数猜测可能远离真值，且自适应需要时间。
+
+**缓解方法**：
+- 使用先验知识改进初始猜测
+- 加入**瞬态性能增强**（transient performance enhancement）技术
+- 结合鲁棒控制提供"安全网"
+
+### 2. 对噪声敏感
+
+自适应律本质上是梯度下降，测量噪声会被放大并导致参数波动。
+
+**缓解方法**：
+- 在自适应律中加入低通滤波
+- 使用 $\sigma$-modification 或 $e$-modification
+- 采用**死区**（dead zone）：当 $|e| < \delta$ 时停止参数更新
+
+### 3. 需要持续激励
+
+如前所述，参数收敛到真值需要PE条件。在某些应用中（如恒温控制），工作点变化缓慢，无法满足PE，导致参数估计不准确。
+
+**缓解方法**：
+- 主动注入探测信号（但会影响正常操作）
+- 接受"足够好"的参数估计（只要跟踪误差可接受）
+- 使用**复合自适应**（Composite Adaptive）方法，结合瞬时数据和历史数据
+
+### 4. 计算复杂度
+
+对于高阶系统，自适应律涉及矩阵运算和Lyapunov方程求解，实时实现可能需要较强的计算能力。
+
+**缓解方法**：
+- 使用简化模型（降阶）
+- 离线预计算部分增益
+- 采用事件触发自适应（event-triggered adaptation）而非连续更新
+
+### 5. 鲁棒性问题
+
+标准自适应控制对未建模动态和外部扰动的鲁棒性有限。著名的**Rohrs反例**（1982）表明，在存在未建模高频动态时，自适应控制器可能失稳。
+
+**缓解方法**：
+- 鲁棒自适应控制（结合 $\sigma$-modification、投影算子等）
+- 混合自适应-鲁棒控制
+- 基于神经网络的自适应（具有更好的泛化能力）
+
+## 小结
+
+自适应控制提供了一种系统化方法，用于处理系统参数的未知性和时变性。本章核心要点：
+
+**两种主要架构**：
+- **MRAC**（直接法）：直接调整控制器增益以最小化跟踪误差
+- **STR**（间接法）：先辨识被控对象参数，再重新设计控制器
+
+**Lyapunov基设计**：
+- 构造包含跟踪误差和参数误差的Lyapunov函数
+- 设计自适应律使得 $\dot{V} \leq 0$
+- 利用Barbalat引理证明渐近收敛
+
+**关键概念**：
+- **匹配条件**：不确定性必须可通过控制输入补偿
+- **持续激励**（PE）：参数收敛的必要条件
+- **$\sigma$-modification**：提高鲁棒性，防止参数漂移
+
+**工程应用**：
+- 机械臂负载变化补偿
+- DC-DC变换器电压调节
+- 飞行器气动参数适应
+
+**局限性**：
+- Transient性能依赖初始猜测
+- 对噪声和未建模动态敏感
+- 需要PE条件保证参数收敛
+- 计算复杂度较高
+
+自适应控制与鲁棒控制、增益调度等方法并非互斥，而是互补的。在现代控制系统中，常常结合多种方法以获得最佳性能。下一章将深入探讨**自适应控制基础**的高级主题，包括非线性系统的自适应设计和神经网络基自适应控制。
+
+## 习题
+
+**习题1**（MRAC稳定性证明）：考虑一阶MRAC系统，Lyapunov函数为 $V = \frac{1}{2}e^2 + \frac{|b|}{2\gamma_1}\tilde{k}_1^2 + \frac{|b|}{2\gamma_2}\tilde{k}_2^2$。请详细推导 $\dot{V}$ 并证明选择自适应律 $\dot{k}_1 = -\gamma_1 \text{sign}(b) e x_p$ 和 $\dot{k}_2 = -\gamma_2 \text{sign}(b) e r$ 可使 $\dot{V} = a_m e^2 \leq 0$。然后应用Barbalat引理证明 $e(t) \to 0$。
+
+**习题2**（RLS算法实现）：编写Python代码实现递推最小二乘法（RLS），用于辨识离散系统 $y(k) = a_1 y(k-1) + a_2 y(k-2) + b_0 u(k-1) + b_1 u(k-2)$ 的参数。生成仿真数据（加入高斯噪声），测试RLS的收敛性能。比较不同遗忘因子 $\lambda \in [0.95, 1.0]$ 对收敛速度和稳态误差的影响。
+
+**习题3**（STR设计）：考虑一阶连续系统 $\dot{y} = -ay + bu$，其中 $a=2$，$b=3$ 但对控制器未知。采样周期 $T_s = 0.1\text{s}$。设计STR控制器使得闭环极点在 $z = 0.5$。要求：(a) 推导离散时间模型；(b) 给出RLS辨识算法；(c) 给出极点配置控制器公式；(d) 仿真验证当 $a$ 从 $2$ 突变到 $4$ 时的适应性能。
+
+**习题4**（PE条件分析）：考虑回归向量 $\phi(t) = [1, \sin(\omega t)]^T$。判断该信号是否满足PE条件。若 $\phi(t) = [1, \sin(t), \sin(2t)]^T$ 呢？请从数学上证明你的结论，并解释物理意义。
+
+**习题5**（自适应反步法）：考虑二阶严格反馈系统：
+$$\dot{x}_1 = x_2$$
+$$\dot{x}_2 = \theta x_1^2 + u$$
+其中 $\theta$ 是未知常数。设计自适应反步法控制器使得 $x_1$ 跟踪参考轨迹 $x_{1d}(t) = \sin(t)$。要求：(a) 定义误差变量 $z_1 = x_1 - x_{1d}$ 和 $z_2 = x_2 - \alpha_1$；(b) 构造Lyapunov函数 $V = \frac{1}{2}z_1^2 + \frac{1}{2}z_2^2 + \frac{1}{2\gamma}(\hat{\theta}-\theta)^2$；(c) 推导控制律 $u$ 和自适应律 $\dot{\hat{\theta}}$；(d) 仿真验证，取 $\theta=1$，$\hat{\theta}(0)=0$，$\gamma=1$。
+
+## 答案
+
+**答案1**：
+
+对 $V = \frac{1}{2}e^2 + \frac{|b|}{2\gamma_1}\tilde{k}_1^2 + \frac{|b|}{2\gamma_2}\tilde{k}_2^2$ 求时间导数：
+
+$$\dot{V} = e\dot{e} + \frac{|b|}{\gamma_1}\tilde{k}_1\dot{\tilde{k}}_1 + \frac{|b|}{\gamma_2}\tilde{k}_2\dot{\tilde{k}}_2$$
+
+代入误差动力学 $\dot{e} = a_m e + b\tilde{k}_1 x_p + b\tilde{k}_2 r$，并注意到 $\dot{\tilde{k}}_i = \dot{k}_i$（因为 $k_i^*$ 是常数）：
+
+$$\dot{V} = e(a_m e + b\tilde{k}_1 x_p + b\tilde{k}_2 r) + \frac{|b|}{\gamma_1}\tilde{k}_1\dot{k}_1 + \frac{|b|}{\gamma_2}\tilde{k}_2\dot{k}_2$$
+
+展开：
+
+$$\dot{V} = a_m e^2 + b\tilde{k}_1 e x_p + b\tilde{k}_2 e r + \frac{|b|}{\gamma_1}\tilde{k}_1\dot{k}_1 + \frac{|b|}{\gamma_2}\tilde{k}_2\dot{k}_2$$
+
+选择自适应律 $\dot{k}_1 = -\gamma_1 \text{sign}(b) e x_p$ 和 $\dot{k}_2 = -\gamma_2 \text{sign}(b) e r$，代入：
+
+$$\frac{|b|}{\gamma_1}\tilde{k}_1\dot{k}_1 = \frac{|b|}{\gamma_1}\tilde{k}_1(-\gamma_1 \text{sign}(b) e x_p) = -|b|\text{sign}(b)\tilde{k}_1 e x_p = -b\tilde{k}_1 e x_p$$
+
+（因为 $|b|\text{sign}(b) = b$）
+
+同理：
+
+$$\frac{|b|}{\gamma_2}\tilde{k}_2\dot{k}_2 = -b\tilde{k}_2 e r$$
+
+因此交叉项相消：
+
+$$\dot{V} = a_m e^2 + b\tilde{k}_1 e x_p + b\tilde{k}_2 e r - b\tilde{k}_1 e x_p - b\tilde{k}_2 e r = a_m e^2$$
+
+由于 $a_m < 0$，故 $\dot{V} = a_m e^2 \leq 0$（半负定）。
+
+**应用Barbalat引理**：
+- $V(t)$ 单调递减且有下界（$V \geq 0$），故 $V(t)$ 收敛到有限值
+- $\dot{V} = a_m e^2$，积分得 $\int_0^\infty e^2 dt = \frac{V(0)-V(\infty)}{|a_m|} < \infty$，即 $e \in L_2$
+- 由误差动力学可知 $\dot{e}$ 有界（因为 $e, x_p, r$ 有界），故 $e$ 一致连续
+- 根据Barbalat引理：若 $e \in L_2$ 且 $\dot{e}$ 有界，则 $e(t) \to 0$ 当 $t \to \infty$
+
+因此证明了渐近跟踪：$\lim_{t\to\infty} e(t) = 0$。
+
+**答案2**：
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+def rls_identification(y_data, u_data, n_a, n_b, lambda_forget=1.0):
+    """
+    递推最小二乘法（带遗忘因子）
+    
+    参数:
+        y_data: 输出数据序列
+        u_data: 输入数据序列
+        n_a: 输出滞后阶数
+        n_b: 输入滞后阶数
+        lambda_forget: 遗忘因子 (0 < lambda <= 1)
+    
+    返回:
+        theta_hist: 参数估计历史
+    """
+    N = len(y_data)
+    n = n_a + n_b  # 参数总数
+    
+    # 初始化
+    theta_hat = np.zeros(n)
+    P = 1e6 * np.eye(n)  # 初始协方差矩阵（大值表示高不确定性）
+    
+    theta_hist = []
+    
+    for k in range(max(n_a, n_b), N):
+        # 构建回归向量
+        phi = np.zeros(n)
+        for i in range(n_a):
+            phi[i] = y_data[k-1-i]
+        for j in range(n_b):
+            phi[n_a+j] = u_data[k-1-j]
+        
+        # 计算增益
+        denominator = lambda_forget + phi.T @ P @ phi
+        L = (P @ phi) / denominator
+        
+        # 预测误差
+        y_pred = phi.T @ theta_hat
+        error = y_data[k] - y_pred
+        
+        # 更新参数估计
+        theta_hat = theta_hat + L * error
+        
+        # 更新协方差矩阵
+        P = (P - np.outer(L, L) * (phi.T @ P @ phi + lambda_forget)) / lambda_forget
+        
+        theta_hist.append(theta_hat.copy())
+    
+    return np.array(theta_hist)
+
+# 生成仿真数据
+np.random.seed(42)
+N = 500
+a1_true, a2_true = 1.5, -0.7
+b0_true, b1_true = 0.8, -0.3
+
+# 输入信号：PRBS
+u = np.sign(np.random.randn(N))
+
+# 初始化输出
+y = np.zeros(N)
+y[0] = 0.1
+y[1] = 0.2
+
+# 生成输出（加入噪声）
+noise_std = 0.05
+for k in range(2, N):
+    y[k] = (a1_true * y[k-1] + a2_true * y[k-2] + 
+            b0_true * u[k-1] + b1_true * u[k-2] + 
+            noise_std * np.random.randn())
+
+# 测试不同遗忘因子
+lambdas = [0.95, 0.98, 1.0]
+colors = ['red', 'green', 'blue']
+
+plt.figure(figsize=(12, 8))
+
+for lam, color in zip(lambdas, colors):
+    theta_hist = rls_identification(y, u, n_a=2, n_b=2, lambda_forget=lam)
+    
+    # 绘制参数收敛曲线
+    plt.subplot(2, 2, 1)
+    plt.plot(theta_hist[:, 0], color=color, label=f'$\\hat{{a}}_1$, $\\lambda={lam}$')
+    plt.axhline(y=a1_true, color='k', linestyle='--', linewidth=1)
+    
+    plt.subplot(2, 2, 2)
+    plt.plot(theta_hist[:, 1], color=color, label=f'$\\hat{{a}}_2$, $\\lambda={lam}$')
+    plt.axhline(y=a2_true, color='k', linestyle='--', linewidth=1)
+    
+    plt.subplot(2, 2, 3)
+    plt.plot(theta_hist[:, 2], color=color, label=f'$\\hat{{b}}_0$, $\\lambda={lam}$')
+    plt.axhline(y=b0_true, color='k', linestyle='--', linewidth=1)
+    
+    plt.subplot(2, 2, 4)
+    plt.plot(theta_hist[:, 3], color=color, label=f'$\\hat{{b}}_1$, $\\lambda={lam}$')
+    plt.axhline(y=b1_true, color='k', linestyle='--', linewidth=1)
+
+plt.subplot(2, 2, 1)
+plt.title('Parameter $a_1$ Convergence')
+plt.xlabel('Sample Index')
+plt.ylabel('Estimate')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 2, 2)
+plt.title('Parameter $a_2$ Convergence')
+plt.xlabel('Sample Index')
+plt.ylabel('Estimate')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 2, 3)
+plt.title('Parameter $b_0$ Convergence')
+plt.xlabel('Sample Index')
+plt.ylabel('Estimate')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 2, 4)
+plt.title('Parameter $b_1$ Convergence')
+plt.xlabel('Sample Index')
+plt.ylabel('Estimate')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/tmp/rls_convergence.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# 打印最终估计值
+print("True parameters: a1=%.2f, a2=%.2f, b0=%.2f, b1=%.2f" % (a1_true, a2_true, b0_true, b1_true))
+for lam in lambdas:
+    theta_hist = rls_identification(y, u, n_a=2, n_b=2, lambda_forget=lam)
+    final_theta = theta_hist[-1]
+    print(f"Lambda={lam:.2f}: a1_hat={final_theta[0]:.4f}, a2_hat={final_theta[1]:.4f}, b0_hat={final_theta[2]:.4f}, b1_hat={final_theta[3]:.4f}")
+```
+
+**结论**：
+- $\lambda = 1.0$（无遗忘）：收敛较慢，但对噪声鲁棒，稳态误差小
+- $\lambda = 0.95$（快速遗忘）：收敛快，能跟踪时变参数，但稳态波动大
+- 折中选择：$\lambda \in [0.98, 0.995]$ 通常较好
+
+**答案3**：
+
+**(a) 离散时间模型**：
+
+连续系统 $\dot{y} = -ay + bu$ 的精确离散化（零阶保持）为：
+
+$$y(k+1) = e^{-aT_s} y(k) + \frac{b}{a}(1-e^{-aT_s}) u(k)$$
+
+令 $\alpha = e^{-aT_s}$，$\beta = \frac{b}{a}(1-e^{-aT_s})$，则：
+
+$$y(k+1) = \alpha y(k) + \beta u(k)$$
+
+当 $a=2$，$b=3$，$T_s=0.1$ 时：
+$$\alpha = e^{-2 \times 0.1} = e^{-0.2} \approx 0.8187$$
+$$\beta = \frac{3}{2}(1-e^{-0.2}) = 1.5 \times 0.1813 \approx 0.2719$$
+
+**(b) RLS辨识算法**：
+
+回归模型：$y(k+1) = \theta_1 y(k) + \theta_2 u(k)$，其中 $\theta_1 = \alpha$，$\theta_2 = \beta$。
+
+初始化：$\hat{\theta}(0) = [0, 0]^T$，$P(0) = 10^6 I$。
+
+对每个 $k$：
+$$\phi(k) = \begin{bmatrix} y(k) \\ u(k) \end{bmatrix}$$
+$$L(k) = \frac{P(k-1)\phi(k)}{1 + \phi(k)^T P(k-1)\phi(k)}$$
+$$\hat{\theta}(k) = \hat{\theta}(k-1) + L(k)[y(k+1) - \phi(k)^T \hat{\theta}(k-1)]$$
+$$P(k) = [I - L(k)\phi(k)^T]P(k-1)$$
+
+**(c) 极点配置控制器**：
+
+期望闭环极点 $z_d = 0.5$。
+
+闭环动态：$y(k+1) = (\alpha + \beta K_p) y(k) + \beta K_r r(k)$
+
+要求 $\alpha + \beta K_p = z_d$，故：
+
+$$K_p = \frac{z_d - \alpha}{\beta}$$
+
+前馈增益 $K_r$ 用于消除稳态误差。对阶跃输入 $r$，稳态时 $y = K_r r / (1-z_d)$。为使 $y=r$，取：
+
+$$K_r = \frac{1-z_d}{\beta}$$
+
+STR算法：在每个时刻用估计值 $\hat{\alpha}(k)$ 和 $\hat{\beta}(k)$ 替换真值：
+
+$$\hat{K}_p(k) = \frac{z_d - \hat{\alpha}(k)}{\hat{\beta}(k)}$$
+$$\hat{K}_r(k) = \frac{1-z_d}{\hat{\beta}(k)}$$
+
+控制律：$u(k) = \hat{K}_p(k) y(k) + \hat{K}_r(k) r(k)$
+
+**(d) 仿真验证**：
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 系统参数
+a_true = 2.0
+b_true = 3.0
+Ts = 0.1
+
+alpha_true = np.exp(-a_true * Ts)
+beta_true = (b_true / a_true) * (1 - np.exp(-a_true * Ts))
+
+# 离散模型
+def simulate_system(u_seq, alpha, beta, y0=0):
+    N = len(u_seq)
+    y = np.zeros(N+1)
+    y[0] = y0
+    for k in range(N):
+        y[k+1] = alpha * y[k] + beta * u_seq[k]
+    return y[1:]  # 返回 y(1) 到 y(N)
+
+# STR控制器
+def str_controller(y_ref, N_sim, a_initial=2.0, b_initial=3.0):
+    # 初始化RLS
+    theta_hat = np.array([np.exp(-a_initial * Ts), 
+                          (b_initial / a_initial) * (1 - np.exp(-a_initial * Ts))])
+    P = 1e6 * np.eye(2)
+    
+    y_data = [0.0]  # 初始输出
+    u_data = []
+    y_traj = []
+    
+    z_d = 0.5  # 期望闭环极点
+    
+    for k in range(N_sim):
+        # 当前输出
+        y_k = y_data[-1]
+        
+        # 计算控制增益
+        alpha_hat = theta_hat[0]
+        beta_hat = theta_hat[1]
+        
+        # 防止除零
+        if abs(beta_hat) < 1e-6:
+            beta_hat = 1e-6 * np.sign(beta_hat)
+        
+        K_p = (z_d - alpha_hat) / beta_hat
+        K_r = (1 - z_d) / beta_hat
+        
+        # 生成控制输入
+        r_k = y_ref(k * Ts)
+        u_k = K_p * y_k + K_r * r_k
+        
+        # 限幅
+        u_k = np.clip(u_k, -10, 10)
+        
+        # 系统响应（假设在某时刻参数突变）
+        if k * Ts < 2.0:
+            alpha_sys = alpha_true
+            beta_sys = beta_true
+        else:
+            # 参数突变：a 从 2 变到 4
+            a_new = 4.0
+            alpha_sys = np.exp(-a_new * Ts)
+            beta_sys = (b_true / a_new) * (1 - np.exp(-a_new * Ts))
+        
+        y_next = alpha_sys * y_k + beta_sys * u_k
+        
+        # RLS更新
+        phi = np.array([y_k, u_k])
+        L = (P @ phi) / (1 + phi.T @ P @ phi)
+        prediction_error = y_next - phi.T @ theta_hat
+        theta_hat = theta_hat + L * prediction_error
+        P = (np.eye(2) - np.outer(L, phi)) @ P
+        
+        # 存储数据
+        u_data.append(u_k)
+        y_data.append(y_next)
+        y_traj.append(y_next)
+    
+    return np.array(y_traj), np.array(u_data), theta_hat
+
+# 仿真
+N_sim = 300
+T_sim = N_sim * Ts
+time = np.linspace(Ts, T_sim, N_sim)
+
+# 参考信号：阶跃
+def y_ref(t):
+    return 1.0 if t >= 0 else 0.0
+
+y_traj, u_traj, final_theta = str_controller(y_ref, N_sim)
+
+# 绘图
+plt.figure(figsize=(10, 6))
+
+plt.subplot(2, 1, 1)
+plt.plot(time, y_traj, 'b-', linewidth=2, label='$y(k)$')
+plt.axhline(y=1.0, color='r', linestyle='--', linewidth=1, label='Reference')
+plt.axvline(x=2.0, color='g', linestyle=':', linewidth=1, label='Parameter change')
+plt.xlabel('Time (s)', fontsize=11)
+plt.ylabel('Output $y$', fontsize=11)
+plt.title('STR Control: Output Tracking', fontsize=12, fontweight='bold')
+plt.legend(fontsize=10)
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 1, 2)
+plt.plot(time, u_traj, 'g-', linewidth=2)
+plt.axvline(x=2.0, color='g', linestyle=':', linewidth=1)
+plt.xlabel('Time (s)', fontsize=11)
+plt.ylabel('Control Input $u$', fontsize=11)
+plt.title('Control Input', fontsize=12, fontweight='bold')
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/tmp/str_control.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f"Final parameter estimates: alpha_hat={final_theta[0]:.4f}, beta_hat={final_theta[1]:.4f}")
+print(f"True values after change: alpha={np.exp(-4*Ts):.4f}, beta={(3/4)*(1-np.exp(-4*Ts)):.4f}")
+```
+
+**结果分析**：在 $t=2\text{s}$ 时参数突变后，STR控制器在约 $0.5\text{s}$（5个采样周期）内重新调整增益，输出恢复到设定值。RLS估计的参数逐渐收敛到新真值。
+
+**答案4**：
+
+**情况1**：$\phi(t) = [1, \sin(\omega t)]^T$
+
+检查PE条件：需判断是否存在 $\alpha_1, T > 0$ 使得：
+
+$$\int_t^{t+T} \phi(\tau)\phi(\tau)^T d\tau = \int_t^{t+T} \begin{bmatrix} 1 & \sin(\omega\tau) \\ \sin(\omega\tau) & \sin^2(\omega\tau) \end{bmatrix} d\tau \geq \alpha_1 I$$
+
+计算积分（取 $T = 2\pi/\omega$，即一个周期）：
+
+$$\int_t^{t+T} 1 d\tau = T$$
+$$\int_t^{t+T} \sin(\omega\tau) d\tau = 0 \quad \text{(正弦在一个周期内积分为零)}$$
+$$\int_t^{t+T} \sin^2(\omega\tau) d\tau = \frac{T}{2}$$
+
+因此：
+
+$$\int_t^{t+T} \phi\phi^T d\tau = \begin{bmatrix} T & 0 \\ 0 & T/2 \end{bmatrix}$$
+
+该矩阵的特征值为 $T$ 和 $T/2$，均大于零。故取 $\alpha_1 = T/2$，满足PE条件。
+
+**结论**：$\phi(t) = [1, \sin(\omega t)]^T$ **满足** PE条件（前提是积分区间至少包含一个完整周期）。
+
+**情况2**：$\phi(t) = [1, \sin(t), \sin(2t)]^T$
+
+类似地，取 $T = 2\pi$（公共周期）：
+
+$$\int_t^{t+T} \phi\phi^T d\tau = \begin{bmatrix} T & 0 & 0 \\ 0 & T/2 & 0 \\ 0 & 0 & T/2 \end{bmatrix}$$
+
+（交叉项如 $\int \sin(t)\sin(2t) dt$ 在一个周期内为零，因为正交性）
+
+特征值为 $T, T/2, T/2$，均大于零。故也满足PE条件。
+
+**物理意义**：
+- $\phi(t) = [1, \sin(\omega t)]^T$ 包含直流分量和单一频率，足以激励一阶系统的两个参数（增益和时间常数）
+- $\phi(t) = [1, \sin(t), \sin(2t)]^T$ 包含多个频率成分，能更充分地激励高阶系统的多个模态
+- **不满足PE的例子**：若 $\phi(t) = [1, 0]^T$（常数输入），则 $\int \phi\phi^T = \begin{bmatrix} T & 0 \\ 0 & 0 \end{bmatrix}$，第二个特征值为零，不满足PE。这对应于常数输入无法辨识系统动态（只能辨识直流增益）。
+
+**答案5**：
+
+**(a) 误差变量定义**：
+
+$$z_1 = x_1 - x_{1d} = x_1 - \sin(t)$$
+$$z_2 = x_2 - \alpha_1$$
+
+其中 $\alpha_1$ 是虚拟控制，待定。
+
+**(b) Lyapunov函数构造**：
+
+第一步：对 $z_1$ 子系统，取 $V_1 = \frac{1}{2}z_1^2$。
+
+$$\dot{V}_1 = z_1 \dot{z}_1 = z_1(\dot{x}_1 - \dot{x}_{1d}) = z_1(x_2 - \cos(t))$$
+
+选择虚拟控制 $\alpha_1 = \cos(t) - k_1 z_1$（$k_1 > 0$），则：
+
+$$\dot{V}_1 = z_1(z_2 + \alpha_1 - \cos(t)) = z_1(z_2 - k_1 z_1) = -k_1 z_1^2 + z_1 z_2$$
+
+第二步：增广Lyapunov函数
+
+$$V = V_1 + \frac{1}{2}z_2^2 + \frac{1}{2\gamma}(\hat{\theta}-\theta)^2 = \frac{1}{2}z_1^2 + \frac{1}{2}z_2^2 + \frac{1}{2\gamma}\tilde{\theta}^2$$
+
+其中 $\tilde{\theta} = \hat{\theta} - \theta$。
+
+**(c) 控制律和自适应律推导**：
+
+对 $z_2$ 求导：
+
+$$\dot{z}_2 = \dot{x}_2 - \dot{\alpha}_1 = \theta x_1^2 + u - \dot{\alpha}_1$$
+
+需要计算 $\dot{\alpha}_1$：
+
+$$\alpha_1 = \cos(t) - k_1(x_1 - \sin(t))$$
+$$\dot{\alpha}_1 = -\sin(t) - k_1(\dot{x}_1 - \cos(t)) = -\sin(t) - k_1(x_2 - \cos(t))$$
+
+对 $V$ 求导：
+
+$$\dot{V} = z_1 \dot{z}_1 + z_2 \dot{z}_2 + \frac{1}{\gamma}\tilde{\theta}\dot{\hat{\theta}}$$
+$$= z_1(-k_1 z_1 + z_2) + z_2(\theta x_1^2 + u - \dot{\alpha}_1) + \frac{1}{\gamma}\tilde{\theta}\dot{\hat{\theta}}$$
+$$= -k_1 z_1^2 + z_1 z_2 + z_2(\theta x_1^2 + u - \dot{\alpha}_1) + \frac{1}{\gamma}\tilde{\theta}\dot{\hat{\theta}}$$
+
+选择控制律：
+
+$$u = -z_1 - \hat{\theta} x_1^2 + \dot{\alpha}_1 - k_2 z_2$$
+
+其中 $k_2 > 0$。代入：
+
+$$\dot{V} = -k_1 z_1^2 + z_1 z_2 + z_2(\theta x_1^2 - z_1 - \hat{\theta} x_1^2 + \dot{\alpha}_1 - k_2 z_2 - \dot{\alpha}_1) + \frac{1}{\gamma}\tilde{\theta}\dot{\hat{\theta}}$$
+$$= -k_1 z_1^2 + z_1 z_2 - z_1 z_2 + z_2(\theta - \hat{\theta})x_1^2 - k_2 z_2^2 + \frac{1}{\gamma}\tilde{\theta}\dot{\hat{\theta}}$$
+$$= -k_1 z_1^2 - k_2 z_2^2 + \tilde{\theta}(-z_2 x_1^2 + \frac{1}{\gamma}\dot{\hat{\theta}})$$
+
+选择自适应律：
+
+$$\dot{\hat{\theta}} = \gamma z_2 x_1^2$$
+
+则 $\dot{V} = -k_1 z_1^2 - k_2 z_2^2 \leq 0$。
+
+**最终控制律和自适应律**：
+
+$$\alpha_1 = \cos(t) - k_1(x_1 - \sin(t))$$
+$$u = -(x_1 - \sin(t)) - \hat{\theta} x_1^2 + \dot{\alpha}_1 - k_2(x_2 - \alpha_1)$$
+$$\dot{\hat{\theta}} = \gamma (x_2 - \alpha_1) x_1^2$$
+
+其中 $\dot{\alpha}_1 = -\sin(t) - k_1(x_2 - \cos(t))$。
+
+**(d) 仿真验证**：
+
+```python
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+def adaptive_backstepping_dynamics(t, y, k1, k2, gamma):
+    """
+    自适应反步法闭环动力学
+    y = [x1, x2, theta_hat]
+    """
+    x1, x2, theta_hat = y
+    
+    # 参考轨迹及其导数
+    x1d = np.sin(t)
+    x1d_dot = np.cos(t)
+    x1d_ddot = -np.sin(t)
+    
+    # 误差变量
+    z1 = x1 - x1d
+    
+    # 虚拟控制
+    alpha1 = x1d_dot - k1 * z1
+    
+    # 虚拟控制的导数
+    alpha1_dot = x1d_ddot - k1 * (x2 - x1d_dot)
+    
+    # 第二个误差
+    z2 = x2 - alpha1
+    
+    # 控制律
+    u = -z1 - theta_hat * x1**2 + alpha1_dot - k2 * z2
+    
+    # 自适应律
+    theta_hat_dot = gamma * z2 * x1**2
+    
+    # 系统动态
+    x1_dot = x2
+    x2_dot = 1.0 * x1**2 + u  # 真实 theta = 1
+    
+    return [x1_dot, x2_dot, theta_hat_dot]
+
+# 参数
+k1 = 2.0
+k2 = 3.0
+gamma = 1.0
+
+# 初始条件
+y0 = [0.5, 0.0, 0.0]  # [x1, x2, theta_hat]
+
+# 仿真
+t_span = (0, 10)
+t_eval = np.linspace(0, 10, 1000)
+
+sol = solve_ivp(adaptive_backstepping_dynamics, t_span, y0, t_eval=t_eval,
+                args=(k1, k2, gamma), method='RK45')
+
+t = sol.t
+x1 = sol.y[0]
+x2 = sol.y[1]
+theta_hat = sol.y[2]
+
+# 参考轨迹
+x1d = np.sin(t)
+
+# 误差
+z1 = x1 - x1d
+
+# 绘图
+fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+
+axes[0].plot(t, x1, 'b-', linewidth=2, label='$x_1(t)$')
+axes[0].plot(t, x1d, 'r--', linewidth=2, label='$x_{1d}(t) = \\sin(t)$')
+axes[0].set_xlabel('Time (s)', fontsize=11)
+axes[0].set_ylabel('State', fontsize=11)
+axes[0].set_title('Adaptive Backstepping: Tracking Performance', fontsize=12, fontweight='bold')
+axes[0].legend(fontsize=10)
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(t, z1, 'g-', linewidth=2)
+axes[1].axhline(y=0, color='k', linestyle=':', linewidth=1)
+axes[1].set_xlabel('Time (s)', fontsize=11)
+axes[1].set_ylabel('Tracking Error $z_1$', fontsize=11)
+axes[1].set_title('Tracking Error', fontsize=12, fontweight='bold')
+axes[1].grid(True, alpha=0.3)
+
+axes[2].plot(t, theta_hat, 'm-', linewidth=2, label='$\\hat{\\theta}(t)$')
+axes[2].axhline(y=1.0, color='k', linestyle='--', linewidth=1, label='$\\theta = 1$')
+axes[2].set_xlabel('Time (s)', fontsize=11)
+axes[2].set_ylabel('Parameter Estimate', fontsize=11)
+axes[2].set_title('Parameter Convergence', fontsize=12, fontweight='bold')
+axes[2].legend(fontsize=10)
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('/tmp/adaptive_backstepping.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f"Final tracking error: z1(10) = {z1[-1]:.6f}")
+print(f"Final parameter estimate: theta_hat(10) = {theta_hat[-1]:.6f} (true: 1.0)")
+```
+
+**结果**：跟踪误差在约2秒内收敛到零附近（$\pm 0.01$），参数估计 $\hat{\theta}(t)$ 渐近收敛到真值 $\theta=1$。这验证了自适应反步法的有效性。

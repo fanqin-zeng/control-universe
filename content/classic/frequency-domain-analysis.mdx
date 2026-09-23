@@ -1,77 +1,1000 @@
 ---
 title: 频域分析
-description: 用 Bode 图、Nyquist 图分析系统的频率特性。
+description: 从 Bode 图到 Nyquist 图——用频率响应理解系统的动态行为。
 ---
 
 # 频域分析
 
-频域分析研究系统对不同频率正弦输入的稳态响应，是经典控制的核心工具。
+## 为什么需要频域分析
+
+上一章（时域分析），我们从传递函数出发，计算了系统对阶跃、脉冲等信号的**时间响应**，提取了超调量、调节时间等性能指标。时域分析直观——响应曲线一眼就能看出系统行为。
+
+但时域分析有一个**根本困难**：它很难回答"系统对**所有频率**的正弦输入如何响应？"
+
+这个问题在工程中极为重要：
+
+- **滤波器设计**：哪些频率的信号能通过，哪些被衰减？
+- **噪声抑制**：传感器噪声通常是高频的，系统对高频输入衰减多少？
+- **共振分析**：如果输入频率接近系统自然频率，响应会放大多少？
+- **稳定性分析**：闭环系统在频域中有更优雅的稳定判据
+- **鲁棒性分析**：模型有多大的不确定性时，系统仍然稳定？
+
+频域分析的核心思想：**不研究系统对某一个特定信号的响应，而是研究系统对所有频率正弦信号的稳态响应规律**。
+
+本章路线图：
+
+$$\text{频率响应函数} \to \text{Bode 图（含稳定裕度）} \to \text{Nyquist 图} \to \text{频域指标与时域的关系} \to \text{工程实例}$$
+
+---
 
 ## 频率响应函数
 
-将传递函数中的 $s$ 替换为 $j\omega$，得到频率响应函数：
+### 从正弦输入开始
 
-$$
-G(j\omega) = |G(j\omega)| e^{j\angle G(j\omega)}
-$$
+假设一个稳定的 LTI 系统 $G(s)$，输入是正弦信号 $r(t) = A\sin(\omega t)$。
 
-其中 $|G(j\omega)|$ 为幅频特性，$\angle G(j\omega)$ 为相频特性。
+一个关键的数学事实：**LTI 系统对正弦输入的稳态响应仍然是同频率的正弦**，只是幅值和相位发生了变化：
+
+$$r(t) = A\sin(\omega t) \quad\xrightarrow{\text{LTI 系统}}\quad y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)$$
+
+也就是说：
+- 输出幅值 = 输入幅值 × $|G(j\omega)|$
+- 输出相位 = 输入相位 + $\angle G(j\omega)$
+
+这个 $G(j\omega)$ 就是**频率响应函数**——它是把传递函数 $G(s)$ 中的 $s$ 替换为 $j\omega$ 得到的复数函数。
+
+### 为什么 $s = j\omega$？
+
+这不是随意的替换。从拉普拉斯变换的角度：
+
+$$Y(s) = G(s) \cdot R(s) = G(s) \cdot \frac{A\omega}{s^2 + \omega^2}$$
+
+分母 $s^2 + \omega^2 = (s + j\omega)(s - j\omega)$，说明输入正弦信号引入了极点 $s = \pm j\omega$。
+
+对 $Y(s)$ 做部分分式展开：
+
+$$Y(s) = \frac{C_1}{s - j\omega} + \frac{C_1^*}{s + j\omega} + (\text{与系统极点相关的项})$$
+
+其中 $C_1$ 是 $Y(s)$ 在 $s = j\omega$ 处的留数。用留数定理：
+
+$$C_1 = \lim_{s \to j\omega} (s - j\omega) \cdot G(s) \cdot \frac{A\omega}{(s - j\omega)(s + j\omega)} = G(j\omega) \cdot \frac{A\omega}{2j\omega} = \frac{A \cdot G(j\omega)}{2j}$$
+
+系统稳定的前提下，与系统极点相关的项随时间衰减到零（瞬态响应），只剩下与 $\pm j\omega$ 对应的稳态项：
+
+$$y_{ss}(t) = C_1 e^{j\omega t} + C_1^* e^{-j\omega t} = \frac{A \cdot G(j\omega)}{2j} e^{j\omega t} - \frac{A \cdot G^*(j\omega)}{2j} e^{-j\omega t}$$
+
+将 $G(j\omega) = |G(j\omega)| e^{j\angle G(j\omega)}$ 代入，利用欧拉公式化简：
+
+$$y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)$$
+
+> 💡 **物理直觉**：$G(j\omega)$ 是系统"透过"频率 $\omega$ 的正弦信号时的"滤镜"——它告诉你在每个频率上，信号被放大了多少（幅值）和延迟了多少（相位）。
+
+### 幅频特性与相频特性
+
+频率响应函数 $G(j\omega)$ 是复数，可以分解为两部分：
+
+$$G(j\omega) = |G(j\omega)| \, e^{j\angle G(j\omega)}$$
+
+- **幅频特性** $|G(j\omega)|$：输出与输入的幅值比，是 $\omega$ 的函数
+- **相频特性** $\angle G(j\omega)$：输出相对输入的相位差，也是 $\omega$ 的函数
+
+### 一个简单的例子
+
+一阶系统 $G(s) = \dfrac{1}{Ts+1}$，令 $s = j\omega$：
+
+$$G(j\omega) = \frac{1}{j\omega T + 1} = \frac{1}{1 + j\omega T}$$
+
+幅频特性：
+
+$$|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega T)^2}}$$
+
+相频特性：
+
+$$\angle G(j\omega) = -\arctan(\omega T)$$
+
+观察：
+- $\omega \to 0$ 时：$|G| \to 1$，$\angle G \to 0°$——低频信号完全通过，无相移
+- $\omega \to \infty$ 时：$|G| \to 0$，$\angle G \to -90°$——高频信号被完全衰减
+- $\omega = 1/T$ 时：$|G| = 1/\sqrt{2} \approx 0.707$（即 $-3$ dB），$\angle G = -45°$
+
+这就是一个**低通滤波器**——低频通过，高频衰减。
+
+---
 
 ## Bode 图
 
-Bode 图由两张图组成：
+频率响应函数 $G(j\omega)$ 包含幅频和相频两条曲线。如何把它们画出来？
 
-- **幅频图**：$20\log_{10}|G(j\omega)|$ 对 $\log\omega$，单位 dB
-- **相频图**：$\angle G(j\omega)$ 对 $\log\omega$，单位度
+最直接的方法是逐点计算 $|G(j\omega)|$ 和 $\angle G(j\omega)$，但这样做既慢又不直观。**Bode 图**提供了一种巧妙的方法：利用对数坐标，把**乘法变加法**，从而可以用简单的渐近线快速画图。
 
-典型环节的 Bode 图特征：
+### 对数坐标的魔力
 
-| 环节 | 幅频斜率 | 相位变化 |
-|------|---------|---------|
-| 比例 $K$ | 0 dB/dec | 0° |
-| 积分 $1/s$ | -20 dB/dec | -90° |
-| 微分 $s$ | +20 dB/dec | +90° |
-| 惯性 $1/(Ts+1)$ | -20 dB/dec | 0° → -90° |
-| 二阶振荡 | -40 dB/dec | 0° → -180° |
+任何传递函数都可以分解为若干"典型环节"的乘积：
+
+$$G(s) = K \cdot \frac{(s/z_1 + 1)(s^2/\omega_{n1}^2 + 2\zeta_1 s/\omega_{n1} + 1)\cdots}{s^N (s/p_1 + 1)(s^2/\omega_{n2}^2 + 2\zeta_2 s/\omega_{n2} + 1)\cdots}$$
+
+取 $s = j\omega$ 后，$G(j\omega)$ 是若干复数的乘积和商。
+
+对幅值取对数后：
+
+$$20\log|G(j\omega)| = 20\log|K| + 20\log|j\omega/z_1 + 1| + \cdots - 20\log|(j\omega)^N| - 20\log|j\omega/p_1 + 1| - \cdots$$
+
+**乘法变成了加法！** 每个环节的 Bode 图可以独立画出，然后叠加。
+
+> 📐 从抽象代数的角度看，对数运算建立了"正实数乘法群"到"实数加法群"的同构映射。这正是 Bode 图能把复杂乘积分解为简单加法的数学本质。
+
+对相位同理：
+
+$$\angle G(j\omega) = \angle K + \angle(j\omega/z_1 + 1) + \cdots - N \times 90° - \angle(j\omega/p_1 + 1) - \cdots$$
+
+### Bode 图的定义
+
+Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
+
+1. **幅频图（幅值图）**：纵轴为 $20\log_{10}|G(j\omega)|$，单位 **dB（分贝）**
+2. **相频图（相位图）**：纵轴为 $\angle G(j\omega)$，单位**度（°）**
+
+> 💡 **为什么用 dB？** 除了把乘法变加法，dB 还有一个好处：人耳和人眼对"比例"的感知比对"绝对值"的感知更灵敏。0 dB 表示幅值 = 1（不放大也不衰减），-20 dB 表示幅值 = 0.1（衰减到 1/10），+40 dB 表示幅值 = 100。
+
+### 典型环节的 Bode 图
+
+掌握以下五种基本环节的 Bode 图，就可以快速画出任意系统的 Bode 图：
+
+#### 1. 比例环节 $G(s) = K$
+
+- 幅频：$20\log K$，水平线
+- 相频：$0°$
+
+#### 2. 积分环节 $G(s) = 1/s$（和纯微分 $G(s) = s$）
+
+积分环节：
+- 幅频：$-20$ dB/dec 的直线，经过 $\omega = 1$ 时幅值为 0 dB
+- 相频：恒定 $-90°$
+
+微分环节 $G(s) = s$：
+- 幅频：$+20$ dB/dec 的直线
+- 相频：恒定 $+90°$
+
+#### 3. 惯性环节（一阶极点）$G(s) = \dfrac{1}{Ts+1}$
+
+转折频率 $\omega = 1/T$：
+
+| 频率范围 | 幅频渐近线 | 说明 |
+|----------|-----------|------|
+| $\omega \ll 1/T$ | 0 dB | 低频段，幅值近似为 1 |
+| $\omega \gg 1/T$ | $-20$ dB/dec | 高频段，每十倍频衰减 20 dB |
+| $\omega = 1/T$ | $-3$ dB | 实际值与渐近线的最大偏差 |
+
+相频：从 $0°$ 逐渐下降到 $-90°$，在转折频率处为 $-45°$。
+
+#### 4. 一阶零点 $G(s) = Ts + 1$
+
+与惯性环节**镜像对称**：
+
+| 频率范围 | 幅频渐近线 |
+|----------|-----------|
+| $\omega \ll 1/T$ | 0 dB |
+| $\omega \gg 1/T$ | $+20$ dB/dec |
+
+相频：从 $0°$ 上升到 $+90°$，转折频率处为 $+45°$。
+
+#### 5. 二阶振荡环节 $G(s) = \dfrac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$
+
+转折频率 $\omega = \omega_n$：
+
+| 频率范围 | 幅频渐近线 |
+|----------|-----------|
+| $\omega \ll \omega_n$ | 0 dB |
+| $\omega \gg \omega_n$ | $-40$ dB/dec |
+
+**关键特征**：当 $\zeta < 0.707$ 时，幅频特性在 $\omega_n$ 附近出现**谐振峰**（峰值）。谐振峰的高度取决于 $\zeta$——$\zeta$ 越小，峰越高。
+
+相频：从 $0°$ 下降到 $-180°$，在 $\omega = \omega_n$ 处为 $-90°$（与 $\zeta$ 无关！）。
+
+### 汇总
+
+| 环节 | 传递函数 | 幅频斜率 | 相位变化 |
+|------|---------|---------|---------|
+| 比例 $K$ | $K$ | 0 dB/dec | 0° |
+| 积分 | $1/s$ | $-20$ dB/dec | $-90°$（恒定）|
+| 纯微分 | $s$ | $+20$ dB/dec | $+90°$（恒定）|
+| 惯性（一阶极点）| $\frac{1}{Ts+1}$ | $-20$ dB/dec（高频）| $0° \to -90°$ |
+| 一阶零点 | $Ts+1$ | $+20$ dB/dec（高频）| $0° \to +90°$ |
+| 二阶振荡 | $\frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}$ | $-40$ dB/dec（高频）| $0° \to -180°$ |
+
+### 画 Bode 图的步骤
+
+**渐近线画法**（工程上最常用的快速方法）：
+
+1. **化为标准形式**：把传递函数写成典型环节乘积的形式，确定增益 $K$
+2. **标出转折频率**：每个一阶环节的转折频率 $\omega = 1/T$，每个二阶环节的转折频率 $\omega = \omega_n$
+3. **画低频渐近线**：从最低频开始，根据积分/微分环节的个数确定初始斜率
+4. **逐段叠加斜率**：每经过一个转折频率，斜率改变相应环节的贡献（一阶极点 $-20$ dB/dec，一阶零点 $+20$ dB/dec，二阶极点 $-40$ dB/dec）
+5. **修正误差**：在转折频率附近，渐近线与实际曲线有偏差（一阶环节最大偏差 $3$ dB，二阶环节取决于 $\zeta$）
+
+### 数值例子
+
+$G(s) = \dfrac{10(s+1)}{s(s/5+1)(s/20+1)}$
+
+直接读出标准形式中的参数：
+
+$$G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/20)}$$
+
+- 增益：$K = 10$，$20\log 10 = 20$ dB
+- 转折频率：$\omega = 1$（零点），$\omega = 5$（极点），$\omega = 20$（极点）
+- 低频段有一个积分环节 $1/s$，初始斜率 $-20$ dB/dec
+
+渐近线：
+
+| 频率范围 | 斜率 | 说明 |
+|----------|------|------|
+| $\omega < 1$ | $-20$ dB/dec | 积分环节 |
+| $1 < \omega < 5$ | $0$ dB/dec | 零点 $+20$ 抵消积分 $-20$ |
+| $5 < \omega < 20$ | $-20$ dB/dec | 极点 $-20$ |
+| $\omega > 20$ | $-40$ dB/dec | 又一个极点 $-20$ |
+
+<JupyterNotebook
+  title="📐 渐近线 vs 实际 Bode 图"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from control import tf, frequency_response`}
+  cells={[
+    { code: `G = 10 * tf([1, 1], [1, 0]) * tf([1], [1/5, 1]) * tf([1], [1/20, 1])
+
+omega = np.logspace(-1, 3, 2000)
+mag, phase, w = frequency_response(G, omega=omega)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+ax1.semilogx(w, 20*np.log10(np.abs(mag)), 'b-', linewidth=2, label='Actual')
+
+for wf, name in [(1, 'zero'), (5, 'pole'), (20, 'pole')]:
+    ax1.axvline(x=wf, color='gray', linestyle=':', alpha=0.4)
+    ax1.text(wf, ax1.get_ylim()[1]*0.9, f'{name} w={wf}', fontsize=8,
+             ha='center', color='gray')
+
+ax1.set_ylabel('Magnitude (dB)', fontsize=12)
+ax1.set_title('Asymptotic Bode Plot: G(s) = 10(1+s) / [s(1+s/5)(1+s/20)]', fontsize=14)
+ax1.legend(fontsize=9)
+ax1.grid(True, alpha=0.3)
+
+ax2.semilogx(w, np.degrees(np.angle(mag)), 'b-', linewidth=2)
+for wf in [1, 5, 20]:
+    ax2.axvline(x=wf, color='gray', linestyle=':', alpha=0.4)
+ax2.set_xlabel('Frequency (rad/s)', fontsize=12)
+ax2.set_ylabel('Phase (deg)', fontsize=12)
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+### 稳定裕度：增益裕度与相位裕度
+
+工程师用 Bode 图最重要的目的之一，是判断闭环系统**离不稳定有多远**。这个"距离"用两个指标衡量：
+
+#### 增益穿越频率与相位穿越频率
+
+在 Bode 图上，有两个特殊的频率点：
+
+- **增益穿越频率** $\omega_c$（gain crossover frequency）：幅频曲线穿过 0 dB 的频率，即 $|G(j\omega_c)| = 1$
+- **相位穿越频率** $\omega_g$（phase crossover frequency）：相频曲线穿过 $-180°$ 的频率，即 $\angle G(j\omega_g) = -180°$
+
+> 💡 为什么这两个频率重要？因为闭环不稳定的临界条件是 $G(j\omega) = -1$，即幅值恰好为 1（0 dB）**且**相位恰好为 $-180°$。如果两个条件**同时**满足，闭环系统就在临界稳定点上。稳定裕度衡量的就是"离这个临界点还有多远"。
+
+#### 相位裕度 PM（Phase Margin）
+
+在幅值恰好为 1 的频率 $\omega_c$ 上，相位离 $-180°$ 还差多少：
+
+$$\boxed{PM = \angle G(j\omega_c) + 180°}$$
+
+物理意义：在 $|G| = 1$ 的频率上，相位还需要再滞后 $PM$ 度才会达到 $-180°$（不稳定的临界点）。
+
+**工程经验**：$PM > 30°$ 通常认为可接受，$PM > 45°$ 较好，$PM > 60°$ 优秀。
+
+#### 增益裕度 GM（Gain Margin）
+
+在相位恰好为 $-180°$ 的频率 $\omega_g$ 上，幅值离 0 dB 还差多少：
+
+$$\boxed{GM = -20\log|G(j\omega_g)| \quad (\text{dB})}$$
+
+等价地，线性增益裕度 $GM_{\text{linear}} = 1/|G(j\omega_g)|$。
+
+物理意义：在相位为 $-180°$ 的频率上，增益还可以再增大 $GM$ dB 才会使 $|G| = 1$（不稳定的临界点）。
+
+**工程经验**：$GM > 6$ dB 通常认为可接受，$GM > 10$ dB 较好。
+
+<JupyterNotebook
+  title="📏 稳定裕度标注"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from control import tf, frequency_response, margin`}
+  cells={[
+    { code: `G = tf([10], [1, 8, 17, 10])
+
+gm, pm, wcg, wcp = margin(G)
+print(f"Gain Margin: {20*np.log10(gm):.1f} dB (at w={wcg:.2f} rad/s)")
+print(f"Phase Margin: {pm:.1f} deg (at w={wcp:.2f} rad/s)")
+
+omega = np.logspace(-2, 2, 2000)
+mag, phase, w = frequency_response(G, omega=omega)
+mag_db = 20 * np.log10(np.abs(mag))
+phase_deg = np.degrees(np.angle(mag))
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+
+ax1.semilogx(w, mag_db, 'b-', linewidth=2)
+ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.3)
+ax1.axvline(x=wcp, color='green', linestyle=':', alpha=0.5, label=f'wc={wcp:.2f} rad/s')
+ax1.axvline(x=wcg, color='red', linestyle=':', alpha=0.5, label=f'wg={wcg:.2f} rad/s')
+mag_at_wg = np.interp(wcg, w, mag_db)
+ax1.annotate(f'GM = {-mag_at_wg:.1f} dB', xy=(wcg, mag_at_wg), xytext=(wcg*2, mag_at_wg+5),
+            arrowprops=dict(arrowstyle='->', color='red'), fontsize=11, color='red')
+ax1.set_ylabel('Magnitude (dB)', fontsize=12)
+ax1.set_title('Stability Margins: G(s) = 10 / [(s+1)(s+2)(s+5)]', fontsize=14)
+ax1.legend(fontsize=9)
+ax1.grid(True, alpha=0.3)
+
+ax2.semilogx(w, phase_deg, 'b-', linewidth=2)
+ax2.axhline(y=-180, color='gray', linestyle='--', alpha=0.3)
+ax2.axvline(x=wcp, color='green', linestyle=':', alpha=0.5)
+phase_at_wc = np.interp(wcp, w, phase_deg)
+ax2.annotate(f'PM = {pm:.1f} deg', xy=(wcp, phase_at_wc), xytext=(wcp*3, phase_at_wc+20),
+            arrowprops=dict(arrowstyle='->', color='green'), fontsize=11, color='green')
+ax2.set_xlabel('Frequency (rad/s)', fontsize=12)
+ax2.set_ylabel('Phase (deg)', fontsize=12)
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+#### 如何在 Bode 图上读取
+
+1. **读 PM**：在幅频图上找到 $|G| = 0$ dB 的频率 $\omega_c$，然后在相频图上读出该频率处的相位 $\phi$，$PM = \phi + 180°$
+2. **读 GM**：在相频图上找到 $\angle G = -180°$ 的频率 $\omega_g$，然后在幅频图上读出该频率处的幅值 $L$（dB），$GM = -L$
+
+#### 稳定裕度的鲁棒性解释
+
+稳定裕度不仅仅是"离不稳定有多远"——它本质上回答了**鲁棒性**问题：
+
+- **GM** 回答：模型增益最多能偏差多少倍，系统仍然稳定？
+- **PM** 回答：模型相位最多能偏差多少度，系统仍然稳定？
+
+实际系统的参数（质量、刚度、电阻等）不可能精确已知。如果稳定裕度太小，参数的微小偏差就可能让系统越过稳定边界。**这就是为什么工程师要求足够的稳定裕度——它是应对模型不确定性的安全余量**。
+
+<BodeZetaExplorer />
+
+#### 数值例子
+
+$G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$
+
+化为标准形式：
+
+$$G(s) = \frac{10}{(1+s)(1+s/2)(1+s/5) \cdot 1 \cdot 2 \cdot 5} = \frac{1}{(1+s)(1+s/2)(1+s/5)}$$
+
+等等，更直接的方法：$G(0) = 10/(1 \times 2 \times 5) = 1$，即低频增益为 0 dB。
+
+转折频率：$\omega = 1, 2, 5$（三个极点）。
+
+**求相位穿越频率 $\omega_g$**：
+
+$$\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+
+即 $\arctan(\omega) + \arctan(\omega/2) + \arctan(\omega/5) = 180°$。
+
+利用恒等式：当 $a, b, c > 0$ 时，$\arctan a + \arctan b + \arctan c = 180°$ 的条件为 $a + b + c = abc$：
+
+$$\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}$$
+
+$$1.7\omega = \frac{\omega^3}{10} \implies \omega_g^2 = 17 \implies \omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}$$
+
+在 $\omega_g = \sqrt{17}$ 处的幅值：
+
+$$|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{21/4} \cdot \sqrt{42/25}}$$
+
+$$= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794$$
+
+$$GM = -20\log(0.794) \approx 1.99 \text{ dB}$$
+
+增益裕度约 2 dB——系统稳定，但裕度不大。
+
+> 💡 这个例子说明：即使低频增益只有 0 dB（$G(0) = 1$），三个极点的相位累积也能让系统接近不稳定。增益裕度只有 2 dB，意味着增益再增大约 26% 就会不稳定。
+
+---
 
 ## Nyquist 图
 
-Nyquist 图是 $G(j\omega)$ 在复平面上的轨迹，$\omega$ 从 $0$ 到 $+\infty$。
+Bode 图用两张图分别展示幅频和相频。**Nyquist 图**换了一种方式：把 $G(j\omega)$ 作为复平面上的点，让 $\omega$ 从 $0$ 变到 $+\infty$，画出这些点的轨迹。
 
-Nyquist 稳定判据：
+### 画法
 
-$$
-Z = P - N
-$$
+对于每个频率 $\omega$，计算 $G(j\omega)$ 的实部和虚部：
 
-其中 $Z$ 为闭环右半平面极点数，$P$ 为开环右半平面极点数，$N$ 为 Nyquist 曲线逆时针包围 $(-1, j0)$ 点的圈数。系统稳定当且仅当 $Z = 0$。
+$$G(j\omega) = \text{Re}[G(j\omega)] + j\,\text{Im}[G(j\omega)]$$
 
-## 代码示例
+在复平面上以 $(\text{Re}, \text{Im})$ 为坐标描点，连成曲线。
 
-绘制 Bode 图：
+### Nyquist 稳定判据
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import lti, bode
+Nyquist 图最重要的应用是判断**闭环稳定性**。
 
-sys = lti([1], [1, 0.5, 1])
-w, mag, phase = bode(sys, w=np.logspace(-2, 2, 500))
+Nyquist 判据的数学本质是复变函数中的**幅角原理**（Argument Principle）：对于闭合曲线包围的区域，解析函数的零点数和极点数之差等于曲线绕原点的圈数。
 
-fig, (ax1, ax2) = plt.subplots(2, 1)
-ax1.semilogx(w, mag)
-ax1.set_ylabel('Magnitude (dB)')
-ax2.semilogx(w, phase)
-ax2.set_ylabel('Phase (deg)')
-plt.show()
-```
+将这一原理应用到闭环特征方程 $1 + G(s) = 0$，就得到：
+
+开环传递函数 $G(s)$ 的 Nyquist 曲线（$\omega$ 从 $-\infty$ 到 $+\infty$），对 $(-1, j0)$ 点的包围情况决定闭环稳定性：
+
+$$Z = P - N$$
+
+- $P$：开环传递函数在**右半平面**的极点数
+- $N$：Nyquist 曲线**逆时针**包围 $(-1, j0)$ 的圈数
+- $Z$：闭环系统在右半平面的极点数
+
+**系统稳定 $\iff Z = 0$**，即 $N = P$。
+
+对于**开环稳定**的系统（$P = 0$），判据简化为：
+
+> Nyquist 曲线不包围 $(-1, j0)$ 点 $\iff$ 闭环稳定。
+
+这就是为什么 $(-1, j0)$ 点被称为**临界点**——Nyquist 曲线离它越远，系统"越稳定"。
+
+### Nyquist 图与 Bode 图的对应
+
+| Nyquist 图上的特征 | Bode 图上的对应 |
+|-------------------|---------------|
+| 曲线与单位圆 $|G|=1$ 的交点 | 幅频曲线穿过 0 dB 的点（$\omega_c$）|
+| 曲线与负实轴的交点 | 相频曲线穿过 $-180°$ 的点（$\omega_g$）|
+| 曲线到 $(-1, j0)$ 的距离 | 稳定裕度（越远越稳定）|
+
+### Nyquist 判据应用举例
+
+**例**：$G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$，判断闭环稳定性。
+
+**第一步**：开环极点 $s = -1, -2, -5$，全部在左半平面，$P = 0$。需要 Nyquist 曲线不包围 $(-1, j0)$。
+
+**第二步**：找 Nyquist 曲线与负实轴的交点（即相位为 $-180°$ 的点）。
+
+由上一节的计算，$\omega_g = \sqrt{17} \approx 4.12$ rad/s。
+
+**第三步**：计算交点处的实部。
+
+$$G(j\sqrt{17}) = \frac{10}{(1+j\sqrt{17})(2+j\sqrt{17})(5+j\sqrt{17})}$$
+
+由于在 $\omega_g$ 处相位为 $-180°$，$G(j\omega_g)$ 是负实数：
+
+$$G(j\omega_g) = -|G(j\omega_g)| = -0.794$$
+
+**第四步**：判断。Nyquist 曲线与负实轴交于 $-0.794$，在 $(-1, j0)$ 点的**右侧**，没有包围 $(-1, j0)$。
+
+**结论**：$N = 0 = P$，**闭环稳定**。
+
+增益裕度 $GM = -20\log(0.794) \approx 2.0$ dB——稳定，但裕度有限。如果增益从 10 增大到约 $10/0.794 \approx 12.6$，交点就会移到 $(-1, j0)$ 上，系统到达临界稳定。
+
+### Nyquist 图 vs Bode 图
+
+| 特征 | Bode 图 | Nyquist 图 |
+|------|---------|-----------|
+| 展示方式 | 两张图（幅值+相位 vs 频率）| 一张图（复平面轨迹）|
+| 稳定性判断 | 需要额外规则 | 直接几何判据 |
+| 直观性 | 幅值和相位分别清晰 | 整体行为一目了然 |
+| 工程使用 | 更常用（设计校正网络方便）| 理论分析更优雅 |
+| 适用系统 | 最小相位系统 | 任意系统（含时延）|
+
+### 含时延系统的 Nyquist 图
+
+纯时延 $e^{-s\tau}$ 的频率响应为 $e^{-j\omega\tau}$，幅值恒为 1，相位为 $-\omega\tau$。
+
+在 Bode 图上：幅频不变，相频额外增加 $-\omega\tau$ 的线性下降。
+在 Nyquist 图上：曲线"螺旋"向原点——时延让相位不断滞后，但不改变幅值。
+
+> 💡 时延是控制系统中最难处理的因素之一。它不改变幅值只改变相位，意味着它**只破坏相位裕度而不影响增益**。这就是为什么时延系统特别难控制——你无法通过降低增益来"补偿"时延。（时延系统的详细处理见本章"深入讨论"部分。）
+
+<NyquistZetaExplorer />
+
+---
+
+## 频域指标与时域指标的对应
+
+频域分析和时域分析不是两套独立的体系——它们之间有深刻的联系。
+
+### 带宽与上升时间
+
+**带宽** $\omega_B$：幅频特性下降到 $-3$ dB（即幅值降到 $1/\sqrt{2}$）时的频率。
+
+直觉：带宽表示系统能"通过"的最高频率。带宽越大，系统能响应越快的信号变化。
+
+**带宽越大，上升时间越短**——系统响应越快。但 $t_r$ 与 $\omega_B$ 的定量关系取决于阻尼比 $\zeta$，不存在独立于 $\zeta$ 的简单近似。
+
+对于二阶系统，数值关系如下（$\omega_n = 10$ rad/s）：
+
+| $\zeta$ | $t_r \cdot \omega_n$ | $\omega_B / \omega_n$ | $t_r \cdot \omega_B$ |
+|---------|---------------------|----------------------|---------------------|
+| 0.3 | 1.44 | 2.89 | 4.16 |
+| 0.5 | 1.55 | 2.54 | 3.94 |
+| 0.707 | 1.80 | 2.30 | 4.14 |
+| 1.0 | 2.76 | 1.84 | 5.08 |
+
+定性结论：**$t_r \cdot \omega_B$ 在 $\zeta \in [0.3, 0.707]$ 范围内约为 3~4**。工程估算中可取 $t_r \approx 3/\omega_B$ 作为粗略参考，但精确值需根据具体阻尼比计算。
+
+### 谐振峰与超调量
+
+二阶系统的谐振频率 $\omega_r$ 和谐振峰值 $M_r$：
+
+$$\omega_r = \omega_n\sqrt{1 - 2\zeta^2} \quad (\zeta < 0.707)$$
+
+$$M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}$$
+
+谐振峰越高（$\zeta$ 越小），时域超调量越大。两者都反映了系统的"振荡倾向"。
+
+<BandwidthCorrespondenceExplorer />
+
+### 稳定裕度与阻尼比
+
+对于二阶开环系统 $G(s) = \dfrac{\omega_n^2}{s(s + 2\zeta\omega_n)}$（单位负反馈闭环即为标准二阶系统），相位裕度与阻尼比有精确的对应关系：
+
+$$PM = \arctan\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}} \times \frac{180°}{\pi}$$
+
+这个公式比较复杂，工程上常用近似：
+
+$$PM \approx 100\zeta° \quad (\zeta \in [0.3, 0.7] \text{ 范围内较准确})$$
+
+| $\zeta$ | 精确 $PM$ | 近似 $100\zeta°$ | 误差 |
+|---------|----------|-----------------|------|
+| 0.3 | 33.3° | 30° | 10% |
+| 0.5 | 51.8° | 50° | 3.5% |
+| 0.707 | 65.5° | 70.7° | 8% |
+
+> 💡 这个近似的价值在于：工程师从 Bode 图上读出 $PM$ 后，可以**立即估算**闭环阻尼比和超调量——不需要任何计算。例如 $PM = 50°$ 意味着 $\zeta \approx 0.5$，对应超调量约 16%。
+
+### 频域指标速查
+
+| 频域指标 | 对应时域指标 | 关系 |
+|---------|------------|------|
+| 带宽 $\omega_B$ | 上升时间 $t_r$ | $\omega_B \uparrow \implies t_r \downarrow$（$t_r \cdot \omega_B \approx 3\text{–}4$）|
+| 谐振峰值 $M_r$ | 超调量 $M_p$ | $M_r \uparrow \implies M_p \uparrow$ |
+| 截止频率 $\omega_c$ | 调节时间 $t_s$ | $\omega_c \uparrow \implies t_s \downarrow$ |
+| 相位裕度 $PM$ | 阻尼比 $\zeta$ | $PM \approx 100\zeta°$（$\zeta \in [0.3, 0.7]$）|
+
+> 📐 这些对应关系在后续"频率响应法"一章中会详细展开。这里先建立直觉：频域和时域是观察同一个系统的两个窗口，看到的"形状"不同，但描述的"本质"相同。
+
+---
+
+## 工程实例
+
+### 实例一：RC 低通滤波器的频率分析
+
+RC 低通滤波器是最简单的频域分析对象，也是理解频域概念的绝佳起点。
+
+#### 电路与传递函数
+
+电阻 $R$ 和电容 $C$ 串联，输出电压取自电容两端。由基尔霍夫定律：
+
+$$RC\dot{v}_o(t) + v_o(t) = v_i(t)$$
+
+传递函数：
+
+$$G(s) = \frac{V_o(s)}{V_i(s)} = \frac{1}{RCs + 1} = \frac{1}{Ts + 1}$$
+
+其中 $T = RC$ 是时间常数。
+
+#### 频率响应
+
+令 $s = j\omega$：
+
+$$G(j\omega) = \frac{1}{1 + j\omega RC}$$
+
+幅频特性：
+
+$$|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega RC)^2}}$$
+
+相频特性：
+
+$$\angle G(j\omega) = -\arctan(\omega RC)$$
+
+#### 关键频率点
+
+取 $R = 1$ kΩ，$C = 1$ μF，则 $T = RC = 1$ ms，转折频率 $\omega_0 = 1/T = 1000$ rad/s（$f_0 = 159$ Hz）。
+
+| 频率 | $\omega/\omega_0$ | $|G|$ | $|G|$ (dB) | $\angle G$ |
+|------|-------------------|-------|-----------|-----------|
+| 10 rad/s | 0.01 | 0.9999 | $-0.0004$ | $-0.6°$ |
+| 100 rad/s | 0.1 | 0.995 | $-0.04$ | $-5.7°$ |
+| 1000 rad/s | 1 | 0.707 | $-3.0$ | $-45°$ |
+| 10000 rad/s | 10 | 0.0995 | $-20.0$ | $-84.3°$ |
+| 100000 rad/s | 100 | 0.01 | $-40.0$ | $-89.4°$ |
+
+观察：
+- 低频（$\omega \ll \omega_0$）：信号几乎无衰减地通过
+- 转折频率（$\omega = \omega_0$）：衰减 $3$ dB，相移 $-45°$
+- 高频（$\omega \gg \omega_0$）：每十倍频衰减 $20$ dB，相移趋近 $-90°$
+
+#### 物理直觉
+
+电容的阻抗 $Z_C = 1/(j\omega C)$ 随频率升高而降低。高频时，电容"短路"，输出电压趋近于零；低频时，电容"开路"，输出电压等于输入电压。这就是低通滤波的物理机制。
+
+### 实例二：悬挂系统的频率响应（承接上一章）
+
+上一章分析了悬挂系统（$m = 250$ kg, $k = 16000$ N/m）的时域响应。这一节在频域中分析同一系统，展示频域分析的独到价值。
+
+#### 系统参数
+
+- 自然频率：$\omega_n = \sqrt{k/m} = \sqrt{16000/250} = 8$ rad/s
+- 三种阻尼方案（与上一章一致）：
+
+| 阻尼比 $\zeta$ | 阻尼系数 $c$ (N·s/m) | 场景 |
+|---------------|---------------------|------|
+| 0.3 | 1200 | 偏软，舒适但晃 |
+| 0.707 | 2828 | "最佳阻尼" |
+| 1.0 | 4000 | 临界阻尼，无超调但硬 |
+
+#### 频率响应分析
+
+车身位移对路面输入的传递函数：
+
+$$G(s) = \frac{cs + k}{ms^2 + cs + k}$$
+
+令 $s = j\omega$，分析不同频率下路面颠簸如何传递到车身。
+
+**低频段**（$\omega \ll \omega_n$）：$|G| \approx 1$（0 dB），路面缓慢起伏完全传递到车身——这无法避免，因为车身必须跟随路面的整体轮廓。
+
+**高频段**（$\omega \gg \omega_n$）：$|G| \to 0$（$-40$ dB/dec），路面高频颠簸被悬挂系统衰减——这正是悬挂系统的核心功能。
+
+**转折区域**（$\omega \approx \omega_n$）：这是关键区域。
+
+- $\zeta = 0.3$：出现明显的**谐振峰**，幅值可能超过 0 dB——路面频率接近 $\omega_n$ 时，车身振动被**放大**！这就是"偏软"悬挂的问题：在特定速度下，路面颠簸频率恰好接近 $\omega_n$，乘客会感到剧烈晃动。
+- $\zeta = 0.707$：谐振峰很小（约 1.5 dB），既保证了高频衰减，又不会在谐振频率处过度放大。
+- $\zeta = 1.0$：无谐振峰，但高频衰减速率较慢（$-20$ dB/dec 而非 $-40$ dB/dec）——路面细碎颠簸更多地传递到车身，乘坐感"硬"。
+
+#### 频域分析的独到价值
+
+时域分析（上一章）告诉我们"过弯后车身晃多久"。频域分析告诉我们**"什么速度的路面颠簸最危险"**——这是时域分析无法直接回答的。
+
+具体来说：如果路面凹凸间距为 $d$ 米，车速为 $v$ m/s，则激励频率为 $\omega = 2\pi v/d$。当 $\omega \approx \omega_n = 8$ rad/s 时发生共振。由此可以算出"危险车速"：$v = \omega_n d / (2\pi)$。
+
+<RCFilterBodeExplorer />
+
+---
+
+## 深入讨论
+
+### 最小相位系统与非最小相位系统
+
+**最小相位系统**：所有零点和极点都在左半平面。这类系统的幅频特性和相频特性**一一对应**——知道幅频曲线就能唯一确定相频曲线（通过 Bode 增益-相位关系）。
+
+> 📐 Bode 增益-相位关系的数学基础是**Hilbert 变换**：最小相位系统的对数幅频和对数相频构成一对 Hilbert 变换对。这意味着幅频和相频不是独立的——它们是同一个复函数（$\log G(s)$ 在虚轴上的取值）的实部和虚部。
+
+**非最小相位系统**：有零点或极点在右半平面。典型例子：
+
+- **右半平面零点** $G(s) = 1 - s/a$：幅频与 $1 + s/a$ 完全相同，但相位**额外滞后**。阶跃响应会出现反向响应（先反向再正向）。
+- **纯时延** $G(s) = e^{-s\tau}$：幅频恒为 1，相位随频率线性下降。
+
+> 💡 "非最小相位"这个名字来源于：在所有具有相同幅频特性的系统中，最小相位系统的相位滞后**最小**。非最小相位系统"额外"的相位滞后让控制变得更加困难。
+
+### Bode 图的局限性
+
+Bode 图假设系统是 LTI 的。实际系统中的非线性（饱和、死区、摩擦）会让频率响应随输入幅值变化。此外，Bode 图只展示 $\omega > 0$ 的信息，对于**条件稳定系统**（增益增大反而稳定的系统），Bode 图可能给出误导性的结论。
+
+在这些情况下，Nyquist 图更可靠——它直接展示完整的复平面轨迹，不会遗漏关键信息。
+
+### 时延系统的处理
+
+纯时延 $e^{-s\tau}$ 不是有理函数，无法直接用多项式表示。工程中常用的处理方法：
+
+**1. 频率响应直接分析**
+
+时延的频率响应为 $e^{-j\omega\tau}$：
+- 幅值：$|e^{-j\omega\tau}| = 1$（0 dB），对所有频率
+- 相位：$\angle e^{-j\omega\tau} = -\omega\tau$（线性下降）
+
+在 Bode 图上：幅频曲线不变，相频曲线额外叠加一条斜率为 $-\tau$ 的直线。
+
+**2. Padé 近似**
+
+用有理函数近似时延，一阶 Padé 近似：
+
+$$e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2}$$
+
+这是一个**全通环节**——幅值恒为 1，但引入了一个右半平面零点（$s = 2/\tau$），解释了时延为什么"额外"引入相位滞后。
+
+> 💡 时延系统的传递函数 $G(s) = \frac{K}{Ts+1} e^{-s\tau}$（一阶加时延，FOPDT）是过程控制中最常用的模型。温度控制、液位控制、化学反应器——几乎所有涉及传输或滞留的过程都有时延。
+
+---
 
 ## 小结
 
-- 频率响应函数 $G(j\omega)$ 描述系统对正弦输入的稳态响应。
-- Bode 图用对数坐标直观展示幅频和相频特性。
-- Nyquist 图可用于判断闭环系统稳定性。
+- 频率响应函数 $G(j\omega)$ 描述系统对所有频率正弦信号的幅值放大和相位移动
+- **Bode 图**用对数坐标把乘法变加法，是工程上最常用的频域工具
+- **增益裕度**和**相位裕度**衡量系统离不稳定有多远，是鲁棒性设计的基础
+- **Nyquist 图**用复平面轨迹统一展示幅值和相位，可直接判断闭环稳定性
+- 频域指标（带宽、谐振峰、稳定裕度）与时域指标（上升时间、超调量、阻尼比）有直接对应关系
+- 最小相位系统的幅频和相频一一对应；非最小相位系统有额外的相位滞后
+- 时延只改变相位不改变幅值，是控制中最难处理的因素之一
 
-<Callout variant="tip">
-  Bode 图的渐近线画法：先标出转折频率，再按各环节斜率叠加，最后修正误差。
-</Callout>
+### 核心概念速查
+
+| 概念 | 关键公式/特征 |
+|------|-------------|
+| 频率响应函数 | $G(j\omega) = G(s)\big\rvert_{s=j\omega}$ |
+| 幅频特性 | $\|G(j\omega)\|$，单位 dB |
+| 相频特性 | $\angle G(j\omega)$，单位度 |
+| 转折频率 | 一阶环节 $\omega = 1/T$，二阶环节 $\omega = \omega_n$ |
+| Bode 渐近线 | 各环节斜率叠加 |
+| 增益穿越频率 $\omega_c$ | $\|G(j\omega_c)\| = 1$（0 dB）|
+| 相位穿越频率 $\omega_g$ | $\angle G(j\omega_g) = -180°$ |
+| 相位裕度 $PM$ | $\angle G(j\omega_c) + 180°$ |
+| 增益裕度 $GM$ | $-20\log\|G(j\omega_g)\|$ (dB) |
+| Nyquist 判据 | $Z = P - N$ |
+| 带宽 | $-3$ dB 频率 |
+
+---
+
+## 习题
+
+**1.** RC 低通滤波器 $R = 10$ kΩ，$C = 0.1$ μF。求转折频率 $f_0$（Hz），并计算输入信号频率为 $f_0/10$、$f_0$、$10f_0$ 时的幅值（dB）和相位。
+
+**2.** 画出以下传递函数的 Bode 图渐近线，标出转折频率和各段斜率：
+
+$$G(s) = \frac{100}{s(s+10)}$$
+
+**3.** 某二阶系统的传递函数为 $G(s) = \dfrac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$，其中 $\omega_n = 5$ rad/s，$\zeta = 0.3$。求谐振频率 $\omega_r$、谐振峰值 $M_r$（dB），以及 $-3$ dB 带宽 $\omega_B$。
+
+**4.** 画出 $G(s) = \dfrac{10(s+1)}{s(s/5+1)(s/50+1)}$ 的 Bode 图渐近线。估算 $\omega = 1$ rad/s 处的幅值（dB）和相位。
+
+**5.** 某开环传递函数 $G(s) = \dfrac{K}{s(s+2)(s+5)}$。用 Nyquist 判据，求使闭环系统稳定的 $K$ 的范围。
+
+**6.** 两个系统的带宽分别为 $\omega_{B1} = 2$ rad/s 和 $\omega_{B2} = 20$ rad/s，阻尼比均为 $\zeta = 0.5$。定性比较它们的阶跃响应：哪个上升更快？哪个超调更大？
+
+**7.** 某单位负反馈系统的开环传递函数为 $G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$。求相位穿越频率 $\omega_g$、增益裕度 $GM$（dB），并判断闭环稳定性。
+
+**8.** 思考题：一个系统的传递函数为 $G(s) = \dfrac{1 - s/10}{1 + s/10}$。画出它的 Bode 图幅频和相频特性。这个系统有什么特殊之处？它属于最小相位系统还是非最小相位系统？
+
+**9.** 某系统的开环传递函数为 $G(s) = \dfrac{5}{s(s+1)} e^{-0.5s}$。用时延的一阶 Padé 近似 $e^{-0.5s} \approx \dfrac{1-0.25s}{1+0.25s}$，近似画出 Bode 图的相频曲线。定性说明时延对系统稳定性的影响。
+
+---
+
+## 答案
+
+**1.** 时间常数 $T = RC = 10 \times 10^3 \times 0.1 \times 10^{-6} = 10^{-3}$ s。
+
+转折频率 $\omega_0 = 1/T = 1000$ rad/s，$f_0 = \omega_0/(2\pi) = \boxed{159.2 \text{ Hz}}$。
+
+在 $f_0/10$（即 $\omega = 100$ rad/s）处：
+
+$$|G| = \frac{1}{\sqrt{1+(0.1)^2}} = 0.995 \implies 20\log|G| = \boxed{-0.04 \text{ dB}}$$
+
+$$\angle G = -\arctan(0.1) = \boxed{-5.7°}$$
+
+在 $f_0$（即 $\omega = 1000$ rad/s）处：
+
+$$|G| = \frac{1}{\sqrt{2}} = 0.707 \implies \boxed{-3.0 \text{ dB}}$$
+
+$$\angle G = -\arctan(1) = \boxed{-45°}$$
+
+在 $10f_0$（即 $\omega = 10000$ rad/s）处：
+
+$$|G| = \frac{1}{\sqrt{1+100}} \approx 0.1 \implies \boxed{-20.0 \text{ dB}}$$
+
+$$\angle G = -\arctan(10) = \boxed{-84.3°}$$
+
+---
+
+**2.** 化为标准形式：
+
+$$G(s) = \frac{100}{s(s+10)} = \frac{10}{s(s/10+1)}$$
+
+- 增益：$K = 10$，$20\log 10 = 20$ dB
+- 积分环节 $1/s$：斜率 $-20$ dB/dec
+- 转折频率：$\omega = 10$ rad/s（极点，斜率再 $-20$ dB/dec）
+
+渐近线：
+
+| 频率范围 | 斜率 |
+|----------|------|
+| $\omega < 10$ | $-20$ dB/dec |
+| $\omega > 10$ | $-40$ dB/dec |
+
+在 $\omega = 10$ 处，低频渐近线幅值：$20 - 20\log_{10}(10) = 20 - 20 = 0$ dB。
+
+---
+
+**3.** $\omega_n = 5$，$\zeta = 0.3$。
+
+谐振频率：
+
+$$\omega_r = \omega_n\sqrt{1-2\zeta^2} = 5\sqrt{1-2(0.09)} = 5\sqrt{0.82} = 5 \times 0.906$$
+
+$$\boxed{\omega_r = 4.53 \text{ rad/s}}$$
+
+谐振峰值：
+
+$$M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.3 \times \sqrt{0.91}} = \frac{1}{0.6 \times 0.954} = \frac{1}{0.572}$$
+
+$$M_r = 1.748 \implies \boxed{M_r = 20\log(1.748) = 4.85 \text{ dB}}$$
+
+$-3$ dB 带宽：需要解 $|G(j\omega_B)|^2 = 1/2$。
+
+$$\frac{\omega_n^4}{(\omega_n^2 - \omega_B^2)^2 + (2\zeta\omega_n\omega_B)^2} = \frac{1}{2}$$
+
+代入数值并整理（令 $u = \omega_B^2/\omega_n^2$）：
+
+$$u^2 - 2u(1-2\zeta^2) + 1 = 2 \implies u^2 - 1.64u - 1 = 0$$
+
+$$u = \frac{1.64 + \sqrt{1.64^2 + 4}}{2} = \frac{1.64 + 2.689}{2} = 2.164$$
+
+$$\omega_B = \omega_n\sqrt{u} = 5\sqrt{2.164} = 5 \times 1.471$$
+
+$$\boxed{\omega_B = 7.36 \text{ rad/s}}$$
+
+---
+
+**4.** 标准形式：
+
+$$G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/50)}$$
+
+- 增益 $K = 10$，$20\log 10 = 20$ dB
+- 转折频率：$\omega = 1$（零点，$+20$ dB/dec），$\omega = 5$（极点，$-20$ dB/dec），$\omega = 50$（极点，$-20$ dB/dec）
+- 积分环节初始斜率 $-20$ dB/dec
+
+渐近线：
+
+| 频率范围 | 斜率 |
+|----------|------|
+| $\omega < 1$ | $-20$ dB/dec |
+| $1 < \omega < 5$ | $0$ dB/dec |
+| $5 < \omega < 50$ | $-20$ dB/dec |
+| $\omega > 50$ | $-40$ dB/dec |
+
+在 $\omega = 1$ 处：低频渐近线值 $= 20 - 20\log_{10}(1) = 20$ dB。经过零点后斜率变为 0。
+
+$\omega = 1$ 处实际幅值约 $\boxed{20 + 3 = 23 \text{ dB}}$（零点在转折频率处有 $+3$ dB 修正）。
+
+相位：$\omega = 1$ 处，零点贡献 $+45°$，积分贡献 $-90°$，两个极点（$\omega = 5, 50$ 都远大于 1）贡献约 $0°$。
+
+$$\angle G(1) \approx -90° + 45° + 0° + 0° = \boxed{-45°}$$
+
+---
+
+**5.** 标准形式：
+
+$$G(s) = \frac{K}{s(s+2)(s+5)} = \frac{K/10}{s(s/2+1)(s/5+1)}$$
+
+开环无右半平面极点，$P = 0$。需要 Nyquist 曲线不包围 $(-1, j0)$。
+
+Nyquist 曲线与负实轴的交点出现在相位为 $-180°$ 时。
+
+$$\angle G(j\omega) = -90° - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+
+$$\arctan(\omega/2) + \arctan(\omega/5) = 90°$$
+
+利用 $\arctan a + \arctan b = 90° \implies ab = 1$：
+
+$$\frac{\omega}{2} \cdot \frac{\omega}{5} = 1 \implies \omega^2 = 10 \implies \omega_g = \sqrt{10}$$
+
+在 $\omega_g = \sqrt{10}$ 处的幅值：
+
+$$|G(j\sqrt{10})| = \frac{K/10}{\sqrt{10} \cdot \sqrt{1+10/4} \cdot \sqrt{1+10/25}} = \frac{K/10}{\sqrt{10} \cdot \sqrt{3.5} \cdot \sqrt{1.4}}$$
+
+$$= \frac{K/10}{\sqrt{10 \times 3.5 \times 1.4}} = \frac{K/10}{\sqrt{49}} = \frac{K/10}{7} = \frac{K}{70}$$
+
+稳定条件：$|G(j\omega_g)| < 1$
+
+$$\frac{K}{70} < 1 \implies \boxed{0 < K < 70}$$
+
+---
+
+**6.** 两个系统都是 $\zeta = 0.5$ 的二阶系统，阻尼比相同，因此**超调量相同**：
+
+$$M_p = e^{-\pi \times 0.5/\sqrt{0.75}} = e^{-1.814} = 16.3\%$$
+
+定性比较：系统 2（$\omega_{B2} = 20$）的带宽是系统 1（$\omega_{B1} = 2$）的 10 倍，因此**响应快约 10 倍**。
+
+上升时间：由正文中的数值表，$\zeta = 0.5$ 时 $t_r \cdot \omega_B \approx 3.9$。
+
+$$t_{r1} \approx 3.9/\omega_{B1} = 3.9/2 = \boxed{1.95 \text{ s}}$$
+
+$$t_{r2} \approx 3.9/\omega_{B2} = 3.9/20 = \boxed{0.195 \text{ s}}$$
+
+调节时间：$\omega_c \approx \omega_B$，$t_s \approx 4/\omega_c$。
+
+$$t_{s1} \approx 4/2 = \boxed{2.0 \text{ s}}, \quad t_{s2} \approx 4/20 = \boxed{0.2 \text{ s}}$$
+
+**结论**：带宽越大，系统响应越快（上升时间和调节时间都更短），但超调量由阻尼比决定，与带宽无关。
+
+---
+
+**7.** $G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$
+
+**求相位穿越频率 $\omega_g$**：
+
+$$\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+
+即 $\arctan(\omega) + \arctan(\omega/2) + \arctan(\omega/5) = 180°$。
+
+利用 $\arctan a + \arctan b + \arctan c = 180°$ 的条件 $a + b + c = abc$：
+
+$$\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}$$
+
+$$1.7\omega = \frac{\omega^3}{10}$$
+
+$$\omega^2 = 17 \implies \boxed{\omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}}$$
+
+**求增益裕度**：
+
+$$|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{5.25} \cdot \sqrt{1.68}}$$
+
+$$= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794$$
+
+$$\boxed{GM = -20\log(0.794) \approx 2.0 \text{ dB}}$$
+
+**判断稳定性**：$GM > 0$（即 $|G(j\omega_g)| < 1$），Nyquist 曲线与负实轴的交点在 $(-1, j0)$ 右侧，不包围临界点。开环稳定（$P=0$），因此 $\boxed{\text{闭环稳定}}$。
+
+---
+
+**8.** $G(s) = \dfrac{1 - s/10}{1 + s/10}$
+
+令 $s = j\omega$：
+
+$$G(j\omega) = \frac{1 - j\omega/10}{1 + j\omega/10}$$
+
+幅频特性：
+
+$$|G(j\omega)| = \frac{\sqrt{1+(\omega/10)^2}}{\sqrt{1+(\omega/10)^2}} = 1 \implies \boxed{20\log|G| = 0 \text{ dB（所有频率）}}$$
+
+相频特性：
+
+$$\angle G(j\omega) = -2\arctan(\omega/10)$$
+
+| $\omega$ | $\angle G$ |
+|----------|-----------|
+| 0 | 0° |
+| 10 | $-90°$ |
+| $\infty$ | $-180°$ |
+
+这个系统是一个**全通滤波器**——所有频率的幅值都相同（增益为 1），但相位随频率变化。
+
+零点在 $s = +10$（右半平面），因此这是**非最小相位系统**。
+
+特殊性：它只改变信号的相位分布而不改变幅值谱。在控制中，右半平面零点带来的额外相位滞后会让系统更难稳定——这是"非最小相位"名称的由来。
+
+---
+
+**9.** $G(s) = \dfrac{5}{s(s+1)} e^{-0.5s}$
+
+一阶 Padé 近似：$e^{-0.5s} \approx \dfrac{1 - 0.25s}{1 + 0.25s}$
+
+近似后的传递函数：
+
+$$G_{\text{approx}}(s) = \frac{5(1 - 0.25s)}{s(s+1)(1+0.25s)} = \frac{5(1 - s/4)}{s(s+1)(1+s/4)}$$
+
+转折频率：$\omega = 1$（极点），$\omega = 4$（零点，RHP），$\omega = 4$（极点），加上积分环节 $1/s$。
+
+**相频分析**（无时延时）：
+
+$$\angle G_0(j\omega) = -90° - \arctan(\omega)$$
+
+**时延引入的额外相位**：$-\omega\tau = -0.5\omega$
+
+| $\omega$ (rad/s) | $\angle G_0$ (无时延) | 时延相位 $-0.5\omega$ | 总相位 |
+|------------------|---------------------|---------------------|--------|
+| 0.1 | $-95.7°$ | $-2.9°$ | $-98.6°$ |
+| 1 | $-135°$ | $-28.6°$ | $-163.6°$ |
+| 2 | $-153.4°$ | $-57.3°$ | $-210.7°$ |
+| 5 | $-168.7°$ | $-143.2°$ | $-311.9°$ |
+
+无时延系统：相位从 $-90°$ 下降到 $-180°$（$\omega \to \infty$），永远不会超过 $-180°$，因此**无条件稳定**（对任意增益都稳定）。
+
+有时延后：相位可以降到 $-180°$ 以下。在 $\omega \approx 2$ rad/s 处，总相位约为 $-211°$，已经超过 $-180°$。
+
+**时延的影响**：
+1. 相位裕度减小——系统"更接近"不稳定
+2. 如果增益足够大，系统可以变得不稳定（无时延时不可能）
+3. 时延不改变幅频曲线，因此不能通过降低增益来"补偿"时延的相位影响——降低增益虽然能增大 GM，但也会让系统变慢
+
+这正是时延系统难以控制的原因：**时延只杀相位，不杀幅值**。
