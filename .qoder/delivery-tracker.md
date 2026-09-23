@@ -100,7 +100,7 @@
 | [x] 非线性系统特性 (nonlinear-characteristics) | v1.3: 3个静态JupyterNotebook（Duffing振子对比、Stribeck摩擦曲线、PI饱和与抗积分饱和） |
 | [ ] 相平面分析 (phase-plane) | |
 | [x] 描述函数法 (describing-function) | v1.3: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer），2个静态JupyterNotebook |
-| [ ] 李雅普诺夫稳定性 (lyapunov-stability) | |
+| [x] 李雅普诺夫稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/course-01/07-nonlinear/04-lyapunov-stability.md |
 | [ ] 反馈线性化 (feedback-linearization) | |
 | [ ] 滑模控制 (sliding-mode-control) | |
 | [ ] 反步法设计 (backstepping) | |
@@ -159,4 +159,4 @@
 
 ---
 
-**统计**：10 / 83 课程已完成（24个交互组件已交付）
+**统计**：11 / 83 课程已完成（25个交互组件已交付）
