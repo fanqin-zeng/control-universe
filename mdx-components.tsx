@@ -26,6 +26,7 @@ import { AntiWindupExplorer } from "@/components/wiki/antiwindup-explorer";
 import { DescribingFunctionExplorer } from "@/components/wiki/describing-function-explorer";
 import { NyquistLimitCycleExplorer } from "@/components/wiki/nyquist-limit-cycle-explorer";
 import { LyapunovExplorer } from "@/components/wiki/lyapunov-explorer";
+import { ZeroDynamicsExplorer } from "@/components/wiki/zero-dynamics-explorer";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
@@ -56,6 +57,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     DescribingFunctionExplorer,
     NyquistLimitCycleExplorer,
     LyapunovExplorer,
+    ZeroDynamicsExplorer,
     ...components,
   };
 }

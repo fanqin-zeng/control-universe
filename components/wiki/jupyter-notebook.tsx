@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface NotebookOutput {
   type: "text" | "image" | "error" | "stream" | "html";
@@ -21,6 +21,12 @@ interface CellState {
 }
 
 const API = "http://127.0.0.1:8891";
+
+// Module-level so notebooks mounting in the same millisecond never share a kernel id.
+let nbSeq = 0;
+function newNotebookId() {
+  return `nb-${Date.now()}-${nbSeq++}`;
+}
 
 async function createNotebook(id: string, setup: string) {
   const res = await fetch(`${API}/api/notebook`, {
@@ -73,11 +79,10 @@ export function JupyterNotebook({
   const [notebookId, setNotebookId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const nbCounter = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    const id = `nb-${Date.now()}-${nbCounter.current++}`;
+    const id = newNotebookId();
 
     createNotebook(id, setupCode)
       .then(() => {
@@ -146,7 +151,7 @@ export function JupyterNotebook({
 
   const reset = useCallback(async () => {
     if (notebookId) await deleteNotebook(notebookId);
-    const id = `nb-${Date.now()}-${nbCounter.current++}`;
+    const id = newNotebookId();
     setReady(false);
     setCells((prev) => prev.map((c) => ({ ...c, outputs: [] })));
     try {

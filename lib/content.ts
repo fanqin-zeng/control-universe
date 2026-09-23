@@ -34,6 +34,7 @@ import { AntiWindupExplorer } from "@/components/wiki/antiwindup-explorer";
 import { DescribingFunctionExplorer } from "@/components/wiki/describing-function-explorer";
 import { NyquistLimitCycleExplorer } from "@/components/wiki/nyquist-limit-cycle-explorer";
 import { LyapunovExplorer } from "@/components/wiki/lyapunov-explorer";
+import { ZeroDynamicsExplorer } from "@/components/wiki/zero-dynamics-explorer";
 import { logger } from "@/lib/logger";
 
 const contentDir = path.join(process.cwd(), "content");
@@ -95,6 +96,7 @@ async function compileLessonSource(source: string, fallbackTitle: string) {
         LeadLagCompensatorExplorer, AntiWindupExplorer,
         DescribingFunctionExplorer, NyquistLimitCycleExplorer,
         LyapunovExplorer,
+        ZeroDynamicsExplorer,
       },
     });
 

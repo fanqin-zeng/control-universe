@@ -12,3 +12,4 @@
 | 008 | 2026-09-23 | classic/pid-controller.mdx | PID控制器参数调节 | BUG | 2个ipywidgets笔记本→转为React组件（PidDerivativeFilterExplorer单Tf滑块+PidKiKdExplorer双Ki/Kd滑块），固定坐标轴，禁用动画 |
 | 009 | 2026-09-23 | classic/stability-analysis.mdx | 系统稳定性分析 | BUG | 2个ipywidgets笔记本→转为React组件（StabilityThirdOrderExplorer单a2滑块展示三阶系统稳定域+StabilityDelayExplorer单K滑块展示时滞稳定性），固定坐标轴，禁用动画 |
 | 010 | 2026-09-23 | classic/compensator-design.mdx | 校正网络设计 | BUG | 4个ipywidgets笔记本→转为React组件（LeadCompensatorExplorer单K滑块展示超前校正Bode图+LagCompensatorExplorer单K滑块展示滞后校正Bode图+LeadLagCompensatorExplorer单K滑块展示超前-滞后校正+AntiWindupExplorer单u_limit滑块展示抗饱和仿真），固定坐标轴，禁用动画 |
+| 011 | 2026-09-23 | components/wiki/jupyter-notebook.tsx | 全站（多Notebook课程页） | BUG | 同页多个Notebook的kernel id都是`nb-<时间戳>-0`（useRef计数器是每实例的）→共用一个内核命名空间、变量互相覆盖，报出与本页代码无关的ValueError；改为模块级`nbSeq`生成唯一id |

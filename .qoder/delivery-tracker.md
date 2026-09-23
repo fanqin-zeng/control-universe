@@ -101,7 +101,7 @@
 | [ ] 相平面分析 (phase-plane) | |
 | [x] 描述函数法 (describing-function) | v1.3: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer），2个静态JupyterNotebook |
 | [x] 李雅普诺夫稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/course-01/07-nonlinear/04-lyapunov-stability.md |
-| [ ] 反馈线性化 (feedback-linearization) | |
+| [x] 反馈线性化 (feedback-linearization) | v1.3: 1个交互组件（ZeroDynamicsExplorer），4个静态JupyterNotebook（Lie导数验证 / 零动态定义式仿真 / 倒立摆IOL-vs-Jacobian三组实验 / 球-梁近似IOL）；讨论日志 docs/discuss-log/course-01/07-nonlinear/05-feedback-linearization.md（含实测修正附录）；顺带修复全站级 kernel id 冲突（fix-logs 011） |
 | [ ] 滑模控制 (sliding-mode-control) | |
 | [ ] 反步法设计 (backstepping) | |
 | [ ] 自适应控制基础 (adaptive-control-basics) | |
@@ -159,4 +159,4 @@
 
 ---
 
-**统计**：11 / 83 课程已完成（25个交互组件已交付）
+**统计**：12 / 83 课程已完成（26个交互组件已交付）
