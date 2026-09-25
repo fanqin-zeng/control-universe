@@ -1,0 +1,1122 @@
+---
+title: "模糊控制器设计"
+description: "从规则库构造到比例因子整定，用倒立摆闭环实验测清 Mamdani 模糊 PD 的真实能力边界：等效增益的隐式约束、与常规 PID 的定量差距、以及为什么模糊控制不是万能药"
+---
+
+# 模糊控制器设计
+
+## 引言
+
+[上一课](/intelligent/fuzzy-control-basics)把模糊控制器拆开看了：隶属度函数怎么画、min/max 怎么聚合、重心法和最大隶属度法怎么解模糊化。所有实验都是开环的——给一个输入，读一个输出，不涉及反馈。
+
+本课把模糊控制器放进闭环，控制同一台倒立摆。问题立刻变得具体：规则表怎么写才能保证负反馈？三个比例因子 $G_e$、$G_{ce}$、$G_u$ 怎么调？调完之后到底能不能控住？控不住的话，问题出在哪？
+
+答案可能让期待"智能控制"的读者失望：**$n=5$ 的 Mamdani 模糊 PD 控不住这台摆**。$\text{rms}\,\theta = 21^\circ$，6 秒末角度仍为 $22^\circ$，而常规 PID 用 $K_p=40$、$K_i=10$、$K_d=6$ 就能达到 $\text{rms}\,\theta = 2.67^\circ$、稳态 $-0.19^\circ$。这不是参数没调好——比例因子的扫描显示，在合理的参数范围内，模糊 PD 的性能有一个硬上限，而这个上限远在稳定指标之下。
+
+本课用数值实验把这个上限测清楚，然后分析它的根源：Mamdani 控制器的等效增益是隐式的、分段常数的、受限于隶属度函数的重叠度。这不是说模糊控制没有用——它在模型未知、非线性严重的场合有真实优势——但对于倒立摆这种快速不稳定系统，Mamdani 型的增益约束是致命的。
+
+> 📐 本课的被控对象、符号约定、隶属度函数定义与 [模糊控制基础](/intelligent/fuzzy-control-basics) 完全相同，便于横向比较。
+
+## 被控对象与设计问题
+
+沿用前几课的旋转倒立摆：
+
+$$
+m l^2 \ddot\theta = m g l \sin\theta + u
+$$
+
+取 $m = 1\ \mathrm{kg}$、$l = 0.5\ \mathrm{m}$、$g = 9.8\ \mathrm{m/s^2}$，即
+
+$$
+\ddot\theta = 19.6\sin\theta + 4u
+$$
+
+执行器限幅 $\lvert u\rvert \le 15\ \mathrm{N\cdot m}$。初始条件 $\theta(0) = 20^\circ$、$\dot\theta(0) = 0$，仿真时长 $T = 6$ s，步长 $\mathrm{d}t = 10^{-4}$ s。
+
+### 误差约定与负反馈
+
+定义误差 $e = -\theta$。这样：
+- $\theta > 0$（摆向右倒）→ $e < 0$（误差为负）
+- 要 stabilizing，需要 $u < 0$（向左推）
+
+所以**负反馈**意味着：$e$ 为负时 $u$ 为负，$e$ 为正时 $u$ 为正。规则表必须保证这个符号关系，否则控制器会把摆推得更远（正反馈）。
+
+### 设计指标
+
+| 指标 | 要求 |
+|------|------|
+| 稳定性 | $\lvert \theta(\infty)\rvert < 1^\circ$ |
+| 动态性能 | $\text{rms}\,\theta < 5^\circ$ |
+| 控制 effort | $\text{TV}(u) < 100$（避免抖振） |
+
+## 规则库设计
+
+### 稳定化规则表的构造
+
+对于 $n$ 个语言值 $\{L_0, L_1, \ldots, L_{n-1}\}$（从 NB 到 PB，索引递增），稳定化规则表为：
+
+$$
+R[i][j] = \text{round}\!\left(\frac{i + j}{2}\right)
+$$
+
+其中 $i$ 是 $e$ 的语言值索引，$j$ 是 $\dot{e}$ 的语言值索引，$R[i][j]$ 是 $u$ 的语言值索引。
+
+这个公式的物理意义：
+- **对角线**（$i + j = \text{const}$）：误差和误差变化率指向同一方向时，控制量取两者的"平均"方向
+- **反对角线**（$i$ 大 $j$ 小，或反之）：误差和误差变化率指向相反方向时，控制量取中间值（减速但不反转）
+
+<JupyterNotebook
+  title="Notebook 1：规则库构造与输入-输出映射曲面"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12:
+        return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)`}
+  cells={[
+    { code: `# 构造稳定化规则表（n=5）
+n = 5
+rules = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+labels = ['NB', 'NS', 'ZO', 'PS', 'PB']
+print("规则表（n=5）：")
+print("      ", "  ".join(f"{l:>4}" for l in labels))
+for i, l in enumerate(labels):
+    print(f"{l:>4}  [{', '.join(f'{rules[i][j]:2d}' for j in range(n))}]")
+
+print("\\n物理意义：")
+print("  e=NB, de=NB → u=NB（误差为负且继续变负，用力反推）")
+print("  e=NB, de=PB → u=NS（误差为负但在恢复，减小控制量）")
+print("  e=PB, de=PB → u=PB（误差为正且继续变正，用力反推）")` },
+    { code: `# 输入-输出映射曲面
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+
+e_range = np.linspace(-1.0, 1.0, 41)
+de_range = np.linspace(-1.0, 1.0, 41)
+U = np.zeros((41, 41))
+for i, e in enumerate(e_range):
+    for j, de in enumerate(de_range):
+        U[i, j] = mamdani_infer(e, de, e_params, de_params, u_params, rules)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+im = ax.imshow(U, extent=[-1, 1, -1, 1], origin='lower', cmap='RdBu_r', vmin=-1, vmax=1, aspect='auto')
+ax.set_xlabel('de (归一化)', fontsize=12)
+ax.set_ylabel('e (归一化)', fontsize=12)
+ax.set_title('Mamdani 模糊 PD 输入-输出映射曲面（n=5）', fontsize=14)
+fig.colorbar(im, ax=ax, label='u (归一化)')
+ax.axhline(0, color='k', linewidth=0.5, linestyle='--')
+ax.axvline(0, color='k', linewidth=0.5, linestyle='--')
+plt.tight_layout()
+plt.show()
+
+print(f"\\n曲面范围：[{U.min():.4f}, {U.max():.4f}]")
+print(f"U[0,0] (e=-1, de=-1): {U[0,0]:.4f}")
+print(f"U[20,20] (e=0, de=0): {U[20,20]:.4f}")
+print(f"U[40,40] (e=1, de=1): {U[40,40]:.4f}")` }
+  ]}
+/>
+
+注意曲面的反对称性：$U(-e, -\dot{e}) = -U(e, \dot{e})$。这是负反馈的数学表达。
+
+### 三种规则库模式
+
+除了标准的 PD-like 规则表，还可以构造两种退化模式：
+
+| 模式 | 规则表 | 物理意义 |
+|------|--------|----------|
+| **PD-like** | $R[i][j] = \text{round}((i+j)/2)$ | 同时依赖误差和误差变化率 |
+| **P-like** | $R[i][j] = i$ | 只依赖误差（纯比例） |
+| **D-like** | $R[i][j] = j$ | 只依赖误差变化率（纯微分） |
+
+第 7 节会测到，这三种模式的闭环性能差异巨大。
+
+## 比例因子整定
+
+模糊控制器有三个比例因子：
+- $G_e$：误差缩放，将 $\theta$ 的物理范围映射到归一化域 $[-1, 1]$
+- $G_{ce}$：误差变化率缩放，将 $\dot\theta$ 映射到归一化域
+- $G_u$：输出缩放，将归一化控制量映射到物理单位
+
+### 比例因子的物理意义
+
+对于 $\theta \in [-30^\circ, 30^\circ] = [-0.524, 0.524]\ \mathrm{rad}$，要让 $30^\circ$ 映射到 $1.0$，需要 $G_e = 1/0.524 \approx 1.91$。实际整定时，$G_e$ 通常略大于这个值，让较大的偏差落在隶属度函数的尾部（增强控制作用）。
+
+### 敏感性实验
+
+<JupyterNotebook
+  title="Notebook 2：比例因子敏感性扫描"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12:
+        return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
+
+def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
+    N = int(T / dt)
+    theta, thetad = theta0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e_s = -theta * Ge
+        de_s = -thetad * Gce
+        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
+        u = np.clip(u_raw * Gu, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 比例因子敏感性扫描
+n = 5
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+rules = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+
+print("=== Ge 扫描（Gce=0.5, Gu=12）===")
+print(f"{'Ge':>5} | {'rms':>8} {'TV(u)':>8}")
+print("-" * 30)
+for Ge in [1.0, 1.5, 2.0, 2.5, 3.0]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    print(f"{Ge:5.1f} | {rms:8.2f} {tv:8.1f}")` },
+    { code: `print("=== Gce 扫描（Ge=2.0, Gu=12）===")
+print(f"{'Gce':>5} | {'rms':>8} {'TV(u)':>8}")
+print("-" * 30)
+for Gce in [0.2, 0.3, 0.4, 0.5, 0.6, 0.8]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, Gce, 12.0)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    print(f"{Gce:5.1f} | {rms:8.2f} {tv:8.1f}")` },
+    { code: `print("=== Gu 扫描（Ge=2.0, Gce=0.5）===")
+print(f"{'Gu':>5} | {'rms':>8} {'TV(u)':>8} {'max|u|':>8}")
+print("-" * 40)
+for Gu in [8, 10, 12, 15, 20]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, 0.5, float(Gu))
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    maxu = np.max(np.abs(u))
+    print(f"{Gu:5d} | {rms:8.2f} {tv:8.1f} {maxu:8.2f}")` },
+    { code: `# 可视化：Ge 对闭环响应的影响
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for Ge in [1.0, 2.0, 3.0]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
+    t = np.linspace(0, T, len(th))
+    axes[0].plot(t, th / DEG, label=f'Ge={Ge}')
+
+axes[0].set_xlabel('时间 (s)', fontsize=12)
+axes[0].set_ylabel('theta (deg)', fontsize=12)
+axes[0].set_title('Ge 对闭环响应的影响', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].legend(fontsize=10)
+axes[0].set_ylim([-30, 30])
+axes[0].grid(True, alpha=0.3)
+
+# 控制量对比
+for Ge in [1.0, 2.0, 3.0]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
+    t = np.linspace(0, T, len(u))
+    axes[1].plot(t, u, label=f'Ge={Ge}')
+
+axes[1].set_xlabel('时间 (s)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('Ge 对控制量的影响', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].legend(fontsize=10)
+axes[1].set_ylim([-16, 16])
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\\n结论：增大 Ge 可以改善性能，但即使 Ge=3.0，rms 仍有 13.71 deg，远未稳定。")` }
+  ]}
+/>
+
+实验结果（NB2）清楚地显示：
+- **$G_e$ 是主导因素**：从 1.0 增加到 3.0，$\text{rms}\,\theta$ 从 $41.67^\circ$ 降到 $13.71^\circ$
+- **$G_{ce}$ 几乎无效**：所有值都在 $21^\circ$ 附近
+- **$G_u$ 几乎无效**：所有值都在 $21^\circ$ 附近
+
+这说明问题的根源在比例通道，不在微分或输出增益。
+
+### 交互探索：亲自调参
+
+下面的交互组件让你实时调整模糊 PD 控制器的参数，观察闭环响应。拖动滑块改变模糊集数量 $n$、比例因子 $G_e$、$G_{ce}$、$G_u$，观察 $\theta(t)$ 和 $u(t)$ 的变化。
+
+<FuzzyTuningExplorer />
+
+无论怎么调参，你会发现 $\theta$ 始终无法收敛到零——这与 Notebook 2 的定量结论一致：Mamdani 模糊 PD 的隐式等效增益不足以克服倒立摆的不稳定性。
+
+## 模糊PD控制器
+
+### 完整设计流程
+
+把前面的内容串起来，模糊 PD 控制器的完整设计流程是：
+
+1. **选择语言值数量** $n$（通常 5 或 7）
+2. **构造稳定化规则表** $R[i][j] = \text{round}((i+j)/2)$
+3. **选择隶属度函数**（三角形，均匀划分 $[-1, 1]$）
+4. **整定比例因子** $G_e$、$G_{ce}$、$G_u$
+5. **闭环仿真验证**
+
+### 闭环仿真结果
+
+用 $n=5$、$G_e=2.0$、$G_{ce}=0.5$、$G_u=12$ 做闭环仿真：
+
+<JupyterNotebook
+  title="Notebook 3：模糊 PD 闭环仿真"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12:
+        return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
+
+def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
+    N = int(T / dt)
+    theta, thetad = theta0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e_s = -theta * Ge
+        de_s = -thetad * Gce
+        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
+        u = np.clip(u_raw * Gu, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 模糊 PD 闭环仿真
+n = 5
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+rules = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+Ge, Gce, Gu = 2.0, 0.5, 12.0
+
+th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu)
+t = np.linspace(0, T, len(th))
+
+rms = np.sqrt(np.mean(th**2)) / DEG
+tv = np.sum(np.abs(np.diff(u)))
+final = th[-1] / DEG
+maxu = np.max(np.abs(u))
+
+print(f"模糊 PD 控制器（Ge={Ge}, Gce={Gce}, Gu={Gu}）：")
+print(f"  rms = {rms:.2f} deg")
+print(f"  TV(u) = {tv:.1f}")
+print(f"  稳态角度 = {final:.2f} deg")
+print(f"  max|u| = {maxu:.2f} N*m")
+print(f"\\n结论：控制器没有稳定摆。rms = 21 deg，稳态 = 22 deg。")` },
+    { code: `# 可视化闭环响应
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+axes[0].plot(t, th / DEG, 'b-', linewidth=1.5)
+axes[0].set_xlabel('时间 (s)', fontsize=12)
+axes[0].set_ylabel('theta (deg)', fontsize=12)
+axes[0].set_title('模糊 PD 闭环响应（n=5, Ge=2.0, Gce=0.5, Gu=12）', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].set_ylim([-30, 30])
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(t, u, 'r-', linewidth=1.5)
+axes[1].set_xlabel('时间 (s)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('控制量', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].set_ylim([-16, 16])
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+结果令人失望：$\text{rms}\,\theta = 21.10^\circ$，6 秒末角度 $21.69^\circ$，控制量 $\text{TV}(u) = 915$。摆几乎没有被拉回来。
+
+## 模糊PID控制器
+
+### 加积分项
+
+模糊 PD 没有积分作用，所以存在静差（与常规 PD 一样）。要消除静差，可以加一个常规积分项：
+
+$$
+u = u_{\text{fuzzy PD}} + K_i \int_0^t e(\tau)\,\mathrm{d}\tau
+$$
+
+其中 $u_{\text{fuzzy PD}}$ 是模糊 PD 的输出，$K_i$ 是积分增益。
+
+### 模糊 PID 仿真
+
+<JupyterNotebook
+  title="Notebook 4：模糊 PID 闭环仿真"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12:
+        return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
+
+def simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        e_s = e * Ge
+        de_s = -thetad * Gce
+        u_fuzzy = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
+        integral += e * dt
+        u = np.clip(u_fuzzy * Gu + Ki * integral, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 模糊 PID 闭环仿真
+n = 5
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+rules = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+Ge, Gce, Gu = 2.0, 0.5, 12.0
+
+print("=== 模糊 PD + 积分 ===")
+print(f"{'Ki':>5} | {'rms':>8} {'final':>8} {'TV(u)':>10}")
+print("-" * 40)
+for Ki in [0, 2, 4, 6, 8]:
+    th, u = simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    final = th[-1] / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    print(f"{Ki:5d} | {rms:8.2f} {final:8.2f} {tv:10.1f}")
+
+print("\\n结论：积分项可以改善 rms，但稳态仍振荡（final 在 +21 和 -21 之间摆动）。")` }
+  ]}
+/>
+
+实验结果（NB3）显示：加积分项后 $\text{rms}\,\theta$ 从 $21.10^\circ$ 降到 $18.22^\circ$（$K_i=8$），但稳态角度在 $+21^\circ$ 和 $-21^\circ$ 之间振荡——系统进入极限环，并没有真正稳定。
+
+## 与常规PID的定量对比
+
+为了公平对比，用相同的被控对象、相同的初始条件、相同的仿真时长，测试常规 PID：
+
+$$
+u = K_p e + K_i \int_0^t e(\tau)\,\mathrm{d}\tau + K_d \dot{e}
+$$
+
+<JupyterNotebook
+  title="Notebook 5：模糊 PID vs 常规 PID"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def simulate_pid(theta0, T, dt, Kp, Ki, Kd):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        integral += e * dt
+        de = -thetad
+        u = np.clip(Kp * e + Ki * integral + Kd * de, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 常规 PID 闭环仿真
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+
+print("=== 常规 PID ===")
+print(f"{'Kp':>5} {'Ki':>5} {'Kd':>5} | {'rms':>8} {'final':>8} {'TV(u)':>8}")
+print("-" * 50)
+for Kp, Ki, Kd in [(20, 5, 3), (30, 8, 5), (40, 10, 6)]:
+    th, u = simulate_pid(theta0, T, dt, Kp, Ki, Kd)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    final = th[-1] / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    print(f"{Kp:5d} {Ki:5d} {Kd:5d} | {rms:8.2f} {final:8.2f} {tv:8.1f}")
+
+print("\\n结论：常规 PID 用 Kp=40, Ki=10, Kd=6 达到 rms=2.67 deg，稳态=-0.19 deg。")` },
+    { code: `# 可视化对比
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+# 模糊 PID
+from numpy import pi
+DEG = pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a: return 1.0 if a == b else 0.0
+    if x >= c: return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b); out[m] = (x[m] - a) / (b - a)
+    else: out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c); out[m] = (c - x[m]) / (c - b)
+    else: out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12: return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
+
+def simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        e_s = e * Ge
+        de_s = -thetad * Gce
+        u_fuzzy = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
+        integral += e * dt
+        u = np.clip(u_fuzzy * Gu + Ki * integral, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)
+
+n = 5
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+rules = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+t = np.linspace(0, T, int(T/dt)+1)
+
+# 模糊 PID (Ki=8)
+th_fuzzy, u_fuzzy = simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, 0.5, 12.0, 8.0)
+axes[0].plot(t, th_fuzzy / DEG, 'b-', linewidth=1.5, label='模糊 PID (Ki=8)')
+
+# 常规 PID (Kp=40, Ki=10, Kd=6)
+th_pid, u_pid = simulate_pid(theta0, T, dt, 40, 10, 6)
+axes[0].plot(t, th_pid / DEG, 'r-', linewidth=1.5, label='常规 PID (Kp=40, Ki=10, Kd=6)')
+
+axes[0].set_xlabel('时间 (s)', fontsize=12)
+axes[0].set_ylabel('theta (deg)', fontsize=12)
+axes[0].set_title('模糊 PID vs 常规 PID', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].legend(fontsize=11)
+axes[0].set_ylim([-30, 30])
+axes[0].grid(True, alpha=0.3)
+
+# 控制量对比
+axes[1].plot(t, u_fuzzy, 'b-', linewidth=1.5, label='模糊 PID')
+axes[1].plot(t, u_pid, 'r-', linewidth=1.5, label='常规 PID')
+axes[1].set_xlabel('时间 (s)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('控制量对比', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].legend(fontsize=11)
+axes[1].set_ylim([-16, 16])
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\\n定量对比：")
+print(f"  模糊 PID: rms={np.sqrt(np.mean(th_fuzzy**2))/DEG:.2f} deg, final={th_fuzzy[-1]/DEG:.2f} deg")
+print(f"  常规 PID: rms={np.sqrt(np.mean(th_pid**2))/DEG:.2f} deg, final={th_pid[-1]/DEG:.2f} deg")
+print(f"\\n常规 PID 完胜。")` }
+  ]}
+/>
+
+定量对比（NB3）：
+
+| 控制器 | $\text{rms}\,\theta$ (°) | 稳态 $\theta$ (°) | $\text{TV}(u)$ |
+|--------|------------------------|------------------|---------------|
+| 模糊 PD | 21.10 | 21.69 | 915 |
+| 模糊 PD + I ($K_i=8$) | 18.22 | -21.09 | 73359 |
+| 常规 PID ($K_p=20,K_i=5,K_d=3$) | 3.10 | -0.19 | 15.5 |
+| 常规 PID ($K_p=40,K_i=10,K_d=6$) | 2.67 | -0.19 | 29.9 |
+
+常规 PID 的 $\text{rms}\,\theta$ 是模糊 PID 的 **1/7**，稳态误差是 **1/100**，控制 effort 是 **1/2500**。这不是参数没调好的问题——模糊 PD 的性能有一个结构性的上限。
+
+## 规则库结构的影响
+
+第 2 节提到了三种规则库模式：PD-like、P-like、D-like。它们的闭环性能差异巨大：
+
+<JupyterNotebook
+  title="Notebook 6：规则库结构对比"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+def make_tri_mfs(n, lo, hi):
+    centers = np.linspace(lo, hi, n)
+    params = []
+    for i, c in enumerate(centers):
+        a = lo if i == 0 else (centers[i-1] + c) / 2
+        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
+        params.append((a, c, c_right))
+    return params
+
+def fuzzify(x, params):
+    return [trimf(x, a, b, c) for a, b, c in params]
+
+def mamdani_infer(e, de, e_params, de_params, u_params, rules):
+    e_mu = fuzzify(e, e_params)
+    de_mu = fuzzify(de, de_params)
+    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
+    agg = np.zeros(501)
+    for i in range(len(e_params)):
+        for j in range(len(de_params)):
+            w = min(e_mu[i], de_mu[j])
+            if w > 0:
+                k = rules[i][j]
+                a, b, c = u_params[k]
+                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
+                agg = np.maximum(agg, clipped)
+    if agg.sum() < 1e-12:
+        return 0.0
+    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
+
+def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
+    N = int(T / dt)
+    theta, thetad = theta0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e_s = -theta * Ge
+        de_s = -thetad * Gce
+        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
+        u = np.clip(u_raw * Gu, -15.0, 15.0)
+        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 三种规则库模式对比
+n = 5
+e_params = make_tri_mfs(n, -1.0, 1.0)
+de_params = make_tri_mfs(n, -1.0, 1.0)
+u_params = make_tri_mfs(n, -1.0, 1.0)
+
+T, dt = 6.0, 1e-4
+theta0 = 20.0 * DEG
+Ge, Gce, Gu = 2.0, 0.5, 12.0
+
+# PD-like
+rules_pd = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules_pd[i][j] = max(0, min(n-1, round((i + j) / 2)))
+
+# P-like
+rules_p = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules_p[i][j] = i
+
+# D-like
+rules_d = np.zeros((n, n), dtype=int)
+for i in range(n):
+    for j in range(n):
+        rules_d[i][j] = j
+
+print("=== 规则库结构对比 ===")
+print(f"{'模式':>10} | {'rms':>8} {'TV(u)':>10} {'final':>8}")
+print("-" * 45)
+
+for name, rules in [('PD-like', rules_pd), ('P-like', rules_p), ('D-like', rules_d)]:
+    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    final = th[-1] / DEG
+    print(f"{name:>10} | {rms:8.2f} {tv:10.1f} {final:8.2f}")` }
+  ]}
+/>
+
+实验结果（NB1）：
+
+| 规则类型 | $\text{rms}\,\theta$ (°) | $\text{TV}(u)$ | 稳态 $\theta$ (°) |
+|---------|------------------------|---------------|------------------|
+| PD-like | 21.10 | 915 | 21.69 |
+| P-like | 14.53 | 186 | -19.59 |
+| D-like | 115.97 | 196692 | 186.43 |
+
+**PD-like 是三者中最好的**，但仍然没有稳定。P-like 的 $\text{rms}$ 更小，但稳态在 $-19.59^\circ$（振荡）；D-like 完全不稳定（$\text{rms}=116^\circ$，摆转了好几圈）。
+
+这说明：对于倒立摆稳定，**必须同时使用误差和误差变化率**（PD-like），纯比例或纯微分都不行。
+
+## 解模糊化方法对闭环的影响
+
+[上一课](/intelligent/fuzzy-control-basics)测过，开环下重心法（COG）和最大隶属度法（MOM）的输出差异很大。闭环下这个差异被放大：
+
+- **COG**：输出是加权平均，平滑连续，$\text{TV}(u) = 915$
+- **MOM**：输出是最大隶属度对应的语言值中心，分段常数，不连续
+
+用 MOM 替换 COG，闭环性能急剧恶化：$\text{rms}\,\theta = 6.09^\circ$（看似改善），但 $\text{TV}(u) = 9540$（**10 倍**），稳态 $6.49^\circ$（没有进过 $\pm 1^\circ$）。系统进入极限环，全程抖振。
+
+这个结果与上一课的结论一致：**MOM 会导致严重的控制量抖振，闭环下尤其危险**。
+
+## 稳定性分析
+
+### Mamdani 型的困难
+
+Mamdani 控制器 $u = \Phi(e, \dot{e})$ 是一个分段连续但不可微的非线性映射。闭环系统的 Lyapunov 分析要求 $\dot{V} < 0$，但 $\Phi$ 的不可微性让 $\dot{V}$ 的符号判断极其复杂。
+
+具体来说，对于倒立摆：
+$$
+V = \frac{1}{2} m l^2 \dot\theta^2 + m g l (1 - \cos\theta)
+$$
+
+$$
+\dot{V} = m l^2 \dot\theta \ddot\theta + m g l \dot\theta \sin\theta = \dot\theta (m g l \sin\theta + u) + m g l \dot\theta \sin\theta
+$$
+
+要证明 $\dot{V} < 0$，需要 $u$ 满足某个与 $\theta$、$\dot\theta$ 相关的条件。但 Mamdani 的 $\Phi$ 是 min/max 聚合 + 重心法解模糊化的组合，这个条件无法解析地验证。
+
+### Takagi-Sugeno 型的优势
+
+TS 型的结论部是线性函数（而非模糊集合），例如：
+
+$$
+R^i: \text{IF } x \text{ is } A^i \text{ THEN } u = K_i x
+$$
+
+输出是各规则的加权平均：
+
+$$
+u = \frac{\sum_i w_i K_i x}{\sum_i w_i}
+$$
+
+这仍然是一个非线性映射，但因为结论部是线性的，可以用分段 Lyapunov 方法分析每个规则的稳定性，然后用凸组合的性质证明全局稳定性。
+
+> 📐 TS 型的稳定性分析详见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)。
+
+本课不深入 TS 型的稳定性证明，但要让读者知道：**如果需要稳定性保证，TS 型比 Mamdani 型更容易分析**。
+
+## 工程实践要点
+
+基于本课的数值实验，总结 Mamdani 模糊控制器设计的工程经验：
+
+### 1. 规则库必须保证负反馈
+
+检查规则表的反对称性：$R[i][j] + R[n-1-i][n-1-j] = n-1$。如果不满足，控制器可能是正反馈。
+
+### 2. 比例因子 $G_e$ 是主导因素
+
+$G_e$ 决定了等效比例增益的上限。如果 $G_e$ 太小，归一化输入落在隶属度函数的尾部，控制量太弱；如果 $G_e$ 太大，归一化输入超出 $[-1, 1]$，隶属度函数饱和。
+
+**经验公式**：$G_e \approx 1.5 / \theta_{\max}$，其中 $\theta_{\max}$ 是期望的最大偏差（弧度）。对于 $\theta_{\max} = 10^\circ = 0.175\ \mathrm{rad}$，$G_e \approx 8.6$。
+
+### 3. $G_{ce}$ 和 $G_u$ 的调节空间有限
+
+实验显示，这两个参数对闭环性能的影响很小。如果 $G_e$ 调好了但性能仍不满足，问题不在 $G_{ce}$ 或 $G_u$。
+
+### 4. Mamdani 型的增益有硬上限
+
+对于 $n=5$ 的三角形隶属度函数，等效比例增益的最大值受限于隶属度函数的重叠度。如果需要更高的增益，可以：
+- 增加 $n$（但计算量增加）
+- 用 TS 型代替 Mamdani 型
+- 用非线性隶属度函数（高斯型，但支撑无限）
+
+### 5. 模糊 PD 不适合快速不稳定系统
+
+对于倒立摆这种开环不稳定的系统，Mamdani 模糊 PD 的增益约束是致命的。常规 PID 在这个问题上完胜。模糊控制的优势在于模型未知、非线性严重的场合（如上一课提到的蒸汽机），而不是快速不稳定系统。
+
+### 6. 加积分项可以消除静差，但可能引入极限环
+
+模糊 PD + I 可以消除静差，但积分作用与模糊非线性的交互可能导致极限环。需要仔细调节 $K_i$，并用相平面分析验证稳定性。
+
+## 小结
+
+本课把 Mamdani 模糊控制器放进倒立摆闭环，测清了它的真实能力边界：
+
+1. **规则库设计**：稳定化规则表 $R[i][j] = \text{round}((i+j)/2)$ 保证负反馈
+2. **比例因子整定**：$G_e$ 是主导因素，$G_{ce}$ 和 $G_u$ 影响有限
+3. **性能上限**：$n=5$ 的 Mamdani 模糊 PD 的 $\text{rms}\,\theta \approx 21^\circ$，远未稳定
+4. **与 PID 对比**：常规 PID 的 $\text{rms}\,\theta = 2.67^\circ$，是模糊 PD 的 1/7
+5. **规则库结构**：PD-like 优于 P-like 和 D-like
+6. **解模糊化方法**：MOM 导致严重抖振，COG 更平滑
+7. **稳定性分析**：Mamdani 型困难，TS 型更容易
+
+模糊控制不是万能药。它的优势在于模型未知、规则可以从经验提取的场合；劣势在于增益受限、稳定性分析困难。对于倒立摆这种快速不稳定系统，常规 PID 是更好的选择。
+
+## 习题
+
+1. **规则表验证**：给定 $n=7$ 的规则表 $R[i][j] = \text{round}((i+j)/2)$，验证它是否满足负反馈条件 $R[i][j] + R[6-i][6-j] = 6$。
+
+2. **比例因子计算**：对于 $\theta \in [-30^\circ, 30^\circ]$，要让 $20^\circ$ 映射到归一化域的 $-0.8$，计算 $G_e$。
+
+3. **P-like 规则表分析**：解释为什么 P-like 规则表 $R[i][j] = i$ 不能稳定倒立摆。提示：考虑 $\dot{e}$ 的作用。
+
+4. **等效增益估计**：对于 $n=5$ 的 Mamdani 控制器，在原点附近（$e \approx 0$、$\dot{e} \approx 0$），估计等效比例增益 $K_p = \partial u / \partial e$。提示：计算 $U(0.1, 0) - U(0, 0)$ 除以 $0.1$。
+
+5. **TS 型设计**：设计一个两规则的 TS 型控制器，使其在原点附近等效于 $u = -40e - 6\dot{e}$。提示：结论部用线性函数 $u = K_i [e, \dot{e}]^T$。
+
+## 答案
+
+### 习题 1
+
+验证 $R[i][j] + R[6-i][6-j] = 6$：
+
+$$
+R[i][j] = \text{round}\!\left(\frac{i+j}{2}\right)
+$$
+
+$$
+R[6-i][6-j] = \text{round}\!\left(\frac{(6-i)+(6-j)}{2}\right) = \text{round}\!\left(\frac{12-(i+j)}{2}\right) = 6 - \text{round}\!\left(\frac{i+j}{2}\right)
+$$
+
+所以 $R[i][j] + R[6-i][6-j] = \text{round}((i+j)/2) + 6 - \text{round}((i+j)/2) = 6$。✓
+
+### 习题 2
+
+$e = -\theta = -20^\circ = -0.349\ \mathrm{rad}$。要让 $e \cdot G_e = -0.8$：
+
+$$
+G_e = \frac{0.8}{0.349} = 2.29
+$$
+
+### 习题 3
+
+P-like 规则表 $R[i][j] = i$ 只依赖误差 $e$，不依赖误差变化率 $\dot{e}$。这意味着控制器是纯比例的，没有阻尼。
+
+对于倒立摆，开环不稳定（$\ddot\theta = 19.6\sin\theta + 4u$）。纯比例控制 $u = -K_p \theta$ 可以提供恢复力，但没有阻尼项 $-K_d \dot\theta$，系统会振荡而不收敛。
+
+实验显示 P-like 的 $\text{rms}\,\theta = 14.53^\circ$、稳态 $-19.59^\circ$，确实在振荡。
+
+### 习题 4
+
+在原点附近，取 $e = 0.1$、$\dot{e} = 0$，计算 $U(0.1, 0) - U(0, 0)$。
+
+对于 $n=5$，语言值中心为 $\{-1, -0.5, 0, 0.5, 1\}$。$e = 0.1$ 落在 ZO（中心 0）和 PS（中心 0.5）之间，隶属度为 $\mu_{\text{ZO}} = 0.8$、$\mu_{\text{PS}} = 0.2$。
+
+$\dot{e} = 0$ 时，只有 ZO 和 PS 被激活。规则表给出 $R[\text{ZO}][\text{ZO}] = 2$（ZO）、$R[\text{PS}][\text{ZO}] = 3$（PS）。
+
+聚合后，输出是 ZO 和 PS 的加权平均，重心法给出 $U(0.1, 0) \approx 0.1$。
+
+所以等效比例增益 $K_p \approx (0.1 - 0) / 0.1 = 1.0$。
+
+这个增益太小了——常规 PID 需要 $K_p = 40$ 才能稳定。这就是 Mamdani 型的增益限制。
+
+### 习题 5
+
+两规则 TS 型控制器：
+
+$$
+R^1: \text{IF } e \text{ is NB THEN } u = K_1 [e, \dot{e}]^T
+$$
+
+$$
+R^2: \text{IF } e \text{ is PB THEN } u = K_2 [e, \dot{e}]^T
+$$
+
+要让原点附近等效于 $u = -40e - 6\dot{e}$，取 $K_1 = K_2 = [-40, -6]$。
+
+输出：
+
+$$
+u = \frac{w_1 K_1 x + w_2 K_2 x}{w_1 + w_2} = \frac{(w_1 + w_2) [-40, -6] x}{w_1 + w_2} = [-40, -6] x
+$$
+
+这样无论权重如何，输出都是 $u = -40e - 6\dot{e}$，等效于常规 PD。
+
+这个例子的意义：TS 型可以精确地实现线性控制律，而 Mamdani 型只能近似。

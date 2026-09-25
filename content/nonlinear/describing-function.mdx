@@ -1,513 +1,1425 @@
 ---
 title: "描述函数法"
-description: "用基波增益近似非线性环节，预测极限环的振幅和频率"
+description: "把非线性环节近似为基波增益 N(A)：谐波平衡条件、-1/N(A) 轨迹、极限环幅值与频率的预测和稳定性判据——以及每一个预测的实测误差。"
 ---
 
 # 描述函数法
 
 ## 引言
 
-在相平面分析中，我们看到了二阶非线性系统如何产生极限环——一种稳定的周期振荡。但对于高阶系统，相平面法不再适用。**描述函数法**（Describing Function Method）提供了一种频域工具，将非线性环节近似为"基波增益"，从而用类似 Nyquist 判据的方法预测极限环的存在性、振幅和频率。
+一台伺服轴在小指令下安静听话，把指令幅值调大一倍，它就开始以固定频率持续振荡——关掉指令也不停。工程师的第一反应是"环路增益太高"，于是降增益：振荡消失了，但跟踪变慢、刚度变差。再调回去，振荡又回来。**这个"只在大幅度时出现"的振荡，就是非线性环节（放大器饱和）与线性环路共同产生的极限环**，而描述函数法是能在纸上预测它的振幅和频率的最便宜工具。
 
-直觉上，描述函数回答这个问题：**如果给非线性环节一个正弦输入 $u(t) = A\sin(\omega t)$，输出的基波分量有多大？相位偏移多少？** 这个"基波增益"就是描述函数 $N(A)$。它类似于线性系统的频率响应 $G(j\omega)$，但依赖的是振幅 $A$ 而非频率 $\omega$。
+它的想法只有一句话：**给非线性环节喂一个正弦 $u = A\sin\omega t$，只取输出里的基波，把"基波输出 / 输入"当作一个增益 $N(A)$**。此后整个非线性环路就被当作一个"增益随振幅变化的线性环路"，用 Nyquist 的语言讨论 $N(A)G(j\omega) = -1$。
 
-> 📐 本文用到了傅里叶级数和 Nyquist 稳定判据，详见 [复数基础](/math/complex-numbers) 和 [频域分析](/classic/frequency-domain-analysis)。
+这个近似好不好，不取决于信仰，取决于线性部分把高次谐波滤掉了多少。本课把五个环路全部仿真出来，用**实测的谐波泄漏指标 $L$、闭环信号 THD、以及预测幅值的误差**给这个方法定价：
 
-<JupyterNotebook 
-  language="python" 
+| 线性部分 $G(s)$（与继电器/滞环继电器串联） | 谐波泄漏 $L$ | 实测闭环 THD | 预测幅值误差 |
+| --- | --- | --- | --- |
+| $\dfrac{1}{s(s+1)(0.5s+1)}$，理想继电器 | $-31.2$ dB | $0.024$ | $+4.9\%$ |
+| $\dfrac{1}{s(s+1)(0.05s+1)}$，理想继电器 | $-27.9$ dB | $0.033$ | $+10.6\%$ |
+| $\dfrac{2}{s(s+1)}$，滞环继电器 $h=0.2$ | $-25.4$ dB | $0.041$ | $-1.2\%$ |
+| $\dfrac{2}{s(s+1)(0.1s+1)}$，滞环继电器 $h=0.2$ | $-26.6$ dB | $0.038$ | $+3.0\%$ |
+| $G_3(s)\times$ 三次谐波谐振峰（$\zeta=0.02$） | $-7.6$ dB | $0.113$ | $+18.1\%$ |
+
+（$L \triangleq \sum_{n=3,5,\ldots}\lvert G(jn\omega_0)\rvert/n \big/ \lvert G(j\omega_0)\rvert$，即"高次谐波经环路漏回来的总量"；$L$ 由 Notebook 3 与 Notebook 6 打印，幅值误差分别由 Notebook 3（第 1、2 行）、Notebook 5（第 3、4 行）、Notebook 6（第 5 行）实测。）读法：**$L$ 低于 $-25$ dB 时，描述函数是一个"误差几个百分点"的工程近似；$L$ 到 $-7.6$ dB 时它已经不可用。** 而 $-20$ dB 的经验门槛只是筛查，不是保证——第二行踩在门槛上，误差就有 $10.6\%$。
+
+本课的每个公式都配一个数值核对：描述函数的闭式对傅里叶积分核到 $10^{-9}$（光滑情形）或 $10^{-4}$（含跳变情形），极限环的预测对仿真核到百分之几。**预测与实测的差距本身就是本课的内容**，不是瑕疵。
+
+> 📐 本文用到傅里叶级数与 Nyquist 稳定判据，详见 [频域分析](/classic/frequency-domain-analysis) 与 [复数基础](/math/complex-numbers)。
+
+## 描述函数的定义与滤波假设
+
+考虑**静态**非线性 $y = f(u)$（输出只依赖当前输入；含滞环/间隙的"多值"非线性见第 3 节，它们带记忆但仍用同一套定义）。输入 $u(t) = A\sin\omega t$，输出是周期函数，展开为
+
+$$
+y(t) = \frac{a_0}{2} + \sum_{n=1}^{\infty}\big[a_n\cos(n\omega t) + b_n\sin(n\omega t)\big]
+$$
+
+$$
+a_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\cos(n\theta)\,\mathrm{d}\theta, \qquad
+b_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\sin(n\theta)\,\mathrm{d}\theta
+$$
+
+**描述函数**定义为基波输出与正弦输入的复数比。因为输入是 $\sin$（不是 $\cos$），把基波写成 $y_1 = A\lvert N\rvert\sin(\omega t + \varphi)$ 对比系数得 $b_1 = A\lvert N\rvert\cos\varphi$、$a_1 = A\lvert N\rvert\sin\varphi$，所以
+
+$$
+N(A) = \frac{b_1 + j a_1}{A} = \lvert N(A)\rvert e^{j\varphi}
+$$
+
+**这个 $b_1 + ja_1$ 的顺序很容易写反**（写成 $a_1 + jb_1$ 会把实虚部互换）。Notebook 1 用带滞环的继电器当场核对：数值积分给出 $(b_1+ja_1)/A = 1.214607 - 0.381927j$，与闭式 $\frac{4M}{\pi A}\big(\sqrt{1-(h/A)^2} - j\,h/A\big) = 1.214593 - 0.381972j$ 相差 $4.7\times10^{-5}$；而写反顺序得到的 $(a_1+jb_1)/A = -0.381927 + 1.214607j$，与闭式差 $2.26$——实虚部整个调了个位置，相位从滞后 $17.5^\circ$ 变成超前 $107.5^\circ$，稳定性判据会跟着全错。
+
+三条结构性事实：
+
+- **奇对称非线性**（$f(-u) = -f(u)$）的所有 $a_n = 0$，故 $N(A) = b_1/A$ 是**实数**——它只改增益不改相位。继电器、饱和、死区都属于这一类。
+- **带记忆的非线性**（滞环、间隙）$a_1 \ne 0$，$N(A)$ 是复数，虚部为负代表相位滞后。
+- $N$ **只依赖 $A$ 不依赖 $\omega$**（静态非线性的尺度性质）；而这里的 $A$ 是**非线性环节输入端**的正弦幅值，不是系统输出的幅值——手算时搞错这一点，预测的振幅就会差一个 $\lvert G(j\omega)\rvert$ 倍。
+
+**滤波假设**：把 $y$ 的高次谐波全部丢掉，只留基波。理由是闭环里谐波要先经过 $G(s)$：若 $\lvert G(jn\omega)\rvert \ll \lvert G(j\omega)\rvert$（$n \ge 3$），漏回来的谐波不足以改变非线性环节输入"近似正弦"这件事。定量筛查常用 $\lvert G(j3\omega)\rvert < 0.1\lvert G(j\omega)\rvert$；更完整的指标是引言里的 $L$。但请注意 Notebook 1 的一个实测：**饱和在 $A = 2$ 时自己就产生 $22.6\%$ 的三次谐波**（各次谐波幅值 $1.2180,\ 0,\ 0.2757,\ 0,\ 0.0551,\ \ldots$）——谐波是非线性环节必然制造的，方法成不成立完全看 $G$ 滤不滤得掉。
+
+<JupyterNotebook
+  title="Notebook 1：波形畸变、谐波含量与复数惯例核对"
   setupCode={`import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False`}
+
+def sat(u, k=1.0, a=1.0):
+    return np.clip(k * u, -k * a, k * a)
+
+
+def fourier(y, th, nmax=7):
+    N = len(th)
+    out = []
+    for n in range(1, nmax + 1):
+        bn = (2.0 / N) * np.sum(y * np.sin(n * th))
+        an = (2.0 / N) * np.sum(y * np.cos(n * th))
+        out.append((an, bn))
+    return out
+
+
+def relay_h_periodic(u, M, h, nper=2):
+    per = len(u)
+    s = -M
+    y = None
+    for p in range(nper):
+        y = np.empty(per)
+        for i in range(per):
+            if u[i] > h:
+                s = M
+            elif u[i] < -h:
+                s = -M
+            y[i] = s
+    return y`}
   cells={[
-    {code: `# 描述函数概念演示：正弦输入经过饱和非线性后的波形畸变
+    { code: `# 正弦过饱和：振幅越大，削顶越狠，三次谐波占比越高
+th = np.linspace(0, 2 * np.pi, 40000, endpoint=False)
+print('%-6s %-10s %-12s %-10s %-8s' % ('A', 'b1', 'N=b1/A', '3次/1次', 'THD'))
+for A in [0.5, 1.0, 2.0]:
+    y = sat(A * np.sin(th), 1.0, 1.0)
+    co = fourier(y, th)
+    amp = [np.hypot(a, b) for a, b in co]
+    thd = np.sqrt(np.sum(np.array(amp[1:]) ** 2)) / amp[0]
+    print('%-6.1f %-10.4f %-12.4f %-10.4f %-8.4f' % (A, co[0][1], co[0][1] / A, amp[2] / amp[0], thd))
+print()
+print('A=0.5 完全在线性区：N = 1.0000 = k，THD = 0。')
+print('A=2 时各次谐波幅值：', ' '.join('%.4f' % a for a in
+      [np.hypot(a, b) for a, b in fourier(sat(2 * np.sin(th), 1.0, 1.0), th)]))
+print('只有奇次谐波（偶次与 cos 项全为 0）——这是奇对称非线性的傅里叶指纹。')
 
-def saturation(u, k=1, a=1):
-    """饱和非线性"""
-    return np.where(np.abs(u) <= a, k * u, k * a * np.sign(u))
-
-# 时间轴
-t = np.linspace(0, 4*np.pi, 1000)
-
-# 不同振幅的正弦输入
-A_values = [0.5, 1.0, 2.0]
-fig, axes = plt.subplots(3, 2, figsize=(12, 10))
-
-for idx, A in enumerate(A_values):
-    u = A * np.sin(t)
-    y = saturation(u, k=1, a=1)
-    
-    # 左图：输入输出波形
-    axes[idx, 0].plot(t, u, 'b-', linewidth=1.5, label=f'输入 u(t), A={A}')
-    axes[idx, 0].plot(t, y, 'r-', linewidth=1.5, label='输出 y(t)')
-    axes[idx, 0].set_xlabel('时间 t', fontsize=11)
-    axes[idx, 0].set_ylabel('幅值', fontsize=11)
-    axes[idx, 0].set_title(f'振幅 A={A} 时的波形', fontsize=12)
-    axes[idx, 0].legend(fontsize=10)
-    axes[idx, 0].grid(True, alpha=0.3)
-    axes[idx, 0].set_xlim([0, 4*np.pi])
-    
-    # 右图：输入输出特性曲线
-    u_range = np.linspace(-2.5, 2.5, 200)
-    y_range = saturation(u_range, k=1, a=1)
-    axes[idx, 1].plot(u_range, y_range, 'k-', linewidth=2, label='饱和特性')
-    # 标注当前振幅的工作范围
-    axes[idx, 1].plot([-A, A], saturation([-A, A], k=1, a=1), 'ro', markersize=8, label=f'A={A}')
-    axes[idx, 1].set_xlabel('输入 u', fontsize=11)
-    axes[idx, 1].set_ylabel('输出 y', fontsize=11)
-    axes[idx, 1].set_title('饱和非线性特性', fontsize=12)
-    axes[idx, 1].legend(fontsize=10)
-    axes[idx, 1].grid(True, alpha=0.3)
-    axes[idx, 1].set_xlim([-2.5, 2.5])
-    axes[idx, 1].set_ylim([-2.5, 2.5])
-
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.2), sharey=True)
+for ax, A in zip(axes, [0.5, 1.0, 2.0]):
+    u = A * np.sin(th)
+    y = sat(u, 1.0, 1.0)
+    b1 = fourier(y, th)[0][1]
+    ax.plot(th, u, color='#94a3b8', lw=1.2, label='输入')
+    ax.plot(th, y, color='#2563eb', lw=1.8, label='输出')
+    ax.plot(th, b1 * np.sin(th), color='#dc2626', ls='--', lw=1.4, label='基波')
+    ax.set_title('A = %.1f' % A)
+    ax.set_xlabel('theta (rad)')
+    ax.grid(alpha=0.3)
+axes[0].set_ylabel('幅值')
+axes[0].legend(fontsize=8)
 plt.tight_layout()
-plt.show()
-
-print("观察：")
-print(f"A=0.5时：工作在线性区，输出无畸变")
-print(f"A=1.0时：刚好到达饱和点，输出开始畸变")
-print(f"A=2.0时：严重饱和，输出接近方波，高次谐波丰富")`}
+plt.show()` },
+    { code: `# 复数惯例核对：滞环继电器 M=1, h=0.3, A=1
+M, h, A = 1.0, 0.3, 1.0
+y = relay_h_periodic(A * np.sin(th), M, h)
+a1, b1 = fourier(y, th)[0]
+num = (b1 + 1j * a1) / A
+wrong = (a1 + 1j * b1) / A
+closed = (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))
+print('数值 (b1 + j a1)/A = %.6f %+.6fj' % (num.real, num.imag))
+print('数值 (a1 + j b1)/A = %.6f %+.6fj   <- 写反顺序的结果' % (wrong.real, wrong.imag))
+print('闭式 4M/(piA)(sqrt(1-(h/A)^2) - j h/A) = %.6f %+.6fj' % (closed.real, closed.imag))
+print('|正确 - 闭式| = %.2e；|写反 - 闭式| = %.2e' % (abs(num - closed), abs(wrong - closed)))
+deg = lambda z: np.degrees(np.arctan2(z.imag, z.real))
+print('相位: 正确 %.1f deg（滞后）；写反 %.1f deg（超前）' % (deg(num), deg(wrong)))
+print()
+print('虚部为负 = 输出相位滞后 = 滞环的记忆效应。奇对称无记忆非线性则 a1 = 0，N 为实数。')` },
+    { code: `# 闭式自洽：N_sat(2) 既等于 b1/A，也等于 (2k/pi)(alpha + sin alpha cos alpha)
+A = 2.0
+b1 = fourier(sat(A * np.sin(th), 1.0, 1.0), th)[0][1]
+alpha = np.arcsin(1.0 / A)
+closed = (2 * 1.0 / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+print('傅里叶:  N(2) = b1/A = %.6f' % (b1 / A))
+print('闭式:    N(2) = %.6f   (alpha = arcsin(0.5) = pi/6)' % closed)
+print('差 = %.2e' % abs(b1 / A - closed))` }
   ]}
 />
-
-*图：不同振幅下，正弦输入经过饱和非线性后的波形畸变。振幅越大，削顶越严重，高次谐波越丰富。*
-
-## 描述函数的定义
-
-考虑静态非线性 $y = f(u)$，输入为正弦信号 $u(t) = A\sin(\omega t)$。输出 $y(t)$ 是周期为 $T = 2\pi/\omega$ 的周期函数，可以展开为傅里叶级数：
-
-$$y(t) = \frac{a_0}{2} + \sum_{n=1}^{\infty}\left[a_n\cos(n\omega t) + b_n\sin(n\omega t)\right]$$
-
-其中傅里叶系数为：
-
-$$a_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\cos(n\theta)d\theta$$
-
-$$b_n = \frac{1}{\pi}\int_0^{2\pi} f(A\sin\theta)\sin(n\theta)d\theta$$
-
-**描述函数**定义为输出基波（$n=1$）的复振幅与输入振幅之比：
-
-$$N(A) = \frac{a_1 + jb_1}{A}$$
-
-这里采用控制理论的复数惯例（$e^{-j\omega t}$）。注意：
-
-- 对于**奇对称非线性**（$f(-u) = -f(u)$），$a_0 = a_1 = 0$，$N(A)$ 为纯虚数或实数。
-- 对于**含滞环的非线性**（多值映射），$N(A)$ 一般为复数，虚部反映相位滞后。
-- 描述函数只依赖振幅 $A$，与频率 $\omega$ 无关（因为非线性是静态的）。
-
-### 谐波平衡条件
-
-考虑闭环系统：线性部分 $G(s)$ 与非线性部分 $f(u)$ 串联，负反馈。假设系统处于周期运动状态，振荡频率为 $\omega$，振幅为 $A$。则非线性环节的输入为 $u(t) = A\sin(\omega t)$，输出基波为 $y_1(t) = |N(A)|A\sin(\omega t + \angle N(A))$。
-
-该基波经过线性部分 $G(j\omega)$ 后，得到反馈信号。闭环自激的条件是反馈信号与输入同相且等幅，即：
-
-$$N(A)G(j\omega) = -1$$
-
-这就是**谐波平衡条件**（Harmonic Balance Condition）。它可以重写为：
-
-$$G(j\omega) = -\frac{1}{N(A)}$$
-
-在 Nyquist 图上，这意味着 $G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹相交。交点对应的 $(A, \omega)$ 即为极限环的振幅和频率。
-
-> **为什么忽略高次谐波？** 关键在于线性部分 $G(s)$ 的低通滤波特性。如果 $G(j\omega)$ 在高频段（$3\omega, 5\omega, \ldots$）的增益远小于基波处的增益（比如衰减 20dB 以上），那么高次谐波经过 $G(s)$ 后会被大幅削弱，对闭环响应的贡献可以忽略。这就是描述函数法的**滤波假设**。定量判据：$|G(j3\omega)| < 0.1|G(j\omega)|$。
-
-<JupyterNotebook 
-  language="python" 
-  setupCode={`import numpy as np
-import matplotlib.pyplot as plt
-from scipy import integrate
-
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {code: `# 数值验证：计算饱和非线性的描述函数并与解析公式对比
-
-def saturation(u, k=1, a=1):
-    """饱和非线性"""
-    return np.where(np.abs(u) <= a, k * u, k * a * np.sign(u))
-
-def numerical_describing_function(A, k=1, a=1, N_points=1000):
-    """数值积分计算描述函数"""
-    theta = np.linspace(0, 2*np.pi, N_points)
-    u = A * np.sin(theta)
-    y = saturation(u, k, a)
-    
-    # 计算傅里叶系数
-    a1 = (1/np.pi) * np.trapz(y * np.cos(theta), theta)
-    b1 = (1/np.pi) * np.trapz(y * np.sin(theta), theta)
-    
-    return a1 + 1j * b1
-
-def analytical_describing_function(A, k=1, a=1):
-    """解析公式计算描述函数"""
-    if A <= a:
-        return k  # 线性区
-    alpha = np.arcsin(a / A)
-    return (2 * k / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
-
-# 振幅范围
-A_values = np.linspace(0.5, 5, 50)
-k, a = 1, 1
-
-# 计算数值和解析结果
-N_numerical = []
-N_analytical = []
-
-for A in A_values:
-    N_num = numerical_describing_function(A, k, a)
-    N_ana = analytical_describing_function(A, k, a)
-    N_numerical.append(np.abs(N_num))
-    N_analytical.append(N_ana)
-
-# 绘图
-fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-
-ax.plot(A_values, N_numerical, 'ro', markersize=4, label='数值积分', alpha=0.6)
-ax.plot(A_values, N_analytical, 'b-', linewidth=2, label='解析公式')
-ax.set_xlabel('振幅 A', fontsize=12)
-ax.set_ylabel('|N(A)|', fontsize=12)
-ax.set_title('饱和非线性的描述函数：数值 vs 解析', fontsize=14)
-ax.legend(fontsize=11)
-ax.grid(True, alpha=0.3)
-ax.set_xlim([0.5, 5])
-ax.set_ylim([0, 1.2])
-
-plt.tight_layout()
-plt.show()
-
-# 打印误差统计
-errors = np.abs(np.array(N_numerical) - np.array(N_analytical))
-print(f"最大绝对误差：{np.max(errors):.6f}")
-print(f"平均绝对误差：{np.mean(errors):.6f}")
-print(f"\\n结论：数值积分与解析公式高度吻合，验证了公式的正确性")`}
-  ]}
-/>
-
-*图：饱和非线性描述函数的数值积分结果与解析公式对比，验证了理论推导的正确性。*
 
 ## 常见非线性的描述函数
 
-### 理想继电器
+五个最常用的闭式（$A$ 为环节输入幅值；$\alpha = \arcsin(a/A)$、$\beta = \arcsin(1 - 2b/A)$）：
 
-理想继电器的特性为：
+| 非线性 | 描述函数 $N(A)$ | 性质 |
+| --- | --- | --- |
+| 理想继电器 $\pm M$ | $\dfrac{4M}{\pi A}$ | 实数，随 $A$ 衰减 |
+| 滞环继电器 $\pm M$，宽 $\pm h$ | $\dfrac{4M}{\pi A}\Big(\sqrt{1-(h/A)^2} - j\dfrac{h}{A}\Big)$，$A>h$ | 复数，虚部 $<0$ |
+| 饱和 $k$，限 $\pm a$ | $A\le a$ 时 $k$；否则 $\dfrac{2k}{\pi}\big[\alpha + \sin\alpha\cos\alpha\big]$ | 实数，单调减 |
+| 死区 $k$，宽 $\pm a$ | $A<a$ 时 $0$；否则 $\dfrac{2k}{\pi}\big[\dfrac{\pi}{2} - \alpha - \sin\alpha\cos\alpha\big]$ | 实数，单调增 |
+| 间隙 $k$，宽 $\pm b$ | $\dfrac{k}{\pi}\big[\dfrac{\pi}{2} + \beta + \sin\beta\cos\beta - j\,4\dfrac{b}{A}\big(1-\dfrac{b}{A}\big)\big]$ | 复数，虚部 $<0$ |
 
-$$f(u) = \begin{cases} +M, & u > 0 \\ -M, & u < 0 \end{cases}$$
+Notebook 2 把每个闭式与 40000 点傅里叶积分在 $A\in[0.4,6]$ 的 60 个点上逐点相减：饱和与死区的最大偏差 $9.9\times10^{-10}$、$8.0\times10^{-10}$（被积函数连续，梯形法则谱精度）；理想继电器与滞环继电器 $1.3\times10^{-4}$、$2.2\times10^{-4}$（输出有跳变，收敛退化为 $O(h)$）；间隙的闭式在 $A=1,2,5$ 上与数值积分逐位相同（$0.747684-0.267380j$、$0.905940-0.162338j$、$0.975504-0.071811j$）。**这张表不是抄来的，是核过的。**
 
-输入 $u(t) = A\sin(\omega t)$ 时，输出为方波。方波的傅里叶级数为：
-
-$$y(t) = \frac{4M}{\pi}\left(\sin\omega t + \frac{1}{3}\sin 3\omega t + \frac{1}{5}\sin 5\omega t + \cdots\right)$$
-
-基波分量为 $\frac{4M}{\pi}\sin\omega t$，因此：
-
-$$N(A) = \frac{4M}{\pi A}$$
-
-**特点**：实数，与振幅 $A$ 成反比。振幅越大，等效增益越小。
-
-### 带滞环的继电器
-
-带滞环的继电器：当输入从负变正时，输出在 $u = +h$ 处跳变；从正变负时，在 $u = -h$ 处跳变。此时描述函数为复数：
-
-$$N(A) = \frac{4M}{\pi A}\sqrt{1 - \left(\frac{h}{A}\right)^2} - j\frac{4Mh}{\pi A^2}, \quad A > h$$
-
-当 $A \leq h$ 时，输入振幅不足以触发跳变，$N(A) = 0$（系统静止）。
-
-**特点**：虚部恒为负，反映滞环引起的相位滞后。
-
-### 饱和非线性
-
-饱和特性：当 $|u| \leq a$ 时 $y = ku$；当 $|u| > a$ 时 $y = ka\cdot\text{sgn}(u)$。令 $\alpha = \arcsin(a/A)$，则：
-
-$$N(A) = \frac{2k}{\pi}\left[\alpha + \sin\alpha\cos\alpha\right], \quad A \geq a$$
-
-**极限情况**：
-- 当 $A \ll a$ 时，$\alpha \approx \pi/2$，$N(A) \approx k$（线性区）。
-- 当 $A \gg a$ 时，$\alpha \approx a/A$，$N(A) \approx \frac{4ka}{\pi A}$（饱和区，增益随振幅衰减）。
-
-### 死区非线性
-
-死区特性：当 $|u| < a$ 时 $y = 0$；当 $|u| \geq a$ 时 $y = k(u - a\cdot\text{sgn}(u))$。令 $\alpha = \arcsin(a/A)$，则：
-
-$$N(A) = \frac{2k}{\pi}\left[\frac{\pi}{2} - \alpha - \sin\alpha\cos\alpha\right], \quad A \geq a$$
-
-当 $A < a$ 时，$N(A) = 0$（信号被死区完全阻挡）。
-
-**特点**：与饱和相反，小信号时增益为零，大信号时趋近于 $k$。
-
-### 间隙（Backlash）
-
-间隙非线性是动态的：输出不仅依赖当前输入，还依赖输入的变化方向。设间隙宽度为 $2b$，则描述函数为：
-
-$$N(A) = \frac{k}{\pi}\left[\frac{\pi}{2} + \beta + \sin\beta\cos\beta - j4\frac{b}{A}\left(1 - \frac{b}{A}\right)\right], \quad \beta = \arcsin\left(1 - 2\frac{b}{A}\right)$$
-
-**特点**：虚部恒为负，表示相位滞后。当 $A \leq b$ 时，$N(A) = 0$。
+一个必须当场拆穿的省事做法：**串联非线性的描述函数不等于各环节描述函数的乘积**。理由很简单：第一个环节的输出已经不是正弦，第二个环节的 DF 公式前提失效。Notebook 2 用"死区(0.3) 串饱和(1)"实测：$A\le1$ 时饱和未起作用，乘积碰巧精确相等（相对差 $0.0\%$）；$A=1.5$ 起开始偏离，$A=1.5$ 处相对差 $15.4\%$、$A=2$ 处 $14.2\%$、$A=5$ 处 $6.9\%$。两个都是静态环节时，正确做法是把组合映射 $f_2(f_1(u))$ 当成**一个**静态非线性直接做傅里叶积分。
 
 <DescribingFunctionExplorer />
 
-*图：交互式探索不同非线性类型的描述函数 $N(A)$ 随振幅 $A$ 的变化。拖动滑块调节参数，观察曲线的变化趋势。*
+*图：交互探索四种非线性的 $N(A)$ 随振幅的变化（间隙只画实部，虚部见上表）。切换类型、拖动参数，重点看两个极限：$A$ 很小时曲线趋于线性增益（饱和与间隙的 $k$、死区的 $0$），$A$ 很大时继电器按 $1/A$ 衰减、饱和与死区都趋于各自的线性增益。把饱和的 $a$ 调大，曲线的"膝盖"随之右移——因为 $N_{\text{sat}}$ 只通过比值 $A/a$ 依赖这两个量（第 2 节说的尺度性质），而 $k$ 只是整条曲线的纵向倍数。*
 
-## 极限环预测：手算例子
+<JupyterNotebook
+  title="Notebook 2：五个闭式对傅里叶积分的核对，以及串联不等于乘积"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
-考虑一个简单的闭环系统：理想继电器（$M=1$）与三阶线性系统 $G(s) = \frac{1}{s(s+1)(0.5s+1)}$ 串联，负反馈。我们来预测是否存在极限环，以及其振幅和频率。
 
-**步骤 1：写出描述函数**
+def sat(u, k=1.0, a=1.0):
+    return np.clip(k * u, -k * a, k * a)
 
-理想继电器的描述函数为：
-$$N(A) = \frac{4}{\pi A}$$
 
-**步骤 2：写出谐波平衡条件**
+def dz(u, k=1.0, a=0.3):
+    return k * (u - a * np.sign(u)) * (np.abs(u) >= a)
 
-$$G(j\omega) = -\frac{1}{N(A)} = -\frac{\pi A}{4}$$
 
-**步骤 3：计算 $G(j\omega)$**
+def relay(u, M=1.0):
+    return M * np.sign(u)
 
-$$G(j\omega) = \frac{1}{j\omega(j\omega + 1)(0.5j\omega + 1)}$$
 
-展开分母：
-$$(j\omega)(j\omega + 1)(0.5j\omega + 1) = j\omega(-\omega^2 + j1.5\omega + 1) = -j\omega^3 - 1.5\omega^2 + j\omega$$
+def relay_h(u, M, h, nper=2):
+    per = len(u)
+    s = -M
+    y = None
+    for p in range(nper):
+        y = np.empty(per)
+        for i in range(per):
+            if u[i] > h:
+                s = M
+            elif u[i] < -h:
+                s = -M
+            y[i] = s
+    return y
 
-所以：
-$$G(j\omega) = \frac{1}{-1.5\omega^2 + j(\omega - \omega^3)} = \frac{-1.5\omega^2 - j(\omega - \omega^3)}{(-1.5\omega^2)^2 + (\omega - \omega^3)^2}$$
 
-其实部和虚部分别为：
-$$\text{Re}[G(j\omega)] = \frac{-1.5\omega^2}{2.25\omega^4 + (\omega - \omega^3)^2}$$
-$$\text{Im}[G(j\omega)] = \frac{-(\omega - \omega^3)}{2.25\omega^4 + (\omega - \omega^3)^2}$$
+def backlash(u, k, b, nper=2):
+    per = len(u)
+    cur = k * (u[0] - b)
+    out = []
+    for p in range(nper):
+        for i in range(per):
+            rising = u[i] > u[i - 1] if i > 0 else True
+            if rising:
+                cur = max(cur, k * (u[i] - b))
+            else:
+                cur = min(cur, k * (u[i] + b))
+            out.append(cur)
+    return np.array(out[-per:])
 
-**步骤 4：求解交点**
 
-由于 $N(A)$ 是实数，$-1/N(A)$ 也是实数（在负实轴上）。因此交点必须满足 $\text{Im}[G(j\omega)] = 0$，即：
+def df_num(f, A, N=40000):
+    th = np.linspace(0, 2 * np.pi, N, endpoint=False)
+    y = f(A * np.sin(th))
+    b1 = (2.0 / N) * np.sum(y * np.sin(th))
+    a1 = (2.0 / N) * np.sum(y * np.cos(th))
+    return (b1 + 1j * a1) / A
 
-$$\omega - \omega^3 = 0 \implies \omega(1 - \omega^2) = 0$$
 
-解得 $\omega = 0$ 或 $\omega = 1$ rad/s。$\omega = 0$ 对应直流，舍去。取 $\omega = 1$ rad/s。
+def N_sat(A, k=1.0, a=1.0):
+    if A <= a:
+        return k + 0j
+    al = np.arcsin(a / A)
+    return (2 * k / np.pi) * (al + np.sin(al) * np.cos(al)) + 0j
 
-代入实部：
-$$\text{Re}[G(j1)] = \frac{-1.5}{2.25 + 0} = -\frac{1.5}{2.25} = -\frac{2}{3} \approx -0.667$$
 
-**步骤 5：求解振幅 $A$**
+def N_dz(A, k=1.0, a=0.3):
+    if A <= a:
+        return 0j
+    al = np.arcsin(a / A)
+    return (2 * k / np.pi) * (np.pi / 2 - al - np.sin(al) * np.cos(al)) + 0j
 
-由谐波平衡条件：
-$$-\frac{\pi A}{4} = -0.667 \implies A = \frac{4 \times 0.667}{\pi} \approx 0.85$$
 
-**结论**：该系统存在极限环，预测振荡频率 $\omega = 1$ rad/s，振幅 $A \approx 0.85$。
+def N_relay(A, M=1.0):
+    return 4 * M / (np.pi * A) + 0j
+
+
+def N_relay_h(A, M=1.0, h=0.2):
+    if A <= h:
+        return 0j
+    return (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))
+
+
+def N_bl(A, k=1.0, b=0.3):
+    if A <= b:
+        return 0j
+    be = np.arcsin(1 - 2 * b / A)
+    return (k / np.pi) * (np.pi / 2 + be + np.sin(be) * np.cos(be)
+                          - 4j * (b / A) * (1 - b / A))`}
+  cells={[
+    { code: `Ag = np.linspace(0.4, 6, 60)
+cases = [('饱和 k=1 a=1', lambda A: df_num(lambda u: sat(u, 1, 1), A), lambda A: N_sat(A, 1, 1)),
+         ('死区 k=1 a=0.3', lambda A: df_num(lambda u: dz(u, 1, 0.3), A), lambda A: N_dz(A, 1, 0.3)),
+         ('理想继电器 M=1', lambda A: df_num(lambda u: relay(u, 1), A), lambda A: N_relay(A, 1)),
+         ('滞环继电器 M=1 h=0.3', lambda A: df_num(lambda u: relay_h(u, 1, 0.3), A),
+          lambda A: N_relay_h(A, 1, 0.3)),
+         ('间隙 k=1 b=0.3', lambda A: df_num(lambda u: backlash(u, 1, 0.3), A),
+          lambda A: N_bl(A, 1, 0.3))]
+print('%-24s %s' % ('非线性', 'max|数值-闭式| (A in [0.4,6])'))
+for name, fn, cf in cases:
+    err = max(abs(fn(A) - cf(A)) for A in Ag)
+    print('%-24s %.3e' % (name, err))
+print()
+print('光滑被积函数（饱和/死区）是谱精度；含跳变的（继电器/滞环/间隙）退化为 O(1/N)。')
+print('间隙在 A=1,2,5 的数值值：')
+for A in [1.0, 2.0, 5.0]:
+    n = df_num(lambda u: backlash(u, 1, 0.3), A)
+    print('   A=%.1f  %.6f %+.6fj' % (A, n.real, n.imag))` },
+    { code: `# 串联（死区 -> 饱和）的精确 DF vs 两个 DF 的乘积
+comp = lambda u: sat(dz(u, 1, 0.3), 1, 1)
+Aa = np.linspace(0.31, 6, 200)
+ex = np.array([df_num(comp, A).real for A in Aa])
+pr = np.array([(N_dz(A, 1, 0.3) * N_sat(A, 1, 1)).real for A in Aa])
+print('%-6s %-12s %-12s %-10s' % ('A', '组合精确', 'DF 乘积', '相对差'))
+for A in [0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0]:
+    e = df_num(comp, A).real
+    p = (N_dz(A, 1, 0.3) * N_sat(A, 1, 1)).real
+    print('%-6.1f %-12.6f %-12.6f %-10.1f%%' % (A, e, p, abs(e - p) / e * 100))
+print()
+print('A <= 1 时饱和没起作用，乘积碰巧精确；A > 1 后中间信号非正弦，乘积最多错 15.4%。')
+
+fig, ax = plt.subplots(figsize=(7.5, 4.0))
+ax.plot(Aa, ex, color='#2563eb', lw=2.0, label='组合映射的精确 DF')
+ax.plot(Aa, pr, color='#dc2626', ls='--', lw=1.6, label='N_dead x N_sat（错误做法）')
+ax.set_xlabel('A')
+ax.set_ylabel('N(A)')
+ax.set_xlim(0, 6)
+ax.set_ylim(0, 0.8)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+## 谐波平衡与极限环预测
+
+闭环结构：非线性 $f$ 在前、线性 $G(s)$ 在后、单位负反馈、无外部输入。假设环路已进入周期状态，非线性环节输入为 $e(t) = A\sin\omega t$，则其基波输出经 $G$ 回到输入端必须**自洽**：
+
+$$
+N(A)\,G(j\omega) = -1 \qquad\Longleftrightarrow\qquad G(j\omega) = -\frac{1}{N(A)}
+$$
+
+这就是**谐波平衡条件**。几何读法：在 Nyquist 图上画两条曲线——$G(j\omega)$（$\omega$ 从 $0$ 到 $\infty$）和 $-1/N(A)$（$A$ 从 $0$ 到 $\infty$）——交点给出 $(A,\omega)$。**注意 $-1/N(A)$ 轨迹的方向**：对理想继电器 $-1/N = -\pi A/(4M)$，$A\to0^+$ 时它从原点出发，$A$ 增大时**向 $-\infty$ 走**；对饱和它从 $-1/k$ 出发同样向左走。方向搞反会把第 5 节的稳定性判据整个读反。
+
+**手算例**：理想继电器 $M=1$ 串 $G(s) = \dfrac{1}{s(s+1)(0.5s+1)}$。$N$ 为实数，故交点必须落在 $G$ 的负实轴穿越点上：
+
+$$
+(j\omega)(j\omega+1)(0.5j\omega+1) = -1.5\omega^2 + j(\omega - 0.5\omega^3)
+$$
+
+虚部为零给出 $\omega_0 = \sqrt{2} = 1.414214$ rad/s（**不是** $\omega=1$：把 $0.5j\omega\cdot j\omega$ 漏掉系数是这一步最常见的错误），此时 $G(j\omega_0) = 1/(-1.5\omega_0^2) = -1/3$。由 $-\pi A/4 = -1/3$ 得
+
+$$
+A_0 = \frac{4}{3\pi} = 0.424413
+$$
+
+即非线性环节**输入端**的基波幅值预测为 $0.4244$。Notebook 3 用 dt = 1e-4 仿真 80 s 并对末段做整周期傅里叶：实测基波幅值 $0.445089$（比预测大 $4.87\%$），周期 $4.550400$ s（预测 $2\pi/\sqrt2 = 4.442883$ s，差 $2.42\%$），闭环信号 THD $0.0237$。**这几个百分点就是基波近似的定价**：被丢掉的三次谐波仍会把继电器的切换时刻稍微推离正弦假设的位置。
+
+同一个 Notebook 还跑了第二个环路：把 $0.5s+1$ 换成 $0.05s+1$（第三个极点从 $2$ rad/s 推到 $20$ rad/s）。这时 $\omega_0 = \sqrt{1/0.05} = \sqrt{20} = 4.472136$，$G(j\omega_0) = -0.05/1.05 = -0.047619$，$A_0 = 0.060630$；实测基波 $0.067046$（$+10.58\%$），周期 $1.477600$ s（$+5.17\%$），THD $0.0332$。**极点推远了，误差反而从 $4.9\%$ 涨到 $10.6\%$**——因为 $\omega_0 = \sqrt{1/T_c}$ 跟着涨了 $3.16$ 倍，三倍频 $3\omega_0$ 与极点的相对距离并没有拉开（泄漏指标 $L$ 只从 $-31.2$ dB 变到 $-27.9$ dB，是变差不是变好）。这条反直觉的实测在第 7 节还会再用到：**要让描述函数准，得让 $\omega_0$ 远离所有极点零点，而不是把极点推远。**
 
 <NyquistLimitCycleExplorer />
 
-*图：Nyquist 图展示 $G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹的交点。拖动滑块调节增益 $K$ 和时间常数 $T_1, T_2$，观察交点位置的变化。绿色圆点标记预测的极限环。*
+*图：Nyquist 图上 $G(j\omega)$ 与 $-1/N(A)$ 的交点就是极限环预测，下方面板给出振幅 $A$、频率 $\omega$ 与 $f$。默认参数（理想继电器，$K=1$、$T_1=1$、$T_2=0.5$）正是上面手算例的配置：交点落在 $(-1/3,\,0)$，手算 $A = 4/(3\pi) = 0.4244$、$\omega = \sqrt2 = 1.4142$，面板显示 $A=0.4241$、$\omega=1.4151$（组件按 $0.05$ rad/s 网格找穿越点、再用二分反解 $A$）。把 $K$ 拉到 $2$，交点移到 $(-2/3,\,0)$，手算 $A = 8/(3\pi) = 0.8488$、面板显示 $0.8482$（习题 3(b)）。切到"饱和"（$K$ 仍为 $2$）：饱和的 $-1/N$ 轨迹从 $-1/k = -1$ 起、够不到 $-0.667$，面板转为"无交点"——这就是案例 2 里 $K<3$ 不可能振荡的几何图像。*
 
-### 稳定性判断
+<JupyterNotebook
+  title="Notebook 3：手算例的每一步，以及仿真仲裁"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
-在 Nyquist 图上，沿 $A$ 增大的方向画 $-1/N(A)$ 轨迹（从左向右移动，因为 $N(A)$ 随 $A$ 增大而减小，$-1/N(A)$ 从 $-\infty$ 趋向于 $0$）。
+G3 = lambda w: 1.0 / (1j * w * (1j * w + 1) * (0.5j * w + 1))
 
-**稳定性判据**：
-- 如果在交点处，$G(j\omega)$ 曲线从**左侧**穿过 $-1/N(A)$ 轨迹（即 $G(j\omega)$ 的相位比 $-1/N(A)$ 更负），则该极限环是**稳定的**。
-- 如果从**右侧**穿过，则极限环是**不稳定的**。
 
-**直观理解**：假设系统处于极限环状态，振幅为 $A_0$。如果受到扰动，振幅变为 $A_0 + \Delta A$：
-- 若 $N(A)$ 随 $A$ 增大而减小（如继电器），则环路增益下降，振幅会回到 $A_0$——稳定。
-- 若 $N(A)$ 随 $A$ 增大而增大，则环路增益上升，振幅会继续偏离——不稳定。
+def sim_relay(T, dt, Tc, K, h=0.0, M=1.0, x0=None):
+    x = np.zeros(3) if x0 is None else np.array(x0, float)
+    s = M
+    n = int(T / dt)
+    ts = np.empty(n)
+    es = np.empty(n)
+    for k in range(n):
+        e = -x[0]
+        if e > h:
+            s = M
+        elif e < -h:
+            s = -M
+        ts[k], es[k] = k * dt, e
+        a3 = -(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * s
+        x[2] += dt * a3
+        x[1] += dt * x[2]
+        x[0] += dt * x[1]
+    return ts, es
 
-在本例中，$G(j\omega)$ 从上向下穿过负实轴（相位从 $-90^\circ$ 变化到 $-270^\circ$），而 $-1/N(A)$ 沿负实轴从左向右移动。因此，$G(j\omega)$ 从左侧穿过，极限环**稳定**。
 
+def measure(ts, sig, t_from, dt):
+    m = ts >= t_from
+    t, s = ts[m], sig[m]
+    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])
+          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]
+    zc = np.array(zc)
+    per = float(np.mean(np.diff(zc)))
+    w = 2 * np.pi / per
+    kk = len(zc) // 2
+    ta, tb = zc[kk], zc[-1]
+    mm = (t >= ta) & (t <= tb)
+    tt, ss = t[mm], s[mm]
+    c1 = np.sin(w * (tt - ta))
+    c2 = np.cos(w * (tt - ta))
+    A1 = 2 * np.trapezoid(ss * c1, tt) / (tb - ta)
+    A2 = 2 * np.trapezoid(ss * c2, tt) / (tb - ta)
+    amp = np.hypot(A1, A2)
+    harm = []
+    for nh in range(2, 8):
+        a = 2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta)
+        b = 2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)
+        harm.append(np.hypot(a, b))
+    return dict(per=per, w=w, amp=amp,
+                thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))`}
+  cells={[
+    { code: `# 手算的每一步都打印出来
+w = np.linspace(0.1, 3, 3001)
+den = -1.5 * w ** 2 + 1j * (w - 0.5 * w ** 3)
+i0 = int(np.argmin(np.abs(den.imag)))
+w0 = w[i0]
+print('Im G = 0 的数值解 w0 = %.6f（手算 sqrt(2) = %.6f）' % (w0, np.sqrt(2)))
+print('G(j w0) = %.6f %+.6fj（手算 -1/3）' % (G3(w0).real, G3(w0).imag))
+A0 = 4 * abs(G3(w0)) / np.pi
+print('A0 = 4|G|/pi = %.6f（手算 4/(3pi) = %.6f）' % (A0, 4 / (3 * np.pi)))
+print()
+ws = np.logspace(-1, 1.3, 400)
+As = np.linspace(0.05, 3, 200)
+fig, ax = plt.subplots(figsize=(7.0, 6.0))
+Gc = G3(ws)
+ax.plot(Gc.real, Gc.imag, color='#2563eb', lw=2.0, label='G(jw)')
+ax.plot(-np.pi * As / 4, np.zeros_like(As), color='#dc2626', lw=2.0,
+        label='-1/N(A)（A 增大向左）')
+ax.plot([-1 / 3], [0], 'o', color='#16a34a', ms=10, label='交点 (w0, A0)')
+ax.axhline(0, color='#94a3b8', lw=0.8)
+ax.axvline(0, color='#94a3b8', lw=0.8)
+ax.set_xlim(-1.6, 0.3)
+ax.set_ylim(-1.2, 0.3)
+ax.set_xlabel('Re')
+ax.set_ylabel('Im')
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 仿真仲裁：预测 vs 实测（两个环路：Tc = 0.5 与 Tc = 0.05）
+dt = 1e-4
+for Tc in (0.5, 0.05):
+    w0 = np.sqrt(1 / Tc)
+    G0 = -Tc / (1 + Tc)
+    Ap = 4 * abs(G0) / np.pi
+    ts, es = sim_relay(80.0, dt, Tc, 1.0)
+    r = measure(ts, es, 40.0, dt)
+    Tp = 2 * np.pi / w0
+    print('Tc=%.2f: w0=%.6f, G(jw0)=%.6f, 预测 A0=%.6f, 周期=%.6f s' % (Tc, w0, G0, Ap, Tp))
+    print('        实测 基波=%.6f (%+.2f%%), 周期=%.6f (%+.2f%%), THD=%.4f'
+          % (r['amp'], (r['amp'] / Ap - 1) * 100, r['per'], (r['per'] / Tp - 1) * 100, r['thd']))
+print()
+print('THD 只有 2.4%~3.3%，说明 e(t) 确实接近正弦；但幅值误差 4.9%~10.6% 提醒我们：')
+print('被丢掉的谐波仍会移动继电器的切换时刻。描述函数给的是估计，不是等式。')
+print('注意 Tc 变小（极点推远）后 w0 从 1.414 升到 4.472，误差反而从 4.9% 涨到 10.6%。')` },
+    { code: `# 谐波泄漏指标 L：把"滤波好不好"变成一个数
+def leak(G, w0, nmax=9):
+    num = 0.0
+    for n in range(3, nmax + 1, 2):
+        num += abs(G(n * w0)) / n
+    return num / abs(G(w0) + 0j)
+
+
+Gw = lambda x: 1.0 / (1j * x * (1j * x + 1) * (0.05j * x + 1))
+G2 = lambda x: 2.0 / (1j * x * (1j * x + 1))
+G3b = lambda x: 2.0 / (1j * x * (1j * x + 1) * (0.1j * x + 1))
+rows = [('G3, 理想继电器, w0=sqrt(2)', G3, np.sqrt(2)),
+        ('G(0.05s+1), 理想继电器, w0=sqrt(20)', Gw, np.sqrt(20)),
+        ('2/(s(s+1)), 滞环 h=0.2, w0=2.1925', G2, 2.1925),
+        ('2/(s(s+1)(0.1s+1)), 滞环 h=0.2, w0=1.8448', G3b, 1.8448)]
+print('%-42s %-10s %-10s' % ('环路', 'L', 'L (dB)'))
+for nm, G, w0 in rows:
+    L = leak(G, w0)
+    print('%-42s %-10.4f %-10.1f' % (nm, L, 20 * np.log10(L)))
+print()
+print('对应的实测幅值误差（Notebook 3 打印前两行，Notebook 5 打印后两行）：')
+print('   +4.9% / +10.6% / -1.2% / +3.0%；第五行（谐振）见 Notebook 6：+18.1%。')
+print('L 只是筛查：第二行 -27.9 dB 仍有 10.6% 误差，因为谐波还会移动切换时刻。')` }
+  ]}
+/>
+
+## 极限环的稳定性判据
+
+交点只说明"谐波平衡在该点成立"，不说明极限环稳定。判据（Loeb 判据的 Nyquist 读法）：**在交点处把 $A$ 稍微增大，看 $-1/N(A)$ 的新位置是否落在 $G$ 的 Nyquist 曲线"不包围"的一侧**——
+
+- 若 $A\uparrow$ 使 $-1/N$ 进入**不被包围**（等效线性环稳定）的区域，振幅会被压回来 → **稳定极限环**；
+- 若进入**被包围**（等效线性环不稳定）的区域，振幅继续增长 → **不稳定极限环**。
+
+用等效增益的语言更直接：把 $N(A)$ 当作环路增益 $K$，用线性判据（本例 Routh：$0.5s^3+1.5s^2+s+K$ 稳定当且仅当 $K<3$）检查该增益下闭环是否稳定。Notebook 4 先做这个交叉核对：$K=2.9$ 时三个极点实部全负，$K=3.1$ 时出现正实部极点——与 Routh 的 $K<3$ 一致。
+
+**双交点算例**（死区 $0.3$ 串饱和，再串 $K\cdot G_3$，$K=7.0302$）：组合 $N(A)$ 先升后降（峰值 $0.711220$ 在 $A=1.331$），水平线 $N = 3/K = 0.426732$ 与它交于两点 $A_1 = 0.6569$（升支）与 $A_2 = 2.8348$（降支）。升支上 $A\uparrow \Rightarrow N\uparrow \Rightarrow$ 等效增益更接近不稳定侧 → $A_1$ **不稳定**；降支相反 → $A_2$ **稳定**。仿真（dt = 5e-4）逐条验证：
+
+| 初值 $e(0)$ | 结局 |
+| --- | --- |
+| $0.10$ / $0.25$ | 信号停在死区内**冻结**（末段 $\lvert e\rvert$ 峰值 $0.1000$ / $0.2500$）——带死区与积分环节的环路有一整段连续平衡点 |
+| $0.40$ / $0.60$ / $0.66$ | 振荡起不来，衰减后冻在 $0.0791$ / $0.2597$ / $0.0709$ |
+| $0.70$ / $3.00$ | 收敛到同一极限环，基波 $2.9070$，周期 $4.4805$ s |
+
+二分法测得的阈值初值 $= 0.6735$，对预测 $A_1 = 0.6569$（差 $2.5\%$）；稳定极限环实测基波 $2.9070$ 对预测 $A_2 = 2.8348$（差 $2.5\%$），周期 $4.4805$ s 对 $2\pi/\sqrt2 = 4.4429$ s（差 $0.8\%$）。**$A_1$ 的物理意义是吸引域的边界**：扰动小于它，系统回到死区内的某个平衡点；大于它，被吸到 $A_2$ 的极限环。这正是习题里"两个交点、一稳一不稳"的完整图像。
+
+> ⚠️ 注意中间那一行的数字**不单调**：$e(0)=0.60$ 冻在 $0.2597$，比 $e(0)=0.40$ 的 $0.0791$ 还大。原因是死区加积分环节让环路有一整段连续平衡点，最终停在哪里取决于衰减过程的相位，而不是初值大小。这类"多平衡点"结构是描述函数看不见的——它只假设了一个正弦。
+
+<JupyterNotebook
+  title="Notebook 4：稳定性判据——Routh 交叉核对与双交点算例"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+
+def sat(u, k=1.0, a=1.0):
+    return np.clip(k * u, -k * a, k * a)
+
+
+def dz(u, k=1.0, a=0.3):
+    return k * (u - a * np.sign(u)) * (np.abs(u) >= a)
+
+
+comp = lambda u: sat(dz(u, 1, 0.3), 1, 1)
+
+
+def df_static(f, A, N=40000):
+    th = np.linspace(0, 2 * np.pi, N, endpoint=False)
+    y = f(A * np.sin(th))
+    b1 = (2.0 / N) * np.sum(y * np.sin(th))
+    a1 = (2.0 / N) * np.sum(y * np.cos(th))
+    return (b1 + 1j * a1) / A
+
+
+def sim_static(f, T, dt, Tc, K, x0):
+    x = np.array(x0, float)
+    n = int(T / dt)
+    ts = np.empty(n)
+    es = np.empty(n)
+    for k in range(n):
+        e = -x[0]
+        ts[k], es[k] = k * dt, e
+        u = f(e)
+        a3 = -(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * u
+        x[2] += dt * a3
+        x[1] += dt * x[2]
+        x[0] += dt * x[1]
+    return ts, es`}
+  cells={[
+    { code: `# 交叉核对：等效增益 K 的线性稳定性边界确实是 3
+for K in [2.9, 3.0, 3.1]:
+    r = np.roots([0.5, 1.5, 1.0, K])
+    print('K=%.1f  极点实部 = %s  -> %s'
+          % (K, np.round(r.real, 4), '稳定' if max(r.real) < 0 else '不稳定'))
+print()
+print('谐波平衡在 w0=sqrt(2) 处要求 K*N(A)/3 = 1，即 N(A) = 3/K；')
+print('K=3 时要求 N=1，而组合 N 的峰值只有 0.7112 -> 无交点 -> 无极限环预测。')` },
+    { code: `# 双交点：N(A) 曲线与水平线 3/K
+Ag = np.linspace(0.31, 8, 400)
+Nv = np.array([df_static(comp, A).real for A in Ag])
+i_max = int(np.argmax(Nv))
+K = 3.0 / (0.6 * Nv[i_max])
+tgt = 3.0 / K
+idx = np.where(Nv >= tgt)[0]
+A1, A2 = Ag[idx[0]], Ag[idx[-1]]
+print('N 峰值 %.6f @ A=%.3f；取 K=%.4f，水平线 N=3/K=%.6f' % (Nv[i_max], Ag[i_max], K, tgt))
+print('交点: A1(升支) = %.4f, A2(降支) = %.4f' % (A1, A2))
+
+fig, ax = plt.subplots(figsize=(7.5, 4.0))
+ax.plot(Ag, Nv, color='#2563eb', lw=2.0, label='组合 N(A)')
+ax.axhline(tgt, color='#dc2626', ls='--', lw=1.5, label='3/K = %.4f' % tgt)
+ax.plot([A1, A2], [tgt, tgt], 'o', color='#16a34a', ms=9)
+ax.annotate('A1 不稳定', (A1, tgt), textcoords='offset points', xytext=(-6, 10), fontsize=9)
+ax.annotate('A2 稳定', (A2, tgt), textcoords='offset points', xytext=(-6, 10), fontsize=9)
+ax.set_xlabel('A')
+ax.set_ylabel('N(A)')
+ax.set_xlim(0, 8)
+ax.set_ylim(0, 0.8)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 初值扫描：冻结 / 衰减 / 被吸到 A2
+dt = 5e-4
+for a0 in [0.10, 0.25, 0.40, 0.60, 0.66, 0.70, 3.00]:
+    ts, es = sim_static(comp, 60.0, dt, 0.5, K, [-a0, 0.0, 0.0])
+    pk = float(np.max(np.abs(es[ts >= 40])))
+    if pk > 0.5:
+        m = ts >= 40
+        t, s = ts[m], es[m]
+        zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])
+              for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]
+        zc = np.array(zc)
+        per = float(np.mean(np.diff(zc)))
+        w = 2 * np.pi / per
+        ta, tb = zc[len(zc) // 2], zc[-1]
+        mm = (t >= ta) & (t <= tb)
+        tt, ss = t[mm], s[mm]
+        A1c = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)
+        A2c = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)
+        print('e(0)=%.2f -> 极限环，基波 %.4f，周期 %.4f' % (a0, np.hypot(A1c, A2c), per))
+    else:
+        print('e(0)=%.2f -> 不起振，末段 |e| 峰值 %.4f（冻在死区内）' % (a0, pk))` },
+    { code: `# 二分法测阈值（= 不稳定极限环 A1 的吸引域边界）
+dt = 5e-4
+lo, hi = 0.66, 0.70
+for _ in range(12):
+    mid = 0.5 * (lo + hi)
+    ts, es = sim_static(comp, 40.0, dt, 0.5, K, [-mid, 0.0, 0.0])
+    if np.max(np.abs(es[ts >= 25])) > 0.5:
+        hi = mid
+    else:
+        lo = mid
+thr = 0.5 * (lo + hi)
+print('实测阈值初值 = %.4f；预测 A1 = %.4f（差 %.1f%%）' % (thr, A1, (thr / A1 - 1) * 100))
+ts, es = sim_static(comp, 80.0, dt, 0.5, K, [-3.0, 0.0, 0.0])
+m = ts >= 60
+t, s = ts[m], es[m]
+zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])
+      for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]
+zc = np.array(zc)
+per = float(np.mean(np.diff(zc)))
+w = 2 * np.pi / per
+ta, tb = zc[len(zc) // 2], zc[-1]
+mm = (t >= ta) & (t <= tb)
+tt, ss = t[mm], s[mm]
+A1c = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)
+A2c = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)
+amp = np.hypot(A1c, A2c)
+print('实测 A2 基波 = %.4f（预测 %.4f，差 %+.1f%%），周期 %.4f s（预测 %.4f s）'
+      % (amp, A2, (amp / A2 - 1) * 100, per, 2 * np.pi / np.sqrt(2)))` }
+  ]}
+/>
 ## 应用案例
 
-### 案例 1：继电器反馈振荡器
+描述函数有三种用法，三个案例各占一种：**正向预测**（给系统算振荡参数）、**诊断**（判断某个增益下会不会振荡）、**反推设计**（给振荡指标解出元件参数）。三个案例的预测与实测误差全部汇总在 Notebook 5 的最后一格。
 
-继电器反馈系统常用于产生方波振荡。考虑系统：理想继电器（$M=1$）与积分器 $G(s) = \frac{1}{s}$ 串联。
+### 案例 1：滞环继电器自激振荡器（温控器 / 滞环电流调制）
 
-**分析**：
-$$G(j\omega) = \frac{1}{j\omega} = -j\frac{1}{\omega}$$
+继电器加滞环是恒温器和滞环电流调制器（hysteresis current-mode control）的标准结构：滞环宽度决定开关频率，继电器幅值决定输出幅值。工程上需要在**不搭仿真**的情况下回答"这个滞环宽度会把开关频率定在哪里"，这正是描述函数的主场。
 
-谐波平衡条件：
-$$\frac{4}{\pi A} \cdot \left(-j\frac{1}{\omega}\right) = -1$$
+环路：滞环继电器（$M=1$，$h=0.2$）串 $G(s) = \dfrac{2}{s(s+1)}$，单位负反馈。这个例子的好处是谐波平衡可以**闭式求解**。记 $r = h/A$、$c = 4M/(\pi A)$，则 $N = c(\sqrt{1-r^2} - jr)$，而 $G(j\omega) = -a - jb$ 中 $a = K/(\omega^2+1)$、$b = a/\omega$。把 $NG = -1$ 分成实虚两部（推导见习题 2）：
 
-分离实部和虚部：
-$$\text{实部：} 0 = -1 \quad \text{（矛盾！）}$$
+$$
+\omega = \frac{\sqrt{1-r^2}}{r}, \qquad 4MKr^3 = \pi h\sqrt{1-r^2}
+$$
 
-这说明**纯积分器无法与继电器形成稳定振荡**。需要加入相位补偿，比如 $G(s) = \frac{1}{s(s+1)}$。
+第二式只含 $r$，一维求根即可。Notebook 5 用 `brentq` 解出三个滞环宽度，残差都在 $10^{-16}$ 量级：
 
-实际工程中，继电器反馈振荡器常用**施密特触发器**（带滞环的继电器）加 RC 低通滤波器实现。滞环提供相位滞后，RC 网络提供额外的相位偏移，两者配合产生稳定振荡。
+| $h$ | $A$ | $\omega$ (rad/s) | $f$ (Hz) | $L$ |
+| --- | --- | --- | --- | --- |
+| $0.10$ | $0.300034$ | $2.828785$ | $0.450215$ | $-25.7$ dB |
+| $0.20$ | $0.481962$ | $2.192528$ | $0.348952$ | $-25.4$ dB |
+| $0.40$ | $0.780020$ | $1.674126$ | $0.266445$ | $-25.0$ dB |
 
-### 案例 2：饱和放大器的意外振荡
+**滞环越宽，开关频率越低、振幅越大**——这就是滞环调制器的设计旋钮，而描述函数把它写成了一行公式。仿真仲裁：$h=0.2$ 时实测基波 $0.4763$（比预测小 $1.18\%$），周期 $2.8472$ s（$-0.65\%$），THD $0.0413$。
 
-某伺服系统的放大器增益 $k=10$，饱和电平 $\pm 1V$，被控对象为 $G(s) = \frac{1}{s(s+1)(0.1s+1)}$。系统在小信号时稳定，但在大指令下出现持续振荡。
+把植物换成三阶的 $\dfrac{2}{s(s+1)(0.1s+1)}$（多一个 $10$ rad/s 的极点），谐波平衡没有闭式解，用 `fsolve` 解二元方程组得 $A = 0.646914$、$\omega = 1.844773$（残差 $2.9\times10^{-13}$）；实测基波 $0.6665$（$+3.03\%$），周期 $3.4628$ s（$+1.67\%$），THD $0.0378$。
 
-**用描述函数诊断**：
+> 💡 一个常被忽略的事实：**二阶环路加理想继电器永远不会自激振荡**，因为 $G(j\omega) = K/(-\omega^2 + j\omega)$ 的相位在 $-90^\circ$ 到 $-180^\circ$ 之间，永远达不到 $-180^\circ$。滞环提供的相位滞后（$N$ 的负虚部）才把总相位推到 $-180^\circ$，振荡才有解。案例 3 的对照组与 Notebook 6 cell 3 都实测了 $h=0$ 的情形：不振荡，而是抖振到零。
 
-1. 计算饱和的描述函数 $N(A)$。
-2. 画 Nyquist 图，找 $G(j\omega)$ 与 $-1/N(A)$ 的交点。
-3. 若存在交点，预测振荡频率 $\omega$ 和振幅 $A$。
+### 案例 2：饱和放大器伺服（诊断"只在大幅度时振荡"）
 
-数值计算表明，在 $\omega \approx 3$ rad/s 处，$G(j\omega)$ 穿过负实轴，交点对应 $A \approx 0.5V$。这与实测振荡幅值吻合。
+这就是引言里那台伺服轴。环路：饱和（$k=1$，$a=1$）串 $G(s) = \dfrac{K}{s(s+1)(0.5s+1)}$，单位负反馈。等效线性环的特征方程是 $0.5s^3 + 1.5s^2 + s + KN(A) = 0$，Routh 判据给出稳定条件 $KN(A) < 3$；谐波平衡在 $\omega_0 = \sqrt2$ 处要求 $N(A) = 3/K$。
 
-**解决方案**：
-- 降低增益 $k$，使 Nyquist 曲线远离 $-1/N(A)$ 轨迹。
-- 加入超前校正，增加相位裕度。
-- 限制指令幅值，避免进入饱和区。
+- **$K = 6$**（线性环不稳定）：需要 $N = 0.5$。饱和的描述函数从 $k=1$ 单调降到 $0$，所以方程有唯一解 $A = 2.475414$。实测基波 $2.551004$（$+3.05\%$），周期 $4.5026$ s（$+1.34\%$），THD $0.0190$。**饱和把增益压下来，线性不稳定的环在大信号下自限于一个稳定极限环**——这就是"降增益振荡消失、跟踪变慢"的定量版本。
+- **$K = 2$**（线性环稳定，$K<3$）：需要 $N = 1.5 > k = 1$，**无解**。实测从 $e(0)=1$ 衰减，末段 $\lvert e\rvert$ 峰值 $0.036456$，没有极限环。
 
-### 案例 3：齿轮间隙导致的机械振荡
+于是设计结论有了明确的门槛：**$K<3$ 时不可能振荡**（$N\le k=1 \Rightarrow KN \le K < 3$）。这个门槛不是描述函数的近似结论，而是可以用圆判据严格证明的（见第 8 节与习题 6）。代价是带宽：$K$ 从 $6$ 降到 $2$ 意味着低频增益降 $3$ 倍。
 
-机器人关节的齿轮箱存在间隙（backlash），宽度 $2b = 0.02$ rad。位置控制环的增益较高时，关节出现低频抖动（约 5 Hz）。
+### 案例 3：反推设计（给指标解参数）
 
-**建模**：间隙非线性的描述函数为复数，虚部反映相位滞后。结合电机和负载的动力学模型 $G(s) = \frac{1}{Js^2 + Bs + K}$，其中 $J = 0.01$ kg·m²，$B = 0.5$ N·m·s/rad，$K = 100$ N·m/rad。
+描述函数也能反过来用。设计任务：用滞环继电器（$M=1$）和植物 $G(s) = \dfrac{K}{s(s+1)}$ 做一个 $f = 0.5$ Hz、幅值 $A = 1$ 的振荡器，求 $h$ 与 $K$。
 
-用谐波平衡条件预测极限环。数值计算表明，在 $\omega \approx 30$ rad/s（约 5 Hz）处存在稳定极限环，振幅 $A \approx 0.015$ rad，与实测一致。
+把案例 1 的两个闭式条件当方程组反解（$c = 4M/(\pi A) = 1.273240$）：
 
-**解决方案**：
-- 采用消隙齿轮或预紧机构，减小间隙宽度 $b$。
-- 降低控制带宽，避免激发间隙非线性。
-- 使用双环控制（位置环 + 速度环），提高阻尼。
+$$
+r = \frac{1}{\sqrt{1+\omega^2}} = 0.303314 \;\Rightarrow\; h = rA = 0.303314
+$$
 
-## 何时失效？
+$$
+K = \frac{\sqrt{1-r^2}}{c}\,(\omega^2+1) = 8.134795
+$$
 
-描述函数法是近似方法，以下情况可能失效：
+代回谐波平衡，残差 $\lvert NG+1\rvert = 2.3\times10^{-16}$（机器精度）。仿真验证：基波 $0.989195$（$-1.08\%$），周期 $1.9886$ s（$-0.57\%$），THD $0.0396$，$40$ s 内继电器只切换 $40$ 次，$\lvert e\rvert$ 首次超过 $0.9$ 的时刻是 $1.74$ s（起振时间）。
 
-### 1. 强非线性
+**三个参数定两个、反解第三个，误差不超过 $1.1\%$**——这是描述函数作为设计工具最有说服力的用法，也是它在继电器反馈整定（relay feedback autotuning）里被广泛使用的原因：做一次继电器反馈实验，测出振荡的 $A$ 和 $\omega$，就得到 $G(j\omega)$ 上的一个点，进而整定 PID。
 
-如果非线性很强（如继电器加积分器产生的滑动模态），高次谐波幅值很大，不能被线性部分充分衰减。此时需要保留更多谐波项（**多谐波平衡法**），或改用相平面法/数值仿真。
+<JupyterNotebook
+  title="Notebook 5：三个应用案例——预测、诊断、反推设计"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq, fsolve
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
-**判断标准**：检查高次谐波的能量占比。如果三次谐波能量超过基波的 10%，则一阶近似不可靠。
+SUMMARY = []
 
-### 2. 弱低通滤波
 
-如果线性部分 $G(s)$ 的高频增益衰减不足（如谐振峰尖锐），高次谐波会通过 $G(s)$ 反馈到输入端，破坏正弦假设。
+def sat(u, k=1.0, a=1.0):
+    return np.clip(k * u, -k * a, k * a)
 
-**判断标准**：$|G(j3\omega)|$ 应比 $|G(j\omega)|$ 小至少 10 倍（20dB）。如果不满足，需要增加低通滤波器或提高系统阶数。
 
-### 3. 时变非线性
+def hrelay(M, h):
+    st = {'s': -M}
 
-描述函数假设非线性是静态的（无记忆）。如果非线性随时问变化（如磨损导致的间隙增大），描述函数不再是 $A$ 的单值函数，方法失效。
+    def f(e):
+        if e > h:
+            st['s'] = M
+        elif e < -h:
+            st['s'] = -M
+        return st['s']
+    return f
 
-**处理方法**：用时变描述函数或数值仿真。
 
-### 4. 多变量非线性
+def N_rh(A, M=1.0, h=0.2):
+    if A <= h:
+        return 0j
+    return (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))
 
-如果系统中同时存在多个非线性环节（如饱和 + 死区），描述函数不再是标量，而是矩阵，计算复杂度大幅增加。此时需要用**增量描述函数**或数值方法。
 
-### 5. 混沌或拟周期运动
+def N_sat(A, k=1.0, a=1.0):
+    if A <= a:
+        return k + 0j
+    al = np.arcsin(a / A)
+    return (2 * k / np.pi) * (al + np.sin(al) * np.cos(al)) + 0j
 
-描述函数只能预测周期解（极限环），不能分析混沌、拟周期运动或多重吸引子共存的情况。这些现象需要用相空间重构、Lyapunov 指数等工具。
 
-## 与相平面法的比较
+def leak(G, w0, nmax=9):
+    return sum(abs(G(n * w0)) / n for n in range(3, nmax + 1, 2)) / abs(G(w0))
 
-| 特性 | 相平面法 | 描述函数法 |
-|------|----------|------------|
-| **适用系统** | 二阶自治系统 | 任意阶系统（需低通滤波） |
-| **精度** | 精确（全局相轨迹） | 近似（基波近似） |
-| **信息量** | 完整相轨迹、平衡点类型 | 仅极限环的 $(A, \omega)$ |
-| **可视化** | 相平面图（几何直观） | Nyquist 图（频域直观） |
-| **计算复杂度** | 低（数值积分） | 中（傅里叶积分 + Nyquist） |
-| **外部输入** | 不适用（自治系统） | 可处理正弦激励 |
 
-**互补使用**：对于二阶系统，先用相平面法获得全局视图，再用描述函数验证极限环参数。对于高阶系统，只能用描述函数。
+def sim(f, T, dt, K, Tc, x0, order):
+    x = np.array(x0, float)
+    n = int(round(T / dt))
+    ts = np.empty(n)
+    es = np.empty(n)
+    sw = 0
+    ulast = None
+    for k in range(n):
+        e = -x[0]
+        u = f(e)
+        if ulast is not None and u != ulast:
+            sw += 1
+        ulast = u
+        ts[k] = k * dt
+        es[k] = e
+        if order == 3:
+            x[2] += dt * (-(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * u)
+            x[1] += dt * x[2]
+            x[0] += dt * x[1]
+        else:
+            x[1] += dt * (-x[1] + K * u)
+            x[0] += dt * x[1]
+    return ts, es, sw
+
+
+def rise_crossings(ts, sig, t_from, dt):
+    m = np.where((sig[:-1] < 0) & (sig[1:] >= 0) & (ts[1:] >= t_from))[0]
+    return [ts[i] + dt * (-sig[i]) / (sig[i + 1] - sig[i]) for i in m]
+
+
+def measure(ts, sig, t_from, dt):
+    m = ts >= t_from
+    t, s = ts[m], sig[m]
+    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])
+          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]
+    zc = np.array(zc)
+    if len(zc) < 4:
+        return None
+    per = float(np.mean(np.diff(zc)))
+    w = 2 * np.pi / per
+    kk = len(zc) // 2
+    ta, tb = zc[kk], zc[-1]
+    mm = (t >= ta) & (t <= tb)
+    tt, ss = t[mm], s[mm]
+    A1 = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)
+    A2 = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)
+    amp = float(np.hypot(A1, A2))
+    harm = [float(np.hypot(2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta),
+                           2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)))
+            for nh in range(2, 8)]
+    return dict(per=per, w=w, amp=amp, thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))`}
+  cells={[
+    { code: `# 案例1（解析）：二阶植物 + 滞环继电器，谐波平衡闭式求解
+M, K2 = 1.0, 2.0
+G2 = lambda w: K2 / (1j * w * (1j * w + 1))
+print('闭式条件： w = sqrt(1-r^2)/r,  4MK r^3 = pi h sqrt(1-r^2),  r = h/A')
+print()
+print('%-6s %-10s %-10s %-10s %-9s %-9s %s' % ('h', 'r', 'A', 'w', 'f(Hz)', 'L(dB)', 'HB残差'))
+hb2 = {}
+for hh in (0.1, 0.2, 0.4):
+    rr = brentq(lambda r: 4 * M * K2 * r ** 3 - np.pi * hh * np.sqrt(1 - r ** 2), 1e-9, 1 - 1e-12)
+    A = hh / rr
+    w = np.sqrt(1 - rr ** 2) / rr
+    hb2[hh] = (A, w)
+    print('%-6.2f %-10.6f %-10.6f %-10.6f %-9.6f %-9.1f %.1e'
+          % (hh, rr, A, w, w / (2 * np.pi), 20 * np.log10(leak(G2, w)),
+             abs(N_rh(A, M, hh) * G2(w) + 1)))
+print()
+print('h: 0.10 -> 0.20 -> 0.40，f: %.4f -> %.4f -> %.4f Hz（滞环越宽，开关频率越低）'
+      % (hb2[0.1][1] / (2 * np.pi), hb2[0.2][1] / (2 * np.pi), hb2[0.4][1] / (2 * np.pi)))
+print('h: 0.10 -> 0.20 -> 0.40，A: %.4f -> %.4f -> %.4f（振幅同步变大）'
+      % (hb2[0.1][0], hb2[0.2][0], hb2[0.4][0]))` },
+    { code: `# 案例1（仿真）：二阶与三阶植物，预测 vs 实测
+G3b = lambda w: 2.0 / (1j * w * (1j * w + 1) * (0.1j * w + 1))
+fun = lambda v: [(N_rh(v[0], M, 0.2) * G3b(v[1]) + 1).real,
+                 (N_rh(v[0], M, 0.2) * G3b(v[1]) + 1).imag]
+sol, info, ier, msg = fsolve(fun, [0.6, 1.9], full_output=True)
+A3, w3 = float(sol[0]), float(sol[1])
+res = abs(fun([A3, w3])[0] + 1j * fun([A3, w3])[1])
+print('2/(s(s+1)(0.1s+1)): fsolve ier=%d, A=%.6f, w=%.6f, 残差=%.2e, L=%.1f dB'
+      % (ier, A3, w3, res, 20 * np.log10(leak(G3b, w3))))
+print()
+print('%-24s %-8s %-8s %-9s %-8s %-8s %-9s %s' % ('植物', '预测A', '实测A', '幅值误差', '预测T', '实测T', '周期误差', 'THD'))
+fig, axes = plt.subplots(2, 1, figsize=(9.0, 6.0))
+cases = [('2/(s(s+1))', 2.0, 1.0, 2, [-0.5, 0.0], hb2[0.2]),
+         ('2/(s(s+1)(0.1s+1))', 2.0, 0.1, 3, [-0.5, 0.0, 0.0], (A3, w3))]
+for ax, (nm, Kp, Tc, order, x0, pred) in zip(axes, cases):
+    Ap, wp = pred
+    Tp = 2 * np.pi / wp
+    ts, es, sw = sim(hrelay(M, 0.2), 80.0, 1e-4, Kp, Tc, x0, order)
+    r = measure(ts, es, 40.0, 1e-4)
+    print('%-24s %-8.4f %-8.4f %+7.2f%%  %-8.4f %-8.4f %+7.2f%%  %.4f'
+          % (nm, Ap, r['amp'], (r['amp'] / Ap - 1) * 100, Tp, r['per'],
+             (r['per'] / Tp - 1) * 100, r['thd']))
+    SUMMARY.append(dict(case='案例1 ' + nm, pred=Ap, meas=r['amp'],
+                        ea=(r['amp'] / Ap - 1) * 100, Tp=Tp, Tm=r['per'],
+                        et=(r['per'] / Tp - 1) * 100, thd=r['thd']))
+    t0 = rise_crossings(ts, es, 70.0, 1e-4)[0]
+    msk = (ts >= t0) & (ts <= t0 + 3 * Tp)
+    tt = ts[msk] - t0
+    ax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')
+    ax.plot(tt, Ap * np.sin(wp * tt), color='#dc2626', lw=1.2, ls='--',
+            label='pred A sin(wt)')
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('e')
+    ax.set_title(nm + ' : hysteresis relay M=1 h=0.2 K=2', fontsize=11)
+    ax.legend(fontsize=9)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 案例2：饱和放大器伺服 —— K=6 有极限环，K=2 无解且衰减
+G3 = lambda w: 1.0 / (1j * w * (1j * w + 1) * (0.5j * w + 1))
+print('等效线性环特征方程 0.5s^3 + 1.5s^2 + s + K N(A)；Routh 稳定条件 K N(A) < 3')
+print('谐波平衡在 w0 = sqrt(2) 处要求 N(A) = 3/K；饱和的最大增益是 k = 1')
+print()
+fig, axes = plt.subplots(1, 2, figsize=(10.0, 3.4))
+for ax, K in zip(axes, (6.0, 2.0)):
+    tgt = 3.0 / K
+    if tgt > 1.0:
+        print('K=%.1f: 需要 N=%.3f > 1 -> 无解，预测不振荡' % (K, tgt))
+        ts, es, sw = sim(lambda e: sat(e, 1, 1), 40.0, 1e-4, K, 0.5, [-1.0, 0.0, 0.0], 3)
+        pk = float(np.max(np.abs(es[ts >= 30])))
+        print('       仿真: 末段 |e| 峰值 = %.6f (t>=30 s)' % pk)
+        SUMMARY.append(dict(case='案例2 K=2 (线性稳定)', pred=0.0, meas=pk,
+                            ea=0.0, Tp=0.0, Tm=0.0, et=0.0, thd=0.0))
+        msk = ts <= 15
+        ax.plot(ts[msk], es[msk], color='#2563eb', lw=1.4)
+        ax.set_title('K=2: no limit cycle, |e| -> %.4f' % pk, fontsize=11)
+    else:
+        Ap = brentq(lambda A: N_sat(A).real - tgt, 1.0 + 1e-9, 50.0)
+        wp = np.sqrt(2.0)
+        Tp = 2 * np.pi / wp
+        print('K=%.1f: 需要 N=%.3f -> A=%.6f, w0=%.6f (线性环不稳定, K>3)' % (K, tgt, Ap, wp))
+        ts, es, sw = sim(lambda e: sat(e, 1, 1), 80.0, 1e-4, K, 0.5, [-0.2, 0.0, 0.0], 3)
+        r = measure(ts, es, 50.0, 1e-4)
+        print('       仿真: 基波 %.6f (%+.2f%%), 周期 %.4f (%+.2f%%), THD %.4f'
+              % (r['amp'], (r['amp'] / Ap - 1) * 100, r['per'],
+                 (r['per'] / Tp - 1) * 100, r['thd']))
+        SUMMARY.append(dict(case='案例2 K=6 (线性不稳定)', pred=Ap, meas=r['amp'],
+                            ea=(r['amp'] / Ap - 1) * 100, Tp=Tp, Tm=r['per'],
+                            et=(r['per'] / Tp - 1) * 100, thd=r['thd']))
+        t0 = rise_crossings(ts, es, 70.0, 1e-4)[0]
+        msk = (ts >= t0) & (ts <= t0 + 2 * Tp)
+        ax.plot(ts[msk] - t0, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')
+        ax.plot(ts[msk] - t0, Ap * np.sin(wp * (ts[msk] - t0)), color='#dc2626',
+                lw=1.2, ls='--', label='pred A sin(wt)')
+        ax.legend(fontsize=9)
+        ax.set_title('K=6: limit cycle, pred A=%.4f meas %.4f' % (Ap, r['amp']), fontsize=11)
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('e')
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 案例3：反推设计 —— 目标 A=1, f=0.5 Hz (w=pi), M=1, 植物 K/(s(s+1))
+Mt, At, wt = 1.0, 1.0, np.pi
+ct = 4 * Mt / (np.pi * At)
+rt = 1.0 / np.sqrt(1 + wt ** 2)
+hd = rt * At
+Kd = (np.sqrt(1 - rt ** 2) / ct) * (wt ** 2 + 1)
+Gd = lambda w: Kd / (1j * w * (1j * w + 1))
+print('目标: A = %.2f, w = pi = %.6f rad/s (f = 0.5 Hz), M = %.1f' % (At, wt, Mt))
+print('  r = h/A = 1/sqrt(1+w^2) = %.6f  ->  h = %.6f' % (rt, hd))
+print('  c = 4M/(piA) = %.6f;  K/(w^2+1) = sqrt(1-r^2)/c  ->  K = %.6f' % (ct, Kd))
+print('  HB 残差 |N G + 1| = %.2e   L = %.1f dB'
+      % (abs(N_rh(At, Mt, hd) * Gd(wt) + 1), 20 * np.log10(leak(Gd, wt))))
+ts, es, sw = sim(hrelay(Mt, hd), 40.0, 1e-4, Kd, 1.0, [-0.6, 0.0], 2)
+r = measure(ts, es, 20.0, 1e-4)
+t_on = float(ts[np.argmax(np.abs(es) > 0.9)])
+print('  仿真: 基波 %.6f (%+.2f%%), 周期 %.6f s (%+.2f%%), THD %.4f'
+      % (r['amp'], (r['amp'] / At - 1) * 100, r['per'], (r['per'] / 2.0 - 1) * 100, r['thd']))
+print('  |e| 首次超过 0.9 的时刻 = %.2f s; 40 s 内继电器切换 %d 次' % (t_on, sw))
+SUMMARY.append(dict(case='案例3 反推设计 (A=1, f=0.5Hz)', pred=At, meas=r['amp'],
+                    ea=(r['amp'] / At - 1) * 100, Tp=2.0, Tm=r['per'],
+                    et=(r['per'] / 2.0 - 1) * 100, thd=r['thd']))
+fig, ax = plt.subplots(figsize=(9.0, 3.2))
+t0 = rise_crossings(ts, es, 20.0, 1e-4)[0]
+msk = (ts >= t0) & (ts <= t0 + 4.0)
+tt = ts[msk] - t0
+ax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')
+ax.plot(tt, At * np.sin(wt * tt), color='#dc2626', lw=1.2, ls='--', label='target sin(pi t)')
+ax.set_xlabel('t (s)')
+ax.set_ylabel('e')
+ax.set_title('Design by describing function: h=%.4f, K=%.4f' % (hd, Kd), fontsize=11)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 三个案例汇总：预测 vs 实测
+print('%-32s %-8s %-8s %-9s %-8s %-8s %-9s %s'
+      % ('案例', '预测A', '实测A', '幅值误差', '预测T', '实测T', '周期误差', 'THD'))
+for d in SUMMARY:
+    if d['pred'] == 0.0:
+        print('%-32s 无极限环：预测不振荡，仿真末段 |e| 峰值 %.6f' % (d['case'], d['meas']))
+    else:
+        print('%-32s %-8.4f %-8.4f %+7.2f%%  %-8.4f %-8.4f %+7.2f%%  %.4f'
+              % (d['case'], d['pred'], d['meas'], d['ea'], d['Tp'], d['Tm'], d['et'], d['thd']))
+ea = [abs(d['ea']) for d in SUMMARY if d['pred'] > 0]
+et = [abs(d['et']) for d in SUMMARY if d['pred'] > 0]
+print()
+print('有极限环的四个算例：幅值误差最大 %.2f%%，周期误差最大 %.2f%%，THD 最大 %.4f'
+      % (max(ea), max(et), max(d['thd'] for d in SUMMARY if d['pred'] > 0)))
+print('这些环路的 L 都在 -25 dB 以下 —— 与引言的定价表一致。')` }
+  ]}
+/>
+
+*图（Notebook 5）：上——两个滞环继电器振荡器的仿真波形与预测正弦叠加；中——饱和伺服在 $K=6$（有极限环）与 $K=2$（衰减到零）的对照；下——反推设计得到的 $0.5$ Hz 振荡器与目标正弦。*
+## 何时失效
+
+四种失效模式，每一种都配实测数字。共同的根源只有一句话：**描述函数把"非线性环节的输入是正弦"当前提，而它自己算出来的解可能破坏这个前提。**
+
+### 失效一：$3\omega_0$ 附近有谐振峰
+
+构造一个"最坏情况"：把第 4 节手算例的 $G_3(s)$ 串上一个 $\zeta = 0.02$、$\omega_r = 3\sqrt2$ 的二阶谐振峰（工程上对应结构模态、电源谐振、传动轴扭振）。数值解 $\operatorname{Im}G = 0$ 得 $\omega_0 = 1.3922$，$G(j\omega_0) = -0.385361$，$A_0 = 0.490657$。此时
+
+$$
+\left\lvert \frac{G(j3\omega_0)}{G(j\omega_0)} \right\rvert = 1.249 \;(+1.9\ \mathrm{dB}), \qquad L = 0.418\;(-7.6\ \mathrm{dB})
+$$
+
+**三次谐波被放大 $25\%$ 而不是被衰减。**仿真结果：实测基波 $0.5794$（$+18.1\%$），周期 $4.9689$ s（$+10.1\%$），THD $0.113$。机理很清楚：被放大的三次谐波回到非线性输入端，$e(t)$ 自己就不是正弦了（THD $11\%$），$N(A)$ 的定义前提被解本身破坏。
+
+**缓解手段的实测价格**：把谐振阻尼从 $\zeta = 0.02$ 提到 $0.2$，$L$ 从 $-7.6$ dB 降到 $-24.6$ dB，幅值误差从 $+18.1\%$ 降到 $+8.7\%$，周期误差 $+5.0\%$，THD 从 $0.1127$ 降到 $0.0550$。代价有两条：振荡频率从 $1.3922$ 移到 $1.2360$ rad/s（$-11.2\%$），以及现实中要真的加阻尼器或陷波滤波器。注意阻尼加大后误差仍有 $8.7\%$，因为 $\omega_r/\omega_0$ 只从 $3.05$ 变到 $3.43$，谐振峰还在三倍频附近——**要真正修好，得让 $\omega_r/\omega_0$ 远离所有奇次谐波**。
+
+### 失效二：$G(j\omega)$ 整段落在负实轴上（周期解族）
+
+继电器串双积分器：$G(j\omega) = -1/\omega^2$ 对一切 $\omega$ 都是负实数，而 $-1/N(A) = -\pi A/(4M)$ 也在负实轴上——**两条轨迹整段重合**。谐波平衡退化成 $\omega^2 = 4M/(\pi A)$：每个 $A$ 都配一个 $\omega$，解不是孤立的一点而是一族。
+
+仿真三个初值 $a_0 = 0.5,\,1.0,\,2.0$（峰值就等于初值），实测：
+
+| $a_0$ | 峰值 $A_p$ | 基波 $A_1$ | 周期实测 | $T=\pi\sqrt{\pi A_1/M}$ | $T=4\sqrt{2A_p/M}$ |
+| --- | --- | --- | --- | --- | --- |
+| $0.5$ | $0.500000$ | $0.516025$ | $4.000000$ | $4.000000$ | $4.000000$ |
+| $1.0$ | $1.000000$ | $1.032029$ | $5.656800$ | $5.656800$ | $5.656854$ |
+| $2.0$ | $2.000000$ | $2.064098$ | $8.000000$ | $8.000000$ | $8.000000$ |
+
+两个公式都与实测吻合到 $10^{-5}$ 相对误差以内。这不是巧合：这条轨道的基波与峰值之比实测为 $A_1/A_p = 1.032029\sim1.032049$，而 $32/\pi^3 = 1.032049$（相对差 $1.9\times10^{-5}$，来自仿真步长；习题 5 要求证明这个恒等式），代入得 $\pi\sqrt{\pi\cdot 32/\pi^3} = \sqrt{32} = 4\sqrt2$，两个式子恒等。
+
+**但周期对了不等于方法成功了**：$T \propto \sqrt{A}$ 说明振幅完全由初值决定，系统参数只决定比例系数。描述函数在这里"公式对、振幅无意义"——它无法告诉你实际会振多大，因为答案取决于扰动历史。这与线性系统里的中心是同一种病，只有相平面能一眼看穿（第 8 节）。工程上真实的位置伺服总有额外极点，所以这个失效模式通常表现为"振幅对初值极其敏感、对增益极其不敏感"这种反常现象。
+
+### 失效三：环路阶数不足 → 滑动与抖振
+
+继电器串纯积分器：$G(j\omega) = -j/\omega$ 永远不在实轴上，谐波平衡无解，描述函数判"没有极限环"。仿真的真相是：$e$ 在 $1$ s 内到达 $0$，此后继电器抖振——dt $=10^{-3}$ 时 $2$ s 内切换 $1000$ 次，dt $=10^{-4}$ 时切换 $9999$ 次，切换频率 $\approx 1/(2\,dt)$ 随步长发散。**这不是有限频率的周期解，是滑动模态。**
+
+再看无滞环继电器串 $2/(s(s+1))$（$K=2$）：同样无谐波平衡解。仿真末段 $\lvert e\rvert$ 峰值 $7.2\times10^{-5}$（$30$ s 内 $1159$ 次切换，其中末 $5$ s 占 $294$ 次）；把 dt 从 $10^{-4}$ 减到 $5\times10^{-5}$，末 $5$ s 切换升到 $480$ 次、峰值降到 $2.7\times10^{-5}$——**误差随步长趋零、切换频率随步长发散**，判据与上面一致。
+
+描述函数的结论（无极限环）是对的，但它给不出工程师最关心的两个数：稳态误差有多小、执行器每秒动作多少次（后者直接决定继电器与接触器的寿命）。这类问题要交给滑模理论，见 [滑模控制](/nonlinear/sliding-mode-control)。反过来，案例 1 的滞环正是工程上抑制抖振的手段：加 $h=0.2$ 之后切换频率被钉死在 $0.349$ Hz，代价是振幅不可能小于 $h$（$A>h$ 才有 $N\neq0$）。
+
+### 失效四：结构性盲区（串联、平衡点、时变、多变量）
+
+- **串联不可相乘**：Notebook 2 实测"死区($0.3$) 串饱和($1$)"在 $A=1.5$ 处乘积近似错 $15.4\%$。正确做法是把组合映射 $f_2(f_1(u))$ 当成**一个**静态非线性做傅里叶积分。
+- **看不见平衡点与吸引域**：死区加积分的环路有一整段连续平衡点，Notebook 4 实测冻点非单调（$e(0)=0.40 \to 0.0791$，$e(0)=0.60 \to 0.2597$）。描述函数只假设一个正弦，既给不出平衡点也给不出吸引域；起振阈值只能靠仿真二分（实测 $0.6735$，对预测 $A_1 = 0.6569$ 差 $2.5\%$）。
+- **时变参数、多频激励、混沌**：本课未测，给结构性理由。$N(A)$ 的定义要求 $f$ 静态、周期化后单值、输入恰为单一正弦。参数慢时变时可用"冻结时间"逐点近似（见 [自适应控制基础](/nonlinear/adaptive-control-basics)）；快时变、多频激励或混沌下 $N(A)$ 不再是良定义的量，只能改用多谐波平衡或直接仿真。
+- **多变量**：$N$ 变成矩阵、$-1/N$ 变成轨迹族，判据也随之复杂化，超出本课范围（见 [多变量系统分析](/modern/multivariable-systems)）。
+
+<JupyterNotebook
+  title="Notebook 6：四种失效模式的实测证据"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+
+def leak(G, w0, nmax=9):
+    return sum(abs(G(n * w0)) / n for n in range(3, nmax + 1, 2)) / abs(G(w0))
+
+
+def measure(ts, sig, t_from, dt):
+    m = ts >= t_from
+    t, s = ts[m], sig[m]
+    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])
+          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]
+    zc = np.array(zc)
+    if len(zc) < 4:
+        return None
+    per = float(np.mean(np.diff(zc)))
+    w = 2 * np.pi / per
+    kk = len(zc) // 2
+    ta, tb = zc[kk], zc[-1]
+    mm = (t >= ta) & (t <= tb)
+    tt, ss = t[mm], s[mm]
+    A1 = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)
+    A2 = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)
+    amp = float(np.hypot(A1, A2))
+    harm = [float(np.hypot(2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta),
+                           2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)))
+            for nh in range(2, 8)]
+    return dict(per=per, w=w, amp=amp, peak=float(np.max(np.abs(ss))),
+                h3=harm[1] / amp,
+                thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))
+
+
+def sim_res(zeta, T=120.0, dt=1e-4):
+    wr = 3 * np.sqrt(2)
+    den = np.polymul([0.5, 1.5, 1.0, 0.0], [1.0, 2 * zeta * wr, wr ** 2])
+    num = [wr ** 2]
+    p = np.zeros(3)
+    q = np.zeros(2)
+    n = int(round(T / dt))
+    ts = np.empty(n)
+    es = np.empty(n)
+    for k in range(n):
+        e = -q[0]
+        u = 1.0 if e > 0 else -1.0
+        ts[k] = k * dt
+        es[k] = e
+        p[2] += dt * (-3.0 * p[2] - 2.0 * p[1] + 2.0 * u)
+        p[1] += dt * p[2]
+        p[0] += dt * p[1]
+        q[1] += dt * (-2 * zeta * wr * q[1] - wr ** 2 * q[0] + wr ** 2 * p[0])
+        q[0] += dt * q[1]
+    return ts, es, num, den, wr
+
+
+def sim_di(a0, T=40.0, dt=1e-4, M=1.0):
+    x = np.array([a0, 0.0])
+    n = int(round(T / dt))
+    ts = np.empty(n)
+    es = np.empty(n)
+    vs = np.empty(n)
+    for k in range(n):
+        e = x[0]
+        u = M if e > 0 else -M
+        ts[k] = k * dt
+        es[k] = e
+        vs[k] = x[1]
+        x[1] += dt * (-u)
+        x[0] += dt * x[1]
+    return ts, es, vs`}
+  cells={[
+    { code: `# 失效一：三次谐波处的谐振峰（zeta = 0.02）与它的缓解（zeta = 0.2）
+fig, axes = plt.subplots(1, 2, figsize=(11.0, 3.6))
+for ax, zeta in zip(axes, (0.02, 0.2)):
+    ts, es, num, den, wr = sim_res(zeta)
+    dt = 1e-4
+    G = lambda w: np.polyval(num, 1j * w) / np.polyval(den, 1j * w)
+    ws = np.linspace(0.2, 3.0, 20001)
+    im = np.array([G(w).imag for w in ws])
+    ix = np.where(np.sign(im[:-1]) != np.sign(im[1:]))[0]
+    w0 = ws[ix[0]]
+    g0 = G(w0)
+    A0 = 4 * abs(g0) / np.pi
+    ratio = abs(G(3 * w0) / g0)
+    L = leak(G, w0)
+    r = measure(ts, es, 60.0, dt)
+    print('zeta = %.2f: w0=%.4f (wr/w0=%.2f), G(jw0)=%.6f, 预测 A0=%.6f' % (zeta, w0, wr / w0, g0.real, A0))
+    print('   |G(j3w0)/G(jw0)| = %.3f (%+.1f dB),  L = %.4f (%+.1f dB)'
+          % (ratio, 20 * np.log10(ratio), L, 20 * np.log10(L)))
+    print('   实测: 基波 %.6f (%+.1f%%), 周期 %.4f (%+.1f%%), THD %.4f, 3次/1次 %.4f'
+          % (r['amp'], (r['amp'] / A0 - 1) * 100, r['per'],
+             (r['per'] / (2 * np.pi / w0) - 1) * 100, r['thd'], r['h3']))
+    zc = [ts[i - 1] + dt * (-es[i - 1]) / (es[i] - es[i - 1])
+          for i in range(1, len(es)) if es[i - 1] < 0 <= es[i] and ts[i] >= 100.0]
+    t0 = zc[0]
+    msk = (ts >= t0) & (ts <= t0 + 2 * r['per'])
+    tt = ts[msk] - t0
+    ax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')
+    ax.plot(tt, A0 * np.sin(r['w'] * tt), color='#dc2626', lw=1.2, ls='--',
+            label='pred A0 sin(w t)')
+    ax.set_title('zeta=%.2f: L=%.1f dB, err=%+.1f%%, THD=%.3f'
+                 % (zeta, 20 * np.log10(L), (r['amp'] / A0 - 1) * 100, r['thd']), fontsize=11)
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('e')
+    ax.legend(fontsize=9)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+print()
+print('加大阻尼把 L 从 -7.6 dB 压到 -24.6 dB，误差从 +18.1% 降到 +8.7%；')
+print('但 wr/w0 只从 3.05 变到 3.43，谐振峰仍在三倍频附近，所以修不彻底。')` },
+    { code: `# 失效二：双积分器 + 继电器 —— 周期解族，T 正比于 sqrt(A)
+print('G(jw) = -1/w^2 恒为负实数，-1/N(A) = -pi A/(4M) 也在负实轴上：两条轨迹整段重合')
+print()
+print('%-6s %-9s %-9s %-9s %-13s %-13s %s'
+      % ('a0', '峰值Ap', '基波A1', '周期实测', 'DF pi*sqrt(pi*A1)', '精确 4*sqrt(2Ap)', 'A1/Ap'))
+fig, ax = plt.subplots(figsize=(6.4, 5.6))
+cols = ['#2563eb', '#dc2626', '#16a34a']
+ratios = []
+for c, a0 in zip(cols, (0.5, 1.0, 2.0)):
+    ts, es, vs = sim_di(a0)
+    r = measure(ts, es, 10.0, 1e-4)
+    Tdf = np.pi * np.sqrt(np.pi * r['amp'])
+    Tex = 4 * np.sqrt(2 * r['peak'])
+    ratios.append(r['amp'] / r['peak'])
+    print('%-6.1f %-9.6f %-9.6f %-9.6f %-13.6f %-13.6f %.6f'
+          % (a0, r['peak'], r['amp'], r['per'], Tdf, Tex, r['amp'] / r['peak']))
+    msk = (ts >= 20) & (ts <= 20 + 2 * r['per'])
+    ax.plot(es[msk], vs[msk], color=c, lw=1.4, label='a0=%.1f, T=%.4f s' % (a0, r['per']))
+ax.plot([0], [0], 'kx', ms=10, markeredgewidth=2)
+ax.set_xlabel('e')
+ax.set_ylabel('de/dt')
+ax.set_title('Relay + double integrator: a family, not one cycle', fontsize=11)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+print()
+print('基波/峰值比实测 = %.6f ~ %.6f，32/pi^3 = %.6f（最大相对差 %.1e）'
+      % (min(ratios), max(ratios), 32 / np.pi ** 3,
+         max(abs(v - 32 / np.pi ** 3) / (32 / np.pi ** 3) for v in ratios)))
+print('代入 A1 = (32/pi^3) Ap：pi*sqrt(pi*32/pi^3) = sqrt(32) = 4*sqrt(2)，两式恒等。')
+print('结论：周期公式对，振幅由初值决定 —— DF 在这里给不出"系统会振多大"。')` },
+    { code: `# 失效三：滑动与抖振 —— 切换频率随 dt 发散
+print('(a) 继电器 + 1/s：G = -j/w 永不落在实轴上，HB 无解')
+for dt in (1e-3, 1e-4):
+    e, sw, ulast = 1.0, 0, None
+    for k in range(int(round(2.0 / dt))):
+        u = 1.0 if e > 0 else -1.0
+        if ulast is not None and u != ulast:
+            sw += 1
+        ulast = u
+        e += dt * (-u)
+    print('    dt=%.0e: 2 s 内切换 %d 次（平均切换周期 %.1e s），|e| 末值 %.1e'
+          % (dt, sw, 2.0 / sw, abs(e)))
+print()
+print('(b) 无滞环继电器 + 2/(s(s+1)), K=2：同样无 HB 解')
+for dt in (1e-4, 5e-5):
+    x = np.array([-0.5, 0.0])
+    n = int(round(30.0 / dt))
+    ts = np.empty(n)
+    es = np.empty(n)
+    sw, ulast = 0, None
+    for k in range(n):
+        e = -x[0]
+        u = 1.0 if e > 0 else -1.0
+        if ulast is not None and u != ulast and k * dt >= 25.0:
+            sw += 1
+        ulast = u
+        ts[k] = k * dt
+        es[k] = e
+        x[1] += dt * (-x[1] + 2.0 * u)
+        x[0] += dt * x[1]
+    print('    dt=%.0e: 末段 |e| 峰值 %.2e (t>=20 s)，末 5 s 切换 %d 次（平均周期 %.2e s）'
+          % (dt, float(np.max(np.abs(es[ts >= 20]))), sw, 5.0 / sw))
+print()
+print('dt 减半：误差 7.2e-05 -> 2.7e-05（趋零），切换 294 -> 480 次（发散）=> 滑动模态。')
+print('DF 判"无极限环"是对的，但它给不出稳态误差和每秒切换次数这两个工程指标。')` },
+    { code: `# 失效模式清单：每条都对应一个可计算的判据与本课的实测数字
+rows = [('谐振峰在 3w0 附近', 'L 与 wr/w0', 'L=-7.6 dB, wr/w0=3.05 -> 误差 +18.1%, THD 0.113',
+         '加阻尼/陷波: zeta=0.2 时 L=-24.6 dB, 误差 +8.7%; 频率 -11.2%'),
+        ('G(jw) 整段在负实轴', 'G 的相位是否恒为 -180deg',
+         '双积分器: T 正比 sqrt(A), 三个初值三条轨道',
+         '用相平面判孤立性; 加极点/阻尼让相位随 w 变化'),
+        ('环路阶数不足', 'HB 无解但仿真误差趋零',
+         '切换 1000 次(dt=1e-3) -> 9999 次(dt=1e-4) / 2 s',
+         '改用滑模理论; 或加滞环把频率钉在 0.349 Hz(代价 A>h)'),
+        ('多个非线性串联', 'N 是否可乘', 'A=1.5 处乘积近似错 15.4%',
+         '把组合映射当一个非线性做傅里叶积分'),
+        ('死区 + 积分（连续平衡点）', '是否存在平衡点段',
+         '冻点非单调 0.0791 / 0.2597; 阈值初值只能仿真二分得 0.6735',
+         '相平面 + 初值扫描; DF 无法给吸引域'),
+        ('参数时变 / 多频 / 混沌', 'f 是否静态单值',
+         '本课未测（定义层面失效）', '多谐波平衡或直接仿真; 慢时变可冻结时间')]
+print('%-22s %-20s %-44s %s' % ('失效模式', '判据', '本课实测', '缓解手段与价格'))
+for a, b, c, d in rows:
+    print('%-22s %-20s %-44s %s' % (a, b, c, d))
+print()
+print('一句话总结：L < -25 dB 且 G 的相位随 w 单调变化且非线性只有一个 => DF 可信到百分之几；')
+print('          任一条不满足，DF 的结论必须用仿真或相平面复核。')` }
+  ]}
+/>
+
+*图（Notebook 6）：左/中——谐振阻尼 $\zeta=0.02$ 与 $0.2$ 的仿真波形对预测正弦；右——双积分器继电环的相平面：三条初值不同的闭合轨道，说明周期解不孤立。*
+## 与其他非线性方法的接口
+
+描述函数在非线性工具箱里的位置很特殊：**它是唯一"频域 + 代数"的方法**，所以便宜、能手算、还能反推设计；代价是它只回答"有没有周期解、多大、多快"，不回答"全局稳不稳"、"吸引域多大"、"参数摄动下还成立吗"。
+
+| 方法 | 适用阶数 | 给出什么 | 代价 | 与本课的关系 |
+| --- | --- | --- | --- | --- |
+| 相平面 | 二阶自治 | 全局相图、平衡点分类、极限环孤立性 | 只能二阶（高维需降维） | 失效二（解族）与失效四（连续平衡点）在相平面上一眼可见，见 [相平面分析](/nonlinear/phase-plane) |
+| Lyapunov | 任意阶 | 严格的稳定性证明、吸引域估计 | 找函数靠技巧；**不给周期解参数** | 判"没有振荡"的严格工具；DF 只能判"没有谐波平衡解"，见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability) |
+| 圆判据 / 被动性 | 任意阶 | 扇区非线性下"全局无周期解"的**充分条件** | 保守；要求扇区条件 | 案例 2 的 $K<3$ 正是圆判据与 Routh 重合的实例（习题 6） |
+| 滑模 | 任意阶 | 有限时间收敛、抖振的定量刻画 | 抖振伤执行器 | 失效三是 DF 的盲区、滑模的主场，见 [滑模控制](/nonlinear/sliding-mode-control) |
+| 反馈线性化 / 反步 / 自适应 | 任意阶 | 控制器（不只是分析） | 需要模型结构已知 | DF 只做预测不做设计；工程上先用 DF 找出振荡边界，再决定要不要换设计方法 |
+
+**圆判据与案例 2 的严格版本**：饱和（$k=1$，$a=1$）满足扇区条件 $0 \le f(u)/u \le 1$，即落在扇区 $[0,1]$ 内。圆判据说：若 $G$ 无右半平面极点，且其 Nyquist 曲线不包围 $-1/k = -1$，则闭环全局渐近稳定（从而不可能有周期解）。对 $G = K/(s(s+1)(0.5s+1))$，Nyquist 只在 $\omega_0=\sqrt2$ 处穿越负实轴，穿越点是 $-K/3$，所以"不包围 $-1$" $\Leftrightarrow$ $K<3$——**与 Routh 判据逐字相同**。这条定理比描述函数强得多：$K<3$ 时不只是"没有谐波平衡解"，而是"从任何初值出发都收敛到零，不存在任何周期解"。
+
+反过来，$K=6$ 时圆判据的充分条件不成立，它只能说"不能排除周期解"——既不能证明存在也不能证明不存在。这时候才轮到描述函数：它给出 $A = 2.4754$、$\omega = \sqrt2$，实测 $2.5510$（$+3.05\%$）。**分工很清楚：严格工具证"无"，近似工具找"有"。**
+
+## 局限性讨论
+
+| 局限 | 机理 | 本课实测证据 | 缓解手段与价格 |
+| --- | --- | --- | --- |
+| 滤波假设失效 | $3\omega_0$ 附近的谐振峰把三次谐波放大后送回非线性输入端 | $L=-7.6$ dB、$\lvert G(j3\omega_0)/G(j\omega_0)\rvert=1.249$ 时误差 $+18.1\%$、THD $0.1127$ | 加阻尼/陷波：$\zeta$ 从 $0.02$ 到 $0.2$ 把误差压到 $+8.7\%$，代价是频率 $-11.2\%$ 且需硬件 |
+| 泄漏指标不是保证 | 谐波还会移动继电器的切换时刻（相位效应），THD 小不代表幅值准 | $L=-27.9$ dB、THD $0.0332$ 时误差仍达 $+10.58\%$ | 让 $\omega_0$ 远离所有极点零点（本例把 $T_c$ 从 $0.05$ 加大到 $0.5$，误差 $10.58\%\to4.87\%$）；代价是带宽 |
+| 只预测孤立周期解 | 若 $G(j\omega)$ 整段落在 $-1/N$ 轨迹上，谐波平衡退化为恒等式 | 双积分器：三个初值给出三条轨道，$T\propto\sqrt{A}$ | 用相平面/Poincaré 截面判孤立性；代价是仅适用二阶或需降维 |
+| 看不见平衡点与吸引域 | DF 只假设一个正弦，不含常数解 | 死区+积分：冻点非单调（$0.0791$ / $0.2597$），起振阈值只能仿真二分得 $0.6735$ | 相平面 + 初值扫描；代价是每个初值一次仿真（本课二分 $14$ 次，每次 $60$ s） |
+| 抖振/滑动下无定义 | 切换频率 $\propto 1/dt$，不存在有限频率周期解 | 继电器+$1/s$：$2$ s 内切换 $1000$ 次（dt$=10^{-3}$）$\to9999$ 次（dt$=10^{-4}$） | 改用滑模理论，或加滞环把频率钉死（$h=0.2 \Rightarrow f=0.349$ Hz）；代价是振幅不可能小于 $h$ |
+| 串联不可相乘 | 第一个环节的输出已非正弦，第二个环节的 DF 前提失效 | 死区($0.3$)串饱和($1$)在 $A=1.5$ 处乘积近似错 $15.4\%$ | 把 $f_2(f_1(u))$ 当一个静态非线性做傅里叶积分；代价是失去闭式 |
+| 时变 / 多频 / 混沌 / 多变量 | $N(A)$ 的定义要求 $f$ 静态、周期化后单值、输入为单一正弦 | **本课未测**（定义层面失效，没有可比的仿真基准） | 慢时变用"冻结时间"逐点近似；其余用多谐波平衡或直接仿真 |
+
+最后一行必须诚实标注：前六条都有本课的实测数字支撑，第七条是定义层面的结论，本课没有做实验。
 
 ## 小结
 
-描述函数法将非线性环节近似为"基波增益" $N(A)$，通过谐波平衡条件 $G(j\omega) = -1/N(A)$ 预测极限环的振幅和频率。关键要点：
+描述函数把非线性环节换成一个"随振幅变化的增益" $N(A)$，于是极限环的预测变成 Nyquist 图上两条曲线的交点问题。
 
-- **物理意义**：描述函数是非线性环节对正弦输入的基波响应，类似于线性系统的频率响应，但依赖振幅而非频率。
-- **常见非线性**：继电器（实数）、饱和（实数）、死区（实数）、间隙（复数）都有标准公式。
-- **稳定性判据**：在 Nyquist 图上，沿 $A$ 增大方向，若 $G(j\omega)$ 从左侧穿过 $-1/N(A)$，则极限环稳定。
-- **局限性**：要求线性部分有良好低通特性，不适用于强非线性、时变非线性或混沌系统。
+- **定义与惯例**：输入 $u = A\sin\omega t$ 时 $N(A) = (b_1 + ja_1)/A$；奇对称无记忆非线性的 $N$ 是**实数**，带记忆（滞环、间隙）的虚部为负。$A$ 是**非线性环节输入端**的幅值。五个闭式全部对 $40000$ 点傅里叶积分核过：光滑情形偏差 $10^{-9}$，含跳变情形 $10^{-4}$。
+- **谐波平衡**：$N(A)G(j\omega) = -1$，即 $G(j\omega) = -1/N(A)$。$-1/N$ 轨迹的方向（$A$ 增大向左）必须画对，否则稳定性判据整个读反。
+- **稳定性判据**：交点处 $A\uparrow$ 若使 $-1/N$ 进入"不被包围"侧则极限环稳定；等效增益语言下就是"$N(A)$ 当增益时闭环仍稳定"。双交点算例中升支交点 $A_1=0.6569$ 不稳定（吸引域边界，仿真二分得 $0.6735$，差 $2.5\%$），降支 $A_2=2.8348$ 稳定（实测 $2.9070$，差 $2.5\%$）。
+- **精度定价**：$L<-25$ dB 时，四个算例的幅值误差最大 $3.05\%$、周期误差最大 $1.67\%$、THD 最大 $0.0413$；$L=-7.6$ dB 时幅值误差 $+18.1\%$、THD $0.1127$，方法不可用。
+- **失效模式**：谐振峰、周期解族、滑动抖振、串联与平衡点盲区——每一种都有实测数字与缓解手段的价格。
+- **三种用法**：正向预测（案例 1）、诊断（案例 2 的 $K<3$ 门槛）、反推设计（案例 3 解出 $h=0.303314$、$K=8.134795$，实测偏差 $1.08\%$）。继电器反馈自整定就是第三种用法的工业化版本。
 
-> 🔗 下一课 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability) 将从能量角度分析非线性系统的稳定性，不依赖正弦假设，适用于更广泛的场景。
+> 🔗 描述函数只能判"有没有周期解"，判不了全局稳定与吸引域。下一课 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability) 用能量函数给出严格结论；想要二阶系统的全局几何图像，回看 [相平面分析](/nonlinear/phase-plane)。
 
 ## 习题
 
-**习题 1**：计算理想继电器（$M=2$）的描述函数，并求当输入振幅 $A=1$ 时的等效增益。
+**习题 1（复数惯例与滞环）**：滞环继电器 $M=1$、$h=0.3$，输入幅值 $A=1$。
 
-**习题 2**：考虑闭环系统：饱和非线性（$k=5, a=0.5$）与 $G(s) = \frac{1}{s(s+1)}$ 串联。用描述函数法预测是否存在极限环，若存在，估算振幅 $A$ 和频率 $\omega$。
+(a) 计算 $N(A)$ 的实部、虚部、幅值与相位（保留 6 位小数）；
+(b) 证明幅值 $\lvert N\rvert$ 与 $h$ 无关，恒等于同幅值理想继电器的 $4M/(\pi A)$；
+(c) 说明虚部符号的物理意义，并解释为什么奇对称的**无记忆**非线性（继电器、饱和、死区）虚部为零。
 
-**习题 3**：在 Nyquist 图上，$G(j\omega)$ 曲线与 $-1/N(A)$ 轨迹有两个交点，分别对应 $A_1 = 0.5$ 和 $A_2 = 2.0$。已知在 $A_1$ 处 $G(j\omega)$ 从右侧穿过，在 $A_2$ 处从左侧穿过。判断两个极限环的稳定性，并说明系统在受到大扰动后的行为。
+**习题 2（二阶植物 + 滞环继电器的闭式解）**：环路为滞环继电器（$M$，$h$）串 $G(s) = \dfrac{K}{s(s+1)}$，单位负反馈。记 $r = h/A$、$c = 4M/(\pi A)$。
 
-**习题 4**：带滞环的继电器（$M=1, h=0.3$）的描述函数在 $A=1$ 时为复数。计算 $N(1)$ 的实部、虚部和幅值、相位。
+(a) 把 $N = c(\sqrt{1-r^2} - jr)$ 与 $G(j\omega) = -a - jb$（$a = K/(\omega^2+1)$、$b = a/\omega$）代入 $NG = -1$，证明等价于
+$$
+\omega = \frac{\sqrt{1-r^2}}{r}, \qquad 4MKr^3 = \pi h\sqrt{1-r^2}
+$$
+(b) 取 $M=1$、$K=2$、$h=0.2$，解出 $A$、$\omega$、$f=\omega/2\pi$；
+(c) 反问题：若要求 $A=1$、$\omega=\pi$（$f=0.5$ Hz）、$M=1$、植物仍是 $K/(s(s+1))$，求 $h$ 与 $K$。
 
-**习题 5**：某系统同时存在饱和（$k=1, a=1$）和死区（$k_d=0.5, a_d=0.2$）两种非线性，串联连接。定性分析组合非线性的描述函数特性：小信号和大信号时的等效增益分别是多少？是否可能产生极限环？
+**习题 3（Routh 与极限环存在性）**：植物 $G(s) = \dfrac{1}{s(s+1)(0.5s+1)}$。
+
+(a) 把非线性换成等效增益 $K$，用 Routh 判据求闭环稳定的 $K$ 上界；
+(b) 非线性换成理想继电器（幅值 $M$）：证明对任意 $K>0$、$M>0$ 都存在谐波平衡解，并给出 $A_0(K,M)$；算 $K=1$、$M=1$ 的数值；
+(c) 非线性换成饱和（$k=1$、$a=1$），植物增益为 $K$：$K$ 满足什么条件才存在极限环？算 $K=6$ 的 $A_0$，并说明 $K=2$ 时会发生什么。
+
+**习题 4（泄漏指标）**：$G_3(s) = \dfrac{1}{s(s+1)(0.5s+1)}$，理想继电器。
+
+(a) 手算 $\lvert G_3(j3\omega_0)\rvert/\lvert G_3(j\omega_0)\rvert$（$\omega_0=\sqrt2$），给出数值与 dB；
+(b) 按 $L \triangleq \sum_{n=3,5,7,9}\lvert G_3(jn\omega_0)\rvert/n \big/ \lvert G_3(j\omega_0)\rvert$ 计算 $L$；
+(c) 实测 THD 只有 $0.0237$，幅值误差却有 $4.87\%$。为什么"$-20$ dB 经验门槛"不足以保证精度？
+(d) 若把 $0.5s+1$ 换成 $0.05s+1$，则 $\omega_0=\sqrt{20}$，比值变为 $0.0966$（$-20.3$ dB）、$L=0.0401$（$-27.9$ dB），实测误差涨到 $10.58\%$。解释为什么把极点推远反而让指标变差。
+
+**习题 5（周期解族与 $32/\pi^3$）**：理想继电器（$M=1$）串双积分器 $1/s^2$，单位负反馈，$e$ 为继电器输入。
+
+(a) 由谐波平衡导出 $\omega^2 = 4M/(\pi A_1)$，进而 $T = \pi\sqrt{\pi A_1/M}$，并说明为什么解不孤立；
+(b) 精确求解：证明轨道峰值 $A_p$ 与周期满足 $T = 4\sqrt{2A_p/M}$；
+(c) 对 (b) 的分段抛物线波形做傅里叶积分，证明基波幅值 $A_1 = \dfrac{32}{\pi^3}A_p$，从而说明 (a) 与 (b) 是同一个式子；
+(d) 用实测数据验证：$(A_1, T) = (0.516025,\,4.000000)$、$(1.032029,\,5.656800)$、$(2.064098,\,8.000000)$。
+
+**习题 6（圆判据交叉核对）**：案例 2 的环路——饱和（$k=1$、$a=1$）串 $\dfrac{K}{s(s+1)(0.5s+1)}$。
+
+(a) 写出该饱和非线性的扇区；
+(b) 用圆判据给出"闭环全局渐近稳定、不存在任何周期解"的充分条件，并证明它等价于 $K<3$；
+(c) $K=6$ 时圆判据给不出结论，而描述函数预测 $A_0=2.475414$、实测 $2.551004$（$+3.05\%$）。说明两个方法的分工，以及为什么"$K<3$ 不振荡"这个结论可以放心用于设计。
 
 ## 答案
 
 **答案 1**：
 
-理想继电器的描述函数为：
-$$N(A) = \frac{4M}{\pi A} = \frac{4 \times 2}{\pi \times 1} = \frac{8}{\pi} \approx 2.546$$
+(a) 闭式 $N(A) = \dfrac{4M}{\pi A}\Big(\sqrt{1-(h/A)^2} - j\dfrac{h}{A}\Big)$。代入 $M=1$、$h=0.3$、$A=1$：
 
-等效增益为 $2.546$（实数）。
+$$
+\frac{4M}{\pi A} = \frac{4}{\pi} = 1.273240, \qquad \sqrt{1-0.3^2} = \sqrt{0.91} = 0.953939
+$$
+
+$$
+\operatorname{Re}N = 1.273240 \times 0.953939 = 1.214593, \qquad \operatorname{Im}N = -1.273240 \times 0.3 = -0.381972
+$$
+
+$$
+\lvert N\rvert = 1.273240, \qquad \angle N = \arctan\frac{-0.381972}{1.214593} = -17.455^\circ
+$$
+
+Notebook 1 的 $40000$ 点数值积分给出 $1.214607 - 0.381927j$，与闭式相差 $4.67\times10^{-5}$（被积函数有跳变，收敛只有 $O(1/N)$）。
+
+(b) $\lvert N\rvert = \dfrac{4M}{\pi A}\sqrt{(1-r^2) + r^2} = \dfrac{4M}{\pi A}$，根号内恰好是 $1$，所以幅值与 $h$ 无关。**滞环只改相位，不改基波增益的模**——这条性质在习题 2 的闭式求解里被反复用到。
+
+(c) 虚部为负意味着输出基波**滞后**输入 $17.5^\circ$：滞环是有记忆的非线性，输出要等输入越过 $\pm h$ 才跳变，跳变时刻的延迟就是相位滞后，物理上对应每周期耗散的能量（滞环回线的面积）。奇对称且**无记忆**的非线性满足 $f(-u) = -f(u)$，于是 $f(A\sin\theta)\cos\theta$ 是奇函数、在整周期上积分为零，即 $a_1 = 0$，$N = b_1/A$ 为实数。注意"奇对称"本身不够：滞环继电器也是奇对称的，但因为有记忆，一个周期内的输出波形不再关于 $\theta=\pi/2$ 对称，$a_1\neq0$。
 
 ---
 
 **答案 2**：
 
-饱和非线性的描述函数为：
-$$N(A) = \frac{2k}{\pi}\left[\alpha + \sin\alpha\cos\alpha\right], \quad \alpha = \arcsin(a/A)$$
+(a) $NG = (p - jq)(-a - jb)$，其中 $p = c\sqrt{1-r^2}$、$q = cr$。展开：
 
-代入 $k=5, a=0.5$：
-$$N(A) = \frac{10}{\pi}\left[\arcsin\left(\frac{0.5}{A}\right) + \frac{0.5}{A}\sqrt{1 - \left(\frac{0.5}{A}\right)^2}\right]$$
+$$
+NG = (-pa - qb) + j(qa - pb) = -1
+$$
 
-线性部分：
-$$G(j\omega) = \frac{1}{j\omega(j\omega + 1)} = -\frac{1}{\omega^2 + 1} - j\frac{1}{\omega(\omega^2 + 1)}$$
+虚部为零：$qa = pb$。代入 $b = a/\omega$ 得 $q = p/\omega$，即
 
-谐波平衡条件要求 $G(j\omega)$ 为实数（因为 $N(A)$ 是实数），即虚部为零：
-$$-\frac{1}{\omega(\omega^2 + 1)} = 0$$
+$$
+\omega = \frac{p}{q} = \frac{\sqrt{1-r^2}}{r}
+$$
 
-这无解。但我们可以找 $G(j\omega)$ 相位最接近 $-180^\circ$ 的频率。数值计算表明，在 $\omega \approx 1$ rad/s 处，相位约为 $-135^\circ$，增益 $|G(j1)| = \frac{1}{\sqrt{2}} \approx 0.707$。
+实部：$pa + qb = 1$。把 $q = p/\omega$ 代入得 $a(p + q/\omega) = a(p + q^2/p) = a\,\dfrac{p^2+q^2}{p} = 1$。由 (b) 的结论 $p^2+q^2 = c^2$、$p = c\sqrt{1-r^2}$，所以
 
-要使 $N(A)G(j\omega) = -1$，需要：
-$$N(A) \cdot 0.707 = 1 \implies N(A) \approx 1.414$$
+$$
+a\,\frac{c}{\sqrt{1-r^2}} = 1 \;\Rightarrow\; a = \frac{\sqrt{1-r^2}}{c}
+$$
 
-代入饱和描述函数公式，数值求解得 $A \approx 0.8$。但由于相位不精确为 $-180^\circ$，**该系统不存在精确的极限环**，可能会有衰减振荡。
+再用 $\omega^2 + 1 = \dfrac{1-r^2}{r^2} + 1 = \dfrac{1}{r^2}$，即 $a = Kr^2$，并代入 $c = \dfrac{4M}{\pi A} = \dfrac{4Mr}{\pi h}$：
+
+$$
+Kr^2 = \frac{\sqrt{1-r^2}\,\pi h}{4Mr} \;\Rightarrow\; 4MKr^3 = \pi h\sqrt{1-r^2}
+$$
+
+(b) 取 $M=1$、$K=2$、$h=0.2$：解 $8r^3 = 0.2\pi\sqrt{1-r^2}$ 得 $r = 0.414971$，于是
+
+$$
+A = \frac{h}{r} = 0.481962, \qquad \omega = \frac{\sqrt{1-r^2}}{r} = 2.192528\ \mathrm{rad/s}, \qquad f = 0.348952\ \mathrm{Hz}
+$$
+
+代回 $\lvert NG+1\rvert = 0$（机器精度）。仿真实测基波 $0.4763$（$-1.18\%$）、周期 $2.8472$ s（预测 $2.8657$ s，$-0.65\%$）、THD $0.0413$。
+
+(c) 反问题：$\omega = \pi$ 代入 $\omega = \sqrt{1-r^2}/r$ 得 $r = \dfrac{1}{\sqrt{1+\omega^2}} = \dfrac{1}{\sqrt{1+\pi^2}} = 0.303314$，故 $h = rA = 0.303314$。再由 $a = Kr^2 = \sqrt{1-r^2}/c$，$c = 4M/(\pi A) = 1.273240$：
+
+$$
+K = \frac{\sqrt{1-r^2}}{c\,r^2} = \frac{0.952891}{1.273240 \times 0.092000} = 8.134795
+$$
+
+（等价写法：$K = \dfrac{\sqrt{1-r^2}}{c}(\omega^2+1)$。）谐波平衡残差 $2.3\times10^{-16}$；仿真实测基波 $0.989195$（$-1.08\%$）、周期 $1.9886$ s（$-0.57\%$）、THD $0.0396$、起振 $1.74$ s。
 
 ---
 
 **答案 3**：
 
-- **$A_1 = 0.5$ 处**：$G(j\omega)$ 从右侧穿过，极限环**不稳定**。
-- **$A_2 = 2.0$ 处**：$G(j\omega)$ 从左侧穿过，极限环**稳定**。
+(a) 特征方程 $0.5s^3 + 1.5s^2 + s + K = 0$。Routh 表：
 
-**系统行为**：如果初始扰动较小（振幅 $A < A_1$），系统会收敛到平衡点（原点）。如果扰动较大（$A_1 < A < A_2$），振幅会增长到 $A_2$，稳定在极限环上。如果扰动非常大（$A > A_2$），振幅会衰减回 $A_2$。因此，$A_1$ 是一个**分离线**（separatrix），区分了收敛到平衡点和收敛到极限环的区域。
+| $s^3$ | $0.5$ | $1$ |
+| --- | --- | --- |
+| $s^2$ | $1.5$ | $K$ |
+| $s^1$ | $\dfrac{1.5\cdot1 - 0.5K}{1.5}$ | $0$ |
+| $s^0$ | $K$ | |
+
+要求第一列全正：$K>0$ 且 $1.5 - 0.5K > 0$，即 $\boxed{0<K<3}$。Notebook 4 用极点直接核对：$K=2.9$ 时极点实部 $[-2.9816,-0.0092,-0.0092]$ 全负；$K=3.0$ 时出现 $0$；$K=3.1$ 时出现 $+0.009$。
+
+(b) 理想继电器 $N(A) = 4M/(\pi A)$ 是实数，故交点必在 $G$ 的负实轴穿越点：$\operatorname{Im}G_3(j\omega)=0 \Rightarrow \omega_0=\sqrt2$，$G_3(j\omega_0) = -1/3$。谐波平衡 $N\cdot K\cdot(-1/3) = -1$ 给出
+
+$$
+A_0 = \frac{4MK}{3\pi}
+$$
+
+对任意 $K>0$、$M>0$ 都有正解——**继电器环路必然振荡**，因为 $N(A)$ 从 $\infty$（$A\to0$）单调降到 $0$（$A\to\infty$），一定穿过任何正的 $3/K$。$K=1$、$M=1$ 时 $A_0 = 4/(3\pi) = 0.424413$，实测 $0.445089$（$+4.87\%$）。
+
+(c) 饱和的 $N_{\text{sat}}(A)$ 从 $k=1$ 单调降到 $0$，最大值就是 $1$。存在解要求 $\dfrac{3}{K} \le 1$，即 $\boxed{K \ge 3}$（$K=3$ 时解在边界 $A=a=1$ 上）。
+
+- $K=6$：需 $N = 0.5$，解 $\dfrac{2}{\pi}\big[\alpha + \sin\alpha\cos\alpha\big] = 0.5$（$\alpha = \arcsin(1/A)$）得 $A_0 = 2.475414$，实测 $2.551004$（$+3.05\%$），周期 $4.5026$ s（$+1.34\%$），THD $0.0190$。
+- $K=2$：需 $N = 1.5 > 1$，**无解**。实测从 $e(0)=1$ 衰减，末段 $\lvert e\rvert$ 峰值 $0.036456$，没有极限环；这与 (a) 的 $K<3$ 一致，而且由习题 6 的圆判据可知是**全局**结论。
 
 ---
 
 **答案 4**：
 
-带滞环的继电器描述函数为：
-$$N(A) = \frac{4M}{\pi A}\sqrt{1 - \left(\frac{h}{A}\right)^2} - j\frac{4Mh}{\pi A^2}$$
+(a) $\lvert G_3(j\omega)\rvert = \dfrac{1}{\omega\sqrt{\omega^2+1}\sqrt{0.25\omega^2+1}}$。
 
-代入 $M=1, h=0.3, A=1$：
+- $\omega_0=\sqrt2$：$\sqrt2\cdot\sqrt3\cdot\sqrt{1.5} = 3.0000$，故 $\lvert G_3(j\omega_0)\rvert = 1/3 = 0.333333$；
+- $3\omega_0 = 3\sqrt2$：$4.2426\times\sqrt{19}\times\sqrt{5.5} = 4.2426\times4.3589\times2.3452 = 43.376$，故 $\lvert G_3(j3\omega_0)\rvert = 0.023054$。
 
-实部：
-$$\text{Re}[N(1)] = \frac{4}{\pi}\sqrt{1 - 0.3^2} = \frac{4}{\pi}\sqrt{0.91} \approx 1.215$$
+比值 $= 0.023054/0.333333 = 0.0692$，即 $20\log_{10}0.0692 = -23.2$ dB。
 
-虚部：
-$$\text{Im}[N(1)] = -\frac{4 \times 0.3}{\pi} = -\frac{1.2}{\pi} \approx -0.382$$
+(b) 逐次计算 $\lvert G_3(jn\omega_0)\rvert/n$：$n=3$ 给 $0.007685$，$n=5$ 给 $0.001078$，$n=7$ 给 $0.000287$，$n=9$ 给 $0.000106$；求和 $0.009156$，除以 $\lvert G_3(j\omega_0)\rvert=0.333333$ 得 $L = 0.0275$，即 $-31.2$ dB。Notebook 3 打印同一结果。
 
-幅值：
-$$|N(1)| = \sqrt{1.215^2 + 0.382^2} \approx 1.274$$
+(c) $-20$ dB 门槛只约束**谐波的幅值**，而幅值误差的主要来源不是"$e(t)$ 里有多少谐波"，而是**谐波把继电器的切换时刻推离了正弦假设的位置**。切换时刻一偏，继电器输出的基波分量跟着变，整个自洽点就移动了。本例 THD 只有 $0.0237$（$e$ 确实接近正弦），幅值误差仍有 $4.87\%$，正是这个机理。所以门槛只能当筛查用：$L=-27.9$ dB 的那个环路 THD $0.0332$，误差却达 $10.58\%$。
 
-相位：
-$$\angle N(1) = \arctan\left(\frac{-0.382}{1.215}\right) \approx -17.5^\circ$$
+(d) 交点频率由 $\omega_0 = \sqrt{1/T_c}$ 决定：$T_c$ 从 $0.5$ 减到 $0.05$，$\omega_0$ 从 $1.414$ 升到 $4.472$（涨 $3.16$ 倍），而极点位置 $1/T_c$ 从 $2$ 升到 $20$（涨 $10$ 倍）。关键量是三倍频与极点之比 $3\omega_0 T_c = 3\sqrt{T_c}$：$T_c=0.5$ 时为 $2.12$（三倍频在极点**之上**，已被衰减），$T_c=0.05$ 时为 $0.67$（三倍频跑到极点**之下**，几乎没被衰减）。所以比值从 $0.0692$ 恶化到 $0.0966$，$L$ 从 $-31.2$ dB 恶化到 $-27.9$ dB，误差从 $4.87\%$ 涨到 $10.58\%$。**结论：要让描述函数准，应降低 $\omega_0$（加大时间常数、降增益），而不是把极点推远。**
 
 ---
 
 **答案 5**：
 
-串联非线性的描述函数近似为各环节描述函数的乘积（这是粗略近似，严格来说需要重新计算组合非线性的傅里叶系数）：
+(a) $G(j\omega) = 1/(j\omega)^2 = -1/\omega^2$，$N(A_1) = 4M/(\pi A_1)$。谐波平衡：
 
-$$N_{\text{total}}(A) \approx N_{\text{sat}}(A) \cdot N_{\text{dead}}(A)$$
+$$
+\frac{4M}{\pi A_1}\cdot\left(-\frac{1}{\omega^2}\right) = -1 \;\Rightarrow\; \omega^2 = \frac{4M}{\pi A_1} \;\Rightarrow\; T = \frac{2\pi}{\omega} = 2\pi\sqrt{\frac{\pi A_1}{4M}} = \pi\sqrt{\frac{\pi A_1}{M}}
+$$
 
-**小信号时**（$A < 0.2$）：
-- 死区的 $N_{\text{dead}}(A) = 0$（信号被阻挡）。
-- 因此 $N_{\text{total}}(A) = 0$，等效增益为零。
+$A_1$ 是自由的：任何 $A_1>0$ 都配一个 $\omega$。几何上，$G$ 的轨迹是整条负实轴，$-1/N$ 的轨迹也是整条负实轴，两者**重合**而不是相交，所以解是一族曲线而非孤立点——描述函数无法预测振幅。
 
-**中等信号时**（$0.2 < A < 1$）：
-- 死区的 $N_{\text{dead}}(A)$ 从 $0$ 增长到约 $0.5$。
-- 饱和的 $N_{\text{sat}}(A) \approx 1$（未饱和）。
-- 组合增益约为 $0.5$。
+(b) 设峰值为 $A_p$。$e>0$ 时 $\ddot e = -M$，从 $(A_p, 0)$ 出发：$e(t) = A_p - \tfrac{M}{2}t^2$，在 $t_a = \sqrt{2A_p/M}$ 处过零，此时 $\dot e = -Mt_a = -\sqrt{2MA_p}$。随后 $\ddot e = +M$，再经 $t_a$ 到达 $-A_p$ 且 $\dot e = 0$。由对称性，半个周期为 $2t_a$，故
 
-**大信号时**（$A > 1$）：
-- 死区的 $N_{\text{dead}}(A) \approx 0.5$（趋近线性增益）。
-- 饱和的 $N_{\text{sat}}(A)$ 从 $1$ 衰减到 $\frac{4}{\pi A}$。
-- 组合增益随 $A$ 增大而衰减。
+$$
+T = 4t_a = 4\sqrt{\frac{2A_p}{M}}
+$$
 
-**极限环可能性**：由于组合描述函数随 $A$ 增大而单调递减（从 $0.5$ 衰减到 $0$），如果线性部分 $G(s)$ 的 Nyquist 曲线穿过负实轴，且穿过的增益值在 $[-2, 0]$ 范围内（对应 $N(A) \in [0, 0.5]$），则可能存在极限环。具体需要画 Nyquist 图判断。
+(c) 取时间原点在峰值处，则 $e$ 是偶函数且满足半波对称 $e(t+T/2) = -e(t)$，故只有奇次余弦项，$A_1 = \dfrac{4}{T}\int_0^{T/2} e(t)\cos(\omega t)\,\mathrm{d}t$，$\omega t_a = \pi/2$。用 $A_p = \tfrac{M}{2}t_a^2$ 把两段写成
+
+$$
+[0,t_a]:\ e = \tfrac{M}{2}(t_a^2 - t^2), \qquad [t_a,2t_a]:\ e = -Mt_a s + \tfrac{M}{2}s^2,\ s = t-t_a
+$$
+
+第二段的 $\cos(\omega(s+t_a)) = \cos(\omega s + \pi/2) = -\sin(\omega s)$。换元 $x = t/t_a$ 后两段分别给出
+
+$$
+\int_0^1 (1-x^2)\cos\tfrac{\pi x}{2}\,\mathrm{d}x = \frac{16}{\pi^3}, \qquad \int_0^1 (2x-x^2)\sin\tfrac{\pi x}{2}\,\mathrm{d}x = \frac{16}{\pi^3}
+$$
+
+（两式都由两次分部积分得到，中间量 $\int_0^1 x\sin\tfrac{\pi x}{2}\mathrm{d}x = \tfrac{4}{\pi^2}$、$\int_0^1 x\cos\tfrac{\pi x}{2}\mathrm{d}x = \tfrac{2}{\pi}-\tfrac{4}{\pi^2}$。）于是
+
+$$
+\int_0^{T/2} e\cos(\omega t)\,\mathrm{d}t = \frac{M}{2}t_a^3\cdot\frac{16}{\pi^3}\times 2 = \frac{16Mt_a^3}{\pi^3}
+$$
+
+$$
+A_1 = \frac{4}{4t_a}\cdot\frac{16Mt_a^3}{\pi^3} = \frac{16Mt_a^2}{\pi^3} = \frac{16M}{\pi^3}\cdot\frac{2A_p}{M} = \frac{32}{\pi^3}A_p
+$$
+
+代入 (a)：$T = \pi\sqrt{\dfrac{\pi}{M}\cdot\dfrac{32}{\pi^3}A_p} = \pi\sqrt{\dfrac{32A_p}{\pi^2 M}} = \sqrt{\dfrac{32A_p}{M}} = 4\sqrt{\dfrac{2A_p}{M}}$，与 (b) 恒等。**所以描述函数在这里的周期公式是精确的**（当 $A$ 解释为基波幅值时），失效的只是"振幅可预测"这一点。
+
+(d) 实测三条轨道的 $A_1/A_p = 1.032029\sim1.032049$，与 $32/\pi^3 = 1.0320491$ 的相对差 $1.9\times10^{-5}$；周期实测 $4.000000$、$5.656800$、$8.000000$，与 $T=\pi\sqrt{\pi A_1}$ 逐位相同，与 $4\sqrt{2A_p}$ 的相对差也在 $10^{-5}$ 量级。
+
+---
+
+**答案 6**：
+
+(a) 饱和 $f(u) = \operatorname{clip}(u,-1,1)$ 满足 $0 \le \dfrac{f(u)}{u} \le 1$（$u\neq0$），即落在扇区 $[0, k]$，$k = 1$。
+
+(b) 圆判据（扇区 $[0,k]$ 版本）：若 $G$ 无右半平面极点，且 $G(j\omega)$ 的 Nyquist 曲线不包围 $-1/k$，则闭环全局渐近稳定，从而不存在任何周期解。本题 $G$ 的极点是 $0,-1,-2$，无右半平面极点（原点极点在 Nyquist 围线中按标准小半圆处理，等效增益判据与 Routh 一致）；Nyquist 只在 $\omega_0 = \sqrt2$ 处穿越负实轴，穿越点为 $-K/3$。于是
+
+$$
+\text{不包围 } -1 \;\Longleftrightarrow\; -\frac{K}{3} > -1 \;\Longleftrightarrow\; K < 3
+$$
+
+与 (习题 3a) 的 Routh 结果逐字相同。区别在于结论强度：Routh 说的是**线性化环**稳定，圆判据说的是**含饱和的非线性环**从任何初值都收敛到零，因此"$K<3$ 不振荡"是全局严格的。
+
+(c) $K=6$ 时 $-K/3 = -2 < -1$，Nyquist 包围 $-1/k$，圆判据的**充分条件不成立**，它只能回答"不能排除周期解"——既不能证明存在，也不能证明不存在。这时描述函数接手：给出 $A_0 = 2.475414$、$\omega_0=\sqrt2$，并用第 5 节的 Loeb 判据判定该极限环稳定（降支交点），仿真验证 $2.551004$（$+3.05\%$）。
+
+**分工**：圆判据/Lyapunov 证"无"（严格、保守），描述函数找"有"（近似、给出幅值与频率）。设计上可以放心用 $K<3$：它是由定理保证的全局结论，不依赖基波近似；而 $K=6$ 时的振幅数字只是估计，落地前必须仿真复核。

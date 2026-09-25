@@ -95,6 +95,8 @@
 | `NEXT_PORT` | Next.js 监听端口 | `8080` |
 | `JUPYTER_PORT` | Jupyter 服务端口 | `8891` |
 | `JUPYTER_HOST` | Jupyter 监听地址 | `0.0.0.0`（容器内） |
+| `JUPYTER_IDLE_TIMEOUT` | 内核空闲回收阈值（秒），`0` 表示关闭 | `1800` |
+| `JUPYTER_REAP_INTERVAL` | 空闲回收巡检周期（秒） | `60` |
 | `NODE_ENV` | Node 环境 | `production` |
 | `JUPYTER_API_URL` | 前端请求 Jupyter 的地址 | `/api/notebook`（相对路径） |
 

@@ -8,6 +8,8 @@ Requires: pip install jupyter_client ipykernel matplotlib numpy scipy
 import json
 import os
 import sys
+import threading
+import time
 import uuid
 import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -20,7 +22,16 @@ except ImportError:
     sys.exit(1)
 
 PORT = int(os.environ.get("JUPYTER_PORT", "8891"))
+# A page reload is a hard navigation: React cleanup never runs, so the browser
+# cannot DELETE its kernels. Without reaping, every reload leaks a kernel per
+# notebook. Set to 0 to disable.
+IDLE_TIMEOUT = float(os.environ.get("JUPYTER_IDLE_TIMEOUT", "1800"))
+REAP_INTERVAL = float(os.environ.get("JUPYTER_REAP_INTERVAL", "60"))
+
 kernels = {}
+last_used = {}
+busy = set()
+lock = threading.Lock()
 
 DEFAULT_SETUP = """\
 import matplotlib
@@ -47,13 +58,37 @@ def new_kernel():
 
 
 def shutdown_kernel(notebook_id):
-    if notebook_id in kernels:
-        km, kc = kernels.pop(notebook_id)
-        try:
-            kc.stop_channels()
-            km.shutdown_kernel(now=True)
-        except Exception:
-            pass
+    with lock:
+        entry = kernels.pop(notebook_id, None)
+        last_used.pop(notebook_id, None)
+        busy.discard(notebook_id)
+    if entry is None:
+        return
+    km, kc = entry
+    try:
+        kc.stop_channels()
+        km.shutdown_kernel(now=True)
+    except Exception:
+        pass
+
+
+def reap_idle_kernels():
+    while True:
+        time.sleep(REAP_INTERVAL)
+        now = time.monotonic()
+        with lock:
+            stale = [nid for nid, t in last_used.items()
+                     if nid not in busy and now - t > IDLE_TIMEOUT]
+        for nid in stale:
+            shutdown_kernel(nid)
+            # stdout is block-buffered when serve.mjs pipes it into logs/dev.log
+            print(f"[jupyter-server] Recycled idle kernel {nid} "
+                  f"(idle > {IDLE_TIMEOUT:.0f}s), {len(kernels)} left", flush=True)
+
+
+def start_reaper():
+    t = threading.Thread(target=reap_idle_kernels, daemon=True)
+    t.start()
 
 
 def execute(km, kc, code, timeout=30):
@@ -132,7 +167,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
-            self._json(200, {"status": "ok", "kernels": len(kernels)})
+            now = time.monotonic()
+            with lock:
+                ages = {nid: round(now - t) for nid, t in last_used.items()}
+            self._json(200, {"status": "ok", "kernels": len(kernels),
+                             "idle_timeout": IDLE_TIMEOUT, "idle_seconds": ages})
         else:
             self._json(404, {"error": "not found"})
 
@@ -166,24 +205,48 @@ class Handler(BaseHTTPRequestHandler):
         nid = body.get("notebook_id", str(uuid.uuid4()))
         setup = body.get("setup_code", DEFAULT_SETUP)
 
+        with lock:
+            reused = nid in kernels
+        if reused:
+            print(f"[jupyter-server] WARNING: notebook_id {nid} already registered; "
+                  f"shutting the old kernel down so two notebooks never share a namespace",
+                  flush=True)
+            shutdown_kernel(nid)
+
         try:
             km, kc = new_kernel()
-            kernels[nid] = (km, kc)
+            with lock:
+                kernels[nid] = (km, kc)
+                last_used[nid] = time.monotonic()
             if setup.strip():
                 execute(km, kc, setup)
             self._json(200, {"notebook_id": nid, "status": "ready"})
         except Exception as e:
             traceback.print_exc()
+            shutdown_kernel(nid)
             self._json(500, {"error": f"Kernel start failed: {e}"})
 
     def _handle_execute(self, nid):
-        if nid not in kernels:
-            self._json(404, {"error": "notebook not found"})
-            return
         body = self._read()
         code = body.get("code", "")
-        km, kc = kernels[nid]
-        outputs = execute(km, kc, code)
+
+        with lock:
+            entry = kernels.get(nid)
+            if entry is not None:
+                busy.add(nid)
+                last_used[nid] = time.monotonic()
+        if entry is None:
+            self._json(404, {"error": "notebook not found"})
+            return
+
+        km, kc = entry
+        try:
+            outputs = execute(km, kc, code)
+        finally:
+            with lock:
+                busy.discard(nid)
+                if nid in last_used:
+                    last_used[nid] = time.monotonic()
         self._json(200, {"outputs": outputs})
 
     def log_message(self, fmt, *args):
@@ -193,12 +256,20 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     server = HTTPServer(("127.0.0.1", PORT), Handler)
     print(f"[jupyter-server] Listening on http://127.0.0.1:{PORT}")
+    if IDLE_TIMEOUT > 0:
+        start_reaper()
+        print(f"[jupyter-server] Recycling kernels idle > {IDLE_TIMEOUT:.0f}s "
+              f"(check every {REAP_INTERVAL:.0f}s)")
+    else:
+        print("[jupyter-server] Idle recycling disabled (JUPYTER_IDLE_TIMEOUT=0)")
     print("[jupyter-server] Press Ctrl+C to stop")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[jupyter-server] Shutting down kernels...")
-        for nid in list(kernels):
+        with lock:
+            ids = list(kernels)
+        for nid in ids:
             shutdown_kernel(nid)
         server.server_close()
 

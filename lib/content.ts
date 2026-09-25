@@ -35,6 +35,15 @@ import { DescribingFunctionExplorer } from "@/components/wiki/describing-functio
 import { NyquistLimitCycleExplorer } from "@/components/wiki/nyquist-limit-cycle-explorer";
 import { LyapunovExplorer } from "@/components/wiki/lyapunov-explorer";
 import { ZeroDynamicsExplorer } from "@/components/wiki/zero-dynamics-explorer";
+import { SlidingModeExplorer } from "@/components/wiki/sliding-mode-explorer";
+import { BacksteppingExplorer } from "@/components/wiki/backstepping-explorer";
+import { MracExplorer } from "@/components/wiki/mrac-explorer";
+import { FuzzyExplorer } from "@/components/wiki/fuzzy-explorer";
+import FuzzyTuningExplorer from "@/components/wiki/fuzzy-tuning-explorer";
+import NeuralNetworkExplorer from "@/components/wiki/neural-network-explorer";
+import { TraceDetExplorer } from "@/components/wiki/trace-det-explorer";
+import { PhasePlaneExplorer } from "@/components/wiki/phase-plane-explorer";
+import { NonlinearityExplorer } from "@/components/wiki/nonlinearity-explorer";
 import { logger } from "@/lib/logger";
 
 const contentDir = path.join(process.cwd(), "content");
@@ -97,6 +106,15 @@ async function compileLessonSource(source: string, fallbackTitle: string) {
         DescribingFunctionExplorer, NyquistLimitCycleExplorer,
         LyapunovExplorer,
         ZeroDynamicsExplorer,
+        SlidingModeExplorer,
+        BacksteppingExplorer,
+        MracExplorer,
+        FuzzyExplorer,
+        FuzzyTuningExplorer,
+        NeuralNetworkExplorer,
+        TraceDetExplorer,
+        PhasePlaneExplorer,
+        NonlinearityExplorer,
       },
     });
 

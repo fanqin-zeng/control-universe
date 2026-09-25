@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface NotebookOutput {
   type: "text" | "image" | "error" | "stream" | "html";
@@ -41,12 +41,17 @@ async function createNotebook(id: string, setup: string) {
   return res.json();
 }
 
+// The server recycles kernels that have been idle too long, so a 404 means
+// "your namespace is gone" rather than "execution failed" — the caller can recover.
+class KernelGoneError extends Error {}
+
 async function execCode(notebookId: string, code: string) {
   const res = await fetch(`${API}/api/notebook/${notebookId}/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
   });
+  if (res.status === 404) throw new KernelGoneError("kernel recycled");
   if (!res.ok) throw new Error("Execution failed");
   return res.json() as Promise<{ outputs: NotebookOutput[] }>;
 }
@@ -79,6 +84,9 @@ export function JupyterNotebook({
   const [notebookId, setNotebookId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Source of truth for requests: kernel recovery swaps the id while a run is
+  // in flight, and a state value captured by that run would be stale.
+  const idRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +95,7 @@ export function JupyterNotebook({
     createNotebook(id, setupCode)
       .then(() => {
         if (!cancelled) {
+          idRef.current = id;
           setNotebookId(id);
           setReady(true);
         }
@@ -109,18 +118,30 @@ export function JupyterNotebook({
     []
   );
 
-  const runCell = useCallback(
-    async (cellId: string) => {
-      if (!notebookId || !ready) return;
-      const cell = cells.find((c) => c.id === cellId);
-      if (!cell || !cell.code.trim()) return;
+  const reviveKernel = useCallback(async () => {
+    const stale = idRef.current;
+    idRef.current = null;
+    if (stale) await deleteNotebook(stale);
+    const id = newNotebookId();
+    await createNotebook(id, setupCode);
+    idRef.current = id;
+    setNotebookId(id);
+    setReady(true);
+    return id;
+  }, [setupCode]);
 
-      updateCell(cellId, { running: true, outputs: [] });
+  const execCell = useCallback(
+    async (id: string, cell: CellState) => {
+      updateCell(cell.id, { running: true, outputs: [] });
       try {
-        const { outputs } = await execCode(notebookId, cell.code);
-        updateCell(cellId, { outputs, running: false });
+        const { outputs } = await execCode(id, cell.code);
+        updateCell(cell.id, { outputs, running: false });
       } catch (e: unknown) {
-        updateCell(cellId, {
+        if (e instanceof KernelGoneError) {
+          updateCell(cell.id, { running: false });
+          throw e;
+        }
+        updateCell(cell.id, {
           outputs: [
             {
               type: "error",
@@ -133,7 +154,34 @@ export function JupyterNotebook({
         });
       }
     },
-    [notebookId, ready, cells, updateCell]
+    [updateCell]
+  );
+
+  const runCell = useCallback(
+    async (cellId: string) => {
+      const id = idRef.current;
+      if (!id || !ready) return;
+      const idx = cells.findIndex((c) => c.id === cellId);
+      if (idx < 0 || !cells[idx].code.trim()) return;
+
+      try {
+        await execCell(id, cells[idx]);
+      } catch {
+        // The server recycled this kernel while the page sat idle. A fresh
+        // namespace has none of the earlier cells' variables, so replay them.
+        let fresh: string;
+        try {
+          fresh = await reviveKernel();
+        } catch {
+          setError("Jupyter 内核已被回收且重建失败，请点击 ↺ 重置");
+          return;
+        }
+        for (let i = 0; i <= idx; i++) {
+          if (cells[i].code.trim()) await execCell(fresh, cells[i]);
+        }
+      }
+    },
+    [cells, ready, execCell, reviveKernel]
   );
 
   const runAll = useCallback(async () => {
@@ -150,19 +198,22 @@ export function JupyterNotebook({
   }, []);
 
   const reset = useCallback(async () => {
-    if (notebookId) await deleteNotebook(notebookId);
-    const id = newNotebookId();
+    const stale = idRef.current;
+    idRef.current = null;
     setReady(false);
+    if (stale) await deleteNotebook(stale);
+    const id = newNotebookId();
     setCells((prev) => prev.map((c) => ({ ...c, outputs: [] })));
     try {
       await createNotebook(id, setupCode);
+      idRef.current = id;
       setNotebookId(id);
       setReady(true);
       setError(null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [notebookId, setupCode]);
+  }, [setupCode]);
 
   if (error) {
     return (

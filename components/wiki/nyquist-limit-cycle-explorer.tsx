@@ -8,7 +8,7 @@ export function NyquistLimitCycleExplorer() {
   const [K, setK] = useState(1);
   const [T1, setT1] = useState(1);
   const [T2, setT2] = useState(0.5);
-  const [nonlinearityType, setNonlinearityType] = useState<"saturation" | "relay">("saturation");
+  const [nonlinearityType, setNonlinearityType] = useState<"saturation" | "relay">("relay");
 
   // Calculate G(jω) = K / (s(s+T1)(T2*s+1))
   const calculateG = (omega: number): { real: number; imag: number } => {
@@ -32,11 +32,10 @@ export function NyquistLimitCycleExplorer() {
     };
   };
 
-  // Calculate -1/N(A) for saturation
+  // Calculate -1/N(A)
   const calculateNegInvN = (A: number): number => {
-    if (A <= 1.01) return -10; // Avoid division by zero
-    
     if (nonlinearityType === "saturation") {
+      if (A <= 1.01) return -10; // N = k in the linear region, locus starts at -1/k
       const k = 1, a = 1;
       const alpha = Math.asin(Math.min(a / A, 1));
       const N = (2 * k / Math.PI) * (alpha + Math.sin(alpha) * Math.cos(alpha));
@@ -50,20 +49,30 @@ export function NyquistLimitCycleExplorer() {
 
   // Generate G(jω) curve
   const nyquistData: [number, number][] = [];
+  const omegaData: number[] = [];
   for (let omega = 0.1; omega <= 10; omega += 0.05) {
     const G = calculateG(omega);
     nyquistData.push([G.real, G.imag]);
+    omegaData.push(omega);
   }
 
   // Generate -1/N(A) trajectory (on negative real axis)
+  // Relay: N is finite for any A > 0, so the locus starts at the origin and walks to -inf.
+  // Saturation: N <= k, so the locus starts at -1/k.
+  const aStart = nonlinearityType === "relay" ? 0.02 : 1.05;
+  const aStep = nonlinearityType === "relay" ? 0.02 : 0.1;
   const negInvNData: [number, number][] = [];
-  for (let A = 1.05; A <= 10; A += 0.1) {
+  const ampData: number[] = [];
+  for (let A = aStart; A <= 10; A += aStep) {
     const negInvN = calculateNegInvN(A);
     negInvNData.push([negInvN, 0]);
+    ampData.push(A);
   }
 
   // Find intersection point (approximate)
   let intersectionPoint: [number, number] | null = null;
+  let intersectionOmega = 0;
+  let intersectionAmp = 0;
   for (let i = 0; i < nyquistData.length - 1; i++) {
     const [real1, imag1] = nyquistData[i];
     const [real2, imag2] = nyquistData[i + 1];
@@ -74,7 +83,28 @@ export function NyquistLimitCycleExplorer() {
       const ratio = -imag1 / (imag2 - imag1);
       const realCross = real1 + ratio * (real2 - real1);
       intersectionPoint = [realCross, 0];
+      intersectionOmega = omegaData[i] + ratio * (omegaData[i + 1] - omegaData[i]);
       break;
+    }
+  }
+
+  // The -1/N locus runs monotonically from its starting value to -inf as A grows,
+  // so an intersection exists only if the crossing point lies on (or left of) that start.
+  let hasIntersection = false;
+  if (intersectionPoint && negInvNData.length > 0) {
+    const locusStart = negInvNData[0][0];
+    if (intersectionPoint[0] <= locusStart) {
+      let lo = aStart;
+      let hi = 10;
+      for (let it = 0; it < 60; it++) {
+        const mid = 0.5 * (lo + hi);
+        if (calculateNegInvN(mid) > intersectionPoint[0]) lo = mid;
+        else hi = mid;
+      }
+      intersectionAmp = 0.5 * (lo + hi);
+      hasIntersection = true;
+    } else {
+      intersectionPoint = null;
     }
   }
 
@@ -136,7 +166,9 @@ export function NyquistLimitCycleExplorer() {
     },
     legend: {
       bottom: 10,
-      data: ["G(jω)", "-1/N(A)", "交点", "(-1, j0)"],
+      data: hasIntersection
+        ? ["G(jω)", "-1/N(A)", "交点", "(-1, j0)"]
+        : ["G(jω)", "-1/N(A)", "(-1, j0)"],
     },
   };
 
@@ -202,11 +234,20 @@ export function NyquistLimitCycleExplorer() {
       
       <div ref={chartRef} className="h-96 w-full" />
       
-      {intersectionPoint && (
-        <div className="text-sm p-3 bg-blue-50 rounded">
+      {hasIntersection && intersectionPoint && (
+        <div style={{ fontSize: 13, padding: 12, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, marginTop: 12 }}>
           <strong>预测的极限环：</strong>
-          交点位置 ({intersectionPoint[0].toFixed(2)}, 0)，
-          对应的 -1/N(A) = {intersectionPoint[0].toFixed(2)}
+          振幅 A = {intersectionAmp.toFixed(4)}，频率 ω = {intersectionOmega.toFixed(4)} rad/s
+          （f = {(intersectionOmega / (2 * Math.PI)).toFixed(4)} Hz）；
+          交点位置 ({intersectionPoint[0].toFixed(3)}, 0) = -1/N(A)
+        </div>
+      )}
+
+      {!hasIntersection && (
+        <div style={{ fontSize: 13, padding: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, marginTop: 12 }}>
+          <strong>无交点：</strong>
+          G(jω) 的负实轴穿越点没有落在 -1/N(A) 轨迹上，描述函数判定不存在极限环
+          （{nonlinearityType === "saturation" ? "饱和的 N ≤ k，轨迹只从 -1/k 向左" : "继电器轨迹从原点向左"}）。
         </div>
       )}
     </div>

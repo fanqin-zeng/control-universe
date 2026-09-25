@@ -264,8 +264,8 @@ description: "一句话描述"
 
 1. 确认课程主题（参考 `content/catalog.ts`）
 2. 确定本轮参与的轮值领域专家
-3. 按Phase 1-4流程展开讨论，一次会话里完整完成
-4. 讨论过程完整记录，保存至 `docs/discuss-log/course-[termNum]/[chapNum-chapName]/[lessonNum-lessonName].md`；其中`termNum`除非用户指定，使用当前同目录下已有的最大termNum，意思是当前的学期计数；`chapNum`是当前章节在全部章节中的顺序号；`lessonNum`就是当前课程在当前章节中的顺序号
+3. **按Phase 1-4流程展开讨论，一次会话里完整完成**
+4. **讨论过程完整记录**，保存至 `docs/discuss-log/course-[termNum]/[chapNum-chapName]/[lessonNum-lessonName].md`；其中`termNum`除非用户指定，使用当前同目录下已有的最大termNum，意思是当前的学期计数；`chapNum`是当前章节在全部章节中的顺序号；`lessonNum`就是当前课程在当前章节中的顺序号
 5. 郑核完成最终审校
 6. 输出MDX格式内容，写入对应的 `content/<chapter>/<lesson>.mdx`
 
