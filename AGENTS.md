@@ -93,7 +93,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 | A 结构治理 | 只动目录与元数据 | A1–A5 ✅；**A6 🔄 仅 classic 完成，剩 modern/robust/mpc/nonlinear/intelligent/rl/multi-agent 7 章章内重排**；A7/A8 ✅ |
 | B 角色升级 | 22 人团队与 M1–M5 固化进 skills | B1–B8 ✅ |
 | E 质量基建 | 自动验收/单一注册表/cell 标准化/术语表 | E1–E4 ✅ |
-| C 存量偿债 | 37 门 draft 课 v1.3 化 + 无日志课补档 | C0–C8 ⬜ 未开工 |
+| C 存量偿债 | 37 门 draft 课 v1.3 重构 + 随课补写完整讨论日志（2026-10-16 用户裁决：取消 C0 补档层） | C1 🔄 / C2–C8 ⬜ |
 | D 新内容生产 | 约 71 门新课 | D1–D14 ⬜ 未开工（推荐先 P0：D1 math 15 课、D2 discrete-sampled、D3 implementation） |
 
 推荐执行顺序：**A（收尾）→ C/D 并行**（B/E 基建已完成）。进入 C/D 后每课必须走 wiki-discussion Phase 1–4。
@@ -179,12 +179,12 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 
 - 16 章 / 141 课（目标 155）；**v1.3 已交付 19 门**；有 MDX 正文 56 门（draft 37）；骨架占位 85 门。
 - prereq 边 148 条（环 0 / 悬空 0；覆盖率 69/141，尚有 7 章零 prereq 边 —— Q20 待裁决）。
-- 讨论日志 11 篇 / 覆盖 11 门；**有 MDX 但无日志 45 门**（C0 要补的最大隐性负债）。
+- 讨论日志 11 篇 / 覆盖 11 门；**有 MDX 但无日志 45 门**（随 C1–C7 逐课交付时在 `semester-02/` 补写完整日志；C0 补档层已于 2026-10-16 裁决取消）。
 - 交互组件 36 个（孤儿 1：`bode-margins-explorer.tsx`，Q3 待裁决）。
 - `npm run check`：PASS 17 · WARN 36 · FAIL 0。
 - git：semester-02 的 A/B/E 阶段成果已提交并合入 `master`（2026-10-16）；`.qoder/` 已迁移为 `.agent/`。`npm run build` 交付前自行复验。
 
-**下一步（按 plan §4）**：收尾 A6（7 章章内重排）→ C0（补讨论日志）→ C1–C8（存量 v1.3 化）与 D1–D3（P0 新课）交错推进。
+**下一步（按 plan §4）**：C1（classic 收尾）→ 收尾 A6（7 章章内重排）→ C2–C8（存量 v1.3 化）与 D1–D3（P0 新课）交错推进。
 
 ## 11. 给后续 Agent 的操作提醒
 

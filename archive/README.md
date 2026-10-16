@@ -31,7 +31,7 @@
 
 | 文档 | 保留理由 |
 |------|---------|
-| `docs/discuss-log/semester-01/**`（11 篇） | 课堂记录固化资产；`npm run check` 第 4 节按目录统计（11 篇/覆盖 11 门）；是 C0 阶段"补日志"的格式范本 |
+| `docs/discuss-log/semester-01/**`（11 篇） | 课堂记录固化资产；`npm run check` 第 4 节按目录统计（11 篇/覆盖 11 门）；是后续课程讨论日志的格式范本 |
 | `.agent/fix-logs/**`（18 篇 + INDEX.md） | 返工归因库，fix-tracker 技能的回顾机制数据源；INDEX 正序索引与之强耦合 |
 | `.agent/v1.3-refactor-plan.md` | **半活文档**：状态表滞后（只记 1 门完成，实际 19 门）——已在其文首加"权威口径"横幅声明以 tracker 为准；P0 表仍是阶段 C 有效待办，且被 `skills/v1.3-refactor/SKILL.md` 与 tracker 引用，不可归档 |
 
