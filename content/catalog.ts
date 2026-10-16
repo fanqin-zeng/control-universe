@@ -54,7 +54,6 @@ export const catalog: Chapter[] = [
           { slug: "复数的四则运算", title: "复数的四则运算" },
           { slug: "复平面", title: "复平面" },
           { slug: "极坐标形式", title: "极坐标形式" },
-          { slug: "复数在控制理论中的角色", title: "复数在控制理论中的角色" },
           { slug: "小结", title: "小结" },
         ],
       },
