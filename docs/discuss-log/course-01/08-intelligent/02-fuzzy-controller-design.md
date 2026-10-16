@@ -95,7 +95,7 @@
 4. 设计一个 TS 型规则表，使其等效增益高于 Mamdani 型
 5. 推导模糊 PID 的积分项如何消除静差
 
-**[郑核-fix-logs 回归检查]** 查阅 `.qoder/fix-logs/INDEX.md`，确认：
+**[郑核-fix-logs 回归检查]** 查阅 `.agent/fix-logs/INDEX.md`，确认：
 - Fix-013：JupyterNotebook setupCode 不能有尾随逗号 ✓
 - Fix-015：组件必须在 mdx-components.tsx 和 lib/content.ts 双重注册 ✓
 - Fix-017：cell 代码不能有 `%` 字符 ✓

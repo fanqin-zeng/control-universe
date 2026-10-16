@@ -75,7 +75,7 @@ export function scanMdx(src) {
     // 错位的方向取决于文件里有几处「空行 + 围栏」，两个方向都实测到过：
     //   · 现网 modern/modern-case-study：5 个 JupyterNotebook 全部隐身
     //     （第 1 项当时还 PASS，报告写着「本课无 JSX 标签」），classic/transfer-function 少扫 1 个；
-    //   · .qoder/e3-fixture/content/fx/nb-crlf.mdx：**反过来**——围栏内的示例被当成真组件
+    //   · .agent/e3-fixture/content/fx/nb-crlf.mdx：**反过来**——围栏内的示例被当成真组件
     //     扫出来（于是报 S1「首行是 %%NB9%%」与 S4 占位符残留），围栏外那个真组件反倒隐身。
     // 变异测试：把 [ \t] 改回 \s，上面这个 fixture 立刻从 [PASS] 1 个 notebook 变成
     // [FAIL] 且认出的是围栏里那个假的；同一变异对 LF 文件（nb-good.mdx）毫无影响——
@@ -103,7 +103,7 @@ export function scanMdx(src) {
     // 进而报「没有 setupCode / 没有 cells」这类假 FAIL。假 FAIL 会让人开始无视整张报告
     // （E2 新发现 ②：绿 ≠ 在测量；反过来，红 ≠ 真有问题）。
     // E3 实测：现网 content/ 56 篇 MDX、326 个标签里落在行内代码段的是 0 个，
-    // 所以这次修补对现有输出是零回归；但 .qoder/e3-fixture 一写就撞上了，说明它一步之遥。
+    // 所以这次修补对现有输出是零回归；但 .agent/e3-fixture 一写就撞上了，说明它一步之遥。
     // 只在同一行内找配对反引号：CommonMark 允许行内代码段跨行，但那种写法本仓没有，
     // 找不到配对就按普通字符继续，行为退回修补前，不会更糟。
     if (c === "`") {

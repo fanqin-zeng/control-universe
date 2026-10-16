@@ -95,7 +95,7 @@
 
 [孙助] 6 道习题覆盖：单位划分闭式、模糊化与激活、解模糊化三法与离散化、FAMM 对称性、零阶 Sugeno 加权平均、TS 严格稳定性；难度从代入到证明递进。6 份答案全部给出关键推导步骤与实测核对值，一一对应。
 
-[郑核] fix-logs 回归检查（`.qoder/fix-logs/INDEX.md`）：Fix-002/003/005（交互组件固定坐标轴、禁用动画）已核对 `FuzzyExplorer` 三面板硬编码 min/max 与两级 `animation:false`；Fix-004（禁 ipywidgets）全文 0 处；Fix-011（notebook 序号模块级唯一）9 个 notebook 标题互不重复；Fix-012（`$$` 独立成行）全文 0 处同行开闭。结构检查：12 个 H2 与 catalog 完全一致；0 个 ` ```python ` 块、0 个 `language=`、0 个 `savefig`；习题 6 + 答案 6。**修改 1 处**：小结原引用绝对微秒（19.38→25.28 µs、23.34→52.14 µs），计时随机器负载漂移、与 notebook 每次运行的打印值对不上，改为只引用比值（约 1.3 倍 / 约 2.2 倍）并注明"绝对微秒数以 Notebook 8 当次打印为准"。
+[郑核] fix-logs 回归检查（`.agent/fix-logs/INDEX.md`）：Fix-002/003/005（交互组件固定坐标轴、禁用动画）已核对 `FuzzyExplorer` 三面板硬编码 min/max 与两级 `animation:false`；Fix-004（禁 ipywidgets）全文 0 处；Fix-011（notebook 序号模块级唯一）9 个 notebook 标题互不重复；Fix-012（`$$` 独立成行）全文 0 处同行开闭。结构检查：12 个 H2 与 catalog 完全一致；0 个 ` ```python ` 块、0 个 `language=`、0 个 `savefig`；习题 6 + 答案 6。**修改 1 处**：小结原引用绝对微秒（19.38→25.28 µs、23.34→52.14 µs），计时随机器负载漂移、与 notebook 每次运行的打印值对不上，改为只引用比值（约 1.3 倍 / 约 2.2 倍）并注明"绝对微秒数以 Notebook 8 当次打印为准"。
 
 ### 学生审校（可读性）
 
@@ -113,7 +113,7 @@
 - `content/intelligent/fuzzy-control-basics.mdx`（3281 行，12 小节，9 notebook / 33 cell，1 交互组件，1 概念图，6 习题 + 6 答案）
 - `components/wiki/fuzzy-explorer.tsx`（已注册进 `mdx-components.tsx` 与 `lib/content.ts`，`npx tsc --noEmit` 通过）
 - `public/images/fuzzy-control-concept.png`（matplotlib 计算图，四联面板）
-- `.qoder/delivery-tracker.md` 对应条目打勾
+- `.agent/delivery-tracker.md` 对应条目打勾
 
 ---
 
@@ -177,4 +177,4 @@
 - `FuzzyExplorer`：3 个 ECharts canvas；把 h/s 从 1.00 拖到 0.60 后读数按闭式更新（μx 0.5000 → 0.1667、Σμ 范围 [1.000, 1.000] → [0.333, 1.000]、max|Σμ−1| 0 → 6.67e-1），x 拖到 −22 后 Σα = 0.3333；坐标轴为硬编码常量（X_LO/X_HI/U_LO/U_HI），`animation:false` 写在 option 与 series 两级。
 - 页面文本可检索到全部关键实测值：−2.860487、4.6875、9540、16807、29.637、30.455、5.3548387097、4.000001、1.1357、0.666667。
 - console 仅 React DevTools 的 info 一条，无 error / warning。
-- **验证过程中发现并修复 Fix-013**：`setupCode={`…`},` 的收尾逗号在 JSX 属性之间非法，next-mdx-remote 编译抛错后 `getLesson` throw，页面表现为 **404 而非 500**；本地 Python harness 不解析 MDX 故完全抓不到。全文 8 处已去除，并记入 `.qoder/fix-logs/2026-09-24-013.md`。今后交付验收必须包含"页面 200 且 h2 数 == catalog 小节数"。
+- **验证过程中发现并修复 Fix-013**：`setupCode={`…`},` 的收尾逗号在 JSX 属性之间非法，next-mdx-remote 编译抛错后 `getLesson` throw，页面表现为 **404 而非 500**；本地 Python harness 不解析 MDX 故完全抓不到。全文 8 处已去除，并记入 `.agent/fix-logs/2026-09-24-013.md`。今后交付验收必须包含"页面 200 且 h2 数 == catalog 小节数"。

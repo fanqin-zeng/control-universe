@@ -104,7 +104,7 @@
 [孙助] 习题 5 道覆盖：正定判定（定义/判据）、直接法+LaSalle（定理应用）、间接法+临界情形（两法边界）、吸引域估计（定理应用）、PD+Lyapunov 工程套路（应用）。难度梯度：1→5 递进。答案逐题给推导步骤，不只给结论。修改 1 处：习题 3 原稿只问 $\theta=0$，补问 $\theta=\pi$ 以覆盖不稳定分支。
 
 [郑核] 风格与一致性：术语统一"李雅普诺夫函数/Lyapunov 函数"混用问题→正文统一中文"李雅普诺夫函数"，公式符号统一 $V$、$\dot V$；与本章前序课程交叉引用（非线性系统特性、相平面分析）已加。无知识幻觉抽查：LaSalle 定理、Krasovskii 条件、solve_lyapunov 签名均核实。
-**fix-logs 回归检查**：查 `.qoder/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）、Fix-004（ipywidgets 禁用）适用于本课 `LyapunovExplorer`：已确认坐标轴常量固定 $[-4,4]$、`animation: false`、无 ipywidgets。Fix-001（缺控件）不适用（本课组件含 3 滑块）。无重犯。
+**fix-logs 回归检查**：查 `.agent/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）、Fix-004（ipywidgets 禁用）适用于本课 `LyapunovExplorer`：已确认坐标轴常量固定 $[-4,4]$、`animation: false`、无 ipywidgets。Fix-001（缺控件）不适用（本课组件含 3 滑块）。无重犯。
 
 ### 学生审校（可读性）
 
@@ -125,6 +125,6 @@
    - 4 个 `<JupyterNotebook>`（手算验证 / 间接法与 Lyapunov 方程 / 吸引域内外初值 / 卫星姿态机动）
    - 1 个交互组件 `components/wiki/lyapunov-explorer.tsx`（`LyapunovExplorer`，已注册至 `lib/content.ts` 与 `mdx-components.tsx`；固定坐标轴、禁动画）
    - 5 道习题 + 5 道完整答案
-5. 交付记录：`.qoder/delivery-tracker.md` 中 lyapunov-stability 打勾，统计更新。
+5. 交付记录：`.agent/delivery-tracker.md` 中 lyapunov-stability 打勾，统计更新。
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、代码可运行、可视化符合 v1.3 双轨制。签发。

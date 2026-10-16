@@ -277,7 +277,7 @@ function staticCheck(file) {
     // 服务端是 setup = body.get("setup_code", DEFAULT_SETUP)：默认值只在**键缺失**时生效，
     // 键存在但为空串照样原样发过去 → numpy/matplotlib/rcParams 一行都不跑，第一个 cell 就 NameError。
     // 组件（components/wiki/jupyter-notebook.tsx）也是无条件带上这个键的，所以这不是理论风险。
-    // 实测（.qoder/e3-setup.mjs，跑完即删）：content/ 182 个 notebook 里空串 0 个、纯空白 0 个、
+    // 实测（.agent/e3-setup.mjs，跑完即删）：content/ 182 个 notebook 里空串 0 个、纯空白 0 个、
     // 无 import 行的 0 个 —— 加这条对现网输出零回归，属于预防性收口。
     // unterminated 的情况交给下面 blocks 循环里的「模板字面量没有闭合反引号」，别在这里抢报。
     else if (!nb.setup.unterminated && !nb.setup.value.trim())
@@ -638,8 +638,8 @@ else {
   S8 fix-011 结构前提：模块级 nbSeq 计数器 + newNotebookId() + 服务端重复 id 兜底（全仓，批量模式报一次）
 
 负向测试（A7 教训：只对着干净的当前仓库跑等于没测）——fixture 是仓库产物，逐条命令与预期
-退出码见 .qoder/e3-fixture/README.md，一条总命令：
-  node scripts/nb-cells.mjs verify --all --root .qoder/e3-fixture --no-kernel
+退出码见 .agent/e3-fixture/README.md，一条总命令：
+  node scripts/nb-cells.mjs verify --all --root .agent/e3-fixture --no-kernel
   → fx/nb-bad FAIL（S0×4 S1×1 S2×2 S3×1 S4×1 S5×5 S7×1）+ S8×4（故意改坏的组件与服务端副本），
     fx/nb-good、fx/nb-crlf、fx/nb-kernel 三个对照组 PASS，退出码 1。
 

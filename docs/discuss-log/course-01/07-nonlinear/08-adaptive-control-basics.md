@@ -96,7 +96,7 @@
 [孙助] 习题 6 道覆盖：一阶 MRAC 的 $\dot V$ 推导与 Barbalat 三前提（核心算法）、PE 判定与失效后果含流形方程（概念）、RLS 递推与遗忘因子 windup 的 $\lambda^{-199}$ 定量核对（实现 + 定量）、$\sigma$-修正 UUB 双区制证明与最优 $\sigma$ 的出路（定理应用）、STR 确认等价的除零保护与三种方案排序（工程判断）、机械臂可辨识性与激励设计（综合）。答案 6 道与习题一一对应，均含推导与数值核对。
 
 [郑核] 风格一致性：术语统一（回归量/持续激励/直流增益匹配流形/确认等价/协方差 windup/泄漏项/正不变集）；交叉引用李雅普诺夫稳定性、反步法设计、滑模控制、H∞控制基础、状态观测器已加（15 处内链）；MDX 安全（模板字符串内无反斜杠、无 `${`、无裸反引号）；多行 display math 全部 `$$` 独占开/闭行（240 个 fence，0 处同行开闭）。
-**fix-logs 回归检查**：查 `.qoder/fix-logs/INDEX.md`——Fix-002/003/005（固定坐标轴、禁动画）适用于 `MracExplorer`：三面板 `min`/`max` 全为硬编码常量、`animation:false`、行内样式，已确认；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）已在全站组件层修复（模块级 `nbSeq`），并按教训做了"同时点击 9 个全部运行"回归；Fix-012（多行公式 `$$` 独占行）已逐行断言。无重犯。
+**fix-logs 回归检查**：查 `.agent/fix-logs/INDEX.md`——Fix-002/003/005（固定坐标轴、禁动画）适用于 `MracExplorer`：三面板 `min`/`max` 全为硬编码常量、`animation:false`、行内样式，已确认；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）已在全站组件层修复（模块级 `nbSeq`），并按教训做了"同时点击 9 个全部运行"回归；Fix-012（多行公式 `$$` 独占行）已逐行断言。无重犯。
 
 ### 学生审校（可读性）
 
@@ -118,7 +118,7 @@
    - 1 个交互组件 `components/wiki/mrac-explorer.tsx`（`MracExplorer`，注册至 `lib/content.ts` 与 `mdx-components.tsx`；三面板固定坐标轴、禁动画、3 滑块 + 4 按钮 + 8 读数块）
    - 1 张 matplotlib 计算图 `public/images/adaptive-control-concept.png`（MRAC 直接法 + STR 间接法双回路）
    - 6 道习题 + 6 道完整答案
-5. 交付记录：`.qoder/delivery-tracker.md` 打勾并更新统计。
+5. 交付记录：`.agent/delivery-tracker.md` 打勾并更新统计。
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、代码可运行、可视化符合 v1.3 双轨制、概念图为计算图。签发。
 

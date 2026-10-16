@@ -16,11 +16,11 @@
 ## 2. 新会话开工必读（按顺序）
 
 1. 本文件。
-2. `.qoder/skills/wiki-discussion/SKILL.md` —— 讨论式内容生成工作流（Phase 1–4、发言纪律、日志结构、数值三方对账）。**写/改任何课程内容前必读。**
-3. `.qoder/skills/wiki-discussion/personas.md` —— 22 名角色 + 14 类轮值专家的完整人设与检查清单（"团队全貌"一节是人数与分组的最终权威）。
-4. `.qoder/semester-02-plan.md` —— **按学期（版本迭代）的重构计划**，见 §5。第 4 节含每个工作包的自包含推荐 Prompt。
-5. `.qoder/delivery-tracker.md` —— 交付台账（每课打勾记录，与 catalog 交叉校验）。
-6. `.qoder/fix-logs/INDEX.md` —— 历史返工归因库（写组件/数值前扫一眼能省一次返工）。
+2. `.agent/skills/wiki-discussion/SKILL.md` —— 讨论式内容生成工作流（Phase 1–4、发言纪律、日志结构、数值三方对账）。**写/改任何课程内容前必读。**
+3. `.agent/skills/wiki-discussion/personas.md` —— 22 名角色 + 14 类轮值专家的完整人设与检查清单（"团队全貌"一节是人数与分组的最终权威）。
+4. `.agent/semester-02-plan.md` —— **按学期（版本迭代）的重构计划**，见 §5。第 4 节含每个工作包的自包含推荐 Prompt。
+5. `.agent/delivery-tracker.md` —— 交付台账（每课打勾记录，与 catalog 交叉校验）。
+6. `.agent/fix-logs/INDEX.md` —— 历史返工归因库（写组件/数值前扫一眼能省一次返工）。
 7. 跑一遍 `npm run check`，以脚本输出刷新你对当前状态的认知（本文件 §10 的快照可能已过期）。
 
 ## 3. 技术栈与常用命令
@@ -59,7 +59,7 @@ docs/
   to-online/                 # 待上线素材
 scripts/                     # check-catalog / verify-lesson / nb-cells / glossary / serve / jupyter_server
 Python/                      # Python 运行时（含 Jupyter kernel）
-.qoder/                      # ★ Qoder 时期固化的"工作记忆"，见 §7，勿删
+.agent/                      # ★ Qoder 时期固化的"工作记忆"，见 §7，勿删
 OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline）
 ```
 
@@ -74,7 +74,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 
 ### 5.1 学期计划文件（用户要求找到的那份）
 
-**`.qoder/semester-02-plan.md`**（约 2400 行）就是按学期的重构计划，结构：
+**`.agent/semester-02-plan.md`**（约 2400 行）就是按学期的重构计划，结构：
 
 - §0 现状盘点（事实基线，全部脚本实测）
 - §1 结构诊断 P1–P11（附行级证据）
@@ -101,7 +101,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 
 ## 6. 内容生产方法论：多角色讨论（本仓库的核心资产）
 
-完整规则在 `.qoder/skills/wiki-discussion/SKILL.md` + `personas.md`，此处只给骨架：
+完整规则在 `.agent/skills/wiki-discussion/SKILL.md` + `personas.md`，此处只给骨架：
 
 ### 6.1 四阶段流程（每课必走，不得跳过直接写内容）
 
@@ -128,12 +128,12 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 - **上场规则**：按 `LessonMeta.type`（math/theory/impl/case/frontier/learning/history）查 SKILL.md《角色上场规则》矩阵，单课 7–10 人，不全员到会。
 - **否决权**：柯验（数值三方不一致）、何疑（对比公平性）→ 内容级打回；郑核 → 签发级闸门；秦构九项前端硬门槛任一未过 → 郑核不得签发。
 
-## 7. `.qoder/` 的地位：Qoder 固化的工作记忆
+## 7. `.agent/` 的地位：Agent 工作记忆（工具中立）
 
-本仓库此前用 **Qoder** 开发，`.qoder/` 是其固化下来的过程资产，**是活文档，不是废料，勿删勿移**：
+本仓库早期用 Qoder 开发，2026-10-16 已将 `.qoder/` 整体迁移为 `.agent/`（git 历史保留 rename 记录）。它是跨工具的项目过程资产：**任何 vibe coding 工具（Codex / Cursor / Claude Code 等）都通过本文件（AGENTS.md，跨工具通用约定）进入，不依赖特定工具的私有目录**。**是活文档，不是废料，勿删勿移**：
 
 ```
-.qoder/
+.agent/
   semester-02-plan.md        # ★ 学期重构计划（§5）
   delivery-tracker.md        # ★ 交付台账（打勾与验收记录，与 npm run check 联动）
   v1.3-refactor-plan.md      # 可视化双轨制重构清单（哪些课待转交互组件）
@@ -145,6 +145,8 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 ```
 
 新工具链（`npm run check` 等）已把其中部分规则自动化，但**计划、人设、讨论纪律、fix 归因**仍以这些文件为权威。
+
+> 迁移说明：若某工具只认自家入口文件（如 Claude Code 的 `CLAUDE.md`），建一个只含一行 `See AGENTS.md` 的指针文件即可，不要复制内容（避免双源漂移）。
 
 ## 8. 硬规则（红线，违反即返工）
 
@@ -165,7 +167,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 | M2 数值三方对账 | 柯验 + `npm run verify`（notebook 复算） |
 | M3 前端九项硬门槛 | `npm run verify`（秦构） |
 | M4 定量对比红队 | 何疑三条件（对比课必过） |
-| M5 fix 归因与回顾 | `.qoder/skills/fix-tracker/` + `fix-logs/` |
+| M5 fix 归因与回顾 | `.agent/skills/fix-tracker/` + `fix-logs/` |
 | 统计口径统一 | `npm run check`（A7） |
 | 依赖图校验 | catalog `prereq` + check 第 9 节（A8） |
 | 术语/符号统一 | `npm run glossary:check`（E4） |
@@ -177,7 +179,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 - 讨论日志 11 篇 / 覆盖 11 门；**有 MDX 但无日志 45 门**（C0 要补的最大隐性负债）。
 - 交互组件 36 个（孤儿 1：`bode-margins-explorer.tsx`，Q3 待裁决）。
 - `npm run check`：PASS 17 · WARN 36 · FAIL 0。
-- git 工作区有大量未提交改动（semester-02 的 A/B/E 阶段成果尚未 commit）；`npm run build` 交付前自行复验。
+- git：semester-02 的 A/B/E 阶段成果已提交并合入 `master`（2026-10-16）；`.qoder/` 已迁移为 `.agent/`。`npm run build` 交付前自行复验。
 
 **下一步（按 plan §4）**：收尾 A6（7 章章内重排）→ C0（补讨论日志）→ C1–C8（存量 v1.3 化）与 D1–D3（P0 新课）交错推进。
 
@@ -187,3 +189,39 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 - **只改本工作包声明的文件**；完成后更新 delivery-tracker 与 plan 勾选，删除临时产物。
 - 每次修改后把实际验收输出（命令 + 退出码）粘贴进交付记录。
 - 用户裁决项以 Q 编号登记在 plan/tracker 的批注里（已到 Q24+）；发现新矛盾先登记待裁决，不要擅自大改冻结文件（plan §1–§2 与诊断报告已冻结）。
+
+## 12. 分支管理与交付节奏（2026-10-16 起）
+
+### 12.1 模型：master 主干 + 按工作包的短命分支
+
+```
+master  ──●──────────●──────────●──▶   （永远 = npm run check 绿 + 可 build）
+            \        / \        /
+             ●──●──●    ●──●──●         （wp/<阶段>-<工作包>，寿命 ≤ 1 个工作包）
+```
+
+| 规则 | 内容 |
+|------|------|
+| `master` | 唯一长期分支。合入门槛：`npm run check` 退出码 0（FAIL=0，WARN 需已在 plan/tracker 登记为已知项）；涉及页面改动另跑 `npm run verify <chapter>/<lesson>` |
+| 工作包分支 | 从 `master` 切出，命名 `wp/<阶段>-<内容>`，如 `wp/a6-modern-reorder`、`wp/d1-math-chapter`、`wp/c1-classic-v13`。**以工作包命名，禁止以工具/日期命名**（教训：`qoder/context/0921` 这种分支让工作在工具专属分支上滞留数周无人认领） |
+| 分支寿命 | 一个工作包一条分支，做完即合即删；跨天继续也沿用同一条分支，不另开 |
+| 合并方式 | `git merge --no-ff`，保留工作包边界，便于整体 revert 一个工作包 |
+| 提交粒度 | 一次提交 = 一个可独立描述的完成态（如"迁移 .qoder→.agent"单独成 commit）；讨论日志、tracker 打勾、plan 勾选与正文改动同 commit 落盘，不留"改了内容没记台账"的悬空态 |
+| 版本标记 | 学期阶段边界（如 course-02 的 A/C/D 各阶段收官）打 tag：`git tag course02-A`、`course02-C1` 等，方便回溯"当时 19 门交付"这类口径 |
+
+### 12.2 为什么不用更重的模型
+
+- 单人维护 + Agent 协作的内容仓库，没有多人并行 / CI 门禁 / 发布列车，Git Flow 的 develop/release 分支是纯开销。
+- 课程生产的工作单元天然是 plan §4 的工作包（A6/C1/D1…），一个包一个分支正好与 delivery-tracker 的勾选粒度对齐。
+- 本仓库的"状态"在文件里（catalog status + tracker 勾选 + plan 复选框），`npm run check` 就是事实上的 CI；合入前本地跑一遍等价于 PR 检查。
+
+### 12.3 操作口诀
+
+```bash
+git checkout master && git checkout -b wp/<阶段>-<内容>   # 开工
+# ...改内容 + 讨论日志 + tracker + plan 勾选...
+npm run check                                               # 必须退出码 0
+git add -A && git commit                                    # 台账同 commit
+git checkout master && git merge --no-ff wp/<阶段>-<内容>   # 合入
+git branch -d wp/<阶段>-<内容>                               # 即合即删
+```

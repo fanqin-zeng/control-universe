@@ -126,7 +126,7 @@
 | 控制台 | 仅 React DevTools info，无 error/warning（`交点 series not exists` 已消除） |
 | 结构检查 | 0 个 ```python、0 个 `language=`、0 个 `savefig`、0 个 ipywidgets、CR 0、TAB 0、`` `}, `` 0 处、`np.trapz` 0 处 |
 | 讨论日志 | 本文件（`docs/discuss-log/course-01/07-nonlinear/03-describing-function.md`） |
-| 交付记录 | `.qoder/delivery-tracker.md` 描述函数法一行更新（保持 `[x]`，统计 16/83、30 组件不变——本课复用已有组件） |
+| 交付记录 | `.agent/delivery-tracker.md` 描述函数法一行更新（保持 `[x]`，统计 16/83、30 组件不变——本课复用已有组件） |
 | fix-logs | 新增 `2026-09-25-014.md` + INDEX 行 |
 
 **签发结论**：内容、代码、可视化、习题答案四者一致，所有数字有实测支撑，未测项已显式标注。同意定稿。

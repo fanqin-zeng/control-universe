@@ -3,7 +3,7 @@
  * check-catalog.mjs —— 交付统计的唯一权威来源（semester-02 A7 / A8）
  *
  * 交叉核对五处：content/catalog.ts、content/<chapter>/<lesson>.mdx、
- * .qoder/delivery-tracker.md、docs/discuss-log/course-*\/、components/wiki/*.tsx
+ * .agent/delivery-tracker.md、docs/discuss-log/course-*\/、components/wiki/*.tsx
  * A8 起再基于 prereq 字段校验依赖图（环 / 悬空边 / 章序违反 / 孤儿课 / 拓扑层级）。
  *
  * 默认只读。写入需显式加 --fix-outline / --fix-tracker-stats。--topo 打印每课拓扑层级。
@@ -30,7 +30,7 @@ const ROOT = (rootArg >= 0 ? argv[rootArg + 1] : join(dirname(fileURLToPath(impo
 
 const P_CATALOG = join(ROOT, "content/catalog.ts");
 const P_CONTENT = join(ROOT, "content");
-const P_TRACKER = join(ROOT, ".qoder/delivery-tracker.md");
+const P_TRACKER = join(ROOT, ".agent/delivery-tracker.md");
 const P_OUTLINE = join(ROOT, "OUTLINE.md");
 const P_DISCUSS = join(ROOT, "docs/discuss-log");
 const P_COMPONENTS = join(ROOT, "components/wiki");
@@ -127,7 +127,7 @@ INFO("MDX 文件 " + mdxByKey.size + " 个 · catalog 骨架课(status=empty) " 
 SECTION(3, "delivery-tracker.md ↔ catalog 交叉核对");
 let trackerChecked = 0, trackerRows = 0, trackerStats = null;
 if (!trackerRaw) {
-  WARN("找不到 .qoder/delivery-tracker.md，跳过本节");
+  WARN("找不到 .agent/delivery-tracker.md，跳过本节");
 } else {
   const rowRe = /^\| \[( |x)\] (.+?) \(([a-z0-9-]+)\) \|/gm;
   const secRe = /^### (.+?) \(([a-z0-9-]+)\)$/gm;

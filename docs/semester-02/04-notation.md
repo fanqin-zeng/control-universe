@@ -10,7 +10,7 @@
 > 改这两张表就是改门槛。
 >
 > 姊妹文件：`03-glossary.md`（中英术语对照与别名冲突，C2/C2b 判据）。
-> 抽取脚本：`scripts/glossary.mjs`（口径见 §1）。负向夹具：`.qoder/e4-fixture/`。
+> 抽取脚本：`scripts/glossary.mjs`（口径见 §1）。负向夹具：`.agent/e4-fixture/`。
 >
 > **本文件只给裁决建议，不改任何 MDX 正文**（E4 的硬约束）。所有待修课程都移交 C1 / A6，
 > 每条修复要按 B8 开 fix-log 并填归因三字段。
@@ -575,7 +575,7 @@ PM、GM 两行的第 1 列匹配 `^[A-Z0-9]{2,}$`，**输出与正确切片一�
 判据静默失效却给出正确数字，是最难发现的那类坏（E2：「绿 ≠ 在测量」）。§5-1 自己又写了一遍字面，同一个坑踩第二次。
 **根治**：三处切片统一改走 `scripts/glossary.mjs` 的 `sentinelSlice()`，判据是「整行 trim 后等于哨兵」。
 散文里的哨兵永远不独占一行，所以正文怎么引用都安全，不必再靠"只写名字"这种纪律。
-**回归测试固化在夹具里**：`.qoder/e4-fixture/ok/docs/semester-02/04-notation.md` 的头部**故意**写全两个字面哨兵（第 7 行），
+**回归测试固化在夹具里**：`.agent/e4-fixture/ok/docs/semester-02/04-notation.md` 的头部**故意**写全两个字面哨兵（第 7 行），
 真哨兵在第 41 行。实测：若退回 `indexOf`，ABBREV 切片会从第 7 行开始、吞掉 **28 行**无关表格，
 而解析结果**仍是** `{PM, GM}`——正是"判据失效但输出正确"，靠跑一遍 `check` 永远发现不了；
 `sentinelSlice()` 下切片是干净的 **6 行**。unit-probe 的 **F 组**（F1–F5）钉住这条判据，
@@ -653,4 +653,4 @@ npm run glossary:check                 # 同上（package.json 别名）
 - 不要为了消除 B 级冲突而大规模换字母（§3.4：107 个基全部保留，必修只 14 项 / 54 处，且多数是补下标与补声明）
 - 不要把 `Ts`(33)、`Nr`(10) 这类连写当"下标丢了下划线"——实测它们是真连乘
   （`compensator-design:270` 的 $\frac{1+\alpha Ts}{1+Ts}$ 是 $T\cdot s$；`modern-case-study:262` 的 $Nr$ 是 $N\cdot r$）
-- 不要把 `.qoder/e4-fixture/{ok,bad}/docs/` 里的玩具登记表抄进本文件（夹具是负向测试，`bad` 根**必须**保持红）
+- 不要把 `.agent/e4-fixture/{ok,bad}/docs/` 里的玩具登记表抄进本文件（夹具是负向测试，`bad` 根**必须**保持红）

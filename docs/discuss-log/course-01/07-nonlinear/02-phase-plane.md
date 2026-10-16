@@ -75,7 +75,7 @@
 
 [何仿] 回应李稳 (3) 与赵工：截面取在驱动相位 $=0$（stroboscopic），取错相位只是旋转坐标系、不动点位置变但乘子不变（正文给一句说明）；无轮辐轮的"恢复到 1% 步数" $=\ln(0.01)/\ln|\mu|=25.46$ 步，写进读数区。
 
-[郑核] 审校前置检查：查 `.qoder/fix-logs/INDEX.md`，本课命中 Fix-002/003（固定坐标轴、禁动画）、Fix-004（禁 ipywidgets）、Fix-011（多 notebook 唯一 kernel id）、Fix-012（`$$` 独占行）、Fix-013（JSX 属性间无逗号）、Fix-014（组件默认值复现手算例）。逐条核对组件源码：`animation:false` ✓、`def.box` 固定轴 ✓、无 ipywidgets ✓、默认参数 = 手算例 ✓。
+[郑核] 审校前置检查：查 `.agent/fix-logs/INDEX.md`，本课命中 Fix-002/003（固定坐标轴、禁动画）、Fix-004（禁 ipywidgets）、Fix-011（多 notebook 唯一 kernel id）、Fix-012（`$$` 独占行）、Fix-013（JSX 属性间无逗号）、Fix-014（组件默认值复现手算例）。逐条核对组件源码：`animation:false` ✓、`def.box` 固定轴 ✓、无 ipywidgets ✓、默认参数 = 手算例 ✓。
 
 ---
 
@@ -119,7 +119,7 @@
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、12 个 notebook 全部可运行、2 个交互组件复现手算例。签发。
 
-交付物：`content/nonlinear/phase-plane.mdx`（2128 行 / 92467 字符，15 H2、12 notebook 组件、2 交互组件、6 习题 + 6 答案）；`components/wiki/phase-plane-explorer.tsx`、`components/wiki/trace-det-explorer.tsx` 注册于 `mdx-components.tsx` 与 `lib/content.ts`；`.qoder/delivery-tracker.md` 对应行打勾。
+交付物：`content/nonlinear/phase-plane.mdx`（2128 行 / 92467 字符，15 H2、12 notebook 组件、2 交互组件、6 习题 + 6 答案）；`components/wiki/phase-plane-explorer.tsx`、`components/wiki/trace-det-explorer.tsx` 注册于 `mdx-components.tsx` 与 `lib/content.ts`；`.agent/delivery-tracker.md` 对应行打勾。
 
 ---
 

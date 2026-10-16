@@ -96,7 +96,7 @@
 [孙助] 习题 6 道覆盖：切换函数与增益下界（定义）、倒立摆完整设计+边界层双界（主算法）、有限时间证明+Barbalat 辨析（核心概念+纠错）、边界层定量反解（定理应用）、秩条件判定+处理思路（判定技能）、幂次律推导+残差带（进阶）。答案含完整推导与数值。
 
 [郑核] 风格一致性：术语统一（切换面/滑动模态/等效控制/到达律/匹配/准滑动模态）；交叉引用反馈线性化、李雅普诺夫稳定性、非线性系统特性已加；MDX 安全（裸 `<` 仅出现在数学与模板字符串内；单元格内无反斜杠、无 `${`）。
-**fix-logs 回归检查**：查 `.qoder/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）适用于 `SlidingModeExplorer`：已确认相平面 $x\in[-2,2],\ \dot x\in[-8,8]$、时间图 $t\in[0,6],\ y\in[-2,2]$ 固定，`animation:false`，行内样式；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）按教训做了"同时点击 5 个全部运行"回归：5 个 notebook 全部无 Traceback。无重犯。
+**fix-logs 回归检查**：查 `.agent/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）适用于 `SlidingModeExplorer`：已确认相平面 $x\in[-2,2],\ \dot x\in[-8,8]$、时间图 $t\in[0,6],\ y\in[-2,2]$ 固定，`animation:false`，行内样式；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）按教训做了"同时点击 5 个全部运行"回归：5 个 notebook 全部无 Traceback。无重犯。
 
 ### 学生审校（可读性）
 
@@ -118,7 +118,7 @@
    - 1 个交互组件 `components/wiki/sliding-mode-explorer.tsx`（`SlidingModeExplorer`，注册至 `lib/content.ts` 与 `mdx-components.tsx`；固定坐标轴、禁动画、4 滑块 + 4 按钮）
    - 2 张重算重画的概念图（覆盖 `public/images/sliding-mode-concept.png` 与 `chattering-phenomenon.png`，原 AI 图数学错误）
    - 6 道习题 + 6 道完整答案
-5. 交付记录：`.qoder/delivery-tracker.md` 打勾并更新统计。
+5. 交付记录：`.agent/delivery-tracker.md` 打勾并更新统计。
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、代码可运行、可视化符合 v1.3 双轨制、概念图经数学审查。签发。
 

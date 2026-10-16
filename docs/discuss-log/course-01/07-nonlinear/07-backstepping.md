@@ -94,7 +94,7 @@
 [孙助] 习题 6 道覆盖：结构判定含"重排状态可救"（判定技能）、$g_1$ 变号设计（边界意识）、三阶递推与参考导数阶数（主算法）、tuning function 三项来源与 PE（核心概念）、极点可达域证明与出路（定理应用）、工程代价估算含 $n=8$ 外推与 ZOH 上界（定量）。答案 6 道与习题一一对应，均含推导与数值核对。
 
 [郑核] 风格一致性：术语统一（镇定函数/交叉项/严格反馈/tuning function/持续激励/可达域）；交叉引用李雅普诺夫稳定性、反馈线性化、自适应控制基础已加；MDX 安全（模板字符串内无反斜杠、无 `${`、无裸反引号）。
-**fix-logs 回归检查**：查 `.qoder/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）适用于 `BacksteppingExplorer`：已确认响应图与可达域图坐标轴固定、`animation:false`、行内样式；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）按教训做了"同时点击 6 个全部运行"回归：6 个 notebook 全部无 Traceback、各出 1 张图。无重犯。
+**fix-logs 回归检查**：查 `.agent/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）适用于 `BacksteppingExplorer`：已确认响应图与可达域图坐标轴固定、`animation:false`、行内样式；Fix-004（禁 ipywidgets）满足；Fix-011（kernel id 冲突）按教训做了"同时点击 6 个全部运行"回归：6 个 notebook 全部无 Traceback、各出 1 张图。无重犯。
 
 ### 学生审校（可读性）
 
@@ -116,7 +116,7 @@
    - 1 个交互组件 `components/wiki/backstepping-explorer.tsx`（`BacksteppingExplorer`，注册至 `lib/content.ts` 与 `mdx-components.tsx`；固定坐标轴、禁动画、3 滑块 + 5 按钮 + 10 读数块）
    - 1 张重算重画的概念图（覆盖 `public/images/backstepping-concept.png`，原 AI 图数学错误）
    - 6 道习题 + 6 道完整答案
-5. 交付记录：`.qoder/delivery-tracker.md` 打勾并更新统计。
+5. 交付记录：`.agent/delivery-tracker.md` 打勾并更新统计。
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、代码可运行、可视化符合 v1.3 双轨制、概念图经数学审查。签发。
 

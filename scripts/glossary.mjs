@@ -139,7 +139,7 @@ const BARE_FUNC = new Set(["sin", "cos", "tan", "exp", "log", "ln", "det", "max"
  * 这张表是从 04-notation.md 的 `<!-- ABBREV-START --> … <!-- ABBREV-END -->` 块读的，**不是写死在代码里**。
  * 三个理由：① 它本来就是一条符号裁决（「PM 是相位裕度，不是 P·M」），裁决归 docs，不归脚本；
  * ② C/D 还要加约 85 门课，新缩写（MTBF、TMR…）应该由写课的人登记进表，而不是改脚本；
- * ③ 只有 ROOT 可配，C5 才能被 `.qoder/e4-fixture` 负向测试（写死的常量测不了）。
+ * ③ 只有 ROOT 可配，C5 才能被 `.agent/e4-fixture` 负向测试（写死的常量测不了）。
  *
  * 表的内容是实测出来的：`abbrs` 子命令把全仓数学环境里所有 ≥2 字母的全大写连写
  * 连同一处原文列出来（56 门课实测 **67 种 / 1131 处**），逐个看上下文后只有 PM、GM 两种是缩写
@@ -1147,7 +1147,7 @@ function rowsDiffNotation(sum) {
 
 // ---------------------------------------------------------------- 入口
 // 被 import 时不跑 CLI：symbolsOf / termsOf / maskNonProse / cleanZhTerm / enKey 需要能单独断言
-// （.qoder/e4-fixture 的单元检查直接 import 本模块，见其 README）。
+// （.agent/e4-fixture 的单元检查直接 import 本模块，见其 README）。
 const IS_MAIN = !!process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (!IS_MAIN) {
   // 只导出函数，不执行任何命令
@@ -1193,10 +1193,10 @@ check 的判据（编号与 verify-lesson.mjs 的九项、nb-cells.mjs 的 S0–
     04 另有 ${ABBREV_START} 全大写缩写判定表（**影响符号抽取本身**，不只是核对用）
 
 负向测试（A7 教训：只对着干净的当前仓库跑等于没测）——fixture 是仓库产物：
-  node .qoder/e4-fixture/unit-probe.mjs                              # 58 条纯函数断言 → 0
-  node scripts/glossary.mjs check --root .qoder/e4-fixture/ok        # 全绿对照组 → 0
-  node scripts/glossary.mjs check --root .qoder/e4-fixture/bad       # 六个注入缺陷 → 1
-  → 逐条命令、预期输出与四条变异测试见 .qoder/e4-fixture/README.md
+  node .agent/e4-fixture/unit-probe.mjs                              # 58 条纯函数断言 → 0
+  node scripts/glossary.mjs check --root .agent/e4-fixture/ok        # 全绿对照组 → 0
+  node scripts/glossary.mjs check --root .agent/e4-fixture/bad       # 六个注入缺陷 → 1
+  → 逐条命令、预期输出与四条变异测试见 .agent/e4-fixture/README.md
 
 退出码：check 有 FAIL → 1；其余命令恒 0（找不到语料 → 1/2）。仅用 Node 内置能力。`);
   process.exit(CMD ? 1 : 2);

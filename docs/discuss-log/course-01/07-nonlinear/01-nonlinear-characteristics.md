@@ -81,7 +81,7 @@
 
 [何仿] 回应李稳 (1)：软弹簧偏差更大（8.780% vs 5.178%）有两个来源：① Lindstedt 一阶修正的误差项是 $O(\alpha^2A_0^4)$，软弹簧 $|\alpha|A_0^2=0.675$ 比硬弹簧 $0.5\times2.25=1.125$ 小，但**软弹簧的周期本身更长**（9.151281 vs 4.647763），绝对偏差被放大；② 软弹簧在 $A_0=1.5$ 时已接近势垒（$x_b=1.825742$），轨迹在势垒附近停留时间变长，一阶摄动的前提（远离同宿轨道）开始失效。数值积分不是主因：`rtol=1e-9,atol=1e-12`，且周期用 28–38 个整周期取平均。
 
-[郑核] 审校前置检查：查 `.qoder/fix-logs/INDEX.md`，本课命中 Fix-002（固定坐标轴）、Fix-003（禁动画）、Fix-004（禁 ipywidgets）、Fix-011（模块级 `nbSeq`，多 notebook 唯一 kernel id）、Fix-012（`$$` 独占行）、Fix-013（JSX 属性间无逗号 + 页面 200/H2 数门槛）、Fix-014（组件默认值复现手算例）、Fix-015（组件需在 `mdx-components.tsx` **与** `lib/content.ts` 双注册）、Fix-016（rk4 抽稀后时间基用返回数组长度自洽换算）。逐条核对：`NonlinearityExplorer` 的 `SPEC` 表按类型写死 `uWin/yWin` ✓、两处 `useECharts` 的 option 均 `animation:false` ✓、无 ipywidgets ✓、默认滞环 $A=1.5,c=0.2$ → 环面积 1.200000 = 正文 $4cA$ ✓、9 个 notebook 的 cell 代码从内核验证过的 harness **逐字拼接**（`nc-splice.py` 断言无 `\`/反引号/`${`）✓、双注册 ✓。
+[郑核] 审校前置检查：查 `.agent/fix-logs/INDEX.md`，本课命中 Fix-002（固定坐标轴）、Fix-003（禁动画）、Fix-004（禁 ipywidgets）、Fix-011（模块级 `nbSeq`，多 notebook 唯一 kernel id）、Fix-012（`$$` 独占行）、Fix-013（JSX 属性间无逗号 + 页面 200/H2 数门槛）、Fix-014（组件默认值复现手算例）、Fix-015（组件需在 `mdx-components.tsx` **与** `lib/content.ts` 双注册）、Fix-016（rk4 抽稀后时间基用返回数组长度自洽换算）。逐条核对：`NonlinearityExplorer` 的 `SPEC` 表按类型写死 `uWin/yWin` ✓、两处 `useECharts` 的 option 均 `animation:false` ✓、无 ipywidgets ✓、默认滞环 $A=1.5,c=0.2$ → 环面积 1.200000 = 正文 $4cA$ ✓、9 个 notebook 的 cell 代码从内核验证过的 harness **逐字拼接**（`nc-splice.py` 断言无 `\`/反引号/`${`）✓、双注册 ✓。
 
 ---
 
@@ -101,7 +101,7 @@
 
 [周联] 代码核对：9 个 notebook 组件全部 `<JupyterNotebook>`，无 ```python 块、无 ipywidgets、无 `language=` 属性（旧稿 3 处已清除）；cell 代码经 `nc-splice.py` 断言不含反斜杠/反引号/`${`（输出 `MDX-UNSAFE: none`）；最慢 cell NB9 实测 17.57 s，在内核 30 s/cell 上限内；NB8 的 `simulate(mode)` 三模式共用同一增益与限幅，`mode != "antiwindup"` 时真正冻结积分器——旧稿"三模式其实都带抗饱和"的缺陷已修正。
 
-[何仿] 仿真核对：所有 notebook 的 cell 代码由 `.qoder/nc-harness6.py`（NB1–NB8）与 `.qoder/nc-harness8.py`（NB9）在内核上跑通后**逐字拼接**进 MDX，不存在转录漂移；合并运行时用 `cells = dict(h6.CELLS[:8]); cells.update(dict(h8.CELLS))` 去重（h6 里有一个过时的 NB9）；NB9 的 $\epsilon$ 收敛性表、$dF/dv$ 表、冷启动扫描、扰动衰减拟合、吸引域扫描五步全部打印，任何一步失败都会暴露。图坐标轴固定、`animation:false`。
+[何仿] 仿真核对：所有 notebook 的 cell 代码由 `.agent/nc-harness6.py`（NB1–NB8）与 `.agent/nc-harness8.py`（NB9）在内核上跑通后**逐字拼接**进 MDX，不存在转录漂移；合并运行时用 `cells = dict(h6.CELLS[:8]); cells.update(dict(h8.CELLS))` 去重（h6 里有一个过时的 NB9）；NB9 的 $\epsilon$ 收敛性表、$dF/dv$ 表、冷启动扫描、扰动衰减拟合、吸引域扫描五步全部打印，任何一步失败都会暴露。图坐标轴固定、`animation:false`。
 
 [吴规] 需求核对：5 条判据每条都挂了一个可测量与一个 notebook 证据；决策表三档（线性化够用 / 局部非线性修正 / 全局非线性分析）与"常见非线性类型"一节的物理签名（滞环=有记忆、死区=小信号零输出、间隙=回程误差 $2b$、饱和=削顶）互相引用，上游规划可以按签名反查参数。
 
@@ -125,7 +125,7 @@
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、9 个 notebook 全部在**浏览器里实跑通过**（各出 1 张图，数值与 harness 逐位一致）、1 个交互组件默认读数复现手算例、页面 200、H2 数 11 == catalog 小节数、katex-error 0、控制台无 error。签发。
 
-交付物：`content/nonlinear/nonlinear-characteristics.mdx`（1857 行，11 H2、9 notebook 组件、1 交互组件、7 习题 + 7 答案）；`components/wiki/nonlinearity-explorer.tsx` 注册于 `mdx-components.tsx` 与 `lib/content.ts`；新增 fix-logs 017/018；`.qoder/delivery-tracker.md` 对应行更新。
+交付物：`content/nonlinear/nonlinear-characteristics.mdx`（1857 行，11 H2、9 notebook 组件、1 交互组件、7 习题 + 7 答案）；`components/wiki/nonlinearity-explorer.tsx` 注册于 `mdx-components.tsx` 与 `lib/content.ts`；新增 fix-logs 017/018；`.agent/delivery-tracker.md` 对应行更新。
 
 ---
 
@@ -190,8 +190,8 @@
 ## 附录 C：环境与工具链问题（供后续课程复用）
 
 1. **间隙环面积的 settle 相位陷阱（已归档为 fix-018）**：有记忆非线性（间隙/滞环）在做上升支扫描前必须先跑几个周期进入周期轨道，且**settle 循环的末相位必须停在 $\theta=-\pi/2$（$u=-A$）**，与上升支起点重合。若停在 $\theta=0$（$u\approx0$，下降支），`prevY` 会带着下降支残留（间隙时 $\approx+b$），使上升支被钉住直到 $u>2b-A$，环面积从 0.84 错算成 0.52（−38%），而 $\max|y-u|$ 仍正确——**只有面积读数出错，最难发现**。
-2. **cell 代码逐字拼接 + 逐字校验（已归档为 fix-017）**：把内核验证过的 harness（`.qoder/nc-harness*.py` 的 `CELLS`）用脚本替换占位符写进 MDX，而不是手抄；拼接后必须再用脚本把 MDX 里的 cell 抽回来与 harness 做**字符串全等**比对（本课 9/9 `ALL MATCH`）。占位符不要写 `%%NBn%%`——经过一层 `%` 格式化会折叠成 `%NBn%`，使 cell 首行 `# 注释` 变成 `%# 注释`，IPython 直接报 `UsageError: Line magic function '%#' not found`，而页面照常 200、组件照常初始化，只有点"运行"才暴露。拼接脚本同时断言 cell 内无反斜杠/反引号/`${`（单引号 JS 模板字面量的三个雷）。
+2. **cell 代码逐字拼接 + 逐字校验（已归档为 fix-017）**：把内核验证过的 harness（`.agent/nc-harness*.py` 的 `CELLS`）用脚本替换占位符写进 MDX，而不是手抄；拼接后必须再用脚本把 MDX 里的 cell 抽回来与 harness 做**字符串全等**比对（本课 9/9 `ALL MATCH`）。占位符不要写 `%%NBn%%`——经过一层 `%` 格式化会折叠成 `%NBn%`，使 cell 首行 `# 注释` 变成 `%# 注释`，IPython 直接报 `UsageError: Line magic function '%#' not found`，而页面照常 200、组件照常初始化，只有点"运行"才暴露。拼接脚本同时断言 cell 内无反斜杠/反引号/`${`（单引号 JS 模板字面量的三个雷）。
 3. **harness 合并去重**：同一编号的 cell 在多个 harness 里出现时（本次 NB9 在 h6 里是过时版本），用 `dict(h6.CELLS[:8]); update(dict(h8.CELLS))`，并断言最终 key 集合恰为 NB1..NB9。
 4. Windows 系统代理使 urllib 对 127.0.0.1:8891 的 POST 返 502 → `build_opener(ProxyHandler({}))`；控制台 GBK → `PYTHONIOENCODING=utf-8` + 重定向到日志文件。
-5. 组件数值核对用 Node 镜像脚本（`.qoder/nc-explorer-check.mjs`）跑十几组工况，与 notebook 实测逐位比对——比在浏览器里肉眼看读数可靠得多。
+5. 组件数值核对用 Node 镜像脚本（`.agent/nc-explorer-check.mjs`）跑十几组工况，与 notebook 实测逐位比对——比在浏览器里肉眼看读数可靠得多。
 6. 交付硬门槛：课程页 `curl` 200、H2 数 == catalog 小节数（本课 11）、控制台无 error、`katex-error` 为 0、组件默认读数 == 手算例、至少 2 个 notebook 在浏览器里实跑并与 harness 数字一致。

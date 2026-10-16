@@ -2,8 +2,8 @@
 /**
  * verify-lesson.mjs —— 单课交付硬门槛自动验收（semester-02 E1）
  *
- * 把 M3 的九项前端交付硬门槛（.qoder/skills/v1.3-refactor/SKILL.md Step 2e，
- * 与 .qoder/skills/wiki-discussion/SKILL.md《前端交付硬门槛（B6 起）》逐字同源）
+ * 把 M3 的九项前端交付硬门槛（.agent/skills/v1.3-refactor/SKILL.md Step 2e，
+ * 与 .agent/skills/wiki-discussion/SKILL.md《前端交付硬门槛（B6 起）》逐字同源）
  * 从人工执行变成一条命令。
  *
  * 用法：
@@ -16,13 +16,13 @@
  *
  * 负向测试（E1 验收的第二半：「对一门故意注入错误的课能报 FAIL」）：
  *   node scripts/verify-lesson.mjs fx/bad-lesson fx/good-lesson \
- *     --root .qoder/e1-fixture --no-http
+ *     --root .agent/e1-fixture --no-http
  *   bad-lesson 注入了 8 处缺陷 → 第 1/2/3/4/5/7/9 项 FAIL、第 8 项 WARN、第 6 项 SKIPPED、退出码 1；
  *   good-lesson 是对照组 → 0 FAIL、退出码 0（它那条 WARN 是故意的：链向 status=empty 的骨架课）。
  *   fixture 是仓库产物、不是临时文件（B6 定的规矩：验证脚本与其测试数据都不得放 %TEMP% 后删），
  *   实测 npm run check 与 tsc --noEmit 都不受它影响（check-catalog.mjs 按根相对路径只取
  *   content/ 与 components/wiki/；tsc 则是压根没编译它——TypeScript 的 include 通配默认跳过
- *   以点开头的目录，E2 用 .qoder/tsc-probe.ts + 仓库根对照探针实测，详见 plan 的 E2 批注 ⑨-i）。
+ *   以点开头的目录，E2 用 .agent/tsc-probe.ts + 仓库根对照探针实测，详见 plan 的 E2 批注 ⑨-i）。
  *
  * 退出码：任何 FAIL → 1；仅 WARN / SKIPPED / 全 PASS → 0。
  * 只用 Node 20+ 内置能力（fs / path / http / url），不引入新依赖，不用 execSync。

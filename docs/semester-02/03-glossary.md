@@ -12,7 +12,7 @@
 > 确认那行不是在给某条冲突签字。
 >
 > 姊妹文件：`04-notation.md`（数学符号约定，C1/C3/C5 判据）。
-> 抽取脚本：`scripts/glossary.mjs`（口径见 §1）。负向夹具：`.qoder/e4-fixture/`。
+> 抽取脚本：`scripts/glossary.mjs`（口径见 §1）。负向夹具：`.agent/e4-fixture/`。
 
 ---
 
@@ -957,7 +957,7 @@ npm run glossary:check                # 同上（package.json 别名）
 - 不要给变体加频次阈值（§1-5：会把整张冲突表滤成 0 条）
 - 不要给 C2 加模糊匹配（§5-1：会把故意不同的对儿判成冲突）
 - 不要为了"数字好看"删 §2.1 的补登记行（它们是 C2 唯一的签字来源）
-- 不要把 `.qoder/e4-fixture/{ok,bad}/docs/` 里的玩具登记表复制进本目录
+- 不要把 `.agent/e4-fixture/{ok,bad}/docs/` 里的玩具登记表复制进本目录
   （夹具的表是**故意**小/故意错的，复制过来等于删掉负向测试）
 
 ---

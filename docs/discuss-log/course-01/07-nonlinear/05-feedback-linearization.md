@@ -102,7 +102,7 @@
 [孙助] 习题 5 道覆盖：Lie 导数计算（定义）、相对阶求取与退化点（定义边界）、IOL 跟踪设计（主算法）、零动态/最小相位判定（核心概念）、全状态线性化条件验证+变换（定理应用）。梯度 1→5 递进；答案含完整推导。修改 1 处：习题 2 补问"$x_1=0$ 处相对阶为何值/是否定义"，覆盖退化情形。
 
 [郑核] 风格一致性：符号统一（$L_f h$、$\mathrm{ad}_f^k g$、$r$、$\eta$）；与前课交叉引用（非线性系统特性、李雅普诺夫稳定性）已加；术语"输入-输出线性化(IOL)"首次出现给全称。
-**fix-logs 回归检查**：查 `.qoder/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）、Fix-004（禁 ipywidgets）适用于 `ZeroDynamicsExplorer`：已确认 $t\in[0,10]$、幅值 $[-6,6]$ 固定、`animation:false`、无 ipywidgets。Fix-001（缺控件）不适用（含滑块）。无重犯。
+**fix-logs 回归检查**：查 `.agent/fix-logs/INDEX.md`——Fix-002/003（固定坐标轴、禁动画）、Fix-004（禁 ipywidgets）适用于 `ZeroDynamicsExplorer`：已确认 $t\in[0,10]$、幅值 $[-6,6]$ 固定、`animation:false`、无 ipywidgets。Fix-001（缺控件）不适用（含滑块）。无重犯。
 
 ### 学生审校（可读性）
 
@@ -123,7 +123,7 @@
    - 4 个 `<JupyterNotebook>`（Lie 导数验证 / 零动态斜率验证 / 倒立摆对比 / 球-梁近似 IOL）
    - 1 个交互组件 `components/wiki/zero-dynamics-explorer.tsx`（`ZeroDynamicsExplorer`，注册至 `lib/content.ts` 与 `mdx-components.tsx`；固定坐标轴、禁动画）
    - 5 道习题 + 5 道完整答案
-5. 交付记录：`.qoder/delivery-tracker.md` 打勾并更新统计。
+5. 交付记录：`.agent/delivery-tracker.md` 打勾并更新统计。
 
 [郑核-签发] 风格统一、无矛盾、无幻觉、代码可运行、可视化符合 v1.3 双轨制。签发。
 
@@ -176,7 +176,7 @@
 
 [郑核] 首次浏览器验证时，NB1 单独运行完全正确，但同时点击 NB2-NB4 的"全部运行"后报出与本页代码无关的错误（`not enough values to unpack (expected 4, got 2)`、`shapes (801,) and (1200,)`）。定位到 `components/wiki/jupyter-notebook.tsx`：kernel id 用**每实例**的 `useRef(0)` 计数器生成，同一页面同毫秒挂载的 4 个 notebook 都得到 `nb-<时间戳>-0`，服务端按 id 建内核 → 4 个 notebook 共用一个命名空间、变量互相覆盖（NB2 的 `run()` 覆盖 NB4 的 `run()`，NB2 的 801 点 `t` 撞上 NB3 的 1200 点 `t`）。
 
-修复：计数器提到模块作用域（`let nbSeq = 0; newNotebookId()`），挂载与 `reset()` 两处统一调用。已归档为 `.qoder/fix-logs/2026-09-23-011.md` 并登记 INDEX。
+修复：计数器提到模块作用域（`let nbSeq = 0; newNotebookId()`），挂载与 `reset()` 两处统一调用。已归档为 `.agent/fix-logs/2026-09-23-011.md` 并登记 INDEX。
 
 **教训（纳入后续课程的 Phase 3 检查项）**：验证多 notebook 课程时，除了逐个运行，必须再做一次"同时点击全部运行"的回归；报错的形状/元组长度与出错代码对不上时，先怀疑命名空间污染而不是自己的代码。
 

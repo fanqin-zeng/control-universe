@@ -2,7 +2,7 @@
 
 > **文档编号**：semester-02 / 01
 > **产出日期**：2026-09-25
-> **来源**：`.qoder/semester-02-plan.md` 第 0 节（现状盘点）与第 1 节（结构诊断 P1–P11）
+> **来源**：`.agent/semester-02-plan.md` 第 0 节（现状盘点）与第 1 节（结构诊断 P1–P11）
 > **对应计划条目**：A1 · 固化结构诊断报告
 > **性质**：**只读诊断**。本报告不修改任何既有文件，全部结论均可用文末命令复现。
 
@@ -78,12 +78,12 @@ grep -rho '<[A-Z][A-Za-z]*Explorer' content/ | sort -u | wc -l
 find docs/discuss-log -name '*.md' | wc -l
 
 # delivery-tracker 勾选计数
-grep -c '^| \[x\]' .qoder/delivery-tracker.md
-grep -c '^| \[ \]' .qoder/delivery-tracker.md
+grep -c '^| \[x\]' .agent/delivery-tracker.md
+grep -c '^| \[ \]' .agent/delivery-tracker.md
 
 # fix-logs：INDEX 条目数 vs 独立文件数
-grep -c '^| 0[0-9][0-9] |' .qoder/fix-logs/INDEX.md
-ls .qoder/fix-logs/*.md | grep -v INDEX | wc -l
+grep -c '^| 0[0-9][0-9] |' .agent/fix-logs/INDEX.md
+ls .agent/fix-logs/*.md | grep -v INDEX | wc -l
 
 # 渲染维度门槛 / 侧栏死链 / 截断检测：需 dev server 在 8080 运行，
 # 逐课 fetch 后提取 <h1-6 id> 与 catalog 的 sub.slug 比对，逻辑与两个解析陷阱见 9.5
@@ -94,7 +94,7 @@ ls .qoder/fix-logs/*.md | grep -v INDEX | wc -l
 | 文件 | 操作 | 授权来源 |
 |------|------|---------|
 | `docs/semester-02/01-structure-diagnosis.md` | **新建**（本报告）；Q1 / Q2 执行后全量重编号 + 新增第 9 节；A2 执行后同步 §0.2 / P6 / §8 / §9.6 / 附录 | A1 交付物 |
-| `.qoder/semester-02-plan.md` | 把 A1、A2 的 `[ ]` 改为 `[x]` | A1 / A2 prompt 明确要求 |
+| `.agent/semester-02-plan.md` | 把 A1、A2 的 `[ ]` 改为 `[x]` | A1 / A2 prompt 明确要求 |
 | `content/catalog.ts` | Q1：`git checkout HEAD --` 丢弃未提交回归（933 → 930 行）<br>Q2：robust 两课对齐 MDX，+3 / −8（930 → 925 行）<br>**A2**：接口块新增 9 行可选字段（925 → **934 行**），未动任何 slug / title / subsections | 用户裁决 Q1=(a)、Q2=(a)、Q8=(a)；A2 推荐 Prompt |
 | `.next/`（构建产物，非源码） | 为修复 N16 缓存损坏而 `rm -rf` 并重启 dev server 重建 | 项目既定补救手段，见 9.6 |
 | 其他任何文件 | **未改动**（MDX 正文、`components/`、`lib/`、`app/`、`delivery-tracker.md`、`OUTLINE.md`、`fix-logs/` 全部原样） | — |
@@ -213,7 +213,7 @@ robust(8):        h-infinity-basics, mixed-sensitivity, mu-synthesis, robust-cas
 | 指标 | 数量 |
 |------|------|
 | `INDEX.md` 表格条目 | **18** |
-| `.qoder/fix-logs/` 下独立日志文件（除 INDEX） | **14** |
+| `.agent/fix-logs/` 下独立日志文件（除 INDEX） | **14** |
 | INDEX 有条目但**无独立日志文件** | **4**：`007` `008` `009` `010` |
 
 实际文件名采用 `YYYY-MM-DD-NNN.md` 格式：
@@ -273,7 +273,7 @@ A1 的核心价值之一是**用实测校正方案里的手写数字**。以下 
 |---|------|------|------|
 | **N1** | **3 门课违反 fix-013 的"H2 数 == catalog 小节数"交付硬门槛**（工作区版本）；HEAD 版本为 2 门 | 见[第 6 节](#6-catalog--mdx-一致性缺陷) | 高：这是 fix-013 明文列为交付门槛的检查项，至今仍不通过 |
 | **N2** | `BodeMarginsExplorer` 是孤儿组件：已实现、两处注册表均未注册、MDX 零引用 | `components/wiki/bode-margins-explorer.tsx:97`；grep 全仓仅此 1 处命中 | 中：死代码；一旦被引用即 500（fix-015 类型） |
-| **N3** | **fix-logs `007`–`010` 无独立日志文件**，只有 INDEX 一行摘要 | `.qoder/fix-logs/` 实有 14 个文件，INDEX 有 18 条 | 中：4 条返工的过程细节已丢失，无法复盘 |
+| **N3** | **fix-logs `007`–`010` 无独立日志文件**，只有 INDEX 一行摘要 | `.agent/fix-logs/` 实有 14 个文件，INDEX 有 18 条 | 中：4 条返工的过程细节已丢失，无法复盘 |
 | **N4** | 组件导出风格不一致：34 个 `export function` + 2 个 `export default function` | `fuzzy-tuning-explorer.tsx:149`、`neural-network-explorer.tsx:82` | 低：会让自动化组件清单脚本漏检 |
 | **N5** | `mpc` 章另有 3 组重复小节，方案 P4 只列了"交互式可视化"一组 | `数值例子` L656/L676/L692；`工业应用` L662/L680/L695；`软件工具` L679/L694 | 中 |
 | **N6** | `intelligent` 章 `工程实践要点` 重复 | L858（fuzzy-controller-design）/ L872（neural-network-control） | 低 |
@@ -322,7 +322,7 @@ A1 的核心价值之一是**用实测校正方案里的手写数字**。以下 
 
 **结构证据**【实测】：`math` 章仅 1 课（`complex-numbers`，catalog.ts L24，7 个小节 L27–L33）。
 
-**人设承诺 vs 目录**：`.qoder/skills/wiki-discussion/personas.md` 中方数教授的"擅长话题"列了 7 项，与 catalog 对照：
+**人设承诺 vs 目录**：`.agent/skills/wiki-discussion/personas.md` 中方数教授的"擅长话题"列了 7 项，与 catalog 对照：
 
 | 方数擅长话题（personas.md） | math 章是否有对应课程 |
 |---------------------------|---------------------|
@@ -336,7 +336,7 @@ A1 的核心价值之一是**用实测校正方案里的手写数字**。以下 
 
 **7 项中 0 项有完整对应课程。**
 
-**规则不可执行**【实测】：`.qoder/skills/wiki-discussion/SKILL.md` L272–L282 规定"遇到需要较多篇幅解释的数学概念，则不在原地展开完整讲解……引用数学基础章节的对应课程"。但被引用的目标课程**不存在**，该规则当前无法遵守。
+**规则不可执行**【实测】：`.agent/skills/wiki-discussion/SKILL.md` L272–L282 规定"遇到需要较多篇幅解释的数学概念，则不在原地展开完整讲解……引用数学基础章节的对应课程"。但被引用的目标课程**不存在**，该规则当前无法遵守。
 
 **已在正文中出现、却无 math 课可引用的依赖**（抽样，附 catalog 行号）：
 
@@ -490,7 +490,7 @@ export interface Chapter {         // L12
 
 - 11 章中，带 `*-case-study` 的章有 5 个：`classic`（L207）、`modern`（L370）、`robust`（L476）、`mpc`（L636）、`intelligent`（L880，空）——**均为章内案例，无跨章选型总纲**
 - 无导论章：catalog 第 1 章直接是 `math`（L20），没有任何"控制理论全局地图 / 方法选型"课程
-- `.qoder/skills/wiki-discussion/personas.md` 定义了 7 类轮值领域专家（化工过程控制 / 自动驾驶 / 航空航天 / 机器人控制 / 电力系统 / 电机驱动 / 生物医学），但 catalog 中**没有任何一章承接行业专题**——7 类专家的行业知识只能在单课里出现一次即消失
+- `.agent/skills/wiki-discussion/personas.md` 定义了 7 类轮值领域专家（化工过程控制 / 自动驾驶 / 航空航天 / 机器人控制 / 电力系统 / 电机驱动 / 生物医学），但 catalog 中**没有任何一章承接行业专题**——7 类专家的行业知识只能在单课里出现一次即消失
 
 ### P10 · 角色团队的职责真空【严重】
 
@@ -635,7 +635,7 @@ D1–D6 全部**无法被自动发现**，因为 `LessonMeta` 没有 `prereq` �
 
 ## 6. catalog ↔ MDX 一致性缺陷
 
-`.qoder/fix-logs/INDEX.md` 的 fix-013 把"页面 200 且 h2 数 == catalog 小节数"列为**交付硬门槛**。实测该门槛当前**不通过**。
+`.agent/fix-logs/INDEX.md` 的 fix-013 把"页面 200 且 h2 数 == catalog 小节数"列为**交付硬门槛**。实测该门槛当前**不通过**。
 
 ### 6.1 全量核对结果【实测】
 
@@ -908,9 +908,9 @@ KaTeX 报 `ParseError: Expected 'EOF', got '&' at position 16: \min_{U} \quad &�
 | `content/catalog.ts` | **A2**：接口块新增 9 行可选字段（`LessonMeta` 的 `prereq`/`level`/`type`/`status`、`Chapter` 的 `order`），925 → **934 行**；未动任何 slug / title / subsections，未调整顺序 | 用户裁决 Q8 = (a) + A2 推荐 Prompt，见 9.6 |
 | `.next/`（构建产物） | 为修复 N16 缓存损坏，kill 进程树后 `rm -rf .next` 并 `npm run dev` 重启重建 | 项目既定补救手段，见 9.6 |
 | `docs/semester-02/01-structure-diagnosis.md` | A1 产出；Q1/Q2 后全量重编号（523 个 `L<n>` 令牌，改写 317 个）；新增第 9 节；§0.2 / §6.1 / §6.2 / §6.3 / §6.4 / §8 同步更新。**A2 后再次同步**：§0.2 加行号换算表、P6 标注已修复、附录头与 3 处接口引用就地标注、§8 增 Q8/Q9、新增 9.6（含 N16） | A1 交付物本身 |
-| `.qoder/semester-02-plan.md` | A1、A2 勾选框 `[ ]` → `[x]` | A1 / A2 prompt 明确要求 |
+| `.agent/semester-02-plan.md` | A1、A2 勾选框 `[ ]` → `[x]` | A1 / A2 prompt 明确要求 |
 
-**未改动**：任何 MDX 正文、`components/`、`lib/`、`app/`、`.qoder/delivery-tracker.md`、`OUTLINE.md`、`.qoder/fix-logs/`。N13 / N14 / N15 三项均只记录、未修复（见 Q5 / Q6 / Q7）；N16 已修复（属环境问题，非源码缺陷）。
+**未改动**：任何 MDX 正文、`components/`、`lib/`、`app/`、`.agent/delivery-tracker.md`、`OUTLINE.md`、`.agent/fix-logs/`。N13 / N14 / N15 三项均只记录、未修复（见 Q5 / Q6 / Q7）；N16 已修复（属环境问题，非源码缺陷）。
 
 ### 9.5 复现命令
 
@@ -1058,11 +1058,11 @@ Require stack: .next\server\webpack-runtime.js → .next\server\app\(wiki)\[chap
 | `components/wiki/bode-margins-explorer.tsx` | L97 | `export function BodeMarginsExplorer`（孤儿组件） |
 | `components/wiki/fuzzy-tuning-explorer.tsx` | L149 | `export default function FuzzyTuningExplorer` |
 | `components/wiki/neural-network-explorer.tsx` | L82 | `export default function NeuralNetworkExplorer` |
-| `.qoder/delivery-tracker.md` | 底部统计行 | 声明"17 / 83 课程已完成（33个交互组件已交付）"；L115 为 `neural-network-control` 行 |
-| `.qoder/fix-logs/INDEX.md` | 全表 18 行 | 表头 `# \| 日期 \| 文档 \| 章节 \| 类型 \| 摘要`，无归因列 |
+| `.agent/delivery-tracker.md` | 底部统计行 | 声明"17 / 83 课程已完成（33个交互组件已交付）"；L115 为 `neural-network-control` 行 |
+| `.agent/fix-logs/INDEX.md` | 全表 18 行 | 表头 `# \| 日期 \| 文档 \| 章节 \| 类型 \| 摘要`，无归因列 |
 | `OUTLINE.md` | L142–L145 | 声明 10 章 / 79 模块 / 已完成 1 / 待编写 78 |
-| `.qoder/skills/wiki-discussion/SKILL.md` | L272–L282 | 数学基础章节引用规则 |
-| `.qoder/skills/wiki-discussion/personas.md` | 方数条目"擅长话题" | 7 项数学主题 |
+| `.agent/skills/wiki-discussion/SKILL.md` | L272–L282 | 数学基础章节引用规则 |
+| `.agent/skills/wiki-discussion/personas.md` | 方数条目"擅长话题" | 7 项数学主题 |
 
 #### 第 9 节新增引用（Q1 / Q2 / A2 执行与 N13–N16）
 
@@ -1092,7 +1092,7 @@ Require stack: .next\server\webpack-runtime.js → .next\server\app\(wiki)\[chap
 
 ---
 
-**本报告完。** A1、A2、A3、A4、A5 已交付（见 9.1 / 9.2 / 9.6；A3 的执行快照与 Q10–Q14 裁决、A4 与 A5 的执行快照记在 `.qoder/semester-02-plan.md` 的对应条目注解中；A4 的产出物是 `docs/semester-02/02-math-dependency-map.md`）。**自 A3 起本报告冻结**：后续阶段的新发现一律记入 plan 的对应条目注解，不再回写本报告（避免 A1 曾发生的全量重编号自伤）。**P3（章节顺序违反依赖关系）已于 A5 关闭**：catalog 数组按 §2.0 学习路径全量重排为 16 章、`order` 重编号 0..15，11 个既有章块经脚本 diff 证明除 `order:` 行外字节不变。**站点规模随 A5 变为 16 章 / 140 课**，其中 84 门为 `status: "empty"` 骨架课，由 `app/(wiki)/[chapter]/[lesson]/page.tsx` 渲染"本课尚未编写"占位页（Q16 裁决，inline style + prereq 链接），不再 404；本报告中所有行号与"11 章 / 103 课"一类的规模数字均为 A5 之前的时点值。下一步：**A6**（章内课程重组与 MDX 迁移：`modern/kalman-filter` → `estimation/`、`rl-control/safe-rl` → `safety-ftc/`、`rl-control/multi-agent-rl` → `multi-agent/`，并把 multi-agent 章标题改为 §2.0 的"多智能体与分布式控制"）。仍悬置的裁决：**Q3 / Q4 / Q5 / Q6**（第 8 节）——其中 **Q6 是读者可见损失最大的一项**（两门 mpc 课正文只剩 1/8 与 2/11），建议优先处理；**Q7 已解决**（2026-09-25，作为 A3 的独立前置改动）；**Q14** 仍为 **5 处**（A4 修掉了 `feedback-linearization` 的 `/math/linear-algebra`，剩余 5 处全在 classic 章：3 处 `/classic/pid-control`、2 处死锚点）；A4 第 4 步的 284 行 `📐` 引用批量插入清单仍等用户确认。
+**本报告完。** A1、A2、A3、A4、A5 已交付（见 9.1 / 9.2 / 9.6；A3 的执行快照与 Q10–Q14 裁决、A4 与 A5 的执行快照记在 `.agent/semester-02-plan.md` 的对应条目注解中；A4 的产出物是 `docs/semester-02/02-math-dependency-map.md`）。**自 A3 起本报告冻结**：后续阶段的新发现一律记入 plan 的对应条目注解，不再回写本报告（避免 A1 曾发生的全量重编号自伤）。**P3（章节顺序违反依赖关系）已于 A5 关闭**：catalog 数组按 §2.0 学习路径全量重排为 16 章、`order` 重编号 0..15，11 个既有章块经脚本 diff 证明除 `order:` 行外字节不变。**站点规模随 A5 变为 16 章 / 140 课**，其中 84 门为 `status: "empty"` 骨架课，由 `app/(wiki)/[chapter]/[lesson]/page.tsx` 渲染"本课尚未编写"占位页（Q16 裁决，inline style + prereq 链接），不再 404；本报告中所有行号与"11 章 / 103 课"一类的规模数字均为 A5 之前的时点值。下一步：**A6**（章内课程重组与 MDX 迁移：`modern/kalman-filter` → `estimation/`、`rl-control/safe-rl` → `safety-ftc/`、`rl-control/multi-agent-rl` → `multi-agent/`，并把 multi-agent 章标题改为 §2.0 的"多智能体与分布式控制"）。仍悬置的裁决：**Q3 / Q4 / Q5 / Q6**（第 8 节）——其中 **Q6 是读者可见损失最大的一项**（两门 mpc 课正文只剩 1/8 与 2/11），建议优先处理；**Q7 已解决**（2026-09-25，作为 A3 的独立前置改动）；**Q14** 仍为 **5 处**（A4 修掉了 `feedback-linearization` 的 `/math/linear-algebra`，剩余 5 处全在 classic 章：3 处 `/classic/pid-control`、2 处死锚点）；A4 第 4 步的 284 行 `📐` 引用批量插入清单仍等用户确认。
 
 
 
