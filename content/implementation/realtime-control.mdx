@@ -7,7 +7,7 @@ description: "计算机控制系统中的实时性保障——硬/软实时概�
 
 前几课讨论了控制算法的离散化和数字实现，但有一个隐含假设始终没有被挑战——**采样周期 $T_s$ 是固定的**。实际上，让 $T_s$ 保持固定并不容易：CPU 要同时处理控制计算、通信、监控等多个任务，如果某个任务"超时"，采样周期就不再是常数，前面所有基于固定 $T_s$ 的分析和设计全部失效。
 
-> 📖 本课需要 [采样周期选择](/computer-control/sampling-period)、[计算机控制系统架构](/computer-control/computer-control-architecture) 和 [数字PID实现](/computer-control/digital-pid) 的前置知识。
+> 📖 本课需要 [采样周期选择](/discrete-sampled/sampling-period-selection)、[计算机控制系统架构](/implementation/computer-control-architecture) 和 [数字PID实现](/implementation/digital-pid) 的前置知识。
 
 本课的目标：理解"实时"的真正含义（不是"快"，而是"确定性"），掌握基本的任务调度算法和可调度性分析方法，了解嵌入式控制系统的关键实现技巧。
 
@@ -64,7 +64,7 @@ WCET 不是平均执行时间，而是**上界**。影响 WCET 的因素：
 
 ### 实时抖动与 ZOH 延迟的关系
 
-在 [采样周期选择](/computer-control/sampling-period) 课中，我们讨论了 ZOH 引入的 $T_s/2$ 等效延迟。这个延迟是**确定性的**——只要 $T_s$ 固定，延迟就固定，可以在控制器设计中补偿。
+在 [采样周期选择](/discrete-sampled/sampling-period-selection) 课中，我们讨论了 ZOH 引入的 $T_s/2$ 等效延迟。这个延迟是**确定性的**——只要 $T_s$ 固定，延迟就固定，可以在控制器设计中补偿。
 
 但如果采样周期存在**抖动（jitter）**——实际周期在 $T_s \pm \Delta T$ 之间波动——则 ZOH 延迟也变成不确定的：$(T_s \pm \Delta T)/2$。这种**不确定性延迟**无法被控制器补偿，直接消耗相位裕度：
 
@@ -638,7 +638,7 @@ void monitoring_task(void) {
 5. **中断管理是实时性的保障**：优先级嵌套、优先级继承、中断延迟控制
 6. **嵌入式实现技巧**：DMA 双缓冲、定点数运算、查表法、看门狗——这些"脏手段"在工程中不可或缺
 
-从整个计算机控制章节的角度看：采样周期 $T_s$ 是控制性能的天花板（[采样周期选择](/computer-control/sampling-period)），量化精度是控制精度的底线（[采样与量化](/computer-control/sampling-quantization)），而实时性则是保证这一切在工程上**真正能跑起来**的基础。
+从整个计算机控制章节的角度看：采样周期 $T_s$ 是控制性能的天花板（[采样周期选择](/discrete-sampled/sampling-period-selection)），量化精度是控制精度的底线（[采样与量化](/discrete-sampled/discrete-time-freq)），而实时性则是保证这一切在工程上**真正能跑起来**的基础。
 
 ## 习题
 

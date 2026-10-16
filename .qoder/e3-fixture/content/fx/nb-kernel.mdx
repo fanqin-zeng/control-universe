@@ -1,0 +1,46 @@
+---
+title: "E3 负向测试 · 内核执行路径（S6）"
+description: "需要 8891 上的真内核；覆盖 OK / ERROR / 良性 stderr / 非良性 stderr 四种结果"
+category: "fx"
+difficulty: "beginner"
+status: "draft"
+---
+
+# E3 负向测试 · 内核执行路径（S6）
+
+这个文件**不是课程**。它专门覆盖 S6——静态检查看不见、只有真跑一遍才知道的那一类问题。
+fix-017 的教训正是如此：`content/robust/h-infinity-basics.mdx:444` 那处 `\n`，
+静态比对 MDX 原文永远抓不到，是内核实跑报出的 `SyntaxError: unterminated string literal`。
+
+**前置**：需要内核在线（`npm run dev` 会拉起 `scripts/jupyter_server.py`，端口 8891）。
+加 `--no-kernel` 时本课应退化成 `[PASS]`（静态判据全绿），S6 记 SKIPPED。
+
+四个 cell 各覆盖一种结果：
+
+| cell | 代码做的事 | 预期 S6 |
+| --- | --- | --- |
+| 1 | 正常 print | OK，不报 |
+| 2 | 除零 | FAIL，ename 是 ZeroDivisionError |
+| 3 | 往 stderr 写 matplotlib 缺字形的良性行 | 不单独报，折进课程级「良性 stderr N 行」 |
+| 4 | 往 stderr 写一条自定义警告 | WARN，且带 MDX 行号 |
+
+cell 3 与 cell 4 的分别对待是 E3 特意做的：良性行不折叠的话，全仓 347 个 cell
+会刷出几百条一模一样的 WARN，而 WARN 一旦被当噪音无视，这条判据就等于没有。
+折叠只在屏幕上做，`--out` 导出的 JSON 里保留每个 cell 的完整 stderr 原文。
+
+<JupyterNotebook
+  setupCode={`import sys
+import numpy as np`}
+  cells={[
+    { code: `x = np.arange(5)
+print("cell 1 正常，x =", x)` },
+    { code: `print("cell 2 即将除零")
+y = 1 / 0
+print(y)` },
+    { code: `sys.stderr.write("Font 'DejaVu Sans' does not have a glyph for U+2212, substituting with a dummy symbol.\\n")
+sys.stderr.write("Font 'DejaVu Sans' does not have a glyph for U+2212, substituting with a dummy symbol.\\n")
+print("cell 3 写了两行良性 stderr")` },
+    { code: `sys.stderr.write("E3 fixture: 这是一条非良性 stderr，必须单独报 WARN\\n")
+print("cell 4 正常结束")` }
+  ]}
+/>

@@ -1,0 +1,56 @@
+# 对照组：九项全绿
+
+📐 本文用到了 [第一节](/fx/good-lesson#第一节) 的结论。
+
+## 第一节
+
+一阶系统的传递函数为
+
+$$
+G(s) = \frac{K}{Ts + 1}
+$$
+
+单行形态同样合法：$$G(j\omega) = \frac{K}{1 + j\omega T}$$，含矩阵也合法：$$\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$$。
+
+<Callout variant="info" title="说明">
+本课是 fixture 对照组，九项门槛应当全绿。
+</Callout>
+
+<GoodExplorer />
+
+## 第二节
+
+![示意图](/images/ok.png)
+
+见 [对照组自身](/fx/good-lesson#第二节) 与 [骨架课](/fx/skeleton-lesson)。
+
+<JupyterNotebook
+  title="📍 一阶系统阶跃响应"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt`}
+  cells={[
+    { code: `t = np.linspace(0, 5, 200)
+y = 1 - np.exp(-t)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(t, y)
+ax.set_xlim(0, 5)
+ax.set_ylim(0, 1.2)
+ax.grid(True)
+plt.show()` },
+  ]}
+/>
+
+## 习题
+
+**1.** 求 $T = 2$ s 时的一阶系统时间常数。
+
+**2.** 写出 $K = 3$、$T = 1$ s 的传递函数。
+
+## 答案
+
+**1.** 时间常数即 $T = 2$ s。
+
+**2.** $G(s) = \dfrac{3}{s + 1}$。

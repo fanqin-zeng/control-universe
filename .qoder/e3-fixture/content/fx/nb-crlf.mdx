@@ -1,0 +1,35 @@
+---
+title: "E3 负向测试 · CRLF 围栏回归"
+description: "复现 scanMdx 在 CRLF 文件里把空行+围栏误判成开栏的 bug"
+category: "fx"
+difficulty: "beginner"
+status: "draft"
+---
+
+# E3 负向测试 · CRLF 围栏回归
+
+本文件由 make-crlf.mjs 生成，**整篇 CRLF 换行**，不要手工编辑。
+
+预期：只认出 **1 个** notebook（下面那个真的），围栏里的示例不算。
+报 0 个就说明 scanMdx 的 CRLF 围栏 bug 复发了。
+
+## 关键：下面这一行是空行，紧跟围栏
+
+```mdx
+<JupyterNotebook
+  setupCode={`围栏内的假 setupCode`}
+  cells={[
+    { code: `%%NB9%% 围栏内的假占位符，不该被 S4 报` }
+  ]}
+/>
+```
+
+## 围栏之后还有真组件，必须被扫到
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+msg = "安全的双写 \\n 与 \\lambda"`}
+  cells={[
+    { code: `print(msg, np.arange(3))` }
+  ]}
+/>

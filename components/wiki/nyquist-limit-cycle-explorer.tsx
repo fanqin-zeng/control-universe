@@ -12,15 +12,6 @@ export function NyquistLimitCycleExplorer() {
 
   // Calculate G(jω) = K / (s(s+T1)(T2*s+1))
   const calculateG = (omega: number): { real: number; imag: number } => {
-    const s = { real: 0, imag: omega };
-    // s * (s + T1) * (T2*s + 1)
-    const term1 = { real: -omega * omega, imag: omega * T1 }; // s*(s+T1)
-    const term2 = { real: -T2 * omega * omega, imag: omega }; // (T2*s+1)*s
-    // Full denominator: s*(s+T1)*(T2*s+1)
-    const denom_real = -omega * omega * T1 - T2 * omega * omega * omega * omega;
-    const denom_imag = omega * (1 - T2 * omega * omega) - omega * omega * omega * T1;
-    
-    // Simplified: G(jω) = K / (jω * (jω + T1) * (jω*T2 + 1))
     const a = omega;
     const denom_mag_sq = a * a * (a * a + T1 * T1) * (T2 * T2 * a * a + 1);
     const phase = -Math.PI / 2 - Math.atan(a / T1) - Math.atan(a * T2);
@@ -108,6 +99,41 @@ export function NyquistLimitCycleExplorer() {
     }
   }
 
+  const series: echarts.EChartsOption["series"] = [
+    {
+      name: "G(jω)",
+      type: "line",
+      data: nyquistData,
+      lineStyle: { width: 2, color: "#1e40af" },
+      symbol: "none",
+    },
+    {
+      name: "-1/N(A)",
+      type: "line",
+      data: negInvNData,
+      lineStyle: { width: 2, color: "#dc2626" },
+      symbol: "none",
+    },
+    ...(intersectionPoint
+      ? [
+          {
+            name: "交点",
+            type: "scatter" as const,
+            data: [intersectionPoint],
+            symbolSize: 10,
+            itemStyle: { color: "#16a34a" },
+          },
+        ]
+      : []),
+    {
+      name: "(-1, j0)",
+      type: "scatter",
+      data: [[-1, 0]],
+      symbolSize: 8,
+      itemStyle: { color: "#000" },
+    },
+  ];
+
   const option: echarts.EChartsOption = {
     animation: false,
     grid: { top: 40, right: 40, bottom: 60, left: 60 },
@@ -127,40 +153,7 @@ export function NyquistLimitCycleExplorer() {
       nameLocation: "middle",
       nameGap: 45,
     },
-    series: [
-      {
-        name: "G(jω)",
-        type: "line",
-        data: nyquistData,
-        lineStyle: { width: 2, color: "#1e40af" },
-        symbol: "none",
-      },
-      {
-        name: "-1/N(A)",
-        type: "line",
-        data: negInvNData,
-        lineStyle: { width: 2, color: "#dc2626" },
-        symbol: "none",
-      },
-      ...(intersectionPoint
-        ? [
-            {
-              name: "交点",
-              type: "scatter",
-              data: [intersectionPoint],
-              symbolSize: 10,
-              itemStyle: { color: "#16a34a" },
-            } as any,
-          ]
-        : []),
-      {
-        name: "(-1, j0)",
-        type: "scatter",
-        data: [[-1, 0]],
-        symbolSize: 8,
-        itemStyle: { color: "#000" },
-      } as any,
-    ],
+    series,
     tooltip: {
       trigger: "item",
     },
@@ -181,7 +174,7 @@ export function NyquistLimitCycleExplorer() {
           <label className="block text-sm font-medium mb-1">非线性类型:</label>
           <select
             value={nonlinearityType}
-            onChange={(e) => setNonlinearityType(e.target.value as any)}
+            onChange={(e) => setNonlinearityType(e.target.value as "saturation" | "relay")}
             className="border rounded px-2 py-1"
           >
             <option value="saturation">饱和</option>

@@ -478,7 +478,7 @@ export function NonlinearityExplorer() {
           <>
             {" "}
             A ≤ M 时 clip 从不触发，THD = 0，系统<strong>完全线性</strong>；A 越过 M 的瞬间 THD
-            阶跃式上升（A = 2、M = 1 时为 23.29%）——这是"非本质非线性"的签名。
+            阶跃式上升（A = 2、M = 1 时为 23.29%）——这是&quot;非本质非线性&quot;的签名。
           </>
         )}
         {type === "deadzone" && (

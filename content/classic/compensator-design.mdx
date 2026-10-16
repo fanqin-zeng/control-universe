@@ -7,7 +7,7 @@ description: 当系统性能不满足要求时——用超前、滞后、超前-
 
 ## 为什么需要校正网络
 
-上一章（[频率响应法](/classic/frequency-response)）的实例中，我们遇到了一个典型困境：
+上一章（[频率响应设计法](/classic/frequency-response-design)）的实例中，我们遇到了一个典型困境：
 
 > 被控对象 $G(s) = \frac{K}{s(s+1)(s+10)}$，要求 $K_v \geq 10$ 且 $PM \geq 45°$。
 >
@@ -21,8 +21,8 @@ description: 当系统性能不满足要求时——用超前、滞后、超前-
 
 | 工具 | 能做什么 | 不能做什么 |
 |------|---------|-----------|
-| 增益调节（[频率响应法](/classic/frequency-response)） | 改变穿越频率 | 无法独立调整低频增益和中频相位 |
-| Z-N 整定（[频率响应法](/classic/frequency-response)） | 给出 PID 初始参数 | 精度有限，PM 通常只有 ~30° |
+| 增益调节（[频率响应设计法](/classic/frequency-response-design)） | 改变穿越频率 | 无法独立调整低频增益和中频相位 |
+| Z-N 整定（[频率响应设计法](/classic/frequency-response-design)） | 给出 PID 初始参数 | 精度有限，PM 通常只有 ~30° |
 | PID（[PID 控制器](/classic/pid-controller)） | 三个参数覆盖基本需求 | 参数耦合，调参靠经验 |
 
 这就是校正网络登场的时刻。校正网络（compensator）是串联在控制器中的额外环节，通过改变开环频率响应的**形状**（而不仅仅是增益），使系统同时满足多方面的设计指标。
@@ -33,11 +33,11 @@ description: 当系统性能不满足要求时——用超前、滞后、超前-
 - 中频段相位裕度不够？→ 增加相位超前（超前校正）
 - 两者都需要？→ 超前-滞后校正
 
-> 📖 本章需要 Bode 图、增益裕度和相位裕度的基础，详见 [频率响应法](/classic/frequency-response)。PID 控制器的基础详见 [PID 控制器设计](/classic/pid-controller)。
+> 📖 本章需要 Bode 图、增益裕度和相位裕度的基础，详见 [频率响应设计法](/classic/frequency-response-design)。PID 控制器的基础详见 [PID 控制器设计](/classic/pid-controller)。
 
 ### 从"试"到"设计"
 
-PID 调参（[Z-N 法](/classic/frequency-response#工程应用ziegler-nichols-整定法)）本质上是"试"——用经验公式给出初始值，再手动微调。校正网络设计则是**系统化方法**：
+PID 调参（[Z-N 法](/classic/frequency-response-design#工程应用ziegler-nichols-整定法)）本质上是"试"——用经验公式给出初始值，再手动微调。校正网络设计则是**系统化方法**：
 
 1. 从设计指标出发，用数学推导出校正器参数
 2. 每一步都有明确的物理意义
@@ -67,7 +67,7 @@ PID 调参（[Z-N 法](/classic/frequency-response#工程应用ziegler-nichols-�
 
 这样，时域指标就转化为了频域设计目标。
 
-> 💡 关于 $PM$ 与 $\zeta$ 的完整推导，详见 [频率响应法——频域指标与时域指标的对应](/classic/frequency-response#频域指标与时域指标的对应)。
+> 💡 关于 $PM$ 与 $\zeta$ 的完整推导，详见 [频域分析——频域指标与时域指标的对应](/classic/frequency-domain-analysis#频域指标与时域指标的对应)。
 
 ### 校正方式
 
@@ -822,7 +822,7 @@ $$
 - 滞后校正减小了带宽 → 对高频动态不敏感，但响应变慢
 - 超前-滞后校正可以灵活调整，但设计更复杂
 
-回忆 [频率响应法](/classic/frequency-response) 中的灵敏度函数 $S = 1/(1+G)$ 和补灵敏度函数 $T = G/(1+G)$。校正设计的目标可以重新表述为：
+回忆 [频率响应设计法](/classic/frequency-response-design) 中的灵敏度函数 $S = 1/(1+G)$ 和补灵敏度函数 $T = G/(1+G)$。校正设计的目标可以重新表述为：
 
 | 频段 | 目标 | 对应灵敏度 |
 |------|------|-----------|

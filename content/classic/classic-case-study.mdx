@@ -7,7 +7,7 @@ description: 以直流电机速度控制为主线，完整走一遍"建模→分
 
 前面十节课分别讲了传递函数、时域分析、频域分析、根轨迹、PID 控制、稳定性分析、频率响应法和校正网络设计。每一节都聚焦一个工具，但工程问题从来不会告诉你"请用根轨迹法"或"请设计超前校正"——你需要自己判断。
 
-> 📖 本章是经典控制部分的综合应用，需要前面所有章节的基础。如果某个概念不熟悉，请回看对应章节：[传递函数入门](/classic/transfer-function)、[时域分析](/classic/time-domain-analysis)、[频域分析](/classic/frequency-domain-analysis)、[根轨迹法](/classic/root-locus)、[PID 控制](/classic/pid-control)、[稳定性分析](/classic/stability-analysis)、[频率响应法](/classic/frequency-response)、[校正网络设计](/classic/compensator-design)。
+> 📖 本章是经典控制部分的综合应用，需要前面所有章节的基础。如果某个概念不熟悉，请回看对应章节：[传递函数入门](/classic/transfer-function)、[时域分析](/classic/time-domain-analysis)、[频域分析](/classic/frequency-domain-analysis)、[根轨迹法](/classic/root-locus)、[PID 控制](/classic/pid-control)、[稳定性分析](/classic/stability-analysis)、[频率响应设计法](/classic/frequency-response-design)、[校正网络设计](/classic/compensator-design)。
 
 本节以**直流电机速度控制**为主线，完整走一遍经典控制的工程设计流程：
 
@@ -201,7 +201,7 @@ print(f"  极点: {plant.poles}")` },
 
 ### 时域指标与频域指标的对应
 
-> 📖 时域指标的详细定义见 [时域分析](/classic/time-domain-analysis)，频域裕度的定义见 [频率响应法](/classic/frequency-response)。
+> 📖 时域指标的详细定义见 [时域分析](/classic/time-domain-analysis)，频域裕度的定义见 [频率响应设计法](/classic/frequency-response-design)。
 
 这两类指标不是独立的，它们通过二阶系统的标准形式相互关联。对于典型的二阶主导极点系统：
 
@@ -957,7 +957,7 @@ $$
 S_{K_m}^T = \frac{1}{1 + C(s)G_p(s)} = S(s)
 $$
 
-这正是[频率响应法](/classic/frequency-response)中讨论的**灵敏度函数**！在低频段，$|C G_p| \gg 1$，所以 $|S| \ll 1$——反馈降低了参数变化的影响。这正是反馈控制的核心优势之一。
+这正是[频率响应设计法](/classic/frequency-response-design)中讨论的**灵敏度函数**！在低频段，$|C G_p| \gg 1$，所以 $|S| \ll 1$——反馈降低了参数变化的影响。这正是反馈控制的核心优势之一。
 
 ### 最坏情况分析
 

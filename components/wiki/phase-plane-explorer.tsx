@@ -399,7 +399,6 @@ export function PhasePlaneExplorer() {
 
   const stats = useMemo(() => {
     const xs = mainTraj.map((q) => q[0]);
-    const ys = mainTraj.map((q) => q[1]);
     const endPt = mainTraj[mainTraj.length - 1];
     const nearest = eqData.reduce(
       (best, e) => {

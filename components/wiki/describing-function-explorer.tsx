@@ -94,10 +94,10 @@ export function DescribingFunctionExplorer() {
     ],
     tooltip: {
       trigger: "axis",
-      formatter: (params: any) => {
-        const A = params[0].value[0].toFixed(2);
-        const N = params[0].value[1].toFixed(3);
-        return `A = ${A}<br/>|N(A)| = ${N}`;
+      formatter: (params) => {
+        const first = Array.isArray(params) ? params[0] : params;
+        const [a, n] = first.value as [number, number];
+        return `A = ${a.toFixed(2)}<br/>|N(A)| = ${n.toFixed(3)}`;
       },
     },
   };

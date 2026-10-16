@@ -1,0 +1,120 @@
+---
+title: "E3 负向测试 · 静态缺陷全集"
+description: "scripts/nb-cells.mjs 的负向测试数据，故意注入每一类静态缺陷"
+category: "fx"
+difficulty: "beginner"
+status: "draft"
+---
+
+# E3 负向测试 · 静态缺陷全集
+
+这个文件**不是课程**，是 `scripts/nb-cells.mjs` 的负向测试数据（A7 教训：只对着干净的当前仓库跑等于没测）。
+每个 `<JupyterNotebook>` 上方标注了它应当触发的判据编号与预期级别。**不要修它**——修好就等于删掉测试。
+
+## NB1 · S1 + S2 + S4 + S7
+
+预期：S7 WARN（`language` 不是组件的属性）、S1 FAIL（setupCode 首行是 `%matplotlib inline`）、
+S2 FAIL（setupCode 与 cell 1 出现 ipywidgets 家族）、S4 FAIL（cell 2 残留拼接占位符）。
+
+注意 S1 这一条是 E3 收紧判据后才抓得到的：旧判据 `/^%[^\w]/` 要求 `%` 后面是非单词字符，
+`%matplotlib` 的 `m` 是单词字符，于是最常见的这个 line magic 一直漏网。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`%matplotlib inline
+import ipywidgets as widgets
+from ipywidgets import FloatSlider
+`}
+  cells={[
+    { code: `interact(f, K=FloatSlider())` },
+    { code: `print("%%NB1%% 这个占位符没被填")` }
+  ]}
+/>
+
+## NB2 · S3
+
+预期：S3 FAIL（JSX 属性之间有逗号 → MDX 编译失败、页面 404，fix-013）。
+逗号在 `setupCode={...}` 的右花括号之后、`cells` 之前，此处花括号与方括号深度都为 0。
+
+<JupyterNotebook
+  setupCode={`import numpy as np`},
+  cells={[
+    { code: `print(np.array([1, 2, 3]))` }
+  ]}
+/>
+
+## NB3 · S5 FAIL 四种 + S5 WARN
+
+预期四条 S5 FAIL 与一条 S5 WARN：
+
+- `\lambda` → dropped-backslash（反斜杠被静默丢掉，LaTeX 到 Python 成了 `lambda`）
+- 行尾反斜杠 → line-continuation（换行被删掉，两行 Python 粘成一行）
+- `${x}` → interpolation（会被当成 JS 表达式求值）
+- `\u12` → bad-escape（`\u` 后面十六进制位数不够）
+- `\n` → transformed，只 WARN 不 FAIL（多数情况能跑，真出问题由 S6 实跑定论）
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+label = "$\lambda$"
+total = ${x}
+bad = "\u12"
+one = 1 + \
+2
+msg = "第一行\n第二行"
+`}
+  cells={[
+    { code: `print(label, total, bad, one, msg)` }
+  ]}
+/>
+
+## NB4 · S0 四条
+
+预期：S0 FAIL（没有 setupCode）、S0 FAIL（没有 cells）、S0 FAIL（`code` 的值不是字符串字面量）、
+S0 FAIL（setupCode 是空串）。
+
+最后一条最阴：属性**在**，值是空串，肉眼看不出问题；但服务端是
+`setup = body.get("setup_code", DEFAULT_SETUP)` —— 默认值只在键缺失时生效，空串照样发过去，
+numpy/matplotlib/rcParams 一行都不跑，第一个 cell 立刻 NameError。
+组件是无条件带这个键的，所以「写了空的」和「压根没写」后果相同、观感却完全不同。
+
+<JupyterNotebook
+  cells={[
+    { code: `print("我没有 setupCode")` }
+  ]}
+/>
+
+<JupyterNotebook
+  setupCode={`import numpy as np`}
+/>
+
+<JupyterNotebook
+  setupCode={`import numpy as np`}
+  cells={[
+    { code: someVariable }
+  ]}
+/>
+
+<JupyterNotebook
+  setupCode={``}
+  cells={[
+    { code: `print(np.__version__)` }
+  ]}
+/>
+
+## NB5 · 正确写法对照组（不应报任何东西）
+
+同一个 notebook 里放**正确**的双写形式：`\\n`、`\\lambda`、`\`` 转义反引号、`\${` 转义美元。
+raw ≠ value 但 0 个 issue，这是 E3 认定的正确写法，S5 必须保持沉默。
+如果这里报了 WARN 或 FAIL，说明判据把安全写法也当成了缺陷。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+label = "$\\lambda$"
+msg = "第一行\\n第二行"
+tick = "反引号 \` 在这里"
+dollar = "\${不是插值}"
+`}
+  cells={[
+    { code: `print(label, msg, tick, dollar)` }
+  ]}
+/>
