@@ -208,6 +208,8 @@ master  ──●──────────●──────────
 | `master` | 唯一长期分支。合入门槛：`npm run check` 退出码 0（FAIL=0，WARN 需已在 plan/tracker 登记为已知项）；涉及页面改动另跑 `npm run verify <chapter>/<lesson>` |
 | 工作包分支 | 从 `master` 切出，命名 `wp/<阶段>-<内容>`，如 `wp/a6-modern-reorder`、`wp/d1-math-chapter`、`wp/c1-classic-v13`。**以工作包命名，禁止以工具/日期命名**（教训：`qoder/context/0921` 这种分支让工作在工具专属分支上滞留数周无人认领） |
 | 分支寿命 | 一个工作包一条分支，做完即合即删；跨天继续也沿用同一条分支，不另开 |
+
+> **部分合并例外（2026-10-16 起）**：多课工作包（如 C2 的 9 课）在**每课交付验收后立即 `--no-ff` 部分合入 master**，分支继续存活——master 始终是用户可访问的最新交付态（教训：state-space 的 ipywidgets 修复停在分支上，用户在 master 环境踩到旧 bug）。工作包完成后的最终合并照旧，分支即合即删。
 | 合并方式 | `git merge --no-ff`，保留工作包边界，便于整体 revert 一个工作包 |
 | 提交粒度 | 一次提交 = 一个可独立描述的完成态（如"迁移 .qoder→.agent"单独成 commit）；讨论日志、tracker 打勾、plan 勾选与正文改动同 commit 落盘，不留"改了内容没记台账"的悬空态 |
 | 版本标记 | 学期阶段边界（如 semester-02 的 A/C/D 各阶段收官）打 tag：`git tag semester02-A`、`semester02-C1` 等，方便回溯"当时 19 门交付"这类口径 |
