@@ -138,10 +138,7 @@ $$m_2\ddot{x}_2 = -k(x_2 - x_1) - c(\dot{x}_2 - \dot{x}_1) + F(t)$$
 
 整理为矩阵形式：
 
-$$
-\underbrace{\begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}}_{M} \begin{bmatrix} \ddot{x}_1 \\ \ddot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} c & -c \\ -c & c \end{bmatrix}}_{C} \begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} k_1 + k & -k \\ -k & k \end{bmatrix}}_{K} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \begin{bmatrix} 0 \\ F(t) \end{bmatrix}
-
-$$
+$$\underbrace{\begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}}_{M} \begin{bmatrix} \ddot{x}_1 \\ \ddot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} c & -c \\ -c & c \end{bmatrix}}_{C} \begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} k_1 + k & -k \\ -k & k \end{bmatrix}}_{K} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \begin{bmatrix} 0 \\ F(t) \end{bmatrix}$$
 
 这就是**多自由度（MDOF）系统**的标准形式 $M\ddot{\mathbf{x}} + C\dot{\mathbf{x}} + K\mathbf{x} = \mathbf{f}$。质量矩阵 $M$、阻尼矩阵 $C$、刚度矩阵 $K$ 都是对称的——这是由物理系统的能量守恒性质决定的。
 
@@ -173,9 +170,7 @@ $$
 
 旋转系统的牛顿方程（转动定律）：
 
-$$
-J\ddot{\theta}(t) + B\dot{\theta}(t) + K\theta(t) = T(t)
-$$
+$$J\ddot{\theta}(t) + B\dot{\theta}(t) + K\theta(t) = T(t)$$
 
 **形式和平移系统一模一样**——只是换了符号。这不是巧合，而是物理定律在不同坐标系下的统一表达。
 
@@ -199,21 +194,15 @@ $$J\dot{\omega}(t) + B\omega(t) = K_t\, i(t) - T_L(t)$$
 
 根据基尔霍夫电压定律（KVL），沿回路各元件电压之和等于输入电压：
 
-$$
-L\frac{di(t)}{dt} + R\,i(t) + v_C(t) = v(t)
-$$
+$$L\frac{di(t)}{dt} + R\,i(t) + v_C(t) = v(t)$$
 
 其中电容的电压-电流关系为 $i(t) = C\,\frac{dv_C(t)}{dt}$，代入消去 $i(t)$：
 
-$$
-LC\,\frac{d^2v_C(t)}{dt^2} + RC\,\frac{dv_C(t)}{dt} + v_C(t) = v(t)
-$$
+$$LC\,\frac{d^2v_C(t)}{dt^2} + RC\,\frac{dv_C(t)}{dt} + v_C(t) = v(t)$$
 
 对比机械系统的方程：
 
-$$
-\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{机械}} \qquad \longleftrightarrow \qquad \underbrace{LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v}_{\text{电气}}
-$$
+$$\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{机械}} \qquad \longleftrightarrow \qquad \underbrace{LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v}_{\text{电气}}$$
 
 **形式完全一样！** 这不是巧合——下面的"机电类比"会展开讲。
 
@@ -263,9 +252,7 @@ $$
 
 电枢回路（KVL）：
 
-$$
-L\frac{di(t)}{dt} + R\,i(t) + K_e\,\omega(t) = v(t)
-$$
+$$L\frac{di(t)}{dt} + R\,i(t) + K_e\,\omega(t) = v(t)$$
 
 注意 $K_e\,\omega(t)$ 这一项——这是**反电动势**（back-EMF）。电机转动时，转子切割磁力线，产生一个与转速成正比的电压，方向与输入电压相反。这是电气侧和机械侧的**第一个耦合点**。
 
@@ -273,9 +260,7 @@ $$
 
 转子转动定律：
 
-$$
-J\frac{d\omega(t)}{dt} + B\,\omega(t) = K_t\,i(t) - T_L(t)
-$$
+$$J\frac{d\omega(t)}{dt} + B\,\omega(t) = K_t\,i(t) - T_L(t)$$
 
 其中 $K_t\,i(t)$ 是电流产生的电磁力矩，$T_L(t)$ 是负载力矩。这是**第二个耦合点**：电流产生力矩，驱动机械运动。
 
@@ -468,6 +453,14 @@ $C$ 是地球系统的热容（主要来自海洋），$S \approx 1361\,\text{W/
 当正反馈增益超过负反馈时，系统可能越过"临界点"（tipping point），发生不可逆的状态跃变——这是当代气候研究的核心问题之一。
 </Callout>
 
+**时间常数的数值计算**：在平衡温度 $T = 288\,\text{K}$（约 15°C）处线性化，特征时间
+
+$$\tau \sim \frac{C}{4\sigma T^3} = \frac{10^8}{4 \times 5.67 \times 10^{-8} \times 288^3}$$
+
+分母：$288^3 \approx 2.39 \times 10^7$，$4 \times 5.67 \times 10^{-8} \times 2.39 \times 10^7 \approx 5.42\,\text{W/(m}^2\text{K)}$，所以 $\tau \sim 10^8 / 5.42 \approx 1.85 \times 10^7\,\text{s} \approx 0.6\,\text{年}$——**约 7 个月**。这是海洋混合层（约 100 m 深）的热惯性。如果考虑深层海洋（热容大 10–100 倍），时间常数可达**数十年至百年**。
+
+这意味着：如果太阳辐射突然改变，地球温度需要数十年到百年才能响应到新的平衡——海洋的巨大热容量像一块"热缓冲"，使温度变化远远滞后于辐射变化。这就是为什么**气候变化是一个极其缓慢的过程**。
+
 **建模过程与参数性质**（原习题 9 的展开）：守恒律是能量守恒（辐射进出之差改变热容存储）；"流"由两条通道构成——吸收的太阳辐射 $Q(1-\alpha)$ 与出射长波 $\varepsilon\sigma T^4$（Stefan-Boltzmann）。**量纲验证**：$\varepsilon\sigma T^4$ 的单位 W/m² 与 $Q(1-\alpha)$ 一致 ✓。参数敏感性：$\varepsilon$（发射率）下降 1% → 平衡温度约升 0.25 K（温室效应的一阶估计）；冰反照率反馈（$T$ 降低 → 冰盖扩大 → $\alpha$ 升高 → 进一步降温）是内生正反馈，可能触发雪球地球式多稳态——与 CSTR 的着火/熄火同构。
 
 ### 生态系统：捕食者-猎物
@@ -498,6 +491,14 @@ $$\dot{y} = \delta x y - \gamma y$$
 
 实际观测证实了这一点：加拿大猞猁和雪鞋兔的毛皮贸易记录显示，两个物种的数量以约10年为周期交替涨落。
 
+**守恒律（首次积分）**：Lotka-Volterra 模型没有简单的能量守恒，但可以构造一个守恒量：
+
+$$V(x,y) = \delta x - \gamma \ln x + \beta y - \alpha \ln y$$
+
+沿轨迹 $dV/dt = 0$（可直接验证：$\dot{V} = \delta\dot{x} - \gamma\dot{x}/x + \beta\dot{y} - \alpha\dot{y}/y$，代入方程后各项抵消）。系统在 $(x,y)$ 平面上的轨迹沿 $V = \text{const}$ 的等高线运动——**闭合曲线**，这就是振荡的几何解释。$V$ 是非线性版的"能量"，振荡围绕它发生。
+
+**淋浴类比**：捕食者-猎物振荡与调节淋浴水温时的"先烫后冷"来回振荡是同一个道理——负反馈 + 时间延迟 = 矫枉过正。狐狸不会在兔子刚好够吃时停止增长，而是继续增长直到兔子被过度捕食；等你感觉到水太烫时，已经在继续调热了。
+
 **建模过程与参数性质**（原习题 10 的展开）：四个参数各司其职——$\alpha$（猎物增长率）与 $\gamma$（捕食者死亡率）决定两个物种各自的"时间常数"$1/\alpha$、$1/\gamma$；$\beta$（捕食效率）与 $\delta$（转化效率）决定耦合强度。模型的**守恒律**不是数量守恒而是"生态量"守恒：沿轨迹 $V(x,y) = \delta x - \gamma\ln x + \beta y - \alpha\ln y$ 为常数（首次积分）——这正是非线性版的"能量"，振荡围绕它发生。参数敏感性：$\beta$ 增大 → 振荡周期缩短（捕食更"高效"）、平衡猎物数下降；$\alpha$ 增大 → 平衡捕食者数上升（食物更充足养活更多捕食者）。
 </Callout>
 
@@ -507,15 +508,25 @@ $$\dot{y} = \delta x y - \gamma y$$
 
 ### 信息传播：谣言与流行病
 
-信息传播模型 $\dot{I} = \beta I(N - I) - \gamma I$：$N$ 是总人口，$I$ 是已感染者/知情者，$\beta$ 是接触传播率，$\gamma$ 是恢复/遗忘率。**建模过程**：守恒律是人口守恒（$S + I = N$），"流"是感染流 $\beta SI$（正比于感染者与易感者的相遇），"存储"是感染人群 $I$ 本身。**参数性质对比**：$\beta$ 增大 → 传播更快且更容易超过临界值；$\gamma$ 是"耗散"项，与生态模型中的死亡率同构。当 $I \ll N$ 时 $N - I \approx N$，方程退化为指数增长 $\dot I \approx (\beta N - \gamma) I$——**阈值条件** $\beta N > \gamma$ 正是"基本传染数 $R_0 > 1$"的连续版本。反馈视角：感染人数越多传播越快（正反馈），但易感者池被消耗（非线性饱和）——与生态学的 Logistic 项同源。
+信息传播模型 $\dot{I} = \beta I(N - I) - \gamma I$：$N$ 是总人口，$I$ 是已感染者/知情者，$\beta$ 是接触传播率，$\gamma$ 是恢复/遗忘率。
 
+**建模过程**：守恒律是人口守恒（$S + I = N$，$S$ 是易感者/未知者），"流"是感染流 $\beta SI$（正比于感染者与易感者的**相遇概率** $S \times I$），"存储"是感染人群 $I$ 本身，"耗散"是遗忘/恢复流 $\gamma I$。
+
+**数值示例**：取 $N = 10000$，$\beta = 0.0002\,\text{day}^{-1}\text{person}^{-1}$，$\gamma = 0.1\,\text{day}^{-1}$。
+
+**早期行为**（$I \ll N$）：$N - I \approx N$，方程退化为指数增长 $\dot{I} \approx (\beta N - \gamma) I = rI$，增长率 $r = 0.0002 \times 10000 - 0.1 = 1.9\,\text{day}^{-1}$——这就是"病毒式传播"的数学本质。
+
+**饱和行为**（$I \to N$）：传播项 $\beta I(N-I) \to 0$，增长速率趋近于零——信息已传遍所有人，没有新传播对象。这是**饱和效应**。
+
+**基本传播数**：定义 $R_0 = \beta N / \gamma = 0.0002 \times 10000 / 0.1 = 20$。物理含义：一个知情者在遗忘之前（平均时间 $1/\gamma$），能传播给多少新人。$R_0 > 1$：每个人能传播给超过 1 个人，信息扩散（本题 $R_0 = 20 \gg 1$）；$R_0 < 1$：传播不到 1 个人就遗忘，信息逐渐消亡。
+
+**参数性质对比**：$\beta$ 增大 → 传播更快且更容易超过阈值；$\gamma$ 是"耗散"项，与生态模型的死亡率同构。反馈视角：感染人数越多传播越快（正反馈），但易感者池被消耗（非线性饱和）——与生态学的 Logistic 项同源。
 ### 化工过程：连续搅拌反应釜（CSTR）
 
 CSTR 是化工控制最经典的对象：物料以流量 $q$ 进入充分搅拌的反应釜，釜内发生放热反应。**建模过程**：两条守恒律——物料衡算（釜内浓度 $C$ 的变化 = 流入 - 流出 - 反应消耗）与能量衡算（温度 $T$ 的变化 = 对流带入 - 流出 ± 反应热 ± 冷却夹套）：
 
 $$
-\dot{C} = \frac{q}{V}(C_{in} - C) - k_0 e^{-E/RT} C, \qquad
-\dot{T} = \frac{q}{V}(T_{in} - T) + \frac{-\Delta H}{\rho c_p} k_0 e^{-E/RT} C - \frac{UA}{V\rho c_p}(T - T_c)
+\dot{C} = \frac{q}{V}(C_{in} - C) - k_0 e^{-E/RT} C, \qquad \dot{T} = \frac{q}{V}(T_{in} - T) + \frac{-\Delta H}{\rho c_p} k_0 e^{-E/RT} C - \frac{UA}{V\rho c_p}(T - T_c)
 $$
 
 **参数性质对比**：与前面的案例最大的不同在于**反馈内生**——Arrhenius 项 $e^{-E/RT}$ 使反应速率随温度指数上升，放热又进一步提高温度（正反馈），可能与冷却（负反馈）竞争产生**多稳态**（熄火/着火）甚至振荡。这是"势-流-容"框架里第一次出现正反馈主导的案例，也是化工控制必须警惕热失控的原因。
