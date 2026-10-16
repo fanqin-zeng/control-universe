@@ -21,9 +21,7 @@ description: 从"方程无解"到复平面——控制理论中无处不在的�
 
 一个**复数** $z$ 写成：
 
-$$
-z = a + bi
-$$
+$$z = a + bi$$
 
 其中：
 - $a$ 是**实部**（real part），记作 $\text{Re}(z) = a$
@@ -47,9 +45,7 @@ $$
 
 实部和实部相加，虚部和虚部相加：
 
-$$
-(a + bi) + (c + di) = (a + c) + (b + d)i
-$$
+$$(a + bi) + (c + di) = (a + c) + (b + d)i$$
 
 **例子**：$(3 + 4i) + (1 - 2i) = 4 + 2i$
 
@@ -57,9 +53,7 @@ $$
 
 展开后利用 $i^2 = -1$ 化简：
 
-$$
-(a + bi)(c + di) = ac + adi + bci + bdi^2 = (ac - bd) + (ad + bc)i
-$$
+$$(a + bi)(c + di) = ac + adi + bci + bdi^2 = (ac - bd) + (ad + bc)i$$
 
 **例子**：$(3 + 4i)(1 + 2i) = 3 + 6i + 4i + 8i^2 = 3 + 10i - 8 = -5 + 10i$
 
@@ -67,21 +61,15 @@ $$
 
 利用**共轭复数**消去分母的虚部。$z = a + bi$ 的共是 $\bar{z} = a - bi$。关键性质：
 
-$$
-z \cdot \bar{z} = (a + bi)(a - bi) = a^2 + b^2 \quad \text{（实数！）}
-$$
+$$z \cdot \bar{z} = (a + bi)(a - bi) = a^2 + b^2 \quad \text{（实数！）}$$
 
 所以除法就是分子分母同乘分母的共轭：
 
-$$
-\frac{a + bi}{c + di} = \frac{(a + bi)(c - di)}{(c + di)(c - di)} = \frac{(ac + bd) + (bc - ad)i}{c^2 + d^2}
-$$
+$$\frac{a + bi}{c + di} = \frac{(a + bi)(c - di)}{(c + di)(c - di)} = \frac{(ac + bd) + (bc - ad)i}{c^2 + d^2}$$
 
 **例子**：
 
-$$
-\frac{3 + 4i}{1 + 2i} = \frac{(3 + 4i)(1 - 2i)}{(1 + 2i)(1 - 2i)} = \frac{3 - 6i + 4i - 8i^2}{1 + 4} = \frac{11 - 2i}{5} = \frac{11}{5} - \frac{2}{5}i
-$$
+$$\frac{3 + 4i}{1 + 2i} = \frac{(3 + 4i)(1 - 2i)}{(1 + 2i)(1 - 2i)} = \frac{3 - 6i + 4i - 8i^2}{1 + 4} = \frac{11 - 2i}{5} = \frac{11}{5} - \frac{2}{5}i$$
 
 ## 复平面
 
@@ -96,23 +84,17 @@ $$
 
 复平面上的点 $(a, b)$ 到原点的距离叫**模**（magnitude）：
 
-$$
-|z| = \sqrt{a^2 + b^2}
-$$
+$$|z| = \sqrt{a^2 + b^2}$$
 
 从正实轴逆时针转到该点的角度叫**辐角**（argument）：
 
-$$
-\arg(z) = \arctan\!\left(\frac{b}{a}\right) \quad \text{（注意象限）}
-$$
+$$\arg(z) = \arctan\!\left(\frac{b}{a}\right)$$
 
 ## 极坐标形式
 
 用模 $r$ 和辐角 $\theta$ 表示复数：
 
-$$
-z = r(\cos\theta + i\sin\theta)
-$$
+$$z = r(\cos\theta + i\sin\theta)$$
 
 其中 $r = |z|$，$\theta = \arg(z)$。
 
@@ -120,24 +102,18 @@ $$
 
 欧拉公式建立了复数和指数函数的联系：
 
-$$
-e^{i\theta} = \cos\theta + i\sin\theta
-$$
+$$e^{i\theta} = \cos\theta + i\sin\theta$$
 
-它**不是被特殊定义出来的**，可以从你已经接受的泰勒展开直接"看见"。把 $e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots$ 中的 $x$ 换成 $i\theta$，按 $i$ 的幂分组（$i^2=-1$、$i^3=-i$、$i^4=1$ 循环）：
+> 欧拉公式来自这样一个事实：代入 $e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots$ 中的 $x$ 为 $i\theta$，按 $i$ 的幂分组（$i^2=-1$、$i^3=-i$、$i^4=1$ 循环）：
 
-$$
-e^{i\theta} = \Big(1 - \frac{\theta^2}{2!} + \frac{\theta^4}{4!} - \cdots\Big) + i\Big(\theta - \frac{\theta^3}{3!} + \frac{\theta^5}{5!} - \cdots\Big)
-$$
+$$e^{i\theta} = \Big(1 - \frac{\theta^2}{2!} + \frac{\theta^4}{4!} - \cdots\Big) + i\Big(\theta - \frac{\theta^3}{3!} + \frac{\theta^5}{5!} - \cdots\Big)$$
 
 括号里正是 $\cos\theta$ 和 $\sin\theta$ 的泰勒展开。或者更快的验证：令 $f(\theta) = e^{i\theta}$，两边求导得 $f'(\theta) = i\,f(\theta)$——而 $(\cos\theta + i\sin\theta)' = -\sin\theta + i\cos\theta = i(\cos\theta + i\sin\theta)$，两者满足同一个微分方程、初值都是 $1$，故相等。
 
 
 所以复数可以写成更简洁的**指数形式**：
 
-$$
-z = r\,e^{i\theta}
-$$
+$$z = r\,e^{i\theta}$$
 
 **为什么欧拉公式重要？** 在控制理论中，$e^{i\omega t}$ 表示频率为 $\omega$ 的正弦振荡。复数 $s = \sigma + j\omega$ 中的虚部 $j\omega$ 就对应振荡频率，实部 $\sigma$ 对应衰减（$\sigma < 0$）或增长（$\sigma > 0$）。
 
@@ -147,15 +123,11 @@ $$
 
 **乘法**：模相乘，辐角相加
 
-$$
-r_1 e^{i\theta_1} \cdot r_2 e^{i\theta_2} = (r_1 r_2)\, e^{i(\theta_1 + \theta_2)}
-$$
+$$r_1 e^{i\theta_1} \cdot r_2 e^{i\theta_2} = (r_1 r_2)\, e^{i(\theta_1 + \theta_2)}$$
 
 **除法**：模相除，辐角相减
 
-$$
-\frac{r_1 e^{i\theta_1}}{r_2 e^{i\theta_2}} = \frac{r_1}{r_2}\, e^{i(\theta_1 - \theta_2)}
-$$
+$$\frac{r_1 e^{i\theta_1}}{r_2 e^{i\theta_2}} = \frac{r_1}{r_2}\, e^{i(\theta_1 - \theta_2)}$$
 
 **例子**：$(2e^{i\pi/3}) \cdot (3e^{i\pi/6}) = 6e^{i\pi/2} = 6i$
 
