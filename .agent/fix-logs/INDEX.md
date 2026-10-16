@@ -21,7 +21,8 @@
 | 017 | 2026-09-25 | content/nonlinear/nonlinear-characteristics.mdx | 全站（JupyterNotebook cell 拼接流程） | BUG | 秦构（B1 新设） | 拼接脚本的占位符 `%%NBn%%` 经过一层 `%` 格式化被折叠成 `%NBn%`，9 个 cell 首行由 `# 注释` 变成 `%# 注释` → IPython 当成 line magic，一运行就 `UsageError: Line magic function '%#' not found`；改回 `#` 并新增"MDX cell 与 harness cell 字符串全等"校验脚本作为交付门槛 |
 | 018 | 2026-09-25 | components/wiki/nonlinearity-explorer.tsx | 非线性系统特性（间隙环面积读数） | BUG | 柯验（B1 新设） | 有记忆非线性预热循环停在 t=6π（u≈0，下降支），上升支扫描却从 u=-A 起，prevY 带着 +b 残留把上升支钉高 1.0 → 环面积 0.520000 而手算 0.84（max\|y-u\| 仍正确，最难发现）；预热末相位改为与扫描起点重合 θ=-π/2，面积回到 0.839999 |
 | 021 | 2026-10-16 | classic/case-study+fda+pid（11 处 setup + 4 处 cell） | notebook 全线 | BUG | 秦构（S6 未实跑） | scipy1.12+/numpy2.x API 漂移：feedback/margin 非 scipy、lti 算术被移除、bode plot kwarg、tf 缺名、cont2discrete 5 元组、1×1 数组转标量→setup 猴子补丁恢复 lti 算术+本地 feedback/margin，cell 仅直修 4 处纯错；S6 实跑 0 error；门槛收紧为签发必跑（编号跳过 B8 预留的 019/020） |
-| 022 | 2026-10-16 | classic 六门课 21 处 setupCode | 图表中文标签 | BUG | 秦构（setup 模板缺字体配置） | matplotlib 未设 font.sans-serif → 中文全渲染为方框（Glyph missing from DejaVu Sans）；实测内核含 YaHei/SimHei 后统一补两行 rcParams（cell 未动），21 处修复；S6 实跑 case-study/time-domain 0 error 0 警告、课程级 WARN→PASS |
+<<<<<<< HEAD
+=======
 
 ## 归因角色列说明（B8 起）
 

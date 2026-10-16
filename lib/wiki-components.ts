@@ -57,6 +57,7 @@ import { StateSpaceExplorer } from "@/components/wiki/state-space-explorer";
 import { StateFeedbackPoleExplorer } from "@/components/wiki/state-feedback-pole-explorer";
 import { ObserverSpeedExplorer } from "@/components/wiki/observer-speed-explorer";
 import { OptimalTimeExplorer } from "@/components/wiki/optimal-time-explorer";
+import { ComplexPolarExplorer } from "@/components/wiki/complex-polar-explorer";
 
 export const wikiComponents: MDXComponents = {
   Callout,
@@ -104,4 +105,5 @@ export const wikiComponents: MDXComponents = {
   StateFeedbackPoleExplorer,
   ObserverSpeedExplorer,
   OptimalTimeExplorer,
+  ComplexPolarExplorer,
 };

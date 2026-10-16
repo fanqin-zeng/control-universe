@@ -124,6 +124,15 @@ $$
 e^{i\theta} = \cos\theta + i\sin\theta
 $$
 
+它**不是被特殊定义出来的**，可以从你已经接受的泰勒展开直接"看见"。把 $e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots$ 中的 $x$ 换成 $i\theta$，按 $i$ 的幂分组（$i^2=-1$、$i^3=-i$、$i^4=1$ 循环）：
+
+$$
+e^{i\theta} = \Big(1 - \frac{\theta^2}{2!} + \frac{\theta^4}{4!} - \cdots\Big) + i\Big(\theta - \frac{\theta^3}{3!} + \frac{\theta^5}{5!} - \cdots\Big)
+$$
+
+括号里正是 $\cos\theta$ 和 $\sin\theta$ 的泰勒展开。或者更快的验证：令 $f(\theta) = e^{i\theta}$，两边求导得 $f'(\theta) = i\,f(\theta)$——而 $(\cos\theta + i\sin\theta)' = -\sin\theta + i\cos\theta = i(\cos\theta + i\sin\theta)$，两者满足同一个微分方程、初值都是 $1$，故相等。
+
+
 所以复数可以写成更简洁的**指数形式**：
 
 $$
@@ -150,18 +159,7 @@ $$
 
 **例子**：$(2e^{i\pi/3}) \cdot (3e^{i\pi/6}) = 6e^{i\pi/2} = 6i$
 
-## 复数在控制理论中的角色
-
-传递函数 $G(s)$ 是复变量 $s$ 的函数。$s$ 的取值决定了系统的行为：
-
-| $s$ 的位置 | 物理含义 |
-|------------|----------|
-| $s = j\omega$（虚轴上） | 纯正弦振荡，频率 $\omega$ |
-| $s = \sigma + j\omega$，$\sigma < 0$（左半平面） | 衰减振荡 |
-| $s = \sigma + j\omega$，$\sigma > 0$（右半平面） | 发散振荡（不稳定） |
-| $s = 0$（原点） | 直流（常数） |
-
-传递函数的**极点**（分母为零的 $s$ 值）如果在左半平面，系统稳定；如果在右半平面，系统不稳定。这就是为什么复平面在控制理论中如此核心。
+<ComplexPolarExplorer />
 
 ## 小结
 
@@ -169,4 +167,4 @@ $$
 - 四则运算：加减按分量，乘法展开化简，除法乘共轭
 - 复平面上，模 $|z| = \sqrt{a^2 + b^2}$，辐角 $\arg(z) = \arctan(b/a)$
 - 欧拉公式 $e^{i\theta} = \cos\theta + i\sin\theta$ 让乘除法变得简单
-- 在控制理论中，$s = \sigma + j\omega$ 的实部控制衰减/增长，虚部控制振荡频率
+
