@@ -55,12 +55,12 @@
 |------|------|------|------|------|------|---------|---------|
 | 4.1 | 状态空间表示 | state-space | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 4.2 | 可控性与可观性 | controllability-observability | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.3 | 状态反馈与极点配置 | state-feedback | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.4 | 状态观测器设计 | state-observer | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.5 | 最优控制基础 | optimal-control-basics | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.6 | LQR控制器 | lqr-controller | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.7 | 卡尔曼滤波 | kalman-filter | 🟨 有正文待审校 | — | — | 0 | — |
-| 4.8 | 线性系统理论 | linear-system-theory | 🟨 有正文待审校 | — | — | 0 | — |
+| 4.3 | Lyapunov 方法与现代稳定性 | lyapunov-modern | ✅ 已交付 v1.3 | — | theory | 0 | — |
+| 4.4 | 状态反馈与极点配置 | state-feedback | ✅ 已交付 v1.3 | — | — | 0 | — |
+| 4.5 | 状态观测器设计 | state-observer | ✅ 已交付 v1.3 | — | — | 0 | — |
+| 4.6 | 最优控制基础 | optimal-control-basics | ✅ 已交付 v1.3 | — | — | 0 | — |
+| 4.7 | LQR控制器 | lqr-controller | ✅ 已交付 v1.3 | — | — | 0 | — |
+| 4.8 | 卡尔曼滤波 | kalman-filter | 🟨 有正文待审校 | — | — | 0 | — |
 | 4.9 | 多变量系统分析 | multivariable-systems | 🟨 有正文待审校 | — | — | 0 | — |
 | 4.10 | 现代控制综合案例 | modern-case-study | 🟨 有正文待审校 | — | — | 0 | — |
 
@@ -231,14 +231,14 @@
 
 - **总章节数**: 16
 - **总模块数**: 141
-- **已交付 v1.3**: 27（status = v1.3）
-- **有正文待审校**: 29（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 28（status = v1.3）
+- **有正文待审校**: 28（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 85（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 114（= draft 29 + empty 85 + 无 status 0）
+- **未完成 v1.3**: 113（= draft 28 + empty 85 + 无 status 0）
 - **有 MDX 正文**: 56
 - **catalog 小节总数**: 614
-- **讨论日志**: 19 篇（覆盖 19 门；有 MDX 无日志 37 门）
+- **讨论日志**: 20 篇（覆盖 20 门；有 MDX 无日志 36 门）
 - **交互组件**: 46 个文件（被正文引用 44，孤儿 2）
 - **prereq 边**: 148 条（环 0 · 悬空 0 · 前向 10 = 导论豁免 6 + 白名单命中 4 · 章内倒置 2 · 孤儿课 30）
 - **prereq 覆盖率**: 69 / 141 门登记了前置；零 prereq 边的章 7 个（modern、nonlinear、mpc、robust、intelligent、rl-control、multi-agent）

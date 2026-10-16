@@ -1,0 +1,747 @@
+---
+title: "Lyapunov 方法与现代稳定性"
+description: "Lyapunov 稳定性、内部/外部稳定性、可稳定性与可检测性——现代控制理论的数学基石"
+---
+
+# Lyapunov 方法与现代稳定性
+
+## 为什么需要 Lyapunov 理论
+
+在[状态空间表示](/modern/state-space)中，线性自治系统写成 $\dot x=Ax$。不论单输入还是多输入、实现是否最小，**$A$ 的全部特征值实部为负，就能判断内部渐近稳定**。真正需要区分的是：传递函数只呈现输入到输出可见的模态，可能漏掉内部不稳定状态。
+
+本课用二次型函数把“特征值稳定”变成可检查的矩阵等式，随后区分内部稳定、BIBO 稳定、可稳定与可检测。它们是后续状态反馈、观测器和 LQR 的基础。
+
+<Callout type="info" title="本课边界与阅读顺序">
+
+本课主讲线性系统的 Lyapunov 方程与稳定性证书；非线性系统的直接法、LaSalle 不变集和吸引域估计，见 [非线性 Lyapunov 稳定性](/nonlinear/lyapunov-stability)。后面的 LQR 关系是应用预览，首次阅读可先看完本课，再到 [LQR控制器](/modern/lqr-controller)学习最优性推导。
+
+</Callout>
+
+> 📐 本文用到了二次型、特征值和矩阵指数，详见 [线性代数基础](/math/linear-algebra-basics)、[特征值与特征分解](/math/eigen-decomposition)、[常微分方程与矩阵指数](/math/ode-matrix-exponential)。最小解释：正定二次型在原点外取正值，矩阵指数给出零输入轨迹，负实部特征值让轨迹衰减。
+
+## Lyapunov 稳定性理论
+
+### 平衡点与稳定性
+
+考虑自治系统（无输入）：
+
+$$\dot{\boldsymbol{x}} = f(\boldsymbol{x})$$
+
+**平衡点** $\boldsymbol{x}_e$ 满足 $f(\boldsymbol{x}_e) = \boldsymbol{0}$。对于 LTI 系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$，原点是唯一的平衡点（$A$ 非奇异时）。
+
+**稳定性的层次**：
+
+| 类型 | 定义 | 直觉 |
+|------|------|------|
+| **稳定**（Lyapunov 稳定） | $\forall \varepsilon > 0, \exists \delta > 0$：$\|\boldsymbol{x}(0) - \boldsymbol{x}_e\| < \delta \implies \|\boldsymbol{x}(t) - \boldsymbol{x}_e\| < \varepsilon, \forall t \geq 0$ | 起点靠近 → 永远靠近 |
+| **渐近稳定** | 稳定 + $\lim_{t \to \infty} \boldsymbol{x}(t) = \boldsymbol{x}_e$ | 起点靠近 → 最终回到平衡点 |
+| **指数稳定** | 稳定 + $\|\boldsymbol{x}(t) - \boldsymbol{x}_e\| \leq c \|\boldsymbol{x}(0) - \boldsymbol{x}_e\| e^{-\alpha t}$ | 以指数速率收敛 |
+| **不稳定** | 不满足稳定定义 | 任意小的初态偏差都可能离开某个固定邻域 |
+
+对于有限维连续时间 LTI 系统，下面三条等价（**不包括单纯的 Lyapunov 稳定**）：**渐近稳定 ⟺ 指数稳定 ⟺ $A$ 的所有特征值实部 < 0**。
+
+<Callout type="info" title="稳定与收敛不是一回事">
+
+$\dot x=0$ 的轨迹保持初值，原点稳定但不渐近稳定。线性系统在虚轴上的特征值还须检查 Jordan 块：半单虚轴模态可保持有界，非平凡 Jordan 块可使轨迹多项式增长。仅凭“没有正实部特征值”不能宣称稳定。
+
+</Callout>
+
+### 二次型能量证书
+
+对线性系统，我们寻找 $V(x)=x^TPx$。正定矩阵 $P$ 将状态空间变成一组围绕原点的椭圆能量等高线；若沿每条非零轨迹都有 $\dot V<0$，能量持续下降，就能证明原点渐近稳定。下面直接给出线性情形的系统化构造，非线性函数构造留给后续章节。
+
+### 线性系统的 Lyapunov 方程
+
+对于 LTI 系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$，取二次型 Lyapunov 函数：
+
+$$V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}, \quad P = P^T > 0$$
+
+沿轨迹求导：
+
+$$\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T (A^T P + PA) \boldsymbol{x}$$
+
+要使 $\dot{V} < 0$，需要 $A^T P + PA < 0$（负定）。
+
+**Lyapunov 定理（线性系统）**：
+
+> $A$ 渐近稳定 ⟺ 对任意 $Q = Q^T > 0$，**Lyapunov 方程**
+> $$A^T P + PA = -Q$$
+> 有唯一正定解 $P = P^T > 0$。
+
+**证明思路**：
+
+**必要性**（$A$ 稳定 → 解存在且正定）：构造
+
+$$P = \int_0^\infty e^{A^T t} Q e^{At} \, dt$$
+
+$A$ 稳定保证积分收敛。直接验证：
+
+$$A^T P + PA = \int_0^\infty (A^T e^{A^T t} Q e^{At} + e^{A^T t} Q e^{At} A) \, dt = \int_0^\infty \frac{d}{dt}(e^{A^T t} Q e^{At}) \, dt$$
+
+$$= \left[ e^{A^T t} Q e^{At} \right]_0^\infty = 0 - Q = -Q$$
+
+$P > 0$：对任意 $\boldsymbol{x} \neq 0$，$\boldsymbol{x}^T P \boldsymbol{x} = \int_0^\infty \|Q^{1/2} e^{At} \boldsymbol{x}\|^2 dt > 0$（因为 $e^{At}\boldsymbol{x}$ 不恒为零）。
+
+**充分性**（解存在 → $A$ 稳定）：取 $V = \boldsymbol{x}^T P \boldsymbol{x}$，则 $\dot{V} = \boldsymbol{x}^T(A^T P + PA)\boldsymbol{x} = -\boldsymbol{x}^T Q \boldsymbol{x} < 0$。由 Lyapunov 定理，$A$ 渐近稳定。$\blacksquare$
+
+> [!question] 李稳的追问
+> "为什么 $Q$ 可以任意选？"
+>
+> 因为定理说的是"对**任意** $Q > 0$"。不同 $Q$ 给出不同 $P$，但只要存在一个 $P > 0$ 就足以证明稳定。实际中常取 $Q = I$ 简化计算。
+
+<Callout type="warning" title="有返回矩阵不等于有稳定性证书">
+
+对不稳定或奇异的 $A$，Lyapunov 方程可能无解、非唯一或有非正定解。先看残差是否接近零，再查对称性与正定性；不能仅凭求解器返回了一个数组就宣布稳定。SciPy 的连续接口解的是 $AX+XA^T=Q$，本课需传入 $A^T,-Q$，见[官方接口定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_continuous_lyapunov.html)。
+
+</Callout>
+
+### 例1：用 Lyapunov 方程检验稳定性
+
+$A = \begin{bmatrix} -1 & 2 \\ 0 & -3 \end{bmatrix}$，$Q = I$。
+
+Lyapunov 方程 $A^T P + PA = -I$：
+
+$\begin{bmatrix} -1 & 0 \\ 2 & -3 \end{bmatrix} \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} + \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} \begin{bmatrix} -1 & 2 \\ 0 & -3 \end{bmatrix} = \begin{bmatrix} -1 & 0 \\ 0 & -1 \end{bmatrix}$
+
+展开：
+
+$(1,1)$：$-2p_1 = -1 \implies p_1 = 1/2$
+
+$(1,2)$：$2p_1 - p_2 - 3p_2 = 0 \implies 1 - 4p_2 = 0 \implies p_2 = 1/4$
+
+$(2,2)$：$4p_2 - 6p_3 = -1 \implies 1 - 6p_3 = -1 \implies p_3 = 1/3$
+
+$P = \begin{bmatrix} 1/2 & 1/4 \\ 1/4 & 1/3 \end{bmatrix}$
+
+检验正定性：$p_1 = 1/2 > 0$，$\det(P) = 1/6 - 1/16 = 5/48 > 0$。$P > 0$ ✓
+
+结论：$A$ 渐近稳定。（验证：特征值 $-1, -3$，确实稳定 ✓）
+
+<JupyterNotebook
+  title="矩阵方程：连续、奇异与离散证书"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov, solve_continuous_are, expm
+from scipy.signal import ss2tf
+from fractions import Fraction
+np.set_printoptions(precision=6, suppress=True)
+def lyap(A, Q):
+    P = solve_continuous_lyapunov(A.T, -Q)
+    residual = np.max(np.abs(A.T@P+P@A+Q))
+    assert residual < 1e-10
+    # Independent vectorized linear solve (column-major).
+    n = A.shape[0]
+    operator = np.kron(np.eye(n), A.T)+np.kron(A.T, np.eye(n))
+    direct = np.linalg.solve(operator, -Q.reshape(-1,order='F')).reshape((n,n),order='F')
+    assert np.allclose(P,direct,atol=1e-12)
+    return P
+`}
+  cells={[
+    { code: `# 例1与不稳定但可解的对照；固定计算，不作方法排名
+A=np.array([[-1.,2.],[0.,-3.]])
+P=lyap(A,np.eye(2))
+print("例1 P =",P,"eigP =",np.linalg.eigvalsh(P),"detP =",np.linalg.det(P),"eigA =",np.linalg.eigvals(A))
+assert np.allclose(P,[[.5,.25],[.25,1/3]])
+A_bad=np.diag([1.,-2.])
+Pb=lyap(A_bad,np.eye(2))
+print("不稳定但可解 P =",Pb,"eigP =",np.linalg.eigvalsh(Pb))
+# 奇异例：diag(1,-1)有不定解族；A=0,Q=I则无解
+As=np.diag([1.,-1.])
+for off in [0.,1.]:
+    Ps=np.array([[-.5,off],[off,.5]])
+    assert np.max(np.abs(As.T@Ps+Ps@As+np.eye(2)))<1e-12
+    print("奇异解族 off =",off,"P =",Ps,"eigP =",np.linalg.eigvalsh(Ps))
+print("A=0,Q=I: 左端恒为0，右端-I非零，无解")
+` },
+    { code: `# 答案1a/1b与2：独立Kronecker复算
+for label,A,Q in [
+    ("1a",np.array([[-2.,1.],[0.,-3.]]),np.eye(2)),
+    ("1b",np.array([[0.,1.],[-2.,-1.]]),np.eye(2)),
+    ("2",np.array([[0.,1.],[-1.,-1.]]),np.diag([1.,2.]))]:
+    P=lyap(A,Q)
+    print("答案",label,"P =",P,"det =",np.linalg.det(P),"eigA =",np.linalg.eigvals(A),"eigP =",np.linalg.eigvalsh(P))
+` },
+    { code: `# 答案9：离散方程，注意SciPy需传A.T
+Ad=np.array([[.5,.1],[0.,.3]])
+Pd=solve_discrete_lyapunov(Ad.T,np.eye(2))
+res=Ad.T@Pd@Ad-Pd+np.eye(2)
+assert np.max(np.abs(res))<1e-12
+p1=Fraction(4,3);p2=Fraction(4,51)
+p3=(1+Fraction(1,100)*p1+Fraction(3,50)*p2)/Fraction(91,100)
+print("答9 P =",Pd,"p22精确 =",p3,"det精确 =",p1*p3-p2*p2,"det =",np.linalg.det(Pd),"eigP =",np.linalg.eigvalsh(Pd))
+print("Ad特征值 =",np.linalg.eigvals(Ad),"residual =",np.max(np.abs(res)))
+` },
+  ]}
+/>
+
+## 内部稳定性与外部稳定性
+
+### 两种稳定性
+
+考虑系统：
+
+$$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}, \quad \boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$$
+
+**内部渐近稳定性**（Internal Stability，本课后文“内部稳定”均指这一含义）：零输入响应 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的稳定性。取决于 $A$ 的特征值。
+
+**外部稳定性**（BIBO Stability）：零初态下，每个有界输入产生有界输出。对于有限维、因果、适当有理的系统，约简后传递矩阵各元素的全部极点必须严格在左半平面；虚轴极点不属于 BIBO 稳定。取决于传递函数 $G(s) = C(sI - A)^{-1}B + D$ 的极点。
+
+### 它们等价吗？
+
+**关键结论**：
+
+$$\text{内部稳定} \implies \text{BIBO 稳定}$$
+
+但反过来**不一定**成立！
+
+**反例**：$A = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 0 & 1 \end{bmatrix}$。
+
+传递函数：$G(s) = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} s-1 & 0 \\ 0 & s+1 \end{bmatrix}^{-1} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = \frac{1}{s+1}$
+
+BIBO 稳定（极点在 $-1$）✓。但 $A$ 有特征值 $+1$，内部**不稳定** ✗。
+
+原因：不稳定模式 $x_1$ 既不可控（$B$ 的第一行为 0）又不可观（$C$ 的第一列为 0）——它被"隐藏"了，传递函数看不到。
+
+<Callout type="info" title="精确关系">
+
+| 条件 | 内部稳定 ⟺ BIBO 稳定？ |
+|------|------------------------|
+| $(A, B, C)$ 可控且可观 | **是**——没有隐藏模式 |
+| 有不可控或不可观的不稳定模式 | **不能由 BIBO 反推内部稳定**；若可见部分稳定，就形成上述反例 |
+| 不可控/不可观模式都稳定 | **是**——隐藏模式自然衰减 |
+
+</Callout>
+
+**工程意义**：BIBO 稳定只回答零初态输入-输出有界性，不能用来保证内部状态安全。但如果关心系统内部所有状态（比如估计所有状态、防止饱和），必须保证内部稳定。
+
+### 例2：隐藏的不稳定模式
+
+系统同反例：$A = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 0 & 1 \end{bmatrix}$。
+
+零输入响应（$u = 0$，初始状态 $\boldsymbol{x}(0) = [1, 0]^T$）：
+
+$x_1(t) = e^t \to \infty$（不稳定！）
+
+输出 $y = C\boldsymbol{x} = x_2$，$x_2(0) = 0$，所以 $y(0) = 0$。输出看起来正常——但内部状态 $x_1(t) = e^t$ 在发散！
+
+传递函数：$G(s) = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} s-1 & 0 \\ 0 & s+1 \end{bmatrix}^{-1} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = \frac{1}{s+1}$
+
+BIBO 稳定 ✓。但 $x_1(t) = e^t$ 发散，$x_1$ 不可控（$B_1 = 0$）且不可观（$C_1 = 0$）。传递函数完全看不到这个不稳定模式。
+
+<Callout type="warning" title="教训">
+
+传递函数只描述可控且可观的部分。设计控制器时，如果只基于传递函数，可能遗漏内部不稳定模式——这就是为什么需要状态空间方法。
+
+</Callout>
+
+<JupyterNotebook
+  title="隐藏模态、PBH 与三重积分器"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov, solve_continuous_are, expm
+from scipy.signal import ss2tf
+from fractions import Fraction
+np.set_printoptions(precision=6, suppress=True)
+def lyap(A, Q):
+    P = solve_continuous_lyapunov(A.T, -Q)
+    residual = np.max(np.abs(A.T@P+P@A+Q))
+    assert residual < 1e-10
+    # Independent vectorized linear solve (column-major).
+    n = A.shape[0]
+    operator = np.kron(np.eye(n), A.T)+np.kron(A.T, np.eye(n))
+    direct = np.linalg.solve(operator, -Q.reshape(-1,order='F')).reshape((n,n),order='F')
+    assert np.allclose(P,direct,atol=1e-12)
+    return P
+`}
+  cells={[
+    { code: `# 例2统一C=[0,1]；传递函数与固定参数轨迹
+A=np.diag([1.,-1.]);B=np.array([[0.],[1.]]);C=np.array([[0.,1.]])
+num,den=ss2tf(A,B,C,np.array([[0.]]))
+print("例2未约简分子/分母 =",num,den,"约简后 G=1/(s+1)")
+print("可控rank =",np.linalg.matrix_rank(np.hstack([B,A@B])),"可观rank =",np.linalg.matrix_rank(np.vstack([C,C@A])))
+t=np.linspace(0,3,301)
+xx=np.array([expm(A*ti)@np.array([1.,1.]) for ti in t])
+assert np.allclose(xx[:,0],np.exp(t))
+assert np.allclose(xx[:,1],np.exp(-t))
+print("初态[1,0]在t=3的状态 =",expm(A*3)@[1.,0.],"输出 = 0")
+print("绘图初态[1,1]在t=3的状态 =",xx[-1],"y =",xx[-1,1])
+fig,ax=plt.subplots(figsize=(8,3.5))
+ax.plot(t,xx[:,0],label="hidden x1");ax.plot(t,xx[:,1],label="x2 = output")
+ax.set(xlim=(0,3),ylim=(0,21),xlabel="t",ylabel="state/output")
+ax.grid(True,alpha=.3);ax.legend();plt.tight_layout();plt.show()
+` },
+    { code: `# 例3与题3/4：只检查实部非负模态，包括虚轴
+def stabilizable(A,B):
+    return all(np.linalg.matrix_rank(np.hstack([v*np.eye(len(A))-A,B]))==len(A)
+               for v in np.linalg.eigvals(A) if v.real>=0)
+for label,A,B in [
+    ("例3",np.diag([1.,-2.]),np.array([[0.],[1.]])),
+    ("题3a",np.diag([-1.,2.]),np.array([[1.],[0.]])),
+    ("题3b",np.diag([1.,-2.]),np.array([[1.],[0.]]))]:
+    print(label,"可稳定 =",stabilizable(A,B),"rankC =",np.linalg.matrix_rank(np.hstack([B,A@B])))
+for label,A,C in [
+    ("题4a",np.diag([-1.,3.]),np.array([[1.,0.]])),
+    ("题4b",np.diag([2.,-3.]),np.array([[1.,0.]]))]:
+    print(label,"可检测 =",stabilizable(A.T,C.T),"rankO =",np.linalg.matrix_rank(np.vstack([C,C@A])))
+` },
+    { code: `# 题7：三重积分器的多项式增长，不是BIBO临界稳定
+A=np.array([[0.,1.,0.],[0.,0.,1.],[0.,0.,0.]])
+B=np.array([[0.],[0.],[1.]]);C=np.array([[1.,0.,0.]])
+print("题7 numerator/denominator =",ss2tf(A,B,C,np.zeros((1,1))))
+print("rankC =",np.linalg.matrix_rank(np.hstack([B,A@B,A@A@B])),"rankO =",np.linalg.matrix_rank(np.vstack([C,C@A,C@A@A])))
+for t in [1.,2.,3.]:
+    free=expm(A*t)@[0.,0.,1.]
+    assert np.allclose(free,[t*t/2,t,1])
+    print("t =",t,"零输入x =",free,"单位阶跃y =",t**3/6)
+# 正确逆矩阵回代，原稿漏掉(2,3)项
+v=2.
+inv=np.array([[v*v,v,1],[0,v*v,v],[0,0,v*v]])/v**3
+assert np.allclose((v*np.eye(3)-A)@inv,np.eye(3))
+` },
+  ]}
+/>
+
+## 可稳定性与可检测性
+
+后续 LQR 设计将要求 $(A, B)$ 可稳定、$(A, Q^{1/2})$ 可检测；卡尔曼滤波需要 $(A, C)$ 可检测。这里先给出精确定义。
+
+### 可稳定性（Stabilizability）
+
+$(A, B)$ **可稳定** ⟺ 存在 $K$ 使 $A - BK$ 渐近稳定。
+
+**等价条件**：$(A, B)$ 的所有不可控模式都是稳定的。
+
+即：如果 $\text{rank}\begin{bmatrix} sI - A & B \end{bmatrix} < n$ 对应的 $s$ 都满足 $\text{Re}(s) < 0$。
+
+> 比"可控"更弱：可控要求**所有**模式都能被控制影响；可稳定只要求**不可控**的模式自己就是稳定的。
+
+### 可检测性（Detectability）
+
+$(A, C)$ **可检测** ⟺ 存在 $L$ 使 $A - LC$ 渐近稳定。
+
+**等价条件**：$(A, C)$ 的所有不可观模式都是稳定的。
+
+> 比"可观"更弱：可观要求**所有**模式都能从输出推断；可检测只要求**不可观**的模式自己就是稳定的。
+
+### 后续控制与估计设计如何使用这些条件
+
+**LQR**：ARE 的解 $P$ 保证 $A - BK$ 稳定，前提是 $(A, B)$ 可稳定、$(A, Q^{1/2})$ 可检测。
+- 可稳定：不可控模式不受 $K$ 影响，必须自身稳定
+- 可检测：保证代价函数 $J$ 能"看到"所有不稳定模式，否则优化器会忽略它们
+
+**稳态卡尔曼滤波的标准充分条件**：测量噪声协方差正定，$(A,C)$ 可检测、$(A,Q_w^{1/2})$ 可稳定，其中 $Q_w$ 是过程噪声协方差，不是 LQR 状态权重。滤波 Riccati 方程与协方差建模见 [卡尔曼滤波](/modern/kalman-filter)。
+- 可检测：不可观模式不受 $K_f$ 影响，必须自身稳定
+- 可稳定：保证过程噪声能"激励"所有不稳定模式
+
+**对偶关系**：
+
+| | 控制 | 估计 |
+|---|---|---|
+| 最强条件 | $(A, B)$ 可控 | $(A, C)$ 可观 |
+| 反馈存在的必要充分条件 | $(A, B)$ 可稳定 | $(A, C)$ 可检测 |
+| 不可控/不可观模式 | 必须稳定 | 必须稳定 |
+
+### 例3：检验可稳定性
+
+$A = \begin{bmatrix} 1 & 0 \\ 0 & -2 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$。
+
+可控性矩阵：$\mathcal{C} = \begin{bmatrix} B & AB \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ 1 & -2 \end{bmatrix}$，$\text{rank} = 1 < 2$。不可控 ✗。
+
+不可控模式：$\text{rank}\begin{bmatrix} sI - A & B \end{bmatrix} = \text{rank}\begin{bmatrix} s-1 & 0 & 0 \\ 0 & s+2 & 1 \end{bmatrix}$。
+
+$s = 1$ 时：$\text{rank}\begin{bmatrix} 0 & 0 & 0 \\ 0 & 3 & 1 \end{bmatrix} = 1 < 2$。不可控模式 $s = 1$（不稳定）。
+
+结论：$(A, B)$ **不可稳定**。不存在 $K$ 使 $A - BK$ 稳定——因为 $x_1$ 完全不受 $u$ 影响，而 $x_1$ 自身不稳定。
+
+## Lyapunov 方程与 LQR 的关系
+
+### ARE 是带最优性的 Lyapunov 方程
+
+LQR 的 ARE：
+
+$$A^T P + PA - PBR^{-1}B^T P + Q = 0$$
+
+改写为：
+
+$$(A - BK)^T P + P(A - BK) = -(Q + K^T R K)$$
+
+其中 $K = R^{-1}B^T P$。
+
+这正是以 $A_{cl}=A-BK$ 为系统矩阵的 Lyapunov 等式。若 $Q>0$，则 $Q+K^TRK>0$，$P>0$ 可作为严格能量证书。若仅有 $Q\geq0$，右侧通常只能保证半正定，不能不加条件就写成负定；闭环稳定性应结合稳定化解与可检测性。
+
+本系列 LQR 代价采用 $J=\frac12\int_0^\infty(x^TQx+u^TRu)\,dt$，故 $J^*(x_0)=\frac12x_0^TPx_0$。这里取的 $V=x^TPx$ 等于 $2J^*$，不要把两种归一化混用。
+
+### 输入增益裕度的证书
+
+对连续时间全状态反馈，令实际输入为 $u=-\alpha Kx$。由 ARE：
+
+$$
+(A-\alpha BK)^TP+P(A-\alpha BK)=-Q-(2\alpha-1)K^TRK
+$$
+
+当 $Q>0$、$P>0$ 时，$\alpha>1/2$ 使右侧负定，给出稳定性证书；半正定 $Q$ 的推广需要可检测性论证。单输入的回差等式、相位裕度与输入端扰动边界详见 [LQR控制器](/modern/lqr-controller#lqr-的鲁棒性)。这不是任意模型误差或 LQG 输出反馈的鲁棒性保证。
+
+<JupyterNotebook
+  title="LQR、观测器与 Lyapunov 证书"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov, solve_continuous_are, expm
+from scipy.signal import ss2tf
+from fractions import Fraction
+np.set_printoptions(precision=6, suppress=True)
+def lyap(A, Q):
+    P = solve_continuous_lyapunov(A.T, -Q)
+    residual = np.max(np.abs(A.T@P+P@A+Q))
+    assert residual < 1e-10
+    # Independent vectorized linear solve (column-major).
+    n = A.shape[0]
+    operator = np.kron(np.eye(n), A.T)+np.kron(A.T, np.eye(n))
+    direct = np.linalg.solve(operator, -Q.reshape(-1,order='F')).reshape((n,n),order='F')
+    assert np.allclose(P,direct,atol=1e-12)
+    return P
+`}
+  cells={[
+    { code: `# 题6与10：控制、对偶观测器及各自证书
+A=np.array([[0.,1.],[0.,0.]]);B=np.array([[0.],[1.]]);C=np.array([[1.,0.]])
+Q=np.eye(2);R=np.eye(1)
+P=solve_continuous_are(A,B,Q,R)
+K=np.linalg.solve(R,B.T@P)
+Pe=solve_continuous_are(A.T,C.T,np.eye(2),np.eye(1));L=Pe@C.T
+Ac=A-B@K;Ao=A-L@C
+lhs=Ac.T@P+P@Ac;rhs=-(Q+K.T@R@K)
+assert np.allclose(lhs,rhs,atol=1e-12)
+print("题6 P =",P,"K =",K,"Lyapunov两边 =",lhs,"V([1,0]) =",P[0,0],"J* =",P[0,0]/2)
+Pcl=lyap(Ac,np.eye(2));Pobs=lyap(Ao,np.eye(2))
+print("题10 Kf =",L,"控制/误差极点 =",np.linalg.eigvals(Ac),np.linalg.eigvals(Ao))
+print("Pcl =",Pcl,"Pobs =",Pobs,"det =",np.linalg.det(Pcl),np.linalg.det(Pobs))
+joint=np.block([[Ac,B@K],[np.zeros((2,2)),Ao]])
+print("联合极点 =",np.linalg.eigvals(joint))
+# 题5：例1非零轨迹上的严格下降
+Ae=np.array([[-1.,2.],[0.,-3.]]);Pl=lyap(Ae,np.eye(2))
+for t in [0.,1.,2.]:
+    x=expm(Ae*t)@[1.,1.]
+    derivative=x@(Ae.T@Pl+Pl@Ae)@x
+    assert abs(derivative+x@x)<1e-12
+    print("题5 t =",t,"Vdot =",derivative)
+` },
+    { code: `# 输入倍率证书的回代与Q半正定边界
+for alpha in [.6,1.,2.]:
+    aa=A-alpha*B@K
+    residual=aa.T@P+P@aa+Q+(2*alpha-1)*K.T@R@K
+    assert np.max(np.abs(residual))<1e-12
+    print("alpha =",alpha,"证书残差 =",np.max(np.abs(residual)),"极点 =",np.linalg.eigvals(aa))
+# Q=0时稳定化P可以为0，右侧并非严格负定
+Az=-np.eye(2);Bz=np.eye(2)
+Pz=solve_continuous_are(Az,Bz,np.zeros((2,2)),np.eye(2))
+print("Q=0且A=-I: P =",Pz,"闭环极点 =",np.linalg.eigvals(Az-Bz@Pz))
+assert np.allclose(Pz,0)
+` },
+  ]}
+/>
+
+## 深入讨论
+
+### Lyapunov 方程 vs Riccati 方程
+
+| | Lyapunov 方程 | Riccati 方程（ARE） |
+|---|---|---|
+| 形式 | $A^T P + PA = -Q$ | $A^T P + PA - PBR^{-1}B^T P + Q = 0$ |
+| 未知量 | $P$（线性） | $P$（非线性，含 $P^2$ 项） |
+| 解法 | 线性方程组（向量化） | 迭代法或 Schur 分解 |
+| 物理意义 | 给定系统的"能量" | 最优控制的代价 |
+| 存在条件 | $A$ 稳定 | $(A,B)$ 可稳定，$(A,Q^{1/2})$ 可检测 |
+
+**联系**：ARE 可以看作"在 Lyapunov 方程中加入了最优性约束"。如果令 $B = 0$（没有控制），ARE 退化为 Lyapunov 方程。
+
+### 从线性到非线性的分工
+
+线性时不变系统可以通过矩阵方程构造二次型证书。非线性系统的能量函数、LaSalle 不变集与吸引域需要额外条件，本课不展开，转至 [非线性 Lyapunov 稳定性](/nonlinear/lyapunov-stability)。这里得到的 $P$ 可作为局部分析的候选，但不能直接承诺非线性系统全局稳定。
+
+### 离散时间 Lyapunov 理论
+
+离散系统 $\boldsymbol{x}_{k+1} = A\boldsymbol{x}_k$ 的 Lyapunov 方程：
+
+$$A^T P A - P = -Q$$
+
+$A$ 渐近稳定 ⟺ 对任意 $Q > 0$，有唯一 $P > 0$。
+
+与连续时间的区别：稳定条件从 $\text{Re}(\lambda_i) < 0$ 变为 $|\lambda_i| < 1$（单位圆内）。
+
+## 小结
+
+1. 对有限维连续时间 LTI 系统，内部渐近稳定、指数稳定与 $A$ 为 Hurwitz 等价；Lyapunov 稳定本身不要求收敛。
+2. $A$ 为 Hurwitz 当且仅当任给对称 $Q>0$，$A^TP+PA=-Q$ 有唯一正定解。求解后必须检查残差与正定性。
+3. 内部渐近稳定蕴含零初态 BIBO 稳定；反向推断需排除隐藏的不稳定模态。
+4. 可稳定性与可检测性要求无法控制或观察的模态本身严格稳定，PBH 检查包含虚轴模态。
+5. LQR 的闭环 Lyapunov 等式连接稳定性与最优代价；本系列的 $V=x^TPx=2J^*(x)$。
+
+## 习题
+
+**1.** 判断以下矩阵 $A$ 是否渐近稳定，并用 Lyapunov 方程验证（取 $Q = I$）：
+
+(a) $A = \begin{bmatrix} -2 & 1 \\ 0 & -3 \end{bmatrix}$
+
+(b) $A = \begin{bmatrix} 0 & 1 \\ -2 & -1 \end{bmatrix}$
+
+(c) $A = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}$
+
+**2.** 对系统 $A = \begin{bmatrix} 0 & 1 \\ -1 & -1 \end{bmatrix}$，取 $Q = \begin{bmatrix} 1 & 0 \\ 0 & 2 \end{bmatrix}$，求 Lyapunov 方程的解 $P$，并验证 $P > 0$。
+
+**3.** 判断以下 $(A, B)$ 是否可稳定：
+
+(a) $A = \begin{bmatrix} -1 & 0 \\ 0 & 2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$
+
+(b) $A = \begin{bmatrix} 1 & 0 \\ 0 & -2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$
+
+**4.** 判断以下 $(A, C)$ 是否可检测：
+
+(a) $A = \begin{bmatrix} -1 & 0 \\ 0 & 3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$
+
+(b) $A = \begin{bmatrix} 2 & 0 \\ 0 & -3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$
+
+**5.** 对非零初态，证明：如果 $A$ 渐近稳定，则 $V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}$（$P$ 为 Lyapunov 方程的解）沿 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的轨迹严格递减。
+
+**6.** 对 LQR 问题 $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$Q = I$，$R = 1$：
+
+(a) 求 ARE 的解 $P$
+
+(b) 验证 $(A - BK)^T P + P(A - BK) = -(Q + K^T R K)$
+
+(c) 说明 $V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}$ 的物理意义
+
+**7.** 系统 $A = \begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ 0 & 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}$。
+
+(a) 求传递函数 $G(s)$
+
+(b) 判断内部稳定性和 BIBO 稳定性
+
+(c) 判断 $(A, B)$ 可控性和 $(A, C)$ 可观性
+
+**8.** 在连续时间单输入全状态反馈与标称闭环稳定的条件下，证明 LQR 的返回差条件 $|1 + L(j\omega)|^2 \geq 1$ 意味着增益裕度下界为 $1/2$。
+
+提示：实际输入为 $u=-\alpha Kx$；证明通用保证区间为 $\alpha>1/2$，而不是求某个系统的精确失稳点。
+
+**9.** 离散时间系统 $\boldsymbol{x}_{k+1} = A\boldsymbol{x}_k$，$A = \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$。
+
+(a) 判断稳定性（特征值方法）
+
+(b) 取 $Q = I$，解离散 Lyapunov 方程 $A^T PA - P = -Q$，验证 $P > 0$
+
+**10.** 综合题：对系统 $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
+
+(a) 设计 LQR 控制器（$Q = I, R = 1$），求 $K$ 和闭环极点
+
+(b) 用对偶 ARE 设计确定性全阶观测器（设计权重 $Q_{obs}=I,R_{obs}=1$），求 $K_f$ 和误差极点
+
+(c) 用 Lyapunov 方程分别验证闭环系统 $A - BK$ 和误差动态 $A - K_f C$ 的稳定性
+
+(d) 说明分离性原理在此例中的体现
+
+## 答案
+
+**1.** (a) $A = \begin{bmatrix} -2 & 1 \\ 0 & -3 \end{bmatrix}$
+
+特征值：$-2, -3$。全部在左半平面 → **渐近稳定** ✓
+
+Lyapunov 方程 $A^T P + PA = -I$：
+
+$\begin{bmatrix} -2 & 0 \\ 1 & -3 \end{bmatrix} \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} + \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} \begin{bmatrix} -2 & 1 \\ 0 & -3 \end{bmatrix} = \begin{bmatrix} -1 & 0 \\ 0 & -1 \end{bmatrix}$
+
+$(1,1)$：$-4p_1 = -1 \implies p_1 = 1/4$
+
+$(1,2)$：$p_1 - 2p_2 - 3p_2 = 0 \implies 1/4 - 5p_2 = 0 \implies p_2 = 1/20$
+
+$(2,2)$：$2p_2 - 6p_3 = -1 \implies 1/10 - 6p_3 = -1 \implies p_3 = 11/60$
+
+$P = \begin{bmatrix} 1/4 & 1/20 \\ 1/20 & 11/60 \end{bmatrix}$
+
+$\det(P) = 11/240 - 1/400 = (55 - 3)/1200 = 52/1200 > 0$，$p_1 > 0$ → $P > 0$ ✓
+
+(b) $A = \begin{bmatrix} 0 & 1 \\ -2 & -1 \end{bmatrix}$
+
+特征多项式：$s^2 + s + 2 = 0$，$s = \frac{-1 \pm \sqrt{1-8}}{2} = -0.5 \pm j\sqrt{7}/2$
+
+实部 $-0.5 < 0$ → **渐近稳定** ✓
+
+Lyapunov 方程 $A^T P + PA = -I$：
+
+$(1,1)$：$-4p_2 = -1 \implies p_2 = 1/4$
+
+$(1,2)$：$p_1 - p_2 - 2p_3 = 0$
+
+$(2,2)$：$2p_2 - 2p_3 = -1 \implies 1/2 - 2p_3 = -1 \implies p_3 = 3/4$
+
+由 $(1,2)$：$p_1 = p_2 + 2p_3 = 1/4 + 3/2 = 7/4$
+
+$P = \begin{bmatrix} 7/4 & 1/4 \\ 1/4 & 3/4 \end{bmatrix}$
+
+$\det(P) = 21/16 - 1/16 = 5/4 > 0$ → $P > 0$ ✓
+
+(c) $A = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}$
+
+特征值：$1, -1$。有正实部特征值 → **不稳定** ✗
+
+Lyapunov 方程 $A^T P + PA = -I$：
+
+$(1,1)$：$2p_1 = -1 \implies p_1 = -1/2$
+
+$p_1<0$，任何解都不正定。更完整地，$p_3=1/2$，非对角元素任意，即
+
+$$
+P=\begin{bmatrix}-1/2&p_2\\p_2&1/2\end{bmatrix}
+$$
+
+这是**非唯一的不定解族**。不稳定系统不一定“无解”；若取 $A=0,Q=I$，方程才是 $0=-I$ 而确实无解。求解器对奇异算子发警告或返回一个矩阵，都不构成正确解的证明。
+
+**2.** $A = \begin{bmatrix} 0 & 1 \\ -1 & -1 \end{bmatrix}$，$Q = \begin{bmatrix} 1 & 0 \\ 0 & 2 \end{bmatrix}$
+
+Lyapunov 方程 $A^T P + PA = -Q$：
+
+$\begin{bmatrix} 0 & -1 \\ 1 & -1 \end{bmatrix} \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} + \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} \begin{bmatrix} 0 & 1 \\ -1 & -1 \end{bmatrix} = \begin{bmatrix} -1 & 0 \\ 0 & -2 \end{bmatrix}$
+
+$(1,1)$：$-2p_2 = -1 \implies p_2 = 1/2$
+
+$(1,2)$：$p_1 - p_2 - p_3 = 0 \implies p_1 - p_3 = 1/2$
+
+$(2,2)$：$2p_2 - 2p_3 = -2 \implies 1 - 2p_3 = -2 \implies p_3 = 3/2$
+
+$p_1 = 1/2 + 3/2 = 2$
+
+$P = \begin{bmatrix} 2 & 1/2 \\ 1/2 & 3/2 \end{bmatrix}$
+
+$p_1 = 2 > 0$，$\det(P) = 3 - 1/4 = 11/4 > 0$ → $P > 0$ ✓
+
+**3.** (a) $A = \begin{bmatrix} -1 & 0 \\ 0 & 2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$
+
+可控性矩阵 $\mathcal{C} = \begin{bmatrix} 1 & -1 \\ 0 & 0 \end{bmatrix}$，rank = 1。不可控。
+
+不可控模式：$x_2$ 不受 $u$ 影响。$x_2$ 的特征值 $= 2 > 0$（不稳定）。
+
+不可控模式不稳定 → $(A, B)$ **不可稳定** ✗
+
+(b) $A = \begin{bmatrix} 1 & 0 \\ 0 & -2 \end{bmatrix}$，$B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$
+
+可控性矩阵 $\mathcal{C} = \begin{bmatrix} 1 & 1 \\ 0 & 0 \end{bmatrix}$，rank = 1。不可控。
+
+不可控模式：$x_2$，特征值 $= -2 < 0$（稳定）。
+
+不可控模式稳定 → $(A, B)$ **可稳定** ✓
+
+**4.** (a) $A = \begin{bmatrix} -1 & 0 \\ 0 & 3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$
+
+可观性矩阵 $\mathcal{O} = \begin{bmatrix} 1 & 0 \\ -1 & 0 \end{bmatrix}$，rank = 1。不可观。
+
+不可观模式：$x_2$，特征值 $= 3 > 0$（不稳定）。
+
+不可观模式不稳定 → $(A, C)$ **不可检测** ✗
+
+(b) $A = \begin{bmatrix} 2 & 0 \\ 0 & -3 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$
+
+可观性矩阵 $\mathcal{O} = \begin{bmatrix} 1 & 0 \\ 2 & 0 \end{bmatrix}$，rank = 1。不可观。
+
+不可观模式：$x_2$，特征值 $= -3 < 0$（稳定）。
+
+不可观模式稳定 → $(A, C)$ **可检测** ✓
+
+**5.** 设 $A$ 渐近稳定，$P$ 满足 $A^T P + PA = -Q$，$Q > 0$。
+
+取 $V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}$。由 Lyapunov 定理，$P > 0$，故 $V(\boldsymbol{x}) > 0$ for $\boldsymbol{x} \neq 0$。
+
+沿 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的轨迹：
+
+$$\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T A^T P \boldsymbol{x} + \boldsymbol{x}^T PA \boldsymbol{x} = \boldsymbol{x}^T(A^T P + PA)\boldsymbol{x} = -\boldsymbol{x}^T Q \boldsymbol{x}$$
+
+因为 $Q > 0$，对任意 $\boldsymbol{x} \neq 0$，$\dot{V} = -\boldsymbol{x}^T Q \boldsymbol{x} < 0$。
+
+因此对非零初态的轨迹，$V(\boldsymbol{x})$ 严格递减；零轨迹上恒为零。$\blacksquare$
+
+**6.** (a) $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$Q = I$，$R = 1$
+
+由 LQR 例2（双积分器）：$P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}$
+
+$K = B^T P = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$
+
+(b) $A - BK = \begin{bmatrix} 0 & 1 \\ -1 & -\sqrt{3} \end{bmatrix}$
+
+$(A-BK)^T P + P(A-BK) = \begin{bmatrix} 0 & -1 \\ 1 & -\sqrt{3} \end{bmatrix} \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix} + \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix} \begin{bmatrix} 0 & 1 \\ -1 & -\sqrt{3} \end{bmatrix}$
+
+$(A-BK)^T P = \begin{bmatrix} -1 & -\sqrt{3} \\ 0 & -2 \end{bmatrix}$，$P(A-BK) = \begin{bmatrix} -1 & 0 \\ -\sqrt{3} & -2 \end{bmatrix}$
+
+$(A-BK)^T P + P(A-BK) = \begin{bmatrix} -2 & -\sqrt{3} \\ -\sqrt{3} & -4 \end{bmatrix}$
+
+$-(Q + K^T R K) = -\left(\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} + \begin{bmatrix} 1 \\ \sqrt{3} \end{bmatrix} \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}\right) = -\begin{bmatrix} 2 & \sqrt{3} \\ \sqrt{3} & 4 \end{bmatrix} = \begin{bmatrix} -2 & -\sqrt{3} \\ -\sqrt{3} & -4 \end{bmatrix}$
+
+两边相等 ✓
+
+(c) 按本系列 $J$ 含 $1/2$ 的约定，$V(x)=x^TPx=2J^*(x)$；它不是未经倍数换算的最优代价。对 $x_0=[1,0]^T$，$V(x_0)=\sqrt3$，$J^*=\sqrt3/2$。这里 $Q=I$，闭环等式右侧严格负定，故 $V$ 也是闭环稳定性证书。
+
+**7.** (a) $G(s)=1/s^3$。逆矩阵的正确形式是
+
+$$
+(sI-A)^{-1}=\frac1{s^3}\begin{bmatrix}s^2&s&1\\0&s^2&s\\0&0&s^2\end{bmatrix}
+$$
+
+(b) **内部不稳定，且 BIBO 不稳定**。零输入初态 $[0,0,1]^T$ 给出 $x(t)=[t^2/2,t,1]^T$，任意缩小这个初态仍会多项式增长；这是三重零特征值的非平凡 Jordan 块。零初态、单位阶跃输入有 $y(t)=t^3/6$，有界输入产生无界输出，因此不应使用“BIBO 临界稳定”。
+
+(c) 可控性矩阵为反序单位阵、可观性矩阵为单位阵，秩均为3。此实现最小；内部渐近稳定与BIBO稳定的判定一致，本例两者都不成立。
+
+**8.** 输入端环路记为 $L(s)$。若某个正增益 $\alpha$ 导致虚轴穿越，则 $L(j\omega)=-1/\alpha$，于是返回差条件要求
+
+$$
+\lvert1-1/\alpha\rvert\geq1
+$$
+
+但对每个有限 $\alpha>1/2$，有 $\lvert1-1/\alpha\rvert<1$，临界点位于 Nyquist 曲线不能进入的圆盘内，因此不会穿越稳定边界。从已稳定的 $\alpha=1$ 连续变形到该 $\alpha$，闭环仍稳定；开环虚轴极点需用缩进路径与极限处理。
+
+本课前面的 Lyapunov 等式提供另一条证明：$Q>0$ 时右侧负定。半正定情况见 LQR 课的可检测性论证。这里给的是保证下界，不是某对象的精确增益裕度；保守写开区间 $\alpha>1/2$，不作一般端点取等承诺。
+
+**9.** (a) $A = \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$
+
+特征值：$0.5, 0.3$（上三角矩阵）。$|0.5| < 1, |0.3| < 1$ → **渐近稳定** ✓
+
+(b) 离散 Lyapunov 方程 $A^T PA - P = -I$
+
+设 $P = \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix}$。
+
+$A^T P A = \begin{bmatrix} 0.5 & 0 \\ 0.1 & 0.3 \end{bmatrix} \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$
+
+$= \begin{bmatrix} 0.5p_1 & 0.5p_2 \\ 0.1p_1+0.3p_2 & 0.1p_2+0.3p_3 \end{bmatrix} \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$
+
+$= \begin{bmatrix} 0.25p_1 & 0.05p_1+0.15p_2 \\ 0.05p_1+0.15p_2 & 0.01p_1+0.06p_2+0.09p_3 \end{bmatrix}$
+
+$A^T PA - P = -I$：
+
+$(1,1)$：$0.25p_1 - p_1 = -1 \implies -0.75p_1 = -1 \implies p_1 = 4/3$
+
+$(1,2)$：$0.05p_1 + 0.15p_2 - p_2 = 0 \implies 0.05(4/3) - 0.85p_2 = 0 \implies p_2 = \frac{0.2/3}{0.85} = \frac{4}{51}$
+
+$(2,2)$：$0.01p_1 + 0.06p_2 + 0.09p_3 - p_3 = -1$
+
+$0.01(4/3) + 0.06(4/51) - 0.91p_3 = -1$
+
+$\dfrac{1}{75} + \dfrac{2}{425} - 0.91p_3 = -1$
+
+$\dfrac{23}{1275} - 0.91p_3 = -1$
+
+$p_3 = \dfrac{1298/1275}{91/100} = \dfrac{5192}{4641} \approx 1.119$
+
+$P = \begin{bmatrix} 4/3 & 4/51 \\ 4/51 & 5192/4641 \end{bmatrix}$
+
+$p_1 = 4/3 > 0$，$\det(P) = (4/3)(5192/4641) - (4/51)^2 =117200/78897\approx1.485481>0$ → $P > 0$ ✓
+
+数值验证：用 `scipy.linalg.solve_discrete_lyapunov(A.T, I)` 可得精确解。
+
+**10.** (a) $P=\begin{bmatrix}\sqrt3&1\\1&\sqrt3\end{bmatrix}$，$K=[1,\sqrt3]$，控制极点为 $-\sqrt3/2\pm j/2$。
+
+(b) 对偶 ARE 是 $AP_e+P_eA^T-P_eC^TC P_e+I=0$。取稳定化解 $P_e=\begin{bmatrix}\sqrt3&1\\1&\sqrt3\end{bmatrix}$，得到 $K_f=P_eC^T=[\sqrt3,1]^T$；误差极点同为 $-\sqrt3/2\pm j/2$。这里 $Q_{obs},R_{obs}$ 是确定性观测器的设计权重；若解释为 Kalman 滤波，还须另给噪声模型，不能混用语义。
+
+(c) 分别以右端 $-I$ 解 Lyapunov 方程，得到
+
+$$
+P_{cl}=\begin{bmatrix}5/(2\sqrt3)&1/2\\1/2&1/\sqrt3\end{bmatrix},\qquad
+P_{obs}=\begin{bmatrix}1/\sqrt3&-1/2\\-1/2&5/(2\sqrt3)\end{bmatrix}
+$$
+
+两者均正定，行列式均为 $7/12$；回代残差为零，分别证明控制与误差动态稳定。
+
+(d) 取 $e=x-\hat x$，联合矩阵为 $\begin{bmatrix}A-BK&BK\\0&A-K_fC\end{bmatrix}$，是块上三角矩阵，特征值为两组极点的并集（均按代数重数计）。全部严格在左半平面，故组合闭环稳定。这个结论是确定性分离原理，不自动附送输入端鲁棒裕度。

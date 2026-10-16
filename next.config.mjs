@@ -4,6 +4,9 @@ import createMDX from '@next/mdx'
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
   images: { unoptimized: true },
+  async redirects() {
+    return [{ source: '/modern/linear-system-theory', destination: '/modern/lyapunov-modern', permanent: true }]
+  },
 }
 
 const withMDX = createMDX({

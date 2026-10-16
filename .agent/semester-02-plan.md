@@ -1956,11 +1956,13 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   - 范围：`frequency-response-design`（原 frequency-response，7 个 ipywidgets 待重构 + A6 已重定位）、`classic-case-study`
   - 验收：classic 章 11/11 打勾
 
-- [ ] **C2 · modern 章 v1.3 重构（9 课，分 3 批）**（2026-10-17 已交付6/9：state-space、controllability-observability、state-feedback、state-observer、optimal-control-basics、lqr-controller。C2工作分支 wp/c2-modern-v13；每课验收后部分合入master，剩3课，故本工作包不打勾）
+- [ ] **C2 · modern 章 v1.3 重构（9 课，分 3 批）**（2026-10-17 已交付7/9：state-space、controllability-observability、lyapunov-modern、state-feedback、state-observer、optimal-control-basics、lqr-controller。C2工作分支 wp/c2-modern-v13；逐课验收后部分合入master，剩multivariable-systems与modern-case-study，工作包不打勾）
   - 批次：① `state-space` + `controllability-observability` + `lyapunov-modern`；② `state-feedback` + `state-observer` + `optimal-control-basics`；③ `lqr-controller` + `multivariable-systems` + `modern-case-study`
   - 验收：modern 章 9/9 打勾
 
   > 2026-10-17 本次交付lqr-controller：Q/R为本课主讲；一个React组件两模式、四cell全量复算、六锚点修正。既有CSTR译名冲突在03术语表补别名（未改其他课正文）。验收及具体退出码见日志06附录B；math两条骨架依赖归D1。新增待裁决Q26：build退出0但classic/stability-analysis已有MDX编译失败被内容加载器吞掉，主干“可build”不能等同全站可渲染，建议后续质量治理单独修正文与失败传播；本次不扩改。
+
+  > 2026-10-17 第7次交付：linear-system-theory→lyapunov-modern并前移第3课；三文件四入链同步、旧址308。保留线性方程/内部BIBO/可稳定可检测主线，非线性直接法与LaSalle转链；三notebook八cell全复算，数值对账和实际命令见日志03-modern/03-lyapunov-modern附录A/B。A6本章其余治理不在本课顺带完成。
 
 - [ ] **C3 · estimation 章：kalman-filter 迁移 + 8 课新写（P0）**
   - 范围：`kalman-filter` 从 modern 迁入并按 v1.3 重构；新写 `estimation-problem`、`least-squares-ml`、`extended-kalman-filter`、`unscented-kalman-filter`、`particle-filter`、`h-infinity-filter`、`mhe-fusion`、`estimation-case-study`
