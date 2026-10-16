@@ -1952,7 +1952,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 >
 > **判定顺序**：先跑 E1 验收脚本 → FAIL 项与通读 MDX 时发现的实质性技术错误决定 C1 / C2（2026-10-16 用户裁决：取消 C0 补档层，直接逐课走 C1 完整流程，讨论日志随课补写）。历史上 `describing-function`、`phase-plane`、`nonlinear-characteristics` 三课属 C2（均因无讨论日志 + 多处技术错误而重写）。
 
-- [ ] **C1 · classic 章 v1.3 收尾（2 课）**（2026-10-16 第 1 课 frequency-response-design 已交付于 `wp/c1-classic-v13`：3 个 ipywidgets 组件化 + 柯验修正 6 组数值错误（含答案 10"Z-N 不稳定"结论反向的实质性错误）+ A6 遗留清理，build 146/146、check 退出码 0、讨论日志在 semester-02/02-classic/07。剩 classic-case-study 1 课）
+- [x] **C1 · classic 章 v1.3 收尾（2 课）**（2026-10-16 第 1 课 frequency-response-design 已交付于 `wp/c1-classic-v13`：3 个 ipywidgets 组件化 + 柯验修正 6 组数值错误（含答案 10"Z-N 不稳定"结论反向的实质性错误）+ A6 遗留清理，build 146/146、check 退出码 0、讨论日志在 semester-02/02-classic/07。第 2 课 classic-case-study 同日交付：全量数值审计修正 5 组系统性错误（含超前设计方法论错误与蒙特卡洛失真表），红队放行。classic 章 11/11 打勾 ✓）
   - 范围：`frequency-response-design`（原 frequency-response，7 个 ipywidgets 待重构 + A6 已重定位）、`classic-case-study`
   - 验收：classic 章 11/11 打勾
 
@@ -2036,6 +2036,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   node scripts/check-catalog.mjs --fix-tracker-stats 生成，不要手写）与
   .agent/semester-02-plan.md 的对应勾选框。
 - 删除本次产生的临时脚本与中间产物。
+- 按照分支维护计划维护分支。
 
 节奏：**一次会话只交付 1 课**。若本条目列了多课，做完第 1 课并验收后停下来报告，
 等用户确认再继续下一课。

@@ -52,6 +52,7 @@ import { NonlinearityExplorer } from "@/components/wiki/nonlinearity-explorer";
 import { ClosedLoopFreqExplorer } from "@/components/wiki/closed-loop-freq-explorer";
 import { DelayMarginExplorer } from "@/components/wiki/delay-margin-explorer";
 import { SensitivityExplorer } from "@/components/wiki/sensitivity-explorer";
+import { PControlTradeoffExplorer } from "@/components/wiki/p-control-tradeoff-explorer";
 
 export const wikiComponents: MDXComponents = {
   Callout,
@@ -94,4 +95,5 @@ export const wikiComponents: MDXComponents = {
   ClosedLoopFreqExplorer,
   DelayMarginExplorer,
   SensitivityExplorer,
+  PControlTradeoffExplorer,
 };
