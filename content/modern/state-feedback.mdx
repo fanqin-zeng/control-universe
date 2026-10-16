@@ -237,20 +237,32 @@ $$
 from control import place, acker`}
   cells={[
     { code: `# ===== 极点配置：place() vs acker() =====
+# 场景：把极点配置到二重根 -5, -5
 A = np.array([[0, 1], [-2, -3]])
 B = np.array([[0], [1]])
-
 poles_desired = [-5, -5]
 
-K_place = place(A, B, poles_desired)
-print(f"place() 结果: K = {K_place}")
+# ① 先试 place()——注意它会拒绝重根！
+try:
+    K_place = place(A, B, poles_desired)
+    print(f"place() 结果: K = {K_place}")
+except ValueError as err:
+    print(f"place() 拒绝重根极点：{err}")
+    print("→ place() 基于 KNV 算法，要求每个极点的重数不超过 rank(B)")
+    print()
 
+# ② acker() 支持重根（SIMO 专用，基于 Ackermann 公式）
 K_acker = acker(A, B, poles_desired)
 print(f"acker() 结果: K = {K_acker}")
 
-A_cl = A - B @ K_place
+A_cl = A - B @ K_acker.reshape(1, -1)  # acker 返回一维数组，恢复成 1x2
 print(f"\\n闭环特征值: {np.linalg.eigvals(A_cl)}")
-print(f"期望特征值: {poles_desired}")` },
+print(f"期望特征值: {poles_desired}")
+
+# ③ 对互异极点，两者一致
+K_p2 = place(A, B, [-5, -4])
+K_a2 = acker(A, B, [-5, -4])
+print(f"\\n互异极点 [-5,-4]: place K = {K_p2}, acker K = {K_a2}（一致）")` },
   ]}
 />
 
@@ -320,7 +332,7 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from control import ss, place, step_response
+from control import ss, place, acker, step_response
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False`}
   cells={[
@@ -332,8 +344,8 @@ D = np.array([[0]])
 
 sys_open = ss(A, B, C, D)
 
-K = place(A, B, [-5, -5]).flatten()
-A_cl = A - B @ K.reshape(-1, 1)
+K = acker(A, B, [-5, -5]).flatten()  # 二重根须用 acker（place 拒绝重根，见上一节实验）
+A_cl = A - B @ K.reshape(1, -1)
 N = 1 / (-C @ np.linalg.inv(A_cl) @ B)
 print(f"前馈增益 N = {N[0][0]:.2f}")
 
@@ -354,32 +366,10 @@ plt.legend(fontsize=11)
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()` },
-    { code: `# ===== 不同极点位置对阶跃响应的影响（交互）=====
-from ipywidgets import interact, FloatSlider
-
-def plot_response(pole_real):
-    poles = [pole_real, pole_real]
-    K = place(A, B, poles).flatten()
-    A_cl = A - B @ K.reshape(-1, 1)
-    N_ff = 1 / (-C @ np.linalg.inv(A_cl) @ B)
-    sys_cl = ss(A_cl, B * N_ff, C, D)
-    t, y = step_response(sys_cl, T=np.linspace(0, 4, 500))
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(t, y, 'b-', linewidth=2)
-    plt.axhline(y=1.0, color='k', linestyle=':', alpha=0.5)
-    plt.xlabel('Time (s)', fontsize=12)
-    plt.ylabel('y(t)', fontsize=12)
-    plt.title(f'极点 = {pole_real:.1f} (二重实极点)', fontsize=14)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-interact(plot_response,
-    pole_real=FloatSlider(min=-10, max=-0.5, step=0.5, value=-5,
-                          description='极点实部'))` },
   ]}
 />
+
+<StateFeedbackPoleExplorer />
 
 ## 深入讨论
 
@@ -555,9 +545,9 @@ $G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$
 
 期望多项式：$s^2 + 2(0.7)(2\omega_n)s + (2\omega_n)^2 = s^2 + 2.8\omega_n s + 4\omega_n^2$。
 
-$A - BK = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 - k_1 & -2\zeta\omega_n - k_2 \end{bmatrix}$，特征多项式 $s^2 + (2\zeta\omega_n + k_2)s + (\omega_n^2 + k_1)$。
+$A - BK = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 - k_1\omega_n^2 & -2\zeta\omega_n - k_2\omega_n^2 \end{bmatrix}$，特征多项式 $s^2 + (2\zeta\omega_n + k_2\omega_n^2)s + \omega_n^2(1 + k_1)$。
 
-$\omega_n^2 + k_1 = 4\omega_n^2 \implies k_1 = 3\omega_n^2$
+（注意 $B = [0, \omega_n^2]^T \neq [0,1]^T$——$k_1, k_2$ 要先乘上 $\omega_n^2$ 才进入特征多项式；原稿漏了这一因子，已按实测更正。）
 
 $2\zeta\omega_n + k_2 = 2.8\omega_n \implies k_2 = (2.8 - 2\zeta)\omega_n$
 
@@ -611,10 +601,22 @@ $\det(sI - A + BK) = \det(sI-A) \cdot \det(I + K(sI-A)^{-1}B)$
 
 $\begin{bmatrix} I & 0 \\ -K & I \end{bmatrix}\begin{bmatrix} sI-A+BK & B \\ C & 0 \end{bmatrix} = \begin{bmatrix} sI-A+BK & B \\ C - K(sI-A+BK) & -KB \end{bmatrix}$
 
-更直接的方法：对 $\begin{bmatrix} sI-A+BK & B \\ C & 0 \end{bmatrix}$ 右乘 $\begin{bmatrix} I & 0 \\ K(sI-A+BK)^{-1}B & I \end{bmatrix}$（行列式为 1），得到 $\begin{bmatrix} sI-A+BK+BK(sI-A+BK)^{-1}B & B \\ C & 0 \end{bmatrix}$。
+最简洁的证明（SISO，Schur 补）：闭环系统矩阵的系统矩阵为
 
-利用 $(sI-A+BK)^{-1}$ 的恒等式可化简为 $\begin{bmatrix} (sI-A)(I+(sI-A)^{-1}BK(sI-A+BK)^{-1}) & B \\ C & 0 \end{bmatrix}$。
+$$
+\Sigma_{cl}(s) = \begin{bmatrix} sI-A+BK & B \\ -C & 0 \end{bmatrix}, \qquad \Sigma_{open}(s) = \begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix}
+$$
 
-最简洁的证明：由 Schur 补公式，$\det\begin{bmatrix} sI-A+BK & B \\ C & 0 \end{bmatrix} = \det(sI-A+BK) \cdot \det(-C(sI-A+BK)^{-1}B)$（SISO 情形）。
+对 $\Sigma_{open}$ 做初等行变换（第二行加上 $K$ 倍第一行）不改变秩与零点：
 
-代入 $\det(sI-A+BK) = \det(sI-A) \cdot \det(I+K(sI-A)^{-1}B)$，闭环零点（使 $C(sI-A+BK)^{-1}B = 0$ 的 $s$）等价于使 $C(sI-A)^{-1}B = 0$ 的 $s$——即开环零点。证毕。
+$$
+\begin{bmatrix} I & 0 \\ K & I \end{bmatrix}\begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix} = \begin{bmatrix} sI-A & B \\ K(sI-A)-C & KB \end{bmatrix}
+$$
+
+再把第一行的 $-B \cdot K$ 倍加到……不如直接做**块列变换**：$\Sigma_{cl} = \Sigma_{open} \cdot \begin{bmatrix} I & 0 \\ K & I \end{bmatrix}$（右乘行列式为 1 的块下三角阵）：
+
+$$
+\begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix}\begin{bmatrix} I & 0 \\ K & I \end{bmatrix} = \begin{bmatrix} sI-A+BK & B \\ -C & 0 \end{bmatrix} = \Sigma_{cl}(s)
+$$
+
+右乘可逆阵不改变秩，故 $\text{rank}\,\Sigma_{cl}(s) = \text{rank}\,\Sigma_{open}(s)$ 对**所有** $s$ 成立——闭环零点集合与开环零点集合完全相同，状态反馈只搬极点、不动零点。证毕。（原稿用"使 $C(sI-A+BK)^{-1}B=0$ 等价于使 $C(sI-A)^{-1}B=0$"直接断言了结论，属循环论证，已替换为上述块矩阵一行证明。）
