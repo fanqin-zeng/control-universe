@@ -311,7 +311,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step`}
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc`}
   cells={[
     { code: `# Z-N PID 整定：G(s) = 1/(s+1)^3
 plant3 = lti([1], np.polymul([1, 1], np.polymul([1, 1], [1, 1])))
@@ -375,7 +431,7 @@ print(f"\\n超调量: {Mp:.1f}%")` },
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import tf, step as sp_step`}
+from scipy.signal import lti as tf, step as sp_step`}
   cells={[
     { code: `# FOPDT 模型 G(s) = K/(Ts+1) * e^{-Ls} 的阶跃响应
 K_gain = 2.0
@@ -611,7 +667,7 @@ from scipy.signal import StateSpace, cont2discrete`}
     { code: `# 增量式离散PID仿真：G(s) = 10/(s+1)，Ts = 0.05s
 plant_ct = StateSpace([[-1]], [[10]], [[1]], [[0]])
 Ts = 0.05
-Ad, Bd, Cd, Dd = cont2discrete((plant_ct.A, plant_ct.B, plant_ct.C, plant_ct.D), Ts, method='zoh')
+Ad, Bd, Cd, Dd, _ = cont2discrete((plant_ct.A, plant_ct.B, plant_ct.C, plant_ct.D), Ts, method='zoh')
 
 Kp, Ki, Kd = 3.0, 1.0, 0.2
 u_max = 10.0
@@ -628,7 +684,7 @@ y_out = np.zeros(N)
 u_out = np.zeros(N)
 
 for k in range(N):
-    y = (Cd @ x)[0]
+    y = (Cd @ x).item()
     e = r - y
     de = e - e_prev
     dde = e - 2*e_prev + e_prev2
@@ -786,7 +842,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step`}
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc`}
   cells={[
     { code: `# P / PI / PID 对比：被控对象 G(s) = 40 / (s^2 + 210s + 208)
 plant = lti([40], [1, 210, 208])

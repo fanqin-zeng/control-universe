@@ -475,7 +475,63 @@ $s^1$ 行：$(6-10)/3 = -4/3 < 0$。确实不稳定。
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, bode, margin`}
+from scipy.signal import lti, bode
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc`}
   cells={[
     { code: `from ipywidgets import interact, FloatSlider
 
@@ -485,7 +541,7 @@ def plot_bode_margins(K):
     gm_db = 20 * np.log10(gm) if gm > 0 else float('inf')
 
     w = np.logspace(-2, 3, 500)
-    mag, phase = bode(sys, w=w, plot=False)
+    w, mag, phase = bode(sys, w=w)
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
@@ -775,11 +831,67 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, bode, margin`}
+from scipy.signal import lti, bode
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc`}
   cells={[
     { code: `sys = lti([50], [1, 11, 10, 0])
 w = np.logspace(-2, 3, 1000)
-mag, phase = bode(sys, w=w, plot=False)
+w, mag, phase = bode(sys, w=w)
 
 gm, pm, wg, wc = margin(sys)
 gm_db = 20 * np.log10(gm)
@@ -971,7 +1083,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step, margin`}
+from scipy.signal import lti, bode
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc`}
   cells={[
     { code: `from ipywidgets import interact, FloatSlider
 

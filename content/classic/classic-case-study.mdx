@@ -442,7 +442,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step, margin
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc
 
 Km, Kb = 0.1, 0.1
 La, Ra = 0.01, 1.0
@@ -641,7 +697,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step, margin
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc
 
 Km, Kb = 0.1, 0.1
 La, Ra = 0.01, 1.0
@@ -752,7 +864,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step, margin
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc
 
 Km, Kb = 0.1, 0.1
 La, Ra = 0.01, 1.0
@@ -799,12 +967,15 @@ plt.grid(True, alpha=0.3)
 
 plt.subplot(1, 2, 2)
 w = np.logspace(-1, 4, 500)
-mag_p, _, _ = plant.freqresp(w)
-mag_pi, _, _ = (C_pi * plant).freqresp(w)
-mag_lead, _, _ = (C_lead * plant).freqresp(w)
-plt.semilogx(w, 20*np.log10(np.abs(mag_p)), label='P', alpha=0.7)
-plt.semilogx(w, 20*np.log10(np.abs(mag_pi)), label='PI', alpha=0.7)
-plt.semilogx(w, 20*np.log10(np.abs(mag_lead)), label='Lead', alpha=0.7)
+_, H_p = plant.freqresp(w)
+mag_p = np.abs(H_p)
+_, H_pi = (C_pi * plant).freqresp(w)
+mag_pi = np.abs(H_pi)
+_, H_lead = (C_lead * plant).freqresp(w)
+mag_lead = np.abs(H_lead)
+plt.semilogx(w, 20*np.log10(mag_p), label='P', alpha=0.7)
+plt.semilogx(w, 20*np.log10(mag_pi), label='PI', alpha=0.7)
+plt.semilogx(w, 20*np.log10(mag_lead), label='Lead', alpha=0.7)
 plt.axhline(0, color='k', linestyle='--', alpha=0.3)
 plt.xlabel("ω (rad/s)")
 plt.ylabel("Magnitude (dB)")
@@ -867,7 +1038,63 @@ PI 和 PID 控制器由于积分作用，对恒定负载扰动具有**完全抑�
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc
 
 Km, Kb = 0.1, 0.1
 La, Ra = 0.01, 1.0
@@ -964,7 +1191,63 @@ $$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lti, feedback, step, margin
+from scipy.signal import lti, step
+import numpy as np
+import scipy.signal as _sg
+
+def _tf(x):
+    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
+
+def _mul(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
+
+def _add(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
+
+def _div(a, b):
+    a, b = _tf(a), _tf(b)
+    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
+
+def _neg(a):
+    a = _tf(a)
+    return lti([-v for v in a.num], a.den)
+
+_T = type(lti([1.0], [1.0]))
+_T.__mul__ = lambda s, o: _mul(s, o)
+_T.__rmul__ = lambda s, o: _mul(o, s)
+_T.__add__ = lambda s, o: _add(s, o)
+_T.__radd__ = lambda s, o: _add(o, s)
+_T.__sub__ = lambda s, o: _add(s, _neg(o))
+_T.__rsub__ = lambda s, o: _add(o, _neg(s))
+_T.__neg__ = lambda s: _neg(s)
+_T.__truediv__ = lambda s, o: _div(s, o)
+_T.__rtruediv__ = lambda s, o: _div(o, s)
+
+def feedback(G, H=1):
+    GH = _mul(G, H)
+    return _div(GH, _add(1, GH))
+
+def margin(L):
+    w = np.logspace(-2, 5, 40000)
+    _, Hjw = L.freqresp(w)
+    mag = np.abs(Hjw)
+    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
+    wc = wg = np.nan
+    gm = np.inf
+    pm = np.nan
+    i = np.where(np.diff(np.sign(mag - 1)))[0]
+    if len(i):
+        k = i[0]
+        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
+        pm = 180 + np.interp(wc, w, ph)
+    j = np.where(np.diff(np.sign(ph + 180)))[0]
+    if len(j):
+        k = j[0]
+        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
+        gm = -20 * np.log10(np.interp(wg, w, mag))
+    return gm, pm, wg, wc
 
 Km, Kb = 0.1, 0.1
 La, Ra = 0.01, 1.0
@@ -1739,3 +2022,4 @@ $t_s \approx 4/(0.575 \times 4.35) = 1.6$ s $< 2$ s ✓。
 验证：$e_{ss} = 0$ ✓，$PM \approx 55°$ ✓，$t_s \approx 1.6$ s ✓。
 
 超前校正也能满足，但结构更复杂、高频增益更大（噪声放大）。PI 是此场景的最优选择。
+

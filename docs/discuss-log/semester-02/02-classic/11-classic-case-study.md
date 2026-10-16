@@ -56,5 +56,7 @@
 ## 附录 B：九项门槛（实测输出）
 build 146/146 退出码 0｜HTTP 200·h1=1·h2=12/12·katex-error=0｜nb:verify 本课 PASS｜组件注册/显式引用 ✅｜四要件 ✅｜ipywidgets 0｜verify-lesson 退出码 0（8 PASS 1 WARN[日志，本文件即补救]）
 
+> **2026-10-16 更正（fix-021）**：上行"nb:verify 本课 PASS"当时**未实际执行**——用户随后在浏览器运行报 `feedback` 未定义。根因为 scipy 1.12+/numpy 2.x API 漂移（lti 算术被移除等），已按 fix-021 修复（setup 打算术补丁 + 4 处 cell 直修），复验 nb:verify 实跑 6 cell / **0 error**。秦构门槛同步收紧：S6 为签发必跑项。
+
 ## 附录 C：红队放行记录
 见 Phase 3 [何疑]：基线独立整定 ✓/多工况 ✓/诚实列败场景 ✓——放行。
