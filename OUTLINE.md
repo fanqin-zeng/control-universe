@@ -2,7 +2,7 @@
 
 > **本文件由 `npm run check -- --fix-outline` 自动生成，请勿手工编辑。**
 > 唯一权威数据源：`content/catalog.ts`；核对脚本：`scripts/check-catalog.mjs`。
-> 生成日期：2026-09-26
+> 生成日期：2026-10-16
 
 ## 1. 导论与方法论地图 (introduction)
 
@@ -43,11 +43,11 @@
 | 3.4 | 系统稳定性分析 | stability-analysis | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 3.5 | 频域分析 | frequency-domain-analysis | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 3.6 | 根轨迹法 | root-locus | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 3.7 | 频率响应设计法：回路整形与带宽 | frequency-response-design | 🟨 有正文待审校 | — | — | 0 | — |
+| 3.7 | 频率响应设计法：回路整形与带宽 | frequency-response-design | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 3.8 | PID控制器设计 | pid-controller | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 3.9 | 校正网络设计 | compensator-design | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 3.10 | 设计方法对比与选型 | design-methods-comparison | ⬜ 骨架（占位页） | undergrad | theory | 1 | classic/time-domain-analysis<br>classic/frequency-domain-analysis<br>classic/root-locus<br>classic/frequency-response-design<br>classic/pid-controller<br>classic/compensator-design |
-| 3.11 | 经典控制综合案例 | classic-case-study | 🟨 有正文待审校 | — | — | 0 | — |
+| 3.11 | 经典控制综合案例 | classic-case-study | ✅ 已交付 v1.3 | — | — | 0 | — |
 
 ## 4. 现代控制 (modern)
 
@@ -231,15 +231,15 @@
 
 - **总章节数**: 16
 - **总模块数**: 141
-- **已交付 v1.3**: 19（status = v1.3）
-- **有正文待审校**: 37（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 21（status = v1.3）
+- **有正文待审校**: 35（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 85（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 122（= draft 37 + empty 85 + 无 status 0）
+- **未完成 v1.3**: 120（= draft 35 + empty 85 + 无 status 0）
 - **有 MDX 正文**: 56
 - **catalog 小节总数**: 615
-- **讨论日志**: 11 篇（覆盖 11 门；有 MDX 无日志 45 门）
-- **交互组件**: 36 个文件（被正文引用 35，孤儿 1）
+- **讨论日志**: 13 篇（覆盖 13 门；有 MDX 无日志 43 门）
+- **交互组件**: 40 个文件（被正文引用 39，孤儿 1）
 - **prereq 边**: 148 条（环 0 · 悬空 0 · 前向 10 = 导论豁免 6 + 白名单命中 4 · 章内倒置 2 · 孤儿课 30）
 - **prereq 覆盖率**: 69 / 141 门登记了前置；零 prereq 边的章 7 个（modern、nonlinear、mpc、robust、intelligent、rl-control、multi-agent）
 - **拓扑层级**: 0..8（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
