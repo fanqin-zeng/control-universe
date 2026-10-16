@@ -502,61 +502,7 @@ $$
 特征值 $\lambda_1 = -1, \lambda_2 = -2$ 都是负实数，所以 $e^{At}$ 的所有元素随时间指数衰减——系统稳定。
 </Callout>
 
-<JupyterNotebook
-  title="状态方程的数值求解：零输入、零状态与全响应"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
-from ipywidgets import interact, FloatSlider
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-
-m, c, k = 250.0, 500.0, 16000.0
-A = np.array([[0, 1], [-k/m, -c/m]])
-B = np.array([[0], [1/m]])
-
-def state_eq(t, x, A, B, u_func):
-    u_val = u_func(t)
-    return A @ x + B.flatten() * u_val`}
-  cells={[
-    { code: `# ===== 零输入 + 零状态 + 全响应 =====
-def plot_response(x0_val=0.1):
-    x0 = np.array([x0_val, 0.0])
-    t = np.linspace(0, 3, 500)
-
-    sol = solve_ivp(state_eq, [0, 3], x0, args=(A, B, lambda t: 0),
-                    t_eval=t, method='RK45')
-    y_free = sol.y[0]
-
-    def step_input(t):
-        return 1000.0 if t >= 0 else 0.0
-
-    sol2 = solve_ivp(state_eq, [0, 3], [0, 0], args=(A, B, step_input),
-                     t_eval=t, method='RK45')
-    y_step = sol2.y[0]
-
-    y_total = y_free + y_step
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(t, y_free, "r--", linewidth=2, label=f"零输入响应 (x₀=[{x0_val}, 0])")
-    plt.plot(t, y_step, "b--", linewidth=2, label="零状态响应 (阶跃 F=1000N)")
-    plt.plot(t, y_total, "k-", linewidth=2.5, label="全响应")
-    plt.xlabel("Time (s)", fontsize=12)
-    plt.ylabel("位移 y(t) (m)", fontsize=12)
-    plt.title("弹簧-质量-阻尼系统：状态方程的分解", fontsize=14)
-    plt.legend(fontsize=10)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-interact(plot_response,
-    x0_val=FloatSlider(min=0.0, max=0.2, step=0.01, value=0.1,
-                       description="初始位移 x₀", continuous_update=False)
-)` },
-  ]}
-/>
+<StateSpaceExplorer />
 
 ## 状态空间与传递函数的关系
 
@@ -939,6 +885,6 @@ $$
 
 (c) 经典控制综合案例中，忽略电感 $L$ 时得到一阶模型 $\Omega(s)/V(s) = \frac{K_t/R}{Js + B + K^2/R} = \frac{0.5}{0.02s + 0.35} = \frac{25}{s+17.5}$。
 
-完整二阶模型的极点为 $s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} \approx \{-17.5, -87.5\}$。
+完整二阶模型的极点为 $s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} = \frac{-105 \pm 63.4}{2} \approx \{-20.8, -84.2\}$。
 
-快极点 $-87.5$ 对应电气动态（时间常数约 $11\,\text{ms}$），慢极点 $-17.5$ 对应机械动态（时间常数约 $57\,\text{ms}$）。忽略电感相当于忽略快极点，保留慢极点——这与综合案例的简化一致 ✓
+快极点 $-84.2$ 对应电气动态（时间常数约 $11.9\,\text{ms}$），慢极点 $-20.8$ 对应机械动态（时间常数约 $48\,\text{ms}$）。注意：忽略电感**不只是丢掉快极点**——一阶简化模型的极点是 $-17.5$，比二阶慢极点 $-20.8$ 还慢约 16%，这是简化引入的模型误差，工程上通常可接受但必须知情。与[经典控制综合案例](/classic/classic-case-study)的简化结论一致 ✓

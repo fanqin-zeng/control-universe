@@ -1956,7 +1956,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   - 范围：`frequency-response-design`（原 frequency-response，7 个 ipywidgets 待重构 + A6 已重定位）、`classic-case-study`
   - 验收：classic 章 11/11 打勾
 
-- [ ] **C2 · modern 章 v1.3 重构（9 课，分 3 批）**
+- [ ] **C2 · modern 章 v1.3 重构（9 课，分 3 批）**（2026-10-16 第 1 课 state-space 已交付于 `wp/c2-modern-v13`：NB3 组件化 + 答案 10 极点错误修正 + S6 实跑新规全过。剩 8 课）
   - 批次：① `state-space` + `controllability-observability` + `lyapunov-modern`；② `state-feedback` + `state-observer` + `optimal-control-basics`；③ `lqr-controller` + `multivariable-systems` + `modern-case-study`
   - 验收：modern 章 9/9 打勾
 
