@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 控制宇宙 · Control Universe
 
-## Getting Started
+中文控制理论教学 wiki：以**多角色讨论式工作流**（Phase 1–4 + 数值三方对账）生产课程，
+Next.js 14 + MDX + KaTeX + ECharts 交互组件 + Jupyter Notebook 双运行时。
 
-First, run the development server:
+## 快速开始
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:8080（scripts/serve.mjs 编排）
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`<JupyterNotebook>` 组件需要 Jupyter Kernel 网关（端口 8891）：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+python scripts/jupyter_server.py
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 质量门槛（提交/合入前必跑）
 
-## Learn More
+| 命令 | 作用 |
+|------|------|
+| `npm run check` | 唯一权威统计：catalog 一致性、tracker↔status 交叉核对、prereq 依赖图、死链 |
+| `npm run verify <chapter>/<lesson>` | 单课交付硬门槛（页面 200、H2 对齐、KaTeX 无错） |
+| `npm run nb:verify` | Notebook cell 结构校验 |
+| `npm run glossary:check` | 术语表与符号约定一致性 |
 
-To learn more about Next.js, take a look at the following resources:
+## 文档地图
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **`AGENTS.md`** —— 仓库第一入口：项目是什么、"学期"概念、讨论方法论、硬红线、分支规范。**人或 Agent 先读它。**
+- `content/catalog.ts` —— 章节课程唯一权威数据源（16 章 / 141 课）
+- `.agent/` —— Agent 工作记忆：学期计划、交付台账、22 角色讨论工作流、fix 归因库（工具中立）
+- `docs/discuss-log/semester-01/` —— 第一学期课堂讨论日志（11 篇）
+- `docs/semester-02/` —— 结构诊断、数学依赖图谱、术语表、符号约定
+- `archive/` —— 过时文档归档区（含审计报告）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 分支模型
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`master`（唯一长期分支，`npm run check` 绿）+ 按工作包的短命分支 `wp/<阶段>-<内容>`，
+`--no-ff` 合并、即合即删。详见 `AGENTS.md` §12。
