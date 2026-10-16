@@ -59,6 +59,8 @@ import { ObserverSpeedExplorer } from "@/components/wiki/observer-speed-explorer
 import { OptimalTimeExplorer } from "@/components/wiki/optimal-time-explorer";
 import { ComplexPolarExplorer } from "@/components/wiki/complex-polar-explorer";
 
+import { LqrExplorer } from "@/components/wiki/lqr-explorer";
+
 export const wikiComponents: MDXComponents = {
   Callout,
   JupyterNotebook,
@@ -105,5 +107,6 @@ export const wikiComponents: MDXComponents = {
   StateFeedbackPoleExplorer,
   ObserverSpeedExplorer,
   OptimalTimeExplorer,
+  LqrExplorer,
   ComplexPolarExplorer,
 };
