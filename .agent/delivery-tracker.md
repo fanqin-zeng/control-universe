@@ -91,7 +91,7 @@
 | [x] 状态反馈与极点配置 (state-feedback) | v1.3（C2 第 3 课，2026-10-16）：ipywidgets 交互 cell → StateFeedbackPoleExplorer（默认 p=−5 复现手算链 K=[23,7]/N=25）；**NB 重构为 place 拒绝重根→acker 解决→互异一致三段式教学**（原 cell 实跑必炸：place ValueError + acker 一维形状 + JS 模板 \n 陷阱）；**答案 7(b) 实质性因子错误修正**（B=[0;ωn²]，原 K 公式实测极点全偏）；答案 10 循环论证重写为块矩阵一行证明；S6 实跑 0 error；讨论日志 semester-02/03-modern/03 |
 | [x] 状态观测器设计 (state-observer) | v1.3（C2 第 4 课，2026-10-16）：ipywidgets 交互 cell → ObserverSpeedExplorer（滑块区间反转 bug 一并修正，默认 p=−15 复现例3 L=[27,142]）；NB 三处运行时错修复（place 重根→acker 教学、acker 一维 reshape、step_response squeeze）；**答案 2 实质性数值错误更正**（L=[994;289;24]→实测 [24;145;−140]，(s+10)³ 验证）；S6 实跑 0 error；讨论日志 semester-02/03-modern/04 |
 | [x] 最优控制基础 (optimal-control-basics) | v1.3（C2 第 5 课，2026-10-17）：ipywidgets 终端时间滑块 → OptimalTimeExplorer（默认 t_f=2 复现例3：λ(0)=0.0373/J*=0.0187，右图对数轴 J*(t_f) 权衡曲线）；**例3 三处近似值修正**（λ(0) 0.0366→0.0373、C 1.0366→1.0187、J* 0.0183→0.0187，solve_bvp 与解析逐位一致）；**NB cell1 真 bug 修复**（u_opt 数组当函数调用 + 三联图索引错乱，整 cell 重写）；5 处 GFM alert → Callout（本站不渲染 [!tip] 语法，全仓清扫登记待定）；凸性/横截/影子价格三个直觉 Callout + bang-bang 不切换措辞修正；S6 实跑 2 cell 0 error；讨论日志 semester-02/03-modern/05 |
-| [ ] LQR控制器 (lqr-controller) | |
+| [x] LQR控制器 (lqr-controller) | v1.3（C2 第6课，2026-10-17）：LqrExplorer 两模式替换两段 widget；答案2/7/10 CARE数值与极点重算，回差式/裕度/可检测性/软约束修正；1 notebook 4 cell S6真跑0 error，TS/SciPy 32组独立对账；六处锚点修正；完整日志 semester-02/03-modern/06，含三方对账与红队降级记录；fix-024 |
 | [ ] 卡尔曼滤波 (kalman-filter) | **A6 待迁出**：`content/modern/kalman-filter.mdx` 将 `git mv` 到 `content/estimation/kalman-filter.mdx`，本行随之删除（modern 10 → 9 课，LQG 一节保留在本章） |
 | [ ] 线性系统理论 (linear-system-theory) | |
 | [ ] 多变量系统分析 (multivariable-systems) | |
@@ -270,7 +270,7 @@
 
 ---
 
-**统计**：26 / 141 课程已完成（16 章；45 个交互组件文件，其中 43 个被课程正文引用）
+**统计**：27 / 141 课程已完成（16 章；46 个交互组件文件，其中 44 个被课程正文引用）
 
 > **E4（2026-09-26）：郑核的「术语一致性 / 符号约定一致」自此是查表 + 一条命令，不再靠人通读 56546 行。** 新建两份**机器读的**权威表 `docs/semester-02/03-glossary.md`（**966 行**：305 条术语、348 条中文侧、**52 条别名冲突全部裁决**、登记表 314 行 + 残渣签字 39 行）与 `docs/semester-02/04-notation.md`（**656 行**：**107 个符号基**、73 行有冲突全部给建议、A 级 3 组 5 行 / B 级 68 行 / 判「无」34 行）；新建 `scripts/glossary.mjs`（**1203 行**，`scan`/`check`/`symbols`/`terms`/`conflicts`/`abbrs`/`rows` 七个子命令）+ `package.json` 两条 script：`npm run glossary`、`npm run glossary:check`。给 `scripts/lib-mdx.mjs` 加了 `scanMdx().skips` 附加返回值（**483 → 502 行**），不另写第二份「什么不是正文」的识别逻辑。负向夹具 `.agent/e4-fixture/`（**8 个文件**，含 86 条纯函数断言的 `unit-probe.mjs`）保留为仓库产物，README 把每条命令的预期判定与退出码写死。**零新增 npm 依赖**，不用 `execSync`。**一条 MDX 都没改**（Prompt 硬约束）。
 > **对本文件日常操作的直接影响**：① **签发前置多一条命令**——`npm run glossary:check` 与九项前端硬门槛同级：**C1（04 登记表缺符号基）/ C2（03 有未裁决别名冲突）FAIL 即不得签发、本文件不得打勾**；C1b/C2b/C4/C5 是 WARN；**C3 只是 INFO，不影响退出码，不得当判据用**。现网基线 `PASS 3 · WARN 1 · FAIL 0`（那条 WARN 是 C4 的 7 处漏反斜杠函数名：`max` 5 / `min` 2，内容缺陷归 C1/A6）。② **判据编号 C1–C5 是第四套**，与九项前端硬门槛、`nb-cells` 的 S0–S8、`verify-lesson` 的九项**都不通用**；写报告时「第 N 项」必须说明是哪一套（同 E2 note ③ / E3 note ② 那个坑）。③ **引入新符号或新术语前必须先查表并回写**：新符号基用 `node scripts/glossary.mjs rows notation` 生成 5 列行贴进 04 的 REGISTER，新术语按 03 §6 登记——**否则 C1 / C2 会 FAIL，这是设计（登记表少一行就红）**。裁决过程写进讨论日志 **Phase 3「教学支持（教学质量）」分组下郑核那条发言**，**不新增小节**（《讨论日志固定结构》§4 第 6 条把 Phase 3 的 `###` 分组数锁死为 6）。硬规则已写进 `wiki-discussion/SKILL.md`《输出格式规范》末尾《E4 术语与符号规则》六条 + Phase 3 郑核/李稳条目 + 《注意事项》，以及 `personas.md` 郑核的「风格一致性」清单行。④ **改这两张表就是改门槛**：03 的 REGISTER 三列会按 `[、,;；/]` 拆成键（实测 737 个），NOISE 第一列**不拆**（含逗号的英文串只能签在那里）；04 的 ABBREV 块**改变符号抽取本身**（登记进去的全大写连写自成符号基，现只 `PM`/`GM`）；**哨兵必须独占一行**（loader 走 `sentinelSlice()`）；**登记表单元格内不得出现裸 `|` 或 `\|`**，范数一律 `\lvert…\rvert` / `\lVert…\rVert`。⑤ **`v1.3-refactor/SKILL.md` 一个字没动**：E4 的改动全在孪生块之外，改完重跑 §6 仍 `TWIN-IDENTICAL ✓ 9 项`、与 plan 之间仍只有第 6 项那一处已登记偏离，整段 §1–§6 切片两份各 **104 行**、md5 同为 `7e2ba04e3b6f720a843b5d1f0f85781c`。
@@ -382,3 +382,5 @@
 > 同行修正两处历史统计口径：① 已完成数按本文件实际打勾行数重新计数为 **19**（原写 17，与 classic 8 + nonlinear 8 + intelligent 3 的打勾行不符）；② 组件数按 `components/wiki/*-explorer.tsx` 实测为 **36**（原写 33），其中 `bode-margins-explorer.tsx` 无任何 MDX 引用（Q3 待裁决），故"被课程引用"为 35。
 
 > 2026-09-25 A3 重组：删除 computer-control 与 discrete 两章，重组为 discrete-sampled（理论，10 课）与 implementation（工程实现，10 课）；8 门已写课程整篇迁移、正文技术内容未改，其中 discrete-time-freq 与 discretization-methods 标注**待拆分**、digital-pid 与 embedded-implementation 标注**待合并/待接收**，拆分动作留到阶段 C。
+
+> C2 第6课验收（2026-10-17）：详见讨论日志06附录B。已知范围：两条math骨架引用归D1；glossary的既有CSTR别名冲突已最小登记修复；build退出0但既有classic/stability-analysis编译错误被加载器吞掉，不能解释为全站渲染全绿；fix-logs索引旧冲突标记仍待治理。其余check WARN沿用既有Q项。

@@ -203,7 +203,7 @@
 | 控制加权 | control weighting | — | 1 门 / 1 次 | — |
 | 信息物理系统 | CPS、Cyber-Physical System | — | 1 门 / 1 次 | — |
 | 中央处理器 | CPU | — | 1 门 / 1 次 | 语料「控制器（CPU）」是同位语；CPU 不是控制器的译名 |
-| 连续搅拌釜反应器 | CSTR | — | 1 门 / 1 次 | — |
+| 连续搅拌釜反应器 | CSTR | 连续搅拌反应釜 | 2 门 / 2 次 | C2 LQR 验收补登记：classic/system-modeling 与 mpc/mpc-case-study 为同一对象的译名变体，保留既有正文；标准译名沿用本行 |
 | 确认等价 | certainty equivalence | — | 1 门 / 2 次 | — |
 | 被控变量 | CV、Controlled Variable | — | 1 门 / 2 次 | — |
 | 信息安全 | Cybersecurity | — | 1 门 / 1 次 | — |
