@@ -88,11 +88,6 @@
 }
 
 @layer utilities {
-  .prose .katex-display {
-    overflow-x: auto;
-    padding: 0.5rem 0;
-  }
-
   .prose pre {
     overflow-x: auto;
     background-color: #f6f8fa !important;
@@ -192,4 +187,14 @@
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
   }
+}
+
+/* KaTeX display 公式：全局居左（与行文排版一致）。
+   必须放在 @layer 之外：katex.min.css 经 <link> 未分层加载，
+   分层规则按 Cascade Layers 规则永远输给它（fix-023 补记的根因）；
+   div 前缀提升特异性，确保压过 katex.css 的 .katex-display { text-align: center }。 */
+div.katex-display {
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  text-align: left;
 }
