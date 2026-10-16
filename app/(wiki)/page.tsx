@@ -1,7 +1,10 @@
 import { catalog } from "@/content/catalog";
 import Link from "next/link";
+import { ChapterPathLine } from "@/components/wiki/lesson-nav";
+import { chapterPaths } from "@/lib/lesson-graph";
 
 export default function WikiHome() {
+  const pathOf = new Map(chapterPaths().map((p) => [p.slug, p]));
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-4xl font-extrabold tracking-tight mb-2" style={{ fontSize: '2.25rem', fontWeight: 800 }}>控制宇宙</h1>
@@ -14,6 +17,7 @@ export default function WikiHome() {
             <h2 className="text-xl font-bold tracking-tight mb-3" style={{ fontSize: '1.25rem', fontWeight: 700 }}>
               {ch.title}
             </h2>
+            {pathOf.get(ch.slug) && <ChapterPathLine path={pathOf.get(ch.slug)!} />}
             {ch.lessons.length === 0 ? (
               <p className="text-sm text-muted-foreground/60">内容筹备中</p>
             ) : (

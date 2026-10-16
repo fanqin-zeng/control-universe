@@ -1,0 +1,696 @@
+---
+title: "模型预测控制原理"
+description: "MPC的三大核心思想——预测模型、滚动优化、约束处理；线性MPC的QP公式化；MPC与LQR的关系；有限时域MPC的稳定性问题——终端约束与终端代价。"
+---
+
+# 模型预测控制原理
+
+前面学过的控制器——PID 不能处理约束，LQR 不能处理约束且需要无限时域——它们都有一个共同特点：**控制律是事先算好的**（PID 的参数固定，LQR 的反馈增益 $K$ 固定）。
+
+模型预测控制（Model Predictive Control, MPC）换了一种思路：**每时每刻都在线求解一个优化问题**，根据当前状态和未来预测，算出"接下来最优的控制序列"，然后只执行第一步。
+
+> 📖 本课需要 [状态空间表示](/modern/state-space)、[最优控制基础](/modern/optimal-control-basics)、[LQR控制器](/modern/lqr-controller) 和 [离散系统稳定性](/discrete-sampled/discrete-stability-criteria) 的前置知识。
+
+MPC 是 1970 年代从过程控制工业中诞生的——炼油厂蒸馏塔有几十个阀门和几十个传感器，强耦合、大量约束，PID 根本搞不定。1978 年 Shell 公司的 Cutler 和 Ramaker 提出了**动态矩阵控制（DMC）**，法国 Richalet 提出了**模型预测启发控制（MPHC）**。后来这些方法统一为状态空间形式，成为今天广义的 MPC。
+
+如今 MPC 已经从过程控制扩展到自动驾驶、无人机、能源管理、机器人——凡是**多变量、有约束、需要最优性能**的场景，MPC 都是首选。
+
+## MPC的三大核心思想
+
+### 思想一：预测模型
+
+MPC 的第一个要素是一个**模型**——用来预测"如果我施加某组控制输入，系统未来会怎样"。
+
+设被控对象为线性离散系统：
+
+$$x(k+1) = A x(k) + B u(k)$$
+$$y(k) = C x(k) + D u(k)$$
+
+给定当前状态 $x(k)$ 和未来 $N_p$ 步的输入序列 $U = [u(k), u(k+1), \ldots, u(k+N_p-1)]^T$，可以逐步递推未来状态：
+
+$$x(k+1) = Ax(k) + Bu(k)$$
+$$x(k+2) = A^2x(k) + ABu(k) + Bu(k+1)$$
+$$x(k+3) = A^3x(k) + A^2Bu(k) + ABu(k+1) + Bu(k+2)$$
+$$\vdots$$
+
+写成紧凑的矩阵形式：
+
+$$\underbrace{\begin{bmatrix} x(k+1) \\ x(k+2) \\ x(k+3) \\ \vdots \\ x(k+N_p) \end{bmatrix}}_{X} = \underbrace{\begin{bmatrix} A \\ A^2 \\ A^3 \\ \vdots \\ A^{N_p} \end{bmatrix}}_{F} x(k) + \underbrace{\begin{bmatrix} B & 0 & 0 & \cdots & 0 \\ AB & B & 0 & \cdots & 0 \\ A^2B & AB & B & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ A^{N_p-1}B & A^{N_p-2}B & A^{N_p-3}B & \cdots & B \end{bmatrix}}_{\Phi} U$$
+
+即：
+
+$$X = F x(k) + \Phi U$$
+
+> 💡 **核心观点**：$F$ 捕捉了"当前状态对未来各步的影响"，$\Phi$ 捕捉了"未来各步输入对未来状态的影响"。这两个矩阵只依赖于系统模型 $(A, B)$ 和预测时域 $N_p$，在每个采样时刻都可以预先计算。
+
+预测模型不限于状态空间形式。原始 DMC 用**阶跃响应系数**，传递函数模型也可以。但状态空间形式最通用——能处理 MIMO、时变、非线性系统。
+
+### 思想二：滚动优化
+
+有了预测模型，下一步是**优化**：找到使某个性能指标最优的输入序列 $U$。
+
+MPC 的优化问题（一般形式）：
+
+$$\boxed{\begin{aligned}
+\min_{U} \quad & J = \sum_{i=0}^{N_p-1} \left[ x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i) \right] + x(k+N_p)^T P\, x(k+N_p) \\
+\text{s.t.} \quad & x(k+i+1) = A x(k+i) + B u(k+i) \\
+& u_{\min} \leq u(k+i) \leq u_{\max} \\
+& x_{\min} \leq x(k+i) \leq x_{\max} \\
+& x(k+N_p) \in \mathcal{X}_f \quad \text{（终端约束，可选）}
+\end{aligned}}$$
+
+其中 $Q \geq 0$（状态偏差权重），$R > 0$（控制能耗权重），$P \geq 0$（终端代价权重）。
+
+**关键**：MPC 不是"优化一次就完了"——它在**每个采样时刻**都重新求解这个优化问题，然后**只执行第一个输入** $u(k)$。下一步用新的测量值重新优化。
+
+```
+时刻 k:    测量 x(k) → 优化 [u*(k), u*(k+1), ..., u*(k+Np-1)] → 执行 u(k) = u*(k)
+时刻 k+1:  测量 x(k+1) → 优化 [u*(k+1), ..., u*(k+Np)] → 执行 u(k+1) = u*(k+1)
+时刻 k+2:  测量 x(k+2) → 优化 [u*(k+2), ..., u*(k+Np+1)] → 执行 u(k+2) = u*(k+2)
+```
+
+这就是**滚动优化（Receding Horizon）**——优化窗口像一扇窗户，每步向前滑动一格。
+
+> 💡 **为什么不只优化一次？** 三个原因：①模型不完美，预测会偏离实际；②有未建模的干扰；③约束可能随工况变化。滚动优化本质上是一种**反馈机制**——每步都用最新测量值修正。
+
+### 思想三：约束处理
+
+MPC 的第三个核心优势——**显式处理约束**。
+
+对比：
+
+| 方法 | 约束处理方式 | 效果 |
+|------|-------------|------|
+| PID + 抗饱和 | 事后截断控制量 | 破坏最优性，可能引起极限环 |
+| LQR + 截断 | 事后截断控制量 | 同上，且可能丧失稳定性保证 |
+| **MPC** | **约束写入优化问题** | **解天然满足约束，保持最优性** |
+
+MPC 可以处理的约束类型：
+
+| 约束类型 | 数学形式 | 物理含义 |
+|----------|----------|----------|
+| 输入约束 | $u_{\min} \leq u \leq u_{\max}$ | 阀门开度、电机电压/电流限制 |
+| 输入变化率 | $\Delta u_{\min} \leq \Delta u \leq \Delta u_{\max}$ | 阀门动作速度限制 |
+| 状态约束 | $x_{\min} \leq x \leq x_{\max}$ | 温度/压力安全限值 |
+| 输出约束 | $y_{\min} \leq y \leq y_{\max}$ | 产品质量要求 |
+
+**软约束与松弛变量**：有时约束太紧，优化问题可能**无解**（不可行）。解决方法是引入**松弛变量** $\epsilon$，把硬约束变成软约束：
+
+$$u_{\min} - \epsilon \leq u \leq u_{\max} + \epsilon, \quad \epsilon \geq 0$$
+
+同时在代价函数中加一项 $V \epsilon^2$（$V$ 很大），惩罚约束违反。这样优化问题始终有解，只在"万不得已"时才轻微违反约束。
+
+## 线性MPC的数学公式
+
+### 从一般形式到 QP
+
+将预测方程 $X = Fx(k) + \Phi U$ 代入代价函数，可以将 MPC 优化问题转化为标准的**二次规划（QP）**：
+
+$$\min_{U} \frac{1}{2} U^T H U + f^T U$$
+$$\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}$$
+
+其中：
+
+**Hessian 矩阵** $H$（与 $x(k)$ 无关，可离线计算）：
+
+$$H = 2(\Phi^T \bar{Q} \Phi + \bar{R})$$
+
+**线性项** $f$（依赖于当前状态 $x(k)$，每步更新）：
+
+$$f = 2 \Phi^T \bar{Q} F x(k)$$
+
+这里 $\bar{Q} = \text{blkdiag}(Q, Q, \ldots, Q, P)$ 和 $\bar{R} = \text{blkdiag}(R, R, \ldots, R)$ 是分块对角权重矩阵。
+
+**约束矩阵** $A_{\text{ineq}}$ 和 $b_{\text{ineq}}$ 由输入约束和状态约束组合而成。
+
+> 💡 **关键观察**：$H$ 不依赖于 $x(k)$——如果约束不随工况变化，$H$ 和 $A_{\text{ineq}}$ 都可以**离线计算**。每步只需要更新 $f$（与 $x(k)$ 线性相关），然后求解 QP。这大大减少了在线计算量。
+
+### 增量形式 vs 绝对形式
+
+上面的公式是**绝对形式**——优化变量是 $U = [u(k), u(k+1), \ldots]$。
+
+更常用的是**增量形式**——优化变量是 $\Delta U = [\Delta u(k), \Delta u(k+1), \ldots]$，其中 $\Delta u(k) = u(k) - u(k-1)$。
+
+增量形式的优势：
+1. **消除稳态误差**：积分效果自然包含在增量中
+2. **方便处理输入变化率约束**：$\Delta u_{\min} \leq \Delta u \leq \Delta u_{\max}$ 直接写入
+3. **对常值干扰有天然鲁棒性**
+
+增量形式的状态增广模型：
+
+$$\underbrace{\begin{bmatrix} \Delta x(k+1) \\ y(k+1) \end{bmatrix}}_{\xi(k+1)} = \underbrace{\begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix}}_{A_e} \underbrace{\begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix}}_{\xi(k)} + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)$$
+
+其中 $\Delta x(k) = x(k) - x(k-1)$。
+
+### 设计参数选择
+
+| 参数 | 符号 | 影响 | 选择原则 |
+|------|------|------|----------|
+| 预测时域 | $N_p$ | 太短→看不到未来约束，太长→计算量大 | $N_p T_s \geq$ 系统 settling time（通常 10-50） |
+| 控制时域 | $N_u$ | 优化变量个数 $N_u \leq N_p$ | 通常 $N_u = 2-10$ |
+| 状态权重 | $Q$ | 大→快速响应但控制量大 | Bryson 规则：$Q_{ii} = 1/x_{i,\max}^2$ |
+| 输入权重 | $R$ | 大→控制量小但响应慢 | Bryson 规则：$R_{jj} = 1/u_{j,\max}^2$ |
+
+**Bryson 规则**的直觉：$Q_{ii} = 1/x_{i,\max}^2$ 意味着"当 $x_i$ 达到最大允许值时，代价为 1"。这样 $Q$ 和 $R$ 的选择有了物理含义——各变量的"重要程度"由其允许范围决定。
+
+### MPC 实现流程
+
+```
+每个采样周期 k：
+┌─────────────────────────────────────────────────┐
+│ 1. 测量输出 y(k)                                 │
+│ 2. 状态估计 → x̂(k)（卡尔曼滤波/观测器）          │
+│ 3. 计算 f = 2ΦᵀQ̄F x̂(k)                        │
+│ 4. 求解 QP：min ½UᵀHU + fᵀU, s.t. 约束         │
+│ 5. 取第一个输入 u(k) = u*(k)                     │
+│ 6. 执行 u(k) → 被控对象                          │
+│ 7. k ← k+1，回到步骤 1                           │
+└─────────────────────────────────────────────────┘
+```
+
+## MPC与LQR的区别
+
+### 数学关系
+
+MPC 和 LQR 都基于"线性系统 + 二次型代价"的框架，但有本质区别：
+
+| 特性 | LQR | MPC |
+|------|-----|-----|
+| 时域 | 无限时域（$t \to \infty$） | 有限时域（$N_p$ 步） |
+| 约束 | 无约束 | 显式处理约束 |
+| 求解方式 | 离线：解 Riccati 方程 → $K$ | 在线：每步解 QP |
+| 控制律 | 固定反馈 $u = -Kx$ | 时变的"反馈"（通过在线优化隐式实现） |
+| 稳定性 | 自动保证 | 需要额外条件（终端约束/终端代价） |
+| 最优性 | 全局最优（无约束意义下） | 约束意义下的最优 |
+
+### MPC 退化为 LQR 的条件
+
+**定理**：当以下条件同时满足时，MPC 等价于离散时间 LQR：
+
+1. **无约束**（$u_{\min} = -\infty, u_{\max} = \infty$）
+2. **无限预测时域**（$N_p \to \infty$）
+3. **线性系统**
+4. **二次型代价**
+
+证明思路：无约束 QP 的最优解由 KKT 条件给出：
+
+$$HU^* + f = 0 \implies U^* = -H^{-1}f = -(\Phi^T\bar{Q}\Phi + \bar{R})^{-1}\Phi^T\bar{Q}Fx(k)$$
+
+当 $N_p \to \infty$ 时，这个解趋向 LQR 的最优反馈 $u^*(k) = -K_{\text{LQR}} x(k)$，其中 $K_{\text{LQR}}$ 由离散 Riccati 方程的解 $P$ 给出：
+
+$$K_{\text{LQR}} = (R + B^TPB)^{-1}B^TPA$$
+
+> 💡 **核心观点**：LQR 是 MPC 的特例。MPC 是更通用的框架——它在 LQR 的基础上增加了约束处理和有限时域滚动优化。
+
+### 直观对比
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== MPC vs LQR 对比：双积分器系统 =====
+# 系统：质量块（m=1），受控力 u，约束 |u| ≤ 2
+from ipywidgets import interact, FloatSlider, IntSlider
+
+# 离散化（Ts = 0.1s）
+Ts = 0.1
+A = np.array([[1, Ts], [0, 1]])
+B = np.array([[0], [Ts]])
+C = np.eye(2)
+
+# LQR 增益（离散 Riccati 方程）
+Q_lqr = np.diag([10, 1])
+R_lqr = np.array([[1]])
+
+# 解离散代数 Riccati 方程（迭代法）
+P = Q_lqr.copy()
+for _ in range(1000):
+    K = np.linalg.inv(R_lqr + B.T @ P @ B) @ B.T @ P @ A
+    P = Q_lqr + A.T @ P @ A - A.T @ P @ B @ np.linalg.inv(R_lqr + B.T @ P @ B) @ B.T @ P @ A
+K_lqr = K
+
+def simulate_mpc(x0, Np, Q_mpc, R_mpc, u_max, N_steps):
+    """简易 MPC 仿真（用暴力搜索近似 QP）"""
+    x_traj = [x0.copy()]
+    u_traj = []
+    x = x0.copy()
+    
+    for k in range(N_steps):
+        # 构建 QP
+        # 预测矩阵
+        F_list = []
+        Phi_list = []
+        for i in range(1, Np + 1):
+            F_list.append(np.linalg.matrix_power(A, i) @ x)
+        
+        # 构建 Phi 矩阵
+        Phi = np.zeros((Np, Np))
+        for i in range(Np):
+            for j in range(i + 1):
+                Phi[i, j] = float(np.linalg.matrix_power(A, i - j) @ B)
+        
+        # 权重矩阵
+        Q_bar = np.eye(Np) * Q_mpc
+        R_bar = np.eye(Np) * R_mpc
+        
+        H = 2 * (Phi.T @ Q_bar @ Phi + R_bar)
+        f_vec = 2 * Phi.T @ Q_bar @ np.array(F_list).flatten()
+        
+        # 简单梯度投影法求解（带约束）
+        U = np.zeros(Np)
+        lr = 0.01
+        for _ in range(200):
+            grad = H @ U + f_vec
+            U = U - lr * grad
+            U = np.clip(U, -u_max, u_max)
+        
+        u_opt = U[0]
+        u_traj.append(u_opt)
+        x = A @ x + B.flatten() * u_opt
+        x_traj.append(x.copy())
+    
+    return np.array(x_traj), np.array(u_traj)
+
+def simulate_lqr_clipped(x0, N_steps, u_max):
+    """LQR + 输入截断"""
+    x_traj = [x0.copy()]
+    u_traj = []
+    x = x0.copy()
+    
+    for k in range(N_steps):
+        u = -float(K_lqr @ x)
+        u = np.clip(u, -u_max, u_max)
+        u_traj.append(u)
+        x = A @ x + B.flatten() * u
+        x_traj.append(x.copy())
+    
+    return np.array(x_traj), np.array(u_traj)
+
+def compare_mpc_lqr(x0_val, Np, Q_mpc, R_mpc, u_max):
+    N_steps = 60
+    x0 = np.array([x0_val, 0])
+    
+    # MPC 仿真
+    x_mpc, u_mpc = simulate_mpc(x0, Np, Q_mpc, R_mpc, u_max, N_steps)
+    
+    # LQR + 截断
+    x_lqr, u_lqr = simulate_lqr_clipped(x0, N_steps, u_max)
+    
+    t = np.arange(N_steps + 1) * Ts
+    
+    fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
+    
+    # 位置
+    axes[0].plot(t, x_mpc[:, 0], 'b-', linewidth=2, label='MPC')
+    axes[0].plot(t, x_lqr[:, 0], 'r--', linewidth=2, label='LQR + 截断')
+    axes[0].set_ylabel('位置 x', fontsize=12)
+    axes[0].legend(fontsize=11)
+    axes[0].grid(True, alpha=0.3)
+    axes[0].set_title(f'MPC (Np={Np}) vs LQR | 约束 |u| ≤ {u_max}', fontsize=13)
+    
+    # 速度
+    axes[1].plot(t, x_mpc[:, 1], 'b-', linewidth=2, label='MPC')
+    axes[1].plot(t, x_lqr[:, 1], 'r--', linewidth=2, label='LQR + 截断')
+    axes[1].set_ylabel('速度 ẋ', fontsize=12)
+    axes[1].legend(fontsize=11)
+    axes[1].grid(True, alpha=0.3)
+    
+    # 控制输入
+    t_u = np.arange(N_steps) * Ts + Ts/2
+    axes[2].step(t_u, u_mpc, 'b-', linewidth=2, where='mid', label='MPC')
+    axes[2].step(t_u, u_lqr, 'r--', linewidth=2, where='mid', label='LQR + 截断')
+    axes[2].axhline(y=u_max, color='k', linestyle=':', alpha=0.5, label=f'约束 ±{u_max}')
+    axes[2].axhline(y=-u_max, color='k', linestyle=':', alpha=0.5)
+    axes[2].set_ylabel('控制量 u', fontsize=12)
+    axes[2].set_xlabel('时间 (s)', fontsize=12)
+    axes[2].legend(fontsize=11)
+    axes[2].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+interact(
+    compare_mpc_lqr,
+    x0_val=FloatSlider(value=5, min=1, max=10, step=1, description='初始位置 x₀'),
+    Np=IntSlider(value=20, min=5, max=50, step=5, description='预测时域 Np'),
+    Q_mpc=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='状态权重 Q'),
+    R_mpc=FloatSlider(value=0.1, min=0.01, max=1, step=0.01, description='输入权重 R'),
+    u_max=FloatSlider(value=2.0, min=0.5, max=5, step=0.5, description='输入约束 u_max'),
+)
+print('调整参数观察 MPC 与 LQR+截断 的区别')`
+    }
+  ]}
+/>
+
+## 稳定性分析
+
+### 为什么有限时域 MPC 可能不稳定
+
+LQR 的无限时域保证了一个关键性质：**最优代价 $V(x) = x^T P x$ 是一个 Lyapunov 函数**。每走一步，$V(x)$ 都减小，系统必然收敛。
+
+但有限时域 MPC 只优化了 $N_p$ 步——它可能做出"短视"的决策：把状态推向一个在 $N_p$ 步内看起来很好、但在 $N_p$ 步之外会发散的方向。
+
+**直觉类比**：你在雾中开车（只能看到前方 $N_p$ 米）。如果 $N_p$ 太短，你可能选择了一条看起来直、但前方有急弯的路。无限时域 LQR 相当于"看清了整条路"。
+
+### 终端约束
+
+**终端约束**要求预测时域终点落在某个集合内：
+
+$$x(k + N_p) \in \mathcal{X}_f$$
+
+通常 $\mathcal{X}_f = \{x : x^T P_f x \leq \alpha\}$，其中 $P_f$ 是某个正定矩阵。
+
+终端约束的作用：强制 MPC 在预测时域结束时，状态已经"足够接近"原点（或目标状态），保证后续即使不再优化，系统也能稳定收敛。
+
+### 终端代价
+
+另一种方法是加**终端代价**：
+
+$$J = \sum_{i=0}^{N_p-1} [x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i)] + \underbrace{x(k+N_p)^T P_f\, x(k+N_p)}_{\text{终端代价}}$$
+
+如果 $P_f$ 选择为离散 Riccati 方程的解（即 LQR 的最优代价矩阵），则终端代价等价于"从 $k+N_p$ 开始用 LQR 控制到无穷远"的代价。
+
+这样，有限时域 MPC 的代价 = 前 $N_p$ 步的在线优化代价 + 剩余无穷步的 LQR 代价 = 完整的无限时域代价的上界。
+
+**定理**（MPC 稳定性）：如果终端代价矩阵 $P_f$ 满足：
+
+1. $P_f$ 是某个局部反馈 $K_f$ 下的 Lyapunov 矩阵：$(A+BK_f)^T P_f (A+BK_f) - P_f \leq -(Q + K_f^T R K_f)$
+2. 终端集合 $\mathcal{X}_f$ 是 $K_f$ 下的正不变集：$x \in \mathcal{X}_f \implies (A+BK_f)x \in \mathcal{X}_f$
+3. 终端集合中的约束满足：$K_f x \in \mathcal{U}$ for all $x \in \mathcal{X}_f$
+
+则闭环系统**渐近稳定**。
+
+> 💡 **直觉**：终端约束/终端代价的作用是"给 MPC 一双看得更远的眼睛"——即使优化只看 $N_p$ 步，终端条件保证了"预测窗口之外"的行为是可控的。
+
+### 实际工程中的处理
+
+在实际工程中，保证 MPC 稳定性的常用策略：
+
+1. **取足够大的 $N_p$**：经验法则 $N_p T_s \geq 3-5 \times$ settling time。当 $N_p$ 足够大时，终端条件的影响很小。
+2. **终端代价 + LQR 终端控制器**：最常用的理论保证方法。
+3. **不加终端约束，靠调参**：很多工业 MPC 不加终端约束，而是通过增大 $N_p$ 和合理选择 $Q, R$ 来获得稳定行为。这在模型准确时通常有效。
+
+## 深入讨论
+
+### 显式 MPC
+
+标准 MPC 每步在线求解 QP——计算量随问题规模增长。对于**低速系统**（如化工过程，$T_s$ 为秒级），这不是问题。但对于**高速系统**（如电机控制，$T_s$ 为微秒级），在线 QP 可能来不及。
+
+**显式 MPC（Explicit MPC）**（Bemporad et al., 2002）：对于线性系统 + 多面体约束，MPC 的最优解可以表示为当前状态 $x(k)$ 的**分段仿射函数**：
+
+$$u^*(k) = F_i x(k) + g_i \quad \text{if} \quad x(k) \in \mathcal{P}_i$$
+
+其中 $\{\mathcal{P}_i\}$ 是状态空间的一组多面体划分。这个分段仿射函数可以**离线计算**，在线只需要查表——判断 $x(k)$ 落在哪个区域，然后用对应的仿射公式计算 $u^*$。
+
+显式 MPC 的局限：状态维度一般不超过 5-10（多面体数量随维度指数增长）。适用于低维高速系统（如电机控制、电源管理）。
+
+### 非线性 MPC
+
+如果被控对象是非线性的 $x(k+1) = f(x(k), u(k))$，预测方程不再是线性的，优化问题变成**非线性规划（NLP）**。
+
+非线性 MPC 的挑战：
+1. NLP 的求解比 QP 困难得多（可能陷入局部最优）
+2. 实时性更难保证
+3. 稳定性理论更复杂
+
+常用方法：序列二次规划（SQP）、实时迭代（Real-Time Iteration, RTI）。
+
+### MPC 与卡尔曼滤波的配合
+
+MPC 需要**全状态信息** $x(k)$，但实际系统通常只有输出 $y(k)$ 可测。解决方案：用**卡尔曼滤波**（或 Luenberger 观测器）估计状态：
+
+$$\hat{x}(k+1) = A\hat{x}(k) + Bu(k) + L(y(k) - C\hat{x}(k))$$
+
+MPC 使用估计值 $\hat{x}(k)$ 代替真实状态 $x(k)$。根据**分离原理**（对线性系统成立），控制器设计和观测器设计可以独立进行。
+
+## 小结
+
+本课的核心要点：
+
+1. **MPC 的三大核心思想**：预测模型（预测未来行为）、滚动优化（每步重新优化，本质是反馈）、约束处理（显式写入优化问题）
+2. **线性 MPC 是一个 QP 问题**：Hessian 矩阵 $H$ 可离线计算，每步只更新线性项 $f$
+3. **LQR 是 MPC 的特例**：无约束 + 无限时域 + 线性 + 二次型 → MPC 退化为 LQR
+4. **有限时域 MPC 可能不稳定**：需要终端约束或终端代价来保证"预测窗口之外"的行为可控
+5. **MPC 的适用场景**：多变量、强耦合、大量约束、对最优性有要求
+
+从整个预测控制章节的角度看：本课建立了 MPC 的基本框架。后续课程将深入各个要素——[预测模型建立](/mpc/prediction-model) 讨论不同模型形式，[滚动优化策略](/mpc/receding-horizon) 讨论高效求解，[约束处理](/mpc/constraint-handling) 讨论各种约束的工程实现。
+
+## 习题
+
+**习题 1**（预测矩阵构建）
+
+给定离散系统 $A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}$，$B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}$，预测时域 $N_p = 3$。
+
+(a) 计算预测矩阵 $F$（$6 \times 2$ 矩阵）。
+(b) 计算预测矩阵 $\Phi$（$6 \times 3$ 矩阵）。
+(c) 给定 $x(k) = [2, 1]^T$ 和输入序列 $U = [1, 0, -1]^T$，计算预测状态序列 $X$。
+
+**习题 2**（MPC 单步计算）
+
+考虑一阶系统 $x(k+1) = 0.5 x(k) + u(k)$，约束 $|u| \leq 2$。
+
+MPC 参数：$N_p = 2$，$Q = 1$，$R = 0$（只最小化状态偏差，不惩罚控制量）。
+
+给定 $x(k) = 4$：
+
+(a) 写出 MPC 优化问题（关于 $u(k), u(k+1)$ 的表达式）。
+(b) 求最优输入序列 $[u^*(k), u^*(k+1)]$。
+(c) 如果去掉约束 $|u| \leq 2$，最优解是什么？
+
+**习题 3**（MPC vs LQR 分析）
+
+判断以下说法是否正确，并说明理由：
+
+(a) "MPC 总是比 LQR 性能好。"
+(b) "当 $N_p \to \infty$ 且无约束时，MPC 的控制律与 LQR 相同。"
+(c) "有限时域 MPC 如果不加终端约束，闭环系统一定不稳定。"
+(d) "MPC 的滚动优化本质上是一种反馈机制。"
+
+**习题 4**（设计参数选择）
+
+某化工反应器，温度控制范围 100-200°C，最大升温速率 5°C/s，采样周期 $T_s = 1$ s。系统的主要时间常数约 10 s。
+
+(a) 根据经验法则，预测时域 $N_p$ 应取多少？
+(b) 用 Bryson 规则，给出 $Q$ 和 $R$ 的初始值（以温度偏差和加热功率为变量）。
+(c) 如果增大 $R$，系统响应会如何变化？
+
+**习题 5**（终端代价的作用）
+
+考虑系统 $x(k+1) = 2x(k) + u(k)$（不稳定系统），代价 $J = \sum_{i=0}^{N_p-1} [x(k+i)^2 + u(k+i)^2]$。
+
+(a) 当 $N_p = 1$ 时，求最优控制 $u^*(k)$（无约束）。
+(b) 计算一步后的状态 $x(k+1)$ 和代价 $J_1 = x(k)^2 + u^*(k)^2$。
+(c) 证明：对于 $N_p = 1$，$J_1 < x(k)^2$ 不总是成立（即一步代价不一定比初始代价小），说明短视优化的问题。
+(d) 如果加终端代价 $P_f x(k+N_p)^2$，其中 $P_f$ 是离散 Riccati 方程的解，解释为什么这能保证稳定性。
+
+## 答案
+
+**答案 1**
+
+(a) $F$ 矩阵由 $A^1, A^2, A^3$ 组成：
+
+$$A^1 = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, \quad A^2 = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}, \quad A^3 = \begin{bmatrix} 1 & 3 \\ 0 & 1 \end{bmatrix}$$
+
+$$F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix}$$
+
+(b) $\Phi$ 矩阵（下三角分块矩阵）：
+
+$$\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix}$$
+
+计算各块：
+
+$$B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad AB = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \end{bmatrix}$$
+
+$$A^2B = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 2.5 \\ 1 \end{bmatrix}$$
+
+$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 0 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 0 & 0 \end{bmatrix}$$
+
+等等，这里需要重新检查 $\Phi$ 的结构。$\Phi$ 应该是 $6 \times 3$ 矩阵，每列对应一个输入对未来状态的影响：
+
+$$\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+不对，让我重新按正确结构写。$\Phi$ 的行是 $x(k+1)$ 到 $x(k+3)$ 的 6 个分量，列是 $u(k), u(k+1), u(k+2)$：
+
+$$\Phi = \begin{bmatrix} B & \mathbf{0} & \mathbf{0} \\ AB & B & \mathbf{0} \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+再检查：$B = [0.5, 1]^T$，$AB = [1.5, 1]^T$，$A^2B = [2.5, 1]^T$。
+
+$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+不对。让我仔细写：
+
+第 1 行块（$x(k+1)$）：$[B, 0, 0]$
+第 2 行块（$x(k+2)$）：$[AB, B, 0]$
+第 3 行块（$x(k+3)$）：$[A^2B, AB, B]$
+
+展开为 $6 \times 3$：
+
+$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+嗯，第三行块第二列应该是 $AB = [1.5, 1]^T$，第三列是 $0$。让我重新整理：
+
+$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+这里第二行块是 $[AB, B, 0]$，即：
+- 第 3 行：$AB$ 的第 1 个分量 = 1.5，$B$ 的第 1 个分量 = 0.5，0
+- 第 4 行：$AB$ 的第 2 个分量 = 1，$B$ 的第 2 个分量 = 1，0
+
+第三行块是 $[A^2B, AB, B]$：
+- 第 5 行：$A^2B$ 的第 1 个分量 = 2.5，$AB$ 的第 1 个分量 = 1.5，$B$ 的第 1 个分量 = 0.5
+- 第 6 行：$A^2B$ 的第 2 个分量 = 1，$AB$ 的第 2 个分量 = 1，$B$ 的第 2 个分量 = 1
+
+所以：
+
+$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+
+(c) 计算 $X = Fx(k) + \Phi U$：
+
+$$Fx(k) = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} 2 \\ 1 \end{bmatrix} = \begin{bmatrix} 3 \\ 1 \\ 4 \\ 1 \\ 5 \\ 1 \end{bmatrix}$$
+
+$$\Phi U = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix} = \begin{bmatrix} 0.5 \\ 1 \\ 1.5 \\ 1 \\ 2.5 \\ 0 \end{bmatrix}$$
+
+$$X = \begin{bmatrix} 3.5 \\ 2 \\ 5.5 \\ 2 \\ 7.5 \\ 1 \end{bmatrix}$$
+
+即 $x(k+1) = [3.5, 2]^T$，$x(k+2) = [5.5, 2]^T$，$x(k+3) = [7.5, 1]^T$。
+
+验证：$x(k+1) = Ax(k) + Bu(k) = [2+1, 1]^T + [0.5, 1]^T = [3.5, 2]^T$ ✅
+
+**答案 2**
+
+(a) 系统 $x(k+1) = 0.5x(k) + u(k)$，$N_p = 2$，$Q = 1$，$R = 0$。
+
+预测：
+$$x(k+1) = 0.5 \times 4 + u(k) = 2 + u(k)$$
+$$x(k+2) = 0.5 x(k+1) + u(k+1) = 0.5(2 + u(k)) + u(k+1) = 1 + 0.5u(k) + u(k+1)$$
+
+代价函数：
+$$J = x(k+1)^2 + x(k+2)^2 = (2 + u(k))^2 + (1 + 0.5u(k) + u(k+1))^2$$
+
+约束：$|u(k)| \leq 2$，$|u(k+1)| \leq 2$。
+
+(b) 先不考虑约束求无约束最优：
+
+$$\frac{\partial J}{\partial u(k)} = 2(2 + u(k)) + 2(1 + 0.5u(k) + u(k+1)) \times 0.5 = 0$$
+$$\frac{\partial J}{\partial u(k+1)} = 2(1 + 0.5u(k) + u(k+1)) = 0$$
+
+从第二个方程：$1 + 0.5u(k) + u(k+1) = 0 \implies u(k+1) = -1 - 0.5u(k)$
+
+代入第一个方程：
+$$2(2 + u(k)) + 0 = 0 \implies u(k) = -2$$
+
+则 $u(k+1) = -1 - 0.5(-2) = -1 + 1 = 0$
+
+检查约束：$|u(k)| = |-2| = 2 \leq 2$ ✅，$|u(k+1)| = 0 \leq 2$ ✅
+
+最优输入序列：$u^*(k) = -2$，$u^*(k+1) = 0$。
+
+(c) 无约束时，最优解同上：$u^*(k) = -2$，$u^*(k+1) = 0$。
+
+本例中无约束最优解恰好满足约束，所以约束不起作用。如果初始状态更大（如 $x(k) = 8$），无约束最优 $u(k)$ 会超过 2，此时约束会起作用。
+
+**答案 3**
+
+(a) **错误**。MPC 在**有约束**时比 LQR+截断好（因为 MPC 从规划阶段就考虑约束，而 LQR+截断是事后修补）。但在**无约束**时，MPC（有限时域）的性能不如 LQR（无限时域），因为 LQR 是全局最优的。
+
+(b) **正确**。当 $N_p \to \infty$ 且无约束时，MPC 的 QP 的解趋向 LQR 的最优反馈 $u^* = -K_{\text{LQR}}x$。这是 MPC 和 LQR 的理论联系。
+
+(c) **错误**。"一定不稳定"太强了。有限时域 MPC 不加终端约束时，**不保证**稳定，但在很多实际情况下（$N_p$ 足够大、权重合理）仍然是稳定的。终端约束/终端代价是**充分条件**，不是必要条件。
+
+(d) **正确**。滚动优化每步都用最新的测量值 $x(k)$ 重新计算控制输入，这本质上是一种**状态反馈**。虽然 MPC 的控制律不像 LQR 那样有显式的 $u = -Kx$ 形式，但通过在线优化隐式地实现了状态到输入的映射。
+
+**答案 4**
+
+(a) 系统时间常数 $\tau \approx 10$ s，settling time $\approx 3\tau = 30$ s（工程上认为 3-5 倍时间常数后系统达到稳态）。
+
+经验法则：$N_p T_s \geq$ settling time
+
+$N_p \times 1 \geq 30 \implies N_p \geq 30$
+
+取 $N_p = 30-50$。
+
+(b) Bryson 规则：
+
+温度范围：100-200°C，偏差范围约 $\pm 50$°C（相对于设定点），$x_{\max} = 50$°C。
+升温速率限制：5°C/s，对应加热功率范围。设加热功率范围 $u_{\max}$ 对应最大升温速率。
+
+$Q = 1/x_{\max}^2 = 1/50^2 = 1/2500 = 4 \times 10^{-4}$
+
+$R = 1/u_{\max}^2$
+
+如果加热功率归一化到 $[-1, 1]$，则 $R = 1/1^2 = 1$。
+
+初始值：$Q = 4 \times 10^{-4}$，$R = 1$。
+
+(c) 增大 $R$ → 控制能耗在代价中的权重增大 → 优化器倾向于使用更小的控制量 → 系统响应变慢，超调减小，调节时间增长。
+
+物理含义：$R$ 大意味着"节约能源比快速响应更重要"。
+
+**答案 5**
+
+(a) $N_p = 1$ 时的代价：$J = x(k)^2 + u(k)^2$（注意 $Q = 1, R = 1$）
+
+预测：$x(k+1) = 2x(k) + u(k)$
+
+$N_p = 1$ 时代价为 $J = x(k)^2 + u(k)^2$。
+
+等等，$N_p = 1$ 时代价应该只有一步：$J = x(k+1)^2 + u(k)^2$（预测一步的状态 + 控制能耗）。
+
+让我重新理解题意。$J = \sum_{i=0}^{N_p-1} [x(k+i)^2 + u(k+i)^2]$。
+
+当 $N_p = 1$ 时，$J = x(k)^2 + u(k)^2$。
+
+不对，应该是 $J = x(k+1)^2 + u(k)^2$（预测一步的状态代价 + 当前输入的能耗）。
+
+让我按照标准 MPC 公式：$J = \sum_{i=0}^{N_p-1} [x(k+i+1)^T Q x(k+i+1) + u(k+i)^T R u(k+i)]$
+
+当 $N_p = 1$ 时：$J = x(k+1)^2 + u(k)^2 = (2x(k) + u(k))^2 + u(k)^2$
+
+对 $u(k)$ 求导：
+
+$$\frac{\partial J}{\partial u(k)} = 2(2x(k) + u(k)) + 2u(k) = 4x(k) + 4u(k) = 0$$
+
+$$u^*(k) = -x(k)$$
+
+(b) 一步后的状态：
+
+$$x(k+1) = 2x(k) + u^*(k) = 2x(k) - x(k) = x(k)$$
+
+代价：$J_1 = x(k+1)^2 + u^*(k)^2 = x(k)^2 + x(k)^2 = 2x(k)^2$
+
+(c) 比较 $J_1$ 和初始"代价" $x(k)^2$：
+
+$J_1 = 2x(k)^2 > x(k)^2$（对于 $x(k) \neq 0$）
+
+这说明一步的总代价（状态代价 + 控制代价）大于初始状态代价。但更重要的是看**状态是否收敛**：
+
+$x(k+1) = x(k)$——状态没有变化！系统"停"在了当前位置，没有向原点收敛。
+
+如果 $N_p = 1$ 反复执行：$x(k+1) = x(k)$，$x(k+2) = x(k)$，...——状态永远不收敛到零。
+
+这就是短视优化的问题：$N_p = 1$ 太短，优化器只看到一步，选择了"最小化一步代价"而不是"让状态收敛"。
+
+(d) 加终端代价 $P_f x(k+N_p)^2$ 后，$N_p = 1$ 时代价变为：
+
+$$J = x(k+1)^2 + u(k)^2 + P_f x(k+1)^2 = (1+P_f)x(k+1)^2 + u(k)^2$$
+
+$$= (1+P_f)(2x(k) + u(k))^2 + u(k)^2$$
+
+对 $u(k)$ 求导：
+
+$$2(1+P_f)(2x(k) + u(k)) + 2u(k) = 0$$
+
+$$u^*(k) = \frac{-2(1+P_f)}{1 + 2(1+P_f)} \cdot 2x(k) = \frac{-4(1+P_f)}{1 + 2(1+P_f)} x(k)$$
+
+如果 $P_f$ 是离散 Riccati 方程的解（$A = 2, B = 1, Q = 1, R = 1$）：
+
+$$P_f = Q + A^2 P_f - A^2 P_f^2 / (R + P_f) = 1 + 4P_f - 4P_f^2/(1+P_f)$$
+
+解此方程得 $P_f \approx 5.83$（取正根）。
+
+有了终端代价，$u^*(k)$ 的增益更大（更积极地推向原点），$|x(k+1)| < |x(k)|$，状态收敛，闭环稳定。
+
+终端代价的物理含义：它代表了"从预测终点到无穷远"的最优代价。加入终端代价后，MPC 不再"短视"——它考虑了预测窗口之外的未来代价。

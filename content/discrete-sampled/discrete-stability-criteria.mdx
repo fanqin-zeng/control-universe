@@ -1,0 +1,880 @@
+---
+title: "离散系统稳定性"
+description: "离散系统的稳定性分析——z域稳定性条件、Jury判据、w变换与Routh判据、采样周期对稳定性的影响，以及离散系统的稳定裕度。"
+---
+
+# 离散系统稳定性
+
+前两节课给了我们离散系统的数学工具（Z 变换）和设计方法（离散化）。但一个根本性问题还没回答：**离散系统什么时候稳定？**
+
+连续系统的稳定性由极点位置决定——所有极点在左半 s 平面。离散系统类似，但稳定区域变了：
+
+> 📖 本课需要 [Z变换基础](/discrete-sampled/z-transform-analysis) 和 [数字控制器设计](/discrete-sampled/discretization-methods) 的前置知识。
+
+| 连续系统 | 离散系统 |
+|---------|---------|
+| 稳定域：s 左半平面 | 稳定域：z 单位圆内 |
+| 临界稳定：虚轴 $s = j\omega$ | 临界稳定：单位圆 $|z| = 1$ |
+| 判据：Routh、Nyquist、根轨迹 | 判据：Jury、w-Routh、离散根轨迹 |
+
+为什么不能直接用 Routh 判据？因为 Routh 判据判断的是"根是否在左半平面"，而离散系统的稳定域是单位圆——形状不同，规则不匹配。
+
+本节的目标：掌握三种离散稳定性分析方法，理解采样周期对稳定性的影响，学会计算离散系统的稳定裕度。
+
+## z 域稳定性条件
+
+### 基本定理
+
+离散 LTI 系统 $G(z) = \frac{Y(z)}{U(z)}$ 的稳定性由**特征方程的根**（即 $G(z)$ 的极点）决定：
+
+$$D(z) = 0$$
+
+**稳定性条件**：
+
+| 类型 | 条件 | 时域表现 |
+|------|------|---------|
+| 渐近稳定 | 所有极点 $|z_i| < 1$ | 响应衰减到零 |
+| 临界稳定 | 有极点在 $|z| = 1$，其余在单位圆内 | 等幅振荡或常值 |
+| 不稳定 | 有极点 $|z| > 1$ | 响应发散 |
+
+**物理直觉**：$z = e^{sT_s}$，所以 $|z| = e^{\text{Re}(s)T_s}$。
+- $\text{Re}(s) < 0$（左半平面）→ $|z| < 1$（单位圆内）→ 稳定
+- $\text{Re}(s) = 0$（虚轴）→ $|z| = 1$（单位圆上）→ 临界稳定
+- $\text{Re}(s) > 0$（右半平面）→ $|z| > 1$（单位圆外）→ 不稳定
+
+### 特殊极点位置的时域含义
+
+| 极点位置 | $z$ 值 | 时域响应 |
+|---------|--------|---------|
+| 正实轴，靠近 1 | $z = 0.9$ | 缓慢衰减（类似大时间常数） |
+| 正实轴，靠近 0 | $z = 0.1$ | 快速衰减（一拍就消失） |
+| 负实轴 | $z = -0.5$ | 交替衰减（振荡，周期 $2T_s$） |
+| 单位圆上，$z = 1$ | $z = 1$ | 常值（积分器） |
+| 单位圆上，$z = -1$ | $z = -1$ | 等幅交替振荡（Nyquist 频率） |
+| 共轭复数 | $z = re^{\pm j\theta}$ | 振荡衰减（$\theta$ 决定振荡频率） |
+
+> 💡 **关键观察**：$z = -1$ 对应频率 $\omega = \pi/T_s = \omega_s/2$（Nyquist 频率）。这是离散系统特有的——连续系统没有"最高频率"的概念。
+
+### 闭环特征方程
+
+对于单位反馈系统，控制器 $K(z)$，对象 $G(z)$：
+
+$$T(z) = \frac{K(z)G(z)}{1 + K(z)G(z)}$$
+
+特征方程：
+
+$$1 + K(z)G(z) = 0$$
+
+或写成多项式形式：
+
+$$D(z) = 1 + \frac{N(z)}{D(z)} = 0 \implies D(z) + N(z) = 0$$
+
+稳定性分析就是判断这个多项式的所有根是否都在单位圆内。
+
+## Jury 稳定性判据
+
+### 原理
+
+Jury 判据是离散系统的"Routh 判据"——直接从多项式系数判断根是否都在单位圆内，**不需要求根**。
+
+给定 $n$ 阶特征多项式：
+
+$$P(z) = a_0 z^n + a_1 z^{n-1} + \cdots + a_{n-1} z + a_n, \quad a_0 > 0$$
+
+### Jury 表
+
+构造类似 Routh 表的阵列：
+
+**第 1 行**：$a_0, a_1, a_2, \ldots, a_n$（多项式系数正序）
+
+**第 2 行**：$a_n, a_{n-1}, \ldots, a_0$（反序）
+
+**第 3 行**：由前两行计算
+
+$$b_k = \begin{vmatrix} a_0 & a_{n-k} \\ a_n & a_k \end{vmatrix} = a_0 a_k - a_n a_{n-k}, \quad k = 0, 1, \ldots, n-1$$
+
+**第 4 行**：第 3 行反序
+
+**第 5 行**：由第 3、4 行计算
+
+$$c_k = \begin{vmatrix} b_0 & b_{n-1-k} \\ b_{n-1} & b_k \end{vmatrix}, \quad k = 0, 1, \ldots, n-2$$
+
+依此类推，每两行产生新一行，行数逐次减 1，直到只剩一行。
+
+### 稳定性条件
+
+**必要条件**（先检查，不满足直接判不稳定）：
+
+$$P(1) > 0 \quad \text{且} \quad (-1)^n P(-1) > 0$$
+
+**充要条件**：Jury 表中所有"奇数行的第一个元素"都为正：
+
+$$a_0 > 0, \quad b_0 > 0, \quad c_0 > 0, \quad \ldots$$
+
+### 低阶情况的简化
+
+**一阶** $P(z) = a_0 z + a_1$：
+
+$$|a_1| < a_0$$
+
+**二阶** $P(z) = a_0 z^2 + a_1 z + a_2$：
+
+$$P(1) > 0: \quad a_0 + a_1 + a_2 > 0$$
+$$P(-1) > 0: \quad a_0 - a_1 + a_2 > 0$$
+$$|a_2| < a_0$$
+
+**三阶** $P(z) = a_0 z^3 + a_1 z^2 + a_2 z + a_3$：
+
+$$P(1) > 0, \quad P(-1) < 0$$
+$$|a_3| < a_0$$
+$$|b_0| > |b_2|, \quad \text{其中 } b_k = a_0 a_k - a_3 a_{3-k}$$
+
+> 💡 **工程建议**：二阶和三阶系统用 Jury 判据的简化公式。四阶及以上，直接用计算机求根更简单——Jury 判据的理论价值大于实用价值。
+
+### 示例
+
+**二阶系统**：$P(z) = z^2 - 1.5z + 0.7$
+
+必要条件：
+- $P(1) = 1 - 1.5 + 0.7 = 0.2 > 0$ ✓
+- $P(-1) = 1 + 1.5 + 0.7 = 3.2 > 0$ ✓（$(-1)^2 \times 3.2 > 0$）
+- $|a_2| = 0.7 < 1 = a_0$ ✓
+
+所有条件满足 → **稳定**。
+
+验证：根为 $z = \frac{1.5 \pm \sqrt{2.25 - 2.8}}{2} = 0.75 \pm j0.233$，$|z| = \sqrt{0.75^2 + 0.233^2} = \sqrt{0.618} = 0.786 < 1$ ✓
+
+## w 变换与 Routh 判据
+
+### 原理
+
+双线性变换（w 变换）：
+
+$$z = \frac{w + 1}{w - 1} \quad \Longleftrightarrow \quad w = \frac{z + 1}{z - 1}$$
+
+这个变换把 **z 平面单位圆内** 映射到 **w 平面左半平面**：
+
+| z 平面 | w 平面 |
+|--------|--------|
+| $|z| < 1$（稳定域） | $\text{Re}(w) < 0$（左半平面） |
+| $|z| = 1$（临界稳定） | $\text{Re}(w) = 0$（虚轴） |
+| $|z| > 1$（不稳定） | $\text{Re}(w) > 0$（右半平面） |
+
+这样就把离散稳定性问题转化为连续稳定性问题，可以直接用 **Routh 判据**。
+
+### 操作步骤
+
+1. 把特征方程 $D(z) = 0$ 中的 $z$ 替换为 $\frac{w+1}{w-1}$
+2. 通分化简，得到 $D'(w) = 0$
+3. 对 $D'(w)$ 用 Routh 判据
+4. Routh 表第一列全正 → 稳定
+
+### 示例
+
+**二阶系统**：$D(z) = z^2 - 1.5z + 0.7 = 0$
+
+代入 $z = \frac{w+1}{w-1}$：
+
+$$\left(\frac{w+1}{w-1}\right)^2 - 1.5\frac{w+1}{w-1} + 0.7 = 0$$
+
+乘以 $(w-1)^2$：
+
+$$(w+1)^2 - 1.5(w+1)(w-1) + 0.7(w-1)^2 = 0$$
+
+展开：
+
+$$(w^2 + 2w + 1) - 1.5(w^2 - 1) + 0.7(w^2 - 2w + 1) = 0$$
+
+$$w^2 + 2w + 1 - 1.5w^2 + 1.5 + 0.7w^2 - 1.4w + 0.7 = 0$$
+
+$$0.2w^2 + 0.6w + 3.2 = 0$$
+
+Routh 表：
+
+| $w^2$ | 0.2 | 3.2 |
+|-------|-----|-----|
+| $w^1$ | 0.6 | 0 |
+| $w^0$ | 3.2 | |
+
+第一列：$0.2, 0.6, 3.2$，全正 → **稳定** ✓（与 Jury 判据结论一致）
+
+### w 变换 vs Jury 判据
+
+| 方法 | 优点 | 缺点 |
+|------|------|------|
+| Jury 判据 | 纯代数运算，可编程 | 高阶时计算量大，公式复杂 |
+| w 变换 + Routh | 利用熟悉的 Routh 判据 | 需要代数替换和化简 |
+| 直接求根 | 最直观，计算机轻松 | 无法给出参数范围的解析表达式 |
+
+> 💡 **工程实践**：现代控制软件（MATLAB、Python）直接求特征根。Jury 判据和 w 变换主要用于理论分析（比如求使系统稳定的参数范围）。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== Jury 判据与 w 变换演示 =====
+def jury_test_2nd(a0, a1, a2):
+    """二阶 Jury 判据: P(z) = a0*z^2 + a1*z + a2"""
+    p1 = a0 + a1 + a2  # P(1)
+    p2 = a0 - a1 + a2  # P(-1)
+    cond3 = abs(a2) < a0
+    stable = (p1 > 0) and (p2 > 0) and cond3
+    return stable, p1, p2, cond3
+
+def w_transform_routh(a0, a1, a2):
+    """w 变换 + Routh 判据 (二阶)"""
+    b0 = a0 + a1 + a2   # w^2 系数
+    b1 = 2*a0 - 2*a2     # w^1 系数
+    b2 = a0 - a1 + a2    # w^0 系数
+    stable = (b0 > 0) and (b1 > 0) and (b2 > 0)
+    return stable, b0, b1, b2
+
+# 测试不同多项式
+print("=== Jury 判据与 w 变换对比 ===")
+test_cases = [
+    (1, -1.5, 0.7, "z² - 1.5z + 0.7"),
+    (1, -2.0, 0.9, "z² - 2.0z + 0.9"),
+    (1, -2.1, 0.9, "z² - 2.1z + 0.9 (不稳定)"),
+    (1, 0.5, 0.5, "z² + 0.5z + 0.5"),
+]
+
+print(f"\\n{'多项式':<30} {'Jury':<10} {'w-Routh':<10} {'直接求根':<10}")
+print("-" * 60)
+for a0, a1, a2, name in test_cases:
+    s_jury, _, _, _ = jury_test_2nd(a0, a1, a2)
+    s_w, _, _, _ = w_transform_routh(a0, a1, a2)
+    roots = np.roots([a0, a1, a2])
+    s_root = np.all(np.abs(roots) < 1)
+    print(f"{name:<30} {'稳定' if s_jury else '不稳定':<10} {'稳定' if s_w else '不稳定':<10} {'稳定' if s_root else '不稳定':<10}")
+    print(f"  根: {roots[0]:.4f}, {roots[1]:.4f}, |z| = {np.abs(roots[0]):.4f}, {np.abs(roots[1]):.4f}")
+
+# 可视化: 参数空间稳定性边界
+fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+
+a1_range = np.linspace(-3, 3, 300)
+a2_range = np.linspace(-1.5, 1.5, 300)
+A1, A2 = np.meshgrid(a1_range, a2_range)
+STABLE = np.zeros_like(A1)
+
+for i in range(len(a1_range)):
+    for j in range(len(a2_range)):
+        s, _, _, _ = jury_test_2nd(1, A1[j,i], A2[j,i])
+        STABLE[j,i] = s
+
+contour = ax.contourf(A1, A2, STABLE, levels=[0, 0.5, 1], colors=['#ff6b6b', '#51cf66'], alpha=0.6)
+ax.contour(A1, A2, STABLE, levels=[0.5], colors='black', linewidths=2)
+
+for a0, a1, a2, name in test_cases:
+    color = 'blue' if jury_test_2nd(a0, a1, a2)[0] else 'red'
+    ax.plot(a1, a2, 'o', color=color, markersize=10, markeredgecolor='black')
+    ax.annotate(name[:15], (a1, a2), textcoords="offset points", xytext=(10, 5), fontsize=8)
+
+ax.set_xlabel('a₁ (z 系数)', fontsize=12)
+ax.set_ylabel('a₂ (常数项)', fontsize=12)
+ax.set_title('二阶多项式 P(z) = z² + a₁z + a₂ 的稳定域\\n(绿色=稳定, 红色=不稳定)', fontsize=14)
+ax.grid(True, alpha=0.3)
+ax.set_xlim(-3, 3); ax.set_ylim(-1.5, 1.5)
+
+ax.axhline(y=1, color='black', linestyle='--', alpha=0.5, label='|a₂| = 1')
+ax.axhline(y=-1, color='black', linestyle='--', alpha=0.5)
+ax.plot([-2, 2], [2, 0], 'k--', alpha=0.5)
+ax.plot([-2, 2], [-2, 0], 'k--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## 采样周期对稳定性的影响
+
+### 核心问题
+
+连续系统稳定的控制器，离散化后**不一定稳定**。采样周期 $T_s$ 是关键参数。
+
+**直觉**：采样越慢，信息丢失越多，相位延迟越大，系统越接近不稳定。
+
+### 定量分析
+
+考虑开环传递函数 $L(s) = K \cdot G(s)$，离散化后 $L(z) = K \cdot G(z)$。
+
+ZOH 等效离散化引入的相位延迟：
+
+$$\angle G_{ZOH}(j\omega) = \angle G(j\omega) - \frac{\omega T_s}{2}$$
+
+在增益穿越频率 $\omega_{gc}$ 处，相位裕度：
+
+$$PM_d = PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180°}{\pi}$$
+
+其中 $PM_c$ 是连续系统的相位裕度，$PM_d$ 是离散系统的相位裕度。
+
+**稳定性条件**：$PM_d > 0$，即
+
+$$T_s < \frac{2 \cdot PM_c}{\omega_{gc}} \times \frac{\pi}{180°}$$
+
+### 示例：采样周期导致不稳定
+
+**连续系统**：$G(s) = \frac{1}{s(s+1)}$，PI 控制器 $K(s) = 2 + \frac{1}{s}$
+
+开环：$L(s) = \frac{2s + 1}{s} \cdot \frac{1}{s(s+1)} = \frac{2s+1}{s^2(s+1)}$
+
+连续系统相位裕度 $PM_c \approx 50°$，$\omega_{gc} \approx 1.5$ rad/s。
+
+**最大允许采样周期**：
+
+$$T_s < \frac{2 \times 50}{1.5} \times \frac{\pi}{180} = \frac{100}{1.5} \times 0.0175 = 1.17 \text{ s}$$
+
+如果 $T_s = 2$ s（超过临界值），离散化后相位裕度变为负值，系统不稳定。
+
+### 根轨迹视角
+
+在 z 域根轨迹中，随着增益 $K$ 增大，闭环极点从开环极点出发，向开环零点移动。当极点穿过单位圆时，系统变得不稳定。
+
+**采样周期的影响**：$T_s$ 增大时，ZOH 等效离散对象 $G(z)$ 的零极点位置变化，根轨迹形状改变。通常 $T_s$ 越大，根轨迹越早穿过单位圆，稳定范围越小。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 采样周期对稳定性的影响 =====
+# 连续对象
+G = ctrl.tf([1], [1, 1, 0])  # 1/(s² + s)
+
+# PI 控制器
+Kp, Ki = 2.0, 1.0
+K_cont = ctrl.tf([Kp, Ki], [1, 0])
+
+# 不同采样周期
+Ts_values = [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# 左上图: 阶跃响应对比
+ax = axes[0, 0]
+t = np.linspace(0, 20, 2000)
+
+L_cont = G * K_cont
+T_cont = ctrl.feedback(L_cont, 1)
+t_c, y_c = ctrl.step_response(T_cont, T=t)
+ax.plot(t_c, y_c, 'k-', linewidth=2.5, alpha=0.5, label='连续')
+
+colors = plt.cm.viridis(np.linspace(0, 1, len(Ts_values)))
+for i, Ts in enumerate(Ts_values):
+    Gz = ctrl.c2d(G, Ts, method='zoh')
+    Kz = ctrl.c2d(K_cont, Ts, method='tustin')
+    Tz = ctrl.feedback(Gz * Kz, 1)
+    t_i, y_i = ctrl.step_response(Tz, T=t)
+    
+    poles = ctrl.pole(Tz)
+    max_pole = np.max(np.abs(poles))
+    label = f'Ts = {Ts}s (max|p|={max_pole:.3f})'
+    
+    if max_pole < 1:
+        ax.plot(t_i, y_i, color=colors[i], linewidth=1.5, label=label)
+    else:
+        ax.plot(t_i[:500], y_i[:500], color=colors[i], linewidth=1.5, 
+                linestyle='--', label=f'{label} 不稳定')
+
+ax.set_xlabel('时间 (s)'); ax.set_ylabel('输出')
+ax.set_title('不同采样周期的闭环阶跃响应')
+ax.legend(fontsize=8, loc='upper right'); ax.grid(True, alpha=0.3)
+ax.set_ylim(-1, 3)
+
+# 右上图: 相位裕度 vs 采样周期
+ax = axes[0, 1]
+Ts_sweep = np.linspace(0.01, 3, 100)
+pm_values = []
+
+for Ts_i in Ts_sweep:
+    Gz_i = ctrl.c2d(G, Ts_i, method='zoh')
+    Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')
+    Lz_i = Gz_i * Kz_i
+    
+    omega = np.logspace(-2, 2, 1000)
+    mag, phase, w = ctrl.frequency_response(Lz_i, omega)
+    mag = np.abs(mag.flatten())
+    phase_deg = np.degrees(phase.flatten())
+    
+    idx_gc = np.where(mag <= 1)[0]
+    if len(idx_gc) > 0:
+        wgc = w[idx_gc[0]]
+        pm = 180 + phase_deg[idx_gc[0]]
+        pm_values.append(pm)
+    else:
+        pm_values.append(np.nan)
+
+ax.plot(Ts_sweep, pm_values, 'b-', linewidth=2)
+ax.axhline(y=0, color='r', linestyle='--', linewidth=2, label='PM = 0° (稳定边界)')
+ax.axhline(y=45, color='g', linestyle=':', alpha=0.5, label='PM = 45° (推荐最小值)')
+ax.set_xlabel('采样周期 Ts (s)'); ax.set_ylabel('相位裕度 (°)')
+ax.set_title('相位裕度 vs 采样周期')
+ax.legend(); ax.grid(True, alpha=0.3); ax.set_ylim(-60, 100)
+
+# 左下图: 极点轨迹 vs 采样周期
+ax = axes[1, 0]
+theta = np.linspace(0, 2*np.pi, 100)
+ax.plot(np.cos(theta), np.sin(theta), 'k--', alpha=0.3, label='单位圆')
+
+Ts_poles = np.linspace(0.01, 3, 50)
+for Ts_i in Ts_poles:
+    Gz_i = ctrl.c2d(G, Ts_i, method='zoh')
+    Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')
+    Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+    poles = ctrl.pole(Tz_i)
+    
+    color = 'green' if np.all(np.abs(poles) < 1) else 'red'
+    ax.plot(np.real(poles), np.imag(poles), 'o', color=color, markersize=4, alpha=0.6)
+
+ax.set_xlabel('Re(z)'); ax.set_ylabel('Im(z)')
+ax.set_title('闭环极点轨迹 (绿=稳定, 红=不稳定)')
+ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
+ax.legend(); ax.set_xlim(-2, 2); ax.set_ylim(-2, 2)
+
+# 右下图: 理论 vs 实际相位裕度
+ax = axes[1, 1]
+mag_c, phase_c, w_c = ctrl.frequency_response(G * K_cont, np.logspace(-2, 2, 1000))
+mag_c = np.abs(mag_c.flatten())
+phase_c_deg = np.degrees(phase_c.flatten())
+idx_gc_c = np.where(mag_c <= 1)[0]
+if len(idx_gc_c) > 0:
+    pm_cont = 180 + phase_c_deg[idx_gc_c[0]]
+    wgc_c = w_c[idx_gc_c[0]]
+else:
+    pm_cont = np.nan
+    wgc_c = np.nan
+
+Ts_pred = np.linspace(0.01, 3, 100)
+pm_pred = pm_cont - wgc_c * Ts_pred / 2 * 180 / np.pi
+
+ax.plot(Ts_pred, pm_pred, 'r--', linewidth=2, label=f'理论预测 (PMc={pm_cont:.1f}°)')
+ax.plot(Ts_sweep, pm_values, 'b-', linewidth=2, label='实际 (离散)')
+ax.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
+ax.set_xlabel('采样周期 Ts (s)'); ax.set_ylabel('相位裕度 (°)')
+ax.set_title('相位裕度: 理论预测 vs 实际')
+ax.legend(); ax.grid(True, alpha=0.3); ax.set_ylim(-60, 100)
+
+plt.tight_layout()
+plt.show()
+
+print(f"\\n连续系统: PM = {pm_cont:.1f}°, ωgc = {wgc_c:.2f} rad/s")
+print(f"理论最大 Ts (PM > 0): {pm_cont / (wgc_c / 2 * 180 / np.pi):.2f} s")`
+    },
+    {
+      code: `# ===== 临界稳定与极限环 =====
+G3 = ctrl.tf([1], [1, 3, 2, 0])  # 1/(s³ + 3s² + 2s) — 三阶系统
+K3 = 10.0  # 纯增益控制器
+
+# 找临界采样周期
+Ts_crit_range = np.linspace(0.1, 2, 50)
+marginal_Ts = []
+
+for Ts_i in Ts_crit_range:
+    Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')
+    Kz_i = ctrl.tf([K3], [1])
+    Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+    poles = ctrl.pole(Tz_i)
+    max_pole = np.max(np.abs(poles))
+    
+    if abs(max_pole - 1.0) < 0.05:
+        marginal_Ts.append(Ts_i)
+
+Ts_marginal = marginal_Ts[len(marginal_Ts)//2] if marginal_Ts else 0.5
+
+print(f"临界采样周期 (近似): Ts ≈ {Ts_marginal:.3f} s")
+
+# 三个场景: 稳定, 临界, 不稳定
+Ts_scenarios = [Ts_marginal * 0.5, Ts_marginal, Ts_marginal * 1.5]
+labels = ['稳定 (Ts < Ts_crit)', '临界稳定 (Ts ≈ Ts_crit)', '不稳定 (Ts > Ts_crit)']
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+for i, (Ts_i, label) in enumerate(zip(Ts_scenarios, labels)):
+    Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')
+    Kz_i = ctrl.tf([K3], [1])
+    Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+    
+    poles = ctrl.pole(Tz_i)
+    max_pole = np.max(np.abs(poles))
+    
+    t = np.linspace(0, 30, 3000)
+    t_step, y_step = ctrl.step_response(Tz_i, T=t)
+    
+    axes[i].plot(t_step, y_step, 'b-', linewidth=1.5)
+    axes[i].set_xlabel('时间 (s)'); axes[i].set_ylabel('输出')
+    axes[i].set_title(f'{label}\\nTs = {Ts_i:.3f}s, max|p| = {max_pole:.4f}')
+    axes[i].grid(True, alpha=0.3); axes[i].set_ylim(-5, 10)
+    
+    print(f"\\n{label}:")
+    print(f"  Ts = {Ts_i:.3f} s, max|p| = {max_pole:.4f} → {'稳定' if max_pole < 1 else '不稳定'}")
+
+plt.tight_layout()
+plt.show()
+
+# 极点分布图
+fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+theta = np.linspace(0, 2*np.pi, 100)
+ax.plot(np.cos(theta), np.sin(theta), 'k--', linewidth=2, label='单位圆')
+
+colors = ['green', 'orange', 'red']
+for Ts_i, color, label in zip(Ts_scenarios, colors, labels):
+    Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')
+    Kz_i = ctrl.tf([K3], [1])
+    Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+    poles = ctrl.pole(Tz_i)
+    ax.plot(np.real(poles), np.imag(poles), 'o', color=color, markersize=12,
+            markeredgecolor='black', label=f'{label[:10]}')
+
+ax.set_xlabel('Re(z)', fontsize=12); ax.set_ylabel('Im(z)', fontsize=12)
+ax.set_title('闭环极点分布', fontsize=14)
+ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
+ax.legend(); ax.set_xlim(-2, 2); ax.set_ylim(-2, 2)
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## 离散系统的稳定裕度
+
+### 增益裕度
+
+在相位穿越频率 $\omega_{pc}$（$\angle L(j\omega_{pc}) = -180°$）处：
+
+$$GM = \frac{1}{|L(e^{j\omega_{pc} T_s})|}$$
+
+用 dB 表示：$GM_{dB} = -20\log_{10}|L(e^{j\omega_{pc} T_s})|$
+
+### 相位裕度
+
+在增益穿越频率 $\omega_{gc}$（$|L(e^{j\omega_{gc} T_s})| = 1$）处：
+
+$$PM = 180° + \angle L(e^{j\omega_{gc} T_s})$$
+
+注意：离散系统的频率响应是 $L(e^{j\omega T_s})$，不是 $L(j\omega)$。
+
+### 计算方法
+
+1. **解析法**：代入 $z = e^{j\omega T_s}$，求幅值和相位
+2. **数值法**：用 MATLAB/Python 的 `margin` 函数（离散版本）
+3. **图形法**：在 z 域 Bode 图或 Nyquist 图上读取
+
+### 离散 vs 连续的裕度差异
+
+| 特性 | 连续系统 | 离散系统 |
+|------|---------|---------|
+| 额外相位延迟 | 无 | $-\omega T_s / 2$（ZOH） |
+| 相位裕度 | $PM_c$ | $PM_d \approx PM_c - \omega_{gc} T_s / 2$ |
+| 增益裕度 | $GM_c$ | 基本不变（低频特性） |
+| 高频行为 | 增益持续下降 | 在 Nyquist 频率处可能反弹 |
+
+> 💡 **设计准则**：为保证离散化后相位裕度足够，选择 $T_s$ 使得 $\omega_{gc} T_s < 0.3$（采样频率 > 20 倍带宽）。这样相位损失 < 8.6°。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 稳定裕度对比 (连续 vs 离散) =====
+# 对象: 二阶系统
+G2 = ctrl.tf([10], [1, 2, 10])  # 10/(s² + 2s + 10)
+
+# PID 控制器
+Kp2, Ki2, Kd2 = 5.0, 2.0, 0.5
+K_pid = ctrl.tf([Kd2, Kp2, Ki2], [1, 0])
+
+# 连续系统分析
+L_c2 = G2 * K_pid
+gm_c, pm_c, wgc_c, wpc_c = ctrl.margin(L_c2)
+print("=== 连续系统稳定裕度 ===")
+print(f"增益裕度: {20*np.log10(gm_c):.1f} dB @ ω = {wpc_c:.2f} rad/s")
+print(f"相位裕度: {pm_c:.1f}° @ ω = {wgc_c:.2f} rad/s")
+
+# 不同采样周期的离散系统
+Ts_test = [0.01, 0.05, 0.1, 0.2]
+print(f"\\n=== 离散系统稳定裕度 ===")
+print(f"{'Ts (s)':<10} {'GM (dB)':<12} {'PM (°)':<10} {'ΔPM (°)':<10} {'状态':<10}")
+print("-" * 55)
+
+for Ts_i in Ts_test:
+    Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')
+    Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')
+    Lz_i = Gz_i * Kz_i
+    
+    omega = np.logspace(-2, 2, 2000)
+    mag_i = np.abs(Lz_i(1j * omega))
+    phase_i = np.degrees(np.angle(Lz_i(1j * omega)))
+    
+    idx_gc = np.where(mag_i <= 1)[0]
+    if len(idx_gc) > 0:
+        wgc_d = omega[idx_gc[0]]
+        pm_d = 180 + phase_i[idx_gc[0]]
+    else:
+        wgc_d = np.nan
+        pm_d = np.nan
+    
+    idx_pc = np.where(phase_i <= -180)[0]
+    if len(idx_pc) > 0:
+        wpc_d = omega[idx_pc[0]]
+        gm_d = 1 / mag_i[idx_pc[0]]
+        gm_d_db = 20 * np.log10(gm_d)
+    else:
+        gm_d_db = np.inf
+    
+    delta_pm = pm_d - pm_c if not np.isnan(pm_d) else np.nan
+    
+    poles = ctrl.pole(ctrl.feedback(Lz_i, 1))
+    stable = "稳定" if np.all(np.abs(poles) < 1) else "不稳定"
+    
+    print(f"{Ts_i:<10.3f} {gm_d_db:<12.1f} {pm_d:<10.1f} {delta_pm:<10.1f} {stable:<10}")
+
+# Nyquist 图对比
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+ax = axes[0]
+omega_nyq = np.logspace(-2, 2, 1000)
+L_c_val = L_c2(1j * omega_nyq)
+ax.plot(np.real(L_c_val), np.imag(L_c_val), 'b-', linewidth=2, label='连续')
+
+for Ts_i, color in [(0.05, 'green'), (0.1, 'orange'), (0.2, 'red')]:
+    Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')
+    Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')
+    Lz_i = Gz_i * Kz_i
+    L_d_val = Lz_i(np.exp(1j * omega_nyq * Ts_i))
+    ax.plot(np.real(L_d_val), np.imag(L_d_val), '--', color=color, linewidth=1.5,
+            label=f'离散 Ts={Ts_i}s')
+
+theta = np.linspace(0, 2*np.pi, 100)
+ax.plot(np.cos(theta), np.sin(theta), 'k:', alpha=0.3)
+ax.plot([-1, -1], [-3, 3], 'r:', alpha=0.5, label='(-1, 0)')
+ax.set_xlabel('Re(L)'); ax.set_ylabel('Im(L)')
+ax.set_title('Nyquist 图: 连续 vs 离散')
+ax.legend(fontsize=8); ax.grid(True, alpha=0.3)
+ax.set_xlim(-3, 3); ax.set_ylim(-3, 3)
+
+# Bode 图对比
+ax = axes[1]
+mag_c2, phase_c2, w_c2 = ctrl.frequency_response(L_c2, omega_nyq)
+mag_c2 = np.abs(mag_c2.flatten())
+phase_c2 = np.degrees(phase_c2.flatten())
+
+ax.semilogx(w_c2, 20*np.log10(mag_c2), 'b-', linewidth=2, label='连续 |L|')
+ax.semilogx(w_c2, phase_c2, 'b--', linewidth=2, label='连续 ∠L')
+
+for Ts_i, color in [(0.05, 'green'), (0.1, 'orange'), (0.2, 'red')]:
+    Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')
+    Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')
+    Lz_i = Gz_i * Kz_i
+    mag_d = np.abs(Lz_i(1j * omega_nyq))
+    phase_d = np.degrees(np.angle(Lz_i(1j * omega_nyq)))
+    ax.semilogx(omega_nyq, 20*np.log10(mag_d), '-', color=color, alpha=0.7, linewidth=1)
+    ax.semilogx(omega_nyq, phase_d, '--', color=color, alpha=0.7, linewidth=1)
+
+ax.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
+ax.axhline(y=-180, color='red', linestyle=':', alpha=0.5, label='-180°')
+ax.set_xlabel('ω (rad/s)'); ax.set_ylabel('增益 (dB) / 相位 (°)')
+ax.set_title('Bode 图: 连续 vs 离散')
+ax.legend(fontsize=8); ax.grid(True, which='both', alpha=0.3)
+ax.set_ylim(-80, 60)
+
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 连续 vs 离散稳定性的本质区别
+
+连续系统的稳定域（左半平面）是**无界**的——极点可以离虚轴任意远。离散系统的稳定域（单位圆内）是**有界**的——极点被限制在有限区域内。
+
+这意味着：
+1. 离散系统天然"更脆弱"——参数变化更容易让极点跑出稳定域
+2. 采样周期越大，稳定域"有效面积"越小（ZOH 延迟吃掉相位裕度）
+3. 离散系统有"最高频率"（Nyquist 频率），连续系统没有
+
+### Schur-Cohn 判据
+
+除了 Jury 判据，还有 Schur-Cohn 判据——基于矩阵行列式判断多项式根是否在单位圆内。
+
+给定 $P(z) = a_0 z^n + a_1 z^{n-1} + \cdots + a_n$，构造 Schur-Cohn 矩阵：
+
+$$M = \begin{bmatrix} a_0 & a_1 & \cdots & a_{n-1} \\ a_n & a_{n-1} & \cdots & a_1 \\ \vdots & & \ddots & \vdots \\ a_1 & a_2 & \cdots & a_n \end{bmatrix}$$
+
+$P(z)$ 的所有根在单位圆内 ⟺ $M$ 的所有顺序主子式满足特定符号条件。
+
+Schur-Cohn 判据在理论上更优雅，但计算量比 Jury 判据大。现代软件都用直接求根。
+
+### 结构稳定性与鲁棒稳定性
+
+本课讨论的是**结构稳定性**（给定参数，系统是否稳定）。实际系统中参数有不确定性，需要**鲁棒稳定性**分析。
+
+离散系统的鲁棒稳定性可以用：
+1. **小增益定理**（离散版本）：$\|L(z)\|_\infty < 1$
+2. **μ 分析**（离散版本）：考虑结构化不确定性
+3. **Kharitonov 定理**（离散版本）：区间多项式的鲁棒稳定性
+
+> 💡 离散鲁棒稳定性分析与连续版本的理论框架相同，只是稳定域从左半平面变成单位圆。详见 [鲁棒稳定性分析](/robust/robust-stability)。
+
+### 非线性系统的离散稳定性
+
+对于非线性离散系统 $x[k+1] = f(x[k])$，Lyapunov 稳定性理论同样适用：
+
+**离散 Lyapunov 定理**：如果存在正定函数 $V(x)$ 使得 $V(f(x)) - V(x) < 0$，则原点渐近稳定。
+
+与连续版本的区别：连续看 $\dot{V}(x) < 0$，离散看 $\Delta V(x) = V(x[k+1]) - V(x[k]) < 0$。
+
+离散 Lyapunov 方程（线性系统 $x[k+1] = Ax[k]$）：
+
+$$A^T P A - P = -Q$$
+
+其中 $Q > 0$，解 $P > 0$ ⟺ $A$ 的所有特征值在单位圆内。
+
+## 小结
+
+1. **离散系统稳定性条件**：所有极点在 z 平面单位圆内（$|z_i| < 1$）
+2. **Jury 判据**：直接从多项式系数判断，不需要求根。二阶简化公式：$P(1) > 0$，$P(-1) > 0$，$|a_2| < a_0$
+3. **w 变换 + Routh**：$z = \frac{w+1}{w-1}$ 把单位圆映射到左半平面，然后用 Routh 判据
+4. **采样周期的影响**：$T_s$ 越大，相位裕度越小，稳定范围越窄。经验法则：$\omega_{gc} T_s < 0.3$
+5. **离散稳定裕度**：增益裕度和相位裕度的定义与连续相同，但频率响应用 $L(e^{j\omega T_s})$ 计算
+6. **工程实践**：现代软件直接求特征根。Jury 和 w 变换主要用于理论分析（求参数范围）
+
+## 习题
+
+1. **Jury 判据应用**：判断以下特征多项式的稳定性：
+   (a) $P(z) = z^2 + 0.5z - 0.6$
+   (b) $P(z) = z^3 - 1.5z^2 + 0.8z - 0.1$
+
+2. **w 变换**：对 $P(z) = z^2 - 1.8z + 0.9$ 做 w 变换，用 Routh 判据判断稳定性。
+
+3. **采样周期选择**：连续系统 $G(s) = \frac{1}{s+1}$，PI 控制器 $K(s) = 2 + \frac{0.5}{s}$。如果要求离散化后相位裕度损失不超过 10°，求最大允许采样周期。
+
+4. **参数范围**：系统 $G(z) = \frac{K}{z - 0.5}$，单位反馈。用 Jury 判据求使闭环稳定的 $K$ 的范围。
+
+## 答案
+
+### 习题 1
+
+**(a)** $P(z) = z^2 + 0.5z - 0.6$
+
+Jury 条件（$a_0 = 1, a_1 = 0.5, a_2 = -0.6$）：
+- $P(1) = 1 + 0.5 - 0.6 = 0.9 > 0$ ✓
+- $P(-1) = 1 - 0.5 - 0.6 = -0.1 < 0$ ✗（需要 $(-1)^2 P(-1) > 0$，即 $P(-1) > 0$）
+
+**不稳定**。验证：根为 $z = \frac{-0.5 \pm \sqrt{0.25 + 2.4}}{2} = \frac{-0.5 \pm 1.628}{2}$，即 $z_1 = 0.564, z_2 = -1.064$。$|z_2| > 1$，确实不稳定。
+
+**(b)** $P(z) = z^3 - 1.5z^2 + 0.8z - 0.1$
+
+Jury 条件（$a_0 = 1, a_1 = -1.5, a_2 = 0.8, a_3 = -0.1$）：
+- $P(1) = 1 - 1.5 + 0.8 - 0.1 = 0.2 > 0$ ✓
+- $(-1)^3 P(-1) = -(−1 − 1.5 − 0.8 − 0.1) = 3.4 > 0$ ✓
+- $|a_3| = 0.1 < 1 = a_0$ ✓
+- $b_0 = a_0^2 - a_3^2 = 1 - 0.01 = 0.99$
+- $b_2 = a_0 a_2 - a_3 a_1 = 0.8 - (-0.1)(-1.5) = 0.8 - 0.15 = 0.65$
+- $|b_0| > |b_2|$：$0.99 > 0.65$ ✓
+
+所有条件满足 → **稳定**。
+
+### 习题 2
+
+$P(z) = z^2 - 1.8z + 0.9$
+
+代入 $z = \frac{w+1}{w-1}$：
+
+$$\left(\frac{w+1}{w-1}\right)^2 - 1.8\frac{w+1}{w-1} + 0.9 = 0$$
+
+乘以 $(w-1)^2$：
+
+$$(w+1)^2 - 1.8(w+1)(w-1) + 0.9(w-1)^2 = 0$$
+
+展开：
+
+$$(w^2 + 2w + 1) - 1.8(w^2 - 1) + 0.9(w^2 - 2w + 1) = 0$$
+
+$$w^2 + 2w + 1 - 1.8w^2 + 1.8 + 0.9w^2 - 1.8w + 0.9 = 0$$
+
+$$0.1w^2 + 0.2w + 3.7 = 0$$
+
+Routh 表：
+
+| $w^2$ | 0.1 | 3.7 |
+|-------|-----|-----|
+| $w^1$ | 0.2 | 0 |
+| $w^0$ | 3.7 | |
+
+第一列：$0.1, 0.2, 3.7$，全正 → **稳定**。
+
+验证：根为 $z = \frac{1.8 \pm \sqrt{3.24 - 3.6}}{2} = 0.9 \pm j0.3$，$|z| = \sqrt{0.81 + 0.09} = \sqrt{0.9} = 0.949 < 1$ ✓
+
+### 习题 3
+
+连续系统：$L(s) = \left(2 + \frac{0.5}{s}\right) \frac{1}{s+1} = \frac{2s + 0.5}{s(s+1)}$
+
+求增益穿越频率 $\omega_{gc}$：
+
+$$|L(j\omega_{gc})| = 1$$
+
+$$\left|\frac{2j\omega_{gc} + 0.5}{j\omega_{gc}(j\omega_{gc} + 1)}\right| = 1$$
+
+$$\frac{\sqrt{4\omega_{gc}^2 + 0.25}}{\omega_{gc}\sqrt{\omega_{gc}^2 + 1}} = 1$$
+
+数值求解得 $\omega_{gc} \approx 0.64$ rad/s。
+
+连续系统相位裕度：
+
+$$\angle L(j\omega_{gc}) = \arctan\left(\frac{2\omega_{gc}}{0.5}\right) - 90° - \arctan(\omega_{gc})$$
+
+$$= \arctan(2.56) - 90° - \arctan(0.64) = 68.7° - 90° - 32.6° = -53.9°$$
+
+$$PM_c = 180° - 53.9° = 126.1°$$
+
+要求相位裕度损失 $\leq 10°$：
+
+$$\frac{\omega_{gc} T_s}{2} \times \frac{180°}{\pi} \leq 10°$$
+
+$$T_s \leq \frac{20° \times \pi}{\omega_{gc} \times 180°} = \frac{20 \times 3.1416}{0.64 \times 180} = 0.546 \text{ s}$$
+
+**最大允许采样周期**：$T_s \approx 0.55$ s。
+
+### 习题 4
+
+开环 $L(z) = \frac{K}{z - 0.5}$，单位反馈。
+
+闭环特征方程：
+
+$$1 + \frac{K}{z - 0.5} = 0 \implies z - 0.5 + K = 0 \implies z = 0.5 - K$$
+
+稳定性条件：$|z| < 1$
+
+$$|0.5 - K| < 1$$
+
+$$-1 < 0.5 - K < 1$$
+
+$$-0.5 < K < 1.5$$
+
+**使闭环稳定的 $K$ 范围**：$-0.5 < K < 1.5$。
+
+验证：
+- $K = 0$：$z = 0.5$，$|z| = 0.5 < 1$ ✓
+- $K = 1$：$z = -0.5$，$|z| = 0.5 < 1$ ✓
+- $K = 1.5$：$z = -1$，临界稳定
+- $K = 2$：$z = -1.5$，$|z| = 1.5 > 1$，不稳定 ✓

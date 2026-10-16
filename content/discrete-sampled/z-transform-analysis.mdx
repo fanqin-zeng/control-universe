@@ -1,0 +1,796 @@
+---
+title: Z变换基础
+description: 离散时间系统的数学工具——Z变换定义、常用变换对、基本性质、逆Z变换、脉冲传递函数，以及连续系统到离散系统的转换方法。
+---
+
+# Z变换基础
+
+上一节我们建立了从连续到离散的桥梁：采样把连续信号变成离散序列，量化把模拟值变成数字值。现在我们有了离散信号 $x[k]$，需要一套数学工具来分析和设计离散系统。
+
+**Z 变换之于离散系统，正如拉普拉斯变换之于连续系统。**
+
+> 📖 本课是计算机控制的数学基础，需要 [采样与量化](/discrete-sampled/discrete-time-freq) 的前置知识，以及经典控制中拉普拉斯变换的基础。
+
+学完本节后，你应该能够：
+
+1. 计算常见信号的 Z 变换
+2. 用部分分式法求逆 Z 变换
+3. 理解 $z = e^{sT_s}$ 映射的几何意义
+4. 从连续传递函数 $G(s)$ 得到离散传递函数 $G(z)$
+5. 用差分方程实现数字控制器
+
+## Z 变换的定义
+
+### 从拉普拉斯到 Z
+
+回顾上一节，理想采样信号的拉普拉斯变换：
+
+$$X^*(s) = \sum_{k=0}^{\infty} x(kT_s) e^{-skT_s}$$
+
+其中 $x(kT_s)$ 是采样时刻的信号值，$T_s$ 是采样周期。
+
+令 $z = e^{sT_s}$，则 $z^{-k} = e^{-skT_s}$，代入得到：
+
+$$X(z) = \sum_{k=0}^{\infty} x[k] z^{-k}$$
+
+这就是**（单边）Z 变换**，记为 $X(z) = \mathcal{Z}\{x[k]\}$。
+
+> 💡 **物理意义**：$z^{-1}$ 代表"延迟一个采样周期"。如果 $x[k]$ 是当前值，$z^{-1}x[k] = x[k-1]$ 是上一个采样时刻的值。Z 变换把离散序列变成 $z^{-1}$ 的幂级数。
+
+### 收敛域
+
+Z 变换是一个无穷级数，只在某些 $z$ 值下收敛。对于因果信号（$k < 0$ 时 $x[k] = 0$），收敛域通常是 $|z| > R$（某个圆的外部）。
+
+例如，单位阶跃 $1[k]$ 的 Z 变换：
+
+$$\mathcal{Z}\{1[k]\} = \sum_{k=0}^{\infty} z^{-k} = \frac{1}{1 - z^{-1}} = \frac{z}{z-1}, \quad |z| > 1$$
+
+收敛条件 $|z| > 1$ 来自几何级数求和公式。
+
+## 常用变换对
+
+控制工程中常用的信号及其 Z 变换：
+
+| 时域 $x[k]$ | 描述 | Z 域 $X(z)$ |
+|-------------|------|-------------|
+| $\delta[k]$ | 单位脉冲（$k=0$ 时为 1，其余为 0） | $1$ |
+| $1[k]$ | 单位阶跃 | $\dfrac{z}{z-1}$ |
+| $k$ | 单位斜坡 | $\dfrac{Tz}{(z-1)^2}$ |
+| $k^2$ | 抛物线 | $\dfrac{T^2 z(z+1)}{2(z-1)^3}$ |
+| $a^k$ | 指数序列 | $\dfrac{z}{z-a}$ |
+| $e^{-akT}$ | 衰减指数 | $\dfrac{z}{z-e^{-aT}}$ |
+| $\sin(k\omega T)$ | 正弦 | $\dfrac{z\sin(\omega T)}{z^2 - 2z\cos(\omega T) + 1}$ |
+| $\cos(k\omega T)$ | 余弦 | $\dfrac{z^2 - z\cos(\omega T)}{z^2 - 2z\cos(\omega T) + 1}$ |
+
+> 📐 表中 $T$ 为采样周期 $T_s$。为简洁，后续省略下标 $s$。
+
+**推导示例**：指数序列 $x[k] = a^k$
+
+$$X(z) = \sum_{k=0}^{\infty} a^k z^{-k} = \sum_{k=0}^{\infty} \left(\frac{a}{z}\right)^k = \frac{1}{1 - a/z} = \frac{z}{z-a}, \quad |z| > |a|$$
+
+这是几何级数求和，条件 $|a/z| < 1$ 即 $|z| > |a|$。
+
+## Z 变换的性质
+
+### 线性
+
+$$\mathcal{Z}\{a x_1[k] + b x_2[k]\} = a X_1(z) + b X_2(z)$$
+
+### 延迟定理
+
+$$\mathcal{Z}\{x[k-n]\} = z^{-n} X(z) \quad (\text{零初始条件})$$
+
+**物理意义**：时域延迟 $n$ 步 = 频域乘以 $z^{-n}$。这是 Z 变换最核心的性质——差分方程中的延迟项直接对应 $z^{-1}$ 的多项式。
+
+### 超前定理
+
+$$\mathcal{Z}\{x[k+1]\} = z X(z) - z x[0]$$
+
+$$\mathcal{Z}\{x[k+n]\} = z^n X(z) - z^n x[0] - z^{n-1} x[1] - \cdots - z x[n-1]$$
+
+### 终值定理
+
+$$\lim_{k \to \infty} x[k] = \lim_{z \to 1} (z-1) X(z)$$
+
+**条件**：$(z-1)X(z)$ 的所有极点在单位圆内（即 $x[k]$ 收敛）。
+
+**应用**：计算离散系统的稳态误差。
+
+### 初值定理
+
+$$x[0] = \lim_{z \to \infty} X(z)$$
+
+## 逆 Z 变换
+
+已知 $X(z)$，求 $x[k]$ 的过程称为逆 Z 变换，记为 $x[k] = \mathcal{Z}^{-1}\{X(z)\}$。
+
+### 部分分式法
+
+最常用的方法。步骤：
+
+1. 将 $X(z)$ 写成有理分式 $\frac{N(z)}{D(z)}$
+2. 展开为部分分式
+3. 逐项查表反变换
+
+**示例**：$X(z) = \frac{z}{(z-1)(z-0.5)}$
+
+**步骤 1**：展开为部分分式
+
+$$\frac{X(z)}{z} = \frac{1}{(z-1)(z-0.5)} = \frac{A}{z-1} + \frac{B}{z-0.5}$$
+
+**步骤 2**：求系数
+
+$$A = \lim_{z \to 1} (z-1) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{1-0.5} = 2$$
+
+$$B = \lim_{z \to 0.5} (z-0.5) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{0.5-1} = -2$$
+
+**步骤 3**：反变换
+
+$$X(z) = \frac{2z}{z-1} - \frac{2z}{z-0.5}$$
+
+查表：$\frac{z}{z-1} \leftrightarrow 1[k]$，$\frac{z}{z-0.5} \leftrightarrow 0.5^k$
+
+$$x[k] = 2 - 2 \cdot 0.5^k = 2(1 - 0.5^k), \quad k \geq 0$$
+
+**验证**：$x[0] = 2(1-1) = 0$，$x[1] = 2(1-0.5) = 1$，$x[2] = 2(1-0.25) = 1.5$，$\lim_{k \to \infty} x[k] = 2$。
+
+用终值定理验证：$\lim_{z \to 1} (z-1)X(z) = \lim_{z \to 1} \frac{z}{z-0.5} = \frac{1}{0.5} = 2$ ✓
+
+## $z$ 平面与 $s$ 平面的映射
+
+### $z = e^{sT_s}$ 的几何意义
+
+设 $s = \sigma + j\omega$，则：
+
+$$z = e^{(\sigma + j\omega)T_s} = e^{\sigma T_s} \cdot e^{j\omega T_s}$$
+
+- **幅值**：$|z| = e^{\sigma T_s}$
+- **相角**：$\angle z = \omega T_s$
+
+关键映射关系：
+
+| $s$ 平面 | $z$ 平面 | 物理意义 |
+|----------|----------|----------|
+| $\sigma < 0$（左半平面） | $|z| < 1$（单位圆内） | 稳定区域 |
+| $\sigma = 0$（虚轴） | $|z| = 1$（单位圆） | 临界稳定 |
+| $\sigma > 0$（右半平面） | $|z| > 1$（单位圆外） | 不稳定区域 |
+| $\omega = 0$（实轴） | $\angle z = 0$（正实轴） | 非振荡 |
+| $\omega = \omega_s/2$（Nyquist 频率） | $\angle z = \pi$（负实轴） | 最高可表示频率 |
+
+```
+s 平面                    z 平面
+  jω                        Im
+   ↑                         ↑
+   |   × (不稳定)            |   × (不稳定, |z|>1)
+   |                         |
+---+---→ σ            -------+-------→ Re
+   |                         |   ○ 单位圆
+   |   × (稳定)              |   × (稳定, |z|<1)
+   |                         |
+```
+
+> 💡 **核心结论**：离散系统的稳定性由极点在 $z$ 平面的位置决定——**所有极点必须在单位圆内**。这与连续系统"极点在 $s$ 左半平面"完全对应。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== s→z 平面映射可视化 =====
+Ts = 0.1  # 采样周期
+
+fig, (ax_s, ax_z) = plt.subplots(1, 2, figsize=(14, 6))
+
+# s 平面
+ax_s.axhline(y=0, color='k', linewidth=0.5)
+ax_s.axvline(x=0, color='k', linewidth=0.5)
+ax_s.fill_betweenx([-4, 4], -4, 0, alpha=0.1, color='green', label='稳定域 (Re<0)')
+ax_s.fill_betweenx([-4, 4], 0, 4, alpha=0.1, color='red', label='不稳定域 (Re>0)')
+
+# z 平面
+theta = np.linspace(0, 2*np.pi, 200)
+ax_z.plot(np.cos(theta), np.sin(theta), 'k-', linewidth=1.5)
+ax_z.axhline(y=0, color='k', linewidth=0.5)
+ax_z.axvline(x=0, color='k', linewidth=0.5)
+ax_z.fill(np.cos(theta), np.sin(theta), alpha=0.1, color='green', label='稳定域 (|z|<1)')
+
+# 映射5个特征点
+s_points = [
+    -1 + 0j,       # 稳定实极点
+    -0.5 + 2j,     # 稳定复数极点
+    0 + 2j,        # 虚轴（临界稳定）
+    0.5 + 0j,      # 不稳定实极点
+    -2 + 0j,       # 快速稳定极点
+]
+labels = ['$s=-1$', '$s=-0.5+2j$', '$s=2j$', '$s=0.5$', '$s=-2$']
+colors = ['blue', 'purple', 'orange', 'red', 'green']
+
+for s, label, color in zip(s_points, labels, colors):
+    z = np.exp(s * Ts)
+    ax_s.plot(np.real(s), np.imag(s), 'o', color=color, markersize=10, markeredgecolor='black')
+    ax_s.annotate(label, (np.real(s), np.imag(s)), textcoords="offset points",
+                  xytext=(8, 8), fontsize=9, color=color)
+    ax_z.plot(np.real(z), np.imag(z), 'o', color=color, markersize=10, markeredgecolor='black')
+    ax_z.annotate(f'$z={np.real(z):.2f}{"+" if np.imag(z)>=0 else ""}{np.imag(z):.2f}j$',
+                  (np.real(z), np.imag(z)), textcoords="offset points",
+                  xytext=(8, 8), fontsize=8, color=color)
+
+# 画虚轴和 imaginary axis mapping
+omega_line = np.linspace(-3, 3, 200)
+ax_s.plot(np.zeros_like(omega_line), omega_line, 'b--', alpha=0.5, linewidth=1.5, label='虚轴 jω')
+z_circle = np.exp(1j * omega_line * Ts)
+ax_z.plot(np.real(z_circle), np.imag(z_circle), 'b--', alpha=0.5, linewidth=1.5, label='单位圆 (jω→e^jωTs)')
+
+# 等频率线（s平面水平线 → z平面射线）
+for omega_val in [1, 2, 3]:
+    sigma_line = np.linspace(-3, 0, 50)
+    s_line = sigma_line + 1j * omega_val
+    z_line = np.exp(s_line * Ts)
+    ax_s.plot(sigma_line, [omega_val]*len(sigma_line), ':', color='gray', alpha=0.4)
+    ax_z.plot(np.real(z_line), np.imag(z_line), ':', color='gray', alpha=0.4)
+
+ax_s.set_xlabel('Re(s) = σ', fontsize=12)
+ax_s.set_ylabel('Im(s) = jω', fontsize=12)
+ax_s.set_title('s 平面', fontsize=14)
+ax_s.set_xlim(-4, 4)
+ax_s.set_ylim(-4, 4)
+ax_s.legend(fontsize=8, loc='upper right')
+ax_s.grid(True, alpha=0.3)
+ax_s.set_aspect('equal')
+
+ax_z.set_xlabel('Re(z)', fontsize=12)
+ax_z.set_ylabel('Im(z)', fontsize=12)
+ax_z.set_title('z 平面', fontsize=14)
+ax_z.set_xlim(-1.5, 1.5)
+ax_z.set_ylim(-1.5, 1.5)
+ax_z.legend(fontsize=8, loc='upper right')
+ax_z.grid(True, alpha=0.3)
+ax_z.set_aspect('equal')
+
+plt.suptitle(f's→z 映射 ($z = e^{{sT_s}}$, $T_s$ = {Ts}s)', fontsize=14, y=1.02)
+plt.tight_layout()
+plt.show()`
+    },
+    {
+      code: `# ===== 极点位置与脉冲响应 =====
+Ts = 0.1
+
+# 5种典型极点配置
+poles_config = [
+    (0.8, 0, "z=0.8 (缓慢衰减)"),
+    (0.2, 0, "z=0.2 (快速衰减)"),
+    (-0.6, 0, "z=-0.6 (交替振荡)"),
+    (0.7, 0.5, "z=0.7+0.5j (振荡衰减)"),
+    (1.0, 0, "z=1.0 (积分器/临界稳定)"),
+]
+
+fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+
+# 左: z平面极点分布
+ax = axes[0, 0]
+theta = np.linspace(0, 2*np.pi, 200)
+ax.plot(np.cos(theta), np.sin(theta), 'k-', linewidth=1.5)
+colors = ['blue', 'green', 'red', 'purple', 'orange']
+for i, (re, im, label) in enumerate(poles_config):
+    ax.plot(re, im, 'o', color=colors[i], markersize=14, markeredgecolor='black', zorder=5)
+    ax.annotate(label, (re, im), textcoords="offset points", xytext=(10, 10),
+                fontsize=8, color=colors[i])
+    if im != 0:  # 共轭极点
+        ax.plot(re, -im, 'o', color=colors[i], markersize=14, markeredgecolor='black', zorder=5)
+
+ax.set_xlabel('Re(z)')
+ax.set_ylabel('Im(z)')
+ax.set_title('z 平面极点分布')
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
+ax.set_aspect('equal')
+ax.grid(True, alpha=0.3)
+ax.axhline(y=0, color='k', linewidth=0.5)
+ax.axvline(x=0, color='k', linewidth=0.5)
+
+# 右: 各极点的脉冲响应
+n_samples = 50
+t_samples = np.arange(n_samples) * Ts
+
+for i, (re, im, label) in enumerate(poles_config):
+    row = i // 3
+    col = i % 3
+    if row >= 2:
+        break
+    ax = axes[row, col + 1] if col < 2 else axes[1, 0]
+    
+    if im == 0:
+        # 实极点: h[k] = p^k
+        h = re ** t_samples / Ts
+    else:
+        # 复极点: 需要共轭对
+        p = re + 1j * im
+        p_conj = re - 1j * im
+        h = (p ** (t_samples / Ts) + p_conj ** (t_samples / Ts)) / 2 / Ts
+    
+    markerline, stemlines, baseline = ax.stem(t_samples, h, linefmt=colors[i]+'-', 
+                                                markerfmt=colors[i]+'o', basefmt='k-')
+    plt.setp(stemlines, linewidth=1.5)
+    plt.setp(markerline, markersize=4)
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('h[k]')
+    ax.set_title(label)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(-0.05, n_samples * Ts + 0.05)
+
+# 最后一个子图: 极点z=1的脉冲响应（积分器）
+ax = axes[1, 1]
+h_int = np.ones(n_samples) / Ts
+markerline, stemlines, baseline = ax.stem(t_samples, h_int, linefmt='orange-',
+                                            markerfmt='orange o', basefmt='k-')
+plt.setp(stemlines, linewidth=1.5)
+plt.setp(markerline, markersize=4)
+ax.set_xlabel('t (s)')
+ax.set_ylabel('h[k]')
+ax.set_title('z=1.0 (积分器/临界稳定)')
+ax.grid(True, alpha=0.3)
+ax.set_xlim(-0.05, n_samples * Ts + 0.05)
+
+# 隐藏多余子图
+axes[1, 2].axis('off')
+
+plt.suptitle('极点位置决定脉冲响应形态', fontsize=14, y=1.02)
+plt.tight_layout()
+plt.show()`
+    }
+  ]}
+/>
+
+### 频率映射的周期性
+
+$z$ 平面上，角度 $\omega T_s$ 和 $\omega T_s + 2\pi$ 对应同一个点（因为 $e^{j(\omega T_s + 2\pi)} = e^{j\omega T_s}$）。
+
+这意味着：离散系统的频率响应是**周期的**，周期为 $\omega_s = 2\pi/T_s$。
+
+$$G(e^{j(\omega + \omega_s)T_s}) = G(e^{j\omega T_s})$$
+
+物理意义：频率 $\omega$ 和 $\omega + k\omega_s$ 在离散系统中不可区分——这就是上一节讲的**混叠**。
+
+## 脉冲传递函数
+
+### 定义
+
+离散系统的输入输出关系：
+
+$$Y(z) = G(z) U(z)$$
+
+$G(z)$ 称为**脉冲传递函数**（或离散传递函数），是连续传递函数 $G(s)$ 的离散等效。
+
+### 从 $G(s)$ 到 $G(z)$
+
+有两种主要方法：
+
+#### 方法 1：ZOH 等效（精确离散化）
+
+假设控制输入经过零阶保持器（ZOH），则：
+
+$$G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}$$
+
+**步骤**：
+1. 计算 $\frac{G(s)}{s}$ 的拉普拉斯逆变换 $g(t)$
+2. 采样得到 $g(kT_s)$
+3. 求 Z 变换 $G_0(z) = \mathcal{Z}\{g(kT_s)\}$
+4. $G(z) = (1 - z^{-1}) G_0(z)$
+
+**示例**：$G(s) = \frac{1}{s+a}$
+
+$$\frac{G(s)}{s} = \frac{1}{s(s+a)} = \frac{1/a}{s} - \frac{1/a}{s+a}$$
+
+反变换：$g(t) = \frac{1}{a}(1 - e^{-at})$
+
+采样：$g(kT) = \frac{1}{a}(1 - e^{-akT})$
+
+Z 变换：$G_0(z) = \frac{1}{a}\left(\frac{z}{z-1} - \frac{z}{z-e^{-aT}}\right) = \frac{1}{a} \cdot \frac{z(1-e^{-aT})}{(z-1)(z-e^{-aT})}$
+
+$$G(z) = (1-z^{-1}) G_0(z) = \frac{1-e^{-aT}}{z - e^{-aT}}$$
+
+#### 方法 2：Tustin 变换（双线性变换）
+
+用代数替换近似：
+
+$$s = \frac{2}{T} \cdot \frac{z-1}{z+1} \quad \Longleftrightarrow \quad z = \frac{1 + sT/2}{1 - sT/2}$$
+
+直接代入 $G(s)$ 得到 $G(z)$。
+
+**优点**：
+- 保持稳定性（$s$ 左半平面 → $z$ 单位圆内）
+- 低频频率响应准确
+- 计算简单
+
+**缺点**：
+- 高频有频率扭曲：$\omega_{\text{离散}} = \frac{2}{T}\tan\left(\frac{\omega T}{2}\right)$
+- 不是精确离散化
+
+**示例**：$G(s) = \frac{1}{s+1}$，$T = 0.1$ s
+
+$$s = \frac{2}{0.1} \cdot \frac{z-1}{z+1} = 20 \cdot \frac{z-1}{z+1}$$
+
+$$G(z) = \frac{1}{20 \cdot \frac{z-1}{z+1} + 1} = \frac{z+1}{20(z-1) + (z+1)} = \frac{z+1}{21z - 19}$$
+
+### 两种方法的对比
+
+| 特性 | ZOH 等效 | Tustin 变换 |
+|------|----------|-------------|
+| 精度 | 精确（假设 ZOH） | 近似 |
+| 稳定性保持 | 是 | 是 |
+| 频率响应 | 精确但混叠 | 低频准确，高频扭曲 |
+| 计算复杂度 | 需要部分分式 | 直接代数替换 |
+| 适用场景 | 分析离散系统 | 连续控制器离散化 |
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 连续系统离散化方法对比 =====
+wn = 10
+zeta = 0.5
+G_s = ctrl.tf([wn**2], [1, 2*zeta*wn, wn**2])
+Ts = 0.01
+
+Gz_zoh = ctrl.c2d(G_s, Ts, method='zoh')
+print("=== ZOH 等效 ===")
+print(f"G(z) = {Gz_zoh}")
+
+Gz_tustin = ctrl.c2d(G_s, Ts, method='tustin')
+print(f"\\n=== Tustin 变换 ===")
+print(f"G(z) = {Gz_tustin}")
+
+omega = np.logspace(-1, 2.5, 500)
+mag_s, phase_s, w_s = ctrl.frequency_response(G_s, omega)
+mag_zoh, phase_zoh, w_zoh = ctrl.frequency_response(Gz_zoh, omega)
+mag_tus, phase_tus, w_tus = ctrl.frequency_response(Gz_tustin, omega)
+
+mag_s = np.abs(mag_s.flatten())
+mag_zoh = np.abs(mag_zoh.flatten())
+mag_tus = np.abs(mag_tus.flatten())
+phase_s = np.degrees(phase_s.flatten())
+phase_zoh = np.degrees(phase_zoh.flatten())
+phase_tus = np.degrees(phase_tus.flatten())
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+ax = axes[0]
+ax.semilogx(w_s, 20*np.log10(mag_s), 'k-', linewidth=2, label='连续 G(s)')
+ax.semilogx(w_zoh, 20*np.log10(mag_zoh), '--', linewidth=1.5, label='ZOH 等效')
+ax.semilogx(w_tus, 20*np.log10(mag_tus), ':', linewidth=1.5, label='Tustin')
+ax.axvline(x=np.pi/Ts, color='gray', linestyle=':', alpha=0.5, label=f'Nyquist ω = {np.pi/Ts:.0f} rad/s')
+ax.set_xlabel('ω (rad/s)')
+ax.set_ylabel('幅值 (dB)')
+ax.set_title('连续 vs 离散系统幅频特性')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+ax.set_ylim(-60, 10)
+
+ax = axes[1]
+ax.semilogx(w_s, phase_s, 'k-', linewidth=2, label='连续 G(s)')
+ax.semilogx(w_zoh, phase_zoh, '--', linewidth=1.5, label='ZOH 等效')
+ax.semilogx(w_tus, phase_tus, ':', linewidth=1.5, label='Tustin')
+ax.axvline(x=np.pi/Ts, color='gray', linestyle=':', alpha=0.5)
+ax.set_xlabel('ω (rad/s)')
+ax.set_ylabel('相位 (°)')
+ax.set_title('连续 vs 离散系统相频特性')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+ax.set_ylim(-270, 30)
+
+plt.tight_layout()
+plt.show()
+
+print(f"\\n结论：")
+print(f"  Tustin 在低频段与连续系统吻合良好")
+print(f"  ZOH 在高频段有额外相位延迟（约 ωTs/2）")
+print(f"  两种方法在 Nyquist 频率 ({np.pi/Ts:.0f} rad/s) 附近都有较大偏差")`
+    }
+  ]}
+/>
+
+## 差分方程实现
+
+### 从 $G(z)$ 到差分方程
+
+脉冲传递函数 $G(z)$ 的标准形式：
+
+$$G(z) = \frac{Y(z)}{U(z)} = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots}{1 + a_1 z^{-1} + a_2 z^{-2} + \cdots}$$
+
+交叉相乘：
+
+$$Y(z)(1 + a_1 z^{-1} + a_2 z^{-2} + \cdots) = U(z)(b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots)$$
+
+利用 $z^{-n} X(z) \leftrightarrow x[k-n]$，得到**差分方程**：
+
+$$y[k] = -a_1 y[k-1] - a_2 y[k-2] - \cdots + b_0 u[k] + b_1 u[k-1] + b_2 u[k-2] + \cdots$$
+
+**代码实现**（伪代码）：
+
+```
+// 初始化
+y = [0, 0, ...]  // 输出历史
+u = [0, 0, ...]  // 输入历史
+
+// 每个采样周期执行
+u[0] = sensor_read()  // 当前输入
+y[0] = -a1*y[1] - a2*y[2] + b0*u[0] + b1*u[1] + b2*u[2]
+actuator_write(y[0])  // 输出控制量
+
+// 更新历史
+shift(u)  // u[2] = u[1], u[1] = u[0]
+shift(y)  // y[2] = y[1], y[1] = y[0]
+```
+
+这就是数字控制器的最终实现形式——几个乘法、加法，以及数组移位。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 差分方程实现与验证 =====
+# 连续系统：二阶传递函数
+wn = 10
+zeta = 0.5
+G_s = ctrl.tf([wn**2], [1, 2*zeta*wn, wn**2])
+Ts = 0.01
+
+# Tustin 离散化
+Gz_tustin = ctrl.c2d(G_s, Ts, method='tustin')
+
+# 从 G(z) 提取差分方程系数
+Gz = Gz_tustin
+num = Gz.num[0][0]
+den = Gz.den[0][0]
+num_zinv = num / den[0]
+den_zinv = den / den[0]
+
+print("=== 差分方程系数 ===")
+print(f"分子 (b): {num_zinv}")
+print(f"分母 (a): {den_zinv}")
+
+def filter_realize(u, b, a):
+    """实现差分方程 y[k] = -a1*y[k-1] - ... + b0*u[k] + b1*u[k-1] + ..."""
+    n = len(u)
+    y = np.zeros(n)
+    nb = len(b)
+    na = len(a)
+    for k in range(n):
+        for i in range(nb):
+            if k - i >= 0:
+                y[k] += b[i] * u[k - i]
+        for i in range(1, na):
+            if k - i >= 0:
+                y[k] -= a[i] * y[k - i]
+    return y
+
+# 阶跃响应测试
+N = 200
+u_step = np.ones(N)
+t = np.arange(N) * Ts
+
+y_filter = filter_realize(u_step, num_zinv, den_zinv)
+
+CL = ctrl.tf(num, den, Ts)
+_, y_ctrl = ctrl.step_response(CL, T=t)
+_, y_cont = ctrl.step_response(G_s, T=t)
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(t, y_cont, 'k-', linewidth=2, label='连续系统')
+ax.plot(t, y_ctrl, 'b--', linewidth=1.5, label='control 库 (离散)')
+ax.plot(t, y_filter, 'r:', linewidth=1.5, label='差分方程实现')
+ax.set_xlabel('时间 (s)')
+ax.set_ylabel('输出')
+ax.set_title('阶跃响应对比：连续 vs 离散 vs 差分方程')
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+error = np.max(np.abs(y_filter - y_ctrl))
+print(f"\\n差分方程 vs control 库 最大误差: {error:.2e}")
+print("（误差来自浮点精度，两者本质相同）")`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### Z 变换与生成函数的关系
+
+数学中的**生成函数**（generating function）定义为 $G(x) = \sum_{k=0}^{\infty} a_k x^k$。Z 变换 $X(z) = \sum_{k=0}^{\infty} x[k] z^{-k}$ 在形式上完全相同，只是变量替换 $x = z^{-1}$。
+
+控制工程选择 $z^{-1}$ 而不是 $z$ 的原因是：$z^{-1}$ 代表延迟，差分方程中的延迟项直接对应 $z^{-1}$ 的幂次，更直观。
+
+### 频率扭曲与预扭曲
+
+Tustin 变换的频率映射：
+
+$$\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)$$
+
+在低频段（$\omega T_s \ll 1$），$\tan(x) \approx x$，$\omega_d \approx \omega$，无扭曲。
+
+在高频段，$\omega_d > \omega$，离散系统的频率被"拉伸"。例如，连续系统带宽 $\omega_b = 50$ rad/s，$T_s = 0.01$ s，则离散带宽 $\omega_d = 200 \tan(0.25) \approx 51$ rad/s，误差约 2%。
+
+**预扭曲**（pre-warping）：在设计时，先把关键频率 $\omega_0$ 预扭曲为 $\omega_d$，再用 Tustin 变换，使得在该频率处离散与连续完全一致。
+
+### 与后续章节的联系
+
+- **数字控制器设计**（下一课）：用 Z 变换分析和设计离散控制器
+- **离散系统稳定性**：z 平面极点分析、Jury 稳定性判据
+- **数字 PID**：PID 控制器的离散实现（位置式、增量式）
+- **采样周期选择**：采样频率对离散系统性能的影响
+
+## 小结
+
+1. **Z 变换**是离散时间系统的核心数学工具，定义为 $X(z) = \sum_{k=0}^{\infty} x[k] z^{-k}$。$z^{-1}$ 的物理意义是"延迟一个采样周期"。
+
+2. **$z = e^{sT_s}$ 映射**把 $s$ 平面映射到 $z$ 平面：左半平面 → 单位圆内（稳定），虚轴 → 单位圆（临界稳定），右半平面 → 单位圆外（不稳定）。
+
+3. **逆 Z 变换**的主要方法是部分分式展开，逐项查表反变换。
+
+4. **脉冲传递函数** $G(z)$ 是连续传递函数 $G(s)$ 的离散等效。ZOH 等效是精确的（假设零阶保持），Tustin 变换是近似的但计算简单。
+
+5. **差分方程**是数字控制器的最终实现形式，系数直接从 $G(z)$ 的分子分母读取。
+
+## 习题
+
+**习题 1**（Z 变换计算）：求以下信号的 Z 变换：
+
+(a) $x[k] = 3 \cdot 0.8^k$
+
+(b) $x[k] = 1 - e^{-0.5kT}$，$T = 0.2$ s
+
+(c) $x[k] = k \cdot 0.5^k$
+
+**习题 2**（逆 Z 变换）：求以下 $X(z)$ 的逆 Z 变换：
+
+(a) $X(z) = \frac{z}{z - 0.8}$
+
+(b) $X(z) = \frac{2z}{(z-1)(z-0.5)}$
+
+(c) $X(z) = \frac{z^2}{(z-1)(z^2 - z + 0.5)}$
+
+**习题 3**（离散化方法）：连续系统 $G(s) = \frac{5}{s+5}$，采样周期 $T_s = 0.05$ s。
+
+(a) 用 ZOH 等效求 $G(z)$。
+
+(b) 用 Tustin 变换求 $G(z)$。
+
+(c) 两种方法在 $\omega = 10$ rad/s 处的频率响应误差分别是多少？
+
+**习题 4**（差分方程）：离散系统 $G(z) = \frac{0.2z + 0.1}{z^2 - 0.8z + 0.2}$。
+
+(a) 写出对应的差分方程。
+
+(b) 如果输入 $u[k] = 1$（单位阶跃），初始条件 $y[0] = 0, y[1] = 0.3$，求 $y[2]$ 和 $y[3]$。
+
+(c) 系统的极点在哪里？是否稳定？
+
+## 答案
+
+**习题 1 答案**：
+
+**(a)** $x[k] = 3 \cdot 0.8^k$
+
+$$X(z) = 3 \cdot \frac{z}{z - 0.8} = \frac{3z}{z - 0.8}$$
+
+**(b)** $x[k] = 1 - e^{-0.5kT}$，$T = 0.2$
+
+$e^{-0.5T} = e^{-0.1} \approx 0.905$
+
+$$X(z) = \frac{z}{z-1} - \frac{z}{z - 0.905} = \frac{z(z - 0.905) - z(z-1)}{(z-1)(z-0.905)} = \frac{0.095z}{(z-1)(z-0.905)}$$
+
+**(c)** $x[k] = k \cdot 0.5^k$
+
+利用性质 $\mathcal{Z}\{k \cdot a^k\} = -z \frac{d}{dz}\left(\frac{z}{z-a}\right) = \frac{az}{(z-a)^2}$
+
+$$X(z) = \frac{0.5z}{(z - 0.5)^2}$$
+
+**习题 2 答案**：
+
+**(a)** $X(z) = \frac{z}{z - 0.8}$
+
+查表：$x[k] = 0.8^k$
+
+**(b)** $X(z) = \frac{2z}{(z-1)(z-0.5)}$
+
+部分分式：$\frac{X(z)}{z} = \frac{2}{(z-1)(z-0.5)} = \frac{A}{z-1} + \frac{B}{z-0.5}$
+
+$A = \frac{2}{1-0.5} = 4$，$B = \frac{2}{0.5-1} = -4$
+
+$X(z) = \frac{4z}{z-1} - \frac{4z}{z-0.5}$
+
+$x[k] = 4 - 4 \cdot 0.5^k = 4(1 - 0.5^k)$
+
+**(c)** $X(z) = \frac{z^2}{(z-1)(z^2 - z + 0.5)}$
+
+$z^2 - z + 0.5 = 0$ 的根：$z = \frac{1 \pm j}{2} = 0.5 \pm 0.5j$，$|z| = \sqrt{0.5} \approx 0.707$
+
+部分分式：$\frac{X(z)}{z} = \frac{z}{(z-1)(z^2 - z + 0.5)} = \frac{A}{z-1} + \frac{Bz + C}{z^2 - z + 0.5}$
+
+$A = \frac{1}{1-1+0.5} = 2$
+
+$z = 0$：$0 = A(-0.5) + C(-1) \implies C = -A \cdot 0.5 = -1$
+
+$z = 2$：$\frac{2}{1 \cdot (4-2+0.5)} = 2 + \frac{2B - 1}{2.5} \implies \frac{2}{2.5} = 2 + \frac{2B-1}{2.5} \implies 0.8 = 2 + 0.8B - 0.4 \implies B = -1$
+
+$X(z) = \frac{2z}{z-1} + \frac{-z^2 - z}{z^2 - z + 0.5}$
+
+第二项需要进一步处理（对应衰减振荡），最终结果：
+
+$x[k] = 2 - (0.707)^k (\cos(k\pi/4) + \sin(k\pi/4))$
+
+**习题 3 答案**：
+
+**(a)** ZOH 等效：$G(s) = \frac{5}{s+5}$
+
+$G(z) = \frac{1 - e^{-5T}}{z - e^{-5T}}$，$e^{-5 \times 0.05} = e^{-0.25} \approx 0.779$
+
+$$G_{ZOH}(z) = \frac{0.221}{z - 0.779}$$
+
+**(b)** Tustin 变换：$s = \frac{2}{0.05} \cdot \frac{z-1}{z+1} = 40 \cdot \frac{z-1}{z+1}$
+
+$$G_{Tustin}(z) = \frac{5}{40 \cdot \frac{z-1}{z+1} + 5} = \frac{5(z+1)}{40(z-1) + 5(z+1)} = \frac{5(z+1)}{45z - 35} = \frac{z+1}{9z - 7}$$
+
+化为标准形式：$G_{Tustin}(z) = \frac{(1/9)(z+1)}{z - 7/9} = \frac{0.111(z+1)}{z - 0.778}$
+
+**(c)** $\omega = 10$ rad/s，$T_s = 0.05$ s
+
+连续：$G(j10) = \frac{5}{j10 + 5} = \frac{5}{5 + j10}$，$|G| = \frac{5}{\sqrt{25+100}} = \frac{5}{\sqrt{125}} \approx 0.447$
+
+ZOH：$z = e^{j10 \times 0.05} = e^{j0.5}$，$G_{ZOH}(e^{j0.5}) = \frac{0.221}{e^{j0.5} - 0.779}$
+
+$|e^{j0.5} - 0.779| = |\cos(0.5) + j\sin(0.5) - 0.779| = |0.878 - 0.779 + j0.479| = |0.099 + j0.479| = \sqrt{0.0098 + 0.229} \approx 0.489$
+
+$|G_{ZOH}| = 0.221/0.489 \approx 0.452$，误差 $\approx 1.1\%$
+
+Tustin：$z = e^{j0.5}$，$G_{Tustin}(e^{j0.5}) = \frac{0.111(e^{j0.5}+1)}{e^{j0.5} - 0.778}$
+
+$|e^{j0.5}+1| = |1.878 + j0.479| = \sqrt{3.527 + 0.229} \approx 1.938$
+
+$|e^{j0.5} - 0.778| \approx 0.489$（同上）
+
+$|G_{Tustin}| = 0.111 \times 1.938 / 0.489 \approx 0.439$，误差 $\approx 1.8\%$
+
+**习题 4 答案**：
+
+**(a)** $G(z) = \frac{Y(z)}{U(z)} = \frac{0.2z + 0.1}{z^2 - 0.8z + 0.2}$
+
+化为 $z^{-1}$ 形式：$G(z) = \frac{0.2z^{-1} + 0.1z^{-2}}{1 - 0.8z^{-1} + 0.2z^{-2}}$
+
+交叉相乘：$Y(z)(1 - 0.8z^{-1} + 0.2z^{-2}) = U(z)(0.2z^{-1} + 0.1z^{-2})$
+
+差分方程：$y[k] = 0.8y[k-1] - 0.2y[k-2] + 0.2u[k-1] + 0.1u[k-2]$
+
+**(b)** $u[k] = 1$（$k \geq 0$），$y[0] = 0, y[1] = 0.3$
+
+$y[2] = 0.8y[1] - 0.2y[0] + 0.2u[1] + 0.1u[0] = 0.8 \times 0.3 - 0.2 \times 0 + 0.2 \times 1 + 0.1 \times 1 = 0.24 + 0.3 = 0.54$
+
+$y[3] = 0.8y[2] - 0.2y[1] + 0.2u[2] + 0.1u[1] = 0.8 \times 0.54 - 0.2 \times 0.3 + 0.2 + 0.1 = 0.432 - 0.06 + 0.3 = 0.672$
+
+**(c)** 极点：$z^2 - 0.8z + 0.2 = 0$
+
+$z = \frac{0.8 \pm \sqrt{0.64 - 0.8}}{2} = \frac{0.8 \pm \sqrt{-0.16}}{2} = 0.4 \pm 0.2j$
+
+$|z| = \sqrt{0.16 + 0.04} = \sqrt{0.2} \approx 0.447 < 1$
+
+极点在单位圆内，系统**稳定**。

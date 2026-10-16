@@ -1,0 +1,1200 @@
+---
+title: 现代控制综合案例
+description: 以倒立摆小车系统为主线，完整走一遍"建模→分析→设计→验证"的现代控制工程流程，串联状态空间、可控可观性、状态反馈、观测器、LQR、卡尔曼滤波、Lyapunov 理论和 MIMO 分析。
+---
+
+# 现代控制综合案例
+
+前面九节课，我们一个一个地建立了现代控制的工具箱：状态空间表示让我们能描述 MIMO 系统和内部动态；可控性和可观性告诉我们系统"能不能控、能不能看"；状态反馈和极点配置让我们能"随心所欲"地安排闭环极点；观测器让我们在没有全状态测量时也能实现状态反馈；LQR 把"怎么选极点"变成了"怎么选权重"；卡尔曼滤波在噪声中估计状态；Lyapunov 理论给了我们判断稳定性的"能量方法"；RGA 帮我们理解 MIMO 系统中的交互。
+
+但工程问题不会告诉你"请用 LQR"或"请设计观测器"——你需要自己判断什么时候用什么工具。
+
+> 📖 本章是现代控制部分的综合应用，需要前面所有章节的基础：[状态空间表示](/modern/state-space)、[可控性与可观性](/modern/controllability-observability)、[状态反馈与极点配置](/modern/state-feedback)、[状态观测器设计](/modern/state-observer)、[最优控制基础](/modern/optimal-control-basics)、[LQR 控制器](/modern/lqr-controller)、[卡尔曼滤波](/modern/kalman-filter)、[线性系统理论](/modern/linear-system-theory)、[多变量系统分析](/modern/multivariable-systems)。
+
+本节以**倒立摆小车系统**（Cart-Pole / Inverted Pendulum on a Cart）为主线，完整走一遍现代控制的工程设计流程：
+
+1. **建模**：从非线性物理方程到线性化状态空间模型
+2. **分析**：开环极点、可控性、可观性
+3. **状态反馈**：极点配置 vs LQR，两种方法的对比
+4. **观测器**：全阶观测器设计，分离性原理
+5. **噪声处理**：卡尔曼滤波 + LQG 控制
+6. **稳定性验证**：Lyapunov 方程
+7. **MIMO 扩展**：双输入系统，RGA 交互分析
+
+这个流程适用于绝大多数线性控制系统。学完本章，你应该能把前面学到的每个工具"对号入座"。
+
+## 问题描述
+
+### 为什么选倒立摆
+
+倒立摆是控制理论最经典的实验对象之一——就像医学里用解剖学理解人体，控制理论用倒立摆理解"不稳定系统的镇定"。
+
+它的核心挑战很直观：**一根棍子立在可移动的小车上，棍子朝上是不稳定平衡——稍有扰动就会倒下。** 你需要不断移动小车来"接住"倒下的棍子。这和火箭着陆、双足机器人行走、 Segway 平衡车的核心问题是一样的。
+
+| 特性 | 为什么重要 |
+|------|-----------|
+| 开环不稳定 | 必须用反馈镇定——不能"不管它" |
+| 非线性 | 需要线性化才能用线性控制工具 |
+| 欠驱动 | 1 个输入控制 2 个自由度（位置 + 角度）——耦合强 |
+| 4 阶系统 | 状态空间表示有充分展示空间 |
+
+### 物理系统
+
+```
+         m
+         ● ← 摆杆质心
+         |
+         | 2l
+         |
+    ┌────┴────┐
+    │    M    │ ← 小车
+    └─────────┘
+  ←───────────→ x
+  ═══════════════════ 地面
+        F ←→
+```
+
+**参数**（后续计算统一使用）：
+
+| 符号 | 含义 | 值 |
+|------|------|-----|
+| $M$ | 小车质量 | $1.0$ kg |
+| $m$ | 摆杆质量 | $0.1$ kg |
+| $l$ | 摆杆质心到转轴距离 | $0.5$ m |
+| $g$ | 重力加速度 | $9.81$ m/s² |
+| $\theta$ | 摆杆偏离垂直方向的角度 | — |
+| $x$ | 小车水平位置 | — |
+| $F$ | 作用在小车上的水平力 | — |
+
+**控制目标**：
+- 摆杆保持在垂直位置（$\theta \to 0$）
+- 小车能跟踪位置参考（$x \to x_{\text{ref}}$）
+- 调节时间 $t_s < 3$ s
+- 控制力 $|F| < 50$ N
+
+## 第一步：建立状态空间模型
+
+### 非线性运动方程
+
+用拉格朗日方法推导（过程从略，直接给出结果）：
+
+$$
+(M + m)\ddot{x} + ml\ddot{\theta}\cos\theta - ml\dot{\theta}^2\sin\theta = F
+$$
+
+$$
+ml\ddot{x}\cos\theta + \frac{4}{3}ml^2\ddot{\theta} - mgl\sin\theta = 0
+$$
+
+这两个方程耦合了 $x$ 和 $\theta$，而且包含 $\cos\theta$、$\sin\theta$、$\dot{\theta}^2$ 等非线性项。
+
+### 线性化
+
+在平衡点 $\theta = 0$（摆杆朝上）、$\dot{\theta} = 0$ 附近线性化。小角度近似：
+
+$$
+\sin\theta \approx \theta, \quad \cos\theta \approx 1, \quad \dot{\theta}^2 \approx 0
+$$
+
+线性化后的方程：
+
+$$
+(M + m)\ddot{x} + ml\ddot{\theta} = F \tag{1}
+$$
+
+$$
+ml\ddot{x} + \frac{4}{3}ml^2\ddot{\theta} = mgl\theta \tag{2}
+$$
+
+### 求解加速度
+
+从 (1) 和 (2) 解出 $\ddot{x}$ 和 $\ddot{\theta}$。
+
+由 (1)：$\ddot{x} = \frac{F - ml\ddot{\theta}}{M+m}$
+
+代入 (2) 并整理：
+
+$$
+\ddot{\theta} = \frac{3g(M+m)}{l(4M+m)}\theta - \frac{3}{l(4M+m)}F
+$$
+
+$$
+\ddot{x} = \frac{1 - ml \cdot \frac{-3}{l(4M+m)}}{M+m}F - \frac{ml \cdot \frac{3g(M+m)}{l(4M+m)}}{M+m}\theta
+$$
+
+简化后定义关键常数：
+
+$$
+a_{43} = \frac{3g(M+m)}{l(4M+m)}, \quad b_{41} = \frac{-3}{l(4M+m)}
+$$
+
+$$
+b_{21} = \frac{1 - m l \cdot b_{41}}{M+m}, \quad a_{23} = \frac{-ml \cdot a_{43}}{M+m}
+$$
+
+代入数值（$M=1, m=0.1, l=0.5, g=9.81$）：
+
+$$
+a_{43} = \frac{3 \times 9.81 \times 1.1}{0.5 \times 4.1} = 15.79, \quad b_{41} = \frac{-3}{2.05} = -1.463
+$$
+
+$$
+b_{21} = \frac{1 - 0.05 \times (-1.463)}{1.1} = 0.9756, \quad a_{23} = \frac{-0.05 \times 15.79}{1.1} = -0.7178
+$$
+
+### 状态空间模型
+
+选状态变量 $\boldsymbol{x} = [x_1, x_2, x_3, x_4]^T = [x, \dot{x}, \theta, \dot{\theta}]^T$，输入 $u = F$：
+
+$$
+\dot{\boldsymbol{x}} = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & -0.7178 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 15.79 & 0 \end{bmatrix} \boldsymbol{x} + \begin{bmatrix} 0 \\ 0.9756 \\ 0 \\ -1.463 \end{bmatrix} u
+$$
+
+$$
+\boldsymbol{y} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix} \boldsymbol{x}
+$$
+
+输出 $\boldsymbol{y} = [x, \theta]^T$ 是小车位置和摆杆角度。
+
+> 注意 $a_{43} = 15.79 > 0$——这意味着 $\ddot{\theta}$ 中有一个 $+15.79\theta$ 的正反馈项。角度越大，角加速度越大，摆杆加速倒下。这就是"不稳定"的数学本质。
+
+## 第二步：分析系统性质
+
+### 开环极点
+
+$A$ 矩阵的特征多项式：
+
+$$
+\det(sI - A) = s^2(s^2 - a_{43}) = s^2(s^2 - 15.79)
+$$
+
+开环极点：$s = 0,\; 0,\; +3.974,\; -3.974$
+
+- **两个零极点**：小车位置是积分环节（力产生加速度，加速度积分成速度，速度积分成位置）
+- **一个不稳定极点** $s = +3.974$：摆杆的不稳定模式
+- **一个稳定极点** $s = -3.974$：摆杆的稳定模式（如果初始条件恰好让它往回倒）
+
+### 可控性
+
+可控性矩阵 $\mathcal{C} = [B,\; AB,\; A^2B,\; A^3B]$：
+
+$$
+B = \begin{bmatrix} 0 \\ 0.9756 \\ 0 \\ -1.463 \end{bmatrix}, \quad AB = \begin{bmatrix} 0.9756 \\ 0 \\ -1.463 \\ 0 \end{bmatrix}
+$$
+
+$$
+A^2B = \begin{bmatrix} 0 \\ 1.050 \\ 0 \\ -23.11 \end{bmatrix}, \quad A^3B = \begin{bmatrix} 1.050 \\ 0 \\ -23.11 \\ 0 \end{bmatrix}
+$$
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 0.9756 & 0 & 1.050 \\ 0.9756 & 0 & 1.050 & 0 \\ 0 & -1.463 & 0 & -23.11 \\ -1.463 & 0 & -23.11 & 0 \end{bmatrix}
+$$
+
+$\text{rank}(\mathcal{C}) = 4$ → **完全可控** ✓
+
+物理解释：通过移动小车（力 $F$），我们既能控制小车位置，也能控制摆杆角度。虽然只有一个输入，但耦合动力学让它能同时影响两个输出。
+
+### 可观性
+
+可观性矩阵 $\mathcal{O} = [C^T,\; A^TC^T,\; (A^2)^TC^T,\; (A^3)^TC^T]^T$：
+
+$$
+C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}
+$$
+
+$$
+CA = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
+$$
+
+前四行 $\begin{bmatrix} C \\ CA \end{bmatrix} = I_4$（经过行交换），所以 $\text{rank}(\mathcal{O}) = 4$ → **完全可观** ✓
+
+物理解释：测量小车位置 $x$ 和摆杆角度 $\theta$，通过微分（或观测器）可以得到 $\dot{x}$ 和 $\dot{\theta}$。
+
+<JupyterNotebook
+  title="倒立摆状态空间建模与分析"
+  setupCode={`import numpy as np
+from numpy.linalg import matrix_rank
+np.set_printoptions(precision=4, suppress=True)`}
+  cells={[
+    { code: `# 倒立摆物理参数
+M = 1.0   # 小车质量 (kg)
+m = 0.1   # 摆杆质量 (kg)
+l = 0.5   # 摆杆半长 (m)
+g = 9.81  # 重力加速度 (m/s²)
+b = 0.1   # 摩擦系数 (N·s/m)
+
+# 状态空间矩阵
+A = np.array([
+    [0, 1, 0, 0],
+    [0, -b/M, -m*g/M, 0],
+    [0, 0, 0, 1],
+    [0, b/(M*l), (M+m)*g/(M*l), 0]
+])
+B = np.array([[0], [1/M], [0], [-1/(M*l)]])
+C = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
+D = np.zeros((2, 1))
+
+print("系统矩阵 A:")
+print(A)
+print("\\n输入矩阵 B:")
+print(B)
+print("\\n输出矩阵 C:")
+print(C)
+
+# 开环极点
+poles = np.linalg.eigvals(A)
+print("\\n开环极点:")
+for i, p in enumerate(poles):
+    print(f"  s_{i+1} = {p:.4f}")
+
+# 可控性
+Cc = np.hstack([B, A@B, A@A@B, A@A@A@B])
+print(f"\\n可控性矩阵秩 = {matrix_rank(Cc)} (满秩 = {A.shape[0]}) → {'完全可控 ✓' if matrix_rank(Cc) == A.shape[0] else '不可控 ✗'}")
+
+# 可观性
+Oc = np.vstack([C, C@A, C@A@A, C@A@A@A])
+print(f"可观性矩阵秩 = {matrix_rank(Oc)} (满秩 = {A.shape[0]}) → {'完全可观 ✓' if matrix_rank(Oc) == A.shape[0] else '不可观 ✗'}")` }
+  ]}
+/>
+
+## 第三步：状态反馈设计
+
+现在我们有了状态空间模型，也确认了可控性，接下来设计状态反馈 $u = -K\boldsymbol{x} + Nr$。
+
+### 方法一：极点配置
+
+选择期望闭环极点：$s = -2, -3, -4, -5$（全部在左半平面，响应速度适中）。
+
+用 Ackermann 公式或 `place` 函数计算 $K$：
+
+$$
+K_{\text{place}} = \text{place}(A, B, [-2, -3, -4, -5])
+$$
+
+闭环系统 $A - BK$ 的特征值恰好是 $-2, -3, -4, -5$。
+
+极点配置的优点是**精确**——你告诉它要什么极点，它就给你什么极点。但问题是：**你怎么知道该选什么极点？** 选太快（比如 $-100$）会导致控制力过大；选太慢则响应不够快。
+
+### 方法二：LQR
+
+LQR 把"选极点"变成了"选权重"。选择：
+
+$$
+Q = \text{diag}([1,\; 1,\; 10,\; 10]), \quad R = 0.1
+$$
+
+$Q$ 中角度和角速度的权重（10）远大于位置和速度的权重（1）——因为**稳住摆杆是第一优先级**。$R = 0.1$ 表示我们不太在意控制能耗（允许较大的力）。
+
+解代数 Riccati 方程 $A^TP + PA - PBR^{-1}B^TP + Q = 0$，得到：
+
+$$
+K_{\text{lqr}} = R^{-1}B^TP
+$$
+
+### 两种方法的对比
+
+| 特性 | 极点配置 | LQR |
+|------|----------|-----|
+| 设计参数 | 期望极点 $\{-2, -3, -4, -5\}$ | 权重 $Q, R$ |
+| 闭环极点 | 精确在指定位置 | 由 $Q, R$ 隐式决定 |
+| 物理意义 | 间接（极点 → 动态） | 直接（"状态偏差 vs 控制能耗"） |
+| 鲁棒性 | 无保证 | 增益裕度 $[1/2, \infty)$，相位裕度 $\geq 60°$ |
+| 调参难度 | 4 阶以上很难选极点 | $Q, R$ 的物理意义更直观 |
+
+在后面的仿真中，我们会看到两种方法的具体表现差异。
+
+### 前馈增益
+
+状态反馈 $u = -K\boldsymbol{x}$ 只能镇定系统，不能让输出跟踪参考值。需要加前馈增益 $N$：
+
+$$
+u = -K\boldsymbol{x} + Nr
+$$
+
+在稳态，$\dot{\boldsymbol{x}} = 0$：
+
+$$
+0 = (A - BK)\boldsymbol{x}_{ss} + BNr \implies \boldsymbol{x}_{ss} = -(A-BK)^{-1}BNr
+$$
+
+$$
+y_{ss} = C\boldsymbol{x}_{ss} = -C(A-BK)^{-1}BNr
+$$
+
+令 $y_{ss} = r$（单位稳态增益）：
+
+$$
+N = \frac{-1}{C_{1,:}(A-BK)^{-1}B}
+$$
+
+其中 $C_{1,:} = [1, 0, 0, 0]$ 是小车位置的输出行。
+
+<JupyterNotebook
+  title="极点配置 vs LQR 阶跃响应对比"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are
+from control import place
+from scipy.integrate import solve_ivp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 系统矩阵（倒立摆线性化模型）
+M = 1.0; m = 0.1; l = 0.5; g = 9.81; b = 0.1
+A = np.array([
+    [0, 1, 0, 0],
+    [0, -b/M, -m*g/M, 0],
+    [0, 0, 0, 1],
+    [0, b/(M*l), (M+m)*g/(M*l), 0]
+])
+B = np.array([[0], [1/M], [0], [-1/(M*l)]])
+C = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
+D = np.zeros((2, 1))
+
+# 方法一：极点配置
+K_place = np.array(place(A, B, [-2, -3, -4, -5])).flatten()
+
+# 方法二：LQR
+Q = np.diag([10, 1, 10, 1])
+R = np.array([[1.0]])
+P = solve_continuous_are(A, B, Q, R)
+K_lqr = np.linalg.solve(R, B.T @ P).flatten()
+
+print(f"极点配置增益 K_place = {K_place}")
+print(f"LQR 增益 K_lqr       = {K_lqr}")` },
+    { code: `# 阶跃响应对比
+def simulate_cl(A, B, K, N_bar, t_span=10, dt=0.01):
+    """闭环阶跃响应仿真"""
+    A_cl = A - B @ K.reshape(1, -1)
+    B_cl = B * N_bar
+    n = A.shape[0]
+    t_eval = np.arange(0, t_span, dt)
+    x0 = np.zeros(n)
+    def dynamics(t, x):
+        return A_cl @ x + B_cl.flatten()
+    sol = solve_ivp(dynamics, [0, t_span], x0, t_eval=t_eval)
+    u = np.array([K @ (N_bar - x) for x in sol.y.T])  # u = -Kx + Nr
+    # 重新计算控制输入
+    u = np.zeros_like(sol.t)
+    for i in range(len(sol.t)):
+        u[i] = -K @ sol.y[:, i] + N_bar
+    return sol.t, sol.y, u
+
+# 前馈增益
+N_place = -1 / (C[0] @ np.linalg.solve(A - B @ K_place.reshape(1,-1), B))[0]
+N_lqr = -1 / (C[0] @ np.linalg.solve(A - B @ K_lqr.reshape(1,-1), B))[0]
+
+t1, y1, u1 = simulate_cl(A, B, K_place, N_place)
+t2, y2, u2 = simulate_cl(A, B, K_lqr, N_lqr)
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 7))
+axes[0].plot(t1, y1[0], label='极点配置', linewidth=2)
+axes[0].plot(t2, y2[0], label='LQR', linewidth=2, linestyle='--')
+axes[0].set_xlabel('时间 (s)')
+axes[0].set_ylabel('小车位置 x (m)')
+axes[0].set_title('阶跃响应对比：极点配置 vs LQR')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(t1, u1, label='极点配置', linewidth=2)
+axes[1].plot(t2, u2, label='LQR', linewidth=2, linestyle='--')
+axes[1].set_xlabel('时间 (s)')
+axes[1].set_ylabel('控制力 F (N)')
+axes[1].set_title('控制输入对比')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"前馈增益 N_place = {N_place:.4f}, N_lqr = {N_lqr:.4f}")` }
+  ]}
+/>
+
+## 第四步：观测器设计
+
+### 为什么需要观测器
+
+状态反馈假设我们能测量所有 4 个状态：$x, \dot{x}, \theta, \dot{\theta}$。但实际上：
+
+- $x$（小车位置）：编码器测量 ✓
+- $\theta$（摆杆角度）：编码器或电位器测量 ✓
+- $\dot{x}$（小车速度）：需要微分或额外传感器
+- $\dot{\theta}$（角速度）：陀螺仪可以测，但有噪声
+
+如果我们只有 $x$ 和 $\theta$ 的测量值，怎么得到 $\dot{x}$ 和 $\dot{\theta}$？答案是**状态观测器**。
+
+### 全阶观测器
+
+观测器的结构：
+
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + Bu + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})
+$$
+
+估计误差 $\boldsymbol{e} = \boldsymbol{x} - \hat{\boldsymbol{x}}$ 的动态：
+
+$$
+\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}
+$$
+
+设计原则：**观测器比控制器快 2~5 倍**。如果控制器极点在 $-2 \sim -5$，观测器极点选在 $-5 \sim -20$。
+
+选择观测器极点：$s = -8, -9, -10, -11$。
+
+用对偶原理（观测器设计 = 状态反馈设计的对偶）：
+
+$$
+L^T = \text{place}(A^T, C^T, [-8, -9, -10, -11])
+$$
+
+### 分离性原理
+
+基于观测器的控制器：
+
+$$
+u = -K\hat{\boldsymbol{x}} + Nr
+$$
+
+闭环系统的状态是 $[\boldsymbol{x}^T, \boldsymbol{e}^T]^T$（8 维），动态矩阵：
+
+$$
+\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{e}} \end{bmatrix} = \begin{bmatrix} A - BK & BK \\ 0 & A - LC \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{e} \end{bmatrix} + \begin{bmatrix} BN \\ 0 \end{bmatrix} r
+$$
+
+关键结论：**闭环极点 = 控制器极点 $\cup$ 观测器极点**。
+
+这就是**分离性原理**——控制器设计（选 $K$）和观测器设计（选 $L$）可以独立进行，互不影响。
+
+> 📖 分离性原理的证明和详细讨论，详见 [状态观测器设计](/modern/state-observer)。
+
+<JupyterNotebook
+  title="观测器设计与基于观测器的控制"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are
+from control import place
+from scipy.integrate import solve_ivp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# 系统矩阵
+M, m, l, g = 1.0, 0.1, 0.5, 9.81
+a43 = 3*g*(M+m) / (l*(4*M+m))
+b41 = -3 / (l*(4*M+m))
+b21 = (1 - m*l*b41) / (M+m)
+a23 = -m*l*a43 / (M+m)
+
+A = np.array([[0, 1, 0, 0],
+              [0, 0, a23, 0],
+              [0, 0, 0, 1],
+              [0, 0, a43, 0]])
+B = np.array([[0], [b21], [0], [b41]])
+C = np.array([[1, 0, 0, 0],
+              [0, 0, 1, 0]])
+
+# LQR 控制器
+Q_lqr = np.diag([1.0, 1.0, 10.0, 10.0])
+R_lqr = np.array([[0.1]])
+P_lqr = solve_continuous_are(A, B, Q_lqr, R_lqr)
+K = np.linalg.solve(R_lqr, B.T @ P_lqr).reshape(1, -1)
+A_cl = A - B @ K
+C1 = C[0:1]
+N_ff = -1.0 / (C1 @ np.linalg.inv(A_cl) @ B)
+
+# 观测器增益（极点 -8, -9, -10, -11）
+L = np.array(place(A.T, C.T, [-8, -9, -10, -11])).T
+obs_poles = np.linalg.eigvals(A - L @ C)
+print(f"观测器增益 L =\\n{np.round(L, 4)}")
+print(f"观测器误差极点: {np.round(np.sort(obs_poles.real)[::-1], 4)}")
+
+# 仿真：基于观测器的控制器（初始角度偏移 0.1 rad）
+def obs_ctrl_dyn(t, state):
+    x = state[:4]
+    x_hat = state[4:]
+    y = C @ x
+    u = (-K @ x_hat + N_ff).item()
+    dx = A @ x + B.flatten() * u
+    dx_hat = A @ x_hat + B.flatten() * u + (L @ (y - C @ x_hat)).flatten()
+    return np.concatenate([dx, dx_hat]).tolist()
+
+x0 = np.array([0, 0, 0.1, 0])
+x0_hat = np.zeros(4)
+state0 = np.concatenate([x0, x0_hat])
+
+sol = solve_ivp(obs_ctrl_dyn, [0, 5], state0, dense_output=True, max_step=0.01)
+t = np.linspace(0, 5, 500)
+state = sol.sol(t)
+x_true = state[:4]
+x_est = state[4:]
+
+fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+
+axes[0].plot(t, x_true[0], 'b-', linewidth=2, label='真实值')
+axes[0].plot(t, x_est[0], 'r--', linewidth=1.5, label='估计值')
+axes[0].set_ylabel('小车位置 x')
+axes[0].set_title('基于观测器的 LQR 控制')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(t, x_true[2], 'b-', linewidth=2, label='真实值')
+axes[1].plot(t, x_est[2], 'r--', linewidth=1.5, label='估计值')
+axes[1].set_ylabel('摆杆角度 θ (rad)')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+axes[2].plot(t, x_true[1] - x_est[1], 'g-', linewidth=2, label='ẋ 误差')
+axes[2].plot(t, x_true[3] - x_est[3], 'm-', linewidth=2, label='θ̇ 误差')
+axes[2].set_ylabel('估计误差')
+axes[2].set_xlabel('时间 (s)')
+axes[2].legend()
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"\\n稳态估计误差 (t=5s):")
+print(f"  ẋ 误差: {abs(x_true[1,-1] - x_est[1,-1]):.6f}")
+print(f"  θ̇ 误差: {abs(x_true[3,-1] - x_est[3,-1]):.6f}")`
+    }
+  ]}
+/>
+
+## 第五步：处理噪声——卡尔曼滤波与 LQG
+
+### 问题
+
+前面的观测器是确定性的——它假设系统模型完全准确，没有噪声。但实际系统中：
+
+- **过程噪声** $w$：未建模的动态、参数不确定性、外部扰动
+- **测量噪声** $v$：传感器噪声、量化误差
+
+随机系统模型：
+
+$$
+\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}, \quad E[\boldsymbol{w}\boldsymbol{w}^T] = Q_n
+$$
+
+$$
+\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}, \quad E[\boldsymbol{v}\boldsymbol{v}^T] = R_n
+$$
+
+### 卡尔曼滤波
+
+卡尔曼滤波是最优状态估计器——它在最小均方误差意义下最优地估计状态。
+
+卡尔曼增益：
+
+$$
+L_k = PC^TR_n^{-1}
+$$
+
+其中 $P$ 解对偶 Riccati 方程（注意和 LQR 的对偶关系）：
+
+$$
+AP + PA^T - PC^TR_n^{-1}CP + Q_n = 0
+$$
+
+> 📖 LQR 和卡尔曼滤波的对偶关系，详见 [卡尔曼滤波](/modern/kalman-filter)。
+
+### LQG 控制
+
+**LQG**（Linear Quadratic Gaussian）控制 = LQR + 卡尔曼滤波：
+
+$$
+u = -K_{\text{lqr}}\hat{\boldsymbol{x}} + Nr
+$$
+
+$$
+\dot{\hat{\boldsymbol{x}}} = (A - LC - BK)\hat{\boldsymbol{x}} + L\boldsymbol{y} + BNr
+$$
+
+LQG 的优美之处：LQR 告诉你"最优控制是什么"，卡尔曼滤波告诉你"最优估计是什么"，LQG 把两者结合起来——在噪声环境下，这就是你能做到的最好控制。
+
+<JupyterNotebook
+  title="卡尔曼滤波与 LQG 控制"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are
+from ipywidgets import interact, FloatSlider
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# 系统矩阵
+M, m, l, g = 1.0, 0.1, 0.5, 9.81
+a43 = 3*g*(M+m) / (l*(4*M+m))
+b41 = -3 / (l*(4*M+m))
+b21 = (1 - m*l*b41) / (M+m)
+a23 = -m*l*a43 / (M+m)
+
+A = np.array([[0, 1, 0, 0],
+              [0, 0, a23, 0],
+              [0, 0, 0, 1],
+              [0, 0, a43, 0]])
+B = np.array([[0], [b21], [0], [b41]])
+C = np.array([[1, 0, 0, 0],
+              [0, 0, 1, 0]])
+
+# LQR 控制器
+Q_lqr = np.diag([1.0, 1.0, 10.0, 10.0])
+R_lqr = np.array([[0.1]])
+P_lqr = solve_continuous_are(A, B, Q_lqr, R_lqr)
+K = np.linalg.solve(R_lqr, B.T @ P_lqr)
+A_cl = A - B @ K
+C1 = C[0:1]
+N_ff = -1.0 / (C1 @ np.linalg.inv(A_cl) @ B)
+
+# 卡尔曼滤波设计
+Q_n = np.eye(4) * 0.01
+R_n = np.eye(2) * 0.1
+P_kf = solve_continuous_are(A.T, C.T, Q_n, R_n)
+L_kf = P_kf @ C.T @ np.linalg.inv(R_n)
+
+kf_poles = np.linalg.eigvals(A - L_kf @ C)
+print("=== 卡尔曼滤波 ===")
+print(f"卡尔曼增益 L_kf =\\n{np.round(L_kf, 4)}")
+print(f"卡尔曼滤波极点: {np.round(np.sort(kf_poles.real)[::-1], 4)}")`
+    },
+    {
+      code: `# LQG 仿真（带噪声）—— 可调节噪声强度
+np.random.seed(42)
+
+def simulate_lQG(process_noise, measurement_noise):
+    dt = 0.005
+    T_sim = 8
+    N_steps = int(T_sim / dt)
+
+    w = np.random.randn(4, N_steps) * np.sqrt(dt) * process_noise
+    v = np.random.randn(2, N_steps) * np.sqrt(dt) * measurement_noise
+
+    x_sim = np.zeros((4, N_steps + 1))
+    x_hat_sim = np.zeros((4, N_steps + 1))
+    x_sim[2, 0] = 0.1
+    u_log = np.zeros(N_steps)
+
+    for i in range(N_steps):
+        y_meas = C @ x_sim[:, i] + v[:, i]
+        u_val = (-K @ x_hat_sim[:, i] + N_ff).item()
+        u_log[i] = u_val
+        x_sim[:, i+1] = x_sim[:, i] + dt * (A @ x_sim[:, i] + B.flatten() * u_val) + w[:, i]
+        innov = y_meas - C @ x_hat_sim[:, i]
+        x_hat_sim[:, i+1] = x_hat_sim[:, i] + dt * (A @ x_hat_sim[:, i] + B.flatten() * u_val + (L_kf @ innov).flatten())
+
+    return np.linspace(0, T_sim, N_steps + 1), x_sim, x_hat_sim, u_log
+
+@interact(process_noise=FloatSlider(min=0.01, max=0.5, step=0.01, value=0.1, description='过程噪声'),
+          measurement_noise=FloatSlider(min=0.01, max=1.0, step=0.01, value=0.3, description='测量噪声'))
+def plot_lqg(process_noise, measurement_noise):
+    t_sim, x_sim, x_hat_sim, u_log = simulate_lQG(process_noise, measurement_noise)
+
+    fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+    axes[0].plot(t_sim, x_sim[0], 'b-', linewidth=1, alpha=0.7, label='真实 x')
+    axes[0].plot(t_sim, x_hat_sim[0], 'r--', linewidth=1.5, label='估计 x̂')
+    axes[0].set_ylabel('小车位置')
+    axes[0].set_title('LQG 控制（带噪声）')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    axes[1].plot(t_sim, np.degrees(x_sim[2]), 'b-', linewidth=1, alpha=0.7, label='真实 θ')
+    axes[1].plot(t_sim, np.degrees(x_hat_sim[2]), 'r--', linewidth=1.5, label='估计 θ̂')
+    axes[1].set_ylabel('摆杆角度 (°)')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+
+    axes[2].plot(t_sim[:-1], u_log, 'g-', linewidth=1, alpha=0.7)
+    axes[2].axhline(50, color='k', linestyle=':', alpha=0.5)
+    axes[2].axhline(-50, color='k', linestyle=':', alpha=0.5)
+    axes[2].set_ylabel('控制力 F (N)')
+    axes[2].set_xlabel('时间 (s)')
+    axes[2].grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()`
+    }
+  ]}
+/>
+
+## 第六步：稳定性验证——Lyapunov 方程
+
+### 为什么要验证
+
+我们设计了状态反馈 $K$，让 $A - BK$ 的所有特征值都在左半平面。但我们怎么**严格证明**闭环系统是稳定的？
+
+答案：**Lyapunov 方程**。
+
+### 方法
+
+对闭环系统 $A_{cl} = A - BK$，选择任意 $Q > 0$（比如 $Q = I$），解 Lyapunov 方程：
+
+$$
+A_{cl}^T P + P A_{cl} = -Q
+$$
+
+如果 $P > 0$（正定），则闭环系统渐近稳定。
+
+由于 $A_{cl}$ 的所有特征值都有负实部（我们设计的），Lyapunov 定理保证 $P$ 一定正定。但实际计算中，验证 $P > 0$ 是一个好的工程习惯——特别是当系统矩阵有舍入误差时。
+
+### 与 LQR 的联系
+
+LQR 的 ARE 解 $P$ 本身就是一个 Lyapunov 函数！对于 LQR 闭环系统：
+
+$$
+V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}
+$$
+
+$$
+\dot{V} = \boldsymbol{x}^T (A_{cl}^T P + P A_{cl}) \boldsymbol{x} = -\boldsymbol{x}^T (Q + K^T R K) \boldsymbol{x} < 0
+$$
+
+这不仅是数学上的优美——它意味着 LQR 自动保证了闭环稳定性，而且 $V(\boldsymbol{x})$ 就是最优代价函数。
+
+> 📖 Lyapunov 理论和 LQR 的关系，详见 [线性系统理论](/modern/linear-system-theory)。
+
+## 第七步：MIMO 扩展——RGA 分析
+
+### 从 SISO 到 MIMO
+
+前面的设计是 SISO 的：1 个输入 $F$，控制 2 个输出 $x$ 和 $\theta$。但严格来说，这是 1 输入 2 输出的系统，不是方阵，RGA 不直接适用。
+
+为了做 MIMO 分析，我们扩展为 **2 输入 2 输出**系统：
+
+- 输入 $u_1 = F$（小车力），$u_2 = \tau$（摆杆转轴力矩）
+- 输出 $y_1 = x$（小车位置），$y_2 = \theta$（摆杆角度）
+
+物理上，$u_2$ 可以理解为摆杆上的小型电机产生的力矩。
+
+同时加入小车摩擦 $b = 0.1$ N·s/m 和弹簧 $k_s = 2.0$ N/m，使系统有有限的稳态增益（否则小车位置的积分环节使 $A$ 矩阵奇异，稳态增益不存在）。
+
+### 带摩擦和弹簧的 2 输入模型
+
+加入摩擦和弹簧后，线性化方程变为：
+
+$$
+(M + m)\ddot{x} + b\dot{x} + k_s x + ml\ddot{\theta} = F
+$$
+
+$$
+ml\ddot{x} + \frac{4}{3}ml^2\ddot{\theta} = mgl\theta + \tau
+$$
+
+用与第一步相同的方法解出 $\ddot{x}$ 和 $\ddot{\theta}$（注意摩擦只影响 $\dot{x}$ 的系数，弹簧只影响 $x$ 的系数）：
+
+状态空间模型 $\dot{\boldsymbol{x}} = A_f\boldsymbol{x} + B_f\boldsymbol{u}$：
+
+$$
+A_f = \begin{bmatrix} 0 & 1 & 0 & 0 \\ -0.4878 & -0.0897 & -0.0634 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0.1429 & 15.7917 & 0 \end{bmatrix}
+$$
+
+$$
+B_f = \begin{bmatrix} 0 & 0 \\ 0.9756 & -0.0732 \\ 0 & 0 \\ -1.4634 & 1.9512 \end{bmatrix}
+$$
+
+### 稳态增益与 RGA
+
+加入摩擦和弹簧后，$A_f$ 不再奇异（零极点被移到左半平面），稳态增益矩阵 $G_{ss} = -CA_f^{-1}B_f$ 有限。
+
+计算 RGA：$\Lambda = G_{ss} \circ (G_{ss}^{-1})^T$
+
+> 📖 RGA 的定义、性质和计算方法，详见 [多变量系统分析](/modern/multivariable-systems)。
+
+RGA 的结果告诉我们哪个输入应该配对哪个输出——如果 $\lambda_{11} \approx 1$，对角配对（$F \to x$, $\tau \to \theta$）是好选择；如果 $\lambda_{11} \approx 0$ 或为负，则需要交叉配对。
+
+<JupyterNotebook
+  title="Lyapunov 验证与 MIMO RGA 分析"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+from scipy.linalg import solve_continuous_are, solve_lyapunov
+np.set_printoptions(precision=4, suppress=True)`}
+  cells={[
+    {
+      code: `# ===== Lyapunov 稳定性验证 =====
+M, m, l, g = 1.0, 0.1, 0.5, 9.81
+
+a43 = 3*g*(M+m) / (l*(4*M+m))
+b41 = -3 / (l*(4*M+m))
+b21 = (1 - m*l*b41) / (M+m)
+a23 = -m*l*a43 / (M+m)
+
+A = np.array([[0, 1, 0, 0],
+              [0, 0, a23, 0],
+              [0, 0, 0, 1],
+              [0, 0, a43, 0]])
+B = np.array([[0], [b21], [0], [b41]])
+C = np.array([[1, 0, 0, 0],
+              [0, 0, 1, 0]])
+
+# LQR 控制器
+Q_lqr = np.diag([1.0, 1.0, 10.0, 10.0])
+R_lqr = np.array([[0.1]])
+P_lqr = solve_continuous_are(A, B, Q_lqr, R_lqr)
+K_lqr = np.linalg.solve(R_lqr, B.T @ P_lqr)
+
+A_cl = A - B @ K_lqr
+Q_lyap = np.eye(4)
+P_lyap = solve_lyapunov(A_cl.T, -Q_lyap)
+
+eig_P = np.linalg.eigvalsh(P_lyap)
+print("=== Lyapunov 稳定性验证 ===")
+print(f"P 的特征值: {np.round(eig_P, 4)}")
+print(f"P > 0: {np.all(eig_P > 0)} → 闭环渐近稳定 ✓")
+
+residual = A_cl.T @ P_lyap + P_lyap @ A_cl + Q_lyap
+print(f"Lyapunov 方程残差: {np.max(np.abs(residual)):.2e}")`
+    },
+    {
+      code: `# ===== MIMO RGA 分析（带摩擦 b=0.1 和弹簧 k_s=2.0）=====
+b_f = 0.1
+k_s = 2.0
+Mm = M + m
+den_th = (4/3)*m*l**2 - m**2*l**2/Mm
+
+c_th_xd = b_f*m*l / (Mm * den_th)
+c_th_th = m*g*l / den_th
+c_th_F = -m*l / (Mm * den_th)
+c_th_tau = 1.0 / den_th
+
+coeff_x = -k_s/Mm + m**2*l**2*k_s / (Mm**2 * den_th)
+coeff_xd = -b_f/Mm - m*l*c_th_xd/Mm
+coeff_th = -m*l*c_th_th/Mm
+coeff_F = 1/Mm - m*l*c_th_F/Mm
+coeff_tau = -m*l*c_th_tau/Mm
+
+A_f = np.array([[0, 1, 0, 0],
+                [coeff_x, coeff_xd, coeff_th, 0],
+                [0, 0, 0, 1],
+                [0, c_th_xd, c_th_th, 0]])
+
+B_f = np.array([[0, 0],
+                [coeff_F, coeff_tau],
+                [0, 0],
+                [c_th_F, c_th_tau]])
+
+print("=== MIMO RGA 分析（b=0.1, k_s=2.0）===")
+print(f"A_f =\\n{np.round(A_f, 4)}")
+print(f"\\nB_f =\\n{np.round(B_f, 4)}")
+
+G_ss = -C @ np.linalg.inv(A_f) @ B_f
+print(f"\\n稳态增益矩阵 G_ss =\\n{np.round(G_ss, 4)}")
+
+G_ss_inv = np.linalg.inv(G_ss)
+Lambda = G_ss * G_ss_inv.T
+print(f"\\nRGA Λ =\\n{np.round(Lambda, 4)}")
+print(f"\\nλ₁₁ = {Lambda[0,0]:.4f}")
+if abs(Lambda[0,0] - 1) < 0.5:
+    print("→ 对角配对推荐 (F→x, τ→θ)")
+else:
+    print("→ 交互较强，需要谨慎配对")`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 参数鲁棒性
+
+LQR 的一个著名性质是**良好的鲁棒性裕度**：增益裕度 $[1/2, \infty)$，相位裕度 $\geq 60°$。这意味着即使系统参数变化，LQR 控制器仍然能保持稳定。
+
+对于倒立摆，最敏感的参数是摆杆质量 $m$ 和长度 $l$。如果实际 $m$ 比设计值大 50%（比如换了一根更重的摆杆），LQR 控制器还能稳住吗？
+
+答案是**能**——只要参数变化不改变系统的可控性，LQR 的鲁棒性裕度保证闭环稳定。但性能会下降：调节时间变长，超调增大。
+
+> 如果想看极端情况下的失效，可以用非线性仿真——当 $\theta$ 偏离平衡点太大时，线性化模型不再准确，LQR 控制器可能"来不及接住"。
+
+### 非线性仿真
+
+线性化模型只在 $\theta$ 接近 0 时有效。如果初始角度 $\theta_0 = 30°$（$\pi/6$ rad），线性化模型的预测和真实非线性系统的行为会有多大差异？
+
+在小角度（$< 10°$）下，两者几乎一致。在大角度下，非线性系统的 $\sin\theta < \theta$，恢复力矩比线性模型预测的小——摆杆"更容易倒"。LQR 控制器可能仍然能稳住，但需要更大的控制力。
+
+这就是为什么实际工程中，倒立摆控制通常需要**增益调度**（Gain Scheduling）——在不同角度范围使用不同的控制器增益。
+
+### 工具链总结
+
+回顾一下整个设计流程中，每个工具在什么时候用：
+
+| 步骤 | 工具 | 解决什么问题 |
+|------|------|-------------|
+| 建模 | 状态空间表示 | 统一描述 MIMO 系统和内部动态 |
+| 分析 | 可控性/可观性 | 确认系统能不能控、能不能观 |
+| 分析 | 开环极点 | 了解系统固有动态（稳定性） |
+| 设计 | 极点配置 / LQR | 计算状态反馈增益 $K$ |
+| 设计 | 观测器 | 在缺少状态测量时估计状态 |
+| 设计 | 卡尔曼滤波 | 在噪声中最优估计状态 |
+| 验证 | Lyapunov 方程 | 严格证明闭环稳定性 |
+| 分析 | RGA | 理解 MIMO 交互，选择配对 |
+
+## 小结
+
+1. **倒立摆是"不稳定系统镇定"的经典案例**——它的线性化模型有正实部极点，必须用反馈才能稳定。
+
+2. **现代控制的设计流程是线性的**：建模 → 分析 → 设计 → 验证。每一步都有对应的工具。
+
+3. **LQR vs 极点配置**：LQR 不需要手动选极点，而是通过 $Q, R$ 权重隐式决定。LQR 还有良好的鲁棒性保证。
+
+4. **分离性原理**：控制器和观测器可以独立设计。闭环极点 = 控制器极点 $\cup$ 观测器极点。
+
+5. **LQG = LQR + 卡尔曼滤波**：在噪声环境下的最优线性控制。
+
+6. **Lyapunov 方程是稳定性的"最终裁判"**：无论用什么方法设计控制器，都可以用 Lyapunov 方程验证闭环稳定性。
+
+7. **RGA 帮助理解 MIMO 交互**：在多输入多输出系统中，RGA 告诉你哪个输入应该配对哪个输出。
+
+## 习题
+
+**1.** 从非线性运动方程出发，推导在 $\theta = 0$ 附近线性化后的状态空间模型。验证 $a_{43} = \frac{3g(M+m)}{l(4M+m)}$。
+
+**2.** 证明倒立摆系统（无摩擦）的特征多项式为 $s^2(s^2 - a_{43})$，并说明开环极点的物理含义。
+
+**3.** 对参数 $M = 2$ kg, $m = 0.5$ kg, $l = 0.3$ m，计算线性化模型的 $A, B$ 矩阵，并判断可控性。
+
+**4.** 对于简化的 2 阶摆杆模型 $\ddot{\theta} = a\theta + bu$（$a = 4, b = 1$），设计 LQR 控制器，取 $Q = \text{diag}([1, 0])$, $R = 1$。求 Riccati 方程的解 $P$ 和最优增益 $K$。
+
+**5.** 对于习题 4 的 2 阶模型，设计全阶观测器，要求观测器极点为 $-5, -5$。假设只有 $\theta$ 可测量。
+
+**6.** 对习题 4 的 LQR 闭环系统，取 $Q_{\text{lyap}} = I$，解 Lyapunov 方程 $A_{cl}^T P + P A_{cl} = -I$，验证 $P > 0$。
+
+**7.** 计算以下稳态增益矩阵的 RGA，并推荐输入-输出配对方案：
+
+$$
+K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}
+$$
+
+**8.** 证明分离性原理：对于基于观测器的控制器 $u = -K\hat{x}$, $\dot{\hat{x}} = A\hat{x} + Bu + L(y - C\hat{x})$，闭环系统的特征值是 $A - BK$ 和 $A - LC$ 的特征值的并集。
+
+## 答案
+
+**1.** 非线性方程：
+
+$$
+(M+m)\ddot{x} + ml\ddot{\theta}\cos\theta - ml\dot{\theta}^2\sin\theta = F
+$$
+
+$$
+ml\ddot{x}\cos\theta + \frac{4}{3}ml^2\ddot{\theta} - mgl\sin\theta = 0
+$$
+
+在 $\theta = 0, \dot{\theta} = 0$ 处线性化：$\sin\theta \approx \theta$, $\cos\theta \approx 1$, $\dot{\theta}^2 \approx 0$：
+
+$$
+(M+m)\ddot{x} + ml\ddot{\theta} = F \quad \cdots (1)
+$$
+
+$$
+ml\ddot{x} + \frac{4}{3}ml^2\ddot{\theta} = mgl\theta \quad \cdots (2)
+$$
+
+由 (1)：$\ddot{x} = \frac{F - ml\ddot{\theta}}{M+m}$，代入 (2)：
+
+$$
+\frac{ml(F - ml\ddot{\theta})}{M+m} + \frac{4}{3}ml^2\ddot{\theta} = mgl\theta
+$$
+
+$$
+\ddot{\theta}\left(\frac{4}{3}ml^2 - \frac{m^2l^2}{M+m}\right) = mgl\theta - \frac{mlF}{M+m}
+$$
+
+$$
+\ddot{\theta} \cdot \frac{ml^2(4M+m)}{3(M+m)} = mgl\theta - \frac{mlF}{M+m}
+$$
+
+$$
+\ddot{\theta} = \frac{3g(M+m)}{l(4M+m)}\theta - \frac{3}{l(4M+m)}F = a_{43}\theta + b_{41}F \quad \checkmark
+$$
+
+**2.** 状态空间矩阵 $A$ 的特征多项式：
+
+$$
+\det(sI - A) = \det\begin{bmatrix} s & -1 & 0 & 0 \\ 0 & s & -a_{23} & 0 \\ 0 & 0 & s & -1 \\ 0 & 0 & -a_{43} & s \end{bmatrix}
+$$
+
+沿第一列展开：
+
+$$
+= s \cdot \det\begin{bmatrix} s & -a_{23} & 0 \\ 0 & s & -1 \\ 0 & -a_{43} & s \end{bmatrix}
+$$
+
+$$
+= s \cdot s \cdot \det\begin{bmatrix} s & -1 \\ -a_{43} & s \end{bmatrix} = s^2(s^2 - a_{43})
+$$
+
+开环极点：$s = 0, 0, \pm\sqrt{a_{43}}$
+
+- $s = 0$（二重）：小车位置的积分动态（力 → 加速度 → 速度 → 位置，两级积分）
+- $s = +\sqrt{a_{43}}$：摆杆的不稳定模式（正实部 → 指数增长 → 倒下）
+- $s = -\sqrt{a_{43}}$：摆杆的稳定模式（如果初始条件让它向平衡点方向运动）
+
+**3.** 代入 $M = 2, m = 0.5, l = 0.3, g = 9.81$：
+
+$M + m = 2.5$, $4M + m = 8.5$, $l(4M+m) = 2.55$
+
+$$
+a_{43} = \frac{3 \times 9.81 \times 2.5}{2.55} = \frac{73.575}{2.55} = 28.85
+$$
+
+$$
+b_{41} = \frac{-3}{2.55} = -1.176
+$$
+
+$$
+b_{21} = \frac{1 - 0.15 \times (-1.176)}{2.5} = \frac{1 + 0.1765}{2.5} = 0.4706
+$$
+
+$$
+a_{23} = \frac{-0.15 \times 28.85}{2.5} = -1.731
+$$
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & -1.731 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 28.85 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0.4706 \\ 0 \\ -1.176 \end{bmatrix}
+$$
+
+可控性矩阵 $\mathcal{C} = [B, AB, A^2B, A^3B]$：
+
+$AB = [0.4706, 0, -1.176, 0]^T$
+
+$A^2B = [0, -1.731 \times (-1.176), 0, 28.85 \times (-1.176)]^T = [0, 2.036, 0, -33.93]^T$
+
+$A^3B = [2.036, 0, -33.93, 0]^T$
+
+$$
+\mathcal{C} = \begin{bmatrix} 0 & 0.4706 & 0 & 2.036 \\ 0.4706 & 0 & 2.036 & 0 \\ 0 & -1.176 & 0 & -33.93 \\ -1.176 & 0 & -33.93 & 0 \end{bmatrix}
+$$
+
+$\det(\mathcal{C}) \neq 0$（可以通过行变换验证），$\text{rank}(\mathcal{C}) = 4$ → 完全可控 ✓
+
+**4.** 2 阶模型：$A_2 = \begin{bmatrix} 0 & 1 \\ 4 & 0 \end{bmatrix}$, $B_2 = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$, $Q = \begin{bmatrix} 1 & 0 \\ 0 & 0 \end{bmatrix}$, $R = 1$.
+
+设 $P = \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix}$，ARE：$A_2^T P + P A_2 - P B_2 R^{-1} B_2^T P + Q = 0$
+
+计算各项：
+
+$$
+A_2^T P + P A_2 = \begin{bmatrix} 8p_2 & p_1 + 4p_3 \\ p_1 + 4p_3 & 2p_2 \end{bmatrix}
+$$
+
+$$
+P B_2 B_2^T P = \begin{bmatrix} p_2^2 & p_2 p_3 \\ p_2 p_3 & p_3^2 \end{bmatrix}
+$$
+
+ARE 各元素：
+
+$(1,1)$: $8p_2 - p_2^2 + 1 = 0 \implies p_2^2 - 8p_2 - 1 = 0 \implies p_2 = 4 + \sqrt{17} \approx 8.123$
+
+（取正根以保证 $P > 0$）
+
+$(2,2)$: $2p_2 - p_3^2 = 0 \implies p_3 = \sqrt{2p_2} = \sqrt{8 + 2\sqrt{17}} \approx 4.031$
+
+$(1,2)$: $p_1 + 4p_3 - p_2 p_3 = 0 \implies p_1 = p_3(p_2 - 4) = \sqrt{17} \cdot \sqrt{8 + 2\sqrt{17}} \approx 16.62$
+
+$$
+P = \begin{bmatrix} 16.62 & 8.123 \\ 8.123 & 4.031 \end{bmatrix}
+$$
+
+验证 $P > 0$：$p_1 = 16.62 > 0$ ✓，$\det(P) = 16.62 \times 4.031 - 8.123^2 \approx 1.0 > 0$ ✓
+
+最优增益：
+
+$$
+K = R^{-1} B_2^T P = [p_2, p_3] = [4 + \sqrt{17},\; \sqrt{8 + 2\sqrt{17}}] \approx [8.12,\; 4.03]
+$$
+
+闭环极点：$A_2 - B_2 K = \begin{bmatrix} 0 & 1 \\ 4 - 8.12 & -4.03 \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -4.12 & -4.03 \end{bmatrix}$
+
+特征方程：$s^2 + 4.03s + 4.12 = 0 \implies s \approx -2.02 \pm 0.25j$ ✓（稳定）
+
+**5.** 2 阶模型 $A_2 = \begin{bmatrix} 0 & 1 \\ 4 & 0 \end{bmatrix}$, $C_2 = \begin{bmatrix} 1 & 0 \end{bmatrix}$.
+
+观测器增益 $L = \begin{bmatrix} l_1 \\ l_2 \end{bmatrix}$，$A_2 - LC_2 = \begin{bmatrix} -l_1 & 1 \\ 4 - l_2 & 0 \end{bmatrix}$
+
+特征方程：$s^2 + l_1 s + (l_2 - 4) = 0$
+
+期望极点 $-5, -5$：$(s+5)^2 = s^2 + 10s + 25 = 0$
+
+比较系数：$l_1 = 10$, $l_2 - 4 = 25 \implies l_2 = 29$
+
+$$
+L = \begin{bmatrix} 10 \\ 29 \end{bmatrix}
+$$
+
+**6.** 习题 4 的闭环系统 $A_{cl} = \begin{bmatrix} 0 & 1 \\ -4.12 & -4.03 \end{bmatrix}$
+
+解 Lyapunov 方程 $A_{cl}^T P + P A_{cl} = -I$：
+
+设 $P = \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix}$
+
+$$
+A_{cl}^T P + P A_{cl} = \begin{bmatrix} -8.24p_2 & p_1 - 4.03p_2 - 4.12p_3 \\ p_1 - 4.03p_2 - 4.12p_3 & 2p_2 - 8.06p_3 \end{bmatrix} = \begin{bmatrix} -1 & 0 \\ 0 & -1 \end{bmatrix}
+$$
+
+$(1,1)$: $p_2 = 1/8.24 = 0.1214$
+
+$(2,2)$: $2(0.1214) - 8.06p_3 = -1 \implies p_3 = 1.2428/8.06 = 0.1542$
+
+$(1,2)$: $p_1 = 4.03 \times 0.1214 + 4.12 \times 0.1542 = 0.489 + 0.635 = 1.124$
+
+$$
+P = \begin{bmatrix} 1.124 & 0.121 \\ 0.121 & 0.154 \end{bmatrix}
+$$
+
+验证 $P > 0$：$p_1 = 1.124 > 0$ ✓，$\det(P) = 1.124 \times 0.154 - 0.121^2 = 0.173 - 0.015 = 0.158 > 0$ ✓
+
+闭环渐近稳定 ✓
+
+**7.** $K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$
+
+$$
+K^{-1} = \frac{1}{4-1}\begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix} = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}
+$$
+
+$$
+(K^{-1})^T = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}
+$$
+
+RGA（Hadamard 积 $\Lambda = K \circ (K^{-1})^T$）：
+
+$$
+\Lambda = \begin{bmatrix} 2 \times 2/3 & 1 \times (-1/3) \\ 1 \times (-1/3) & 2 \times 2/3 \end{bmatrix} = \begin{bmatrix} 4/3 & -1/3 \\ -1/3 & 4/3 \end{bmatrix}
+$$
+
+$\lambda_{11} = 4/3 \approx 1.33$
+
+行和 = $4/3 - 1/3 = 1$ ✓，列和 = $4/3 - 1/3 = 1$ ✓
+
+$\lambda_{11} = 1.33$ 接近 1（$|1.33 - 1| = 0.33 < 0.5$），**推荐对角配对**：$u_1 \to y_1$, $u_2 \to y_2$。交互较弱。
+
+**8.** 定义估计误差 $\boldsymbol{e} = \boldsymbol{x} - \hat{\boldsymbol{x}}$。
+
+系统动态：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} = A\boldsymbol{x} - BK\hat{\boldsymbol{x}} = A\boldsymbol{x} - BK(\boldsymbol{x} - \boldsymbol{e}) = (A - BK)\boldsymbol{x} + BK\boldsymbol{e}$
+
+误差动态：
+
+$$
+\dot{\boldsymbol{e}} = \dot{\boldsymbol{x}} - \dot{\hat{\boldsymbol{x}}} = (A\boldsymbol{x} + B\boldsymbol{u}) - (A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(C\boldsymbol{x} - C\hat{\boldsymbol{x}}))
+$$
+
+$$
+= A(\boldsymbol{x} - \hat{\boldsymbol{x}}) - LC(\boldsymbol{x} - \hat{\boldsymbol{x}}) = (A - LC)\boldsymbol{e}
+$$
+
+组合系统（状态 $[\boldsymbol{x}^T, \boldsymbol{e}^T]^T$）：
+
+$$
+\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{e}} \end{bmatrix} = \begin{bmatrix} A - BK & BK \\ 0 & A - LC \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{e} \end{bmatrix}
+$$
+
+这是一个**上三角分块矩阵**，其特征值等于对角块特征值的并集：
+
+$$
+\det\left(sI - \begin{bmatrix} A-BK & BK \\ 0 & A-LC \end{bmatrix}\right) = \det(sI - (A-BK)) \cdot \det(sI - (A-LC))
+$$
+
+因此闭环极点 = $\{A-BK \text{ 的特征值}\} \cup \{A-LC \text{ 的特征值}\}$。
+
+这意味着控制器设计（选 $K$）和观测器设计（选 $L$）**互不影响**——分离性原理成立。 $\blacksquare$

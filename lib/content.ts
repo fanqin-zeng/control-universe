@@ -1,13 +1,16 @@
 import { compileMDX } from "next-mdx-remote/rsc";
+import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 import { readFile } from "fs/promises";
 import path from "path";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
 
-import { Callout } from "@/components/wiki/callout";
-import { StepResponseSlider } from "@/components/wiki/step-response-slider";
+// 组件映射的唯一来源是 lib/wiki-components.ts（E2 · fix-015 根治）；mdx-components.tsx 也从它导入。
+// 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
+import { wikiComponents } from "@/lib/wiki-components";
 import { logger } from "@/lib/logger";
 
 const contentDir = path.join(process.cwd(), "content");
@@ -17,7 +20,14 @@ export interface LessonMeta {
   description: string;
 }
 
-export async function getLesson(chapter: string, lesson: string) {
+/** compileMDX 的组件表类型，供页面注入 h1 覆盖（A8 的前置课程卡片靠它挂在标题下方）。 */
+type MdxComponents = NonNullable<MDXRemoteProps["components"]>;
+
+export async function getLesson(
+  chapter: string,
+  lesson: string,
+  extraComponents?: MdxComponents
+) {
   const filePath = path.join(contentDir, chapter, `${lesson}.mdx`);
   logger.debug("加载课程", { chapter, lesson });
 
@@ -32,12 +42,16 @@ export async function getLesson(chapter: string, lesson: string) {
     throw err;
   }
 
-  const result = await compileLessonSource(source, lesson);
+  const result = await compileLessonSource(source, lesson, extraComponents);
   logger.info("课程加载完成", { chapter, lesson, title: result.meta.title });
   return result;
 }
 
-async function compileLessonSource(source: string, fallbackTitle: string) {
+async function compileLessonSource(
+  source: string,
+  fallbackTitle: string,
+  extraComponents?: MdxComponents
+) {
   try {
     const { content, frontmatter } = await compileMDX<LessonMeta>({
       source,
@@ -51,10 +65,15 @@ async function compileLessonSource(source: string, fallbackTitle: string) {
             rehypeKatex as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [rehypePrettyCode, { theme: "github-light" }] as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rehypeSlug as any,
           ],
         },
       },
-      components: { Callout, StepResponseSlider },
+      components: {
+        ...wikiComponents,
+        ...extraComponents,
+      },
     });
 
     return {

@@ -1,0 +1,1045 @@
+---
+title: "滑模控制"
+description: "用不连续的高增益切换换取对匹配不确定性的完全鲁棒性：切换面、等效控制、有限时间到达、抖振与边界层/超螺旋抑制、匹配条件，以及五个定量数值实验"
+---
+
+# 滑模控制
+
+## 引言
+
+最古老的反馈装置就是一个开关：老式电暖器的温控器只有"全开"和"全关"两档，靠不停地切换把温度维持在设定值附近。这个看似粗糙的做法里藏着一个深刻的思想——**切换本身可以是一种控制手段**。
+
+滑模控制（Sliding Mode Control, SMC）把这个思想做成了有完整设计方法的理论。它的做法是：在状态空间里指定一个超平面 $s(x)=0$（**切换面**），然后设计一个不连续的控制律，把系统状态在**有限时间**内强行推到面上；一旦上到面上，闭环动态就完全由切换面的几何决定，而**不再依赖被控对象的模型，也不再依赖满足"匹配条件"的不确定性与扰动**。这就是滑模控制的卖点：对匹配不确定性具有理论上的**完全鲁棒性**（invariance），而不是"误差小一点"的近似鲁棒。
+
+代价同样明确：维持滑动需要控制量在切换面两侧高频换向，而真实执行机构（电机、舵机、阀门、功率开关）做不到无限快切换，于是出现有限频率、大幅值的振荡——**抖振**（chattering）。抖振带来磨损、发热、噪声放大，还可能激发未建模的高频动态。因此滑模控制的工程本质，是在"鲁棒性、精度、抖振"三者之间做权衡。
+
+上一课 [反馈线性化](/nonlinear/feedback-linearization) 用精确模型把非线性"抵消"掉，模型一错结论就崩；本课反过来：**不追求精确抵消，而是用足够强的切换把模型误差和扰动一起压住**。两课合起来，正好覆盖非线性控制的两大路线。
+
+<Callout variant="info">
+**本课的前置知识**：李雅普诺夫稳定性（$V=\tfrac12 s^2$ 的证明套路，见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)）；仿射系统与不连续向量场的解（见 [非线性系统特性](/nonlinear/nonlinear-characteristics)）；反馈线性化中的等效控制思想（见 [反馈线性化](/nonlinear/feedback-linearization)）。
+</Callout>
+
+学完本课，你应当能够：
+
+1. 解释到达阶段与滑动阶段的区别，并说明"滑动模态与模型无关"（不变性）的来源；
+2. 对二阶系统完成"选面 → 求等效控制 → 定切换增益 → 证有限时间到达"的完整设计；
+3. 用 $V=\tfrac12 s^2$ 证明到达条件，并区分"有限时间到达"与 Barbalat 引理给出的渐近结论；
+4. 定量比较 sgn / 边界层 / tanh / 超螺旋四种控制律的抖振代价与稳态精度；
+5. 用秩条件判断不确定性是否匹配，并解释为什么"加大切换增益"对不匹配扰动无效。
+
+## 滑模控制的基本概念
+
+### 两阶段机制
+
+滑模控制的工作过程分成两个阶段：
+
+**到达阶段（reaching phase）**：状态从任意初值出发，在切换控制的作用下于**有限时间** $t_r$ 内到达切换面 $s(x)=0$。这一阶段控制量通常接近满幅，目的是尽快"捕获"状态。
+
+**滑动阶段（sliding phase）**：状态到达面上后，控制律在面两侧高速切换，其平均效果恰好维持 $\dot s = 0$，于是状态被约束在面上运动。面上的运动方程是一个 $n-1$ 阶的**滑动模态**（sliding mode dynamics），它由切换面的几何唯一决定。
+
+<figure>
+  <img src="/images/sliding-mode-concept.png" alt="相平面中多条轨迹先被吸引到斜率为负的切换面 s=0，再沿面滑向原点" />
+  <figcaption>图1：两阶段机制。蓝色轨迹从不同初值出发（到达阶段），被压到红色切换面 $s=0$（即 $\dot e=-\lambda e$）上，然后沿面滑向原点（滑动阶段）。注意切换面必须是负斜率：正斜率的面对应不稳定的滑动模态。</figcaption>
+</figure>
+
+### 切换函数与切换面
+
+对 $n$ 阶系统，切换函数通常取状态的线性组合：
+
+$$s(x) = c_1 x_1 + c_2 x_2 + \cdots + c_{n-1} x_{n-1} + x_n$$
+
+系数选取要使多项式 $p^{n-1} + c_{n-1}p^{n-2} + \cdots + c_1$ 的所有根位于左半平面（Hurwitz）。这样当 $s=0$ 时，剩下的 $n-1$ 阶动态渐近稳定。**切换面**就是 $s(x)=0$ 定义的 $n-1$ 维超平面：二阶系统里它是一条直线，三阶系统里是一个平面。
+
+跟踪问题里更常用的写法是把误差的导数链组合起来。对二阶系统：
+
+$$s = \dot e + \lambda e, \qquad e = x - x_d$$
+
+其中 $\lambda>0$ 决定滑动模态的收敛速度。$s=0$ 意味着 $\dot e = -\lambda e$，即误差按 $e^{-\lambda t}$ 指数衰减——**滑动模态就是一个你亲手指定的一阶系统**。推广到 $n$ 阶可取 $s = \left(\frac{d}{dt}+\lambda\right)^{n-1} e$。
+
+### 滑动模态与等效控制：不变性从哪里来
+
+设仿射系统 $\dot x = f(x) + g(x)\,u$（记号与上一课一致）。对切换函数求导：
+
+$$\dot s = \frac{\partial s}{\partial x}\dot x = L_f s(x) + L_g s(x)\,u$$
+
+其中 $L_f s$、$L_g s$ 是 Lie 导数。若理想滑动成立（$s\equiv 0$，从而 $\dot s \equiv 0$），解出维持滑动所需的控制，称为**等效控制**（equivalent control）：
+
+$$u_{eq}(x) = -\frac{L_f s(x)}{L_g s(x)} \qquad (\text{要求 } L_g s \neq 0)$$
+
+把 $u_{eq}$ 代回状态方程，得到滑动模态：
+
+$$\dot x = f(x) - g(x)\frac{L_f s(x)}{L_g s(x)}, \qquad s(x)=0$$
+
+关键观察：如果系统带有**匹配**的不确定性，即 $\dot x = f + \Delta f + g(u + \delta)$ 且 $\Delta f = g\cdot\eta(x,t)$，那么 $\dot s = L_f s + L_g s\,(u+\delta+\eta)$，等效控制变成 $u_{eq} = -(L_f s)/(L_g s) - \delta - \eta$——**扰动被等效控制原封不动地吃掉了**，滑动模态方程里根本不出现 $\Delta f$ 与 $\delta$。这就是"完全鲁棒性"的数学来源：不是误差被压小，而是不确定性在滑动模态中被精确抵消。
+
+<Callout variant="warning">
+**等效控制是物理可观测的吗？** 理想滑动要求无限快切换，物理上不存在。Filippov 意义下的解释是：真实的高频切换控制在一个短窗口内的**时间平均**等于 $u_{eq}$。Notebook 1 会用数值实验直接验证这一点，并且展示一个容易踩的坑：用高阶自适应积分器（如 RK4）去仿真理想 sgn 控制，得到的"平均值"是错的。
+</Callout>
+
+### 到达条件与有限时间到达
+
+滑动要能建立，首先状态得**到得了**面上。充分条件是存在 $\eta>0$ 使
+
+$$s\,\dot s \le -\eta\,|s| \quad\Longleftrightarrow\quad \dot V \le -\eta|s|,\quad V=\tfrac12 s^2$$
+
+取 $V=\tfrac12 s^2$，则 $\dot V = s\dot s \le -\eta|s| = -\eta\sqrt{2V}$。由比较引理，$\sqrt{V(t)} \le \sqrt{V(0)} - \frac{\eta}{\sqrt2}t$，故
+
+$$t_r \le \frac{\sqrt{2V(0)}}{\eta} = \frac{|s(0)|}{\eta}$$
+
+即**有限时间到达**，且上界可以手算。
+
+<Callout variant="warning">
+**常见错误**：用 Barbalat 引理"证明"有限时间到达。Barbalat 引理只能给出 $\dot V \to 0$ 或 $s\to 0$ 的**渐近**结论，给不出到达时间上界。有限时间性来自 $\dot V \le -\eta\sqrt{2V}$ 这种"在零点不可 Lipschitz"的结构，必须用上面的比较引理（或等价的积分估计）。
+</Callout>
+
+### 数字实现：准滑动模态
+
+以上全部假设连续时间的理想切换。数字控制器以周期 $T$ 采样，状态在一个采样周期内无法被拉回面上，因此实际得到的是**准滑动模态**（quasi-sliding mode）：状态在宽度为 $O(T)$ 的带内振荡，稳态误差也按 $O(T)$ 缩放。工程经验是采样频率至少为闭环带宽的 10 倍以上；Notebook 1 会用积分步长扮演采样周期，把这个 $O(T)$ 关系直接测出来。
+
+## 二阶系统的滑模控制器设计
+
+### 问题描述
+
+考虑带匹配扰动的二阶系统：
+
+$$\ddot x = f(x,\dot x) + b(x,\dot x)\,u + d(t)$$
+
+其中 $b(x,\dot x) \ge b_0 > 0$ 已知（至少符号与下界已知），扰动有界 $|d(t)| \le D$ 且 $D$ 已知。目标：使 $x$ 跟踪 $x_d(t)$。
+
+### 步骤 1：切换函数
+
+$$e = x - x_d, \qquad s = \dot e + \lambda e$$
+
+$\lambda$ 是滑动模态的极点（收敛速率），也是后面稳态精度的分母，选大一些精度高，但需要的控制权限也更大。
+
+### 步骤 2：求 $\dot s$ 与等效控制
+
+$$\dot s = \ddot x - \ddot x_d + \lambda \dot e = f + b\,u + d - \ddot x_d + \lambda \dot e$$
+
+令名义部分（$d=0$）为零，解出名义等效控制：
+
+$$u_{eq} = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e\Big]$$
+
+### 步骤 3：完整控制律
+
+把切换项放在 $\frac1b$ 的**括号内**，可以避免增益与 $b$ 的纠缠：
+
+$$u = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e - k\,\mathrm{sgn}(s)\Big], \qquad k > D$$
+
+代入 $\dot s$ 得 $\dot s = -k\,\mathrm{sgn}(s) + d$，于是
+
+$$\dot V = s\dot s = -k|s| + s\,d \le -(k-D)|s| = -\eta|s|, \qquad \eta = k-D$$
+
+**到达条件**：$k > D$。增益裕度 $\eta$ 直接决定到达时间上界 $t_r \le |s(0)|/\eta$。
+
+### 步骤 4：滑动模态与总误差预算
+
+到达后 $s=0 \Rightarrow \dot e = -\lambda e$，故 $e(t) = e(t_r)e^{-\lambda(t-t_r)}$。总误差 = 到达阶段的偏差 + 滑动阶段的指数尾：想快就加大 $k$（缩短 $t_r$）与 $\lambda$（缩短尾），两者都要更多控制权限。
+
+### 步骤 5：$b$ 不确定怎么办
+
+若只知道 $b$ 的符号与范围 $0 < b_{\min} \le b \le b_{\max}$，用标称值 $\hat b = \sqrt{b_{\min}b_{\max}}$ 设计，则条件变为 $k > \frac{D + \beta|u_{eq,\hat b}|}{\text{...}}$ 的形式；工程上常用的充分条件是比值有界 $\frac{b}{\hat b} \in [\beta^{-1}, \beta]$ 且
+
+$$k \ge \beta\big(D + (\beta-1)|u_{eq,\hat b}|\big)$$
+
+直觉：控制增益的误差会按 $|u|$ 的比例放大等效控制的误差，所以切换增益不仅要盖住扰动，还要盖住"等效控制算错的部分"。
+
+<JupyterNotebook
+  title="Notebook 1：到达条件、滑动模态与等效控制的数值验证"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 被控对象: x'' = -2 x' - sin(x) + u + d(t),  d = 0.3 sin(5t),  |d| <= D
+D, LAM, K = 0.3, 3.0, 2.0
+ETA = K - D
+dist = lambda t: D*np.sin(5.0*t)
+
+def rhs(t, y):
+    x, xd = y
+    s = xd + LAM*x
+    u = 2.0*xd + np.sin(x) - LAM*xd - K*np.sign(s)
+    return np.array([xd, -2.0*xd - np.sin(x) + u + dist(t)])
+
+dt, T_END = 1e-4, 6.0
+n = int(T_END/dt)
+y = np.array([1.5, 0.0])
+T = np.zeros(n+1); X = np.zeros(n+1); S = np.zeros(n+1)
+for i in range(n+1):
+    t = i*dt
+    T[i], X[i], S[i] = t, y[0], y[1] + LAM*y[0]
+    if i == n:
+        break
+    k1 = rhs(t, y); k2 = rhs(t+dt/2, y+dt/2*k1)
+    k3 = rhs(t+dt/2, y+dt/2*k2); k4 = rhs(t+dt, y+dt*k3)
+    y = y + dt/6*(k1+2*k2+2*k3+k4)
+
+print(f"eta = K - D = {ETA:.2f},  s(0) = {S[0]:.4f},  解析上界 t_r <= |s(0)|/eta = {abs(S[0])/ETA:.4f} s")
+tol, hold = 0.02, 0.2
+below = np.abs(S) < tol
+kh = int(hold/dt)
+idx = next(i for i in range(len(T)-kh) if below[i] and np.all(below[i:i+kh]))
+t_r = T[idx]
+print(f"实测到达时间 t_r = {t_r:.4f} s（满足上界；上界按最坏扰动估计，偏保守）")
+m = (T > t_r+0.5) & (np.abs(X) > 1e-12)
+slope = np.polyfit(T[m], np.log(np.abs(X[m])), 1)[0]
+print(f"滑动阶段 log|x| 斜率 = {slope:.4f}，理论 -lambda = {-LAM:.1f}（滑动模态 e' = -lambda*e 成立）")` },
+    { code: `# 等效控制 = 切换控制的滑动平均（Filippov 意义）
+def run(scheme, dt, t_end=6.0):
+    n = int(t_end/dt); x, xd = 1.5, 0.0
+    T=[]; U=[]; UEQ=[]; SS=[]
+    for i in range(n+1):
+        t = i*dt
+        s = xd + LAM*x
+        u_eq = 2.0*xd + np.sin(x) - LAM*xd
+        u = u_eq - K*np.sign(s)
+        T.append(t); U.append(u); UEQ.append(u_eq); SS.append(s)
+        if i == n:
+            break
+        acc = -2.0*xd - np.sin(x) + u + dist(t)
+        if scheme == "euler":
+            x, xd = x + dt*xd, xd + dt*acc
+        else:
+            yv = np.array([x, xd])
+            k1 = rhs(t, yv); k2 = rhs(t+dt/2, yv+dt/2*k1)
+            k3 = rhs(t+dt/2, yv+dt/2*k2); k4 = rhs(t+dt, yv+dt*k3)
+            x, xd = yv + dt/6*(k1+2*k2+2*k3+k4)
+    return np.array(T), np.array(U), np.array(UEQ), np.array(SS)
+
+W = 0.2
+print("滑动段内 u 的 0.2s 窗口平均，应等于 u_eq - d（等效控制自动吸收扰动）")
+print(f"{'积分格式':<8} {'dt':>9} {'max|mean(u)-(u_eq-d)|':>24}")
+for scheme in ["euler", "rk4"]:
+    for d_ in [1e-3, 1e-4, 1e-5]:
+        T2, U2, UEQ2, _ = run(scheme, d_)
+        w = int(W/d_)
+        errs = []
+        for c in [3.0, 3.5, 4.0, 4.5]:
+            i = int(c/d_); a, b = i-w//2, i+w//2
+            errs.append(abs(np.mean(U2[a:b]) - np.mean(UEQ2[a:b] - dist(T2[a:b]))))
+        print(f"{scheme:<8} {d_:9.0e} {max(errs):24.4f}")
+print("=> 一阶（采样数据）格式的平均值随 dt 收敛到等效控制；")
+print("   RK4 的中间阶段跨越不连续面，平均值失真且不随 dt 收敛，不能用来验证 Filippov 结论")` },
+    { code: `# 数值抖振带 vs 积分步长：理想 sgn 的"抖振"在纯数值仿真里是 O(dt) 的
+print(f"{'dt':>9} {'max|s|':>11} {'max|s|/dt':>11} {'TV(u)':>11} {'TV(u)*dt':>10}")
+for d_ in [2e-4, 1e-4, 5e-5, 2e-5]:
+    T3, U3, UEQ3, Ss = run("euler", d_)
+    m3 = T3 > 3.0
+    band = np.max(np.abs(Ss[m3]))
+    tv = np.sum(np.abs(np.diff(U3[m3])))
+    print(f"{d_:9.0e} {band:11.3e} {band/d_:11.4f} {tv:11.2f} {tv*d_:10.4f}")
+print("=> max|s|/dt 近似常数：带宽是 O(dt) 的纯数值现象；")
+print("   TV(u)*dt 近似常数：切换次数随 dt->0 发散，说明理想切换在物理上不可实现")` },
+    { code: `fig, axes = plt.subplots(2, 2, figsize=(11, 6.2))
+sl = T >= t_r
+axes[0,0].plot(T, X, lw=1.4, color="#2563eb", label="实测 x(t)")
+axes[0,0].plot(T[sl], X[idx]*np.exp(-LAM*(T[sl]-t_r)), "--", lw=1.2, color="#9ca3af",
+               label="x(tr)*exp(-lambda*(t-tr))")
+axes[0,0].axvline(t_r, color="#dc2626", lw=0.8, ls=":", label=f"tr={t_r:.2f}s")
+axes[0,0].set_title("到达阶段 + 滑动阶段")
+axes[0,0].set_xlabel("t (s)"); axes[0,0].set_ylabel("x")
+axes[0,0].legend(fontsize=8); axes[0,0].grid(alpha=0.3)
+
+axes[0,1].plot(X, S - LAM*X, lw=1.0, color="#2563eb", label="相轨迹")
+xs = np.linspace(-0.4, 1.8, 200)
+axes[0,1].plot(xs, -LAM*xs, "r--", lw=1.4, label="切换面 s=0")
+axes[0,1].plot(X[0], S[0]-LAM*X[0], "ko", ms=5, label="初值")
+axes[0,1].set_xlim(-0.4, 1.8); axes[0,1].set_ylim(-6.0, 2.0)
+axes[0,1].set_title("相平面 (x, x_dot)")
+axes[0,1].set_xlabel("x"); axes[0,1].set_ylabel("x_dot")
+axes[0,1].legend(fontsize=8); axes[0,1].grid(alpha=0.3)
+
+win = int(0.05/dt)
+mm = T > t_r
+_, Ue, _, _ = run("euler", dt)
+avg = np.convolve(Ue[mm], np.ones(win)/win, mode="valid")
+axes[1,0].plot(T[mm], Ue[mm], lw=0.35, color="#9333ea", alpha=0.7, label="u(t) 切换")
+axes[1,0].plot(T[mm][win//2:win//2+len(avg)], avg, lw=2.0, color="#0f172a", label="0.05s 滑动平均")
+axes[1,0].set_xlim(t_r, t_r+2.0); axes[1,0].set_ylim(-6, 6)
+axes[1,0].set_title("等效控制 = 切换控制的滑动平均")
+axes[1,0].set_xlabel("t (s)"); axes[1,0].legend(fontsize=8); axes[1,0].grid(alpha=0.3)
+
+axes[1,1].plot(T, S, lw=0.5, color="#16a34a")
+axes[1,1].axhline(0, color="k", lw=0.6)
+axes[1,1].set_yscale("symlog", linthresh=1e-4)
+axes[1,1].set_title("切换函数 s(t)（symlog 轴）")
+axes[1,1].set_xlabel("t (s)"); axes[1,1].set_ylabel("s")
+axes[1,1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+Notebook 1 的三组输出分别确认了：到达时间落在解析上界之内（2.26 s vs 上界 2.65 s）；滑动阶段 $\log|x|$ 的斜率等于 $-\lambda$（滑动模态成立）；以及一个仿真方法论结论——**验证等效控制必须用一阶（采样数据）积分格式**，RK4 的中间阶段会跨越不连续面，给出的"滑动平均"偏差高达 1.15 且不随步长收敛。第三组还说明：理想 sgn 控制在数值仿真里的"抖振带"宽度正比于 $dt$，而控制量总变差 $\mathrm{TV}(u)=\sum|\Delta u|$ 正比于 $1/dt$——后者才是物理抖振的预兆：真实执行机构的带宽有限，$dt$ 换成采样周期 $T$ 就是准滑动模态的带宽。
+
+## 手算例子：倒立摆镇定
+
+### 建模与标准化
+
+倒立摆（支点在下方电机上）动力学：
+
+$$m l^2 \ddot\theta = m g l \sin\theta + u + d(t)$$
+
+其中 $d(t)$ 是作用在摆轴上的扰动转矩，$|d| \le D$。取 $m=1$ kg，$l=0.5$ m，$g=9.8$ m/s²，则
+
+$$\ddot\theta = \underbrace{\frac{g}{l}}_{19.6}\sin\theta + \underbrace{\frac{1}{m l^2}}_{4}\big(u + d(t)\big)$$
+
+注意扰动与 $u$ 乘同一个系数 $1/(ml^2)$：**这是匹配扰动**，滑模控制可以完全抑制它。
+
+### 设计
+
+取 $\theta_d = 0$，$e=\theta$，$\lambda = 5$（滑动模态时间常数 0.2 s）：
+
+$$s = \dot\theta + 5\theta$$
+
+$$\dot s = \ddot\theta + 5\dot\theta = 19.6\sin\theta + 4(u+d) + 5\dot\theta$$
+
+令名义部分为零：$u_{eq} = -\frac{1}{4}\big(19.6\sin\theta + 5\dot\theta\big) = -4.9\sin\theta - 1.25\dot\theta$。完整控制律（切换项放在括号内）：
+
+$$u = -4.9\sin\theta - 1.25\dot\theta - k\,\mathrm{sgn}(s)$$
+
+代入得 $\dot s = -4k\,\mathrm{sgn}(s) + 4d$，故 $\dot V \le -4(k-D)|s|$，$\eta = 4(k-D)$。取 $D=0.1$ N·m、$k=0.5$ N·m：$\eta = 4\times0.4 = 1.6$ rad/s²。
+
+### 数值核对（全部手算）
+
+- 初值 $\theta_0 = 0.5$ rad、$\dot\theta_0=0$：$s(0) = 0 + 5\times0.5 = 2.5$，到达时间上界 $t_r \le 2.5/1.6 = 1.5625$ s；
+- 到达后 $\dot\theta = -5\theta$，从 $\theta(t_r)$ 起按 $e^{-5t}$ 衰减，0.6 s 后剩约 5%；
+- 控制律三项的物理含义：$-4.9\sin\theta$ 抵消重力矩，$-1.25\dot\theta$ 注入阻尼，$-k\,\mathrm{sgn}(s)$ 负责鲁棒性；
+- 若改用边界层 $\Phi=0.05$（$s$ 的单位是 rad/s）：保守稳态界 $|\theta_{ss}| \le \Phi/\lambda = 0.01$ rad $=0.573°$；更精细的界（见下一节推导）$|s_{ss}| \le \Phi D/k = 0.01$ rad/s，从而 $|\theta_{ss}| \le 0.01/5 = 0.002$ rad $=0.115°$。
+
+这个例子同时说明滑模控制的"配方"有多短：选 $\lambda$ → 写 $s$ → 解 $u_{eq}$ → 选 $k>D$ → 用 $\eta=k-D$ 估到达时间。五步，全部可以手算。
+
+## 抖振现象与抑制策略
+
+### 成因与危害
+
+理想滑模的切换频率是无穷大。真实系统里，执行机构带宽、传感器噪声、计算时延、采样周期都会把无穷快切换"拉"成有限频率的大幅振荡，即抖振。危害包括：机械磨损与疲劳、额外发热与能耗、激发未建模高频模态（结构共振、功率器件寄生振荡）、放大测量噪声、以及把执行机构推入饱和从而**破坏滑动条件本身**。
+
+<figure>
+  <img src="/images/chattering-phenomenon.png" alt="左：控制量在正负 K 之间高频换向；右：sat 与 tanh 在边界层内平滑过渡" />
+  <figcaption>图2：左为理想切换 $u=-k\,\mathrm{sgn}(s)$ 的控制量波形（横轴是时间）；右为边界层平滑：用 $\mathrm{sat}(s/\Phi)$ 或 $\tanh(s/\Phi)$ 代替 $\mathrm{sgn}$，横轴是切换函数 $s$。</figcaption>
+</figure>
+
+### 方法 1：边界层（饱和函数）
+
+$$\mathrm{sat}\!\left(\frac{s}{\Phi}\right) = \begin{cases} 1 & s > \Phi \\ s/\Phi & |s| \le \Phi \\ -1 & s < -\Phi \end{cases} \qquad u = u_{eq} - k\,\mathrm{sat}\!\left(\frac{s}{\Phi}\right)$$
+
+层外与理想滑模相同；层内控制量随 $s$ 线性变化，切换消失。**代价**是不再渐近收敛到 $s=0$：层内动态为
+
+$$\dot s = -\frac{b k}{\Phi}s + d \quad\Rightarrow\quad |s_{ss}| \le \frac{\Phi D}{b k}, \qquad |e_{ss}| \le \frac{|s_{ss}|}{\lambda} \le \frac{\Phi D}{b k \lambda}$$
+
+而不用扰动信息的保守界是 $|e_{ss}| \le \Phi/\lambda$。两条界给出同一个设计权衡：$\Phi$ 大 → 抖振小、精度差；$\Phi$ 小 → 精度高、抖振回来。Notebook 2 会实测验证 $|s_{ss}| \approx \Phi D/(bk)$ 这条精细界。
+
+### 方法 2：双曲正切光滑化
+
+$u = u_{eq} - k\tanh(s/\varepsilon)$。与 sat 同族，但在 $|s|=\varepsilon$ 处一阶导连续，对噪声略友好；稳态精度与边界层同量级。
+
+### 方法 3：高阶滑模 / 超螺旋算法（STA）
+
+对相对阶为 1 的 $s$ 动态，超螺旋算法给出**连续**的控制量：
+
+$$u = u_{eq} - \alpha|s|^{1/2}\mathrm{sgn}(s) + v, \qquad \dot v = -\beta\,\mathrm{sgn}(s)$$
+
+不连续被藏进了积分状态 $v$ 里，因此 $u$ 连续、抖振大幅降低，同时仍保持有限时间收敛到 $s=\dot s=0$。工程整定常用 Levant 经验式：若扰动导数有界 $|\dot d| \le L$，取
+
+$$\alpha = 1.5\sqrt{L}, \qquad \beta = 1.1 L$$
+
+<Callout variant="warning">
+**STA 不是免费的**：积分状态 $v$ 的变化速率上限是 $\beta$。若扰动发生阶跃（幅值 $\Delta$），$v$ 至少需要 $\Delta/\beta$ 秒才能追上——Notebook 5 会实测这个恢复时间下界。因此 $\beta$ 必须按**你预期最坏的扰动变化率**整定，而不是按稳态扰动幅值。
+</Callout>
+
+### 方法 4：降低对切换的依赖
+
+- **前馈/观测器**：把可测扰动的估计 $\hat d$ 加进 $u_{eq}$，切换增益只需盖住估计残差，$k$ 可以显著减小；
+- **积分滑模（ISM）**：在 $s$ 里加积分项使系统从 $t=0$ 就在面上，消除到达阶段（到达阶段往往是最脆弱的），但不改变匹配性；
+- **离散滑模**：针对采样系统直接设计，把准滑动带从 $O(T)$ 压到 $O(T^2)$。
+
+<SlidingModeExplorer />
+
+<JupyterNotebook
+  title="Notebook 2：四种控制律的抖振代价与稳态精度定量对比"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 跟踪任务: x_d = 0.5 sin(2t), 匹配扰动 d = 0.3 sin(5t)
+D, LAM, K, PHI = 0.3, 3.0, 2.0, 0.05
+Lpert = D*5.0
+ALPHA, BETA = 1.5*np.sqrt(Lpert), 1.1*Lpert
+DT, T_END = 5e-5, 8.0
+ref = lambda t: (0.5*np.sin(2*t), 1.0*np.cos(2*t), -2.0*np.sin(2*t))
+dist = lambda t: D*np.sin(5.0*t)
+
+def run(law, dt=DT, t_end=T_END, x0=(1.5, 0.0)):
+    n = int(t_end/dt); x, xd, w = x0[0], x0[1], 0.0
+    T=np.empty(n+1); X=np.empty(n+1); S=np.empty(n+1); U=np.empty(n+1)
+    for i in range(n+1):
+        t=i*dt
+        xd_d, xdd_d, xddd_d = ref(t)
+        e, ed = x-xd_d, xd-xdd_d
+        s = ed + LAM*e
+        u_eq = 2.0*xd + np.sin(x) + xddd_d - LAM*ed
+        if   law=="sgn":  u = u_eq - K*np.sign(s)
+        elif law=="sat":  u = u_eq - K*np.clip(s/PHI, -1.0, 1.0)
+        elif law=="tanh": u = u_eq - K*np.tanh(s/PHI)
+        else:             u = u_eq - ALPHA*np.sqrt(abs(s))*np.sign(s) + w
+        T[i],X[i],S[i],U[i] = t,x,s,u
+        if i==n: break
+        acc = -2.0*xd - np.sin(x) + u + dist(t)
+        xdn = xd + dt*acc; x = x + dt*xdn; xd = xdn
+        if law=="sta": w = w - dt*BETA*np.sign(s)
+    return T,X,S,U
+
+print(f"STA 增益(Levant): alpha={ALPHA:.3f}, beta={BETA:.3f}  (L=|d'|<={Lpert:.2f})")
+print()
+hdr = f"{'控制律':>6} {'到达t_r':>9} {'稳态rms|e|':>12} {'稳态max|e|':>12} {'max|s|':>11} {'TV(u)2s':>10} {'u变号':>7} {'max|u|':>8}"
+print(hdr)
+data = {}
+for law in ["sgn","sat","tanh","sta"]:
+    T,X,S,U = run(law); data[law]=(T,X,S,U)
+    E = X - ref(T)[0]
+    below = np.abs(S)<0.02; kh=int(0.1/DT)
+    idx = next((i for i in range(len(T)-kh) if below[i] and np.all(below[i:i+kh])), None)
+    t_r = T[idx] if idx is not None else float('nan')
+    ss = T > T[-1]-2.0
+    tv = np.sum(np.abs(np.diff(U[ss])))
+    nsw = int(np.sum(np.diff(np.sign(U[ss]))!=0))
+    print(f"{law:>6} {t_r:9.4f} {np.sqrt(np.mean(E[ss]**2)):12.3e} {np.max(np.abs(E[ss])):12.3e} "
+          f"{np.max(np.abs(S[ss])):11.3e} {tv:10.2f} {nsw:7d} {np.max(np.abs(U)):8.2f}")` },
+    { code: `print("理论对照：")
+print(f"  边界层保守界 |e_ss| <= Phi/lambda = {PHI/LAM:.5f}")
+print(f"  精细界 |s_ss| <= Phi*D/K = {PHI*D/K:.5f}  ->  |e_ss| <= {PHI*D/(K*LAM):.6f}")
+_,_,Ssat,_ = data["sat"]
+print(f"  实测 sat 的 max|s| = {np.max(np.abs(Ssat[T>6.0])):.5f}，与 Phi*D/K 之比 = "
+      f"{np.max(np.abs(Ssat[T>6.0]))/(PHI*D/K):.3f}")
+print("  => 精细界几乎精确；保守界 Phi/lambda 偏大一个量级，只适合做量级估计")
+print()
+print("结论：sgn 精度最高但 TV(u) 达 1e5 量级（2s 内换号约 2 万次）；")
+print("      sat/tanh 把 TV(u) 降到个位数，代价是稳态误差抬高约两个量级；")
+print("      STA 同时拿到 sgn 的精度与 sat 的平滑（TV(u) 同为个位数），代价是到达更慢、整定更复杂")` },
+    { code: `fig, axes = plt.subplots(2, 2, figsize=(11.5, 6.4))
+colors = {"sgn":"#dc2626","sat":"#2563eb","tanh":"#16a34a","sta":"#9333ea"}
+names = {"sgn":"sgn 理想切换","sat":"sat 边界层 Phi=0.05","tanh":"tanh eps=0.05","sta":"超螺旋 STA"}
+T0 = data["sgn"][0]
+axes[0,0].plot(T0, ref(T0)[0], "k--", lw=1.4, label="期望 x_d(t)")
+for law in colors:
+    T,X,S,U = data[law]
+    axes[0,0].plot(T, X, lw=0.9, color=colors[law], label=names[law])
+axes[0,0].set_xlim(0,8); axes[0,0].set_ylim(-0.7,1.8)
+axes[0,0].set_title("跟踪响应 x(t)"); axes[0,0].set_xlabel("t (s)")
+axes[0,0].legend(fontsize=7); axes[0,0].grid(alpha=0.3)
+
+for law in colors:
+    T,X,S,U = data[law]
+    m=(T>6.0)&(T<6.25)
+    axes[0,1].plot(T[m], X[m]-ref(T[m])[0], lw=0.9, color=colors[law], label=names[law])
+axes[0,1].set_xlim(6.0,6.25); axes[0,1].set_ylim(-0.02,0.02)
+axes[0,1].set_title("稳态跟踪误差放大 t in [6,6.25] s")
+axes[0,1].set_xlabel("t (s)"); axes[0,1].set_ylabel("e")
+axes[0,1].legend(fontsize=7); axes[0,1].grid(alpha=0.3)
+
+for law in colors:
+    T,X,S,U = data[law]
+    m=(T>6.0)&(T<6.25)
+    axes[1,0].plot(T[m], U[m], lw=0.8, color=colors[law], label=names[law])
+axes[1,0].set_xlim(6.0,6.25); axes[1,0].set_ylim(-6,6)
+axes[1,0].set_title("控制量放大：抖振对比"); axes[1,0].set_xlabel("t (s)"); axes[1,0].set_ylabel("u")
+axes[1,0].legend(fontsize=7); axes[1,0].grid(alpha=0.3)
+
+labs = ["sgn","sat","tanh","sta"]
+tvv = [np.sum(np.abs(np.diff(data[l][3][data[l][0]>6.0]))) for l in labs]
+ess = [np.sqrt(np.mean((data[l][1]-ref(data[l][0])[0])[data[l][0]>6.0]**2)) for l in labs]
+ax = axes[1,1]
+ax.bar(np.arange(4)-0.2, tvv, width=0.4, color=[colors[l] for l in labs])
+for i,v in enumerate(tvv): ax.text(i-0.2, v*1.5, f"{v:.1f}", ha="center", fontsize=7)
+ax.set_yscale("log"); ax.set_ylabel("TV(u) 稳态2s")
+ax.set_xticks(np.arange(4)-0.2); ax.set_xticklabels(labs)
+ax2 = ax.twinx()
+ax2.bar(np.arange(4)+0.2, ess, width=0.4, color=[colors[l] for l in labs], alpha=0.45)
+for i,v in enumerate(ess): ax2.text(i+0.2, v*1.5, f"{v:.1e}", ha="center", fontsize=7)
+ax2.set_yscale("log"); ax2.set_ylabel("稳态 rms|e|")
+ax2.set_xticks(np.arange(4)+0.2); ax2.set_xticklabels(labs)
+ax.set_title("抖振代价 TV(u) 与精度 rms|e| 的权衡"); ax.grid(alpha=0.3, axis="y")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+Notebook 2 的数字把"权衡"变成了可以报价的东西：理想 sgn 的稳态 rms 误差约 $1\times10^{-5}$，但 2 秒内控制量换号约 1.9 万次、总变差约 $1.4\times10^5$；边界层把总变差降到约 6（四个数量级以上），稳态误差抬到约 $9\times10^{-4}$；超螺旋则**同时**拿到 $1\times10^{-5}$ 量级的误差与个位数的总变差——代价是到达时间从 1.80 s 拖到 2.43 s，以及一组需要按扰动变化率整定的增益。同时注意实测 $\max|s| = 7.45\times10^{-3}$ 与精细界 $\Phi D/K = 7.5\times10^{-3}$ 的比值是 0.99：边界层的稳态带由"扰动/增益"决定，而不是由 $\Phi$ 单独决定。
+
+## 到达律方法
+
+上一节的设计是"先写控制律、再验证 $\dot V\le-\eta|s|$"。另一条路线是直接**规定 $\dot s$ 的动态**（到达律，reaching law），再反解控制律。好处是到达过程的速度与形状变成设计自由度。
+
+### 常值速达律
+
+$$\dot s = -\varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D$$
+
+积分得 $|s|$ 以速率 $\varepsilon$ 线性下降，$t_r = |s(0)|/\varepsilon$。考虑扰动后实际速率在 $\varepsilon-D$ 与 $\varepsilon+D$ 之间，故 $t_r \in \big[\frac{|s(0)|}{\varepsilon+D}, \frac{|s(0)|}{\varepsilon-D}\big]$。对应的控制律就是上一节的形式（$k=\varepsilon$）。
+
+### 指数到达律
+
+$$\dot s = -k s - \varepsilon\,\mathrm{sgn}(s), \qquad k,\varepsilon>0$$
+
+对 $s>0$ 积分得 $s(t) = \frac{ks_0+\varepsilon}{k}e^{-kt} - \frac{\varepsilon}{k}$，令其为零：
+
+$$t_r = \frac{1}{k}\ln\!\left(1 + \frac{k|s(0)|}{\varepsilon}\right)$$
+
+远离面时 $-ks$ 主导、接近极快；代价是**控制峰值随 $|s(0)|$ 线性放大**（$-ks$ 项在 $t=0$ 最大）。
+
+### 幂次到达律
+
+$$\dot s = -k|s|^{\alpha}\mathrm{sgn}(s), \qquad 0<\alpha<1 \quad\Rightarrow\quad t_r = \frac{|s(0)|^{1-\alpha}}{k(1-\alpha)}$$
+
+有限时间到达，且远处比指数律温和。**但有一个教科书常漏掉的坑**：扰动存在时，平衡要求 $k|s|^{\alpha} = |d|$，即留下残差带
+
+$$|s|_{res} = \left(\frac{D}{k}\right)^{1/\alpha}$$
+
+$\alpha=0.5$、$D=0.3$、$k=2$ 时这个带是 $0.0225$——比边界层还宽。原因是 $|s|^\alpha$ 在面附近趋于零，**近处控制权限不足**，压不住扰动。
+
+### 混合到达律（工程推荐）
+
+$$\dot s = -k|s|^{\alpha}\mathrm{sgn}(s) - \varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D$$
+
+常值项负责盖住扰动、幂次项负责有限时间，两者互补。Notebook 3 的实测显示它几乎拿到指数律的到达速度与幂次律的控制峰值。
+
+<JupyterNotebook
+  title="Notebook 3：四种到达律的到达时间解析式核对与残差带"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `D, LAM, DT, T_END = 0.3, 3.0, 5e-5, 6.0
+dist = lambda t: D*np.sin(5.0*t)
+EPS_C = 1.7
+K_E, EPS_E = 2.0, 0.5
+K_P, ALPHA_P = 2.0, 0.5
+
+def sdot_des(law, s):
+    if law == "const":  return -EPS_C*np.sign(s)
+    if law == "exp":    return -K_E*s - EPS_E*np.sign(s)
+    if law == "power":  return -K_P*np.abs(s)**ALPHA_P*np.sign(s)
+    return -K_P*np.abs(s)**ALPHA_P*np.sign(s) - EPS_E*np.sign(s)
+
+def t_r_theory(law, s0=4.5):
+    if law == "const":  return abs(s0)/EPS_C
+    if law == "exp":    return np.log(1 + K_E*abs(s0)/EPS_E)/K_E
+    if law == "power":  return abs(s0)**(1-ALPHA_P)/(K_P*(1-ALPHA_P))
+    return float('nan')
+
+def run(law, dt=DT, t_end=T_END, x0=(1.5, 0.0)):
+    n=int(round(t_end/dt)); x, xd = x0
+    T=np.empty(n+1); X=np.empty(n+1); XD=np.empty(n+1); S=np.empty(n+1); U=np.empty(n+1)
+    for i in range(n+1):
+        t=i*dt; s = xd + LAM*x
+        u_eq = 2.0*xd + np.sin(x) - LAM*xd
+        u = u_eq + sdot_des(law, s)
+        T[i],X[i],S[i],U[i],XD[i]=t,x,s,u,xd
+        if i==n: break
+        acc = -2.0*xd - np.sin(x) + u + dist(t)
+        xdn = xd + dt*acc; x = x + dt*xdn; xd = xdn
+    return T,X,XD,S,U
+
+print(f"{'到达律':>7} {'解析t_r':>9} {'实测t_r':>9} {'扰动区间':>16} {'max|u|':>8} {'TV到达段':>10} {'稳态rms|e|':>12}")
+out={}; metrics={}
+for law in ["const","exp","power","mixed"]:
+    T,X,XD,S,U = run(law); out[law]=(T,X,XD,S,U)
+    below=np.abs(S)<0.02; kh=int(0.1/DT)
+    idx=next((i for i in range(len(T)-kh) if below[i] and np.all(below[i:i+kh])), None)
+    t_r=T[idx] if idx is not None else float('nan')
+    th=t_r_theory(law)
+    if law=="const": iv=f"[{4.5/(EPS_C+D):.3f},{4.5/(EPS_C-D):.3f}]"
+    elif np.isnan(th): iv="(无闭式)"
+    else: iv="(数值解)"
+    reach=slice(0, idx if idx else len(T))
+    tv=np.sum(np.abs(np.diff(U[reach])))
+    ss=T>T[-1]-1.5
+    rms=np.sqrt(np.mean(X[ss]**2))
+    metrics[law]=dict(rms=rms, umax=np.max(np.abs(U)), t_r=t_r)
+    print(f"{law:>7} {th:9.4f} {t_r:9.4f} {iv:>16} {np.max(np.abs(U)):8.3f} {tv:10.2f} {rms:12.3e}")` },
+    { code: `s_res = (D/K_P)**(1.0/ALPHA_P)
+print(f"纯幂次律残差带: 平衡时 k|s|^alpha=|d| => |s|_res=(D/k)^(1/alpha)={s_res:.4f}")
+print(f"  对应误差量级 |e| ~ |s|_res/lambda = {s_res/LAM:.4f}（实测 rms|e|={metrics['power']['rms']:.2e}，同量级）")
+print("  => 纯幂次律近处权限不足；叠加常值项(mixed)即恢复精确滑动")
+print()
+print(f"指数律最快(t_r={metrics['exp']['t_r']:.2f}s)但峰值最大(max|u|={metrics['exp']['umax']:.2f})；")
+print(f"mixed 律 t_r={metrics['mixed']['t_r']:.2f}s、峰值 {metrics['mixed']['umax']:.2f}、精度 {metrics['mixed']['rms']:.1e}，综合最优")` },
+    { code: `fig,axes=plt.subplots(1,3,figsize=(12,3.4))
+colors={"const":"#dc2626","exp":"#2563eb","power":"#16a34a","mixed":"#9333ea"}
+names={"const":"常值 eps=1.7","exp":"指数 k=2,eps=0.5","power":"幂次 k=2,alpha=0.5",
+       "mixed":"幂次+常值"}
+for law in colors:
+    T,X,XD,S,U=out[law]
+    axes[0].plot(T,S,lw=1.2,color=colors[law],label=names[law])
+axes[0].set_title("切换函数 s(t)"); axes[0].set_xlabel("t (s)")
+axes[0].set_xlim(0,4); axes[0].set_ylim(-0.5,5); axes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)
+for law in colors:
+    T,X,XD,S,U=out[law]
+    axes[1].plot(T,U,lw=1.0,color=colors[law],label=names[law])
+axes[1].set_title("控制量 u(t)：指数律峰值最高"); axes[1].set_xlabel("t (s)")
+axes[1].set_xlim(0,4); axes[1].set_ylim(-9.5,3.5); axes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)
+for law in colors:
+    T,X,XD,S,U=out[law]
+    axes[2].plot(X,XD,lw=1.0,color=colors[law],label=names[law])
+xs=np.linspace(-0.2,1.7,100)
+axes[2].plot(xs,-LAM*xs,"k--",lw=1.0,label="切换面 s=0")
+axes[2].set_title("相平面 (x, x_dot)"); axes[2].set_xlabel("x"); axes[2].set_ylabel("x_dot")
+axes[2].set_xlim(-0.2,1.7); axes[2].set_ylim(-1.7,0.3); axes[2].legend(fontsize=8); axes[2].grid(alpha=0.3)
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+实测与解析式高度一致：常值律 $t_r$ 解析 2.647 s / 实测 2.642 s（且落在扰动区间 $[2.250, 3.214]$ 内）；指数律 1.472 / 1.390；幂次律 2.121 / 2.031。三者的稳态精度差异正是残差带理论的直接证据：指数律 $4.5\times10^{-6}$、混合律 $9.0\times10^{-6}$、常值律 $2.6\times10^{-4}$、纯幂次律 $1.9\times10^{-3}$——**纯幂次律比其它三种差两个量级**，原因就是 $(D/k)^{1/\alpha}=0.0225$ 的残差带。
+
+## 匹配与不匹配不确定性
+
+### 匹配条件的严格定义
+
+对仿射系统 $\dot x = f(x) + g(x)u$，不确定性 $\Delta(x,t)$（含扰动）称为**匹配的**（matched），若存在 $\delta$ 使
+
+$$\Delta(x,t) = g(x)\,\delta(x,t) \quad\Longleftrightarrow\quad \Delta(x,t) \in \mathrm{span}\{g(x)\}$$
+
+即不确定性只从控制通道进入。线性系统 $\dot x = Ax + Bu$ 中，$\Delta A$ 匹配当且仅当 $\Delta A = BE$，可用秩条件检验：
+
+$$\mathrm{rank}\,[B \;\; \Delta A] = \mathrm{rank}\,B$$
+
+### 不变性定理（一句话版）
+
+若不确定性匹配且 $| \delta |$ 有界、切换增益盖住它，则滑动模态方程中**完全不出现**该不确定性（见第 2 节等效控制的推导）。这是滑模控制区别于一切"误差界"型鲁棒方法的本质特征。
+
+### 不匹配不确定性：加大 K 没有用
+
+若 $\Delta \notin \mathrm{span}\{g\}$（例如扰动进入 $x_1$ 通道而控制进入 $x_2$ 通道），切换面只能用**可测状态**构造，滑动条件 $s=0$ 不再等价于理想的误差动态，会留下一个与扰动同量级的残差。关键在于：**这个残差与切换增益 K 无关**——K 只决定能否建立滑动与抖振大小，不决定残差。Notebook 4 把这个结论测得非常干净。
+
+处理不匹配不确定性的正确杠杆是：
+
+1. **提高切换面带宽**（加大 $\lambda$）：残差按 $D_u/\sqrt{\lambda^2+\omega^2}$ 缩小，但需要更多控制权限；
+2. **扰动观测器/前馈**：把不匹配扰动的估计补进等效控制；
+3. **级联/反步滑模**：为内环再设计一个面，把不匹配通道变成内环的"控制输入"（下一课反步法的接口）；
+4. **积分滑模**：消除到达阶段，但不改变匹配性——不要指望它解决不匹配问题。
+
+<JupyterNotebook
+  title="Notebook 4：匹配 vs 不匹配——秩条件判定与 K 扫描实验"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 线性系统的匹配性判定: rank[B, dA] == rank[B] ?
+A = np.array([[0.0, 1.0], [0.0, -0.5]])
+B = np.array([[0.0], [1.0]])
+rankB = np.linalg.matrix_rank(B)
+print("xdot = A x + B u,  A =", A.tolist(), ", B =", B.tolist())
+print("匹配条件: 存在 E 使 dA = B E  <=>  rank[B, dA] = rank[B]")
+print()
+cases = [
+    ("dA1 阻尼不确定 (第2行第2列=-0.2)", np.array([[0.0,0.0],[0.0,-0.2]])),
+    ("dA2 耦合到 x1 通道 (第1行第2列=0.3)", np.array([[0.0,0.3],[0.0,0.0]])),
+    ("dA3 x1 自身不确定 (第1行第1列=0.2)", np.array([[0.2,0.0],[0.0,0.0]])),
+]
+print(f"{'不确定性':<36} {'rank[B,dA]':>11} {'rank[B]':>8} {'判定':>8}")
+for name, dA in cases:
+    r = np.linalg.matrix_rank(np.hstack([B, dA]))
+    print(f"{name:<36} {r:>11d} {rankB:>8d} {'匹配' if r==rankB else '不匹配':>8}")
+print()
+print("=> 只有落在 B 的列空间（即 x2 方程）里的不确定性才是匹配的")` },
+    { code: `# 非线性验证系统:
+#   x1' = x2 + d_u(t)              不匹配扰动 (走 x1 通道), |d_u| <= 0.1
+#   x2' = -sin(x1) - 0.5 x2 + u + d_m(t)   匹配扰动 (走控制通道), |d_m| <= 0.3
+LAM, DT, T_END = 3.0, 5e-5, 8.0
+Dm, Du = 0.3, 0.1
+dm = lambda t: Dm*np.sin(5.0*t)
+du = lambda t: Du*np.sin(3.0*t)
+
+def run(K, use_m, use_u, dt=DT, t_end=T_END, x0=(1.0, 0.0)):
+    n=int(round(t_end/dt)); x1, x2 = x0
+    T=np.empty(n+1); E=np.empty(n+1); S=np.empty(n+1); U=np.empty(n+1)
+    for i in range(n+1):
+        t=i*dt
+        shat = x2 + LAM*x1
+        u = np.sin(x1) + (0.5-LAM)*x2 - K*np.sign(shat)
+        T[i],E[i],S[i],U[i] = t, x1, shat, u
+        if i==n: break
+        d_m = dm(t) if use_m else 0.0
+        d_u = du(t) if use_u else 0.0
+        x1n = x1 + dt*(x2 + d_u)
+        x2n = x2 + dt*(-np.sin(x1) - 0.5*x2 + u + d_m)
+        x1, x2 = x1n, x2n
+    return T,E,S,U
+
+print(f"滑动条件 K > Dm + lambda*Du = {Dm + LAM*Du:.2f}")
+print()
+print(f"{'K':>6} {'仅匹配 rms|e|':>15} {'仅不匹配 rms|e|':>17} {'两者都有 rms|e|':>17} {'TV(u)匹配':>12} {'TV(u)不匹配':>13}")
+res={}
+for K in [0.3, 1.0, 2.0, 4.0, 8.0]:
+    row={}
+    for tag,(um,uu) in {"matched":(True,False),"unmatched":(False,True),"both":(True,True)}.items():
+        T,E,S,U = run(K,um,uu)
+        ss = T > T[-1]-2.0
+        row[tag]=(np.sqrt(np.mean(E[ss]**2)), np.sum(np.abs(np.diff(U[ss]))), T,E,S,U)
+    res[K]=row
+    print(f"{K:6.1f} {row['matched'][0]:15.3e} {row['unmatched'][0]:17.5f} {row['both'][0]:17.5f} "
+          f"{row['matched'][1]:12.1f} {row['unmatched'][1]:13.1f}")` },
+    { code: `# 机理验证: 不匹配残差由 e' = -lambda e + d_u 决定, 与 K 无关
+K = 2.0
+T,E,S,U = run(K, False, True)
+e_pred = np.empty_like(E); ep = 0.0
+for i in range(len(T)):
+    e_pred[i] = ep
+    if i < len(T)-1:
+        ep = ep + DT*(-LAM*ep + du(T[i]))
+ss = T > T[-1]-2.0
+print(f"K={K}, 仅不匹配扰动:")
+print(f"  实测稳态 rms|e|            = {np.sqrt(np.mean(E[ss]**2)):.6f}")
+print(f"  由 e'=-lambda e+d_u 预测    = {np.sqrt(np.mean(e_pred[ss]**2)):.6f}")
+print(f"  最大偏差 max|e-e_pred|      = {np.max(np.abs(E[ss]-e_pred[ss])):.3e}  <- 机理确认")
+amp = Du/np.sqrt(LAM**2 + 3.0**2)
+print(f"  解析幅值 Du/sqrt(lambda^2+w^2) = {amp:.6f} (w=3), 对应 rms = {amp/np.sqrt(2):.6f}")
+print()
+print(f"对照: 同样 K={K}, 仅匹配扰动时 rms|e| = {res[K]['matched'][0]:.3e} (被完全抑制)")
+print(f"K 从 1 加到 8: 不匹配残差 {res[1.0]['unmatched'][0]:.5f} -> {res[8.0]['unmatched'][0]:.5f} (不变),")
+print(f"              而 TV(u) {res[1.0]['unmatched'][1]:.0f} -> {res[8.0]['unmatched'][1]:.0f} (约 10 倍)")
+print("=> 对不匹配扰动, 加大 K 只买抖振, 不买精度")` },
+    { code: `fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.5))
+Ks = [1.0, 2.0, 4.0, 8.0]
+for K in Ks:
+    T,E,S,U = res[K]["matched"][2], res[K]["matched"][3], res[K]["matched"][4], res[K]["matched"][5]
+    axes[0].plot(T, E, lw=0.9, label=f"K={K:g}")
+axes[0].set_title("匹配扰动: K 超过阈值后误差归零")
+axes[0].set_xlabel("t (s)"); axes[0].set_ylabel("e=x1")
+axes[0].set_xlim(0,8); axes[0].set_ylim(-0.05,1.05)
+axes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)
+
+for K in Ks:
+    T,E,S,U = res[K]["unmatched"][2], res[K]["unmatched"][3], res[K]["unmatched"][4], res[K]["unmatched"][5]
+    axes[1].plot(T, E, lw=0.9, label=f"K={K:g}")
+axes[1].plot(T, e_pred, "k--", lw=1.6, label="预测 e'=-lambda e+d_u")
+axes[1].set_title("不匹配扰动: 残差与 K 无关")
+axes[1].set_xlabel("t (s)"); axes[1].set_ylabel("e=x1")
+axes[1].set_xlim(4,8); axes[1].set_ylim(-0.04,0.04)
+axes[1].legend(fontsize=7); axes[1].grid(alpha=0.3)
+
+axes[2].plot(Ks, [res[K]["unmatched"][0] for K in Ks], "o-", color="#dc2626", label="不匹配 rms|e|")
+axes[2].plot(Ks, [res[K]["matched"][0] for K in Ks], "s-", color="#2563eb", label="匹配 rms|e|")
+axes[2].set_xscale("log", base=2); axes[2].set_yscale("log")
+axes[2].set_xticks(Ks); axes[2].set_xticklabels([f"{K:g}" for K in Ks])
+axes[2].set_title("加大 K 只对匹配扰动有用")
+axes[2].set_xlabel("切换增益 K"); axes[2].set_ylabel("稳态 rms|e|")
+axes[2].legend(fontsize=8); axes[2].grid(alpha=0.3, which="both")
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+Notebook 4 的 K 扫描表是本页最重要的一张表：$K=0.3$ 低于滑动条件阈值 $0.6$ 时，连匹配扰动都压不住（rms 误差 0.36）；$K\ge1$ 后匹配残差掉到 $10^{-6}$ 量级（完全抑制），而**不匹配残差在 $K=1,2,4,8$ 下恒为 0.01631**，同时 TV(u) 从 6.5 万涨到 62 万。机理验证进一步给出残差的解析来源：滑动时 $\dot e = -\lambda e + d_u$，实测 rms 0.016310 与预测 0.016308 的最大偏差只有 $3.4\times10^{-6}$。所以面对不匹配扰动，正确的动作是加大 $\lambda$、加观测器或改结构，而不是拧 K。
+
+## 应用案例
+
+### 案例 1：直流电机位置伺服（六控制器同台对比）
+
+工业伺服的真实困难是叠加的：惯量随负载变化、摩擦模型不准、运行中突加负载、电压有限幅。设
+
+$$J\ddot\theta = -B\dot\theta - T_c\tanh(\dot\theta/0.01) + K_t u - T_L(t)$$
+
+标称 $J_0=0.010$、$B_0=0.10$，实际 $J=0.011$（+10%）、$B=0.12$；库仑摩擦 $T_c=0.05$ N·m **不告诉控制器**；$t=4$ s 突加负载 $T_L=0.15$ N·m（等效加速度扰动 13.64 rad/s²）；电压限幅 ±24 V。任务：1.5 s 内平滑点位到 $\pi/2$。
+
+对比六个控制器：整定良好的 PID（含积分）、纯计算力矩（标称模型反馈线性化、无鲁棒项）、计算力矩+sgn、计算力矩+sat、计算力矩+STA（$L=6$）、计算力矩+STA（$L=60$）。
+
+<JupyterNotebook
+  title="Notebook 5：电机位置伺服——PID / 计算力矩 / SMC / STA 六方对比"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `J0, J_real = 0.010, 0.011
+B0, B_real = 0.10, 0.12
+Kt = 0.5
+Tc = 0.05
+U_MAX = 24.0
+T_LOAD, T_STEP = 0.15, 4.0
+DT, T_END = 5e-5, 8.0
+LAM, PHI, K_SW = 20.0, 0.05, 40.0
+
+def theta_d(t):
+    T = 1.5
+    if t >= T:
+        return np.pi/2, 0.0, 0.0
+    x = t/T
+    return ((np.pi/2)*(10*x**3-15*x**4+6*x**5),
+            (np.pi/2)*(30*x**2-60*x**3+30*x**4)/T,
+            (np.pi/2)*(60*x-180*x**2+120*x**3)/T**2)
+
+load = lambda t: T_LOAD if t >= T_STEP else 0.0
+fric = lambda w: Tc*np.tanh(w/0.01)
+sat = lambda z: np.clip(z, -1.0, 1.0)
+
+def base_torque(e, ed, xddd, w):
+    return J0*(xddd - 40.0*ed - 400.0*e) + B0*w
+
+def c_pid(t, th, w, e, ed, s, xddd, st, dt):
+    Kp, Ki, Kd = 10.0, 20.0, 0.5
+    st["integ"] += dt*e
+    return -(Kp*e + Ki*st["integ"] + Kd*ed)/Kt
+
+def c_ct(t, th, w, e, ed, s, xddd, st, dt):
+    return base_torque(e, ed, xddd, w)/Kt
+
+def c_ct_sgn(t, th, w, e, ed, s, xddd, st, dt):
+    return (base_torque(e, ed, xddd, w) - J0*K_SW*np.sign(s))/Kt
+
+def c_ct_sat(t, th, w, e, ed, s, xddd, st, dt):
+    return (base_torque(e, ed, xddd, w) - J0*K_SW*sat(s/PHI))/Kt
+
+def make_sta(L):
+    alpha, beta = 1.5*np.sqrt(L), 1.1*L
+    def c(t, th, w, e, ed, s, xddd, st, dt):
+        st["v"] -= dt*beta*np.sign(s)
+        u_sta = -alpha*np.sqrt(abs(s))*np.sign(s) + st["v"]
+        return (base_torque(e, ed, xddd, w) + J0*u_sta)/Kt
+    return c, alpha, beta
+
+c_sta_lo, a_lo, b_lo = make_sta(6.0)
+c_sta_hi, a_hi, b_hi = make_sta(60.0)
+
+def simulate(ctrl, dt=DT, t_end=T_END):
+    n = int(round(t_end/dt)); th, w = 0.0, 0.0
+    st = {"integ": 0.0, "v": 0.0}
+    T=np.empty(n+1); TH=np.empty(n+1); E=np.empty(n+1); U=np.empty(n+1); S=np.empty(n+1)
+    for i in range(n+1):
+        t = i*dt
+        xd, xdd, xddd = theta_d(t)
+        e, ed = th-xd, w-xdd
+        s = ed + LAM*e
+        u = np.clip(ctrl(t, th, w, e, ed, s, xddd, st, dt), -U_MAX, U_MAX)
+        T[i], TH[i], E[i], U[i], S[i] = t, th, e, u, s
+        if i == n: break
+        acc = (Kt*u - fric(w) - load(t) - B_real*w)/J_real
+        w_new = w + dt*acc
+        th, w = th + dt*w_new, w_new
+    return T, TH, E, U, S
+
+print(f"STA(L=6): alpha={a_lo:.3f}, beta={b_lo:.2f};  STA(L=60): alpha={a_hi:.3f}, beta={b_hi:.2f}")
+print()
+CTRLS = [("PID", c_pid), ("计算力矩", c_ct), ("计算力矩+sgn", c_ct_sgn),
+         ("计算力矩+sat", c_ct_sat), ("计算力矩+STA(L=6)", c_sta_lo),
+         ("计算力矩+STA(L=60)", c_sta_hi)]
+rows = {}
+print(f"{'控制器':<20} {'过渡max|e|':>11} {'加载前rms':>11} {'加载跌落':>9} {'加载后rms':>11} {'恢复时间':>9} {'TV(u)':>10} {'max|u|':>7}")
+for name, ctrl in CTRLS:
+    T, TH, E, U, S = simulate(ctrl)
+    pre = (T > 2.0) & (T < T_STEP-0.2)
+    post = T > T_STEP+1.5
+    dip = np.min(E[T >= T_STEP])
+    band = max(2e-3, 2*np.sqrt(np.mean(E[pre]**2)))
+    kh = int(0.3/DT)
+    full = np.convolve((np.abs(E) < band).astype(np.int32), np.ones(kh, dtype=np.int32), "valid") == kh
+    j0 = int(np.searchsorted(T, T_STEP))
+    cand = np.where(full[j0:len(full)])[0] if j0 < len(full) else []
+    rec = (T[j0+cand[0]]-T_STEP) if len(cand) else float("nan")
+    rows[name] = (T, TH, E, U, S)
+    print(f"{name:<20} {np.max(np.abs(E[T<2.0])):11.4f} {np.sqrt(np.mean(E[pre]**2)):11.3e} "
+          f"{abs(dip):9.4f} {np.sqrt(np.mean(E[post]**2)):11.3e} {rec:9.3f} "
+          f"{np.sum(np.abs(np.diff(U))):10.1f} {np.max(np.abs(U)):7.2f}")` },
+    { code: `print("机理核对：")
+print(f"  纯计算力矩无积分/无鲁棒项 => 静差 = 扰动加速度/Kp = {(T_LOAD/J_real)/400.0:.4f} rad")
+print(f"  STA 积分项速率上限 = beta，抵消负载需 v 变化 {T_LOAD/J_real:.2f} rad/s^2：")
+print(f"    L=6  (beta={b_lo:.1f}) => 恢复时间下界 {(T_LOAD/J_real)/b_lo:.2f} s")
+print(f"    L=60 (beta={b_hi:.1f}) => 恢复时间下界 {(T_LOAD/J_real)/b_hi:.2f} s")
+print(f"  电压峰值 {max(np.max(np.abs(v[3])) for v in rows.values()):.2f} V，远小于限幅 {U_MAX} V（本工况执行器余量充足）")` },
+    { code: `fig, axes = plt.subplots(2, 2, figsize=(11.5, 6.4))
+colors = {"PID":"#dc2626","计算力矩":"#0ea5e9","计算力矩+sgn":"#f59e0b",
+          "计算力矩+sat":"#16a34a","计算力矩+STA(L=6)":"#9333ea","计算力矩+STA(L=60)":"#be185d"}
+T0 = rows["PID"][0]
+axes[0,0].plot(T0[::20], np.array([theta_d(t)[0] for t in T0[::20]]), "k--", lw=1.6, label="期望 theta_d")
+for name in rows:
+    T, TH, E, U, S = rows[name]
+    axes[0,0].plot(T[::20], TH[::20], lw=1.0, color=colors[name], label=name)
+axes[0,0].set_title("位置跟踪（曲线几乎重合，差别在误差量级）")
+axes[0,0].set_xlabel("t (s)"); axes[0,0].set_ylabel("theta (rad)")
+axes[0,0].set_xlim(0,8); axes[0,0].set_ylim(-0.2,1.8)
+axes[0,0].legend(fontsize=7, ncol=2); axes[0,0].grid(alpha=0.3)
+
+for name in rows:
+    T, TH, E, U, S = rows[name]
+    m = T > 3.0
+    axes[0,1].plot(T[m], E[m], lw=0.9, color=colors[name], label=name)
+axes[0,1].axvline(T_STEP, color="k", ls=":", lw=1.2)
+axes[0,1].set_title("跟踪误差：t=4 s 突加负载后的恢复")
+axes[0,1].set_xlabel("t (s)"); axes[0,1].set_ylabel("e (rad)")
+axes[0,1].set_xlim(3.0, 8.0); axes[0,1].set_ylim(-0.06, 0.04)
+axes[0,1].legend(fontsize=7); axes[0,1].grid(alpha=0.3)
+
+for name in rows:
+    T, TH, E, U, S = rows[name]
+    m = (T > 4.5) & (T < 4.7)
+    axes[1,0].plot(T[m], U[m], lw=0.7, color=colors[name], label=name)
+axes[1,0].set_title("控制电压放大 t in [4.5,4.7] s：抖振对比")
+axes[1,0].set_xlabel("t (s)"); axes[1,0].set_ylabel("u (V)")
+axes[1,0].set_xlim(4.5, 4.7); axes[1,0].set_ylim(-1.5, 1.5)
+axes[1,0].legend(fontsize=7); axes[1,0].grid(alpha=0.3)
+
+names = list(rows.keys())
+xpos = np.arange(len(names))
+post_rms = [np.sqrt(np.mean(rows[n][2][rows[n][0] > T_STEP+1.5]**2)) for n in names]
+tv = [np.sum(np.abs(np.diff(rows[n][3]))) for n in names]
+axes[1,1].bar(xpos-0.2, post_rms, width=0.4, color=[colors[n] for n in names])
+for i,v in enumerate(post_rms): axes[1,1].text(i-0.2, v*1.5, f"{v:.1e}", ha="center", fontsize=6.5)
+ax2 = axes[1,1].twinx()
+ax2.bar(xpos+0.2, tv, width=0.4, color=[colors[n] for n in names], alpha=0.45)
+for i,v in enumerate(tv): ax2.text(i+0.2, v*1.5, f"{v:.0f}", ha="center", fontsize=6.5)
+axes[1,1].set_yscale("log"); ax2.set_yscale("log")
+axes[1,1].set_ylabel("加载后 rms|e|"); ax2.set_ylabel("TV(u)")
+axes[1,1].set_xticks(xpos)
+axes[1,1].set_xticklabels([n.replace("计算力矩","CT") for n in names], fontsize=7, rotation=20)
+axes[1,1].set_title("精度 vs 控制代价"); axes[1,1].grid(alpha=0.3, axis="y")
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+这张表值得逐行读：
+
+- **PID**（$K_p=10, K_i=20, K_d=0.5$，按 $J\omega_n^2$ 与 $2\zeta\omega_n J$ 整定）：积分作用把负载静差消掉了（加载后 rms $7.7\times10^{-4}$），但过渡峰值误差 0.0169 rad，是计算力矩+sat 的 34 倍；
+- **纯计算力矩**：模型解耦做得最好，却留下 0.0355 rad 的负载静差——与解析预测 $a_d/K_p = 13.64/400 = 0.0341$ 吻合。**反馈线性化/计算力矩本身不抗常值扰动**，必须靠积分或鲁棒项兜底，这正是上一课局限性的定量版本；
+- **计算力矩+sgn**：精度近乎完美（加载后 $3.2\times10^{-5}$），代价是 TV(u) ≈ 20 万——比 sat 版高五个数量级；
+- **计算力矩+sat**：加载前 rms $7.4\times10^{-8}$、TV(u) 仅 1.5，综合最优；
+- **STA(L=6)**：$\beta=6.6$ 追不上 13.64 rad/s² 的负载阶跃，恢复用了 2.77 s（下界 $13.64/6.6=2.07$ s）；
+- **STA(L=60)**：恢复 0.314 s（下界 0.21 s）、加载后 rms $4.8\times10^{-10}$，但 TV(u)=34，是 sat 版的 23 倍。
+
+工程结论：**边界层 SMC 是默认选择；STA 用于对精度与平滑都要求高、且扰动变化率可估计的场合；理想 sgn 只存在于论文里。**
+
+### 案例 2：航天器单轴姿态（小力矩执行机构的诚实账）
+
+单轴姿态 $J\dot\omega = \tau + d(t)$，$J=20$ kg·m²，常值扰动力矩上界 $D=0.01$ N·m（地磁残矩+推力器偏差），反作用轮力矩上限很小。取 $\lambda=0.5$、$s=(\omega-\omega_d)+\lambda(\theta-\theta_d)$，则
+
+$$\tau = J\big[\dot\omega_d - \lambda(\omega-\omega_d)\big] - k\,\mathrm{sgn}(s), \qquad k > D$$
+
+注意等效控制里**必须**有 $J[\cdots]$ 这一项（只写 $-k\,\mathrm{sgn}(s)$ 是常见错误：那样 $\dot s$ 里会残留 $J$ 倍的未抵消项）。取 $k=0.05$ N·m：$\eta=(k-D)/J = 0.002$ rad/s²。初值 $\theta_0=5°=0.0873$ rad 时 $s(0)=0.0436$，到达上界 $t_r \le 21.8$ s，面上时间常数 $1/\lambda=2$ s，全程约 28 s。
+
+这个案例的教学点不是"滑模多快"，而是**执行机构权限如何决定滑模的速度**：$\eta$ 与 $k-D$ 成正比、与 $J$ 成反比，小力矩航天器的到达阶段天然漫长。工程上会提高 $k$ 缩短 $t_r$，但轮子饱和后滑动条件立即失效——所以航天器滑模几乎总是配边界层与抗饱和逻辑。
+
+### 案例 3：机器人关节 = 计算力矩 + 滑模鲁棒项
+
+$$M(q)\ddot q + C(q,\dot q)\dot q + G(q) = \tau - \tau_f - \tau_d$$
+
+取 $s = \dot e + \Lambda e$（$\Lambda$ 为正定对角阵），控制律
+
+$$\tau = M(\ddot q_d - \Lambda \dot e) + C\dot q + G - K\,\mathrm{sat}(s/\Phi)$$
+
+前三项就是上一课的计算力矩（反馈线性化），最后一项负责吃掉摩擦模型残差 $\tau_f$ 与辨识误差。这与案例 1 的"计算力矩+sat"是同一个结构：**滑模项在工业机器人里的角色，是给模型解耦买一份保险**。摩擦上界难估时，$K$ 取保守值 + 边界层是通行做法。
+
+### 案例 4：buck 变换器——抖振在这里是功能而不是缺陷
+
+[领域-电力电子] 的主场：DC-DC buck 变换器的开关管本来就只有开/关两态，"不连续控制"不是近似而是物理事实。取状态 $(i_L, v_C)$，选面 $s = i_L - i_{L,ref}(v_C)$（电流模态面），滞环或定频 PWM 滑模都能建立滑动。最漂亮的一点：**等效控制就是占空比**。稳态时 $u_{eq} = v_o/v_g$：$v_g=24$ V、$v_o=12$ V 时 $d=0.5$，与课本公式一致。取 $L=100\ \mu$H、$C=100\ \mu$F、$R=5\ \Omega$，开关频率 100 kHz 时电感电流纹波 $\Delta i_L = v_o(1-d)/(L f_{sw}) = 0.6$ A——这就是该拓扑的"抖振"，它被输出滤波器吸收，是设计的一部分而非缺陷。滑模控制在电力电子里之所以流行，正是因为**切换就是执行机构的工作方式**，抖振的代价被拓扑天然消化。
+
+## 与其他非线性控制方法的对比
+
+| 维度 | 滑模控制 | 反馈线性化 | Lyapunov 直接法 | 自适应控制 |
+|---|---|---|---|---|
+| 对模型的要求 | 只需上界与 $b$ 的符号/范围 | 需要精确模型 | 需要能构造 $V$ 的洞察 | 需要参数化结构 |
+| 不确定性处理 | 匹配项被**精确抵消** | 不处理，误差直接进入闭环 | 取决于 $V$ 的选择 | 在线估计参数 |
+| 收敛性质 | 有限时间到达 + 指数滑动 | 精确线性（全局/区域） | 通常渐近 | 渐近 |
+| 控制连续性 | 不连续（需平滑化） | 连续 | 连续 | 连续 |
+| 主要代价 | 抖振、需上界 | 模型误差敏感、奇异点 | 无系统方法 | 收敛慢、需激励 |
+| 相对阶要求 | 一阶滑模要求 $r=1$（高阶滑模可放宽） | 任意（按 $r$ 设计） | 无 | 无 |
+
+**何时选滑模**（决策清单）：
+
+1. 不确定性/扰动**有界且大致匹配**，上界能估 → 滑模是首选；
+2. 模型精确、追求高精度连续控制 → 反馈线性化或计算力矩 + 外环；
+3. 不确定性是**参数化**的且变化慢 → 自适应更省控制能量；
+4. 执行机构本身就是开关（电力电子、推力器）→ 滑模几乎是唯一自然选择；
+5. 对振动极度敏感（光学平台、精密加工）→ 避开理想滑模，用边界层/STA 或换方法。
+
+一个常被误传的表述需要纠正："滑模只适用于相对阶 1 的系统"。准确说法是：**一阶滑模**要求切换函数对输入的相对阶为 1；相对阶更高的对象用高阶滑模（超螺旋是 $r=2$ 情形的特例家族），或者先用内环把相对阶降下来。
+
+## 局限性讨论
+
+1. **抖振是本质代价**。任何平滑化都用精度换连续：边界层留下 $\Phi D/(bk\lambda)$ 量级的残差，STA 用积分换平滑但受 $\beta$ 的速率限制。对振动敏感的应用，滑模可能根本不适用。
+2. **需要知道上界**。$k$ 估小了滑动建立不起来（Notebook 4 的 $K=0.3$ 行：匹配扰动都压不住）；估大了抖振与能耗上升。自适应滑模（$\dot{\hat D}=\gamma|s|$）可以在线估，但引入新的整定与稳定性论证。
+3. **匹配条件**。不匹配残差与 $K$ 无关（Notebook 4），只能靠 $\lambda$、观测器或结构改造。
+4. **全状态可测**。$s$ 需要 $\dot x$；用观测器补速度时，观测误差会作为**不匹配**项进入 $s$ 动态，鲁棒性论证要重做。
+5. **采样系统只有准滑动模态**，带宽 $O(T)$；Notebook 1 的 $O(dt)$ 数值带就是它的影子。
+6. **执行器饱和与速率限制**。$k$ 再大，饱和后 $\dot s$ 的符号条件就破了；案例 2 的小力矩航天器是典型。
+7. **内部动态不受保护**。若相对阶小于状态维数，滑动只约束 $r$ 个自由度，剩下的内部动态必须单独验证稳定性——这正是上一课零动态/最小相位问题的翻版。滑模保证"面上的行为"，不保证"面外的秘密"。
+8. **"完全鲁棒性"是有条件的**。匹配 + 已知上界 + 理想切换，三者现实中都不精确成立。工程上的滑模是"鲁棒性—精度—抖振"三角里的一个可调工作点，而不是免费午餐。
+
+## 小结
+
+1. **两阶段**：有限时间到达（$t_r \le |s(0)|/\eta$）+ 滑动模态（$\dot e = -\lambda e$）；
+2. **设计五步**：选 $\lambda$ → 写 $s$ → 解 $u_{eq}$ → 取 $k>D$ → 用 $\eta=k-D$ 估到达时间；
+3. **不变性**：匹配不确定性被等效控制精确吃掉，滑动模态方程里不出现它；
+4. **有限时间**来自 $\dot V \le -\eta\sqrt{2V}$ 的比较引理，不是 Barbalat；
+5. **抖振权衡**：sgn 精确但 TV(u) 爆炸；边界层/tanh 平滑但留 $\Phi D/(bk\lambda)$ 残差；STA 两者兼得但受 $\beta$ 速率限制；
+6. **到达律**：常值/指数/幂次/混合各有解析 $t_r$；纯幂次律留残差带 $(D/k)^{1/\alpha}$；
+7. **匹配性**用 $\Delta \in \mathrm{span}\{g\}$（线性系统用秩条件）判断；不匹配残差与 $K$ 无关；
+8. **数字实现**只有准滑动模态，带宽 $O(T)$；仿真理想 sgn 必须用一阶积分格式。
+
+## 习题
+
+**习题 1（切换函数与到达条件）** 系统 $\ddot x + 2\dot x + x = u + d(t)$，$|d(t)| \le 0.5$。要求滑动模态时间常数 $\tau=0.2$ s。(a) 写出切换函数 $s$；(b) 求名义等效控制 $u_{eq}$；(c) 给出切换增益 $k$ 的下界与 $\eta$，并写出 $t_r$ 的上界表达式。
+
+**习题 2（倒立摆完整设计）** 倒立摆 $ml^2\ddot\theta = mgl\sin\theta + u + d(t)$，$m=1$ kg、$l=0.5$ m、$g=9.8$ m/s²、$|d|\le0.1$ N·m，取 $\lambda=5$。(a) 给出 $u_{eq}$ 与完整控制律，并取 $k=0.5$ 计算 $\eta$；(b) 初值 $\theta_0=0.5$ rad、$\dot\theta_0=0$，计算 $s(0)$ 与 $t_r$ 上界；(c) 若改用边界层 $\Phi=0.05$，分别用保守界与精细界估计稳态角误差。
+
+**习题 3（有限时间到达的证明）** 对 $\dot s = -k\,\mathrm{sgn}(s)+d$、$|d|\le D$、$k>D$：(a) 取 $V=\tfrac12 s^2$ 证明 $\dot V \le -(k-D)|s|$；(b) 由 $\dot V \le -\eta\sqrt{2V}$ 推出 $t_r \le |s(0)|/\eta$；(c) 说明为什么 Barbalat 引理不能给出 (b) 的结论。
+
+**习题 4（边界层定量分析）** 边界层内 $\dot s = -\frac{bk}{\Phi}s + d$。(a) 求稳态带 $|s_{ss}|$ 的上界；(b) 由此给出 $|e_{ss}|$ 的两条上界（保守与精细）；(c) 若要求 $|e_{ss}| < 0.01$ rad、$\lambda=10$、$k=2$、$D=0.3$、$b=1$，分别按两条界求 $\Phi$ 的允许上限，并解释差异。
+
+**习题 5（匹配性判定）** 线性系统 $\dot x = Ax+Bu$，
+$A=\begin{bmatrix}0&1&0\\0&0&1\\0&0&-2\end{bmatrix}$，$B=\begin{bmatrix}0\\0\\1\end{bmatrix}$。判断下列不确定性是否匹配并说明理由：(a) $\Delta A$ 仅第 3 行第 3 列为 0.5；(b) $\Delta A$ 仅第 1 行第 2 列为 0.2；(c) 对 (b) 的情形，给出两种可行的处理思路。
+
+**习题 6（幂次到达律）** 到达律 $\dot s = -k|s|^{\alpha}\mathrm{sgn}(s)$，$0<\alpha<1$。(a) 积分推出 $t_r = |s(0)|^{1-\alpha}/(k(1-\alpha))$；(b) 取 $k=2$、$\alpha=0.5$、$s(0)=3$ 计算 $t_r$；(c) 若另有 $|d|\le0.3$，求残差带 $|s|_{res}$ 并说明为什么工程上常叠加常值项。
+
+## 答案
+
+**答案 1**
+
+(a) $\tau=0.2 \Rightarrow \lambda = 1/\tau = 5$，故 $s = \dot e + 5e$，$e=x-x_d$。
+
+(b) 写成 $\ddot x = -2\dot x - x + u + d$。$\dot s = \ddot x - \ddot x_d + 5\dot e = -2\dot x - x + u + d - \ddot x_d + 5\dot e$。令名义部分为零：$u_{eq} = 2\dot x + x + \ddot x_d - 5\dot e$（镇定问题中 $\ddot x_d=0$，即 $u_{eq}=2\dot x + x - 5\dot e$）。
+
+(c) 取 $u = u_{eq} - k\,\mathrm{sgn}(s)$ 得 $\dot s = -k\,\mathrm{sgn}(s)+d$，$\dot V \le -(k-D)|s|$，故 $k > D = 0.5$；取 $k=1.0$ 时 $\eta = k-D = 0.5$，$t_r \le |s(0)|/0.5 = 2|s(0)|$。
+
+**答案 2**
+
+(a) 标准化 $\ddot\theta = 19.6\sin\theta + 4(u+d)$。$s=\dot\theta+5\theta$，$\dot s = 19.6\sin\theta + 4(u+d) + 5\dot\theta$。$u_{eq} = -\frac{1}{4}(19.6\sin\theta+5\dot\theta) = -4.9\sin\theta - 1.25\dot\theta$；完整律 $u = -4.9\sin\theta - 1.25\dot\theta - k\,\mathrm{sgn}(s)$。代入得 $\dot s = -4k\,\mathrm{sgn}(s)+4d$，$\eta = 4(k-D) = 4\times0.4 = 1.6$ rad/s²。
+
+(b) $s(0) = 0 + 5\times0.5 = 2.5$；$t_r \le 2.5/1.6 = 1.5625$ s。
+
+(c) 保守界 $|\theta_{ss}| \le \Phi/\lambda = 0.05/5 = 0.01$ rad $=0.573°$；精细界 $|s_{ss}| \le \Phi D/k = 0.05\times0.1/0.5 = 0.01$ rad/s，$|\theta_{ss}| \le 0.01/5 = 0.002$ rad $=0.115°$。两者差 5 倍，工程上以精细界做量级判断、以保守界做验收余量。
+
+**答案 3**
+
+(a) $\dot V = s\dot s = s(-k\,\mathrm{sgn}(s)+d) = -k|s| + sd \le -k|s| + D|s| = -(k-D)|s|$。
+
+(b) $|s| = \sqrt{2V}$，故 $\dot V \le -\eta\sqrt{2V}$，即 $\frac{d}{dt}\sqrt{V} \le -\frac{\eta}{\sqrt2}$。积分：$\sqrt{V(t)} \le \sqrt{V(0)} - \frac{\eta}{\sqrt2}t$。右端在 $t = \sqrt{2V(0)}/\eta = |s(0)|/\eta$ 处到零，而 $\sqrt V \ge 0$，故 $s$ 在该时刻之前必到 0。
+
+(c) Barbalat 引理的前提是 $V$ 下有界、$\dot V$ 一致连续，结论是 $\dot V \to 0$；它不含任何速率信息，无法排除"以 $1/t$ 的速度慢慢趋近"。有限时间性依赖 $\dot V$ 在 $V=0$ 处的非 Lipschitz 结构（$\sqrt V$ 项），必须用 (b) 的比较/积分论证。
+
+**答案 4**
+
+(a) 稳态 $\dot s=0 \Rightarrow s_{ss} = \Phi d/(bk)$，故 $|s_{ss}| \le \Phi D/(bk)$。
+
+(b) 保守：$|e_{ss}| \le \Phi/\lambda$（只用 $|s|\le\Phi$）。精细：$|e_{ss}| \le |s_{ss}|/\lambda \le \Phi D/(bk\lambda)$。
+
+(c) 保守界要求 $\Phi < \lambda\times0.01 = 0.1$；精细界要求 $\Phi < 0.01\times bk\lambda/D = 0.01\times20/0.3 = 0.667$。差异来源：保守界假设 $s$ 可以顶到边界层边缘 $\Phi$，而精细界指出稳态时 $s$ 实际被压在 $\Phi D/(bk) = 0.015 \ll \Phi$。真实系统介于两者之间（扰动时变、层内动态未达稳态），所以两条界一个给余量、一个给量级。
+
+**答案 5**
+
+$\mathrm{rank}\,B = 1$。
+
+(a) $\Delta A$ 的非零列是第 3 列 $[0,0,0.5]^T = 0.5 B$，落在 $\mathrm{span}\{B\}$ 中；$\mathrm{rank}[B\ \Delta A]=1=\mathrm{rank}B$ ⇒ **匹配**。
+
+(b) 第 2 列 $[0.2,0,0]^T$ 与 $B$ 线性无关，$\mathrm{rank}[B\ \Delta A]=2 > 1$ ⇒ **不匹配**。物理上它把 $x_2$ 的误差注入 $x_1$ 通道，控制够不着。
+
+(c) 思路一：提高切换面带宽（加大 $\lambda$），残差按 $D_u/\sqrt{\lambda^2+\omega^2}$ 缩小；思路二：为 $x_1$ 通道设计内环（级联/反步滑模），把不匹配通道变成内环的控制输入；亦可用扰动观测器前馈补偿。注意加大 $K$ 无效（Notebook 4）。
+
+**答案 6**
+
+(a) $s>0$ 时 $\dot s = -k s^{\alpha}$，分离变量 $\int s^{-\alpha}ds = -k\int dt \Rightarrow \frac{s^{1-\alpha}}{1-\alpha} = -kt + C$。由 $s(0)$ 定 $C$，令 $s=0$ 得 $t_r = s(0)^{1-\alpha}/(k(1-\alpha))$（$s<0$ 对称同理）。
+
+(b) $t_r = 3^{0.5}/(2\times0.5) = 1.732/1 = 1.732$ s。
+
+(c) 平衡要求 $k|s|^{\alpha} = |d|$，故 $|s|_{res} = (D/k)^{1/\alpha} = (0.3/2)^{2} = 0.0225$。它比典型边界层还宽，且与 $\alpha$ 强相关。叠加常值项 $-\varepsilon\,\mathrm{sgn}(s)$（$\varepsilon>D$）后，面附近的控制权限由 $\varepsilon$ 提供，残差带消失，同时保留幂次项的有限时间特性（Notebook 3 的 mixed 律实测精度 $9\times10^{-6}$）。

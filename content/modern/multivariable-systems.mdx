@@ -1,0 +1,433 @@
+---
+title: 多变量系统分析
+description: 分析 MIMO 系统的极点、零点与传输零点，掌握 RGA 交互分析和解耦控制方法。
+---
+
+# 多变量系统分析
+
+前面九章，我们建立了现代控制的完整工具箱：状态空间、可控性、状态反馈、观测器、LQR、卡尔曼滤波、Lyapunov 理论。但这些工具大多在"单回路"或"已知控制器结构"的框架下工作。
+
+实际工程系统往往是**多输入多输出**（MIMO）的。无人机有 4 个电机、6 个自由度；精馏塔有 2 个操纵变量、2 个被控变量；发动机有燃油、节气门、点火角等多个输入，转速、温度、排放等多个输出。
+
+MIMO 带来一个 SISO 中不存在的问题：**交互**。你调一个输入，不只影响"对应的"输出——所有输出都跟着动。这种交互让控制设计变得复杂得多。
+
+本章分析 MIMO 系统的固有特性——极点、零点和交互结构——为后续的 MIMO 控制设计打基础。
+
+> 📖 本章需要状态空间和传递函数的基础：[状态空间表示](/modern/state-space)、[传递函数入门](/classic/transfer-function)。
+
+## 为什么需要多变量分析
+
+### 从 SISO 到 MIMO
+
+SISO 系统：一个输入 $u$，一个输出 $y$，一个传递函数 $G(s)$。设计很直觉——调一个控制器，影响一条通道。
+
+MIMO 系统：$m$ 个输入 $\boldsymbol{u} \in \mathbb{R}^m$，$p$ 个输出 $\boldsymbol{y} \in \mathbb{R}^p$，一个传递函数**矩阵** $G(s) \in \mathbb{R}^{p \times m}$：
+
+$$\boldsymbol{y}(s) = G(s) \boldsymbol{u}(s) = \begin{bmatrix} G_{11}(s) & G_{12}(s) & \cdots & G_{1m}(s) \\ G_{21}(s) & G_{22}(s) & \cdots & G_{2m}(s) \\ \vdots & \vdots & \ddots & \vdots \\ G_{p1}(s) & G_{p2}(s) & \cdots & G_{pm}(s) \end{bmatrix} \boldsymbol{u}(s)$$
+
+$G_{ij}(s)$ 表示第 $j$ 个输入对第 $i$ 个输出的传递函数。
+
+### 交互问题
+
+考虑一个 $2 \times 2$ 系统：
+
+$$\begin{bmatrix} y_1 \\ y_2 \end{bmatrix} = \begin{bmatrix} G_{11} & G_{12} \\ G_{21} & G_{22} \end{bmatrix} \begin{bmatrix} u_1 \\ u_2 \end{bmatrix}$$
+
+展开：
+
+$$y_1 = G_{11} u_1 + G_{12} u_2$$
+
+$$y_2 = G_{21} u_1 + G_{22} u_2$$
+
+**关键观察**：$u_1$ 不只影响 $y_1$（通过 $G_{11}$），还影响 $y_2$（通过 $G_{21}$）。$u_2$ 同理。
+
+如果 $G_{12}$ 和 $G_{21}$ 很小（相对于 $G_{11}$ 和 $G_{22}$），交互不严重，可以近似当作两个独立的 SISO 系统。这叫**分散控制**——每个回路独立设计控制器。
+
+但如果 $G_{12}$ 和 $G_{21}$ 不可忽略，分散控制就会出问题：你调 $u_1$ 想让 $y_1$ 到设定值，但 $y_2$ 也被拉偏了；然后你调 $u_2$ 修正 $y_2$，又把 $y_1$ 拉偏了……两个回路互相"打架"。
+
+### 一个数值例子
+
+设 $2 \times 2$ 系统的稳态增益矩阵为：
+
+$$K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$$
+
+稳态时 $\boldsymbol{y} = K \boldsymbol{u}$。
+
+**方案 A**：$u_1 \to y_1$，$u_2 \to y_2$（对角配对）
+
+如果 $u_2 = 0$，$y_1 = 2u_1$，$y_2 = u_1$。$u_1$ 对 $y_2$ 的影响是 $y_1$ 的一半——交互严重！
+
+**方案 B**：$u_1 \to y_2$，$u_2 \to y_1$（交叉配对）
+
+如果 $u_2 = 0$，$y_2 = u_1$，$y_1 = 2u_1$。$u_1$ 对 $y_1$ 的影响反而是 $y_2$ 的两倍——更糟！
+
+哪个方案更好？我们需要一个**量化工具**来回答这个问题。这就是 RGA（相对增益矩阵）。
+
+## MIMO 极点与零点
+
+### MIMO 极点
+
+MIMO 传递函数矩阵 $G(s)$ 的**极点**是所有元素 $G_{ij}(s)$ 的极点的并集。
+
+例：$G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{2}{s+2} \\ \frac{3}{s+1} & \frac{1}{s+3} \end{bmatrix}$
+
+极点：$s = -1, -2, -3$（所有元素极点的并集）。
+
+极点的物理意义和 SISO 一样：决定了系统的自由响应模式。极点实部 $< 0$ → 稳定。
+
+### 传输零点
+
+**传输零点**是 MIMO 系统特有的概念，没有 SISO 对应物（SISO 的零点就是传递函数分子的根）。
+
+**定义**（方阵 $p = m$ 的情况）：使 $\det G(s) = 0$ 的 $s$ 值称为传输零点。
+
+物理意义：在 $s = z$（传输零点）处，存在某个非零输入方向 $\boldsymbol{u}_0$，使得 $G(z) \boldsymbol{u}_0 = \boldsymbol{0}$。也就是说，沿 $\boldsymbol{u}_0$ 方向的输入被系统完全"吞掉"了——输出为零。
+
+### 例1：计算传输零点
+
+$$G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{1}{s+3} \\ \frac{2}{s+1} & \frac{1}{s+2} \end{bmatrix}$$
+
+$$\det G(s) = \frac{1}{s+1} \cdot \frac{1}{s+2} - \frac{1}{s+3} \cdot \frac{2}{s+1} = \frac{1}{(s+1)(s+2)} - \frac{2}{(s+1)(s+3)}$$
+
+$$= \frac{(s+3) - 2(s+2)}{(s+1)(s+2)(s+3)} = \frac{s + 3 - 2s - 4}{(s+1)(s+2)(s+3)} = \frac{-s - 1}{(s+1)(s+2)(s+3)}$$
+
+$$= \frac{-(s+1)}{(s+1)(s+2)(s+3)} = \frac{-1}{(s+2)(s+3)}$$
+
+分子是常数 $-1$，没有传输零点。
+
+但注意：$s = -1$ 在分子分母同时对消了。这意味着什么？
+
+$s = -1$ 是 $G_{11}$ 和 $G_{21}$ 的极点，但在 $\det G(s)$ 中被对消了。这说明 $s = -1$ 这个模式在传递函数中"看不到"——它可能是不可控或不可观的。
+
+### 状态空间的零点定义
+
+更一般的零点定义用 **Rosenbrock 系统矩阵**。对状态空间 $(A, B, C, D)$：
+
+$$P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix}$$
+
+**不变零点**：使 $P(s)$ 降秩的 $s$ 值，即 $\text{rank}\, P(s) < n + \min(p, m)$。
+
+不变零点包括：
+- **传输零点**：$G(s)$ 降秩的方向（与输入-输出行为相关）
+- **输入解耦零点**：不可控模式的极点
+- **输出解耦零点**：不可观模式的极点
+
+如果 $(A, B, C)$ 既可控又可观，不变零点 = 传输零点。
+
+### 传输零点的物理后果
+
+RHP 传输零点（实部 $> 0$）的后果和 SISO 的 RHP 零点一样严重：
+
+1. **限制闭环带宽**：不能把闭环极点放得太快
+2. **阶跃响应的 undershoot**：响应先反方向再正方向
+3. **不能用高增益**：高增益会导致不稳定
+
+经典例子：飞机的升降舵到高度的传递函数有 RHP 零点。拉杆（升降舵上偏）→ 飞机先低头（高度短暂下降）→ 然后才爬升。这就是 RHP 零点导致的"非最小相位"行为。
+
+## 交互分析与 RGA
+
+### 稳态增益矩阵
+
+对于稳态分析（$s = 0$），MIMO 系统简化为：
+
+$$\boldsymbol{y} = K \boldsymbol{u}$$
+
+其中 $K = G(0)$ 是稳态增益矩阵。
+
+### RGA 的定义
+
+**相对增益矩阵**（Relative Gain Array, RGA）定义为：
+
+$$\Lambda = K \circ (K^{-1})^T$$
+
+其中 $\circ$ 是 **Hadamard 积**（逐元素相乘），即 $\lambda_{ij} = k_{ij} \cdot [K^{-1}]_{ji}$。
+
+$\lambda_{ij}$ 的物理意义：
+
+$$\lambda_{ij} = \frac{\text{开环增益：} u_j \to y_i \text{（其他输入固定）}}{\text{闭环增益：} u_j \to y_i \text{（其他输出固定）}}$$
+
+- $\lambda_{ij} = 1$：开环和闭环增益相同——其他回路对这个通道没有影响。**理想配对**。
+- $\lambda_{ij} = 0$：$u_j$ 对 $y_i$ 完全没有影响。不应该配对。
+- $\lambda_{ij} < 0$ 或 $\lambda_{ij} > 1$：交互严重。闭环增益和开环增益方向相反或放大——分散控制器可能不稳定。
+
+### RGA 的性质
+
+1. **行和列和为 1**：$\sum_j \lambda_{ij} = 1$（每行），$\sum_i \lambda_{ij} = 1$（每列）
+
+2. **$2 \times 2$ 系统的简化**：只需要算一个元素：
+
+$$\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmatrix}, \quad \lambda = \frac{k_{11} k_{22}}{k_{11} k_{22} - k_{12} k_{21}}$$
+
+3. **配对准则**：选择 $\lambda_{ij}$ 最接近 1 的配对。避免 $\lambda_{ij} < 0$ 或 $\lambda_{ij} > 2$ 的配对。
+
+### 例2：RGA 计算
+
+回到前面的例子：$K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$
+
+$$K^{-1} = \frac{1}{4-1} \begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix} = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}$$
+
+$$(K^{-1})^T = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}$$
+
+（$K$ 对称，所以 $(K^{-1})^T = K^{-1}$）
+
+$$\Lambda = K \circ K^{-1} = \begin{bmatrix} 2 \times 2/3 & 1 \times (-1/3) \\ 1 \times (-1/3) & 2 \times 2/3 \end{bmatrix} = \begin{bmatrix} 4/3 & -1/3 \\ -1/3 & 4/3 \end{bmatrix}$$
+
+$\lambda_{11} = 4/3 \approx 1.33$。偏离 1 不算太远，但也不是很好。负的非对角元素说明交互存在但可控。
+
+### 例3：精馏塔配对分析
+
+二元精馏塔的稳态增益矩阵（典型值）：
+
+$$K = \begin{bmatrix} 0.8 & -0.3 \\ 0.4 & 0.6 \end{bmatrix}$$
+
+$u_1$ = 回流比，$u_2$ = 再沸器功率；$y_1$ = 塔顶纯度，$y_2$ = 塔底纯度。
+
+$$\det K = 0.8 \times 0.6 - (-0.3) \times 0.4 = 0.48 + 0.12 = 0.60$$
+
+$$K^{-1} = \frac{1}{0.6} \begin{bmatrix} 0.6 & 0.3 \\ -0.4 & 0.8 \end{bmatrix} = \begin{bmatrix} 1 & 0.5 \\ -2/3 & 4/3 \end{bmatrix}$$
+
+$$(K^{-1})^T = \begin{bmatrix} 1 & -2/3 \\ 0.5 & 4/3 \end{bmatrix}$$
+
+$$\Lambda = \begin{bmatrix} 0.8 \times 1 & (-0.3) \times (-2/3) \\ 0.4 \times 0.5 & 0.6 \times 4/3 \end{bmatrix} = \begin{bmatrix} 0.8 & 0.2 \\ 0.2 & 0.8 \end{bmatrix}$$
+
+$\lambda_{11} = 0.8$，接近 1。**对角配对**（$u_1 \to y_1$，$u_2 \to y_2$）是好的选择。
+
+如果选交叉配对（$u_1 \to y_2$，$u_2 \to y_1$），$\lambda_{21} = 0.2$，远离 1——不好。
+
+<JupyterNotebook
+  title="RGA 计算与 MIMO 系统分析"
+  setupCode={`import numpy as np\nfrom scipy import signal`}
+  cells={[
+    { code: `# RGA 计算函数\ndef rga(K):\n    """计算相对增益矩阵 Λ = K ∘ (K⁻¹)ᵀ"""\n    K_inv = np.linalg.inv(K)\n    return K * K_inv.T\n\n# 例2：简单 2×2 系统\nK1 = np.array([[2, 1],\n               [1, 2]])\nLambda1 = rga(K1)\nprint("例2 稳态增益矩阵 K:")\nprint(K1)\nprint("\\nRGA:")\nprint(np.round(Lambda1, 4))\nprint(f"\\nλ₁₁ = {Lambda1[0,0]:.4f}（接近 1 → 对角配对可行）")\n\n# 例3：精馏塔\nK2 = np.array([[0.8, -0.3],\n               [0.4,  0.6]])\nLambda2 = rga(K2)\nprint("\\n\\n例3 精馏塔稳态增益矩阵 K:")\nprint(K2)\nprint("\\nRGA:")\nprint(np.round(Lambda2, 4))\nprint(f"\\nλ₁₁ = {Lambda2[0,0]:.4f}（接近 1 → 对角配对是好选择）")\nprint(f"λ₂₁ = {Lambda2[1,0]:.4f}（远离 1 → 交叉配对不好）")` },
+    { code: `# MIMO 系统仿真：计算稳态增益和 RGA\nG11 = signal.TransferFunction([1], [1, 1])    # 1/(s+1)\nG12 = signal.TransferFunction([0.5], [1, 3])  # 0.5/(s+3)\nG21 = signal.TransferFunction([0.3], [1, 2])  # 0.3/(s+2)\nG22 = signal.TransferFunction([1], [1, 1])    # 1/(s+1)\n\nK = np.array([[signal.dcgain(G11), signal.dcgain(G12)],\n              [signal.dcgain(G21), signal.dcgain(G22)]])\nprint("稳态增益矩阵 K:")\nprint(np.round(K, 4))\nprint("\\nRGA:")\nLambda = rga(K)\nprint(np.round(Lambda, 4))\nprint(f"\\nλ₁₁ ≈ {Lambda[0,0]:.4f} → 交互很弱，对角配对非常好")` },
+  ]}
+/>
+
+## 解耦控制
+
+### 问题描述
+
+给定 MIMO 系统 $G(s)$，设计控制器使闭环系统的传递函数为**对角阵**——每个输入只影响"对应的"输出，消除交互。
+
+### 前馈解耦（静态解耦）
+
+最简单的思路：在控制器前面加一个**预补偿器** $T$，使得 $G(s) T$ 为对角阵。
+
+对于稳态情况：选择 $T = K^{-1}$（如果 $K$ 可逆），则 $K T = I$——完全解耦。
+
+但问题是：$K^{-1}$ 是稳态逆，动态过程中 $G(s) K^{-1}$ 不是对角的。所以静态解耦只在低频有效。
+
+### 动态解耦
+
+更一般的做法：找传递函数矩阵 $T(s)$，使得 $G(s) T(s) = \text{diag}(\ldots)$。
+
+如果 $G(s)$ 是方阵且可逆，$T(s) = G^{-1}(s) \cdot \text{diag}(\ldots)$。但这要求 $G^{-1}(s)$ 稳定——即 $G(s)$ 没有 RHP 传输零点。
+
+**关键限制**：如果 $G(s)$ 有 RHP 传输零点，动态解耦会导致内部不稳定。这和 SISO 中"不能对消 RHP 零点"的道理一样。
+
+### 状态反馈解耦
+
+用状态反馈 $u = -Kx + Tv$ 使闭环传递函数 $G_{cl}(s) = C(sI - A + BK)^{-1}BT + D$ 为对角阵。
+
+这要求 $(A, B, C)$ 满足一定条件（Morgan 问题）。一般要求：
+- 系统可控
+- 每个输出的"相对阶"满足可解耦条件
+
+状态反馈解耦的优点：可以利用状态信息实现更好的解耦效果。缺点：需要全状态测量或观测器。
+
+<JupyterNotebook
+  title="MIMO 闭环仿真：分散比例控制"
+  setupCode={`import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import solve_ivp\nfrom ipywidgets import interact, FloatSlider\nimport matplotlib\nmatplotlib.use('module://matplotlib_inline.backend_inline')\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# MIMO 闭环仿真：分散比例控制\n# 2×2 系统：G(s) = [1/(s+1)    0.5/(s+3)]\n#                  [0.3/(s+2)   1/(s+1)  ]\n# 状态空间实现（每个通道一个状态）\n\ndef simulate_mimo(Kp1, Kp2):\n    def mimo_cl(t, x):\n        y1 = x[0] + x[1]\n        y2 = x[2] + x[3]\n        u1 = Kp1 * (1.0 - y1)\n        u2 = Kp2 * (0.0 - y2)\n        return [-x[0] + u1,\n                -3*x[1] + 0.5*u2,\n                -2*x[2] + 0.3*u1,\n                -x[3] + u2]\n    sol = solve_ivp(mimo_cl, [0, 10], [0, 0, 0, 0], dense_output=True, max_step=0.01)\n    t = np.linspace(0, 10, 500)\n    x = sol.sol(t)\n    return t, x[0] + x[1], x[2] + x[3]\n\n@interact(Kp1=FloatSlider(min=0.5, max=5.0, step=0.1, value=2.0, description='Kp₁'),\n          Kp2=FloatSlider(min=0.5, max=5.0, step=0.1, value=2.0, description='Kp₂'))\ndef plot_mimo(Kp1, Kp2):\n    t, y1, y2 = simulate_mimo(Kp1, Kp2)\n    fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)\n    axes[0].plot(t, y1, 'b-', linewidth=2, label='y₁')\n    axes[0].axhline(1.0, color='r', linestyle='--', alpha=0.7, label='ref = 1')\n    axes[0].set_ylabel('y₁')\n    axes[0].set_title(f'分散比例控制 (Kp₁={Kp1:.1f}, Kp₂={Kp2:.1f})')\n    axes[0].legend()\n    axes[0].grid(True, alpha=0.3)\n    axes[1].plot(t, y2, 'g-', linewidth=2, label='y₂')\n    axes[1].axhline(0.0, color='r', linestyle='--', alpha=0.7, label='ref = 0')\n    axes[1].set_ylabel('y₂')\n    axes[1].set_xlabel('时间 (s)')\n    axes[1].legend()\n    axes[1].grid(True, alpha=0.3)\n    plt.tight_layout()\n    plt.show()\n    print(f"y₁ 稳态值: {y1[-1]:.4f} (期望: 1.0，纯比例控制有稳态误差)")\n    print(f"y₂ 稳态值: {y2[-1]:.4f} (期望: 0.0)")\n    print(f"y₂ 最大偏移: {np.max(np.abs(y2)):.4f}")` },
+  ]}
+/>
+
+## 深入讨论
+
+### 频率依赖 RGA
+
+稳态 RGA 只考虑 $s = 0$ 的情况。但交互可能随频率变化——低频交互弱不代表高频交互也弱。
+
+**频率依赖 RGA** 定义为：
+
+$$\Lambda(j\omega) = G(j\omega) \circ (G(j\omega)^{-1})^T$$
+
+画出 $\lambda_{ij}(j\omega)$ 随频率变化的曲线，可以看到交互在不同频率下的强度。如果高频段 $\lambda_{ij}$ 偏离 1 较多，说明分散控制在高频（快速响应）时可能出问题。
+
+### 结构化奇异值（μ 分析）
+
+MIMO 系统的鲁棒性分析比 SISO 复杂得多。SISO 中，不确定性是一个标量 $\Delta(s)$，用 $|1 + L(j\omega)|$ 的裕度衡量。MIMO 中，不确定性是一个矩阵 $\boldsymbol{\Delta}(s)$，而且往往是**结构化的**——每个通道有独立的不确定性。
+
+**结构化奇异值** $\mu$ 是分析结构化不确定性的工具。$\mu < 1$ 保证鲁棒稳定。计算 $\mu$ 是 NP-hard 问题，但有上下界可以用。
+
+这部分内容属于高级鲁棒控制的范畴，这里只提一下概念。
+
+### 从 MIMO 到 MPC
+
+多变量系统分析的另一个重要延伸是**模型预测控制**（MPC）。MPC 天然处理 MIMO 系统和约束——它用模型预测未来行为，在约束下优化控制输入。本课的 RGA 分析可以帮助理解 MPC 中"哪些输入-输出配对重要"。
+
+## 小结
+
+1. **MIMO 的交互问题**：每个输入影响所有输出。交互严重时，分散控制（独立调每个回路）不行。
+
+2. **传输零点**：使 $\det G(s) = 0$ 的 $s$ 值。RHP 传输零点限制闭环性能（和 SISO 的 RHP 零点一样）。
+
+3. **RGA**：$\Lambda = K \circ (K^{-1})^T$。$\lambda_{ij} \approx 1$ → 好配对。$\lambda_{ij} < 0$ 或 $> 2$ → 交互严重，分散控制可能不稳定。
+
+4. **解耦控制**：前馈解耦 $T = G^{-1}$ 要求 $G(s)$ 没有 RHP 传输零点。状态反馈解耦需要满足 Morgan 问题的条件。
+
+5. **工程实践**：先用 RGA 选配对，再设计分散控制器。如果交互严重，考虑解耦或直接用 MIMO 控制器（如 LQR、MPC）。
+
+## 习题
+
+**1.** 计算以下传递函数矩阵的极点和传输零点：
+
+$$G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{2}{s+1} \\ \frac{1}{s+2} & \frac{2}{s+2} \end{bmatrix}$$
+
+**2.** 计算以下系统的 RGA，并建议最佳的输入-输出配对方案：
+
+$$K = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$$
+
+**3.** 计算以下系统的 RGA，并分析配对方案：
+
+$$K = \begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix}$$
+
+**4.** 证明：对任意可逆 $2 \times 2$ 矩阵 $K$，RGA 的形式为 $\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmatrix}$，其中 $\lambda = \frac{k_{11} k_{22}}{\det K}$。
+
+**5.** 证明 RGA 的行和为 1：$\sum_j \lambda_{ij} = 1$。
+
+**6.** 对状态空间系统 $A = \begin{bmatrix} -1 & 0 \\ 0 & -2 \end{bmatrix}$，$B = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}$，$C = I$，$D = 0$，求 Rosenbrock 系统矩阵 $P(s)$ 的不变零点。
+
+**7.** 某 MIMO 系统的稳态增益矩阵为 $K = \begin{bmatrix} 5 & 3 \\ 2 & 1 \end{bmatrix}$。
+
+(a) 计算 RGA。
+
+(b) 如果选对角配对（$u_1 \to y_1$，$u_2 \to y_2$），交互是否严重？
+
+**8.** 考虑 $2 \times 2$ 系统 $G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{a}{s+1} \\ \frac{1}{s+2} & \frac{1}{s+2} \end{bmatrix}$。
+
+(a) 求传输零点（用 $a$ 表示）。
+
+(b) 当 $a$ 取何值时，系统没有传输零点？
+
+## 答案
+
+**1.**
+
+极点：$G_{11}$ 和 $G_{21}$ 的极点是 $s = -1$；$G_{12}$ 和 $G_{22}$ 的极点是 $s = -2$。
+
+所有极点：$s = -1, -2$。
+
+传输零点：
+
+$$\det G(s) = \frac{1}{s+1} \cdot \frac{2}{s+2} - \frac{2}{s+1} \cdot \frac{1}{s+2} = \frac{2 - 2}{(s+1)(s+2)} = 0$$
+
+$\det G(s) \equiv 0$——对所有 $s$ 都为零！这意味着 $G(s)$ 对所有 $s$ 都降秩（秩为 1）。
+
+物理意义：两个输出完全线性相关——$y_2(s) = \frac{s+1}{s+2} y_1(s)$。系统实际上只有一个独立的输出方向，无法独立控制两个输出。
+
+**2.**
+
+$$\det K = 1 \times 4 - 2 \times 3 = 4 - 6 = -2$$
+
+$$K^{-1} = \frac{1}{-2} \begin{bmatrix} 4 & -2 \\ -3 & 1 \end{bmatrix} = \begin{bmatrix} -2 & 1 \\ 3/2 & -1/2 \end{bmatrix}$$
+
+$$(K^{-1})^T = \begin{bmatrix} -2 & 3/2 \\ 1 & -1/2 \end{bmatrix}$$
+
+$$\Lambda = K \circ (K^{-1})^T = \begin{bmatrix} 1 \times (-2) & 2 \times 3/2 \\ 3 \times 1 & 4 \times (-1/2) \end{bmatrix} = \begin{bmatrix} -2 & 3 \\ 3 & -2 \end{bmatrix}$$
+
+$\lambda_{11} = -2$，远离 1 且为负。**交互非常严重**。
+
+对角配对和交叉配对都不好（$\lambda$ 都是 $-2$ 和 $3$）。需要解耦控制或 MIMO 控制器。
+
+**3.**
+
+$$\det K = 3 \times 4 - 1 \times 2 = 12 - 2 = 10$$
+
+$$K^{-1} = \frac{1}{10} \begin{bmatrix} 4 & -1 \\ -2 & 3 \end{bmatrix} = \begin{bmatrix} 0.4 & -0.1 \\ -0.2 & 0.3 \end{bmatrix}$$
+
+$$(K^{-1})^T = \begin{bmatrix} 0.4 & -0.2 \\ -0.1 & 0.3 \end{bmatrix}$$
+
+$$\Lambda = \begin{bmatrix} 3 \times 0.4 & 1 \times (-0.2) \\ 2 \times (-0.1) & 4 \times 0.3 \end{bmatrix} = \begin{bmatrix} 1.2 & -0.2 \\ -0.2 & 1.2 \end{bmatrix}$$
+
+$\lambda_{11} = 1.2$，接近 1。**对角配对**（$u_1 \to y_1$，$u_2 \to y_2$）可行，交互不严重。
+
+**4.**
+
+$$K^{-1} = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{12} \\ -k_{21} & k_{11} \end{bmatrix}$$
+
+$$(K^{-1})^T = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{21} \\ -k_{12} & k_{11} \end{bmatrix}$$
+
+$$\lambda_{11} = k_{11} \cdot \frac{k_{22}}{\det K} = \frac{k_{11} k_{22}}{\det K}$$
+
+$$\lambda_{12} = k_{12} \cdot \frac{-k_{21}}{\det K} = \frac{-k_{12} k_{21}}{\det K} = \frac{\det K - k_{11} k_{22}}{\det K} = 1 - \lambda_{11}$$
+
+同理 $\lambda_{21} = 1 - \lambda_{11}$，$\lambda_{22} = \lambda_{11}$。$\blacksquare$
+
+**5.**
+
+$$\sum_j \lambda_{ij} = \sum_j k_{ij} [K^{-1}]_{ji}$$
+
+注意 $[K^{-1}]_{ji}$ 是 $(K^{-1})^T$ 的第 $i$ 行第 $j$ 列元素。所以：
+
+$$\sum_j \lambda_{ij} = \sum_j k_{ij} [(K^{-1})^T]_{ij}$$
+
+这是矩阵 $K \cdot (K^{-1})^T$ 的第 $i$ 行...不对。Hadamard 积的行和不是矩阵乘积。
+
+正确证明：$\sum_j \lambda_{ij} = \sum_j k_{ij} [K^{-1}]_{ji}$。
+
+设 $e_i$ 是第 $i$ 个标准基向量。$K e_j$ 是 $K$ 的第 $j$ 列，$e_i^T K^{-1}$ 是 $K^{-1}$ 的第 $i$ 行。
+
+$$\sum_j k_{ij} [K^{-1}]_{ji} = \sum_j (e_i^T K e_j)(e_j^T K^{-1} e_i) = e_i^T K \left(\sum_j e_j e_j^T\right) K^{-1} e_i = e_i^T K \cdot I \cdot K^{-1} e_i = e_i^T e_i = 1$$
+
+其中用了 $\sum_j e_j e_j^T = I$。$\blacksquare$
+
+**6.**
+
+Rosenbrock 系统矩阵：
+
+$$P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix} = \begin{bmatrix} s+1 & 0 & -1 & -1 \\ 0 & s+2 & -1 & 1 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{bmatrix}$$
+
+不变零点使 $P(s)$ 降秩（秩 $< 4$）。
+
+对 $P(s)$ 做行变换。第 3 行给出 $x_1 = 0$（从 $(s+1)x_1 - u_1 - u_2 = 0$ 和 $x_1 = 0$ 得 $u_1 + u_2 = 0$）。
+
+第 4 行给出 $x_2 = 0$（从 $(s+2)x_2 - u_1 + u_2 = 0$ 和 $x_2 = 0$ 得 $u_1 = u_2$）。
+
+结合 $u_1 + u_2 = 0$ 和 $u_1 = u_2$：$2u_1 = 0 \implies u_1 = 0, u_2 = 0$。
+
+所以对所有 $s$，$P(s)$ 的零空间只有零向量——$P(s)$ 满秩。
+
+**系统没有不变零点**。
+
+验证：$G(s) = C(sI-A)^{-1}B = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} \frac{1}{s+1} & 0 \\ 0 & \frac{1}{s+2} \end{bmatrix} \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix} = \begin{bmatrix} \frac{1}{s+1} & \frac{1}{s+1} \\ \frac{1}{s+2} & \frac{-1}{s+2} \end{bmatrix}$
+
+$\det G(s) = \frac{-1}{(s+1)(s+2)} - \frac{1}{(s+1)(s+2)} = \frac{-2}{(s+1)(s+2)}$
+
+分子是常数 $-2$，没有零点。✓
+
+**7.**
+
+(a) $\det K = 5 \times 1 - 3 \times 2 = 5 - 6 = -1$
+
+$$K^{-1} = \frac{1}{-1} \begin{bmatrix} 1 & -3 \\ -2 & 5 \end{bmatrix} = \begin{bmatrix} -1 & 3 \\ 2 & -5 \end{bmatrix}$$
+
+$$(K^{-1})^T = \begin{bmatrix} -1 & 2 \\ 3 & -5 \end{bmatrix}$$
+
+$$\Lambda = \begin{bmatrix} 5 \times (-1) & 3 \times 2 \\ 2 \times 3 & 1 \times (-5) \end{bmatrix} = \begin{bmatrix} -5 & 6 \\ 6 & -5 \end{bmatrix}$$
+
+(b) $\lambda_{11} = -5$，远离 1 且为负。**交互极其严重**。对角配对不可行——需要解耦或 MIMO 控制器。
+
+**8.**
+
+(a)
+
+$$\det G(s) = \frac{1}{s+1} \cdot \frac{1}{s+2} - \frac{a}{s+1} \cdot \frac{1}{s+2} = \frac{1 - a}{(s+1)(s+2)}$$
+
+分子是 $1 - a$。
+
+- 若 $a \neq 1$：分子是常数，没有传输零点。
+- 若 $a = 1$：$\det G(s) \equiv 0$，$G(s)$ 对所有 $s$ 降秩（秩为 1）。所有 $s$ 都是"零点"——系统不可逆。
+
+(b) 当 $a \neq 1$ 时，系统没有传输零点。当 $a = 1$ 时，$G_{12} = G_{11}$，两行线性相关，系统实际上只有一个独立输出。

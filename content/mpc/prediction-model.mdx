@@ -1,0 +1,702 @@
+---
+title: "预测模型建立"
+description: "MPC的基石——预测模型。掌握状态空间增广模型、阶跃响应模型（DMC）、CARIMA模型（GPC）三种形式，理解增量形式的设计原理，了解模型辨识与模型失配的影响。"
+---
+
+# 预测模型建立
+
+上一课介绍了 MPC 的三大核心思想，其中预测模型用矩阵 $F$ 和 $\Phi$ 把"当前状态和未来输入 → 未来输出"的关系写成了线性方程。但那个推导有两个没说清楚的问题：
+
+1. **模型只有状态空间一种形式吗？** 工业界最常用的其实是阶跃响应模型。
+2. **模型怎么消除稳态误差？** 上一课的绝对形式 $x(k+1) = Ax(k) + Bu(k)$ 没有积分作用。
+
+这一课把预测模型讲透——三种模型形式、增量增广的数学原理、模型辨识方法、模型失配的影响。
+
+> 📖 本课需要 [模型预测控制原理](/mpc/mpc-principle)（F/Φ 矩阵和 QP 公式化）和 [Z变换基础](/discrete-sampled/z-transform-analysis) 的前置知识。
+
+## 状态空间预测模型
+
+### 绝对形式的回顾
+
+上一课给出的预测模型是**绝对形式**：
+
+$$x(k+1) = Ax(k) + Bu(k), \quad y(k) = Cx(k)$$
+
+从当前状态 $x(k)$ 出发，递推 $N_p$ 步：
+
+$$X = Fx(k) + \Phi U$$
+
+其中 $U = [u(k), u(k+1), \ldots, u(k+N_p-1)]^T$ 是未来输入的**绝对值**。
+
+这个形式有两个问题：
+- **没有积分作用**：对常值参考输入会有稳态误差
+- **不方便处理输入变化率约束**：实际执行器限制的是 $\Delta u$（阀门速度），不是 $u$ 的绝对值
+
+### 增量形式的增广模型
+
+解决方法：把优化变量从 $u$ 换成 $\Delta u = u(k) - u(k-1)$。
+
+对**时不变系统**（$A, B$ 为常数矩阵），原系统的增量形式：
+
+$$x(k+1) - x(k) = A[x(k) - x(k-1)] + B[u(k) - u(k-1)]$$
+
+$$\Delta x(k+1) = A\Delta x(k) + B\Delta u(k)$$
+
+输出方程：
+
+$$y(k+1) = Cx(k+1) = C[x(k) + \Delta x(k+1)] = y(k) + CA\Delta x(k) + CB\Delta u(k)$$
+
+把 $\Delta x(k)$ 和 $y(k)$ 组合成**增广状态**：
+
+$$\xi(k) = \begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix} \in \mathbb{R}^{n+p}$$
+
+增广模型：
+
+$$\boxed{\xi(k+1) = \underbrace{\begin{bmatrix} A & 0 \\ CA & I_p \end{bmatrix}}_{A_e} \xi(k) + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)}$$
+
+$$y(k) = \underbrace{\begin{bmatrix} 0_{p \times n} & I_p \end{bmatrix}}_{C_e} \xi(k)$$
+
+其中 $n$ 是原系统状态维度，$p$ 是输出维度，$I_p$ 是 $p \times p$ 单位矩阵。
+
+> 💡 **为什么增广能消除稳态误差？** 输出方程 $y(k+1) = y(k) + CA\Delta x(k) + CB\Delta u(k)$ 中，$y(k)$ 的累加效果等价于一个**积分器**。这就是**内模原理**的应用——在预测模型中嵌入参考信号的生成模型（常值参考 → 积分器），保证零稳态误差。
+
+### 增广矩阵的性质
+
+**特征值**：$A_e = \begin{bmatrix} A & 0 \\ CA & I_p \end{bmatrix}$ 是块下三角矩阵，其特征值 = $A$ 的特征值 ∪ $\{1, 1, \ldots, 1\}$（$p$ 个 1）。
+
+即使原系统稳定（$A$ 的特征值全在单位圆内），增广系统也有 $p$ 个特征值在单位圆上。这不是缺陷——积分器的特征值就在单位圆上，这是提供积分作用的必要条件。
+
+**可观测性**：若原系统 $(A, C)$ 可观测，则增广系统 $(A_e, C_e)$ 也可观测。
+
+> 证明思路：用 PBH 判据。对 $A_e$ 的任意特征值 $\lambda$，检查 $\text{rank}\begin{bmatrix} A_e - \lambda I \\ C_e \end{bmatrix} = n + p$。对 $\lambda = 1$（增广特征值），利用 $(A, C)$ 的可观测性可以证明满秩。
+
+**维度代价**：增广后系统维度从 $n$ 变为 $n + p$。通常 $p \ll n$（1-2 个输出），计算量增加有限。
+
+### 增广模型的预测矩阵
+
+用增广模型重新构建预测方程。从当前增广状态 $\xi(k)$ 出发：
+
+$$\xi(k+1) = A_e \xi(k) + B_e \Delta u(k)$$
+$$\xi(k+2) = A_e^2 \xi(k) + A_e B_e \Delta u(k) + B_e \Delta u(k+1)$$
+$$\vdots$$
+
+输出预测：
+
+$$Y = F_e \xi(k) + \Phi_e \Delta U$$
+
+其中：
+
+$$F_e = \begin{bmatrix} C_e A_e \\ C_e A_e^2 \\ C_e A_e^3 \\ \vdots \\ C_e A_e^{N_p} \end{bmatrix}, \quad \Phi_e = \begin{bmatrix} C_e B_e & 0 & 0 & \cdots & 0 \\ C_e A_e B_e & C_e B_e & 0 & \cdots & 0 \\ C_e A_e^2 B_e & C_e A_e B_e & C_e B_e & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ C_e A_e^{N_p-1} B_e & C_e A_e^{N_p-2} B_e & C_e A_e^{N_p-3} B_e & \cdots & C_e B_e \end{bmatrix}$$
+
+$\Delta U = [\Delta u(k), \Delta u(k+1), \ldots, \Delta u(k+N_u-1)]^T$ 是未来增量序列（$N_u \leq N_p$ 为控制时域）。
+
+$\Phi_e$ 是**下三角 Toeplitz 矩阵**——每一行的元素是上一行向右移一格。这个结构来自线性时不变系统的卷积性质。
+
+> 💡 **与上一课的关系**：上一课的 $\Phi$ 矩阵也是 Toeplitz 结构。增广模型只是把 $(A, B, C)$ 替换为 $(A_e, B_e, C_e)$，把 $U$ 替换为 $\Delta U$，预测框架完全一样。
+
+## 阶跃响应模型
+
+### DMC 模型
+
+动态矩阵控制（DMC）是 1978 年 Shell 公司 Cutler 和 Ramaker 提出的——**最早工业化的 MPC 算法**。它不用状态空间，直接用**阶跃响应系数**做预测。
+
+**阶跃响应系数**：给系统一个单位阶跃输入，在采样时刻 $t = iT_s$ 记录输出值 $s_i$。对稳定系统，$s_i \to s_\infty$（稳态增益）。
+
+定义**脉冲响应系数**（阶跃响应的增量）：
+
+$$d_i = s_i - s_{i-1}, \quad i = 1, 2, \ldots, N$$
+
+其中 $s_0 = 0$。对稳定系统，$d_i \to 0$（当 $i \to \infty$），所以可以截断为有限项 $N$（模型长度）。
+
+**预测方程**：用叠加原理，当前时刻 $k$ 对未来第 $j$ 步输出的预测：
+
+$$\hat{y}(k+j|k) = y_0(k+j|k) + \sum_{i=1}^{j} d_i \Delta u(k+j-i+1)$$
+
+其中 $y_0(k+j|k)$ 是**自由响应**——假设未来输入不变（$\Delta u = 0$），仅由过去输入产生的输出：
+
+$$y_0(k+j|k) = y(k) + \sum_{i=j+1}^{N} d_i \Delta u(k+j-i+1) + \sum_{i=N}^{\infty} d_i \Delta u(k+j-i+1)$$
+
+> 💡 直觉理解：自由响应 = "如果什么都不做，输出会怎样"。优化部分 = "加上未来控制动作的额外贡献"。
+
+写成矩阵形式，$N_p$ 步预测：
+
+$$\hat{Y} = Y_0 + D \Delta U$$
+
+其中 $D$ 是由 $d_i$ 构成的下三角 Toeplitz 矩阵（和 $\Phi_e$ 结构一样）。
+
+### 阶跃响应模型 vs 状态空间模型
+
+| 特性 | 阶跃响应模型 (DMC) | 状态空间模型 |
+|------|-------------------|-------------|
+| 模型数据 | 阶跃响应系数 $\{d_1, \ldots, d_N\}$ | 矩阵 $(A, B, C)$ |
+| 模型长度 | $N$（截断长度，通常 30-100） | $n$（状态维度） |
+| 适用系统 | SISO 为主，也可 MIMO | MIMO 自然支持 |
+| 辨识难度 | 简单（阶跃实验） | 较复杂（需要系统辨识工具） |
+| 物理直觉 | 强（直接看到阶跃响应） | 弱（状态变量可能无物理意义） |
+| 工业应用 | 过程控制主流 | 学术主流，机器人/自动驾驶 |
+
+> 💡 **本质等价**：阶跃响应系数 $d_i = C A^{i-1} B$（$i \geq 1$）——它就是状态空间模型的 Markov 参数。两种模型包含相同的信息，只是表达方式不同。
+
+## CARIMA模型
+
+### GPC 的模型形式
+
+广义预测控制（GPC）由 Clarke 等人在 1987 年提出，用的是 **CARIMA**（Controlled Auto-Regressive Integrated Moving Average）模型：
+
+$$\boxed{A(z^{-1}) y(k) = B(z^{-1}) u(k) + \frac{C(z^{-1})}{\Delta} \xi(k)}$$
+
+其中：
+- $A(z^{-1}) = 1 + a_1 z^{-1} + \cdots + a_{n_a} z^{-n_a}$
+- $B(z^{-1}) = b_0 + b_1 z^{-1} + \cdots + b_{n_b} z^{-n_b}$
+- $C(z^{-1}) = 1 + c_1 z^{-1} + \cdots + c_{n_c} z^{-n_c}$（常简化为 $C = 1$）
+- $\Delta = 1 - z^{-1}$（差分算子）
+- $\xi(k)$ 是零均值白噪声
+
+展开写：
+
+$$y(k) = -a_1 y(k-1) - \cdots - a_{n_a} y(k-n_a) + b_0 u(k) + \cdots + b_{n_b} u(k-n_b) + \frac{C(z^{-1})}{\Delta}\xi(k)$$
+
+$\frac{1}{\Delta}$ 是积分器——和状态增广的思路一样，保证对常值参考的零稳态误差。
+
+### Diophantine 方程递推
+
+GPC 的核心计算是求 $j$ 步 ahead 最优预测 $\hat{y}(k+j|k)$。这需要解 **Diophantine 方程**：
+
+$$1 = E_j(z^{-1}) \tilde{A}(z^{-1}) + z^{-j} F_j(z^{-1})$$
+
+其中 $\tilde{A}(z^{-1}) = A(z^{-1})\Delta(z^{-1})$，$E_j$ 和 $F_j$ 是待求多项式，约束 $\deg E_j < j$。
+
+**递推方法**（$j = 1, 2, \ldots, N_p$）：
+
+**初始条件**（$j = 1$）：
+
+$$E_1 = 1, \quad F_1 = (1 - \tilde{A}) = (1 + a_1 - 1)z^{-1} + \cdots$$
+
+更精确地：$\tilde{A} = 1 + \tilde{a}_1 z^{-1} + \tilde{a}_2 z^{-2} + \cdots$，则 $F_1 = -\tilde{a}_1 z^{-1} - \tilde{a}_2 z^{-2} - \cdots$
+
+**递推**（$j \to j+1$）：
+
+$$E_{j+1} = E_j + e_{j+1} z^{-j} F_j^{(0)}$$
+$$F_{j+1} = z^{-1}[F_j - f_{j,0}] - e_{j+1} z^{-j} \tilde{A}$$
+
+其中 $e_{j+1}$ 是 $F_j$ 的常数项（$z^0$ 系数），$f_{j,0}$ 是 $F_j$ 的常数项，$F_j^{(0)}$ 是 $F_j$ 去掉常数项后除以 $z^{-1}$。
+
+> 💡 这个递推看起来复杂，但本质就是**多项式长除法**——把 $\frac{1}{\tilde{A}}$ 展开为 $z^{-1}$ 的幂级数，前 $j$ 项是 $E_j$，余项是 $z^{-j} F_j$。
+
+### j 步 ahead 预测
+
+解出 $E_j, F_j$ 后，$j$ 步 ahead 预测：
+
+$$\hat{y}(k+j|k) = G_j(z^{-1}) \Delta u(k+j-1) + F_j(z^{-1}) y(k) + H_j(z^{-1}) \Delta u(k-1)$$
+
+其中 $G_j = E_j B$，$H_j$ 是考虑过去输入变化的修正项。
+
+写成矩阵形式：
+
+$$\hat{Y} = G \Delta U + f$$
+
+其中 $G$ 由 $G_j$ 的系数构成（下三角 Toeplitz），$f$ 是"自由响应"（依赖过去数据）。
+
+> 💡 **与状态空间模型的关系**：$G$ 矩阵 = 状态空间增广模型的 $\Phi_e$ 矩阵。Diophantine 递推 = 增广系统的状态转移 $C_e A_e^{j-1} B_e$。两种语言，同一个数学。
+
+## 三种模型的对比
+
+| 特性 | 状态空间增广 | 阶跃响应 (DMC) | CARIMA (GPC) |
+|------|-------------|---------------|-------------|
+| 模型参数 | $(A, B, C)$，$n+p$ 维增广 | $\{d_1, \ldots, d_N\}$ | $(a_i, b_i, c_i)$ |
+| 预测矩阵 | $\Phi_e = C_e A_e^{i-1} B_e$ | $D$（Toeplitz，元素 $d_i$） | $G$（Toeplitz，元素 $g_i$） |
+| 积分作用 | 增广状态中的 $y(k)$ | 增量形式天然包含 | $\frac{1}{\Delta}$ 积分器 |
+| 计算复杂度 | $O((n+p)^2 N_p + N_u^3)$ | $O(N^2 + N_u^3)$ | $O(n_a N_p + N_u^3)$ |
+| MIMO 扩展 | 自然 | 需要多变量阶跃响应 | 需要多项式矩阵 |
+| 工业流行度 | 学术主流 | 过程控制主流 | 中等 |
+
+> 💡 **核心观点**：三种模型**数学等价**——预测矩阵都是 Toeplitz 结构，元素都是系统的脉冲/阶跃响应系数。选择哪种模型取决于：①系统辨识方法（阶跃实验 → DMC，频域实验 → 状态空间）；②应用习惯（过程控制 → DMC/GPC，机器人 → 状态空间）；③MIMO 复杂度。
+
+## 模型辨识基础
+
+### 阶跃响应辨识法
+
+工业上最常用的模型辨识方法——简单、直观、不需要专业工具。
+
+**步骤**：
+
+1. **准备**：系统稳定在稳态工作点 $(u_0, y_0)$
+2. **激励**：输入阶跃变化 $\Delta u$（通常为满量程的 5-10%）
+3. **记录**：以采样周期 $T_s$ 记录输出 $y(t)$
+4. **计算**：阶跃响应系数 $s_i = \frac{y(iT_s) - y_0}{\Delta u}$
+5. **截断**：选择模型长度 $N$，当 $|s_N - s_\infty| < \epsilon$（如 $\epsilon = 0.01 s_\infty$）
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 阶跃响应辨识：从仿真数据到 FOPTD 模型 =====
+from ipywidgets import interact, FloatSlider, Dropdown
+
+def foptd_response(K, tau, theta, Ts, N_samples):
+    """生成 FOPTD 模型的阶跃响应"""
+    t = np.arange(N_samples) * Ts
+    y = np.zeros(N_samples)
+    for i in range(N_samples):
+        t_delayed = t[i] - theta
+        if t_delayed > 0:
+            y[i] = K * (1 - np.exp(-t_delayed / tau))
+    return t, y
+
+def identify_foptd(t, y, Ts):
+    """从阶跃响应数据辨识 FOPTD 参数（63.2% 法）"""
+    K_est = y[-1]  # 稳态增益
+    
+    # 找纯滞后：输出首次偏离稳态的 5%
+    threshold = 0.05 * K_est
+    theta_idx = 0
+    for i in range(len(y)):
+        if y[i] > threshold:
+            theta_idx = max(0, i - 1)
+            break
+    theta_est = theta_idx * Ts
+    
+    # 找时间常数：从输出开始变化到达到 63.2% 稳态值
+    target = 0.632 * K_est
+    tau_idx = theta_idx
+    for i in range(theta_idx, len(y)):
+        if y[i] > target:
+            tau_idx = i
+            break
+    tau_est = (tau_idx - theta_idx) * Ts
+    if tau_est < Ts:
+        tau_est = Ts
+    
+    return K_est, tau_est, theta_est
+
+def demo_step_identification(system_type, noise_level):
+    """交互演示阶跃响应辨识"""
+    Ts = 0.1
+    N_samples = 200
+    t = np.arange(N_samples) * Ts
+    
+    # 生成"真实系统"阶跃响应
+    if system_type == '一阶系统 (K=2, τ=3)':
+        K_true, tau_true, theta_true = 2.0, 3.0, 0.5
+    elif system_type == '二阶系统 (欠阻尼)':
+        K_true, tau_true, theta_true = 1.5, 2.0, 0.3
+    else:  # 高阶系统
+        K_true, tau_true, theta_true = 1.0, 4.0, 1.0
+    
+    # 生成响应
+    y_true = np.zeros(N_samples)
+    for i in range(N_samples):
+        t_d = t[i] - theta_true
+        if t_d > 0:
+            if '一阶' in system_type:
+                y_true[i] = K_true * (1 - np.exp(-t_d / tau_true))
+            elif '二阶' in system_type:
+                wn = 1.0
+                zeta = 0.5
+                wd = wn * np.sqrt(1 - zeta**2)
+                y_true[i] = K_true * (1 - np.exp(-zeta * wn * t_d) * 
+                    (np.cos(wd * t_d) + zeta/np.sqrt(1-zeta**2) * np.sin(wd * t_d)))
+            else:
+                # 三阶系统近似
+                y_true[i] = K_true * (1 - np.exp(-t_d / tau_true) * 
+                    (1 + t_d / tau_true))
+    
+    # 添加噪声
+    np.random.seed(42)
+    y_meas = y_true + noise_level * np.random.randn(N_samples)
+    
+    # 辨识 FOPTD
+    K_est, tau_est, theta_est = identify_foptd(t, y_meas, Ts)
+    
+    # 辨识模型的响应
+    y_model = np.zeros(N_samples)
+    for i in range(N_samples):
+        t_d = t[i] - theta_est
+        if t_d > 0:
+            y_model[i] = K_est * (1 - np.exp(-t_d / tau_est))
+    
+    # 绘图
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+    
+    # 阶跃响应
+    axes[0].plot(t, y_meas, 'b.', markersize=2, alpha=0.5, label='测量数据')
+    axes[0].plot(t, y_true, 'k-', linewidth=1.5, label='真实响应（无噪声）')
+    axes[0].plot(t, y_model, 'r--', linewidth=2, 
+                 label=f'FOPTD辨识: K={K_est:.2f}, τ={tau_est:.2f}, θ={theta_est:.2f}')
+    axes[0].axhline(y=0.632*K_est, color='g', linestyle=':', alpha=0.5, label='63.2% 稳态值')
+    axes[0].axvline(x=theta_est, color='orange', linestyle=':', alpha=0.5, label=f'纯滞后 θ={theta_est:.2f}')
+    axes[0].set_xlabel('时间 (s)', fontsize=12)
+    axes[0].set_ylabel('输出 y', fontsize=12)
+    axes[0].set_title(f'阶跃响应辨识 — {system_type}', fontsize=13)
+    axes[0].legend(fontsize=10)
+    axes[0].grid(True, alpha=0.3)
+    
+    # 阶跃响应系数
+    s_coeffs = (y_meas - y_meas[0])  # 假设初始值为 0
+    d_coeffs = np.diff(s_coeffs, prepend=0)
+    
+    axes[1].stem(t[:50], s_coeffs[:50], linefmt='b-', markerfmt='bo', basefmt='b-', label='阶跃响应系数 s_i')
+    axes[1].stem(t[:50], d_coeffs[:50], linefmt='r-', markerfmt='r-', basefmt='r-', label='脉冲响应系数 d_i')
+    axes[1].set_xlabel('时间 (s)', fontsize=12)
+    axes[1].set_ylabel('系数值', fontsize=12)
+    axes[1].set_title('阶跃响应系数与脉冲响应系数', fontsize=13)
+    axes[1].legend(fontsize=10)
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    print(f'\\n辨识结果：')
+    print(f'  增益 K = {K_est:.3f}')
+    print(f'  时间常数 τ = {tau_est:.3f} s')
+    print(f'  纯滞后 θ = {theta_est:.3f} s')
+
+interact(
+    demo_step_identification,
+    system_type=Dropdown(
+        options=['一阶系统 (K=2, τ=3)', '二阶系统 (欠阻尼)', '高阶系统'],
+        value='一阶系统 (K=2, τ=3)',
+        description='系统类型'
+    ),
+    noise_level=FloatSlider(value=0.05, min=0, max=0.3, step=0.05, description='噪声水平'),
+)
+print('选择系统类型，观察阶跃响应辨识过程和 FOPTD 模型拟合效果')`
+    }
+  ]}
+/>
+
+### FOPTD 模型拟合
+
+工业上最常用的简化模型——**一阶加纯滞后（FOPTD）**：
+
+$$G(s) = \frac{K}{\tau s + 1} e^{-\theta s}$$
+
+三个参数的物理意义：
+
+| 参数 | 含义 | 从阶跃响应读取 |
+|------|------|---------------|
+| $K$ | 稳态增益 | $K = y_{\text{steady}} / \Delta u$ |
+| $\tau$ | 时间常数 | 从输出开始变化到达到 $63.2\%$ 稳态值的时间 |
+| $\theta$ | 纯滞后 | 从输入变化到输出**首次**可观测变化的时间 |
+
+> ⚠️ **63.2% 法的前提**：系统确实近似一阶。对欠阻尼二阶系统，63.2% 法会高估 $\tau$。更精确的方法是用两点法（取 28.3% 和 63.2% 两个点联立求解 $\tau$ 和 $\theta$）或最小二乘拟合。
+
+### PRBS 辨识
+
+对多变量系统，逐个做阶跃实验太慢。**伪随机二进制序列（PRBS）**可以同时激励多个输入：
+
+PRBS 是一个二值信号（$u \in \{u_0 - \Delta, u_0 + \Delta\}$），具有近似白噪声的频谱特性，但幅值固定（对非线性系统友好）。
+
+辨识流程：
+1. 设计 PRBS 信号（周期、幅值、最小脉冲宽度）
+2. 同时向所有输入通道施加 PRBS
+3. 记录输入输出数据
+4. 用最小二乘或相关分析法辨识多变量模型
+
+## 模型失配与鲁棒性
+
+### 模型失配的来源
+
+实际 MPC 应用中，预测模型不可能是完美的。失配来源：
+
+| 来源 | 示例 | 影响 |
+|------|------|------|
+| 模型结构误差 | 用一阶模型近似二阶系统 | 动态预测不准 |
+| 参数误差 | 增益 $K$ 随工况变化 | 稳态偏差、动态偏差 |
+| 未建模动态 | 高频振荡模态 | 可能引起不稳定 |
+| 非线性 | 用线性模型近似非线性系统 | 大范围工况下性能下降 |
+| 时变特性 | 催化剂老化、换热器结垢 | 模型逐渐过时 |
+
+### 增益失配的影响
+
+最常见的失配——模型增益 $K_{\text{model}}$ 不等于真实增益 $K_{\text{true}}$。
+
+定义增益误差比：$\gamma = K_{\text{true}} / K_{\text{model}}$。
+
+- $\gamma > 1$：真实增益大于模型 → MPC 预测偏保守 → 控制动作偏小 → 响应偏慢
+- $\gamma < 1$：真实增益小于模型 → MPC 预测偏激进 → 控制动作偏大 → 可能超调
+- $\gamma = 1$：完美匹配
+
+工程经验：增益误差在 ±30% 以内时，MPC 通常仍能稳定工作（得益于滚动优化的反馈修正）。但超过 ±50%，性能显著下降。
+
+### 应对策略
+
+| 策略 | 原理 | 适用场景 |
+|------|------|----------|
+| **增大 $R$** | 减小控制动作，降低对模型精度的依赖 | 模型不确定性大 |
+| **缩短 $N_p$** | 减少对未来预测的依赖（短期预测更准） | 模型动态误差大 |
+| **干扰观测器** | 用卡尔曼滤波等估计等效干扰，补偿模型失配 | 常值/慢变干扰 |
+| **在线自适应** | 根据实际输入输出数据实时更新模型参数 | 时变系统 |
+| **鲁棒 MPC** | 在优化中考虑模型不确定性集合，对最坏情况优化 | 严格性能保证需求 |
+
+> 📖 鲁棒 MPC 的设计方法将在 [μ综合方法](/robust/mu-synthesis) 和 [鲁棒控制综合案例](/robust/robust-case-study) 中详细讨论。
+
+## 深入讨论
+
+### 模型阶数选择
+
+模型阶数（或模型长度 $N$）的选择是**偏差-方差权衡**：
+
+- **阶数太低**：无法捕捉系统动态（欠拟合）→ 预测误差大 → 控制性能差
+- **阶数太高**：捕捉了噪声（过拟合）→ 预测矩阵条件数差 → 优化问题病态
+
+**经验法则**：
+- 状态空间模型：从物理系统推导阶数，再用模型降阶简化
+- 阶跃响应模型：$N \approx t_{\text{settling}} / T_s$（settling time 内的采样数）
+- CARIMA 模型：用 AIC/BIC 准则选择 $n_a, n_b$
+
+### 非线性预测模型
+
+以上三种都是**线性模型**。对强非线性系统（如化学反应器、飞行器大机动），可以用：
+
+1. **增益调度 MPC**：在不同工作点建立不同的线性模型，在线切换
+2. **非线性 MPC（NMPC）**：直接用非线性模型 $x(k+1) = f(x(k), u(k))$ 做预测，优化问题变成非线性规划（NLP）
+
+> 📖 非线性 MPC 将在 [非线性MPC](/mpc/nonlinear-mpc) 中详细讨论。
+
+### 预测模型与卡尔曼滤波
+
+MPC 需要知道当前状态 $x(k)$（或增广状态 $\xi(k)$），但实际只能测量输出 $y(k)$。解决方案：
+
+1. **全状态测量**：$y = Cx$ 中 $C = I$（所有状态都可测）→ 直接用 $y$ 作为状态
+2. **状态观测器**：用 Luenberger 观测器或卡尔曼滤波器估计状态
+
+卡尔曼滤波器的作用：
+- 估计不可测状态
+- 滤除测量噪声
+- 估计等效干扰（补偿模型失配）
+
+> 📖 卡尔曼滤波的设计详见 [卡尔曼滤波](/modern/kalman-filter)。
+
+## 小结
+
+1. **三种预测模型**：状态空间增广模型（最通用）、阶跃响应模型（工业主流）、CARIMA 模型（GPC 专用）。数学本质等价——预测矩阵都是 Toeplitz 结构。
+
+2. **增量形式的增广模型**：通过引入 $\Delta x$ 和 $y$ 的增广状态，在预测模型中嵌入积分器（内模原理），保证对常值参考的零稳态误差。维度从 $n$ 增加到 $n+p$。
+
+3. **模型辨识**：阶跃响应实验是最简单的方法。FOPTD 模型（$K, \tau, \theta$）是工业最常用的简化模型。多变量系统用 PRBS 信号同时辨识。
+
+4. **模型失配**：增益误差 ±30% 以内通常可接受。应对策略：增大 $R$、缩短 $N_p$、加干扰观测器、在线自适应、鲁棒 MPC。
+
+## 习题
+
+### 习题 1
+
+给定连续系统 $G(s) = \frac{2}{3s + 1}$，采样周期 $T_s = 0.5$ s。
+
+(a) 求零阶保持器离散化后的状态空间模型 $(A, B, C)$。
+
+(b) 构造增量形式的增广模型 $(A_e, B_e, C_e)$。
+
+(c) 求 $A_e$ 的特征值，并说明积分作用体现在哪里。
+
+### 习题 2
+
+某系统的阶跃响应系数（采样周期 $T_s = 1$ s）如下：
+
+| $i$ | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-----|---|---|---|---|---|---|---|---|---|
+| $s_i$ | 0 | 0.2 | 0.35 | 0.47 | 0.56 | 0.63 | 0.68 | 0.72 | 0.75 |
+
+(a) 计算脉冲响应系数 $d_1, d_2, \ldots, d_8$。
+
+(b) 写出预测时域 $N_p = 4$ 时的 DMC 预测矩阵 $D$（4×4 下三角 Toeplitz 矩阵）。
+
+(c) 如果模型长度取 $N = 8$，稳态增益 $K = s_\infty \approx 0.75$，这个系统的 FOPTD 模型参数是什么？（用 63.2% 法估算）
+
+### 习题 3
+
+给定 CARIMA 模型：
+
+$$y(k) - 0.5 y(k-1) = 0.8 u(k-1) + \frac{\xi(k)}{\Delta}$$
+
+即 $A(z^{-1}) = 1 - 0.5z^{-1}$，$B(z^{-1}) = 0.8z^{-1}$，$C(z^{-1}) = 1$。
+
+(a) 求 $\tilde{A}(z^{-1}) = A(z^{-1})\Delta(z^{-1})$ 的表达式。
+
+(b) 用 Diophantine 方程 $1 = E_1 \tilde{A} + z^{-1} F_1$，求 $E_1$ 和 $F_1$。
+
+(c) 求 1 步 ahead 预测 $\hat{y}(k+1|k)$ 的表达式（用 $y(k), u(k), \Delta u(k)$ 表示）。
+
+### 习题 4
+
+某 MPC 系统使用模型 $K_{\text{model}} = 1.0$，但真实系统增益为 $K_{\text{true}} = 1.5$（增益误差比 $\gamma = 1.5$）。
+
+(a) 定性分析：MPC 的控制动作会偏大还是偏小？闭环响应会偏快还是偏慢？
+
+(b) 如果 MPC 的输入权重 $R$ 增大 10 倍，对模型失配的敏感度会如何变化？解释原因。
+
+### 习题 5
+
+某二阶系统 $G(s) = \frac{1}{s^2 + 0.4s + 1}$，采样周期 $T_s = 0.2$ s。
+
+(a) 用零阶保持器离散化，求离散传递函数 $G(z)$。
+
+(b) 从离散传递函数提取状态空间模型 $(A, B, C)$（可控标准型）。
+
+(c) 构造增量增广模型 $(A_e, B_e, C_e)$，验证 $(A_e, C_e)$ 的可观测性。
+
+## 答案
+
+### 答案 1
+
+**(a)** 连续状态空间（可控标准型）：
+
+$$A_c = -\frac{1}{3}, \quad B_c = \frac{2}{3}, \quad C_c = 1$$
+
+零阶保持器离散化（$T_s = 0.5$）：
+
+$$A = e^{A_c T_s} = e^{-1/6} \approx 0.8465$$
+
+$$B = \int_0^{T_s} e^{A_c \tau} B_c \, d\tau = \frac{B_c}{A_c}(e^{A_c T_s} - 1) = \frac{2/3}{-1/3}(e^{-1/6} - 1) = -2(0.8465 - 1) = 0.3070$$
+
+$$C = 1$$
+
+即：$x(k+1) = 0.8465 x(k) + 0.3070 u(k)$，$y(k) = x(k)$。
+
+**(b)** 增广模型（$n = 1, p = 1$）：
+
+$$A_e = \begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix} = \begin{bmatrix} 0.8465 & 0 \\ 0.8465 & 1 \end{bmatrix}$$
+
+$$B_e = \begin{bmatrix} B \\ CB \end{bmatrix} = \begin{bmatrix} 0.3070 \\ 0.3070 \end{bmatrix}$$
+
+$$C_e = \begin{bmatrix} 0 & 1 \end{bmatrix}$$
+
+**(c)** $A_e$ 的特征值 = $A$ 的特征值 ∪ $\{1\}$ = $\{0.8465, 1\}$。
+
+特征值 1 对应增广状态中的 $y(k)$ 积分项。输出方程 $y(k+1) = y(k) + 0.8465 \Delta x(k) + 0.3070 \Delta u(k)$ 中，$y(k)$ 的累加效果等价于积分器——这就是零稳态误差的来源。
+
+### 答案 2
+
+**(a)** 脉冲响应系数 $d_i = s_i - s_{i-1}$：
+
+| $i$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-----|---|---|---|---|---|---|---|---|
+| $d_i$ | 0.20 | 0.15 | 0.12 | 0.09 | 0.07 | 0.05 | 0.04 | 0.03 |
+
+**(b)** $N_p = 4$ 时的 DMC 预测矩阵：
+
+$$D = \begin{bmatrix} d_1 & 0 & 0 & 0 \\ d_2 & d_1 & 0 & 0 \\ d_3 & d_2 & d_1 & 0 \\ d_4 & d_3 & d_2 & d_1 \end{bmatrix} = \begin{bmatrix} 0.20 & 0 & 0 & 0 \\ 0.15 & 0.20 & 0 & 0 \\ 0.12 & 0.15 & 0.20 & 0 \\ 0.09 & 0.12 & 0.15 & 0.20 \end{bmatrix}$$
+
+**(c)** 63.2% 法：$0.632 \times 0.75 = 0.474$。
+
+从数据看，$s_3 = 0.47 \approx 0.474$，所以达到 63.2% 的时间约为 $3 T_s = 3$ s。
+
+纯滞后 $\theta$：输出首次明显变化在 $i = 1$，所以 $\theta \approx 1 \times T_s = 1$ s。
+
+时间常数 $\tau$：从开始变化到 63.2% 的时间 = $3 - 1 = 2$ s。
+
+FOPTD 模型：$G(s) \approx \frac{0.75}{2s + 1} e^{-s}$。
+
+### 答案 3
+
+**(a)** $\Delta(z^{-1}) = 1 - z^{-1}$，所以：
+
+$$\tilde{A}(z^{-1}) = (1 - 0.5z^{-1})(1 - z^{-1}) = 1 - 1.5z^{-1} + 0.5z^{-2}$$
+
+**(b)** Diophantine 方程 $1 = E_1 \tilde{A} + z^{-1} F_1$，约束 $\deg E_1 < 1$（即 $E_1$ 为常数）。
+
+$E_1 = 1$（常数项必须匹配）。
+
+$z^{-1} F_1 = 1 - \tilde{A} = 1.5z^{-1} - 0.5z^{-2}$
+
+$F_1 = 1.5 - 0.5z^{-1}$
+
+**(c)** 1 步 ahead 预测。将 CARIMA 模型两边乘以 $E_1 \Delta$：
+
+$$\hat{y}(k+1|k) = G_1 \Delta u(k) + F_1 y(k)$$
+
+其中 $G_1 = E_1 B = 0.8z^{-1}$（取 $z^{-1}$ 的系数，即 $g_{1,1} = 0.8$），所以 $G_1 \Delta u(k) = 0.8 \Delta u(k)$。
+
+$F_1 y(k) = (1.5 - 0.5z^{-1})y(k) = 1.5y(k) - 0.5y(k-1)$。
+
+$$\hat{y}(k+1|k) = 0.8 \Delta u(k) + 1.5 y(k) - 0.5 y(k-1)$$
+
+> 验证：从原模型 $y(k+1) = 0.5y(k) + 0.8u(k) + \text{干扰}$，得 $\hat{y}(k+1|k) = 0.5y(k) + 0.8u(k)$。
+> 
+> 我们的结果：$0.8[u(k) - u(k-1)] + 1.5y(k) - 0.5y(k-1) = 0.8u(k) - 0.8u(k-1) + 1.5y(k) - 0.5y(k-1)$。
+> 
+> 从原模型：$y(k) = 0.5y(k-1) + 0.8u(k-1)$，所以 $0.8u(k-1) = y(k) - 0.5y(k-1)$。
+> 
+> 代入：$0.8u(k) - [y(k) - 0.5y(k-1)] + 1.5y(k) - 0.5y(k-1) = 0.8u(k) + 0.5y(k)$。✓
+
+### 答案 4
+
+**(a)** $\gamma = 1.5 > 1$：真实增益大于模型增益。
+
+MPC 用模型预测"施加 $\Delta u$ 后输出变化多少"。模型增益偏小 → MPC 认为"需要较大的 $\Delta u$ 才能达到目标" → 但真实系统增益更大 → 实际控制效果超出预期 → **控制动作偏大，响应偏快，可能超调**。
+
+等等，这个分析需要更仔细。MPC 的优化目标是最小化代价函数。如果模型增益偏小（$K_{\text{model}} < K_{\text{true}}$），MPC 认为需要更大的控制量才能把状态驱动到零。所以 MPC 给出的 $u$ 偏大。但真实系统增益更大，实际效果比预测的更强。综合效果：**响应偏快，可能超调**。
+
+**(b)** 增大 $R$ 10 倍 → MPC 更"珍惜"控制量 → 控制动作减小 → 对模型增益误差的敏感度**降低**。
+
+直觉：$R$ 大时，MPC 倾向于"小步慢走"，即使模型不准，每步的控制量也小，预测误差的绝对值也小。滚动优化的反馈修正可以逐步补偿小偏差。
+
+极端情况：$R \to \infty$ 时，$u \to 0$，系统不受控制，模型准不准都无所谓了。
+
+### 答案 5
+
+**(a)** 连续传递函数 $G(s) = \frac{1}{s^2 + 0.4s + 1}$。
+
+零阶保持器离散化（$T_s = 0.2$）：
+
+$$G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}$$
+
+$G(s)/s = \frac{1}{s(s^2 + 0.4s + 1)}$。部分分式分解：
+
+$$\frac{1}{s(s^2 + 0.4s + 1)} = \frac{1}{s} - \frac{s + 0.4}{s^2 + 0.4s + 1}$$
+
+$s^2 + 0.4s + 1 = (s + 0.2)^2 + 0.96$，极点 $s = -0.2 \pm j\sqrt{0.96}$。
+
+$\omega_d = \sqrt{0.96} \approx 0.9798$，$\sigma = 0.2$。
+
+$$\frac{s + 0.4}{s^2 + 0.4s + 1} = \frac{(s + 0.2) + 0.2}{(s + 0.2)^2 + \omega_d^2}$$
+
+Z 变换（$e^{-\sigma T_s} = e^{-0.04} \approx 0.9608$，$\omega_d T_s \approx 0.1960$）：
+
+令 $a = e^{-\sigma T_s} = 0.9608$，$\cos(\omega_d T_s) = \cos(0.1960) \approx 0.9808$，$\sin(\omega_d T_s) \approx 0.1947$。
+
+$$\mathcal{Z}\left\{\frac{s + 0.2}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{z(z - a\cos\omega_d T_s)}{z^2 - 2a\cos(\omega_d T_s)z + a^2}$$
+
+$$\mathcal{Z}\left\{\frac{\omega_d}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{a\sin(\omega_d T_s) z}{z^2 - 2a\cos(\omega_d T_s)z + a^2}$$
+
+计算各项：
+- $a^2 = 0.9608^2 \approx 0.9231$
+- $2a\cos(\omega_d T_s) = 2 \times 0.9608 \times 0.9808 \approx 1.8847$
+- $a\sin(\omega_d T_s) = 0.9608 \times 0.1947 \approx 0.1871$
+
+$$G(z) = \frac{(1 - z^{-1})}{1} \left[\frac{z}{z-1} - \frac{z(z - 0.9608 \times 0.9808) + 0.2/0.9798 \times 0.1871 z}{z^2 - 1.8847z + 0.9231}\right]$$
+
+简化后（用数值计算）：
+
+$$G(z) = \frac{0.01873 z + 0.01752}{z^2 - 1.8847z + 0.9231}$$
+
+即：$y(k) - 1.8847y(k-1) + 0.9231y(k-2) = 0.01873u(k-1) + 0.01752u(k-2)$
+
+**(b)** 可控标准型（$n = 2$）：
+
+$$A = \begin{bmatrix} 1.8847 & -0.9231 \\ 1 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 0.01873 & 0.01752 \end{bmatrix}$$
+
+**(c)** 增广模型（$p = 1$）：
+
+$$A_e = \begin{bmatrix} 1.8847 & -0.9231 & 0 \\ 1 & 0 & 0 \\ 0.01873 & 0.01752 & 1 \end{bmatrix}, \quad B_e = \begin{bmatrix} 1 \\ 0 \\ 0.01873 \end{bmatrix}, \quad C_e = \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}$$
+
+可观测性检验：
+
+$$\mathcal{O} = \begin{bmatrix} C_e \\ C_e A_e \\ C_e A_e^2 \end{bmatrix} = \begin{bmatrix} 0 & 0 & 1 \\ 0.01873 & 0.01752 & 1 \\ \cdots & \cdots & \cdots \end{bmatrix}$$
+
+$C_e A_e = \begin{bmatrix} 0.01873 & 0.01752 & 1 \end{bmatrix}$
+
+$C_e A_e^2 = C_e A_e \cdot A_e$：第一元素 = $0.01873 \times 1.8847 + 0.01752 \times 1 + 1 \times 0.01873 = 0.03530 + 0.01752 + 0.01873 = 0.07155$
+
+$\mathcal{O} = \begin{bmatrix} 0 & 0 & 1 \\ 0.01873 & 0.01752 & 1 \\ 0.07155 & 0.05342 & 1 \end{bmatrix}$
+
+$\det(\mathcal{O}) = 0 \times (\cdots) - 0 \times (\cdots) + 1 \times (0.01873 \times 0.05342 - 0.01752 \times 0.07155)$
+
+$= 0.01873 \times 0.05342 - 0.01752 \times 0.07155 = 0.001000 - 0.001254 = -0.000254 \neq 0$
+
+可观测性矩阵满秩 → $(A_e, C_e)$ 可观测。✓

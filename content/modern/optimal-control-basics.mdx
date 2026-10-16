@@ -1,0 +1,632 @@
+---
+title: 最优控制基础
+description: 从极点配置到最优控制，引入性能指标和变分法，掌握 Hamilton 函数和极小值原理，求解经典最优控制问题。
+---
+
+# 最优控制基础
+
+前四章，我们学会了用状态反馈任意配置闭环极点，用观测器估计不可测的状态。但有一个根本问题没回答：**极点应该放在哪？**
+
+工程经验说"阻尼比 0.7，观测器极点快 3 倍"——但为什么是 0.7 不是 0.5？为什么快 3 倍不是 5 倍？极点配置给了你 $n$ 个自由度，却没告诉你怎么选。
+
+最优控制的答案是：**定义一个"性能指标"（代价），然后找使代价最小的控制律**。不再靠经验试凑，而是让数学告诉你"最优"答案。
+
+> 📖 本章需要前四章的基础：[状态空间表示](/modern/state-space)、[可控性与可观性](/modern/controllability-observability)、[状态反馈与极点配置](/modern/state-feedback) 和 [状态观测器设计](/modern/state-observer)，特别是状态方程和矩阵运算。
+
+## 为什么需要最优控制
+
+### 极点配置的困境
+
+回顾状态反馈：$\boldsymbol{u} = -K\boldsymbol{x}$，闭环系统 $\dot{\boldsymbol{x}} = (A - BK)\boldsymbol{x}$。
+
+对于 $n$ 阶 SISO 系统，$K$ 有 $n$ 个参数，可以配置 $n$ 个闭环极点。但：
+
+- **选哪些极点？** 阻尼比、自然频率的选择依赖经验和试凑
+- **多目标冲突**：快速响应需要大带宽（极点远离虚轴），但大控制量意味着高能耗、饱和风险
+- **没有"最优"标准**：不同工程师对"好"的定义不同
+
+最优控制把"好"变成**数学公式**：定义代价函数 $J$（如能耗、时间、误差的积分），然后找使 $J$ 最小的 $\boldsymbol{u}^*(t)$。
+
+### 最优控制的典型问题
+
+| 问题类型 | 代价函数 | 应用场景 |
+|----------|----------|----------|
+| 最小能量 | $J = \int_0^{t_f} u^2 \, dt$ | 卫星姿态控制（省燃料） |
+| 最小时间 | $J = t_f$ | 机器人快速定位 |
+| 最小误差 | $J = \int_0^{t_f} e^2 \, dt$ | 精密跟踪 |
+| 线性二次型 (LQR) | $J = \int_0^{\infty} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt$ | 通用，下一章重点 |
+
+这些问题的共同结构：**最小化一个泛函，约束是系统动态方程**。
+
+## 最优控制问题的数学表述
+
+### 一般形式
+
+$$
+\boxed{
+\begin{aligned}
+\min_{\boldsymbol{u}(t)} \quad & J = \phi(\boldsymbol{x}(t_f), t_f) + \int_0^{t_f} L(\boldsymbol{x}(t), \boldsymbol{u}(t), t) \, dt \\
+\text{s.t.} \quad & \dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}, t) \quad \text{（系统约束）}\\
+& \boldsymbol{x}(0) = \boldsymbol{x}_0 \quad \text{（初始条件）}\\
+& \boldsymbol{u}(t) \in U \quad \text{（控制约束，可选）}
+\end{aligned}
+}
+$$
+
+各部分的含义：
+
+- **终值代价** $\phi(\boldsymbol{x}(t_f), t_f)$：终态的"代价"。比如要求终态接近目标 $\boldsymbol{x}_f$，可以设 $\phi = \frac{1}{2}(\boldsymbol{x}(t_f) - \boldsymbol{x}_f)^T S (\boldsymbol{x}(t_f) - \boldsymbol{x}_f)$
+- **运行代价** $L(\boldsymbol{x}, \boldsymbol{u}, t)$：过程中的"代价率"。比如 $L = \frac{1}{2}\boldsymbol{u}^T R \boldsymbol{u}$ 表示能耗
+- **系统约束** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}, t)$：控制不能无视物理规律
+- **控制约束** $\boldsymbol{u} \in U$： actuators 有上下限，如 $|u| \leq 10$
+
+> [!tip] 关键区别
+> 普通优化：找一组**数** $\boldsymbol{x}^*$ 使 $f(\boldsymbol{x}^*)$ 最小。
+> 最优控制：找一个**函数** $\boldsymbol{u}^*(t)$ 使 $J[\boldsymbol{u}]$ 最小。
+> 输入从"数"变成了"函数"——这就是为什么需要新的数学工具。
+
+### 例1：最小能量问题
+
+系统 $\dot{x} = -x + u$，$x(0) = 1$，$x(2) = 0$。找 $u(t)$ 最小化：
+
+$$J = \frac{1}{2} \int_0^2 u^2 \, dt$$
+
+这里：$f(x, u) = -x + u$，$L = \frac{1}{2}u^2$，$\phi = 0$，$t_f = 2$。
+
+物理意义：把一个一阶系统从 $x=1$ 驱动到 $x=0$，用最小的控制能量。
+
+## 变分法：对泛函求极值
+
+### 从微积分到变分法
+
+**微积分**：找 $x^*$ 使 $f(x^*)$ 最小 → 必要条件 $f'(x^*) = 0$
+
+**变分法**：找函数 $u^*(t)$ 使泛函 $J[u]$ 最小 → 必要条件 $\delta J = 0$（变分为零）
+
+**泛函**（functional）：输入是一个**函数**，输出是一个**数**。
+
+例如 $J[u] = \int_0^T u(t)^2 \, dt$ 是一个泛函——给它一个函数 $u(t)$，它返回一个数值。不同的 $u(t)$ 给出不同的 $J$ 值。
+
+### 最简单的变分问题
+
+$$\min_{x(t)} J = \int_0^T F(x, \dot{x}, t) \, dt, \quad x(0) = x_0, \; x(T) = x_T$$
+
+极值的必要条件——**Euler-Lagrange 方程**：
+
+$$\boxed{\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 0}$$
+
+这是关于 $x(t)$ 的二阶常微分方程，配合两个边界条件 $x(0) = x_0$、$x(T) = x_T$，可以解出最优轨迹 $x^*(t)$。
+
+### 例2：最短路径问题
+
+找连接 $(0, 0)$ 和 $(1, 1)$ 的最短曲线 $y(x)$。
+
+曲线长度：$J[y] = \int_0^1 \sqrt{1 + \dot{y}^2} \, dx$
+
+这里 $F(y, \dot{y}) = \sqrt{1 + \dot{y}^2}$（不显含 $y$ 和 $x$）。
+
+Euler-Lagrange 方程：
+
+$$\frac{\partial F}{\partial y} - \frac{d}{dx}\frac{\partial F}{\partial \dot{y}} = 0 - \frac{d}{dx}\frac{\dot{y}}{\sqrt{1+\dot{y}^2}} = 0$$
+
+所以 $\frac{\dot{y}}{\sqrt{1+\dot{y}^2}} = \text{const}$，即 $\dot{y} = \text{const}$。
+
+结论：$y(x) = x$——**直线**。变分法告诉我们，两点之间直线最短。
+
+> [!info] 变分法的意义
+> 最优控制问题的核心工具就是变分法。Euler-Lagrange 方程处理无约束的变分问题；当有系统动态约束时，需要推广为 **Hamilton 函数 + 极小值原理**。
+
+## Hamilton 函数与极小值原理
+
+### 从 Lagrange 乘子到 Hamilton 函数
+
+最优控制问题有**约束** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}, t)$，不能直接对 $J$ 用 Euler-Lagrange。
+
+回忆静态约束优化：$\min f(\boldsymbol{x})$ s.t. $g(\boldsymbol{x}) = 0$。方法：构造 Lagrange 函数 $\mathcal{L} = f + \boldsymbol{\lambda}^T g$，对 $\boldsymbol{x}$ 和 $\boldsymbol{\lambda}$ 同时求导。
+
+动态约束优化类似：引入**协态变量** $\boldsymbol{\lambda}(t)$（时间的函数，类似动态的 Lagrange 乘子），构造 **Hamilton 函数**：
+
+$$\boxed{H(\boldsymbol{x}, \boldsymbol{u}, \boldsymbol{\lambda}, t) = L(\boldsymbol{x}, \boldsymbol{u}, t) + \boldsymbol{\lambda}^T f(\boldsymbol{x}, \boldsymbol{u}, t)}$$
+
+### Pontryagin 极小值原理
+
+最优控制 $\boldsymbol{u}^*(t)$ 使 Hamilton 函数取**最小值**：
+
+$$\boxed{\boldsymbol{u}^*(t) = \arg\min_{\boldsymbol{u} \in U} H(\boldsymbol{x}^*, \boldsymbol{u}, \boldsymbol{\lambda}^*, t)}$$
+
+同时，状态和协态满足**正则方程**：
+
+$$\dot{\boldsymbol{x}}^* = \frac{\partial H}{\partial \boldsymbol{\lambda}} = f(\boldsymbol{x}^*, \boldsymbol{u}^*, t) \quad \text{（状态方程）}$$
+
+$$\dot{\boldsymbol{\lambda}}^* = -\frac{\partial H}{\partial \boldsymbol{x}} \quad \text{（协态方程）}$$
+
+边界条件：
+- **初始条件**：$\boldsymbol{x}(0) = \boldsymbol{x}_0$（已知）
+- **终值横截条件**：$\boldsymbol{\lambda}(t_f) = \frac{\partial \phi}{\partial \boldsymbol{x}}\bigg|_{t_f}$
+
+> [!tip] 记忆技巧
+> - 状态方程：$\dot{\boldsymbol{x}} = \partial H / \partial \boldsymbol{\lambda}$（对协态求偏导）
+> - 协态方程：$\dot{\boldsymbol{\lambda}} = -\partial H / \partial \boldsymbol{x}$（对状态求偏导，加负号）
+> - 最优控制：$\boldsymbol{u}^* = \arg\min H$
+>
+> 这三条构成一个完整的方程组，解出来就是最优轨迹和最优控制。
+
+### 无控制约束的情况
+
+如果控制没有约束（$U = \mathbb{R}^m$），$H$ 对 $\boldsymbol{u}$ 可微且在内点取极值，则：
+
+$$\frac{\partial H}{\partial \boldsymbol{u}} = 0$$
+
+这比 $\arg\min$ 形式更容易计算。
+
+### 求解结构：两点边值问题
+
+极小值原理给出的是一个**两点边值问题**（TPBVP）：
+
+- $\boldsymbol{x}(0) = \boldsymbol{x}_0$（初始条件在 $t = 0$）
+- $\boldsymbol{\lambda}(t_f) = \partial \phi / \partial \boldsymbol{x}|_{t_f}$（终值条件在 $t = t_f$）
+
+状态方程从 $t=0$ 向前积分，协态方程从 $t=t_f$ 向后积分——两边往中间凑。这比初值问题难解，通常需要数值方法。
+
+### 例3：用极小值原理求解例1
+
+系统 $\dot{x} = -x + u$，$x(0) = 1$，$x(2) = 0$。$J = \frac{1}{2}\int_0^2 u^2 \, dt$。
+
+**步骤1**：构造 Hamilton 函数。
+
+$$H = \frac{1}{2}u^2 + \lambda(-x + u)$$
+
+**步骤2**：最优控制条件（无约束，$\partial H / \partial u = 0$）。
+
+$$\frac{\partial H}{\partial u} = u + \lambda = 0 \implies u^* = -\lambda$$
+
+**步骤3**：协态方程。
+
+$$\dot{\lambda} = -\frac{\partial H}{\partial x} = -(-\lambda) = \lambda$$
+
+解：$\lambda(t) = \lambda(0) e^t$。
+
+**步骤4**：状态方程（代入 $u^* = -\lambda$）。
+
+$$\dot{x} = -x + u^* = -x - \lambda = -x - \lambda(0) e^t$$
+
+这是一阶线性 ODE。积分因子 $e^t$：
+
+$$\frac{d}{dt}(xe^t) = -\lambda(0) e^{2t}$$
+
+$$xe^t = -\frac{\lambda(0)}{2} e^{2t} + C$$
+
+$$x(t) = -\frac{\lambda(0)}{2} e^t + Ce^{-t}$$
+
+**步骤5**：用边界条件确定常数。
+
+$x(0) = 1$：$-\frac{\lambda(0)}{2} + C = 1$
+
+$x(2) = 0$：$-\frac{\lambda(0)}{2} e^2 + Ce^{-2} = 0$
+
+从第二个方程：$C = \frac{\lambda(0)}{2} e^4$。代入第一个：
+
+$-\frac{\lambda(0)}{2} + \frac{\lambda(0)}{2} e^4 = 1$
+
+$\lambda(0) = \frac{2}{e^4 - 1} \approx 0.0366$
+
+$C = \frac{e^4}{e^4 - 1} \approx 1.0366$
+
+**结果**：
+
+$$u^*(t) = -\lambda(t) = -\lambda(0) e^t = -\frac{2e^t}{e^4 - 1}$$
+
+$$x^*(t) = -\frac{\lambda(0)}{2} e^t + C e^{-t} = -\frac{e^t}{e^4 - 1} + \frac{e^4}{e^4 - 1} e^{-t} = \frac{e^{4-t} - e^t}{e^4 - 1}$$
+
+验证：$x(0) = \frac{e^4 - 1}{e^4 - 1} = 1$ ✓，$x(2) = \frac{e^2 - e^2}{e^4 - 1} = 0$ ✓
+
+最优代价：
+
+$$J^* = \frac{1}{2}\int_0^2 u^{*2} \, dt = \frac{1}{2}\int_0^2 \frac{4e^{2t}}{(e^4-1)^2} \, dt = \frac{2}{(e^4-1)^2} \cdot \frac{e^4 - 1}{2} = \frac{1}{e^4 - 1} \approx 0.0183$$
+
+> [!info] 观察
+> 最优控制 $u^*(t) = -\frac{2e^t}{e^4-1}$ 是一个指数递减的函数。初始时刻控制量大（把状态快速拉向零），之后逐渐减小。这比"均匀用力"更省能量。
+
+<JupyterNotebook
+  title=" 动手实验：最优控制数值求解"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp, quad
+from ipywidgets import interact, FloatSlider
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+def min_energy_ode(t, y):
+    return np.array([-y[0] - y[1], y[1]])
+
+def min_energy_bc(ya, yb):
+    return np.array([ya[0] - 1, yb[0]])`}
+  cells={[
+    { code: `# ===== 最小能量控制 — 数值求解 =====
+# 系统: dx/dt = -x + u, x(0)=1, x(2)=0
+# 最小化 J = 0.5 * integral(u^2 dt)
+# 极小值原理给出 TPBVP: x' = -x - λ, λ' = λ, x(0)=1, x(2)=0
+
+t_init = np.linspace(0, 2, 100)
+y_init = np.zeros((2, len(t_init)))
+y_init[0] = 1 - t_init / 2
+y_init[1] = 0.03
+
+sol = solve_bvp(min_energy_ode, min_energy_bc, t_init, y_init)
+print(f"求解成功: {sol.success}")
+print(f"λ(0) 数值 = {sol.y[1, 0]:.6f}")
+print(f"λ(0) 解析 = {2 / (np.exp(4) - 1):.6f}")
+
+u_opt = -sol.y[1]
+t_plot = np.linspace(0, 2, 200)
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+labels = ['最优状态轨迹', '最优控制', '协态变量']
+colors = ['blue', 'red', 'green']
+for i, (label, color) in enumerate(zip(labels, colors)):
+    axes[i].plot(t_plot, sol.sol(t_plot)[i if i < 2 else 1], color=color, linewidth=2)
+    if i == 1:
+        axes[i].plot(t_plot, u_opt(t_plot), color=color, linewidth=2)
+    axes[i].axhline(y=0, color='k', linestyle=':', alpha=0.3)
+    axes[i].set_title(label)
+    axes[i].grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# ===== 验证最优代价 =====
+J_analytical = 1 / (np.exp(4) - 1)
+print(f"解析最优代价 J* = {J_analytical:.6f}")
+
+u_sq = lambda t: sol.sol(t)[1]**2
+J_numerical, _ = quad(u_sq, 0, 2)
+J_numerical *= 0.5
+print(f"数值最优代价 J* = {J_numerical:.6f}")
+
+c_uniform = -1 / (np.exp(2) - 1)
+J_uniform = 0.5 * c_uniform**2 * 2
+print(f"\\n均匀控制 u = {c_uniform:.4f}, J = {J_uniform:.6f}")
+print(f"最优控制节省能量: {(1 - J_analytical/J_uniform)*100:.1f}%")` },
+    { code: `# ===== 不同终态时间对最优控制的影响 =====
+def plot_min_energy(tf=2.0):
+    t_i = np.linspace(0, tf, 100)
+    y_i = np.zeros((2, 100))
+    y_i[0] = 1 - t_i / tf
+    y_i[1] = 0.03
+    sol_i = solve_bvp(min_energy_ode, min_energy_bc, t_i, y_i)
+    t_p = np.linspace(0, tf, 200)
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    axes[0].plot(t_p, sol_i.sol(t_p)[0], 'b-', linewidth=2, label='x*(t)')
+    axes[0].plot(t_p, -sol_i.sol(t_p)[1], 'r--', linewidth=2, label='u*(t)')
+    axes[0].axhline(y=0, color='k', linestyle=':', alpha=0.3)
+    axes[0].set_xlabel('t')
+    axes[0].set_title(f'最优轨迹 (t_f = {tf:.1f})')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    J_i = 1 / (np.exp(2*tf) - 1)
+    axes[1].bar(['最优代价'], [J_i], color='steelblue')
+    axes[1].set_ylabel('J*')
+    axes[1].set_title(f'J* = {J_i:.4f}')
+    axes[1].set_ylim(0, max(J_i * 1.3, 0.1))
+    axes[1].grid(True, alpha=0.3, axis='y')
+    plt.tight_layout()
+    plt.show()
+
+interact(plot_min_energy,
+         tf=FloatSlider(value=2.0, min=0.5, max=5.0, step=0.1,
+                        description='t_f', continuous_update=False))` },
+  ]}
+/>
+
+## 最小时间问题与 Bang-Bang 控制
+
+### 问题描述
+
+最小时间问题：把系统从 $\boldsymbol{x}_0$ 驱动到 $\boldsymbol{x}_f$，**用最短的时间**。
+
+$$\min_{u(t)} J = t_f = \int_0^{t_f} 1 \, dt$$
+
+约束：$\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，$\boldsymbol{x}(0) = \boldsymbol{x}_0$，$\boldsymbol{x}(t_f) = \boldsymbol{x}_f$，$|u(t)| \leq 1$。
+
+### 求解
+
+Hamilton 函数（$L = 1$）：
+
+$$H = 1 + \lambda^T f(\boldsymbol{x}, \boldsymbol{u})$$
+
+对于线性系统 $\dot{x} = ax + bu$：
+
+$$H = 1 + \lambda(ax + bu) = 1 + \lambda a x + \lambda b u$$
+
+$H$ 对 $u$ 是**线性**的！最优控制：
+
+$$u^* = \arg\min_{|u| \leq 1} (\lambda b u) = \begin{cases} -1 & \text{if } \lambda b > 0 \\ +1 & \text{if } \lambda b < 0 \end{cases}$$
+
+控制量只取 $+1$ 或 $-1$——这就是 **bang-bang 控制**。
+
+### 例4：一阶系统的最小时间控制
+
+系统 $\dot{x} = -x + u$，$x(0) = 1$，$x(t_f) = 0$，$|u| \leq 1$。
+
+Hamilton 函数：$H = 1 + \lambda(-x + u)$
+
+协态方程：$\dot{\lambda} = -\frac{\partial H}{\partial x} = \lambda \implies \lambda(t) = \lambda(0) e^t$
+
+$\lambda(0) \neq 0$ 时，$\lambda(t)$ 不变号（指数函数不过零），所以 $u^*$ 在整个过程中**不切换**。
+
+设 $\lambda(0) > 0$，则 $u^* = -1$（全程）。
+
+$\dot{x} = -x - 1$，解：$x(t) = (x(0) + 1)e^{-t} - 1 = 2e^{-t} - 1$
+
+$x(t_f) = 0 \implies 2e^{-t_f} = 1 \implies t_f = \ln 2 \approx 0.693$
+
+验证：如果 $u^* = +1$，$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 1$（常数），永远到不了零。所以 $u^* = -1$ 是正确的。
+
+> [!tip] Bang-bang 控制的物理直觉
+> 最小时间问题要求"最快到达"——策略很简单：**全力加速，到终点前全力刹车**。对于高阶系统，切换时刻需要精确计算，但控制结构不变：总是在边界值之间切换。
+
+## 线性二次型最优控制——引向 LQR
+
+### 二次型性能指标
+
+工程中最重要的最优控制问题是**线性二次型**（LQ）问题：
+
+$$\min_{\boldsymbol{u}(t)} J = \frac{1}{2}\boldsymbol{x}^T(t_f) S \boldsymbol{x}(t_f) + \frac{1}{2}\int_0^{t_f} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt$$
+
+约束：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$（线性系统）
+
+其中：
+- $Q \geq 0$：状态代价权重（惩罚偏离零点的状态）
+- $R > 0$：控制代价权重（惩罚控制能量）
+- $S \geq 0$：终态代价权重
+
+### 为什么 LQ 问题特别重要
+
+1. **二次型代价物理意义清晰**：$\boldsymbol{x}^T Q \boldsymbol{x}$ = "偏离目标的代价"，$\boldsymbol{u}^T R \boldsymbol{u}$ = "能耗代价"
+2. **最优控制是状态反馈**：$\boldsymbol{u}^* = -K(t)\boldsymbol{x}$——最优控制自动具有状态反馈的形式！
+3. **Riccati 方程**：增益 $K(t)$ 由 Riccati 微分方程确定，可以数值求解
+4. **无穷时间情况**：$t_f \to \infty$ 时，$K$ 变成常数矩阵，由**代数 Riccati 方程**（ARE）确定——这就是下一章的 **LQR 控制器**
+
+> 下一章 [LQR 控制器](/modern/lqr-controller) 将详细推导 LQ 问题的解和 Riccati 方程。
+
+## 深入讨论
+
+### 最优控制 vs 极点配置
+
+| 特性 | 极点配置 | 最优控制 (LQR) |
+|------|----------|----------------|
+| 设计参数 | 期望极点位置 | 代价权重 $Q, R$ |
+| 物理意义 | 间接（极点 → 动态） | 直接（能耗、误差） |
+| 多变量系统 | 极点选择困难 | $Q, R$ 的选择更直观 |
+| 计算方式 | 矩阵运算 | 解 Riccati 方程 |
+| 鲁棒性 | 依赖极点选择 | LQR 有良好的鲁棒性裕度 |
+
+### 极小值原理的推广
+
+Pontryagin 极小值原理不仅适用于线性系统。对于**非线性系统** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，极小值原理同样成立——只是求解更困难。
+
+非线性最优控制的求解方法：
+- **间接法**：用极小值原理推导 TPBVP，数值求解（如 `solve_bvp`）
+- **直接法**：参数化控制/状态，转化为非线性规划（NLP）求解
+- **动态规划**：Bellman 最优性原理，HJB 方程（下一章 LQR 的另一个推导路径）
+
+### 最优控制的局限性
+
+1. **依赖模型精度**：最优控制基于模型 $(A, B, C)$。模型不准，"最优"可能变成"最差"
+2. **计算复杂度**：非线性系统的 TPBVP 求解困难，实时性差
+3. **代价权重选择**：$Q, R$ 的选择仍然需要工程判断——"最优"取决于你如何定义"好"
+4. **开环 vs 闭环**：极小值原理给出的是开环最优控制；实际中需要闭环（LQR 自动给出反馈形式）
+
+> 下一章 LQR 将解决这些问题中的大部分——它给出**闭环**最优控制，并且有良好的鲁棒性。
+
+## 小结
+
+- **最优控制**：找使性能指标 $J$ 最小的控制律 $\boldsymbol{u}^*(t)$
+- **问题结构**：最小化泛函，约束是系统动态方程
+- **变分法**：对泛函求极值的数学工具，Euler-Lagrange 方程是核心
+- **Hamilton 函数**：$H = L + \boldsymbol{\lambda}^T f$，把约束优化转化为无约束
+- **极小值原理**：$\boldsymbol{u}^* = \arg\min H$，配合状态方程和协态方程
+- **两点边值问题**：初始条件在 $t=0$，终值条件在 $t=t_f$，通常需数值求解
+- **Bang-bang 控制**：最小时间问题的最优控制，在约束边界之间切换
+- **LQ 问题**：二次型代价 + 线性系统 → 最优控制是状态反馈 → 下一章 LQR
+
+## 习题
+
+**1.** 用 Euler-Lagrange 方程求使以下泛函最小的函数 $x(t)$：
+
+$$J = \int_0^1 (\dot{x}^2 + x^2) \, dt, \quad x(0) = 0, \; x(1) = 1$$
+
+**2.** 证明：连接平面上两点 $(x_0, y_0)$ 和 $(x_1, y_1)$ 的最短曲线是直线。（提示：曲线长度 $L = \int \sqrt{1 + y'^2} \, dx$，用 Euler-Lagrange 方程。）
+
+**3.** 系统 $\dot{x} = u$，$x(0) = 1$，$x(1) = 0$。最小化 $J = \frac{1}{2}\int_0^1 u^2 \, dt$。用极小值原理求 $u^*(t)$ 和 $x^*(t)$。
+
+**4.** 系统 $\dot{x} = -2x + u$，$x(0) = 3$，$x(2) = 0$。最小化 $J = \frac{1}{2}\int_0^2 (x^2 + u^2) \, dt$。
+- (a) 写出 Hamilton 函数
+- (b) 求最优控制 $u^*$（用 $\boldsymbol{x}$ 和 $\lambda$ 表示）
+- (c) 写出状态方程和协态方程组成的 TPBVP
+
+**5.** 系统 $\dot{x} = -x + u$，$x(0) = 2$，$x(t_f) = 0$，$|u| \leq 1$。求最小时间控制的 $u^*(t)$ 和 $t_f^*$。
+
+**6.** 证明：对于最小时间问题 $\min t_f$ s.t. $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$|\boldsymbol{u}| \leq 1$（分量约束），如果 $H$ 对每个 $u_i$ 是线性的，则最优控制是 bang-bang 形式。
+
+**7.** 系统 $\dot{x}_1 = x_2$，$\dot{x}_2 = u$（双积分器），$x_1(0) = 1, x_2(0) = 0$，$x_1(t_f) = 0, x_2(t_f) = 0$，$|u| \leq 1$。
+- (a) 写出 Hamilton 函数和协态方程
+- (b) 证明最优控制最多切换一次
+- (c) 求 $u^*(t)$ 和 $t_f^*$
+
+**8.** 考虑最优控制问题 $\min J = \frac{1}{2}x^2(t_f) + \frac{1}{2}\int_0^{t_f} u^2 \, dt$，约束 $\dot{x} = u$，$x(0) = 1$，$t_f = 1$（终态自由）。
+- (a) 写出横截条件 $\lambda(t_f)$
+- (b) 求 $u^*(t)$ 和 $x^*(t)$
+
+**9.** 证明：如果 Hamilton 函数 $H$ 不显含时间 $t$，则沿最优轨迹 $H$ 是常数。（提示：计算 $dH/dt$。）
+
+**10.** 讨论：为什么极点配置方法无法直接处理控制约束 $|u| \leq u_{\max}$？极小值原理如何处理这个约束？
+
+## 答案
+
+**1.** $F(x, \dot{x}) = \dot{x}^2 + x^2$。
+
+Euler-Lagrange 方程：$\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 2x - \frac{d}{dt}(2\dot{x}) = 2x - 2\ddot{x} = 0$
+
+$\ddot{x} - x = 0$，通解 $x(t) = Ae^t + Be^{-t}$。
+
+$x(0) = 0$：$A + B = 0 \implies B = -A$
+
+$x(1) = 1$：$Ae - Ae^{-1} = 1 \implies A = \frac{1}{e - e^{-1}} = \frac{1}{2\sinh 1}$
+
+$$x^*(t) = \frac{\sinh t}{\sinh 1}$$
+
+**2.** 曲线长度 $L[y] = \int_{x_0}^{x_1} \sqrt{1 + y'^2} \, dx$。
+
+$F(y, y') = \sqrt{1 + y'^2}$。
+
+$\frac{\partial F}{\partial y} = 0$，$\frac{\partial F}{\partial y'} = \frac{y'}{\sqrt{1+y'^2}}$。
+
+Euler-Lagrange：$0 - \frac{d}{dx}\frac{y'}{\sqrt{1+y'^2}} = 0 \implies \frac{y'}{\sqrt{1+y'^2}} = C$（常数）。
+
+所以 $y' = \text{const}$，即 $y(x) = ax + b$——**直线**。
+
+**3.** Hamilton 函数：$H = \frac{1}{2}u^2 + \lambda u$。
+
+$\partial H / \partial u = u + \lambda = 0 \implies u^* = -\lambda$。
+
+协态方程：$\dot{\lambda} = -\partial H / \partial x = 0 \implies \lambda(t) = \lambda_0$（常数）。
+
+$u^* = -\lambda_0$（常数）。
+
+状态方程：$\dot{x} = u^* = -\lambda_0$，$x(t) = 1 - \lambda_0 t$。
+
+$x(1) = 0$：$1 - \lambda_0 = 0 \implies \lambda_0 = 1$。
+
+$$u^*(t) = -1, \quad x^*(t) = 1 - t$$
+
+$J^* = \frac{1}{2}\int_0^1 1 \, dt = \frac{1}{2}$
+
+**4.** (a) $H = \frac{1}{2}(x^2 + u^2) + \lambda(-2x + u)$
+
+(b) $\partial H / \partial u = u + \lambda = 0 \implies u^* = -\lambda$
+
+(c) 状态方程：$\dot{x} = -2x + u^* = -2x - \lambda$
+
+协态方程：$\dot{\lambda} = -\partial H / \partial x = -(x - 2\lambda) = -x + 2\lambda$
+
+TPBVP：
+$$\begin{bmatrix} \dot{x} \\ \dot{\lambda} \end{bmatrix} = \begin{bmatrix} -2 & -1 \\ -1 & 2 \end{bmatrix} \begin{bmatrix} x \\ \lambda \end{bmatrix}$$
+
+$x(0) = 3$，$x(2) = 0$。
+
+**5.** Hamilton 函数：$H = 1 + \lambda(-x + u)$。
+
+协态方程：$\dot{\lambda} = \lambda \implies \lambda(t) = \lambda_0 e^t$。
+
+$H$ 对 $u$ 线性：$H = (1 - \lambda x) + \lambda u$。
+
+$u^* = \arg\min_{|u|\leq 1} \lambda u = \begin{cases} -1 & \lambda > 0 \\ +1 & \lambda < 0 \end{cases}$
+
+$\lambda(t) = \lambda_0 e^t$ 不变号，所以 $u^*$ 不切换。
+
+设 $\lambda_0 > 0$，$u^* = -1$：$\dot{x} = -x - 1$，$x(t) = (x(0)+1)e^{-t} - 1 = 3e^{-t} - 1$。
+
+$x(t_f) = 0$：$3e^{-t_f} = 1 \implies t_f = \ln 3 \approx 1.099$。
+
+验证 $\lambda_0 < 0$（$u^* = +1$）：$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 2e^{-t} + 1 > 0$，永远到不了零。
+
+$$u^*(t) = -1, \quad t_f^* = \ln 3 \approx 1.099$$
+
+**6.** 对于分量约束 $|u_i| \leq 1$，Hamilton 函数：
+
+$$H = L(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{\lambda}^T(A\boldsymbol{x} + B\boldsymbol{u})$$
+
+如果 $H$ 对 $u_i$ 是线性的，则 $H$ 可以写成 $H = (\text{不含 } u_i \text{ 的项}) + (\lambda^T b_i) u_i$，其中 $b_i$ 是 $B$ 的第 $i$ 列。
+
+$\min_{|u_i| \leq 1} (\lambda^T b_i) u_i$：
+- 如果 $\lambda^T b_i > 0$：$u_i^* = -1$
+- 如果 $\lambda^T b_i < 0$：$u_i^* = +1$
+
+每个 $u_i$ 只取边界值 $\pm 1$，即 **bang-bang 控制**。证毕。
+
+**7.** (a) $H = 1 + \lambda_1 x_2 + \lambda_2 u$。
+
+协态方程：$\dot{\lambda}_1 = -\partial H / \partial x_1 = 0 \implies \lambda_1 = c_1$（常数）。
+
+$\dot{\lambda}_2 = -\partial H / \partial x_2 = -\lambda_1 = -c_1 \implies \lambda_2(t) = -c_1 t + c_2$。
+
+$\lambda_2(t)$ 是 $t$ 的线性函数，**最多过零一次**。
+
+(b) $u^* = \arg\min_{|u|\leq 1} \lambda_2 u = -\text{sign}(\lambda_2(t))$。
+
+$\lambda_2(t)$ 最多过零一次 → $u^*$ 最多切换一次。证毕。
+
+(c) 设 $u^*$ 切换一次，在 $t = t_s$ 处。两种情况：$u = +1$ 然后 $u = -1$，或反过来。
+
+设 $u = +1$（$0 \leq t < t_s$），$u = -1$（$t_s \leq t \leq t_f$）。
+
+第一阶段：$\ddot{x}_1 = 1$，$x_1(t) = \frac{1}{2}t^2 + t + 1$，$x_2(t) = t$（用了 $x_1(0)=1, x_2(0)=0$）。
+
+在 $t_s$：$x_1(t_s) = \frac{1}{2}t_s^2 + t_s + 1$，$x_2(t_s) = t_s$。
+
+第二阶段：$\ddot{x}_1 = -1$，从 $(x_1(t_s), x_2(t_s))$ 出发。
+
+$x_2(t) = t_s - (t - t_s) = 2t_s - t$
+
+$x_2(t_f) = 0 \implies t_f = 2t_s$
+
+$x_1(t) = x_1(t_s) + t_s(t-t_s) - \frac{1}{2}(t-t_s)^2$
+
+$x_1(t_f) = x_1(t_s) + t_s^2 - \frac{1}{2}t_s^2 = \frac{1}{2}t_s^2 + t_s + 1 + \frac{1}{2}t_s^2 = t_s^2 + t_s + 1$
+
+$x_1(t_f) = 0 \implies t_s^2 + t_s + 1 = 0$。判别式 $1 - 4 = -3 < 0$，无实数解。
+
+设 $u = -1$（$0 \leq t < t_s$），$u = +1$（$t_s \leq t \leq t_f$）。
+
+第一阶段：$x_1(t) = -\frac{1}{2}t^2 + 1$，$x_2(t) = -t$。
+
+在 $t_s$：$x_1(t_s) = 1 - \frac{1}{2}t_s^2$，$x_2(t_s) = -t_s$。
+
+第二阶段：$x_2(t) = -t_s + (t - t_s) = t - 2t_s$
+
+$x_2(t_f) = 0 \implies t_f = 2t_s$
+
+$x_1(t_f) = x_1(t_s) - t_s(t_f - t_s) + \frac{1}{2}(t_f - t_s)^2 = (1 - \frac{1}{2}t_s^2) - t_s^2 + \frac{1}{2}t_s^2 = 1 - t_s^2$
+
+$x_1(t_f) = 0 \implies t_s = 1$。$t_f = 2$。
+
+$$u^*(t) = \begin{cases} -1 & 0 \leq t < 1 \\ +1 & 1 \leq t \leq 2 \end{cases}, \quad t_f^* = 2$$
+
+**8.** (a) 终值代价 $\phi = \frac{1}{2}x^2(t_f)$。
+
+横截条件：$\lambda(t_f) = \frac{\partial \phi}{\partial x}\bigg|_{t_f} = x(t_f)$。
+
+(b) $H = \frac{1}{2}u^2 + \lambda u$。$u^* = -\lambda$。
+
+协态方程：$\dot{\lambda} = -\partial H / \partial x = 0 \implies \lambda(t) = \lambda_0$（常数）。
+
+$u^* = -\lambda_0$（常数）。
+
+状态方程：$\dot{x} = -\lambda_0$，$x(t) = 1 - \lambda_0 t$。
+
+$x(t_f) = 1 - \lambda_0$（$t_f = 1$）。
+
+横截条件：$\lambda_0 = x(1) = 1 - \lambda_0 \implies \lambda_0 = \frac{1}{2}$。
+
+$$u^*(t) = -\frac{1}{2}, \quad x^*(t) = 1 - \frac{t}{2}$$
+
+验证：$x(1) = \frac{1}{2}$，$\lambda(1) = \frac{1}{2} = x(1)$ ✓
+
+**9.** $H = L(\boldsymbol{x}, \boldsymbol{u}, t) + \boldsymbol{\lambda}^T f(\boldsymbol{x}, \boldsymbol{u}, t)$。
+
+沿最优轨迹：
+
+$$\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \dot{\boldsymbol{x}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \dot{\boldsymbol{\lambda}} + \frac{\partial H}{\partial t}$$
+
+由正则方程：$\dot{\boldsymbol{x}} = \partial H / \partial \boldsymbol{\lambda}$，$\dot{\boldsymbol{\lambda}} = -\partial H / \partial \boldsymbol{x}$。
+
+$$\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \frac{\partial H}{\partial \boldsymbol{\lambda}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \left(-\frac{\partial H}{\partial \boldsymbol{x}}\right) + \frac{\partial H}{\partial t} = \frac{\partial H}{\partial t}$$
+
+如果 $H$ 不显含 $t$，则 $\partial H / \partial t = 0$，所以 $dH/dt = 0$，即 $H$ 是常数。证毕。
+
+**10.** 极点配置方法假设 $\boldsymbol{u} = -K\boldsymbol{x}$ 可以取任意值。当 $|u| > u_{\max}$ 时，实际控制被截断为 $\text{sat}(-K\boldsymbol{x})$，闭环系统变成非线性，极点配置的设计结果不再有效。
+
+极小值原理**直接处理**控制约束：$\boldsymbol{u}^* = \arg\min_{\boldsymbol{u} \in U} H$。当 $U = \{u : |u| \leq u_{\max}\}$ 时，最优控制自动满足约束，可能产生 bang-bang 结构。这是极小值原理相比极点配置的核心优势之一。

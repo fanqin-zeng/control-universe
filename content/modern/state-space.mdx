@@ -1,0 +1,944 @@
+---
+title: 状态空间表示
+description: 从传递函数的局限出发，引入状态变量、状态方程和输出方程，建立现代控制的统一数学框架。
+---
+
+# 状态空间表示
+
+前面十章，我们用传递函数 $G(s) = Y(s)/U(s)$ 描述系统。传递函数简洁、直观，配合 Bode 图、根轨迹等工具，能解决大量 SISO（单输入单输出）控制问题。但当你面对更复杂的工程系统时，传递函数开始力不从心。
+
+本章引入现代控制理论的核心工具——**状态空间表示**。它不是要"取代"传递函数，而是提供一个更通用、更强大的框架，能处理传递函数处理不了的问题。
+
+## 为什么需要状态空间表示
+
+### 传递函数的三个局限
+
+回顾一下传递函数的"身世"：我们对线性常系数微分方程做拉普拉斯变换（假设零初始条件），得到 $s$ 域的代数方程，再取比值 $Y(s)/U(s)$。这个过程天生带了三个限制：
+
+**局限一：只能处理 SISO 系统。** 传递函数描述的是"一个输入到一个输出"的关系。但实际工程系统往往是多输入多输出的（MIMO）——无人机有四个电机（输入），要同时控制位置、姿态、速度（输出）。你可以为每对输入-输出写一个传递函数，但这样会丢失输入之间的耦合信息。
+
+**局限二：看不到系统内部。** 传递函数是"黑箱"描述——你只知道输入 $u$ 和输出 $y$ 的关系，但系统内部有几个储能元件？哪些内部变量会饱和？哪些动态模式是不可控的？传递函数一概不告诉你。
+
+> 📖 一个经典的例子：两个不同的内部结构可能产生完全相同的传递函数（这叫"极零对消"）。从传递函数看系统完全一样，但一个内部稳定，另一个内部不稳定。
+
+**局限三：不方便处理非零初始条件。** 拉普拉斯变换假设零初始条件。如果系统有非零初始状态（比如电容上有初始电压），传递函数方法需要额外处理，很不方便。
+
+### 状态空间的优势
+
+状态空间表示直接回到**时域的一阶微分方程组**，绕开了拉普拉斯变换的所有限制：
+
+| 特性 | 传递函数 | 状态空间 |
+|------|----------|----------|
+| 系统类型 | 仅 SISO | SISO 和 MIMO |
+| 内部信息 | 黑箱 | 透明（状态变量可见） |
+| 初始条件 | 零初始条件 | 任意初始条件 |
+| 时变性 | 仅 LTI | 可处理时变系统 |
+| 非线性 | 仅线性 | 可扩展到非线性 |
+| 数学工具 | 复变函数 | 线性代数 |
+
+最后一个优势值得强调：状态空间的数学工具是**线性代数**——矩阵乘法、特征值、子空间——这些你在大学数学课里已经学过。不需要学新的变换（拉普拉斯、Z变换），只需要把熟悉的线性代数工具应用到动态系统上。
+
+### 一个直觉例子
+
+想象你坐在一辆自动驾驶汽车里。汽车的运动由什么决定？
+
+- 当前位置 $(x, y)$
+- 当前速度 $v$
+- 当前航向角 $\psi$
+
+这些量合起来就是汽车的**状态**——知道了这些量，再加上未来的控制输入（油门、方向盘），你就能预测汽车未来的运动。
+
+传递函数只会告诉你"方向盘转角 → 航向角变化"的关系。状态空间则把 $(x, y, v, \psi)$ 全部显式地列出来，让你看到系统的全貌。
+
+## 状态变量的定义
+
+### 什么是状态？
+
+**状态**是系统在某一时刻的"完整快照"——知道了 $t_0$ 时刻的状态和 $t \geq t_0$ 之后的输入，就能唯一确定系统在未来任意时刻的行为。
+
+更形式化地：
+
+> **定义（状态变量）**：一组变量 $x_1(t), x_2(t), \ldots, x_n(t)$ 称为系统的**状态变量**，如果在 $t_0$ 时刻知道它们的值 $x_1(t_0), \ldots, x_n(t_0)$，以及 $t \geq t_0$ 之后的输入 $u(t)$，就能唯一确定系统在 $t \geq t_0$ 之后的全部行为。
+
+状态变量组成的向量称为**状态向量**：
+
+$$
+\boldsymbol{x}(t) = \begin{bmatrix} x_1(t) \\ x_2(t) \\ \vdots \\ x_n(t) \end{bmatrix} \in \mathbb{R}^n
+$$
+
+$n$ 称为系统的**阶数**（order），等于系统中独立储能元件的个数。
+
+### 状态方程和输出方程
+
+有了状态变量，系统的动态用**一阶微分方程组**描述：
+
+$$
+\boxed{
+\begin{aligned}
+\dot{\boldsymbol{x}}(t) &= A\boldsymbol{x}(t) + B\boldsymbol{u}(t) \quad &\text{（状态方程）} \\
+\boldsymbol{y}(t) &= C\boldsymbol{x}(t) + D\boldsymbol{u}(t) \quad &\text{（输出方程）}
+\end{aligned}
+}
+$$
+
+其中：
+
+| 符号 | 名称 | 维度 | 含义 |
+|------|------|------|------|
+| $\boldsymbol{x}(t)$ | 状态向量 | $n \times 1$ | 系统内部状态 |
+| $\boldsymbol{u}(t)$ | 输入向量 | $p \times 1$ | 外部控制量 |
+| $\boldsymbol{y}(t)$ | 输出向量 | $q \times 1$ | 可测量的输出 |
+| $A$ | 系统矩阵 | $n \times n$ | 描述状态之间的耦合 |
+| $B$ | 输入矩阵 | $n \times p$ | 描述输入如何影响状态 |
+| $C$ | 输出矩阵 | $q \times n$ | 描述哪些状态被测量 |
+| $D$ | 直通矩阵 | $q \times p$ | 输入到输出的直接通路（通常为 0） |
+
+<Callout variant="tip">
+**记忆技巧**：$A$ 是"自治"（autonomous）——没有输入时系统的自然动态；$B$ 是"驱动"（actuation）——输入如何推动状态；$C$ 是"观测"（observation）——我们能从外部看到什么；$D$ 是"直通"（direct feedthrough）——输入不经过动态直接到输出。
+</Callout>
+
+### 状态变量的选取不唯一
+
+同一个系统，状态变量的选取**不是唯一的**。不同的选取方式给出不同的 $(A, B, C, D)$ 矩阵，但描述的是同一个输入-输出关系。
+
+这就像描述一个点的位置：你可以用直角坐标 $(x, y)$，也可以用极坐标 $(r, \theta)$——坐标不同，但点是一样的。
+
+> 📖 不同状态空间表示之间的转换叫**相似变换**：如果 $\boldsymbol{z} = T\boldsymbol{x}$（$T$ 是可逆矩阵），则新表示为 $(TAT^{-1}, TB, CT^{-1}, D)$，输入-输出关系不变。
+
+状态变量选取的原则：
+1. **物理意义明确**：优先选有直接物理含义的量（位置、速度、电压、电流）
+2. **可测量或可估计**：选那些能用传感器测量，或通过观测器估计的量
+3. **线性无关**：$n$ 个状态变量必须线性无关（不能互相表示）
+
+## 从物理系统建立状态空间模型
+
+### 一般步骤
+
+从物理系统（微分方程）建立状态空间模型的步骤：
+
+1. **确定系统阶数 $n$**：数独立储能元件的个数（质量块、弹簧、电感、电容等）
+2. **选取状态变量**：通常选"位置类"和"速度类"变量
+3. **列写一阶微分方程组**：把高阶微分方程拆成 $n$ 个一阶方程
+4. **整理为矩阵形式**：写成 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$
+
+### 例1：弹簧-质量-阻尼系统
+
+回顾经典控制中的弹簧-质量-阻尼系统（我们在[系统建模基础](/classic/system-modeling)和[传递函数入门](/classic/transfer-function)中都见过它）：
+
+$$
+m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = F(t)
+$$
+
+这是一个二阶系统（$n=2$，两个储能元件：质量 $m$ 和弹簧 $k$）。
+
+**步骤1**：选状态变量。自然的选择是位置和速度：
+
+$$
+x_1 = y \quad \text{（位移）}, \qquad x_2 = \dot{y} \quad \text{（速度）}
+$$
+
+**步骤2**：列一阶方程。由 $x_1 = y$ 得 $\dot{x}_1 = x_2$。由原方程解出 $\ddot{y}$：
+
+$$
+\dot{x}_2 = \ddot{y} = \frac{1}{m}\big(F - c\dot{y} - ky\big) = -\frac{k}{m}x_1 - \frac{c}{m}x_2 + \frac{1}{m}F
+$$
+
+**步骤3**：写成矩阵形式。设输入 $u = F$，输出 $y = x_1$：
+
+$$
+\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} = \underbrace{\begin{bmatrix} 0 & 1 \\ -k/m & -c/m \end{bmatrix}}_{A} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} + \underbrace{\begin{bmatrix} 0 \\ 1/m \end{bmatrix}}_{B} u
+$$
+
+$$
+y = \underbrace{\begin{bmatrix} 1 & 0 \end{bmatrix}}_{C} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} + \underbrace{0}_{D} u
+$$
+
+<Callout variant="info">
+**关键观察**：矩阵 $A$ 的特征值决定了系统的动态特性。计算 $\det(sI - A) = s^2 + (c/m)s + k/m$——这正是原微分方程的特征多项式！状态空间表示和微分方程描述的是同一个系统，只是形式不同。
+</Callout>
+
+### 例2：RLC串联电路
+
+RLC串联电路的微分方程（以电容电压 $v_C$ 为输出）：
+
+$$
+LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v(t)
+$$
+
+选状态变量 $x_1 = v_C$（电容电压），$x_2 = i$（电感电流，注意 $i = C\dot{v}_C$）：
+
+$$
+\dot{x}_1 = \frac{1}{C}x_2
+$$
+
+$$
+\dot{x}_2 = \frac{1}{L}\big(v - Rx_2 - x_1\big) = -\frac{1}{L}x_1 - \frac{R}{L}x_2 + \frac{1}{L}v
+$$
+
+矩阵形式：
+
+$$
+\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} = \begin{bmatrix} 0 & 1/C \\ -1/L & -R/L \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} + \begin{bmatrix} 0 \\ 1/L \end{bmatrix} v
+$$
+
+$$
+v_C = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}
+$$
+
+### 例3：多变量系统——双质量块
+
+两个质量块 $m_1, m_2$ 通过弹簧 $k$ 和阻尼 $c$ 连接，$m_1$ 还通过弹簧 $k_1$ 连到墙壁。外力 $F_1, F_2$ 分别作用在两个质量块上。
+
+运动方程：
+
+$$
+m_1\ddot{y}_1 = -k_1 y_1 - k(y_1 - y_2) - c(\dot{y}_1 - \dot{y}_2) + F_1
+$$
+
+$$
+m_2\ddot{y}_2 = -k(y_2 - y_1) - c(\dot{y}_2 - \dot{y}_1) + F_2
+$$
+
+这是**两个输入、两个输出**的 MIMO 系统。选状态变量：
+
+$$
+x_1 = y_1,\quad x_2 = \dot{y}_1,\quad x_3 = y_2,\quad x_4 = \dot{y}_2
+$$
+
+状态方程（$n=4$）：
+
+$$
+\dot{\boldsymbol{x}} = \begin{bmatrix} 0 & 1 & 0 & 0 \\ -(k_1+k)/m_1 & -c/m_1 & k/m_1 & c/m_1 \\ 0 & 0 & 0 & 1 \\ k/m_2 & c/m_2 & -k/m_2 & -c/m_2 \end{bmatrix} \boldsymbol{x} + \begin{bmatrix} 0 & 0 \\ 1/m_1 & 0 \\ 0 & 0 \\ 0 & 1/m_2 \end{bmatrix} \begin{bmatrix} F_1 \\ F_2 \end{bmatrix}
+$$
+
+输出方程（测量两个位移）：
+
+$$
+\boldsymbol{y} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix} \boldsymbol{x}
+$$
+
+<Callout variant="warning">
+**传递函数做不到的事**：这个双质量块系统有 2 个输入和 2 个输出，需要 $2 \times 2 = 4$ 个传递函数才能完整描述（$Y_1/F_1, Y_1/F_2, Y_2/F_1, Y_2/F_2$）。而且传递函数矩阵无法直观展示两个质量块之间的耦合。状态空间用一个 $4 \times 4$ 的 $A$ 矩阵就清晰地表达了全部耦合关系。
+</Callout>
+
+<JupyterNotebook
+  title="弹簧-质量-阻尼系统的状态空间模型"
+  setupCode={`import numpy as np
+from control import ss, tf
+
+m, c, k = 250.0, 500.0, 16000.0`}
+  cells={[
+    { code: `# ===== 弹簧-质量-阻尼系统的状态空间模型 =====
+A = np.array([[0, 1], [-k/m, -c/m]])
+B = np.array([[0], [1/m]])
+C = np.array([[1, 0]])
+D = np.array([[0]])
+
+sys_ss = ss(A, B, C, D)
+print("状态空间系统:")
+print(sys_ss)
+print()
+
+sys_tf = tf(sys_ss)
+print("对应的传递函数:")
+print(sys_tf)
+print()
+
+eigenvalues = np.linalg.eigvals(A)
+print(f"A 的特征值: {eigenvalues}")
+print(f"传递函数的极点: {sys_tf.poles()}")` },
+  ]}
+/>
+
+## 从传递函数到状态空间
+
+工程中经常遇到这种情况：你已经有了传递函数 $G(s)$，需要转换为状态空间表示（比如要用 MATLAB 的 `ss()` 函数做仿真）。
+
+### 可控标准型
+
+设 SISO 系统的传递函数为：
+
+$$
+G(s) = \frac{Y(s)}{U(s)} = \frac{b_{n-1}s^{n-1} + b_{n-2}s^{n-2} + \cdots + b_1 s + b_0}{s^n + a_{n-1}s^{n-1} + \cdots + a_1 s + a_0}
+$$
+
+（假设分子阶数低于分母，即严格真有理函数）
+
+**可控标准型**（controllable canonical form）的状态空间表示为：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 & \cdots & 0 \\ 0 & 0 & 1 & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \cdots & 1 \\ -a_0 & -a_1 & -a_2 & \cdots & -a_{n-1} \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}
+$$
+
+$$
+C = \begin{bmatrix} b_0 & b_1 & b_2 & \cdots & b_{n-1} \end{bmatrix}, \quad D = 0
+$$
+
+<Callout variant="tip">
+**记忆技巧**：$A$ 矩阵的最后一行是分母多项式系数的负值（从 $a_0$ 到 $a_{n-1}$），其余行是"移位寄存器"结构（次对角线为1）。$B$ 向量只有最后一个元素为1。$C$ 向量是分子系数。
+</Callout>
+
+### 推导思路
+
+为什么这样构造？核心思想是引入**中间变量** $\xi(t)$，使得：
+
+$$
+\xi^{(n)} + a_{n-1}\xi^{(n-1)} + \cdots + a_1\dot{\xi} + a_0\xi = u(t)
+$$
+
+$$
+y(t) = b_{n-1}\xi^{(n-1)} + \cdots + b_1\dot{\xi} + b_0\xi
+$$
+
+选状态变量 $x_1 = \xi, x_2 = \dot{\xi}, \ldots, x_n = \xi^{(n-1)}$，则：
+
+$$
+\dot{x}_1 = x_2,\quad \dot{x}_2 = x_3,\quad \ldots,\quad \dot{x}_{n-1} = x_n
+$$
+
+$$
+\dot{x}_n = -a_0 x_1 - a_1 x_2 - \cdots - a_{n-1}x_n + u
+$$
+
+这正好就是可控标准型。
+
+### 可观标准型
+
+**可观标准型**（observable canonical form）是可控标准型的"对偶"：
+
+$$
+A = \begin{bmatrix} 0 & 0 & \cdots & 0 & -a_0 \\ 1 & 0 & \cdots & 0 & -a_1 \\ 0 & 1 & \cdots & 0 & -a_2 \\ \vdots & \vdots & \ddots & \vdots & \vdots \\ 0 & 0 & \cdots & 1 & -a_{n-1} \end{bmatrix}, \quad B = \begin{bmatrix} b_0 \\ b_1 \\ b_2 \\ \vdots \\ b_{n-1} \end{bmatrix}
+$$
+
+$$
+C = \begin{bmatrix} 0 & 0 & \cdots & 0 & 1 \end{bmatrix}, \quad D = 0
+$$
+
+可控标准型和可观标准型描述的是**同一个传递函数**，只是状态变量的选取不同（它们之间通过相似变换联系）。
+
+<Callout variant="info">
+**为什么有两种标准型？**
+
+- **可控标准型**：便于分析系统的**可控性**（哪些状态能被输入影响）——后续"可控性与可观性"章节会详细讨论
+- **可观标准型**：便于分析系统的**可观性**（哪些状态能从输出推断）
+
+两种标准型在控制器设计和观测器设计中各有用途。
+</Callout>
+
+### 例：二阶系统
+
+设 $G(s) = \frac{2s + 3}{s^2 + 4s + 5}$，即 $n=2$，$a_1=4, a_0=5, b_1=2, b_0=3$。
+
+可控标准型：
+
+$$
+A = \begin{bmatrix} 0 & 1 \\ -5 & -4 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 3 & 2 \end{bmatrix}, \quad D = 0
+$$
+
+验证：$G(s) = C(sI-A)^{-1}B = \begin{bmatrix} 3 & 2 \end{bmatrix} \frac{1}{s^2+4s+5}\begin{bmatrix} s+4 & 1 \\ -5 & s \end{bmatrix} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = \frac{2s+3}{s^2+4s+5}$ ✓
+
+<JupyterNotebook
+  title="可控标准型 vs 可观标准型"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from control import ss, tf, step_response
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# ===== 可控标准型 vs 可观标准型 =====
+# 传递函数 G(s) = (2s + 3) / (s² + 4s + 5)
+
+# 可控标准型
+A_c = np.array([[0, 1], [-5, -4]])
+B_c = np.array([[0], [1]])
+C_c = np.array([[3, 2]])
+D_c = np.array([[0]])
+
+# 可观标准型
+A_o = np.array([[0, -5], [1, -4]])
+B_o = np.array([[3], [2]])
+C_o = np.array([[0, 1]])
+D_o = np.array([[0]])
+
+sys_c = ss(A_c, B_c, C_c, D_c)
+sys_o = ss(A_o, B_o, C_o, D_o)
+
+print("可控标准型传递函数:")
+print(tf(sys_c))
+print()
+print("可观标准型传递函数:")
+print(tf(sys_o))
+print()
+
+print(f"可控标准型特征值: {np.linalg.eigvals(A_c)}")
+print(f"可观标准型特征值: {np.linalg.eigvals(A_o)}")
+print()
+
+t, y_c = step_response(sys_c, T=np.linspace(0, 5, 500))
+_, y_o = step_response(sys_o, T=np.linspace(0, 5, 500))
+
+plt.figure(figsize=(10, 5))
+plt.plot(t, y_c, "b-", linewidth=2, label="可控标准型")
+plt.plot(t, y_o, "r--", linewidth=2, label="可观标准型")
+plt.xlabel("Time (s)")
+plt.ylabel("y(t)")
+plt.title("可控标准型 vs 可观标准型：阶跃响应完全相同")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+## 状态方程的求解
+
+### 标量情形的回顾
+
+先看最简单的一阶标量方程 $\dot{x} = ax + bu$，初始条件 $x(0) = x_0$。解为：
+
+$$
+x(t) = e^{at}x_0 + \int_0^t e^{a(t-\tau)}b\,u(\tau)\,d\tau
+$$
+
+第一项 $e^{at}x_0$ 是**零输入响应**（初始状态的自然演化），第二项是**零状态响应**（输入驱动的贡献）。
+
+### 矩阵情形：状态转移矩阵
+
+状态方程 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$ 的解与标量情形完全类比：
+
+$$
+\boxed{\boldsymbol{x}(t) = e^{At}\boldsymbol{x}(0) + \int_0^t e^{A(t-\tau)}B\boldsymbol{u}(\tau)\,d\tau}
+$$
+
+其中 $e^{At}$ 称为**状态转移矩阵**（state transition matrix），记为 $\Phi(t) = e^{At}$，定义为：
+
+$$
+e^{At} = I + At + \frac{(At)^2}{2!} + \frac{(At)^3}{3!} + \cdots = \sum_{k=0}^{\infty}\frac{(At)^k}{k!}
+$$
+
+<Callout variant="tip">
+**状态转移矩阵的物理含义**：$\Phi(t) = e^{At}$ 描述了系统在**没有输入**时，状态从 $\boldsymbol{x}(0)$ 演化到 $\boldsymbol{x}(t)$ 的规律。它完全由系统矩阵 $A$ 决定，是系统"内在动态"的数学表达。
+</Callout>
+
+### 状态转移矩阵的性质
+
+$e^{At}$ 有以下重要性质（和标量指数函数 $e^{at}$ 类比）：
+
+| 性质 | 表达式 |
+|------|--------|
+| 初始值 | $e^{A \cdot 0} = I$ |
+| 导数 | $\frac{d}{dt}e^{At} = Ae^{At} = e^{At}A$ |
+| 组合 | $e^{A(t_1+t_2)} = e^{At_1}e^{At_2}$ |
+| 逆 | $(e^{At})^{-1} = e^{-At}$ |
+| 相似变换 | $e^{TAT^{-1}t} = Te^{At}T^{-1}$ |
+
+### 计算方法
+
+实际计算 $e^{At}$ 有几种方法：
+
+**方法一：拉普拉斯变换法**
+
+$$
+e^{At} = \mathcal{L}^{-1}\{(sI - A)^{-1}\}
+$$
+
+这是最常用的解析方法——先求 $(sI-A)^{-1}$（预解矩阵），再做拉普拉斯逆变换。
+
+**方法二：特征值分解法**
+
+如果 $A$ 有 $n$ 个互异特征值 $\lambda_1, \ldots, \lambda_n$，对应的特征向量组成矩阵 $P = [\boldsymbol{v}_1, \ldots, \boldsymbol{v}_n]$，则：
+
+$$
+e^{At} = P\,\text{diag}(e^{\lambda_1 t}, \ldots, e^{\lambda_n t})\,P^{-1}
+$$
+
+**方法三：凯莱-哈密顿定理**
+
+利用 $A$ 满足自身特征方程 $p(A) = 0$，可以将 $e^{At}$ 表示为 $A$ 的有限次多项式。
+
+### 例：计算状态转移矩阵
+
+设 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，求 $e^{At}$。
+
+**步骤1**：求 $(sI - A)^{-1}$。
+
+$$
+sI - A = \begin{bmatrix} s & -1 \\ 2 & s+3 \end{bmatrix}
+$$
+
+$$
+(sI - A)^{-1} = \frac{1}{s^2+3s+2}\begin{bmatrix} s+3 & 1 \\ -2 & s \end{bmatrix} = \frac{1}{(s+1)(s+2)}\begin{bmatrix} s+3 & 1 \\ -2 & s \end{bmatrix}
+$$
+
+**步骤2**：对每个元素做部分分式展开和拉普拉斯逆变换。
+
+$$
+\frac{s+3}{(s+1)(s+2)} = \frac{2}{s+1} - \frac{1}{s+2} \quad \xrightarrow{\mathcal{L}^{-1}} \quad 2e^{-t} - e^{-2t}
+$$
+
+$$
+\frac{1}{(s+1)(s+2)} = \frac{1}{s+1} - \frac{1}{s+2} \quad \xrightarrow{\mathcal{L}^{-1}} \quad e^{-t} - e^{-2t}
+$$
+
+$$
+\frac{-2}{(s+1)(s+2)} = \frac{-2}{s+1} + \frac{2}{s+2} \quad \xrightarrow{\mathcal{L}^{-1}} \quad -2e^{-t} + 2e^{-2t}
+$$
+
+$$
+\frac{s}{(s+1)(s+2)} = \frac{-1}{s+1} + \frac{2}{s+2} \quad \xrightarrow{\mathcal{L}^{-1}} \quad -e^{-t} + 2e^{-2t}
+$$
+
+**结果**：
+
+$$
+e^{At} = \begin{bmatrix} 2e^{-t} - e^{-2t} & e^{-t} - e^{-2t} \\ -2e^{-t} + 2e^{-2t} & -e^{-t} + 2e^{-2t} \end{bmatrix}
+$$
+
+<Callout variant="info">
+**验证**：$e^{A \cdot 0} = \begin{bmatrix} 2-1 & 1-1 \\ -2+2 & -1+2 \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} = I$ ✓
+
+特征值 $\lambda_1 = -1, \lambda_2 = -2$ 都是负实数，所以 $e^{At}$ 的所有元素随时间指数衰减——系统稳定。
+</Callout>
+
+<JupyterNotebook
+  title="状态方程的数值求解：零输入、零状态与全响应"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from ipywidgets import interact, FloatSlider
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+m, c, k = 250.0, 500.0, 16000.0
+A = np.array([[0, 1], [-k/m, -c/m]])
+B = np.array([[0], [1/m]])
+
+def state_eq(t, x, A, B, u_func):
+    u_val = u_func(t)
+    return A @ x + B.flatten() * u_val`}
+  cells={[
+    { code: `# ===== 零输入 + 零状态 + 全响应 =====
+def plot_response(x0_val=0.1):
+    x0 = np.array([x0_val, 0.0])
+    t = np.linspace(0, 3, 500)
+
+    sol = solve_ivp(state_eq, [0, 3], x0, args=(A, B, lambda t: 0),
+                    t_eval=t, method='RK45')
+    y_free = sol.y[0]
+
+    def step_input(t):
+        return 1000.0 if t >= 0 else 0.0
+
+    sol2 = solve_ivp(state_eq, [0, 3], [0, 0], args=(A, B, step_input),
+                     t_eval=t, method='RK45')
+    y_step = sol2.y[0]
+
+    y_total = y_free + y_step
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(t, y_free, "r--", linewidth=2, label=f"零输入响应 (x₀=[{x0_val}, 0])")
+    plt.plot(t, y_step, "b--", linewidth=2, label="零状态响应 (阶跃 F=1000N)")
+    plt.plot(t, y_total, "k-", linewidth=2.5, label="全响应")
+    plt.xlabel("Time (s)", fontsize=12)
+    plt.ylabel("位移 y(t) (m)", fontsize=12)
+    plt.title("弹簧-质量-阻尼系统：状态方程的分解", fontsize=14)
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+interact(plot_response,
+    x0_val=FloatSlider(min=0.0, max=0.2, step=0.01, value=0.1,
+                       description="初始位移 x₀", continuous_update=False)
+)` },
+  ]}
+/>
+
+## 状态空间与传递函数的关系
+
+### 从状态空间到传递函数
+
+对状态方程做拉普拉斯变换（零初始条件 $\boldsymbol{x}(0) = 0$）：
+
+$$
+s\boldsymbol{X}(s) = A\boldsymbol{X}(s) + B\boldsymbol{U}(s) \quad \Rightarrow \quad (sI - A)\boldsymbol{X}(s) = B\boldsymbol{U}(s)
+$$
+
+$$
+\boldsymbol{X}(s) = (sI - A)^{-1}B\boldsymbol{U}(s)
+$$
+
+代入输出方程：
+
+$$
+\boldsymbol{Y}(s) = C\boldsymbol{X}(s) + D\boldsymbol{U}(s) = \big[C(sI - A)^{-1}B + D\big]\boldsymbol{U}(s)
+$$
+
+所以传递函数矩阵为：
+
+$$
+\boxed{G(s) = C(sI - A)^{-1}B + D}
+$$
+
+对 SISO 系统，$G(s)$ 是标量传递函数；对 MIMO 系统（$p$ 输入，$q$ 输出），$G(s)$ 是 $q \times p$ 的传递函数矩阵。
+
+### 特征多项式与极点
+
+$(sI - A)^{-1} = \frac{\text{adj}(sI-A)}{\det(sI-A)}$，其中 $\det(sI-A)$ 是 $A$ 的**特征多项式**。
+
+传递函数的极点 = $A$ 的特征值。这建立了状态空间和传递函数之间最核心的联系：
+
+$$
+\text{极点} \iff \text{特征值} \iff \det(sI - A) = 0 \text{ 的根}
+$$
+
+### 从传递函数到状态空间：非唯一性
+
+前面已经看到，同一个传递函数可以有多种状态空间表示（可控标准型、可观标准型等）。它们之间的关系是**相似变换**：
+
+如果 $(A, B, C, D)$ 和 $(\tilde{A}, \tilde{B}, \tilde{C}, \tilde{D})$ 描述同一个传递函数，则存在可逆矩阵 $T$ 使得：
+
+$$
+\tilde{A} = TAT^{-1}, \quad \tilde{B} = TB, \quad \tilde{C} = CT^{-1}, \quad \tilde{D} = D
+$$
+
+相似变换不改变特征值（$\det(sI - TAT^{-1}) = \det(sI - A)$），所以传递函数的极点不变。
+
+<Callout variant="warning">
+**最小实现**：给定传递函数 $G(s)$，阶数最低的状态空间表示称为**最小实现**。最小实现的阶数等于 $G(s)$ 分母多项式的阶数（假设无极零对消）。非最小实现包含"多余"的状态——这些状态要么不可控，要么不可观。可控性和可观性的概念将在下一章详细讨论。
+</Callout>
+
+## 深入讨论
+
+### 状态空间的历史
+
+状态空间方法的思想可以追溯到19世纪的动力系统理论（庞加莱、李雅普诺夫），但作为控制理论的系统化工具，它在1960年代才成熟。关键推动力来自**航天工程**——阿波罗登月计划需要处理多输入多输出的轨道控制和姿态控制，传递函数方法力不从心。
+
+鲁道夫·卡尔曼（Rudolf Kalman）在1960年发表了奠基性论文，严格定义了可控性和可观性，建立了状态空间方法的数学基础。此后，最优控制（LQR）、卡尔曼滤波、多变量控制等现代控制理论的核心内容都建立在状态空间框架之上。
+
+### 连续与离散的统一
+
+状态空间表示的一个优美之处在于，连续时间和离散时间系统可以用完全相同的形式描述：
+
+| 连续时间 | 离散时间 |
+|----------|----------|
+| $\dot{\boldsymbol{x}}(t) = A\boldsymbol{x}(t) + B\boldsymbol{u}(t)$ | $\boldsymbol{x}[k+1] = A_d\boldsymbol{x}[k] + B_d\boldsymbol{u}[k]$ |
+| $\boldsymbol{y}(t) = C\boldsymbol{x}(t) + D\boldsymbol{u}(t)$ | $\boldsymbol{y}[k] = C_d\boldsymbol{x}[k] + D_d\boldsymbol{u}[k]$ |
+
+只是微分方程变成了差分方程，矩阵 $A$ 变成了 $A_d = e^{AT}$（$T$ 为采样周期）。这种统一性使得连续控制器的设计方法可以系统地推广到数字控制。
+
+### 非线性系统的状态空间
+
+状态空间框架可以自然地扩展到非线性系统：
+
+$$
+\dot{\boldsymbol{x}} = \boldsymbol{f}(\boldsymbol{x}, \boldsymbol{u}, t)
+$$
+
+$$
+\boldsymbol{y} = \boldsymbol{h}(\boldsymbol{x}, \boldsymbol{u}, t)
+$$
+
+当 $\boldsymbol{f}$ 和 $\boldsymbol{h}$ 是线性函数时，退化为 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$。非线性状态空间模型是分析非线性系统（相平面、李雅普诺夫稳定性、反馈线性化）的基础——这些内容将在"非线性控制"章节详细讨论。
+
+## 小结
+
+- 传递函数有三个局限：仅SISO、黑箱描述、不方便处理非零初始条件；状态空间表示克服了这些局限
+- **状态变量**是系统的"完整快照"——知道初始状态和未来输入，就能唯一确定未来行为
+- 状态空间模型由四个矩阵 $(A, B, C, D)$ 描述：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$
+- 状态变量的选取**不唯一**，不同选取通过相似变换联系，输入-输出关系不变
+- 从物理系统建立状态空间模型的步骤：确定阶数 → 选状态变量 → 列一阶方程 → 整理为矩阵形式
+- 从传递函数到状态空间有**可控标准型**和**可观标准型**两种常用形式
+- 状态方程的解：$\boldsymbol{x}(t) = e^{At}\boldsymbol{x}(0) + \int_0^t e^{A(t-\tau)}B\boldsymbol{u}(\tau)d\tau$，分为零输入响应和零状态响应
+- 传递函数与状态空间的关系：$G(s) = C(sI-A)^{-1}B + D$，极点 = $A$ 的特征值
+- 状态空间框架统一了连续/离散、线性/非线性、SISO/MIMO 系统
+
+## 习题
+
+**1.** 一个RLC并联电路，输入为电流源 $i_s(t)$，输出为电容电压 $v_C(t)$。电路参数：$R = 10\,\Omega$，$L = 0.5\,\text{H}$，$C = 0.02\,\text{F}$。选取电感电流 $i_L$ 和电容电压 $v_C$ 为状态变量，写出状态空间模型 $(A, B, C, D)$。
+
+**2.** 给定传递函数 $G(s) = \frac{s + 2}{s^2 + 3s + 2}$。
+- (a) 写出可控标准型的 $(A, B, C, D)$
+- (b) 写出可观标准型的 $(A, B, C, D)$
+- (c) 验证两种表示的特征值相同
+
+**3.** 计算矩阵 $A = \begin{bmatrix} 0 & 1 \\ -6 & -5 \end{bmatrix}$ 的状态转移矩阵 $e^{At}$。
+
+**4.** 一个双输入双输出系统，状态方程为：
+
+$$
+\dot{\boldsymbol{x}} = \begin{bmatrix} -1 & 0 \\ 0 & -2 \end{bmatrix}\boldsymbol{x} + \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}\boldsymbol{u}, \quad \boldsymbol{y} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\boldsymbol{x}
+$$
+
+- (a) 写出传递函数矩阵 $G(s)$
+- (b) 这个系统的极点是什么？系统稳定吗？
+
+**5.** 一个单摆（质量 $m$，摆长 $l$），在重力作用下摆动，同时受到控制力矩 $u(t)$ 和粘性摩擦 $B\dot{\theta}$。
+- (a) 写出非线性状态方程（状态变量选 $\theta$ 和 $\dot{\theta}$）
+- (b) 在平衡点 $\theta = 0$ 附近线性化，写出线性状态空间模型
+- (c) 如果选平衡点 $\theta = \pi$（倒立位置）线性化，$A$ 矩阵有什么不同？这对稳定性意味着什么？
+
+**6.** 给定状态空间系统：
+
+$$
+A = \begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ -6 & -11 & -6 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}, \quad D = 0
+$$
+
+- (a) 求传递函数 $G(s)$
+- (b) 求 $A$ 的特征值
+- (c) 求状态转移矩阵 $e^{At}$（提示：先做部分分式展开）
+
+**7.** 证明：如果 $\tilde{A} = TAT^{-1}$，$\tilde{B} = TB$，$\tilde{C} = CT^{-1}$，$\tilde{D} = D$（相似变换），则 $C(sI-A)^{-1}B + D = \tilde{C}(sI-\tilde{A})^{-1}\tilde{B} + \tilde{D}$。即相似变换不改变传递函数。
+
+**8.** 一个水箱系统：截面积 $A$，液位 $h(t)$，入流 $q_{in}(t)$，出流 $q_{out} = h/R_v$（$R_v$ 为阀阻）。
+- (a) 写出状态空间模型（状态变量选 $h$）
+- (b) 这是一个几阶系统？$A, B, C, D$ 分别是什么（标量）？
+- (c) 求传递函数，并与直接对微分方程做拉普拉斯变换的结果对比
+
+**9.** 考虑离散时间系统 $\boldsymbol{x}[k+1] = A_d\boldsymbol{x}[k] + B_d\boldsymbol{u}[k]$，其中 $A_d = \begin{bmatrix} 0.5 & 0.2 \\ 0 & 0.8 \end{bmatrix}$，$B_d = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$。
+- (a) 求 $A_d$ 的特征值，系统稳定吗？
+- (b) 计算 $A_d^k$（提示：对角化）
+- (c) 如果采样周期 $T = 0.1\,\text{s}$，对应的连续时间系统矩阵 $A$ 是什么？（提示：$A_d = e^{AT}$）
+
+**10.** 直流电机的状态空间模型。电枢电压 $v(t)$ 为输入，角速度 $\omega(t)$ 和电枢电流 $i(t)$ 为状态变量，角速度为输出。参数：$R = 1\,\Omega$，$L = 0.01\,\text{H}$，$K = 0.5$，$J = 0.02\,\text{kg·m}^2$，$B = 0.1\,\text{N·m·s/rad}$。
+- (a) 写出状态空间模型 $(A, B, C, D)$
+- (b) 求传递函数 $\Omega(s)/V(s)$
+- (c) 与经典控制综合案例中用微分方程推导的传递函数对比，是否一致？
+
+## 答案
+
+**1.** 对RLC并联电路，由KCL：$i_s = i_R + i_L + i_C$，即 $i_s = v_C/R + i_L + C\dot{v}_C$。由KVL（电感支路）：$v_C = L\dot{i}_L$。
+
+状态变量 $x_1 = i_L$，$x_2 = v_C$，输入 $u = i_s$，输出 $y = v_C = x_2$：
+
+由电感方程：
+
+$$
+\dot{x}_1 = \frac{1}{L}x_2 = \frac{1}{0.5}x_2 = 2x_2
+$$
+
+由电容方程 $C\dot{v}_C = i_s - i_L - v_C/R$：
+
+$$
+\dot{x}_2 = \frac{1}{C}(u - x_1 - x_2/R)
+$$
+
+代入参数 $C = 0.02$，$1/C = 50$，$1/(RC) = 1/(10 \times 0.02) = 5$：
+
+$$
+\dot{x}_2 = 50(u - x_1 - x_2/10) = -50x_1 - 5x_2 + 50u
+$$
+
+整理为矩阵形式：
+
+$$
+A = \begin{bmatrix} 0 & 2 \\ -50 & -5 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 50 \end{bmatrix}, \quad C = \begin{bmatrix} 0 & 1 \end{bmatrix}, \quad D = 0
+$$
+
+**2.** $G(s) = \frac{s + 2}{s^2 + 3s + 2}$，$n=2$，$a_1=3, a_0=2, b_1=1, b_0=2$。
+
+(a) 可控标准型：
+
+$$
+A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 2 & 1 \end{bmatrix}, \quad D = 0
+$$
+
+(b) 可观标准型：
+
+$$
+A = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix}, \quad B = \begin{bmatrix} 2 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 0 & 1 \end{bmatrix}, \quad D = 0
+$$
+
+(c) 两种表示的特征多项式均为 $\det(sI - A) = s^2 + 3s + 2 = (s+1)(s+2)$，特征值 $\lambda_1 = -1, \lambda_2 = -2$。
+
+**3.** $A = \begin{bmatrix} 0 & 1 \\ -6 & -5 \end{bmatrix}$，特征多项式 $\det(sI-A) = s^2 + 5s + 6 = (s+2)(s+3)$，特征值 $\lambda_1 = -2, \lambda_2 = -3$。
+
+$$
+(sI-A)^{-1} = \frac{1}{(s+2)(s+3)}\begin{bmatrix} s+5 & 1 \\ -6 & s \end{bmatrix}
+$$
+
+对各元素做部分分式展开：
+
+$$
+\frac{s+5}{(s+2)(s+3)} = \frac{3}{s+2} - \frac{2}{s+3} \xrightarrow{\mathcal{L}^{-1}} 3e^{-2t} - 2e^{-3t}
+$$
+
+$$
+\frac{1}{(s+2)(s+3)} = \frac{1}{s+2} - \frac{1}{s+3} \xrightarrow{\mathcal{L}^{-1}} e^{-2t} - e^{-3t}
+$$
+
+$$
+\frac{-6}{(s+2)(s+3)} = \frac{-6}{s+2} + \frac{6}{s+3} \xrightarrow{\mathcal{L}^{-1}} -6e^{-2t} + 6e^{-3t}
+$$
+
+$$
+\frac{s}{(s+2)(s+3)} = \frac{-2}{s+2} + \frac{3}{s+3} \xrightarrow{\mathcal{L}^{-1}} -2e^{-2t} + 3e^{-3t}
+$$
+
+$$
+e^{At} = \begin{bmatrix} 3e^{-2t} - 2e^{-3t} & e^{-2t} - e^{-3t} \\ -6e^{-2t} + 6e^{-3t} & -2e^{-2t} + 3e^{-3t} \end{bmatrix}
+$$
+
+**4.** (a) $G(s) = C(sI-A)^{-1}B$。
+
+$$
+(sI-A)^{-1} = \begin{bmatrix} \frac{1}{s+1} & 0 \\ 0 & \frac{1}{s+2} \end{bmatrix}
+$$
+
+$$
+G(s) = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} \frac{1}{s+1} & 0 \\ 0 & \frac{1}{s+2} \end{bmatrix} \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} = \begin{bmatrix} \frac{1}{s+1} & \frac{1}{s+2} \\ 0 & \frac{1}{s+2} \end{bmatrix}
+$$
+
+(b) 极点为 $s = -1$ 和 $s = -2$（$A$ 的特征值），都在左半平面，系统**稳定**。
+
+**5.** (a) 单摆的非线性方程：$ml^2\ddot{\theta} + B\dot{\theta} + mgl\sin\theta = u$。
+
+选 $x_1 = \theta, x_2 = \dot{\theta}$：
+
+$$
+\dot{x}_1 = x_2
+$$
+
+$$
+\dot{x}_2 = -\frac{B}{ml^2}x_2 - \frac{g}{l}\sin x_1 + \frac{1}{ml^2}u
+$$
+
+这是非线性状态方程（因为 $\sin x_1$ 项）。
+
+(b) 在 $\theta = 0$ 附近线性化：$\sin\theta \approx \theta$。
+
+$$
+A = \begin{bmatrix} 0 & 1 \\ -g/l & -B/(ml^2) \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 1/(ml^2) \end{bmatrix}
+$$
+
+(c) 在 $\theta = \pi$ 附近线性化：令 $\phi = \theta - \pi$，则 $\sin\theta = \sin(\pi + \phi) = -\sin\phi \approx -\phi$。
+
+$$
+A = \begin{bmatrix} 0 & 1 \\ g/l & -B/(ml^2) \end{bmatrix}
+$$
+
+注意 $A_{21}$ 从 $-g/l$ 变为 $+g/l$。特征方程 $s^2 + \frac{B}{ml^2}s - \frac{g}{l} = 0$，由于常数项为负，必有一个正特征值——**倒立位置是不稳定平衡点**。这就是为什么倒立摆需要主动控制才能保持平衡。
+
+**6.** (a) $G(s) = C(sI-A)^{-1}B$。
+
+$$
+\det(sI-A) = s^3 + 6s^2 + 11s + 6 = (s+1)(s+2)(s+3)
+$$
+
+由于这是可控标准型，$G(s) = \frac{1}{s^3 + 6s^2 + 11s + 6} = \frac{1}{(s+1)(s+2)(s+3)}$。
+
+(b) $A$ 的特征值：$\lambda_1 = -1, \lambda_2 = -2, \lambda_3 = -3$。
+
+(c) 利用对角化方法。$A$ 的特征向量矩阵 $P = \begin{bmatrix} 1 & 1 & 1 \\ -1 & -2 & -3 \\ 1 & 4 & 9 \end{bmatrix}$（对应 $\lambda_1=-1, \lambda_2=-2, \lambda_3=-3$ 的列向量），则：
+
+$$
+e^{At} = P \begin{bmatrix} e^{-t} & 0 & 0 \\ 0 & e^{-2t} & 0 \\ 0 & 0 & e^{-3t} \end{bmatrix} P^{-1}
+$$
+
+计算 $P^{-1}$：
+
+$$
+P^{-1} = \frac{1}{2}\begin{bmatrix} 6 & 5 & 1 \\ -6 & -8 & -2 \\ 2 & 3 & 1 \end{bmatrix}
+$$
+
+展开乘法，得到 $e^{At}$ 的 $(1,1)$ 元素为例：
+
+$$
+(e^{At})_{11} = \frac{1}{2}(6e^{-t} - 6e^{-2t} + 2e^{-3t}) \cdot \frac{1}{2} + \cdots
+$$
+
+更直接地，逐元素写出结果：
+
+$$
+e^{At} = \begin{bmatrix} 3e^{-t} - 3e^{-2t} + e^{-3t} & 2e^{-t} - 2e^{-2t} + \cdots \\ \cdots & \cdots \end{bmatrix}
+$$
+
+由于完整展开较为繁琐，实用中通常用数值方法（如 `scipy.linalg.expm`）计算。关键结论是：$e^{At}$ 的每个元素都是 $e^{-t}, e^{-2t}, e^{-3t}$ 的线性组合，衰减速率由特征值决定。
+
+**7.** 证明：
+
+$$
+\tilde{C}(sI-\tilde{A})^{-1}\tilde{B} + \tilde{D} = CT^{-1}(sI - TAT^{-1})^{-1}TB + D
+$$
+
+注意 $(sI - TAT^{-1}) = T(sI - A)T^{-1}$，所以 $(sI - TAT^{-1})^{-1} = T(sI-A)^{-1}T^{-1}$。代入：
+
+$$
+= CT^{-1} \cdot T(sI-A)^{-1}T^{-1} \cdot TB + D = C(sI-A)^{-1}B + D
+$$
+
+证毕。相似变换不改变传递函数。
+
+**8.** (a) 质量守恒：$A\dot{h} = q_{in} - q_{out} = q_{in} - h/R_v$。
+
+状态变量 $x = h$，输入 $u = q_{in}$，输出 $y = h = x$：
+
+$$
+\dot{x} = -\frac{1}{AR_v}x + \frac{1}{A}u
+$$
+
+(b) 一阶系统（$n=1$）。$A = -1/(AR_v)$，$B = 1/A$，$C = 1$，$D = 0$（这里 $A$ 既是矩阵名又是截面积，注意区分——通常用 $S$ 表示截面积以避免混淆）。
+
+(c) 传递函数 $G(s) = C(s-A)^{-1}B = \frac{1/A}{s + 1/(AR_v)} = \frac{1}{As + 1/R_v} = \frac{R_v}{AR_v s + 1}$。
+
+直接对 $A\dot{h} + h/R_v = q_{in}$ 做拉普拉斯变换：$(As + 1/R_v)H(s) = Q_{in}(s)$，$G(s) = H(s)/Q_{in}(s) = \frac{1}{As + 1/R_v} = \frac{R_v}{AR_v s + 1}$。结果一致 ✓
+
+**9.** (a) $A_d$ 是上三角矩阵，特征值在对角线上：$\lambda_1 = 0.5, \lambda_2 = 0.8$。两个特征值的模都小于1，离散系统**稳定**。
+
+(b) $A_d$ 已经是上三角，可以直接计算幂次。对角化：特征向量 $P = \begin{bmatrix} 1 & 1 \\ 0 & 1.5 \end{bmatrix}$（对应 $\lambda_1=0.5, \lambda_2=0.8$），$P^{-1} = \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix}$，则 $A_d^k = P\,\text{diag}(0.5^k, 0.8^k)\,P^{-1}$。
+
+(c) $A_d = e^{AT}$，所以 $A = \frac{1}{T}\ln(A_d)$。对对角化形式：$A = \frac{1}{T}P\,\text{diag}(\ln 0.5, \ln 0.8)\,P^{-1}$。
+
+$\ln 0.5 \approx -0.693$，$\ln 0.8 \approx -0.223$，$T = 0.1$：
+
+$$
+A = 10 \cdot \begin{bmatrix} 1 & 1 \\ 0 & 1.5 \end{bmatrix} \begin{bmatrix} -0.693 & 0 \\ 0 & -0.223 \end{bmatrix} \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix}
+$$
+
+$$
+= 10 \cdot \begin{bmatrix} -0.693 & -0.223 \\ 0 & -0.3345 \end{bmatrix} \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix} = 10 \cdot \begin{bmatrix} -0.693 & 0.303 \\ 0 & -0.223 \end{bmatrix}
+$$
+
+$$
+A = \begin{bmatrix} -6.93 & 3.03 \\ 0 & -2.23 \end{bmatrix}
+$$
+
+连续时间特征值为 $-6.93$ 和 $-2.23$（都是负实数，连续系统稳定）。
+
+**10.** (a) 电气侧：$L\dot{i} + Ri + K\omega = v$，即 $\dot{i} = -\frac{R}{L}i - \frac{K}{L}\omega + \frac{1}{L}v$。
+
+机械侧：$J\dot{\omega} + B\omega = Ki$，即 $\dot{\omega} = \frac{K}{J}i - \frac{B}{J}\omega$。
+
+状态变量 $\boldsymbol{x} = [i, \omega]^T$，输入 $u = v$，输出 $y = \omega$：
+
+$$
+A = \begin{bmatrix} -R/L & -K/L \\ K/J & -B/J \end{bmatrix} = \begin{bmatrix} -100 & -50 \\ 25 & -5 \end{bmatrix}
+$$
+
+$$
+B = \begin{bmatrix} 1/L \\ 0 \end{bmatrix} = \begin{bmatrix} 100 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 0 & 1 \end{bmatrix}, \quad D = 0
+$$
+
+(b) $G(s) = C(sI-A)^{-1}B$。
+
+计算特征多项式：$\det(sI-A) = (s + R/L)(s + B/J) + K^2/(LJ) = s^2 + (R/L + B/J)s + (RB + K^2)/(LJ)$。
+
+代入数值：$R/L + B/J = 100 + 5 = 105$，$(RB + K^2)/(LJ) = (0.1 + 0.25)/0.0002 = 1750$。
+
+分子：$C \cdot \text{adj}(sI-A) \cdot B$ 中，只有 $K/J \cdot 1/L = 25 \times 100 = 2500$... 更直接地：
+
+$$
+G(s) = \frac{K/(LJ)}{s^2 + (R/L + B/J)s + (RB + K^2)/(LJ)} = \frac{25}{s^2 + 105s + 1750}
+$$
+
+极点：$s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} \approx \{-17.5, -87.5\}$。
+
+(c) 经典控制综合案例中，忽略电感 $L$ 时得到一阶模型 $\Omega(s)/V(s) = \frac{K_t/R}{Js + B + K^2/R} = \frac{0.5}{0.02s + 0.35} = \frac{25}{s+17.5}$。
+
+完整二阶模型的极点为 $s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} \approx \{-17.5, -87.5\}$。
+
+快极点 $-87.5$ 对应电气动态（时间常数约 $11\,\text{ms}$），慢极点 $-17.5$ 对应机械动态（时间常数约 $57\,\text{ms}$）。忽略电感相当于忽略快极点，保留慢极点——这与综合案例的简化一致 ✓

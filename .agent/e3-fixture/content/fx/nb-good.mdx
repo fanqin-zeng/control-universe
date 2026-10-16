@@ -1,0 +1,76 @@
+---
+title: "E3 正向对照 · 全部判据都应当沉默"
+description: "scripts/nb-cells.mjs 的假阳性对照组"
+category: "fx"
+difficulty: "beginner"
+status: "draft"
+---
+
+# E3 正向对照 · 全部判据都应当沉默
+
+这个文件**不是课程**，是 `scripts/nb-cells.mjs` 的假阳性对照组。
+负向测试只证明「有缺陷时报得出来」，不证明「没缺陷时不误报」——两件事都得测（A7 教训）。
+本课的课程级结论必须是 `[PASS]`；一旦出现任何 FAIL 或 WARN，说明判据过宽。
+
+## 行内代码段里的组件名不是真组件
+
+本仓的 `<JupyterNotebook>` 组件接收 `setupCode` 与 `cells` 两个属性，
+另一个常用的例子是 `<PoleZeroExplorer>`。这两句里的尖括号写法都只是**文档示例**。
+
+E3 之前 `scanMdx` 会把它们扫成幻影标签，进而报「没有 setupCode」这类假 FAIL。
+实测现网 content/ 56 篇 MDX、326 个标签里落在行内代码段的为 0，所以那一直是潜伏缺陷；
+这个文件让它变成可复现的回归测试。
+
+## 围栏里的 JSX 示例同样不是真组件
+
+````mdx
+<JupyterNotebook
+  setupCode={`这一整块都在围栏里，不该被扫描`}
+  cells={[
+    { code: `%%NB1%% 这里的占位符也不该被报` }
+  ]}
+/>
+````
+
+上面这段围栏内的示例既不贡献 notebook 计数，也不触发 S4。
+
+## 真组件 · 安全写法
+
+下面这个是**真**组件，应当被扫到，并且不报任何东西。
+它故意用满了容易踩雷的安全写法：双写反斜杠、转义反引号、转义美元、LaTeX、中文、多行代码。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+label = r"$\\lambda$ 与 $\\zeta$"
+msg = "第一行\\n第二行\\t制表"
+tick = "反引号 \` 在字符串里"
+dollar = "\${这不是插值}"
+pct = "百分号 50% 在行中间是安全的"
+`}
+  cells={[
+    { code: `x = np.linspace(0, 10, 200)
+y = np.exp(-0.3 * x) * np.cos(2 * x)
+print(label, msg, tick, dollar, pct)
+print(f"末值 {y[-1]:.4f}")` },
+    { code: `fig, ax = plt.subplots(figsize=(6, 3))
+ax.plot(x, y)
+ax.set_xlabel("t")
+ax.set_ylabel("y(t)")
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+## 判据为什么沉默（对照表）
+
+| 判据 | 本课为什么不触发 |
+| --- | --- |
+| S0 | 有 setupCode、有 cells、cell 的值是字符串字面量、模板都闭合 |
+| S1 | 首行是 `import numpy as np`，不以百分号开头 |
+| S2 | 全文没有 ipywidgets / interact / FloatSlider / IntSlider / widgets. |
+| S3 | JSX 属性之间没有逗号（cells 数组元素之间的逗号在方括号深度内，合法） |
+| S4 | 没有拼接占位符残留；围栏里那个不算 |
+| S5 | 反斜杠全部双写，没有 dropped-backslash / line-continuation / interpolation / bad-escape |
+| S7 | 只传了组件真正声明的 setupCode 与 cells |

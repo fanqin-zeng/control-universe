@@ -8,13 +8,17 @@ import { useState, useEffect } from "react";
 export function Sidebar() {
   const pathname = usePathname();
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const currentChapter = catalog.find((ch) =>
-      ch.lessons.some((l) => pathname === `/${ch.slug}/${l.slug}`)
-    );
-    if (currentChapter) {
-      setExpandedChapters(new Set([currentChapter.slug]));
+    for (const ch of catalog) {
+      for (const l of ch.lessons) {
+        if (pathname === `/${ch.slug}/${l.slug}`) {
+          setExpandedChapters(new Set([ch.slug]));
+          setExpandedLessons(new Set([`${ch.slug}/${l.slug}`]));
+          return;
+        }
+      }
     }
   }, [pathname]);
 
@@ -30,6 +34,18 @@ export function Sidebar() {
     });
   };
 
+  const toggleLesson = (key: string) => {
+    setExpandedLessons((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   return (
     <nav className="space-y-5">
       <Link
@@ -39,7 +55,7 @@ export function Sidebar() {
         控制宇宙
       </Link>
       {catalog.map((ch) => {
-        const isExpanded = expandedChapters.has(ch.slug);
+        const isChapterExpanded = expandedChapters.has(ch.slug);
         return (
           <div key={ch.slug}>
             <button
@@ -48,7 +64,7 @@ export function Sidebar() {
             >
               <span>{ch.title}</span>
               <svg
-                className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                className={`w-3 h-3 transition-transform ${isChapterExpanded ? "rotate-90" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -56,23 +72,59 @@ export function Sidebar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            {isExpanded && (
+            {isChapterExpanded && (
               <ul className="space-y-0.5">
                 {ch.lessons.map((l) => {
-                  const isActive = pathname === `/${ch.slug}/${l.slug}`;
+                  const lessonKey = `${ch.slug}/${l.slug}`;
+                  const isLessonActive = pathname === `/${lessonKey}`;
+                  const isLessonExpanded = expandedLessons.has(lessonKey);
+                  const hasSubsections = l.subsections && l.subsections.length > 0;
+
                   return (
                     <li key={l.slug}>
-                      <Link
-                        href={`/${ch.slug}/${l.slug}`}
-                        className={`block text-sm py-1.5 px-2 -mx-2 rounded-md transition-colors ${
-                          isActive
-                            ? "bg-accent text-foreground font-medium"
-                            : "text-foreground/80 hover:text-foreground hover:bg-muted"
-                        }`}
-                        title={l.title}
-                      >
-                        {l.title}
-                      </Link>
+                      <div className="flex items-center">
+                        {hasSubsections && (
+                          <button
+                            onClick={() => toggleLesson(lessonKey)}
+                            className="shrink-0 p-0.5 mr-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <svg
+                              className={`w-3 h-3 transition-transform ${isLessonExpanded ? "rotate-90" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        )}
+                        <Link
+                          href={`/${lessonKey}`}
+                          className={`block text-sm py-1.5 px-2 -mx-2 rounded-md transition-colors flex-1 ${
+                            isLessonActive
+                              ? "bg-accent text-foreground font-medium"
+                              : "text-foreground/80 hover:text-foreground hover:bg-muted"
+                          }`}
+                          title={l.title}
+                        >
+                          {l.title}
+                        </Link>
+                      </div>
+                      {hasSubsections && isLessonExpanded && (
+                        <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
+                          {l.subsections!.map((sub) => (
+                            <li key={sub.slug}>
+                              <Link
+                                href={`/${lessonKey}#${sub.slug}`}
+                                className="block text-xs py-1 px-2 -mx-2 rounded-md text-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+                                title={sub.title}
+                              >
+                                {sub.title}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   );
                 })}

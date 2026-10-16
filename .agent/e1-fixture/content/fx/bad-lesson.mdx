@@ -1,0 +1,58 @@
+# 注入组：逐项缺陷
+
+📐 本文用到了 [不存在的锚点](/fx/good-lesson#不存在的锚点) 与 [悬空课程](/fx/nonexistent-lesson)。
+
+## 第一节
+
+<Callout variant="warning", title="注入 1a：JSX 属性之间有逗号">
+这个标签会让 next-mdx-remote 编译失败（fix-013）。
+</Callout>
+
+下面是注入 1b：闭合 `$$` 与内容同行，math 块永不关闭。
+
+$$
+\begin{aligned}
+\min_{U} \quad & J = \sum_{i=0}^{N} x_i^T Q x_i \\
+\text{s.t.} \quad & x_{i+1} = A x_i + B u_i
+\end{aligned}$$
+
+<BadExplorer />
+
+<HalfExplorer />
+
+<GhostExplorer />
+
+## 第二节
+
+![缺失的图](/images/missing.png)
+
+<JupyterNotebook
+  title="📍 注入 3：ipywidgets 与 %# 首行"
+  setupCode={`import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import numpy as np
+import matplotlib.pyplot as plt
+import ipywidgets as widgets
+from ipywidgets import interact, FloatSlider`}
+  cells={[
+    { code: `%# 注入 3b：cell 首行是 magic 注释（fix-017）
+t = np.linspace(0, 5, 200)
+interact(lambda k: plt.plot(t, np.exp(-k * t)), k=FloatSlider(min=0.1, max=3, step=0.1, value=1))` },
+  ]}
+/>
+
+## 第三节
+
+这一节是注入 2：catalog 只登记了 4 个 subsection，MDX 却有 5 个 H2。
+
+## 习题
+
+**1.** 第一题。
+
+**2.** 第二题。
+
+**3.** 第三题（注入 9：答案段只有 1 条）。
+
+## 答案
+
+**1.** 第一题答案。

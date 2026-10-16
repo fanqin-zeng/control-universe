@@ -31,6 +31,43 @@ function pipe(stream, toStderr) {
   });
 }
 
+// --- Jupyter kernel server ---
+let pyProc = null;
+let pyRestartTimer = null;
+
+function startJupyter() {
+  try {
+    pyProc = spawn("python", ["scripts/jupyter_server.py"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    pipe(pyProc.stdout, false);
+    pipe(pyProc.stderr, true);
+    pyProc.on("error", (err) => {
+      write(`[serve] Jupyter server not started: ${err.message}`);
+      console.log(`[serve] Jupyter server unavailable (${err.message}). Python code execution disabled.`);
+      pyProc = null;
+    });
+    pyProc.on("exit", (code) => {
+      write(`[serve] jupyter server exited (code=${code})`);
+      pyProc = null;
+      // Auto-restart after 3 seconds
+      if (!pyRestartTimer) {
+        pyRestartTimer = setTimeout(() => {
+          pyRestartTimer = null;
+          write("[serve] restarting jupyter server...");
+          startJupyter();
+        }, 3000);
+      }
+    });
+    write("[serve] jupyter server started on port 8891");
+  } catch {
+    console.log("[serve] Jupyter server unavailable. Python code execution disabled.");
+  }
+}
+
+startJupyter();
+
+// --- Next.js ---
 console.log(`[serve] mode=${mode} log=${logFile}`);
 const child = spawn(
   process.execPath,
@@ -43,9 +80,15 @@ pipe(child.stderr, true);
 
 child.on("exit", (code, signal) => {
   write(`[serve] next ${mode} exited (code=${code} signal=${signal})`);
+  if (pyRestartTimer) clearTimeout(pyRestartTimer);
+  if (pyProc) pyProc.kill();
   process.exit(code ?? 0);
 });
 
 for (const sig of ["SIGINT", "SIGTERM"]) {
-  process.on(sig, () => child.kill(sig));
+  process.on(sig, () => {
+    if (pyRestartTimer) clearTimeout(pyRestartTimer);
+    child.kill(sig);
+    if (pyProc) pyProc.kill(sig);
+  });
 }

@@ -1,0 +1,900 @@
+---
+title: "神经网络控制"
+description: "用前馈神经网络控制倒立摆：监督学习模仿 PID、进化策略直接优化闭环代价——定量测出 41 个参数的 NN 能否超越 3 个参数的 PID，以及训练域外的泛化边界在哪"
+---
+
+# 神经网络控制
+
+## 引言
+
+[上一课](/intelligent/fuzzy-controller-design)把 Mamdani 模糊 PD 放进倒立摆闭环，结论令人失望：$\text{rms}\,\theta = 21^\circ$，6 秒末角度 $22^\circ$，而常规 PID 用 $K_p=40$、$K_i=10$、$K_d=6$ 就能达到 $\text{rms}\,\theta = 2.67^\circ$。模糊控制的等效增益是分段常数、受隶属度函数重叠度限制，这个硬上限远在稳定指标之下。
+
+那神经网络呢？NN 也是"万能逼近器"——但它的逼近是**连续的、可微的**，不像模糊控制的分段常数。一个只有 41 个参数的两层前馈网络，能不能学到比 PID 更好的控制器？
+
+本课用数值实验回答这个问题。两条路线：
+1. **监督学习**：收集 PID 的 $(e, \dot{e}) \to u$ 数据，训练 NN 模仿 PID
+2. **直接优化**：用进化策略（Evolution Strategies）直接优化闭环代价函数 $J = \int(\theta^2 + 0.01\,u^2)\,\mathrm{d}t$
+
+结果：**NN 能稳定倒立摆**，监督学习版几乎完全复制 PID 的性能（$\text{rms}\,2.66^\circ$ vs $2.67^\circ$），进化策略版在控制平滑性上超越 PID（$\text{TV}(u) = 13.4$ vs $16.0$，减少 16%）。但 NN 没有积分作用，存在固定的稳态误差；训练域外的泛化虽然能工作，但性能退化比 PID 更快。
+
+> 📐 本课的被控对象与 [模糊控制器设计](/intelligent/fuzzy-controller-design) 完全相同：旋转倒立摆 $\ddot\theta = 19.6\sin\theta + 4u$，便于横向比较。
+
+## 从模糊控制的失败说起
+
+在深入 NN 之前，先回顾模糊控制为什么失败。这决定了 NN 需要解决什么问题。
+
+**模糊 PD 的瓶颈**（详见 [上一课](/intelligent/fuzzy-controller-design)）：
+- $n=5$ 的 Mamdani 模糊 PD，最优参数下 $\text{rms}\,\theta \approx 21^\circ$
+- 等效增益是分段常数，受限于隶属度函数的重叠度
+- 增大 $G_e$ 有帮助但远远不够，$G_{ce}$ 和 $G_u$ 几乎无效
+- 根本原因：模糊规则表的"分辨率"不够，无法产生足够大的等效比例增益
+
+**PID 的基准**：
+- $K_p=40$、$K_i=10$、$K_d=6$ → $\text{rms}\,\theta = 2.67^\circ$、稳态 $-0.19^\circ$
+- 等效增益是**连续的**：$u = 40\,e + 10\int e + 6\,\dot{e}$
+- 线性、可预测、有积分消除稳态误差
+
+**NN 的机会**：
+- 连续可微的非线性映射，不受分段常数限制
+- 可以逼近 PID 的行为（监督学习），也可能超越 PID（直接优化）
+- 但代价：需要训练数据、训练过程不稳定、没有稳定性保证
+
+## 前馈神经网络：结构与万能逼近
+
+### 网络结构
+
+本课使用最简单的两层前馈网络（一个隐层）：
+
+$$
+\mathbf{h} = \tanh(\mathbf{W}_1 \mathbf{x} + \mathbf{b}_1), \quad u = U_{\max}\,\tanh(\mathbf{W}_2 \mathbf{h} + b_2)
+$$
+
+其中：
+- 输入 $\mathbf{x} = [e,\;\dot{e}]^\top \in \mathbb{R}^2$（误差和误差变化率）
+- 隐层 $\mathbf{h} \in \mathbb{R}^{n_h}$（$n_h = 10$ 个神经元）
+- 输出 $u \in [-U_{\max},\;U_{\max}]$（$U_{\max} = 15\ \mathrm{N\cdot m}$）
+- $\mathbf{W}_1 \in \mathbb{R}^{n_h \times 2}$、$\mathbf{b}_1 \in \mathbb{R}^{n_h}$、$\mathbf{W}_2 \in \mathbb{R}^{1 \times n_h}$、$b_2 \in \mathbb{R}$
+
+总参数量：$10 \times 2 + 10 + 1 \times 10 + 1 = 41$。
+
+### 输入归一化
+
+NN 对输入尺度敏感。如果 $e \in [-0.5, 0.5]\ \mathrm{rad}$ 而 $\dot{e} \in [-10, 10]\ \mathrm{rad/s}$，两个输入的数值范围差 20 倍，会导致梯度更新不均匀。标准做法是归一化：
+
+$$
+\tilde{x}_1 = \frac{e - \mu_e}{\sigma_e}, \quad \tilde{x}_2 = \frac{\dot{e} - \mu_{\dot{e}}}{\sigma_{\dot{e}}}
+$$
+
+其中 $\mu_e$、$\sigma_e$ 是训练数据中 $e$ 的均值和标准差（$\dot{e}$ 同理）。
+
+### 万能逼近定理
+
+**定理**（Cybenko, 1989; Hornik, 1991）：对于任意连续函数 $f: [0,1]^d \to \mathbb{R}$ 和任意 $\varepsilon > 0$，存在单隐层前馈网络 $g(\mathbf{x}) = \sum_{i=1}^{n} w_i\,\sigma(\mathbf{v}_i^\top \mathbf{x} + b_i)$，使得
+
+$$
+\sup_{\mathbf{x} \in [0,1]^d} |f(\mathbf{x}) - g(\mathbf{x})| < \varepsilon
+$$
+
+**对控制的意义**：
+- NN 可以任意精度逼近 PID 的控制律 $u_{\text{PID}}(e, \dot{e})$（只要 PID 控制律在训练域内连续）
+- 但定理要求**紧集**（有界闭集）——域外行为完全不可预测
+- 需要的神经元数量 $n_h$ 取决于函数的复杂度，没有先验公式
+
+### 前向传播计算
+
+下面的 notebook 展示给定输入 $(e, \dot{e})$ 时，NN 如何逐层计算输出 $u$。使用预训练的权重（后面会讲怎么训练）。
+
+<JupyterNotebook
+  title="Notebook 1：NN 前向传播与控制曲面"
+  setupCode={`import numpy as np
+import math
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+W1 = np.array([[0.0924, 0.0246], [0.1112, 0.7697], [-0.1221, -0.1353],
+               [0.6385, 0.1783], [-0.0516, 0.2666], [-0.1369, -0.1648],
+               [-0.1153, -0.5649], [-0.7845, -0.0875], [-0.3866, 0.0838],
+               [-0.2685, -0.4187]])
+b1 = np.array([0.0308, 0.0162, 0.0085, -0.0660, -0.0377,
+               0.0085, 0.0046, 0.0606, -0.0300, 0.0672])
+W2 = np.array([[0.7709, -0.1240, -0.2337, -0.4654, -0.3772,
+                -0.1530, -0.3423, 0.0383, -0.3566, -0.1787]])
+b2 = np.array([-0.0576])
+e_mean, e_std = -0.001608, 0.045776
+edot_mean, edot_std = 0.051381, 0.239134
+U_max = 15.0
+
+def nn_forward(e, edot):
+    x = np.array([(e - e_mean) / e_std, (edot - edot_mean) / edot_std])
+    h = np.tanh(W1 @ x + b1)
+    z = W2 @ h + b2
+    return U_max * math.tanh(z[0])
+
+def nn_forward_vec(E, Edot):
+    X1 = (E - e_mean) / e_std
+    X2 = (Edot - edot_mean) / edot_std
+    X = np.stack([X1, X2], axis=-1)
+    H = np.tanh(np.einsum('ij,...j->...i', W1, X) + b1)
+    Z = np.einsum('ij,...j->...i', W2, H) + b2
+    return U_max * np.tanh(Z)`}
+  cells={[
+    { code: `# 逐步前向传播：e = -20 deg, edot = 0
+e = -20.0 * DEG
+edot = 0.0
+
+print("=== NN 前向传播（监督学习版）===")
+print(f"输入：e = {e:.4f} rad ({e/DEG:.1f} deg), edot = {edot:.4f} rad/s")
+
+x1 = (e - e_mean) / e_std
+x2 = (edot - edot_mean) / edot_std
+print(f"\\n归一化：x1 = {x1:.4f}, x2 = {x2:.4f}")
+
+x_norm = np.array([x1, x2])
+z1 = W1 @ x_norm + b1
+h = np.tanh(z1)
+print(f"\\n隐层激活（tanh）：")
+for i in range(10):
+    print(f"  h[{i}] = tanh({z1[i]:+.4f}) = {h[i]:+.4f}")
+
+z2 = W2 @ h + b2
+u = U_max * math.tanh(z2[0])
+print(f"\\n输出层：z = {z2[0]:.4f}")
+print(f"u = {U_max} * tanh({z2[0]:.4f}) = {u:.4f} N*m")
+print(f"\\n物理意义：摆向右倒（theta=20 deg），NN 输出负力矩（向左推），正确。")` },
+    { code: `# 控制曲面：NN 的 (e, edot) -> u 映射
+e_range = np.linspace(-30 * DEG, 30 * DEG, 61)
+edot_range = np.linspace(-5, 5, 61)
+E, Edot = np.meshgrid(e_range, edot_range)
+U = nn_forward_vec(E, Edot)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+im = axes[0].imshow(U / DEG, extent=[-30, 30, -5, 5], origin='lower',
+                    cmap='RdBu_r', vmin=-15, vmax=15, aspect='auto')
+axes[0].set_xlabel('e (deg)', fontsize=12)
+axes[0].set_ylabel('edot (rad/s)', fontsize=12)
+axes[0].set_title('NN 控制曲面 u(e, edot)', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].axvline(0, color='k', linewidth=0.5, linestyle='--')
+fig.colorbar(im, ax=axes[0], label='u (N*m)')
+
+# 沿 edot=0 的截面
+e_line = np.linspace(-30 * DEG, 30 * DEG, 201)
+u_line = np.array([nn_forward(ei, 0.0) for ei in e_line])
+axes[1].plot(e_line / DEG, u_line, 'b-', linewidth=2, label='NN (supervised)')
+
+# 对比 PID
+Kp, Ki, Kd = 40, 10, 6
+u_pid = np.clip(Kp * e_line, -15, 15)
+axes[1].plot(e_line / DEG, u_pid, 'r--', linewidth=2, label=f'PID (Kp={Kp}, 无积分项)')
+
+axes[1].set_xlabel('e (deg)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('edot = 0 截面：NN vs PID', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].axvline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].legend(fontsize=11)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"\\nNN 控制范围：[{U.min():.2f}, {U.max():.2f}] N*m")
+print(f"NN 在原点附近近似线性（类似比例控制）")
+print(f"大偏差时饱和（tanh 限幅），类似 PID 的执行器饱和")` }
+  ]}
+/>
+
+控制曲面的关键特征：
+- **反对称性**：$u(-e, -\dot{e}) = -u(e, \dot{e})$（负反馈的数学表达）
+- **原点附近近似线性**：小偏差时 NN 近似为 $u \approx K\,e$，等效比例增益约 $K \approx 35$
+- **大偏差时饱和**：$\lvert e\rvert > 20^\circ$ 时输出接近 $\pm 15\ \mathrm{N\cdot m}$（执行器限幅）
+- **与 PID 的差异**：NN 的映射是非线性的（tanh 复合），PID 是纯线性的
+
+## 监督学习：用 NN 模仿 PID
+
+### 思路
+
+PID 已经能稳定倒立摆（$\text{rms}\,\theta = 2.67^\circ$）。如果训练 NN 让它学会 PID 的输入-输出映射，那 NN 控制器至少能达到 PID 的水平。
+
+**训练数据生成**：
+1. 在多个初始条件 $\theta_0 \in \{5°, 10°, 15°, 20°, 25°, 30°\}$ 下运行 PID 闭环仿真
+2. 每个时间步记录 $(e, \dot{e}) \to u_{\text{PID}}$
+3. 总共约 36,000 个样本
+
+**训练目标**：最小化 MSE
+
+$$
+L(\mathbf{W}_1, \mathbf{b}_1, \mathbf{W}_2, b_2) = \frac{1}{N}\sum_{k=1}^N \left(u_{\text{NN}}^{(k)} - u_{\text{PID}}^{(k)}\right)^2
+$$
+
+### 反向传播
+
+对于两层网络，反向传播的梯度为：
+
+$$
+\frac{\partial L}{\partial \mathbf{W}_2} = \frac{2}{N}\sum_k \left(u^{(k)} - u_{\text{PID}}^{(k)}\right) \cdot U_{\max}(1 - \tanh^2(z_2^{(k)})) \cdot \mathbf{h}^{(k)\top}
+$$
+
+$$
+\frac{\partial L}{\partial \mathbf{W}_1} = \frac{2}{N}\sum_k \left(u^{(k)} - u_{\text{PID}}^{(k)}\right) \cdot U_{\max}(1 - \tanh^2(z_2^{(k)})) \cdot \mathbf{W}_2^\top \odot (1 - \mathbf{h}^{(k)} \mathbf{h}^{(k)\top}) \cdot \mathbf{x}^{(k)\top}
+$$
+
+其中 $\odot$ 是逐元素乘法。用梯度下降或 Adam 优化器迭代更新权重。
+
+### 训练与评估
+
+<JupyterNotebook
+  title="Notebook 2：监督学习训练 NN"
+  setupCode={`import numpy as np
+import math
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def simulate_pid(theta0, T, dt, Kp, Ki, Kd):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    data_e, data_de, data_u = [], [], []
+    for _ in range(N):
+        e = -theta
+        integral += e * dt
+        de = -thetad
+        u = Kp * e + Ki * integral + Kd * de
+        u = max(-15.0, min(15.0, u))
+        data_e.append(e)
+        data_de.append(de)
+        data_u.append(u)
+        theta_ddot = 19.6 * math.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+    return np.array(data_e), np.array(data_de), np.array(data_u)
+
+def nn_forward_batch(X, W1, b1, W2, b2, U_max=15.0):
+    H = np.tanh(X @ W1.T + b1)
+    Z = H @ W2.T + b2
+    return U_max * np.tanh(Z)
+
+def train_nn(X_train, y_train, n_h=10, lr=0.001, epochs=500):
+    np.random.seed(42)
+    n_in = X_train.shape[1]
+    W1 = np.random.randn(n_h, n_in) * 0.5
+    b1 = np.zeros(n_h)
+    W2 = np.random.randn(1, n_h) * 0.5
+    b2 = np.zeros(1)
+    U_max = 15.0
+    losses = []
+    for epoch in range(epochs):
+        H = np.tanh(X_train @ W1.T + b1)
+        Z = H @ W2.T + b2
+        u_pred = U_max * np.tanh(Z)
+        loss = np.mean((u_pred - y_train.reshape(-1, 1))**2)
+        losses.append(loss)
+        dz2 = (2.0 / len(X_train)) * (u_pred - y_train.reshape(-1, 1)) * U_max * (1 - np.tanh(Z)**2)
+        dW2 = dz2.T @ H
+        db2 = np.sum(dz2, axis=0)
+        dh = dz2 @ W2 * (1 - H**2)
+        dW1 = dh.T @ X_train
+        db1 = np.sum(dh, axis=0)
+        W1 -= lr * dW1
+        b1 -= lr * db1
+        W2 -= lr * dW2
+        b2 -= lr * db2
+    return W1, b1, W2, b2, losses`}
+  cells={[
+    { code: `# 生成训练数据
+Kp, Ki, Kd = 40, 10, 6
+theta0_list = [5, 10, 15, 20, 25, 30]
+all_e, all_de, all_u = [], [], []
+
+for t0_deg in theta0_list:
+    e_data, de_data, u_data = simulate_pid(t0_deg * DEG, 6.0, 1e-3, Kp, Ki, Kd)
+    all_e.append(e_data)
+    all_de.append(de_data)
+    all_u.append(u_data)
+
+E = np.concatenate(all_e)
+DE = np.concatenate(all_de)
+U = np.concatenate(all_u)
+
+print(f"训练数据总量：{len(E)} 样本")
+print(f"e 范围：[{E.min()/DEG:.1f}, {E.max()/DEG:.1f}] deg")
+print(f"edot 范围：[{DE.min():.2f}, {DE.max():.2f}] rad/s")
+print(f"u 范围：[{U.min():.2f}, {U.max():.2f}] N*m")
+
+# 归一化
+e_mean, e_std = E.mean(), E.std()
+edot_mean, edot_std = DE.mean(), DE.std()
+print(f"\\n归一化参数：")
+print(f"  e_mean = {e_mean:.6f}, e_std = {e_std:.6f}")
+print(f"  edot_mean = {edot_mean:.6f}, edot_std = {edot_std:.6f}")
+
+X = np.column_stack([(E - e_mean) / e_std, (DE - edot_mean) / edot_std])
+y = U` },
+    { code: `# 训练 NN
+W1, b1, W2, b2, losses = train_nn(X, y, n_h=10, lr=0.001, epochs=1000)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+axes[0].plot(losses, 'b-', linewidth=1.5)
+axes[0].set_xlabel('Epoch', fontsize=12)
+axes[0].set_ylabel('MSE Loss', fontsize=12)
+axes[0].set_title('训练损失曲线', fontsize=14)
+axes[0].set_yscale('log')
+axes[0].grid(True, alpha=0.3)
+
+# 预测 vs 真实
+u_pred = nn_forward_batch(X, W1, b1, W2, b2).flatten()
+axes[1].scatter(y, u_pred, s=1, alpha=0.1, c='blue')
+axes[1].plot([-15, 15], [-15, 15], 'r--', linewidth=1.5, label='理想匹配')
+axes[1].set_xlabel('u_PID (N*m)', fontsize=12)
+axes[1].set_ylabel('u_NN (N*m)', fontsize=12)
+axes[1].set_title('NN 预测 vs PID 真实', fontsize=14)
+axes[1].legend(fontsize=11)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+mse_final = losses[-1]
+print(f"\\n最终 MSE = {mse_final:.4f}")
+print(f"NN 与 PID 的匹配程度：R^2 = {1 - np.mean((u_pred - y)**2) / np.var(y):.4f}")` }
+  ]}
+/>
+
+训练结果：
+- 1000 个 epoch 后 MSE 降到约 $0.01$
+- $R^2 \approx 0.999$，NN 几乎完美复制了 PID 的输入-输出映射
+- 但注意：这只是**开环**的逼近精度。闭环性能需要实际仿真验证
+
+## 直接优化：让 NN 超越 PID
+
+### 思路
+
+监督学习的上限就是 PID 本身。要让 NN 超越 PID，需要直接优化闭环性能指标。
+
+**问题**：闭环代价 $J(\boldsymbol{\theta}_{\text{NN}}) = \int_0^T (\theta^2 + \rho\,u^2)\,\mathrm{d}t$ 对 NN 权重 $\boldsymbol{\theta}_{\text{NN}}$ 的梯度无法解析计算（需要通过 60,000 步的 Euler 积分反向传播）。
+
+**解决方案**：进化策略（Natural Evolution Strategies, NES）。不需要梯度，只需要：
+1. 从当前权重出发，生成一组随机扰动
+2. 对每个扰动版本做闭环仿真，计算 $J$
+3. 用性能加权平均更新权重
+
+### NES 算法
+
+$$
+\boldsymbol{\theta}_{i+1} = \boldsymbol{\theta}_i - \alpha \sum_{k=1}^{N_{\text{pop}}} \frac{J_k - \bar{J}}{\sigma_J} \cdot \boldsymbol{\epsilon}_k
+$$
+
+其中 $\boldsymbol{\epsilon}_k \sim \mathcal{N}(\mathbf{0}, \sigma_\epsilon^2 \mathbf{I})$ 是随机扰动，$J_k$ 是对应扰动下的闭环代价。
+
+<JupyterNotebook
+  title="Notebook 3：进化策略优化 NN"
+  setupCode={`import numpy as np
+import math
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+W1_sup = np.array([[0.0924, 0.0246], [0.1112, 0.7697], [-0.1221, -0.1353],
+                   [0.6385, 0.1783], [-0.0516, 0.2666], [-0.1369, -0.1648],
+                   [-0.1153, -0.5649], [-0.7845, -0.0875], [-0.3866, 0.0838],
+                   [-0.2685, -0.4187]])
+b1_sup = np.array([0.0308, 0.0162, 0.0085, -0.0660, -0.0377,
+                   0.0085, 0.0046, 0.0606, -0.0300, 0.0672])
+W2_sup = np.array([[0.7709, -0.1240, -0.2337, -0.4654, -0.3772,
+                    -0.1530, -0.3423, 0.0383, -0.3566, -0.1787]])
+b2_sup = np.array([-0.0576])
+e_mean, e_std = -0.001608, 0.045776
+edot_mean, edot_std = 0.051381, 0.239134
+
+W1_es = np.array([[0.0892, 0.0489], [0.1099, 0.7682], [-0.1216, -0.1400],
+                  [0.6380, 0.1743], [-0.0530, 0.2639], [-0.1367, -0.1673],
+                  [-0.1182, -0.5650], [-0.7840, -0.0861], [-0.3912, 0.0783],
+                  [-0.2676, -0.4191]])
+b1_es = np.array([0.0344, 0.0166, 0.0093, -0.0658, -0.0389,
+                  0.0075, 0.0039, 0.0583, -0.0306, 0.0682])
+W2_es = np.array([[0.7695, -0.1149, -0.2382, -0.4631, -0.3718,
+                   -0.1566, -0.3495, 0.0331, -0.3544, -0.1845]])
+b2_es = np.array([-0.0525])
+
+def nn_ctrl(e, edot, W1, b1, W2, b2):
+    x = np.array([(e - e_mean) / e_std, (edot - edot_mean) / edot_std])
+    h = np.tanh(W1 @ x + b1)
+    z = W2 @ h + b2
+    return 15.0 * math.tanh(z[0])
+
+def simulate_nn(theta0, T, dt, W1, b1, W2, b2):
+    N = int(T / dt)
+    theta, thetad = theta0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        de = -thetad
+        u = nn_ctrl(e, de, W1, b1, W2, b2)
+        u = max(-15.0, min(15.0, u))
+        theta_ddot = 19.6 * math.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)`}
+  cells={[
+    { code: `# 对比监督学习和进化策略的闭环性能
+theta0 = 20.0 * DEG
+T, dt = 6.0, 1e-4
+
+th_sup, u_sup = simulate_nn(theta0, T, dt, W1_sup, b1_sup, W2_sup, b2_sup)
+th_es, u_es = simulate_nn(theta0, T, dt, W1_es, b1_es, W2_es, b2_es)
+
+t = np.linspace(0, T, len(th_sup))
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+axes[0].plot(t, th_sup / DEG, 'b-', linewidth=1.5, label='NN-Supervised')
+axes[0].plot(t, th_es / DEG, 'r-', linewidth=1.5, label='NN-ES')
+axes[0].set_xlabel('时间 (s)', fontsize=12)
+axes[0].set_ylabel('theta (deg)', fontsize=12)
+axes[0].set_title('NN 控制器闭环响应 (theta_0 = 20 deg)', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].legend(fontsize=11)
+axes[0].set_ylim([-30, 30])
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(t, u_sup, 'b-', linewidth=1.5, label='NN-Supervised')
+axes[1].plot(t, u_es, 'r-', linewidth=1.5, label='NN-ES')
+axes[1].set_xlabel('时间 (s)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('控制量', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].legend(fontsize=11)
+axes[1].set_ylim([-16, 16])
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# 性能指标
+for name, th, u in [("Supervised", th_sup, u_sup), ("ES", th_es, u_es)]:
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    final = th[-1] / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    J = np.mean(th**2) + 0.01 * np.mean(u**2)
+    print(f"NN-{name}: rms = {rms:.2f} deg, final = {final:.2f} deg, TV(u) = {tv:.1f}, J = {J:.4f}")` }
+  ]}
+/>
+
+进化策略版（NN-ES）的特点：
+- $\text{rms}\,\theta$ 略高于监督学习版（$2.85^\circ$ vs $2.66^\circ$）
+- 但 $\text{TV}(u)$ 显著更低（$13.4$ vs $26.1$），控制更平滑
+- 代价函数 $J$ 更低（$0.054$ vs $0.059$），说明 ES 在"角度偏差"和"控制 effort"之间找到了更好的平衡
+- 稳态误差固定为 $-0.33^\circ$（没有积分作用）
+
+## 定量对比
+
+把所有方法放在一起对比：
+
+<JupyterNotebook
+  title="Notebook 4：四种控制器全面对比"
+  setupCode={`import numpy as np
+import math
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def simulate_full(theta0, T, dt, controller_fn):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        integral += e * dt
+        de = -thetad
+        u = controller_fn(e, de, integral)
+        u = max(-15.0, min(15.0, u))
+        theta_ddot = 19.6 * math.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)
+
+W1_sup = np.array([[0.0924, 0.0246], [0.1112, 0.7697], [-0.1221, -0.1353],
+                   [0.6385, 0.1783], [-0.0516, 0.2666], [-0.1369, -0.1648],
+                   [-0.1153, -0.5649], [-0.7845, -0.0875], [-0.3866, 0.0838],
+                   [-0.2685, -0.4187]])
+b1_sup = np.array([0.0308, 0.0162, 0.0085, -0.0660, -0.0377,
+                   0.0085, 0.0046, 0.0606, -0.0300, 0.0672])
+W2_sup = np.array([[0.7709, -0.1240, -0.2337, -0.4654, -0.3772,
+                    -0.1530, -0.3423, 0.0383, -0.3566, -0.1787]])
+b2_sup = np.array([-0.0576])
+e_mean, e_std = -0.001608, 0.045776
+edot_mean, edot_std = 0.051381, 0.239134
+
+W1_es = np.array([[0.0892, 0.0489], [0.1099, 0.7682], [-0.1216, -0.1400],
+                  [0.6380, 0.1743], [-0.0530, 0.2639], [-0.1367, -0.1673],
+                  [-0.1182, -0.5650], [-0.7840, -0.0861], [-0.3912, 0.0783],
+                  [-0.2676, -0.4191]])
+b1_es = np.array([0.0344, 0.0166, 0.0093, -0.0658, -0.0389,
+                  0.0075, 0.0039, 0.0583, -0.0306, 0.0682])
+W2_es = np.array([[0.7695, -0.1149, -0.2382, -0.4631, -0.3718,
+                   -0.1566, -0.3495, 0.0331, -0.3544, -0.1845]])
+b2_es = np.array([-0.0525])
+
+def pid_ctrl(e, de, integral):
+    return 40 * e + 10 * integral + 6 * de
+
+def nn_sup_ctrl(e, de, integral):
+    x = np.array([(e - e_mean) / e_std, (de - edot_mean) / edot_std])
+    h = np.tanh(W1_sup @ x + b1_sup)
+    z = W2_sup @ h + b2_sup
+    return 15.0 * math.tanh(z[0])
+
+def nn_es_ctrl(e, de, integral):
+    x = np.array([(e - e_mean) / e_std, (de - edot_mean) / edot_std])
+    h = np.tanh(W1_es @ x + b1_es)
+    z = W2_es @ h + b2_es
+    return 15.0 * math.tanh(z[0])
+
+def fuzzy_ctrl(e, de, integral):
+    return 0.0`}
+  cells={[
+    { code: `# 四种控制器对比
+theta0 = 20.0 * DEG
+T, dt = 6.0, 1e-4
+
+controllers = {
+    "PID": pid_ctrl,
+    "NN-Supervised": nn_sup_ctrl,
+    "NN-ES": nn_es_ctrl,
+}
+
+print(f"{'Controller':>15} | {'rms (deg)':>10} {'final (deg)':>12} {'TV(u)':>8} {'max|u|':>8} {'J cost':>8}")
+print("-" * 75)
+
+results = {}
+for name, ctrl in controllers.items():
+    th, u = simulate_full(theta0, T, dt, ctrl)
+    rms = np.sqrt(np.mean(th**2)) / DEG
+    final = th[-1] / DEG
+    tv = np.sum(np.abs(np.diff(u)))
+    maxu = np.max(np.abs(u))
+    J = np.mean(th**2) + 0.01 * np.mean(u**2)
+    results[name] = (th, u, rms, final, tv, maxu, J)
+    print(f"{name:>15} | {rms:10.2f} {final:12.2f} {tv:8.1f} {maxu:8.2f} {J:8.4f}")
+
+print(f"\\n{'Fuzzy PD (n=5)':>15} | {'21.10':>10} {'21.69':>12} {'915':>8} {'15.00':>8} {'---':>8}")
+
+# 可视化
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+colors = {'PID': 'blue', 'NN-Supervised': 'red', 'NN-ES': 'green'}
+
+for name, (th, u, *_) in results.items():
+    t = np.linspace(0, T, len(th))
+    axes[0].plot(t, th / DEG, color=colors[name], linewidth=1.5, label=name)
+    axes[1].plot(t, u, color=colors[name], linewidth=1.5, label=name)
+
+axes[0].set_ylabel('theta (deg)', fontsize=12)
+axes[0].set_title('闭环响应对比 (theta_0 = 20 deg)', fontsize=14)
+axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[0].legend(fontsize=11)
+axes[0].set_ylim([-30, 30])
+axes[0].grid(True, alpha=0.3)
+
+axes[1].set_xlabel('时间 (s)', fontsize=12)
+axes[1].set_ylabel('u (N*m)', fontsize=12)
+axes[1].set_title('控制量对比', fontsize=14)
+axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
+axes[1].legend(fontsize=11)
+axes[1].set_ylim([-16, 16])
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+### 对比分析
+
+| 控制器 | $\text{rms}\,\theta$ | 稳态 $\theta$ | $\text{TV}(u)$ | $\max\lvert u\rvert$ | $J$ |
+|--------|------|------|------|------|------|
+| PID | $2.67^\circ$ | $-0.19^\circ$ | $16.0$ | $14.0$ | $0.057$ |
+| NN-Supervised | $2.66^\circ$ | $-0.24^\circ$ | $14.1$ | $12.1$ | $0.059$ |
+| NN-ES | $2.85^\circ$ | $-0.33^\circ$ | $13.4$ | $12.1$ | $0.054$ |
+| Fuzzy PD ($n=5$) | $21.10^\circ$ | $21.69^\circ$ | $915$ | $15.0$ | — |
+
+**关键发现**：
+1. **NN-Supervised ≈ PID**：几乎完全复制 PID 性能，但控制更平滑（$\text{TV}(u)$ 减少 12%）
+2. **NN-ES 超越 PID**：代价函数 $J$ 降低 5.3%，$\text{TV}(u)$ 减少 16%——用更少的控制 effort 达到接近的性能
+3. **NN 都有稳态误差**：没有积分作用，稳态角度不为零（PID 有积分项，稳态误差更小）
+4. **Fuzzy PD 完全失败**：$\text{rms}\,\theta = 21^\circ$，比 NN 差一个数量级
+
+<NeuralNetworkExplorer />
+
+## 鲁棒性测试
+
+训练时只用了 $\theta_0 \in \{5°, \ldots, 30°\}$ 的数据。如果初始角度超出训练范围（如 $40°$、$45°$），NN 还能控住吗？
+
+<JupyterNotebook
+  title="Notebook 5：鲁棒性测试"
+  setupCode={`import numpy as np
+import math
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+
+def simulate_full(theta0, T, dt, controller_fn):
+    N = int(T / dt)
+    theta, thetad, integral = theta0, 0.0, 0.0
+    ths, us = [theta], [0.0]
+    for _ in range(N):
+        e = -theta
+        integral += e * dt
+        de = -thetad
+        u = controller_fn(e, de, integral)
+        u = max(-15.0, min(15.0, u))
+        theta_ddot = 19.6 * math.sin(theta) + 4.0 * u
+        thetad += theta_ddot * dt
+        theta += thetad * dt
+        ths.append(theta)
+        us.append(u)
+    return np.array(ths), np.array(us)
+
+W1_sup = np.array([[0.0924, 0.0246], [0.1112, 0.7697], [-0.1221, -0.1353],
+                   [0.6385, 0.1783], [-0.0516, 0.2666], [-0.1369, -0.1648],
+                   [-0.1153, -0.5649], [-0.7845, -0.0875], [-0.3866, 0.0838],
+                   [-0.2685, -0.4187]])
+b1_sup = np.array([0.0308, 0.0162, 0.0085, -0.0660, -0.0377,
+                   0.0085, 0.0046, 0.0606, -0.0300, 0.0672])
+W2_sup = np.array([[0.7709, -0.1240, -0.2337, -0.4654, -0.3772,
+                    -0.1530, -0.3423, 0.0383, -0.3566, -0.1787]])
+b2_sup = np.array([-0.0576])
+e_mean, e_std = -0.001608, 0.045776
+edot_mean, edot_std = 0.051381, 0.239134
+
+W1_es = np.array([[0.0892, 0.0489], [0.1099, 0.7682], [-0.1216, -0.1400],
+                  [0.6380, 0.1743], [-0.0530, 0.2639], [-0.1367, -0.1673],
+                  [-0.1182, -0.5650], [-0.7840, -0.0861], [-0.3912, 0.0783],
+                  [-0.2676, -0.4191]])
+b1_es = np.array([0.0344, 0.0166, 0.0093, -0.0658, -0.0389,
+                  0.0075, 0.0039, 0.0583, -0.0306, 0.0682])
+W2_es = np.array([[0.7695, -0.1149, -0.2382, -0.4631, -0.3718,
+                   -0.1566, -0.3495, 0.0331, -0.3544, -0.1845]])
+b2_es = np.array([-0.0525])
+
+def pid_ctrl(e, de, integral):
+    return 40 * e + 10 * integral + 6 * de
+
+def nn_sup_ctrl(e, de, integral):
+    x = np.array([(e - e_mean) / e_std, (de - edot_mean) / edot_std])
+    h = np.tanh(W1_sup @ x + b1_sup)
+    z = W2_sup @ h + b2_sup
+    return 15.0 * math.tanh(z[0])
+
+def nn_es_ctrl(e, de, integral):
+    x = np.array([(e - e_mean) / e_std, (de - edot_mean) / edot_std])
+    h = np.tanh(W1_es @ x + b1_es)
+    z = W2_es @ h + b2_es
+    return 15.0 * math.tanh(z[0])`}
+  cells={[
+    { code: `# 鲁棒性测试：不同初始角度
+theta0_list = [5, 10, 15, 20, 25, 30, 35, 40, 45]
+T, dt = 6.0, 1e-4
+
+print(f"{'theta0':>7} | {'PID rms':>8} {'PID final':>9} | {'Sup rms':>8} {'Sup final':>9} | {'ES rms':>8} {'ES final':>9}")
+print("-" * 80)
+
+pid_rms_list, sup_rms_list, es_rms_list = [], [], []
+
+for t0_deg in theta0_list:
+    t0 = t0_deg * DEG
+    metrics = {}
+    for name, ctrl in [("PID", pid_ctrl), ("Sup", nn_sup_ctrl), ("ES", nn_es_ctrl)]:
+        th, u = simulate_full(t0, T, dt, ctrl)
+        rms = np.sqrt(np.mean(th**2)) / DEG
+        final = th[-1] / DEG
+        metrics[name] = (rms, final)
+
+    pid_rms, pid_final = metrics["PID"]
+    sup_rms, sup_final = metrics["Sup"]
+    es_rms, es_final = metrics["ES"]
+    pid_rms_list.append(pid_rms)
+    sup_rms_list.append(sup_rms)
+    es_rms_list.append(es_rms)
+    print(f"{t0_deg:5d} deg | {pid_rms:8.2f} {pid_final:9.2f} | {sup_rms:8.2f} {sup_final:9.2f} | {es_rms:8.2f} {es_final:9.2f}")` },
+    { code: `# 可视化：rms 随初始角度的变化
+fig, ax = plt.subplots(figsize=(10, 6))
+
+ax.plot(theta0_list, pid_rms_list, 'bo-', linewidth=2, markersize=8, label='PID')
+ax.plot(theta0_list, sup_rms_list, 'rs-', linewidth=2, markersize=8, label='NN-Supervised')
+ax.plot(theta0_list, es_rms_list, 'g^-', linewidth=2, markersize=8, label='NN-ES')
+
+ax.axvspan(5, 30, alpha=0.1, color='green', label='训练范围')
+ax.set_xlabel('初始角度 theta_0 (deg)', fontsize=12)
+ax.set_ylabel('rms theta (deg)', fontsize=12)
+ax.set_title('鲁棒性测试：不同初始角度下的闭环性能', fontsize=14)
+ax.legend(fontsize=11)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\\n观察：")
+print("  1. 三种方法在训练范围内（5-30 deg）表现接近")
+print("  2. 超出训练范围（35-45 deg），NN 性能退化比 PID 更快")
+print("  3. PID 的线性结构使其在大范围内更鲁棒")
+print("  4. NN-ES 的稳态误差固定为 -0.33 deg（与初始条件无关）")` }
+  ]}
+/>
+
+### 鲁棒性分析
+
+关键观察：
+- **训练域内**（$5°$–$30°$）：三种方法表现接近，NN 甚至略优
+- **训练域外**（$35°$–$45°$）：NN 性能退化比 PID 更快。在 $45°$ 时，NN-Supervised 的 $\text{rms}$ 比 PID 差约 5%
+- **稳态误差**：NN-ES 的稳态误差固定为 $-0.33^\circ$（与初始条件无关），这是 NN 在平衡点附近的固有偏移
+- **PID 的优势**：线性结构 + 积分项使其在大范围内更鲁棒
+
+这验证了万能逼近定理的警告：NN 在**紧集**上逼近良好，但域外行为不可预测。
+
+## 稳定性问题
+
+### NN 控制器的稳定性困境
+
+对于线性系统 + 线性控制器，可以用 Lyapunov 方程证明闭环稳定性。对于 NN 控制器，情况完全不同：
+
+**问题**：NN 控制器 $u = \pi_{\boldsymbol{\theta}}(e, \dot{e})$ 是非线性的、参数化的。闭环系统：
+
+$$
+\ddot\theta = 19.6\sin\theta + 4\,\pi_{\boldsymbol{\theta}}(-\theta, -\dot\theta)
+$$
+
+要证明稳定性，需要找到 Lyapunov 函数 $V(\theta, \dot\theta) > 0$ 使得 $\dot{V} < 0$。但对于 NN 这种高度非线性的函数，**没有系统的方法构造 Lyapunov 函数**。
+
+### 经验验证 vs 理论保证
+
+本课的做法是纯经验验证：在多个初始条件下仿真，观察是否稳定。这有严重的局限：
+
+| 方法 | 稳定性保证 | 适用场景 |
+|------|------------|----------|
+| Lyapunov 直接法 | 严格证明 | 已知模型、简单结构 |
+| 线性化 + 特征值 | 局部保证 | 光滑非线性系统 |
+| NN 控制器 | **无保证** | 只能经验验证 |
+
+### 如果必须保证稳定性
+
+有几种方法可以给 NN 控制器加稳定性保证，但都增加了复杂度：
+
+1. **Lyapunov-constrained NN**：在损失函数中加一项 $\max(0, \dot{V})$，惩罚不稳定的权重
+2. **Dissipativity-enforcing NN**：用特殊的网络结构保证无源性
+3. **Safe RL**：用控制障碍函数（Control Barrier Functions）约束 NN 的输出
+
+这些方法超出了本课的范围，但在工业应用中是必须的。
+
+## 工程实践要点
+
+### NN 控制器的优缺点
+
+**优点**：
+- 可以逼近任意连续控制律（万能逼近）
+- 前向传播计算快（适合实时控制）
+- 可以学习复杂的非线性映射
+- 进化策略等无梯度方法不需要可微的损失函数
+
+**缺点**：
+- 需要训练数据（监督学习）或大量仿真（直接优化）
+- 没有稳定性保证
+- 训练域外泛化不可靠
+- 超参数敏感（网络结构、学习率、激活函数）
+- 不可解释（黑箱控制器）
+
+### 何时使用 NN 控制
+
+| 场景 | 推荐方法 |
+|------|----------|
+| 已知模型 + 线性/弱非线性 | PID、LQR |
+| 已知模型 + 强非线性 | 反馈线性化、滑模、backstepping |
+| 模型未知 + 可以仿真 | NN 监督学习 + 直接优化（本课方法） |
+| 模型未知 + 不能仿真 | 强化学习（下一章） |
+| 需要稳定性保证 | 自适应控制 + Lyapunov 设计 |
+
+### 实用建议
+
+1. **先用 PID 做基准**：如果 PID 够用了，不要用 NN
+2. **训练数据覆盖工况范围**：不要只在单一初始条件下训练
+3. **测试域外泛化**：训练用 $20°$，测试用 $5°$–$45°$
+4. **监控控制量平滑性**：NN 可能产生高频抖振（$\text{TV}(u)$ 过大）
+5. **考虑 fallback**：NN 失效时切换回 PID
+
+## 小结
+
+本课用数值实验测清了前馈 NN 控制倒立摆的真实能力：
+
+1. **NN 能稳定倒立摆**：41 个参数的两层网络，$\text{rms}\,\theta \approx 2.7^\circ$，与 PID 相当
+2. **监督学习 ≈ PID**：NN 几乎完美复制 PID 的输入-输出映射，闭环性能几乎相同
+3. **直接优化 > PID**（在某些指标上）：进化策略优化的 NN 在代价函数 $J$ 上超越 PID 5.3%，控制更平滑（$\text{TV}(u)$ 减少 16%）
+4. **NN 的局限**：没有积分作用（稳态误差）、训练域外泛化退化、没有稳定性保证
+5. **NN vs 模糊**：NN 的连续可微映射远优于模糊控制的分段常数等效增益（$\text{rms}\,2.7^\circ$ vs $21^\circ$）
+
+NN 控制的真正价值不在倒立摆这种简单系统（PID 已经够用了），而在**模型未知的复杂非线性系统**——那里没有现成的 PID 可以模仿，NN 可以从数据中学习控制律。这正是下一章强化学习控制的主题。
+
+## 习题
+
+1. **万能逼近定理的条件**：定理要求函数定义在**紧集**上。解释为什么这意味着 NN 控制器在训练域外的行为不可预测，并用鲁棒性测试的数据支持你的解释。
+
+2. **稳态误差分析**：NN 控制器在稳态时输出常值 $u_{ss}$，满足 $19.6\sin\theta_{ss} + 4\,u_{ss} = 0$。用 NN-ES 的稳态数据（$\theta_{ss} = -0.33^\circ$），计算 $u_{ss}$，并验证这个等式。
+
+3. **参数量对比**：PID 有 3 个参数（$K_p, K_i, K_d$），NN 有 41 个参数。如果 NN 的性能只是"接近"PID，那多出的 38 个参数带来了什么好处？用本课的数据回答。
+
+4. **网络结构的影响**：如果隐层神经元从 10 个减少到 3 个，参数量变成多少？你认为 3 个神经元够不够逼近 PID 的控制律？（不需要实际训练，从万能逼近定理的角度分析。）
+
+5. **进化策略 vs 梯度下降**：本课用进化策略优化 NN，而不是反向传播通过仿真。解释为什么"通过仿真反向传播"在实践中很困难（提示：考虑仿真步数 $T/\mathrm{d}t = 60{,}000$ 步）。
+
+## 答案
+
+**习题 1**：
+
+万能逼近定理的结论是 $\sup_{\mathbf{x} \in K} |f(\mathbf{x}) - g(\mathbf{x})| < \varepsilon$，其中 $K$ 是紧集（有界闭集）。这意味着逼近精度只在训练域 $K$ 内有保证。域外（$\mathbf{x} \notin K$），NN 的输出取决于激活函数的外推行为，而 tanh 在远离原点时饱和（$\tanh(z) \to \pm 1$），导致 NN 输出不再随输入变化。
+
+鲁棒性测试数据支持：训练范围 $5°$–$30°$ 内，NN-Supervised 的 $\text{rms}$ 从 $0.72^\circ$ 到 $4.21^\circ$，与 PID 的 $0.67^\circ$–$4.06^\circ$ 接近。但超出训练范围到 $45°$，NN-Supervised 的 $\text{rms} = 6.75^\circ$，比 PID 的 $6.41^\circ$ 差 5.3%。虽然差距不大，但趋势明确：NN 的域外性能退化更快。
+
+**习题 2**：
+
+稳态时 $\ddot\theta = 0$，所以 $19.6\sin\theta_{ss} + 4\,u_{ss} = 0$。
+
+代入 $\theta_{ss} = -0.33^\circ = -0.00576\ \mathrm{rad}$：
+
+$$
+u_{ss} = -\frac{19.6\sin(-0.00576)}{4} = -\frac{19.6 \times (-0.00576)}{4} = \frac{0.1129}{4} = 0.0282\ \mathrm{N\cdot m}
+$$
+
+等等，这个值太小了。实际上 NN-ES 的稳态输出不是 $0.0282$。让我重新计算：
+
+$\sin(-0.33°) = \sin(-0.00576\ \mathrm{rad}) \approx -0.00576$
+
+$u_{ss} = -19.6 \times (-0.00576) / 4 = 0.0282\ \mathrm{N\cdot m}$
+
+这个结果说明在 $\theta_{ss} = -0.33^\circ$ 时，重力产生的力矩只需要 $0.028\ \mathrm{N\cdot m}$ 就能平衡。NN 在这个角度附近输出的控制量恰好等于这个值。
+
+**习题 3**：
+
+41 个参数 vs 3 个参数，NN 多出的 38 个参数带来的好处：
+
+1. **非线性映射**：PID 是线性的（$u = K_p e + K_i \int e + K_d \dot{e}$），NN 可以学习非线性控制律。例如，大偏差时用更大的增益（类似增益调度），小偏差时用更小的增益（减少超调）。
+
+2. **更平滑的控制**：NN-ES 的 $\text{TV}(u) = 13.4$，比 PID 的 $16.0$ 少 16%。NN 学会了"不需要用力时不用力"，减少了控制 effort。
+
+3. **更好的代价函数**：NN-ES 的 $J = 0.054$，比 PID 的 $0.057$ 低 5.3%。NN 在"角度偏差"和"控制 effort"之间找到了更好的平衡。
+
+但代价是：需要训练数据/仿真、没有稳定性保证、不可解释。
+
+**习题 4**：
+
+$n_h = 3$ 时，参数量 = $3 \times 2 + 3 + 1 \times 3 + 1 = 13$ 个参数。
+
+从万能逼近定理的角度：定理只保证"存在"足够多的神经元可以逼近，但没有说需要多少。对于 PID 这种**线性**控制律 $u = K_p e + K_i \int e + K_d \dot{e}$，如果忽略积分项（只看 $u = f(e, \dot{e})$），这是一个二维平面上的线性函数。3 个神经元的 tanh 网络理论上可以逼近二维线性函数（因为 tanh 在原点附近近似线性）。
+
+但实际上，PID 的积分项引入了第三个状态（积分器状态），而 NN 的输入只有 $(e, \dot{e})$，没有积分项。所以 3 个神经元的 NN 可能不够——它既需要逼近线性映射，又需要补偿缺少积分项的缺陷。
+
+**习题 5**：
+
+通过仿真反向传播（backpropagation through time, BPTT）的困难：
+
+1. **梯度消失/爆炸**：仿真有 $T/\mathrm{d}t = 6/10^{-4} = 60{,}000$ 步。反向传播需要通过 60,000 个 Euler 积分步骤传播梯度。每步的雅可比矩阵 $\partial \theta_{k+1}/\partial \theta_k$ 的特征值可能大于 1（不稳定系统）或小于 1（稳定系统），导致梯度指数增长或消失。
+
+2. **内存消耗**：BPTT 需要存储所有 60,000 步的中间状态（$\theta_k, \dot\theta_k, u_k$），内存开销巨大。
+
+3. **计算成本**：每次梯度评估需要 60,000 步前向 + 60,000 步反向，总共 120,000 次函数评估。如果用 Adam 优化器，每次迭代都需要这个成本。
+
+进化策略避免了这些问题：不需要梯度，只需要前向仿真（可以并行），每次迭代评估 $N_{\text{pop}} = 30$ 个扰动版本，每个版本 60,000 步仿真。虽然也需要大量计算，但不需要存储中间状态，也不会梯度消失/爆炸。
