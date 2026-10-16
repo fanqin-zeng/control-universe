@@ -16,7 +16,6 @@ export function StateFeedbackPoleExplorer() {
     const wn = Math.sqrt(2 + k1), zt = (3 + k2) / (2 * Math.sqrt(2 + k1));
     const N = 2 + k1; // -C(Acl)^-1 B = 1/(2+k1)
     const t: number[] = [], yO: number[] = [], yC: number[] = [];
-    const e1 = Math.exp(-1), e2 = Math.exp(-2); // open-loop poles -1,-2
     for (let i = 0; i <= 500; i++) {
       const ti = (4 * i) / 500; t.push(ti);
       yO[i] = 0.5 * (1 + Math.exp(-ti) - 2 * Math.exp(-2 * ti));
@@ -53,7 +52,7 @@ export function StateFeedbackPoleExplorer() {
         <strong>读数（默认 p=−5 复现正文手算链）：</strong><br />
         反馈增益 K = [k₁, k₂] = [p²−2, −2p−3] = [{d.k1}, {d.k2}]（正文例 1/4：[23, 7]）<br />
         前馈增益 N = p² = {d.N}（正文例 5：25）· 闭环 ω_n = |p| = {d.wn.toFixed(1)} rad/s（临界阻尼）<br />
-        注意 p 越远 K 越大（|K|∝p²）——执行器饱和与噪声放大的代价，见"极点选择的工程考量"
+        注意 p 越远 K 越大（|K|∝p²）——执行器饱和与噪声放大的代价，见「极点选择的工程考量」
       </div>
     </div>
   );
