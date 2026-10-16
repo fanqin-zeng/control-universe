@@ -3,7 +3,7 @@
  * check-catalog.mjs —— 交付统计的唯一权威来源（semester-02 A7 / A8）
  *
  * 交叉核对五处：content/catalog.ts、content/<chapter>/<lesson>.mdx、
- * .agent/delivery-tracker.md、docs/discuss-log/course-*\/、components/wiki/*.tsx
+ * .agent/delivery-tracker.md、docs/discuss-log/semester-*\/、components/wiki/*.tsx
  * A8 起再基于 prereq 字段校验依赖图（环 / 悬空边 / 章序违反 / 孤儿课 / 拓扑层级）。
  *
  * 默认只读。写入需显式加 --fix-outline / --fix-tracker-stats。--topo 打印每课拓扑层级。
@@ -191,7 +191,7 @@ const logFiles = walk(P_DISCUSS, (p) => p.endsWith(".md"));
 const logKeys = new Set();
 for (const f of logFiles) {
   const rel = f.slice(P_DISCUSS.length + 1).replace(/\\/g, "/").split("/");
-  if (rel.length < 3) continue;                     // course-XX/<NN-chapter>/<NN-slug>.md
+  if (rel.length < 3) continue;                     // semester-XX/<NN-chapter>/<NN-slug>.md
   const chM = /^\d+-(.+)$/.exec(rel[1]);
   const slM = /^\d+-(.+)\.md$/.exec(rel[2]);
   if (chM && slM) logKeys.add(chM[1] + "/" + slM[1]);

@@ -1,4 +1,4 @@
-# 控制宇宙 Wiki · 第二学期（course-02）优化方案与执行计划
+# 控制宇宙 Wiki · 第二学期（semester-02）优化方案与执行计划
 
 > 版本：v1.0 ｜ 日期：2026-09-25 ｜ 状态：待用户评审
 > 范围：章节与课程结构重组、角色讨论团队升级、分阶段执行计划与推荐 Prompt
@@ -10,7 +10,7 @@
 
 - [0. 现状盘点（事实基线）](#0-现状盘点事实基线)
 - [1. 结构诊断：已证实的 11 个问题](#1-结构诊断已证实的-11-个问题)
-- [2. 新学期章节与课程结构方案](#2-新学期course-02章节与课程结构方案)
+- [2. 新学期章节与课程结构方案](#2-新学期semester-02章节与课程结构方案)
 - [3. 角色讨论团队升级方案](#3-角色讨论团队升级方案)
 - [4. 执行计划与推荐 Prompt](#4-执行计划与推荐-prompt)
 - [5. 验收门槛与统计口径](#5-验收门槛与统计口径)
@@ -206,7 +206,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 
 ---
 
-## 2. 新学期（course-02）章节与课程结构方案
+## 2. 新学期（semester-02）章节与课程结构方案
 
 ### 2.0 总览：11 章 84 课 → 16 章 155 课
 
@@ -1074,7 +1074,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
      报出：catalog 有但 MDX 缺失 / MDX 存在但 catalog 无条目 / 跨章重复 slug。
   3. 解析 .agent/delivery-tracker.md，统计 [x] 与 [ ]，与 catalog 的 status 字段
      交叉核对，报出所有不一致的课程。
-  4. 统计 docs/discuss-log/course-*/ 下的讨论日志篇数，报出"已有 MDX 但无讨论日志"
+  4. 统计 docs/discuss-log/semester-*/ 下的讨论日志篇数，报出"已有 MDX 但无讨论日志"
      的课程清单（这是 0.2 节记录的 43 课负债的自动化检测）。
   5. 统计 components/wiki/*-explorer.tsx 数量，与 MDX 中实际引用的组件名交叉核对，
      报出"已实现但未被任何 MDX 引用"和"MDX 引用但未实现"的组件。
@@ -1693,7 +1693,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   7. **交叉引用完整性**：MDX 中所有站内链接（/math/xxx、/<chapter>/<lesson>）必须
      指向 catalog 中存在的课程。报出悬空链接。特别检查所有 "📐 本文用到了" 引用行。
   8. **交付完整性**：该课是否存在对应讨论日志
-     docs/discuss-log/course-*/<chapIdx>-<chap*>/<lessonIdx>-<lessonSlug>.md。
+     docs/discuss-log/semester-*/<chapIdx>-<chap*>/<lessonIdx>-<lessonSlug>.md。
      缺失报 WARN（不阻断，但要列出）。
   9. **习题 / 答案配对**：MDX 必须同时含"习题"与"答案"两个 H2，且答案条目数
      不少于习题条目数。
@@ -2089,7 +2089,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 - 需要较多篇幅的数学概念不在原地展开，改为引用 math 章对应课程
   （格式：> 📐 本文用到了…，详见 [标题](/math/<slug>)）。
   若目标 math 课尚未编写，在讨论日志的[待定]清单中记录，并给出最小自足解释。
-- 讨论日志写入 docs/discuss-log/course-02/<章序号>-<章slug>/<课序号>-<课slug>.md
+- 讨论日志写入 docs/discuss-log/semester-02/<章序号>-<章slug>/<课序号>-<课slug>.md
   （第二学期 termNum = 02；目录不存在则创建）。
 - 遵守"叙述服从测量"：测量与预期不符时只改叙述或改实验设计，**不改数据**。
 - 完成后更新 .agent/delivery-tracker.md（打勾 + 重构摘要 + 底部统计，统计用
@@ -2226,7 +2226,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 
 | # | 门槛 | 执行者 | 自动化 |
 |---|------|-------|--------|
-| 1 | Phase 1–4 完整走通，讨论日志已写入 `docs/discuss-log/course-02/...` | 郑核 | E1 第 8 项（WARN） |
+| 1 | Phase 1–4 完整走通，讨论日志已写入 `docs/discuss-log/semester-02/...` | 郑核 | E1 第 8 项（WARN） |
 | 2 | 柯验的三方对账表全部一致，已写入讨论日志附录 A | **柯验（否决权）** | 半自动 |
 | 3 | 秦构的前端硬门槛九项全部通过，输出已写入附录 B | 秦构 | E1 + E3 |
 | 4 | 若含定量对比：何疑红队三条件放行，记录已写入附录 C | **何疑（否决权）** | 人工 |
@@ -2247,7 +2247,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 - [ ] 该章的"主线被控对象"在各课之间一致（若有），且案例课的对比基线均整定过
 - [ ] 该章有至少一门 `*-case-study` 串联全章方法
 
-### 5.3 学期级门槛（course-02 收尾时）
+### 5.3 学期级门槛（semester-02 收尾时）
 
 - [ ] `node scripts/check-catalog.mjs` 退出码 0（无任何 FAIL）
 - [ ] `npm run verify:all` 全绿（无 FAIL）

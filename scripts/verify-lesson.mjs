@@ -171,7 +171,7 @@ const consumers = [
   parseConsumer("lib/content.ts", P_LIB_CONTENT),
 ];
 
-// 讨论日志：course-XX/<NN-chapter>/<NN-slug>.md → 课程键 → 实际相对路径
+// 讨论日志：semester-XX/<NN-chapter>/<NN-slug>.md → 课程键 → 实际相对路径
 const logKeys = new Map();
 for (const f of walk(P_DISCUSS, (p) => p.endsWith(".md"))) {
   const r = f.slice(P_DISCUSS.length + 1).replace(/\\/g, "/");

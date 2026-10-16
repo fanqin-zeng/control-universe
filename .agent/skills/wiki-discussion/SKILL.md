@@ -470,7 +470,7 @@ triggers:
 ```markdown
 # 课堂讨论日志：<课程标题>（<chapter-slug> / <lesson-slug>）
 
-- 学期：course-0N
+- 学期：semester-0N
 - 章节：NN <章中文名>（<chapter-slug>）
 - 课程：NN <课程标题>（<lesson-slug>）
 - 课型：<type>
@@ -1085,7 +1085,7 @@ description: "一句话描述"
 2. **读取课型、定上场名单（B3 起）**：从 `content/catalog.ts` 的 `LessonMeta.type` 读该课课型；字段缺失时按《角色上场规则》§4 的兜底映射表判定。再按 §1（核心常设 4 人）+ §2（课型追加名单）+ §3（章主责）定出本轮上场角色，按 §5 分配到 Phase 1–4；应到而未到的角色必须在讨论日志里显式标 `[沉默-<角色>：<原因>]`
 3. 确定本轮参与的轮值领域专家（`case` / `frontier` 课型必到；章 → 轮值类的匹配规则见 [personas.md](./personas.md) 的「轮值角色」节）
 4. **按Phase 1-4流程展开讨论，一次会话里完整完成**；发言遵守《发言纪律》（Phase 2 每角色每轮最多 3 条、常态 1 条；无信息发言禁止）
-5. **讨论过程完整记录**，保存至 `docs/discuss-log/course-[termNum]/[chapNum-chapName]/[lessonNum-lessonName].md`；其中`termNum`除非用户指定，使用当前同目录下已有的最大termNum，意思是当前的学期计数；`chapNum`是当前章节在全部章节中的顺序号；`lessonNum`就是当前课程在当前章节中的顺序号。**日志文件的章节结构按《讨论日志固定结构》§1 的固定骨架写**（10 项 + 附录 A/B/C/D），§4 的 10 条口径在 E1 的 `scripts/verify-lesson.mjs` 落地前由陆阅/郑核人工核对
+5. **讨论过程完整记录**，保存至 `docs/discuss-log/semester-[termNum]/[chapNum-chapName]/[lessonNum-lessonName].md`；其中`termNum`除非用户指定，使用当前同目录下已有的最大termNum，意思是当前的学期计数；`chapNum`是当前章节在全部章节中的顺序号；`lessonNum`就是当前课程在当前章节中的顺序号。**日志文件的章节结构按《讨论日志固定结构》§1 的固定骨架写**（10 项 + 附录 A/B/C/D），§4 的 10 条口径在 E1 的 `scripts/verify-lesson.mjs` 落地前由陆阅/郑核人工核对
 6. 郑核完成最终审校与签发（签发前先过 Phase 4 第 5 步的三道门）
 7. 输出MDX格式内容，写入对应的 `content/<chapter>/<lesson>.mdx`
 
