@@ -2,7 +2,7 @@
 
 > **本文件由 `npm run check -- --fix-outline` 自动生成，请勿手工编辑。**
 > 唯一权威数据源：`content/catalog.ts`；核对脚本：`scripts/check-catalog.mjs`。
-> 生成日期：2026-10-16
+> 生成日期：2026-10-17
 
 ## 1. 导论与方法论地图 (introduction)
 
@@ -57,7 +57,7 @@
 | 4.2 | 可控性与可观性 | controllability-observability | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 4.3 | 状态反馈与极点配置 | state-feedback | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 4.4 | 状态观测器设计 | state-observer | ✅ 已交付 v1.3 | — | — | 0 | — |
-| 4.5 | 最优控制基础 | optimal-control-basics | 🟨 有正文待审校 | — | — | 0 | — |
+| 4.5 | 最优控制基础 | optimal-control-basics | ✅ 已交付 v1.3 | — | — | 0 | — |
 | 4.6 | LQR控制器 | lqr-controller | 🟨 有正文待审校 | — | — | 0 | — |
 | 4.7 | 卡尔曼滤波 | kalman-filter | 🟨 有正文待审校 | — | — | 0 | — |
 | 4.8 | 线性系统理论 | linear-system-theory | 🟨 有正文待审校 | — | — | 0 | — |
@@ -231,15 +231,15 @@
 
 - **总章节数**: 16
 - **总模块数**: 141
-- **已交付 v1.3**: 25（status = v1.3）
-- **有正文待审校**: 31（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 26（status = v1.3）
+- **有正文待审校**: 30（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 85（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 116（= draft 31 + empty 85 + 无 status 0）
+- **未完成 v1.3**: 115（= draft 30 + empty 85 + 无 status 0）
 - **有 MDX 正文**: 56
 - **catalog 小节总数**: 615
-- **讨论日志**: 17 篇（覆盖 17 门；有 MDX 无日志 39 门）
-- **交互组件**: 43 个文件（被正文引用 42，孤儿 1）
+- **讨论日志**: 18 篇（覆盖 18 门；有 MDX 无日志 38 门）
+- **交互组件**: 44 个文件（被正文引用 43，孤儿 1）
 - **prereq 边**: 148 条（环 0 · 悬空 0 · 前向 10 = 导论豁免 6 + 白名单命中 4 · 章内倒置 2 · 孤儿课 30）
 - **prereq 覆盖率**: 69 / 141 门登记了前置；零 prereq 边的章 7 个（modern、nonlinear、mpc、robust、intelligent、rl-control、multi-agent）
 - **拓扑层级**: 0..8（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

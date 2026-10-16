@@ -56,6 +56,7 @@ import { PControlTradeoffExplorer } from "@/components/wiki/p-control-tradeoff-e
 import { StateSpaceExplorer } from "@/components/wiki/state-space-explorer";
 import { StateFeedbackPoleExplorer } from "@/components/wiki/state-feedback-pole-explorer";
 import { ObserverSpeedExplorer } from "@/components/wiki/observer-speed-explorer";
+import { OptimalTimeExplorer } from "@/components/wiki/optimal-time-explorer";
 
 export const wikiComponents: MDXComponents = {
   Callout,
@@ -102,4 +103,5 @@ export const wikiComponents: MDXComponents = {
   StateSpaceExplorer,
   StateFeedbackPoleExplorer,
   ObserverSpeedExplorer,
+  OptimalTimeExplorer,
 };
