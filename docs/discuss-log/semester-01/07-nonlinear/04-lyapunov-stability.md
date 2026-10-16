@@ -1,6 +1,6 @@
 # 课堂讨论日志：李雅普诺夫稳定性（nonlinear / lyapunov-stability）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：04 李雅普诺夫稳定性（lyapunov-stability）
 - 日期：2026-09-23

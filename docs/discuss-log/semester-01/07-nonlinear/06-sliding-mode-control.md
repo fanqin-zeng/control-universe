@@ -1,6 +1,6 @@
 # 课堂讨论日志：滑模控制（nonlinear / sliding-mode-control）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：06 滑模控制（sliding-mode-control）
 - 日期：2026-09-24

@@ -1,6 +1,6 @@
 # 课堂讨论日志：模糊控制基础（intelligent / fuzzy-control-basics）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：08 智能控制（intelligent）
 - 课程：01 模糊控制基础（fuzzy-control-basics）
 - 日期：2026-09-24

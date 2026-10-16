@@ -1,6 +1,6 @@
 # 课堂讨论日志：相平面分析（nonlinear / phase-plane）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：02 相平面分析（phase-plane）
 - 日期：2026-09-25

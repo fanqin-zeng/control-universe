@@ -1,6 +1,6 @@
 # 课堂讨论日志：自适应控制基础（nonlinear / adaptive-control-basics）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：08 自适应控制基础（adaptive-control-basics）
 - 日期：2026-09-24

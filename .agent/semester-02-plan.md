@@ -44,7 +44,7 @@
 
 ### 0.2 讨论日志覆盖
 
-`docs/discuss-log/course-01/` 下只有 `07-nonlinear`（8 篇）与 `08-intelligent`（3 篇），合计 13 个 md 文件。
+`docs/discuss-log/semester-01/` 下只有 `07-nonlinear`（8 篇）与 `08-intelligent`（3 篇），合计 13 个 md 文件。
 
 即：**已写 56 课中，43 课没有讨论日志**。而项目记忆明确记录过"用户因为『没有固化课堂记录』要求重写已交付课程"的事故——`describing-function`、`phase-plane`、`nonlinear-characteristics` 三课因此整课重写。这是第二学期最大的一笔隐性负债。
 
@@ -1354,14 +1354,14 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 - [x] **B4 · 引入发言纪律与讨论日志固定结构**（2026-09-26 完成。`SKILL.md` 490 → **713 行**（`wc -l` 口径，+223），在「讨论流程」与「输出格式规范」之间插入两节：《发言纪律（B4 起）》`:351`–`:414`（4 小节）与《讨论日志固定结构（B4 起）》`:416`–`:562`（4 小节，含一份 95 行的 markdown 骨架模板）；另同步 5 处内部指针。验收：M1 四项逐条落地（配额 / 沉默标记 + 3 示例 / 禁止的发言类型 + ✗✓ 改写例 / 流程标记登记）；Prompt 的 10 项内容全部映射到骨架位置并列出**8 处与既有实践的取舍及理由**（取舍依据是对 11 篇日志的实测统计，不是印象）；重读 `02-phase-plane.md` 与 `01-fuzzy-control-basics.md` 后**采纳了既有实践里更好的两处**（Phase 4 汇总行的 P0/P1 分级、`[郑核-复核签发]` 标记）；`npm run check` 退出码 0、PASS 17 / WARN 36 / FAIL 0 与 B3 后完全一致；只改 SKILL.md 一个文件（mtime 实证）。新发现 4 处见下方补记。）
   - 做什么：把 3.7 M1 写入 SKILL.md；规定讨论日志的固定章节结构（含出席与沉默表）
   - 涉及文件：`.agent/skills/wiki-discussion/SKILL.md`
-  - 验收：讨论日志结构与 `docs/discuss-log/course-01/` 既有实践不冲突
+  - 验收：讨论日志结构与 `docs/discuss-log/semester-01/` 既有实践不冲突
 
   **推荐 Prompt：**
   ```
   项目：D:/Workspace/control-universe。先读 .agent/skills/wiki-discussion/SKILL.md 的
   "讨论标记约定""输出格式规范""注意事项"三节，读 2 篇现有讨论日志
-  （docs/discuss-log/course-01/07-nonlinear/02-phase-plane.md 与
-  docs/discuss-log/course-01/08-intelligent/01-fuzzy-control-basics.md）了解既有实践，
+  （docs/discuss-log/semester-01/07-nonlinear/02-phase-plane.md 与
+  docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md）了解既有实践，
   再读 .agent/semester-02-plan.md 的 3.7 M1 与 3.3 陆阅条目。
 
   任务：在 SKILL.md 中新增"发言纪律"与"讨论日志固定结构"两节：
@@ -1570,7 +1570,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   **推荐 Prompt：**
   ```
   项目：D:/Workspace/control-universe。先读 .agent/skills/wiki-discussion/SKILL.md 的
-  Phase 3 与 Phase 4、docs/discuss-log/course-01/08-intelligent/01-fuzzy-control-basics.md、
+  Phase 3 与 Phase 4、docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md、
   .agent/semester-02-plan.md 的 3.3 何疑条目与 3.7 M4。
 
   前置条件：B1 已完成（何疑人设已写入 personas.md）。
@@ -1720,7 +1720,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   >
   > **④ 新发现（Q6 精确化）：两门 mpc 课的正文在渲染时被整段吞掉。** `content/mpc/mpc-principle.mdx` 源码 8 个 H2、渲染后 `<h2>` 只有 **1** 个、HTML 里 **2** 处 `katex-error`；`content/mpc/receding-horizon.mdx` 源码 11 个 H2、渲染后只有 **2** 个、同样 2 处 `katex-error`。根因是 fix-012 的**闭合形态**：两课的 `:60` 与 `:73` 都写成 `\end{aligned}}$$`（闭合 `$$` 与前一行内容同行）。用仓库自己的 `micromark` + `micromark-extension-math` 实测九种形态确认：**闭合 `$$` 必须在行首**，否则 math-flow 永不关闭、其后全文被当数学内容吞掉；**开启 `$$` 后面带内容是合法的**（能正常渲染）。修法各一行：把闭合 `$$` 挪到下一行。两门都是 `status=draft`、不在 19 门已交付里，所以此前所有人工门槛都没碰到它们。**Q6 从「2 个 mpc 页面被截断」升级为有 file:line、有根因、有一行修法的条目。**
   >
-  > **⑤ 新发现：一门已签发的课过不了 M3 第 5 项——这是「清单在纸面上存在、在实践里空转」的第一个实证。** `nonlinear/describing-function`（`status="v1.3"`）引用的两个组件，`components/wiki/describing-function-explorer.tsx:67` 与 `components/wiki/nyquist-limit-cycle-explorer.tsx:137` 都写成 `const option: echarts.EChartsOption = {`（裸对象字面量）再 `useECharts(option)`，**都不是 `useMemo` 产出**——正是 B8 预登为 **fix-019** 的 hydration 崩溃模式、也正是《前端交付硬门槛（B6 起）》§1 第 5 项明写的判据。而该课第 8 项 PASS：它有讨论日志，且 `docs/discuss-log/course-01/07-nonlinear/03-describing-function.md:116` 就是 `[郑核-签发]`。**即它走完了完整的多角色流程并被签发，日志里 `useMemo` 出现 0 次**，仍带着一个九项清单里明写的违规上线。B6 批注 ③ 当时预言「第 5 项与第 8 项子项 4 目前没有可运行的工具 → 它们在纸面上存在、在实践里空转」，E1 把工具补上之后第一次抓到了实例。全仓另有 1 处同类：孤儿组件 `BodeMarginsExplorer`（`components/wiki/bode-margins-explorer.tsx:111` 的 `yAxis` 是 value 轴却缺 `min` / `max`）——Q3 长期在册的那个孤儿现在有了具体缺陷，**删或补都行，但不能维持现状**（~~它已在两个注册表里注册，任何课一旦引用就带着轴漂移上线~~ → **E2 更正 2026-09-26：括号里这句是编造的，实测为假**。`BodeMarginsExplorer` 在 E2 之前的 `mdx-components.tsx` 与 `lib/content.ts` 里各命中 **0** 次，全仓只出现在自己的实现文件 `components/wiki/bode-margins-explorer.tsx`（`:97` 定义、`:111` 违规轴）——即它**从未被任何注册表登记过**。所以真实后果与原注解相反：任何课一旦引用它，先撞上的是 fix-015 的 500「Expected component `BodeMarginsExplorer` to be defined」，轴漂移要等它被登记进单一来源之后才会浮现。E2 已把 `verify-lesson.mjs` 汇总里那句「孤儿交互组件（已实现**已注册**…）」改成「已实现、全仓无 MDX 引用」并追加逐组件的登记状态；E2 的单一来源 `lib/wiki-components.ts` **故意不登记它**（自行裁定：登记等于替 Q3 的「删或补」裁决预设答案）。**教训同 ③：写「已注册 / 已记录」这类断言前必须 grep 实测，否则是把推测当测量。**）
+  > **⑤ 新发现：一门已签发的课过不了 M3 第 5 项——这是「清单在纸面上存在、在实践里空转」的第一个实证。** `nonlinear/describing-function`（`status="v1.3"`）引用的两个组件，`components/wiki/describing-function-explorer.tsx:67` 与 `components/wiki/nyquist-limit-cycle-explorer.tsx:137` 都写成 `const option: echarts.EChartsOption = {`（裸对象字面量）再 `useECharts(option)`，**都不是 `useMemo` 产出**——正是 B8 预登为 **fix-019** 的 hydration 崩溃模式、也正是《前端交付硬门槛（B6 起）》§1 第 5 项明写的判据。而该课第 8 项 PASS：它有讨论日志，且 `docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md:116` 就是 `[郑核-签发]`。**即它走完了完整的多角色流程并被签发，日志里 `useMemo` 出现 0 次**，仍带着一个九项清单里明写的违规上线。B6 批注 ③ 当时预言「第 5 项与第 8 项子项 4 目前没有可运行的工具 → 它们在纸面上存在、在实践里空转」，E1 把工具补上之后第一次抓到了实例。全仓另有 1 处同类：孤儿组件 `BodeMarginsExplorer`（`components/wiki/bode-margins-explorer.tsx:111` 的 `yAxis` 是 value 轴却缺 `min` / `max`）——Q3 长期在册的那个孤儿现在有了具体缺陷，**删或补都行，但不能维持现状**（~~它已在两个注册表里注册，任何课一旦引用就带着轴漂移上线~~ → **E2 更正 2026-09-26：括号里这句是编造的，实测为假**。`BodeMarginsExplorer` 在 E2 之前的 `mdx-components.tsx` 与 `lib/content.ts` 里各命中 **0** 次，全仓只出现在自己的实现文件 `components/wiki/bode-margins-explorer.tsx`（`:97` 定义、`:111` 违规轴）——即它**从未被任何注册表登记过**。所以真实后果与原注解相反：任何课一旦引用它，先撞上的是 fix-015 的 500「Expected component `BodeMarginsExplorer` to be defined」，轴漂移要等它被登记进单一来源之后才会浮现。E2 已把 `verify-lesson.mjs` 汇总里那句「孤儿交互组件（已实现**已注册**…）」改成「已实现、全仓无 MDX 引用」并追加逐组件的登记状态；E2 的单一来源 `lib/wiki-components.ts` **故意不登记它**（自行裁定：登记等于替 Q3 的「删或补」裁决预设答案）。**教训同 ③：写「已注册 / 已记录」这类断言前必须 grep 实测，否则是把推测当测量。**）
   >
   > **⑥ 新发现（Q25）：19 门已交付课里有 8 门没有讨论日志，且全部集中在 `classic` 章**（system-modeling / transfer-function / time-domain-analysis / stability-analysis / frequency-domain-analysis / root-locus / pid-controller / compensator-design）。全仓 `docs/discuss-log/` 下实测只有 **11** 个 `.md`，全在 `07-nonlinear`(8) 与 `08-intelligent`(3) 两个目录里。**已排除脚本假阴性**：`find docs/discuss-log -type f` 实测就是这 11 个文件，没有别处存放的 classic 日志。日志缺失本身不是新事实（§0.2 的「45 门有 MDX 但无日志」早已在册、`npm run check` 也报），**sharper 的部分是这 45 门里有 8 门已被标成 `v1.3` 并在 tracker 打勾**——B4 要求每课交付 4 份档案（讨论日志 + 柯验三方对账表 + 何疑红队放行记录 + 秦构九项硬门槛输出），这 8 门一份都没有，即 **classic 章的「已交付」状态是靠正文存在性给的、不是靠流程给的**。E1 按 Prompt 只报 WARN（第 8 项不阻断签发），是否升级为「8 门补做流程或降级 status」需用户裁决。
   >
@@ -1955,7 +1955,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 
 - [ ] **C0 · 建立交付档案模板并为 43 门无日志课程补档**
   - 做什么：设计精简交付档案模板；先做 3 门样本待用户确认详略，再批量补 40 门；产出 C0/C1/C2 分级汇总
-  - 涉及文件：新建 `docs/discuss-log/course-01/_template-delivery-dossier.md` + 43 份档案
+  - 涉及文件：新建 `docs/discuss-log/semester-01/_template-delivery-dossier.md` + 43 份档案
   - 验收：43 门课全部有档案；E1 脚本第 8 项检查从 WARN 转 PASS；输出分级汇总表
 
   **推荐 Prompt（先做样本，确认后再批量）：**
@@ -1963,9 +1963,9 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   项目：D:/Workspace/control-universe。先读：
   - .agent/skills/wiki-discussion/SKILL.md 的 Phase 1-4、"使用方式"第 4 条
     （讨论日志路径规则）、以及 B4 新增的"讨论日志固定结构"一节
-  - docs/discuss-log/course-01/07-nonlinear/ 下任意 2 篇（了解完整讨论日志的实际
+  - docs/discuss-log/semester-01/07-nonlinear/ 下任意 2 篇（了解完整讨论日志的实际
     结构与详略程度）
-  - docs/discuss-log/course-01/08-intelligent/ 下任意 1 篇
+  - docs/discuss-log/semester-01/08-intelligent/ 下任意 1 篇
   - .agent/fix-logs/INDEX.md
   - .agent/semester-02-plan.md 的 0.2 节与阶段 C 的分级偿还策略
 
@@ -1977,7 +1977,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
   为 43 门课补写完整讨论日志成本过高，因此采用精简的"交付档案"作为过渡性补救。
 
   任务：
-  1. 设计模板 docs/discuss-log/course-01/_template-delivery-dossier.md，包含：
+  1. 设计模板 docs/discuss-log/semester-01/_template-delivery-dossier.md，包含：
      - 课程标识（章 / 课 slug、标题、当前状态、档案类型 = 补档、补档日期）
      - **补档声明**：明确写出"本档案为事后补写，非当时讨论的实时记录"及原因
      - 教学目标与前置依赖（从 catalog 的 prereq 字段提取）
@@ -2000,7 +2000,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
      模板对"结构已改"课程的处理）、modern/state-space（理论课代表）。
      产出后**停下来请用户确认模板详略是否合适**，确认后再批量执行。
   3. 批量为其余 40 门课补档，路径严格遵循
-     docs/discuss-log/course-01/<章序号>-<章slug>/<课序号>-<课slug>.md
+     docs/discuss-log/semester-01/<章序号>-<章slug>/<课序号>-<课slug>.md
      （章序号与课序号按重组后的新目录，见 semester-02-plan.md 2.0 表）。
   4. 每门课的档案必须基于**实际阅读该课 MDX 全文**产出，禁止用标题推测内容。
      数值断言清单必须逐条从正文摘出，不得省略、不得写"等等"。
@@ -2058,7 +2058,7 @@ math 章只有 1 课（`complex-numbers`）。但 `.agent/skills/wiki-discussion
 5. .agent/semester-02-plan.md 的 <相关章节号，如 2.4、2.5> 节与 3.6 节（角色矩阵）、
    3.7 节（M2/M3/M4 机制）
 6. docs/semester-02/03-glossary.md 与 04-notation.md（术语与符号权威表，若 E4 已就绪）
-7. 本课在 docs/discuss-log/course-01/ 下的交付档案（C0 产出，含分级建议与数值断言清单）
+7. 本课在 docs/discuss-log/semester-01/ 下的交付档案（C0 产出，含分级建议与数值断言清单）
 8. 若 E1 已就绪：先跑 node scripts/verify-lesson.mjs <chapter>/<lesson> 并把报告作为
    起点，FAIL 项必须先修
 

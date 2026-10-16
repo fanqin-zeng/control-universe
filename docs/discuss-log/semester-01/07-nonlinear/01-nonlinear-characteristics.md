@@ -1,6 +1,6 @@
 # 课堂讨论日志：非线性系统特性（nonlinear / nonlinear-characteristics）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：01 非线性系统特性（nonlinear-characteristics）
 - 日期：2026-09-25

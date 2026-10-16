@@ -169,7 +169,7 @@ modern  10 | mpc               8 | nonlinear   8 | robust 8      → 合计 56
 
 ```
 docs/discuss-log/
-└── course-01/
+└── semester-01/
     ├── 07-nonlinear/     8 篇
     └── 08-intelligent/   3 篇
                           ─────

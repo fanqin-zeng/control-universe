@@ -1,6 +1,6 @@
 # 课堂讨论日志：反馈线性化（nonlinear / feedback-linearization）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：05 反馈线性化（feedback-linearization）
 - 日期：2026-09-23

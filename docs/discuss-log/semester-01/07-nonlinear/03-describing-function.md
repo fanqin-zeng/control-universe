@@ -1,6 +1,6 @@
 # 课堂讨论日志：描述函数法（nonlinear / describing-function）
 
-- 学期：course-01
+- 学期：semester-01
 - 章节：07 非线性控制（nonlinear）
 - 课程：03 描述函数法（describing-function）
 - 日期：2026-09-25
@@ -125,7 +125,7 @@
 | 交互组件 | Nyquist 默认显示 $A=0.4241$、$\omega=1.4151$（手算 $0.4244$/$1.4142$）；$K=2\to A=0.8482$（手算 $0.8488$）；切饱和 + $K=2\to$ "无交点"；DF explorer 改 $k$/换类型后 canvas 校验和 $461217\to475040$、第二滑块按类型显隐 |
 | 控制台 | 仅 React DevTools info，无 error/warning（`交点 series not exists` 已消除） |
 | 结构检查 | 0 个 ```python、0 个 `language=`、0 个 `savefig`、0 个 ipywidgets、CR 0、TAB 0、`` `}, `` 0 处、`np.trapz` 0 处 |
-| 讨论日志 | 本文件（`docs/discuss-log/course-01/07-nonlinear/03-describing-function.md`） |
+| 讨论日志 | 本文件（`docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md`） |
 | 交付记录 | `.agent/delivery-tracker.md` 描述函数法一行更新（保持 `[x]`，统计 16/83、30 组件不变——本课复用已有组件） |
 | fix-logs | 新增 `2026-09-25-014.md` + INDEX 行 |
 

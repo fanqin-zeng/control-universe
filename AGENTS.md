@@ -54,7 +54,7 @@ lib/wiki-components.ts       # ★ 组件注册唯一来源（E2 根治双注册
 lib/content.ts               # next-mdx-remote/rsc 编译课程页（走 wikiComponents）
 lib/lesson-graph.ts          # prereq 依赖图
 docs/
-  discuss-log/course-01/     # ★ 讨论日志（每课一篇，Phase 1–4 全程记录）——"课堂记录固化"
+  discuss-log/semester-01/   # ★ 讨论日志（每课一篇，Phase 1–4 全程记录）——"课堂记录固化"
   semester-02/               # 01 结构诊断 / 02 数学依赖图谱 / 03 术语表 / 04 符号约定
   to-online/                 # 待上线素材
 scripts/                     # check-catalog / verify-lesson / nb-cells / glossary / serve / jupyter_server
@@ -69,8 +69,8 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 
 | 代际 | 含义 | 角色团队 | 标志性变化 |
 |------|------|---------|-----------|
-| **course-01**（第一学期） | 初版内容生产，已结束 | 14 名角色，全员到会 | 交付 classic 8 + nonlinear 8 + intelligent 3 = 19 门 v1.3；讨论日志在 `docs/discuss-log/course-01/`（现存 11 篇，覆盖 nonlinear 8 + intelligent 3） |
-| **course-02**（semester-02，进行中） | 结构重构 + 团队升级代 | **22 名具名角色 + 14 类轮值领域专家**，按课型上场 7–10 人 | 章节结构 11 章 84 课 → 目标 16 章 155 课；新增验证/体验层角色；固化 M1–M5 五大质量机制 |
+| **semester-01**（第一学期） | 初版内容生产，已结束 | 14 名角色，全员到会 | 交付 classic 8 + nonlinear 8 + intelligent 3 = 19 门 v1.3；讨论日志在 `docs/discuss-log/semester-01/`（现存 11 篇，覆盖 nonlinear 8 + intelligent 3） |
+| **semester-02**（进行中） | 结构重构 + 团队升级代 | **22 名具名角色 + 14 类轮值领域专家**，按课型上场 7–10 人 | 章节结构 11 章 84 课 → 目标 16 章 155 课；新增验证/体验层角色；固化 M1–M5 五大质量机制 |
 
 ### 5.1 学期计划文件（用户要求找到的那份）
 

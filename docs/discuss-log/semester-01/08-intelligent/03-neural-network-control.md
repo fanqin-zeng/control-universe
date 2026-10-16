@@ -1,7 +1,7 @@
 # 讨论日志：intelligent/neural-network-control（神经网络控制）
 
 - 日期：2026-09-25
-- 课程：course-01 / 08-intelligent / 03-neural-network-control
+- 课程：semester-01 / 08-intelligent / 03-neural-network-control
 - 版本：v2（重写，扩展 NN 分类与深度网络/RL 内容，升级交互组件）
 - 参与角色：陈控、林矩、卫韧、方数、周联、何仿、吴规、孙助、郑核、苏绘、小初、李稳、赵工、钱锐、[领域-自动驾驶]
 
