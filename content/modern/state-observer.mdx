@@ -222,7 +222,7 @@ $\bar{k}_1 = 17$，$\bar{k}_2 = 47$。$\bar{K} = \begin{bmatrix} 17 & 47 \end{bm
 <JupyterNotebook
   title=" 动手实验：观测器增益设计（对偶原理）"
   setupCode={`import numpy as np
-from control import place`}
+from control import place, acker`}
   cells={[
     { code: `# ===== 利用对偶原理设计观测器 =====
 A = np.array([[0, 1], [-2, -3]])
@@ -232,7 +232,7 @@ C = np.array([[1, 0]])
 obs_poles = [-15, -15]
 
 # 利用对偶：place(A', C', poles) 给出 K_bar，L = K_bar'
-L = place(A.T, C.T, obs_poles).T
+L = acker(A.T, C.T, obs_poles).reshape(-1, 1)  # acker 返回一维，恢复 n×1  # 二重根须用 acker（place 拒绝重根，见 state-feedback 课）
 print(f"观测器增益 L = \\n{L}")
 
 # 验证观测器极点
@@ -342,7 +342,7 @@ $N = 9$
 matplotlib.use('module://matplotlib_inline.backend_inline')
 import numpy as np
 import matplotlib.pyplot as plt
-from control import ss, place, step_response
+from control import ss, place, acker, step_response
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False`}
   cells={[
@@ -352,7 +352,7 @@ B = np.array([[0], [1]])
 C = np.array([[1, 0]])
 
 # 观测器增益（例1结果）
-L = place(A.T, C.T, [-15, -15]).T
+L = acker(A.T, C.T, [-15, -15]).reshape(-1, 1)  # acker 返回一维，恢复 n×1  # 二重根须用 acker
 
 # 状态反馈增益（上一章的结果）
 K = np.array([[7, 1.2]])
@@ -376,7 +376,7 @@ t = np.linspace(0, 3, 500)
 t_out, y_out = step_response(sys_closed, T=t)
 
 plt.figure(figsize=(10, 6))
-plt.plot(t_out, y_out[0], 'b-', linewidth=2, label='输出 y(t)')
+plt.plot(t_out, np.squeeze(y_out), 'b-', linewidth=2, label='输出 y(t)')
 plt.axhline(y=1.0, color='k', linestyle=':', alpha=0.5, label='参考值 r=1')
 plt.xlabel('Time (s)', fontsize=12)
 plt.ylabel('y(t)', fontsize=12)
@@ -385,57 +385,10 @@ plt.legend(fontsize=11)
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()` },
-    { code: `# ===== 状态估计的收敛过程（交互）=====
-from scipy.integrate import solve_ivp
-from ipywidgets import interact, FloatSlider
-
-def plot_convergence(obs_speed):
-    obs_poles = [obs_speed, obs_speed]
-    L_local = place(A.T, C.T, obs_poles).T
-
-    def closed_loop(t, z):
-        x = z[:2]
-        x_hat = z[2:]
-        r = 1.0
-        y = C @ x
-        u = -K.flatten() @ x_hat + N * r
-        x_dot = A @ x + B.flatten() * u
-        xhat_dot = (A - L_local @ C) @ x_hat + B.flatten() * u + L_local.flatten() * y
-        return np.concatenate([x_dot, xhat_dot])
-
-    x0_true = np.array([1.0, -0.5])
-    x0_est = np.array([0.0, 0.0])
-    sol = solve_ivp(closed_loop, [0, 2], np.concatenate([x0_true, x0_est]),
-                    t_eval=np.linspace(0, 2, 500))
-
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(sol.t, sol.y[0], 'b-', linewidth=2, label='真实 x₁')
-    plt.plot(sol.t, sol.y[2], 'r--', linewidth=2, label='估计 x̂₁')
-    plt.xlabel('Time (s)')
-    plt.ylabel('x₁')
-    plt.title('状态 x₁ 的估计')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-
-    plt.subplot(1, 2, 2)
-    plt.plot(sol.t, sol.y[1], 'b-', linewidth=2, label='真实 x₂')
-    plt.plot(sol.t, sol.y[3], 'r--', linewidth=2, label='估计 x̂₂')
-    plt.xlabel('Time (s)')
-    plt.ylabel('x₂')
-    plt.title('状态 x₂ 的估计')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-
-    plt.suptitle(f'观测器极点 = {obs_speed:.0f} (控制极点实部 ≈ 2.1)', fontsize=13)
-    plt.tight_layout()
-    plt.show()
-
-interact(plot_convergence,
-    obs_speed=FloatSlider(min=-5, max=-30, step=1, value=-15,
-                          description='观测器极点'))` },
   ]}
 />
+
+<ObserverSpeedExplorer />
 
 ## 降阶观测器
 
