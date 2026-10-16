@@ -49,6 +49,9 @@ import NeuralNetworkExplorer from "@/components/wiki/neural-network-explorer";
 import { TraceDetExplorer } from "@/components/wiki/trace-det-explorer";
 import { PhasePlaneExplorer } from "@/components/wiki/phase-plane-explorer";
 import { NonlinearityExplorer } from "@/components/wiki/nonlinearity-explorer";
+import { ClosedLoopFreqExplorer } from "@/components/wiki/closed-loop-freq-explorer";
+import { DelayMarginExplorer } from "@/components/wiki/delay-margin-explorer";
+import { SensitivityExplorer } from "@/components/wiki/sensitivity-explorer";
 
 export const wikiComponents: MDXComponents = {
   Callout,
@@ -88,4 +91,7 @@ export const wikiComponents: MDXComponents = {
   TraceDetExplorer,
   PhasePlaneExplorer,
   NonlinearityExplorer,
+  ClosedLoopFreqExplorer,
+  DelayMarginExplorer,
+  SensitivityExplorer,
 };

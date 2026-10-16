@@ -7,7 +7,7 @@ description: 用增益裕度和相位裕度评估系统的相对稳定性——�
 
 ## 为什么需要频率响应法
 
-上一章（[稳定性分析](/classic/stability-analysis)）告诉我们系统"稳不稳定"。但工程师的问题不止于此：
+[根轨迹法](/classic/root-locus)回答了"极点怎么随增益移动"，[稳定性分析](/classic/stability-analysis)告诉我们系统"稳不稳定"。但工程师的问题不止于此：
 
 **系统离不稳定有多远？**
 
@@ -111,9 +111,9 @@ $M_r$ 越大，时域响应的超调越大。
 | $M_r$（dB） | $\zeta$ | $M_p$ |
 |:---:|:---:|:---:|
 | 0 dB | 0.707 | 4.3% |
-| 2 dB | 0.59 | 10% |
-| 5 dB | 0.43 | 22% |
-| 10 dB | 0.30 | 37% |
+| 0.4 dB | 0.59 | 10% |
+| 2.2 dB | 0.43 | 22% |
+| 4.9 dB | 0.30 | 37% |
 
 ### 从零频到带宽
 
@@ -124,61 +124,7 @@ $M_r$ 越大，时域响应的超调越大。
 - **高频段**（$\omega \gg \omega_b$）：$|T| \to 0$，高频噪声被衰减
 - **带宽** $\omega_b$：$|T|$ 下降到 $1/\sqrt{2}$（$-3$ dB）的频率，决定响应速度
 
-<JupyterNotebook
-  title="🧪 闭环频率响应：谐振峰值与带宽"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import lti, bode, step`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-wn = 10
-
-def plot_closed_loop_freq(zeta):
-    sys_closed = lti([wn**2], [1, 2*zeta*wn, wn**2])
-    w = np.logspace(-1, 2, 500)
-    mag, phase = bode(sys_closed, w=w, plot=False)
-
-    Mr = np.max(10**(mag/20))
-    Mr_db = 20 * np.log10(Mr) if Mr > 0 else -np.inf
-
-    mag_linear = 10**(mag/20)
-    wb_idx = np.where(mag_linear <= 1/np.sqrt(2))[0]
-    wb = w[wb_idx[0]] if len(wb_idx) > 0 else w[-1]
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax1.semilogx(w, mag, linewidth=2, color='blue')
-    ax1.axhline(y=-3, color='orange', linestyle='--', alpha=0.5, label='-3 dB (带宽)')
-    ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.3)
-    ax1.set_xlabel('ω (rad/s)')
-    ax1.set_ylabel('幅值 (dB)')
-    ax1.set_title(f'闭环幅频特性 (ζ={zeta:.2f})')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    ax1.set_ylim(-20, 15)
-
-    t = np.linspace(0, 2, 1000)
-    _, y = step(sys_closed, T=t)
-    ax2.plot(t, y, linewidth=2, color='blue')
-    ax2.axhline(y=1, color='gray', linestyle=':', alpha=0.5)
-    ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('y(t)')
-    ax2.set_title(f'闭环阶跃响应 (ζ={zeta:.2f})')
-    ax2.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-    print(f"ζ={zeta:.3f}: Mr={Mr_db:.1f} dB, ωb={wb:.2f} rad/s, 超调量={max(np.max(y)-1, 0)*100:.1f}%")
-
-interact(plot_closed_loop_freq,
-         zeta=FloatSlider(min=0.1, max=1.5, step=0.01, value=0.5,
-                          description='ζ', continuous_update=False));` },
-  ]}
-/>
+<ClosedLoopFreqExplorer />
 
 ## 时滞对频率响应的影响
 
@@ -221,19 +167,19 @@ $$
 
 系统 $G(s) = \frac{10}{s(s+1)}$，无时滞时：
 
-$\omega_c$：$|G(j\omega_c)| = \frac{10}{\omega_c\sqrt{\omega_c^2+1}} = 1$，解得 $\omega_c \approx 2.87$ rad/s。
+$\omega_c$：$|G(j\omega_c)| = \frac{10}{\omega_c\sqrt{\omega_c^2+1}} = 1$，解得 $\omega_c^4+\omega_c^2-100=0$，$\omega_c \approx 3.08$ rad/s。
 
-$\angle G(j2.87) = -90° - \arctan(2.87) = -90° - 70.8° = -160.8°$
+$\angle G(j3.08) = -90° - \arctan(3.08) = -90° - 72.0° = -162.0°$
 
-$PM_0 = 180° - 160.8° = 19.2°$
+$PM_0 = 180° - 162.0° = 18.0°$
 
 最大允许时滞：
 
 $$
-L_{\max} = \frac{19.2}{2.87} \times \frac{\pi}{180°} = \frac{19.2 \times 0.01745}{2.87} = 0.117 \text{ s}
+L_{\max} = \frac{18.0}{3.08} \times \frac{\pi}{180°} \approx 0.102 \text{ s}
 $$
 
-如果实际时滞 $L > 0.117$ s，系统就不稳定了。
+如果实际时滞 $L > 0.102$ s，系统就不稳定了。
 
 ### 时滞的处理方法
 
@@ -247,56 +193,7 @@ $$
 
 近似后变成有理函数，可以用 Routh 判据分析稳定性。但注意：Padé 近似引入了右半平面零点，这是时滞系统的固有特征。
 
-<JupyterNotebook
-  title="🧪 时滞对频率响应的影响"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import lti, bode, margin`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-def plot_delay_effect(L):
-    sys_no_delay = lti([10], [1, 1, 0])
-    w = np.logspace(-2, 2, 500)
-    mag, phase = bode(sys_no_delay, w=w, plot=False)
-    phase_with_delay = phase - np.degrees(w * L)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax1.semilogx(w, mag, linewidth=2, color='blue')
-    ax1.set_xlabel('ω (rad/s)')
-    ax1.set_ylabel('幅值 (dB)')
-    ax1.set_title(f'幅频特性（时滞不改变幅值）')
-    ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
-    ax1.legend([f'L={L}s' if L > 0 else '无时滞'])
-    ax1.grid(True, alpha=0.3)
-
-    ax2.semilogx(w, phase_with_delay, linewidth=2, color='blue')
-    ax2.set_xlabel('ω (rad/s)')
-    ax2.set_ylabel('相位 (°)')
-    ax2.set_title(f'相频特性（L={L}s）')
-    ax2.axhline(y=-180, color='gray', linestyle=':', alpha=0.5)
-    ax2.legend([f'L={L}s' if L > 0 else '无时滞'])
-    ax2.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-    gm, pm, wg, wc = margin(sys_no_delay)
-    L_max = pm / wc * np.pi / 180
-    print(f"无时滞系统: PM={pm:.1f}°, ωc={wc:.2f} rad/s")
-    print(f"最大允许时滞: L_max = {L_max:.4f} s")
-    if L > 0:
-        pm_new = pm - np.degrees(wc * L)
-        print(f"L={L}s 时有效相位裕度: PM_eff = {pm_new:.1f}° {'✓ 稳定' if pm_new > 0 else '✗ 不稳定'}")
-
-interact(plot_delay_effect,
-         L=FloatSlider(min=0, max=0.5, step=0.01, value=0.05,
-                       description='L (s)', continuous_update=False));` },
-  ]}
-/>
+<DelayMarginExplorer />
 
 ## 工程实例：从Bode图设计增益
 
@@ -333,25 +230,25 @@ $1 < \omega < 10$：斜率 $-40$ dB/dec
 
 $\omega > 10$：斜率 $-60$ dB/dec
 
-从 $(1, 40\text{ dB})$ 开始，以 $-40$ dB/dec 下降，到 0 dB 需要下降 40 dB：
+从 $(1, 40\text{ dB})$ 开始，以 $-40$ dB/dec 下降，到 0 dB 需要下降 40 dB，渐近线估算 $\omega_c \approx 10$ rad/s。
+
+**但这里渐近线法失准了**：两个转折频率（1 与 10）相距仅一个十倍频程，$-40$ 段还没走完就叠上了 $-60$ 段，转折点附近还有约 $-3$ dB 的修正。精确求解 $|G(j\omega_c)| = 1$（即 $\omega_c^2(\omega_c^2+1)(\omega_c^2+100) = 100^2$）得：
 
 $$
-\log_{10}(\omega_c/1) = 40/40 = 1 \quad \Rightarrow \quad \omega_c \approx 10
+\omega_c \approx 3.0 \text{ rad/s}
 $$
 
-更精确计算：$\omega_c \approx 9.5$ rad/s。
-
-在 $\omega_c \approx 9.5$ 处的相位：
+在 $\omega_c \approx 3.0$ 处的相位：
 
 $$
-\angle G(j9.5) = -90° - \arctan(9.5) - \arctan(0.95) \approx -90° - 84° - 44° = -218°
+\angle G(j3.0) = -90° - \arctan(3.0) - \arctan(0.30) \approx -90° - 71.6° - 16.7° = -178.3°
 $$
 
 $$
-PM = 180° - 218° = -38°
+PM \approx 1.6°, \qquad GM \approx 0.83 \text{ dB}
 $$
 
-**相位裕度为负！系统不稳定。**
+**裕度几乎为零**——理论上仍稳定，但离临界只差一步，任何参数漂移都可能失稳，工程上等同不可用（与习题 1 答案的 $GM = 0.83$ dB、$PM$ 仅约 2° 相互印证）。
 
 ### 第三步：减小增益使系统稳定
 
@@ -383,7 +280,7 @@ $$
 
 ### 结论
 
-纯增益调节无法同时满足稳态精度和相位裕度要求。需要**校正网络**（超前/滞后校正），这是下一章的内容。
+纯增益调节无法同时满足稳态精度和相位裕度要求。需要**校正网络**（超前/滞后校正）——那是[校正网络设计](/classic/compensator-design)一课的主题（中间还隔一课 [PID 控制器设计](/classic/pid-controller)）。
 
 这个例子说明了频率响应法的核心价值：**从 Bode 图上直接看出设计矛盾，指导校正网络的设计。**
 
@@ -436,64 +333,6 @@ $$
 C(s) = 4.8\left(1 + \frac{1}{1.81s} + 0.45s\right)
 $$
 
-<JupyterNotebook
-  title="🧪 灵敏度函数 S 和补灵敏度函数 T"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import lti`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-def plot_sensitivity(K):
-    sys_open = lti([K], [1, 11, 10, 0])
-    w = np.logspace(-2, 2, 500)
-    H = sys_open.freqresp(w)
-    G_jw = H.real.flatten() + 1j * H.imag.flatten()
-
-    S = 1 / (1 + G_jw)
-    T = G_jw / (1 + G_jw)
-
-    S_mag_db = 20 * np.log10(np.abs(S))
-    T_mag_db = 20 * np.log10(np.abs(T))
-
-    Ms = np.max(np.abs(S))
-    Ms_db = 20 * np.log10(Ms)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax1.semilogx(w, S_mag_db, label=f'K={K}', linewidth=2)
-    ax1.set_xlabel('ω (rad/s)')
-    ax1.set_ylabel('|S| (dB)')
-    ax1.set_title(f'灵敏度函数 |S(jω)| (K={K})')
-    ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
-    ax1.axhline(y=3, color='orange', linestyle='--', alpha=0.5, label='3 dB')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    ax1.set_ylim(-40, 20)
-
-    ax2.semilogx(w, T_mag_db, label=f'K={K}', linewidth=2)
-    ax2.set_xlabel('ω (rad/s)')
-    ax2.set_ylabel('|T| (dB)')
-    ax2.set_title(f'补灵敏度函数 |T(jω)| (K={K})')
-    ax2.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
-    ax2.axhline(y=-3, color='orange', linestyle='--', alpha=0.5, label='-3 dB (带宽)')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(-40, 20)
-
-    plt.tight_layout()
-    plt.show()
-
-    print(f"K={K}: 峰值灵敏度 Ms = {Ms_db:.1f} dB")
-    print("S+T=1：低频 |S|→0（扰动抑制），高频 |T|→0（噪声衰减）")
-
-interact(plot_sensitivity,
-         K=FloatSlider(min=1, max=200, step=1, value=50,
-                       description='K', continuous_update=False));` },
-  ]}
-/>
 
 ## 深入讨论
 
@@ -530,6 +369,8 @@ $T(s)$ 就是闭环传递函数。$|T(j\omega)|$ 描述输出对参考输入的�
 **关键约束**：$S + T = 1$。这意味着 $S$ 和 $T$ 不可能同时很小——低频段 $S$ 小（好），高频段 $T$ 小（好），中间频段必然有一个峰值。
 
 ### $M_s$ 与稳定裕度的关系
+
+<SensitivityExplorer />
 
 灵敏度峰值 $M_s = \max_\omega |S(j\omega)|$ 是一个重要的鲁棒性指标：
 
@@ -613,12 +454,12 @@ $GM$ 和 $PM$ 不是独立的——它们都取决于开环频率响应的形状
 **频域-时域对应**：
 
 - $PM \approx 100\zeta$（度），$M_p \approx e^{-\pi\zeta/\sqrt{1-\zeta^2}}$
-- $t_r \approx 1.8/\omega_c$
+- $t_r \approx 1.8/\omega_c$（$t_r$ 与截止频率的经验式；注意与 [频域分析](/classic/frequency-domain-analysis) 实测表 $t_r \cdot \omega_B \approx 3\text{–}4$ 并不矛盾——对典型二阶系统 $\omega_B \approx 2\omega_c$，两式给出同一量级）
 
 **设计流程**：先满足稳态精度（低频增益），再调整动态性能（$PM$ 和 $\omega_c$），最后校验高频噪声抑制。
 
 <Callout variant="tip">
-  设计时先满足相位裕度要求，再校验增益裕度——对大多数系统，两者同时满足。如果矛盾，需要校正网络（下一章）。
+  设计时先满足相位裕度要求，再校验增益裕度——对大多数系统，两者同时满足。如果矛盾，需要校正网络（见[校正网络设计](/classic/compensator-design)）。
 </Callout>
 
 ## 习题
@@ -713,13 +554,13 @@ $GM = -20\log_{10}(10/11) = 20\log_{10}(11/10) = 20\log_{10}(1.1) \approx 0.83$ 
 
 $\frac{100}{\omega_c \sqrt{\omega_c^2+1} \sqrt{\omega_c^2+100}} = 1$
 
-数值求解：$\omega_c \approx 2.7$ rad/s。
+数值求解：$\omega_c \approx 3.0$ rad/s。
 
-$\angle G(j2.7) = -90° - \arctan(2.7) - \arctan(0.27) = -90° - 69.7° - 15.1° = -174.8°$
+$\angle G(j3.0) = -90° - \arctan(3.0) - \arctan(0.30) \approx -90° - 71.6° - 16.7° = -178.3°$
 
-$PM = 180° - 174.8° = 5.2°$。
+$PM = 180° - 178.3° \approx 1.7°$。
 
-(c) $GM = 0.83$ dB > 0，$PM = 5.2°$ > 0，系统**稳定**。但裕度很小，动态性能差（超调大）。
+(c) $GM = 0.83$ dB > 0，$PM \approx 1.7°$ > 0，系统**稳定**。但裕度极小，动态性能差（超调大）。
 
 **答案2**：
 
@@ -794,11 +635,11 @@ $GM = -20\log_{10}(0.5) = 6.02$ dB。
 
 求 $\omega_c$：$\frac{8}{\omega_c(\omega_c^2+4)} = 1$
 
-$\omega_c^3 + 4\omega_c = 8$，数值求解 $\omega_c \approx 1.27$ rad/s。
+$\omega_c^3 + 4\omega_c = 8$，数值求解 $\omega_c \approx 1.37$ rad/s（在 1.3 与 1.4 之间插值）。
 
-$\angle G(j1.27) = -90° - 2\arctan(0.635) = -90° - 2 \times 32.4° = -154.8°$
+$\angle G(j1.37) = -90° - 2\arctan(0.685) \approx -90° - 2 \times 34.4° = -158.8°$
 
-$PM = 180° - 154.8° = 25.2°$。
+$PM = 180° - 158.8° = 21.2°$（数值精确值 21.4°）。
 
 **答案5**：
 
@@ -808,8 +649,8 @@ $PM = 180° - 154.8° = 25.2°$。
 
 例如：
 
-- $G_1(s) = \frac{10}{s(s+1)}$：二阶系统，$PM \approx 51°$，阶跃响应平滑
-- $G_2(s) = \frac{10(s+5)}{s(s+1)(s+20)}$：有零点，$PM$ 可能也是 $51°$，但阶跃响应有更大的超调（零点增加了"预测"效果）
+- $G_1(s) = \frac{10}{s(s+1)}$：二阶系统，$\omega_c \approx 3.1$ rad/s，$PM \approx 18°$，阶跃响应有明显超调
+- $G_2(s) = \frac{10(s+5)}{s(s+1)(s+20)}$：加入左半平面零点后同样可以把 $PM$ 整定到 $\approx 18°$，但零点改变了响应形状（上升更快、超调组合不同）
 
 原因：$PM$ 只反映了 $\omega_c$ 处的相位，不能描述整个频率范围内的特性。谐振峰值 $M_r$、闭环带宽 $\omega_b$ 等指标也影响动态性能。
 
@@ -831,11 +672,11 @@ $M_r (\text{dB}) = 20\log_{10}(1.747) = 4.85$ dB。
 
 (b) 带宽：$\omega_b = \omega_n\sqrt{1-2\zeta^2+\sqrt{2-4\zeta^2+4\zeta^4}}$
 
-$= 10\sqrt{1-0.18+\sqrt{2-0.36+0.3249}}$
+$= 10\sqrt{1-0.18+\sqrt{2-0.36+0.0324}}$（注意 $4\zeta^4 = 4\times0.3^4 = 0.0324$）
 
-$= 10\sqrt{0.82+\sqrt{1.9649}}$
+$= 10\sqrt{0.82+\sqrt{1.6724}}$
 
-$= 10\sqrt{0.82+1.402} = 10\sqrt{2.222} = 14.9$ rad/s。
+$= 10\sqrt{0.82+1.293} = 10\sqrt{2.113} \approx 14.5$ rad/s。
 
 (c) 超调量：$M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} = e^{-\pi \times 0.3/0.954} = e^{-0.986} = 0.373 = 37.3\%$。
 
@@ -1040,47 +881,35 @@ $= \frac{4.8}{1.814} \times \frac{0.824 s^2 + 0.454 s + 1.814}{s} = 2.646 \times
 
 开环 $L(s) = C(s)G(s)$。需要数值计算 $PM$。
 
-在 $\omega_c$ 附近搜索 $|L(j\omega_c)| = 1$：
+在 $\omega_c$ 附近搜索 $|L(j\omega_c)| = 1$。
 
-$C(j\omega) = 2.646 \times \frac{-0.824\omega^2 + j0.454\omega + 1.814}{j\omega}$
+**先更正通分**（原稿把分子 $s$ 项系数误写为 $T_d = 0.454$，正确值见下；此一处笔误曾使后续整段结论反向）：
 
-$G(j\omega) = \frac{1}{(1+j\omega)^3}$
+$$
+C(s) = K_p\left(1 + \frac{1}{T_i s} + T_d s\right) = \frac{K_p(T_i T_d s^2 + s + T_i)}{T_i s} = \frac{4.8\,(0.824 s^2 + s + 1.814)}{1.814 s}
+$$
 
-数值计算（取 $\omega_c \approx 2.5$）：
+数值搜索（$\omega$ 从低到高）：
 
-$C(j2.5) = 2.646 \times \frac{-5.15 + j1.135 + 1.814}{j2.5} = 2.646 \times \frac{-3.336 + j1.135}{j2.5}$
+- $\omega = 1.0$：$|C(j1)| = 4.82$，$|G(j1)| = 0.354$，$|L| = 1.71 > 1$
+- $\omega = 1.3$：$|C(j1.3)| = 4.87$，$|G(j1.3)| = 0.227$，$|L| = 1.10 > 1$
+- $\omega = 1.4$：$|C(j1.4)| = 4.94$，$|G(j1.4)| = 0.196$，$|L| = 0.97 < 1$
 
-$= 2.646 \times \frac{3.523 \angle 161.2°}{2.5 \angle 90°} = 2.646 \times 1.409 \angle 71.2° = 3.728 \angle 71.2°$
+$$
+\omega_c \approx 1.38 \text{ rad/s}
+$$
 
-$G(j2.5) = \frac{1}{(1+j2.5)^3} = \frac{1}{(2.693 \angle 68.2°)^3} = \frac{1}{19.55 \angle 204.6°} = 0.0511 \angle -204.6°$
+在 $\omega_c = 1.38$ 处：$\angle C \approx +12.6°$（微分项此时已占上风），$\angle G(j1.38) \approx -162.0°$，
 
-$|L(j2.5)| = 3.728 \times 0.0511 = 0.191$（太小，$\omega_c$ 更低）
+$$
+\angle L(j1.38) \approx -149.4°, \qquad PM = 180° - 149.4° \approx 30.6°
+$$
 
-取 $\omega_c \approx 1.0$：
+**Z-N 整定的 PID 对该系统是稳定的，$PM \approx 30.6°$**——恰好印证本课 §工程应用 一节所说的"Z-N 整定的 PID 通常给出 $PM \approx 30°$ 左右"。
 
-$C(j1) = 2.646 \times \frac{-0.824 + j0.454 + 1.814}{j} = 2.646 \times \frac{0.990 + j0.454}{j}$
+(c) $PM = 30.6° < 50°，不满足指标要求——但这是"裕度不够"，不是"不稳定"。应在 Z-N 结果的基础上保守化（减小 $K_p$ 或增大 $T_i$），再迭代校验。
 
-$= 2.646 \times \frac{1.089 \angle 24.6°}{1 \angle 90°} = 2.646 \times 1.089 \angle -65.4° = 2.882 \angle -65.4°$
-
-$G(j1) = \frac{1}{(1+j)^3} = \frac{1}{(1.414 \angle 45°)^3} = \frac{1}{2.828 \angle 135°} = 0.354 \angle -135°$
-
-$|L(j1)| = 2.882 \times 0.354 = 1.020$（接近 1！）
-
-$\omega_c \approx 1.0$ rad/s。
-
-$\angle L(j1) = -65.4° - 135° = -200.4°$
-
-$PM = 180° - 200.4° = -20.4°$
-
-**PM 为负！Z-N 整定的 PID 对该系统不稳定。**
-
-实际上 Z-N 方法对高阶系统可能给出激进的结果。
-
-(c) Z-N 整定不满足 $PM \geq 50°$（实际上不稳定）。需要降低增益。
-
-如果将 $K_p$ 减小到 $K_p = 1.5$（约为 Z-N 值的 31%），可以增大 PM。具体需要数值计算或迭代调整。
-
-这说明 Z-N 方法不是万能的——对高阶系统可能需要更保守的整定。
+这说明 Z-N 的正确定位是**初始整定**：它能自动把系统带到 $PM \approx 30°$ 的可用裕度；追求更高裕度（如 $PM \geq 50°$）时仍需人工再整定。
 
 **答案11**：
 
@@ -1122,7 +951,7 @@ $|S(j1)| \approx 1/100 = 0.01$，$|S|_{\text{dB}} = -40$ dB。
 
 在 $\omega = 10$ 处：$|G(j10)| = \frac{100}{10 \times \sqrt{2} \times 1} \approx \frac{100}{14.14} \approx 7.07$
 
-$|S(j10)| \approx \frac{1}{|1+7.07|} \approx \frac{1}{8.07} \approx 0.124$，$|S|_{\text{dB}} \approx -18.1$ dB。
+$|S(j10)| \approx \frac{1}{|1+7.07|} \approx 0.124$；计入 $G(j10)$ 的相位后精确值 $\approx 0.16$，即 $|S|_{\text{dB}} \approx -16.0$ dB。
 
 （更精确计算需要考虑 $G$ 的相位，此处为近似估算。）
 
