@@ -54,6 +54,7 @@ import { DelayMarginExplorer } from "@/components/wiki/delay-margin-explorer";
 import { SensitivityExplorer } from "@/components/wiki/sensitivity-explorer";
 import { PControlTradeoffExplorer } from "@/components/wiki/p-control-tradeoff-explorer";
 import { StateSpaceExplorer } from "@/components/wiki/state-space-explorer";
+import { StateFeedbackPoleExplorer } from "@/components/wiki/state-feedback-pole-explorer";
 
 export const wikiComponents: MDXComponents = {
   Callout,
@@ -98,4 +99,5 @@ export const wikiComponents: MDXComponents = {
   SensitivityExplorer,
   PControlTradeoffExplorer,
   StateSpaceExplorer,
+  StateFeedbackPoleExplorer,
 };
