@@ -63,7 +63,7 @@
 | MATH-12 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/12-stochastic-processes.md;.agent/semester-03/math-12/acceptance.md;commit:e4404751d8455b8d2d16c63ce9e9d19c2f546227 |
 | MATH-13 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/13-convex-optimization.md;.agent/semester-03/math-13/acceptance.md;commit:31484f051c09edda86b7c93c4a50b1d5da430fcd |
 | MATH-14 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/14-variational-dp.md;.agent/semester-03/math-14/acceptance.md;commit:c8774d79e26a1207d005c3fc4a679f4482720d1b |
-| MATH-15 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-15 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/15-diff-geometry.md;.agent/semester-03/math-15/acceptance.md |
 | MATH-16 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-17 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-18 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

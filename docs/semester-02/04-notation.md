@@ -1,7 +1,8 @@
 # 04 · 数学符号约定表
 
 > **这张表是机器读的**。`node scripts/glossary.mjs check` 的 **C1 / C1b / C5** 直接解析本文件
-> `<!-- REGISTER-START -->` … `<!-- REGISTER-END -->` 之间的登记表，与
+> `<!-- REGISTER-START -->` … `| $\Psi$ | 指数极坐标映射（math/diff-geometry） | 1 门 / 1 次（MATH-15引入时） | 无冲突 | 仅本课局部反例：Jacobian可逆但角度周期，非全局坐标；不覆盖预测矩阵。 |
+<!-- REGISTER-END -->` 之间的登记表，与
 > `<!-- ABBREV-START -->` … `<!-- ABBREV-END -->` 之间的缩写判定表。
 > **哨兵必须独占一行**：loader 走 `sentinelSlice()`，判据是「整行 trim 后等于哨兵」，
 > 所以上面这样写全字面是安全的（引用行以 `>` 开头，不独占一行）。
@@ -174,6 +175,7 @@ $N$ 的"Nyquist 圈数"义 → $\nu$……）。落到正文是 §3.4 那张 21 
 | $\mathcal{K}$ | $\mathcal{K}_\infty$ 函数类 | 1 门 / 1 次 | 无冲突 | 保留。**必须**写 $\mathcal{K}_\infty$ 带下标 |
 | $\Pi$ | 投影算子 $\Pi_\Omega(\cdot)$（把自适应律限制在 $\Omega$ 内） | 1 门 / 1 次 | 无冲突 | 保留。**必须**写 $\Pi_\Omega$ 带集合下标 |
 
+| $\Psi$ | 指数极坐标映射（math/diff-geometry） | 1 门 / 1 次（MATH-15引入时） | 无冲突 | 仅本课局部反例：Jacobian可逆但角度周期，非全局坐标；不覆盖预测矩阵。 |
 <!-- REGISTER-END -->
 
 ---
@@ -697,3 +699,7 @@ math/convex-optimization中u为二维静态电暖器功率，r为给定请求，
 ### MATH-14局部约定（2026-10-18）
 
 math/variational-dp中x为归一化小车位置，u为归一化每步位移；离散k0…N，u仅0…N−1，连续另用t与xdot=u，不当同一采样模型。J为半平方和/积分泛函，ell为阶段代价，phi为终端代价，q/r/s为非负状态/严格正动作/非负终端权重（s不是复频率）。V为最优剩余代价，Pk为标量值函数系数而非协方差；K为该步增益，使用Pk+1；p为协态即边际代价，H为Hamilton量，不同于上一课QP Hessian。变分节L为代价密度，eta为端点允许扰动函数、epsilon为扰动幅度不是步长，a/b为直线路径系数。全部量归一化；连续与离散始终保留1/2，无噪声随机窗。按规则②/⑤局部声明，不改变其它课矩阵和物理单位。
+
+### MATH-15局部约定（2026-10-18）
+
+math/diff-geometry中M为光滑流形，TpM为切空间，p为位置点；c为约束，D为Jacobian，Phi/Psi为坐标映射。圆例R为半径m，theta角度rad，a为弧长坐标；ds²为长度平方而非复频率。搬运车z=(x,y,theta)，平移m/时间s/朝向rad；f/g按1m/s与1rad/s基准数值表示直行/转向场，v/omega在控制组合式为相对基准无量纲系数。epsilon是各段时长s（公式按1s归一数值），总4epsilon；括号固定Dg f−Df g，时间先后f→g→−f→−g，主项epsilon²[f,g]，曲线归一量按1m/1s基准。h输出，Lf是方向导数；分布是切子空间族不是概率。SO3节R改指旋转矩阵，Omega为机体角速度反对称矩阵，dotR=R Omega；该段另述恒角速度。控制接口另用x1/x2，relative-degree系数2x1只在非零邻域可除。按规则②/⑤局部声明，不覆盖其它课权重R、概率P或谱符号。
