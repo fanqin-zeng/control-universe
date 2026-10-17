@@ -49,7 +49,7 @@
 | MATH-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/02-complex-numbers.md;.agent/semester-03/math-02/source-audit.json;.agent/semester-03/math-02/acceptance.md;commit:0af1920a5f103b4c2340c73f107480fe5f158bc5 |
 | MATH-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/03-linear-algebra-basics.md;.agent/semester-03/math-03/acceptance.md;.agent/semester-03/math-03/reconciliation.json;commit:610cf519523d06a67e0b2431ce45d5a7ca73fd29 |
 | MATH-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/04-eigen-decomposition.md;.agent/semester-03/math-04/acceptance.md;.agent/semester-03/math-04/reconciliation.json;commit:21e01b2e3fe76ca98402645d38780cd4c8e978fc |
-| MATH-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/05-matrix-decomposition.md;.agent/semester-03/math-05/acceptance.md;.agent/semester-03/math-05/reconciliation.json |
+| MATH-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/05-matrix-decomposition.md;.agent/semester-03/math-05/acceptance.md;.agent/semester-03/math-05/reconciliation.json;commit:04e98d5af707017cdf1ac293d7914a4a31c274c8 |
 | MATH-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
