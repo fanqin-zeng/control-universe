@@ -284,7 +284,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "两只水箱里的染料", "slug": "两只水箱里的染料"},
+          {"title": "微分方程描述变化", "slug": "微分方程描述变化"},
+          {"title": "初值选出一条轨迹", "slug": "初值选出一条轨迹"},
+          {"title": "先解一阶方程", "slug": "先解一阶方程"},
+          {"title": "外部输入怎样累积", "slug": "外部输入怎样累积"},
+          {"title": "把高阶方程写成一阶", "slug": "把高阶方程写成一阶"},
+          {"title": "矩阵指数从级数来", "slug": "矩阵指数从级数来"},
+          {"title": "矩阵指数给出初值解", "slug": "矩阵指数给出初值解"},
+          {"title": "可对角化时怎样算", "slug": "可对角化时怎样算"},
+          {"title": "重根也能求解", "slug": "重根也能求解"},
+          {"title": "有输入时使用积分", "slug": "有输入时使用积分"},
+          {"title": "解的存在与模型边界", "slug": "解的存在与模型边界"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "laplace-transform",

@@ -1,0 +1,330 @@
+---
+title: 微分方程与矩阵指数
+description: 从串联水箱中染料的变化出发，用初值选出轨迹，理解一阶方程、矩阵指数与外部输入的累积。
+---
+
+# 微分方程与矩阵指数
+
+## 两只水箱里的染料
+
+把两只装满水的箱子串起来：纯水流进第一箱，第一箱的水流进第二箱，第二箱再把水排走。开始时，第一箱里有混匀的染料，第二箱里是清水。过了一会儿，第一箱的颜色变淡，第二箱却先变深、再变淡。能不能只根据流量和箱子的大小，预测每一刻的颜色深浅？
+
+我们用浓度表示颜色深浅，假设每只箱子里的水始终混合均匀，流入和流出的体积相等，染料不发生反应。把浓度除以第一箱的初始浓度，记作 $x_1,x_2$，于是初始值是 $(1,0)$；它们是无量纲的比例，不是染料总量。时间 $t$ 用分钟表示。
+
+先看这个实验。默认两箱每分钟的流量都等于各自一箱水的体积；调观察时刻，看第二箱怎样从无色开始出现染料。再改变一只箱子的换水速率，看两条曲线的变化。
+
+<CascadeExponentialExplorer />
+
+在[微积分入门](/math/calculus-basics)里，知道位置随时间怎样变，就能求速度。这里反过来：我们知道“现在的浓度会使浓度以多快的速度变化”，想求出整条浓度曲线。**由变化率找回函数**，就是本课的出发点。
+
+## 微分方程描述变化
+
+记流量为 $Q$、两箱体积为 $V_1,V_2$，定义换水速率 $a=Q/V_1,b=Q/V_2$，单位都是每分钟。第一箱流入的纯水不带染料，流出的染料量每分钟为 $Q$ 乘当前浓度；除以体积，就得到浓度的变化率。第二箱则有第一箱带来的染料，同时排出自己的染料。因此
+
+$$
+\dot x_1=-a x_1,\qquad \dot x_2=b(x_1-x_2).
+$$
+
+点号表示对时间求导，与 $dx_i/dt$ 相同。第二式的流入和流出都除以 **第二箱体积**，所以它们共用系数 $b$，不能把流入系数误写成 $a$。
+
+含有未知函数及其导数的方程叫**微分方程**。若只对一个自变量求导，叫**常微分方程**（ODE）；未知函数可以有多个。这里唯一自变量是时间，因此两箱一起描述，仍然是常微分方程组。最高只含一阶导数，所以它是一阶方程组。
+
+写成向量与矩阵：
+
+$$
+\mathbf x=\begin{bmatrix}x_1\\x_2\end{bmatrix},\qquad
+\dot{\mathbf x}=A\mathbf x,\qquad
+A=\begin{bmatrix}-a&0\\b&-b\end{bmatrix}.
+$$
+
+第一行说第一箱不受第二箱影响，第二行说第二箱接收第一箱的水。矩阵乘法的读法见[线性代数基础](/math/linear-algebra-basics)。这里未知量只以一次项相加，系数不依赖未知量，因而是线性方程；没有外部输入项时称为齐次线性方程，加上给定输入项后称为非齐次线性方程。这就是控制中常用的一类线性状态方程，本课先把它当作两条变化率关系，不要求先学控制系统。
+
+## 初值选出一条轨迹
+
+只给 $\dot x=-a x$，还不能知道某时刻的 $x$：任何常数 $C$ 都给出一条解 $x(t)=Ce^{-at}$。对它求导，确实得到 $-aCe^{-at}=-ax(t)$。这里 $a$ 恒定，指数中的 $at$ 没有单位。
+
+再给 $x(0)=x_0$，才选出 $C=x_0$。**初值问题**就是“微分方程 + 某时刻的函数值”。水箱从哪一种浓度开始，属于初值；流量与体积决定的 $a,b$，属于模型参数，两者不要混为一谈。
+
+一般写作 $\dot{\mathbf x}=\mathbf f(t,\mathbf x)$、$\mathbf x(t_0)=\mathbf x_0$。一条候选曲线要算解，必须在所讨论的时间区间可微，代入方程成立，并满足初值。后面讲“唯一”，也总是在声明的区间和条件下说，不是所有微分方程都自动只有一个解。
+
+## 先解一阶方程
+
+从更熟悉的冷却现象练习。假设室温恒为 $20$°C，一杯水开始为 $80$°C，水温记作 $T$。采用理想冷却模型
+
+$$
+\dot T=-\tfrac12(T-20),\qquad T(0)=80.
+$$
+
+系数 $1/2$ 的单位是每分钟。令温差 $z=T-20$，便得到 $\dot z=-z/2$、$z(0)=60$。温差每经过相同时间都会乘上相同比例，而不是每分钟减去固定温度。
+
+怎样解出来？把两边乘以 $e^{t/2}$，利用乘积求导：
+
+$$
+\frac{d}{dt}\bigl(e^{t/2}z(t)\bigr)
+=e^{t/2}\bigl(\dot z+z/2\bigr)=0.
+$$
+
+导数恒为零说明括号内是常数，由初值得到 $e^{t/2}z(t)=60$，所以 $T(t)=20+60e^{-t/2}$。到第 $2$ 分钟，水温为 $20+60/e\approx42.0728$°C。$20$°C 是这个模型在时间趋于无穷时的极限，不能把某次有限时刻的读数直接叫作最终值。
+
+## 外部输入怎样累积
+
+若方程是 $\dot z+az=f(t)$，右边的 $f(t)$ 是外部给定的输入，不能像初值那样只在开始时起作用。仍乘以 $e^{at}$，这个乘子称为**积分因子**。从 $0$ 积分到 $t$：
+
+$$
+e^{at}z(t)-z(0)=\int_0^t e^{as}f(s)\,ds,
+\qquad
+z(t)=e^{-at}z(0)+\int_0^t e^{-a(t-s)}f(s)\,ds.
+$$
+
+这里 $s$ 是积分中走过的时刻，$t$ 是最终观察时刻。第一项是初值留下的影响；第二项把各时刻的输入贡献加起来，本课水箱中 $a>0$，较早的输入已经经历了更久的衰减；若 $a=0$ 则不衰减，若 $a<0$ 则对应放大。公式用于 $t\ge0$，常数 $a$ 和连续的 $f$ 足以保证这里的计算成立。
+
+例如 $\dot z=-z+2$、$z(0)=1$，解是 $z(t)=2-e^{-t}$；在 $t=\ln2$ 时为 $3/2$。输入恒为 $2$，并不意味着函数立刻等于 $2$；初值到长期状态之间还有一段变化。
+
+<JupyterNotebook title="一阶方程与输入" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)
+s = sp.symbols('s', real=True)`} cells={[{code:`T = 20 + 60*sp.exp(-t/2)
+z = sp.exp(-t) + sp.integrate(2*sp.exp(-(t-s)), (s,0,t))
+print('冷却解/初值/方程余量:', T, T.subs(t,0), sp.simplify(sp.diff(T,t)+(T-20)/2))
+print('第2分钟:', sp.N(T.subs(t,2),12))
+print('常输入解/初值/ln2时:', sp.simplify(z), z.subs(t,0), sp.simplify(z.subs(t,sp.log(2))))
+print('常输入方程余量:', sp.simplify(sp.diff(z,t)+z-2))`}]} />
+
+## 把高阶方程写成一阶
+
+一阶向量方程也能容纳高阶导数。例如理想无阻尼振动 $\ddot y+y=0$，用归一化时间表示，令 $x_1=y,x_2=\dot y$，便得到
+
+$$
+\dot{\mathbf x}=\begin{bmatrix}0&1\\-1&0\end{bmatrix}\mathbf x.
+$$
+
+第一行是 $\dot x_1=x_2$，第二行是 $\dot x_2=-x_1$。二阶式需要给 $y(0)$ 与 $\dot y(0)$，恰好对应向量初值的两个分量。若它们是 $(1,0)$，解为 $(\cos t,-\sin t)$；在 $t=\pi/2$ 时为 $(0,-1)$。位置变成零时，速度未必为零。
+
+更一般的 $\ddot y+c\dot y+ky=u(t)$ 会成为 $\dot x_1=x_2$、$\dot x_2=-kx_1-cx_2+u(t)$。这是改写同一个方程，不是用一阶近似替代二阶动力学；若回到物理单位，要保留原方程各系数的单位。
+
+## 矩阵指数从级数来
+
+[微积分入门](/math/calculus-basics)末尾已经介绍指数的无穷级数。把标量的乘幂换成方阵的乘幂，就定义了**矩阵指数**：
+
+$$
+e^{At}=I+At+\frac{A^2t^2}{2!}+\frac{A^3t^3}{3!}+\cdots.
+$$
+
+$I$ 是单位矩阵，$A^0=I$；每个 $A^k$ 都按矩阵乘法计算。对任意有限维常矩阵和有限 $t$，这一级数都收敛。这里可取最大绝对行和 $\|M\|=\max_i\sum_j|m_{ij}|$，它用一个数衡量矩阵的大小，并满足 $\|AB\|\le\|A\|\|B\|$。级数各项的范数被收敛的标量级数 $\sum (\|A\||t|)^k/k!$ 控住。
+
+**不能把每个元素分别取指数。** 比如 $A=0$ 时，正确结果是 $e^{At}=I$；逐元素取指数却会得到全为一的矩阵。编程时矩阵乘方和矩阵指数也不是同一个操作。
+
+有些级数会自己停下来。若
+
+$$
+N=\begin{bmatrix}0&1&0\\0&0&1\\0&0&0\end{bmatrix},\qquad
+N^3=0,
+\qquad e^{Nt}=I+tN+\tfrac12t^2N^2
+=\begin{bmatrix}1&t&t^2/2\\0&1&t\\0&0&1\end{bmatrix}.
+$$
+
+这样的矩阵叫**幂零矩阵**。在 $t=2$ 时，上面第一行是 $(1,2,2)$。级数停下的原因是矩阵的高次幂为零，不是把所有无穷级数都近似截断到二阶。
+
+对振动矩阵 $A=\left[\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right]$，有 $A^2=-I$。把偶数项与奇数项分别相加，用正弦、余弦级数得到
+
+$$
+e^{At}=I\cos t+A\sin t
+=\begin{bmatrix}\cos t&\sin t\\-\sin t&\cos t\end{bmatrix}.
+$$
+
+<JupyterNotebook title="高阶方程与矩阵级数" setupCode={`import sympy as sp
+t = sp.symbols('t', real=True)`} cells={[{code:`A = sp.Matrix([[0,1],[-1,0]])
+R = (A*t).exp()
+N = sp.Matrix([[0,1,0],[0,0,1],[0,0,0]])
+EN = sp.eye(3)+t*N+t*t*N*N/2
+print('振动A平方:', A*A)
+print('振动矩阵指数:', R)
+print('pi/2时位置与速度:', sp.simplify(R.subs(t,sp.pi/2)*sp.Matrix([1,0])))
+print('幂零N立方:', N**3)
+print('幂零指数/第2时刻:', EN, EN.subs(t,2))
+print('指数核验:', sp.simplify((N*t).exp()-EN))`}]} />
+
+## 矩阵指数给出初值解
+
+级数在有界时间区间可以逐项求导，从而
+
+$$
+\frac{d}{dt}e^{At}=Ae^{At}=e^{At}A,\qquad e^{A0}=I.
+$$
+
+因此 $\mathbf x(t)=e^{At}\mathbf x_0$ 同时满足 $\dot{\mathbf x}=A\mathbf x$ 和 $\mathbf x(0)=\mathbf x_0$。这不只是一个候选解：对任一解求导 $e^{-At}\mathbf x(t)$，两项抵消，得到它恒等于 $\mathbf x_0$，所以解也是唯一的。从 $t_0$ 开始，写成 $e^{A(t-t_0)}\mathbf x_0$。
+
+$e^{A(t-t_0)}$ 把初始向量变成后来的向量，称为这里的**状态转移矩阵**。它可逆，逆为 $e^{-A(t-t_0)}$。沿同一常矩阵演化，先过 $s$ 再过 $t$，与一次经过 $s+t$ 一样：$e^{At}e^{As}=e^{A(t+s)}$。
+
+这不意味着任意矩阵都能用 $e^Pe^Q=e^{P+Q}$。当 $P,Q$ 交换，即 $PQ=QP$ 时可以；不交换时一般不行。例如 $P=\left[\begin{smallmatrix}0&1\\0&0\end{smallmatrix}\right]$、$Q=\left[\begin{smallmatrix}0&0\\1&0\end{smallmatrix}\right]$，$e^Pe^Q=\left[\begin{smallmatrix}2&1\\1&1\end{smallmatrix}\right]$，而 $e^{P+Q}$ 两个对角元相等，二者不同。后面讨论时变模型时，这个限制尤其不能忽略。
+
+## 可对角化时怎样算
+
+沿用[特征值与对角化](/math/eigen-decomposition)的结论。若 $A=P\Lambda P^{-1}$，则 $A^k=P\Lambda^kP^{-1}$，代入级数就得到
+
+$$
+e^{At}=P e^{\Lambda t}P^{-1},\qquad
+e^{\Lambda t}=\operatorname{diag}(e^{\lambda_1t},\ldots,e^{\lambda_nt}).
+$$
+
+只对**对角矩阵**，才可以直接对角元取指数。特征值乘上时间后放进指数，是连续演化；前课反复乘矩阵的 $A^k$，则用 $\lambda_i^k$，两者别混用。实矩阵若需在复数域对角化，使用复特征向量也可以，最后实初值的解仍为实向量。
+
+取 $B=\left[\begin{smallmatrix}-1&1\\0&-2\end{smallmatrix}\right]$，可选 $P=\left[\begin{smallmatrix}1&-1\\0&1\end{smallmatrix}\right]$、$\Lambda=\operatorname{diag}(-1,-2)$。计算得到
+
+$$
+e^{Bt}=\begin{bmatrix}e^{-t}&e^{-t}-e^{-2t}\\0&e^{-2t}\end{bmatrix}.
+$$
+
+在 $t=\ln2$ 时，矩阵为 $\left[\begin{smallmatrix}1/2&1/4\\0&1/4\end{smallmatrix}\right]$。若初值是 $(0,1)$，解便是 $(1/4,1/4)$。非对角元体现第二个分量对第一个的影响，不能只看两个指数就把每个原坐标当成独立变化。
+
+<JupyterNotebook title="对角化与指数乘法边界" setupCode={`import sympy as sp
+t = sp.symbols('t', real=True)`} cells={[{code:`B = sp.Matrix([[-1,1],[0,-2]])
+P = sp.Matrix([[1,-1],[0,1]])
+L = sp.diag(-1,-2)
+EB = sp.simplify(P*(L*t).exp()*P.inv())
+U = sp.Matrix([[0,1],[0,0]])
+V = sp.Matrix([[0,0],[1,0]])
+print('对角化余量:', B-P*L*P.inv())
+print('指数:', EB)
+print('ln2时矩阵/解:', sp.simplify(EB.subs(t,sp.log(2))), sp.simplify(EB.subs(t,sp.log(2))*sp.Matrix([0,1])))
+print('零矩阵指数/逐元素指数:', sp.zeros(2).exp(), sp.zeros(2).applyfunc(sp.exp))
+print('非交换PQ-QP:', U*V-V*U)
+print('指数相乘:', U.exp()*V.exp())
+print('和的指数:', (U+V).exp())`}]} />
+
+## 重根也能求解
+
+回到两箱：默认 $a=b=1$，故 $A=\left[\begin{smallmatrix}-1&0\\1&-1\end{smallmatrix}\right]$，初值为 $(1,0)$。它的特征值都是 $-1$，但特征向量只能沿 $(0,1)$，凑不出两个独立方向，所以不能对角化。矩阵指数的级数却仍然成立。
+
+写成 $A=-I+K$，其中 $K=\left[\begin{smallmatrix}0&0\\1&0\end{smallmatrix}\right]$，$K^2=0$。$-I$ 与 $K$ 交换，因此
+
+$$
+e^{At}=e^{-t}(I+tK)
+=\begin{bmatrix}e^{-t}&0\\te^{-t}&e^{-t}\end{bmatrix},
+\qquad \mathbf x(t)=\begin{bmatrix}e^{-t}\\te^{-t}\end{bmatrix}.
+$$
+
+在 $t=1$ 分钟，两箱浓度都约为 $0.3679$；变化率分别为 $-0.3679$ 与 $0$。第二箱此时达到最大浓度，因为 $d(te^{-t})/dt=e^{-t}(1-t)$，在 $t=1$ 前为正、之后为负。到 $t=2$ 时两箱为 $0.1353,0.2707$，第二箱仍比第一箱深，但两者最终都趋于零。**特征值都为负，不表示每个分量从一开始就下降。**
+
+若两箱速率不同，先解第一箱，再把它当第二箱的输入，可得到
+
+$$
+x_1(t)=e^{-at},\qquad
+x_2(t)=\frac{b}{b-a}(e^{-at}-e^{-bt})\quad(a\ne b).
+$$
+
+当 $b$ 趋于 $a$，右边的极限是 $at e^{-at}$，正好接上等速率公式；不是系统在重根处突然断裂。程序要避免两项很接近时直接相减丢失精度。回到开篇把第二箱速率设为 $2$、第一箱保留 $1$，在第 $1$ 分钟可读到 $x_1\approx0.3679,x_2\approx0.4651$。这是另一个箱体体积下的模型，不是控制策略优劣对比。
+
+<JupyterNotebook title="串联水箱与重根" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)
+a,b = sp.symbols('a b', positive=True)`} cells={[{code:`A = sp.Matrix([[-1,0],[1,-1]])
+E = (A*t).exp()
+x = E*sp.Matrix([1,0])
+other = b*(sp.exp(-a*t)-sp.exp(-b*t))/(b-a)
+print('特征值/特征向量:', A.eigenvects())
+print('矩阵指数/轨迹:', E, x)
+K = A + sp.eye(2)
+print('K平方/指数初值/矩阵方程余量:', K*K, E.subs(t,0), sp.simplify(E.diff(t)-A*E))
+print('初值/方程余量:', x.subs(t,0), sp.simplify(x.diff(t)-A*x))
+for q in [1,2,8]:
+    print('时刻/浓度/变化率:', q, x.subs(t,q).evalf(12), (A*x).subs(t,q).evalf(12))
+print('第二箱导数/极限:', sp.diff(x[1],t), sp.limit(x[1],t,sp.oo))
+print('速率趋同:', sp.simplify(sp.limit(other,b,a)))
+print('不同速率方程余量/初值:', sp.simplify(sp.diff(other,t)-b*(sp.exp(-a*t)-other)), sp.simplify(other.subs(t,0)))
+print('a1b2第1分钟:', sp.N(other.subs({a:1,b:2,t:1}),12))`}]} />
+
+## 有输入时使用积分
+
+若第一箱流入的水也带有染料，就需要额外输入。一般的常系数线性方程写作 $\dot{\mathbf x}=A\mathbf x+\mathbf f(t)$。像标量积分因子那样，对 $e^{-At}\mathbf x(t)$ 求导并积分，得到**常数变易公式**：
+
+$$
+\mathbf x(t)=e^{At}\mathbf x_0+\int_0^t e^{A(t-s)}\mathbf f(s)\,ds.
+$$
+
+假设 $\mathbf f$ 连续。向量积分就是各分量分别积分；$e^{A(t-s)}$ 告诉我们，时刻 $s$ 加入的影响怎样传到 $t$。若输入写成 $G\mathbf u(s)$，只需把 $\mathbf f(s)$ 换成它，乘法顺序不能交换。
+
+取等速率水箱矩阵、两箱初始都无染料，沿用开篇的固定参考浓度（并非除以本次为零的初值），第一箱改为流入归一化浓度为 $1$ 的水，则 $\mathbf f=(1,0)$，解为
+
+$$
+\mathbf x(t)=\begin{bmatrix}1-e^{-t}\\1-(1+t)e^{-t}\end{bmatrix}.
+$$
+
+在 $t=\ln2$ 时为 $(1/2,(1-\ln2)/2)\approx(0.5000,0.1534)$。这与开篇“初始第一箱有染料、随后流入纯水”是**不同实验条件**，这里从零开始持续注入，开篇组件仍只显示纯水冲洗实验。
+
+积分公式不要求 $A$ 可逆。即使 $A=0$、$\dot{\mathbf x}=\mathbf f_0$，也直接得到 $\mathbf x(t)=\mathbf x_0+t\mathbf f_0$。不能为了套用 $A^{-1}(e^{At}-I)\mathbf f_0$，把奇异矩阵排除掉；这个含逆矩阵的简写只在 $A$ 可逆且输入恒定时适用。
+
+<JupyterNotebook title="持续输入与奇异矩阵" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)
+s = sp.symbols('s', real=True)`} cells={[{code:`A = sp.Matrix([[-1,0],[1,-1]])
+f = sp.Matrix([1,0])
+y = sp.simplify(sp.integrate((A*(t-s)).exp()*f,(s,0,t)))
+print('输入积分解:', y)
+print('初值/方程余量:', y.subs(t,0), sp.simplify(y.diff(t)-A*y-f))
+print('ln2时精确/近似:', sp.simplify(y.subs(t,sp.log(2))), y.subs(t,sp.log(2)).evalf(12))
+Z = sp.zeros(2)
+z = sp.integrate((Z*(t-s)).exp()*sp.Matrix([1,2]),(s,0,t))
+print('A零时积分:', z, '第2时刻:', z.subs(t,2))`}]} />
+
+## 解的存在与模型边界
+
+本课的常矩阵 $A$ 与连续输入，在任意有限时间上都有唯一解，前面的显式公式已给出它。更一般的 $\dot x=f(t,x)$ 常用一个局部充分条件：在初值附近 $f$ 连续，而且对 $x$ **局部Lipschitz**。后一个词的意思是，附近两个状态的变化率之差可由常数乘状态差控制：$|f(t,x)-f(t,y)|\le L|x-y|$，其中有限的 $L$ 在该邻域内通用。它保证足够短时间内的解存在且唯一；不是说这个条件必要，也不是保证永远不发散。
+
+例如 $\dot x=\sqrt{|x|}$、$x(0)=0$ 的右边连续，却不满足零附近的这种限制。在 $t\ge0$ 上，$x(t)=0$ 和 $x(t)=t^2/4$ 都满足同一初值问题；还可以先保持为零，等到任意时刻 $c\ge0$ 后再取 $(t-c)^2/4$。这说明“连续”本身不足以保证唯一。
+
+另一个边界是 $\dot x=x^2$、$x(0)=1$。它的解 $x(t)=1/(1-t)$ 在 $t<1$ 满足方程，向前接近 $1$ 时无界，因此不能把局部唯一误当作所有正时间都有有限解。这些边界不同于理想水箱的线性常系数情形。
+
+最后，若矩阵变成 $A(t)$，通常不能直接写 $e^{A(t)t}$，也不能不检查条件就写 $e^{\int A(s)ds}$；不同时刻的矩阵可能不交换。本课的简洁指数公式以 **$A$ 不随时间变** 为前提。真实水箱若流量改变、混合不充分或有输送延迟，也必须先修改模型，不能继续套用这里的常矩阵轨迹。
+
+<JupyterNotebook title="唯一性与有限时间边界" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)
+x = sp.symbols('x', real=True)`} cells={[{code:`zero = sp.Integer(0)
+branch = t*t/4
+blow = 1/(1-t)
+print('两条分支初值:', zero, branch.subs(t,0))
+print('非零分支方程余量:', sp.simplify(sp.diff(branch,t)-sp.sqrt(sp.Abs(branch))))
+print('第1时刻两分支:', zero, branch.subs(t,1))
+print('sqrt变化率比值:', sp.limit(sp.sqrt(x)/x,x,0,dir='+'))
+print('发散例初值/余量/左极限:', blow.subs(t,0), sp.simplify(sp.diff(blow,t)-blow**2), sp.limit(blow,t,1,dir='-'))`}]} />
+
+## 小结
+
+微分方程给变化率，初值给起点；两者合起来，才有条件谈一条确定轨迹。先用标量积分因子理解“初值影响 + 输入累积”，再把同一逻辑推广到常矩阵。
+
+矩阵指数由乘幂级数定义，不是逐元素指数；可对角化时能沿特征方向计算，不可对角化时定义仍有效。串联水箱中的 $te^{-t}$ 正是重根耦合留下的项。解的存在范围、唯一性和物理模型的适用范围，还需要分别核查。
+
+下一课[拉普拉斯变换](/math/laplace-transform)会换一种工具整理微分方程。先能把本课公式代回方程、核对初值，再学变换，就不容易把代数运算与原来的时间问题脱开。
+
+## 习题
+
+1. 对冷却模型 $\dot T=-(T-20)/2$、$T(0)=80$，写出解，计算 $T(2)$，并说明为什么不能把温差写成每分钟固定减少 $30$°C。
+2. 将 $\ddot y+y=0$、$y(0)=1,\dot y(0)=0$ 写成一阶向量初值问题；求 $t=\pi/2$ 的位置和速度，并代回验证。
+3. 对正文的三阶幂零矩阵 $N$，求 $e^{2N}$；若初值 $(0,0,1)$，求第 $2$ 时刻的解。为什么它不是只保留了近似的前三项？
+4. 对正文 $B=\left[\begin{smallmatrix}-1&1\\0&-2\end{smallmatrix}\right]$，用给出的 $P,\Lambda$ 求 $e^{B\ln2}$。初值 $(0,1)$ 的解是什么？
+5. 对等速率串联水箱，分别求纯水冲洗、初值 $(1,0)$ 时第 $2$ 分钟的浓度，以及持续注入浓度 $1$、初值 $(0,0)$ 时 $t=\ln2$ 的浓度。说明两次实验的输入、初值各是什么。
+6. 检验 $x=0$ 与 $x=t^2/4$ 在 $t\ge0$ 是否都解 $\dot x=\sqrt{|x|},x(0)=0$。再对 $\dot x=x^2,x(0)=1$ 说明为什么局部唯一不保证解覆盖所有正时间。
+
+## 答案
+
+1. 令 $z=T-20$，则 $\dot z=-z/2,z(0)=60$；积分因子给 $z=60e^{-t/2}$，故 $T=20+60e^{-t/2}$，$T(2)=20+60/e\approx42.0728$°C。开始的变化率是 $-30$°C/分钟，之后温差缩小，下降速率的绝对值也缩小，不能把开始的斜率当作整段直线。
+2. 取 $\mathbf x=(y,\dot y)$，$A=\left[\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right]$，$\mathbf x(0)=(1,0)$。$e^{At}\mathbf x(0)=(\cos t,-\sin t)$；其导数 $(-\sin t,-\cos t)$ 恰好等于 $A\mathbf x$，初值也满足。$t=\pi/2$ 时为 $(0,-1)$。
+3. $N^3=0$，所以所有三次及更高次项严格为零。$e^{2N}=I+2N+2N^2=\left[\begin{smallmatrix}1&2&2\\0&1&2\\0&0&1\end{smallmatrix}\right]$。乘初值 $(0,0,1)$ 得 $(2,2,1)$；这是精确结果，不是截断误差忽略不计。
+4. $e^{\Lambda\ln2}=\operatorname{diag}(1/2,1/4)$，左右乘 $P,P^{-1}$ 得 $e^{B\ln2}=\left[\begin{smallmatrix}1/2&1/4\\0&1/4\end{smallmatrix}\right]$。乘 $(0,1)$ 得 $(1/4,1/4)$。
+5. 冲洗实验没有染料输入，$\mathbf x(2)=(e^{-2},2e^{-2})\approx(0.1353,0.2707)$。持续注入实验从零开始，输入向量是 $(1,0)$，用常数变易公式积分得到 $(1-e^{-t},1-(1+t)e^{-t})$；在 $\ln2$ 时为 $(1/2,(1-\ln2)/2)\approx(0.5000,0.1534)$。不能只更换初值而漏掉持续输入项。
+6. 零函数两边均为零；另一分支的导数为 $t/2$，在 $t\ge0$ 等于 $\sqrt{t^2/4}$，且起点为零，所以都成立。例如第 $1$ 时刻分别为 $0,1/4$，轨迹已不同。发散例 $x=1/(1-t)$ 在 $t<1$ 满足初值和方程，但 $t\to1^-$ 时趋于正无穷；局部存在唯一没有承诺越过这次发散。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)`} cells={[{code:`print('题1解/第2分钟/初始斜率:',20+60*sp.exp(-t/2),sp.N(20+60/sp.E,12),-30)
+R = sp.Matrix([[sp.cos(t),sp.sin(t)],[-sp.sin(t),sp.cos(t)]])
+print('题2:', R.subs(t,sp.pi/2)*sp.Matrix([1,0]))
+N = sp.Matrix([[0,1,0],[0,0,1],[0,0,0]])
+E2 = (2*N).exp()
+print('题3指数/解:',E2,E2*sp.Matrix([0,0,1]))
+B = sp.Matrix([[-1,1],[0,-2]])
+EB = sp.simplify((B*sp.log(2)).exp())
+print('题4指数/解:',EB,EB*sp.Matrix([0,1]))
+wash = sp.Matrix([sp.exp(-2),2*sp.exp(-2)])
+feed = sp.Matrix([sp.Rational(1,2),(1-sp.log(2))/2])
+print('题5冲洗/持续输入:',wash.evalf(12),feed,feed.evalf(12))
+print('题6两分支第1时刻:',0,sp.Rational(1,4))
+branch = t*t/4
+print('题6分支方程余量:',sp.simplify(sp.diff(branch,t)-sp.sqrt(branch)))
+print('题6发散左极限:',sp.limit(1/(1-t),t,1,dir='-'))`}]} />
