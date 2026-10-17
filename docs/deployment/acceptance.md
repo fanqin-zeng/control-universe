@@ -1,5 +1,7 @@
 # GitHub Pages适配验收
 
+> 本文保留首次授权前的本地验收历史；后续远端首次发布见 [first-release.md](first-release.md)。
+
 2026-10-17；工作包wp/pages-static，起点98bf9d3。用户要求仅在每次明确同意后，把更新反合到Pages服务分支。本次只完成基础设施与本地验收，未推送任何分支，未修改远端Pages设置，未执行公开发布。
 
 ## 结果

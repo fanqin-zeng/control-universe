@@ -1,6 +1,6 @@
 # GitHub Pages 发布约定
 
-2026-10-17。预期公网地址：https://fanqing-zeng.github.io/control-universe/ 。这是目标地址，尚未上线。
+2026-10-17。公网地址：https://fanqing-zeng.github.io/control-universe/ 。首次发布记录见 [first-release.md](first-release.md)。
 
 ## 分支与同意
 
@@ -9,7 +9,7 @@
 - wp/*：按工作包开发，验收合入master。每次用户明确同意具体版本后，才允许把该版本反合到gh-pages，并推送gh-pages。
 - 不自动合并、不按时间同步、不强推覆盖发布分支。用户没有同意时，连首次发布也停在具体可审阅版本。
 
-本次已在本地建立gh-pages，起点98bf9d3。它暂不包含本工作包；工作完成与master合入不代表已授权发布。首次发布和以后每次更新都需用户同意。
+首次授权：2026-10-17 用户明确同意发布 master 的 237b6ff；以 --no-ff 合入 gh-pages 得到 1100137399bf9e0defa03e939c965aa107a06cdf，已推送 origin/gh-pages。以后每次更新仍需用户明确同意具体版本。
 
 ## 静态站能力
 
@@ -39,7 +39,7 @@ git checkout master
 
 在仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**（不是Deploy from a branch）。工作流位于.github/workflows/pages.yml，push触发只列gh-pages；手工dispatch也仅允许gh-pages。github-pages环境的Deployment branches应仅允许gh-pages；如账户支持环境Required reviewers，可再配置用户作为复核人。这里只写部署配置，不更改仓库公开性或额外授予第三方访问。
 
-首次需要确认GitHub Actions启用、Pages已选GitHub Actions；本机未发现gh CLI，不能假称远端配置已完成。用户同意后可用已登录浏览器配置，若需要登录则由用户完成。失败时先修工作包再申请发布新版本，不绕开同意流程。
+首次已通过 GitHub REST API 配置 build_type=workflow；github-pages 环境仅允许 gh-pages 分支。使用 Git 已保存的 GitHub 认证，凭据仅在进程内使用，未写入文件或输出。失败时先修工作包再申请发布新版本，不绕开同意流程。
 
 发布成功后检查Actions对应SHA/部署URL，再实测公网首页、数学两课、旧URL/锚点、CSS/字体与交互；不能以本地build通过宣称公网已上线。以后版本回滚也只在用户同意后合入/revert发布分支并推送。
 
@@ -47,4 +47,4 @@ git checkout master
 - https://nextjs.org/docs/14/app/building-your-application/deploying/static-exports
 - https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
 
-实际输出与截图见同目录验收文件；当前尚未执行远端发布。
+本地适配证据见 acceptance.md；首次远端部署、版本核验与公网截图见 first-release.md。

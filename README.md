@@ -43,4 +43,4 @@ python scripts/jupyter_server.py
 
 静态构建：`npm run build:pages`；本地预览：`npm run preview:pages` → http://localhost:8081/control-universe/ 。课程与ECharts可在线使用；Python代码展示但需本地Jupyter服务执行。
 
-`gh-pages`为额外长期源码发布分支，由Actions导出部署。**每次用户明确同意版本后，才把更新反合并推送到gh-pages**；master推送不自动上线。首次部署配置与验收见[发布约定](docs/deployment/github-pages.md)。当前适配已准备，远端首次发布仍待用户同意。
+`gh-pages`为额外长期源码发布分支，由Actions导出部署。**每次用户明确同意版本后，才把更新反合并推送到gh-pages**；master推送不自动上线。首次部署配置与验收见[发布约定](docs/deployment/github-pages.md)。首次发布已完成：[访问在线 wiki](https://fanqing-zeng.github.io/control-universe/)，[公网验收](docs/deployment/first-release.md)。
