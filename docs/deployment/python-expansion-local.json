@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-17T18:23:11.505Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=math/fourier-analysis",
+  "testedAt": "2026-10-17T18:38:41.563Z",
+  "url": "http://localhost:8080/python-expansion.html?lesson=math/z-transform",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -8431,21 +8431,166 @@
           ]
         }
       ]
+    },
+    {
+      "key": "math/z-transform",
+      "title": "Z变换",
+      "sourceHash": "21b9c9e4b8e369f443063a8a145b1bc602fb16f88c5eb9b154bfc55907a165ea",
+      "notebooks": [
+        {
+          "id": "math/z-transform#1",
+          "title": "几何序列与加权和",
+          "index": 1,
+          "line": 47,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5332,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "记录0到3: [1, 1/2, 1/4, 1/8]\nN/项数/有限和/小数: 8 9 511/256 1.99609375000\n无限和/尾项: 2 1/256 0.00390625000000\n变换（ROC模z大于1/2）: 2*z/(2*z - 1)\ndelta变换: 1\n边界a/前五个部分和: 1 [1, 2, 3, 4, 5]\n边界a/前五个部分和: -1 [1, 0, 1, 0, 1]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#2",
+          "title": "同分式与两种收敛域",
+          "index": 2,
+          "line": 83,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 175,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "两分式相减: 0\n右侧前四项: [1, 1/2, 1/4, 1/8]\n左侧k=-1,-2,-3: [-2, -4, -8]\n右侧z1/左侧z1/4: 2 -1\n各自截断核对: 2417851639229258349412351/1208925819614629174706176 -1.00000000000\n同一分式在z1,a=-1的代数值（非边界级数和）: 1/2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#3",
+          "title": "单边延迟与非零初值",
+          "index": 3,
+          "line": 128,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 34,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "零输入初值响应0到3: [2, 1, 1/2, 1/4]\nY0/延迟式: 4*z/(2*z - 1) 8*z/(2*z - 1)\nz2处原移位前17项/完整值: 5.33333333302 16/3\n阶跃分式拆分余量: 0\n阶跃输出0到3: [1, 3/2, 7/4, 15/8]\n延迟两格脉冲变换: z**(-2)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#4",
+          "title": "递推卷积与终值边界",
+          "index": 4,
+          "line": 173,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 27,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "递推=卷积: True 前四项: [1, 3/2, 7/4, 15/8] 第8项: 511/256\n阶跃初值/终值: 1 2\n脉冲绝对和: 2\na1阶跃: [1, 2, 3, 4, 5]\n交替反例前五项: [1, -1, 1, -1, 1]\n不满足条件的形式终值: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#5",
+          "title": "单位圆频响与物理周期",
+          "index": 5,
+          "line": 206,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 63,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "角度/H/幅值/相位: 0 2 2 0\n角度/H/幅值/相位: pi/2 4/5 - 2*I/5 2*sqrt(5)/5 -atan(1/2)\n角度/H/幅值/相位: pi 2/3 2/3 0\npi/2幅相小数: 0.894427191000 -0.463647609001\nTs1分钟的周期: 4\n2pi周期性余量: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#6",
+          "title": "模态采样与六题复算",
+          "index": 6,
+          "line": 248,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: 1/(1 - 1/(2*z)) ROC模z>1/2 511/256 2 1/256\n题2左侧z1/4的80项近似: -1.00000000000 极限为-1;尾项绝对值2^-80\n题3: 2/(1 - 1/(2*z)) [2, 1, 1/2, 1/4]\n题4: [1, 3/2, 7/4] 通项2-(1/2)^k;初值1;终值2\n题5: 4/5 - 2*I/5 2*sqrt(5)/5 -atan(1/2) 4\n题5交替形式终值: 0\n题6采样系数: 0.36787944117144233 0.6065306597126334\n题6 a1阶跃: [1, 2, 3, 4, 5]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 60,
-    "notebooks": 225,
-    "enabled": 197,
+    "lessons": 61,
+    "notebooks": 231,
+    "enabled": 203,
     "codeOnly": 28
   },
   "releaseTotals": {
-    "lessons": 60,
-    "notebooks": 225,
-    "enabled": 195,
+    "lessons": 61,
+    "notebooks": 231,
+    "enabled": 201,
     "codeOnly": 30
   },
   "provenance": [
@@ -8513,6 +8658,11 @@
       "testedAt": "2026-10-17T18:23:11.505Z",
       "url": "http://localhost:8080/python-expansion.html?lesson=math/fourier-analysis",
       "inputPath": ".agent/semester-03/math-09/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T18:38:41.563Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/z-transform",
+      "inputPath": ".agent/semester-03/math-10/browser-python.json"
     }
   ]
 }
