@@ -1,0 +1,142 @@
+{
+  "source": "content/math/ode-matrix-exponential.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 83,
+      "title": "一阶方程与输入",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)\r\ns = sp.symbols('s', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 85,
+          "delim": "`",
+          "code": "T = 20 + 60*sp.exp(-t/2)\r\nz = sp.exp(-t) + sp.integrate(2*sp.exp(-(t-s)), (s,0,t))\r\nprint('冷却解/初值/方程余量:', T, T.subs(t,0), sp.simplify(sp.diff(T,t)+(T-20)/2))\r\nprint('第2分钟:', sp.N(T.subs(t,2),12))\r\nprint('常输入解/初值/ln2时:', sp.simplify(z), z.subs(t,0), sp.simplify(z.subs(t,sp.log(2))))\r\nprint('常输入方程余量:', sp.simplify(sp.diff(z,t)+z-2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 134,
+      "title": "高阶方程与矩阵级数",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 135,
+          "delim": "`",
+          "code": "A = sp.Matrix([[0,1],[-1,0]])\r\nR = (A*t).exp()\r\nN = sp.Matrix([[0,1,0],[0,0,1],[0,0,0]])\r\nEN = sp.eye(3)+t*N+t*t*N*N/2\r\nprint('振动A平方:', A*A)\r\nprint('振动矩阵指数:', R)\r\nprint('pi/2时位置与速度:', sp.simplify(R.subs(t,sp.pi/2)*sp.Matrix([1,0])))\r\nprint('幂零N立方:', N**3)\r\nprint('幂零指数/第2时刻:', EN, EN.subs(t,2))\r\nprint('指数核验:', sp.simplify((N*t).exp()-EN))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 179,
+      "title": "对角化与指数乘法边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 180,
+          "delim": "`",
+          "code": "B = sp.Matrix([[-1,1],[0,-2]])\r\nP = sp.Matrix([[1,-1],[0,1]])\r\nL = sp.diag(-1,-2)\r\nEB = sp.simplify(P*(L*t).exp()*P.inv())\r\nU = sp.Matrix([[0,1],[0,0]])\r\nV = sp.Matrix([[0,0],[1,0]])\r\nprint('对角化余量:', B-P*L*P.inv())\r\nprint('指数:', EB)\r\nprint('ln2时矩阵/解:', sp.simplify(EB.subs(t,sp.log(2))), sp.simplify(EB.subs(t,sp.log(2))*sp.Matrix([0,1])))\r\nprint('零矩阵指数/逐元素指数:', sp.zeros(2).exp(), sp.zeros(2).applyfunc(sp.exp))\r\nprint('非交换PQ-QP:', U*V-V*U)\r\nprint('指数相乘:', U.exp()*V.exp())\r\nprint('和的指数:', (U+V).exp())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 217,
+      "title": "串联水箱与重根",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)\r\na,b = sp.symbols('a b', positive=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 219,
+          "delim": "`",
+          "code": "A = sp.Matrix([[-1,0],[1,-1]])\r\nE = (A*t).exp()\r\nx = E*sp.Matrix([1,0])\r\nother = b*(sp.exp(-a*t)-sp.exp(-b*t))/(b-a)\r\nprint('特征值/特征向量:', A.eigenvects())\r\nprint('矩阵指数/轨迹:', E, x)\r\nK = A + sp.eye(2)\r\nprint('K平方/指数初值/矩阵方程余量:', K*K, E.subs(t,0), sp.simplify(E.diff(t)-A*E))\r\nprint('初值/方程余量:', x.subs(t,0), sp.simplify(x.diff(t)-A*x))\r\nfor q in [1,2,8]:\r\n    print('时刻/浓度/变化率:', q, x.subs(t,q).evalf(12), (A*x).subs(t,q).evalf(12))\r\nprint('第二箱导数/极限:', sp.diff(x[1],t), sp.limit(x[1],t,sp.oo))\r\nprint('速率趋同:', sp.simplify(sp.limit(other,b,a)))\r\nprint('不同速率方程余量/初值:', sp.simplify(sp.diff(other,t)-b*(sp.exp(-a*t)-other)), sp.simplify(other.subs(t,0)))\r\nprint('a1b2第1分钟:', sp.N(other.subs({a:1,b:2,t:1}),12))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 255,
+      "title": "持续输入与奇异矩阵",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)\r\ns = sp.symbols('s', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 257,
+          "delim": "`",
+          "code": "A = sp.Matrix([[-1,0],[1,-1]])\r\nf = sp.Matrix([1,0])\r\ny = sp.simplify(sp.integrate((A*(t-s)).exp()*f,(s,0,t)))\r\nprint('输入积分解:', y)\r\nprint('初值/方程余量:', y.subs(t,0), sp.simplify(y.diff(t)-A*y-f))\r\nprint('ln2时精确/近似:', sp.simplify(y.subs(t,sp.log(2))), y.subs(t,sp.log(2)).evalf(12))\r\nZ = sp.zeros(2)\r\nz = sp.integrate((Z*(t-s)).exp()*sp.Matrix([1,2]),(s,0,t))\r\nprint('A零时积分:', z, '第2时刻:', z.subs(t,2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 277,
+      "title": "唯一性与有限时间边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)\r\nx = sp.symbols('x', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 279,
+          "delim": "`",
+          "code": "zero = sp.Integer(0)\r\nbranch = t*t/4\r\nblow = 1/(1-t)\r\nprint('两条分支初值:', zero, branch.subs(t,0))\r\nprint('非零分支方程余量:', sp.simplify(sp.diff(branch,t)-sp.sqrt(sp.Abs(branch))))\r\nprint('第1时刻两分支:', zero, branch.subs(t,1))\r\nprint('sqrt变化率比值:', sp.limit(sp.sqrt(x)/x,x,0,dir='+'))\r\nprint('发散例初值/余量/左极限:', blow.subs(t,0), sp.simplify(sp.diff(blow,t)-blow**2), sp.limit(blow,t,1,dir='-'))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 314,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 315,
+          "delim": "`",
+          "code": "print('题1解/第2分钟/初始斜率:',20+60*sp.exp(-t/2),sp.N(20+60/sp.E,12),-30)\r\nR = sp.Matrix([[sp.cos(t),sp.sin(t)],[-sp.sin(t),sp.cos(t)]])\r\nprint('题2:', R.subs(t,sp.pi/2)*sp.Matrix([1,0]))\r\nN = sp.Matrix([[0,1,0],[0,0,1],[0,0,0]])\r\nE2 = (2*N).exp()\r\nprint('题3指数/解:',E2,E2*sp.Matrix([0,0,1]))\r\nB = sp.Matrix([[-1,1],[0,-2]])\r\nEB = sp.simplify((B*sp.log(2)).exp())\r\nprint('题4指数/解:',EB,EB*sp.Matrix([0,1]))\r\nwash = sp.Matrix([sp.exp(-2),2*sp.exp(-2)])\r\nfeed = sp.Matrix([sp.Rational(1,2),(1-sp.log(2))/2])\r\nprint('题5冲洗/持续输入:',wash.evalf(12),feed,feed.evalf(12))\r\nprint('题6两分支第1时刻:',0,sp.Rational(1,4))\r\nbranch = t*t/4\r\nprint('题6分支方程余量:',sp.simplify(sp.diff(branch,t)-sp.sqrt(branch)))\r\nprint('题6发散左极限:',sp.limit(1/(1-t),t,1,dir='-'))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

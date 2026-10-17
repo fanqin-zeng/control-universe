@@ -454,6 +454,16 @@
 | 驻点 | stationary point | — | MATH-06定义 | 梯度为零，不保证极值 |
 | 鞍点 | saddle point | — | MATH-06定义 | 相邻方向有升有降 |
 | 二重积分 | double integral | — | MATH-06定义 | 高度或密度乘小面积再求和 |
+| 微分方程 | differential equation | — | MATH-07定义 | 未知函数与导数的关系 |
+| 常微分方程 | ordinary differential equation、ODE | — | MATH-07定义 | 单一自变量，未知函数可多个 |
+| 初值问题 | initial value problem、IVP | — | MATH-07定义 | 方程与指定时刻的函数值 |
+| 积分因子 | integrating factor | — | MATH-07定义 | 乘积求导转换，本课标量e^{at} |
+| 矩阵指数 | matrix exponential | — | MATH-07定义 | 按矩阵乘幂的无穷级数，非逐元素 |
+| 幂零矩阵 | nilpotent matrix | — | MATH-07定义 | 某次正整数幂为零 |
+| 常数变易公式 | variation of constants formula | — | MATH-07定义 | 初值传播加输入积分 |
+| 局部Lipschitz | locally Lipschitz | — | MATH-07定义 | 邻域内变化率差由状态差线性控制 |
+| 齐次线性方程 | homogeneous linear equation | — | MATH-07定义 | 无外部输入项 |
+| 非齐次线性方程 | inhomogeneous linear equation | — | MATH-07定义 | 带给定外部输入项 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
