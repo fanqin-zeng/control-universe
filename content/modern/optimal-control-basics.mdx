@@ -70,7 +70,9 @@ $$
 
 系统 $\dot{x} = -x + u$，$x(0) = 1$，$x(2) = 0$。找 $u(t)$ 最小化：
 
-$$J = \frac{1}{2} \int_0^2 u^2 \, dt$$
+$$
+J = \frac{1}{2} \int_0^2 u^2 \, dt
+$$
 
 这里：$f(x, u) = -x + u$，$L = \frac{1}{2}u^2$，$\phi = 0$，$t_f = 2$。
 
@@ -90,11 +92,15 @@ $$J = \frac{1}{2} \int_0^2 u^2 \, dt$$
 
 ### 最简单的变分问题
 
-$$\min_{x(t)} J = \int_0^T F(x, \dot{x}, t) \, dt, \quad x(0) = x_0, \; x(T) = x_T$$
+$$
+\min_{x(t)} J = \int_0^T F(x, \dot{x}, t) \, dt, \quad x(0) = x_0, \; x(T) = x_T
+$$
 
 极值的必要条件——**Euler-Lagrange 方程**：
 
-$$\boxed{\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 0}$$
+$$
+\boxed{\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 0}
+$$
 
 这是关于 $x(t)$ 的二阶常微分方程，配合两个边界条件 $x(0) = x_0$、$x(T) = x_T$，可以解出最优轨迹 $x^*(t)$。
 
@@ -108,7 +114,9 @@ $$\boxed{\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial 
 
 Euler-Lagrange 方程：
 
-$$\frac{\partial F}{\partial y} - \frac{d}{dx}\frac{\partial F}{\partial \dot{y}} = 0 - \frac{d}{dx}\frac{\dot{y}}{\sqrt{1+\dot{y}^2}} = 0$$
+$$
+\frac{\partial F}{\partial y} - \frac{d}{dx}\frac{\partial F}{\partial \dot{y}} = 0 - \frac{d}{dx}\frac{\dot{y}}{\sqrt{1+\dot{y}^2}} = 0
+$$
 
 所以 $\frac{\dot{y}}{\sqrt{1+\dot{y}^2}} = \text{const}$，即 $\dot{y} = \text{const}$。
 
@@ -130,19 +138,27 @@ $$\frac{\partial F}{\partial y} - \frac{d}{dx}\frac{\partial F}{\partial \dot{y}
 
 动态约束优化类似：引入**协态变量** $\boldsymbol{\lambda}(t)$（时间的函数，类似动态的 Lagrange 乘子），构造 **Hamilton 函数**：
 
-$$\boxed{H(\boldsymbol{x}, \boldsymbol{u}, \boldsymbol{\lambda}, t) = L(\boldsymbol{x}, \boldsymbol{u}, t) + \boldsymbol{\lambda}^T f(\boldsymbol{x}, \boldsymbol{u}, t)}$$
+$$
+\boxed{H(\boldsymbol{x}, \boldsymbol{u}, \boldsymbol{\lambda}, t) = L(\boldsymbol{x}, \boldsymbol{u}, t) + \boldsymbol{\lambda}^T f(\boldsymbol{x}, \boldsymbol{u}, t)}
+$$
 
 ### Pontryagin 极小值原理
 
 最优控制 $\boldsymbol{u}^*(t)$ 使 Hamilton 函数取**最小值**：
 
-$$\boxed{\boldsymbol{u}^*(t) = \arg\min_{\boldsymbol{u} \in U} H(\boldsymbol{x}^*, \boldsymbol{u}, \boldsymbol{\lambda}^*, t)}$$
+$$
+\boxed{\boldsymbol{u}^*(t) = \arg\min_{\boldsymbol{u} \in U} H(\boldsymbol{x}^*, \boldsymbol{u}, \boldsymbol{\lambda}^*, t)}
+$$
 
 同时，状态和协态满足**正则方程**：
 
-$$\dot{\boldsymbol{x}}^* = \frac{\partial H}{\partial \boldsymbol{\lambda}} = f(\boldsymbol{x}^*, \boldsymbol{u}^*, t) \quad \text{（状态方程）}$$
+$$
+\dot{\boldsymbol{x}}^* = \frac{\partial H}{\partial \boldsymbol{\lambda}} = f(\boldsymbol{x}^*, \boldsymbol{u}^*, t) \quad \text{（状态方程）}
+$$
 
-$$\dot{\boldsymbol{\lambda}}^* = -\frac{\partial H}{\partial \boldsymbol{x}} \quad \text{（协态方程）}$$
+$$
+\dot{\boldsymbol{\lambda}}^* = -\frac{\partial H}{\partial \boldsymbol{x}} \quad \text{（协态方程）}
+$$
 
 边界条件：
 - **初始条件**：$\boldsymbol{x}(0) = \boldsymbol{x}_0$（已知）
@@ -166,7 +182,9 @@ $$\dot{\boldsymbol{\lambda}}^* = -\frac{\partial H}{\partial \boldsymbol{x}} \qu
 
 如果控制没有约束（$U = \mathbb{R}^m$），$H$ 对 $\boldsymbol{u}$ 可微且在内点取极值，则：
 
-$$\frac{\partial H}{\partial \boldsymbol{u}} = 0$$
+$$
+\frac{\partial H}{\partial \boldsymbol{u}} = 0
+$$
 
 这比 $\arg\min$ 形式更容易计算。
 
@@ -185,29 +203,43 @@ $$\frac{\partial H}{\partial \boldsymbol{u}} = 0$$
 
 **步骤1**：构造 Hamilton 函数。
 
-$$H = \frac{1}{2}u^2 + \lambda(-x + u)$$
+$$
+H = \frac{1}{2}u^2 + \lambda(-x + u)
+$$
 
 **步骤2**：最优控制条件（无约束，$\partial H / \partial u = 0$）。
 
-$$\frac{\partial H}{\partial u} = u + \lambda = 0 \implies u^* = -\lambda$$
+$$
+\frac{\partial H}{\partial u} = u + \lambda = 0 \implies u^* = -\lambda
+$$
 
 **步骤3**：协态方程。
 
-$$\dot{\lambda} = -\frac{\partial H}{\partial x} = -(-\lambda) = \lambda$$
+$$
+\dot{\lambda} = -\frac{\partial H}{\partial x} = -(-\lambda) = \lambda
+$$
 
 解：$\lambda(t) = \lambda(0) e^t$。
 
 **步骤4**：状态方程（代入 $u^* = -\lambda$）。
 
-$$\dot{x} = -x + u^* = -x - \lambda = -x - \lambda(0) e^t$$
+$$
+\dot{x} = -x + u^* = -x - \lambda = -x - \lambda(0) e^t
+$$
 
 这是一阶线性 ODE。积分因子 $e^t$：
 
-$$\frac{d}{dt}(xe^t) = -\lambda(0) e^{2t}$$
+$$
+\frac{d}{dt}(xe^t) = -\lambda(0) e^{2t}
+$$
 
-$$xe^t = -\frac{\lambda(0)}{2} e^{2t} + C$$
+$$
+xe^t = -\frac{\lambda(0)}{2} e^{2t} + C
+$$
 
-$$x(t) = -\frac{\lambda(0)}{2} e^t + Ce^{-t}$$
+$$
+x(t) = -\frac{\lambda(0)}{2} e^t + Ce^{-t}
+$$
 
 **步骤5**：用边界条件确定常数。
 
@@ -225,15 +257,21 @@ $C = \frac{e^4}{e^4 - 1} \approx 1.0187$
 
 **结果**：
 
-$$u^*(t) = -\lambda(t) = -\lambda(0) e^t = -\frac{2e^t}{e^4 - 1}$$
+$$
+u^*(t) = -\lambda(t) = -\lambda(0) e^t = -\frac{2e^t}{e^4 - 1}
+$$
 
-$$x^*(t) = -\frac{\lambda(0)}{2} e^t + C e^{-t} = -\frac{e^t}{e^4 - 1} + \frac{e^4}{e^4 - 1} e^{-t} = \frac{e^{4-t} - e^t}{e^4 - 1}$$
+$$
+x^*(t) = -\frac{\lambda(0)}{2} e^t + C e^{-t} = -\frac{e^t}{e^4 - 1} + \frac{e^4}{e^4 - 1} e^{-t} = \frac{e^{4-t} - e^t}{e^4 - 1}
+$$
 
 验证：$x(0) = \frac{e^4 - 1}{e^4 - 1} = 1$ ✓，$x(2) = \frac{e^2 - e^2}{e^4 - 1} = 0$ ✓
 
 最优代价：
 
-$$J^* = \frac{1}{2}\int_0^2 u^{*2} \, dt = \frac{1}{2}\int_0^2 \frac{4e^{2t}}{(e^4-1)^2} \, dt = \frac{2}{(e^4-1)^2} \cdot \frac{e^4 - 1}{2} = \frac{1}{e^4 - 1} \approx 0.0187$$
+$$
+J^* = \frac{1}{2}\int_0^2 u^{*2} \, dt = \frac{1}{2}\int_0^2 \frac{4e^{2t}}{(e^4-1)^2} \, dt = \frac{2}{(e^4-1)^2} \cdot \frac{e^4 - 1}{2} = \frac{1}{e^4 - 1} \approx 0.0187
+$$
 
 <Callout variant="info">
 **观察**
@@ -308,7 +346,9 @@ print(f"最优控制节省能量: {(1 - J_analytical/J_uniform)*100:.1f}%")` },
 
 最小时间问题：把系统从 $\boldsymbol{x}_0$ 驱动到 $\boldsymbol{x}_f$，**用最短的时间**。
 
-$$\min_{u(t)} J = t_f = \int_0^{t_f} 1 \, dt$$
+$$
+\min_{u(t)} J = t_f = \int_0^{t_f} 1 \, dt
+$$
 
 约束：$\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，$\boldsymbol{x}(0) = \boldsymbol{x}_0$，$\boldsymbol{x}(t_f) = \boldsymbol{x}_f$，$|u(t)| \leq 1$。
 
@@ -316,15 +356,21 @@ $$\min_{u(t)} J = t_f = \int_0^{t_f} 1 \, dt$$
 
 Hamilton 函数（$L = 1$）：
 
-$$H = 1 + \lambda^T f(\boldsymbol{x}, \boldsymbol{u})$$
+$$
+H = 1 + \lambda^T f(\boldsymbol{x}, \boldsymbol{u})
+$$
 
 对于线性系统 $\dot{x} = ax + bu$：
 
-$$H = 1 + \lambda(ax + bu) = 1 + \lambda a x + \lambda b u$$
+$$
+H = 1 + \lambda(ax + bu) = 1 + \lambda a x + \lambda b u
+$$
 
 $H$ 对 $u$ 是**线性**的！最优控制：
 
-$$u^* = \arg\min_{|u| \leq 1} (\lambda b u) = \begin{cases} -1 & \text{if } \lambda b > 0 \\ +1 & \text{if } \lambda b < 0 \end{cases}$$
+$$
+u^* = \arg\min_{|u| \leq 1} (\lambda b u) = \begin{cases} -1 & \text{if } \lambda b > 0 \\ +1 & \text{if } \lambda b < 0 \end{cases}
+$$
 
 控制量只取 $+1$ 或 $-1$——这就是 **bang-bang 控制**。
 
@@ -358,7 +404,9 @@ $x(t_f) = 0 \implies 2e^{-t_f} = 1 \implies t_f = \ln 2 \approx 0.693$
 
 工程中最重要的最优控制问题是**线性二次型**（LQ）问题：
 
-$$\min_{\boldsymbol{u}(t)} J = \frac{1}{2}\boldsymbol{x}^T(t_f) S \boldsymbol{x}(t_f) + \frac{1}{2}\int_0^{t_f} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt$$
+$$
+\min_{\boldsymbol{u}(t)} J = \frac{1}{2}\boldsymbol{x}^T(t_f) S \boldsymbol{x}(t_f) + \frac{1}{2}\int_0^{t_f} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt
+$$
 
 约束：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$（线性系统）
 
@@ -421,7 +469,9 @@ Pontryagin 极小值原理不仅适用于线性系统。对于**非线性系统*
 
 **1.** 用 Euler-Lagrange 方程求使以下泛函最小的函数 $x(t)$：
 
-$$J = \int_0^1 (\dot{x}^2 + x^2) \, dt, \quad x(0) = 0, \; x(1) = 1$$
+$$
+J = \int_0^1 (\dot{x}^2 + x^2) \, dt, \quad x(0) = 0, \; x(1) = 1
+$$
 
 **2.** 证明：连接平面上两点 $(x_0, y_0)$ 和 $(x_1, y_1)$ 的最短曲线是直线。（提示：曲线长度 $L = \int \sqrt{1 + y'^2} \, dx$，用 Euler-Lagrange 方程。）
 
@@ -461,7 +511,9 @@ $x(0) = 0$：$A + B = 0 \implies B = -A$
 
 $x(1) = 1$：$Ae - Ae^{-1} = 1 \implies A = \frac{1}{e - e^{-1}} = \frac{1}{2\sinh 1}$
 
-$$x^*(t) = \frac{\sinh t}{\sinh 1}$$
+$$
+x^*(t) = \frac{\sinh t}{\sinh 1}
+$$
 
 **数值抽查**：$J(x^*) = \frac{1}{\sinh^2 1}\int_0^1 \cosh^2 t \, dt \approx 1.0185$；对比直线 $x(t)=t$ 的 $J = \int_0^1 (1 + t^2)\,dt = 4/3 \approx 1.3333$——最优性肉眼可见。
 
@@ -487,7 +539,9 @@ $u^* = -\lambda_0$（常数）。
 
 $x(1) = 0$：$1 - \lambda_0 = 0 \implies \lambda_0 = 1$。
 
-$$u^*(t) = -1, \quad x^*(t) = 1 - t$$
+$$
+u^*(t) = -1, \quad x^*(t) = 1 - t
+$$
 
 $J^* = \frac{1}{2}\int_0^1 1 \, dt = \frac{1}{2}$
 
@@ -500,7 +554,9 @@ $J^* = \frac{1}{2}\int_0^1 1 \, dt = \frac{1}{2}$
 协态方程：$\dot{\lambda} = -\partial H / \partial x = -(x - 2\lambda) = -x + 2\lambda$
 
 TPBVP：
-$$\begin{bmatrix} \dot{x} \\ \dot{\lambda} \end{bmatrix} = \begin{bmatrix} -2 & -1 \\ -1 & 2 \end{bmatrix} \begin{bmatrix} x \\ \lambda \end{bmatrix}$$
+$$
+\begin{bmatrix} \dot{x} \\ \dot{\lambda} \end{bmatrix} = \begin{bmatrix} -2 & -1 \\ -1 & 2 \end{bmatrix} \begin{bmatrix} x \\ \lambda \end{bmatrix}
+$$
 
 $x(0) = 3$，$x(2) = 0$。
 
@@ -520,11 +576,15 @@ $x(t_f) = 0$：$3e^{-t_f} = 1 \implies t_f = \ln 3 \approx 1.099$。
 
 验证 $\lambda_0 < 0$（$u^* = +1$）：$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 2e^{-t} + 1 > 0$，永远到不了零。
 
-$$u^*(t) = -1, \quad t_f^* = \ln 3 \approx 1.099$$
+$$
+u^*(t) = -1, \quad t_f^* = \ln 3 \approx 1.099
+$$
 
 **6.** 对于分量约束 $|u_i| \leq 1$，Hamilton 函数：
 
-$$H = L(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{\lambda}^T(A\boldsymbol{x} + B\boldsymbol{u})$$
+$$
+H = L(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{\lambda}^T(A\boldsymbol{x} + B\boldsymbol{u})
+$$
 
 如果 $H$ 对 $u_i$ 是线性的，则 $H$ 可以写成 $H = (\text{不含 } u_i \text{ 的项}) + (\lambda^T b_i) u_i$，其中 $b_i$ 是 $B$ 的第 $i$ 列。
 
@@ -580,7 +640,9 @@ $x_1(t_f) = x_1(t_s) - t_s(t_f - t_s) + \frac{1}{2}(t_f - t_s)^2 = (1 - \frac{1}
 
 $x_1(t_f) = 0 \implies t_s = 1$。$t_f = 2$。
 
-$$u^*(t) = \begin{cases} -1 & 0 \leq t < 1 \\ +1 & 1 \leq t \leq 2 \end{cases}, \quad t_f^* = 2$$
+$$
+u^*(t) = \begin{cases} -1 & 0 \leq t < 1 \\ +1 & 1 \leq t \leq 2 \end{cases}, \quad t_f^* = 2
+$$
 
 **8.** (a) 终值代价 $\phi = \frac{1}{2}x^2(t_f)$。
 
@@ -598,7 +660,9 @@ $x(t_f) = 1 - \lambda_0$（$t_f = 1$）。
 
 横截条件：$\lambda_0 = x(1) = 1 - \lambda_0 \implies \lambda_0 = \frac{1}{2}$。
 
-$$u^*(t) = -\frac{1}{2}, \quad x^*(t) = 1 - \frac{t}{2}$$
+$$
+u^*(t) = -\frac{1}{2}, \quad x^*(t) = 1 - \frac{t}{2}
+$$
 
 验证：$x(1) = \frac{1}{2}$，$\lambda(1) = \frac{1}{2} = x(1)$ ✓
 
@@ -606,11 +670,15 @@ $$u^*(t) = -\frac{1}{2}, \quad x^*(t) = 1 - \frac{t}{2}$$
 
 沿最优轨迹：
 
-$$\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \dot{\boldsymbol{x}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \dot{\boldsymbol{\lambda}} + \frac{\partial H}{\partial t}$$
+$$
+\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \dot{\boldsymbol{x}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \dot{\boldsymbol{\lambda}} + \frac{\partial H}{\partial t}
+$$
 
 由正则方程：$\dot{\boldsymbol{x}} = \partial H / \partial \boldsymbol{\lambda}$，$\dot{\boldsymbol{\lambda}} = -\partial H / \partial \boldsymbol{x}$。
 
-$$\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \frac{\partial H}{\partial \boldsymbol{\lambda}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \left(-\frac{\partial H}{\partial \boldsymbol{x}}\right) + \frac{\partial H}{\partial t} = \frac{\partial H}{\partial t}$$
+$$
+\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \frac{\partial H}{\partial \boldsymbol{\lambda}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \left(-\frac{\partial H}{\partial \boldsymbol{x}}\right) + \frac{\partial H}{\partial t} = \frac{\partial H}{\partial t}
+$$
 
 如果 $H$ 不显含 $t$，则 $\partial H / \partial t = 0$，所以 $dH/dt = 0$，即 $H$ 是常数。证毕。
 

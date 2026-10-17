@@ -55,27 +55,39 @@ $$
 
 Hamilton 函数：
 
-$$H = \frac{1}{2}(\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) + \boldsymbol{\lambda}^T(A\boldsymbol{x} + B\boldsymbol{u})$$
+$$
+H = \frac{1}{2}(\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) + \boldsymbol{\lambda}^T(A\boldsymbol{x} + B\boldsymbol{u})
+$$
 
 **步骤1**：最优控制条件（$\partial H / \partial \boldsymbol{u} = 0$）。
 
-$$\frac{\partial H}{\partial \boldsymbol{u}} = R\boldsymbol{u} + B^T\boldsymbol{\lambda} = 0 \implies \boxed{\boldsymbol{u}^* = -R^{-1}B^T\boldsymbol{\lambda}}$$
+$$
+\frac{\partial H}{\partial \boldsymbol{u}} = R\boldsymbol{u} + B^T\boldsymbol{\lambda} = 0 \implies \boxed{\boldsymbol{u}^* = -R^{-1}B^T\boldsymbol{\lambda}}
+$$
 
 **步骤2**：协态方程。
 
-$$\dot{\boldsymbol{\lambda}} = -\frac{\partial H}{\partial \boldsymbol{x}} = -Q\boldsymbol{x} - A^T\boldsymbol{\lambda}$$
+$$
+\dot{\boldsymbol{\lambda}} = -\frac{\partial H}{\partial \boldsymbol{x}} = -Q\boldsymbol{x} - A^T\boldsymbol{\lambda}
+$$
 
 **步骤3**：终值横截条件。
 
-$$\boldsymbol{\lambda}(t_f) = \frac{\partial}{\partial \boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^T S \boldsymbol{x}\right]_{t_f} = S\boldsymbol{x}(t_f)$$
+$$
+\boldsymbol{\lambda}(t_f) = \frac{\partial}{\partial \boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^T S \boldsymbol{x}\right]_{t_f} = S\boldsymbol{x}(t_f)
+$$
 
 把最优控制代入状态方程：
 
-$$\dot{\boldsymbol{x}} = A\boldsymbol{x} - BR^{-1}B^T\boldsymbol{\lambda}$$
+$$
+\dot{\boldsymbol{x}} = A\boldsymbol{x} - BR^{-1}B^T\boldsymbol{\lambda}
+$$
 
 状态方程和协态方程组成 TPBVP：
 
-$$\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{\lambda}} \end{bmatrix} = \begin{bmatrix} A & -BR^{-1}B^T \\ -Q & -A^T \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{\lambda} \end{bmatrix}$$
+$$
+\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{\lambda}} \end{bmatrix} = \begin{bmatrix} A & -BR^{-1}B^T \\ -Q & -A^T \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{\lambda} \end{bmatrix}
+$$
 
 边界条件：$\boldsymbol{x}(0) = \boldsymbol{x}_0$，$\boldsymbol{\lambda}(t_f) = S\boldsymbol{x}(t_f)$。
 
@@ -85,23 +97,33 @@ $$\begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{\lambda}} \end{bmatri
 
 如果这个关系成立，最优控制变为：
 
-$$\boldsymbol{u}^* = -R^{-1}B^T P(t)\boldsymbol{x} = -K(t)\boldsymbol{x}$$
+$$
+\boldsymbol{u}^* = -R^{-1}B^T P(t)\boldsymbol{x} = -K(t)\boldsymbol{x}
+$$
 
 其中 $K(t) = R^{-1}B^T P(t)$——这就是**时变状态反馈**！
 
 对 $\boldsymbol{\lambda} = P\boldsymbol{x}$ 两边求导：
 
-$$\dot{\boldsymbol{\lambda}} = \dot{P}\boldsymbol{x} + P\dot{\boldsymbol{x}}$$
+$$
+\dot{\boldsymbol{\lambda}} = \dot{P}\boldsymbol{x} + P\dot{\boldsymbol{x}}
+$$
 
 代入协态方程 $\dot{\boldsymbol{\lambda}} = -Q\boldsymbol{x} - A^T P\boldsymbol{x}$ 和状态方程 $\dot{\boldsymbol{x}} = (A - BR^{-1}B^T P)\boldsymbol{x}$：
 
-$$\dot{P}\boldsymbol{x} + P(A - BR^{-1}B^T P)\boldsymbol{x} = -Q\boldsymbol{x} - A^T P\boldsymbol{x}$$
+$$
+\dot{P}\boldsymbol{x} + P(A - BR^{-1}B^T P)\boldsymbol{x} = -Q\boldsymbol{x} - A^T P\boldsymbol{x}
+$$
 
 因为对所有 $\boldsymbol{x}$ 成立，去掉 $\boldsymbol{x}$：
 
-$$\dot{P} + PA + A^T P - PBR^{-1}B^T P + Q = 0$$
+$$
+\dot{P} + PA + A^T P - PBR^{-1}B^T P + Q = 0
+$$
 
-$$\boxed{-\dot{P} = A^T P + PA - PBR^{-1}B^T P + Q}$$
+$$
+\boxed{-\dot{P} = A^T P + PA - PBR^{-1}B^T P + Q}
+$$
 
 这就是**微分 Riccati 方程**（DRE），终值条件 $P(t_f) = S$。
 
@@ -128,11 +150,15 @@ Riccati 方程的结构：
 
 当 $t_f \to \infty$，$P(t)$ 趋向稳态值 $P$（假设 $(A, B)$ 可控，$(A, Q^{1/2})$ 可观）。令 $\dot{P} = 0$：
 
-$$\boxed{A^T P + PA - PBR^{-1}B^T P + Q = 0}$$
+$$
+\boxed{A^T P + PA - PBR^{-1}B^T P + Q = 0}
+$$
 
 这就是**代数 Riccati 方程**（ARE）。解出 $P$ 后，最优增益为常数：
 
-$$\boxed{K = R^{-1}B^T P}$$
+$$
+\boxed{K = R^{-1}B^T P}
+$$
 
 最优控制：$\boldsymbol{u}^* = -K\boldsymbol{x}$
 
@@ -150,11 +176,17 @@ $$\boxed{K = R^{-1}B^T P}$$
 
 ARE（$P$ 是标量）：
 
-$$2ap - \frac{b^2}{r}p^2 + q = 0$$
+$$
+2ap - \frac{b^2}{r}p^2 + q = 0
+$$
 
-$$\frac{b^2}{r}p^2 - 2ap - q = 0$$
+$$
+\frac{b^2}{r}p^2 - 2ap - q = 0
+$$
 
-$$p = \frac{2a \pm \sqrt{4a^2 + 4b^2 q/r}}{2b^2/r} = \frac{r}{b^2}\left(a + \sqrt{a^2 + \frac{b^2 q}{r}}\right)$$
+$$
+p = \frac{2a \pm \sqrt{4a^2 + 4b^2 q/r}}{2b^2/r} = \frac{r}{b^2}\left(a + \sqrt{a^2 + \frac{b^2 q}{r}}\right)
+$$
 
 取正根（保证 $p > 0$）。
 
@@ -351,7 +383,9 @@ Nyquist 曲线不进入以 $(-1,0)$ 为圆心、半径为 1 的开圆盘。增�
 
 $Q$ 和 $R$ 的选择决定了"状态偏差"和"控制能耗"之间的权衡。一个常用的起点是 **Bryson 规则**：
 
-$$q_{ii} = \frac{1}{x_{i,\max}^2}, \quad r_{jj} = \frac{1}{u_{j,\max}^2}$$
+$$
+q_{ii} = \frac{1}{x_{i,\max}^2}, \quad r_{jj} = \frac{1}{u_{j,\max}^2}
+$$
 
 其中 $x_{i,\max}$ 和 $u_{j,\max}$ 是各状态和控制量的**允许最大值**。
 
@@ -390,11 +424,15 @@ $$q_{ii} = \frac{1}{x_{i,\max}^2}, \quad r_{jj} = \frac{1}{u_{j,\max}^2}$$
 
 方法：加入前馈增益 $N$。
 
-$$\boldsymbol{u} = -K\boldsymbol{x} + N r$$
+$$
+\boldsymbol{u} = -K\boldsymbol{x} + N r
+$$
 
 前馈增益 $N$ 的计算和上一课状态反馈中一样：
 
-$$N = -\frac{1}{C(A-BK)^{-1}B}$$
+$$
+N = -\frac{1}{C(A-BK)^{-1}B}
+$$
 
 （这里假设 SISO、无直接通道、闭环稳定且分母非零；只在名义模型下保证常值参考无静差，不能自动消除常值扰动或模型偏差，后者通常需要积分。）
 
@@ -426,7 +464,9 @@ $N = -\frac{1}{-1} = 1$
 
 离散时间系统的 LQR 类似，但 Riccati 方程变成**差分方程**：
 
-$$P(k) = A^T P(k+1) A - A^T P(k+1) B (R + B^T P(k+1) B)^{-1} B^T P(k+1) A + Q$$
+$$
+P(k) = A^T P(k+1) A - A^T P(k+1) B (R + B^T P(k+1) B)^{-1} B^T P(k+1) A + Q
+$$
 
 稳态时 $P(k) = P(k+1) = P$，得到**离散代数 Riccati 方程**（DARE）。Python 中用 `scipy.linalg.solve_discrete_are`。
 

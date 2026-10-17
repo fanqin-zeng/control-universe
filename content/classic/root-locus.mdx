@@ -17,7 +17,9 @@ description: 用根轨迹分析闭环极点随增益变化的轨迹——从"分
 
 本章路线图：
 
-$$\text{特征方程} \to \text{相角条件} \to \text{绘制规则} \to \text{完整示例} \to \text{读性能} \to \text{控制器设计}$$
+$$
+\text{特征方程} \to \text{相角条件} \to \text{绘制规则} \to \text{完整示例} \to \text{读性能} \to \text{控制器设计}
+$$
 
 ---
 
@@ -27,15 +29,21 @@ $$\text{特征方程} \to \text{相角条件} \to \text{绘制规则} \to \text{
 
 考虑单位反馈系统：
 
-$$\text{参考输入 } R(s) \to \boxed{K} \to \boxed{G(s)} \to Y(s) \to \boxed{H(s)=1} \to \text{反馈}$$
+$$
+\text{参考输入 } R(s) \to \boxed{K} \to \boxed{G(s)} \to Y(s) \to \boxed{H(s)=1} \to \text{反馈}
+$$
 
 闭环传递函数：
 
-$$T(s) = \frac{KG(s)}{1 + KG(s)}$$
+$$
+T(s) = \frac{KG(s)}{1 + KG(s)}
+$$
 
 闭环特征方程：
 
-$$\boxed{1 + KG(s) = 0}$$
+$$
+\boxed{1 + KG(s) = 0}
+$$
 
 即 $KG(s) = -1$。
 
@@ -73,11 +81,15 @@ $KG(s) = -1$ 是一个复数方程。$-1$ 的极坐标形式是 $1 \cdot e^{j\pi
 
 **相角条件**（决定根轨迹在哪里）：
 
-$$\boxed{\angle G(s) = \pm 180°(2k+1), \quad k = 0, 1, 2, \ldots}$$
+$$
+\boxed{\angle G(s) = \pm 180°(2k+1), \quad k = 0, 1, 2, \ldots}
+$$
 
 **幅值条件**（决定该点对应的 $K$ 值）：
 
-$$\boxed{K = \frac{1}{|G(s)|}}$$
+$$
+\boxed{K = \frac{1}{|G(s)|}}
+$$
 
 > 💡 **相角条件是关键**：根轨迹上的点**只由相角条件决定**，与 $K$ 无关。一旦确定了轨迹上的点，再用幅值条件算出对应的 $K$。
 
@@ -85,13 +97,17 @@ $$\boxed{K = \frac{1}{|G(s)|}}$$
 
 把 $G(s)$ 写成零极点形式：
 
-$$G(s) = \frac{(s-z_1)(s-z_2)\cdots}{(s-p_1)(s-p_2)\cdots}$$
+$$
+G(s) = \frac{(s-z_1)(s-z_2)\cdots}{(s-p_1)(s-p_2)\cdots}
+$$
 
 每个因子 $(s - z_i)$ 可以看作从零点 $z_i$ 指向 $s$ 的向量，$(s - p_i)$ 是从极点 $p_i$ 指向 $s$ 的向量。
 
 相角条件变为：
 
-$$\sum \angle(s - z_i) - \sum \angle(s - p_i) = \pm 180°(2k+1)$$
+$$
+\sum \angle(s - z_i) - \sum \angle(s - p_i) = \pm 180°(2k+1)
+$$
 
 **直觉**：$s$ 平面上某个点是否在根轨迹上，取决于从所有零极点指向该点的向量的角度之和。
 
@@ -110,7 +126,9 @@ $$\sum \angle(s - z_i) - \sum \angle(s - p_i) = \pm 180°(2k+1)$$
 
 对应的 $K$ 值（幅值条件）：
 
-$$K = |s| \cdot |s+2| = \sqrt{2} \cdot \sqrt{2} = 2$$
+$$
+K = |s| \cdot |s+2| = \sqrt{2} \cdot \sqrt{2} = 2
+$$
 
 ---
 
@@ -141,11 +159,15 @@ $$K = |s| \cdot |s+2| = \sqrt{2} \cdot \sqrt{2} = 2$$
 
 **渐近线角度**：
 
-$$\phi_a = \frac{(2k+1) \times 180°}{n - m}, \quad k = 0, 1, \ldots, n-m-1$$
+$$
+\phi_a = \frac{(2k+1) \times 180°}{n - m}, \quad k = 0, 1, \ldots, n-m-1
+$$
 
 **渐近线交点**（重心）：
 
-$$\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}$$
+$$
+\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}
+$$
 
 所有渐近线交于实轴上的同一点 $\sigma_a$。
 
@@ -155,11 +177,15 @@ $$\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}$$
 
 分离/会合点满足：
 
-$$\frac{dK}{ds} = 0 \quad \text{其中} \quad K = -\frac{1}{G(s)}$$
+$$
+\frac{dK}{ds} = 0 \quad \text{其中} \quad K = -\frac{1}{G(s)}
+$$
 
 等价地：
 
-$$\sum_{i=1}^{n} \frac{1}{s - p_i} = \sum_{j=1}^{m} \frac{1}{s - z_j}$$
+$$
+\sum_{i=1}^{n} \frac{1}{s - p_i} = \sum_{j=1}^{m} \frac{1}{s - z_j}
+$$
 
 ### 规则 6：与虚轴的交点
 
@@ -173,7 +199,9 @@ $$\sum_{i=1}^{n} \frac{1}{s - p_i} = \sum_{j=1}^{m} \frac{1}{s - z_j}$$
 
 从复数极点**出发**的角度（出射角）：
 
-$$\theta_{\text{departure}} = 180° + \sum \angle(p - z_j) - \sum_{i \neq k} \angle(p - p_i)$$
+$$
+\theta_{\text{departure}} = 180° + \sum \angle(p - z_j) - \sum_{i \neq k} \angle(p - p_i)
+$$
 
 到达复数零点**进入**的角度（入射角）：类似公式，符号相反。
 
@@ -221,23 +249,33 @@ $G(s) = \dfrac{1}{s(s+2)(s+4)}$，绘制根轨迹。
 
 $n - m = 3$ 条渐近线：
 
-$$\phi_a = \frac{(2k+1) \times 180°}{3} = 60°, 180°, 300° \quad (k=0,1,2)$$
+$$
+\phi_a = \frac{(2k+1) \times 180°}{3} = 60°, 180°, 300° \quad (k=0,1,2)
+$$
 
 即 $\pm 60°$ 和 $180°$（沿负实轴）。
 
 渐近线交点：
 
-$$\sigma_a = \frac{0 + (-2) + (-4)}{3} = -2$$
+$$
+\sigma_a = \frac{0 + (-2) + (-4)}{3} = -2
+$$
 
 ### 步骤 4：分离点
 
 特征方程：$1 + K \cdot \dfrac{1}{s(s+2)(s+4)} = 0 \implies K = -s(s+2)(s+4) = -(s^3 + 6s^2 + 8s)$
 
-$$\frac{dK}{ds} = -(3s^2 + 12s + 8) = 0$$
+$$
+\frac{dK}{ds} = -(3s^2 + 12s + 8) = 0
+$$
 
-$$s = \frac{-12 \pm \sqrt{144 - 96}}{6} = \frac{-12 \pm \sqrt{48}}{6} = \frac{-12 \pm 6.93}{6}$$
+$$
+s = \frac{-12 \pm \sqrt{144 - 96}}{6} = \frac{-12 \pm \sqrt{48}}{6} = \frac{-12 \pm 6.93}{6}
+$$
 
-$$s_1 = -0.845, \quad s_2 = -3.155$$
+$$
+s_1 = -0.845, \quad s_2 = -3.155
+$$
 
 $s_1 = -0.845$ 在 $(-2, 0)$ 段上，是**分离点** ✓
 
@@ -245,7 +283,9 @@ $s_2 = -3.155$ 不在根轨迹上（$(-4, -2)$ 段不是根轨迹），舍去。
 
 分离点处的 $K$ 值：
 
-$$K = -(-0.845)(-0.845+2)(-0.845+4) = 0.845 \times 1.155 \times 3.155 = 3.08$$
+$$
+K = -(-0.845)(-0.845+2)(-0.845+4) = 0.845 \times 1.155 \times 3.155 = 3.08
+$$
 
 ### 步骤 5：与虚轴的交点
 
@@ -253,9 +293,13 @@ $$K = -(-0.845)(-0.845+2)(-0.845+4) = 0.845 \times 1.155 \times 3.155 = 3.08$$
 
 令 $s = j\omega$：
 
-$$(j\omega)^3 + 6(j\omega)^2 + 8(j\omega) + K = 0$$
+$$
+(j\omega)^3 + 6(j\omega)^2 + 8(j\omega) + K = 0
+$$
 
-$$-j\omega^3 - 6\omega^2 + 8j\omega + K = 0$$
+$$
+-j\omega^3 - 6\omega^2 + 8j\omega + K = 0
+$$
 
 实部：$-6\omega^2 + K = 0 \implies K = 6\omega^2$
 
@@ -393,31 +437,47 @@ Routh 判据给出稳定范围 $0 < K < 48$（$K = 48$ 时极点穿越虚轴，$
 
 在 $60°$ 线上取 $s = -a + ja\sqrt{3}$（$a > 0$），代入特征方程。利用 $s = 2a \cdot e^{j2\pi/3}$：
 
-$$s^2 = a^2(-2 - 2j\sqrt{3}), \quad s^3 = 8a^3$$
+$$
+s^2 = a^2(-2 - 2j\sqrt{3}), \quad s^3 = 8a^3
+$$
 
-$$s^3 + 6s^2 + 8s = 8a^3 + 6a^2(-2 - 2j\sqrt{3}) + 8a(-1 + j\sqrt{3})$$
+$$
+s^3 + 6s^2 + 8s = 8a^3 + 6a^2(-2 - 2j\sqrt{3}) + 8a(-1 + j\sqrt{3})
+$$
 
 分离虚部：
 
-$$\text{Im} = -12a^2\sqrt{3} + 8a\sqrt{3} = a\sqrt{3}(8 - 12a) = 0 \implies a = \frac{2}{3}$$
+$$
+\text{Im} = -12a^2\sqrt{3} + 8a\sqrt{3} = a\sqrt{3}(8 - 12a) = 0 \implies a = \frac{2}{3}
+$$
 
 代入实部：
 
-$$\text{Re} = 8\left(\frac{2}{3}\right)^3 - 12\left(\frac{2}{3}\right)^2 - 8\left(\frac{2}{3}\right) = \frac{64}{27} - \frac{48}{9} - \frac{16}{3} = \frac{64 - 144 - 144}{27} = -\frac{224}{27}$$
+$$
+\text{Re} = 8\left(\frac{2}{3}\right)^3 - 12\left(\frac{2}{3}\right)^2 - 8\left(\frac{2}{3}\right) = \frac{64}{27} - \frac{48}{9} - \frac{16}{3} = \frac{64 - 144 - 144}{27} = -\frac{224}{27}
+$$
 
 特征方程要求 $s(s+2)(s+4) = -K$。此处乘积为 $-224/27$（负实数），所以 $K = 224/27 \approx 8.30 > 0$。
 
 **验证**（幅值条件）：$s = -\dfrac{2}{3} + j\dfrac{2\sqrt{3}}{3}$
 
-$$|s| = \frac{4}{3}, \quad |s+2| = \frac{2\sqrt{7}}{3}, \quad |s+4| = \frac{4\sqrt{7}}{3}$$
+$$
+|s| = \frac{4}{3}, \quad |s+2| = \frac{2\sqrt{7}}{3}, \quad |s+4| = \frac{4\sqrt{7}}{3}
+$$
 
-$$K = \frac{4}{3} \cdot \frac{2\sqrt{7}}{3} \cdot \frac{4\sqrt{7}}{3} = \frac{224}{27} \approx 8.30 \quad \checkmark$$
+$$
+K = \frac{4}{3} \cdot \frac{2\sqrt{7}}{3} \cdot \frac{4\sqrt{7}}{3} = \frac{224}{27} \approx 8.30 \quad \checkmark
+$$
 
 **验证**（相角条件）：
 
-$$\angle s = 120°, \quad \angle(s+2) \approx 40.9°, \quad \angle(s+4) \approx 19.1°$$
+$$
+\angle s = 120°, \quad \angle(s+2) \approx 40.9°, \quad \angle(s+4) \approx 19.1°
+$$
 
-$$120° + 40.9° + 19.1° = 180° \quad \checkmark$$
+$$
+120° + 40.9° + 19.1° = 180° \quad \checkmark
+$$
 
 **第三步**：确定 $\zeta \geq 0.5$ 的范围。
 
@@ -427,7 +487,9 @@ $$120° + 40.9° + 19.1° = 180° \quad \checkmark$$
 - $3.08 \leq K \leq 8.30$：复数极点在 $60°$ 线以左，$\zeta \geq 0.5$ ✓
 - $K > 8.30$：复数极点在 $60°$ 线以右，$\zeta < 0.5$ ✗
 
-$$\boxed{0 < K \leq \frac{224}{27} \approx 8.30 \text{ 时 } \zeta \geq 0.5}$$
+$$
+\boxed{0 < K \leq \frac{224}{27} \approx 8.30 \text{ 时 } \zeta \geq 0.5}
+$$
 
 对应的自然频率 $\omega_n = |s| = 4/3 \approx 1.33$ rad/s。第三个极点 $p_3 = -6 - 2(-2/3) = -14/3 \approx -4.67$，满足主导极点条件（$|p_3|/|\text{Re}(s)| = 7 > 5$）。
 
@@ -591,7 +653,9 @@ PI 控制器 $C(s) = K_p + K_i/s = K_p(1 + 1/(T_i s))$，添加了一个极点 $
 
 相角条件变为：
 
-$$\angle G(s) = \pm 360° \cdot k \quad (k = 0, 1, 2, \ldots)$$
+$$
+\angle G(s) = \pm 360° \cdot k \quad (k = 0, 1, 2, \ldots)
+$$
 
 与负反馈的 $\pm 180°$ 不同。这导致两条关键规则变化：
 
@@ -682,17 +746,23 @@ $$\angle G(s) = \pm 360° \cdot k \quad (k = 0, 1, 2, \ldots)$$
 
 **渐近线**：$n - m = 2$ 条
 
-$$\phi_a = \frac{(2k+1) \times 180°}{2} = 90°, 270° \quad (k=0,1)$$
+$$
+\phi_a = \frac{(2k+1) \times 180°}{2} = 90°, 270° \quad (k=0,1)
+$$
 
 即沿虚轴方向。
 
-$$\sigma_a = \frac{0 + (-6)}{2} = -3$$
+$$
+\sigma_a = \frac{0 + (-6)}{2} = -3
+$$
 
 **实轴上的根轨迹**：$-6 < s < 0$ 段（右侧 1 个极点，奇数）。
 
 **分离点**：$K = -s(s+6) = -(s^2 + 6s)$
 
-$$\frac{dK}{ds} = -(2s + 6) = 0 \implies \boxed{s = -3}$$
+$$
+\frac{dK}{ds} = -(2s + 6) = 0 \implies \boxed{s = -3}
+$$
 
 分离点处 $K = -(-3)(-3+6) = 3 \times 3 = 9$。
 
@@ -706,7 +776,9 @@ $$\frac{dK}{ds} = -(2s + 6) = 0 \implies \boxed{s = -3}$$
 
 根轨迹从 $s = 0$ 和 $s = -6$ 出发，在 $s = -3$ 处分离后沿 $\text{Re}(s) = -3$ 的竖直线上下延伸，始终在左半平面。
 
-$$\boxed{\text{所有 } K > 0 \text{ 均稳定}}$$
+$$
+\boxed{\text{所有 } K > 0 \text{ 均稳定}}
+$$
 
 ---
 
@@ -716,9 +788,13 @@ $$\boxed{\text{所有 } K > 0 \text{ 均稳定}}$$
 
 **渐近线**：$n - m = 3$ 条
 
-$$\phi_a = \frac{(2k+1) \times 180°}{3} = 60°, 180°, 300°$$
+$$
+\phi_a = \frac{(2k+1) \times 180°}{3} = 60°, 180°, 300°
+$$
 
-$$\sigma_a = \frac{-1 + (-3) + (-5)}{3} = -3$$
+$$
+\sigma_a = \frac{-1 + (-3) + (-5)}{3} = -3
+$$
 
 **实轴上的根轨迹**：$-3 < s < -1$ 和 $s < -5$。
 
@@ -726,17 +802,25 @@ $$\sigma_a = \frac{-1 + (-3) + (-5)}{3} = -3$$
 
 展开：$K = -(s^3 + 9s^2 + 23s + 15)$
 
-$$\frac{dK}{ds} = -(3s^2 + 18s + 23) = 0$$
+$$
+\frac{dK}{ds} = -(3s^2 + 18s + 23) = 0
+$$
 
-$$s = \frac{-18 \pm \sqrt{324 - 276}}{6} = \frac{-18 \pm \sqrt{48}}{6} = \frac{-18 \pm 6.93}{6}$$
+$$
+s = \frac{-18 \pm \sqrt{324 - 276}}{6} = \frac{-18 \pm \sqrt{48}}{6} = \frac{-18 \pm 6.93}{6}
+$$
 
-$$s_1 = -1.845, \quad s_2 = -4.155$$
+$$
+s_1 = -1.845, \quad s_2 = -4.155
+$$
 
 $s_1 = -1.845$ 在 $(-3, -1)$ 段上，是**分离点** ✓
 
 $s_2 = -4.155$ 不在根轨迹段上（$(-5, -3)$ 不是根轨迹），舍去。
 
-$$\boxed{s_d = -1.845, \quad K_d = 0.845 \times 1.155 \times 3.155 = 3.08}$$
+$$
+\boxed{s_d = -1.845, \quad K_d = 0.845 \times 1.155 \times 3.155 = 3.08}
+$$
 
 **与虚轴交点**：特征方程 $s^3 + 9s^2 + 23s + 15 + K = 0$
 
@@ -748,9 +832,13 @@ $$\boxed{s_d = -1.845, \quad K_d = 0.845 \times 1.155 \times 3.155 = 3.08}$$
 
 $\omega = \sqrt{23} \approx 4.80$ rad/s
 
-$$K_{\text{crit}} = 9 \times 23 - 15 = 207 - 15 = \boxed{192}$$
+$$
+K_{\text{crit}} = 9 \times 23 - 15 = 207 - 15 = \boxed{192}
+$$
 
-$$\boxed{0 < K < 192 \text{ 时系统稳定}}$$
+$$
+\boxed{0 < K < 192 \text{ 时系统稳定}}
+$$
 
 ---
 
@@ -760,11 +848,15 @@ $$\boxed{0 < K < 192 \text{ 时系统稳定}}$$
 
 **渐近线**：$n - m = 1$ 条
 
-$$\phi_a = \frac{180°}{1} = 180°$$
+$$
+\phi_a = \frac{180°}{1} = 180°
+$$
 
 （沿负实轴趋向无穷远）
 
-$$\sigma_a = \frac{0 + (-1) - (-2)}{1} = 1$$
+$$
+\sigma_a = \frac{0 + (-1) - (-2)}{1} = 1
+$$
 
 **实轴上的根轨迹**：
 
@@ -777,13 +869,21 @@ $$\sigma_a = \frac{0 + (-1) - (-2)}{1} = 1$$
 
 **分离点/会合点**：
 
-$$K = \frac{-s(s+1)}{s+2} = \frac{-(s^2+s)}{s+2}$$
+$$
+K = \frac{-s(s+1)}{s+2} = \frac{-(s^2+s)}{s+2}
+$$
 
-$$\frac{dK}{ds} = \frac{-(2s+1)(s+2) + (s^2+s)}{(s+2)^2} = \frac{-s^2-4s-2}{(s+2)^2} = 0$$
+$$
+\frac{dK}{ds} = \frac{-(2s+1)(s+2) + (s^2+s)}{(s+2)^2} = \frac{-s^2-4s-2}{(s+2)^2} = 0
+$$
 
-$$s^2 + 4s + 2 = 0 \implies s = -2 \pm \sqrt{2}$$
+$$
+s^2 + 4s + 2 = 0 \implies s = -2 \pm \sqrt{2}
+$$
 
-$$s_1 = -0.586, \quad s_2 = -3.414$$
+$$
+s_1 = -0.586, \quad s_2 = -3.414
+$$
 
 $s_1 = -0.586$ 在 $(-1, 0)$ 段上 → **分离点**
 
@@ -807,13 +907,19 @@ $s_2 = -3.414$ 在 $(-\infty, -2)$ 段上 → **会合点**
 
 **分离点**：$K = -(s^3 + 10s^2 + 24s)$
 
-$$\frac{dK}{ds} = -(3s^2 + 20s + 24) = 0$$
+$$
+\frac{dK}{ds} = -(3s^2 + 20s + 24) = 0
+$$
 
-$$s = \frac{-20 \pm \sqrt{400 - 288}}{6} = \frac{-20 \pm \sqrt{112}}{6} = \frac{-10 \pm 2\sqrt{7}}{3}$$
+$$
+s = \frac{-20 \pm \sqrt{400 - 288}}{6} = \frac{-20 \pm \sqrt{112}}{6} = \frac{-10 \pm 2\sqrt{7}}{3}
+$$
 
 $s_1 = (-10 + 2\sqrt{7})/3 \approx -1.569$ 在 $(-4, 0)$ 段上 → **分离点** ✓
 
-$$K_d = -s_1(s_1+4)(s_1+6) = \frac{10-2\sqrt{7}}{3} \cdot \frac{2+2\sqrt{7}}{3} \cdot \frac{8+2\sqrt{7}}{3} = \frac{160 + 112\sqrt{7}}{27} \approx 16.90$$
+$$
+K_d = -s_1(s_1+4)(s_1+6) = \frac{10-2\sqrt{7}}{3} \cdot \frac{2+2\sqrt{7}}{3} \cdot \frac{8+2\sqrt{7}}{3} = \frac{160 + 112\sqrt{7}}{27} \approx 16.90
+$$
 
 **与虚轴交点**：特征方程 $s^3 + 10s^2 + 24s + K = 0$
 
@@ -830,7 +936,9 @@ $s^1$ 行全为零：$K = 240$
 
 辅助方程：$10s^2 + 240 = 0 \implies s = \pm j\sqrt{24} = \pm j2\sqrt{6}$
 
-$$\boxed{K_{\text{crit}} = 240, \quad \omega = 2\sqrt{6} \approx 4.90 \text{ rad/s}}$$
+$$
+\boxed{K_{\text{crit}} = 240, \quad \omega = 2\sqrt{6} \approx 4.90 \text{ rad/s}}
+$$
 
 **设计：求 $\zeta \geq 0.5$ 的 $K$ 范围**
 
@@ -846,9 +954,13 @@ $K = 43.776 = \dfrac{5472}{125} \approx 43.8$
 
 **验证**：$s = -1.2 + j1.2\sqrt{3}$
 
-$$|s| = 2.4, \quad |s+4| = \sqrt{2.8^2 + (1.2\sqrt{3})^2} = \sqrt{12.16} \approx 3.49, \quad |s+6| = \sqrt{4.8^2 + (1.2\sqrt{3})^2} = \sqrt{27.36} \approx 5.23$$
+$$
+|s| = 2.4, \quad |s+4| = \sqrt{2.8^2 + (1.2\sqrt{3})^2} = \sqrt{12.16} \approx 3.49, \quad |s+6| = \sqrt{4.8^2 + (1.2\sqrt{3})^2} = \sqrt{27.36} \approx 5.23
+$$
 
-$$K = 2.4 \times 3.49 \times 5.23 \approx 43.8 \quad \checkmark$$
+$$
+K = 2.4 \times 3.49 \times 5.23 \approx 43.8 \quad \checkmark
+$$
 
 相角验证：$\angle s = 120°$，$\angle(s+4) \approx 36.6°$，$\angle(s+6) \approx 23.4°$，总和 $= 180°$ ✓
 
@@ -856,7 +968,9 @@ $$K = 2.4 \times 3.49 \times 5.23 \approx 43.8 \quad \checkmark$$
 
 根轨迹从分离点（$\zeta = 1$）出发，随 $K$ 增大穿越 $60°$ 线（$\zeta = 0.5$，$K \approx 43.8$），继续向虚轴移动。
 
-$$\boxed{K_{\text{分离}} \leq K \leq \frac{5472}{125}，\text{即 } 16.90 \leq K \leq 43.8}$$
+$$
+\boxed{K_{\text{分离}} \leq K \leq \frac{5472}{125}，\text{即 } 16.90 \leq K \leq 43.8}
+$$
 
 （$K < K_{\text{分离}}$ 时极点在实轴上，$\zeta = 1 \geq 0.5$，也满足。完整范围：$0 < K \leq 43.8$。）
 
@@ -866,7 +980,9 @@ $$\boxed{K_{\text{分离}} \leq K \leq \frac{5472}{125}，\text{即 } 16.90 \leq
 
 调节时间由主导极点的实部决定：$t_s \approx 4/\sigma$，其中 $\sigma = |\text{Re}(s)|$。
 
-$$t_s \leq 3 \implies \sigma \geq \frac{4}{3} \implies \text{Re}(s) \leq -\frac{4}{3}$$
+$$
+t_s \leq 3 \implies \sigma \geq \frac{4}{3} \implies \text{Re}(s) \leq -\frac{4}{3}
+$$
 
 **复数极点范围**（$K > K_{\text{分离}} \approx 16.90$）：
 
@@ -874,29 +990,43 @@ $$t_s \leq 3 \implies \sigma \geq \frac{4}{3} \implies \text{Re}(s) \leq -\frac{
 
 计算各幂次：
 
-$$s^2 = \left(-\frac{4}{3} + j\omega\right)^2 = \left(\frac{16}{9} - \omega^2\right) - j\frac{8\omega}{3}$$
+$$
+s^2 = \left(-\frac{4}{3} + j\omega\right)^2 = \left(\frac{16}{9} - \omega^2\right) - j\frac{8\omega}{3}
+$$
 
-$$s^3 = s \cdot s^2 = \left(-\frac{64}{27} + 4\omega^2\right) + j\left(\frac{16\omega}{3} - \omega^3\right)$$
+$$
+s^3 = s \cdot s^2 = \left(-\frac{64}{27} + 4\omega^2\right) + j\left(\frac{16\omega}{3} - \omega^3\right)
+$$
 
 代入特征方程，分离虚部：
 
-$$\text{Im} = \left(\frac{16\omega}{3} - \omega^3\right) + 10\left(-\frac{8\omega}{3}\right) + 24\omega = \omega\left(\frac{16}{3} - \frac{80}{3} + 24 - \omega^2\right) = \omega\left(\frac{8}{3} - \omega^2\right) = 0$$
+$$
+\text{Im} = \left(\frac{16\omega}{3} - \omega^3\right) + 10\left(-\frac{8\omega}{3}\right) + 24\omega = \omega\left(\frac{16}{3} - \frac{80}{3} + 24 - \omega^2\right) = \omega\left(\frac{8}{3} - \omega^2\right) = 0
+$$
 
 $\omega \neq 0$（否则为实轴上的点），故 $\omega^2 = \dfrac{8}{3}$。
 
 代入实部：
 
-$$\text{Re} = \left(-\frac{64}{27} + 4 \cdot \frac{8}{3}\right) + 10\left(\frac{16}{9} - \frac{8}{3}\right) + 24\left(-\frac{4}{3}\right) + K = 0$$
+$$
+\text{Re} = \left(-\frac{64}{27} + 4 \cdot \frac{8}{3}\right) + 10\left(\frac{16}{9} - \frac{8}{3}\right) + 24\left(-\frac{4}{3}\right) + K = 0
+$$
 
-$$-\frac{64}{27} + \frac{32}{3} + \frac{160}{9} - \frac{80}{3} - 32 + K = 0$$
+$$
+-\frac{64}{27} + \frac{32}{3} + \frac{160}{9} - \frac{80}{3} - 32 + K = 0
+$$
 
 通分（分母 27）：
 
-$$\frac{-64 + 288 + 480 - 720 - 864}{27} + K = 0 \implies K = \frac{880}{27} \approx 32.59$$
+$$
+\frac{-64 + 288 + 480 - 720 - 864}{27} + K = 0 \implies K = \frac{880}{27} \approx 32.59
+$$
 
 **验证阻尼比**：$s = -\dfrac{4}{3} + j\dfrac{2\sqrt{6}}{3}$
 
-$$\zeta = \frac{|\text{Re}(s)|}{|s|} = \frac{4/3}{\sqrt{16/9 + 24/9}} = \frac{4/3}{2\sqrt{10}/3} = \frac{2}{\sqrt{10}} \approx 0.632 > 0.5 \quad \checkmark$$
+$$
+\zeta = \frac{|\text{Re}(s)|}{|s|} = \frac{4/3}{\sqrt{16/9 + 24/9}} = \frac{4/3}{2\sqrt{10}/3} = \frac{2}{\sqrt{10}} \approx 0.632 > 0.5 \quad \checkmark
+$$
 
 **单调性**：根轨迹从分离点 $\text{Re} = -1.569$（$K = 16.90$）出发，随 $K$ 增大，复数极点的实部单调递增趋向 0。因此 $\text{Re}(s) \leq -4/3$ 对应 $K \leq 880/27$。
 
@@ -904,7 +1034,9 @@ $$\zeta = \frac{|\text{Re}(s)|}{|s|} = \frac{4/3}{\sqrt{16/9 + 24/9}} = \frac{4/
 
 **综合两个指标**：
 
-$$\boxed{\frac{448}{27} \leq K \leq \frac{880}{27}，\text{即 } 16.59 \leq K \leq 32.59}$$
+$$
+\boxed{\frac{448}{27} \leq K \leq \frac{880}{27}，\text{即 } 16.59 \leq K \leq 32.59}
+$$
 
 （主要范围：$K_{\text{分离}} \leq K \leq 880/27$，即 $16.90 \leq K \leq 32.59$。$t_s$ 约束比 $\zeta$ 约束更严格——$t_s$ 要求 $K \leq 32.59$，而 $\zeta$ 允许到 $K \leq 43.8$。）
 
@@ -916,11 +1048,15 @@ $$\boxed{\frac{448}{27} \leq K \leq \frac{880}{27}，\text{即 } 16.59 \leq K \l
 
 **Routh 表**：
 
-$$\begin{array}{c|cc} s^3 & 1 & 0 \\ s^2 & 4 & K \\ s^1 & \dfrac{4 \cdot 0 - 1 \cdot K}{4} = -\dfrac{K}{4} & \\ s^0 & K & \end{array}$$
+$$
+\begin{array}{c|cc} s^3 & 1 & 0 \\ s^2 & 4 & K \\ s^1 & \dfrac{4 \cdot 0 - 1 \cdot K}{4} = -\dfrac{K}{4} & \\ s^0 & K & \end{array}
+$$
 
 对任意 $K > 0$：$s^1$ 行 $= -K/4 < 0$。第一列符号变化：$+4 \to -K/4 \to +K$，共 **2 次符号变化**，即 2 个右半平面极点。
 
-$$\boxed{\text{系统对所有 } K > 0 \text{ 都不稳定}}$$
+$$
+\boxed{\text{系统对所有 } K > 0 \text{ 都不稳定}}
+$$
 
 **根轨迹特征**：
 
@@ -939,11 +1075,15 @@ $$\boxed{\text{系统对所有 } K > 0 \text{ 都不稳定}}$$
 
 Routh 表：
 
-$$\begin{array}{c|cc} s^3 & 1 & K \\ s^2 & 4 & 2K \\ s^1 & \dfrac{4K - 2K}{4} = \dfrac{K}{2} & \\ s^0 & 2K & \end{array}$$
+$$
+\begin{array}{c|cc} s^3 & 1 & K \\ s^2 & 4 & 2K \\ s^1 & \dfrac{4K - 2K}{4} = \dfrac{K}{2} & \\ s^0 & 2K & \end{array}
+$$
 
 $K > 0$ 时第一列全部为正 $\implies$ **系统对所有 $K > 0$ 稳定**。
 
-$$\boxed{\text{添加 PD 控制器（左半平面零点）可稳定系统}}$$
+$$
+\boxed{\text{添加 PD 控制器（左半平面零点）可稳定系统}}
+$$
 
 ---
 
@@ -951,7 +1091,9 @@ $$\boxed{\text{添加 PD 控制器（左半平面零点）可稳定系统}}$$
 
 **（1）渐近线交点左移**
 
-$$\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}$$
+$$
+\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}
+$$
 
 添加零点使分母 $n - m$ 减小（趋向无穷远的分支减少），同时分子中减去 $z$ 使 $\sigma_a$ 更负。渐近线交点左移意味着根轨迹整体向左半平面深处移动，闭环极点实部绝对值更大，响应更快、衰减更迅速。
 

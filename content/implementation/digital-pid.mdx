@@ -25,7 +25,9 @@ description: "工业级数字PID的完整实现——位置式与增量式、积
 
 最基本的数字 PID 形式，直接计算控制量的**绝对值**：
 
-$$u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}$$
+$$
+u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}
+$$
 
 其中 $e[k] = r[k] - y[k]$。
 
@@ -42,17 +44,27 @@ $$u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s
 
 计算控制量的**增量** $\Delta u[k] = u[k] - u[k-1]$：
 
-$$\Delta u[k] = K_p(e[k] - e[k-1]) + K_i T_s\, e[k] + K_d \frac{e[k] - 2e[k-1] + e[k-2]}{T_s}$$
+$$
+\Delta u[k] = K_p(e[k] - e[k-1]) + K_i T_s\, e[k] + K_d \frac{e[k] - 2e[k-1] + e[k-2]}{T_s}
+$$
 
 整理为：
 
-$$\Delta u[k] = A\, e[k] - B\, e[k-1] + C\, e[k-2]$$
+$$
+\Delta u[k] = A\, e[k] - B\, e[k-1] + C\, e[k-2]
+$$
 
 其中：
 
-$$A = K_p + K_i T_s + \frac{K_d}{T_s}$$
-$$B = K_p + \frac{2K_d}{T_s}$$
-$$C = \frac{K_d}{T_s}$$
+$$
+A = K_p + K_i T_s + \frac{K_d}{T_s}
+$$
+$$
+B = K_p + \frac{2K_d}{T_s}
+$$
+$$
+C = \frac{K_d}{T_s}
+$$
 
 实际控制量：$u[k] = u[k-1] + \Delta u[k]$
 
@@ -71,7 +83,9 @@ $$C = \frac{K_d}{T_s}$$
 
 形式上与增量式相同，但物理含义不同——输出的是控制量的**变化速率**而非增量：
 
-$$\frac{\Delta u}{\Delta t} \approx \frac{\Delta u[k]}{T_s}$$
+$$
+\frac{\Delta u}{\Delta t} \approx \frac{\Delta u[k]}{T_s}
+$$
 
 速度式主要用于**伺服系统**（控制电机的转速），其中执行器天然接受速度指令。
 
@@ -208,7 +222,9 @@ print(f"\u7ed3\u8bba: {'\u5b8c\u5168\u7b49\u4ef7' if diff < 1e-6 else '\u5b58\u5
 
 **思路**：误差大时关闭积分，误差小时开启积分。
 
-$$u_I[k] = \begin{cases} K_i T_s \sum e[j] & |e[k]| \leq \varepsilon \\ 0 & |e[k]| > \varepsilon \end{cases}$$
+$$
+u_I[k] = \begin{cases} K_i T_s \sum e[j] & |e[k]| \leq \varepsilon \\ 0 & |e[k]| > \varepsilon \end{cases}
+$$
 
 其中 $\varepsilon$ 是积分分离阈值。
 
@@ -219,7 +235,9 @@ $$u_I[k] = \begin{cases} K_i T_s \sum e[j] & |e[k]| \leq \varepsilon \\ 0 & |e[k
 
 **改进版本——渐变积分**：不是突然开关，而是让积分增益随误差平滑变化：
 
-$$K_i' = \lambda \cdot K_i, \quad \lambda = \begin{cases} 1 & |e| \leq \varepsilon \\ \frac{|e| - \varepsilon_0}{\varepsilon - \varepsilon_0} & \varepsilon < |e| < \varepsilon_0 \\ 0 & |e| \geq \varepsilon_0 \end{cases}$$
+$$
+K_i' = \lambda \cdot K_i, \quad \lambda = \begin{cases} 1 & |e| \leq \varepsilon \\ \frac{|e| - \varepsilon_0}{\varepsilon - \varepsilon_0} & \varepsilon < |e| < \varepsilon_0 \\ 0 & |e| \geq \varepsilon_0 \end{cases}
+$$
 
 其中 $\varepsilon < \varepsilon_0$，$\lambda$ 在 $[\varepsilon, \varepsilon_0]$ 区间从 1 线性降到 0。
 
@@ -227,7 +245,9 @@ $$K_i' = \lambda \cdot K_i, \quad \lambda = \begin{cases} 1 & |e| \leq \varepsil
 
 **思路**：积分增益不是常数，而是随误差大小动态调整。
 
-$$K_i(e) = K_{i0} \cdot f(|e|)$$
+$$
+K_i(e) = K_{i0} \cdot f(|e|)
+$$
 
 常见的 $f$ 函数：
 
@@ -245,17 +265,23 @@ $$K_i(e) = K_{i0} \cdot f(|e|)$$
 
 **解决方案**：加一阶低通滤波器
 
-$$K_d s \to \frac{K_d N s}{s + N}$$
+$$
+K_d s \to \frac{K_d N s}{s + N}
+$$
 
 其中 $N$ 是微分增益上限（$N = 10 \sim 100$）。
 
 离散化后（Tustin）：
 
-$$D(z) = \frac{K_d N}{1 + N T_s / 2} \cdot \frac{z - 1}{z + 1 - \frac{2}{2 + N T_s}}$$
+$$
+D(z) = \frac{K_d N}{1 + N T_s / 2} \cdot \frac{z - 1}{z + 1 - \frac{2}{2 + N T_s}}
+$$
 
 简化为一阶递推：
 
-$$u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}$$
+$$
+u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}
+$$
 
 其中 $\alpha = \frac{N T_s}{1 + N T_s}$（后向欧拉近似）或 $\alpha = e^{-N T_s}$（精确离散化）。
 
@@ -277,7 +303,9 @@ $$u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T
 
 **解决方案**：微分作用在测量值 $y$ 上，而非误差 $e$ 上。
 
-$$u_D[k] = -K_d \frac{y[k] - y[k-1]}{T_s}$$
+$$
+u_D[k] = -K_d \frac{y[k] - y[k-1]}{T_s}
+$$
 
 注意负号——测量值增大等价于误差减小。
 
@@ -294,7 +322,9 @@ $$u_D[k] = -K_d \frac{y[k] - y[k-1]}{T_s}$$
 
 类似地，比例项也可以只作用在测量值上：
 
-$$u_P[k] = -K_p \cdot y[k]$$
+$$
+u_P[k] = -K_p \cdot y[k]
+$$
 
 这样设定值变化不会引起比例项跳变。但纯比例先行会引入稳态误差（因为没有 $r$ 的比例项），需要积分项来消除。
 
@@ -302,11 +332,17 @@ $$u_P[k] = -K_p \cdot y[k]$$
 
 综合以上改进，工业 PID 的标准结构：
 
-$$u[k] = K_p(b \cdot r[k] - y[k]) + u_I[k] + u_D[k]$$
+$$
+u[k] = K_p(b \cdot r[k] - y[k]) + u_I[k] + u_D[k]
+$$
 
-$$u_I[k] = u_I[k-1] + K_i' T_s (r[k] - y[k]) + K_b(u_{sat}[k] - u[k])$$
+$$
+u_I[k] = u_I[k-1] + K_i' T_s (r[k] - y[k]) + K_b(u_{sat}[k] - u[k])
+$$
 
-$$u_D[k] = \alpha \cdot u_D[k-1] - (1 - \alpha) \cdot K_d \cdot c \cdot \frac{y[k] - y[k-1]}{T_s}$$
+$$
+u_D[k] = \alpha \cdot u_D[k-1] - (1 - \alpha) \cdot K_d \cdot c \cdot \frac{y[k] - y[k-1]}{T_s}
+$$
 
 其中：
 - $b \in [0, 1]$：比例设定值加权（$b = 0$ 为比例先行）
@@ -739,7 +775,9 @@ print(f"  \u7a33\u6001\u8bef\u5dee: {ess:.4f}")`
 
 对于一阶加延迟对象 $G(s) = \frac{K}{Ts + 1} e^{-Ls}$：
 
-$$K_p = \frac{T}{K(\lambda + L)}, \quad T_i = T, \quad T_d = 0$$
+$$
+K_p = \frac{T}{K(\lambda + L)}, \quad T_i = T, \quad T_d = 0
+$$
 
 其中 $\lambda$ 是可调参数（期望闭环时间常数）：
 - $\lambda = L$：快速响应（激进）
@@ -830,9 +868,13 @@ PI 控制器：$K(z) = K_p + K_i T_s \frac{z+1}{2(z-1)}$（Tustin 离散化）
 
 增量式：$\Delta u[k] = u[k] - u[k-1]$
 
-$$\Delta u[k] = K_p(e[k] - e[k-1]) + \frac{K_i T_s}{2}(e[k] + e[k-1])$$
+$$
+\Delta u[k] = K_p(e[k] - e[k-1]) + \frac{K_i T_s}{2}(e[k] + e[k-1])
+$$
 
-$$= \left(K_p + \frac{K_i T_s}{2}\right) e[k] + \left(-K_p + \frac{K_i T_s}{2}\right) e[k-1]$$
+$$
+= \left(K_p + \frac{K_i T_s}{2}\right) e[k] + \left(-K_p + \frac{K_i T_s}{2}\right) e[k-1]
+$$
 
 所以：$A = K_p + \frac{K_i T_s}{2}$，$B = K_p - \frac{K_i T_s}{2}$，$C = 0$。
 
@@ -860,7 +902,9 @@ $$= \left(K_p + \frac{K_i T_s}{2}\right) e[k] + \left(-K_p + \frac{K_i T_s}{2}\r
 
 当 $r$ 发生阶跃变化时（$r[k] = R, r[k-1] = 0$）：
 
-$$u_D[k] = K_d \frac{R - y[k] + y[k-1]}{T_s}$$
+$$
+u_D[k] = K_d \frac{R - y[k] + y[k-1]}{T_s}
+$$
 
 $R$ 的出现导致微分项产生脉冲。
 
@@ -876,11 +920,15 @@ $R$ 的出现导致微分项产生脉冲。
 
 IMC 参数：$K = 5, T = 0.1, L \approx 0$
 
-$$K_{p2} = \frac{T}{K(\lambda_2 + L)} = \frac{0.1}{5 \lambda_2}$$
+$$
+K_{p2} = \frac{T}{K(\lambda_2 + L)} = \frac{0.1}{5 \lambda_2}
+$$
 
 要求内环带宽 $\omega_{c2} = 20$ rad/s：$\lambda_2 = 1/\omega_{c2} = 0.05$
 
-$$K_{p2} = \frac{0.1}{5 \times 0.05} = 0.4, \quad T_{i2} = T = 0.1, \quad T_{d2} = 0$$
+$$
+K_{p2} = \frac{0.1}{5 \times 0.05} = 0.4, \quad T_{i2} = T = 0.1, \quad T_{d2} = 0
+$$
 
 内环 PI 控制器：$K_2(s) = 0.4 + \frac{4}{s} = 0.4 \frac{0.1s + 1}{0.1s}$
 
@@ -890,11 +938,15 @@ $$K_{p2} = \frac{0.1}{5 \times 0.05} = 0.4, \quad T_{i2} = T = 0.1, \quad T_{d2}
 
 由于内环带宽（20 rad/s）远大于外环带宽（2 rad/s），内环动态可以近似为增益 $2/3$：
 
-$$G_{eq}(s) \approx \frac{2/3}{s}$$
+$$
+G_{eq}(s) \approx \frac{2/3}{s}
+$$
 
 IMC 参数：$K_{eq} = 2/3, T_{eq} \approx 0, L_{eq} \approx 0$
 
-$$K_{p1} = \frac{1}{K_{eq}(\lambda_1)} = \frac{1}{(2/3) \times 0.5} = 3.0$$
+$$
+K_{p1} = \frac{1}{K_{eq}(\lambda_1)} = \frac{1}{(2/3) \times 0.5} = 3.0
+$$
 
 其中 $\lambda_1 = 1/\omega_{c1} = 0.5$。
 

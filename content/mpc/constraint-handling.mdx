@@ -19,7 +19,9 @@ MPC 可以处理四类约束，每类对应不同的物理含义：
 
 ### 输入幅值约束
 
-$$u_{\min} \leq u(k+i) \leq u_{\max}, \quad i = 0, 1, \ldots, N_u - 1$$
+$$
+u_{\min} \leq u(k+i) \leq u_{\max}, \quad i = 0, 1, \ldots, N_u - 1
+$$
 
 **物理含义**：执行器的物理极限。
 
@@ -32,7 +34,9 @@ $$u_{\min} \leq u(k+i) \leq u_{\max}, \quad i = 0, 1, \ldots, N_u - 1$$
 
 ### 输入变化率约束
 
-$$\Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max}, \quad i = 0, 1, \ldots, N_u - 1$$
+$$
+\Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max}, \quad i = 0, 1, \ldots, N_u - 1
+$$
 
 其中 $\Delta u(k+i) = u(k+i) - u(k+i-1)$。
 
@@ -44,13 +48,17 @@ $$\Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max}, \quad i = 0, 1, \ldot
 
 ### 状态约束
 
-$$x_{\min} \leq x(k+i) \leq x_{\max}, \quad i = 1, 2, \ldots, N_p$$
+$$
+x_{\min} \leq x(k+i) \leq x_{\max}, \quad i = 1, 2, \ldots, N_p
+$$
 
 **物理含义**：系统内部变量的安全运行范围。反应器温度不能超过材料极限，储罐液位不能溢出或干涸。
 
 ### 输出约束
 
-$$y_{\min} \leq y(k+i) \leq y_{\max}, \quad i = 1, 2, \ldots, N_p$$
+$$
+y_{\min} \leq y(k+i) \leq y_{\max}, \quad i = 1, 2, \ldots, N_p
+$$
 
 **物理含义**：系统输出的性能/质量要求。产品纯度、排放浓度。
 
@@ -60,7 +68,9 @@ $$y_{\min} \leq y(k+i) \leq y_{\max}, \quad i = 1, 2, \ldots, N_p$$
 
 MPC 的 QP 标准形式：
 
-$$\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}$$
+$$
+\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}
+$$
 
 核心问题：**如何把各类约束统一写成 $A_{\text{ineq}} U \leq b_{\text{ineq}}$ 的形式？**
 
@@ -68,11 +78,15 @@ $$\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_{\text{ineq}} U 
 
 对于 $u_{\min} \leq u(k+i) \leq u_{\max}$，$i = 0, \ldots, N_u-1$，直接拆分：
 
-$$U \leq u_{\max} \mathbf{1}, \quad -U \leq -u_{\min} \mathbf{1}$$
+$$
+U \leq u_{\max} \mathbf{1}, \quad -U \leq -u_{\min} \mathbf{1}
+$$
 
 合并为：
 
-$$\underbrace{\begin{bmatrix} I_{N_u} \\ -I_{N_u} \end{bmatrix}}_{A_u} U \leq \underbrace{\begin{bmatrix} u_{\max} \mathbf{1}_{N_u} \\ -u_{\min} \mathbf{1}_{N_u} \end{bmatrix}}_{b_u}$$
+$$
+\underbrace{\begin{bmatrix} I_{N_u} \\ -I_{N_u} \end{bmatrix}}_{A_u} U \leq \underbrace{\begin{bmatrix} u_{\max} \mathbf{1}_{N_u} \\ -u_{\min} \mathbf{1}_{N_u} \end{bmatrix}}_{b_u}
+$$
 
 **特点**：$A_u$ 和 $b_u$ 都是**常数**（不依赖于 $x(k)$ 或 $u(k-1)$）。
 
@@ -82,18 +96,26 @@ $$\underbrace{\begin{bmatrix} I_{N_u} \\ -I_{N_u} \end{bmatrix}}_{A_u} U \leq \u
 
 写成矩阵形式 $\Delta U = L U - M u(k-1)$，其中：
 
-$$L = \begin{bmatrix} 1 & 0 & 0 & \cdots & 0 \\ -1 & 1 & 0 & \cdots & 0 \\ 0 & -1 & 1 & \cdots & 0 \\ \vdots & & \ddots & \ddots & \vdots \\ 0 & \cdots & 0 & -1 & 1 \end{bmatrix}_{N_u \times N_u}, \quad M = \begin{bmatrix} 1 \\ 0 \\ 0 \\ \vdots \\ 0 \end{bmatrix}_{N_u \times 1}$$
+$$
+L = \begin{bmatrix} 1 & 0 & 0 & \cdots & 0 \\ -1 & 1 & 0 & \cdots & 0 \\ 0 & -1 & 1 & \cdots & 0 \\ \vdots & & \ddots & \ddots & \vdots \\ 0 & \cdots & 0 & -1 & 1 \end{bmatrix}_{N_u \times N_u}, \quad M = \begin{bmatrix} 1 \\ 0 \\ 0 \\ \vdots \\ 0 \end{bmatrix}_{N_u \times 1}
+$$
 
 验证第一行：$\Delta u(k) = 1 \cdot u(k) + 0 \cdot u(k+1) + \cdots - 1 \cdot u(k-1) = u(k) - u(k-1)$ ✓
 
 约束 $\Delta u_{\min} \leq \Delta U \leq \Delta u_{\max}$ 变为：
 
-$$L U - M u(k-1) \leq \Delta u_{\max} \mathbf{1}$$
-$$-L U + M u(k-1) \leq -\Delta u_{\min} \mathbf{1}$$
+$$
+L U - M u(k-1) \leq \Delta u_{\max} \mathbf{1}
+$$
+$$
+-L U + M u(k-1) \leq -\Delta u_{\min} \mathbf{1}
+$$
 
 合并：
 
-$$\underbrace{\begin{bmatrix} L \\ -L \end{bmatrix}}_{A_{\Delta u}} U \leq \underbrace{\begin{bmatrix} \Delta u_{\max} \mathbf{1} + M u(k-1) \\ -\Delta u_{\min} \mathbf{1} - M u(k-1) \end{bmatrix}}_{b_{\Delta u}}$$
+$$
+\underbrace{\begin{bmatrix} L \\ -L \end{bmatrix}}_{A_{\Delta u}} U \leq \underbrace{\begin{bmatrix} \Delta u_{\max} \mathbf{1} + M u(k-1) \\ -\Delta u_{\min} \mathbf{1} - M u(k-1) \end{bmatrix}}_{b_{\Delta u}}
+$$
 
 > 💡 **关键区别**：$b_{\Delta u}$ 中包含 $u(k-1)$——约束右端项每步都在变！这和输入幅值约束不同。物理含义：上一步的输入越大，下一步"还能增加多少"就越少（受 rate limit 约束）。
 
@@ -101,9 +123,13 @@ $$\underbrace{\begin{bmatrix} L \\ -L \end{bmatrix}}_{A_{\Delta u}} U \leq \unde
 
 利用预测矩阵 $X = F x(k) + \Phi U$：
 
-$$x_{\min} \mathbf{1} \leq F x(k) + \Phi U \leq x_{\max} \mathbf{1}$$
+$$
+x_{\min} \mathbf{1} \leq F x(k) + \Phi U \leq x_{\max} \mathbf{1}
+$$
 
-$$\underbrace{\begin{bmatrix} \Phi \\ -\Phi \end{bmatrix}}_{A_x} U \leq \underbrace{\begin{bmatrix} x_{\max} \mathbf{1} - F x(k) \\ -x_{\min} \mathbf{1} + F x(k) \end{bmatrix}}_{b_x}$$
+$$
+\underbrace{\begin{bmatrix} \Phi \\ -\Phi \end{bmatrix}}_{A_x} U \leq \underbrace{\begin{bmatrix} x_{\max} \mathbf{1} - F x(k) \\ -x_{\min} \mathbf{1} + F x(k) \end{bmatrix}}_{b_x}
+$$
 
 $b_x$ 依赖于当前状态 $x(k)$——状态越接近约束边界，可行域越小。
 
@@ -111,15 +137,21 @@ $b_x$ 依赖于当前状态 $x(k)$——状态越接近约束边界，可行域�
 
 输出预测：$Y = C_x (F x(k) + \Phi U)$（假设 $D = 0$），其中 $C_x = \text{blkdiag}(C, C, \ldots, C)$。
 
-$$y_{\min} \mathbf{1} \leq C_x F x(k) + C_x \Phi U \leq y_{\max} \mathbf{1}$$
+$$
+y_{\min} \mathbf{1} \leq C_x F x(k) + C_x \Phi U \leq y_{\max} \mathbf{1}
+$$
 
-$$\underbrace{\begin{bmatrix} C_x \Phi \\ -C_x \Phi \end{bmatrix}}_{A_y} U \leq \underbrace{\begin{bmatrix} y_{\max} \mathbf{1} - C_x F x(k) \\ -y_{\min} \mathbf{1} + C_x F x(k) \end{bmatrix}}_{b_y}$$
+$$
+\underbrace{\begin{bmatrix} C_x \Phi \\ -C_x \Phi \end{bmatrix}}_{A_y} U \leq \underbrace{\begin{bmatrix} y_{\max} \mathbf{1} - C_x F x(k) \\ -y_{\min} \mathbf{1} + C_x F x(k) \end{bmatrix}}_{b_y}
+$$
 
 ### 合并所有约束
 
 把所有约束堆叠：
 
-$$A_{\text{ineq}} = \begin{bmatrix} A_u \\ A_{\Delta u} \\ A_x \\ A_y \end{bmatrix}, \quad b_{\text{ineq}} = \begin{bmatrix} b_u \\ b_{\Delta u} \\ b_x \\ b_y \end{bmatrix}$$
+$$
+A_{\text{ineq}} = \begin{bmatrix} A_u \\ A_{\Delta u} \\ A_x \\ A_y \end{bmatrix}, \quad b_{\text{ineq}} = \begin{bmatrix} b_u \\ b_{\Delta u} \\ b_x \\ b_y \end{bmatrix}
+$$
 
 ### 数值例子
 
@@ -128,11 +160,17 @@ $$A_{\text{ineq}} = \begin{bmatrix} A_u \\ A_{\Delta u} \\ A_x \\ A_y \end{bmatr
 > 约束：$|u| \leq 2$，$|\Delta u| \leq 1$，$|y| \leq 5$。
 >
 > **输入约束**（$2 N_u = 4$ 行）：
-> $$A_u = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ -1 & 0 \\ 0 & -1 \end{bmatrix}, \quad b_u = \begin{bmatrix} 2 \\ 2 \\ 2 \\ 2 \end{bmatrix}$$
+> $$
+> A_u = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ -1 & 0 \\ 0 & -1 \end{bmatrix}, \quad b_u = \begin{bmatrix} 2 \\ 2 \\ 2 \\ 2 \end{bmatrix}
+> $$
 >
 > **变化率约束**（$2 N_u = 4$ 行），设 $u(k-1) = 0.5$：
-> $$L = \begin{bmatrix} 1 & 0 \\ -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.5 \\ 0 \end{bmatrix}$$
-> $$A_{\Delta u} = \begin{bmatrix} 1 & 0 \\ -1 & 1 \\ -1 & 0 \\ 1 & -1 \end{bmatrix}, \quad b_{\Delta u} = \begin{bmatrix} 1 + 0.5 \\ 1 - 0 \\ -(-1) - 0.5 \\ -(-1) - 0 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \\ 0.5 \\ 1 \end{bmatrix}$$
+> $$
+> L = \begin{bmatrix} 1 & 0 \\ -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.5 \\ 0 \end{bmatrix}
+> $$
+> $$
+> A_{\Delta u} = \begin{bmatrix} 1 & 0 \\ -1 & 1 \\ -1 & 0 \\ 1 & -1 \end{bmatrix}, \quad b_{\Delta u} = \begin{bmatrix} 1 + 0.5 \\ 1 - 0 \\ -(-1) - 0.5 \\ -(-1) - 0 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \\ 0.5 \\ 1 \end{bmatrix}
+> $$
 >
 > 验证第一行：$u(k) - u(k-1) \leq 1 \implies u(k) \leq 1 + 0.5 = 1.5$ ✓
 >
@@ -154,12 +192,18 @@ $$A_{\text{ineq}} = \begin{bmatrix} A_u \\ A_{\Delta u} \\ A_x \\ A_y \end{bmatr
 
 解决方法：引入**松弛变量** $\epsilon \geq 0$，把硬约束变成软约束：
 
-$$A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}$$
+$$
+A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}
+$$
 
 同时在代价函数中惩罚 $\epsilon$：
 
-$$\min_{U, \epsilon} \frac{1}{2} U^T H U + f^T U + V \epsilon^2$$
-$$\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}, \quad \epsilon \geq 0$$
+$$
+\min_{U, \epsilon} \frac{1}{2} U^T H U + f^T U + V \epsilon^2
+$$
+$$
+\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}, \quad \epsilon \geq 0
+$$
 
 $V$ 是松弛变量的权重——**必须足够大**，使得 $\epsilon > 0$ 只在"万不得已"时发生。
 
@@ -178,7 +222,9 @@ $V$ 是松弛变量的权重——**必须足够大**，使得 $\epsilon > 0$ �
 
 不同约束可以用不同的松弛变量和权重：
 
-$$\min_{U, \epsilon_1, \epsilon_2} \frac{1}{2} U^T H U + f^T U + V_1 \epsilon_1^2 + V_2 \epsilon_2^2$$
+$$
+\min_{U, \epsilon_1, \epsilon_2} \frac{1}{2} U^T H U + f^T U + V_1 \epsilon_1^2 + V_2 \epsilon_2^2
+$$
 
 $V_1 \gg V_2$ 意味着第一组约束比第二组更"硬"。
 
@@ -197,11 +243,15 @@ $V_1 \gg V_2$ 意味着第一组约束比第二组更"硬"。
 
 对于 QP：
 
-$$\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A U \leq b$$
+$$
+\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A U \leq b
+$$
 
 引入 Lagrange 乘子 $\lambda \geq 0$，Lagrangian 为：
 
-$$\mathcal{L}(U, \lambda) = \frac{1}{2} U^T H U + f^T U + \lambda^T (A U - b)$$
+$$
+\mathcal{L}(U, \lambda) = \frac{1}{2} U^T H U + f^T U + \lambda^T (A U - b)
+$$
 
 **KKT 条件**（对凸 QP 是最优性的充要条件）：
 
@@ -212,8 +262,12 @@ $$\mathcal{L}(U, \lambda) = \frac{1}{2} U^T H U + f^T U + \lambda^T (A U - b)$$
 
 **互补松弛**的含义：
 
-$$\lambda_i^* > 0 \implies a_i^T U^* = b_i \quad \text{（约束 } i \text{ 是 active 的）}$$
-$$a_i^T U^* < b_i \implies \lambda_i^* = 0 \quad \text{（约束 } i \text{ 是 inactive 的）}$$
+$$
+\lambda_i^* > 0 \implies a_i^T U^* = b_i \quad \text{（约束 } i \text{ 是 active 的）}
+$$
+$$
+a_i^T U^* < b_i \implies \lambda_i^* = 0 \quad \text{（约束 } i \text{ 是 inactive 的）}
+$$
 
 > 💡 **直觉**：KKT 乘子 $\lambda_i^*$ 告诉你"如果放松第 $i$ 个约束一点点，目标函数能改善多少"。$\lambda_i^* = 0$ 意味着这个约束"不影响"最优解——它离得远，最优解根本碰不到它。$\lambda_i^* > 0$ 意味着这个约束"正在限制"性能——最优解被它"顶住了"。
 
@@ -225,7 +279,9 @@ Active set 的核心作用：一旦知道哪些约束是 active 的，约束优�
 
 对于 QP，如果 active set 已知，最优解可以解析求出：
 
-$$\begin{bmatrix} H & A_{\mathcal{A}}^T \\ A_{\mathcal{A}} & 0 \end{bmatrix} \begin{bmatrix} U^* \\ \lambda_{\mathcal{A}}^* \end{bmatrix} = \begin{bmatrix} -f \\ b_{\mathcal{A}} \end{bmatrix}$$
+$$
+\begin{bmatrix} H & A_{\mathcal{A}}^T \\ A_{\mathcal{A}} & 0 \end{bmatrix} \begin{bmatrix} U^* \\ \lambda_{\mathcal{A}}^* \end{bmatrix} = \begin{bmatrix} -f \\ b_{\mathcal{A}} \end{bmatrix}
+$$
 
 其中 $A_{\mathcal{A}}$ 是 active 约束对应的行组成的子矩阵。
 
@@ -296,7 +352,9 @@ QP 求解器在求解过程中会自动检测不可行性。当检测到不可�
 
 暂时放弃性能优化，只追求满足约束。定义一个新的优化问题：
 
-$$\min_{U, \epsilon} \epsilon^2, \quad \text{s.t.} \quad A U \leq b + \epsilon \mathbf{1}, \quad \epsilon \geq 0$$
+$$
+\min_{U, \epsilon} \epsilon^2, \quad \text{s.t.} \quad A U \leq b + \epsilon \mathbf{1}, \quad \epsilon \geq 0
+$$
 
 找到最小的 $\epsilon$ 使问题可行，然后以这个 $\epsilon$ 为额外约束，再求解原始优化问题。
 
@@ -314,7 +372,9 @@ $$\min_{U, \epsilon} \epsilon^2, \quad \text{s.t.} \quad A U \leq b + \epsilon \
 
 MPC 的最优解 $U^*(x(k))$ 是当前状态 $x(k)$ 的函数。由于 active set 随 $x(k)$ 变化，这个函数是**分段仿射**的：
 
-$$U^*(x) = \begin{cases} K_1 x + k_1 & \text{if } x \in \mathcal{R}_1 \\ K_2 x + k_2 & \text{if } x \in \mathcal{R}_2 \\ \vdots & \vdots \\ K_M x + k_M & \text{if } x \in \mathcal{R}_M \end{cases}$$
+$$
+U^*(x) = \begin{cases} K_1 x + k_1 & \text{if } x \in \mathcal{R}_1 \\ K_2 x + k_2 & \text{if } x \in \mathcal{R}_2 \\ \vdots & \vdots \\ K_M x + k_M & \text{if } x \in \mathcal{R}_M \end{cases}
+$$
 
 其中 $\mathcal{R}_i$ 是状态空间的多面体划分（每个区域对应一个 active set）。
 
@@ -348,9 +408,13 @@ $$U^*(x) = \begin{cases} K_1 x + k_1 & \text{if } x \in \mathcal{R}_1 \\ K_2 x +
 
 高优先级约束先满足，低优先级约束在剩余自由度内优化：
 
-$$\text{Stage 1:} \quad \min_{U} \epsilon_1^2, \quad \text{s.t.} \quad A_1 U \leq b_1 + \epsilon_1 \mathbf{1}$$
+$$
+\text{Stage 1:} \quad \min_{U} \epsilon_1^2, \quad \text{s.t.} \quad A_1 U \leq b_1 + \epsilon_1 \mathbf{1}
+$$
 
-$$\text{Stage 2:} \quad \min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_1 U \leq b_1, \quad A_2 U \leq b_2 + \epsilon_2 \mathbf{1}$$
+$$
+\text{Stage 2:} \quad \min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_1 U \leq b_1, \quad A_2 U \leq b_2 + \epsilon_2 \mathbf{1}
+$$
 
 Stage 1 确保高优先级约束满足，Stage 2 在满足高优先级约束的前提下优化性能。
 
@@ -560,7 +624,9 @@ print('红点 = 触达变化率约束 | 红色虚线 = 输出约束边界')`
 
 **避障约束**：无人机不能飞入障碍物区域。如果障碍物是圆形（中心 $c$，半径 $r$）：
 
-$$\|x - c\|_2 \geq r \quad \text{（非凸！可行域在圆外）}$$
+$$
+\|x - c\|_2 \geq r \quad \text{（非凸！可行域在圆外）}
+$$
 
 处理方法：
 1. **序列凸化**：在当前点线性化约束 $\to$ 迭代求解一系列凸 QP
@@ -571,7 +637,9 @@ $$\|x - c\|_2 \geq r \quad \text{（非凸！可行域在圆外）}$$
 
 有些约束涉及离散决策：阀门要么全开要么全关（0-1 变量），齿轮只能选离散的挡位。
 
-$$u \in \{u_1, u_2, \ldots, u_m\} \quad \text{（离散集合）}$$
+$$
+u \in \{u_1, u_2, \ldots, u_m\} \quad \text{（离散集合）}
+$$
 
 这变成**混合整数 QP（MIQP）**——NP-hard 问题。小规模（$< 10$ 个整数变量）可以用分支定界法，大规模需要启发式方法或松弛（把整数约束松弛为连续约束 $0 \leq u \leq 1$，然后四舍五入）。
 
@@ -579,7 +647,9 @@ $$u \in \{u_1, u_2, \ldots, u_m\} \quad \text{（离散集合）}$$
 
 有随机干扰时，硬约束可能过于保守。机会约束允许以一定概率违反：
 
-$$P(g(x(k)) \leq 0) \geq 1 - \alpha$$
+$$
+P(g(x(k)) \leq 0) \geq 1 - \alpha
+$$
 
 例如："$P(\text{温度} \leq 200°C) \geq 99\%$"——允许 1% 的概率超温。
 
@@ -664,15 +734,23 @@ $$P(g(x(k)) \leq 0) \geq 1 - \alpha$$
 
 (a) $N_u = 3$，输入约束 $-1 \leq u(k+i) \leq 1$，$i = 0, 1, 2$：
 
-$$A_u = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \\ -1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & -1 \end{bmatrix} = \begin{bmatrix} I_3 \\ -I_3 \end{bmatrix}, \quad b_u = \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} = \mathbf{1}_6$$
+$$
+A_u = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \\ -1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & -1 \end{bmatrix} = \begin{bmatrix} I_3 \\ -I_3 \end{bmatrix}, \quad b_u = \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} = \mathbf{1}_6
+$$
 
 (b) 变化率约束 $|\Delta u| \leq 0.5$，$u(k-1) = 0.3$：
 
-$$L = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.3 \\ 0 \\ 0 \end{bmatrix}$$
+$$
+L = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.3 \\ 0 \\ 0 \end{bmatrix}
+$$
 
-$$A_{\Delta u} = \begin{bmatrix} L \\ -L \end{bmatrix} = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \\ -1 & 0 & 0 \\ 1 & -1 & 0 \\ 0 & 1 & -1 \end{bmatrix}$$
+$$
+A_{\Delta u} = \begin{bmatrix} L \\ -L \end{bmatrix} = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \\ -1 & 0 & 0 \\ 1 & -1 & 0 \\ 0 & 1 & -1 \end{bmatrix}
+$$
 
-$$b_{\Delta u} = \begin{bmatrix} 0.5 + 0.3 \\ 0.5 - 0 \\ 0.5 - 0 \\ 0.5 - 0.3 \\ 0.5 + 0 \\ 0.5 + 0 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.5 \\ 0.5 \\ 0.2 \\ 0.5 \\ 0.5 \end{bmatrix}$$
+$$
+b_{\Delta u} = \begin{bmatrix} 0.5 + 0.3 \\ 0.5 - 0 \\ 0.5 - 0 \\ 0.5 - 0.3 \\ 0.5 + 0 \\ 0.5 + 0 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.5 \\ 0.5 \\ 0.2 \\ 0.5 \\ 0.5 \end{bmatrix}
+$$
 
 关键推导：$b_{\Delta u}$ 上三行 $= \Delta u_{\max} \mathbf{1} + M u(k-1)$，下三行 $= -\Delta u_{\min} \mathbf{1} - M u(k-1)$，其中 $\Delta u_{\min} = \Delta u_{\max} = 0.5$（对称约束）。
 

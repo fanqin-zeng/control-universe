@@ -268,7 +268,9 @@ plt.show()` },
 
 对比**纯反馈系统**（pure-feedback system）：
 
-$$\dot x_i = f_i(x_1,\ldots,x_{i+1}),\qquad \dot x_n = f_n(x)+g_n(x)u$$
+$$
+\dot x_i = f_i(x_1,\ldots,x_{i+1}),\qquad \dot x_n = f_n(x)+g_n(x)u
+$$
 
 纯反馈系统里 $x_{i+1}$ 可以以任意非线性方式出现（比如上面的 $x_2^3$）。此时反步递推的第一步就要解方程 $f_1(x_1,\alpha_1)=-k_1z_1$ 求 $\alpha_1$，一般没有闭式解；即使解出来，也常含 $1/g_1$ 这样的奇异项——Notebook 1 的右图就是这个现象：$\alpha_1=-(1+k_1)x_1/(3x_2^2)$ 在 $x_2=0$ 附近爆到 $10^{12}$。处理纯反馈系统要用中值定理展开或神经网络逼近，属于另一套方法。
 
@@ -295,21 +297,29 @@ $$
 
 定义跟踪误差并求导：
 
-$$z_1 = x_1 - x_{1d},\qquad \dot z_1 = f_1(x_1) + g_1(x_1)x_2 - \dot x_{1d}$$
+$$
+z_1 = x_1 - x_{1d},\qquad \dot z_1 = f_1(x_1) + g_1(x_1)x_2 - \dot x_{1d}
+$$
 
 在这个一阶子系统里，$x_2$ 扮演控制输入的角色。**如果我们可以任意指定 $x_2$**，那让它等于
 
-$$\alpha_1(x_1,x_{1d},\dot x_{1d}) = \frac{1}{g_1(x_1)}\Big[-f_1(x_1)+\dot x_{1d}-k_1z_1\Big],\qquad k_1>0$$
+$$
+\alpha_1(x_1,x_{1d},\dot x_{1d}) = \frac{1}{g_1(x_1)}\Big[-f_1(x_1)+\dot x_{1d}-k_1z_1\Big],\qquad k_1>0
+$$
 
 就有 $\dot z_1=-k_1z_1$，误差按 $e^{-k_1t}$ 指数收敛。$\alpha_1$ 称为**镇定函数**（stabilizing function），它是"$x_2$ 应当等于多少"的答案，还不是真正的控制量。
 
 但 $x_2$ 是一个真实状态，它不会瞬间跳到 $\alpha_1$。所以定义第二个误差
 
-$$z_2 = x_2-\alpha_1$$
+$$
+z_2 = x_2-\alpha_1
+$$
 
 并把 $x_2=\alpha_1+z_2$ 代回。取 $V_1=\tfrac12 z_1^2$：
 
-$$\dot V_1 = z_1\dot z_1 = z_1\big[f_1+g_1(\alpha_1+z_2)-\dot x_{1d}\big] = \underbrace{-k_1z_1^2}_{\text{我们要的阻尼}} + \underbrace{g_1z_1z_2}_{\text{交叉项，下一步处理}}$$
+$$
+\dot V_1 = z_1\dot z_1 = z_1\big[f_1+g_1(\alpha_1+z_2)-\dot x_{1d}\big] = \underbrace{-k_1z_1^2}_{\text{我们要的阻尼}} + \underbrace{g_1z_1z_2}_{\text{交叉项，下一步处理}}
+$$
 
 **关键观察**：$\dot V_1$ 里多出一个交叉项 $g_1z_1z_2$。它不定号，此刻无法断定稳定性。反步法的全部技巧就是：**把这个不定项留给下一步，然后在下一步精确地把它吃掉。**
 
@@ -326,15 +336,21 @@ $$
 
 取 $V_2=V_1+\tfrac12 z_2^2$：
 
-$$\dot V_2 = -k_1z_1^2 + z_2\big[\,g_1z_1 + f_2 + g_2u-\dot\alpha_1\,\big]$$
+$$
+\dot V_2 = -k_1z_1^2 + z_2\big[\,g_1z_1 + f_2 + g_2u-\dot\alpha_1\,\big]
+$$
 
 现在要求方括号等于 $-k_2z_2$（$k_2>0$），解出
 
-$$\boxed{\,u=\frac{1}{g_2(x_1,x_2)}\Big[-g_1(x_1)z_1-f_2(x_1,x_2)+\dot\alpha_1-k_2z_2\Big]\,}$$
+$$
+\boxed{\,u=\frac{1}{g_2(x_1,x_2)}\Big[-g_1(x_1)z_1-f_2(x_1,x_2)+\dot\alpha_1-k_2z_2\Big]\,}
+$$
 
 代回即得
 
-$$\dot V_2 = -k_1z_1^2-k_2z_2^2 \le 0$$
+$$
+\dot V_2 = -k_1z_1^2-k_2z_2^2 \le 0
+$$
 
 方括号里的 $-g_1z_1$ 就是**专门用来吃掉上一步交叉项的那一项**。$V_2$ 正定、$\dot V_2$ 负半定，再由 Barbalat 引理（$\dot V_2$ 一致连续且有界）得 $z_1,z_2\to 0$，即 $x_1\to x_{1d}$。
 
@@ -365,19 +381,29 @@ $$
 
 考虑二阶非线性系统，要求 $x_1$ 跟踪 $x_{1d}(t)=\sin t$：
 
-$$\dot{x}_1 = x_1^2 + x_2,\qquad \dot{x}_2 = x_1x_2 + u$$
+$$
+\dot{x}_1 = x_1^2 + x_2,\qquad \dot{x}_2 = x_1x_2 + u
+$$
 
 对照标准形式：$f_1=x_1^2$，$g_1=1$，$f_2=x_1x_2$，$g_2=1$。取设计参数 $k_1=2$，$k_2=3$。
 
 ### 步骤 1：虚拟控制 $\alpha_1$
 
-$$z_1 = x_1-\sin t,\qquad \dot z_1 = x_1^2+x_2-\cos t$$
+$$
+z_1 = x_1-\sin t,\qquad \dot z_1 = x_1^2+x_2-\cos t
+$$
 
-$$\alpha_1 = \frac1{g_1}\big(-f_1+\dot x_{1d}-k_1z_1\big) = -x_1^2+\cos t-2(x_1-\sin t) = -x_1^2-2x_1+\cos t+2\sin t$$
+$$
+\alpha_1 = \frac1{g_1}\big(-f_1+\dot x_{1d}-k_1z_1\big) = -x_1^2+\cos t-2(x_1-\sin t) = -x_1^2-2x_1+\cos t+2\sin t
+$$
 
-$$z_2 = x_2-\alpha_1 = x_2+x_1^2+2x_1-\cos t-2\sin t$$
+$$
+z_2 = x_2-\alpha_1 = x_2+x_1^2+2x_1-\cos t-2\sin t
+$$
 
-$$V_1=\tfrac12z_1^2,\qquad \dot V_1 = z_1(x_1^2+\alpha_1+z_2-\cos t) = -2z_1^2 + z_1z_2$$
+$$
+V_1=\tfrac12z_1^2,\qquad \dot V_1 = z_1(x_1^2+\alpha_1+z_2-\cos t) = -2z_1^2 + z_1z_2
+$$
 
 ### 步骤 2：实际控制律 $u$
 
@@ -390,7 +416,9 @@ $$
 
 展开：
 
-$$\dot\alpha_1 = -2x_1^3-2x_1x_2-2x_1^2-2x_2-\sin t+2\cos t$$
+$$
+\dot\alpha_1 = -2x_1^3-2x_1x_2-2x_1^2-2x_2-\sin t+2\cos t
+$$
 
 于是
 
@@ -402,13 +430,19 @@ $$
 
 令方括号 $=-k_2z_2=-3z_2$，解出
 
-$$u = -z_1-x_1x_2+\dot\alpha_1-3z_2$$
+$$
+u = -z_1-x_1x_2+\dot\alpha_1-3z_2
+$$
 
 代入 $\dot\alpha_1$ 并合并同类项：
 
-$$\boxed{\,u = -z_1-3z_2-2x_1^3-3x_1x_2-2x_1^2-2x_2-\sin t+2\cos t\,}$$
+$$
+\boxed{\,u = -z_1-3z_2-2x_1^3-3x_1x_2-2x_1^2-2x_2-\sin t+2\cos t\,}
+$$
 
-$$\dot V_2 = -2z_1^2-3z_2^2 \le 0$$
+$$
+\dot V_2 = -2z_1^2-3z_2^2 \le 0
+$$
 
 留意一件事：**原系统里最高只有 $x_1^2$ 和 $x_1x_2$，而控制律里出现了 $x_1^3$**。反步控制律的非线性 degree 通常比被控对象更高——这不是算错，而是 $\dot\alpha_1$ 里 $\partial\alpha_1/\partial x_1\cdot\dot x_1$ 的必然结果，也是后面复杂度爆炸的种子。
 
@@ -549,11 +583,17 @@ plt.show()` },
 
 **第 $i$ 步（$i=1,\ldots,n-1$）**：
 
-$$z_i = x_i-\alpha_{i-1}$$
+$$
+z_i = x_i-\alpha_{i-1}
+$$
 
-$$\dot z_i = f_i(x_1,\ldots,x_i)+g_i(x_1,\ldots,x_i)x_{i+1}-\dot\alpha_{i-1}$$
+$$
+\dot z_i = f_i(x_1,\ldots,x_i)+g_i(x_1,\ldots,x_i)x_{i+1}-\dot\alpha_{i-1}
+$$
 
-$$\alpha_i = \frac{1}{g_i}\Big[-f_i+\dot\alpha_{i-1}-g_{i-1}z_{i-1}-k_iz_i\Big]$$
+$$
+\alpha_i = \frac{1}{g_i}\Big[-f_i+\dot\alpha_{i-1}-g_{i-1}z_{i-1}-k_iz_i\Big]
+$$
 
 $$
 V_i = V_{i-1}+\tfrac12 z_i^2,\qquad
@@ -835,25 +875,35 @@ plt.show()` },
 
 反步法真正的独门本事，是处理**不匹配的参数不确定性**。考虑
 
-$$\dot x_1 = \theta x_1^2+x_2,\qquad \dot x_2 = \theta x_2+u,\qquad \theta=1.5\ \text{（未知）}$$
+$$
+\dot x_1 = \theta x_1^2+x_2,\qquad \dot x_2 = \theta x_2+u,\qquad \theta=1.5\ \text{（未知）}
+$$
 
 $\theta x_2$ 在最后一个方程里，是匹配的——滑模控制可以用足够大的切换增益压住它。但 $\theta x_1^2$ 出现在**没有 $u$ 的第一个方程**里，滑模的不变性对它无效。反步法的做法是：把参数估计误差 $\tilde\theta=\theta-\hat\theta$ 也当成 Lyapunov 函数的一部分，让它和 $z_i$ 一起被"压下去"。
 
 ### 第一步：$\tilde\theta$ 项与 $\tau_1$
 
-$$z_1=x_1-x_d,\qquad \alpha_1=-\hat\theta x_1^2+\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1$$
+$$
+z_1=x_1-x_d,\qquad \alpha_1=-\hat\theta x_1^2+\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1
+$$
 
 代入 $\dot x_1$：
 
-$$\dot z_1 = \theta x_1^2+(\alpha_1+z_2)-\dot x_d = \tilde\theta x_1^2-k_1z_1+z_2$$
+$$
+\dot z_1 = \theta x_1^2+(\alpha_1+z_2)-\dot x_d = \tilde\theta x_1^2-k_1z_1+z_2
+$$
 
 取 $V_1=\tfrac12z_1^2+\dfrac{\tilde\theta^2}{2\gamma}$（$\gamma>0$ 是自适应增益，$\dot{\tilde\theta}=-\dot{\hat\theta}$）：
 
-$$\dot V_1 = -k_1z_1^2+z_1z_2+\tilde\theta\Big(z_1x_1^2-\frac{\dot{\hat\theta}}{\gamma}\Big)$$
+$$
+\dot V_1 = -k_1z_1^2+z_1z_2+\tilde\theta\Big(z_1x_1^2-\frac{\dot{\hat\theta}}{\gamma}\Big)
+$$
 
 括号里的 $z_1x_1^2$ 就是**第一步的 tuning function**：
 
-$$\tau_1 = z_1x_1^2$$
+$$
+\tau_1 = z_1x_1^2
+$$
 
 如果此刻就令 $\dot{\hat\theta}=\gamma\tau_1$，$\tilde\theta$ 项消失了，但交叉项 $z_1z_2$ 还在。**tuning function 方法的要点是：先不更新参数，把 $\tau_1$ 记下来，到最后一步再一次性更新。**这就是它区别于"过参数化"的地方（下面会对比）。
 
@@ -868,15 +918,21 @@ $$
 
 麻烦在这里：$\dot\alpha_1$ 需要 $\dot x_1$，而 $\dot x_1=\theta x_1^2+x_2$ 含**未知的** $\theta$。标准做法是用估计模型替代（确定性等价）：
 
-$$\dot x_1 \approx \hat\theta x_1^2+x_2$$
+$$
+\dot x_1 \approx \hat\theta x_1^2+x_2
+$$
 
 取控制律
 
-$$u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2$$
+$$
+u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2
+$$
 
 那么 $\dot z_2$ 里会剩下**两个** $\tilde\theta$ 项：一个来自 $\theta x_2-\hat\theta x_2$，另一个来自"用估计模型算 $\dot\alpha_1$"欠下的账：
 
-$$\dot z_2 = \tilde\theta x_2 + \tilde\theta x_1^2(2\hat\theta x_1+k_1) - z_1-k_2z_2$$
+$$
+\dot z_2 = \tilde\theta x_2 + \tilde\theta x_1^2(2\hat\theta x_1+k_1) - z_1-k_2z_2
+$$
 
 于是
 
@@ -1501,9 +1557,13 @@ plt.show()` },
 
 对 $g_1=1$ 的二阶系统（$\dot x_1=x_2$，$\dot x_2=f_2+u$），把反步递推一步步展开。记 $e=x_1-x_d$，$\dot e=x_2-\dot x_d$：
 
-$$\alpha_1=\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1=\dot e+k_1e$$
+$$
+\alpha_1=\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1=\dot e+k_1e
+$$
 
-$$\dot\alpha_1=\ddot x_d-k_1\dot z_1=\ddot x_d-k_1(z_2-k_1z_1)=\ddot x_d+k_1^2e-k_1z_2$$
+$$
+\dot\alpha_1=\ddot x_d-k_1\dot z_1=\ddot x_d-k_1(z_2-k_1z_1)=\ddot x_d+k_1^2e-k_1z_2
+$$
 
 $$
 u=-z_1-\hat f_2+\dot\alpha_1-k_2z_2
@@ -1512,7 +1572,9 @@ $$
 
 而反馈线性化的标准写法是 $u=-\hat f_2+\ddot x_d-K_pe-K_v\dot e$。对照得
 
-$$\boxed{K_p=g_1+k_1k_2,\qquad K_v=k_1+k_2}$$
+$$
+\boxed{K_p=g_1+k_1k_2,\qquad K_v=k_1+k_2}
+$$
 
 **两者是同一个控制律，只是增益的参数化方式不同。**下面用 20000 个随机状态点逐点验证（连模型误差都一起加进去，因为它对两边是同样的）：差值 $2.1\times10^{-14}$，即浮点舍入。
 
@@ -1542,7 +1604,9 @@ $k_1,k_2$ 必须同号且为实数，这条约束无法绕过。$K_p=9$（$\omeg
 
 下面把 PID、反馈线性化、标称反步、只抵消阻尼的反步变体、自适应反步、边界层滑模、纯 sgn 滑模放在同一个被控对象上跑：
 
-$$\dot x_1=x_2,\qquad \dot x_2=-a\sin x_1-bx_2+u+w(t),\quad a=3,\ b=1,\ w=0.3\sin 5t$$
+$$
+\dot x_1=x_2,\qquad \dot x_2=-a\sin x_1-bx_2+u+w(t),\quad a=3,\ b=1,\ w=0.3\sin 5t
+$$
 
 参考 $0.5\sin 2t$，初值与参考一致，$T=20$ s。模型误差用 $\hat a=ma,\ \hat b=mb$ 模拟，$m=1.0$（精确）与 $m=0.7$（30% 误差）各跑一遍。
 
@@ -1914,7 +1978,9 @@ plt.show()` },
 
 (d) **重排后合格**。按 $(x_1,x_3,x_2)$ 重新排序，记 $y_1=x_1,y_2=x_3,y_3=x_2$：
 
-$$\dot y_1=y_2+y_1^2,\qquad \dot y_2=y_3,\qquad \dot y_3=\sin y_1+u$$
+$$
+\dot y_1=y_2+y_1^2,\qquad \dot y_2=y_3,\qquad \dot y_3=\sin y_1+u
+$$
 
 这正是 (a) 的结构，$g=(1,1,1)$。**工程启示**：拿到模型先做结构判定，不合格时先试试重排状态（尤其常见于把"电机侧"和"负载侧"写反的机电模型），再考虑换方法。
 
@@ -1922,7 +1988,9 @@ $$\dot y_1=y_2+y_1^2,\qquad \dot y_2=y_3,\qquad \dot y_3=\sin y_1+u$$
 
 (a) $f_1(x_1)=\sin x_1$，$g_1(x_1)=x_1$。
 
-$$\alpha_1=\frac1{x_1}\big[-\sin x_1+\dot x_d-k_1(x_1-x_d)\big]$$
+$$
+\alpha_1=\frac1{x_1}\big[-\sin x_1+\dot x_d-k_1(x_1-x_d)\big]
+$$
 
 (b) 奇异点在 $x_1=0$，即**连杆/摆处于竖直（或零位）姿态**。此时 $x_2$ 对 $\dot x_1$ 失去作用（$g_1=0$ 意味着"虚拟控制失效"），系统在该点不可控——这不是反步法的缺陷，而是被控对象的固有性质。
 
@@ -1937,7 +2005,9 @@ $$\alpha_1=\frac1{x_1}\big[-\sin x_1+\dot x_d-k_1(x_1-x_d)\big]$$
 
 (a) 取 $\alpha_0=x_d$，$g_0=1$，$f_1=x_1^2,f_2=x_2^2,f_3=x_1x_3$，$g_1=g_2=g_3=1$：
 
-$$z_1=x_1-x_d,\qquad \alpha_1=-x_1^2+\dot x_d-z_1$$
+$$
+z_1=x_1-x_d,\qquad \alpha_1=-x_1^2+\dot x_d-z_1
+$$
 
 $$
 z_2=x_2-\alpha_1,\qquad
@@ -1946,16 +2016,22 @@ $$
 
 把 $\alpha_1=-x_1^2-x_1+\dot x_d+x_d$ 的偏导数代入（$\partial\alpha_1/\partial x_1=-2x_1-1$，$\partial\alpha_1/\partial x_d=1$，$\partial\alpha_1/\partial\dot x_d=1$），并用 $\dot x_1=x_1^2+x_2$：
 
-$$\dot\alpha_1=(-2x_1-1)(x_1^2+x_2)+\dot x_d+\ddot x_d$$
+$$
+\dot\alpha_1=(-2x_1-1)(x_1^2+x_2)+\dot x_d+\ddot x_d
+$$
 
-$$\alpha_2=-x_2^2+\dot\alpha_1-z_1-z_2$$
+$$
+\alpha_2=-x_2^2+\dot\alpha_1-z_1-z_2
+$$
 
 $$
 z_3=x_3-\alpha_2,\qquad
 \dot\alpha_2=\sum_{j=1}^{2}\frac{\partial\alpha_2}{\partial x_j}\dot x_j+\frac{\partial\alpha_2}{\partial x_d}\dot x_d+\frac{\partial\alpha_2}{\partial\dot x_d}\ddot x_d+\frac{\partial\alpha_2}{\partial\ddot x_d}x_d^{(3)}
 $$
 
-$$u=-x_1x_3+\dot\alpha_2-z_2-z_3$$
+$$
+u=-x_1x_3+\dot\alpha_2-z_2-z_3
+$$
 
 (b) $\dot\alpha_2$ 里含 $\partial\alpha_2/\partial\ddot x_d\cdot x_d^{(3)}$，所以 **$u$ 中出现 $x_d$ 的三阶导数**。一般规律：$n$ 阶系统需要 $x_d^{(n)}$。
 
@@ -1965,15 +2041,21 @@ $$u=-x_1x_3+\dot\alpha_2-z_2-z_3$$
 
 (a) $\dot z_1=\theta x_1^2+x_2-\dot x_d=\tilde\theta x_1^2-k_1z_1+z_2$。取 $V_2=\frac12z_1^2+\frac12z_2^2+\frac{\tilde\theta^2}{2\gamma}$：
 
-$$\dot V_2=-k_1z_1^2+z_1z_2+\tilde\theta z_1x_1^2+z_2\dot z_2-\frac{\tilde\theta\dot{\hat\theta}}{\gamma}$$
+$$
+\dot V_2=-k_1z_1^2+z_1z_2+\tilde\theta z_1x_1^2+z_2\dot z_2-\frac{\tilde\theta\dot{\hat\theta}}{\gamma}
+$$
 
 $\dot z_2=\theta x_2+u-\dot\alpha_1$，其中
 
-$$\dot\alpha_1=(-2\hat\theta x_1-k_1)\dot x_1-x_1^2\dot{\hat\theta}+k_1\dot x_d+\ddot x_d$$
+$$
+\dot\alpha_1=(-2\hat\theta x_1-k_1)\dot x_1-x_1^2\dot{\hat\theta}+k_1\dot x_d+\ddot x_d
+$$
 
 $\dot x_1$ 含未知 $\theta$，用估计模型 $\hat{\dot x}_1=\hat\theta x_1^2+x_2$ 代替。代入 $u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2$：
 
-$$\dot z_2=\tilde\theta x_2+\tilde\theta x_1^2(2\hat\theta x_1+k_1)-z_1-k_2z_2$$
+$$
+\dot z_2=\tilde\theta x_2+\tilde\theta x_1^2(2\hat\theta x_1+k_1)-z_1-k_2z_2
+$$
 
 其中第二个 $\tilde\theta$ 项来自 $\dot\alpha_1$ 用估计模型造成的偏差 $(-2\hat\theta x_1-k_1)\tilde\theta x_1^2$。合并：
 
@@ -1996,11 +2078,15 @@ $$
 
 (b) 给定 $K_p$，则 $k_1k_2=K_p-1\equiv P$。要求 $k_1,k_2$ 为实数且同号（$P>0$ 时同为正），于是
 
-$$K_v=k_1+\frac{P}{k_1}\ge2\sqrt{P}=2\sqrt{K_p-1}$$
+$$
+K_v=k_1+\frac{P}{k_1}\ge2\sqrt{P}=2\sqrt{K_p-1}
+$$
 
 （均值不等式，等号在 $k_1=k_2=\sqrt{K_p-1}$ 时取得）。又 $\zeta=\dfrac{K_v}{2\sqrt{K_p}}$，所以
 
-$$\zeta\ge\zeta_{\min}=\frac{2\sqrt{K_p-1}}{2\sqrt{K_p}}=\sqrt{\frac{K_p-1}{K_p}}=\sqrt{1-\frac{g_1}{K_p}}$$
+$$
+\zeta\ge\zeta_{\min}=\frac{2\sqrt{K_p-1}}{2\sqrt{K_p}}=\sqrt{\frac{K_p-1}{K_p}}=\sqrt{1-\frac{g_1}{K_p}}
+$$
 
 $K_p$ 越大（刚度越高），$\zeta_{\min}$ 越接近 1：$K_p=2$ 时 0.707，$K_p=9$ 时 0.943，$K_p=36$ 时 0.986。**标准反步只能给出接近临界阻尼或过阻尼的响应。**
 
@@ -2018,7 +2104,9 @@ $K_p$ 越大（刚度越高），$\zeta_{\min}$ 越接近 1：$K_p=2$ 时 0.707�
 
 (b) 零阶保持期间控制量误差上界
 
-$$\lvert\Delta u\rvert\le\max\Big|\frac{\partial u}{\partial x}\Big|\cdot\lvert\dot x\rvert\cdot T_s=2.2\times10^{6}\times10^{-3}=2.2\times10^{3}\ \text{N·m}$$
+$$
+\lvert\Delta u\rvert\le\max\Big|\frac{\partial u}{\partial x}\Big|\cdot\lvert\dot x\rvert\cdot T_s=2.2\times10^{6}\times10^{-3}=2.2\times10^{3}\ \text{N·m}
+$$
 
 是 50 N·m 限幅的 **44 倍**。这个上界很保守（它取的是全程最大值之积，而不是保持区间内的实际增量），实测 1 kHz 下 $\max|u|=12306$ N·m 且跟踪误差恶化到 $1.1\times10^{-3}$，10 kHz 才回到限幅内（43.7 N·m）。
 
@@ -2026,7 +2114,9 @@ $$\lvert\Delta u\rvert\le\max\Big|\frac{\partial u}{\partial x}\Big|\cdot\lvert\
 
 (c) 常值不匹配扰动以加速度 $\delta=-T_L/J_l$ 进入 $\dot z_2$ 方程。稳态时 $\dot z_1=\dot z_2=0$，由 $\dot z_1=-k_1z_1+z_2=0$ 得 $z_2=k_1z_1$；由 $\dot z_2=-z_1-k_2z_2+\delta=0$ 得
 
-$$z_{1,ss}=\frac{\delta}{1+k_1k_2}=-\frac{T_L/J_l}{1+k_1k_2}$$
+$$
+z_{1,ss}=\frac{\delta}{1+k_1k_2}=-\frac{T_L/J_l}{1+k_1k_2}
+$$
 
 代入 $T_L=5,J_l=1,k_1=k_2=8$：$z_{1,ss}=-5/65=-0.07692$ rad，实测 $-0.07829$ rad，比值 1.018。
 
