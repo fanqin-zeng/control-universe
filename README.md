@@ -41,6 +41,6 @@ python scripts/jupyter_server.py
 
 ## GitHub Pages
 
-静态构建：`npm run build:pages`；本地预览：`npm run preview:pages` → http://localhost:8081/control-universe/ 。课程与ECharts可在线使用；数学两课试用 Pyodide 在浏览器运行 Python，其余课仍展示代码、本地 Jupyter 可执行。[支持清单](docs/deployment/pyodide-trial.md)。
+静态构建：`npm run build:pages`；本地预览：`npm run preview:pages` → http://localhost:8081/control-universe/ 。课程与ECharts可在线使用；通过逐课实跑的实验使用 Pyodide 在浏览器执行，不兼容实验保留代码并显示原因，本地 Jupyter 保留。[逐课支持与待办清单](docs/deployment/python-expansion.md)。
 
 `gh-pages`为额外长期源码发布分支，由Actions导出部署。**每次用户明确同意版本后，才把更新反合并推送到gh-pages**；master推送不自动上线。首次部署配置与验收见[发布约定](docs/deployment/github-pages.md)。首次发布已完成：[访问在线 wiki](https://fanqing-zeng.github.io/control-universe/)，[公网验收](docs/deployment/first-release.md)。

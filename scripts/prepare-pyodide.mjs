@@ -1,6 +1,8 @@
 import {readFileSync, writeFileSync, existsSync, mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {extractNotebooks} from './lib-mdx.mjs';
+import './check-python-support.mjs';
+import './prepare-python-expansion.mjs';
 const manifest = JSON.parse(readFileSync('scripts/pyodide-assets.json', 'utf8'));
 mkdirSync('public/pyodide', {recursive: true});
 const queue = [...manifest.files];

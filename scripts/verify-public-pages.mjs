@@ -18,10 +18,11 @@ async function read(path) {
 const release = JSON.parse(await read('/release.json'));
 assert.equal(release.sourceCommit, expected);
 assert.equal(release.sourceDirty, false);
-assert([false, 'browser-math-trial'].includes(release.pythonExecution));
+assert([false, 'browser-math-trial','browser-verified-notebooks'].includes(release.pythonExecution));
 assert.equal(release.basePath, '/control-universe');
 const home = await read('/');
 const catalog = parseCatalog(readFileSync('content/catalog.ts', 'utf8'));
+const pythonPolicy = release.pythonExecution === 'browser-verified-notebooks' ? JSON.parse(readFileSync('lib/python-support.json','utf8')) : null;
 const queue = catalog.flatMap(ch => ch.lessons.map(lesson => ({ch, lesson})));
 await Promise.all(Array.from({length: 4}, async () => {
   while (queue.length) {
@@ -30,6 +31,13 @@ await Promise.all(Array.from({length: 4}, async () => {
     assert(!html.includes('class="katex-error"'));
     assert(html.includes('/control-universe/katex/katex.min.css'));
     if (lesson.status !== 'empty') assert.equal((html.match(/<h2[ >]/g) || []).length, lesson.subsections.length);
+    if (pythonPolicy) {
+      const entries=pythonPolicy.lessons[ch.slug+'/'+lesson.slug]?.notebooks || [];
+      if(entries.some(n=>n.status==='enabled')) assert(html.includes(pythonPolicy.workerHash));
+      assert.equal((html.match(/data-python-mode="browser"/g)||[]).length,entries.filter(n=>n.status==='enabled').length);
+      assert.equal((html.match(/data-python-mode="code"/g)||[]).length,entries.filter(n=>n.status==='code').length);
+      if(entries.some(n=>n.status==='code')) assert(html.includes('浏览器暂不运行此实验'));
+    }
   }
 }));
 for (const [old, target] of lessonRedirects) {

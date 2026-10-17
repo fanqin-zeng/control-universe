@@ -1,5 +1,7 @@
 # 浏览器 Python 试验与支持清单
 
+> 本文保留 DEP03 数学两课试验的历史记录。后续全课程逐实验支持范围以 [python-expansion.md](python-expansion.md) 为准。
+
 2026-10-17；工作包 wp/pyodide-trial。用户授权：先在本地验收数学两课、python-control 常用功能和 Slycot 兼容性，验收通过则直接发布 gh-pages。本次授权仅覆盖本工作包；以后仍逐次取得发布同意。
 
 ## 交付范围

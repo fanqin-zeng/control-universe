@@ -13,7 +13,7 @@
 
 ## 静态站能力
 
-正文、KaTeX、导航、旧地址和React/ECharts实验支持静态站。Pages不能托管服务端 Jupyter；数学两课通过 Pyodide 在读者浏览器运行，支持范围与限制见 [pyodide-trial.md](pyodide-trial.md)。其余课程显示原始setup与cell代码及明确提示，不请求读者的127.0.0.1:8891。本地npm run dev保持真实内核运行模式。课程数值验收仍使用本地严格内核，静态发布不代替课程质量门槛。
+正文、KaTeX、导航、旧地址和React/ECharts实验支持静态站。Pages不能托管服务端 Jupyter；通过逐课实跑的实验由 Pyodide 在读者浏览器运行，支持范围与待办见 [python-expansion.md](python-expansion.md)。不兼容实验显示原始setup与cell代码及具体原因，不请求读者的127.0.0.1:8891。本地npm run dev保持真实内核运行模式。课程数值验收仍使用本地严格内核，静态发布不代替课程质量门槛。
 
 ## 本地验收
 

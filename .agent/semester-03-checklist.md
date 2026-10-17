@@ -33,6 +33,7 @@
 | DEP01 | GitHub Pages静态导出与发布分支闸门 | [x] | docs/deployment/github-pages.md;docs/deployment/acceptance.md |
 | DEP02 | 首次远端发布及公网验收 | [x] | docs/deployment/first-release.md;docs/deployment/first-release-http.json;docs/deployment/first-release-actions.json |
 | DEP03 | Pyodide数学两课试验、控制库支持清单与授权发布 | [x] | docs/deployment/pyodide-trial.md;docs/deployment/pyodide-public-results.json;docs/deployment/pyodide-public-actions.json;docs/deployment/pyodide-public-ui.json |
+| DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [ ] | docs/deployment/python-expansion-delivery.md;逐课浏览器实跑进行中 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪

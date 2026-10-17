@@ -16,5 +16,5 @@ for(const [old,target] of lessonRedirects){
   writeFileSync(resolve(directory,'index.html'),`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>课程地址已更新</title><link rel="canonical" href="${destination}"><meta http-equiv="refresh" content="0;url=${destination}"><script>location.replace(${JSON.stringify(destination)}+location.search+location.hash)</script><body><a href="${destination}">打开课程新地址</a></body></html>`);
 }
 writeFileSync('out/.nojekyll','');
-writeFileSync('out/release.json',JSON.stringify({sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),basePath:base,pythonExecution:'browser-math-trial',pyodide:'0.27.7',sourceDirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,builtAt:new Date().toISOString()},null,2));
+writeFileSync('out/release.json',JSON.stringify({sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),basePath:base,pythonExecution:'browser-verified-notebooks',pyodide:'0.27.7',sourceDirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,builtAt:new Date().toISOString()},null,2));
 const verify=spawnSync(process.execPath,['scripts/verify-pages.mjs'],{stdio:'inherit',env:{...process.env,NEXT_PUBLIC_BASE_PATH:base}});process.exitCode=verify.status??1;

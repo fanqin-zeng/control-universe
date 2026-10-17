@@ -1,0 +1,73 @@
+{
+  "testedAt": "2026-10-17T13:03:16.739Z",
+  "url": "http://localhost:8081/control-universe/python-expansion.html?lesson=classic/transfer-function",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "classic/transfer-function",
+      "title": "传递函数",
+      "sourceHash": "b3232d81c9cc3903851ff1a028c282d411f918305ecf477b38b5759fbcd0d1a2",
+      "notebooks": [
+        {
+          "id": "classic/transfer-function#1",
+          "title": "🧪 动手实验：方框图代数 — feedback() 计算闭环传递函数",
+          "index": 1,
+          "line": 258,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5140,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "电机开环传递函数: <TransferFunction>: sys[0]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n               0.1\n  ------------------------------\n  0.0001 s^2 + 0.01001 s + 0.011\nK=10 闭环传递函数: <TransferFunction>: sys[4]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n                1\n  ------------------------------\n  0.0001 s^2 + 0.01001 s + 1.011\n开环极点: [-98.98876276+0.j  -1.11123724+0.j]\n闭环极点: [-50.05+87.20663679j -50.05-87.20663679j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#2",
+          "title": "🧪 动手实验：零极点对消 — 传递函数会隐藏内部状态",
+          "index": 2,
+          "line": 440,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "1 states have been removed from the model\nGa 的极点: [-2.+0.j]\nGb 的极点: [1.+0.j]  <- 不稳定!\n串联对消后: <TransferFunction>: sys[8]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n    1\n  -----\n  s + 2\n对消后的极点: [-2.+0.j]  <- 看起来稳定\n\n危险: Gb 内部的 e^t 发散模式只是没出现在输出里,\n一个进入两环节之间的扰动就会让它爆发。\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "classic/transfer-function",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 2,
+    "enabled": 2,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 2,
+    "codeOnly": 0
+  }
+}
