@@ -47,5 +47,5 @@ await read('/images/adaptive-control-concept.png');
 const missing = await fetch(base + '/nonexistent-release-test/', {signal: AbortSignal.timeout(30000)});
 assert.equal(missing.status, 404);
 const output = {pass: true, testedAt: new Date().toISOString(), base, release, lessons: catalog.reduce((n,ch) => n+ch.lessons.length, 0), legacyRoutes: lessonRedirects.length, missingStatus: missing.status, results};
-writeFileSync('docs/deployment/first-release-http.json', JSON.stringify(output, null, 2) + '\n');
+writeFileSync(process.argv[3] || 'docs/deployment/first-release-http.json', JSON.stringify(output, null, 2) + '\n');
 console.log(JSON.stringify({...output, results: results.length}));
