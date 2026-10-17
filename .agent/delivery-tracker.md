@@ -55,7 +55,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [x] 系统建模 (system-modeling) | v1.3: 2个交互组件（SuspensionExplorer + FirstOrderComparisonExplorer） |
+| [x] 系统建模 (system-modeling) | CLASSIC-01学期3重构；13节/6题/7严格内核与Pyodide实验、自由响应/能量双图SuspensionExplorer、三SVG、36旧标题ID保留；讨论docs/discuss-log/semester-03/03-classic/01-system-modeling.md，验收.agent/semester-03/classic-01/acceptance.md；纠正过期FirstOrderComparisonExplorer引用说明 |
 | [x] 传递函数 (transfer-function) | v1.3: 2个交互组件（PoleZeroExplorer + StepBodeExplorer），2个静态JupyterNotebook |
 | [x] 时域分析 (time-domain-analysis) | v1.3: 5个交互组件（ImpulseExplorer + FirstOrderStepExplorer + PerformanceMetricsExplorer + SecondOrderStepExplorer + SuspensionTimeExplorer），2个静态JupyterNotebook |
 | [x] 系统稳定性 (stability-analysis) | v1.3: 2个交互组件（StabilityThirdOrderExplorer + StabilityDelayExplorer）。**A6 由第 7 位提前到第 4 位**；§2.3 要求的"剥离频域/根轨迹部分"属正文改写，留阶段 C |

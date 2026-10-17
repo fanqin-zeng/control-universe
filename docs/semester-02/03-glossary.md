@@ -596,6 +596,11 @@
 | A稳定 | A-stability | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
 | 复合梯形法 | composite trapezoidal rule | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
 | 经典四阶Runge–Kutta | classical fourth-order Runge–Kutta | RK4 | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 自由响应 | free response | — | CLASSIC-01 | 零外部输入，由初值产生；不同于零初值阶跃 |
+| 静平衡位置 | static equilibrium position | — | CLASSIC-01 | 重力等静态载荷已平衡的坐标原点 |
+| 集总热容 | lumped capacitance | — | CLASSIC-01 | 温度近似均匀的热储存模型 |
+| 基本传播数 | basic reproduction number | — | CLASSIC-01 | SIS例中beta N除以gamma，固定人口与恢复回流假设 |
+| 易感感染易感模型 | susceptible-infected-susceptible、SIS | — | CLASSIC-01 | 恢复后回到易感状态，不含永久免疫 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

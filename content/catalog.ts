@@ -903,58 +903,58 @@ export const catalog: Chapter[] = [
         "title": "系统建模",
         "subsections": [
           {
-            "slug": "为什么需要数学建模",
-            "title": "为什么需要数学建模"
+                    "slug": "从按下车身开始",
+                    "title": "从按下车身开始"
           },
           {
-            "slug": "从一个实际问题开始汽车悬挂",
-            "title": "从一个实际问题开始：汽车悬挂"
+                    "slug": "受力与平衡位置",
+                    "title": "受力与平衡位置"
           },
           {
-            "slug": "旋转机械系统",
-            "title": "旋转机械系统"
+                    "slug": "旋转机械系统",
+                    "title": "旋转机械系统"
           },
           {
-            "slug": "电气系统建模",
-            "title": "电气系统建模"
+                    "slug": "电气系统建模",
+                    "title": "电气系统建模"
           },
           {
-            "slug": "机电类比同一个数学不同的物理",
-            "title": "机电类比：同一个数学，不同的物理"
+                    "slug": "机电类比",
+                    "title": "机电类比"
           },
           {
-            "slug": "耦合系统直流电机",
-            "title": "耦合系统：直流电机"
+                    "slug": "直流电机",
+                    "title": "直流电机"
           },
           {
-            "slug": "模型验证与简化",
-            "title": "模型验证与简化"
+                    "slug": "模型验证与简化",
+                    "title": "模型验证与简化"
           },
           {
-            "slug": "跨领域建模控制理论远不止机械和电气",
-            "title": "跨领域建模：控制理论远不止机械和电气"
+                    "slug": "跨领域建模",
+                    "title": "跨领域建模"
           },
           {
-            "slug": "建模方法论总结",
-            "title": "建模方法论总结"
+                    "slug": "建模方法论总结",
+                    "title": "建模方法论总结"
           },
           {
-            "slug": "深入讨论",
-            "title": "深入讨论"
+                    "slug": "工作点与线性化",
+                    "title": "工作点与线性化"
           },
           {
-            "slug": "小结",
-            "title": "小结"
+                    "slug": "小结",
+                    "title": "小结"
           },
           {
-            "slug": "习题",
-            "title": "习题"
+                    "slug": "习题",
+                    "title": "习题"
           },
           {
-            "slug": "答案",
-            "title": "答案"
+                    "slug": "答案",
+                    "title": "答案"
           }
-        ],
+],
         "prereq": [
           "math/ode-matrix-exponential",
           "math/multivariable-calculus"
