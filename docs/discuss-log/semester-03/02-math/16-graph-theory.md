@@ -242,4 +242,6 @@ npm run build（build-delivery.log）、npm run build:pages（pages-delivery.log
 
 最终生产browser-results.json finalDelivery=true：16真实H2与目录ID/全部锚点、无重ID，8display居中auto、KaTeX错误0、7浏览器Notebook；按钮/所有滑块端点/默认恢复正确，答案cell在页面Pyodide运行完成并打印初始分歧平方和20。390px正文343=scroll343，canvas313×160/313×280；控制台warn/error空。opening.png与narrow.png人工查看清晰，初次窄屏截图未绘制的空白图已以实际绘制后截图替换，最终证据可见正文。最终source-consistency.json七标签/提取/kernel/Pyodide一致，最终源SHA一致。
 
-scope-check证明其它66课兼容记录、30待办及其它课程正文未改，W06/W07/W08保持未完成。两个用户批阅文件不编辑不暂存；本对话只交付MATH-16，不推送远端、不发布gh-pages。合并回执待实际no-ff后补写。
+scope-check证明其它66课兼容记录、30待办及其它课程正文未改，W06/W07/W08保持未完成。两个用户批阅文件不编辑不暂存；本对话只交付MATH-16，不推送远端、不发布gh-pages。实际合并回执如下。
+
+合并回执：课程提交 `dc20fab` 已用 `--no-ff` 合入 master，课程合并提交 `942255b69c73be4a3d864b07a6ffe02833698830`。全局checklist六项全部完成，本对话仅交付MATH-16；未推送远端、未发布gh-pages。

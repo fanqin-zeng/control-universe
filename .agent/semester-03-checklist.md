@@ -64,7 +64,7 @@
 | MATH-13 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/13-convex-optimization.md;.agent/semester-03/math-13/acceptance.md;commit:31484f051c09edda86b7c93c4a50b1d5da430fcd |
 | MATH-14 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/14-variational-dp.md;.agent/semester-03/math-14/acceptance.md;commit:c8774d79e26a1207d005c3fc4a679f4482720d1b |
 | MATH-15 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/15-diff-geometry.md;.agent/semester-03/math-15/acceptance.md;commit:9cc0ee3814532bdb5ed5bb8006fb1aacde70dbab |
-| MATH-16 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/16-graph-theory.md;.agent/semester-03/math-16/acceptance.md;验收交付状态后合入 |
+| MATH-16 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/16-graph-theory.md;.agent/semester-03/math-16/acceptance.md;commit:942255b69c73be4a3d864b07a6ffe02833698830 |
 | MATH-17 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-18 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
