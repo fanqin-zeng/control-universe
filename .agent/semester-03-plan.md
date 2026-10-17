@@ -477,3 +477,5 @@ MATH-01微积分入门已完成新写Phase 1–4和实际验收，详见[本课�
 MATH-02复数基础已按重构技能完成Phase1–4与实际验收，来源保留/纠错矩阵和证据见[本次验收](semester-03/math-02/acceptance.md)。同次按批阅及追加授权修订MATH-01开篇，补运动演示、无穷级数与泰勒桥；目录分别13/8个H2，不改本期课程范围与顺序。MATH-02先修明确为已交付的微积分入门，用户开工前正文删除保持。WARN日志债务仅复数基础关闭，35→34门，其余逐字保留；不改历史快照，不生产MATH-03。
 
 2026-10-17用户要求增加GitHub Pages发布：DEP01准备静态导出与gh-pages源码发布分支，DEP02首次上线需单独确认版本。master更新不自动上线，每次用户明确同意后才反合gh-pages并推送；课程范围和Phase1–4门槛不变，静态版不承担Python内核运行。细则见docs/deployment/github-pages.md和全局checklist。
+
+2026-10-17追加 DEP03：按用户本次条件授权，试验 Pyodide 本地浏览器执行，先交付数学两课并实测 python-control/Slycot 支持清单，本地验收通过即发布 gh-pages。其余课程继续静态代码展示，真实本地 Jupyter 保留；不改变课程范围和讨论工作流。此条更新此前“静态版不承担Python内核运行”的能力边界，详见 docs/deployment/pyodide-trial.md。
