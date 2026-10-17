@@ -893,7 +893,9 @@ $$
 ## 习题
 
 **习题 1（Lie导数与相对阶）** 系统
-$$\dot x_1=x_2+x_1^2,\qquad \dot x_2=\sin x_1+u,\qquad y=x_1$$
+$$
+\dot x_1=x_2+x_1^2,\qquad \dot x_2=\sin x_1+u,\qquad y=x_1
+$$
 求 $L_fh$、$L_gh$、$L_f^2h$、$L_gL_fh$，确定相对阶 $r$，并写出使 $\ddot y=v$ 的控制律 $u$。
 
 **习题 2（相对阶退化）** 系统 $\dot x_1=x_2$，$\dot x_2=x_1x_2+u$，输出改为 $y=x_1^2$。
@@ -911,7 +913,9 @@ $$\dot x_1=x_2+x_1^2,\qquad \dot x_2=\sin x_1+u,\qquad y=x_1$$
 (c) 取 $a=-0.5$，$x(0)=(1,0)$，外环 $v=-2y$。证明闭环解为 $x_1(t)=\cosh 2t$，并说明 $y(t)$ 与 $x_1(t)$ 各自的长期行为。
 
 **习题 5（全状态线性化验证）** 系统
-$$f(x)=\begin{bmatrix}x_2(1+x_1^2)\\x_1x_2\end{bmatrix},\qquad g(x)=\begin{bmatrix}0\\1+x_1^2\end{bmatrix}$$
+$$
+f(x)=\begin{bmatrix}x_2(1+x_1^2)\\x_1x_2\end{bmatrix},\qquad g(x)=\begin{bmatrix}0\\1+x_1^2\end{bmatrix}
+$$
 (a) 计算 $\mathrm{ad}_fg$ 与 $\det[g,\mathrm{ad}_fg]$，判断系统是否可在 $\mathbb{R}^2$ 上全状态线性化（要说明秩条件与对合条件）；
 (b) 取 $\lambda(x)=x_1$，验证相对阶为 2，写出坐标变换 $z=T(x)$ 及其逆变换；
 (c) 写出化为 $\dot z_1=z_2,\dot z_2=v$ 的控制律（用 $x$ 表示），并给出使闭环极点为 $-2,-2$ 的 $v$（用 $z$ 表示）。
@@ -934,7 +938,9 @@ $f(x)=\big(x_2+x_1^2,\ \sin x_1\big)^\top$，$g(x)=(0,1)^\top$，$h(x)=x_1$，$\
 
 **控制律**：由 $\ddot y=L_f^2h+L_gL_fh\cdot u=v$ 得
 
-$$u=v-L_f^2h=v-2x_1x_2-2x_1^3-\sin x_1$$
+$$
+u=v-L_f^2h=v-2x_1x_2-2x_1^3-\sin x_1
+$$
 
 因为 $L_gL_fh=1$ 是常数，控制律在整个 $\mathbb{R}^2$ 上非奇异。
 
@@ -949,7 +955,9 @@ $$u=v-L_f^2h=v-2x_1x_2-2x_1^3-\sin x_1$$
 
 当 $x_1\neq0$ 时 $L_gL_fh=2x_1\neq0$，相对阶 $r=2$，控制律
 
-$$u=\frac{v-L_f^2h}{L_gL_fh}=\frac{v-2x_2^2-2x_1^2x_2}{2x_1}$$
+$$
+u=\frac{v-L_f^2h}{L_gL_fh}=\frac{v-2x_2^2-2x_1^2x_2}{2x_1}
+$$
 
 **(b)** 在 $x_1=0$ 处 $L_gL_fh=0$，条件 (ii) 不成立，**相对阶在 $x_1=0$ 处没有定义**（若继续检查 $L_gL_f^2h=\frac{\partial}{\partial x}(2x_2^2+2x_1^2x_2)\cdot g=4x_1x_2+2x_1^2$，在 $x_1=0$ 处也为 0，说明该点邻域内不存在一致的相对阶）。控制律的分母 $2x_1\to0$，$u\to\infty$——$x_1=0$ 是一条**奇异流形**。
 
@@ -959,22 +967,31 @@ $$u=\frac{v-L_f^2h}{L_gL_fh}=\frac{v-2x_2^2-2x_1^2x_2}{2x_1}$$
 
 **(a)** $y=\theta$，$f=(\dot\theta,\ 12\sin\theta)^\top$，$g=(0,2)^\top$。$L_gh=0$，$L_fh=\dot\theta$，$L_gL_fh=2\neq0$ ⇒ $r=2$，$L_f^2h=12\sin\theta$。
 
-$$u=\frac{1}{2}\big(v-12\sin\theta\big),\qquad
+$$
+u=\frac{1}{2}\big(v-12\sin\theta\big),\qquad
 v=\ddot\theta_d-6\dot e-9e=-6\dot\theta-9\theta
 $$
 
 （$\theta_d\equiv0$）故
 
-$$u=\frac{1}{2}\big(-6\dot\theta-9\theta-12\sin\theta\big)=-3\dot\theta-4.5\theta-6\sin\theta$$
+$$
+u=\frac{1}{2}\big(-6\dot\theta-9\theta-12\sin\theta\big)=-3\dot\theta-4.5\theta-6\sin\theta
+$$
 
 **(b)** 代入 $\theta=0.9$，$\dot\theta=0.4$，$\sin 0.9=0.78333$：
 
-$$v=-6(0.4)-9(0.9)=-2.4-8.1=-10.5$$
-$$u=\frac{-10.5-12\times0.78333}{2}=\frac{-10.5-9.39996}{2}=\frac{-19.89996}{2}\approx-9.950$$
+$$
+v=-6(0.4)-9(0.9)=-2.4-8.1=-10.5
+$$
+$$
+u=\frac{-10.5-12\times0.78333}{2}=\frac{-10.5-9.39996}{2}=\frac{-19.89996}{2}\approx-9.950
+$$
 
 **(c)** Jacobian 线性化把 $12\sin\theta$ 换成 $12\theta$：
 
-$$u_J=\frac{1}{2}(v-12\theta)=\frac{-10.5-10.8}{2}=\frac{-21.3}{2}=-10.65$$
+$$
+u_J=\frac{1}{2}(v-12\theta)=\frac{-10.5-10.8}{2}=\frac{-21.3}{2}=-10.65
+$$
 
 差异 $u_J-u=-0.70$，约 **7%**。来源：线性近似 $12\theta=10.8$ 比真值 $12\sin\theta=9.40$ 大 **14.9%**，Jacobian 控制器"以为"重力恢复力矩比实际更强，于是过度补偿（$u$ 更负）。$\theta$ 越大偏差越猛：$\theta=1.4$ rad 时 $\sin\theta=0.985$，近似值比真值大 **42%**。
 
@@ -988,20 +1005,27 @@ $L_fh=(1,a)(x_2,\ x_1x_2)^\top=x_2+ax_1x_2=x_2(1+ax_1)$。
 
 **(b)** 零动态：令 $y\equiv0$ ⇒ $x_1=-ax_2$；令 $\dot y\equiv0$ ⇒ $v=0$。剩余状态方程 $\dot x_1=x_2$，代入 $x_2=-x_1/a$：
 
-$$\dot x_1=-\frac{1}{a}x_1\quad\Longrightarrow\quad \text{特征值}\ \lambda_z=-\frac{1}{a}$$
+$$
+\dot x_1=-\frac{1}{a}x_1\quad\Longrightarrow\quad \text{特征值}\ \lambda_z=-\frac{1}{a}
+$$
 
 系统最小相位 ⇔ $\lambda_z<0$ ⇔ $-\frac1a<0$ ⇔ $\boxed{a>0}$。
 
 **(c)** $a=-0.5$ 时闭环为 $\dot x_1=x_2$，且 $y=x_1-0.5x_2$，$\dot y=-2y$。由 $x_2=\dot x_1$ 得 $y=x_1-0.5\dot x_1$，而 $y(t)=y(0)e^{-2t}$。初值 $x(0)=(1,0)$ ⇒ $y(0)=1-0=1$，故
 
-$$x_1-0.5\dot x_1=e^{-2t}\quad\Longleftrightarrow\quad \dot x_1-2x_1=-2e^{-2t}$$
+$$
+x_1-0.5\dot x_1=e^{-2t}\quad\Longleftrightarrow\quad \dot x_1-2x_1=-2e^{-2t}
+$$
 
 一阶线性 ODE。齐次解 $Ce^{2t}$；特解设 $x_1=Be^{-2t}$，代入得 $-2B-2B=-4B=-2$ ⇒ $B=0.5$。故
 
-$$x_1(t)=Ce^{2t}+0.5e^{-2t},\qquad x_1(0)=1\Rightarrow C=0.5
+$$
+x_1(t)=Ce^{2t}+0.5e^{-2t},\qquad x_1(0)=1\Rightarrow C=0.5
 $$
 
-$$\boxed{x_1(t)=0.5e^{2t}+0.5e^{-2t}=\cosh 2t}$$
+$$
+\boxed{x_1(t)=0.5e^{2t}+0.5e^{-2t}=\cosh 2t}
+$$
 
 验证：$x_2=\dot x_1=\sinh 2t$，$y=x_1-0.5x_2=\cosh 2t-\sinh 2t=e^{-2t}$ ✓（满足 $\dot y=-2y$）。
 
@@ -1052,6 +1076,8 @@ $$
 
 代入即得 $\dot z_1=z_2$，$\dot z_2=v$。闭环极点 $-2,-2$ ⇒ 特征多项式 $s^2+4s+4$ ⇒
 
-$$v=-4z_2-4z_1=-4x_2(1+x_1^2)-4x_1$$
+$$
+v=-4z_2-4z_1=-4x_2(1+x_1^2)-4x_1
+$$
 
 （分母 $(1+x_1^2)^2\ge1$，控制律全局非奇异，无需限制工作区域。）

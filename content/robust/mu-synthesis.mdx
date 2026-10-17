@@ -19,7 +19,9 @@ description: "理解结构化奇异值 μ 的定义与计算，掌握 D-K 迭代
 
 回顾上节课的鲁棒稳定性条件。设标称系统稳定，乘性不确定性 $G_p = G(1 + \Delta_m)$，则闭环鲁棒稳定的**充分条件**是：
 
-$$\|T \cdot \Delta_m\|_\infty < 1 \quad \Longleftrightarrow \quad |T(j\omega)| < \frac{1}{|\Delta_m(j\omega)|}, \quad \forall \omega$$
+$$
+\|T \cdot \Delta_m\|_\infty < 1 \quad \Longleftrightarrow \quad |T(j\omega)| < \frac{1}{|\Delta_m(j\omega)|}, \quad \forall \omega
+$$
 
 这个条件的推导用了小增益定理：$\|T \Delta_m\|_\infty \leq \|T\|_\infty \cdot \|\Delta_m\|_\infty < 1$。
 
@@ -33,7 +35,9 @@ $$\|T \cdot \Delta_m\|_\infty < 1 \quad \Longleftrightarrow \quad |T(j\omega)| <
 
 质量-弹簧-阻尼器系统：
 
-$$G(s) = \frac{1}{ms^2 + bs + k}$$
+$$
+G(s) = \frac{1}{ms^2 + bs + k}
+$$
 
 标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$。
 
@@ -53,17 +57,23 @@ $$G(s) = \frac{1}{ms^2 + bs + k}$$
 
 **非结构化不确定性**（前两节课用的）：
 
-$$G_p(s) = G(s)(1 + \Delta_m(s)), \quad |\Delta_m(j\omega)| \leq \gamma_m(\omega)$$
+$$
+G_p(s) = G(s)(1 + \Delta_m(s)), \quad |\Delta_m(j\omega)| \leq \gamma_m(\omega)
+$$
 
 $\Delta_m(s)$ 是任意稳定传递函数，只要幅值有界。它不区分"这个不确定性来自质量变化还是刚度变化"。
 
 **结构化不确定性**：
 
-$$G_p(s) = \mathcal{F}_u(G_u(s), \Delta)$$
+$$
+G_p(s) = \mathcal{F}_u(G_u(s), \Delta)
+$$
 
 其中 $\Delta$ 是**块对角矩阵**：
 
-$$\Delta = \text{blkdiag}(\delta_1 I_{r_1}, \delta_2 I_{r_2}, \ldots, \delta_s I_{r_s}, \Delta_{s+1}, \ldots, \Delta_{s+f})$$
+$$
+\Delta = \text{blkdiag}(\delta_1 I_{r_1}, \delta_2 I_{r_2}, \ldots, \delta_s I_{r_s}, \Delta_{s+1}, \ldots, \Delta_{s+f})
+$$
 
 每个 $\delta_i$ 是标量（实数或复数），代表一个独立的物理参数不确定性。每个 $\Delta_j$ 是满矩阵块，代表一组耦合的不确定性（如未建模动态）。
 
@@ -83,15 +93,21 @@ $\mathcal{F}_u$ 是**上线形分式变换**（upper LFT），将不确定性 $\
 
 回到质量-弹簧-阻尼器系统。将参数不确定性写成 LFT 形式：
 
-$$m = \bar{m}(1 + 0.3\delta_m), \quad k = \bar{k}(1 + 0.3\delta_k)$$
+$$
+m = \bar{m}(1 + 0.3\delta_m), \quad k = \bar{k}(1 + 0.3\delta_k)
+$$
 
 传递函数：
 
-$$G(s, \delta_m, \delta_k) = \frac{1}{\bar{m}(1+0.3\delta_m)s^2 + \bar{b}s + \bar{k}(1+0.3\delta_k)}$$
+$$
+G(s, \delta_m, \delta_k) = \frac{1}{\bar{m}(1+0.3\delta_m)s^2 + \bar{b}s + \bar{k}(1+0.3\delta_k)}
+$$
 
 重写为 LFT 形式 $G = \mathcal{F}_u(G_u, \Delta)$，其中 $\Delta = \text{diag}(\delta_m, \delta_k)$：
 
-$$G_u(s) = \begin{bmatrix} \frac{-0.3\bar{m}s^2}{\bar{m}s^2 + \bar{b}s + \bar{k}} & 0 & \frac{1}{\bar{m}s^2 + \bar{b}s + \bar{k}} \\ 0 & \frac{-0.3\bar{k}}{\bar{m}s^2 + \bar{b}s + \bar{k}} & 0 \\ \frac{-0.3\bar{m}s^2}{\bar{m}s^2 + \bar{b}s + \bar{k}} & \frac{-0.3\bar{k}}{\bar{m}s^2 + \bar{b}s + \bar{k}} & \frac{1}{\bar{m}s^2 + \bar{b}s + \bar{k}} \end{bmatrix}$$
+$$
+G_u(s) = \begin{bmatrix} \frac{-0.3\bar{m}s^2}{\bar{m}s^2 + \bar{b}s + \bar{k}} & 0 & \frac{1}{\bar{m}s^2 + \bar{b}s + \bar{k}} \\ 0 & \frac{-0.3\bar{k}}{\bar{m}s^2 + \bar{b}s + \bar{k}} & 0 \\ \frac{-0.3\bar{m}s^2}{\bar{m}s^2 + \bar{b}s + \bar{k}} & \frac{-0.3\bar{k}}{\bar{m}s^2 + \bar{b}s + \bar{k}} & \frac{1}{\bar{m}s^2 + \bar{b}s + \bar{k}} \end{bmatrix}
+$$
 
 > 📐 LFT（线性分式变换）的推导涉及状态空间 realization 和代数操作。这里直接给出结果，重点是理解 $\Delta$ 的结构——两个独立的标量块。
 
@@ -101,7 +117,9 @@ $$G_u(s) = \begin{bmatrix} \frac{-0.3\bar{m}s^2}{\bar{m}s^2 + \bar{b}s + \bar{k}
 
 给定矩阵 $M \in ℂ^{n \times n}$ 和不确定性结构 $\boldsymbol{\Delta}$（块对角矩阵的集合）：
 
-$$\mu_{\boldsymbol{\Delta}}(M) = \frac{1}{\min\left\lbrace\bar{\sigma}(\Delta) : \Delta \in \boldsymbol{\Delta},\; \det(I - M\Delta) = 0\right\rbrace}$$
+$$
+\mu_{\boldsymbol{\Delta}}(M) = \frac{1}{\min\left\lbrace\bar{\sigma}(\Delta) : \Delta \in \boldsymbol{\Delta},\; \det(I - M\Delta) = 0\right\rbrace}
+$$
 
 如果没有使 $\det(I - M\Delta) = 0$ 的 $\Delta \in \boldsymbol{\Delta}$，则 $\mu(M) = 0$。
 
@@ -115,7 +133,9 @@ $$\mu_{\boldsymbol{\Delta}}(M) = \frac{1}{\min\left\lbrace\bar{\sigma}(\Delta) :
 
 ### 上下界
 
-$$\rho(M) \leq \mu_{\boldsymbol{\Delta}}(M) \leq \bar{\sigma}(M)$$
+$$
+\rho(M) \leq \mu_{\boldsymbol{\Delta}}(M) \leq \bar{\sigma}(M)
+$$
 
 其中 $\rho(M) = \max_i |\lambda_i(M)|$ 是谱半径，$\bar{\sigma}(M)$ 是最大奇异值。
 
@@ -133,11 +153,15 @@ $$\rho(M) \leq \mu_{\boldsymbol{\Delta}}(M) \leq \bar{\sigma}(M)$$
 
 μ 的精确计算是 NP-hard 的。工程上用**上界**：
 
-$$\mu_{\boldsymbol{\Delta}}(M) \leq \inf_{D \in \mathcal{D}} \bar{\sigma}(D M D^{-1})$$
+$$
+\mu_{\boldsymbol{\Delta}}(M) \leq \inf_{D \in \mathcal{D}} \bar{\sigma}(D M D^{-1})
+$$
 
 其中 $\mathcal{D}$ 是与 $\boldsymbol{\Delta}$ 交换的缩放矩阵集合：
 
-$$\mathcal{D} = \lbrace D = \text{blkdiag}(d_1 I_{r_1}, \ldots, d_s I_{r_s}, D_{s+1}, \ldots) : d_i > 0, D_j > 0\rbrace$$
+$$
+\mathcal{D} = \lbrace D = \text{blkdiag}(d_1 I_{r_1}, \ldots, d_s I_{r_s}, D_{s+1}, \ldots) : d_i > 0, D_j > 0\rbrace
+$$
 
 **直觉**：$D$ 缩放矩阵"重新标度"不确定性通道。如果通道 1（如质量变化）比通道 2（如刚度变化）更"危险"，$D$ 会放大通道 1 的影响，使 $\bar{\sigma}(DMD^{-1})$ 比 $\bar{\sigma}(M)$ 更小——上界更紧。
 
@@ -154,7 +178,9 @@ $$\mathcal{D} = \lbrace D = \text{blkdiag}(d_1 I_{r_1}, \ldots, d_s I_{r_s}, D_{
 
 **定理**（μ 鲁棒稳定性）：闭环系统对所有 $\Delta \in \boldsymbol{B}\boldsymbol{\Delta}$ 鲁棒稳定，**当且仅当**：
 
-$$\sup_{\omega} \mu_{\boldsymbol{\Delta}}(M(j\omega)) < 1$$
+$$
+\sup_{\omega} \mu_{\boldsymbol{\Delta}}(M(j\omega)) < 1
+$$
 
 其中 $M$ 是从不确定性输出到输入的闭环传递函数矩阵。
 
@@ -173,7 +199,9 @@ $$\sup_{\omega} \mu_{\boldsymbol{\Delta}}(M(j\omega)) < 1$$
 
 **定理**（μ 鲁棒性能）：闭环系统鲁棒稳定且满足 $\|T_{zw}\|_\infty < \gamma$（对所有 $\Delta \in \boldsymbol{B}\boldsymbol{\Delta}$），**当且仅当**：
 
-$$\sup_{\omega} \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1$$
+$$
+\sup_{\omega} \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1
+$$
 
 其中 $\boldsymbol{\Delta}_p$ 是**增广**的不确定性结构，包含性能不确定性（将性能指标转化为一个额外的复数满块 $\Delta_p$）和参数不确定性。
 
@@ -185,7 +213,9 @@ $$\sup_{\omega} \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1$$
 
 μ 综合的目标：
 
-$$\min_K \sup_\omega \mu_{\boldsymbol{\Delta}}(\mathcal{F}_\ell(P, K)(j\omega))$$
+$$
+\min_K \sup_\omega \mu_{\boldsymbol{\Delta}}(\mathcal{F}_\ell(P, K)(j\omega))
+$$
 
 其中 $P$ 是广义被控对象（包含不确定性通道），$K$ 是控制器。
 
@@ -193,11 +223,15 @@ $$\min_K \sup_\omega \mu_{\boldsymbol{\Delta}}(\mathcal{F}_\ell(P, K)(j\omega))$
 
 **步骤 1**（K 步）：固定 $D$ 缩放矩阵（初始 $D = I$），求解标准 H∞ 综合问题：
 
-$$K_{\text{new}} = \arg\min_K \|D \mathcal{F}_\ell(P, K) D^{-1}\|_\infty$$
+$$
+K_{\text{new}} = \arg\min_K \|D \mathcal{F}_\ell(P, K) D^{-1}\|_\infty
+$$
 
 **步骤 2**（D 步）：固定 $K$，在每个频率点优化 $D$：
 
-$$D(j\omega) = \arg\min_D \bar{\sigma}(D M(j\omega) D^{-1}), \quad M = \mathcal{F}_\ell(P, K)$$
+$$
+D(j\omega) = \arg\min_D \bar{\sigma}(D M(j\omega) D^{-1}), \quad M = \mathcal{F}_\ell(P, K)
+$$
 
 然后拟合一个稳定的 $D(s)$（有理传递函数）。
 
@@ -263,7 +297,9 @@ $$D(j\omega) = \arg\min_D \bar{\sigma}(D M(j\omega) D^{-1}), \quad M = \mathcal{
 
 考虑质量-弹簧-阻尼器系统（与前几节课相同）：
 
-$$G(s) = \frac{1}{ms^2 + bs + k}$$
+$$
+G(s) = \frac{1}{ms^2 + bs + k}
+$$
 
 标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$（$\omega_n = 1$ rad/s，$\zeta = 0.1$）。
 

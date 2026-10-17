@@ -58,7 +58,9 @@ description: 定义可控性和可观性两个现代控制的核心概念，掌�
 最常用的判定方法：
 
 > **定理（可控性秩判据）**：系统 $(A, B)$ 完全可控的充要条件是**可控性矩阵**
-> $$\mathcal{C} = \begin{bmatrix} B & AB & A^2B & \cdots & A^{n-1}B \end{bmatrix}$$
+> $$
+> \mathcal{C} = \begin{bmatrix} B & AB & A^2B & \cdots & A^{n-1}B \end{bmatrix}
+> $$
 > 满秩，即 $\text{rank}(\mathcal{C}) = n$。
 
 其中 $n$ 是状态维数（$A$ 的维度 $n \times n$）。
@@ -134,7 +136,9 @@ print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat2)} (n=2) → {'可
 秩判据需要计算矩阵乘积和秩，有时不方便。**PBH 判据**（Popov-Belevitch-Hautus）提供了另一种视角：
 
 > **定理（PBH 判据）**：系统 $(A, B)$ 完全可控的充要条件是：对所有复数 $s$，
-> $$\text{rank}\begin{bmatrix} sI - A & B \end{bmatrix} = n$$
+> $$
+> \text{rank}\begin{bmatrix} sI - A & B \end{bmatrix} = n
+> $$
 >
 > 等价地：$A$ 的每个**左特征向量** $\boldsymbol{v}^T$（满足 $\boldsymbol{v}^T A = \lambda \boldsymbol{v}^T$）都不能与 $B$ 正交，即 $\boldsymbol{v}^T B \neq \boldsymbol{0}$。
 
@@ -205,7 +209,9 @@ for i, (lam, v) in enumerate(zip(eigenvalues_L, eigvecs_L.T)):
 ### 可观性秩判据
 
 > **定理（可观性秩判据）**：系统 $(A, C)$ 完全可观的充要条件是**可观性矩阵**
-> $$\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}$$
+> $$
+> \mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}
+> $$
 > 满秩，即 $\text{rank}(\mathcal{O}) = n$。
 
 ### 例4：判断可观性
@@ -243,7 +249,9 @@ $\text{rank}(\mathcal{O}) = 1 < 2$，系统**不可观**。
 ### PBH 判据（可观性版本）
 
 > **定理**：系统 $(A, C)$ 完全可观的充要条件是：对所有 $A$ 的特征值 $\lambda_i$，
-> $$\text{rank}\begin{bmatrix} \lambda_i I - A \\ C \end{bmatrix} = n$$
+> $$
+> \text{rank}\begin{bmatrix} \lambda_i I - A \\ C \end{bmatrix} = n
+> $$
 >
 > 等价地：$A$ 的每个**右特征向量** $\boldsymbol{w}$（满足 $A\boldsymbol{w} = \lambda\boldsymbol{w}$）都不能被 $C$ "消灭"，即 $C\boldsymbol{w} \neq \boldsymbol{0}$。
 

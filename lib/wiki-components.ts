@@ -1,4 +1,5 @@
 import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
+import { LinearMapExplorer } from "@/components/wiki/linear-map-explorer";
 /**
  * 组件注册的唯一来源（E2 · fix-015 根治）。
  *
@@ -119,4 +120,5 @@ export const wikiComponents: MDXComponents = {
   LqrExplorer,
   MimoProportionalExplorer,
   ComplexPolarExplorer,
+  LinearMapExplorer,
 };

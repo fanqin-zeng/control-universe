@@ -19,7 +19,9 @@ description: "分布式模型预测控制——ADMM分解算法、车辆编队�
 
 **集中式MPC**要优化总状态 $X = [x_1^T, \ldots, x_N^T]^T$（维度 $2N$）和总输入 $U = [u_1, \ldots, u_N]^T$（维度 $N$）。优化问题：
 
-$$\min_{X,U} \sum_{i=1}^N J_i(x_i, u_i)$$
+$$
+\min_{X,U} \sum_{i=1}^N J_i(x_i, u_i)
+$$
 
 约束包括：
 - 动力学：$x_i(k+1) = A x_i(k) + B u_i(k)$（每辆车独立）
@@ -51,12 +53,18 @@ QP规模：状态维度 $2N \cdot N_p$，输入维度 $N \cdot N_p$，约束数�
 
 采用线性离散模型（采样时间 $\Delta t$）：
 
-$$p_i(k+1) = p_i(k) + v_i(k) \Delta t$$
-$$v_i(k+1) = v_i(k) + u_i(k) \Delta t$$
+$$
+p_i(k+1) = p_i(k) + v_i(k) \Delta t
+$$
+$$
+v_i(k+1) = v_i(k) + u_i(k) \Delta t
+$$
 
 写成状态空间形式：
 
-$$x_i(k+1) = A x_i(k) + B u_i(k), \quad A = \begin{bmatrix} 1 & \Delta t \\ 0 & 1 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ \Delta t \end{bmatrix}$$
+$$
+x_i(k+1) = A x_i(k) + B u_i(k), \quad A = \begin{bmatrix} 1 & \Delta t \\ 0 & 1 \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ \Delta t \end{bmatrix}
+$$
 
 ### 编队目标
 
@@ -72,7 +80,9 @@ $$x_i(k+1) = A x_i(k) + B u_i(k), \quad A = \begin{bmatrix} 1 & \Delta t \\ 0 & 
 
 每辆车的局部代价函数：
 
-$$J_i = \sum_{j=0}^{N_p-1} \left[ q_v (v_i(k+j|k) - v_0)^2 + q_d (d_i(k+j|k) - d_{safe,i})^2 + r u_i(k+j|k)^2 \right]$$
+$$
+J_i = \sum_{j=0}^{N_p-1} \left[ q_v (v_i(k+j|k) - v_0)^2 + q_d (d_i(k+j|k) - d_{safe,i})^2 + r u_i(k+j|k)^2 \right]
+$$
 
 其中 $d_i(k+j|k) = p_{i-1}(k+j|k) - p_i(k+j|k)$ 是预测的车间距。
 
@@ -86,11 +96,15 @@ $$J_i = \sum_{j=0}^{N_p-1} \left[ q_v (v_i(k+j|k) - v_0)^2 + q_d (d_i(k+j|k) - d
 
 标准形式：
 
-$$\min_{x,z} f(x) + g(z) \quad \text{s.t. } Ax + Bz = c$$
+$$
+\min_{x,z} f(x) + g(z) \quad \text{s.t. } Ax + Bz = c
+$$
 
 增广拉格朗日函数：
 
-$$L_\rho(x, z, \lambda) = f(x) + g(z) + \lambda^T(Ax + Bz - c) + \frac{\rho}{2}\|Ax + Bz - c\|^2$$
+$$
+L_\rho(x, z, \lambda) = f(x) + g(z) + \lambda^T(Ax + Bz - c) + \frac{\rho}{2}\|Ax + Bz - c\|^2
+$$
 
 ADMM迭代（$k = 0, 1, 2, \ldots$）：
 
@@ -109,22 +123,30 @@ ADMM迭代（$k = 0, 1, 2, \ldots$）：
 
 每辆车的子问题：
 
-$$\min_{x_i} J_i(x_i) + (\lambda_i^k)^T (x_i - z_i^k) + \frac{\rho}{2}\|x_i - z_i^k\|^2$$
+$$
+\min_{x_i} J_i(x_i) + (\lambda_i^k)^T (x_i - z_i^k) + \frac{\rho}{2}\|x_i - z_i^k\|^2
+$$
 
 约束：本地动力学、输入约束。
 
 **ADMM三步迭代**：
 
 1. **本地优化**（每辆车并行）：
-   $$x_i^{k+1} := \arg\min_{x_i} J_i(x_i) + (\lambda_i^k)^T (x_i - z_i^k) + \frac{\rho}{2}\|x_i - z_i^k\|^2$$
+   $$
+   x_i^{k+1} := \arg\min_{x_i} J_i(x_i) + (\lambda_i^k)^T (x_i - z_i^k) + \frac{\rho}{2}\|x_i - z_i^k\|^2
+   $$
    这是一个标准QP，可用OSQP、CVXOPT求解。
 
 2. **共识更新**（协调变量）：
-   $$z_i^{k+1} := \frac{1}{|\mathcal{N}_i|} \sum_{j \in \mathcal{N}_i} x_j^{k+1}$$
+   $$
+   z_i^{k+1} := \frac{1}{|\mathcal{N}_i|} \sum_{j \in \mathcal{N}_i} x_j^{k+1}
+   $$
    其中 $\mathcal{N}_i$ 是车辆i的邻居集合（如前后车）。这步求平均，使相邻车辆的边界变量趋于一致。
 
 3. **对偶更新**：
-   $$\lambda_i^{k+1} := \lambda_i^k + \rho(x_i^{k+1} - z_i^{k+1})$$
+   $$
+   \lambda_i^{k+1} := \lambda_i^k + \rho(x_i^{k+1} - z_i^{k+1})
+   $$
 
 迭代直到收敛判据满足：$\|x_i^{k+1} - z_i^{k+1}\| < \epsilon$ 且 $\|\lambda_i^{k+1} - \lambda_i^k\| < \epsilon$。
 
@@ -441,7 +463,9 @@ print(f"\\n最终残差: {convergence_history[-1]:.6f}")`}]} />
 
 **安全约束**：若两车轨迹交叉（如车1从北向南，车2从西向东），则它们不能同时进入路口区域：
 
-$$|p_i(k)| > R_{intersection} \text{ 或 } |p_j(k)| > R_{intersection}, \quad \forall k$$
+$$
+|p_i(k)| > R_{intersection} \text{ 或 } |p_j(k)| > R_{intersection}, \quad \forall k
+$$
 
 这是非凸约束（"或"逻辑），需线性化或用指示变量处理。
 
@@ -536,7 +560,9 @@ ADMM共识变量：每辆车的预计到达时间 $T_i^{ETA}$。迭代过程中�
 
 **本地QP形式**（车辆i）：
 
-$$\min_{u_i} \sum_{k=0}^{N_p-1} \left[ q_v(v_i(k) - v_0)^2 + q_d(p_{i-1}(k) - p_i(k) - d_{safe})^2 + r u_i(k)^2 \right] + \lambda_i^k (p_i - z_i^k) + \frac{\rho}{2}(p_i - z_i^k)^2$$
+$$
+\min_{u_i} \sum_{k=0}^{N_p-1} \left[ q_v(v_i(k) - v_0)^2 + q_d(p_{i-1}(k) - p_i(k) - d_{safe})^2 + r u_i(k)^2 \right] + \lambda_i^k (p_i - z_i^k) + \frac{\rho}{2}(p_i - z_i^k)^2
+$$
 
 约束：
 - $p_i(k+1) = p_i(k) + v_i(k)\Delta t$

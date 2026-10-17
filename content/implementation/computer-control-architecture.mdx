@@ -17,7 +17,9 @@ description: "计算机控制系统的硬件组成、软件架构、通信网络
 
 最基本的单回路计算机控制系统，信号经过以下环节：
 
-$$r(t) \xrightarrow{比较} e(t) \xrightarrow{A/D} e(k) \xrightarrow{控制器} u(k) \xrightarrow{D/A} u(t) \xrightarrow{执行器} \boxed{被控对象} \xrightarrow{传感器} y(t)$$
+$$
+r(t) \xrightarrow{比较} e(t) \xrightarrow{A/D} e(k) \xrightarrow{控制器} u(k) \xrightarrow{D/A} u(t) \xrightarrow{执行器} \boxed{被控对象} \xrightarrow{传感器} y(t)
+$$
 
 每个环节的功能：
 
@@ -141,7 +143,9 @@ RTOS 的核心功能是**任务调度**——决定哪个任务在什么时候�
 
 数学证明：对于 $n$ 个周期性任务，RMS 的 CPU 利用率上限为：
 
-$$U_{RMS} \leq n(2^{1/n} - 1)$$
+$$
+U_{RMS} \leq n(2^{1/n} - 1)
+$$
 
 当 $n \to \infty$ 时，$U_{RMS} \to \ln 2 \approx 0.693$。这就是为什么硬实时系统的 CPU 利用率要限制在 70% 以下。
 
@@ -302,23 +306,33 @@ PLC 的工作方式是**循环扫描**，每个扫描周期包括三个阶段：
 
 单台设备的可靠度：
 
-$$R(t) = e^{-\lambda t}$$
+$$
+R(t) = e^{-\lambda t}
+$$
 
 其中 $\lambda$ 是故障率。MTBF（平均无故障时间）：
 
-$$\text{MTBF} = \frac{1}{\lambda}$$
+$$
+\text{MTBF} = \frac{1}{\lambda}
+$$
 
 **串联系统**（所有部件都必须工作）：
 
-$$R_{sys} = \prod_{i=1}^n R_i$$
+$$
+R_{sys} = \prod_{i=1}^n R_i
+$$
 
 **并联冗余**（$n$ 取 1，任一工作即可）：
 
-$$R_{sys} = 1 - \prod_{i=1}^n (1 - R_i)$$
+$$
+R_{sys} = 1 - \prod_{i=1}^n (1 - R_i)
+$$
 
 **TMR（三取二表决）**：
 
-$$R_{sys} = 3R^2 - 2R^3$$
+$$
+R_{sys} = 3R^2 - 2R^3
+$$
 
 > 💡 **TMR 原理**：三个控制器并行运行，输出取多数票。如果一个控制器故障，另外两个仍然可以正确控制。TMR 广泛用于航空航天、核电等安全关键系统。
 
@@ -487,23 +501,33 @@ $$R_{sys} = 3R^2 - 2R^3$$
 
 双机热备（并联冗余）：
 
-$$R_{sys}(t) = 1 - (1 - R(t))^2 = 1 - (1 - e^{-\lambda t})^2 = 2e^{-\lambda t} - e^{-2\lambda t}$$
+$$
+R_{sys}(t) = 1 - (1 - R(t))^2 = 1 - (1 - e^{-\lambda t})^2 = 2e^{-\lambda t} - e^{-2\lambda t}
+$$
 
 系统故障率：
 
-$$\lambda_{sys} = \int_0^\infty \lambda_{sys}(t) dt$$
+$$
+\lambda_{sys} = \int_0^\infty \lambda_{sys}(t) dt
+$$
 
 对于并联冗余，MTBF 的近似公式：
 
-$$\text{MTBF}_{parallel} \approx \frac{3}{2\lambda} = 1.5 \times \text{MTBF}_{single} = 1.5 \times 10 = 15 \text{ 年}$$
+$$
+\text{MTBF}_{parallel} \approx \frac{3}{2\lambda} = 1.5 \times \text{MTBF}_{single} = 1.5 \times 10 = 15 \text{ 年}
+$$
 
 TMR（三取二表决）：
 
-$$R_{sys}(t) = 3R(t)^2 - 2R(t)^3 = 3e^{-2\lambda t} - 2e^{-3\lambda t}$$
+$$
+R_{sys}(t) = 3R(t)^2 - 2R(t)^3 = 3e^{-2\lambda t} - 2e^{-3\lambda t}
+$$
 
 MTBF 的近似公式：
 
-$$\text{MTBF}_{TMR} \approx \frac{5}{6\lambda} = \frac{5}{6} \times \text{MTBF}_{single} = \frac{5}{6} \times 10 \approx 8.33 \text{ 年}$$
+$$
+\text{MTBF}_{TMR} \approx \frac{5}{6\lambda} = \frac{5}{6} \times \text{MTBF}_{single} = \frac{5}{6} \times 10 \approx 8.33 \text{ 年}
+$$
 
 > 💡 **注意**：TMR 的 MTBF 反而比单机低！这是因为 TMR 提高了**可靠性**（在早期阶段），但降低了**可用性**（长期运行）。TMR 适用于短期任务（如航天飞行），不适用于长期运行的工业系统。
 
@@ -525,11 +549,15 @@ $$\text{MTBF}_{TMR} \approx \frac{5}{6\lambda} = \frac{5}{6} \times \text{MTBF}_
 
 通信延迟引入的相位滞后：
 
-$$\Delta\phi = -\omega_{gc} \tau_d = -50 \times 0.002 = -0.1 \text{ rad} = -5.73°$$
+$$
+\Delta\phi = -\omega_{gc} \tau_d = -50 \times 0.002 = -0.1 \text{ rad} = -5.73°
+$$
 
 离散系统的相位裕度：
 
-$$PM_d = PM_c + \Delta\phi = 45° - 5.73° = 39.27°$$
+$$
+PM_d = PM_c + \Delta\phi = 45° - 5.73° = 39.27°
+$$
 
 $PM_d > 0$，系统**稳定**，但相位裕度减小，动态性能下降（超调增大、调节时间延长）。
 
@@ -539,20 +567,32 @@ PLC 扫描周期等效于采样周期 $T_s = T_{scan} = 5$ ms。
 
 ZOH 引入的相位滞后：
 
-$$\Delta\phi = -\frac{\omega_{gc} T_s}{2} = -\frac{20 \times 0.005}{2} = -0.05 \text{ rad} = -2.86°$$
+$$
+\Delta\phi = -\frac{\omega_{gc} T_s}{2} = -\frac{20 \times 0.005}{2} = -0.05 \text{ rad} = -2.86°
+$$
 
 离散系统的相位裕度：
 
-$$PM_d = PM_c + \Delta\phi = 50° - 2.86° = 47.14°$$
+$$
+PM_d = PM_c + \Delta\phi = 50° - 2.86° = 47.14°
+$$
 
 如果要求 $PM_d \geq 40°$，则：
 
-$$PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi} \geq 40°$$
+$$
+PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi} \geq 40°
+$$
 
-$$50° - \frac{20 \times T_s}{2} \times \frac{180}{\pi} \geq 40°$$
+$$
+50° - \frac{20 \times T_s}{2} \times \frac{180}{\pi} \geq 40°
+$$
 
-$$10° \geq 20 \times T_s \times 28.65$$
+$$
+10° \geq 20 \times T_s \times 28.65
+$$
 
-$$T_s \leq \frac{10}{20 \times 28.65} \approx 0.0174 \text{ s} = 17.4 \text{ ms}$$
+$$
+T_s \leq \frac{10}{20 \times 28.65} \approx 0.0174 \text{ s} = 17.4 \text{ ms}
+$$
 
 因此，扫描周期最大可以是 **17.4 ms**。

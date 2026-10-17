@@ -35,11 +35,15 @@ description: 掌握 H∞ 优化问题的标准形式，理解加权灵敏度方�
 
 具体来说，$\mathcal{H}_\infty$ 控制要解决以下优化问题：
 
-$$\min_{C \text{ 稳定}} \|W_1 S\|_\infty^2 + \|W_2 T\|_\infty^2 + \|W_3 CS\|_\infty^2$$
+$$
+\min_{C \text{ 稳定}} \|W_1 S\|_\infty^2 + \|W_2 T\|_\infty^2 + \|W_3 CS\|_\infty^2
+$$
 
 或者更一般地：
 
-$$\min_{C \text{ 稳定}} \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 CS \end{bmatrix} \right\|_\infty$$
+$$
+\min_{C \text{ 稳定}} \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 CS \end{bmatrix} \right\|_\infty
+$$
 
 其中 $W_1(s)$、$W_2(s)$、$W_3(s)$ 是**加权函数**（weighting functions），用来把不同频率的设计需求统一到一个优化框架中。
 
@@ -55,7 +59,9 @@ $$\min_{C \text{ 稳定}} \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 CS \end{
 
 一个合适的加权函数：
 
-$$W_1(s) = \frac{s/M^{1/p} + \omega_b}{s + \omega_b A^{1/p}}$$
+$$
+W_1(s) = \frac{s/M^{1/p} + \omega_b}{s + \omega_b A^{1/p}}
+$$
 
 其中：
 - $A$：低频允许的最大 $|S|$（如 $A = 0.001$，即 -60 dB）
@@ -73,13 +79,17 @@ $$W_1(s) = \frac{s/M^{1/p} + \omega_b}{s + \omega_b A^{1/p}}$$
 
 如果乘性不确定性的上界为 $|\Delta_m(j\omega)| \leq \gamma_m(\omega)$，小增益定理要求：
 
-$$\|T\|_\infty < \frac{1}{\gamma_m}$$
+$$
+\|T\|_\infty < \frac{1}{\gamma_m}
+$$
 
 用加权函数表达：$W_2(s) = \gamma_m(s)$，要求 $\|W_2 T\|_\infty < 1$。
 
 **例子**：高频未建模动态的不确定性上界为 $\gamma_m(\omega) = 0.01 \cdot (\omega/100)^2$（$\omega > 100$ 时快速增长），则：
 
-$$W_2(s) = \left(\frac{s}{100} + 1\right)^2 \cdot 0.01$$
+$$
+W_2(s) = \left(\frac{s}{100} + 1\right)^2 \cdot 0.01
+$$
 
 ### 控制能量加权 $W_3(s)$
 
@@ -106,7 +116,9 @@ $$W_2(s) = \left(\frac{s}{100} + 1\right)^2 \cdot 0.01$$
 
 定义**广义被控对象**（generalized plant）$P(s)$：
 
-$$P(s) = \begin{bmatrix} P_{11}(s) & P_{12}(s) \\ P_{21}(s) & P_{22}(s) \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} P_{11}(s) & P_{12}(s) \\ P_{21}(s) & P_{22}(s) \end{bmatrix}
+$$
 
 外部信号：
 - $w$：外部输入（参考信号、扰动、噪声）
@@ -118,7 +130,9 @@ $$P(s) = \begin{bmatrix} P_{11}(s) & P_{12}(s) \\ P_{21}(s) & P_{22}(s) \end{bma
 
 从 $w$ 到 $z$ 的闭环传递函数：
 
-$$T_{zw} = P_{11} + P_{12} K (I - P_{22} K)^{-1} P_{21} = \mathcal{F}_\ell(P, K)$$
+$$
+T_{zw} = P_{11} + P_{12} K (I - P_{22} K)^{-1} P_{21} = \mathcal{F}_\ell(P, K)
+$$
 
 $\mathcal{F}_\ell$ 称为**下线形分式变换**（lower linear fractional transformation, LFT）。
 
@@ -132,11 +146,15 @@ $\mathcal{F}_\ell$ 称为**下线形分式变换**（lower linear fractional tra
 
 构造广义被控对象：
 
-$$P(s) = \begin{bmatrix} W_1 & -W_1 G \\ I & -G \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} W_1 & -W_1 G \\ I & -G \end{bmatrix}
+$$
 
 验证：$w \to z$ 的传递函数为
 
-$$T_{zw} = W_1 + (-W_1 G) K (I + GK)^{-1} = W_1 (I - GK(I+GK)^{-1}) = W_1 \cdot \frac{1}{1+GK} = W_1 S$$
+$$
+T_{zw} = W_1 + (-W_1 G) K (I + GK)^{-1} = W_1 (I - GK(I+GK)^{-1}) = W_1 \cdot \frac{1}{1+GK} = W_1 S
+$$
 
 所以 $\|T_{zw}\|_\infty = \|W_1 S\|_\infty$，正是我们要最小化的目标。
 
@@ -144,15 +162,21 @@ $$T_{zw} = W_1 + (-W_1 G) K (I + GK)^{-1} = W_1 (I - GK(I+GK)^{-1}) = W_1 \cdot 
 
 更一般的优化问题：
 
-$$\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty$$
+$$
+\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+$$
 
 对应的广义被控对象：
 
-$$P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ 0 & W_3 \\ I & -G \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ 0 & W_3 \\ I & -G \end{bmatrix}
+$$
 
 验证：
 
-$$T_{zw} = \begin{bmatrix} W_1 S \\ W_2 G K (I+GK)^{-1} \\ W_3 K (I+GK)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix}$$
+$$
+T_{zw} = \begin{bmatrix} W_1 S \\ W_2 G K (I+GK)^{-1} \\ W_3 K (I+GK)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix}
+$$
 
 > 💡 混合灵敏度是工程中最常用的 $\mathcal{H}_\infty$ 设计框架。下一节课会详细展开。
 
@@ -179,9 +203,13 @@ $$T_{zw} = \begin{bmatrix} W_1 S \\ W_2 G K (I+GK)^{-1} \\ W_3 K (I+GK)^{-1} \en
 
 **核心思想**：将 $\mathcal{H}_\infty$ 问题转化为两个代数 Riccati 方程（ARE）的求解。
 
-$$A^T X + XA - X(B_2 B_2^T - \gamma^{-2} B_1 B_1^T)X + C_1^T C_1 = 0$$
+$$
+A^T X + XA - X(B_2 B_2^T - \gamma^{-2} B_1 B_1^T)X + C_1^T C_1 = 0
+$$
 
-$$AY + YA^T - Y(C_2^T C_2 - \gamma^{-2} C_1^T C_1)Y + B_1 B_1^T = 0$$
+$$
+AY + YA^T - Y(C_2^T C_2 - \gamma^{-2} C_1^T C_1)Y + B_1 B_1^T = 0
+$$
 
 当 $\gamma$ 足够大时，两个 ARE 有稳定半正定解，可以构造出最优控制器。
 
@@ -199,7 +227,9 @@ $$AY + YA^T - Y(C_2^T C_2 - \gamma^{-2} C_1^T C_1)Y + B_1 B_1^T = 0$$
 
 考虑一个带高频共振模态的系统（如柔性结构、带谐振的机电系统），标称模型为：
 
-$$G(s) = \frac{100}{s^2 + s + 100}$$
+$$
+G(s) = \frac{100}{s^2 + s + 100}
+$$
 
 这是一个二阶系统，自然频率 $\omega_n = 10$ rad/s，阻尼比 $\zeta = 0.05$（非常轻的阻尼）。
 
@@ -215,7 +245,9 @@ $$G(s) = \frac{100}{s^2 + s + 100}$$
 
 $G(s)$ 在 $\omega_n = 10$ rad/s 处有一个尖锐的共振峰。共振峰值为：
 
-$$|G(j\omega_n)| = \frac{1}{2\zeta} = \frac{1}{2 \times 0.05} = 10 \quad (+20 \text{ dB})$$
+$$
+|G(j\omega_n)| = \frac{1}{2\zeta} = \frac{1}{2 \times 0.05} = 10 \quad (+20 \text{ dB})
+$$
 
 低频增益 $|G(0)| = 1$（0 dB），共振峰比低频增益高 +20 dB。如果控制器不处理这个共振，闭环系统在 $\omega \approx 10$ rad/s 附近会剧烈振荡。
 
@@ -280,7 +312,9 @@ plt.show()`
 
 使用增益 + 陷波滤波器：
 
-$$C(s) = \underbrace{K}_{\text{增益}} \cdot \underbrace{\frac{s^2 + 2\zeta_n \omega_n s + \omega_n^2}{s^2 + 2\zeta_d \omega_n s + \omega_n^2}}_{\text{陷波}}$$
+$$
+C(s) = \underbrace{K}_{\text{增益}} \cdot \underbrace{\frac{s^2 + 2\zeta_n \omega_n s + \omega_n^2}{s^2 + 2\zeta_d \omega_n s + \omega_n^2}}_{\text{陷波}}
+$$
 
 参数选择：
 - $K = 20$：提供低频增益，使穿越频率在 ≈ 5 rad/s
@@ -589,11 +623,15 @@ LQG 的"鲁棒性陷阱"：LQG 控制器最小化 $\mathcal{H}_2$ 范数（能�
 
 (a) $\omega = 0$：
 
-$$|W_1(0)| = \frac{1}{0.01} = 100$$
+$$
+|W_1(0)| = \frac{1}{0.01} = 100
+$$
 
 $\omega = 1$：
 
-$$|W_1(j)| = \frac{|100j + 1|}{|j + 0.01|} = \frac{\sqrt{10000 + 1}}{\sqrt{1 + 0.0001}} = \frac{\sqrt{10001}}{\sqrt{1.0001}} \approx \frac{100.005}{1.00005} \approx 100$$
+$$
+|W_1(j)| = \frac{|100j + 1|}{|j + 0.01|} = \frac{\sqrt{10000 + 1}}{\sqrt{1 + 0.0001}} = \frac{\sqrt{10001}}{\sqrt{1.0001}} \approx \frac{100.005}{1.00005} \approx 100
+$$
 
 (b) $\|W_1 S\|_\infty < 1$ 意味着对所有 $\omega$，$|W_1(j\omega)| \cdot |S(j\omega)| < 1$，即 $|S(j\omega)| < \frac{1}{|W_1(j\omega)|}$。
 
@@ -609,19 +647,31 @@ $\omega = 1$：$|S(j)| < \frac{1}{100} = 0.01$
 
 (a) 代入 $P_{11} = W_1$，$P_{12} = -W_1 G$，$P_{21} = I$，$P_{22} = -G$：
 
-$$T_{zw} = W_1 + (-W_1 G) C (I - (-G) C)^{-1} \cdot I$$
+$$
+T_{zw} = W_1 + (-W_1 G) C (I - (-G) C)^{-1} \cdot I
+$$
 
-$$= W_1 - W_1 G C (I + GC)^{-1}$$
+$$
+= W_1 - W_1 G C (I + GC)^{-1}
+$$
 
-$$= W_1 \left[1 - GC(I+GC)^{-1}\right]$$
+$$
+= W_1 \left[1 - GC(I+GC)^{-1}\right]
+$$
 
-$$= W_1 \left[\frac{I + GC - GC}{I + GC}\right]$$
+$$
+= W_1 \left[\frac{I + GC - GC}{I + GC}\right]
+$$
 
-$$= W_1 \cdot \frac{1}{1 + GC} = W_1 S \quad \checkmark$$
+$$
+= W_1 \cdot \frac{1}{1 + GC} = W_1 S \quad \checkmark
+$$
 
 (b) 混合灵敏度 $\left\|\begin{bmatrix} W_1 S \\ W_2 T \end{bmatrix}\right\|_\infty$，$z$ 是二维向量。广义被控对象：
 
-$$P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ I & -G \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ I & -G \end{bmatrix}
+$$
 
 验证：$T_{zw} = \begin{bmatrix} W_1 \\ 0 \end{bmatrix} + \begin{bmatrix} -W_1 G \\ W_2 G \end{bmatrix} C(I+GC)^{-1} \cdot I = \begin{bmatrix} W_1 - W_1 GC(I+GC)^{-1} \\ W_2 GC(I+GC)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \end{bmatrix} \quad \checkmark$
 
@@ -629,7 +679,9 @@ $$P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ I & -G \end{bmatrix}$$
 
 (a) $C(s) = 5(1 + 0.5s) = 5 + 2.5s = 2.5(s+2)$
 
-$$L(s) = G(s)C(s) = \frac{2.5(s+2)}{s(s+2)} = \frac{2.5}{s}$$
+$$
+L(s) = G(s)C(s) = \frac{2.5(s+2)}{s(s+2)} = \frac{2.5}{s}
+$$
 
 零极点对消！$|L(j\omega)| = \frac{2.5}{\omega}$。
 
@@ -637,15 +689,21 @@ $$L(s) = G(s)C(s) = \frac{2.5(s+2)}{s(s+2)} = \frac{2.5}{s}$$
 
 (b) $\angle L(j\omega) = \angle \frac{2.5}{j\omega} = -90°$（对所有 $\omega$）。
 
-$$PM = 180° + (-90°) = 90°$$
+$$
+PM = 180° + (-90°) = 90°
+$$
 
 (c) $S(s) = \frac{1}{1+L} = \frac{1}{1+2.5/s} = \frac{s}{s+2.5}$
 
-$$|S(j\omega)| = \frac{\omega}{\sqrt{\omega^2 + 6.25}}$$
+$$
+|S(j\omega)| = \frac{\omega}{\sqrt{\omega^2 + 6.25}}
+$$
 
 $|S(j\omega)|$ 随 $\omega$ 单调递增，$\lim_{\omega \to \infty} |S(j\omega)| = 1$。
 
-$$\|S\|_\infty = 1 < 1.5 \quad \checkmark$$
+$$
+\|S\|_\infty = 1 < 1.5 \quad \checkmark
+$$
 
 所有指标满足：$\omega_c = 2.5$ rad/s（略低于目标 5 rad/s，但 $PM = 90°$ 非常好，$\|S\|_\infty = 1$）。
 

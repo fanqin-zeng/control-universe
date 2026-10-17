@@ -23,7 +23,9 @@ description: 从 Bode 图到 Nyquist 图——用频率响应理解系统的动�
 
 本章路线图：
 
-$$\text{频率响应函数} \to \text{Bode 图（含稳定裕度）} \to \text{Nyquist 图} \to \text{频域指标与时域的关系} \to \text{工程实例}$$
+$$
+\text{频率响应函数} \to \text{Bode 图（含稳定裕度）} \to \text{Nyquist 图} \to \text{频域指标与时域的关系} \to \text{工程实例}
+$$
 
 ---
 
@@ -35,7 +37,9 @@ $$\text{频率响应函数} \to \text{Bode 图（含稳定裕度）} \to \text{N
 
 一个关键的数学事实：**LTI 系统对正弦输入的稳态响应仍然是同频率的正弦**，只是幅值和相位发生了变化：
 
-$$r(t) = A\sin(\omega t) \quad\xrightarrow{\text{LTI 系统}}\quad y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)$$
+$$
+r(t) = A\sin(\omega t) \quad\xrightarrow{\text{LTI 系统}}\quad y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)
+$$
 
 也就是说：
 - 输出幅值 = 输入幅值 × $|G(j\omega)|$
@@ -47,25 +51,35 @@ $$r(t) = A\sin(\omega t) \quad\xrightarrow{\text{LTI 系统}}\quad y_{ss}(t) = A
 
 这不是随意的替换。从拉普拉斯变换的角度：
 
-$$Y(s) = G(s) \cdot R(s) = G(s) \cdot \frac{A\omega}{s^2 + \omega^2}$$
+$$
+Y(s) = G(s) \cdot R(s) = G(s) \cdot \frac{A\omega}{s^2 + \omega^2}
+$$
 
 分母 $s^2 + \omega^2 = (s + j\omega)(s - j\omega)$，说明输入正弦信号引入了极点 $s = \pm j\omega$。
 
 对 $Y(s)$ 做部分分式展开：
 
-$$Y(s) = \frac{C_1}{s - j\omega} + \frac{C_1^*}{s + j\omega} + (\text{与系统极点相关的项})$$
+$$
+Y(s) = \frac{C_1}{s - j\omega} + \frac{C_1^*}{s + j\omega} + (\text{与系统极点相关的项})
+$$
 
 其中 $C_1$ 是 $Y(s)$ 在 $s = j\omega$ 处的留数。用留数定理：
 
-$$C_1 = \lim_{s \to j\omega} (s - j\omega) \cdot G(s) \cdot \frac{A\omega}{(s - j\omega)(s + j\omega)} = G(j\omega) \cdot \frac{A\omega}{2j\omega} = \frac{A \cdot G(j\omega)}{2j}$$
+$$
+C_1 = \lim_{s \to j\omega} (s - j\omega) \cdot G(s) \cdot \frac{A\omega}{(s - j\omega)(s + j\omega)} = G(j\omega) \cdot \frac{A\omega}{2j\omega} = \frac{A \cdot G(j\omega)}{2j}
+$$
 
 系统稳定的前提下，与系统极点相关的项随时间衰减到零（瞬态响应），只剩下与 $\pm j\omega$ 对应的稳态项：
 
-$$y_{ss}(t) = C_1 e^{j\omega t} + C_1^* e^{-j\omega t} = \frac{A \cdot G(j\omega)}{2j} e^{j\omega t} - \frac{A \cdot G^*(j\omega)}{2j} e^{-j\omega t}$$
+$$
+y_{ss}(t) = C_1 e^{j\omega t} + C_1^* e^{-j\omega t} = \frac{A \cdot G(j\omega)}{2j} e^{j\omega t} - \frac{A \cdot G^*(j\omega)}{2j} e^{-j\omega t}
+$$
 
 将 $G(j\omega) = |G(j\omega)| e^{j\angle G(j\omega)}$ 代入，利用欧拉公式化简：
 
-$$y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)$$
+$$
+y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\big)
+$$
 
 > 💡 **物理直觉**：$G(j\omega)$ 是系统"透过"频率 $\omega$ 的正弦信号时的"滤镜"——它告诉你在每个频率上，信号被放大了多少（幅值）和延迟了多少（相位）。
 
@@ -73,7 +87,9 @@ $$y_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin\big(\omega t + \angle G(j\omega)\b
 
 频率响应函数 $G(j\omega)$ 是复数，可以分解为两部分：
 
-$$G(j\omega) = |G(j\omega)| \, e^{j\angle G(j\omega)}$$
+$$
+G(j\omega) = |G(j\omega)| \, e^{j\angle G(j\omega)}
+$$
 
 - **幅频特性** $|G(j\omega)|$：输出与输入的幅值比，是 $\omega$ 的函数
 - **相频特性** $\angle G(j\omega)$：输出相对输入的相位差，也是 $\omega$ 的函数
@@ -82,15 +98,21 @@ $$G(j\omega) = |G(j\omega)| \, e^{j\angle G(j\omega)}$$
 
 一阶系统 $G(s) = \dfrac{1}{Ts+1}$，令 $s = j\omega$：
 
-$$G(j\omega) = \frac{1}{j\omega T + 1} = \frac{1}{1 + j\omega T}$$
+$$
+G(j\omega) = \frac{1}{j\omega T + 1} = \frac{1}{1 + j\omega T}
+$$
 
 幅频特性：
 
-$$|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega T)^2}}$$
+$$
+|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega T)^2}}
+$$
 
 相频特性：
 
-$$\angle G(j\omega) = -\arctan(\omega T)$$
+$$
+\angle G(j\omega) = -\arctan(\omega T)
+$$
 
 观察：
 - $\omega \to 0$ 时：$|G| \to 1$，$\angle G \to 0°$——低频信号完全通过，无相移
@@ -111,13 +133,17 @@ $$\angle G(j\omega) = -\arctan(\omega T)$$
 
 任何传递函数都可以分解为若干"典型环节"的乘积：
 
-$$G(s) = K \cdot \frac{(s/z_1 + 1)(s^2/\omega_{n1}^2 + 2\zeta_1 s/\omega_{n1} + 1)\cdots}{s^N (s/p_1 + 1)(s^2/\omega_{n2}^2 + 2\zeta_2 s/\omega_{n2} + 1)\cdots}$$
+$$
+G(s) = K \cdot \frac{(s/z_1 + 1)(s^2/\omega_{n1}^2 + 2\zeta_1 s/\omega_{n1} + 1)\cdots}{s^N (s/p_1 + 1)(s^2/\omega_{n2}^2 + 2\zeta_2 s/\omega_{n2} + 1)\cdots}
+$$
 
 取 $s = j\omega$ 后，$G(j\omega)$ 是若干复数的乘积和商。
 
 对幅值取对数后：
 
-$$20\log|G(j\omega)| = 20\log|K| + 20\log|j\omega/z_1 + 1| + \cdots - 20\log|(j\omega)^N| - 20\log|j\omega/p_1 + 1| - \cdots$$
+$$
+20\log|G(j\omega)| = 20\log|K| + 20\log|j\omega/z_1 + 1| + \cdots - 20\log|(j\omega)^N| - 20\log|j\omega/p_1 + 1| - \cdots
+$$
 
 **乘法变成了加法！** 每个环节的 Bode 图可以独立画出，然后叠加。
 
@@ -125,7 +151,9 @@ $$20\log|G(j\omega)| = 20\log|K| + 20\log|j\omega/z_1 + 1| + \cdots - 20\log|(j\
 
 对相位同理：
 
-$$\angle G(j\omega) = \angle K + \angle(j\omega/z_1 + 1) + \cdots - N \times 90° - \angle(j\omega/p_1 + 1) - \cdots$$
+$$
+\angle G(j\omega) = \angle K + \angle(j\omega/z_1 + 1) + \cdots - N \times 90° - \angle(j\omega/p_1 + 1) - \cdots
+$$
 
 ### Bode 图的定义
 
@@ -218,7 +246,9 @@ $G(s) = \dfrac{10(s+1)}{s(s/5+1)(s/20+1)}$
 
 直接读出标准形式中的参数：
 
-$$G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/20)}$$
+$$
+G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/20)}
+$$
 
 - 增益：$K = 10$，$20\log 10 = 20$ dB
 - 转折频率：$\omega = 1$（零点），$\omega = 5$（极点），$\omega = 20$（极点）
@@ -291,7 +321,9 @@ plt.show()` }
 
 在幅值恰好为 1 的频率 $\omega_c$ 上，相位离 $-180°$ 还差多少：
 
-$$\boxed{PM = \angle G(j\omega_c) + 180°}$$
+$$
+\boxed{PM = \angle G(j\omega_c) + 180°}
+$$
 
 物理意义：在 $|G| = 1$ 的频率上，相位还需要再滞后 $PM$ 度才会达到 $-180°$（不稳定的临界点）。
 
@@ -301,7 +333,9 @@ $$\boxed{PM = \angle G(j\omega_c) + 180°}$$
 
 在相位恰好为 $-180°$ 的频率 $\omega_g$ 上，幅值离 0 dB 还差多少：
 
-$$\boxed{GM = -20\log|G(j\omega_g)| \quad (\text{dB})}$$
+$$
+\boxed{GM = -20\log|G(j\omega_g)| \quad (\text{dB})}
+$$
 
 等价地，线性增益裕度 $GM_{\text{linear}} = 1/|G(j\omega_g)|$。
 
@@ -381,7 +415,9 @@ $G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$
 
 化为标准形式：
 
-$$G(s) = \frac{10}{(1+s)(1+s/2)(1+s/5) \cdot 1 \cdot 2 \cdot 5} = \frac{1}{(1+s)(1+s/2)(1+s/5)}$$
+$$
+G(s) = \frac{10}{(1+s)(1+s/2)(1+s/5) \cdot 1 \cdot 2 \cdot 5} = \frac{1}{(1+s)(1+s/2)(1+s/5)}
+$$
 
 等等，更直接的方法：$G(0) = 10/(1 \times 2 \times 5) = 1$，即低频增益为 0 dB。
 
@@ -389,23 +425,35 @@ $$G(s) = \frac{10}{(1+s)(1+s/2)(1+s/5) \cdot 1 \cdot 2 \cdot 5} = \frac{1}{(1+s)
 
 **求相位穿越频率 $\omega_g$**：
 
-$$\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+$$
+\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°
+$$
 
 即 $\arctan(\omega) + \arctan(\omega/2) + \arctan(\omega/5) = 180°$。
 
 利用恒等式：当 $a, b, c > 0$ 时，$\arctan a + \arctan b + \arctan c = 180°$ 的条件为 $a + b + c = abc$：
 
-$$\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}$$
+$$
+\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}
+$$
 
-$$1.7\omega = \frac{\omega^3}{10} \implies \omega_g^2 = 17 \implies \omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}$$
+$$
+1.7\omega = \frac{\omega^3}{10} \implies \omega_g^2 = 17 \implies \omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}
+$$
 
 在 $\omega_g = \sqrt{17}$ 处的幅值：
 
-$$|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{21/4} \cdot \sqrt{42/25}}$$
+$$
+|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{21/4} \cdot \sqrt{42/25}}
+$$
 
-$$= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794$$
+$$
+= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794
+$$
 
-$$GM = -20\log(0.794) \approx 1.99 \text{ dB}$$
+$$
+GM = -20\log(0.794) \approx 1.99 \text{ dB}
+$$
 
 增益裕度约 2 dB——系统稳定，但裕度不大。
 
@@ -586,7 +634,9 @@ Bode 图用两张图分别展示幅频和相频。**Nyquist 图**换了一种方
 
 对于每个频率 $\omega$，计算 $G(j\omega)$ 的实部和虚部：
 
-$$G(j\omega) = \text{Re}[G(j\omega)] + j\,\text{Im}[G(j\omega)]$$
+$$
+G(j\omega) = \text{Re}[G(j\omega)] + j\,\text{Im}[G(j\omega)]
+$$
 
 在复平面上以 $(\text{Re}, \text{Im})$ 为坐标描点，连成曲线。
 
@@ -600,7 +650,9 @@ Nyquist 判据的数学本质是复变函数中的**幅角原理**（Argument Pr
 
 开环传递函数 $G(s)$ 的 Nyquist 曲线（$\omega$ 从 $-\infty$ 到 $+\infty$），对 $(-1, j0)$ 点的包围情况决定闭环稳定性：
 
-$$Z = P - N$$
+$$
+Z = P - N
+$$
 
 - $P$：开环传递函数在**右半平面**的极点数
 - $N$：Nyquist 曲线**逆时针**包围 $(-1, j0)$ 的圈数
@@ -634,11 +686,15 @@ $$Z = P - N$$
 
 **第三步**：计算交点处的实部。
 
-$$G(j\sqrt{17}) = \frac{10}{(1+j\sqrt{17})(2+j\sqrt{17})(5+j\sqrt{17})}$$
+$$
+G(j\sqrt{17}) = \frac{10}{(1+j\sqrt{17})(2+j\sqrt{17})(5+j\sqrt{17})}
+$$
 
 由于在 $\omega_g$ 处相位为 $-180°$，$G(j\omega_g)$ 是负实数：
 
-$$G(j\omega_g) = -|G(j\omega_g)| = -0.794$$
+$$
+G(j\omega_g) = -|G(j\omega_g)| = -0.794
+$$
 
 **第四步**：判断。Nyquist 曲线与负实轴交于 $-0.794$，在 $(-1, j0)$ 点的**右侧**，没有包围 $(-1, j0)$。
 
@@ -978,9 +1034,13 @@ print(f"  系统{'稳定' if gm_db > 0 and pm > 0 else '不稳定'}")` },
 
 二阶系统的谐振频率 $\omega_r$ 和谐振峰值 $M_r$：
 
-$$\omega_r = \omega_n\sqrt{1 - 2\zeta^2} \quad (\zeta < 0.707)$$
+$$
+\omega_r = \omega_n\sqrt{1 - 2\zeta^2} \quad (\zeta < 0.707)
+$$
 
-$$M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}$$
+$$
+M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}
+$$
 
 谐振峰越高（$\zeta$ 越小），时域超调量越大。两者都反映了系统的"振荡倾向"。
 
@@ -990,11 +1050,15 @@ $$M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}$$
 
 对于二阶开环系统 $G(s) = \dfrac{\omega_n^2}{s(s + 2\zeta\omega_n)}$（单位负反馈闭环即为标准二阶系统），相位裕度与阻尼比有精确的对应关系：
 
-$$PM = \arctan\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}} \times \frac{180°}{\pi}$$
+$$
+PM = \arctan\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}} \times \frac{180°}{\pi}
+$$
 
 这个公式比较复杂，工程上常用近似：
 
-$$PM \approx 100\zeta° \quad (\zeta \in [0.3, 0.7] \text{ 范围内较准确})$$
+$$
+PM \approx 100\zeta° \quad (\zeta \in [0.3, 0.7] \text{ 范围内较准确})
+$$
 
 | $\zeta$ | 精确 $PM$ | 近似 $100\zeta°$ | 误差 |
 |---------|----------|-----------------|------|
@@ -1243,11 +1307,15 @@ RC 低通滤波器是最简单的频域分析对象，也是理解频域概念�
 
 电阻 $R$ 和电容 $C$ 串联，输出电压取自电容两端。由基尔霍夫定律：
 
-$$RC\dot{v}_o(t) + v_o(t) = v_i(t)$$
+$$
+RC\dot{v}_o(t) + v_o(t) = v_i(t)
+$$
 
 传递函数：
 
-$$G(s) = \frac{V_o(s)}{V_i(s)} = \frac{1}{RCs + 1} = \frac{1}{Ts + 1}$$
+$$
+G(s) = \frac{V_o(s)}{V_i(s)} = \frac{1}{RCs + 1} = \frac{1}{Ts + 1}
+$$
 
 其中 $T = RC$ 是时间常数。
 
@@ -1255,15 +1323,21 @@ $$G(s) = \frac{V_o(s)}{V_i(s)} = \frac{1}{RCs + 1} = \frac{1}{Ts + 1}$$
 
 令 $s = j\omega$：
 
-$$G(j\omega) = \frac{1}{1 + j\omega RC}$$
+$$
+G(j\omega) = \frac{1}{1 + j\omega RC}
+$$
 
 幅频特性：
 
-$$|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega RC)^2}}$$
+$$
+|G(j\omega)| = \frac{1}{\sqrt{1 + (\omega RC)^2}}
+$$
 
 相频特性：
 
-$$\angle G(j\omega) = -\arctan(\omega RC)$$
+$$
+\angle G(j\omega) = -\arctan(\omega RC)
+$$
 
 #### 关键频率点
 
@@ -1305,7 +1379,9 @@ $$\angle G(j\omega) = -\arctan(\omega RC)$$
 
 车身位移对路面输入的传递函数：
 
-$$G(s) = \frac{cs + k}{ms^2 + cs + k}$$
+$$
+G(s) = \frac{cs + k}{ms^2 + cs + k}
+$$
 
 令 $s = j\omega$，分析不同频率下路面颠簸如何传递到车身。
 
@@ -1366,7 +1442,9 @@ Bode 图假设系统是 LTI 的。实际系统中的非线性（饱和、死区�
 
 用有理函数近似时延，一阶 Padé 近似：
 
-$$e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2}$$
+$$
+e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2}
+$$
 
 这是一个**全通环节**——幅值恒为 1，但引入了一个右半平面零点（$s = 2/\tau$），解释了时延为什么"额外"引入相位滞后。
 
@@ -1408,7 +1486,9 @@ $$e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2}$$
 
 **2.** 画出以下传递函数的 Bode 图渐近线，标出转折频率和各段斜率：
 
-$$G(s) = \frac{100}{s(s+10)}$$
+$$
+G(s) = \frac{100}{s(s+10)}
+$$
 
 **3.** 某二阶系统的传递函数为 $G(s) = \dfrac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$，其中 $\omega_n = 5$ rad/s，$\zeta = 0.3$。求谐振频率 $\omega_r$、谐振峰值 $M_r$（dB），以及 $-3$ dB 带宽 $\omega_B$。
 
@@ -1434,27 +1514,41 @@ $$G(s) = \frac{100}{s(s+10)}$$
 
 在 $f_0/10$（即 $\omega = 100$ rad/s）处：
 
-$$|G| = \frac{1}{\sqrt{1+(0.1)^2}} = 0.995 \implies 20\log|G| = \boxed{-0.04 \text{ dB}}$$
+$$
+|G| = \frac{1}{\sqrt{1+(0.1)^2}} = 0.995 \implies 20\log|G| = \boxed{-0.04 \text{ dB}}
+$$
 
-$$\angle G = -\arctan(0.1) = \boxed{-5.7°}$$
+$$
+\angle G = -\arctan(0.1) = \boxed{-5.7°}
+$$
 
 在 $f_0$（即 $\omega = 1000$ rad/s）处：
 
-$$|G| = \frac{1}{\sqrt{2}} = 0.707 \implies \boxed{-3.0 \text{ dB}}$$
+$$
+|G| = \frac{1}{\sqrt{2}} = 0.707 \implies \boxed{-3.0 \text{ dB}}
+$$
 
-$$\angle G = -\arctan(1) = \boxed{-45°}$$
+$$
+\angle G = -\arctan(1) = \boxed{-45°}
+$$
 
 在 $10f_0$（即 $\omega = 10000$ rad/s）处：
 
-$$|G| = \frac{1}{\sqrt{1+100}} \approx 0.1 \implies \boxed{-20.0 \text{ dB}}$$
+$$
+|G| = \frac{1}{\sqrt{1+100}} \approx 0.1 \implies \boxed{-20.0 \text{ dB}}
+$$
 
-$$\angle G = -\arctan(10) = \boxed{-84.3°}$$
+$$
+\angle G = -\arctan(10) = \boxed{-84.3°}
+$$
 
 ---
 
 **2.** 化为标准形式：
 
-$$G(s) = \frac{100}{s(s+10)} = \frac{10}{s(s/10+1)}$$
+$$
+G(s) = \frac{100}{s(s+10)} = \frac{10}{s(s/10+1)}
+$$
 
 - 增益：$K = 10$，$20\log 10 = 20$ dB
 - 积分环节 $1/s$：斜率 $-20$ dB/dec
@@ -1475,35 +1569,55 @@ $$G(s) = \frac{100}{s(s+10)} = \frac{10}{s(s/10+1)}$$
 
 谐振频率：
 
-$$\omega_r = \omega_n\sqrt{1-2\zeta^2} = 5\sqrt{1-2(0.09)} = 5\sqrt{0.82} = 5 \times 0.906$$
+$$
+\omega_r = \omega_n\sqrt{1-2\zeta^2} = 5\sqrt{1-2(0.09)} = 5\sqrt{0.82} = 5 \times 0.906
+$$
 
-$$\boxed{\omega_r = 4.53 \text{ rad/s}}$$
+$$
+\boxed{\omega_r = 4.53 \text{ rad/s}}
+$$
 
 谐振峰值：
 
-$$M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.3 \times \sqrt{0.91}} = \frac{1}{0.6 \times 0.954} = \frac{1}{0.572}$$
+$$
+M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.3 \times \sqrt{0.91}} = \frac{1}{0.6 \times 0.954} = \frac{1}{0.572}
+$$
 
-$$M_r = 1.748 \implies \boxed{M_r = 20\log(1.748) = 4.85 \text{ dB}}$$
+$$
+M_r = 1.748 \implies \boxed{M_r = 20\log(1.748) = 4.85 \text{ dB}}
+$$
 
 $-3$ dB 带宽：需要解 $|G(j\omega_B)|^2 = 1/2$。
 
-$$\frac{\omega_n^4}{(\omega_n^2 - \omega_B^2)^2 + (2\zeta\omega_n\omega_B)^2} = \frac{1}{2}$$
+$$
+\frac{\omega_n^4}{(\omega_n^2 - \omega_B^2)^2 + (2\zeta\omega_n\omega_B)^2} = \frac{1}{2}
+$$
 
 代入数值并整理（令 $u = \omega_B^2/\omega_n^2$）：
 
-$$u^2 - 2u(1-2\zeta^2) + 1 = 2 \implies u^2 - 1.64u - 1 = 0$$
+$$
+u^2 - 2u(1-2\zeta^2) + 1 = 2 \implies u^2 - 1.64u - 1 = 0
+$$
 
-$$u = \frac{1.64 + \sqrt{1.64^2 + 4}}{2} = \frac{1.64 + 2.689}{2} = 2.164$$
+$$
+u = \frac{1.64 + \sqrt{1.64^2 + 4}}{2} = \frac{1.64 + 2.689}{2} = 2.164
+$$
 
-$$\omega_B = \omega_n\sqrt{u} = 5\sqrt{2.164} = 5 \times 1.471$$
+$$
+\omega_B = \omega_n\sqrt{u} = 5\sqrt{2.164} = 5 \times 1.471
+$$
 
-$$\boxed{\omega_B = 7.36 \text{ rad/s}}$$
+$$
+\boxed{\omega_B = 7.36 \text{ rad/s}}
+$$
 
 ---
 
 **4.** 标准形式：
 
-$$G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/50)}$$
+$$
+G(s) = \frac{10(1+s)}{s(1+s/5)(1+s/50)}
+$$
 
 - 增益 $K = 10$，$20\log 10 = 20$ dB
 - 转折频率：$\omega = 1$（零点，$+20$ dB/dec），$\omega = 5$（极点，$-20$ dB/dec），$\omega = 50$（极点，$-20$ dB/dec）
@@ -1524,53 +1638,77 @@ $\omega = 1$ 处实际幅值约 $\boxed{20 + 3 = 23 \text{ dB}}$（零点在转�
 
 相位：$\omega = 1$ 处，零点贡献 $+45°$，积分贡献 $-90°$，两个极点（$\omega = 5, 50$ 都远大于 1）贡献约 $0°$。
 
-$$\angle G(1) \approx -90° + 45° + 0° + 0° = \boxed{-45°}$$
+$$
+\angle G(1) \approx -90° + 45° + 0° + 0° = \boxed{-45°}
+$$
 
 ---
 
 **5.** 标准形式：
 
-$$G(s) = \frac{K}{s(s+2)(s+5)} = \frac{K/10}{s(s/2+1)(s/5+1)}$$
+$$
+G(s) = \frac{K}{s(s+2)(s+5)} = \frac{K/10}{s(s/2+1)(s/5+1)}
+$$
 
 开环无右半平面极点，$P = 0$。需要 Nyquist 曲线不包围 $(-1, j0)$。
 
 Nyquist 曲线与负实轴的交点出现在相位为 $-180°$ 时。
 
-$$\angle G(j\omega) = -90° - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+$$
+\angle G(j\omega) = -90° - \arctan(\omega/2) - \arctan(\omega/5) = -180°
+$$
 
-$$\arctan(\omega/2) + \arctan(\omega/5) = 90°$$
+$$
+\arctan(\omega/2) + \arctan(\omega/5) = 90°
+$$
 
 利用 $\arctan a + \arctan b = 90° \implies ab = 1$：
 
-$$\frac{\omega}{2} \cdot \frac{\omega}{5} = 1 \implies \omega^2 = 10 \implies \omega_g = \sqrt{10}$$
+$$
+\frac{\omega}{2} \cdot \frac{\omega}{5} = 1 \implies \omega^2 = 10 \implies \omega_g = \sqrt{10}
+$$
 
 在 $\omega_g = \sqrt{10}$ 处的幅值：
 
-$$|G(j\sqrt{10})| = \frac{K/10}{\sqrt{10} \cdot \sqrt{1+10/4} \cdot \sqrt{1+10/25}} = \frac{K/10}{\sqrt{10} \cdot \sqrt{3.5} \cdot \sqrt{1.4}}$$
+$$
+|G(j\sqrt{10})| = \frac{K/10}{\sqrt{10} \cdot \sqrt{1+10/4} \cdot \sqrt{1+10/25}} = \frac{K/10}{\sqrt{10} \cdot \sqrt{3.5} \cdot \sqrt{1.4}}
+$$
 
-$$= \frac{K/10}{\sqrt{10 \times 3.5 \times 1.4}} = \frac{K/10}{\sqrt{49}} = \frac{K/10}{7} = \frac{K}{70}$$
+$$
+= \frac{K/10}{\sqrt{10 \times 3.5 \times 1.4}} = \frac{K/10}{\sqrt{49}} = \frac{K/10}{7} = \frac{K}{70}
+$$
 
 稳定条件：$|G(j\omega_g)| < 1$
 
-$$\frac{K}{70} < 1 \implies \boxed{0 < K < 70}$$
+$$
+\frac{K}{70} < 1 \implies \boxed{0 < K < 70}
+$$
 
 ---
 
 **6.** 两个系统都是 $\zeta = 0.5$ 的二阶系统，阻尼比相同，因此**超调量相同**：
 
-$$M_p = e^{-\pi \times 0.5/\sqrt{0.75}} = e^{-1.814} = 16.3\%$$
+$$
+M_p = e^{-\pi \times 0.5/\sqrt{0.75}} = e^{-1.814} = 16.3\%
+$$
 
 定性比较：系统 2（$\omega_{B2} = 20$）的带宽是系统 1（$\omega_{B1} = 2$）的 10 倍，因此**响应快约 10 倍**。
 
 上升时间：由正文中的数值表，$\zeta = 0.5$ 时 $t_r \cdot \omega_B \approx 3.9$。
 
-$$t_{r1} \approx 3.9/\omega_{B1} = 3.9/2 = \boxed{1.95 \text{ s}}$$
+$$
+t_{r1} \approx 3.9/\omega_{B1} = 3.9/2 = \boxed{1.95 \text{ s}}
+$$
 
-$$t_{r2} \approx 3.9/\omega_{B2} = 3.9/20 = \boxed{0.195 \text{ s}}$$
+$$
+t_{r2} \approx 3.9/\omega_{B2} = 3.9/20 = \boxed{0.195 \text{ s}}
+$$
 
 调节时间：$\omega_c \approx \omega_B$，$t_s \approx 4/\omega_c$。
 
-$$t_{s1} \approx 4/2 = \boxed{2.0 \text{ s}}, \quad t_{s2} \approx 4/20 = \boxed{0.2 \text{ s}}$$
+$$
+t_{s1} \approx 4/2 = \boxed{2.0 \text{ s}}, \quad t_{s2} \approx 4/20 = \boxed{0.2 \text{ s}}
+$$
 
 **结论**：带宽越大，系统响应越快（上升时间和调节时间都更短），但超调量由阻尼比决定，与带宽无关。
 
@@ -1580,25 +1718,39 @@ $$t_{s1} \approx 4/2 = \boxed{2.0 \text{ s}}, \quad t_{s2} \approx 4/20 = \boxed
 
 **求相位穿越频率 $\omega_g$**：
 
-$$\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°$$
+$$
+\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°
+$$
 
 即 $\arctan(\omega) + \arctan(\omega/2) + \arctan(\omega/5) = 180°$。
 
 利用 $\arctan a + \arctan b + \arctan c = 180°$ 的条件 $a + b + c = abc$：
 
-$$\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}$$
+$$
+\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}
+$$
 
-$$1.7\omega = \frac{\omega^3}{10}$$
+$$
+1.7\omega = \frac{\omega^3}{10}
+$$
 
-$$\omega^2 = 17 \implies \boxed{\omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}}$$
+$$
+\omega^2 = 17 \implies \boxed{\omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}}
+$$
 
 **求增益裕度**：
 
-$$|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{5.25} \cdot \sqrt{1.68}}$$
+$$
+|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{5.25} \cdot \sqrt{1.68}}
+$$
 
-$$= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794$$
+$$
+= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794
+$$
 
-$$\boxed{GM = -20\log(0.794) \approx 2.0 \text{ dB}}$$
+$$
+\boxed{GM = -20\log(0.794) \approx 2.0 \text{ dB}}
+$$
 
 **判断稳定性**：$GM > 0$（即 $|G(j\omega_g)| < 1$），Nyquist 曲线与负实轴的交点在 $(-1, j0)$ 右侧，不包围临界点。开环稳定（$P=0$），因此 $\boxed{\text{闭环稳定}}$。
 
@@ -1608,15 +1760,21 @@ $$\boxed{GM = -20\log(0.794) \approx 2.0 \text{ dB}}$$
 
 令 $s = j\omega$：
 
-$$G(j\omega) = \frac{1 - j\omega/10}{1 + j\omega/10}$$
+$$
+G(j\omega) = \frac{1 - j\omega/10}{1 + j\omega/10}
+$$
 
 幅频特性：
 
-$$|G(j\omega)| = \frac{\sqrt{1+(\omega/10)^2}}{\sqrt{1+(\omega/10)^2}} = 1 \implies \boxed{20\log|G| = 0 \text{ dB（所有频率）}}$$
+$$
+|G(j\omega)| = \frac{\sqrt{1+(\omega/10)^2}}{\sqrt{1+(\omega/10)^2}} = 1 \implies \boxed{20\log|G| = 0 \text{ dB（所有频率）}}
+$$
 
 相频特性：
 
-$$\angle G(j\omega) = -2\arctan(\omega/10)$$
+$$
+\angle G(j\omega) = -2\arctan(\omega/10)
+$$
 
 | $\omega$ | $\angle G$ |
 |----------|-----------|
@@ -1638,13 +1796,17 @@ $$\angle G(j\omega) = -2\arctan(\omega/10)$$
 
 近似后的传递函数：
 
-$$G_{\text{approx}}(s) = \frac{5(1 - 0.25s)}{s(s+1)(1+0.25s)} = \frac{5(1 - s/4)}{s(s+1)(1+s/4)}$$
+$$
+G_{\text{approx}}(s) = \frac{5(1 - 0.25s)}{s(s+1)(1+0.25s)} = \frac{5(1 - s/4)}{s(s+1)(1+s/4)}
+$$
 
 转折频率：$\omega = 1$（极点），$\omega = 4$（零点，RHP），$\omega = 4$（极点），加上积分环节 $1/s$。
 
 **相频分析**（无时延时）：
 
-$$\angle G_0(j\omega) = -90° - \arctan(\omega)$$
+$$
+\angle G_0(j\omega) = -90° - \arctan(\omega)
+$$
 
 **时延引入的额外相位**：$-\omega\tau = -0.5\omega$
 

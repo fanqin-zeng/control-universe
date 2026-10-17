@@ -56,7 +56,9 @@ description: 从微分方程到传递函数——为什么我们需要一个比�
 
 传递函数的数学基础是**拉普拉斯变换**。它的定义是一个积分：
 
-$$F(s) = \mathcal{L}\{f(t)\} = \int_0^\infty f(t)\,e^{-st}\,dt$$
+$$
+F(s) = \mathcal{L}\{f(t)\} = \int_0^\infty f(t)\,e^{-st}\,dt
+$$
 
 看起来吓人，但直觉很简单：**拉普拉斯变换把信号 $f(t)$ 分解成一系列"广义指数分量" $e^{st}$ 的叠加，$F(s)$ 就是每个分量的"含量"**。
 
@@ -75,11 +77,15 @@ $s = \sigma + j\omega$ 是一个复数：
 
 对 $e^{st}$ 求导：
 
-$$\frac{d}{dt}e^{st} = s\,e^{st}$$
+$$
+\frac{d}{dt}e^{st} = s\,e^{st}
+$$
 
 **指数函数求导等于乘以 $s$**。既然任何信号都被分解成了指数分量的叠加，那么"对信号求导"就等于"把每个分量乘以 $s$"：
 
-$$\frac{df(t)}{dt} \quad\longleftrightarrow\quad sF(s) - f(0)$$
+$$
+\frac{df(t)}{dt} \quad\longleftrightarrow\quad sF(s) - f(0)
+$$
 
 注意那个 $-f(0)$：它是分部积分时冒出来的**初始条件项**。只有当 $f(0) = 0$（零初始条件）时，才有干净的"求导 = 乘 $s$"。这就是为什么传递函数的定义要强调零初始条件——它把"初始状态的影响"和"输入的影响"分开处理，让传递函数只描述系统本身的特性。
 
@@ -101,7 +107,9 @@ $$\frac{df(t)}{dt} \quad\longleftrightarrow\quad sF(s) - f(0)$$
 
 作为练习，用定义推一个：$f(t) = e^{-at}$（$a>0$）：
 
-$$F(s) = \int_0^\infty e^{-at}e^{-st}\,dt = \int_0^\infty e^{-(s+a)t}\,dt = \left.\frac{-e^{-(s+a)t}}{s+a}\right|_0^\infty = \frac{1}{s+a}$$
+$$
+F(s) = \int_0^\infty e^{-at}e^{-st}\,dt = \int_0^\infty e^{-(s+a)t}\,dt = \left.\frac{-e^{-(s+a)t}}{s+a}\right|_0^\infty = \frac{1}{s+a}
+$$
 
 （要求 $\mathrm{Re}(s) > -a$ 才能保证上限处收敛。）
 
@@ -111,21 +119,29 @@ $$F(s) = \int_0^\infty e^{-at}e^{-st}\,dt = \int_0^\infty e^{-(s+a)t}\,dt = \lef
 
 **第1步**：两边取拉普拉斯变换
 
-$$\tau s Y(s) + Y(s) = U(s) = \frac{1}{s}$$
+$$
+\tau s Y(s) + Y(s) = U(s) = \frac{1}{s}
+$$
 
 微分方程消失了，剩下的是关于 $Y(s)$ 的**代数方程**。
 
 **第2步**：解代数方程
 
-$$Y(s) = \frac{1}{s(\tau s + 1)}$$
+$$
+Y(s) = \frac{1}{s(\tau s + 1)}
+$$
 
 **第3步**：部分分式分解 + 查表反变换
 
-$$Y(s) = \frac{1}{s} - \frac{\tau}{\tau s + 1} = \frac{1}{s} - \frac{1}{s + 1/\tau}$$
+$$
+Y(s) = \frac{1}{s} - \frac{\tau}{\tau s + 1} = \frac{1}{s} - \frac{1}{s + 1/\tau}
+$$
 
 查表得：
 
-$$y(t) = 1 - e^{-t/\tau}$$
+$$
+y(t) = 1 - e^{-t/\tau}
+$$
 
 对比经典解法（齐次解+特解+定系数），拉普拉斯方法**全程只做代数运算**，最后查一次表。系统阶数越高，优势越大——高阶方程的经典解法几乎不可行，而拉普拉斯方法只是部分分式分解的项数变多。
 
@@ -133,19 +149,27 @@ $$y(t) = 1 - e^{-t/\tau}$$
 
 现在，让我们把拉普拉斯变换应用到上一节的悬挂系统方程：
 
-$$m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = F(t)$$
+$$
+m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = F(t)
+$$
 
 对两边取拉普拉斯变换（假设零初始条件 $y(0) = \dot{y}(0) = 0$），利用"$\ddot{y} \leftrightarrow s^2Y$，$\dot{y} \leftrightarrow sY$"：
 
-$$ms^2Y(s) + csY(s) + kY(s) = F(s)$$
+$$
+ms^2Y(s) + csY(s) + kY(s) = F(s)
+$$
 
 提取 $Y(s)$：
 
-$$Y(s)\,(ms^2 + cs + k) = F(s)$$
+$$
+Y(s)\,(ms^2 + cs + k) = F(s)
+$$
 
 于是输入输出之比就是：
 
-$$G(s) = \frac{Y(s)}{F(s)} = \frac{1}{ms^2 + cs + k}$$
+$$
+G(s) = \frac{Y(s)}{F(s)} = \frac{1}{ms^2 + cs + k}
+$$
 
 这就是**传递函数**。
 
@@ -159,7 +183,9 @@ $$G(s) = \frac{Y(s)}{F(s)} = \frac{1}{ms^2 + cs + k}$$
 
 一旦有了 $G(s)$，任何输入的响应都是简单的乘法：
 
-$$Y(s) = G(s)\,U(s)$$
+$$
+Y(s) = G(s)\,U(s)
+$$
 
 阶跃输入乘 $\frac{1}{s}$，正弦输入乘 $\frac{\omega}{s^2+\omega^2}$——**换输入不用重新解方程，只是换一个乘数**。
 
@@ -167,13 +193,19 @@ $$Y(s) = G(s)\,U(s)$$
 
 **RLC电路**（来自[系统建模基础](/classic/system-modeling)）：$LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v$，变换后：
 
-$$G(s) = \frac{V_C(s)}{V(s)} = \frac{1}{LCs^2 + RCs + 1}$$
+$$
+G(s) = \frac{V_C(s)}{V(s)} = \frac{1}{LCs^2 + RCs + 1}
+$$
 
 **直流电机**（电压 → 转速）：联立电气方程和机械方程，消去电流 $I(s)$：
 
-$$(Ls + R)I(s) = V(s) - K_e\Omega(s), \qquad (Js + B)\Omega(s) = K_t I(s)$$
+$$
+(Ls + R)I(s) = V(s) - K_e\Omega(s), \qquad (Js + B)\Omega(s) = K_t I(s)
+$$
 
-$$G(s) = \frac{\Omega(s)}{V(s)} = \frac{K_t}{(Ls+R)(Js+B) + K_tK_e}$$
+$$
+G(s) = \frac{\Omega(s)}{V(s)} = \frac{K_t}{(Ls+R)(Js+B) + K_tK_e}
+$$
 
 注意分母中多出的 $K_tK_e$ 项——它来自反电动势这个**内部反馈**。这就是传递函数框架的威力：物理上的反馈耦合，在代数上只是分母多一项。
 
@@ -181,7 +213,9 @@ $$G(s) = \frac{\Omega(s)}{V(s)} = \frac{K_t}{(Ls+R)(Js+B) + K_tK_e}$$
 
 任何传递函数都可以写成多项式之比：
 
-$$G(s) = \frac{b_ms^m + \cdots + b_1s + b_0}{a_ns^n + \cdots + a_1s + a_0} = K\frac{(s-z_1)(s-z_2)\cdots(s-z_m)}{(s-p_1)(s-p_2)\cdots(s-p_n)}$$
+$$
+G(s) = \frac{b_ms^m + \cdots + b_1s + b_0}{a_ns^n + \cdots + a_1s + a_0} = K\frac{(s-z_1)(s-z_2)\cdots(s-z_m)}{(s-p_1)(s-p_2)\cdots(s-p_n)}
+$$
 
 - **极点** $p_i$：分母的根，$G(s) \to \infty$ 的位置
 - **零点** $z_i$：分子的根，$G(s) = 0$ 的位置
@@ -215,7 +249,9 @@ $$G(s) = \frac{b_ms^m + \cdots + b_1s + b_0}{a_ns^n + \cdots + a_1s + a_0} = K\f
 
 微分方程需要"求解"，传递函数只需要"代数运算"。
 
-$$\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{微分方程：需要求解}} \quad\longleftrightarrow\quad \underbrace{G(s) = \frac{1}{ms^2 + cs + k}}_{\text{代数表达式：直接分析}}$$
+$$
+\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{微分方程：需要求解}} \quad\longleftrightarrow\quad \underbrace{G(s) = \frac{1}{ms^2 + cs + k}}_{\text{代数表达式：直接分析}}
+$$
 
 ### 2. 方框图代数：串联、并联、反馈
 
@@ -223,15 +259,21 @@ $$\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{微分方程：需要求解}
 
 **串联**：前一个环节的输出是后一个的输入
 
-$$U(s) \longrightarrow \boxed{G_1(s)} \longrightarrow \boxed{G_2(s)} \longrightarrow Y(s)$$
+$$
+U(s) \longrightarrow \boxed{G_1(s)} \longrightarrow \boxed{G_2(s)} \longrightarrow Y(s)
+$$
 
-$$G(s) = G_1(s) \cdot G_2(s)$$
+$$
+G(s) = G_1(s) \cdot G_2(s)
+$$
 
 用微分方程做这个运算需要联立求解，用传递函数只需乘法。
 
 **并联**：两个环节接收同一输入，输出相加
 
-$$G(s) = G_1(s) + G_2(s)$$
+$$
+G(s) = G_1(s) + G_2(s)
+$$
 
 **反馈**：输出被测量后送回输入端比较——这是控制系统最重要的结构。设前向通道为 $G(s)$，反馈通道（传感器）为 $H(s)$，输入为 $R(s)$，输出为 $Y(s)$：
 
@@ -244,11 +286,17 @@ $$G(s) = G_1(s) + G_2(s)$$
 
 误差信号 $E(s) = R(s) - H(s)Y(s)$，而 $Y(s) = G(s)E(s)$。代入消去 $E(s)$：
 
-$$Y(s) = G(s)\big[R(s) - H(s)Y(s)\big]$$
+$$
+Y(s) = G(s)\big[R(s) - H(s)Y(s)\big]
+$$
 
-$$Y(s)\big[1 + G(s)H(s)\big] = G(s)R(s)$$
+$$
+Y(s)\big[1 + G(s)H(s)\big] = G(s)R(s)
+$$
 
-$$\boxed{\frac{Y(s)}{R(s)} = \frac{G(s)}{1 + G(s)H(s)}}$$
+$$
+\boxed{\frac{Y(s)}{R(s)} = \frac{G(s)}{1 + G(s)H(s)}}
+$$
 
 这个公式是经典控制的第一公式。注意两点：
 
@@ -281,7 +329,9 @@ print("闭环极点:", poles(closed))` },
 
 传递函数的**极点**直接告诉我们系统稳不稳定。以悬挂系统为例，令分母为零：
 
-$$ms^2 + cs + k = 0 \implies s_{1,2} = \frac{-c \pm \sqrt{c^2 - 4mk}}{2m}$$
+$$
+ms^2 + cs + k = 0 \implies s_{1,2} = \frac{-c \pm \sqrt{c^2 - 4mk}}{2m}
+$$
 
 - 如果 $c > 0$：两个根的实部都为负（$-c/2m < 0$），系统稳定——振荡衰减
 - 如果 $c < 0$（负阻尼，比如气动弹性中的颤振）：实部为正，系统不稳定——振荡发散
@@ -293,13 +343,17 @@ $$ms^2 + cs + k = 0 \implies s_{1,2} = \frac{-c \pm \sqrt{c^2 - 4mk}}{2m}$$
 
 想知道 $t \to \infty$ 时输出停在哪儿？不用求完整的 $y(t)$：
 
-$$\lim_{t\to\infty} y(t) = \lim_{s\to 0} s\,Y(s)$$
+$$
+\lim_{t\to\infty} y(t) = \lim_{s\to 0} s\,Y(s)
+$$
 
 （前提：$sY(s)$ 的极点全部在左半平面，即系统确实会停下来。）
 
 例：单位阶跃输入 $U(s) = 1/s$ 作用于 $G(s) = \frac{5}{(s+1)(s+2)}$：
 
-$$y(\infty) = \lim_{s\to 0} s \cdot \frac{5}{s(s+1)(s+2)} = \frac{5}{2} = 2.5$$
+$$
+y(\infty) = \lim_{s\to 0} s \cdot \frac{5}{s(s+1)(s+2)} = \frac{5}{2} = 2.5
+$$
 
 一行算出稳态值。稳态误差的系统分析见[时域分析](/classic/time-domain-analysis)。
 
@@ -307,7 +361,9 @@ $$y(\infty) = \lim_{s\to 0} s \cdot \frac{5}{s(s+1)(s+2)} = \frac{5}{2} = 2.5$$
 
 大量实际系统可以近似为二阶系统——而且高阶系统的行为往往由一对"主导极点"决定，本质还是二阶的。把悬挂系统的传递函数写成标准形式：
 
-$$G(s) = \frac{1}{ms^2 + cs + k} = \frac{1/m}{s^2 + \frac{c}{m}s + \frac{k}{m}}$$
+$$
+G(s) = \frac{1}{ms^2 + cs + k} = \frac{1/m}{s^2 + \frac{c}{m}s + \frac{k}{m}}
+$$
 
 定义两个参数：
 
@@ -316,11 +372,15 @@ $$G(s) = \frac{1}{ms^2 + cs + k} = \frac{1/m}{s^2 + \frac{c}{m}s + \frac{k}{m}}$
 
 则传递函数变为标准形式：
 
-$$G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$$
+$$
+G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}
+$$
 
 这两个参数决定了系统的全部动态行为。解特征方程 $s^2 + 2\zeta\omega_n s + \omega_n^2 = 0$：
 
-$$s_{1,2} = -\zeta\omega_n \pm \omega_n\sqrt{\zeta^2 - 1}$$
+$$
+s_{1,2} = -\zeta\omega_n \pm \omega_n\sqrt{\zeta^2 - 1}
+$$
 
 **极点位置随 $\zeta$ 的变化**：
 
@@ -345,7 +405,9 @@ $$s_{1,2} = -\zeta\omega_n \pm \omega_n\sqrt{\zeta^2 - 1}$$
 
 **数值例子**：延续系统建模的悬挂参数 $m = 250\,\text{kg}$，$k = 16000\,\text{N/m}$，$c = 2000\,\text{N·s/m}$：
 
-$$\omega_n = \sqrt{\frac{16000}{250}} = 8\,\text{rad/s}, \qquad \zeta = \frac{2000}{2\sqrt{250 \times 16000}} = \frac{2000}{4000} = 0.5$$
+$$
+\omega_n = \sqrt{\frac{16000}{250}} = 8\,\text{rad/s}, \qquad \zeta = \frac{2000}{2\sqrt{250 \times 16000}} = \frac{2000}{4000} = 0.5
+$$
 
 极点：$s = -4 \pm j6.93$。欠阻尼，衰减振荡——过减速带后车身晃两三下才停，符合日常乘车的体验。
 
@@ -355,7 +417,9 @@ $$\omega_n = \sqrt{\frac{16000}{250}} = 8\,\text{rad/s}, \qquad \zeta = \frac{20
 
 假设输入是正弦信号 $u(t) = A\sin(\omega t)$，可以证明：稳定系统的稳态输出仍是同频率的正弦波，只是幅度和相位变了：
 
-$$y_{ss}(t) = A\,|G(j\omega)|\,\sin\big(\omega t + \angle G(j\omega)\big)$$
+$$
+y_{ss}(t) = A\,|G(j\omega)|\,\sin\big(\omega t + \angle G(j\omega)\big)
+$$
 
 **把 $s = j\omega$ 代入传递函数**，得到的复数 $G(j\omega)$ 就完整刻画了系统对频率 $\omega$ 的正弦输入的响应：
 
@@ -397,13 +461,17 @@ $$y_{ss}(t) = A\,|G(j\omega)|\,\sin\big(\omega t + \angle G(j\omega)\big)$$
 
 **工作点 $\theta = 0$（下垂）**：令 $\theta = 0 + \delta$，$\sin\delta \approx \delta$：
 
-$$ml^2\ddot{\delta} + mgl\,\delta = 0 \implies \text{特征方程 } s^2 + \frac{g}{l} = 0 \implies s = \pm j\sqrt{\frac{g}{l}}$$
+$$
+ml^2\ddot{\delta} + mgl\,\delta = 0 \implies \text{特征方程 } s^2 + \frac{g}{l} = 0 \implies s = \pm j\sqrt{\frac{g}{l}}
+$$
 
 极点在虚轴上——临界稳定，等幅摆动（钟摆）。
 
 **工作点 $\theta = \pi$（倒立）**：令 $\theta = \pi + \delta$，$\sin(\pi+\delta) = -\sin\delta \approx -\delta$：
 
-$$ml^2\ddot{\delta} - mgl\,\delta = 0 \implies s^2 - \frac{g}{l} = 0 \implies s = \pm\sqrt{\frac{g}{l}}$$
+$$
+ml^2\ddot{\delta} - mgl\,\delta = 0 \implies s^2 - \frac{g}{l} = 0 \implies s = \pm\sqrt{\frac{g}{l}}
+$$
 
 一个极点 $+\sqrt{g/l}$ 在**右半平面**——不稳定！倒立摆会指数倒下，这正是杂技演员必须不断移动手来修正的原因。
 
@@ -419,11 +487,15 @@ $$ml^2\ddot{\delta} - mgl\,\delta = 0 \implies s^2 - \frac{g}{l} = 0 \implies s 
 
 两个内部结构完全不同的系统，可能有相同的传递函数。看这个例子：
 
-$$G_a(s) = \frac{s-1}{s+2}, \qquad G_b(s) = \frac{1}{s-1}$$
+$$
+G_a(s) = \frac{s-1}{s+2}, \qquad G_b(s) = \frac{1}{s-1}
+$$
 
 串联之后：
 
-$$G_a(s) \cdot G_b(s) = \frac{s-1}{(s+2)(s-1)} = \frac{1}{s+2}$$
+$$
+G_a(s) \cdot G_b(s) = \frac{s-1}{(s+2)(s-1)} = \frac{1}{s+2}
+$$
 
 总传递函数 $\frac{1}{s+2}$ 只有一个极点 $s=-2$，看起来完全稳定。**但 $G_b$ 内部有一个不稳定极点 $s = +1$**，对应的内部状态按 $e^{t}$ 指数发散——它只是在总输出中恰好被 $G_a$ 的零点"对消"了，看不出来而已。
 
@@ -514,17 +586,25 @@ print("一个进入两环节之间的扰动就会让它爆发。")` },
 
 **1.** 对微分方程 $500\ddot{y} + 2000\dot{y} + 20000y = F(t)$ 取拉普拉斯变换（零初始条件）：
 
-$$500s^2Y(s) + 2000sY(s) + 20000Y(s) = F(s)$$
+$$
+500s^2Y(s) + 2000sY(s) + 20000Y(s) = F(s)
+$$
 
 传递函数：
 
-$$G(s) = \frac{Y(s)}{F(s)} = \frac{1}{500s^2 + 2000s + 20000} = \frac{1/500}{s^2 + 4s + 40}$$
+$$
+G(s) = \frac{Y(s)}{F(s)} = \frac{1}{500s^2 + 2000s + 20000} = \frac{1/500}{s^2 + 4s + 40}
+$$
 
 标准形式参数：
 
-$$\omega_n = \sqrt{\frac{k}{m}} = \sqrt{\frac{20000}{500}} = \sqrt{40} \approx 6.32 \text{ rad/s}$$
+$$
+\omega_n = \sqrt{\frac{k}{m}} = \sqrt{\frac{20000}{500}} = \sqrt{40} \approx 6.32 \text{ rad/s}
+$$
 
-$$\zeta = \frac{c}{2\sqrt{mk}} = \frac{2000}{2\sqrt{500 \times 20000}} = \frac{2000}{2 \times \sqrt{10^7}} = \frac{2000}{6324.6} \approx 0.316$$
+$$
+\zeta = \frac{c}{2\sqrt{mk}} = \frac{2000}{2\sqrt{500 \times 20000}} = \frac{2000}{2 \times \sqrt{10^7}} = \frac{2000}{6324.6} \approx 0.316
+$$
 
 $0 < \zeta < 1$，系统为欠阻尼。
 
@@ -534,29 +614,41 @@ $0 < \zeta < 1$，系统为欠阻尼。
 
 **极点**：令分母为零 $s^2 + 3s + 10 = 0$：
 
-$$s_{1,2} = \frac{-3 \pm \sqrt{9 - 40}}{2} = \frac{-3 \pm \sqrt{-31}}{2} = -1.5 \pm j\frac{\sqrt{31}}{2} \approx -1.5 \pm j2.78$$
+$$
+s_{1,2} = \frac{-3 \pm \sqrt{9 - 40}}{2} = \frac{-3 \pm \sqrt{-31}}{2} = -1.5 \pm j\frac{\sqrt{31}}{2} \approx -1.5 \pm j2.78
+$$
 
 极点实部为 $-1.5 < 0$，系统**稳定**。
 
 **标准形式参数**：对比 $s^2 + 2\zeta\omega_n s + \omega_n^2$：
 
-$$\omega_n^2 = 10 \implies \omega_n = \sqrt{10} \approx 3.16 \text{ rad/s}$$
+$$
+\omega_n^2 = 10 \implies \omega_n = \sqrt{10} \approx 3.16 \text{ rad/s}
+$$
 
-$$2\zeta\omega_n = 3 \implies \zeta = \frac{3}{2\sqrt{10}} \approx 0.474$$
+$$
+2\zeta\omega_n = 3 \implies \zeta = \frac{3}{2\sqrt{10}} \approx 0.474
+$$
 
 ---
 
 **3.** 串联总传递函数：
 
-$$G(s) = G_1(s) \cdot G_2(s) = \frac{1}{s+1} \cdot \frac{5}{s+2} = \frac{5}{(s+1)(s+2)} = \frac{5}{s^2 + 3s + 2}$$
+$$
+G(s) = G_1(s) \cdot G_2(s) = \frac{1}{s+1} \cdot \frac{5}{s+2} = \frac{5}{(s+1)(s+2)} = \frac{5}{s^2 + 3s + 2}
+$$
 
 输入为单位阶跃 $U(s) = 1/s$，输出为：
 
-$$Y(s) = G(s) \cdot U(s) = \frac{5}{s(s^2 + 3s + 2)}$$
+$$
+Y(s) = G(s) \cdot U(s) = \frac{5}{s(s^2 + 3s + 2)}
+$$
 
 用终值定理求稳态值（需验证 $sY(s)$ 的所有极点在左半平面）：
 
-$$\lim_{t\to\infty} y(t) = \lim_{s\to 0} sY(s) = \lim_{s\to 0} \frac{5}{s^2 + 3s + 2} = \frac{5}{2} = 2.5$$
+$$
+\lim_{t\to\infty} y(t) = \lim_{s\to 0} sY(s) = \lim_{s\to 0} \frac{5}{s^2 + 3s + 2} = \frac{5}{2} = 2.5
+$$
 
 $sY(s)$ 的极点为 $s = -1$ 和 $s = -2$，均在左半平面，终值定理适用。
 
@@ -564,7 +656,9 @@ $sY(s)$ 的极点为 $s = -1$ 和 $s = -2$，均在左半平面，终值定理�
 
 **4.** RLC传递函数 $G(s) = \frac{1}{LCs^2 + RCs + 1}$，化为标准形式：
 
-$$G(s) = \frac{1/LC}{s^2 + \frac{R}{L}s + \frac{1}{LC}}$$
+$$
+G(s) = \frac{1/LC}{s^2 + \frac{R}{L}s + \frac{1}{LC}}
+$$
 
 机电类比（力-电压类比）：
 
@@ -576,19 +670,27 @@ $$G(s) = \frac{1/LC}{s^2 + \frac{R}{L}s + \frac{1}{LC}}$$
 
 标准形式参数：
 
-$$\omega_n = \sqrt{\frac{1}{LC}} = \sqrt{\frac{1}{0.1 \times 0.01}} = \sqrt{1000} \approx 31.6 \text{ rad/s}$$
+$$
+\omega_n = \sqrt{\frac{1}{LC}} = \sqrt{\frac{1}{0.1 \times 0.01}} = \sqrt{1000} \approx 31.6 \text{ rad/s}
+$$
 
-$$\zeta = \frac{R}{2}\sqrt{\frac{C}{L}} = \frac{2}{2}\sqrt{\frac{0.01}{0.1}} = \sqrt{0.1} \approx 0.316$$
+$$
+\zeta = \frac{R}{2}\sqrt{\frac{C}{L}} = \frac{2}{2}\sqrt{\frac{0.01}{0.1}} = \sqrt{0.1} \approx 0.316
+$$
 
 ---
 
 **5.** 小角度假设 $\sin\theta \approx \theta$，线性化后的方程：
 
-$$ml^2\ddot{\theta}(t) + mgl\,\theta(t) = 0$$
+$$
+ml^2\ddot{\theta}(t) + mgl\,\theta(t) = 0
+$$
 
 特征方程（代入 $\theta = e^{st}$）：
 
-$$ml^2 s^2 + mgl = 0 \implies s^2 + \frac{g}{l} = 0 \implies s = \pm j\sqrt{\frac{g}{l}}$$
+$$
+ml^2 s^2 + mgl = 0 \implies s^2 + \frac{g}{l} = 0 \implies s = \pm j\sqrt{\frac{g}{l}}
+$$
 
 极点在**虚轴**上（实部为零），系统处于**临界稳定**——受到扰动后做等幅振荡，既不收敛也不发散。这与日常经验一致：无摩擦的理想单摆会永远摆下去。
 
@@ -600,19 +702,27 @@ $$ml^2 s^2 + mgl = 0 \implies s^2 + \frac{g}{l} = 0 \implies s = \pm j\sqrt{\fra
 
 **6.** (a) 闭环传递函数公式 $T = \frac{CG}{1+CGH}$：
 
-$$C(s)G(s) = \frac{40}{s(s+2)}, \qquad C(s)G(s)H(s) = \frac{20}{s(s+2)}$$
+$$
+C(s)G(s) = \frac{40}{s(s+2)}, \qquad C(s)G(s)H(s) = \frac{20}{s(s+2)}
+$$
 
-$$T(s) = \frac{\frac{40}{s(s+2)}}{1 + \frac{20}{s(s+2)}} = \frac{40}{s^2 + 2s + 20}$$
+$$
+T(s) = \frac{\frac{40}{s(s+2)}}{1 + \frac{20}{s(s+2)}} = \frac{40}{s^2 + 2s + 20}
+$$
 
 (b) 闭环极点：$s^2 + 2s + 20 = 0$：
 
-$$s = \frac{-2 \pm \sqrt{4 - 80}}{2} = -1 \pm j\sqrt{19} \approx -1 \pm j4.36$$
+$$
+s = \frac{-2 \pm \sqrt{4 - 80}}{2} = -1 \pm j\sqrt{19} \approx -1 \pm j4.36
+$$
 
 实部为负，**稳定**。对比标准形式：$\omega_n^2 = 20 \implies \omega_n = \sqrt{20} \approx 4.47$ rad/s；$2\zeta\omega_n = 2 \implies \zeta = \frac{2}{2\sqrt{20}} \approx 0.224$（强欠阻尼，阶跃响应会有约50%的超调）。
 
 (c) 终值定理：
 
-$$y(\infty) = \lim_{s\to 0} s \cdot T(s) \cdot \frac{1}{s} = T(0) = \frac{40}{20} = 2$$
+$$
+y(\infty) = \lim_{s\to 0} s \cdot T(s) \cdot \frac{1}{s} = T(0) = \frac{40}{20} = 2
+$$
 
 稳态值是 2 而不是 1，因为传感器增益 $H = 0.5$：闭环把"测量值 $Hy$"逼近到 $r$，即 $0.5\,y \to 1$，所以 $y \to 2$。物理上：传感器"缩小"了读数，控制器就把真实输出推得更高。**非单位反馈系统的稳态输出是 $1/H$ 倍**——这也是为什么实际系统要么把传感器增益归一化，要么在控制器里补偿。
 
@@ -620,7 +730,9 @@ $$y(\infty) = \lim_{s\to 0} s \cdot T(s) \cdot \frac{1}{s} = T(0) = \frac{40}{20
 
 **7.** (a) 串联：
 
-$$G_a G_b = \frac{s-1}{s+2} \cdot \frac{1}{s-1} = \frac{1}{s+2}$$
+$$
+G_a G_b = \frac{s-1}{s+2} \cdot \frac{1}{s-1} = \frac{1}{s+2}
+$$
 
 总传递函数只有一个极点 $s = -2$，"看起来"稳定。
 
@@ -638,9 +750,13 @@ $$G_a G_b = \frac{s-1}{s+2} \cdot \frac{1}{s-1} = \frac{1}{s+2}$$
 
 **8.** (a) 零初始条件下取拉普拉斯变换。注意输入导数项：$\dot{u} \leftrightarrow sU(s)$（$u(0)=0$）：
 
-$$sY(s) + 3Y(s) = 2sU(s) + U(s)$$
+$$
+sY(s) + 3Y(s) = 2sU(s) + U(s)
+$$
 
-$$G(s) = \frac{Y(s)}{U(s)} = \frac{2s+1}{s+3}$$
+$$
+G(s) = \frac{Y(s)}{U(s)} = \frac{2s+1}{s+3}
+$$
 
 极点 $s = -3$，零点 $s = -0.5$。分子分母同阶，存在直接馈通（阶跃瞬间输出立即跳变）。
 
@@ -648,13 +764,21 @@ $$G(s) = \frac{Y(s)}{U(s)} = \frac{2s+1}{s+3}$$
 
 (c) 单位阶跃 $U(s) = 1/s$：
 
-$$Y(s) = \frac{2s+1}{s(s+3)} = \frac{A}{s} + \frac{B}{s+3}$$
+$$
+Y(s) = \frac{2s+1}{s(s+3)} = \frac{A}{s} + \frac{B}{s+3}
+$$
 
-$$A = \left.\frac{2s+1}{s+3}\right|_{s=0} = \frac{1}{3}, \qquad B = \left.\frac{2s+1}{s}\right|_{s=-3} = \frac{-5}{-3} = \frac{5}{3}$$
+$$
+A = \left.\frac{2s+1}{s+3}\right|_{s=0} = \frac{1}{3}, \qquad B = \left.\frac{2s+1}{s}\right|_{s=-3} = \frac{-5}{-3} = \frac{5}{3}
+$$
 
-$$y(t) = \frac{1}{3} + \frac{5}{3}e^{-3t}$$
+$$
+y(t) = \frac{1}{3} + \frac{5}{3}e^{-3t}
+$$
 
-$$y(0^+) = \frac{1}{3} + \frac{5}{3} = 2$$
+$$
+y(0^+) = \frac{1}{3} + \frac{5}{3} = 2
+$$
 
 输出在 $t=0^+$ 直接跳到 2（而不是从 0 开始）——原因是方程含 $\dot{u}$ 项：阶跃瞬间 $\dot{u}$ 是冲激，$2\dot{u}$ 给输出注入一个瞬时跳变。这正是**零点（分子动力学）的时域效应**：它不改变极点决定的衰减模式（$e^{-3t}$），但改变了模式的权重和初始值。含零点的系统阶跃响应详细分析见[时域分析](/classic/time-domain-analysis)。
 
@@ -666,9 +790,13 @@ $$y(0^+) = \frac{1}{3} + \frac{5}{3} = 2$$
 
 **$\omega = 10$ 数据**：
 
-$$\frac{2}{\sqrt{100\tau^2 + 1}} = 0.894 \approx \frac{2}{\sqrt{5}}$$
+$$
+\frac{2}{\sqrt{100\tau^2 + 1}} = 0.894 \approx \frac{2}{\sqrt{5}}
+$$
 
-$$\sqrt{100\tau^2 + 1} = \sqrt{5} \implies 100\tau^2 = 4 \implies \tau^2 = 0.04 \implies \tau = 0.2\,\text{s}$$
+$$
+\sqrt{100\tau^2 + 1} = \sqrt{5} \implies 100\tau^2 = 4 \implies \tau^2 = 0.04 \implies \tau = 0.2\,\text{s}
+$$
 
 辨识结果：$G(s) = \frac{2}{0.2s + 1}$。
 

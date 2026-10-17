@@ -1,10 +1,10 @@
 # Python 逐课兼容验收与待处理清单
 
-2026-10-17；DEP04。用户授权本地验收通过后直接发布本工作包到 gh-pages。正文、算法、catalog 课程状态与课程交付顺序均未改动。
+2026-10-17；当前浏览器兼容清单。起点为DEP04，后续按课程交付合并实跑证据（见原始记录provenance）；MATH-03新增4个实验。DEP04的自动发布授权仅限其原工作包，后续发布仍需用户逐次同意。本文不代表课程内容签发。
 
 ## 结果口径
 
-含 notebook 的 53 课 / 183 个实验 / 356 个单元格全部纳入盘点。32 课全部可运行，12 课混合，9 课全部保留代码；启用 153 个实验，保留 30 个。实际执行 328 个单元格（含异常单元格），生成 144 张 PNG。原始记录中 155 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 54 课 / 187 个实验 / 360 个单元格全部纳入盘点。33 课全部可运行，12 课混合，9 课全部保留代码；启用 157 个实验，保留 30 个。实际执行 332 个单元格（含异常单元格），生成 144 张 PNG。原始记录中 159 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -65,6 +65,7 @@
 | intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 12 | 无 |
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
 | multi-agent/distributed-mpc（分布式预测控制） | 1/1 | 2 | 无 |
+| math/linear-algebra-basics（线性代数基础） | 4/4 | 4 | 无 |
 
 ## 待处理实验
 
@@ -72,36 +73,36 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-001 | classic/frequency-domain-analysis#3：🧪 不同增益下的 Bode 图与稳定裕度（源码 L476） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-002 | classic/frequency-domain-analysis#4：🧪 Nyquist 图上的稳定裕度（源码 L755） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-003 | classic/frequency-domain-analysis#6：🧪 相位裕度与超调量的对应关系（源码 L1090） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-001 | classic/frequency-domain-analysis#3：🧪 不同增益下的 Bode 图与稳定裕度（源码 L524） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-002 | classic/frequency-domain-analysis#4：🧪 Nyquist 图上的稳定裕度（源码 L811） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-003 | classic/frequency-domain-analysis#6：🧪 相位裕度与超调量的对应关系（源码 L1154） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-004 | modern/modern-case-study#3：观测器设计与基于观测器的控制（源码 L473） | FONT | 绘图字形未通过验收：ẋ（U+1E8B)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
 | PY-005 | modern/modern-case-study#4：卡尔曼滤波与 LQG 控制（源码 L619） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-006 | discrete-sampled/discrete-time-freq#3：实验 3（源码 L392） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-007 | discrete-sampled/z-transform-analysis#1：实验 1（源码 L174） | RUNTIME | ValueError: 'blue-' is not a valid format string (unrecognized character 'l') | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-008 | discrete-sampled/discrete-stability-criteria#2：实验 2（源码 L341） | RUNTIME | ValueError: Time steps `T` must be multiples of sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-009 | discrete-sampled/discrete-stability-criteria#3：实验 3（源码 L585） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-010 | discrete-sampled/discretization-methods#1：实验 1（源码 L171） | RUNTIME | ValueError: Unknown transformation method 'forward_euler' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-011 | discrete-sampled/discretization-methods#3：实验 3（源码 L634） | RUNTIME | ValueError: Time steps `T` must match sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-012 | discrete-sampled/sampling-period-selection#1：实验 1（源码 L58） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-013 | discrete-sampled/sampling-period-selection#2：实验 2（源码 L224） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-014 | discrete-sampled/sampling-period-selection#3：实验 3（源码 L427） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-015 | implementation/realtime-control#1：实验 1（源码 L211） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-016 | estimation/kalman-filter#2： 动手实验：卡尔曼滤波仿真（源码 L311） | FONT | 绘图字形未通过验收：₁（U+2081)、₂（U+2082)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
-| PY-017 | estimation/kalman-filter#3： 动手实验：Q/R 对卡尔曼滤波性能的影响（源码 L458） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-018 | robust/robustness-concept#2：实验 2（源码 L158） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-019 | robust/uncertainty-modeling#3：实验 3（源码 L421） | RUNTIME | IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-020 | robust/robust-stability#2：实验 2（源码 L253） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
-| PY-021 | robust/h-infinity-basics#2：实验 2（源码 L291） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-022 | robust/h-infinity-basics#3：实验 3（源码 L390） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-023 | robust/robust-case-study#2：实验 2（源码 L421） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-024 | mpc/mpc-principle#1：实验 1（源码 L209） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-025 | mpc/prediction-model#1：实验 1（源码 L229） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-026 | mpc/receding-horizon#1：实验 1（源码 L124） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-027 | mpc/constraint-handling#1：实验 1（源码 L369） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-028 | mpc/generalized-predictive-control#1：实验 1（源码 L704） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-029 | mpc/nonlinear-mpc#1：实验 1（源码 L419） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-030 | mpc/mpc-case-study#1：实验 1（源码 L249） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-006 | discrete-sampled/discrete-time-freq#3：实验 3（源码 L418） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-007 | discrete-sampled/z-transform-analysis#1：实验 1（源码 L206） | RUNTIME | ValueError: 'blue-' is not a valid format string (unrecognized character 'l') | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-008 | discrete-sampled/discrete-stability-criteria#2：实验 2（源码 L393） | RUNTIME | ValueError: Time steps `T` must be multiples of sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-009 | discrete-sampled/discrete-stability-criteria#3：实验 3（源码 L641） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-010 | discrete-sampled/discretization-methods#1：实验 1（源码 L187） | RUNTIME | ValueError: Unknown transformation method 'forward_euler' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-011 | discrete-sampled/discretization-methods#3：实验 3（源码 L704） | RUNTIME | ValueError: Time steps `T` must match sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-012 | discrete-sampled/sampling-period-selection#1：实验 1（源码 L64） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-013 | discrete-sampled/sampling-period-selection#2：实验 2（源码 L240） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-014 | discrete-sampled/sampling-period-selection#3：实验 3（源码 L447） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-015 | implementation/realtime-control#1：实验 1（源码 L225） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-016 | estimation/kalman-filter#2： 动手实验：卡尔曼滤波仿真（源码 L357） | FONT | 绘图字形未通过验收：₁（U+2081)、₂（U+2082)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
+| PY-017 | estimation/kalman-filter#3： 动手实验：Q/R 对卡尔曼滤波性能的影响（源码 L514） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-018 | robust/robustness-concept#2：实验 2（源码 L166） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-019 | robust/uncertainty-modeling#3：实验 3（源码 L453） | RUNTIME | IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-020 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
+| PY-021 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-022 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-023 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-024 | mpc/mpc-principle#1：实验 1（源码 L241） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-025 | mpc/prediction-model#1：实验 1（源码 L279） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-026 | mpc/receding-horizon#1：实验 1（源码 L128） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-027 | mpc/constraint-handling#1：实验 1（源码 L433） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-028 | mpc/generalized-predictive-control#1：实验 1（源码 L794） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-029 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-030 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 

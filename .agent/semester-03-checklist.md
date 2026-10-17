@@ -27,7 +27,7 @@
 | W03 | Q20：30条孤立课程与7零先修章逐项核验 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
 | W04 | S3-Q001：真实渲染锚点生成与验收契约 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
 | W05 | Q6：两页MPC正文吞入数学块的渲染修复 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
-| R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归；正文主题对比度已本地修复并验收，.agent/fix-logs/2026-10-17-032.md;docs/deployment/lesson-theme-browser.json;等待具体版本发布授权；R01其余全站验收仍待执行 |
+| R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归；正文主题对比度已本地修复并验收，.agent/fix-logs/2026-10-17-032.md;docs/deployment/lesson-theme-browser.json;已获授权并发布1df6328，docs/deployment/lesson-theme-public-http.json;docs/deployment/lesson-theme-public-browser.json；块级公式居中/围栏分行专项见.agent/semester-03/math-layout/acceptance.md；R01其余全站验收仍待执行 |
 | R02 | 205课全交付与141来源去向复核 | [ ] | 所有课程合并列完成，56原文资产无遗失，统计以脚本为准 |
 | R03 | 归因回顾、学期总结与版本标签 | [ ] | 沿用fix-tracker回顾，记录最终验收和semester03标签 |
 | DEP01 | GitHub Pages静态导出与发布分支闸门 | [x] | docs/deployment/github-pages.md;docs/deployment/acceptance.md |
@@ -47,7 +47,7 @@
 |---|---|---|---|---|---|---|---|
 | MATH-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/01-calculus-basics.md;.agent/semester-03/math-01/acceptance.md;.agent/semester-03/math-02/acceptance.md;commit:0e7e5db670c69677abdb8aff629cc8340125462b |
 | MATH-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/02-complex-numbers.md;.agent/semester-03/math-02/source-audit.json;.agent/semester-03/math-02/acceptance.md;commit:0af1920a5f103b4c2340c73f107480fe5f158bc5 |
-| MATH-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/03-linear-algebra-basics.md;.agent/semester-03/math-03/acceptance.md;.agent/semester-03/math-03/reconciliation.json;commit:610cf519523d06a67e0b2431ce45d5a7ca73fd29 |
 | MATH-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

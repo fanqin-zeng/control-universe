@@ -25,7 +25,9 @@ SISO 系统：一个输入 $u$，一个输出 $y$，一个传递函数 $G(s)$。
 
 MIMO 系统：$m$ 个输入 $\boldsymbol{u} \in \mathbb{R}^m$，$p$ 个输出 $\boldsymbol{y} \in \mathbb{R}^p$，一个由实系数有理函数组成的 $p\times m$ 传递函数**矩阵** $G(s)$：
 
-$$\boldsymbol{y}(s) = G(s) \boldsymbol{u}(s) = \begin{bmatrix} G_{11}(s) & G_{12}(s) & \cdots & G_{1m}(s) \\ G_{21}(s) & G_{22}(s) & \cdots & G_{2m}(s) \\ \vdots & \vdots & \ddots & \vdots \\ G_{p1}(s) & G_{p2}(s) & \cdots & G_{pm}(s) \end{bmatrix} \boldsymbol{u}(s)$$
+$$
+\boldsymbol{y}(s) = G(s) \boldsymbol{u}(s) = \begin{bmatrix} G_{11}(s) & G_{12}(s) & \cdots & G_{1m}(s) \\ G_{21}(s) & G_{22}(s) & \cdots & G_{2m}(s) \\ \vdots & \vdots & \ddots & \vdots \\ G_{p1}(s) & G_{p2}(s) & \cdots & G_{pm}(s) \end{bmatrix} \boldsymbol{u}(s)
+$$
 
 $G_{ij}(s)$ 表示第 $j$ 个输入对第 $i$ 个输出的传递函数。
 
@@ -33,13 +35,19 @@ $G_{ij}(s)$ 表示第 $j$ 个输入对第 $i$ 个输出的传递函数。
 
 考虑一个 $2 \times 2$ 系统：
 
-$$\begin{bmatrix} y_1 \\ y_2 \end{bmatrix} = \begin{bmatrix} G_{11} & G_{12} \\ G_{21} & G_{22} \end{bmatrix} \begin{bmatrix} u_1 \\ u_2 \end{bmatrix}$$
+$$
+\begin{bmatrix} y_1 \\ y_2 \end{bmatrix} = \begin{bmatrix} G_{11} & G_{12} \\ G_{21} & G_{22} \end{bmatrix} \begin{bmatrix} u_1 \\ u_2 \end{bmatrix}
+$$
 
 展开：
 
-$$y_1 = G_{11} u_1 + G_{12} u_2$$
+$$
+y_1 = G_{11} u_1 + G_{12} u_2
+$$
 
-$$y_2 = G_{21} u_1 + G_{22} u_2$$
+$$
+y_2 = G_{21} u_1 + G_{22} u_2
+$$
 
 **关键观察**：$u_1$ 不只影响 $y_1$（通过 $G_{11}$），还影响 $y_2$（通过 $G_{21}$）。$u_2$ 同理。
 
@@ -51,7 +59,9 @@ $$y_2 = G_{21} u_1 + G_{22} u_2$$
 
 设 $2 \times 2$ 系统的稳态增益矩阵为：
 
-$$K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$$
+$$
+K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}
+$$
 
 稳态时 $\boldsymbol{y} = K \boldsymbol{u}$。
 
@@ -83,13 +93,21 @@ $$K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$$
 
 ### 例1：计算传输零点
 
-$$G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{1}{s+3} \\ \frac{2}{s+1} & \frac{1}{s+2} \end{bmatrix}$$
+$$
+G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{1}{s+3} \\ \frac{2}{s+1} & \frac{1}{s+2} \end{bmatrix}
+$$
 
-$$\det G(s) = \frac{1}{s+1} \cdot \frac{1}{s+2} - \frac{1}{s+3} \cdot \frac{2}{s+1} = \frac{1}{(s+1)(s+2)} - \frac{2}{(s+1)(s+3)}$$
+$$
+\det G(s) = \frac{1}{s+1} \cdot \frac{1}{s+2} - \frac{1}{s+3} \cdot \frac{2}{s+1} = \frac{1}{(s+1)(s+2)} - \frac{2}{(s+1)(s+3)}
+$$
 
-$$= \frac{(s+3) - 2(s+2)}{(s+1)(s+2)(s+3)} = \frac{s + 3 - 2s - 4}{(s+1)(s+2)(s+3)} = \frac{-s - 1}{(s+1)(s+2)(s+3)}$$
+$$
+= \frac{(s+3) - 2(s+2)}{(s+1)(s+2)(s+3)} = \frac{s + 3 - 2s - 4}{(s+1)(s+2)(s+3)} = \frac{-s - 1}{(s+1)(s+2)(s+3)}
+$$
 
-$$= \frac{-(s+1)}{(s+1)(s+2)(s+3)} = \frac{-1}{(s+2)(s+3)}$$
+$$
+= \frac{-(s+1)}{(s+1)(s+2)(s+3)} = \frac{-1}{(s+2)(s+3)}
+$$
 
 约简后的行列式分子是常数，但本例**仍有一个有限传输零点 $s=-1$**：零点与另一方向的极点位于同一位置，单看标量行列式会遗漏它。$s=-1$ 是传递矩阵的极点，仍在 $G_{11}$、$G_{21}$ 中可见；它在 $\det G$ 里被抵消，**不等于该模态不可控或不可观**。
 
@@ -109,7 +127,9 @@ $$
 
 更一般的零点定义用 **Rosenbrock 系统矩阵**。对状态空间 $(A, B, C, D)$：
 
-$$P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix}
+$$
 
 **不变零点**：$P(s)$ 的秩低于它自身的正常秩的有限 $s$。这里系统矩阵正常秩为 $n+r_G$；只有 $G$ 满正常秩时，才可将阈值写成 $n+\min(p,m)$。本节的 $P(s)$ 是系统矩阵，不是 Lyapunov 证书矩阵。
 
@@ -125,7 +145,9 @@ $$P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix}$$
 
 对于稳态分析（$s = 0$），MIMO 系统简化为：
 
-$$\boldsymbol{y} = K \boldsymbol{u}$$
+$$
+\boldsymbol{y} = K \boldsymbol{u}
+$$
 
 其中 $K=G(0)$ 是有限的稳态增益矩阵（与本章其他课的状态反馈增益不同）。本节传统 RGA 要求方阵且 $K$ 可逆；奇异或非方阵不能直接套这个逆矩阵公式。
 
@@ -133,13 +155,17 @@ $$\boldsymbol{y} = K \boldsymbol{u}$$
 
 **相对增益矩阵**（Relative Gain Array, RGA）定义为：
 
-$$\Lambda = K \circ (K^{-1})^T$$
+$$
+\Lambda = K \circ (K^{-1})^T
+$$
 
 其中 $\circ$ 是 **Hadamard 积**（逐元素相乘），即 $\lambda_{ij} = k_{ij} \cdot [K^{-1}]_{ji}$。
 
 $\lambda_{ij}$ 的物理意义：
 
-$$\lambda_{ij} = \frac{\text{开环增益：} u_j \to y_i \text{（其他输入固定）}}{\text{闭环增益：} u_j \to y_i \text{（其他输出固定）}}$$
+$$
+\lambda_{ij} = \frac{\text{开环增益：} u_j \to y_i \text{（其他输入固定）}}{\text{闭环增益：} u_j \to y_i \text{（其他输出固定）}}
+$$
 
 这个增益比需要相应的约束增益有定义。其解释是局部稳态的，不等于闭环动态保证：
 
@@ -156,7 +182,9 @@ $$\lambda_{ij} = \frac{\text{开环增益：} u_j \to y_i \text{（其他输入�
 
 2. **$2 \times 2$ 系统的简化**：只需要算一个元素：
 
-$$\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmatrix}, \quad \lambda = \frac{k_{11} k_{22}}{k_{11} k_{22} - k_{12} k_{21}}$$
+$$
+\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmatrix}, \quad \lambda = \frac{k_{11} k_{22}}{k_{11} k_{22} - k_{12} k_{21}}
+$$
 
 3. **配对启发式**：优先研究正值且接近1的成套配对（每个输入/输出使用一次）；负值或很大的元素提示风险。数值阈值不是稳定性定理，还需检查工作频段的动态 RGA 与闭环。
 
@@ -164,13 +192,19 @@ $$\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmat
 
 回到前面的例子：$K = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$
 
-$$K^{-1} = \frac{1}{4-1} \begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix} = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{4-1} \begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix} = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}$$
+$$
+(K^{-1})^T = \begin{bmatrix} 2/3 & -1/3 \\ -1/3 & 2/3 \end{bmatrix}
+$$
 
 （$K$ 对称，所以 $(K^{-1})^T = K^{-1}$）
 
-$$\Lambda = K \circ K^{-1} = \begin{bmatrix} 2 \times 2/3 & 1 \times (-1/3) \\ 1 \times (-1/3) & 2 \times 2/3 \end{bmatrix} = \begin{bmatrix} 4/3 & -1/3 \\ -1/3 & 4/3 \end{bmatrix}$$
+$$
+\Lambda = K \circ K^{-1} = \begin{bmatrix} 2 \times 2/3 & 1 \times (-1/3) \\ 1 \times (-1/3) & 2 \times 2/3 \end{bmatrix} = \begin{bmatrix} 4/3 & -1/3 \\ -1/3 & 4/3 \end{bmatrix}
+$$
 
 $\lambda_{11}=4/3\approx1.3333$，非对角元素为 $-1/3$。对角配对可以作为后续设计的候选，但这不是可控性判据，也没有证明任何闭环必然稳定。
 
@@ -178,17 +212,27 @@ $\lambda_{11}=4/3\approx1.3333$，非对角元素为 $-1/3$。对角配对可以
 
 以下是用于练习的归一化教学矩阵，**不是实测精馏塔参数**：
 
-$$K = \begin{bmatrix} 0.8 & -0.3 \\ 0.4 & 0.6 \end{bmatrix}$$
+$$
+K = \begin{bmatrix} 0.8 & -0.3 \\ 0.4 & 0.6 \end{bmatrix}
+$$
 
 输入与输出均为归一化偏差，不赋予未经核查的行业单位。
 
-$$\det K = 0.8 \times 0.6 - (-0.3) \times 0.4 = 0.48 + 0.12 = 0.60$$
+$$
+\det K = 0.8 \times 0.6 - (-0.3) \times 0.4 = 0.48 + 0.12 = 0.60
+$$
 
-$$K^{-1} = \frac{1}{0.6} \begin{bmatrix} 0.6 & 0.3 \\ -0.4 & 0.8 \end{bmatrix} = \begin{bmatrix} 1 & 0.5 \\ -2/3 & 4/3 \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{0.6} \begin{bmatrix} 0.6 & 0.3 \\ -0.4 & 0.8 \end{bmatrix} = \begin{bmatrix} 1 & 0.5 \\ -2/3 & 4/3 \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \begin{bmatrix} 1 & -2/3 \\ 0.5 & 4/3 \end{bmatrix}$$
+$$
+(K^{-1})^T = \begin{bmatrix} 1 & -2/3 \\ 0.5 & 4/3 \end{bmatrix}
+$$
 
-$$\Lambda = \begin{bmatrix} 0.8 \times 1 & (-0.3) \times (-2/3) \\ 0.4 \times 0.5 & 0.6 \times 4/3 \end{bmatrix} = \begin{bmatrix} 0.8 & 0.2 \\ 0.2 & 0.8 \end{bmatrix}$$
+$$
+\Lambda = \begin{bmatrix} 0.8 \times 1 & (-0.3) \times (-2/3) \\ 0.4 \times 0.5 & 0.6 \times 4/3 \end{bmatrix} = \begin{bmatrix} 0.8 & 0.2 \\ 0.2 & 0.8 \end{bmatrix}
+$$
 
 $\lambda_{11}=0.8$，对角元素比非对角元素更接近1，因此按该稳态启发式，将对角配对列为候选。
 
@@ -358,7 +402,9 @@ $$
 
 **频率依赖 RGA** 定义为：
 
-$$\Lambda(j\omega) = G(j\omega) \circ (G(j\omega)^{-1})^T$$
+$$
+\Lambda(j\omega) = G(j\omega) \circ (G(j\omega)^{-1})^T
+$$
 
 画出 $\lambda_{ij}(j\omega)$ 随频率变化的曲线，可以看到交互在不同频率下的强度。复数 RGA 的幅值与相位应结合拟设计的闭环带宽解读；高频大偏离提示进一步检查，不能单独判失稳。这里是普通转置，不是共轭转置。
 
@@ -382,15 +428,21 @@ $$\Lambda(j\omega) = G(j\omega) \circ (G(j\omega)^{-1})^T$$
 
 **1.** 计算以下传递函数矩阵的极点和传输零点：
 
-$$G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{2}{s+1} \\ \frac{1}{s+2} & \frac{2}{s+2} \end{bmatrix}$$
+$$
+G(s) = \begin{bmatrix} \frac{1}{s+1} & \frac{2}{s+1} \\ \frac{1}{s+2} & \frac{2}{s+2} \end{bmatrix}
+$$
 
 **2.** 计算以下系统的 RGA，并给出稳态配对风险提示（不凭 RGA 判断闭环优劣）：
 
-$$K = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$$
+$$
+K = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}
+$$
 
 **3.** 计算以下系统的 RGA，并分析配对方案：
 
-$$K = \begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix}$$
+$$
+K = \begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix}
+$$
 
 **4.** 证明：对任意可逆 $2 \times 2$ 矩阵 $K$，RGA 的形式为 $\Lambda = \begin{bmatrix} \lambda & 1-\lambda \\ 1-\lambda & \lambda \end{bmatrix}$，其中 $\lambda = \frac{k_{11} k_{22}}{\det K}$。
 
@@ -418,13 +470,21 @@ $$K = \begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix}$$
 
 **2.**
 
-$$\det K = 1 \times 4 - 2 \times 3 = 4 - 6 = -2$$
+$$
+\det K = 1 \times 4 - 2 \times 3 = 4 - 6 = -2
+$$
 
-$$K^{-1} = \frac{1}{-2} \begin{bmatrix} 4 & -2 \\ -3 & 1 \end{bmatrix} = \begin{bmatrix} -2 & 1 \\ 3/2 & -1/2 \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{-2} \begin{bmatrix} 4 & -2 \\ -3 & 1 \end{bmatrix} = \begin{bmatrix} -2 & 1 \\ 3/2 & -1/2 \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \begin{bmatrix} -2 & 3/2 \\ 1 & -1/2 \end{bmatrix}$$
+$$
+(K^{-1})^T = \begin{bmatrix} -2 & 3/2 \\ 1 & -1/2 \end{bmatrix}
+$$
 
-$$\Lambda = K \circ (K^{-1})^T = \begin{bmatrix} 1 \times (-2) & 2 \times 3/2 \\ 3 \times 1 & 4 \times (-1/2) \end{bmatrix} = \begin{bmatrix} -2 & 3 \\ 3 & -2 \end{bmatrix}$$
+$$
+\Lambda = K \circ (K^{-1})^T = \begin{bmatrix} 1 \times (-2) & 2 \times 3/2 \\ 3 \times 1 & 4 \times (-1/2) \end{bmatrix} = \begin{bmatrix} -2 & 3 \\ 3 & -2 \end{bmatrix}
+$$
 
 $\lambda_{11} = -2$，远离 1 且为负。是对角配对的风险信号。
 
@@ -432,25 +492,41 @@ $\lambda_{11} = -2$，远离 1 且为负。是对角配对的风险信号。
 
 **3.**
 
-$$\det K = 3 \times 4 - 1 \times 2 = 12 - 2 = 10$$
+$$
+\det K = 3 \times 4 - 1 \times 2 = 12 - 2 = 10
+$$
 
-$$K^{-1} = \frac{1}{10} \begin{bmatrix} 4 & -1 \\ -2 & 3 \end{bmatrix} = \begin{bmatrix} 0.4 & -0.1 \\ -0.2 & 0.3 \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{10} \begin{bmatrix} 4 & -1 \\ -2 & 3 \end{bmatrix} = \begin{bmatrix} 0.4 & -0.1 \\ -0.2 & 0.3 \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \begin{bmatrix} 0.4 & -0.2 \\ -0.1 & 0.3 \end{bmatrix}$$
+$$
+(K^{-1})^T = \begin{bmatrix} 0.4 & -0.2 \\ -0.1 & 0.3 \end{bmatrix}
+$$
 
-$$\Lambda = \begin{bmatrix} 3 \times 0.4 & 1 \times (-0.2) \\ 2 \times (-0.1) & 4 \times 0.3 \end{bmatrix} = \begin{bmatrix} 1.2 & -0.2 \\ -0.2 & 1.2 \end{bmatrix}$$
+$$
+\Lambda = \begin{bmatrix} 3 \times 0.4 & 1 \times (-0.2) \\ 2 \times (-0.1) & 4 \times 0.3 \end{bmatrix} = \begin{bmatrix} 1.2 & -0.2 \\ -0.2 & 1.2 \end{bmatrix}
+$$
 
 $\lambda_{11} = 1.2$，接近 1。**对角配对**（$u_1 \to y_1$，$u_2 \to y_2$）可作为稳态候选；仍需验证动态闭环。
 
 **4.**
 
-$$K^{-1} = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{12} \\ -k_{21} & k_{11} \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{12} \\ -k_{21} & k_{11} \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{21} \\ -k_{12} & k_{11} \end{bmatrix}$$
+$$
+(K^{-1})^T = \frac{1}{\det K} \begin{bmatrix} k_{22} & -k_{21} \\ -k_{12} & k_{11} \end{bmatrix}
+$$
 
-$$\lambda_{11} = k_{11} \cdot \frac{k_{22}}{\det K} = \frac{k_{11} k_{22}}{\det K}$$
+$$
+\lambda_{11} = k_{11} \cdot \frac{k_{22}}{\det K} = \frac{k_{11} k_{22}}{\det K}
+$$
 
-$$\lambda_{12} = k_{12} \cdot \frac{-k_{21}}{\det K} = \frac{-k_{12} k_{21}}{\det K} = \frac{\det K - k_{11} k_{22}}{\det K} = 1 - \lambda_{11}$$
+$$
+\lambda_{12} = k_{12} \cdot \frac{-k_{21}}{\det K} = \frac{-k_{12} k_{21}}{\det K} = \frac{\det K - k_{11} k_{22}}{\det K} = 1 - \lambda_{11}
+$$
 
 同理 $\lambda_{21} = 1 - \lambda_{11}$，$\lambda_{22} = \lambda_{11}$。$\blacksquare$
 
@@ -466,7 +542,9 @@ $$
 
 Rosenbrock 系统矩阵：
 
-$$P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix} = \begin{bmatrix} s+1 & 0 & -1 & -1 \\ 0 & s+2 & -1 & 1 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{bmatrix}$$
+$$
+P(s) = \begin{bmatrix} sI - A & -B \\ C & D \end{bmatrix} = \begin{bmatrix} s+1 & 0 & -1 & -1 \\ 0 & s+2 & -1 & 1 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{bmatrix}
+$$
 
 不变零点使 $P(s)$ 降秩（秩 $< 4$）。
 
@@ -490,11 +568,17 @@ $\det G(s) = \frac{-1}{(s+1)(s+2)} - \frac{1}{(s+1)(s+2)} = \frac{-2}{(s+1)(s+2)
 
 (a) $\det K = 5 \times 1 - 3 \times 2 = 5 - 6 = -1$
 
-$$K^{-1} = \frac{1}{-1} \begin{bmatrix} 1 & -3 \\ -2 & 5 \end{bmatrix} = \begin{bmatrix} -1 & 3 \\ 2 & -5 \end{bmatrix}$$
+$$
+K^{-1} = \frac{1}{-1} \begin{bmatrix} 1 & -3 \\ -2 & 5 \end{bmatrix} = \begin{bmatrix} -1 & 3 \\ 2 & -5 \end{bmatrix}
+$$
 
-$$(K^{-1})^T = \begin{bmatrix} -1 & 2 \\ 3 & -5 \end{bmatrix}$$
+$$
+(K^{-1})^T = \begin{bmatrix} -1 & 2 \\ 3 & -5 \end{bmatrix}
+$$
 
-$$\Lambda = \begin{bmatrix} 5 \times (-1) & 3 \times 2 \\ 2 \times 3 & 1 \times (-5) \end{bmatrix} = \begin{bmatrix} -5 & 6 \\ 6 & -5 \end{bmatrix}$$
+$$
+\Lambda = \begin{bmatrix} 5 \times (-1) & 3 \times 2 \\ 2 \times 3 & 1 \times (-5) \end{bmatrix} = \begin{bmatrix} -5 & 6 \\ 6 & -5 \end{bmatrix}
+$$
 
 (b) $\lambda_{11} = -5$，远离 1 且为负。是很强的配对风险提示。它不能独立证明任意对角比例反馈都不稳定；还需实际动态对象、反馈符号、增益及约束。
 

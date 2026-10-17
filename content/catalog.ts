@@ -179,9 +179,23 @@ export const catalog: Chapter[] = [
       {
         "slug": "linear-algebra-basics",
         "title": "线性代数基础",
+        "subsections": [
+          { "title": "两路输入怎么配合", "slug": "两路输入怎么配合" },
+          { "title": "向量把数放在一起", "slug": "向量把数放在一起" },
+          { "title": "矩阵怎样作用于向量", "slug": "矩阵怎样作用于向量" },
+          { "title": "矩阵相乘与先后顺序", "slug": "矩阵相乘与先后顺序" },
+          { "title": "消元求解方程组", "slug": "消元求解方程组" },
+          { "title": "秩与解的可能", "slug": "秩与解的可能" },
+          { "title": "行列式与逆矩阵", "slug": "行列式与逆矩阵" },
+          { "title": "转置内积与长度", "slug": "转置内积与长度" },
+          { "title": "控制里为什么常见矩阵", "slug": "控制里为什么常见矩阵" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "eigen-decomposition",

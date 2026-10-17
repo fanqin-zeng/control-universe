@@ -23,7 +23,9 @@ description: 从汽车悬挂、RLC电路到热力学、液压、气候、生态�
 
 本章的路线图：
 
-$$\text{悬挂系统} \to \text{旋转系统} \to \text{电气系统} \to \text{机电类比} \to \text{耦合系统} \to \text{跨领域建模} \to \text{方法论总结}$$
+$$
+\text{悬挂系统} \to \text{旋转系统} \to \text{电气系统} \to \text{机电类比} \to \text{耦合系统} \to \text{跨领域建模} \to \text{方法论总结}
+$$
 
 ---
 
@@ -70,15 +72,21 @@ $$\text{悬挂系统} \to \text{旋转系统} \to \text{电气系统} \to \text{
 
 假设路面是平的（$y_r = 0$，分析系统的自由响应），牛顿第二定律给出：
 
-$$m\ddot{y} = -k\,y - c\,\dot{y}$$
+$$
+m\ddot{y} = -k\,y - c\,\dot{y}
+$$
 
 整理成标准形式：
 
-$$\boxed{m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = 0}$$
+$$
+\boxed{m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = 0}
+$$
 
 如果路面有起伏 $y_r(t)$ 作为输入，弹簧力的表达式变为 $k(y - y_r)$，方程右边就不为零：
 
-$$m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = c\dot{y}_r(t) + k\,y_r(t)$$
+$$
+m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = c\dot{y}_r(t) + k\,y_r(t)
+$$
 
 这就是一个**二阶线性常微分方程**。
 
@@ -132,13 +140,19 @@ $$m\ddot{y}(t) + c\dot{y}(t) + k\,y(t) = c\dot{y}_r(t) + k\,y_r(t)$$
 
 列方程：
 
-$$m_1\ddot{x}_1 = -k_1 x_1 + k(x_2 - x_1) + c(\dot{x}_2 - \dot{x}_1)$$
+$$
+m_1\ddot{x}_1 = -k_1 x_1 + k(x_2 - x_1) + c(\dot{x}_2 - \dot{x}_1)
+$$
 
-$$m_2\ddot{x}_2 = -k(x_2 - x_1) - c(\dot{x}_2 - \dot{x}_1) + F(t)$$
+$$
+m_2\ddot{x}_2 = -k(x_2 - x_1) - c(\dot{x}_2 - \dot{x}_1) + F(t)
+$$
 
 整理为矩阵形式：
 
-$$\underbrace{\begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}}_{M} \begin{bmatrix} \ddot{x}_1 \\ \ddot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} c & -c \\ -c & c \end{bmatrix}}_{C} \begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} k_1 + k & -k \\ -k & k \end{bmatrix}}_{K} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \begin{bmatrix} 0 \\ F(t) \end{bmatrix}$$
+$$
+\underbrace{\begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}}_{M} \begin{bmatrix} \ddot{x}_1 \\ \ddot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} c & -c \\ -c & c \end{bmatrix}}_{C} \begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} + \underbrace{\begin{bmatrix} k_1 + k & -k \\ -k & k \end{bmatrix}}_{K} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \begin{bmatrix} 0 \\ F(t) \end{bmatrix}
+$$
 
 这就是**多自由度（MDOF）系统**的标准形式 $M\ddot{\mathbf{x}} + C\dot{\mathbf{x}} + K\mathbf{x} = \mathbf{f}$。质量矩阵 $M$、阻尼矩阵 $C$、刚度矩阵 $K$ 都是对称的——这是由物理系统的能量守恒性质决定的。
 
@@ -170,14 +184,18 @@ $$\underbrace{\begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}}_{M} \begin{bmatr
 
 旋转系统的牛顿方程（转动定律）：
 
-$$J\ddot{\theta}(t) + B\dot{\theta}(t) + K\theta(t) = T(t)$$
+$$
+J\ddot{\theta}(t) + B\dot{\theta}(t) + K\theta(t) = T(t)
+$$
 
 **形式和平移系统一模一样**——只是换了符号。这不是巧合，而是物理定律在不同坐标系下的统一表达。
 
 <Callout variant="info">
 **直流电机的例子**：一个直流电机的转轴可以用旋转模型描述。电枢转动惯量 $J$、轴承粘性摩擦 $B$、负载力矩 $T_L$，方程为：
 
-$$J\dot{\omega}(t) + B\omega(t) = K_t\, i(t) - T_L(t)$$
+$$
+J\dot{\omega}(t) + B\omega(t) = K_t\, i(t) - T_L(t)
+$$
 
 其中 $\omega = \dot{\theta}$ 是角速度，$K_t\, i(t)$ 是电流产生的电磁力矩。这个方程把"电气侧"（电流 $i$）和"机械侧"（角速度 $\omega$）耦合在了一起——后面会详细讨论。
 </Callout>
@@ -194,15 +212,21 @@ $$J\dot{\omega}(t) + B\omega(t) = K_t\, i(t) - T_L(t)$$
 
 根据基尔霍夫电压定律（KVL），沿回路各元件电压之和等于输入电压：
 
-$$L\frac{di(t)}{dt} + R\,i(t) + v_C(t) = v(t)$$
+$$
+L\frac{di(t)}{dt} + R\,i(t) + v_C(t) = v(t)
+$$
 
 其中电容的电压-电流关系为 $i(t) = C\,\frac{dv_C(t)}{dt}$，代入消去 $i(t)$：
 
-$$LC\,\frac{d^2v_C(t)}{dt^2} + RC\,\frac{dv_C(t)}{dt} + v_C(t) = v(t)$$
+$$
+LC\,\frac{d^2v_C(t)}{dt^2} + RC\,\frac{dv_C(t)}{dt} + v_C(t) = v(t)
+$$
 
 对比机械系统的方程：
 
-$$\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{机械}} \qquad \longleftrightarrow \qquad \underbrace{LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v}_{\text{电气}}$$
+$$
+\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{机械}} \qquad \longleftrightarrow \qquad \underbrace{LC\,\ddot{v}_C + RC\,\dot{v}_C + v_C = v}_{\text{电气}}
+$$
 
 **形式完全一样！** 这不是巧合——下面的"机电类比"会展开讲。
 
@@ -252,7 +276,9 @@ $$\underbrace{m\ddot{y} + c\dot{y} + ky = F}_{\text{机械}} \qquad \longleftrig
 
 电枢回路（KVL）：
 
-$$L\frac{di(t)}{dt} + R\,i(t) + K_e\,\omega(t) = v(t)$$
+$$
+L\frac{di(t)}{dt} + R\,i(t) + K_e\,\omega(t) = v(t)
+$$
 
 注意 $K_e\,\omega(t)$ 这一项——这是**反电动势**（back-EMF）。电机转动时，转子切割磁力线，产生一个与转速成正比的电压，方向与输入电压相反。这是电气侧和机械侧的**第一个耦合点**。
 
@@ -260,7 +286,9 @@ $$L\frac{di(t)}{dt} + R\,i(t) + K_e\,\omega(t) = v(t)$$
 
 转子转动定律：
 
-$$J\frac{d\omega(t)}{dt} + B\,\omega(t) = K_t\,i(t) - T_L(t)$$
+$$
+J\frac{d\omega(t)}{dt} + B\,\omega(t) = K_t\,i(t) - T_L(t)
+$$
 
 其中 $K_t\,i(t)$ 是电流产生的电磁力矩，$T_L(t)$ 是负载力矩。这是**第二个耦合点**：电流产生力矩，驱动机械运动。
 
@@ -313,7 +341,9 @@ $$J\frac{d\omega(t)}{dt} + B\,\omega(t) = K_t\,i(t) - T_L(t)$$
 
 令所有导数为零（$\dot{y} = \ddot{y} = 0$），看稳态解是否符合物理直觉：
 
-$$ky_{ss} = F_{ss} \implies y_{ss} = F_{ss}/k$$
+$$
+ky_{ss} = F_{ss} \implies y_{ss} = F_{ss}/k
+$$
 
 弹簧上施加恒力，稳态位移等于力除以刚度——这就是胡克定律，符合预期 ✓
 
@@ -349,13 +379,17 @@ $$ky_{ss} = F_{ss} \implies y_{ss} = F_{ss}/k$$
 
 根据**能量守恒**，物体内能的变化率 = 散失到环境的热流。用**集总热容模型**（假设物体内部温度均匀）：
 
-$$mc_p \frac{dT(t)}{dt} = hA\big(T_\infty - T(t)\big)$$
+$$
+mc_p \frac{dT(t)}{dt} = hA\big(T_\infty - T(t)\big)
+$$
 
 其中 $m$ 是质量，$c_p$ 是比热容，$h$ 是对流换热系数，$A$ 是表面积，$T_\infty$ 是环境温度。
 
 令 $\Delta T = T - T_\infty$（物体与环境的温差），整理得：
 
-$$mc_p \,\Delta\dot{T} + hA\,\Delta T = 0$$
+$$
+mc_p \,\Delta\dot{T} + hA\,\Delta T = 0
+$$
 
 这是一个**一阶系统**——时间常数 $\tau = mc_p / hA$。热容 $mc_p$ 越大（存储热能越多），时间常数越大，冷却越慢；换热系数 $hA$ 越大（散热越快），冷却越快。
 
@@ -397,19 +431,27 @@ $$mc_p \,\Delta\dot{T} + hA\,\Delta T = 0$$
 
 工业中最常见的配置是伺服阀控制液压缸。阀芯位移 $x_v$ 控制流入缸的流量 $q_L$，液压缸推动负载 $m$：
 
-$$q_L = K_q \, x_v - K_c \, P_L$$
+$$
+q_L = K_q \, x_v - K_c \, P_L
+$$
 
 $K_q$ 是阀的流量增益，$K_c$ 是压力-流量系数。流体压缩性和活塞运动耦合：
 
-$$\frac{V_t}{4\beta_e}\dot{P}_L = q_L - A_p \dot{x}$$
+$$
+\frac{V_t}{4\beta_e}\dot{P}_L = q_L - A_p \dot{x}
+$$
 
 $V_t$ 是总腔体容积，$A_p$ 是活塞面积。负载运动方程（牛顿第二定律）：
 
-$$m\ddot{x} + b\dot{x} + kx = A_p P_L - F_{ext}$$
+$$
+m\ddot{x} + b\dot{x} + kx = A_p P_L - F_{ext}
+$$
 
 联立消去 $P_L$，得到以活塞位移 $x$ 为输出的**三阶**微分方程（阀芯位移 $x_v$ 为输入）。如果忽略流体压缩性（$V_t/\beta_e \to 0$），退化为**二阶**系统：
 
-$$m\ddot{x} + \left(b + \frac{A_p^2 K_c}{K_q}\right)\dot{x} + kx = \frac{A_p K_q}{K_c} x_v - F_{ext}$$
+$$
+m\ddot{x} + \left(b + \frac{A_p^2 K_c}{K_q}\right)\dot{x} + kx = \frac{A_p K_q}{K_c} x_v - F_{ext}
+$$
 
 <Callout variant="info">
 **液压 vs 电气 vs 机械的完整类比**：
@@ -431,7 +473,9 @@ $$m\ddot{x} + \left(b + \frac{A_p^2 K_c}{K_q}\right)\dot{x} + kx = \frac{A_p K_q
 
 最简单的"零维能量平衡模型"把地球看作一个均匀温度的黑体。能量守恒：
 
-$$C\frac{dT}{dt} = \underbrace{\frac{S(1-\alpha)}{4}}_{\text{吸收的太阳辐射}} - \underbrace{\sigma T^4}_{\text{向外红外辐射}}$$
+$$
+C\frac{dT}{dt} = \underbrace{\frac{S(1-\alpha)}{4}}_{\text{吸收的太阳辐射}} - \underbrace{\sigma T^4}_{\text{向外红外辐射}}
+$$
 
 $C$ 是地球系统的热容（主要来自海洋），$S \approx 1361\,\text{W/m}^2$ 是太阳常数，$\alpha \approx 0.3$ 是地球反照率（冰雪反射），$\sigma = 5.67 \times 10^{-8}\,\text{W/(m}^2\text{K}^4\text{)}$ 是Stefan-Boltzmann常数。
 
@@ -455,7 +499,9 @@ $C$ 是地球系统的热容（主要来自海洋），$S \approx 1361\,\text{W/
 
 **时间常数的数值计算**：在平衡温度 $T = 288\,\text{K}$（约 15°C）处线性化，特征时间
 
-$$\tau \sim \frac{C}{4\sigma T^3} = \frac{10^8}{4 \times 5.67 \times 10^{-8} \times 288^3}$$
+$$
+\tau \sim \frac{C}{4\sigma T^3} = \frac{10^8}{4 \times 5.67 \times 10^{-8} \times 288^3}
+$$
 
 分母：$288^3 \approx 2.39 \times 10^7$，$4 \times 5.67 \times 10^{-8} \times 2.39 \times 10^7 \approx 5.42\,\text{W/(m}^2\text{K)}$，所以 $\tau \sim 10^8 / 5.42 \approx 1.85 \times 10^7\,\text{s} \approx 0.6\,\text{年}$——**约 7 个月**。这是海洋混合层（约 100 m 深）的热惯性。如果考虑深层海洋（热容大 10–100 倍），时间常数可达**数十年至百年**。
 
@@ -469,9 +515,13 @@ $$\tau \sim \frac{C}{4\sigma T^3} = \frac{10^8}{4 \times 5.67 \times 10^{-8} \ti
 
 设 $x(t)$ 为猎物数量（如兔子），$y(t)$ 为捕食者数量（如狐狸）：
 
-$$\dot{x} = \alpha x - \beta x y$$
+$$
+\dot{x} = \alpha x - \beta x y
+$$
 
-$$\dot{y} = \delta x y - \gamma y$$
+$$
+\dot{y} = \delta x y - \gamma y
+$$
 
 - $\alpha x$：猎物自然增长（食物充足时指数增长）
 - $-\beta xy$：被捕食（正比于两者相遇的概率）
@@ -493,7 +543,9 @@ $$\dot{y} = \delta x y - \gamma y$$
 
 **守恒律（首次积分）**：Lotka-Volterra 模型没有简单的能量守恒，但可以构造一个守恒量：
 
-$$V(x,y) = \delta x - \gamma \ln x + \beta y - \alpha \ln y$$
+$$
+V(x,y) = \delta x - \gamma \ln x + \beta y - \alpha \ln y
+$$
 
 沿轨迹 $dV/dt = 0$（可直接验证：$\dot{V} = \delta\dot{x} - \gamma\dot{x}/x + \beta\dot{y} - \alpha\dot{y}/y$，代入方程后各项抵消）。系统在 $(x,y)$ 平面上的轨迹沿 $V = \text{const}$ 的等高线运动——**闭合曲线**，这就是振荡的几何解释。$V$ 是非线性版的"能量"，振荡围绕它发生。
 
@@ -592,13 +644,17 @@ $$
 
 在 $\theta = 0$（竖直下垂）附近，$\sin\theta \approx \theta$（泰勒展开取第一项），方程变为：
 
-$$ml^2\ddot{\theta} + mgl\,\theta = 0$$
+$$
+ml^2\ddot{\theta} + mgl\,\theta = 0
+$$
 
 这是一个无阻尼二阶线性系统，自然频率 $\omega_n = \sqrt{g/l}$。
 
 但如果在 $\theta = \pi$（竖直倒立）附近呢？令 $\phi = \theta - \pi$（小偏差），则 $\sin\theta = \sin(\pi + \phi) = -\sin\phi \approx -\phi$，方程变为：
 
-$$ml^2\ddot{\phi} - mgl\,\phi = 0$$
+$$
+ml^2\ddot{\phi} - mgl\,\phi = 0
+$$
 
 注意第二项的符号变了！这不再是振荡系统，而是**指数发散**系统——$\phi(t) = \phi(0)\,e^{\sqrt{g/l}\,t}$。这就是为什么倒立摆需要主动控制才能站住。
 
@@ -640,13 +696,19 @@ $$ml^2\ddot{\phi} - mgl\,\phi = 0$$
 
 **1.** 微分方程为：
 
-$$2\ddot{y}(t) + 4\dot{y}(t) + 50\,y(t) = 0$$
+$$
+2\ddot{y}(t) + 4\dot{y}(t) + 50\,y(t) = 0
+$$
 
 自然频率和阻尼比：
 
-$$\omega_n = \sqrt{\frac{k}{m}} = \sqrt{\frac{50}{2}} = 5 \text{ rad/s}$$
+$$
+\omega_n = \sqrt{\frac{k}{m}} = \sqrt{\frac{50}{2}} = 5 \text{ rad/s}
+$$
 
-$$\zeta = \frac{c}{2\sqrt{mk}} = \frac{4}{2\sqrt{2 \times 50}} = \frac{4}{20} = 0.2$$
+$$
+\zeta = \frac{c}{2\sqrt{mk}} = \frac{4}{2\sqrt{2 \times 50}} = \frac{4}{20} = 0.2
+$$
 
 因为 $0 < \zeta = 0.2 < 1$，系统为**欠阻尼**，响应会振荡衰减。
 
@@ -654,11 +716,15 @@ $$\zeta = \frac{c}{2\sqrt{mk}} = \frac{4}{2\sqrt{2 \times 50}} = \frac{4}{20} = 
 
 **2.** 对RLC串联电路，以 $v_C(t)$ 为输出：
 
-$$LC\,\ddot{v}_C(t) + RC\,\dot{v}_C(t) + v_C(t) = v(t)$$
+$$
+LC\,\ddot{v}_C(t) + RC\,\dot{v}_C(t) + v_C(t) = v(t)
+$$
 
 代入数值：
 
-$$0.005\,\ddot{v}_C(t) + 0.1\,\dot{v}_C(t) + v_C(t) = v(t)$$
+$$
+0.005\,\ddot{v}_C(t) + 0.1\,\dot{v}_C(t) + v_C(t) = v(t)
+$$
 
 利用机电类比（力-电压类比）：
 
@@ -672,17 +738,23 @@ $$0.005\,\ddot{v}_C(t) + 0.1\,\dot{v}_C(t) + v_C(t) = v(t)$$
 
 **3.** 对单摆，取摆锤为研究对象。重力对悬挂点产生的力矩为 $-mgl\sin\theta$（恢复力矩），由转动定律：
 
-$$ml^2\ddot{\theta}(t) = -mgl\sin\theta$$
+$$
+ml^2\ddot{\theta}(t) = -mgl\sin\theta
+$$
 
 整理得：
 
-$$\boxed{ml^2\ddot{\theta}(t) + mgl\sin\theta(t) = 0}$$
+$$
+\boxed{ml^2\ddot{\theta}(t) + mgl\sin\theta(t) = 0}
+$$
 
 由于 $\sin\theta$ 是 $\theta$ 的非线性函数，该方程是**非线性**微分方程。
 
 当摆角很小时（$|\theta| \ll 1$ rad），利用泰勒展开 $\sin\theta \approx \theta$，线性化后的方程为：
 
-$$ml^2\ddot{\theta}(t) + mgl\,\theta(t) = 0$$
+$$
+ml^2\ddot{\theta}(t) + mgl\,\theta(t) = 0
+$$
 
 这是一个无阻尼二阶线性系统，自然频率 $\omega_n = \sqrt{g/l}$。
 
