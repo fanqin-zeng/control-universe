@@ -1,3 +1,4 @@
+import { GraphConsensusExplorer } from "@/components/wiki/graph-consensus-explorer";
 import { BracketMotionExplorer } from "@/components/wiki/bracket-motion-explorer";
 import { FiniteHorizonExplorer } from "@/components/wiki/finite-horizon-explorer";
 import { PowerAllocationExplorer } from "@/components/wiki/power-allocation-explorer";
@@ -81,6 +82,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  GraphConsensusExplorer,
   BracketMotionExplorer,
   FiniteHorizonExplorer,
   PowerAllocationExplorer,

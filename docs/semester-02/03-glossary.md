@@ -577,6 +577,10 @@
 | 极点 | pole | — | MATH-08定义 | 有理式约分后分母的零点 |
 | 初值定理 | initial-value theorem | — | MATH-08定义 | 右极限有限的普通函数，沿正实轴s趋无穷 |
 | 终值定理 | final-value theorem | — | MATH-08定义 | 先查sF极点充分条件，不只算形式极限 |
+| 关联矩阵 | incidence matrix | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 代数连通度 | algebraic connectivity | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 生成树 | spanning tree | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 权平衡 | weight balance | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
