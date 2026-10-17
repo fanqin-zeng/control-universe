@@ -4,9 +4,10 @@ import { catalog } from "@/content/catalog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { lessonPath } from "@/lib/deployment";
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = lessonPath(usePathname());
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
 

@@ -89,6 +89,7 @@ export function JupyterNotebook({
   const idRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") return;
     let cancelled = false;
     const id = newNotebookId();
 
@@ -215,6 +216,14 @@ export function JupyterNotebook({
     }
   }, [setupCode]);
 
+  if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {
+    return <section className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "var(--foreground)" }}>
+      <strong style={{ color: "var(--foreground)" }}>{title || "Python 代码"}</strong>
+      <p>在线版展示实验代码；Python 执行需要本地 Jupyter 服务。图中的交互实验仍可直接操作。</p>
+      {setupCode && <details><summary>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{setupCode}</pre></details>}
+      {initCells.map((cell, i) => <div key={i}><p>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{cell.code}</pre></div>)}
+    </section>;
+  }
   if (error) {
     return (
       <div style={s.errorBox}>
