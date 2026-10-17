@@ -26,8 +26,8 @@
 | 2.8 | 拉普拉斯变换 | laplace-transform | ✅ 已交付 v1.3 | undergrad | math | 4 | math/calculus-basics<br>math/complex-numbers<br>math/ode-matrix-exponential |
 | 2.9 | 傅里叶分析 | fourier-analysis | ✅ 已交付 v1.3 | undergrad | math | 2 | math/calculus-basics<br>math/complex-numbers |
 | 2.10 | Z变换 | z-transform | ✅ 已交付 v1.3 | undergrad | math | 5 | math/laplace-transform |
-| 2.11 | 概率基础 | probability-basics | ⬜ 骨架（占位页） | undergrad | math | 0 | — |
-| 2.12 | 随机过程 | stochastic-processes | ⬜ 骨架（占位页） | grad | math | 1 | math/probability-basics<br>math/linear-algebra-basics |
+| 2.11 | 概率基础 | probability-basics | ✅ 已交付 v1.3 | undergrad | math | 1 | math/calculus-basics |
+| 2.12 | 随机过程 | stochastic-processes | ⬜ 骨架（占位页） | grad | math | 2 | math/probability-basics<br>math/linear-algebra-basics |
 | 2.13 | 凸优化 | convex-optimization | ⬜ 骨架（占位页） | grad | math | 4 | math/matrix-decomposition<br>math/multivariable-calculus |
 | 2.14 | 变分法与动态规划 | variational-dp | ⬜ 骨架（占位页） | grad | math | 4 | math/multivariable-calculus<br>math/ode-matrix-exponential |
 | 2.15 | 微分几何入门 | diff-geometry | ⬜ 骨架（占位页） | grad | math | 4 | math/multivariable-calculus<br>math/ode-matrix-exponential |
@@ -116,7 +116,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 8.1 | 学习问题与泛化 | learning-problem | ⬜ 骨架（占位页） | undergrad | learning | 1 | math/probability-basics<br>math/linear-algebra-basics |
+| 8.1 | 学习问题与泛化 | learning-problem | ⬜ 骨架（占位页） | undergrad | learning | 2 | math/probability-basics<br>math/linear-algebra-basics |
 | 8.2 | 监督学习 | supervised-learning | ⬜ 骨架（占位页） | undergrad | learning | 5 | machine-learning/learning-problem<br>math/convex-optimization |
 | 8.3 | 神经网络基础 | neural-networks | ⬜ 骨架（占位页） | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/multivariable-calculus |
 | 8.4 | 自动微分与训练 | autodiff-optimization | ⬜ 骨架（占位页） | undergrad | learning | 7 | machine-learning/neural-networks<br>math/numerical-methods |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 39（status = v1.3）
+- **已交付 v1.3**: 40（status = v1.3）
 - **有正文待审校**: 26（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 140（status = empty，渲染占位页）
+- **骨架占位**: 139（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 166（= draft 26 + empty 140 + 无 status 0）
-- **有 MDX 正文**: 65
-- **catalog 小节总数**: 739
-- **讨论日志**: 32 篇（覆盖 31 门；有 MDX 无日志 34 门）
-- **交互组件**: 55 个文件（被正文引用 55，孤儿 0）
-- **prereq 边**: 466 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
-- **prereq 覆盖率**: 201 / 205 门登记了前置；零 prereq 边的章 0 个
+- **未完成 v1.3**: 165（= draft 26 + empty 139 + 无 status 0）
+- **有 MDX 正文**: 66
+- **catalog 小节总数**: 754
+- **讨论日志**: 33 篇（覆盖 32 门；有 MDX 无日志 34 门）
+- **交互组件**: 56 个文件（被正文引用 56，孤儿 0）
+- **prereq 边**: 467 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

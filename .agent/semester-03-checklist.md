@@ -36,6 +36,7 @@
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
 | W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
 | W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
+| W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |
 | P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 <!-- S3-TASKS-END -->
 
@@ -58,7 +59,7 @@
 | MATH-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/08-laplace-transform.md;.agent/semester-03/math-08/acceptance.md;.agent/semester-03/math-08/reconciliation.json;commit:f092f3e822bdfc4fd406679e4874ae1b91c492b0 |
 | MATH-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/09-fourier-analysis.md;.agent/semester-03/math-09/acceptance.md;commit:cb048267cdca44cb6e07978306534a21313e0c2d |
 | MATH-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/10-z-transform.md;.agent/semester-03/math-10/acceptance.md;commit:91e207ac296ff6349b6ab39cff332b156d162a63 |
-| MATH-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-11 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/11-probability-basics.md;.agent/semester-03/math-11/acceptance.md |
 | MATH-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-13 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-14 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

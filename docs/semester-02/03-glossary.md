@@ -166,6 +166,33 @@
 | 零状态响应 | zero-state response | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
 | 绝对可和 | absolutely summable | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
 
+| 样本空间 | sample space | — | MATH-11 | 本课定义，按概率语境使用 |
+| 事件 | event | — | MATH-11 | 本课定义，按概率语境使用 |
+| 条件概率 | conditional probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 全概率公式 | law of total probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 贝叶斯公式 | Bayes formula | — | MATH-11 | 本课定义，按概率语境使用 |
+| 独立 | independence | — | MATH-11 | 本课定义，按概率语境使用 |
+| 互斥 | mutually exclusive | — | MATH-11 | 本课定义，按概率语境使用 |
+| 随机变量 | random variable | — | MATH-11 | 本课定义，按概率语境使用 |
+| 概率质量函数 | probability mass function、PMF | — | MATH-11 | 本课定义，按概率语境使用 |
+| 累积分布函数 | cumulative distribution function、CDF | — | MATH-11 | 本课定义，按概率语境使用 |
+| 概率密度 | probability density | — | MATH-11 | 本课定义，按概率语境使用 |
+| 期望 | expectation | — | MATH-11 | 本课定义，按概率语境使用 |
+| 方差 | variance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 标准差 | standard deviation | — | MATH-11 | 本课定义，按概率语境使用 |
+| 协方差 | covariance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 相关系数 | correlation coefficient | — | MATH-11 | 本课定义，按概率语境使用 |
+| 先验概率 | prior probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 后验概率 | posterior probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 伯努利分布 | Bernoulli distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 二项分布 | binomial distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 正态分布 | normal distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 样本方差 | sample variance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 无偏 | unbiasedness | — | MATH-11 | 本课定义，按概率语境使用 |
+| 独立同分布 | independent and identically distributed、iid | — | MATH-11 | 本课定义，按概率语境使用 |
+| 大数定律 | law of large numbers | — | MATH-11 | 本课定义，按概率语境使用 |
+| Chebyshev不等式 | Chebyshev inequality | — | MATH-11 | 本课定义，按概率语境使用 |
+
 ### §2.2 无冲突的条目（按英文键字母序）
 
 | 中文标准译名 | 英文 | 别名（课程中出现过的其他译法） | 出现课程 | 建议 |
