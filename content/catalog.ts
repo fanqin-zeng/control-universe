@@ -200,12 +200,27 @@ export const catalog: Chapter[] = [
       {
         "slug": "eigen-decomposition",
         "title": "特征值与对角化",
+        "subsections": [
+          { "title": "反复更新会怎样", "slug": "反复更新会怎样" },
+          { "title": "保持直线的向量", "slug": "保持直线的向量" },
+          { "title": "怎样求特征值", "slug": "怎样求特征值" },
+          { "title": "特征向量有多少", "slug": "特征向量有多少" },
+          { "title": "换一组坐标", "slug": "换一组坐标" },
+          { "title": "用对角化算多步", "slug": "用对角化算多步" },
+          { "title": "重根不保证对角化", "slug": "重根不保证对角化" },
+          { "title": "旋转与复特征值", "slug": "旋转与复特征值" },
+          { "title": "从倍率看长期变化", "slug": "从倍率看长期变化" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
-          "math/linear-algebra-basics"
+          "math/linear-algebra-basics",
+          "math/complex-numbers"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "matrix-decomposition",

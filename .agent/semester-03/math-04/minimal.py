@@ -1,0 +1,11 @@
+import sympy as s
+A=s.Matrix([[s.Rational(3,4),s.Rational(1,4)],[s.Rational(1,4),s.Rational(3,4)]])
+P=s.Matrix([[1,1],[1,-1]])
+x=s.Matrix([2,0])
+print('A eigen:', A.eigenvects())
+print('states:', [(k,list(A**k*x)) for k in range(5)])
+print('P inverse:',P.inv().tolist(),'modal:',list(P.inv()*x),'Pdet:',P.det())
+J=s.Matrix([[1,1],[0,1]])
+print('J eigen:',J.eigenvects(),'J^3 e2:', list(J**3*s.Matrix([0,1])))
+R=s.Matrix([[0,-1],[1,0]])
+print('R eigen:',R.eigenvects(),'R^4:',R**4)
