@@ -59,7 +59,7 @@
 | MATH-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/08-laplace-transform.md;.agent/semester-03/math-08/acceptance.md;.agent/semester-03/math-08/reconciliation.json;commit:f092f3e822bdfc4fd406679e4874ae1b91c492b0 |
 | MATH-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/09-fourier-analysis.md;.agent/semester-03/math-09/acceptance.md;commit:cb048267cdca44cb6e07978306534a21313e0c2d |
 | MATH-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/10-z-transform.md;.agent/semester-03/math-10/acceptance.md;commit:91e207ac296ff6349b6ab39cff332b156d162a63 |
-| MATH-11 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/11-probability-basics.md;.agent/semester-03/math-11/acceptance.md |
+| MATH-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/11-probability-basics.md;.agent/semester-03/math-11/acceptance.md;commit:7cdb3f9d22c16d458fde7e6d4a7ea14fb220d408 |
 | MATH-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-13 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-14 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

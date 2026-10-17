@@ -228,3 +228,5 @@ NB1…NB7各有cell1；数值原始输出见.agent/semester-03/math-11/reconcili
 | 5 | 轻量扫描7标签只提6个却PASS | 数学a<X误识别JSX吞CDF实验 | 本课空格排版解除，7项独立计数与全部重跑；公共修复W08待办 |
 
 最终登记验收：check.log PASS21/WARN2/FAIL0；build-final.log/pages-build.log/types-final.log均退出0，Pages205课/9旧入口/310381829字节。根页/课程200，page-verify-delivery.log PASS8/WARN1/FAIL0/SKIPPED0；source-consistency.json匹配最终MDX与两环境执行哈希。生产七browser实验含CDF，第七答案实际运行完成、console无error/warn、13display居中、手机宽343=scroll343，browser-results.json pass=true。最终开篇与窄屏截图目视核对可读；未发布远端。
+
+实际合并：课程18dc910 → master合并7cdb3f9d22c16d458fde7e6d4a7ea14fb220d408（--no-ff）；全局checklist本课六项完成，W08继续待办；回执独立提交入主干。
