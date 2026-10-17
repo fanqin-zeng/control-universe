@@ -254,3 +254,6 @@ browser-results.json finalDelivery=true；13H2与全目录目标、36旧ID/29别
 source-consistency.json最终SHA20763b08bdc6840cfe870dddcadb4c7884ec23adbadc97e2ccb6f21877ad471b对独立数值/浏览器报告一致，7原始标签/提取/kernel/Pyodide、13H2/32独占围栏/16display核对。scope-check.json证明此前69课兼容记录/政策与30待办逐字段不变、其它课程正文未改、SuspensionExplorer仅本课调用。最终纯源码diff无空白错误，raw命令日志按原输出保留。
 
 本对话只交付CLASSIC-01，下一课CLASSIC-02「传递函数」另起对话；未推送远端、未发布gh-pages。本课合并列等实际commit后回填，回执后附。
+
+
+合并回执：课程提交`bca1ad4`已通过`--no-ff`合入master，课程合并提交`c8fb52614a20e35331d666f2ab0d5c68e80e7508`。全局checklist六列全部完成，本期课程合并19节（18数学+本课）；W06/W07/W08/W09保持待办。只交付CLASSIC-01，未推送远端、未发布gh-pages。
