@@ -65,7 +65,7 @@
 | MATH-14 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/14-variational-dp.md;.agent/semester-03/math-14/acceptance.md;commit:c8774d79e26a1207d005c3fc4a679f4482720d1b |
 | MATH-15 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/15-diff-geometry.md;.agent/semester-03/math-15/acceptance.md;commit:9cc0ee3814532bdb5ed5bb8006fb1aacde70dbab |
 | MATH-16 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/16-graph-theory.md;.agent/semester-03/math-16/acceptance.md;commit:942255b69c73be4a3d864b07a6ffe02833698830 |
-| MATH-17 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/17-game-theory-math.md;.agent/semester-03/math-17/acceptance.md;待交付状态复验后合入 |
+| MATH-17 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/17-game-theory-math.md;.agent/semester-03/math-17/acceptance.md;commit:680e508d68527bebc9866a5b40c09c1c4b707230 |
 | MATH-18 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 经典控制
