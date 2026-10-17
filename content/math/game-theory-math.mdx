@@ -1,0 +1,305 @@
+---
+title: 博弈论基础
+description: 从两户家庭的充电选择理解最佳响应与纳什均衡，区分共同目标、混合策略、势函数和更新收敛。
+---
+
+# 博弈论基础
+
+## 两户充电怎样互相影响
+
+两户家庭在同一时段给车充电，各自希望使用 $2$ kW，却只能决定自己车位的功率。假设结算规则除了计算偏离期望功率的损失，还包含一项随两户共同用电增加的附加评分：另一户开得越大，自己的选择就越贵。
+
+**如果两户都只调整自己的功率，最后会停在哪里？这个结果会是两户总代价最低的选择吗？**
+
+这里用一套简化评分研究选择之间的影响，不拟合真实电价或电网。每户允许使用 $0$ 至 $4$ kW，没有另设两户总功率硬上限；若现场存在共同容量约束，就要重新建模，不能直接套用本课结论。图中的点表示一次静态选择，不是电池电量或充电过程。
+
+<ChargingGameExplorer />
+
+默认两户各选 $2$ kW，各自评分为 $1$。保持乙的选择不变，甲改成 $1.5$ kW，可以把自己的评分降到 $0.875$；这一次改善为 $0.125$。先观察“只让甲响应”，再看什么样的点能让两户都没有单独改变的理由。
+
+## 谁选择什么
+
+一个静态博弈至少要说明：谁作决定、每人允许选什么、别人作出选择时自己的结果怎样、作决定前知道哪些信息。
+
+本课先用完全信息的同时选择模型：两户都知道评分规则，但决定时不先观察对方本次选择。令 $u_i=p_i/(1\,\mathrm{kW})$ 为归一化功率，行动集 $U_i=[0,4]$，$u=(u_1,u_2)$ 是行动组合。$u_{-i}$ 表示除第 $i$ 人以外的行动；两人时就是另一个人的数。代价越小越好：
+
+$$
+J_i(u_i,u_j)=\tfrac12(u_i-2)^2+c\,u_i u_j,\qquad j\ne i.
+$$
+
+第一项惩罚偏离期望，第二项是约定的共同用电附加分。$J_i$ 与 $c$ 都无量纲；$c$ 表示评分里的相互影响强度，不是线路阻抗或实测电价。本课交互范围为 $0\le c\le0.45$，默认 $c=1/4$。若改用收益 $R_i=-J_i$，则要最大化收益，不要在同一个不等式里混用方向。
+
+<JupyterNotebook title="单方改变能改善多少" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `a,b=sp.symbols('a b',real=True);c=sp.Rational(1,4)
+J1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b
+br=sp.solve(sp.diff(J1,a),a)[0]
+print('甲代价/导数/无约束最佳响应:',J1,sp.diff(J1,a),br)
+print('自身二阶导:',sp.diff(J1,a,2))
+print('默认各代价:',J1.subs({a:2,b:2}),J2.subs({a:2,b:2}))
+print('乙固定2，甲最佳响应/代价/改善:',br.subs(b,2),J1.subs({a:sp.Rational(3,2),b:2}),J1.subs({a:2,b:2})-J1.subs({a:sp.Rational(3,2),b:2}))
+`}]} />
+
+行动有限时，常把代价列成表。下面是**另一个教学博弈**，不是把充电功率离散化；两人可选合作或争抢，表内为（甲代价，乙代价），只是一套无量纲评分。
+
+| 甲选什么 | 乙合作 | 乙争抢 |
+|---|---|---|
+| 甲合作 | (1,1) | (3,0) |
+| 甲争抢 | (0,3) | (2,2) |
+
+固定列、沿行看甲的选择；固定行、沿列看乙的选择。不要把一格里的两个数字相加后，就替两人决定各自的选择。
+
+## 最佳响应
+
+先固定别人，再求自己的最优选择，得到最佳响应：
+
+$$
+\operatorname{BR}_i(u_{-i})=\underset{v_i\in U_i}{\arg\min}\;J_i(v_i,u_{-i}).
+$$
+
+$\arg\min$ 给出行动，而不是最小代价值；有并列最优时它是一个集合。主例固定 $u_j$，对 $u_i$ 求导得 $u_i-2+c u_j$，二阶导数为 $1$，所以该一元问题严格凸。加入上下界后：
+
+$$
+\operatorname{BR}_i(u_j)=\operatorname{clip}_{[0,4]}(2-c u_j).
+$$
+
+$\operatorname{clip}$ 表示把区间外的结果截到最近端点。当前范围内 $2-c u_j$ 在 $0.2$ 到 $2$ 之间，不触发截断；图仍按有约束问题计算。默认对方为 $2$，最佳响应为 $2-(1/4)\times2=1.5$。
+
+最佳响应依赖别人选什么。若一个行动对别人**所有允许选择**都是最优响应，才叫占优策略；若始终严格胜过自己的其它行动，则为严格占优。上面的有限表中，无论对方合作还是争抢，自己争抢的代价分别是 $0<1$ 和 $2<3$，所以争抢严格占优。充电主例的响应随对方变化，不能把一个最佳响应点说成占优策略。
+
+## 纳什均衡
+
+纳什均衡要求在同一个行动组合上，每人都已经是对别人的最佳响应。用代价写就是：
+
+$$
+J_i(u_i^*,u_{-i}^*)\le J_i(v_i,u_{-i}^*)\quad
+\text{对每位 }i\text{ 和每个允许的 }v_i.
+$$
+
+星号表示均衡候选，不自动表示全体最优。检验时只准改变一个人，别人固定；也不要求两人的行动相等。
+
+主例对称且响应未截断，联立 $u_1=2-c u_2$、$u_2=2-c u_1$，在当前范围得到唯一解 $u_1^*=u_2^*=2/(1+c)$。默认均衡为 $(1.6,1.6)$ kW，各自代价 $0.72$；单方改变都不能降分。数值审查也可以计算
+
+$$
+g_i(u)=J_i(u)-\min_{v_i\in U_i}J_i(v_i,u_{-i}),\qquad
+\varepsilon(u)=\max_i g_i(u).
+$$
+
+$g_i$ 是单方最多能减少的代价，非负；$\varepsilon=0$ 才是精确均衡。默认选点 $(2,2)$ 的两个改善量均为 $0.125$，因此不是均衡。正的容差只能说明近似均衡，不是证明精确相等。
+
+有限表中唯一纯策略纳什均衡为（争抢，争抢），代价为 $(2,2)$。这里“纯策略”表示确定选一个行动。定义及独立混合策略的标准形式可对照 [MIT博弈论讲义](https://www.mit.edu/~6.7980/nfgs_nash.html)。
+
+<JupyterNotebook title="有限表中的单方偏离" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `C1=np.array([[1,3],[0,2]],dtype=int);C2=np.array([[1,0],[3,2]],dtype=int)
+ne=[]
+for i in range(2):
+    for j in range(2):
+        if C1[i,j]==min(C1[:,j]) and C2[i,j]==min(C2[i,:]):ne.append((i,j))
+print('行/列0合作1争抢，甲乙代价矩阵:',C1,C2)
+print('各列甲响应/各行乙响应:',np.argmin(C1,axis=0),np.argmin(C2,axis=1))
+print('纯NE索引:',ne,'NE代价:',[(C1[i,j],C2[i,j]) for i,j in ne])
+print('同时合作代价:',C1[0,0],C2[0,0],'甲单方争抢后:',C1[1,0])
+`}]} />
+
+## 均衡与共同目标
+
+若有一个协调者最小化总分 $S=J_1+J_2$，它解的是另一个问题。主例中
+
+$$
+S=\tfrac12(u_1-2)^2+\tfrac12(u_2-2)^2+2c u_1u_2.
+$$
+
+其 Hessian 为 $\bigl(\begin{smallmatrix}1&2c\\2c&1\end{smallmatrix}\bigr)$，特征值为 $1\pm2c$。本课 $c\le0.45<1/2$，所以严格凸，唯一最优为两户各选 $2/(1+2c)$。不要把超出此范围的驻点直接叫全局最优。
+
+**仅对本评分模型和默认参数**，均衡点的总分为 $1.44$，共同目标点两户各选 $4/3$ kW，总分为 $4/3\approx1.3333333$，相差约 $0.1066667$。但在共同目标点，若乙保持 $4/3$，甲的响应是 $5/3$，能再减少自己的代价 $1/18$：总目标点本身不是纳什均衡，需要协调或承诺才能维持。
+
+没有相互影响时 $c=0$，两种点都为 $(2,2)$，总分都是 $0$；它们不是永远不同。改变评分、约束或信息，结果也会改变。这里没有实测电费节省或控制算法优越性结论。
+
+有限表的（合作，合作）使两人代价都为 $1$，而均衡各为 $2$；前者帕累托改进了后者，即没有人变差且至少一人变好。但甲仍有把自身代价从 $1$ 降到 $0$ 的单方动机。这说明“大家都喜欢”与“没人愿意单独离开”是不同条件。
+
+<JupyterNotebook title="分别求均衡与共同目标" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `a,b,c=sp.symbols('a b c',real=True)
+J1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b;S=J1+J2
+NE=sp.solve([sp.diff(J1,a),sp.diff(J2,b)],[a,b]);central=sp.solve([sp.diff(S,a),sp.diff(S,b)],[a,b])
+print('NE/共同目标/Hessian:',NE,central,sp.hessian(S,(a,b)))
+for v in [0,sp.Rational(1,4),sp.Rational(9,20)]:
+    n={k:x.subs(c,v) for k,x in NE.items()};z={k:x.subs(c,v) for k,x in central.items()}
+    sn=sp.simplify(S.subs(n).subs(c,v));sz=sp.simplify(S.subs(z).subs(c,v))
+    print('c/NE/共同目标/两总分/差:',v,n,z,sn,sz,sp.simplify(sn-sz))
+    print('该c下响应端点/总分Hessian谱/NE单方改善:',[2-4*v,2],sp.hessian(S,(a,b)).subs(c,v).eigenvals(),sp.simplify(J1.subs(n).subs(c,v)-J1.subs({a:2-v*n[b],b:n[b]}).subs(c,v)))
+print('默认NE各代价:',J1.subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}))
+u=sp.Rational(4,3);reply=2-sp.Rational(1,4)*u
+print('共同目标各代价/甲响应/甲改善:',sp.simplify(J1.subs({a:u,b:u,c:sp.Rational(1,4)})),reply,sp.simplify(J1.subs({a:u,b:u,c:sp.Rational(1,4)})-J1.subs({a:reply,b:u,c:sp.Rational(1,4)})))
+`}]} />
+
+## 混合策略
+
+有些有限博弈没有纯策略均衡。考虑匹配硬币：甲希望两人相同，乙希望不同。这里明确切换成**收益**约定：甲最大化矩阵 $M$ 给出的收益，乙最大化其相反数，等价于最小化甲收益。
+
+$$
+M=\begin{pmatrix}1&-1\\-1&1\end{pmatrix}.
+$$
+
+行是甲的正/反，列是乙的正/反。任一纯行动组合都有一方想改变，所以不存在纯策略均衡。
+
+混合策略是选择行动的概率分布。令甲出正的概率为 $p$，乙为 $q$，双方**独立**随机化；一次具体结果不是概率本身，两人按约定交替也不是独立混合。期望收益为
+
+$$
+\mathbb E[R_1]=(2p-1)(2q-1).
+$$
+
+甲面对乙时，纯正/纯反的期望收益分别为 $2q-1$ 与 $1-2q$。要让甲愿意在两者之间混合，需让它们相等，得 $q=1/2$；同理令乙无差别，得 $p=1/2$。因而混合均衡为双方各以一半概率选正，期望收益为 $0$。每次实际结果仍是 $1$ 或 $-1$，不是每次都得到 $0$。
+
+独立性不可省略：若用一枚公共硬币让双方始终选同一面，两个边缘概率仍各是一半，但甲收益恒为 $1$；这不是刚才的独立乘积分布，而且乙可获知自己的建议后反向选择。相关信息需要另外定义与检验均衡。
+
+## 零和与极小极大
+
+两人收益之和恒为零才是零和；充电评分并非如此，不能把乙直接当成专门破坏甲的对手。
+
+在有限两人零和博弈里，允许独立混合时有极小极大等式：
+
+$$
+\max_x\min_y x^TMy=\min_y\max_x x^TMy,
+\quad x,y\ge0,\quad\mathbf1^Tx=\mathbf1^Ty=1.
+$$
+
+$x,y$ 是概率向量。左边是甲先承诺一个分布后保证的收益，右边是乙先承诺一个分布后能压住的收益；矩阵、方向与允许的分布集合相同。匹配硬币的共同值为 $0$。若只准纯行动，甲的最大最小值为 $-1$，乙的最小最大值为 $1$，二者不相等。
+
+甲若固定 $p=0.8$，对方选取相应的纯行动，能使甲的最坏期望收益为 $-0.6$。均匀混合的保证值不等于“猜中对方这一次”；它是对所有对方分布成立的期望下界。线性规划形式及均衡关系可查 [MIT零和博弈讲义](https://www.mit.edu/~6.7980/correlated.html)。
+
+<JupyterNotebook title="匹配硬币的期望与LP" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `p,q=sp.symbols('p q',real=True);M=np.array([[1.,-1.],[-1.,1.]])
+expr=sp.expand((sp.Matrix([[p,1-p]])*sp.Matrix(M.astype(int))*sp.Matrix([q,1-q]))[0])
+print('独立期望:',sp.factor(expr),'均衡期望:',expr.subs({p:sp.Rational(1,2),q:sp.Rational(1,2)}))
+print('纯最大最小/最小最大:',M.min(axis=1).max(),M.max(axis=0).min())
+pure=[(i,j) for i in range(2) for j in range(2) if M[i,j]==M[:,j].max() and M[i,j]==M[i,:].min()]
+print('匹配硬币纯NE:',pure)
+row=linprog([0,0,-1],A_ub=np.column_stack((-M.T,np.ones(2))),b_ub=np.zeros(2),A_eq=[[1,1,0]],b_eq=[1],bounds=[(0,None),(0,None),(None,None)],method='highs')
+col=linprog([0,0,1],A_ub=np.column_stack((M,-np.ones(2))),b_ub=np.zeros(2),A_eq=[[1,1,0]],b_eq=[1],bounds=[(0,None),(0,None),(None,None)],method='highs')
+assert row.success and col.success
+print('甲分布/保证值，乙分布/上界:',row.x,col.x)
+print('p=.8的最坏收益:',min(expr.subs({p:sp.Rational(4,5),q:v}) for v in [0,1]))
+print('同面公共硬币相关收益:',sp.Rational(1,2)*1+sp.Rational(1,2)*1)
+`}]} />
+
+## 均衡何时存在
+
+对有限人数、每人有限行动、实数收益的博弈，至少存在一个**混合策略**纳什均衡；不能漏掉“混合”两字。匹配硬币就是纯均衡不存在的反例。这个存在结论也不直接给出计算速度或更新算法。
+
+连续行动需要另外的条件。有限人数、各行动集非空紧凸、代价连续且对自己的行动凸，是纯策略均衡存在的一组充分条件。主例的闭区间与一元二次代价满足它们；这里不展开固定点存在证明。
+
+存在也不等于唯一。即使每人的代价对自己的行动严格凸，仍可能有多个均衡：取 $J_1=J_2=(u_1-u_2)^2$、各自行动在 $[0,4]$，最佳响应就是跟随另一个人，所有 $u_1=u_2$ 都是均衡。主例的唯一性来自联立响应方程及下面的严格凸势函数，不能仅凭“每人都有唯一最佳响应”推出。
+
+## 势函数
+
+若存在一个函数 $\Phi$，满足每人单方改变时，它的变化恰好等于该人代价的变化，就称这是一个精确势博弈：
+
+$$
+\Phi(v_i,u_{-i})-\Phi(u_i,u_{-i})
+=J_i(v_i,u_{-i})-J_i(u_i,u_{-i}).
+$$
+
+主例可取
+
+$$
+\Phi=\tfrac12(u_1-2)^2+\tfrac12(u_2-2)^2+c u_1u_2.
+$$
+
+当只有甲改变时，乙那一项偏差平方不变，所以等式成立。注意交叉项只有一份：总分 $S$ 含两份，故势函数不是总分。默认 $\Phi$ 的 Hessian 特征值为 $0.75,1.25$，严格凸；其唯一最小点是前面求得的纳什点。
+
+为什么这里能从势最小点判断均衡？单方偏离也是可行偏离，不能降低势，就不能降低自己的代价。反过来，当前可微凸势和独立区间约束下，各坐标都无可改进意味着满足联合凸问题的最优条件，因此本例没有额外的非最小均衡。不要把这个反向结论推广到任意非凸势函数。
+
+有限行动的精确势博弈中，每次只让一人作**严格改善**，势就严格下降；行动组合有限，因此不会无限访问新的组合。这只保证该类严格改善过程终止，平局随意换动作、同时更新或连续行动不在这条有限步论证内。势博弈与响应更新可对照 [Stanford讲义](https://theory.stanford.edu/~tim/f13/l/l16.pdf)。
+
+<JupyterNotebook title="势函数与非唯一均衡" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `a,b,c,v=sp.symbols('a b c v',real=True)
+J1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b
+Phi=(a-2)**2/2+(b-2)**2/2+c*a*b
+print('两位玩家单方变化差:',sp.simplify(Phi.subs(a,v)-Phi-(J1.subs(a,v)-J1)),sp.simplify(Phi.subs(b,v)-Phi-(J2.subs(b,v)-J2)))
+print('势Hessian/默认谱:',sp.hessian(Phi,(a,b)),sp.hessian(Phi,(a,b)).subs(c,sp.Rational(1,4)).eigenvals())
+print('默认NE势/总分:',Phi.subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}),(J1+J2).subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}))
+Q=(a-b)**2
+print('非唯一例各自二阶导/响应:',sp.diff(Q,a,2),sp.diff(Q,b,2),sp.solve(sp.diff(Q,a),a),sp.solve(sp.diff(Q,b),b))
+print('对角线上代价:',sp.simplify(Q.subs(a,b)))
+`}]} />
+
+## 更新不一定收敛
+
+把最佳响应当作算法，还要声明更新顺序。主例若每轮同时读取旧值并响应，有 $u_1^{k+1}=2-c u_2^k$、$u_2^{k+1}=2-c u_1^k$；在当前参数范围内不用截断。误差每轮互换并乘 $-c$，所以无穷范数误差满足 $\|e^{k+1}\|_\infty=c\|e^k\|_\infty$；$c<1$ 才给出这项收缩保证。
+
+从 $(0,4)$ 出发，默认前两轮为 $(1,2)$、$(1.5,1.75)$。第 $12$ 轮约为（1.5999999，1.6000001），很接近却仍不是精确的 $(1.6,1.6)$。轮数不是物理时间，此处没有电池状态方程。
+
+换成匹配硬币，逐个响应就可能一直转圈：从（甲正，乙正）开始，依次让乙、甲、乙、甲更新，会走过（正，反）→（反，反）→（反，正）→（正，正），然后重复。它有混合均衡，却没有让这条纯行动响应序列收敛的保证。不能以“每一步都在优化自己”替代算法收敛证明。
+
+## 先后行动与信息
+
+若甲能够先**承诺**功率，乙观察后再响应，甲会把乙的响应 $u_2=2-c u_1$ 代入自己的代价。这是一个有先后顺序的领导者—跟随者模型；承诺若可以随时反悔，就不能直接用这个解。
+
+代入后，甲代价对 $u_1$ 的导数为 $(1-2c^2)u_1-2+2c$。当前范围内它严格凸且解在允许区间，故默认甲选 $12/7\approx1.7142857$ kW，乙选 $11/7\approx1.5714286$ kW，各自代价为 $5/7$ 和 $75/98$。这是本组规则的解，不是前面同时选择的纳什点，也不意味着先行动在任意博弈都更好。
+
+完全信息指知道模型和代价，不等于总能观察对方当前行动。若有私有需求、噪声观测或未来多步状态，还要指定信念、历史以及策略如何依据信息选择行动；不能把这里一个静态功率数当作完整反馈策略。
+
+<JupyterNotebook title="同步响应、循环与承诺" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `c=sp.Rational(1,4);x=sp.Matrix([0,4]);seq=[x]
+for k in range(12):x=sp.Matrix([2-c*x[1],2-c*x[0]]);seq.append(x)
+print('同步响应0/1/2/12轮:',[(k,seq[k],np.array(seq[k],dtype=float).reshape(-1)) for k in [0,1,2,12]])
+print('第12轮精确误差:',seq[12]-sp.ones(2,1)*sp.Rational(8,5))
+state=[0,0];cycle=[state.copy()]
+for who in [1,0,1,0]:
+    state[who]=(1-state[0]) if who==1 else state[1];cycle.append(state.copy())
+print('匹配硬币乙甲乙甲，0正1反:',cycle)
+a=sp.symbols('a',real=True);follower=2-c*a;leader=(a-2)**2/2+c*a*follower
+lead=sp.solve(sp.diff(leader,a),a)[0];follow=follower.subs(a,lead)
+print('承诺代价/导数/二阶导/甲乙行动:',sp.expand(leader),sp.diff(leader,a),sp.diff(leader,a,2),lead,follow)
+print('承诺甲乙代价:',leader.subs(a,lead),sp.simplify((follow-2)**2/2+c*lead*follow))
+`}]} />
+
+## 控制中的博弈
+
+多台控制器共享通信、能源或空间时，若每台有自己的目标，单台最优控制问题就变成了互相影响的决策。建模前先问：每人看见什么、何时决定、谁承诺、谁可以单独改变、资源约束是否耦合。改变其中任何一项，都可能改变均衡概念。
+
+本课只处理静态教学模型。共同硬约束会引出广义纳什问题；状态随时间变化会引出动态博弈；策略学习还需另外检查信息、样本与收敛。鲁棒控制中的最坏扰动也不自动等于有自己收益目标的另一玩家。
+
+先固定别人求最佳响应，再用单方偏离条件判断均衡；需要共同目标时另写总分，需要分析更新时另证收敛。均衡不是“公平”“安全”“可实现”的同义词，以上任何一个性质都需要自己的定义和证据。
+
+## 习题
+
+1. 对有限合作/争抢表，列每种对方行动下的最佳响应，求所有纯策略均衡。为何同时合作不是均衡？
+2. 主例默认乙固定为 $2$，求甲最佳响应、代价与改善量；再求两户同时选择的纳什点和各自代价。
+3. 求默认共同总分最小点及总分，计算该点甲的单方改善量。$c=0$ 时两种解怎样？
+4. 写出匹配硬币的独立混合期望，求混合均衡及纯策略的两个极值；解释公共硬币同面策略为什么不是同一分布。
+5. 验证主例势函数的单方变化等式，求默认Hessian谱；用跟随对方的平方差代价说明唯一响应为何不推出唯一均衡，并写出匹配硬币的循环。
+6. 在默认先行承诺模型中推导甲的最优行动及乙的响应，算各自代价，并指出它与同时选择模型的信息差别。
+
+## 答案
+
+1. 对方合作时，争抢得 $0<1$；对方争抢时，争抢得 $2<3$。两人都严格占优地选争抢，唯一纯均衡为（争抢，争抢），代价各 $2$。同时合作各 $1$，但任一人可以单方改成争抢，把自己的分数降到 $0$。
+2. 求导 $u_1-2+(1/4)\times2=0$ 得 $u_1=1.5$，二阶导数 $1>0$，代价 $7/8=0.875$，改善 $1/8=0.125$。联立两响应得各 $8/5=1.6$，代价各 $18/25=0.72$。
+3. 总分交叉项有两份，求导联立得各 $4/3$，总分 $4/3$；均衡总分 $36/25=1.44$，差 $8/75$。固定乙 $4/3$，甲响应 $5/3$，改善 $1/18$；该点不自我维持。$c=0$ 时两点都是 $(2,2)$、总代价 $0$。
+4. 期望为 $(2p-1)(2q-1)$。令对方的两个纯行动无差别得 $p=q=1/2$，值 $0$；只许纯行动则最大最小为 $-1$，最小最大为 $1$。公共同面硬币只有两个对角结果各一半，不是独立时四种结果各 $1/4$；其甲收益为 $1$。
+5. 改甲时势与 $J_1$ 只差一项固定的乙偏差平方，变化相同；乙同理。势Hessian的默认谱为 $3/4,5/4$。平方差例各自二阶导数 $2>0$，但所有相等行动都互为响应。硬币循环见正文，一次只更新乙、甲、乙、甲，四步回原组合。
+6. 把 $u_2=2-u_1/4$ 代入甲代价，导数为 $(7/8)u_1-3/2$，二阶导数 $7/8>0$。甲选 $12/7$，乙选 $11/7$，代价各为 $5/7,75/98$。这依赖甲先承诺、乙能观察并响应，不是同时决定的静态模型。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import linprog
+`} cells={[{code: `c=sp.Rational(1,4);a=sp.Rational(8,5);z=sp.Rational(4,3)
+J=lambda x,y:sp.Rational(1,2)*(x-2)**2+c*x*y
+print('题2响应/代价/改善/NE代价:',sp.Rational(3,2),J(sp.Rational(3,2),2),J(2,2)-J(sp.Rational(3,2),2),J(a,a))
+print('题3共同总分/均衡总分/差/改善:',2*J(z,z),2*J(a,a),2*J(a,a)-2*J(z,z),J(z,z)-J(2-c*z,z))
+print('题4纯两个值/独立四项概率/相关收益:',-1,1,[sp.Rational(1,4)]*4,1)
+print('题5默认势谱:',sp.Matrix([[1,c],[c,1]]).eigenvals())
+lead=sp.Rational(12,7);follow=sp.Rational(11,7)
+print('题6行动/代价:',lead,follow,J(lead,follow),J(follow,lead))
+`}]} />

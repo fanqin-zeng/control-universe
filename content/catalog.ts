@@ -755,11 +755,71 @@ export const catalog: Chapter[] = [
         "slug": "game-theory-math",
         "title": "博弈论基础",
         "prereq": [
-          "math/convex-optimization"
+          "math/convex-optimization",
+          "math/probability-basics"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
+,
+        "subsections": [
+          {
+                    "slug": "两户充电怎样互相影响",
+                    "title": "两户充电怎样互相影响"
+          },
+          {
+                    "slug": "谁选择什么",
+                    "title": "谁选择什么"
+          },
+          {
+                    "slug": "最佳响应",
+                    "title": "最佳响应"
+          },
+          {
+                    "slug": "纳什均衡",
+                    "title": "纳什均衡"
+          },
+          {
+                    "slug": "均衡与共同目标",
+                    "title": "均衡与共同目标"
+          },
+          {
+                    "slug": "混合策略",
+                    "title": "混合策略"
+          },
+          {
+                    "slug": "零和与极小极大",
+                    "title": "零和与极小极大"
+          },
+          {
+                    "slug": "均衡何时存在",
+                    "title": "均衡何时存在"
+          },
+          {
+                    "slug": "势函数",
+                    "title": "势函数"
+          },
+          {
+                    "slug": "更新不一定收敛",
+                    "title": "更新不一定收敛"
+          },
+          {
+                    "slug": "先后行动与信息",
+                    "title": "先后行动与信息"
+          },
+          {
+                    "slug": "控制中的博弈",
+                    "title": "控制中的博弈"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+]
       },
       {
         "slug": "numerical-methods",

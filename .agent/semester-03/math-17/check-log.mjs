@@ -1,0 +1,11 @@
+import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';
+const s=readFileSync('docs/discuss-log/semester-03/02-math/17-game-theory-math.md','utf8');
+for(const p of ['## Phase 1:','## Phase 2:','## Phase 3:','## Phase 4:','## 附录 A：','## 附录 B：','## 附录 C：','## 附录 D：'])assert(s.includes(p));
+for(const t of ['第一轮 — 概念讲解','第二轮 — 学生反馈','第三轮 — 调整完善','教授团队（学术准确性）','工程团队（实践可行性）','验证团队（独立把关）','体验与脉络（读者、历史与安全）','教学支持（教学质量）','学生审校（可读性）'])assert(s.includes(t));
+for(const n of ['郑核','苏绘','孙助','柯验','方数','岳自','小初','陆阅','何疑','秦构'])assert(s.includes('| '+n+' | 出席 |'));
+assert.equal((s.match(/\[郑核-签发\]/g)||[]).length,1);assert(s.includes('无 P0 阻断项'));
+const a=s.split('### A.1 ')[1].split('### A.2 ')[0];assert(a.includes('| # | 正文断言 | notebook 输出 | 组件默认值读数 | 一致? | 备注 |'));
+const rows=a.split('\n').filter(l=>/^\| \d+ \|/.test(l));assert.equal(rows.length,40);for(const row of rows)assert.equal(row.split('|').length,8);
+const b=s.split('## 附录 B：')[1].split('## 附录 C：')[0];assert.equal((b.match(/^\| \d+ \|/gm)||[]).length,9);
+const c=s.split('## 附录 C：')[1].split('## 附录 D：')[0];assert(c.includes('| # | 对比断言（原句 + file:line） | 基线整定与扫描范围（a） | 组数与落败场景（b） | 正文的边界与代价（c） | 放行? |'));assert(c.includes('限定观察'));assert(!c.includes('[沉默-何疑：本课无对比结论]'));assert.equal((s.match(/\[待定\]/g)||[]).length,1);assert(s.includes('交付清单：'));
+console.log('PASS fixed log: 4 phases / 3 rounds / 6 review groups / 10 roles / 40 six-column reconciliation rows / original 9 + 4 gates / single signoff / comparative review; semantic review separately recorded.');
