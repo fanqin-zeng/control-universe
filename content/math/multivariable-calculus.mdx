@@ -1,0 +1,283 @@
+---
+title: 多元微积分
+description: 从地图上的上坡方向出发，理解偏导、全微分、梯度、雅可比、二阶近似与面积上的积分。
+---
+
+# 多元微积分
+
+## 从地图上看坡度
+
+爬一座小山时，你在地图上标出自己的位置。沿东西方向走，高度会变；沿南北方向走，高度也会变。可你真正想走的路线，往往是斜着的。只知道这两条方向上的坡度，能不能估计往斜方向迈一小步后，高度会变化多少？
+
+在[微积分入门](/math/calculus-basics)里，我们沿一条路线，用一个变量记录位置，再用导数描述变化。现在先看地图：$x$ 记录东西位置，$y$ 记录南北位置，高度由两个数共同决定，写作 $h(x,y)$。等高线就是地图上高度相同的点连成的线。
+
+为了能亲手算，用一个圆滑小山的简化模型：
+
+$$
+h(x,y)=10-x^2-2y^2.
+$$
+
+本例的位置和高度都经过归一化，没有物理单位；它不是实地测绘数据。站在 $(1,1)$，高度为 $7$。朝东走 $0.1$，位置成为 $(1.1,1)$，高度为 $6.79$，下降了 $0.21$。这些数怎样从坡度估出来，又差了多少，就是本课要解决的问题。
+
+先看下面的地图。灰线是等高线，蓝线是选定的一小步，绿线沿梯度方向指向高度增加的一侧；绿线只按固定比例显示方向信息，不代表实际步长。下面的剖面把同一条行进直线变成一元高度曲线，与你已经学过的切线近似对上。
+
+<HillGradientExplorer />
+
+先保留默认位置、向东和步长 $0.1$，观察坡度估计与真实高度；再换方向，看下降会不会变成上升。后面逐一解释读数。所需的向量、内积、矩阵乘法见已交付的[线性代数基础](/math/linear-algebra-basics)。
+
+## 两个变量怎样趋近
+
+一元函数里，靠近一个点可以从左或从右。两个变量一起变时，可以沿任意直线、曲线甚至不同形状的路径靠近。要说函数在某点连续，不能只检查两根坐标轴。
+
+本课说 $(x,y)$ 趋近 $(a,b)$，意思是平面距离 $\sqrt{(x-a)^2+(y-b)^2}$ 趋于零。若无论怎样靠近，函数值都趋于函数在该点的值，就在该点连续。小山模型是多项式，处处连续。
+
+看一个边界例，定义
+
+$$
+F(x,y)=\begin{cases}\dfrac{xy}{x^2+y^2},&(x,y)\ne(0,0),\\0,&(x,y)=(0,0).\end{cases}
+$$
+
+沿 $y=0$ 或 $x=0$ 靠近原点，函数值始终为零；沿 $y=x$ 靠近，却始终为 $1/2$。同一点、不同路径给出不同极限，因此原点处连连续性都没有。这个例子会提醒我们：沿两根轴求出来的变化率，不一定能代表所有方向。
+
+## 固定一个方向求导
+
+先站在 $(a,b)$，只向东西移动，让南北坐标保持 $y=b$。这就得到一元函数 $x\mapsto h(x,b)$。它在 $a$ 处的导数叫对 $x$ 的**偏导数**：
+
+$$
+\frac{\partial h}{\partial x}(a,b)
+=\lim_{t\to0}\frac{h(a+t,b)-h(a,b)}{t}.
+$$
+
+$\partial$ 提醒我们：有多个变量，现在只让其中一个变化。保持 $y=b$，不是把 $y$ 设为零。对 $y$ 的偏导同理，保持 $x=a$。也可简写为 $h_x,h_y$。
+
+对小山模型，按一元求导规则得到
+
+$$
+h_x=-2x,\qquad h_y=-4y,\qquad
+h_x(1,1)=-2,\qquad h_y(1,1)=-4.
+$$
+
+所以从该处向正东迈很小一步，每单位东西位移对应约 $-2$ 的高度变化；向正北则约为 $-4$。负号说的是朝这个方向高度下降，不是当前位置高度为负。这里“约”指附近的一阶近似，不能把它当作走很远后仍固定的坡度。
+
+前面的 $F$ 在原点两个偏导都为零，因为两根轴上的函数都恒为零；但它并不连续。**两个偏导存在，不保证能作统一的局部线性近似。**
+
+<JupyterNotebook title="核对偏导与多路径反例" setupCode={`import sympy as sp`} cells={[{code:`x,y,t = sp.symbols('x y t', real=True)
+h = 10-x*x-2*y*y
+print("高度/两个偏导:", h.subs({x:1,y:1}), sp.diff(h,x), sp.diff(h,y))
+print("站位偏导:", sp.diff(h,x).subs(x,1), sp.diff(h,y).subs(y,1))
+print("向东真实高度/变化:", h.subs({x:sp.Rational(11,10),y:1}), h.subs({x:sp.Rational(11,10),y:1})-7)
+F = x*y/(x*x+y*y)
+print("轴向极限/斜向极限:", sp.limit(F.subs(y,0),x,0), sp.limit(F.subs(y,x),x,0))
+print("原点偏导差商:", sp.limit(sp.Integer(0)/t,t,0), sp.limit(sp.Integer(0)/t,t,0))`}]} />
+
+## 全微分估计变化
+
+如果一个函数在点附近能被同一个线性表达式从所有方向逼近，就说它在该点**可微**。具体来说，令 $\Delta=(\Delta x,\Delta y)^T$，要求
+
+$$
+h(a+\Delta x,b+\Delta y)-h(a,b)
+=h_x(a,b)\Delta x+h_y(a,b)\Delta y+r(\Delta),\qquad
+\frac{r(\Delta)}{\|\Delta\|_2}\longrightarrow0.
+$$
+
+这不是要求误差恰好为零，而是要求误差相对位移长度趋于零。常用的充分条件是：两个偏导在点的附近存在，并在该点连续。小山多项式满足这个条件；上一节的 $F$ 不满足。
+
+线性部分叫**全微分**，写作 $dh=h_x\,dx+h_y\,dy$。其中 $dx,dy$ 是用来估计的小位移，$dh$ 是线性预测，不要直接把它与真实有限变化 $\Delta h$ 画等号。
+
+在 $(1,1)$ 附近，一阶预测为
+
+$$
+h(1+\Delta x,1+\Delta y)\approx7-2\Delta x-4\Delta y.
+$$
+
+朝东走 $\Delta x=0.1,\Delta y=0$，预测高度 $6.8$，真实高度 $6.79$，真实值减预测值为 $-0.01$。直接展开原式，还能得到本例的精确误差：
+
+$$
+h(1+\Delta x,1+\Delta y)
+=7-2\Delta x-4\Delta y-(\Delta x)^2-2(\Delta y)^2.
+$$
+
+步长缩小，二次误差比一次位移缩得更快。这个二次式对本模型恰好精确，不代表任意函数都能在很远处用同一个切平面预测。
+
+## 梯度与方向导数
+
+把两个偏导排成一个列向量，得到**梯度**：
+
+$$
+\nabla h=\begin{bmatrix}h_x\\h_y\end{bmatrix},\qquad
+\nabla h(1,1)=\begin{bmatrix}-2\\-4\end{bmatrix}.
+$$
+
+它把站位处各方向的局部变化组织起来。选择一个单位向量 $d=(d_1,d_2)^T$，沿它走长度为 $t$ 的小步，位移就是 $td$。若函数可微，沿该方向每单位长度的变化率，即**方向导数**为
+
+$$
+D_dh=\nabla h^Td=h_xd_1+h_yd_2,\qquad \|d\|_2=1.
+$$
+
+向东 $d=(1,0)^T$，方向导数为 $-2$。若朝 $d=(3/5,4/5)^T$ 走，方向导数是 $-22/5=-4.4$。不能直接把 $(3,4)^T$ 代进去还称“每单位长度”：它的长度是 $5$，要先归一化。
+
+当梯度不为零，单位方向与它同向时，上升的局部变化率最大，为 $\|\nabla h\|_2$；反向时下降最快。原因是内积等于梯度长度乘两方向夹角的余弦。在默认站位，最大上升率为 $2\sqrt5$，方向为 $(-1,-2)^T/\sqrt5$。它只保证同样小的步长下的一阶变化率最大，不保证有限步越大越好。
+
+在梯度不为零的等高线点，沿等高线的切向方向，方向导数为零，梯度与它垂直。直线迈一步不等于沿弯曲等高线走：在 $(1,1)$ 沿 $(2,-1)^T/\sqrt5$ 直走，虽然一阶高度变化为零，二阶变化仍会使高度下降。
+
+<JupyterNotebook title="核对局部估计与方向导数" setupCode={`import sympy as sp`} cells={[{code:`x,y = sp.symbols('x y', real=True)
+h = 10-x*x-2*y*y
+g = sp.Matrix([sp.diff(h,x),sp.diff(h,y)]).subs({x:1,y:1})
+for dx,dy in [(sp.Rational(1,10),0),(sp.Rational(1,10),-sp.Rational(1,10))]:
+    predicted = 7+g.dot(sp.Matrix([dx,dy]))
+    actual = h.subs({x:1+dx,y:1+dy})
+    print("位移/预测/真实/误差:", dx,dy,predicted,actual,actual-predicted)
+d = sp.Matrix([3,4])/5
+print("单位方向/方向导数:", d.norm(),g.dot(d))
+print("梯度长度/最大方向:",g.norm(),list(g/g.norm()))
+tangent = sp.Matrix([2,-1])/sp.sqrt(5)
+print("切向导数:",g.dot(tangent))`}]} />
+
+## 沿路径使用链式法则
+
+若地图上的位置沿路径 $x=x(t),y=y(t)$ 变化，高度就是一个变量的复合函数 $h(x(t),y(t))$。函数可微、路径可导时，**多元链式法则**给出
+
+$$
+\frac{dh}{dt}=h_x\frac{dx}{dt}+h_y\frac{dy}{dt}.
+$$
+
+每一项都是“该坐标每单位变化影响多少”乘“该坐标本身变化多快”。这里的 $t$ 可以只是路径参数，不必是物理时间。它不要求路径速度为一；区别于前节按单位路程定义的方向导数。
+
+例如沿单位圆 $x=\cos t,y=\sin t$ 移动，$t$ 用弧度表示。代入高度式得 $h=10-\cos^2t-2\sin^2t$，直接求导为 $-2\sin t\cos t$。用链式法则也得到同样结果；在 $t=\pi/4$ 处为 $-1$。
+
+## 雅可比组织多路变化
+
+若输入位置变化，不只想估高度，还要同时估另一个量，例如 $g_2(x,y)=x+y$，把两路输出排成 $g=(h,x+y)^T$。对每个输出分别取偏导，再按行排列，得到**雅可比矩阵**：
+
+$$
+J_g=\begin{bmatrix}h_x&h_y\\1&1\end{bmatrix},\qquad
+J_g(1,1)=\begin{bmatrix}-2&-4\\1&1\end{bmatrix},\qquad
+\Delta g\approx J_g\Delta.
+$$
+
+每一行对应一个输出，每一列对应一个输入。一般 $n$ 个输入、$m$ 个输出时，雅可比为 $m\times n$。若只有一个标量输出，其雅可比是一行，梯度按本课约定是一列，两者互为转置，不能直接混写形状。
+
+例如 $\Delta=(0.1,0)^T$，预测两路变化为 $(-0.2,0.1)^T$；真实变化为 $(-0.21,0.1)^T$。第二路恰好线性，所以这一项预测精确。控制中在某工作点把非线性关系作局部线性化，常用的正是这种组织方式；它没有自动提供全局准确性或稳定性保证。
+
+<JupyterNotebook title="核对路径链式法则与雅可比" setupCode={`import sympy as sp`} cells={[{code:`x,y,t = sp.symbols('x y t', real=True)
+h = 10-x*x-2*y*y
+path = {x:sp.cos(t),y:sp.sin(t)}
+direct = sp.diff(h.subs(path),t)
+chain = sp.diff(h,x).subs(path)*(-sp.sin(t))+sp.diff(h,y).subs(path)*sp.cos(t)
+print("链式残差/路径导数:",sp.simplify(direct-chain),sp.simplify(direct))
+print("pi/4处:",direct.subs(t,sp.pi/4))
+g = sp.Matrix([h,x+y])
+J = g.jacobian([x,y]).subs({x:1,y:1})
+shift = sp.Matrix([sp.Rational(1,10),0])
+actual = g.subs({x:1+shift[0],y:1})-g.subs({x:1,y:1})
+print("J/预测/真实:",J.tolist(),list(J*shift),list(actual))`}]} />
+
+## 二阶导数与局部形状
+
+偏导还能继续求导。将所有二阶偏导排成矩阵，称为 **Hessian矩阵**，本课记为 $H_h$。若二阶偏导在附近连续，混合偏导 $h_{xy}=h_{yx}$，矩阵对称。小山模型有
+
+$$
+H_h=\begin{bmatrix}-2&0\\0&-4\end{bmatrix}.
+$$
+
+矩阵记录各方向的弯曲程度。将一元泰勒展开推广到多个变量，可得到二阶近似：
+
+$$
+h(p+\Delta)=h(p)+\nabla h(p)^T\Delta
++\frac12\Delta^TH_h(p)\Delta+r_2(\Delta),\qquad
+\frac{r_2(\Delta)}{\|\Delta\|_2^2}\longrightarrow0.
+$$
+
+这里 $p=(a,b)^T$；写成 $h(p)$ 只是把两个坐标收成向量，不是换了函数。对小山的二次多项式，$r_2$ 恒为零；二次项就是 $-(\Delta x)^2-2(\Delta y)^2$。没有那个 $1/2$，误差项会被算成两倍。
+
+## 驻点不一定是极值
+
+梯度为零的点称为**驻点**。可微函数若在定义域内部、没有约束的点取得局部极值，其梯度必须为零；零梯度只是必要条件。马鞍形 $s(x,y)=x^2-y^2$ 在原点梯度为零，但沿 $x$ 轴上升、沿 $y$ 轴下降，所以不是局部最大或最小，而是**鞍点**。
+
+对于二阶偏导在附近连续的二元函数，在驻点处可用下面的二阶判别。令 $D=f_{xx}f_{yy}-f_{xy}^2$：
+
+- $D>0$ 且 $f_{xx}>0$：严格局部最小；$D>0$ 且 $f_{xx}<0$：严格局部最大。
+- $D<0$：鞍点。
+- $D=0$：此判别不能决定，需继续分析。
+
+小山在原点的 Hessian 行列式为 $8$，且 $h_{xx}=-2$，所以是局部最大，高度为 $10$。也能直接由 $x^2+2y^2\geq0$ 看出。马鞍的行列式为 $-4$。而 $x^4+y^4$ 在原点的 Hessian 是零矩阵，却仍有严格最小值，说明判别不确定不等于没有极值。
+
+“内部、无约束”不能删掉：例如 $f(x,y)=x$ 在方形 $[0,1]^2$ 上的最大值是 $1$，可在边界取得，梯度并不为零。约束与边界的处理留到后续优化课程。
+
+<JupyterNotebook title="核对二阶近似与驻点边界" setupCode={`import sympy as sp`} cells={[{code:`x,y = sp.symbols('x y', real=True)
+h = 10-x*x-2*y*y
+H = sp.hessian(h,(x,y))
+dx,dy = sp.symbols('dx dy',real=True)
+d = sp.Matrix([dx,dy])
+print("山的Hessian/行列式:",H.tolist(),H.det())
+print("二次项:",(d.T*H*d)[0]/2)
+for f in [h,x*x-y*y,x**4+y**4]:
+    grad = sp.Matrix([sp.diff(f,x),sp.diff(f,y)]).subs({x:0,y:0})
+    hf = sp.hessian(f,(x,y)).subs({x:0,y:0})
+    print("函数/原点梯度/Hessian/行列式:",f,list(grad),hf.tolist(),hf.det())
+print("边界例的梯度:",list(sp.Matrix([sp.diff(x,x),sp.diff(x,y)])))`}]} />
+
+## 把面积上的量加起来
+
+一元积分把一条线段上的小部分加起来。现在看方形地块 $[0,1]\times[0,1]$：想知道这片区域的平均高度，只看一个角或把两根轴的高度加起来都不够，需要计入整片面积。
+
+把地块分成小矩形，在每块取一点的高度，乘这块的面积，再把这些贡献相加。分得越来越细时，若极限存在，就得到**二重积分**。对本例这样的连续函数和矩形区域，可以写成累次积分：
+
+$$
+\iint_{[0,1]^2}h(x,y)\,dA
+=\int_0^1\left[\int_0^1(10-x^2-2y^2)\,dy\right]dx
+=\int_0^1(10-x^2-2/3)\,dx=9.
+$$
+
+先对 $y$ 积分时，把 $x$ 当常数；再对 $x$ 积分。这里可以交换顺序，但不能不检查函数和积分区域就对所有问题照搬。平均高度还要除以地块面积，本例面积是 $1$，所以平均高度也是 $9$。
+
+数值近似时，不能只把采样高度相加而忘记面积。若每边等分成 $N$ 段，选每个小方块的中点，每块面积为 $1/N^2$。本例 $N=2$ 的近似为 $9.0625$，$N=10$ 时为 $9.0025$；它们只是有限网格读数，不是积分的精确值。
+
+<JupyterNotebook title="核对面积积分与中点近似" setupCode={`import sympy as sp`} cells={[{code:`x,y = sp.symbols('x y',real=True)
+h = 10-x*x-2*y*y
+print("先y后x/先x后y:",sp.integrate(h,(y,0,1),(x,0,1)),sp.integrate(h,(x,0,1),(y,0,1)))
+for N in [2,10]:
+    total = sum(h.subs({x:sp.Rational(2*i+1,2*N),y:sp.Rational(2*j+1,2*N)}) for i in range(N) for j in range(N))/N**2
+    print("网格N/面积和/小数:",N,total,float(total))`}]} />
+
+## 小结
+
+偏导是把其它坐标固定后的变化率；可微性让这些轴向信息组成同一个局部线性近似。梯度回答标量沿哪个单位方向升得最快，雅可比把多路输出的近似按行组织；Hessian进一步描述局部弯曲。
+
+但两根轴不能代替所有路径，零梯度不能代替极值判定，有限步预测不能冒充真实值，数值网格也不能冒充精确积分。带着这些边界，再去学习[微分方程与矩阵指数](/math/ode-matrix-exponential)，就能把“沿路径变化”扩展为随时间演化的系统；该课尚未交付时，先完成这里的练习。
+
+## 习题
+
+1. 对本课的 $F$，分别沿 $y=0$ 和 $y=x$ 趋近原点，求极限。为什么两个偏导为零仍不能说明它在原点可微？
+2. 从小山的 $(1,1)$ 出发，位移为 $(0.1,-0.1)^T$，用全微分估计新高度，再算真实高度与误差。
+3. 在同一站位沿 $(3,4)^T$ 指向的方向走，求单位方向、方向导数以及最大上升方向。为什么不能把 $(-2,-4)^T$ 直接当作“单位方向”？
+4. 对路径 $(\cos t,\sin t)$，用链式法则求 $t=\pi/4$ 时的高度变化率。另写出 $g=(h,x+y)^T$ 在 $(1,1)$ 的雅可比，并估计位移 $(0.1,0)^T$ 引起的两路变化。
+5. 用原点梯度、Hessian及明确路径，分别说明小山 $h$、$x^2-y^2$、$x^4+y^4$ 在原点的局部形状。Hessian行列式为零时能直接说没有极值吗？
+6. 求小山在 $[0,1]^2$ 上的平均高度。若每边只分两段、取四块中点，写出每块面积、数值近似及与精确值之差；为什么不应直接把四个高度相加当作积分？
+
+## 答案
+
+1. 沿 $y=0$ 得极限 $0$；沿 $y=x$ 得极限 $1/2$，因此原点不连续。两个偏导只检查坐标轴上的差商；可微必然连续，所以这里不能用它们组成有效的全微分。
+2. 线性变化为 $(-2)(0.1)+(-4)(-0.1)=0.2$，预测高度为 $7.2$。代原式得到 $10-1.1^2-2(0.9)^2=7.17$，真实值减预测值为 $-0.03$，也就是 $-(0.1)^2-2(-0.1)^2$。
+3. $(3,4)^T$ 长度为 $5$，单位方向为 $(3/5,4/5)^T$，方向导数为 $(-2)(3/5)+(-4)(4/5)=-22/5$。最大上升方向是梯度归一化后的 $(-1,-2)^T/\sqrt5$，最大变化率为 $2\sqrt5$。梯度本身长度不是一，不能不加区分地当作单位方向。
+4. $x'=-\sin t,y'=\cos t$，所以 $h'=(-2\cos t)(-\sin t)+(-4\sin t)\cos t=-2\sin t\cos t$，代入 $\pi/4$ 为 $-1$。雅可比为 $\begin{bmatrix}-2&-4\\1&1\end{bmatrix}$，乘位移得到 $(-0.2,0.1)^T$；真实高度变化的二阶误差为 $-0.01$。
+5. 三者梯度都为零。小山 Hessian 为 $\operatorname{diag}(-2,-4)$，行列式 $8$，原点为严格最大且高度 $10$；马鞍 Hessian 为 $\operatorname{diag}(2,-2)$，行列式 $-4$，沿两轴一升一降。$x^4+y^4$ 的 Hessian 为零，但非原点处函数值严格大于零，故原点为严格最小；二阶判别不确定不能误读成没有极值。
+6. 二重积分为 $9$，面积为 $1$，所以平均高度为 $9$。四块中点是 $(1/4,1/4)$、$(1/4,3/4)$、$(3/4,1/4)$、$(3/4,3/4)$，每块面积为 $1/4$；对应高度为 $157/16,141/16,149/16,133/16$，面积加权和为 $145/16=9.0625$，误差 $1/16=0.0625$。少了面积权重，就没有把“每块有多大”算进去。
+
+<JupyterNotebook title="复核六题步骤答案" setupCode={`import sympy as sp`} cells={[{code:`x,y,t = sp.symbols('x y t',real=True)
+h = 10-x*x-2*y*y
+F = x*y/(x*x+y*y)
+print("题1:",sp.limit(F.subs(y,0),x,0),sp.limit(F.subs(y,x),x,0))
+g = sp.Matrix([-2,-4])
+shift = sp.Matrix([sp.Rational(1,10),-sp.Rational(1,10)])
+pred = 7+g.dot(shift)
+actual = h.subs({x:1+shift[0],y:1+shift[1]})
+print("题2:",pred,actual,actual-pred)
+print("题3:",g.dot(sp.Matrix([3,4])/5),g.norm(),list(g/g.norm()))
+print("题4:",sp.diff(h.subs({x:sp.cos(t),y:sp.sin(t)}),t).subs(t,sp.pi/4))
+J = sp.Matrix([h,x+y]).jacobian([x,y]).subs({x:1,y:1})
+print("题4 J/变化:",J.tolist(),list(J*sp.Matrix([sp.Rational(1,10),0])))
+print("题5:",[sp.hessian(f,(x,y)).subs({x:0,y:0}).det() for f in [h,x*x-y*y,x**4+y**4]])
+points = [(sp.Rational(1,4),sp.Rational(1,4)),(sp.Rational(1,4),sp.Rational(3,4)),(sp.Rational(3,4),sp.Rational(1,4)),(sp.Rational(3,4),sp.Rational(3,4))]
+heights = [h.subs({x:a,y:b}) for a,b in points]
+print("题6高度/近似/误差:",heights,sum(heights)/4,sum(heights)/4-9)`}]} />

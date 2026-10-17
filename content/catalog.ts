@@ -251,13 +251,28 @@ export const catalog: Chapter[] = [
       {
         "slug": "multivariable-calculus",
         "title": "多元微积分",
+        "subsections": [
+          { "title": "从地图上看坡度", "slug": "从地图上看坡度" },
+          { "title": "两个变量怎样趋近", "slug": "两个变量怎样趋近" },
+          { "title": "固定一个方向求导", "slug": "固定一个方向求导" },
+          { "title": "全微分估计变化", "slug": "全微分估计变化" },
+          { "title": "梯度与方向导数", "slug": "梯度与方向导数" },
+          { "title": "沿路径使用链式法则", "slug": "沿路径使用链式法则" },
+          { "title": "雅可比组织多路变化", "slug": "雅可比组织多路变化" },
+          { "title": "二阶导数与局部形状", "slug": "二阶导数与局部形状" },
+          { "title": "驻点不一定是极值", "slug": "驻点不一定是极值" },
+          { "title": "把面积上的量加起来", "slug": "把面积上的量加起来" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
           "math/calculus-basics",
           "math/linear-algebra-basics"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "ode-matrix-exponential",
