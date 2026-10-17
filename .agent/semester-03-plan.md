@@ -471,3 +471,5 @@ S03迁移兼容已完成，见 [验收记录](semester-03/s03-compatibility.md)�
 变更记录：2026-10-17 初版立项；21章205课，141条基线全覆盖。实际校验与交付记录见全局 checklist 的 P04/P05 证据。
 
 S04结构验收完成：W01–W05已按实际条件关闭，21章205课、56正文/149空课、464先修边，生产路径/真实锚点/数学/旧入口通过；check为PASS21/WARN2/FAIL0。全站verify仍有课程内容与组件存量债务，逐课登记，R01不提前关闭。参见 [S04证据](semester-03/s04-structure-acceptance.md)。下一对话从MATH-01微积分入门开始，新写技能与一个对话一节课节奏不变。
+
+MATH-01微积分入门已完成新写Phase 1–4和实际验收，详见[本课验收](semester-03/math-01/acceptance.md)与全局checklist；目标范围/来源/顺序不变，本对话不生产MATH-02。check的35门日志债务成员不变，新增有日志正文令占比63%→61%，两项WARN复审见[逐课快照](semester-03/math-01/warnings.json)，不覆盖I03/S04历史快照。

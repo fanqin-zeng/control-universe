@@ -76,7 +76,53 @@ export const catalog: Chapter[] = [
         "title": "微积分入门",
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "问题从哪里来",
+            "title": "问题从哪里来"
+          },
+          {
+            "slug": "函数与变化量",
+            "title": "函数与变化量"
+          },
+          {
+            "slug": "极限的意思",
+            "title": "极限的意思"
+          },
+          {
+            "slug": "导数与局部近似",
+            "title": "导数与局部近似"
+          },
+          {
+            "slug": "基本求导规则",
+            "title": "基本求导规则"
+          },
+          {
+            "slug": "积分与累积",
+            "title": "积分与累积"
+          },
+          {
+            "slug": "微积分的联系",
+            "title": "微积分的联系"
+          },
+          {
+            "slug": "测量与采样边界",
+            "title": "测量与采样边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "complex-numbers",

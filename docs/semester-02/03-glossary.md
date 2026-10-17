@@ -392,6 +392,18 @@
 | 自适应控制 | adaptive control | — | 1 门 / 1 次 | — |
 | 仿射非线性系统 | affine system | — | 1 门 / 1 次 | — |
 
+| 微积分 | calculus | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 极限 | limit | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 差商 | difference quotient | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 导数 | derivative | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 局部线性近似 | local linear approximation | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 链式法则 | chain rule | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 定积分 | definite integral | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 原函数 | antiderivative | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 不定积分 | indefinite integral | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 微积分基本定理 | fundamental theorem of calculus | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 牛顿—莱布尼茨公式 | Newton–Leibniz formula | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 右端矩形和 | right Riemann sum | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

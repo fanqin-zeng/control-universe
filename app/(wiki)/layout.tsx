@@ -15,7 +15,7 @@ export default function WikiLayout({
             <Sidebar />
           </div>
         </aside>
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col" style={{ minWidth: 0 }}>
           <MobileHeader />
           <main className="flex-1 p-4 lg:p-8">{children}</main>
         </div>

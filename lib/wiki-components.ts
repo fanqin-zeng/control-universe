@@ -12,6 +12,7 @@
  * 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
  */
 import type { MDXComponents } from "mdx/types";
+import { CalculusExplorer } from "@/components/wiki/calculus-explorer";
 import { Callout } from "@/components/wiki/callout";
 import { JupyterNotebook } from "@/components/wiki/jupyter-notebook";
 import { SuspensionExplorer } from "@/components/wiki/suspension-explorer";
@@ -63,6 +64,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  CalculusExplorer,
   Callout,
   JupyterNotebook,
   SuspensionExplorer,
