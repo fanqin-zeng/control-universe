@@ -40,5 +40,5 @@ Phase1合同先落盘，minimal.py实跑后才写数字；Phase2三轮反馈修�
 
 ## 合入
 
-待本工作包提交并--no-ff合master后记录真实hash；此时全局合并列保持未勾。
+课程提交d0573e6，已以--no-ff合入master为21e01b2e3fe76ca98402645d38780cd4c8e978fc；真实合并完成后才勾全局合并列。本回执沿用工作包分支提交再合master，随后删除分支；未push/未发布gh-pages，停止于本课。
 补充复核：node .agent/semester-03/math-04/check-log.mjs退出0，4阶段/3轮/6审校组/10角色/34对账行/9+4门槛均匹配；node scripts/check-semester03.mjs退出0。scope-check.json确认原54课浏览器实跑及策略记录、30条待办逐条保持原样，未修改其它已有课程正文。
