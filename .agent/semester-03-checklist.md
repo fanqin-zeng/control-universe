@@ -30,6 +30,8 @@
 | R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归 |
 | R02 | 205课全交付与141来源去向复核 | [ ] | 所有课程合并列完成，56原文资产无遗失，统计以脚本为准 |
 | R03 | 归因回顾、学期总结与版本标签 | [ ] | 沿用fix-tracker回顾，记录最终验收和semester03标签 |
+| DEP01 | GitHub Pages静态导出与发布分支闸门 | [x] | docs/deployment/github-pages.md;docs/deployment/acceptance.md |
+| DEP02 | 首次远端发布及公网验收 | [ ] | docs/deployment/github-pages.md;需用户明确同意版本后执行 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪

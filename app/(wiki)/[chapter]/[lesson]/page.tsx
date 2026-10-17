@@ -9,6 +9,8 @@ import type { LessonNode } from "@/lib/lesson-graph";
 import { catalog } from "@/content/catalog";
 import type { Metadata } from "next";
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return catalog.flatMap((ch) =>
     ch.lessons.map((l) => ({ chapter: ch.slug, lesson: l.slug }))
