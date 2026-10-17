@@ -40,3 +40,6 @@
 全仓两WARN沿用登记基线；本页唯一WARN是下一课Z变换空页。自动修正统计/OUTLINE首次退出非0保留，不冒充独立check成功。术语表补12条与局部符号约定；四份交付档案、旧tracker、计划与全局checklist已同步。
 
 最终npm run build:pages退出0，205课/9旧入口/307661517字节；npx tsc --noEmit退出0。8080根页/课程均200，最终verify PASS8/WARN1/FAIL0/SKIPPED0（page-verify-delivery.log）。生产导出七实验均browser模式，第七实验实际点击全部运行完成并输出六题；console无error/warn，窄屏343=scroll343，browser-results.json最终pass=true。真实合并回执待实际合入后追加。用户proofreading原文件未编辑或暂存；不推送、不发布gh-pages。
+
+
+实际合并回执：课程提交a9517a2，以--no-ff合入master，合并提交cb048267cdca44cb6e07978306534a21313e0c2d。全局checklist六项已完成并登记同一真实hash；此回执随后独立合入。

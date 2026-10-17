@@ -226,3 +226,5 @@
 | 6 | 验收驱动多一括号 | Python语法错误 | 仅修契约脚本，七实验重验 |
 
 最终登记复验：check.log PASS21/WARN2/FAIL0；build-final.log与pages-build.log均退出0，Pages205课/9旧入口/307661517字节；types-final.log退出0；根页/课程200，page-verify-delivery.log PASS8/WARN1/FAIL0/SKIPPED0。生产页七browser实验，第七题答案实际运行完成，console无error/warn；browser-results.json pass=true，手机宽度343=scroll343。仅本地验收，未发布gh-pages。
+
+实际合并：课程a9517a2 → master合并cb048267cdca44cb6e07978306534a21313e0c2d（--no-ff）；checklist完成合并栏，回执独立入主干。
