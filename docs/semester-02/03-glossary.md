@@ -581,6 +581,12 @@
 | 代数连通度 | algebraic connectivity | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
 | 生成树 | spanning tree | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
 | 权平衡 | weight balance | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 最佳响应 | best response | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 纳什均衡 | Nash equilibrium | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 混合策略 | mixed strategy | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 精确势博弈 | exact potential game | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 帕累托改进 | Pareto improvement | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 极小极大 | minimax | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
