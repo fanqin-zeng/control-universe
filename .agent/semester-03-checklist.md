@@ -14,7 +14,7 @@
 | P03 | 新写/重构技能及共同门槛 | [x] | .agent/skills/wiki-lesson-new/SKILL.md;.agent/skills/wiki-lesson-refactor/SKILL.md;.agent/skills/wiki-discussion/references/semester-03-core.md |
 | P04 | 全局台账、覆盖/勾选校验及异常用例 | [x] | .agent/semester-03-validation.md;scripts/check-semester03.mjs;scripts/check-semester03.test.mjs |
 | P05 | 两技能静态验证与场景试走 | [x] | .agent/semester-03-validation.md |
-| I01 | 构建吞MDX错误门槛修复与失败样本验证 | [ ] | 开课前处理；Q26证据见学期2交付记录及lib/content.ts |
+| I01 | 构建吞MDX错误门槛修复与失败样本验证 | [x] | .agent/semester-03/i01-mdx-errors.md;.agent/fix-logs/2026-10-17-027.md |
 | I02 | 历史fix索引冲突标记与记录一致性审计 | [ ] | .agent/fix-logs/INDEX.md现存冲突标记；先核原意再修 |
 | I03 | 36项基线WARN逐项分类并登记处置 | [ ] | 实测明细录入版本化清单；新增WARN不可笼统豁免 |
 | I04 | 内核、数值与页面验收可复现性 | [ ] | 验证8891网关、干净kernel执行和8080页面；保留命令与输出 |

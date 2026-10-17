@@ -24,6 +24,7 @@
 | 024 | 2026-10-17 | content/modern/lqr-controller.mdx | ARE/鲁棒性/可检测性 | BOTH | 柯验+林矩（既有清单未执行） | 三题CARE数值、裕度外推与可检测性结论修正；双模式React替代widget；真实内核与独立TS/SciPy对账，证据见讨论日志附录 |
 | 025 | 2026-10-17 | content/modern/lyapunov-modern.mdx | 线性稳定性/BIBO/Lyapunov证书 | BOTH | 林矩+柯验（既有清单未执行） | 统一隐藏模式矩阵、修正Jordan/BIBO与代价因子、限定半正定证书；改名并前移，旧路由308；三notebook八cell复算 |
 | 026 | 2026-10-17 | content/modern/multivariable-systems.mdx | 正常秩/零点/RGA/解耦 | BOTH | 林矩+柯验（既有清单未执行） | 例1方向零点、恒秩亏定义与RGA越界推论更正；补D项和可实现性；React替widget，六cell实跑与TS/SciPy对账 |
+| 027 | 2026-10-17 | app/(wiki)/[chapter]/[lesson]/page.tsx | MDX构建错误传播 | BUG | 秦构（清单缺项） | 移除把目录内读取/编译故障转成404的宽泛catch；真实坏页构建退出1，补两处MDX闭合符恢复正常；保留负向样本和路由回归测试，见学期3I01记录 |
 <<<<<<< HEAD
 =======
 

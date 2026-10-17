@@ -22,12 +22,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const node = findLesson(params.chapter, params.lesson);
   if (node && !node.skeleton) {
-    try {
-      const { meta } = await getLesson(params.chapter, params.lesson);
-      return { title: `${meta.title} | 控制宇宙` };
-    } catch {
-      return { title: "未找到 | 控制宇宙" };
-    }
+    const { meta } = await getLesson(params.chapter, params.lesson);
+    return { title: `${meta.title} | 控制宇宙` };
   }
   return { title: node ? `${node.title} | 控制宇宙` : "未找到 | 控制宇宙" };
 }
@@ -130,9 +126,10 @@ export default async function LessonPage({
   params: { chapter: string; lesson: string };
 }) {
   const node = findLesson(params.chapter, params.lesson);
-  // 只有目录明确标记 status="empty" 的课走占位页；已登记为 draft 却读不到 MDX、
-  // 或 MDX 编译失败的课仍然 404，避免真实故障被"尚未编写"掩盖。
-  if (node?.skeleton) {
+  // 只有目录外地址是404；已登记课程的读取/编译故障必须上抛，让预渲染构建失败。
+  if (!node) notFound();
+  // 目录明确标记 status="empty" 的课程正常显示占位页，不尝试读取MDX。
+  if (node.skeleton) {
     return <LessonPlaceholder node={node} />;
   }
 
@@ -145,12 +142,11 @@ export default async function LessonPage({
     />
   ) : null;
 
-  let data;
-  try {
-    data = await getLesson(params.chapter, params.lesson, card ? { h1: h1WithCard(card) } : undefined);
-  } catch {
-    notFound();
-  }
+  const data = await getLesson(
+    params.chapter,
+    params.lesson,
+    card ? { h1: h1WithCard(card) } : undefined
+  );
 
   const up = node ? nextUp(node) : null;
 
