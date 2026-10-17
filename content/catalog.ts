@@ -427,7 +427,8 @@ export const catalog: Chapter[] = [
           { slug: "习题", title: "习题" },
           { slug: "答案", title: "答案" },
         ],
-        status: "draft",
+        type: "theory",
+        status: "v1.3",
       },
       {
         slug: "modern-case-study",
