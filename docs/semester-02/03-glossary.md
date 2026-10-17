@@ -417,6 +417,13 @@
 | 复平面 | complex plane | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
 | 共轭复数 | complex conjugate | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
 | 欧拉公式 | Euler formula | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 特征值 | eigenvalue | — | MATH-04新增定义 | 对应非零特征向量的倍率 |
+| 特征向量 | eigenvector | — | MATH-04新增定义 | 不含零向量 |
+| 特征空间 | eigenspace | — | MATH-04新增定义 | 包含零向量的齐次解空间 |
+| 对角化 | diagonalization | — | MATH-04新增定义 | 写清所选数域 |
+| 代数重数 | algebraic multiplicity | — | MATH-04新增定义 | 特征多项式根的重复次数 |
+| 几何重数 | geometric multiplicity | — | MATH-04新增定义 | 特征空间维数 |
+| 模态 | mode | — | MATH-04新增定义 | 本课指独立特征方向的演化项，不与滑动模态混用 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
