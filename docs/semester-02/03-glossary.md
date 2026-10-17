@@ -193,6 +193,18 @@
 | 大数定律 | law of large numbers | — | MATH-11 | 本课定义，按概率语境使用 |
 | Chebyshev不等式 | Chebyshev inequality | — | MATH-11 | 本课定义，按概率语境使用 |
 
+| 凸集 | convex set | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 凸组合 | convex combination | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 凸函数 | convex function | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 严格凸 | strict convexity | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 可行集 | feasible set | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 全局最优 | global optimum | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 欧氏投影 | Euclidean projection | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 弱对偶 | weak duality | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 强对偶 | strong duality | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 互补松弛 | complementary slackness | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 约束资格 | constraint qualification | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 投影梯度 | projected gradient | — | MATH-13 | 本课局部定义，先核条件与单位 |
 | 随机过程 | stochastic process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 样本轨迹 | sample path | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 高斯过程 | Gaussian process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
