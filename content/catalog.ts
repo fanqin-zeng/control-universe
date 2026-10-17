@@ -341,7 +341,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "振动里有哪些频率", "slug": "振动里有哪些频率"},
+          {"title": "周期与角频率", "slug": "周期与角频率"},
+          {"title": "正交性怎样分离分量", "slug": "正交性怎样分离分量"},
+          {"title": "傅里叶级数的系数", "slug": "傅里叶级数的系数"},
+          {"title": "幅值与相位", "slug": "幅值与相位"},
+          {"title": "截断与跳变", "slug": "截断与跳变"},
+          {"title": "均方值与能量", "slug": "均方值与能量"},
+          {"title": "非周期信号的傅里叶变换", "slug": "非周期信号的傅里叶变换"},
+          {"title": "延迟与卷积", "slug": "延迟与卷积"},
+          {"title": "频率响应从哪里来", "slug": "频率响应从哪里来"},
+          {"title": "DFT与FFT", "slug": "dft与fft"},
+          {"title": "采样与有限窗口", "slug": "采样与有限窗口"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "z-transform",

@@ -1,0 +1,99 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8891",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S6": 1
+  },
+  "failLessons": [
+    "math/fourier-analysis"
+  ],
+  "lessons": [
+    {
+      "key": "math/fourier-analysis",
+      "file": "content/math/fourier-analysis.mdx",
+      "level": "FAIL",
+      "notebooks": 7,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 4
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "TypeError",
+          "evalue": "Invalid NaN comparison",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "TypeError                                 Traceback (most recent call last)",
+            "Cell In[2], line 3\n      1 X = sp.simplify(sp.integrate(sp.exp(t)*sp.exp(-sp.I*w*t),(t,-sp.oo,0))+sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo)))\n      2 box = sp.simplify(sp.integrate(sp.exp(-sp.I*w*t),(t,-1,1)))\n----> 3 print('双边衰减变换/零频/一弧度:',X,X.subs(w,0),X.subs(w,1))\n      4 print('逆式在t0的积分:',sp.integrate(2/(1+w*w),(w,-sp.oo,sp.oo))/(2*sp.pi))\n      5 print('矩形脉冲变换:',box)\n      6 print('矩形零频/第一正零点:',sp.limit(2*sp.sin(w)/w,w,0),sp.simplify(2*sp.sin(sp.pi)/sp.pi))\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\core\\basic.py:1171, in Basic.subs(self, arg1, arg2, **kwargs)\n   1169 rv = self\n   1170 for old, new in sequence:\n-> 1171     rv = rv._subs(old, new, **kwargs)\n   1172     if not isinstance(rv, Basic):\n   1173         break\n"
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 3,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 4,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 5,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 6,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        }
+      ],
+      "findings": [
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 1（:167）执行报错 TypeError: Invalid NaN comparison\n          ---------------------------------------------------------------------------\n          TypeError                                 Traceback (most recent call last)\n          Cell In[2], line 3\n      1 X = sp.simplify(sp.integrate(sp.exp(t)*sp.exp(-sp.I*w*t),(t,-sp.oo,0))+sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo)))\n      2 box = sp.simplify(sp.integrate(sp.exp(-sp.I*w*t),(t,-1,1)))\n----> 3 print('双边衰减变换/零频/一弧度:',X,X.subs(w,0),X.subs(w,1))\n      4 print('逆式在t0的积分:',sp.integrate(2/(1+w*w),(w,-sp.oo,sp.oo))/(2*sp.pi))\n      5 print('矩形脉冲变换:',box)\n      6 print('矩形零频/第一正零点:',sp.limit(2*sp.sin(w)/w,w,0),sp.simplify(2*sp.sin(sp.pi)/sp.pi))\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\core\\basic.py:1171, in Basic.subs(self, arg1, arg2, **kwargs)\n   1169 rv = self\n   1170 for old, new in sequence:\n-> 1171     rv = rv._subs(old, new, **kwargs)\n   1172     if not isinstance(rv, Basic):\n   1173         break\n",
+          "line": 167
+        }
+      ]
+    }
+  ]
+}
