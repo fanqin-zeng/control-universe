@@ -18,259 +18,319 @@
 
 ---
 
-### 导论与方法论地图 (introduction)
+> 学期3 S02同步运行目录。下表打勾仅保留旧v1.3交付；本期进度只认semester-03-checklist。历史整表与章级说明见 `.agent/semester-03/s02-delivery-tracker-before.md`。
+
+### 控制导论 (introduction)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 控制理论全景图 (control-landscape) | |
 | [ ] 反馈为什么有效 (why-feedback-works) | |
-| [ ] 控制器选型决策指南 (controller-selection-guide) | 横向导论课：prereq 含 classic / modern / mpc / robust / rl-control 五章的**前向边**，A8 依赖图校验须允许 |
-
-> **A5（2026-09-25）**：新增横向导论章（3 课，`type: "history"`，主责许史）。本章不是"先看这里"的软导引——`controller-selection-guide` 的选型表要覆盖 PID / 状态反馈 / MPC / H∞ / RL 五个方法族，因此按设计携带指向后续章节的前向 prereq。
+| [ ] 控制理论地图 (control-landscape) | |
+| [ ] 控制方法选型 (controller-selection-guide) | 横向导论课：prereq 含 classic / modern / mpc / robust / rl-control 五章的**前向边**，A8 依赖图校验须允许 |
 
 ### 数学基础 (math)
 
 | 课程 | 状态 |
 |------|------|
+| [ ] 微积分入门 (calculus-basics) | 本期新增骨架；尚未编写 |
 | [ ] 复数基础 (complex-numbers) | 正文已写（v1.1）；v1.3 重构待办。被依赖 25 行 / 15 课，但全仓 0 处 `📐` 引用指向它 |
-| [ ] 向量、矩阵、秩与子空间 (linear-algebra-basics) | 骨架待写（`status: "empty"`）。被依赖 26 行 / 17 课（排名第 6） |
-| [ ] 特征值、特征向量与对角化 (eigen-decomposition) | 骨架待写。被依赖 31 行 / 21 课（排名第 2，横向覆盖最广） |
-| [ ] 矩阵分解：SVD、Jordan、二次型与正定性 (matrix-decomposition) | 骨架待写。被依赖 37 行 / 20 课（**排名第 1**） |
-| [ ] 常微分方程与矩阵指数 (ode-matrix-exponential) | 骨架待写。被依赖 11 行 / 8 课（排名第 11） |
+| [ ] 线性代数基础 (linear-algebra-basics) | 骨架待写（`status: "empty"`）。被依赖 26 行 / 17 课（排名第 6） |
+| [ ] 特征值与对角化 (eigen-decomposition) | 骨架待写。被依赖 31 行 / 21 课（排名第 2，横向覆盖最广） |
+| [ ] 矩阵分解 (matrix-decomposition) | 骨架待写。被依赖 37 行 / 20 课（**排名第 1**） |
+| [ ] 多元微积分 (multivariable-calculus) | 本期新增骨架；尚未编写 |
+| [ ] 微分方程与矩阵指数 (ode-matrix-exponential) | 骨架待写。被依赖 11 行 / 8 课（排名第 11） |
 | [ ] 拉普拉斯变换 (laplace-transform) | 骨架待写。被依赖 27 行 / 20 课（排名第 5） |
-| [ ] 傅里叶分析与频谱概念 (fourier-analysis) | 骨架待写。被依赖 28 行 / 14 课（排名第 3） |
-| [ ] Z 变换与离散时间信号 (z-transform) | 骨架待写。被依赖 17 行 / 7 课（排名第 9，集中在 discrete-sampled） |
-| [ ] 概率论与随机变量 (probability-basics) | 骨架待写。被依赖 14 行 / 12 课（排名第 10） |
-| [ ] 随机过程、马尔可夫链与白噪声 (stochastic-processes) | 骨架待写。被依赖 6 行 / 4 课（排名第 13） |
-| [ ] 凸优化：凸集、QP 与 KKT 条件 (convex-optimization) | 骨架待写。被依赖 27 行 / 13 课（排名第 4，mpc/robust/intelligent 刚需） |
-| [ ] 变分法与动态规划（含贝尔曼方程） (variational-dp) | 骨架待写。被依赖 5 行 / 2 课（排名第 14，全在 modern） |
-| [ ] 微分几何入门：向量场、李导数、李括号 (diff-geometry) | 骨架待写。被依赖 9 行 / 3 课（排名第 12，全在 nonlinear） |
-| [ ] 图论与网络拉普拉斯、代数连通性 (graph-theory) | 骨架待写。被依赖 1 行 / 1 课（排名第 15，主要服务对象 multi-agent 章未开工） |
-| [ ] 博弈论数学基础：纳什均衡与 LQ 博弈 (game-theory-math) | 骨架待写。被依赖 0 行（排名第 16，仅服务未编写的 `multi-agent/game-theory-basics`） |
-| [ ] 数值方法与矩阵微积分：积分步长、刚性、条件数 (numerical-methods) | 骨架待写。被依赖 20 行 / 17 课（排名第 8，fix-016/018 一类仿真读数问题的共同语言） |
-
-> **A4（2026-09-25）**：math 章由 1 课扩容为 16 课骨架，全部填 `order/prereq/level/type/status`；除 `complex-numbers` 为 `draft` 外均为 `empty`（无 MDX、无 subsections）。依赖数据来自 `docs/semester-02/02-math-dependency-map.md`（扫描 56 门已写课程、逐 H2 小节判定，共 284 行依赖）。**编写优先级 = 依赖行数排序**：第一梯队 matrix-decomposition / eigen-decomposition / fourier-analysis / convex-optimization / laplace-transform / linear-algebra-basics（合计 176 行 ≈ 62%），numerical-methods 因服务全部含仿真课程提前到第一批。
+| [ ] 傅里叶分析 (fourier-analysis) | 骨架待写。被依赖 28 行 / 14 课（排名第 3） |
+| [ ] Z变换 (z-transform) | 骨架待写。被依赖 17 行 / 7 课（排名第 9，集中在 discrete-sampled） |
+| [ ] 概率基础 (probability-basics) | 骨架待写。被依赖 14 行 / 12 课（排名第 10） |
+| [ ] 随机过程 (stochastic-processes) | 骨架待写。被依赖 6 行 / 4 课（排名第 13） |
+| [ ] 凸优化 (convex-optimization) | 骨架待写。被依赖 27 行 / 13 课（排名第 4，mpc/robust/intelligent 刚需） |
+| [ ] 变分法与动态规划 (variational-dp) | 骨架待写。被依赖 5 行 / 2 课（排名第 14，全在 modern） |
+| [ ] 微分几何入门 (diff-geometry) | 骨架待写。被依赖 9 行 / 3 课（排名第 12，全在 nonlinear） |
+| [ ] 图论基础 (graph-theory) | 骨架待写。被依赖 1 行 / 1 课（排名第 15，主要服务对象 multi-agent 章未开工） |
+| [ ] 博弈论基础 (game-theory-math) | 骨架待写。被依赖 0 行（排名第 16，仅服务未编写的 `multi-agent/game-theory-basics`） |
+| [ ] 数值方法 (numerical-methods) | 骨架待写。被依赖 20 行 / 17 课（排名第 8，fix-016/018 一类仿真读数问题的共同语言） |
 
 ### 经典控制 (classic)
 
 | 课程 | 状态 |
 |------|------|
-| [x] 系统建模基础 (system-modeling) | v1.3: 2个交互组件（SuspensionExplorer + FirstOrderComparisonExplorer） |
-| [x] 传递函数入门 (transfer-function) | v1.3: 2个交互组件（PoleZeroExplorer + StepBodeExplorer），2个静态JupyterNotebook |
+| [x] 系统建模 (system-modeling) | v1.3: 2个交互组件（SuspensionExplorer + FirstOrderComparisonExplorer） |
+| [x] 传递函数 (transfer-function) | v1.3: 2个交互组件（PoleZeroExplorer + StepBodeExplorer），2个静态JupyterNotebook |
 | [x] 时域分析 (time-domain-analysis) | v1.3: 5个交互组件（ImpulseExplorer + FirstOrderStepExplorer + PerformanceMetricsExplorer + SecondOrderStepExplorer + SuspensionTimeExplorer），2个静态JupyterNotebook |
-| [x] 系统稳定性分析 (stability-analysis) | v1.3: 2个交互组件（StabilityThirdOrderExplorer + StabilityDelayExplorer）。**A6 由第 7 位提前到第 4 位**；§2.3 要求的"剥离频域/根轨迹部分"属正文改写，留阶段 C |
+| [x] 系统稳定性 (stability-analysis) | v1.3: 2个交互组件（StabilityThirdOrderExplorer + StabilityDelayExplorer）。**A6 由第 7 位提前到第 4 位**；§2.3 要求的"剥离频域/根轨迹部分"属正文改写，留阶段 C |
 | [x] 频域分析 (frequency-domain-analysis) | v1.3: 4个交互组件（BodeZetaExplorer + NyquistZetaExplorer + BandwidthCorrespondenceExplorer + RCFilterBodeExplorer），6个JupyterNotebook（3静态 + **3个A6搬入的ipywidgets笔记本**）。**A6 结构已改（吸收 frequency-response 的 4 个小节，H2 10 → 13），内容待 v1.3 复核**——详见下方 A6 说明 |
-| [x] 根轨迹法 (root-locus) | v1.3: 1个交互组件（RootLocusKExplorer），4个静态JupyterNotebook |
-| [x] 频率响应设计法：回路整形与带宽 (frequency-response-design) | v1.3（C1 第 1 课，2026-10-16）：3 个坏 ipywidgets 全部组件化（ClosedLoopFreqExplorer + DelayMarginExplorer + SensitivityExplorer，默认参数复现手算例）；**柯验收尾抓出并修正 6 组数值错误**——时滞例 ωc 2.87→3.08/L_max 0.117→0.102、设计例"PM=−38° 不稳定"实为 +1.6° 裕度趋零（渐近线失准，与答案 1 自洽化）、答案 10"Z-N 不稳定(PM=−20.4°)"实为稳定 PM=30.6°（通分 s 项系数笔误，与前文 PM≈30° 自洽化）、Mr 表 dB 列公式化、答案 4/5/6/11 数值校正；A6 方位词 3 处修正 + tr≈1.8/ωc 与 fda 实测表矛盾澄清；讨论日志 docs/discuss-log/semester-02/02-classic/07-frequency-response-design.md（附录 A 12 行对账全 ✅）；遗留：Q5 死锚点 1 处、prereq 未登记、"回路整形"深度重写留 D 阶段 |
-| [x] PID控制器设计 (pid-controller) | v1.3: 2个交互组件（PidDerivativeFilterExplorer + PidKiKdExplorer） |
-| [x] 校正网络设计 (compensator-design) | v1.3: 4个交互组件（LeadCompensatorExplorer + LagCompensatorExplorer + LeadLagCompensatorExplorer + AntiWindupExplorer） |
-| [ ] 设计方法对比与选型 (design-methods-comparison) | **A6 新增骨架**（`status: "empty"`，占位页 200，无 MDX、无 subsections）。承接诊断报告 P9，同时作为 `introduction/controller-selection-guide` 的经典控制分支；prereq 指向本章 6 门方法课 |
-| [x] 经典控制综合案例 (classic-case-study) | v1.3（C1 第 2 课，2026-10-16）：**柯验全量数值审计修正 5 组系统性错误**——e_ss 链漏对象增益 9.1（指标改 <1%、K=50 定位为余量）、PI 结论反转（ts=0.08s 达标、败在 Mp=16.8%；对消陷阱改写为失配场景）、PID 实测 wc=283/PM=106°/Mp=0.1%、超前设计双错（ωm 180→305；有源网络误加 α 倍补偿 K 192.5→50，修正后 PM=54.3°）、蒙特卡洛表换实测（0% 超标）；P 控制矛盾转 PControlTradeoffExplorer（默认复现手算例）；何疑红队三条件放行；讨论日志 semester-02/02-classic/11；[待定] 答案 8/9 个别数值下轮抽查 |
-
-> **A6 第 1 章（classic，2026-09-26）**：按 §2.3 完成"分析/设计"拆分，本章 10 → **11 课**。四项动作：
-> ① **小节搬移**（只移动、不改写，逐字校验通过）：`在Bode图上读取裕度`(105行) / `在Nyquist图上读取裕度`(128行) / `稳定性判据`(90行) 三节整节迁入 frequency-domain-analysis；`频域指标与时域指标的对应`(157行) 因与 fda 同名节重复，**去掉自身 H2 后并入 fda 既有同名节**（插在 `### 频域指标速查` 之前），catalog 中该小节名自此唯一。搬移后 fr 侧 1620 → 1134 行、fda 侧 1001 → 1488 行，两侧非空行多重集守恒（fda 仅多 3 条 `---` 分隔线）。
-> ② **改名**：`frequency-response` → `frequency-response-design`，frontmatter title + H1 + catalog title 统一为"频率响应设计法：回路整形与带宽"（Q19 裁决：§2.3 其余纯装饰性改名一律不做，避免 catalog 标题 ≠ MDX H1，留阶段 C）。
-> ③ **重排**：stability-analysis 提到第 4 位；侧栏实测顺序 = catalog 数组顺序 = §2.3 目标顺序。
-> ④ **入链**：content/ 内 10 处旧链接全部改指新 slug（classic-case-study 3 处、compensator-design 7 处），其中 compensator-design:70 的 `#频域指标与时域指标的对应` 锚点**改指 fda**（该节已迁走）；`.agent/v1.3-refactor-plan.md:59` 同步。旧路由 `/classic/frequency-response` 实测 404。
->
-> **A6 遗留债务（本章，均非新增故障）**：
-> - **ipywidgets 落到已交付页**（Q18 裁决已知代价）：fda 原为 v1.3 已交付且 0 个 ipywidgets，搬移后带进 3 个，浏览器实测点击运行即 `ModuleNotFoundError: No module named 'ipywidgets'`（fix-004 同类）。fda 的 `[x]` 因此为**有条件通过**，阶段 C 须按 fix-006 先例转 React 组件（`BodeMarginsExplorer` 已实现未注册，正是"在Bode图上读取裕度"节的现成替代品 → **Q3 裁决需按新归属重审**）。
-> - **"上一章/下一章"叙述失效 8 处**（重排的必然副作用，A6 禁止改正文故未动）：`frequency-domain-analysis.mdx` 10、1109、1111、1116、1144 行仍称上一章为时域分析（现为 stability-analysis）；`frequency-response-design.mdx` 10 行称上一章为稳定性分析（现为 root-locus）、386 与 621 行称校正网络为"下一章"（现隔了 pid-controller）；`compensator-design.mdx` 10 行称上一章为频率响应法（现为 pid-controller）。链接本身全部有效，仅方位词过期。
-> - **残留主题重叠 2 处**：stability-analysis 的"从频域看稳定性" vs fda 新吸收的"稳定性判据"；fda `Bode 图` 节内 H3"稳定裕度：增益裕度与相位裕度"(275行) vs frequency-response-design 保留的 H2"增益裕度与相位裕度"。§2.3 的"剥离/删除重复"属正文改写，留阶段 C/D。
-> - **搬入内容与既有实测数据冲突**：fr 侧 `t_r ≈ 1.8/ω_c`、`ω_b·t_r ≈ 2.2` 两条近似与 fda 既有的实测表（`t_r·ω_B ≈ 3–4`，ζ∈[0.3,0.707]）矛盾，现已同页并存；另 fr 侧留有空 H3"### 相位裕度与阻尼比（数值对照）"（无正文）。阶段 C 复核时二选一。
-> - **Q5 类死锚点 2 处**（历史遗留，本次未扩大）：fda `工程实例rc低通滤波器的频率分析`（MDX 实为 `## 工程实例`）、frequency-response-design `工程应用ziegler-nichols整定法`（slugger 实为 `工程应用ziegler-nichols-整定法`，少一个连字符）。浏览器实测 fda 13 个侧栏锚点 12 个可跳转。
->
-> **验收实测**：`npm run build` 退出码 0、146/146 页（143 条静态路由，classic 11 条全部 `OK` 无 fallback）；`tsc --noEmit` 与 `next lint` 退出码 0；本章 11 课全部 curl 200，H2 数 == catalog subsections（13/11/11/14/13/12/10/13/12/占位/12），katex-error 全 0；`/classic/design-methods-comparison` 渲染"本课尚未编写"占位页；全仓死链扫描 267 条内链、dead=5，与 A3 记录的 Q14 历史死链**逐条一致、零新增**。
+| [x] 根轨迹 (root-locus) | v1.3: 1个交互组件（RootLocusKExplorer），4个静态JupyterNotebook |
+| [x] PID控制 (pid-controller) | v1.3: 2个交互组件（PidDerivativeFilterExplorer + PidKiKdExplorer） |
+| [x] 校正网络 (compensator-design) | v1.3: 4个交互组件（LeadCompensatorExplorer + LagCompensatorExplorer + LeadLagCompensatorExplorer + AntiWindupExplorer） |
+| [x] 回路整形 (frequency-response-design) | v1.3（C1 第 1 课，2026-10-16）：3 个坏 ipywidgets 全部组件化（ClosedLoopFreqExplorer + DelayMarginExplorer + SensitivityExplorer，默认参数复现手算例）；**柯验收尾抓出并修正 6 组数值错误**——时滞例 ωc 2.87→3.08/L_max 0.117→0.102、设计例"PM=−38° 不稳定"实为 +1.6° 裕度趋零（渐近线失准，与答案 1 自洽化）、答案 10"Z-N 不稳定(PM=−20.4°)"实为稳定 PM=30.6°（通分 s 项系数笔误，与前文 PM≈30° 自洽化）、Mr 表 dB 列公式化、答案 4/5/6/11 数值校正；A6 方位词 3 处修正 + tr≈1.8/ωc 与 fda 实测表矛盾澄清；讨论日志 docs/discuss-log/semester-02/02-classic/07-frequency-response-design.md（附录 A 12 行对账全 ✅）；遗留：Q5 死锚点 1 处、prereq 未登记、"回路整形"深度重写留 D 阶段 |
+| [ ] 设计方法选型 (design-methods-comparison) | **A6 新增骨架**（`status: "empty"`，占位页 200，无 MDX、无 subsections）。承接诊断报告 P9，同时作为 `introduction/controller-selection-guide` 的经典控制分支；prereq 指向本章 6 门方法课 |
+| [x] 经典控制案例 (classic-case-study) | v1.3（C1 第 2 课，2026-10-16）：**柯验全量数值审计修正 5 组系统性错误**——e_ss 链漏对象增益 9.1（指标改 <1%、K=50 定位为余量）、PI 结论反转（ts=0.08s 达标、败在 Mp=16.8%；对消陷阱改写为失配场景）、PID 实测 wc=283/PM=106°/Mp=0.1%、超前设计双错（ωm 180→305；有源网络误加 α 倍补偿 K 192.5→50，修正后 PM=54.3°）、蒙特卡洛表换实测（0% 超标）；P 控制矛盾转 PControlTradeoffExplorer（默认复现手算例）；何疑红队三条件放行；讨论日志 semester-02/02-classic/11；[待定] 答案 8/9 个别数值下轮抽查 |
 
 ### 现代控制 (modern)
 
 | 课程 | 状态 |
 |------|------|
-| [x] 状态空间表示 (state-space) | v1.3（C2 第 1 课，2026-10-16）：NB3 ipywidgets → StateSpaceExplorer（默认复现原例）；**柯验修正答案 10(c) 实质性极点错误**（{−17.5,−87.5}→{−20.8,−84.2}，判别式 4025；并澄清"忽略电感会使慢极点再放慢 16%"）、答案 6 e^{At} 混乱中介式删除+补 expm 抽查 0.9391、"前面十节课"方位词修正；S6 实跑 0 error（fix-021 新规）；讨论日志 semester-02/03-modern/01 |
+| [x] 状态空间 (state-space) | v1.3（C2 第 1 课，2026-10-16）：NB3 ipywidgets → StateSpaceExplorer（默认复现原例）；**柯验修正答案 10(c) 实质性极点错误**（{−17.5,−87.5}→{−20.8,−84.2}，判别式 4025；并澄清"忽略电感会使慢极点再放慢 16%"）、答案 6 e^{At} 混乱中介式删除+补 expm 抽查 0.9391、"前面十节课"方位词修正；S6 实跑 0 error（fix-021 新规）；讨论日志 semester-02/03-modern/01 |
 | [x] 可控性与可观性 (controllability-observability) | v1.3（C2 第 2 课，2026-10-16）：3 notebook 保持静态（判定计算场景，P2 定位正确）；**柯验重写答案 4**——AB/CA² 两处乘法错误致结论反向（实测可控且可观，det C=−1/det O=1），并补"Jordan 重根 PBH 须用秩条件"教学点；答案 1 的 O 第三行笔误修正；S6 实跑 0 error；讨论日志 semester-02/03-modern/02 |
-| [x] Lyapunov 方法与现代稳定性 (lyapunov-modern) | v1.3（C2 第7次交付，2026-10-17）：原linear-system-theory改名并前移本章第3课，旧路由308；修正隐藏模态C/y/G、Jordan/BIBO判据、LQR代价2倍因子与半正定边界；三notebook八cell，S6在线0 error；讨论日志03-modern/03-lyapunov-modern，fix-025 |
-| [x] 状态反馈与极点配置 (state-feedback) | v1.3（C2 第 3 课，2026-10-16）：ipywidgets 交互 cell → StateFeedbackPoleExplorer（默认 p=−5 复现手算链 K=[23,7]/N=25）；**NB 重构为 place 拒绝重根→acker 解决→互异一致三段式教学**（原 cell 实跑必炸：place ValueError + acker 一维形状 + JS 模板 \n 陷阱）；**答案 7(b) 实质性因子错误修正**（B=[0;ωn²]，原 K 公式实测极点全偏）；答案 10 循环论证重写为块矩阵一行证明；S6 实跑 0 error；讨论日志 semester-02/03-modern/03 |
-| [x] 状态观测器设计 (state-observer) | v1.3（C2 第 4 课，2026-10-16）：ipywidgets 交互 cell → ObserverSpeedExplorer（滑块区间反转 bug 一并修正，默认 p=−15 复现例3 L=[27,142]）；NB 三处运行时错修复（place 重根→acker 教学、acker 一维 reshape、step_response squeeze）；**答案 2 实质性数值错误更正**（L=[994;289;24]→实测 [24;145;−140]，(s+10)³ 验证）；S6 实跑 0 error；讨论日志 semester-02/03-modern/04 |
-| [x] 最优控制基础 (optimal-control-basics) | v1.3（C2 第 5 课，2026-10-17）：ipywidgets 终端时间滑块 → OptimalTimeExplorer（默认 t_f=2 复现例3：λ(0)=0.0373/J*=0.0187，右图对数轴 J*(t_f) 权衡曲线）；**例3 三处近似值修正**（λ(0) 0.0366→0.0373、C 1.0366→1.0187、J* 0.0183→0.0187，solve_bvp 与解析逐位一致）；**NB cell1 真 bug 修复**（u_opt 数组当函数调用 + 三联图索引错乱，整 cell 重写）；5 处 GFM alert → Callout（本站不渲染 [!tip] 语法，全仓清扫登记待定）；凸性/横截/影子价格三个直觉 Callout + bang-bang 不切换措辞修正；S6 实跑 2 cell 0 error；讨论日志 semester-02/03-modern/05 |
-| [x] LQR控制器 (lqr-controller) | v1.3（C2 第6课，2026-10-17）：LqrExplorer 两模式替换两段 widget；答案2/7/10 CARE数值与极点重算，回差式/裕度/可检测性/软约束修正；1 notebook 4 cell S6真跑0 error，TS/SciPy 32组独立对账；六处锚点修正；完整日志 semester-02/03-modern/06，含三方对账与红队降级记录；fix-024 |
-| [ ] 卡尔曼滤波 (kalman-filter) | **A6 待迁出**：`content/modern/kalman-filter.mdx` 将 `git mv` 到 `content/estimation/kalman-filter.mdx`，本行随之删除（modern 10 → 9 课，LQG 一节保留在本章） |
-| [x] 多变量系统分析 (multivariable-systems) | v1.3（C2 第8次交付，2026-10-17）：正常秩与例1方向零点−1修正、RGA启发式边界、一般D项反馈公式/动态逆适当性；MimoProportionalExplorer替widget；1 notebook 6 cell在线0 error，实际TS/SciPy九组对账；完整日志03-modern/08-multivariable-systems，fix-026 |
-| [ ] 现代控制综合案例 (modern-case-study) | |
-
-### 状态估计与滤波 (estimation)
-
-| 课程 | 状态 |
-|------|------|
-| [ ] 估计问题框架：从观测器到最优估计 (estimation-problem) | |
-| [ ] 最小二乘、加权最小二乘与极大似然估计 (least-squares-ml) | |
-| [ ] 卡尔曼滤波 (kalman-filter) | **A6 待迁入**：正文现为 `content/modern/kalman-filter.mdx`（已写，未过 v1.3 审校），A6 `git mv` 到 `content/estimation/`；迁移前与 modern 章同 slug 条目并存，路由按 (chapter, lesson) 组合键取文件，不冲突 |
-| [ ] 扩展卡尔曼滤波 EKF：线性化误差、收敛条件与失效场景 (extended-kalman-filter) | |
-| [ ] 无迹卡尔曼滤波 UKF：Sigma 点选取与二阶精度 (unscented-kalman-filter) | |
-| [ ] 粒子滤波与蒙特卡洛方法：多峰后验、粒子退化与重采样策略 (particle-filter) | |
-| [ ] H∞滤波与鲁棒估计 (h-infinity-filter) | |
-| [ ] 移动水平估计 MHE 与多传感器融合 (mhe-fusion) | |
-| [ ] 估计综合案例：非线性系统的滤波器选型与定量对比 (estimation-case-study) | |
-
-> **A5（2026-09-25）**：新增状态估计与滤波章（9 课，`type: "theory"` ×8 + `case` ×1，主责林矩）。本章把原先塞在 modern 里的卡尔曼滤波独立成主线：估计问题框架 → 最小二乘/极大似然 → KF → EKF/UKF/PF 三条非线性分支 → H∞ 滤波（与 robust 章交叉）→ MHE（与 mpc 章交叉）→ 综合案例。`h-infinity-filter` 与 `robust/h-infinity-basics` 共用 H∞ 范数语言但视角不同（前者估计误差上界、后者闭环鲁棒性能），编写时须显式互引避免重复推导。
+| [x] 线性系统稳定性 (lyapunov-modern) | v1.3（C2 第7次交付，2026-10-17）：原linear-system-theory改名并前移本章第3课，旧路由308；修正隐藏模态C/y/G、Jordan/BIBO判据、LQR代价2倍因子与半正定边界；三notebook八cell，S6在线0 error；讨论日志03-modern/03-lyapunov-modern，fix-025 |
+| [x] 状态反馈 (state-feedback) | v1.3（C2 第 3 课，2026-10-16）：ipywidgets 交互 cell → StateFeedbackPoleExplorer（默认 p=−5 复现手算链 K=[23,7]/N=25）；**NB 重构为 place 拒绝重根→acker 解决→互异一致三段式教学**（原 cell 实跑必炸：place ValueError + acker 一维形状 + JS 模板 \n 陷阱）；**答案 7(b) 实质性因子错误修正**（B=[0;ωn²]，原 K 公式实测极点全偏）；答案 10 循环论证重写为块矩阵一行证明；S6 实跑 0 error；讨论日志 semester-02/03-modern/03 |
+| [x] 状态观测器 (state-observer) | v1.3（C2 第 4 课，2026-10-16）：ipywidgets 交互 cell → ObserverSpeedExplorer（滑块区间反转 bug 一并修正，默认 p=−15 复现例3 L=[27,142]）；NB 三处运行时错修复（place 重根→acker 教学、acker 一维 reshape、step_response squeeze）；**答案 2 实质性数值错误更正**（L=[994;289;24]→实测 [24;145;−140]，(s+10)³ 验证）；S6 实跑 0 error；讨论日志 semester-02/03-modern/04 |
+| [x] 最优控制 (optimal-control-basics) | v1.3（C2 第 5 课，2026-10-17）：ipywidgets 终端时间滑块 → OptimalTimeExplorer（默认 t_f=2 复现例3：λ(0)=0.0373/J*=0.0187，右图对数轴 J*(t_f) 权衡曲线）；**例3 三处近似值修正**（λ(0) 0.0366→0.0373、C 1.0366→1.0187、J* 0.0183→0.0187，solve_bvp 与解析逐位一致）；**NB cell1 真 bug 修复**（u_opt 数组当函数调用 + 三联图索引错乱，整 cell 重写）；5 处 GFM alert → Callout（本站不渲染 [!tip] 语法，全仓清扫登记待定）；凸性/横截/影子价格三个直觉 Callout + bang-bang 不切换措辞修正；S6 实跑 2 cell 0 error；讨论日志 semester-02/03-modern/05 |
+| [x] LQR控制 (lqr-controller) | v1.3（C2 第6课，2026-10-17）：LqrExplorer 两模式替换两段 widget；答案2/7/10 CARE数值与极点重算，回差式/裕度/可检测性/软约束修正；1 notebook 4 cell S6真跑0 error，TS/SciPy 32组独立对账；六处锚点修正；完整日志 semester-02/03-modern/06，含三方对账与红队降级记录；fix-024 |
+| [x] 多变量系统 (multivariable-systems) | v1.3（C2 第8次交付，2026-10-17）：正常秩与例1方向零点−1修正、RGA启发式边界、一般D项反馈公式/动态逆适当性；MimoProportionalExplorer替widget；1 notebook 6 cell在线0 error，实际TS/SciPy九组对账；完整日志03-modern/08-multivariable-systems，fix-026 |
+| [ ] 现代控制案例 (modern-case-study) | |
 
 ### 非线性控制 (nonlinear)
 
 | 课程 | 状态 |
 |------|------|
-| [x] 非线性系统特性 (nonlinear-characteristics) | v1.3 重写: 1个交互组件（NonlinearityExplorer 六种非线性的 u-y 回线+时间波形，按类型固定坐标轴，默认滞环 A=1.5/c=0.2 复现环面积 4cA=1.200000；间隙 settle 相位陷阱见讨论日志附录 C），9个静态JupyterNotebook（叠加原理定量破坏 / 振幅依赖周期+Lindstedt+软弹簧逃逸 / 滞环·间隙·Stribeck / 谐波产生与双频互调 / 线性化误差带 / 跳跃共振与谐波平衡三分支 / 多平衡点与鞍结分岔 / PI三种幅值处理 / 粘滑极限环与吸引域）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/01-nonlinear-characteristics.md（含11条旧稿错误对照） |
-| [x] 相平面分析 (phase-plane) | v1.3 重写: 2个交互组件（PhasePlaneExplorer 五系统相平面 + TraceDetExplorer 迹-行列式平面，默认参数复现手算例，见 fix-logs 016），12个静态JupyterNotebook组件（NB10 拆上/下：Van der Pol 极限环 / 迹-行列式分类+2000抽查 / 非双曲中心三情形 / Duffing 手算例全程核对 / 鞍点流形与吸引域 / μ扫描张弛振荡 / 极限环孤立性 / 真假中心对照 / Lotka-Volterra 首次积分 / 受迫Duffing截面+Floquet+延拓 / 无轮辐轮混合系统）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/02-phase-plane.md；顺带修复组件双注册表问题（fix-logs 015） |
-| [x] 描述函数法 (describing-function) | v1.3 重写: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer，后者修正 -1/N 轨迹范围与交点存在性判断，见 fix-logs 014），6个静态JupyterNotebook（21 cell：波形畸变与复数惯例 / 五个闭式核对与串联≠乘积 / 手算例仿真仲裁与泄漏指标L / Routh交叉核对与双交点算例 / 三个应用案例 / 四种失效模式）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md |
-| [x] 李雅普诺夫稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/semester-01/07-nonlinear/04-lyapunov-stability.md |
+| [x] 非线性系统 (nonlinear-characteristics) | v1.3 重写: 1个交互组件（NonlinearityExplorer 六种非线性的 u-y 回线+时间波形，按类型固定坐标轴，默认滞环 A=1.5/c=0.2 复现环面积 4cA=1.200000；间隙 settle 相位陷阱见讨论日志附录 C），9个静态JupyterNotebook（叠加原理定量破坏 / 振幅依赖周期+Lindstedt+软弹簧逃逸 / 滞环·间隙·Stribeck / 谐波产生与双频互调 / 线性化误差带 / 跳跃共振与谐波平衡三分支 / 多平衡点与鞍结分岔 / PI三种幅值处理 / 粘滑极限环与吸引域）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/01-nonlinear-characteristics.md（含11条旧稿错误对照） |
+| [x] 相平面 (phase-plane) | v1.3 重写: 2个交互组件（PhasePlaneExplorer 五系统相平面 + TraceDetExplorer 迹-行列式平面，默认参数复现手算例，见 fix-logs 016），12个静态JupyterNotebook组件（NB10 拆上/下：Van der Pol 极限环 / 迹-行列式分类+2000抽查 / 非双曲中心三情形 / Duffing 手算例全程核对 / 鞍点流形与吸引域 / μ扫描张弛振荡 / 极限环孤立性 / 真假中心对照 / Lotka-Volterra 首次积分 / 受迫Duffing截面+Floquet+延拓 / 无轮辐轮混合系统）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/02-phase-plane.md；顺带修复组件双注册表问题（fix-logs 015） |
+| [x] Lyapunov稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/semester-01/07-nonlinear/04-lyapunov-stability.md |
+| [x] 描述函数 (describing-function) | v1.3 重写: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer，后者修正 -1/N 轨迹范围与交点存在性判断，见 fix-logs 014），6个静态JupyterNotebook（21 cell：波形畸变与复数惯例 / 五个闭式核对与串联≠乘积 / 手算例仿真仲裁与泄漏指标L / Routh交叉核对与双交点算例 / 三个应用案例 / 四种失效模式）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md |
 | [x] 反馈线性化 (feedback-linearization) | v1.3: 1个交互组件（ZeroDynamicsExplorer），4个静态JupyterNotebook（Lie导数验证 / 零动态定义式仿真 / 倒立摆IOL-vs-Jacobian三组实验 / 球-梁近似IOL）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/05-feedback-linearization.md（含实测修正附录）；顺带修复全站级 kernel id 冲突（fix-logs 011） |
 | [x] 滑模控制 (sliding-mode-control) | v1.3: 1个交互组件（SlidingModeExplorer），5个静态JupyterNotebook（到达条件与等效控制 / 四种控制律抖振对比 / 四种到达律 / 匹配性K扫描 / 电机六控制器），2张按实测重算的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/06-sliding-mode-control.md |
-| [x] 反步法设计 (backstepping) | v1.3: 1个交互组件（BacksteppingExplorer），6个静态JupyterNotebook（结构判定/手算复核/复杂度与DSC/自适应/柔性关节机器人/七律对比与可达域），1张按实测重画的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/07-backstepping.md |
-| [x] 自适应控制基础 (adaptive-control-basics) | v1.3: 1个交互组件（MracExplorer，三面板固定坐标轴，JS↔Python 交叉验证 Rohrs 临界增益 3/4 与发散时刻），9个静态JupyterNotebook（V̇恒等式 / 手算与PE流形 / γ两面性 / 高阶匹配条件 / RLS与协方差windup / STR除零保护 / 噪声与四种修正 / 机械臂负载突变 / 飞行器爬升三方对比），1张matplotlib计算概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/08-adaptive-control-basics.md（含18条"叙述服从测量"修正） |
+| [x] 反步设计 (backstepping) | v1.3: 1个交互组件（BacksteppingExplorer），6个静态JupyterNotebook（结构判定/手算复核/复杂度与DSC/自适应/柔性关节机器人/七律对比与可达域），1张按实测重画的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/07-backstepping.md |
+| [x] 自适应控制 (adaptive-control-basics) | v1.3: 1个交互组件（MracExplorer，三面板固定坐标轴，JS↔Python 交叉验证 Rohrs 临界增益 3/4 与发散时刻），9个静态JupyterNotebook（V̇恒等式 / 手算与PE流形 / γ两面性 / 高阶匹配条件 / RLS与协方差windup / STR除零保护 / 噪声与四种修正 / 机械臂负载突变 / 飞行器爬升三方对比），1张matplotlib计算概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/08-adaptive-control-basics.md（含18条"叙述服从测量"修正） |
+| [ ] 无源控制 (passivity-control) | 本期新增骨架；尚未编写 |
+| [ ] 输入状态稳定性 (iss-small-gain) | 本期新增骨架；尚未编写 |
+| [ ] 切换与混杂系统 (switched-hybrid-systems) | 本期新增骨架；尚未编写 |
+| [ ] 分岔与混沌 (bifurcation-chaos) | 本期新增骨架；尚未编写 |
 
-### 离散与采样数据系统 (discrete-sampled)
+### 离散控制 (discrete-sampled)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 离散时间系统与状态空间 (discrete-time-systems) | |
-| [ ] 差分方程建模与脉冲传递函数 (difference-equation) | |
-| [ ] Z变换基础 (z-transform-analysis) | MDX 自 computer-control/z-transform-basics 迁移（A3，2026-09-25）；未过 v1.3 审校 |
-| [ ] 数字控制器设计 (discretization-methods) | MDX 自 computer-control/digital-controller-design 整篇迁移（A3）；**待拆分**：离散化方法独立成本课、数字PID工程实现节并入 implementation/digital-pid（阶段 C） |
-| [ ] 离散系统稳定性 (discrete-stability-criteria) | MDX 自 computer-control/discrete-stability 迁移（A3）；未过 v1.3 审校 |
 | [ ] 采样与量化 (discrete-time-freq) | MDX 自 computer-control/sampling-quantization 整篇迁移（A3）；**待拆分**：量化部分移入 implementation/embedded-implementation（阶段 C） |
-| [ ] 采样周期选择 (sampling-period-selection) | MDX 自 computer-control/sampling-period 迁移（A3）；未过 v1.3 审校 |
-| [ ] 采样数据系统理论：提升法、精确离散模型与采样间性能 (sampled-data-systems) | |
-| [ ] 离散最优控制：DARE、离散 LQR 与动态规划 (discrete-optimal-control) | |
-| [ ] 事件触发与自触发控制 (event-triggered-control) | |
+| [ ] 离散时间系统 (discrete-time-systems) | |
+| [ ] 差分方程 (difference-equation) | |
+| [ ] Z域系统分析 (z-transform-analysis) | MDX 自 computer-control/z-transform-basics 迁移（A3，2026-09-25）；未过 v1.3 审校 |
+| [ ] 离散系统稳定性 (discrete-stability-criteria) | MDX 自 computer-control/discrete-stability 迁移（A3）；未过 v1.3 审校 |
+| [ ] 离散化方法 (discretization-methods) | MDX 自 computer-control/digital-controller-design 整篇迁移（A3）；**待拆分**：离散化方法独立成本课、数字PID工程实现节并入 implementation/digital-pid（阶段 C） |
+| [ ] 采样周期 (sampling-period-selection) | MDX 自 computer-control/sampling-period 迁移（A3）；未过 v1.3 审校 |
+| [ ] 采样数据系统 (sampled-data-systems) | |
+| [ ] 离散最优控制 (discrete-optimal-control) | |
+| [ ] 事件触发控制 (event-triggered-control) | |
 
-### 控制工程实现 (implementation)
-
-| 课程 | 状态 |
-|------|------|
-| [ ] 数字PID实现 (digital-pid) | MDX 自 computer-control/digital-pid 迁移（A3）；**待合并**：接收 discretization-methods 的数字PID工程实现节（阶段 C）；未过 v1.3 审校 |
-| [ ] PID 工程整定：ZN、Cohen–Coon、继电反馈自整定与实测对比 (pid-engineering-tuning) | |
-| [ ] 控制器离散化实战：从连续设计到定点化部署 (controller-discretization-practice) | |
-| [ ] 计算机控制系统架构 (computer-control-architecture) | MDX 自 computer-control/computer-control-architecture 迁移（A3）；未过 v1.3 审校 |
-| [ ] 实时控制实现 (realtime-control) | MDX 自 computer-control/realtime-control 迁移（A3）；未过 v1.3 审校 |
-| [ ] 嵌入式实现：定点 / 浮点、数值精度、DMA 与驱动 (embedded-implementation) | **待接收**：discrete-time-freq 的量化部分（阶段 C） |
-| [ ] 网络控制系统 NCS——延迟、丢包、带宽与时钟同步 (networked-control) | |
-| [ ] 工业总线与协议——CAN / EtherCAT / Modbus / PROFINET 的控制视角 (industrial-bus-protocols) | |
-| [ ] 半实物仿真、快速原型与自动代码生成 (hil-rapid-prototyping) | |
-| [ ] 实现综合案例：同一控制器在 MCU / SoC / PLC 三种平台的移植与实测 (implementation-case-study) | |
-
-### 预测控制 (mpc)
+### 控制实现 (implementation)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 模型预测控制原理 (mpc-principle) | |
-| [ ] 预测模型建立 (prediction-model) | |
-| [ ] 滚动优化策略 (receding-horizon) | |
-| [ ] 约束处理 (constraint-handling) | |
-| [ ] MPC实现案例 (mpc-case-study) | |
-| [ ] 广义预测控制(GPC) (generalized-predictive-control) | |
-| [ ] 非线性MPC (nonlinear-mpc) | |
-| [ ] 分布式MPC (distributed-mpc) | |
+| [ ] 控制系统架构 (computer-control-architecture) | MDX 自 computer-control/computer-control-architecture 迁移（A3）；未过 v1.3 审校 |
+| [ ] 数字PID (digital-pid) | MDX 自 computer-control/digital-pid 迁移（A3）；**待合并**：接收 discretization-methods 的数字PID工程实现节（阶段 C）；未过 v1.3 审校 |
+| [ ] PID工程整定 (pid-engineering-tuning) | |
+| [ ] 控制器部署 (controller-discretization-practice) | |
+| [ ] 嵌入式控制 (embedded-implementation) | **待接收**：discrete-time-freq 的量化部分（阶段 C） |
+| [ ] 实时控制 (realtime-control) | MDX 自 computer-control/realtime-control 迁移（A3）；未过 v1.3 审校 |
+| [ ] 网络控制 (networked-control) | |
+| [ ] 工业通信 (industrial-bus-protocols) | |
+| [ ] 半实物仿真 (hil-rapid-prototyping) | |
+| [ ] 控制实现案例 (implementation-case-study) | |
+
+### 机器学习 (machine-learning)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 学习问题与泛化 (learning-problem) | 本期新增骨架；尚未编写 |
+| [ ] 监督学习 (supervised-learning) | 本期新增骨架；尚未编写 |
+| [ ] 神经网络基础 (neural-networks) | 本期新增骨架；尚未编写 |
+| [ ] 自动微分与训练 (autodiff-optimization) | 本期新增骨架；尚未编写 |
+| [ ] 时序模型 (sequence-models) | 本期新增骨架；尚未编写 |
+| [ ] 注意力机制 (attention-transformers) | 本期新增骨架；尚未编写 |
+| [ ] 表征学习 (representation-learning) | 本期新增骨架；尚未编写 |
+| [ ] 扩散与流匹配 (generative-models) | 本期新增骨架；尚未编写 |
+| [ ] 学习实验评估 (learning-evaluation) | 本期新增骨架；尚未编写 |
+
+### 系统辨识 (identification)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 系统辨识框架 (identification-framework) | |
+| [ ] 辨识模型 (model-structures) | |
+| [ ] 最小二乘辨识 (least-squares-rls) | 自 `nonlinear/adaptive-control-basics` 的 RLS 一节抽出并深化（含协方差 windup、遗忘因子与除零保护），两处须互引不重复推导 |
+| [ ] 持久激励 (persistent-excitation) | |
+| [ ] 闭环辨识 (instrumental-variable) | |
+| [ ] 频域辨识 (frequency-domain-id) | |
+| [ ] 子空间辨识 (subspace-id) | |
+| [ ] 非线性辨识 (nonlinear-data-driven-id) | |
+| [ ] 系统辨识案例 (identification-case-study) | |
+
+### 状态估计 (estimation)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 状态估计框架 (estimation-problem) | |
+| [ ] 统计估计 (least-squares-ml) | |
+| [ ] 卡尔曼滤波 (kalman-filter) | **A6 待迁出**：`content/modern/kalman-filter.mdx` 将 `git mv` 到 `content/estimation/kalman-filter.mdx`，本行随之删除（modern 10 → 9 课，LQG 一节保留在本章） |
+| [ ] 扩展卡尔曼滤波 (extended-kalman-filter) | |
+| [ ] 无迹卡尔曼滤波 (unscented-kalman-filter) | |
+| [ ] 粒子滤波 (particle-filter) | |
+| [ ] 多传感器融合 (sensor-fusion) | 本期新增骨架；尚未编写 |
+| [ ] 状态估计案例 (estimation-case-study) | |
 
 ### 鲁棒控制 (robust)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 鲁棒性概念 (robustness-concept) | |
-| [ ] H∞控制基础 (h-infinity-basics) | |
-| [ ] 混合灵敏度设计 (mixed-sensitivity) | |
-| [ ] μ综合方法 (mu-synthesis) | |
-| [ ] 鲁棒稳定性分析 (robust-stability) | |
+| [ ] 鲁棒性 (robustness-concept) | |
 | [ ] 不确定性建模 (uncertainty-modeling) | |
-| [ ] 鲁棒性能指标 (robust-performance) | |
-| [ ] 鲁棒控制综合案例 (robust-case-study) | |
+| [ ] 鲁棒稳定性 (robust-stability) | |
+| [ ] 鲁棒性能 (robust-performance) | |
+| [ ] H∞控制 (h-infinity-basics) | |
+| [ ] 混合灵敏度 (mixed-sensitivity) | |
+| [ ] 结构奇异值 (mu-analysis) | 本期新增骨架；尚未编写 |
+| [ ] μ综合 (mu-synthesis) | |
+| [ ] H∞滤波 (h-infinity-filter) | |
+| [ ] 时滞系统控制 (delay-robust-control) | 本期新增骨架；尚未编写 |
+| [ ] 鲁棒控制案例 (robust-case-study) | |
 
-### 系统辨识与数据驱动建模 (identification)
+### 预测控制 (mpc)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 辨识问题框架：模型集、准则与验证 (identification-framework) | |
-| [ ] 最小二乘与递推最小二乘 (least-squares-rls) | 自 `nonlinear/adaptive-control-basics` 的 RLS 一节抽出并深化（含协方差 windup、遗忘因子与除零保护），两处须互引不重复推导 |
-| [ ] 持久激励条件与参数可辨识性 (persistent-excitation) | |
-| [ ] 模型族：ARX / ARMAX / OE / BJ 与状态空间模型 (model-structures) | |
-| [ ] 工具变量法与闭环辨识 (instrumental-variable) | |
-| [ ] 频域辨识与谱分析（含实测扫频、窗函数与噪声抑制） (frequency-domain-id) | |
-| [ ] 子空间辨识 N4SID / MOESP (subspace-id) | |
-| [ ] 非线性与灰盒辨识、神经网络辨识、符号回归 (nonlinear-data-driven-id) | |
-| [ ] 辨识综合案例：从实测数据到可用于 MPC 的模型（含阶次选择与残差检验） (identification-case-study) | |
-
-> **A5（2026-09-25）**：新增系统辨识与数据驱动建模章（9 课，`theory` ×7 + `frontier` ×1 + `case` ×1，主责方数、卫韧协查鲁棒性）。与 `estimation/least-squares-ml` 的分工：估计章讲"给定模型结构如何由数据求状态/参数的最优估计"，辨识章讲"模型结构本身如何选定与验证"，两课共用最小二乘工具但目标函数不同，编写时须互相点名。`subspace-id` 依赖 `math/matrix-decomposition`（依赖排名第 1），排在 math 第一批之后才可动笔。
+| [ ] 预测控制原理 (mpc-principle) | |
+| [ ] 预测模型 (prediction-model) | |
+| [ ] 滚动优化 (receding-horizon) | |
+| [ ] 约束处理 (constraint-handling) | |
+| [ ] 递归可行性与稳定性 (mpc-stability) | 本期新增骨架；尚未编写 |
+| [ ] 广义预测控制 (generalized-predictive-control) | |
+| [ ] 显式预测控制 (explicit-mpc) | 本期新增骨架；尚未编写 |
+| [ ] 非线性预测控制 (nonlinear-mpc) | |
+| [ ] 经济预测控制 (economic-mpc) | 本期新增骨架；尚未编写 |
+| [ ] 移动水平估计 (mhe-fusion) | |
+| [ ] 预测控制案例 (mpc-case-study) | |
 
 ### 智能控制 (intelligent)
 
 | 课程 | 状态 |
 |------|------|
-| [x] 模糊控制基础 (fuzzy-control-basics) | v1.3: 1个交互组件（FuzzyExplorer，三面板固定坐标轴：隶属度与Σμ / 控制面与理想增益线 / 聚合与三种解模糊化），9个静态JupyterNotebook（单位划分闭式 / 算子2×2闭环 / 三解模糊化与离散化 / FAMM量化与等效增益 / 静差与积分 / 零阶Sugeno等价2×2与TS严格稳定 / 洗衣机决策面 / ABS三路面与路面切换 / 在线成本），1张matplotlib计算概念图（四联管线）；讨论日志 docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md（含ABS基线整定与8条"叙述服从测量"修正） |
-| [x] 模糊控制器设计 (fuzzy-controller-design) | v1.3: 1个交互组件（FuzzyTuningExplorer，四滑块实时闭环仿真：n/Ge/Gce/Gu，双ECharts固定坐标轴θ∈[-30,30]°与u∈[-16,16] N·m），6个静态JupyterNotebook（规则表构造 / 比例因子敏感性扫描 / 闭环仿真与PID对比 / 模糊PID与积分消除 / 规则库PD/P/PD-like模式对比 / 解模糊化COG vs BIS vs MOM），14个小节（引言→被控对象→规则库→比例因子→模糊PD→模糊PID→PID对比→规则库结构→解模糊化→稳定性→工程要点→小结→习题→答案）；讨论日志 docs/discuss-log/semester-01/08-intelligent/02-fuzzy-controller-design.md（含附录A完整实验数据，核心发现：Mamdani模糊PD无法稳定倒立摆，rms≈21° vs PID的2.67°） |
+| [x] 模糊控制 (fuzzy-control-basics) | v1.3: 1个交互组件（FuzzyExplorer，三面板固定坐标轴：隶属度与Σμ / 控制面与理想增益线 / 聚合与三种解模糊化），9个静态JupyterNotebook（单位划分闭式 / 算子2×2闭环 / 三解模糊化与离散化 / FAMM量化与等效增益 / 静差与积分 / 零阶Sugeno等价2×2与TS严格稳定 / 洗衣机决策面 / ABS三路面与路面切换 / 在线成本），1张matplotlib计算概念图（四联管线）；讨论日志 docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md（含ABS基线整定与8条"叙述服从测量"修正） |
+| [x] 模糊控制器 (fuzzy-controller-design) | v1.3: 1个交互组件（FuzzyTuningExplorer，四滑块实时闭环仿真：n/Ge/Gce/Gu，双ECharts固定坐标轴θ∈[-30,30]°与u∈[-16,16] N·m），6个静态JupyterNotebook（规则表构造 / 比例因子敏感性扫描 / 闭环仿真与PID对比 / 模糊PID与积分消除 / 规则库PD/P/PD-like模式对比 / 解模糊化COG vs BIS vs MOM），14个小节（引言→被控对象→规则库→比例因子→模糊PD→模糊PID→PID对比→规则库结构→解模糊化→稳定性→工程要点→小结→习题→答案）；讨论日志 docs/discuss-log/semester-01/08-intelligent/02-fuzzy-controller-design.md（含附录A完整实验数据，核心发现：Mamdani模糊PD无法稳定倒立摆，rms≈21° vs PID的2.67°） |
+| [ ] 专家控制 (expert-system) | |
+| [ ] 遗传算法 (genetic-algorithm) | |
 | [x] 神经网络控制 (neural-network-control) | v1.3: 1个交互组件（NeuralNetworkExplorer，控制器类型切换PID/NN-Sup/NN-ES + 初始角度滑块5°–45°，双ECharts固定坐标轴θ∈[-50,50]°与u∈[-16,16] N·m），5个静态JupyterNotebook（NN前向传播与控制曲面 / 监督学习训练 / 进化策略优化 / 四种控制器全面对比 / 鲁棒性测试），12个小节（引言→模糊失败回顾→NN结构→监督学习→直接优化→定量对比→鲁棒性→稳定性→工程要点→小结→习题→答案）；讨论日志 docs/discuss-log/semester-01/08-intelligent/03-neural-network-control.md（核心发现：NN-Supervised≈PID，NN-ES在J上超越PID 5.3%，NN远优于模糊控制2.7° vs 21°） |
-| [ ] 专家控制系统 (expert-system) | |
-| [ ] 遗传算法优化 (genetic-algorithm) | |
 | [ ] 模糊神经网络 (fuzzy-neural-network) | |
-| [ ] 智能控制综合案例 (intelligent-case-study) | |
+| [ ] 迭代学习控制 (iterative-learning-control) | 本期新增骨架；尚未编写 |
+| [ ] 智能控制案例 (intelligent-case-study) | |
 
-### 强化学习控制 (rl-control)
+### 强化学习控制基础 (rl-control)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 强化学习基础 (rl-basics) | |
-| [ ] Q-learning算法 (q-learning) | |
-| [ ] 深度Q网络(DQN) (dqn) | |
-| [ ] 策略梯度方法 (policy-gradient) | |
-| [ ] Actor-Critic架构 (actor-critic) | |
-| [ ] RL控制应用案例 (rl-control-case) | |
-| [ ] 安全强化学习 (safe-rl) | **A6 待迁出** → `safety-ftc/safe-rl`（并扩充 CMDP、拉格朗日法、屏障约束 RL），本行随之删除 |
-| [ ] 多智能体RL (multi-agent-rl) | **A6 待迁出** → `multi-agent/multi-agent-rl`，本行随之删除；rl-control 目标 11 课 = 现存 8 − 移出 2 + 新增 5 |
+| [ ] 强化学习问题 (rl-basics) | |
+| [ ] 价值函数与贝尔曼方程 (dynamic-programming) | 本期新增骨架；尚未编写 |
+| [ ] Q学习 (q-learning) | |
+| [ ] 深度Q网络 (dqn) | |
+| [ ] 策略梯度 (policy-gradient) | |
+| [ ] 演员评论家方法 (actor-critic) | |
+| [ ] PPO算法 (ppo) | 本期新增骨架；尚未编写 |
+| [ ] SAC与TD3 (sac-td3) | 本期新增骨架；尚未编写 |
+| [ ] 离线强化学习 (offline-rl) | 本期新增骨架；尚未编写 |
+| [ ] 基于模型的强化学习 (model-based-rl) | 本期新增骨架；尚未编写 |
+| [ ] 强化学习评估 (rl-evaluation) | 本期新增骨架；尚未编写 |
+| [ ] 强化学习控制案例 (rl-control-case) | |
 
 ### 多智能体控制 (multi-agent)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 多智能体系统概述 (multi-agent-overview) | |
+| [ ] 多智能体系统 (multi-agent-overview) | |
 | [ ] 一致性控制 (consensus-control) | |
-| [ ] 编队控制 (formation-control) | |
-| [ ] 分布式优化 (distributed-optimization) | |
-| [ ] 博弈论基础 (game-theory-basics) | |
-| [ ] 多智能体协同案例 (multi-agent-cooperation) | |
 | [ ] 分布式估计 (distributed-estimation) | |
-| [ ] 多智能体RL (multi-agent-rl) | **A6 待迁入**：自 `rl-control/multi-agent-rl` 移入，迁移后本行改为已登记条目 |
+| [ ] 分布式优化 (distributed-optimization) | |
+| [ ] 控制中的博弈 (game-theory-basics) | |
+| [ ] 编队控制 (formation-control) | |
+| [ ] 分布式预测控制 (distributed-mpc) | |
+| [ ] 多智能体强化学习 (multi-agent-rl) | **A6 待迁出** → `multi-agent/multi-agent-rl`，本行随之删除；rl-control 目标 11 课 = 现存 8 − 移出 2 + 新增 5 |
+| [ ] 多智能体协同案例 (multi-agent-cooperation) | |
 
-> **A6 交接**：本章标题现为"多智能体控制"，§2.0 定名为"多智能体与分布式控制"，A6 统一改名（`catalog.ts` + 本文件 + 侧栏/首页显示）。`math/graph-theory`（网络拉普拉斯、代数连通性）与 `math/game-theory-math` 的主要服务对象就是本章，两者被依赖数分别为 1 行 / 0 行——即 math 章末尾两课的编写时点应由本章开工时间决定。
-
-### 安全、容错与认证控制 (safety-ftc)
-
-| 课程 | 状态 |
-|------|------|
-| [ ] 控制安全概论：失效模式、危害分析（HAZOP/FMEA）与安全目标 (safety-overview) | |
-| [ ] 控制屏障函数 CBF：安全集不变性与 CBF-QP (control-barrier-functions) | |
-| [ ] 可达性分析与形式化验证（Hamilton–Jacobi 可达性、区间方法、zonotope） (reachability-analysis) | |
-| [ ] 故障检测与诊断 FDI：残差生成、观测器组与统计检验 (fault-detection-isolation) | |
-| [ ] 容错控制 FTC：被动 / 主动容错与控制重构 (fault-tolerant-control) | |
-| [ ] 功能安全标准：ISO 26262 / IEC 61508 / DO-178C 的控制视角 (functional-safety-standards) | |
-| [ ] 安全强化学习 (safe-rl) | **A6 待迁入并扩充**：自 `rl-control/safe-rl` 移入，补 CMDP、拉格朗日法、屏障约束 RL |
-| [ ] 安全综合案例：从危害分析到 CBF 护栏到认证证据的完整链路 (safety-case-study) | |
-
-> **A5（2026-09-25）**：新增安全、容错与认证控制章（8 课，主责卫韧）。本章把散在各处的"安全"话题收成一条认证链路：危害分析（safety-overview）→ 运行期护栏（control-barrier-functions）→ 形式化验证（reachability-analysis）→ 故障侧 FDI/FTC → 标准合规（functional-safety-standards）→ 学习类方法的受限版本（safe-rl）→ 综合案例。`functional-safety-standards` 是唯一 `type: "impl"` 的一课，须落到 ISO 26262 的 ASIL 分解与 IEC 61508 的 SIL 定级，不能停在概念罗列。
-
-### 控制应用专题 (applications)
+### 安全控制 (safety-ftc)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 自动驾驶纵向与横向控制 (auto-driving-control) | |
-| [ ] 工业机器人与协作机器人控制 (robotics-control) | |
-| [ ] 电力电子与并网逆变器控制 (power-electronics) | |
-| [ ] 化工过程与精馏塔控制 (process-control) | |
-| [ ] 航空航天与姿态控制 (aerospace-attitude) | |
-| [ ] 新能源、储能与微电网控制 (energy-storage-microgrid) | |
-| [ ] 生物医学控制：药物输注、假肢与手术机器人 (biomedical-control) | |
-| [ ] 半导体制造装备控制：光刻机双工件台与纳米定位 (semiconductor-equipment) | |
+| [ ] 控制安全 (safety-overview) | |
+| [ ] 控制屏障函数 (control-barrier-functions) | |
+| [ ] 可达性分析 (reachability-analysis) | |
+| [ ] 故障诊断 (fault-detection-isolation) | |
+| [ ] 容错控制 (fault-tolerant-control) | |
+| [ ] 安全强化学习 (safe-rl) | **A6 待迁出** → `safety-ftc/safe-rl`（并扩充 CMDP、拉格朗日法、屏障约束 RL），本行随之删除 |
+| [ ] 功能安全 (functional-safety-standards) | |
+| [ ] 安全控制案例 (safety-case-study) | |
 
-> **A5（2026-09-25）**：新增控制应用专题章（8 课，全部 `type: "case"`、`level: "grad"`）。本章制度化 `personas.md` 的**轮值领域专家**：每课由一位领域专家主导（而非客串），配赵工（工程实现）、范安（安全）、何疑（质疑）。每课 3 条 prereq 横跨方法族（如 robotics-control 指向 nonlinear/feedback-linearization），因此本章应排在对应方法章之后编写——它是全站的"综合考场"，不是入门读物。
+### 机器人控制 (robotics)
 
----
+| 课程 | 状态 |
+|------|------|
+| [ ] 机器人系统 (robot-models) | 本期新增骨架；尚未编写 |
+| [ ] 刚体运动 (rigid-body-motion) | 本期新增骨架；尚未编写 |
+| [ ] 机器人运动学 (kinematics) | 本期新增骨架；尚未编写 |
+| [ ] 机器人动力学 (dynamics) | 本期新增骨架；尚未编写 |
+| [ ] 机器人运动规划 (motion-planning) | 本期新增骨架；尚未编写 |
+| [ ] 轨迹跟踪 (trajectory-tracking) | 本期新增骨架；尚未编写 |
+| [ ] 阻抗控制 (impedance-control) | 本期新增骨架；尚未编写 |
+| [ ] 接触控制 (contact-control) | 本期新增骨架；尚未编写 |
+| [ ] 足式机器人控制 (legged-control) | 本期新增骨架；尚未编写 |
+| [ ] 机器人控制案例 (robotics-case-study) | |
 
-**统计**：29 / 141 课程已完成（16 章；47 个交互组件文件，其中 45 个被课程正文引用）
+### 机器人学习 (robot-learning)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 机器人数据 (robot-data) | 本期新增骨架；尚未编写 |
+| [ ] 模仿学习 (imitation-learning) | 本期新增骨架；尚未编写 |
+| [ ] 离线到在线学习 (offline-online-learning) | 本期新增骨架；尚未编写 |
+| [ ] 残差学习控制 (residual-learning) | 本期新增骨架；尚未编写 |
+| [ ] 仿真到现实 (sim-to-real) | 本期新增骨架；尚未编写 |
+| [ ] 运动技能学习 (locomotion-learning) | 本期新增骨架；尚未编写 |
+| [ ] 操作技能学习 (manipulation-learning) | 本期新增骨架；尚未编写 |
+| [ ] 人机协同学习 (human-in-the-loop) | 本期新增骨架；尚未编写 |
+| [ ] 学习与预测控制 (learning-with-mpc) | 本期新增骨架；尚未编写 |
+| [ ] 机器人学习评估 (robot-learning-evaluation) | 本期新增骨架；尚未编写 |
+
+### 具身智能 (embodied)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 具身智能系统 (embodied-systems) | 本期新增骨架；尚未编写 |
+| [ ] 多模态感知 (multimodal-observation) | 本期新增骨架；尚未编写 |
+| [ ] 动作表示 (action-representations) | 本期新增骨架；尚未编写 |
+| [ ] 通用机器人策略 (generalist-policies) | 本期新增骨架；尚未编写 |
+| [ ] 扩散与流策略 (diffusion-flow-policies) | 本期新增骨架；尚未编写 |
+| [ ] 视觉语言动作模型 (vla) | 本期新增骨架；尚未编写 |
+| [ ] 世界模型 (world-models) | 本期新增骨架；尚未编写 |
+| [ ] 世界模型控制 (world-model-control) | 本期新增骨架；尚未编写 |
+| [ ] 分层决策 (hierarchical-reasoning) | 本期新增骨架；尚未编写 |
+| [ ] 具身智能评估 (embodied-evaluation) | 本期新增骨架；尚未编写 |
+
+### 自动驾驶 (autonomous-driving)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 自动驾驶系统 (driving-system) | 本期新增骨架；尚未编写 |
+| [ ] 车辆动力学 (vehicle-dynamics) | 本期新增骨架；尚未编写 |
+| [ ] 定位与运动预测 (localization-prediction) | 本期新增骨架；尚未编写 |
+| [ ] 自动驾驶规划 (motion-planning) | 本期新增骨架；尚未编写 |
+| [ ] 车辆跟踪控制 (vehicle-control) | |
+| [ ] 学习型驾驶策略 (learning-planning) | 本期新增骨架；尚未编写 |
+| [ ] 驾驶决策强化学习 (rl-decision) | 本期新增骨架；尚未编写 |
+| [ ] 驾驶世界模型 (driving-world-models) | 本期新增骨架；尚未编写 |
+| [ ] 驾驶视觉语言动作模型 (driving-vla) | 本期新增骨架；尚未编写 |
+| [ ] 闭环驾驶评估 (closed-loop-evaluation) | 本期新增骨架；尚未编写 |
+| [ ] 驾驶安全与回退 (driving-safety) | 本期新增骨架；尚未编写 |
+
+### 工程应用 (applications)
+
+| 课程 | 状态 |
+|------|------|
+| [ ] 电力电子控制 (power-electronics) | |
+| [ ] 过程控制 (process-control) | |
+| [ ] 飞行器姿态控制 (aerospace-attitude) | |
+| [ ] 微电网控制 (energy-storage-microgrid) | |
+| [ ] 生物医学控制 (biomedical-control) | |
+| [ ] 半导体装备控制 (semiconductor-equipment) | |
+
+**统计**：29 / 205 课程已完成（21 章；47 个交互组件文件，其中 45 个被课程正文引用）
 
 > **E4（2026-09-26）：郑核的「术语一致性 / 符号约定一致」自此是查表 + 一条命令，不再靠人通读 56546 行。** 新建两份**机器读的**权威表 `docs/semester-02/03-glossary.md`（**966 行**：305 条术语、348 条中文侧、**52 条别名冲突全部裁决**、登记表 314 行 + 残渣签字 39 行）与 `docs/semester-02/04-notation.md`（**656 行**：**107 个符号基**、73 行有冲突全部给建议、A 级 3 组 5 行 / B 级 68 行 / 判「无」34 行）；新建 `scripts/glossary.mjs`（**1203 行**，`scan`/`check`/`symbols`/`terms`/`conflicts`/`abbrs`/`rows` 七个子命令）+ `package.json` 两条 script：`npm run glossary`、`npm run glossary:check`。给 `scripts/lib-mdx.mjs` 加了 `scanMdx().skips` 附加返回值（**483 → 502 行**），不另写第二份「什么不是正文」的识别逻辑。负向夹具 `.agent/e4-fixture/`（**8 个文件**，含 86 条纯函数断言的 `unit-probe.mjs`）保留为仓库产物，README 把每条命令的预期判定与退出码写死。**零新增 npm 依赖**，不用 `execSync`。**一条 MDX 都没改**（Prompt 硬约束）。
 > **对本文件日常操作的直接影响**：① **签发前置多一条命令**——`npm run glossary:check` 与九项前端硬门槛同级：**C1（04 登记表缺符号基）/ C2（03 有未裁决别名冲突）FAIL 即不得签发、本文件不得打勾**；C1b/C2b/C4/C5 是 WARN；**C3 只是 INFO，不影响退出码，不得当判据用**。现网基线 `PASS 3 · WARN 1 · FAIL 0`（那条 WARN 是 C4 的 7 处漏反斜杠函数名：`max` 5 / `min` 2，内容缺陷归 C1/A6）。② **判据编号 C1–C5 是第四套**，与九项前端硬门槛、`nb-cells` 的 S0–S8、`verify-lesson` 的九项**都不通用**；写报告时「第 N 项」必须说明是哪一套（同 E2 note ③ / E3 note ② 那个坑）。③ **引入新符号或新术语前必须先查表并回写**：新符号基用 `node scripts/glossary.mjs rows notation` 生成 5 列行贴进 04 的 REGISTER，新术语按 03 §6 登记——**否则 C1 / C2 会 FAIL，这是设计（登记表少一行就红）**。裁决过程写进讨论日志 **Phase 3「教学支持（教学质量）」分组下郑核那条发言**，**不新增小节**（《讨论日志固定结构》§4 第 6 条把 Phase 3 的 `###` 分组数锁死为 6）。硬规则已写进 `wiki-discussion/SKILL.md`《输出格式规范》末尾《E4 术语与符号规则》六条 + Phase 3 郑核/李稳条目 + 《注意事项》，以及 `personas.md` 郑核的「风格一致性」清单行。④ **改这两张表就是改门槛**：03 的 REGISTER 三列会按 `[、,;；/]` 拆成键（实测 737 个），NOISE 第一列**不拆**（含逗号的英文串只能签在那里）；04 的 ABBREV 块**改变符号抽取本身**（登记进去的全大写连写自成符号基，现只 `PM`/`GM`）；**哨兵必须独占一行**（loader 走 `sentinelSlice()`）；**登记表单元格内不得出现裸 `|` 或 `\|`**，范数一律 `\lvert…\rvert` / `\lVert…\rVert`。⑤ **`v1.3-refactor/SKILL.md` 一个字没动**：E4 的改动全在孪生块之外，改完重跑 §6 仍 `TWIN-IDENTICAL ✓ 9 项`、与 plan 之间仍只有第 6 项那一处已登记偏离，整段 §1–§6 切片两份各 **104 行**、md5 同为 `7e2ba04e3b6f720a843b5d1f0f85781c`。
