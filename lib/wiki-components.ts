@@ -61,6 +61,8 @@ import { ComplexPolarExplorer } from "@/components/wiki/complex-polar-explorer";
 
 import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 
+import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
+
 export const wikiComponents: MDXComponents = {
   Callout,
   JupyterNotebook,
@@ -108,5 +110,6 @@ export const wikiComponents: MDXComponents = {
   ObserverSpeedExplorer,
   OptimalTimeExplorer,
   LqrExplorer,
+  MimoProportionalExplorer,
   ComplexPolarExplorer,
 };
