@@ -44,3 +44,6 @@
 最终npm run build、npm run build:pages、npx tsc --noEmit均退出0；Pages205课/9旧入口/310381829字节（pages-build.log）。8080根页/课程均200，page-verify-delivery.log仍PASS8/WARN1/FAIL0/SKIPPED0。source-consistency.json确认最终MDX与原生kernel/Pyodide源哈希相同。生产DOM七browser实验，含先前漏提的CDF实验；第七答案实验实际点击全部运行完成，输出与独立参考一致；console无error/warn，13display居中，390px正文343=scroll343。browser-results.json最终pass=true，opening.png/narrow.png/experiment.png均为生产页实际截图，前两图已目视确认可读。
 
 实际合并hash待合入后追加。
+
+
+实际合并回执：课程提交18dc910，以--no-ff合入master，真实合并7cdb3f9d22c16d458fde7e6d4a7ea14fb220d408。全局checklist六项完成并登记同一hash；W08仍待办。回执随后独立合入。
