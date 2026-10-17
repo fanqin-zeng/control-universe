@@ -43,10 +43,10 @@ A.1共38行；本文/答案数字、原始Notebook输出和存在的界面路线
 
 最终登记后复验全部退出0：npm run check为PASS21/WARN2/FAIL0（check.log）；npm run build完整通过（build-final.log）；npm run build:pages通过205课/9旧入口/304691505字节（pages-build.log）；npx tsc --noEmit通过（types-final.log）；8080恢复后根页/课程均200，单课verify仍PASS8/WARN1/FAIL0/SKIPPED0（page-verify-delivery.log）。
 
-生产导出页面七个Notebook均为浏览器模式、KaTeX错误0；不同速率按钮与恢复一致，第七个答案实验点击全部运行后在Pyodide 0.27.7完成，六题输出与精确参考一致，console无error/warn。browser-results.json最终pass=true；production字段保留独立生产页数据。experiment.png已由生产页面重拍，图例蓝/棕与线色一致。全局checklist本课前五项完成，真实合并后再勾最后一项。
+生产导出页面七个Notebook均为浏览器模式、KaTeX错误0；不同速率按钮与恢复一致，第七个答案实验点击全部运行后在Pyodide 0.27.7完成，六题输出与精确参考一致，console无error/warn。browser-results.json最终pass=true；production字段保留独立生产页数据。experiment.png已由生产页面重拍，图例蓝/棕与线色一致。全局checklist本课六项均完成，合并栏已在实际合并后登记真实hash。
 
 ## 合并
 
-合并记录：待实际合并后填写。
+合并记录：课程提交a1e0c74，已以--no-ff合入master，实际合并12bc125d414db3f5a8ffbdb54518357d064e84e9；全局checklist记录同一hash，本回执随后独立合入。
 
 用户两份proofreading原文件未编辑、未暂存。本次不推送远端，不发布gh-pages；下一课由新对话执行。
