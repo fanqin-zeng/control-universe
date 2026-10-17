@@ -75,7 +75,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | CLASSIC-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/01-system-modeling.md;.agent/semester-03/classic-01/acceptance.md;commit:c8fb52614a20e35331d666f2ab0d5c68e80e7508 |
-| CLASSIC-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/02-transfer-function.md;.agent/semester-03/classic-02/acceptance.md |
+| CLASSIC-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/02-transfer-function.md;.agent/semester-03/classic-02/acceptance.md;commit:1b3481632b724d91c6d9eee481b19ccbff2e864d |
 | CLASSIC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
