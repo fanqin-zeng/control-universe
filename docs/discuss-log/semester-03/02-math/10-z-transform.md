@@ -229,3 +229,5 @@
 | 6 | 最终内核复跑短暂拒绝连接 | 严格门槛必须fail | kernel-unavailable留证，服务恢复后全部重跑 |
 
 最终登记验收：check.log PASS21/WARN2/FAIL0；build-final.log/pages-build.log/types-final.log均退出0，Pages205课/9旧入口/309096053字节。根页/课程200，page-verify-delivery.log PASS8/WARN1/FAIL0/SKIPPED0。source-consistency.json确认最终MDX与双环境执行哈希相同；生产页第六答案实验实际运行完成、六browser模式、console无error/warn、手机宽343=scroll343，browser-results.json pass=true。最终截图已目视核对，未发布远端。
+
+实际合并：课程99da8ca → master合并91e207ac296ff6349b6ab39cff332b156d162a63（--no-ff）；全局checklist完成合并栏，回执另提交入主干。
