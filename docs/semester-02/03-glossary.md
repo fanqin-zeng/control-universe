@@ -205,6 +205,14 @@
 | 互补松弛 | complementary slackness | — | MATH-13 | 本课局部定义，先核条件与单位 |
 | 约束资格 | constraint qualification | — | MATH-13 | 本课局部定义，先核条件与单位 |
 | 投影梯度 | projected gradient | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 泛函 | functional | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 一阶变分 | first variation | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 欧拉拉格朗日方程 | Euler–Lagrange equation | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 自然边界条件 | natural boundary condition | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 值函数 | value function | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 最优性原理 | principle of optimality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 协态 | costate | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 维数灾难 | curse of dimensionality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
 | 随机过程 | stochastic process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 样本轨迹 | sample path | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 高斯过程 | Gaussian process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |

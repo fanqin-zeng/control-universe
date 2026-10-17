@@ -531,3 +531,7 @@ MATH-12「随机过程」按新写专用技能完整Phase1–4交付16节、6题
 ### MATH-13执行回执（2026-10-18）
 
 MATH-13「凸优化」按新写技能完整Phase1–4交付16节、6题步骤答案、6严格内核及Pyodide原始实验、双图功率分配Explorer。从两间房电暖器请求与总功率限制进入，贯穿凸性/存在唯一/对偶/KKT/Slater/投影梯度与停止证书，明确非凸与退化边界。实际TS750组与独立活跃集KKT参考对账；详见[验收记录](semester-03/math-13/acceptance.md)。W06/W07/W08继续待办，不生产MATH-14；真实合并hash登记全局checklist，发布仍需具体版本授权。
+
+### MATH-14执行回执（2026-10-18）
+
+MATH-14「变分法与动态规划」按新写技能完整Phase1–4交付16节、6题步骤答案、6严格内核及Pyodide原始实验、双图有限步小车Explorer。由归一化小车回家问题连接泛函/变分/EL/端点与充分性、Bellman/Riccati倒推与前向执行、协态/Hamilton/HJB；软终点和硬终点、离散和连续明确区分。实际TS960组对独立整段稠密正定QP；详见[验收记录](semester-03/math-14/acceptance.md)。W06/W07/W08继续待办，不生产MATH-15；合并hash登记全局checklist，发布仍需具体版本授权。

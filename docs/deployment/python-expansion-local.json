@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-17T19:30:38.797Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=math/convex-optimization",
+  "testedAt": "2026-10-17T19:44:06.068Z",
+  "url": "http://localhost:8080/python-expansion.html?lesson=math/variational-dp",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -9057,21 +9057,166 @@
           ]
         }
       ]
+    },
+    {
+      "key": "math/variational-dp",
+      "title": "变分法与动态规划",
+      "sourceHash": "19929150e89a71cece74f31b1e12e2bd0e06d51a088442ac3868ccb092c71517",
+      "notebooks": [
+        {
+          "id": "math/variational-dp#1",
+          "title": "路径扰动与边界复算",
+          "index": 1,
+          "line": 88,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5950,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "端点: 0 1\n正泛函/负泛函: pi**2*e**2/4 + 1/2 -pi**2*e**2/4 - 1/2\n第一/第二变分: 0 pi**2/2\n自由终点零路径目标: 0\n匀速系数: {a: 1, b: 0}\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#2",
+          "title": "Bellman符号倒推",
+          "index": 2,
+          "line": 154,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 31,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "最优动作: -p*x/(p + r) 二阶导: p + r\nP递推: (p*q + p*r + q*r)/(p + r)\nP: [8/5, 3/2, 1] K: [3/5, 1/2] V0(2): 16/5\n无状态/终端惩罚P: [0, 0, 0]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#3",
+          "title": "整段二次问题独立核验",
+          "index": 3,
+          "line": 180,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 22,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "软终端动作/状态/目标: {a: -6/5, b: -2/5} 4/5 2/5 16/5\n阶段与终端: 68/25 2/5 2/25\nHessian: Matrix([[3, 1], [1, 2]]) 顺序主子式: 3 5\n硬终端动作/中间状态/目标: -4/3 -2/3 2/3 10/3\n零状态最优目标: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#4",
+          "title": "协态与Bellman核对",
+          "index": 4,
+          "line": 207,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "协态: [16/5, 6/5, 2/5]\n协态递推残差: [0, 0]\n动作驻点残差: [0, 0]\nBellman残差: [0, 0]\n终端残差: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#5",
+          "title": "连续时间Riccati与代价",
+          "index": 5,
+          "line": 242,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 50,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "连续阶段/终端/总: 2 - 2*exp(-2) 2*exp(-2) 2\n连续终点: 2*exp(-1) 0.7357588823428847\ns/P0/J0: 1.0 1.0 2.0\n终端/方程复核: 1.0 0.0\ns/P0/J0: 0.0 0.7615941559548295 1.523188311909659\n终端/方程复核: 0.0 -9.353628982466944e-13\ns0解析值: 1.5231883119115297\n协态/驻点/状态残差: 0 0 0\nquad积分证书: 1.9999999999999998\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#6",
+          "title": "六题答案复算",
+          "index": 6,
+          "line": 284,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 52,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1泛函/一阶: pi**2*e**2/4 + 1/2 0\n题3 P/K/V: [8/5, 3/2, 1] [3/5, 1/2] 16/5\n题4阶段/终端/总: [68/25, 2/5] 2/25 16/5\n题5协态: [16/5, 6/5, 2/5]\n题6阶段/终端/总: 2 - 2*exp(-2) 2*exp(-2) 2\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 64,
-    "notebooks": 251,
-    "enabled": 223,
+    "lessons": 65,
+    "notebooks": 257,
+    "enabled": 229,
     "codeOnly": 28
   },
   "releaseTotals": {
-    "lessons": 64,
-    "notebooks": 251,
-    "enabled": 221,
+    "lessons": 65,
+    "notebooks": 257,
+    "enabled": 227,
     "codeOnly": 30
   },
   "provenance": [
@@ -9169,6 +9314,11 @@
       "testedAt": "2026-10-17T19:30:38.797Z",
       "url": "http://localhost:8080/python-expansion.html?lesson=math/convex-optimization",
       "inputPath": ".agent/semester-03/math-13/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:44:06.068Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/variational-dp",
+      "inputPath": ".agent/semester-03/math-14/browser-python.json"
     }
   ]
 }
