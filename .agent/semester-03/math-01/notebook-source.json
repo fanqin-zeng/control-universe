@@ -1,0 +1,104 @@
+{
+  "source": "content/math/calculus-basics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 5,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 102,
+      "title": "复算差商、导数与切线预测",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\nfrom fractions import Fraction\nimport json\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 109,
+          "delim": "`",
+          "code": "s = t**2\nprint(\"位置表:\", [(i, int(s.subs(t, i))) for i in range(4)])\nprint(\"区间平均速度:\", (s.subs(t, 2)-s.subs(t, 1))/(2-1), (s.subs(t, 3)-s.subs(t, 2))/(3-2))\nfor h in [sp.Rational(-1,2), sp.Rational(-1,10), sp.Rational(-1,100), sp.Rational(1,100), sp.Rational(1,10), sp.Rational(1,2)]:\n    quotient = sp.simplify((s.subs(t, 2+h)-s.subs(t, 2))/h)\n    print(\"h=\", h, \"差商=\", quotient, \"小数=\", float(quotient))\nprint(\"导数:\", sp.diff(s, t), \"t=2时:\", sp.diff(s, t).subs(t, 2))\nh = sp.Rational(1,10)\nprint(\"切线预测/真值/误差:\", 4+4*h, s.subs(t,2+h), sp.simplify(s.subs(t,2+h)-(4+4*h)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 150,
+      "title": "复核求导规则",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 155,
+          "delim": "`",
+          "code": "polynomial = 3*t**2-2*t+1\nchain = (1+2*t)**2\nprint(\"常数/幂函数/乘积:\", sp.diff(sp.Integer(7), t), sp.diff(t**2, t), sp.diff(t*t**2, t))\nprint(\"多项式导数与点值:\", sp.diff(polynomial,t), sp.diff(polynomial,t).subs(t,2))\nprint(\"复合函数导数与点值:\", sp.expand(sp.diff(chain,t)), sp.diff(chain,t).subs(t,1))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 211,
+      "title": "复算矩形和与有符号累积",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\nfrom fractions import Fraction\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 217,
+          "delim": "`",
+          "code": "for n in [1,2,4,8,16]:\n    width = Fraction(2,n)\n    sample_times = [Fraction(2*i,n) for i in range(1,n+1)]\n    velocities = [2*sample for sample in sample_times]\n    total = sum(speed*width for speed in velocities)\n    print(\"N=\",n,\"宽度=\",width,\"右端速度=\",velocities,\"右端和=\",total,\"小数=\",float(total))\nprint(\"符号积分:\", sp.integrate(2*t,(t,0,2)))\nvelocity = 2*t-2\nfirst = sp.integrate(velocity,(t,0,1))\nsecond = sp.integrate(velocity,(t,1,2))\nprint(\"两段位移/净位移/路程:\",first,second,first+second,-first+second)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 280,
+      "title": "复算尖点、扰动与基本定理",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\nt, h = sp.symbols('t h', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 285,
+          "delim": "`",
+          "code": "for increment in [sp.Rational(-1,10),sp.Rational(-1,100),sp.Rational(1,100),sp.Rational(1,10)]:\n    print(\"尖点 h=\",increment,\"差商=\",abs(increment)/increment)\nfor increment in [sp.Rational(1,10),sp.Rational(1,100)]:\n    clean = ((2+increment)**2-4)/increment\n    noisy = ((2+increment)**2+sp.Rational(1,100)-4)/increment\n    print(\"h=\",increment,\"准确/扰动差商=\",float(clean),float(noisy),\"额外项=\",float(noisy-clean))\nprint(\"累积函数及导数:\", sp.integrate(2*t,(t,0,h)), sp.diff(h**2,h))\nprint(\"幂函数原函数:\",sp.integrate(t**2,t))\nprint(\"常数信息:\",[sp.diff(t**2+c,t) for c in [-3,0,7]])\nprint(\"取h=0时原差商分母:\",0,\"；不执行除零\")",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 330,
+      "title": "独立复算全部习题答案",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\nfrom fractions import Fraction\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 336,
+          "delim": "`",
+          "code": "s = t**2\nprint(\"题1:\", (s.subs(t,3)-s.subs(t,1))/2, sp.diff(s,t).subs(t,1), sp.diff(s,t).subs(t,3))\nincrement = sp.Rational(-1,2)\nprint(\"题2:\", sp.simplify((s.subs(t,2+increment)-s.subs(t,2))/increment), sp.diff(s,t).subs(t,2))\nincrement = sp.Rational(1,10)\nprediction = s.subs(t,2)+sp.diff(s,t).subs(t,2)*increment\nexact = s.subs(t,2+increment)\nprint(\"题3:\",prediction,exact,exact-prediction)\nprint(\"题4:\",sp.diff((1+2*t)**2,t).subs(t,1))\nwidth = sp.Rational(1,2)\nrectangle = sum((2*i*width)*width for i in range(1,5))\narea = sp.integrate(2*t,(t,0,2))\nprint(\"题5:\",rectangle,area,rectangle-area)\nsegments = [sp.integrate(2*t-2,(t,0,1)),sp.integrate(2*t-2,(t,1,2))]\nprint(\"题6:\",segments,sum(segments),sum(abs(segment) for segment in segments))\nprint(\"题7:\",[abs(h)/h for h in [sp.Rational(-1,10),sp.Rational(1,10)]])\nprint(\"题8:\",[sp.Rational(1,100)/h for h in [sp.Rational(1,10),sp.Rational(1,100)]])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
