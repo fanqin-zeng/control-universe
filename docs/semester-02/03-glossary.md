@@ -442,6 +442,18 @@
 | 最小范数最小二乘解 | minimum-norm least-squares solution | — | MATH-05定义 | 在最优残差解中再选最小范数 |
 | 二范数条件数 | 2-norm condition number | — | MATH-05定义 | 本课满列秩时σmax/σmin |
 | 截断SVD | truncated SVD | — | MATH-05定义 | 本课严格σ>τ才保留 |
+| 等高线 | contour line | — | MATH-06定义 | 高度相同的点形成的曲线 |
+| 偏导数 | partial derivative | — | MATH-06定义 | 固定其它坐标，不是置零 |
+| 可微性 | differentiability | — | MATH-06定义 | 统一线性近似及相对位移余项 |
+| 全微分 | total differential | — | MATH-06定义 | 一阶线性部分，不等于有限真实变化 |
+| 梯度 | gradient | — | MATH-06定义 | 本课按列向量约定 |
+| 方向导数 | directional derivative | — | MATH-06定义 | 本课按单位方向、可微前提使用梯度公式 |
+| 雅可比矩阵 | Jacobian matrix、Jacobian | — | MATH-06定义 | 行对应输出，列对应输入 |
+| Hessian矩阵 | Hessian matrix、Hessian | 海森矩阵 | MATH-06定义 | 本课记H_h，不与其它H混用 |
+| 混合偏导 | mixed partial derivative | — | MATH-06定义 | 交换顺序需条件 |
+| 驻点 | stationary point | — | MATH-06定义 | 梯度为零，不保证极值 |
+| 鞍点 | saddle point | — | MATH-06定义 | 相邻方向有升有降 |
+| 二重积分 | double integral | — | MATH-06定义 | 高度或密度乘小面积再求和 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

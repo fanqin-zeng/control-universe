@@ -34,6 +34,9 @@
 | DEP02 | 首次远端发布及公网验收 | [x] | docs/deployment/first-release.md;docs/deployment/first-release-http.json;docs/deployment/first-release-actions.json |
 | DEP03 | Pyodide数学两课试验、控制库支持清单与授权发布 | [x] | docs/deployment/pyodide-trial.md;docs/deployment/pyodide-public-results.json;docs/deployment/pyodide-public-actions.json;docs/deployment/pyodide-public-ui.json |
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
+| W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
+| W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
+| P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -50,7 +53,7 @@
 | MATH-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/03-linear-algebra-basics.md;.agent/semester-03/math-03/acceptance.md;.agent/semester-03/math-03/reconciliation.json;commit:610cf519523d06a67e0b2431ce45d5a7ca73fd29 |
 | MATH-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/04-eigen-decomposition.md;.agent/semester-03/math-04/acceptance.md;.agent/semester-03/math-04/reconciliation.json;commit:21e01b2e3fe76ca98402645d38780cd4c8e978fc |
 | MATH-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/05-matrix-decomposition.md;.agent/semester-03/math-05/acceptance.md;.agent/semester-03/math-05/reconciliation.json;commit:04e98d5af707017cdf1ac293d7914a4a31c274c8 |
-| MATH-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md;.agent/semester-03/math-06/acceptance.md;.agent/semester-03/math-06/reconciliation.json |
 | MATH-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
