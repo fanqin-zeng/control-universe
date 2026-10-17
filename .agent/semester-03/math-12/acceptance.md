@@ -38,3 +38,5 @@ Pyodide七原始setup/cell完整成功（browser-python.json），清单63课/24
 真实16H2/ID顺序/侧栏一致、无重复；12块公式居中、长式自身auto滚动，390px正文client343=scroll343，两画布313宽。最终生产截图opening.png/narrow.png/experiment.png及browser-results.json已保存；四份档案日志/对账/红队/九项齐备。18新术语、局部符号、真实先修、旧tracker、自动OUTLINE、计划与全局checklist同步；全仓两WARN沿用登记基线，本页唯一WARN为下一课凸优化空页。自动OUTLINE/统计修正首次退出非0保留，独立check另验。
 
 W06/W07/W08仍待办；用户proofreading两个原文件未编辑未暂存。不推送远端，不发布gh-pages。最终build、build:pages、tsc退出码均0；Pages导出205课/9旧路由，311841075字节。生产页7个浏览器实验、16H2、12公式居中、零KaTeX错误，答案实验运行完成，控制台warn/error为空，390px正文343=343，双画布313。browser-results.json pass=true。最终页面verify退出码0。合并回执见后附。
+
+合并回执：课程提交 `312b524` 已通过 `--no-ff` 合入 master，课程合并提交 `e4404751d8455b8d2d16c63ce9e9d19c2f546227`。全局 checklist 六项完成；本对话仅交付 MATH-12。未推送远端、未发布 gh-pages。

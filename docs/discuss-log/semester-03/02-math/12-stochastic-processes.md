@@ -233,3 +233,5 @@ NB1…NB7各一cell；原始数字见.agent/semester-03/math-12/reconciliation.j
 ### 最终生产验收回执
 
 秦构：最终 build / build:pages / tsc 均退出0；本地 Pages 导出205课、9旧路由、311841075字节。生产页 h1=1、h2=16、浏览器实验7、KaTeX错误0，12块公式居中；390px正文343=343，双画布313。答案实验在Pyodide运行完成，默认/平稳初始化/恢复默认正确，控制台warn/error为空。browser-results.json pass=true，opening.png人工查看字色清晰。最终单课verify退出0。郑核：验收通过，批准本课合入master；未授权发布gh-pages。
+
+合并回执：课程提交 `312b524` 已通过 `--no-ff` 合入 master，课程合并提交 `e4404751d8455b8d2d16c63ce9e9d19c2f546227`。全局 checklist 六项完成；本对话仅交付 MATH-12。未推送远端、未发布 gh-pages。
