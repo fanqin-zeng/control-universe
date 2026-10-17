@@ -1,0 +1,84 @@
+[
+  {
+    "name": "versions / import control",
+    "code": "import sys, numpy, scipy, sympy, matplotlib, control as ct\nprint(sys.version)\nprint('numpy',numpy.__version__,'scipy',scipy.__version__,'sympy',sympy.__version__,'matplotlib',matplotlib.__version__,'control',ct.__version__)\nassert ct.__version__ == '0.10.2'"
+  },
+  {
+    "name": "transfer function / poles / zeros / DC gain",
+    "code": "G=ct.tf([1],[1,2,1])\nassert np.allclose(ct.poles(G),[-1,-1])\nassert len(ct.zeros(G)) == 0\nassert np.isclose(ct.dcgain(G),1)\nprint(G,ct.poles(G),ct.dcgain(G))"
+  },
+  {
+    "name": "step / impulse / forced response",
+    "code": "G=ct.tf([1],[1,1]); t=np.linspace(0,5,101)\nt,y=ct.step_response(G,T=t); assert np.isclose(y[-1],1-np.exp(-5))\nt,y=ct.impulse_response(G,T=t); assert np.isclose(y[-1],np.exp(-5))\nt,y=ct.forced_response(G,T=t,U=np.ones_like(t)); assert np.isclose(y[-1],1-np.exp(-5))\nprint('step/impulse/forced analytic values passed')"
+  },
+  {
+    "name": "feedback / series / parallel",
+    "code": "G=ct.tf([1],[1,1]); T=ct.feedback(G,1)\nassert np.allclose(ct.poles(T),[-2]); assert np.isclose(ct.dcgain(T),0.5)\nassert np.isclose(ct.dcgain(ct.series(G,G)),1); assert np.isclose(ct.dcgain(ct.parallel(G,G)),2)\nprint('closed-loop pole -2; gain 0.5')"
+  },
+  {
+    "name": "frequency response / Bode / Nyquist / margins",
+    "code": "G=ct.tf([1],[1,2,1,0]); w=np.logspace(-2,2,100)\nr=ct.frequency_response(G,w); assert len(r.omega)==100\nct.bode_plot(G,w); plt.close('all')\nct.nyquist_plot(G,omega=w); plt.close('all')\ngm,pm,wpc,wgc=ct.margin(G); assert np.isclose(gm,2); assert 20<pm<25\nprint('gain margin',gm,'phase margin',pm)"
+  },
+  {
+    "name": "state space / controllability / observability",
+    "code": "A=np.array([[0,1],[-2,-3]]); B=np.array([[0],[1]]); C=np.array([[1,0]]); D=np.zeros((1,1))\nS=ct.ss(A,B,C,D); assert np.linalg.matrix_rank(ct.ctrb(A,B))==2; assert np.linalg.matrix_rank(ct.obsv(A,C))==2\nassert np.isclose(ct.dcgain(S),0.5); print(S)"
+  },
+  {
+    "name": "tf to ss / ss to tf (SISO)",
+    "code": "G=ct.tf([1],[1,3,2]); S=ct.ss(G); H=ct.tf(S)\nassert np.allclose(np.sort_complex(ct.poles(H)),[-2,-1]); assert np.isclose(ct.dcgain(H),0.5)\nprint('SISO conversions passed')"
+  },
+  {
+    "name": "pole placement (SciPy place)",
+    "code": "K=ct.place(A,B,[-4,-5]); assert np.allclose(np.sort_complex(np.linalg.eigvals(A-B@K)),[-5,-4]); print('K',K)"
+  },
+  {
+    "name": "continuous LQR / CARE (SciPy fallback)",
+    "code": "K,P,E=ct.lqr(A,B,np.eye(2),np.eye(1),method='scipy')\nassert np.all(np.real(E)<0); assert np.linalg.norm(A.T@P+P@A-P@B@B.T@P+np.eye(2))<1e-8\nprint('K',K,'closed-loop poles',E)"
+  },
+  {
+    "name": "discretization / DLQR / DARE",
+    "code": "Sd=ct.sample_system(S,0.1,method='zoh'); K,P,E=ct.dlqr(Sd.A,Sd.B,np.eye(2),np.eye(1),method='scipy')\nassert np.all(np.abs(E)<1); R=np.eye(1); Ad=Sd.A; Bd=Sd.B\nres=Ad.T@P@Ad-P-Ad.T@P@Bd@np.linalg.solve(R+Bd.T@P@Bd,Bd.T@P@Ad)+np.eye(2)\nassert np.linalg.norm(res)<1e-8; print('discrete poles',E)"
+  },
+  {
+    "name": "root locus numerical map",
+    "code": "r=ct.root_locus_map(ct.tf([1],[1,3,2]),gains=np.array([0,1,10])); assert r.loci.shape==(3,2); assert np.allclose(np.sort_complex(r.loci[0]),[-2,-1]); print(r.loci)"
+  },
+  {
+    "name": "MIMO state-space frequency response",
+    "code": "M=ct.ss(np.diag([-1.,-2.]),np.eye(2),np.eye(2),np.zeros((2,2))); r=ct.frequency_response(M,[1.]); assert r.frdata.shape==(2,2,1); assert np.allclose(r.frdata[:,:,0],np.diag([1/(1+1j),1/(2+1j)])); print(r.frdata)"
+  },
+  {
+    "name": "Slycot import unavailable",
+    "expectedFailure": true,
+    "code": "import slycot"
+  },
+  {
+    "name": "H-infinity synthesis unavailable without Slycot",
+    "expectedFailure": true,
+    "code": "P=ct.ss([[-1.]],[[1.,1.]],[[1.],[1.]],[[0.,1.],[1.,0.]])\nct.hinfsyn(P,1,1)"
+  },
+  {
+    "name": "H2 synthesis unavailable without Slycot",
+    "expectedFailure": true,
+    "code": "ct.h2syn(P,1,1)"
+  },
+  {
+    "name": "mixed sensitivity synthesis unavailable without Slycot",
+    "expectedFailure": true,
+    "code": "ct.mixsyn(ct.tf([1],[1,1]),ct.tf([1],[1]))"
+  },
+  {
+    "name": "state-space minimal realization unavailable without Slycot",
+    "expectedFailure": true,
+    "code": "ct.minreal(S)"
+  },
+  {
+    "name": "MIMO tf to ss unavailable without Slycot",
+    "expectedFailure": true,
+    "code": "Mtf=ct.tf([[[1],[0]],[[0],[1]]],[[[1,1],[1]],[[1],[1,2]]])\nct.ss(Mtf)"
+  },
+  {
+    "name": "continuous LQE (SciPy fallback)",
+    "code": "L,P,E=ct.lqe(A,np.eye(2),C,np.eye(2),np.eye(1),method=\"scipy\")\nassert np.all(np.real(E)<0); assert np.linalg.norm(A@P+P@A.T-P@C.T@C@P+np.eye(2))<1e-8; print(\"L\",L,\"observer poles\",E)"
+  }
+]

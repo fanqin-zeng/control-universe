@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import {usePathname} from 'next/navigation';
+import {BrowserNotebook} from './browser-notebook';
 
 interface NotebookOutput {
   type: "text" | "image" | "error" | "stream" | "html";
@@ -73,6 +75,7 @@ export function JupyterNotebook({
   setupCode = "",
   title,
 }: JupyterNotebookProps) {
+  const pathname = usePathname();
   const [cells, setCells] = useState<CellState[]>(() =>
     initCells.map((c, i) => ({
       id: `cell-${i}`,
@@ -217,6 +220,7 @@ export function JupyterNotebook({
   }, [setupCode]);
 
   if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {
+    if (/\/math\/(calculus-basics|complex-numbers)\/?$/.test(pathname || '')) return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} />;
     return <section className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "var(--foreground)" }}>
       <strong style={{ color: "var(--foreground)" }}>{title || "Python 代码"}</strong>
       <p>在线版展示实验代码；Python 执行需要本地 Jupyter 服务。图中的交互实验仍可直接操作。</p>

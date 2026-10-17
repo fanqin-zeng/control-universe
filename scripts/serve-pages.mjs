@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {createReadStream,existsSync,statSync} from 'node:fs';
 import {resolve,extname,sep} from 'node:path';
 const root=resolve('out'),base='/control-universe';
-const mime={'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.json':'application/json','.txt':'text/plain; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+const mime={'.wasm':'application/wasm','.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.json':'application/json','.txt':'text/plain; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 createServer((req,res)=>{
  const url=new URL(req.url,'http://localhost');
  if(url.pathname===base){res.writeHead(301,{Location:base+'/'+url.search});res.end();return;}
