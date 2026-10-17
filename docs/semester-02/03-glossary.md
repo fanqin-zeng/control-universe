@@ -145,6 +145,19 @@
 | 阶跃响应 | step response | — | 1 门 / 1 次 | **补登记** → §4-15 |
 | 最小方差控制 | Minimum Variance Control | — | 1 门 / 1 次 | **补登记**。缩写 MVC，**不要**写 MV（MV = 操纵变量）→ §4-20 |
 
+| 傅里叶级数 | Fourier series | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 傅里叶变换 | Fourier transform | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 基频 | fundamental frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 谐波 | harmonic | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 角频率 | angular frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 均方值 | mean square | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 均方根 | root mean square、RMS | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| Parseval等式 | Parseval identity | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 频谱泄漏 | spectral leakage | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 奈奎斯特频率 | Nyquist frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| Gibbs现象 | Gibbs phenomenon | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 快速傅里叶变换 | fast Fourier transform、FFT | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+
 ### §2.2 无冲突的条目（按英文键字母序）
 
 | 中文标准译名 | 英文 | 别名（课程中出现过的其他译法） | 出现课程 | 建议 |

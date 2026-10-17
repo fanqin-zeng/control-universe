@@ -1,0 +1,142 @@
+{
+  "source": "content/math/fourier-analysis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 85,
+      "title": "正交系数与幅相",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 86,
+          "delim": "`",
+          "code": "x = sp.cos(2*sp.pi*t)+sp.cos(6*sp.pi*t)/2\r\nfor k in [0,1,2,3]:\r\n    a = sp.integrate(2*x*sp.cos(2*sp.pi*k*t),(t,0,1))\r\n    b = sp.integrate(2*x*sp.sin(2*sp.pi*k*t),(t,0,1))\r\n    print('n/a/b:',k,a,b)\r\nfor k in [-3,-1,0,1,3]:\r\n    c = sp.integrate(sp.expand_trig(x)*sp.expand_complex(sp.exp(-2*sp.pi*sp.I*k*t)),(t,0,1))\r\n    print('n/c:',k,sp.simplify(c))\r\nphase_signal = sp.cos(2*sp.pi*t)-sp.sin(6*sp.pi*t)/2\r\nprint('相位90度的a3/b3/c3/起点:',0,-sp.Rational(1,2),sp.I/4,phase_signal.subs(t,0))\r\nms = sp.integrate(x*x,(t,0,1))\r\nphase_ms = sp.integrate(phase_signal**2,(t,0,1))\r\nprint('均值/均方/改相位均方/RMS:',sp.integrate(x,(t,0,1)),ms,phase_ms,sp.sqrt(ms),sp.N(sp.sqrt(ms),12))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 114,
+      "title": "方波系数与有限截断",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nimport numpy as np\r\nt = sp.symbols('t', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 116,
+          "delim": "`",
+          "code": "for n in [1,2,3,5]:\r\n    b = 2*(sp.integrate(sp.sin(2*sp.pi*n*t),(t,0,sp.Rational(1,2)))-sp.integrate(sp.sin(2*sp.pi*n*t),(t,sp.Rational(1,2),1)))\r\n    print('方波n/b:',n,sp.simplify(b))\r\nfor N in [1,3,15]:\r\n    quarter = sp.simplify(sum(4*sp.sin(sp.pi*(2*k-1)/2)/(sp.pi*(2*k-1)) for k in range(1,N+1)))\r\n    ms = sp.simplify(sum(8/(sp.pi**2*(2*k-1)**2) for k in range(1,N+1)))\r\n    grid = np.linspace(0,1,20001)\r\n    values = sum(4*np.sin(2*np.pi*(2*k-1)*grid)/(np.pi*(2*k-1)) for k in range(1,N+1))\r\n    print('N/四分之一时刻/均方:',N,quarter,sp.N(quarter,12),sp.N(ms,12))\r\n    print('网格采样最大值（非连续精确峰）:',float(values.max()))\r\nprint('跳点有限和:',0)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 166,
+      "title": "普通傅里叶变换与单位约定",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt,w = sp.symbols('t w', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 167,
+          "delim": "`",
+          "code": "# 对任意实w，复权重模为1，绝对积分界为2，故下列无条件化简有明确依据\r\nabsolute_bound = sp.integrate(sp.exp(t),(t,-sp.oo,0))+sp.integrate(sp.exp(-t),(t,0,sp.oo))\r\nprint('任意实频率的绝对积分界:',absolute_bound)\r\nX = sp.simplify(sp.integrate(sp.exp(t)*sp.exp(-sp.I*w*t),(t,-sp.oo,0),conds='none')+sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))\r\nbox = sp.simplify(sp.integrate(sp.exp(-sp.I*w*t),(t,-1,1)))\r\nprint('双边衰减变换/零频/一弧度:',X,X.subs(w,0),X.subs(w,1))\r\nprint('逆式在t0的积分:',sp.integrate(2/(1+w*w),(w,-sp.oo,sp.oo))/(2*sp.pi))\r\nprint('矩形脉冲变换:',box)\r\nprint('矩形零频/第一正零点:',sp.limit(2*sp.sin(w)/w,w,0),sp.simplify(2*sp.sin(sp.pi)/sp.pi))\r\nprint('延迟2秒的一弧度变换:',sp.exp(-2*sp.I)*X.subs(w,1))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 202,
+      "title": "延迟卷积与稳定频响",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt,r = sp.symbols('t r', positive=True)\r\nw = sp.symbols('w', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 204,
+          "delim": "`",
+          "code": "# w为实数，e^-t及t*e^-t都绝对可积；导数绝对值亦被(1+t)e^-t控制\r\nprint('三种积分的绝对界:',1,1,sp.integrate((1+t)*sp.exp(-t),(t,0,sp.oo)))\r\nH = sp.simplify(sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))\r\ncontinuous = sp.simplify(sp.integrate(t*sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))\r\nderivative = sp.simplify(sp.integrate((1-t)*sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))\r\nconv = sp.integrate(sp.exp(-r)*sp.exp(-(t-r)),(r,0,t))\r\nprint('核H/卷积函数/卷积变换:',H,conv,continuous)\r\nprint('导数规则余量:',sp.simplify(derivative-sp.I*w*continuous))\r\nH1 = sp.simplify(H.subs(w,1))\r\nprint('一弧度H/增益/相位:',H1,sp.Abs(H1),sp.arg(H1))\r\nprint('一Hz增益:',sp.simplify(sp.Abs(H.subs(w,2*sp.pi))),sp.N(sp.Abs(H.subs(w,2*sp.pi)),12))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 233,
+      "title": "DFT幅值与负频率",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 233,
+          "delim": "`",
+          "code": "N = 64\r\nfs = 64.0\r\nn = np.arange(N)\r\nx = np.cos(2*np.pi*n/fs)+.5*np.cos(6*np.pi*n/fs)\r\nX = np.fft.fft(x)\r\nprint('正/负频率格及模:',[1,3,63,61],np.abs(X[[1,3,63,61]]))\r\nprint('单边幅值:',2*np.abs(X[[1,3]])/N)\r\nprint('均值/时域均方/DFT均方:',x.mean(),np.mean(x*x),np.sum(np.abs(X)**2)/N**2)\r\nprint('逆变换最大误差:',np.max(np.abs(np.fft.ifft(X).real-x)))\r\nprint('频率格间隔:',fs/N)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 254,
+      "title": "混叠泄漏与端点归一化",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 254,
+          "delim": "`",
+          "code": "N=64\r\nn=np.arange(N)\r\na=np.cos(2*np.pi*3*n/N)\r\nb=np.cos(2*np.pi*61*n/N)\r\nprint('3Hz与61Hz采样最大差:',np.max(np.abs(a-b)))\r\nprint('奈奎斯特正弦采样最大绝对值:',np.max(np.abs(np.sin(np.pi*n))))\r\nfor f in [3,3.5]:\r\n    X=np.fft.rfft(np.cos(2*np.pi*f*n/N))\r\n    amplitudes=2*np.abs(X)/N\r\n    amplitudes[0]/=2\r\n    amplitudes[-1]/=2\r\n    print('输入Hz/格3,4单边幅值:',f,amplitudes[[3,4]])\r\nfor label,x in [('DC2',np.full(N,2.0)),('Nyquist',np.cos(np.pi*n))]:\r\n    X=np.fft.rfft(x)\r\n    print('端点例/正确幅值:',label,np.abs(X[0])/N,np.abs(X[-1])/N)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 294,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nimport numpy as np\r\nt,w = sp.symbols('t w', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 296,
+          "delim": "`",
+          "code": "print('题1周期/Hz/角频率/双边系数:',1,[1,3],[2*sp.pi,6*sp.pi],[sp.Rational(1,2),sp.Rational(1,4)])\r\np=sp.cos(2*sp.pi*t)-sp.sin(6*sp.pi*t)/2\r\nprint('题2 a3/b3/c3/起点/均方:',0,-sp.Rational(1,2),sp.I/4,p.subs(t,0),sp.integrate(p*p,(t,0,1)))\r\nprint('题3:',4/sp.pi,52/(15*sp.pi),0)\r\nX=2/(1+w*w)\r\nprint('题4:',X,X.subs(w,0),X.subs(w,1),sp.exp(-2*sp.I))\r\nprint('题5 H1/增益/相位/一Hz增益:',(1-sp.I)/2,sp.sqrt(2)/2,-sp.pi/4,1/sp.sqrt(1+4*sp.pi**2))\r\nn=np.arange(64)\r\nx=np.cos(2*np.pi*n/64)+.5*np.cos(6*np.pi*n/64)\r\nD=np.fft.fft(x)\r\nprint('题6原始模/单边幅值:',np.abs(D[[1,3]]),2*np.abs(D[[1,3]])/64)\r\nleak=np.fft.rfft(np.cos(2*np.pi*3.5*n/64))\r\nprint('题6泄漏格3/4:',2*np.abs(leak[[3,4]])/64)\r\nprint('题6端点幅值:',np.abs(np.fft.rfft(np.full(64,2.0))[0])/64,np.abs(np.fft.rfft(np.cos(np.pi*n))[-1])/64)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

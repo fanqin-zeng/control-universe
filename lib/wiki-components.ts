@@ -1,3 +1,4 @@
+import { FourierSynthesisExplorer } from "@/components/wiki/fourier-synthesis-explorer";
 import { LaplaceWeightExplorer } from "@/components/wiki/laplace-weight-explorer";
 import { CascadeExponentialExplorer } from "@/components/wiki/cascade-exponential-explorer";
 import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
@@ -74,6 +75,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  FourierSynthesisExplorer,
   LaplaceWeightExplorer,
   CascadeExponentialExplorer,
   a: ({ href = "", ...props }: ComponentProps<"a">) => createElement("a", { ...props, href: withBasePath(href) }),

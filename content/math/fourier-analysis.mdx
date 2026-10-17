@@ -1,0 +1,309 @@
+---
+title: 傅里叶分析
+description: 从振动的频率成分出发，理解正交系数、幅值与相位、周期级数与非周期变换，并正确解释有限采样的FFT。
+---
+
+# 傅里叶分析
+
+## 振动里有哪些频率
+
+风扇转动时，支架可能一边做较慢的摆动，一边叠着更快的起伏。位移传感器只给出一条随时间变化的曲线：怎样看出里面有哪些重复的节奏？能不能把它拆成几条简单的正弦，再用这些分量合回原来的形状？
+
+先构造一条已知答案的教学曲线，时间 $t$ 用秒、位移 $x$ 用毫米，系数按这些单位写数值：
+
+$$
+x(t)=\cos(2\pi t)+\tfrac12\cos(6\pi t).
+$$
+
+第一项每秒重复一次，第二项每秒重复三次；幅值分别为 $1$ mm 和 $0.5$ mm。这不是风扇实测数据，也不能据此判断设备故障。我们先用它学习如何读波形和频谱。
+
+<FourierSynthesisExplorer />
+
+保留默认设置时，$t=0$ 的位移为 $1.5$ mm。把第三谐波的相位改成 $90^\circ$，波形会改变，但它在频率轴上仍位于 $3$ Hz。先观察这一点：**频率、幅值、相位回答的是三个不同问题**。本课用已交付的微积分和[复数基础](/math/complex-numbers)把它们定量分开。
+
+## 周期与角频率
+
+若 $x(t+T)=x(t)$，就说 $T>0$ 是一个周期；对这里的非恒定周期信号，最小正周期叫基本周期。每秒重复多少次用频率 $f_0=1/T$ 表示，单位 Hz；正弦每秒转过多少弧度用角频率 $\omega_0=2\pi f_0$ 表示，单位 rad/s。
+
+主例的基本周期为 $1$ 秒，基频为 $1$ Hz，基角频率为 $2\pi$ rad/s。$3$ Hz 是它的第三谐波，对应角频率 $6\pi$ rad/s。**$1$ Hz 不等于 $1$ rad/s**，代公式前先看采用哪一种单位。
+
+一个周期函数不必长得像单一正弦；谐波就是基频的整数倍分量。直流分量则是平均偏置，不随时间摆动，频率为零。主例的平均位移为零，但瞬时位移、幅值和后面的均方值都不为零。
+
+## 正交性怎样分离分量
+
+先把主例乘上 $\cos(2\pi t)$，在一整周期上积分。不同整数频率的余弦相乘，正负部分恰好抵消；相同频率相乘，相当于余弦平方，留下非零平均。这就是这里的**正交性**。
+
+对正整数 $m,n$，令 $\omega_0=2\pi/T$，有
+
+$$
+\int_0^T\cos(m\omega_0t)\cos(n\omega_0t)\,dt
+=\begin{cases}0,&m\ne n,\\T/2,&m=n.\end{cases}
+$$
+
+可以用 $2\cos A\cos B=\cos(A-B)+\cos(A+B)$ 验证：整数个周期的余弦积分为零，相同频率时多出常数项。正弦与余弦相乘的积分也为零，正弦的同频平方积分同样为 $T/2$。
+
+因此“乘上目标频率再积分”就像只保留与它对得上的部分。再乘以 $2/T$，便能读出该余弦前的系数；主例会给出 $1$ 和 $1/2$，其它整数频率的系数为零。积分区间必须是一整周期或整数个周期，随手截一小段通常不再正交。
+
+## 傅里叶级数的系数
+
+把周期函数写成整数频率正弦和，称为**傅里叶级数**：
+
+$$
+x(t)\sim\frac{a_0}{2}+\sum_{n=1}^\infty
+\bigl[a_n\cos(n\omega_0t)+b_n\sin(n\omega_0t)\bigr],
+$$
+
+$$
+a_n=\frac2T\int_0^T x(t)\cos(n\omega_0t)\,dt\quad(n\ge0),\qquad
+b_n=\frac2T\int_0^T x(t)\sin(n\omega_0t)\,dt\quad(n\ge1).
+$$
+
+平均值是 $a_0/2$，不是 $a_0$。主例有 $a_1=1,a_3=1/2$，其余 $a_n$ 与所有 $b_n$ 为零，恰好只需两项。$\sim$ 提醒我们：对一般函数，还需要讨论级数以什么方式收敛，不能不加条件说“处处相等”。
+
+用欧拉公式也可写成复指数形式，其中 $j^2=-1$：
+
+$$
+x(t)\sim\sum_{n=-\infty}^\infty c_ne^{jn\omega_0t},\qquad
+c_n=\frac1T\int_0^T x(t)e^{-jn\omega_0t}\,dt.
+$$
+
+对实信号，$c_0=a_0/2$，正整数 $n$ 有 $c_n=(a_n-jb_n)/2$、$c_{-n}=\overline{c_n}$。主例 $c_{\pm1}=1/2,c_{\pm3}=1/4$。负频率不是又发现了一台反向振动的机器，而是复指数表达实信号所需的成对信息。
+
+## 幅值与相位
+
+将同一频率的两项合成：$a_n\cos\theta+b_n\sin\theta=A_n\cos(\theta+\phi_n)$，便有
+
+$$
+A_n=\sqrt{a_n^2+b_n^2}=2|c_n|,\qquad
+\phi_n=\arg(a_n-jb_n)\quad(A_n>0).
+$$
+
+所以主例的**单边幅值**是 $1,0.5$ mm，而双边复系数的模是 $0.5,0.25$ mm；两种图不能使用同一个纵轴名称。若幅值为零，就无法从信号中辨认该分量的相位。
+
+把第三谐波改为 $\tfrac12\cos(6\pi t+\pi/2)=-\tfrac12\sin(6\pi t)$，就有 $a_3=0,b_3=-1/2,c_3=j/4$，相位为 $+\pi/2$。此时 $t=0$ 的总位移为 $1$ mm，幅值仍是 $0.5$ mm。相位改变了各分量怎样在时间上配合，没有改变频率位置。
+
+<JupyterNotebook title="正交系数与幅相" setupCode={`import sympy as sp
+t = sp.symbols('t', real=True)`} cells={[{code:`x = sp.cos(2*sp.pi*t)+sp.cos(6*sp.pi*t)/2
+for k in [0,1,2,3]:
+    a = sp.integrate(2*x*sp.cos(2*sp.pi*k*t),(t,0,1))
+    b = sp.integrate(2*x*sp.sin(2*sp.pi*k*t),(t,0,1))
+    print('n/a/b:',k,a,b)
+for k in [-3,-1,0,1,3]:
+    c = sp.integrate(sp.expand_trig(x)*sp.expand_complex(sp.exp(-2*sp.pi*sp.I*k*t)),(t,0,1))
+    print('n/c:',k,sp.simplify(c))
+phase_signal = sp.cos(2*sp.pi*t)-sp.sin(6*sp.pi*t)/2
+print('相位90度的a3/b3/c3/起点:',0,-sp.Rational(1,2),sp.I/4,phase_signal.subs(t,0))
+ms = sp.integrate(x*x,(t,0,1))
+phase_ms = sp.integrate(phase_signal**2,(t,0,1))
+print('均值/均方/改相位均方/RMS:',sp.integrate(x,(t,0,1)),ms,phase_ms,sp.sqrt(ms),sp.N(sp.sqrt(ms),12))`}]} />
+
+## 截断与跳变
+
+真实计算只能保留有限项。看一个数学上的理想方波：周期为 $1$ 秒，前半周期为 $+1$ mm，后半周期为 $-1$ mm，跳变时刻取左右值的中点 $0$。它的级数只含奇次正弦：
+
+$$
+x_N(t)=\frac4\pi\sum_{k=1}^N\frac{\sin\bigl(2\pi(2k-1)t\bigr)}{2k-1}.
+$$
+
+$N$ 是保留的奇谐波项数；$N=3$ 表示频率 $1,3,5$ Hz，并不是最高只到 $3$ Hz。组件可切换到方波模式观察。$t=1/4$ 时，$N=1$ 给 $4/\pi\approx1.2732$ mm，$N=3$ 给 $52/(15\pi)\approx1.1035$ mm；目标值是 $1$ mm。跳点 $t=0$ 则每一项都为零。
+
+对分段光滑的周期函数，级数在连续点收敛到函数值，在跳变点收敛到左右极限的平均。这里“分段光滑”指一周期可分成有限段，各段函数和导数足够规则，接缝允许有限跳变。有限和是连续曲线，不可能在所有点都精确复制跳跃。
+
+跳变附近会出现**Gibbs现象**：过冲不会因项数增加而完全消失，但它所在的区域会变窄。某个点的误差也不保证随项数单调下降。下面只输出有限网格的采样最大值，不把它当成连续曲线精确峰值，更不把振铃解释成设备里多出一种真实振动。
+
+<JupyterNotebook title="方波系数与有限截断" setupCode={`import sympy as sp
+import numpy as np
+t = sp.symbols('t', real=True)`} cells={[{code:`for n in [1,2,3,5]:
+    b = 2*(sp.integrate(sp.sin(2*sp.pi*n*t),(t,0,sp.Rational(1,2)))-sp.integrate(sp.sin(2*sp.pi*n*t),(t,sp.Rational(1,2),1)))
+    print('方波n/b:',n,sp.simplify(b))
+for N in [1,3,15]:
+    quarter = sp.simplify(sum(4*sp.sin(sp.pi*(2*k-1)/2)/(sp.pi*(2*k-1)) for k in range(1,N+1)))
+    ms = sp.simplify(sum(8/(sp.pi**2*(2*k-1)**2) for k in range(1,N+1)))
+    grid = np.linspace(0,1,20001)
+    values = sum(4*np.sin(2*np.pi*(2*k-1)*grid)/(np.pi*(2*k-1)) for k in range(1,N+1))
+    print('N/四分之一时刻/均方:',N,quarter,sp.N(quarter,12),sp.N(ms,12))
+    print('网格采样最大值（非连续精确峰）:',float(values.max()))
+print('跳点有限和:',0)`}]} />
+
+## 均方值与能量
+
+平均位移可能为零，却不能说明没有振动。把位移平方后取一周期平均，得到**均方值**；再开平方，就是**均方根**（RMS），单位恢复为位移单位。
+
+对一周期内平方积分有限的信号，正交性使不同频率的交叉项积分为零，给出 **Parseval等式**：
+
+$$
+\frac1T\int_0^T|x(t)|^2dt
+=\frac{a_0^2}{4}+\frac12\sum_{n=1}^\infty(a_n^2+b_n^2)
+=\sum_{n=-\infty}^\infty|c_n|^2.
+$$
+
+主例均方值为 $(1^2+0.5^2)/2=5/8=0.625$ mm²，RMS约为 $0.7906$ mm。只改变第三谐波相位不会改变这个整周期均方值；但位移的瞬时值仍会改变。方波目标的均方值为 $1$ mm²，有限截断的均方值则只累计保留的系数，不应直接写成 $1$。
+
+一周期均方值大于零的周期信号无限重复时，$\int_{-\infty}^\infty|x(t)|^2dt$ 发散，因此它不是有限能量信号。一周期均方有限与全时间能量有限是两件事。本课把这个平方积分称为信号能量；位移平方的积分不自动等于机械能量，后者还需要质量、速度等物理模型。
+
+## 非周期信号的傅里叶变换
+
+对一段会衰减或只在有限时间出现的信号，不必强行假设它周期重复。采用**角频率**约定，定义
+
+$$
+X(\omega)=\int_{-\infty}^\infty x(t)e^{-j\omega t}\,dt.
+$$
+
+若 $\int|x(t)|dt<\infty$，称 $x$ **绝对可积**，上式就能按普通积分处理。若 $x$ 与 $X$ 都绝对可积，在连续点有逆式
+
+$$
+x(t)=\frac1{2\pi}\int_{-\infty}^\infty X(\omega)e^{j\omega t}\,d\omega.
+$$
+
+这里的 $1/(2\pi)$ 与指数里的角频率是一套约定。若改用Hz，就必须把指数写成 $e^{-j2\pi ft}$，相应逆式也随变量替换调整，不能把两套公式拼在一起。
+
+取 $x(t)=e^{-|t|}$，按秒的数值标尺写系数。把积分从零处分开，得到 $X(\omega)=2/(1+\omega^2)$；$X(0)=2$，$X(1)=1$。这里 $X$ 的单位是信号单位乘秒，不能把它的数值直接当成周期信号中某条正弦的毫米幅值。
+
+另取 $|t|<1$ 时为 $1$、外部为零的矩形脉冲，端点值不影响积分。它的变换为 $2\sin\omega/\omega$，零频处按极限取 $2$，$\omega=\pi$ 时为零。这个变换不绝对可积，逆积分需额外的收敛解释，不能直接套刚才那组充分条件。
+
+周期正弦和方波也不绝对可积；本课用傅里叶级数表示它们，不把它们的普通傅里叶变换硬画成连续函数。用冲激表示线谱需要广义函数，这里不引入。
+
+<JupyterNotebook title="普通傅里叶变换与单位约定" setupCode={`import sympy as sp
+t,w = sp.symbols('t w', real=True)`} cells={[{code:`# 对任意实w，复权重模为1，绝对积分界为2，故下列无条件化简有明确依据
+absolute_bound = sp.integrate(sp.exp(t),(t,-sp.oo,0))+sp.integrate(sp.exp(-t),(t,0,sp.oo))
+print('任意实频率的绝对积分界:',absolute_bound)
+X = sp.simplify(sp.integrate(sp.exp(t)*sp.exp(-sp.I*w*t),(t,-sp.oo,0),conds='none')+sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))
+box = sp.simplify(sp.integrate(sp.exp(-sp.I*w*t),(t,-1,1)))
+print('双边衰减变换/零频/一弧度:',X,X.subs(w,0),X.subs(w,1))
+print('逆式在t0的积分:',sp.integrate(2/(1+w*w),(w,-sp.oo,sp.oo))/(2*sp.pi))
+print('矩形脉冲变换:',box)
+print('矩形零频/第一正零点:',sp.limit(2*sp.sin(w)/w,w,0),sp.simplify(2*sp.sin(sp.pi)/sp.pi))
+print('延迟2秒的一弧度变换:',sp.exp(-2*sp.I)*X.subs(w,1))`}]} />
+
+## 延迟与卷积
+
+将绝对可积信号延迟 $\tau$，即 $x(t-\tau)$，变换就乘 $e^{-j\omega\tau}$。模不变，相位减少 $\omega\tau$。上例 $e^{-|t|}$ 延迟 $2$ 秒，在 $\omega=1$ rad/s 处的模仍为 $1$，相位为 $-2$ 弧度（模 $2\pi$）。
+
+对合适的绝对可积信号，定义全时间卷积 $(h*x)(t)=\int_{-\infty}^\infty h(r)x(t-r)dr$，它的变换为 $H(\omega)X(\omega)$。这与前面周期系数不是同一种乘法，但都在利用复指数的结构。
+
+若 $x$ 连续、分段连续可微，导数也绝对可积，且远处边界项为零，分部积分还给出 $\mathcal F\{x'\}=j\omega X$。跳变信号不能忽略跳变后就照搬普通导数规则。对负时间为零、正时间为 $te^{-t}$ 的连续信号，它的变换为 $1/(1+j\omega)^2$，导数的变换为 $j\omega/(1+j\omega)^2$，边界条件在这里恰好满足。
+
+## 频率响应从哪里来
+
+设一个稳定线性时不变模型用卷积描述，核函数为负时间取零、正时间取 $h(t)=e^{-t}$，时间常数为 $1$ 秒，核的单位配为每秒。它的**频率响应**是
+
+$$
+H(\omega)=\int_0^\infty e^{-t}e^{-j\omega t}dt=\frac1{1+j\omega}.
+$$
+
+把全时间存在的复指数 $e^{j\omega t}$ 代入卷积，可把与积分变量无关的部分提出，得到输出 $H(\omega)e^{j\omega t}$。实部就是余弦输出：幅值乘 $|H|$，相位加 $\arg H$。这里输入正弦不必绝对可积；核 $h$ 的绝对可积性使这次稳定卷积仍成立。
+
+输入 $\cos t$ 时，角频率为 $1$ rad/s，增益为 $1/\sqrt2\approx0.7071$，相位为 $-\pi/4$，输出为 $\cos(t-\pi/4)/\sqrt2$。若从某个时刻才接通输入，还会有启动瞬态，不能把这个全时间正弦结果当成从零开始的完整响应。
+
+若输入频率是 $1$ Hz，则应代入 $\omega=2\pi$，增益约 $0.1572$，不是 $0.7071$。这也是必须区分两种频率单位的实际原因。
+
+对这个负时间为零的核，若定义单边加权积分 $H_L(s)=\int_0^\infty h(t)e^{-st}dt$，且虚轴在它的收敛域内，才可令 $s=j\omega$ 得到这里的响应；不能对任意不收敛的积分这样替换。
+
+<JupyterNotebook title="延迟卷积与稳定频响" setupCode={`import sympy as sp
+t,r = sp.symbols('t r', positive=True)
+w = sp.symbols('w', real=True)`} cells={[{code:`# w为实数，e^-t及t*e^-t都绝对可积；导数绝对值亦被(1+t)e^-t控制
+print('三种积分的绝对界:',1,1,sp.integrate((1+t)*sp.exp(-t),(t,0,sp.oo)))
+H = sp.simplify(sp.integrate(sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))
+continuous = sp.simplify(sp.integrate(t*sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))
+derivative = sp.simplify(sp.integrate((1-t)*sp.exp(-t)*sp.exp(-sp.I*w*t),(t,0,sp.oo),conds='none'))
+conv = sp.integrate(sp.exp(-r)*sp.exp(-(t-r)),(r,0,t))
+print('核H/卷积函数/卷积变换:',H,conv,continuous)
+print('导数规则余量:',sp.simplify(derivative-sp.I*w*continuous))
+H1 = sp.simplify(H.subs(w,1))
+print('一弧度H/增益/相位:',H1,sp.Abs(H1),sp.arg(H1))
+print('一Hz增益:',sp.simplify(sp.Abs(H.subs(w,2*sp.pi))),sp.N(sp.Abs(H.subs(w,2*sp.pi)),12))`}]} />
+
+## DFT与FFT
+
+电脑拿到的是有限个采样值。对 $N$ 个数 $x[n]$，**离散傅里叶变换**（DFT）定义为
+
+$$
+X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N},\qquad
+x[n]=\frac1N\sum_{k=0}^{N-1}X[k]e^{j2\pi kn/N}.
+$$
+
+**FFT** 是快速计算这组DFT的算法，不是另一种物理变换。这里正变换不除以 $N$，逆变换除以 $N$；不同软件约定若不同，幅值也要相应调整。
+
+以 $f_s=64$ Hz 采样，取 $N=64$，$t_n=n/64$，$n=0,\ldots,63$。不要把右端点 $t=1$ 再采一次。频率格为 $k f_s/N$；$k>N/2$ 的格也可读成 $(k-N)f_s/N$ 的负频率。主例得到 $|X[1]|=32,|X[3]|=16$，负频率对应格 $63,61$ 具有相同模。
+
+对实信号、偶数 $N$、且分量恰好对准频率格时，正频率内部格的单边幅值为 $2|X[k]|/N$；直流格和奈奎斯特格 $k=N/2$ 不翻倍。直流的有符号均值是 $X[0]/N$，它的幅值则取绝对值。于是主例仍给 $1,0.5$ mm，不能把未经归一化的 $32,16$ 当作实际幅值。
+
+这一约定下，离散均方值为 $(1/N)\sum|x[n]|^2=(1/N^2)\sum|X[k]|^2$。主例两边都为 $0.625$ mm²，与整周期积分一致；这依赖本例采样和周期匹配，不能由一次FFT读数推断所有连续时间信息。
+
+<JupyterNotebook title="DFT幅值与负频率" setupCode={`import numpy as np`} cells={[{code:`N = 64
+fs = 64.0
+n = np.arange(N)
+x = np.cos(2*np.pi*n/fs)+.5*np.cos(6*np.pi*n/fs)
+X = np.fft.fft(x)
+print('正/负频率格及模:',[1,3,63,61],np.abs(X[[1,3,63,61]]))
+print('单边幅值:',2*np.abs(X[[1,3]])/N)
+print('均值/时域均方/DFT均方:',x.mean(),np.mean(x*x),np.sum(np.abs(X)**2)/N**2)
+print('逆变换最大误差:',np.max(np.abs(np.fft.ifft(X).real-x)))
+print('频率格间隔:',fs/N)`}]} />
+
+## 采样与有限窗口
+
+采样率决定了哪些不同连续信号可能给出相同数据。以 $64$ Hz 采样，$3$ Hz和 $61$ Hz的余弦在每个采样点上完全相同，因为 $\cos(2\pi61n/64)=\cos(2\pi3n/64)$。这叫**混叠**，仅看这些数据无法判定原信号是哪一个。
+
+$f_s/2=32$ Hz叫这里的**奈奎斯特频率**。理想带限采样定理需要已知信号的频率严格低于该边界，并有完整的均匀采样序列；有限一段FFT并不能证明这些前提。恰在边界上的 $\sin(\pi n)$ 在所有采样点都为零，因此不能声称任意边界相位都可恢复；前面的奈奎斯特余弦只是有限DFT端点归一化的例子。实际采样前还要限制高频成分，这超出本课的数学入门范围。
+
+另一种现象是**频谱泄漏**。同样记录一秒，若余弦为 $3.5$ Hz，它在窗口里不是整数周期，DFT的整数频率格就不能只用一对系数精确表示。能量会分到多个格里；本例格 $3,4$ 的单边幅值约为 $0.5900,0.6777$，并非两条真实振动的毫米幅值。
+
+有限记录相当于给无限信号乘一个时间窗口；窗口也参与了频谱。补零只能让频率格画得更密，不能自动增加窗外观测，也不能只靠它获得更长记录的辨别能力。泄漏与混叠的原因不同，不能把泄漏的多个柱子都叫混叠，也不能用加密绘图恢复已经混叠的信息。
+
+<JupyterNotebook title="混叠泄漏与端点归一化" setupCode={`import numpy as np`} cells={[{code:`N=64
+n=np.arange(N)
+a=np.cos(2*np.pi*3*n/N)
+b=np.cos(2*np.pi*61*n/N)
+print('3Hz与61Hz采样最大差:',np.max(np.abs(a-b)))
+print('奈奎斯特正弦采样最大绝对值:',np.max(np.abs(np.sin(np.pi*n))))
+for f in [3,3.5]:
+    X=np.fft.rfft(np.cos(2*np.pi*f*n/N))
+    amplitudes=2*np.abs(X)/N
+    amplitudes[0]/=2
+    amplitudes[-1]/=2
+    print('输入Hz/格3,4单边幅值:',f,amplitudes[[3,4]])
+for label,x in [('DC2',np.full(N,2.0)),('Nyquist',np.cos(np.pi*n))]:
+    X=np.fft.rfft(x)
+    print('端点例/正确幅值:',label,np.abs(X[0])/N,np.abs(X[-1])/N)`}]} />
+
+## 小结
+
+周期级数用离散的谐波系数表示波形；普通非周期变换用连续频率变量，并要检查积分条件。复系数、单边幅值、连续变换和有限DFT各有自己的归一化，不能只看一张“频谱图”就混为一谈。
+
+正交性解释系数怎样分离，也解释均方值怎样相加；稳定卷积解释一个频率为何只改变幅值和相位。FFT能高效计算已有样本的DFT，但不会替我们保证采样率、记录窗口与物理模型正确。下一课[Z变换](/math/z-transform)会继续讨论离散序列的变换，本课不提前展开。
+
+## 习题
+
+1. 主例的基本周期、两条正频率的Hz与角频率各是多少？写出非零双边复系数，并解释它们为什么比单边幅值小一半。
+2. 第三谐波相位改为 $90^\circ$ 时，求 $a_3,b_3,c_3,x(0)$ 与整周期均方值；幅值为零时，相位还能从信号辨认吗？
+3. 方波保留 $N=1$ 与 $N=3$ 项时，在 $t=1/4$ 各是多少？在跳点 $t=0$ 应收敛到什么值？增加项数是否保证所有点误差都单调减少？
+4. 求 $e^{-|t|}$ 的角频率傅里叶变换及 $X(0),X(1)$。延迟 $2$ 秒后，在 $\omega=1$ 处的模与相位怎样变？
+5. 对本课稳定核 $h(t)=e^{-t}$（负时间为零），输入全时间余弦 $\cos t$，求增益、相位和输出。若改为 $1$ Hz，为什么不能仍代入 $\omega=1$？
+6. 对主例取 $N=f_s=64$ 的一秒记录，求格 $1,3$ 的原始DFT模与单边幅值。再解释 $3$ 与 $61$ Hz无法区分、$3.5$ Hz出现多个格，以及直流/奈奎斯特格为什么不翻倍。
+
+## 答案
+
+1. $T=1$ 秒，频率为 $1,3$ Hz，角频率为 $2\pi,6\pi$ rad/s。$c_{\pm1}=1/2,c_{\pm3}=1/4$，其余为零；一条余弦按欧拉公式拆成正负两条复指数，每条承担一半幅值。
+2. 第三项等于 $-\sin(6\pi t)/2$，所以 $a_3=0,b_3=-1/2,c_3=j/4$。$x(0)=1$ mm；均方值仍为 $5/8$ mm²，RMS约 $0.7906$ mm，交叉项在整周期上为零。幅值为零时，该分量不再影响信号，无法辨认它的相位。
+3. $N=1$ 给 $4/\pi\approx1.2732$ mm，$N=3$ 给 $(4/\pi)(1-1/3+1/5)=52/(15\pi)\approx1.1035$ mm。跳点左右值为 $+1,-1$，中点为零，有限和在这里也为零。不能保证所有点误差单调减少，跳变附近还保留Gibbs振铃，不能声称处处一致逼近。
+4. 分别在负、正半轴积分，得到 $1/(1-j\omega)+1/(1+j\omega)=2/(1+\omega^2)$。$X(0)=2,X(1)=1$；延迟后乘 $e^{-2j\omega}$，在 $\omega=1$ 处模为 $1$、相位为 $-2$ 弧度（模 $2\pi$）。
+5. $H(1)=1/(1+j)=(1-j)/2$，增益 $1/\sqrt2\approx0.7071$，相位 $-\pi/4$，输出 $\cos(t-\pi/4)/\sqrt2$。$1$ Hz对应 $2\pi$ rad/s，应得到 $1/\sqrt{1+4\pi^2}\approx0.1572$ 的增益；这里不包含启动瞬态。
+6. 原始模为 $32,16$，内部正频率格要乘 $2/N$，恢复为 $1,0.5$ mm。$3$ 与 $61$ Hz在采样点上余弦相同，是混叠；$3.5$ Hz不对齐本次频率格，有限窗口造成泄漏，格 $3,4$ 约为 $0.5900,0.6777$，不能认作两条物理分量。直流与奈奎斯特格没有另一条独立负频率伙伴，归一化只除以 $N$；常数 $2$ 的直流幅值为 $2$，单位幅值奈奎斯特余弦的幅值为 $1$。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import sympy as sp
+import numpy as np
+t,w = sp.symbols('t w', real=True)`} cells={[{code:`print('题1周期/Hz/角频率/双边系数:',1,[1,3],[2*sp.pi,6*sp.pi],[sp.Rational(1,2),sp.Rational(1,4)])
+p=sp.cos(2*sp.pi*t)-sp.sin(6*sp.pi*t)/2
+print('题2 a3/b3/c3/起点/均方:',0,-sp.Rational(1,2),sp.I/4,p.subs(t,0),sp.integrate(p*p,(t,0,1)))
+print('题3:',4/sp.pi,52/(15*sp.pi),0)
+X=2/(1+w*w)
+print('题4:',X,X.subs(w,0),X.subs(w,1),sp.exp(-2*sp.I))
+print('题5 H1/增益/相位/一Hz增益:',(1-sp.I)/2,sp.sqrt(2)/2,-sp.pi/4,1/sp.sqrt(1+4*sp.pi**2))
+n=np.arange(64)
+x=np.cos(2*np.pi*n/64)+.5*np.cos(6*np.pi*n/64)
+D=np.fft.fft(x)
+print('题6原始模/单边幅值:',np.abs(D[[1,3]]),2*np.abs(D[[1,3]])/64)
+leak=np.fft.rfft(np.cos(2*np.pi*3.5*n/64))
+print('题6泄漏格3/4:',2*np.abs(leak[[3,4]])/64)
+print('题6端点幅值:',np.abs(np.fft.rfft(np.full(64,2.0))[0])/64,np.abs(np.fft.rfft(np.cos(np.pi*n))[-1])/64)`}]} />
