@@ -38,3 +38,5 @@
 最终独立生产标签browser-results.json pass=true：h1=1/H2=16、7浏览器实验、7display居中auto、KaTeX错误0；默认/缩小动作/观察37.5%时刻.750s/恢复正确，答案原始cell在Pyodide运行完成；控制台warn/error为空。旧标签兼用开发页留下的历史Fast Refresh警告单独保留priorTabHistoricalLogs，未当作生产标签错误或删除证据。390px正文343=scroll343、几何canvas313×313、第二图313×240。opening.png人工查看正文清晰，arrow-repair.png查看车头箭头与线段方向一致，narrow.png存档。原始7标签/提取/kernel/Pyodide一致，源SHA核source-consistency.json；37行三方对账、九项+四条与四份档案齐备。
 
 W06/W07/W08不关闭；两个用户批阅文件不编辑不暂存。未推送远端、未发布gh-pages。
+
+合并回执：课程提交 `93bef9f` 已用 `--no-ff` 合入 master，课程合并提交 `9cc0ee3814532bdb5ed5bb8006fb1aacde70dbab`。全局checklist六项全部完成；本对话只交付MATH-15。未推送远端、未发布gh-pages。
