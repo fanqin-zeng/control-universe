@@ -193,6 +193,25 @@
 | 大数定律 | law of large numbers | — | MATH-11 | 本课定义，按概率语境使用 |
 | Chebyshev不等式 | Chebyshev inequality | — | MATH-11 | 本课定义，按概率语境使用 |
 
+| 随机过程 | stochastic process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 样本轨迹 | sample path | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 高斯过程 | Gaussian process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 自相关 | autocorrelation | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 自协方差 | autocovariance | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 严格平稳 | strict stationarity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 宽平稳 | wide-sense stationarity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 均值均方遍历 | mean-square mean ergodicity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 白噪声 | white noise | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 一阶自回归模型 | first-order autoregressive model、AR(1) | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 功率谱密度 | power spectral density、PSD | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 马尔可夫性质 | Markov property | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 马尔可夫链 | Markov chain | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 转移矩阵 | transition matrix | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 平稳分布 | stationary distribution | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 布朗运动 | Brownian motion | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 独立增量 | independent increments | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 离散Lyapunov方程 | discrete Lyapunov equation | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+
 ### §2.2 无冲突的条目（按英文键字母序）
 
 | 中文标准译名 | 英文 | 别名（课程中出现过的其他译法） | 出现课程 | 建议 |
