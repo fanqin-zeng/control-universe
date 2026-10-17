@@ -43,3 +43,6 @@ browser-results.json finalDelivery=true：真实14H2顺序/ID/全部目录锚点
 source-consistency.json：最终正文SHA aa7c4aec92a0fddd9948d7d2f180d0d1f898d7b6c13c792e84a1b9a1d92b66a3，与独立复算及浏览器报告一致，原始/提取/kernel/Pyodide各7、H2十四/独占围栏8。scope-check证明此前68课兼容记录及30待办逐字段未改。check-log通过40行六列对账、九项+四条、五条红队放行及单次签发；结构检查不能代替已记录的语义与可见画面检查。
 
 用户两份proofreading不编辑不暂存；W06/W07/W08与全站收官保持待办。本对话只交付MATH-18，没有推送远端、没有发布gh-pages。真实合并回执后附。
+
+
+合并回执：课程提交 `36da790` 已用 `--no-ff` 合入 master，课程合并提交 `b4d3b8e22c63cbbf159fffaa2401d3998aa1c598`。全局checklist六项全部完成，数学章本期18课均已交付；只交付MATH-18，W06/W07/W08保持待办。没有推送远端、没有发布gh-pages。
