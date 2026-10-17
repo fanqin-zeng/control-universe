@@ -45,3 +45,6 @@ Phase1–4已完成，日志57行六列A.1、原九项+四条B、三条六列C�
 | check-browser/check-source/check-scope/check-log及check-fix-logs | 真实DOM、源hash/5计数、69旧课+30待办不变、四阶段/57对账/九项门槛、fix索引一致（均0） | 对应check日志 |
 
 郑核已签发，下一课CLASSIC-03「时域分析」另起对话；只合master，不推送远端、不发布gh-pages。开发8080恢复。真实合并提交在完成后回填以下回执。
+
+
+合并回执：课程提交`cc5cf58`已通过`--no-ff`合入master，课程合并提交`1b3481632b724d91c6d9eee481b19ccbff2e864d`。全局checklist六列完成，本期已合并20课（18数学+2经典控制）；W06/W07/W08/W09继续待办。本对话只交付CLASSIC-02，未推送远端、未发布gh-pages。
