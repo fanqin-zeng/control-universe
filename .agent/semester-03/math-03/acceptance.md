@@ -40,6 +40,6 @@ verify的唯一WARN为下一课math/eigen-decomposition仍是已登记骨架；�
 
 ## 合入
 
-待真实--no-ff合入后记录。此处不预填hash。
+课程提交bf990e2，已以--no-ff合入master，真实课程合并提交610cf519523d06a67e0b2431ce45d5a7ca73fd29；确认后才勾全局MATH-03合并列。回执沿用本工作包分支提交再合回master。本次不push、不发布gh-pages，停止于这一节课。
 
 日志结构复核：node .agent/semester-03/math-03/check-log.mjs退出0，4阶段/3轮/6审校组/10出席角色/36对账行/9门槛与附加项/4附录及唯一标记均通过；语义、数字覆盖和出席阶段由日志人工逐项核查。见log-structure.log。最终source-hash与Python白名单经check-python-support复核一致，原两门数学正文与Worker的git diff为空。
