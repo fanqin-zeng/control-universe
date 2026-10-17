@@ -15,7 +15,6 @@ import type { MDXComponents } from "mdx/types";
 import { Callout } from "@/components/wiki/callout";
 import { JupyterNotebook } from "@/components/wiki/jupyter-notebook";
 import { SuspensionExplorer } from "@/components/wiki/suspension-explorer";
-import { FirstOrderComparisonExplorer } from "@/components/wiki/first-order-comparison-explorer";
 import { PoleZeroExplorer } from "@/components/wiki/pole-zero-explorer";
 import { StepBodeExplorer } from "@/components/wiki/step-bode-explorer";
 import { ImpulseExplorer } from "@/components/wiki/impulse-explorer";
@@ -67,7 +66,6 @@ export const wikiComponents: MDXComponents = {
   Callout,
   JupyterNotebook,
   SuspensionExplorer,
-  FirstOrderComparisonExplorer,
   PoleZeroExplorer,
   StepBodeExplorer,
   ImpulseExplorer,

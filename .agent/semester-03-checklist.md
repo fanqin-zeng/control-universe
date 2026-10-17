@@ -21,12 +21,12 @@
 | S01 | 结构迁移清单与来源/依赖审查 | [x] | .agent/semester-03/s01-migration-review.md;.agent/semester-03/s01-dependency-review.md;.agent/semester-03/s01-migration-inventory.json;scripts/check-migration-review.mjs |
 | S02 | 21章catalog骨架与纯资产迁移 | [x] | .agent/semester-03/s02-structure-migration.md;scripts/check-structure-migration.mjs;.agent/semester-03/s02-route-results.json;.agent/semester-03/s02-warnings.json |
 | S03 | 旧URL、锚点、引用与台账兼容 | [x] | .agent/semester-03/s03-compatibility.md;.agent/semester-03/s03-compat-results.json;scripts/verify-migration-compat.mjs;9旧入口、迁移旧片段、10活跃引用及历史日志身份通过；全站锚点W01/W04/W05仍待办 |
-| S04 | 结构迁移验收与master合入 | [ ] | check、build、全部迁移页/链接回归和实际merge hash |
-| W01 | Q5：26页侧栏锚点对齐与旧链接兼容 | [ ] | .agent/semester-03/i03-warn-audit.md;W04/W05后、S04前完成，逐页实际DOM验收 |
-| W02 | Q3：两个孤儿组件的用途与资产去向 | [ ] | .agent/semester-03/i03-warn-audit.md;S04前提交去向决定；复用交给关联课，未实际交付不关闭 |
-| W03 | Q20：30条孤立课程与7零先修章逐项核验 | [ ] | .agent/semester-03/i03-warn-audit.md;.agent/semester-03/s02-structure-migration.md;S02目录图已无孤立课/零边章/倒置，待W03独立确认处置，教学可学性仍逐课P1复核 |
-| W04 | S3-Q001：真实渲染锚点生成与验收契约 | [ ] | .agent/semester-03/i03-warn-audit.md;先于W01/S04，覆盖数学标题与跨级同名标题 |
-| W05 | Q6：两页MPC正文吞入数学块的渲染修复 | [ ] | .agent/semester-03/i03-warn-audit.md;P0，先于W01/S04；build及verify第1/6项通过，widget债务归MPC-01/MPC-03 |
+| S04 | 结构迁移验收与master合入 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
+| W01 | Q5：26页侧栏锚点对齐与旧链接兼容 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;真实DOM、旧ID与canonical去向通过 |
+| W02 | Q3：两个孤儿组件的用途与资产去向 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
+| W03 | Q20：30条孤立课程与7零先修章逐项核验 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
+| W04 | S3-Q001：真实渲染锚点生成与验收契约 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
+| W05 | Q6：两页MPC正文吞入数学块的渲染修复 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
 | R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归 |
 | R02 | 205课全交付与141来源去向复核 | [ ] | 所有课程合并列完成，56原文资产无遗失，统计以脚本为准 |
 | R03 | 归因回顾、学期总结与版本标签 | [ ] | 沿用fix-tracker回顾，记录最终验收和semester03标签 |
@@ -42,7 +42,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | MATH-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MATH-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -68,7 +68,7 @@
 | CLASSIC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| CLASSIC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | CLASSIC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -88,7 +88,7 @@
 | MODERN-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MODERN-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MODERN-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 
 ### 非线性控制
 
@@ -97,7 +97,7 @@
 | NONLINEAR-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | NONLINEAR-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -117,7 +117,7 @@
 | DISCRETE-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | DISCRETE-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -131,7 +131,7 @@
 | IMPL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| IMPL-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | IMPL-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -171,7 +171,7 @@
 |---|---|---|---|---|---|---|---|
 | EST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s02-structure-migration.md;S02实跑发现存量setup缺plt及ipywidgets，Phase1审计 |
+| EST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s02-structure-migration.md;S02实跑发现存量setup缺plt及ipywidgets，Phase1审计;.agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | EST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -182,11 +182,11 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBUST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | ROBUST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | ROBUST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -198,17 +198,17 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MPC-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| MPC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| MPC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| MPC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MPC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 
 ### 智能控制
 

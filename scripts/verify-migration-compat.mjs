@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import http from 'node:http';
 import {parseCatalog} from './lib-catalog.mjs';
-import {lessonRedirects,legacyAnchors,canonicalizeLessonLinks,resolveHistoricalLesson} from '../lib/lesson-compat.mjs';
+import {lessonRedirects,legacyAnchors,normalizeMigrationSource,resolveHistoricalLesson} from '../lib/lesson-compat.mjs';
 import {compileMDX} from 'next-mdx-remote/rsc';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
@@ -42,7 +42,7 @@ try{
     report.anchors.push({target,oldRenderedIds:oldIds.size,missing,oldH2:headings(before),currentH2:headings(live.body),aliases});
   }
   const files=[];function walk(dir){for(const e of readdirSync(dir,{withFileTypes:true})){const p=dir+'/'+e.name;if(e.isDirectory())walk(p);else if(p.endsWith('.mdx'))files.push(p);}}walk('content');
-  for(const file of files){const source=read(file),prior=old(file);check(source===canonicalizeLessonLinks(prior)||source.replace(/\r\n/g,'\n')===canonicalizeLessonLinks(prior).replace(/\r\n/g,'\n'),'仅URL规范化 '+file);
+  for(const file of files){const source=read(file),prior=old(file);check(source.replace(/\r\n/g,'\n')===normalizeMigrationSource(prior,file.slice(8,-4)).replace(/\r\n/g,'\n'),'仅URL规范化 '+file);
     for(const [historical]of lessonRedirects)check(!source.includes('](/'+historical+')')&&!source.includes('](/'+historical+'#'),'无活跃旧URL '+file+' '+historical);
     for(const match of source.matchAll(/\]\(\/(estimation\/kalman-filter|multi-agent\/distributed-mpc)(#[^)]*)?\)/g)){
       const target=match[1],p=await page(target);check(p.status===200,'引用可达 '+file+' → '+target);if(match[2])check(ids(p.body).has(decodeURIComponent(match[2].slice(1))),'引用片段存在 '+file);

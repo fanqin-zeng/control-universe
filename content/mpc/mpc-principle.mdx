@@ -51,13 +51,15 @@ $$X = F x(k) + \Phi U$$
 
 MPC 的优化问题（一般形式）：
 
-$$\boxed{\begin{aligned}
+$$
+\boxed{\begin{aligned}
 \min_{U} \quad & J = \sum_{i=0}^{N_p-1} \left[ x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i) \right] + x(k+N_p)^T P\, x(k+N_p) \\
 \text{s.t.} \quad & x(k+i+1) = A x(k+i) + B u(k+i) \\
 & u_{\min} \leq u(k+i) \leq u_{\max} \\
 & x_{\min} \leq x(k+i) \leq x_{\max} \\
 & x(k+N_p) \in \mathcal{X}_f \quad \text{（终端约束，可选）}
-\end{aligned}}$$
+\end{aligned}}
+$$
 
 其中 $Q \geq 0$（状态偏差权重），$R > 0$（控制能耗权重），$P \geq 0$（终端代价权重）。
 

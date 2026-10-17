@@ -20,5 +20,5 @@ reject('35课聚合问题不能漏掉一课的处置',()=>({audit:input.audit.re
 reject('聚合成员不能关联错误目标课',()=>({audit:input.audit.replace('| math/complex-numbers | math/complex-numbers | MATH-02 |','| math/complex-numbers | math/complex-numbers | MATH-01 |')}),/聚合成员去向不符/);
 test('警告消失只报关闭候选，不自动关闭台账',()=>{
   const result=auditWarnings({...input,live:input.snapshot.warnings.slice(1)});
-  assert.deepEqual(result.errors,[]);assert.equal(result.stats.resolvedCandidates,1);assert.equal(result.stats.closed,0);
+  assert.deepEqual(result.errors,[]);assert.equal(result.stats.resolvedCandidates,1);assert.equal(result.stats.closed,auditWarnings(input).stats.closed);
 });

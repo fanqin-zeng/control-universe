@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { resolveHistoricalLesson, legacyAnchors } from '../lib/lesson-compat.mjs';
+import { renderedHeadings } from './rendered-headings.mjs';
+import { assertHeadingTargets } from '../lib/mdx-headings.mjs';
+import { resolveHistoricalLesson } from '../lib/lesson-compat.mjs';
 /**
  * verify-lesson.mjs —— 单课交付硬门槛自动验收（semester-02 E1）
  *
@@ -41,7 +43,7 @@ import {
   scanMdx, mdxH2Titles, extractNotebookCode,
   RE_WIDGETS, RE_MAGIC_FIRST, RE_PLACEHOLDER,
 } from "./lib-mdx.mjs";
-import { parseCatalog, slugify, makeSlugger } from "./lib-catalog.mjs";
+import { parseCatalog } from "./lib-catalog.mjs";
 
 // ---------------------------------------------------------------- 参数与路径
 const argv = process.argv.slice(2);
@@ -260,10 +262,9 @@ function check1Syntax(rep, src, item) {
       " · $$ 共 " + parity + " 个且配平" + (openerSoft.length ? "" : " · 无 $$ 同行违规"));
 }
 
-function check2Structure(rep, src, item, lesson) {
+async function check2Structure(rep, src, item, lesson) {
   const titles = mdxH2Titles(src);
-  const slug = makeSlugger();
-  const actual = titles.map((t) => slug(t));
+  const actual = (await renderedHeadings(src, lesson.chapter+"/"+lesson.slug)).h2.map(h=>h.id);
   if (!lesson.subsections || !lesson.subsections.length) {
     mark(item, "WARN", "catalog 里本课没有 subsections（侧栏无本课小节导航），无法核对；MDX 实有 " + actual.length + " 个 H2");
     return;
@@ -278,7 +279,7 @@ function check2Structure(rep, src, item, lesson) {
   const bad = want.map((s, i) => (s === actual[i] ? null : "第 " + (i + 1) + " 条「" + s + "」应为「" + actual[i] + "」")).filter(Boolean);
   if (bad.length) {
     STATS.q5 += bad.length;
-    mark(item, "WARN", bad.length + " 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）");
+    mark(item, "WARN", bad.length + " 个 subsection slug 与真实渲染ID不符 → 侧栏死锚点（已登记为 Q5）");
     for (const b of bad.slice(0, 4)) mark(item, "WARN", "  " + b);
     if (bad.length > 4) mark(item, "WARN", "  …共 " + bad.length + " 处");
   } else {
@@ -468,15 +469,20 @@ async function check6Render(rep, item, lesson) {
   const nH2 = (body.match(/<h2[ >]/g) || []).length;
   const nKatex = (body.match(/katex-error/g) || []).length;
   const want = lesson.subsections ? lesson.subsections.length : null;
+  const renderedH2=[...body.matchAll(/<h2\b[^>]*\bid="([^"]+)"/g)].map(m=>({id:m[1]}));
+  const renderedIds=[...body.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  const anchorErrors=lesson.subsections?assertHeadingTargets(lesson.subsections,renderedH2,renderedIds):[];
+  if(new Set(renderedIds).size!==renderedIds.length)anchorErrors.push('DOM存在重复ID');
+  for(const error of anchorErrors)mark(item,'FAIL','真实渲染锚点：'+error);
   if (nH1 !== 1) mark(item, "FAIL", "渲染后 <h1> 数 " + nH1 + " ≠ 1");
   if (want === null) mark(item, "WARN", "catalog 无 subsections，无法核对渲染后 H2 数（实得 " + nH2 + "）");
   else if (nH2 !== want) mark(item, "FAIL", "渲染后 <h2> 数 " + nH2 + " ≠ catalog subsections " + want + " → fix-012 的典型症状（源码 H2 数对，DOM 只渲染出一部分）");
   if (nKatex !== 0) mark(item, "FAIL", "HTML 里有 " + nKatex + " 处 katex-error → 数学公式渲染失败（rehype-katex 在编译期运行，错误直接落在 SSR HTML）");
-  if (nH1 === 1 && nKatex === 0 && (want === null || nH2 === want))
+  if (nH1 === 1 && nKatex === 0 && !anchorErrors.length && (want === null || nH2 === want))
     mark(item, "PASS", "HTTP 200 · <h1>=" + nH1 + " · <h2>=" + nH2 + (want === null ? "" : "/" + want) + " · katex-error=" + nKatex);
 }
 
-function check7Links(rep, src, item) {
+async function check7Links(rep, src, item) {
   const linkRe = /(!?)\[[^\]]*\]\((\/[^)\s]*)\)/g;
   let nCourse = 0, nAsset = 0;
   const dead = [], skeleton = [], anchorBad = [], assetMissing = [];
@@ -502,9 +508,7 @@ function check7Links(rep, src, item) {
       const f = mdxByKey.get(key);
       if (!f) { anchorBad.push(full + "（目标课无 MDX）"); continue; }
       if (!h2Cache.has(key)) {
-        const sl = makeSlugger();
-        h2Cache.set(key, new Set(mdxH2Titles(read(f)).map((t) => sl(t))));
-        for (const alias of Object.keys(legacyAnchors[key] ?? {})) h2Cache.get(key).add(alias);
+        h2Cache.set(key, new Set((await renderedHeadings(read(f),key)).ids));
       }
       if (!h2Cache.get(key).has(decodeURIComponent(frag))) anchorBad.push(full);
     }
@@ -607,12 +611,12 @@ async function verifyLesson(key) {
   const compTargets = [...new Set(tags.map((t) => t.name))].filter((n) => /-explorer\.tsx$/.test(implName.get(n) || ""));
 
   check1Syntax(rep, src, rep.items[0]);
-  check2Structure(rep, src, rep.items[1], lesson);
+  await check2Structure(rep, src, rep.items[1], lesson);
   check3Notebook(rep, src, rep.items[2]);
   check4Registry(rep, src, rep.items[3]);
   check5Component(rep, src, rep.items[4], compTargets);
   await check6Render(rep, rep.items[5], lesson);
-  check7Links(rep, src, rep.items[6]);
+  await check7Links(rep, src, rep.items[6]);
   check8Delivery(rep, rep.items[7], lesson);
   check9Exercises(rep, src, rep.items[8]);
 
@@ -659,7 +663,7 @@ function targets() {
 
 const list = targets();
 console.log("待验课程 " + list.length + " 门 · 交互组件 " + explorerFiles.length + " 个 · 讨论日志 " + logKeys.size + " 门 · dev server " + (NO_HTTP ? "跳过" : DEV_HOST + ":" + DEV_PORT));
-console.log("口径：第 2 项量的是 MDX 源码 H2，渲染后的 H2 数由第 6 项在 HTML 上复核（fix-012 曾出现源码 12 个、DOM 只 2 个）。");
+console.log("口径：第 2 项使用与页面共享的真实编译标题ID，第 6 项在 HTML 上复核数量与目标（fix-012 曾出现源码 12 个、DOM 只 2 个）。");
 console.log("      第 8 项按 E1 推荐 Prompt 只查讨论日志「是否存在」；B4 的 16 条日志结构口径未纳入，登记为 E1 缺口。");
 
 const reports = [];
