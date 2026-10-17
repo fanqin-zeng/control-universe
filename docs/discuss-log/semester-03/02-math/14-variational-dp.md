@@ -226,3 +226,5 @@
 签发后catalog=v1.3、tracker与全局checklist同步。npm run check退出0：PASS21/WARN2/FAIL0，两WARN沿登记基线；check-semester03退出0。npm run build / build:pages / npx tsc --noEmit最终交付态均退出0，无MDX编译失败。Pages本地导出205课/9旧路由/314526646字节（pages-delivery.log）；此前draft314526632只作历史证据。最终npm run verify -- math/variational-dp为PASS9/WARN0/FAIL0/SKIPPED0，退出0。
 
 生产页browser-results.json pass=true：h1=1、16H2、6浏览器实验、13display居中/auto、KaTeX错误0；默认/零初态/只罚动作/恢复正确，答案原始cell在Pyodide运行完成；控制台warn/error为空；390px正文343=scroll343、双canvas313。opening.png人工查看正文清晰，narrow.png/experiment.png存档。六原始实验源哈希、kernel与Pyodide一致。36行三方对账、原九项+四条与四份档案齐备。未推送远端、未发布gh-pages；W06/W07/W08保持待办，两用户批阅文件未改未暂存。
+
+合并回执：课程提交 `fce6da9` 已用 `--no-ff` 合入 master；课程合并提交 `c8774d79e26a1207d005c3fc4a679f4482720d1b`。全局checklist六项全部完成，本对话仅交付MATH-14。未推送远端、未发布gh-pages。
