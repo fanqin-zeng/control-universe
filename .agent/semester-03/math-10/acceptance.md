@@ -44,3 +44,6 @@ Pyodide六原始实验全部成功（browser-python.json）；兼容清单61课/
 最终npm run build、npm run build:pages、npx tsc --noEmit均退出0；Pages导出205课/9旧入口/309096053字节（pages-build.log）。8080根页/课程200，最终verify仍PASS8/WARN1/FAIL0/SKIPPED0（page-verify-delivery.log）。最终MDX哈希与原生kernel及Pyodide报告相同（source-consistency.json）。生产页6个实验均browser模式，第六答案实验实际点击全部运行完成，输出与独立参考一致；console无error/warn，窄屏343=scroll343，browser-results.json pass=true。opening.png/narrow.png已覆盖为最终生产截图并目视检查，正文可读、标题与前置卡正常。实验截图experiment.png留存。
 
 实际合并hash在完成后追加。不推送远端，不发布gh-pages。
+
+
+实际合并回执：课程提交99da8ca，以--no-ff合入master，真实合并91e207ac296ff6349b6ab39cff332b156d162a63；全局checklist六项完成并登记同一hash。回执随后独立合入。
