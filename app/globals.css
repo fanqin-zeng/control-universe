@@ -3,6 +3,10 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
+/* Keep dark utilities in sync with the .dark theme tokens below. System dark
+   preference alone must not invert article text on the default light canvas. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
