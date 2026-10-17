@@ -44,7 +44,7 @@
 日志采用原固定骨架：头部/出席、Phase 1、Phase 2 三轮、Phase 3 六组、Phase 4、附录 A.1 对账+A.2 实测总表、B 九项门槛、C 红队放行；准备审计或设计合同可加附录 D。原始输出留在日志附录或链接的版本化证据文件，不能只指向本机临时 logs。
 
 1. 逐项核对学术修改、柯验全部对账、何疑放行、秦构九项、习题答案、档案；未决项不能影响本课正确性。郑核有依据才签发。
-2. 执行 `npm run check`、`npm run verify -- <chapter>/<lesson>`、该课 notebook 校验与真实内核运行、适用术语检查、`npm run build`。查看 verify 的参数文档选择单课检查，不能将全站旧课失败误记为本课通过。build 除 exit=0 还需无 MDX 编译失败：现有 lib/content.ts 会吞编译错误，绿色退出码不足以证明页面可用。基础设施阻塞记录全局 checklist，未解除不得虚签。
+2. 执行 `npm run check`、`npm run verify -- <chapter>/<lesson>`、该课 notebook 校验与真实内核运行、适用术语检查、`npm run build`。查看 verify 的参数文档选择单课检查，不能将全站旧课失败误记为本课通过。build 除 exit=0 还需无 MDX 编译失败。I01查明吞错发生在课程路由的catch→notFound，而非已重新抛错的lib/content.ts；修复后仅目录外地址404，目录内读取/编译错误必须上抛并使构建失败。变更错误处理时必须运行 `node --test scripts/lesson-route.test.mjs`，不得恢复宽泛catch。基础设施阻塞记录全局 checklist，未解除不得虚签。
 3. 正文、组件、注册、catalog status=v1.3、旧 tracker（如适用）、自动 OUTLINE、讨论日志、学期3 checklist 和适用计划修改同提交。学期3完成只认本期日志证据，不继承旧 v1.3 标签。
 4. `npm run check -- --fix-outline`、`--fix-tracker-stats` 按变更使用；在工作包分支验收后 `git merge --no-ff` 合 master。记录真实提交/合并 hash 和输出后才勾“合并”。多课包每课即合，未完分支继续留存；不碰用户未提交文件。
 5. 报告本课成果、验收和下一课；本对话到此停止，不自动生产下一课。学期末复盘沿用 fix-tracker，记录问题是规范缺口还是规范未执行。
