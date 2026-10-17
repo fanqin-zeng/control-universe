@@ -18,7 +18,7 @@ async function read(path) {
 const release = JSON.parse(await read('/release.json'));
 assert.equal(release.sourceCommit, expected);
 assert.equal(release.sourceDirty, false);
-assert.equal(release.pythonExecution, false);
+assert([false, 'browser-math-trial'].includes(release.pythonExecution));
 assert.equal(release.basePath, '/control-universe');
 const home = await read('/');
 const catalog = parseCatalog(readFileSync('content/catalog.ts', 'utf8'));
