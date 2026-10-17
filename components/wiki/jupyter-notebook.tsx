@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import {usePathname} from 'next/navigation';
 import {BrowserNotebook} from './browser-notebook';
 
 interface NotebookOutput {
@@ -65,6 +64,9 @@ async function deleteNotebook(notebookId: string) {
 }
 
 interface JupyterNotebookProps {
+  browserMode?: string;
+  browserReason?: string;
+  browserWorkerVersion?: string;
   cells: { code: string }[];
   setupCode?: string;
   title?: string;
@@ -74,8 +76,10 @@ export function JupyterNotebook({
   cells: initCells,
   setupCode = "",
   title,
+  browserMode,
+  browserReason,
+  browserWorkerVersion,
 }: JupyterNotebookProps) {
-  const pathname = usePathname();
   const [cells, setCells] = useState<CellState[]>(() =>
     initCells.map((c, i) => ({
       id: `cell-${i}`,
@@ -220,10 +224,11 @@ export function JupyterNotebook({
   }, [setupCode]);
 
   if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {
-    if (/\/math\/(calculus-basics|complex-numbers)\/?$/.test(pathname || '')) return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} />;
-    return <section className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "var(--foreground)" }}>
+    if (browserMode === 'enabled') return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} workerVersion={browserWorkerVersion} />;
+    return <section data-python-mode="code" className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "var(--foreground)" }}>
       <strong style={{ color: "var(--foreground)" }}>{title || "Python 代码"}</strong>
-      <p>在线版展示实验代码；Python 执行需要本地 Jupyter 服务。图中的交互实验仍可直接操作。</p>
+      <p>在线版展示实验代码；请在具备相应依赖的原生 Python/Jupyter 环境中复核代码后运行。图中的交互实验仍可直接操作。</p>
+      <p role="status">浏览器暂不运行此实验：{browserReason || '尚未完成 Pyodide 兼容验收，请在原生 Python/Jupyter 中执行。'}</p>
       {setupCode && <details><summary>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{setupCode}</pre></details>}
       {initCells.map((cell, i) => <div key={i}><p>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{cell.code}</pre></div>)}
     </section>;
