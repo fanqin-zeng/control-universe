@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
+import { rehypeLegacyAnchors } from "./lesson-compat.mjs";
 
 // 组件映射的唯一来源是 lib/wiki-components.ts（E2 · fix-015 根治）；mdx-components.tsx 也从它导入。
 // 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
@@ -42,7 +43,7 @@ export async function getLesson(
     throw err;
   }
 
-  const result = await compileLessonSource(source, lesson, extraComponents);
+  const result = await compileLessonSource(source, lesson, extraComponents, `${chapter}/${lesson}`);
   logger.info("课程加载完成", { chapter, lesson, title: result.meta.title });
   return result;
 }
@@ -50,7 +51,8 @@ export async function getLesson(
 async function compileLessonSource(
   source: string,
   fallbackTitle: string,
-  extraComponents?: MdxComponents
+  extraComponents?: MdxComponents,
+  lessonKey?: string
 ) {
   try {
     const { content, frontmatter } = await compileMDX<LessonMeta>({
@@ -67,6 +69,8 @@ async function compileLessonSource(
             [rehypePrettyCode, { theme: "github-light" }] as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rehypeSlug as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [rehypeLegacyAnchors, { lesson: lessonKey }] as any,
           ],
         },
       },

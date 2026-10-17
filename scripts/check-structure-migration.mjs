@@ -6,7 +6,8 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {parseCatalog} from './lib-catalog.mjs';
 import {rows,reviewGraph} from './check-migration-review.mjs';
-export function validateStructure({catalog,plan,inventory,readMdx,redirects,oldCatalog}){
+import {canonicalizeLessonLinks} from '../lib/lesson-compat.mjs';
+export function validateStructure({catalog,plan,inventory,readMdx,redirects,oldCatalog,readBaselineMdx}){
   const errors=[],check=(ok,msg)=>{if(!ok)errors.push(msg);};
   const chapters=rows(plan,'S3-CHAPTERS').filter(c=>c[2]!=='slug').sort((a,b)=>+a[0]-b[0]);
   const lessons=rows(plan,'S3-LESSONS'),byId=new Map(lessons.map(l=>[l[0],l]));
@@ -26,7 +27,9 @@ export function validateStructure({catalog,plan,inventory,readMdx,redirects,oldC
     check(l.status===(written[0]?.status||'empty'),`历史状态被改写 ${d.id}`);
     const source=readMdx(target[1]);
     if(written.length){
-      check(source!==null&&hash(source)===written[0].currentNormalizedSha256,`正文遗失/漂移 ${d.id}`);
+      // S03只允许旧课程URL规范化；从真实迁移前正文推导，不接受任意新hash白名单。
+      const canonical=readBaselineMdx ? canonicalizeLessonLinks(readBaselineMdx(written[0].source)) : null;
+      check(source!==null&&(hash(source)===written[0].currentNormalizedSha256||(canonical!==null&&hash(source)===hash(canonical))),`正文遗失/漂移 ${d.id}`);
       const old=oldCatalog.flatMap(c=>c.lessons.map(l=>({...l,path:c.slug+'/'+l.slug}))).find(l=>l.path===written[0].source);
       check(JSON.stringify(l.subsections)===JSON.stringify(old?.subsections),`原小节元数据漂移 ${d.id}`);
     }
@@ -44,6 +47,7 @@ export function validateStructure({catalog,plan,inventory,readMdx,redirects,oldC
 }
 export async function readStructure(){
   const read=p=>readFileSync(p,'utf8');const config=(await import('../next.config.mjs')).default;
-  return {catalog:parseCatalog(read('content/catalog.ts')),oldCatalog:parseCatalog(execFileSync('git',['show','4c06e93:content/catalog.ts'],{encoding:'utf8'})),plan:read('.agent/semester-03-plan.md'),inventory:JSON.parse(read('.agent/semester-03/s01-migration-inventory.json')),redirects:await config.redirects(),readMdx:p=>existsSync('content/'+p+'.mdx')?read('content/'+p+'.mdx'):null};
+  const baseline=new Map();const readBaselineMdx=p=>{if(!baseline.has(p))baseline.set(p,execFileSync('git',['show','4c06e93:content/'+p+'.mdx'],{encoding:'utf8'}));return baseline.get(p);};
+  return {catalog:parseCatalog(read('content/catalog.ts')),oldCatalog:parseCatalog(execFileSync('git',['show','4c06e93:content/catalog.ts'],{encoding:'utf8'})),plan:read('.agent/semester-03-plan.md'),inventory:JSON.parse(read('.agent/semester-03/s01-migration-inventory.json')),redirects:await config.redirects(),readBaselineMdx,readMdx:p=>existsSync('content/'+p+'.mdx')?read('content/'+p+'.mdx'):null};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){try{const r=validateStructure(await readStructure());console.log(JSON.stringify(r.stats));if(r.errors.length){r.errors.forEach(e=>console.error('FAIL',e));process.exitCode=1;}else console.log('PASS S02 structure migration');}catch(e){console.error(e);process.exitCode=1;}}

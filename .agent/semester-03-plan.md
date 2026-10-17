@@ -458,6 +458,8 @@ S01迁移输入审查见 [结构清单](semester-03/s01-migration-review.md) 与
 
 S02已实施21章205课与464先修边，正文56份逐字保留，149空课和29个旧v1.3状态不变。为保证独立合入后可用，S03中必要的旧URL永久跳转和旧tracker/自动大纲同步前置到S02；S03仍负责锚点、引用与完整兼容验收，S04不提前关闭。迁移后30项WARN的实际审计及新发现存量notebook失败见 [S02记录](semester-03/s02-structure-migration.md)，I03/S01不可变快照保留；S01校验转对历史提交取证，迁移后用 `node scripts/check-structure-migration.mjs`。
 
+S03迁移兼容已完成，见 [验收记录](semester-03/s03-compatibility.md)：统一9条旧入口与历史日志身份映射，规范化8份正文的10处课程URL，在渲染层保留分布式MPC的3个旧片段，全部迁移前渲染ID保留。只改引用/兼容，不改教学内容；旧台账状态与历史证据保留。W01/W04/W05的全站锚点和MPC正文渲染问题不由S03代签，S04仍待其相应门槛完成。
+
 工作包分支沿用 `wp/<阶段>-<内容>`，计划为 `wp/s3-planning`，后续结构或单课用 `wp/s3-structure`、`wp/s3-math-calculus-basics` 等。从master开始；每课验收后立即 `--no-ff` 合入master，多课包未完可留分支。只暂存本任务文件，用户已有未提交修改不动；不自动push。
 
 ## 6. 目标清单与范围变更

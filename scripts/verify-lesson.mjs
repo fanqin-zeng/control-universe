@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveHistoricalLesson, legacyAnchors } from '../lib/lesson-compat.mjs';
 /**
  * verify-lesson.mjs —— 单课交付硬门槛自动验收（semester-02 E1）
  *
@@ -179,7 +180,7 @@ for (const f of walk(P_DISCUSS, (p) => p.endsWith(".md"))) {
   if (parts.length < 3) continue;
   const chM = /^\d+-(.+)$/.exec(parts[1]);
   const slM = /^\d+-(.+)\.md$/.exec(parts[2]);
-  if (chM && slM) logKeys.set(chM[1] + "/" + slM[1], "docs/discuss-log/" + r);
+  if (chM && slM) logKeys.set(resolveHistoricalLesson(chM[1] + "/" + slM[1]), "docs/discuss-log/" + r);
 }
 
 // ---------------------------------------------------------------- dev server 探测
@@ -493,7 +494,7 @@ function check7Links(rep, src, item) {
       continue;
     }
     nCourse++;
-    const key = parts.join("/");
+    const key = resolveHistoricalLesson(parts.join("/"));
     const lesson = catByKey.get(key);
     if (!lesson) { dead.push(full); continue; }
     if (!mdxByKey.has(key)) skeleton.push(full);
@@ -503,6 +504,7 @@ function check7Links(rep, src, item) {
       if (!h2Cache.has(key)) {
         const sl = makeSlugger();
         h2Cache.set(key, new Set(mdxH2Titles(read(f)).map((t) => sl(t))));
+        for (const alias of Object.keys(legacyAnchors[key] ?? {})) h2Cache.get(key).add(alias);
       }
       if (!h2Cache.get(key).has(decodeURIComponent(frag))) anchorBad.push(full);
     }

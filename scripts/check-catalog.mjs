@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveHistoricalLesson } from '../lib/lesson-compat.mjs';
 /**
  * check-catalog.mjs —— 交付统计的唯一权威来源（semester-02 A7 / A8）
  *
@@ -194,7 +195,7 @@ for (const f of logFiles) {
   if (rel.length < 3) continue;                     // semester-XX/<NN-chapter>/<NN-slug>.md
   const chM = /^\d+-(.+)$/.exec(rel[1]);
   const slM = /^\d+-(.+)\.md$/.exec(rel[2]);
-  if (chM && slM) logKeys.add(chM[1] + "/" + slM[1]);
+  if (chM && slM) logKeys.add(resolveHistoricalLesson(chM[1] + "/" + slM[1]));
 }
 console.log("  讨论日志 " + logFiles.length + " 篇，可映射到课程 " + logKeys.size + " 门");
 const unknownLog = [...logKeys].filter((k) => !catByKey.has(k));

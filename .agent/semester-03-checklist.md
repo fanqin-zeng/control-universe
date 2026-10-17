@@ -20,7 +20,7 @@
 | I04 | 内核、数值与页面验收可复现性 | [x] | .agent/semester-03/i04-reproducibility.md;.agent/semester-03/i04-reproducibility-results.json;.agent/fix-logs/2026-10-17-029.md |
 | S01 | 结构迁移清单与来源/依赖审查 | [x] | .agent/semester-03/s01-migration-review.md;.agent/semester-03/s01-dependency-review.md;.agent/semester-03/s01-migration-inventory.json;scripts/check-migration-review.mjs |
 | S02 | 21章catalog骨架与纯资产迁移 | [x] | .agent/semester-03/s02-structure-migration.md;scripts/check-structure-migration.mjs;.agent/semester-03/s02-route-results.json;.agent/semester-03/s02-warnings.json |
-| S03 | 旧URL、锚点、引用与台账兼容 | [ ] | .agent/semester-03/s02-structure-migration.md;S02已前置9条308及旧tracker同步以保可验收；余锚点/活跃引用与完整兼容验收待做 |
+| S03 | 旧URL、锚点、引用与台账兼容 | [x] | .agent/semester-03/s03-compatibility.md;.agent/semester-03/s03-compat-results.json;scripts/verify-migration-compat.mjs;9旧入口、迁移旧片段、10活跃引用及历史日志身份通过；全站锚点W01/W04/W05仍待办 |
 | S04 | 结构迁移验收与master合入 | [ ] | check、build、全部迁移页/链接回归和实际merge hash |
 | W01 | Q5：26页侧栏锚点对齐与旧链接兼容 | [ ] | .agent/semester-03/i03-warn-audit.md;W04/W05后、S04前完成，逐页实际DOM验收 |
 | W02 | Q3：两个孤儿组件的用途与资产去向 | [ ] | .agent/semester-03/i03-warn-audit.md;S04前提交去向决定；复用交给关联课，未实际交付不关闭 |
