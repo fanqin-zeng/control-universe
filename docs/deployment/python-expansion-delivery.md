@@ -55,3 +55,11 @@ DEP04完成，待办30项保留，不将本次平台交付算作课程内容重�
 原生/静态Python运行策略、Worker、课程源码与153/30清单不变；只给可运行区和代码展示区补显式背景、标题、正文、标签和输出颜色，避免继承主题后文字过浅。14项回归通过，重新完成Pages构建；证据见python-expansion-contrast-tests.log / contrast-build.log。追加发布SHA与最终公网截图随后登记。
 
 实验区外的旧正文在当前主题下仍存在浅色文字，已在R01记录另行审查，未将此次局部颜色兜底宣称为全站主题修复。
+
+### 最终发布验收
+
+显示修正提交5a11816，经master合并e026f77后发布到gh-pages：c96d0728d93c9121deee98086425004c34261004。Actions [39036591940](https://github.com/fanqing-zeng/control-universe/actions/runs/39036591940) 的build/deploy均success，见python-expansion-final-public-actions.json。
+
+`node scripts/verify-public-pages.mjs c96d0728d93c9121deee98086425004c34261004 docs/deployment/python-expansion-final-public-http.json` 退出码0：235次请求通过，205课程、9旧入口及资源核对通过，未知路径404，release精确匹配且sourceDirty=false。公网稳定性课程重新执行完成，生成1张PNG并输出稳定范围0<K<6，控制台error/warn=0。运行区与代码展示区均白底深色文字，降级块运行按钮0；见python-expansion-final-public-ui.json / python-expansion-final-public-plot.png。Worker及153/30策略未变，沿用完整53课实跑证据。
+
+`node scripts/check-semester03.mjs` 与 `node scripts/check-python-support.mjs` 均退出码0（25任务/22完成，53课/153运行/30展示）。本次最终记录仅合入并推送master，不重复触发部署。
