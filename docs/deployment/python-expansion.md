@@ -1,10 +1,10 @@
 # Python 逐课兼容验收与待处理清单
 
-2026-10-17；当前浏览器兼容清单。起点为DEP04，后续按课程交付合并实跑证据（见原始记录provenance）；MATH-03新增4个实验。DEP04的自动发布授权仅限其原工作包，后续发布仍需用户逐次同意。本文不代表课程内容签发。
+2026-10-17；当前浏览器兼容清单。起点为DEP04，后续按课程交付合并实跑证据（见原始记录provenance）；MATH-03新增4个、MATH-04新增5个、MATH-05与MATH-06各新增6个、MATH-07、MATH-08与MATH-09各新增7个、MATH-10新增6个、MATH-11与MATH-12各新增7个、MATH-13与MATH-14各新增6个、MATH-15、MATH-16、MATH-17与MATH-18各新增7个实验；各次实跑日期见对应报告。DEP04的自动发布授权仅限其原工作包，后续发布仍需用户逐次同意。本文不代表课程内容签发。
 
 ## 结果口径
 
-含 notebook 的 54 课 / 187 个实验 / 360 个单元格全部纳入盘点。33 课全部可运行，12 课混合，9 课全部保留代码；启用 157 个实验，保留 30 个。实际执行 332 个单元格（含异常单元格），生成 144 张 PNG。原始记录中 159 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 69 课 / 285 个实验 / 458 个单元格全部纳入盘点。48 课全部可运行，12 课混合，9 课全部保留代码；启用 255 个实验，保留 30 个。实际执行 430 个单元格（含异常单元格），生成 144 张 PNG。原始记录中 257 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -66,6 +66,21 @@
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
 | multi-agent/distributed-mpc（分布式预测控制） | 1/1 | 2 | 无 |
 | math/linear-algebra-basics（线性代数基础） | 4/4 | 4 | 无 |
+| math/eigen-decomposition（特征值与对角化） | 5/5 | 5 | 无 |
+| math/matrix-decomposition（矩阵分解） | 6/6 | 6 | 无 |
+| math/multivariable-calculus（多元微积分） | 6/6 | 6 | 无 |
+| math/ode-matrix-exponential（微分方程与矩阵指数） | 7/7 | 7 | 无 |
+| math/laplace-transform（拉普拉斯变换） | 7/7 | 7 | 无 |
+| math/fourier-analysis（傅里叶分析） | 7/7 | 7 | 无 |
+| math/z-transform（Z变换） | 6/6 | 6 | 无 |
+| math/probability-basics（概率基础） | 7/7 | 7 | 无 |
+| math/stochastic-processes（随机过程） | 7/7 | 7 | 无 |
+| math/convex-optimization（凸优化） | 6/6 | 6 | 无 |
+| math/variational-dp（变分法与动态规划） | 6/6 | 6 | 无 |
+| math/diff-geometry（微分几何入门） | 7/7 | 7 | 无 |
+| math/graph-theory（图论基础） | 7/7 | 7 | 无 |
+| math/game-theory-math（博弈论基础） | 7/7 | 7 | 无 |
+| math/numerical-methods（数值方法） | 7/7 | 7 | 无 |
 
 ## 待处理实验
 

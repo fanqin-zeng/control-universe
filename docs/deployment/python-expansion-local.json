@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-17T15:44:05.017Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=math/linear-algebra-basics",
+  "testedAt": "2026-10-17T21:22:12.491Z",
+  "url": "http://localhost:8080/python-expansion.html?lesson=math/numerical-methods",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -7515,21 +7515,2380 @@
           ]
         }
       ]
+    },
+    {
+      "key": "math/eigen-decomposition",
+      "title": "特征值与对角化",
+      "sourceHash": "c964482d04f1e54977d9d6805e39ad7a07c1e2a41ecd895999ee7e7e408f2c43",
+      "notebooks": [
+        {
+          "id": "math/eigen-decomposition#1",
+          "title": "先算几步更新",
+          "index": 1,
+          "line": 26,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4942,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "0 [2, 0]\n1 [3/2, 1/2]\n2 [5/4, 3/4]\n3 [9/8, 7/8]\n4 [17/16, 15/16]\n两路之和: [2, 2, 2, 2, 2]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/eigen-decomposition#2",
+          "title": "核对特征方程与特征向量",
+          "index": 2,
+          "line": 76,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 98,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "特征多项式: lam**2 - 3*lam/2 + 1/2\n因式分解: (lam - 1)*(2*lam - 1)/2\n两组残差: [0, 0] [0, 0]\n求解器结果: [(1/2, 1, [Matrix([\n[-1],\n[ 1]])]), (1, 1, [Matrix([\n[1],\n[1]])])]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/eigen-decomposition#3",
+          "title": "核对换坐标和多步公式",
+          "index": 3,
+          "line": 149,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P的行列式/逆: -2 [[1/2, 1/2], [1/2, -1/2]]\n新坐标: [1, 1]\n换坐标后的矩阵: [[1, 0], [0, 1/2]]\n重构残差: [[0, 0], [0, 0]]\n步数/直接乘/对角化: 0 [2, 0] [2, 0]\n步数/直接乘/对角化: 1 [3/2, 1/2] [3/2, 1/2]\n步数/直接乘/对角化: 2 [5/4, 3/4] [5/4, 3/4]\n步数/直接乘/对角化: 3 [9/8, 7/8] [9/8, 7/8]\n步数/直接乘/对角化: 8 [257/256, 255/256] [257/256, 255/256]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/eigen-decomposition#4",
+          "title": "核对重根、缺方向与旋转",
+          "index": 4,
+          "line": 190,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "单位阵特征空间维数: 2\n剪切特征值及基: [(1, 2, [Matrix([\n[1],\n[0]])])]\n剪切步数/状态: 0 [0, 1]\n剪切步数/状态: 1 [1, 1]\n剪切步数/状态: 3 [3, 1]\n剪切步数/状态: 8 [8, 1]\n旋转特征值: {-I: 1, I: 1}\n旋转复向量残差: [0, 0]\n四次旋转: [[1, 0], [0, 1]]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/eigen-decomposition#5",
+          "title": "复核六题答案",
+          "index": 5,
+          "line": 239,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: [[2, 0, 0], [0, -1, 0], [0, 0, 0]]\n题2特征值/基: [(2, 1, [Matrix([\n[1],\n[0]])]), (3, 1, [Matrix([\n[1],\n[1]])])]\n题2残差/行列式: [[0, 0], [0, 0]] 1\n题3坐标/两步/极限: [2, 1] [9/4, 7/4] [2, 2]\n题4: [(1, 2, [Matrix([\n[1],\n[0]]), Matrix([\n[0],\n[1]])])]\n题5特征空间: [[1, 0]]\n题5两初值: [3, 1] [1, 0]\n题6前两步: [1/4, 5/4] [13/16, 5/16]\n题6衰减/增长方向: [1/2, -1/2] [5/4, 5/4]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/matrix-decomposition",
+      "title": "矩阵分解",
+      "sourceHash": "1edb31bf029c76ed3fa1037d14571da9fdfbf87e7715a556610a4e3c45159ae4",
+      "notebooks": [
+        {
+          "id": "math/matrix-decomposition#1",
+          "title": "核对投影、LU与行交换",
+          "index": 1,
+          "line": 66,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5107,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "投影系数/向量/剩余: sqrt(2) [1, 1] [1, -1]\nLU重构: [[2, 1], [4, 3]]\n中间量/解: [1, 1] [0, 1]\n行交换后的矩阵: [[1, 1], [0, 1]] 原行列式: -1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#2",
+          "title": "核对QR与最小二乘",
+          "index": 2,
+          "line": 141,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 10,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q/R: [[sqrt(2)/2, -sqrt(6)/6], [sqrt(2)/2, sqrt(6)/6], [0, sqrt(6)/3]] [[sqrt(2), sqrt(2)/2], [0, sqrt(6)/2]]\n正交与重构: [[1, 0], [0, 1]] [[0, 0], [0, 0], [0, 0]]\nQt b/解: [3*sqrt(2)/2, 5*sqrt(6)/6] [2/3, 5/3]\n预测/残差/平方和: [2/3, 7/3, 5/3] [1/3, -1/3, 1/3] 1/3\n残差与列正交: [0, 0]\nQtQ和QQt形状: (2, 2) (3, 3)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#3",
+          "title": "核对正定条件与Cholesky",
+          "index": 3,
+          "line": 171,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "G/C: [[2, 1], [1, 2]] [[sqrt(2), 0], [sqrt(2)/2, sqrt(6)/2]]\n重构残差: [[0, 0], [0, 0]]\n半正定反例的二次型: 0\n标准正定Cholesky拒绝此半正定矩阵\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#4",
+          "title": "核对SVD、伪逆与秩亏解",
+          "index": 4,
+          "line": 230,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 11,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "正交性: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] [[1, 0], [0, 1]]\nSVD重构残差: [[0, 0], [0, 0], [0, 0]]\nAtA特征值/奇异值: {3: 1, 1: 1} [sqrt(3), 1]\n伪逆/最小二乘解: [[2/3, 1/3, -1/3], [-1/3, 1/3, 2/3]] [2/3, 5/3]\n秩亏伪逆/所选解: [[1, 0], [0, 0]] [1, 0]\n全部最优解的残差平方/解平方: 4 t**2 + 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#5",
+          "title": "核对噪声放大与截断代价",
+          "index": 5,
+          "line": 258,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "测量/奇异值: [1.   0.11] [1.  0.1]\n精确伪逆解: [1.  1.1]\n条件数/正规方程条件数: 10.0 99.99999999999999\n噪声/阈值/截断解/解误差/残差: 0.01 0.05 [1.  1.1] 0.10000000000000009 1.3877787807814457e-17\n噪声/阈值/截断解/解误差/残差: 0.01 0.2 [1. 0.] 1.0 0.11\n噪声/阈值/截断解/解误差/残差: 0.0 0.2 [1. 0.] 1.0 0.1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#6",
+          "title": "复核六题步骤答案",
+          "index": 6,
+          "line": 311,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1中间量/解: [3, 1] [1, 1]\n题2系数/投影/剩余: 2*sqrt(2) [2, 2] [1, -1]\n题2 QQt: [[2/3, 1/3, -1/3], [1/3, 2/3, 1/3], [-1/3, 1/3, 2/3]]\n题3残差/平方/正交: [1/3, -1/3, 1/3] 1/3 [0, 0]\n题4因子: [[2, 0], [1, sqrt(2)]]\n题5奇异值/伪逆/选解: [2, 0] [[1/2, 0], [0, 0]] [2, 0]\n题5残差/平方/解平方: [0, 3] 9 t**2 + 4\n题6测量/精确解/误差: [1, 2/25] [1, 4/5] 1/5\n题6条件数: 10 100\n题6截断残差/解误差/无噪残差: 2/25 1 1/10\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/multivariable-calculus",
+      "title": "多元微积分",
+      "sourceHash": "5e594eb3d082565596f09fb42e37904f97c14e93d476515fd0ce166c6266bce6",
+      "notebooks": [
+        {
+          "id": "math/multivariable-calculus#1",
+          "title": "核对偏导与多路径反例",
+          "index": 1,
+          "line": 64,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5380,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "高度/两个偏导: 7 -2*x -4*y\n站位偏导: -2 -4\n向东真实高度/变化: 679/100 -21/100\n轴向极限/斜向极限: 0 1/2\n原点偏导差商: 0 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/multivariable-calculus#2",
+          "title": "核对局部估计与方向导数",
+          "index": 2,
+          "line": 123,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "位移/预测/真实/误差: 1/10 0 34/5 679/100 -1/100\n位移/预测/真实/误差: 1/10 -1/10 36/5 717/100 -3/100\n单位方向/方向导数: 1 -22/5\n梯度长度/最大方向: 2*sqrt(5) [-sqrt(5)/5, -2*sqrt(5)/5]\n切向导数: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/multivariable-calculus#3",
+          "title": "核对路径链式法则与雅可比",
+          "index": 3,
+          "line": 162,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 171,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "链式残差/路径导数: 0 -sin(2*t)\npi/4处: -1\nJ/预测/真实: [[-2, -4], [1, 1]] [-1/5, 1/10] [-21/100, 1/10]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/multivariable-calculus#4",
+          "title": "核对二阶近似与驻点边界",
+          "index": 4,
+          "line": 207,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 16,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "山的Hessian/行列式: [[-2, 0], [0, -4]] 8\n二次项: -dx**2 - 2*dy**2\n函数/原点梯度/Hessian/行列式: -x**2 - 2*y**2 + 10 [0, 0] [[-2, 0], [0, -4]] 8\n函数/原点梯度/Hessian/行列式: x**2 - y**2 [0, 0] [[2, 0], [0, -2]] -4\n函数/原点梯度/Hessian/行列式: x**4 + y**4 [0, 0] [[0, 0], [0, 0]] 0\n边界例的梯度: [1, 0]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/multivariable-calculus#5",
+          "title": "核对面积积分与中点近似",
+          "index": 5,
+          "line": 236,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 104,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "先y后x/先x后y: 9 9\n网格N/面积和/小数: 2 145/16 9.0625\n网格N/面积和/小数: 10 3601/400 9.0025\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/multivariable-calculus#6",
+          "title": "复核六题步骤答案",
+          "index": 6,
+          "line": 267,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: 0 1/2\n题2: 36/5 717/100 -3/100\n题3: -22/5 2*sqrt(5) [-sqrt(5)/5, -2*sqrt(5)/5]\n题4: -1\n题4 J/变化: [[-2, -4], [1, 1]] [-1/5, 1/10]\n题5: [8, -4, 0]\n题6高度/近似/误差: [157/16, 141/16, 149/16, 133/16] 145/16 1/16\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/ode-matrix-exponential",
+      "title": "微分方程与矩阵指数",
+      "sourceHash": "3fc98a435cf720f1027ee321ed1611ec0e4aa61a410e50428794d21137bedad9",
+      "notebooks": [
+        {
+          "id": "math/ode-matrix-exponential#1",
+          "title": "一阶方程与输入",
+          "index": 1,
+          "line": 83,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5310,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "冷却解/初值/方程余量: 20 + 60*exp(-t/2) 80 0\n第2分钟: 42.0727664703\n常输入解/初值/ln2时: 2 - exp(-t) 1 3/2\n常输入方程余量: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#2",
+          "title": "高阶方程与矩阵级数",
+          "index": 2,
+          "line": 134,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 50,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "振动A平方: Matrix([[-1, 0], [0, -1]])\n振动矩阵指数: Matrix([[cos(t), sin(t)], [-sin(t), cos(t)]])\npi/2时位置与速度: Matrix([[0], [-1]])\n幂零N立方: Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])\n幂零指数/第2时刻: Matrix([[1, t, t**2/2], [0, 1, t], [0, 0, 1]]) Matrix([[1, 2, 2], [0, 1, 2], [0, 0, 1]])\n指数核验: Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#3",
+          "title": "对角化与指数乘法边界",
+          "index": 3,
+          "line": 179,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 49,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "对角化余量: Matrix([[0, 0], [0, 0]])\n指数: Matrix([[exp(-t), (exp(t) - 1)*exp(-2*t)], [0, exp(-2*t)]])\nln2时矩阵/解: Matrix([[1/2, 1/4], [0, 1/4]]) Matrix([[1/4], [1/4]])\n零矩阵指数/逐元素指数: Matrix([[1, 0], [0, 1]]) Matrix([[1, 1], [1, 1]])\n非交换PQ-QP: Matrix([[1, 0], [0, -1]])\n指数相乘: Matrix([[2, 1], [1, 1]])\n和的指数: Matrix([[exp(-1)/2 + E/2, -exp(-1)/2 + E/2], [-exp(-1)/2 + E/2, exp(-1)/2 + E/2]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#4",
+          "title": "串联水箱与重根",
+          "index": 4,
+          "line": 217,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 325,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "特征值/特征向量: [(-1, 2, [Matrix([\n[0],\n[1]])])]\n矩阵指数/轨迹: Matrix([[exp(-t), 0], [t*exp(-t), exp(-t)]]) Matrix([[exp(-t)], [t*exp(-t)]])\nK平方/指数初值/矩阵方程余量: Matrix([[0, 0], [0, 0]]) Matrix([[1, 0], [0, 1]]) Matrix([[0, 0], [0, 0]])\n初值/方程余量: Matrix([[1], [0]]) Matrix([[0], [0]])\n时刻/浓度/变化率: 1 Matrix([[0.367879441171], [0.367879441171]]) Matrix([[-0.367879441171], [0]])\n时刻/浓度/变化率: 2 Matrix([[0.135335283237], [0.270670566473]]) Matrix([[-0.135335283237], [-0.135335283237]])\n时刻/浓度/变化率: 8 Matrix([[0.000335462627903], [0.00268370102322]]) Matrix([[-0.000335462627903], [-0.00234823839532]])\n第二箱导数/极限: -t*exp(-t) + exp(-t) 0\n速率趋同: a*t*exp(-a*t)\n不同速率方程余量/初值: 0 0\na1b2第1分钟: 0.465088315870\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#5",
+          "title": "持续输入与奇异矩阵",
+          "index": 5,
+          "line": 255,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 187,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "输入积分解: Matrix([[1 - exp(-t)], [(-t + exp(t) - 1)*exp(-t)]])\n初值/方程余量: Matrix([[0], [0]]) Matrix([[0], [0]])\nln2时精确/近似: Matrix([[1/2], [1/2 - log(2)/2]]) Matrix([[0.500000000000], [0.153426409720]])\nA零时积分: Matrix([[t], [2*t]]) 第2时刻: Matrix([[2], [4]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#6",
+          "title": "唯一性与有限时间边界",
+          "index": 6,
+          "line": 277,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "两条分支初值: 0 0\n非零分支方程余量: 0\n第1时刻两分支: 0 1/4\nsqrt变化率比值: oo\n发散例初值/余量/左极限: 1 0 oo\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/ode-matrix-exponential#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 314,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1解/第2分钟/初始斜率: 20 + 60*exp(-t/2) 42.0727664703 -30\n题2: Matrix([[0], [-1]])\n题3指数/解: Matrix([[1, 2, 2], [0, 1, 2], [0, 0, 1]]) Matrix([[2], [2], [1]])\n题4指数/解: Matrix([[1/2, 1/4], [0, 1/4]]) Matrix([[1/4], [1/4]])\n题5冲洗/持续输入: Matrix([[0.135335283237], [0.270670566473]]) Matrix([[1/2], [1/2 - log(2)/2]]) Matrix([[0.500000000000], [0.153426409720]])\n题6两分支第1时刻: 0 1/4\n题6分支方程余量: 0\n题6发散左极限: oo\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/laplace-transform",
+      "title": "拉普拉斯变换",
+      "sourceHash": "c8a655392593eb2de1ef31a103ec45cdba48191073d6de05c8606a89b2000ea3",
+      "notebooks": [
+        {
+          "id": "math/laplace-transform#1",
+          "title": "加权面积与变换表",
+          "index": 1,
+          "line": 77,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5682,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "函数/变换/收敛界: 1 (1/s, 0, True)\n函数/变换/收敛界: t (s**(-2), 0, True)\n函数/变换/收敛界: t**2 (2/s**3, 0, True)\n函数/变换/收敛界: exp(-t) (1/(s + 1), -1, True)\n函数/变换/收敛界: sin(t*w) (w/(s**2 + w**2), 0, True)\n函数/变换/收敛界: cos(t*w) (s/(s**2 + w**2), 0, True)\n默认有限/尾项/总量: 1 - exp(-4) exp(-4) 1\n默认近似: 0.981684361111 0.0183156388887\n边界r0前4分钟: 4\n不收敛例前4分钟: -4 + 4*E 6.87312731384\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#2",
+          "title": "移位与导数规则",
+          "index": 2,
+          "line": 124,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 202,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "指数移位: ((s + 1)**(-2), -1, True)\n导数直接/带初值/余量: -1/(s + 1) -1/(s + 1) 0\n二阶初值: 0 1\n二阶直接/规则/余量: -2/(s + 1) + (s + 1)**(-2) s**2/(s + 1)**2 - 1 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#3",
+          "title": "初值问题与部分分式",
+          "index": 3,
+          "line": 172,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 151,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "一阶零初值: -1/(s + 1) + 1/s 1 - exp(-t)\n一阶初值/余量: 0 2 0 0\n一阶非零初值: 1/(s + 1) + 1/s 1 + exp(-t) ln2时: 3/2\n二阶分式/解: -1/(s + 1) - 1/(s + 1)**2 + 1/s -t*exp(-t) + 1 - exp(-t)\n二阶方程余量/初值: 0 0 0\n二阶ln2时: 1/2 - log(2)/2 0.153426409720\n二次分母反变换: sin(2*t)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#4",
+          "title": "延迟的时间含义",
+          "index": 4,
+          "line": 201,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 18,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "延迟变换/ROC界/条件: exp(-2*s)/(s*(s + 1)) 0 True\n时刻/输出: 1 0 0\n时刻/输出: 2 0 0\n时刻/输出: 3 1 - exp(-1) 0.632120558829\n原响应变换与ROC: (-1/(s + 1) + 1/s, 0, True)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#5",
+          "title": "卷积与输入累积",
+          "index": 5,
+          "line": 226,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 33,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "指数卷积/变换: t*exp(-t) ((s + 1)**(-2), -1, True)\n常输入卷积/变换: 1 - exp(-t) (-1/(s + 1) + 1/s, 0, True)\n乘法核验: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#6",
+          "title": "传递函数与初终值检查",
+          "index": 6,
+          "line": 263,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 40,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "带初值输出/ln2时: 2 + exp(-t) 5/2\n方程余量/初值: 0 3\n零初值部分/漏项/极点: 2 - 2*exp(-t) 3*exp(-t) [-1]\n合法初值/终值: 0 1\n形式终值/极点: 0 [-I, I]\n形式终值/极点: 0 [1]\nexp(t)变换与ROC: (1/(s - 1), 1, True)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/laplace-transform#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 303,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 89,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: (1/(s + 1), -1, True) 1 - exp(-4) exp(-4)\n题2: ((s + 2)**(-2), -2, True)\n题3: 1/(s + 1) + 1/s 1 + exp(-t) 3/2\n题4: -1/(s + 1) - 1/(s + 1)**2 + 1/s -t*exp(-t) + 1 - exp(-t) 1/2 - log(2)/2\n题5延迟变换/第3分钟: exp(-2*s)/(s*(s + 1)) 1 - exp(-1) 0.632120558829\n题5卷积/变换: t*exp(-t) ((s + 1)**(-2), -1, True)\n题6形式终值/极点: 1 [-1]\n题6形式终值/极点: 0 [-I, I]\n题6形式终值/极点: 0 [1]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/fourier-analysis",
+      "title": "傅里叶分析",
+      "sourceHash": "5322d6c976b67f412031185461d62ca387752f4c0c0a8189fbb4161bcaa5e263",
+      "notebooks": [
+        {
+          "id": "math/fourier-analysis#1",
+          "title": "正交系数与幅相",
+          "index": 1,
+          "line": 85,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7264,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n/a/b: 0 0 0\nn/a/b: 1 1 0\nn/a/b: 2 0 0\nn/a/b: 3 1/2 0\nn/c: -3 1/4\nn/c: -1 1/2\nn/c: 0 0\nn/c: 1 1/2\nn/c: 3 1/4\n相位90度的a3/b3/c3/起点: 0 -1/2 I/4 1\n均值/均方/改相位均方/RMS: 0 5/8 5/8 sqrt(10)/4 0.790569415042\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#2",
+          "title": "方波系数与有限截断",
+          "index": 2,
+          "line": 114,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 238,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "方波n/b: 1 4/pi\n方波n/b: 2 0\n方波n/b: 3 4/(3*pi)\n方波n/b: 5 4/(5*pi)\nN/四分之一时刻/均方: 1 4/pi 1.27323954474 0.810569469139\n网格采样最大值（非连续精确峰）: 1.2732395447351628\nN/四分之一时刻/均方: 3 52/(15*pi) 1.10347427210 0.933055522253\n网格采样最大值（非连续精确峰）: 1.1883568665366488\nN/四分之一时刻/均方: 15 467009482388/(145568097675*pi) 1.02119720983 0.986495504607\n网格采样最大值（非连续精确峰）: 1.1793492982435194\n跳点有限和: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#3",
+          "title": "普通傅里叶变换与单位约定",
+          "index": 3,
+          "line": 166,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 659,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "任意实频率的绝对积分界: 2\n双边衰减变换/零频/一弧度: 2/(w**2 + 1) 2 1\n逆式在t0的积分: 1\n矩形脉冲变换: Piecewise((2*sin(w)/w, (w > 0) | (w < 0)), (2, True))\n矩形零频/第一正零点: 2 0\n延迟2秒的一弧度变换: exp(-2*I)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#4",
+          "title": "延迟卷积与稳定频响",
+          "index": 4,
+          "line": 202,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 293,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "三种积分的绝对界: 1 1 2\n核H/卷积函数/卷积变换: 1/(I*w + 1) t*exp(-t) (I*w + 1)**(-2)\n导数规则余量: 0\n一弧度H/增益/相位: 1/2 - I/2 sqrt(2)/2 -pi/4\n一Hz增益: 1/sqrt(1 + 4*pi**2) 0.157176725478\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#5",
+          "title": "DFT幅值与负频率",
+          "index": 5,
+          "line": 233,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "正/负频率格及模: [1, 3, 63, 61] [32. 16. 32. 16.]\n单边幅值: [1.  0.5]\n均值/时域均方/DFT均方: -6.678685382510707e-17 0.625 0.625\n逆变换最大误差: 6.661338147750939e-16\n频率格间隔: 1.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#6",
+          "title": "混叠泄漏与端点归一化",
+          "index": 6,
+          "line": 254,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "3Hz与61Hz采样最大差: 3.4861002973229915e-14\n奈奎斯特正弦采样最大绝对值: 2.1558735510086122e-14\n输入Hz/格3,4单边幅值: 3 [1.00000000e+00 1.55382272e-16]\n输入Hz/格3,4单边幅值: 3.5 [0.59002253 0.67771909]\n端点例/正确幅值: DC2 2.0 0.0\n端点例/正确幅值: Nyquist 0.0 1.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/fourier-analysis#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 294,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 196,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1周期/Hz/角频率/双边系数: 1 [1, 3] [2*pi, 6*pi] [1/2, 1/4]\n题2 a3/b3/c3/起点/均方: 0 -1/2 I/4 1 5/8\n题3: 4/pi 52/(15*pi) 0\n题4: 2/(w**2 + 1) 2 1 exp(-2*I)\n题5 H1/增益/相位/一Hz增益: 1/2 - I/2 sqrt(2)/2 -pi/4 1/sqrt(1 + 4*pi**2)\n题6原始模/单边幅值: [32. 16.] [1.  0.5]\n题6泄漏格3/4: [0.59002253 0.67771909]\n题6端点幅值: 2.0 1.0\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/z-transform",
+      "title": "Z变换",
+      "sourceHash": "21b9c9e4b8e369f443063a8a145b1bc602fb16f88c5eb9b154bfc55907a165ea",
+      "notebooks": [
+        {
+          "id": "math/z-transform#1",
+          "title": "几何序列与加权和",
+          "index": 1,
+          "line": 47,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5332,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "记录0到3: [1, 1/2, 1/4, 1/8]\nN/项数/有限和/小数: 8 9 511/256 1.99609375000\n无限和/尾项: 2 1/256 0.00390625000000\n变换（ROC模z大于1/2）: 2*z/(2*z - 1)\ndelta变换: 1\n边界a/前五个部分和: 1 [1, 2, 3, 4, 5]\n边界a/前五个部分和: -1 [1, 0, 1, 0, 1]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#2",
+          "title": "同分式与两种收敛域",
+          "index": 2,
+          "line": 83,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 175,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "两分式相减: 0\n右侧前四项: [1, 1/2, 1/4, 1/8]\n左侧k=-1,-2,-3: [-2, -4, -8]\n右侧z1/左侧z1/4: 2 -1\n各自截断核对: 2417851639229258349412351/1208925819614629174706176 -1.00000000000\n同一分式在z1,a=-1的代数值（非边界级数和）: 1/2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#3",
+          "title": "单边延迟与非零初值",
+          "index": 3,
+          "line": 128,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 34,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "零输入初值响应0到3: [2, 1, 1/2, 1/4]\nY0/延迟式: 4*z/(2*z - 1) 8*z/(2*z - 1)\nz2处原移位前17项/完整值: 5.33333333302 16/3\n阶跃分式拆分余量: 0\n阶跃输出0到3: [1, 3/2, 7/4, 15/8]\n延迟两格脉冲变换: z**(-2)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#4",
+          "title": "递推卷积与终值边界",
+          "index": 4,
+          "line": 173,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 27,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "递推=卷积: True 前四项: [1, 3/2, 7/4, 15/8] 第8项: 511/256\n阶跃初值/终值: 1 2\n脉冲绝对和: 2\na1阶跃: [1, 2, 3, 4, 5]\n交替反例前五项: [1, -1, 1, -1, 1]\n不满足条件的形式终值: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#5",
+          "title": "单位圆频响与物理周期",
+          "index": 5,
+          "line": 206,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 63,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "角度/H/幅值/相位: 0 2 2 0\n角度/H/幅值/相位: pi/2 4/5 - 2*I/5 2*sqrt(5)/5 -atan(1/2)\n角度/H/幅值/相位: pi 2/3 2/3 0\npi/2幅相小数: 0.894427191000 -0.463647609001\nTs1分钟的周期: 4\n2pi周期性余量: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/z-transform#6",
+          "title": "模态采样与六题复算",
+          "index": 6,
+          "line": 248,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: 1/(1 - 1/(2*z)) ROC模z>1/2 511/256 2 1/256\n题2左侧z1/4的80项近似: -1.00000000000 极限为-1;尾项绝对值2^-80\n题3: 2/(1 - 1/(2*z)) [2, 1, 1/2, 1/4]\n题4: [1, 3/2, 7/4] 通项2-(1/2)^k;初值1;终值2\n题5: 4/5 - 2*I/5 2*sqrt(5)/5 -atan(1/2) 4\n题5交替形式终值: 0\n题6采样系数: 0.36787944117144233 0.6065306597126334\n题6 a1阶跃: [1, 2, 3, 4, 5]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/probability-basics",
+      "title": "概率基础",
+      "sourceHash": "c8f381f9539b46839d70401663d3ed55cc5a398761819e2d2f89bef825c558ca",
+      "notebooks": [
+        {
+          "id": "math/probability-basics#1",
+          "title": "感应灯联合表与条件反转",
+          "index": 1,
+          "line": 72,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4729,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "四格联合概率: [9/1000, 1/1000, 99/2000, 1881/2000] 合计: 1\n万次期望四格: [90, 10, 495, 9405]\n行合计/列合计: [100, 9900] [585, 9415]\n亮灯概率/后验/小数: 117/2000 2/13 0.153846153846\nD并B: 119/2000\n先验10%后验: 2/3\n独立检验P交集与P乘积: 9/1000 117/200000\n相同亮灯概率时后验: 1/100\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#2",
+          "title": "离散CDF与连续面积",
+          "index": 2,
+          "line": 120,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 60,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "阈值/CDF: -2 0\n阈值/CDF: -1 1/4\n阈值/CDF: -1/2 1/4\n阈值/CDF: 0 3/4\n阈值/CDF: 1/2 3/4\n阈值/CDF: 1 1\n阈值/CDF: 2 1\n离散P等于0/P小于等于0: 1/2 3/4\n均匀密度2的总面积/四分之一内概率: 1 1/2\n连续单点积分: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#3",
+          "title": "矩与零协方差反例",
+          "index": 3,
+          "line": 157,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "误差均值/二阶矩/方差/标准差: 0 1/2 1/2 sqrt(2)/2 0.707106781187\n线性变换均值/方差: 3 2\nU均值/V均值/UV均值/协方差: 0 2/3 0 0\nVarU/VarV: 2/3 2/9\nP(U0且V0)/边缘乘积: 1/3 1/9\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#4",
+          "title": "伯努利二项与正态面积",
+          "index": 4,
+          "line": 196,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 737,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "伯努利均值/方差: 1/5 4/25\n二项概率表: [1024/3125, 256/625, 128/625, 32/625, 4/625, 1/3125] 总和: 1\nP0/P1/P至少1: 0.3276800000 0.4096000000 0.6723200000\n二项均值/方差: 1 4/5\n正态中心密度/区间概率/积分误差估计: 0.19947114020071635 0.682689492137086 7.579375928402476e-15\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#5",
+          "title": "固定样本与总体参数",
+          "index": 5,
+          "line": 221,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "样本数/均值/平方和: 4 0 2\n样本方差n-1/平均平方偏差n: 2/3 1/2\n教学总体方差: 1/2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#6",
+          "title": "独立平均与共同误差",
+          "index": 6,
+          "line": 259,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sigma2平均标准差: [(1, 2), (4, 1), (16, 1/2), (100, 1/5)]\n离散表n100门限1/2的Chebyshev界: 1/50\n枚举配置数/平均的均值/方差: 32 0 5/4\n单次方差/两次协方差: 2 1\n错误独立假设下的方差: 1/2 真实极限方差: 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/probability-basics#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 296,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: 117/2000 2/13 2/3\n题2互斥交集/独立所需乘积/无信息后验: 0 1/4 1/100\n题3 P0/CDF0/均值/方差/标准差: 1/2 3/4 0 1/2 sqrt(2)/2\n题3均匀密度/面积/半区间概率: 2 1 1/2\n题4 Y均值/方差: 3 2 U,V协方差0但交集1/3不等于1/9\n题5: 2101/3125 0.6723200000 1 4/5\n题5正态sigma/中心密度/概率: 2 0.19947114020071635 0.682689492137086\n题6样本均值/样本方差/独立平均标准差/共同平均方差: 0 2/3 1 5/4\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/stochastic-processes",
+      "title": "随机过程",
+      "sourceHash": "a0dd17c0849a52ced1d7ed1b043fbbf7f9b992b9ccc580f94705f4000e54cc21",
+      "notebooks": [
+        {
+          "id": "math/stochastic-processes#1",
+          "title": "相关函数与白噪声边界",
+          "index": 1,
+          "line": 65,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4740,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "带偏置均值/同刻R/C/异刻R/C: 2 5 1 4 0\n白噪声反例配置数: 8\n均值/方差/跨时协方差: 0 5/2 0\n绝对值同时1/边缘乘积: 1/2 1/4\n随机常量的时间均值可能值/总体均值/均方误差: [-1, 1] 0 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#2",
+          "title": "AR矩传播与初始化",
+          "index": 2,
+          "line": 120,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 90,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P0到P3/平稳方差: [0, 3/4, 15/16, 63/64] 1\nP12/距离极限: 16777215/16777216 1/16777216\n从零开始C(3,1)/C(2,0): 3/16 0\n宽平稳gamma0到3: [1, 1/2, 1/4, 1/8]\n二阶矩初始化下X0取值: [-1, 1]\nX1取值: [-sqrt(3)/2 - 1/2, 1/2 - sqrt(3)/2, -1/2 + sqrt(3)/2, 1/2 + sqrt(3)/2]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#3",
+          "title": "相关平均与谱归一化",
+          "index": 3,
+          "line": 173,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 739,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "a/q/四点平均方差: -1/2 3/4 7/64\na/q/四点平均方差: 0 1 1/4\na/q/四点平均方差: 1/2 3/4 33/64\n谱0/pi2/pi: [3.0, 0.6, 0.3333333333333333]\n谱积分归一方差: 1.0\n平稳AR四点平均方差: 33/64 随机常量过程4点方差: 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#4",
+          "title": "两状态链与周期边界",
+          "index": 4,
+          "line": 199,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 15,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "转移行和: [1, 1]\np1/p2: Matrix([[4/5, 1/5]]) Matrix([[7/10, 3/10]])\n平稳分布/残差: Matrix([[3/5, 2/5]]) Matrix([[0, 0]])\nk4开门概率/闭式: 3/8 3/8\n交替链k0到3: [Matrix([[1, 0]]), Matrix([[0, 1]]), Matrix([[1, 0]]), Matrix([[0, 1]])]\n交替链平稳分布残差: Matrix([[0, 0]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#5",
+          "title": "向量协方差与Lyapunov方程",
+          "index": 5,
+          "line": 237,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P1/P2: Matrix([[3/4, 1/4], [1/4, 15/16]]) Matrix([[15/16, 9/32], [9/32, 255/256]])\nQ与Ps行列式: 41/64 45/49\nLyapunov残差: Matrix([[0, 0], [0, 0]])\nA特征值: {1/2: 1, 1/4: 1}\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#6",
+          "title": "游走与布朗增量协方差",
+          "index": 6,
+          "line": 258,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "游走k/均值/方差: 0 0 0\n游走k/均值/方差: 1 0 1\n游走k/均值/方差: 2 0 2\n游走k/均值/方差: 3 0 3\n游走k/均值/方差: 4 0 4\n游走C(4,2): 2\nBrownian取样协方差: Matrix([[1, 1, 1], [1, 2, 2], [1, 2, 4]])\n不重叠增量协方差: Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 2]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/stochastic-processes#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 294,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1均值/同刻R,C/异刻R,C: 2 5 1 4 0 常量过程平均均方误差1\n题2 P1,P2,P3,Ps: 3/4 15/16 63/64 1\n题2平稳gamma0,1,2: 1 1/2 1/4\n题3平均方差/谱0,pi2,pi/归一: 33/64 [3, 3/5, 1/3] 1\n题4: Matrix([[4/5, 1/5]]) Matrix([[7/10, 3/10]]) Matrix([[3/5, 2/5]])\n题5 P1/P2/Ps/残差: Matrix([[3/4, 1/4], [1/4, 15/16]]) Matrix([[15/16, 9/32], [9/32, 255/256]]) Matrix([[1, 2/7], [2/7, 1]]) Matrix([[0, 0], [0, 0]])\n题6: 4 2 [1, 1, 2]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/convex-optimization",
+      "title": "凸优化",
+      "sourceHash": "88bd3ee725480836d19b0d10000b26ffd26a8750ddff963492d5c9828a51dc59",
+      "notebooks": [
+        {
+          "id": "math/convex-optimization#1",
+          "title": "几何与凸性复算",
+          "index": 1,
+          "line": 67,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5630,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "可行中点: [1. 1.]\nx平方中点/弦: 1 2\nx平方函数/切线: 4 3\n凸可行点(1,1)目标: 1/2\nexp导数与二阶导: exp(x) exp(x)\nx四次方零点曲率: 0\nexp负无穷极限: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/convex-optimization#2",
+          "title": "功率分配与边界",
+          "index": 2,
+          "line": 101,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "请求/上限/最优/目标: [2, 1] 2 (array([1.5, 0.5]), np.float64(0.25))\n请求/上限/最优/目标: [3, 0] 1 (array([1., 0.]), np.float64(2.000000000000007))\n请求/上限/最优/目标: [2, 1] 0 (array([0., 0.]), np.float64(2.5))\n请求/上限/最优/目标: [2, 1] 4 (array([2., 1.]), np.float64(0.0))\n主例梯度: [-0.5 -0.5]\nHessian特征值: [1. 1.]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/convex-optimization#3",
+          "title": "对偶与KKT证书",
+          "index": 3,
+          "line": 161,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "目标/对偶/间隙: 1/4 1/4 0\n驻点残差: Matrix([[0], [0]]) 互补: 0\n非负乘子互补: [0, 0]\nlambda0下界: 0 Slater点及余量: [1/2, 1/2] 1\nb0驻点/对偶: Matrix([[0], [0]]) 5/2\n退化约束零点驻点: 1\n退化对偶lambda1/2: -1/4 -1/8\n退化对偶极限: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/convex-optimization#4",
+          "title": "投影迭代与步长边界",
+          "index": 4,
+          "line": 194,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "默认迭代: 0 [0. 0.] 2.5\n默认迭代: 1 [1.  0.5] 0.625\n默认迭代: 2 [1.375 0.625] 0.26562499999999994\n默认迭代: 3 [1.4375 0.5625] 0.25390624999999994\n末点: (18, array([1.49999809, 0.50000191]), np.float64(0.2500000000036379))\n步长边界: [(0, array([0., 0.]), np.float64(1.0)), (1, array([2., 2.]), np.float64(1.0)), (2, array([0., 0.]), np.float64(1.0)), (3, array([2., 2.]), np.float64(1.0))]\n错误只截非负: [1.5  0.75] 正确投影: [1.375 0.625]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/convex-optimization#5",
+          "title": "带权二次规划",
+          "index": 5,
+          "line": 241,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "数值解/目标: [1.66666667 0.33333333] 0.33333333333333365\n精确解/乘子/目标: Matrix([[5/3], [1/3]]) 2/3 1/3\n驻点: Matrix([[0], [0]])\n主例QP常数: 5/2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/convex-optimization#6",
+          "title": "六题答案复算",
+          "index": 6,
+          "line": 278,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1平方/弦: 1 2 非凸中点: 0.0\n题3梯度/驻点/目标: Matrix([[-1/2], [-1/2]]) Matrix([[0], [0]]) 1/4\n题4下界: [0, 1/4, 0]\n题5: Matrix([[1], [1/2]]) Matrix([[11/8], [5/8]]) 5/8 17/64\n题6: Matrix([[5/3], [1/3]]) 2/3 1/3 Matrix([[0], [0]])\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/variational-dp",
+      "title": "变分法与动态规划",
+      "sourceHash": "19929150e89a71cece74f31b1e12e2bd0e06d51a088442ac3868ccb092c71517",
+      "notebooks": [
+        {
+          "id": "math/variational-dp#1",
+          "title": "路径扰动与边界复算",
+          "index": 1,
+          "line": 88,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5950,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "端点: 0 1\n正泛函/负泛函: pi**2*e**2/4 + 1/2 -pi**2*e**2/4 - 1/2\n第一/第二变分: 0 pi**2/2\n自由终点零路径目标: 0\n匀速系数: {a: 1, b: 0}\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#2",
+          "title": "Bellman符号倒推",
+          "index": 2,
+          "line": 154,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 31,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "最优动作: -p*x/(p + r) 二阶导: p + r\nP递推: (p*q + p*r + q*r)/(p + r)\nP: [8/5, 3/2, 1] K: [3/5, 1/2] V0(2): 16/5\n无状态/终端惩罚P: [0, 0, 0]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#3",
+          "title": "整段二次问题独立核验",
+          "index": 3,
+          "line": 180,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 22,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "软终端动作/状态/目标: {a: -6/5, b: -2/5} 4/5 2/5 16/5\n阶段与终端: 68/25 2/5 2/25\nHessian: Matrix([[3, 1], [1, 2]]) 顺序主子式: 3 5\n硬终端动作/中间状态/目标: -4/3 -2/3 2/3 10/3\n零状态最优目标: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#4",
+          "title": "协态与Bellman核对",
+          "index": 4,
+          "line": 207,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "协态: [16/5, 6/5, 2/5]\n协态递推残差: [0, 0]\n动作驻点残差: [0, 0]\nBellman残差: [0, 0]\n终端残差: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#5",
+          "title": "连续时间Riccati与代价",
+          "index": 5,
+          "line": 242,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 50,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "连续阶段/终端/总: 2 - 2*exp(-2) 2*exp(-2) 2\n连续终点: 2*exp(-1) 0.7357588823428847\ns/P0/J0: 1.0 1.0 2.0\n终端/方程复核: 1.0 0.0\ns/P0/J0: 0.0 0.7615941559548295 1.523188311909659\n终端/方程复核: 0.0 -9.353628982466944e-13\ns0解析值: 1.5231883119115297\n协态/驻点/状态残差: 0 0 0\nquad积分证书: 1.9999999999999998\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/variational-dp#6",
+          "title": "六题答案复算",
+          "index": 6,
+          "line": 284,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 52,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1泛函/一阶: pi**2*e**2/4 + 1/2 0\n题3 P/K/V: [8/5, 3/2, 1] [3/5, 1/2] 16/5\n题4阶段/终端/总: [68/25, 2/5] 2/25 16/5\n题5协态: [16/5, 6/5, 2/5]\n题6阶段/终端/总: 2 - 2*exp(-2) 2*exp(-2) 2\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/diff-geometry",
+      "title": "微分几何入门",
+      "sourceHash": "d5cb358a77ee57a20675b9ce8df01dd8d2ff420ab014f812729c21dc53d13adc",
+      "notebooks": [
+        {
+          "id": "math/diff-geometry#1",
+          "title": "圆周切空间与弧长",
+          "index": 1,
+          "line": 66,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5884,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "位置/速度/速率: Matrix([[sqrt(3)], [1]]) Matrix([[-1/2], [sqrt(3)/2]]) 1\n正则圆Jacobian/核: Matrix([[4, 0]]) [Matrix([\n[0],\n[1]])]\n圆弧长: pi\n度量系数: 4\n退化零水平集Jacobian/核维数: Matrix([[0, 0]]) 2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#2",
+          "title": "坐标推前与李导数",
+          "index": 2,
+          "line": 116,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 42,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "变换/行列式/推前: Matrix([[1], [3]]) 1 Matrix([[2], [4]])\nLie导数/复合: 2*x*y 1 2*x 默认: 4 1 2\n非全局逆行列式/周期差: exp(2*a) Matrix([[0], [0]])\n流例方程/初值: 0 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#3",
+          "title": "四段流与李括号",
+          "index": 3,
+          "line": 151,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 30,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "括号: Matrix([[sin(t)], [-cos(t)], [0]]) 零朝向: Matrix([[0], [-1], [0]])\n归一化极限: [0, -1]\n段时长/精确/二阶/误差/总时长: 0.1 [ 0.00049958 -0.00998334] [ 0.   -0.01] 0.0004998611265425421 0.4\n段时长/精确/二阶/误差/总时长: 0.25 [ 0.00777189 -0.06185099] [ 0.     -0.0625] 0.007798946048381193 1.0\n段时长/精确/二阶/误差/总时长: 0.5 [ 0.06120872 -0.23971277] [ 0.   -0.25] 0.06206717654092934 2.0\n段时长/精确/二阶/误差/总时长: 0.8 [ 0.24263463 -0.57388487] [ 0.   -0.64] 0.25148116222595474 3.2\n默认归一化: [ 0.24483488 -0.95885108]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#4",
+          "title": "分布的秩与可积性",
+          "index": 4,
+          "line": 180,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 15,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "非对合括号/二场秩/三场行列式: Matrix([[0], [0], [1]]) 2 1\n平面分布括号: Matrix([[0], [0], [0]])\n差速三方向行列式: 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#5",
+          "title": "旋转约束与矩阵指数",
+          "index": 5,
+          "line": 201,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 61,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "正交/行列式: Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]]) 1\n切向约束: Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])\npi2旋转与基向量: Matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) Matrix([[0], [1], [0]])\n线性步正交残差/行列式: Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]]) 2\nexpm数值差: 0.0\n周期差: Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#6",
+          "title": "相对阶与退化坐标",
+          "index": 6,
+          "line": 225,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "输出/Lg/Lf/LgLf/变换行列式: a 0 b 1 1\n输出/Lg/Lf/LgLf/变换行列式: a**2 0 2*a*b 2*a 4*a**2\n平方输出默认/退化系数: 2 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/diff-geometry#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 260,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 15,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1: Matrix([[sqrt(3)], [1]]) Matrix([[-1/2], [sqrt(3)/2]]) 1 pi\n题2: Matrix([[1], [3]]) Matrix([[2], [4]]) 1\n题3: 2*x*y 1 2*x 取值: 4 1 2 反序: 0\n题4: [ 0.06120872 -0.23971277] 二阶: [0, -0.25]\n题5括号: Matrix([[0], [0], [1]])\n题6: Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]]) Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]]) 2 2*x 4*x**2\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/graph-theory",
+      "title": "图论基础",
+      "sourceHash": "ee212d907b392e969e45da0771b6e3d20f91b4863a1f214c4b2a393f134e9733",
+      "notebooks": [
+        {
+          "id": "math/graph-theory#1",
+          "title": "图结构与连通分量",
+          "index": 1,
+          "line": 44,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5510,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "节点/边/连通分量: 4 3 [[1, 2, 3, 4]]\n断中间边: [[1, 2], [3, 4]]\n路径边数: 3 生成树边数: 3 补一边圈边数: 4\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#2",
+          "title": "邻接关联与二次型",
+          "index": 2,
+          "line": 102,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "A/D/L: Matrix([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0]]) Matrix([[1, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 1]]) Matrix([[1, -1, 0, 0], [-1, 2, -1, 0], [0, -1, 2, -1], [0, 0, -1, 1]])\n关联重建/行和/列和: Matrix([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]) Matrix([[0], [0], [0], [0]]) Matrix([[0, 0, 0, 0]])\nLx/边差/能量: Matrix([[-2], [0], [0], [2]]) Matrix([[2], [2], [2]]) 12\n反向一列差: Matrix([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])\n单向边邻接: Matrix([[0, 0], [1, 0]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#3",
+          "title": "零谱与代数连通度",
+          "index": 3,
+          "line": 133,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 113,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "特征多项式: z*(z - 2)*(-2*w*z + 2*w + z**2 - 2*z)\nw/秩/零空间维数/数值谱: 0 2 2 [0. 0. 2. 2.]\nw/秩/零空间维数/数值谱: 1 3 1 [5.04508348e-17 5.85786438e-01 2.00000000e+00 3.41421356e+00]\nw/秩/零空间维数/数值谱: 3/2 3 1 [1.36526982e-16 6.97224362e-01 2.00000000e+00 4.30277564e+00]\n默认精确谱: {2: 1, 2 - sqrt(2): 1, sqrt(2) + 2: 1, 0: 1}\n解析lambda2/lambdaMax: 0.585786437626905 3.414213562373095\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#4",
+          "title": "连续时间与平均保持",
+          "index": 4,
+          "line": 160,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 26,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "w/t1/t10/平均: 1.0 [1.37492827 2.33485668 3.66514332 4.62507173] [2.9916731  2.99655089 3.00344911 3.0083269 ] 3.0\nw/t1/t10/平均: 0.0 [0.86466472 1.13533528 4.86466472 5.13533528] [1. 1. 5. 5.] 3.0\n初始V/Vdot: 10.0 -12.0\n断图分量极限: [np.float64(1.0), np.float64(1.0), np.float64(5.0), np.float64(5.0)]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#5",
+          "title": "离散更新与失败边界",
+          "index": 5,
+          "line": 194,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "w/alpha/首轮/20轮/分歧谱半径: 1.0 0.25 [0.5 2.  4.  5.5] [2.87721786 2.94914197 3.05085803 3.12278214] 0.8535533905932737\n首轮边差能量: 8.5\nw/alpha/首轮/20轮/分歧谱半径: 0.0 0.25 [0.5 1.5 4.5 5.5] [0.99999905 1.00000095 4.99999905 5.00000095] 1.0\n首轮边差能量: 2.0\nw/alpha/首轮/20轮/分歧谱半径: 1.5 0.5 [1.  2.5 3.5 5. ] [3.42571545 1.59189415 4.40810585 2.57428455] 1.1513878188659974\n首轮边差能量: 6.0\n默认步长上界: 0.585786437626905\n两节点周期: Matrix([[2], [0]]) Matrix([[0], [2]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#6",
+          "title": "有向根与加权极限",
+          "index": 6,
+          "line": 224,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 56,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "左/右零/列和: Matrix([[0, 0]]) Matrix([[0], [0]]) Matrix([[-1, 1]])\n保持量/算术平均: 2 3\n强连通t10: [2. 2.]\n单向解方程残差: Matrix([[0], [0]]) 极限: Matrix([[0], [0]])\n单向左保持向量: Matrix([[0, 0]])\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/graph-theory#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 266,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1节点/树边/断分量: 4 3 2\n题2 Lx: Matrix([[-2], [0], [0], [2]]) 单向元素a21: 1\n题3边差/能量: Matrix([[2], [2], [2]]) 12\n题4零维/秩: 1 3 2 2 2 - sqrt(2)\n初始分歧平方和: 20\n题5首轮/V/Vdot: Matrix([[1/2], [2], [4], [11/2]]) 10 -12\n题6左零/保持量/列和: Matrix([[0, 0]]) 2 Matrix([[-1, 1]])\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/game-theory-math",
+      "title": "博弈论基础",
+      "sourceHash": "cfbb7c16d898a9f2b32f5a0aace983ef413a1e3f361f71fca860336ea2c11e69",
+      "notebooks": [
+        {
+          "id": "math/game-theory-math#1",
+          "title": "单方改变能改善多少",
+          "index": 1,
+          "line": 32,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6213,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "甲代价/导数/无约束最佳响应: a*b/4 + (a - 2)**2/2 a + b/4 - 2 2 - b/4\n自身二阶导: 1\n默认各代价: 1 1\n乙固定2，甲最佳响应/代价/改善: 3/2 7/8 1/8\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#2",
+          "title": "有限表中的单方偏离",
+          "index": 2,
+          "line": 93,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "行/列0合作1争抢，甲乙代价矩阵: [[1 3]\n [0 2]] [[1 0]\n [3 2]]\n各列甲响应/各行乙响应: [1 1] [1 1]\n纯NE索引: [(1, 1)] NE代价: [(np.int32(2), np.int32(2))]\n同时合作代价: 1 1 甲单方争抢后: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#3",
+          "title": "分别求均衡与共同目标",
+          "index": 3,
+          "line": 123,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 42,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "NE/共同目标/Hessian: {a: 2/(c + 1), b: 2/(c + 1)} {a: 2/(2*c + 1), b: 2/(2*c + 1)} Matrix([[1, 2*c], [2*c, 1]])\nc/NE/共同目标/两总分/差: 0 {a: 2, b: 2} {a: 2, b: 2} 0 0 0\n该c下响应端点/总分Hessian谱/NE单方改善: [2, 2] {1: 2} 0\nc/NE/共同目标/两总分/差: 1/4 {a: 8/5, b: 8/5} {a: 4/3, b: 4/3} 36/25 4/3 8/75\n该c下响应端点/总分Hessian谱/NE单方改善: [1, 2] {3/2: 1, 1/2: 1} 0\nc/NE/共同目标/两总分/差: 9/20 {a: 40/29, b: 40/29} {a: 20/19, b: 20/19} 1764/841 36/19 3240/15979\n该c下响应端点/总分Hessian谱/NE单方改善: [1/5, 2] {19/10: 1, 1/10: 1} 0\n默认NE各代价: 18/25\n共同目标各代价/甲响应/甲改善: 2/3 5/3 1/18\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#4",
+          "title": "匹配硬币的期望与LP",
+          "index": 4,
+          "line": 175,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 32,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "独立期望: (2*p - 1)*(2*q - 1) 均衡期望: 0\n纯最大最小/最小最大: -1.0 1.0\n匹配硬币纯NE: []\n甲分布/保证值，乙分布/上界: [ 0.5  0.5 -0. ] [ 0.5  0.5 -0. ]\np=.8的最坏收益: -3/5\n同面公共硬币相关收益: 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#5",
+          "title": "势函数与非唯一均衡",
+          "index": 5,
+          "line": 221,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 14,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "两位玩家单方变化差: 0 0\n势Hessian/默认谱: Matrix([[1, c], [c, 1]]) {5/4: 1, 3/4: 1}\n默认NE势/总分: 4/5 36/25\n非唯一例各自二阶导/响应: 2 2 [b] [a]\n对角线上代价: 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#6",
+          "title": "同步响应、循环与承诺",
+          "index": 6,
+          "line": 251,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "同步响应0/1/2/12轮: [(0, Matrix([\n[0],\n[4]]), array([0., 4.])), (1, Matrix([\n[1],\n[2]]), array([1., 2.])), (2, Matrix([\n[3/2],\n[7/4]]), array([1.5 , 1.75])), (12, Matrix([\n[3355443/2097152],\n[6710887/4194304]]), array([1.5999999 , 1.60000014]))]\n第12轮精确误差: Matrix([[-1/10485760], [3/20971520]])\n匹配硬币乙甲乙甲，0正1反: [[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]\n承诺代价/导数/二阶导/甲乙行动: 7*a**2/16 - 3*a/2 + 2 7*a/8 - 3/2 7/8 12/7 11/7\n承诺甲乙代价: 5/7 75/98\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/game-theory-math#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 294,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题2响应/代价/改善/NE代价: 3/2 7/8 1/8 18/25\n题3共同总分/均衡总分/差/改善: 4/3 36/25 8/75 1/18\n题4纯两个值/独立四项概率/相关收益: -1 1 [1/4, 1/4, 1/4, 1/4] 1\n题5默认势谱: {5/4: 1, 3/4: 1}\n题6行动/代价: 12/7 11/7 5/7 75/98\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "math/numerical-methods",
+      "title": "数值方法",
+      "sourceHash": "aa7c4aec92a0fddd9948d7d2f180d0d1f898d7b6c13c792e84a1b9a1d92b66a3",
+      "notebooks": [
+        {
+          "id": "math/numerical-methods#1",
+          "title": "舍入与相消",
+          "index": 1,
+          "line": 30,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5739,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "指定顺序浮点/精确整数: 0.0 1\n直接/改写/80位参考: 0.0 5e-17 4.99999999999999987500000000000000625e-17\n各绝对误差: 5.0e-17 2.0488933620173e-34\nfloat64相邻1间距: 2.220446049250313e-16\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#2",
+          "title": "条件数、输入变化与分解求解",
+          "index": 2,
+          "line": 70,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 28,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "精确原解/新解/条件数: Matrix([[1], [1]]) Matrix([[0], [2]]) 4000004000001/1000000 4000004.000001\n对新输入残差/对旧输入残差/前向变化: Matrix([[0], [0]]) Matrix([[0], [-1/1000000]]) 1\n浮点LU/Cholesky解与残差: [1. 1.] [1. 1.] 0.0 0.0\nQR/SVD拟合/残差范数/正交残差: [1.16666667 0.5       ] [1.16666667 0.5       ] 0.40824829046386313 [-2.22044605e-16 -4.44089210e-16]\nC与正规方程二范数条件数: 2.923987610591259 8.549703546891168\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#3",
+          "title": "包根与停止准则",
+          "index": 3,
+          "line": 98,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "端点/次数/根/区间宽/位置界/实际误差: 40.0 -18.90106166667595 22 1.0986123085021973 9.5367431640625e-07 4.76837158203125e-07 1.9834087483516782e-08\n解析根: 1.0986122886681098 k0有限窗包根: False\nNewton从0: 导数为零，拒绝继续\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#4",
+          "title": "差分与复合求积",
+          "index": 4,
+          "line": 132,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "h/前向/中心/绝对误差: 0.1 1.0517091807564771 1.001667500198441 0.051709180756477124 0.0016675001984409743\nh/前向/中心/绝对误差: 0.01 1.005016708416795 1.0000166667499921 0.005016708416794913 1.6666749992122476e-05\nh/前向/中心/绝对误差: 0.0001 1.000050001667141 1.0000000016668897 5.0001667140975314e-05 1.6668897373506297e-09\nh/前向/中心/绝对误差: 1e-08 0.999999993922529 0.999999993922529 6.07747097092215e-09 6.07747097092215e-09\nh/前向/中心/绝对误差: 1e-12 1.000088900582341 1.0000333894311098 8.890058234101161e-05 3.3389431109753787e-05\nN/解析积分/梯形/Simpson/误差: 4 138.90106166667596 143.72957673321716 139.1930448703837 4.8285150665412 0.2919832037077299\nN/解析积分/梯形/Simpson/误差: 8 138.90106166667596 140.123084423827 138.92092032069692 1.222022757151052 0.01985865402096465\nN/解析积分/梯形/Simpson/误差: 16 138.90106166667596 139.20751894560382 138.90233045286283 0.3064572789278657 0.0012687861868698747\nN/解析积分/梯形/Simpson/误差: 32 138.90106166667596 138.9777357923956 138.9011414079929 0.0766741257196486 7.974131693799791e-05\nN/解析积分/梯形/Simpson/误差: 64 138.90106166667596 138.92023394119377 138.9010666574598 0.019172274517814003 4.990783850189473e-06\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#5",
+          "title": "固定步方法与全量网格",
+          "index": 5,
+          "line": 176,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "k/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 0.0 4 1.0 [80. 80. 80. 80.] [0. 0. 0.] [4, 4, 16]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 0.0 8 0.5 [80. 80. 80. 80.] [0. 0. 0.] [8, 8, 32]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 0.0 16 0.25 [80. 80. 80. 80.] [0. 0. 0.] [16, 16, 64]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 0.0 32 0.125 [80. 80. 80. 80.] [0. 0. 0.] [32, 32, 128]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 0.0 64 0.0625 [80. 80. 80. 80.] [0. 0. 0.] [64, 64, 256]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 1.0 4 1.0 [21.09893833 20.         23.75       21.18652344] [1.09893833 2.65106167 0.0875851 ] [4, 4, 16]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 1.0 8 0.5 [21.09893833 20.234375   22.34110654 21.10242442] [0.86456333 1.24216821 0.00348608] [8, 8, 32]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 1.0 16 0.25 [21.09893833 20.60135575 21.68884986 21.09911469] [4.97582588e-01 5.89911527e-01 1.76355237e-04] [16, 16, 64]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 1.0 32 0.125 [21.09893833 20.83639022 21.3844285  21.09894826] [2.62548111e-01 2.85490170e-01 9.92658541e-06] [32, 32, 128]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 1.0 64 0.0625 [21.09893833 20.96452378 21.2390795  21.09893892] [1.34414552e-01 1.40141168e-01 5.88855215e-07] [64, 64, 256]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 2.0 4 1.0 [20.02012776 80.         20.74074074 20.74074074] [59.97987224  0.72061298  0.72061298] [4, 4, 16]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 2.0 8 0.5 [20.02012776 20.         20.234375   20.02346396] [0.02012776 0.21424724 0.00333621] [8, 8, 32]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 2.0 16 0.25 [20.02012776 20.00091553 20.09134633 20.02025566] [0.01921223 0.07121857 0.0001279 ] [16, 16, 64]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 2.0 32 0.125 [20.02012776 20.00602715 20.0475369  20.02013422] [1.41006121e-02 2.74091398e-02 6.46063602e-06] [32, 32, 128]\nk/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK: 2.0 64 0.0625 [20.02012776 20.01165914 20.03194404 20.02012812] [8.46861428e-03 1.18162803e-02 3.63625148e-07] [64, 64, 256]\n默认全网格: [[ 0.         80.         80.         80.         80.        ]\n [ 0.5        56.39183958 50.         60.         56.40625   ]\n [ 1.         42.07276647 35.         46.66666667 42.09025065]\n [ 1.5        33.38780961 27.5        37.77777778 33.4037198 ]\n [ 2.         28.12011699 23.75       31.85185185 28.13298623]\n [ 2.5        24.92509992 21.875      27.90123457 24.93485883]\n [ 3.         22.9872241  20.9375     25.26748971 22.99432841]\n [ 3.5        21.81184301 20.46875    23.51165981 21.81687114]\n [ 4.         21.09893833 20.234375   22.34110654 21.10242442]]\nEuler振荡边界: [[  0.  80.]\n [  1. -40.]\n [  2.  80.]\n [  3. -40.]\n [  4.  80.]]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#6",
+          "title": "自适应、事件与刚性双模态",
+          "index": 6,
+          "line": 229,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 63,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "RK45终点/实际终点误差/事件/事件误差/nfev: 21.098938378737774 4.541372433664037e-08 1.0986122906912796 2.0231698538708542e-09 212\n事件插值温度: 39.99999999999999 内部节点数: 36\nRadau双模态终点/解析/绝对误差/nfev: [3.67879441e-01 3.76750914e-42] [3.67879441e-01 3.72007598e-44] [1.96714867e-12 3.73030838e-42] 1940\n快模态E/BE/RK因子与两步: -9 1/11 291 81 1/121 84681 解析两步: 2.061153622438558e-09\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/numerical-methods#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 280,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1浮点与整数: 0.0 1\n题2原解/新解/条件数/两残差: Matrix([[1], [1]]) Matrix([[0], [2]]) 4000004000001/1000000 Matrix([[0], [0]]) Matrix([[0], [-1/1000000]])\n题2精确拟合/残差范数: Matrix([[7/6], [1/2]]) sqrt(6)/6\n题3次数/宽度/中点界: 22 1/1048576 1/2097152\n题4解析/梯形/Simpson: 138.90106166667596 140.123084423827 138.92092032069692\n题5 Euler/RK终温/两者误差: 1295/64 21.102424417072946 0.8645633333240497 0.0034860837488963625\n题6解析事件: 1.0986122886681098\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 54,
-    "notebooks": 187,
-    "enabled": 159,
+    "lessons": 69,
+    "notebooks": 285,
+    "enabled": 257,
     "codeOnly": 28
   },
   "releaseTotals": {
-    "lessons": 54,
-    "notebooks": 187,
-    "enabled": 157,
+    "lessons": 69,
+    "notebooks": 285,
+    "enabled": 255,
     "codeOnly": 30
   },
   "provenance": [
@@ -7557,6 +9916,116 @@
       "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
       "evidence": ".agent/semester-03/math-layout/python-proof-transfer.json",
       "executedAgain": false
+    },
+    {
+      "testedAt": "2026-10-17T16:30:33.636Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/eigen-decomposition",
+      "inputPath": ".agent/semester-03/math-04/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T16:53:16.264Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/matrix-decomposition",
+      "inputPath": ".agent/semester-03/math-05/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T16:55:57.532Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=math/matrix-decomposition",
+      "inputPath": ".agent/semester-03/math-05/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T17:14:31.423Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/multivariable-calculus",
+      "inputPath": ".agent/semester-03/math-06/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T17:36:23.997Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/ode-matrix-exponential",
+      "inputPath": ".agent/semester-03/math-07/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T17:40:44.610Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/ode-matrix-exponential",
+      "inputPath": ".agent/semester-03/math-07/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T18:00:43.165Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/laplace-transform",
+      "inputPath": ".agent/semester-03/math-08/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T18:23:11.505Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/fourier-analysis",
+      "inputPath": ".agent/semester-03/math-09/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T18:38:41.563Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/z-transform",
+      "inputPath": ".agent/semester-03/math-10/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T18:54:05.057Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/probability-basics",
+      "inputPath": ".agent/semester-03/math-11/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:11:28.128Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/stochastic-processes",
+      "inputPath": ".agent/semester-03/math-12/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:25:39.583Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/convex-optimization",
+      "inputPath": ".agent/semester-03/math-13/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:27:55.189Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/convex-optimization",
+      "inputPath": ".agent/semester-03/math-13/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:30:38.797Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/convex-optimization",
+      "inputPath": ".agent/semester-03/math-13/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:44:06.068Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/variational-dp",
+      "inputPath": ".agent/semester-03/math-14/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T19:57:25.686Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/diff-geometry",
+      "inputPath": ".agent/semester-03/math-15/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T20:19:55.907Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/graph-theory",
+      "inputPath": ".agent/semester-03/math-16/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T20:22:54.080Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/graph-theory",
+      "inputPath": ".agent/semester-03/math-16/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T20:27:48.065Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/graph-theory",
+      "inputPath": ".agent/semester-03/math-16/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T20:48:00.402Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/game-theory-math",
+      "inputPath": ".agent/semester-03/math-17/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T20:53:07.647Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/game-theory-math",
+      "inputPath": ".agent/semester-03/math-17/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T21:22:12.491Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/numerical-methods",
+      "inputPath": ".agent/semester-03/math-18/browser-python.json"
     }
   ]
 }

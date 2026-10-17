@@ -1,0 +1,142 @@
+{
+  "source": "content/math/numerical-methods.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 30,
+      "title": "舍入与相消",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 35,
+          "delim": "`",
+          "code": "print('指定顺序浮点/精确整数:',(1e16+1)-1e16,(10**16+1)-10**16)\r\nmp.mp.dps=80;x=1e-16\r\nnaive=np.sqrt(1+x)-1;stable=x/(np.sqrt(1+x)+1)\r\ntruth=mp.sqrt(1+mp.mpf('1e-16'))-1\r\nprint('直接/改写/80位参考:',naive,stable,mp.nstr(truth,40))\r\nprint('各绝对误差:',mp.nstr(abs(mp.mpf(float(naive))-truth),15),mp.nstr(abs(mp.mpf(float(stable))-truth),15))\r\nprint('float64相邻1间距:',np.finfo(float).eps)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 70,
+      "title": "条件数、输入变化与分解求解",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 75,
+          "delim": "`",
+          "code": "eps=sp.Rational(1,10**6);A=sp.Matrix([[1,1],[1,1+eps]]);b=sp.Matrix([2,2+eps]);bp=b+sp.Matrix([0,eps])\r\nx=A.inv()*b;xp=A.inv()*bp\r\ncond=(2+eps)*(2/eps+1)\r\nprint('精确原解/新解/条件数:',x,xp,cond,float(cond))\r\nprint('对新输入残差/对旧输入残差/前向变化:',bp-A*xp,b-A*xp,max(abs(v) for v in xp-x))\r\nAf=np.array(A,dtype=float);bf=np.array(b,dtype=float).reshape(-1)\r\nlu=lu_solve(lu_factor(Af),bf);ch=cho_solve(cho_factor(Af),bf)\r\nprint('浮点LU/Cholesky解与残差:',lu,ch,np.linalg.norm(Af@lu-bf,np.inf),np.linalg.norm(Af@ch-bf,np.inf))\r\nC=np.array([[1.,0.],[1.,1.],[1.,2.]]);y=np.array([1.,2.,2.]);Q,R=np.linalg.qr(C,mode='reduced');fit=np.linalg.solve(R,Q.T@y);svd=np.linalg.lstsq(C,y,rcond=None)[0]\r\nprint('QR/SVD拟合/残差范数/正交残差:',fit,svd,np.linalg.norm(C@fit-y),C.T@(C@fit-y))\r\nprint('C与正规方程二范数条件数:',np.linalg.cond(C),np.linalg.cond(C.T@C))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 98,
+      "title": "包根与停止准则",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 103,
+          "delim": "`",
+          "code": "f=lambda t:20+60*np.exp(-t)-40\r\nlo,hi=0.,4.;count=0\r\nassert f(lo)*f(hi)<0\r\nwhile hi-lo>1e-6 and count<100:\r\n    mid=(lo+hi)/2\r\n    if f(mid)>0:lo=mid\r\n    else:hi=mid\r\n    count+=1\r\nroot=(lo+hi)/2\r\nprint('端点/次数/根/区间宽/位置界/实际误差:',f(0),f(4),count,root,hi-lo,(hi-lo)/2,abs(root-np.log(3)))\r\nprint('解析根:',np.log(3),'k0有限窗包根:',(80-40)*(80-40)<0)\r\nz=0.;derivative=2*z\r\nprint('Newton从0:', '导数为零，拒绝继续' if derivative==0 else '可继续')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 132,
+      "title": "差分与复合求积",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 137,
+          "delim": "`",
+          "code": "for h in [1e-1,1e-2,1e-4,1e-8,1e-12]:\r\n    forward=(np.exp(h)-1)/h;central=(np.exp(h)-np.exp(-h))/(2*h)\r\n    print('h/前向/中心/绝对误差:',h,forward,central,abs(forward-1),abs(central-1))\r\nexact=80+60*(1-np.exp(-4))\r\nfor n in [4,8,16,32,64]:\r\n    t=np.linspace(0,4,n+1);y=20+60*np.exp(-t);h=4/n\r\n    trap=h*(y[0]/2+sum(y[1:-1])+y[-1]/2)\r\n    simp=h/3*(y[0]+y[-1]+4*sum(y[1:-1:2])+2*sum(y[2:-1:2]))\r\n    print('N/解析积分/梯形/Simpson/误差:',n,exact,trap,simp,abs(trap-exact),abs(simp-exact))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 176,
+      "title": "固定步方法与全量网格",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 181,
+          "delim": "`",
+          "code": "def march(k,n):\r\n    h=4/n;e=b=r=80.;rows=[[0.,80.,80.,80.,80.]]\r\n    f=lambda y:-k*(y-20)\r\n    for j in range(n):\r\n        e=e+h*f(e);b=20+(b-20)/(1+k*h)\r\n        s1=f(r);s2=f(r+h*s1/2);s3=f(r+h*s2/2);s4=f(r+h*s3)\r\n        r=r+h*(s1+2*s2+2*s3+s4)/6\r\n        t=(j+1)*h;rows.append([t,20+60*np.exp(-k*t),e,b,r])\r\n    return np.array(rows)\r\nfor k in [0.,1.,2.]:\r\n    for n in [4,8,16,32,64]:\r\n        rows=march(k,n);last=rows[-1]\r\n        print('k/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK:',k,n,4/n,last[1:],abs(last[2:]-last[1]),[n,n,4*n])\r\nprint('默认全网格:',march(1,8))\r\nprint('Euler振荡边界:',march(2,4)[:,[0,2]])\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 229,
+      "title": "自适应、事件与刚性双模态",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 234,
+          "delim": "`",
+          "code": "def event(t,y):return y[0]-40\r\nevent.direction=-1\r\nsol=solve_ivp(lambda t,y:-(y-20),(0,4),[80.],method='RK45',rtol=1e-8,atol=1e-10,events=event,dense_output=True)\r\nassert sol.success\r\nhit=sol.t_events[0][0]\r\nprint('RK45终点/实际终点误差/事件/事件误差/nfev:',sol.y[0,-1],abs(sol.y[0,-1]-(20+60*np.exp(-4))),hit,abs(hit-np.log(3)),sol.nfev)\r\nprint('事件插值温度:',sol.sol(hit)[0],'内部节点数:',len(sol.t))\r\nA=np.diag([-1.,-100.]);stiff=solve_ivp(lambda t,y:A@y,(0,1),[1.,1.],method='Radau',rtol=1e-8,atol=1e-10)\r\nassert stiff.success\r\nprint('Radau双模态终点/解析/绝对误差/nfev:',stiff.y[:,-1],np.exp([-1.,-100.]),abs(stiff.y[:,-1]-np.exp([-1.,-100.])),stiff.nfev)\r\nz=sp.Integer(-10);RE=1+z;RB=1/(1-z);R4=1+z+z*z/2+z**3/6+z**4/24\r\nprint('快模态E/BE/RK因子与两步:',RE,RB,R4,RE**2,RB**2,R4**2,'解析两步:',np.exp(-20))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 280,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nimport mpmath as mp\r\nfrom scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 285,
+          "delim": "`",
+          "code": "eps=sp.Rational(1,10**6);A=sp.Matrix([[1,1],[1,1+eps]]);b=sp.Matrix([2,2+eps]);bp=b+sp.Matrix([0,eps])\r\nprint('题1浮点与整数:',(1e16+1)-1e16,(10**16+1)-10**16)\r\nprint('题2原解/新解/条件数/两残差:',A.inv()*b,A.inv()*bp,(2+eps)*(2/eps+1),bp-A*(A.inv()*bp),b-A*(A.inv()*bp))\r\nC=sp.Matrix([[1,0],[1,1],[1,2]]);y=sp.Matrix([1,2,2]);beta=(C.T*C).inv()*C.T*y;res=C*beta-y\r\nprint('题2精确拟合/残差范数:',beta,sp.sqrt((res.T*res)[0]))\r\nprint('题3次数/宽度/中点界:',22,sp.Rational(4,2**22),sp.Rational(2,2**22))\r\nt=np.linspace(0,4,9);v=20+60*np.exp(-t)\r\nprint('题4解析/梯形/Simpson:',80+60*(1-np.exp(-4)),.5*(v[0]/2+sum(v[1:-1])+v[-1]/2),.5/3*(v[0]+v[-1]+4*sum(v[1:-1:2])+2*sum(v[2:-1:2])))\r\nz=sp.Rational(-1,2);R=1+z+z*z/2+z**3/6+z**4/24\r\nprint('题5 Euler/RK终温/两者误差:',20+sp.Rational(60,2**8),float(20+60*R**8),abs(20+60*(.5)**8-(20+60*np.exp(-4))),abs(float(20+60*R**8)-(20+60*np.exp(-4))))\r\nprint('题6解析事件:',np.log(3))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

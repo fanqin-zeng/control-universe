@@ -27,13 +27,17 @@
 | W03 | Q20：30条孤立课程与7零先修章逐项核验 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
 | W04 | S3-Q001：真实渲染锚点生成与验收契约 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
 | W05 | Q6：两页MPC正文吞入数学块的渲染修复 | [x] | .agent/semester-03/s04-structure-acceptance.md;.agent/semester-03/s04-acceptance-results.json;结构技术门槛已过；课程仍按Phase1–4 |
-| R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归；正文主题对比度已本地修复并验收，.agent/fix-logs/2026-10-17-032.md;docs/deployment/lesson-theme-browser.json;已获授权并发布1df6328，docs/deployment/lesson-theme-public-http.json;docs/deployment/lesson-theme-public-browser.json；块级公式居中/围栏分行专项见.agent/semester-03/math-layout/acceptance.md；R01其余全站验收仍待执行 |
+| R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归；正文主题对比度已本地修复并验收，.agent/fix-logs/2026-10-17-032.md;docs/deployment/lesson-theme-browser.json;已获授权并发布1df6328，docs/deployment/lesson-theme-public-http.json;docs/deployment/lesson-theme-public-browser.json；块级公式居中/围栏分行已获授权发布000f3b3（含MATH-03），.agent/semester-03/math-layout/acceptance.md; .agent/semester-03/math-layout/public-actions.json; .agent/semester-03/math-layout/public-http.json; .agent/semester-03/math-layout/public-browser.json；R01其余全站验收仍待执行 |
 | R02 | 205课全交付与141来源去向复核 | [ ] | 所有课程合并列完成，56原文资产无遗失，统计以脚本为准 |
 | R03 | 归因回顾、学期总结与版本标签 | [ ] | 沿用fix-tracker回顾，记录最终验收和semester03标签 |
 | DEP01 | GitHub Pages静态导出与发布分支闸门 | [x] | docs/deployment/github-pages.md;docs/deployment/acceptance.md |
 | DEP02 | 首次远端发布及公网验收 | [x] | docs/deployment/first-release.md;docs/deployment/first-release-http.json;docs/deployment/first-release-actions.json |
 | DEP03 | Pyodide数学两课试验、控制库支持清单与授权发布 | [x] | docs/deployment/pyodide-trial.md;docs/deployment/pyodide-public-results.json;docs/deployment/pyodide-public-actions.json;docs/deployment/pyodide-public-ui.json |
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
+| W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
+| W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
+| W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |
+| P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -48,21 +52,21 @@
 | MATH-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/01-calculus-basics.md;.agent/semester-03/math-01/acceptance.md;.agent/semester-03/math-02/acceptance.md;commit:0e7e5db670c69677abdb8aff629cc8340125462b |
 | MATH-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/02-complex-numbers.md;.agent/semester-03/math-02/source-audit.json;.agent/semester-03/math-02/acceptance.md;commit:0af1920a5f103b4c2340c73f107480fe5f158bc5 |
 | MATH-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/03-linear-algebra-basics.md;.agent/semester-03/math-03/acceptance.md;.agent/semester-03/math-03/reconciliation.json;commit:610cf519523d06a67e0b2431ce45d5a7ca73fd29 |
-| MATH-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-13 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-14 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-15 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-16 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-17 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MATH-18 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MATH-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/04-eigen-decomposition.md;.agent/semester-03/math-04/acceptance.md;.agent/semester-03/math-04/reconciliation.json;commit:21e01b2e3fe76ca98402645d38780cd4c8e978fc |
+| MATH-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/05-matrix-decomposition.md;.agent/semester-03/math-05/acceptance.md;.agent/semester-03/math-05/reconciliation.json;commit:04e98d5af707017cdf1ac293d7914a4a31c274c8 |
+| MATH-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md;.agent/semester-03/math-06/acceptance.md;.agent/semester-03/math-06/reconciliation.json;commit:92df41203811f0eac79bb66470c53036bde361ad |
+| MATH-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/07-ode-matrix-exponential.md;.agent/semester-03/math-07/acceptance.md;.agent/semester-03/math-07/reconciliation.json;commit:12bc125d414db3f5a8ffbdb54518357d064e84e9 |
+| MATH-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/08-laplace-transform.md;.agent/semester-03/math-08/acceptance.md;.agent/semester-03/math-08/reconciliation.json;commit:f092f3e822bdfc4fd406679e4874ae1b91c492b0 |
+| MATH-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/09-fourier-analysis.md;.agent/semester-03/math-09/acceptance.md;commit:cb048267cdca44cb6e07978306534a21313e0c2d |
+| MATH-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/10-z-transform.md;.agent/semester-03/math-10/acceptance.md;commit:91e207ac296ff6349b6ab39cff332b156d162a63 |
+| MATH-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/11-probability-basics.md;.agent/semester-03/math-11/acceptance.md;commit:7cdb3f9d22c16d458fde7e6d4a7ea14fb220d408 |
+| MATH-12 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/12-stochastic-processes.md;.agent/semester-03/math-12/acceptance.md;commit:e4404751d8455b8d2d16c63ce9e9d19c2f546227 |
+| MATH-13 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/13-convex-optimization.md;.agent/semester-03/math-13/acceptance.md;commit:31484f051c09edda86b7c93c4a50b1d5da430fcd |
+| MATH-14 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/14-variational-dp.md;.agent/semester-03/math-14/acceptance.md;commit:c8774d79e26a1207d005c3fc4a679f4482720d1b |
+| MATH-15 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/15-diff-geometry.md;.agent/semester-03/math-15/acceptance.md;commit:9cc0ee3814532bdb5ed5bb8006fb1aacde70dbab |
+| MATH-16 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/16-graph-theory.md;.agent/semester-03/math-16/acceptance.md;commit:942255b69c73be4a3d864b07a6ffe02833698830 |
+| MATH-17 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/17-game-theory-math.md;.agent/semester-03/math-17/acceptance.md;commit:680e508d68527bebc9866a5b40c09c1c4b707230 |
+| MATH-18 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/18-numerical-methods.md;.agent/semester-03/math-18/acceptance.md;commit:b4d3b8e22c63cbbf159fffaa2401d3998aa1c598 |
 
 ### 经典控制
 

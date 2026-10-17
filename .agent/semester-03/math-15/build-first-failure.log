@@ -1,0 +1,46 @@
+
+> control-universe@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./components/wiki/browser-notebook.tsx
+43:102  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/jupyter-notebook.tsx
+119:6  Warning: React Hook useEffect has a missing dependency: 'setupCode'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+336:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/phase-plane-explorer.tsx
+380:9  Warning: The 'ic' array makes the dependencies of useMemo Hook (at line 394) change on every render. To fix this, wrap the initialization of 'ic' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+380:9  Warning: The 'ic' array makes the dependencies of useMemo Hook (at line 491) change on every render. To fix this, wrap the initialization of 'ic' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+574:6  Warning: React Hook useMemo has an unnecessary dependency: 'showMany'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+Failed to compile.
+
+./components/wiki/bracket-motion-explorer.tsx:23:8
+Type error: Type '{ animation: false; grid: { left: number; right: number; top: number; bottom: number; }; tooltip: { trigger: "item"; }; xAxis: { type: "value"; min: number; max: number; name: string; }; yAxis: { type: "value"; min: number; max: number; name: string; }; series: ({ ...; } | ... 2 more ... | { ...; })[]; }' is not assignable to type 'EChartsOption'.
+  Types of property 'series' are incompatible.
+    Type '({ name: string; type: "line"; showSymbol: false; data: number[][]; symbol?: undefined; symbolSize?: undefined; lineStyle?: undefined; itemStyle?: undefined; } | { name: string; type: "line"; symbol: string[]; ... 4 more ...; showSymbol?: undefined; } | { ...; } | { ...; })[]' is not assignable to type 'SeriesOption$1 | SeriesOption$1[] | undefined'.
+      Type '({ name: string; type: "line"; showSymbol: false; data: number[][]; symbol?: undefined; symbolSize?: undefined; lineStyle?: undefined; itemStyle?: undefined; } | { name: string; type: "line"; symbol: string[]; ... 4 more ...; showSymbol?: undefined; } | { ...; } | { ...; })[]' is not assignable to type 'MapSeriesOption$1 | LineSeriesOption$1 | TreeSeriesOption$1 | BarSeriesOption$1 | ScatterSeriesOption$1 | ... 18 more ... | SeriesOption$1[]'.
+        Type '({ name: string; type: "line"; showSymbol: false; data: number[][]; symbol?: undefined; symbolSize?: undefined; lineStyle?: undefined; itemStyle?: undefined; } | { name: string; type: "line"; symbol: string[]; ... 4 more ...; showSymbol?: undefined; } | { ...; } | { ...; })[]' is not assignable to type 'SeriesOption$1[]'.
+          Type '{ name: string; type: "line"; showSymbol: false; data: number[][]; symbol?: undefined; symbolSize?: undefined; lineStyle?: undefined; itemStyle?: undefined; } | { name: string; type: "line"; symbol: string[]; ... 4 more ...; showSymbol?: undefined; } | { ...; } | { ...; }' is not assignable to type 'SeriesOption$1'.
+            Type '{ name: string; type: "line"; symbol: string[]; symbolSize: number; lineStyle: { color: string; width: number; }; itemStyle: { color: string; }; data: number[][]; showSymbol?: undefined; }' is not assignable to type 'SeriesOption$1'.
+              Type '{ name: string; type: "line"; symbol: string[]; symbolSize: number; lineStyle: { color: string; width: number; }; itemStyle: { color: string; }; data: number[][]; showSymbol?: undefined; }' is not assignable to type 'LineSeriesOption$1'.
+                Type '{ name: string; type: "line"; symbol: string[]; symbolSize: number; lineStyle: { color: string; width: number; }; itemStyle: { color: string; }; data: number[][]; showSymbol?: undefined; }' is not assignable to type 'LineSeriesOption'.
+                  Types of property 'symbol' are incompatible.
+                    Type 'string[]' is not assignable to type 'string | SymbolCallback<CallbackDataParams> | undefined'.
+
+  21 |  const[e,setE]=useState(.5),[theta,setTheta]=useState(0),[progress,setProgress]=useState(1);
+  22 |  const d=useMemo(()=>calculateBracketMotion(e,theta,progress),[e,theta,progress]);
+> 23 |  const geometry:EChartsOption=useMemo(()=>({animation: false,grid:{left:45,right:45,top:40,bottom:50},tooltip:{trigger:"item"},xAxis:{type:"value",min:-1,max:1,name:"x m"},yAxis:{type:"value",min:-1,max:1,name:"y m"},series:[
+     |        ^
+  24 |   {name:"四段轨迹",type:"line",showSymbol:false,data:d.samples.map(p=>[p[1],p[2]])},
+  25 |   {name:"当前车身朝向",type:"line",symbol:["none","arrow"],symbolSize:9,lineStyle:{color:"#b45309",width:3},itemStyle:{color:"#b45309"},data:[[d.selected[0],d.selected[1]],[d.selected[0]+.15*Math.cos(d.selected[2]),d.selected[1]+.15*Math.sin(d.selected[2])]]},
+  26 |   {name:"循环终点",type:"scatter",symbolSize:10,data:[[d.net[0],d.net[1]]],itemStyle:{color:"#2563eb"}},
+Next.js build worker exited with code: 1 and signal: null

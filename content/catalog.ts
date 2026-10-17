@@ -200,33 +200,79 @@ export const catalog: Chapter[] = [
       {
         "slug": "eigen-decomposition",
         "title": "特征值与对角化",
+        "subsections": [
+          { "title": "反复更新会怎样", "slug": "反复更新会怎样" },
+          { "title": "保持直线的向量", "slug": "保持直线的向量" },
+          { "title": "怎样求特征值", "slug": "怎样求特征值" },
+          { "title": "特征向量有多少", "slug": "特征向量有多少" },
+          { "title": "换一组坐标", "slug": "换一组坐标" },
+          { "title": "用对角化算多步", "slug": "用对角化算多步" },
+          { "title": "重根不保证对角化", "slug": "重根不保证对角化" },
+          { "title": "旋转与复特征值", "slug": "旋转与复特征值" },
+          { "title": "从倍率看长期变化", "slug": "从倍率看长期变化" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
-          "math/linear-algebra-basics"
+          "math/linear-algebra-basics",
+          "math/complex-numbers"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "matrix-decomposition",
         "title": "矩阵分解",
+        "subsections": [
+          { "title": "为什么把矩阵拆开", "slug": "为什么把矩阵拆开" },
+          { "title": "正交向量与投影", "slug": "正交向量与投影" },
+          { "title": "LU与消元", "slug": "lu与消元" },
+          { "title": "QR与正交化", "slug": "qr与正交化" },
+          { "title": "最小二乘在求什么", "slug": "最小二乘在求什么" },
+          { "title": "用QR求最小二乘", "slug": "用qr求最小二乘" },
+          { "title": "正定矩阵与Cholesky", "slug": "正定矩阵与cholesky" },
+          { "title": "奇异值分解", "slug": "奇异值分解" },
+          { "title": "伪逆与最小范数", "slug": "伪逆与最小范数" },
+          { "title": "小奇异值与截断", "slug": "小奇异值与截断" },
+          { "title": "分解怎样选择", "slug": "分解怎样选择" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
           "math/eigen-decomposition"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "multivariable-calculus",
         "title": "多元微积分",
+        "subsections": [
+          { "title": "从地图上看坡度", "slug": "从地图上看坡度" },
+          { "title": "两个变量怎样趋近", "slug": "两个变量怎样趋近" },
+          { "title": "固定一个方向求导", "slug": "固定一个方向求导" },
+          { "title": "全微分估计变化", "slug": "全微分估计变化" },
+          { "title": "梯度与方向导数", "slug": "梯度与方向导数" },
+          { "title": "沿路径使用链式法则", "slug": "沿路径使用链式法则" },
+          { "title": "雅可比组织多路变化", "slug": "雅可比组织多路变化" },
+          { "title": "二阶导数与局部形状", "slug": "二阶导数与局部形状" },
+          { "title": "驻点不一定是极值", "slug": "驻点不一定是极值" },
+          { "title": "把面积上的量加起来", "slug": "把面积上的量加起来" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
           "math/calculus-basics",
           "math/linear-algebra-basics"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "ode-matrix-exponential",
@@ -238,7 +284,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "两只水箱里的染料", "slug": "两只水箱里的染料"},
+          {"title": "微分方程描述变化", "slug": "微分方程描述变化"},
+          {"title": "初值选出一条轨迹", "slug": "初值选出一条轨迹"},
+          {"title": "先解一阶方程", "slug": "先解一阶方程"},
+          {"title": "外部输入怎样累积", "slug": "外部输入怎样累积"},
+          {"title": "把高阶方程写成一阶", "slug": "把高阶方程写成一阶"},
+          {"title": "矩阵指数从级数来", "slug": "矩阵指数从级数来"},
+          {"title": "矩阵指数给出初值解", "slug": "矩阵指数给出初值解"},
+          {"title": "可对角化时怎样算", "slug": "可对角化时怎样算"},
+          {"title": "重根也能求解", "slug": "重根也能求解"},
+          {"title": "有输入时使用积分", "slug": "有输入时使用积分"},
+          {"title": "解的存在与模型边界", "slug": "解的存在与模型边界"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "laplace-transform",
@@ -250,7 +313,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "从衰减曲线算总影响", "slug": "从衰减曲线算总影响"},
+          {"title": "给积分加一个权重", "slug": "给积分加一个权重"},
+          {"title": "复变量与收敛域", "slug": "复变量与收敛域"},
+          {"title": "常用变换怎样得到", "slug": "常用变换怎样得到"},
+          {"title": "线性与指数移位", "slug": "线性与指数移位"},
+          {"title": "导数怎样变成代数", "slug": "导数怎样变成代数"},
+          {"title": "解一个初值问题", "slug": "解一个初值问题"},
+          {"title": "分式怎样还原", "slug": "分式怎样还原"},
+          {"title": "延迟怎样进入变换", "slug": "延迟怎样进入变换"},
+          {"title": "卷积对应相乘", "slug": "卷积对应相乘"},
+          {"title": "从方程得到传递函数", "slug": "从方程得到传递函数"},
+          {"title": "初值与终值的条件", "slug": "初值与终值的条件"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "fourier-analysis",
@@ -261,7 +341,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "振动里有哪些频率", "slug": "振动里有哪些频率"},
+          {"title": "周期与角频率", "slug": "周期与角频率"},
+          {"title": "正交性怎样分离分量", "slug": "正交性怎样分离分量"},
+          {"title": "傅里叶级数的系数", "slug": "傅里叶级数的系数"},
+          {"title": "幅值与相位", "slug": "幅值与相位"},
+          {"title": "截断与跳变", "slug": "截断与跳变"},
+          {"title": "均方值与能量", "slug": "均方值与能量"},
+          {"title": "非周期信号的傅里叶变换", "slug": "非周期信号的傅里叶变换"},
+          {"title": "延迟与卷积", "slug": "延迟与卷积"},
+          {"title": "频率响应从哪里来", "slug": "频率响应从哪里来"},
+          {"title": "DFT与FFT", "slug": "dft与fft"},
+          {"title": "采样与有限窗口", "slug": "采样与有限窗口"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "z-transform",
@@ -271,25 +368,78 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "每分钟记录的温差", "slug": "每分钟记录的温差"},
+          {"title": "序列与单位脉冲", "slug": "序列与单位脉冲"},
+          {"title": "把加权积分换成求和", "slug": "把加权积分换成求和"},
+          {"title": "收敛域不能省略", "slug": "收敛域不能省略"},
+          {"title": "同一分式的不同序列", "slug": "同一分式的不同序列"},
+          {"title": "延迟与初值", "slug": "延迟与初值"},
+          {"title": "从递推式求解序列", "slug": "从递推式求解序列"},
+          {"title": "卷积与零状态映射", "slug": "卷积与零状态映射"},
+          {"title": "极点与单位圆", "slug": "极点与单位圆"},
+          {"title": "单位圆上的频率响应", "slug": "单位圆上的频率响应"},
+          {"title": "连续时间与离散时间", "slug": "连续时间与离散时间"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "probability-basics",
         "title": "概率基础",
+        "prereq": ["math/calculus-basics"],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "感应灯为什么会误报", "slug": "感应灯为什么会误报"},
+          {"title": "事件与概率", "slug": "事件与概率"},
+          {"title": "条件概率换了分母", "slug": "条件概率换了分母"},
+          {"title": "全概率与贝叶斯", "slug": "全概率与贝叶斯"},
+          {"title": "独立不是互斥", "slug": "独立不是互斥"},
+          {"title": "随机变量与分布", "slug": "随机变量与分布"},
+          {"title": "密度不是点概率", "slug": "密度不是点概率"},
+          {"title": "期望与方差", "slug": "期望与方差"},
+          {"title": "两个变量一起变化", "slug": "两个变量一起变化"},
+          {"title": "常见分布", "slug": "常见分布"},
+          {"title": "样本不等于总体", "slug": "样本不等于总体"},
+          {"title": "平均值为什么更稳", "slug": "平均值为什么更稳"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "stochastic-processes",
         "title": "随机过程",
         "prereq": [
           "math/probability-basics",
-          "math/linear-algebra-basics"
+          "math/linear-algebra-basics",
+          "math/fourier-analysis"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "电子秤的一串读数", "slug": "电子秤的一串读数"},
+          {"title": "一条轨迹与一族随机量", "slug": "一条轨迹与一族随机量"},
+          {"title": "均值与相关函数", "slug": "均值与相关函数"},
+          {"title": "平稳不等于不变", "slug": "平稳不等于不变"},
+          {"title": "白噪声与独立", "slug": "白噪声与独立"},
+          {"title": "带记忆的误差模型", "slug": "带记忆的误差模型"},
+          {"title": "从零开始与二阶矩平稳", "slug": "从零开始与二阶矩平稳"},
+          {"title": "平均值还剩多少波动", "slug": "平均值还剩多少波动"},
+          {"title": "频谱里的时间关联", "slug": "频谱里的时间关联"},
+          {"title": "马尔可夫链", "slug": "马尔可夫链"},
+          {"title": "随机游走为什么漂移", "slug": "随机游走为什么漂移"},
+          {"title": "向量过程与协方差传播", "slug": "向量过程与协方差传播"},
+          {"title": "连续时间的布朗运动", "slug": "连续时间的布朗运动"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "convex-optimization",
@@ -300,18 +450,151 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "两台电暖器怎么分功率",
+            "title": "两台电暖器怎么分功率"
+          },
+          {
+            "slug": "把要求写成优化问题",
+            "title": "把要求写成优化问题"
+          },
+          {
+            "slug": "凸集里的线段",
+            "title": "凸集里的线段"
+          },
+          {
+            "slug": "凸函数的弦与切线",
+            "title": "凸函数的弦与切线"
+          },
+          {
+            "slug": "局部最优为什么够用",
+            "title": "局部最优为什么够用"
+          },
+          {
+            "slug": "梯度与曲率",
+            "title": "梯度与曲率"
+          },
+          {
+            "slug": "功率分配的精确解",
+            "title": "功率分配的精确解"
+          },
+          {
+            "slug": "拉格朗日函数与下界",
+            "title": "拉格朗日函数与下界"
+          },
+          {
+            "slug": "kkt条件",
+            "title": "KKT条件"
+          },
+          {
+            "slug": "约束资格与强对偶",
+            "title": "约束资格与强对偶"
+          },
+          {
+            "slug": "投影梯度法",
+            "title": "投影梯度法"
+          },
+          {
+            "slug": "停止前检查什么",
+            "title": "停止前检查什么"
+          },
+          {
+            "slug": "控制问题中的凸结构",
+            "title": "控制问题中的凸结构"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "variational-dp",
         "title": "变分法与动态规划",
         "prereq": [
           "math/multivariable-calculus",
-          "math/ode-matrix-exponential"
+          "math/ode-matrix-exponential",
+          "math/convex-optimization"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "小车怎样分几步回家",
+            "title": "小车怎样分几步回家"
+          },
+          {
+            "slug": "从一个数到一条函数",
+            "title": "从一个数到一条函数"
+          },
+          {
+            "slug": "一次变分",
+            "title": "一次变分"
+          },
+          {
+            "slug": "欧拉拉格朗日方程",
+            "title": "欧拉拉格朗日方程"
+          },
+          {
+            "slug": "端点不能随意省略",
+            "title": "端点不能随意省略"
+          },
+          {
+            "slug": "最优不只是驻点",
+            "title": "最优不只是驻点"
+          },
+          {
+            "slug": "把过程分成几步",
+            "title": "把过程分成几步"
+          },
+          {
+            "slug": "剩余代价与最优性原理",
+            "title": "剩余代价与最优性原理"
+          },
+          {
+            "slug": "bellman递推",
+            "title": "Bellman递推"
+          },
+          {
+            "slug": "二次代价的倒推",
+            "title": "二次代价的倒推"
+          },
+          {
+            "slug": "沿最优策略向前走",
+            "title": "沿最优策略向前走"
+          },
+          {
+            "slug": "协态与哈密顿量",
+            "title": "协态与哈密顿量"
+          },
+          {
+            "slug": "连续时间的hjb",
+            "title": "连续时间的HJB"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "diff-geometry",
@@ -322,27 +605,221 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "搬运车怎样侧着挪",
+            "title": "搬运车怎样侧着挪"
+          },
+          {
+            "slug": "局部坐标与流形",
+            "title": "局部坐标与流形"
+          },
+          {
+            "slug": "切向量与切空间",
+            "title": "切向量与切空间"
+          },
+          {
+            "slug": "约束怎样给出切空间",
+            "title": "约束怎样给出切空间"
+          },
+          {
+            "slug": "长度与坐标刻度",
+            "title": "长度与坐标刻度"
+          },
+          {
+            "slug": "坐标变换与微分",
+            "title": "坐标变换与微分"
+          },
+          {
+            "slug": "向量场与流",
+            "title": "向量场与流"
+          },
+          {
+            "slug": "沿向量场求导",
+            "title": "沿向量场求导"
+          },
+          {
+            "slug": "李括号与运动顺序",
+            "title": "李括号与运动顺序"
+          },
+          {
+            "slug": "独立方向不等于全能",
+            "title": "独立方向不等于全能"
+          },
+          {
+            "slug": "分布与可积性",
+            "title": "分布与可积性"
+          },
+          {
+            "slug": "旋转矩阵也有几何",
+            "title": "旋转矩阵也有几何"
+          },
+          {
+            "slug": "几何语言怎样用于控制",
+            "title": "几何语言怎样用于控制"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "graph-theory",
         "title": "图论基础",
         "prereq": [
-          "math/eigen-decomposition"
+          "math/eigen-decomposition",
+          "math/ode-matrix-exponential"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
+,
+        "subsections": [
+          {
+                    "slug": "四个房间怎样统一读数",
+                    "title": "四个房间怎样统一读数"
+          },
+          {
+                    "slug": "节点与边",
+                    "title": "节点与边"
+          },
+          {
+                    "slug": "路径与连通",
+                    "title": "路径与连通"
+          },
+          {
+                    "slug": "生成树与割",
+                    "title": "生成树与割"
+          },
+          {
+                    "slug": "邻接矩阵的方向",
+                    "title": "邻接矩阵的方向"
+          },
+          {
+                    "slug": "度与拉普拉斯矩阵",
+                    "title": "度与拉普拉斯矩阵"
+          },
+          {
+                    "slug": "关联矩阵与能量",
+                    "title": "关联矩阵与能量"
+          },
+          {
+                    "slug": "零特征值告诉什么",
+                    "title": "零特征值告诉什么"
+          },
+          {
+                    "slug": "代数连通度",
+                    "title": "代数连通度"
+          },
+          {
+                    "slug": "连续时间的一致性",
+                    "title": "连续时间的一致性"
+          },
+          {
+                    "slug": "离散更新的步长",
+                    "title": "离散更新的步长"
+          },
+          {
+                    "slug": "有向图的一致性",
+                    "title": "有向图的一致性"
+          },
+          {
+                    "slug": "控制里的网络边界",
+                    "title": "控制里的网络边界"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+]
       },
       {
         "slug": "game-theory-math",
         "title": "博弈论基础",
         "prereq": [
-          "math/convex-optimization"
+          "math/convex-optimization",
+          "math/probability-basics"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
+,
+        "subsections": [
+          {
+                    "slug": "两户充电怎样互相影响",
+                    "title": "两户充电怎样互相影响"
+          },
+          {
+                    "slug": "谁选择什么",
+                    "title": "谁选择什么"
+          },
+          {
+                    "slug": "最佳响应",
+                    "title": "最佳响应"
+          },
+          {
+                    "slug": "纳什均衡",
+                    "title": "纳什均衡"
+          },
+          {
+                    "slug": "均衡与共同目标",
+                    "title": "均衡与共同目标"
+          },
+          {
+                    "slug": "混合策略",
+                    "title": "混合策略"
+          },
+          {
+                    "slug": "零和与极小极大",
+                    "title": "零和与极小极大"
+          },
+          {
+                    "slug": "均衡何时存在",
+                    "title": "均衡何时存在"
+          },
+          {
+                    "slug": "势函数",
+                    "title": "势函数"
+          },
+          {
+                    "slug": "更新不一定收敛",
+                    "title": "更新不一定收敛"
+          },
+          {
+                    "slug": "先后行动与信息",
+                    "title": "先后行动与信息"
+          },
+          {
+                    "slug": "控制中的博弈",
+                    "title": "控制中的博弈"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+]
       },
       {
         "slug": "numerical-methods",
@@ -354,7 +831,65 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+                    "slug": "热水多久接近室温",
+                    "title": "热水多久接近室温"
+          },
+          {
+                    "slug": "误差从哪里来",
+                    "title": "误差从哪里来"
+          },
+          {
+                    "slug": "条件数与残差",
+                    "title": "条件数与残差"
+          },
+          {
+                    "slug": "线性方程怎么解",
+                    "title": "线性方程怎么解"
+          },
+          {
+                    "slug": "找零点与停止条件",
+                    "title": "找零点与停止条件"
+          },
+          {
+                    "slug": "差分与积分",
+                    "title": "差分与积分"
+          },
+          {
+                    "slug": "从微分方程到递推",
+                    "title": "从微分方程到递推"
+          },
+          {
+                    "slug": "阶数与步长",
+                    "title": "阶数与步长"
+          },
+          {
+                    "slug": "稳定域与刚性",
+                    "title": "稳定域与刚性"
+          },
+          {
+                    "slug": "自适应与事件",
+                    "title": "自适应与事件"
+          },
+          {
+                    "slug": "怎样审计仿真读数",
+                    "title": "怎样审计仿真读数"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+]
       }
     ]
   },

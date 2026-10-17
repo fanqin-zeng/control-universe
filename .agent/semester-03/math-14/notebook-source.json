@@ -1,0 +1,123 @@
+{
+  "source": "content/math/variational-dp.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 88,
+      "title": "路径扰动与边界复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 91,
+          "delim": "`",
+          "code": "t,e=sp.symbols('t e',real=True)\r\ny=t+e*sp.sin(sp.pi*t)\r\nF=sp.simplify(sp.integrate(sp.diff(y,t)**2/2,(t,0,1)))\r\nprint('端点:',y.subs(t,0),y.subs(t,1))\r\nprint('正泛函/负泛函:',F,-F)\r\nprint('第一/第二变分:',sp.diff(F,e).subs(e,0),sp.diff(F,e,2))\r\nprint('自由终点零路径目标:',sp.integrate(sp.Integer(0),(t,0,1)))\r\nprint('匀速系数:',sp.solve([sp.Symbol('b'),sp.Symbol('a')+sp.Symbol('b')-1],[sp.Symbol('a'),sp.Symbol('b')]))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 154,
+      "title": "Bellman符号倒推",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 157,
+          "delim": "`",
+          "code": "q,r,p=sp.symbols('q r p',positive=True)\r\nx,u=sp.symbols('x u',real=True)\r\nB=(q*x*x+r*u*u+p*(x+u)**2)/2\r\nus=sp.solve(sp.diff(B,u),u)[0]\r\nprint('最优动作:',us,'二阶导:',sp.diff(B,u,2))\r\nprint('P递推:',sp.factor(2*B.subs(u,us)/x**2))\r\nP=[sp.Integer(0)]*3;P[2]=sp.Integer(1);K=[0,0]\r\nfor k in [1,0]:\r\n    K[k]=P[k+1]/(1+P[k+1]);P[k]=1+P[k+1]/(1+P[k+1])\r\nprint('P:',P,'K:',K,'V0(2):',P[0]*4/2)\r\nprint('无状态/终端惩罚P:',[0,0,0])\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 180,
+      "title": "整段二次问题独立核验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 183,
+          "delim": "`",
+          "code": "a,b=sp.symbols('a b',real=True);x0=sp.Integer(2);x1=x0+a;x2=x1+b\r\nJ=(x0*x0+a*a+x1*x1+b*b+x2*x2)/2\r\nsol=sp.solve([sp.diff(J,a),sp.diff(J,b)],[a,b]);print('软终端动作/状态/目标:',sol,x1.subs(sol),x2.subs(sol),J.subs(sol))\r\nprint('阶段与终端:',(x0*x0+a*a).subs(sol)/2,(x1*x1+b*b).subs(sol)/2,x2.subs(sol)**2/2)\r\nH=sp.hessian(J,(a,b));print('Hessian:',H,'顺序主子式:',H[0,0],H.det())\r\nhard=J.subs(b,-x0-a);ah=sp.solve(sp.diff(hard,a),a)[0]\r\nprint('硬终端动作/中间状态/目标:',ah,-x0-ah,x0+ah,hard.subs(a,ah))\r\nprint('零状态最优目标:',sp.Integer(0))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 207,
+      "title": "协态与Bellman核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 210,
+          "delim": "`",
+          "code": "xs=[sp.Integer(2),sp.Rational(4,5),sp.Rational(2,5)]\r\nP=[sp.Rational(8,5),sp.Rational(3,2),sp.Integer(1)];us=[-sp.Rational(6,5),-sp.Rational(2,5)]\r\nps=[P[k]*xs[k] for k in range(3)]\r\nprint('协态:',ps)\r\nprint('协态递推残差:',[ps[k]-xs[k]-ps[k+1] for k in range(2)])\r\nprint('动作驻点残差:',[us[k]+ps[k+1] for k in range(2)])\r\nprint('Bellman残差:',[P[k]*xs[k]**2/2-(xs[k]**2+us[k]**2)/2-P[k+1]*xs[k+1]**2/2 for k in range(2)])\r\nprint('终端残差:',ps[-1]-xs[-1])\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 242,
+      "title": "连续时间Riccati与代价",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 245,
+          "delim": "`",
+          "code": "t=sp.symbols('t',real=True)\r\nx=2*sp.exp(-t);u=-x\r\nstage=sp.integrate((x*x+u*u)/2,(t,0,1));terminal=x.subs(t,1)**2/2\r\nprint('连续阶段/终端/总:',stage,terminal,sp.simplify(stage+terminal))\r\nprint('连续终点:',x.subs(t,1),float(x.subs(t,1)))\r\ndef rhs(t,y):return [y[0]**2-1]\r\nfor s0 in [1.,0.]:\r\n    sol=solve_ivp(rhs,[1.,0.],[s0],rtol=1e-11,atol=1e-13,dense_output=True)\r\n    p=float(sol.y[0,-1]);print('s/P0/J0:',s0,p,2*p)\r\n    print('终端/方程复核:',sol.sol(1.)[0],p-(1 if s0==1 else np.tanh(1)))\r\nprint('s0解析值:',2*np.tanh(1))\r\nprint('协态/驻点/状态残差:',sp.simplify(sp.diff(x,t)+x),sp.simplify(u+x),sp.simplify(sp.diff(x,t)-u))\r\nprint('quad积分证书:',quad(lambda z:4*np.exp(-2*z),0,1)[0]+2*np.exp(-2))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 284,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp, quad\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 287,
+          "delim": "`",
+          "code": "t,e=sp.symbols('t e',real=True)\r\nf=sp.simplify(sp.integrate(sp.diff(t+e*sp.sin(sp.pi*t),t)**2/2,(t,0,1)))\r\nprint('题1泛函/一阶:',f,sp.diff(f,e).subs(e,0))\r\nP=[sp.Rational(8,5),sp.Rational(3,2),sp.Integer(1)];xs=[sp.Integer(2),sp.Rational(4,5),sp.Rational(2,5)];us=[-sp.Rational(6,5),-sp.Rational(2,5)]\r\nprint('题3 P/K/V:',P,[sp.Rational(3,5),sp.Rational(1,2)],P[0]*xs[0]**2/2)\r\nprint('题4阶段/终端/总:',[(xs[k]**2+us[k]**2)/2 for k in range(2)],xs[-1]**2/2,P[0]*xs[0]**2/2)\r\nprint('题5协态:',[P[k]*xs[k] for k in range(3)])\r\nprint('题6阶段/终端/总:',2*(1-sp.exp(-2)),2*sp.exp(-2),sp.Integer(2))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

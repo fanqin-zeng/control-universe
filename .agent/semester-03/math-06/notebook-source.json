@@ -1,0 +1,123 @@
+{
+  "source": "content/math/multivariable-calculus.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 64,
+      "title": "核对偏导与多路径反例",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 64,
+          "delim": "`",
+          "code": "x,y,t = sp.symbols('x y t', real=True)\nh = 10-x*x-2*y*y\nprint(\"高度/两个偏导:\", h.subs({x:1,y:1}), sp.diff(h,x), sp.diff(h,y))\nprint(\"站位偏导:\", sp.diff(h,x).subs(x,1), sp.diff(h,y).subs(y,1))\nprint(\"向东真实高度/变化:\", h.subs({x:sp.Rational(11,10),y:1}), h.subs({x:sp.Rational(11,10),y:1})-7)\nF = x*y/(x*x+y*y)\nprint(\"轴向极限/斜向极限:\", sp.limit(F.subs(y,0),x,0), sp.limit(F.subs(y,x),x,0))\nprint(\"原点偏导差商:\", sp.limit(sp.Integer(0)/t,t,0), sp.limit(sp.Integer(0)/t,t,0))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 123,
+      "title": "核对局部估计与方向导数",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 123,
+          "delim": "`",
+          "code": "x,y = sp.symbols('x y', real=True)\nh = 10-x*x-2*y*y\ng = sp.Matrix([sp.diff(h,x),sp.diff(h,y)]).subs({x:1,y:1})\nfor dx,dy in [(sp.Rational(1,10),0),(sp.Rational(1,10),-sp.Rational(1,10))]:\n    predicted = 7+g.dot(sp.Matrix([dx,dy]))\n    actual = h.subs({x:1+dx,y:1+dy})\n    print(\"位移/预测/真实/误差:\", dx,dy,predicted,actual,actual-predicted)\nd = sp.Matrix([3,4])/5\nprint(\"单位方向/方向导数:\", d.norm(),g.dot(d))\nprint(\"梯度长度/最大方向:\",g.norm(),list(g/g.norm()))\ntangent = sp.Matrix([2,-1])/sp.sqrt(5)\nprint(\"切向导数:\",g.dot(tangent))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 162,
+      "title": "核对路径链式法则与雅可比",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 162,
+          "delim": "`",
+          "code": "x,y,t = sp.symbols('x y t', real=True)\nh = 10-x*x-2*y*y\npath = {x:sp.cos(t),y:sp.sin(t)}\ndirect = sp.diff(h.subs(path),t)\nchain = sp.diff(h,x).subs(path)*(-sp.sin(t))+sp.diff(h,y).subs(path)*sp.cos(t)\nprint(\"链式残差/路径导数:\",sp.simplify(direct-chain),sp.simplify(direct))\nprint(\"pi/4处:\",direct.subs(t,sp.pi/4))\ng = sp.Matrix([h,x+y])\nJ = g.jacobian([x,y]).subs({x:1,y:1})\nshift = sp.Matrix([sp.Rational(1,10),0])\nactual = g.subs({x:1+shift[0],y:1})-g.subs({x:1,y:1})\nprint(\"J/预测/真实:\",J.tolist(),list(J*shift),list(actual))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 207,
+      "title": "核对二阶近似与驻点边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 207,
+          "delim": "`",
+          "code": "x,y = sp.symbols('x y', real=True)\nh = 10-x*x-2*y*y\nH = sp.hessian(h,(x,y))\ndx,dy = sp.symbols('dx dy',real=True)\nd = sp.Matrix([dx,dy])\nprint(\"山的Hessian/行列式:\",H.tolist(),H.det())\nprint(\"二次项:\",(d.T*H*d)[0]/2)\nfor f in [h,x*x-y*y,x**4+y**4]:\n    grad = sp.Matrix([sp.diff(f,x),sp.diff(f,y)]).subs({x:0,y:0})\n    hf = sp.hessian(f,(x,y)).subs({x:0,y:0})\n    print(\"函数/原点梯度/Hessian/行列式:\",f,list(grad),hf.tolist(),hf.det())\nprint(\"边界例的梯度:\",list(sp.Matrix([sp.diff(x,x),sp.diff(x,y)])))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 236,
+      "title": "核对面积积分与中点近似",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 236,
+          "delim": "`",
+          "code": "x,y = sp.symbols('x y',real=True)\nh = 10-x*x-2*y*y\nprint(\"先y后x/先x后y:\",sp.integrate(h,(y,0,1),(x,0,1)),sp.integrate(h,(x,0,1),(y,0,1)))\nfor N in [2,10]:\n    total = sum(h.subs({x:sp.Rational(2*i+1,2*N),y:sp.Rational(2*j+1,2*N)}) for i in range(N) for j in range(N))/N**2\n    print(\"网格N/面积和/小数:\",N,total,float(total))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 267,
+      "title": "复核六题步骤答案",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 267,
+          "delim": "`",
+          "code": "x,y,t = sp.symbols('x y t',real=True)\nh = 10-x*x-2*y*y\nF = x*y/(x*x+y*y)\nprint(\"题1:\",sp.limit(F.subs(y,0),x,0),sp.limit(F.subs(y,x),x,0))\ng = sp.Matrix([-2,-4])\nshift = sp.Matrix([sp.Rational(1,10),-sp.Rational(1,10)])\npred = 7+g.dot(shift)\nactual = h.subs({x:1+shift[0],y:1+shift[1]})\nprint(\"题2:\",pred,actual,actual-pred)\nprint(\"题3:\",g.dot(sp.Matrix([3,4])/5),g.norm(),list(g/g.norm()))\nprint(\"题4:\",sp.diff(h.subs({x:sp.cos(t),y:sp.sin(t)}),t).subs(t,sp.pi/4))\nJ = sp.Matrix([h,x+y]).jacobian([x,y]).subs({x:1,y:1})\nprint(\"题4 J/变化:\",J.tolist(),list(J*sp.Matrix([sp.Rational(1,10),0])))\nprint(\"题5:\",[sp.hessian(f,(x,y)).subs({x:0,y:0}).det() for f in [h,x*x-y*y,x**4+y**4]])\npoints = [(sp.Rational(1,4),sp.Rational(1,4)),(sp.Rational(1,4),sp.Rational(3,4)),(sp.Rational(3,4),sp.Rational(1,4)),(sp.Rational(3,4),sp.Rational(3,4))]\nheights = [h.subs({x:a,y:b}) for a,b in points]\nprint(\"题6高度/近似/误差:\",heights,sum(heights)/4,sum(heights)/4-9)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

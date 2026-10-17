@@ -1,0 +1,123 @@
+{
+  "source": "content/math/z-transform.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 47,
+      "title": "几何序列与加权和",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nk = sp.symbols('k', integer=True, nonnegative=True)\r\nz = sp.symbols('z', nonzero=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 49,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\nN=8\r\npartial=sum(a**i for i in range(N+1))\r\nX=1/(1-a/z)\r\nprint('记录0到3:',[a**i for i in range(4)])\r\nprint('N/项数/有限和/小数:',N,N+1,partial,sp.N(partial,12))\r\nprint('无限和/尾项:',X.subs(z,1),2-partial,sp.N(2-partial,12))\r\nprint('变换（ROC模z大于1/2）:',sp.factor(X))\r\nprint('delta变换:',1)\r\nfor a_value in [1,-1]:\r\n    print('边界a/前五个部分和:',a_value,[sum(a_value**i for i in range(n+1)) for n in range(5)])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 83,
+      "title": "同分式与两种收敛域",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nq=sp.symbols('q')\r\nz=sp.symbols('z', nonzero=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 85,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\nright=1/(1-a/z)\r\nleft=-(z/a)/(1-z/a)\r\nprint('两分式相减:',sp.simplify(right-left))\r\nprint('右侧前四项:',[a**i for i in range(4)])\r\nprint('左侧k=-1,-2,-3:',[-a**i for i in [-1,-2,-3]])\r\nprint('右侧z1/左侧z1/4:',right.subs(z,1),left.subs(z,sp.Rational(1,4)))\r\nprint('各自截断核对:',sum((a/1)**i for i in range(81)),sp.N(-sum((sp.Rational(1,4)/a)**i for i in range(1,81)),12))\r\nprint('同一分式在z1,a=-1的代数值（非边界级数和）:',sp.Rational(1,2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 128,
+      "title": "单边延迟与非零初值",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nz=sp.symbols('z', nonzero=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 129,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\nq=4\r\nY0=a*q/(1-a/z)\r\nleft=q+Y0/z\r\nright=q+sum(q*a**(i+1)*z**(-i-1) for i in range(16))\r\nprint('零输入初值响应0到3:',[q*a**(i+1) for i in range(4)])\r\nprint('Y0/延迟式:',sp.factor(Y0),sp.factor(left))\r\nprint('z2处原移位前17项/完整值:',sp.N(right.subs(z,2),12),left.subs(z,2))\r\nU=1/(1-1/z)\r\nY=sp.factor(U/(1-a/z))\r\nparts=2/(1-1/z)-1/(1-a/z)\r\nprint('阶跃分式拆分余量:',sp.simplify(Y-parts))\r\nprint('阶跃输出0到3:',[2-a**i for i in range(4)])\r\nprint('延迟两格脉冲变换:',z**(-2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 173,
+      "title": "递推卷积与终值边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nz=sp.symbols('z', nonzero=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 174,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\ny=[]\r\nprevious=sp.Integer(0)\r\nfor i in range(9):\r\n    previous=a*previous+1\r\n    y.append(previous)\r\nconv=[sum(a**(i-m) for m in range(i+1)) for i in range(9)]\r\nprint('递推=卷积:',y==conv,'前四项:',y[:4],'第8项:',y[8])\r\nY=1/((1-1/z)*(1-a/z))\r\nprint('阶跃初值/终值:',sp.limit(Y,z,sp.oo),sp.limit((1-1/z)*Y,z,1))\r\nprint('脉冲绝对和:',1/(1-abs(a)))\r\nprint('a1阶跃:',list(range(1,6)))\r\nalt=1/(1+1/z)\r\nprint('交替反例前五项:',[(-1)**i for i in range(5)])\r\nprint('不满足条件的形式终值:',sp.limit((1-1/z)*alt,z,1))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 206,
+      "title": "单位圆频响与物理周期",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\ntheta=sp.symbols('theta', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 207,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\nH=1/(1-a*sp.exp(-sp.I*theta))\r\nfor angle in [0,sp.pi/2,sp.pi]:\r\n    value=sp.simplify(H.subs(theta,angle))\r\n    print('角度/H/幅值/相位:',angle,value,sp.simplify(sp.Abs(value)),sp.arg(value))\r\nprint('pi/2幅相小数:',sp.N(2/sp.sqrt(5),12),sp.N(-sp.atan(sp.Rational(1,2)),12))\r\nprint('Ts1分钟的周期:',2*sp.pi/(sp.pi/2))\r\nprint('2pi周期性余量:',sp.simplify(H.subs(theta,theta+2*sp.pi)-H))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 248,
+      "title": "模态采样与六题复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nimport numpy as np\r\nz=sp.symbols('z', nonzero=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 250,
+          "delim": "`",
+          "code": "a=sp.Rational(1,2)\r\nprint('题1:',1/(1-a/z),'ROC模z>1/2',sum(a**i for i in range(9)),2,sp.Rational(1,256))\r\nprint('题2左侧z1/4的80项近似:',sp.N(-sum(sp.Rational(1,2)**i for i in range(1,81)),12), '极限为-1;尾项绝对值2^-80')\r\nprint('题3:',2/(1-a/z),[4*a**(i+1) for i in range(4)])\r\nprint('题4:',[sum(a**m for m in range(i+1)) for i in range(3)],'通项2-(1/2)^k;初值1;终值2')\r\nprint('题5:',(4-2*sp.I)/5,2/sp.sqrt(5),-sp.atan(a),4)\r\nprint('题5交替形式终值:',sp.limit((1-1/z)/(1+1/z),z,1))\r\nprint('题6采样系数:',np.exp(-1),np.exp(-.5))\r\nprint('题6 a1阶跃:',[i+1 for i in range(5)])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

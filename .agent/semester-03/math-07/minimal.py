@@ -1,0 +1,12 @@
+import sympy as s
+t=s.symbols('t', real=True)
+A=s.Matrix([[-1,0],[1,-1]])
+E=(A*t).exp()
+print('cascade exponential:',E)
+print('at 1:',(E*s.Matrix([1,0])).subs(t,1).evalf(12))
+print('at 2:',(E*s.Matrix([1,0])).subs(t,2).evalf(12))
+print('scalar cooling at 2:',20+60*s.exp(-1),float(20+60*s.exp(-1)))
+B=s.Matrix([[-1,1],[0,-2]])
+print('diagonalizable at ln2:',s.simplify((B*s.log(2)).exp()))
+print('forced cascade:',s.integrate((A*(t-s.Symbol('r'))).exp()*s.Matrix([1,0]),(s.Symbol('r'),0,t)))
+print('uniqueness boundary:',s.diff(t*t/4,t),s.sqrt(t*t/4))

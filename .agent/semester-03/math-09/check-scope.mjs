@@ -1,0 +1,16 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const old=f=>JSON.parse(execFileSync('git',['show','8d4242a:'+f],{encoding:'utf8',maxBuffer:16*1024*1024}));
+const report=JSON.parse(readFileSync('docs/deployment/python-expansion-local.json','utf8'));
+const policy=JSON.parse(readFileSync('lib/python-support.json','utf8'));
+const previous=old('docs/deployment/python-expansion-local.json');
+for(const l of previous.lessons)assert.deepEqual(report.lessons.find(r=>r.key===l.key),l,l.key);
+for(const [k,v]of Object.entries(old('lib/python-support.json').lessons))assert.deepEqual(policy.lessons[k],v,k);
+assert.deepEqual(JSON.parse(readFileSync('docs/deployment/python-expansion-pending.json','utf8')),old('docs/deployment/python-expansion-pending.json'));
+const changed=execFileSync('git',['diff','--name-only','8d4242a','--','content'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+assert(changed.every(p=>['content/catalog.ts','content/math/fourier-analysis.mdx'].includes(p)));
+const tracker=readFileSync('.agent/semester-03-checklist.md','utf8');
+assert(/^\| W06 \|[^\n]+\| \[ \] \|/m.test(tracker));assert(/^\| W07 \|[^\n]+\| \[ \] \|/m.test(tracker));
+const result={pass:true,previousLessonsUnchanged:previous.lessons.length,previousPendingUnchanged:30,newLesson:'math/fourier-analysis',newNotebooks:7,otherTrackedCourseBodiesUnchanged:true,priorOpeningReviewsStillPending:['W06','W07']};
+writeFileSync('.agent/semester-03/math-09/scope-check.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

@@ -1,0 +1,296 @@
+---
+title: 数值方法
+description: 从热水冷却理解误差、条件数、求根、差分求积与ODE求解，实测步长、稳定域和事件读数的边界。
+---
+
+# 数值方法
+
+## 热水多久接近室温
+
+一杯 $80$ ℃的热水放在 $20$ ℃的房间里，我们想画出接下来几分钟的温度，并估计什么时候降到 $40$ ℃。即使已经有了冷却方程，计算机仍不能把连续时间里的每一个时刻都算出来：它必须选取有限个时间点，一步一步更新温度。
+
+**每隔多久算一步，才能既看清降温过程，又不把计算误差误认为真实变化？** 先拖动步数，看看同一个冷却模型会被算成什么样。
+
+<CoolingNumericsExplorer />
+
+本课给定模型 $\dot T=-k(T-20)$、初温 $T(0)=80$ ℃，$t$ 的单位为分钟，$k$ 的单位为每分钟；默认 $k=1$。它假定环境与系数不变，不是对真实杯具的参数识别或温度保证。解析参考为 $T(t)=20+60e^{-kt}$。
+
+默认算到 $4$ min，共 $8$ 步，每步 $0.5$ min。解析终温约 $21.0989383$ ℃，前向Euler得到 $20.2343750$ ℃；这不是房间变冷了，而是算法误差。下文先建立检查误差的语言，再解释几条曲线和步长的关系。
+
+## 误差从哪里来
+
+数值计算至少有三层误差：模型与输入数据可能不准确；有限步算法带来截断误差；有限位浮点数带来舍入误差。这里先把模型当作给定，只检验后两层，不能用“算法算得准”替代模型验证。
+
+若真值为 $x$、近似为 $\hat x$，绝对误差为 $|\hat x-x|$；当 $x\ne0$ 时，相对误差为 $|\hat x-x|/|x|$。真值接近零时，绝对与相对指标要一起看，不能机械地只报百分比。
+
+常用双精度把间隔很小的数舍入到同一个表示。例如按指定顺序计算 $(10^{16}+1)-10^{16}$ 得到 $0$，而精确整数运算应得到 $1$。另外，$\sqrt{1+x}-1$ 在小正 $x$ 下会发生相近数相减；改写成 $x/(\sqrt{1+x}+1)$ 可以避免这次消去。两式数学等价，浮点行为却不同。
+
+这不是说计算机“不会算减法”。问题在于中间量先失去了低位，再做减法也找不回来。步长越来越小也可能放大舍入影响，不能一概认为越小越准。
+
+<JupyterNotebook title="舍入与相消" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `print('指定顺序浮点/精确整数:',(1e16+1)-1e16,(10**16+1)-10**16)
+mp.mp.dps=80;x=1e-16
+naive=np.sqrt(1+x)-1;stable=x/(np.sqrt(1+x)+1)
+truth=mp.sqrt(1+mp.mpf('1e-16'))-1
+print('直接/改写/80位参考:',naive,stable,mp.nstr(truth,40))
+print('各绝对误差:',mp.nstr(abs(mp.mpf(float(naive))-truth),15),mp.nstr(abs(mp.mpf(float(stable))-truth),15))
+print('float64相邻1间距:',np.finfo(float).eps)
+`}]} />
+
+## 条件数与残差
+
+条件数描述**问题本身对输入变化有多敏感**。它不是算法精度开关。以可逆线性系统 $Ax=b$ 为例，同一矩阵范数下定义 $\kappa(A)=\|A\|\|A^{-1}\|$；只改变右端时，精确解满足相应的相对误差界：
+
+$$
+\frac{\|\delta x\|}{\|x\|}\le\kappa(A)\frac{\|\delta b\|}{\|b\|}.
+$$
+
+这个上界不是每次都恰好达到。小奇异值、输入扰动的方向、采用的范数都影响解的变化。
+
+取 $A=\bigl(\begin{smallmatrix}1&1\\1&1+\epsilon\end{smallmatrix}\bigr)$，$\epsilon=10^{-6}$，原右端为 $(2,2+\epsilon)^T$，精确解为 $(1,1)^T$。只把右端第二项增加 $\epsilon$，精确解就变成 $(0,2)^T$。本例无穷范数条件数为 $4/\epsilon+4+\epsilon=4000004.000001$，输入很小的变化足以明显改变解。
+
+残差 $r=b-A\hat x$ 检查候选解是否满足**你实际提供的方程**；前向误差则检查它离目标真解有多远。上面的新解对新右端残差为零，却与原问题的解相差无穷范数 $1$。必须先说清楚“对哪个输入”“用什么范数”，再报告残差。
+
+把相对残差或后向误差与条件数一起看，才能判断可信度；稳定算法也不能替你找回已经有误的输入。误差与条件分析的标准框架可查 [LAPACK用户指南](https://www.netlib.org/lapack/lug/node78.html)。
+
+## 线性方程怎么解
+
+要求 $Ax=b$，通常直接做分解并求解，而不是先形成 $A^{-1}$ 再乘 $b$。一般稠密方阵常用带选主元的LU；对称正定问题可用Cholesky。它们都要求相应的可解性与数值检查；“算出了一个向量”不能代替条件数与残差检查。
+
+方程多于未知数时，先说明是在求最小二乘。QR或SVD可以直接处理矩形矩阵；若满列秩，在二范数下有 $\kappa_2(C^TC)=\kappa_2(C)^2$，所以不应仅为写起来方便就把问题变成正规方程。
+
+例如用直线拟合三个点 $(0,1),(1,2),(2,2)$，最小二乘截距与斜率为 $7/6$、$1/2$。残差二范数为 $\sqrt{1/6}$，不是零；满足的是残差与列空间正交，而不是三点都落在直线上。这里的分解与小奇异值含义承接已交付的矩阵分解课。
+
+这里对二阶小矩阵用符号求逆，只为展示精确解与条件数；实际浮点计算示范使用分解求解，不把符号演算写法当成通用数值实现。
+
+<JupyterNotebook title="条件数、输入变化与分解求解" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `eps=sp.Rational(1,10**6);A=sp.Matrix([[1,1],[1,1+eps]]);b=sp.Matrix([2,2+eps]);bp=b+sp.Matrix([0,eps])
+x=A.inv()*b;xp=A.inv()*bp
+cond=(2+eps)*(2/eps+1)
+print('精确原解/新解/条件数:',x,xp,cond,float(cond))
+print('对新输入残差/对旧输入残差/前向变化:',bp-A*xp,b-A*xp,max(abs(v) for v in xp-x))
+Af=np.array(A,dtype=float);bf=np.array(b,dtype=float).reshape(-1)
+lu=lu_solve(lu_factor(Af),bf);ch=cho_solve(cho_factor(Af),bf)
+print('浮点LU/Cholesky解与残差:',lu,ch,np.linalg.norm(Af@lu-bf,np.inf),np.linalg.norm(Af@ch-bf,np.inf))
+C=np.array([[1.,0.],[1.,1.],[1.,2.]]);y=np.array([1.,2.,2.]);Q,R=np.linalg.qr(C,mode='reduced');fit=np.linalg.solve(R,Q.T@y);svd=np.linalg.lstsq(C,y,rcond=None)[0]
+print('QR/SVD拟合/残差范数/正交残差:',fit,svd,np.linalg.norm(C@fit-y),C.T@(C@fit-y))
+print('C与正规方程二范数条件数:',np.linalg.cond(C),np.linalg.cond(C.T@C))
+`}]} />
+
+## 找零点与停止条件
+
+要找默认热水何时达到 $40$ ℃，可令 $f(t)=20+60e^{-t}-40$，求 $f(t)=0$。在 $[0,4]$ 上连续且严格递减，端点异号，因此有且仅有一个根，解析值为 $\log3\approx1.0986123$ min。
+
+二分法每次保留异号的一半区间。若初始宽度为 $4$，经过 $m$ 次后宽度为 $4/2^m$；用中点作近似，根误差不超过剩余宽度的一半。这条保证依赖连续性与包根，单看“函数值变号”而忽略间断点是不够的。
+
+本例按区间宽度不超过 $10^{-6}$ min停止，最多允许 $100$ 次。实际进行了 $22$ 次，中点约 $1.0986123085$ min，区间宽度约 $9.5367432\times10^{-7}$ min；中点误差界约 $4.7683716\times10^{-7}$ min。函数残差小与根位置误差小也不是同一句话，平坦函数尤其要小心。
+
+Newton法用 $t_{m+1}=t_m-f(t_m)/f'(t_m)$，在根附近可能很快，但需要导数与合适初值。求 $z^2-2=0$ 若从 $z=0$ 起步，分母为零，不能继续。实际程序要有导数保护、最大迭代数、区间或步长/残差准则，失败时明确返回失败，而不是把最后一次迭代冒充根。
+
+<JupyterNotebook title="包根与停止准则" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `f=lambda t:20+60*np.exp(-t)-40
+lo,hi=0.,4.;count=0
+assert f(lo)*f(hi)<0
+while hi-lo>1e-6 and count<100:
+    mid=(lo+hi)/2
+    if f(mid)>0:lo=mid
+    else:hi=mid
+    count+=1
+root=(lo+hi)/2
+print('端点/次数/根/区间宽/位置界/实际误差:',f(0),f(4),count,root,hi-lo,(hi-lo)/2,abs(root-np.log(3)))
+print('解析根:',np.log(3),'k0有限窗包根:',(80-40)*(80-40)<0)
+z=0.;derivative=2*z
+print('Newton从0:', '导数为零，拒绝继续' if derivative==0 else '可继续')
+`}]} />
+
+## 差分与积分
+
+没有解析导数时，可用前向差分 $[f(x+h)-f(x)]/h$ 或中心差分 $[f(x+h)-f(x-h)]/(2h)$。对足够光滑的函数，截断误差分别为 $O(h)$、$O(h^2)$；但相近数相减与除以小 $h$ 会放大舍入误差。因此要扫描多个步长，寻找可信范围，不能只试最小的那个。
+
+对采样数据求积分，复合梯形法是把相邻两点连线后求面积。若间距均为 $h$：
+
+$$
+I_h=h\left[\tfrac12 f_0+\sum_{j=1}^{N-1}f_j+\tfrac12 f_N\right].
+$$
+
+光滑条件下梯形法为二阶；复合Simpson法用二次插值，要求偶数个等长小区间，通常为四阶。区间、采样点、权重和光滑条件都要说清楚，间断或尖峰不能直接套用平滑收敛阶。
+
+默认冷却温度在 $[0,4]$ min的积分为 $80+60(1-e^{-4})\approx138.9010617$ ℃·min。$N=8$ 时梯形约 $140.1230844$、Simpson约 $138.9209203$ ℃·min。这里是温度对时间的面积，**不是热能或耗电量**；算热量还要引入相应物理模型。
+
+<JupyterNotebook title="差分与复合求积" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `for h in [1e-1,1e-2,1e-4,1e-8,1e-12]:
+    forward=(np.exp(h)-1)/h;central=(np.exp(h)-np.exp(-h))/(2*h)
+    print('h/前向/中心/绝对误差:',h,forward,central,abs(forward-1),abs(central-1))
+exact=80+60*(1-np.exp(-4))
+for n in [4,8,16,32,64]:
+    t=np.linspace(0,4,n+1);y=20+60*np.exp(-t);h=4/n
+    trap=h*(y[0]/2+sum(y[1:-1])+y[-1]/2)
+    simp=h/3*(y[0]+y[-1]+4*sum(y[1:-1:2])+2*sum(y[2:-1:2]))
+    print('N/解析积分/梯形/Simpson/误差:',n,exact,trap,simp,abs(trap-exact),abs(simp-exact))
+`}]} />
+
+## 从微分方程到递推
+
+给定 $\dot y=f(t,y)$、$y(t_0)=y_0$，前向Euler沿当前斜率走一步：$y_{n+1}=y_n+h f(t_n,y_n)$，其中 $t_n=t_0+nh$。它是在逼近微分方程，**不是被控对象天然采用的离散状态方程**；若要讨论采样控制，必须另外说明保持器与离散模型。
+
+主例写成温差 $z=T-20$，就有 $\dot z=-kz$，Euler递推为 $z_{n+1}=(1-kh)z_n$。默认每步乘 $1/2$，八步后 $T_8=20+60/2^8=20.234375$ ℃。时间必须由真实的 $nh$ 得到，不能把画图后的数组下标直接当秒数。
+
+后退Euler改用下一时刻的斜率，主例得到 $z_{n+1}=z_n/(1+kh)$。这里恰好能闭式计算；一般隐式问题每步要解代数方程，可能需要多次线性或非线性迭代，这项成本不能略去。
+
+## 阶数与步长
+
+经典四阶Runge–Kutta把一个步长里的多个斜率组合起来。对自治方程 $\dot y=f(y)$：
+
+$$
+\begin{aligned}
+s_1&=f(y_n),&s_2&=f(y_n+hs_1/2),\\
+s_3&=f(y_n+hs_2/2),&s_4&=f(y_n+hs_3),\\
+y_{n+1}&=y_n+h(s_1+2s_2+2s_3+s_4)/6.
+\end{aligned}
+$$
+
+它每步需要四次右端计算。非自治方程的中间斜率还要使用相应的中间时间，不能始终固定在 $t_n$。
+
+在光滑、稳定且进入渐近范围时，Euler和后退Euler在固定终点的全局误差为 $O(h)$，经典RK4为 $O(h^4)$；从精确起点只做一步的误差则分别为 $O(h^2)$ 与 $O(h^5)$。把误差除以步长后定义的局部截断误差又会少一阶，阅读资料时要核定义。
+
+**仅在本模型、默认参数及同一网格下**，后退Euler终温约 $22.3411065$ ℃，RK4约 $21.1024244$ ℃；三者终点绝对误差依次为Euler $0.8645633$、后退Euler $1.2421682$、RK4 $0.0034861$ ℃。默认Euler用了 $8$ 次右端计算，RK4用了 $32$ 次；后退Euler做了 $8$ 次本例特有的闭式更新。这不是相同运算预算的速度评测。
+
+步长减半后的误差比可以辅助观察阶数，但粗步长、舍入主导或误差偶然抵消时，不必恰好等于 $2$ 或 $16$。$k=0$ 时各方法都精确保持 $80$ ℃，误差为零，不能从零误差比推断阶数，也不能把它替换成一个正数画进对数图。
+
+<JupyterNotebook title="固定步方法与全量网格" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `def march(k,n):
+    h=4/n;e=b=r=80.;rows=[[0.,80.,80.,80.,80.]]
+    f=lambda y:-k*(y-20)
+    for j in range(n):
+        e=e+h*f(e);b=20+(b-20)/(1+k*h)
+        s1=f(r);s2=f(r+h*s1/2);s3=f(r+h*s2/2);s4=f(r+h*s3)
+        r=r+h*(s1+2*s2+2*s3+s4)/6
+        t=(j+1)*h;rows.append([t,20+60*np.exp(-k*t),e,b,r])
+    return np.array(rows)
+for k in [0.,1.,2.]:
+    for n in [4,8,16,32,64]:
+        rows=march(k,n);last=rows[-1]
+        print('k/N/h/终点解析-E-BE-RK/三误差/预算E-闭式BE-RK:',k,n,4/n,last[1:],abs(last[2:]-last[1]),[n,n,4*n])
+print('默认全网格:',march(1,8))
+print('Euler振荡边界:',march(2,4)[:,[0,2]])
+`}]} />
+
+## 稳定域与刚性
+
+用衰减测试方程 $\dot z=\lambda z$ 检查方法。一步会把误差或状态模态乘上稳定函数 $R(h\lambda)$；要让该衰减模态在数值上也衰减，需有 $|R(h\lambda)|<1$。对冷却模型，前向Euler要求 $0<kh<2$；若还要温差非负、不跨过室温，则应有 $0\le kh\le1$。**衰减稳定与不振荡是两条不同要求。**
+
+取 $k=2$、$N=4$，$h=1$ min，Euler因子为 $-1$，算得温度 $80,-40,80,-40,80$ ℃；真实温度却持续趋近室温。假振荡来自步长，不能把它解释成物理不稳定。$k=0$ 的因子也为 $1$，但模型本来就保持常数，应单独处理。
+
+前向Euler、后退Euler、RK4的稳定函数分别为
+
+$$
+R_E(z)=1+z,\quad R_B(z)=\frac1{1-z},\quad
+R_4(z)=1+z+\frac{z^2}{2}+\frac{z^3}{6}+\frac{z^4}{24}.
+$$
+
+多维系统即使渐近稳定，也可能因耦合出现暂时放大；各分量误差与过程峰值仍要另外检查。
+
+后退Euler在整个左半平面都满足相应的有界性条件，称为A稳定；这不是任意大步都准确的保证。RK4也有有限的稳定域，“四阶”不能替代步长检查。
+
+刚性问题常同时含快慢模态：例如 $\dot y=\operatorname{diag}(-1,-100)y$，时间单位秒。想观察慢模态，却可能被快速衰减模态限制步长。若用 $h=0.1$ s，快速模态对应 $h\lambda=-10$，Euler因子为 $-9$、RK4为 $291$，都产生数值放大；后退Euler因子为 $1/11$，但仍有精度误差。这个例子与杯子的分钟单位分开。
+
+主例在 $k=2,N=4$ 时，后退Euler与RK4的终点误差恰好相同；$k=0$ 时三者也持平。方法选择还要看精度需求、问题结构、每步求解成本与刚性，不能从默认一张图推出普遍排名。刚性的解释可参看 [Moler的数值计算说明](https://www.mathworks.com/company/technical-articles/stiff-differential-equations.html)。
+
+## 自适应与事件
+
+自适应求解器利用局部误差估计来接受或拒绝步长。常见尺度是 $\mathrm{atol}+\mathrm{rtol}|y|$：绝对容差管接近零的分量，相对容差随状态幅值缩放，多状态不同单位时还应考虑分量各自的绝对容差。它不是“最终每个输出都保证有这么多位正确”。
+
+Notebook用RK45求冷却曲线，设置 $\mathrm{rtol}=10^{-8}$、$\mathrm{atol}=10^{-10}$，以解析解检查实际误差。另用Radau处理刚性双模态；这只是本例可复算演示，不是求解器效率排名。具体接口与步长、误差控制规则见 [SciPy官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)。
+
+达到 $40$ ℃是事件 $g(t,T)=T-40=0$。求解器通常在检测到步内变号后，用局部插值定位事件；返回时间应与解析 $\log3$ 对账，不能只取“第一个低于40的采样点”。若一步内穿越多次，单靠端点变号可能漏检，需结合事件结构与最大步长。
+
+同样，`t_eval`指定的是要输出哪些时刻，不等于强制内部只用这些积分步。把输出加密不能自动修复积分误差；判断轨迹、事件或峰值，都要保留实际时间与插值/采样口径。
+
+<JupyterNotebook title="自适应、事件与刚性双模态" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `def event(t,y):return y[0]-40
+event.direction=-1
+sol=solve_ivp(lambda t,y:-(y-20),(0,4),[80.],method='RK45',rtol=1e-8,atol=1e-10,events=event,dense_output=True)
+assert sol.success
+hit=sol.t_events[0][0]
+print('RK45终点/实际终点误差/事件/事件误差/nfev:',sol.y[0,-1],abs(sol.y[0,-1]-(20+60*np.exp(-4))),hit,abs(hit-np.log(3)),sol.nfev)
+print('事件插值温度:',sol.sol(hit)[0],'内部节点数:',len(sol.t))
+A=np.diag([-1.,-100.]);stiff=solve_ivp(lambda t,y:A@y,(0,1),[1.,1.],method='Radau',rtol=1e-8,atol=1e-10)
+assert stiff.success
+print('Radau双模态终点/解析/绝对误差/nfev:',stiff.y[:,-1],np.exp([-1.,-100.]),abs(stiff.y[:,-1]-np.exp([-1.,-100.])),stiff.nfev)
+z=sp.Integer(-10);RE=1+z;RB=1/(1-z);R4=1+z+z*z/2+z**3/6+z**4/24
+print('快模态E/BE/RK因子与两步:',RE,RB,R4,RE**2,RB**2,R4**2,'解析两步:',np.exp(-20))
+`}]} />
+
+## 怎样审计仿真读数
+
+每次给出一个数，至少留下这些信息：对象与方程、输入与初值、单位与参数、方法与容差、内部步长或输出时刻、计算窗口、指标定义、参考值与误差。随机实验还要另留种子、重复次数及分布；本课各例没有随机项。
+
+尤其要避免三种混淆：残差小不等于对真实输入求解准确；数值解稳定不等于物理模型正确；绘图平滑不等于积分或事件读数准确。单位变化、丢掉前面的时间、抽稀后把索引当时间，都会产生看起来很精确的错误。
+
+实际复核可以沿着“固定模型→减半步长/收紧容差→换独立参考→核对时间与指标”的顺序进行。高精度计算帮助发现舍入，解析解帮助检验算法，实验测量帮助检验模型；三者各回答一层问题，不能互相冒充。
+
+## 小结
+
+先区分问题敏感性与算法误差，再选择结构合适的求解方法。步长同时影响精度与稳定；高阶、隐式和自适应各有条件与成本。最后把数值读数落回真实时间、单位与可复算的误差定义。
+
+## 习题
+
+1. 解释浮点式 $(10^{16}+1)-10^{16}$ 为什么会与整数结果不同，并写出避免 $\sqrt{1+x}-1$ 消去的等价形式。
+2. 对正文含 $\epsilon$ 的线性系统，求扰动前后精确解、无穷范数条件数及新输入残差。直线拟合例为什么残差不为零？
+3. 用宽度为 $4$ 的初始区间二分，要求宽度不超过 $10^{-6}$，至少要多少次？中点根误差界是多少？Newton起点为零的平方根例应怎样处理？
+4. 写默认冷却积分的解析值、$N=8$ 梯形与Simpson值及单位；解释差分步长过小为什么可能更差。
+5. 算默认Euler终温与RK4终点误差，给出两者预算；再说明 $k=2,N=4$ 时的Euler振荡，以及 $h\lambda=-10$ 时高阶方法是否仍可靠。
+6. 对冷却达到40℃事件，写事件函数、解析时间、自适应容差与输出时刻各自的含义。列出发布这个读数时必须保留的实验口径。
+
+## 答案
+
+1. 浮点加一时丢失低位，随后减法不能恢复；指定顺序浮点得 $0$，精确整数得 $1$。改写成 $x/(\sqrt{1+x}+1)$。对 $x=10^{-16}$，直接式为零，改写约 $5\times10^{-17}$，与高精度参考一致到浮点舍入范围。
+2. 原解 $(1,1)^T$，新解 $(0,2)^T$；$\kappa_\infty=4/\epsilon+4+\epsilon=4000004.000001$。对新右端残差为零，对旧右端残差为 $(0,-\epsilon)^T$，解的变化无穷范数为 $1$。拟合参数 $(7/6,1/2)$，残差范数 $\sqrt{1/6}$；它最小化误差而非强行通过三点。
+3. $4/2^m\le10^{-6}$，故 $m=22$。最终宽度 $4/2^{22}$，中点误差界 $2/2^{22}\approx4.7683716\times10^{-7}$ min。Newton分母为零时应拒绝该步、换初值或采用有保护的方法，不能输出成功。
+4. 解析 $80+60(1-e^{-4})\approx138.9010617$，梯形 $140.1230844$，Simpson $138.9209203$，单位均为℃·min，不是热量。差分除以小步长会放大舍入及数据噪声，需检查步长扫描。
+5. 默认Euler $20+60(1/2)^8=20.234375$ ℃，RK4终点误差约 $0.0034861$ ℃；右端调用为 $8$ 与 $32$。振荡例因子 $1-kh=-1$，温度80与−40交替；快速模态Euler因子−9、RK4因子291都放大，后退因子1/11仅说明该模态稳定，不保证精确。
+6. $g=T-40$，默认解析时间 $\log3$ min。atol/rtol用于局部误差控制尺度，不是事件时间或最终全局误差的直接保证；输出时刻也不是内部步长。报告还应给方程/初值/参数/单位、窗口、求解器与容差、事件方向与定位方式、实际事件时间和参考误差，并说明这是给定模型的计算。
+
+答案中的小矩阵求逆与正规方程仅用于精确符号验算；实际浮点最小二乘仍采用前面演示的QR或SVD。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+import mpmath as mp
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
+from scipy.integrate import solve_ivp
+`} cells={[{code: `eps=sp.Rational(1,10**6);A=sp.Matrix([[1,1],[1,1+eps]]);b=sp.Matrix([2,2+eps]);bp=b+sp.Matrix([0,eps])
+print('题1浮点与整数:',(1e16+1)-1e16,(10**16+1)-10**16)
+print('题2原解/新解/条件数/两残差:',A.inv()*b,A.inv()*bp,(2+eps)*(2/eps+1),bp-A*(A.inv()*bp),b-A*(A.inv()*bp))
+C=sp.Matrix([[1,0],[1,1],[1,2]]);y=sp.Matrix([1,2,2]);beta=(C.T*C).inv()*C.T*y;res=C*beta-y
+print('题2精确拟合/残差范数:',beta,sp.sqrt((res.T*res)[0]))
+print('题3次数/宽度/中点界:',22,sp.Rational(4,2**22),sp.Rational(2,2**22))
+t=np.linspace(0,4,9);v=20+60*np.exp(-t)
+print('题4解析/梯形/Simpson:',80+60*(1-np.exp(-4)),.5*(v[0]/2+sum(v[1:-1])+v[-1]/2),.5/3*(v[0]+v[-1]+4*sum(v[1:-1:2])+2*sum(v[2:-1:2])))
+z=sp.Rational(-1,2);R=1+z+z*z/2+z**3/6+z**4/24
+print('题5 Euler/RK终温/两者误差:',20+sp.Rational(60,2**8),float(20+60*R**8),abs(20+60*(.5)**8-(20+60*np.exp(-4))),abs(float(20+60*R**8)-(20+60*np.exp(-4))))
+print('题6解析事件:',np.log(3))
+`}]} />

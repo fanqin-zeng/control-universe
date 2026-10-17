@@ -1,0 +1,295 @@
+---
+title: 变分法与动态规划
+description: 从小车分步回家理解整条路径的代价，连接变分、边界条件、Bellman递推、协态与HJB。
+---
+
+# 变分法与动态规划
+
+## 小车怎样分几步回家
+
+一辆小车停在直轨上，离目标还有两个刻度。我们每一步都能决定它向左或向右走多远：一下回到目标，动作可能太大；慢慢靠近，又会让小车在离目标较远的位置多停几步。**如果只给两步，怎样同时照顾位置偏差和动作开销？**
+
+用 $x_k$ 表示相对目标的位置，$u_k$ 表示这一步的有符号位移，负号表示朝坐标减小的方向。这里采用理想运动模型：指令指定多少位移就执行多少，不研究电机力、惯性或轮胎。距离、每步时间和代价都已归一化，所有读数无量纲。
+
+默认从 $x_0=2$ 出发，允许两次动作，位置偏差、动作和最终偏差采用相同的平方惩罚。图中可以改变步数与权重：先看第一步怎么选，再看最后为什么可能还留下一点误差。
+
+<FiniteHorizonExplorer />
+
+默认两次动作依次为 $-6/5$ 和 $-2/5$，位置依次变为 $4/5$、$2/5$，总代价为 $16/5=3.2$。**终点不是强制为零**；把终端误差计入目标，与把终点固定在原点，是两种问题。下面先从“优化整条路径”建立思路，再回到这个分步问题。
+
+## 从一个数到一条函数
+
+普通优化选择一个数或向量，例如上一课选择两台电暖器的功率。现在若要选择连续时间内的整条位置曲线 $x(t)$，目标就要把一段过程的开销累加起来。输入一条函数、输出一个数的映射叫**泛函**。
+
+先研究一个更简单、边界不同的小问题：在归一化时间 $0\leq t\leq1$，从 $x(0)=0$ 走到 $x(1)=1$，最小化速度平方的积分：
+
+$$
+J[x]=\frac12\int_0^1\dot x(t)^2\,dt.
+$$
+
+假设路径足够光滑；点号是对时间求导。$x(t)=t$ 是匀速路径，代价为 $1/2$。选择弯曲的 $x(t)=t+\varepsilon\sin(\pi t)$，两个端点不变，而代价为 $1/2+\varepsilon^2\pi^2/4$。这里的 $\varepsilon$ 是扰动幅度，不是时间步长。
+
+这说明“换一条路径”也能精确计算代价怎样改变。但只试一种正弦波不等于搜索了所有路径；变分法要检查所有允许的微小扰动。
+
+## 一次变分
+
+选一条满足端点要求的参考路径 $x$，再选任意光滑扰动函数 $\eta(t)$，令 $x_\varepsilon=x+\varepsilon\eta$。如果起终点固定，就要求 $\eta(0)=\eta(1)=0$。把泛函沿这个方向对普通参数 $\varepsilon$ 求导，得到**一阶变分**：
+
+$$
+\delta J[x;\eta]=\left.\frac{d}{d\varepsilon}J[x+\varepsilon\eta]\right|_{\varepsilon=0}.
+$$
+
+若路径是光滑的局部最小点，沿正负小扰动都不能再降低目标，所以每个可行方向的一阶变分都必须为零。这里是对参数求导，不是把“函数当数字”直接套导数表。
+
+对速度平方例，$\delta J=\int_0^1\dot x\dot\eta\,dt$。匀速路径 $\dot x=1$ 时，积分等于 $\eta(1)-\eta(0)=0$，满足驻点条件。**驻点**只表示一阶变化消失，尚未保证它是最小值。
+
+## 欧拉拉格朗日方程
+
+推广到 $J[x]=\int_0^T L(t,x,\dot x)\,dt$。$L$ 是每个时刻的代价密度；本课取足够光滑的函数和路径，允许交换求导与积分。链式法则和分部积分给出
+
+$$
+\delta J=\int_0^T(L_x\eta+L_{\dot x}\dot\eta)\,dt
+=[L_{\dot x}\eta]_0^T+\int_0^T\left(L_x-\frac{d}{dt}L_{\dot x}\right)\eta\,dt.
+$$
+
+固定端点让边界项消失。要让剩余积分对任意内部扰动都为零，连续的括号项必须处处为零，这就是**欧拉拉格朗日方程**：
+
+$$
+\frac{d}{dt}L_{\dot x}-L_x=0.
+$$
+
+对 $L=\dot x^2/2$，有 $L_{\dot x}=\dot x$、$L_x=0$，因此 $\ddot x=0$。先积分得速度为常数，再积分得 $x=at+b$，代入两个端点得到 $a=1,b=0$。这两条端点条件不能只靠微分方程自己补出来。推导中的固定端点与分部积分也可对照 [UCSB变分讲义](https://web.math.ucsb.edu/~yer/teach/147Atext.pdf)。
+
+## 端点不能随意省略
+
+若起点固定、终止时间 $T$ 固定，但终点位置自由，还另有终端代价 $\phi(x(T))$，那么 $\eta(T)$ 可以自由变化。边界项与终端代价的一阶变化一起要求
+
+$$
+L_{\dot x}(T)+\phi'(x(T))=0.
+$$
+
+这叫自然边界条件的一种形式。比如仍取速度平方代价，$x(0)=0$，终点自由且 $\phi=0$，就有 $\dot x(1)=0$；结合 $\ddot x=0$ 得到整条路径为零。它不是前面固定终点为 $1$ 的问题，答案不同很正常。
+
+本课不处理自由终止时间、端点所在曲面或状态不等式约束；那些情形还会引入别的横截条件。记住：先写允许怎样改端点，再处理边界项。
+
+## 最优不只是驻点
+
+对固定端点的匀速候选 $x=t$，任取端点为零的扰动 $\eta$，可以直接展开：
+
+$$
+J[t+\eta]-J[t]=\int_0^1\dot\eta\,dt+\frac12\int_0^1\dot\eta^2\,dt
+=\frac12\int_0^1\dot\eta^2\,dt\geq0.
+$$
+
+因此这条路径确实全局最优。若等号成立，光滑扰动的导数处处为零，再由端点为零得到 $\eta=0$，所以解唯一。这里靠完整代价差证明充分性，而不是只说“欧拉方程解出来了”。
+
+反过来，把同一泛函前面改成负号，匀速路径仍满足欧拉方程，却是最大点；正弦扰动会让代价从 $-1/2$ 下降到 $-1/2-\varepsilon^2\pi^2/4$。必要条件不能区分最小、最大或其他驻点。
+
+<JupyterNotebook title="路径扰动与边界复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `t,e=sp.symbols('t e',real=True)
+y=t+e*sp.sin(sp.pi*t)
+F=sp.simplify(sp.integrate(sp.diff(y,t)**2/2,(t,0,1)))
+print('端点:',y.subs(t,0),y.subs(t,1))
+print('正泛函/负泛函:',F,-F)
+print('第一/第二变分:',sp.diff(F,e).subs(e,0),sp.diff(F,e,2))
+print('自由终点零路径目标:',sp.integrate(sp.Integer(0),(t,0,1)))
+print('匀速系数:',sp.solve([sp.Symbol('b'),sp.Symbol('a')+sp.Symbol('b')-1],[sp.Symbol('a'),sp.Symbol('b')]))
+`}]} />
+
+## 把过程分成几步
+
+回到开篇小车。状态是现在的位置 $x_k$，动作是本步位移 $u_k$，离散动力学为 $x_{k+1}=x_k+u_k$。给定步数 $N$ 与初态，目标是
+
+$$
+J=\frac12\sum_{k=0}^{N-1}(q x_k^2+r u_k^2)+\frac12 s x_N^2,
+\qquad q\geq0,\quad r>0,\quad s\geq0.
+$$
+
+$q,r,s$ 分别表示过程偏差、动作和终端偏差的重要程度。动作是位移而非力，没有单独的输入上限。这个归一化模型的平方代价不是电机的真实能量。
+
+**动作序列**是事先列好的 $u_0,\ldots,u_{N-1}$；**策略**则给出每一步如何根据当前状态选择动作，写为 $u_k=\pi_k(x_k)$。在本课无扰动的模型里，给定初态和策略后就得到一条确定轨迹；策略本身还能告诉我们，如果该步状态不同应该怎么做。
+
+## 剩余代价与最优性原理
+
+把已经发生的开销放在一旁，定义从第 $k$ 步、状态为 $x$ 时出发，到结束为止最小可能的开销为值函数 $V_k(x)$，也叫最优剩余代价。终点没有动作可选，故 $V_N(x)=s x^2/2$。
+
+最优性原理说：一条最优策略到达某个状态后，其剩余部分也必须对这个子问题最优。否则换上更好的后半段，就能让整条方案更好，产生矛盾。它依赖于状态已经保留了预测未来和计算未来代价所需的信息。
+
+例如若还有“剩余电量”限制，仅用位置作状态就不够：位置相同、电量不同，可选的未来动作也不同，必须把剩余电量纳入状态。这里没有资源记忆、扰动或额外约束，所以位置加步号足够。
+
+## Bellman递推
+
+先选当前动作，再接上后面最好的做法，就得到
+
+$$
+V_k(x)=\min_u\left\{\frac12(qx^2+ru^2)+V_{k+1}(x+u)\right\}.
+$$
+
+右边并不是只惩罚当前这一步；$V_{k+1}$ 已经代表后续所有最小代价。计算时先从终端 $V_N$ 倒推，执行时从 $x_0$ 正向前进。倒推的是答案表，不是让小车从终点倒着开。
+
+一般问题需要在状态和动作网格上存值、取最小，网格覆盖越细，近似误差通常越小而成本越高；多维状态下网格数量迅速增加，称为维数灾难。网格插值和有限搜索的结果不能不经误差检查就叫精确最优。本课二次结构可以解析消去动作，不用网格搜索。
+
+## 二次代价的倒推
+
+设下一步值函数 $V_{k+1}(x)=P_{k+1}x^2/2$。把它代入Bellman式，括号里关于 $u$ 的二阶导是 $r+P_{k+1}>0$，所以令一阶导为零就得到唯一最小点：
+
+$$
+(r+P_{k+1})u+P_{k+1}x=0,\qquad
+u_k^\star=-K_kx,\quad K_k=\frac{P_{k+1}}{r+P_{k+1}}.
+$$
+
+将动作代回去，整理得标量Riccati递推：
+
+$$
+P_N=s,\qquad P_k=q+P_{k+1}-\frac{P_{k+1}^2}{r+P_{k+1}}
+=q+\frac{rP_{k+1}}{r+P_{k+1}}.
+$$
+
+因为 $q,s$ 非负，倒推过程中 $P_k$ 始终非负，分母始终为正。默认 $N=2,q=r=s=1$：先得到 $P_2=1$，再算 $P_1=3/2$、$P_0=8/5$；相应 $K_1=1/2,K_0=3/5$。注意当前增益用的是**下一步**的 $P_{k+1}$，不能错用 $P_k$。
+
+若 $q=s=0$，目标只惩罚动作，最优动作自然全零，小车不需要回到原点。这不是算法失效，而是目标里已经没有“回家”的要求。
+
+<JupyterNotebook title="Bellman符号倒推" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `q,r,p=sp.symbols('q r p',positive=True)
+x,u=sp.symbols('x u',real=True)
+B=(q*x*x+r*u*u+p*(x+u)**2)/2
+us=sp.solve(sp.diff(B,u),u)[0]
+print('最优动作:',us,'二阶导:',sp.diff(B,u,2))
+print('P递推:',sp.factor(2*B.subs(u,us)/x**2))
+P=[sp.Integer(0)]*3;P[2]=sp.Integer(1);K=[0,0]
+for k in [1,0]:
+    K[k]=P[k+1]/(1+P[k+1]);P[k]=1+P[k+1]/(1+P[k+1])
+print('P:',P,'K:',K,'V0(2):',P[0]*4/2)
+print('无状态/终端惩罚P:',[0,0,0])
+`}]} />
+
+## 沿最优策略向前走
+
+有了增益，再从实际初态出发。默认 $x_0=2$，第一步 $u_0=-(3/5)\cdot2=-6/5$，得到 $x_1=4/5$；第二步 $u_1=-(1/2)\cdot(4/5)=-2/5$，得到 $x_2=2/5$。
+
+两步阶段开销分别为 $68/25=2.72$、$2/5=0.4$，终端代价为 $2/25=0.08$，相加为 $16/5$，等于 $V_0(2)$。每一步还应满足 $V_k(x_k)=\ell_k+V_{k+1}(x_{k+1})$；这能抓住漏终端项、漏 $1/2$ 和下标错位。
+
+另把所有动作一起看成向量，状态由动力学消去后，目标是严格凸的二次函数，因为 $r>0$。直接解整段二次问题会得到相同答案；这是同一个数学问题的交叉核验，不是对两种算法速度或鲁棒性的比较。
+
+默认末状态 $2/5$ 是软终端目标的最优结果；若改为硬约束 $x_2=0$，重新求解会得到 $u=(-4/3,-2/3)$、$x_1=2/3$、总代价 $10/3$。硬约束不能用有限终端权重“自动等同”；上面的简单Riccati终端条件也不能原样套用。
+
+<JupyterNotebook title="整段二次问题独立核验" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `a,b=sp.symbols('a b',real=True);x0=sp.Integer(2);x1=x0+a;x2=x1+b
+J=(x0*x0+a*a+x1*x1+b*b+x2*x2)/2
+sol=sp.solve([sp.diff(J,a),sp.diff(J,b)],[a,b]);print('软终端动作/状态/目标:',sol,x1.subs(sol),x2.subs(sol),J.subs(sol))
+print('阶段与终端:',(x0*x0+a*a).subs(sol)/2,(x1*x1+b*b).subs(sol)/2,x2.subs(sol)**2/2)
+H=sp.hessian(J,(a,b));print('Hessian:',H,'顺序主子式:',H[0,0],H.det())
+hard=J.subs(b,-x0-a);ah=sp.solve(sp.diff(hard,a),a)[0]
+print('硬终端动作/中间状态/目标:',ah,-x0-ah,x0+ah,hard.subs(a,ah))
+print('零状态最优目标:',sp.Integer(0))
+`}]} />
+
+## 协态与哈密顿量
+
+另一种推导给动力学等式配上乘子。对本课离散目标，构造 $\sum_k[\ell(x_k,u_k)+p_{k+1}(x_k+u_k-x_{k+1})]+\phi(x_N)$。对内部状态、动作和自由终端状态分别求导，得到
+
+$$
+p_k=qx_k+p_{k+1},\qquad ru_k+p_{k+1}=0,\qquad p_N=sx_N.
+$$
+
+$p_k$ 称为**协态**，这里表示最优剩余代价对当前位置的边际变化，不是小车速度。对这个光滑二次问题，$p_k=V_k'(x_k)=P_kx_k$。默认沿轨迹依次为 $p_0=16/5,p_1=6/5,p_2=2/5$，恰好满足三组关系。乘子的下标与构造方式有关，不能把别处的式子只改字母就抄过来。
+
+连续时间另设 $\dot x=u$，目标为 $J=\int_0^T\ell(x,u)dt+\phi(x(T))$，起点固定、终点自由、终止时间固定。定义哈密顿量 $H=\ell+pu$，光滑无约束驻点条件为 $\dot x=H_p$、$\dot p=-H_x$、$H_u=0$，边界为 $p(T)=\phi'(x(T))$。这解释了为什么常要从起点给状态、从终点给协态。
+
+这些是本课正则、无输入约束模型的条件，不能代替一般极大值原理的完整假设；若动作有限幅，应在允许动作内最小化 $H$，不能无条件要求 $H_u=0$。若终点硬固定，也不能再无条件用自由终端的 $p(T)=\phi'$。
+
+<JupyterNotebook title="协态与Bellman核对" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `xs=[sp.Integer(2),sp.Rational(4,5),sp.Rational(2,5)]
+P=[sp.Rational(8,5),sp.Rational(3,2),sp.Integer(1)];us=[-sp.Rational(6,5),-sp.Rational(2,5)]
+ps=[P[k]*xs[k] for k in range(3)]
+print('协态:',ps)
+print('协态递推残差:',[ps[k]-xs[k]-ps[k+1] for k in range(2)])
+print('动作驻点残差:',[us[k]+ps[k+1] for k in range(2)])
+print('Bellman残差:',[P[k]*xs[k]**2/2-(xs[k]**2+us[k]**2)/2-P[k+1]*xs[k+1]**2/2 for k in range(2)])
+print('终端残差:',ps[-1]-xs[-1])
+`}]} />
+
+## 连续时间的HJB
+
+定义连续值函数 $V(t,x)$ 为从时刻 $t$、状态 $x$ 出发的最小剩余代价。若它足够光滑，先经历一小段时间 $\Delta t$：付出约 $\ell\Delta t$，状态变到约 $x+f\Delta t$，再接上 $V(t+\Delta t,x+f\Delta t)$。把后者展开为 $V+V_t\Delta t+V_xf\Delta t$ 加高阶余项，两边减去 $V$、除以 $\Delta t$ 并令它趋于零，得到Hamilton–Jacobi–Bellman方程：
+
+$$
+0=V_t+\min_u\{\ell(x,u)+V_x f(x,u)\},\qquad V(T,x)=\phi(x).
+$$
+
+$V_t$ 是时间偏导，$V_x$ 是状态偏导；有限时域不能随意删掉 $V_t$。HJB同时给出值函数和对每个状态的策略，通常比只求一条驻点轨迹更难；不光滑时需要其他解的概念，本课不展开。
+
+对连续积分器 $f=u$、$\ell=(qx^2+ru^2)/2$、$\phi=sx^2/2$，试 $V=P(t)x^2/2$，最小化括号得到 $u^*=-P(t)x/r$，代回得到
+
+$$
+-\dot P=q-\frac{P^2}{r},\qquad P(T)=s.
+$$
+
+连续默认取 $q=r=s=1,T=1,x(0)=2$，于是 $P(t)=1$、$u=-x$、$x(t)=2e^{-t}$，最优代价为 $2$。终点是 $2/e$，仍不强制为零；协态为 $p=x$，$\dot p=-x$ 和终端条件都成立。
+
+如果改为 $s=0$，则 $P(t)=\tanh(1-t)$，其中 $\tanh z=(e^z-e^{-z})/(e^z+e^{-z})$，初始最优代价为 $2\tanh1\approx1.5231883$；它变小是因为目标删去了终端惩罚，**不是同一指标下控制器变好**。这个连续例与两步离散例的目标、时域和动力学约定不同，不能用代价 $2$ 与 $3.2$ 作性能排名。
+
+对足够光滑且满足终端条件的HJB候选，沿任意允许轨迹积分其不等式，可得到 $J\geq V(0,x_0)$；取到括号最小值的策略使等号成立，才构成验证证书。本课无约束二次例可直接核验。更一般的连续/离散有限时域Riccati与HJB推导见 [MIT作者课程讲义](https://underactuated.mit.edu/lqr.html)。
+
+<JupyterNotebook title="连续时间Riccati与代价" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `t=sp.symbols('t',real=True)
+x=2*sp.exp(-t);u=-x
+stage=sp.integrate((x*x+u*u)/2,(t,0,1));terminal=x.subs(t,1)**2/2
+print('连续阶段/终端/总:',stage,terminal,sp.simplify(stage+terminal))
+print('连续终点:',x.subs(t,1),float(x.subs(t,1)))
+def rhs(t,y):return [y[0]**2-1]
+for s0 in [1.,0.]:
+    sol=solve_ivp(rhs,[1.,0.],[s0],rtol=1e-11,atol=1e-13,dense_output=True)
+    p=float(sol.y[0,-1]);print('s/P0/J0:',s0,p,2*p)
+    print('终端/方程复核:',sol.sol(1.)[0],p-(1 if s0==1 else np.tanh(1)))
+print('s0解析值:',2*np.tanh(1))
+print('协态/驻点/状态残差:',sp.simplify(sp.diff(x,t)+x),sp.simplify(u+x),sp.simplify(sp.diff(x,t)-u))
+print('quad积分证书:',quad(lambda z:4*np.exp(-2*z),0,1)[0]+2*np.exp(-2))
+`}]} />
+
+## 小结
+
+变分法沿扰动方向考察整条函数，用分部积分得到内部方程与边界项；它先给必要驻点条件，是否最小要另外证明。动态规划把未来压缩成值函数，从终点倒推，再用策略正向执行。协态刻画边际代价，在光滑情形与值函数梯度相联系。
+
+做题先写清连续还是离散、终端硬约束还是软惩罚、代价有没有 $1/2$、状态是否足够、动作是否有限幅。把这些约定写错，即使算出一套漂亮公式，也是在回答另一个问题。
+
+## 习题
+
+1. 对固定端点扰动 $x=t+\varepsilon\sin\pi t$ 计算正速度平方泛函及一阶变分；为何仅试这条扰动不足以证明全局最优？
+2. 推 $L=\dot x^2/2$ 的欧拉方程。比较固定终点 $x(1)=1$ 与终点自由、无终端代价两种边界条件（起点均为零）。
+3. 默认两步问题从 $P_2$ 算出所有 $P_k,K_k$，说明增益为什么用下一步系数。
+4. 从 $x_0=2$ 正向计算动作、状态和三项代价，再解释硬终点 $x_2=0$ 为什么要重新求解。
+5. 计算默认离散协态，核验状态、协态、动作驻点和终端条件；解释协态的含义。
+6. 连续积分器默认 $q=r=s=1,T=1,x_0=2$，验证 $P=1$、$x=2e^{-t}$、$u=-x$ 及代价；指出它与离散两步问题不能直接比较的原因。
+
+## 答案
+
+1. $J=1/2+\varepsilon^2\pi^2/4$，一阶变分在零幅度处为零。它只检查一个方向；对任意端点为零的 $\eta$，代价差为 $\int\dot\eta^2/2\geq0$ 才证明全域结论。负号泛函说明驻点也可能为最大。
+2. $L_{\dot x}=\dot x,L_x=0$，所以 $\ddot x=0$。固定两端得 $x=t$；自由终点得自然条件 $\dot x(1)=0$，故 $x=0$，不是同一个边界问题。
+3. $P_2=1,P_1=3/2,P_0=8/5$；$K_1=1/2,K_0=3/5$。当前动作影响的是下一状态的剩余代价，故求导时出现 $P_{k+1}$；初始值为 $V_0(2)=16/5$。
+4. $u=(-6/5,-2/5)$，$x=(2,4/5,2/5)$。阶段 $68/25,2/5$，终端 $2/25$，和为 $16/5$。硬终点约束要求 $u_1=-2-u_0$，代回一元二次目标求导得 $u=(-4/3,-2/3)$、中间位置 $2/3$、代价 $10/3$。
+5. $p=P x=(16/5,6/5,2/5)$。状态更新逐步成立；$p_k-x_k-p_{k+1}=0$，$u_k+p_{k+1}=0$，$p_2-x_2=0$。它是当前位置变化引起的最优剩余代价的一阶变化率，不是速度。
+6. 终端 $P(1)=1$，微分方程右边 $1-P^2=0$；反馈 $u=-x$ 给出指数解。阶段积分为 $2(1-e^{-2})$，终端为 $2e^{-2}$，合计 $2=V(0,2)$。连续积分与离散求和、连续动力学与逐步位移模型不同，不能把两个代价值当同场对比。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp, quad
+`} cells={[{code: `t,e=sp.symbols('t e',real=True)
+f=sp.simplify(sp.integrate(sp.diff(t+e*sp.sin(sp.pi*t),t)**2/2,(t,0,1)))
+print('题1泛函/一阶:',f,sp.diff(f,e).subs(e,0))
+P=[sp.Rational(8,5),sp.Rational(3,2),sp.Integer(1)];xs=[sp.Integer(2),sp.Rational(4,5),sp.Rational(2,5)];us=[-sp.Rational(6,5),-sp.Rational(2,5)]
+print('题3 P/K/V:',P,[sp.Rational(3,5),sp.Rational(1,2)],P[0]*xs[0]**2/2)
+print('题4阶段/终端/总:',[(xs[k]**2+us[k]**2)/2 for k in range(2)],xs[-1]**2/2,P[0]*xs[0]**2/2)
+print('题5协态:',[P[k]*xs[k] for k in range(3)])
+print('题6阶段/终端/总:',2*(1-sp.exp(-2)),2*sp.exp(-2),sp.Integer(2))
+`}]} />

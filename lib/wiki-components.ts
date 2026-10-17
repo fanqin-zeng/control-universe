@@ -1,5 +1,20 @@
+import { CoolingNumericsExplorer } from "@/components/wiki/cooling-numerics-explorer";
+import { ChargingGameExplorer } from "@/components/wiki/charging-game-explorer";
+import { GraphConsensusExplorer } from "@/components/wiki/graph-consensus-explorer";
+import { BracketMotionExplorer } from "@/components/wiki/bracket-motion-explorer";
+import { FiniteHorizonExplorer } from "@/components/wiki/finite-horizon-explorer";
+import { PowerAllocationExplorer } from "@/components/wiki/power-allocation-explorer";
+import { ARProcessExplorer } from "@/components/wiki/ar-process-explorer";
+import { BayesWindowExplorer } from "@/components/wiki/bayes-window-explorer";
+import { ZSequenceExplorer } from "@/components/wiki/z-sequence-explorer";
+import { FourierSynthesisExplorer } from "@/components/wiki/fourier-synthesis-explorer";
+import { LaplaceWeightExplorer } from "@/components/wiki/laplace-weight-explorer";
+import { CascadeExponentialExplorer } from "@/components/wiki/cascade-exponential-explorer";
 import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
 import { LinearMapExplorer } from "@/components/wiki/linear-map-explorer";
+import { EigenIterationExplorer } from "@/components/wiki/eigen-iteration-explorer";
+import { SvdSensitivityExplorer } from "@/components/wiki/svd-sensitivity-explorer";
+import { HillGradientExplorer } from "@/components/wiki/hill-gradient-explorer";
 /**
  * 组件注册的唯一来源（E2 · fix-015 根治）。
  *
@@ -69,6 +84,18 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  CoolingNumericsExplorer,
+  ChargingGameExplorer,
+  GraphConsensusExplorer,
+  BracketMotionExplorer,
+  FiniteHorizonExplorer,
+  PowerAllocationExplorer,
+  ARProcessExplorer,
+  BayesWindowExplorer,
+  ZSequenceExplorer,
+  FourierSynthesisExplorer,
+  LaplaceWeightExplorer,
+  CascadeExponentialExplorer,
   a: ({ href = "", ...props }: ComponentProps<"a">) => createElement("a", { ...props, href: withBasePath(href) }),
   img: ({ src = "", ...props }: ComponentProps<"img">) => createElement("img", { ...props, src: withBasePath(src) }),
   MotionIntroExplorer,
@@ -121,4 +148,7 @@ export const wikiComponents: MDXComponents = {
   MimoProportionalExplorer,
   ComplexPolarExplorer,
   LinearMapExplorer,
+  EigenIterationExplorer,
+  SvdSensitivityExplorer,
+  HillGradientExplorer,
 };

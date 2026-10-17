@@ -1,0 +1,142 @@
+{
+  "source": "content/math/game-theory-math.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 32,
+      "title": "单方改变能改善多少",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 35,
+          "delim": "`",
+          "code": "a,b=sp.symbols('a b',real=True);c=sp.Rational(1,4)\r\nJ1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b\r\nbr=sp.solve(sp.diff(J1,a),a)[0]\r\nprint('甲代价/导数/无约束最佳响应:',J1,sp.diff(J1,a),br)\r\nprint('自身二阶导:',sp.diff(J1,a,2))\r\nprint('默认各代价:',J1.subs({a:2,b:2}),J2.subs({a:2,b:2}))\r\nprint('乙固定2，甲最佳响应/代价/改善:',br.subs(b,2),J1.subs({a:sp.Rational(3,2),b:2}),J1.subs({a:2,b:2})-J1.subs({a:sp.Rational(3,2),b:2}))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 93,
+      "title": "有限表中的单方偏离",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 96,
+          "delim": "`",
+          "code": "C1=np.array([[1,3],[0,2]],dtype=int);C2=np.array([[1,0],[3,2]],dtype=int)\r\nne=[]\r\nfor i in range(2):\r\n    for j in range(2):\r\n        if C1[i,j]==min(C1[:,j]) and C2[i,j]==min(C2[i,:]):ne.append((i,j))\r\nprint('行/列0合作1争抢，甲乙代价矩阵:',C1,C2)\r\nprint('各列甲响应/各行乙响应:',np.argmin(C1,axis=0),np.argmin(C2,axis=1))\r\nprint('纯NE索引:',ne,'NE代价:',[(C1[i,j],C2[i,j]) for i,j in ne])\r\nprint('同时合作代价:',C1[0,0],C2[0,0],'甲单方争抢后:',C1[1,0])\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 123,
+      "title": "分别求均衡与共同目标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 126,
+          "delim": "`",
+          "code": "a,b,c=sp.symbols('a b c',real=True)\r\nJ1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b;S=J1+J2\r\nNE=sp.solve([sp.diff(J1,a),sp.diff(J2,b)],[a,b]);central=sp.solve([sp.diff(S,a),sp.diff(S,b)],[a,b])\r\nprint('NE/共同目标/Hessian:',NE,central,sp.hessian(S,(a,b)))\r\nfor v in [0,sp.Rational(1,4),sp.Rational(9,20)]:\r\n    n={k:x.subs(c,v) for k,x in NE.items()};z={k:x.subs(c,v) for k,x in central.items()}\r\n    sn=sp.simplify(S.subs(n).subs(c,v));sz=sp.simplify(S.subs(z).subs(c,v))\r\n    print('c/NE/共同目标/两总分/差:',v,n,z,sn,sz,sp.simplify(sn-sz))\r\n    print('该c下响应端点/总分Hessian谱/NE单方改善:',[2-4*v,2],sp.hessian(S,(a,b)).subs(c,v).eigenvals(),sp.simplify(J1.subs(n).subs(c,v)-J1.subs({a:2-v*n[b],b:n[b]}).subs(c,v)))\r\nprint('默认NE各代价:',J1.subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}))\r\nu=sp.Rational(4,3);reply=2-sp.Rational(1,4)*u\r\nprint('共同目标各代价/甲响应/甲改善:',sp.simplify(J1.subs({a:u,b:u,c:sp.Rational(1,4)})),reply,sp.simplify(J1.subs({a:u,b:u,c:sp.Rational(1,4)})-J1.subs({a:reply,b:u,c:sp.Rational(1,4)})))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 175,
+      "title": "匹配硬币的期望与LP",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 178,
+          "delim": "`",
+          "code": "p,q=sp.symbols('p q',real=True);M=np.array([[1.,-1.],[-1.,1.]])\r\nexpr=sp.expand((sp.Matrix([[p,1-p]])*sp.Matrix(M.astype(int))*sp.Matrix([q,1-q]))[0])\r\nprint('独立期望:',sp.factor(expr),'均衡期望:',expr.subs({p:sp.Rational(1,2),q:sp.Rational(1,2)}))\r\nprint('纯最大最小/最小最大:',M.min(axis=1).max(),M.max(axis=0).min())\r\npure=[(i,j) for i in range(2) for j in range(2) if M[i,j]==M[:,j].max() and M[i,j]==M[i,:].min()]\r\nprint('匹配硬币纯NE:',pure)\r\nrow=linprog([0,0,-1],A_ub=np.column_stack((-M.T,np.ones(2))),b_ub=np.zeros(2),A_eq=[[1,1,0]],b_eq=[1],bounds=[(0,None),(0,None),(None,None)],method='highs')\r\ncol=linprog([0,0,1],A_ub=np.column_stack((M,-np.ones(2))),b_ub=np.zeros(2),A_eq=[[1,1,0]],b_eq=[1],bounds=[(0,None),(0,None),(None,None)],method='highs')\r\nassert row.success and col.success\r\nprint('甲分布/保证值，乙分布/上界:',row.x,col.x)\r\nprint('p=.8的最坏收益:',min(expr.subs({p:sp.Rational(4,5),q:v}) for v in [0,1]))\r\nprint('同面公共硬币相关收益:',sp.Rational(1,2)*1+sp.Rational(1,2)*1)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 221,
+      "title": "势函数与非唯一均衡",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 224,
+          "delim": "`",
+          "code": "a,b,c,v=sp.symbols('a b c v',real=True)\r\nJ1=(a-2)**2/2+c*a*b;J2=(b-2)**2/2+c*a*b\r\nPhi=(a-2)**2/2+(b-2)**2/2+c*a*b\r\nprint('两位玩家单方变化差:',sp.simplify(Phi.subs(a,v)-Phi-(J1.subs(a,v)-J1)),sp.simplify(Phi.subs(b,v)-Phi-(J2.subs(b,v)-J2)))\r\nprint('势Hessian/默认谱:',sp.hessian(Phi,(a,b)),sp.hessian(Phi,(a,b)).subs(c,sp.Rational(1,4)).eigenvals())\r\nprint('默认NE势/总分:',Phi.subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}),(J1+J2).subs({a:sp.Rational(8,5),b:sp.Rational(8,5),c:sp.Rational(1,4)}))\r\nQ=(a-b)**2\r\nprint('非唯一例各自二阶导/响应:',sp.diff(Q,a,2),sp.diff(Q,b,2),sp.solve(sp.diff(Q,a),a),sp.solve(sp.diff(Q,b),b))\r\nprint('对角线上代价:',sp.simplify(Q.subs(a,b)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 251,
+      "title": "同步响应、循环与承诺",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 254,
+          "delim": "`",
+          "code": "c=sp.Rational(1,4);x=sp.Matrix([0,4]);seq=[x]\r\nfor k in range(12):x=sp.Matrix([2-c*x[1],2-c*x[0]]);seq.append(x)\r\nprint('同步响应0/1/2/12轮:',[(k,seq[k],np.array(seq[k],dtype=float).reshape(-1)) for k in [0,1,2,12]])\r\nprint('第12轮精确误差:',seq[12]-sp.ones(2,1)*sp.Rational(8,5))\r\nstate=[0,0];cycle=[state.copy()]\r\nfor who in [1,0,1,0]:\r\n    state[who]=(1-state[0]) if who==1 else state[1];cycle.append(state.copy())\r\nprint('匹配硬币乙甲乙甲，0正1反:',cycle)\r\na=sp.symbols('a',real=True);follower=2-c*a;leader=(a-2)**2/2+c*a*follower\r\nlead=sp.solve(sp.diff(leader,a),a)[0];follow=follower.subs(a,lead)\r\nprint('承诺代价/导数/二阶导/甲乙行动:',sp.expand(leader),sp.diff(leader,a),sp.diff(leader,a,2),lead,follow)\r\nprint('承诺甲乙代价:',leader.subs(a,lead),sp.simplify((follow-2)**2/2+c*lead*follow))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 294,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import linprog\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 297,
+          "delim": "`",
+          "code": "c=sp.Rational(1,4);a=sp.Rational(8,5);z=sp.Rational(4,3)\r\nJ=lambda x,y:sp.Rational(1,2)*(x-2)**2+c*x*y\r\nprint('题2响应/代价/改善/NE代价:',sp.Rational(3,2),J(sp.Rational(3,2),2),J(2,2)-J(sp.Rational(3,2),2),J(a,a))\r\nprint('题3共同总分/均衡总分/差/改善:',2*J(z,z),2*J(a,a),2*J(a,a)-2*J(z,z),J(z,z)-J(2-c*z,z))\r\nprint('题4纯两个值/独立四项概率/相关收益:',-1,1,[sp.Rational(1,4)]*4,1)\r\nprint('题5默认势谱:',sp.Matrix([[1,c],[c,1]]).eigenvals())\r\nlead=sp.Rational(12,7);follow=sp.Rational(11,7)\r\nprint('题6行动/代价:',lead,follow,J(lead,follow),J(follow,lead))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

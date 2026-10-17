@@ -1,0 +1,290 @@
+---
+title: 凸优化
+description: 从两台电暖器的功率分配理解凸性、全局最优、对偶与KKT，用投影梯度检查数值解。
+---
+
+# 凸优化
+
+## 两台电暖器怎么分功率
+
+两间房各有一台可调功率的电暖器。假设上层温控器此刻分别请求 $2$ kW 和 $1$ kW，但供电回路只允许它们合计使用 $2$ kW。直接照着请求开，会超过上限；随便关掉一台，又可能让功率分配偏离需求太多。
+
+**怎样在总功率不超限的前提下，让两台电暖器尽量接近各自的请求？** 这里只研究这一时刻的分配：把功率看成连续可调，不模拟室温、不计算一天的耗电，也不把教学模型当成真实设备的保护设计。
+
+图中的横纵坐标是两台的功率，三角形内是允许的分配。空心点是请求，实心点是精确最优分配；另一条折线记录算法从全关开始怎样逐步调整。拖动总功率上限，先看可行区域和最优点怎样变化。
+
+<PowerAllocationExplorer />
+
+默认最优分配是 $(1.5,0.5)$ kW。两台各少给 $0.5$ kW；这来自下面的目标与约束，并不是对所有供暖设备都适用的分配规则。
+
+## 把要求写成优化问题
+
+令 $u=(u_1,u_2)$ 是待选功率，$r=(r_1,r_2)$ 是给定请求，$b$ 是合计上限。允许的选择构成**可行集** $C$；其中每个点叫可行点。目标函数为
+
+$$
+\min_{u\in C} f(u)=\frac12\big[(u_1-r_1)^2+(u_2-r_2)^2\big],\qquad
+C=\{u:u_1\geq0,\ u_2\geq0,\ u_1+u_2\leq b\}.
+$$
+
+平方让正负偏差都受到惩罚，较大的偏差惩罚更重；前面的 $1/2$ 让求导简洁，不改变最优点。两项同权表示本模型没有优先房间；若重要性不同，应明确修改权重。$f$ 的单位为 kW²，**不是电费或能量**。
+
+使目标最小的可行点叫最优解 $u^\star$；最优值记为 $p^\star=f(u^\star)$。对默认数据，$(1,1)$ 可行、目标为 $1/2$；$(2,1)$ 的目标虽为零，却不可行。不能只看目标小不小。
+
+## 凸集里的线段
+
+若集合中任意两点 $x,y$ 的整条连线都仍在集合中，它就是凸集。用 $0\leq t\leq1$ 表示线段位置，连线上的点是 $(1-t)x+ty$，称为**凸组合**。
+
+默认可行三角形是凸的：两个非负分配混合后仍非负，总和也不会超过 $b$。例如 $(2,0)$ 与 $(0,2)$ 的中点 $(1,1)$ 仍可行。每个线性半空间是凸集，凸集的交集仍凸；因此多条线性不等式可以一起保留凸性。
+
+反例是 $|x|\geq1$：$-1$ 与 $1$ 都在集合里，中点 $0$ 却不在。障碍物外的可行区域往往也有这种“中间被挖掉”的情况。连通、没有空洞或看起来圆润，都不是凸性的定义。
+
+## 凸函数的弦与切线
+
+在凸定义域上，如果函数在两点之间的值不高于连接两端函数值的弦，就称为凸函数：
+
+$$
+f((1-t)x+ty)\leq(1-t)f(x)+tf(y),\qquad 0\leq t\leq1.
+$$
+
+例如 $f(x)=x^2$，取端点 $0,2$ 和中点 $1$，左边是 $1$，右边是 $2$。函数可以有平的部分，也可以不可微，例如 $|x|$ 仍然凸；“像碗”只是直觉。
+
+若不同点之间、对 $0<t<1$ 总是严格小于，就称为**严格凸**。对可微凸函数，在凸的开定义域内等价的一阶条件是
+
+$$
+f(y)\geq f(x)+\nabla f(x)^T(y-x).
+$$
+
+右边是 $x$ 处切平面的预测；凸函数始终不低于它。对 $x^2$ 在 $x=1,y=2$，左边 $4$，右边 $3$。上面的弦在函数上方，这里的切线在函数下方，二者不要混淆。
+
+## 局部最优为什么够用
+
+局部最优只要求附近没有更好的可行点；全局最优要求整个可行集都没有。**凸函数在凸集上的每个局部最优都是全局最优。** 证明只需反证：若远处有更好的可行点，把它与当前点连线，凸性保证沿线任意小的一步已经降低目标，与局部最优矛盾。
+
+严格凸目标在凸集上**至多有一个**最优解，但不保证解存在。$e^x$ 在实轴上严格凸，下确界为零，却没有有限 $x$ 取到零。另一种失败是可行集为空，例如同时要求 $u\geq2$ 与 $u\leq1$；还有无界问题 $\min_{u\geq0}(-u)$，目标可无限减小。
+
+本课主例 $b\geq0$ 时可行集非空、闭且有界，连续目标一定取到最小值；再由严格凸得到唯一解。一般问题可以用别的存在性条件，不能把这一结论只归功于“凸”。
+
+<JupyterNotebook title="几何与凸性复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `x=sp.symbols('x',real=True)
+print('可行中点:',(np.array([2.,0.])+np.array([0.,2.]))/2)
+print('x平方中点/弦:',sp.Integer(1)**2,(sp.Integer(0)**2+sp.Integer(2)**2)/2)
+print('x平方函数/切线:',sp.Integer(2)**2,1+2*(2-1))
+print('凸可行点(1,1)目标:',sp.Rational(1,2)*((1-2)**2+(1-1)**2))
+print('exp导数与二阶导:',sp.diff(sp.exp(x),x),sp.diff(sp.exp(x),x,2))
+print('x四次方零点曲率:',sp.diff(x**4,x,2).subs(x,0))
+print('exp负无穷极限:',sp.limit(sp.exp(x),x,-sp.oo))
+`}]} />
+
+## 梯度与曲率
+
+多元微积分中，梯度指向函数增长最快的方向，Hessian记录二阶曲率。对二次连续可微函数，在凸开定义域上，Hessian处处半正定等价于凸；处处正定是严格凸的充分条件，**不是必要条件**，例如 $x^4$ 严格凸，却在零点二阶导为零。
+
+主例 $\nabla f(u)=u-r$、$\nabla^2 f=I$，所以严格凸。无约束最优点满足梯度为零，得到 $u=r$；有约束时，边界可能挡住下降方向，最优点的梯度不必为零。
+
+对可微凸目标在凸集 $C$ 上，$u^\star$ 最优的充要条件是：对每个可行 $v$，都有 $\nabla f(u^\star)^T(v-u^\star)\geq0$。它说任何可行方向都无法通过一阶变化降低目标。默认解的梯度为 $(-1/2,-1/2)$，而可行点的功率总和不超过 $2$，所以这个内积非负。
+
+## 功率分配的精确解
+
+主例的目标是到请求点的平方距离，因此最优点就是请求到三角形的**欧氏投影**。请求各分量非负时，如果请求总和不超上限，直接满足请求；否则将各请求减去同一个阈值 $\tau$，降到负数的分量截为零：
+
+$$
+u_i^\star=\max(r_i-\tau,0),\qquad
+\sum_i\max(r_i-\tau,0)=b.
+$$
+
+默认两台都仍为正，故 $(2-\tau)+(1-\tau)=2$，得到 $\tau=1/2$、$u^\star=(3/2,1/2)$、$p^\star=1/4$。若请求改为 $(3,0)$、上限为 $1$，第二台不能减到负功率：答案是 $(1,0)$，而不是先平均扣除后停止检查。
+
+上限 $b=0$ 时只有全关可行；上限 $b=4$、默认请求不变时，直接取 $(2,1)$，目标零。精确最优点用于校验算法，不能把一次离散迭代的末点直接叫作精确解。下面另用SciPy的SLSQP数值求解作交叉核验；它是通用约束优化方法，代码检查success和解析解，而不把求解器返回成功当作证明。参数含义见 [SciPy官方文档](https://docs.scipy.org/doc/scipy-1.16.1/reference/optimize.minimize-slsqp.html)。
+
+<JupyterNotebook title="功率分配与边界" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `def solve(r,b,weights=None):
+    r=np.array(r,dtype=float); w=np.ones(2) if weights is None else np.array(weights,dtype=float)
+    result=minimize(lambda u:np.dot(w,(u-r)**2)/2,[0.,0.],jac=lambda u:w*(u-r),bounds=[(0,None)]*2,constraints=[{'type':'ineq','fun':lambda u:b-np.sum(u),'jac':lambda u:-np.ones(2)}],method='SLSQP',options={'ftol':1e-12,'maxiter':100})
+    assert result.success,result.message
+    return result.x,result.fun
+for r,b in [([2,1],2),([3,0],1),([2,1],0),([2,1],4)]:
+    print('请求/上限/最优/目标:',r,b,solve(r,b))
+print('主例梯度:',np.array([1.5,.5])-np.array([2.,1.]))
+print('Hessian特征值:',np.linalg.eigvalsh(np.eye(2)))
+`}]} />
+
+## 拉格朗日函数与下界
+
+把一般不等式统一写成 $g_i(u)\leq0$，等式写成 $h_j(u)=0$。对不等式引入非负乘子 $\lambda_i$，对等式引入可正可负的乘子 $\nu_j$，定义
+
+$$
+L(u,\lambda,\nu)=f(u)+\sum_i\lambda_i g_i(u)+\sum_j\nu_j h_j(u),\qquad
+q(\lambda,\nu)=\inf_u L(u,\lambda,\nu).
+$$
+
+这里对 $u$ 求下确界时只保留目标和约束函数的共同定义域，**不再要求原约束可行**。对任意原问题可行点，乘子项不大于零，所以 $q(\lambda,\nu)\leq p^\star$，这叫弱对偶。对偶问题最大化这个下界；它不保证下界一定紧，也不保证下确界或最大值能取到。
+
+主例把 $g_0=u_1+u_2-b$、$g_1=-u_1$、$g_2=-u_2$ 都移入 $L$。写总约束乘子为 $\lambda$、非负约束乘子向量为 $\mu$，得到
+
+$$
+q(\lambda,\mu)=(\lambda\mathbf1-\mu)^Tr-\lambda b-\frac12\|\lambda\mathbf1-\mu\|^2,\qquad \lambda\geq0,\ \mu\geq0.
+$$
+
+这里 $\mathbf1=(1,1)^T$，向量不等式逐分量解释。这是把 $u-r+\lambda\mathbf1-\mu=0$ 代回 $L$ 的结果。默认取 $\mu=0$，则 $q(\lambda,0)=\lambda-\lambda^2$；取 $\lambda=0$ 的下界为 $0$，取 $1/2$ 的下界为 $1/4$，恰好等于可行解的目标，因此已经证明该解最优。
+
+## KKT条件
+
+KKT把最优点与乘子应该满足的关系列在一起。对可微问题，其四部分为：
+
+$$
+\begin{aligned}
+g_i(u)&\leq0,\quad h_j(u)=0 &&\text{原始可行},\\
+\lambda_i&\geq0 &&\text{对偶可行},\\
+\nabla_u L(u,\lambda,\nu)&=0 &&\text{驻点},\\
+\lambda_i g_i(u)&=0 &&\text{互补松弛}.
+\end{aligned}
+$$
+
+“互补”不是要求所有约束都取等号：**严格没碰到的约束，其乘子必须为零；乘子为零的约束也可能刚好碰到边界。** 默认最优点两台功率都大于零，故 $\mu_1=\mu_2=0$；总功率等号成立，取 $\lambda=1/2$。梯度 $(-1/2,-1/2)$ 被 $\lambda(1,1)$ 正好抵消，四组条件全部成立。
+
+若目标和不等式函数凸、等式仿射，满足KKT就是全局最优的充分证书。它的必要性还需要约束资格等条件，非凸问题的KKT通常只能给候选点。不能看到“驻点”两个字就宣布最优。
+
+## 约束资格与强对偶
+
+强对偶指原问题与对偶问题的最优值相等。凸问题中，常用的 **Slater条件** 是：在共同凸定义域的相对内部，存在满足等式且使所有不等式严格成立的点；等式须仿射，即线性表达式加常数。这里的相对内部指在定义域自身所在的最小仿射空间里取内部，而非强求整个环境空间的开球。
+
+在通常有限维凸问题、有限最优值等标准假设下，Slater保证强对偶并存在对偶最优乘子；再配合已取到的原始最优点与可微性，可以得到KKT的必要性。它是**充分条件，不是强对偶必要条件**。默认取 $(1/2,1/2)$，两功率严格为正、合计严格小于 $2$，满足严格可行。
+
+反例能说明不能省条件：$\min_x x$，约束 $x^2\leq0$，唯一可行点为 $0$。它是凸问题，但没有严格可行点；在零点驻点方程为 $1+\lambda\cdot0=0$，没有任何有限乘子能满足。对偶在 $\lambda>0$ 时为 $-1/(4\lambda)$，最优下界的上确界为 $0$，却不被有限乘子取到。**值相等与乘子存在是不同结论。**
+
+主例 $b=0$ 也没有严格可行点，但仍可取 $u=0$、$\lambda=2$、$\mu=(0,1)$ 满足KKT，目标与对偶均为 $5/2$。Slater失败只表示不能直接引用这条保证，要另外检查。上述KKT充分性、Slater与乘子存在性的条件，可对照 [Boyd与Vandenberghe的对偶讲义](https://see.stanford.edu/materials/lsocoee364a/05Duality.pdf)。
+
+<JupyterNotebook title="对偶与KKT证书" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `r=sp.Matrix([2,1]); u=sp.Matrix([sp.Rational(3,2),sp.Rational(1,2)])
+lam=sp.Rational(1,2); mu=sp.zeros(2,1); v=lam*sp.ones(2,1)-mu
+primal=((u-r).dot(u-r))/2; dual=v.dot(r)-lam*2-v.dot(v)/2
+print('目标/对偶/间隙:',primal,dual,primal-dual)
+print('驻点残差:',u-r+v,'互补:',lam*(sum(u)-2))
+print('非负乘子互补:',[mu[i]*(-u[i]) for i in range(2)])
+print('lambda0下界:',0,'Slater点及余量:',[sp.Rational(1,2)]*2,1)
+u0=sp.zeros(2,1); l0=sp.Integer(2); m0=sp.Matrix([0,1]); v0=l0*sp.ones(2,1)-m0
+print('b0驻点/对偶:',u0-r+v0,v0.dot(r)-v0.dot(v0)/2)
+x,l=sp.symbols('x l',real=True)
+print('退化约束零点驻点:',(1+2*l*x).subs(x,0))
+print('退化对偶lambda1/2:',-sp.Rational(1,4),-sp.Rational(1,8))
+print('退化对偶极限:',sp.limit(-1/(4*l),l,sp.oo))
+`}]} />
+
+## 投影梯度法
+
+先沿负梯度走一步，再把结果投回允许的集合：
+
+$$
+u^{k+1}=\Pi_C\big(u^k-\eta\nabla f(u^k)\big),\qquad
+\Pi_C(y)=\arg\min_{v\in C}\frac12\|v-y\|^2.
+$$
+
+投影的定义是找**离试探点最近的可行点**，不是逐坐标截断就完事；逐坐标截非负后，合计仍可能超限。主例Hessian为 $I$，梯度的Lipschitz常数 $L=1$，意思是梯度变化的长度不超过点变化的长度。投影对闭凸集单值且非扩张，结合主例更新可知，在 $0<\eta<2$ 时误差以至多 $|1-\eta|$ 的比例收缩，迭代收敛到唯一最优点。一般光滑凸问题常取 $0<\eta\leq1/L$ 保证目标不增，不照搬本例的收缩率。
+
+默认 $\eta=1/2$、$u^0=(0,0)$，第一步到 $(1,1/2)$、目标 $5/8$；第二步先试探 $(3/2,3/4)$，超过总上限，投影到 $(11/8,5/8)$，目标 $17/64$。第三步为 $(23/16,9/16)$，目标 $65/256$。这些有限迭代值仍不等于精确最优值 $1/4$。
+
+步长也有边界：请求 $(1,1)$、上限 $4$、$\eta=2$ 时，从零出发在 $(0,0)$ 与 $(2,2)$ 之间来回，目标始终为 $1$。问题严格凸、有唯一解，也不能让任意步长自动收敛。界面的“步长边界”按钮只展示这个确定性反例，不构成算法性能排名。
+
+<JupyterNotebook title="投影迭代与步长边界" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `def project(y,b):
+    y=np.array(y,dtype=float); z=np.maximum(y,0)
+    if sum(z)<=b:return z
+    lo,hi=0.,max(z)
+    for _ in range(80):
+        mid=(lo+hi)/2
+        if sum(np.maximum(y-mid,0))>b:lo=mid
+        else:hi=mid
+    return np.maximum(y-hi,0)
+def iterate(r,b,eta):
+    r=np.array(r,dtype=float); u=np.zeros(2); rows=[]
+    for k in range(19):
+        rows.append((k,u.copy(),np.sum((u-r)**2)/2))
+        u=project(u-eta*(u-r),b)
+    return rows
+rows=iterate([2,1],2,.5)
+for k,u,f in rows[:4]:print('默认迭代:',k,u,f)
+print('末点:',rows[-1])
+print('步长边界:',iterate([1,1],4,2)[:4])
+print('错误只截非负:',np.maximum([1.5,.75],0),'正确投影:',project([1.5,.75],2))
+`}]} />
+
+## 停止前检查什么
+
+算法输入是请求、上限、起点、步长与最大迭代数，输出是候选分配及状态。至少分开检查：功率与总和是否可行、候选是否有限数、最优性残差是否够小、是否用完预算。迭代编号不是物理时间；界面固定展示 $18$ 次更新，不伪装成通用求解器的成功状态。
+
+常用的最优性残差是**投影梯度映射**的长度：
+
+$$
+\|G_\eta(u)\|=\left\|\frac{u-\Pi_C(u-\eta\nabla f(u))}{\eta}\right\|.
+$$
+
+在本课凸可微问题中，它为零等价于一阶最优条件。小步长可能让相邻点几乎不动，所以不能只看 $\|u^{k+1}-u^k\|$ 而不考虑 $\eta$。界面同时给出可行性违规量、到精确解的距离和映射残差；后两种数值与舍入精度不能代替普遍的精确证明。
+
+若有对偶可行乘子，还可以看原始目标与对偶下界的间隙。得到小间隙之前，先确认原始和对偶两边都可行。真实在线控制还必须为超时、不可行、数值失败定义回退行为，本课没有替设备设计回退控制器。
+
+## 控制问题中的凸结构
+
+二次规划（QP）在控制中很常见。它把目标写为 $\frac12u^THu+c^Tu+d$，配合线性等式和不等式；$H$ 对称半正定就给出凸目标，正定则严格凸。主例 $H=I,c=-r,d=\frac12r^Tr$。常数项不改变最优点，却影响目标值和对偶间隙，不能在对账时丢掉。
+
+若把第一台偏差权重改为 $2$，第二台仍为 $1$，总上限仍为 $2$，两台功率均为正、总约束活跃时的方程为 $2(u_1-2)+\lambda=0$、$u_2-1+\lambda=0$、$u_1+u_2=2$。得到 $\lambda=2/3$、$u=(5/3,1/3)$，带权目标为 $1/3$。权重改变的是问题偏好，不是“求解器更聪明”。
+
+线性预测模型、凸二次代价和线性输入/状态约束可以构成凸QP，是后续预测控制的重要基础。非线性等式、障碍物外侧约束、整数开关决策通常会破坏这种结构；有时可以局部线性化或松弛，但那是另一个问题，需要重新核验原约束和误差。凸优化不是所有控制问题的通行证。
+
+<JupyterNotebook title="带权二次规划" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `r=np.array([2.,1.]); w=np.array([2.,1.])
+s=minimize(lambda u:np.dot(w,(u-r)**2)/2,[.5,.5],jac=lambda u:w*(u-r),bounds=[(0,None)]*2,constraints=[{'type':'ineq','fun':lambda u:2-np.sum(u),'jac':lambda u:-np.ones(2)}],method='SLSQP',options={'ftol':1e-12})
+assert s.success
+u=sp.Matrix([sp.Rational(5,3),sp.Rational(1,3)]); R=sp.Matrix([2,1]); H=sp.diag(2,1); l=sp.Rational(2,3)
+print('数值解/目标:',s.x,s.fun)
+print('精确解/乘子/目标:',u,l,((u-R).T*H*(u-R))[0]/2)
+print('驻点:',H*(u-R)+l*sp.ones(2,1))
+print('主例QP常数:',sp.Rational(1,2)*(2**2+1**2))
+`}]} />
+
+## 小结
+
+先定义可行集和目标，再判断凸性。凸结构让局部最优成为全局最优，存在性与唯一性仍要分别说明。KKT和对偶下界给出证书，Slater说明什么时候能保证这些证书存在；数值算法还需要合适步长、停止标准与失败状态。
+
+在两台电暖器例子里，你现在应能解释：为什么最优点会落在总功率边界，为什么此时梯度仍非零，为什么默认乘子与目标能互相核对，以及为什么算法末点不能直接当成精确解。
+
+## 习题
+
+1. 判断集合 $|x|\geq1$ 是否凸，并核验 $x^2$ 在端点 $0,2$、中点 $1$ 的凸不等式。
+2. “严格凸必有唯一最优解”错在哪里？分别用 $e^x$、相互矛盾的区间约束、$\min_{u\geq0}(-u)$ 区分三种失败。
+3. 默认功率问题写出最优点、三个不等式乘子，逐项验证KKT。
+4. 取主例 $\mu=0$，计算 $\lambda=0,1/2,1$ 的对偶下界。解释退化约束 $x^2\leq0$ 为什么无法直接用Slater保证KKT乘子。
+5. 手算默认投影梯度前两步，解释只截断负坐标为什么不够。再解释步长边界按钮为何振荡。
+6. 第一台权重改为 $2$ 时，求最优分配、总约束乘子和目标，并核验非负约束是否活跃。
+
+## 答案
+
+1. 不凸：两端 $-1,1$ 合格，中点 $0$ 不合格。平方函数给出 $1\leq2$，满足该组凸不等式；只验一组不能证明一般凸性，还需定义、二阶导等全域论证。
+2. 严格凸只保证“至多一个”。$e^x$ 下确界零不取到；$u\geq2,u\leq1$ 无可行点；$-u$ 在非负半轴下无界。主例另靠非空紧集和连续性保证解存在。
+3. $u=(3/2,1/2)$，$\lambda=1/2,\mu=(0,0)$。功率非负且和为 $2$；乘子非负；梯度与 $\lambda(1,1)$ 抵消；总约束松弛零、非负约束乘子零，互补乘积均零。目标 $1/4$。
+4. $q(\lambda,0)=\lambda-\lambda^2$，三个下界依次 $0,1/4,0$；第二个等于可行目标，证明最优。退化问题只有 $x=0$ 可行，没有严格可行；约束梯度为零，驻点式左边恒为 $1$，不存在有限KKT乘子，尽管原对偶最优值相同。
+5. 从零先到 $(1,1/2)$；再试探 $(3/2,3/4)$，总和多出 $1/4$，两坐标各减 $1/8$ 得 $(11/8,5/8)$；目标分别 $5/8,17/64$。仅截非负保留了越限试探点。边界例更新为 $u^{k+1}=2r-u^k$，两个端点都可行，故投影不改变它们，持续往返。
+6. 两功率都正，非负乘子为零。由 $u_1=2-\lambda/2,u_2=1-\lambda$ 和总和 $2$ 得 $\lambda=2/3,u=(5/3,1/3)$。代回带权目标 $1/3$，驻点残差为零；权重不能沿用同权目标 $1/4$。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import minimize
+`} cells={[{code: `t=sp.symbols('t',real=True)
+print('题1平方/弦:',1,2,'非凸中点:',(-1+1)/2)
+u=sp.Matrix([sp.Rational(3,2),sp.Rational(1,2)]); r=sp.Matrix([2,1]); l=sp.Rational(1,2)
+print('题3梯度/驻点/目标:',u-r,u-r+l*sp.ones(2,1),(u-r).dot(u-r)/2)
+print('题4下界:',[v-v*v for v in [sp.Integer(0),sp.Rational(1,2),sp.Integer(1)]])
+a=sp.Matrix([1,sp.Rational(1,2)]); b=sp.Matrix([sp.Rational(11,8),sp.Rational(5,8)])
+print('题5:',a,b,(a-r).dot(a-r)/2,(b-r).dot(b-r)/2)
+w=sp.Matrix([sp.Rational(5,3),sp.Rational(1,3)]); H=sp.diag(2,1)
+print('题6:',w,sp.Rational(2,3),((w-r).T*H*(w-r))[0]/2,H*(w-r)+sp.Rational(2,3)*sp.ones(2,1))
+`}]} />

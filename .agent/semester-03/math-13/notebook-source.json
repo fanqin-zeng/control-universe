@@ -1,0 +1,123 @@
+{
+  "source": "content/math/convex-optimization.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 67,
+      "title": "几何与凸性复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 70,
+          "delim": "`",
+          "code": "x=sp.symbols('x',real=True)\r\nprint('可行中点:',(np.array([2.,0.])+np.array([0.,2.]))/2)\r\nprint('x平方中点/弦:',sp.Integer(1)**2,(sp.Integer(0)**2+sp.Integer(2)**2)/2)\r\nprint('x平方函数/切线:',sp.Integer(2)**2,1+2*(2-1))\r\nprint('凸可行点(1,1)目标:',sp.Rational(1,2)*((1-2)**2+(1-1)**2))\r\nprint('exp导数与二阶导:',sp.diff(sp.exp(x),x),sp.diff(sp.exp(x),x,2))\r\nprint('x四次方零点曲率:',sp.diff(x**4,x,2).subs(x,0))\r\nprint('exp负无穷极限:',sp.limit(sp.exp(x),x,-sp.oo))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 101,
+      "title": "功率分配与边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 104,
+          "delim": "`",
+          "code": "def solve(r,b,weights=None):\r\n    r=np.array(r,dtype=float); w=np.ones(2) if weights is None else np.array(weights,dtype=float)\r\n    result=minimize(lambda u:np.dot(w,(u-r)**2)/2,[0.,0.],jac=lambda u:w*(u-r),bounds=[(0,None)]*2,constraints=[{'type':'ineq','fun':lambda u:b-np.sum(u),'jac':lambda u:-np.ones(2)}],method='SLSQP',options={'ftol':1e-12,'maxiter':100})\r\n    assert result.success,result.message\r\n    return result.x,result.fun\r\nfor r,b in [([2,1],2),([3,0],1),([2,1],0),([2,1],4)]:\r\n    print('请求/上限/最优/目标:',r,b,solve(r,b))\r\nprint('主例梯度:',np.array([1.5,.5])-np.array([2.,1.]))\r\nprint('Hessian特征值:',np.linalg.eigvalsh(np.eye(2)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 161,
+      "title": "对偶与KKT证书",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 164,
+          "delim": "`",
+          "code": "r=sp.Matrix([2,1]); u=sp.Matrix([sp.Rational(3,2),sp.Rational(1,2)])\r\nlam=sp.Rational(1,2); mu=sp.zeros(2,1); v=lam*sp.ones(2,1)-mu\r\nprimal=((u-r).dot(u-r))/2; dual=v.dot(r)-lam*2-v.dot(v)/2\r\nprint('目标/对偶/间隙:',primal,dual,primal-dual)\r\nprint('驻点残差:',u-r+v,'互补:',lam*(sum(u)-2))\r\nprint('非负乘子互补:',[mu[i]*(-u[i]) for i in range(2)])\r\nprint('lambda0下界:',0,'Slater点及余量:',[sp.Rational(1,2)]*2,1)\r\nu0=sp.zeros(2,1); l0=sp.Integer(2); m0=sp.Matrix([0,1]); v0=l0*sp.ones(2,1)-m0\r\nprint('b0驻点/对偶:',u0-r+v0,v0.dot(r)-v0.dot(v0)/2)\r\nx,l=sp.symbols('x l',real=True)\r\nprint('退化约束零点驻点:',(1+2*l*x).subs(x,0))\r\nprint('退化对偶lambda1/2:',-sp.Rational(1,4),-sp.Rational(1,8))\r\nprint('退化对偶极限:',sp.limit(-1/(4*l),l,sp.oo))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 194,
+      "title": "投影迭代与步长边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 197,
+          "delim": "`",
+          "code": "def project(y,b):\r\n    y=np.array(y,dtype=float); z=np.maximum(y,0)\r\n    if sum(z)<=b:return z\r\n    lo,hi=0.,max(z)\r\n    for _ in range(80):\r\n        mid=(lo+hi)/2\r\n        if sum(np.maximum(y-mid,0))>b:lo=mid\r\n        else:hi=mid\r\n    return np.maximum(y-hi,0)\r\ndef iterate(r,b,eta):\r\n    r=np.array(r,dtype=float); u=np.zeros(2); rows=[]\r\n    for k in range(19):\r\n        rows.append((k,u.copy(),np.sum((u-r)**2)/2))\r\n        u=project(u-eta*(u-r),b)\r\n    return rows\r\nrows=iterate([2,1],2,.5)\r\nfor k,u,f in rows[:4]:print('默认迭代:',k,u,f)\r\nprint('末点:',rows[-1])\r\nprint('步长边界:',iterate([1,1],4,2)[:4])\r\nprint('错误只截非负:',np.maximum([1.5,.75],0),'正确投影:',project([1.5,.75],2))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 241,
+      "title": "带权二次规划",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 244,
+          "delim": "`",
+          "code": "r=np.array([2.,1.]); w=np.array([2.,1.])\r\ns=minimize(lambda u:np.dot(w,(u-r)**2)/2,[.5,.5],jac=lambda u:w*(u-r),bounds=[(0,None)]*2,constraints=[{'type':'ineq','fun':lambda u:2-np.sum(u),'jac':lambda u:-np.ones(2)}],method='SLSQP',options={'ftol':1e-12})\r\nassert s.success\r\nu=sp.Matrix([sp.Rational(5,3),sp.Rational(1,3)]); R=sp.Matrix([2,1]); H=sp.diag(2,1); l=sp.Rational(2,3)\r\nprint('数值解/目标:',s.x,s.fun)\r\nprint('精确解/乘子/目标:',u,l,((u-R).T*H*(u-R))[0]/2)\r\nprint('驻点:',H*(u-R)+l*sp.ones(2,1))\r\nprint('主例QP常数:',sp.Rational(1,2)*(2**2+1**2))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 278,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import minimize\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 281,
+          "delim": "`",
+          "code": "t=sp.symbols('t',real=True)\r\nprint('题1平方/弦:',1,2,'非凸中点:',(-1+1)/2)\r\nu=sp.Matrix([sp.Rational(3,2),sp.Rational(1,2)]); r=sp.Matrix([2,1]); l=sp.Rational(1,2)\r\nprint('题3梯度/驻点/目标:',u-r,u-r+l*sp.ones(2,1),(u-r).dot(u-r)/2)\r\nprint('题4下界:',[v-v*v for v in [sp.Integer(0),sp.Rational(1,2),sp.Integer(1)]])\r\na=sp.Matrix([1,sp.Rational(1,2)]); b=sp.Matrix([sp.Rational(11,8),sp.Rational(5,8)])\r\nprint('题5:',a,b,(a-r).dot(a-r)/2,(b-r).dot(b-r)/2)\r\nw=sp.Matrix([sp.Rational(5,3),sp.Rational(1,3)]); H=sp.diag(2,1)\r\nprint('题6:',w,sp.Rational(2,3),((w-r).T*H*(w-r))[0]/2,H*(w-r)+sp.Rational(2,3)*sp.ones(2,1))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

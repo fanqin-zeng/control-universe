@@ -1,0 +1,333 @@
+---
+title: 矩阵分解
+description: 从不完全一致的测量方程出发，理解LU、QR、Cholesky、SVD和伪逆，辨认小奇异值与截断的代价。
+---
+
+# 矩阵分解
+
+## 为什么把矩阵拆开
+
+假设两个待求的量是 $x_1,x_2$。三次测量分别说：第一个量大约是 $1$，两者之和大约是 $2$，第二个量大约是 $2$。这三句话没法同时成立：如果首尾两条完全正确，中间的和就应该是 $3$。
+
+我们不急着认定哪条测量错了，先把问题写成
+
+$$
+Ax\approx b,\qquad
+A=\begin{bmatrix}1&0\\1&1\\0&1\end{bmatrix},\qquad
+b=\begin{bmatrix}1\\2\\2\end{bmatrix}.
+$$
+
+这里所有量都已归一化，没有物理单位；各条测量按相同权重处理。究竟怎样选 $x$，才能让三条关系整体上尽量接近？如果两个待求量的作用几乎分不出来，答案又会不会对测量误差特别敏感？
+
+**矩阵分解，是把一个矩阵写成几个结构简单的矩阵的乘积。** 有的把求解变成前后代入，有的把误差拆成互相垂直的部分，有的让被压缩得厉害的方向显出来。分解不是为了多记几组字母，而是为了让我们知道问题该怎样算、哪些信息能够恢复。
+
+本课承接[线性代数基础](/math/linear-algebra-basics)与[特征值与对角化](/math/eigen-decomposition)。先用小矩阵手算，再用代码核对；只讨论实矩阵。分解不唯一时，软件给出的符号或排列可以不同，能否重构原矩阵才是关键。
+
+## 正交向量与投影
+
+在线性代数基础里，我们用内积判断两个向量是否垂直。如果一个向量 $q$ 的长度是 $1$，沿着它取 $c$ 份，得到 $cq$。怎样让这个向量尽量接近 $b$？
+
+把 $b$ 沿 $q$ 的方向分出一部分，称为在这条直线上的**正交投影**。投影系数和剩余部分分别是
+
+$$
+c=q^Tb,\qquad b_{\parallel}=q(q^Tb),\qquad
+r=b-q(q^Tb).
+$$
+
+因为 $q^Tq=1$，所以 $q^Tr=q^Tb-q^Tq(q^Tb)=0$：剩余部分与 $q$ 垂直。对任何别的系数 $d$，有 $b-dq=r+(c-d)q$。勾股定理给出平方长度 $\|r\|_2^2+(c-d)^2$，在 $d=c$ 时最小。这就是投影的用处，不需要先学多元微分。
+
+例如 $q=(1,1)^T/\sqrt2$、$b=(2,0)^T$，系数为 $\sqrt2$，投影为 $(1,1)^T$，剩余为 $(1,-1)^T$。投影和剩余都是向量，投影系数则是一个数，不能混淆。
+
+若方阵 $Q$ 的列都是单位向量且两两正交，则称它为**正交矩阵**，满足 $Q^TQ=QQ^T=I$，所以 $Q^{-1}=Q^T$。它改变坐标的方向或朝向，但保持向量长度。列为正交单位向量、却不是方阵的矩阵，只能直接写 $Q^TQ=I$，不能据此断言 $QQ^T=I$。
+
+## LU与消元
+
+先看能够精确求解的方阵问题，用来理解一种最熟悉的分解：
+
+$$
+Mx=d,\qquad M=\begin{bmatrix}2&1\\4&3\end{bmatrix},\qquad
+d=\begin{bmatrix}1\\3\end{bmatrix}.
+$$
+
+第二行减去第一行的两倍，系数矩阵变成上三角矩阵 $U$。把这一动作倒过来，就得到
+
+$$
+M=LU,\qquad
+L=\begin{bmatrix}1&0\\2&1\end{bmatrix},\qquad
+U=\begin{bmatrix}2&1\\0&1\end{bmatrix}.
+$$
+
+$L$ 是下三角矩阵，主对角线上方为零；$U$ 是上三角矩阵，主对角线下方为零。乘回去就能确认第二行是怎么恢复的。这叫 **LU分解**。
+
+解方程时先令 $w=Ux$，解 $Lw=d$：第一行给 $w_1=1$，第二行给 $2w_1+w_2=3$，所以 $w_2=1$。再从 $U$ 的最后一行向前代入：$x_2=1$，$2x_1+x_2=1$，得到 $x_1=0$。如果同一个 $M$ 要配许多个不同右端，只需分解一次，再反复代入，不必每次求逆。
+
+不能保证消元一开始就有合适的主元。例如 $N=\begin{bmatrix}0&1\\1&1\end{bmatrix}$ 可逆，但第一项为零，不能直接拿它作除数。先交换两行，就得到上三角矩阵。一般带行交换的写法可取 $PM=LU$，$P$ 是记录行交换的**置换矩阵**；这里的约定是先用 $P$ 作用于原矩阵。有些库写成 $M=PLU$，检查接口约定后再重构，不能混着用。实际浮点计算还会选大小合适的主元，不能把这里的小例当作无主元选择的通用程序。
+
+<JupyterNotebook title="核对投影、LU与行交换" setupCode={`import sympy as sp`} cells={[{code:`q, b = sp.Matrix([1,1])/sp.sqrt(2), sp.Matrix([2,0])
+c = q.dot(b)
+print("投影系数/向量/剩余:", c, list(q*c), list(b-q*c))
+M, d = sp.Matrix([[2,1],[4,3]]), sp.Matrix([1,3])
+L, U = sp.Matrix([[1,0],[2,1]]), sp.Matrix([[2,1],[0,1]])
+w = L.lower_triangular_solve(d)
+print("LU重构:", (L*U).tolist())
+print("中间量/解:", list(w), list(U.upper_triangular_solve(w)))
+N, P = sp.Matrix([[0,1],[1,1]]), sp.Matrix([[0,1],[1,0]])
+print("行交换后的矩阵:", (P*N).tolist(), "原行列式:", N.det())`}]} />
+
+## QR与正交化
+
+回到开篇三行两列的 $A$。它的两列是 $a_1=(1,1,0)^T$、$a_2=(0,1,1)^T$。先把第一列除以长度，得到 $q_1=a_1/\sqrt2$。第二列与第一列不垂直，需要先减掉在第一方向上的投影：
+
+$$
+\widetilde a_2=a_2-q_1(q_1^Ta_2)
+=\begin{bmatrix}-1/2\\1/2\\1\end{bmatrix},\qquad
+q_2=\frac{\widetilde a_2}{\|\widetilde a_2\|_2}
+=\frac1{\sqrt6}\begin{bmatrix}-1\\1\\2\end{bmatrix}.
+$$
+
+如此得到的两列长度为一，且互相垂直。把它们排在一起，同时记下原列是怎样组合出来的：
+
+$$
+A=QR,\qquad
+Q=\begin{bmatrix}1/\sqrt2&-1/\sqrt6\\1/\sqrt2&1/\sqrt6\\0&2/\sqrt6\end{bmatrix},\qquad
+R=\begin{bmatrix}\sqrt2&1/\sqrt2\\0&\sqrt6/2\end{bmatrix}.
+$$
+
+这叫 **QR分解**。本例 $Q$ 为三行两列，$R$ 为两行两列，是列满秩矩阵的简约形式。$Q$ 的列构成 $A$ 列空间的一套正交单位基；$R$ 记录原来每一列在这套基底下的系数。本课 $R$ 是三角因子，不是控制输入权重。
+
+逐列减投影并归一化的步骤叫 **Gram–Schmidt正交化**。这里用它看清含义；遇到近乎相关的列时，直接照抄手算步骤可能积累浮点误差，实际通常调用成熟库的 QR 实现。若出现零的剩余向量，就不能继续除以它的长度，需要处理秩亏；不能假装所有矩阵都能照这个流程产生同样大小的 $Q,R$。
+
+## 最小二乘在求什么
+
+开篇的三条关系不能同时满足。定义**残差** $r=b-Ax$，本课的**最小二乘**问题就是选 $x$，使
+
+$$
+\|b-Ax\|_2^2=r_1^2+r_2^2+r_3^2
+$$
+
+最小。这里“二乘”指平方后相加，不是把方程解两遍。不同测量若量纲或可信度不同，需要先缩放或引入权重；本例已经约定相同权重。
+
+向量 $Ax$ 一定落在 $A$ 的列空间内，所以我们要找列空间中离 $b$ 最近的向量。和直线投影一样，最小残差必须垂直于整个列空间，即
+
+$$
+A^Tr=0,\qquad A^TAx=A^Tb.
+$$
+
+后一式称为**正规方程**。为什么垂直就保证最小？若 $x_*$ 的残差为 $r_*$，任何另一个 $x$ 都有 $b-Ax=r_*+A(x_*-x)$。两项正交，平方长度是 $\|r_*\|_2^2+\|A(x_*-x)\|_2^2$，因此不能比前者更小。若 $A$ 列满秩，第二项只有在 $x=x_*$ 时为零，解唯一。
+
+正规方程适合解释条件，但不意味着实际求解就应该先构造 $A^TA$ 再求逆。后面会看到，矩阵中很弱的方向在这次相乘后会变得更弱。
+
+## 用QR求最小二乘
+
+本例 $A=QR$，所以 $A^T(b-Ax)=0$ 可以化成 $Rx=Q^Tb$；这里利用 $Q^TQ=I$ 及 $R$ 可逆。也可以直接把 $b$ 分成 $QQ^Tb$ 和与列空间垂直的 $(I-QQ^T)b$：后者不受 $x$ 影响，前者由 $R$ 的三角方程来匹配。
+
+先算
+
+$$
+Q^Tb=\begin{bmatrix}3/\sqrt2\\5/\sqrt6\end{bmatrix}.
+$$
+
+从下往上代入 $Rx=Q^Tb$，第二行给 $x_2=5/3$，第一行再给 $x_1=2/3$。于是
+
+$$
+x_*=\begin{bmatrix}2/3\\5/3\end{bmatrix},\qquad
+Ax_*=\begin{bmatrix}2/3\\7/3\\5/3\end{bmatrix},\qquad
+r_*=\begin{bmatrix}1/3\\-1/3\\1/3\end{bmatrix},\qquad
+\|r_*\|_2^2=1/3.
+$$
+
+两列分别与 $r_*$ 点乘，结果都是零。这个解没有让任何一条关系“完全正确”，而是按约定的平方和兼顾三条；如果你改变误差权重，答案也可能改变。
+
+<JupyterNotebook title="核对QR与最小二乘" setupCode={`import sympy as sp`} cells={[{code:`A, b = sp.Matrix([[1,0],[1,1],[0,1]]), sp.Matrix([1,2,2])
+Q, R = A.QRdecomposition()
+x = R.upper_triangular_solve(Q.T*b)
+r = b-A*x
+print("Q/R:", Q.tolist(), R.tolist())
+print("正交与重构:", (Q.T*Q).tolist(), (Q*R-A).tolist())
+print("Qt b/解:", list(Q.T*b), list(x))
+print("预测/残差/平方和:", list(A*x), list(r), r.dot(r))
+print("残差与列正交:", list(A.T*r))
+print("QtQ和QQt形状:", (Q.T*Q).shape, (Q*Q.T).shape)`}]} />
+
+## 正定矩阵与Cholesky
+
+一个实对称矩阵 $G$，如果对每个非零向量 $z$ 都有 $z^TGz>0$，就称为**对称正定矩阵**。不能把“每个元素为正”当成这个定义。例如本例
+
+$$
+G=A^TA=\begin{bmatrix}2&1\\1&2\end{bmatrix},\qquad
+z^TGz=(z_1+z_2)^2+z_1^2+z_2^2>0\quad(z\ne0).
+$$
+
+对实对称正定矩阵，**Cholesky分解**写作 $G=CC^T$，其中 $C$ 为下三角矩阵且对角元素为正。本例设 $C=\begin{bmatrix}c_{11}&0\\c_{21}&c_{22}\end{bmatrix}$，乘回去依次比较元素，得到 $c_{11}^2=2$、$c_{11}c_{21}=1$、$c_{21}^2+c_{22}^2=2$，所以
+
+$$
+C=\begin{bmatrix}\sqrt2&0\\1/\sqrt2&\sqrt6/2\end{bmatrix}.
+$$
+
+解 $Gx=h$ 时先解 $Cw=h$，再解 $C^Tx=w$。这里 $C$ 是Cholesky因子，不是控制器或状态输出矩阵。
+
+若只满足 $z^TGz\geq0$，叫正半定，允许某个非零方向给出零。矩阵 $\begin{bmatrix}1&1\\1&1\end{bmatrix}$ 就在方向 $(1,-1)^T$ 上给出零，标准的正对角Cholesky不能继续。本例 $A$ 列满秩，所以 $A^TA$ 正定；列不独立时就没有这个保证。控制中协方差矩阵也可能只是半正定，不能不检查就要求标准Cholesky成功。
+
+<JupyterNotebook title="核对正定条件与Cholesky" setupCode={`import sympy as sp`} cells={[{code:`A = sp.Matrix([[1,0],[1,1],[0,1]])
+G = A.T*A
+C = G.cholesky()
+print("G/C:", G.tolist(), C.tolist())
+print("重构残差:", (G-C*C.T).tolist())
+S, z = sp.ones(2), sp.Matrix([1,-1])
+print("半正定反例的二次型:", (z.T*S*z)[0])
+try:
+    S.cholesky()
+    print("意外成功，请核查前提")
+except sp.matrices.exceptions.NonPositiveDefiniteMatrixError:
+    print("标准正定Cholesky拒绝此半正定矩阵")`}]} />
+
+## 奇异值分解
+
+上一课的对角化要求方阵有足够的独立特征向量。开篇的 $A$ 是长方形，不能直接写成 $PDP^{-1}$，但仍能把输入方向、各方向的倍率、输出方向分开。
+
+对任意实 $m\times n$ 矩阵，**奇异值分解**，简称 **SVD**，写作
+
+$$
+A=U\Sigma V^T,\qquad U^TU=I_m,\qquad V^TV=I_n.
+$$
+
+这里 $U$ 是 $m\times m$ 正交矩阵，$V$ 是 $n\times n$ 正交矩阵；$\Sigma$ 是 $m\times n$ 矩阵，只有主对角位置可以非零。它的非负对角数称为**奇异值**，通常从大到小排列，严格为正的奇异值个数等于矩阵的秩。实际软件也可能返回节省列数的简约形式，先检查维数。$V^T$ 先把输入换到右奇异向量基底，$\Sigma$ 沿各轴缩放，$U$ 再换成输出方向；它们也可能包含反射，不一定只是旋转。
+
+对非零奇异值 $\sigma_i$，有 $Av_i=\sigma_i u_i$。这与 $Av=\lambda v$ 不同：输入、输出的方向分别为 $v_i,u_i$，甚至可能处在不同维数的空间。奇异值不是特征值换个名字，也不会为负。
+
+怎样从已学知识找到它们？由 $A^TA=V(\Sigma^T\Sigma)V^T$ 可知，$A^TA$ 的特征值是奇异值的平方。本例的 $A^TA=\begin{bmatrix}2&1\\1&2\end{bmatrix}$ 有特征值 $3,1$，故奇异值为 $\sqrt3,1$。选
+
+$$
+v_1=\frac1{\sqrt2}\begin{bmatrix}1\\1\end{bmatrix},\quad
+v_2=\frac1{\sqrt2}\begin{bmatrix}1\\-1\end{bmatrix},\quad
+u_1=\frac1{\sqrt6}\begin{bmatrix}1\\2\\1\end{bmatrix},\quad
+u_2=\frac1{\sqrt2}\begin{bmatrix}1\\0\\-1\end{bmatrix}.
+$$
+
+它们满足两条 $Av_i=\sigma_i u_i$。再补 $u_3=(1,-1,1)^T/\sqrt3$，组成 $U$；$\Sigma$ 的三行依次为 $(\sqrt3,0)$、$(0,1)$、$(0,0)$。这样不仅能检查倍率，也能完整重构 $A$。软件若同时改变一对奇异向量的符号，乘积不变；相同奇异值对应的基底还可重新选择。
+
+## 伪逆与最小范数
+
+奇异值为零，说明某些输入方向的信息已经丢失。我们不能除以零，但可以只对非零方向取倒数：把 $\Sigma$ 转为 $n\times m$ 的 $\Sigma^+$，非零奇异值改成倒数，其余位置保持零。定义**Moore–Penrose伪逆**
+
+$$
+A^+=V\Sigma^+U^T,\qquad x_*=A^+b.
+$$
+
+它的作用是：在所有使残差长度最小的解中，选取自身长度最小的一个，称为**最小范数最小二乘解**。这个解唯一，但不意味着每个最小二乘问题本身只有一个最优解。可逆方阵的伪逆就是普通逆；矩形或秩亏矩阵则不能一般地要求 $AA^+=I$ 和 $A^+A=I$。
+
+对开篇列满秩的 $A$，可用精确代数核验 $A^+=(A^TA)^{-1}A^T$，结果为
+
+$$
+A^+=\frac13\begin{bmatrix}2&1&-1\\-1&1&2\end{bmatrix},\qquad
+A^+b=\begin{bmatrix}2/3\\5/3\end{bmatrix}.
+$$
+
+这与QR的解相同。此式用于本例的手算核验，代码仍应使用库的求解器或SVD，不把构造正规方程并求逆作为通用建议。
+
+再看 $B=\operatorname{diag}(1,0)$、$b=(1,2)^T$，其中 $\operatorname{diag}$ 表示将数字依次放在主对角线上。最小二乘只要求 $x_1=1$，第二个分量取任何实数都不改变输出 $(1,0)^T$，残差平方和都是 $4$。伪逆选 $(1,0)^T$，因为不必要的第二分量只会增大解的长度。它没有恢复丢失的那路信息。
+
+<JupyterNotebook title="核对SVD、伪逆与秩亏解" setupCode={`import sympy as sp`} cells={[{code:`A, b = sp.Matrix([[1,0],[1,1],[0,1]]), sp.Matrix([1,2,2])
+V = sp.Matrix([[1,1],[1,-1]])/sp.sqrt(2)
+U = sp.Matrix.hstack(sp.Matrix([1,2,1])/sp.sqrt(6), sp.Matrix([1,0,-1])/sp.sqrt(2), sp.Matrix([1,-1,1])/sp.sqrt(3))
+Sigma = sp.Matrix([[sp.sqrt(3),0],[0,1],[0,0]])
+print("正交性:", sp.simplify(U.T*U).tolist(), sp.simplify(V.T*V).tolist())
+print("SVD重构残差:", sp.simplify(U*Sigma*V.T-A).tolist())
+print("AtA特征值/奇异值:", (A.T*A).eigenvals(), A.singular_values())
+print("伪逆/最小二乘解:", A.pinv().tolist(), list(A.pinv()*b))
+B, y = sp.diag(1,0), sp.Matrix([1,2])
+t = sp.symbols('t', real=True)
+x = sp.Matrix([1,t])
+print("秩亏伪逆/所选解:", B.pinv().tolist(), list(B.pinv()*y))
+print("全部最优解的残差平方/解平方:", (y-B*x).dot(y-B*x), x.dot(x))`}]} />
+
+## 小奇异值与截断
+
+考虑 $A_s=\operatorname{diag}(1,s)$，先取 $s=0.1$、真实输入 $x=(1,1)^T$。无误差输出为 $(1,0.1)^T$。如果第二路测量多出 $0.01$，得到 $(1,0.11)^T$，精确反求就给出 $(1,1.1)^T$：测量差 $0.01$，解的第二分量相差 $0.1$。这是倒数 $1/s$ 在放大误差，不是浮点程序突然出错。
+
+对列满秩矩阵，在本课的欧几里得长度下，**二范数条件数**为 $\kappa_2(A)=\sigma_{\max}/\sigma_{\min}$，本例为 $10$。对于本例这样的可逆方阵，固定矩阵、只扰动右端时，解的相对误差放大有条件数给出的上界；并不表示每次都恰好放大十倍。一般的含残差最小二乘还需考虑测量与列空间的位置等条件，不能只凭这个比值保证误差。对本例的秩亏边界 $s=0$，该条件数无穷大。若直接形成 $A^TA$，在列满秩条件下其二范数条件数为原来的平方，本例从 $10$ 变为 $100$。这也是通常不优先用正规方程处理病态最小二乘的原因；这里没有给所有算法作性能排名。
+
+可以选择一个阈值 $\tau$，只对 $\sigma_i>\tau$ 的方向取倒数，其他方向设为零，这叫**截断SVD**。注意边界采用严格大于，等于阈值的方向也舍弃。它是在改变求解规则，通常不再给原问题的精确最小二乘解。阈值必须结合量纲缩放、噪声和任务选取，本实验使用绝对阈值，不是软件的通用默认值。
+
+下面单位圆经矩阵映成椭圆；短轴越短，对应输入方向越难从含误差的输出中分辨。旋转角只改变输出坐标方向，不改变奇异值。实验固定真实输入 $(1,1)^T$，测量误差沿第二条左奇异方向，大小为 $\delta$；曲线表示无噪声映射，不把测量误差偷偷加到椭圆上。
+
+<SvdSensitivityExplorer />
+
+默认 $\tau=0.05$，两方向都保留，截断解仍为 $(1,1.1)^T$。试把阈值调到 $0.2$，第二方向被舍弃，解变成 $(1,0)^T$，相对本实验真实输入的误差长度反而为 $1$。即使把噪声设为零，这个偏差仍在；删掉噪声敏感方向，也会删掉该方向的真实信号。$s=0$ 时则是模型本来就丢失信息，不能靠调小阈值恢复。
+
+<JupyterNotebook title="核对噪声放大与截断代价" setupCode={`import numpy as np`} cells={[{code:`A = np.diag([1.0, 0.1])
+x_true = np.array([1.0,1.0])
+b = A@x_true + np.array([0.0,0.01])
+U, sigma, Vt = np.linalg.svd(A)
+print("测量/奇异值:", b, sigma)
+print("精确伪逆解:", np.linalg.pinv(A)@b)
+print("条件数/正规方程条件数:", np.linalg.cond(A), np.linalg.cond(A.T@A))
+for delta, tau in [(0.01,0.05),(0.01,0.2),(0.0,0.2)]:
+    y = A@x_true + np.array([0.0,delta])
+    reciprocal = np.zeros_like(sigma)
+    keep = sigma > tau
+    reciprocal[keep] = 1/sigma[keep]
+    x = Vt.T@(reciprocal*(U.T@y))
+    print("噪声/阈值/截断解/解误差/残差:", delta, tau, x, np.linalg.norm(x-x_true), np.linalg.norm(y-A@x))`}]} />
+
+## 分解怎样选择
+
+先看矩阵与问题的条件，再选求解路径。下面是各自承担的任务，不是“越靠后越高级”的排名。
+
+| 结构或问题 | 本课的入口 | 必须检查什么 |
+|---|---|---|
+| 一般可逆方阵的线性方程 | 带主元选择的LU | 行交换约定、主元与奇异性 |
+| 列满秩的过定最小二乘 | QR | 列独立；简约Q并非方阵 |
+| 实对称正定线性方程 | Cholesky | 对称与严格正定，不能只看元素正负 |
+| 矩形、秩亏、弱方向分析 | SVD与伪逆 | 数值阈值、分解维数、最小范数的含义 |
+| 含噪弱方向，愿意舍弃信息 | 截断SVD | 阈值依据、丢失信号的偏差与残差 |
+
+在控制里，这些工具会出现在参数拟合、状态估计、多个执行器之间的分配和二次优化中。同样的矩阵运算能回答不同任务的问题，但本课教学例没有证明某台设备的可控性、安全性或实际噪声水平。大型与稀疏矩阵还需专门算法，本课不让小例替代工程实现。
+
+## 小结
+
+LU把消元存成三角因子；QR先建立正交坐标，再把残差分开；Cholesky利用对称正定；SVD把输入方向、倍率和输出方向分开。伪逆在恢复不了全部信息时给出明确的最小范数选择，截断则需要承担主动舍弃信息的代价。
+
+你现在应当能先回答“这个问题要解什么、矩阵具有什么条件”，再读分解公式。下节[多元微积分](/math/multivariable-calculus)将讨论多个变量怎样共同影响变化；本课的最小二乘解释并不依赖那节尚未交付的内容。
+
+## 习题
+
+1. 用正文的 $L,U$ 求 $Mx=(3,7)^T$，写出中间量。对正文的 $N$，写出先交换行后的上三角矩阵，并说明为什么不能把首项零直接当作“无解”。
+2. 将 $b=(3,1)^T$ 投影到 $q=(1,1)^T/\sqrt2$ 的直线上，求投影系数、投影、剩余，并核对垂直。正文三行两列 $Q$ 是否满足 $QQ^T=I_3$？为什么？
+3. 对正文的 $A,b$，核验 $x_*=(2/3,5/3)^T$ 的残差、残差平方和及 $A^Tr_*$。用正交分解说明它为什么是唯一最优解，不必求导。
+4. 对 $G=\begin{bmatrix}4&2\\2&3\end{bmatrix}$，按元素比较求正对角的下三角Cholesky因子。再说明 $\begin{bmatrix}1&1\\1&1\end{bmatrix}$ 为什么不满足同样的前提。
+5. 对 $B=\operatorname{diag}(2,0)$、$b=(4,3)^T$，求奇异值、伪逆、全部最小二乘解和伪逆所选解。残差能为零吗？
+6. 对 $A_s=\operatorname{diag}(1,0.1)$，真实输入仍为 $(1,1)^T$，第二路噪声改为 $-0.02$。求精确伪逆解、解误差长度、两种条件数；阈值取 $0.1$ 时截断解和残差长度是多少？无噪声时采用同一阈值又会怎样？
+
+## 答案
+
+1. 先解 $Lw=(3,7)^T$，得 $w_1=3,w_2=7-2\cdot3=1$；再解 $Ux=w$，得 $x_2=1,x_1=(3-1)/2=1$。所以 $x=(1,1)^T$。交换 $N$ 两行得到 $\begin{bmatrix}1&1\\0&1\end{bmatrix}$，原矩阵行列式为 $-1$，可逆；零只表示当前消元顺序不能直接使用这个主元。
+2. 系数 $q^Tb=4/\sqrt2=2\sqrt2$，投影为 $(2,2)^T$，剩余为 $(1,-1)^T$，与 $q$ 的内积为零。正文 $QQ^T$ 为 $\frac13\begin{bmatrix}2&1&-1\\1&2&1\\-1&1&2\end{bmatrix}$，不是 $I_3$；它投影到一个二维列空间，不保留与该空间垂直的方向。
+3. $Ax_*=(2/3,7/3,5/3)^T$，残差为 $(1/3,-1/3,1/3)^T$，平方和 $1/3$，$A^Tr_*=(0,0)^T$。对任意其它 $x$，残差平方和等于 $1/3+\|A(x_*-x)\|_2^2$。两列独立，所以后一项只有 $x=x_*$ 时为零。
+4. 由 $c_{11}^2=4$ 得 $c_{11}=2$；由 $c_{11}c_{21}=2$ 得 $c_{21}=1$；再由 $c_{21}^2+c_{22}^2=3$ 得 $c_{22}=\sqrt2$。所以 $C=\begin{bmatrix}2&0\\1&\sqrt2\end{bmatrix}$。后一个矩阵在非零方向 $(1,-1)^T$ 上二次型为零，只是半正定，不能要求标准正对角Cholesky成功。
+5. 奇异值为 $2,0$，$B^+=\operatorname{diag}(1/2,0)$。所有最小二乘解为 $(2,t)^T$，其中 $t$ 为任意实数；预测恒为 $(4,0)^T$，残差 $(0,3)^T$，平方和 $9$。解平方长度 $4+t^2$ 在 $t=0$ 最小，故伪逆选 $(2,0)^T$。第二路输出不可达，残差不能为零。
+6. 测量为 $(1,0.08)^T$，精确伪逆解 $(1,0.8)^T$，解误差长度 $0.2$；$\kappa_2(A_s)=10$，$\kappa_2(A_s^TA_s)=100$。本课规则只保留严格大于阈值的奇异值，因此 $0.1$ 被舍弃，截断解为 $(1,0)^T$，残差长度 $0.08$，相对真实输入的误差长度 $1$。无噪声时残差长度为 $0.1$，解误差长度仍为 $1$；它没有因为测量准确就自动恢复被舍弃的信息。
+
+<JupyterNotebook title="复核六题步骤答案" setupCode={`import sympy as sp`} cells={[{code:`L, U = sp.Matrix([[1,0],[2,1]]), sp.Matrix([[2,1],[0,1]])
+w = L.lower_triangular_solve(sp.Matrix([3,7]))
+print("题1中间量/解:", list(w), list(U.upper_triangular_solve(w)))
+q, b = sp.Matrix([1,1])/sp.sqrt(2), sp.Matrix([3,1])
+print("题2系数/投影/剩余:", q.dot(b), list(q*q.dot(b)), list(b-q*q.dot(b)))
+A, y = sp.Matrix([[1,0],[1,1],[0,1]]), sp.Matrix([1,2,2])
+Q, R = A.QRdecomposition()
+r = y-A*sp.Matrix([sp.Rational(2,3),sp.Rational(5,3)])
+print("题2 QQt:", (Q*Q.T).tolist())
+print("题3残差/平方/正交:", list(r), r.dot(r), list(A.T*r))
+G = sp.Matrix([[4,2],[2,3]])
+print("题4因子:", G.cholesky().tolist())
+B, y = sp.diag(2,0), sp.Matrix([4,3])
+t = sp.symbols('t', real=True)
+x = sp.Matrix([2,t])
+print("题5奇异值/伪逆/选解:", B.singular_values(), B.pinv().tolist(), list(B.pinv()*y))
+print("题5残差/平方/解平方:", list(y-B*x), (y-B*x).dot(y-B*x), x.dot(x))
+S, real_x = sp.diag(1,sp.Rational(1,10)), sp.ones(2,1)
+y = S*real_x+sp.Matrix([0,-sp.Rational(2,100)])
+exact, truncated = S.inv()*y, sp.Matrix([1,0])
+print("题6测量/精确解/误差:", list(y), list(exact), (exact-real_x).norm())
+print("题6条件数:", S.condition_number(), (S.T*S).condition_number())
+print("题6截断残差/解误差/无噪残差:", (y-S*truncated).norm(), (truncated-real_x).norm(), (S*real_x-S*truncated).norm())`}]} />

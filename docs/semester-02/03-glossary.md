@@ -145,6 +145,104 @@
 | 阶跃响应 | step response | — | 1 门 / 1 次 | **补登记** → §4-15 |
 | 最小方差控制 | Minimum Variance Control | — | 1 门 / 1 次 | **补登记**。缩写 MVC，**不要**写 MV（MV = 操纵变量）→ §4-20 |
 
+| 傅里叶级数 | Fourier series | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 傅里叶变换 | Fourier transform | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 基频 | fundamental frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 谐波 | harmonic | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 角频率 | angular frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 均方值 | mean square | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 均方根 | root mean square、RMS | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| Parseval等式 | Parseval identity | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 频谱泄漏 | spectral leakage | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 奈奎斯特频率 | Nyquist frequency | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| Gibbs现象 | Gibbs phenomenon | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+| 快速傅里叶变换 | fast Fourier transform、FFT | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
+
+| Z变换 | Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单位脉冲序列 | unit impulse sequence | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单位阶跃序列 | unit step sequence | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 双边Z变换 | bilateral Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单边Z变换 | unilateral Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 零状态响应 | zero-state response | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 绝对可和 | absolutely summable | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+
+| 样本空间 | sample space | — | MATH-11 | 本课定义，按概率语境使用 |
+| 事件 | event | — | MATH-11 | 本课定义，按概率语境使用 |
+| 条件概率 | conditional probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 全概率公式 | law of total probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 贝叶斯公式 | Bayes formula | — | MATH-11 | 本课定义，按概率语境使用 |
+| 独立 | independence | — | MATH-11 | 本课定义，按概率语境使用 |
+| 互斥 | mutually exclusive | — | MATH-11 | 本课定义，按概率语境使用 |
+| 随机变量 | random variable | — | MATH-11 | 本课定义，按概率语境使用 |
+| 概率质量函数 | probability mass function、PMF | — | MATH-11 | 本课定义，按概率语境使用 |
+| 累积分布函数 | cumulative distribution function、CDF | — | MATH-11 | 本课定义，按概率语境使用 |
+| 概率密度 | probability density | — | MATH-11 | 本课定义，按概率语境使用 |
+| 期望 | expectation | — | MATH-11 | 本课定义，按概率语境使用 |
+| 方差 | variance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 标准差 | standard deviation | — | MATH-11 | 本课定义，按概率语境使用 |
+| 协方差 | covariance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 相关系数 | correlation coefficient | — | MATH-11 | 本课定义，按概率语境使用 |
+| 先验概率 | prior probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 后验概率 | posterior probability | — | MATH-11 | 本课定义，按概率语境使用 |
+| 伯努利分布 | Bernoulli distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 二项分布 | binomial distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 正态分布 | normal distribution | — | MATH-11 | 本课定义，按概率语境使用 |
+| 样本方差 | sample variance | — | MATH-11 | 本课定义，按概率语境使用 |
+| 无偏 | unbiasedness | — | MATH-11 | 本课定义，按概率语境使用 |
+| 独立同分布 | independent and identically distributed、iid | — | MATH-11 | 本课定义，按概率语境使用 |
+| 大数定律 | law of large numbers | — | MATH-11 | 本课定义，按概率语境使用 |
+| Chebyshev不等式 | Chebyshev inequality | — | MATH-11 | 本课定义，按概率语境使用 |
+
+| 凸集 | convex set | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 凸组合 | convex combination | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 凸函数 | convex function | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 严格凸 | strict convexity | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 可行集 | feasible set | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 全局最优 | global optimum | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 欧氏投影 | Euclidean projection | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 弱对偶 | weak duality | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 强对偶 | strong duality | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 互补松弛 | complementary slackness | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 约束资格 | constraint qualification | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 投影梯度 | projected gradient | — | MATH-13 | 本课局部定义，先核条件与单位 |
+| 泛函 | functional | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 一阶变分 | first variation | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 欧拉拉格朗日方程 | Euler–Lagrange equation | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 自然边界条件 | natural boundary condition | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 值函数 | value function | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 最优性原理 | principle of optimality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 协态 | costate | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 维数灾难 | curse of dimensionality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 光滑流形 | smooth manifold | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 坐标图 | coordinate chart | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 切向量 | tangent vector | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 切空间 | tangent space | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 微分同胚 | diffeomorphism | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 推前 | pushforward | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 向量场 | vector field | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 李导数 | Lie derivative | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 李括号 | Lie bracket | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 对合 | involutive | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 局部可积 | locally integrable | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 随机过程 | stochastic process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 样本轨迹 | sample path | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 高斯过程 | Gaussian process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 自相关 | autocorrelation | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 自协方差 | autocovariance | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 严格平稳 | strict stationarity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 宽平稳 | wide-sense stationarity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 均值均方遍历 | mean-square mean ergodicity | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 白噪声 | white noise | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 一阶自回归模型 | first-order autoregressive model、AR(1) | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 功率谱密度 | power spectral density、PSD | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 马尔可夫性质 | Markov property | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 马尔可夫链 | Markov chain | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 转移矩阵 | transition matrix | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 平稳分布 | stationary distribution | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 布朗运动 | Brownian motion | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 独立增量 | independent increments | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 离散Lyapunov方程 | discrete Lyapunov equation | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+
 ### §2.2 无冲突的条目（按英文键字母序）
 
 | 中文标准译名 | 英文 | 别名（课程中出现过的其他译法） | 出现课程 | 建议 |
@@ -417,6 +515,87 @@
 | 复平面 | complex plane | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
 | 共轭复数 | complex conjugate | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
 | 欧拉公式 | Euler formula | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 特征值 | eigenvalue | — | MATH-04新增定义 | 对应非零特征向量的倍率 |
+| 特征向量 | eigenvector | — | MATH-04新增定义 | 不含零向量 |
+| 特征空间 | eigenspace | — | MATH-04新增定义 | 包含零向量的齐次解空间 |
+| 对角化 | diagonalization | — | MATH-04新增定义 | 写清所选数域 |
+| 代数重数 | algebraic multiplicity | — | MATH-04新增定义 | 特征多项式根的重复次数 |
+| 几何重数 | geometric multiplicity | — | MATH-04新增定义 | 特征空间维数 |
+| 模态 | mode | — | MATH-04新增定义 | 本课指独立特征方向的演化项，不与滑动模态混用 |
+| 正交投影 | orthogonal projection | — | MATH-05定义 | 剩余与投影空间正交 |
+| 正交矩阵 | orthogonal matrix | — | MATH-05定义 | 实方阵；矩形的列正交不等于方阵正交 |
+| LU分解 | LU decomposition | — | MATH-05定义 | 写清置换约定 |
+| 置换矩阵 | permutation matrix | — | MATH-05定义 | 记录行交换 |
+| QR分解 | QR decomposition | — | MATH-05定义 | 区分简约与完整形式 |
+| Gram–Schmidt正交化 | Gram-Schmidt orthogonalization | — | MATH-05定义 | 减投影再归一化 |
+| 残差 | residual | — | MATH-05定义 | 本课r=b−Ax |
+| 最小二乘 | least squares | — | MATH-05定义 | 本课同权残差平方和 |
+| 正规方程 | normal equations | — | MATH-05定义 | 推导条件不等于默认求解建议 |
+| 对称正定矩阵 | symmetric positive definite matrix | — | MATH-05定义 | 非零向量二次型严格正 |
+| 正半定 | positive semidefinite | 半正定 | MATH-05定义 | 允许非零向量二次型为零 |
+| Cholesky分解 | Cholesky decomposition | — | MATH-05定义 | 本课要求实对称正定 |
+| 奇异值分解 | singular value decomposition、SVD | — | MATH-05定义 | 任意实矩阵，含矩形与秩亏 |
+| 奇异值 | singular value | — | MATH-05定义 | 非负，不与特征值混同 |
+| Moore–Penrose伪逆 | Moore-Penrose pseudoinverse | 伪逆 | MATH-05定义 | 最小范数最小二乘选择 |
+| 最小范数最小二乘解 | minimum-norm least-squares solution | — | MATH-05定义 | 在最优残差解中再选最小范数 |
+| 二范数条件数 | 2-norm condition number | — | MATH-05定义 | 本课满列秩时σmax/σmin |
+| 截断SVD | truncated SVD | — | MATH-05定义 | 本课严格σ>τ才保留 |
+| 等高线 | contour line | — | MATH-06定义 | 高度相同的点形成的曲线 |
+| 偏导数 | partial derivative | — | MATH-06定义 | 固定其它坐标，不是置零 |
+| 可微性 | differentiability | — | MATH-06定义 | 统一线性近似及相对位移余项 |
+| 全微分 | total differential | — | MATH-06定义 | 一阶线性部分，不等于有限真实变化 |
+| 梯度 | gradient | — | MATH-06定义 | 本课按列向量约定 |
+| 方向导数 | directional derivative | — | MATH-06定义 | 本课按单位方向、可微前提使用梯度公式 |
+| 雅可比矩阵 | Jacobian matrix、Jacobian | — | MATH-06定义 | 行对应输出，列对应输入 |
+| Hessian矩阵 | Hessian matrix、Hessian | 海森矩阵 | MATH-06定义 | 本课记H_h，不与其它H混用 |
+| 混合偏导 | mixed partial derivative | — | MATH-06定义 | 交换顺序需条件 |
+| 驻点 | stationary point | — | MATH-06定义 | 梯度为零，不保证极值 |
+| 鞍点 | saddle point | — | MATH-06定义 | 相邻方向有升有降 |
+| 二重积分 | double integral | — | MATH-06定义 | 高度或密度乘小面积再求和 |
+| 微分方程 | differential equation | — | MATH-07定义 | 未知函数与导数的关系 |
+| 常微分方程 | ordinary differential equation、ODE | — | MATH-07定义 | 单一自变量，未知函数可多个 |
+| 初值问题 | initial value problem、IVP | — | MATH-07定义 | 方程与指定时刻的函数值 |
+| 积分因子 | integrating factor | — | MATH-07定义 | 乘积求导转换，本课标量e^{at} |
+| 矩阵指数 | matrix exponential | — | MATH-07定义 | 按矩阵乘幂的无穷级数，非逐元素 |
+| 幂零矩阵 | nilpotent matrix | — | MATH-07定义 | 某次正整数幂为零 |
+| 常数变易公式 | variation of constants formula | — | MATH-07定义 | 初值传播加输入积分 |
+| 局部Lipschitz | locally Lipschitz | — | MATH-07定义 | 邻域内变化率差由状态差线性控制 |
+| 齐次线性方程 | homogeneous linear equation | — | MATH-07定义 | 无外部输入项 |
+| 非齐次线性方程 | inhomogeneous linear equation | — | MATH-07定义 | 带给定外部输入项 |
+| 单边拉普拉斯变换 | unilateral Laplace transform、Laplace transform | 拉普拉斯变换 | MATH-08定义 | 从非负时间的加权积分定义 |
+| 逆拉普拉斯变换 | inverse Laplace transform | — | MATH-08定义 | 本课由表和部分分式还原 |
+| 收敛域 | region of convergence、ROC | — | MATH-08定义 | 本课采用绝对收敛范围 |
+| 指数阶 | exponential order | — | MATH-08定义 | 最终由有限常数乘指数控制 |
+| 分段连续 | piecewise continuous | — | MATH-08定义 | 有限段内连续且接缝单侧极限有限 |
+| 线性性质 | linearity | — | MATH-08定义 | 共同收敛域内拆分加权积分 |
+| 指数移位 | exponential shift | — | MATH-08定义 | 乘e^{-at}对应F(s+a)，非时间延迟 |
+| 部分分式分解 | partial fraction decomposition | — | MATH-08定义 | 重根保留各阶分母项 |
+| 时间延迟性质 | time-delay property | — | MATH-08定义 | 延迟前为零，变换乘e^{-τs} |
+| 卷积 | convolution | — | MATH-08定义 | 本课单边积分0到t |
+| 卷积定理 | convolution theorem | — | MATH-08定义 | 绝对收敛交换积分前提 |
+| 传递函数 | transfer function | — | MATH-08定义 | 零初值输入输出映射 |
+| 极点 | pole | — | MATH-08定义 | 有理式约分后分母的零点 |
+| 初值定理 | initial-value theorem | — | MATH-08定义 | 右极限有限的普通函数，沿正实轴s趋无穷 |
+| 终值定理 | final-value theorem | — | MATH-08定义 | 先查sF极点充分条件，不只算形式极限 |
+| 关联矩阵 | incidence matrix | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 代数连通度 | algebraic connectivity | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 生成树 | spanning tree | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 权平衡 | weight balance | — | MATH-16 | 固定非负权图，接收行约定及有向/无向条件见本课 |
+| 最佳响应 | best response | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 纳什均衡 | Nash equilibrium | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 混合策略 | mixed strategy | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 精确势博弈 | exact potential game | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 帕累托改进 | Pareto improvement | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 极小极大 | minimax | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 舍入误差 | roundoff error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 截断误差 | truncation error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 前向误差 | forward error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 后向误差 | backward error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 稳定域 | stability region | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 刚性 | stiffness | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| A稳定 | A-stability | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 复合梯形法 | composite trapezoidal rule | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 经典四阶Runge–Kutta | classical fourth-order Runge–Kutta | RK4 | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

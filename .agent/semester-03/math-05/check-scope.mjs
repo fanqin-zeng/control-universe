@@ -1,0 +1,15 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const old=file=>JSON.parse(execFileSync('git',['show','6e2396f:'+file],{encoding:'utf8',maxBuffer:16*1024*1024}));
+const report=JSON.parse(readFileSync('docs/deployment/python-expansion-local.json','utf8'));
+const policy=JSON.parse(readFileSync('lib/python-support.json','utf8'));
+const previous=old('docs/deployment/python-expansion-local.json');
+for(const l of previous.lessons)assert.deepEqual(report.lessons.find(r=>r.key===l.key),l,l.key);
+for(const [k,v]of Object.entries(old('lib/python-support.json').lessons))assert.deepEqual(policy.lessons[k],v,k);
+assert.deepEqual(JSON.parse(readFileSync('docs/deployment/python-expansion-pending.json','utf8')),old('docs/deployment/python-expansion-pending.json'));
+const changed=execFileSync('git',['diff','--name-only','6e2396f','--','content'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+assert(changed.every(p=>['content/catalog.ts','content/math/matrix-decomposition.mdx'].includes(p)));
+const result={pass:true,previousLessonsUnchanged:previous.lessons.length,previousPendingUnchanged:30,newLesson:'math/matrix-decomposition',newNotebooks:6,otherTrackedCourseBodiesUnchanged:true};
+writeFileSync('.agent/semester-03/math-05/scope-check.json',JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify(result));
