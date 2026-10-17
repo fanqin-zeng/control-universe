@@ -36,5 +36,11 @@ python scripts/jupyter_server.py
 
 ## 分支模型
 
-`master`（唯一长期分支，`npm run check` 绿）+ 按工作包的短命分支 `wp/<阶段>-<内容>`，
+`master`（开发主干，`npm run check` 绿）+ 按工作包的短命分支 `wp/<阶段>-<内容>`，
 `--no-ff` 合并、即合即删。详见 `AGENTS.md` §12。
+
+## GitHub Pages
+
+静态构建：`npm run build:pages`；本地预览：`npm run preview:pages` → http://localhost:8081/control-universe/ 。课程与ECharts可在线使用；Python代码展示但需本地Jupyter服务执行。
+
+`gh-pages`为额外长期源码发布分支，由Actions导出部署。**每次用户明确同意版本后，才把更新反合并推送到gh-pages**；master推送不自动上线。首次部署配置与验收见[发布约定](docs/deployment/github-pages.md)。当前适配已准备，远端首次发布仍待用户同意。

@@ -475,3 +475,5 @@ S04结构验收完成：W01–W05已按实际条件关闭，21章205课、56正�
 MATH-01微积分入门已完成新写Phase 1–4和实际验收，详见[本课验收](semester-03/math-01/acceptance.md)与全局checklist；目标范围/来源/顺序不变，本对话不生产MATH-02。check的35门日志债务成员不变，新增有日志正文令占比63%→61%，两项WARN复审见[逐课快照](semester-03/math-01/warnings.json)，不覆盖I03/S04历史快照。
 
 MATH-02复数基础已按重构技能完成Phase1–4与实际验收，来源保留/纠错矩阵和证据见[本次验收](semester-03/math-02/acceptance.md)。同次按批阅及追加授权修订MATH-01开篇，补运动演示、无穷级数与泰勒桥；目录分别13/8个H2，不改本期课程范围与顺序。MATH-02先修明确为已交付的微积分入门，用户开工前正文删除保持。WARN日志债务仅复数基础关闭，35→34门，其余逐字保留；不改历史快照，不生产MATH-03。
+
+2026-10-17用户要求增加GitHub Pages发布：DEP01准备静态导出与gh-pages源码发布分支，DEP02首次上线需单独确认版本。master更新不自动上线，每次用户明确同意后才反合gh-pages并推送；课程范围和Phase1–4门槛不变，静态版不承担Python内核运行。细则见docs/deployment/github-pages.md和全局checklist。

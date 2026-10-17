@@ -211,7 +211,7 @@ master  ──●──────────●──────────
 
 | 规则 | 内容 |
 |------|------|
-| `master` | 唯一长期分支。合入门槛：`npm run check` 退出码 0（FAIL=0，WARN 需已在 plan/tracker 登记为已知项）；涉及页面改动另跑 `npm run verify <chapter>/<lesson>` |
+| `master` | 日常开发主干；另有用户指定的gh-pages长期源码发布分支（2026-10-17例外）。合入门槛：`npm run check` 退出码 0（FAIL=0，WARN 需已在 plan/tracker 登记为已知项）；涉及页面改动另跑 `npm run verify <chapter>/<lesson>` |
 | 工作包分支 | 从 `master` 切出，命名 `wp/<阶段>-<内容>`，如 `wp/a6-modern-reorder`、`wp/d1-math-chapter`、`wp/c1-classic-v13`。**以工作包命名，禁止以工具/日期命名**（教训：`qoder/context/0921` 这种分支让工作在工具专属分支上滞留数周无人认领） |
 | 分支寿命 | 一个工作包一条分支，做完即合即删；跨天继续也沿用同一条分支，不另开 |
 
@@ -236,3 +236,7 @@ git add -A && git commit                                    # 台账同 commit
 git checkout master && git merge --no-ff wp/<阶段>-<内容>   # 合入
 git branch -d wp/<阶段>-<内容>                               # 即合即删
 ```
+
+### 12.4 GitHub Pages发布闸门（2026-10-17用户要求）
+
+gh-pages是额外长期源码发布分支，GitHub Actions只发布该分支。工作包正常验收合入master；**每次必须先取得用户对具体版本的明确同意，才把更新反合到gh-pages并推送**，首次发布也一样。禁止master自动部署或后台同步发布分支。操作与能力限制见docs/deployment/github-pages.md；没有远端Actions成功与公网实测，不得宣称已上线。

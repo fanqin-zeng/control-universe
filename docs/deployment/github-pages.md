@@ -1,0 +1,50 @@
+# GitHub Pages 发布约定
+
+2026-10-17。预期公网地址：https://fanqing-zeng.github.io/control-universe/ 。这是目标地址，尚未上线。
+
+## 分支与同意
+
+- master：课程和基础设施的日常主干。推送master不部署。
+- gh-pages：额外的长期**源码**发布分支，由GitHub Actions构建out/并上传Pages artifact；不把整份源码当静态文件发布。
+- wp/*：按工作包开发，验收合入master。每次用户明确同意具体版本后，才允许把该版本反合到gh-pages，并推送gh-pages。
+- 不自动合并、不按时间同步、不强推覆盖发布分支。用户没有同意时，连首次发布也停在具体可审阅版本。
+
+本次已在本地建立gh-pages，起点98bf9d3。它暂不包含本工作包；工作完成与master合入不代表已授权发布。首次发布和以后每次更新都需用户同意。
+
+## 静态站能力
+
+正文、KaTeX、导航、旧地址和React/ECharts实验支持静态站。Python/Jupyter运行需要服务端，Pages不能托管；在线版显示原始setup与cell代码及明确提示，既不声称执行成功，也不请求读者的127.0.0.1:8891。本地npm run dev保持真实内核运行模式。课程数值验收仍使用本地严格内核，静态发布不代替课程质量门槛。
+
+## 本地验收
+
+1. 停止运行中的Next开发/生产服务，避免与build共享.next。
+2. npm run check
+3. node --test scripts/pages.test.mjs scripts/lesson-route.test.mjs
+4. npm run build:pages（含全部目录HTML、内部资源/根路径和旧入口验收）
+5. npm run preview:pages，浏览 http://localhost:8081/control-universe/ ；这不是Next服务器，也没有Python执行代理。
+6. 本地开发回归时使用npm run build与npm run verify -- math/calculus-basics math/complex-numbers，最终恢复npm run dev。
+
+静态导出的out/仅包含可公开的站点资源，源码中的.agent、proofreading、Python运行时不被上传。out/release.json记录构建所用源码提交、basePath和时间；不记录任何凭据。build日志中的sourceCommit只表示构建时HEAD，未提交改动的本地试构建不代表已发布版本。
+
+## 用户同意后的首次发布
+
+确认用户同意的master提交及工作区后，执行：
+
+```powershell
+git checkout gh-pages
+git merge --no-ff <用户同意的master提交> -m "release: approved wiki update"
+git push -u origin gh-pages
+git checkout master
+```
+
+在仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**（不是Deploy from a branch）。工作流位于.github/workflows/pages.yml，push触发只列gh-pages；手工dispatch也仅允许gh-pages。github-pages环境的Deployment branches应仅允许gh-pages；如账户支持环境Required reviewers，可再配置用户作为复核人。这里只写部署配置，不更改仓库公开性或额外授予第三方访问。
+
+首次需要确认GitHub Actions启用、Pages已选GitHub Actions；本机未发现gh CLI，不能假称远端配置已完成。用户同意后可用已登录浏览器配置，若需要登录则由用户完成。失败时先修工作包再申请发布新版本，不绕开同意流程。
+
+发布成功后检查Actions对应SHA/部署URL，再实测公网首页、数学两课、旧URL/锚点、CSS/字体与交互；不能以本地build通过宣称公网已上线。以后版本回滚也只在用户同意后合入/revert发布分支并推送。
+
+依据：
+- https://nextjs.org/docs/14/app/building-your-application/deploying/static-exports
+- https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+
+实际输出与截图见同目录验收文件；当前尚未执行远端发布。

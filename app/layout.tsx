@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { withBasePath } from "@/lib/deployment";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,7 +30,7 @@ export default function RootLayout({
     <html lang="zh-CN" className={cn("font-sans", geistSans.variable)}>
       <head>
         {/* eslint-disable-next-line @next/next/no-css-tags */}
-        <link rel="stylesheet" href="/katex/katex.min.css" />
+        <link rel="stylesheet" href={withBasePath("/katex/katex.min.css")} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}

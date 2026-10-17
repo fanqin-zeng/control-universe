@@ -13,6 +13,9 @@ import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
  * 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
  */
 import type { MDXComponents } from "mdx/types";
+import type { ComponentProps } from "react";
+import { createElement } from "react";
+import { withBasePath } from "@/lib/deployment";
 import { CalculusExplorer } from "@/components/wiki/calculus-explorer";
 import { Callout } from "@/components/wiki/callout";
 import { JupyterNotebook } from "@/components/wiki/jupyter-notebook";
@@ -65,6 +68,8 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  a: ({ href = "", ...props }: ComponentProps<"a">) => createElement("a", { ...props, href: withBasePath(href) }),
+  img: ({ src = "", ...props }: ComponentProps<"img">) => createElement("img", { ...props, src: withBasePath(src) }),
   MotionIntroExplorer,
   CalculusExplorer,
   Callout,

@@ -9,6 +9,7 @@ import { headingRemarkPlugins, headingRehypePlugins } from "./mdx-headings.mjs";
 // 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
 import { wikiComponents } from "@/lib/wiki-components";
 import { logger } from "@/lib/logger";
+import { rehypeBasePath } from "./mdx-base-path.mjs";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -59,7 +60,7 @@ async function compileLessonSource(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           remarkPlugins: headingRemarkPlugins as any,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rehypePlugins: [...headingRehypePlugins(lessonKey), [rehypePrettyCode, { theme: "github-light" }]] as any,
+          rehypePlugins: [...headingRehypePlugins(lessonKey), [rehypePrettyCode, { theme: "github-light" }], [rehypeBasePath, {basePath: process.env.NEXT_PUBLIC_BASE_PATH || ""}]] as any,
         },
       },
       components: {
