@@ -31,4 +31,6 @@ WARN复审见warnings.json：原35门无日志旧课中仅math/complex-numbers�
 
 ## 合入
 
-完成验收后--no-ff合入master，得到真实合并hash后再勾MATH-02合并列；当前不预填未来hash。不push，不继续MATH-03。
+课程与批阅修订提交72f8787；已--no-ff合入master，真实课程合并提交0af1920a5f103b4c2340c73f107480fe5f158bc5。确认后才勾MATH-02合并列；回执沿用同一工作包分支提交后再合回master。不push，不继续MATH-03。
+
+浏览器额外实际点击“核对六题答案”的全部运行按钮，完成标记In[✓]及六题输出留在browser-answers.txt；不是只检查按钮存在。
