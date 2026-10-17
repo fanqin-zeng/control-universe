@@ -1,0 +1,276 @@
+
+> control-universe@0.1.0 verify
+> node scripts/verify-lesson.mjs modern/lyapunov-modern modern/state-observer modern/lqr-controller modern/modern-case-study nonlinear/adaptive-control-basics mpc/prediction-model mpc/receding-horizon mpc/mpc-case-study estimation/kalman-filter multi-agent/distributed-mpc --quiet
+
+verify-lesson.mjs · 根目录：D:/Workspace/control-universe
+待验课程 10 门 · 交互组件 47 个 · 讨论日志 21 门 · dev server 127.0.0.1:8080
+口径：第 2 项量的是 MDX 源码 H2，渲染后的 H2 数由第 6 项在 HTML 上复核（fix-012 曾出现源码 12 个、DOM 只 2 个）。
+      第 8 项按 E1 推荐 Prompt 只查讨论日志「是否存在」；B4 的 16 条日志结构口径未纳入，登记为 E1 缺口。
+
+──────────────────────────────────────────────────────────────────────────────
+modern/lyapunov-modern  (status=v1.3, level=undergrad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      8 个 JSX 标签无属性间逗号 · $$ 共 36 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      PASS
+      H2 9 个与 catalog subsections 逐条 slug 相等
+  3 Notebook cell 完整性            PASS
+      3 个 setupCode + 8 个 cell：无 ipywidgets、首行无 magic、无占位符残留
+  4 组件注册                        PASS
+      2 个自定义组件（Callout, JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=9/9 · katex-error=0
+  7 交叉引用完整性                  WARN
+      3 条链接指向 status=empty 的骨架课（/math/linear-algebra-basics, /math/eigen-decomposition, /math/ode-matrix-exponential）→ 渲染占位页而非正文
+      「📐 本文用到了」引用行 1 条（另有其它 📐 行 0 条），其链接已由本项一并核对
+      站内课程链接 9 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      PASS
+      存在讨论日志：docs/discuss-log/semester-02/03-modern/03-lyapunov-modern.md
+  9 习题 / 答案配对                 PASS
+      习题 10 条，答案覆盖编号 1,2,3,4,5,6,7,8,9,10 ⊇ 习题编号
+  小计                              PASS 8 · WARN 1 · FAIL 0 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+modern/state-observer  (status=v1.3, level=undergrad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    WARN
+      开 $$ 行带内容 1 处：行 148 → 实测可正常渲染，但它是上面那类硬违规的前置形态，建议把公式挪到下一行
+      8 个 JSX 标签无属性间逗号 · $$ 共 46 个且配平
+  2 结构一致性                      WARN
+      1 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）
+        第 4 条「基于观测器的控制器——分离性原理」应为「基于观测器的控制器分离性原理」
+  3 Notebook cell 完整性            PASS
+      2 个 setupCode + 2 个 cell：无 ipywidgets、首行无 magic、无占位符残留
+  4 组件注册                        PASS
+      3 个自定义组件（Callout, JupyterNotebook, ObserverSpeedExplorer）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      ObserverSpeedExplorer：components/wiki/observer-speed-explorer.tsx → useECharts ✓ animation:false ✓ 轴固定 ✓ useMemo ✓
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=9/9 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 4 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      PASS
+      存在讨论日志：docs/discuss-log/semester-02/03-modern/04-state-observer.md
+  9 习题 / 答案配对                 PASS
+      习题 10 条，答案覆盖编号 1,2,3,4,5,6,7,8,9,10 ⊇ 习题编号
+  小计                              PASS 7 · WARN 2 · FAIL 0 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+modern/lqr-controller  (status=v1.3, level=grad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      9 个 JSX 标签无属性间逗号 · $$ 共 58 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      PASS
+      H2 10 个与 catalog subsections 逐条 slug 相等
+  3 Notebook cell 完整性            PASS
+      1 个 setupCode + 4 个 cell：无 ipywidgets、首行无 magic、无占位符残留
+  4 组件注册                        PASS
+      3 个自定义组件（Callout, JupyterNotebook, LqrExplorer）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      LqrExplorer：components/wiki/lqr-explorer.tsx → useECharts ✓ animation:false ✓ 轴固定 ✓ useMemo ✓
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=10/10 · katex-error=0
+  7 交叉引用完整性                  WARN
+      2 条链接指向 status=empty 的骨架课（/math/linear-algebra-basics, /math/ode-matrix-exponential）→ 渲染占位页而非正文
+      「📐 本文用到了」引用行 1 条（另有其它 📐 行 0 条），其链接已由本项一并核对
+      站内课程链接 7 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      PASS
+      存在讨论日志：docs/discuss-log/semester-02/03-modern/06-lqr-controller.md
+  9 习题 / 答案配对                 PASS
+      习题 10 条，答案覆盖编号 1,2,3,4,5,6,7,8,9,10 ⊇ 习题编号
+  小计                              PASS 8 · WARN 1 · FAIL 0 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+modern/modern-case-study  (status=draft, level=grad, type=case)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      5 个 JSX 标签无属性间逗号 · $$ 共 152 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      PASS
+      H2 12 个与 catalog subsections 逐条 slug 相等
+  3 Notebook cell 完整性            FAIL
+      [存量债务] notebook 代码里出现 ipywidgets 家族 5 处（ipywidgets×1, FloatSlider×3, interact(×1）→ 轻量内核不支持 widget，应改 React 交互组件（C1 重构目标，A6 已登记存量债务）
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=12/12 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 13 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 8 条，答案覆盖编号 1,2,3,4,5,6,7,8 ⊇ 习题编号
+  小计                              PASS 7 · WARN 1 · FAIL 1 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+mpc/prediction-model  (status=draft, level=grad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      1 个 JSX 标签无属性间逗号 · $$ 共 96 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      WARN
+      1 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）
+        第 3 条「CARIMA模型」应为「carima模型」
+  3 Notebook cell 完整性            FAIL
+      [存量债务] notebook 代码里出现 ipywidgets 家族 4 处（ipywidgets×1, FloatSlider×2, interact(×1）→ 轻量内核不支持 widget，应改 React 交互组件（C1 重构目标，A6 已登记存量债务）
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=10/10 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 6 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 5 条，答案覆盖编号 1,2,3,4,5 ⊇ 习题编号
+  小计                              PASS 6 · WARN 2 · FAIL 1 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+mpc/receding-horizon  (status=draft, level=grad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    FAIL
+      fix-012 硬违规 1 处：闭合 $$ 与内容同行 → 行 73「\end{aligned}}$$」 → micromark 不认它是闭合符，math 块永不关闭，其后全文被吞
+      开 $$ 行带内容 1 处：行 65 → 实测可正常渲染，但它是上面那类硬违规的前置形态，建议把公式挪到下一行
+  2 结构一致性                      WARN
+      4 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）
+        第 1 条「开环最优vs滚动优化」应为「开环最优-vs-滚动优化」
+        第 5 条「QP求解与实时性」应为「qp求解与实时性」
+        第 6 条「Warm-Starting策略」应为「warm-starting策略」
+        第 7 条「显式MPC」应为「显式mpc」
+  3 Notebook cell 完整性            FAIL
+      [存量债务] notebook 代码里出现 ipywidgets 家族 7 处（ipywidgets×1, IntSlider×3, FloatSlider×2, interact(×1）→ 轻量内核不支持 widget，应改 React 交互组件（C1 重构目标，A6 已登记存量债务）
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     FAIL
+      渲染后 <h2> 数 2 ≠ catalog subsections 11 → fix-012 的典型症状（源码 H2 数对，DOM 只渲染出一部分）
+      HTML 里有 2 处 katex-error → 数学公式渲染失败（rehype-katex 在编译期运行，错误直接落在 SSR HTML）
+  7 交叉引用完整性                  PASS
+      站内课程链接 3 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 5 条，答案覆盖编号 1,2,3,4,5 ⊇ 习题编号
+  小计                              PASS 4 · WARN 2 · FAIL 3 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+mpc/mpc-case-study  (status=draft, level=grad, type=case)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      1 个 JSX 标签无属性间逗号 · $$ 共 62 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      WARN
+      1 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）
+        第 4 条「MPC控制器设计」应为「mpc-控制器设计」
+  3 Notebook cell 完整性            FAIL
+      [存量债务] notebook 代码里出现 ipywidgets 家族 8 处（ipywidgets×1, FloatSlider×3, IntSlider×3, interact(×1）→ 轻量内核不支持 widget，应改 React 交互组件（C1 重构目标，A6 已登记存量债务）
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=12/12 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 14 条全部命中 catalog · 资源链接 1 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 5 条，答案覆盖编号 1,2,3,4,5 ⊇ 习题编号
+  小计                              PASS 6 · WARN 2 · FAIL 1 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+estimation/kalman-filter  (status=draft, level=grad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      3 个 JSX 标签无属性间逗号 · $$ 共 64 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      PASS
+      H2 12 个与 catalog subsections 逐条 slug 相等
+  3 Notebook cell 完整性            FAIL
+      [存量债务] notebook 代码里出现 ipywidgets 家族 2 处（ipywidgets×1, interact(×1）→ 轻量内核不支持 widget，应改 React 交互组件（C1 重构目标，A6 已登记存量债务）
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=12/12 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 2 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 10 条，答案覆盖编号 1,2,3,4,5,6,7,8,9,10 ⊇ 习题编号
+  小计                              PASS 7 · WARN 1 · FAIL 1 · SKIPPED 0
+
+──────────────────────────────────────────────────────────────────────────────
+multi-agent/distributed-mpc  (status=draft, level=grad, type=theory)
+──────────────────────────────────────────────────────────────────────────────
+  1 MDX 语法预检                    PASS
+      1 个 JSX 标签无属性间逗号 · $$ 共 26 个且配平 · 无 $$ 同行违规
+  2 结构一致性                      WARN
+      3 个 subsection slug 与 slugger 实值不符 → 侧栏死锚点（已登记为 Q5）
+        第 1 条「为什么需要分布式MPC」应为「为什么需要分布式mpc」
+        第 3 条「ADMM分解算法」应为「admm分解算法」
+        第 6 条「数值例子」应为「数值例子5车编队仿真」
+  3 Notebook cell 完整性            PASS
+      1 个 setupCode + 2 个 cell：无 ipywidgets、首行无 magic、无占位符残留
+  4 组件注册                        PASS
+      1 个自定义组件（JupyterNotebook）全部登记在单一来源 lib/wiki-components.ts
+  5 组件规范                        PASS
+      本课未引用交互组件
+  6 渲染与数学（需 dev server）     PASS
+      HTTP 200 · <h1>=1 · <h2>=13/13 · katex-error=0
+  7 交叉引用完整性                  PASS
+      站内课程链接 3 条全部命中 catalog · 资源链接 0 条全部存在
+  8 交付完整性                      WARN
+      没有讨论日志 → wiki-discussion 流程未留痕（全仓 35 门有 MDX 但无日志，0.2 节负债；不阻断签发但要列出）
+  9 习题 / 答案配对                 PASS
+      习题 5 条，答案覆盖编号 1,2,3,4,5 ⊇ 习题编号
+  小计                              PASS 7 · WARN 2 · FAIL 0 · SKIPPED 0
+
+==============================================================================
+汇总
+==============================================================================
+课程 10 门 · 检查项 90 个
+  PASS 69 · WARN 14 · FAIL 7 · SKIPPED 0
+  「📐 本文用到了」引用行合计 2 条（另有其它 📐 装饰行 1 条）
+  Q5 侧栏死锚点合计 10 处（本次所验课程范围内，第 2 项 WARN）
+  孤儿交互组件（已实现、全仓无 MDX 引用，Q3）：2 个 → BodeMarginsExplorer(components/wiki/bode-margins-explorer.tsx，且未登记进单一来源), FirstOrderComparisonExplorer(components/wiki/first-order-comparison-explorer.tsx)
+
+按项统计 FAIL：
+  1 MDX 语法预检                    FAIL 1 门 → mpc/receding-horizon
+  2 结构一致性                      0
+  3 Notebook cell 完整性            FAIL 5 门 → modern/modern-case-study, mpc/prediction-model, mpc/receding-horizon, mpc/mpc-case-study, estimation/kalman-filter
+  4 组件注册                        0
+  5 组件规范                        0
+  6 渲染与数学（需 dev server）     FAIL 1 门 → mpc/receding-horizon
+  7 交叉引用完整性                  0
+  8 交付完整性                      0
+  9 习题 / 答案配对                 0
+
+健康度分级：
+  A 级 · 全绿（0 FAIL 0 WARN，可直接进 C1 重构）：1 门
+      nonlinear/adaptive-control-basics
+  B 级 · 仅 WARN（可进 C1，WARN 需登记）：4 门
+      modern/lyapunov-modern, modern/state-observer, modern/lqr-controller, multi-agent/distributed-mpc
+  C 级 · 只有 ipywidgets 存量债务 FAIL（正是 C1 的重构目标，A6 已登记）：4 门
+      modern/modern-case-study, mpc/prediction-model, mpc/mpc-case-study, estimation/kalman-filter
+  D 级 · 有非债务 FAIL（必须先修再进 C1）：1 门
+      mpc/receding-horizon                          第1项、第6项
+
+附 · 全仓组件规范扫描（47 个 *-explorer.tsx，含未被任何课引用的孤儿）：
+  BodeMarginsExplorer（components/wiki/bode-margins-explorer.tsx）  ← 孤儿组件，无课程引用
+      yAxis[0]（行 111） 是 value 轴但缺 min 与 max → 坐标轴会随数据动态缩放
+  DescribingFunctionExplorer（components/wiki/describing-function-explorer.tsx）
+      useECharts 的实参 option 不是 useMemo 产出的 EChartsOption 对象
+  NyquistLimitCycleExplorer（components/wiki/nyquist-limit-cycle-explorer.tsx）
+      useECharts 的实参 option 不是 useMemo 产出的 EChartsOption 对象
+  （单课运行：以上违规只作提示，不计入本次退出码；跑 --all 才计入）
+
+附 · 组件注册结构（E2 起单一来源 lib/wiki-components.ts，登记 48 个组件）：
+  单一来源 ✓ 无 "use client" ✓ mdx-components.tsx 与 lib/content.ts 均导入并展开 ✓ 无内联残留 ✓
+
+判定：退出码 1（有 FAIL） · 课程项 FAIL 7
