@@ -368,7 +368,23 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "每分钟记录的温差", "slug": "每分钟记录的温差"},
+          {"title": "序列与单位脉冲", "slug": "序列与单位脉冲"},
+          {"title": "把加权积分换成求和", "slug": "把加权积分换成求和"},
+          {"title": "收敛域不能省略", "slug": "收敛域不能省略"},
+          {"title": "同一分式的不同序列", "slug": "同一分式的不同序列"},
+          {"title": "延迟与初值", "slug": "延迟与初值"},
+          {"title": "从递推式求解序列", "slug": "从递推式求解序列"},
+          {"title": "卷积与零状态映射", "slug": "卷积与零状态映射"},
+          {"title": "极点与单位圆", "slug": "极点与单位圆"},
+          {"title": "单位圆上的频率响应", "slug": "单位圆上的频率响应"},
+          {"title": "连续时间与离散时间", "slug": "连续时间与离散时间"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "probability-basics",

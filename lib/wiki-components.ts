@@ -1,3 +1,4 @@
+import { ZSequenceExplorer } from "@/components/wiki/z-sequence-explorer";
 import { FourierSynthesisExplorer } from "@/components/wiki/fourier-synthesis-explorer";
 import { LaplaceWeightExplorer } from "@/components/wiki/laplace-weight-explorer";
 import { CascadeExponentialExplorer } from "@/components/wiki/cascade-exponential-explorer";
@@ -75,6 +76,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  ZSequenceExplorer,
   FourierSynthesisExplorer,
   LaplaceWeightExplorer,
   CascadeExponentialExplorer,

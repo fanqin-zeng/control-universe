@@ -158,6 +158,14 @@
 | Gibbs现象 | Gibbs phenomenon | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
 | 快速傅里叶变换 | fast Fourier transform、FFT | — | MATH-09 | 本课局部定义；RMS按均方根语境消歧 |
 
+| Z变换 | Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单位脉冲序列 | unit impulse sequence | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单位阶跃序列 | unit step sequence | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 双边Z变换 | bilateral Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 单边Z变换 | unilateral Z-transform | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 零状态响应 | zero-state response | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+| 绝对可和 | absolutely summable | — | MATH-10 | 本课定义；离散脉冲不同于连续冲激 |
+
 ### §2.2 无冲突的条目（按英文键字母序）
 
 | 中文标准译名 | 英文 | 别名（课程中出现过的其他译法） | 出现课程 | 建议 |
