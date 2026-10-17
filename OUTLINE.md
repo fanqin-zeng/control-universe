@@ -33,7 +33,7 @@
 | 2.15 | 微分几何入门 | diff-geometry | ✅ 已交付 v1.3 | grad | math | 4 | math/multivariable-calculus<br>math/ode-matrix-exponential |
 | 2.16 | 图论基础 | graph-theory | ✅ 已交付 v1.3 | undergrad | math | 4 | math/eigen-decomposition<br>math/ode-matrix-exponential |
 | 2.17 | 博弈论基础 | game-theory-math | ✅ 已交付 v1.3 | grad | math | 5 | math/convex-optimization<br>math/probability-basics |
-| 2.18 | 数值方法 | numerical-methods | ⬜ 骨架（占位页） | undergrad | math | 4 | math/matrix-decomposition<br>math/multivariable-calculus<br>math/ode-matrix-exponential |
+| 2.18 | 数值方法 | numerical-methods | ✅ 已交付 v1.3 | undergrad | math | 4 | math/matrix-decomposition<br>math/multivariable-calculus<br>math/ode-matrix-exponential |
 
 ## 3. 经典控制 (classic)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 46（status = v1.3）
+- **已交付 v1.3**: 47（status = v1.3）
 - **有正文待审校**: 26（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 133（status = empty，渲染占位页）
+- **骨架占位**: 132（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 159（= draft 26 + empty 133 + 无 status 0）
-- **有 MDX 正文**: 72
-- **catalog 小节总数**: 848
-- **讨论日志**: 39 篇（覆盖 38 门；有 MDX 无日志 34 门）
-- **交互组件**: 62 个文件（被正文引用 62，孤儿 0）
+- **未完成 v1.3**: 158（= draft 26 + empty 132 + 无 status 0）
+- **有 MDX 正文**: 73
+- **catalog 小节总数**: 862
+- **讨论日志**: 40 篇（覆盖 39 门；有 MDX 无日志 34 门）
+- **交互组件**: 63 个文件（被正文引用 63，孤儿 0）
 - **prereq 边**: 471 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
