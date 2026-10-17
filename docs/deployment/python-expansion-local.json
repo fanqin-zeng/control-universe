@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-17T16:30:33.636Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=math/eigen-decomposition",
+  "testedAt": "2026-10-17T16:55:57.532Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=math/matrix-decomposition",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -7637,21 +7637,166 @@
           ]
         }
       ]
+    },
+    {
+      "key": "math/matrix-decomposition",
+      "title": "矩阵分解",
+      "sourceHash": "1edb31bf029c76ed3fa1037d14571da9fdfbf87e7715a556610a4e3c45159ae4",
+      "notebooks": [
+        {
+          "id": "math/matrix-decomposition#1",
+          "title": "核对投影、LU与行交换",
+          "index": 1,
+          "line": 66,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5107,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "投影系数/向量/剩余: sqrt(2) [1, 1] [1, -1]\nLU重构: [[2, 1], [4, 3]]\n中间量/解: [1, 1] [0, 1]\n行交换后的矩阵: [[1, 1], [0, 1]] 原行列式: -1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#2",
+          "title": "核对QR与最小二乘",
+          "index": 2,
+          "line": 141,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 10,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q/R: [[sqrt(2)/2, -sqrt(6)/6], [sqrt(2)/2, sqrt(6)/6], [0, sqrt(6)/3]] [[sqrt(2), sqrt(2)/2], [0, sqrt(6)/2]]\n正交与重构: [[1, 0], [0, 1]] [[0, 0], [0, 0], [0, 0]]\nQt b/解: [3*sqrt(2)/2, 5*sqrt(6)/6] [2/3, 5/3]\n预测/残差/平方和: [2/3, 7/3, 5/3] [1/3, -1/3, 1/3] 1/3\n残差与列正交: [0, 0]\nQtQ和QQt形状: (2, 2) (3, 3)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#3",
+          "title": "核对正定条件与Cholesky",
+          "index": 3,
+          "line": 171,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "G/C: [[2, 1], [1, 2]] [[sqrt(2), 0], [sqrt(2)/2, sqrt(6)/2]]\n重构残差: [[0, 0], [0, 0]]\n半正定反例的二次型: 0\n标准正定Cholesky拒绝此半正定矩阵\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#4",
+          "title": "核对SVD、伪逆与秩亏解",
+          "index": 4,
+          "line": 230,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 11,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "正交性: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] [[1, 0], [0, 1]]\nSVD重构残差: [[0, 0], [0, 0], [0, 0]]\nAtA特征值/奇异值: {3: 1, 1: 1} [sqrt(3), 1]\n伪逆/最小二乘解: [[2/3, 1/3, -1/3], [-1/3, 1/3, 2/3]] [2/3, 5/3]\n秩亏伪逆/所选解: [[1, 0], [0, 0]] [1, 0]\n全部最优解的残差平方/解平方: 4 t**2 + 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#5",
+          "title": "核对噪声放大与截断代价",
+          "index": 5,
+          "line": 258,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "测量/奇异值: [1.   0.11] [1.  0.1]\n精确伪逆解: [1.  1.1]\n条件数/正规方程条件数: 10.0 99.99999999999999\n噪声/阈值/截断解/解误差/残差: 0.01 0.05 [1.  1.1] 0.10000000000000009 1.3877787807814457e-17\n噪声/阈值/截断解/解误差/残差: 0.01 0.2 [1. 0.] 1.0 0.11\n噪声/阈值/截断解/解误差/残差: 0.0 0.2 [1. 0.] 1.0 0.1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "math/matrix-decomposition#6",
+          "title": "复核六题步骤答案",
+          "index": 6,
+          "line": 311,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1中间量/解: [3, 1] [1, 1]\n题2系数/投影/剩余: 2*sqrt(2) [2, 2] [1, -1]\n题2 QQt: [[2/3, 1/3, -1/3], [1/3, 2/3, 1/3], [-1/3, 1/3, 2/3]]\n题3残差/平方/正交: [1/3, -1/3, 1/3] 1/3 [0, 0]\n题4因子: [[2, 0], [1, sqrt(2)]]\n题5奇异值/伪逆/选解: [2, 0] [[1/2, 0], [0, 0]] [2, 0]\n题5残差/平方/解平方: [0, 3] 9 t**2 + 4\n题6测量/精确解/误差: [1, 2/25] [1, 4/5] 1/5\n题6条件数: 10 100\n题6截断残差/解误差/无噪残差: 2/25 1 1/10\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 55,
-    "notebooks": 192,
-    "enabled": 164,
+    "lessons": 56,
+    "notebooks": 198,
+    "enabled": 170,
     "codeOnly": 28
   },
   "releaseTotals": {
-    "lessons": 55,
-    "notebooks": 192,
-    "enabled": 162,
+    "lessons": 56,
+    "notebooks": 198,
+    "enabled": 168,
     "codeOnly": 30
   },
   "provenance": [
@@ -7684,6 +7829,16 @@
       "testedAt": "2026-10-17T16:30:33.636Z",
       "url": "http://localhost:8080/python-expansion.html?lesson=math/eigen-decomposition",
       "inputPath": ".agent/semester-03/math-04/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T16:53:16.264Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=math/matrix-decomposition",
+      "inputPath": ".agent/semester-03/math-05/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T16:55:57.532Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=math/matrix-decomposition",
+      "inputPath": ".agent/semester-03/math-05/browser-python.json"
     }
   ]
 }

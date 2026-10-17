@@ -225,12 +225,28 @@ export const catalog: Chapter[] = [
       {
         "slug": "matrix-decomposition",
         "title": "矩阵分解",
+        "subsections": [
+          { "title": "为什么把矩阵拆开", "slug": "为什么把矩阵拆开" },
+          { "title": "正交向量与投影", "slug": "正交向量与投影" },
+          { "title": "LU与消元", "slug": "lu与消元" },
+          { "title": "QR与正交化", "slug": "qr与正交化" },
+          { "title": "最小二乘在求什么", "slug": "最小二乘在求什么" },
+          { "title": "用QR求最小二乘", "slug": "用qr求最小二乘" },
+          { "title": "正定矩阵与Cholesky", "slug": "正定矩阵与cholesky" },
+          { "title": "奇异值分解", "slug": "奇异值分解" },
+          { "title": "伪逆与最小范数", "slug": "伪逆与最小范数" },
+          { "title": "小奇异值与截断", "slug": "小奇异值与截断" },
+          { "title": "分解怎样选择", "slug": "分解怎样选择" },
+          { "title": "小结", "slug": "小结" },
+          { "title": "习题", "slug": "习题" },
+          { "title": "答案", "slug": "答案" }
+        ],
         "prereq": [
           "math/eigen-decomposition"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "multivariable-calculus",

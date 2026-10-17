@@ -424,6 +424,24 @@
 | 代数重数 | algebraic multiplicity | — | MATH-04新增定义 | 特征多项式根的重复次数 |
 | 几何重数 | geometric multiplicity | — | MATH-04新增定义 | 特征空间维数 |
 | 模态 | mode | — | MATH-04新增定义 | 本课指独立特征方向的演化项，不与滑动模态混用 |
+| 正交投影 | orthogonal projection | — | MATH-05定义 | 剩余与投影空间正交 |
+| 正交矩阵 | orthogonal matrix | — | MATH-05定义 | 实方阵；矩形的列正交不等于方阵正交 |
+| LU分解 | LU decomposition | — | MATH-05定义 | 写清置换约定 |
+| 置换矩阵 | permutation matrix | — | MATH-05定义 | 记录行交换 |
+| QR分解 | QR decomposition | — | MATH-05定义 | 区分简约与完整形式 |
+| Gram–Schmidt正交化 | Gram-Schmidt orthogonalization | — | MATH-05定义 | 减投影再归一化 |
+| 残差 | residual | — | MATH-05定义 | 本课r=b−Ax |
+| 最小二乘 | least squares | — | MATH-05定义 | 本课同权残差平方和 |
+| 正规方程 | normal equations | — | MATH-05定义 | 推导条件不等于默认求解建议 |
+| 对称正定矩阵 | symmetric positive definite matrix | — | MATH-05定义 | 非零向量二次型严格正 |
+| 正半定 | positive semidefinite | 半正定 | MATH-05定义 | 允许非零向量二次型为零 |
+| Cholesky分解 | Cholesky decomposition | — | MATH-05定义 | 本课要求实对称正定 |
+| 奇异值分解 | singular value decomposition、SVD | — | MATH-05定义 | 任意实矩阵，含矩形与秩亏 |
+| 奇异值 | singular value | — | MATH-05定义 | 非负，不与特征值混同 |
+| Moore–Penrose伪逆 | Moore-Penrose pseudoinverse | 伪逆 | MATH-05定义 | 最小范数最小二乘选择 |
+| 最小范数最小二乘解 | minimum-norm least-squares solution | — | MATH-05定义 | 在最优残差解中再选最小范数 |
+| 二范数条件数 | 2-norm condition number | — | MATH-05定义 | 本课满列秩时σmax/σmin |
+| 截断SVD | truncated SVD | — | MATH-05定义 | 本课严格σ>τ才保留 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

@@ -491,3 +491,7 @@ MATH-03「线性代数基础」按新写专用讨论技能完成Phase1–4；12�
 ### MATH-04 执行回执（2026-10-18）
 
 MATH-04「特征值与对角化」按新写专用讨论技能完成Phase1–4；12节、6题答案、5个严格内核及Pyodide实跑实验、1个特征倍率Explorer。主例与剪切/旋转边界、数域条件与初值作用的证据见[本课验收](semester-03/math-04/acceptance.md)。先修明确为已交付的线性代数基础与复数基础，不生产MATH-05；合并hash仅在全局checklist记录，gh-pages需另获具体版本授权。
+
+### MATH-05 执行回执（2026-10-18）
+
+MATH-05「矩阵分解」按新写专用讨论技能完成Phase1–4；14节、6题步骤答案、6个严格内核及Pyodide原始实验、1个SVD敏感性与截断Explorer。LU/QR/Cholesky/SVD、最小二乘与伪逆的前提和数值、阈值舍弃真实信号的代价见[本课验收](semester-03/math-05/acceptance.md)。保持已交付特征值课为前置；不生产MATH-06。合并hash仅在全局checklist登记，发布仍需具体版本授权。
