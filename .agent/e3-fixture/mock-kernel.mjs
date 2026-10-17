@@ -13,19 +13,20 @@
  *   node scripts/nb-cells.mjs verify content/fx/nb-kernel.mdx --root .agent/e3-fixture --port 8999
  *   curl -s http://127.0.0.1:8999/__log      # 读请求流水，核对重放确实发生
  *
- * 行为：第 1 个内核的第 3 次 execute 返回 404（模拟空闲回收），之后一切正常。
+ * I04起setup显式执行：第1个内核的第4次execute（setup后第3个cell）返回404。
  * 对 4 个 cell 的 nb-kernel.mdx，正确的复活实现应当产生：
- *   creates == 2、executes == 7（cell0, cell1, cell2→404, 重放 cell0, 重放 cell1, 重试 cell2, cell3）
+ *   creates == 2、executes == 9（setup, cell0, cell1, cell2→404, setup, 重放cell0/1, 重试cell2, cell3）
  * 少了就说明没重放（新命名空间里缺前面 cell 定义的变量），多了就说明重复重试。
  *
  * /__log 返回 JSON 流水；/__reset 清零。GET /health 与真服务同形，好让 kernelAlive() 认。
  */
 import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 
 const argv = process.argv.slice(2);
 const optVal = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : null; };
 const PORT = Number(optVal("--port") || 8999);
-const FAIL_AT_EXECUTE = Number(optVal("--fail-at") || 3);   // 第 1 个内核的第几次 execute 返 404
+const FAIL_AT_EXECUTE = Number(optVal("--fail-at") || 4);   // 包含显式setup执行
 
 const log = [];
 let creates = 0;
@@ -64,7 +65,7 @@ const server = createServer((req, res) => {
       const id = decodeURIComponent(m[1]);
       const isFirst = id === firstKernelId;
       if (isFirst) firstKernelExecutes++;
-      log.push({ kind: "execute", id, isFirst, n: isFirst ? firstKernelExecutes : null, codeLen: (body.code || "").length });
+      log.push({ kind: "execute", id, isFirst, n: isFirst ? firstKernelExecutes : null, codeLen: (body.code || "").length, codeHash: createHash("sha256").update(body.code || "").digest("hex") });
       // 只在「第 1 个内核」的第 FAIL_AT_EXECUTE 次 execute 上返 404；复活后的新内核一切正常
       if (isFirst && firstKernelExecutes === FAIL_AT_EXECUTE) {
         return send(res, 404, { error: "mock: notebook_id 已被空闲回收" });

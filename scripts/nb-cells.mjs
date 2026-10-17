@@ -49,6 +49,7 @@ const optVal = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i 
 const ALL = flag("--all");
 const DELIVERED = flag("--delivered");
 const NO_KERNEL = flag("--no-kernel");
+const REQUIRE_KERNEL = flag("--require-kernel");
 const QUIET = flag("--quiet");
 const SKELETON = flag("--skeleton");
 const rootArg = optVal("--root");
@@ -178,14 +179,21 @@ async function runNotebook(nb) {
   let id = newKernelId();
   const results = [];
   const create = async (newId) => {
-    // setup_code 必须显式带上：服务端是 body.get("setup_code", DEFAULT_SETUP)，
-    // 键存在但为空串时**不会**跑 DEFAULT_SETUP——这正是浏览器组件的行为，照抄才叫保真。
-    const r = await httpJson("POST", "/api/notebook", { notebook_id: newId, setup_code: setup });
+    // 先显式创建空命名空间，再执行MDX求值后的原始setup；不引入DEFAULT_SETUP。
+    // 兼容曾丢弃setup输出的旧网关；验收仍显式检查每次setup与重放结果。
+    const r = await httpJson("POST", "/api/notebook", { notebook_id: newId, setup_code: "" });
     if (r.status !== 200) throw new Error("创建内核失败 HTTP " + r.status + " " + (r.json?.error || r.text).slice(0, 120));
+    if (setup.trim()) {
+      const executed = await httpJson("POST", `/api/notebook/${newId}/execute`, { code: setup });
+      const error = executed.json?.outputs?.find((o) => o.type === "error");
+      if (executed.status !== 200 || error) {
+        throw new Error("setup 执行失败：" + (error ? `${error.ename}: ${error.evalue}` : "HTTP " + executed.status));
+      }
+    }
     return r;
   };
-  await create(id);
   try {
+    await create(id);
     for (let i = 0; i < nb.cells.length; i++) {
       const code = nb.cells[i].code;
       if (!code.trim()) { results.push({ index: i, status: "EMPTY" }); continue; }
@@ -195,7 +203,11 @@ async function runNotebook(nb) {
         id = newKernelId();
         await create(id);
         for (let k = 0; k < i; k++) {
-          if (nb.cells[k].code.trim()) await httpJson("POST", `/api/notebook/${id}/execute`, { code: nb.cells[k].code });
+          if (nb.cells[k].code.trim()) {
+            const replay = await httpJson("POST", `/api/notebook/${id}/execute`, { code: nb.cells[k].code });
+            const error = replay.json?.outputs?.find((o) => o.type === "error");
+            if (replay.status !== 200 || error) throw new Error(`重放 cell ${k + 1} 失败：${error?.evalue || "HTTP " + replay.status}`);
+          }
         }
         r = await httpJson("POST", `/api/notebook/${id}/execute`, { code });
       }
@@ -394,9 +406,10 @@ function worst(findings) {
 }
 
 async function cmdVerify() {
+  if (REQUIRE_KERNEL && NO_KERNEL) { say("FAIL --require-kernel 与 --no-kernel 不能同时使用"); process.exit(2); }
   const targets = resolveTargets();
   if (!targets.length) {
-    say("\n用法：node scripts/nb-cells.mjs verify <chapter>/<lesson>|--all|--delivered [--no-kernel] [--out f.json] [--quiet]");
+    say("\n用法：node scripts/nb-cells.mjs verify <chapter>/<lesson>|--all|--delivered [--require-kernel|--no-kernel] [--out f.json] [--quiet]");
     process.exit(2);
   }
   const live = NO_KERNEL ? false : await kernelAlive();
@@ -407,6 +420,7 @@ async function cmdVerify() {
     say("S6 内核实跑 SKIPPED —— 启动方法：npm run dev（会同时拉起 next dev 与 scripts/jupyter_server.py）");
     say("                     或单独：python scripts/jupyter_server.py");
   }
+  if (REQUIRE_KERNEL && !live) say("FAIL 严格模式要求S6实际执行，内核不可达不得交付");
 
   const perLesson = [];
   const totals = { PASS: 0, WARN: 0, FAIL: 0, SKIPPED: 0 };
@@ -416,6 +430,7 @@ async function cmdVerify() {
 
   for (const t of targets) {
     const { findings, notebooks } = staticCheck(t.file);
+    if (REQUIRE_KERNEL && !live) findings.push({ level: "FAIL", code: "S6", msg: "严格模式：内核不可达，S6不得SKIPPED", line: null });
     nNotebooks += notebooks.length;
     nCells += notebooks.reduce((s, nb) => s + nb.cells.length, 0);
 
@@ -496,10 +511,10 @@ async function cmdVerify() {
   say(`    kernel id 生成方式（现读组件源码）：${inv.scheme || "(未找到)"}`);
 
   if (OUT) {
-    writeFileSync(OUT, JSON.stringify({ root: ROOT, kernel: live ? `${KERNEL_HOST}:${KERNEL_PORT}` : null, totals, codeCount, failLessons, lessons: perLesson }, null, 2), "utf8");
+    writeFileSync(OUT, JSON.stringify({ root: ROOT, kernel: live ? `${KERNEL_HOST}:${KERNEL_PORT}` : null, kernelRequired: REQUIRE_KERNEL, executionStatus: live ? "EXECUTED" : "SKIPPED", totals, codeCount, failLessons, lessons: perLesson }, null, 2), "utf8");
     say("\n已写出 " + OUT);
   }
-  process.exit(totals.FAIL ? 1 : 0);
+  process.exit(totals.FAIL || (REQUIRE_KERNEL && !live) ? 1 : 0);
 }
 
 // ---------------------------------------------------------------- assemble
@@ -622,9 +637,10 @@ else {
 
 用法：
   node scripts/nb-cells.mjs extract  <chapter>/<lesson>|<path.mdx>|--all [--out f.json]
-  node scripts/nb-cells.mjs verify   <chapter>/<lesson>|--all|--delivered [--no-kernel] [--out f.json] [--quiet]
+  node scripts/nb-cells.mjs verify   <chapter>/<lesson>|--all|--delivered [--require-kernel|--no-kernel] [--out f.json] [--quiet]
   node scripts/nb-cells.mjs assemble <extract.json> [--out f.mdx] [--skeleton]
   公共开关：--root <dir> 换根目录（fixture 用）· --port <n> 换内核端口 · --quiet 只打 WARN/FAIL
+  交付必须用 --require-kernel：S6不可达时退出1；--no-kernel只做静态检查，不是数值验收。
 
 静态检查判据：
   S0 结构（缺 setupCode / setupCode 是空串 / 缺 cells / 模板未闭合 / 解析失败）

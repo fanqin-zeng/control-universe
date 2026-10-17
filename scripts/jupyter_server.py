@@ -219,7 +219,15 @@ class Handler(BaseHTTPRequestHandler):
                 kernels[nid] = (km, kc)
                 last_used[nid] = time.monotonic()
             if setup.strip():
-                execute(km, kc, setup)
+                outputs = execute(km, kc, setup)
+                error = next((o for o in outputs if o.get("type") == "error"), None)
+                if error is not None:
+                    shutdown_kernel(nid)
+                    self._json(422, {
+                        "error": f"Setup failed: {error['ename']}: {error['evalue']}",
+                        "outputs": outputs,
+                    })
+                    return
             self._json(200, {"notebook_id": nid, "status": "ready"})
         except Exception as e:
             traceback.print_exc()
