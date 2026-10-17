@@ -18,7 +18,7 @@
 |------|------|------|------|------|------|---------|---------|
 | 2.1 | 微积分入门 | calculus-basics | ✅ 已交付 v1.3 | undergrad | math | 0 | — |
 | 2.2 | 复数基础 | complex-numbers | ✅ 已交付 v1.3 | undergrad | math | 1 | math/calculus-basics |
-| 2.3 | 线性代数基础 | linear-algebra-basics | ⬜ 骨架（占位页） | undergrad | math | 0 | — |
+| 2.3 | 线性代数基础 | linear-algebra-basics | ✅ 已交付 v1.3 | undergrad | math | 0 | — |
 | 2.4 | 特征值与对角化 | eigen-decomposition | ⬜ 骨架（占位页） | undergrad | math | 1 | math/linear-algebra-basics |
 | 2.5 | 矩阵分解 | matrix-decomposition | ⬜ 骨架（占位页） | undergrad | math | 2 | math/eigen-decomposition |
 | 2.6 | 多元微积分 | multivariable-calculus | ⬜ 骨架（占位页） | undergrad | math | 1 | math/calculus-basics<br>math/linear-algebra-basics |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 31（status = v1.3）
+- **已交付 v1.3**: 32（status = v1.3）
 - **有正文待审校**: 26（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 148（status = empty，渲染占位页）
+- **骨架占位**: 147（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 174（= draft 26 + empty 148 + 无 status 0）
-- **有 MDX 正文**: 57
-- **catalog 小节总数**: 629
-- **讨论日志**: 23 篇（覆盖 23 门；有 MDX 无日志 34 门）
-- **交互组件**: 47 个文件（被正文引用 47，孤儿 0）
+- **未完成 v1.3**: 173（= draft 26 + empty 147 + 无 status 0）
+- **有 MDX 正文**: 58
+- **catalog 小节总数**: 641
+- **讨论日志**: 24 篇（覆盖 24 门；有 MDX 无日志 34 门）
+- **交互组件**: 48 个文件（被正文引用 48，孤儿 0）
 - **prereq 边**: 465 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 201 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..20（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
