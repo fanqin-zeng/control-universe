@@ -1,0 +1,193 @@
+{
+  "sources": [
+    {
+      "source": "content/math/calculus-basics.mdx",
+      "component": "components/wiki/jupyter-notebook.tsx",
+      "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+      "kernelApi": "http://127.0.0.1:8891",
+      "count": 6,
+      "notebooks": [
+        {
+          "index": 0,
+          "line": 106,
+          "title": "复算差商、导数与切线预测",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nfrom fractions import Fraction\nimport json\nt = sp.symbols('t', real=True)",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 113,
+              "delim": "`",
+              "code": "s = t**2\nprint(\"位置表:\", [(i, int(s.subs(t, i))) for i in range(5)])\nprint(\"运动演示时间/位置/速度:\",[(i,i**2,2*i) for i in range(5)])\nprint(\"区间平均速度:\", (s.subs(t, 2)-s.subs(t, 1))/(2-1), (s.subs(t, 3)-s.subs(t, 2))/(3-2))\nfor h in [sp.Rational(-1,2), sp.Rational(-1,10), sp.Rational(-1,100), sp.Rational(1,100), sp.Rational(1,10), sp.Rational(1,2)]:\n    quotient = sp.simplify((s.subs(t, 2+h)-s.subs(t, 2))/h)\n    print(\"h=\", h, \"差商=\", quotient, \"小数=\", float(quotient))\nprint(\"导数:\", sp.diff(s, t), \"t=2时:\", sp.diff(s, t).subs(t, 2))\nh = sp.Rational(1,10)\nprint(\"切线预测/真值/误差:\", 4+4*h, s.subs(t,2+h), sp.simplify(s.subs(t,2+h)-(4+4*h)))",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "line": 155,
+          "title": "复核求导规则",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nt = sp.symbols('t', real=True)",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 160,
+              "delim": "`",
+              "code": "polynomial = 3*t**2-2*t+1\nchain = (1+2*t)**2\nprint(\"常数/幂函数/乘积:\", sp.diff(sp.Integer(7), t), sp.diff(t**2, t), sp.diff(t*t**2, t))\nprint(\"多项式导数与点值:\", sp.diff(polynomial,t), sp.diff(polynomial,t).subs(t,2))\nprint(\"复合函数导数与点值:\", sp.expand(sp.diff(chain,t)), sp.diff(chain,t).subs(t,1))",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "line": 216,
+          "title": "复算矩形和与有符号累积",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nfrom fractions import Fraction\nt = sp.symbols('t', real=True)",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 222,
+              "delim": "`",
+              "code": "for n in [1,2,4,8,16]:\n    width = Fraction(2,n)\n    sample_times = [Fraction(2*i,n) for i in range(1,n+1)]\n    velocities = [2*sample for sample in sample_times]\n    total = sum(speed*width for speed in velocities)\n    print(\"N=\",n,\"宽度=\",width,\"右端速度=\",velocities,\"右端和=\",total,\"小数=\",float(total))\nprint(\"符号积分:\", sp.integrate(2*t,(t,0,2)))\nvelocity = 2*t-2\nfirst = sp.integrate(velocity,(t,0,1))\nsecond = sp.integrate(velocity,(t,1,2))\nprint(\"两段位移/净位移/路程:\",first,second,first+second,-first+second)",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "line": 285,
+          "title": "复算尖点、扰动与基本定理",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nt, h = sp.symbols('t h', real=True)",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 290,
+              "delim": "`",
+              "code": "for increment in [sp.Rational(-1,10),sp.Rational(-1,100),sp.Rational(1,100),sp.Rational(1,10)]:\n    print(\"尖点 h=\",increment,\"差商=\",abs(increment)/increment)\nfor increment in [sp.Rational(1,10),sp.Rational(1,100)]:\n    clean = ((2+increment)**2-4)/increment\n    noisy = ((2+increment)**2+sp.Rational(1,100)-4)/increment\n    print(\"h=\",increment,\"准确/扰动差商=\",float(clean),float(noisy),\"额外项=\",float(noisy-clean))\nprint(\"累积函数及导数:\", sp.integrate(2*t,(t,0,h)), sp.diff(h**2,h))\nprint(\"幂函数原函数:\",sp.integrate(t**2,t))\nprint(\"常数信息:\",[sp.diff(t**2+c,t) for c in [-3,0,7]])\nprint(\"取h=0时原差商分母:\",0,\"；不执行除零\")",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "line": 361,
+          "title": "核对级数与泰勒近似",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nimport math\nx = sp.symbols('x')",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 367,
+              "delim": "`",
+              "code": "print(\"几何级数部分和:\",[sum(sp.Rational(1,2)**k for k in range(n)) for n in range(1,5)])\nprint(\"几何级数极限:\",sp.summation(sp.Rational(1,2)**sp.Symbol('k',integer=True,nonnegative=True),(sp.Symbol('k',integer=True,nonnegative=True),0,sp.oo)))\nfor f in [sp.exp(x),sp.sin(x),sp.cos(x),1/(1-x),sp.log(1+x)]:\n    print(\"展开:\",sp.series(f,x,0,6))\npoint=sp.Rational(1,10)\npoly=1+point+point**2/2\nprint(\"指数近似/真值/误差:\",float(poly),float(sp.exp(point)),float(sp.exp(point)-poly))\nprint(\"阶乘0/2/3/5:\",[math.factorial(k) for k in [0,2,3,5]])\nprint(\"调和级数分组:\",sp.Rational(1,3)+sp.Rational(1,4),sum(sp.Rational(1,k) for k in range(5,9)))",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "line": 417,
+          "title": "独立复算全部习题答案",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nfrom fractions import Fraction\nt = sp.symbols('t', real=True)",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 423,
+              "delim": "`",
+              "code": "s = t**2\nprint(\"题1:\", (s.subs(t,3)-s.subs(t,1))/2, sp.diff(s,t).subs(t,1), sp.diff(s,t).subs(t,3))\nincrement = sp.Rational(-1,2)\nprint(\"题2:\", sp.simplify((s.subs(t,2+increment)-s.subs(t,2))/increment), sp.diff(s,t).subs(t,2))\nincrement = sp.Rational(1,10)\nprediction = s.subs(t,2)+sp.diff(s,t).subs(t,2)*increment\nexact = s.subs(t,2+increment)\nprint(\"题3:\",prediction,exact,exact-prediction)\nprint(\"题4:\",sp.diff((1+2*t)**2,t).subs(t,1))\nwidth = sp.Rational(1,2)\nrectangle = sum((2*i*width)*width for i in range(1,5))\narea = sp.integrate(2*t,(t,0,2))\nprint(\"题5:\",rectangle,area,rectangle-area)\nsegments = [sp.integrate(2*t-2,(t,0,1)),sp.integrate(2*t-2,(t,1,2))]\nprint(\"题6:\",segments,sum(segments),sum(abs(segment) for segment in segments))\nprint(\"题7:\",[abs(h)/h for h in [sp.Rational(-1,10),sp.Rational(1,10)]])\nprint(\"题8:\",[sp.Rational(1,100)/h for h in [sp.Rational(1,10),sp.Rational(1,100)]])",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "content/math/complex-numbers.mdx",
+      "component": "components/wiki/jupyter-notebook.tsx",
+      "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+      "kernelApi": "http://127.0.0.1:8891",
+      "count": 3,
+      "notebooks": [
+        {
+          "index": 0,
+          "line": 97,
+          "title": "复算表示与四则运算",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nI=sp.I",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 99,
+              "delim": "`",
+              "code": "for z in [3+4*I,sp.Integer(5),2*I,sp.Integer(0)]:\n    print(\"实部/虚部:\",sp.re(z),sp.im(z))\nz=3+4*I\nprint(\"加法:\",sp.expand(z+1-2*I))\nprint(\"减法:\",sp.expand(z-(1-2*I)))\nprint(\"乘法:\",sp.expand(z*(1+2*I)))\nprint(\"共轭/模平方:\",sp.conjugate(z),sp.expand(z*sp.conjugate(z)))\nprint(\"除法:\",sp.expand_complex(z/(1+2*I)))\nprint(\"除零:\",\"不定义，不执行除零\")",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "line": 186,
+          "title": "复算象限与旋转",
+          "unknownAttrs": [],
+          "setupCode": "import cmath, math\nimport sympy as sp",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 188,
+              "delim": "`",
+              "code": "for a,b in [(3,4),(-3,4),(0,1),(0,-1),(0,0)]:\n    z=complex(a,b)\n    angle=None if z==0 else math.degrees(cmath.phase(z))\n    print(\"坐标/模/主辐角:\",(a,b),abs(z),angle)\nprint(\"反正切漏象限:\",math.degrees(math.atan(-4/3)))\nprint(\"弧度与角度:\",2*math.pi,360,math.pi,180,math.pi/2,90)\nprint(\"极坐标乘法:\",sp.simplify(2*sp.exp(sp.I*sp.pi/3)*3*sp.exp(sp.I*sp.pi/6)))\nprint(\"单位旋转:\",sp.simplify(sp.exp(sp.I*sp.pi/2)),sp.simplify(sp.exp(sp.I*sp.pi)))\nprint(\"乘i:\",(3+4j)*1j,abs((3+4j)*1j))",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "line": 224,
+          "title": "核对六题答案",
+          "unknownAttrs": [],
+          "setupCode": "import sympy as sp\nimport cmath, math\nI=sp.I",
+          "setupRawDiffers": false,
+          "setupEscapeIssues": [],
+          "cells": [
+            {
+              "index": 0,
+              "line": 227,
+              "delim": "`",
+              "code": "print(\"题1:\",[(sp.re(z),sp.im(z)) for z in [3+4*I,sp.Integer(5),2*I,sp.Integer(0)]])\nz=3+4*I\nprint(\"题2:\",sp.expand(z+1-2*I),sp.expand(z*(1+2*I)),sp.expand_complex(z/(1+2*I)))\nprint(\"乘回验证:\",sp.simplify((sp.Rational(11,5)-sp.Rational(2,5)*I)*(1+2*I)-z))\nprint(\"题3:\",abs(-3+4j),math.degrees(cmath.phase(-3+4j)))\nprint(\"题4:\",abs(1j),abs(-1j),sp.pi/2,-sp.pi/2,\"零:模0，角未定义\")\nprint(\"题5:\",sp.simplify(2*sp.exp(I*sp.pi/3)*3*sp.exp(I*sp.pi/6)))\nprint(\"题6:\",sp.expand(z*I),sp.Abs(z*I))",
+              "rawDiffers": false,
+              "escapeIssues": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
