@@ -37,3 +37,21 @@
 ## 发布
 
 本地执行功能验收通过；两项严格verify源级失败是用户明确要求保留展示的既有ipywidgets债务，已登记到待办，不声称修复课程。按本次授权发布此工作包；待记录远端SHA、Actions成功和公网模式/运行复验后勾选DEP04。
+
+
+## 首次扩展发布完成
+
+源码提交0c915e4，--no-ff合入master为6e9d3a4，再合入gh-pages为745514aa3107b00b1a65a2b42979af13e81abcb4；两分支推送均退出码0。Actions [39035517804](https://github.com/fanqing-zeng/control-universe/actions/runs/39035517804) 的build/deploy均success，原始状态见python-expansion-public-actions.json。
+
+公网release.json精确匹配745514a…，sourceDirty=false，pythonExecution=browser-verified-notebooks。命令 node scripts/verify-public-pages.mjs 745514aa3107b00b1a65a2b42979af13e81abcb4 docs/deployment/python-expansion-public-http.json 返回0：235次成功请求，205课/9旧入口/资源通过，未知路径404；逐页核对运行/代码展示数量与Worker版本。公网Worker的归一化SHA256与本地全量审计一致。Worker JS、质量门槛MJS模块、中文字体均200且MIME正确，见python-expansion-public-assets.json。
+
+公网独立复跑频域课，3个可运行实验完整执行、3个widgets实验保留代码；见python-expansion-public-rerun.json。实际课程页稳定性实验输出PNG和中文，混合页无降级运行按钮；cvxpy、缺字、旧绘图接口原因均明确展示，两个浏览器控制台error/warn=0，见python-expansion-public-ui.json / python-expansion-public-plot.png。
+
+DEP04完成，待办30项保留，不将本次平台交付算作课程内容重构完成。仅记录更新不触发发布；首轮公网截图另发现实验文字继承主题后过浅，已增加白底深色文字兜底，并按同一工作包授权追加发布显示修正。后续上线仍需用户逐次授权，本次条件授权仅覆盖本工作包。
+
+
+### 公网显示修正
+
+原生/静态Python运行策略、Worker、课程源码与153/30清单不变；只给可运行区和代码展示区补显式背景、标题、正文、标签和输出颜色，避免继承主题后文字过浅。14项回归通过，重新完成Pages构建；证据见python-expansion-contrast-tests.log / contrast-build.log。追加发布SHA与最终公网截图随后登记。
+
+实验区外的旧正文在当前主题下仍存在浅色文字，已在R01记录另行审查，未将此次局部颜色兜底宣称为全站主题修复。

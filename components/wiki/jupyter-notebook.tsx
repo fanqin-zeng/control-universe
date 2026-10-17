@@ -225,12 +225,12 @@ export function JupyterNotebook({
 
   if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {
     if (browserMode === 'enabled') return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} workerVersion={browserWorkerVersion} />;
-    return <section data-python-mode="code" className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "var(--foreground)" }}>
-      <strong style={{ color: "var(--foreground)" }}>{title || "Python 代码"}</strong>
-      <p>在线版展示实验代码；请在具备相应依赖的原生 Python/Jupyter 环境中复核代码后运行。图中的交互实验仍可直接操作。</p>
-      <p role="status">浏览器暂不运行此实验：{browserReason || '尚未完成 Pyodide 兼容验收，请在原生 Python/Jupyter 中执行。'}</p>
-      {setupCode && <details><summary>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{setupCode}</pre></details>}
-      {initCells.map((cell, i) => <div key={i}><p>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10 }}>{cell.code}</pre></div>)}
+    return <section data-python-mode="code" className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "#111827", background: "#fff" }}>
+      <strong style={{ color: "#111827", background: "#fff" }}>{title || "Python 代码"}</strong>
+      <p style={{color:"#334155"}}>在线版展示实验代码；请在具备相应依赖的原生 Python/Jupyter 环境中复核代码后运行。图中的交互实验仍可直接操作。</p>
+      <p role="status" style={{color:"#334155"}}>浏览器暂不运行此实验：{browserReason || '尚未完成 Pyodide 兼容验收，请在原生 Python/Jupyter 中执行。'}</p>
+      {setupCode && <details><summary style={{color:"#334155"}}>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{setupCode}</pre></details>}
+      {initCells.map((cell, i) => <div key={i}><p style={{color:"#334155"}}>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{cell.code}</pre></div>)}
     </section>;
   }
   if (error) {
