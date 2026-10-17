@@ -587,6 +587,15 @@
 | 精确势博弈 | exact potential game | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
 | 帕累托改进 | Pareto improvement | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
 | 极小极大 | minimax | — | MATH-17 | 代价最小/收益最大约定分开，定义与条件见本课 |
+| 舍入误差 | roundoff error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 截断误差 | truncation error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 前向误差 | forward error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 后向误差 | backward error | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 稳定域 | stability region | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 刚性 | stiffness | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| A稳定 | A-stability | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 复合梯形法 | composite trapezoidal rule | — | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
+| 经典四阶Runge–Kutta | classical fourth-order Runge–Kutta | RK4 | MATH-18 | 误差、指标与方法适用条件见数值方法课 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
