@@ -1,0 +1,85 @@
+{
+  "source": "content/math/linear-algebra-basics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 4,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 80,
+      "title": "按行与按列计算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 80,
+          "delim": "`",
+          "code": "A = sp.Matrix([[1, 1], [1, 2]])\nu = sp.Matrix([2, 1])\nprint(\"输入:\", list(u))\nprint(\"按行:\", list(A*u))\nprint(\"第一列贡献:\", list(u[0]*A[:, 0]))\nprint(\"第二列贡献:\", list(u[1]*A[:, 1]))\nprint(\"线性组合:\", list(u[0]*A[:, 0]+u[1]*A[:, 1]))\nprint(\"零输入:\", list(A*sp.zeros(2, 1)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 109,
+      "title": "核对乘法顺序",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 109,
+          "delim": "`",
+          "code": "A = sp.Matrix([[1, 1], [1, 2]])\nB = sp.diag(1, 2)\nu = sp.Matrix([2, 1])\nprint(\"AB:\", (A*B).tolist())\nprint(\"BA:\", (B*A).tolist())\nprint(\"先B后A:\", list(A*(B*u)))\nprint(\"先A后B:\", list(B*(A*u)))\nprint(\"单位矩阵:\", sp.eye(2).tolist())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 165,
+      "title": "求解并检查秩",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 165,
+          "delim": "`",
+          "code": "A = sp.Matrix([[1, 1], [1, 2]])\nC = sp.Matrix([[1, 2], [1, 2]])\ny = sp.Matrix([3, 4])\nprint(\"唯一解:\", list(A.LUsolve(y)))\nprint(\"A的秩:\", A.rank())\nprint(\"C的秩:\", C.rank())\nprint(\"C与目标(3,4)的增广秩:\", C.row_join(y).rank())\nprint(\"无解集合:\", sp.linsolve((C, y)))\nprint(\"目标(4,4)的两组解:\", list(C*sp.Matrix([4, 0])), list(C*sp.Matrix([2, 1])))\nprint(\"行列式:\", A.det(), C.det())\nprint(\"逆矩阵:\", A.inv().tolist())\nprint(\"逆乘原矩阵:\", (A.inv()*A).tolist())\naug = A.row_join(y)\naug[1, :] = aug[1, :] - aug[0, :]\nprint(\"消元第一步:\", aug.tolist())\naug[0, :] = aug[0, :] - aug[1, :]\nprint(\"消元第二步:\", aug.tolist())\nprint(\"两列齐次方程:\", sp.linsolve((A, sp.zeros(2, 1))))\nprint(\"相关列组合:\", list(-2*C[:, 0]+C[:, 1]))\nfor target in (sp.Matrix([4, 4]), sp.Matrix([3, 4])):\n    aug = C.row_join(target)\n    aug[1, :] = aug[1, :] - aug[0, :]\n    print(\"C消元:\", aug.tolist())\na, b, c, d = sp.symbols('a b c d')\nM = sp.Matrix([[a, b], [c, d]])\ncandidate = sp.Matrix([[d, -b], [-c, a]])/(a*d-b*c)\nprint(\"逆公式乘回:\", sp.simplify(candidate*M).tolist())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 292,
+      "title": "核对正文与七题答案",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 292,
+          "delim": "`",
+          "code": "A = sp.Matrix([[1, 1], [1, 2]])\nB = sp.diag(1, 2)\nC = sp.Matrix([[1, 2], [1, 2]])\np, q = sp.Matrix([1, 2]), sp.Matrix([3, 4])\nprint(\"正文内积/范数/外积:\", p.dot(q), p.norm(), (p*q.T).tolist())\nprint(\"正文输出长度:\", q.norm())\nprint(\"题1:\", list(A*sp.Matrix([-1, 2])))\nprint(\"题1列贡献:\", list(-A[:, 0]), list(2*A[:, 1]))\nprint(\"题2:\", (A*B).tolist(), (B*A).tolist())\nprint(\"题3:\", list(A.LUsolve(sp.Matrix([5, 8]))))\nr = sp.symbols('r', real=True)\nprint(\"题4全部解核验:\", list(C*sp.Matrix([6-2*r, r])))\nprint(\"题4增广秩:\", C.row_join(sp.Matrix([6, 6])).rank(), C.row_join(sp.Matrix([6, 5])).rank())\nprint(\"题5:\", A.inv().tolist(), (A.inv()*A).tolist())\np, q = sp.Matrix([1, -1]), sp.Matrix([1, 1])\nprint(\"题6:\", p.dot(q), p.norm(), (p*q.T).tolist())\nF, G = sp.Matrix([[1, 1], [0, 1]]), sp.Matrix([0, 1])\nprint(\"正文状态更新:\", list(F*sp.Matrix([2, 1])+G*(-1)))\nprint(\"正文状态两项:\", list(F*sp.Matrix([2, 1])), list(G*(-1)))\nprint(\"题7:\", list(F*sp.Matrix([1, 2])+G*(-2)))\nprint(\"题7两项:\", list(F*sp.Matrix([1, 2])), list(G*(-2)))\nM = sp.Matrix([[1, 2], [3, 4]])\nprint(\"转置示例:\", M.T.tolist())\nprint(\"二维逆公式核验:\", (A.inv()*sp.Matrix([3, 4])).T.tolist())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

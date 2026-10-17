@@ -481,3 +481,7 @@ MATH-02复数基础已按重构技能完成Phase1–4与实际验收，来源保
 2026-10-17追加 DEP03：按用户本次条件授权，试验 Pyodide 本地浏览器执行，先交付数学两课并实测 python-control/Slycot 支持清单，本地验收通过即发布 gh-pages。其余课程继续静态代码展示，真实本地 Jupyter 保留；不改变课程范围和讨论工作流。此条更新此前“静态版不承担Python内核运行”的能力边界，详见 docs/deployment/pyodide-trial.md。
 
 2026-10-17追加 DEP04：按本次用户授权，扩展所有经逐课实跑验证的兼容 Python 实验；以实验为单位启用，不兼容的保留源代码、明确原因并登记待处理清单。本地验收通过后直接发布 gh-pages，随后公网复验。课程正文/算法/交付状态不因执行能力扩展而变更，课程后续修改仍按讨论 SKILL。权威结果见 docs/deployment/python-expansion.md 与 python-expansion-delivery.md。
+
+### MATH-03 执行回执（2026-10-17）
+
+MATH-03「线性代数基础」按新写专用讨论技能完成Phase1–4；12节、7题答案、4个严格内核及Pyodide实跑实验、1个列合成/共线Explorer。数值、真实页面与生产构建证据见[本课验收](semester-03/math-03/acceptance.md)。不新增大学数学先修边，不生产MATH-04；下一课仍按原计划为「特征值与对角化」。合并只在全局checklist记录真实hash，gh-pages需另获具体版本授权。

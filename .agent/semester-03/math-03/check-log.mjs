@@ -1,0 +1,14 @@
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const s=readFileSync('docs/discuss-log/semester-03/02-math/03-linear-algebra-basics.md','utf8');
+for(const [pattern,n] of [[/^# 课堂讨论日志：/gm,1],[/^## Phase [1-4]: /gm,4],[/^### 第[一二三]轮 /gm,3],[/^## 附录 [ABCD]：/gm,4],[/\[共识\]/g,1],[/\[待定\]/g,1],[/\[郑核-签发\]/g,1],[/\[沉默-何疑：本课无对比结论\]/g,1]])assert.equal([...s.matchAll(pattern)].length,n,String(pattern));
+const phase3=s.split('## Phase 3:')[1].split('## Phase 4:')[0];
+const headings=[...phase3.matchAll(/^### (.+)$/gm)].map(m=>m[1]);
+assert.deepEqual(headings,['教授团队（学术准确性）','工程团队（实践可行性）','验证团队（独立把关）','体验与脉络（读者、历史与安全）','教学支持（教学质量）','学生审校（可读性）']);
+for(const name of ['郑核','苏绘','孙助','柯验','方数','岳自','小初','陆阅','秦构','何仿'])assert(s.includes('| '+name+' | 出席 |'));
+const a=s.split('### A.1 ')[1].split('### A.2 ')[0];assert(a.includes('| # | 正文断言 | notebook 输出 | 组件默认值读数 | 一致? | 备注 |'));assert.equal([...a.matchAll(/^\| \d+ \|/gm)].length,36);assert(!a.includes('❌'));
+assert(s.includes('交付清单：'));assert(s.includes('无P0阻断项'));
+const b=s.split('## 附录 B：')[1].split('## 附录 C：')[0];
+assert.equal([...b.matchAll(/^\| \d+ \|/gm)].length,9);
+for(const token of ['S8','S1/S4','34个美元围栏','S3'])assert(b.includes(token));
+console.log('PASS log structure: 4 phases / 3 rounds / 6 review groups / 10 attending roles / 36 reconciliation rows / 9 gates + 4 extra gates / 4 appendices; manual field/claim coverage recorded in acceptance');
