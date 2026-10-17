@@ -251,4 +251,6 @@ browser-results.json finalDelivery=true/visualRepair=true：14真实H2及目录�
 
 source-consistency.json最终正文SHA与独立数值及浏览器报告一致，7原始标签/提取/kernel/Pyodide独立计数，22美元围栏/14H2核对。scope-check证明其它67课兼容记录及30待办逐字段未变，其它课程正文未改。早期check-fix按旧统计报FAIL，fix-outline/stats后独立check退出0；catalog生成时混合行尾已统一LF，最终源码diff检查无空白错误。
 
-W06/W07/W08继续未完成；两个用户批阅文件不编辑不暂存。本对话仅交付MATH-17；未推送远端、未发布gh-pages。实际no-ff合并回执随后补写。
+W06/W07/W08继续未完成；两个用户批阅文件不编辑不暂存。本对话仅交付MATH-17；未推送远端、未发布gh-pages。实际合并回执如下。
+
+合并回执：课程提交 `cdb1de5` 已用 `--no-ff` 合入 master，课程合并提交 `680e508d68527bebc9866a5b40c09c1c4b707230`。全局checklist六项全部完成；本对话只交付MATH-17，未推送远端、未发布gh-pages。
