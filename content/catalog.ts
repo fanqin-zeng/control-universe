@@ -313,7 +313,24 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "从衰减曲线算总影响", "slug": "从衰减曲线算总影响"},
+          {"title": "给积分加一个权重", "slug": "给积分加一个权重"},
+          {"title": "复变量与收敛域", "slug": "复变量与收敛域"},
+          {"title": "常用变换怎样得到", "slug": "常用变换怎样得到"},
+          {"title": "线性与指数移位", "slug": "线性与指数移位"},
+          {"title": "导数怎样变成代数", "slug": "导数怎样变成代数"},
+          {"title": "解一个初值问题", "slug": "解一个初值问题"},
+          {"title": "分式怎样还原", "slug": "分式怎样还原"},
+          {"title": "延迟怎样进入变换", "slug": "延迟怎样进入变换"},
+          {"title": "卷积对应相乘", "slug": "卷积对应相乘"},
+          {"title": "从方程得到传递函数", "slug": "从方程得到传递函数"},
+          {"title": "初值与终值的条件", "slug": "初值与终值的条件"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "fourier-analysis",
