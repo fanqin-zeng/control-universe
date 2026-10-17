@@ -29,18 +29,18 @@ export function BrowserNotebook({title, setupCode = '', cells: initial, workerVe
     try {await browserPython(key.current, '', '', 'reset', workerVersion); setCells(initial.map(c => ({...c, outputs: []}))); setMessage('已重置本实验，变量和输出已清空。');}
     catch (error) {setMessage(String(error));} finally {setBusy(false);}
   }
-  return <section data-python-mode="browser" aria-label={title || '浏览器 Python'} className="not-prose" style={{border: '1px solid #94a3b8', borderRadius: 8, padding: 14, margin: '16px 0'}}>
-    <strong>{title || 'Python Notebook'}</strong>
-    <p role="status">{message}</p>
-    <p>本实验默认代码已通过浏览器验收；自行修改后可能需要额外依赖。刷新页面会清空变量，停止会结束本页所有 Python 实验。</p>
+  return <section data-python-mode="browser" aria-label={title || '浏览器 Python'} className="not-prose" style={{border: '1px solid #94a3b8', borderRadius: 8, padding: 14, margin: '16px 0', color:'#111827', background:'#fff'}}>
+    <strong style={{color:'#111827'}}>{title || 'Python Notebook'}</strong>
+    <p role="status" style={{color:'#334155'}}>{message}</p>
+    <p style={{color:'#334155'}}>本实验默认代码已通过浏览器验收；自行修改后可能需要额外依赖。刷新页面会清空变量，停止会结束本页所有 Python 实验。</p>
     <button style={{...buttonStyle, opacity: busy ? 0.5 : 1}} disabled={busy} onClick={() => run(cells.map((_, i) => i))}>全部运行</button>{' '}
     <button style={{...buttonStyle, opacity: busy ? 0.5 : 1}} disabled={busy} onClick={reset}>重置实验</button>{' '}
     <button style={{...buttonStyle, opacity: busy ? 1 : 0.5}} disabled={!busy} onClick={stopBrowserPython}>停止本页 Python</button>
-    {setupCode && <details><summary>初始化代码</summary><pre style={{overflowX: 'auto'}}>{setupCode}</pre></details>}
+    {setupCode && <details><summary style={{color:'#334155'}}>初始化代码</summary><pre style={{overflowX: 'auto',color:'#111827'}}>{setupCode}</pre></details>}
     {cells.map((cell, index) => <div key={index} style={{borderTop: '1px solid #cbd5e1', marginTop: 12, paddingTop: 12}}>
-      <label>代码 {index + 1}<textarea aria-label={`代码 ${index + 1}`} value={cell.code} disabled={busy} spellCheck={false} onChange={event => setCells(previous => previous.map((c, i) => i === index ? {...c, code: event.target.value} : c))} style={{display: 'block', width: '100%', minHeight: 120, boxSizing: 'border-box', fontFamily: 'monospace', color: '#111827', background: '#f8fafc'}} /></label>
+      <label style={{color:'#334155'}}>代码 {index + 1}<textarea aria-label={`代码 ${index + 1}`} value={cell.code} disabled={busy} spellCheck={false} onChange={event => setCells(previous => previous.map((c, i) => i === index ? {...c, code: event.target.value} : c))} style={{display: 'block', width: '100%', minHeight: 120, boxSizing: 'border-box', fontFamily: 'monospace', color: '#111827', background: '#f8fafc'}} /></label>
       <button style={{...buttonStyle, opacity: busy ? 0.5 : 1}} disabled={busy} onClick={() => run([index])}>运行代码 {index + 1}</button>
-      <div aria-label={`输出 ${index + 1}`}>{cell.outputs.map((output, i) => output.type === 'image' ? <img key={i} src={`data:image/png;base64,${output.data}`} alt="Python 绘图输出" style={{maxWidth: '100%'}} /> : <pre key={i} style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: output.type === 'error' ? '#b91c1c' : undefined}}>{output.type === 'error' ? `${output.ename}: ${output.evalue}\n${output.traceback?.join('\n')}` : output.text}</pre>)}</div>
+      <div aria-label={`输出 ${index + 1}`}>{cell.outputs.map((output, i) => output.type === 'image' ? <img key={i} src={`data:image/png;base64,${output.data}`} alt="Python 绘图输出" style={{maxWidth: '100%'}} /> : <pre key={i} style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: output.type === 'error' ? '#b91c1c' : '#111827'}}>{output.type === 'error' ? `${output.ename}: ${output.evalue}\n${output.traceback?.join('\n')}` : output.text}</pre>)}</div>
     </div>)}
   </section>;
 }
