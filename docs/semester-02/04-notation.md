@@ -720,3 +720,8 @@ math/numerical-methods中T为温度℃，t单位min，k冷却率min⁻¹，z=T�
 ### CLASSIC-01局部约定（2026-10-18）
 
 classic/system-modeling中y是向下为正、相对静平衡的车身位移m，r为基座位移m，F额外外力N，c阻尼N·s/m，k刚度N/m，zeta阻尼比；图将y显示为cm，速度仍m/s。E机械能J，c v²耗散功率W，t为秒，末样不是稳态。旋转tau为力矩，B摩擦、J转动惯量；电路C电容F、q电荷，与后续化工浓度C、流量q分段局部定义。电机Ke/ Kt分清V/(rad/s)与N·m/A，L电感；液压Ch=Vt/(4beta_e)是液容，Ap面积，Kc流量除压力，Kq流量除阀芯位移。辐射CA单位面积热容，T用K，eps有效发射率；热集总T可用℃差，thermal H单位W/K。LV的x/y是种群量，与机械位移无关，beta/delta为耦合参数；SIS I为感染人数，与库存I分节声明，单位日。线性化xi/eta是相对平衡增量，摆phi=theta−pi，a=sqrt(g/l)不是幅值。按规则②/⑤局部声明，不覆写其它课程约定。
+
+
+### CLASSIC-02局部约定（2026-10-18）
+
+classic/transfer-function中GF=Y/F是外力到相对静平衡位移的柔度，单位m/N；q=ky/F0和u=F/F0是归一化量，Q/U=kGF无量纲。F0为非零阶跃幅值，初值为0−；qe另指电荷而不是归一化位移q。s为复频率，p/z为约分后极点/零点，wn和wd单位rad/s，极点坐标s⁻¹。电机的比例K单位V/(rad/s)，Kt/Ke分开；辨识K另为一阶模型正增益。对消示例信号归一化，顺序u→Ga→v→Gb→y，d加Gb输入，xa/xb是内部状态，不与悬挂位移混用。0−指开关前、0+指开关后。按规则②/⑤局部声明。

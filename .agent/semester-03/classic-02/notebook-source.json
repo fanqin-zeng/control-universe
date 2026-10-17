@@ -1,0 +1,104 @@
+{
+  "source": "content/classic/transfer-function.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 5,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 124,
+      "title": "变换与模型核对",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 128,
+          "delim": "`",
+          "code": "s, t, tau = sp.symbols('s t tau', positive=True)\r\na, w = sp.symbols('a w', positive=True)\r\npairs=[(1,1/s),(t,1/s**2),(sp.exp(-a*t),1/(s+a)),\r\n       (sp.sin(w*t),w/(s*s+w*w)),(sp.cos(w*t),s/(s*s+w*w)),\r\n       (t*sp.exp(-a*t),1/(s+a)**2)]\r\nfor f, expected in pairs:\r\n    result=sp.laplace_transform(f,t,s,noconds=True)\r\n    assert sp.simplify(result-expected)==0\r\n    print(f, '->', result)\r\nY=1/(s*(tau*s+1))\r\nassert sp.simplify(sp.laplace_transform(1-sp.exp(-t/tau),t,s,noconds=True)-Y)==0\r\nprint('一阶阶跃:', sp.apart(Y,s), '-> 1-exp(-t/tau)')\r\nm,c,k,L,R,J,B,Kt,Ke=sp.symbols('m c k L R J B Kt Ke', positive=True)\r\nmotor=(L*s+R)*(J*s+B)+Kt*Ke\r\nprint('外力/位移分母:', m*s*s+c*s+k)\r\nprint('电机分母:',sp.expand(motor))\r\nprint('RLC电压坐标系数:', L*sp.Symbol('C'),R*sp.Symbol('C'),1)\r\nprint('冲激变换为1，采用0-因果约定；这项是广义函数恒等式')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 309,
+      "title": "🧪 动手实验：方框图代数 — feedback() 计算闭环传递函数",
+      "unknownAttrs": [],
+      "setupCode": "import matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport numpy as np\r\nfrom control import tf, poles, feedback\r\nimport warnings; warnings.filterwarnings('ignore')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 317,
+          "delim": "`",
+          "code": "# 直流电机: 电压 -> 转速 (L=0.01H, R=1Ω, J=0.01, B=0.001, Kt=Ke=0.1)\r\nL, R, J, B, Kt, Ke = 0.01, 1.0, 0.01, 0.001, 0.1, 0.1\r\nmotor = tf([Kt], [L*J, L*B + R*J, R*B + Kt*Ke])\r\nprint(\"电机开环传递函数:\", motor)\r\n\r\n# 单位负反馈 + 比例增益 K=10\r\nK = 10.0  # 单位V/(rad/s)；教学线性模型，未检查执行器饱和\r\nclosed = feedback(K * motor, 1)\r\nprint(\"K=10 闭环传递函数:\", closed)\r\nprint(\"开环极点:\", poles(motor))\r\nprint(\"闭环极点:\", poles(closed))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 450,
+      "title": "二阶归一化与频响核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 455,
+          "delim": "`",
+          "code": "m,c,k=250.,2000.,16000.\r\nwn=np.sqrt(k/m); zeta=c/(2*np.sqrt(m*k))\r\nprint('m,c,k; wn,zeta:',m,c,k,wn,zeta)\r\nprint('极点:',np.roots([m,c,k]))\r\nprint('极点角度(deg):',np.degrees(np.arccos(zeta)))\r\nA=np.array([[0.,1.],[-wn*wn,-2*zeta*wn]])\r\nB=np.array([0.,wn*wn])\r\ntimes=np.linspace(0,3,401)\r\nq=np.array([(np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))[0] for t in times])\r\nprint('t=1归一化位移:',(np.linalg.solve(A,(expm(A)-np.eye(2))@B))[0])\r\nprint('采样峰值/末样:',q.max(),q[-1])\r\novershoot=np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta))\r\nprint('连续峰值/峰时:',1+overshoot,np.pi/(wn*np.sqrt(1-zeta*zeta)))\r\nfor w in [0.,4.,8.,40.]:\r\n    g=1/(k-m*w*w+1j*c*w)\r\n    print('频率/柔度m每N/归一化/相位deg:',w,abs(g),k*abs(g),np.angle(g,deg=True))\r\nwr=wn*np.sqrt(1-2*zeta*zeta)\r\nwc=wn*np.sqrt(1-2*zeta*zeta+np.sqrt((1-2*zeta*zeta)**2+1))\r\nprint('幅值峰频率/归一化峰:',wr,1/(2*zeta*np.sqrt(1-zeta*zeta)))\r\nprint('相对直流-3dB频率:',wc)\r\nassert abs(k/abs(k-m*wc*wc+1j*c*wc)-1/np.sqrt(2))<1e-12\r\nfor z in [0.,.5,1.,2.]:\r\n    A=np.array([[0.,1.],[-64.,-16*z]])\r\n    samples=np.array([np.linalg.solve(A,(expm(A*t)-np.eye(2))@B)[0] for t in times])\r\n    print('阻尼/极点/采样峰/3s末样:',z,np.linalg.eigvals(A),samples.max(),samples[-1])\r\nprint('高频近似 m/N:',1/(m*40**2))\r\nprint('路面输入需要分子cs+k，不能套用外力柔度')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 551,
+      "title": "🧪 动手实验：零极点对消 — 传递函数会隐藏内部状态",
+      "unknownAttrs": [],
+      "setupCode": "import matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nfrom control import tf, poles, minreal\r\nimport warnings; warnings.filterwarnings('ignore')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 558,
+          "delim": "`",
+          "code": "# 归一化教学信号；顺序 u -> Ga -> Gb -> y，d加在Gb输入\r\nimport numpy as np\r\nfrom scipy.linalg import expm\r\nGa = tf([1, -1], [1, 2])\r\nGb = tf([1], [1, -1])\r\nprod = minreal(Ga * Gb, verbose=False)  # 传递函数化简不依赖Slycot\r\nprint(\"约分后极点:\", poles(prod))\r\nA = np.array([[-2., 0.], [-3., 1.]])\r\nBu, Bd = np.array([1., 1.]), np.array([0., 1.])\r\nfor t in [0., 1., 5.]:\r\n    integ = np.linalg.solve(A, expm(A*t)-np.eye(2))\r\n    yu, yd = (integ@Bu)[1], (integ@Bd)[1]\r\n    print(\"t, 输入阶跃输出, 中间扰动阶跃输出:\", t, yu, yd)\r\n    assert abs(yu-(1-np.exp(-2*t))/2)<1e-9\r\n    assert abs(yd-np.expm1(t))<1e-9\r\nprint(\"内部特征值:\", np.linalg.eigvals(A))\r\nprint(\"反向顺序的中间扰动通道是Ga，极点:\", poles(Ga))\r\nfor eps in [-0.001, 0., 0.001]:\r\n    p = 1+eps\r\n    residue = eps/(p*(p+2))\r\n    print(\"极点失配, 不稳定阶跃残余系数:\", eps, residue)\r\nassert np.allclose(poles(prod),[-2])\r\nprint(\"对消仅掩盖输入通道，不能保证内部稳定\")\r\n\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 849,
+      "title": "九题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom control import tf, poles, feedback, dcgain",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 855,
+          "delim": "`",
+          "code": "s,t=sp.symbols('s t', real=True)\r\nprint('题1 wn,zeta:',np.sqrt(20000/500),2000/(2*np.sqrt(500*20000)))\r\nprint('题2 poles,wn,zeta:',np.roots([1,3,10]),np.sqrt(10),3/(2*np.sqrt(10)))\r\nseries=tf([1],[1,1])*tf([5],[1,2])\r\nparallel=tf([1],[1,1])+tf([5],[1,2])\r\nprint('题3 串联/并联/串联直流:',series,parallel,dcgain(series))\r\nprint('题4 电荷坐标L,R,1/C:',.1,2.,100.)\r\nprint('题4 电压坐标LC,RC,1;wn,zeta:',.001,.02,1.,np.sqrt(1000),np.sqrt(.1))\r\nprint('题5 下垂/倒立固有根: +/-j*sqrt(g/l), +/-sqrt(g/l)')\r\nclosed=feedback(4*tf([10],[1,2,0]),.5)\r\nprint('题6 闭环:',closed)\r\nprint('题6 poles,wn,zeta,终值,超调百分比:',poles(closed),np.sqrt(20),1/np.sqrt(20),dcgain(closed),100*np.exp(-np.pi/np.sqrt(19)))\r\nprint('有限直流增益反例 C=G=1,H=.5: 终值=',1/1.5)\r\nassert sp.cancel((s-1)/(s+2)/(s-1))==1/(s+2)\r\nprint('题7 U通道1/(s+2)，D通道1/(s-1)，d阶跃输出exp(t)-1')\r\ng8=(2*s+1)/(s+3); y8=sp.Rational(1,3)+sp.Rational(5,3)*sp.exp(-3*t)\r\nassert sp.simplify(sp.laplace_transform(y8,t,s,noconds=True)-g8/s)==0\r\nprint('题8 poles,zero,DC,y0+,终值:',-3.,-.5,1/3,float(y8.subs(t,0)),1/3)\r\nprint('题8 部分分式:',sp.apart(g8/s,s))\r\ntau=np.sqrt((2/.894)**2-1)/10\r\nprint('题9 舍入测量tau:',tau,'理想tau=.2时幅值:',2/np.sqrt(5))\r\nprint('题9 tau=.2转折频率/2倍转折频率:',5.,10.)\r\nassert np.allclose(poles(closed),np.roots([1,2,20]))\r\nassert abs(dcgain(closed)-2)<1e-12",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
