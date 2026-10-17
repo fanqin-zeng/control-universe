@@ -2,12 +2,8 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 import { readFile } from "fs/promises";
 import path from "path";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
-import rehypeSlug from "rehype-slug";
-import { rehypeLegacyAnchors } from "./lesson-compat.mjs";
+import { headingRemarkPlugins, headingRehypePlugins } from "./mdx-headings.mjs";
 
 // 组件映射的唯一来源是 lib/wiki-components.ts（E2 · fix-015 根治）；mdx-components.tsx 也从它导入。
 // 校验：node scripts/verify-lesson.mjs 第 4 项 + 末尾「组件注册结构」附录 / npm run check 第 5 节。
@@ -61,17 +57,9 @@ async function compileLessonSource(
         parseFrontmatter: true,
         mdxOptions: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          remarkPlugins: [remarkGfm, remarkMath] as any,
-          rehypePlugins: [
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rehypeKatex as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [rehypePrettyCode, { theme: "github-light" }] as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rehypeSlug as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [rehypeLegacyAnchors, { lesson: lessonKey }] as any,
-          ],
+          remarkPlugins: headingRemarkPlugins as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rehypePlugins: [...headingRehypePlugins(lessonKey), [rehypePrettyCode, { theme: "github-light" }]] as any,
         },
       },
       components: {

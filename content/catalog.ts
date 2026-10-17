@@ -567,7 +567,7 @@ export const catalog: Chapter[] = [
             "title": "频域指标与时域指标的对应"
           },
           {
-            "slug": "工程实例rc低通滤波器的频率分析",
+            "slug": "工程实例",
             "title": "工程实例：RC 低通滤波器的频率分析"
           },
           {
@@ -806,7 +806,7 @@ export const catalog: Chapter[] = [
             "title": "工程实例：从Bode图设计增益"
           },
           {
-            "slug": "工程应用ziegler-nichols整定法",
+            "slug": "工程应用ziegler-nichols-整定法",
             "title": "工程应用：Ziegler-Nichols整定法"
           },
           {
@@ -1128,7 +1128,7 @@ export const catalog: Chapter[] = [
             "title": "对偶原理"
           },
           {
-            "slug": "基于观测器的控制器——分离性原理",
+            "slug": "基于观测器的控制器分离性原理",
             "title": "基于观测器的控制器——分离性原理"
           },
           {
@@ -1173,19 +1173,19 @@ export const catalog: Chapter[] = [
             "title": "最优控制问题的数学表述"
           },
           {
-            "slug": "变分法：对泛函求极值",
+            "slug": "变分法对泛函求极值",
             "title": "变分法：对泛函求极值"
           },
           {
-            "slug": "Hamilton 函数与极小值原理",
+            "slug": "hamilton-函数与极小值原理",
             "title": "Hamilton 函数与极小值原理"
           },
           {
-            "slug": "最小时间问题与 Bang-Bang 控制",
+            "slug": "最小时间问题与-bang-bang-控制",
             "title": "最小时间问题与 Bang-Bang 控制"
           },
           {
-            "slug": "线性二次型最优控制——引向 LQR",
+            "slug": "线性二次型最优控制引向-lqr",
             "title": "线性二次型最优控制——引向 LQR"
           },
           {
@@ -1392,7 +1392,7 @@ export const catalog: Chapter[] = [
             "title": "引言"
           },
           {
-            "slug": "什么是非线性系统？",
+            "slug": "什么是非线性系统",
             "title": "什么是非线性系统？"
           },
           {
@@ -1404,11 +1404,11 @@ export const catalog: Chapter[] = [
             "title": "非线性的分类"
           },
           {
-            "slug": "为什么线性化会失效？",
+            "slug": "为什么线性化会失效",
             "title": "为什么线性化会失效？"
           },
           {
-            "slug": "何时需要非线性分析？",
+            "slug": "何时需要非线性分析",
             "title": "何时需要非线性分析？"
           },
           {
@@ -1453,11 +1453,11 @@ export const catalog: Chapter[] = [
             "title": "相平面与向量场"
           },
           {
-            "slug": "Nullcline 与平衡点",
+            "slug": "nullcline-与平衡点",
             "title": "Nullcline 与平衡点"
           },
           {
-            "slug": "平衡点分类：迹-行列式平面",
+            "slug": "平衡点分类迹-行列式平面",
             "title": "平衡点分类：迹-行列式平面"
           },
           {
@@ -1465,7 +1465,7 @@ export const catalog: Chapter[] = [
             "title": "线性化何时失效"
           },
           {
-            "slug": "手算例：非线性振子的完整相平面",
+            "slug": "手算例非线性振子的完整相平面",
             "title": "手算例：非线性振子的完整相平面"
           },
           {
@@ -1473,7 +1473,7 @@ export const catalog: Chapter[] = [
             "title": "鞍点分界线与吸引域"
           },
           {
-            "slug": "Poincaré-Bendixson 定理与极限环",
+            "slug": "poincaré-bendixson-定理与极限环",
             "title": "Poincaré-Bendixson 定理与极限环"
           },
           {
@@ -1481,11 +1481,11 @@ export const catalog: Chapter[] = [
             "title": "应用案例"
           },
           {
-            "slug": "高维推广：Poincaré 截面与 Floquet 乘子",
+            "slug": "高维推广poincaré-截面与-floquet-乘子",
             "title": "高维推广：Poincaré 截面与 Floquet 乘子"
           },
           {
-            "slug": "分岔：相图的拓扑突变",
+            "slug": "分岔相图的拓扑突变",
             "title": "分岔：相图的拓扑突变"
           },
           {
@@ -1530,11 +1530,11 @@ export const catalog: Chapter[] = [
             "title": "李雅普诺夫直接法"
           },
           {
-            "slug": "手算例子：非线性弹簧-质量系统",
+            "slug": "手算例子非线性弹簧-质量系统",
             "title": "手算例子：非线性弹簧-质量系统"
           },
           {
-            "slug": "LaSalle 不变集原理",
+            "slug": "lasalle-不变集原理",
             "title": "LaSalle 不变集原理"
           },
           {
@@ -1554,7 +1554,7 @@ export const catalog: Chapter[] = [
             "title": "应用案例"
           },
           {
-            "slug": "何时失效？",
+            "slug": "何时失效",
             "title": "何时失效？"
           },
           {
@@ -1649,7 +1649,7 @@ export const catalog: Chapter[] = [
             "title": "引言"
           },
           {
-            "slug": "仿射非线性系统与lie-导数",
+            "slug": "仿射非线性系统与lie导数",
             "title": "仿射非线性系统与Lie导数"
           },
           {
@@ -1657,7 +1657,7 @@ export const catalog: Chapter[] = [
             "title": "相对阶严格定义"
           },
           {
-            "slug": "输入输出线性化",
+            "slug": "输入-输出线性化",
             "title": "输入-输出线性化"
           },
           {
@@ -1677,7 +1677,7 @@ export const catalog: Chapter[] = [
             "title": "应用案例：倒立摆镇定"
           },
           {
-            "slug": "应用案例球梁系统",
+            "slug": "应用案例球-梁系统",
             "title": "应用案例：球-梁系统"
           },
           {
@@ -2030,7 +2030,7 @@ export const catalog: Chapter[] = [
         "title": "Z域系统分析",
         "subsections": [
           {
-            "slug": "Z变换的定义",
+            "slug": "z-变换的定义",
             "title": "Z变换的定义"
           },
           {
@@ -2038,15 +2038,15 @@ export const catalog: Chapter[] = [
             "title": "常用变换对"
           },
           {
-            "slug": "Z变换的性质",
+            "slug": "z-变换的性质",
             "title": "Z变换的性质"
           },
           {
-            "slug": "逆Z变换",
+            "slug": "逆-z-变换",
             "title": "逆Z变换"
           },
           {
-            "slug": "z平面与s平面的映射",
+            "slug": "zzz-平面与-sss-平面的映射",
             "title": "z平面与s平面的映射"
           },
           {
@@ -2088,15 +2088,15 @@ export const catalog: Chapter[] = [
         "title": "离散系统稳定性",
         "subsections": [
           {
-            "slug": "z域稳定性条件",
+            "slug": "z-域稳定性条件",
             "title": "z域稳定性条件"
           },
           {
-            "slug": "Jury稳定性判据",
+            "slug": "jury-稳定性判据",
             "title": "Jury稳定性判据"
           },
           {
-            "slug": "w变换与Routh判据",
+            "slug": "w-变换与-routh-判据",
             "title": "w变换与Routh判据"
           },
           {
@@ -2145,11 +2145,11 @@ export const catalog: Chapter[] = [
             "title": "直接数字设计"
           },
           {
-            "slug": "数字PID工程实现",
+            "slug": "数字-pid-工程实现",
             "title": "数字PID工程实现"
           },
           {
-            "slug": "设计实例",
+            "slug": "设计实例电机速度控制",
             "title": "设计实例"
           },
           {
@@ -2319,15 +2319,15 @@ export const catalog: Chapter[] = [
             "title": "三种实现形式"
           },
           {
-            "slug": "PID改进结构",
+            "slug": "pid-改进结构",
             "title": "PID改进结构"
           },
           {
-            "slug": "级联PID",
+            "slug": "级联-pid",
             "title": "级联PID"
           },
           {
-            "slug": "数字PID调参",
+            "slug": "数字-pid-调参",
             "title": "数字PID调参"
           },
           {
@@ -2879,7 +2879,7 @@ export const catalog: Chapter[] = [
             "title": "灵敏度函数"
           },
           {
-            "slug": "h-范数",
+            "slug": "hmathcalh_inftyh-范数",
             "title": "H∞范数"
           },
           {
@@ -2887,7 +2887,7 @@ export const catalog: Chapter[] = [
             "title": "小增益定理"
           },
           {
-            "slug": "回顾lqr的鲁棒性",
+            "slug": "回顾lqr-的鲁棒性",
             "title": "回顾：LQR的鲁棒性"
           },
           {
@@ -3087,7 +3087,7 @@ export const catalog: Chapter[] = [
             "title": "加权函数"
           },
           {
-            "slug": "标准h-问题",
+            "slug": "标准-hmathcalh_inftyh-问题",
             "title": "标准H∞问题"
           },
           {
@@ -3190,7 +3190,7 @@ export const catalog: Chapter[] = [
         "title": "μ综合",
         "subsections": [
           {
-            "slug": "为什么h-不够",
+            "slug": "为什么-h-不够",
             "title": "为什么H∞不够"
           },
           {
@@ -3198,11 +3198,11 @@ export const catalog: Chapter[] = [
             "title": "结构化不确定性"
           },
           {
-            "slug": "结构化奇异值",
+            "slug": "结构化奇异值-μ",
             "title": "结构化奇异值μ"
           },
           {
-            "slug": "鲁棒稳定性与鲁棒性能",
+            "slug": "μ-鲁棒稳定性与鲁棒性能",
             "title": "μ鲁棒稳定性与鲁棒性能"
           },
           {
@@ -3333,15 +3333,15 @@ export const catalog: Chapter[] = [
         "title": "预测控制原理",
         "subsections": [
           {
-            "slug": "MPC的三大核心思想",
+            "slug": "mpc的三大核心思想",
             "title": "MPC的三大核心思想"
           },
           {
-            "slug": "线性MPC的数学公式",
+            "slug": "线性mpc的数学公式",
             "title": "线性MPC的数学公式"
           },
           {
-            "slug": "MPC与LQR的区别",
+            "slug": "mpc与lqr的区别",
             "title": "MPC与LQR的区别"
           },
           {
@@ -3387,7 +3387,7 @@ export const catalog: Chapter[] = [
             "title": "阶跃响应模型"
           },
           {
-            "slug": "CARIMA模型",
+            "slug": "carima模型",
             "title": "CARIMA模型"
           },
           {
@@ -3432,7 +3432,7 @@ export const catalog: Chapter[] = [
         "title": "滚动优化",
         "subsections": [
           {
-            "slug": "开环最优vs滚动优化",
+            "slug": "开环最优-vs-滚动优化",
             "title": "开环最优vs滚动优化"
           },
           {
@@ -3448,15 +3448,15 @@ export const catalog: Chapter[] = [
             "title": "滚动优化与稳定性"
           },
           {
-            "slug": "QP求解与实时性",
+            "slug": "qp求解与实时性",
             "title": "QP求解与实时性"
           },
           {
-            "slug": "Warm-Starting策略",
+            "slug": "warm-starting策略",
             "title": "Warm Starting策略"
           },
           {
-            "slug": "显式MPC",
+            "slug": "显式mpc",
             "title": "显式MPC"
           },
           {
@@ -3493,7 +3493,7 @@ export const catalog: Chapter[] = [
             "title": "约束类型与数学表达"
           },
           {
-            "slug": "约束到QP标准形式的转化",
+            "slug": "约束到qp标准形式的转化",
             "title": "约束到QP标准形式的转化"
           },
           {
@@ -3560,39 +3560,39 @@ export const catalog: Chapter[] = [
         "title": "广义预测控制",
         "subsections": [
           {
-            "slug": "CARIMA模型回顾",
+            "slug": "carima-模型回顾",
             "title": "CARIMA模型回顾"
           },
           {
-            "slug": "Diophantine方程",
+            "slug": "diophantine-方程",
             "title": "Diophantine方程"
           },
           {
-            "slug": "j步ahead预测",
+            "slug": "j-步-ahead-预测",
             "title": "j步ahead预测"
           },
           {
-            "slug": "GPC代价函数",
+            "slug": "gpc-代价函数",
             "title": "GPC代价函数"
           },
           {
-            "slug": "GPC解析解",
+            "slug": "gpc-解析解",
             "title": "GPC解析解"
           },
           {
-            "slug": "数值例子",
+            "slug": "数值例子-1",
             "title": "数值例子"
           },
           {
-            "slug": "GPC与经典控制的关系",
+            "slug": "gpc-与经典控制的关系",
             "title": "GPC与经典控制的关系"
           },
           {
-            "slug": "GPC调参方法",
+            "slug": "gpc-调参方法",
             "title": "GPC调参方法"
           },
           {
-            "slug": "约束GPC",
+            "slug": "约束-gpc",
             "title": "约束GPC"
           },
           {
@@ -3648,7 +3648,7 @@ export const catalog: Chapter[] = [
         "title": "非线性预测控制",
         "subsections": [
           {
-            "slug": "为什么需要NMPC",
+            "slug": "为什么需要-nmpc",
             "title": "为什么需要NMPC"
           },
           {
@@ -3656,11 +3656,11 @@ export const catalog: Chapter[] = [
             "title": "非线性预测模型"
           },
           {
-            "slug": "NMPC优化问题",
+            "slug": "nmpc-优化问题",
             "title": "NMPC优化问题"
           },
           {
-            "slug": "SQP求解",
+            "slug": "sqp-求解",
             "title": "SQP求解"
           },
           {
@@ -3668,7 +3668,7 @@ export const catalog: Chapter[] = [
             "title": "实时迭代方案"
           },
           {
-            "slug": "Lyapunov-based NMPC",
+            "slug": "lyapunov-based-nmpc",
             "title": "Lyapunov-based NMPC"
           },
           {
@@ -3676,11 +3676,11 @@ export const catalog: Chapter[] = [
             "title": "稳定性分析"
           },
           {
-            "slug": "数值例子",
+            "slug": "数值例子非线性摆",
             "title": "数值例子"
           },
           {
-            "slug": "多稳态系统的NMPC",
+            "slug": "多稳态系统的-nmpc",
             "title": "多稳态系统的NMPC"
           },
           {
@@ -3760,7 +3760,7 @@ export const catalog: Chapter[] = [
             "title": "离散化与预测模型"
           },
           {
-            "slug": "MPC控制器设计",
+            "slug": "mpc-控制器设计",
             "title": "MPC控制器设计"
           },
           {
@@ -3833,11 +3833,11 @@ export const catalog: Chapter[] = [
             "title": "解模糊化方法"
           },
           {
-            "slug": "Mamdani型模糊控制器",
+            "slug": "mamdani型模糊控制器",
             "title": "Mamdani型模糊控制器"
           },
           {
-            "slug": "Takagi-Sugeno型模糊控制器",
+            "slug": "takagi-sugeno型模糊控制器",
             "title": "Takagi-Sugeno型模糊控制器"
           },
           {
@@ -3894,15 +3894,15 @@ export const catalog: Chapter[] = [
             "title": "比例因子整定"
           },
           {
-            "slug": "模糊PD控制器",
+            "slug": "模糊pd控制器",
             "title": "模糊PD控制器"
           },
           {
-            "slug": "模糊PID控制器",
+            "slug": "模糊pid控制器",
             "title": "模糊PID控制器"
           },
           {
-            "slug": "与常规PID的定量对比",
+            "slug": "与常规pid的定量对比",
             "title": "与常规PID的定量对比"
           },
           {
@@ -3975,15 +3975,15 @@ export const catalog: Chapter[] = [
             "title": "从模糊控制的失败说起"
           },
           {
-            "slug": "前馈神经网络：结构与万能逼近",
+            "slug": "前馈神经网络结构与万能逼近",
             "title": "前馈神经网络：结构与万能逼近"
           },
           {
-            "slug": "监督学习：用NN模仿PID",
+            "slug": "监督学习用-nn-模仿-pid",
             "title": "监督学习：用NN模仿PID"
           },
           {
-            "slug": "直接优化：让NN超越PID",
+            "slug": "直接优化让-nn-超越-pid",
             "title": "直接优化：让NN超越PID"
           },
           {
@@ -4277,7 +4277,7 @@ export const catalog: Chapter[] = [
         "title": "分布式预测控制",
         "subsections": [
           {
-            "slug": "为什么需要分布式MPC",
+            "slug": "为什么需要分布式mpc",
             "title": "为什么需要分布式MPC"
           },
           {
@@ -4285,7 +4285,7 @@ export const catalog: Chapter[] = [
             "title": "车辆编队问题建模"
           },
           {
-            "slug": "ADMM分解算法",
+            "slug": "admm分解算法",
             "title": "ADMM分解算法"
           },
           {
@@ -4297,7 +4297,7 @@ export const catalog: Chapter[] = [
             "title": "通信拓扑影响"
           },
           {
-            "slug": "数值例子",
+            "slug": "数值例子5车编队仿真",
             "title": "数值例子"
           },
           {

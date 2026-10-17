@@ -19,7 +19,7 @@
 
 [机器输出快照](i03-warnings-baseline.json) 固化36条原始message、来源节号和附带明细；[DOM实测](i03-anchor-evidence.json) 保存26页HTTP、H2数量、KaTeX错误和catalog/源码预估/DOM三路锚点差异。JSON是本期审计证据，不是另一份运行catalog或进度源。
 
-分类：7项“已知待处理”、29项“阻塞”、本次新增脚本WARN为0。这里的阻塞指表内指定的**结构验收或相应课程签发**，不表示审计任务不能合入。I03勾选仅代表每项已查清并有去向，36项底层问题的状态仍均为待处理，不予笼统豁免。P0是整段正文不可读，P1是导航/依赖/日志交付门槛，P2是兼容期或资产治理。
+分类：7项“已知待处理”、29项“阻塞”、本次新增脚本WARN为0。这里的阻塞指表内指定的**结构验收或相应课程签发**，不表示审计任务不能合入。I03勾选仅代表每项已查清并有去向，I03当时36项底层问题均为待处理；当前状态列已按S04追加关闭证据，分类/优先级保留最初风险口径，不予笼统豁免。P0是整段正文不可读，P1是导航/依赖/日志交付门槛，P2是兼容期或资产治理。
 
 ## 逐项处置
 
@@ -28,42 +28,42 @@
 <!-- I03-WARNINGS-BEGIN -->
 | ID | 对象/证据 | 分类 | 优先级 | 影响与处置 | 后续任务 | 截止/关闭条件 | 状态 |
 |---|---|---|---|---|---|---|---|
-| BW-001 | modern/kalman-filter、estimation/kalman-filter | 已知待处理 | P2 | 按计划合一到estimation/kalman-filter；保留有正文一侧，校验旧URL、引用及先修迁移 | S02;S03;EST-03 | S04前完成迁移；重复slug当前不造成路由冲突 | 待处理 |
-| BW-002 | rl-control/safe-rl、safety-ftc/safe-rl | 已知待处理 | P2 | 按计划合一到safety-ftc/safe-rl；保留有正文一侧，校验旧URL、引用及先修迁移 | S02;S03;SAFE-06 | S04前完成迁移；重复slug当前不造成路由冲突 | 待处理 |
-| BW-003 | rl-control/multi-agent-rl、multi-agent/multi-agent-rl | 已知待处理 | P2 | 按计划合一到multi-agent/multi-agent-rl；保留有正文一侧，校验旧URL、引用及先修迁移 | S02;S03;MULTI-08 | S04前完成迁移；重复slug当前不造成路由冲突 | 待处理 |
+| BW-001 | modern/kalman-filter、estimation/kalman-filter | 已知待处理 | P2 | 按计划合一到estimation/kalman-filter；保留有正文一侧，校验旧URL、引用及先修迁移；关闭证据: .agent/semester-03/s04-structure-acceptance.md | S02;S03;EST-03 | S04前完成迁移；重复slug当前不造成路由冲突 | 已关闭 |
+| BW-002 | rl-control/safe-rl、safety-ftc/safe-rl | 已知待处理 | P2 | 按计划合一到safety-ftc/safe-rl；保留有正文一侧，校验旧URL、引用及先修迁移；关闭证据: .agent/semester-03/s04-structure-acceptance.md | S02;S03;SAFE-06 | S04前完成迁移；重复slug当前不造成路由冲突 | 已关闭 |
+| BW-003 | rl-control/multi-agent-rl、multi-agent/multi-agent-rl | 已知待处理 | P2 | 按计划合一到multi-agent/multi-agent-rl；保留有正文一侧，校验旧URL、引用及先修迁移；关闭证据: .agent/semester-03/s04-structure-acceptance.md | S02;S03;MULTI-08 | S04前完成迁移；重复slug当前不造成路由冲突 | 已关闭 |
 | BW-004 | 35课缺讨论日志（附表A逐课列出） | 阻塞 | P1 | 按生产顺序逐课执行Phase1–4，生成真实本期日志，不伪造历史补档；由35个目标课程行跟踪 | R02 | 每门对应课程签发前补齐；全部覆盖后关闭本项 | 待处理 |
-| BW-005 | BodeMarginsExplorer，未引用且未登记 | 已知待处理 | P2 | W02核教学需求；需复用则关联课程后注册并显式引用、跑默认值/边界验收；无用途则移除或归档 | W02;CLASSIC-09 | 引用前必须登记；W02关闭须有去向及全站引用扫描 | 待处理 |
-| BW-006 | FirstOrderComparisonExplorer，已登记未引用 | 已知待处理 | P2 | W02核对fix023删组件背景和后续需求；不再使用则同步清理实现/注册，保留复用须指定目标课与交付时点 | W02;CLASSIC-01 | 不得仅为消WARN插入课文；明确去向后复查孤儿数 | 待处理 |
-| BW-007 | classic/frequency-domain-analysis（源码差异1处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;CLASSIC-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-008 | classic/frequency-response-design（源码差异1处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;CLASSIC-09 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-009 | modern/state-observer（源码差异1处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MODERN-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-010 | modern/optimal-control-basics（源码差异4处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MODERN-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-011 | nonlinear/nonlinear-characteristics（源码差异3处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;NONLINEAR-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-012 | nonlinear/phase-plane（源码差异6处；DOM H2 15/15） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;NONLINEAR-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-013 | nonlinear/lyapunov-stability（源码差异3处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;NONLINEAR-03 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-014 | nonlinear/feedback-linearization（源码差异3处；DOM H2 15/15） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;NONLINEAR-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-015 | discrete-sampled/z-transform-analysis（源码差异4处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;DISCRETE-04 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-016 | discrete-sampled/discretization-methods（源码差异2处；DOM H2 8/8） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;DISCRETE-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-017 | discrete-sampled/discrete-stability-criteria（源码差异3处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;DISCRETE-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-018 | implementation/digital-pid（源码差异3处；DOM H2 8/8） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;IMPL-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-019 | mpc/mpc-principle（源码差异3处；DOM H2 1/8） | 阻塞 | P0 | W01按实际DOM校正catalog小节slug与旧锚点兼容；先由W05恢复正文和数学渲染，再核锚点 | W01;W05;MPC-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-020 | mpc/prediction-model（源码差异1处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MPC-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-021 | mpc/receding-horizon（源码差异4处；DOM H2 2/11） | 阻塞 | P0 | W01按实际DOM校正catalog小节slug与旧锚点兼容；先由W05恢复正文和数学渲染，再核锚点 | W01;W05;MPC-03 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-022 | mpc/constraint-handling（源码差异1处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MPC-04 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-023 | mpc/mpc-case-study（源码差异1处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MPC-11 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-024 | mpc/generalized-predictive-control（源码差异8处；DOM H2 16/16） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MPC-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-025 | mpc/nonlinear-mpc（源码差异6处；DOM H2 16/16） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MPC-08 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-026 | mpc/distributed-mpc（源码差异3处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;MULTI-07 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-027 | robust/robustness-concept（源码差异2处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;ROBUST-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-028 | robust/h-infinity-basics（源码差异1处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;ROBUST-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-029 | robust/mu-synthesis（源码差异3处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;ROBUST-08 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-030 | intelligent/fuzzy-control-basics（源码差异2处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;INTEL-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-031 | intelligent/fuzzy-controller-design（源码差异3处；DOM H2 14/14） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;INTEL-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-032 | intelligent/neural-network-control（源码差异3处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估 | W01;INTEL-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 待处理 |
-| BW-033 | discrete-sampled/z-transform-analysis 先修本章后面的discrete-time-freq | 阻塞 | P1 | S01依目标顺序先安排采样与量化，S02重排并核真实依赖，不靠删边掩盖逆序 | S01;S02;DISCRETE-04 | S04前章内倒置为0；相关课交付前先修实际可学 | 待处理 |
-| BW-034 | discrete-sampled/discretization-methods 先修本章后面的discrete-time-freq | 阻塞 | P1 | S01依目标顺序先安排采样与量化，S02重排并核真实依赖，不靠删边掩盖逆序 | S01;S02;DISCRETE-06 | S04前章内倒置为0；相关课交付前先修实际可学 | 待处理 |
-| BW-035 | 30条孤立源条目（附表B逐课列出） | 已知待处理 | P2 | W03逐条判断缺先修、缺入边或合理独立；迁移后按目标ID复核，合理独立写证据，不为连图伪造依赖 | W03;S01 | S01形成逐条审查表；各目标课P1复核后写catalog | 待处理 |
-| BW-036 | modern、nonlinear、mpc、robust、intelligent、rl-control、multi-agent共7章 | 已知待处理 | P2 | W03核已有图谱与课程输入，分清零边是元数据缺失还是合理；记录迁移后逐课先修和可验证例外 | W03;S01 | S01完成7章审查；各课签发前必须核真实先修 | 待处理 |
+| BW-005 | BodeMarginsExplorer，未引用且未登记 | 已知待处理 | P2 | W02核教学需求；需复用则关联课程后注册并显式引用、跑默认值/边界验收；无用途则移除或归档；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W02;CLASSIC-09 | 引用前必须登记；W02关闭须有去向及全站引用扫描 | 已关闭 |
+| BW-006 | FirstOrderComparisonExplorer，已登记未引用 | 已知待处理 | P2 | W02核对fix023删组件背景和后续需求；不再使用则同步清理实现/注册，保留复用须指定目标课与交付时点；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W02;CLASSIC-01 | 不得仅为消WARN插入课文；明确去向后复查孤儿数 | 已关闭 |
+| BW-007 | classic/frequency-domain-analysis（源码差异1处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;CLASSIC-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-008 | classic/frequency-response-design（源码差异1处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;CLASSIC-09 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-009 | modern/state-observer（源码差异1处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MODERN-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-010 | modern/optimal-control-basics（源码差异4处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MODERN-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-011 | nonlinear/nonlinear-characteristics（源码差异3处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;NONLINEAR-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-012 | nonlinear/phase-plane（源码差异6处；DOM H2 15/15） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;NONLINEAR-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-013 | nonlinear/lyapunov-stability（源码差异3处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;NONLINEAR-03 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-014 | nonlinear/feedback-linearization（源码差异3处；DOM H2 15/15） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;NONLINEAR-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-015 | discrete-sampled/z-transform-analysis（源码差异4处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;DISCRETE-04 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-016 | discrete-sampled/discretization-methods（源码差异2处；DOM H2 8/8） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;DISCRETE-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-017 | discrete-sampled/discrete-stability-criteria（源码差异3处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;DISCRETE-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-018 | implementation/digital-pid（源码差异3处；DOM H2 8/8） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;IMPL-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-019 | mpc/mpc-principle（源码差异3处；DOM H2 1/8） | 阻塞 | P0 | W01按实际DOM校正catalog小节slug与旧锚点兼容；先由W05恢复正文和数学渲染，再核锚点；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;W05;MPC-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-020 | mpc/prediction-model（源码差异1处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MPC-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-021 | mpc/receding-horizon（源码差异4处；DOM H2 2/11） | 阻塞 | P0 | W01按实际DOM校正catalog小节slug与旧锚点兼容；先由W05恢复正文和数学渲染，再核锚点；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;W05;MPC-03 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-022 | mpc/constraint-handling（源码差异1处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MPC-04 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-023 | mpc/mpc-case-study（源码差异1处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MPC-11 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-024 | mpc/generalized-predictive-control（源码差异8处；DOM H2 16/16） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MPC-06 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-025 | mpc/nonlinear-mpc（源码差异6处；DOM H2 16/16） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MPC-08 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-026 | mpc/distributed-mpc（源码差异3处；DOM H2 13/13） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;MULTI-07 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-027 | robust/robustness-concept（源码差异2处；DOM H2 10/10） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;ROBUST-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-028 | robust/h-infinity-basics（源码差异1处；DOM H2 9/9） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;ROBUST-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-029 | robust/mu-synthesis（源码差异3处；DOM H2 11/11） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;ROBUST-08 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-030 | intelligent/fuzzy-control-basics（源码差异2处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;INTEL-01 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-031 | intelligent/fuzzy-controller-design（源码差异3处；DOM H2 14/14） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;INTEL-02 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-032 | intelligent/neural-network-control（源码差异3处；DOM H2 12/12） | 阻塞 | P1 | W01按实际DOM校正catalog小节slug与旧锚点兼容；结合W04统一锚点生成/验收，禁止只信源码预估；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W01;INTEL-05 | S04及关联课程签发前：实际链接目标存在，H2对齐，katex-error=0 | 已关闭 |
+| BW-033 | discrete-sampled/z-transform-analysis 先修本章后面的discrete-time-freq | 阻塞 | P1 | S01依目标顺序先安排采样与量化，S02重排并核真实依赖，不靠删边掩盖逆序；关闭证据: .agent/semester-03/s04-structure-acceptance.md | S01;S02;DISCRETE-04 | S04前章内倒置为0；相关课交付前先修实际可学 | 已关闭 |
+| BW-034 | discrete-sampled/discretization-methods 先修本章后面的discrete-time-freq | 阻塞 | P1 | S01依目标顺序先安排采样与量化，S02重排并核真实依赖，不靠删边掩盖逆序；关闭证据: .agent/semester-03/s04-structure-acceptance.md | S01;S02;DISCRETE-06 | S04前章内倒置为0；相关课交付前先修实际可学 | 已关闭 |
+| BW-035 | 30条孤立源条目（附表B逐课列出） | 已知待处理 | P2 | W03逐条判断缺先修、缺入边或合理独立；迁移后按目标ID复核，合理独立写证据，不为连图伪造依赖；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W03;S01 | S01形成逐条审查表；各目标课P1复核后写catalog | 已关闭 |
+| BW-036 | modern、nonlinear、mpc、robust、intelligent、rl-control、multi-agent共7章 | 已知待处理 | P2 | W03核已有图谱与课程输入，分清零边是元数据缺失还是合理；记录迁移后逐课先修和可验证例外；关闭证据: .agent/semester-03/s04-structure-acceptance.md | W03;S01 | S01完成7章审查；各课签发前必须核真实先修 | 已关闭 |
 <!-- I03-WARNINGS-END -->
 
 ## 附表A：35课日志债务逐课去向
@@ -197,3 +197,7 @@ BW-001–003由S02/S03负责迁移，完成前保留三组旧入口，禁止先�
 | git diff --check | 0 | 无空白错误输出 |
 
 I03的关闭条件是36项完成逐条审计、分类、来源核对和后续登记，已满足；不是警告清零或两页课程修复。W01–W05保持未勾，课程行保持原状态。新增审计技术缺口S3-Q001已固化于计划和W04，后续执行按各任务的明确关闭条件推进。
+
+## S04关闭复核（2026-10-17）
+
+上述I03命令/DOM快照保留当时事实；状态列已追加S04关闭证据。36项中35项经S01–S04及W01–W05实测关闭，BW-004的35课日志债务仍待逐课Phase1–4。完整证据见 `s04-structure-acceptance.md`；S02新增加的独立领域motion-planning同slug提示仍为接受项，不属于I03三组重复迁移债务。

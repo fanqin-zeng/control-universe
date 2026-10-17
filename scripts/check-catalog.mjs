@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { renderedHeadings } from './rendered-headings.mjs';
 import { resolveHistoricalLesson } from '../lib/lesson-compat.mjs';
 /**
  * check-catalog.mjs —— 交付统计的唯一权威来源（semester-02 A7 / A8）
@@ -16,7 +17,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 // E3：解析原语与 catalog 解析已抽成单一来源（原先本文件与 verify-lesson.mjs 各存一份）
 import { read, readIfExists, linesOf, walk, mdxH2Titles } from "./lib-mdx.mjs";
-import { parseCatalog, slugify, makeSlugger } from "./lib-catalog.mjs";
+import { parseCatalog } from "./lib-catalog.mjs";
 
 // ---------------------------------------------------------------- 参数与路径
 const argv = process.argv.slice(2);
@@ -301,8 +302,7 @@ for (const l of catLessons) {
   if (!l.subsections) { WARN(catKey(l) + "：有 MDX 但 catalog 无 subsections（侧栏无本课小节导航）"); continue; }
   subChecked++;
   const titles = mdxH2Titles(read(f));
-  const slug = makeSlugger();
-  const actual = titles.map((t) => slug(t));
+  const actual = (await renderedHeadings(read(f), catKey(l))).h2.map(h=>h.id);
   const want = l.subsections.map((s) => s.slug);
   if (actual.length !== want.length) {
     subCountMismatch++;
@@ -313,7 +313,7 @@ for (const l of catLessons) {
   const bad = want.map((s, i) => (s === actual[i] ? null : "「" + s + "」应为「" + actual[i] + "」")).filter(Boolean);
   if (bad.length) {
     subSlugMismatch++;
-    WARN(catKey(l) + "：" + bad.length + " 个 subsection slug 与 slugger 实值不符（侧栏死锚点，Q5 待裁决）\n        " + bad.join("\n        "));
+    WARN(catKey(l) + "：" + bad.length + " 个 subsection slug 与真实渲染ID不符（侧栏死锚点，Q5 待裁决）\n        " + bad.join("\n        "));
   }
 }
 if (!subCountMismatch) PASS(subChecked + " 门有 MDX 且有 subsections 的课程，H2 数与 catalog 全部相等");

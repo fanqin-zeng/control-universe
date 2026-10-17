@@ -62,7 +62,8 @@ $$\min_{u(0), \ldots, u(N-1)} \sum_{k=0}^{N-1} L(x(k), u(k)), \quad \text{s.t.} 
 
 每个采样时刻 $k$，求解以下优化问题（用第二课的增量增广模型）：
 
-$$\boxed{\begin{aligned}
+$$
+\boxed{\begin{aligned}
 \min_{\Delta U} \quad & J(k) = \sum_{i=0}^{N_p-1} \left[ \hat{y}(k+i|k) - r(k+i) \right]^T Q_i \left[ \hat{y}(k+i|k) - r(k+i) \right] \\
 & + \sum_{i=0}^{N_u-1} \Delta u(k+i)^T R_i \Delta u(k+i) + V_f(\hat{\xi}(k+N_p|k)) \\
 \text{s.t.} \quad & \hat{Y} = F_e \xi(k) + \Phi_e \Delta U \quad \text{（预测模型）}\\
@@ -70,7 +71,8 @@ $$\boxed{\begin{aligned}
 & \Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max} \quad \text{（变化率约束）}\\
 & y_{\min} \leq \hat{y}(k+i|k) \leq y_{\max} \quad \text{（输出约束）}\\
 & \hat{\xi}(k+N_p|k) \in \mathcal{X}_f \quad \text{（终端约束，可选）}
-\end{aligned}}$$
+\end{aligned}}
+$$
 
 其中：
 - $\Delta U = [\Delta u(k), \ldots, \Delta u(k+N_u-1)]^T$ 是优化变量

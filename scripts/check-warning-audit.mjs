@@ -1,5 +1,5 @@
 /** I03审计覆盖校验；check-catalog仍是运行目录/警告的唯一测量来源。 */
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -44,7 +44,11 @@ export function auditWarnings({snapshot,audit,checklist,anchors,plan,live}){
     check(Boolean(owners),'缺后续任务 '+id);
     for(const owner of (owners??'').split(';'))check(tasks.has(owner),'未知后续任务 '+id+': '+owner);
     check(['待处理','已关闭'].includes(state),'状态非法 '+id);
-    if(state==='已关闭')check(/关闭证据[:：]\s*\S+/.test(action??''),'关闭缺证据 '+id);
+    if(state==='已关闭'){
+      const proof=(action??'').match(/关闭证据[:：]\s*(\S+)/)?.[1];
+      check(Boolean(proof),'关闭缺证据 '+id);
+      if(proof)check(proof.startsWith('.agent/')&&!proof.includes('..')&&existsSync(proof.split('#')[0]),'关闭证据不可读 '+id);
+    }
   }
   for(const id of known)check(ids.has(id),'遗漏基线WARN '+id);
   const sourceTargets=new Map();
@@ -109,11 +113,12 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
     }
     const result=auditWarnings(input);
     if(successorLive){
-      const expected=JSON.parse(readFileSync('.agent/semester-03/s02-warnings.json','utf8'));
+      const milestone=/\| S04 \|[^\n]*\[x\]/.test(input.checklist)?'s04':'s02';
+      const expected=JSON.parse(readFileSync(`.agent/semester-03/${milestone}-warnings.json`,'utf8'));
       const delta=compareWarningSnapshot(expected.warnings,successorLive);
       const unexpected=delta.newOrChanged,disappeared=delta.resolvedCandidates;
-      if(unexpected||disappeared)result.errors.push(`S02后WARN变化须重新审计：新增/变化${unexpected}，消失${disappeared}`);
-      Object.assign(result.stats,{liveBaseline:'S02',current:successorLive.length,newOrChanged:unexpected,resolvedCandidates:disappeared});
+      if(unexpected||disappeared)result.errors.push(`${milestone}后WARN变化须重新审计：新增/变化${unexpected}，消失${disappeared}`);
+      Object.assign(result.stats,{liveBaseline:milestone.toUpperCase(),current:successorLive.length,newOrChanged:unexpected,resolvedCandidates:disappeared});
     }
     console.log(JSON.stringify(result.stats,null,2));
     if(result.errors.length){result.errors.forEach(e=>console.error('FAIL',e));process.exitCode=1;}else console.log('PASS I03 warning audit');
