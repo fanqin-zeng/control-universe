@@ -33,3 +33,16 @@
 源码仅加换行及引用续行前缀；不调整章节/练习/数值断言/算法。原30项实验待办的行号由新源文件重算，处置结论未改变。未发布gh-pages；未来发布仍需具体版本授权。
 
 合并：修正提交8f0fc6a，已--no-ff合入master为edf0fb448d6690c4461a933ad990562f80b28b82。回执沿用工作包分支合回后删除分支。本次未push、未发布gh-pages。
+
+## 授权发布与公网验收（2026-10-18）
+
+用户明确同意将8c2920f合入gh-pages并推送；已以--no-ff合并为000f3b3cad9e28f242d04829763ee8aa37423443并推送origin/gh-pages。上文“未发布”描述本地交付阶段，本节记录后续授权发布。
+
+- GitHub Actions 39048485033：build/deploy均success，公开运行记录见public-actions.json（https://github.com/fanqing-zeng/control-universe/actions/runs/39048485033）。
+- node scripts/verify-public-pages.mjs 000f3b3cad9e28f242d04829763ee8aa37423443 .agent/semester-03/math-layout/public-http.json：退出0；205课程/9旧入口，235成功请求，缺失路径404；release.json精确匹配发布SHA，sourceDirty=false。
+- 公网传递函数页64个块级公式全部center，内容中心误差小于0.006px，KaTeX错误0；截图public-centered.png，读数public-browser.json。
+- 公网MATH-03：4个浏览器Notebook入口，线性映射默认输出(3,4)、共线切换正常并恢复默认；“核对正文与七题答案”在公网Pyodide 0.27.7实际运行完成，输出与本地验收一致，浏览器warn/error为空。此次没有重跑全部历史课程实验，原证据衔接范围不变。
+- node scripts/check-semester03.mjs、npm run math:check、node scripts/check-python-support.mjs：均退出0；任务25/完成22/已合课程3，Python54课157启用/30展示。
+
+全局checklist的R01补充本次公网证据，仍保持未完成：其余全站验收未在本次发布中冒充完成。验收回执仅合回master，不再次合入gh-pages触发重复部署。
+最终回执门槛：npm run check退出0，PASS21/WARN2/FAIL0，见public-final-check.log。

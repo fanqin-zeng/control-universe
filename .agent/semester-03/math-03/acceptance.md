@@ -43,3 +43,5 @@ verify的唯一WARN为下一课math/eigen-decomposition仍是已登记骨架；�
 课程提交bf990e2，已以--no-ff合入master，真实课程合并提交610cf519523d06a67e0b2431ce45d5a7ca73fd29；确认后才勾全局MATH-03合并列。回执沿用本工作包分支提交再合回master。本次不push、不发布gh-pages，停止于这一节课。
 
 日志结构复核：node .agent/semester-03/math-03/check-log.mjs退出0，4阶段/3轮/6审校组/10出席角色/36对账行/9门槛与附加项/4附录及唯一标记均通过；语义、数字覆盖和出席阶段由日志人工逐项核查。见log-structure.log。最终source-hash与Python白名单经check-python-support复核一致，原两门数学正文与Worker的git diff为空。
+
+授权发布补记（2026-10-18）：用户批准的8c2920f包含本课，已合入gh-pages为000f3b3cad9e28f242d04829763ee8aa37423443并推送发布；205课程/9旧入口公网检查通过，本课4个浏览器Notebook入口及线性映射交互正常，“核对正文与七题答案”公网实际运行完成。完整记录见.agent/semester-03/math-layout/acceptance.md及public-http.json、public-browser.json。
