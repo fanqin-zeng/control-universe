@@ -13,6 +13,8 @@ triggers:
 
 ## 概述
 
+> **学期3入口（2026-10-17）**：新写课程使用 [wiki-lesson-new](../wiki-lesson-new/SKILL.md)，已有正文重构使用 [wiki-lesson-refactor](../wiki-lesson-refactor/SKILL.md)，并执行 [共同流程](references/semester-03-core.md)。本文件保留为既有角色矩阵、讨论纪律和质量门槛的共同权威，历史日志不回写；学期3新增执行约束由共同流程统一承载。
+
 本技能定义了一套多角色讨论框架，用于生成和优化控制理论wiki课程内容。内容通过七个具名层面（外加轮值领域专家）的角色结构化讨论产出，确保内容兼具学术深度、工程实用性、教学质量、数值可信度与可读性。
 
 ## 角色体系

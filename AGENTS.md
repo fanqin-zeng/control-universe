@@ -13,12 +13,18 @@
 
 它的特别之处不在技术栈，而在**内容生产方法论**：每门课程由一套**虚拟多角色团队**通过四阶段结构化讨论（Phase 1–4）产出，讨论过程固化为日志，数值断言要求"正文 / notebook 输出 / 交互组件默认值"三方对账。**这是本仓库的既有硬规则，后续所有课程重构与开发必须延续这套讨论式工作流。**
 
+### 当前迭代入口：学期3（2026-10-17）
+
+用户已启动学期3优化，**后续默认按 [.agent/semester-03-plan.md](.agent/semester-03-plan.md) 与 [全局 checklist](.agent/semester-03-checklist.md) 执行**；学期2计划保留为历史来源。学期3不改角色团队，先落实计划中的结构/基建，再从数学起按顺序生产，**一个对话只交付一节课**。
+
+新写使用 [.agent/skills/wiki-lesson-new/SKILL.md](.agent/skills/wiki-lesson-new/SKILL.md)，已有正文重构使用 [.agent/skills/wiki-lesson-refactor/SKILL.md](.agent/skills/wiki-lesson-refactor/SKILL.md)，两者共用既有 Phase 1–4、personas 与 M1–M5。开工及更新进度后另跑 `node scripts/check-semester03.mjs`，不能用旧 v1.3 标记冒充本期完成。旧章节/状态快照不代表学期3目标已落地；运行元数据仍只认 catalog。
+
 ## 2. 新会话开工必读（按顺序）
 
 1. 本文件。
 2. `.agent/skills/wiki-discussion/SKILL.md` —— 讨论式内容生成工作流（Phase 1–4、发言纪律、日志结构、数值三方对账）。**写/改任何课程内容前必读。**
 3. `.agent/skills/wiki-discussion/personas.md` —— 22 名角色 + 14 类轮值专家的完整人设与检查清单（"团队全貌"一节是人数与分组的最终权威）。
-4. `.agent/semester-02-plan.md` —— **按学期（版本迭代）的重构计划**，见 §5。第 4 节含每个工作包的自包含推荐 Prompt。
+4. `.agent/semester-03-plan.md` 与 `.agent/semester-03-checklist.md` —— 当前计划与全局进度；按任务读取新写/重构技能。`.agent/semester-02-plan.md` 是历史计划，见 §5，不再作为默认排期。
 5. `.agent/delivery-tracker.md` —— 交付台账（每课打勾记录，与 catalog 交叉校验）。
 6. `.agent/fix-logs/INDEX.md` —— 历史返工归因库（写组件/数值前扫一眼能省一次返工）。
 7. 跑一遍 `npm run check`，以脚本输出刷新你对当前状态的认知（本文件 §10 的快照可能已过期）。
