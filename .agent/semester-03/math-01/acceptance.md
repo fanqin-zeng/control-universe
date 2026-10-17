@@ -30,4 +30,4 @@
 
 ## 合入回执
 
-验收完成后按--no-ff合入master，真实合并提交再写入全局checklist；此处不预填hash。用户已有proofreading/proofreading-2026-10-16.txt修改未改动、未暂存。没有自动push。
+课程提交97dfa94；已按--no-ff合入master，真实课程合并提交0e7e5db670c69677abdb8aff629cc8340125462b。合并之后才更新全局checklist合并列；随后以同一工作包分支提交回执并合回master。用户已有proofreading/proofreading-2026-10-16.txt修改未改动、未暂存。没有自动push。

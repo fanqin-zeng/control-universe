@@ -41,7 +41,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MATH-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/01-calculus-basics.md;.agent/semester-03/math-01/acceptance.md |
+| MATH-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/01-calculus-basics.md;.agent/semester-03/math-01/acceptance.md;commit:0e7e5db670c69677abdb8aff629cc8340125462b |
 | MATH-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MATH-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
