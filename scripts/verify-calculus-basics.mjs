@@ -23,7 +23,8 @@ for(let n=1;n<=16;n++){const a=calc(0,n);assert.equal(a.secant,null);close(a.rig
 for(const [h,n]of [[NaN,4],[Infinity,4],[1.1,4],[0,0],[0,17],[0,1.5]])assert.throws(()=>calc(h,n));
 report.default=calc(.5,4);delete report.default.curve;
 const expected=[['区间平均速度: 3 5','导数: 2*t t=2时: 4','切线预测/真值/误差: 22/5 441/100 1/100'],['常数/幂函数/乘积: 0 2*t 3*t**2','多项式导数与点值: 6*t - 2 10','复合函数导数与点值: 8*t + 4 12'],['符号积分: 4','两段位移/净位移/路程: -1 1 0 2'],['准确/扰动差商= 4.1 4.2','准确/扰动差商= 4.01 5.01','累积函数及导数: h**2 2*h','幂函数原函数: t**3/3','常数信息: [2*t, 2*t, 2*t]'],['题1: 4 2 6','题2: 7/2 4','题3: 22/5 441/100 1/100','题4: 12','题5: 5 4 1','题6: [-1, 1] 0 2','题7: [-1, 1]','题8: [1/10, 1]']];
-const notebooks=extractNotebooks(mdx);assert.equal(notebooks.length,5);
+expected.splice(4,0,['几何级数部分和: [1, 3/2, 7/4, 15/8]','几何级数极限: 2','指数近似/真值/误差: 1.105 1.1051709180756477','阶乘0/2/3/5: [1, 2, 6, 120]']);
+const notebooks=extractNotebooks(mdx);assert.equal(notebooks.length,6);
 for(let i=0;i<notebooks.length;i++){
  const id='math01-'+randomUUID();const nb=notebooks[i];
  try{
@@ -37,5 +38,5 @@ for(let i=0;i<notebooks.length;i++){
   report.notebooks.push({index:i+1,environment,cells,stream});
  } finally {const removed=await directHttp(8891,'/api/notebook/'+id,'DELETE');assert.equal(removed.status,200);}
 }
-report.pass=true;writeFileSync('.agent/semester-03/math-01/reconciliation.json',JSON.stringify(report,null,2)+'\n');
-console.log('PASS MATH-01: actual TS / independent Fraction+SymPy / 5 clean page notebooks; all 16 N, h=0, boundary and invalid input checks');
+report.pass=true;writeFileSync(process.argv.includes('--out')?process.argv[process.argv.indexOf('--out')+1]:'.agent/semester-03/math-02/calculus-reconciliation.json',JSON.stringify(report,null,2)+'\n');
+console.log('PASS MATH-01: actual TS / independent Fraction+SymPy / 6 clean page notebooks; all 16 N, h=0, boundary and invalid input checks');

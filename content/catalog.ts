@@ -111,6 +111,14 @@ export const catalog: Chapter[] = [
             "title": "测量与采样边界"
           },
           {
+            "slug": "无穷级数",
+            "title": "无穷级数"
+          },
+          {
+            "slug": "泰勒展开",
+            "title": "泰勒展开"
+          },
+          {
             "slug": "小结",
             "title": "小结"
           },
@@ -151,11 +159,22 @@ export const catalog: Chapter[] = [
           {
             "slug": "小结",
             "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
           }
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "draft"
+        "status": "v1.3",
+        "prereq": [
+          "math/calculus-basics"
+        ]
       },
       {
         "slug": "linear-algebra-basics",

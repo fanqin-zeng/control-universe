@@ -1,61 +1,30 @@
 "use client";
-
 import { useMemo, useState } from "react";
+import type { EChartsOption } from "echarts";
 import { useECharts } from "@/components/wiki/use-echarts";
-
-/**
- * 复数极坐标探索器（math/complex-numbers）
- * 四滑块 a、b、r、θ 联动（拖 a/b 反算 r/θ；拖 r/θ 反算 a/b）。
- * 默认 a=3、b=4 复现正文首例（r=5、θ=53.13°）。
- * 画布固定 x/y ∈ [-6,6]（校订反馈要求：画图范围保持固定）。
- */
+export function calculateComplex(a: number, b: number) {
+  if (![a,b].every(Number.isFinite) || Math.abs(a)>5 || Math.abs(b)>5) throw Error("坐标范围为-5到5");
+  const r=Math.hypot(a,b), angle=r===0?null:(Math.atan2(b,a)<=-Math.PI?Math.PI:Math.atan2(b,a)), degrees=angle===null?null:angle*180/Math.PI;
+  return { a,b,r,angle,degrees,conjugate:[a,-b],rotation:[-b,a],
+    arc:angle===null?[]:Array.from({length:61},(_,i)=>{const t=i/60*angle;return [Math.min(r,1)*Math.cos(t),Math.min(r,1)*Math.sin(t)];}) };
+}
 export function ComplexPolarExplorer() {
-  const [a, setA] = useState(3);
-  const [b, setB] = useState(4);
-  const r = Math.hypot(a, b);
-  const thetaDeg = (Math.atan2(b, a) * 180) / Math.PI;
-  const setFromPolar = (nr: number, nd: number) => {
-    const rad = (nd * Math.PI) / 180;
-    setA(Math.round(nr * Math.cos(rad) * 100) / 100);
-    setB(Math.round(nr * Math.sin(rad) * 100) / 100);
-  };
-  const option = useMemo(() => ({
-    tooltip: { trigger: "item" as const },
-    grid: { top: 30, left: 60, right: 30, bottom: 45 },
-    xAxis: { type: "value" as const, name: "Re", min: -6, max: 6 },
-    yAxis: { type: "value" as const, name: "Im", min: -6, max: 6 },
-    series: [
-      { type: "line" as const, data: [[0, 0], [a, b]], lineStyle: { width: 2.5, color: "#2563eb" }, symbol: "arrow" as const, symbolSize: 10 },
-      { type: "line" as const, data: [[0, b], [a, b]], lineStyle: { width: 1, color: "#94a3b8", type: "dashed" as const }, symbol: "none" },
-      { type: "line" as const, data: [[a, 0], [a, b]], lineStyle: { width: 1, color: "#94a3b8", type: "dashed" as const }, symbol: "none" },
-      { type: "scatter" as const, data: [[a, b]], itemStyle: { color: "#dc2626" }, symbolSize: 9 },
-      { type: "line" as const, data: Array.from({ length: 61 }, (_, i) => { const t = (i / 60) * Math.max(thetaDeg, 0) * Math.PI / 180; const rr = Math.min(r, 1.2); return [rr * Math.cos(t), rr * Math.sin(t)]; }), lineStyle: { width: 1, color: "#f59e0b" }, symbol: "none" },
-    ],
-    animation: false,
-  }), [a, b, r, thetaDeg]);
-  const ref = useECharts(option);
-  const sliders: [string, number, number, number, number, (v: number) => void][] = [
-    ["实部 a", a, -5, 5, 0.1, setA],
-    ["虚部 b", b, -5, 5, 0.1, setB],
-    ["模 r", Math.round(r * 100) / 100, 0.5, 7, 0.05, (v) => setFromPolar(v, thetaDeg)],
-    ["辐角 θ (°)", Math.round(thetaDeg * 100) / 100, -180, 180, 1, (v) => setFromPolar(r, v)],
-  ];
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div ref={ref} style={{ height: 400 }} />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 18px", padding: "0 12px" }}>
-        {sliders.map(([label, val, mn, mx, st, on]) => (
-          <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontSize: 13, minWidth: 72 }}>{label}:</label>
-            <input type="range" min={mn} max={mx} step={st} value={val} onChange={(ev) => on(parseFloat(ev.target.value))} style={{ flex: 1 }} />
-            <span style={{ fontSize: 13, minWidth: 46, textAlign: "right" }}>{val.toFixed(2)}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ padding: "8px 14px", background: "#f8fafc", borderRadius: 8, fontSize: 14, lineHeight: 1.9 }}>
-        z = {a.toFixed(2)} {b >= 0 ? "+" : "−"} {Math.abs(b).toFixed(2)}i　·　r = √(a²+b²) = {r.toFixed(3)}　·　θ = arctan(b/a) = {thetaDeg.toFixed(2)}°（注意象限）<br />
-        极坐标形式 z = r(cosθ + i·sinθ)。拖 a、b 时 r、θ 跟着变；拖 r、θ 时 a、b 反向联动——两组坐标描述同一个点（默认 a=3、b=4 即正文首例：r=5、θ=53.13°）
-      </div>
-    </div>
-  );
+  const [a,setA]=useState(3),[b,setB]=useState(4);
+  const data=useMemo(()=>calculateComplex(a,b),[a,b]);
+  const option:EChartsOption=useMemo(()=>({animation:false,tooltip:{trigger:"item"},
+    grid:{left:45,right:45,top:45,bottom:45},
+    xAxis:{type:"value",min:-6,max:6,name:"实部"},yAxis:{type:"value",min:-6,max:6,name:"虚部"},
+    series:[{name:"复数",type:"line",data:[[0,0],[a,b]],symbolSize:9,lineStyle:{color:"#2563eb"}},
+      {name:"共轭",type:"scatter",data:[data.conjugate],symbolSize:9,itemStyle:{color:"#15803d"}},
+      {name:"有向角",type:"line",data:data.arc,showSymbol:false,lineStyle:{color:"#ea580c"}}]}),[a,b,data]);
+  const ref=useECharts(option);
+  return <section aria-label="复平面实验" style={{color:"var(--foreground)",border:"1px solid var(--border)",padding:14,borderRadius:8,margin:"16px 0",minWidth:0}}>
+    <p>蓝线连接原点与复数，绿点是它的共轭；橙色小弧显示角度的方向。</p>
+    <div ref={ref} style={{width:"100%",maxWidth:400,aspectRatio:"1 / 1"}} />
+    <label style={{display:"block"}}>实部 a = {a.toFixed(2)}<input aria-label="实部 a" type="range" min={-5} max={5} step={0.1} value={a} onChange={e=>setA(Number(e.target.value))} style={{display:"block",width:"100%"}} /></label>
+    <label style={{display:"block"}}>虚部 b = {b.toFixed(2)}<input aria-label="虚部 b" type="range" min={-5} max={5} step={0.1} value={b} onChange={e=>setB(Number(e.target.value))} style={{display:"block",width:"100%"}} /></label>
+    <p aria-live="polite">z = {a.toFixed(2)} {b<0?"−":"+"} {Math.abs(b).toFixed(2)}i；模 {data.r.toFixed(4)}；主辐角 {data.degrees===null?"未定义（原点没有方向）":data.degrees.toFixed(4)+"°"}</p>
+    <p style={{fontSize:13}}>角度由 atan2(b,a) 结合两个坐标计算，主值取 (−180°,180°]。图的横纵轴都固定为[−6,6]；画布保持正方形，让长度与角度的图示和坐标一致。</p>
+    <button style={{ padding: "6px 12px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--background)", color: "var(--foreground)", cursor: "pointer" }} type="button" onClick={()=>{setA(3);setB(4);}}>恢复默认</button>
+  </section>;
 }

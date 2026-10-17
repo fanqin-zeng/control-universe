@@ -654,3 +654,5 @@ npm run glossary:check                 # 同上（package.json 别名）
 - 不要把 `Ts`(33)、`Nr`(10) 这类连写当"下标丢了下划线"——实测它们是真连乘
   （`compensator-design:270` 的 $\frac{1+\alpha Ts}{1+Ts}$ 是 $T\cdot s$；`modern-case-study:262` 的 $Nr$ 是 $N\cdot r$）
 - 不要把 `.agent/e4-fixture/{ok,bad}/docs/` 里的玩具登记表抄进本文件（夹具是负向测试，`bad` 根**必须**保持红）
+
+MATH-01校订与MATH-02局部符号：$a_k$ 为级数项、$R_n(x)$ 为泰勒余项；$z=a+bi$ 中a/b为实数坐标，i为虚数单位（索引改用k），r为模，θ为辐角，Arg为(-π,π]主值。首次定义后只在本课对应公式语境使用，不覆盖控制章R矩阵、r参考输入和i电流的约定。

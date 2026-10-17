@@ -1,3 +1,4 @@
+import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
 /**
  * 组件注册的唯一来源（E2 · fix-015 根治）。
  *
@@ -64,6 +65,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  MotionIntroExplorer,
   CalculusExplorer,
   Callout,
   JupyterNotebook,

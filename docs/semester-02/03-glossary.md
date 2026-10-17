@@ -404,6 +404,19 @@
 | 微积分基本定理 | fundamental theorem of calculus | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
 | 牛顿—莱布尼茨公式 | Newton–Leibniz formula | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
 | 右端矩形和 | right Riemann sum | — | MATH-01 首次登记 | 数学入门；单位不是英文别名 |
+| 无穷级数 | infinite series | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 部分和 | partial sum | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 绝对收敛 | absolute convergence | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 泰勒展开 | Taylor expansion | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 麦克劳林展开 | Maclaurin expansion | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 余项 | remainder | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 阶乘 | factorial | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 主辐角 | principal argument | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 模 | modulus | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 复数 | complex number | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 复平面 | complex plane | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 共轭复数 | complex conjugate | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
+| 欧拉公式 | Euler formula | — | MATH-02及前课修订登记 | 首现定义；适用条件见正文 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
