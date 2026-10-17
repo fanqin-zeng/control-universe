@@ -1,0 +1,142 @@
+{
+  "source": "content/math/diff-geometry.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 66,
+      "title": "圆周切空间与弧长",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 70,
+          "delim": "`",
+          "code": "t=sp.symbols('t',real=True)\r\np=sp.Matrix([2*sp.cos(t),2*sp.sin(t)]);v=p.diff(t)/2\r\nprint('位置/速度/速率:',p.subs(t,sp.pi/6),v.subs(t,sp.pi/6),sp.simplify(sp.sqrt(v.dot(v))))\r\nx,y=sp.symbols('x y',real=True);c=sp.Matrix([x*x+y*y-4]);D=c.jacobian([x,y])\r\nprint('正则圆Jacobian/核:',D.subs({x:2,y:0}),D.subs({x:2,y:0}).nullspace())\r\nprint('圆弧长:',sp.integrate(sp.sqrt(p.diff(t).dot(p.diff(t))),(t,0,sp.pi/2)))\r\nprint('度量系数:',sp.simplify(p.diff(t).dot(p.diff(t))))\r\nD0=sp.Matrix([x*x+y*y]).jacobian([x,y]).subs({x:0,y:0})\r\nprint('退化零水平集Jacobian/核维数:',D0,len(D0.nullspace()))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 116,
+      "title": "坐标推前与李导数",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 120,
+          "delim": "`",
+          "code": "x,y,a,b=sp.symbols('x y a b',real=True);Phi=sp.Matrix([x,y+x*x]);D=Phi.jacobian([x,y]);f=sp.Matrix([y,0]);g=sp.Matrix([0,1]);h=x*x+y\r\nLf=(sp.Matrix([h]).jacobian([x,y])*f)[0];Lg=(sp.Matrix([h]).jacobian([x,y])*g)[0]\r\nprint('变换/行列式/推前:',Phi.subs({x:1,y:2}),D.det(),(D*f).subs({x:1,y:2}))\r\nprint('Lie导数/复合:',Lf,Lg,sp.diff(Lf,y),'默认:',Lf.subs({x:1,y:2}),Lg,sp.diff(Lf,y).subs(x,1))\r\nPsi=sp.Matrix([sp.exp(a)*sp.cos(b),sp.exp(a)*sp.sin(b)])\r\nprint('非全局逆行列式/周期差:',sp.simplify(Psi.jacobian([a,b]).det()),sp.simplify(Psi.subs(b,b+2*sp.pi)-Psi))\r\nt=sp.symbols('t',real=True);sol=1/(1-t)\r\nprint('流例方程/初值:',sp.simplify(sp.diff(sol,t)-sol**2),sol.subs(t,0))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 151,
+      "title": "四段流与李括号",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 155,
+          "delim": "`",
+          "code": "x,y,t=sp.symbols('x y t',real=True);z=sp.Matrix([x,y,t]);f=sp.Matrix([sp.cos(t),sp.sin(t),0]);g=sp.Matrix([0,0,1]);br=g.jacobian(z)*f-f.jacobian(z)*g\r\nprint('括号:',br,'零朝向:',br.subs(t,0))\r\ne=sp.symbols('e',positive=True);d=sp.Matrix([e*(1-sp.cos(e)),-e*sp.sin(e)])\r\nprint('归一化极限:',[sp.limit(v/e**2,e,0) for v in d])\r\nfor v in [.1,.25,.5,.8]:\r\n    exact=np.array([float(a.subs(e,v)) for a in d]);approx=np.array([0.,-v*v]);print('段时长/精确/二阶/误差/总时长:',v,exact,approx,np.linalg.norm(exact-approx),4*v)\r\nprint('默认归一化:',np.array([float(a.subs(e,.5)) for a in d])/.25)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 180,
+      "title": "分布的秩与可积性",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 184,
+          "delim": "`",
+          "code": "x,y,z=sp.symbols('x y z',real=True);vars=sp.Matrix([x,y,z]);F=sp.Matrix([1,0,-y/2]);G=sp.Matrix([0,1,x/2]);br=G.jacobian(vars)*F-F.jacobian(vars)*G\r\nprint('非对合括号/二场秩/三场行列式:',br,sp.Matrix.hstack(F,G).rank(),sp.Matrix.hstack(F,G,br).det())\r\na=sp.Matrix([1,0,0]);b=sp.Matrix([0,1,0]);print('平面分布括号:',b.jacobian(vars)*a-a.jacobian(vars)*b)\r\nt=sp.symbols('t',real=True);f=sp.Matrix([sp.cos(t),sp.sin(t),0]);g=sp.Matrix([0,0,1]);B=sp.Matrix([sp.sin(t),-sp.cos(t),0])\r\nprint('差速三方向行列式:',sp.simplify(sp.Matrix.hstack(f,g,B).det()))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 201,
+      "title": "旋转约束与矩阵指数",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 205,
+          "delim": "`",
+          "code": "O=sp.Matrix([[0,-1,0],[1,0,0],[0,0,0]]);t=sp.symbols('t',real=True)\r\nR=sp.Matrix([[sp.cos(t),-sp.sin(t),0],[sp.sin(t),sp.cos(t),0],[0,0,1]])\r\nprint('正交/行列式:',sp.simplify(R.T*R),sp.simplify(R.det()))\r\nprint('切向约束:',sp.simplify(R.T*R.diff(t)+(R.diff(t)).T*R))\r\nprint('pi2旋转与基向量:',R.subs(t,sp.pi/2),R.subs(t,sp.pi/2)*sp.Matrix([1,0,0]))\r\nlin=sp.eye(3)+O;print('线性步正交残差/行列式:',lin.T*lin-sp.eye(3),lin.det())\r\nprint('expm数值差:',np.max(np.abs(expm(np.array(O,dtype=float)*np.pi/2)-np.array(R.subs(t,sp.pi/2),dtype=float))))\r\nprint('周期差:',sp.simplify(R.subs(t,t+2*sp.pi)-R))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 225,
+      "title": "相对阶与退化坐标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 229,
+          "delim": "`",
+          "code": "a,b=sp.symbols('a b',real=True);vars=sp.Matrix([a,b]);f=sp.Matrix([b,0]);g=sp.Matrix([0,1])\r\ndef lie(v,h):return (sp.Matrix([h]).jacobian(vars)*v)[0]\r\nfor h in [a,a*a]:\r\n    Lf=lie(f,h);Lg=lie(g,h);dec=lie(g,Lf);T=sp.Matrix([h,Lf]);print('输出/Lg/Lf/LgLf/变换行列式:',h,Lg,Lf,dec,sp.factor(T.jacobian(vars).det()))\r\nprint('平方输出默认/退化系数:',(2*a).subs(a,1),(2*a).subs(a,0))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 260,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 264,
+          "delim": "`",
+          "code": "t=sp.symbols('t',real=True);p=sp.Matrix([2*sp.cos(t),2*sp.sin(t)]);v=p.diff(t)/2\r\nprint('题1:',p.subs(t,sp.pi/6),v.subs(t,sp.pi/6),sp.simplify(v.dot(v)),sp.pi)\r\nx,y=sp.symbols('x y',real=True);D=sp.Matrix([[1,0],[2*x,1]])\r\nprint('题2:',sp.Matrix([x,y+x*x]).subs({x:1,y:2}),(D*sp.Matrix([2,0])).subs(x,1),D.det())\r\nprint('题3:',2*x*y,1,2*x,'取值:',4,1,2,'反序:',sp.diff(sp.Integer(1),x)*y)\r\ne=.5;d=np.array([e*(1-np.cos(e)),-e*np.sin(e)]);print('题4:',d,'二阶:',[0,-e*e])\r\nprint('题5括号:',sp.Matrix([0,0,1]))\r\nO=sp.Matrix([[0,-1,0],[1,0,0],[0,0,0]]);print('题6:',O.T+O,(sp.eye(3)+O).T*(sp.eye(3)+O)-sp.eye(3),(sp.eye(3)+O).det(),2*x,4*x*x)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

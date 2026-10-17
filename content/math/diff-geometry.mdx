@@ -1,0 +1,272 @@
+---
+title: 微分几何入门
+description: 从差速搬运车的侧向挪动理解局部坐标、切空间、向量场、李导数与李括号，连接旋转和非线性控制。
+---
+
+# 微分几何入门
+
+## 搬运车怎样侧着挪
+
+图书馆的一辆双轮差速搬运车停在书架旁。它可以沿车身方向前进、后退，也可以原地转向，却不能像被人横推那样直接侧滑。**想挪到旁边一点，是否一定要有一个“横向运动”按钮？**
+
+试一个小动作循环：先前进，再向左原地转一点，接着沿新的车头方向后退，最后向右转回原朝向。车头恢复了，位置却没有完全回去。为什么四个看似互相抵消的动作，组合后会留下位移？
+
+下面采用理想差速模型，不模拟加速度、轮胎侧滑或障碍物。平移速度取 $1$ m/s，转向角速度取 $1$ rad/s；每段默认持续 $\varepsilon=0.5$ s。改变段时长和初始朝向，再移动观察时刻，看车身方向与位置怎样变化。
+
+<BracketMotionExplorer />
+
+默认整个循环持续 $2$ s，净位移约为 $(0.0612,-0.2397)$ m，朝向回到零。它**不是一次精确横移**：还留有前向分量。第二张图把净位移除以段时长的平方，观察缩小动作时留下的主要方向；这种局部规律叫李括号。先把描述它所需的几何语言补齐。
+
+## 局部坐标与流形
+
+地图用平面上的两个数描述地球表面的一小块区域；这两个数不是地球本身。类似地，一个光滑流形是在每个点附近都能用若干实数作坐标、且重叠区域换坐标足够光滑的空间。坐标个数称为维数，本课只用嵌在欧氏空间中的例子建立直觉，不展开拓扑定义的全部条件。
+
+半径 $R$ 的圆周可写为 $p(\theta)=(R\cos\theta,R\sin\theta)$。它在平面里需要两个位置分量，但沿圆周的局部位置只需一个角度，所以是一维的。角度应限制在不跨接缝的开区间，再用另一张坐标图覆盖遗漏位置；因为 $0$ 与 $2\pi$ 代表同一点，不能把整条实轴的角度当成全局一一坐标。
+
+一张**坐标图**是在一小块流形与欧氏开集之间建立光滑、可逆的局部对应。圆周不像一条没有接缝的实数轴；“局部像直线”不表示整体就是直线。搬运车的位置加朝向属于 $\mathbb R^2\times S^1$，其中 $S^1$ 表示圆周朝向；局部可以写成 $(x,y,\theta)$。
+
+## 切向量与切空间
+
+想象一个点沿圆周运动。在某个时刻，它的速度必须沿圆周的切线，而不能突然径直朝圆外走。经过点 $p$ 的光滑曲线在该点的速度叫切向量；所有这样的速度组成切空间 $T_pM$。切空间是向量空间，圆周的一维切空间却不是圆周上的一段弧。
+
+对圆周参数曲线求导：
+
+$$
+\dot p=R\dot\theta(-\sin\theta,\cos\theta).
+$$
+
+取 $R=2$ m、$\theta=\pi/6$、$\dot\theta=1/2$ rad/s，得到位置 $(\sqrt3,1)$ m、速度 $(-1/2,\sqrt3/2)$ m/s，速率为 $1$ m/s。$\dot\theta=1/2$ 是角坐标中的速度分量，不等于平面速度向量，也不等于它的长度。
+
+切向量是**瞬时允许的速度**，不是下一个位置点。用切线走一段有限距离通常会离开圆；需要沿圆上的曲线更新位置。
+
+## 约束怎样给出切空间
+
+若流形由光滑等式 $c(p)=0$ 给出，沿任何允许曲线求导都有 $Dc(p)\dot p=0$。在约束Jacobian满行秩的正则点，这个核空间恰好给出切空间：
+
+$$
+T_pM=\ker Dc(p),\qquad \dim M=n-m.
+$$
+
+这里环境空间有 $n$ 个坐标、$m$ 个独立等式。例如圆周 $c(x,y)=x^2+y^2-R^2$，在 $(2,0)$ 处 $Dc=(4,0)$，允许速度为 $(0,v_y)$，只有一个自由分量。
+
+满秩条件不能删掉。约束 $x^2+y^2=0$ 的集合只有原点；在原点Jacobian为零，核却是整个平面。这个集合的实际切空间是零空间，而不是由该退化约束算出的二维核。计算出了一个核，不表示已经证明它是几何切空间。
+
+## 长度与坐标刻度
+
+角度改变同样多，大圆上的路程比小圆长。切向量的坐标分量之外，还需要规定怎样计算长度。对圆周继承平面长度，弧长微元为
+
+$$
+ds^2=R^2d\theta^2.
+$$
+
+系数 $R^2$ 是这一坐标中的度量系数。它让坐标变化转换为几何长度：半径 $2$ m 的圆从角度零走到 $\pi/2$，弧长为 $\pi$ m。
+
+若改用局部弧长坐标 $a=R\theta$，就有 $ds^2=da^2$。系数从 $R^2$ 变成了 $1$，实际路程没有改变。度量依赖坐标表达，算出的长度不依赖我们给路径贴的坐标标签。本课不推曲率张量；不要把坐标数值的差直接当几何距离。
+
+<JupyterNotebook title="圆周切空间与弧长" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `t=sp.symbols('t',real=True)
+p=sp.Matrix([2*sp.cos(t),2*sp.sin(t)]);v=p.diff(t)/2
+print('位置/速度/速率:',p.subs(t,sp.pi/6),v.subs(t,sp.pi/6),sp.simplify(sp.sqrt(v.dot(v))))
+x,y=sp.symbols('x y',real=True);c=sp.Matrix([x*x+y*y-4]);D=c.jacobian([x,y])
+print('正则圆Jacobian/核:',D.subs({x:2,y:0}),D.subs({x:2,y:0}).nullspace())
+print('圆弧长:',sp.integrate(sp.sqrt(p.diff(t).dot(p.diff(t))),(t,0,sp.pi/2)))
+print('度量系数:',sp.simplify(p.diff(t).dot(p.diff(t))))
+D0=sp.Matrix([x*x+y*y]).jacobian([x,y]).subs({x:0,y:0})
+print('退化零水平集Jacobian/核维数:',D0,len(D0.nullspace()))
+`}]} />
+
+## 坐标变换与微分
+
+光滑可逆、逆映射也光滑的对应叫微分同胚。它的微分把切向量变换到新坐标：若 $z=\Phi(x)$、速度为 $v$，则新坐标速度为 $D\Phi(x)v$。这是多元链式法则的几何含义，也叫把向量推前。
+
+例如 $\Phi(x,y)=(x,y+x^2)$，逆映射为 $(z_1,z_2-z_1^2)$，Jacobian行列式处处为 $1$。点 $(1,2)$ 变为 $(1,3)$；速度 $(2,0)$ 变为 $(2,4)$。坐标变了，描述的仍是同一个运动。
+
+逆函数定理说，方阵Jacobian在一点可逆，可以保证该点附近局部可逆，不能只凭这个条件宣布全局一一。例如 $\Psi(a,b)=(e^a\cos b,e^a\sin b)$ 的行列式为 $e^{2a}>0$，但 $b$ 加 $2\pi$ 后位置相同。局部微分同胚和全局坐标是不同结论。
+
+## 向量场与流
+
+给空间中的每个点安排一个切向量，就得到向量场。把它看成“走到这里时应该有的速度”。微分方程 $\dot z=f(z)$ 的解把初始点随时间带到别处；这个局部演化映射称为流，记作 $\varphi_f^t$。足够光滑的场局部有唯一解，但不保证所有初态都能无限时间演化。
+
+例如 $\dot x=x^2,x(0)=1$ 的解为 $x(t)=1/(1-t)$，在 $t=1$ 前发散，不能说这个光滑向量场给出了所有时间的全局流。
+
+对搬运车的局部状态 $z=(x,y,\theta)$，定义
+
+$$
+f(z)=(\cos\theta,\sin\theta,0),\qquad g(z)=(0,0,1),\qquad
+\dot z=vf(z)+\omega g(z).
+$$
+
+为简洁，场的分量按本课 $1$ m/s、$1$ rad/s 的基准控制数值书写，$v,\omega$ 在公式里表示相对基准的无量纲系数。$f$ 是直行场，$g$ 是原地转向场；负系数允许后退和反向转动。场随朝向而变，所以顺序可能影响结果。
+
+## 沿向量场求导
+
+标量函数 $h(z)$ 可以表示输出或误差。沿 $f$ 演化时它的变化率为
+
+$$
+L_fh(z)=Dh(z)f(z).
+$$
+
+这叫 $h$ 沿 $f$ 的李导数，本质是方向导数。它不是两个数相乘的特殊新运算，也不是曲线长度。
+
+取平面上的 $f=(y,0)$、$g=(0,1)$、$h=x^2+y$，则 $L_fh=2xy$、$L_gh=1$，在 $(1,2)$ 分别为 $4$、$1$。再沿 $g$ 求一次，$L_gL_fh=2x$，在该点为 $2$。上标 $L_f^2h$ 表示重复作用 $L_f(L_fh)$，不是把一次李导数平方。
+
+<JupyterNotebook title="坐标推前与李导数" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `x,y,a,b=sp.symbols('x y a b',real=True);Phi=sp.Matrix([x,y+x*x]);D=Phi.jacobian([x,y]);f=sp.Matrix([y,0]);g=sp.Matrix([0,1]);h=x*x+y
+Lf=(sp.Matrix([h]).jacobian([x,y])*f)[0];Lg=(sp.Matrix([h]).jacobian([x,y])*g)[0]
+print('变换/行列式/推前:',Phi.subs({x:1,y:2}),D.det(),(D*f).subs({x:1,y:2}))
+print('Lie导数/复合:',Lf,Lg,sp.diff(Lf,y),'默认:',Lf.subs({x:1,y:2}),Lg,sp.diff(Lf,y).subs(x,1))
+Psi=sp.Matrix([sp.exp(a)*sp.cos(b),sp.exp(a)*sp.sin(b)])
+print('非全局逆行列式/周期差:',sp.simplify(Psi.jacobian([a,b]).det()),sp.simplify(Psi.subs(b,b+2*sp.pi)-Psi))
+t=sp.symbols('t',real=True);sol=1/(1-t)
+print('流例方程/初值:',sp.simplify(sp.diff(sol,t)-sol**2),sol.subs(t,0))
+`}]} />
+
+## 李括号与运动顺序
+
+本课固定李括号约定为
+
+$$
+[f,g](z)=Dg(z)f(z)-Df(z)g(z).
+$$
+
+它度量两个场的局部演化不交换的主要部分。按时间先后执行 $f$、$g$、$-f$、$-g$，各持续一小段 $\varepsilon$，在足够光滑且流存在的局部区域，净变化的二阶主项为 $\varepsilon^2[f,g]$，余项为 $O(\varepsilon^3)$。这表示余项的大小在足够小范围内可被某个常数乘 $\varepsilon^3$ 控住，不表示有限时长时余项为零。
+
+搬运车的两个场给出 $[f,g]=(\sin\theta,-\cos\theta,0)$。在初始朝向零处，括号指向负 $y$ 方向。四段精确流还可以直接算出
+
+$$
+\Delta p=\varepsilon\big(\cos\theta_0-\cos(\theta_0+\varepsilon),
+\sin\theta_0-\sin(\theta_0+\varepsilon)\big),\qquad \Delta\theta=0.
+$$
+
+式中时间按 $1$ s、长度按 $1$ m、角度按 $1$ rad 的基准数值代入；因此数值上转角恰等于段时长，不能把任意物理速度混进这条简化式。默认净位移为 $(0.0612087,-0.2397128)$ m，而二阶主项为 $(0,-0.25)$ m，二者误差长度约 $0.0620672$ m。
+
+两者不相等；只有缩小 $\varepsilon$ 后，$\Delta p/\varepsilon^2$ 才趋近括号的平移分量。在默认段时长下，归一化读数约为 $(0.2448349,-0.9588511)$。换一个动作顺序或改用另一种括号定义，符号可能相反，必须先说清约定。该循环与微分驱动车李括号的讨论见 [LaValle作者教材](https://lavalle.pl/planning/node829.html)。
+
+<JupyterNotebook title="四段流与李括号" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `x,y,t=sp.symbols('x y t',real=True);z=sp.Matrix([x,y,t]);f=sp.Matrix([sp.cos(t),sp.sin(t),0]);g=sp.Matrix([0,0,1]);br=g.jacobian(z)*f-f.jacobian(z)*g
+print('括号:',br,'零朝向:',br.subs(t,0))
+e=sp.symbols('e',positive=True);d=sp.Matrix([e*(1-sp.cos(e)),-e*sp.sin(e)])
+print('归一化极限:',[sp.limit(v/e**2,e,0) for v in d])
+for v in [.1,.25,.5,.8]:
+    exact=np.array([float(a.subs(e,v)) for a in d]);approx=np.array([0.,-v*v]);print('段时长/精确/二阶/误差/总时长:',v,exact,approx,np.linalg.norm(exact-approx),4*v)
+print('默认归一化:',np.array([float(a.subs(e,.5)) for a in d])/.25)
+`}]} />
+
+## 独立方向不等于全能
+
+在朝向零处，$f=(1,0,0)$、$g=(0,0,1)$，直接可用的瞬时方向只有两个；加入括号 $(0,-1,0)$ 后，三个方向线性独立。这解释了分步动作为什么能产生直接速度里没有的方向。
+
+这不是“车任何时候都能随便横移”的证明。括号是局部小动作的结果，执行要花时间；有限动作还带余项。可控性定理需要检查系统有无漂移、控制是否能取正负、允许时间及状态区域等假设。障碍物、单向运动限制和执行器约束更不能凭一个满秩矩阵消除。本课只核几何方向，不给有障碍地图上的规划方案。
+
+## 分布与可积性
+
+每一点都选定一个固定维数的切子空间，且随点光滑变化，称为光滑常秩**分布**。这里不是概率分布。例如在三维空间里，每点都允许沿 $x,y$ 两个方向运动，分布为 $\operatorname{span}\{(1,0,0),(0,1,0)\}$；平面 $z=\text{常数}$ 的切空间恰好就是它。
+
+如果能在每个点附近找到与分布同维的光滑子流形，使其各点切空间等于分布，就称该分布局部可积。若任意两个取值于该分布的光滑局部向量场，其李括号仍落在分布内，就称它**对合**。Frobenius定理说：光滑常秩分布局部可积，当且仅当它对合；这不是只在一个点验一次括号的结论。条件与定义可查 [UCLA作者讲义](https://www.math.ucla.edu/~petersen/manifolds.pdf)。
+
+取三维坐标 $(x,y,z)$，令 $F=(1,0,-y/2)$、$G=(0,1,x/2)$。它们处处独立，但 $[F,G]=(0,0,1)$ 不在它们张成的平面内：若前两分量为零，线性组合系数只能都为零，第三分量也只能为零。因此这个二维分布不对合，不能把它当成某族二维曲面的切平面。
+
+“瞬时只给两个方向”与“轨迹永远待在一张二维曲面”不是一回事。反例正是为了阻止这种直觉误用。
+
+<JupyterNotebook title="分布的秩与可积性" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `x,y,z=sp.symbols('x y z',real=True);vars=sp.Matrix([x,y,z]);F=sp.Matrix([1,0,-y/2]);G=sp.Matrix([0,1,x/2]);br=G.jacobian(vars)*F-F.jacobian(vars)*G
+print('非对合括号/二场秩/三场行列式:',br,sp.Matrix.hstack(F,G).rank(),sp.Matrix.hstack(F,G,br).det())
+a=sp.Matrix([1,0,0]);b=sp.Matrix([0,1,0]);print('平面分布括号:',b.jacobian(vars)*a-a.jacobian(vars)*b)
+t=sp.symbols('t',real=True);f=sp.Matrix([sp.cos(t),sp.sin(t),0]);g=sp.Matrix([0,0,1]);B=sp.Matrix([sp.sin(t),-sp.cos(t),0])
+print('差速三方向行列式:',sp.simplify(sp.Matrix.hstack(f,g,B).det()))
+`}]} />
+
+## 旋转矩阵也有几何
+
+平面旋转可用角度表示，也可以写成矩阵 $R(\theta)$。三维中，合法旋转矩阵满足 $R^TR=I$、$\det R=1$，它们组成 $SO(3)$。矩阵有九个元素，但约束使局部自由度只有三个，不能任意独立改变九个数。
+
+沿旋转轨迹对正交约束求导，得到 $R^T\dot R$ 为反对称矩阵。写成 $\dot R=R\Omega$，其中 $\Omega^T=-\Omega$，这里的 $\Omega$ 对应机体坐标中的角速度；它不是新的旋转位置。若 $\Omega$ 为常数，$R(t)=R(0)e^{\Omega t}$ 保持在旋转集合内。
+
+例如绕第三轴，取 $\Omega$ 左上角为矩阵 $\bigl(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\bigr)$、其余元素为零，从单位阵出发，$t=\pi/2$ 时平面基向量 $(1,0,0)$ 变成 $(0,1,0)$。直接用 $I+t\Omega$ 近似，在 $t=1$ 时其行列式为 $2$，已不是旋转矩阵；局部切向更新不自动满足有限步约束。
+
+指数坐标在零附近可作局部参数，但在整个旋转空间不是全局唯一；例如绕同一轴转零与 $2\pi$ 得到相同矩阵。角速度的矩阵表达和指数映射详见 [Modern Robotics作者课程](https://modernrobotics.northwestern.edu/chapters/chapter3/)。
+
+<JupyterNotebook title="旋转约束与矩阵指数" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `O=sp.Matrix([[0,-1,0],[1,0,0],[0,0,0]]);t=sp.symbols('t',real=True)
+R=sp.Matrix([[sp.cos(t),-sp.sin(t),0],[sp.sin(t),sp.cos(t),0],[0,0,1]])
+print('正交/行列式:',sp.simplify(R.T*R),sp.simplify(R.det()))
+print('切向约束:',sp.simplify(R.T*R.diff(t)+(R.diff(t)).T*R))
+print('pi2旋转与基向量:',R.subs(t,sp.pi/2),R.subs(t,sp.pi/2)*sp.Matrix([1,0,0]))
+lin=sp.eye(3)+O;print('线性步正交残差/行列式:',lin.T*lin-sp.eye(3),lin.det())
+print('expm数值差:',np.max(np.abs(expm(np.array(O,dtype=float)*np.pi/2)-np.array(R.subs(t,sp.pi/2),dtype=float))))
+print('周期差:',sp.simplify(R.subs(t,t+2*sp.pi)-R))
+`}]} />
+
+## 几何语言怎样用于控制
+
+对输入仿射系统 $\dot x=f(x)+g(x)u$ 和输出 $y=h(x)$，链式法则给出 $\dot y=L_fh+L_gh\,u$。所谓相对阶，是在一个适当邻域内，输出连续求导到第几次，输入才以非零系数明确出现；前面的相关李导数必须在该邻域恒为零，不能只在一个点偶然为零。
+
+看二阶积分器 $f=(x_2,0)$、$g=(0,1)$、$h=x_1$。有 $L_gh=0$、$L_fh=x_2$、$L_gL_fh=1$，所以相对阶为二，$\ddot y=u$。这是后续输入输出线性化的基本接口，本课不把它推广为一般系统设计公式。
+
+若只把输出改为 $h=x_1^2$，则 $L_gL_fh=2x_1$。在 $x_1=0$ 处系数消失，不能再除以它；输出坐标 $(h,L_fh)=(x_1^2,2x_1x_2)$ 的Jacobian行列式为 $4x_1^2$，同一位置坐标也退化。远离零时还须选定局部分支，不能把平方坐标当全局一一变换。
+
+这串概念各有用途：切空间说明瞬时允许的变化，坐标微分保证不同表达描述同一运动，李导数追踪输出，括号追踪动作顺序，可积性判断方向能否来自同维曲面。先检查局部条件，再谈具体控制方法。
+
+<JupyterNotebook title="相对阶与退化坐标" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `a,b=sp.symbols('a b',real=True);vars=sp.Matrix([a,b]);f=sp.Matrix([b,0]);g=sp.Matrix([0,1])
+def lie(v,h):return (sp.Matrix([h]).jacobian(vars)*v)[0]
+for h in [a,a*a]:
+    Lf=lie(f,h);Lg=lie(g,h);dec=lie(g,Lf);T=sp.Matrix([h,Lf]);print('输出/Lg/Lf/LgLf/变换行列式:',h,Lg,Lf,dec,sp.factor(T.jacobian(vars).det()))
+print('平方输出默认/退化系数:',(2*a).subs(a,1),(2*a).subs(a,0))
+`}]} />
+
+## 小结
+
+微分几何先分清“空间本身”和“局部坐标”，再用切向量描述允许的瞬时变化。速度的坐标分量要经微分变换，长度还需要度量。向量场生成流，李导数描述标量输出如何变化，李括号揭示先后顺序留下的新方向。
+
+本课最需要保留的警惕是：瞬时切向量不等于有限位移，局部可逆不等于全局坐标，括号满秩不自动等于任意受限环境可控，驻在一个点的计算不替代邻域条件。带着这些条件进入非线性控制和机器人课程，公式才不会被误用。
+
+## 习题
+
+1. 半径 $2$ m 的圆在角度 $\pi/6$、角速度 $1/2$ rad/s 时，求位置、切向速度与速率；计算从角度零到 $\pi/2$ 的弧长。
+2. 对 $\Phi(x,y)=(x,y+x^2)$ 求逆和Jacobian，把点 $(1,2)$、速度 $(2,0)$ 变到新坐标；为何非零Jacobian行列式通常只能保证局部逆？
+3. 对 $f=(y,0),g=(0,1),h=x^2+y$ 求 $L_fh,L_gh,L_gL_fh$，并在 $(1,2)$ 取值。
+4. 按本课括号与时间先后约定，求差速车在朝向零处的括号，写出四段净位移；解释默认时长下为何不是精确侧移。
+5. 对 $F=(1,0,-y/2),G=(0,1,x/2)$ 求括号，判断它们张成的二维分布能否作为某族二维曲面的切空间；列出所用定理条件。
+6. 验证绕第三轴的旋转生成矩阵为反对称；解释线性步为什么离开旋转约束。再求二阶积分器输出 $h=x_1^2$ 的退化系数与坐标Jacobian。
+
+## 答案
+
+1. 位置 $(\sqrt3,1)$ m；速度 $(-1/2,\sqrt3/2)$ m/s；模为 $1$ m/s。弧长 $R\Delta\theta=2\cdot\pi/2=\pi$ m。角速度分量不是速度向量。
+2. 逆为 $(z_1,z_2-z_1^2)$，Jacobian为 $\bigl(\begin{smallmatrix}1&0\\2x&1\end{smallmatrix}\bigr)$、行列式 $1$；新位置 $(1,3)$、新速度 $(2,4)$。本例显式逆证明全局成立；一般只靠一点可逆还不够，指数极坐标例因角度周期而不一一。
+3. $L_fh=2xy,L_gh=1,L_gL_fh=2x$；对应读数 $4,1,2$。顺序不能改成 $L_fL_gh$，后者为零。
+4. 括号为 $(0,-1,0)$。净位移为 $\varepsilon(1-\cos\varepsilon,-\sin\varepsilon)$，默认约 $(.0612087,-.2397128)$ m，二阶项 $(0,-.25)$ m；剩余前向量不为零，有限动作不等于括号流。
+5. 括号为 $(0,0,1)$，不在 $F,G$ 张成的平面内，故不对合。两场光滑且处处独立、给常秩二维分布；据局部Frobenius条件，它不可积为这样的二维曲面族，不是说没有允许轨迹。
+6. 生成矩阵转置等于负自身。$I+\Omega$ 的正交残差为 $\operatorname{diag}(1,1,0)$、行列式 $2$，不是旋转；矩阵指数才保持此常角速度旋转。平方输出的 $L_gL_fh=2x_1$、坐标行列式 $4x_1^2$，在零处退化，不能直接使用邻域非零的结论。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+`} cells={[{code: `t=sp.symbols('t',real=True);p=sp.Matrix([2*sp.cos(t),2*sp.sin(t)]);v=p.diff(t)/2
+print('题1:',p.subs(t,sp.pi/6),v.subs(t,sp.pi/6),sp.simplify(v.dot(v)),sp.pi)
+x,y=sp.symbols('x y',real=True);D=sp.Matrix([[1,0],[2*x,1]])
+print('题2:',sp.Matrix([x,y+x*x]).subs({x:1,y:2}),(D*sp.Matrix([2,0])).subs(x,1),D.det())
+print('题3:',2*x*y,1,2*x,'取值:',4,1,2,'反序:',sp.diff(sp.Integer(1),x)*y)
+e=.5;d=np.array([e*(1-np.cos(e)),-e*np.sin(e)]);print('题4:',d,'二阶:',[0,-e*e])
+print('题5括号:',sp.Matrix([0,0,1]))
+O=sp.Matrix([[0,-1,0],[1,0,0],[0,0,0]]);print('题6:',O.T+O,(sp.eye(3)+O).T*(sp.eye(3)+O)-sp.eye(3),(sp.eye(3)+O).det(),2*x,4*x*x)
+`}]} />

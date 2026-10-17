@@ -213,6 +213,17 @@
 | 最优性原理 | principle of optimality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
 | 协态 | costate | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
 | 维数灾难 | curse of dimensionality | — | MATH-14 | 本课局部定义，注意端点与连续离散约定 |
+| 光滑流形 | smooth manifold | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 坐标图 | coordinate chart | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 切向量 | tangent vector | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 切空间 | tangent space | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 微分同胚 | diffeomorphism | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 推前 | pushforward | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 向量场 | vector field | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 李导数 | Lie derivative | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 李括号 | Lie bracket | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 对合 | involutive | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
+| 局部可积 | locally integrable | — | MATH-15 | 本课局部定义，注意正则/邻域/符号约定 |
 | 随机过程 | stochastic process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 样本轨迹 | sample path | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 高斯过程 | Gaussian process | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
