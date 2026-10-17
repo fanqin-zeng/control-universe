@@ -16,12 +16,17 @@
 | P05 | 两技能静态验证与场景试走 | [x] | .agent/semester-03-validation.md |
 | I01 | 构建吞MDX错误门槛修复与失败样本验证 | [x] | .agent/semester-03/i01-mdx-errors.md;.agent/fix-logs/2026-10-17-027.md |
 | I02 | 历史fix索引冲突标记与记录一致性审计 | [x] | .agent/semester-03/i02-fix-index.md;.agent/fix-logs/2026-10-17-028.md |
-| I03 | 36项基线WARN逐项分类并登记处置 | [ ] | 实测明细录入版本化清单；新增WARN不可笼统豁免 |
+| I03 | 36项基线WARN逐项分类并登记处置 | [x] | .agent/semester-03/i03-warn-audit.md;.agent/semester-03/i03-warnings-baseline.json;.agent/semester-03/i03-anchor-evidence.json |
 | I04 | 内核、数值与页面验收可复现性 | [ ] | 验证8891网关、干净kernel执行和8080页面；保留命令与输出 |
 | S01 | 结构迁移清单与来源/依赖审查 | [ ] | 141来源、56正文、迁移调用点与逐课先修；现有两条离散章内逆序优先 |
 | S02 | 21章catalog骨架与纯资产迁移 | [ ] | 按目标表迁移；新课保持empty，不改教学正文或预签课 |
 | S03 | 旧URL、锚点、引用与台账兼容 | [ ] | 308或等价兼容；不指向空页/不成环；旧tracker按现有check同步 |
 | S04 | 结构迁移验收与master合入 | [ ] | check、build、全部迁移页/链接回归和实际merge hash |
+| W01 | Q5：26页侧栏锚点对齐与旧链接兼容 | [ ] | .agent/semester-03/i03-warn-audit.md;W04/W05后、S04前完成，逐页实际DOM验收 |
+| W02 | Q3：两个孤儿组件的用途与资产去向 | [ ] | .agent/semester-03/i03-warn-audit.md;S04前提交去向决定；复用交给关联课，未实际交付不关闭 |
+| W03 | Q20：30条孤立课程与7零先修章逐项核验 | [ ] | .agent/semester-03/i03-warn-audit.md;纳入S01审查，逐课P1复核真实先修 |
+| W04 | S3-Q001：真实渲染锚点生成与验收契约 | [ ] | .agent/semester-03/i03-warn-audit.md;先于W01/S04，覆盖数学标题与跨级同名标题 |
+| W05 | Q6：两页MPC正文吞入数学块的渲染修复 | [ ] | .agent/semester-03/i03-warn-audit.md;P0，先于W01/S04；build及verify第1/6项通过，widget债务归MPC-01/MPC-03 |
 | R01 | 全站验收与缺陷清零/明确处置 | [ ] | check、verify:all、nb、术语、build、链接及旧路由回归 |
 | R02 | 205课全交付与141来源去向复核 | [ ] | 所有课程合并列完成，56原文资产无遗失，统计以脚本为准 |
 | R03 | 归因回顾、学期总结与版本标签 | [ ] | 沿用fix-tracker回顾，记录最终验收和semester03标签 |
