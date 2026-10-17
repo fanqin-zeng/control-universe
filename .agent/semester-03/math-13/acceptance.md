@@ -37,3 +37,5 @@
 签发后catalog=v1.3、tracker与全局checklist同步；npm run check退出0，PASS21/WARN2/FAIL0，两WARN沿登记基线。node scripts/check-semester03.mjs退出0，合并前merged12。npm run build、build:pages、npx tsc --noEmit最终交付态均退出0，无MDX编译失败；Pages本地导出205课/9旧路由/312958116字节（pages-delivery.log），此前draft导出312958194仅留历史。最终npm run verify -- math/convex-optimization退出0，PASS9/WARN0/FAIL0/SKIPPED0。
 
 生产页browser-results.json pass=true：16H2、6浏览器实验、9块display居中/auto、无KaTeX错误；默认/关机/步长边界/恢复正确，答案原始cell在Pyodide运行完成；控制台warn/error为空；390px正文343=scroll343、canvas313。opening.png人工查看标题/正文清晰，narrow.png及experiment.png存档。六原始实验严格kernel及浏览器源哈希一致见source-consistency.json；38行三方对账和九项+四条已过。W06/W07/W08不关闭，两个用户批阅文件不编辑不暂存。未推送远端，未发布gh-pages。
+
+合并回执：课程提交 `94d0ddc` 已用 `--no-ff` 合入 master；课程合并提交 `31484f051c09edda86b7c93c4a50b1d5da430fcd`。全局checklist六项均完成；本对话只交付MATH-13。未推送远端、未发布gh-pages。

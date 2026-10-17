@@ -61,7 +61,7 @@
 | MATH-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/10-z-transform.md;.agent/semester-03/math-10/acceptance.md;commit:91e207ac296ff6349b6ab39cff332b156d162a63 |
 | MATH-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/11-probability-basics.md;.agent/semester-03/math-11/acceptance.md;commit:7cdb3f9d22c16d458fde7e6d4a7ea14fb220d408 |
 | MATH-12 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/12-stochastic-processes.md;.agent/semester-03/math-12/acceptance.md;commit:e4404751d8455b8d2d16c63ce9e9d19c2f546227 |
-| MATH-13 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/13-convex-optimization.md;.agent/semester-03/math-13/acceptance.md |
+| MATH-13 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/13-convex-optimization.md;.agent/semester-03/math-13/acceptance.md;commit:31484f051c09edda86b7c93c4a50b1d5da430fcd |
 | MATH-14 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-15 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-16 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
