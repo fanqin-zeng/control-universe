@@ -389,9 +389,27 @@ export const catalog: Chapter[] = [
       {
         "slug": "probability-basics",
         "title": "概率基础",
+        "prereq": ["math/calculus-basics"],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "感应灯为什么会误报", "slug": "感应灯为什么会误报"},
+          {"title": "事件与概率", "slug": "事件与概率"},
+          {"title": "条件概率换了分母", "slug": "条件概率换了分母"},
+          {"title": "全概率与贝叶斯", "slug": "全概率与贝叶斯"},
+          {"title": "独立不是互斥", "slug": "独立不是互斥"},
+          {"title": "随机变量与分布", "slug": "随机变量与分布"},
+          {"title": "密度不是点概率", "slug": "密度不是点概率"},
+          {"title": "期望与方差", "slug": "期望与方差"},
+          {"title": "两个变量一起变化", "slug": "两个变量一起变化"},
+          {"title": "常见分布", "slug": "常见分布"},
+          {"title": "样本不等于总体", "slug": "样本不等于总体"},
+          {"title": "平均值为什么更稳", "slug": "平均值为什么更稳"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "stochastic-processes",

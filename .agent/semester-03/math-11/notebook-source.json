@@ -1,0 +1,142 @@
+{
+  "source": "content/math/probability-basics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 72,
+      "title": "感应灯联合表与条件反转",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 72,
+          "delim": "`",
+          "code": "p,t,f=sp.Rational(1,100),sp.Rational(9,10),sp.Rational(1,20)\r\njoint=[p*t,p*(1-t),(1-p)*f,(1-p)*(1-f)]\r\nbell=joint[0]+joint[2]\r\nprint('四格联合概率:',joint,'合计:',sum(joint))\r\nprint('万次期望四格:',[v*10000 for v in joint])\r\nprint('行合计/列合计:',[100,9900],[bell*10000,(1-bell)*10000])\r\nprint('亮灯概率/后验/小数:',bell,joint[0]/bell,sp.N(joint[0]/bell,12))\r\nprint('D并B:',p+bell-joint[0])\r\np2=sp.Rational(1,10)\r\nprint('先验10%后验:',p2*t/(p2*t+(1-p2)*f))\r\nprint('独立检验P交集与P乘积:',joint[0],p*bell)\r\nprint('相同亮灯概率时后验:',p*sp.Rational(1,5)/(p*sp.Rational(1,5)+(1-p)*sp.Rational(1,5)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 120,
+      "title": "离散CDF与连续面积",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nx=sp.symbols('x', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 121,
+          "delim": "`",
+          "code": "values=[-1,0,1]\r\nweights=[sp.Rational(1,4),sp.Rational(1,2),sp.Rational(1,4)]\r\nfor threshold in [-2,-1,sp.Rational(-1,2),0,sp.Rational(1,2),1,2]:\r\n    print('阈值/CDF:',threshold,sum(w for v,w in zip(values,weights) if v<=threshold))\r\nprint('离散P等于0/P小于等于0:',weights[1],sum(w for v,w in zip(values,weights) if v<=0))\r\nprint('均匀密度2的总面积/四分之一内概率:',sp.integrate(2,(x,0,sp.Rational(1,2))),sp.integrate(2,(x,0,sp.Rational(1,4))))\r\nprint('连续单点积分:',sp.integrate(2,(x,sp.Rational(1,4),sp.Rational(1,4))))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 157,
+      "title": "矩与零协方差反例",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 157,
+          "delim": "`",
+          "code": "vals=[-1,0,1]\r\nprobs=[sp.Rational(1,4),sp.Rational(1,2),sp.Rational(1,4)]\r\nmu=sum(v*p for v,p in zip(vals,probs))\r\nsecond=sum(v*v*p for v,p in zip(vals,probs))\r\nvariance=second-mu*mu\r\nprint('误差均值/二阶矩/方差/标准差:',mu,second,variance,sp.sqrt(variance),sp.N(sp.sqrt(variance),12))\r\ny=[2*v+3 for v in vals]\r\nmy=sum(v*p for v,p in zip(y,probs))\r\nprint('线性变换均值/方差:',my,sum((v-my)**2*p for v,p in zip(y,probs)))\r\nu=vals\r\nEU=sum(u)/sp.Integer(3)\r\nEV=sum(v*v for v in u)/sp.Integer(3)\r\nEUV=sum(v**3 for v in u)/sp.Integer(3)\r\ncov=EUV-EU*EV\r\nprint('U均值/V均值/UV均值/协方差:',EU,EV,EUV,cov)\r\nprint('VarU/VarV:',sum(v*v for v in u)/sp.Integer(3)-EU**2,sum(v**4 for v in u)/sp.Integer(3)-EV**2)\r\nprint('P(U0且V0)/边缘乘积:',sp.Rational(1,3),sp.Rational(1,9))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 196,
+      "title": "伯努利二项与正态面积",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom scipy.integrate import quad\r\nimport math",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 198,
+          "delim": "`",
+          "code": "p=sp.Rational(1,5)\r\nn=5\r\npmf=[sp.binomial(n,k)*p**k*(1-p)**(n-k) for k in range(n+1)]\r\nprint('伯努利均值/方差:',p,p*(1-p))\r\nprint('二项概率表:',pmf,'总和:',sum(pmf))\r\nprint('P0/P1/P至少1:',sp.N(pmf[0],10),sp.N(pmf[1],10),sp.N(1-pmf[0],10))\r\nprint('二项均值/方差:',sum(k*v for k,v in enumerate(pmf)),sum((k-1)**2*v for k,v in enumerate(pmf)))\r\nsigma=2.0\r\npdf=lambda x:math.exp(-x*x/(2*sigma*sigma))/(sigma*math.sqrt(2*math.pi))\r\narea,error=quad(pdf,-2,2,epsabs=1e-12,epsrel=1e-12)\r\nprint('正态中心密度/区间概率/积分误差估计:',pdf(0),area,error)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 221,
+      "title": "固定样本与总体参数",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 221,
+          "delim": "`",
+          "code": "sample=list(map(sp.Integer,[-1,0,0,1]))\r\nn=len(sample)\r\nmean=sum(sample)/n\r\nss=sum((v-mean)**2 for v in sample)\r\nprint('样本数/均值/平方和:',n,mean,ss)\r\nprint('样本方差n-1/平均平方偏差n:',ss/(n-1),ss/n)\r\nprint('教学总体方差:',sp.Rational(1,2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 259,
+      "title": "独立平均与共同误差",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom itertools import product",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 260,
+          "delim": "`",
+          "code": "print('sigma2平均标准差:',[(n,sp.Rational(2)/sp.sqrt(n)) for n in [1,4,16,100]])\r\nprint('离散表n100门限1/2的Chebyshev界:',sp.Rational(1,2)/(100*sp.Rational(1,2)**2))\r\nrows=[]\r\nfor config in product([-1,1],repeat=5):\r\n    common,*noise=config\r\n    readings=[sp.Integer(common+v) for v in noise]\r\n    rows.append((readings,sum(readings)/4))\r\nmeans=[avg for _,avg in rows]\r\nprint('枚举配置数/平均的均值/方差:',len(rows),sum(means)/len(rows),sum(v*v for v in means)/len(rows))\r\nprint('单次方差/两次协方差:',sum(r[0]**2 for r,_ in rows)/len(rows),sum(r[0]*r[1] for r,_ in rows)/len(rows))\r\nprint('错误独立假设下的方差:',sp.Rational(2,4),'真实极限方差:',1)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 296,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom scipy.integrate import quad\r\nimport math",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 298,
+          "delim": "`",
+          "code": "p,t,f=sp.Rational(1,100),sp.Rational(9,10),sp.Rational(1,20)\r\nbell=p*t+(1-p)*f\r\nprint('题1:',bell,p*t/bell,sp.Rational(1,10)*t/(sp.Rational(1,10)*t+sp.Rational(9,10)*f))\r\nprint('题2互斥交集/独立所需乘积/无信息后验:',0,sp.Rational(1,4),p)\r\nprint('题3 P0/CDF0/均值/方差/标准差:',sp.Rational(1,2),sp.Rational(3,4),0,sp.Rational(1,2),1/sp.sqrt(2))\r\nprint('题3均匀密度/面积/半区间概率:',2,1,sp.Rational(1,2))\r\nprint('题4 Y均值/方差:',3,2,'U,V协方差0但交集1/3不等于1/9')\r\nprint('题5:',1-sp.Rational(4,5)**5,sp.N(1-sp.Rational(4,5)**5,10),1,sp.Rational(4,5))\r\npdf=lambda x:math.exp(-x*x/8)/(2*math.sqrt(2*math.pi))\r\nprint('题5正态sigma/中心密度/概率:',2,pdf(0),quad(pdf,-2,2,epsabs=1e-12,epsrel=1e-12)[0])\r\nprint('题6样本均值/样本方差/独立平均标准差/共同平均方差:',0,sp.Rational(2,3),1,sp.Rational(5,4))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { BayesWindowExplorer } from "@/components/wiki/bayes-window-explorer";
 import { ZSequenceExplorer } from "@/components/wiki/z-sequence-explorer";
 import { FourierSynthesisExplorer } from "@/components/wiki/fourier-synthesis-explorer";
 import { LaplaceWeightExplorer } from "@/components/wiki/laplace-weight-explorer";
@@ -76,6 +77,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  BayesWindowExplorer,
   ZSequenceExplorer,
   FourierSynthesisExplorer,
   LaplaceWeightExplorer,
