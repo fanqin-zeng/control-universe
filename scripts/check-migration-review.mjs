@@ -32,8 +32,9 @@ export function reviewGraph(lessons, dependencies) {
   return errors;
 }
 const hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex');
-export function collectReview(root=process.cwd()){
-  const read=p=>readFileSync(resolve(root,p),'utf8');
+export function collectReview(root=process.cwd(),ref=null){
+  const read=p=>ref?execFileSync('git',['show',`${ref}:${p}`],{cwd:root,encoding:'utf8'}):readFileSync(resolve(root,p),'utf8');
+  const present=p=>{if(!ref)return existsSync(resolve(root,p));try{execFileSync('git',['cat-file','-e',`${ref}:${p}`],{cwd:root,stdio:'ignore'});return true;}catch{return false;}};
   const plan=read('.agent/semester-03-plan.md'),lessons=rows(plan,'S3-LESSONS');
   const deps=rows(read('.agent/semester-03/s01-dependency-review.md'),'S01-DEPENDENCIES');
   const errors=reviewGraph(lessons,deps),baseline=JSON.parse(read('.agent/semester-03-baseline.json'));
@@ -41,7 +42,7 @@ export function collectReview(root=process.cwd()){
   const current=new Map(catalog.flatMap(c=>c.lessons.map(l=>[`${c.slug}/${l.slug}`,l])));
   const mapped=new Map();for(const l of lessons)if(l[4]!=='—')for(const s of l[4].split(';')){if(mapped.has(s))errors.push(`重复来源 ${s}`);mapped.set(s,l);}
   const sources=baseline.chapters.flatMap(c=>c.lessons).map(s=>{
-    const target=mapped.get(s.path),file=`content/${s.path}.mdx`,exists=existsSync(resolve(root,file));
+    const target=mapped.get(s.path),file=`content/${s.path}.mdx`,exists=present(file);
     if(!target)errors.push(`来源遗漏 ${s.path}`);
     if(exists!==s.hasMdx)errors.push(`正文数量漂移 ${s.path}`);
     if(!current.has(s.path))errors.push(`当前来源缺失 ${s.path}`);
@@ -61,7 +62,7 @@ export function collectReview(root=process.cwd()){
       action:s.path===target?.[1]?'保留':exists?'git mv正文并保留旧入口':'合并或迁移空条目并保留旧入口',baselineNormalizedSha256:baselineHash,currentNormalizedSha256:currentHash,exception};
   });
   for(const s of mapped.keys())if(!sources.some(r=>r.source===s))errors.push(`未知来源 ${s}`);
-  const files=execFileSync('git',['ls-files','content','app','components','lib','scripts','next.config.mjs','mdx-components.tsx','.agent/delivery-tracker.md','docs/discuss-log'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/);
+  const files=execFileSync('git',ref?['ls-tree','-r','--name-only',ref,'--','content','app','components','lib','scripts','next.config.mjs','mdx-components.tsx','.agent/delivery-tracker.md','docs/discuss-log']:['ls-files','content','app','components','lib','scripts','next.config.mjs','mdx-components.tsx','.agent/delivery-tracker.md','docs/discuss-log'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/);
   const moved=sources.filter(s=>s.source!==s.target),references=[];
   for(const file of files){if(!/\.(mdx?|tsx?|mjs|json)$/.test(file))continue;
     const lines=read(file).split(/\r?\n/);for(const [i,line]of lines.entries()){
@@ -101,5 +102,7 @@ export function collectReview(root=process.cwd()){
   return {errors,stats:{sources:sources.length,mdx:sources.filter(s=>s.hasMdx).length,movedSources:moved.length,movedMdx:moved.filter(s=>s.hasMdx).length,targets:lessons.length,oldEdges:oldEdges.length,candidateEdges:allEdges.length,isolated:isolated.length,zeroChapters:zeroChapters.length,forward:forward.length},sources,dependencies:deps.map(d=>({id:d[0],type:d[1],level:d[2],prereq:d[3]==='—'?[]:d[3].split(';')})),oldEdges,isolated,zeroChapters,forward,references};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
-  try{const result=collectReview();if(process.argv.includes('--write')&&!result.errors.length)writeFileSync('.agent/semester-03/s01-migration-inventory.json',JSON.stringify(result,null,2)+'\n');if(!process.argv.includes('--write')&&JSON.stringify(result)!==JSON.stringify(JSON.parse(readFileSync('.agent/semester-03/s01-migration-inventory.json','utf8'))))result.errors.push('审查快照与当前输入不一致；检查差异后显式 --write');console.log(JSON.stringify(result.stats));for(const e of result.errors)console.error('FAIL',e);if(result.errors.length)process.exitCode=1;else console.log('PASS S01 migration review');}catch(e){console.error('FAIL',e.message);process.exitCode=1;}
+  try{const migrated=/\| S02 \|[^\n]*\[x\]/.test(readFileSync('.agent/semester-03-checklist.md','utf8'));
+    if(migrated&&process.argv.includes('--write'))throw Error('S01历史证据冻结；迁移后禁止覆盖');
+    const result=collectReview(process.cwd(),migrated?'4c06e93':null);if(process.argv.includes('--write')&&!result.errors.length)writeFileSync('.agent/semester-03/s01-migration-inventory.json',JSON.stringify(result,null,2)+'\n');if(!process.argv.includes('--write')&&JSON.stringify(result)!==JSON.stringify(JSON.parse(readFileSync('.agent/semester-03/s01-migration-inventory.json','utf8'))))result.errors.push('审查快照与当前输入不一致；检查差异后显式 --write');console.log(JSON.stringify(result.stats));for(const e of result.errors)console.error('FAIL',e);if(result.errors.length)process.exitCode=1;else console.log('PASS S01 migration review');}catch(e){console.error('FAIL',e.message);process.exitCode=1;}
 }

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {rows,reviewGraph,collectReview} from './check-migration-review.mjs';
 const lessons=rows(readFileSync('.agent/semester-03-plan.md','utf8'),'S3-LESSONS');
 const dependencies=rows(readFileSync('.agent/semester-03/s01-dependency-review.md','utf8'),'S01-DEPENDENCIES');
-test('205课审查和来源/正文/旧边解释均完整',()=>{const r=collectReview();assert.deepEqual(r.errors,[]);assert.equal(r.stats.sources,141);assert.equal(r.stats.mdx,56);assert.equal(r.stats.isolated,30);assert.equal(r.stats.zeroChapters,7);assert.equal(r.stats.targets,205);assert.ok(r.oldEdges.every(e=>e.reason));});
+test('205课审查和来源/正文/旧边解释均完整',()=>{const r=collectReview(process.cwd(),'4c06e93');assert.deepEqual(r.errors,[]);assert.equal(r.stats.sources,141);assert.equal(r.stats.mdx,56);assert.equal(r.stats.isolated,30);assert.equal(r.stats.zeroChapters,7);assert.equal(r.stats.targets,205);assert.ok(r.oldEdges.every(e=>e.reason));});
 for(const [name,mutate,pattern] of [
   ['漏课',d=>d.pop(),/缺课/],
   ['重复课',d=>d.push(d[0]),/重复/],

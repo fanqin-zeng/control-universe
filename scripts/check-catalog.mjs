@@ -385,16 +385,8 @@ if (!trackerStats) {
 //      隐藏：每条都打成 INFO，数量变化时肉眼可见。
 //   ② 其余章的前向边必须逐条登记在 FORWARD_ALLOWLIST 里并写明理由；未登记 → FAIL。
 //      登记条目若在 catalog 中消失（改序或删边）→ 同样 FAIL，防止名单腐化成死数据。
-const FORWARD_ALLOWLIST = [
-  { own: "estimation/extended-kalman-filter", pre: "nonlinear/lyapunov-stability",
-    why: "EKF 的收敛性证明要 Lyapunov 工具；§2.0 把 estimation 排在 nonlinear 之前（Kalman 是 modern 的自然延伸）" },
-  { own: "estimation/h-infinity-filter", pre: "robust/h-infinity-basics",
-    why: "H∞ 滤波以 H∞ 范数与博弈不等式为前提；§2.0 把 robust 排在 estimation 之后（H∞ 需频域+状态空间+凸优化齐备）" },
-  { own: "estimation/mhe-fusion", pre: "mpc/receding-horizon",
-    why: "MHE 本质是把滚动时域优化用在估计上，与 MPC 同源；§2.0 把 mpc 排在 estimation 之后" },
-  { own: "identification/nonlinear-data-driven-id", pre: "intelligent/neural-network-control",
-    why: "神经网络辨识要先懂网络结构与训练；§2.0 把 identification 排在 intelligent 之前（回答「MPC 的模型从哪来」）" },
-];
+// S02：旧四条前向边已由章序/迁移/工具前置消解；保留未登记前向边与陈旧名单守卫。
+const FORWARD_ALLOWLIST = [];
 
 SECTION(9, "prereq 依赖图（P3/P6 守卫）");
 const chOrderOf = new Map(catalog.map((c, i) => [c.slug, c.order !== undefined ? c.order : i]));
@@ -503,7 +495,7 @@ const staleMigrated = edges.filter((e) => MIGRATION_OUT[e.pre]);
 if (staleMigrated.length) {
   for (const e of staleMigrated) WARN("prereq 指向 A6 迁出侧（旧条目删除后会变悬空边，应改指 " +
     MIGRATION_OUT[e.pre] + "）：" + e.own + " -> " + e.pre);
-} else PASS("无 prereq 指向 A6 迁出侧旧条目（" + Object.keys(MIGRATION_OUT).length + " 个迁移期并存 slug 均未被误指）");
+} else PASS("无 prereq 指向 A6 迁出侧旧条目（" + Object.keys(MIGRATION_OUT).length + " 个历史迁出路径均未被误指；S02已合并条目）");
 // 边指向骨架课不是缺陷（85 门骨架课本来就还没写），但 Part 2 的 UI 必须能降级显示，故只报数
 const toSkeleton = edges.filter((e) => catByKey.get(e.pre).status === "empty");
 INFO("指向骨架课(status=empty)的 prereq 边 " + toSkeleton.length + " / " + edges.length +

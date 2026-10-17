@@ -456,6 +456,8 @@ I03审计明细与35课日志/30条孤立课程去向在 [semester-03/i03-warn-a
 
 S01迁移输入审查见 [结构清单](semester-03/s01-migration-review.md) 与 [205课候选先修](semester-03/s01-dependency-review.md)。141来源/56正文全部保留，8个旧入口改变、2份正文移动；148旧边逐条登记处置，候选图464边无环/悬空/未解释前向边，保留两条采样先修。S02按该审查落地课型/难度和先修，S03处理旧入口/引用/台账；仍由catalog提供线上元数据，逐课Phase 1复核教学依赖。W03仅完成审查部分，不提前关闭；S01未更改本计划目标范围或课程生产顺序。
 
+S02已实施21章205课与464先修边，正文56份逐字保留，149空课和29个旧v1.3状态不变。为保证独立合入后可用，S03中必要的旧URL永久跳转和旧tracker/自动大纲同步前置到S02；S03仍负责锚点、引用与完整兼容验收，S04不提前关闭。迁移后30项WARN的实际审计及新发现存量notebook失败见 [S02记录](semester-03/s02-structure-migration.md)，I03/S01不可变快照保留；S01校验转对历史提交取证，迁移后用 `node scripts/check-structure-migration.mjs`。
+
 工作包分支沿用 `wp/<阶段>-<内容>`，计划为 `wp/s3-planning`，后续结构或单课用 `wp/s3-structure`、`wp/s3-math-calculus-basics` 等。从master开始；每课验收后立即 `--no-ff` 合入master，多课包未完可留分支。只暂存本任务文件，用户已有未提交修改不动；不自动push。
 
 ## 6. 目标清单与范围变更
