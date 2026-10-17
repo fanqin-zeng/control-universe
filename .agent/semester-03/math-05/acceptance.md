@@ -42,5 +42,5 @@ Phase1合同先落盘，minimal.py实跑后才写数字；Phase2三轮反馈触�
 
 ## 合入
 
-待工作包提交并--no-ff合master后补真实hash；全局合并列此时保持未勾。本课合并后停止。
+课程提交76deaa3，已以--no-ff合入master为04e98d5af707017cdf1ac293d7914a4a31c274c8；真实合并完成后才勾全局合并列。回执沿用本工作包分支提交再合master，随后删除分支；未push/未发布gh-pages，本对话停止于本课。
 补充复核：node .agent/semester-03/math-05/check-log.mjs退出0，4阶段/3轮/6审校组/10角色/43对账行/9+4门槛；node scripts/check-semester03.mjs退出0。语义、数字覆盖与缺席理由已按日志人工逐项核查。源文件与变更范围的git diff --check退出0（原始工具日志保留工具输出中的对齐空格）。
