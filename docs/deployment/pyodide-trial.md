@@ -1,5 +1,7 @@
 # 浏览器 Python 试验与支持清单
 
+> 本文保留 DEP03 数学两课试验的历史记录。后续全课程逐实验支持范围以 [python-expansion.md](python-expansion.md) 为准。
+
 2026-10-17；工作包 wp/pyodide-trial。用户授权：先在本地验收数学两课、python-control 常用功能和 Slycot 兼容性，验收通过则直接发布 gh-pages。本次授权仅覆盖本工作包；以后仍逐次取得发布同意。
 
 ## 交付范围
@@ -52,7 +54,7 @@ Pyodide 0.27.7 / Python 3.12.7 / NumPy 2.0.2 / SciPy 1.14.1 / SymPy 1.13.3 / Mat
 
 - [pyodide-local-results.json](pyodide-local-results.json)：真实浏览器 Worker 30/30 项符合预期，其中 6 项是明确的失败预期；Slycot wheel 安装失败独立记录，不能将它计作“支持”。
 - [pyodide-ui-results.json](pyodide-ui-results.json)：实际课程页面的微积分 6 / 复数 3 个 notebook 全部完成；编辑 print(2+3) 得 5，重置恢复原代码并清空输出；ValueError 显示；while True 无限循环可停止，并可重新初始化运行；控制台 error/warn=0。
-- [pyodide-calculus.png](pyodide-calculus.png)、[pyodide-complex.png](pyodide-complex.png)：本地页面截图。
+- [pyodide-calculus.png](pyodide-calculus.png)、[pyodide-complex.png](pyodide-complex.png)：本地页面截图。另见 pyodide-plot.png：实际课程单元格中 import control、dcgain 得 1.0，并显示 Matplotlib PNG。
 - npm run build:pages：退出码 0；205 课程、9 旧入口静态审计通过，279290823 字节，低于 1 GiB。见 pyodide-build.log。
 - npm run check：退出码 0，PASS21/WARN2/FAIL0，存量 WARN 不变。见 pyodide-check.log。
 - node --test scripts/pages.test.mjs scripts/lesson-route.test.mjs scripts/browser-python.test.mjs：退出码 0，12/12；包含数学路由限定、静态其他课程不请求 Jupyter、停止/超时拒绝在途请求及新建 Worker。见 pyodide-tests.log。
@@ -69,6 +71,12 @@ Pyodide 0.27.7 / Python 3.12.7 / NumPy 2.0.2 / SciPy 1.14.1 / SymPy 1.13.3 / Mat
 
 ## 发布
 
-本地验收已通过；按本次用户授权发布，远端 SHA / Actions / 公网复验随后补录。只有公网版本核对与浏览器实跑后才完成 DEP03。
+本地验收通过后按本次授权发布：源码 43180de，经 --no-ff 合入 master 得 9e750a7，再合入 gh-pages 得 e6f74f0e3766888f4ef40c4675d9cc5f79567d90；gh-pages/master 推送均退出码 0。Actions：[39023386607](https://github.com/fanqing-zeng/control-universe/actions/runs/39023386607)。云端 build/deploy 均 success，见 pyodide-public-actions.json。公网 release.json sourceCommit 精确匹配 e6f74f0…、sourceDirty=false、pythonExecution=browser-math-trial。公网完整清单再次 30/30 符合预期，Slycot 0.7.1 安装明确失败，见 pyodide-public-results.json。
+
+node scripts/verify-public-pages.mjs e6f74f0e3766888f4ef40c4675d9cc5f79567d90 docs/deployment/pyodide-public-http.json：退出码 0，235 次成功请求、205 课程和9旧入口、未知路径404，见 pyodide-public-http.json。
+
+公网实际课程页面亦完成微积分 6 / 复数 3 个 notebook，站内导航正常、控制台 error/warn=0；输出见 pyodide-public-ui.json，截图见 pyodide-public-course.png / pyodide-public-complex.png，验收台截图见 pyodide-public-lab.png。DEP03 完成。
+
+发布后的验收记录只在 master 更新，不触发新的站点发布；保留首次发布证据，verify-public-pages 支持指定新的输出路径。
 
 参考：[Pyodide 0.27.7](https://pyodide.org/en/0.27.7/usage/index.html)、[Worker](https://pyodide.org/en/0.27.7/usage/webworker.html)、[hinfsyn 依赖](https://python-control.readthedocs.io/en/stable/generated/control.hinfsyn.html)。

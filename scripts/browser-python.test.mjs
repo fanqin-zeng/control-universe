@@ -26,4 +26,11 @@ test('shared browser worker routes requests, rejects all on stop/timeout, and re
   assert.equal(workers.length,2);
   const timeout = assert.rejects(next,/已停止/); timers.at(-1)(); await timeout;
   assert(workers[1].terminated);
+  const old = api.browserPython('one','','old','execute','hash-one');
+  assert.equal(workers[2].url,'/control-universe/python-worker.js?v=hash-one');
+  const replaced = assert.rejects(old,/已停止/);
+  const fresh = api.browserPython('one','','fresh','execute','hash-two');
+  await replaced; assert(workers[2].terminated); assert.equal(workers[3].url,'/control-universe/python-worker.js?v=hash-two');
+  workers[2].onerror(); assert(!workers[3].terminated,'late errors from an old worker cannot kill a new runtime');
+  workers[3].onmessage({data:{id:workers[3].messages[0].id,outputs:[]}});await fresh;
 });

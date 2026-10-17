@@ -10,6 +10,8 @@ import { headingRemarkPlugins, headingRehypePlugins } from "./mdx-headings.mjs";
 import { wikiComponents } from "@/lib/wiki-components";
 import { logger } from "@/lib/logger";
 import { rehypeBasePath } from "./mdx-base-path.mjs";
+import {rehypePythonPolicy} from './mdx-python-policy.mjs';
+import pythonSupport from './python-support.json';
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -60,7 +62,7 @@ async function compileLessonSource(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           remarkPlugins: headingRemarkPlugins as any,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rehypePlugins: [...headingRehypePlugins(lessonKey), [rehypePrettyCode, { theme: "github-light" }], [rehypeBasePath, {basePath: process.env.NEXT_PUBLIC_BASE_PATH || ""}]] as any,
+          rehypePlugins: [...headingRehypePlugins(lessonKey), [rehypePrettyCode, { theme: "github-light" }], [rehypeBasePath, {basePath: process.env.NEXT_PUBLIC_BASE_PATH || ""}], [rehypePythonPolicy, {lessonKey, policy: pythonSupport}]] as any,
         },
       },
       components: {
