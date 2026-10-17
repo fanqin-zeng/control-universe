@@ -23,23 +23,39 @@ MPC 的第一个要素是一个**模型**——用来预测"如果我施加某�
 
 设被控对象为线性离散系统：
 
-$$x(k+1) = A x(k) + B u(k)$$
-$$y(k) = C x(k) + D u(k)$$
+$$
+x(k+1) = A x(k) + B u(k)
+$$
+$$
+y(k) = C x(k) + D u(k)
+$$
 
 给定当前状态 $x(k)$ 和未来 $N_p$ 步的输入序列 $U = [u(k), u(k+1), \ldots, u(k+N_p-1)]^T$，可以逐步递推未来状态：
 
-$$x(k+1) = Ax(k) + Bu(k)$$
-$$x(k+2) = A^2x(k) + ABu(k) + Bu(k+1)$$
-$$x(k+3) = A^3x(k) + A^2Bu(k) + ABu(k+1) + Bu(k+2)$$
-$$\vdots$$
+$$
+x(k+1) = Ax(k) + Bu(k)
+$$
+$$
+x(k+2) = A^2x(k) + ABu(k) + Bu(k+1)
+$$
+$$
+x(k+3) = A^3x(k) + A^2Bu(k) + ABu(k+1) + Bu(k+2)
+$$
+$$
+\vdots
+$$
 
 写成紧凑的矩阵形式：
 
-$$\underbrace{\begin{bmatrix} x(k+1) \\ x(k+2) \\ x(k+3) \\ \vdots \\ x(k+N_p) \end{bmatrix}}_{X} = \underbrace{\begin{bmatrix} A \\ A^2 \\ A^3 \\ \vdots \\ A^{N_p} \end{bmatrix}}_{F} x(k) + \underbrace{\begin{bmatrix} B & 0 & 0 & \cdots & 0 \\ AB & B & 0 & \cdots & 0 \\ A^2B & AB & B & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ A^{N_p-1}B & A^{N_p-2}B & A^{N_p-3}B & \cdots & B \end{bmatrix}}_{\Phi} U$$
+$$
+\underbrace{\begin{bmatrix} x(k+1) \\ x(k+2) \\ x(k+3) \\ \vdots \\ x(k+N_p) \end{bmatrix}}_{X} = \underbrace{\begin{bmatrix} A \\ A^2 \\ A^3 \\ \vdots \\ A^{N_p} \end{bmatrix}}_{F} x(k) + \underbrace{\begin{bmatrix} B & 0 & 0 & \cdots & 0 \\ AB & B & 0 & \cdots & 0 \\ A^2B & AB & B & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ A^{N_p-1}B & A^{N_p-2}B & A^{N_p-3}B & \cdots & B \end{bmatrix}}_{\Phi} U
+$$
 
 即：
 
-$$X = F x(k) + \Phi U$$
+$$
+X = F x(k) + \Phi U
+$$
 
 > 💡 **核心观点**：$F$ 捕捉了"当前状态对未来各步的影响"，$\Phi$ 捕捉了"未来各步输入对未来状态的影响"。这两个矩阵只依赖于系统模型 $(A, B)$ 和预测时域 $N_p$，在每个采样时刻都可以预先计算。
 
@@ -98,7 +114,9 @@ MPC 可以处理的约束类型：
 
 **软约束与松弛变量**：有时约束太紧，优化问题可能**无解**（不可行）。解决方法是引入**松弛变量** $\epsilon$，把硬约束变成软约束：
 
-$$u_{\min} - \epsilon \leq u \leq u_{\max} + \epsilon, \quad \epsilon \geq 0$$
+$$
+u_{\min} - \epsilon \leq u \leq u_{\max} + \epsilon, \quad \epsilon \geq 0
+$$
 
 同时在代价函数中加一项 $V \epsilon^2$（$V$ 很大），惩罚约束违反。这样优化问题始终有解，只在"万不得已"时才轻微违反约束。
 
@@ -108,18 +126,26 @@ $$u_{\min} - \epsilon \leq u \leq u_{\max} + \epsilon, \quad \epsilon \geq 0$$
 
 将预测方程 $X = Fx(k) + \Phi U$ 代入代价函数，可以将 MPC 优化问题转化为标准的**二次规划（QP）**：
 
-$$\min_{U} \frac{1}{2} U^T H U + f^T U$$
-$$\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}$$
+$$
+\min_{U} \frac{1}{2} U^T H U + f^T U
+$$
+$$
+\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}
+$$
 
 其中：
 
 **Hessian 矩阵** $H$（与 $x(k)$ 无关，可离线计算）：
 
-$$H = 2(\Phi^T \bar{Q} \Phi + \bar{R})$$
+$$
+H = 2(\Phi^T \bar{Q} \Phi + \bar{R})
+$$
 
 **线性项** $f$（依赖于当前状态 $x(k)$，每步更新）：
 
-$$f = 2 \Phi^T \bar{Q} F x(k)$$
+$$
+f = 2 \Phi^T \bar{Q} F x(k)
+$$
 
 这里 $\bar{Q} = \text{blkdiag}(Q, Q, \ldots, Q, P)$ 和 $\bar{R} = \text{blkdiag}(R, R, \ldots, R)$ 是分块对角权重矩阵。
 
@@ -140,7 +166,9 @@ $$f = 2 \Phi^T \bar{Q} F x(k)$$
 
 增量形式的状态增广模型：
 
-$$\underbrace{\begin{bmatrix} \Delta x(k+1) \\ y(k+1) \end{bmatrix}}_{\xi(k+1)} = \underbrace{\begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix}}_{A_e} \underbrace{\begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix}}_{\xi(k)} + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)$$
+$$
+\underbrace{\begin{bmatrix} \Delta x(k+1) \\ y(k+1) \end{bmatrix}}_{\xi(k+1)} = \underbrace{\begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix}}_{A_e} \underbrace{\begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix}}_{\xi(k)} + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)
+$$
 
 其中 $\Delta x(k) = x(k) - x(k-1)$。
 
@@ -196,11 +224,15 @@ MPC 和 LQR 都基于"线性系统 + 二次型代价"的框架，但有本质区
 
 证明思路：无约束 QP 的最优解由 KKT 条件给出：
 
-$$HU^* + f = 0 \implies U^* = -H^{-1}f = -(\Phi^T\bar{Q}\Phi + \bar{R})^{-1}\Phi^T\bar{Q}Fx(k)$$
+$$
+HU^* + f = 0 \implies U^* = -H^{-1}f = -(\Phi^T\bar{Q}\Phi + \bar{R})^{-1}\Phi^T\bar{Q}Fx(k)
+$$
 
 当 $N_p \to \infty$ 时，这个解趋向 LQR 的最优反馈 $u^*(k) = -K_{\text{LQR}} x(k)$，其中 $K_{\text{LQR}}$ 由离散 Riccati 方程的解 $P$ 给出：
 
-$$K_{\text{LQR}} = (R + B^TPB)^{-1}B^TPA$$
+$$
+K_{\text{LQR}} = (R + B^TPB)^{-1}B^TPA
+$$
 
 > 💡 **核心观点**：LQR 是 MPC 的特例。MPC 是更通用的框架——它在 LQR 的基础上增加了约束处理和有限时域滚动优化。
 
@@ -362,7 +394,9 @@ LQR 的无限时域保证了一个关键性质：**最优代价 $V(x) = x^T P x$
 
 **终端约束**要求预测时域终点落在某个集合内：
 
-$$x(k + N_p) \in \mathcal{X}_f$$
+$$
+x(k + N_p) \in \mathcal{X}_f
+$$
 
 通常 $\mathcal{X}_f = \{x : x^T P_f x \leq \alpha\}$，其中 $P_f$ 是某个正定矩阵。
 
@@ -372,7 +406,9 @@ $$x(k + N_p) \in \mathcal{X}_f$$
 
 另一种方法是加**终端代价**：
 
-$$J = \sum_{i=0}^{N_p-1} [x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i)] + \underbrace{x(k+N_p)^T P_f\, x(k+N_p)}_{\text{终端代价}}$$
+$$
+J = \sum_{i=0}^{N_p-1} [x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i)] + \underbrace{x(k+N_p)^T P_f\, x(k+N_p)}_{\text{终端代价}}
+$$
 
 如果 $P_f$ 选择为离散 Riccati 方程的解（即 LQR 的最优代价矩阵），则终端代价等价于"从 $k+N_p$ 开始用 LQR 控制到无穷远"的代价。
 
@@ -404,7 +440,9 @@ $$J = \sum_{i=0}^{N_p-1} [x(k+i)^T Q\, x(k+i) + u(k+i)^T R\, u(k+i)] + \underbra
 
 **显式 MPC（Explicit MPC）**（Bemporad et al., 2002）：对于线性系统 + 多面体约束，MPC 的最优解可以表示为当前状态 $x(k)$ 的**分段仿射函数**：
 
-$$u^*(k) = F_i x(k) + g_i \quad \text{if} \quad x(k) \in \mathcal{P}_i$$
+$$
+u^*(k) = F_i x(k) + g_i \quad \text{if} \quad x(k) \in \mathcal{P}_i
+$$
 
 其中 $\{\mathcal{P}_i\}$ 是状态空间的一组多面体划分。这个分段仿射函数可以**离线计算**，在线只需要查表——判断 $x(k)$ 落在哪个区域，然后用对应的仿射公式计算 $u^*$。
 
@@ -425,7 +463,9 @@ $$u^*(k) = F_i x(k) + g_i \quad \text{if} \quad x(k) \in \mathcal{P}_i$$
 
 MPC 需要**全状态信息** $x(k)$，但实际系统通常只有输出 $y(k)$ 可测。解决方案：用**卡尔曼滤波**（或 Luenberger 观测器）估计状态：
 
-$$\hat{x}(k+1) = A\hat{x}(k) + Bu(k) + L(y(k) - C\hat{x}(k))$$
+$$
+\hat{x}(k+1) = A\hat{x}(k) + Bu(k) + L(y(k) - C\hat{x}(k))
+$$
 
 MPC 使用估计值 $\hat{x}(k)$ 代替真实状态 $x(k)$。根据**分离原理**（对线性系统成立），控制器设计和观测器设计可以独立进行。
 
@@ -495,33 +535,51 @@ MPC 参数：$N_p = 2$，$Q = 1$，$R = 0$（只最小化状态偏差，不惩�
 
 (a) $F$ 矩阵由 $A^1, A^2, A^3$ 组成：
 
-$$A^1 = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, \quad A^2 = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}, \quad A^3 = \begin{bmatrix} 1 & 3 \\ 0 & 1 \end{bmatrix}$$
+$$
+A^1 = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, \quad A^2 = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}, \quad A^3 = \begin{bmatrix} 1 & 3 \\ 0 & 1 \end{bmatrix}
+$$
 
-$$F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix}$$
+$$
+F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix}
+$$
 
 (b) $\Phi$ 矩阵（下三角分块矩阵）：
 
-$$\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix}
+$$
 
 计算各块：
 
-$$B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad AB = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \end{bmatrix}$$
+$$
+B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad AB = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \end{bmatrix}
+$$
 
-$$A^2B = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 2.5 \\ 1 \end{bmatrix}$$
+$$
+A^2B = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}\begin{bmatrix} 0.5 \\ 1 \end{bmatrix} = \begin{bmatrix} 2.5 \\ 1 \end{bmatrix}
+$$
 
-$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 0 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 0 & 0 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 0 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 0 & 0 \end{bmatrix}
+$$
 
 等等，这里需要重新检查 $\Phi$ 的结构。$\Phi$ 应该是 $6 \times 3$ 矩阵，每列对应一个输入对未来状态的影响：
 
-$$\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 不对，让我重新按正确结构写。$\Phi$ 的行是 $x(k+1)$ 到 $x(k+3)$ 的 6 个分量，列是 $u(k), u(k+1), u(k+2)$：
 
-$$\Phi = \begin{bmatrix} B & \mathbf{0} & \mathbf{0} \\ AB & B & \mathbf{0} \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} B & \mathbf{0} & \mathbf{0} \\ AB & B & \mathbf{0} \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 再检查：$B = [0.5, 1]^T$，$AB = [1.5, 1]^T$，$A^2B = [2.5, 1]^T$。
 
-$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 不对。让我仔细写：
 
@@ -531,11 +589,15 @@ $$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 
 
 展开为 $6 \times 3$：
 
-$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 嗯，第三行块第二列应该是 $AB = [1.5, 1]^T$，第三列是 $0$。让我重新整理：
 
-$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 这里第二行块是 $[AB, B, 0]$，即：
 - 第 3 行：$AB$ 的第 1 个分量 = 1.5，$B$ 的第 1 个分量 = 0.5，0
@@ -547,15 +609,23 @@ $$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 
 
 所以：
 
-$$\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix}
+$$
 
 (c) 计算 $X = Fx(k) + \Phi U$：
 
-$$Fx(k) = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} 2 \\ 1 \end{bmatrix} = \begin{bmatrix} 3 \\ 1 \\ 4 \\ 1 \\ 5 \\ 1 \end{bmatrix}$$
+$$
+Fx(k) = \begin{bmatrix} 1 & 1 \\ 0 & 1 \\ 1 & 2 \\ 0 & 1 \\ 1 & 3 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} 2 \\ 1 \end{bmatrix} = \begin{bmatrix} 3 \\ 1 \\ 4 \\ 1 \\ 5 \\ 1 \end{bmatrix}
+$$
 
-$$\Phi U = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix} = \begin{bmatrix} 0.5 \\ 1 \\ 1.5 \\ 1 \\ 2.5 \\ 0 \end{bmatrix}$$
+$$
+\Phi U = \begin{bmatrix} 0.5 & 0 & 0 \\ 1 & 0 & 0 \\ 1.5 & 0.5 & 0 \\ 1 & 1 & 0 \\ 2.5 & 1.5 & 0.5 \\ 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix} = \begin{bmatrix} 0.5 \\ 1 \\ 1.5 \\ 1 \\ 2.5 \\ 0 \end{bmatrix}
+$$
 
-$$X = \begin{bmatrix} 3.5 \\ 2 \\ 5.5 \\ 2 \\ 7.5 \\ 1 \end{bmatrix}$$
+$$
+X = \begin{bmatrix} 3.5 \\ 2 \\ 5.5 \\ 2 \\ 7.5 \\ 1 \end{bmatrix}
+$$
 
 即 $x(k+1) = [3.5, 2]^T$，$x(k+2) = [5.5, 2]^T$，$x(k+3) = [7.5, 1]^T$。
 
@@ -566,23 +636,35 @@ $$X = \begin{bmatrix} 3.5 \\ 2 \\ 5.5 \\ 2 \\ 7.5 \\ 1 \end{bmatrix}$$
 (a) 系统 $x(k+1) = 0.5x(k) + u(k)$，$N_p = 2$，$Q = 1$，$R = 0$。
 
 预测：
-$$x(k+1) = 0.5 \times 4 + u(k) = 2 + u(k)$$
-$$x(k+2) = 0.5 x(k+1) + u(k+1) = 0.5(2 + u(k)) + u(k+1) = 1 + 0.5u(k) + u(k+1)$$
+$$
+x(k+1) = 0.5 \times 4 + u(k) = 2 + u(k)
+$$
+$$
+x(k+2) = 0.5 x(k+1) + u(k+1) = 0.5(2 + u(k)) + u(k+1) = 1 + 0.5u(k) + u(k+1)
+$$
 
 代价函数：
-$$J = x(k+1)^2 + x(k+2)^2 = (2 + u(k))^2 + (1 + 0.5u(k) + u(k+1))^2$$
+$$
+J = x(k+1)^2 + x(k+2)^2 = (2 + u(k))^2 + (1 + 0.5u(k) + u(k+1))^2
+$$
 
 约束：$|u(k)| \leq 2$，$|u(k+1)| \leq 2$。
 
 (b) 先不考虑约束求无约束最优：
 
-$$\frac{\partial J}{\partial u(k)} = 2(2 + u(k)) + 2(1 + 0.5u(k) + u(k+1)) \times 0.5 = 0$$
-$$\frac{\partial J}{\partial u(k+1)} = 2(1 + 0.5u(k) + u(k+1)) = 0$$
+$$
+\frac{\partial J}{\partial u(k)} = 2(2 + u(k)) + 2(1 + 0.5u(k) + u(k+1)) \times 0.5 = 0
+$$
+$$
+\frac{\partial J}{\partial u(k+1)} = 2(1 + 0.5u(k) + u(k+1)) = 0
+$$
 
 从第二个方程：$1 + 0.5u(k) + u(k+1) = 0 \implies u(k+1) = -1 - 0.5u(k)$
 
 代入第一个方程：
-$$2(2 + u(k)) + 0 = 0 \implies u(k) = -2$$
+$$
+2(2 + u(k)) + 0 = 0 \implies u(k) = -2
+$$
 
 则 $u(k+1) = -1 - 0.5(-2) = -1 + 1 = 0$
 
@@ -653,13 +735,19 @@ $N_p = 1$ 时代价为 $J = x(k)^2 + u(k)^2$。
 
 对 $u(k)$ 求导：
 
-$$\frac{\partial J}{\partial u(k)} = 2(2x(k) + u(k)) + 2u(k) = 4x(k) + 4u(k) = 0$$
+$$
+\frac{\partial J}{\partial u(k)} = 2(2x(k) + u(k)) + 2u(k) = 4x(k) + 4u(k) = 0
+$$
 
-$$u^*(k) = -x(k)$$
+$$
+u^*(k) = -x(k)
+$$
 
 (b) 一步后的状态：
 
-$$x(k+1) = 2x(k) + u^*(k) = 2x(k) - x(k) = x(k)$$
+$$
+x(k+1) = 2x(k) + u^*(k) = 2x(k) - x(k) = x(k)
+$$
 
 代价：$J_1 = x(k+1)^2 + u^*(k)^2 = x(k)^2 + x(k)^2 = 2x(k)^2$
 
@@ -677,19 +765,29 @@ $x(k+1) = x(k)$——状态没有变化！系统"停"在了当前位置，没有
 
 (d) 加终端代价 $P_f x(k+N_p)^2$ 后，$N_p = 1$ 时代价变为：
 
-$$J = x(k+1)^2 + u(k)^2 + P_f x(k+1)^2 = (1+P_f)x(k+1)^2 + u(k)^2$$
+$$
+J = x(k+1)^2 + u(k)^2 + P_f x(k+1)^2 = (1+P_f)x(k+1)^2 + u(k)^2
+$$
 
-$$= (1+P_f)(2x(k) + u(k))^2 + u(k)^2$$
+$$
+= (1+P_f)(2x(k) + u(k))^2 + u(k)^2
+$$
 
 对 $u(k)$ 求导：
 
-$$2(1+P_f)(2x(k) + u(k)) + 2u(k) = 0$$
+$$
+2(1+P_f)(2x(k) + u(k)) + 2u(k) = 0
+$$
 
-$$u^*(k) = \frac{-2(1+P_f)}{1 + 2(1+P_f)} \cdot 2x(k) = \frac{-4(1+P_f)}{1 + 2(1+P_f)} x(k)$$
+$$
+u^*(k) = \frac{-2(1+P_f)}{1 + 2(1+P_f)} \cdot 2x(k) = \frac{-4(1+P_f)}{1 + 2(1+P_f)} x(k)
+$$
 
 如果 $P_f$ 是离散 Riccati 方程的解（$A = 2, B = 1, Q = 1, R = 1$）：
 
-$$P_f = Q + A^2 P_f - A^2 P_f^2 / (R + P_f) = 1 + 4P_f - 4P_f^2/(1+P_f)$$
+$$
+P_f = Q + A^2 P_f - A^2 P_f^2 / (R + P_f) = 1 + 4P_f - 4P_f^2/(1+P_f)
+$$
 
 解此方程得 $P_f \approx 5.83$（取正根）。
 

@@ -46,13 +46,17 @@ description: "用不连续的高增益切换换取对匹配不确定性的完全
 
 对 $n$ 阶系统，切换函数通常取状态的线性组合：
 
-$$s(x) = c_1 x_1 + c_2 x_2 + \cdots + c_{n-1} x_{n-1} + x_n$$
+$$
+s(x) = c_1 x_1 + c_2 x_2 + \cdots + c_{n-1} x_{n-1} + x_n
+$$
 
 系数选取要使多项式 $p^{n-1} + c_{n-1}p^{n-2} + \cdots + c_1$ 的所有根位于左半平面（Hurwitz）。这样当 $s=0$ 时，剩下的 $n-1$ 阶动态渐近稳定。**切换面**就是 $s(x)=0$ 定义的 $n-1$ 维超平面：二阶系统里它是一条直线，三阶系统里是一个平面。
 
 跟踪问题里更常用的写法是把误差的导数链组合起来。对二阶系统：
 
-$$s = \dot e + \lambda e, \qquad e = x - x_d$$
+$$
+s = \dot e + \lambda e, \qquad e = x - x_d
+$$
 
 其中 $\lambda>0$ 决定滑动模态的收敛速度。$s=0$ 意味着 $\dot e = -\lambda e$，即误差按 $e^{-\lambda t}$ 指数衰减——**滑动模态就是一个你亲手指定的一阶系统**。推广到 $n$ 阶可取 $s = \left(\frac{d}{dt}+\lambda\right)^{n-1} e$。
 
@@ -60,15 +64,21 @@ $$s = \dot e + \lambda e, \qquad e = x - x_d$$
 
 设仿射系统 $\dot x = f(x) + g(x)\,u$（记号与上一课一致）。对切换函数求导：
 
-$$\dot s = \frac{\partial s}{\partial x}\dot x = L_f s(x) + L_g s(x)\,u$$
+$$
+\dot s = \frac{\partial s}{\partial x}\dot x = L_f s(x) + L_g s(x)\,u
+$$
 
 其中 $L_f s$、$L_g s$ 是 Lie 导数。若理想滑动成立（$s\equiv 0$，从而 $\dot s \equiv 0$），解出维持滑动所需的控制，称为**等效控制**（equivalent control）：
 
-$$u_{eq}(x) = -\frac{L_f s(x)}{L_g s(x)} \qquad (\text{要求 } L_g s \neq 0)$$
+$$
+u_{eq}(x) = -\frac{L_f s(x)}{L_g s(x)} \qquad (\text{要求 } L_g s \neq 0)
+$$
 
 把 $u_{eq}$ 代回状态方程，得到滑动模态：
 
-$$\dot x = f(x) - g(x)\frac{L_f s(x)}{L_g s(x)}, \qquad s(x)=0$$
+$$
+\dot x = f(x) - g(x)\frac{L_f s(x)}{L_g s(x)}, \qquad s(x)=0
+$$
 
 关键观察：如果系统带有**匹配**的不确定性，即 $\dot x = f + \Delta f + g(u + \delta)$ 且 $\Delta f = g\cdot\eta(x,t)$，那么 $\dot s = L_f s + L_g s\,(u+\delta+\eta)$，等效控制变成 $u_{eq} = -(L_f s)/(L_g s) - \delta - \eta$——**扰动被等效控制原封不动地吃掉了**，滑动模态方程里根本不出现 $\Delta f$ 与 $\delta$。这就是"完全鲁棒性"的数学来源：不是误差被压小，而是不确定性在滑动模态中被精确抵消。
 
@@ -80,11 +90,15 @@ $$\dot x = f(x) - g(x)\frac{L_f s(x)}{L_g s(x)}, \qquad s(x)=0$$
 
 滑动要能建立，首先状态得**到得了**面上。充分条件是存在 $\eta>0$ 使
 
-$$s\,\dot s \le -\eta\,|s| \quad\Longleftrightarrow\quad \dot V \le -\eta|s|,\quad V=\tfrac12 s^2$$
+$$
+s\,\dot s \le -\eta\,|s| \quad\Longleftrightarrow\quad \dot V \le -\eta|s|,\quad V=\tfrac12 s^2
+$$
 
 取 $V=\tfrac12 s^2$，则 $\dot V = s\dot s \le -\eta|s| = -\eta\sqrt{2V}$。由比较引理，$\sqrt{V(t)} \le \sqrt{V(0)} - \frac{\eta}{\sqrt2}t$，故
 
-$$t_r \le \frac{\sqrt{2V(0)}}{\eta} = \frac{|s(0)|}{\eta}$$
+$$
+t_r \le \frac{\sqrt{2V(0)}}{\eta} = \frac{|s(0)|}{\eta}
+$$
 
 即**有限时间到达**，且上界可以手算。
 
@@ -102,33 +116,45 @@ $$t_r \le \frac{\sqrt{2V(0)}}{\eta} = \frac{|s(0)|}{\eta}$$
 
 考虑带匹配扰动的二阶系统：
 
-$$\ddot x = f(x,\dot x) + b(x,\dot x)\,u + d(t)$$
+$$
+\ddot x = f(x,\dot x) + b(x,\dot x)\,u + d(t)
+$$
 
 其中 $b(x,\dot x) \ge b_0 > 0$ 已知（至少符号与下界已知），扰动有界 $|d(t)| \le D$ 且 $D$ 已知。目标：使 $x$ 跟踪 $x_d(t)$。
 
 ### 步骤 1：切换函数
 
-$$e = x - x_d, \qquad s = \dot e + \lambda e$$
+$$
+e = x - x_d, \qquad s = \dot e + \lambda e
+$$
 
 $\lambda$ 是滑动模态的极点（收敛速率），也是后面稳态精度的分母，选大一些精度高，但需要的控制权限也更大。
 
 ### 步骤 2：求 $\dot s$ 与等效控制
 
-$$\dot s = \ddot x - \ddot x_d + \lambda \dot e = f + b\,u + d - \ddot x_d + \lambda \dot e$$
+$$
+\dot s = \ddot x - \ddot x_d + \lambda \dot e = f + b\,u + d - \ddot x_d + \lambda \dot e
+$$
 
 令名义部分（$d=0$）为零，解出名义等效控制：
 
-$$u_{eq} = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e\Big]$$
+$$
+u_{eq} = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e\Big]
+$$
 
 ### 步骤 3：完整控制律
 
 把切换项放在 $\frac1b$ 的**括号内**，可以避免增益与 $b$ 的纠缠：
 
-$$u = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e - k\,\mathrm{sgn}(s)\Big], \qquad k > D$$
+$$
+u = \frac{1}{b}\Big[-f + \ddot x_d - \lambda \dot e - k\,\mathrm{sgn}(s)\Big], \qquad k > D
+$$
 
 代入 $\dot s$ 得 $\dot s = -k\,\mathrm{sgn}(s) + d$，于是
 
-$$\dot V = s\dot s = -k|s| + s\,d \le -(k-D)|s| = -\eta|s|, \qquad \eta = k-D$$
+$$
+\dot V = s\dot s = -k|s| + s\,d \le -(k-D)|s| = -\eta|s|, \qquad \eta = k-D
+$$
 
 **到达条件**：$k > D$。增益裕度 $\eta$ 直接决定到达时间上界 $t_r \le |s(0)|/\eta$。
 
@@ -140,7 +166,9 @@ $$\dot V = s\dot s = -k|s| + s\,d \le -(k-D)|s| = -\eta|s|, \qquad \eta = k-D$$
 
 若只知道 $b$ 的符号与范围 $0 < b_{\min} \le b \le b_{\max}$，用标称值 $\hat b = \sqrt{b_{\min}b_{\max}}$ 设计，则条件变为 $k > \frac{D + \beta|u_{eq,\hat b}|}{\text{...}}$ 的形式；工程上常用的充分条件是比值有界 $\frac{b}{\hat b} \in [\beta^{-1}, \beta]$ 且
 
-$$k \ge \beta\big(D + (\beta-1)|u_{eq,\hat b}|\big)$$
+$$
+k \ge \beta\big(D + (\beta-1)|u_{eq,\hat b}|\big)
+$$
 
 直觉：控制增益的误差会按 $|u|$ 的比例放大等效控制的误差，所以切换增益不仅要盖住扰动，还要盖住"等效控制算错的部分"。
 
@@ -279,11 +307,15 @@ Notebook 1 的三组输出分别确认了：到达时间落在解析上界之内
 
 倒立摆（支点在下方电机上）动力学：
 
-$$m l^2 \ddot\theta = m g l \sin\theta + u + d(t)$$
+$$
+m l^2 \ddot\theta = m g l \sin\theta + u + d(t)
+$$
 
 其中 $d(t)$ 是作用在摆轴上的扰动转矩，$|d| \le D$。取 $m=1$ kg，$l=0.5$ m，$g=9.8$ m/s²，则
 
-$$\ddot\theta = \underbrace{\frac{g}{l}}_{19.6}\sin\theta + \underbrace{\frac{1}{m l^2}}_{4}\big(u + d(t)\big)$$
+$$
+\ddot\theta = \underbrace{\frac{g}{l}}_{19.6}\sin\theta + \underbrace{\frac{1}{m l^2}}_{4}\big(u + d(t)\big)
+$$
 
 注意扰动与 $u$ 乘同一个系数 $1/(ml^2)$：**这是匹配扰动**，滑模控制可以完全抑制它。
 
@@ -291,13 +323,19 @@ $$\ddot\theta = \underbrace{\frac{g}{l}}_{19.6}\sin\theta + \underbrace{\frac{1}
 
 取 $\theta_d = 0$，$e=\theta$，$\lambda = 5$（滑动模态时间常数 0.2 s）：
 
-$$s = \dot\theta + 5\theta$$
+$$
+s = \dot\theta + 5\theta
+$$
 
-$$\dot s = \ddot\theta + 5\dot\theta = 19.6\sin\theta + 4(u+d) + 5\dot\theta$$
+$$
+\dot s = \ddot\theta + 5\dot\theta = 19.6\sin\theta + 4(u+d) + 5\dot\theta
+$$
 
 令名义部分为零：$u_{eq} = -\frac{1}{4}\big(19.6\sin\theta + 5\dot\theta\big) = -4.9\sin\theta - 1.25\dot\theta$。完整控制律（切换项放在括号内）：
 
-$$u = -4.9\sin\theta - 1.25\dot\theta - k\,\mathrm{sgn}(s)$$
+$$
+u = -4.9\sin\theta - 1.25\dot\theta - k\,\mathrm{sgn}(s)
+$$
 
 代入得 $\dot s = -4k\,\mathrm{sgn}(s) + 4d$，故 $\dot V \le -4(k-D)|s|$，$\eta = 4(k-D)$。取 $D=0.1$ N·m、$k=0.5$ N·m：$\eta = 4\times0.4 = 1.6$ rad/s²。
 
@@ -323,11 +361,15 @@ $$u = -4.9\sin\theta - 1.25\dot\theta - k\,\mathrm{sgn}(s)$$
 
 ### 方法 1：边界层（饱和函数）
 
-$$\mathrm{sat}\!\left(\frac{s}{\Phi}\right) = \begin{cases} 1 & s > \Phi \\ s/\Phi & |s| \le \Phi \\ -1 & s < -\Phi \end{cases} \qquad u = u_{eq} - k\,\mathrm{sat}\!\left(\frac{s}{\Phi}\right)$$
+$$
+\mathrm{sat}\!\left(\frac{s}{\Phi}\right) = \begin{cases} 1 & s > \Phi \\ s/\Phi & |s| \le \Phi \\ -1 & s < -\Phi \end{cases} \qquad u = u_{eq} - k\,\mathrm{sat}\!\left(\frac{s}{\Phi}\right)
+$$
 
 层外与理想滑模相同；层内控制量随 $s$ 线性变化，切换消失。**代价**是不再渐近收敛到 $s=0$：层内动态为
 
-$$\dot s = -\frac{b k}{\Phi}s + d \quad\Rightarrow\quad |s_{ss}| \le \frac{\Phi D}{b k}, \qquad |e_{ss}| \le \frac{|s_{ss}|}{\lambda} \le \frac{\Phi D}{b k \lambda}$$
+$$
+\dot s = -\frac{b k}{\Phi}s + d \quad\Rightarrow\quad |s_{ss}| \le \frac{\Phi D}{b k}, \qquad |e_{ss}| \le \frac{|s_{ss}|}{\lambda} \le \frac{\Phi D}{b k \lambda}
+$$
 
 而不用扰动信息的保守界是 $|e_{ss}| \le \Phi/\lambda$。两条界给出同一个设计权衡：$\Phi$ 大 → 抖振小、精度差；$\Phi$ 小 → 精度高、抖振回来。Notebook 2 会实测验证 $|s_{ss}| \approx \Phi D/(bk)$ 这条精细界。
 
@@ -339,11 +381,15 @@ $u = u_{eq} - k\tanh(s/\varepsilon)$。与 sat 同族，但在 $|s|=\varepsilon$
 
 对相对阶为 1 的 $s$ 动态，超螺旋算法给出**连续**的控制量：
 
-$$u = u_{eq} - \alpha|s|^{1/2}\mathrm{sgn}(s) + v, \qquad \dot v = -\beta\,\mathrm{sgn}(s)$$
+$$
+u = u_{eq} - \alpha|s|^{1/2}\mathrm{sgn}(s) + v, \qquad \dot v = -\beta\,\mathrm{sgn}(s)
+$$
 
 不连续被藏进了积分状态 $v$ 里，因此 $u$ 连续、抖振大幅降低，同时仍保持有限时间收敛到 $s=\dot s=0$。工程整定常用 Levant 经验式：若扰动导数有界 $|\dot d| \le L$，取
 
-$$\alpha = 1.5\sqrt{L}, \qquad \beta = 1.1 L$$
+$$
+\alpha = 1.5\sqrt{L}, \qquad \beta = 1.1 L
+$$
 
 <Callout variant="warning">
 **STA 不是免费的**：积分状态 $v$ 的变化速率上限是 $\beta$。若扰动发生阶跃（幅值 $\Delta$），$v$ 至少需要 $\Delta/\beta$ 秒才能追上——Notebook 5 会实测这个恢复时间下界。因此 $\beta$ 必须按**你预期最坏的扰动变化率**整定，而不是按稳态扰动幅值。
@@ -475,33 +521,45 @@ Notebook 2 的数字把"权衡"变成了可以报价的东西：理想 sgn 的�
 
 ### 常值速达律
 
-$$\dot s = -\varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D$$
+$$
+\dot s = -\varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D
+$$
 
 积分得 $|s|$ 以速率 $\varepsilon$ 线性下降，$t_r = |s(0)|/\varepsilon$。考虑扰动后实际速率在 $\varepsilon-D$ 与 $\varepsilon+D$ 之间，故 $t_r \in \big[\frac{|s(0)|}{\varepsilon+D}, \frac{|s(0)|}{\varepsilon-D}\big]$。对应的控制律就是上一节的形式（$k=\varepsilon$）。
 
 ### 指数到达律
 
-$$\dot s = -k s - \varepsilon\,\mathrm{sgn}(s), \qquad k,\varepsilon>0$$
+$$
+\dot s = -k s - \varepsilon\,\mathrm{sgn}(s), \qquad k,\varepsilon>0
+$$
 
 对 $s>0$ 积分得 $s(t) = \frac{ks_0+\varepsilon}{k}e^{-kt} - \frac{\varepsilon}{k}$，令其为零：
 
-$$t_r = \frac{1}{k}\ln\!\left(1 + \frac{k|s(0)|}{\varepsilon}\right)$$
+$$
+t_r = \frac{1}{k}\ln\!\left(1 + \frac{k|s(0)|}{\varepsilon}\right)
+$$
 
 远离面时 $-ks$ 主导、接近极快；代价是**控制峰值随 $|s(0)|$ 线性放大**（$-ks$ 项在 $t=0$ 最大）。
 
 ### 幂次到达律
 
-$$\dot s = -k|s|^{\alpha}\mathrm{sgn}(s), \qquad 0<\alpha<1 \quad\Rightarrow\quad t_r = \frac{|s(0)|^{1-\alpha}}{k(1-\alpha)}$$
+$$
+\dot s = -k|s|^{\alpha}\mathrm{sgn}(s), \qquad 0<\alpha<1 \quad\Rightarrow\quad t_r = \frac{|s(0)|^{1-\alpha}}{k(1-\alpha)}
+$$
 
 有限时间到达，且远处比指数律温和。**但有一个教科书常漏掉的坑**：扰动存在时，平衡要求 $k|s|^{\alpha} = |d|$，即留下残差带
 
-$$|s|_{res} = \left(\frac{D}{k}\right)^{1/\alpha}$$
+$$
+|s|_{res} = \left(\frac{D}{k}\right)^{1/\alpha}
+$$
 
 $\alpha=0.5$、$D=0.3$、$k=2$ 时这个带是 $0.0225$——比边界层还宽。原因是 $|s|^\alpha$ 在面附近趋于零，**近处控制权限不足**，压不住扰动。
 
 ### 混合到达律（工程推荐）
 
-$$\dot s = -k|s|^{\alpha}\mathrm{sgn}(s) - \varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D$$
+$$
+\dot s = -k|s|^{\alpha}\mathrm{sgn}(s) - \varepsilon\,\mathrm{sgn}(s), \qquad \varepsilon > D
+$$
 
 常值项负责盖住扰动、幂次项负责有限时间，两者互补。Notebook 3 的实测显示它几乎拿到指数律的到达速度与幂次律的控制峰值。
 
@@ -600,11 +658,15 @@ plt.tight_layout(); plt.show()` },
 
 对仿射系统 $\dot x = f(x) + g(x)u$，不确定性 $\Delta(x,t)$（含扰动）称为**匹配的**（matched），若存在 $\delta$ 使
 
-$$\Delta(x,t) = g(x)\,\delta(x,t) \quad\Longleftrightarrow\quad \Delta(x,t) \in \mathrm{span}\{g(x)\}$$
+$$
+\Delta(x,t) = g(x)\,\delta(x,t) \quad\Longleftrightarrow\quad \Delta(x,t) \in \mathrm{span}\{g(x)\}
+$$
 
 即不确定性只从控制通道进入。线性系统 $\dot x = Ax + Bu$ 中，$\Delta A$ 匹配当且仅当 $\Delta A = BE$，可用秩条件检验：
 
-$$\mathrm{rank}\,[B \;\; \Delta A] = \mathrm{rank}\,B$$
+$$
+\mathrm{rank}\,[B \;\; \Delta A] = \mathrm{rank}\,B
+$$
 
 ### 不变性定理（一句话版）
 
@@ -741,7 +803,9 @@ Notebook 4 的 K 扫描表是本页最重要的一张表：$K=0.3$ 低于滑动�
 
 工业伺服的真实困难是叠加的：惯量随负载变化、摩擦模型不准、运行中突加负载、电压有限幅。设
 
-$$J\ddot\theta = -B\dot\theta - T_c\tanh(\dot\theta/0.01) + K_t u - T_L(t)$$
+$$
+J\ddot\theta = -B\dot\theta - T_c\tanh(\dot\theta/0.01) + K_t u - T_L(t)
+$$
 
 标称 $J_0=0.010$、$B_0=0.10$，实际 $J=0.011$（+10%）、$B=0.12$；库仑摩擦 $T_c=0.05$ N·m **不告诉控制器**；$t=4$ s 突加负载 $T_L=0.15$ N·m（等效加速度扰动 13.64 rad/s²）；电压限幅 ±24 V。任务：1.5 s 内平滑点位到 $\pi/2$。
 
@@ -914,7 +978,9 @@ plt.tight_layout(); plt.show()` },
 
 单轴姿态 $J\dot\omega = \tau + d(t)$，$J=20$ kg·m²，常值扰动力矩上界 $D=0.01$ N·m（地磁残矩+推力器偏差），反作用轮力矩上限很小。取 $\lambda=0.5$、$s=(\omega-\omega_d)+\lambda(\theta-\theta_d)$，则
 
-$$\tau = J\big[\dot\omega_d - \lambda(\omega-\omega_d)\big] - k\,\mathrm{sgn}(s), \qquad k > D$$
+$$
+\tau = J\big[\dot\omega_d - \lambda(\omega-\omega_d)\big] - k\,\mathrm{sgn}(s), \qquad k > D
+$$
 
 注意等效控制里**必须**有 $J[\cdots]$ 这一项（只写 $-k\,\mathrm{sgn}(s)$ 是常见错误：那样 $\dot s$ 里会残留 $J$ 倍的未抵消项）。取 $k=0.05$ N·m：$\eta=(k-D)/J = 0.002$ rad/s²。初值 $\theta_0=5°=0.0873$ rad 时 $s(0)=0.0436$，到达上界 $t_r \le 21.8$ s，面上时间常数 $1/\lambda=2$ s，全程约 28 s。
 
@@ -922,11 +988,15 @@ $$\tau = J\big[\dot\omega_d - \lambda(\omega-\omega_d)\big] - k\,\mathrm{sgn}(s)
 
 ### 案例 3：机器人关节 = 计算力矩 + 滑模鲁棒项
 
-$$M(q)\ddot q + C(q,\dot q)\dot q + G(q) = \tau - \tau_f - \tau_d$$
+$$
+M(q)\ddot q + C(q,\dot q)\dot q + G(q) = \tau - \tau_f - \tau_d
+$$
 
 取 $s = \dot e + \Lambda e$（$\Lambda$ 为正定对角阵），控制律
 
-$$\tau = M(\ddot q_d - \Lambda \dot e) + C\dot q + G - K\,\mathrm{sat}(s/\Phi)$$
+$$
+\tau = M(\ddot q_d - \Lambda \dot e) + C\dot q + G - K\,\mathrm{sat}(s/\Phi)
+$$
 
 前三项就是上一课的计算力矩（反馈线性化），最后一项负责吃掉摩擦模型残差 $\tau_f$ 与辨识误差。这与案例 1 的"计算力矩+sat"是同一个结构：**滑模项在工业机器人里的角色，是给模型解耦买一份保险**。摩擦上界难估时，$K$ 取保守值 + 边界层是通行做法。
 

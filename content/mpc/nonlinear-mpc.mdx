@@ -36,7 +36,9 @@ description: "当模型不能线性化时——非线性 MPC 的完整框架。�
 
 [MPC 实现案例](/mpc/mpc-case-study) 中，我们把 CSTR 的非线性模型在工作点线性化：
 
-$$\delta \dot{x} = A_c \delta x + B_c \delta u$$
+$$
+\delta \dot{x} = A_c \delta x + B_c \delta u
+$$
 
 这个线性模型只在**工作点附近**有效。具体来说：
 
@@ -77,7 +79,9 @@ NMPC 不线性化——直接用非线性模型 $f(x, u)$ 做预测和优化。
 
 ### 连续时间模型
 
-$$\dot{x}(t) = f_c(x(t), u(t))$$
+$$
+\dot{x}(t) = f_c(x(t), u(t))
+$$
 
 其中 $f_c: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^n$ 是非线性向量场。
 
@@ -85,19 +89,33 @@ $$\dot{x}(t) = f_c(x(t), u(t))$$
 
 用数值积分（Euler、RK4 等）将连续模型离散化：
 
-$$x(k+1) = f(x(k), u(k))$$
+$$
+x(k+1) = f(x(k), u(k))
+$$
 
 **Euler 方法**（最简单，$T_s$ 足够小时可用）：
 
-$$f(x, u) = x + T_s \cdot f_c(x, u)$$
+$$
+f(x, u) = x + T_s \cdot f_c(x, u)
+$$
 
 **四阶 Runge-Kutta**（精度高，推荐）：
 
-$$k_1 = f_c(x, u)$$
-$$k_2 = f_c(x + \tfrac{T_s}{2}k_1, u)$$
-$$k_3 = f_c(x + \tfrac{T_s}{2}k_2, u)$$
-$$k_4 = f_c(x + T_s k_3, u)$$
-$$f(x, u) = x + \frac{T_s}{6}(k_1 + 2k_2 + 2k_3 + k_4)$$
+$$
+k_1 = f_c(x, u)
+$$
+$$
+k_2 = f_c(x + \tfrac{T_s}{2}k_1, u)
+$$
+$$
+k_3 = f_c(x + \tfrac{T_s}{2}k_2, u)
+$$
+$$
+k_4 = f_c(x + T_s k_3, u)
+$$
+$$
+f(x, u) = x + \frac{T_s}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+$$
 
 > 💡 和线性 MPC 的关键区别：线性 MPC 的预测矩阵 $F, \Phi$ 可以**预先计算**（只依赖 $A, B$）。NMPC 的预测需要**逐步递推**非线性方程——每步都要计算 $f(x_k, u_k)$，计算量 $O(N_p \cdot n^2)$。
 
@@ -105,10 +123,18 @@ $$f(x, u) = x + \frac{T_s}{6}(k_1 + 2k_2 + 2k_3 + k_4)$$
 
 从 $x(0)$ 出发，逐步递推：
 
-$$x(1) = f(x(0), u(0))$$
-$$x(2) = f(x(1), u(1)) = f(f(x(0), u(0)), u(1))$$
-$$\vdots$$
-$$x(N_p) = f(x(N_p-1), u(N_p-1))$$
+$$
+x(1) = f(x(0), u(0))
+$$
+$$
+x(2) = f(x(1), u(1)) = f(f(x(0), u(0)), u(1))
+$$
+$$
+\vdots
+$$
+$$
+x(N_p) = f(x(N_p-1), u(N_p-1))
+$$
 
 所有状态 $x(0), x(1), \ldots, x(N_p)$ 都通过非线性方程**耦合**在一起——不能像线性 MPC 那样写成矩阵形式。这就是 NMPC 优化比线性 MPC 困难的根本原因。
 
@@ -117,11 +143,19 @@ $$x(N_p) = f(x(N_p-1), u(N_p-1))$$
 
 ### 标准形式
 
-$$\boxed{\min_{U} \sum_{k=0}^{N_p-1} \ell(x_k, u_k) + V_f(x_{N_p})}$$
+$$
+\boxed{\min_{U} \sum_{k=0}^{N_p-1} \ell(x_k, u_k) + V_f(x_{N_p})}
+$$
 
-$$\text{s.t.} \quad x_{k+1} = f(x_k, u_k), \quad k = 0, \ldots, N_p-1$$
-$$g(x_k, u_k) \leq 0, \quad k = 0, \ldots, N_p-1$$
-$$x_0 = x(k) \quad \text{（当前测量值）}$$
+$$
+\text{s.t.} \quad x_{k+1} = f(x_k, u_k), \quad k = 0, \ldots, N_p-1
+$$
+$$
+g(x_k, u_k) \leq 0, \quad k = 0, \ldots, N_p-1
+$$
+$$
+x_0 = x(k) \quad \text{（当前测量值）}
+$$
 
 其中：
 - $\ell(x, u)$：阶段代价（stage cost），通常 $\ell = x^T Q x + u^T R u$
@@ -174,7 +208,9 @@ $$x_0 = x(k) \quad \text{（当前测量值）}$$
 
 **第一步：线性化约束**
 
-$$x_{k+1} = f(x_k, u_k) \approx f(x_k^i, u_k^i) + A_k^i (x_k - x_k^i) + B_k^i (u_k - u_k^i)$$
+$$
+x_{k+1} = f(x_k, u_k) \approx f(x_k^i, u_k^i) + A_k^i (x_k - x_k^i) + B_k^i (u_k - u_k^i)
+$$
 
 其中 $A_k^i = \frac{\partial f}{\partial x}\big|_{x_k^i, u_k^i}$，$B_k^i = \frac{\partial f}{\partial u}\big|_{x_k^i, u_k^i}$。
 
@@ -182,16 +218,24 @@ $$x_{k+1} = f(x_k, u_k) \approx f(x_k^i, u_k^i) + A_k^i (x_k - x_k^i) + B_k^i (u
 
 目标函数用二阶 Taylor 展开：
 
-$$J \approx J^i + \nabla J^i \cdot \Delta Z + \frac{1}{2} \Delta Z^T H^i \Delta Z$$
+$$
+J \approx J^i + \nabla J^i \cdot \Delta Z + \frac{1}{2} \Delta Z^T H^i \Delta Z
+$$
 
 其中 $\Delta Z = [\Delta X, \Delta U]$ 是搜索方向，$H^i$ 是 Hessian（或 Hessian 近似）。
 
 **第三步：构造 QP 子问题**
 
-$$\min_{\Delta Z} \frac{1}{2} \Delta Z^T H^i \Delta Z + \nabla J^i \cdot \Delta Z$$
+$$
+\min_{\Delta Z} \frac{1}{2} \Delta Z^T H^i \Delta Z + \nabla J^i \cdot \Delta Z
+$$
 
-$$\text{s.t.} \quad \Delta x_{k+1} = A_k^i \Delta x_k + B_k^i \Delta u_k + (f(x_k^i, u_k^i) - x_{k+1}^i)$$
-$$G_k^i \Delta Z \leq -g(x_k^i, u_k^i)$$
+$$
+\text{s.t.} \quad \Delta x_{k+1} = A_k^i \Delta x_k + B_k^i \Delta u_k + (f(x_k^i, u_k^i) - x_{k+1}^i)
+$$
+$$
+G_k^i \Delta Z \leq -g(x_k^i, u_k^i)
+$$
 
 **这就是一个标准的 QP**——和线性 MPC 的优化问题结构完全一样！
 
@@ -199,7 +243,9 @@ $$G_k^i \Delta Z \leq -g(x_k^i, u_k^i)$$
 
 求解 QP 得到 $\Delta Z^*$，然后：
 
-$$(X^{i+1}, U^{i+1}) = (X^i, U^i) + \alpha \Delta Z^*$$
+$$
+(X^{i+1}, U^{i+1}) = (X^i, U^i) + \alpha \Delta Z^*
+$$
 
 步长 $\alpha$ 通过线搜索确定（保证目标函数下降）。
 
@@ -292,11 +338,15 @@ RTI 可以分成两个阶段，**重叠执行**：
 
 **Lyapunov-based NMPC** 绕开 terminal cost/terminal constraint，直接在代价函数中使用 CLF：
 
-$$J = \int_0^{T} \ell(x, u) dt + V_f(x(T))$$
+$$
+J = \int_0^{T} \ell(x, u) dt + V_f(x(T))
+$$
 
 其中 $V_f$ 是已知的 CLF，满足：
 
-$$\frac{\partial V_f}{\partial x} f(x, u^*(x)) + \ell(x, u^*(x)) \leq -\alpha(\|x\|)$$
+$$
+\frac{\partial V_f}{\partial x} f(x, u^*(x)) + \ell(x, u^*(x)) \leq -\alpha(\|x\|)
+$$
 
 其中 $u^*(x)$ 是使左边最小化的控制律，$\alpha$ 是 $\mathcal{K}_\infty$ 函数。
 
@@ -345,17 +395,23 @@ $$\frac{\partial V_f}{\partial x} f(x, u^*(x)) + \ell(x, u^*(x)) \leq -\alpha(\|
 
 非线性摆（单摆）：
 
-$$\ddot{\theta} + \frac{g}{L}\sin\theta = \frac{1}{mL^2}\tau$$
+$$
+\ddot{\theta} + \frac{g}{L}\sin\theta = \frac{1}{mL^2}\tau
+$$
 
 状态空间形式（$x = [\theta, \dot{\theta}]^T$，$u = \tau$）：
 
-$$\dot{x} = f_c(x, u) = \begin{bmatrix} x_2 \\ -\frac{g}{L}\sin x_1 + \frac{u}{mL^2} \end{bmatrix}$$
+$$
+\dot{x} = f_c(x, u) = \begin{bmatrix} x_2 \\ -\frac{g}{L}\sin x_1 + \frac{u}{mL^2} \end{bmatrix}
+$$
 
 参数：$m = 1$ kg, $L = 1$ m, $g = 9.81$ m/s²。
 
 离散化（RK4，$T_s = 0.05$ s）：
 
-$$x(k+1) = f(x(k), u(k))$$
+$$
+x(k+1) = f(x(k), u(k))
+$$
 
 ### 控制目标
 
@@ -365,7 +421,9 @@ $$x(k+1) = f(x(k), u(k))$$
 
 在 $\theta = 0$ 处线性化：$\sin\theta \approx \theta$。
 
-$$A = \begin{bmatrix} 1 & T_s \\ -\frac{g}{L}T_s & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0.05 \\ -0.4905 & 1 \end{bmatrix}$$
+$$
+A = \begin{bmatrix} 1 & T_s \\ -\frac{g}{L}T_s & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0.05 \\ -0.4905 & 1 \end{bmatrix}
+$$
 
 线性 MPC 在 $\theta(0) = 150° = 2.618$ rad 时：$\sin(2.618) = 0.5$，但线性模型认为 $\sin(2.618) \approx 2.618$——误差 5 倍！
 
@@ -753,7 +811,9 @@ NMPC 可以在线优化温度轨迹，最大化产量同时保证安全。
 
 传统 NMPC 跟踪设定值。但工业中更常见的目标是**最大化利润**——不跟踪任何设定值，而是直接优化经济指标：
 
-$$\min \sum_{k=0}^{N_p-1} -\text{profit}(x_k, u_k)$$
+$$
+\min \sum_{k=0}^{N_p-1} -\text{profit}(x_k, u_k)
+$$
 
 经济 NMPC 的平衡点不一定在"稳定点"——可能在边界上（最大产出 = 最大约束）。稳定性分析需要特殊工具（周期性最优、自优化控制）。
 
@@ -822,11 +882,17 @@ RTI 每步只做一次 SQP 迭代，不保证收敛到精确最优。讨论：
 
 NLP：
 
-$$\min_{u_0, u_1} \sum_{k=0}^{2} [x_1(k)^2 + u_k^2]$$
+$$
+\min_{u_0, u_1} \sum_{k=0}^{2} [x_1(k)^2 + u_k^2]
+$$
 
-$$\text{s.t.} \quad x(k+1) = \begin{bmatrix} x_1(k) + 0.1 x_2(k) \\ x_2(k) - 0.1\sin(x_1(k)) + 0.1 u_k \end{bmatrix}$$
+$$
+\text{s.t.} \quad x(k+1) = \begin{bmatrix} x_1(k) + 0.1 x_2(k) \\ x_2(k) - 0.1\sin(x_1(k)) + 0.1 u_k \end{bmatrix}
+$$
 
-$$x(0) = x_{\text{meas}}, \quad u_k = u_1 \text{ for } k \geq 2$$
+$$
+x(0) = x_{\text{meas}}, \quad u_k = u_1 \text{ for } k \geq 2
+$$
 
 展开：$x(1) = f(x(0), u_0)$，$x(2) = f(x(1), u_1)$，$x(3) = f(x(2), u_1)$。
 

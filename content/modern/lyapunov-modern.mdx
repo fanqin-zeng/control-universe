@@ -25,7 +25,9 @@ description: "Lyapunov 稳定性、内部/外部稳定性、可稳定性与可�
 
 考虑自治系统（无输入）：
 
-$$\dot{\boldsymbol{x}} = f(\boldsymbol{x})$$
+$$
+\dot{\boldsymbol{x}} = f(\boldsymbol{x})
+$$
 
 **平衡点** $\boldsymbol{x}_e$ 满足 $f(\boldsymbol{x}_e) = \boldsymbol{0}$。对于 LTI 系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$，原点是唯一的平衡点（$A$ 非奇异时）。
 
@@ -54,31 +56,43 @@ $\dot x=0$ 的轨迹保持初值，原点稳定但不渐近稳定。线性系统
 
 对于 LTI 系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$，取二次型 Lyapunov 函数：
 
-$$V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}, \quad P = P^T > 0$$
+$$
+V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}, \quad P = P^T > 0
+$$
 
 沿轨迹求导：
 
-$$\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T (A^T P + PA) \boldsymbol{x}$$
+$$
+\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T (A^T P + PA) \boldsymbol{x}
+$$
 
 要使 $\dot{V} < 0$，需要 $A^T P + PA < 0$（负定）。
 
 **Lyapunov 定理（线性系统）**：
 
 > $A$ 渐近稳定 ⟺ 对任意 $Q = Q^T > 0$，**Lyapunov 方程**
-> $$A^T P + PA = -Q$$
+> $$
+> A^T P + PA = -Q
+> $$
 > 有唯一正定解 $P = P^T > 0$。
 
 **证明思路**：
 
 **必要性**（$A$ 稳定 → 解存在且正定）：构造
 
-$$P = \int_0^\infty e^{A^T t} Q e^{At} \, dt$$
+$$
+P = \int_0^\infty e^{A^T t} Q e^{At} \, dt
+$$
 
 $A$ 稳定保证积分收敛。直接验证：
 
-$$A^T P + PA = \int_0^\infty (A^T e^{A^T t} Q e^{At} + e^{A^T t} Q e^{At} A) \, dt = \int_0^\infty \frac{d}{dt}(e^{A^T t} Q e^{At}) \, dt$$
+$$
+A^T P + PA = \int_0^\infty (A^T e^{A^T t} Q e^{At} + e^{A^T t} Q e^{At} A) \, dt = \int_0^\infty \frac{d}{dt}(e^{A^T t} Q e^{At}) \, dt
+$$
 
-$$= \left[ e^{A^T t} Q e^{At} \right]_0^\infty = 0 - Q = -Q$$
+$$
+= \left[ e^{A^T t} Q e^{At} \right]_0^\infty = 0 - Q = -Q
+$$
 
 $P > 0$：对任意 $\boldsymbol{x} \neq 0$，$\boldsymbol{x}^T P \boldsymbol{x} = \int_0^\infty \|Q^{1/2} e^{At} \boldsymbol{x}\|^2 dt > 0$（因为 $e^{At}\boldsymbol{x}$ 不恒为零）。
 
@@ -180,7 +194,9 @@ print("Ad特征值 =",np.linalg.eigvals(Ad),"residual =",np.max(np.abs(res)))
 
 考虑系统：
 
-$$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}, \quad \boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$$
+$$
+\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}, \quad \boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}
+$$
 
 **内部渐近稳定性**（Internal Stability，本课后文“内部稳定”均指这一含义）：零输入响应 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的稳定性。取决于 $A$ 的特征值。
 
@@ -190,7 +206,9 @@ $$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}, \quad \boldsymbol{y}
 
 **关键结论**：
 
-$$\text{内部稳定} \implies \text{BIBO 稳定}$$
+$$
+\text{内部稳定} \implies \text{BIBO 稳定}
+$$
 
 但反过来**不一定**成立！
 
@@ -359,11 +377,15 @@ $s = 1$ 时：$\text{rank}\begin{bmatrix} 0 & 0 & 0 \\ 0 & 3 & 1 \end{bmatrix} =
 
 LQR 的 ARE：
 
-$$A^T P + PA - PBR^{-1}B^T P + Q = 0$$
+$$
+A^T P + PA - PBR^{-1}B^T P + Q = 0
+$$
 
 改写为：
 
-$$(A - BK)^T P + P(A - BK) = -(Q + K^T R K)$$
+$$
+(A - BK)^T P + P(A - BK) = -(Q + K^T R K)
+$$
 
 其中 $K = R^{-1}B^T P$。
 
@@ -461,7 +483,9 @@ assert np.allclose(Pz,0)
 
 离散系统 $\boldsymbol{x}_{k+1} = A\boldsymbol{x}_k$ 的 Lyapunov 方程：
 
-$$A^T P A - P = -Q$$
+$$
+A^T P A - P = -Q
+$$
 
 $A$ 渐近稳定 ⟺ 对任意 $Q > 0$，有唯一 $P > 0$。
 
@@ -649,7 +673,9 @@ $p_1 = 2 > 0$，$\det(P) = 3 - 1/4 = 11/4 > 0$ → $P > 0$ ✓
 
 沿 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的轨迹：
 
-$$\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T A^T P \boldsymbol{x} + \boldsymbol{x}^T PA \boldsymbol{x} = \boldsymbol{x}^T(A^T P + PA)\boldsymbol{x} = -\boldsymbol{x}^T Q \boldsymbol{x}$$
+$$
+\dot{V} = \dot{\boldsymbol{x}}^T P \boldsymbol{x} + \boldsymbol{x}^T P \dot{\boldsymbol{x}} = \boldsymbol{x}^T A^T P \boldsymbol{x} + \boldsymbol{x}^T PA \boldsymbol{x} = \boldsymbol{x}^T(A^T P + PA)\boldsymbol{x} = -\boldsymbol{x}^T Q \boldsymbol{x}
+$$
 
 因为 $Q > 0$，对任意 $\boldsymbol{x} \neq 0$，$\dot{V} = -\boldsymbol{x}^T Q \boldsymbol{x} < 0$。
 

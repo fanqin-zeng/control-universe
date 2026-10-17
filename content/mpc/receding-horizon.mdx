@@ -19,7 +19,9 @@ description: "MPC的核心机制——滚动优化。理解开环最优与滚动
 
 给定初始状态 $x(0)$，求解 $N$ 步最优控制序列：
 
-$$\min_{u(0), \ldots, u(N-1)} \sum_{k=0}^{N-1} L(x(k), u(k)), \quad \text{s.t.} \quad x(k+1) = f(x(k), u(k))$$
+$$
+\min_{u(0), \ldots, u(N-1)} \sum_{k=0}^{N-1} L(x(k), u(k)), \quad \text{s.t.} \quad x(k+1) = f(x(k), u(k))
+$$
 
 得到最优序列 $U^* = [u^*(0), u^*(1), \ldots, u^*(N-1)]$，然后**全部执行**。
 
@@ -84,7 +86,9 @@ $$
 
 求解后，取第一个增量 $\Delta u^*(k)$，计算控制量：
 
-$$u(k) = u(k-1) + \Delta u^*(k)$$
+$$
+u(k) = u(k-1) + \Delta u^*(k)
+$$
 
 执行 $u(k)$，然后 $k \to k+1$，测量新的 $y(k+1)$，估计新的 $\xi(k+1)$，重新求解。
 
@@ -244,7 +248,9 @@ print('调整 Np 和 Nu，观察滚动优化过程和控制性能')`
 
 **$N_p = 1$ 的情况**：
 
-$$J = x(k)^2 + u(k)^2$$
+$$
+J = x(k)^2 + u(k)^2
+$$
 
 $x(k)$ 是当前状态（给定），优化只影响 $u(k)$。$\partial J / \partial u(k) = 2u(k) = 0 \implies u^*(k) = 0$。
 
@@ -254,7 +260,9 @@ $x(k)$ 是当前状态（给定），优化只影响 $u(k)$。$\partial J / \par
 
 **$N_p = 2$ 的情况**：
 
-$$J = x(k)^2 + u(k)^2 + x(k+1)^2 + u(k+1)^2$$
+$$
+J = x(k)^2 + u(k)^2 + x(k+1)^2 + u(k+1)^2
+$$
 
 $x(k+1) = 2x(k) + u(k)$，$x(k+2) = 2x(k+1) + u(k+1)$。优化 $u(k), u(k+1)$ 可以同时影响 $x(k+1)$ 和 $x(k+2)$。最优解会把状态推向零——可能稳定（需要具体计算）。
 
@@ -264,7 +272,9 @@ $x(k+1) = 2x(k) + u(k)$，$x(k+2) = 2x(k+1) + u(k+1)$。优化 $u(k), u(k+1)$ �
 
 #### 方法一：终端等式约束
 
-$$\hat{x}(k+N_p|k) = 0$$
+$$
+\hat{x}(k+N_p|k) = 0
+$$
 
 强制预测终点到零。等价于"在 $N_p$ 步内必须把状态驱动到零"。
 
@@ -273,7 +283,9 @@ $$\hat{x}(k+N_p|k) = 0$$
 
 #### 方法二：终端区域约束
 
-$$\hat{x}(k+N_p|k) \in \mathcal{X}_f$$
+$$
+\hat{x}(k+N_p|k) \in \mathcal{X}_f
+$$
 
 其中 $\mathcal{X}_f$ 是**LQR 终端集**——在这个集合内，用 LQR 反馈 $u = -K_{\text{LQR}} x$ 可以保证稳定。
 
@@ -286,7 +298,9 @@ $$\hat{x}(k+N_p|k) \in \mathcal{X}_f$$
 
 #### 方法三：终端代价
 
-$$V_f = \hat{x}(k+N_p|k)^T P_f \hat{x}(k+N_p|k)$$
+$$
+V_f = \hat{x}(k+N_p|k)^T P_f \hat{x}(k+N_p|k)
+$$
 
 其中 $P_f$ 是**无限时域 LQR 的 Riccati 解**（对应系统 $(A, B)$ 和权重 $(Q, R)$）。
 
@@ -303,7 +317,9 @@ $$V_f = \hat{x}(k+N_p|k)^T P_f \hat{x}(k+N_p|k)$$
 
 把滚动优化的优化问题转化为标准 QP：
 
-$$\min_z \frac{1}{2} z^T H z + f^T z, \quad \text{s.t.} \quad A z \leq b$$
+$$
+\min_z \frac{1}{2} z^T H z + f^T z, \quad \text{s.t.} \quad A z \leq b
+$$
 
 其中 $z = \Delta U$（优化变量），$H = 2(\Phi_e^T \bar{Q} \Phi_e + \bar{R})$ 正定（保证凸性和唯一解），$f = 2 \Phi_e^T \bar{Q} F_e \xi(k)$ 随状态变化。
 
@@ -352,7 +368,9 @@ $$\min_z \frac{1}{2} z^T H z + f^T z, \quad \text{s.t.} \quad A z \leq b$$
 
 用上一步的最优解 $\Delta U^*(k-1) = [\Delta u^*(k-1), \Delta u^*(k), \ldots, \Delta u^*(k+N_u-2)]$ 构造当前初始猜测：
 
-$$\Delta U_0(k) = [\Delta u^*(k), \Delta u^*(k+1), \ldots, \Delta u^*(k+N_u-2), 0]$$
+$$
+\Delta U_0(k) = [\Delta u^*(k), \Delta u^*(k+1), \ldots, \Delta u^*(k+N_u-2), 0]
+$$
 
 即**左移一位**，最后补零（假设最后一步控制增量为零）。
 
@@ -373,7 +391,9 @@ $$\Delta U_0(k) = [\Delta u^*(k), \Delta u^*(k+1), \ldots, \Delta u^*(k+N_u-2), 
 
 对线性 MPC，最优解 $z^*(x)$ 是 $x$ 的**分段仿射（Piecewise Affine, PWA）函数**：
 
-$$z^*(x) = F_i x + g_i, \quad \text{if } x \in \mathcal{R}_i$$
+$$
+z^*(x) = F_i x + g_i, \quad \text{if } x \in \mathcal{R}_i
+$$
 
 其中 $\{\mathcal{R}_i\}$ 是状态空间的**多面体划分**（每个区域 $\mathcal{R}_i$ 对应一组活跃约束）。
 
@@ -419,7 +439,9 @@ Lyapunov 分析：定义 $V(x(k)) = J^*(x(k))$（最优代价）。如果 $V(x(k
 
 经济 MPC 的代价函数直接是**经济指标**（如利润、能耗、产量）：
 
-$$\min \sum_{i=0}^{N_p-1} L_{\text{economic}}(x(k+i), u(k+i))$$
+$$
+\min \sum_{i=0}^{N_p-1} L_{\text{economic}}(x(k+i), u(k+i))
+$$
 
 其中 $L_{\text{economic}}$ 不是二次型，可能是非凸的。
 
@@ -516,13 +538,19 @@ $$\min \sum_{i=0}^{N_p-1} L_{\text{economic}}(x(k+i), u(k+i))$$
 
 **(a)** 系统 $A = 0.8, B = 0.2$。
 
-$$F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.64 \\ 0.512 \end{bmatrix}$$
+$$
+F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.64 \\ 0.512 \end{bmatrix}
+$$
 
-$$\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.2 & 0 & 0 \\ 0.16 & 0.2 & 0 \\ 0.128 & 0.16 & 0.2 \end{bmatrix}$$
+$$
+\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.2 & 0 & 0 \\ 0.16 & 0.2 & 0 \\ 0.128 & 0.16 & 0.2 \end{bmatrix}
+$$
 
 **(b)** $Q = I_3, R = 0.1 I_3$。
 
-$$H = 2(\Phi^T \Phi + 0.1 I_3)$$
+$$
+H = 2(\Phi^T \Phi + 0.1 I_3)
+$$
 
 $\Phi^T \Phi = \begin{bmatrix} 0.2 & 0.16 & 0.128 \\ 0 & 0.2 & 0.16 \\ 0 & 0 & 0.2 \end{bmatrix} \begin{bmatrix} 0.2 & 0 & 0 \\ 0.16 & 0.2 & 0 \\ 0.128 & 0.16 & 0.2 \end{bmatrix} = \begin{bmatrix} 0.0819 & 0.0524 & 0.0256 \\ 0.0524 & 0.0656 & 0.032 \\ 0.0256 & 0.032 & 0.04 \end{bmatrix}$
 
@@ -574,11 +602,15 @@ $N_p = 2$ 时，代价包含 $x(k+1)^2$，而 $x(k+1)$ 受 $u(k)$ 影响。优�
 
 **(a)** Shift 策略：左移一位，最后补零。
 
-$$\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, 0]^T$$
+$$
+\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, 0]^T
+$$
 
 **(b)** LQR 补充：最后一步用 $\Delta u(k+4) = -K \hat{x}(k+4) = -0.8 \times 0.3 = -0.24$。
 
-$$\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, -0.24]^T$$
+$$
+\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, -0.24]^T
+$$
 
 **(c)** Shift 策略能减少迭代次数的原因：
 1. **相邻两步的 QP 高度相似**：只有 $f$ 变了（因为 $x(k)$ 变了），$H$ 和 $A$ 不变

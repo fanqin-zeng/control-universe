@@ -20,11 +20,15 @@ description: "MPC的基石——预测模型。掌握状态空间增广模型、
 
 上一课给出的预测模型是**绝对形式**：
 
-$$x(k+1) = Ax(k) + Bu(k), \quad y(k) = Cx(k)$$
+$$
+x(k+1) = Ax(k) + Bu(k), \quad y(k) = Cx(k)
+$$
 
 从当前状态 $x(k)$ 出发，递推 $N_p$ 步：
 
-$$X = Fx(k) + \Phi U$$
+$$
+X = Fx(k) + \Phi U
+$$
 
 其中 $U = [u(k), u(k+1), \ldots, u(k+N_p-1)]^T$ 是未来输入的**绝对值**。
 
@@ -38,23 +42,35 @@ $$X = Fx(k) + \Phi U$$
 
 对**时不变系统**（$A, B$ 为常数矩阵），原系统的增量形式：
 
-$$x(k+1) - x(k) = A[x(k) - x(k-1)] + B[u(k) - u(k-1)]$$
+$$
+x(k+1) - x(k) = A[x(k) - x(k-1)] + B[u(k) - u(k-1)]
+$$
 
-$$\Delta x(k+1) = A\Delta x(k) + B\Delta u(k)$$
+$$
+\Delta x(k+1) = A\Delta x(k) + B\Delta u(k)
+$$
 
 输出方程：
 
-$$y(k+1) = Cx(k+1) = C[x(k) + \Delta x(k+1)] = y(k) + CA\Delta x(k) + CB\Delta u(k)$$
+$$
+y(k+1) = Cx(k+1) = C[x(k) + \Delta x(k+1)] = y(k) + CA\Delta x(k) + CB\Delta u(k)
+$$
 
 把 $\Delta x(k)$ 和 $y(k)$ 组合成**增广状态**：
 
-$$\xi(k) = \begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix} \in \mathbb{R}^{n+p}$$
+$$
+\xi(k) = \begin{bmatrix} \Delta x(k) \\ y(k) \end{bmatrix} \in \mathbb{R}^{n+p}
+$$
 
 增广模型：
 
-$$\boxed{\xi(k+1) = \underbrace{\begin{bmatrix} A & 0 \\ CA & I_p \end{bmatrix}}_{A_e} \xi(k) + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)}$$
+$$
+\boxed{\xi(k+1) = \underbrace{\begin{bmatrix} A & 0 \\ CA & I_p \end{bmatrix}}_{A_e} \xi(k) + \underbrace{\begin{bmatrix} B \\ CB \end{bmatrix}}_{B_e} \Delta u(k)}
+$$
 
-$$y(k) = \underbrace{\begin{bmatrix} 0_{p \times n} & I_p \end{bmatrix}}_{C_e} \xi(k)$$
+$$
+y(k) = \underbrace{\begin{bmatrix} 0_{p \times n} & I_p \end{bmatrix}}_{C_e} \xi(k)
+$$
 
 其中 $n$ 是原系统状态维度，$p$ 是输出维度，$I_p$ 是 $p \times p$ 单位矩阵。
 
@@ -76,17 +92,27 @@ $$y(k) = \underbrace{\begin{bmatrix} 0_{p \times n} & I_p \end{bmatrix}}_{C_e} \
 
 用增广模型重新构建预测方程。从当前增广状态 $\xi(k)$ 出发：
 
-$$\xi(k+1) = A_e \xi(k) + B_e \Delta u(k)$$
-$$\xi(k+2) = A_e^2 \xi(k) + A_e B_e \Delta u(k) + B_e \Delta u(k+1)$$
-$$\vdots$$
+$$
+\xi(k+1) = A_e \xi(k) + B_e \Delta u(k)
+$$
+$$
+\xi(k+2) = A_e^2 \xi(k) + A_e B_e \Delta u(k) + B_e \Delta u(k+1)
+$$
+$$
+\vdots
+$$
 
 输出预测：
 
-$$Y = F_e \xi(k) + \Phi_e \Delta U$$
+$$
+Y = F_e \xi(k) + \Phi_e \Delta U
+$$
 
 其中：
 
-$$F_e = \begin{bmatrix} C_e A_e \\ C_e A_e^2 \\ C_e A_e^3 \\ \vdots \\ C_e A_e^{N_p} \end{bmatrix}, \quad \Phi_e = \begin{bmatrix} C_e B_e & 0 & 0 & \cdots & 0 \\ C_e A_e B_e & C_e B_e & 0 & \cdots & 0 \\ C_e A_e^2 B_e & C_e A_e B_e & C_e B_e & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ C_e A_e^{N_p-1} B_e & C_e A_e^{N_p-2} B_e & C_e A_e^{N_p-3} B_e & \cdots & C_e B_e \end{bmatrix}$$
+$$
+F_e = \begin{bmatrix} C_e A_e \\ C_e A_e^2 \\ C_e A_e^3 \\ \vdots \\ C_e A_e^{N_p} \end{bmatrix}, \quad \Phi_e = \begin{bmatrix} C_e B_e & 0 & 0 & \cdots & 0 \\ C_e A_e B_e & C_e B_e & 0 & \cdots & 0 \\ C_e A_e^2 B_e & C_e A_e B_e & C_e B_e & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ C_e A_e^{N_p-1} B_e & C_e A_e^{N_p-2} B_e & C_e A_e^{N_p-3} B_e & \cdots & C_e B_e \end{bmatrix}
+$$
 
 $\Delta U = [\Delta u(k), \Delta u(k+1), \ldots, \Delta u(k+N_u-1)]^T$ 是未来增量序列（$N_u \leq N_p$ 为控制时域）。
 
@@ -104,23 +130,31 @@ $\Phi_e$ 是**下三角 Toeplitz 矩阵**——每一行的元素是上一行向
 
 定义**脉冲响应系数**（阶跃响应的增量）：
 
-$$d_i = s_i - s_{i-1}, \quad i = 1, 2, \ldots, N$$
+$$
+d_i = s_i - s_{i-1}, \quad i = 1, 2, \ldots, N
+$$
 
 其中 $s_0 = 0$。对稳定系统，$d_i \to 0$（当 $i \to \infty$），所以可以截断为有限项 $N$（模型长度）。
 
 **预测方程**：用叠加原理，当前时刻 $k$ 对未来第 $j$ 步输出的预测：
 
-$$\hat{y}(k+j|k) = y_0(k+j|k) + \sum_{i=1}^{j} d_i \Delta u(k+j-i+1)$$
+$$
+\hat{y}(k+j|k) = y_0(k+j|k) + \sum_{i=1}^{j} d_i \Delta u(k+j-i+1)
+$$
 
 其中 $y_0(k+j|k)$ 是**自由响应**——假设未来输入不变（$\Delta u = 0$），仅由过去输入产生的输出：
 
-$$y_0(k+j|k) = y(k) + \sum_{i=j+1}^{N} d_i \Delta u(k+j-i+1) + \sum_{i=N}^{\infty} d_i \Delta u(k+j-i+1)$$
+$$
+y_0(k+j|k) = y(k) + \sum_{i=j+1}^{N} d_i \Delta u(k+j-i+1) + \sum_{i=N}^{\infty} d_i \Delta u(k+j-i+1)
+$$
 
 > 💡 直觉理解：自由响应 = "如果什么都不做，输出会怎样"。优化部分 = "加上未来控制动作的额外贡献"。
 
 写成矩阵形式，$N_p$ 步预测：
 
-$$\hat{Y} = Y_0 + D \Delta U$$
+$$
+\hat{Y} = Y_0 + D \Delta U
+$$
 
 其中 $D$ 是由 $d_i$ 构成的下三角 Toeplitz 矩阵（和 $\Phi_e$ 结构一样）。
 
@@ -143,7 +177,9 @@ $$\hat{Y} = Y_0 + D \Delta U$$
 
 广义预测控制（GPC）由 Clarke 等人在 1987 年提出，用的是 **CARIMA**（Controlled Auto-Regressive Integrated Moving Average）模型：
 
-$$\boxed{A(z^{-1}) y(k) = B(z^{-1}) u(k) + \frac{C(z^{-1})}{\Delta} \xi(k)}$$
+$$
+\boxed{A(z^{-1}) y(k) = B(z^{-1}) u(k) + \frac{C(z^{-1})}{\Delta} \xi(k)}
+$$
 
 其中：
 - $A(z^{-1}) = 1 + a_1 z^{-1} + \cdots + a_{n_a} z^{-n_a}$
@@ -154,7 +190,9 @@ $$\boxed{A(z^{-1}) y(k) = B(z^{-1}) u(k) + \frac{C(z^{-1})}{\Delta} \xi(k)}$$
 
 展开写：
 
-$$y(k) = -a_1 y(k-1) - \cdots - a_{n_a} y(k-n_a) + b_0 u(k) + \cdots + b_{n_b} u(k-n_b) + \frac{C(z^{-1})}{\Delta}\xi(k)$$
+$$
+y(k) = -a_1 y(k-1) - \cdots - a_{n_a} y(k-n_a) + b_0 u(k) + \cdots + b_{n_b} u(k-n_b) + \frac{C(z^{-1})}{\Delta}\xi(k)
+$$
 
 $\frac{1}{\Delta}$ 是积分器——和状态增广的思路一样，保证对常值参考的零稳态误差。
 
@@ -162,7 +200,9 @@ $\frac{1}{\Delta}$ 是积分器——和状态增广的思路一样，保证对�
 
 GPC 的核心计算是求 $j$ 步 ahead 最优预测 $\hat{y}(k+j|k)$。这需要解 **Diophantine 方程**：
 
-$$1 = E_j(z^{-1}) \tilde{A}(z^{-1}) + z^{-j} F_j(z^{-1})$$
+$$
+1 = E_j(z^{-1}) \tilde{A}(z^{-1}) + z^{-j} F_j(z^{-1})
+$$
 
 其中 $\tilde{A}(z^{-1}) = A(z^{-1})\Delta(z^{-1})$，$E_j$ 和 $F_j$ 是待求多项式，约束 $\deg E_j < j$。
 
@@ -170,14 +210,20 @@ $$1 = E_j(z^{-1}) \tilde{A}(z^{-1}) + z^{-j} F_j(z^{-1})$$
 
 **初始条件**（$j = 1$）：
 
-$$E_1 = 1, \quad F_1 = (1 - \tilde{A}) = (1 + a_1 - 1)z^{-1} + \cdots$$
+$$
+E_1 = 1, \quad F_1 = (1 - \tilde{A}) = (1 + a_1 - 1)z^{-1} + \cdots
+$$
 
 更精确地：$\tilde{A} = 1 + \tilde{a}_1 z^{-1} + \tilde{a}_2 z^{-2} + \cdots$，则 $F_1 = -\tilde{a}_1 z^{-1} - \tilde{a}_2 z^{-2} - \cdots$
 
 **递推**（$j \to j+1$）：
 
-$$E_{j+1} = E_j + e_{j+1} z^{-j} F_j^{(0)}$$
-$$F_{j+1} = z^{-1}[F_j - f_{j,0}] - e_{j+1} z^{-j} \tilde{A}$$
+$$
+E_{j+1} = E_j + e_{j+1} z^{-j} F_j^{(0)}
+$$
+$$
+F_{j+1} = z^{-1}[F_j - f_{j,0}] - e_{j+1} z^{-j} \tilde{A}
+$$
 
 其中 $e_{j+1}$ 是 $F_j$ 的常数项（$z^0$ 系数），$f_{j,0}$ 是 $F_j$ 的常数项，$F_j^{(0)}$ 是 $F_j$ 去掉常数项后除以 $z^{-1}$。
 
@@ -187,13 +233,17 @@ $$F_{j+1} = z^{-1}[F_j - f_{j,0}] - e_{j+1} z^{-j} \tilde{A}$$
 
 解出 $E_j, F_j$ 后，$j$ 步 ahead 预测：
 
-$$\hat{y}(k+j|k) = G_j(z^{-1}) \Delta u(k+j-1) + F_j(z^{-1}) y(k) + H_j(z^{-1}) \Delta u(k-1)$$
+$$
+\hat{y}(k+j|k) = G_j(z^{-1}) \Delta u(k+j-1) + F_j(z^{-1}) y(k) + H_j(z^{-1}) \Delta u(k-1)
+$$
 
 其中 $G_j = E_j B$，$H_j$ 是考虑过去输入变化的修正项。
 
 写成矩阵形式：
 
-$$\hat{Y} = G \Delta U + f$$
+$$
+\hat{Y} = G \Delta U + f
+$$
 
 其中 $G$ 由 $G_j$ 的系数构成（下三角 Toeplitz），$f$ 是"自由响应"（依赖过去数据）。
 
@@ -373,7 +423,9 @@ print('选择系统类型，观察阶跃响应辨识过程和 FOPTD 模型拟合
 
 工业上最常用的简化模型——**一阶加纯滞后（FOPTD）**：
 
-$$G(s) = \frac{K}{\tau s + 1} e^{-\theta s}$$
+$$
+G(s) = \frac{K}{\tau s + 1} e^{-\theta s}
+$$
 
 三个参数的物理意义：
 
@@ -512,7 +564,9 @@ MPC 需要知道当前状态 $x(k)$（或增广状态 $\xi(k)$），但实际只
 
 给定 CARIMA 模型：
 
-$$y(k) - 0.5 y(k-1) = 0.8 u(k-1) + \frac{\xi(k)}{\Delta}$$
+$$
+y(k) - 0.5 y(k-1) = 0.8 u(k-1) + \frac{\xi(k)}{\Delta}
+$$
 
 即 $A(z^{-1}) = 1 - 0.5z^{-1}$，$B(z^{-1}) = 0.8z^{-1}$，$C(z^{-1}) = 1$。
 
@@ -546,25 +600,39 @@ $$y(k) - 0.5 y(k-1) = 0.8 u(k-1) + \frac{\xi(k)}{\Delta}$$
 
 **(a)** 连续状态空间（可控标准型）：
 
-$$A_c = -\frac{1}{3}, \quad B_c = \frac{2}{3}, \quad C_c = 1$$
+$$
+A_c = -\frac{1}{3}, \quad B_c = \frac{2}{3}, \quad C_c = 1
+$$
 
 零阶保持器离散化（$T_s = 0.5$）：
 
-$$A = e^{A_c T_s} = e^{-1/6} \approx 0.8465$$
+$$
+A = e^{A_c T_s} = e^{-1/6} \approx 0.8465
+$$
 
-$$B = \int_0^{T_s} e^{A_c \tau} B_c \, d\tau = \frac{B_c}{A_c}(e^{A_c T_s} - 1) = \frac{2/3}{-1/3}(e^{-1/6} - 1) = -2(0.8465 - 1) = 0.3070$$
+$$
+B = \int_0^{T_s} e^{A_c \tau} B_c \, d\tau = \frac{B_c}{A_c}(e^{A_c T_s} - 1) = \frac{2/3}{-1/3}(e^{-1/6} - 1) = -2(0.8465 - 1) = 0.3070
+$$
 
-$$C = 1$$
+$$
+C = 1
+$$
 
 即：$x(k+1) = 0.8465 x(k) + 0.3070 u(k)$，$y(k) = x(k)$。
 
 **(b)** 增广模型（$n = 1, p = 1$）：
 
-$$A_e = \begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix} = \begin{bmatrix} 0.8465 & 0 \\ 0.8465 & 1 \end{bmatrix}$$
+$$
+A_e = \begin{bmatrix} A & 0 \\ CA & 1 \end{bmatrix} = \begin{bmatrix} 0.8465 & 0 \\ 0.8465 & 1 \end{bmatrix}
+$$
 
-$$B_e = \begin{bmatrix} B \\ CB \end{bmatrix} = \begin{bmatrix} 0.3070 \\ 0.3070 \end{bmatrix}$$
+$$
+B_e = \begin{bmatrix} B \\ CB \end{bmatrix} = \begin{bmatrix} 0.3070 \\ 0.3070 \end{bmatrix}
+$$
 
-$$C_e = \begin{bmatrix} 0 & 1 \end{bmatrix}$$
+$$
+C_e = \begin{bmatrix} 0 & 1 \end{bmatrix}
+$$
 
 **(c)** $A_e$ 的特征值 = $A$ 的特征值 ∪ $\{1\}$ = $\{0.8465, 1\}$。
 
@@ -580,7 +648,9 @@ $$C_e = \begin{bmatrix} 0 & 1 \end{bmatrix}$$
 
 **(b)** $N_p = 4$ 时的 DMC 预测矩阵：
 
-$$D = \begin{bmatrix} d_1 & 0 & 0 & 0 \\ d_2 & d_1 & 0 & 0 \\ d_3 & d_2 & d_1 & 0 \\ d_4 & d_3 & d_2 & d_1 \end{bmatrix} = \begin{bmatrix} 0.20 & 0 & 0 & 0 \\ 0.15 & 0.20 & 0 & 0 \\ 0.12 & 0.15 & 0.20 & 0 \\ 0.09 & 0.12 & 0.15 & 0.20 \end{bmatrix}$$
+$$
+D = \begin{bmatrix} d_1 & 0 & 0 & 0 \\ d_2 & d_1 & 0 & 0 \\ d_3 & d_2 & d_1 & 0 \\ d_4 & d_3 & d_2 & d_1 \end{bmatrix} = \begin{bmatrix} 0.20 & 0 & 0 & 0 \\ 0.15 & 0.20 & 0 & 0 \\ 0.12 & 0.15 & 0.20 & 0 \\ 0.09 & 0.12 & 0.15 & 0.20 \end{bmatrix}
+$$
 
 **(c)** 63.2% 法：$0.632 \times 0.75 = 0.474$。
 
@@ -596,7 +666,9 @@ FOPTD 模型：$G(s) \approx \frac{0.75}{2s + 1} e^{-s}$。
 
 **(a)** $\Delta(z^{-1}) = 1 - z^{-1}$，所以：
 
-$$\tilde{A}(z^{-1}) = (1 - 0.5z^{-1})(1 - z^{-1}) = 1 - 1.5z^{-1} + 0.5z^{-2}$$
+$$
+\tilde{A}(z^{-1}) = (1 - 0.5z^{-1})(1 - z^{-1}) = 1 - 1.5z^{-1} + 0.5z^{-2}
+$$
 
 **(b)** Diophantine 方程 $1 = E_1 \tilde{A} + z^{-1} F_1$，约束 $\deg E_1 < 1$（即 $E_1$ 为常数）。
 
@@ -608,13 +680,17 @@ $F_1 = 1.5 - 0.5z^{-1}$
 
 **(c)** 1 步 ahead 预测。将 CARIMA 模型两边乘以 $E_1 \Delta$：
 
-$$\hat{y}(k+1|k) = G_1 \Delta u(k) + F_1 y(k)$$
+$$
+\hat{y}(k+1|k) = G_1 \Delta u(k) + F_1 y(k)
+$$
 
 其中 $G_1 = E_1 B = 0.8z^{-1}$（取 $z^{-1}$ 的系数，即 $g_{1,1} = 0.8$），所以 $G_1 \Delta u(k) = 0.8 \Delta u(k)$。
 
 $F_1 y(k) = (1.5 - 0.5z^{-1})y(k) = 1.5y(k) - 0.5y(k-1)$。
 
-$$\hat{y}(k+1|k) = 0.8 \Delta u(k) + 1.5 y(k) - 0.5 y(k-1)$$
+$$
+\hat{y}(k+1|k) = 0.8 \Delta u(k) + 1.5 y(k) - 0.5 y(k-1)
+$$
 
 > 验证：从原模型 $y(k+1) = 0.5y(k) + 0.8u(k) + \text{干扰}$，得 $\hat{y}(k+1|k) = 0.5y(k) + 0.8u(k)$。
 > 
@@ -644,50 +720,70 @@ MPC 用模型预测"施加 $\Delta u$ 后输出变化多少"。模型增益偏�
 
 零阶保持器离散化（$T_s = 0.2$）：
 
-$$G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}$$
+$$
+G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}
+$$
 
 $G(s)/s = \frac{1}{s(s^2 + 0.4s + 1)}$。部分分式分解：
 
-$$\frac{1}{s(s^2 + 0.4s + 1)} = \frac{1}{s} - \frac{s + 0.4}{s^2 + 0.4s + 1}$$
+$$
+\frac{1}{s(s^2 + 0.4s + 1)} = \frac{1}{s} - \frac{s + 0.4}{s^2 + 0.4s + 1}
+$$
 
 $s^2 + 0.4s + 1 = (s + 0.2)^2 + 0.96$，极点 $s = -0.2 \pm j\sqrt{0.96}$。
 
 $\omega_d = \sqrt{0.96} \approx 0.9798$，$\sigma = 0.2$。
 
-$$\frac{s + 0.4}{s^2 + 0.4s + 1} = \frac{(s + 0.2) + 0.2}{(s + 0.2)^2 + \omega_d^2}$$
+$$
+\frac{s + 0.4}{s^2 + 0.4s + 1} = \frac{(s + 0.2) + 0.2}{(s + 0.2)^2 + \omega_d^2}
+$$
 
 Z 变换（$e^{-\sigma T_s} = e^{-0.04} \approx 0.9608$，$\omega_d T_s \approx 0.1960$）：
 
 令 $a = e^{-\sigma T_s} = 0.9608$，$\cos(\omega_d T_s) = \cos(0.1960) \approx 0.9808$，$\sin(\omega_d T_s) \approx 0.1947$。
 
-$$\mathcal{Z}\left\{\frac{s + 0.2}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{z(z - a\cos\omega_d T_s)}{z^2 - 2a\cos(\omega_d T_s)z + a^2}$$
+$$
+\mathcal{Z}\left\{\frac{s + 0.2}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{z(z - a\cos\omega_d T_s)}{z^2 - 2a\cos(\omega_d T_s)z + a^2}
+$$
 
-$$\mathcal{Z}\left\{\frac{\omega_d}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{a\sin(\omega_d T_s) z}{z^2 - 2a\cos(\omega_d T_s)z + a^2}$$
+$$
+\mathcal{Z}\left\{\frac{\omega_d}{(s+0.2)^2 + \omega_d^2}\right\} = \frac{a\sin(\omega_d T_s) z}{z^2 - 2a\cos(\omega_d T_s)z + a^2}
+$$
 
 计算各项：
 - $a^2 = 0.9608^2 \approx 0.9231$
 - $2a\cos(\omega_d T_s) = 2 \times 0.9608 \times 0.9808 \approx 1.8847$
 - $a\sin(\omega_d T_s) = 0.9608 \times 0.1947 \approx 0.1871$
 
-$$G(z) = \frac{(1 - z^{-1})}{1} \left[\frac{z}{z-1} - \frac{z(z - 0.9608 \times 0.9808) + 0.2/0.9798 \times 0.1871 z}{z^2 - 1.8847z + 0.9231}\right]$$
+$$
+G(z) = \frac{(1 - z^{-1})}{1} \left[\frac{z}{z-1} - \frac{z(z - 0.9608 \times 0.9808) + 0.2/0.9798 \times 0.1871 z}{z^2 - 1.8847z + 0.9231}\right]
+$$
 
 简化后（用数值计算）：
 
-$$G(z) = \frac{0.01873 z + 0.01752}{z^2 - 1.8847z + 0.9231}$$
+$$
+G(z) = \frac{0.01873 z + 0.01752}{z^2 - 1.8847z + 0.9231}
+$$
 
 即：$y(k) - 1.8847y(k-1) + 0.9231y(k-2) = 0.01873u(k-1) + 0.01752u(k-2)$
 
 **(b)** 可控标准型（$n = 2$）：
 
-$$A = \begin{bmatrix} 1.8847 & -0.9231 \\ 1 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 0.01873 & 0.01752 \end{bmatrix}$$
+$$
+A = \begin{bmatrix} 1.8847 & -0.9231 \\ 1 & 0 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \quad C = \begin{bmatrix} 0.01873 & 0.01752 \end{bmatrix}
+$$
 
 **(c)** 增广模型（$p = 1$）：
 
-$$A_e = \begin{bmatrix} 1.8847 & -0.9231 & 0 \\ 1 & 0 & 0 \\ 0.01873 & 0.01752 & 1 \end{bmatrix}, \quad B_e = \begin{bmatrix} 1 \\ 0 \\ 0.01873 \end{bmatrix}, \quad C_e = \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}$$
+$$
+A_e = \begin{bmatrix} 1.8847 & -0.9231 & 0 \\ 1 & 0 & 0 \\ 0.01873 & 0.01752 & 1 \end{bmatrix}, \quad B_e = \begin{bmatrix} 1 \\ 0 \\ 0.01873 \end{bmatrix}, \quad C_e = \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}
+$$
 
 可观测性检验：
 
-$$\mathcal{O} = \begin{bmatrix} C_e \\ C_e A_e \\ C_e A_e^2 \end{bmatrix} = \begin{bmatrix} 0 & 0 & 1 \\ 0.01873 & 0.01752 & 1 \\ \cdots & \cdots & \cdots \end{bmatrix}$$
+$$
+\mathcal{O} = \begin{bmatrix} C_e \\ C_e A_e \\ C_e A_e^2 \end{bmatrix} = \begin{bmatrix} 0 & 0 & 1 \\ 0.01873 & 0.01752 & 1 \\ \cdots & \cdots & \cdots \end{bmatrix}
+$$
 
 $C_e A_e = \begin{bmatrix} 0.01873 & 0.01752 & 1 \end{bmatrix}$
 

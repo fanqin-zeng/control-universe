@@ -27,7 +27,9 @@ description: "理解鲁棒性能的精确定义，掌握μ鲁棒性能定理，�
 
 三者的逻辑关系：
 
-$$\text{鲁棒性能} \implies \text{鲁棒稳定性} + \text{标称性能}$$
+$$
+\text{鲁棒性能} \implies \text{鲁棒稳定性} + \text{标称性能}
+$$
 
 但**反过来不成立**：鲁棒稳定 + 标称性能 $\not\Rightarrow$ 鲁棒性能。
 
@@ -75,9 +77,13 @@ $$\text{鲁棒性能} \implies \text{鲁棒稳定性} + \text{标称性能}$$
 
 从外部输入 $w$ 到被控输出 $z$ 的闭环传递函数为 $T_{zw}(\Delta) = \mathcal{F}_l(M, \Delta)$，其中 $M$ 是"去掉"不确定性 $\Delta$ 后的闭环传递矩阵：
 
-$$M(s) = \begin{bmatrix} M_{11}(s) & M_{12}(s) \\ M_{21}(s) & M_{22}(s) \end{bmatrix} \begin{array}{l} \leftarrow v_\Delta \text{（不确定性输出）} \\ \leftarrow z \text{（被控输出）} \end{array}$$
+$$
+M(s) = \begin{bmatrix} M_{11}(s) & M_{12}(s) \\ M_{21}(s) & M_{22}(s) \end{bmatrix} \begin{array}{l} \leftarrow v_\Delta \text{（不确定性输出）} \\ \leftarrow z \text{（被控输出）} \end{array}
+$$
 
-$$\begin{array}{r} \leftarrow y_\Delta \text{（不确定性输入）} \\ \leftarrow w \text{（外部输入）} \end{array}$$
+$$
+\begin{array}{r} \leftarrow y_\Delta \text{（不确定性输入）} \\ \leftarrow w \text{（外部输入）} \end{array}
+$$
 
 其中：
 - $M_{11}$：不确定性通道（鲁棒稳定性相关）
@@ -90,7 +96,9 @@ $$\begin{array}{r} \leftarrow y_\Delta \text{（不确定性输入）} \\ \lefta
 
 怎么转化？考虑在 $z$ 和 $w$ 之间连接一个"测试算子" $\Delta_p$：
 
-$$w = \Delta_p z$$
+$$
+w = \Delta_p z
+$$
 
 如果 $\|T_{zw}(\Delta)\|_\infty < 1$，那么对小增益定理，任何 $\|\Delta_p\|_\infty \leq 1$ 的 $\Delta_p$ 都不会使增广闭环系统不稳定——因为总环路增益 $< 1 \times 1 = 1$。
 
@@ -98,11 +106,15 @@ $$w = \Delta_p z$$
 
 所以：
 
-$$\|T_{zw}(\Delta)\|_\infty < 1 \quad \Longleftrightarrow \quad \text{增广系统（含 } \Delta_p \text{）稳定}$$
+$$
+\|T_{zw}(\Delta)\|_\infty < 1 \quad \Longleftrightarrow \quad \text{增广系统（含 } \Delta_p \text{）稳定}
+$$
 
 定义**增广不确定性结构**：
 
-$$\boldsymbol{\Delta}_p = \left\lbrace \text{blkdiag}(\Delta, \Delta_p) : \Delta \in \boldsymbol{\Delta},\; \Delta_p \in ℂ^{n_z \times n_w} \right\rbrace$$
+$$
+\boldsymbol{\Delta}_p = \left\lbrace \text{blkdiag}(\Delta, \Delta_p) : \Delta \in \boldsymbol{\Delta},\; \Delta_p \in ℂ^{n_z \times n_w} \right\rbrace
+$$
 
 $\Delta_p$ 是**满矩阵块**（不是对角的），维度为 $n_z \times n_w$（被控输出维度 × 外部输入维度）。
 
@@ -110,7 +122,9 @@ $\Delta_p$ 是**满矩阵块**（不是对角的），维度为 $n_z \times n_w$
 
 **定理**（μ 鲁棒性能）：设 $M(s)$ 稳定。则
 
-$$\sup_{\Delta \in \boldsymbol{B\Delta}} \left(\text{闭环稳定且} \|T_{zw}(\Delta)\|_\infty < 1\right) \quad \Longleftrightarrow \quad \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1$$
+$$
+\sup_{\Delta \in \boldsymbol{B\Delta}} \left(\text{闭环稳定且} \|T_{zw}(\Delta)\|_\infty < 1\right) \quad \Longleftrightarrow \quad \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega)) < 1
+$$
 
 **证明思路**：
 1. "⟸"：$\mu_{\boldsymbol{\Delta}_p}(M) < 1$ 意味着对所有 $(\Delta, \Delta_p) \in \boldsymbol{B\Delta}_p$，$\det(I - M \cdot \text{blkdiag}(\Delta, \Delta_p)) \neq 0$。取 $\Delta_p = 0$，得到鲁棒稳定性。取 $\Delta = 0$，得到"对所有 $\|\Delta_p\| \leq 1$，$\det(I - M_{22}\Delta_p) \neq 0$"，即 $\bar{\sigma}(M_{22}) < 1$，即标称性能。
@@ -122,7 +136,9 @@ $$\sup_{\Delta \in \boldsymbol{B\Delta}} \left(\text{闭环稳定且} \|T_{zw}(\
 
 μ 的精确计算是 NP-hard 的。工程上用上界：
 
-$$\mu_{\boldsymbol{\Delta}_p}(M) \leq \inf_{D \in \mathcal{D}_p} \bar{\sigma}(D M D^{-1})$$
+$$
+\mu_{\boldsymbol{\Delta}_p}(M) \leq \inf_{D \in \mathcal{D}_p} \bar{\sigma}(D M D^{-1})
+$$
 
 其中 $\mathcal{D}_p$ 是与增广结构 $\boldsymbol{\Delta}_p$ 交换的缩放矩阵集合。
 
@@ -185,7 +201,9 @@ print("注意：这是忽略交叉项的简化上界，实际 μ 分析需要完
 
 用质量-弹簧-阻尼器系统定量说明三个条件的关系。
 
-$$G(s) = \frac{1}{ms^2 + bs + k}$$
+$$
+G(s) = \frac{1}{ms^2 + bs + k}
+$$
 
 标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$。
 
@@ -222,7 +240,9 @@ $$G(s) = \frac{1}{ms^2 + bs + k}$$
 
 混合灵敏度设计最小化：
 
-$$\left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty < 1$$
+$$
+\left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty < 1
+$$
 
 这个条件**本身就是一个鲁棒性能条件**！
 
@@ -275,7 +295,9 @@ $$\left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
 
 最常用的性能权重是一阶形式：
 
-$$W_p(s) = \frac{s/M + \omega_b}{s + \omega_b \cdot A} = \frac{1}{A} \cdot \frac{s + M\omega_b}{s + \omega_b/A} \cdot \frac{A}{M}$$
+$$
+W_p(s) = \frac{s/M + \omega_b}{s + \omega_b \cdot A} = \frac{1}{A} \cdot \frac{s + M\omega_b}{s + \omega_b/A} \cdot \frac{A}{M}
+$$
 
 参数含义：
 - $A$：低频允许的最大 $|S|$（$A \ll 1$ 表示高跟踪精度）
@@ -303,7 +325,9 @@ $$W_p(s) = \frac{s/M + \omega_b}{s + \omega_b \cdot A} = \frac{1}{A} \cdot \frac
 
 代入：
 
-$$W_p(s) = \frac{s/1.5 + 5}{s + 0.05}$$
+$$
+W_p(s) = \frac{s/1.5 + 5}{s + 0.05}
+$$
 
 验证：$|W_p(0)| = 100$ → $|S(0)| < 0.01$ ✓，$|W_p(j5)| \approx 1$ ✓。
 
@@ -315,7 +339,9 @@ $$W_p(s) = \frac{s/1.5 + 5}{s + 0.05}$$
 
 质量-弹簧-阻尼器系统：
 
-$$G(s) = \frac{1}{ms^2 + bs + k}$$
+$$
+G(s) = \frac{1}{ms^2 + bs + k}
+$$
 
 标称参数：$\bar{m} = 1$，$\bar{b} = 0.2$，$\bar{k} = 1$（$\omega_n = 1$ rad/s，$\zeta = 0.1$）。
 
@@ -331,7 +357,9 @@ $$G(s) = \frac{1}{ms^2 + bs + k}$$
 
 性能权重：$A = 0.02$，$M = 1.5$，$\omega_b = 0.8$。
 
-$$W_1(s) = \frac{s/1.5 + 0.8}{s + 0.016}$$
+$$
+W_1(s) = \frac{s/1.5 + 0.8}{s + 0.016}
+$$
 
 鲁棒性权重：$W_2 = 0.2$（轻度约束 $|T|$）。
 
@@ -351,7 +379,9 @@ $$W_1(s) = \frac{s/1.5 + 0.8}{s + 0.016}$$
 
 用 D-K 迭代直接优化 μ 鲁棒性能指标：
 
-$$\min_K \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))$$
+$$
+\min_K \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))
+$$
 
 得到控制器 $K_\mu$，通常比 $K_{mix}$ 在鲁棒性能上更好，但控制器阶数更高。
 
@@ -585,7 +615,9 @@ plt.show()`
 
 **习题 4**（μ 鲁棒性能分析）：设闭环系统从 $(v_\Delta, w)$ 到 $(y_\Delta, z)$ 的传递矩阵为：
 
-$$M(j\omega_0) = \begin{bmatrix} 0.5 & 0.3 \\ 0.4 & 0.6 \end{bmatrix}$$
+$$
+M(j\omega_0) = \begin{bmatrix} 0.5 & 0.3 \\ 0.4 & 0.6 \end{bmatrix}
+$$
 
 其中 $\Delta = \delta$（$1 \times 1$ 实标量），$\Delta_p = \delta_p$（$1 \times 1$ 复数满块）。
 
@@ -654,7 +686,9 @@ $|S_p(0)|_{max} = \frac{1}{1 + 0.5k}$。
 
 代入标准形式：
 
-$$W_p(s) = \frac{s/M + \omega_b}{s + \omega_b A} = \frac{s/2 + 2}{s + 0.02} = \frac{0.5(s + 4)}{s + 0.02}$$
+$$
+W_p(s) = \frac{s/M + \omega_b}{s + \omega_b A} = \frac{s/2 + 2}{s + 0.02} = \frac{0.5(s + 4)}{s + 0.02}
+$$
 
 验证：
 - $|W_p(0)| = 2/0.02 = 100$ → $|S(0)| < 1/100 = 0.01 = A$ ✓
@@ -695,12 +729,18 @@ $\bar{\sigma}^2 = \frac{\text{tr} + \sqrt{\text{tr}^2 - 4\det}}{2}$
 
 最小化 $\bar{\sigma}$ 等价于最小化 $\text{tr}$（因为 $\det$ 与 $r$ 无关）。对 $r$ 求导：
 
-$$\frac{d}{dr}\text{tr} = -\frac{0.32}{r^3} + 0.18r = 0 \implies r^4 = \frac{16}{9} \implies r = \frac{2}{\sqrt{3}}$$
+$$
+\frac{d}{dr}\text{tr} = -\frac{0.32}{r^3} + 0.18r = 0 \implies r^4 = \frac{16}{9} \implies r = \frac{2}{\sqrt{3}}
+$$
 
 代入：$\text{tr}_{min} = 0.61 + 0.16 \times \frac{3}{4} + 0.09 \times \frac{4}{3} = 0.61 + 0.12 + 0.12 = 0.85$
 
-$$\bar{\sigma}^2_{min} = \frac{0.85 + \sqrt{0.85^2 - 4 \times 0.0324}}{2} = \frac{0.85 + \sqrt{0.5929}}{2} = \frac{0.85 + 0.77}{2} = 0.81$$
+$$
+\bar{\sigma}^2_{min} = \frac{0.85 + \sqrt{0.85^2 - 4 \times 0.0324}}{2} = \frac{0.85 + \sqrt{0.5929}}{2} = \frac{0.85 + 0.77}{2} = 0.81
+$$
 
-$$\bar{\sigma}_{min} = \sqrt{0.81} = 0.9 < 1 \quad ✓$$
+$$
+\bar{\sigma}_{min} = \sqrt{0.81} = 0.9 < 1 \quad ✓
+$$
 
 **结论**：鲁棒性能上界 = 0.9 < 1，鲁棒性能满足。注意上界 0.9 大于标称性能 0.6 和鲁棒稳定性 0.5——这体现了"不确定性与性能的耦合"带来的额外影响。

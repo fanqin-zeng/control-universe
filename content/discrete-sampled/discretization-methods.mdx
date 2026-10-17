@@ -42,11 +42,15 @@ description: "连续控制器如何变成数字代码——四种离散化方法
 
 **原理**：用前向差分近似微分
 
-$$\dot{x}(t) \approx \frac{x[k+1] - x[k]}{T_s}$$
+$$
+\dot{x}(t) \approx \frac{x[k+1] - x[k]}{T_s}
+$$
 
 对应 $s$ 域的替换：
 
-$$s \approx \frac{z - 1}{T_s}$$
+$$
+s \approx \frac{z - 1}{T_s}
+$$
 
 即 $K(z) = K\!\left(s = \frac{z-1}{T_s}\right)$。
 
@@ -75,11 +79,15 @@ $$s \approx \frac{z - 1}{T_s}$$
 
 **原理**：用后向差分近似微分
 
-$$\dot{x}(t) \approx \frac{x[k] - x[k-1]}{T_s}$$
+$$
+\dot{x}(t) \approx \frac{x[k] - x[k-1]}{T_s}
+$$
 
 对应替换：
 
-$$s \approx \frac{z - 1}{T_s z} = \frac{1 - z^{-1}}{T_s}$$
+$$
+s \approx \frac{z - 1}{T_s z} = \frac{1 - z^{-1}}{T_s}
+$$
 
 **稳定域**：$z = \frac{1}{1 - sT_s}$。s 平面左半部分映射到 $|z| < \frac{1}{|1 - sT_s|} < 1$（因为 $\text{Re}(s) < 0$ 时 $|1 - sT_s| > 1$）。**稳定域完全在单位圆内**——稳定性保持。
 
@@ -91,11 +99,15 @@ $$s \approx \frac{z - 1}{T_s z} = \frac{1 - z^{-1}}{T_s}$$
 
 **原理**：用梯形积分近似
 
-$$x(kT_s) = \int_0^{kT_s} \dot{x}(\tau)\,d\tau \approx \sum_{j=1}^{k} \frac{\dot{x}[j] + \dot{x}[j-1]}{2} T_s$$
+$$
+x(kT_s) = \int_0^{kT_s} \dot{x}(\tau)\,d\tau \approx \sum_{j=1}^{k} \frac{\dot{x}[j] + \dot{x}[j-1]}{2} T_s
+$$
 
 对应替换：
 
-$$s = \frac{2}{T_s} \cdot \frac{z - 1}{z + 1}$$
+$$
+s = \frac{2}{T_s} \cdot \frac{z - 1}{z + 1}
+$$
 
 反解 $z$：$z = \frac{1 + sT_s/2}{1 - sT_s/2}$
 
@@ -107,7 +119,9 @@ $$s = \frac{2}{T_s} \cdot \frac{z - 1}{z + 1}$$
 
 **频率畸变**：$s = j\omega$ 映射到 $z = e^{j\omega_d T_s}$，其中
 
-$$\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)$$
+$$
+\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)
+$$
 
 低频时 $\omega_d \approx \omega$（三阶误差），高频时 $\omega_d > \omega$（畸变增大）。
 
@@ -131,7 +145,9 @@ $$\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)$$
 
 **步骤 1**：计算预畸变频率
 
-$$\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right)$$
+$$
+\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right)
+$$
 
 **步骤 2**：在 $K(s)$ 中，把 $\omega_0$ 替换为 $\omega_0'$
 
@@ -260,7 +276,9 @@ for name, K_d in [('前向欧拉', K_fwd), ('后向欧拉', K_bwd),
 
 1. 对连续对象 $G(s)$ 做 ZOH 等效离散化（见 [Z变换基础](/discrete-sampled/z-transform-analysis)）：
 
-$$G(z) = (1 - z^{-1})\,\mathcal{Z}\!\left\{\frac{G(s)}{s}\right\}$$
+$$
+G(z) = (1 - z^{-1})\,\mathcal{Z}\!\left\{\frac{G(s)}{s}\right\}
+$$
 
 2. 在 z 域设计控制器 $K(z)$：
    - **根轨迹法**：规则和 s 域类似，稳定域是单位圆内
@@ -280,13 +298,17 @@ z 域根轨迹的基本规则与 s 域相同（起点=极点，终点=零点，�
 
 假设对象 $G(z) = \frac{B(z)}{A(z)}$（$n$ 阶），闭环传递函数设计为：
 
-$$T(z) = \frac{Y(z)}{R(z)} = z^{-d}$$
+$$
+T(z) = \frac{Y(z)}{R(z)} = z^{-d}
+$$
 
 其中 $d$ 是对象的纯延迟步数。这意味着输出在 $d$ 步后精确跟踪输入。
 
 **控制器**：
 
-$$K(z) = \frac{T(z)}{G(z)(1 - T(z))} = \frac{z^{-d} \cdot A(z)}{B(z)(1 - z^{-d})}$$
+$$
+K(z) = \frac{T(z)}{G(z)(1 - T(z))} = \frac{z^{-d} \cdot A(z)}{B(z)(1 - z^{-d})}
+$$
 
 **限制条件**：
 - 对象必须是最小相位的（$B(z)$ 的根在单位圆内），否则控制器不稳定
@@ -309,11 +331,15 @@ $$K(z) = \frac{T(z)}{G(z)(1 - T(z))} = \frac{z^{-d} \cdot A(z)}{B(z)(1 - z^{-d})
 
 连续 PID：
 
-$$u(t) = K_p\, e(t) + K_i \int_0^t e(\tau)\,d\tau + K_d\, \dot{e}(t)$$
+$$
+u(t) = K_p\, e(t) + K_i \int_0^t e(\tau)\,d\tau + K_d\, \dot{e}(t)
+$$
 
 用 Tustin 离散化后，数字 PID 的标准形式：
 
-$$u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}$$
+$$
+u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}
+$$
 
 但直接实现这个公式有三个严重问题。
 
@@ -327,7 +353,9 @@ $$u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s
 
 引入反馈回路，当执行器饱和时把"多余的"控制量反馈到积分器：
 
-$$u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b \cdot (u_{sat}[k] - u[k])$$
+$$
+u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b \cdot (u_{sat}[k] - u[k])
+$$
 
 其中：
 - $u[k] = u_P[k] + u_{int}[k] + u_D[k]$（未饱和的控制量）
@@ -474,11 +502,15 @@ print(f"超调减少: {os1 - os2:.1f}%")`
 
 离散化后，等价于一阶递推：
 
-$$u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}$$
+$$
+u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}
+$$
 
 其中滤波系数：
 
-$$\alpha = \frac{N T_s}{1 + N T_s}$$
+$$
+\alpha = \frac{N T_s}{1 + N T_s}
+$$
 
 | $N T_s$ | $\alpha$ | 含义 |
 |:---:|:---:|------|
@@ -507,9 +539,15 @@ $$\alpha = \frac{N T_s}{1 + N T_s}$$
 
 工业 PID 很少用纯误差 $e = r - y$。常用**设定值加权**：
 
-$$e_P = b \cdot r - y \quad \text{（比例项用）}$$
-$$e_I = r - y \quad \text{（积分项用）}$$
-$$e_D = c \cdot r - y \quad \text{（微分项用）}$$
+$$
+e_P = b \cdot r - y \quad \text{（比例项用）}
+$$
+$$
+e_I = r - y \quad \text{（积分项用）}
+$$
+$$
+e_D = c \cdot r - y \quad \text{（微分项用）}
+$$
 
 其中 $b, c \in [0, 1]$ 是加权系数。
 
@@ -526,15 +564,25 @@ $$e_D = c \cdot r - y \quad \text{（微分项用）}$$
 
 综合以上所有修改，完整的数字 PID 算法：
 
-$$u_P[k] = K_p (b \cdot r[k] - y[k])$$
+$$
+u_P[k] = K_p (b \cdot r[k] - y[k])
+$$
 
-$$u_{int}[k] = u_{int}[k-1] + K_i T_s (r[k] - y[k]) + K_b (u_{sat}[k] - u[k])$$
+$$
+u_{int}[k] = u_{int}[k-1] + K_i T_s (r[k] - y[k]) + K_b (u_{sat}[k] - u[k])
+$$
 
-$$u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{(c \cdot r[k] - y[k]) - (c \cdot r[k-1] - y[k-1])}{T_s}$$
+$$
+u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{(c \cdot r[k] - y[k]) - (c \cdot r[k-1] - y[k-1])}{T_s}
+$$
 
-$$u[k] = u_P[k] + u_{int}[k] + u_D[k]$$
+$$
+u[k] = u_P[k] + u_{int}[k] + u_D[k]
+$$
 
-$$u_{sat}[k] = \text{sat}(u[k], u_{\min}, u_{\max})$$
+$$
+u_{sat}[k] = \text{sat}(u[k], u_{\min}, u_{\max})
+$$
 
 这个算法有 6 个可调参数：$K_p, K_i, K_d, K_b, N, b, c$。其中 $K_p, K_i, K_d$ 从连续 PID 设计得到，$K_b, N, b, c$ 是工程实现参数。
 
@@ -544,7 +592,9 @@ $$u_{sat}[k] = \text{sat}(u[k], u_{\min}, u_{\max})$$
 
 直流电机速度控制，传递函数：
 
-$$G(s) = \frac{100}{0.1s + 1} = \frac{1000}{s + 10}$$
+$$
+G(s) = \frac{100}{0.1s + 1} = \frac{1000}{s + 10}
+$$
 
 **设计需求**：
 - 闭环带宽 $\omega_c \approx 5$ rad/s
@@ -559,21 +609,29 @@ $$G(s) = \frac{100}{0.1s + 1} = \frac{1000}{s + 10}$$
 
 **PI 控制器**（速度控制通常不需要微分项，因为传感器噪声大）：
 
-$$K(s) = K_p + \frac{K_i}{s} = K_p \frac{T_i s + 1}{T_i s}$$
+$$
+K(s) = K_p + \frac{K_i}{s} = K_p \frac{T_i s + 1}{T_i s}
+$$
 
 开环传递函数：
 
-$$L(s) = K(s) G(s) = K_p \frac{T_i s + 1}{T_i s} \cdot \frac{1000}{s + 10}$$
+$$
+L(s) = K(s) G(s) = K_p \frac{T_i s + 1}{T_i s} \cdot \frac{1000}{s + 10}
+$$
 
 选择 $T_i = 0.1$ s（抵消对象极点 $s = -10$）：
 
-$$L(s) = \frac{1000 K_p}{s}$$
+$$
+L(s) = \frac{1000 K_p}{s}
+$$
 
 这是纯积分开环，相位裕度 = 90°。
 
 增益选择：$|L(j\omega_c)| = 1$ 在 $\omega_c = 5$ rad/s：
 
-$$\frac{1000 K_p}{5} = 1 \implies K_p = 0.005$$
+$$
+\frac{1000 K_p}{5} = 1 \implies K_p = 0.005
+$$
 
 $K_i = K_p / T_i = 0.005 / 0.1 = 0.05$。
 
@@ -590,25 +648,37 @@ $K(s) = 0.005 + \frac{0.05}{s}$
 
 **积分项**：$s = \frac{2}{T_s} \frac{z-1}{z+1}$
 
-$$\frac{K_i}{s} = \frac{0.05}{\frac{2}{0.01} \frac{z-1}{z+1}} = \frac{0.05 \times 0.01}{2} \cdot \frac{z+1}{z-1} = 0.00025 \frac{z+1}{z-1}$$
+$$
+\frac{K_i}{s} = \frac{0.05}{\frac{2}{0.01} \frac{z-1}{z+1}} = \frac{0.05 \times 0.01}{2} \cdot \frac{z+1}{z-1} = 0.00025 \frac{z+1}{z-1}
+$$
 
 **数字 PI 控制器**：
 
-$$K(z) = 0.005 + 0.00025 \frac{z+1}{z-1} = \frac{0.005(z-1) + 0.00025(z+1)}{z-1} = \frac{0.00525 z - 0.00475}{z - 1}$$
+$$
+K(z) = 0.005 + 0.00025 \frac{z+1}{z-1} = \frac{0.005(z-1) + 0.00025(z+1)}{z-1} = \frac{0.00525 z - 0.00475}{z - 1}
+$$
 
 **预畸变检查**：$\omega_c T_s = 5 \times 0.01 = 0.05$，$\omega_d / \omega_c = \tan(0.025)/0.025 = 1.0002$，误差 0.02%，**不需要预畸变**。
 
 ### 步骤 3：差分方程实现
 
-$$K(z) = \frac{U(z)}{E(z)} = \frac{0.00525 - 0.00475 z^{-1}}{1 - z^{-1}}$$
+$$
+K(z) = \frac{U(z)}{E(z)} = \frac{0.00525 - 0.00475 z^{-1}}{1 - z^{-1}}
+$$
 
 交叉相乘：
 
-$$U(z)(1 - z^{-1}) = E(z)(0.00525 - 0.00475 z^{-1})$$
+$$
+U(z)(1 - z^{-1}) = E(z)(0.00525 - 0.00475 z^{-1})
+$$
 
-$$u[k] - u[k-1] = 0.00525\, e[k] - 0.00475\, e[k-1]$$
+$$
+u[k] - u[k-1] = 0.00525\, e[k] - 0.00475\, e[k-1]
+$$
 
-$$\boxed{u[k] = u[k-1] + 0.00525\, e[k] - 0.00475\, e[k-1]}$$
+$$
+\boxed{u[k] = u[k-1] + 0.00525\, e[k] - 0.00475\, e[k-1]}
+$$
 
 这就是最终在芯片上运行的代码——三行乘法/加法。
 
@@ -825,7 +895,9 @@ Tustin 是二阶精度（梯形积分），所以频率响应比一阶方法（�
 
 在嵌入式系统（MCU、FPGA）中，浮点运算可能太慢或不可用。需要用**定点数**实现控制器：
 
-$$u[k] = u[k-1] + \underbrace{0.00525}_{=\,5.25 \times 10^{-3}} \cdot e[k] - \underbrace{0.00475}_{=\,4.75 \times 10^{-3}} \cdot e[k-1]$$
+$$
+u[k] = u[k-1] + \underbrace{0.00525}_{=\,5.25 \times 10^{-3}} \cdot e[k] - \underbrace{0.00475}_{=\,4.75 \times 10^{-3}} \cdot e[k-1]
+$$
 
 定点数实现：
 1. 选择缩放因子 $S = 2^{16} = 65536$
@@ -873,22 +945,30 @@ $K(s) = 2 + \frac{0.5}{s} = \frac{2s + 0.5}{s}$
 
 **前向欧拉**：$s = \frac{z-1}{T_s} = \frac{z-1}{0.05} = 20(z-1)$
 
-$$K(z) = 2 + \frac{0.5}{20(z-1)} = 2 + \frac{0.025}{z-1} = \frac{2z - 1.975}{z - 1}$$
+$$
+K(z) = 2 + \frac{0.5}{20(z-1)} = 2 + \frac{0.025}{z-1} = \frac{2z - 1.975}{z - 1}
+$$
 
 **后向欧拉**：$s = \frac{z-1}{T_s z} = \frac{z-1}{0.05z} = 20\frac{z-1}{z}$
 
-$$K(z) = 2 + \frac{0.5}{20\frac{z-1}{z}} = 2 + \frac{0.025z}{z-1} = \frac{2.025z - 2}{z - 1}$$
+$$
+K(z) = 2 + \frac{0.5}{20\frac{z-1}{z}} = 2 + \frac{0.025z}{z-1} = \frac{2.025z - 2}{z - 1}
+$$
 
 **Tustin**：$s = \frac{2}{T_s}\frac{z-1}{z+1} = 40\frac{z-1}{z+1}$
 
-$$K(z) = 2 + \frac{0.5}{40\frac{z-1}{z+1}} = 2 + \frac{0.0125(z+1)}{z-1} = \frac{2.0125z - 1.9875}{z - 1}$$
+$$
+K(z) = 2 + \frac{0.5}{40\frac{z-1}{z+1}} = 2 + \frac{0.0125(z+1)}{z-1} = \frac{2.0125z - 1.9875}{z - 1}
+$$
 
 **零极点匹配**：
 - $K(s)$ 的极点 $s = 0$ → $z = e^{0} = 1$
 - $K(s)$ 的零点 $s = -0.25$ → $z = e^{-0.25 \times 0.05} = e^{-0.0125} \approx 0.9876$
 - DC 增益匹配：$K(s)|_{s \to 0} \to \infty$，改用 $\omega = 1$ rad/s 处匹配
 
-$$K(z) = \frac{K_0(z - 0.9876)}{z - 1}$$
+$$
+K(z) = \frac{K_0(z - 0.9876)}{z - 1}
+$$
 
 在 $\omega = 1$ rad/s 处：$|K(j1)| = \sqrt{4 + 0.25} = \sqrt{4.25} = 2.062$
 
@@ -896,13 +976,17 @@ $|K(z)|_{z=e^{j0.05}} = \frac{K_0 |e^{j0.05} - 0.9876|}{|e^{j0.05} - 1|}$
 
 计算得 $K_0 \approx 2.013$。
 
-$$K(z) \approx \frac{2.013(z - 0.9876)}{z - 1} = \frac{2.013z - 1.988}{z - 1}$$
+$$
+K(z) \approx \frac{2.013(z - 0.9876)}{z - 1} = \frac{2.013z - 1.988}{z - 1}
+$$
 
 ### 习题 2
 
 **步骤 1**：计算预畸变频率
 
-$$\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right) = \frac{2}{0.1} \tan\left(\frac{2 \times 0.1}{2}\right) = 20 \tan(0.1) = 20 \times 0.1003 = 2.007 \text{ rad/s}$$
+$$
+\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right) = \frac{2}{0.1} \tan\left(\frac{2 \times 0.1}{2}\right) = 20 \tan(0.1) = 20 \times 0.1003 = 2.007 \text{ rad/s}
+$$
 
 误差只有 0.3%——因为 $\omega_0 T_s = 0.2$ 较小。
 
@@ -910,33 +994,49 @@ $$\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right) = \frac{2}{0
 
 把零点从 $-2$ 移到 $-2.007$：
 
-$$K'(s) = \frac{10(s + 2.007)}{s}$$
+$$
+K'(s) = \frac{10(s + 2.007)}{s}
+$$
 
 **步骤 3**：Tustin 变换
 
-$$s = 20\frac{z-1}{z+1}$$
+$$
+s = 20\frac{z-1}{z+1}
+$$
 
-$$K(z) = \frac{10\left(20\frac{z-1}{z+1} + 2.007\right)}{20\frac{z-1}{z+1}} = \frac{10(20(z-1) + 2.007(z+1))}{20(z-1)}$$
+$$
+K(z) = \frac{10\left(20\frac{z-1}{z+1} + 2.007\right)}{20\frac{z-1}{z+1}} = \frac{10(20(z-1) + 2.007(z+1))}{20(z-1)}
+$$
 
-$$= \frac{10(22.007z - 17.993)}{20(z-1)} = \frac{11.0035z - 8.9965}{z - 1}$$
+$$
+= \frac{10(22.007z - 17.993)}{20(z-1)} = \frac{11.0035z - 8.9965}{z - 1}
+$$
 
 ### 习题 3
 
 反算法积分器方程：
 
-$$u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b(u_{sat}[k] - u[k])$$
+$$
+u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b(u_{sat}[k] - u[k])
+$$
 
 饱和时，$u[k] > u_{\max}$，$u_{sat}[k] = u_{\max}$，令 $\Delta u = u[k] - u_{\max} > 0$：
 
-$$u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] - K_b \Delta u$$
+$$
+u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] - K_b \Delta u
+$$
 
 如果饱和期间误差 $e[k]$ 近似不变（因为输出被钳位），则积分器的变化率：
 
-$$\frac{\Delta u_{int}}{T_s} \approx K_i e - K_b \Delta u$$
+$$
+\frac{\Delta u_{int}}{T_s} \approx K_i e - K_b \Delta u
+$$
 
 这是一个一阶系统，稳态时 $\Delta u_{int} / T_s = 0$：
 
-$$K_i e = K_b \Delta u \implies \Delta u = \frac{K_i}{K_b} e$$
+$$
+K_i e = K_b \Delta u \implies \Delta u = \frac{K_i}{K_b} e
+$$
 
 积分器被限制在有限范围内，不会无限累积。退饱和的时间常数约为 $\tau = 1/K_b$。
 
@@ -956,18 +1056,30 @@ PI 控制器 $K(s) = K_p + \frac{K_i}{s}$
 
 带宽：$|L(j\omega_c)| = \frac{250 K_p}{\omega_c} = 1$，$\omega_c = 10$ rad/s
 
-$$K_p = \frac{10}{250} = 0.04, \quad K_i = \frac{K_p}{T_i} = \frac{0.04}{0.2} = 0.2$$
+$$
+K_p = \frac{10}{250} = 0.04, \quad K_i = \frac{K_p}{T_i} = \frac{0.04}{0.2} = 0.2
+$$
 
 **步骤 2**：Tustin 离散化（$T_s = 0.02$ s）
 
-$$K(z) = 0.04 + \frac{0.2}{\frac{2}{0.02}\frac{z-1}{z+1}} = 0.04 + \frac{0.2 \times 0.02}{2} \cdot \frac{z+1}{z-1} = 0.04 + 0.002 \frac{z+1}{z-1}$$
+$$
+K(z) = 0.04 + \frac{0.2}{\frac{2}{0.02}\frac{z-1}{z+1}} = 0.04 + \frac{0.2 \times 0.02}{2} \cdot \frac{z+1}{z-1} = 0.04 + 0.002 \frac{z+1}{z-1}
+$$
 
-$$= \frac{0.04(z-1) + 0.002(z+1)}{z-1} = \frac{0.042z - 0.038}{z - 1}$$
+$$
+= \frac{0.04(z-1) + 0.002(z+1)}{z-1} = \frac{0.042z - 0.038}{z - 1}
+$$
 
 **步骤 3**：差分方程
 
-$$\frac{U(z)}{E(z)} = \frac{0.042 - 0.038z^{-1}}{1 - z^{-1}}$$
+$$
+\frac{U(z)}{E(z)} = \frac{0.042 - 0.038z^{-1}}{1 - z^{-1}}
+$$
 
-$$u[k] - u[k-1] = 0.042\, e[k] - 0.038\, e[k-1]$$
+$$
+u[k] - u[k-1] = 0.042\, e[k] - 0.038\, e[k-1]
+$$
 
-$$\boxed{u[k] = u[k-1] + 0.042\, e[k] - 0.038\, e[k-1]}$$
+$$
+\boxed{u[k] = u[k-1] + 0.042\, e[k] - 0.038\, e[k-1]}
+$$

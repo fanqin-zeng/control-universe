@@ -23,11 +23,15 @@ Luenberger 观测器的增益 $L$ 靠经验选取——极点放得越快，估�
 
 回顾 Luenberger 全阶观测器：
 
-$$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})$$
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})
+$$
 
 估计误差 $\tilde{\boldsymbol{x}} = \boldsymbol{x} - \hat{\boldsymbol{x}}$ 满足：
 
-$$\dot{\tilde{\boldsymbol{x}}} = (A - LC)\tilde{\boldsymbol{x}}$$
+$$
+\dot{\tilde{\boldsymbol{x}}} = (A - LC)\tilde{\boldsymbol{x}}
+$$
 
 这个设计假设：
 1. 系统模型 $A, B, C$ **完全已知**
@@ -59,8 +63,12 @@ $$\dot{\tilde{\boldsymbol{x}}} = (A - LC)\tilde{\boldsymbol{x}}$$
 
 ### 带噪声的状态空间模型
 
-$$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}$$
-$$\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}$$
+$$
+\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}
+$$
+$$
+\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}
+$$
 
 其中：
 - $\boldsymbol{w}(t)$：**过程噪声**（process noise），建模误差和外部扰动的综合效果
@@ -70,11 +78,17 @@ $$\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}$$
 
 卡尔曼滤波假设噪声是**高斯白噪声**：
 
-$$E[\boldsymbol{w}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] = Q\,\delta(t-\tau)$$
+$$
+E[\boldsymbol{w}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] = Q\,\delta(t-\tau)
+$$
 
-$$E[\boldsymbol{v}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{v}(t)\boldsymbol{v}(\tau)^T] = R\,\delta(t-\tau)$$
+$$
+E[\boldsymbol{v}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{v}(t)\boldsymbol{v}(\tau)^T] = R\,\delta(t-\tau)
+$$
 
-$$E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] = \boldsymbol{0} \quad \text{（过程噪声和测量噪声不相关）}$$
+$$
+E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] = \boldsymbol{0} \quad \text{（过程噪声和测量噪声不相关）}
+$$
 
 其中：
 - $Q \geq 0$：过程噪声协方差（"模型有多不精确"）
@@ -103,7 +117,9 @@ $$E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] = \boldsymbol{0} \quad \text{（过
 
 卡尔曼滤波的形式与 Luenberger 观测器**完全相同**：
 
-$$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})$$
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})
+$$
 
 区别在于：$K_f$（卡尔曼增益）不是任意选的，而是**最优**的——最小化估计误差的方差。
 
@@ -111,7 +127,9 @@ $$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\bo
 
 估计误差 $\tilde{\boldsymbol{x}} = \boldsymbol{x} - \hat{\boldsymbol{x}}$：
 
-$$\dot{\tilde{\boldsymbol{x}}} = (A - K_f C)\tilde{\boldsymbol{x}} + \boldsymbol{w} - K_f \boldsymbol{v}$$
+$$
+\dot{\tilde{\boldsymbol{x}}} = (A - K_f C)\tilde{\boldsymbol{x}} + \boldsymbol{w} - K_f \boldsymbol{v}
+$$
 
 与 Luenberger 观测器相比，多了噪声项 $\boldsymbol{w} - K_f \boldsymbol{v}$。估计误差不会收敛到零，而是随机波动。
 
@@ -119,7 +137,9 @@ $$\dot{\tilde{\boldsymbol{x}}} = (A - K_f C)\tilde{\boldsymbol{x}} + \boldsymbol
 
 定义**估计误差协方差矩阵**：
 
-$$P(t) = E[\tilde{\boldsymbol{x}}(t)\tilde{\boldsymbol{x}}(t)^T]$$
+$$
+P(t) = E[\tilde{\boldsymbol{x}}(t)\tilde{\boldsymbol{x}}(t)^T]
+$$
 
 $P$ 的物理意义：
 - $P_{ii}$：第 $i$ 个状态估计误差的方差（"对 $x_i$ 的估计有多不确定"）
@@ -134,19 +154,27 @@ $P$ 的物理意义：
 
 对 $P = E[\tilde{\boldsymbol{x}}\tilde{\boldsymbol{x}}^T]$ 求时间导数，代入误差 dynamics：
 
-$$\dot{P} = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T$$
+$$
+\dot{P} = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T
+$$
 
 展开：
 
-$$\dot{P} = AP + PA^T - K_f CP - PC^T K_f^T + Q + K_f R K_f^T$$
+$$
+\dot{P} = AP + PA^T - K_f CP - PC^T K_f^T + Q + K_f R K_f^T
+$$
 
 ### 最优增益
 
 最小化 $\text{tr}(P)$，对 $K_f$ 求导并令为零：
 
-$$\frac{\partial\,\text{tr}(\dot{P})}{\partial K_f} = -2PC^T + 2K_f R = 0$$
+$$
+\frac{\partial\,\text{tr}(\dot{P})}{\partial K_f} = -2PC^T + 2K_f R = 0
+$$
 
-$$\boxed{K_f = PC^T R^{-1}}$$
+$$
+\boxed{K_f = PC^T R^{-1}}
+$$
 
 这就是**最优卡尔曼增益**。
 
@@ -154,7 +182,9 @@ $$\boxed{K_f = PC^T R^{-1}}$$
 
 将 $K_f = PC^T R^{-1}$ 代入 $\dot{P}$ 的方程：
 
-$$\dot{P} = AP + PA^T - PC^T R^{-1} CP + Q$$
+$$
+\dot{P} = AP + PA^T - PC^T R^{-1} CP + Q
+$$
 
 这就是**微分 Riccati 方程**（滤波形式）。
 
@@ -173,13 +203,17 @@ $$\dot{P} = AP + PA^T - PC^T R^{-1} CP + Q$$
 
 当 $t \to \infty$，$P(t)$ 趋向稳态值 $P$（假设 $(A, C)$ 可观，$(A, Q^{1/2})$ 可检测）。令 $\dot{P} = 0$：
 
-$$\boxed{AP + PA^T - PC^T R^{-1} CP + Q = 0}$$
+$$
+\boxed{AP + PA^T - PC^T R^{-1} CP + Q = 0}
+$$
 
 这就是**滤波代数 Riccati 方程**（ARE）。
 
 稳态卡尔曼增益：
 
-$$\boxed{K_f = PC^T R^{-1}}$$
+$$
+\boxed{K_f = PC^T R^{-1}}
+$$
 
 闭环（误差 dynamics）矩阵：$A - K_f C$，其特征值全部在左半平面。
 
@@ -189,11 +223,17 @@ $$\boxed{K_f = PC^T R^{-1}}$$
 
 ARE（$p$ 是标量）：
 
-$$2ap - \frac{c^2}{r}p^2 + q = 0$$
+$$
+2ap - \frac{c^2}{r}p^2 + q = 0
+$$
 
-$$\frac{c^2}{r}p^2 - 2ap - q = 0$$
+$$
+\frac{c^2}{r}p^2 - 2ap - q = 0
+$$
 
-$$p = \frac{r}{c^2}\left(a + \sqrt{a^2 + \frac{c^2 q}{r}}\right)$$
+$$
+p = \frac{r}{c^2}\left(a + \sqrt{a^2 + \frac{c^2 q}{r}}\right)
+$$
 
 取正根（保证 $p > 0$）。
 
@@ -236,9 +276,13 @@ $(2,2)$：$-p_{12}^2 + 1 = 0 \implies p_{12} = 1$（取正）
 
 $p_{22} = \sqrt{3} \times 1 = \sqrt{3}$
 
-$$P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}$$
+$$
+P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}
+$$
 
-$$K_f = PC^T R^{-1} = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}$$
+$$
+K_f = PC^T R^{-1} = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}
+$$
 
 误差 dynamics 极点：$A - K_f C = \begin{bmatrix} -\sqrt{3} & 1 \\ -1 & 0 \end{bmatrix}$
 
@@ -299,7 +343,9 @@ print(f"自然频率 ωn = {abs(eigvals[0]):.4f}")` },
 
 **对偶替换规则**：将 LQR 的所有公式做以下替换，就得到卡尔曼滤波的公式：
 
-$$A \to A^T, \quad B \to C^T, \quad Q_{\text{lqr}} \to R_{\text{kf}}, \quad R_{\text{lqr}} \to Q_{\text{kf}}$$
+$$
+A \to A^T, \quad B \to C^T, \quad Q_{\text{lqr}} \to R_{\text{kf}}, \quad R_{\text{lqr}} \to Q_{\text{kf}}
+$$
 
 > [!tip] 统一视角
 > LQR 和卡尔曼滤波本质上是**同一个问题的两面**：
@@ -384,8 +430,12 @@ LQR 假设全部状态可测。实际中只有输出 $\boldsymbol{y}$ 可测。�
 1. **卡尔曼滤波**从噪声测量 $\boldsymbol{y}$ 估计状态 $\hat{\boldsymbol{x}}$
 2. **LQR** 用估计状态计算控制 $\boldsymbol{u} = -K\hat{\boldsymbol{x}}$
 
-$$\boldsymbol{u} = -K\hat{\boldsymbol{x}}$$
-$$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})$$
+$$
+\boldsymbol{u} = -K\hat{\boldsymbol{x}}
+$$
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})
+$$
 
 ### 分离性原理
 
@@ -395,7 +445,9 @@ $$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\bo
 
 > **LQG 分离性原理**：LQR 控制器和卡尔曼滤波器可以**独立设计**。闭环系统的特征值 = LQR 的闭环极点 $\cup$ 卡尔曼的误差极点。
 
-$$\det(sI - A_{\text{cl}}) = \det(sI - A + BK) \cdot \det(sI - A + K_f C)$$
+$$
+\det(sI - A_{\text{cl}}) = \det(sI - A + BK) \cdot \det(sI - A + K_f C)
+$$
 
 这是现代控制理论最美的结论之一：**最优控制和最优估计可以独立设计，组合起来仍然是最优的**。
 
@@ -415,8 +467,12 @@ $K_f = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}$，误差极点 $\frac{-\sqrt
 
 **步骤3**：LQG 控制器
 
-$$\boldsymbol{u} = -K\hat{\boldsymbol{x}} = -\hat{x}_1 - \sqrt{3}\hat{x}_2$$
-$$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(y - C\hat{\boldsymbol{x}})$$
+$$
+\boldsymbol{u} = -K\hat{\boldsymbol{x}} = -\hat{x}_1 - \sqrt{3}\hat{x}_2
+$$
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(y - C\hat{\boldsymbol{x}})
+$$
 
 闭环极点 = 控制极点 $\cup$ 误差极点 = $\left\{\frac{-\sqrt{3} \pm j}{2}, \frac{-\sqrt{3} \pm j}{2}\right\}$
 
@@ -525,11 +581,15 @@ interact(plot_kf_qr,
 
 卡尔曼滤波只适用于**线性**系统。对于非线性系统：
 
-$$\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{w}, \quad \boldsymbol{y} = h(\boldsymbol{x}) + \boldsymbol{v}$$
+$$
+\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{w}, \quad \boldsymbol{y} = h(\boldsymbol{x}) + \boldsymbol{v}
+$$
 
 **扩展卡尔曼滤波**（EKF）在工作点线性化：
 
-$$A_k = \left.\frac{\partial f}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}, \quad C_k = \left.\frac{\partial h}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}$$
+$$
+A_k = \left.\frac{\partial f}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}, \quad C_k = \left.\frac{\partial h}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}
+$$
 
 然后用线性卡尔曼滤波的方法估计。EKF 在机器人定位、GPS 导航中广泛使用。
 
@@ -546,7 +606,9 @@ $$A_k = \left.\frac{\partial f}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbo
 
 离散 ARE（差分 Riccati 方程的稳态）：
 
-$$P = A_d P A_d^T - A_d P C^T(R + C P C^T)^{-1} C P A_d^T + Q_d$$
+$$
+P = A_d P A_d^T - A_d P C^T(R + C P C^T)^{-1} C P A_d^T + Q_d
+$$
 
 Python 中用 `scipy.linalg.solve_discrete_are`。离散时间实现更适合数字控制器。
 
@@ -591,7 +653,9 @@ Python 中用 `scipy.linalg.solve_discrete_are`。离散时间实现更适合数
 
 **5.** 证明：使 $\text{tr}(\dot{P})$ 最小的增益为 $K_f = PC^T R^{-1}$。
 
-$$\dot{P} = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T$$
+$$
+\dot{P} = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T
+$$
 
 （提示：对 $\text{tr}(\dot{P})$ 关于 $K_f$ 求导，利用矩阵微分公式 $\frac{\partial}{\partial X}\text{tr}(XB) = B^T$。）
 

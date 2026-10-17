@@ -15,7 +15,9 @@ description: 从传递函数回到时间域，计算系统对典型输入的具�
 
 本章的路线图：
 
-$$\text{典型信号} \to \text{一阶系统} \to \text{二阶系统} \to \text{性能指标} \to \text{高阶近似} \to \text{工程实例}$$
+$$
+\text{典型信号} \to \text{一阶系统} \to \text{二阶系统} \to \text{性能指标} \to \text{高阶近似} \to \text{工程实例}
+$$
 
 ---
 
@@ -42,7 +44,9 @@ $$\text{典型信号} \to \text{一阶系统} \to \text{二阶系统} \to \text{
 
 这四种信号不是独立的——它们之间有积分关系：
 
-$$\text{脉冲} \xrightarrow{\int} \text{阶跃} \xrightarrow{\int} \text{斜坡}$$
+$$
+\text{脉冲} \xrightarrow{\int} \text{阶跃} \xrightarrow{\int} \text{斜坡}
+$$
 
 这意味着：系统对阶跃的响应 = 系统对脉冲响应的积分。这个关系在数学上是卷积积分的特殊情况。
 
@@ -60,7 +64,9 @@ $$\text{脉冲} \xrightarrow{\int} \text{阶跃} \xrightarrow{\int} \text{斜坡
 
 一阶系统的标准形式：
 
-$$G(s) = \frac{1}{Ts + 1}$$
+$$
+G(s) = \frac{1}{Ts + 1}
+$$
 
 其中 $T$ 是**时间常数**。
 
@@ -68,15 +74,21 @@ $$G(s) = \frac{1}{Ts + 1}$$
 
 对单位阶跃输入 $U(s) = 1/s$：
 
-$$Y(s) = G(s) \cdot \frac{1}{s} = \frac{1}{s(Ts+1)}$$
+$$
+Y(s) = G(s) \cdot \frac{1}{s} = \frac{1}{s(Ts+1)}
+$$
 
 用**部分分式展开**，把一个复杂分式拆成两个简单分式：
 
-$$Y(s) = \frac{1}{s} - \frac{T}{Ts+1} = \frac{1}{s} - \frac{1}{s + 1/T}$$
+$$
+Y(s) = \frac{1}{s} - \frac{T}{Ts+1} = \frac{1}{s} - \frac{1}{s + 1/T}
+$$
 
 查拉普拉斯逆变换表，每一项都对应一个简单的时间函数：
 
-$$\boxed{y(t) = 1 - e^{-t/T}, \quad t \geq 0}$$
+$$
+\boxed{y(t) = 1 - e^{-t/T}, \quad t \geq 0}
+$$
 
 > 📐 这里用到的数学方法叫"部分分式展开"——把复杂分式拆成简单分式之和，每一项都可以单独查表求逆变换。这个方法在二阶和高阶系统中同样适用。
 
@@ -117,7 +129,9 @@ $$\boxed{y(t) = 1 - e^{-t/T}, \quad t \geq 0}$$
 
 ### 标准形式回顾
 
-$$G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$$
+$$
+G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}
+$$
 
 - $\omega_n$：自然频率，决定快慢
 - $\zeta$：阻尼比，决定振荡程度
@@ -126,11 +140,15 @@ $$G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$$
 
 对单位阶跃输入，$Y(s) = G(s) \cdot \frac{1}{s}$。以最重要的**欠阻尼**情况（$0 < \zeta < 1$）为例：
 
-$$Y(s) = \frac{\omega_n^2}{s(s^2 + 2\zeta\omega_n s + \omega_n^2)}$$
+$$
+Y(s) = \frac{\omega_n^2}{s(s^2 + 2\zeta\omega_n s + \omega_n^2)}
+$$
 
 先做**部分分式展开**。把右式拆成一个"稳态项"和一个"暂态项"：
 
-$$Y(s) = \frac{1}{s} - \frac{s + 2\zeta\omega_n}{s^2 + 2\zeta\omega_n s + \omega_n^2}$$
+$$
+Y(s) = \frac{1}{s} - \frac{s + 2\zeta\omega_n}{s^2 + 2\zeta\omega_n s + \omega_n^2}
+$$
 
 第一项 $\frac{1}{s}$ 对应稳态值 1（阶跃响应的终值）。第二项是暂态部分，需要进一步配方为标准形式才能查表。
 
@@ -138,11 +156,15 @@ $$Y(s) = \frac{1}{s} - \frac{s + 2\zeta\omega_n}{s^2 + 2\zeta\omega_n s + \omega
 
 分子也相应拆分：$s + 2\zeta\omega_n = (s + \zeta\omega_n) + \zeta\omega_n$。于是暂态项变成：
 
-$$\frac{s + 2\zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2} = \frac{s + \zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2} + \frac{\zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2}$$
+$$
+\frac{s + 2\zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2} = \frac{s + \zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2} + \frac{\zeta\omega_n}{(s+\zeta\omega_n)^2 + \omega_d^2}
+$$
 
 这两项分别对应拉普拉斯变换表中的"衰减余弦"和"衰减正弦"。合并后得到：
 
-$$\boxed{y(t) = 1 - \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}} \sin\left(\omega_d t + \phi\right), \quad t \geq 0}$$
+$$
+\boxed{y(t) = 1 - \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}} \sin\left(\omega_d t + \phi\right), \quad t \geq 0}
+$$
 
 其中：
 - $\omega_d = \omega_n\sqrt{1-\zeta^2}$：**阻尼振荡频率**
@@ -196,7 +218,9 @@ $$\boxed{y(t) = 1 - \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}} \sin\left(\ome
 
 **定义**：响应从 0 首次到达稳态值所需时间（欠阻尼系统）。
 
-$$t_r = \frac{\pi - \phi}{\omega_d} = \frac{\pi - \arccos\zeta}{\omega_n\sqrt{1-\zeta^2}}$$
+$$
+t_r = \frac{\pi - \phi}{\omega_d} = \frac{\pi - \arccos\zeta}{\omega_n\sqrt{1-\zeta^2}}
+$$
 
 > 💡 不同教材对上升时间的定义不同：有的用 0→100%，有的用 10%→90%。过阻尼系统通常用 10%→90%（因为永远到不了100%）。本书欠阻尼系统统一用 0→100% 定义，一阶系统用 10%→90% 定义。
 
@@ -204,7 +228,9 @@ $$t_r = \frac{\pi - \phi}{\omega_d} = \frac{\pi - \arccos\zeta}{\omega_n\sqrt{1-
 
 **定义**：响应到达第一个峰值所需时间。
 
-$$\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{\omega_n\sqrt{1-\zeta^2}}}$$
+$$
+\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{\omega_n\sqrt{1-\zeta^2}}}
+$$
 
 物理直觉：峰值出现在振荡项 $\sin(\omega_d t + \phi)$ 第一次到达极值时。
 
@@ -212,7 +238,9 @@ $$\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{\omega_n\sqrt{1-\zeta^2}}}$$
 
 **定义**：峰值超出稳态值的百分比。
 
-$$\boxed{M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%}$$
+$$
+\boxed{M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%}
+$$
 
 **关键观察**：$M_p$ **只取决于 $\zeta$**，与 $\omega_n$ 无关。这是因为 $\omega_n$ 只影响时间尺度（快慢），不影响振荡的"相对幅度"。这意味着你可以独立设计"快慢"和"振荡程度"。
 
@@ -233,11 +261,15 @@ $$\boxed{M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%}$$
 
 2% 误差带：
 
-$$\boxed{t_s \approx \frac{4}{\zeta\omega_n}}$$
+$$
+\boxed{t_s \approx \frac{4}{\zeta\omega_n}}
+$$
 
 5% 误差带：
 
-$$t_s \approx \frac{3}{\zeta\omega_n}$$
+$$
+t_s \approx \frac{3}{\zeta\omega_n}
+$$
 
 **近似条件**：这个公式来自包络线分析。欠阻尼响应的包络线为 $1 \pm \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}$。当包络线进入 ±2% 范围时认为"调节完成"。忽略 $\frac{1}{\sqrt{1-\zeta^2}}$ 因子（在 $\zeta$ 不太接近1时约为1），得到 $e^{-\zeta\omega_n t_s} \approx 0.02$。
 
@@ -310,7 +342,9 @@ plt.show()` }
 
 实际系统几乎都不是"纯二阶"的。传递函数可能有多个极点：
 
-$$G(s) = \frac{N(s)}{(s^2 + 2\zeta_1\omega_{n1}s + \omega_{n1}^2)(s + p_1)(s + p_2)\cdots}$$
+$$
+G(s) = \frac{N(s)}{(s^2 + 2\zeta_1\omega_{n1}s + \omega_{n1}^2)(s + p_1)(s + p_2)\cdots}
+$$
 
 ### 主导极点的概念
 
@@ -347,11 +381,15 @@ $$G(s) = \frac{N(s)}{(s^2 + 2\zeta_1\omega_{n1}s + \omega_{n1}^2)(s + p_1)(s + p
 
 考虑路面位移 $y_r(t)$ 到车身位移 $y(t)$ 的传递函数。由牛顿第二定律：
 
-$$m\ddot{y} + c\dot{y} + ky = c\dot{y}_r + ky_r$$
+$$
+m\ddot{y} + c\dot{y} + ky = c\dot{y}_r + ky_r
+$$
 
 取拉普拉斯变换（零初始条件），得到：
 
-$$G(s) = \frac{Y(s)}{Y_r(s)} = \frac{cs + k}{ms^2 + cs + k}$$
+$$
+G(s) = \frac{Y(s)}{Y_r(s)} = \frac{cs + k}{ms^2 + cs + k}
+$$
 
 注意分子含有 $s$ 项，这意味着传递函数有一个**零点** $s = -k/c$。零点会影响超调量——实际超调量比标准二阶公式预测的稍大。
 
@@ -375,25 +413,41 @@ $$G(s) = \frac{Y(s)}{Y_r(s)} = \frac{cs + k}{ms^2 + cs + k}$$
 
 **$\zeta = 0.3$（偏软）**：
 
-$$\omega_d = 8\sqrt{1 - 0.09} = 8 \times 0.954 = 7.63 \text{ rad/s}$$
+$$
+\omega_d = 8\sqrt{1 - 0.09} = 8 \times 0.954 = 7.63 \text{ rad/s}
+$$
 
-$$t_p = \frac{\pi}{7.63} = 0.412 \text{ s}$$
+$$
+t_p = \frac{\pi}{7.63} = 0.412 \text{ s}
+$$
 
-$$M_p = e^{-\pi \times 0.3/0.954} = e^{-0.987} = 37.3\%$$
+$$
+M_p = e^{-\pi \times 0.3/0.954} = e^{-0.987} = 37.3\%
+$$
 
-$$t_s \approx \frac{4}{0.3 \times 8} = 1.67 \text{ s}$$
+$$
+t_s \approx \frac{4}{0.3 \times 8} = 1.67 \text{ s}
+$$
 
 评判：$M_p = 37.3\% > 10\%$，**不满足**设计要求。乘坐体验：过弯后车身晃动明显，乘客会感到不安。
 
 **$\zeta = 0.707$（最佳阻尼）**：
 
-$$\omega_d = 8\sqrt{1 - 0.5} = 8 \times 0.707 = 5.66 \text{ rad/s}$$
+$$
+\omega_d = 8\sqrt{1 - 0.5} = 8 \times 0.707 = 5.66 \text{ rad/s}
+$$
 
-$$t_p = \frac{\pi}{5.66} = 0.555 \text{ s}$$
+$$
+t_p = \frac{\pi}{5.66} = 0.555 \text{ s}
+$$
 
-$$M_p = e^{-\pi \times 0.707/0.707} = e^{-\pi} = 4.3\%$$
+$$
+M_p = e^{-\pi \times 0.707/0.707} = e^{-\pi} = 4.3\%
+$$
 
-$$t_s \approx \frac{4}{0.707 \times 8} = 0.707 \text{ s}$$
+$$
+t_s \approx \frac{4}{0.707 \times 8} = 0.707 \text{ s}
+$$
 
 评判：$M_p = 4.3\% < 10\%$ ✓，$t_s = 0.707 < 2$ s ✓。**满足**设计要求。乘坐体验：快速平稳，超调几乎感觉不到。
 
@@ -488,7 +542,9 @@ plt.show()` }
 这些假设在"小信号"条件下近似成立。大信号情况下，需要用仿真或实验验证。
 
 > 💡 **关于纯时延**：纯时延 $e^{-s\tau}$ 是工业控制系统中最常见的"隐形杀手"。管道传输、信号处理、计算延迟都会引入时延。纯时延不改变系统的幅值响应，但会引入额外的相位滞后 $\Delta\phi = -\omega\tau$，直接蚕食相位裕度。处理时延的常用方法是 **Padé 近似**：
-> $$e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2} \quad \text{（一阶 Padé）}$$
+> $$
+> e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2} \quad \text{（一阶 Padé）}
+> $$
 > 将时延转化为有理传递函数后，就可以用本章和后续章节的方法分析。注意 Padé 近似引入了一个**右半平面零点** $s = 2/\tau$——这正是时延降低系统稳定性的数学本质。
 
 ---
@@ -543,19 +599,29 @@ plt.show()` }
 
 **1.** 将传递函数化为标准形式：
 
-$$G(s) = \frac{1}{0.5s + 1} = \frac{2}{s + 2}$$
+$$
+G(s) = \frac{1}{0.5s + 1} = \frac{2}{s + 2}
+$$
 
 时间常数 $T = 0.5$ s。
 
 阶跃响应：$Y(s) = \dfrac{1}{s} \cdot \dfrac{2}{s+2} = \dfrac{1}{s} - \dfrac{1}{s+2}$
 
-$$\boxed{y(t) = 1 - e^{-2t} = 1 - e^{-t/T}}$$
+$$
+\boxed{y(t) = 1 - e^{-2t} = 1 - e^{-t/T}}
+$$
 
 上升时间（10%→90%）：
 
-$$t_{10\%} = -T\ln(0.9) = 0.5 \times 0.105 = 0.053 \text{ s}$$
-$$t_{90\%} = -T\ln(0.1) = 0.5 \times 2.303 = 1.151 \text{ s}$$
-$$\boxed{t_r = 1.151 - 0.053 \approx 1.1 \text{ s}} \quad (\text{验证：} 2.2T = 1.1 \text{ s} \checkmark)$$
+$$
+t_{10\%} = -T\ln(0.9) = 0.5 \times 0.105 = 0.053 \text{ s}
+$$
+$$
+t_{90\%} = -T\ln(0.1) = 0.5 \times 2.303 = 1.151 \text{ s}
+$$
+$$
+\boxed{t_r = 1.151 - 0.053 \approx 1.1 \text{ s}} \quad (\text{验证：} 2.2T = 1.1 \text{ s} \checkmark)
+$$
 
 调节时间（2%）：$\boxed{t_s = 4T = 2.0 \text{ s}}$
 
@@ -563,39 +629,61 @@ $$\boxed{t_r = 1.151 - 0.053 \approx 1.1 \text{ s}} \quad (\text{验证：} 2.2T
 
 **2.** 对比标准形式 $s^2 + 2\zeta\omega_n s + \omega_n^2$：
 
-$$\omega_n^2 = 36 \implies \boxed{\omega_n = 6 \text{ rad/s}}$$
+$$
+\omega_n^2 = 36 \implies \boxed{\omega_n = 6 \text{ rad/s}}
+$$
 
-$$2\zeta\omega_n = 4.8 \implies \zeta = \frac{4.8}{2 \times 6} = \boxed{0.4}$$
+$$
+2\zeta\omega_n = 4.8 \implies \zeta = \frac{4.8}{2 \times 6} = \boxed{0.4}
+$$
 
 $0 < \zeta < 1$，**欠阻尼**。
 
-$$\omega_d = \omega_n\sqrt{1-\zeta^2} = 6\sqrt{1-0.16} = 6 \times 0.917 = 5.50 \text{ rad/s}$$
+$$
+\omega_d = \omega_n\sqrt{1-\zeta^2} = 6\sqrt{1-0.16} = 6 \times 0.917 = 5.50 \text{ rad/s}
+$$
 
-$$\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{5.50} = 0.571 \text{ s}}$$
+$$
+\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{5.50} = 0.571 \text{ s}}
+$$
 
-$$\boxed{M_p = e^{-\pi \times 0.4/0.917} = e^{-1.371} = 25.4\%}$$
+$$
+\boxed{M_p = e^{-\pi \times 0.4/0.917} = e^{-1.371} = 25.4\%}
+$$
 
-$$\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{0.4 \times 6} = 1.67 \text{ s}}$$
+$$
+\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{0.4 \times 6} = 1.67 \text{ s}}
+$$
 
 ---
 
 **3.** 由 $M_p \leq 5\%$：
 
-$$e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.05 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.05) = 2.996$$
+$$
+e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.05 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.05) = 2.996
+$$
 
-$$\frac{\zeta}{\sqrt{1-\zeta^2}} \geq \frac{2.996}{\pi} = 0.954$$
+$$
+\frac{\zeta}{\sqrt{1-\zeta^2}} \geq \frac{2.996}{\pi} = 0.954
+$$
 
 两边平方：$\zeta^2 \geq 0.910(1-\zeta^2) \implies \zeta^2 \geq 0.476$
 
-$$\boxed{\zeta \geq 0.690}$$
+$$
+\boxed{\zeta \geq 0.690}
+$$
 
 由 $t_s \leq 2$ s：
 
-$$\frac{4}{\zeta\omega_n} \leq 2 \implies \zeta\omega_n \geq 2$$
+$$
+\frac{4}{\zeta\omega_n} \leq 2 \implies \zeta\omega_n \geq 2
+$$
 
 当 $\zeta = 0.690$ 时，$\omega_n \geq 2/0.690 = 2.90$ rad/s。
 
-$$\boxed{\zeta \geq 0.690, \quad \omega_n \geq \frac{2}{\zeta}}$$
+$$
+\boxed{\zeta \geq 0.690, \quad \omega_n \geq \frac{2}{\zeta}}
+$$
 
 ---
 
@@ -607,17 +695,29 @@ $$\boxed{\zeta \geq 0.690, \quad \omega_n \geq \frac{2}{\zeta}}$$
 
 由稳态增益确定近似系统：$G(0) = \frac{100}{10 \times 10} = 1$
 
-$$G_{\text{approx}}(s) = \frac{10}{s^2 + 2s + 10}$$
+$$
+G_{\text{approx}}(s) = \frac{10}{s^2 + 2s + 10}
+$$
 
-$$\boxed{\omega_n = \sqrt{10} = 3.16 \text{ rad/s}, \quad \zeta = \frac{1}{\sqrt{10}} = 0.316}$$
+$$
+\boxed{\omega_n = \sqrt{10} = 3.16 \text{ rad/s}, \quad \zeta = \frac{1}{\sqrt{10}} = 0.316}
+$$
 
-$$\omega_d = \sqrt{10}\sqrt{1-0.1} = \sqrt{9} = 3.00 \text{ rad/s}$$
+$$
+\omega_d = \sqrt{10}\sqrt{1-0.1} = \sqrt{9} = 3.00 \text{ rad/s}
+$$
 
-$$\boxed{t_p = \frac{\pi}{3.00} = 1.05 \text{ s}}$$
+$$
+\boxed{t_p = \frac{\pi}{3.00} = 1.05 \text{ s}}
+$$
 
-$$\boxed{M_p = e^{-\pi \times 0.316/0.949} = e^{-1.046} = 35.1\%}$$
+$$
+\boxed{M_p = e^{-\pi \times 0.316/0.949} = e^{-1.046} = 35.1\%}
+$$
 
-$$\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{1} = 4.0 \text{ s}}$$
+$$
+\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{1} = 4.0 \text{ s}}
+$$
 
 ---
 
@@ -625,19 +725,29 @@ $$\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{1} = 4.0 \text{ s}}$$
 
 由 $M_p \leq 10\%$：
 
-$$e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.10 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.1) = 2.303$$
+$$
+e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.10 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.1) = 2.303
+$$
 
-$$\frac{\zeta}{\sqrt{1-\zeta^2}} \geq 0.733 \implies \zeta^2 \geq 0.537(1-\zeta^2) \implies \zeta^2 \geq 0.349$$
+$$
+\frac{\zeta}{\sqrt{1-\zeta^2}} \geq 0.733 \implies \zeta^2 \geq 0.537(1-\zeta^2) \implies \zeta^2 \geq 0.349
+$$
 
-$$\boxed{\zeta \geq 0.591}$$
+$$
+\boxed{\zeta \geq 0.591}
+$$
 
 阻尼系数 $c = 2\zeta\omega_n m$：
 
-$$\boxed{c \geq 2 \times 0.591 \times 8 \times 250 = 2364 \text{ N·s/m}}$$
+$$
+\boxed{c \geq 2 \times 0.591 \times 8 \times 250 = 2364 \text{ N·s/m}}
+$$
 
 取 $\zeta = 0.591$ 时调节时间最小：
 
-$$\boxed{t_s \approx \frac{4}{0.591 \times 8} = 0.85 \text{ s}}$$
+$$
+\boxed{t_s \approx \frac{4}{0.591 \times 8} = 0.85 \text{ s}}
+$$
 
 $\zeta$ 越大，$t_s$ 越大，所以最小调节时间为 0.85 s。
 
@@ -645,21 +755,35 @@ $\zeta$ 越大，$t_s$ 越大，所以最小调节时间为 0.85 s。
 
 **6.** 由峰值 $y_{\max} = 1.16$：
 
-$$M_p = \frac{1.16 - 1.0}{1.0} = 16\%$$
+$$
+M_p = \frac{1.16 - 1.0}{1.0} = 16\%
+$$
 
-$$e^{-\pi\zeta/\sqrt{1-\zeta^2}} = 0.16 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} = -\ln(0.16) = 1.833$$
+$$
+e^{-\pi\zeta/\sqrt{1-\zeta^2}} = 0.16 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} = -\ln(0.16) = 1.833
+$$
 
-$$\frac{\zeta}{\sqrt{1-\zeta^2}} = 0.583 \implies \zeta^2 = \frac{0.340}{1.340} = 0.254$$
+$$
+\frac{\zeta}{\sqrt{1-\zeta^2}} = 0.583 \implies \zeta^2 = \frac{0.340}{1.340} = 0.254
+$$
 
-$$\boxed{\zeta \approx 0.50}$$
+$$
+\boxed{\zeta \approx 0.50}
+$$
 
 由 $t_p = 0.5$ s：
 
-$$\omega_d = \frac{\pi}{t_p} = \frac{\pi}{0.5} = 6.28 \text{ rad/s}$$
+$$
+\omega_d = \frac{\pi}{t_p} = \frac{\pi}{0.5} = 6.28 \text{ rad/s}
+$$
 
-$$\omega_n = \frac{\omega_d}{\sqrt{1-\zeta^2}} = \frac{6.28}{\sqrt{1-0.254}} = \frac{6.28}{0.863}$$
+$$
+\omega_n = \frac{\omega_d}{\sqrt{1-\zeta^2}} = \frac{6.28}{\sqrt{1-0.254}} = \frac{6.28}{0.863}
+$$
 
-$$\boxed{\omega_n \approx 7.3 \text{ rad/s}}$$
+$$
+\boxed{\omega_n \approx 7.3 \text{ rad/s}}
+$$
 
 **验证**：$t_s \approx \frac{4}{0.50 \times 7.3} = 1.1$ s，但题目给出 $t_s = 2.0$ s。两者不一致，暗示系统可能**不是纯二阶系统**——可能有零点或额外极点的影响。这本身就是一个有价值的发现：实际数据与理想公式之间的差距，往往揭示了系统的复杂动态。
 
@@ -686,11 +810,15 @@ $$\boxed{\omega_n \approx 7.3 \text{ rad/s}}$$
 
 **8.** 输入 $R(s) = 3/s^2$，系统 $G(s) = \frac{1}{2s+1} = \frac{0.5}{s + 0.5}$。
 
-$$Y(s) = G(s) \cdot R(s) = \frac{0.5}{s+0.5} \cdot \frac{3}{s^2} = \frac{1.5}{s^2(s+0.5)}$$
+$$
+Y(s) = G(s) \cdot R(s) = \frac{0.5}{s+0.5} \cdot \frac{3}{s^2} = \frac{1.5}{s^2(s+0.5)}
+$$
 
 部分分式展开：
 
-$$\frac{1.5}{s^2(s+0.5)} = \frac{A}{s} + \frac{B}{s^2} + \frac{C}{s+0.5}$$
+$$
+\frac{1.5}{s^2(s+0.5)} = \frac{A}{s} + \frac{B}{s^2} + \frac{C}{s+0.5}
+$$
 
 通分比较系数：$1.5 = As(s+0.5) + B(s+0.5) + Cs^2$
 
@@ -698,21 +826,31 @@ $$\frac{1.5}{s^2(s+0.5)} = \frac{A}{s} + \frac{B}{s^2} + \frac{C}{s+0.5}$$
 - 令 $s = -0.5$：$1.5 = 0.25C \implies C = 6$
 - 比较 $s^2$ 系数：$0 = A + C \implies A = -6$
 
-$$Y(s) = \frac{-6}{s} + \frac{3}{s^2} + \frac{6}{s+0.5}$$
+$$
+Y(s) = \frac{-6}{s} + \frac{3}{s^2} + \frac{6}{s+0.5}
+$$
 
-$$\boxed{y(t) = -6 + 3t + 6e^{-0.5t} = 3t - 6(1 - e^{-t/2}), \quad t \geq 0}$$
+$$
+\boxed{y(t) = -6 + 3t + 6e^{-0.5t} = 3t - 6(1 - e^{-t/2}), \quad t \geq 0}
+$$
 
 稳态跟踪误差：
 
-$$e(t) = r(t) - y(t) = 3t - [3t - 6(1-e^{-t/2})] = 6(1-e^{-t/2})$$
+$$
+e(t) = r(t) - y(t) = 3t - [3t - 6(1-e^{-t/2})] = 6(1-e^{-t/2})
+$$
 
-$$\boxed{e(\infty) = 6}$$
+$$
+\boxed{e(\infty) = 6}
+$$
 
 物理意义：一阶系统跟踪斜坡输入时，稳态误差为常数 $= T \times A = 0.5 \times 3 \times 2 = 3 \times T \times 2$... 实际上 $e(\infty) = T \cdot \dot{r} = 0.5 \times 3 \times 2$... 让我重新推导。
 
 对于 $G(s) = \frac{1}{Ts+1}$，斜坡输入 $r(t) = At$，稳态误差 $e_{ss} = AT$。这里 $A = 3$，$T = 2$... 不对，$G(s) = \frac{1}{2s+1}$，所以 $T = 2$。
 
-$$\boxed{e_{ss} = AT = 3 \times 2 = 6}$$
+$$
+\boxed{e_{ss} = AT = 3 \times 2 = 6}
+$$
 
 与上面的计算结果一致 ✓。
 
@@ -724,25 +862,39 @@ $$\boxed{e_{ss} = AT = 3 \times 2 = 6}$$
 
 **脉冲响应**：对 $U(s) = 1$（单位脉冲），
 
-$$Y(s) = G(s) = \frac{25}{s^2 + 4s + 25} = \frac{25}{(s+2)^2 + \omega_d^2}$$
+$$
+Y(s) = G(s) = \frac{25}{s^2 + 4s + 25} = \frac{25}{(s+2)^2 + \omega_d^2}
+$$
 
 查表（$\mathcal{L}^{-1}\left\{\frac{\omega_n^2}{(s+\sigma)^2 + \omega_d^2}\right\} = \frac{\omega_n^2}{\omega_d} e^{-\sigma t}\sin(\omega_d t)$）：
 
-$$\boxed{y(t) = \frac{25}{4.58} e^{-2t}\sin(4.58t) = 5.46\, e^{-2t}\sin(4.58t), \quad t \geq 0}$$
+$$
+\boxed{y(t) = \frac{25}{4.58} e^{-2t}\sin(4.58t) = 5.46\, e^{-2t}\sin(4.58t), \quad t \geq 0}
+$$
 
 **脉冲响应的峰值时间**：令 $\dot{y}(t) = 0$。
 
-$$\dot{y}(t) = 5.46\,e^{-2t}[-2\sin(4.58t) + 4.58\cos(4.58t)] = 0$$
+$$
+\dot{y}(t) = 5.46\,e^{-2t}[-2\sin(4.58t) + 4.58\cos(4.58t)] = 0
+$$
 
-$$\tan(4.58\,t_p^{\text{impulse}}) = \frac{4.58}{2} = 2.29$$
+$$
+\tan(4.58\,t_p^{\text{impulse}}) = \frac{4.58}{2} = 2.29
+$$
 
-$$4.58\,t_p^{\text{impulse}} = \arctan(2.29) = 1.156 \text{ rad}$$
+$$
+4.58\,t_p^{\text{impulse}} = \arctan(2.29) = 1.156 \text{ rad}
+$$
 
-$$\boxed{t_p^{\text{impulse}} = \frac{1.156}{4.58} = 0.252 \text{ s}}$$
+$$
+\boxed{t_p^{\text{impulse}} = \frac{1.156}{4.58} = 0.252 \text{ s}}
+$$
 
 **与阶跃响应对比**：阶跃响应的峰值时间
 
-$$t_p^{\text{step}} = \frac{\pi}{\omega_d} = \frac{\pi}{4.58} = 0.686 \text{ s}$$
+$$
+t_p^{\text{step}} = \frac{\pi}{\omega_d} = \frac{\pi}{4.58} = 0.686 \text{ s}
+$$
 
 脉冲响应的峰值时间（0.252 s）**早于**阶跃响应的峰值时间（0.686 s）。
 

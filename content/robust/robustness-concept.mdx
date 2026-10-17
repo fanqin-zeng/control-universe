@@ -34,7 +34,9 @@ description: 理解控制系统鲁棒性的含义，掌握不确定性的分类�
 
 考虑一个电机位置控制系统。标称模型：
 
-$$G(s) = \frac{1}{Js^2 + bs}$$
+$$
+G(s) = \frac{1}{Js^2 + bs}
+$$
 
 其中 $J = 0.01$ kg·m² 为转动惯量，$b = 0.1$ N·m·s/rad 为阻尼系数。用 PID 控制器 $C(s) = 50 + \frac{10}{s} + 0.5s$ 设计，标称情况下相位裕度 $PM = 45.6°$，阶跃响应超调 30.2%。
 
@@ -119,7 +121,9 @@ $J$ 增大 10 倍，相位裕度从 45.6° 暴跌到 14.8°，超调从 30% 飙�
 
 **例子**：一阶系统 $G(s) = \frac{K}{Ts + 1}$，其中增益 $K$ 和时间常数 $T$ 不精确已知：
 
-$$K \in [K_0 - \Delta K,\; K_0 + \Delta K], \quad T \in [T_0 - \Delta T,\; T_0 + \Delta T]$$
+$$
+K \in [K_0 - \Delta K,\; K_0 + \Delta K], \quad T \in [T_0 - \Delta T,\; T_0 + \Delta T]
+$$
 
 数学描述：定义参数集合 $\mathcal{G} = \{G(s, \theta) : \theta \in \Theta\}$，其中 $\Theta$ 是参数的可能范围。实际对象是集合中的某一个，但我们不知道是哪一个。
 
@@ -141,13 +145,17 @@ $$K \in [K_0 - \Delta K,\; K_0 + \Delta K], \quad T \in [T_0 - \Delta T,\; T_0 +
 
 **加性不确定性**：
 
-$$G_{\text{actual}}(s) = G(s) + \Delta(s), \quad |\Delta(j\omega)| \leq W_a(\omega)$$
+$$
+G_{\text{actual}}(s) = G(s) + \Delta(s), \quad |\Delta(j\omega)| \leq W_a(\omega)
+$$
 
 $G(s)$ 是标称模型，$\Delta(s)$ 是未知的偏差，$W_a(\omega)$ 是频率相关的上界。
 
 **乘性不确定性**：
 
-$$G_{\text{actual}}(s) = G(s)[1 + \Delta_m(s)], \quad |\Delta_m(j\omega)| \leq W_m(\omega)$$
+$$
+G_{\text{actual}}(s) = G(s)[1 + \Delta_m(s)], \quad |\Delta_m(j\omega)| \leq W_m(\omega)
+$$
 
 等价地写成 $G_{\text{actual}}(s) = G(s) + G(s)\Delta_m(s)$，偏差与标称模型成比例。
 
@@ -256,20 +264,28 @@ display(interact(plot_unmodeled,
 
 考虑标准单位负反馈系统：
 
-$$\boxed{Y(s) = T(s)R(s) + S(s)D(s) - T(s)N(s)}$$
+$$
+\boxed{Y(s) = T(s)R(s) + S(s)D(s) - T(s)N(s)}
+$$
 
 其中：
 
-$$S(s) = \frac{1}{1 + G(s)C(s)}$$
+$$
+S(s) = \frac{1}{1 + G(s)C(s)}
+$$
 
-$$T(s) = \frac{G(s)C(s)}{1 + G(s)C(s)}$$
+$$
+T(s) = \frac{G(s)C(s)}{1 + G(s)C(s)}
+$$
 
 - $S(s)$：**灵敏度函数**（Sensitivity Function）
 - $T(s)$：**补灵敏度函数**（Complementary Sensitivity Function）
 
 ### 基本关系
 
-$$\boxed{S(s) + T(s) = 1}$$
+$$
+\boxed{S(s) + T(s) = 1}
+$$
 
 证明：$S + T = \frac{1}{1+GC} + \frac{GC}{1+GC} = \frac{1+GC}{1+GC} = 1$。
 
@@ -420,7 +436,9 @@ plt.show()`
 
 对于一个稳定传递函数 $G(s)$：
 
-$$\|G\|_\infty = \sup_{\omega \in \mathbb{R}} |G(j\omega)|$$
+$$
+\|G\|_\infty = \sup_{\omega \in \mathbb{R}} |G(j\omega)|
+$$
 
 直觉：**$\|G\|_\infty$ 是系统对正弦输入的最大放大倍数**。如果输入 $r(t) = A\sin(\omega_0 t)$，稳态输出的峰值为 $|G(j\omega_0)| \cdot A \leq \|G\|_\infty \cdot A$。
 
@@ -434,7 +452,9 @@ $$\|G\|_\infty = \sup_{\omega \in \mathbb{R}} |G(j\omega)|$$
 
 在鲁棒控制中，不确定性 $\Delta(s)$ 是未知的，只知道它的"大小"有上界。用 $\mathcal{H}_\infty$ 范数描述：
 
-$$\|\Delta\|_\infty \leq \gamma$$
+$$
+\|\Delta\|_\infty \leq \gamma
+$$
 
 意思是：**对所有频率，$|\Delta(j\omega)| \leq \gamma$**。
 
@@ -448,7 +468,9 @@ $$\|\Delta\|_\infty \leq \gamma$$
 
 考虑反馈系统，其中 $M(s)$ 是已知的稳定传递函数，$\Delta(s)$ 是未知的稳定传递函数（代表不确定性）。反馈连接如图所示：
 
-$$z = M w, \quad w = \Delta z$$
+$$
+z = M w, \quad w = \Delta z
+$$
 
 > **小增益定理**：如果 $\|M\|_\infty \cdot \|\Delta\|_\infty < 1$，则闭环系统稳定。
 
@@ -462,7 +484,9 @@ $$z = M w, \quad w = \Delta z$$
 
 闭环稳定的充分条件：
 
-$$\|T\|_\infty < \frac{1}{\gamma_m}$$
+$$
+\|T\|_\infty < \frac{1}{\gamma_m}
+$$
 
 其中 $T(s) = \frac{GC}{1+GC}$ 是补灵敏度函数。
 
@@ -472,7 +496,9 @@ $$\|T\|_\infty < \frac{1}{\gamma_m}$$
 
 闭环稳定的充分条件：
 
-$$\|CS\|_\infty < \frac{1}{\gamma_a}$$
+$$
+\|CS\|_\infty < \frac{1}{\gamma_a}
+$$
 
 其中 $C(s)S(s)$ 是控制信号对扰动的传递函数。
 
@@ -493,7 +519,9 @@ $$\|CS\|_\infty < \frac{1}{\gamma_a}$$
 
 **LQR 的鲁棒性定理**：对于连续时间 LQR，回路传递函数 $L(s) = K(sI-A)^{-1}B$ 满足：
 
-$$|1 + L(j\omega)| \geq 1 \quad \forall \omega$$
+$$
+|1 + L(j\omega)| \geq 1 \quad \forall \omega
+$$
 
 等价地：$|S(j\omega)| \leq 1 \quad \forall \omega$，即 $\|S\|_\infty \leq 1$。
 
@@ -599,49 +627,75 @@ LQR 的 $\|S\|_\infty \leq 1$ 是**理论上最优的**——不可能做得更�
 
 (a) $L(s) = \frac{10}{s(s+2)} = \frac{10}{s^2 + 2s}$
 
-$$S(s) = \frac{1}{1+L} = \frac{s^2+2s}{s^2+2s+10}$$
+$$
+S(s) = \frac{1}{1+L} = \frac{s^2+2s}{s^2+2s+10}
+$$
 
-$$T(s) = \frac{L}{1+L} = \frac{10}{s^2+2s+10}$$
+$$
+T(s) = \frac{L}{1+L} = \frac{10}{s^2+2s+10}
+$$
 
 验证：$S + T = \frac{s^2+2s+10}{s^2+2s+10} = 1$ ✓
 
 (b) 令 $s = j\omega$：
 
-$$|S(j\omega)|^2 = \frac{\omega^4 + 4\omega^2}{(10-\omega^2)^2 + 4\omega^2}$$
+$$
+|S(j\omega)|^2 = \frac{\omega^4 + 4\omega^2}{(10-\omega^2)^2 + 4\omega^2}
+$$
 
 令 $x = \omega^2$，$f(x) = \frac{x^2+4x}{x^2-16x+100}$。对 $x$ 求导令为零：
 
-$$f'(x) = \frac{(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16)}{(x^2-16x+100)^2} = 0$$
+$$
+f'(x) = \frac{(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16)}{(x^2-16x+100)^2} = 0
+$$
 
 分子展开化简：
 
-$$(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16) = -20x^2 + 200x + 400 = 0$$
+$$
+(2x+4)(x^2-16x+100) - (x^2+4x)(2x-16) = -20x^2 + 200x + 400 = 0
+$$
 
-$$x^2 - 10x - 20 = 0 \implies x = 5 + 3\sqrt{5} \approx 11.71$$
+$$
+x^2 - 10x - 20 = 0 \implies x = 5 + 3\sqrt{5} \approx 11.71
+$$
 
 （取正值，$x = 5 - 3\sqrt{5} < 0$ 舍去。）
 
 代入 $f(x)$：
 
-$$|S|^2_{\max} = \frac{(5+3\sqrt{5})^2 + 4(5+3\sqrt{5})}{(5+3\sqrt{5})^2 - 16(5+3\sqrt{5}) + 100} = \frac{90 + 42\sqrt{5}}{70 - 36\sqrt{5}}$$
+$$
+|S|^2_{\max} = \frac{(5+3\sqrt{5})^2 + 4(5+3\sqrt{5})}{(5+3\sqrt{5})^2 - 16(5+3\sqrt{5}) + 100} = \frac{90 + 42\sqrt{5}}{70 - 36\sqrt{5}}
+$$
 
 化简（分子分母同乘 $70+36\sqrt{5}$）得：
 
-$$\|S\|_\infty^2 = \frac{171 + 78\sqrt{5}}{50} = 9 + 4\sqrt{5} \approx 17.944^{0.5 \times 2}$$
+$$
+\|S\|_\infty^2 = \frac{171 + 78\sqrt{5}}{50} = 9 + 4\sqrt{5} \approx 17.944^{0.5 \times 2}
+$$
 
-$$\boxed{\|S\|_\infty = \sqrt{9 + 4\sqrt{5}} \approx 1.923 \quad (5.68 \text{ dB})}$$
+$$
+\boxed{\|S\|_\infty = \sqrt{9 + 4\sqrt{5}} \approx 1.923 \quad (5.68 \text{ dB})}
+$$
 
 峰值频率 $\omega_{\text{peak}} = \sqrt{5+3\sqrt{5}} \approx 3.42$ rad/s。
 
 (c) $\omega = 1$：
 
-$$S(j) = \frac{-1+2j}{-1+2j+10} = \frac{-1+2j}{9+2j} = \frac{(-1+2j)(9-2j)}{81+4} = \frac{-5+20j}{85}$$
+$$
+S(j) = \frac{-1+2j}{-1+2j+10} = \frac{-1+2j}{9+2j} = \frac{(-1+2j)(9-2j)}{81+4} = \frac{-5+20j}{85}
+$$
 
-$$|S(j)| = \frac{\sqrt{25+400}}{85} = \frac{\sqrt{425}}{85} \approx 0.243$$
+$$
+|S(j)| = \frac{\sqrt{25+400}}{85} = \frac{\sqrt{425}}{85} \approx 0.243
+$$
 
-$$T(j) = 1 - S(j) = \frac{90-20j}{85}$$
+$$
+T(j) = 1 - S(j) = \frac{90-20j}{85}
+$$
 
-$$|T(j)| = \frac{\sqrt{8100+400}}{85} = \frac{\sqrt{8500}}{85} \approx 1.085$$
+$$
+|T(j)| = \frac{\sqrt{8100+400}}{85} = \frac{\sqrt{8500}}{85} \approx 1.085
+$$
 
 验证：$S(j) + T(j) = \frac{-5+20j+90-20j}{85} = \frac{85}{85} = 1$ ✓
 
@@ -649,7 +703,9 @@ $$|T(j)| = \frac{\sqrt{8100+400}}{85} = \frac{\sqrt{8500}}{85} \approx 1.085$$
 
 (a) 标称 $K_0 = 1$：$G_0(s) = \frac{1}{s+1}$，$C(s) = \frac{5}{s}$
 
-$$T_0(s) = \frac{G_0 C}{1 + G_0 C} = \frac{\frac{5}{s(s+1)}}{1 + \frac{5}{s(s+1)}} = \frac{5}{s^2+s+5}$$
+$$
+T_0(s) = \frac{G_0 C}{1 + G_0 C} = \frac{\frac{5}{s(s+1)}}{1 + \frac{5}{s(s+1)}} = \frac{5}{s^2+s+5}
+$$
 
 (b) $G_p = \frac{K}{s+1} = \frac{K_0}{s+1} \cdot \frac{K}{K_0} = G_0 \cdot \frac{K}{K_0}$
 
@@ -665,7 +721,9 @@ $T_0(s) = \frac{5}{s^2+s+5}$，$\omega_n^2 = 5$，$2\zeta\omega_n = 1$，$\zeta 
 
 $\|T_0\|_\infty$：因为 $\zeta < 1/\sqrt{2}$，$T_0$ 有谐振峰。
 
-$$\|T_0\|_\infty = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.224 \times \sqrt{1-0.05}} = \frac{1}{0.447 \times 0.975} \approx 2.29$$
+$$
+\|T_0\|_\infty = \frac{1}{2\zeta\sqrt{1-\zeta^2}} = \frac{1}{2 \times 0.224 \times \sqrt{1-0.05}} = \frac{1}{0.447 \times 0.975} \approx 2.29
+$$
 
 $2.29 > 1 = 1/\gamma_m$，小增益定理条件**不满足**。
 
@@ -675,41 +733,61 @@ $2.29 > 1 = 1/\gamma_m$，小增益定理条件**不满足**。
 
 (a) $L(s) = \frac{\omega_n^2}{s^2+2\zeta\omega_n s}$
 
-$$S(s) = \frac{1}{1+L} = \frac{s^2+2\zeta\omega_n s}{s^2+2\zeta\omega_n s + \omega_n^2}$$
+$$
+S(s) = \frac{1}{1+L} = \frac{s^2+2\zeta\omega_n s}{s^2+2\zeta\omega_n s + \omega_n^2}
+$$
 
 (b) 令 $s = j\omega$，$u = (\omega/\omega_n)^2$：
 
-$$|S(j\omega)|^2 = \frac{\omega^4 + 4\zeta^2\omega_n^2\omega^2}{(\omega_n^2-\omega^2)^2 + 4\zeta^2\omega_n^2\omega^2} = \frac{u^2 + 4\zeta^2 u}{(1-u)^2 + 4\zeta^2 u} = \frac{u^2+4\zeta^2 u}{u^2+(4\zeta^2-2)u+1}$$
+$$
+|S(j\omega)|^2 = \frac{\omega^4 + 4\zeta^2\omega_n^2\omega^2}{(\omega_n^2-\omega^2)^2 + 4\zeta^2\omega_n^2\omega^2} = \frac{u^2 + 4\zeta^2 u}{(1-u)^2 + 4\zeta^2 u} = \frac{u^2+4\zeta^2 u}{u^2+(4\zeta^2-2)u+1}
+$$
 
 令 $f(u) = \frac{u^2+4\zeta^2 u}{u^2+(4\zeta^2-2)u+1}$，令 $f'(u) = 0$：
 
-$$(2u+4\zeta^2)[u^2+(4\zeta^2-2)u+1] - (u^2+4\zeta^2 u)(2u+4\zeta^2-2) = 0$$
+$$
+(2u+4\zeta^2)[u^2+(4\zeta^2-2)u+1] - (u^2+4\zeta^2 u)(2u+4\zeta^2-2) = 0
+$$
 
 展开并化简（令 $c = 4\zeta^2$，$d = c-2$）：
 
-$$(2u+c)(u^2+du+1) - (u^2+cu)(2u+d) = (d-c)u^2 + 2u + c = -2u^2 + 2u + 4\zeta^2 = 0$$
+$$
+(2u+c)(u^2+du+1) - (u^2+cu)(2u+d) = (d-c)u^2 + 2u + c = -2u^2 + 2u + 4\zeta^2 = 0
+$$
 
-$$\boxed{u^2 - u - 2\zeta^2 = 0}$$
+$$
+\boxed{u^2 - u - 2\zeta^2 = 0}
+$$
 
 解得（取正值）：
 
-$$u_{\text{peak}} = \frac{1 + \sqrt{1+8\zeta^2}}{2}$$
+$$
+u_{\text{peak}} = \frac{1 + \sqrt{1+8\zeta^2}}{2}
+$$
 
 (c) 当 $\zeta = 0.5$ 时：
 
-$$u_{\text{peak}} = \frac{1+\sqrt{3}}{2} \approx 1.366$$
+$$
+u_{\text{peak}} = \frac{1+\sqrt{3}}{2} \approx 1.366
+$$
 
 代入 $|S|^2$ 表达式（注意 $4\zeta^2 = 1$）：
 
-$$\|S\|_\infty^2 = \frac{u^2 + u}{(1-u)^2 + u}$$
+$$
+\|S\|_\infty^2 = \frac{u^2 + u}{(1-u)^2 + u}
+$$
 
 分子：$u^2 + u = u(u+1) = \frac{1+\sqrt{3}}{2} \cdot \frac{3+\sqrt{3}}{2} = \frac{3+2\sqrt{3}}{2}$
 
 分母：$(1-u)^2 + u = \frac{(\sqrt{3}-1)^2}{4} + \frac{1+\sqrt{3}}{2} = \frac{4-2\sqrt{3}}{4} + \frac{2+2\sqrt{3}}{4} = \frac{6}{4} = \frac{3}{2}$
 
-$$\|S\|_\infty^2 = \frac{(3+2\sqrt{3})/2}{3/2} = \frac{3+2\sqrt{3}}{3} \approx 2.155$$
+$$
+\|S\|_\infty^2 = \frac{(3+2\sqrt{3})/2}{3/2} = \frac{3+2\sqrt{3}}{3} \approx 2.155
+$$
 
-$$\boxed{\|S\|_\infty = \sqrt{\frac{3+2\sqrt{3}}{3}} \approx 1.468 \quad (3.33 \text{ dB})}$$
+$$
+\boxed{\|S\|_\infty = \sqrt{\frac{3+2\sqrt{3}}{3}} \approx 1.468 \quad (3.33 \text{ dB})}
+$$
 
 $M_S = 1.468$ 对应典型相位裕度约 $45°$，属于良好水平。
 

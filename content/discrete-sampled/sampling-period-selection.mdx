@@ -19,7 +19,9 @@ description: "数字控制系统中采样周期的选择——ZOH等效延迟、
 
 从频域看，ZOH 的频率响应为：
 
-$$H_{ZOH}(j\omega) = \frac{1 - e^{-j\omega T_s}}{j\omega} = T_s \cdot \text{sinc}\!\left(\frac{\omega T_s}{2}\right) \cdot e^{-j\omega T_s / 2}$$
+$$
+H_{ZOH}(j\omega) = \frac{1 - e^{-j\omega T_s}}{j\omega} = T_s \cdot \text{sinc}\!\left(\frac{\omega T_s}{2}\right) \cdot e^{-j\omega T_s / 2}
+$$
 
 其中 $\text{sinc}(x) = \sin(x)/x$。
 
@@ -36,11 +38,15 @@ $$H_{ZOH}(j\omega) = \frac{1 - e^{-j\omega T_s}}{j\omega} = T_s \cdot \text{sinc
 
 设连续系统的开环传递函数为 $L_c(s)$，增益穿越频率为 $\omega_{gc}$，相位裕度为 $PM_c$。离散化后（ZOH + 采样），在 $\omega_{gc}$ 处额外引入的相位滞后为：
 
-$$\Delta\phi = -\frac{\omega_{gc} T_s}{2} \text{ (rad)} = -\frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi} \text{ (°)}$$
+$$
+\Delta\phi = -\frac{\omega_{gc} T_s}{2} \text{ (rad)} = -\frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi} \text{ (°)}
+$$
 
 因此离散系统的相位裕度近似为：
 
-$$\boxed{PM_d \approx PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi}}$$
+$$
+\boxed{PM_d \approx PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi}}
+$$
 
 > 💡 **核心公式**：每增加 1 ms 的采样周期，在 $\omega_{gc} = 100$ rad/s 处，相位裕度减少约 $2.9°$。在 $\omega_{gc} = 1000$ rad/s 处，减少约 $28.6°$——带宽越高，对采样周期越敏感。
 
@@ -180,19 +186,25 @@ interact(plot_step_response,
 
 **Shannon 采样定理**给出了无混叠的最低采样频率：
 
-$$f_s > 2 f_{max}$$
+$$
+f_s > 2 f_{max}
+$$
 
 其中 $f_{max}$ 是信号中最高频率分量。但这是**信号重建**的最低要求，不是控制系统的要求。
 
 为什么控制系统需要更高的采样率？因为控制不仅需要"看到"信号，还需要**足够的相位裕度**。如果只按 Shannon 采样（$f_s = 2f_c$），在 $\omega_c$ 处的相位滞后为：
 
-$$\Delta\phi = -\frac{\omega_c \cdot \pi/\omega_c}{2} = -\frac{\pi}{2} = -90°$$
+$$
+\Delta\phi = -\frac{\omega_c \cdot \pi/\omega_c}{2} = -\frac{\pi}{2} = -90°
+$$
 
 直接吃掉 90° 的相位裕度——大多数系统会不稳定。
 
 **工程经验法则**：
 
-$$\boxed{\omega_s \geq (10 \sim 30)\,\omega_c \quad \Leftrightarrow \quad T_s \leq \frac{2\pi}{(10 \sim 30)\,\omega_c}}$$
+$$
+\boxed{\omega_s \geq (10 \sim 30)\,\omega_c \quad \Leftrightarrow \quad T_s \leq \frac{2\pi}{(10 \sim 30)\,\omega_c}}
+$$
 
 其中 $\omega_c$ 是期望的闭环带宽。
 
@@ -211,11 +223,15 @@ $$\boxed{\omega_s \geq (10 \sim 30)\,\omega_c \quad \Leftrightarrow \quad T_s \l
 
 由 $PM_d \approx PM_c - \omega_{gc} T_s / 2 \times 180/\pi$，得：
 
-$$\boxed{T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}}$$
+$$
+\boxed{T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}}
+$$
 
 **例**：连续系统 $PM_c = 60°$，$\omega_{gc} = 100$ rad/s，要求 $PM_d \geq 45°$。
 
-$$T_s \leq \frac{2 \times (60 - 45)}{100} \times \frac{\pi}{180} = \frac{30}{100} \times \frac{\pi}{180} = 0.00524 \text{ s} \approx 5.2 \text{ ms}$$
+$$
+T_s \leq \frac{2 \times (60 - 45)}{100} \times \frac{\pi}{180} = \frac{30}{100} \times \frac{\pi}{180} = 0.00524 \text{ s} \approx 5.2 \text{ ms}
+$$
 
 取标准值 $T_s = 5$ ms。
 
@@ -347,11 +363,15 @@ interact(plot_pm_vs_Ts,
 
 **计算延迟** $T_{compute}$ 常被忽略，但在高速系统中不可忽略：
 
-$$\text{总等效延迟} = \frac{T_s}{2} + T_{compute} + T_{comm}$$
+$$
+\text{总等效延迟} = \frac{T_s}{2} + T_{compute} + T_{comm}
+$$
 
 修正后的相位裕度公式：
 
-$$PM_d \approx PM_c - \left(\frac{T_s}{2} + T_{compute} + T_{comm}\right) \omega_{gc} \times \frac{180}{\pi}$$
+$$
+PM_d \approx PM_c - \left(\frac{T_s}{2} + T_{compute} + T_{comm}\right) \omega_{gc} \times \frac{180}{\pi}
+$$
 
 ### 工程设计流程
 
@@ -643,11 +663,15 @@ interact(simulate_cascade,
 
 由相位裕度约束公式：
 
-$$T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}$$
+$$
+T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}
+$$
 
 代入 $PM_c = 51.3°$，$PM_{min} = 40°$，$\omega_{gc} = 4.5$ rad/s：
 
-$$T_s \leq \frac{2 \times (51.3 - 40)}{4.5} \times \frac{\pi}{180} = \frac{2 \times 11.3}{4.5} \times 0.01745 = 5.02 \times 0.01745 \approx 0.0877 \text{ s}$$
+$$
+T_s \leq \frac{2 \times (51.3 - 40)}{4.5} \times \frac{\pi}{180} = \frac{2 \times 11.3}{4.5} \times 0.01745 = 5.02 \times 0.01745 \approx 0.0877 \text{ s}
+$$
 
 取标准值 $T_s = 50$ ms 或 $20$ ms。
 
@@ -675,17 +699,29 @@ $$T_s \leq \frac{2 \times (51.3 - 40)}{4.5} \times \frac{\pi}{180} = \frac{2 \ti
 
 相位裕度约束：
 
-$$PM_d \approx PM_c - \tau \cdot \omega_{gc} \times \frac{180}{\pi} \geq 40°$$
+$$
+PM_d \approx PM_c - \tau \cdot \omega_{gc} \times \frac{180}{\pi} \geq 40°
+$$
 
-$$55 - (T_s/2 + 0.7 \times 10^{-3}) \times 200 \times \frac{180}{\pi} \geq 40$$
+$$
+55 - (T_s/2 + 0.7 \times 10^{-3}) \times 200 \times \frac{180}{\pi} \geq 40
+$$
 
-$$(T_s/2 + 0.0007) \times 200 \times 57.3 \leq 15$$
+$$
+(T_s/2 + 0.0007) \times 200 \times 57.3 \leq 15
+$$
 
-$$T_s/2 + 0.0007 \leq \frac{15}{200 \times 57.3} = 0.001309$$
+$$
+T_s/2 + 0.0007 \leq \frac{15}{200 \times 57.3} = 0.001309
+$$
 
-$$T_s/2 \leq 0.001309 - 0.0007 = 0.000609$$
+$$
+T_s/2 \leq 0.001309 - 0.0007 = 0.000609
+$$
 
-$$T_s \leq 0.001218 \text{ s} \approx 1.2 \text{ ms}$$
+$$
+T_s \leq 0.001218 \text{ s} \approx 1.2 \text{ ms}
+$$
 
 取标准值 $T_s = 1$ ms。
 

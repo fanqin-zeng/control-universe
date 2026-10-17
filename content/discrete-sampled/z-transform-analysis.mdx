@@ -25,13 +25,17 @@ description: 离散时间系统的数学工具——Z变换定义、常用变换
 
 回顾上一节，理想采样信号的拉普拉斯变换：
 
-$$X^*(s) = \sum_{k=0}^{\infty} x(kT_s) e^{-skT_s}$$
+$$
+X^*(s) = \sum_{k=0}^{\infty} x(kT_s) e^{-skT_s}
+$$
 
 其中 $x(kT_s)$ 是采样时刻的信号值，$T_s$ 是采样周期。
 
 令 $z = e^{sT_s}$，则 $z^{-k} = e^{-skT_s}$，代入得到：
 
-$$X(z) = \sum_{k=0}^{\infty} x[k] z^{-k}$$
+$$
+X(z) = \sum_{k=0}^{\infty} x[k] z^{-k}
+$$
 
 这就是**（单边）Z 变换**，记为 $X(z) = \mathcal{Z}\{x[k]\}$。
 
@@ -43,7 +47,9 @@ Z 变换是一个无穷级数，只在某些 $z$ 值下收敛。对于因果信�
 
 例如，单位阶跃 $1[k]$ 的 Z 变换：
 
-$$\mathcal{Z}\{1[k]\} = \sum_{k=0}^{\infty} z^{-k} = \frac{1}{1 - z^{-1}} = \frac{z}{z-1}, \quad |z| > 1$$
+$$
+\mathcal{Z}\{1[k]\} = \sum_{k=0}^{\infty} z^{-k} = \frac{1}{1 - z^{-1}} = \frac{z}{z-1}, \quad |z| > 1
+$$
 
 收敛条件 $|z| > 1$ 来自几何级数求和公式。
 
@@ -66,7 +72,9 @@ $$\mathcal{Z}\{1[k]\} = \sum_{k=0}^{\infty} z^{-k} = \frac{1}{1 - z^{-1}} = \fra
 
 **推导示例**：指数序列 $x[k] = a^k$
 
-$$X(z) = \sum_{k=0}^{\infty} a^k z^{-k} = \sum_{k=0}^{\infty} \left(\frac{a}{z}\right)^k = \frac{1}{1 - a/z} = \frac{z}{z-a}, \quad |z| > |a|$$
+$$
+X(z) = \sum_{k=0}^{\infty} a^k z^{-k} = \sum_{k=0}^{\infty} \left(\frac{a}{z}\right)^k = \frac{1}{1 - a/z} = \frac{z}{z-a}, \quad |z| > |a|
+$$
 
 这是几何级数求和，条件 $|a/z| < 1$ 即 $|z| > |a|$。
 
@@ -74,23 +82,33 @@ $$X(z) = \sum_{k=0}^{\infty} a^k z^{-k} = \sum_{k=0}^{\infty} \left(\frac{a}{z}\
 
 ### 线性
 
-$$\mathcal{Z}\{a x_1[k] + b x_2[k]\} = a X_1(z) + b X_2(z)$$
+$$
+\mathcal{Z}\{a x_1[k] + b x_2[k]\} = a X_1(z) + b X_2(z)
+$$
 
 ### 延迟定理
 
-$$\mathcal{Z}\{x[k-n]\} = z^{-n} X(z) \quad (\text{零初始条件})$$
+$$
+\mathcal{Z}\{x[k-n]\} = z^{-n} X(z) \quad (\text{零初始条件})
+$$
 
 **物理意义**：时域延迟 $n$ 步 = 频域乘以 $z^{-n}$。这是 Z 变换最核心的性质——差分方程中的延迟项直接对应 $z^{-1}$ 的多项式。
 
 ### 超前定理
 
-$$\mathcal{Z}\{x[k+1]\} = z X(z) - z x[0]$$
+$$
+\mathcal{Z}\{x[k+1]\} = z X(z) - z x[0]
+$$
 
-$$\mathcal{Z}\{x[k+n]\} = z^n X(z) - z^n x[0] - z^{n-1} x[1] - \cdots - z x[n-1]$$
+$$
+\mathcal{Z}\{x[k+n]\} = z^n X(z) - z^n x[0] - z^{n-1} x[1] - \cdots - z x[n-1]
+$$
 
 ### 终值定理
 
-$$\lim_{k \to \infty} x[k] = \lim_{z \to 1} (z-1) X(z)$$
+$$
+\lim_{k \to \infty} x[k] = \lim_{z \to 1} (z-1) X(z)
+$$
 
 **条件**：$(z-1)X(z)$ 的所有极点在单位圆内（即 $x[k]$ 收敛）。
 
@@ -98,7 +116,9 @@ $$\lim_{k \to \infty} x[k] = \lim_{z \to 1} (z-1) X(z)$$
 
 ### 初值定理
 
-$$x[0] = \lim_{z \to \infty} X(z)$$
+$$
+x[0] = \lim_{z \to \infty} X(z)
+$$
 
 ## 逆 Z 变换
 
@@ -116,21 +136,31 @@ $$x[0] = \lim_{z \to \infty} X(z)$$
 
 **步骤 1**：展开为部分分式
 
-$$\frac{X(z)}{z} = \frac{1}{(z-1)(z-0.5)} = \frac{A}{z-1} + \frac{B}{z-0.5}$$
+$$
+\frac{X(z)}{z} = \frac{1}{(z-1)(z-0.5)} = \frac{A}{z-1} + \frac{B}{z-0.5}
+$$
 
 **步骤 2**：求系数
 
-$$A = \lim_{z \to 1} (z-1) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{1-0.5} = 2$$
+$$
+A = \lim_{z \to 1} (z-1) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{1-0.5} = 2
+$$
 
-$$B = \lim_{z \to 0.5} (z-0.5) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{0.5-1} = -2$$
+$$
+B = \lim_{z \to 0.5} (z-0.5) \cdot \frac{1}{(z-1)(z-0.5)} = \frac{1}{0.5-1} = -2
+$$
 
 **步骤 3**：反变换
 
-$$X(z) = \frac{2z}{z-1} - \frac{2z}{z-0.5}$$
+$$
+X(z) = \frac{2z}{z-1} - \frac{2z}{z-0.5}
+$$
 
 查表：$\frac{z}{z-1} \leftrightarrow 1[k]$，$\frac{z}{z-0.5} \leftrightarrow 0.5^k$
 
-$$x[k] = 2 - 2 \cdot 0.5^k = 2(1 - 0.5^k), \quad k \geq 0$$
+$$
+x[k] = 2 - 2 \cdot 0.5^k = 2(1 - 0.5^k), \quad k \geq 0
+$$
 
 **验证**：$x[0] = 2(1-1) = 0$，$x[1] = 2(1-0.5) = 1$，$x[2] = 2(1-0.25) = 1.5$，$\lim_{k \to \infty} x[k] = 2$。
 
@@ -142,7 +172,9 @@ $$x[k] = 2 - 2 \cdot 0.5^k = 2(1 - 0.5^k), \quad k \geq 0$$
 
 设 $s = \sigma + j\omega$，则：
 
-$$z = e^{(\sigma + j\omega)T_s} = e^{\sigma T_s} \cdot e^{j\omega T_s}$$
+$$
+z = e^{(\sigma + j\omega)T_s} = e^{\sigma T_s} \cdot e^{j\omega T_s}
+$$
 
 - **幅值**：$|z| = e^{\sigma T_s}$
 - **相角**：$\angle z = \omega T_s$
@@ -351,7 +383,9 @@ $z$ 平面上，角度 $\omega T_s$ 和 $\omega T_s + 2\pi$ 对应同一个点�
 
 这意味着：离散系统的频率响应是**周期的**，周期为 $\omega_s = 2\pi/T_s$。
 
-$$G(e^{j(\omega + \omega_s)T_s}) = G(e^{j\omega T_s})$$
+$$
+G(e^{j(\omega + \omega_s)T_s}) = G(e^{j\omega T_s})
+$$
 
 物理意义：频率 $\omega$ 和 $\omega + k\omega_s$ 在离散系统中不可区分——这就是上一节讲的**混叠**。
 
@@ -361,7 +395,9 @@ $$G(e^{j(\omega + \omega_s)T_s}) = G(e^{j\omega T_s})$$
 
 离散系统的输入输出关系：
 
-$$Y(z) = G(z) U(z)$$
+$$
+Y(z) = G(z) U(z)
+$$
 
 $G(z)$ 称为**脉冲传递函数**（或离散传递函数），是连续传递函数 $G(s)$ 的离散等效。
 
@@ -373,7 +409,9 @@ $G(z)$ 称为**脉冲传递函数**（或离散传递函数），是连续传递
 
 假设控制输入经过零阶保持器（ZOH），则：
 
-$$G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}$$
+$$
+G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}
+$$
 
 **步骤**：
 1. 计算 $\frac{G(s)}{s}$ 的拉普拉斯逆变换 $g(t)$
@@ -383,7 +421,9 @@ $$G(z) = (1 - z^{-1}) \mathcal{Z}\left\{\frac{G(s)}{s}\right\}$$
 
 **示例**：$G(s) = \frac{1}{s+a}$
 
-$$\frac{G(s)}{s} = \frac{1}{s(s+a)} = \frac{1/a}{s} - \frac{1/a}{s+a}$$
+$$
+\frac{G(s)}{s} = \frac{1}{s(s+a)} = \frac{1/a}{s} - \frac{1/a}{s+a}
+$$
 
 反变换：$g(t) = \frac{1}{a}(1 - e^{-at})$
 
@@ -391,13 +431,17 @@ $$\frac{G(s)}{s} = \frac{1}{s(s+a)} = \frac{1/a}{s} - \frac{1/a}{s+a}$$
 
 Z 变换：$G_0(z) = \frac{1}{a}\left(\frac{z}{z-1} - \frac{z}{z-e^{-aT}}\right) = \frac{1}{a} \cdot \frac{z(1-e^{-aT})}{(z-1)(z-e^{-aT})}$
 
-$$G(z) = (1-z^{-1}) G_0(z) = \frac{1-e^{-aT}}{z - e^{-aT}}$$
+$$
+G(z) = (1-z^{-1}) G_0(z) = \frac{1-e^{-aT}}{z - e^{-aT}}
+$$
 
 #### 方法 2：Tustin 变换（双线性变换）
 
 用代数替换近似：
 
-$$s = \frac{2}{T} \cdot \frac{z-1}{z+1} \quad \Longleftrightarrow \quad z = \frac{1 + sT/2}{1 - sT/2}$$
+$$
+s = \frac{2}{T} \cdot \frac{z-1}{z+1} \quad \Longleftrightarrow \quad z = \frac{1 + sT/2}{1 - sT/2}
+$$
 
 直接代入 $G(s)$ 得到 $G(z)$。
 
@@ -412,9 +456,13 @@ $$s = \frac{2}{T} \cdot \frac{z-1}{z+1} \quad \Longleftrightarrow \quad z = \fra
 
 **示例**：$G(s) = \frac{1}{s+1}$，$T = 0.1$ s
 
-$$s = \frac{2}{0.1} \cdot \frac{z-1}{z+1} = 20 \cdot \frac{z-1}{z+1}$$
+$$
+s = \frac{2}{0.1} \cdot \frac{z-1}{z+1} = 20 \cdot \frac{z-1}{z+1}
+$$
 
-$$G(z) = \frac{1}{20 \cdot \frac{z-1}{z+1} + 1} = \frac{z+1}{20(z-1) + (z+1)} = \frac{z+1}{21z - 19}$$
+$$
+G(z) = \frac{1}{20 \cdot \frac{z-1}{z+1} + 1} = \frac{z+1}{20(z-1) + (z+1)} = \frac{z+1}{21z - 19}
+$$
 
 ### 两种方法的对比
 
@@ -506,15 +554,21 @@ print(f"  两种方法在 Nyquist 频率 ({np.pi/Ts:.0f} rad/s) 附近都有较�
 
 脉冲传递函数 $G(z)$ 的标准形式：
 
-$$G(z) = \frac{Y(z)}{U(z)} = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots}{1 + a_1 z^{-1} + a_2 z^{-2} + \cdots}$$
+$$
+G(z) = \frac{Y(z)}{U(z)} = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots}{1 + a_1 z^{-1} + a_2 z^{-2} + \cdots}
+$$
 
 交叉相乘：
 
-$$Y(z)(1 + a_1 z^{-1} + a_2 z^{-2} + \cdots) = U(z)(b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots)$$
+$$
+Y(z)(1 + a_1 z^{-1} + a_2 z^{-2} + \cdots) = U(z)(b_0 + b_1 z^{-1} + b_2 z^{-2} + \cdots)
+$$
 
 利用 $z^{-n} X(z) \leftrightarrow x[k-n]$，得到**差分方程**：
 
-$$y[k] = -a_1 y[k-1] - a_2 y[k-2] - \cdots + b_0 u[k] + b_1 u[k-1] + b_2 u[k-2] + \cdots$$
+$$
+y[k] = -a_1 y[k-1] - a_2 y[k-2] - \cdots + b_0 u[k] + b_1 u[k-1] + b_2 u[k-2] + \cdots
+$$
 
 **代码实现**（伪代码）：
 
@@ -624,7 +678,9 @@ print("（误差来自浮点精度，两者本质相同）")`
 
 Tustin 变换的频率映射：
 
-$$\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)$$
+$$
+\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)
+$$
 
 在低频段（$\omega T_s \ll 1$），$\tan(x) \approx x$，$\omega_d \approx \omega$，无扭曲。
 
@@ -691,19 +747,25 @@ $$\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)$$
 
 **(a)** $x[k] = 3 \cdot 0.8^k$
 
-$$X(z) = 3 \cdot \frac{z}{z - 0.8} = \frac{3z}{z - 0.8}$$
+$$
+X(z) = 3 \cdot \frac{z}{z - 0.8} = \frac{3z}{z - 0.8}
+$$
 
 **(b)** $x[k] = 1 - e^{-0.5kT}$，$T = 0.2$
 
 $e^{-0.5T} = e^{-0.1} \approx 0.905$
 
-$$X(z) = \frac{z}{z-1} - \frac{z}{z - 0.905} = \frac{z(z - 0.905) - z(z-1)}{(z-1)(z-0.905)} = \frac{0.095z}{(z-1)(z-0.905)}$$
+$$
+X(z) = \frac{z}{z-1} - \frac{z}{z - 0.905} = \frac{z(z - 0.905) - z(z-1)}{(z-1)(z-0.905)} = \frac{0.095z}{(z-1)(z-0.905)}
+$$
 
 **(c)** $x[k] = k \cdot 0.5^k$
 
 利用性质 $\mathcal{Z}\{k \cdot a^k\} = -z \frac{d}{dz}\left(\frac{z}{z-a}\right) = \frac{az}{(z-a)^2}$
 
-$$X(z) = \frac{0.5z}{(z - 0.5)^2}$$
+$$
+X(z) = \frac{0.5z}{(z - 0.5)^2}
+$$
 
 **习题 2 答案**：
 
@@ -745,11 +807,15 @@ $x[k] = 2 - (0.707)^k (\cos(k\pi/4) + \sin(k\pi/4))$
 
 $G(z) = \frac{1 - e^{-5T}}{z - e^{-5T}}$，$e^{-5 \times 0.05} = e^{-0.25} \approx 0.779$
 
-$$G_{ZOH}(z) = \frac{0.221}{z - 0.779}$$
+$$
+G_{ZOH}(z) = \frac{0.221}{z - 0.779}
+$$
 
 **(b)** Tustin 变换：$s = \frac{2}{0.05} \cdot \frac{z-1}{z+1} = 40 \cdot \frac{z-1}{z+1}$
 
-$$G_{Tustin}(z) = \frac{5}{40 \cdot \frac{z-1}{z+1} + 5} = \frac{5(z+1)}{40(z-1) + 5(z+1)} = \frac{5(z+1)}{45z - 35} = \frac{z+1}{9z - 7}$$
+$$
+G_{Tustin}(z) = \frac{5}{40 \cdot \frac{z-1}{z+1} + 5} = \frac{5(z+1)}{40(z-1) + 5(z+1)} = \frac{5(z+1)}{45z - 35} = \frac{z+1}{9z - 7}
+$$
 
 化为标准形式：$G_{Tustin}(z) = \frac{(1/9)(z+1)}{z - 7/9} = \frac{0.111(z+1)}{z - 0.778}$
 
