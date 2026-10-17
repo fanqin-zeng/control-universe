@@ -1,0 +1,305 @@
+---
+title: 随机过程
+description: 从电子秤连续读数理解轨迹、时间相关、平稳性和白噪声，连接谱、马尔可夫链与协方差传播。
+---
+
+# 随机过程
+
+## 电子秤的一串读数
+
+把同一件物品放在电子秤上，每秒记一次读数。即使物品没有变，末位数字也可能上下跳；有时这次偏高，下一次也容易偏高。重新做一遍，记录又会不同。
+
+上一课用一个随机变量描述一次测量误差；现在的问题是：**一串误差怎样一起变化？前后读数是否有关，平均后还能减少多少波动？** 用 $X_k$ 表示第 $k$ 秒的称量误差，单位为克（g），$k=0,1,\ldots$。
+
+先看一个教学模型：下一次误差保留上次的一部分，再加入新的扰动。默认保留比例 $a=1/2$，新扰动均值为零、方差为 $q=3/4$ g²，初始误差为零。下图的四条曲线是**选定的可能轨迹**，不是电子秤实测数据，也不是大样本统计。
+
+<ARProcessExplorer />
+
+图中“总体方差”来自概率模型的推导，不是拿这四条曲线算出来的。默认第 $3$ 秒均值仍为零，方差为 $63/64\approx0.9844$ g²；曲线却不必在零线上。下面先说明这里的“总体”是什么。
+
+## 一条轨迹与一族随机量
+
+随机过程是一族由时间编号的随机变量 $\{X_k\}$，它们定义在同一概率模型上。固定时刻 $k$，跨重复试验看 $X_k$ 的分布；固定一次试验的结果，就得到随 $k$ 变化的一条样本轨迹。
+
+这两个方向不能交换。一条轨迹上有很多时刻，不表示拿到了很多相互独立的样本。只知道每个 $X_k$ 的单独分布，也不能确定它们如何一起变化；还需要联合分布。
+
+如果任取有限多个时刻，组成的随机向量都服从联合高斯分布，就称为高斯过程。不是每个时刻单独看起来像正态，就足以证明联合高斯。
+
+## 均值与相关函数
+
+在所需矩存在时，均值函数、原始自相关与自协方差分别定义为
+
+$$
+m_k=E[X_k],\qquad R(k,j)=E[X_kX_j],\qquad
+C(k,j)=E[(X_k-m_k)(X_j-m_j)]=R(k,j)-m_km_j.
+$$
+
+本课取实值过程。$C(k,k)$ 就是时刻 $k$ 的方差；不同时间的协方差描述两次偏差怎样共同变化。$R$ 与 $C$ 不是同一个量；只有均值为零时才相同。
+
+例如 $X_k=2+Z_k$ g，其中各 $Z_k$ 独立、等概率取 $\pm1$ g。均值为 $2$ g，同一时刻 $R(k,k)=5$ g²、$C(k,k)=1$ g²；不同时间 $R(k,j)=4$ g²、$C(k,j)=0$。不减均值会把固定偏置也算进相关函数。
+
+## 平稳不等于不变
+
+严格平稳要求：任取一组时刻，整体平移后，联合分布保持不变。宽平稳只要求有限二阶矩、均值为常数、自协方差只依赖时间差。写 $\gamma_\ell=C(k+\ell,k)$；对实值宽平稳过程，$\gamma_{-\ell}=\gamma_\ell$。
+
+平稳说的是概率规律，不是一条曲线保持不动。宽平稳也不自动推出严格平稳；高斯过程例外，因为它的有限维分布由均值和协方差确定。
+
+平稳更不保证一条长轨迹能恢复总体均值。取随机量 $A$ 等概率为 $\pm1$ g，让 $X_k=A$ 在所有时刻都不变。这个过程严格平稳，总体均值为零，但任意长度的单条轨迹平均始终是 $+1$ 或 $-1$ g。
+
+本课把 $E[(\bar X_n-m)^2]\to0$ 称为均值的均方遍历，其中 $\bar X_n$ 是连续 $n$ 个时刻的平均。上述常量过程的均方误差始终为 $1$ g²，故不满足这一性质。不要仅凭“平稳”就用一条记录的时间平均代替总体平均。
+
+## 白噪声与独立
+
+本课的离散白噪声约定为零均值、固定方差 $q$，且不同时间不相关：
+
+$$
+E[W_k]=0,\qquad E[W_kW_j]=q\,\delta_{kj}.
+$$
+
+$\delta_{kj}$ 在 $k=j$ 时为 $1$，其它时候为零，是离散的 Kronecker 符号。它不是连续时间的狄拉克冲激。
+
+独立同分布、零均值有限方差的序列是白噪声，但白噪声不必独立。反例：让共同随机幅值 $L$ 等概率为 $1$ 或 $2$ g，各 $\varepsilon_k$ 独立取 $\pm1$ 且与 $L$ 独立，定义 $W_k=L\varepsilon_k$。不同时间协方差为零，方差都为 $5/2$ g²；但各次绝对值共享同一个 $L$。
+
+例如两次绝对值同时为 $1$ g 的概率为 $1/2$，而两个边缘概率乘积为 $1/4$，所以不独立。若明确过程联合高斯，不相关才可推出不同时间的独立性。
+
+<JupyterNotebook title="相关函数与白噪声边界" setupCode={`import sympy as sp
+from itertools import product`} cells={[{code:`biased=[(2+z0,2+z1) for z0,z1 in product([-1,1],repeat=2)]
+mx=sp.Rational(sum(x for x,y in biased),4)
+r0=sp.Rational(sum(x*x for x,y in biased),4)
+r1=sp.Rational(sum(x*y for x,y in biased),4)
+print('带偏置均值/同刻R/C/异刻R/C:',mx,r0,r0-mx**2,r1,r1-mx**2)
+rows=[(L*e0,L*e1) for L,e0,e1 in product([1,2],[-1,1],[-1,1])]
+print('白噪声反例配置数:',len(rows))
+print('均值/方差/跨时协方差:',sp.Rational(sum(x for x,y in rows),8),sp.Rational(sum(x*x for x,y in rows),8),sp.Rational(sum(x*y for x,y in rows),8))
+joint=sp.Rational(sum(abs(x)==1 and abs(y)==1 for x,y in rows),8)
+margin=sp.Rational(sum(abs(x)==1 for x,y in rows),8)
+print('绝对值同时1/边缘乘积:',joint,margin**2)
+constants=[-1,1]
+print('随机常量的时间均值可能值/总体均值/均方误差:',constants,sp.Rational(sum(constants),2),sp.Rational(sum(v*v for v in constants),2))`}]} />
+
+## 带记忆的误差模型
+
+回到电子秤，使用一阶自回归模型（AR(1)）：
+
+$$
+X_{k+1}=aX_k+W_k.
+$$
+
+$a$ 为无量纲比例，$W_k$ 为每步新加入的误差，单位 g。这种新加入的扰动也常称为创新项。现在**额外假设**各 $W_k$ 独立同分布、均值零、方差 $q$，且与初始 $X_0$ 独立。不能只说“白噪声”就偷用这些更强条件。
+
+因此 $W_k$ 与当前状态独立，均值和方差按
+
+$$
+m_{k+1}=am_k,\qquad P_{k+1}=a^2P_k+q,\qquad P_k=\operatorname{Var}(X_k)
+$$
+
+传播。方差式来自平方展开，交叉协方差项因独立性为零。若新扰动与状态相关，就需要保留该交叉项。
+
+在默认 $a=1/2,q=3/4$、$X_0=0$ 下，$m_k=0$，$P_1=3/4$、$P_2=15/16$、$P_3=63/64$ g²。虽然初始值没有不确定性，后续仍不断加入新扰动。
+
+## 从零开始与二阶矩平稳
+
+对 $|a|<1$，方差递推的不动点是
+
+$$
+P_\infty=\frac q{1-a^2},\qquad
+P_k=a^{2k}P_0+\frac{q(1-a^{2k})}{1-a^2}.
+$$
+
+默认 $P_\infty=1$ g²。从零开始时 $P_k=1-4^{-k}$，有限时刻不等于极限。若一开始就令均值为零、$P_0=P_\infty$，并保持初始状态与未来扰动独立，则 $P_k$ 恒定，且
+
+$$
+C(k,j)=a^{k-j}P_j\quad(k\ge j),\qquad
+\gamma_\ell=P_\infty a^{|\ell|}.
+$$
+
+这保证宽平稳。组件的“二阶矩平稳初始化”把 $X_0$ 设为等概率的 $\pm\sqrt{P_\infty}$，创新则独立等概率取 $\pm\sqrt q$。默认参数下，$X_0$ 只有 $\pm1$ 两种值，$X_1$ 却可能取 $\pm1/2\pm\sqrt3/2$ 四种值，所以完整分布已经变化，不能称为严格平稳初始化。
+
+若要构造严格平稳 AR(1)，可以从无限过去用独立同分布创新驱动稳定递推；若创新是高斯且取相应平稳高斯初值，则得到平稳高斯模型。本课只用其明确的均值和协方差，不要求读者实现无限过去。
+
+<JupyterNotebook title="AR矩传播与初始化" setupCode={`import sympy as sp`} cells={[{code:`a,q=sp.Rational(1,2),sp.Rational(3,4)
+P=[sp.Integer(0)]
+for k in range(12):
+    P.append(a*a*P[-1]+q)
+steady=q/(1-a*a)
+print('P0到P3/平稳方差:',P[:4],steady)
+print('P12/距离极限:',P[12],steady-P[12])
+print('从零开始C(3,1)/C(2,0):',a**2*P[1],a**2*P[0])
+print('宽平稳gamma0到3:',[steady*a**l for l in range(4)])
+print('二阶矩初始化下X0取值:',[-1,1])
+print('X1取值:',sorted({s0*a+s1*sp.sqrt(q) for s0 in [-1,1] for s1 in [-1,1]},key=float))`}]} />
+
+## 平均值还剩多少波动
+
+对于均值为 $m$ 的宽平稳过程，连续 $n$ 点平均的方差为
+
+$$
+\operatorname{Var}(\bar X_n)=\frac1{n^2}\left[n\gamma_0+2\sum_{\ell=1}^{n-1}(n-\ell)\gamma_\ell\right].
+$$
+
+这是把所有两两协方差相加后得到的：时间差为 $\ell$ 的无序对有 $n-\ell$ 个。只有其它协方差都为零时，才简化成 $\gamma_0/n$。
+
+将 AR(1) 的平稳方差都固定为 $1$ g²，取四点平均，结果为：
+
+| $a$ | 为保持平稳方差 $1$ 所取的 $q$（g²） | 四点平均方差（g²） |
+|---|---:|---:|
+| $-1/2$ | $3/4$ | $7/64$ |
+| $0$ | $1$ | $1/4$ |
+| $1/2$ | $3/4$ | $33/64$ |
+
+这三行是给定协方差模型的精确计算，不是滤波算法评比。相同的单次方差，不同时间相关会改变平均的方差；不能一律除以四。
+
+当 $\sum_{\ell=-\infty}^{\infty}|\gamma_\ell|<\infty$ 时，上式给平均方差趋零，因此满足前述均值均方遍历。随机常量过程的协方差不随时间差衰减，不满足这个充分条件，平均方差仍为 $1$。
+
+## 频谱里的时间关联
+
+对零均值、宽平稳且协方差绝对可和的实过程，采用离散角频率 $\theta$（rad/步）定义功率谱密度：
+
+$$
+S_X(\theta)=\sum_{\ell=-\infty}^{\infty}\gamma_\ell e^{-j\ell\theta},\qquad
+\gamma_0=\frac1{2\pi}\int_{-\pi}^{\pi}S_X(\theta)\,d\theta.
+$$
+
+它把时间关联写到频率轴上，[傅里叶分析](/math/fourier-analysis)中的正负指数和归一化约定继续适用。这里的离散谱按角频率积分，不能不换单位就当作按 Hz 的谱；每步 $1$ 秒时 $\theta=2\pi f$。
+
+白噪声只有零时差协方差，故 $S_W(\theta)=q$ 为常数。平稳 AR(1) 则有
+
+$$
+S_X(\theta)=\frac q{|1-ae^{-j\theta}|^2}=\frac q{1+a^2-2a\cos\theta}.
+$$
+
+默认参数下，在 $\theta=0,\pi/2,\pi$ 处分别为 $3,3/5,1/3$ g²；按上式积分再除以 $2\pi$ 得方差 $1$ g²。谱不是一次有限记录的 FFT 图，也不保证每条样本轨迹有同样的峰。随机常量或非平稳游走不能直接套本节这组普通谱密度条件。
+
+<JupyterNotebook title="相关平均与谱归一化" setupCode={`import sympy as sp
+from scipy.integrate import quad
+import math`} cells={[{code:`n=4
+for a in [sp.Rational(-1,2),sp.Integer(0),sp.Rational(1,2)]:
+    gamma=[a**l for l in range(4)]
+    v=(n*gamma[0]+2*sum((n-l)*gamma[l] for l in range(1,n)))/n**2
+    print('a/q/四点平均方差:',a,1-a*a,v)
+spectrum=lambda t:.75/(1+.5**2-2*.5*math.cos(t))
+print('谱0/pi2/pi:',[spectrum(t) for t in [0,math.pi/2,math.pi]])
+print('谱积分归一方差:',quad(spectrum,-math.pi,math.pi,epsabs=1e-12,epsrel=1e-12)[0]/(2*math.pi))
+print('平稳AR四点平均方差:',sp.Rational(33,64),'随机常量过程4点方差:',1)`}]} />
+
+## 马尔可夫链
+
+对某些过程，给定现在的状态后，预测下一步不再需要更早的历史；在相关条件概率有定义时，这称为马尔可夫性质。它是**条件**关系，不是说各时刻独立。
+
+以门的“关、开”两种状态为例，行表示当前状态、列表示下一状态，固定转移矩阵
+
+$$
+T=\begin{pmatrix}4/5&1/5\\3/10&7/10\end{pmatrix}.
+$$
+
+各项非负，每行和为 $1$。用行向量 $p_k$ 记录状态概率，则 $p_{k+1}=p_kT$。从关门开始，$p_0=(1,0)$，一步后 $(4/5,1/5)$，两步后 $(7/10,3/10)$。平稳分布满足 $\pi=\pi T$ 且概率和为 $1$，本例为 $(3/5,2/5)$；它不是某一次门的状态。
+
+本例开门概率还满足 $r_{k+1}=1/5+r_k/2$，故从关门出发 $r_k=(2/5)(1-2^{-k})$，趋于 $2/5$。但不是所有链都这样收敛：确定地关开交替的矩阵 $\begin{pmatrix}0&1\\1&0\end{pmatrix}$ 也有平稳分布 $(1/2,1/2)$，从确定关门出发的分布却一直交替，不趋于它。
+
+<JupyterNotebook title="两状态链与周期边界" setupCode={`import sympy as sp`} cells={[{code:`T=sp.Matrix([[sp.Rational(4,5),sp.Rational(1,5)],[sp.Rational(3,10),sp.Rational(7,10)]])
+p=sp.Matrix([[1,0]])
+pi=sp.Matrix([[sp.Rational(3,5),sp.Rational(2,5)]])
+print('转移行和:',[sum(T.row(i)) for i in range(2)])
+print('p1/p2:',p*T,p*T*T)
+print('平稳分布/残差:',pi,pi*T-pi)
+print('k4开门概率/闭式:',(p*T**4)[1],sp.Rational(2,5)*(1-sp.Rational(1,2)**4))
+flip=sp.Matrix([[0,1],[1,0]])
+print('交替链k0到3:',[p*flip**k for k in range(4)])
+print('交替链平稳分布残差:',sp.Matrix([[sp.Rational(1,2),sp.Rational(1,2)]])*flip-sp.Matrix([[sp.Rational(1,2),sp.Rational(1,2)]]))`}]} />
+
+## 随机游走为什么漂移
+
+令 $X_0=0$，每次独立地加上 $\pm1$ g，概率各半：$X_{k+1}=X_k+W_k$。这是随机游走；新增加的部分是白噪声，累积后的 $X_k$ 却不是白噪声。
+
+独立增量给出 $E[X_k]=0$、$\operatorname{Var}(X_k)=k$ g²，以及 $C(k,j)=\min(k,j)$ g²。不同时间方差不同，所以不是宽平稳。均值为零不能阻止某条轨迹逐渐走远。
+
+这相当于 AR 递推取 $a=1$；不能再把 $q/(1-a^2)$ 写成有限平稳方差，也不能直接使用上一节的平稳谱。组件将参数限制在稳定区间，游走另用下面的精确枚举核对。
+
+## 向量过程与协方差传播
+
+若同时记录两个量，把它们组成列向量 $x_k$。均值是向量，协方差是矩阵：$P_k=E[(x_k-m_k)(x_k-m_k)^T]$。对模型 $x_{k+1}=Ax_k+w_k$，若 $w_k$ 与当前状态独立、均值零、协方差为 $Q$，则
+
+$$
+m_{k+1}=Am_k,\qquad P_{k+1}=AP_kA^T+Q.
+$$
+
+下面两个分量都是归一化到同一克标尺的误差，$A=\operatorname{diag}(1/2,1/4)$，
+
+$$
+Q=\begin{pmatrix}3/4&1/4\\1/4&15/16\end{pmatrix},\qquad
+P_\infty=\begin{pmatrix}1&2/7\\2/7&1\end{pmatrix}.
+$$
+
+$Q$ 的非对角项允许同一时刻的两个扰动相关；这与不同时间的扰动独立并不冲突。$P_0=0$ 时 $P_1=Q$，$P_2$ 的对角项为 $15/16,255/256$，非对角项为 $9/32$ g²。本例 $A$ 的两个对角倍率 $1/2,1/4$ 的模都小于 $1$，方差趋于满足 $P_\infty=AP_\infty A^T+Q$ 的解，这叫离散 Lyapunov 方程。
+
+协方差矩阵必须对称半正定。本例 $Q$ 行列式为 $41/64$、$P_\infty$ 行列式为 $45/49$，且首个对角元为正，因此都正定。均值和协方差传播将用于后续状态估计，本课不提前推滤波增益。
+
+<JupyterNotebook title="向量协方差与Lyapunov方程" setupCode={`import sympy as sp`} cells={[{code:`A=sp.diag(sp.Rational(1,2),sp.Rational(1,4))
+Q=sp.Matrix([[sp.Rational(3,4),sp.Rational(1,4)],[sp.Rational(1,4),sp.Rational(15,16)]])
+P0=sp.zeros(2)
+P1=A*P0*A.T+Q
+P2=A*P1*A.T+Q
+Ps=sp.Matrix([[1,sp.Rational(2,7)],[sp.Rational(2,7),1]])
+print('P1/P2:',P1,P2)
+print('Q与Ps行列式:',Q.det(),Ps.det())
+print('Lyapunov残差:',Ps-A*Ps*A.T-Q)
+print('A特征值:',A.eigenvals())`}]} />
+
+## 连续时间的布朗运动
+
+标准布朗运动 $B_t$ 从零开始，具有独立增量；对 $t>s\ge0$，增量 $B_t-B_s$ 为均值零、方差 $t-s$ 的正态变量，以概率 $1$ 具有连续样本轨迹。其均值为零，协方差为 $E[B_tB_s]=\min(t,s)$。
+
+布朗运动本身不平稳，增量却有只依赖时间长度的分布。比如在 $t=1,2,4$ 取样，协方差矩阵为 $\begin{pmatrix}1&1&1\\1&2&2\\1&2&4\end{pmatrix}$；相邻不重叠增量的方差是 $1,1,2$，相互独立。时间数值按秒理解时，物理误差可写为 $\sigma B_t$，其中 $\sigma$ 用 g/√s，使方差 $\sigma^2t$ 用 g²。
+
+这里的连续性不等于能求普通导数；布朗轨迹以概率 $1$ 处处不可微。“连续白噪声是它的导数”只是广义对象的形式说法，不能当作逐点有限方差的普通函数，也不能把离散的 $q\delta_{kj}$ 原样换成连续模型。
+
+连接采样点的分段直线可以画出有限记录，但不因此成为一条真正的布朗轨迹；二值随机游走也不是有限步下精确的布朗运动。本课只计算有限时刻的分布与协方差，不做随机积分。
+
+<JupyterNotebook title="游走与布朗增量协方差" setupCode={`import sympy as sp
+from itertools import product`} cells={[{code:`paths=list(product([-1,1],repeat=4))
+for k in range(5):
+    values=[sum(path[:k]) for path in paths]
+    print('游走k/均值/方差:',k,sp.Rational(sum(values),16),sp.Rational(sum(v*v for v in values),16))
+print('游走C(4,2):',sp.Rational(sum(sum(p[:4])*sum(p[:2]) for p in paths),16))
+times=[1,2,4]
+C=sp.Matrix([[min(t,s) for s in times] for t in times])
+D=sp.Matrix([[1,0,0],[-1,1,0],[0,-1,1]])
+print('Brownian取样协方差:',C)
+print('不重叠增量协方差:',D*C*D.T)`}]} />
+
+## 小结
+
+随机过程把单次不确定性延伸到时间关系。轨迹、总体统计、宽平稳、严格平稳、白噪声和独立性各有定义，不能用一个词代替其它条件。平均的波动要累计协方差，而不总是单次方差除以样本数。
+
+AR、马尔可夫链、随机游走和布朗运动描述不同的记忆与增量结构；给定模型和初始化后，才谈均值、协方差与谱。下一课[凸优化](/math/convex-optimization)进入另一组数学工具，本课不提前展开优化或滤波器设计。
+
+## 习题
+
+1. 对 $X_k=2+Z_k$，$Z_k$ 独立等概率为 $\pm1$，求均值、同刻与异刻的 $R,C$。随机常量 $X_k=A\in\{-1,1\}$ 为什么平稳却不能用一条轨迹恢复总体均值？
+2. 默认AR模型从零开始，求 $P_1,P_2,P_3,P_\infty$。改为二阶矩平稳初始化后，求 $\gamma_0,\gamma_1,\gamma_2$，并解释为什么组件的二值初始化不保证严格平稳。
+3. 平稳方差固定为 $1$、$a=1/2$ 的AR过程，四点平均方差是多少？谱在 $0,\pi/2,\pi$ 的值及积分归一后的方差各是多少？
+4. 两状态链从关门开始，求一步、两步状态分布和平稳分布。为什么确定关开交替的链虽有平稳分布，初始确定时分布仍不收敛？
+5. 对本课向量模型，求 $P_1,P_2$ 和平稳协方差；同一时刻 $Q$ 有非零非对角项，是否违反跨时独立假设？
+6. 二值随机游走的 $k=4$ 方差和 $C(4,2)$ 各是多少？布朗运动在 $1,2,4$ 的相邻增量方差各是多少？为什么不把随机游走或布朗运动直接当平稳白噪声？
+
+## 答案
+
+1. 均值 $2$，同刻 $R=E[(2+Z)^2]=5,C=1$；异刻因独立有 $R=4,C=0$，单位按 g/g²。随机常量的所有有限维分布在时间平移下不变，总体均值零，但任一时间平均是 $\pm1$，均方误差恒为 $1$，故不是均值均方遍历。
+2. 递推 $P_{k+1}=P_k/4+3/4$ 得 $3/4,15/16,63/64$，极限为 $1$ g²。二阶矩平稳时 $\gamma_0=1,\gamma_1=1/2,\gamma_2=1/4$；组件 $X_0=\pm1$，$X_1$ 有 $\pm1/2\pm\sqrt3/2$ 四个值，分布不同，不能由宽平稳推出严格平稳。
+3. 四点平均方差为 $[4+2(3/2+2/4+1/8)]/16=33/64$ g²。谱 $q/(1+a^2-2a\cos\theta)$ 在三个角度为 $3,3/5,1/3$ g²；按 $1/(2\pi)$ 积分得 $1$ g²，不是把三处谱值取平均。
+4. 行向量右乘转移矩阵得 $(4/5,1/5)$、$(7/10,3/10)$。平稳条件与和为一给 $(3/5,2/5)$。交替链从 $(1,0)$ 依次变成 $(0,1),(1,0),\ldots$，不趋于 $(1/2,1/2)$；“存在不动分布”与“任意初始分布收敛”不同。
+5. $P_1=Q$，$P_2=\begin{pmatrix}15/16&9/32\\9/32&255/256\end{pmatrix}$；平稳解为 $\begin{pmatrix}1&2/7\\2/7&1\end{pmatrix}$，代入 $P-APA^T-Q$ 为零。同刻两个分量相关，与不同时刻扰动向量独立不矛盾。
+6. 游走方差为 $4$ g²，协方差为 $\min(4,2)=2$ g²；布朗不重叠增量方差为 $1,1,2$（对应时间单位）。两种过程的水平值都累积扰动、方差随时间增长；离散游走的增量才是本例独立白噪声，布朗的形式导数又不是普通逐点随机函数。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import sympy as sp`} cells={[{code:`print('题1均值/同刻R,C/异刻R,C:',2,5,1,4,0,'常量过程平均均方误差1')
+print('题2 P1,P2,P3,Ps:',sp.Rational(3,4),sp.Rational(15,16),sp.Rational(63,64),1)
+print('题2平稳gamma0,1,2:',1,sp.Rational(1,2),sp.Rational(1,4))
+print('题3平均方差/谱0,pi2,pi/归一:',sp.Rational(33,64),[3,sp.Rational(3,5),sp.Rational(1,3)],1)
+T=sp.Matrix([[sp.Rational(4,5),sp.Rational(1,5)],[sp.Rational(3,10),sp.Rational(7,10)]])
+p=sp.Matrix([[1,0]])
+print('题4:',p*T,p*T*T,sp.Matrix([[sp.Rational(3,5),sp.Rational(2,5)]]))
+A=sp.diag(sp.Rational(1,2),sp.Rational(1,4))
+Q=sp.Matrix([[sp.Rational(3,4),sp.Rational(1,4)],[sp.Rational(1,4),sp.Rational(15,16)]])
+Ps=sp.Matrix([[1,sp.Rational(2,7)],[sp.Rational(2,7),1]])
+print('题5 P1/P2/Ps/残差:',Q,A*Q*A.T+Q,Ps,Ps-A*Ps*A.T-Q)
+print('题6:',4,2,[1,1,2])`}]} />

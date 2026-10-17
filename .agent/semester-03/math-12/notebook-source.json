@@ -1,0 +1,142 @@
+{
+  "source": "content/math/stochastic-processes.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 65,
+      "title": "相关函数与白噪声边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom itertools import product",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 66,
+          "delim": "`",
+          "code": "biased=[(2+z0,2+z1) for z0,z1 in product([-1,1],repeat=2)]\r\nmx=sp.Rational(sum(x for x,y in biased),4)\r\nr0=sp.Rational(sum(x*x for x,y in biased),4)\r\nr1=sp.Rational(sum(x*y for x,y in biased),4)\r\nprint('带偏置均值/同刻R/C/异刻R/C:',mx,r0,r0-mx**2,r1,r1-mx**2)\r\nrows=[(L*e0,L*e1) for L,e0,e1 in product([1,2],[-1,1],[-1,1])]\r\nprint('白噪声反例配置数:',len(rows))\r\nprint('均值/方差/跨时协方差:',sp.Rational(sum(x for x,y in rows),8),sp.Rational(sum(x*x for x,y in rows),8),sp.Rational(sum(x*y for x,y in rows),8))\r\njoint=sp.Rational(sum(abs(x)==1 and abs(y)==1 for x,y in rows),8)\r\nmargin=sp.Rational(sum(abs(x)==1 for x,y in rows),8)\r\nprint('绝对值同时1/边缘乘积:',joint,margin**2)\r\nconstants=[-1,1]\r\nprint('随机常量的时间均值可能值/总体均值/均方误差:',constants,sp.Rational(sum(constants),2),sp.Rational(sum(v*v for v in constants),2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 120,
+      "title": "AR矩传播与初始化",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 120,
+          "delim": "`",
+          "code": "a,q=sp.Rational(1,2),sp.Rational(3,4)\r\nP=[sp.Integer(0)]\r\nfor k in range(12):\r\n    P.append(a*a*P[-1]+q)\r\nsteady=q/(1-a*a)\r\nprint('P0到P3/平稳方差:',P[:4],steady)\r\nprint('P12/距离极限:',P[12],steady-P[12])\r\nprint('从零开始C(3,1)/C(2,0):',a**2*P[1],a**2*P[0])\r\nprint('宽平稳gamma0到3:',[steady*a**l for l in range(4)])\r\nprint('二阶矩初始化下X0取值:',[-1,1])\r\nprint('X1取值:',sorted({s0*a+s1*sp.sqrt(q) for s0 in [-1,1] for s1 in [-1,1]},key=float))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 173,
+      "title": "相关平均与谱归一化",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom scipy.integrate import quad\r\nimport math",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 175,
+          "delim": "`",
+          "code": "n=4\r\nfor a in [sp.Rational(-1,2),sp.Integer(0),sp.Rational(1,2)]:\r\n    gamma=[a**l for l in range(4)]\r\n    v=(n*gamma[0]+2*sum((n-l)*gamma[l] for l in range(1,n)))/n**2\r\n    print('a/q/四点平均方差:',a,1-a*a,v)\r\nspectrum=lambda t:.75/(1+.5**2-2*.5*math.cos(t))\r\nprint('谱0/pi2/pi:',[spectrum(t) for t in [0,math.pi/2,math.pi]])\r\nprint('谱积分归一方差:',quad(spectrum,-math.pi,math.pi,epsabs=1e-12,epsrel=1e-12)[0]/(2*math.pi))\r\nprint('平稳AR四点平均方差:',sp.Rational(33,64),'随机常量过程4点方差:',1)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 199,
+      "title": "两状态链与周期边界",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 199,
+          "delim": "`",
+          "code": "T=sp.Matrix([[sp.Rational(4,5),sp.Rational(1,5)],[sp.Rational(3,10),sp.Rational(7,10)]])\r\np=sp.Matrix([[1,0]])\r\npi=sp.Matrix([[sp.Rational(3,5),sp.Rational(2,5)]])\r\nprint('转移行和:',[sum(T.row(i)) for i in range(2)])\r\nprint('p1/p2:',p*T,p*T*T)\r\nprint('平稳分布/残差:',pi,pi*T-pi)\r\nprint('k4开门概率/闭式:',(p*T**4)[1],sp.Rational(2,5)*(1-sp.Rational(1,2)**4))\r\nflip=sp.Matrix([[0,1],[1,0]])\r\nprint('交替链k0到3:',[p*flip**k for k in range(4)])\r\nprint('交替链平稳分布残差:',sp.Matrix([[sp.Rational(1,2),sp.Rational(1,2)]])*flip-sp.Matrix([[sp.Rational(1,2),sp.Rational(1,2)]]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 237,
+      "title": "向量协方差与Lyapunov方程",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 237,
+          "delim": "`",
+          "code": "A=sp.diag(sp.Rational(1,2),sp.Rational(1,4))\r\nQ=sp.Matrix([[sp.Rational(3,4),sp.Rational(1,4)],[sp.Rational(1,4),sp.Rational(15,16)]])\r\nP0=sp.zeros(2)\r\nP1=A*P0*A.T+Q\r\nP2=A*P1*A.T+Q\r\nPs=sp.Matrix([[1,sp.Rational(2,7)],[sp.Rational(2,7),1]])\r\nprint('P1/P2:',P1,P2)\r\nprint('Q与Ps行列式:',Q.det(),Ps.det())\r\nprint('Lyapunov残差:',Ps-A*Ps*A.T-Q)\r\nprint('A特征值:',A.eigenvals())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 258,
+      "title": "游走与布朗增量协方差",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nfrom itertools import product",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 259,
+          "delim": "`",
+          "code": "paths=list(product([-1,1],repeat=4))\r\nfor k in range(5):\r\n    values=[sum(path[:k]) for path in paths]\r\n    print('游走k/均值/方差:',k,sp.Rational(sum(values),16),sp.Rational(sum(v*v for v in values),16))\r\nprint('游走C(4,2):',sp.Rational(sum(sum(p[:4])*sum(p[:2]) for p in paths),16))\r\ntimes=[1,2,4]\r\nC=sp.Matrix([[min(t,s) for s in times] for t in times])\r\nD=sp.Matrix([[1,0,0],[-1,1,0],[0,-1,1]])\r\nprint('Brownian取样协方差:',C)\r\nprint('不重叠增量协方差:',D*C*D.T)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 294,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 294,
+          "delim": "`",
+          "code": "print('题1均值/同刻R,C/异刻R,C:',2,5,1,4,0,'常量过程平均均方误差1')\r\nprint('题2 P1,P2,P3,Ps:',sp.Rational(3,4),sp.Rational(15,16),sp.Rational(63,64),1)\r\nprint('题2平稳gamma0,1,2:',1,sp.Rational(1,2),sp.Rational(1,4))\r\nprint('题3平均方差/谱0,pi2,pi/归一:',sp.Rational(33,64),[3,sp.Rational(3,5),sp.Rational(1,3)],1)\r\nT=sp.Matrix([[sp.Rational(4,5),sp.Rational(1,5)],[sp.Rational(3,10),sp.Rational(7,10)]])\r\np=sp.Matrix([[1,0]])\r\nprint('题4:',p*T,p*T*T,sp.Matrix([[sp.Rational(3,5),sp.Rational(2,5)]]))\r\nA=sp.diag(sp.Rational(1,2),sp.Rational(1,4))\r\nQ=sp.Matrix([[sp.Rational(3,4),sp.Rational(1,4)],[sp.Rational(1,4),sp.Rational(15,16)]])\r\nPs=sp.Matrix([[1,sp.Rational(2,7)],[sp.Rational(2,7),1]])\r\nprint('题5 P1/P2/Ps/残差:',Q,A*Q*A.T+Q,Ps,Ps-A*Ps*A.T-Q)\r\nprint('题6:',4,2,[1,1,2])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

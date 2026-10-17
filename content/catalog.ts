@@ -416,11 +416,30 @@ export const catalog: Chapter[] = [
         "title": "随机过程",
         "prereq": [
           "math/probability-basics",
-          "math/linear-algebra-basics"
+          "math/linear-algebra-basics",
+          "math/fourier-analysis"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {"title": "电子秤的一串读数", "slug": "电子秤的一串读数"},
+          {"title": "一条轨迹与一族随机量", "slug": "一条轨迹与一族随机量"},
+          {"title": "均值与相关函数", "slug": "均值与相关函数"},
+          {"title": "平稳不等于不变", "slug": "平稳不等于不变"},
+          {"title": "白噪声与独立", "slug": "白噪声与独立"},
+          {"title": "带记忆的误差模型", "slug": "带记忆的误差模型"},
+          {"title": "从零开始与二阶矩平稳", "slug": "从零开始与二阶矩平稳"},
+          {"title": "平均值还剩多少波动", "slug": "平均值还剩多少波动"},
+          {"title": "频谱里的时间关联", "slug": "频谱里的时间关联"},
+          {"title": "马尔可夫链", "slug": "马尔可夫链"},
+          {"title": "随机游走为什么漂移", "slug": "随机游走为什么漂移"},
+          {"title": "向量过程与协方差传播", "slug": "向量过程与协方差传播"},
+          {"title": "连续时间的布朗运动", "slug": "连续时间的布朗运动"},
+          {"title": "小结", "slug": "小结"},
+          {"title": "习题", "slug": "习题"},
+          {"title": "答案", "slug": "答案"}
+        ]
       },
       {
         "slug": "convex-optimization",
