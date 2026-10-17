@@ -55,7 +55,7 @@
 | MATH-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/05-matrix-decomposition.md;.agent/semester-03/math-05/acceptance.md;.agent/semester-03/math-05/reconciliation.json;commit:04e98d5af707017cdf1ac293d7914a4a31c274c8 |
 | MATH-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md;.agent/semester-03/math-06/acceptance.md;.agent/semester-03/math-06/reconciliation.json;commit:92df41203811f0eac79bb66470c53036bde361ad |
 | MATH-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/07-ode-matrix-exponential.md;.agent/semester-03/math-07/acceptance.md;.agent/semester-03/math-07/reconciliation.json;commit:12bc125d414db3f5a8ffbdb54518357d064e84e9 |
-| MATH-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/02-math/08-laplace-transform.md;.agent/semester-03/math-08/acceptance.md;.agent/semester-03/math-08/reconciliation.json |
+| MATH-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/02-math/08-laplace-transform.md;.agent/semester-03/math-08/acceptance.md;.agent/semester-03/math-08/reconciliation.json;commit:f092f3e822bdfc4fd406679e4874ae1b91c492b0 |
 | MATH-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MATH-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

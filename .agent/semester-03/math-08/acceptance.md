@@ -39,8 +39,8 @@ A.1共37条逐量对账；相同断言在习题/答案重复时指向相应原�
 
 最终登记后验收全部退出0：npm run check为PASS21/WARN2/FAIL0（check.log）；npm run build完整通过（build-final.log）；npm run build:pages通过205课/9旧入口/306252669字节（pages-build.log）；npx tsc --noEmit通过（types-final.log）；8080根页/课程均200，verify仍PASS8/WARN1/FAIL0/SKIPPED0（page-verify-delivery.log）。
 
-生产导出页7个Notebook均为浏览器模式，KaTeX错误0；边界与发散提示正确，默认恢复一致。第七个答案实验实际点击全部运行后完成，六题输出与独立参考一致；console无error/warn，生产窄屏client343=scroll343，browser-results.json最终pass=true。开发服务的后台启动组合命令曾被自动审批拒绝，未请求额外权限；改为独立类型检查及受工具管理的直接Next dev进程后完成恢复与验证。全局checklist本课前五项完成，合并栏等待实际hash。
+生产导出页7个Notebook均为浏览器模式，KaTeX错误0；边界与发散提示正确，默认恢复一致。第七个答案实验实际点击全部运行后完成，六题输出与独立参考一致；console无error/warn，生产窄屏client343=scroll343，browser-results.json最终pass=true。开发服务的后台启动组合命令曾被自动审批拒绝，未请求额外权限；改为独立类型检查及受工具管理的直接Next dev进程后完成恢复与验证。全局checklist本课六项均完成，合并栏已在实际合入后登记真实hash。
 
-合并记录：待实际合并后填写。
+合并记录：课程提交b565acc，已以--no-ff合入master，实际合并f092f3e822bdfc4fd406679e4874ae1b91c492b0；全局checklist登记同一hash，本回执随后独立合入。
 
 用户proofreading两原文件未编辑、未暂存；不推送远端、不发布gh-pages。下一课需新对话执行。
