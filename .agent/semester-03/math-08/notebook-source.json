@@ -1,0 +1,142 @@
+{
+  "source": "content/math/laplace-transform.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 77,
+      "title": "加权面积与变换表",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\ns = sp.symbols('s')\r\nw = sp.symbols('w', positive=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 80,
+          "delim": "`",
+          "code": "for f in [sp.Integer(1),t,t**2,sp.exp(-t),sp.sin(w*t),sp.cos(w*t)]:\r\n    print('函数/变换/收敛界:',f,sp.laplace_transform(f,t,s))\r\nfinite = sp.integrate(sp.exp(-t),(t,0,4))\r\ntail = sp.integrate(sp.exp(-t),(t,4,sp.oo))\r\nprint('默认有限/尾项/总量:',finite,tail,sp.simplify(finite+tail))\r\nprint('默认近似:',sp.N(finite,12),sp.N(tail,12))\r\nprint('边界r0前4分钟:',sp.integrate(sp.Integer(1),(t,0,4)))\r\nnegative = sp.integrate(sp.exp(t/4),(t,0,4))\r\nprint('不收敛例前4分钟:',negative,sp.N(negative,12))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 124,
+      "title": "移位与导数规则",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\ns = sp.symbols('s')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 126,
+          "delim": "`",
+          "code": "F = sp.laplace_transform(sp.exp(-t),t,s,noconds=True)\r\nfirst = sp.laplace_transform(-sp.exp(-t),t,s,noconds=True)\r\nshifted = sp.laplace_transform(t*sp.exp(-t),t,s)\r\nprint('指数移位:',shifted)\r\nprint('导数直接/带初值/余量:',first,sp.simplify(s*F-1),sp.simplify(first-(s*F-1)))\r\nf = t*sp.exp(-t)\r\nF2 = sp.laplace_transform(f,t,s,noconds=True)\r\nrule = s*s*F2-sp.limit(f,t,0,dir='+')*s-sp.limit(sp.diff(f,t),t,0,dir='+')\r\ndirect = sp.laplace_transform(sp.diff(f,t,2),t,s,noconds=True)\r\nprint('二阶初值:',sp.limit(f,t,0,dir='+'),sp.limit(sp.diff(f,t),t,0,dir='+'))\r\nprint('二阶直接/规则/余量:',direct,sp.simplify(rule),sp.simplify(direct-rule))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 172,
+      "title": "初值问题与部分分式",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\ns = sp.symbols('s')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 174,
+          "delim": "`",
+          "code": "Y0 = 1/(s*(s+1))\r\nY2 = (1/s+2)/(s+1)\r\nYsecond = 1/(s*(s+1)**2)\r\ny0 = sp.inverse_laplace_transform(Y0,s,t)\r\ny2 = sp.inverse_laplace_transform(Y2,s,t)\r\nysecond = sp.inverse_laplace_transform(Ysecond,s,t)\r\nprint('一阶零初值:',sp.apart(Y0,s),y0)\r\nprint('一阶初值/余量:',sp.limit(y0,t,0,dir='+'),sp.limit(y2,t,0,dir='+'),sp.simplify(sp.diff(y0,t)+y0-1),sp.simplify(sp.diff(y2,t)+y2-1))\r\nprint('一阶非零初值:',sp.apart(Y2,s),y2,'ln2时:',sp.simplify(y2.subs(t,sp.log(2))))\r\nprint('二阶分式/解:',sp.apart(Ysecond,s),ysecond)\r\nprint('二阶方程余量/初值:',sp.simplify(sp.diff(ysecond,t,2)+2*sp.diff(ysecond,t)+ysecond-1),sp.limit(ysecond,t,0,dir='+'),sp.limit(sp.diff(ysecond,t),t,0,dir='+'))\r\nprint('二阶ln2时:',sp.simplify(ysecond.subs(t,sp.log(2))),sp.N(ysecond.subs(t,sp.log(2)),12))\r\nprint('二次分母反变换:',sp.inverse_laplace_transform(2/(s*s+4),s,t))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 201,
+      "title": "延迟的时间含义",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', nonnegative=True)\r\ns = sp.symbols('s')\r\nr = sp.symbols('r', positive=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 204,
+          "delim": "`",
+          "code": "base,roc,condition = sp.laplace_transform(1-sp.exp(-r),r,s)\r\ndelayed = sp.exp(-2*s)*base\r\nprint('延迟变换/ROC界/条件:',sp.factor(delayed),roc,condition)\r\ng = sp.Piecewise((0,t<2),(1-sp.exp(-(t-2)),True))\r\nfor q in [1,2,3]:\r\n    print('时刻/输出:',q,g.subs(t,q),sp.N(g.subs(t,q),12))\r\nprint('原响应变换与ROC:',sp.laplace_transform(1-sp.exp(-r),r,s))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 226,
+      "title": "卷积与输入累积",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\nr = sp.symbols('r', real=True)\r\ns = sp.symbols('s')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 229,
+          "delim": "`",
+          "code": "same = sp.integrate(sp.exp(-(t-r))*sp.exp(-r),(r,0,t))\r\nstep = sp.integrate(sp.exp(-(t-r)),(r,0,t))\r\nprint('指数卷积/变换:',same,sp.laplace_transform(same,t,s))\r\nprint('常输入卷积/变换:',step,sp.laplace_transform(step,t,s))\r\nprint('乘法核验:',sp.simplify(sp.laplace_transform(same,t,s,noconds=True)-1/(s+1)**2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 263,
+      "title": "传递函数与初终值检查",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\ns = sp.symbols('s')",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 265,
+          "delim": "`",
+          "code": "G = 2/(s+1)\r\nY = G/s + 3/(s+1)\r\ny = sp.inverse_laplace_transform(Y,s,t)\r\nprint('带初值输出/ln2时:',y,sp.simplify(y.subs(t,sp.log(2))))\r\nprint('方程余量/初值:',sp.simplify(sp.diff(y,t)+y-2),sp.limit(y,t,0,dir='+'))\r\nzero_part = sp.inverse_laplace_transform(G/s,s,t)\r\nprint('零初值部分/漏项/极点:',zero_part,sp.simplify(y-zero_part),sp.solve(sp.denom(G),s))\r\nYstep = 1/(s*(s+1))\r\nprint('合法初值/终值:',sp.limit(s*Ystep,s,sp.oo),sp.limit(s*Ystep,s,0,dir='+'))\r\nfor F in [1/(s*s+1),1/(s-1)]:\r\n    reduced = sp.cancel(s*F)\r\n    print('形式终值/极点:',sp.limit(reduced,s,0,dir='+'),sp.solve(sp.denom(reduced),s))\r\nprint('exp(t)变换与ROC:',sp.laplace_transform(sp.exp(t),t,s))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 303,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import sympy as sp\r\nt = sp.symbols('t', positive=True)\r\ns = sp.symbols('s')\r\nr = sp.symbols('r', real=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 306,
+          "delim": "`",
+          "code": "print('题1:',sp.laplace_transform(sp.exp(-t),t,s),sp.integrate(sp.exp(-t),(t,0,4)),sp.integrate(sp.exp(-t),(t,4,sp.oo)))\r\nprint('题2:',sp.laplace_transform(t*sp.exp(-2*t),t,s))\r\nY3 = (1/s+2)/(s+1)\r\ny3 = sp.inverse_laplace_transform(Y3,s,t)\r\nprint('题3:',sp.apart(Y3,s),y3,sp.simplify(y3.subs(t,sp.log(2))))\r\nY4 = 1/(s*(s+1)**2)\r\ny4 = sp.inverse_laplace_transform(Y4,s,t)\r\nprint('题4:',sp.apart(Y4,s),y4,sp.simplify(y4.subs(t,sp.log(2))))\r\nprint('题5延迟变换/第3分钟:',sp.exp(-2*s)/(s*(s+1)),1-1/sp.E,sp.N(1-1/sp.E,12))\r\nc = sp.integrate(sp.exp(-(t-r))*sp.exp(-r),(r,0,t))\r\nprint('题5卷积/变换:',c,sp.laplace_transform(c,t,s))\r\nfor F in [1/(s*(s+1)),1/(s*s+1),1/(s-1)]:\r\n    R = sp.cancel(s*F)\r\n    print('题6形式终值/极点:',sp.limit(R,s,0,dir='+'),sp.solve(sp.denom(R),s))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

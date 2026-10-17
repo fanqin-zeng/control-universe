@@ -1,3 +1,4 @@
+import { LaplaceWeightExplorer } from "@/components/wiki/laplace-weight-explorer";
 import { CascadeExponentialExplorer } from "@/components/wiki/cascade-exponential-explorer";
 import { MotionIntroExplorer } from "@/components/wiki/motion-intro-explorer";
 import { LinearMapExplorer } from "@/components/wiki/linear-map-explorer";
@@ -73,6 +74,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  LaplaceWeightExplorer,
   CascadeExponentialExplorer,
   a: ({ href = "", ...props }: ComponentProps<"a">) => createElement("a", { ...props, href: withBasePath(href) }),
   img: ({ src = "", ...props }: ComponentProps<"img">) => createElement("img", { ...props, src: withBasePath(src) }),

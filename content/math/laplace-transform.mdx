@@ -1,0 +1,319 @@
+---
+title: 拉普拉斯变换
+description: 从衰减曲线的加权积分出发，理解收敛域、导数与初值项，用代数求解微分方程，并检查初值与终值的条件。
+---
+
+# 拉普拉斯变换
+
+## 从衰减曲线算总影响
+
+上一课的串联水箱里，第一箱染料浓度按 $x_1(t)=e^{-t}$ 衰减。曲线后面越来越低，却没有在某一分钟突然变成零。如果想把它在整个冲洗过程中的影响加起来，要计算的是从开始一直到未来的曲线下面积，而不是读某一个时刻的高度。
+
+以分钟为时间单位，浓度仍是除以固定参考浓度的比例。先只看前 $4$ 分钟：面积为 $1-e^{-4}\approx0.9817$ 分钟；把后面所有时间也算进去，总面积为 $1$ 分钟。这个积分不是染料总量，量纲是“相对浓度乘时间”；它描述整条浓度曲线的累积。
+
+怎样把这样的积分变成解方程的工具？先加一个可以调的权重：较晚发生的变化，可以让它在积分里占得少一些。下面用同一条指数曲线观察权重、有限面积与无限积分，后面再解释公式。
+
+<LaplaceWeightExplorer />
+
+默认权重实部为零，此时没有额外衰减。无限积分的读数来自解析式，阴影只表示有限时间内积入的部分。观察有限面积与尾项，再点“收敛边界”：即使前几分钟的面积可以算出来，也不表示一直积到无穷还会得到有限数。这是学习变换前必须分清的一件事。
+
+## 给积分加一个权重
+
+对记录在 $t\ge0$ 的函数 $f(t)$，定义它的**单边拉普拉斯变换**：
+
+$$
+F(s)=\mathcal L\{f\}(s)=\int_0^\infty f(t)e^{-st}\,dt.
+$$
+
+右边是反常积分：先积到有限的 $T$，再看 $T\to\infty$ 时是否趋于一个有限值。大写 $F$ 和小写 $f$ 是同一段时间信息的两种表示，$F$ 不再以时间为自变量，而是以 $s$ 为自变量。
+
+暂取实数 $s=\sigma$。对 $f(t)=e^{-at}$，加权后变为 $e^{-(a+\sigma)t}$。若 $a+\sigma>0$，就有
+
+$$
+\int_0^T e^{-(a+\sigma)t}\,dt
+=\frac{1-e^{-(a+\sigma)T}}{a+\sigma},\qquad
+F(\sigma)=\frac1{a+\sigma}.
+$$
+
+默认 $a=1,\sigma=0,T=4$，尚未积入的尾项为 $e^{-4}\approx0.0183$ 分钟。若 $a+\sigma=0$，加权曲线恒为 $1$，有限面积等于 $T$，无限积分发散。若 $a+\sigma<0$，曲线还会增长。组件的不收敛示例 $a=1/4,\sigma=-1/2$，前 $4$ 分钟面积为 $4(e-1)\approx6.8731$ 分钟，仍然没有有限的无限积分。
+
+本课信号例子都给出模型和计算条件。这里说局部分段连续，是指每个有限时间区间都可分成有限段，段内连续，接缝处的左右极限有限。对这样的函数，若足够晚以后满足 $|f(t)|\le Me^{ct}$，就称具有**指数阶**；$M$ 是有限常数。此时只要 $\operatorname{Re}s>c$，绝对值积分就收敛。这是常用的充分条件，不是每个函数的最精确边界。
+
+## 复变量与收敛域
+
+在[复数基础](/math/complex-numbers)里，已经学过复数和欧拉公式。这里按控制领域的常见记法，用 $j^2=-1$，写 $s=\sigma+j\omega$。于是
+
+$$
+e^{-st}=e^{-\sigma t}\bigl(\cos\omega t-j\sin\omega t\bigr).
+$$
+
+实部 $\sigma$ 决定衰减权重，虚部 $\omega$ 决定振荡快慢。所以 **$s$ 不是单独一个“频率”**。时间用分钟时，$\sigma$ 的单位为每分钟，$\omega$ 用弧度/分钟；指数整体没有单位。无量纲 $f$ 的变换 $F$ 带分钟单位。
+
+使积分绝对收敛的 $s$ 的集合称为这里的**收敛域**（ROC）。对于实常数 $a$，
+
+$$
+\mathcal L\{e^{-at}\}(s)=\frac1{s+a},\qquad \operatorname{Re}s>-a.
+$$
+
+公式和收敛域必须一起读。$a=1$ 时，$s=0$ 在收敛域内，积分确实为 $1$；$s=-1$ 在边界上，原积分发散，不能把变换理解成一个到处都可代入的分式。分式的代数延拓在某点有值，也不保证那里的积分存在。
+
+本课只做单边变换：它记录非负时间的信息，不要求所有函数在负时间一定为零。后面构造延迟信号时，会另行约定延迟之前为零。普通函数在一个孤立端点取什么值不改变积分；初值规则中的 $f(0^+)$ 则是从右侧接近零的极限，必须明确。
+
+## 常用变换怎样得到
+
+常数 $1$ 的积分是 $1/s$，要求 $\operatorname{Re}s>0$。对 $t$ 做分部积分，可得 $1/s^2$；继续做下去，得到 $t^n$ 的公式，其中 $n$ 是非负整数。正弦与余弦可先按欧拉公式拆成复指数，再分别积分。
+
+| 时间函数（$t\ge0$） | 变换 | 收敛域 |
+|---|---|---|
+| $1$ | $1/s$ | $\operatorname{Re}s>0$ |
+| $t$ | $1/s^2$ | $\operatorname{Re}s>0$ |
+| $t^n$ | $n!/s^{n+1}$ | $\operatorname{Re}s>0$ |
+| $e^{-at}$（$a$ 实数） | $1/(s+a)$ | $\operatorname{Re}s>-a$ |
+| $\sin\omega_0t$（$\omega_0>0$） | $\omega_0/(s^2+\omega_0^2)$ | $\operatorname{Re}s>0$ |
+| $\cos\omega_0t$（$\omega_0>0$） | $s/(s^2+\omega_0^2)$ | $\operatorname{Re}s>0$ |
+
+这些不是六条互不相关的口诀：指数积分是起点，分部积分和指数拆分把其它行连起来。计算机输出的收敛条件也要读；只看分式会漏掉重要信息。
+
+<JupyterNotebook title="加权面积与变换表" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+s = sp.symbols('s')
+w = sp.symbols('w', positive=True)`} cells={[{code:`for f in [sp.Integer(1),t,t**2,sp.exp(-t),sp.sin(w*t),sp.cos(w*t)]:
+    print('函数/变换/收敛界:',f,sp.laplace_transform(f,t,s))
+finite = sp.integrate(sp.exp(-t),(t,0,4))
+tail = sp.integrate(sp.exp(-t),(t,4,sp.oo))
+print('默认有限/尾项/总量:',finite,tail,sp.simplify(finite+tail))
+print('默认近似:',sp.N(finite,12),sp.N(tail,12))
+print('边界r0前4分钟:',sp.integrate(sp.Integer(1),(t,0,4)))
+negative = sp.integrate(sp.exp(t/4),(t,0,4))
+print('不收敛例前4分钟:',negative,sp.N(negative,12))`}]} />
+
+## 线性与指数移位
+
+积分可以拆开，因此对常数 $\alpha,\beta$，在两个变换共同收敛的区域内，$\mathcal L\{\alpha f+\beta g\}=\alpha F+\beta G$。这叫**线性性质**。相加后可能发生抵消，所以共同收敛区域是安全的使用范围，不一定是结果最大的收敛域。
+
+再给 $f$ 乘一个指数：
+
+$$
+\mathcal L\{e^{-at}f(t)\}(s)
+=\int_0^\infty f(t)e^{-(s+a)t}\,dt=F(s+a).
+$$
+
+这叫**指数移位**。例如 $\mathcal L\{t\}=1/s^2$，就能直接得到 $\mathcal L\{te^{-t}\}=1/(s+1)^2$，收敛域为 $\operatorname{Re}s>-1$。这正是上一课第二箱浓度中出现的函数。
+
+指数移位改变的是加权变量 $s$，并没有让曲线晚几分钟才开始。真正的时间延迟稍后再讲，二者不要混用。
+
+## 导数怎样变成代数
+
+设 $f$ 连续、分段可微，所用的 $f,f'$ 有足够的增长界，并且选定 $s$ 使边界项 $e^{-st}f(t)$ 在无穷远趋于零。分部积分给出
+
+$$
+\mathcal L\{f'\}(s)
+=\left[e^{-st}f(t)\right]_{0^+}^\infty
++s\int_0^\infty f(t)e^{-st}\,dt
+=sF(s)-f(0^+).
+$$
+
+导数变成“乘 $s$”，**还要减去初值**。再用一次，若二阶导数也满足对应条件，则
+
+$$
+\mathcal L\{f''\}(s)=s^2F(s)-sf(0^+)-f'(0^+).
+$$
+
+比如 $f=e^{-t}$，$f(0^+)=1$。导数的变换是 $s/(s+1)-1=-1/(s+1)$，与直接变换 $-e^{-t}$ 相同；漏掉初值就会得到错误答案。这些规则用于这里连续的普通函数；若函数中途跳变，不能忽略跳变后仍照抄普通导数公式。本课不使用冲激分布来处理它。
+
+<JupyterNotebook title="移位与导数规则" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+s = sp.symbols('s')`} cells={[{code:`F = sp.laplace_transform(sp.exp(-t),t,s,noconds=True)
+first = sp.laplace_transform(-sp.exp(-t),t,s,noconds=True)
+shifted = sp.laplace_transform(t*sp.exp(-t),t,s)
+print('指数移位:',shifted)
+print('导数直接/带初值/余量:',first,sp.simplify(s*F-1),sp.simplify(first-(s*F-1)))
+f = t*sp.exp(-t)
+F2 = sp.laplace_transform(f,t,s,noconds=True)
+rule = s*s*F2-sp.limit(f,t,0,dir='+')*s-sp.limit(sp.diff(f,t),t,0,dir='+')
+direct = sp.laplace_transform(sp.diff(f,t,2),t,s,noconds=True)
+print('二阶初值:',sp.limit(f,t,0,dir='+'),sp.limit(sp.diff(f,t),t,0,dir='+'))
+print('二阶直接/规则/余量:',direct,sp.simplify(rule),sp.simplify(direct-rule))`}]} />
+
+## 解一个初值问题
+
+后面的方程算例把一分钟选为时间单位，系数写成对应数值；恢复物理量时，系数的单位仍须与导数阶数配平。沿用上一课的一阶模型，在非负时间持续输入 $u(t)=1$：
+
+$$
+\dot y+y=u(t),\qquad y(0^+)=0.
+$$
+
+令 $Y=\mathcal L\{y\},U=\mathcal L\{u\}=1/s$，变换后得到 $(s+1)Y=1/s$，于是 $Y=1/[s(s+1)]$。用代数把它拆开：
+
+$$
+Y(s)=\frac1s-\frac1{s+1},\qquad y(t)=1-e^{-t}.
+$$
+
+从右边找回时间函数叫**逆拉普拉斯变换**。这里用变换表与线性性质逆向辨认，找到后仍可代回原方程和初值检查；不要求先学复平面积分。对本课分段连续、指数阶的函数，变换在共同右半平面上的信息能唯一确定连续点处的函数。
+
+若只把初值改成 $y(0^+)=2$，代数式变为 $(s+1)Y=1/s+2$，解是 $y(t)=1+e^{-t}$。在 $t=\ln2$ 时为 $3/2$。持续输入相同，初始储存的影响却不同，不能把这个初值项误放进输入变换 $U$。
+
+## 分式怎样还原
+
+把有理分式拆成表中熟悉的项，叫**部分分式分解**。分母里 $(s+1)$ 重复出现时，需要保留 $1/(s+1)$、$1/(s+1)^2$ 等各阶项，不能只写一次。
+
+看上一课两箱持续注入对应的二阶方程：$\ddot y+2\dot y+y=1$，初值 $y(0^+)=\dot y(0^+)=0$。变换后
+
+$$
+Y(s)=\frac1{s(s+1)^2}
+=\frac1s-\frac1{s+1}-\frac1{(s+1)^2},
+\qquad y(t)=1-e^{-t}-te^{-t}.
+$$
+
+将 $y$ 求两次导数并代回，确实得到右边的 $1$；初值和初始导数都为零。在 $t=\ln2$ 时，$y=(1-\ln2)/2\approx0.1534$，与前课的输入积分结果相同。
+
+分母也可能有不能在实数域拆成一次因子的二次项。例如 $2/(s^2+4)$ 对应 $\sin2t$，不必硬拆成实数一次项。表里的系数和频率要一起匹配，不能把分子上的 $2$ 随意丢掉。
+
+<JupyterNotebook title="初值问题与部分分式" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+s = sp.symbols('s')`} cells={[{code:`Y0 = 1/(s*(s+1))
+Y2 = (1/s+2)/(s+1)
+Ysecond = 1/(s*(s+1)**2)
+y0 = sp.inverse_laplace_transform(Y0,s,t)
+y2 = sp.inverse_laplace_transform(Y2,s,t)
+ysecond = sp.inverse_laplace_transform(Ysecond,s,t)
+print('一阶零初值:',sp.apart(Y0,s),y0)
+print('一阶初值/余量:',sp.limit(y0,t,0,dir='+'),sp.limit(y2,t,0,dir='+'),sp.simplify(sp.diff(y0,t)+y0-1),sp.simplify(sp.diff(y2,t)+y2-1))
+print('一阶非零初值:',sp.apart(Y2,s),y2,'ln2时:',sp.simplify(y2.subs(t,sp.log(2))))
+print('二阶分式/解:',sp.apart(Ysecond,s),ysecond)
+print('二阶方程余量/初值:',sp.simplify(sp.diff(ysecond,t,2)+2*sp.diff(ysecond,t)+ysecond-1),sp.limit(ysecond,t,0,dir='+'),sp.limit(sp.diff(ysecond,t),t,0,dir='+'))
+print('二阶ln2时:',sp.simplify(ysecond.subs(t,sp.log(2))),sp.N(ysecond.subs(t,sp.log(2)),12))
+print('二次分母反变换:',sp.inverse_laplace_transform(2/(s*s+4),s,t))`}]} />
+
+## 延迟怎样进入变换
+
+约定延迟 $\tau\ge0$ 之前信号为零，之后把原曲线整个向右平移：$g(t)=0$（$t<\tau$），$g(t)=f(t-\tau)$（$t\ge\tau$）。把积分变量换成 $r=t-\tau$，便得到
+
+$$
+G(s)=\int_\tau^\infty f(t-\tau)e^{-st}\,dt
+=e^{-\tau s}\int_0^\infty f(r)e^{-sr}\,dr=e^{-\tau s}F(s).
+$$
+
+这叫**时间延迟性质**。它乘上 $e^{-\tau s}$，不是把 $s$ 换成 $s+\tau$。延迟有限时间不会改变这里的收敛半平面。
+
+例如先前的一阶阶跃响应 $f(t)=1-e^{-t}$，若延迟 $2$ 分钟，变换成为 $e^{-2s}/[s(s+1)]$。在第 $1$ 分钟输出为零，第 $2$ 分钟刚开始仍为零，第 $3$ 分钟为 $1-e^{-1}\approx0.6321$。不是一开始就输出一个较小的指数倍数，而是整条曲线晚出现。
+
+<JupyterNotebook title="延迟的时间含义" setupCode={`import sympy as sp
+t = sp.symbols('t', nonnegative=True)
+s = sp.symbols('s')
+r = sp.symbols('r', positive=True)`} cells={[{code:`base,roc,condition = sp.laplace_transform(1-sp.exp(-r),r,s)
+delayed = sp.exp(-2*s)*base
+print('延迟变换/ROC界/条件:',sp.factor(delayed),roc,condition)
+g = sp.Piecewise((0,t<2),(1-sp.exp(-(t-2)),True))
+for q in [1,2,3]:
+    print('时刻/输出:',q,g.subs(t,q),sp.N(g.subs(t,q),12))
+print('原响应变换与ROC:',sp.laplace_transform(1-sp.exp(-r),r,s))`}]} />
+
+## 卷积对应相乘
+
+上一课的输入公式把每个过去时刻的作用加起来。对两个非负时间函数，定义它们的**卷积**：
+
+$$
+(f*g)(t)=\int_0^t f(t-r)g(r)\,dr.
+$$
+
+时刻 $r$ 的输入 $g(r)$，经过余下的 $t-r$ 时间，由 $f(t-r)$ 决定它对现在的贡献；不是简单地将同一时刻的两个数相乘。
+
+在能绝对收敛并交换积分次序的区域内，先按过去的时刻、再按经过的时长积分，可得到 $\mathcal L\{f*g\}=F(s)G(s)$。这是**卷积定理**。例如 $f=g=e^{-t}$，卷积为 $\int_0^t e^{-(t-r)}e^{-r}dr=te^{-t}$，变换为 $1/(s+1)^2$。
+
+若 $g(t)=1$，卷积就变成 $\int_0^t f(r)dr$，因此积分的变换为 $F(s)/s$，在共同收敛区域使用。再看 $f(t)=e^{-t},g(t)=1$，输出为 $1-e^{-t}$，恰好是刚才一阶方程的零初值响应。变换中的乘法是在整理时间上的累积，不是创造了另一套动力学。
+
+<JupyterNotebook title="卷积与输入累积" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+r = sp.symbols('r', real=True)
+s = sp.symbols('s')`} cells={[{code:`same = sp.integrate(sp.exp(-(t-r))*sp.exp(-r),(r,0,t))
+step = sp.integrate(sp.exp(-(t-r)),(r,0,t))
+print('指数卷积/变换:',same,sp.laplace_transform(same,t,s))
+print('常输入卷积/变换:',step,sp.laplace_transform(step,t,s))
+print('乘法核验:',sp.simplify(sp.laplace_transform(same,t,s,noconds=True)-1/(s+1)**2))`}]} />
+
+## 从方程得到传递函数
+
+对常系数模型 $\tau\dot y+y=K u$，若初值为零，变换后 $(\tau s+1)Y=KU$。于是定义**传递函数** $G(s)=K/(\tau s+1)$，使 $Y=GU$。常写作 $Y/U$，但含义是这个零初值的输入输出关系；$U=0$ 时不是真的去做 $0/0$。
+
+若初值不是零，完整式是
+
+$$
+Y(s)=G(s)U(s)+\frac{\tau y(0^+)}{\tau s+1}.
+$$
+
+第二项是初始条件的贡献，不属于传递函数本身。取 $\tau=1,K=2,y(0^+)=3,u(t)=1$，得到 $y(t)=2+e^{-t}$；在 $t=\ln2$ 时为 $5/2$。用 $G$ 乘 $U$ 只会得到 $2(1-e^{-t})$，它漏掉了初始条件留下的 $3e^{-t}$。
+
+有理函数约去公因子后，分母为零的点叫它的**极点**。例如 $G=2/(s+1)$ 的极点为 $-1$，与时间响应中的 $e^{-t}$ 有联系。这里还不能仅凭一个代数分式就断言所有内部状态都稳定；本课只建立输入输出变换的基础，系统层面的判据由后续控制课程展开。
+
+## 初值与终值的条件
+
+对本课这些指数阶普通函数，若右极限 $f(0^+)$ 有限，**初值定理**给出 $f(0^+)=\lim_{s\to+\infty}sF(s)$，这里沿正实数方向取极限。可将它理解为：$s$ 越大，权重越集中在刚开始的一小段时间。它不用于含冲激的信号。
+
+**终值定理**不能只背“令 $s=0$”。对本课这类普通函数的有理变换，一个常用充分条件是：$sF(s)$ 的所有极点都严格位于左半平面，也就是实部为负。满足条件时，才可用
+
+$$
+\lim_{t\to\infty}f(t)=\lim_{s\to0^+}sF(s).
+$$
+
+例如 $y=1-e^{-t}$，$Y=1/[s(s+1)]$，$sY=1/(s+1)$ 的极点为 $-1$，终值是 $1$；初值定理则给 $0$。若 $Y$ 在原点有一个简单极点，乘上 $s$ 后它被去掉，并不自动阻止终值存在。
+
+反例必须一起记：$\sin t$ 的变换为 $1/(s^2+1)$，形式上 $s\to0$ 得零，但 $sF$ 有虚轴极点 $\pm j$，原函数不停振荡，没有终值。$e^t$ 的变换为 $1/(s-1)$，形式极限也给零，却有右半平面极点 $1$，真实函数发散；况且 $s\to0$ 已经走出它的收敛域。必须先查条件，再做极限。
+
+<JupyterNotebook title="传递函数与初终值检查" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+s = sp.symbols('s')`} cells={[{code:`G = 2/(s+1)
+Y = G/s + 3/(s+1)
+y = sp.inverse_laplace_transform(Y,s,t)
+print('带初值输出/ln2时:',y,sp.simplify(y.subs(t,sp.log(2))))
+print('方程余量/初值:',sp.simplify(sp.diff(y,t)+y-2),sp.limit(y,t,0,dir='+'))
+zero_part = sp.inverse_laplace_transform(G/s,s,t)
+print('零初值部分/漏项/极点:',zero_part,sp.simplify(y-zero_part),sp.solve(sp.denom(G),s))
+Ystep = 1/(s*(s+1))
+print('合法初值/终值:',sp.limit(s*Ystep,s,sp.oo),sp.limit(s*Ystep,s,0,dir='+'))
+for F in [1/(s*s+1),1/(s-1)]:
+    reduced = sp.cancel(s*F)
+    print('形式终值/极点:',sp.limit(reduced,s,0,dir='+'),sp.solve(sp.denom(reduced),s))
+print('exp(t)变换与ROC:',sp.laplace_transform(sp.exp(t),t,s))`}]} />
+
+## 小结
+
+拉普拉斯变换从加权积分开始，公式只有和收敛条件放在一起才完整。导数变成乘 $s$ 时带着初值项；代数分式可以用变换表与部分分式还原，再代回时间方程核对。
+
+指数移位、时间延迟和卷积各有自己的时间含义，不能互相替代。传递函数描述零初值的输入输出关系，终值定理则必须先检查极点条件。下一课[傅里叶分析](/math/fourier-analysis)会进一步讨论振荡分量；不能因为这里用了复数，就不检查积分是否存在而直接把 $s$ 都换成 $j\omega$。
+
+## 习题
+
+1. 求 $e^{-t}$ 的拉普拉斯变换与收敛域。默认只积分前 $4$ 分钟的面积、尾项各是多少？若权重 $\sigma=-1$，为什么不能继续用 $1/(s+1)$ 得到一个有限积分？
+2. 由 $\mathcal L\{t\}=1/s^2$ 求 $\mathcal L\{te^{-2t}\}$ 及收敛域；它表示原曲线延迟 $2$ 分钟吗？
+3. 解 $\dot y+y=1,y(0^+)=2$，写出变换后的初值项与分式，求 $y(\ln2)$。
+4. 解 $\ddot y+2\dot y+y=1,y(0^+)=\dot y(0^+)=0$；用部分分式解释 $te^{-t}$ 为什么出现，并核对 $y(\ln2)$。
+5. 将 $1-e^{-t}$ 延迟 $2$ 分钟，写出分段时间函数和变换，求第 $3$ 分钟的值；再计算 $e^{-t}$ 与自身的卷积。
+6. 分别对 $1-e^{-t},\sin t,e^t$ 检查终值定理。给出形式极限、$sF$ 的极点以及能否采用的理由。
+
+## 答案
+
+1. 直接积分得 $F=1/(s+1)$，要求 $\operatorname{Re}s>-1$。前 $4$ 分钟面积为 $1-e^{-4}\approx0.9817$ 分钟，尾项 $e^{-4}\approx0.0183$ 分钟，总量 $1$ 分钟。取 $\sigma=-1$ 时加权函数恒为 $1$，$\int_0^T1dt=T\to\infty$，位于收敛边界，没有有限变换值。
+2. 指数移位给 $F(s+2)=1/(s+2)^2$，收敛域为 $\operatorname{Re}s>-2$。这是原函数额外乘以 $e^{-2t}$，不是延迟；延迟需要延迟前为零、之后替换时间，并在变换里乘 $e^{-2s}$。
+3. 导数变换是 $sY-2$，所以 $(s+1)Y=1/s+2$。$Y=1/s+1/(s+1)$，逆变换得 $y=1+e^{-t}$，初值为 $2$；$y(\ln2)=3/2$。
+4. 零初值消去导数中的初值项，$Y=1/[s(s+1)^2]=1/s-1/(s+1)-1/(s+1)^2$。重根项的逆变换为 $te^{-t}$，所以 $y=1-(1+t)e^{-t}$；$y(\ln2)=(1-\ln2)/2\approx0.1534$。代回方程余量为零，初始值和初始导数都为零。
+5. 延迟后 $g=0$（$t<2$），$g=1-e^{-(t-2)}$（$t\ge2$），$G=e^{-2s}/[s(s+1)]$，收敛域仍为 $\operatorname{Re}s>0$。第 $3$ 分钟为 $1-e^{-1}\approx0.6321$。卷积则为 $\int_0^t e^{-(t-r)}e^{-r}dr=te^{-t}$，变换为 $1/(s+1)^2$，要求 $\operatorname{Re}s>-1$。
+6. 三个形式极限依次为 $1,0,0$。第一项的 $sF=1/(s+1)$ 只有极点 $-1$，可用，终值为 $1$。第二项的极点 $\pm j$ 在虚轴，振荡不停，不能用。第三项有极点 $1$ 在右半平面，真实函数增长无界，不能用；其变换积分还要求 $\operatorname{Re}s>1$，形式求零点极限并非在收敛域内积分。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import sympy as sp
+t = sp.symbols('t', positive=True)
+s = sp.symbols('s')
+r = sp.symbols('r', real=True)`} cells={[{code:`print('题1:',sp.laplace_transform(sp.exp(-t),t,s),sp.integrate(sp.exp(-t),(t,0,4)),sp.integrate(sp.exp(-t),(t,4,sp.oo)))
+print('题2:',sp.laplace_transform(t*sp.exp(-2*t),t,s))
+Y3 = (1/s+2)/(s+1)
+y3 = sp.inverse_laplace_transform(Y3,s,t)
+print('题3:',sp.apart(Y3,s),y3,sp.simplify(y3.subs(t,sp.log(2))))
+Y4 = 1/(s*(s+1)**2)
+y4 = sp.inverse_laplace_transform(Y4,s,t)
+print('题4:',sp.apart(Y4,s),y4,sp.simplify(y4.subs(t,sp.log(2))))
+print('题5延迟变换/第3分钟:',sp.exp(-2*s)/(s*(s+1)),1-1/sp.E,sp.N(1-1/sp.E,12))
+c = sp.integrate(sp.exp(-(t-r))*sp.exp(-r),(r,0,t))
+print('题5卷积/变换:',c,sp.laplace_transform(c,t,s))
+for F in [1/(s*(s+1)),1/(s*s+1),1/(s-1)]:
+    R = sp.cancel(s*F)
+    print('题6形式终值/极点:',sp.limit(R,s,0,dir='+'),sp.solve(sp.denom(R),s))`}]} />

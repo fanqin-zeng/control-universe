@@ -1,0 +1,12 @@
+import sympy as sp
+t=sp.symbols('t',positive=True)
+s=sp.symbols('s')
+print('finite default:',1-sp.exp(-4),float(1-sp.exp(-4)))
+print('tail/default infinite:',sp.exp(-4),1)
+print('zero r finite:',4,'negative r finite:',4*(sp.E-1),float(4*(sp.E-1)))
+print('table exp:',sp.laplace_transform(sp.exp(-t),t,s))
+Y=1/(s*(s+1)**2)
+print('partial:',sp.apart(Y,s),'inverse:',sp.inverse_laplace_transform(Y,s,t))
+print('cascade at ln2:',float((1-sp.log(2))/2))
+print('nonzero initial:',sp.apart((1/s+2)/(s+1),s))
+print('bad finals:',sp.limit(s/(s*s+1),s,0),sp.limit(s/(s-1),s,0))

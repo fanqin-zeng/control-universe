@@ -464,6 +464,21 @@
 | 局部Lipschitz | locally Lipschitz | — | MATH-07定义 | 邻域内变化率差由状态差线性控制 |
 | 齐次线性方程 | homogeneous linear equation | — | MATH-07定义 | 无外部输入项 |
 | 非齐次线性方程 | inhomogeneous linear equation | — | MATH-07定义 | 带给定外部输入项 |
+| 单边拉普拉斯变换 | unilateral Laplace transform、Laplace transform | 拉普拉斯变换 | MATH-08定义 | 从非负时间的加权积分定义 |
+| 逆拉普拉斯变换 | inverse Laplace transform | — | MATH-08定义 | 本课由表和部分分式还原 |
+| 收敛域 | region of convergence、ROC | — | MATH-08定义 | 本课采用绝对收敛范围 |
+| 指数阶 | exponential order | — | MATH-08定义 | 最终由有限常数乘指数控制 |
+| 分段连续 | piecewise continuous | — | MATH-08定义 | 有限段内连续且接缝单侧极限有限 |
+| 线性性质 | linearity | — | MATH-08定义 | 共同收敛域内拆分加权积分 |
+| 指数移位 | exponential shift | — | MATH-08定义 | 乘e^{-at}对应F(s+a)，非时间延迟 |
+| 部分分式分解 | partial fraction decomposition | — | MATH-08定义 | 重根保留各阶分母项 |
+| 时间延迟性质 | time-delay property | — | MATH-08定义 | 延迟前为零，变换乘e^{-τs} |
+| 卷积 | convolution | — | MATH-08定义 | 本课单边积分0到t |
+| 卷积定理 | convolution theorem | — | MATH-08定义 | 绝对收敛交换积分前提 |
+| 传递函数 | transfer function | — | MATH-08定义 | 零初值输入输出映射 |
+| 极点 | pole | — | MATH-08定义 | 有理式约分后分母的零点 |
+| 初值定理 | initial-value theorem | — | MATH-08定义 | 右极限有限的普通函数，沿正实轴s趋无穷 |
+| 终值定理 | final-value theorem | — | MATH-08定义 | 先查sF极点充分条件，不只算形式极限 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
