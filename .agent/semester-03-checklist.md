@@ -38,6 +38,7 @@
 | W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
 | W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
 | W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |
+| W09 | 开发IAB直连本地Jupyter网关的连接边界复核 | [ ] | .agent/semester-03/classic-01/acceptance.md;IAB页面显示Failed to fetch，8891原始严格内核与生产Pyodide实跑正常；后续区分浏览器环境/跨端口连接原因，不伪记原生UI通过 |
 | P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 <!-- S3-TASKS-END -->
 
@@ -73,7 +74,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| CLASSIC-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| CLASSIC-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/01-system-modeling.md;.agent/semester-03/classic-01/acceptance.md;合并待真实commit |
 | CLASSIC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

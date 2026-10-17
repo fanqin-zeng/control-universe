@@ -715,3 +715,8 @@ math/game-theory-math中ui=pi/(1kW)是归一化充电功率、行动集Ui=[0,4]�
 ### MATH-18局部约定（2026-10-18）
 
 math/numerical-methods中T为温度℃，t单位min，k冷却率min⁻¹，z=T−20为温差；h为积分/求积/差分步长，各节明确单位，N为窗口内步数，时间节点tn=t0+nh，不是绘图索引。刚性双模态另用y、秒s、lambda=−1/−100 s⁻¹，不与杯子分钟混用。R(z)为稳定函数，该函数自变量z另指h lambda而非温差，并在稳定域节显式声明。A/C为线性方程/矩形拟合矩阵，kappa为条件数，r残差、epsilon为小矩阵参数10⁻⁶而非机器精度；帽号近似，delta输入/解扰动。RK4的s1…s4为中间斜率而非复频率，E/B/4下标对应前向/后退/经典四阶方法。rtol/atol为局部误差控制尺度，event为T−40，积分温度面积℃·min不当热量。按规则②/⑤局部声明，不覆盖其它课状态/代价/采样周期T等符号。
+
+
+### CLASSIC-01局部约定（2026-10-18）
+
+classic/system-modeling中y是向下为正、相对静平衡的车身位移m，r为基座位移m，F额外外力N，c阻尼N·s/m，k刚度N/m，zeta阻尼比；图将y显示为cm，速度仍m/s。E机械能J，c v²耗散功率W，t为秒，末样不是稳态。旋转tau为力矩，B摩擦、J转动惯量；电路C电容F、q电荷，与后续化工浓度C、流量q分段局部定义。电机Ke/ Kt分清V/(rad/s)与N·m/A，L电感；液压Ch=Vt/(4beta_e)是液容，Ap面积，Kc流量除压力，Kq流量除阀芯位移。辐射CA单位面积热容，T用K，eps有效发射率；热集总T可用℃差，thermal H单位W/K。LV的x/y是种群量，与机械位移无关，beta/delta为耦合参数；SIS I为感染人数，与库存I分节声明，单位日。线性化xi/eta是相对平衡增量，摆phi=theta−pi，a=sqrt(g/l)不是幅值。按规则②/⑤局部声明，不覆写其它课程约定。

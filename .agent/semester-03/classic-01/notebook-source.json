@@ -1,0 +1,142 @@
+{
+  "source": "content/classic/system-modeling.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 58,
+      "title": "自由释放与能量核验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 62,
+          "delim": "`",
+          "code": "m=250.;k=16000.;y0=.05;t=np.linspace(0,3,301)\r\nfor zeta in [0.,.3,1.,2.]:\r\n    c=2*zeta*np.sqrt(m*k);A=np.array([[0.,1.],[-k/m,-c/m]])\r\n    states=np.array([expm(A*tt)@np.array([y0,0.]) for tt in t])\r\n    E=.5*m*states[:,1]**2+.5*k*states[:,0]**2\r\n    print('zeta/c/wn/E0:',zeta,c,np.sqrt(k/m),E[0])\r\n    for j in [100,300]:print('t/y/v/E/dissipation:',t[j],*states[j],E[j],c*states[j,1]**2)\r\n    print('sample energy maximum/increase:',max(E),max(np.diff(E)))\r\ny,v,c,k=sp.symbols('y v c k',real=True);m=sp.symbols('m',positive=True)\r\nE=m*v*v/2+k*y*y/2\r\nprint('symbolic E derivative:',sp.simplify(sp.diff(E,y)*v+sp.diff(E,v)*(-c*v-k*y)/m))\r\nprint('force1000 equilibrium/base.05 equilibrium:',1000/16000,.05)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 134,
+      "title": "双质量受力与电路坐标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 138,
+          "delim": "`",
+          "code": "m1,m2,c,k,k1=sp.symbols('m1 m2 c k k1',positive=True)\r\nx1,x2,v1,v2=sp.symbols('x1 x2 v1 v2',real=True)\r\nM=sp.diag(m1,m2);D=sp.Matrix([[c,-c],[-c,c]]);K=sp.Matrix([[k1+k,-k],[-k,k]])\r\nprint('M/C/K:',M,D,K)\r\nx=sp.Matrix([x1,x2]);v=sp.Matrix([v1,v2]);f=sp.Matrix([-k1*x1+k*(x2-x1)+c*(v2-v1),-k*(x2-x1)-c*(v2-v1)])\r\nprint('force sign residual:',sp.simplify(f+D*v+K*x))\r\nenergy=(v.T*M*v)[0]/2+k1*x1*x1/2+k*(x2-x1)**2/2\r\nacc=M.inv()*f;edot=sum(sp.diff(energy,xx)*vv for xx,vv in zip(x,v))+sum(sp.diff(energy,vv)*aa for vv,aa in zip(v,acc))\r\nprint('two-mass dissipation:',sp.factor(edot))\r\nR=sp.Integer(10);L=sp.Rational(1,2);C=sp.Rational(1,100)\r\nprint('RLC vC coefficients:',L*C,R*C,1,'charge coefficients:',L,R,1/C)\r\nprint('original exercise wn/zeta:',sp.sqrt(50/sp.Integer(2)),4/(2*sp.sqrt(2*50)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 195,
+      "title": "电机降阶的三种电感",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 199,
+          "delim": "`",
+          "code": "R=1.;J=.01;B=.1;K=.1;t=np.linspace(0,1,601);a=(B+K*K/R)/J;gain=K/(R*B+K*K)\r\nreduced=gain*(1-np.exp(-a*t))\r\nfor L in [.001,.01,.1]:\r\n    A=np.array([[-R/L,-K/L],[K/J,-B/J]]);u=np.array([1/L,0.])\r\n    sol=solve_ivp(lambda tt,x:A@x+u,(0,1),[0.,0.],t_eval=t,method='DOP853',rtol=1e-10,atol=1e-12,max_step=.001)\r\n    assert sol.success\r\n    equilibrium=np.linalg.solve(-A,u)\r\n    r1,r2=np.linalg.eigvals(A).astype(complex)\r\n    wr=gain*(1+(r2*np.exp(r1*t)-r1*np.exp(r2*t))/(r1-r2))\r\n    dw=gain*r1*r2*(np.exp(r1*t)-np.exp(r2*t))/(r1-r2)\r\n    reference=np.column_stack([(J*dw+B*wr)/K,wr]).real\r\n    assert np.max(abs(sol.y.T-reference))<1e-8\r\n    print('L/poles/tau_e/tau_reduced:',L,np.linalg.eigvals(A),L/R,1/a)\r\n    print('steady i/w/max sampled speed error:',equilibrium,np.max(abs(sol.y[1]-reduced)))\r\n    print('at1s full/reduced speed/reference error:',sol.y[1,-1],reduced[-1],np.max(abs(sol.y.T-reference)))\r\nprint('initial full/reduced current:',0.,1/R,'initial full/reduced acceleration:',0.,K/(R*J))\r\ns,L,R,J,B,Ke,Kt=sp.symbols('s L R J B Ke Kt')\r\nprint('full speed denominator:',sp.expand((L*s+R)*(J*s+B)+Ke*Kt))\r\nprint('reduced speed denominator:',R*J*s+R*B+Ke*Kt)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 276,
+      "title": "跨领域模型的单位与尺度",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 280,
+          "delim": "`",
+          "code": "Ch,m,b,k,Ap,Kc,Kq,s=sp.symbols('Ch m b k Ap Kc Kq s',positive=True)\r\npoly=sp.expand((Ch*s+Kc)*(m*s*s+b*s+k)+Ap*Ap*s)\r\nprint('hydraulic full coefficients:',[poly.coeff(s,j) for j in [3,2,1,0]])\r\nprint('incompressible divided coefficients:',m,b+Ap*Ap/Kc,k,'input gain:',Ap*Kq/Kc)\r\nprint('thermal tau/T100:',1000/10,20+60*np.exp(-100/(1000/10)))\r\nS=1361.;albedo=.3;sig=5.67e-8;Carea=1e8;eps=1.\r\nTe=(S*(1-albedo)/(4*eps*sig))**.25;tau=Carea/(4*eps*sig*Te**3)\r\nprint('radiation equilibrium/tau seconds/tau years:',Te,tau,tau/(365.25*86400))\r\nprint('epsilon drop1pct temperature change:',Te*((1/.99)**.25-1))\r\nprint('288K derivative timescale years, NOT equilibrium:',Carea/(4*sig*288**3)/(365.25*86400))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 304,
+      "title": "生态首次积分与SIS平衡",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 308,
+          "delim": "`",
+          "code": "x,y,alpha,beta,gamma,delta=sp.symbols('x y alpha beta gamma delta',positive=True)\r\nfx=alpha*x-beta*x*y;fy=delta*x*y-gamma*y\r\nV=delta*x-gamma*sp.log(x)+beta*y-alpha*sp.log(y)\r\nprint('LV first integral derivative:',sp.simplify(sp.diff(V,x)*fx+sp.diff(V,y)*fy))\r\nprint('positive equilibrium:',gamma/delta,alpha/beta)\r\nJac=sp.Matrix([fx,fy]).jacobian([x,y]).subs({x:gamma/delta,y:alpha/beta})\r\nprint('equilibrium Jacobian/determinant:',Jac,sp.factor(Jac.det()))\r\nfor beta0 in [.1,.2]:print('beta/xstar/ystar/local frequency:',beta0,2/.2,1/beta0,np.sqrt(1*2))\r\nN=10000.;rate=.0002;recovery=.1\r\nprint('SIS r/R0/Istar/f(N):',rate*N-recovery,rate*N/recovery,N-recovery/rate,rate*N*(N-N)-recovery*N)\r\nfor rate0 in [.000005,.00001,.0002]:print('SIS rate/initial growth/R0:',rate0,rate0*N-recovery,rate0*N/recovery)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 361,
+      "title": "工作点与单摆初值",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 365,
+          "delim": "`",
+          "code": "t,w,p0,v0=sp.symbols('t w p0 v0',real=True)\r\np=p0*sp.cosh(w*t)+v0/w*sp.sinh(w*t)\r\nprint('inverted equation/initial value/initial velocity residual:',sp.simplify(sp.diff(p,t,2)-w*w*p),sp.simplify(p.subs(t,0)-p0),sp.simplify(sp.diff(p,t).subs(t,0)-v0))\r\nprint('growth/decay coefficients:',p0/2+v0/(2*w),p0/2-v0/(2*w))\r\nfor angle in [.1,.5,1.]:print('angle/sine/absolute sine approximation error:',angle,np.sin(angle),abs(np.sin(angle)-angle))\r\nprint('exercise pendulum g/l and frequency:',9.81,1.,np.sqrt(9.81))\r\nx,u,xe,ue,A,B=sp.symbols('x u xe ue A B')\r\nprint('local model format:',A*(x-xe)+B*(u-ue))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 397,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\nfrom scipy.integrate import solve_ivp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 401,
+          "delim": "`",
+          "code": "print('Q1 wn/zeta/case:',sp.sqrt(50/sp.Integer(2)),sp.Rational(4,20),'underdamped')\r\nprint('Q2 RLC vC/charge:',[sp.Rational(1,200),sp.Rational(1,10),1],[sp.Rational(1,2),10,100])\r\nprint('Q3 pendulum frequency l1:',np.sqrt(9.81))\r\nprint('Q4 force1000/base.05 equilibrium:',1000/16000,.05)\r\nprint('Q5 reduced motor tau/gain/initial current:',.01/(.1+.1**2),.1/(.1+.1**2),1.)\r\nprint('Q5 hydraulic coefficients m2/b3/k4/Ap.5/Kc.25/Kq2:',2,3+.5**2/.25,4,.5*2/.25)\r\nprint('Q6 SIS r/R0/Istar/fN:',1.9,20,9500,-1000)\r\nprint('Q6 radiant tau at own equilibrium years:',1e8/(4*5.67e-8*(1361*.7/(4*5.67e-8))**.75)/(365.25*86400))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
