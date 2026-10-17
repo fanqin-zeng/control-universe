@@ -29,7 +29,7 @@
 | 2.11 | 概率基础 | probability-basics | ✅ 已交付 v1.3 | undergrad | math | 1 | math/calculus-basics |
 | 2.12 | 随机过程 | stochastic-processes | ✅ 已交付 v1.3 | grad | math | 3 | math/probability-basics<br>math/linear-algebra-basics<br>math/fourier-analysis |
 | 2.13 | 凸优化 | convex-optimization | ✅ 已交付 v1.3 | grad | math | 4 | math/matrix-decomposition<br>math/multivariable-calculus |
-| 2.14 | 变分法与动态规划 | variational-dp | ⬜ 骨架（占位页） | grad | math | 4 | math/multivariable-calculus<br>math/ode-matrix-exponential |
+| 2.14 | 变分法与动态规划 | variational-dp | ✅ 已交付 v1.3 | grad | math | 5 | math/multivariable-calculus<br>math/ode-matrix-exponential<br>math/convex-optimization |
 | 2.15 | 微分几何入门 | diff-geometry | ⬜ 骨架（占位页） | grad | math | 4 | math/multivariable-calculus<br>math/ode-matrix-exponential |
 | 2.16 | 图论基础 | graph-theory | ⬜ 骨架（占位页） | undergrad | math | 3 | math/eigen-decomposition |
 | 2.17 | 博弈论基础 | game-theory-math | ⬜ 骨架（占位页） | grad | math | 5 | math/convex-optimization |
@@ -202,10 +202,10 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 14.1 | 强化学习问题 | rl-basics | ⬜ 骨架（占位页） | undergrad | learning | 5 | math/stochastic-processes<br>math/variational-dp<br>machine-learning/learning-problem |
-| 14.2 | 价值函数与贝尔曼方程 | dynamic-programming | ⬜ 骨架（占位页） | undergrad | learning | 6 | rl-control/rl-basics<br>math/variational-dp |
-| 14.3 | Q学习 | q-learning | ⬜ 骨架（占位页） | undergrad | learning | 7 | rl-control/dynamic-programming |
-| 14.4 | 深度Q网络 | dqn | ⬜ 骨架（占位页） | grad | learning | 8 | rl-control/q-learning<br>machine-learning/autodiff-optimization |
+| 14.1 | 强化学习问题 | rl-basics | ⬜ 骨架（占位页） | undergrad | learning | 6 | math/stochastic-processes<br>math/variational-dp<br>machine-learning/learning-problem |
+| 14.2 | 价值函数与贝尔曼方程 | dynamic-programming | ⬜ 骨架（占位页） | undergrad | learning | 7 | rl-control/rl-basics<br>math/variational-dp |
+| 14.3 | Q学习 | q-learning | ⬜ 骨架（占位页） | undergrad | learning | 8 | rl-control/dynamic-programming |
+| 14.4 | 深度Q网络 | dqn | ⬜ 骨架（占位页） | grad | learning | 9 | rl-control/q-learning<br>machine-learning/autodiff-optimization |
 | 14.5 | 策略梯度 | policy-gradient | ⬜ 骨架（占位页） | grad | learning | 8 | rl-control/dynamic-programming<br>machine-learning/autodiff-optimization |
 | 14.6 | 演员评论家方法 | actor-critic | ⬜ 骨架（占位页） | grad | learning | 9 | rl-control/policy-gradient<br>rl-control/q-learning |
 | 14.7 | PPO算法 | ppo | ⬜ 骨架（占位页） | grad | learning | 10 | rl-control/actor-critic |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 42（status = v1.3）
+- **已交付 v1.3**: 43（status = v1.3）
 - **有正文待审校**: 26（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 137（status = empty，渲染占位页）
+- **骨架占位**: 136（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 163（= draft 26 + empty 137 + 无 status 0）
-- **有 MDX 正文**: 68
-- **catalog 小节总数**: 786
-- **讨论日志**: 35 篇（覆盖 34 门；有 MDX 无日志 34 门）
-- **交互组件**: 58 个文件（被正文引用 58，孤儿 0）
-- **prereq 边**: 468 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **未完成 v1.3**: 162（= draft 26 + empty 136 + 无 status 0）
+- **有 MDX 正文**: 69
+- **catalog 小节总数**: 802
+- **讨论日志**: 36 篇（覆盖 35 门；有 MDX 无日志 34 门）
+- **交互组件**: 59 个文件（被正文引用 59，孤儿 0）
+- **prereq 边**: 469 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

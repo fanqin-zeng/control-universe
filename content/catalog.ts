@@ -523,11 +523,78 @@ export const catalog: Chapter[] = [
         "title": "变分法与动态规划",
         "prereq": [
           "math/multivariable-calculus",
-          "math/ode-matrix-exponential"
+          "math/ode-matrix-exponential",
+          "math/convex-optimization"
         ],
         "level": "grad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "小车怎样分几步回家",
+            "title": "小车怎样分几步回家"
+          },
+          {
+            "slug": "从一个数到一条函数",
+            "title": "从一个数到一条函数"
+          },
+          {
+            "slug": "一次变分",
+            "title": "一次变分"
+          },
+          {
+            "slug": "欧拉拉格朗日方程",
+            "title": "欧拉拉格朗日方程"
+          },
+          {
+            "slug": "端点不能随意省略",
+            "title": "端点不能随意省略"
+          },
+          {
+            "slug": "最优不只是驻点",
+            "title": "最优不只是驻点"
+          },
+          {
+            "slug": "把过程分成几步",
+            "title": "把过程分成几步"
+          },
+          {
+            "slug": "剩余代价与最优性原理",
+            "title": "剩余代价与最优性原理"
+          },
+          {
+            "slug": "bellman递推",
+            "title": "Bellman递推"
+          },
+          {
+            "slug": "二次代价的倒推",
+            "title": "二次代价的倒推"
+          },
+          {
+            "slug": "沿最优策略向前走",
+            "title": "沿最优策略向前走"
+          },
+          {
+            "slug": "协态与哈密顿量",
+            "title": "协态与哈密顿量"
+          },
+          {
+            "slug": "连续时间的hjb",
+            "title": "连续时间的HJB"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "diff-geometry",

@@ -1,3 +1,4 @@
+import { FiniteHorizonExplorer } from "@/components/wiki/finite-horizon-explorer";
 import { PowerAllocationExplorer } from "@/components/wiki/power-allocation-explorer";
 import { ARProcessExplorer } from "@/components/wiki/ar-process-explorer";
 import { BayesWindowExplorer } from "@/components/wiki/bayes-window-explorer";
@@ -79,6 +80,7 @@ import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  FiniteHorizonExplorer,
   PowerAllocationExplorer,
   ARProcessExplorer,
   BayesWindowExplorer,
