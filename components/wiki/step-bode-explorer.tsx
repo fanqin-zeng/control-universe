@@ -6,7 +6,8 @@ import type { EChartsOption } from "echarts";
 
 const NUM_POINTS = 400;
 
-function computeStepResponse(zeta: number, wn: number, tEnd: number): [number, number][] {
+export function computeStepResponse(zeta: number, wn: number, tEnd: number): [number, number][] {
+  if (!Number.isFinite(zeta) || zeta < 0 || !Number.isFinite(wn) || wn <= 0 || !Number.isFinite(tEnd) || tEnd <= 0) throw new RangeError("invalid second-order parameters");
   const dt = tEnd / NUM_POINTS;
   const pts: [number, number][] = [];
   for (let i = 0; i <= NUM_POINTS; i++) {
@@ -16,7 +17,7 @@ function computeStepResponse(zeta: number, wn: number, tEnd: number): [number, n
       const wd = wn * Math.sqrt(1 - zeta * zeta);
       const phi = Math.atan2(Math.sqrt(1 - zeta * zeta), zeta);
       y = 1 - (Math.exp(-zeta * wn * t) / Math.sqrt(1 - zeta * zeta)) * Math.sin(wd * t + phi);
-    } else if (Math.abs(zeta - 1) < 0.01) {
+    } else if (zeta === 1) {
       y = 1 - (1 + wn * t) * Math.exp(-wn * t);
     } else {
       const sq = wn * Math.sqrt(zeta * zeta - 1);
@@ -31,7 +32,8 @@ function computeStepResponse(zeta: number, wn: number, tEnd: number): [number, n
   return pts;
 }
 
-function computeBodeMagnitude(zeta: number, wn: number): [number, number][] {
+export function computeBodeMagnitude(zeta: number, wn: number): [number, number][] {
+  if (!Number.isFinite(zeta) || zeta <= 0 || !Number.isFinite(wn) || wn <= 0) throw new RangeError("frequency response requires positive damping and frequency");
   const pts: [number, number][] = [];
   const wMin = 0.1;
   const wMax = 100;
@@ -62,8 +64,8 @@ export function StepBodeExplorer() {
   const option: EChartsOption = useMemo(() => ({
     animation: false,
     grid: [
-      { left: 60, right: "52%", top: 50, bottom: 50 },
-      { left: "55%", right: 30, top: 50, bottom: 50 },
+      { left: 55, right: 20, top: 40, height: 170 },
+      { left: 55, right: 20, top: 300, height: 170 },
     ],
     xAxis: [
       {
@@ -86,8 +88,8 @@ export function StepBodeExplorer() {
       },
     ],
     yAxis: [
-      { type: "value", name: "y(t)", gridIndex: 0, min: 0, max: 2.0 },
-      { type: "value", name: "幅值 (dB)", gridIndex: 1, min: -40, max: 20 },
+      { type: "value", name: "q（无量纲）", gridIndex: 0, min: 0, max: 2.0 },
+      { type: "value", name: "幅值 (dB)", gridIndex: 1, min: -100, max: 30 },
     ],
     series: [
       {
@@ -95,7 +97,7 @@ export function StepBodeExplorer() {
         xAxisIndex: 0,
         yAxisIndex: 0,
         data: stepData,
-        smooth: true,
+        smooth: false,
         showSymbol: false,
         lineStyle: { width: 2.5, color: "#16a34a" },
         markLine: {
@@ -111,7 +113,7 @@ export function StepBodeExplorer() {
         xAxisIndex: 1,
         yAxisIndex: 1,
         data: bodeData,
-        smooth: true,
+        smooth: false,
         showSymbol: false,
         lineStyle: { width: 2.5, color: "#3b82f6" },
         markLine: {
@@ -126,12 +128,14 @@ export function StepBodeExplorer() {
     title: [
       {
         text: `阶跃响应 (ζ=${zeta.toFixed(2)}, ωn=${wn.toFixed(1)})`,
-        left: "20%",
+        left: "center",
+        top: 0,
         textStyle: { fontSize: 13, fontWeight: 500, color: "#333" },
       },
       {
         text: "Bode 幅频特性",
-        left: "70%",
+        left: "center",
+        top: 260,
         textStyle: { fontSize: 13, fontWeight: 500, color: "#333" },
       },
     ],
@@ -140,13 +144,15 @@ export function StepBodeExplorer() {
   const chartRef = useECharts(option);
 
   return (
-    <div style={s.wrapper}>
+    <section style={s.wrapper} aria-label="二阶阶跃与幅频探索">
+      <p style={{color:"#334155", marginTop:0}}>Q/U = ωn² / (s² + 2ζωn s + ωn²)，零初值，单位阶跃。q = ky/F₀ 为归一化位移。</p>
       <div ref={chartRef} style={s.chart} />
 
       <div style={s.controls}>
         <div style={s.sliderRow}>
           <label style={s.label}>ζ 阻尼比</label>
           <input
+            aria-label="阶跃阻尼比"
             type="range"
             min={0.05}
             max={2.0}
@@ -160,6 +166,7 @@ export function StepBodeExplorer() {
         <div style={s.sliderRow}>
           <label style={s.label}>ωn 自然频率</label>
           <input
+            aria-label="阶跃自然频率"
             type="range"
             min={0.5}
             max={20.0}
@@ -170,8 +177,10 @@ export function StepBodeExplorer() {
           />
           <span style={s.value}>{wn.toFixed(1)}</span>
         </div>
+        <p style={{color:"#334155",overflowWrap:"anywhere"}}>t=1s：q={computeStepResponse(zeta,wn,1).at(-1)![1].toFixed(6)}；3s末样={stepData.at(-1)![1].toFixed(6)}；采样最大值={Math.max(...stepData.map(p=>p[1])).toFixed(6)}。末样不是稳态极限。</p>
+        <button type="button" onClick={()=>{setZeta(.5);setWn(8);}} style={{padding:"6px 12px",border:"1px solid #94a3b8",borderRadius:6,color:"#1e293b",background:"white"}}>恢复阶跃默认值</button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -183,7 +192,7 @@ const s: Record<string, React.CSSProperties> = {
     margin: "20px 0",
     background: "#fafafa",
   },
-  chart: { width: "100%", height: 340 },
+  chart: { width: "100%", height: 530 },
   controls: {
     marginTop: 16,
     padding: 16,
@@ -195,10 +204,11 @@ const s: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 12,
+    flexWrap: "wrap",
     marginBottom: 12,
   },
   label: { fontSize: 14, fontWeight: 500, color: "#374151", minWidth: 100 },
-  slider: { flex: 1, height: 6, cursor: "pointer" },
+  slider: { flex: "1 1 90px", minWidth:0, height: 6, cursor: "pointer" },
   value: {
     fontSize: 14,
     fontWeight: 600,

@@ -976,8 +976,8 @@ export const catalog: Chapter[] = [
             "title": "微分方程的困难"
           },
           {
-            "slug": "拉普拉斯变换把微分变代数",
-            "title": "拉普拉斯变换：把微分变代数"
+            "slug": "变换回顾",
+            "title": "变换回顾"
           },
           {
             "slug": "传递函数的定义",
@@ -988,12 +988,12 @@ export const catalog: Chapter[] = [
             "title": "传递函数好在哪里"
           },
           {
-            "slug": "二阶系统最重要的范例",
-            "title": "二阶系统：最重要的范例"
+            "slug": "二阶模型",
+            "title": "二阶模型"
           },
           {
-            "slug": "从传递函数看频率响应",
-            "title": "从传递函数看频率响应"
+            "slug": "频率响应",
+            "title": "频率响应"
           },
           {
             "slug": "传递函数的局限",
