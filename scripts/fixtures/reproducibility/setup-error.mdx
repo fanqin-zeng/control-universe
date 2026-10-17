@@ -1,0 +1,12 @@
+---
+title: setup错误不得漏检
+---
+
+# setup错误不得漏检
+
+<JupyterNotebook
+  setupCode={`raise RuntimeError("I04_SETUP_SENTINEL")`}
+  cells={[
+    { code: `print("cell独立可运行，但setup失败仍必须判FAIL")` },
+  ]}
+/>

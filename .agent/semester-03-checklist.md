@@ -17,7 +17,7 @@
 | I01 | 构建吞MDX错误门槛修复与失败样本验证 | [x] | .agent/semester-03/i01-mdx-errors.md;.agent/fix-logs/2026-10-17-027.md |
 | I02 | 历史fix索引冲突标记与记录一致性审计 | [x] | .agent/semester-03/i02-fix-index.md;.agent/fix-logs/2026-10-17-028.md |
 | I03 | 36项基线WARN逐项分类并登记处置 | [x] | .agent/semester-03/i03-warn-audit.md;.agent/semester-03/i03-warnings-baseline.json;.agent/semester-03/i03-anchor-evidence.json |
-| I04 | 内核、数值与页面验收可复现性 | [ ] | 验证8891网关、干净kernel执行和8080页面；保留命令与输出 |
+| I04 | 内核、数值与页面验收可复现性 | [x] | .agent/semester-03/i04-reproducibility.md;.agent/semester-03/i04-reproducibility-results.json;.agent/fix-logs/2026-10-17-029.md |
 | S01 | 结构迁移清单与来源/依赖审查 | [ ] | 141来源、56正文、迁移调用点与逐课先修；现有两条离散章内逆序优先 |
 | S02 | 21章catalog骨架与纯资产迁移 | [ ] | 按目标表迁移；新课保持empty，不改教学正文或预签课 |
 | S03 | 旧URL、锚点、引用与台账兼容 | [ ] | 308或等价兼容；不指向空页/不成环；旧tracker按现有check同步 |

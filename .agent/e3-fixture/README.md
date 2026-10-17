@@ -86,18 +86,18 @@ SKIPPED 必须**说出来**并给启动方法，不能静默算过。
 真服务端只在空闲 1800 秒后回收内核，正常验一遍等不到，所以用 mock 确定性触发。
 
 ```bash
-node .agent/e3-fixture/mock-kernel.mjs --port 8999 --fail-at 3 &
+node .agent/e3-fixture/mock-kernel.mjs --port 8999 --fail-at 4 &
 node scripts/nb-cells.mjs verify fx/nb-kernel --root .agent/e3-fixture --port 8999 --quiet
 curl -s --noproxy '*' http://127.0.0.1:8999/__log
 ```
 
-预期 mock 侧记录 `creates = 2`、`executes = 7`，序列为：
-建内核 A → 在 A 上跑 cell 1/2/3（第 3 次返 404）→ 建内核 B（**id 必须不同**）→
-在 B 上重放 cell 1/2 → 重试 cell 3 → 跑 cell 4 → DELETE。
+I04起setup显式执行，预期 mock 侧记录 `creates = 2`、`executes = 9`，序列为：
+建空内核 A → 执行setup → 在 A 上跑 cell 1/2/3（第4次execute返404）→ 建空内核 B（**id 必须不同**）→
+执行原setup → 在 B 上重放 cell 1/2 → 重试 cell 3 → 跑 cell 4 → DELETE。
 
 重放这一步是必须的：新内核是空命名空间，前面 cell 定义的变量都不在了，
 不重放就会用一个跟浏览器行为不一致的方式跑完，报告失真。
-两次 `create` 的 `setupLen` 相同 —— `setup_code` 在重建时也要重发。
+两次 `create` 的 `setupLen` 均为0，避免隐式默认setup；第1/5次execute是原setup，`codeHash`应相等。历史“creates=2、executes=7、fail-at=3”只适用于setup在create内执行的旧协议。
 
 顺带验了 nb-cells 自己的 id 计数器：两个 id 形如 `nbc-<毫秒>-0` / `nbc-<毫秒>-1`，
 后缀递增，符合 fix-011 的前提。
