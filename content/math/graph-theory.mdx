@@ -1,0 +1,277 @@
+---
+title: 图论基础
+description: 从四台记录器交换参考值理解图、连通性、拉普拉斯与谱，区分无向平均一致和有向加权一致。
+---
+
+# 图论基础
+
+## 四个房间怎样统一读数
+
+四个库房各有一台温度记录器，每台保存一份校准偏差的参考数，初始分别为 $0,2,4,6$ ℃。它们不能直接连接所有设备，只能把当前参考数发给相邻设备。如果教学任务是**在没有中心服务器时，让四台设备最终采用这四个数的平均值**，只听邻居的信息够不够？
+
+这里更新的是设备保存的参考数，不是房间的真实温度；取平均也不代替真实的标定实验。先把可通信关系连成链：一号连二号，二号连三号，三号连四号。每一轮同步读取旧值，再同时更新。
+
+图中可以减弱或切断中间链路，也可以改变每轮调整幅度。先看默认第一轮，再看连接条件和调整幅度各自会影响什么。
+
+<GraphConsensusExplorer />
+
+默认第一轮为 $(0.5,2,4,5.5)$ ℃，平均值仍为 $3$ ℃。第 $20$ 轮的读数只是有限次更新结果，不能直接当作极限；下面会说明什么时候能证明它们趋于共同平均。
+
+## 节点与边
+
+图用节点集合 $V$ 和边集合 $E$ 描述对象及其关系，写作 $G=(V,E)$。本例四台记录器是四个节点，一条边表示允许交换信息；节点在图上画的位置只是排版，不是实际房间距离。
+
+无向边表示双向且对等的关系；有向边用箭头表示单向关系。边还可以有非负权重，表示使用邻居信息的强度。本课链图两端边权为 $1$，中间边权为 $w$；$w=0$ 视为删掉中间边，而不是保留一条有效通信链路。
+
+本课使用无自环、无重边的有限图。通信权重不是路径长度或延迟：若要研究最短路的路程成本，应另外规定边代价，不能直接把“更信任邻居”理解成“房间更远”。
+
+## 路径与连通
+
+路径是按边依次走过、不重复节点的节点序列。默认图从一号到四号的路径为 $1\to2\to3\to4$，共有三条边；这里的箭头只表示行走顺序，无向边本身仍可双向使用。沿边绕行回到起点，至少经过三条边、除首尾外不重复节点的路线称为圈。
+
+无向图中，任意两节点间都有路径就称为连通。不能彼此到达的部分形成不同的连通分量；本例中间边切断后，分成 $\{1,2\}$、$\{3,4\}$ 两个分量。
+
+有向图要分开问：按箭头方向，任意两节点都能互达，叫强连通；忽略方向后连通，叫弱连通。单向链 $1\to2\to3\to4$ 弱连通而不强连通。看起来连成一片，不表示信息能反向传回来。
+
+## 生成树与割
+
+连通且没有圈的无向图叫树。包含原图所有节点、只取部分边且仍为树的子图叫生成树。四节点链本身就是一棵生成树，使用 $4-1=3$ 条边；再补上一号与四号之间的边就形成一个四边圈。
+
+把节点分成两组，一条边的两端分别在两组时，它跨过这个割。本例取 $\{1,2\}$ 与 $\{3,4\}$，只有中间边跨割，所以删掉它就断开。删去后增加组内通信不能恢复两组间的信息流。
+
+有向图中的“有根生成树”还要说明方向。本课采用**根可以沿箭头到达所有节点**的出树约定；它不要求每个节点都能返回根。后面的一致性条件也沿用这个约定。
+
+<JupyterNotebook title="图结构与连通分量" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `def components(edges):
+    adjacency=[set() for _ in range(4)]
+    for a,b in edges:adjacency[a].add(b);adjacency[b].add(a)
+    unseen=set(range(4));groups=[]
+    while unseen:
+        root=min(unseen);todo=[root];seen={root}
+        while todo:
+            u=todo.pop()
+            for v in adjacency[u]-seen:seen.add(v);todo.append(v)
+        unseen-=seen;groups.append(sorted(v+1 for v in seen))
+    return groups
+chain=[(0,1),(1,2),(2,3)]
+print('节点/边/连通分量:',4,len(chain),components(chain))
+print('断中间边:',components([(0,1),(2,3)]))
+print('路径边数:',len([1,2,3,4])-1,'生成树边数:',4-1,'补一边圈边数:',len(chain)+1)
+`}]} />
+
+## 邻接矩阵的方向
+
+用邻接矩阵 $A$ 记录边。本课固定 $a_{ij}>0$ 表示**节点 $j$ 的信息被节点 $i$ 接收**，即 $j\to i$，接收者放在行，发送者放在列。别的教材或软件可能采用相反约定，使用前先核一条有向边。
+
+默认无向链的邻接矩阵为
+
+$$
+A=\begin{pmatrix}0&1&0&0\\1&0&1&0\\0&1&0&1\\0&0&1&0\end{pmatrix}.
+$$
+
+对无向等权通信，$A=A^T$，所以方向差异暂时看不出来。若只有 $1\to2$，则 $a_{21}=1$、$a_{12}=0$；不能仍把它画成对称矩阵。
+
+## 度与拉普拉斯矩阵
+
+无向无权图的度是与该节点相接的边数；加权图中使用加权度 $d_i=\sum_j a_{ij}$。在本课有向接收行约定下，它是接收权重之和。令 $D=\operatorname{diag}(d_i)$，定义拉普拉斯矩阵 $L=D-A$。
+
+默认度为 $(1,2,2,1)$，所以
+
+$$
+L=\begin{pmatrix}1&-1&0&0\\-1&2&-1&0\\0&-1&2&-1\\0&0&-1&1\end{pmatrix},\qquad L\mathbf1=0.
+$$
+
+其中 $\mathbf1$ 是全一列向量。矩阵作用 $(Lx)_i=\sum_j a_{ij}(x_i-x_j)$，每一行就是该节点与邻居的加权差。初值 $x^0=(0,2,4,6)^T$ 时，$Lx^0=(-2,0,0,2)^T$；两端有偏差需要调整，中间两台此时恰好相互抵消。
+
+$L\mathbf1=0$ 来自行和为零；无向图因对称还满足 $\mathbf1^TL=0$。一般有向图未必有后一个等式，不能把两个式子混为一谈。
+
+## 关联矩阵与能量
+
+对每条无向边任意选一个记号方向，尾端记 $-1$、头端记 $+1$，每条边组成一列，得到关联矩阵 $B$。令 $W$ 是边权对角矩阵，则
+
+$$
+L=BWB^T,\qquad x^TLx=(B^Tx)^TW(B^Tx)=\sum_{\{i,j\}\in E}w_{ij}(x_i-x_j)^2.
+$$
+
+这里每条无向边只计一次。如果改用对所有有序 $(i,j)$ 的双重和，才需要额外乘 $1/2$。给关联矩阵的边反向只会把对应列变号，不改变 $BWB^T$；这只是无向图的记号选择，不是把实际单向通信反向。
+
+默认三条边的差都为 $2$ ℃，故 $x^{0T}Lx^0=12$ ℃²。它刻画邻居间不一致程度，并非热能或通信能耗。非负边权保证这个二次型非负，因此无向 $L$ 为半正定矩阵。
+
+<JupyterNotebook title="邻接关联与二次型" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]])
+A=sp.Matrix([[0,1,0,0],[1,0,1,0],[0,1,0,1],[0,0,1,0]])
+D=sp.diag(*[sum(A.row(i)) for i in range(4)]);L=D-A;x=sp.Matrix([0,2,4,6])
+print('A/D/L:',A,D,L)
+print('关联重建/行和/列和:',B*B.T-L,L*sp.ones(4,1),sp.ones(1,4)*L)
+print('Lx/边差/能量:',L*x,B.T*x,(x.T*L*x)[0])
+Br=B.copy();Br[:,1]=-Br[:,1];print('反向一列差:',Br*Br.T-L)
+print('单向边邻接:',sp.Matrix([[0,0],[1,0]]))
+`}]} />
+
+## 零特征值告诉什么
+
+所有节点取同一个值时没有邻居差，所以 $\mathbf1$ 在 $L$ 的核内。对无向图，还可以从能量式得到反向结论：$x^TLx=0$ 要求每条正权边的两端相等，沿路径传递后，每个连通分量内部都只能是常数。
+
+因此，零特征值的重数等于连通分量数，$\operatorname{rank}L=n-c$，其中 $c$ 是分量个数。默认链图有一个零特征值、秩为 $3$；中间边切断后有两个零特征值、秩为 $2$。零特征值本身不是“出错”，它保存了整体常数或各组常数的自由度。
+
+## 代数连通度
+
+把无向拉普拉斯特征值按从小到大排列：$0=\lambda_1\leq\lambda_2\leq\cdots\leq\lambda_n$。第二小的 $\lambda_2$ 称为代数连通度；对非负权无向图，$\lambda_2>0$ 等价于连通。
+
+在默认链图中，谱为 $0,2-\sqrt2,2,2+\sqrt2$，所以 $\lambda_2\approx0.5857864$、$\lambda_{\max}\approx3.4142136$。让中间权重为 $w\geq0$ 时，本课四节点链的谱可精确写成
+
+$$
+0,\quad 1+w-\sqrt{1+w^2},\quad 2,\quad 1+w+\sqrt{1+w^2}.
+$$
+
+代数连通度不仅在问“有没有路”，还量化某些不一致方向上的最弱耦合。由正交特征分解，对 $z^T\mathbf1=0$ 有 $z^TLz\geq\lambda_2\|z\|^2$。但改变所有边权会同时改变时间尺度或更新强度，不能只看 $\lambda_2$ 就断言整个控制系统更好。定义也可对照 [Boyd作者资料](https://stanford.edu/~boyd/papers/eigbounds_laplacian.html)。
+
+<JupyterNotebook title="零谱与代数连通度" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `w,z=sp.symbols('w z',nonnegative=True);B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]])
+L=B*sp.diag(1,w,1)*B.T
+print('特征多项式:',sp.factor(L.charpoly(z).as_expr()))
+for weight in [0,1,sp.Rational(3,2)]:
+    M=L.subs(w,weight);print('w/秩/零空间维数/数值谱:',weight,M.rank(),len(M.nullspace()),np.linalg.eigvalsh(np.array(M,dtype=float)))
+print('默认精确谱:',L.subs(w,1).eigenvals())
+print('解析lambda2/lambdaMax:',float(2-sp.sqrt(2)),float(2+sp.sqrt(2)))
+`}]} />
+
+## 连续时间的一致性
+
+在固定无向图上，令参考数按 $\dot x=-\gamma Lx$ 演化，$\gamma>0$ 的单位为每秒，$L$ 的通信权重本课无量纲。因 $\mathbf1^TL=0$，总和及算术平均保持不变。
+
+对连通图，令 $\bar x=\mathbf1^Tx(0)/n$，分歧 $e=x-\bar x\mathbf1$ 总与 $\mathbf1$ 正交。取 $V=\|e\|^2/2$，有
+
+$$
+\dot V=-\gamma e^TLe\leq-2\gamma\lambda_2V,\qquad
+x(t)=e^{-\gamma Lt}x(0)\longrightarrow\bar x\mathbf1.
+$$
+
+默认平均为 $3$ ℃，$V(0)=10$ ℃²，$\gamma=1$ s⁻¹ 时初始 $\dot V=-12$ ℃²/s。指数解在 $t=1$ s 约为 （1.3749283，2.3348567，3.6651433，4.6250717） ℃，还没有精确相同。
+
+断开中间边后，只能分别保持和收敛到各分量的平均：一二号趋于 $1$ ℃，三四号趋于 $5$ ℃。全局平均仍为 $3$ ℃，却不能让没有信息通路的两组自动统一。
+
+<JupyterNotebook title="连续时间与平均保持" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `B=np.array([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1.]],dtype=float);x=np.array([0.,2.,4.,6.]);mean=np.mean(x)
+for w in [1.,0.]:
+    L=B@np.diag([1,w,1])@B.T
+    print('w/t1/t10/平均:',w,expm(-L)@x,expm(-10*L)@x,np.mean(expm(-L)@x))
+L=B@B.T;e=x-mean;print('初始V/Vdot:',np.dot(e,e)/2,-e@L@e)
+print('断图分量极限:',[np.mean(x[:2])]*2+[np.mean(x[2:])]*2)
+`}]} />
+
+## 离散更新的步长
+
+实际记录器可以每轮同步进行一次邻居差分：
+
+$$
+x^{k+1}=(I-\alpha L)x^k,\qquad
+x_i^{k+1}=x_i^k+\alpha\sum_j a_{ij}(x_j^k-x_i^k).
+$$
+
+$k$ 是轮数，$\alpha$ 是无量纲更新幅度。这个协议与连续时间微分方程分开定义；若把它看成前向欧拉离散，才另有 $\alpha=\gamma\Delta t$ 的关系，它不是矩阵指数的精确采样。
+
+对固定连通无向图，每个非零特征模态乘上 $1-\alpha\lambda_i$。要让所有分歧模态衰减，充要范围为
+
+$$
+0<\alpha<\frac{2}{\lambda_{\max}}.
+$$
+
+默认上界约为 $0.5857864$，取 $\alpha=1/4$ 满足条件，第一轮为 $(.5,2,4,5.5)$ ℃。第 $20$ 轮约为 （2.8772179，2.9491420，3.0508580，3.1227821） ℃，仍只是接近极限。图中的平均虚线是解析基准，不是最后一个采样点。
+
+若还要求每轮是自身与邻居旧值的凸组合，可以检查 $0<\alpha<1/d_{\max}$，这是连通无向图下一个便于使用的充分范围，但不是上面精确谱范围的同义写法。
+
+失败边界同样重要。两个节点互连、权重为 $1$，取 $\alpha=1$ 会使两者每轮交换旧值：从 $(0,2)$ 反复变成 $(2,0),(0,2)$，平均虽保持却不收敛。在本课四节点图取 $w=1.5,\alpha=.5$ 时，分歧谱半径约为 $1.1513878>1$，对所有初态的收敛保证已失效；**只看当前 $20$ 轮是否显得平稳，不能代替谱条件**。
+
+<JupyterNotebook title="离散更新与失败边界" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `B=np.array([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1.]],dtype=float);x0=np.array([0.,2.,4.,6.])
+for w,alpha in [(1.,.25),(0.,.25),(1.5,.5)]:
+    L=B@np.diag([1,w,1])@B.T;P=np.eye(4)-alpha*L;ev=np.linalg.eigvalsh(L)
+    rows=np.array([np.linalg.matrix_power(P,k)@x0 for k in range(21)])
+    print('w/alpha/首轮/20轮/分歧谱半径:',w,alpha,rows[1],rows[-1],np.max(np.abs(1-alpha*ev[1:])))
+    print('首轮边差能量:',rows[1]@L@rows[1])
+print('默认步长上界:',2/(2+np.sqrt(2)))
+flip=sp.Matrix([[0,1],[1,0]]);x=sp.Matrix([0,2]);print('两节点周期:',flip*x,flip**2*x)
+`}]} />
+
+## 有向图的一致性
+
+对有向接收行拉普拉斯，$L\mathbf1=0$ 仍成立，但总和不一定保持。对固定非负权有向图，只要存在一棵根可沿箭头到达全部节点的生成树，连续协议就能从任意初值趋于某个共同值；强连通是一个充分的连接条件，却不是必要条件。
+
+例如只有 $1\to2$、权重为 $1$，就有 $\dot x_1=0$、$\dot x_2=x_1-x_2$（本节时间增益取 $1$ s⁻¹）。从 $(0,6)$ 出发，解为 $(0,6e^{-t})$，两者趋于 $0$，不是算术平均 $3$。节点一是能到达所有节点的根，但图不强连通。
+
+即使强连通，也未必平均一致。若一号接收二号的权重为 $1$，二号接收一号的权重为 $2$，则
+
+$$
+L=\begin{pmatrix}1&-1\\-2&2\end{pmatrix},\qquad
+\pi^TL=0,\quad \pi=(2/3,1/3)^T.
+$$
+
+归一化左零向量 $\pi$ 给出保持量 $\pi^Tx$。从 $(0,6)$ 出发，连续解趋于 $(2,2)$，而不是 $(3,3)$。这里 $\pi$ 不是概率抽样结果，只是非负且和为一的数学权重。
+
+有向图若每节点接收权重和等于发送权重和，就称权平衡；矩阵上对应 $\mathbf1^TL=0$。若再有强连通，就能用这个连续协议从任意初值趋于算术平均。不能把“强连通”“平衡”“平均一致”三个词互相替换。固定拓扑的有向平均条件可查 [Olfati-Saber与Murray作者论文](https://www.cds.caltech.edu/~murray/preprints/om04-tac.pdf)。
+
+<JupyterNotebook title="有向根与加权极限" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `L=sp.Matrix([[1,-1],[-2,2]]);pi=sp.Matrix([sp.Rational(2,3),sp.Rational(1,3)]);x=sp.Matrix([0,6])
+print('左/右零/列和:',pi.T*L,L*sp.ones(2,1),sp.ones(1,2)*L)
+print('保持量/算术平均:',(pi.T*x)[0],sum(x)/2)
+print('强连通t10:',expm(-10*np.array(L,dtype=float))@np.array(x,dtype=float).reshape(-1))
+t=sp.symbols('t',real=True);oneway=sp.Matrix([0,6*sp.exp(-t)]);L1=sp.Matrix([[0,0],[-1,1]])
+print('单向解方程残差:',sp.simplify(oneway.diff(t)+L1*oneway),'极限:',oneway.applyfunc(lambda a:sp.limit(a,t,sp.oo)))
+print('单向左保持向量:',sp.Matrix([[1,0]])*L1)
+`}]} />
+
+## 控制里的网络边界
+
+通信图决定谁能使用谁的信息，系统动力学决定这些信息怎样变成状态变化。图连通只是其中一层：还要检查局部控制器、延迟、丢包、异步更新、切换拓扑和约束。固定无延迟图上的证明不能不加条件搬到变化中的网络。
+
+同一张图也可以表达电力线路、机械连接、状态依赖或优化变量的耦合，但不同边的方向和权重意义不同。本课给出的拉普拉斯与一致性模型，是后续多智能体控制的数学入口，不是一个已经处理真实通信问题的完整协议。
+
+## 小结
+
+从边追路径，从路径看连通和割，再把关系写成矩阵。无向拉普拉斯的关联分解给出非负能量，核说明连通分量，特征值把连接结构与模态衰减联系起来。
+
+做计算前先固定箭头与矩阵行列约定；使用收敛结论前再核无向还是有向、平均是否保持、图是否固定和步长是否合适。有限曲线只是证据的一部分，解析极限与条件必须另外说明。
+
+## 习题
+
+1. 对默认四节点链写出一号到四号的路径、生成树边数和中间割；中间边删掉后有几个分量？
+2. 按接收行约定写默认 $A,D,L$，计算 $L(0,2,4,6)^T$；单向边 $1\to2$ 应填邻接矩阵的哪个元素？
+3. 写出三边关联矩阵的一种定向，核验 $B B^T=L$，计算初始边差能量，并解释反向一列为什么不改变无向拉普拉斯。
+4. 默认和切断中间边的零谱重数、秩分别是多少？计算默认代数连通度，并说明它与全局平均保持不是同一命题。
+5. 求默认离散首轮、连续初始分歧能量及其导数，给出离散谱步长范围；用两节点交换说明保持平均为何不足以收敛。
+6. 对有向 $L=\bigl(\begin{smallmatrix}1&-1\\-2&2\end{smallmatrix}\bigr)$ 求归一化左零向量、从 $(0,6)$ 出发的一致极限，并判断权平衡。
+
+## 答案
+
+1. 路径 $1\to2\to3\to4$，三条边；生成树用 $4-1=3$ 边。割 $\{1,2\}$ 与 $\{3,4\}$ 只跨中间边，删掉后为两个分量。
+2. 矩阵见正文，度对角为 $(1,2,2,1)$；$Lx=(-2,0,0,2)^T$。单向边只填 $a_{21}=1$，不填 $a_{12}$。
+3. 可用三列 $(-1,1,0,0)^T$、$(0,-1,1,0)^T$、$(0,0,-1,1)^T$。边差为 $(2,2,2)$，平方和 $12$ ℃²。列变号时外积不变，因此 $BB^T$ 不变。
+4. 连通链零重数一、秩三；断图零重数二、秩二。$\lambda_2=2-\sqrt2\approx.5857864$。平均保持来自列和零，而能否让所有节点达到这个平均还依赖连通与动态条件。
+5. 默认首轮 $(.5,2,4,5.5)$ ℃；初始分歧平方和为 $20$，所以 $V=10$ ℃²，$\dot V=-12$ ℃²/s。精确步长范围 $0<\alpha<2/(2+\sqrt2)\approx.5857864$。两节点 $\alpha=1$ 交换旧值，平均为 $1$ 却往返，不收敛。
+6. 解 $\pi^TL=0$、$\pi_1+\pi_2=1$ 得 $\pi=(2/3,1/3)$，保持量为 $2$，因此连续极限为 $(2,2)$。列和为 $(-1,1)$，不是零，所以不平衡；强连通也不能替代平衡。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+`} cells={[{code: `B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]]);L=B*B.T;x=sp.Matrix([0,2,4,6]);alpha=sp.Rational(1,4)
+print('题1节点/树边/断分量:',4,3,2)
+print('题2 Lx:',L*x,'单向元素a21:',1)
+print('题3边差/能量:',B.T*x,(x.T*L*x)[0])
+Lc=B*sp.diag(1,0,1)*B.T;print('题4零维/秩:',len(L.nullspace()),L.rank(),len(Lc.nullspace()),Lc.rank(),2-sp.sqrt(2))
+e=x-sp.ones(4,1)*3;print('初始分歧平方和:',(e.T*e)[0]);print('题5首轮/V/Vdot:',(sp.eye(4)-alpha*L)*x,(e.T*e)[0]/2,-(e.T*L*e)[0])
+Ld=sp.Matrix([[1,-1],[-2,2]]);p=sp.Matrix([[sp.Rational(2,3),sp.Rational(1,3)]])
+print('题6左零/保持量/列和:',p*Ld,(p*sp.Matrix([0,6]))[0],sp.ones(1,2)*Ld)
+`}]} />

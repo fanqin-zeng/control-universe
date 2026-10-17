@@ -677,11 +677,79 @@ export const catalog: Chapter[] = [
         "slug": "graph-theory",
         "title": "图论基础",
         "prereq": [
-          "math/eigen-decomposition"
+          "math/eigen-decomposition",
+          "math/ode-matrix-exponential"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
+,
+        "subsections": [
+          {
+                    "slug": "四个房间怎样统一读数",
+                    "title": "四个房间怎样统一读数"
+          },
+          {
+                    "slug": "节点与边",
+                    "title": "节点与边"
+          },
+          {
+                    "slug": "路径与连通",
+                    "title": "路径与连通"
+          },
+          {
+                    "slug": "生成树与割",
+                    "title": "生成树与割"
+          },
+          {
+                    "slug": "邻接矩阵的方向",
+                    "title": "邻接矩阵的方向"
+          },
+          {
+                    "slug": "度与拉普拉斯矩阵",
+                    "title": "度与拉普拉斯矩阵"
+          },
+          {
+                    "slug": "关联矩阵与能量",
+                    "title": "关联矩阵与能量"
+          },
+          {
+                    "slug": "零特征值告诉什么",
+                    "title": "零特征值告诉什么"
+          },
+          {
+                    "slug": "代数连通度",
+                    "title": "代数连通度"
+          },
+          {
+                    "slug": "连续时间的一致性",
+                    "title": "连续时间的一致性"
+          },
+          {
+                    "slug": "离散更新的步长",
+                    "title": "离散更新的步长"
+          },
+          {
+                    "slug": "有向图的一致性",
+                    "title": "有向图的一致性"
+          },
+          {
+                    "slug": "控制里的网络边界",
+                    "title": "控制里的网络边界"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+]
       },
       {
         "slug": "game-theory-math",

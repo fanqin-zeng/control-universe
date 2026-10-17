@@ -1,0 +1,142 @@
+{
+  "source": "content/math/graph-theory.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 44,
+      "title": "图结构与连通分量",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 47,
+          "delim": "`",
+          "code": "def components(edges):\r\n    adjacency=[set() for _ in range(4)]\r\n    for a,b in edges:adjacency[a].add(b);adjacency[b].add(a)\r\n    unseen=set(range(4));groups=[]\r\n    while unseen:\r\n        root=min(unseen);todo=[root];seen={root}\r\n        while todo:\r\n            u=todo.pop()\r\n            for v in adjacency[u]-seen:seen.add(v);todo.append(v)\r\n        unseen-=seen;groups.append(sorted(v+1 for v in seen))\r\n    return groups\r\nchain=[(0,1),(1,2),(2,3)]\r\nprint('节点/边/连通分量:',4,len(chain),components(chain))\r\nprint('断中间边:',components([(0,1),(2,3)]))\r\nprint('路径边数:',len([1,2,3,4])-1,'生成树边数:',4-1,'补一边圈边数:',len(chain)+1)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 102,
+      "title": "邻接关联与二次型",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 105,
+          "delim": "`",
+          "code": "B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]])\r\nA=sp.Matrix([[0,1,0,0],[1,0,1,0],[0,1,0,1],[0,0,1,0]])\r\nD=sp.diag(*[sum(A.row(i)) for i in range(4)]);L=D-A;x=sp.Matrix([0,2,4,6])\r\nprint('A/D/L:',A,D,L)\r\nprint('关联重建/行和/列和:',B*B.T-L,L*sp.ones(4,1),sp.ones(1,4)*L)\r\nprint('Lx/边差/能量:',L*x,B.T*x,(x.T*L*x)[0])\r\nBr=B.copy();Br[:,1]=-Br[:,1];print('反向一列差:',Br*Br.T-L)\r\nprint('单向边邻接:',sp.Matrix([[0,0],[1,0]]))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 133,
+      "title": "零谱与代数连通度",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 136,
+          "delim": "`",
+          "code": "w,z=sp.symbols('w z',nonnegative=True);B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]])\r\nL=B*sp.diag(1,w,1)*B.T\r\nprint('特征多项式:',sp.factor(L.charpoly(z).as_expr()))\r\nfor weight in [0,1,sp.Rational(3,2)]:\r\n    M=L.subs(w,weight);print('w/秩/零空间维数/数值谱:',weight,M.rank(),len(M.nullspace()),np.linalg.eigvalsh(np.array(M,dtype=float)))\r\nprint('默认精确谱:',L.subs(w,1).eigenvals())\r\nprint('解析lambda2/lambdaMax:',float(2-sp.sqrt(2)),float(2+sp.sqrt(2)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 160,
+      "title": "连续时间与平均保持",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 163,
+          "delim": "`",
+          "code": "B=np.array([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1.]],dtype=float);x=np.array([0.,2.,4.,6.]);mean=np.mean(x)\r\nfor w in [1.,0.]:\r\n    L=B@np.diag([1,w,1])@B.T\r\n    print('w/t1/t10/平均:',w,expm(-L)@x,expm(-10*L)@x,np.mean(expm(-L)@x))\r\nL=B@B.T;e=x-mean;print('初始V/Vdot:',np.dot(e,e)/2,-e@L@e)\r\nprint('断图分量极限:',[np.mean(x[:2])]*2+[np.mean(x[2:])]*2)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 194,
+      "title": "离散更新与失败边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 197,
+          "delim": "`",
+          "code": "B=np.array([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1.]],dtype=float);x0=np.array([0.,2.,4.,6.])\r\nfor w,alpha in [(1.,.25),(0.,.25),(1.5,.5)]:\r\n    L=B@np.diag([1,w,1])@B.T;P=np.eye(4)-alpha*L;ev=np.linalg.eigvalsh(L)\r\n    rows=np.array([np.linalg.matrix_power(P,k)@x0 for k in range(21)])\r\n    print('w/alpha/首轮/20轮/分歧谱半径:',w,alpha,rows[1],rows[-1],np.max(np.abs(1-alpha*ev[1:])))\r\n    print('首轮边差能量:',rows[1]@L@rows[1])\r\nprint('默认步长上界:',2/(2+np.sqrt(2)))\r\nflip=sp.Matrix([[0,1],[1,0]]);x=sp.Matrix([0,2]);print('两节点周期:',flip*x,flip**2*x)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 224,
+      "title": "有向根与加权极限",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 227,
+          "delim": "`",
+          "code": "L=sp.Matrix([[1,-1],[-2,2]]);pi=sp.Matrix([sp.Rational(2,3),sp.Rational(1,3)]);x=sp.Matrix([0,6])\r\nprint('左/右零/列和:',pi.T*L,L*sp.ones(2,1),sp.ones(1,2)*L)\r\nprint('保持量/算术平均:',(pi.T*x)[0],sum(x)/2)\r\nprint('强连通t10:',expm(-10*np.array(L,dtype=float))@np.array(x,dtype=float).reshape(-1))\r\nt=sp.symbols('t',real=True);oneway=sp.Matrix([0,6*sp.exp(-t)]);L1=sp.Matrix([[0,0],[-1,1]])\r\nprint('单向解方程残差:',sp.simplify(oneway.diff(t)+L1*oneway),'极限:',oneway.applyfunc(lambda a:sp.limit(a,t,sp.oo)))\r\nprint('单向左保持向量:',sp.Matrix([[1,0]])*L1)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 266,
+      "title": "六题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.linalg import expm\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 269,
+          "delim": "`",
+          "code": "B=sp.Matrix([[-1,0,0],[1,-1,0],[0,1,-1],[0,0,1]]);L=B*B.T;x=sp.Matrix([0,2,4,6]);alpha=sp.Rational(1,4)\r\nprint('题1节点/树边/断分量:',4,3,2)\r\nprint('题2 Lx:',L*x,'单向元素a21:',1)\r\nprint('题3边差/能量:',B.T*x,(x.T*L*x)[0])\r\nLc=B*sp.diag(1,0,1)*B.T;print('题4零维/秩:',len(L.nullspace()),L.rank(),len(Lc.nullspace()),Lc.rank(),2-sp.sqrt(2))\r\ne=x-sp.ones(4,1)*3;print('初始分歧平方和:',(e.T*e)[0]);print('题5首轮/V/Vdot:',(sp.eye(4)-alpha*L)*x,(e.T*e)[0]/2,-(e.T*L*e)[0])\r\nLd=sp.Matrix([[1,-1],[-2,2]]);p=sp.Matrix([[sp.Rational(2,3),sp.Rational(1,3)]])\r\nprint('题6左零/保持量/列和:',p*Ld,(p*sp.Matrix([0,6]))[0],sp.ones(1,2)*Ld)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
