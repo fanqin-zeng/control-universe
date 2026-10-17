@@ -1,33 +1,58 @@
 # Wiki修复日志索引
 
-| # | 日期 | 文档 | 章节 | 类型 | 归因角色 | 摘要 |
-|---|------|------|------|------|------|------|
-| 001 | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 缺少动态控件→新增FirstOrderStepExplorer交互组件，拖动T滑块感受各指标含义 |
-| 002 | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 横坐标轴动态缩放→改为固定范围(30s)，让T/3T/4T标注线随参数变化而移动 |
-| 003 | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 标注线渐入动画→禁用animation，拖动时即时响应无闪烁 |
-| 004 | 2026-09-22 | classic/system-modeling.mdx | 阻尼的关键作用 | BUG | 苏绘+何仿（清单缺项） | ipywidgets不可用→改用React交互组件SuspensionExplorer，带ζ滑块实时响应 |
-| 005 | 2026-09-23 | transfer-function, time-domain-analysis | StepBodeExplorer/ImpulseExplorer/SuspensionTimeExplorer/PoleZeroExplorer | BUG | 苏绘+何仿（清单缺项） | 四个组件违反Fix-002（动态坐标轴）→改为固定xAxis/yAxis常量，确保曲线在稳定参考系中移动 |
-| 006 | 2026-09-23 | classic/frequency-domain-analysis.mdx | 频域分析 | BOTH | 苏绘+何仿（清单缺项） | 4个ipywidgets笔记本→转为React组件（BodeZetaExplorer/NyquistZetaExplorer/BandwidthCorrespondenceExplorer/RCFilterBodeExplorer），符合Fix-002/003/004 |
-| 007 | 2026-09-23 | classic/root-locus.mdx | 增益 K 如何影响阶跃响应 | BUG | 苏绘+何仿（清单缺项） | ipywidgets不可用→改用React交互组件RootLocusKExplorer，带K滑块展示过阻尼/分离点/欠阻尼/临界稳定/不稳定五种状态，固定时间轴(0-10s)，禁用动画 |
-| 008 | 2026-09-23 | classic/pid-controller.mdx | PID控制器参数调节 | BUG | 苏绘+何仿（清单缺项） | 2个ipywidgets笔记本→转为React组件（PidDerivativeFilterExplorer单Tf滑块+PidKiKdExplorer双Ki/Kd滑块），固定坐标轴，禁用动画 |
-| 009 | 2026-09-23 | classic/stability-analysis.mdx | 系统稳定性分析 | BUG | 苏绘+何仿（清单缺项） | 2个ipywidgets笔记本→转为React组件（StabilityThirdOrderExplorer单a2滑块展示三阶系统稳定域+StabilityDelayExplorer单K滑块展示时滞稳定性），固定坐标轴，禁用动画 |
-| 010 | 2026-09-23 | classic/compensator-design.mdx | 校正网络设计 | BUG | 苏绘+何仿（清单缺项） | 4个ipywidgets笔记本→转为React组件（LeadCompensatorExplorer单K滑块展示超前校正Bode图+LagCompensatorExplorer单K滑块展示滞后校正Bode图+LeadLagCompensatorExplorer单K滑块展示超前-滞后校正+AntiWindupExplorer单u_limit滑块展示抗饱和仿真），固定坐标轴，禁用动画 |
-| 011 | 2026-09-23 | components/wiki/jupyter-notebook.tsx | 全站（多Notebook课程页） | BUG | 秦构（B1 新设） | 同页多个Notebook的kernel id都是`nb-<时间戳>-0`（useRef计数器是每实例的）→共用一个内核命名空间、变量互相覆盖，报出与本页代码无关的ValueError；改为模块级`nbSeq`生成唯一id |
-| 012 | 2026-09-24 | content/nonlinear/backstepping.mdx | 全站（多行display math） | BUG | 苏绘+何仿（清单缺项）※Q24 | 多行公式把内容写在开/闭`$$`同一行（`$$\begin{aligned}`、`\end{aligned}$$`）→remark-math吞首行/不闭合，其后全文被当成一个数学块以katex-error原文渲染；规范化为`$$`独占开/闭行，并给浏览器验收加"h2数==catalog小节数、katex-error==0"两条断言 |
-| 013 | 2026-09-24 | content/intelligent/fuzzy-control-basics.mdx | 全站（JupyterNotebook 组件写法） | BUG | 秦构（B1 新设） | `setupCode={`...`},` 收尾带逗号在 JSX 里非法（属性间只能用空白分隔）→next-mdx-remote 编译抛错、getLesson throw、页面表现为 404 而非 500；本地 Python harness 不解析 MDX 故抓不到。全文去掉 8 处逗号，并把"页面 200 且 h2 数==catalog"列为交付硬门槛 |
-| 014 | 2026-09-25 | components/wiki/nyquist-limit-cycle-explorer.tsx | 全站（交互组件与正文手算例配对） | BOTH | 柯验（B1 新设） | 组件 -1/N(A) 轨迹从 A=1.05 起（继电器分支共用该下限）→ 默认参数下画不出正文手算例的交点 A0=4/(3π)=0.4244；交点检测只算 Nyquist 穿越点、不检查轨迹覆盖 → 不存在极限环时也误报。修法：轨迹起点按类型分开（relay 从 0.02）、默认改 relay、加覆盖性判据+二分反解 A/插值反解 ω、legend 随交点存在性变化 |
-| 015 | 2026-09-25 | lib/content.ts | 全站（新增交互组件的课程页） | BUG | 秦构（B1 新设） | 组件注册表有两份：mdx-components.tsx 与 lib/content.ts 的 compileMDX components 映射，课程页走后者且显式传参会覆盖前者→只改 mdx-components.tsx 时页面 500 "Expected component X to be defined"；新增组件必须两处同改，并以 curl 课程页 200 为交付门槛。**E2（2026-09-26）已根治**，机制改为单一来源 `lib/wiki-components.ts`，见下方《根治记录 015》；本行「显式传参会覆盖前者」这句机制描述经实测**不成立**（真实原因是 `mdx-components.tsx` 对课程页从未生效），更正也记在那里 |
-| 016 | 2026-09-25 | components/wiki/phase-plane-explorer.tsx | 相平面分析（Van der Pol 读数） | BUG | 柯验（B1 新设） | rk4 按 keep=round(steps/1200) 抽稀后返回，过零事件下标是输出点不是积分步，用 T/steps 换算时间使周期小 keep 倍（0.319 vs 6.381 s）→改用 dtStored=T/(len-1) 自洽换算，读数回到 6.380664 s 与 Notebook 1 一致 |
-| 017 | 2026-09-25 | content/nonlinear/nonlinear-characteristics.mdx | 全站（JupyterNotebook cell 拼接流程） | BUG | 秦构（B1 新设） | 拼接脚本的占位符 `%%NBn%%` 经过一层 `%` 格式化被折叠成 `%NBn%`，9 个 cell 首行由 `# 注释` 变成 `%# 注释` → IPython 当成 line magic，一运行就 `UsageError: Line magic function '%#' not found`；改回 `#` 并新增"MDX cell 与 harness cell 字符串全等"校验脚本作为交付门槛 |
-| 018 | 2026-09-25 | components/wiki/nonlinearity-explorer.tsx | 非线性系统特性（间隙环面积读数） | BUG | 柯验（B1 新设） | 有记忆非线性预热循环停在 t=6π（u≈0，下降支），上升支扫描却从 u=-A 起，prevY 带着 +b 残留把上升支钉高 1.0 → 环面积 0.520000 而手算 0.84（max\|y-u\| 仍正确，最难发现）；预热末相位改为与扫描起点重合 θ=-π/2，面积回到 0.839999 |
-| 021 | 2026-10-16 | classic/case-study+fda+pid（11 处 setup + 4 处 cell） | notebook 全线 | BUG | 秦构（S6 未实跑） | scipy1.12+/numpy2.x API 漂移：feedback/margin 非 scipy、lti 算术被移除、bode plot kwarg、tf 缺名、cont2discrete 5 元组、1×1 数组转标量→setup 猴子补丁恢复 lti 算术+本地 feedback/margin，cell 仅直修 4 处纯错；S6 实跑 0 error；门槛收紧为签发必跑（编号跳过 B8 预留的 019/020） |
-| 024 | 2026-10-17 | content/modern/lqr-controller.mdx | ARE/鲁棒性/可检测性 | BOTH | 柯验+林矩（既有清单未执行） | 三题CARE数值、裕度外推与可检测性结论修正；双模式React替代widget；真实内核与独立TS/SciPy对账，证据见讨论日志附录 |
-| 025 | 2026-10-17 | content/modern/lyapunov-modern.mdx | 线性稳定性/BIBO/Lyapunov证书 | BOTH | 林矩+柯验（既有清单未执行） | 统一隐藏模式矩阵、修正Jordan/BIBO与代价因子、限定半正定证书；改名并前移，旧路由308；三notebook八cell复算 |
-| 026 | 2026-10-17 | content/modern/multivariable-systems.mdx | 正常秩/零点/RGA/解耦 | BOTH | 林矩+柯验（既有清单未执行） | 例1方向零点、恒秩亏定义与RGA越界推论更正；补D项和可实现性；React替widget，六cell实跑与TS/SciPy对账 |
-| 027 | 2026-10-17 | app/(wiki)/[chapter]/[lesson]/page.tsx | MDX构建错误传播 | BUG | 秦构（清单缺项） | 移除把目录内读取/编译故障转成404的宽泛catch；真实坏页构建退出1，补两处MDX闭合符恢复正常；保留负向样本和路由回归测试，见学期3I01记录 |
-<<<<<<< HEAD
-=======
+本表是当前归档入口；每行编号链接到唯一详情。007–010为2026-10-17依据原索引补建的追溯记录，不是同期原始验收。当前条数由 node scripts/check-fix-logs.mjs 实测，预留号不计入归档数。
 
+<!-- FIX-INDEX-BEGIN -->
+| # | 日期 | 文档 | 章节 | 类型 | 归因角色 | 摘要 |
+|---|---|---|---|---|---|---|
+| [001](2026-09-22-001.md) | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 缺少动态控件→新增FirstOrderStepExplorer交互组件，拖动T滑块感受各指标含义 |
+| [002](2026-09-22-002.md) | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 横坐标轴动态缩放→改为固定范围(30s)，让T/3T/4T标注线随参数变化而移动 |
+| [003](2026-09-22-003.md) | 2026-09-22 | classic/time-domain-analysis.mdx | 一阶系统的阶跃响应 | BOTH | 苏绘+何仿（清单缺项） | 标注线渐入动画→禁用animation，拖动时即时响应无闪烁 |
+| [004](2026-09-22-004.md) | 2026-09-22 | classic/system-modeling.mdx | 阻尼的关键作用 | BUG | 苏绘+何仿（清单缺项） | ipywidgets不可用→改用React交互组件SuspensionExplorer，带ζ滑块实时响应 |
+| [005](2026-09-23-005.md) | 2026-09-23 | transfer-function, time-domain-analysis | StepBodeExplorer/ImpulseExplorer/SuspensionTimeExplorer/PoleZeroExplorer | BUG | 苏绘+何仿（清单缺项） | 四个组件违反Fix-002（动态坐标轴）→改为固定xAxis/yAxis常量，确保曲线在稳定参考系中移动 |
+| [006](2026-09-23-006.md) | 2026-09-23 | classic/frequency-domain-analysis.mdx | 频域分析 | BOTH | 苏绘+何仿（清单缺项） | 4个ipywidgets笔记本→转为React组件（BodeZetaExplorer/NyquistZetaExplorer/BandwidthCorrespondenceExplorer/RCFilterBodeExplorer），符合Fix-002/003/004 |
+| [007](2026-09-23-007.md) | 2026-09-23 | classic/root-locus.mdx | 增益 K 如何影响阶跃响应 | BUG | 苏绘+何仿（清单缺项） | ipywidgets不可用→改用React交互组件RootLocusKExplorer，带K滑块展示过阻尼/分离点/欠阻尼/临界稳定/不稳定五种状态，固定时间轴(0-10s)，禁用动画 |
+| [008](2026-09-23-008.md) | 2026-09-23 | classic/pid-controller.mdx | PID控制器参数调节 | BUG | 苏绘+何仿（清单缺项） | 2个ipywidgets笔记本→转为React组件（PidDerivativeFilterExplorer单Tf滑块+PidKiKdExplorer双Ki/Kd滑块），固定坐标轴，禁用动画 |
+| [009](2026-09-23-009.md) | 2026-09-23 | classic/stability-analysis.mdx | 系统稳定性分析 | BUG | 苏绘+何仿（清单缺项） | 2个ipywidgets笔记本→转为React组件（StabilityThirdOrderExplorer单a2滑块展示三阶系统稳定域+StabilityDelayExplorer单K滑块展示时滞稳定性），固定坐标轴，禁用动画 |
+| [010](2026-09-23-010.md) | 2026-09-23 | classic/compensator-design.mdx | 校正网络设计 | BUG | 苏绘+何仿（清单缺项） | 4个ipywidgets笔记本→转为React组件（LeadCompensatorExplorer单K滑块展示超前校正Bode图+LagCompensatorExplorer单K滑块展示滞后校正Bode图+LeadLagCompensatorExplorer单K滑块展示超前-滞后校正+AntiWindupExplorer单u_limit滑块展示抗饱和仿真），固定坐标轴，禁用动画 |
+| [011](2026-09-23-011.md) | 2026-09-23 | components/wiki/jupyter-notebook.tsx | 全站（多Notebook课程页） | BUG | 秦构（B1 新设） | 同页多个Notebook的kernel id都是`nb-<时间戳>-0`（useRef计数器是每实例的）→共用一个内核命名空间、变量互相覆盖，报出与本页代码无关的ValueError；改为模块级`nbSeq`生成唯一id |
+| [012](2026-09-24-012.md) | 2026-09-24 | content/nonlinear/backstepping.mdx | 全站（多行display math） | BUG | 苏绘+何仿（清单缺项）※Q24 | 多行公式把内容写在开/闭`$$`同一行（`$$\begin{aligned}`、`\end{aligned}$$`）→remark-math吞首行/不闭合，其后全文被当成一个数学块以katex-error原文渲染；规范化为`$$`独占开/闭行，并给浏览器验收加"h2数==catalog小节数、katex-error==0"两条断言 |
+| [013](2026-09-24-013.md) | 2026-09-24 | content/intelligent/fuzzy-control-basics.mdx | 全站（JupyterNotebook 组件写法） | BUG | 秦构（B1 新设） | `setupCode={`...`},` 收尾带逗号在 JSX 里非法（属性间只能用空白分隔）→next-mdx-remote 编译抛错、getLesson throw、页面表现为 404 而非 500；本地 Python harness 不解析 MDX 故抓不到。全文去掉 8 处逗号，并把"页面 200 且 h2 数==catalog"列为交付硬门槛 |
+| [014](2026-09-25-014.md) | 2026-09-25 | components/wiki/nyquist-limit-cycle-explorer.tsx | 全站（交互组件与正文手算例配对） | BOTH | 柯验（B1 新设） | 组件 -1/N(A) 轨迹从 A=1.05 起（继电器分支共用该下限）→ 默认参数下画不出正文手算例的交点 A0=4/(3π)=0.4244；交点检测只算 Nyquist 穿越点、不检查轨迹覆盖 → 不存在极限环时也误报。修法：轨迹起点按类型分开（relay 从 0.02）、默认改 relay、加覆盖性判据+二分反解 A/插值反解 ω、legend 随交点存在性变化 |
+| [015](2026-09-25-015.md) | 2026-09-25 | lib/content.ts | 全站（新增交互组件的课程页） | BUG | 秦构（B1 新设） | 组件注册表有两份：mdx-components.tsx 与 lib/content.ts 的 compileMDX components 映射，课程页走后者且显式传参会覆盖前者→只改 mdx-components.tsx 时页面 500 "Expected component X to be defined"；新增组件必须两处同改，并以 curl 课程页 200 为交付门槛。**E2（2026-09-26）已根治**，机制改为单一来源 `lib/wiki-components.ts`，见下方《根治记录 015》；本行「显式传参会覆盖前者」这句机制描述经实测**不成立**（真实原因是 `mdx-components.tsx` 对课程页从未生效），更正也记在那里 |
+| [016](2026-09-25-016.md) | 2026-09-25 | components/wiki/phase-plane-explorer.tsx | 相平面分析（Van der Pol 读数） | BUG | 柯验（B1 新设） | rk4 按 keep=round(steps/1200) 抽稀后返回，过零事件下标是输出点不是积分步，用 T/steps 换算时间使周期小 keep 倍（0.319 vs 6.381 s）→改用 dtStored=T/(len-1) 自洽换算，读数回到 6.380664 s 与 Notebook 1 一致 |
+| [017](2026-09-25-017.md) | 2026-09-25 | content/nonlinear/nonlinear-characteristics.mdx | 全站（JupyterNotebook cell 拼接流程） | BUG | 秦构（B1 新设） | 拼接脚本的占位符 `%%NBn%%` 经过一层 `%` 格式化被折叠成 `%NBn%`，9 个 cell 首行由 `# 注释` 变成 `%# 注释` → IPython 当成 line magic，一运行就 `UsageError: Line magic function '%#' not found`；改回 `#` 并新增"MDX cell 与 harness cell 字符串全等"校验脚本作为交付门槛 |
+| [018](2026-09-25-018.md) | 2026-09-25 | components/wiki/nonlinearity-explorer.tsx | 非线性系统特性（间隙环面积读数） | BUG | 柯验（B1 新设） | 有记忆非线性预热循环停在 t=6π（u≈0，下降支），上升支扫描却从 u=-A 起，prevY 带着 +b 残留把上升支钉高 1.0 → 环面积 0.520000 而手算 0.84（max\|y-u\| 仍正确，最难发现）；预热末相位改为与扫描起点重合 θ=-π/2，面积回到 0.839999 |
+| [021](2026-10-16-021.md) | 2026-10-16 | classic/case-study+fda+pid（11 处 setup + 4 处 cell） | notebook 全线 | BUG | 秦构（S6未实跑）+柯验（setup对账未覆盖） | scipy1.12+/numpy2.x API 漂移：feedback/margin 非 scipy、lti 算术被移除、bode plot kwarg、tf 缺名、cont2discrete 5 元组、1×1 数组转标量→setup 猴子补丁恢复 lti 算术+本地 feedback/margin，cell 仅直修 4 处纯错；S6 实跑 0 error；门槛收紧为签发必跑（编号跳过 B8 预留的 019/020） |
+| [022](2026-10-16-022.md) | 2026-10-16 | classic/{classic-case-study,frequency-domain-analysis,pid-controller,root-locus,stability-analysis,time-domain-analysis}.mdx | Notebook中文字体 | BUG | 秦构（清单缺项） | 21处setup补中文字体；详情保留当时实测与CRLF匹配教训 |
+| [023](2026-10-17-023.md) | 2026-10-17 | classic/system-modeling.mdx、math/complex-numbers.mdx、app/globals.css | 校订反馈与公式对齐 | BOTH | 苏绘+何仿（清单缺项）；秦构（清单缺项） | 补入遗漏索引；图片占位、公式排版与CSS选择器二次修正，完整经过见详情 |
+| [024](2026-10-17-024.md) | 2026-10-17 | content/modern/lqr-controller.mdx | ARE/鲁棒性/可检测性 | BOTH | 柯验+林矩（既有清单未执行） | 三题CARE数值、裕度外推与可检测性结论修正；双模式React替代widget；真实内核与独立TS/SciPy对账，证据见讨论日志附录 |
+| [025](2026-10-17-025.md) | 2026-10-17 | content/modern/lyapunov-modern.mdx | 线性稳定性/BIBO/Lyapunov证书 | BOTH | 林矩+柯验（既有清单未执行） | 统一隐藏模式矩阵、修正Jordan/BIBO与代价因子、限定半正定证书；改名并前移，旧路由308；三notebook八cell复算 |
+| [026](2026-10-17-026.md) | 2026-10-17 | content/modern/multivariable-systems.mdx | 正常秩/零点/RGA/解耦 | BOTH | 林矩+柯验（既有清单未执行） | 例1方向零点、恒秩亏定义与RGA越界推论更正；补D项和可实现性；React替widget，六cell实跑与TS/SciPy对账 |
+| [027](2026-10-17-027.md) | 2026-10-17 | app/(wiki)/[chapter]/[lesson]/page.tsx | MDX构建错误传播 | BUG | 秦构（清单缺项） | 移除把目录内读取/编译故障转成404的宽泛catch；真实坏页构建退出1，补两处MDX闭合符恢复正常；保留负向样本和路由回归测试，见学期3I01记录 |
+| [028](2026-10-17-028.md) | 2026-10-17 | .agent/fix-logs/INDEX.md | 历史索引一致性 | BUG | 郑核（清单缺项） | I02清除冲突标记、补索引/追溯详情、修元数据；预留号单列并加双向校验 |
+<!-- FIX-INDEX-END -->
+
+## 预留编号（不代表已完成修复）
+
+<!-- FIX-RESERVED-BEGIN -->
+| 编号 | 状态 | 依据 |
+|---|---|---|
+| 019 | 预留待核 | B8曾指向fuzzy-controller-design的hydration事故；E1/E2后来只证实describing-function两个组件的useMemo规范问题，不能等同于已复现的原事故；见fix-tracker §5及I02记录 |
+| 020 | 预留待核 | B8称bode-margins已注册未引用；E2证实它从未登记。未证实的事故描述不能补作完成记录；见fix-tracker §5及I02记录 |
+<!-- FIX-RESERVED-END -->
+
+019/020不复用；新增编号取已归档与预留编号的最大值加1，不按详情篇数加1。预留将来补证时须有来源与执行时间，不追认未保存的历史测试。
+
+## I02审计说明（2026-10-17）
+
+022/023已补索引；018经核对原索引和详情均为BUG，保留不变；021补齐详情已记载的柯验协查。原有23行编号、日期和历史说明保留，007–010补档边界见各详情。[完整审计与验收](../semester-03/i02-fix-index.md)。
+
+Q24仍为历史归因口径待裁决：012保留原索引归因与标记，当前MDX检查责任归秦构；没有擅自解冻学期2计划或重算其历史39%依据。
+
+## 以下为历史阶段快照
+
+以下E2/E3/B8说明保留原文。“现在”“仍未建”“未入库”和固定数量均指各段记录时点，不是当前状态。019/020的当前处置见上方预留表；当前编号、文件和元数据一致性由校验脚本判断。
 ## 归因角色列说明（B8 起）
 
 | 标记 | 含义 | 改进方向 |

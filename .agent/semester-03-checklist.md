@@ -15,7 +15,7 @@
 | P04 | 全局台账、覆盖/勾选校验及异常用例 | [x] | .agent/semester-03-validation.md;scripts/check-semester03.mjs;scripts/check-semester03.test.mjs |
 | P05 | 两技能静态验证与场景试走 | [x] | .agent/semester-03-validation.md |
 | I01 | 构建吞MDX错误门槛修复与失败样本验证 | [x] | .agent/semester-03/i01-mdx-errors.md;.agent/fix-logs/2026-10-17-027.md |
-| I02 | 历史fix索引冲突标记与记录一致性审计 | [ ] | .agent/fix-logs/INDEX.md现存冲突标记；先核原意再修 |
+| I02 | 历史fix索引冲突标记与记录一致性审计 | [x] | .agent/semester-03/i02-fix-index.md;.agent/fix-logs/2026-10-17-028.md |
 | I03 | 36项基线WARN逐项分类并登记处置 | [ ] | 实测明细录入版本化清单；新增WARN不可笼统豁免 |
 | I04 | 内核、数值与页面验收可复现性 | [ ] | 验证8891网关、干净kernel执行和8080页面；保留命令与输出 |
 | S01 | 结构迁移清单与来源/依赖审查 | [ ] | 141来源、56正文、迁移调用点与逐课先修；现有两条离散章内逆序优先 |
