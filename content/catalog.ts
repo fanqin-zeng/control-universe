@@ -1720,20 +1720,20 @@ export const catalog: Chapter[] = [
         "title": "状态反馈",
         "subsections": [
           {
-            "slug": "状态反馈的基本概念",
-            "title": "状态反馈的基本概念"
+            "slug": "状态怎样反馈",
+            "title": "状态怎样反馈"
           },
           {
             "slug": "极点配置问题",
             "title": "极点配置问题"
           },
           {
-            "slug": "一般系统的极点配置",
-            "title": "一般系统的极点配置"
+            "slug": "一般坐标配置",
+            "title": "一般坐标配置"
           },
           {
-            "slug": "前馈补偿与参考跟踪",
-            "title": "前馈补偿与参考跟踪"
+            "slug": "参考跟踪",
+            "title": "参考跟踪"
           },
           {
             "slug": "深入讨论",

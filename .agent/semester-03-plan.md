@@ -608,3 +608,8 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### MODERN-03 本轮执行记录（2026-10-18）
 
 线性系统稳定性按重构技能Phase1–4推进，范围仅modern/lyapunov-modern。保留三例/十题/原三Notebook八cell用途；补小车能量SVG与三阻尼图、唯一性与指数界、半正定证书反例和可检测条件，LQR/Q6/Q8明确就地推导与边界。五H2缩短并保留旧ID，新增实际PBH先修modern/controllability-observability；OUTLINE拓扑层级由工具自动传播。学期3签发与master真实提交以全局checklist及.agent/semester-03/modern-03/acceptance.md为准。五Notebook十一cell严格Jupyter、独立闭式/符号/解析复核与Pyodide逐份执行；Pages仅本地构建预览，本轮未发布。W08/W09/W10及27Python待办不关闭，下一课MODERN-04另开会话。
+
+
+### MODERN-04 本轮执行记录（2026-10-18）
+
+状态反馈按重构技能Phase1–4完成，保留八主题/五例/十题/原两实验用途，扩五Notebook六cell。纠正SISO/MIMO边界、Ackermann坐标与行向量证明、Q6矩阵/Q7缩放/Q10正常秩及含D输出；原组件开环闭式纠错、等DC基线与施力双图，独立物理ODE核全部19滑块值×501点。Q9保留正确K并补精确指标/包络验收。路径/先修不变，短标题保留旧ID；签发、验收与master真实提交以全局checklist及.agent/semester-03/modern-04/acceptance.md为准。W08/W09/W10与27Python待办不关闭，未发布Pages，MODERN-05另开会话。

@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T06:42:41.901Z",
-  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
+  "testedAt": "2026-10-18T07:10:10.722Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-feedback",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -1940,26 +1940,26 @@
     {
       "key": "modern/state-feedback",
       "title": "状态反馈",
-      "sourceHash": "12227407e4c1db76da2666d7706625ad0356a5eadb626b7b79790134c5abf293",
+      "sourceHash": "cd18b0107e54b080b88b5c684582b5f950e97cd719fe0d8e4aeb8cb360cd9fec",
       "notebooks": [
         {
           "id": "modern/state-feedback#1",
-          "title": " 动手实验：place() 与 acker() 对比",
+          "title": "place 与 Ackermann",
           "index": 1,
-          "line": 234,
+          "line": 247,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5584,
+              "milliseconds": 7664,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "place() 拒绝重根极点：at least one of the requested pole is repeated more than rank(B) times\n→ place() 基于 KNV 算法，要求每个极点的重数不超过 rank(B)\n\nacker() 结果: K = [23.  7.]\n\n闭环特征值: [-5. -5.]\n期望特征值: [-5, -5]\n\n互异极点 [-5,-4]: place K = [[18.  6.]], acker K = [18.  6.]（一致）\n"
+                  "text": "Expected rank(B)=1 repeated-pole rejection: at least one of the requested pole is repeated more than rank(B) times\nacker repeated K= [[23.  7.]] polynomial= [ 1. 10. 25.]\ndistinct roots: place and acker K= [[18.  6.]]\nPython library versions:\ncontrol 0.10.2 scipy 1.14.1\n"
                 }
               ]
             }
@@ -1967,27 +1967,113 @@
         },
         {
           "id": "modern/state-feedback#2",
-          "title": " 动手实验：开环 vs 闭环阶跃响应",
+          "title": "小车定位与施力",
           "index": 2,
-          "line": 329,
+          "line": 353,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 238,
+              "milliseconds": 1580,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "前馈增益 N = 25.00\n"
+                  "text": "p= -10.0 K= [[98. 17.]] N= 100.0 u0 N= 100.0 q4 m= 0.9999999999999998\np= -5.0 K= [[23.  7.]] N= 25.0 u0 N= 25.0 q4 m= 0.9999999567157739\np= -1.0 K= [[-1. -1.]] N= 1.0 u0 N= 1.0 q4 m= 0.9084218055563291\np= -0.5 K= [[-1.75 -2.  ]] N= 0.25 u0 N= 0.25 q4 m= 0.593994150290162\nRaw open-loop limit=.5m; fair baseline limit=1m; feedback limit=1m (analytic DC)\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 56420
+                  "base64Length": 65564
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#3",
+          "title": "算例与十题核验",
+          "index": 3,
+          "line": 664,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 316,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "example1/4/5 K= [[23, 7]] char= s**2 + 10*s + 25\nexample2 K= [[94, 15]] char= s**2 + 20*s + 100\nQ1 K= [[6, 4]] char= s**2 + 5*s + 6\nQ2b K= [[125, 73, 12]] char= s**3 + 15*s**2 + 75*s + 125\nQ2c K= [[24, 24, 6]] char= s**3 + 9*s**2 + 26*s + 24\nQ3 K= [[12, -2]] char= s**2 + 3*s + 2\nQ5 K= [[24, 7]] char= s**2 + 7*s + 25\nQ6 AB,A2B,A3B= [[0, 0], [1, 0], [0, 1], [1, 0]] [[1, 0], [0, 1], [1, 0], [-2, 1]] [[0, 1], [1, 0], [-2, 1], [2, -2]] minor det= -1\nQ6 family K= [[6, 11, 6, 0], [1, -2, 1, 4]] char= s**4 + 10*s**3 + 35*s**2 + 50*s + 24\nQ6 family K= [[6, 11, 6, 2], [1, -2, 1, 4]] char= s**4 + 10*s**3 + 35*s**2 + 50*s + 24\nQ8 canonical row identities and transformed K= [[23, -39]]\nQ3 exact R/inverse/pd verified; Q5 N25; Q9 full resolvent [50,50s]/(s(s+10)) verified\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q7 wn2: {'wn': 2.0, 'zeta': 0.2, 'K': [[3.0, 1.2]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(52.66205993303031), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.6859943405700354)}\nQ7 wn2: {'wn': 2.0, 'zeta': 0.7, 'K': [[3.0, 0.7]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(4.598791026026775), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.5)}\nQ7 wn2: {'wn': 2.0, 'zeta': 0.9, 'K': [[3.0, 0.4999999999999999]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(0.15237558205194096), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.3051839689465368)}\nQ7 symbolic K valid for every wn>0; N=4; repeated root polynomial checks avoid ill-conditioned eig rounding\nQ7 wn2,zeta.5 example K=[3,.9], roots= [-2.8+2.85657137j -2.8-2.85657137j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#4",
+          "title": "前馈与零点边界",
+          "index": 4,
+          "line": 749,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 31,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "zero example open= (s - 1)/((s + 1)*(s + 2)) closed unreduced= s - 1 / s**2 - 1 reduced= 1/(s + 1)\nD1 example: Ccl=-2, g0= 3/5 N= 5/3 both invariant zeros= [-3]\nzero DC example A=-1,B=1,C=-1,D=1: g0= 0\nmodel mismatch k2.2, nominal K23/7,N25: qss= 0.9920634920634921 constant force disturbance .5N: qss= 1.02\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#5",
+          "title": "电机指标验收",
+          "index": 5,
+          "line": 782,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 200,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q9 K= [[4.  0.2]] N= 3.999999999999999 poles= [-10.+10.j -10.-10.j] u0 V= 3.999999999999999\novershoot %= 4.3213918263772255 tp s= 0.3141592653589793 last 2% crossing s= 0.4216184030629444 envelope-safe time s= 0.4258596595708119 zeta threshold for5%= 0.6901067305598217\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32960
                 }
               ]
             }
@@ -11118,14 +11204,14 @@
   "complete": true,
   "totals": {
     "lessons": 73,
-    "notebooks": 333,
-    "enabled": 308,
+    "notebooks": 336,
+    "enabled": 311,
     "codeOnly": 25
   },
   "releaseTotals": {
     "lessons": 73,
-    "notebooks": 333,
-    "enabled": 306,
+    "notebooks": 336,
+    "enabled": 309,
     "codeOnly": 27
   },
   "provenance": [
@@ -11428,6 +11514,16 @@
       "testedAt": "2026-10-18T06:42:41.901Z",
       "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
       "inputPath": ".agent/semester-03/modern-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:02:14.566Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-feedback",
+      "inputPath": ".agent/semester-03/modern-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:10:10.722Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-feedback",
+      "inputPath": ".agent/semester-03/modern-04/pyodide.json"
     }
   ]
 }

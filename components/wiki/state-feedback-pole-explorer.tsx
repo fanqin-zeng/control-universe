@@ -1,59 +1,45 @@
 "use client";
-
-import { useMemo, useState } from "react";
-import { useECharts } from "@/components/wiki/use-echarts";
-
-/**
- * 极点配置探索器（modern/state-feedback）
- * 系统 A=[[0,1],[-2,-3]], B=[0;1], C=[1,0]。拖动二重实极点 p：
- * K = [p²−2, −2p−3]（比较系数），前馈 N = 1/(−C(A−BK)⁻¹B)。
- * 默认 p=−5 复现正文例1/例4/例5 手算链：K=[23,7]、N=25。
- */
+import {useMemo,useState} from "react";
+import {useECharts} from "@/components/wiki/use-echarts";
+import {stateFeedbackResponse} from "@/lib/state-feedback-response";
 export function StateFeedbackPoleExplorer() {
-  const [p, setP] = useState(-5);
-  const d = useMemo(() => {
-    const k1 = p * p - 2, k2 = -2 * p - 3; // Acl=[[0,1],[-2-k1,-3-k2]] => char s²+(3+k2)s+(2+k1)
-    const wn = Math.sqrt(2 + k1), zt = (3 + k2) / (2 * Math.sqrt(2 + k1));
-    const N = 2 + k1; // -C(Acl)^-1 B = 1/(2+k1)
-    const t: number[] = [], yO: number[] = [], yC: number[] = [];
-    for (let i = 0; i <= 500; i++) {
-      const ti = (4 * i) / 500; t.push(ti);
-      yO[i] = 0.5 * (1 + Math.exp(-ti) - 2 * Math.exp(-2 * ti));
-      // closed-loop with feedforward: DC gain 1, second-order (p,p): y = 1 - e^{pt}(1 - pt) ... for double pole
-      const ept = Math.exp(p * ti);
-      yC.push(1 - ept * (1 - p * ti));
-    }
-    return { t, yO, yC, k1, k2, wn, zt, N };
-  }, [p]);
-  const option = useMemo(() => ({
-    title: { text: `开环 vs 极点配置闭环（p = ${p.toFixed(1)} 二重极点）`, left: "center", textStyle: { fontSize: 14 } },
-    tooltip: { trigger: "axis" as const },
-    legend: { top: 26, data: ["开环（极点 −1, −2）", "闭环 + 前馈"] },
-    grid: { top: 60, left: 55, right: 20, bottom: 45 },
-    xAxis: { type: "value" as const, name: "t (s)", min: 0, max: 4 },
-    yAxis: { type: "value" as const, name: "y(t)", min: 0, max: 1.6 },
-    series: [
-      { name: "开环（极点 −1, −2）", type: "line" as const, data: d.t.map((x, i) => [x, d.yO[i]]), lineStyle: { width: 2, color: "#94a3b8", type: "dashed" as const }, symbol: "none" },
-      { name: "闭环 + 前馈", type: "line" as const, data: d.t.map((x, i) => [x, d.yC[i]]), lineStyle: { width: 2.5, color: "#2563eb" }, symbol: "none" },
-      { name: "r=1", type: "line" as const, data: [[0, 1], [4, 1]], lineStyle: { width: 1, color: "#f59e0b", type: "dotted" as const }, symbol: "none" },
+  const [p,setP]=useState(-5);
+  const d=useMemo(()=>Array.from({length:501},(_,i)=>({t:4*i/500,...stateFeedbackResponse(p,4*i/500)})),[p]);
+  const positionOption=useMemo(()=>({
+    animation:false,tooltip:{trigger:"axis" as const},legend:{top:0,data:["基线 N=2","状态反馈"]},
+    grid:{top:42,left:48,right:18,bottom:42},
+    xAxis:{type:"value" as const,min:0,max:4,name:"t (s)",nameLocation:"middle" as const,nameGap:27},
+    yAxis:{type:"value" as const,min:0,max:1.1,name:"q (m)"},
+    series:[
+      {name:"基线 N=2",type:"line" as const,symbol:"none",data:d.map(v=>[v.t,v.baseline]),itemStyle:{color:"#64748b"},lineStyle:{type:"dashed" as const,color:"#64748b"}},
+      {name:"状态反馈",type:"line" as const,symbol:"none",data:d.map(v=>[v.t,v.position]),itemStyle:{color:"#2563eb"},lineStyle:{color:"#2563eb",width:2}},
     ],
-    animation: false,
-  }), [d, p]);
-  const ref = useECharts(option);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px" }}>
-        <label style={{ fontSize: 14 }}>闭环二重极点 p:</label>
-        <input type="range" min={-10} max={-0.5} step={0.5} value={p} onChange={(e) => setP(parseFloat(e.target.value))} style={{ flex: 1 }} />
-        <span style={{ fontSize: 14, minWidth: 40 }}>{p.toFixed(1)}</span>
-      </div>
-      <div ref={ref} style={{ height: 400 }} />
-      <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, fontSize: 14, lineHeight: 1.9 }}>
-        <strong>读数（默认 p=−5 复现正文手算链）：</strong><br />
-        反馈增益 K = [k₁, k₂] = [p²−2, −2p−3] = [{d.k1}, {d.k2}]（正文例 1/4：[23, 7]）<br />
-        前馈增益 N = p² = {d.N}（正文例 5：25）· 闭环 ω_n = |p| = {d.wn.toFixed(1)} rad/s（临界阻尼）<br />
-        注意 p 越远 K 越大（|K|∝p²）——执行器饱和与噪声放大的代价，见「极点选择的工程考量」
-      </div>
+  }),[d]);
+  const forceOption=useMemo(()=>({
+    animation:false,tooltip:{trigger:"axis" as const},legend:{top:0,data:["基线 2N","反馈施力"]},
+    grid:{top:42,left:48,right:18,bottom:42},
+    xAxis:{type:"value" as const,min:0,max:4,name:"t (s)",nameLocation:"middle" as const,nameGap:27},
+    yAxis:{type:"value" as const,min:-30,max:105,name:"u (N)"},
+    series:[
+      {name:"基线 2N",type:"line" as const,symbol:"none",data:[[0,2],[4,2]],itemStyle:{color:"#64748b"},lineStyle:{type:"dashed" as const,color:"#64748b"}},
+      {name:"反馈施力",type:"line" as const,symbol:"none",data:d.map(v=>[v.t,v.force]),itemStyle:{color:"#b45309"},lineStyle:{color:"#b45309",width:2}},
+    ],
+  }),[d]);
+  const positionRef=useECharts(positionOption),forceRef=useECharts(forceOption);
+  return <section aria-label="状态反馈极点探索" style={{display:"flex",flexDirection:"column",gap:12,margin:"20px 0",color:"#1e293b"}}>
+    <label style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"center",fontSize:14}}>
+      二重极点 p (s⁻¹)
+      <input aria-label="闭环二重极点" type="range" min={-10} max={-0.5} step={0.5} value={p} onChange={e=>setP(Number(e.target.value))} style={{flex:"1 1 130px",minWidth:0}} />
+      <span>{p.toFixed(1)}</span><button type="button" onClick={()=>setP(-5)} style={{border:"1px solid #94a3b8",padding:"4px 9px",borderRadius:4}}>恢复默认</button>
+    </label>
+    <p style={{fontSize:14,margin:0}}>同一小车、零初态、目标1m。基线只施恒力2N；两方案终值均为1m。固定0–4s窗口不代表都已到稳态。</p>
+    <div ref={positionRef} style={{height:290,width:"100%",minWidth:0}} />
+    <div ref={forceRef} style={{height:290,width:"100%",minWidth:0}} />
+    <div role="status" style={{padding:12,background:"#f1f5f9",borderRadius:8,fontSize:14,lineHeight:1.8}}>
+      K=[{d[0].k1.toFixed(2)}, {d[0].k2.toFixed(2)}]，N={d[0].N.toFixed(2)}<br />
+      初始施力={d[0].force.toFixed(2)}N；t=4s位置={d[500].position.toFixed(6)}m（采样值）<br />
+      默认p=−5：K=[23,7]、N=25；快极点需要更大初始力。p=−0.5时反而比基线慢。<br />
+      未模拟饱和、噪声、延迟或模型失配，不能由本图保证实机性能。
     </div>
-  );
+  </section>;
 }
