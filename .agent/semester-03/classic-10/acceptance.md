@@ -34,3 +34,5 @@ W06/W07/W08/W09与27项全局Python待办继续开放。下一课CLASSIC-11需�
 ## 合并回执
 
 验收后进行--no-ff合master；实际课程提交和合并hash取得后补入此处，并据真实hash勾checklist最后一列。
+
+实际课程提交e0b62e95895393e6e9fd8ef05faadc66cba92996；--no-ff课程合并5194247ebad0d62c72b96e26ce67eb123f016f1f。取得真实hash后勾全局checklist最后一列，合并态check-merged.log和semester-merged.log分别核21PASS/2已知WARN/0FAIL与merged28。回执提交后--no-ff合master并删除本工作包分支；本轮未推送或发布。
