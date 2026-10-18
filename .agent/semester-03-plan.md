@@ -50,6 +50,7 @@
 | DISCRETE-06 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-06”；04/05已交付，保留01草稿，采样保持本课局部解释 | .agent/semester-03/discrete-06/acceptance.md |
 | DISCRETE-07 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-07”；02–06已交付，保留01草稿，本课局部解释采样保持 | .agent/semester-03/discrete-07/acceptance.md |
 | DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
+| DISCRETE-09 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-09”；02–08已交付，保留01草稿，本课不依赖其未验收内容 | .agent/semester-03/discrete-09/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -741,3 +742,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 用户指定继续08，单独登记暂缓01，草稿隔离。空占位按wiki-lesson-new完整Phase1–4，仅交付采样数据系统：一阶精确段内轨迹/保持、Phi/Gamma积分与奇异A、采样状态反馈及一拍延迟、旋转输出漏采、完整Schur采样状态到连续指数衰减的有条件证明。七H2、两Notebook四cell、一个真实TS交互与SVG，四题答案独立复算。十三TS配置与39493个原始cell数值量核验；顺读把实验移到对应矩阵解释后，源hash变化全链路重跑。
 
 新课不追认旧v1.3/历史讨论，无旧正文迁移或历史fix需伪造。新增两实验通过浏览器实跑才启用Pyodide，原17待办与W08/W09/W10保持；不借此生产09/10或关闭07后续占位提示。实际命令/退出码与最终签发、master回执见本课checklist链接。本次不发布Pages。
+
+### DISCRETE-09 本轮执行记录（2026-10-19）
+
+离散最优控制从空占位按新写专用Phase1–4完成。保温箱交班问题→离散有限步Bellman/标量配方→Riccati倒推/正向执行→DARE条件→输入约束边界；8H2、四题四答、一个Explorer与SVG、两Notebook四cell。实际TS十五参数配置对独立Fraction全输入稠密消元；原始内核、Pyodide、两种页面与375px验收通过。证据.agent/semester-03/discrete-09/acceptance.md；master真实提交见checklist。独立登记暂缓01的用户顺序例外，不继承08授权；01草稿、用户批阅及四处本地端口排除提交。本对话仅生产09，不发布Pages、不生产10。新增两实验支持，17项Python待办元数据保留；zh计划只更新生产交接、不代做润色。

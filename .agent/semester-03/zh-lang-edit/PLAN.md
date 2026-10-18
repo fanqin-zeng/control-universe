@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前57课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前58课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -67,7 +67,7 @@
 | 56 | DISCRETE-06 | 离散化方法 | content/discrete-sampled/discretization-methods.mdx | 已完成 | 待润色 | — |
 | 57 | DISCRETE-07 | 采样周期 | content/discrete-sampled/sampling-period-selection.mdx | 已完成 | 待润色 | — |
 | 58 | DISCRETE-08 | 采样数据系统 | content/discrete-sampled/sampled-data-systems.mdx | 已完成 | 待润色 | — |
-| 59 | DISCRETE-09 | 离散最优控制 | content/discrete-sampled/discrete-optimal-control.mdx | 待完成 | 待生产 | — |
+| 59 | DISCRETE-09 | 离散最优控制 | content/discrete-sampled/discrete-optimal-control.mdx | 已完成 | 待润色 | — |
 | 60 | DISCRETE-10 | 事件触发控制 | content/discrete-sampled/event-triggered-control.mdx | 待完成 | 待生产 | — |
 | 61 | IMPL-01 | 控制系统架构 | content/implementation/computer-control-architecture.mdx | 待完成 | 待生产 | — |
 | 62 | IMPL-02 | 数字PID | content/implementation/digital-pid.mdx | 待完成 | 待生产 | — |

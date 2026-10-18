@@ -3038,9 +3038,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/discrete-stability-criteria",
           "modern/lqr-controller"
         ],
+        "subsections": [
+          {
+            "slug": "只剩几次调整",
+            "title": "只剩几次调整"
+          },
+          {
+            "slug": "从最后一步倒推",
+            "title": "从最后一步倒推"
+          },
+          {
+            "slug": "向前执行",
+            "title": "向前执行"
+          },
+          {
+            "slug": "从有限步到长期",
+            "title": "从有限步到长期"
+          },
+          {
+            "slug": "输入有上限",
+            "title": "输入有上限"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "event-triggered-control",
