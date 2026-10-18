@@ -43,6 +43,7 @@
 | P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 | W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
+| W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
