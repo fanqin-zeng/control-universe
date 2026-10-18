@@ -32,3 +32,7 @@ Python兼容账本为73课/331实验/504cell，304启用、27保留代码；只�
 44项六列对账、六组审校、九项门槛与三条限定观察在讨论日志。W08/W09/W10与27Python待办不关闭；不交付MODERN-03，不同步gh-pages。用户三份proofreading修改未加入提交。
 
 最终整体验收：node scripts/verify-modern02-delivery.mjs退出0，读取真实截图尺寸375px，而非把请求的390px冒充实测；六实验/33旧ID/41目标/源指纹全部通过，详见delivery-validation.json。普通及Pages构建均对最终上下双图版本重新执行。
+
+## master回执
+
+课程完成提交 `0d30ee53c995c853053625854687ca18b7d070da` 已直接进入master（普通提交），未建短命分支。全局checklist据真实hash勾选旧“合并”列；后续回执提交与本课一起正常推送origin master。最终全局校验见delivery-check.log、checklist.log。gh-pages保持原发布版本，本轮未发布。
