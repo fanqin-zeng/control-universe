@@ -58,7 +58,7 @@
 | ZH02 | 现代9课及非线性前8课润色增量审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/6ab3775/acceptance.md;.agent/semester-03/zh-lang-edit/merges/6ab3775/review.json;commit:1a0ea71af824828a085379101a122d8d71c7092a |
 | DEP10 | NONLINEAR-12及17课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear12-zh-release.md;docs/deployment/nonlinear12-zh-public-validation.json;commit:de07d3e9a8495e40693d44baba79e5fe8a6cb13f |
 | ZH03 | 45课中文润色重做增量快速审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/d05e876/acceptance.md;.agent/semester-03/zh-lang-edit/merges/d05e876/review.json;commit:9cafbd4020cd72457b36bbbf1b8edb7d5c5e570e |
-| DEP11 | DISCRETE-02–10与当前润色授权发布及公网验收 | [ ] | docs/deployment/discrete10-zh-release.md |
+| DEP11 | DISCRETE-02–10与当前润色授权发布及公网验收 | [x] | docs/deployment/discrete10-zh-release.md;docs/deployment/discrete10-zh-public-validation.json;commit:2dd926fe7d2a4daa810a76690d69582933b54a0b |
 | W15 | NONLINEAR-01势能示例历史数字笔误勘误 | [ ] | .agent/semester-03/zh-lang-edit/records/NONLINEAR-01.md;V(1.83)应为0.83331515925，旧文误写0.83331530925；不影响内外侧结论，独立修复并对账 |
 <!-- S3-TASKS-END -->
 
