@@ -36,11 +36,13 @@
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
 | DEP05 | 数学章18课现有成果授权发布与公网验收 | [x] | docs/deployment/math18-release.md;docs/deployment/math18-public-actions.json;docs/deployment/math18-public-http.json;docs/deployment/math18-public-browser.json;docs/deployment/math18-public-python.json;发布commit:f01e0bbb52308a9cf277f1f2ff65b377c7e73cac |
 | DEP06 | 经典控制11课现有成果授权发布与公网验收 | [x] | docs/deployment/classic11-release.md;docs/deployment/classic11-public-actions.json;docs/deployment/classic11-public-http.json;docs/deployment/classic11-public-browser.json;docs/deployment/classic11-public-python.json;docs/deployment/classic10-public-python.json;docs/deployment/classic11-public-validation.json;发布commit:0dad5f04b701f443752e10529720e07bcb46b918 |
-| W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
-| W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
+| W06 | MATH-03开篇改用生活直观例子并讨论验收 | [x] | docs/discuss-log/semester-03/02-math/intro-proofreading-2026-10-18.md;.agent/semester-03/intro-proofreading/notebooks.json;.agent/semester-03/intro-proofreading/verify.log |
+| W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [x] | docs/discuss-log/semester-03/02-math/intro-proofreading-2026-10-18.md;.agent/semester-03/intro-proofreading/build.log;.agent/semester-03/intro-proofreading/browser.json |
 | W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |
 | W09 | 开发IAB直连本地Jupyter网关的连接边界复核 | [ ] | .agent/semester-03/classic-01/acceptance.md;IAB页面显示Failed to fetch，8891原始严格内核与生产Pyodide实跑正常；后续区分浏览器环境/跨端口连接原因，不伪记原生UI通过 |
 | P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
+| W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
+| W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
