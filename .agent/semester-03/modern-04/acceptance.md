@@ -21,3 +21,7 @@
 兼容聚合73课/336实验/511cell，309启用/27保留代码；本轮仅实跑本课，27待办ID/原因/任务不变，W08/W09/W10仍开放。三份用户proofreading不加入提交。最终delivery验证退出0、27旧ID/34目标通过后，Phase4已签发；master真实回执另记。
 
 整体验收：node scripts/verify-modern04-delivery.mjs退出0；desktop.png与narrow.png为最终生产预览实际截图。
+
+## master回执
+
+课程提交 `d58259df22e3c214f372da5472ce4764bff71bb8` 已直接进入master。全局checklist依真实hash勾选旧“合并”列；本回执普通提交后与课程一起推送origin master。gh-pages保持42eed1d，本轮未发布。
