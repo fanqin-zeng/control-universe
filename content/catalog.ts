@@ -1367,8 +1367,8 @@ export const catalog: Chapter[] = [
             "title": "从根轨迹看校正"
           },
           {
-            "slug": "工程实例电机速度控制设计",
-            "title": "工程实例：电机速度控制设计"
+            "slug": "电机位置控制",
+            "title": "电机位置控制"
           },
           {
             "slug": "深入讨论",
