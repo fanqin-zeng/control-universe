@@ -1,0 +1,212 @@
+[
+  {
+    "path": "content/classic/frequency-domain-analysis.mdx",
+    "line": 24,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\nr(t) = A\\sin(\\omega t) \\quad\\xrightarrow{\\text{LTI 系统}}\\quad y_{ss}(t) = A \\cdot |G(j\\omega)| \\cdot \\sin\\big(\\omega t + \\angle G(j\\omega)\\big)\n$$"
+  },
+  {
+    "path": "content/classic/time-domain-analysis.mdx",
+    "line": 39,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\n\\text{脉冲} \\xrightarrow{\\int} \\text{阶跃} \\xrightarrow{\\int} \\text{斜坡}\n$$"
+  },
+  {
+    "path": "content/discrete-sampled/discrete-time-freq.mdx",
+    "line": 69,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n原信号频谱 X(jω):\n        ┌───┐\n        │   │\n  ──────┘   └──────\n  -ωm    0    ωm\n\n采样后频谱 X*(jω)（ωs > 2ωm）:\n    ┌───┐  ┌───┐  ┌───┐\n    │   │  │   │  │   │\n────┘   └──┘   └──┘   └────\n  -ωs  -ωm 0  ωm  ωs\n        ↑ 可分离 → 可恢复\n```"
+  },
+  {
+    "path": "content/discrete-sampled/discrete-time-freq.mdx",
+    "line": 180,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n                    抗混叠滤波器         采样器\nx(t) ──────────→ [低通滤波器] ──→ [采样/ADC] ──→ x[k]\n  连续信号         衰减 > ωs/2       离散信号\n                   的成分\n```"
+  },
+  {
+    "path": "content/discrete-sampled/discretization-methods.mdx",
+    "line": 59,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n        Im(z)\n         ↑\n    ┌────┼────┐\n    │  ╱      ╲\n    │╱  单位圆  ╲\n ───●───────────●──→ Re(z)\n  0 │╲    1    ╱│\n    │  ╲     ╱  │\n    │    ╲ ╱    │\n    └─────●─────┘\n       前向欧拉\n       稳定域\n```"
+  },
+  {
+    "path": "content/discrete-sampled/sampling-period-selection.mdx",
+    "line": 608,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n采样时刻 tk ──→ A/D 转换 ──→ 计算控制量 ──→ D/A 输出 ──→ 下一采样时刻 tk+1\n              T_AD           T_compute        T_DA\n```"
+  },
+  {
+    "path": "content/discrete-sampled/z-transform-analysis.mdx",
+    "line": 192,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\ns 平面                    z 平面\n  jω                        Im\n   ↑                         ↑\n   |   × (不稳定)            |   × (不稳定, |z|>1)\n   |                         |\n---+---→ σ            -------+-------→ Re\n   |                         |   ○ 单位圆\n   |   × (稳定)              |   × (稳定, |z|<1)\n   |                         |\n```"
+  },
+  {
+    "path": "content/implementation/computer-control-architecture.mdx",
+    "line": 225,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n[操作站 HMI] ← Ethernet → [PLC CPU] ← PROFIBUS → [远程 I/O 站]\n                              ↓\n                         [现场传感器/执行器]\n```"
+  },
+  {
+    "path": "content/implementation/computer-control-architecture.mdx",
+    "line": 249,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n[工程师站] ← Ethernet → [操作站 1] [操作站 2] [历史服务器]\n                              ↓\n                         [控制网络 PROFINET/EtherCAT]\n                              ↓\n                   [控制站 1] [控制站 2] ... [控制站 N]\n                              ↓\n                         [现场 I/O 模块]\n                              ↓\n                      [传感器/执行器]\n```"
+  },
+  {
+    "path": "content/implementation/computer-control-architecture.mdx",
+    "line": 280,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n[上位机/PC] ← UART/Ethernet → [嵌入式控制器 MCU/DSP]\n                                    ↓\n                              [ADC] [DAC] [PWM] [编码器接口]\n                                    ↓\n                              [传感器] [执行器] [电机]\n```"
+  },
+  {
+    "path": "content/implementation/computer-control-architecture.mdx",
+    "line": 352,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n1. 控制周期要求？\n   ├─ < 1 ms → 嵌入式系统（DSP/FPGA）\n   ├─ 1-100 ms → PLC 或嵌入式\n   └─ > 100 ms → DCS 或 PLC\n\n2. I/O 点数？\n   ├─ < 100 → 嵌入式或小型 PLC\n   ├─ 100-10000 → 中型 PLC\n   └─ > 10000 → DCS\n\n3. 应用类型？\n   ├─ 离散制造（逻辑控制） → PLC\n   ├─ 连续过程（模拟控制） → DCS\n   └─ 高带宽伺服 → 嵌入式\n\n4. 预算？\n   ├─ < 1 万 → 嵌入式（Arduino/STM32）\n   ├─ 1-50 万 → PLC\n   └─ > 100 万 → DCS\n```"
+  },
+  {
+    "path": "content/implementation/computer-control-architecture.mdx",
+    "line": 20,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\nr(t) \\xrightarrow{比较} e(t) \\xrightarrow{A/D} e(k) \\xrightarrow{控制器} u(k) \\xrightarrow{D/A} u(t) \\xrightarrow{执行器} \\boxed{被控对象} \\xrightarrow{传感器} y(t)\n$$"
+  },
+  {
+    "path": "content/implementation/digital-pid.mdx",
+    "line": 608,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n  r₁ ──→ [主控制器] ──→ r₂ ──→ [副控制器] ──→ u ──→ [副对象] ──→ y₂\n   ↑         K₁           ↑         K₂           ↑       G₂\n   │                       │                       │\n   └──── y₁ ───────────────┘                       │\n                                                   │\n                      y₂ ←─────────────────────────┘\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 209,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n时间 (ms):  0    1    2    3    4    5    6    7    8    9   10\n            ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤\nτ₁ (最高):  |████|    |████|    |████|    |████|    |████|    |\nτ₂ (中):    |    |████|    |████|    |████|    |████|    |████|\nτ₃ (最低):  |    |    |████|    |    |████|    |    |████|    |\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 349,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n中断优先级（从高到低）：\n┌─────────────────────────────────────────────┐\n│ 1. 故障保护（过流、过压、短路）    — 最高    │\n│ 2. 电流环 ISR（ADC 完成触发）               │\n│ 3. 速度环 ISR（定时器触发）                  │\n│ 4. 通信 ISR（CAN/UART 接收）                │\n│ 5. 监控任务（看门狗、LED）         — 最低    │\n└─────────────────────────────────────────────┘\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 370,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n无优先级继承的情况：\n\n时间 →\nL: [获取锁]────[执行]────────────[释放锁]──────\nH:      [就绪]──[需要锁→阻塞]──────────────────[继续执行]\nM:            [就绪]──[抢占L执行]──[完成]\n                         ↑\n                    L 被 M 抢占，\n                    导致 H 间接被 M 阻塞！\n\nH 的实际阻塞时间 = L 的临界区 + M 的完整执行时间\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 390,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n有优先级继承的情况：\n\n时间 →\nL: [获取锁, 继承H优先级]──[执行]──[释放锁, 恢复优先级]──\nH:      [就绪]──────────────[等待]──[继续执行]\nM:                          [就绪]──[等L释放锁]──[执行]\n\nH 的阻塞时间 = 仅 L 的临界区（最小化）\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 433,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n┌──────────────┐     ┌──────────────┐\n│  缓冲区 A     │     │  缓冲区 B     │\n│ (CPU 读取)    │     │ (DMA 写入)    │\n└──────┬───────┘     └──────┬───────┘\n       │                     │\n       └───── 交换指针 ──────┘\n       \nDMA 完成中断 → 交换 A/B 指针 → CPU 读 A，DMA 写 B\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 540,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n时间 →\n┌──────────── 窗口 ────────────┐\n│   太早      │    OK    │  太晚  │\n│  (复位!)    │ (喂狗)   │ (复位!) │\n├─────────────┼──────────┼───────┤\n0           W_min      W_max   T_timeout\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 771,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n时间:  0   1   2   3   4   5   6   7   8   9  10  11  12\n       ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼──┤\nτ₁:    |███|███|   |   |███|███|   |   |███|███|   |   |\nτ₂:    |   |   |███|███|   |   |███|███|   |   |███|███|\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 835,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\nτ_L: [获取锁][临界区 1ms][释放锁]──[继续执行 1ms]──[完成]\nτ_H:      [就绪]──[等锁 1ms][阻塞]──────[就绪]──[执行 3ms]──[完成]\nτ_M:              [抢占τ_L]──────[执行 5ms]────[完成]\n```"
+  },
+  {
+    "path": "content/implementation/realtime-control.mdx",
+    "line": 850,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\nτ_L: [获取锁, 继承τ_H优先级][临界区 1ms][释放锁, 恢复][执行 1ms][完成]\nτ_H:      [等待锁 1ms][执行 3ms][完成]\nτ_M:                    [被阻塞（τ_L 继承了τ_H的优先级）]──[τ_L完成后执行 5ms]\n```"
+  },
+  {
+    "path": "content/modern/modern-case-study.mdx",
+    "line": 43,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n         m\n         ● ← 摆杆质心\n         |\n         | 2l\n         |\n    ┌────┴────┐\n    │    M    │ ← 小车\n    └─────────┘\n  ←───────────→ x\n  ═══════════════════ 地面\n        F ←→\n```"
+  },
+  {
+    "path": "content/mpc/mpc-case-study.mdx",
+    "line": 717,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n┌─────────────────────────────────────────────┐\n│              DCS（分布式控制系统）              │\n│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │\n│  │ PID 回路  │  │ 数据采集  │  │ 安全联锁  │  │\n│  └──────────┘  └──────────┘  └──────────┘  │\n└──────────────────┬──────────────────────────┘\n                   │ OPC 通信\n┌──────────────────┴──────────────────────────┐\n│            MPC 控制器（上位机）                 │\n│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │\n│  │ 线性模型  │  │ QP 求解器 │  │ 约束管理  │  │\n│  └──────────┘  └──────────┘  └──────────┘  │\n│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │\n│  │ 状态估计  │  │ 优化监控  │  │ 日志记录  │  │\n│  └──────────┘  └──────────┘  └──────────┘  │\n└─────────────────────────────────────────────┘\n```"
+  },
+  {
+    "path": "content/mpc/mpc-principle.mdx",
+    "line": 84,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n时刻 k:    测量 x(k) → 优化 [u*(k), u*(k+1), ..., u*(k+Np-1)] → 执行 u(k) = u*(k)\n时刻 k+1:  测量 x(k+1) → 优化 [u*(k+1), ..., u*(k+Np)] → 执行 u(k+1) = u*(k+1)\n时刻 k+2:  测量 x(k+2) → 优化 [u*(k+2), ..., u*(k+Np+1)] → 执行 u(k+2) = u*(k+2)\n```"
+  },
+  {
+    "path": "content/mpc/mpc-principle.mdx",
+    "line": 188,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n每个采样周期 k：\n┌─────────────────────────────────────────────────┐\n│ 1. 测量输出 y(k)                                 │\n│ 2. 状态估计 → x̂(k)（卡尔曼滤波/观测器）          │\n│ 3. 计算 f = 2ΦᵀQ̄F x̂(k)                        │\n│ 4. 求解 QP：min ½UᵀHU + fᵀU, s.t. 约束         │\n│ 5. 取第一个输入 u(k) = u*(k)                     │\n│ 6. 执行 u(k) → 被控对象                          │\n│ 7. k ← k+1，回到步骤 1                           │\n└─────────────────────────────────────────────────┘\n```"
+  },
+  {
+    "path": "content/mpc/receding-horizon.mdx",
+    "line": 43,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n时刻 k:    测量 x(k) → 优化 [u*(k), u*(k+1), ..., u*(k+Np-1)] → 执行 u(k) = u*(k)\n时刻 k+1:  测量 x(k+1) → 优化 [u*(k+1), ..., u*(k+Np)] → 执行 u(k+1) = u*(k+1)\n时刻 k+2:  测量 x(k+2) → 优化 [u*(k+2), ..., u*(k+Np+1)] → 执行 u(k+2) = u*(k+2)\n```"
+  },
+  {
+    "path": "content/nonlinear/adaptive-control-basics.mdx",
+    "line": 75,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\nr \\longrightarrow [\\text{参考模型}] \\longrightarrow x_m, \\qquad e = x_p - x_m \\longrightarrow [\\text{自适应律}] \\longrightarrow \\theta \\longrightarrow [\\text{控制律}] \\longrightarrow u \\longrightarrow [\\text{被控对象}] \\longrightarrow x_p\n$$"
+  },
+  {
+    "path": "content/nonlinear/adaptive-control-basics.mdx",
+    "line": 85,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\n(u, y) \\longrightarrow [\\text{RLS 辨识器}] \\longrightarrow \\hat\\theta_p \\longrightarrow [\\text{控制器设计}] \\longrightarrow K(\\hat\\theta_p) \\longrightarrow u\n$$"
+  },
+  {
+    "path": "content/nonlinear/adaptive-control-basics.mdx",
+    "line": 1117,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\n\\underbrace{(u(k), y(k))}_{\\text{输入输出数据}} \\longrightarrow \\underbrace{[\\text{RLS 辨识器}]}_{\\text{估计 } \\hat\\alpha, \\hat\\beta} \\longrightarrow \\underbrace{[\\text{极点配置公式}]}_{K_p = (z_d - \\hat\\alpha)/\\hat\\beta} \\longrightarrow u(k)\n$$"
+  },
+  {
+    "path": "content/nonlinear/phase-plane.mdx",
+    "line": 790,
+    "kind": "公式流程图候选，须与普通推导区分",
+    "source": "$$\n+10^{-4} \\;\\longrightarrow\\; \\text{逃逸到 } +\\infty, \\qquad -10^{-4} \\;\\longrightarrow\\; \\text{收敛到原点}\n$$"
+  },
+  {
+    "path": "content/robust/robust-case-study.mdx",
+    "line": 47,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n         k   b\n    ┌───╱╲──/\\/\\/──┐\n    │   m₁         m₂\n  F →│  ●───────────●\n    │               │\n    └─── b₁ ────────┘\n         (阻尼到地)\n```"
+  },
+  {
+    "path": "content/robust/robust-case-study.mdx",
+    "line": 671,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n┌────────────────────────────────────────────────────────────────┐\n│                    鲁棒控制工程设计流程                         │\n├────────────────────────────────────────────────────────────────┤\n│                                                                │\n│  1. 物理建模 → 标称传递函数 G(s)                               │\n│       ↓                                                        │\n│  2. 不确定性识别 → 来源、范围、结构                             │\n│       ↓                                                        │\n│  3. LFT 建模 → G_u(s), Δ                                      │\n│       ↓                                                        │\n│  4. 需求翻译 → 时域指标 → 频域权重 W₁, W₂, W₃                  │\n│       ↓                                                        │\n│  5. H∞ 设计 → mixsyn → K_H∞                                   │\n│       ↓                                                        │\n│  6. μ 分析验证 → 鲁棒稳定? 鲁棒性能?                            │\n│       ├─ 都满足 → 步骤 8                                       │\n│       └─ 不满足 → 步骤 7                                       │\n│       ↓                                                        │\n│  7. μ 综合改进 → musyn → K_μ → 回到步骤 6                     │\n│       ↓                                                        │\n│  8. Monte Carlo 验证 → 最终确认                                 │\n│       ├─ 通过 → 设计完成                                       │\n│       └─ 不通过 → 回到步骤 4（调整权重）                        │\n│                                                                │\n└────────────────────────────────────────────────────────────────┘\n```"
+  },
+  {
+    "path": "content/robust/robust-performance.mdx",
+    "line": 257,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n┌─────────────────────────────────────────────────────┐\n│  1. 定义性能需求 → 选择权重 W₁, W₂, W₃              │\n│  2. 混合灵敏度设计 → 得到控制器 K                     │\n│  3. μ 鲁棒性能分析 → 检验是否 sup μ < 1              │\n│     ├─ 是 → 设计完成                                 │\n│     └─ 否 → 分析最坏情况 → 调整权重 → 回到步骤 2      │\n└─────────────────────────────────────────────────────┘\n```"
+  },
+  {
+    "path": "content/robust/robust-stability.mdx",
+    "line": 537,
+    "kind": "字符图候选，待逐项核图",
+    "source": "```\n开始\n  │\n  ├─ 不确定性是单一增益/相位变化？\n  │   └─ 是 → 用增益裕度 / 相位裕度\n  │\n  ├─ 特征方程是区间多项式（系数独立变化）？\n  │   └─ 是 → 用 Kharitonov 定理（充要条件，检查 4 个多项式）\n  │\n  ├─ 状态空间模型 + 结构化不确定性？\n  │   └─ 是 → 用二次稳定性 / LMI（充分条件）\n  │\n  ├─ 频域不确定性 + 需要精确分析？\n  │   └─ 是 → 用 μ 分析（充要条件）\n  │\n  └─ 以上都不适用 / 需要快速验证？\n      └─ 用 Monte Carlo 仿真（概率结论）\n```"
+  }
+]
