@@ -38,6 +38,14 @@
 
 默认选择全局 checklist 中生产顺序最前的未合入课程。本期首课 **MATH-01：微积分入门**。先修与基础设施阻塞时记录原因，只处理该课所必需的已登记阻塞，不顺带交付第二课。讨论未完继续同一课程；用户明确换课时保留检查点。课程合入后停止，下一对话再取下一课。
 
+明确换课需在下表登记目标、获准暂缓的前课、用户依据及可读证据；只放行该目标，不免除阶段顺序、验收或其它前课。历史例外保留，不改变课程导航和默认生产顺序。
+
+<!-- S3-ORDER-EXCEPTIONS-BEGIN -->
+| ID | 暂缓前课 | 用户依据 | 证据 |
+|---|---|---|---|
+| DISCRETE-02 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-02”；上一课未验收草稿保留，当前课局部补足采样编号定义 | .agent/semester-03/discrete-02/acceptance.md |
+<!-- S3-ORDER-EXCEPTIONS-END -->
+
 推荐新写 Prompt：
 
 > 继续学期3，读取 semester-03-plan.md 和全局 checklist，选择生产顺序最前的未合入课程。确认无正文后，按 wiki-lesson-new 及共同流程完成这一节的 Phase 1–4、真实验收、日志与台账，验收后 --no-ff 合入 master。本对话只交付这一节，不自动开始下一节。
@@ -688,3 +696,8 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-12 本轮执行记录（2026-10-19）
 
 分岔与混沌从空占位按新写专用Phase1–4完成：电机带摆平衡消失引入折叠/叉形，再以径向方程证明Hopf；Logistic逐步更新解释乘子、周期倍化、窗口和有限指数，保留正指数不稳定不动点反例。13H2、4Notebook5cell、五题五答、SVG与BifurcationExplorer；14配置140014实际TS轨道点及三初态17424点云核高精度短程/稳定周期/逐步残差，Duffing周期解由独立Radau+差分乘子复算，原生/Pyodide、真实锚点/375px页面通过。W13指定旧跳跃/鞍结/吸引子材料逐项审完，四组修正扫频核驻留/步长/网格；只认有限窗口区间，不认证完整分支或吸引域。证据.agent/semester-03/nonlinear-12/acceptance.md及source-audit.md；实际master回执以checklist为准。25Python待办及W14保持，用户批阅和长期润色分支保持，Pages另行授权，不顺带交付后续课。
+
+
+### DISCRETE-02 本轮执行记录（2026-10-19）
+
+离散时间系统由空占位按新写专用Phase1–4完成。每分钟房间温差引入递推，区分初始状态与加热输入，矩阵同步更新以错误覆盖反例解释，脉冲/卷积连接零初值传递函数。8H2、3Notebook3cell、四题四答、两SVG；独立几何和/矩阵幂/SciPy、原生与Pyodide、375px及Pages本地基路径验收通过。证据.agent/semester-03/discrete-02/acceptance.md；master真实回执见全局checklist。DISCRETE-01未完草稿保留检查点，不继承签发；本课局部解释采样编号，不依赖其未验收数值。25项Python待办、W14、用户批阅及长期润色分支保持；本地端口四文件不提交，Pages另行授权，不顺带交付下一课。

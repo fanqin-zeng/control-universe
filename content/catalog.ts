@@ -2703,6 +2703,40 @@ export const catalog: Chapter[] = [
       {
         "slug": "discrete-time-systems",
         "title": "离散时间系统",
+        "subsections": [
+          {
+            "slug": "从读数到递推",
+            "title": "从读数到递推"
+          },
+          {
+            "slug": "初值和输入各做了什么",
+            "title": "初值和输入各做了什么"
+          },
+          {
+            "slug": "离散状态空间",
+            "title": "离散状态空间"
+          },
+          {
+            "slug": "从脉冲到输入输出",
+            "title": "从脉冲到输入输出"
+          },
+          {
+            "slug": "模型的边界",
+            "title": "模型的边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-freq",
           "modern/state-space",
@@ -2710,7 +2744,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "difference-equation",

@@ -87,7 +87,7 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 6.1 | 采样与量化 | discrete-time-freq | 🟨 有正文待审校 | undergrad | theory | 7 | classic/frequency-domain-analysis<br>math/fourier-analysis |
-| 6.2 | 离散时间系统 | discrete-time-systems | ⬜ 骨架（占位页） | undergrad | theory | 8 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>math/z-transform |
+| 6.2 | 离散时间系统 | discrete-time-systems | ✅ 已交付 v1.3 | undergrad | theory | 8 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>math/z-transform |
 | 6.3 | 差分方程 | difference-equation | ⬜ 骨架（占位页） | undergrad | math | 9 | discrete-sampled/discrete-time-systems<br>math/z-transform |
 | 6.4 | Z域系统分析 | z-transform-analysis | 🟨 有正文待审校 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
 | 6.5 | 离散系统稳定性 | discrete-stability-criteria | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/z-transform-analysis<br>modern/lyapunov-modern |
@@ -320,14 +320,14 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 53（status = v1.3）
+- **已交付 v1.3**: 54（status = v1.3）
 - **有正文待审校**: 25（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 127（status = empty，渲染占位页）
+- **骨架占位**: 126（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 152（= draft 25 + empty 127 + 无 status 0）
-- **有 MDX 正文**: 78
-- **catalog 小节总数**: 914
-- **讨论日志**: 74 篇（覆盖 53 门；有 MDX 无日志 25 门）
+- **未完成 v1.3**: 151（= draft 25 + empty 126 + 无 status 0）
+- **有 MDX 正文**: 79
+- **catalog 小节总数**: 922
+- **讨论日志**: 75 篇（覆盖 54 门；有 MDX 无日志 25 门）
 - **交互组件**: 68 个文件（被正文引用 68，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个

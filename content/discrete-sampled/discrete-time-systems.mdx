@@ -1,0 +1,250 @@
+---
+title: 离散时间系统
+description: 从每分钟一次的温度读数出发，学习递推、初始状态、离散状态空间与脉冲响应。
+---
+
+# 离散时间系统
+
+冬天给房间加热，我们可以每分钟看一次温度计，再决定下一分钟开多大功率。记录本上留下的是一串读数：现在多少度，一分钟后多少度，再过一分钟呢？
+
+在[状态空间](/modern/state-space)中，我们用微分方程描述状态随时间的变化。现在只关心这些固定时刻，问题就变成：**知道这一刻的状态和接下来的加热命令，怎样算出下一刻的状态？**
+
+## 从读数到递推
+
+把第一次读数编号为 $k=0$，之后依次是 $k=1,2,\ldots$。采样间隔记作 $T_s$，第 $k$ 次读数的实际时刻就是 $t_k=kT_s$。本课取 $T_s=1$ 分钟；因此 $k=5$ 对应开始后的第 $5$ 分钟。$k$ 是编号，不带时间单位。
+
+![每个采样时刻先读状态，再将加热命令用于下一个采样区间](/images/discrete-system-timeline.svg)
+
+为方便计算，设室外温度固定，用 $x[k]$ 表示第 $k$ 次读数时室内比室外高多少摄氏度。输入 $u[k]$ 是随后这一分钟的加热功率比例，$0$ 表示关闭，$1$ 表示满功率。先用一个简化模型：
+
+$$
+x[k+1]=0.8x[k]+2u[k],\qquad y[k]=x[k].
+$$
+
+第一项表示这一分钟后还保留原有温差的八成；第二项表示加热带来的贡献，系数 $2$ 的单位是摄氏度。输出 $y[k]$ 就是这次测得的温差。**这个关系是教学假设，不是所有房间都服从的规律**；真实系数需要实验辨识，这里也没有计入开门、日照和传感器误差。
+
+若初始温差 $x[0]=4$ °C，始终满功率加热，逐步代入就得到：
+
+$$
+x[1]=0.8\times4+2=5.2,\qquad x[2]=0.8\times5.2+2=6.16.
+$$
+
+这叫**递推**：用已知的一步算下一步。给出初始状态和后续输入，整串输出才确定。只给公式而不说房间一开始有多热，还不能预测第一次读数。
+
+这里计算 $y[0]$ 时读到的是 $x[0]=4$，不是刚算出的 $x[1]=5.2$。编程序时把“读当前输出”和“更新下一状态”混在一起，就会整串错开一步。
+
+<JupyterNotebook
+  title="实验1：一步一步预测温差"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt`}
+  cells={[{title: "递推与初值分解", code: `a, b, x0, steps = 0.8, 2.0, 4.0, 5
+k = np.arange(steps + 1)
+x = np.empty(steps + 1)
+x[0] = x0
+for j in range(steps):
+    x[j + 1] = a*x[j] + b
+natural = x0*a**k
+forced = b*(1-a**k)/(1-a)
+assert np.max(np.abs(x-natural-forced)) < 1e-12
+print("k:", k.tolist())
+print("total:", np.round(x, 5).tolist())
+print("initial only:", np.round(natural, 5).tolist())
+print("input only:", np.round(forced, 5).tolist())
+print("equilibrium:", b/(1-a))
+fig, ax = plt.subplots(figsize=(7, 3))
+ax.plot(k, x, "o-", label="total")
+ax.plot(k, natural, "s--", label="initial only")
+ax.plot(k, forced, "^--", label="input only")
+ax.set(xlabel="time (min)", ylabel="temperature difference (deg C)", xlim=(0, 5), ylim=(0, 11))
+ax.grid(True); ax.legend(); plt.show()`}]}
+/>
+
+图中的点才是模型计算的时刻；连线只是帮助看清先后顺序，不能据此知道两个读数之间的真实温度变化。
+
+## 初值和输入各做了什么
+
+先把递推式展开几步：
+
+$$
+\begin{aligned}
+x[1]&=a x[0]+b u[0],\\
+x[2]&=a^2 x[0]+a b u[0]+b u[1],\\
+x[k]&=a^k x[0]+\sum_{j=0}^{k-1}a^{k-1-j}b u[j].
+\end{aligned}
+$$
+
+最后一行适用于 $k\geq1$，而 $k=0$ 时直接使用给定的初值。$a,b$ 是固定系数；本课房间模型对应 $a=0.8,b=2$。
+
+第一部分 $a^k x[0]$ 是**零输入响应**：关掉加热后，房间原有温差怎样变化。第二部分是**零状态响应**：从零温差开始，各次加热命令怎样累积成当前温差。“零状态”说的是初始状态为零，不是整个过程一直为零。
+
+在本例中，第 $5$ 分钟，初始温差贡献 $1.31072$ °C，加热贡献 $6.7232$ °C，两者相加是 $8.03392$ °C。前面的实验同时画出了三串点，可以逐个时刻核对。
+
+如果持续满功率，加热每分钟补进来的温差最终会和散热抵消。设不再变化时的温差为 $\bar x$，则
+
+$$
+\bar x=0.8\bar x+2,\qquad \bar x=10\ {\rm ^\circ C}.
+$$
+
+对于这组初值与输入，完整表达式是 $x[k]=10-6(0.8)^k$。第 $5$ 分钟的读数还没到 $10$ °C；**有限时刻的读数和无限久后的极限是两回事**。
+
+## 离散状态空间
+
+一个温差就能描述上面的教学模型。如果温度计本身反应慢，只记室内温差可能还不够：同样的室温，温度计也许正在升温，也许还没冷下来。
+
+用 $x_1[k]$ 表示室内温差，$x_2[k]$ 表示温度计显示的温差，试用下面的两状态模型：
+
+$$
+\begin{aligned}
+x_1[k+1]&=0.8x_1[k]+2u[k],\\
+x_2[k+1]&=0.25x_1[k]+0.5x_2[k],\\
+y[k]&=x_2[k].
+\end{aligned}
+$$
+
+第二个式子也是人为给定的教学模型，包含温度计对房间和环境的简化热交换；系数之和不是 $1$，不能把它直接叫作对室温的无偏测量。它的目的在于说明：**状态可以不止一个，输出也不一定等于全部状态。**
+
+![输入只作用于室内温差，温度计状态由上一步的室内温差和自身状态更新，输出为温度计状态](/images/discrete-system-state.svg)
+
+把状态放进列向量，得到离散线性时不变系统的一般形式：
+
+$$
+\boldsymbol{x}[k+1]=A\boldsymbol{x}[k]+B\boldsymbol{u}[k],\qquad
+\boldsymbol{y}[k]=C\boldsymbol{x}[k]+D\boldsymbol{u}[k].
+$$
+
+“线性”表示这里没有状态或输入之间的乘积、平方等非线性项；“时不变”表示 $A,B,C,D$ 不随编号 $k$ 改变。严格地说，输入到输出的线性叠加对应零初始状态；非零初值产生的那部分响应需要另行保留。
+
+$A$ 描述当前状态怎样影响下一状态，$B$ 描述当前输入怎样影响下一状态；$C$ 决定测量哪些状态组合，$D$ 描述输入对当前输出的直接影响，称为**直接通路**。若有 $n$ 个状态、$m$ 路输入、$p$ 路输出，矩阵尺寸依次是 $n\times n$、$n\times m$、$p\times n$、$p\times m$。
+
+对于房间和温度计，
+
+$$
+A=\begin{bmatrix}0.8&0\\0.25&0.5\end{bmatrix},\quad
+B=\begin{bmatrix}2\\0\end{bmatrix},\quad
+C=\begin{bmatrix}0&1\end{bmatrix},\quad D=0.
+$$
+
+取 $\boldsymbol{x}[0]=[4,0]^{\mathsf T}$、$u[k]=1$，第一步得到 $\boldsymbol{x}[1]=[5.2,1]^{\mathsf T}$。注意第二个状态用的是旧值 $x_1[0]=4$，不能用刚得到的 $5.2$。两个下一状态都从同一个旧状态向量计算，最后一起更新。
+
+<JupyterNotebook
+  title="实验2：同时更新两个状态"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import dlsim`}
+  cells={[{title: "状态递推与SciPy核对", code: `A = np.array([[0.8, 0.0], [0.25, 0.5]])
+B = np.array([[2.0], [0.0]])
+C = np.array([[0.0, 1.0]])
+D = np.zeros((1, 1))
+u = np.ones(6)
+states = np.empty((6, 2)); states[0] = [4.0, 0.0]
+for k in range(5):
+    states[k+1] = A @ states[k] + B[:, 0]*u[k]
+y = (states @ C.T)[:, 0]
+t, y_ref, x_ref = dlsim((A, B, C, D, 1.0), u, x0=states[0])
+assert np.max(np.abs(states-x_ref)) < 1e-12
+assert np.max(np.abs(y-y_ref[:, 0])) < 1e-12
+print("states:", np.round(states, 5).tolist())
+print("output:", np.round(y, 5).tolist())
+print("wrong sequential x2[1]:", 0.25*states[1, 0]+0.5*states[0, 1])
+fig, ax = plt.subplots(figsize=(7, 3))
+ax.plot(t, states[:, 0], "o-", label="room")
+ax.plot(t, y, "s-", label="sensor")
+ax.set(xlabel="time (min)", ylabel="temperature difference (deg C)", xlim=(0, 5), ylim=(0, 10))
+ax.legend(); ax.grid(True); plt.show()`}]}
+/>
+
+实验中若错误地依次覆盖状态，温度计第一步会算成 $1.3$ °C，而正确值是 $1$ °C。这不是算术误差，而是偷偷换了模型。
+
+一般的状态解也可按同样的方法展开：
+
+$$
+\boldsymbol{x}[k]=A^k\boldsymbol{x}[0]+\sum_{j=0}^{k-1}A^{k-1-j}B\boldsymbol{u}[j].
+$$
+
+它和前面的标量式结构一样：初始状态的影响，加上每一步输入传播到现在的影响。矩阵乘法的顺序不能随意交换。
+
+## 从脉冲到输入输出
+
+设初始状态为零，只在 $k=0$ 给一次大小为 $1$ 的输入，以后输入都是 $0$。这个输入序列叫**单位脉冲**，记作 $\delta[k]$。它是一个普通序列：$\delta[0]=1$，其余为零，不是连续时间中面积为一的冲激函数。
+
+对应的输出 $h[k]$ 叫**脉冲响应**。对标量模型 $x[k+1]=a x[k]+b u[k]$、$y[k]=x[k]$，有
+
+$$
+h[0]=0,\qquad h[k]=b a^{k-1}\quad(k\geq1).
+$$
+
+为何开头是零？因为 $u[0]$ 影响的是下一状态 $x[1]$，当前输出 $y[0]=x[0]$ 仍为零。本例的脉冲响应从 $0,2,1.6,1.28,\ldots$ 开始。
+
+任意从 $k=0$ 开始的输入，都可以看作许多次大小不同、时间不同的脉冲。利用线性叠加，得到零初值输出：
+
+$$
+y[k]=\sum_{j=0}^{k}h[k-j]u[j].
+$$
+
+这就是离散**卷积和**。它只是把每次输入到当前的贡献加起来。若初值不为零，还要加上 $a^k x[0]$，不能把这部分“忘”在卷积外面。
+
+对于一般的 ABCD 模型，$h[0]=D$，$h[k]=CA^{k-1}B$（$k\geq1$）。所以，当前输入是否立刻出现在输出中，要看 $D$，不是所有离散系统都必须等一步。
+
+结合[Z变换](/math/z-transform)，零初值下，本例还可写成
+
+$$
+G(z)=\frac{Y(z)}{U(z)}=\frac{b}{z-a}=\frac{bz^{-1}}{1-az^{-1}}.
+$$
+
+这里的 $z^{-1}$ 对应一步延迟。传递函数概括输入输出关系，但没有额外包含非零初值；这一点与连续系统相同。后面的 Z 域分析课再利用它讨论频率响应和控制设计。
+
+<JupyterNotebook
+  title="实验3：脉冲、卷积与习题核验"
+  setupCode={`import numpy as np
+from scipy.signal import lfilter`}
+  cells={[{title: "从递推到卷积", code: `a, b = 0.8, 2.0
+u = np.array([1., 0., 2., 0., 0., 0.])
+h = np.r_[0., b*a**np.arange(5)]
+x = np.zeros(6)
+for k in range(5):
+    x[k+1] = a*x[k]+b*u[k]
+convolved = np.convolve(u, h)[:6]
+filtered = lfilter([0., b], [1., -a], u)
+assert np.max(np.abs(x-convolved)) < 1e-12
+assert np.max(np.abs(x-filtered)) < 1e-12
+print("impulse:", np.round(h, 5).tolist())
+print("zero-state convolution:", np.round(x, 5).tolist())
+print("Q1 x1,x2:", 0.8*4+2*0.5, 0.8*(0.8*4+2*0.5)+2*0.5)
+print("Q2 initial,input,total:", 4*a**5, 2*(1-a**5)/(1-a), 10-6*a**5)
+print("Q3 next state:", [0.8*4+2, 0.25*4+0.5*0])
+print("Q4 impulse with D=0.5:", np.round(h+0.5*np.r_[1., np.zeros(5)], 5).tolist())
+for coefficient in [0.8, -1.0, 1.1]:
+    print("boundary a,x5:", coefficient, coefficient**5)`}]}
+/>
+
+## 模型的边界
+
+**离散时间不等于离散数值。** $k$ 只能取整数，但状态仍可取实数。把读数舍入到有限刻度，是量化，不能仅凭方括号就说模型已经考虑了它。
+
+**离散模型不自动说明采样间隔内发生什么。** 固定 $T_s$ 后，模型描述采样点之间的对应关系。改变 $T_s$，一般也要重新确定系数；不能把“一分钟保留八成”原样改称“一秒钟保留八成”。连续模型怎样得到离散模型，留到离散化方法课。
+
+**输出是否衰减，要看系数。** 对没有输入的标量系统，$x[k]=a^k x[0]$。$|a|<1$ 时趋于零；$a=-1$ 时反复变号而不衰减，$a=1.1$ 时一般会增大。以 $x[0]=1$ 为例，后两种模型在 $k=5$ 分别得到 $-1$ 和 $1.61051$。矩阵系统的稳定性需要进一步分析，本课不拿单个矩阵元素的大小当判据。
+
+**计算规则未必是物理事实。** 加热器功率有限，房间也不是永久不变的线性系统。本课模型用来练习预测与表示；用于实际控制前，还要检查测量数据、适用温度范围及输入限制。
+
+本课状态解与卷积关系可参阅 Dahleh 等人的[离散线性状态空间模型](https://eng.libretexts.org/Bookshelves/Industrial_and_Systems_Engineering/Book%3A_Dynamic_Systems_and_Control_%28Dahleh_Dahleh_and_Verghese%29/10%3A_Discrete-Time_Linear_State-Space_Models/10.02%3A_Linear_Time-Invariant_Models)；实验所用的离散仿真接口见 [SciPy dlsim 文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.dlsim.html)。
+
+## 小结
+
+离散时间系统告诉我们：当前状态和当前输入怎样共同产生下一状态。初始状态提供计算起点，输出方程决定我们看见什么。状态较多时用矩阵同时更新；只关心零初值输入输出关系时，可以改看脉冲响应、卷积和与传递函数。
+
+下一课[差分方程](/discrete-sampled/difference-equation)将继续研究这些递推关系的解法。
+
+## 习题
+
+1. 房间模型仍为 $x[k+1]=0.8x[k]+2u[k]$，$x[0]=4$ °C。若始终以半功率加热，求 $x[1]$、$x[2]$，并说明 $u[0]$ 对应哪段时间。
+2. 初值和模型不变，改为持续满功率。分别求 $k=5$ 时的零输入响应、零状态响应和总响应。总响应是否已经达到平衡温差？
+3. 两状态模型取 $\boldsymbol{x}[0]=[4,0]^{\mathsf T}$、$u[0]=1$。求下一状态和当前输出，解释为什么不能先改写第一个状态再算第二个。
+4. 标量状态方程不变，输出改为 $y[k]=x[k]+0.5u[k]$。零初值下，求脉冲响应的前三项。这个系统的 $D$ 是多少？
+
+## 答案
+
+1. $x[1]=4.2$ °C、$x[2]=4.36$ °C。$u[0]=0.5$ 是从第 $0$ 分钟到第 $1$ 分钟之间的半功率命令，不是第 $1$ 次更新以后才开始使用。
+2. 三部分依次为 $1.31072$ °C、$6.7232$ °C、$8.03392$ °C。平衡温差是 $10$ °C，此时尚未达到。零输入响应计算时把全部输入置零，零状态响应计算时把初值置零。
+3. 下一状态为 $[5.2,1]^{\mathsf T}$，当前输出 $y[0]=0$。两个下一状态都应使用旧向量 $[4,0]^{\mathsf T}$；若用新的 $5.2$ 更新温度计，会错得 $1.3$。
+4. $h[0]=0.5$、$h[1]=2$、$h[2]=1.6$，且 $D=0.5$。输入当次通过直接通路产生输出，同时还会经状态影响以后各步。
