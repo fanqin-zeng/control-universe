@@ -591,3 +591,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### CLASSIC-10执行回执（2026-10-18）
 
 本轮仅新写classic/design-methods-comparison「设计方法选型」，按新写SKILL完整Phase1–4：八节/六题/三原始Notebook，四合同同对象筛固定候选，不作结构排名；完整PI状态、目标误差口径、限幅不可达及噪声通道边界明确。独立状态空间对3候选×3幅值×2001节点y/u与6频点复响应通过；63项对账、严格内核/Pyodide3/3、生产页/390px/普通及Pages构建见.agent/semester-03/classic-10/acceptance.md。W06–09及27Python待办保持开放，只有本课合master，不发布；真实hash另登记全局checklist，CLASSIC-11另起对话。
+
+### CLASSIC-11执行回执（2026-10-18）
+
+本轮仅重构classic/classic-case-study「经典控制案例」，按重构SKILL完整Phase1–4，保留12主题/34H3/十题/六实验及P交互，47旧ID以单旧H1别名兼容。物理系数101→100.1、负载尺度、PI/PID/反算/灵敏度和十题全链纠错；补温和PI与305V输入反例，三种子360组不冒充全域保证。真实TS107K/601节点对独立状态，六严格内核/Pyodide、136行对账与390px/数字环路/两构建见.agent/semester-03/classic-11/acceptance.md，fix-043记录。W06–09及27Python待办继续开放，只合master，不发布。真实合并hash登记全局checklist；下一课MODERN-01另开对话。
