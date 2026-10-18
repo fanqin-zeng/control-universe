@@ -25,4 +25,7 @@
 
 全局npm run check退出0，PASS21/WARN2/FAIL0；52/205交付、77正文、67Explorer。自动大纲/统计重算命令先校验旧统计，产生5FAIL并写入正确统计，catalog-refresh.log完整保留；等待其完成后最终check全绿。两个WARN为既有25旧稿日志债与跨章同slug。合入列在真实提交后补回执。
 
-学期与支持策略最终门槛：node scripts/check-semester03.mjs退出0（提交前merged48，本课合入列尚未虚填）；node scripts/check-python-support.mjs退出0，76课/342放行/25代码展示。git diff --check退出0。验收脚本与原始证据随课提交，不含用户未提交批阅。
+学期与支持策略最终门槛：node scripts/check-semester03.mjs退出0（提交前merged48，本课合入列尚未虚填）；node scripts/check-python-support.mjs退出0，76课/342放行/25代码展示。实现与文档（排除原始.log）的git diff HEAD^ HEAD --check退出0；完整原始verify.log的PASS列保留工具输出尾空格，整包空白检查会报告这九行，仅为原始证据格式，不是课程源码缺陷。验收脚本与原始证据随课提交，不含用户未提交批阅。
+
+
+真实交付提交已进入master：2a7af2f9146592ad6e319857b444ff056138f3a1。回执同步全局合入列，semester03累计49课进入master。未修改用户批阅，未合并润色分支，未发布Pages。
