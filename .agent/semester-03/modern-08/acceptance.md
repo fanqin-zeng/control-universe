@@ -20,3 +20,5 @@
 四份档案、40行三方对账、六组审校、原九项及四补充与红队六列表见docs/discuss-log/semester-03/04-modern/08-multivariable-systems.md。首次术语FAIL由中文紧邻术语被识别成新别名，改标准表达后复验，不改扫描器；initial-glossary.log保留。
 
 兼容清单现为73课/350实验/525cell，本轮只重跑此课；27待办ID/原因/处置与W08/W09/W10保留。真实提交进入master后回填hash。
+
+master交付提交：`3a2192e6210406717f91d4ba20f11e9d3b9a769a`；全局六列已勾选，回执另提交。按主干策略推送origin/master；本轮gh-pages保持42eed1d509b90699fda0eff8d45f369d7dd7a210。
