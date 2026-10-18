@@ -15,9 +15,7 @@
 
 ### 当前迭代入口：学期3（2026-10-17）
 
-用户已启动学期3优化，**后续默认按 [.agent/semester-03-plan.md](.agent/semester-03-plan.md) 与 [全局 checklist](.agent/semester-03-checklist.md) 执行**；学期2计划保留为历史来源。2026-10-18用户新增文简/沈读两名语言角色（当前24人，原22人职责不变），先落实计划中的结构/基建，再从数学起按顺序生产，**一个对话只交付一节课**。
-
-逐课语言润色使用 [.agent/skills/wiki-lesson-polish/SKILL.md](.agent/skills/wiki-lesson-polish/SKILL.md)，沈读完整终稿后更新 `.agent/semester-03/language-memory.md`；CLASSIC-01试点须等用户精读确认才开始后续润色。
+用户已启动学期3优化，**后续默认按 [.agent/semester-03-plan.md](.agent/semester-03-plan.md) 与 [全局 checklist](.agent/semester-03-checklist.md) 执行**；学期2计划保留为历史来源。学期3不改角色团队，先落实计划中的结构/基建，再从数学起按顺序生产，**一个对话只交付一节课**。
 
 新写使用 [.agent/skills/wiki-lesson-new/SKILL.md](.agent/skills/wiki-lesson-new/SKILL.md)，已有正文重构使用 [.agent/skills/wiki-lesson-refactor/SKILL.md](.agent/skills/wiki-lesson-refactor/SKILL.md)，两者共用既有 Phase 1–4、personas 与 M1–M5。开工及更新进度后另跑 `node scripts/check-semester03.mjs`，不能用旧 v1.3 标记冒充本期完成。旧章节/状态快照不代表学期3目标已落地；运行元数据仍只认 catalog。
 
@@ -123,7 +121,7 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 
 全程产出讨论日志：`docs/discuss-log/semester-NN/<章序>-<章slug>/<课序>-<课slug>.md`，日志结构有固定骨架（SKILL.md《讨论日志固定结构》），缺席角色要显式标 `[沉默-<角色>：<原因>]`，禁止凑数发言。
 
-### 6.2 角色体系（学期2原22人，学期3用户新增两语言角色后为24人）
+### 6.2 角色体系（semester-02 起，22 人 + 轮值）
 
 | 层 | 角色 | 备注 |
 |----|------|------|
@@ -133,11 +131,10 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 | **体验与脉络** | **陆阅**(学习体验) **许史**(控制史/方法论) **范安**(功能安全) | semester-02 新增层 |
 | 教学支持 | 孙助(习题/翻译) 郑核(主持/签发) | |
 | 可视化 | 苏绘(决策与规范；实现归秦构) | |
-| 语言表达 | 文简(润色)、沈读(顺读审核与学期记忆) | 2026-10-18用户新增，每课必到 |
 | 学生 | 小初 李稳 赵工 钱锐 **林码**(CS转行) **岳自**(高中数学自学) | 林码/岳自为 semester-02 新增 |
 
-- **核心常设6人（每课必到）**：郑核、苏绘、孙助、柯验、文简、沈读；`math` 章另加**岳自必到**（"读者只有高中数学"的唯一真实检验者）。
-- **上场规则**：按 `LessonMeta.type`（math/theory/impl/case/frontier/learning/history）查 SKILL.md《角色上场规则》矩阵，原课型阵容追加文简/沈读后通常9–12人，不全员到会。
+- **核心常设 4 人（每课必到）**：郑核、苏绘、孙助、柯验；`math` 章另加**岳自必到**（"读者只有高中数学"的唯一真实检验者）。
+- **上场规则**：按 `LessonMeta.type`（math/theory/impl/case/frontier/learning/history）查 SKILL.md《角色上场规则》矩阵，单课 7–10 人，不全员到会。
 - **否决权**：柯验（数值三方不一致）、何疑（对比公平性）→ 内容级打回；郑核 → 签发级闸门；秦构九项前端硬门槛任一未过 → 郑核不得签发。
 
 ## 7. `.agent/` 的地位：Agent 工作记忆（工具中立）
@@ -235,3 +232,7 @@ git push origin master
 ### 12.4 GitHub Pages发布闸门（2026-10-17用户要求）
 
 gh-pages是额外长期源码发布分支，GitHub Actions只发布该分支。日常更新正常验收后提交并推送master；**每次必须先取得用户对具体版本的明确同意，才把更新反合到gh-pages并推送**，首次发布也一样。禁止master自动部署或后台同步发布分支。操作与能力限制见docs/deployment/github-pages.md；没有远端Actions成功与公网实测，不得宣称已上线。
+
+## 独立中文润色（2026-10-18用户裁决）
+
+课程中文润色交给其他模型，入口 `.agent/semester-03/zh-lang-edit/README.md`，完整名单与进度在同目录 PLAN.md，记录在 records/。该任务不走角色讨论；既有课程新写/重构仍按原SKILL。专用长期分支 `codex/semester-03-zh-lang-edit`，仅在用户明确要求时简单审核并合入 master；不得自动合并或发布 Pages。普通课程开发仍直接在master进行。
