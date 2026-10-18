@@ -59,7 +59,7 @@
 | [x] 传递函数 (transfer-function) | CLASSIC-02学期3重构；11节/9题/5严格内核与Pyodide实验、两交互同默认与归一化、25旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/02-transfer-function.md，验收.agent/semester-03/classic-02/acceptance.md；二阶增益/频响/内部对消通道纠错 |
 | [x] 时域分析 (time-domain-analysis) | CLASSIC-03学期3重构；11节/9题/7严格内核与Pyodide实验，五交互36组独立复算，43旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/03-time-domain-analysis.md，验收.agent/semester-03/classic-03/acceptance.md；路面零点/连续调节时间/主导误差纠错 |
 | [x] 系统稳定性 (stability-analysis) | CLASSIC-04学期3重构；14节/十题/八严格内核与Pyodide实验，两交互真实TS对独立根与幅相边界；54旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/04-stability-analysis.md，验收.agent/semester-03/classic-04/acceptance.md；BIBO/内部稳定、零行/重根/时滞近似与模型纠错 |
-| [x] 频域分析 (frequency-domain-analysis) | v1.3: 4个交互组件（BodeZetaExplorer + NyquistZetaExplorer + BandwidthCorrespondenceExplorer + RCFilterBodeExplorer），6个JupyterNotebook（3静态 + **3个A6搬入的ipywidgets笔记本**）。**A6 结构已改（吸收 frequency-response 的 4 个小节，H2 10 → 13），内容待 v1.3 复核**——详见下方 A6 说明 |
+| [x] 频域分析 (frequency-domain-analysis) | CLASSIC-05学期3重构；13节/九题/九严格内核与Pyodide实验，四交互真实TS对独立SciPy；73旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/05-frequency-domain-analysis.md，验收.agent/semester-03/classic-05/acceptance.md；修GM归一化/幅相API/完整围线/路面零点，关闭本课PY-001/002/003 |
 | [x] 根轨迹 (root-locus) | v1.3: 1个交互组件（RootLocusKExplorer），4个静态JupyterNotebook |
 | [x] PID控制 (pid-controller) | v1.3: 2个交互组件（PidDerivativeFilterExplorer + PidKiKdExplorer） |
 | [x] 校正网络 (compensator-design) | v1.3: 4个交互组件（LeadCompensatorExplorer + LagCompensatorExplorer + LeadLagCompensatorExplorer + AntiWindupExplorer） |

@@ -7,33 +7,17 @@ description: 从 Bode 图到 Nyquist 图——用频率响应理解系统的动�
 
 ## 为什么需要频域分析
 
-上一章（时域分析），我们从传递函数出发，计算了系统对阶跃、脉冲等信号的**时间响应**，提取了超调量、调节时间等性能指标。时域分析直观——响应曲线一眼就能看出系统行为。
+上一课问“偏离平衡后会不会越摆越大”，这次继续看同一个车身：如果路面不是突然抬高一次，而是间隔均匀的起伏，车身会跟着上下移动多大幅度？车速变了，起伏经过车轮的频率也变了，车身振幅又会怎样变化？
 
-但时域分析有一个**根本困难**：它很难回答"系统对**所有频率**的正弦输入如何响应？"
+RC滤波器也有同样的问题：缓慢变化的电压与快速抖动的电压，经过电路后会衰减多少、错开多少相位？频域分析把每一个输入频率对应的**幅值比和相位差**列出来。它与时域分析描述同一模型，换的是观察方式，不能因此说时域方法无法分析周期输入。
 
-这个问题在工程中极为重要：
-
-- **滤波器设计**：哪些频率的信号能通过，哪些被衰减？
-- **噪声抑制**：传感器噪声通常是高频的，系统对高频输入衰减多少？
-- **共振分析**：如果输入频率接近系统自然频率，响应会放大多少？
-- **稳定性分析**：闭环系统在频域中有更优雅的稳定判据
-- **鲁棒性分析**：模型有多大的不确定性时，系统仍然稳定？
-
-频域分析的核心思想：**不研究系统对某一个特定信号的响应，而是研究系统对所有频率正弦信号的稳态响应规律**。
-
-本章路线图：
-
-$$
-\text{频率响应函数} \to \text{Bode 图（含稳定裕度）} \to \text{Nyquist 图} \to \text{频域指标与时域的关系} \to \text{工程实例}
-$$
-
----
+本课先从正弦稳态推导$G(j\omega)$，再读Bode与Nyquist图、核查反馈裕度，最后回到标准二阶、RC和路面模型。除特别说明，均为实系数、因果连续LTI模型，单位负反馈，不隐藏不稳定极零约消；$\omega$用rad/s，$f=\omega/(2\pi)$用Hz，dB表示$20\log_{10}$幅比。
 
 ## 频率响应函数
 
 ### 从正弦输入开始
 
-假设一个稳定的 LTI 系统 $G(s)$，输入是正弦信号 $r(t) = A\sin(\omega t)$。
+假设一个输入输出稳定、无该频率极点的适当有理LTI系统，且初始瞬态会衰减。对其传递函数 $G(s)$，输入是正弦信号 $r(t) = A\sin(\omega t)$。
 
 一个关键的数学事实：**LTI 系统对正弦输入的稳态响应仍然是同频率的正弦**，只是幅值和相位发生了变化：
 
@@ -117,7 +101,7 @@ $$
 观察：
 - $\omega \to 0$ 时：$|G| \to 1$，$\angle G \to 0°$——低频信号完全通过，无相移
 - $\omega \to \infty$ 时：$|G| \to 0$，$\angle G \to -90°$——高频信号被完全衰减
-- $\omega = 1/T$ 时：$|G| = 1/\sqrt{2} \approx 0.707$（即 $-3$ dB），$\angle G = -45°$
+- $\omega = 1/T$ 时：$|G| = 1/\sqrt{2} \approx 0.707$（精确为$-3.010300$dB，习惯称−3dB），$\angle G = -45°$
 
 这就是一个**低通滤波器**——低频通过，高频衰减。
 
@@ -131,7 +115,7 @@ $$
 
 ### 对数坐标的魔力
 
-任何传递函数都可以分解为若干"典型环节"的乘积：
+有限维实系数有理传递函数可分解为实一阶与共轭二阶因子；下式先以正增益、左半平面零极点的情形示意，右半平面因子须另计相位：
 
 $$
 G(s) = K \cdot \frac{(s/z_1 + 1)(s^2/\omega_{n1}^2 + 2\zeta_1 s/\omega_{n1} + 1)\cdots}{s^N (s/p_1 + 1)(s^2/\omega_{n2}^2 + 2\zeta_2 s/\omega_{n2} + 1)\cdots}
@@ -147,7 +131,7 @@ $$
 
 **乘法变成了加法！** 每个环节的 Bode 图可以独立画出，然后叠加。
 
-> 📐 从抽象代数的角度看，对数运算建立了"正实数乘法群"到"实数加法群"的同构映射。这正是 Bode 图能把复杂乘积分解为简单加法的数学本质。
+> 幅值必须取正模再取对数；相位相加要沿频率连续展开，不能把每一点的主值跳变当真实相位突变。
 
 对相位同理：
 
@@ -170,8 +154,8 @@ Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
 
 #### 1. 比例环节 $G(s) = K$
 
-- 幅频：$20\log K$，水平线
-- 相频：$0°$
+- 幅频：$20\log_{10}|K|$，水平线；这里先取$K>0$。
+- 相频：正增益为$0°$；负增益另有$180°$相位。
 
 #### 2. 积分环节 $G(s) = 1/s$（和纯微分 $G(s) = s$）
 
@@ -187,11 +171,15 @@ Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
 
 转折频率 $\omega = 1/T$：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 幅频渐近线 | 说明 |
 |----------|-----------|------|
 | $\omega \ll 1/T$ | 0 dB | 低频段，幅值近似为 1 |
 | $\omega \gg 1/T$ | $-20$ dB/dec | 高频段，每十倍频衰减 20 dB |
 | $\omega = 1/T$ | $-3$ dB | 实际值与渐近线的最大偏差 |
+
+</div>
 
 相频：从 $0°$ 逐渐下降到 $-90°$，在转折频率处为 $-45°$。
 
@@ -199,10 +187,14 @@ Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
 
 与惯性环节**镜像对称**：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 幅频渐近线 |
 |----------|-----------|
 | $\omega \ll 1/T$ | 0 dB |
 | $\omega \gg 1/T$ | $+20$ dB/dec |
+
+</div>
 
 相频：从 $0°$ 上升到 $+90°$，转折频率处为 $+45°$。
 
@@ -210,16 +202,22 @@ Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
 
 转折频率 $\omega = \omega_n$：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 幅频渐近线 |
 |----------|-----------|
 | $\omega \ll \omega_n$ | 0 dB |
 | $\omega \gg \omega_n$ | $-40$ dB/dec |
 
-**关键特征**：当 $\zeta < 0.707$ 时，幅频特性在 $\omega_n$ 附近出现**谐振峰**（峰值）。谐振峰的高度取决于 $\zeta$——$\zeta$ 越小，峰越高。
+</div>
 
-相频：从 $0°$ 下降到 $-180°$，在 $\omega = \omega_n$ 处为 $-90°$（与 $\zeta$ 无关！）。
+**关键特征**：当$0<\zeta<1/\sqrt2$ 时，幅频特性在 $\omega_n$ 附近出现**谐振峰**（峰值）。谐振峰的高度取决于 $\zeta$——$\zeta$ 越小，峰越高。
+
+相频：从 $0°$ 下降到 $-180°$，在 $\omega = \omega_n$ 处为 $-90°$（这里要求$\zeta>0$；无阻尼在自然频率处有奇点）。
 
 ### 汇总
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 环节 | 传递函数 | 幅频斜率 | 相位变化 |
 |------|---------|---------|---------|
@@ -229,6 +227,8 @@ Bode 图由**两张图**组成，横轴都是 $\log\omega$（对数频率）：
 | 惯性（一阶极点）| $\frac{1}{Ts+1}$ | $-20$ dB/dec（高频）| $0° \to -90°$ |
 | 一阶零点 | $Ts+1$ | $+20$ dB/dec（高频）| $0° \to +90°$ |
 | 二阶振荡 | $\frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}$ | $-40$ dB/dec（高频）| $0° \to -180°$ |
+
+</div>
 
 ### 画 Bode 图的步骤
 
@@ -256,6 +256,8 @@ $$
 
 渐近线：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 斜率 | 说明 |
 |----------|------|------|
 | $\omega < 1$ | $-20$ dB/dec | 积分环节 |
@@ -263,45 +265,31 @@ $$
 | $5 < \omega < 20$ | $-20$ dB/dec | 极点 $-20$ |
 | $\omega > 20$ | $-40$ dB/dec | 又一个极点 $-20$ |
 
+</div>
+
 <JupyterNotebook
-  title="📐 渐近线 vs 实际 Bode 图"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="正弦稳态与Bode复算"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, frequency_response`}
-  cells={[
-    { code: `G = 10 * tf([1, 1], [1, 0]) * tf([1], [1/5, 1]) * tf([1], [1/20, 1])
-
-omega = np.logspace(-1, 3, 2000)
-mag, phase, w = frequency_response(G, omega=omega)
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-
-ax1.semilogx(w, 20*np.log10(np.abs(mag)), 'b-', linewidth=2, label='Actual')
-
-for wf, name in [(1, 'zero'), (5, 'pole'), (20, 'pole')]:
-    ax1.axvline(x=wf, color='gray', linestyle=':', alpha=0.4)
-    ax1.text(wf, ax1.get_ylim()[1]*0.9, f'{name} w={wf}', fontsize=8,
-             ha='center', color='gray')
-
-ax1.set_ylabel('Magnitude (dB)', fontsize=12)
-ax1.set_title('Asymptotic Bode Plot: G(s) = 10(1+s) / [s(1+s/5)(1+s/20)]', fontsize=14)
-ax1.legend(fontsize=9)
-ax1.grid(True, alpha=0.3)
-
-ax2.semilogx(w, np.degrees(np.angle(mag)), 'b-', linewidth=2)
-for wf in [1, 5, 20]:
-    ax2.axvline(x=wf, color='gray', linestyle=':', alpha=0.4)
-ax2.set_xlabel('Frequency (rad/s)', fontsize=12)
-ax2.set_ylabel('Phase (deg)', fontsize=12)
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()` }
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `w=np.logspace(-2,3,601)
+G=ct.tf([10,10],[.01,.25,1,0])
+mag,phase,omega=ct.frequency_response(G,w)
+assert np.ptp(phase)>1
+fig,ax=plt.subplots(2,1,figsize=(7,5),sharex=True)
+ax[0].semilogx(omega,20*np.log10(mag));ax[0].set_ylabel('Magnitude (dB)')
+ax[1].semilogx(omega,np.degrees(phase));ax[1].set_ylabel('Phase (deg)');ax[1].set_xlabel('omega (rad/s)')
+plt.tight_layout();plt.show()
+for q in [1,5,20]:
+ h=ct.evalfr(G,1j*q); print('Bode example',q,abs(h),20*np.log10(abs(h)),np.angle(h,deg=True))
+for q in [.1,1,10]:
+ h=1/(1+1j*q);print('RC normalized sine',q,abs(h),np.angle(h,deg=True))
+`}]}
 />
 
 ### 稳定裕度：增益裕度与相位裕度
@@ -315,7 +303,7 @@ plt.show()` }
 - **增益穿越频率** $\omega_c$（gain crossover frequency）：幅频曲线穿过 0 dB 的频率，即 $|G(j\omega_c)| = 1$
 - **相位穿越频率** $\omega_g$（phase crossover frequency）：相频曲线穿过 $-180°$ 的频率，即 $\angle G(j\omega_g) = -180°$
 
-> 💡 为什么这两个频率重要？因为闭环不稳定的临界条件是 $G(j\omega) = -1$，即幅值恰好为 1（0 dB）**且**相位恰好为 $-180°$。如果两个条件**同时**满足，闭环系统就在临界稳定点上。稳定裕度衡量的就是"离这个临界点还有多远"。
+> 💡 为什么这两个频率重要？因为闭环不稳定的临界条件是 $G(j\omega) = -1$，即幅值恰好为 1（0 dB）**且**相位恰好为 $-180°$。两个条件同时满足说明特征方程在该频率有虚轴根；是否只有简单根、是否还存在右半平面根，须继续检查，不能一律称临界稳定。稳定裕度衡量的就是"离这个临界点还有多远"。
 
 #### 相位裕度 PM（Phase Margin）
 
@@ -327,7 +315,7 @@ $$
 
 物理意义：在 $|G| = 1$ 的频率上，相位还需要再滞后 $PM$ 度才会达到 $-180°$（不稳定的临界点）。
 
-**工程经验**：$PM > 30°$ 通常认为可接受，$PM > 45°$ 较好，$PM > 60°$ 优秀。
+PM不是“优秀/合格”的通用评级；应由任务、延迟和不确定性模型决定要求。多穿越或开环不稳定时，单个PM不能签发闭环稳定。
 
 #### 增益裕度 GM（Gain Margin）
 
@@ -341,56 +329,29 @@ $$
 
 物理意义：在相位为 $-180°$ 的频率上，增益还可以再增大 $GM$ dB 才会使 $|G| = 1$（不稳定的临界点）。
 
-**工程经验**：$GM > 6$ dB 通常认为可接受，$GM > 10$ dB 较好。
+GM的线性值是增益倍率，dB值才取$20\log_{10}$；不要对已是dB的结果再次取对数。
 
 <JupyterNotebook
-  title="📏 稳定裕度标注"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="归一化与裕度"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, frequency_response, margin`}
-  cells={[
-    { code: `G = tf([10], [1, 8, 17, 10])
-
-gm, pm, wcg, wcp = margin(G)
-print(f"Gain Margin: {20*np.log10(gm):.1f} dB (at w={wcg:.2f} rad/s)")
-print(f"Phase Margin: {pm:.1f} deg (at w={wcp:.2f} rad/s)")
-
-omega = np.logspace(-2, 2, 2000)
-mag, phase, w = frequency_response(G, omega=omega)
-mag_db = 20 * np.log10(np.abs(mag))
-phase_deg = np.degrees(np.angle(mag))
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
-
-ax1.semilogx(w, mag_db, 'b-', linewidth=2)
-ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.3)
-ax1.axvline(x=wcp, color='green', linestyle=':', alpha=0.5, label=f'wc={wcp:.2f} rad/s')
-ax1.axvline(x=wcg, color='red', linestyle=':', alpha=0.5, label=f'wg={wcg:.2f} rad/s')
-mag_at_wg = np.interp(wcg, w, mag_db)
-ax1.annotate(f'GM = {-mag_at_wg:.1f} dB', xy=(wcg, mag_at_wg), xytext=(wcg*2, mag_at_wg+5),
-            arrowprops=dict(arrowstyle='->', color='red'), fontsize=11, color='red')
-ax1.set_ylabel('Magnitude (dB)', fontsize=12)
-ax1.set_title('Stability Margins: G(s) = 10 / [(s+1)(s+2)(s+5)]', fontsize=14)
-ax1.legend(fontsize=9)
-ax1.grid(True, alpha=0.3)
-
-ax2.semilogx(w, phase_deg, 'b-', linewidth=2)
-ax2.axhline(y=-180, color='gray', linestyle='--', alpha=0.3)
-ax2.axvline(x=wcp, color='green', linestyle=':', alpha=0.5)
-phase_at_wc = np.interp(wcp, w, phase_deg)
-ax2.annotate(f'PM = {pm:.1f} deg', xy=(wcp, phase_at_wc), xytext=(wcp*3, phase_at_wc+20),
-            arrowprops=dict(arrowstyle='->', color='green'), fontsize=11, color='green')
-ax2.set_xlabel('Frequency (rad/s)', fontsize=12)
-ax2.set_ylabel('Phase (deg)', fontsize=12)
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()` }
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `G=ct.tf([10],[1,8,17,10])
+wg=np.sqrt(17);h=ct.evalfr(G,1j*wg)
+gm,pm,wpc,wgc=ct.margin(G)
+print('G(0), phase crossing, complex response:',ct.dcgain(G),wg,h)
+print('GM linear/dB, PM, wpc,wgc:',gm,20*np.log10(gm),pm,wpc,wgc)
+print('all crossings:',ct.stability_margins(G,returnall=True))
+print('closed poles:',ct.poles(ct.feedback(G)))
+assert abs(h.real+10/126)<1e-12 and abs(h.imag)<1e-12
+assert abs(gm-12.6)<1e-10 and not np.isfinite(wgc)
+print('No finite positive gain crossing: PM is unavailable, not a measured finite angle.')
+`}]}
 />
 
 #### 如何在 Bode 图上读取
@@ -400,12 +361,9 @@ plt.show()` }
 
 #### 稳定裕度的鲁棒性解释
 
-稳定裕度不仅仅是"离不稳定有多远"——它本质上回答了**鲁棒性**问题：
+GM与PM分别描述某类单独增益或相位变化的边界，不是对任意质量、刚度、未建模动态的联合鲁棒性保证。最短距离$\min_\omega|1+G(j\omega)|$是另一指标，不能把它与GM/PM当同一个“距离”。
 
-- **GM** 回答：模型增益最多能偏差多少倍，系统仍然稳定？
-- **PM** 回答：模型相位最多能偏差多少度，系统仍然稳定？
-
-实际系统的参数（质量、刚度、电阻等）不可能精确已知。如果稳定裕度太小，参数的微小偏差就可能让系统越过稳定边界。**这就是为什么工程师要求足够的稳定裕度——它是应对模型不确定性的安全余量**。
+以下交互画**标准二阶传递函数本身**$H(s)=64/(s^2+8s+64)$，默认$\zeta=.5,\omega_n=8$rad/s；它不是下面各个开环回路。默认$H(j8)=-j$，相位$-90^\circ$、幅比1，连续峰频$5.656854$rad/s、峰值$1.249387$dB，半功率带宽$10.176157$rad/s。
 
 <BodeZetaExplorer />
 
@@ -419,49 +377,22 @@ $$
 G(s) = \frac{10}{(1+s)(1+s/2)(1+s/5) \cdot 1 \cdot 2 \cdot 5} = \frac{1}{(1+s)(1+s/2)(1+s/5)}
 $$
 
-等等，更直接的方法：$G(0) = 10/(1 \times 2 \times 5) = 1$，即低频增益为 0 dB。
+直流增益$G(0)=1$，转折频率为1、2、5rad/s。对正频率，三个因子的模都大于其直流值，因此$|G(j\omega)|<1$，**没有有限正增益穿越频率**；不能硬填一个PM。软件以无穷/NaN表示缺失时，要说明这是未定义的交点，而不是任意动态都安全。
 
-转折频率：$\omega = 1, 2, 5$（三个极点）。
-
-**求相位穿越频率 $\omega_g$**：
+相位穿越满足$\omega+\omega/2+\omega/5=\omega^3/10$，故$\omega_g=\sqrt{17}\approx4.123106$rad/s。用未归一化分母直接核：
 
 $$
-\angle G(j\omega) = -\arctan(\omega) - \arctan(\omega/2) - \arctan(\omega/5) = -180°
+(1+j\sqrt{17})(2+j\sqrt{17})(5+j\sqrt{17})=-126,
+\quad G(j\sqrt{17})=-\frac{10}{126}.
 $$
 
-即 $\arctan(\omega) + \arctan(\omega/2) + \arctan(\omega/5) = 180°$。
+所以幅比为$0.079365$、$GM_{linear}=12.6$、$GM_{dB}=20\log_{10}(12.6)\approx22.007411$dB。若分母写成归一化因子，还须保留$1\times2\times5=10$；漏掉它会得到错误的2dB。
 
-利用恒等式：当 $a, b, c > 0$ 时，$\arctan a + \arctan b + \arctan c = 180°$ 的条件为 $a + b + c = abc$：
-
-$$
-\omega + \frac{\omega}{2} + \frac{\omega}{5} = \omega \cdot \frac{\omega}{2} \cdot \frac{\omega}{5}
-$$
-
-$$
-1.7\omega = \frac{\omega^3}{10} \implies \omega_g^2 = 17 \implies \omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}
-$$
-
-在 $\omega_g = \sqrt{17}$ 处的幅值：
-
-$$
-|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{21/4} \cdot \sqrt{42/25}}
-$$
-
-$$
-= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794
-$$
-
-$$
-GM = -20\log(0.794) \approx 1.99 \text{ dB}
-$$
-
-增益裕度约 2 dB——系统稳定，但裕度不大。
-
-> 💡 这个例子说明：即使低频增益只有 0 dB（$G(0) = 1$），三个极点的相位累积也能让系统接近不稳定。增益裕度只有 2 dB，意味着增益再增大约 26% 就会不稳定。
+单位负反馈特征多项式为$s^3+8s^2+17s+(10+K)$。对正增益族，$0\lt K\lt126$严格稳定；当前$K=10$满足，$K=126$边界含$\pm j\sqrt{17}$。
 
 ---
 
-## 在Bode图上读取裕度
+## Bode裕度
 
 在 Bode 图上，增益裕度和相位裕度可以直接读出：
 
@@ -522,107 +453,26 @@ $$
 $s^1$ 行：$(6-10)/3 = -4/3 < 0$。确实不稳定。
 
 <JupyterNotebook
-  title="🧪 不同增益下的 Bode 图与稳定裕度"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="增益与Bode交点"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, bode
-import numpy as np
-import scipy.signal as _sg
-
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-def plot_bode_margins(K):
-    sys = lti([K], [1, 11, 10, 0])
-    gm, pm, wg, wc = margin(sys)
-    gm_db = 20 * np.log10(gm) if gm > 0 else float('inf')
-
-    w = np.logspace(-2, 3, 500)
-    w, mag, phase = bode(sys, w=w)
-
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-    axes[0].semilogx(w, mag, linewidth=2, color='blue')
-    axes[0].set_xlabel('ω (rad/s)')
-    axes[0].set_ylabel('幅值 (dB)')
-    axes[0].set_title(f'Bode 幅频图 (K={K:.0f})')
-    axes[0].axhline(y=0, color='gray', linestyle=':', alpha=0.5)
-    axes[0].grid(True, alpha=0.3)
-
-    axes[1].semilogx(w, phase, linewidth=2, color='blue')
-    axes[1].set_xlabel('ω (rad/s)')
-    axes[1].set_ylabel('相位 (°)')
-    axes[1].set_title(f'Bode 相频图 (K={K:.0f})')
-    axes[1].axhline(y=-180, color='gray', linestyle=':', alpha=0.5)
-    axes[1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-    status = '稳定' if gm_db > 0 and pm > 0 else '不稳定'
-    print(f"K={K:.0f}: GM={gm_db:.1f} dB, PM={pm:.1f}°, ωc={wc:.2f} rad/s → {status}")
-
-interact(plot_bode_margins,
-         K=FloatSlider(min=1, max=1000, step=1, value=10,
-                       description='K', continuous_update=False));` },
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `fig,ax=plt.subplots(2,1,figsize=(7,5),sharex=True)
+for a,b,ks in [(1,10,[10,50,110,150]),(1,2,[5,6,10])]:
+ for k in ks:
+  G=ct.tf([k],[1,a+b,a*b,0]);gm,pm,wpc,wgc=ct.margin(G)
+  print('family a,b,K / GM dB / PM / wc / poles',a,b,k,20*np.log10(gm),pm,wgc,ct.poles(ct.feedback(G)))
+  if b==10:
+   mag,ph,w=ct.frequency_response(G,np.logspace(-2,3,601));ax[0].semilogx(w,20*np.log10(mag),label=str(k));ax[1].semilogx(w,np.degrees(ph))
+ax[0].axhline(0,color='black');ax[0].legend(title='K');ax[0].set_ylabel('dB');ax[1].set_ylabel('deg');ax[1].set_xlabel('rad/s')
+plt.tight_layout();plt.show()
+print('Routh strict intervals: 0<K<110; 0<K<6. Equality is a boundary.')
+`}]}
 />
 ---
 
@@ -644,35 +494,25 @@ $$
 
 Nyquist 图最重要的应用是判断**闭环稳定性**。
 
-Nyquist 判据的数学本质是复变函数中的**幅角原理**（Argument Principle）：对于闭合曲线包围的区域，解析函数的零点数和极点数之差等于曲线绕原点的圈数。
-
-将这一原理应用到闭环特征方程 $1 + G(s) = 0$，就得到：
-
-开环传递函数 $G(s)$ 的 Nyquist 曲线（$\omega$ 从 $-\infty$ 到 $+\infty$），对 $(-1, j0)$ 点的包围情况决定闭环稳定性：
+Nyquist判据来自幅角原理，使用的是**闭合围线的完整像**，不是单独的正频率半支。沿顺时针绕右半平面的围线，把$G(s)$对$-1$的顺时针净包围数记作$N_{cw}$，则
 
 $$
-Z = P - N
+Z=P+N_{cw}.
 $$
 
-- $P$：开环传递函数在**右半平面**的极点数
-- $N$：Nyquist 曲线**逆时针**包围 $(-1, j0)$ 的圈数
-- $Z$：闭环系统在右半平面的极点数
-
-**系统稳定 $\iff Z = 0$**，即 $N = P$。
-
-对于**开环稳定**的系统（$P = 0$），判据简化为：
-
-> Nyquist 曲线不包围 $(-1, j0)$ 点 $\iff$ 闭环稳定。
-
-这就是为什么 $(-1, j0)$ 点被称为**临界点**——Nyquist 曲线离它越远，系统"越稳定"。
+$P$是开环右半平面极点数，$Z$是$1+G(s)$的右半平面零点数。没有虚轴闭环根、互联适定且无隐藏不稳定约消时，$Z=0$才能据此判闭环稳定。开环有原点积分极点时必须缩进绕开；实系数系统的负频率支由共轭得到，外半圆像也属围线的一部分。Notebook会实际计算缩进围线并核对Routh/直接根数。
 
 ### Nyquist 图与 Bode 图的对应
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | Nyquist 图上的特征 | Bode 图上的对应 |
 |-------------------|---------------|
-| 曲线与单位圆 $|G|=1$ 的交点 | 幅频曲线穿过 0 dB 的点（$\omega_c$）|
+| 曲线与单位圆 $\vert G\vert =1$ 的交点 | 幅频曲线穿过 0 dB 的点（$\omega_c$）|
 | 曲线与负实轴的交点 | 相频曲线穿过 $-180°$ 的点（$\omega_g$）|
-| 曲线到 $(-1, j0)$ 的距离 | 稳定裕度（越远越稳定）|
+| 曲线到$(-1,0)$的最短距离 | 灵敏度峰值相关指标；不是GM/PM本身 |
+
+</div>
 
 ### Nyquist 判据应用举例
 
@@ -693,16 +533,18 @@ $$
 由于在 $\omega_g$ 处相位为 $-180°$，$G(j\omega_g)$ 是负实数：
 
 $$
-G(j\omega_g) = -|G(j\omega_g)| = -0.794
+G(j\omega_g) = -|G(j\omega_g)| = -0.079365
 $$
 
-**第四步**：判断。Nyquist 曲线与负实轴交于 $-0.794$，在 $(-1, j0)$ 点的**右侧**，没有包围 $(-1, j0)$。
+**第四步**：判断。Nyquist 曲线与负实轴交于 $-0.079365$，在 $(-1, j0)$ 点的**右侧**，没有包围 $(-1, j0)$。
 
-**结论**：$N = 0 = P$，**闭环稳定**。
+**结论**：$N_{cw}=0$且$P=0$，**闭环稳定**。
 
-增益裕度 $GM = -20\log(0.794) \approx 2.0$ dB——稳定，但裕度有限。如果增益从 10 增大到约 $10/0.794 \approx 12.6$，交点就会移到 $(-1, j0)$ 上，系统到达临界稳定。
+增益裕度 GM=22.007411dB——稳定，但裕度有限。如果增益从 10 增大到约 126，交点就会移到 $(-1, j0)$ 上，系统到达临界稳定。
 
 ### Nyquist 图 vs Bode 图
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 特征 | Bode 图 | Nyquist 图 |
 |------|---------|-----------|
@@ -710,30 +552,32 @@ $$
 | 稳定性判断 | 需要额外规则 | 直接几何判据 |
 | 直观性 | 幅值和相位分别清晰 | 整体行为一目了然 |
 | 工程使用 | 更常用（设计校正网络方便）| 理论分析更优雅 |
-| 适用系统 | 最小相位系统 | 任意系统（含时延）|
+| 适用条件 | 任意LTI频率响应可画；稳定判定需额外条件 | 满足围线、极点及互联条件，可含时延 |
+
+</div>
 
 ### 含时延系统的 Nyquist 图
 
 纯时延 $e^{-s\tau}$ 的频率响应为 $e^{-j\omega\tau}$，幅值恒为 1，相位为 $-\omega\tau$。
 
-在 Bode 图上：幅频不变，相频额外增加 $-\omega\tau$ 的线性下降。
-在 Nyquist 图上：曲线"螺旋"向原点——时延让相位不断滞后，但不改变幅值。
+在 Bode 图上：幅频不变，展开相位额外增加$-\omega\tau$弧度；它对线性频率成直线，对对数频率轴则不是直线。
+在Nyquist图上，时延使每个频率点旋转−ωτ；只有本体高频幅值趋零时轨迹才趋原点，纯时延本身沿单位圆转动。
 
-> 💡 时延是控制系统中最难处理的因素之一。它不改变幅值只改变相位，意味着它**只破坏相位裕度而不影响增益**。这就是为什么时延系统特别难控制——你无法通过降低增益来"补偿"时延。（时延系统的详细处理见本章"深入讨论"部分。）
+> 💡 时延是控制系统中最难处理的因素之一。它不改变幅值只改变相位，意味着它不改变该开环的幅值，却可能移动相位穿越并改变增益裕度。这就是为什么时延系统特别难控制——降低增益可把穿越移向低频、增大时滞容限，但不能消掉时延本身。（时延系统的详细处理见本章"深入讨论"部分。）
 
 <NyquistZetaExplorer />
 
 ---
 
-## 在Nyquist图上读取裕度
+## Nyquist裕度
 
-Nyquist 图提供了更直观的几何解释——稳定裕度就是曲线到临界点的"距离"。
+Nyquist 图提供了更直观的几何解释——GM是负实轴交点的倍率，PM是单位圆交点的角度；它们都不是最短欧氏距离。
 
 ### 临界点与几何关系
 
 **临界点**：$(-1, j0)$。这是开环幅值为 1、相位为 $-180°$ 的点，对应闭环极点在虚轴上（不稳定边界）。
 
-Nyquist 曲线 $G(j\omega)$ 离 $(-1, j0)$ 越远，系统越"安全"。
+即使曲线看起来远离临界点，也要先核$P$和完整包围数；不能凭局部距离判定内部稳定。
 
 ### 增益裕度的几何含义
 
@@ -741,18 +585,18 @@ Nyquist 曲线与负实轴的交点，对应相位为 $-180°$ 的频率 $\omega
 
 设交点为 $(-a, j0)$（$a > 0$），即 $G(j\omega_g) = -a$。
 
-**增益裕度**：从交点到临界点的距离（用比值表示）。
+**线性增益裕度**是把该交点沿原点径向缩放到−1所需的倍率，不是平移距离。
 
 $$
 GM_{\text{linear}} = \frac{1}{a}, \quad GM_{\text{dB}} = -20\log_{10}(a)
 $$
 
-几何上：
+对本课指定的单交点回路，结合完整围线和$P$后，才能作以下判断；一般多交点系统不能照搬：
 - 交点在 $(-1, j0)$ **右边**（$a < 1$）：$GM > 0$，稳定。曲线没有包围临界点。
 - 交点恰好是 $(-1, j0)$（$a = 1$）：$GM = 0$ dB，临界稳定。
 - 交点在 $(-1, j0)$ **左边**（$a > 1$）：$GM < 0$，不稳定。曲线包围了临界点。
 
-**直觉**：增益裕度就是"曲线与负实轴的交点，还能往右推多远才碰到 $(-1, j0)$"。
+对稳定例$a<1$，增加增益会把交点沿负实轴向左推向−1；不是向右推。
 
 ### 相位裕度的几何含义
 
@@ -809,51 +653,31 @@ $GM > 0$，增益裕度为正。但只有 1.58 dB，裕度很小。
 验证：特征方程 $s^3 + 3s^2 + 2s + 5 = 0$。Routh 表 $s^1$ 行：$(6-5)/3 = 1/3 > 0$。确实稳定，但裕度不大。
 
 <JupyterNotebook
-  title="🧪 Nyquist 图上的稳定裕度"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="Nyquist完整围线"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-def plot_nyquist_margin(K):
-    sys = lti([K], [1, 11, 10, 0])
-    w = np.logspace(-3, 3, 1000)
-    H = sys.freqresp(w)
-    real = H.real.flatten()
-    imag = H.imag.flatten()
-
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.plot(real, imag, linewidth=2, color='blue', label=f'K={K}')
-    ax.plot(-1, 0, 'rx', markersize=15, markeredgewidth=3, label='(-1, j0) 临界点')
-    ax.plot(0, 0, 'ko', markersize=5)
-    ax.add_patch(plt.Circle((-1, 0), 1, fill=False, linestyle='--', color='gray', alpha=0.5))
-    ax.text(-1.5, 0.5, '单位圆', fontsize=10, color='gray')
-
-    ax.set_xlabel('Real')
-    ax.set_ylabel('Imaginary')
-    ax.set_title(f'Nyquist 图 (K={K})')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_xlim(-15, 2)
-    ax.set_ylim(-10, 10)
-    plt.show()
-
-    real_min = np.min(real[real < 0])
-    if real_min > -1:
-        gm = 1 / abs(real_min)
-        print(f"K={K}: 与负实轴交点 = {real_min:.3f}, GM = {gm:.2f} ({20*np.log10(gm):.1f} dB) → 稳定")
-    else:
-        print(f"K={K}: 与负实轴交点 = {real_min:.3f} → 包围 (-1,j0)，不稳定")
-
-interact(plot_nyquist_margin,
-         K=FloatSlider(min=1, max=200, step=1, value=10,
-                       description='K', continuous_update=False));` },
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `def contour(R,eps):
+ w=np.geomspace(eps,R,10001)
+ return np.concatenate([-1j*w[::-1],eps*np.exp(1j*np.linspace(-np.pi/2,np.pi/2,3001)),1j*w,R*np.exp(1j*np.linspace(np.pi/2,-np.pi/2,3001))])
+def winding(fun,R,eps):
+ v=1+fun(contour(R,eps));return -(np.unwrap(np.angle(v))[-1]-np.unwrap(np.angle(v))[0])/(2*np.pi)
+for R,eps in [(1e3,1e-3),(1e4,1e-4)]:
+ for k in [5,10]:
+  n=winding(lambda s:k/(s*(s+1)*(s+2)),R,eps)
+  roots=np.roots([1,3,2,k]);print('K,R,eps,Ncw,Z:',k,R,eps,n,sum(roots.real>1e-8))
+  assert abs(n-(0 if k==5 else 2))<1e-8
+ n=winding(lambda s:2/(s-1),R,eps);print('P=1, K=2, Ncw,Z:',n,1+n);assert abs(n+1)<1e-8
+w=np.logspace(-3,3,3001);v=5/(1j*w*(1j*w+1)*(1j*w+2))
+plt.figure(figsize=(5,5));plt.plot(v.real,v.imag);plt.plot(v.real,-v.imag,color='gray')
+t=np.linspace(0,2*np.pi,301);plt.plot(np.cos(t),np.sin(t),'--');plt.plot([-1],[0],'rx');plt.xlim(-3,2);plt.ylim(-3,3);plt.gca().set_aspect('equal');plt.xlabel('Real');plt.ylabel('Imag');plt.show()
+print('Plot is a clipped frequency trace; winding above uses the full closed contour. K=6 is excluded from winding.')
+`}]}
 />
 ---
 
@@ -861,188 +685,82 @@ interact(plot_nyquist_margin,
 
 ### 最小相位系统
 
-对最小相位系统（开环稳定，无右半平面零极点），判据非常简单：
-
-| 条件 | 结论 |
-|------|------|
-| $GM > 0$ dB 且 $PM > 0°$ | 闭环稳定 |
-| $GM < 0$ dB 或 $PM < 0°$ | 闭环不稳定 |
-| $GM = 0$ dB 或 $PM = 0°$ | 临界稳定 |
+最小相位与“开环没有右半平面极点”不是同义。对常见开环稳定、单穿越且满足Nyquist条件的回路，可结合正裕度作稳定判断；不能把下表简化成任意回路的充要条件。无有限穿越时，对应裕度未定义，亦不能机械用正负分类。
 
 ### 非最小相位系统
 
-对开环不稳定的系统（有右半平面极点），情况更复杂。需要结合 Nyquist 判据：
-
-$$
-Z = P - N
-$$
-
-其中 $P$ 是开环右半平面极点数，$N$ 是 Nyquist 曲线逆时针包围 $(-1, j0)$ 的圈数。
-
-此时 $GM > 0$ 且 $PM > 0$ **不一定**意味着稳定！必须检查 Nyquist 曲线的完整包围情况。
+右半平面零点会增加相位滞后；开环不稳定则还要计$P>0$。例如$G(s)=K/(s-1)$，$K=2$时负反馈闭环极点为−1，但必须由$P=1,N_{cw}=-1$得到$Z=0$；不能用“不包围−1才稳定”。
 
 ### 条件稳定系统
 
-有些系统很奇怪：增益增大时先变得不稳定，继续增大又变稳定了。这叫**条件稳定系统**。
-
-在 Bode 图上表现为：幅频曲线多次穿越 0 dB 线，相频曲线多次穿越 $-180°$ 线。
-
-这类系统对增益变化非常敏感，工程中应尽量避免。
+有些回路只在一定增益区间稳定，可能有多个穿越点。Bode与Nyquist包含相同复频率信息；问题在于只读取一个交点或漏掉包围方向，而不是Bode图天生不能分析。后面的静态实验保留原$K/[s(s+1)(s+10)]$族，比较$K=10,50,110,150$：边界110不能取，跨边界结果全列出，不把所有例子误当同一对象。
 
 <JupyterNotebook
-  title="🧪 从 Bode 图直接读取稳定裕度"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="稳定判据与API核对"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, bode
-import numpy as np
-import scipy.signal as _sg
-
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc`}
-  cells={[
-    { code: `sys = lti([50], [1, 11, 10, 0])
-w = np.logspace(-2, 3, 1000)
-w, mag, phase = bode(sys, w=w)
-
-gm, pm, wg, wc = margin(sys)
-gm_db = 20 * np.log10(gm)
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-
-ax1.semilogx(w, mag, 'b-', linewidth=2)
-ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.5)
-ax1.axvline(x=wc, color='green', linestyle='--', alpha=0.7, label=f'ωc={wc:.2f}')
-ax1.axvline(x=wg, color='red', linestyle='--', alpha=0.7, label=f'ωg={wg:.2f}')
-
-mag_at_wg = np.interp(np.log(wg), np.log(w), mag)
-ax1.annotate(f'GM={gm_db:.1f} dB',
-             xy=(wg, mag_at_wg), xytext=(wg*3, mag_at_wg+10),
-             arrowprops=dict(arrowstyle='->', color='red'),
-             fontsize=12, color='red', fontweight='bold')
-
-ax1.set_ylabel('幅值 (dB)')
-ax1.set_title('Bode 图上的稳定裕度标注')
-ax1.legend()
-ax1.grid(True, alpha=0.3)
-
-ax2.semilogx(w, phase, 'b-', linewidth=2)
-ax2.axhline(y=-180, color='gray', linestyle=':', alpha=0.5)
-ax2.axvline(x=wc, color='green', linestyle='--', alpha=0.7, label=f'ωc={wc:.2f}')
-ax2.axvline(x=wg, color='red', linestyle='--', alpha=0.7, label=f'ωg={wg:.2f}')
-
-phase_at_wc = np.interp(np.log(wc), np.log(w), phase)
-ax2.annotate(f'PM={pm:.1f}°',
-             xy=(wc, phase_at_wc), xytext=(wc*3, phase_at_wc+30),
-             arrowprops=dict(arrowstyle='->', color='green'),
-             fontsize=12, color='green', fontweight='bold')
-
-ax2.set_xlabel('ω (rad/s)')
-ax2.set_ylabel('相位 (°)')
-ax2.legend()
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print(f"\\n稳定裕度:")
-print(f"  增益裕度 GM = {gm_db:.1f} dB @ ωg = {wg:.2f} rad/s")
-print(f"  相位裕度 PM = {pm:.1f}° @ ωc = {wc:.2f} rad/s")
-print(f"  系统{'稳定' if gm_db > 0 and pm > 0 else '不稳定'}")` },
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `G=ct.tf([50],[1,11,10,0]);gm,pm,wpc,wgc=ct.margin(G)
+print('50/[s(s+1)(s+10)] margins',gm,20*np.log10(gm),pm,wpc,wgc)
+mag,phase,w=ct.frequency_response(G,[.1,1,10])
+for i,q in enumerate(w):
+ h=ct.evalfr(G,1j*q);assert abs(mag[i]*np.exp(1j*phase[i])-h)<1e-10
+ print('omega, abs, phase degrees',q,mag[i],np.degrees(phase[i]))
+for q in [.1,1,10,100]:
+ allpass=(1-1j*q/10)/(1+1j*q/10)
+ print('allpass',q,abs(allpass),np.angle(allpass,deg=True));assert abs(abs(allpass)-1)<1e-12
+print('Use all crossings plus P/N/Z for nonminimum-phase or multiple-crossing loops; one PM alone is insufficient.')
+`}]}
 />
 ---
 
-## 频域指标与时域指标的对应
+## 频域与时域
 
 频域分析和时域分析不是两套独立的体系——它们之间有深刻的联系。
 
 ### 带宽与上升时间
 
-**带宽** $\omega_B$：幅频特性下降到 $-3$ dB（即幅值降到 $1/\sqrt{2}$）时的频率。
+对本节单位直流增益、无零点标准二阶闭环模型，**半功率带宽**$\omega_B$定义为$|H(j\omega_B)|=1/\sqrt2$，即相对直流$-3.010300$dB，而非相对谐振峰。它不等于开环增益穿越频率$\omega_c$。解二次方程可得
 
-直觉：带宽表示系统能"通过"的最高频率。带宽越大，系统能响应越快的信号变化。
+$$
+\frac{\omega_B}{\omega_n}=\sqrt{1-2\zeta^2+\sqrt{(1-2\zeta^2)^2+1}}.
+$$
 
-**带宽越大，上升时间越短**——系统响应越快。但 $t_r$ 与 $\omega_B$ 的定量关系取决于阻尼比 $\zeta$，不存在独立于 $\zeta$ 的简单近似。
+以下统一用零初值单位阶跃的**首次10%→90%上升时间**，避免与上一课欠阻尼0→100%定义混用。表中都是无量纲量：
 
-对于二阶系统，数值关系如下（$\omega_n = 10$ rad/s）：
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
-| $\zeta$ | $t_r \cdot \omega_n$ | $\omega_B / \omega_n$ | $t_r \cdot \omega_B$ |
-|---------|---------------------|----------------------|---------------------|
-| 0.3 | 1.44 | 2.89 | 4.16 |
-| 0.5 | 1.55 | 2.54 | 3.94 |
-| 0.707 | 1.80 | 2.30 | 4.14 |
-| 1.0 | 2.76 | 1.84 | 5.08 |
+| ζ | tr·ωn | ωB/ωn | tr·ωB |
+|---|---|---|---|
+| .3 | 1.321340 | 1.453689 | 1.920818 |
+| .5 | 1.637573 | 1.272020 | 2.083025 |
+| .707 | 2.147707 | 1.000151 | 2.148032 |
+| 1 | 3.357909 | .643594 | 2.161131 |
 
-定性结论：**$t_r \cdot \omega_B$ 在 $\zeta \in [0.3, 0.707]$ 范围内约为 3~4**。工程估算中可取 $t_r \approx 3/\omega_B$ 作为粗略参考，但精确值需根据具体阻尼比计算。
+</div>
+
+固定ζ、只缩放ωn时，完整响应的时间轴精确反向缩放，带宽越大相应上升时间越短；跨不同模型或阻尼比时，没有一个通用乘积常数。
 
 ### 谐振峰与超调量
 
 二阶系统的谐振频率 $\omega_r$ 和谐振峰值 $M_r$：
 
 $$
-\omega_r = \omega_n\sqrt{1 - 2\zeta^2} \quad (\zeta < 0.707)
+\omega_r = \omega_n\sqrt{1 - 2\zeta^2} \quad (0<\zeta<1/\sqrt2)
 $$
 
 $$
 M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}
 $$
 
-谐振峰越高（$\zeta$ 越小），时域超调量越大。两者都反映了系统的"振荡倾向"。
+仅在这里固定无零点标准二阶族、欠阻尼范围内，谐振峰越高（$\zeta$越小）对应时域超调越大。两者都反映了系统的"振荡倾向"。
+
+默认ζ=.5、ωn8时，ωB=10.176157rad/s、tr=0.204697s、乘积2.083025；连续超调16.303353%。下面用真实频率和时间坐标画图，不能将有限末样当极限。
 
 <BandwidthCorrespondenceExplorer />
 
@@ -1054,21 +772,19 @@ $$
 PM = \arctan\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}} \times \frac{180°}{\pi}
 $$
 
-这个公式比较复杂，工程上常用近似：
+这里的$G$是**开环**，负反馈闭环才是前面的标准二阶$H$；两者不能混用。近似$PM\approx100\zeta$（PM以度计）只作该模型族的粗估，不能推广到带零点、延迟或额外极点的系统。
 
-$$
-PM \approx 100\zeta° \quad (\zeta \in [0.3, 0.7] \text{ 范围内较准确})
-$$
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
-| $\zeta$ | 精确 $PM$ | 近似 $100\zeta°$ | 误差 |
-|---------|----------|-----------------|------|
-| 0.3 | 33.3° | 30° | 10% |
-| 0.5 | 51.8° | 50° | 3.5% |
-| 0.707 | 65.5° | 70.7° | 8% |
+| ζ | 精确PM(度) | 100ζ(度) |
+|---|---|---|
+| .3 | 33.272491 | 30 |
+| .5 | 51.827292 | 50 |
+| .707 | 65.524630 | 70.7 |
 
-> 💡 这个近似的价值在于：工程师从 Bode 图上读出 $PM$ 后，可以**立即估算**闭环阻尼比和超调量——不需要任何计算。例如 $PM = 50°$ 意味着 $\zeta \approx 0.5$，对应超调量约 16%。
+</div>
 
-频率响应法的强大之处在于：频域指标可以直接预测时域性能。
+模型假设与误差比“一看PM便能预测任何超调”更重要；下面保留精确推导。
 
 ### 相位裕度与阻尼比（推导）
 
@@ -1126,15 +842,11 @@ $$
 \boxed{PM = \arctan\left(\frac{2\zeta}{\sqrt{\sqrt{1+4\zeta^4}-2\zeta^2}}\right)}
 $$
 
-**工程近似**：当 $\zeta < 0.7$ 时，$\omega_c \approx \omega_n$，于是：
-
-$$
-PM \approx \arctan(2\zeta) \approx 2\zeta \text{ (rad)} \approx \frac{2\zeta \times 180°}{\pi} \approx \frac{PM(\text{度})}{100} \approx \zeta
-$$
-
-即 $\zeta \approx PM/100$（$PM$ 单位为度）。这个近似在 $\zeta < 0.7$ 时误差在 10% 以内。
+不能把$\omega_c\approx\omega_n$、$\arctan(2\zeta)\approx2\zeta$一路连成含PM/100和ζ的等号链；各近似有各自的小量条件。实际估计应直接使用上面的精确模型公式，并核验闭环。
 
 ### 相位裕度与阻尼比（数值对照）
+
+上表与下方原始实验同时计算精确PM和粗估值，ζ取.3/.5/.707/1，避免空标题或只报吻合样本。
 
 ### 阻尼比与超调量
 
@@ -1144,154 +856,55 @@ $$
 
 ### 综合：PM 与超调量
 
-| 相位裕度 $PM$ | 阻尼比 $\zeta$ | 超调量 $M_p$ |
-|:---:|:---:|:---:|
-| 30° | 0.30 | 37% |
-| 45° | 0.45 | 20% |
-| 60° | 0.60 | 10% |
-| 75° | 0.75 | 3% |
+不再将PM30/45/60/75度直接除100后当作精确阻尼比，再反算超调。Notebook按精确PM公式求根，给出对应ζ和超调；该关系只在指定标准二阶闭环成立。
 
 <JupyterNotebook
-  title="🧪 相位裕度与超调量的对应关系"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="二阶频时指标"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, bode
-import numpy as np
-import scipy.signal as _sg
-
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc`}
-  cells={[
-    { code: `from ipywidgets import interact, FloatSlider
-
-wn = 10
-
-def plot_pm_overshoot(zeta):
-    sys_open = lti([wn**2], [1, 2*zeta*wn, 0])
-    gm, pm, wg, wc = margin(sys_open)
-
-    sys_closed = feedback(sys_open, 1)
-    t, y = step(sys_closed, T=np.linspace(0, 3, 1000))
-    Mp = (np.max(y) - 1) * 100
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax1.plot(t, y, linewidth=2, color='blue')
-    ax1.axhline(y=1, color='gray', linestyle=':', alpha=0.5)
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('y(t)')
-    ax1.set_title(f'阶跃响应 (ζ={zeta:.2f}, PM={pm:.1f}°)')
-    ax1.grid(True, alpha=0.3)
-
-    PM_range = np.linspace(10, 80, 100)
-    zeta_approx = PM_range / 100
-    Mp_approx = np.exp(-np.pi * zeta_approx / np.sqrt(1 - zeta_approx**2)) * 100
-    ax2.plot(PM_range, Mp_approx, 'b-', linewidth=2)
-    ax2.plot(pm, Mp, 'ro', markersize=10, label=f'当前: PM={pm:.0f}°, Mp={Mp:.0f}%')
-    ax2.set_xlabel('相位裕度 PM (°)')
-    ax2.set_ylabel('超调量 Mp (%)')
-    ax2.set_title('PM 与超调量的关系')
-    ax2.axhline(y=20, color='orange', linestyle='--', alpha=0.5, label='20% 超调')
-    ax2.axvline(x=45, color='green', linestyle='--', alpha=0.5, label='PM=45°')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-    print(f"ζ={zeta:.2f}: PM={pm:.1f}°, 超调量={Mp:.1f}%")
-
-interact(plot_pm_overshoot,
-         zeta=FloatSlider(min=0.1, max=1.0, step=0.01, value=0.45,
-                          description='ζ', continuous_update=False));` },
-  ]}
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `def step_value(z,t):
+ A=np.array([[0.,1.],[-1.,-2*z]]);B=np.array([0.,1.]);return float((np.linalg.solve(A,(expm(A*t)-np.eye(2)))@B)[0])
+for z in [.3,.5,.707,1]:
+ end=np.pi/np.sqrt(1-z*z) if z<1 else 20
+ tr=brentq(lambda t:step_value(z,t)-.9,0,end)-brentq(lambda t:step_value(z,t)-.1,0,end)
+ wb=brentq(lambda w:abs(1/((1j*w)**2+2*z*1j*w+1))**2-.5,0,4)
+ L=ct.tf([1],[1,2*z,0]);gm,pm,wpc,wgc=ct.margin(L)
+ mr=1/(2*z*np.sqrt(1-z*z)) if z<1/np.sqrt(2) else 1
+ mp=100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0
+ print('z,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn:',z,tr,wb,tr*wb,mr,20*np.log10(mr),mp,pm,wgc)
+for target in [30,45,60,75]:
+ z=brentq(lambda z:ct.margin(ct.tf([1],[1,2*z,0]))[1]-target,.01,2)
+ print('PM to exact zeta and MP',target,z,100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0)
+print('default z=.5,wn=8:',ct.frequency_response(ct.tf([64],[1,8,64]),[8])[0],ct.frequency_response(ct.tf([64],[1,8,64]),[8])[1]*180/np.pi)
+`}]}
 />
 
 ### 截止频率与上升时间
 
-截止频率 $\omega_c$ 与上升时间 $t_r$ 近似成反比：
-
-$$
-t_r \approx \frac{1.8}{\omega_c}
-$$
-
-$\omega_c$ 越大（带宽越宽），响应越快。
+开环穿越$\omega_c$与闭环10–90%上升时间并无统一的$1.8/\omega_c$保证。若使用工程经验式，必须说明开闭环对象、阶数、阻尼和误差范围。本课用精确模型复算，不把它作为设计验收。
 
 ### 带宽
 
-**闭环带宽** $\omega_b$：闭环幅频特性下降到 $-3$ dB 时的频率。
-
-对二阶系统，带宽与上升时间的关系：
-
-$$
-\omega_b \cdot t_r \approx 0.35 \times 2\pi \approx 2.2
-$$
-
-带宽越宽，响应越快——但高频噪声也更容易通过。这是速度与噪声抑制之间的权衡。
+对一阶$H=1/(Ts+1)$，$t_r=T\ln9$、$\omega_B=1/T$，所以$t_r\omega_B=\ln9\approx2.197225$；换成Hz才是$t_r f_B=\ln9/(2\pi)\approx.349699$。二阶应使用前表，而不是把0.35、2.2和3–4交替套用。
 
 ### 频域指标速查
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频域指标 | 对应时域指标 | 关系 |
 |---------|------------|------|
-| 带宽 $\omega_B$ | 上升时间 $t_r$ | $\omega_B \uparrow \implies t_r \downarrow$（$t_r \cdot \omega_B \approx 3\text{–}4$）|
+| 带宽 $\omega_B$ | 上升时间 $t_r$ | $\omega_B \uparrow \implies t_r \downarrow$（固定模型、固定ζ时作时间缩放）|
 | 谐振峰值 $M_r$ | 超调量 $M_p$ | $M_r \uparrow \implies M_p \uparrow$ |
-| 截止频率 $\omega_c$ | 调节时间 $t_s$ | $\omega_c \uparrow \implies t_s \downarrow$ |
+| 截止频率 $\omega_c$ | 调节时间 $t_s$ | 不能无条件由开环穿越保证调节时间 |
 | 相位裕度 $PM$ | 阻尼比 $\zeta$ | $PM \approx 100\zeta°$（$\zeta \in [0.3, 0.7]$）|
+
+</div>
 
 > 📐 这些对应关系的完整推导见本节前半部分的"相位裕度与阻尼比（推导）"；[频率响应设计法](/classic/frequency-response-design)一章会进一步把它们用于回路整形设计。这里先建立直觉：频域和时域是观察同一个系统的两个窗口，看到的"形状"不同，但描述的"本质"相同。
 
@@ -1343,13 +956,17 @@ $$
 
 取 $R = 1$ kΩ，$C = 1$ μF，则 $T = RC = 1$ ms，转折频率 $\omega_0 = 1/T = 1000$ rad/s（$f_0 = 159$ Hz）。
 
-| 频率 | $\omega/\omega_0$ | $|G|$ | $|G|$ (dB) | $\angle G$ |
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
+| 频率 | $\omega/\omega_0$ | $\vert G\vert $ | $\vert G\vert $ (dB) | $\angle G$ |
 |------|-------------------|-------|-----------|-----------|
 | 10 rad/s | 0.01 | 0.9999 | $-0.0004$ | $-0.6°$ |
 | 100 rad/s | 0.1 | 0.995 | $-0.04$ | $-5.7°$ |
 | 1000 rad/s | 1 | 0.707 | $-3.0$ | $-45°$ |
 | 10000 rad/s | 10 | 0.0995 | $-20.0$ | $-84.3°$ |
 | 100000 rad/s | 100 | 0.01 | $-40.0$ | $-89.4°$ |
+
+</div>
 
 观察：
 - 低频（$\omega \ll \omega_0$）：信号几乎无衰减地通过
@@ -1367,13 +984,17 @@ $$
 #### 系统参数
 
 - 自然频率：$\omega_n = \sqrt{k/m} = \sqrt{16000/250} = 8$ rad/s
-- 三种阻尼方案（与上一章一致）：
+- 三种阻尼方案：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 阻尼比 $\zeta$ | 阻尼系数 $c$ (N·s/m) | 场景 |
 |---------------|---------------------|------|
-| 0.3 | 1200 | 偏软，舒适但晃 |
-| 0.707 | 2828 | "最佳阻尼" |
-| 1.0 | 4000 | 临界阻尼，无超调但硬 |
+| 0.3 | 1200 | 仅为阻尼候选A |
+| 0.707 | 2828 | 阻尼候选B |
+| 1.0 | 4000 | 阻尼候选C；路面模型不能套无零点超调 |
+
+</div>
 
 #### 频率响应分析
 
@@ -1387,21 +1008,49 @@ $$
 
 **低频段**（$\omega \ll \omega_n$）：$|G| \approx 1$（0 dB），路面缓慢起伏完全传递到车身——这无法避免，因为车身必须跟随路面的整体轮廓。
 
-**高频段**（$\omega \gg \omega_n$）：$|G| \to 0$（$-40$ dB/dec），路面高频颠簸被悬挂系统衰减——这正是悬挂系统的核心功能。
+**高频段**：只要$c>0$，$G(j\omega)\sim c/(mj\omega)$，所有三个正阻尼方案最终都是$-20$dB/dec；不是欠阻尼−40、临界−20。$c=0$是另一个无阻尼模型，不能混入这个结论。
 
-**转折区域**（$\omega \approx \omega_n$）：这是关键区域。
+**转折区域**：含零点的路面响应有自己的峰，不能套标准无零点$M_r$。令$x=\omega/\omega_n$，幅值平方为$(1+4\zeta^2x^2)/[(1-x^2)^2+4\zeta^2x^2]$；对$x^2$求导得到峰频比$\sqrt{2/(1+\sqrt{1+8\zeta^2})}$。
 
-- $\zeta = 0.3$：出现明显的**谐振峰**，幅值可能超过 0 dB——路面频率接近 $\omega_n$ 时，车身振动被**放大**！这就是"偏软"悬挂的问题：在特定速度下，路面颠簸频率恰好接近 $\omega_n$，乘客会感到剧烈晃动。
-- $\zeta = 0.707$：谐振峰很小（约 1.5 dB），既保证了高频衰减，又不会在谐振频率处过度放大。
-- $\zeta = 1.0$：无谐振峰，但高频衰减速率较慢（$-20$ dB/dec 而非 $-40$ dB/dec）——路面细碎颠簸更多地传递到车身，乘坐感"硬"。
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
+| ζ | 峰频(rad/s) | 峰值，单位dB |
+|---|---|---|
+| .3 | 7.441478 | 5.997151 |
+| .707 | 6.289474 | 2.090325 |
+| 1 | 5.656854 | 1.249387 |
+
+</div>
+
+三种方案都有位移放大峰；更大阻尼可降低该峰，但高频位移传递的系数$c/m$更大。不能据这张位移图排名舒适性，尚缺加速度、轮胎与人体指标。
 
 #### 频域分析的独到价值
 
-时域分析（上一章）告诉我们"过弯后车身晃多久"。频域分析告诉我们**"什么速度的路面颠簸最危险"**——这是时域分析无法直接回答的。
-
-具体来说：如果路面凹凸间距为 $d$ 米，车速为 $v$ m/s，则激励频率为 $\omega = 2\pi v/d$。当 $\omega \approx \omega_n = 8$ rad/s 时发生共振。由此可以算出"危险车速"：$v = \omega_n d / (2\pi)$。
+若路面是波长$d$的单一正弦，恒速$v$下$\omega=2\pi v/d$，可把空间波长映射为输入频率。峰值应使用对应路面模型的$\omega_r$，而不是直接取$\omega_n$。只有波长与模型、指标均明确时才能换算$v=\omega_r d/(2\pi)$；它不是“危险车速”或安全阈值。下面RC交互回到前一个电路例，路面三方案由独立Notebook复算。
 
 <RCFilterBodeExplorer />
+
+<JupyterNotebook
+  title="RC与路面模型"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
+import matplotlib.pyplot as plt
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `for q in [10,100,1000,10000,100000]:
+ h=1/(1+1j*q*.001);print('RC rad/s,abs,dB,deg:',q,abs(h),20*np.log10(abs(h)),np.angle(h,deg=True))
+print('R1000 C1uF: T=.001 s, wc=1000 rad/s, fc=',1000/(2*np.pi),'Hz')
+for z in [.3,.707,1]:
+ def mag(w):return abs((1+2*z*1j*w)/(1-w*w+2*z*1j*w))
+ p=minimize_scalar(lambda w:-mag(w),bounds=(0,3),method='bounded',options={'xatol':1e-13})
+ high=20*np.log10(mag(1e5)/mag(1e4))
+ print('road z,c for m250 k16000, peak rad/s,dB,high decade slope:',z,4000*z,8*p.x,20*np.log10(mag(p.x)),high)
+print('Road model has a numerator zero; even z=1 has a resonance. No vehicle safety conclusion follows from displacement alone.')
+`}]}
+/>
 
 ---
 
@@ -1409,13 +1058,13 @@ $$
 
 ### 最小相位系统与非最小相位系统
 
-**最小相位系统**：所有零点和极点都在左半平面。这类系统的幅频特性和相频特性**一一对应**——知道幅频曲线就能唯一确定相频曲线（通过 Bode 增益-相位关系）。
+本课对稳定有理系统讨论最小相位：零点也在开左半平面，且没有额外纯时延；负增益还需单独指定相位常数。这类系统的幅频特性和相频特性**一一对应**——在满足解析/渐近条件并指定增益符号与时延后，可由幅频重建最小相位部分（通过 Bode 增益-相位关系）。
 
-> 📐 Bode 增益-相位关系的数学基础是**Hilbert 变换**：最小相位系统的对数幅频和对数相频构成一对 Hilbert 变换对。这意味着幅频和相频不是独立的——它们是同一个复函数（$\log G(s)$ 在虚轴上的取值）的实部和虚部。
+> 📐 Bode 增益-相位关系的数学基础是**Hilbert 变换**：最小相位系统的对数幅频和展开相位构成一对 Hilbert 变换对。这意味着幅频和相频不是独立的——它们是同一个复函数（$\log G(s)$ 在虚轴上的取值）的实部和虚部。
 
-**非最小相位系统**：有零点或极点在右半平面。典型例子：
+右半平面零点和纯时延会带来额外相位，不能把开环不稳定直接当作其定义。典型例子：
 
-- **右半平面零点** $G(s) = 1 - s/a$：幅频与 $1 + s/a$ 完全相同，但相位**额外滞后**。阶跃响应会出现反向响应（先反向再正向）。
+- **右半平面零点** $G(s) = 1 - s/a$：幅频与 $1 + s/a$ 完全相同，但相位**额外滞后**。该非适当因子本身不能作普通物理阶跃模型；反向响应须对完整适当模型核，不能只凭零点作无条件断言。
 - **纯时延** $G(s) = e^{-s\tau}$：幅频恒为 1，相位随频率线性下降。
 
 > 💡 "非最小相位"这个名字来源于：在所有具有相同幅频特性的系统中，最小相位系统的相位滞后**最小**。非最小相位系统"额外"的相位滞后让控制变得更加困难。
@@ -1424,7 +1073,7 @@ $$
 
 Bode 图假设系统是 LTI 的。实际系统中的非线性（饱和、死区、摩擦）会让频率响应随输入幅值变化。此外，Bode 图只展示 $\omega > 0$ 的信息，对于**条件稳定系统**（增益增大反而稳定的系统），Bode 图可能给出误导性的结论。
 
-在这些情况下，Nyquist 图更可靠——它直接展示完整的复平面轨迹，不会遗漏关键信息。
+实系数LTI的正频率信息可恢复负频支；两种图均须完整读取。非线性幅值依赖不能靠换成Nyquist图自动消除，有限频带测量也不能保证不漏信息。
 
 ### 时延系统的处理
 
@@ -1436,7 +1085,7 @@ Bode 图假设系统是 LTI 的。实际系统中的非线性（饱和、死区�
 - 幅值：$|e^{-j\omega\tau}| = 1$（0 dB），对所有频率
 - 相位：$\angle e^{-j\omega\tau} = -\omega\tau$（线性下降）
 
-在 Bode 图上：幅频曲线不变，相频曲线额外叠加一条斜率为 $-\tau$ 的直线。
+在 Bode 图上：幅频曲线不变，展开相位额外加$-\omega\tau$弧度；这是对线性ω的直线，在对数频率横轴上不是斜率恒定的直线。
 
 **2. Padé 近似**
 
@@ -1446,11 +1095,34 @@ $$
 e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2}
 $$
 
-这是一个**全通环节**——幅值恒为 1，但引入了一个右半平面零点（$s = 2/\tau$），解释了时延为什么"额外"引入相位滞后。
+这是一个**全通环节**——幅值恒为 1，但引入了一个右半平面零点（$s = 2/\tau$），这里只是近似的零点，不是精确时延的物理零点；相位为$-2\arctan(\omega\tau/2)$，与精确$-\omega\tau$仅低频接近。
 
 > 💡 时延系统的传递函数 $G(s) = \frac{K}{Ts+1} e^{-s\tau}$（一阶加时延，FOPDT）是过程控制中最常用的模型。温度控制、液位控制、化学反应器——几乎所有涉及传输或滞留的过程都有时延。
 
 ---
+
+<JupyterNotebook
+  title="时延与Padé"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
+import matplotlib.pyplot as plt
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `for w in [.1,1,2,5]:
+ base=-90-np.degrees(np.arctan(w))
+ print('w, base, exact, Pade (deg)',w,base,base-np.degrees(.5*w),base-2*np.degrees(np.arctan(.25*w)))
+for k in [.5,1,5]:
+ wc=brentq(lambda w:w*np.sqrt(1+w*w)-k,1e-10,10)
+ edge=np.arctan(1/wc)/wc
+ pade=ct.tf([-k*.25,k],[.25,1.25,1,0]);poles=ct.poles(ct.feedback(pade))
+ print('K,wc,exact delay limit, exact PM at tau .5,Pade poles',k,wc,edge,np.degrees(np.arctan(1/wc)-.5*wc),poles)
+ assert (edge>.5)==bool(np.max(poles.real)<0)
+print('For this family each crossing moves roots into RHP as delay increases; first limit is the strict stability edge, equality excluded.')
+`}]}
+/>
 
 ## 小结
 
@@ -1459,24 +1131,28 @@ $$
 - **增益裕度**和**相位裕度**衡量系统离不稳定有多远，是鲁棒性设计的基础
 - **Nyquist 图**用复平面轨迹统一展示幅值和相位，可直接判断闭环稳定性
 - 频域指标（带宽、谐振峰、稳定裕度）与时域指标（上升时间、超调量、阻尼比）有直接对应关系
-- 最小相位系统的幅频和相频一一对应；非最小相位系统有额外的相位滞后
+- 满足最小相位及增益符号/时延等条件才可由幅频重建相位；额外全通因子可改变相位而不改幅值
 - 时延只改变相位不改变幅值，是控制中最难处理的因素之一
 
 ### 核心概念速查
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 概念 | 关键公式/特征 |
 |------|-------------|
 | 频率响应函数 | $G(j\omega) = G(s)\big\rvert_{s=j\omega}$ |
-| 幅频特性 | $\|G(j\omega)\|$，单位 dB |
+| 幅频特性 | 幅比为模；$20\log_{10}\vert G\vert $才是dB |
 | 相频特性 | $\angle G(j\omega)$，单位度 |
 | 转折频率 | 一阶环节 $\omega = 1/T$，二阶环节 $\omega = \omega_n$ |
 | Bode 渐近线 | 各环节斜率叠加 |
-| 增益穿越频率 $\omega_c$ | $\|G(j\omega_c)\| = 1$（0 dB）|
+| 增益穿越频率 $\omega_c$ | $\vert G(j\omega_c)\vert  = 1$（0 dB）|
 | 相位穿越频率 $\omega_g$ | $\angle G(j\omega_g) = -180°$ |
 | 相位裕度 $PM$ | $\angle G(j\omega_c) + 180°$ |
-| 增益裕度 $GM$ | $-20\log\|G(j\omega_g)\|$ (dB) |
-| Nyquist 判据 | $Z = P - N$ |
+| 增益裕度 $GM$ | $-20\log\vert G(j\omega_g)\vert $ (dB) |
+| Nyquist 判据 | $Z=P+N_{cw}$，完整围线及方向按本课约定 |
 | 带宽 | $-3$ dB 频率 |
+
+</div>
 
 ---
 
@@ -1496,7 +1172,7 @@ $$
 
 **5.** 某开环传递函数 $G(s) = \dfrac{K}{s(s+2)(s+5)}$。用 Nyquist 判据，求使闭环系统稳定的 $K$ 的范围。
 
-**6.** 两个系统的带宽分别为 $\omega_{B1} = 2$ rad/s 和 $\omega_{B2} = 20$ rad/s，阻尼比均为 $\zeta = 0.5$。定性比较它们的阶跃响应：哪个上升更快？哪个超调更大？
+**6.** 两个系统的带宽分别为 $\omega_{B1} = 2$ rad/s 和 $\omega_{B2} = 20$ rad/s，阻尼比均为$\zeta=.5$，且均为单位直流增益、无零点标准二阶闭环模型。上升时间定义为首次10%→90%。定性比较它们的阶跃响应：哪个上升更快？哪个超调更大？
 
 **7.** 某单位负反馈系统的开环传递函数为 $G(s) = \dfrac{10}{(s+1)(s+2)(s+5)}$。求相位穿越频率 $\omega_g$、增益裕度 $GM$（dB），并判断闭环稳定性。
 
@@ -1556,10 +1232,14 @@ $$
 
 渐近线：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 斜率 |
 |----------|------|
 | $\omega < 10$ | $-20$ dB/dec |
 | $\omega > 10$ | $-40$ dB/dec |
+
+</div>
 
 在 $\omega = 10$ 处，低频渐近线幅值：$20 - 20\log_{10}(10) = 20 - 20 = 0$ dB。
 
@@ -1600,15 +1280,11 @@ u^2 - 2u(1-2\zeta^2) + 1 = 2 \implies u^2 - 1.64u - 1 = 0
 $$
 
 $$
-u = \frac{1.64 + \sqrt{1.64^2 + 4}}{2} = \frac{1.64 + 2.689}{2} = 2.164
+u=\frac{1.64+\sqrt{6.6896}}2\approx2.113065.
 $$
 
 $$
-\omega_B = \omega_n\sqrt{u} = 5\sqrt{2.164} = 5 \times 1.471
-$$
-
-$$
-\boxed{\omega_B = 7.36 \text{ rad/s}}
+\omega_B=5\sqrt{u}\approx7.268447\text{ rad/s}.
 $$
 
 ---
@@ -1625,6 +1301,8 @@ $$
 
 渐近线：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 频率范围 | 斜率 |
 |----------|------|
 | $\omega < 1$ | $-20$ dB/dec |
@@ -1632,15 +1310,11 @@ $$
 | $5 < \omega < 50$ | $-20$ dB/dec |
 | $\omega > 50$ | $-40$ dB/dec |
 
+</div>
+
 在 $\omega = 1$ 处：低频渐近线值 $= 20 - 20\log_{10}(1) = 20$ dB。经过零点后斜率变为 0。
 
-$\omega = 1$ 处实际幅值约 $\boxed{20 + 3 = 23 \text{ dB}}$（零点在转折频率处有 $+3$ dB 修正）。
-
-相位：$\omega = 1$ 处，零点贡献 $+45°$，积分贡献 $-90°$，两个极点（$\omega = 5, 50$ 都远大于 1）贡献约 $0°$。
-
-$$
-\angle G(1) \approx -90° + 45° + 0° + 0° = \boxed{-45°}
-$$
+$\omega=1$的粗估为23dB和−45度；它忽略两个极点的相位贡献。精确幅值为$10\sqrt2/(\sqrt{1.04}\sqrt{1.0004})$，对应$22.838230$dB；精确相位为$-90+45-\arctan(.2)-\arctan(.02)\approx-57.455695^\circ$。渐近线近似不能当精确读数。
 
 ---
 
@@ -1694,23 +1368,7 @@ $$
 
 定性比较：系统 2（$\omega_{B2} = 20$）的带宽是系统 1（$\omega_{B1} = 2$）的 10 倍，因此**响应快约 10 倍**。
 
-上升时间：由正文中的数值表，$\zeta = 0.5$ 时 $t_r \cdot \omega_B \approx 3.9$。
-
-$$
-t_{r1} \approx 3.9/\omega_{B1} = 3.9/2 = \boxed{1.95 \text{ s}}
-$$
-
-$$
-t_{r2} \approx 3.9/\omega_{B2} = 3.9/20 = \boxed{0.195 \text{ s}}
-$$
-
-调节时间：$\omega_c \approx \omega_B$，$t_s \approx 4/\omega_c$。
-
-$$
-t_{s1} \approx 4/2 = \boxed{2.0 \text{ s}}, \quad t_{s2} \approx 4/20 = \boxed{0.2 \text{ s}}
-$$
-
-**结论**：带宽越大，系统响应越快（上升时间和调节时间都更短），但超调量由阻尼比决定，与带宽无关。
+固定ζ=.5，精确$t_r\omega_B=2.083025$，所以$t_{r1}=1.041512$s、$t_{r2}=.104151$s，全部时间尺度正好相差10倍，连续超调同为16.303353%。题目只要求定性比较，不能额外把$\omega_c\approx\omega_B$当作精确调节时间计算。这里已补充“标准无零点、单位直流增益闭环模型”的条件，跨模型不能仅凭带宽给相同结论。
 
 ---
 
@@ -1738,21 +1396,7 @@ $$
 \omega^2 = 17 \implies \boxed{\omega_g = \sqrt{17} \approx 4.12 \text{ rad/s}}
 $$
 
-**求增益裕度**：
-
-$$
-|G(j\sqrt{17})| = \frac{10}{\sqrt{1+17} \cdot \sqrt{1+17/4} \cdot \sqrt{1+17/25}} = \frac{10}{\sqrt{18} \cdot \sqrt{5.25} \cdot \sqrt{1.68}}
-$$
-
-$$
-= \frac{10}{\sqrt{18 \times 5.25 \times 1.68}} = \frac{10}{\sqrt{158.76}} = \frac{10}{12.6} \approx 0.794
-$$
-
-$$
-\boxed{GM = -20\log(0.794) \approx 2.0 \text{ dB}}
-$$
-
-**判断稳定性**：$GM > 0$（即 $|G(j\omega_g)| < 1$），Nyquist 曲线与负实轴的交点在 $(-1, j0)$ 右侧，不包围临界点。开环稳定（$P=0$），因此 $\boxed{\text{闭环稳定}}$。
+**求增益裕度**：三个未归一化分母在$j\sqrt{17}$相乘为−126，故$G(j\sqrt{17})=-10/126\approx-.079365$，$GM_{linear}=12.6$，$GM_{dB}\approx22.007411$dB。闭环多项式$s^3+8s^2+17s+20$满足Routh条件$8\times17>20$，完整Nyquist计数$P=0,N_{cw}=0,Z=0$，因此稳定；不是旧答案的2dB。
 
 ---
 
@@ -1776,17 +1420,21 @@ $$
 \angle G(j\omega) = -2\arctan(\omega/10)
 $$
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | $\omega$ | $\angle G$ |
 |----------|-----------|
 | 0 | 0° |
 | 10 | $-90°$ |
 | $\infty$ | $-180°$ |
 
+</div>
+
 这个系统是一个**全通滤波器**——所有频率的幅值都相同（增益为 1），但相位随频率变化。
 
 零点在 $s = +10$（右半平面），因此这是**非最小相位系统**。
 
-特殊性：它只改变信号的相位分布而不改变幅值谱。在控制中，右半平面零点带来的额外相位滞后会让系统更难稳定——这是"非最小相位"名称的由来。
+它只改变相位，不改变幅值。相同幅值响应不代表相同相位裕度；这里的右半平面零点会额外引入相位滞后。
 
 ---
 
@@ -1808,22 +1456,54 @@ $$
 \angle G_0(j\omega) = -90° - \arctan(\omega)
 $$
 
-**时延引入的额外相位**：$-\omega\tau = -0.5\omega$
+精确时延相位为$-.5\omega$弧度；一阶Padé相位为$-2\arctan(.25\omega)$，二者都要加到$-90^\circ-\arctan\omega$上，**不能把精确相位表当作Padé结果**。
 
-| $\omega$ (rad/s) | $\angle G_0$ (无时延) | 时延相位 $-0.5\omega$ | 总相位 |
-|------------------|---------------------|---------------------|--------|
-| 0.1 | $-95.7°$ | $-2.9°$ | $-98.6°$ |
-| 1 | $-135°$ | $-28.6°$ | $-163.6°$ |
-| 2 | $-153.4°$ | $-57.3°$ | $-210.7°$ |
-| 5 | $-168.7°$ | $-143.2°$ | $-311.9°$ |
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
-无时延系统：相位从 $-90°$ 下降到 $-180°$（$\omega \to \infty$），永远不会超过 $-180°$，因此**无条件稳定**（对任意增益都稳定）。
+| ω(rad/s) | 无时延相位(度) | 精确总相位(度) | Padé总相位(度) |
+|---|---|---|---|
+| .1 | -95.710593 | -98.575382 | -98.574785 |
+| 1 | -135 | -163.647890 | -163.072487 |
+| 2 | -153.434949 | -210.730728 | -206.565051 |
+| 5 | -168.690068 | -311.929517 | -271.370451 |
 
-有时延后：相位可以降到 $-180°$ 以下。在 $\omega \approx 2$ rad/s 处，总相位约为 $-211°$，已经超过 $-180°$。
+</div>
 
-**时延的影响**：
-1. 相位裕度减小——系统"更接近"不稳定
-2. 如果增益足够大，系统可以变得不稳定（无时延时不可能）
-3. 时延不改变幅频曲线，因此不能通过降低增益来"补偿"时延的相位影响——降低增益虽然能增大 GM，但也会让系统变慢
+对$K>0$无时延族$K/[s(s+1)]$，闭环$s^2+s+K$严格稳定；有时延时不能只看某一个频率相位越过−180度就判定。固定τ=.5，原始实验分别核K=.5/1/5的穿越、精确时滞容限与Padé闭环极点；K5在该延迟下不稳定。减小增益可以提高时滞容限，但通常牺牲响应速度，不能消除延迟本身。
 
-这正是时延系统难以控制的原因：**时延只杀相位，不杀幅值**。
+这个模型的正幅值穿越只有一个，满足$\omega_c\sqrt{1+\omega_c^2}=K$。首次时滞边界为$\tau_* =\arctan(1/\omega_c)/\omega_c$。对特征方程$s(s+1)+Ke^{-\tau s}=0$隐式求导，在虚轴穿越处有$\operatorname{Re}[(ds/d\tau)^{-1}]=(1+2\omega_c^2)/[\omega_c^2(1+\omega_c^2)]>0$，根随时滞增加进入右半平面。因此本族严格稳定区间为$0\leq\tau<\tau_*$；这是模型分析的结果，不能只用三个样本代替证明。
+
+
+<JupyterNotebook
+  title="九题答案复算"
+  setupCode={`import numpy as np
+import control as ct
+from scipy import signal
+from scipy.optimize import brentq, minimize_scalar
+from scipy.linalg import expm
+import matplotlib.pyplot as plt
+print("python-control", ct.__version__)
+`}
+  cells={[{code: `print('Q1 RC T=.001; wc1000 rad/s; fc',1000/(2*np.pi))
+for w in [100,1000,10000]:
+ h=1/(1+.001j*w);print(w,20*np.log10(abs(h)),np.angle(h,deg=True))
+print('Q2 normalized gain,corner,asymptote at corner:',100/10,10,20*np.log10(10)-20*np.log10(10))
+u=brentq(lambda u:(1-u)**2+.36*u-2,1,4);print('Q3 u,bandwidth',u,5*np.sqrt(u))
+print('Q3 resonance rad/s,linear,dB:',5*np.sqrt(1-2*.3**2),1/(2*.3*np.sqrt(1-.3**2)),20*np.log10(1/(2*.3*np.sqrt(1-.3**2))))
+h=10*(1+1j)/(1j*(1+1j/5)*(1+1j/50));print('Q4 exact dB,phase at 1:',20*np.log10(abs(h)),np.angle(h,deg=True))
+wg=np.sqrt(10);print('Q5 wg,Kcrit:',wg,abs(1j*wg*(1j*wg+2)*(1j*wg+5)))
+for k in [0,35,70,100]:print('Q5 K,poles:',k,np.roots([1,7,10,k]))
+print('Q6 fixed z=.5 bandwidth2/20')
+def y(t):return 1-np.exp(-t/2)*(np.cos(np.sqrt(.75)*t)+np.sin(np.sqrt(.75)*t)/np.sqrt(3))
+tr=brentq(lambda t:y(t)-.9,0,3.7)-brentq(lambda t:y(t)-.1,0,3.7)
+ratio=np.sqrt(.5+np.sqrt(1.25))
+print('tr2,tr20,MP:',tr*ratio/2,tr*ratio/20,100*np.exp(-np.pi/np.sqrt(3)))
+print('Q7 wg,Re,GMlinear,GMdB:',np.sqrt(17),-10/126,12.6,20*np.log10(12.6))
+for w in [0,10,1e10]:
+ h=(1-1j*w/10)/(1+1j*w/10);print('Q8 omega,abs,deg:',w,abs(h),np.angle(h,deg=True))
+for w in [.1,1,2,5]:
+ base=-90-np.degrees(np.arctan(w));print('Q9:',w,base,base-np.degrees(.5*w),base-2*np.degrees(np.arctan(.25*w)))
+`}]}
+/>
+
+接口参考：[python-control 0.10.2 频率响应](https://python-control.readthedocs.io/en/0.10.2/generated/control.frequency_response.html)给出幅比、弧度相位和rad/s频率；[稳定裕度](https://python-control.readthedocs.io/en/0.10.2/generated/control.stability_margins.html)区分线性增益裕度与穿越频率。[Illinois ECE486 Nyquist讲义](https://courses.physics.illinois.edu/ece486/fa2026/documentation/handbook/lec18.html)可用于复习幅角原理；本文的包围数方向统一按上文约定。
