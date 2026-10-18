@@ -16,8 +16,8 @@
 | node scripts/check-python-support.mjs | 0；73课351实验，326启用25保留 | python-policy.log |
 | 实际静态页 | 默认/零阻尼/正负边界/高能跨圈/恢复，三个工具栏运行完成，console0，375px无整页溢出 | browser.json、desktop.png/narrow.png |
 | node .agent/semester-03/nonlinear-03/validate.mjs | 0；最终指纹/原实验保留/DOM/待办不变式通过 | delivery-validation.json |
-| npm run check；node scripts/check-semester03.mjs | 0/0；PASS21/WARN2/FAIL0，原生产merged40，本课提交后登记回执 | check.log/checklist.log |
+| npm run check；node scripts/check-semester03.mjs | 0/0；PASS21/WARN2/FAIL0，本期merged41，课程提交已验证在master | check.log/checklist.log |
 
 最终源SHA256：40088b2f4556739b937752aea7291aa1f6b3ff5ccf2af68d6fcc02c891cd9a5b。早期旧锚点映射失配与375px表格撑页均已修正；SymPy判等采用化简差为零，避免将表达式结构比较误作数学判等。历史日志不回写，实际原始输出及A/B/C/D见本期讨论日志。
 
-W08/W09/W10和原25Python待办保持；全局v1.3数量不因本期重构重复增长。Phase4已签发，master实际提交后补回执，不提前勾“已进入master”。
+W08/W09/W10和原25Python待办保持；全局v1.3数量不因本期重构重复增长。Phase4已签发，实际课程交付提交已进入master：15e7512a3361343fee8b75c80693c9f3f6310d6e；全局checklist六列已勾。本轮推送origin/master，gh-pages与独立中文润色分支不动。

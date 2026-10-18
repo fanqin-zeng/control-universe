@@ -117,7 +117,7 @@
 |---|---|---|---|---|---|---|---|
 | NONLINEAR-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md;.agent/semester-03/nonlinear-01/acceptance.md;.agent/semester-03/nonlinear-01/delivery-validation.json;commit:9d6d31e22b460a1102d3dbf6d8672770939f4be8 |
 | NONLINEAR-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-02/delivery-validation.json;commit:064e0d47a70f7e805d4d6a7df777ed5b82e4da41 |
-| NONLINEAR-03 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md;.agent/semester-03/nonlinear-03/acceptance.md |
+| NONLINEAR-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md;.agent/semester-03/nonlinear-03/acceptance.md;commit:15e7512a3361343fee8b75c80693c9f3f6310d6e |
 | NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | NONLINEAR-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
