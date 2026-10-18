@@ -54,4 +54,6 @@ rejects('其它课例外本身不放行DISCRETE-08',()=>({plan:input.plan.replac
 
 rejects('其它课例外本身不放行DISCRETE-09',()=>({plan:input.plan.replace(/^\| DISCRETE-09 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-09 .*$/m,'| DISCRETE-09 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-09/);
 
-rejects('已登记例外不自动放行DISCRETE-10',()=>({checklist:input.checklist.replace(/^\| DISCRETE-10 .*$/m,'| DISCRETE-10 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-10/);
+rejects('其它课例外本身不放行DISCRETE-10',()=>({plan:input.plan.replace(/^\| DISCRETE-10 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-10 .*$/m,'| DISCRETE-10 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-10/);
+
+rejects('离散课例外不自动放行IMPL-01',()=>({checklist:input.checklist.replace(/^\| IMPL-01 .*$/m,'| IMPL-01 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 IMPL-01/);

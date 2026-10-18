@@ -3083,9 +3083,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/sampled-data-systems",
           "nonlinear/lyapunov-stability"
         ],
+        "subsections": [
+          {
+            "slug": "消息一定要按时发吗",
+            "title": "消息一定要按时发吗"
+          },
+          {
+            "slug": "旧读数还能用多久",
+            "title": "旧读数还能用多久"
+          },
+          {
+            "slug": "为什么误差不能太大",
+            "title": "为什么误差不能太大"
+          },
+          {
+            "slug": "按周期检查事件",
+            "title": "按周期检查事件"
+          },
+          {
+            "slug": "少发消息也有代价",
+            "title": "少发消息也有代价"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },

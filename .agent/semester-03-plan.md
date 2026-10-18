@@ -51,6 +51,7 @@
 | DISCRETE-07 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-07”；02–06已交付，保留01草稿，本课局部解释采样保持 | .agent/semester-03/discrete-07/acceptance.md |
 | DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
 | DISCRETE-09 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-09”；02–08已交付，保留01草稿，本课不依赖其未验收内容 | .agent/semester-03/discrete-09/acceptance.md |
+| DISCRETE-10 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-10”；02–09已交付，保留01草稿，本课只依赖已交付先修 | .agent/semester-03/discrete-10/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -746,3 +747,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### DISCRETE-09 本轮执行记录（2026-10-19）
 
 离散最优控制从空占位按新写专用Phase1–4完成。保温箱交班问题→离散有限步Bellman/标量配方→Riccati倒推/正向执行→DARE条件→输入约束边界；8H2、四题四答、一个Explorer与SVG、两Notebook四cell。实际TS十五参数配置对独立Fraction全输入稠密消元；原始内核、Pyodide、两种页面与375px验收通过。证据.agent/semester-03/discrete-09/acceptance.md；master真实提交见checklist。独立登记暂缓01的用户顺序例外，不继承08授权；01草稿、用户批阅及四处本地端口排除提交。本对话仅生产09，不发布Pages、不生产10。新增两实验支持，17项Python待办元数据保留；zh计划只更新生产交接、不代做润色。
+
+### DISCRETE-10 本轮执行记录（2026-10-19）
+
+事件触发控制从空占位按新写专用Phase1–4完成。温室无线读数入口→测量/发送/控制更新→保持误差与理想连续Lyapunov条件→周期检查→通信代价/漏检/Zeno/自触发边界；八H2、四题四答、两Notebook四cell、一个Explorer/SVG。17真实TS配置对独立60位解析事件段，195控件组合固定轴范围、36610个原始Notebook量、严格内核、Pyodide、两种真实页面与375px验收通过。默认/每拍持平/两路线发散/少发但趋−2均保留，未将连续定理套到周期程序。证据.agent/semester-03/discrete-10/acceptance.md，真实master回执见checklist。仅本课；01草稿、用户批阅、四处本地端口排除提交；本轮顺序例外独立登记，不发布Pages、不生产下一章。新增两实验可运行，17项Python待办元数据保持，zh只登记生产交接。07历史后续阅读的目标现已交付并验收HTTP200，不重写历史记录。

@@ -1,0 +1,209 @@
+---
+title: 事件触发控制
+description: 从旧读数的误差设计触发条件，区分连续监测与周期检查，核对通信次数、稳定性与实现代价。
+---
+
+# 事件触发控制
+
+温室里的无线温度传感器，每隔一小会儿就读一次温度。早晨开门后，温度变化很快，多发几条消息很有用；到了中午，连续几次读数几乎没变，还要每次都通知控制器吗？
+
+[采样数据系统](/discrete-sampled/sampled-data-systems)让我们看清了两次更新之间的运动。现在的问题是：**读到了新数据，是否就一定要发送它、重新计算控制指令？** 事件触发控制把“什么时候更新”也变成设计的一部分。但少发消息只是手段，不能为了省消息，把系统管丢了。
+
+## 消息一定要按时发吗
+
+先区分三件事：传感器**测量**当前状态，通过网络**发送**读数，控制器据此**更新**输入。这三件事可以同拍发生，也可以采用不同节奏。
+
+- 周期更新：每隔固定时间发送并更新，不管状态变化大小。
+- 事件触发：判断旧数据是否还够用，满足条件才发送或更新。
+- 周期事件触发：仍然按固定周期检查条件，但不一定每次都发送。
+
+本课的可运行实验采用第三种方式：判据放在传感器一侧，**每次检查都测量，触发时才发送并立即更新控制输入**。因此我们统计发送次数，不能把它直接叫作“减少测量次数”或“省了一半电”。本地检测本身也要工作。
+
+![传感器按周期读状态，在本地比较新旧读数；触发后发送并更新控制，否则保持原输入](/images/event-triggered-loop.svg)
+
+## 旧读数还能用多久
+
+沿用采样数据系统中的一阶教学模型：
+
+$$
+\dot x=-x+u,\qquad x(0)=1.
+$$
+
+$x$ 是归一化偏差，时间以秒计。没有输入时，偏差会自然衰减。先假设全状态可测、无噪声、无延迟、无输入限幅，也没有外扰。这是用来讲清机制的模型，不是温室的实测温控方程。
+
+如果每时每刻都能用最新状态，取 $u=-2x$，就有 $\dot x=-3x$。实际更新后，控制器拿着上次收到的状态 $\hat x$，保持输入 $u=-2\hat x$。这里的帽子表示“保存的旧读数”，不是估计器。
+
+定义**保持误差** $e=\hat x-x$。于是
+
+$$
+\dot x=-3x-2e.
+$$
+
+没有误差时，控制按原计划工作；误差出现后，相当于多了一项 $-2e$。一个直观办法是要求误差相对当前偏差不要太大，例如
+
+$$
+\lvert e\rvert\leq\sigma\lvert x\rvert,\qquad\sigma>0.
+$$
+
+$\sigma$ 是相对阈值。旧读数偏得足够多时，就发送当前 $x$，令 $\hat x=x$，误差立刻清零。具体触发规则是 $\lvert e\rvert\geq\sigma\lvert x\rvert$ **且误差非零**；在原点且新旧读数都为零时，不需要反复发送零。
+
+## 为什么误差不能太大
+
+用[Lyapunov稳定性](/nonlinear/lyapunov-stability)中的办法，取 $V=x^2/2$。它不是真实耗电量，只是衡量偏差大小的函数。沿轨迹求导：
+
+$$
+\dot V=x\dot x=-3x^2-2xe
+\leq-3x^2+2\lvert x\rvert\lvert e\rvert.
+$$
+
+**如果一直保证** $\lvert e\rvert\leq\sigma\lvert x\rvert$，则
+
+$$
+\dot V\leq-(3-2\sigma)x^2=-2(3-2\sigma)V.
+$$
+
+因此 $0\lt\sigma\lt1.5$ 是这个模型的一个充分条件。比如 $\sigma=0.25$ 时，$\dot V\leq-5V$，从而
+
+$$
+V(t)\leq V(0)e^{-5t},\qquad
+\lvert x(t)\rvert\leq\lvert x(0)\rvert e^{-2.5t}.
+$$
+
+这段证明对应**连续监测、碰到阈值就立即更新**的理想实现；没有把网络等待和计算时间算进去。超过 $1.5$ 只表示这条充分条件不能再证明收敛，不等于所有阈值更大的控制都必然失稳。
+
+对本例还能算出理想事件间隔。刚更新后，设当时状态为 $x_i\ne0$，输入保持为 $-2x_i$。过去 $\tau$ 秒后，
+
+$$
+x(t_i+\tau)=(3e^{-\tau}-2)x_i.
+$$
+
+从更新到第一次触发，状态还未过零，条件变成 $x_i-x=\sigma x$。代入上式得到
+
+$$
+\tau_* =\ln\frac{3(1+\sigma)}{3+2\sigma}.
+$$
+
+$\sigma=0.25$ 时，$\tau_*\approx0.068993$ 秒。这个间隔与 $x_i$ 的大小无关，所以在这个无噪声、线性齐次例子里，理想事件实际上等间隔发生。“事件触发”并不保证每个例子都会自动变成忽快忽慢的更新。
+
+## 按周期检查事件
+
+真实程序若每 $h=0.05$ 秒才检查一次，就看不到 $0.068993$ 秒那一刻的条件变化。它先在 $0.05$ 秒检查，再在 $0.10$ 秒检查；本例第一次发送发生在 $0.10$ 秒，而不是理想事件时刻。
+
+检查间隔内仍使用固定的 $\hat x$，精确推进公式为
+
+$$
+x(t+\tau)=e^{-\tau}x(t)-2(1-e^{-\tau})\hat x,
+\qquad0\leq\tau\leq h.
+$$
+
+每次检查按下面顺序做：先测 $x$，用尚未更新的 $\hat x$ 算误差；满足条件就发送、令 $\hat x=x$；然后保持输入走到下一次检查。这里不能把 $\hat x$ 每拍都刷新，否则就悄悄变回周期控制了。
+
+默认参数下，六秒内发送 $60$ 次，每拍都更新则发送 $120$ 次；两者都包含零时刻的初始化，统计窗口是 $[0,6)$ 秒。六秒时只读取终态，不再发送供下一段使用的指令。事件路线的 $x(6)\approx1.740127\times10^{-9}$，这是有限时刻读数，不是用数值零代替收敛证明。
+
+<EventTriggeredExplorer />
+
+**连续监测的证明不能直接搬过来。** 默认例子在 $0.10$ 秒更新之前，$\lvert e\rvert/\lvert x\rvert\approx0.399556$，已经超过 $0.25$。虽然这组周期检查仍能收敛，但上一节要求的误差界在两次检查之间已经被突破了。周期检查的稳定性需要把 $h$ 和触发规则一起分析。
+
+下面在同一对象、同一反馈增益和同一初值下，比较四组参数。它展示更新方式的差别，不是在宣布一种方法普遍优于另一种。
+
+<JupyterNotebook
+ title="周期检查下的发送与轨迹"
+ setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+def simulate(h=.05,sigma=.25,x0=1.):
+    N=round(6/h);x=x0;base=x0;held=x0
+    samples=[];baseline_samples=[];curve=[];baseline_curve=[];events=[]
+    for k in range(N+1):
+        samples.append([k*h,x]);baseline_samples.append([k*h,base])
+        if k==N: break
+        e=held-x
+        if k==0 or (abs(e)>0 and abs(e)>=sigma*abs(x)):
+            held=x;events.append([k*h,x])
+        old_base=base
+        sol=solve_ivp(lambda t,z: [-z[0]-2*held,-z[1]-2*old_base],(0,h),[x,base],rtol=1e-11,atol=1e-13,dense_output=True)
+        assert sol.success
+        tau=np.arange(20)*h/20;values=sol.sol(tau)
+        curve.extend(np.column_stack((k*h+tau,values[0])).tolist())
+        baseline_curve.extend(np.column_stack((k*h+tau,values[1])).tolist())
+        x,base=map(float,sol.y[:,-1])
+    curve.append([6.,x]);baseline_curve.append([6.,base])
+    return dict(h=h,sigma=sigma,x0=x0,samples=samples,baselineSamples=baseline_samples,curve=curve,baselineCurve=baseline_curve,events=events,count=len(events),baselineCount=N,terminal=x,baselineTerminal=base)
+`}
+ cells={[{code:`default=simulate()
+print('default: sends=%d baseline=%d x6=%.12e baseline_x6=%.12e'%(default['count'],default['baselineCount'],default['terminal'],default['baselineTerminal']))
+print('first sends:',np.array(default['events'][:3])[:,0])
+fig,ax=plt.subplots(figsize=(6,3))
+for name,label in [('curve','event'),('baselineCurve','periodic')]:
+    z=np.array(default[name]);ax.plot(z[:,0],z[:,1],label=label)
+ev=np.array(default['events']);ax.scatter(ev[:,0],ev[:,1],s=9,label='send')
+ax.set(xlabel='time (s)',ylabel='x',xlim=(0,6),ylim=(-2.2,2.2));ax.legend();ax.grid();plt.show()
+`},{code:`cases=[]
+for h,sigma in [(.05,.25),(.1,.1),(1.2,.25),(1.2,2.)]:
+    z=simulate(h,sigma);cases.append(z)
+    print('h=%.2f sigma=%.2f sends=%d/%d x6=%.9f periodic_x6=%.9f'%(h,sigma,z['count'],z['baselineCount'],z['terminal'],z['baselineTerminal']))
+origin=simulate(.05,.25,0.)
+print('origin: sends=%d x6=%.1f'%(origin['count'],origin['terminal']))
+`}]}
+/>
+
+## 少发消息也有代价
+
+先按“每拍都触发”：$h=0.1$、$\sigma=0.1$ 时，两路线每次检查都更新，发送次数相同，没有省消息。再按“周期太长”：$h=1.2$、$\sigma=0.25$ 时，即使每拍触发，也和周期基线一样发散。一个好判据救不了任意长的等待。
+
+“漏掉事件”更值得警惕。取 $h=1.2$、$\sigma=2$，只在零时刻发送过一次，之后条件始终没有在检查点满足。原输入 $u=-2$ 一直保持，故
+
+$$
+x(t)=3e^{-t}-2\longrightarrow-2.
+$$
+
+六秒时 $x(6)\approx-1.992564$，离目标零还很远。理想连续条件曾经满足，但稀疏的检查把它漏掉了。第一次检查时状态已经小于 $-1$，此后继续减小到 $-2$；这时 $1-x$ 始终小于 $2\lvert x\rvert$，所以后面的检查也不再触发。这里只说明**这个周期规则没有调节到零**；不能把“状态趋向一个非零常数”说成轨迹无限发散。
+
+还有三件工程问题不能省略：
+
+1. **检测成本与网络位置。** 本课在传感器端判断，所以能减少消息；若全部测量早已传到远端控制器再判断，测量上行通信就已经花掉了。
+2. **噪声、延迟和限幅。** 靠近目标时相对阈值也很小，噪声可能引起频繁发送。加绝对死区可以减少这种发送，但要重新分析允许残差；延迟、丢包或限幅也会改变误差与状态的关系。
+3. **事件会不会挤成一团。** 有限时间内发生无限次更新叫作 Zeno 现象。连续事件控制通常需要证明事件之间有足够的间隔；本课理想标量例已算出正的 $\tau_*$，原点不再触发。周期检查则使相邻更新至少隔 $h$，但这只排除了无限密集更新，不能顺带证明稳定。
+
+如果在一次更新时根据模型预测“下次最迟什么时候该测量”，再设置定时器，那是**自触发控制**。它与本课持续按周期测量、到点再判断不同；预测误差和扰动也必须纳入设计。
+
+<JupyterNotebook
+ title="误差界与漏检复算"
+ setupCode={`import numpy as np
+from math import exp,log
+`}
+ cells={[{code:`sigma=.25
+ideal_interval=log(3*(1+sigma)/(3+2*sigma))
+p=3*exp(-.1)-2
+pre_update_ratio=(1-p)/abs(p)
+proof_values=[3-2*sigma,2*(3-2*sigma),ideal_interval,.1,pre_update_ratio]
+print('x-square coefficient=%.9f V-rate=%.9f ideal_interval=%.9f grid_first=%.9f ratio_before=%.9f'%tuple(proof_values))
+`},{code:`h=1.2;sigma=2.
+miss_samples=[[k*h,3*exp(-k*h)-2] for k in range(6)]
+for t,x in miss_samples[1:]:
+    print('t=%.1f x=%.9f error=%.9f threshold=%.9f'%(t,x,abs(1-x),sigma*abs(x)))
+print('held-input limit=-2; this is nonzero regulation error, not unbounded growth')
+answer_values=[.2,.2,-1.6,2.5,5.,ideal_interval,.1,3*exp(-6)-2,-2.]
+print('answers:',np.array2string(np.array(answer_values),precision=9))
+`}]}
+/>
+
+## 小结
+
+事件触发先问“旧信息是否还够用”，再决定是否更新。保持误差给了我们一个可以分析的触发依据，但检测时刻、通信位置和执行延迟都属于控制方案的一部分。少发消息不等于少测量，更不等于已经证明稳定。
+
+进一步阅读：[Tabuada的事件触发论文](https://www.seas.ucla.edu/~tabuada/Papers/EventTriggered.pdf)、[Heemels团队的事件与自触发研究](https://heemels.tue.nl/research/event-triggered-and-self-triggered-control)。本文只复现一阶教学模型，不把其数字视为论文实验结果。
+
+## 习题
+
+1. 取 $\hat x=1,x=0.8,\sigma=0.25$。保持误差是多少？此时是否应触发？更新后的输入是多少？
+2. 在理想连续监测下，$\sigma=0.25$ 时，$\dot V$ 的界和状态的指数界分别是什么？为什么不能只凭这个阈值给周期检查方案发稳定证明？
+3. 求本例理想首次事件间隔；如果每 $0.05$ 秒检查，第一次检测到事件在哪一拍？原点状态是否也要每拍发送？
+4. $h=1.2,\sigma=2$ 的方案为何只发一次消息却没有回到目标？写出六秒状态和长期极限，区分不收敛到零与无界发散。
+
+## 答案
+
+1. $e=1-0.8=0.2$，阈值 $\sigma\lvert x\rvert=0.2$，误差非零且达到阈值，应触发。更新后 $\hat x=0.8$，所以 $u=-1.6$，保持误差清零。
+2. $\dot V\leq-2.5x^2=-5V$，所以 $\lvert x(t)\rvert\leq\lvert x(0)\rvert e^{-2.5t}$。周期检查可能在两次检查间越过阈值，不能保证证明里要求的全时误差界；默认例子更新前比值约为 $0.399556$，已超过 $0.25$。
+3. $\tau_*=\ln(3.75/3.5)\approx0.068993$ 秒，周期检查在第2拍，即 $0.10$ 秒检测到。原点且保持读数为零时误差为零，除了初始化不再发送。
+4. 对所有检查点都未再触发，旧输入保持为 $-2$，因此 $x(t)=3e^{-t}-2$，$x(6)\approx-1.992564$，长期趋于 $-2$。状态有界，却没有调节到零；少发消息的代价在这里是失去调节目标。
