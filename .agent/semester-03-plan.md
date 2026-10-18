@@ -587,3 +587,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### CLASSIC-09执行回执（2026-10-18）
 
 本轮仅交付classic/frequency-response-design「回路整形」，完整重构Phase1–4，保留十主题/十一题/三交互，39旧ID以五别名（四新增）兼容。补S/T/GS/CS频段合同，纠正归一化/GM单位/临界及复数互补、ZN分子、Q3欠定与Q5/7/9/11；六原实验严格内核/Pyodide与实际TS对200K/142ζ/五延迟通过，128项对账和生产5图/临界按钮/390px/课程运行见.agent/semester-03/classic-09/acceptance.md。W06–09与27Python待办仍开放，仅合master、不发布；真实合并回执登记全局checklist，CLASSIC-10另起对话。
+
+### CLASSIC-10执行回执（2026-10-18）
+
+本轮仅新写classic/design-methods-comparison「设计方法选型」，按新写SKILL完整Phase1–4：八节/六题/三原始Notebook，四合同同对象筛固定候选，不作结构排名；完整PI状态、目标误差口径、限幅不可达及噪声通道边界明确。独立状态空间对3候选×3幅值×2001节点y/u与6频点复响应通过；63项对账、严格内核/Pyodide3/3、生产页/390px/普通及Pages构建见.agent/semester-03/classic-10/acceptance.md。W06–09及27Python待办保持开放，只有本课合master，不发布；真实hash另登记全局checklist，CLASSIC-11另起对话。

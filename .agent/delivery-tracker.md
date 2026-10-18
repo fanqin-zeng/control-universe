@@ -64,7 +64,7 @@
 | [x] PID控制 (pid-controller) | 学期3 CLASSIC-07：Phase1–4、完整零点/直通与滤波交互、六实验/九题复算；验收 .agent/semester-03/classic-07/acceptance.md |
 | [x] 校正网络 (compensator-design) | 学期3 CLASSIC-08：Phase1–4、12主题/十题/六严格内核与Pyodide实验；四原交互改真实完整模型，102环路独立核、54旧ID兼容、98行对账；验收.agent/semester-03/classic-08/acceptance.md |
 | [x] 回路整形 (frequency-response-design) | 学期3 CLASSIC-09：Phase1–4、10主题/十一题/六严格内核与Pyodide实验；三原交互真实TS对200K/142ζ/五延迟独立核，39旧ID兼容、128行对账；修频段合同/复数互补/归一化/ZN分子与高阶近似；验收.agent/semester-03/classic-09/acceptance.md；学期2旧日志保留为历史来源 |
-| [ ] 设计方法选型 (design-methods-comparison) | **A6 新增骨架**（`status: "empty"`，占位页 200，无 MDX、无 subsections）。承接诊断报告 P9，同时作为 `introduction/controller-selection-guide` 的经典控制分支；prereq 指向本章 6 门方法课 |
+| [x] 设计方法选型 (design-methods-comparison) | 学期3 CLASSIC-10新写：Phase1–4、八节/六题/三严格内核及Pyodide实验，四合同同对象筛选、63行数值对账；独立状态空间与真实页面/390px/普通及Pages构建验收见.agent/semester-03/classic-10/acceptance.md |
 | [x] 经典控制案例 (classic-case-study) | v1.3（C1 第 2 课，2026-10-16）：**柯验全量数值审计修正 5 组系统性错误**——e_ss 链漏对象增益 9.1（指标改 <1%、K=50 定位为余量）、PI 结论反转（ts=0.08s 达标、败在 Mp=16.8%；对消陷阱改写为失配场景）、PID 实测 wc=283/PM=106°/Mp=0.1%、超前设计双错（ωm 180→305；有源网络误加 α 倍补偿 K 192.5→50，修正后 PM=54.3°）、蒙特卡洛表换实测（0% 超标）；P 控制矛盾转 PControlTradeoffExplorer（默认复现手算例）；何疑红队三条件放行；讨论日志 semester-02/02-classic/11；[待定] 答案 8/9 个别数值下轮抽查 |
 
 ### 现代控制 (modern)
@@ -330,7 +330,7 @@
 | [ ] 生物医学控制 (biomedical-control) | |
 | [ ] 半导体装备控制 (semiconductor-equipment) | |
 
-**统计**：47 / 205 课程已完成（21 章；63 个交互组件文件，其中 63 个被课程正文引用）
+**统计**：48 / 205 课程已完成（21 章；63 个交互组件文件，其中 63 个被课程正文引用）
 
 > **E4（2026-09-26）：郑核的「术语一致性 / 符号约定一致」自此是查表 + 一条命令，不再靠人通读 56546 行。** 新建两份**机器读的**权威表 `docs/semester-02/03-glossary.md`（**966 行**：305 条术语、348 条中文侧、**52 条别名冲突全部裁决**、登记表 314 行 + 残渣签字 39 行）与 `docs/semester-02/04-notation.md`（**656 行**：**107 个符号基**、73 行有冲突全部给建议、A 级 3 组 5 行 / B 级 68 行 / 判「无」34 行）；新建 `scripts/glossary.mjs`（**1203 行**，`scan`/`check`/`symbols`/`terms`/`conflicts`/`abbrs`/`rows` 七个子命令）+ `package.json` 两条 script：`npm run glossary`、`npm run glossary:check`。给 `scripts/lib-mdx.mjs` 加了 `scanMdx().skips` 附加返回值（**483 → 502 行**），不另写第二份「什么不是正文」的识别逻辑。负向夹具 `.agent/e4-fixture/`（**8 个文件**，含 86 条纯函数断言的 `unit-probe.mjs`）保留为仓库产物，README 把每条命令的预期判定与退出码写死。**零新增 npm 依赖**，不用 `execSync`。**一条 MDX 都没改**（Prompt 硬约束）。
 > **对本文件日常操作的直接影响**：① **签发前置多一条命令**——`npm run glossary:check` 与九项前端硬门槛同级：**C1（04 登记表缺符号基）/ C2（03 有未裁决别名冲突）FAIL 即不得签发、本文件不得打勾**；C1b/C2b/C4/C5 是 WARN；**C3 只是 INFO，不影响退出码，不得当判据用**。现网基线 `PASS 3 · WARN 1 · FAIL 0`（那条 WARN 是 C4 的 7 处漏反斜杠函数名：`max` 5 / `min` 2，内容缺陷归 C1/A6）。② **判据编号 C1–C5 是第四套**，与九项前端硬门槛、`nb-cells` 的 S0–S8、`verify-lesson` 的九项**都不通用**；写报告时「第 N 项」必须说明是哪一套（同 E2 note ③ / E3 note ② 那个坑）。③ **引入新符号或新术语前必须先查表并回写**：新符号基用 `node scripts/glossary.mjs rows notation` 生成 5 列行贴进 04 的 REGISTER，新术语按 03 §6 登记——**否则 C1 / C2 会 FAIL，这是设计（登记表少一行就红）**。裁决过程写进讨论日志 **Phase 3「教学支持（教学质量）」分组下郑核那条发言**，**不新增小节**（《讨论日志固定结构》§4 第 6 条把 Phase 3 的 `###` 分组数锁死为 6）。硬规则已写进 `wiki-discussion/SKILL.md`《输出格式规范》末尾《E4 术语与符号规则》六条 + Phase 3 郑核/李稳条目 + 《注意事项》，以及 `personas.md` 郑核的「风格一致性」清单行。④ **改这两张表就是改门槛**：03 的 REGISTER 三列会按 `[、,;；/]` 拆成键（实测 737 个），NOISE 第一列**不拆**（含逗号的英文串只能签在那里）；04 的 ABBREV 块**改变符号抽取本身**（登记进去的全大写连写自成符号基，现只 `PM`/`GM`）；**哨兵必须独占一行**（loader 走 `sentinelSlice()`）；**登记表单元格内不得出现裸 `|` 或 `\|`**，范数一律 `\lvert…\rvert` / `\lVert…\rVert`。⑤ **`v1.3-refactor/SKILL.md` 一个字没动**：E4 的改动全在孪生块之外，改完重跑 §6 仍 `TWIN-IDENTICAL ✓ 9 项`、与 plan 之间仍只有第 6 项那一处已登记偏离，整段 §1–§6 切片两份各 **104 行**、md5 同为 `7e2ba04e3b6f720a843b5d1f0f85781c`。

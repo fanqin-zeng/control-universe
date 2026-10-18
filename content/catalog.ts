@@ -1451,6 +1451,40 @@ export const catalog: Chapter[] = [
       {
         "slug": "design-methods-comparison",
         "title": "设计方法选型",
+        "subsections": [
+          {
+            "slug": "先分清三个问题",
+            "title": "先分清三个问题"
+          },
+          {
+            "slug": "把需求写成合同",
+            "title": "把需求写成合同"
+          },
+          {
+            "slug": "同一对象的三组候选",
+            "title": "同一对象的三组候选"
+          },
+          {
+            "slug": "需求改变后的选择",
+            "title": "需求改变后的选择"
+          },
+          {
+            "slug": "何时换一种工具",
+            "title": "何时换一种工具"
+          },
+          {
+            "slug": "交付前的复核",
+            "title": "交付前的复核"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "classic/pid-controller",
           "classic/compensator-design",
@@ -1458,7 +1492,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "classic-case-study",
