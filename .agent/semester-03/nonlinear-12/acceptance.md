@@ -28,3 +28,6 @@ W13完成含义是指定旧材料已审并处置：NB6扫频初态/相位/谱窗
 本轮只停止核对命令后确认属于自己的8083生产服务（PID31356）；既有8081/8082/8891保留。全局npm run check最终退出0，PASS21/WARN2/FAIL0，53/205交付、78正文、68Explorer。首次自动大纲/统计刷新先校验旧统计产生5FAIL后写入正确值，完整catalog-refresh.log保留；等待完成再运行check全绿。两个WARN仍是25旧稿日志债与跨章同slug，未降低门槛。master回执在真实提交后补入。
 
 最终学期门槛node scripts/check-semester03.mjs退出0，45任务/37完成，提交前merged49（本课不虚填hash）；Python支持门槛退出0。代码与文档空白检查排除原始.log后通过；原始verify.log保留工具PASS列尾空格。所有最终结果与源指纹关联，截图人工检视确认正文/图形可读。
+
+
+真实交付提交已进入master：8325f097ce63d63d4c4875cd9665a969a934ad4b。回执同步全局合入列，本期已进入master课程50节，NONLINEAR-01至12均有本期证据。仅此课，用户批阅保持，未合润色分支、未推gh-pages。

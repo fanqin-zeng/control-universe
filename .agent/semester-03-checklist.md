@@ -129,7 +129,7 @@
 | NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json;commit:aa691ca7d211255d2713c9856f5be10c02380b65 |
 | NONLINEAR-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/10-iss-small-gain.md;.agent/semester-03/nonlinear-10/acceptance.md;.agent/semester-03/nonlinear-10/validation.json;commit:b90b4ed1366e2b72380295c6daf0119347102810 |
 | NONLINEAR-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/11-switched-hybrid-systems.md;.agent/semester-03/nonlinear-11/acceptance.md;.agent/semester-03/nonlinear-11/validation.json;commit:2a7af2f9146592ad6e319857b444ff056138f3a1 |
-| NONLINEAR-12 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/12-bifurcation-chaos.md;.agent/semester-03/nonlinear-12/acceptance.md;.agent/semester-03/nonlinear-12/validation.json |
+| NONLINEAR-12 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/12-bifurcation-chaos.md;.agent/semester-03/nonlinear-12/acceptance.md;.agent/semester-03/nonlinear-12/validation.json;commit:8325f097ce63d63d4c4875cd9665a969a934ad4b |
 
 ### 离散控制
 
