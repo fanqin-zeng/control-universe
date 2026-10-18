@@ -105,7 +105,7 @@
 
 原始内核四cell全跑、error0/SKIPPED0；13真实TS配置/39493量对独立60位参考；Pyodide、实际普通/静态两页面、375px、图例/左右轴/控件/曲线/目录与图片全部通过。正文顺读调整改变hash后全链路重跑。最终源hash：2822cbfcd1607ea1d9ba2c1d248363e0a9c4669cb37013e5cffe74cfc37013eb；validate.mjs退出0，maxNumericError=2.944311461305915e−12。npm run check退出0（PASS21/WARN2/FAIL0，两个WARN已登记），verify九PASS/零WARN，31顺序/路由/标题测试通过，学期守卫退出0。数学检查/术语检查/两构建通过，无本课未决阻断。
 
-catalog=v1.3、tracker与自动OUTLINE、学期3checklist和润色交接状态同步。实际master提交后才补hash与合入列；只交付08，不自动开始09，不发布Pages。本地端口和用户批阅不提交，01草稿交付后恢复。
+catalog=v1.3、tracker与自动OUTLINE、学期3checklist和润色交接状态同步。实际master交付提交：33a3931c0e3f33192d1edb43d9f3eecabd432cb5，提交后登记hash与合入列，本期合入57课；只交付08，不自动开始09，不发布Pages。本地端口和用户批阅不提交，01草稿交付后恢复。
 
 ## 附录 A.1 数值三方对账
 

@@ -145,7 +145,7 @@
 | DISCRETE-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/05-discrete-stability-criteria.md;.agent/semester-03/discrete-05/acceptance.md;commit:8aa700be5d624925f7814f6a460db1d9c38b25b3 |
 | DISCRETE-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/06-discretization-methods.md;.agent/semester-03/discrete-06/acceptance.md;commit:fe45658e2f879650390bfc962df59e635e9391c2 |
 | DISCRETE-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/07-sampling-period-selection.md;.agent/semester-03/discrete-07/acceptance.md;commit:82e95f1f6ee5797e6fd129b7d50b4a021db7a051 |
-| DISCRETE-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/08-sampled-data-systems.md;.agent/semester-03/discrete-08/acceptance.md;验收通过，待真实master提交回执 |
+| DISCRETE-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/08-sampled-data-systems.md;.agent/semester-03/discrete-08/acceptance.md;commit:33a3931c0e3f33192d1edb43d9f3eecabd432cb5 |
 | DISCRETE-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
