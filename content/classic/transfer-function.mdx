@@ -223,14 +223,7 @@ $$
 
 把极点画为 ×、零点画为 ○，标在复平面上，就是**零极点图（pole-zero map）**：
 
-```
-        Im
-         |
-   ×  ···|···  ×        一对共轭复极点
-   - - - + - - - → Re
-         |  ×           一个实极点
-         |
-```
+![零极点定性示意：共轭极点在实轴两侧上下对称，实极点位于实轴，空心圆表示零点](/diagrams/transfer-function/pole-zero.svg)
 
 它们的物理意义完全不同：
 
@@ -262,9 +255,7 @@ $$
 
 **串联**：前一个环节的输出是后一个的输入
 
-$$
-U(s) \longrightarrow \boxed{G_1(s)} \longrightarrow \boxed{G_2(s)} \longrightarrow Y(s)
-$$
+![串联框图：输入依次经过两个传递环节，再得到输出](/diagrams/transfer-function/series.svg)
 
 $$
 G(s) = G_1(s) \cdot G_2(s)
@@ -274,18 +265,15 @@ $$
 
 **并联**：两个环节接收同一输入，输出相加
 
+![并联框图：输入分成两路，两路环节的输出相加](/diagrams/transfer-function/parallel.svg)
+
 $$
 G(s) = G_1(s) + G_2(s)
 $$
 
 **反馈**：输出被测量后送回输入端比较——这是控制系统最重要的结构。设前向通道为 $G(s)$，反馈通道（传感器）为 $H(s)$，输入为 $R(s)$，输出为 $Y(s)$：
 
-```
-  R(s) -->⊕--> [ G(s) ] --> Y(s)
-           ^-              |
-           |    [ H(s) ]   |
-           +---------------+
-```
+![负反馈框图：目标从正端进入比较点，输出经测量环节返回负端，误差驱动前向环节](/diagrams/transfer-function/feedback.svg)
 
 误差信号 $E(s) = R(s) - H(s)Y(s)$，而 $Y(s) = G(s)E(s)$。代入消去 $E(s)$：
 

@@ -199,44 +199,36 @@ OUTLINE.md                   # 自动生成物（npm run check -- --fix-outline�
 - 每次修改后把实际验收输出（命令 + 退出码）粘贴进交付记录。
 - 用户裁决项以 Q 编号登记在 plan/tracker 的批注里（已到 Q24+）；发现新矛盾先登记待裁决，不要擅自大改冻结文件（plan §1–§2 与诊断报告已冻结）。
 
-## 12. 分支管理与交付节奏（2026-10-16 起）
+## 12. 版本管理与交付节奏（2026-10-18 用户更新）
 
-### 12.1 模型：master 主干 + 按工作包的短命分支
+### 12.1 默认直接在 master 工作
 
-```
-master  ──●──────────●──────────●──▶   （永远 = npm run check 绿 + 可 build）
-            \        / \        /
-             ●──●──●    ●──●──●         （wp/<阶段>-<工作包>，寿命 ≤ 1 个工作包）
-```
+日常课程、修复、文档和基建更新直接在 `master` 修改、验收、提交并推送 `origin master`，不再为每课或每个工作包创建短命分支，也不再制造日常 `--no-ff` 合并节点。只有确实需要长期维护独立版本时才创建/切换分支，按用途命名。
 
 | 规则 | 内容 |
 |------|------|
-| `master` | 日常开发主干；另有用户指定的gh-pages长期源码发布分支（2026-10-17例外）。合入门槛：`npm run check` 退出码 0（FAIL=0，WARN 需已在 plan/tracker 登记为已知项）；涉及页面改动另跑 `npm run verify <chapter>/<lesson>` |
-| 工作包分支 | 从 `master` 切出，命名 `wp/<阶段>-<内容>`，如 `wp/a6-modern-reorder`、`wp/d1-math-chapter`、`wp/c1-classic-v13`。**以工作包命名，禁止以工具/日期命名**（教训：`qoder/context/0921` 这种分支让工作在工具专属分支上滞留数周无人认领） |
-| 分支寿命 | 一个工作包一条分支，做完即合即删；跨天继续也沿用同一条分支，不另开 |
+| master | 日常开发与远端同步主干。提交/推送前 `npm run check` 必须退出0，WARN需已登记；按变更完成页面、内核、构建等适用验收 |
+| 长期分支 | 有明确维护需求才创建。现有 gh-pages 保留为长期源码发布分支，发布闸门见12.4 |
+| 提交粒度 | 一个提交对应一个可独立描述的完成态；正文、讨论日志和进度记录同步落盘，只暂存本任务文件，不带入用户未提交修改 |
+| 课程回执 | 真实交付提交必须已进入master；普通提交与历史合并提交均有效。旧台账“合并”列兼容解释为“已进入master”，保留历史hash，不要求新建分支制造合并提交 |
+| 推送 | 验收完成后正常push到origin master；推送不触发Pages发布。远端有新提交时先读取并处理差异，不强推、不重写历史，失败如实报告 |
+| 历史 | 保留已有提交、合并、tag与历史日志，不为美化分支图执行rebase/force-push或批量删除分支 |
 
-> **部分合并例外（2026-10-16 起）**：多课工作包（如 C2 的 9 课）在**每课交付验收后立即 `--no-ff` 部分合入 master**，分支继续存活——master 始终是用户可访问的最新交付态（教训：state-space 的 ipywidgets 修复停在分支上，用户在 master 环境踩到旧 bug）。工作包完成后的最终合并照旧，分支即合即删。
-| 合并方式 | `git merge --no-ff`，保留工作包边界，便于整体 revert 一个工作包 |
-| 提交粒度 | 一次提交 = 一个可独立描述的完成态（如"迁移 .qoder→.agent"单独成 commit）；讨论日志、tracker 打勾、plan 勾选与正文改动同 commit 落盘，不留"改了内容没记台账"的悬空态 |
-| 版本标记 | 学期阶段边界（如 semester-02 的 A/C/D 各阶段收官）打 tag：`git tag semester02-A`、`semester02-C1` 等，方便回溯"当时 19 门交付"这类口径 |
+### 12.2 交付记录
 
-### 12.2 为什么不用更重的模型
+每节课仍按Phase 1–4与既有验收交付。提交前记录验收结果；提交后再登记实际hash，不能预填尚不存在的commit。需要补充提交回执时，在master追加记录提交即可，无需新分支。学期阶段仍可使用有意义的tag标记。
 
-- 单人维护 + Agent 协作的内容仓库，没有多人并行 / CI 门禁 / 发布列车，Git Flow 的 develop/release 分支是纯开销。
-- 课程生产的工作单元天然是 plan §4 的工作包（A6/C1/D1…），一个包一个分支正好与 delivery-tracker 的勾选粒度对齐。
-- 本仓库的"状态"在文件里（catalog status + tracker 勾选 + plan 复选框），`npm run check` 就是事实上的 CI；合入前本地跑一遍等价于 PR 检查。
-
-### 12.3 操作口诀
+### 12.3 日常操作
 
 ```bash
-git checkout master && git checkout -b wp/<阶段>-<内容>   # 开工
-# ...改内容 + 讨论日志 + tracker + plan 勾选...
-npm run check                                               # 必须退出码 0
-git add -A && git commit                                    # 台账同 commit
-git checkout master && git merge --no-ff wp/<阶段>-<内容>   # 合入
-git branch -d wp/<阶段>-<内容>                               # 即合即删
+git checkout master
+# 修改本任务文件，完成适用验收与台账
+npm run check
+git add -- <本任务的明确文件列表>
+git commit -m "描述本次完成态"
+git push origin master
 ```
 
 ### 12.4 GitHub Pages发布闸门（2026-10-17用户要求）
 
-gh-pages是额外长期源码发布分支，GitHub Actions只发布该分支。工作包正常验收合入master；**每次必须先取得用户对具体版本的明确同意，才把更新反合到gh-pages并推送**，首次发布也一样。禁止master自动部署或后台同步发布分支。操作与能力限制见docs/deployment/github-pages.md；没有远端Actions成功与公网实测，不得宣称已上线。
+gh-pages是额外长期源码发布分支，GitHub Actions只发布该分支。日常更新正常验收后提交并推送master；**每次必须先取得用户对具体版本的明确同意，才把更新反合到gh-pages并推送**，首次发布也一样。禁止master自动部署或后台同步发布分支。操作与能力限制见docs/deployment/github-pages.md；没有远端Actions成功与公网实测，不得宣称已上线。

@@ -1,60 +1,52 @@
 ---
-title: 状态空间表示
-description: 从传递函数的局限出发，引入状态变量、状态方程和输出方程，建立现代控制的统一数学框架。
+title: 状态空间
+description: 从车身位置相同而速度不同的运动出发，建立状态、ABCD模型与初值响应，辨清最小实现和传递函数的边界。
 ---
 
-# 状态空间表示
+# 状态空间
 
-前面十章，我们用传递函数 $G(s) = Y(s)/U(s)$ 描述系统。传递函数简洁、直观，配合 Bode 图、根轨迹等工具，能解决大量 SISO（单输入单输出）控制问题。但当你面对更复杂的工程系统时，传递函数开始力不从心。
+<span id="状态空间表示" />
 
-本章引入现代控制理论的核心工具——**状态空间表示**。它不是要"取代"传递函数，而是提供一个更通用、更强大的框架，能处理传递函数处理不了的问题。
+在[系统建模](/classic/system-modeling)中，我们把停着的汽车车身向下压，再松手；在[传递函数](/classic/transfer-function)中，则从静止状态施加外力，观察位移。现在比较两个瞬间：车身都在平衡位置，一个正在向上运动，另一个正在向下运动。即使接下来施加相同的力，两条运动轨迹也不会一样。
+
+**只知道当前位置，还不足以预测接下来的运动。还要知道什么？** 对前面采用的质量—弹簧—阻尼模型，答案是当前速度。把位移和速度一起记录，再给出未来外力，就能从当前时刻继续计算。本课从这个“继续算下去需要哪些信息”的问题，进入状态空间。
 
 ## 为什么需要状态空间表示
 
 ### 传递函数的三个局限
 
-回顾一下传递函数的"身世"：我们对线性常系数微分方程做拉普拉斯变换（假设零初始条件），得到 $s$ 域的代数方程，再取比值 $Y(s)/U(s)$。这个过程天生带了三个限制：
+传递函数描述零初始状态下的输入输出关系。它很好地概括了外力怎样引起位移，但使用时要分清三个边界。
 
-**局限一：只能处理 SISO 系统。** 传递函数描述的是"一个输入到一个输出"的关系。但实际工程系统往往是多输入多输出的（MIMO）——无人机有四个电机（输入），要同时控制位置、姿态、速度（输出）。你可以为每对输入-输出写一个传递函数，但这样会丢失输入之间的耦合信息。
+**第一，单个传递函数只描述一对输入输出；多输入多输出系统可以用传递函数矩阵。** 矩阵中每一项记录某路输入对某路输出的作用，非对角项也保留耦合信息，不能说传递函数只能处理 SISO。SISO 是单输入单输出，MIMO 是多输入多输出。
 
-**局限二：看不到系统内部。** 传递函数是"黑箱"描述——你只知道输入 $u$ 和输出 $y$ 的关系，但系统内部有几个储能元件？哪些内部变量会饱和？哪些动态模式是不可控的？传递函数一概不告诉你。
+**第二，输入输出关系没有唯一指定内部状态。** 两个系统可以具有同一个传递函数，却包含不同的内部动态；有些内部模态不受输入激发，或不出现在所选输出中。本课后面会给出一个隐藏不稳定状态的例子，说明“输出看着稳定”和“内部状态稳定”必须分别检查。
 
-> 📖 一个经典的例子：两个不同的内部结构可能产生完全相同的传递函数（这叫"极零对消"）。从传递函数看系统完全一样，但一个内部稳定，另一个内部不稳定。
-
-**局限三：不方便处理非零初始条件。** 拉普拉斯变换假设零初始条件。如果系统有非零初始状态（比如电容上有初始电压），传递函数方法需要额外处理，很不方便。
+**第三，传递函数本身不包含初始状态。** 拉普拉斯变换能够处理非零初值，只是这部分需要另外保留初值项。状态空间把初值直接写进状态方程的解，便于同时计算松手运动和外力响应。
 
 ### 状态空间的优势
 
-状态空间表示直接回到**时域的一阶微分方程组**，绕开了拉普拉斯变换的所有限制：
+状态空间把当前所需信息组织成向量，用一阶微分方程描述它的变化，再单独指定测量什么。
 
-| 特性 | 传递函数 | 状态空间 |
-|------|----------|----------|
-| 系统类型 | 仅 SISO | SISO 和 MIMO |
-| 内部信息 | 黑箱 | 透明（状态变量可见） |
-| 初始条件 | 零初始条件 | 任意初始条件 |
-| 时变性 | 仅 LTI | 可处理时变系统 |
-| 非线性 | 仅线性 | 可扩展到非线性 |
-| 数学工具 | 复变函数 | 线性代数 |
+| 关心的事情 | 传递函数描述 | 状态空间描述 |
+|---|---|---|
+| 多路输入输出 | 用传递函数矩阵记录各通道与耦合 | 用输入、状态、输出矩阵组织关系 |
+| 非零初值 | 在零状态传函之外保留初值响应 | 显式给定状态初值 |
+| 内部动态 | 从输入输出函数不能唯一恢复全部内部模态 | 对选定的实现逐项分析内部状态 |
+| 非线性、时变 | 常用的单一 $G(s)$ 针对LTI模型 | 可用一般状态方程；常矩阵ABCD仍只描述LTI模型 |
 
-最后一个优势值得强调：状态空间的数学工具是**线性代数**——矩阵乘法、特征值、子空间——这些你在大学数学课里已经学过。不需要学新的变换（拉普拉斯、Z变换），只需要把熟悉的线性代数工具应用到动态系统上。
+状态坐标写出来，不代表每个状态都能直接测量；能否由传感器读数估计它们，要到[可控性与可观性](/modern/controllability-observability)再讨论。本课主要使用[线性代数基础](/math/linear-algebra-basics)和[矩阵指数](/math/ode-matrix-exponential)中的工具。
 
 ### 一个直觉例子
 
-想象你坐在一辆自动驾驶汽车里。汽车的运动由什么决定？
+回到车身：选择外力 $u=F$ 为输入，位移 $y$ 为输出；内部记录 $x_1=y$、$x_2=\dot y$。两个瞬间的 $x_1$ 相同、$x_2$ 不同，所以它们是不同的状态。这里忽略路面运动与其它悬架自由度，不能据此声称这两个量足够描述整辆汽车。
 
-- 当前位置 $(x, y)$
-- 当前速度 $v$
-- 当前航向角 $\psi$
-
-这些量合起来就是汽车的**状态**——知道了这些量，再加上未来的控制输入（油门、方向盘），你就能预测汽车未来的运动。
-
-传递函数只会告诉你"方向盘转角 → 航向角变化"的关系。状态空间则把 $(x, y, v, \psi)$ 全部显式地列出来，让你看到系统的全貌。
+![输入影响状态变化，状态通过积分延续到下一时刻，输出由状态和直接通路共同决定](/diagrams/state-space/state-flow.svg)
 
 ## 状态变量的定义
 
 ### 什么是状态？
 
-**状态**是系统在某一时刻的"完整快照"——知道了 $t_0$ 时刻的状态和 $t \geq t_0$ 之后的输入，就能唯一确定系统在未来任意时刻的行为。
+对一个解存在且唯一的选定模型，**状态**是继续预测所需的当前信息，也可以把它理解为模型的“完整快照”——知道了 $t_0$ 时刻的状态和 $t \geq t_0$ 之后的输入，就能唯一确定系统在未来任意时刻的行为。
 
 更形式化地：
 
@@ -66,7 +58,7 @@ $$
 \boldsymbol{x}(t) = \begin{bmatrix} x_1(t) \\ x_2(t) \\ \vdots \\ x_n(t) \end{bmatrix} \in \mathbb{R}^n
 $$
 
-$n$ 称为系统的**阶数**（order），等于系统中独立储能元件的个数。
+$n$ 是这份状态实现的维数，通常称为实现的**阶数**（order）。对无约束的简单机械或电路模型，可以从独立储能自由度寻找状态；不能机械地数元件。理想约束可能减少独立变量，额外加入的不可控或不可观状态也会使实现非最小。
 
 ### 状态方程和输出方程
 
@@ -87,7 +79,7 @@ $$
 |------|------|------|------|
 | $\boldsymbol{x}(t)$ | 状态向量 | $n \times 1$ | 系统内部状态 |
 | $\boldsymbol{u}(t)$ | 输入向量 | $p \times 1$ | 外部控制量 |
-| $\boldsymbol{y}(t)$ | 输出向量 | $q \times 1$ | 可测量的输出 |
+| $\boldsymbol{y}(t)$ | 输出向量 | $q \times 1$ | 选定的测量或关心的输出 |
 | $A$ | 系统矩阵 | $n \times n$ | 描述状态之间的耦合 |
 | $B$ | 输入矩阵 | $n \times p$ | 描述输入如何影响状态 |
 | $C$ | 输出矩阵 | $q \times n$ | 描述哪些状态被测量 |
@@ -101,14 +93,14 @@ $$
 
 同一个系统，状态变量的选取**不是唯一的**。不同的选取方式给出不同的 $(A, B, C, D)$ 矩阵，但描述的是同一个输入-输出关系。
 
-这就像描述一个点的位置：你可以用直角坐标 $(x, y)$，也可以用极坐标 $(r, \theta)$——坐标不同，但点是一样的。
+例如，把位移从米换算成毫米、或对状态作可逆的线性组合，都是坐标改变。下面只讨论**常数可逆矩阵**给出的线性换坐标；极坐标等非线性变换不能直接套用相似变换公式。
 
-> 📖 不同状态空间表示之间的转换叫**相似变换**：如果 $\boldsymbol{z} = T\boldsymbol{x}$（$T$ 是可逆矩阵），则新表示为 $(TAT^{-1}, TB, CT^{-1}, D)$，输入-输出关系不变。
+> 📖 对这种常数可逆线性换坐标，矩阵之间的关系称为**相似变换**：如果 $\boldsymbol{z} = T\boldsymbol{x}$（$T$ 是可逆矩阵），则新表示为 $(TAT^{-1}, TB, CT^{-1}, D)$，输入-输出关系不变。
 
 状态变量选取的原则：
 1. **物理意义明确**：优先选有直接物理含义的量（位置、速度、电压、电流）
-2. **可测量或可估计**：选那些能用传感器测量，或通过观测器估计的量
-3. **线性无关**：$n$ 个状态变量必须线性无关（不能互相表示）
+2. **区分状态与测量**：状态可以不能直接测量；能否从输出估计它，取决于模型和传感器配置
+3. **避免冗余约束**：优先使用独立坐标；不要把同一个量及其固定倍数当作两个独立状态
 
 ## 从物理系统建立状态空间模型
 
@@ -116,7 +108,7 @@ $$
 
 从物理系统（微分方程）建立状态空间模型的步骤：
 
-1. **确定系统阶数 $n$**：数独立储能元件的个数（质量块、弹簧、电感、电容等）
+1. **确定独立动态变量**：先写守恒关系与约束，再确定需要多少个初值；简单模型可从独立储能自由度寻找候选
 2. **选取状态变量**：通常选"位置类"和"速度类"变量
 3. **列写一阶微分方程组**：把高阶微分方程拆成 $n$ 个一阶方程
 4. **整理为矩阵形式**：写成 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$
@@ -218,7 +210,7 @@ $$
 $$
 
 <Callout variant="warning">
-**传递函数做不到的事**：这个双质量块系统有 2 个输入和 2 个输出，需要 $2 \times 2 = 4$ 个传递函数才能完整描述（$Y_1/F_1, Y_1/F_2, Y_2/F_1, Y_2/F_2$）。而且传递函数矩阵无法直观展示两个质量块之间的耦合。状态空间用一个 $4 \times 4$ 的 $A$ 矩阵就清晰地表达了全部耦合关系。
+**同一个模型的两种表达**：双输入双输出对应一个 $2\times2$ 传递函数矩阵，四个通道包含交叉耦合。这里的 $4\times4$ 状态矩阵则把位移、速度及弹簧/阻尼作用保留在时域中。两种表达各有用途；不能把传递矩阵说成“丢失耦合”。
 </Callout>
 
 <JupyterNotebook
@@ -246,7 +238,22 @@ print()
 
 eigenvalues = np.linalg.eigvals(A)
 print(f"A 的特征值: {eigenvalues}")
-print(f"传递函数的极点: {sys_tf.poles()}")` },
+print(f"传递函数的极点: {sys_tf.poles()}")
+import sympy as sp
+s = sp.symbols('s')
+assert np.allclose(np.sort_complex(eigenvalues), np.sort_complex(np.array([-1-1j*np.sqrt(63),-1+1j*np.sqrt(63)])))
+L, R, cap = sp.symbols('L R cap', positive=True)
+Ar=sp.Matrix([[0,1/cap],[-1/L,-R/L]])
+Gr=(sp.Matrix([[1,0]])*(s*sp.eye(2)-Ar).inv()*sp.Matrix([0,1/L]))[0]
+assert sp.cancel(Gr-1/(L*cap*s*s+R*cap*s+1))==0
+print('RLC传递函数:',sp.cancel(Gr))
+m1,m2,k1,kc,cc=sp.symbols('m1 m2 k1 kc cc',positive=True)
+M=sp.diag(m1,m2);K=sp.Matrix([[k1+kc,-kc],[-kc,kc]]);V=sp.Matrix([[cc,-cc],[-cc,cc]])
+Gm=(M*s*s+V*s+K).inv()
+print('双质量块动态刚度矩阵:',(M*s*s+V*s+K).tolist())
+print('双质量块交叉通道:',sp.factor(Gm[0,1]),sp.factor(Gm[1,0]))
+assert sp.simplify(Gm[0,1]-Gm[1,0])==0
+print('机械状态A:',A.tolist(),'B:',B.tolist(),'DC:',1/16000)` },
   ]}
 />
 
@@ -275,7 +282,7 @@ C = \begin{bmatrix} b_0 & b_1 & b_2 & \cdots & b_{n-1} \end{bmatrix}, \quad D = 
 $$
 
 <Callout variant="tip">
-**记忆技巧**：$A$ 矩阵的最后一行是分母多项式系数的负值（从 $a_0$ 到 $a_{n-1}$），其余行是"移位寄存器"结构（次对角线为1）。$B$ 向量只有最后一个元素为1。$C$ 向量是分子系数。
+**记忆技巧**：$A$ 矩阵的最后一行是分母多项式系数的负值（从 $a_0$ 到 $a_{n-1}$），其余行是"移位寄存器"结构（主对角线上方紧邻一条线为1）。$B$ 向量只有最后一个元素为1。$C$ 向量是分子系数。
 </Callout>
 
 ### 推导思路
@@ -314,7 +321,7 @@ $$
 C = \begin{bmatrix} 0 & 0 & \cdots & 0 & 1 \end{bmatrix}, \quad D = 0
 $$
 
-可控标准型和可观标准型描述的是**同一个传递函数**，只是状态变量的选取不同（它们之间通过相似变换联系）。
+这里的可观标准型是可控标准型的对偶：$A_o=A_c^T$、$B_o=C_c^T$、$C_o=B_c^T$。对SISO，两者得到同一个标量传递函数。**若实现是最小的**，它们可以通过相似变换联系；若有极零对消，不能仅凭同一个传递函数就断言存在这种换坐标。
 
 <Callout variant="info">
 **为什么有两种标准型？**
@@ -364,6 +371,13 @@ D_o = np.array([[0]])
 
 sys_c = ss(A_c, B_c, C_c, D_c)
 sys_o = ss(A_o, B_o, C_o, D_o)
+assert np.array_equal(A_o,A_c.T) and np.array_equal(B_o,C_c.T) and np.array_equal(C_o,B_c.T)
+import sympy as sp
+s=sp.symbols('s')
+for aa,bb,cc in [(A_c,B_c,C_c),(A_o,B_o,C_o)]:
+    g=(sp.Matrix(cc)*(s*sp.eye(2)-sp.Matrix(aa)).inv()*sp.Matrix(bb))[0]
+    assert sp.cancel(g-(2*s+3)/(s*s+4*s+5))==0
+print('两种标准型传函恒等式精确核验通过')
 
 print("可控标准型传递函数:")
 print(tf(sys_c))
@@ -434,6 +448,8 @@ $e^{At}$ 有以下重要性质（和标量指数函数 $e^{at}$ 类比）：
 | 逆 | $(e^{At})^{-1} = e^{-At}$ |
 | 相似变换 | $e^{TAT^{-1}t} = Te^{At}T^{-1}$ |
 
+本表针对同一常矩阵 $A$；不能据此把任意矩阵的指数写成 $e^{A+B}=e^Ae^B$，后者通常需要 $AB=BA$。
+
 ### 计算方法
 
 实际计算 $e^{At}$ 有几种方法：
@@ -448,7 +464,7 @@ $$
 
 **方法二：特征值分解法**
 
-如果 $A$ 有 $n$ 个互异特征值 $\lambda_1, \ldots, \lambda_n$，对应的特征向量组成矩阵 $P = [\boldsymbol{v}_1, \ldots, \boldsymbol{v}_n]$，则：
+如果 $A$ 可对角化（$n$ 个互异特征值是一个充分条件），具有足够多的独立特征向量，设特征值为 $\lambda_1, \ldots, \lambda_n$，特征向量组成矩阵 $P = [\boldsymbol{v}_1, \ldots, \boldsymbol{v}_n]$，则：
 
 $$
 e^{At} = P\,\text{diag}(e^{\lambda_1 t}, \ldots, e^{\lambda_n t})\,P^{-1}
@@ -502,7 +518,52 @@ $$
 特征值 $\lambda_1 = -1, \lambda_2 = -2$ 都是负实数，所以 $e^{At}$ 的所有元素随时间指数衰减——系统稳定。
 </Callout>
 
+刚才的整数矩阵适合手算。下面回到机械例子，采用 $m=250\,\mathrm{kg},c=500\,\mathrm{N\,s/m},k=16000\,\mathrm{N/m}$，初始位移为 $0.1\,\mathrm m$、速度为零，从 $t=0$ 起施加 $1000\,\mathrm N$ 的恒力。它的 $A=\begin{bmatrix}0&1\\-64&-2\end{bmatrix}$，不是刚才手算例子的矩阵。
+
+此时 $\omega_n=8\,\mathrm{rad/s}$、$\zeta=0.125$、$\omega_d=\sqrt{63}\,\mathrm{rad/s}$。定义
+
+$$
+g(t)=e^{-t}\left(\cos(\sqrt{63}t)+\frac1{\sqrt{63}}\sin(\sqrt{63}t)\right).
+$$
+
+位移的零输入、零状态与全响应分别为
+
+$$
+y_{\mathrm{free}}=x_1(0)g(t),\qquad y_{\mathrm{step}}=0.0625[1-g(t)],\qquad y=y_{\mathrm{free}}+y_{\mathrm{step}}.
+$$
+
+这里 $F/k=0.0625\,\mathrm m$ 是解析终值，三秒末样值并不等于它。拖动初始位移只改变零输入部分；把初值设为零，两条“零状态/全响应”曲线应重合。曲线是同一模型的分解，不是在比较控制器优劣。
+
 <StateSpaceExplorer />
+
+<JupyterNotebook title="非零初值与恒力响应" setupCode={`import matplotlib
+matplotlib.use("module://matplotlib_inline.backend_inline")`} cells={[{code:`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+m, c, k, F = 250., 500., 16000., 1000.
+A = np.array([[0., 1.], [-k/m, -c/m]])
+B = np.array([[0.], [1/m]])
+x0 = np.array([.1, 0.])
+M = np.block([[A, B*F], [np.zeros((1,3))]])
+ts = np.linspace(0, 3, 601)
+free = np.array([expm(A*t)@x0 for t in ts])
+step = np.array([(expm(M*t)@np.array([0.,0.,1.]))[:2] for t in ts])
+total = free+step
+for t in [0., 1., 3.]:
+    f=expm(A*t)@x0
+    z=(expm(M*t)@np.array([0.,0.,1.]))[:2]
+    print('机械读数 t=',t,'零输入=',f[0],'零状态=',z[0],'全响应=',f[0]+z[0])
+assert np.allclose(total[0], x0)
+assert np.isclose(F/k, .0625)
+print('wn/zeta/wd/终值:',np.sqrt(k/m),c/(2*np.sqrt(k*m)),np.sqrt(63),F/k)
+print('相同位置、相反初速度，t=.1s位置:',[(expm(A*.1)@np.array([0.,v]))[0] for v in [-.1,.1]])
+plt.figure(figsize=(8,4))
+plt.plot(ts, free[:,0], '--', label='zero input')
+plt.plot(ts, step[:,0], '--', label='zero state')
+plt.plot(ts, total[:,0], label='total')
+plt.xlim(0,3);plt.ylim(-.16,.24)
+plt.xlabel('t (s)');plt.ylabel('displacement (m)');plt.legend();plt.grid();plt.tight_layout();plt.show()`}]} />
+
 
 ## 状态空间与传递函数的关系
 
@@ -536,35 +597,58 @@ $$
 
 $(sI - A)^{-1} = \frac{\text{adj}(sI-A)}{\det(sI-A)}$，其中 $\det(sI-A)$ 是 $A$ 的**特征多项式**。
 
-传递函数的极点 = $A$ 的特征值。这建立了状态空间和传递函数之间最核心的联系：
+约分后传递函数的极点来自 $A$ 的特征值，但某些模态可能被消去。**对于最小实现，传递函数极点与 $A$ 的特征值对应；一般实现不能直接画等号。**
+
+例如
 
 $$
-\text{极点} \iff \text{特征值} \iff \det(sI - A) = 0 \text{ 的根}
+A=\begin{bmatrix}-1&0\\0&1\end{bmatrix},\quad B=\begin{bmatrix}1\\0\end{bmatrix},\quad C=\begin{bmatrix}1&0\end{bmatrix},\quad D=0.
 $$
+
+其传递函数是 $1/(s+1)$，但内部第二个状态满足 $\dot x_2=x_2$。当 $x_2(0)=1$ 时它按 $e^t$ 增长，却不会出现在输出里。这个输入输出模型是BIBO稳定的，内部状态模型却不渐近稳定。BIBO指有界输入产生有界输出，采用零初始状态；内部稳定则要考察初值激发的全部状态。
 
 ### 从传递函数到状态空间：非唯一性
 
-前面已经看到，同一个传递函数可以有多种状态空间表示（可控标准型、可观标准型等）。它们之间的关系是**相似变换**：
-
-如果 $(A, B, C, D)$ 和 $(\tilde{A}, \tilde{B}, \tilde{C}, \tilde{D})$ 描述同一个传递函数，则存在可逆矩阵 $T$ 使得：
+若主动选取常数可逆矩阵 $T$，令 $z=Tx$，一定有
 
 $$
-\tilde{A} = TAT^{-1}, \quad \tilde{B} = TB, \quad \tilde{C} = CT^{-1}, \quad \tilde{D} = D
+\widetilde A=TAT^{-1},\quad \widetilde B=TB,\quad \widetilde C=CT^{-1},\quad \widetilde D=D.
 $$
 
-相似变换不改变特征值（$\det(sI - TAT^{-1}) = \det(sI - A)$），所以传递函数的极点不变。
+**反过来，仅有相同传递函数还不够。** 两份同一传递函数的最小实现才一定相似；添加隐藏状态可以改变维数或内部模态，不能靠坐标变换把它们消掉。两份模型即使同维，也可能不相似。
 
 <Callout variant="warning">
-**最小实现**：给定传递函数 $G(s)$，阶数最低的状态空间表示称为**最小实现**。最小实现的阶数等于 $G(s)$ 分母多项式的阶数（假设无极零对消）。非最小实现包含"多余"的状态——这些状态要么不可控，要么不可观。可控性和可观性的概念将在下一章详细讨论。
+给定适当有理传递函数（分子次数不高于分母），状态维数最低的实现称为**最小实现**；SISO情况下，它的维数是约分后分母的次数（常数传递函数可以没有动态状态）。MIMO最小阶数不能通过某一项的分母次数直接判断。可控性与可观性的判据留给下一课。
 </Callout>
+
+<JupyterNotebook title="隐藏模态与精确采样" setupCode={`import sympy as sp`} cells={[{code:`import sympy as sp
+s, t, tau = sp.symbols('s t tau', real=True)
+A=sp.diag(-1,1);B=sp.Matrix([1,0]);C=sp.Matrix([[1,0]])
+G=sp.simplify((C*(s*sp.eye(2)-A).inv()*B)[0])
+assert G==1/(s+1)
+print('隐藏模态A特征值:',A.eigenvals(),'外部传递函数:',G)
+print('初值(0,1)的状态:',list((A*t).exp()*sp.Matrix([0,1])))
+# A fully controllable and observable first-order realization has the same G but different dimension.
+assert sp.Matrix([[-1]]).shape != A.shape
+Ac=sp.diag(-1,-2);Bc=sp.Matrix([1,1]);T=sp.Rational(1,10)
+Ad=(Ac*T).exp();Bd=sp.integrate((Ac*tau).exp()*Bc,(tau,0,T))
+print('ZOH Ad:',Ad.tolist(),'Bd:',list(Bd))
+print('ZOH数值:',Ad.evalf(9).tolist(),list(Bd.evalf(9)))
+# Nonzero feedthrough: the same state can accompany different instantaneous outputs.
+print('直通示例 xdot=-x+u, y=x+2u: G=',sp.cancel(1/(s+1)+2))
+for a in [sp.Matrix([[0,1],[-2,-3]]),sp.Matrix([[0,1],[-6,-5]])]:
+    phi=(a*t).exp()
+    assert phi.subs(t,0)==sp.eye(2)
+    assert sp.simplify(sp.diff(phi,t)-a*phi)==sp.zeros(2)
+print('两份2x2转移矩阵: 初值/微分方程残差均为0')`}]} />
 
 ## 深入讨论
 
-### 状态空间的历史
+<span id="状态空间的历史" />
 
-状态空间方法的思想可以追溯到19世纪的动力系统理论（庞加莱、李雅普诺夫），但作为控制理论的系统化工具，它在1960年代才成熟。关键推动力来自**航天工程**——阿波罗登月计划需要处理多输入多输出的轨道控制和姿态控制，传递函数方法力不从心。
+### 本章的路线
 
-鲁道夫·卡尔曼（Rudolf Kalman）在1960年发表了奠基性论文，严格定义了可控性和可观性，建立了状态空间方法的数学基础。此后，最优控制（LQR）、卡尔曼滤波、多变量控制等现代控制理论的核心内容都建立在状态空间框架之上。
+本课不把两种表示讲成新旧方法的竞争。经典章节已经用传递函数检查反馈连接和频率特性；这一章改从内部状态和初值出发，为后续的可控性、状态反馈与观测器建立共同记号。方法名称不会替代模型假设和适用条件。
 
 ### 连续与离散的统一
 
@@ -575,7 +659,13 @@ $$
 | $\dot{\boldsymbol{x}}(t) = A\boldsymbol{x}(t) + B\boldsymbol{u}(t)$ | $\boldsymbol{x}[k+1] = A_d\boldsymbol{x}[k] + B_d\boldsymbol{u}[k]$ |
 | $\boldsymbol{y}(t) = C\boldsymbol{x}(t) + D\boldsymbol{u}(t)$ | $\boldsymbol{y}[k] = C_d\boldsymbol{x}[k] + D_d\boldsymbol{u}[k]$ |
 
-只是微分方程变成了差分方程，矩阵 $A$ 变成了 $A_d = e^{AT}$（$T$ 为采样周期）。这种统一性使得连续控制器的设计方法可以系统地推广到数字控制。
+对LTI模型，若采样周期为 $T_s$，输入在每个采样区间保持常值（零阶保持，ZOH），精确采样模型为
+
+$$
+A_d=e^{AT_s},\qquad B_d=\int_0^{T_s}e^{A\tau}B\,d\tau,\qquad C_d=C,\quad D_d=D.
+$$
+
+这不是把连续时间 $A,B$ 原样换个下标；尤其不能漏掉 $B_d$ 的积分。若输入保持方式、延迟或采样假设改变，离散模型也会改变。连续时间渐近稳定要求全部特征值实部为负，离散时间则要求模小于一；不能把两个判据混用。
 
 ### 非线性系统的状态空间
 
@@ -589,18 +679,18 @@ $$
 \boldsymbol{y} = \boldsymbol{h}(\boldsymbol{x}, \boldsymbol{u}, t)
 $$
 
-当 $\boldsymbol{f}$ 和 $\boldsymbol{h}$ 是线性函数时，退化为 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$。非线性状态空间模型是分析非线性系统（相平面、李雅普诺夫稳定性、反馈线性化）的基础——这些内容将在"非线性控制"章节详细讨论。
+当 $\boldsymbol{f}$ 和 $\boldsymbol{h}$ 对状态/输入线性、系数不随时间变化且没有常数偏置时，得到本课的LTI形式。一般非线性模型的局部解还需满足适定性条件；线性化通常只描述平衡点附近的小偏差。非线性状态空间模型是分析非线性系统（相平面、李雅普诺夫稳定性、反馈线性化）的基础——这些内容将在"非线性控制"章节详细讨论。
 
 ## 小结
 
-- 传递函数有三个局限：仅SISO、黑箱描述、不方便处理非零初始条件；状态空间表示克服了这些局限
+- 传递函数矩阵能表达MIMO耦合；状态空间显式记录内部状态和初值，两者都要带上模型假设
 - **状态变量**是系统的"完整快照"——知道初始状态和未来输入，就能唯一确定未来行为
 - 状态空间模型由四个矩阵 $(A, B, C, D)$ 描述：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$
-- 状态变量的选取**不唯一**，不同选取通过相似变换联系，输入-输出关系不变
+- 常数可逆线性换坐标保持动态和输入输出关系；只有同一传函的最小实现才保证相似
 - 从物理系统建立状态空间模型的步骤：确定阶数 → 选状态变量 → 列一阶方程 → 整理为矩阵形式
 - 从传递函数到状态空间有**可控标准型**和**可观标准型**两种常用形式
 - 状态方程的解：$\boldsymbol{x}(t) = e^{At}\boldsymbol{x}(0) + \int_0^t e^{A(t-\tau)}B\boldsymbol{u}(\tau)d\tau$，分为零输入响应和零状态响应
-- 传递函数与状态空间的关系：$G(s) = C(sI-A)^{-1}B + D$，极点 = $A$ 的特征值
+- 零状态传递矩阵为 $G(s) = C(sI-A)^{-1}B + D$；有隐藏模态时不能把全部特征值当作外部极点
 - 状态空间框架统一了连续/离散、线性/非线性、SISO/MIMO 系统
 
 ## 习题
@@ -640,7 +730,7 @@ $$
 
 **7.** 证明：如果 $\tilde{A} = TAT^{-1}$，$\tilde{B} = TB$，$\tilde{C} = CT^{-1}$，$\tilde{D} = D$（相似变换），则 $C(sI-A)^{-1}B + D = \tilde{C}(sI-\tilde{A})^{-1}\tilde{B} + \tilde{D}$。即相似变换不改变传递函数。
 
-**8.** 一个水箱系统：截面积 $A$，液位 $h(t)$，入流 $q_{in}(t)$，出流 $q_{out} = h/R_v$（$R_v$ 为阀阻）。
+**8.** 一个水箱系统：截面积 $S$，液位 $h(t)$，入流 $q_{in}(t)$，出流 $q_{out} = h/R_v$（$R_v$ 为阀阻）。
 - (a) 写出状态空间模型（状态变量选 $h$）
 - (b) 这是一个几阶系统？$A, B, C, D$ 分别是什么（标量）？
 - (c) 求传递函数，并与直接对微分方程做拉普拉斯变换的结果对比
@@ -699,7 +789,7 @@ $$
 A = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix}, \quad B = \begin{bmatrix} 2 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} 0 & 1 \end{bmatrix}, \quad D = 0
 $$
 
-(c) 两种表示的特征多项式均为 $\det(sI - A) = s^2 + 3s + 2 = (s+1)(s+2)$，特征值 $\lambda_1 = -1, \lambda_2 = -2$。
+(c) 两种表示的特征多项式均为 $\det(sI - A) = s^2 + 3s + 2 = (s+1)(s+2)$，特征值 $\lambda_1 = -1, \lambda_2 = -2$。但本题传递函数约分后为 $1/(s+1)$，两个二阶实现都非最小。可控型的可控秩为2，而对偶可观型的可控秩为1，因此这两份实现并不相似；这是“同一传函必相似”的反例。秩判据将在下一课系统学习。
 
 **3.** $A = \begin{bmatrix} 0 & 1 \\ -6 & -5 \end{bmatrix}$，特征多项式 $\det(sI-A) = s^2 + 5s + 6 = (s+2)(s+3)$，特征值 $\lambda_1 = -2, \lambda_2 = -3$。
 
@@ -791,19 +881,17 @@ $$
 P^{-1} = \frac{1}{2}\begin{bmatrix} 6 & 5 & 1 \\ -6 & -8 & -2 \\ 2 & 3 & 1 \end{bmatrix}
 $$
 
-展开乘法，得到 $e^{At}$ 的 $(1,1)$ 元素为例：
+用 $a=e^{-t},b=e^{-2t},c=e^{-3t}$ 缩短记号，完整结果为
 
 $$
-(e^{At})_{11} = \frac{1}{2}(6e^{-t} - 6e^{-2t} + 2e^{-3t}) \cdot \frac{1}{2} + \cdots
+e^{At}=\begin{bmatrix}
+3a-3b+c&5a/2-4b+3c/2&a/2-b+c/2\\
+-3a+6b-3c&-5a/2+8b-9c/2&-a/2+2b-3c/2\\
+3a-12b+9c&5a/2-16b+27c/2&a/2-4b+9c/2
+\end{bmatrix}.
 $$
 
-更直接地，逐元素写出结果：
-
-$$
-e^{At} = \begin{bmatrix} 3e^{-t} - 3e^{-2t} + e^{-3t} & 2e^{-t} - 2e^{-2t} + \cdots \\ \cdots & \cdots \end{bmatrix}
-$$
-
-由于完整展开较为繁琐，实用中通常用数值方法（如 `scipy.linalg.expm`）计算。关键结论是：$e^{At}$ 的每个元素都是 $e^{-t}, e^{-2t}, e^{-3t}$ 的线性组合，衰减速率由特征值决定。
+代入 $t=0$ 得单位矩阵；对时间求导应满足 $\dot\Phi=A\Phi$。两条同时检查，可以发现错误的系数或缺失的行列。
 
 **7.** 证明：
 
@@ -819,41 +907,40 @@ $$
 
 证毕。相似变换不改变传递函数。
 
-**8.** (a) 质量守恒：$A\dot{h} = q_{in} - q_{out} = q_{in} - h/R_v$。
-
-状态变量 $x = h$，输入 $u = q_{in}$，输出 $y = h = x$：
+**8.** (a) 由体积守恒，$S\dot h=q_{in}-h/R_v$。这里 $S>0$ 是截面积，$R_v>0$ 为线性阀阻；$q_{out}=h/R_v$ 是题设线性关系，不是普遍的孔口流量公式。以 $x=h,u=q_{in},y=h$：
 
 $$
-\dot{x} = -\frac{1}{AR_v}x + \frac{1}{A}u
+\dot x=-\frac1{SR_v}x+\frac1S u.
 $$
 
-(b) 一阶系统（$n=1$）。$A = -1/(AR_v)$，$B = 1/A$，$C = 1$，$D = 0$（这里 $A$ 既是矩阵名又是截面积，注意区分——通常用 $S$ 表示截面积以避免混淆）。
+(b) 一阶实现：$A=-1/(SR_v),B=1/S,C=1,D=0$。矩阵名 $A$ 不再兼指面积。
 
-(c) 传递函数 $G(s) = C(s-A)^{-1}B = \frac{1/A}{s + 1/(AR_v)} = \frac{1}{As + 1/R_v} = \frac{R_v}{AR_v s + 1}$。
+(c) 零初值时
 
-直接对 $A\dot{h} + h/R_v = q_{in}$ 做拉普拉斯变换：$(As + 1/R_v)H(s) = Q_{in}(s)$，$G(s) = H(s)/Q_{in}(s) = \frac{1}{As + 1/R_v} = \frac{R_v}{AR_v s + 1}$。结果一致 ✓
+$$
+G(s)=\frac{1/S}{s+1/(SR_v)}=\frac{R_v}{SR_vs+1}.
+$$
+
+直接变换 $S\dot h+h/R_v=q_{in}$ 得到同样结果。模型适用范围还受水箱容量和非负液位约束，本式未包含这些非线性限制。
 
 **9.** (a) $A_d$ 是上三角矩阵，特征值在对角线上：$\lambda_1 = 0.5, \lambda_2 = 0.8$。两个特征值的模都小于1，离散系统**稳定**。
 
 (b) $A_d$ 已经是上三角，可以直接计算幂次。对角化：特征向量 $P = \begin{bmatrix} 1 & 1 \\ 0 & 1.5 \end{bmatrix}$（对应 $\lambda_1=0.5, \lambda_2=0.8$），$P^{-1} = \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix}$，则 $A_d^k = P\,\text{diag}(0.5^k, 0.8^k)\,P^{-1}$。
 
-(c) $A_d = e^{AT}$，所以 $A = \frac{1}{T}\ln(A_d)$。对对角化形式：$A = \frac{1}{T}P\,\text{diag}(\ln 0.5, \ln 0.8)\,P^{-1}$。
-
-$\ln 0.5 \approx -0.693$，$\ln 0.8 \approx -0.223$，$T = 0.1$：
+(b)的幂也可明确写成
 
 $$
-A = 10 \cdot \begin{bmatrix} 1 & 1 \\ 0 & 1.5 \end{bmatrix} \begin{bmatrix} -0.693 & 0 \\ 0 & -0.223 \end{bmatrix} \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix}
+A_d^k=\begin{bmatrix}0.5^k&\frac23(0.8^k-0.5^k)\\0&0.8^k\end{bmatrix},\qquad k\geq0.
 $$
 
-$$
-= 10 \cdot \begin{bmatrix} -0.693 & -0.223 \\ 0 & -0.3345 \end{bmatrix} \begin{bmatrix} 1 & -2/3 \\ 0 & 2/3 \end{bmatrix} = 10 \cdot \begin{bmatrix} -0.693 & 0.303 \\ 0 & -0.223 \end{bmatrix}
-$$
+(c) 此处取**主矩阵对数**对应的连续模型，$A=\log(A_d)/T$。矩阵对数不是把每个元素分别取对数，也不能一般地声称采样唯一确定连续系统。本题两个不同的正实特征值给出如下实主对数：
 
 $$
-A = \begin{bmatrix} -6.93 & 3.03 \\ 0 & -2.23 \end{bmatrix}
+A=\frac1{0.1}\begin{bmatrix}\ln0.5&\frac23(\ln0.8-\ln0.5)\\0&\ln0.8\end{bmatrix}
+\approx\begin{bmatrix}-6.931472&3.133358\\0&-2.231436\end{bmatrix}\ \mathrm{s^{-1}}.
 $$
 
-连续时间特征值为 $-6.93$ 和 $-2.23$（都是负实数，连续系统稳定）。
+把它代入 $e^{0.1A}$ 应还原题给的 $A_d$，这是核验的方向。本问只恢复 $A$；若还想恢复 $B$，必须另外说明输入保持方式并利用 $B_d$。
 
 **10.** (a) 电气侧：$L\dot{i} + Ri + K\omega = v$，即 $\dot{i} = -\frac{R}{L}i - \frac{K}{L}\omega + \frac{1}{L}v$。
 
@@ -875,16 +962,90 @@ $$
 
 代入数值：$R/L + B/J = 100 + 5 = 105$，$(RB + K^2)/(LJ) = (0.1 + 0.25)/0.0002 = 1750$。
 
-分子：$C \cdot \text{adj}(sI-A) \cdot B$ 中，只有 $K/J \cdot 1/L = 25 \times 100 = 2500$... 更直接地：
+分子由 $K/(LJ)=0.5/(0.01\times0.02)=2500$ 得到，所以
 
 $$
-G(s) = \frac{K/(LJ)}{s^2 + (R/L + B/J)s + (RB + K^2)/(LJ)} = \frac{25}{s^2 + 105s + 1750}
+G(s)=\frac{2500}{s^2+105s+1750}.
 $$
 
-极点：$s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} \approx \{-17.5, -87.5\}$。
+极点为
 
-(c) 经典控制综合案例中，忽略电感 $L$ 时得到一阶模型 $\Omega(s)/V(s) = \frac{K_t/R}{Js + B + K^2/R} = \frac{0.5}{0.02s + 0.35} = \frac{25}{s+17.5}$。
+$$
+s=\frac{-105\pm\sqrt{4025}}2\approx\{-20.778556,-84.221444\}\ \mathrm{s^{-1}}.
+$$
 
-完整二阶模型的极点为 $s = \frac{-105 \pm \sqrt{105^2 - 4 \times 1750}}{2} = \frac{-105 \pm \sqrt{4025}}{2} = \frac{-105 \pm 63.4}{2} \approx \{-20.8, -84.2\}$。
+(c) 忽略电枢电感，相当于用代数关系 $i=(v-K\omega)/R$ 代替电流微分方程，得到
 
-快极点 $-84.2$ 对应电气动态（时间常数约 $11.9\,\text{ms}$），慢极点 $-20.8$ 对应机械动态（时间常数约 $48\,\text{ms}$）。注意：忽略电感**不只是丢掉快极点**——一阶简化模型的极点是 $-17.5$，比二阶慢极点 $-20.8$ 还慢约 16%，这是简化引入的模型误差，工程上通常可接受但必须知情。与[经典控制综合案例](/classic/classic-case-study)的简化结论一致 ✓
+$$
+G_{\mathrm{red}}(s)=\frac{K/R}{Js+B+K^2/R}=\frac{25}{s+17.5}.
+$$
+
+完整模型与简化模型的直流增益均为 $10/7\approx1.428571\ \mathrm{(rad/s)/V}$，但瞬态并不相同：从零状态对电压施加单位阶跃，完整模型的初始角加速度为零，简化模型则为 $25\ \mathrm{rad/s^2}$。这是忽略电流建立过程的代价。
+
+完整模型的两个衰减时间常数约为 $48.1265\,\mathrm{ms}$ 和 $11.8735\,\mathrm{ms}$；简化模型为 $57.1429\,\mathrm{ms}$。按慢极点绝对值作基准，简化极点幅值低约 $15.78\%$。这些只描述本题参数，不构成“工程上总能接受”的结论；需要根据所关心频段和输入变化速度另作验收。[经典控制案例](/classic/classic-case-study)采用不同参数，不能直接比较其数字。
+
+
+<JupyterNotebook title="十题答案逐项复算" setupCode={`import sympy as sp`} cells={[{code:`import sympy as sp
+import numpy as np
+from scipy.linalg import expm, logm
+s,t=sp.symbols('s t',real=True)
+def transfer(A,B,C,D=0):
+    return sp.cancel((C*(s*sp.eye(A.rows)-A).inv()*B)[0]+D)
+# Q1, parallel RLC, order iL,vC.
+A=sp.Matrix([[0,2],[-50,-5]]);B=sp.Matrix([0,50]);C=sp.Matrix([[0,1]])
+print('题1 ABCD:',A.tolist(),list(B),C.tolist(),0,'G=',transfer(A,B,C))
+# Q2: the cancellation leaves a nonminimal two-state realization.
+Ac=sp.Matrix([[0,1],[-2,-3]]);Bc=sp.Matrix([0,1]);Cc=sp.Matrix([[2,1]])
+Ao=Ac.T;Bo=Cc.T;Co=Bc.T
+assert transfer(Ac,Bc,Cc)==transfer(Ao,Bo,Co)==1/(s+1)
+print('题2 G和特征值:',transfer(Ac,Bc,Cc),Ac.eigenvals())
+print('题2可控/可观型可控秩:',sp.Matrix.hstack(Bc,Ac*Bc).rank(),sp.Matrix.hstack(Bo,Ao*Bo).rank())
+# Q3 fully specified expression, differentiated independently.
+A3=sp.Matrix([[0,1],[-6,-5]])
+a=sp.exp(-2*t);b=sp.exp(-3*t)
+E3=sp.Matrix([[3*a-2*b,a-b],[-6*a+6*b,-2*a+3*b]])
+assert E3.subs(t,0)==sp.eye(2) and sp.simplify(E3.diff(t)-A3*E3)==sp.zeros(2)
+print('题3 Phi:',E3.tolist())
+# Q4 full MIMO transfer, not just diagonal entries.
+A4=sp.diag(-1,-2);C4=sp.Matrix([[1,1],[0,1]])
+G4=C4*(s*sp.eye(2)-A4).inv()
+print('题4 G:',G4.tolist(),'A eigenvalues:',A4.eigenvals())
+# Q5 local Jacobians, m,l,g positive, beta is viscous coefficient.
+m,l,g,beta=sp.symbols('m l g beta',positive=True);th,w,u=sp.symbols('theta omega u',real=True)
+f=sp.Matrix([w,-beta*w/(m*l*l)-g*sp.sin(th)/l+u/(m*l*l)])
+print('题5 A0/Api/B:',f.jacobian([th,w]).subs(th,0).tolist(),f.jacobian([th,w]).subs(th,sp.pi).tolist(),list(f.diff(u)))
+# Q6 all 9 entries; A exp computed independently via SymPy.
+A6=sp.Matrix([[0,1,0],[0,0,1],[-6,-11,-6]])
+a,b,c=sp.exp(-t),sp.exp(-2*t),sp.exp(-3*t)
+E6=sp.Matrix([[3*a-3*b+c,5*a/2-4*b+3*c/2,a/2-b+c/2],[-3*a+6*b-3*c,-5*a/2+8*b-9*c/2,-a/2+2*b-3*c/2],[3*a-12*b+9*c,5*a/2-16*b+27*c/2,a/2-4*b+9*c/2]])
+P=sp.Matrix([[1,1,1],[-1,-2,-3],[1,4,9]])
+assert P.inv()==sp.Matrix([[3,sp.Rational(5,2),sp.Rational(1,2)],[-3,-4,-1],[1,sp.Rational(3,2),sp.Rational(1,2)]])
+assert sp.simplify(E6-(A6*t).exp())==sp.zeros(3)
+assert E6.subs(t,0)==sp.eye(3) and sp.simplify(E6.diff(t)-A6*E6)==sp.zeros(3)
+assert sp.cancel(transfer(A6,sp.Matrix([0,0,1]),sp.Matrix([[1,0,0]]))-1/((s+1)*(s+2)*(s+3)))==0
+print('题6 P逆:',P.inv().tolist(),'9元素及初值/微分方程残差:0','特征值:',A6.eigenvals())
+# Q7 symbolic invertible T proves the matrix identity without assuming minimality.
+p,q,r,v=sp.symbols('p q r v');T=sp.Matrix([[p,q],[r,v]])
+assert sp.simplify(T.inv()*(s*sp.eye(2)-T*Ac*T.inv()).inv()*T-(s*sp.eye(2)-Ac).inv())==sp.zeros(2)
+print('题7 相似变换预解矩阵恒等式残差:0, det(T)!=0')
+# Q8 scalar with area S distinct from A.
+S,Rv=sp.symbols('S Rv',positive=True)
+assert sp.cancel((1/S)/(s+1/(S*Rv))-Rv/(S*Rv*s+1))==0
+print('题8 G:',Rv/(S*Rv*s+1))
+# Q9 closed power and principal matrix logarithm checked against independent SciPy.
+Ad=np.array([[.5,.2],[0.,.8]])
+for k in [0,1,2,5,20]:
+    candidate=np.array([[.5**k,2/3*(.8**k-.5**k)],[0,.8**k]])
+    assert np.allclose(candidate,np.linalg.matrix_power(Ad,k),atol=1e-14)
+Al=np.array([[np.log(.5),2/3*(np.log(.8)-np.log(.5))],[0,np.log(.8)]])/.1
+assert np.allclose(Al,logm(Ad)/.1,atol=1e-12) and np.allclose(expm(.1*Al),Ad,atol=1e-14)
+print('题9 A主对数:',Al.tolist(),'离散谱:',np.linalg.eigvals(Ad).tolist())
+# Q10 independent electromechanical state equations.
+A10=sp.Matrix([[-100,-50],[25,-5]]);B10=sp.Matrix([100,0]);C10=sp.Matrix([[0,1]])
+G10=transfer(A10,B10,C10)
+assert G10==2500/(s*s+105*s+1750)
+roots=np.sort(np.linalg.eigvals(np.array(A10,dtype=float)))
+print('题10 G:',G10,'poles:',roots.tolist(),'tau_ms:',(-1000/roots).tolist())
+print('题10 DC:',G10.subs(s,0),'简化极点:',-17.5,'tau_ms:',1000/17.5,'慢极点相对幅值误差百分比:',100*(abs(roots[1])-17.5)/abs(roots[1]))
+print('题10 完整/简化初始角加速度:',(C10*B10)[0],25)
+print('十题核验全部通过')`}]} />

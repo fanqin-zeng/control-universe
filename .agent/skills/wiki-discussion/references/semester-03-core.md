@@ -52,5 +52,9 @@
    S04起标题/链接检查使用与页面共用的Math→KaTeX→全级Slug管线，并复核真实DOM的H2顺序、ID、侧栏目标和重复ID；源码slug预估或仅H2数量相同都不能代替锚点验收。改旧ID须保留可用别名，已被其它标题占用的ID不能抢占，记录歧义及canonical去向。display math的`$$`须独占行，不能误删`\boxed{...}`的合法闭合花括号。
 2. 执行 `npm run check`、`npm run verify -- <chapter>/<lesson>`、`node scripts/nb-cells.mjs verify <chapter>/<lesson> --require-kernel`、适用术语检查、`npm run build`。I04起数值交付使用严格内核选项，setup与cell错误都必须失败；无内核的静态检查不算数值验收。复验环境、隔离、独立数值和页面链路可运行 `node scripts/verify-reproducibility.mjs --out <证据文件>`，该抽样不替代本课完整三方对账。查看 verify 的参数文档选择单课检查，不能将全站旧课失败误记为本课通过。build 除 exit=0 还需无 MDX 编译失败。I01查明吞错发生在课程路由的catch→notFound，而非已重新抛错的lib/content.ts；修复后仅目录外地址404，目录内读取/编译错误必须上抛并使构建失败。变更错误处理时必须运行 `node --test scripts/lesson-route.test.mjs`，不得恢复宽泛catch。基础设施阻塞记录全局 checklist，未解除不得虚签。
 3. 正文、组件、注册、catalog status=v1.3、旧 tracker（如适用）、自动 OUTLINE、讨论日志、学期3 checklist 和适用计划修改同提交。学期3完成只认本期日志证据，不继承旧 v1.3 标签。
-4. `npm run check -- --fix-outline`、`--fix-tracker-stats` 按变更使用；在工作包分支验收后 `git merge --no-ff` 合 master。记录真实提交/合并 hash 和输出后才勾“合并”。多课包每课即合，未完分支继续留存；不碰用户未提交文件。
+4. `npm run check -- --fix-outline`、`--fix-tracker-stats` 按变更使用。按AGENTS.md §12（2026-10-18用户更新），默认直接在master验收、提交并推送origin master，仅有长期维护需求才建分支。真实交付提交已进入master后再登记hash、勾旧“合并”列（现含义为“已进入master”），普通提交与历史合并提交均可；不再要求每课建分支或--no-ff，不碰用户未提交文件。Pages仍需另获具体版本发布授权。
 5. 报告本课成果、验收和下一课；本对话到此停止，不自动生产下一课。学期末复盘沿用 fix-tracker，记录问题是规范缺口还是规范未执行。
+
+## 2026-10-18图示批阅追加
+
+控制框图、结构图、时序/流程图使用真正的图形表达，不再用公式围栏或等宽字符拼图代替。简单静态图优先仓库内SVG，标明信号方向、比较点正负号和必要标签，提供alt并检查窄屏与Pages路径；保留真正的数学推导公式、程序代码和输出表格。存量候选逐项审查，不用全局字符替换误伤数学内容；未完成位置登记全局checklist。

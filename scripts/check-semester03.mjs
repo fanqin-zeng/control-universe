@@ -14,6 +14,11 @@ function table(text,marker,width){
     .map(r=>{if(r.length!==width)throw Error(`${marker}: 列数错误 ${r[0]}`);return r;});
 }
 
+export function assertCommitOnMaster(root, hash) {
+  execFileSync('git', ['rev-parse', '--verify', `${hash}^{commit}`], {cwd: root, stdio: 'ignore'});
+  execFileSync('git', ['merge-base', '--is-ancestor', hash, 'master'], {cwd: root, stdio: 'ignore'});
+}
+
 export function validateSemester03({plan,checklist,baseline,root=process.cwd(),evidence=true}){
   const errors=[],check=(ok,msg)=>{if(!ok)errors.push(msg);};
   let chapters,lessons,tasks,progress;
@@ -64,8 +69,9 @@ export function validateSemester03({plan,checklist,baseline,root=process.cwd(),e
       for(const ref of files){const p=resolve(root,ref.split('#')[0]),rel=relative(root,p);
         check(!isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..\\')&&!rel.startsWith('../')&&existsSync(p)&&statSync(p).isFile(),`${id} 证据不可读/越界 ${ref}`);}
       for(const ref of commits)try{
-        const hash=ref.slice(7);const parents=execFileSync('git',['rev-list','--parents','-n','1',hash],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim().split(/\s+/);
-        if(needCommit){check(parents.length>=3,`${id} commit不是合并提交`);execFileSync('git',['merge-base','--is-ancestor',hash,'master'],{cwd:root,stdio:'ignore'});}
+        const hash=ref.slice(7);
+        if(needCommit)assertCommitOnMaster(root,hash);
+        else execFileSync('git',['rev-parse','--verify',`${hash}^{commit}`],{cwd:root,stdio:'ignore'});
       }catch{check(false,`${id} 提交不存在或未合入master ${ref}`);}
     }
     return files;

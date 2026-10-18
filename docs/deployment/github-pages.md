@@ -6,7 +6,7 @@
 
 - master：课程和基础设施的日常主干。推送master不部署。
 - gh-pages：额外的长期**源码**发布分支，由GitHub Actions构建out/并上传Pages artifact；不把整份源码当静态文件发布。
-- wp/*：按工作包开发，验收合入master。每次用户明确同意具体版本后，才允许把该版本反合到gh-pages，并推送gh-pages。
+- 日常直接在master开发、验收、提交并推送origin master（2026-10-18用户更新），不再默认创建wp/*短命分支；确有长期维护需求才建分支。每次用户明确同意具体版本后，才允许把该版本反合到gh-pages，并推送gh-pages。
 - 不自动合并、不按时间同步、不强推覆盖发布分支。用户没有同意时，连首次发布也停在具体可审阅版本。
 
 首次授权：2026-10-17 用户明确同意发布 master 的 237b6ff；以 --no-ff 合入 gh-pages 得到 1100137399bf9e0defa03e939c965aa107a06cdf，已推送 origin/gh-pages。以后每次更新仍需用户明确同意具体版本。
@@ -50,4 +50,6 @@ git checkout master
 本地适配证据见 acceptance.md；首次远端部署、版本核验与公网截图见 first-release.md。
 
 
-最新授权发布（2026-10-18）：用户要求将已有内容更新到Pages，master `98492e1`以`--no-ff`合入gh-pages得到`f01e0bbb52308a9cf277f1f2ff65b377c7e73cac`并推送。Actions成功，205课程/9旧入口/235成功请求及数学章18课公网、最新七Python实验通过。详见[数学章发布记录](math18-release.md)；后续仍逐次获同意再发布。
+数学章授权发布（2026-10-18）：用户要求将已有内容更新到Pages，master `98492e1`以`--no-ff`合入gh-pages得到`f01e0bbb52308a9cf277f1f2ff65b377c7e73cac`并推送。Actions成功，205课程/9旧入口/235成功请求及数学章18课公网、最新七Python实验通过。详见[数学章发布记录](math18-release.md)；后续仍逐次获同意再发布。
+
+最新授权发布（2026-10-18）：用户要求将已有内容更新到 Pages，master `bbab75b` 合入 gh-pages 得到 `0dad5f04b701f443752e10529720e07bcb46b918` 并推送。Actions 构建与部署成功，205 课程页、9 旧入口、235 请求及九份原始 Python 实验公网验收通过；经典控制已交付 11/11。详见[经典控制章发布记录](classic11-release.md)。后续仍逐次获同意再发布。
