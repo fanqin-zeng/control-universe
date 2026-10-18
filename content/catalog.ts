@@ -2522,13 +2522,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "passivity-control",
         "title": "无源控制",
+        "subsections": [
+          {
+                    "slug": "引言",
+                    "title": "引言"
+          },
+          {
+                    "slug": "给小车记能量账",
+                    "title": "给小车记能量账"
+          },
+          {
+                    "slug": "无源性的定义",
+                    "title": "无源性的定义"
+          },
+          {
+                    "slug": "阻尼反馈能保证什么",
+                    "title": "阻尼反馈能保证什么"
+          },
+          {
+                    "slug": "把目标位置变成能量最低点",
+                    "title": "把目标位置变成能量最低点"
+          },
+          {
+                    "slug": "无源系统的互联",
+                    "title": "无源系统的互联"
+          },
+          {
+                    "slug": "实现中的边界",
+                    "title": "实现中的边界"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "modern/multivariable-systems"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "iss-small-gain",

@@ -670,3 +670,7 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-08 本轮执行记录（2026-10-18）
 
 自适应控制按重构专用Phase1–4，仅本课。保留13主题、九原实验38cell、六题，纠高阶输入信息、固定V参数界、有限时域无界/PE推断、泄漏唯一性、RLS先验、机器人初速及谐波；追加核验共十实验39cell。组件真实19配置27465点独立对账、三种子、DOP853、原生/Pyodide及55旧ID验收见本期讨论日志与.agent/semester-03/nonlinear-08/acceptance.md。原25项Python待办及W08/W09/W10保留，中文润色分支不动，Pages另行授权；真实签发与master回执以全局checklist为准。
+
+### NONLINEAR-09 本轮执行记录（2026-10-18）
+
+无源控制从空占位按新写专用Phase1–4完成。以三次弹簧小车贯穿能量收支、无源输入输出、阻尼与目标能量整形，补互联适定、隐藏状态及限幅/延迟边界；10H2、3Notebook3cell、四题四答、SVG和PassivityExplorer。实际TS五配置2505点对独立DOP853、原生/Pyodide完整实验及375px页面通过，详见.agent/semester-03/nonlinear-09/acceptance.md。用户批阅与润色分支保持，25Python待办及W14保留；仅本课进入master，Pages另行授权。
