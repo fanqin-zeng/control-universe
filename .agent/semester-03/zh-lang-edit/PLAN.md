@@ -55,7 +55,7 @@
 | 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-07.md) |
 | 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-08.md) |
 | 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 已完成 | 待润色 | — |
-| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 已完成 | 待润色 | — |
+| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-10.md) |
 | 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 已完成 | 待润色 | — |
 | 50 | NONLINEAR-12 | 分岔与混沌 | content/nonlinear/bifurcation-chaos.mdx | 已完成 | 待润色 | — |
 | 51 | DISCRETE-01 | 采样与量化 | content/discrete-sampled/discrete-time-freq.mdx | 待完成 | 待生产 | — |
