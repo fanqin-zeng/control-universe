@@ -2458,59 +2458,59 @@ export const catalog: Chapter[] = [
         "slug": "adaptive-control-basics",
         "title": "自适应控制",
         "subsections": [
-          {
-            "slug": "引言",
-            "title": "引言"
-          },
-          {
-            "slug": "自适应控制的基本概念",
-            "title": "自适应控制的基本概念"
-          },
-          {
-            "slug": "模型参考自适应控制mrac",
-            "title": "模型参考自适应控制（MRAC）"
-          },
-          {
-            "slug": "手算例子一阶系统的mrac设计",
-            "title": "手算例子：一阶系统的MRAC设计"
-          },
-          {
-            "slug": "高阶系统的mrac设计",
-            "title": "高阶系统的MRAC设计"
-          },
-          {
-            "slug": "自整定调节器str",
-            "title": "自整定调节器（STR）"
-          },
-          {
-            "slug": "处理参数不确定性",
-            "title": "处理参数不确定性"
-          },
-          {
-            "slug": "应用案例",
-            "title": "应用案例"
-          },
-          {
-            "slug": "与其他非线性控制方法的对比",
-            "title": "与其他非线性控制方法的对比"
-          },
-          {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+            {
+              "slug": "引言",
+              "title": "引言"
+            },
+            {
+              "slug": "未知参数与控制目标",
+              "title": "未知参数与控制目标"
+            },
+            {
+              "slug": "一阶mrac",
+              "title": "一阶MRAC"
+            },
+            {
+              "slug": "跟踪与参数收敛",
+              "title": "跟踪与参数收敛"
+            },
+            {
+              "slug": "高阶mrac",
+              "title": "高阶MRAC"
+            },
+            {
+              "slug": "辨识与自整定",
+              "title": "辨识与自整定"
+            },
+            {
+              "slug": "噪声与鲁棒化",
+              "title": "噪声与鲁棒化"
+            },
+            {
+              "slug": "两个应用模型",
+              "title": "两个应用模型"
+            },
+            {
+              "slug": "怎样选择方法",
+              "title": "怎样选择方法"
+            },
+            {
+              "slug": "适用边界",
+              "title": "适用边界"
+            },
+            {
+              "slug": "小结",
+              "title": "小结"
+            },
+            {
+              "slug": "习题",
+              "title": "习题"
+            },
+            {
+              "slug": "答案",
+              "title": "答案"
+            }
+          ],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "modern/state-feedback"

@@ -51,6 +51,7 @@
 | LP01 | 独立中文润色交接、完整计划与专用分支 | [x] | .agent/semester-03/zh-lang-edit/README.md;.agent/semester-03/zh-lang-edit/PLAN.md |
 | LP02 | 清理代码框/前置课程的内部流程文案（已完成） | [x] | .agent/semester-03/zh-lang-edit/archive/classic-01/acceptance.md |
 | LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
+| W14 | 自适应失配实验停止前的数值收敛审查 | [ ] | .agent/semester-03/nonlinear-08/followup.md;当前仅放行有限停止事件，参数末值不作定量结论 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -122,7 +123,7 @@
 | NONLINEAR-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md;.agent/semester-03/nonlinear-05/acceptance.md;commit:c249d3bc0df1f2005f794d0c2a4486b4eedc8ead |
 | NONLINEAR-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md;.agent/semester-03/nonlinear-06/acceptance.md;commit:0e10841f328442190c4afab041f83af7d0f9b20b |
 | NONLINEAR-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md;.agent/semester-03/nonlinear-07/acceptance.md;commit:dd961a7caf18390888c3e3c78ee29044cb82f789 |
-| NONLINEAR-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md;.agent/semester-03/nonlinear-08/acceptance.md |
 | NONLINEAR-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

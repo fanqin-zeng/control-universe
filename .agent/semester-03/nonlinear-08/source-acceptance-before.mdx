@@ -1,0 +1,1954 @@
+---
+title: "自适应控制"
+description: "从机械臂负载变化出发，推导MRAC与STR，理解跟踪、参数辨识和鲁棒化修正各自能保证什么"
+---
+
+# 自适应控制
+
+## 引言
+
+机械臂空手移动时，原来的控制器工作得很好。可一抓起较重的工件，同样的力矩就未必能让它按原来的速度运动，抬起手臂所需的重力补偿也变了。每换一次工件，就停机重调控制器，显然不太方便。
+
+我们希望控制器在运行中观察偏差，逐步调整自己的参数。这就是**自适应控制**要解决的一类问题。它不等于“什么都不知道也能自动控制”：哪些参数未知、控制量作用在哪个方程、传感器能测到什么，仍然要事先说明。
+
+[反步设计](/nonlinear/backstepping)已经展示了把参数估计放进控制律的思路。本课先用一个更简单的一阶系统，把更新律为什么这样选完整算一遍，然后再看递推辨识和两个应用模型。读者需要了解[李雅普诺夫方法](/nonlinear/lyapunov-stability)中的正定函数与Barbalat引理，以及[状态空间表示](/modern/state-space)。
+
+阅读时先记住一个问题：**输出已经跟上了参考，是否就说明控制器把对象参数认准了？** 答案是否定的。理解这一点，比记住几种更新公式更重要。
+
+## 未知参数与控制目标
+
+假设电机的运动方程形式已知，但惯量、摩擦系数还不准确。这是参数不确定性。本课主要讨论能写成“未知常参数乘已知函数”的情形，例如
+
+$$
+f(x,\theta)=\theta^{\mathsf T}\phi(x).
+$$
+
+$\theta$是待估参数，$\phi$是由可测量信号算出的**回归量**。对参数线性，不要求对状态线性：$\theta_1\sin x+\theta_2x^3$也符合这种形式。不是所有自适应方法都要求这一形式，但本课的证明依赖它。
+
+还有一类差异是模型漏掉了执行器滞后、柔性振动等动态。多估几个常数未必能弥补这些遗漏，后面会专门做实验。
+
+两条常见路线如下。**模型参考自适应控制（MRAC）**先规定希望跟随的参考模型，再直接调整控制器增益；**自整定调节器（STR）**先估计对象参数，再代入设计公式重算增益。前者的增益不一定有“惯量估计”这样的物理含义。
+
+![MRAC与STR的信号及更新方向](/images/nonlinear/adaptive-control-routes.svg)
+
+## 一阶MRAC
+
+### 模型与假设
+
+对象与参考模型分别是
+
+$$
+\dot x_p=ax_p+bu,\qquad \dot x_m=a_mx_m+b_mr.
+$$
+
+$a,b$是未知常数，$b\ne0$且**符号已知**；$a_m<0,b_m$已知，参考$r$有界。状态$x_p$可准确测量，暂不考虑噪声、饱和和未建模动态。目标是让跟踪误差$e=x_p-x_m$趋于零。
+
+取可调控制律
+
+$$
+u=k_1x_p+k_2r.
+$$
+
+如果知道对象参数，就能选择
+
+$$
+k_1^*=\frac{a_m-a}{b},\qquad k_2^*=\frac{b_m}{b},
+$$
+
+使$a+bk_1^*=a_m$、$bk_2^*=b_m$。$b\ne0$保证这两个式子有解；它本身并不告诉我们$b$的符号。
+
+### 从误差方程选更新律
+
+定义$\tilde k_i=k_i-k_i^*$。把控制律代入对象，减去参考模型，得到
+
+$$
+\dot e=a_me+b\tilde k_1x_p+b\tilde k_2r.
+$$
+
+后两项妨碍我们直接判断误差是否减小。为此，把参数误差也放进候选函数：
+
+$$
+V=\frac12e^2+\frac{|b|}{2\gamma_1}\tilde k_1^2+\frac{|b|}{2\gamma_2}\tilde k_2^2,\qquad \gamma_i>0.
+$$
+
+虽然$V$含未知的$k_i^*$，它仍可以用于证明；真正运行的控制器不计算$V$。因为真参数为常数，$\dot{\tilde k}_i=\dot k_i$，所以
+
+$$
+\dot V=a_me^2+b\tilde k_1ex_p+b\tilde k_2er
++\frac{|b|}{\gamma_1}\tilde k_1\dot k_1+\frac{|b|}{\gamma_2}\tilde k_2\dot k_2.
+$$
+
+现在选
+
+$$
+\dot k_1=-\gamma_1\operatorname{sign}(b)ex_p,\qquad
+\dot k_2=-\gamma_2\operatorname{sign}(b)er.
+$$
+
+由于$b=|b|\operatorname{sign}(b)$，参数相关的交叉项恰好相消：
+
+$$
+\dot V=a_me^2\le0.
+$$
+
+更新律需要的只有误差、测得的状态、参考和$b$的符号。若把符号写反，上述抵消不成立，证明失效；这不等于所有初值都必然发散。
+
+### 为什么误差趋于零
+
+对任意固定、有限、正的$\gamma_i$，$V(t)\le V(0)$保证$e$和两个参数误差有界。增益很大时，相应的参数界可能更宽，但绝不是“$V$管不住参数”。
+
+由$\dot V=a_me^2$积分，得到$\int_0^\infty e^2\,dt<\infty$。参考模型稳定且$r$有界，故$x_m$有界，$x_p=e+x_m$也有界；误差方程右端各项有界，因此$\dot e$有界。于是$e$一致连续，结合平方可积，由Barbalat引理得到$e(t)\to0$。
+
+注意，$\dot V$中没有负的$\tilde k_i^2$项。我们还没有证明参数趋于理想值。
+
+<JupyterNotebook
+  title="Notebook 1：一阶 MRAC 的 V̇ = a_m·e² 恒等式验证与阶跃跟踪"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 被控对象 x_p' = a x_p + b u（a, b 对控制器未知，只知 sign(b) > 0）
+A_TRUE, B_TRUE = -2.0, 3.0
+# 参考模型 x_m' = a_m x_m + b_m r
+AM, BM = -5.0, 5.0
+# 理想增益（仅用于评估，控制器不使用）
+K1S = (AM - A_TRUE) / B_TRUE
+K2S = BM / B_TRUE
+
+
+def sim_mrac(kind='step', gamma=2.0, T=20.0, dt=2e-4, k10=0.0, k20=0.0,
+             xp0=0.0, store_every=5):
+    """一阶 MRAC 闭环。RK4，控制量在每个 stage 重新计算（不做零阶保持）。"""
+    if kind == 'step':
+        rf = lambda t: 1.0
+    elif kind == 'sine':
+        rf = lambda t: np.sin(t)
+    elif kind == 'multi':
+        rf = lambda t: 1.0 + 0.5 * np.sin(2.0 * t) + 0.3 * np.sin(5.0 * t)
+    elif kind == 'zero':
+        rf = lambda t: 0.0
+    else:
+        raise ValueError(kind)
+    N = int(round(T / dt))
+    xp, xm, k1, k2 = xp0, 0.0, k10, k20
+    ts, xps, xms, k1s, k2s, ets, us = [], [], [], [], [], [], []
+
+    def deriv(xp, xm, k1, k2, r):
+        e = xp - xm
+        uu = k1 * xp + k2 * r
+        return (A_TRUE * xp + B_TRUE * uu, AM * xm + BM * r,
+                -gamma * np.sign(B_TRUE) * e * xp,
+                -gamma * np.sign(B_TRUE) * e * r)
+
+    for i in range(N + 1):
+        t = i * dt
+        r = rf(t)
+        if i % store_every == 0:
+            ts.append(t); xps.append(xp); xms.append(xm)
+            k1s.append(k1); k2s.append(k2); ets.append(xp - xm)
+            us.append(k1 * xp + k2 * r)
+        if i == N:
+            break
+        s1 = deriv(xp, xm, k1, k2, r)
+        s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
+        s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
+        s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
+                   k2 + dt*s3[3], rf(t + dt))
+        xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
+        xm += dt/6*(s1[1] + 2*s2[1] + 2*s3[1] + s4[1])
+        k1 += dt/6*(s1[2] + 2*s2[2] + 2*s3[2] + s4[2])
+        k2 += dt/6*(s1[3] + 2*s2[3] + 2*s3[3] + s4[3])
+        if not np.isfinite(xp) or abs(xp) > 1e3:
+            break
+    return dict(t=np.array(ts), xp=np.array(xps), xm=np.array(xms),
+                k1=np.array(k1s), k2=np.array(k2s), e_true=np.array(ets),
+                u=np.array(us))`}
+  cells={[
+{ title: "计算", code: `# 检验 1：V̇ = a_m e^2 是代数恒等式，与轨迹无关
+# 在随机状态点上用解析式算 V̇，与 a_m*e^2 比较
+rng = np.random.default_rng(0)
+g1, g2 = 2.0, 2.0
+absb = abs(B_TRUE)
+max_abs = 0.0
+max_tgt = 0.0
+for _ in range(20000):
+    e = rng.uniform(-3, 3)
+    xp = rng.uniform(-3, 3)
+    r = rng.uniform(-2, 2)
+    kt1 = rng.uniform(-4, 4)      # k1 误差（分析量，控制器不知道它）
+    kt2 = rng.uniform(-4, 4)
+    edot = AM * e + B_TRUE * kt1 * xp + B_TRUE * kt2 * r
+    dk1 = -g1 * np.sign(B_TRUE) * e * xp
+    dk2 = -g2 * np.sign(B_TRUE) * e * r
+    Vd = e * edot + absb / g1 * kt1 * dk1 + absb / g2 * kt2 * dk2
+    tgt = AM * e * e
+    max_abs = max(max_abs, abs(Vd - tgt))
+    max_tgt = max(max_tgt, abs(tgt))
+print('在 20000 个随机状态点上验证 V̇ = a_m * e^2：')
+print('  最大绝对偏差 = %.3e' % max_abs)
+print('  样本中 |a_m e^2| 的最大值 = %.4f' % max_tgt)
+print('  相对偏差 = %.3e' % (max_abs / max_tgt))
+print('  => 交叉项 b*kt*e*phi 与 (|b|/gamma)*kt*k_dot 精确相消，推导无误')
+print()
+print('对照：把 sign(b) 写反会怎样？')
+max_abs2 = 0.0
+for _ in range(20000):
+    e = rng.uniform(-3, 3); xp = rng.uniform(-3, 3); r = rng.uniform(-2, 2)
+    kt1 = rng.uniform(-4, 4); kt2 = rng.uniform(-4, 4)
+    edot = AM * e + B_TRUE * kt1 * xp + B_TRUE * kt2 * r
+    dk1 = +g1 * np.sign(B_TRUE) * e * xp      # 符号写反
+    dk2 = +g2 * np.sign(B_TRUE) * e * r
+    Vd = e * edot + absb / g1 * kt1 * dk1 + absb / g2 * kt2 * dk2
+    max_abs2 = max(max_abs2, abs(Vd - AM * e * e))
+print('  最大绝对偏差 = %.3e（不再为零，多出 2*b*kt*e*phi 项）' % max_abs2)` },
+{ title: "计算", code: `# 检验 2：沿真实仿真轨迹，V 必须严格单调下降，且 V̇ 的积分对得上
+d = sim_mrac(kind='step', gamma=2.0, T=30.0, dt=2e-4, store_every=2)
+e = d['e_true']
+kt1 = d['k1'] - K1S
+kt2 = d['k2'] - K2S
+V = 0.5*e**2 + abs(B_TRUE)/(2*2.0)*kt1**2 + abs(B_TRUE)/(2*2.0)*kt2**2
+dV = np.diff(V)
+print('阶跃输入 r=1，gamma=2，T=30 s，共 %d 个采样点' % len(V))
+print('  V(0)  = %.6e' % V[0])
+print('  V(末) = %.6e' % V[-1])
+print('  max dV = %+.3e   （应 <= 0，为正的只能是舍入量级）' % np.max(dV))
+print('  dV < 0 的点占比 = %.4f%%' % (100 * np.mean(dV < 0)))
+print()
+lhs = AM * np.trapezoid(e**2, d['t'])      # = int V̇ dt
+rhs = V[-1] - V[0]
+print('能量核算：int V̇ dt 应等于 a_m * int e^2 dt')
+print('  a_m * int e^2 dt = %.6e' % lhs)
+print('  V(末) - V(0)     = %.6e' % rhs)
+print('  相对偏差 = %.3e  （差值来自梯形积分误差）' % (abs(lhs - rhs) / abs(rhs)))` },
+{ title: "计算", code: `# 阶跃跟踪的基本面貌：e -> 0，但参数走向哪里？
+d = sim_mrac(kind='step', gamma=2.0, T=30.0, dt=2e-4, store_every=10)
+fig, ax = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
+ax[0].plot(d['t'], d['xp'], 'b-', lw=2, label='x_p 被控对象')
+ax[0].plot(d['t'], d['xm'], 'r--', lw=2, label='x_m 参考模型')
+ax[0].set_ylabel('状态'); ax[0].legend(fontsize=9); ax[0].grid(alpha=0.3)
+ax[0].set_title('MRAC 阶跃跟踪：a=-2, b=3 未知；a_m=-5, b_m=5；gamma=2')
+ax[1].plot(d['t'], d['e_true'], 'g-', lw=1.6)
+ax[1].set_ylabel('e = x_p - x_m'); ax[1].grid(alpha=0.3)
+ax[1].set_yscale('symlog', linthresh=1e-6)
+ax[1].set_title('跟踪误差（对称对数轴，能看到一路降到浮点底）')
+ax[2].plot(d['t'], d['k1'], 'b-', lw=1.8, label='k1(t)')
+ax[2].axhline(K1S, color='b', ls=':', label='k1* = %.4f' % K1S)
+ax[2].plot(d['t'], d['k2'], 'r-', lw=1.8, label='k2(t)')
+ax[2].axhline(K2S, color='r', ls=':', label='k2* = %.4f' % K2S)
+ax[2].set_xlabel('t (s)'); ax[2].set_ylabel('控制器增益')
+ax[2].legend(fontsize=9); ax[2].grid(alpha=0.3)
+ax[2].set_title('增益轨迹：注意它们没有停在虚线上')
+plt.tight_layout(); plt.show()
+print('末值：e = %.3e' % d['e_true'][-1])
+print('      k1 = %.6f （理想 %.4f）' % (d['k1'][-1], K1S))
+print('      k2 = %.6f （理想 %.4f）' % (d['k2'][-1], K2S))
+print('      距理想点 = %.5f' % np.hypot(d['k1'][-1] - K1S, d['k2'][-1] - K2S))
+print()
+print('闭环极点  a + b*k1          = %.4f  （参考模型 a_m = %.4f）'
+      % (A_TRUE + B_TRUE*d['k1'][-1], AM))
+print('闭环稳态增益 -b*k2/(a+b*k1) = %.6f  （参考模型 -b_m/a_m = %.6f）'
+      % (-B_TRUE*d['k2'][-1]/(A_TRUE + B_TRUE*d['k1'][-1]), -BM/AM))
+print()
+print('跟踪是完美的，稳态增益是对的，闭环极点是错的。下一节解释为什么。')` }
+]}
+/>
+
+
+## 跟踪与参数收敛
+
+### 手算一个控制器
+
+取对象$\dot x_p=-2x_p+3u$，参考模型$\dot x_m=-5x_m+5r$。控制器只知道输入系数为正。理想增益为
+
+$$
+k_1^*=-1,\qquad k_2^*=\frac53.
+$$
+
+选择$\gamma_1=\gamma_2=2$，就有$\dot k_1=-2ex_p$、$\dot k_2=-2er$，且
+
+$$
+V=\frac12e^2+\frac34\tilde k_1^2+\frac34\tilde k_2^2,\qquad \dot V=-5e^2.
+$$
+
+下面保留步长减半、四种参考及多组初始增益的实验。先看各步长是否给出接近的输出，再比较跟踪误差和参数误差；两列不能混着读。
+
+<JupyterNotebook
+  title="Notebook 2：手算例子的步长收敛性、PE 度量与参数等效流形"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A_TRUE, B_TRUE = -2.0, 3.0
+AM, BM = -5.0, 5.0
+K1S = (AM - A_TRUE) / B_TRUE
+K2S = BM / B_TRUE
+
+
+def make_r(kind):
+    if kind == 'step':
+        return lambda t: 1.0
+    if kind == 'sine':
+        return lambda t: np.sin(t)
+    if kind == 'multi':
+        return lambda t: 1.0 + 0.5 * np.sin(2.0 * t) + 0.3 * np.sin(5.0 * t)
+    if kind == 'zero':
+        return lambda t: 0.0
+    raise ValueError(kind)
+
+
+def sim_mrac(kind='step', gamma=2.0, T=20.0, dt=2e-4, k10=0.0, k20=0.0,
+             xp0=0.0, store_every=5):
+    rf = make_r(kind)
+    N = int(round(T / dt))
+    xp, xm, k1, k2 = xp0, 0.0, k10, k20
+    ts, xps, k1s, k2s, ets = [], [], [], [], []
+
+    def deriv(xp, xm, k1, k2, r):
+        e = xp - xm
+        uu = k1 * xp + k2 * r
+        return (A_TRUE * xp + B_TRUE * uu, AM * xm + BM * r,
+                -gamma * e * xp, -gamma * e * r)
+
+    for i in range(N + 1):
+        t = i * dt
+        r = rf(t)
+        if i % store_every == 0:
+            ts.append(t); xps.append(xp); k1s.append(k1); k2s.append(k2)
+            ets.append(xp - xm)
+        if i == N:
+            break
+        s1 = deriv(xp, xm, k1, k2, r)
+        s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
+        s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
+        s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
+                   k2 + dt*s3[3], rf(t + dt))
+        xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
+        xm += dt/6*(s1[1] + 2*s2[1] + 2*s3[1] + s4[1])
+        k1 += dt/6*(s1[2] + 2*s2[2] + 2*s3[2] + s4[2])
+        k2 += dt/6*(s1[3] + 2*s2[3] + 2*s3[3] + s4[3])
+        if not np.isfinite(xp) or abs(xp) > 1e3:
+            break
+    return dict(t=np.array(ts), xp=np.array(xps), k1=np.array(k1s),
+                k2=np.array(k2s), e_true=np.array(ets))
+
+
+def pe_lmin(d, kind, Tw=2*np.pi, dtw=2e-3):
+    """PE 度量：min_t lambda_min( int_t^{t+Tw} phi phi^T dtau )，phi = [x_p, r]"""
+    rf = make_r(kind)
+    tw = np.arange(0, Tw, dtw)
+    out = []
+    for t0 in np.arange(0, 20.0, 1.0):
+        rr = np.array([rf(t0 + s) for s in tw])
+        xpv = np.interp(t0 + tw, d['t'], d['xp'])
+        M = np.stack([xpv, rr], 1)
+        out.append(np.linalg.eigvalsh(M.T @ M * dtw)[0])
+    return min(out)
+
+
+def k2_manifold(k1):
+    """直流增益匹配流形：b*k2/(a+b*k1) = b_m/a_m"""
+    return (BM / AM) * (A_TRUE + B_TRUE * k1) / B_TRUE`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 步长收敛性：若结果随 dt 改变，说明看到的是数值假象
+prev = None
+for dt_ in [8e-4, 4e-4, 2e-4, 1e-4]:
+    d = sim_mrac(kind='step', gamma=2.0, T=60.0, dt=dt_,
+                 store_every=max(1, int(2e-3 / dt_)))
+    val = abs(d['e_true'][-1])
+    ratio = '-' if prev is None else '%.2f' % (prev / val if val > 0 else float('nan'))
+    print('  %-10.0e %-14.6e %-14.8f %-14.8f %-10s'
+          % (dt_, val, d['k1'][-1], d['k2'][-1], ratio))
+    prev = val
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# PE 度量：phi = [x_p, r] 在长度 2*pi 的窗口上的最小特征值
+# 有限窗口Gram检查，不等于全未来PE证明
+res = {}
+for kind, label in [('step', '1 (阶跃)'), ('sine', 'sin(t)'),
+                    ('multi', '1+多正弦'), ('zero', '0 (调节)')]:
+    d = sim_mrac(kind=kind, T=60.0, dt=2e-4, xp0=(1.0 if kind == 'zero' else 0.0))
+    res[kind] = d
+    lam = max(pe_lmin(d, kind), 0.0)
+    tail = d['t'] > 48
+    print('  %-14s %-13.3e %-13.3e %-11.5f %-11.5f %-11.5f'
+          % (label, lam, np.sqrt(np.mean(d['e_true'][tail]**2)),
+             d['k1'][-1], d['k2'][-1],
+             np.hypot(d['k1'][-1] - K1S, d['k2'][-1] - K2S)))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 等效流形：阶跃输入下参数终点在哪？换五组初值再试
+pts = []
+for k10, k20 in [(0.0, 0.0), (-2.0, 0.0), (0.5, 3.0), (-1.0, 1.6667), (-3.0, -2.0)]:
+    d = sim_mrac(kind='step', gamma=2.0, T=60.0, dt=2e-4, k10=k10, k20=k20)
+    dev = abs(d['k2'][-1] - k2_manifold(d['k1'][-1]))
+    pts.append((d['k1'][-1], d['k2'][-1]))
+    print('  %-16s %-11.5f %-11.5f %-13.5f %-15.3e'
+          % ('(%.1f, %.1f)' % (k10, k20), d['k1'][-1], d['k2'][-1],
+             np.hypot(d['k1'][-1] - K1S, d['k2'][-1] - K2S), dev))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 把流形画出来，并对照满足 PE 的情形
+d_step = res['step']
+d_multi = sim_mrac(kind='multi', gamma=10.0, T=400.0, dt=5e-4, store_every=40)
+kk = np.linspace(-3.0, 0.6, 300)
+fig, ax = plt.subplots(1, 2, figsize=(11, 4.4))
+ax[0].plot(d_step['k1'], d_step['k2'], 'b-', lw=1.2, label='阶跃 r=1 的参数轨迹')
+ax[0].plot([p[0] for p in pts], [p[1] for p in pts], 'bs', ms=6, label='五组初值的终点')
+ax[0].plot(kk, k2_manifold(kk), 'g--', lw=2, label='DC 匹配流形')
+ax[0].plot(K1S, K2S, 'r*', ms=16, label='理想点 (k1*, k2*)')
+ax[0].set_xlim(-3.2, 0.8); ax[0].set_ylim(-2.2, 3.4)
+ax[0].set_xlabel('k1'); ax[0].set_ylabel('k2')
+ax[0].legend(fontsize=8, loc='upper left'); ax[0].grid(alpha=0.3)
+ax[0].set_title('阶跃输入：终点由初值决定，全落在流形上')
+ax[1].plot(d_multi['k1'], d_multi['k2'], 'b-', lw=1.4, label='多正弦 r 的参数轨迹')
+ax[1].plot(d_multi['k1'][-1], d_multi['k2'][-1], 'bo', ms=7)
+ax[1].plot(kk, k2_manifold(kk), 'g--', lw=1.2, alpha=0.6, label='DC 匹配流形')
+ax[1].plot(K1S, K2S, 'r*', ms=16, label='理想点 (k1*, k2*)')
+ax[1].set_xlim(-3.2, 0.8); ax[1].set_ylim(-2.2, 3.4)
+ax[1].set_xlabel('k1'); ax[1].set_ylabel('k2')
+ax[1].legend(fontsize=8, loc='upper left'); ax[1].grid(alpha=0.3)
+ax[1].set_title('多正弦：给定配置的参数轨迹')
+plt.tight_layout(); plt.show()
+` }
+]}
+/>
+
+
+### 阶跃为什么不够
+
+当$r=1$且已进入常值平衡时，$x_m=-b_m/a_m$。若希望$x_p=x_m$，增益只需满足
+
+$$
+k_2=\frac{b_m}{a_m}\frac{a+bk_1}{b}=\frac23-k_1.
+$$
+
+这是一条直线，而不是唯一的点。理想增益在直线上，其他增益也可能给出相同常值输出。若把终点增益**冻结**，它对应的对象闭环极点是$a+bk_1$，未必等于$a_m$。这是对冻结控制器的解释，不能把自适应暂态也说成固定极点系统。
+
+所以，对这一个恒定参考跟踪得好，不足以说明换成别的信号以后也能复现参考模型的全部动态，更不能据此宣称辨识出了真实对象。
+
+### 持续激励
+
+要分清多个参数，需要信号反复提供不同方向的信息。数学上，回归量$\phi(t)$满足**持续激励（PE）**，是指存在$T>0$和$\alpha_2\ge\alpha_1>0$，对所有$t\ge0$有
+
+$$
+\alpha_1 I\le\int_t^{t+T}\phi(\tau)\phi(\tau)^{\mathsf T}\,d\tau\le\alpha_2 I.
+$$
+
+积分得到的矩阵叫Gram矩阵。它的最小特征值若为零，说明这个窗口内至少有一个参数方向没有被充分区分。例如$\phi=[1,1]^{\mathsf T}$始终指向同一方向，就区分不了两个系数各自的贡献。
+
+本课MRAC的$\phi=[x_p,r]^{\mathsf T}$取决于闭环，不能只数参考中有几个频率就宣布PE。实验计算起点0到19秒、长度$2\pi$秒的20个窗口。这些有限窗口的正值是诊断信息，**不能证明所有未来窗口都满足统一正下界**。缺少PE也不等于对象在任何实验下都结构不可辨识。
+
+### 增益与快慢
+
+$\gamma$增大使同一瞬间的更新更快，但整个闭环也随之改变。初段跟踪、长时间参数误差、控制峰值可能有不同的变化趋势。下面保留五个增益的长时实验和小增益速率拟合；它们只比较所列配置，不给“增益越大一定越好”的结论。
+
+<JupyterNotebook
+  title="Notebook 3：自适应增益 γ 的两面性——初始段更快，尾部更慢"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A_TRUE, B_TRUE = -2.0, 3.0
+AM, BM = -5.0, 5.0
+K1S = (AM - A_TRUE) / B_TRUE
+K2S = BM / B_TRUE
+
+
+def sim_mrac(gamma=2.0, T=400.0, dt=2e-4, store_every=20, k10=0.0, k20=0.0):
+    """r = 1 + 0.5 sin(2t) + 0.3 sin(5t)，满足 PE"""
+    rf = lambda t: 1.0 + 0.5 * np.sin(2.0 * t) + 0.3 * np.sin(5.0 * t)
+    N = int(round(T / dt))
+    xp, xm, k1, k2 = 0.0, 0.0, k10, k20
+    ts, k1s, k2s, ets = [], [], [], []
+
+    def deriv(xp, xm, k1, k2, r):
+        e = xp - xm
+        uu = k1 * xp + k2 * r
+        return (A_TRUE * xp + B_TRUE * uu, AM * xm + BM * r,
+                -gamma * e * xp, -gamma * e * r)
+
+    for i in range(N + 1):
+        t = i * dt
+        r = rf(t)
+        if i % store_every == 0:
+            ts.append(t); k1s.append(k1); k2s.append(k2); ets.append(xp - xm)
+        if i == N:
+            break
+        s1 = deriv(xp, xm, k1, k2, r)
+        s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
+        s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
+        s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
+                   k2 + dt*s3[3], rf(t + dt))
+        xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
+        xm += dt/6*(s1[1] + 2*s2[1] + 2*s3[1] + s4[1])
+        k1 += dt/6*(s1[2] + 2*s2[2] + 2*s3[2] + s4[2])
+        k2 += dt/6*(s1[3] + 2*s2[3] + 2*s3[3] + s4[3])
+        if not np.isfinite(xp) or abs(xp) > 1e3:
+            break
+    return dict(t=np.array(ts), k1=np.array(k1s), k2=np.array(k2s),
+                e_true=np.array(ets))`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# |k~|(t) 的完整时间序列：分别看初始段和尾部
+times = [1, 2, 5, 10, 20, 50, 100, 200, 400]
+res = {}
+for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
+    dt_ = min(1e-3, 2.0 / (7.5 * g))
+    d = sim_mrac(gamma=g, T=400.0, dt=dt_, store_every=max(1, int(2e-3/dt_)))
+    err = np.hypot(d['k1'] - K1S, d['k2'] - K2S)
+    res[g] = (d, err)
+    print('  %-8.0f %-9.0e' % (g, dt_)
+          + ''.join('%-11.3e' % err[np.argmin(np.abs(d['t'] - x))] for x in times))` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 把上面这张表读出来
+for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
+    i1 = np.argmin(np.abs(res[g][0]['t'] - 1))
+    print('  gamma=%-6.0f |k~|(1) = %.4e' % (g, res[g][1][i1]))
+for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
+    print('  gamma=%-6.0f |k~|(400) = %.4e' % (g, res[g][1][-1]))
+best = min(res, key=lambda g: res[g][1][-1])
+rates = {}
+for g in [0.5, 2.0, 10.0]:
+    dt_ = min(1e-3, 2.0 / (7.5 * g))
+    d = sim_mrac(gamma=g, T=400.0, dt=dt_, store_every=max(1, int(2e-3/dt_)))
+    err = np.hypot(d['k1'] - K1S, d['k2'] - K2S)
+    floor = max(np.min(err[d['t'] > 2]), 1e-14)
+    m = (d['t'] > 2) & (err > 2 * floor)
+    p = np.polyfit(d['t'][m], np.log(err[m]), 1)
+    rates[g] = -p[0]
+    print('  gamma=%-5.1f 速率 = %.5f /s   拟合窗口 [%.0f, %.0f] s，%d 个点'
+          % (g, -p[0], d['t'][m][0], d['t'][m][-1], m.sum()))
+for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
+    d = res[g][0]
+    m = d['t'] > 10
+    print('  gamma=%-6.0f rms|e| = %.4e' % (g, np.sqrt(np.mean(d['e_true'][m]**2))))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 画出来：五条 |k~|(t) 与五条 |e|(t)
+fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
+for c, g in zip(['C0', 'C1', 'C2', 'C3', 'C4'], [2.0, 10.0, 50.0, 200.0, 1000.0]):
+    d, err = res[g]
+    ax[0].semilogy(d['t'], np.maximum(err, 1e-12), c, lw=1.6, label='gamma=%.0f' % g)
+    ax[1].semilogy(d['t'], np.maximum(np.abs(d['e_true']), 1e-14), c, lw=1.6)
+ax[0].set_xlim(0, 400); ax[0].set_ylim(1e-9, 3)
+ax[0].set_xlabel('t (s)'); ax[0].set_ylabel('|k~| 距理想点距离')
+ax[0].legend(fontsize=9); ax[0].grid(alpha=0.3, which='both')
+ax[0].set_title('参数误差：大 gamma 初始快，但留下慢尾')
+ax[1].set_xlim(0, 400); ax[1].set_ylim(1e-9, 3)
+ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('|e| 跟踪误差')
+ax[1].grid(alpha=0.3, which='both')
+ax[1].set_title('跟踪误差：五个给定增益的比较')
+plt.tight_layout(); plt.show()
+` }
+]}
+/>
+
+
+## 高阶MRAC
+
+### 先检查能否匹配
+
+考虑状态可测的单输入系统
+
+$$
+\dot x_p=A_px_p+B_pu,\qquad \dot x_m=A_mx_m+B_mr,
+$$
+
+其中$A_m$为Hurwitz矩阵。本节采用**已知非零列向量$B_p$**的设计，$A_p$中的参数未知；这比前面“只知道标量$b$的符号”假设更强。
+
+选$u=K^{\mathsf T}x_p+k_rr$，常理想增益存在须满足
+
+$$
+A_p+B_pK^{*\mathsf T}=A_m,\qquad B_pk_r^*=B_m.
+$$
+
+用伪逆$B_p^+$检查，就是
+
+$$
+(I-B_pB_p^+)(A_m-A_p)=0,\qquad (I-B_pB_p^+)B_m=0.
+$$
+
+若$B_p=[0,\ldots,0,1]^{\mathsf T}$，反馈只能直接修改矩阵最后一行；其他行要与参考模型一致。所谓“不匹配”，是某个差异不能由这一输入方向即时抵消，**不是说输入永远影响不到那些状态**。投影矩阵的残差是匹配方程的残差，也不是稳态跟踪误差。
+
+### 矩阵推导
+
+匹配成立时，$e=x_p-x_m$满足
+
+$$
+\dot e=A_me+B_p\tilde K^{\mathsf T}x_p+B_p\tilde k_rr.
+$$
+
+取$Q>0$，解$A_m^{\mathsf T}P+PA_m=-Q$，得到$P>0$。令$\Gamma>0,\gamma_r>0$，并取
+
+$$
+V=e^{\mathsf T}Pe+\tilde K^{\mathsf T}\Gamma^{-1}\tilde K+\frac{\tilde k_r^2}{\gamma_r}.
+$$
+
+$K,x_p$都是$n$维列向量，$\tilde K^{\mathsf T}x_p$和$e^{\mathsf T}PB_p$都是标量。求导得
+
+$$
+\dot V=-e^{\mathsf T}Qe+2(e^{\mathsf T}PB_p)(\tilde K^{\mathsf T}x_p+\tilde k_rr)
++2\tilde K^{\mathsf T}\Gamma^{-1}\dot K+\frac{2\tilde k_r\dot k_r}{\gamma_r}.
+$$
+
+选择
+
+$$
+\dot K=-\Gamma x_pe^{\mathsf T}PB_p,\qquad
+\dot k_r=-\gamma_rr e^{\mathsf T}PB_p,
+$$
+
+就得到$\dot V=-e^{\mathsf T}Qe$。在常参数、精确状态、无饱和、匹配且参考有界等假设下，可像一阶一样证明跟踪误差趋于零。这里**实际用了$B_p$**，不能把它当成“不需要知道控制方向”的方法。
+
+二阶实验保留匹配检查、Lyapunov恒等式、增益扫描和两种失配。诊断现在从实际对象方程算$\dot e$；失配时不会再借用本已不成立的匹配公式“验证”恒等式。
+
+<JupyterNotebook
+  title="Notebook 4：二阶 MRAC 的匹配条件、V̇=-eᵀQe 验证与失配后果"
+  setupCode={`import numpy as np
+from scipy.linalg import solve_continuous_lyapunov, norm
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A_P = np.array([[0.0, 1.0], [-6.0, -5.0]])      # 开环极点 -2, -3
+B_P = np.array([0.0, 1.0])
+WM, ZM = 4.0, 0.8
+A_M = np.array([[0.0, 1.0], [-WM**2, -2*ZM*WM]])
+B_M = np.array([0.0, WM**2])                     # 单位直流增益
+Q = np.eye(2)
+P = solve_continuous_lyapunov(A_M.T, -Q)
+KS = np.array([-10.0, -1.4])                     # 理想反馈增益
+KRS = 16.0                                       # 理想前馈增益
+
+
+def match_residual(Ap, Bp, Am, Bm):
+    """最小二乘意义下的最优 K, k_r 及残差；残差为零 <=> 匹配条件可解"""
+    Bc = Bp.reshape(-1, 1)
+    Ks = np.linalg.lstsq(Bc, Am - Ap, rcond=None)[0]
+    krs = np.linalg.lstsq(Bc, Bm.reshape(-1, 1), rcond=None)[0]
+    r1 = norm(Bc @ Ks - (Am - Ap))
+    r2 = norm(Bc @ krs - Bm.reshape(-1, 1))
+    return Ks.ravel(), float(krs.ravel()[0]), r1, r2
+
+
+def sim2(gam=1000.0, T=60.0, dt=5e-4, theta_row1=0.0, A_m_use=None, store_every=4):
+    """二阶 MRAC 闭环，r = 1+0.5sin(2t)+0.3sin(5t)。
+    theta_row1 != 0 时在 A_p 第一行第一列注入不匹配不确定性。
+    A_m_use != None 时换用另一个参考模型（用于制造匹配条件无解的情形）。"""
+    Am = A_M if A_m_use is None else A_m_use
+    At = A_P.copy()
+    At[0, 0] = theta_row1
+    rf = lambda t: 1.0 + 0.5*np.sin(2*t) + 0.3*np.sin(5*t)
+    Pm = solve_continuous_lyapunov(Am.T, -Q)
+    Pinv = np.linalg.inv(np.eye(2) * gam)
+    N = int(round(T / dt))
+    x = np.zeros(2); xm = np.zeros(2); K = np.zeros(2); kr = 0.0
+    ts, es, Kh, krh, Vh = [], [], [], [], []
+    id_rel, id_abs, mono = 0.0, 0.0, -np.inf
+    Vprev = None
+
+    def dxdt(xx, xmm, KK, krr, tt):
+        rr = rf(tt)
+        uu = KK @ xx + krr * rr
+        ee = xx - xmm
+        spb = float(ee @ Pm @ B_P)
+        return (At @ xx + B_P * uu, Am @ xmm + B_M * rr,
+                -gam * xx * spb, -gam * rr * spb)
+
+    for i in range(N + 1):
+        t = i * dt
+        r = rf(t)
+        if i % store_every == 0:
+            e = x - xm
+            Kt = K - KS; krt = kr - KRS
+            V = e @ Pm @ e + Kt @ Pinv @ Kt + krt**2 / gam
+            edot = At @ x + B_P * (K @ x + kr*r) - Am @ xm - B_M*r
+            spb = float(e @ Pm @ B_P)
+            Kd = -gam * x * spb; krd = -gam * r * spb
+            Vd = 2*e @ Pm @ edot + 2*Kt @ Pinv @ Kd + 2*krt*krd/gam
+            qe = float(e @ Q @ e)
+            id_abs = max(id_abs, abs(Vd + qe))
+            if qe > 1e-8:
+                id_rel = max(id_rel, abs(Vd + qe) / qe)
+            if Vprev is not None:
+                mono = max(mono, V - Vprev)
+            Vprev = V
+            ts.append(t); es.append(e.copy()); Kh.append(K.copy())
+            krh.append(kr); Vh.append(V)
+        if i == N:
+            break
+        s1 = dxdt(x, xm, K, kr, t)
+        s2 = dxdt(x+.5*dt*s1[0], xm+.5*dt*s1[1], K+.5*dt*s1[2], kr+.5*dt*s1[3], t+.5*dt)
+        s3 = dxdt(x+.5*dt*s2[0], xm+.5*dt*s2[1], K+.5*dt*s2[2], kr+.5*dt*s2[3], t+.5*dt)
+        s4 = dxdt(x+dt*s3[0], xm+dt*s3[1], K+dt*s3[2], kr+dt*s3[3], t+dt)
+        x = x + dt/6*(s1[0]+2*s2[0]+2*s3[0]+s4[0])
+        xm = xm + dt/6*(s1[1]+2*s2[1]+2*s3[1]+s4[1])
+        K = K + dt/6*(s1[2]+2*s2[2]+2*s3[2]+s4[2])
+        kr = kr + dt/6*(s1[3]+2*s2[3]+2*s3[3]+s4[3])
+        if not np.all(np.isfinite(x)) or np.max(np.abs(x)) > 1e3:
+            return dict(t=np.array(ts), e=np.array(es), K=np.array(Kh), kr=np.array(krh),
+                        V=np.array(Vh), id_rel=id_rel, id_abs=id_abs, mono=mono, div_t=t+dt)
+    return dict(t=np.array(ts), e=np.array(es), K=np.array(Kh), kr=np.array(krh),
+                V=np.array(Vh), id_rel=id_rel, id_abs=id_abs, mono=mono, div_t=np.nan)`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 匹配条件的可解性：三个情形
+K, kr, r1, r2 = match_residual(A_P, B_P, A_M, B_M)
+A_M2 = np.array([[-1.0, 1.0], [-WM**2, -2*ZM*WM]])
+K2, kr2, r1b, _ = match_residual(A_P, B_P, A_M2, B_M)
+proj = (np.eye(2) - np.outer(B_P, B_P)) @ (A_M2 - A_P)
+for th in [0.0, 0.5, -1.0]:
+    At = A_P.copy(); At[0,0] = th
+    K3, _, r1c, _ = match_residual(At, B_P, A_M, B_M)
+    print('  theta = %+.1f -> 最优 K = [%+.4f, %+.4f], 残差 = %.4f' % (th, K3[0], K3[1], r1c))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Lyapunov 方程的解 P，以及 B^T P 的量级
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# V̇ = -e^T Q e 的代数验证 + V 单调性（Gamma = 10 和 100）
+G4 = {}
+for g in [10.0, 100.0]:
+    d = sim2(gam=g, T=60.0, dt=5e-4)
+    G4[g] = (norm(d['K'][-1] - KS),
+             np.sqrt(np.mean(np.sum(d['e'][d['t'] > 48]**2, 1))), d['V'][-1])
+    print('  %-10.0f %-18.3e %-18.3e %-16.3e %-14.4f'
+          % (g, d['id_rel'], d['id_abs'], d['mono'], G4[g][0]))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Gamma 扫描后半段：与一阶同样的"过大反而变差"
+for g in [10.0, 100.0]:
+    print('  %-10.0f %-14.4f %-16.4e %-14.4e %-16s %-14s'
+          % (g, G4[g][0], G4[g][1], G4[g][2], '（见上）', '（见上）'))
+for g in [1000.0, 5000.0]:
+    d = sim2(gam=g, T=60.0, dt=5e-4)
+    tail = d['t'] > 48
+    G4[g] = (norm(d['K'][-1] - KS),
+             np.sqrt(np.mean(np.sum(d['e'][tail]**2, 1))), d['V'][-1])
+    print('  %-10.0f %-14.4e %-16.4e %-14.4e %-16.3e %-14.3e'
+          % (g, G4[g][0], G4[g][1], G4[g][2], d['id_rel'], d['mono']))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Gamma=1000 的收敛轨迹与出图
+d = sim2(gam=1000.0, T=60.0, dt=5e-4)
+for tt in [1, 5, 10, 20, 40, 60]:
+    i = np.argmin(np.abs(d['t'] - tt))
+    print('  %-8.1f %-14.4e %-14.4e %-14.4e'
+          % (d['t'][i], norm(d['e'][i]), norm(d['K'][i] - KS), d['V'][i]))
+fig, ax = plt.subplots(1, 3, figsize=(12, 3.4))
+ax[0].semilogy(d['t'], np.maximum(norm(d['e'], axis=1), 1e-12), 'C0', lw=1.6)
+ax[0].set_xlabel('t (s)'); ax[0].set_ylabel('||e||'); ax[0].grid(alpha=0.3, which='both')
+ax[0].set_title('跟踪误差')
+ax[1].plot(d['t'], d['K'][:,0], 'C1', lw=1.6, label='K1')
+ax[1].axhline(KS[0], color='C1', ls=':')
+ax[1].plot(d['t'], d['K'][:,1], 'C2', lw=1.6, label='K2')
+ax[1].axhline(KS[1], color='C2', ls=':')
+ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('增益'); ax[1].legend(fontsize=9)
+ax[1].grid(alpha=0.3); ax[1].set_title('增益收敛（虚线为理想值）')
+ax[2].semilogy(d['t'], np.maximum(d['V'], 1e-14), 'C3', lw=1.6)
+ax[2].set_xlabel('t (s)'); ax[2].set_ylabel('V'); ax[2].grid(alpha=0.3, which='both')
+ax[2].set_title('Lyapunov 函数单调下降')
+plt.tight_layout(); plt.show()` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 匹配条件不成立时会怎样：两个对照实验
+A_M2 = np.array([[-1.0, 1.0], [-WM**2, -2*ZM*WM]])
+d2 = sim2(gam=1000.0, T=60.0, dt=5e-4, A_m_use=A_M2)
+if np.isfinite(d2['div_t']):
+    print('  实测：t = %.2f s 时 ||x|| > 1e3，闭环发散' % d2['div_t'])
+    print('  发散前 K 涨到 [%.3f, %.3f]（||K|| = %.3f）'
+          % (d2['K'][-1,0], d2['K'][-1,1], norm(d2['K'][-1])))
+else:
+    print('  有界，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d2['e'][d2['t']>48]**2, 1))))
+d3 = sim2(gam=1000.0, T=60.0, dt=5e-4, theta_row1=0.5)
+if np.isfinite(d3['div_t']):
+    print('  实测：t = %.2f s 时 ||x|| > 1e3，闭环发散' % d3['div_t'])
+    print('  发散前 K = [%.3f, %.3f]' % (d3['K'][-1,0], d3['K'][-1,1]))
+else:
+    print('  有界，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d3['e'][d3['t']>48]**2, 1))))
+` }
+]}
+/>
+
+
+## 辨识与自整定
+
+### RLS怎样逐次利用数据
+
+对离散对象$y(k+1)=\alpha y(k)+\beta u(k)+v(k)$，令$\theta=[\alpha,\beta]^{\mathsf T}$、$\phi(k)=[y(k),u(k)]^{\mathsf T}$。先取$\lambda=1$。带先验的最小二乘使用
+
+$$
+R_N=P_0^{-1}+\sum_{k=0}^N\phi(k)\phi(k)^{\mathsf T},\qquad
+g_N=P_0^{-1}\theta_0+\sum_{k=0}^N\phi(k)y(k+1),\qquad \hat\theta_N=R_N^{-1}g_N.
+$$
+
+只需累加$R_N,g_N$就不必保存全部历史；**递推最小二乘（RLS）**进一步用矩阵求逆引理免去每步重新求逆。记$P=R^{-1}$，对每个新样本依次计算
+
+$$
+\begin{aligned}
+L_k&=\frac{P_{k-1}\phi_k}{\lambda+\phi_k^{\mathsf T}P_{k-1}\phi_k},\\
+\hat\theta_k&=\hat\theta_{k-1}+L_k(y_{k+1}-\phi_k^{\mathsf T}\hat\theta_{k-1}),\\
+P_k&=\frac1\lambda(I-L_k\phi_k^{\mathsf T})P_{k-1}.
+\end{aligned}
+$$
+
+首个样本之前给定$\hat\theta_{-1}=\theta_0,P_{-1}=P_0>0$，避免把初始化和首步更新混为同一个下标。$P$首先是逆信息矩阵；只有进一步规定噪声、先验及尺度，它才可解释为估计协方差。更新形式与卡尔曼滤波有关，但不能直接等同。
+
+### 遗忘旧数据的代价
+
+$0<\lambda<1$使旧数据权重逐步衰减，便于跟随参数变化，也会降低长期平均噪声的能力。若一段时间**完全无激励**，即$\phi=0$，则$L=0$、估计不变，而$P\leftarrow P/\lambda$。重新出现数据时，更新可能很大，这称为协方差膨胀（windup）及突发变化（bursting）。只有部分方向失去激励时，要分别分析那些方向。
+
+原实验保留无遗忘对照、四种遗忘因子、参数跳变及人为构造的零回归量窗口。输出上直接加测量噪声会让下一步回归量也含噪声，属于变量含误差的情形；不能用它证明一般RLS无偏或一致。后面补充核验比较**相同先验**的批量和递推解。
+
+<JupyterNotebook
+  title="Notebook 5：RLS 的正确性检验、遗忘因子权衡与协方差 windup"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A0, B0 = 2.0, 3.0          # 连续对象 y' = -a y + b u
+TS = 0.1                   # 采样周期
+
+
+def disc(a, b, Ts=TS):
+    """精确离散化（零阶保持）：y(k+1) = alpha y(k) + beta u(k)"""
+    al = np.exp(-a * Ts)
+    be = (b / a) * (1 - np.exp(-a * Ts))
+    return al, be
+
+
+AL0, BE0 = disc(A0, B0)
+
+
+def prbs(N, seed=0, period=4):
+    rng = np.random.default_rng(seed)
+    sw = rng.integers(0, 2, size=N // period + 1) * 2 - 1
+    return np.repeat(sw, period)[:N].astype(float)
+
+
+def gen_data(N, a_seq, b_seq, u, noise=0.0, seed=1):
+    """按逐步变化的 a, b 生成数据（用于制造参数突变）"""
+    rng = np.random.default_rng(seed)
+    y = np.zeros(N + 1)
+    for k in range(N):
+        al, be = disc(a_seq[k], b_seq[k])
+        y[k + 1] = al * y[k] + be * u[k]
+    if noise > 0:
+        y = y + np.concatenate([[0.0], rng.standard_normal(N) * noise])
+    return y
+
+
+def rls(y, u, lam=1.0, P0=1e6, theta0=None):
+    """y[k+1] = theta^T phi[k], phi[k] = [y[k], u[k]]"""
+    N = len(u)
+    th = np.zeros(2) if theta0 is None else np.array(theta0, dtype=float)
+    P = P0 * np.eye(2)
+    TH = np.zeros((N, 2))
+    PN = np.zeros(N)
+    for k in range(N):
+        phi = np.array([y[k], u[k]])
+        L = (P @ phi) / (lam + phi @ P @ phi)
+        th = th + L * (y[k + 1] - phi @ th)
+        P = (np.eye(2) - np.outer(L, phi)) @ P / lam
+        TH[k] = th
+        PN[k] = np.linalg.norm(P)
+    return TH, PN`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 1：RLS 是否真的等价于批量最小二乘？
+# 若实现正确，偏差应随 P0 增大按 1/P0 缩小，直到撞上浮点底
+N = 300
+u = prbs(N, seed=3)
+y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.0)
+PHI = np.stack([y[:-1], u], 1)
+batch = np.linalg.lstsq(PHI, y[1:], rcond=None)[0]
+for P0 in [1e3, 1e6, 1e9, 1e12]:
+    TH, _ = rls(y, u, lam=1.0, P0=P0)
+    print('  %-12.0e [%9.7f, %9.7f]  [%9.7f, %9.7f]  %.3e'
+          % (P0, TH[-1,0], TH[-1,1], batch[0], batch[1], np.max(np.abs(TH[-1] - batch))))
+yn = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.02, seed=9)
+THn, _ = rls(yn, u, lam=1.0)
+PHIn = np.stack([yn[:-1], u], 1)
+bn = np.linalg.lstsq(PHIn, yn[1:], rcond=None)[0]
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 2：遗忘因子的权衡 —— 定常参数下的方差
+N = 800
+u = prbs(N, seed=5)
+y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.02)
+L2 = {}
+for lam in [1.0, 0.995, 0.98, 0.95]:
+    TH, PN = rls(y, u, lam=lam)
+    tail = TH[int(0.8*N):]
+    L2[lam] = (np.linalg.norm(TH[-1] - np.array([AL0, BE0])),
+               np.mean(np.std(tail, 0)), PN[-1])
+    print('  %-8s %-16.4e %-18.4e %-16.4e' % ((lam,) + L2[lam]))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 3：参数突变时，lam=1 就无能为力了
+N = 800
+u = prbs(N, seed=7)
+a_seq = np.where(np.arange(N) < 400, 2.0, 4.0)     # k=400 时 a 从 2 跳到 4
+y = gen_data(N, a_seq, np.full(N, B0), u, noise=0.02)
+AL1, BE1 = disc(4.0, B0)
+target = np.array([AL1, BE1])
+res = {}
+for lam in [1.0, 0.995, 0.98, 0.95]:
+    TH, PN = rls(y, u, lam=lam)
+    err = np.linalg.norm(TH - target, axis=1)
+    res[lam] = err
+    print('  %-8s %-16.4f %-16.4e %-16.1f'
+          % (lam, np.sum(err[400:]) * TS, err[-1],
+             err[-1] / L2[lam][0]))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 4：协方差 windup 与 bursting
+# 场景：k<200 有 PRBS 激励；200<=k<400 输入输出都为零（无激励）；k>=400 激励恢复
+N = 600
+u = np.zeros(N)
+u[:200] = prbs(200, seed=11)
+u[400:] = prbs(200, seed=12)
+y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.0)
+y[200:400] = 0.0
+L4 = {}
+for lam in [1.0, 0.995, 0.98, 0.95]:
+    TH, PN = rls(y, u, lam=lam)
+    growth = PN[399] / max(PN[200], 1e-30)
+    burst = np.max(np.abs(np.diff(TH[395:420], axis=0)))
+    L4[lam] = (PN[399], growth, lam**(-199), burst)
+    print('  %-8s %-16.4e %-20.4e %-18.4e %-18.4e' % ((lam,) + L4[lam]))
+for lam in [0.995, 0.98, 0.95]:
+    print('       lam=%-6s 实测 %.4e  理论 %.4e  相对偏差 %.1e'
+          % (lam, L4[lam][1], L4[lam][2], abs(L4[lam][1] / L4[lam][2] - 1)))
+fig, ax = plt.subplots(1, 2, figsize=(11, 3.8))
+for c, lam in zip(['C0', 'C1', 'C2', 'C3'], [1.0, 0.995, 0.98, 0.95]):
+    TH, PN = rls(y, u, lam=lam)
+    ax[0].semilogy(np.arange(N), np.maximum(PN, 1e-12), c, lw=1.5, label='lam=%.3f' % lam)
+    ax[1].plot(np.arange(N), TH[:, 0], c, lw=1.2)
+ax[0].axvspan(200, 400, color='gray', alpha=0.2)
+ax[0].set_xlabel('k'); ax[0].set_ylabel('||P(k)||')
+ax[0].set_ylim(1e-6, 1e6); ax[0].legend(fontsize=9); ax[0].grid(alpha=0.3, which='both')
+ax[0].set_title('协方差 windup（灰色为无激励段）')
+ax[1].axvspan(200, 400, color='gray', alpha=0.2)
+ax[1].axhline(AL0, color='k', ls=':')
+ax[1].set_xlabel('k'); ax[1].set_ylabel('alpha_hat')
+ax[1].set_ylim(-0.5, 2.0); ax[1].grid(alpha=0.3)
+ax[1].set_title('bursting：k=400 处参数跳变')
+plt.tight_layout(); plt.show()` }
+]}
+/>
+
+
+### 把估计值代入控制器
+
+对$\dot y=-ay+bu$作采样周期$T_s$的零阶保持离散化：
+
+$$
+\alpha=e^{-aT_s},\qquad \beta=\frac ba(1-e^{-aT_s})\quad(a\ne0).
+$$
+
+当$a=0$时取极限$\beta=bT_s$。希望闭环极点为$z_d$且直流增益为1，可选
+
+$$
+u_k=K_py_k+K_rr_k,\qquad K_p=\frac{z_d-\hat\alpha}{\hat\beta},\quad K_r=\frac{1-z_d}{\hat\beta}.
+$$
+
+把估计值当真值代入设计，叫**确定性等价**。危险也很直接：$\hat\beta$接近零时，控制量可能非常大。实验里的保护只把**用于除法的分母**夹离零，不修改RLS估计本身，所以不称为参数投影。
+
+合理初值、已知输入符号的参数约束、分母保护、执行器限幅和后备控制器各有用途，也各有代价。加上一项保护不等于已经证明闭环稳定。恢复时间表示从某样本起直到本实验终点一直留在误差带内；终点仍超带则记“未恢复”。
+
+<JupyterNotebook
+  title="Notebook 6：STR 闭环性能与确认等价的除零风险"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A0, B0 = 2.0, 3.0
+TS = 0.1
+ZD = 0.5
+
+
+def disc(a, b, Ts=TS):
+    al = np.exp(-a * Ts)
+    be = (b / a) * (1 - np.exp(-a * Ts))
+    return al, be
+
+
+AL0, BE0 = disc(A0, B0)
+
+
+def str_run(theta0, lam=0.98, adapt=True, a_jump=True, proj=0.0,
+            N=400, u_lim=100.0):
+    """STR 闭环。adapt=False 时冻结在 theta0（即固定增益控制器）。
+    proj>0 时对 beta_hat 做控制分母保护（估计值本身不分母保护） |beta_hat| >= proj。"""
+    th = np.array(theta0, dtype=float)
+    P = 1e4 * np.eye(2)
+    yk = 0.0
+    Y = np.zeros(N); U = np.zeros(N); TH = np.zeros((N, 2))
+    sat = 0
+    for k in range(N):
+        a_now = 4.0 if (a_jump and k * TS >= 20.0) else A0
+        al_s, be_s = disc(a_now, B0)
+        bh = th[1]
+        if proj > 0 and abs(bh) < proj:
+            bh = proj if bh >= 0 else -proj
+        with np.errstate(divide='ignore', invalid='ignore'):
+            raw = (ZD - th[0]) / bh * yk + (1 - ZD) / bh * 1.0
+        uk = float(np.clip(raw, -u_lim, u_lim))
+        sat += int(abs(raw) > u_lim)
+        y_next = al_s * yk + be_s * uk
+        if adapt:
+            phi = np.array([yk, uk])
+            L = (P @ phi) / (lam + phi @ P @ phi)
+            th = th + L * (y_next - phi @ th)
+            P = (np.eye(2) - np.outer(L, phi)) @ P / lam
+        Y[k] = y_next; U[k] = uk; TH[k] = th
+        yk = y_next
+        if not np.isfinite(yk) or not np.isfinite(th).all():
+            return Y, U, TH, k, sat
+        if abs(yk) > 1e6:
+            return Y, U, TH, k, sat
+    return Y, U, TH, None, sat`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# STR 闭环 vs 固定增益：a 在 t=20s 由 2 突变到 4，r=1 阶跃
+Kp_nom = (ZD - AL0) / BE0
+Kr_nom = (1 - ZD) / BE0
+al1, be1 = disc(4.0, B0)
+pole_after = al1 + be1 * Kp_nom
+yss = be1 * Kr_nom / (1 - pole_after)
+C6 = {}
+for label, kw in [('STR (lam=0.98, 初值粗)', dict(theta0=[0.5, 0.1], lam=0.98, adapt=True)),
+                  ('STR (lam=1.0, 初值粗)', dict(theta0=[0.5, 0.1], lam=1.0, adapt=True)),
+                  ('固定增益 (名义 a=2)', dict(theta0=[AL0, BE0], adapt=False))]:
+    Y, U, TH, kdiv, sat = str_run(**kw)
+    pre = np.mean(np.abs(Y[150:200] - 1.0))
+    post = np.mean(np.abs(Y[210:400] - 1.0))
+    err = np.abs(Y - 1.0)
+    idx = np.where((np.arange(400) * TS >= 20.0) & (err < 0.02))[0]
+    rec = (idx[0] - 200) if len(idx) else None
+    C6[label] = (pre, post, rec, np.max(np.abs(U)))
+    print('  %-28s %-14.4f %-14.4f %-14s %-10.3f'
+          % (label, pre, post, ('未恢复' if rec is None else '%d' % rec), C6[label][3]))
+FX = '固定增益 (名义 a=2)'
+S98 = 'STR (lam=0.98, 初值粗)'
+S10 = 'STR (lam=1.0, 初值粗)'
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 出图：三条输出轨迹与参数估计
+fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+for kw, lab, c in [(dict(theta0=[0.5, 0.1], lam=0.98), 'STR lam=0.98', 'C0'),
+                   (dict(theta0=[0.5, 0.1], lam=1.0), 'STR lam=1.0', 'C1'),
+                   (dict(theta0=[AL0, BE0], adapt=False), '固定增益', 'C2')]:
+    Y, U, TH, _, _ = str_run(**kw)
+    tt = np.arange(400) * TS
+    ax[0].plot(tt, Y, c, lw=1.6, label=lab)
+    ax[1].plot(tt, U, c, lw=1.2)
+ax[0].axhline(1.0, color='k', ls=':')
+ax[0].axvline(20.0, color='gray', ls='--', alpha=0.7)
+ax[0].set_ylabel('y(k)'); ax[0].legend(fontsize=9); ax[0].grid(alpha=0.3)
+ax[0].set_title('STR 与固定增益：a 在 t=20 s 由 2 突变到 4')
+ax[1].axvline(20.0, color='gray', ls='--', alpha=0.7)
+ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('u(k)'); ax[1].grid(alpha=0.3)
+ax[1].set_title('控制量')
+plt.tight_layout(); plt.show()` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 确认等价的除零风险：beta_hat 穿过零时会发生什么
+DZ = {}
+for label, th0, proj in [('theta0=[0,0]（beta_hat=0）无保护', [0.0, 0.0], 0.0),
+                         ('theta0=[0,0] + 分母保护 |beta_hat|>=0.05', [0.0, 0.0], 0.05),
+                         ('theta0=[0.5,0.1] 无保护', [0.5, 0.1], 0.0),
+                         ('theta0=[0.5,0.1] + 分母保护 0.05', [0.5, 0.1], 0.05)]:
+    Y, U, TH, kdiv, sat = str_run(th0, lam=0.98, proj=proj)
+    if kdiv is not None:
+        out = '数值失效 k=%d' % kdiv
+        dev = np.nan
+    else:
+        out = '完成有限窗口'
+        dev = np.mean(np.abs(Y[300:] - 1.0))
+    DZ[label] = (np.max(np.abs(U)), sat, dev, out)
+    print('  %-38s %-12s %-14d %-18s %-14s'
+          % (label, ('%.3f' % DZ[label][0]) if np.isfinite(DZ[label][0]) else 'nan',
+             sat, ('%.4f' % dev) if np.isfinite(dev) else '-', out))
+P0 = 'theta0=[0,0] + 分母保护 |beta_hat|>=0.05'
+G0 = 'theta0=[0.5,0.1] 无保护'
+G1 = 'theta0=[0.5,0.1] + 分母保护 0.05'
+` }
+]}
+/>
+
+
+## 噪声与鲁棒化
+
+### 原证明在哪里失效
+
+若测量为$x_p+n$，用于更新的误差是$e_m=x_p+n-x_m$，而真正的跟踪误差仍是$e=x_p-x_m$。乘积$e_m(x_p+n)$含相关项和$n^2$，不能直接当作独立零均值噪声。原先的$\dot V=a_me^2$也不再成立。
+
+参数可能因偏置和持续更新而偏离理想值，控制量也可能增大；但一条有限时长轨迹不能证明参数无界。比较不同噪声实现时，还要看多个种子，而不是只挑一条曲线。
+
+### 四种修正
+
+令$\phi=[x_p,r]^{\mathsf T}$，先写无噪声形式：
+
+| 修正 | 更新做法 | 需要付出的代价 |
+| --- | --- | --- |
+| $\sigma$修正 | 加$-\sigma\gamma_i k_i$ | 把参数拉向零，也可能引入跟踪偏差 |
+| $e$修正 | 加$-\nu\gamma_i\lvert e\rvert k_i$ | 误差小时泄漏变弱，保证仍需单独分析 |
+| 死区 | $\lvert e\rvert<\delta$时停止更新 | 阈值太小挡不住噪声，太大会留下误差 |
+| 投影 | 在允许集合的边界限制更新方向 | 要有包含合理参数的集合；不能修复任意模型遗漏 |
+
+连续时间投影算子和每步后裁剪参数不是一回事。本课代码的`projection`采用后者，是数值盒约束；控制增益范围也不等于惯量等物理参数范围。
+
+### 泄漏的一个可证明结论
+
+在本课一阶**无噪声、常参数、无饱和且精确模型**下，加入泄漏后有
+
+$$
+\dot V=a_me^2-\sigma|b|\sum_i\tilde k_i k_i
+\le -|a_m|e^2-\frac{\sigma|b|}{2}\sum_i\tilde k_i^2+C,
+\quad C=\frac{\sigma|b|}{2}\sum_i k_i^{*2}.
+$$
+
+取$c=\min(2|a_m|,\sigma\gamma_{\min})>0$，则$\dot V\le-cV+C$，从而
+
+$$
+V(t)\le e^{-ct}V(0)+\frac Cc(1-e^{-ct}).
+$$
+
+$\rho=C/c$是**$V$的水平值**，不是状态欧氏球的半径。它给出保守的最终范围；连同$V(0)$还可给全时段上界。它既不保证误差为零，也不保证唯一平衡点，不能直接拿去检验加入测量噪声后的轨迹。
+
+对$b>0$、$r=1$的无噪声常值平衡，第二条更新律给$e_{ss}=-\sigma k_{2,ss}$。由于$k_{2,ss}$也会随$\sigma$变化，这不表示误差严格正比于$\sigma$。补充实验会求出全部平衡根，避免把几组初值到达同一点当作唯一性证明。
+
+### 漏掉执行器动态会怎样
+
+原鲁棒化实验保留增益扫描、四种修正、泄漏平衡、30至240秒时域扩展和步长减半。还在输入前加入两个滞后环节：$\dot v_1=3(u-v_1)$、$\dot v_2=20(v_1-v_2)$，实际对象接收$v_2$。这是说明Rohrs类鲁棒性问题的**教学模型**，不声称逐项复现历史原例。
+
+表中“触阈值”表示仿真按预定数值阈值停止；“完成”只表示没有提前停止。不能从所列几个增益推导适用于所有参考、噪声和初值的临界增益，也不能从240秒的平台证明无限时间有界。
+
+<JupyterNotebook
+  title="Notebook 7：噪声下的参数漂移、四种鲁棒化修正与 sigma 的代价"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A_TRUE, B_TRUE = -2.0, 3.0
+AM, BM = -5.0, 5.0
+K1S = (AM - A_TRUE) / B_TRUE
+K2S = BM / B_TRUE
+W1, W2 = 3.0, 20.0        # 未建模极点（Rohrs 型）
+# 量测噪声模型：tau_n * n' = -n + w，w 是强度 q 的白噪声，稳态 std(n) = sqrt(q/(2*tau_n))。
+# 每步取一个样本时 w 的离散幅度应为 std(n) * sqrt(2*tau_n/dt)，
+# 这样连续时间噪声强度与积分步长无关（下面 cell 6 会做 dt 复核）。
+
+
+def sim_mrac(gamma=200.0, kind='multi', mod='none', par=0.0, noise=0.0,
+             tau_n=0.01, unm=False, T=60.0, dt=2e-4, seed=1, store_every=5,
+             k_lo=-3.0, k_hi=3.0, k10=0.0, k20=0.0):
+    """mod: none | sigma | deadzone | emod | projection"""
+    if kind == 'multi':
+        rf = lambda t: 1.0 + 0.5 * np.sin(2.0 * t) + 0.3 * np.sin(5.0 * t)
+    elif kind == 'step':
+        rf = lambda t: 1.0
+    else:
+        raise ValueError(kind)
+    N = int(round(T / dt))
+    rng = np.random.default_rng(seed)
+    xp, xm, k1, k2, v1, v2, n = 0.0, 0.0, k10, k20, 0.0, 0.0, 0.0
+    ts, ets, k1s, k2s, us = [], [], [], [], []
+
+    def deriv(xp, xm, k1, k2, v1, v2, n, r, xv):
+        xpn = xp + n
+        e = xpn - xm
+        uu = k1 * xpn + k2 * r
+        if mod == 'deadzone' and abs(e) < par:
+            d1, d2 = 0.0, 0.0
+        else:
+            d1 = -gamma * e * xpn
+            d2 = -gamma * e * r
+            if mod == 'sigma':
+                d1 -= gamma * par * k1
+                d2 -= gamma * par * k2
+            elif mod == 'emod':
+                d1 -= gamma * par * abs(e) * k1
+                d2 -= gamma * par * abs(e) * k2
+        if unm:
+            return (A_TRUE * xp + B_TRUE * v2, AM * xm + BM * r, d1, d2,
+                    W1 * (uu - v1), W2 * (v1 - v2), (-n + xv) / tau_n)
+        return (A_TRUE * xp + B_TRUE * uu, AM * xm + BM * r, d1, d2,
+                0.0, 0.0, (-n + xv) / tau_n)
+
+    div_t = np.nan
+    for i in range(N + 1):
+        t = i * dt
+        r = rf(t)
+        xv = rng.standard_normal() * noise * np.sqrt(2 * tau_n / dt)
+        xpn = xp + n
+        if i % store_every == 0:
+            ts.append(t); ets.append(xp - xm); k1s.append(k1); k2s.append(k2)
+            us.append(k1 * xpn + k2 * r)
+        if i == N:
+            break
+        s1 = deriv(xp, xm, k1, k2, v1, v2, n, r, xv)
+        s2 = deriv(xp+.5*dt*s1[0], xm+.5*dt*s1[1], k1+.5*dt*s1[2], k2+.5*dt*s1[3],
+                   v1+.5*dt*s1[4], v2+.5*dt*s1[5], n+.5*dt*s1[6], rf(t+.5*dt), xv)
+        s3 = deriv(xp+.5*dt*s2[0], xm+.5*dt*s2[1], k1+.5*dt*s2[2], k2+.5*dt*s2[3],
+                   v1+.5*dt*s2[4], v2+.5*dt*s2[5], n+.5*dt*s2[6], rf(t+.5*dt), xv)
+        s4 = deriv(xp+dt*s3[0], xm+dt*s3[1], k1+dt*s3[2], k2+dt*s3[3],
+                   v1+dt*s3[4], v2+dt*s3[5], n+dt*s3[6], rf(t+dt), xv)
+        xp += dt/6*(s1[0]+2*s2[0]+2*s3[0]+s4[0])
+        xm += dt/6*(s1[1]+2*s2[1]+2*s3[1]+s4[1])
+        k1 += dt/6*(s1[2]+2*s2[2]+2*s3[2]+s4[2])
+        k2 += dt/6*(s1[3]+2*s2[3]+2*s3[3]+s4[3])
+        v1 += dt/6*(s1[4]+2*s2[4]+2*s3[4]+s4[4])
+        v2 += dt/6*(s1[5]+2*s2[5]+2*s3[5]+s4[5])
+        n += dt/6*(s1[6]+2*s2[6]+2*s3[6]+s4[6])
+        if mod == 'projection':
+            k1 = min(max(k1, k_lo), k_hi)
+            k2 = min(max(k2, k_lo), k_hi)
+        if not np.isfinite([xp,xm,k1,k2,v1,v2,n]).all() or abs(xp) > 1e3 or abs(k1) > 1e4:
+            div_t = t
+            break
+    return dict(t=np.array(ts), e_true=np.array(ets), k1=np.array(k1s),
+                k2=np.array(k2s), u=np.array(us), div_t=div_t)
+
+
+def summarize(tag, d, frac=0.8):
+    if np.isfinite(d['div_t']):
+        print('  %-28s %-15s %-14s %-14s %-11s' % (tag, '触阈值 t=%.2f' % d['div_t'], '-', '-', '-'))
+        return
+    tail = d['t'] > frac * d['t'][-1]
+    print('  %-28s %-15.4e %-14.4e %-14.4f %-11.3f'
+          % (tag, np.sqrt(np.mean(d['e_true'][tail]**2)), np.std(d['k1'][tail]),
+             np.max(np.abs(d['k1'])), np.max(np.abs(d['u']))))`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 量测噪声标准差 0.1 下，gamma 决定参数漂移的幅度
+G = {}
+for g in [2.0, 20.0, 200.0]:
+    d = sim_mrac(gamma=g, noise=0.1, T=60.0, seed=1)
+    tail = d['t'] > 48
+    G[g] = (np.sqrt(np.mean(d['e_true'][tail]**2)), np.std(d['k1'][tail]),
+            np.std(d['k2'][tail]), np.max(np.abs(d['u'])))
+    print('  %-10.0f %-16.4e %-16.4e %-16.4e %-12.3f' % ((g,) + G[g]))
+d0 = sim_mrac(gamma=200.0, noise=0.0, T=60.0)
+tail0 = d0['t'] > 48
+G[0.0] = (np.sqrt(np.mean(d0['e_true'][tail0]**2)), np.std(d0['k1'][tail0]),
+          np.std(d0['k2'][tail0]), np.max(np.abs(d0['u'])))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 四种修正的横向对比（噪声场景）
+def stat(d, frac=0.8):
+    tail = d['t'] > frac * d['t'][-1]
+    return (np.sqrt(np.mean(d['e_true'][tail]**2)), np.std(d['k1'][tail]),
+            np.max(np.abs(d['k1'])), np.max(np.abs(d['u'])))
+
+
+MODS = [('无修正', 'none', 0.0),
+        ('sigma-mod  sigma=0.01', 'sigma', 0.01),
+        ('sigma-mod  sigma=0.1', 'sigma', 0.1),
+        ('死区  delta=0.02', 'deadzone', 0.02),
+        ('死区  delta=0.1', 'deadzone', 0.1),
+        ('e-mod  nu=0.1', 'emod', 0.1),
+        ('e-mod  nu=1.0', 'emod', 1.0),
+        ('投影  k in [-3, 3]', 'projection', 0.0)]
+S = {}
+for tag, m, p in MODS:
+    S[tag] = stat(sim_mrac(gamma=200.0, mod=m, par=p, noise=0.1, T=60.0, seed=1))
+    print('  %-28s %-15.4e %-14.4e %-14.4f %-11.3f' % ((tag,) + S[tag]))
+IDEAL = stat(sim_mrac(gamma=200.0, noise=0.0, T=60.0))
+STRONG = [S['sigma-mod  sigma=0.1'], S['e-mod  nu=1.0'], S['投影  k in [-3, 3]']]
+ALLE = [S[t] for t, _, _ in MODS]
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 的稳态平衡点：无噪声、r=1，验证平衡条件 e_ss = -sigma*k2_ss/r
+SIG = {}
+for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0, 3.0]:
+    d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=s, noise=0.0,
+                 T=60.0, dt=1e-3, seed=1)
+    m = d['t'] > 57
+    k1 = d['k1'][m].mean(); k2 = d['k2'][m].mean(); e = d['e_true'][m].mean()
+    SIG[s] = (k1, k2, e, -B_TRUE * k2 / (A_TRUE + B_TRUE * k1))
+    print('  %-8.3f %-11.5f %-11.5f %-13.4e %-13.4e %-12.6f'
+          % (s, k1, k2, e, -s * k2, -B_TRUE * k2 / (A_TRUE + B_TRUE * k1)))
+IC = [(0.0, 0.0), (-2.0, 0.0), (0.5, 3.0), (-3.0, -2.0)]
+for k10, k20 in IC:
+    d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=0.0, noise=0.0,
+                 T=60.0, dt=1e-3, seed=1, k10=k10, k20=k20)
+    m = d['t'] > 57
+    print('  %-16s %-11.5f %-11.5f %-11.1e'
+          % ('(%.1f, %.1f)' % (k10, k20), d['k1'][m].mean(), d['k2'][m].mean(),
+             d['e_true'][m].mean()))
+for k10, k20 in IC:
+    d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=0.01, noise=0.0,
+                 T=60.0, dt=1e-3, seed=1, k10=k10, k20=k20)
+    m = d['t'] > 57
+    print('  (k1_0, k2_0) = (%.1f, %.1f) -> k_ss = (%.5f, %.5f)'
+          % (k10, k20, d['k1'][m].mean(), d['k2'][m].mean()))
+` },
+{ title: "计算", code: `print('注意：rho及参数界只适用于无噪声标称证明；右侧有噪声实测不能据此验界。')
+print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 的标度律：所列 sigma 配置的有限窗口比较
+Sg = K1S**2 + K2S**2
+g0 = 200.0
+for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0]:
+    d = sim_mrac(gamma=g0, mod='sigma', par=s, noise=0.1, T=60.0, seed=1)
+    tail = d['t'] > 48
+    if s == 0.0:
+        rs, kb, reg, rr = 'inf', 'inf', '-', '-'
+    elif s * g0 <= 2 * abs(AM):
+        rho = abs(B_TRUE) * Sg / (2 * g0)
+        rs = '%.4f' % rho
+        kb = '%.3f' % (abs(K1S) + np.sqrt(rho * 2 * g0 / abs(B_TRUE)))
+        reg = 'A (mu=1)'; rr = '%.2f' % (s * g0)
+    else:
+        rho = s * abs(B_TRUE) * Sg / (4 * abs(AM))
+        rs = '%.4f' % rho
+        kb = '%.3f' % (abs(K1S) + np.sqrt(rho * 2 * g0 / abs(B_TRUE)))
+        reg = 'B'; rr = '%.1f' % (2 * abs(AM))
+    print('  %-7.3f %-10s %-9s %-11s %-8s | %-9.3f %-10.4f %-11.4f %-8.3f'
+          % (s, rs, kb, reg, rr, np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
+             np.sqrt(np.mean(d['e_true'][tail]**2)), np.max(np.abs(d['u']))))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma=0 到底有没有"终极界"？把仿真时长从 30 s 拉到 240 s（上半：sigma=0）
+# 这个 cell 有 4 次长仿真，运行约 15 秒
+TSW = [30.0, 60.0, 120.0, 240.0]
+lres = {}
+for T in TSW:
+    d = sim_mrac(gamma=200.0, mod='sigma', par=0.0, noise=0.1, T=T, seed=1)
+    tail = d['t'] > 0.5 * T
+    lres[(0.0, T)] = (np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
+                      np.max(np.abs(d['u'])), np.sqrt(np.mean(d['e_true'][tail]**2)))
+    print('  %-8.1f %-8.0f %-12.3f %-12.3f %-11.2f %-11.4f' % ((0.0, T) + lres[(0.0, T)]))` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 下半：sigma=0.1，并与 sigma=0 对照（4 次长仿真，约 15 秒）
+for T in TSW:
+    d = sim_mrac(gamma=200.0, mod='sigma', par=0.1, noise=0.1, T=T, seed=1)
+    tail = d['t'] > 0.5 * T
+    lres[(0.1, T)] = (np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
+                      np.max(np.abs(d['u'])), np.sqrt(np.mean(d['e_true'][tail]**2)))
+    print('  %-8.1f %-8.0f %-12.3f %-12.3f %-11.2f %-11.4f' % ((0.1, T) + lres[(0.1, T)]))
+m0 = [lres[(0.0, T)][0] for T in TSW]
+m1 = [lres[(0.1, T)][0] for T in TSW]
+p0 = np.polyfit(np.log(np.array(TSW)), np.log(np.array(m0)), 1)[0]
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Rohrs 型反例：两个未建模极点 + 自适应增益 ；只检查所列增益与有限时域
+
+
+def rms_tail(d, t0=32.0):
+    m = d['t'] > t0
+    return np.sqrt(np.mean(d['e_true'][m]**2))
+
+
+GS = [1.0, 2.0, 3.0, 4.0, 6.0, 10.0, 20.0, 100.0]
+DIV, RMS, SAME = {}, {}, True
+for g in GS:
+    dt_ = min(2e-4, 0.5 / (g * 4.0))
+    row = []
+    for f in [1.0, 0.5]:
+        d = sim_mrac(gamma=g, unm=True, noise=0.0, T=40.0, dt=dt_ * f,
+                     store_every=max(1, int(2e-3 / (dt_ * f))), seed=0)
+        if np.isfinite(d['div_t']):
+            row.append('触阈值 t=%.2f s' % d['div_t'])
+        else:
+            row.append('完成40s rms|e|=%.3e' % rms_tail(d))
+        if f == 1.0:
+            DIV[g] = d['div_t']
+            RMS[g] = None if np.isfinite(d['div_t']) else rms_tail(d)
+    SAME = SAME and (row[0] == row[1])
+    print('  %-10.1f %-10.0e %-22s %-22s' % (g, dt_, row[0], row[1]))
+ok = [g for g in GS if RMS[g] is not None]
+bad = [g for g in GS if RMS[g] is None]
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 能救回 Rohrs 失稳吗？（gamma=100，无修正时 0.76 s 发散）
+D8 = {}
+for tag, m, p in [('无修正', 'none', 0.0),
+                  ('sigma-mod  sigma=0.1', 'sigma', 0.1),
+                  ('sigma-mod  sigma=1.0', 'sigma', 1.0),
+                  ('死区  delta=0.1', 'deadzone', 0.1),
+                  ('e-mod  nu=1.0', 'emod', 1.0),
+                  ('投影  k in [-3, 3]', 'projection', 0.0)]:
+    D8[tag] = sim_mrac(gamma=100.0, mod=m, par=p, noise=0.1, unm=True,
+                       T=40.0, seed=1)
+    summarize(tag, D8[tag])
+d3 = sim_mrac(gamma=3.0, unm=True, noise=0.1, T=40.0, seed=1)
+` }
+]}
+/>
+
+
+### 自己调参数
+
+先用默认阶跃看参数终点与理想点的差别，再换正弦与多正弦；最后分别加噪声、泄漏和未建模极点。每次只改一个条件，先看真实跟踪误差，再看控制峰值和参数。默认值为$\gamma=50,\sigma=0$、无噪声、无额外极点，计算40秒；与前面的手算例采用同一对象和参考模型。默认终点增益约为$(-0.728771,1.395437)$，末段真实误差RMS约$1.1\times10^{-15}$，全时段采样控制峰值约$2.400381$；参数仍没有到达理想点。
+
+<MracExplorer />
+
+## 两个应用模型
+
+### 机械臂换负载
+
+单连杆模型为
+
+$$
+J\ddot q+B\dot q+mgL\sin q=u.
+$$
+
+本例$B$已知，只估计$\theta=[J,mgL]^{\mathsf T}$。给定参考$q_d$，定义$e_q=q-q_d$、$\dot q_r=\dot q_d-\lambda e_q$、$s=\dot q-\dot q_r$，所以$s=\dot e_q+\lambda e_q$。让$s$趋于零，就会让角度误差按稳定的一阶方程减小。
+
+取$\phi=[\ddot q_r,\sin q]^{\mathsf T}$，控制律和更新律为
+
+$$
+u_{cmd}=\hat\theta^{\mathsf T}\phi+B\dot q-K_ds,\qquad
+\dot{\hat\theta}=-\Gamma\phi s.
+$$
+
+为方便本段推导，定义$\tilde\theta=\theta-\hat\theta$，方向与前面增益误差相反。常参数、无测量噪声且$u=u_{cmd}$时，$J\dot s=-\tilde\theta^{\mathsf T}\phi-K_ds$。因此
+
+$$
+V=\frac12Js^2+\frac12\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta,
+\qquad \dot V=-K_ds^2.
+$$
+
+在$\lambda,K_d>0$、有界光滑参考等条件下可进一步得到跟踪收敛。若实际力矩被裁剪，$\dot V$还多出$s(u-u_{cmd})$；负载突然改变时，参数误差及$V$也可能跳变。下面的带限幅、负载跳变实验只能展示该配置的表现，不能套用刚才的恒等式证明全程单调。
+
+负载在3秒由1kg变为5kg，$J=0.2+0.25m$由0.45变为1.45kg·m²，$mgL=4.905m$由4.905变为24.525N·m，限幅60N·m。模型假定换载瞬间角度和速度连续，不模拟抓取冲击。初始角度和**速度**均取参考初值。
+
+若$q_d=\sin t$且跟踪较好，$\ddot q_r\approx-\sin t$，但$\sin(\sin t)$并不精确等于某个倍数的$\sin t$：它还有高次谐波。基波系数约0.880，可能让惯量和重力项难以分开；这属于激励强弱和数值条件问题，不能直接断言严格不可辨识。双频参考可改变这一条件，仍要检查实际回归量。
+
+<JupyterNotebook
+  title="Notebook 8：机械臂负载突变的自适应控制实测"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+G_ACC, L = 9.81, 0.5
+J0, B_TRUE = 0.2, 0.5
+LAM, KD, U_LIM = 2.0, 20.0, 60.0
+DT_REF = 2e-4   # 白噪声强度基准：幅度按 sqrt(DT_REF/dt) 缩放，保证与步长无关
+
+
+def params(m):
+    """theta = [J, m g L]"""
+    return np.array([J0 + m * L**2, m * G_ACC * L])
+
+
+def ref_traj(t, rich=True):
+    """rich=True: 双频参考（回归量可辨识）；rich=False: 单频 sin(t)（近共线）"""
+    if rich:
+        return (np.sin(t) + 0.5*np.sin(2.3*t),
+                np.cos(t) + 1.15*np.cos(2.3*t),
+                -np.sin(t) - 2.645*np.sin(2.3*t))
+    return np.sin(t), np.cos(t), -np.sin(t)
+
+
+def sim_arm(T=20.0, dt=2e-4, mode='adaptive', gam=200.0, m0=1.0, m1=5.0,
+            t_jump=3.0, th0_m=2.0, rich=True, noise=0.0, seed=0, store_every=10):
+    """mode: adaptive | fixed_ct（冻结在初值） | fixed_pd（纯 PD，不补偿重力）"""
+    J, mgL = params(m0)
+    th = params(th0_m)
+    Gm = gam * np.ones(2)
+    N = int(round(T / dt))
+    rng = np.random.default_rng(seed)
+    q0, v0, _ = ref_traj(0.0, rich)
+    q, v = q0, v0
+    ts, es, us, ths, ss = [], [], [], [], []
+    for i in range(N + 1):
+        t = i * dt
+        if t >= t_jump:
+            J, mgL = params(m1)
+        q_d, qd_d, qdd_d = ref_traj(t, rich)
+        n = rng.standard_normal() * noise * np.sqrt(DT_REF / dt)
+        qm, vm = q + n, v + n
+        e1 = qm - q_d
+        e2 = vm - qd_d
+        s = e2 + LAM * e1
+        qr_ddot = qdd_d - LAM * e2
+        phi = np.array([qr_ddot, np.sin(qm)])
+        if mode == 'fixed_pd':
+            u = -60.0 * e1 - 20.0 * e2
+        else:
+            u = th @ phi + B_TRUE * vm - KD * s
+        u = float(np.clip(u, -U_LIM, U_LIM))
+        if i % store_every == 0:
+            ts.append(t); es.append(q - q_d); us.append(u); ths.append(th.copy()); ss.append(s)
+        if i == N:
+            break
+        acc = (u - B_TRUE * v - mgL * np.sin(q)) / J
+        v_new = v + dt * acc
+        q = q + dt * v_new
+        v = v_new
+        if mode == 'adaptive':
+            th = th - dt * Gm * s * phi
+        if not np.isfinite(q) or abs(q) > 1e3:
+            break
+    return dict(t=np.array(ts), e=np.array(es), u=np.array(us), th=np.array(ths),
+                s=np.array(ss))`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验：V̇ = -K_d s^2 是代数恒等式吗？在随机状态点上验证
+rng = np.random.default_rng(0)
+max_abs, max_tgt = 0.0, 0.0
+for _ in range(20000):
+    q = rng.uniform(-2, 2); v = rng.uniform(-3, 3); t = rng.uniform(0, 10)
+    m = float(rng.choice([1.0, 3.0, 5.0]))
+    gam = 5.0
+    J, mgL = params(m)
+    th = params(float(rng.uniform(0.5, 6.0)))
+    q_d, qd_d, qdd_d = ref_traj(t, True)
+    e1 = q - q_d; e2 = v - qd_d
+    s = e2 + LAM * e1
+    qr_ddot = qdd_d - LAM * e2
+    phi = np.array([qr_ddot, np.sin(q)])
+    u = th @ phi + B_TRUE * v - KD * s
+    sd = (u - B_TRUE * v - mgL * np.sin(q)) / J - qr_ddot      # = s_dot
+    thd = -gam * s * phi                                        # = theta_hat_dot
+    tht = np.array([J - th[0], mgL - th[1]])                    # = theta_tilde
+    Vd = J * s * sd + tht @ (-thd) / gam
+    tgt = -KD * s * s
+    max_abs = max(max_abs, abs(Vd - tgt))
+    max_tgt = max(max_tgt, abs(tgt))
+
+print('常参数无饱和恒等式随机残差', max_abs, '相对残差', max_abs/max_tgt)
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 负载突变：五种控制器的对比
+runs = [('自适应 gamma=50', dict(mode='adaptive', gam=50.0)),
+        ('自适应 gamma=200', dict(mode='adaptive', gam=200.0)),
+        ('自适应 gamma=1000', dict(mode='adaptive', gam=1000.0)),
+        ('定增益计算力矩(冻结 m=2)', dict(mode='fixed_ct')),
+        ('纯 PD(不补偿重力/惯量)', dict(mode='fixed_pd'))]
+out = {}
+for label, kw in runs:
+    d = sim_arm(**kw)
+    out[label] = d
+    e = np.abs(d['e'])
+    bad = np.where((d['t'] > 3.0) & (e >= 0.02))[0]
+    rec = None if e[-1] >= 0.02 else (d['t'][bad[-1]+1] - 3.0 if len(bad) else 0.0)
+    print('  %-28s %-14.4e %-14.4e %-14.4f %-11s %-9.2f'
+          % (label, np.sqrt(np.mean(d['e'][d['t'] < 3.0]**2)),
+             np.sqrt(np.mean(d['e'][d['t'] > 6.0]**2)), np.max(e[d['t'] > 3.0]),
+             ('窗口内未恢复' if rec is None else '%.2f s' % rec), np.max(np.abs(d['u']))))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 激励丰富度决定参数是否可辨识
+pt = params(5.0)
+RID = {}
+for rich, lab in [(True, 'sin(t)+0.5sin(2.3t)'), (False, 'sin(t) 单频')]:
+    d = sim_arm(gam=200.0, rich=rich)
+    RID[lab] = (d['th'][-1, 0], 100 * abs(d['th'][-1, 0] - pt[0]) / pt[0],
+                d['th'][-1, 1], 100 * abs(d['th'][-1, 1] - pt[1]) / pt[1],
+                np.sqrt(np.mean(d['e'][d['t'] > 6.0]**2)))
+    print('  %-26s %-14.4f %-10s %-14.4f %-10s %-13.4f'
+          % (lab, RID[lab][0], '%.2f%%' % RID[lab][1],
+             RID[lab][2], '%.2f%%' % RID[lab][3], RID[lab][4]))
+R1 = RID['sin(t)+0.5sin(2.3t)']
+R2 = RID['sin(t) 单频']
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 参数收敛过程与出图；再看量测噪声的影响
+d = sim_arm(gam=200.0, rich=True)
+pt = params(5.0)
+for tt in [0, 3, 4, 5, 6, 8, 12, 20]:
+    i = np.argmin(np.abs(d['t'] - tt))
+    print('  %-8.1f %-14.4f %-14.4f %-14.4f %-14.4f'
+          % (d['t'][i], d['th'][i,0], params(1.0 if d['t'][i] < 3 else 5.0)[0], d['th'][i,1], params(1.0 if d['t'][i] < 3 else 5.0)[1]))
+fig, ax = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+for kw, lab, c in [(dict(mode='adaptive', gam=200.0), '自适应 gamma=200', 'C0'),
+                   (dict(mode='adaptive', gam=1000.0), '自适应 gamma=1000', 'C1'),
+                   (dict(mode='fixed_ct'), '定增益计算力矩', 'C2'),
+                   (dict(mode='fixed_pd'), '纯 PD', 'C3')]:
+    dd = sim_arm(**kw)
+    ax[0].plot(dd['t'], dd['e'], c, lw=1.4, label=lab)
+    ax[1].plot(dd['t'], dd['u'], c, lw=1.0)
+ax[0].axvline(3.0, color='gray', ls='--', alpha=0.7)
+ax[0].set_ylim(-0.4, 0.4); ax[0].set_ylabel('e = q - q_d (rad)')
+ax[0].legend(fontsize=8); ax[0].grid(alpha=0.3)
+ax[0].set_title('负载 1kg -> 5kg 突变（t=3 s）下的跟踪误差')
+ax[1].axvline(3.0, color='gray', ls='--', alpha=0.7)
+ax[1].axhline(U_LIM, color='k', ls=':'); ax[1].axhline(-U_LIM, color='k', ls=':')
+ax[1].set_ylim(-70, 70); ax[1].set_ylabel('u (N*m)'); ax[1].grid(alpha=0.3)
+ax[1].set_title('控制量（虚线为 ±60 N*m 限幅）')
+ax[2].plot(d['t'], d['th'][:,0], 'C0', lw=1.6, label='J_hat')
+ax[2].axhline(pt[0], color='C0', ls=':')
+ax[2].plot(d['t'], d['th'][:,1], 'C1', lw=1.6, label='(mgL)_hat')
+ax[2].axhline(pt[1], color='C1', ls=':')
+ax[2].axvline(3.0, color='gray', ls='--', alpha=0.7)
+ax[2].set_xlabel('t (s)'); ax[2].set_ylabel('参数估计'); ax[2].legend(fontsize=9)
+ax[2].grid(alpha=0.3); ax[2].set_title('参数估计（虚线为突变后真值 J=1.45, mgL=24.525）')
+plt.tight_layout(); plt.show()
+for nz in [0.0, 0.002, 0.01]:
+    dn = sim_arm(gam=200.0, rich=True, noise=nz, seed=2)
+    tail = dn['t'] > 10
+    print('  %-12s %-16.4e %-14.4f %-14.4f'
+          % (nz, np.sqrt(np.mean(dn['e'][tail]**2)), dn['th'][-1,0], dn['th'][-1,1]))
+` }
+]}
+/>
+
+
+噪声实验把同一个随机数加到角度和角速度的归一化测量上，是相关噪声敏感性演示，不是已标定的传感器模型。固定计算力矩和PD均按原配置保留，没有为每种方法重新优化。
+
+### 俯仰系数随高度变化
+
+第二个例子使用简化的俯仰模型$\ddot x+a_1(h)\dot x+a_0(h)x=b(h)u$。三个系数都乘同一个因子$\eta(h)=e^{-h/8500}$；高度在60秒从0升到10000m，再保持不变。这是教学假设，不能代表所有真实气动导数的变化规律。它控制俯仰状态，**不是高度控制器**。
+
+海平面$a_0=16,a_1=2,b=40$；参考模型$\omega_n=3,\zeta=0.9$，故
+
+$$
+A_m=\begin{bmatrix}0&1\\-9&-5.4\end{bmatrix},\qquad B_m=\begin{bmatrix}0\\9\end{bmatrix}.
+$$
+
+每个固定高度的理想增益是$k_1^*=(a_0-9)/b$、$k_2^*=(a_1-5.4)/b$、$k_r^*=9/b$。精确调度器直接使用真高度和真系数，天然拥有信息优势；另一调度器将比例表放大30%。MRAC不读取高度，但使用已知输入方向和名义$B_p=[0,40]^{\mathsf T}$。
+
+爬升期间真系数和理想增益都在变，常参数证明不能原封不动照搬，$V$求导还会出现时变理想参数等附加项。比较的是固定海平面增益、两种调度表和两个MRAC增益在同一120秒实验中的表现；2rad输入限幅只是模型参数，不据此声称真实飞机可执行。
+
+<JupyterNotebook
+  title="Notebook 9：固定增益 vs 增益调度 vs MRAC 的爬升跟踪对比"
+  setupCode={`import numpy as np
+from scipy.linalg import solve_continuous_lyapunov
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+A0_SL, A1_SL, B_SL = 16.0, 2.0, 40.0
+H_SCALE, T_CLIMB, H_TOP = 8500.0, 60.0, 10000.0
+WM, ZM = 3.0, 0.9
+A_M = np.array([[0.0, 1.0], [-WM**2, -2*ZM*WM]])
+B_M = np.array([0.0, WM**2])
+B_NOM = np.array([0.0, B_SL])       # 自适应律里用的名义控制方向
+Q = np.eye(2)
+P = solve_continuous_lyapunov(A_M.T, -Q)
+PBx1 = float(P[0, 0]*B_NOM[0] + P[0, 1]*B_NOM[1])
+PBx2 = float(P[1, 0]*B_NOM[0] + P[1, 1]*B_NOM[1])
+AM00, AM01, AM10, AM11 = A_M[0,0], A_M[0,1], A_M[1,0], A_M[1,1]
+BM0, BM1 = B_M[0], B_M[1]
+
+
+def sigma(t):
+    h = min(H_TOP, H_TOP * t / T_CLIMB)
+    return np.exp(-h / H_SCALE), h
+
+
+def ideal_gains(s):
+    a0, a1, b = A0_SL*s, A1_SL*s, B_SL*s
+    return (-WM**2 + a0)/b, (-2*ZM*WM + a1)/b, WM**2/b
+
+
+K1_SL, K2_SL, KR_SL = ideal_gains(1.0)
+
+
+def sim_pitch(mode='mrac', T=120.0, dt=1e-3, gam=200.0, table_err=0.0,
+              store_every=5, u_lim=2.0):
+    """mode: fixed（海平面整定）| sched（增益调度）| mrac（在线自适应）"""
+    rf = lambda t: np.sin(2*t)
+    N = int(round(T / dt))
+    x1 = x2 = xm1 = xm2 = 0.0
+    if mode == 'mrac':
+        g1 = g2 = gr = 0.0
+    else:
+        g1, g2, gr = K1_SL, K2_SL, KR_SL
+
+    def ctrl(z1, z2, s, r, h1, h2, hr):
+        if mode == 'fixed':
+            return K1_SL*z1 + K2_SL*z2 + KR_SL*r
+        if mode == 'sched':
+            sk = s * (1.0 + table_err)
+            kk1, kk2, kkr = ideal_gains(sk)
+            return kk1*z1 + kk2*z2 + kkr*r
+        return h1*z1 + h2*z2 + hr*r
+
+    def deriv(z1, z2, m1, m2, h1, h2, hr, tt):
+        s, _ = sigma(tt)
+        a0, a1, b = A0_SL*s, A1_SL*s, B_SL*s
+        r = rf(tt)
+        uu = ctrl(z1, z2, s, r, h1, h2, hr)
+        uu = max(-u_lim, min(u_lim, uu))
+        e1 = z1 - m1; e2 = z2 - m2
+        spb = e1*PBx1 + e2*PBx2
+        if mode == 'mrac':
+            return (z2, -a0*z1 - a1*z2 + b*uu,
+                    AM00*m1 + AM01*m2 + BM0*r, AM10*m1 + AM11*m2 + BM1*r,
+                    -gam*z1*spb, -gam*z2*spb, -gam*r*spb)
+        return (z2, -a0*z1 - a1*z2 + b*uu,
+                AM00*m1 + AM01*m2 + BM0*r, AM10*m1 + AM11*m2 + BM1*r,
+                0.0, 0.0, 0.0)
+
+    ts, ens, us, hs, K1s = [], [], [], [], []
+    for i in range(N + 1):
+        t = i * dt
+        s, h = sigma(t)
+        r = rf(t)
+        uu = max(-u_lim, min(u_lim, ctrl(x1, x2, s, r, g1, g2, gr)))
+        if i % store_every == 0:
+            ts.append(t); ens.append(np.hypot(x1-xm1, x2-xm2)); us.append(uu)
+            hs.append(h); K1s.append(g1)
+        if i == N:
+            break
+        a_ = deriv(x1, x2, xm1, xm2, g1, g2, gr, t)
+        b_ = deriv(x1+.5*dt*a_[0], x2+.5*dt*a_[1], xm1+.5*dt*a_[2], xm2+.5*dt*a_[3],
+                   g1+.5*dt*a_[4], g2+.5*dt*a_[5], gr+.5*dt*a_[6], t+.5*dt)
+        c_ = deriv(x1+.5*dt*b_[0], x2+.5*dt*b_[1], xm1+.5*dt*b_[2], xm2+.5*dt*b_[3],
+                   g1+.5*dt*b_[4], g2+.5*dt*b_[5], gr+.5*dt*b_[6], t+.5*dt)
+        d_ = deriv(x1+dt*c_[0], x2+dt*c_[1], xm1+dt*c_[2], xm2+dt*c_[3],
+                   g1+dt*c_[4], g2+dt*c_[5], gr+dt*c_[6], t+dt)
+        x1 += dt/6*(a_[0]+2*b_[0]+2*c_[0]+d_[0])
+        x2 += dt/6*(a_[1]+2*b_[1]+2*c_[1]+d_[1])
+        xm1 += dt/6*(a_[2]+2*b_[2]+2*c_[2]+d_[2])
+        xm2 += dt/6*(a_[3]+2*b_[3]+2*c_[3]+d_[3])
+        g1 += dt/6*(a_[4]+2*b_[4]+2*c_[4]+d_[4])
+        g2 += dt/6*(a_[5]+2*b_[5]+2*c_[5]+d_[5])
+        gr += dt/6*(a_[6]+2*b_[6]+2*c_[6]+d_[6])
+        if not (np.isfinite(x1) and np.isfinite(x2)) or abs(x1) > 1e3:
+            break
+    return dict(t=np.array(ts), en=np.array(ens), u=np.array(us),
+                h=np.array(hs), k1=np.array(K1s))`}
+  cells={[
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 三种方案在爬升剖面下的跟踪性能
+k1t, k2t, krt = ideal_gains(sigma(T_CLIMB)[0])
+out = {}
+R9 = {}
+for label, kw in [('固定增益（海平面整定）', dict(mode='fixed')),
+                  ('增益调度（密度表精确）', dict(mode='sched', table_err=0.0)),
+                  ('增益调度（密度表偏差 30%）', dict(mode='sched', table_err=0.30)),
+                  ('MRAC（Gamma=50，不知高度）', dict(mode='mrac', gam=50.0)),
+                  ('MRAC（Gamma=200，不知高度）', dict(mode='mrac', gam=200.0))]:
+    d = sim_pitch(**kw)
+    out[label] = d
+    climb = (d['t'] > 2.0) & (d['t'] < 60.0)
+    top = d['t'] > 70.0
+    en = d['en']
+    R9[label] = (np.sqrt(np.mean(en[climb]**2)), np.sqrt(np.mean(en[top]**2)),
+                 np.max(en[top]), en[-1], np.max(np.abs(d['u'])))
+    print('  %-30s %-14.4e %-14.4e %-14.4e %-13.4e %-9.3f' % ((label,) + R9[label]))
+SC = '增益调度（密度表精确）'
+S3 = '增益调度（密度表偏差 30%）'
+MR = 'MRAC（Gamma=200，不知高度）'
+FX = '固定增益（海平面整定）'
+for lab in ['MRAC（Gamma=50，不知高度）', 'MRAC（Gamma=200，不知高度）']:
+    en, t = out[lab]['en'], out[lab]['t']
+    for thr in [1e-2, 1e-3]:
+        stay = None
+        for i in np.where(en < thr)[0]:
+            if np.all(en[i:] < thr):
+                stay = t[i]
+                break
+        print('    %-28s |e| < %.0e 从 t = %s 起一直保持'
+              % (lab, thr, ('%.2f s' % stay) if stay is not None else 'never'))` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 固定增益为什么还能保持稳定？闭环极点随高度的变化
+for tt in [0.0, 30.0, 60.0, 120.0]:
+    s, h = sigma(tt)
+    a0, a1, b = A0_SL*s, A1_SL*s, B_SL*s
+    ev = np.linalg.eigvals(np.array([[0.0, 1.0], [-a0 + b*K1_SL, -a1 + b*K2_SL]]))
+    wn = np.sqrt(a0 - b*K1_SL)
+    zeta = (a1 - b*K2_SL) / (2*wn)
+    dc = b * KR_SL / (a0 - b*K1_SL)
+    print('  %-24s %-22s %-9.3f %-9.3f %-10.4f'
+          % ('t=%.0f s, h=%.0f m' % (tt, h), np.round(ev, 3), wn, zeta, dc))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 出图：误差包络与增益轨迹
+fig, ax = plt.subplots(1, 2, figsize=(11, 4.0))
+for label, c in [('固定增益（海平面整定）', 'C2'), ('增益调度（密度表偏差 30%）', 'C1'),
+                 ('MRAC（Gamma=200，不知高度）', 'C0')]:
+    d = out[label]
+    ax[0].semilogy(d['t'], np.maximum(d['en'], 1e-16), c, lw=1.6, label=label)
+d2 = out['增益调度（密度表精确）']
+ax[0].semilogy(d2['t'], np.maximum(d2['en'], 1e-18), 'C3', lw=1.6, ls='--',
+               label='增益调度（密度表精确）')
+ax[0].axvline(60.0, color='gray', ls=':', alpha=0.7)
+ax[0].set_xlim(0, 120); ax[0].set_ylim(1e-16, 10)
+ax[0].set_xlabel('t (s)'); ax[0].set_ylabel('||e||')
+ax[0].legend(fontsize=8); ax[0].grid(alpha=0.3, which='both')
+ax[0].set_title('跟踪误差（t=60 s 到达 10 km 顶点）')
+dm = out['MRAC（Gamma=200，不知高度）']
+kk = np.linspace(0, 120, 400)
+ax[1].plot(dm['t'], dm['k1'], 'C0', lw=1.8, label='MRAC 的 k1(t)')
+ax[1].plot(kk, [ideal_gains(sigma(t)[0])[0] for t in kk], 'k--', lw=1.4,
+           label='理想 k1*(h)（MRAC 不知道它）')
+ax[1].axhline(K1_SL, color='C2', ls=':', lw=1.4, label='固定增益用的海平面值')
+ax[1].axvline(60.0, color='gray', ls=':', alpha=0.7)
+ax[1].set_xlim(0, 120); ax[1].set_ylim(-0.6, 0.4)
+ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('k1')
+ax[1].legend(fontsize=8); ax[1].grid(alpha=0.3)
+ax[1].set_title('MRAC 的 k1 追着理想值走（并在顶点后继续微调）')
+plt.tight_layout(); plt.show()
+` }
+]}
+/>
+
+
+固定增益的冻结高度极点仍可稳定，但对正弦的幅相跟随变差；“跟踪差”不等于“失稳”。精确调度在这个模型上消除了系数变化，并不说明调度在所有任务都优于自适应。
+
+## 怎样选择方法
+
+| 问题 | 设计时先检查什么 |
+| --- | --- |
+| 需要跟踪，还是还需要真实参数？ | 后者必须检查辨识条件，遗忘因子不能凭空补足信息 |
+| 参数变化能否由可测工况预测？ | 有可信模型可研究调度；没有时考虑在线估计，仍需稳定性分析 |
+| 不确定项能否由现有输入结构补偿？ | 先验匹配条件；严格反馈结构也可研究自适应反步 |
+| 主要问题是噪声和遗漏的快速动态吗？ | 检查传感器、带宽与模型；不能只增大自适应增益 |
+| 主要问题是有界外扰吗？ | 可研究鲁棒或滑模设计，并考虑扰动假设、采样、抖振及限幅 |
+
+自适应、鲁棒、调度和滑模并不是按性能排成一列的替代品。本课没有实现同带宽、各自独立整定的全部基线，因此只解释各自需要什么信息，不作整体排名。超过某个百分比就必须换方法之类经验阈值，在这里没有依据。
+
+## 适用边界
+
+回看本课的证明，每次保证成立都有清楚的前提：常参数、匹配、已知输入信息、可测状态、规定的参考、无额外噪声和饱和。更真实的实验逐项放宽这些条件，目的是发现问题，而不是让有限仿真替代证明。
+
+尤其要分开三件事：$e\to0$是跟踪结论，$\tilde\theta\to0$是辨识结论，仿真在截止时间没有触阈值是有限运行结果。三者互不等价。输出反馈、一般多输入系统、快速时变参数和真实机械臂抓取，都需要本课以外的设计。
+
+下面补充检查更新律的符号、泄漏多平衡、RLS同先验一致性、机械臂谐波及交互默认值，也便于核对习题中的算术。
+
+<JupyterNotebook
+  title="Notebook 10：证明边界与默认值核验"
+  setupCode={`import numpy as np`}
+  cells={[
+{ title: "符号、平衡、辨识、谐波及默认值", code: `import numpy as np
+import sympy as sp
+from scipy.linalg import solve_continuous_lyapunov
+from scipy.integrate import solve_ivp
+from scipy.special import jv
+
+# Independent symbolic checks: both control directions and matrix dimensions.
+e,x,r,b,g,a,kt1,kt2=sp.symbols('e x r b g a kt1 kt2', real=True)
+proofs=0
+for bb in [sp.Integer(3),sp.Integer(-2)]:
+    vd=e*(a*e+bb*kt1*x+bb*kt2*r)+abs(bb)/g*(kt1*(-g*sp.sign(bb)*e*x)+kt2*(-g*sp.sign(bb)*e*r))
+    assert sp.simplify(vd-a*e**2)==0
+    proofs+=1
+J,s,K,p1,p2,t1,t2,G=sp.symbols('J s K p1 p2 t1 t2 G', nonzero=True)
+assert sp.simplify(s*(-t1*p1-t2*p2-K*s)+(t1*(G*p1*s)+t2*(G*p2*s))/G+K*s*s)==0
+proofs+=1
+print('符号恒等式',proofs,'；Q1理想增益',(-3+4)/-2,3/-2)
+
+# Leakage step equilibria: e=x-1, k1=-e*x/sigma, k2=-e/sigma.
+# Object balance: -2*x -3*(x-1)*(x*x+1)/sigma=0.
+sigma=.01
+roots=np.roots([3.,-3.,3.+2*sigma,-3.])
+# All roots for the stated plant are reported, plus another admissible plant with multiple roots.
+def leak_roots(aa,bb,ss):
+    # a*x - b*(x-1)*(x*x+1)/sigma = 0
+    roots=np.roots([bb,-bb,bb-aa*ss,-bb])
+    ans=[]
+    for z in roots:
+        if abs(z.imag)<1e-9:
+            xx=float(z.real); ee=xx-1; k1=-ee*xx/ss; k2=-ee/ss
+            ans.append([xx,k1,k2])
+    return ans
+print('本课a=-2,b=3,sigma=.01的实平衡根',leak_roots(-2,3,.01))
+multi=leak_roots(10,1,1)
+assert len(multi)==3
+print('反例a=10,b=1,参考xm=1,sigma=1的三个实平衡[x,k1,k2]',multi)
+# Equilibrium existence is not a stability or attraction claim.
+
+# Same-prior RLS vs regularized batch, deterministic data and forgetting.
+rng=np.random.default_rng(23)
+Phi=rng.normal(size=(200,2)); y=Phi@np.array([.8,.27])+rng.normal(0,.01,200)
+th0=np.array([.3,.1]); P0=np.diag([3.,7.]); diffs=[]
+for lam in [1.,.995,.98,.95]:
+    th=th0.copy(); P=P0.copy(); R=np.linalg.inv(P0); rhs=R@th0
+    for ph,yy in zip(Phi,y):
+        L=P@ph/(lam+ph@P@ph); th+=L*(yy-ph@th); P=(np.eye(2)-np.outer(L,ph))@P/lam
+        R=lam*R+np.outer(ph,ph); rhs=lam*rhs+ph*yy
+    diff=float(np.max(abs(th-np.linalg.solve(R,rhs)))); diffs.append(diff)
+assert max(diffs)<1e-10
+print('同先验RLS/批量差',diffs,'；199步增长',.95**-199,.98**-199)
+
+# STR exact arithmetic, no simulation needed for the frozen controller.
+al=np.exp(-.2); be=1.5*(1-al); kp=(.5-al)/be; kr=.5/be
+al1=np.exp(-.4); be1=.75*(1-al1); pole=al1+be1*kp; yss=be1*kr/(1-pole)
+print('STR alpha,beta,Kp,Kr,newpole,yss,error',al,be,kp,kr,pole,yss,1-yss)
+print('冻结Q2极点与时间常数',-2+3*(-.0441),-1/(-2+3*(-.0441)))
+
+# Harmonic Gram: actual sin(sin t), no forced rank deficiency.
+tt=np.linspace(0,2*np.pi,100001); ph=np.array([-np.sin(tt),np.cos(tt),np.sin(np.sin(tt))]).T
+gram=np.trapezoid(ph[:,:,None]*ph[:,None,:],tt,axis=0)
+eig=np.linalg.eigvalsh(gram); assert eig[0]>0
+print('sin(sin t)基波系数',2*jv(1,1),'；一周期三回归量Gram特征值',eig)
+
+# Default Explorer: continuous feedback RK4, full-node metrics, no downsampled RMS.
+def default_run(dt=.001):
+    N=int(round(40/dt)); z=np.zeros(4); sq=0.; count=0; peak=0.
+    def f(z):
+        xp,xm,k1,k2=z; ee=xp-xm; u=k1*xp+k2
+        return np.array([-2*xp+3*u,-5*xm+5,-50*ee*xp,-50*ee])
+    for i in range(N+1):
+        xp,xm,k1,k2=z; u=k1*xp+k2; peak=max(peak,abs(u))
+        if i*dt>32: sq+=(xp-xm)**2; count+=1
+        if i==N: break
+        a=f(z); b=f(z+dt*a/2); c=f(z+dt*b/2); d=f(z+dt*c); z+=dt/6*(a+2*b+2*c+d)
+    return dict(state=z.tolist(),rms=float(np.sqrt(sq/count)),maxu=float(peak))
+default=default_run()
+print('交互默认全部节点指标',default)
+assert np.isfinite(default['state']).all()
+
+# Analytic upper bound check in noise-free trajectories from an independent DOP853 solver.
+boundchecks=[]
+for sigma in [.001,.1,1.]:
+    gamma=200.; ks=np.array([-1.,5/3]); V0=3*np.dot(ks,ks)/(2*gamma)
+    C=sigma*3*np.dot(ks,ks)/2; rate=min(10,sigma*gamma)
+    def rhs(t,z):
+        x,m,k1,k2=z; rr=1+.5*np.sin(2*t)+.3*np.sin(5*t); ee=x-m
+        return [-2*x+3*(k1*x+k2*rr),-5*m+5*rr,-gamma*ee*x-sigma*gamma*k1,-gamma*ee*rr-sigma*gamma*k2]
+    sol=solve_ivp(rhs,[0,10],np.zeros(4),method='DOP853',rtol=1e-10,atol=1e-12,t_eval=np.linspace(0,10,1001))
+    vv=.5*(sol.y[0]-sol.y[1])**2+3/(2*gamma)*np.sum((sol.y[2:4]-ks[:,None])**2,axis=0)
+    upper=np.exp(-rate*sol.t)*V0+C/rate*(1-np.exp(-rate*sol.t))
+    violation=float(np.max(vv-upper)); assert violation<1e-8; boundchecks.append(violation)
+print('无噪声V包络最大超出量',boundchecks)
+` }
+]}
+/>
+
+
+## 小结
+
+MRAC从理想匹配关系出发，用参数误差项配平Lyapunov导数；STR先递推辨识，再根据估计值设计控制。它们都需要明确模型和可用信息。
+
+跟踪好不等于估参准。PE讨论的是持续获得足够信息，鲁棒化讨论的是更新在偏差、噪声等影响下如何受约束；两者解决的问题不同。选增益时，同时看误差、控制峰值和模型未描述的动态。
+
+理论与扩展阅读：[Lavretsky的自适应控制讲义](https://web.iitd.ac.in/~sbhasin/docs/IEEE_WorkShop_Slides_Lavretsky_Adaptive_Control.pdf)讨论匹配与参数收敛条件；[Ioannou与Sun《Robust Adaptive Control》](https://flyingv.ucsd.edu/krstic/teaching/282/ioannousun.pdf)系统分析鲁棒化修改。这里的具体数值和简化模型均由本课代码产生，不能当作文献原实验。
+
+## 习题
+
+**习题1：一阶设计。** 对象$a=-4,b=-2$，只知$b<0$，参考$a_m=-3,b_m=3$。(a)求理想增益；(b)写误差方程；(c)取相同$\gamma>0$，推导更新律及$\dot V$；(d)补齐Barbalat论证；(e)若误写成正控制方向，$\dot V$多出什么？是否足以断言每个初值必发散？
+
+**习题2：激励与等效增益。** (a)对$\phi=[1,\sin\omega t]^{\mathsf T}$、$\omega>0$计算一周期Gram矩阵；(b)对$[1,1]^{\mathsf T}$计算特征值并说明没有信息的参数方向；(c)推导$r=1$时的一阶零误差平衡增益集合及冻结稳定条件；(d)将本课对象的增益冻结为$(-0.0441,0.7107)$，计算极点和时间常数。此处四位数是题设，不声称是所有增益配置的共同终点。
+
+**习题3：RLS。** (a)由$R_k=R_{k-1}+\phi_k\phi_k^{\mathsf T}$用求逆引理推导更新；(b)加入$\lambda$后写三步式；(c)证明$\phi=0$时$P$如何变化；(d)计算$\lambda=.95,.98$的199步增长倍数；(e)解释$\lambda=1$免去这一膨胀机制的代价，并说明$P$何时才能称协方差。
+
+**习题4：泄漏。** (a)推导$\dot V=a_me^2-\sigma|b|\sum\tilde k_i k_i$；(b)用$\tilde k_i k_i\ge\tilde k_i^2/2-k_i^{*2}/2$求上界；(c)给出任意$\sigma>0$的$c,C,\rho$，并用$\mu\in(0,1]$写$c=\sigma\gamma_{\min}\mu$；分两种增益区间说明$\rho$；(d)阅读30至240秒实验：增长能否证明无界，平台能否证明有界？为何不能把无噪声界用于该噪声实验？解释泄漏对参数范围和跟踪误差的不同影响。
+
+**习题5：STR保护。** 对象$\dot y=-2y+3u,T_s=.1$，期望$z_d=.5$。(a)求离散系数；(b)求增益；(c)$a$变4而增益冻结时求新极点、常值输出和偏差；(d)初值$[0,0]$为何让除法失效？列至少三种措施及代价，说明本课分母夹取是否改变RLS估计。
+
+**习题6：机械臂。** 先允许$\theta=[J,B,mgL]^{\mathsf T}$，$\phi=[\ddot q_r,\dot q,\sin q]^{\mathsf T}$，定义$\tilde\theta=\theta-\hat\theta$。(a)推导$J\dot s$；(b)设计更新使无噪声常参数无饱和时$\dot V=-K_ds^2$；(c)$V$含未知$J$是否合法？(d)$q_d=\sin t$时哪些分量近相关？保留高次谐波会怎样？为何跟踪好仍可能估参差？(e)双频参考和已知$B$各改变了什么？说明限幅、负载跳变时还缺哪些证明步骤。
+
+## 答案
+
+**答案1。** (a)$k_1^*=-.5,k_2^*=-1.5$；(b)$\dot e=-3e-2\tilde k_1x_p-2\tilde k_2r$；(c)$\dot k_1=+\gamma ex_p,\dot k_2=+\gamma er$，取$V=e^2/2+(\tilde k_1^2+\tilde k_2^2)/\gamma$得到$\dot V=-3e^2$。(d)$V$界给$e,\tilde k$界，参考稳定给$x_m$界，再得$x_p$和$\dot e$界；$e\in L_2$且一致连续，所以趋零。(e)若误用$\dot k_i=-\gamma e\phi_i$，则$\dot V=-3e^2-4e(\tilde k_1x_p+\tilde k_2r)$，不再半负定。原证明失效，但零参考、零状态等特例已经足以否定“每个初值必发散”。
+
+**答案2。** (a)一个周期$T=2\pi/\omega$给$\operatorname{diag}(T,T/2)>0$，与窗口起点无关，满足PE。(b)得到$T\begin{bmatrix}1&1\\1&1\end{bmatrix}$，特征值$0,2T$，方向$[1,-1]^{\mathsf T}$没有信息，不能分别确定两参数贡献。(c)零误差平衡要求$k_2=(b_m/a_m)(a+bk_1)/b$；理想点满足它。若要把这组增益冻结成稳定控制器，还需$a+bk_1<0$；这不是任意直线上点都稳定的承诺。(d)极点$-2.1323$，时间常数约$.4690$秒；参考时间常数$.2$秒。它说明同一常值输出不唯一决定冻结动态。
+
+**答案3。** (a)代入求逆引理，$P_k=P_{k-1}-P_{k-1}\phi\phi^{\mathsf T}P_{k-1}/(1+\phi^{\mathsf T}P_{k-1}\phi)$，取$L=P_{k-1}\phi/(1+\phi^{\mathsf T}P_{k-1}\phi)$即得正文式。(b)将分母1改$\lambda$，$P$更新整体除$\lambda$，估计仍加$L$乘预测误差。(c)$L=0$，估计冻结而$P$每步除$\lambda$。(d)倍数$\lambda^{-199}$，约$2.7102\times10^4$和$55.7200$，补充实验输出更多位。(e)无遗忘不会有上述零激励指数膨胀，但旧数据长期保留，参数变化后可能反应慢。$P$是逆信息矩阵；噪声和先验满足相应统计模型并对齐尺度时才有协方差解释。
+
+**答案4。** (a)(b)先用原更新抵消交叉项，再保留泄漏项并逐项应用给定不等式，得到正文的$-cV+C$界。(c)令$\mu=\min(1,2|a_m|/(\sigma\gamma_{\min}))$，$C=\sigma|b|\|k^*\|^2/2$，$\rho=C/(\sigma\gamma_{\min}\mu)$。当$\sigma\gamma_{\min}\le2|a_m|$，$\rho=|b|\|k^*\|^2/(2\gamma_{\min})$；否则$\rho=\sigma|b|\|k^*\|^2/(4|a_m|)$。$\{V\le\rho\}$在这些假设下正不变，任意初值有$\limsup V\le\rho$，不保证有限时刻恰好进入边界；参数大小可再由$V$各正项换算。(d)有限增长或平台都不裁定无限时间性质。测量噪声破坏用于推导的原恒等式，须另行控制附加项。泄漏拉向零而非理想增益，因此参数幅度缩小不表示跟踪更准。多平衡也不能仅凭四组初值排除。
+
+**答案5。** (a)$\alpha=.818731,\beta=.271904$；(b)$K_p\approx-1.172219,K_r\approx1.838885$；(c)新极点约$.380477$，常参考1的输出约$.733924$，偏差约$.266076$，由$\beta_1K_r/(1-\alpha_1-\beta_1K_p)$求得；补充实验按完整精度核对，舍入值不代回计算。(d)初始$\hat\beta=0$使公式没有定义。优先根据先验给合理带符号初值/约束；分母下界避免除零却可能放大控制；限幅保护执行器却改变闭环；后备控制增加切换设计要求。代码的分母夹取不改变估计值，不是RLS参数投影，也不是完整稳定保证。
+
+**答案6。** (a)$u=\hat\theta^{\mathsf T}\phi-K_ds$，减去真实动力学和$J\ddot q_r$得$J\dot s=-\tilde\theta^{\mathsf T}\phi-K_ds$。(b)取$\dot{\hat\theta}=-\Gamma\phi s$，于是$\dot{\tilde\theta}=+\Gamma\phi s$，代入$V$使交叉项消去。(c)正定证明可使用未知但固定的$J>0$，控制器无需计算$V$。(d)跟踪好时$\phi\approx[-\sin t,\cos t,\sin(\sin t)]^{\mathsf T}$。第三项基波约$.880101\sin t$，与第一项近相关，但还有高次谐波；仅保留基波时可辨组合为$-J+.880101mgL$，不是$-J+mgL/.880101$。完整信号不能据此称精确秩亏，有限时域估参仍可能很差。控制主要使用参数与回归量的组合，跟踪指标不单独约束每个估计分量。(e)双频改变实际激励，已知$B$减少待估参数；$\cos t$并不因此天然冗余。更丰富的参考不自动证明闭环回归量全时域PE。限幅要保留$s(u-u_{cmd})$，负载跳变要分析$V$的跳变量及分段性质，测量噪声也需附加分析。

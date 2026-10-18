@@ -4,23 +4,9 @@ import { useMemo, useState } from "react";
 import { useECharts } from "./use-echarts";
 import type { EChartsOption } from "echarts";
 
-const A = -2.0;
-const B = 3.0;
-const AM = -5.0;
-const BM = 5.0;
-const K1S = (AM - A) / B;
-const K2S = BM / B;
-const W1 = 3.0;
-const W2 = 20.0;
-const TAU_N = 0.01;
-const T = 40;
-const DT = 1e-3;
-const STRIDE = 25;
-const PE_STRIDE = 2;
-const PE_TW = 2 * Math.PI;
-
-type RefKind = "step" | "sine" | "multi";
-
+import { simulateMrac, type RefKind } from "@/lib/mrac";
+const T = 40, K1S = -1, K2S = 5/3;
+const manifoldK2 = (k1: number) => 2/3-k1;
 const REF_LABEL: Record<RefKind, string> = {
   step: "阶跃 r=1",
   sine: "单正弦 sin(t)",
@@ -33,220 +19,6 @@ const Y_RANGE: Record<RefKind, [number, number]> = {
   multi: [-0.3, 2.1],
 };
 
-function refSignal(kind: RefKind, t: number): number {
-  if (kind === "step") return 1.0;
-  if (kind === "sine") return Math.sin(t);
-  return 1.0 + 0.5 * Math.sin(2 * t) + 0.3 * Math.sin(5 * t);
-}
-
-function manifoldK2(k1: number): number {
-  return ((BM / AM) * (A + B * k1)) / B;
-}
-
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-interface SimResult {
-  t: number[];
-  xp: number[];
-  xm: number[];
-  r: number[];
-  e: number[];
-  traj: [number, number][];
-  k1End: number;
-  k2End: number;
-  rmsE: number;
-  maxU: number;
-  divT: number | null;
-  peLmin: number;
-  distIdeal: number;
-  distManifold: number;
-}
-
-function simulate(
-  kind: RefKind,
-  gamma: number,
-  sigma: number,
-  noiseStd: number,
-  unmodeled: boolean
-): SimResult {
-  const steps = Math.round(T / DT);
-  const rnd = mulberry32(20260924);
-  let spare: number | null = null;
-  const gauss = (): number => {
-    if (spare !== null) {
-      const v = spare;
-      spare = null;
-      return v;
-    }
-    let u = 0;
-    let v = 0;
-    while (u === 0) u = rnd();
-    while (v === 0) v = rnd();
-    const mag = Math.sqrt(-2 * Math.log(u));
-    spare = mag * Math.sin(2 * Math.PI * v);
-    return mag * Math.cos(2 * Math.PI * v);
-  };
-
-  const nAmp = noiseStd * Math.sqrt((2 * TAU_N) / DT);
-  let xp = 0;
-  let xm = 0;
-  let k1 = 0;
-  let k2 = 0;
-  let v1 = 0;
-  let v2 = 0;
-  let n = 0;
-
-  const t: number[] = [];
-  const xps: number[] = [];
-  const xms: number[] = [];
-  const rs: number[] = [];
-  const es: number[] = [];
-  const traj: [number, number][] = [];
-  const peR: [number, number][] = [];
-
-  let divT: number | null = null;
-  let maxU = 0;
-  let sq = 0;
-  let cnt = 0;
-
-  const deriv = (
-    px: number,
-    pm: number,
-    p1: number,
-    p2: number,
-    pv1: number,
-    pv2: number,
-    pn: number,
-    r: number,
-    xi: number
-  ): number[] => {
-    const xpn = px + pn;
-    const e = xpn - pm;
-    const u = p1 * xpn + p2 * r;
-    const d1 = -gamma * e * xpn - sigma * gamma * p1;
-    const d2 = -gamma * e * r - sigma * gamma * p2;
-    if (unmodeled) {
-      return [
-        A * px + B * pv2,
-        AM * pm + BM * r,
-        d1,
-        d2,
-        W1 * (u - pv1),
-        W2 * (pv1 - pv2),
-        (-pn + xi) / TAU_N,
-      ];
-    }
-    return [A * px + B * u, AM * pm + BM * r, d1, d2, 0, 0, (-pn + xi) / TAU_N];
-  };
-
-  for (let i = 0; i <= steps; i++) {
-    const time = i * DT;
-    const r = refSignal(kind, time);
-    const xi = noiseStd > 0 ? gauss() * nAmp : 0;
-
-    if (i % PE_STRIDE === 0) peR.push([xp, r]);
-    if (i % STRIDE === 0) {
-      t.push(time);
-      xps.push(xp);
-      xms.push(xm);
-      rs.push(r);
-      es.push(xp - xm);
-      traj.push([k1, k2]);
-    }
-    if (time > 0.8 * T) {
-      const ee = xp - xm;
-      sq += ee * ee;
-      cnt += 1;
-    }
-    const uu = k1 * (xp + n) + k2 * r;
-    if (Math.abs(uu) > maxU) maxU = Math.abs(uu);
-    if (i === steps) break;
-
-    const s1 = deriv(xp, xm, k1, k2, v1, v2, n, r, xi);
-    const s2 = deriv(
-      xp + 0.5 * DT * s1[0], xm + 0.5 * DT * s1[1], k1 + 0.5 * DT * s1[2],
-      k2 + 0.5 * DT * s1[3], v1 + 0.5 * DT * s1[4], v2 + 0.5 * DT * s1[5],
-      n + 0.5 * DT * s1[6], r, xi
-    );
-    const s3 = deriv(
-      xp + 0.5 * DT * s2[0], xm + 0.5 * DT * s2[1], k1 + 0.5 * DT * s2[2],
-      k2 + 0.5 * DT * s2[3], v1 + 0.5 * DT * s2[4], v2 + 0.5 * DT * s2[5],
-      n + 0.5 * DT * s2[6], r, xi
-    );
-    const rNext = refSignal(kind, time + DT);
-    const s4 = deriv(
-      xp + DT * s3[0], xm + DT * s3[1], k1 + DT * s3[2],
-      k2 + DT * s3[3], v1 + DT * s3[4], v2 + DT * s3[5],
-      n + DT * s3[6], rNext, xi
-    );
-    xp += (DT / 6) * (s1[0] + 2 * s2[0] + 2 * s3[0] + s4[0]);
-    xm += (DT / 6) * (s1[1] + 2 * s2[1] + 2 * s3[1] + s4[1]);
-    k1 += (DT / 6) * (s1[2] + 2 * s2[2] + 2 * s3[2] + s4[2]);
-    k2 += (DT / 6) * (s1[3] + 2 * s2[3] + 2 * s3[3] + s4[3]);
-    v1 += (DT / 6) * (s1[4] + 2 * s2[4] + 2 * s3[4] + s4[4]);
-    v2 += (DT / 6) * (s1[5] + 2 * s2[5] + 2 * s3[5] + s4[5]);
-    n += (DT / 6) * (s1[6] + 2 * s2[6] + 2 * s3[6] + s4[6]);
-
-    if (!Number.isFinite(xp) || Math.abs(xp) > 1e3 || Math.abs(k1) > 1e4) {
-      divT = time;
-      break;
-    }
-  }
-
-  const dtw = PE_STRIDE * DT;
-  const nw = Math.round(PE_TW / dtw);
-  let peLmin = Infinity;
-  for (let j = 0; j < 20; j++) {
-    const i0 = Math.round(j / dtw);
-    let g00 = 0;
-    let g01 = 0;
-    let g11 = 0;
-    for (let p = 0; p < nw; p++) {
-      const idx = i0 + p;
-      if (idx >= peR.length) break;
-      const a = peR[idx][0];
-      const b = peR[idx][1];
-      g00 += a * a;
-      g01 += a * b;
-      g11 += b * b;
-    }
-    g00 *= dtw;
-    g01 *= dtw;
-    g11 *= dtw;
-    const tr = g00 + g11;
-    const det = g00 * g11 - g01 * g01;
-    const lam = tr / 2 - Math.sqrt(Math.max(0, (tr * tr) / 4 - det));
-    if (lam < peLmin) peLmin = lam;
-  }
-  if (!Number.isFinite(peLmin)) peLmin = 0;
-
-  const distManifold = Math.abs(k2 - manifoldK2(k1));
-  return {
-    t,
-    xp: xps,
-    xm: xms,
-    r: rs,
-    e: es,
-    traj,
-    k1End: k1,
-    k2End: k2,
-    rmsE: cnt > 0 ? Math.sqrt(sq / cnt) : NaN,
-    maxU,
-    divT,
-    peLmin: Math.max(peLmin, 0),
-    distIdeal: Math.hypot(k1 - K1S, k2 - K2S),
-    distManifold,
-  };
-}
-
 export function MracExplorer() {
   const [kind, setKind] = useState<RefKind>("step");
   const [gamma, setGamma] = useState(50);
@@ -255,7 +27,7 @@ export function MracExplorer() {
   const [unmodeled, setUnmodeled] = useState(false);
 
   const sim = useMemo(
-    () => simulate(kind, gamma, sigma, noiseStd, unmodeled),
+    () => simulateMrac(kind, gamma, sigma, noiseStd, unmodeled),
     [kind, gamma, sigma, noiseStd, unmodeled]
   );
 
@@ -429,9 +201,9 @@ export function MracExplorer() {
         u = k₁·xp + k₂·r
       </div>
       <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
-        自适应律 dk_i/dt = −γ·e·φ_i − σγ·k_i（φ = [xp, r]，e = xp − xm）。
+        无噪声时，自适应律 dk_i/dt = −γ·e·φ_i − σγ·k_i（φ = [xp, r]，e = xp − xm）。
         理想增益 k* = (−1, 5/3)；紫色虚线是直流增益匹配流形 k₂ = (2 − 3k₁)/3——
-        阶跃参考下参数会停在这条线上而不是停在红色菱形上。坐标轴范围固定，拖动时曲线在稳定参考系里移动。
+        阶跃稳态只约束这条直线，不唯一决定理想点。连续反馈以RK4计算，dt=0.001秒，参考在各子步更新；每25步绘图一次，指标不抽稀。坐标范围固定，超出范围的数值请看读数。
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 10, alignItems: "center" }}>
@@ -447,7 +219,7 @@ export function MracExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 12 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           γ = {gamma}
           <input
             type="range"
@@ -472,7 +244,7 @@ export function MracExplorer() {
           />
         </label>
         <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-          量测噪声 std = {noiseStd.toFixed(2)}
+          噪声名义幅度 = {noiseStd.toFixed(2)}
           <input
             type="range"
             min={0}
@@ -485,59 +257,35 @@ export function MracExplorer() {
         </label>
       </div>
 
+      <button style={btn(false)} onClick={() => { setKind("step"); setGamma(50); setSigma(0); setNoiseStd(0); setUnmodeled(false); }}>恢复默认</button>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
         {stat("rms|e| 末段", sci(sim.rmsE))}
         {stat("k₁(末)", sim.k1End.toFixed(4), converged ? "#16a34a" : undefined)}
         {stat("k₂(末)", sim.k2End.toFixed(4), converged ? "#16a34a" : undefined)}
         {stat("距理想点 |k̃|", sim.distIdeal.toExponential(2))}
-        {stat("距匹配流形", sim.distManifold.toExponential(1), onManifold ? "#9333ea" : undefined)}
-        {stat("PE λ_min", sim.peLmin.toExponential(2), sim.peLmin < 1e-8 ? "#dc2626" : "#16a34a")}
+        {stat("匹配直线纵向偏差", sim.distManifold.toExponential(1), onManifold ? "#9333ea" : undefined)}
+        {stat("窗口 λ_min", (sim.peLmin === null ? "窗口不足" : sim.peLmin.toExponential(2)), (sim.peLmin !== null && sim.peLmin < 1e-8) ? "#dc2626" : "#16a34a")}
         {stat("max|u|", sim.maxU.toFixed(2))}
         {stat(
           "结局",
-          sim.divT === null ? "有界" : `发散 t=${sim.divT.toFixed(2)} s`,
+          sim.divT === null ? "完成40s" : `触阈值 t=${sim.divT.toFixed(3)} s`,
           sim.divT === null ? "#16a34a" : "#dc2626"
         )}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <div ref={timeRef} style={{ width: "32%", minWidth: 280, height: 300 }} />
-        <div ref={errRef} style={{ width: "30%", minWidth: 260, height: 300 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
+        <div ref={timeRef} style={{ width: "100%", minWidth: 0, height: 300 }} />
+        <div ref={errRef} style={{ width: "100%", minWidth: 0, height: 300 }} />
         <div ref={planeRef} style={{ width: "32%", minWidth: 280, height: 300 }} />
       </div>
 
       <div style={{ fontSize: 13, color: "#475569", marginTop: 10, lineHeight: 1.7 }}>
-        {sim.divT !== null ? (
-          <span style={{ color: "#dc2626" }}>
-            闭环在 t = {sim.divT.toFixed(2)} s 发散。
-            {unmodeled
-              ? " 未建模极点打开时 γ 存在硬上界：本例 γ ≤ 3 有界、γ ≥ 4 发散（Rohrs 反例）。把 γ 降回 3 以下，或关掉未建模极点再看。"
-              : " 没有未建模极点时纯 MRAC 不会这样发散——检查 σ 与噪声是否把参数推到了非物理的区域。"}
-          </span>
-        ) : (
-          <>
-            <strong>PE λ_min = {sim.peLmin.toExponential(2)}</strong>
-            ：这是回归量 φ = [xp, r] 在 20 个长度 2π 秒的窗口上 Gram 矩阵最小特征值的最小值。
-            {sim.peLmin < 1e-8
-              ? " 它是数值零，说明当前参考不满足持续激励——两个参数不可分辨，"
-              : " 它明显大于零，说明持续激励成立，参数会真正收敛到 k*。"}
-            {sim.peLmin < 1e-8 && kind === "step"
-              ? " 阶跃输入稳态后 xp 与 r 都等于 1，φ = [1, 1] 只剩一个方向。"
-              : ""}
-            {onManifold && !converged
-              ? ` 参数终点 (k₁, k₂) = (${sim.k1End.toFixed(4)}, ${sim.k2End.toFixed(4)}) 落在直流增益匹配流形上（偏差 ${sim.distManifold.toExponential(1)}），距理想点还有 ${sim.distIdeal.toFixed(3)}——可是左图的跟踪误差已经压到 ${sci(sim.rmsE)}。跟踪无差不等于参数收敛。`
-              : ""}
-            {converged
-              ? ` 参数已经收敛到理想点附近（|k̃| = ${sim.distIdeal.toExponential(2)}）。`
-              : ""}
-            {sigma > 0
-              ? ` σ = ${sigma.toFixed(2)} 的泄漏项把平衡点从 k* 拉开，稳态误差正比于 σ；换来的是参数保证有界。`
-              : ""}
-            {noiseStd > 0
-              ? ` 噪声 std = ${noiseStd.toFixed(2)} 时 rms|e| = ${sci(sim.rmsE)}、max|u| = ${sim.maxU.toFixed(2)}：γ 越大，噪声被积分成的随机游走越厉害。`
-              : ""}
-          </>
-        )}
+        实际计算到 {sim.endTime.toFixed(3)} s。末段RMS用 t &gt; 32 s 的全部计算节点；提前停止且未到此窗口时显示“—”。
+        {sim.divT !== null ? " 状态触及数值停止阈值，不再外推曲线。" : " 完成40秒不是无限时间有界性的证明。"}
+        窗口 λ_min 取起点0至19秒、长度约2π秒的20个完整窗口；窗口不足不计为零。
+        有限个正值不能证明对所有未来窗口都成立的PE条件。阶跃稳态的回归量只有一个方向，跟踪好不等于参数接近理想点。
+        {sigma > 0 ? " 泄漏会改变平衡，不能据此保证本噪声或失配模型稳定。" : ""}
+        {noiseStd > 0 ? " 测得误差用于更新，图中显示真实跟踪误差；噪声名义幅度经时间常数0.01秒的滤波器近似实现。" : ""}
       </div>
     </div>
   );

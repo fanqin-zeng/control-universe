@@ -92,7 +92,7 @@
 | [x] 反馈线性化 (feedback-linearization) | semester-03 NONLINEAR-05：1个交互组件、6份Notebook/15cell、6题；本期日志 docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md；验收 .agent/semester-03/nonlinear-05/acceptance.md；旧semester-01日志保留 |
 | [x] 滑模控制 (sliding-mode-control) | v1.3；semester-03 NONLINEAR-06：1个SlidingModeExplorer，6个Notebook/18cell、六题、两SVG；原五实验17cell及44旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md；验收 .agent/semester-03/nonlinear-06/acceptance.md |
 | [x] 反步设计 (backstepping) | v1.3；semester-03 NONLINEAR-07：1个BacksteppingExplorer，7Notebook27cell、六题、SVG；原六实验26cell及41旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md；验收 .agent/semester-03/nonlinear-07/acceptance.md |
-| [x] 自适应控制 (adaptive-control-basics) | v1.3: 1个交互组件（MracExplorer，三面板固定坐标轴，JS↔Python 交叉验证 Rohrs 临界增益 3/4 与发散时刻），9个静态JupyterNotebook（V̇恒等式 / 手算与PE流形 / γ两面性 / 高阶匹配条件 / RLS与协方差windup / STR除零保护 / 噪声与四种修正 / 机械臂负载突变 / 飞行器爬升三方对比），1张matplotlib计算概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/08-adaptive-control-basics.md（含18条"叙述服从测量"修正） |
+| [x] 自适应控制 (adaptive-control-basics) | v1.3；semester-03 NONLINEAR-08：1个MracExplorer，10Notebook39cell、六题、SVG；原九实验38cell及55旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md；验收 .agent/semester-03/nonlinear-08/acceptance.md |
 | [ ] 无源控制 (passivity-control) | 本期新增骨架；尚未编写 |
 | [ ] 输入状态稳定性 (iss-small-gain) | 本期新增骨架；尚未编写 |
 | [ ] 切换与混杂系统 (switched-hybrid-systems) | 本期新增骨架；尚未编写 |
