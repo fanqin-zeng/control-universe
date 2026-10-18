@@ -23,4 +23,4 @@
 | node .agent/semester-03/nonlinear-05/validate.mjs | 退出0；最终指纹、实验完整性、42旧ID、25待办不变式 | delivery-validation.json |
 | npm run check；node scripts/check-semester03.mjs | 退出0/0；PASS21/WARN2/FAIL0，提交前merged42 | check.log、checklist.log |
 
-Phase4已签发，实际master提交回执待写。
+Phase4已签发，实际课程提交已进入master：c249d3bc0df1f2005f794d0c2a4486b4eedc8ead；全局checklist六列已勾，本期merged43。

@@ -119,7 +119,7 @@
 | NONLINEAR-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-02/delivery-validation.json;commit:064e0d47a70f7e805d4d6a7df777ed5b82e4da41 |
 | NONLINEAR-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md;.agent/semester-03/nonlinear-03/acceptance.md;commit:15e7512a3361343fee8b75c80693c9f3f6310d6e |
 | NONLINEAR-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/04-describing-function.md;.agent/semester-03/nonlinear-04/acceptance.md;commit:8dc6b5234ad7a7b721895a3c11b928c106b159c4;S04本课第5项债务已验收 |
-| NONLINEAR-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md;.agent/semester-03/nonlinear-05/acceptance.md;待实际master提交回执 |
+| NONLINEAR-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md;.agent/semester-03/nonlinear-05/acceptance.md;commit:c249d3bc0df1f2005f794d0c2a4486b4eedc8ead |
 | NONLINEAR-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
