@@ -50,4 +50,6 @@ git checkout master
 本地适配证据见 acceptance.md；首次远端部署、版本核验与公网截图见 first-release.md。
 
 
-最新授权发布（2026-10-18）：用户要求将已有内容更新到Pages，master `98492e1`以`--no-ff`合入gh-pages得到`f01e0bbb52308a9cf277f1f2ff65b377c7e73cac`并推送。Actions成功，205课程/9旧入口/235成功请求及数学章18课公网、最新七Python实验通过。详见[数学章发布记录](math18-release.md)；后续仍逐次获同意再发布。
+数学章授权发布（2026-10-18）：用户要求将已有内容更新到Pages，master `98492e1`以`--no-ff`合入gh-pages得到`f01e0bbb52308a9cf277f1f2ff65b377c7e73cac`并推送。Actions成功，205课程/9旧入口/235成功请求及数学章18课公网、最新七Python实验通过。详见[数学章发布记录](math18-release.md)；后续仍逐次获同意再发布。
+
+最新授权发布（2026-10-18）：用户要求将已有内容更新到 Pages，master `bbab75b` 合入 gh-pages 得到 `0dad5f04b701f443752e10529720e07bcb46b918` 并推送。Actions 构建与部署成功，205 课程页、9 旧入口、235 请求及九份原始 Python 实验公网验收通过；经典控制已交付 11/11。详见[经典控制章发布记录](classic11-release.md)。后续仍逐次获同意再发布。

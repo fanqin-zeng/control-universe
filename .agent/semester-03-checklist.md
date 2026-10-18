@@ -35,6 +35,7 @@
 | DEP03 | Pyodide数学两课试验、控制库支持清单与授权发布 | [x] | docs/deployment/pyodide-trial.md;docs/deployment/pyodide-public-results.json;docs/deployment/pyodide-public-actions.json;docs/deployment/pyodide-public-ui.json |
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
 | DEP05 | 数学章18课现有成果授权发布与公网验收 | [x] | docs/deployment/math18-release.md;docs/deployment/math18-public-actions.json;docs/deployment/math18-public-http.json;docs/deployment/math18-public-browser.json;docs/deployment/math18-public-python.json;发布commit:f01e0bbb52308a9cf277f1f2ff65b377c7e73cac |
+| DEP06 | 经典控制11课现有成果授权发布与公网验收 | [x] | docs/deployment/classic11-release.md;docs/deployment/classic11-public-actions.json;docs/deployment/classic11-public-http.json;docs/deployment/classic11-public-browser.json;docs/deployment/classic11-public-python.json;docs/deployment/classic10-public-python.json;docs/deployment/classic11-public-validation.json;发布commit:0dad5f04b701f443752e10529720e07bcb46b918 |
 | W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
 | W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
 | W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |

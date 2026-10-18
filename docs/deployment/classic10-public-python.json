@@ -1,0 +1,106 @@
+{
+  "testedAt": "2026-10-18T04:48:05.721Z",
+  "url": "https://fanqing-zeng.github.io/control-universe/python-expansion.html?lesson=classic/design-methods-comparison",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "classic/design-methods-comparison",
+      "title": "设计方法选型",
+      "sourceHash": "c92b0fe4a7c8f6ba440f9571a165c08ba2fa31d5a6620619ec7a6a2cbbd805ac",
+      "notebooks": [
+        {
+          "id": "classic/design-methods-comparison#1",
+          "title": "候选的完整响应",
+          "index": 1,
+          "line": 113,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 17159,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "versions numpy,scipy,control 2.0.2 1.14.1 0.10.2\nP4 poles,DC [-5.+0.j] 0.8\nP4 PM,wc 104.47751218592992 3.872983346207417\nP4 residual,target10to90,t_epsilon,u_peak 0.2 inf inf 4.0\nP4 y20 finite sample 0.8000000000000003\nPI11 poles,DC [-1.+0.j -1.+0.j] 1.0\nPI11 PM,wc 90.0 0.9999999999999999\nPI11 residual,target10to90,t_epsilon,u_peak 0.0 2.1972245773362196 3.912023005428146 1.0\nPI11 y20 finite sample 0.9999999979388463\nPI21 poles,DC [-2.61803399+0.j -0.38196601+0.j] 1.0\nPI21 PM,wc 103.4388894554719 1.817354021023971\nPI21 residual,target10to90,t_epsilon,u_peak 0.0 2.625336654477471 6.875200143735631 2.0\nPI21 y20 finite sample 0.9998670119131462\nPI state roots 1.0 [-1. -1.]\nPI state roots 2.0 [-2.61803399 -0.38196601]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 41844
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/design-methods-comparison#2",
+          "title": "四份合同的筛选",
+          "index": 2,
+          "line": 208,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "contract A A,epsilon,input_limit,deadline 1.0 0.02 3.0 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 True\naccepted fixed candidates ['PI11', 'PI21']\ncontract B A,epsilon,input_limit,deadline 0.25 0.06 1.2 2.0\nP4 continuous entry time,peak,pass 0.5991464547107983 1.0 True\nPI11 continuous entry time,peak,pass 1.4271163556401458 0.25 True\nPI21 continuous entry time,peak,pass 1.0068337096944768 0.5 True\naccepted fixed candidates ['P4', 'PI11', 'PI21']\ncontract C A,epsilon,input_limit,deadline 1.0 0.02 1.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates ['PI11']\ncontract D A,epsilon,input_limit,deadline 1.0 0.02 0.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 False\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates []\nD reachable upper bound at t8 0.49983226868604874\nD asymptotic upper bound .5, required lower band 0.98\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/design-methods-comparison#3",
+          "title": "通道与边界复算",
+          "index": 3,
+          "line": 314,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 138,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P4 measurement noise absT,absCS at100 0.03995009355511379 3.995209100985642\nP4 control noise high frequency limit Kp 4.0\nPI11 measurement noise absT,absCS at100 0.009999500037496875 1.0\nPI11 control noise high frequency limit Kp 1.0\nPI21 measurement noise absT,absCS at100 0.019993253483945202 1.9994253121629082\nPI21 control noise high frequency limit Kp 2.0\nTp,full roots 0.5 [-3.41421356+0.j -0.58578644+0.j]\nTp,full roots 1.0 [-1.+0.j -1.+0.j]\nTp,full roots 2.0 [-0.5+0.5j -0.5-0.5j]\nexercise2 P gain, pole,residual ratio 4.0 -5.0 0.2\nexercise2 required P gain for .02 49.0\nexercise3 PI11 full polynomial [1.0, 2.0, 1.0]\nexercise4 B times [0.5991464547107983, 1.4271163556401458, 1.0068337096944768]\nexercise5 D lower required 0.98 max equilibrium .5\nversions numpy,scipy,control 2.0.2 1.14.1 0.10.2\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 33376
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "classic/design-methods-comparison",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 3,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 3,
+    "codeOnly": 0
+  }
+}
