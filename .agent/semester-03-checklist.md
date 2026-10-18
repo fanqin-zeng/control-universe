@@ -143,7 +143,7 @@
 | DISCRETE-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/03-difference-equation.md;.agent/semester-03/discrete-03/acceptance.md;commit:3a579d90706c37f7b12ab085fccfffdaf061b399 |
 | DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;commit:149bac2092969d2d817f68f879a29376f073d7f4 |
 | DISCRETE-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/05-discrete-stability-criteria.md;.agent/semester-03/discrete-05/acceptance.md;commit:8aa700be5d624925f7814f6a460db1d9c38b25b3 |
-| DISCRETE-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/06-discretization-methods.md;.agent/semester-03/discrete-06/acceptance.md;验收完成，待真实master提交回执 |
+| DISCRETE-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/06-discretization-methods.md;.agent/semester-03/discrete-06/acceptance.md;commit:fe45658e2f879650390bfc962df59e635e9391c2 |
 | DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | DISCRETE-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
