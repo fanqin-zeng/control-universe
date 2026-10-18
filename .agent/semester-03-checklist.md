@@ -126,7 +126,7 @@
 | NONLINEAR-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md;.agent/semester-03/nonlinear-06/acceptance.md;commit:0e10841f328442190c4afab041f83af7d0f9b20b |
 | NONLINEAR-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md;.agent/semester-03/nonlinear-07/acceptance.md;commit:dd961a7caf18390888c3e3c78ee29044cb82f789 |
 | NONLINEAR-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md;.agent/semester-03/nonlinear-08/acceptance.md;commit:932a40b46200c2db16a297aeb4218ba17d91c144 |
-| NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json |
+| NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json;commit:aa691ca7d211255d2713c9856f5be10c02380b65 |
 | NONLINEAR-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
