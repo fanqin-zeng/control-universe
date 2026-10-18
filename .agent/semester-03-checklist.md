@@ -45,6 +45,7 @@
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
+| DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [ ] | .agent/semester-03/modern-01/acceptance.md;用户追加授权：本课完成后发布届时master全部现有修改 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -95,7 +96,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MODERN-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MODERN-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/04-modern/01-state-space.md;.agent/semester-03/modern-01/acceptance.md;.agent/semester-03/modern-01/reconciliation.json |
 | MODERN-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

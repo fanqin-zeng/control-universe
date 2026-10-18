@@ -595,3 +595,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### CLASSIC-11执行回执（2026-10-18）
 
 本轮仅重构classic/classic-case-study「经典控制案例」，按重构SKILL完整Phase1–4，保留12主题/34H3/十题/六实验及P交互，47旧ID以单旧H1别名兼容。物理系数101→100.1、负载尺度、PI/PID/反算/灵敏度和十题全链纠错；补温和PI与305V输入反例，三种子360组不冒充全域保证。真实TS107K/601节点对独立状态，六严格内核/Pyodide、136行对账与390px/数字环路/两构建见.agent/semester-03/classic-11/acceptance.md，fix-043记录。W06–09及27Python待办继续开放，只合master，不发布。真实合并hash登记全局checklist；下一课MODERN-01另开对话。
+
+## MODERN-01交付（2026-10-18）
+
+状态空间按重构技能Phase1–4完成，保留10节/三物理例/十题及原两实验用途，五严格内核/Pyodide、65行对账、真实TS21×601点与独立物理参考、36旧ID/两别名/390px/两构建验收通过，详见semester-03/modern-01/acceptance.md。直接master提交推送后登记回执；用户另授权本课完成后发布届时master已有修改，DEP07据实际结果更新。不生产MODERN-02。
