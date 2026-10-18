@@ -112,7 +112,7 @@ Phase3前补审：[周联] 交互默认不能同时假设有串行计算耗时�
 
 [郑核] 签发DISCRETE-07《采样周期》。Phase1先行规划、Phase2三轮、Phase3六组、A.1逐量对账、B九门槛与四补充、C限定比较及D来源映射齐备。本课原始内核3实验4cell全部实跑，十四真实TS配置和独立状态复算通过；实际普通/Pages本地页面输出、20旧ID/7H2同序、控件、图像与375px通过。截图拦下的曲线十倍单位错误已改为调用同一计算函数，两构建与页面实跑/截图重做后复审通过；没有以读数正确替代图像。
 
-最终源hash：e6731141a2314ccaf4a4e7d2d09bfa1f9cec79844ce0bb561cd373520788195d；validate.mjs退出0。npm run check退出0（PASS21/WARN2/FAIL0），学期守卫退出0，30顺序/路由/标题测试和16fix测试通过。单课verify退出0（8PASS/1WARN），唯一WARN为后续占位DISCRETE-10，计划已登记；无本课正确性阻断。catalog标v1.3、tracker/OUTLINE刷新、学期3与润色交接状态同步。实际master提交后再登记hash与合入列，不预填。此次只交付07，不发布Pages、不自动开始08。
+最终源hash：e6731141a2314ccaf4a4e7d2d09bfa1f9cec79844ce0bb561cd373520788195d；validate.mjs退出0。npm run check退出0（PASS21/WARN2/FAIL0），学期守卫退出0，30顺序/路由/标题测试和16fix测试通过。单课verify退出0（8PASS/1WARN），唯一WARN为后续占位DISCRETE-10，计划已登记；无本课正确性阻断。catalog标v1.3、tracker/OUTLINE刷新、学期3与润色交接状态同步。交付已在master：82e95f1f6ee5797e6fd129b7d50b4a021db7a051；提交后登记hash与合入列，本期合入56课。此次只交付07，不发布Pages、不自动开始08。
 
 ## 附录 A.1 数值三方对账
 

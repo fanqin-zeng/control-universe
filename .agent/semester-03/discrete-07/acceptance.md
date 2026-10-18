@@ -33,6 +33,6 @@
 
 构建曾拦HTML注释残留与表格裸竖线使sinc成为MDX表达式，修后成功构建，无吞错；失败日志build-before-mdx-review.log/build-before-table-review.log不作为最终验收。术语检查也拦“带宽(rad/s)”被识为别名，改为明确单位栏后复验，不修改词表放宽门槛。
 
-最终npm run check退出0：PASS21/WARN2/FAIL0，node scripts/check-semester03.mjs退出0；见check.log与semester-check.log。初次刷新前5项旧统计不一致保留refresh.log，OUTLINE与tracker由脚本更新后独立check复跑才放行。学期3生产完成56课，合入数先为55，等真实master提交后补记为56。真实master提交回执待提交后补记。
+最终npm run check退出0：PASS21/WARN2/FAIL0，node scripts/check-semester03.mjs退出0；见check.log与semester-check.log。初次刷新前5项旧统计不一致保留refresh.log，OUTLINE与tracker由脚本更新后独立check复跑才放行。学期3生产完成56课，合入数先为55，等真实master提交后补记为56。真实master交付提交：82e95f1f6ee5797e6fd129b7d50b4a021db7a051。据真实提交勾合入列，本学期生产与合入均56课，semester-check.log回执merged=56。
 
 最终截图复审拦下预算曲线横坐标换算差十倍（散点与数字正确、曲线错误）。曲线改为逐点调用samplingBudget，不重复公式，随后重建普通/Pages并重新核默认点落在线上、截图及两页面输出。desktop-before-curve-review.png保留反例，不用于最终签发。
