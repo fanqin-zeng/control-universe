@@ -2907,7 +2907,7 @@ export const catalog: Chapter[] = [
         "title": "离散化方法",
         "subsections": [
           {
-            "slug": "离散化方法",
+            "slug": "离散化方法-1",
             "title": "离散化方法"
           },
           {
@@ -2947,7 +2947,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "sampling-period-selection",

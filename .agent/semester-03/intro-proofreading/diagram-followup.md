@@ -26,3 +26,6 @@
 
 
 2026-10-19 DISCRETE-04：原z/s字符平面示意已改s-to-z-map.svg，箭头、左右半平面与单位圆对应清晰；实际375px和Pages图片加载通过。候选原source/line保留，新增本课review/evidence，不把其余候选批量关闭；W10仍待后续逐项审查。
+
+
+2026-10-19 DISCRETE-06：原Euler字符稳定域图本身错误，已撤回，用正确λ平面绝对稳定条件与真实每步乘数交互说明，新增discretization-workflow.svg区分对象ZOH/控制器代换/闭环复验。未冒充错误圆图的等价重绘。原source/line保留，新增review/evidence；其余W10候选继续待逐项审查。

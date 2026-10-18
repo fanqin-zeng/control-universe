@@ -91,7 +91,7 @@
 | 6.3 | 差分方程 | difference-equation | ✅ 已交付 v1.3 | undergrad | math | 9 | discrete-sampled/discrete-time-systems<br>math/z-transform |
 | 6.4 | Z域系统分析 | z-transform-analysis | ✅ 已交付 v1.3 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
 | 6.5 | 离散系统稳定性 | discrete-stability-criteria | ✅ 已交付 v1.3 | undergrad | theory | 11 | discrete-sampled/z-transform-analysis<br>modern/lyapunov-modern |
-| 6.6 | 离散化方法 | discretization-methods | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/discrete-time-freq<br>discrete-sampled/discrete-time-systems<br>math/numerical-methods<br>discrete-sampled/z-transform-analysis |
+| 6.6 | 离散化方法 | discretization-methods | ✅ 已交付 v1.3 | undergrad | theory | 11 | discrete-sampled/discrete-time-freq<br>discrete-sampled/discrete-time-systems<br>math/numerical-methods<br>discrete-sampled/z-transform-analysis |
 | 6.7 | 采样周期 | sampling-period-selection | 🟨 有正文待审校 | undergrad | impl | 12 | discrete-sampled/discrete-stability-criteria<br>discrete-sampled/discretization-methods |
 | 6.8 | 采样数据系统 | sampled-data-systems | ⬜ 骨架（占位页） | grad | theory | 13 | discrete-sampled/discretization-methods<br>discrete-sampled/sampling-period-selection |
 | 6.9 | 离散最优控制 | discrete-optimal-control | ⬜ 骨架（占位页） | grad | theory | 12 | discrete-sampled/discrete-stability-criteria<br>modern/lqr-controller |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 57（status = v1.3）
-- **有正文待审校**: 23（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 58（status = v1.3）
+- **有正文待审校**: 22（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 125（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 148（= draft 23 + empty 125 + 无 status 0）
+- **未完成 v1.3**: 147（= draft 22 + empty 125 + 无 status 0）
 - **有 MDX 正文**: 80
 - **catalog 小节总数**: 931
-- **讨论日志**: 78 篇（覆盖 57 门；有 MDX 无日志 23 门）
-- **交互组件**: 70 个文件（被正文引用 70，孤儿 0）
+- **讨论日志**: 79 篇（覆盖 58 门；有 MDX 无日志 22 门）
+- **交互组件**: 71 个文件（被正文引用 71，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

@@ -47,6 +47,7 @@
 | DISCRETE-03 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-03”；先修DISCRETE-02与Z变换已交付，保留DISCRETE-01未验收草稿 | .agent/semester-03/discrete-03/acceptance.md |
 | DISCRETE-04 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-04”；先修差分方程与Z变换已交付，采样/保持定义本课局部补足，保留DISCRETE-01草稿 | .agent/semester-03/discrete-04/acceptance.md |
 | DISCRETE-05 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-05”；04已交付，保留01草稿，本课局部补足采样定义 | .agent/semester-03/discrete-05/acceptance.md |
+| DISCRETE-06 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-06”；04/05已交付，保留01草稿，采样保持本课局部解释 | .agent/semester-03/discrete-06/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -719,3 +720,8 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### DISCRETE-05 本轮执行记录（2026-10-19）
 
 离散系统稳定性按重构专用Phase1–4完成，保留原9H2/38标题主题/41旧课程ID、三实验组四cell和全部四题。纠正状态/BIBO与单位根条件、二阶根、采样PI数值、伪临界回退、理想PID不真有理、离散频响与裕度交点、Schur-Cohn定义及题3近似冒充精确上限；原正确w映射保留并补z1例外。新增Jury交互与SVG，五Notebook六cell、真实TS十三配置、独立状态矩阵指数/解析频响/SymPy、375px及Pages本地页面验收通过。证据.agent/semester-03/discrete-05/acceptance.md；真实master回执见全局checklist。PY-008/009实测修复，Python待办24→22，其余任务元数据保留。用户指定05的顺序例外独立登记，01草稿与用户批阅、本地端口四文件不提交；本次不发布Pages、不顺带生产下一课。
+
+
+### DISCRETE-06 本轮执行记录（2026-10-19）
+
+离散化方法按重构专用Phase1–4完成，原八H2/39标题主题/41课程ID、三实验组四cell及四题保留纠错，新增一实验共四Notebook五cell。修Euler因果/绝对稳定区、Tustin方向/预扭曲、matched积分器增益与默认API、反算符号/单位/真实状态/未触饱和基线、导数滤波和首达指标。数字PI由原生/浏览器及独立MP/Decimal/状态模型核，真实TS十三配置、375px及Pages本地验收通过。正式H1与首H2同名，旧离散化方法ID转H1开篇，H2canonical为离散化方法-1，旧数字控制器设计span保留；歧义明确登记，未伪称段落未变。PID工程材料本页全文保留，IMPL-02迁移未完不计交付。证据.agent/semester-03/discrete-06/acceptance.md；master真实回执见checklist。PY-010/011实测修复，待办22→20，其它元数据保留；W10仅处理本课错误Euler字符图。01草稿、用户批阅及四端口不提交；Pages不发布，本对话止于06。

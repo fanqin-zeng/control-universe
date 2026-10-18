@@ -1,3 +1,4 @@
+import { DiscretizationModeExplorer } from "@/components/wiki/discretization-mode-explorer";
 import { JuryStabilityExplorer } from "@/components/wiki/jury-stability-explorer";
 import { SampledModeExplorer } from "@/components/wiki/sampled-mode-explorer";
 import { CoolingNumericsExplorer } from "@/components/wiki/cooling-numerics-explorer";
@@ -91,6 +92,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  DiscretizationModeExplorer,
   JuryStabilityExplorer,
   SampledModeExplorer,
   CoolingNumericsExplorer,
