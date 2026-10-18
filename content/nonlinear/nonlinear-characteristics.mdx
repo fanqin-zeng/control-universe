@@ -1,1856 +1,330 @@
 ---
-title: "非线性系统特性"
-description: "从叠加原理的定量破坏讲起：常见非线性类型、四种分类维度、线性化失效的三种机制、以及什么时候必须放弃线性工具——每一个论断都配一次实测，包括实测推翻直觉的地方。"
+title: "非线性系统"
+description: "从间隙和限幅出发，理解叠加、记忆、谐波、局部线性化与多种运动。"
 ---
 
-# 非线性系统特性
+# 非线性系统
 
-## 引言
+## 从哪里看见非线性
 
-一台直线定位平台，高速运行时平稳，速度指令降到 0.05 m/s 以下就开始"咯咯"地抖，位置误差呈锯齿状。工程师第一反应是调 PID：加大 $K_p$ 抖动更凶，加大 $K_i$ 抖动变慢但不消失，加 $K_d$ 噪声被放大。三轮参数扫下来，问题一点没动。
+拉开一个有些松动的抽屉，再反方向推回去，手已经动了，抽屉却可能要等一小段距离才跟着动。这段空程不能靠“把输入乘一个固定增益”描述：同一个手的位置，推来和拉来时，抽屉的位置可能不同。
 
-原因是这个抖动**不是控制参数问题，也不是外部激励问题**。导轨的摩擦曲线在低速段有一段负斜率，它本身就是一台**能量泵**：滑块每停一次，弹簧多存一点能量，然后一次性释放。系统在没有外部周期输入的情况下自己产生了周期运动——这叫**自激振荡**，线性理论里对应的只能是"极点在虚轴上"，而这里的极点是**稳定**的。
+电机还有另一种限制。小范围内，增大指令可能近似按比例增加推力；达到电流上限后，再增大指令，推力也上不去了。前者要记住运动历史，后者只需看当前指令是否超限。这些现象都要求我们在模型里多写一点东西。
 
-本课要回答的不是"怎么设计非线性控制器"，而是更前面一步的问题：
+前面学过的状态空间模型仍然有用。本章要进一步问：**哪些性质能在工作点附近近似成立，哪些问题必须回到原来的非线性模型？** 本课先学识别和分析边界，后续课程再讨论控制器设计。
 
-- 非线性到底破坏了什么？破坏到什么程度可以量化吗？
-- 工程上常见的非线性有哪几类，怎么给它们分类？
-- 线性化在什么条件下够用，什么条件下会**给出方向性错误的结论**？
-- 什么时候必须换工具？
+<img src="/diagrams/nonlinearity/backlash.svg" alt="手柄先向右再向左，换向后的间隙空程内抽屉保持原位；同一手柄位置对应不同抽屉位置" style={{width:'100%',maxWidth:640,height:'auto'}} />
 
-下面这张表是全文的浓缩。左列是"线性理论的直觉预测"，右列是本课 Notebook 的**实测**结果——其中三行实测与直觉相反。
+> 可先回看[状态空间](/modern/state-space)、[现代稳定性](/modern/lyapunov-modern)。切线用到[微积分入门](/math/calculus-basics)，运动方程用到[常微分方程](/math/ode-matrix-exponential)。以下算例除特别注明外采用无量纲变量，数值是教学模型的结果。
 
-| 问题 | 线性直觉 | 实测 |
-| --- | --- | --- |
-| 硬弹簧 $\alpha=0.5$ 的叠加残差 | 应该为零 | $\max\lvert y(u_1+u_2)-y(u_1)-y(u_2)\rvert = 1.705805$，相对参考幅值 $2.123509$ 达 **80.32953%** |
-| 齐次性 $A(2u_2)/A(u_2)$ | 应该等于 2 | 线性弹簧 $2.000000$；硬弹簧 **$1.163721$** |
-| $f(x)=x+0.2x^3$ 在 $x_0=1$ 处线性化，误差 $\lt 5\%$ 的范围 | "小邻域内都准" | $x\in[0.7283,\,1.3746]$，向上 $+0.3746$、向下 $-0.2717$（**不对称**） |
-| Duffing $\alpha=0.5$ 的周期 | 与振幅无关，恒为 $2\pi=6.283185$ | $A_0=0.10\to6.271439$；$A_0=1.50\to4.647763$（**$-26.029\%$**） |
-| 摩擦曲线正斜率（$v_b\gt v_{\min}$）是否保证平滑滑动 | 是，负阻尼消失就稳定 | 冷启动在 $v_b=0.02\sim1.00$ **全部粘滑**，峰峰值 $0.038703\to0.637545$ m 单调增大 |
-| PI 饱和对超调的影响 | 限幅只会"削平"，超调不会更大 | 无限幅 $21.052\%$；饱和无抗饱和 **$80.181\%$**，调节时间 $4.879\to25.426$ s |
+## 叠加原理
 
-**读法**：第 1、2 行说明叠加原理不是"近似成立"而是**数量级地不成立**；第 3 行说明线性化的有效区间是**有界的、不对称的、可计算的**；第 4 行说明非线性系统的"固有频率"不是一个数而是一个**关于振幅的函数**；第 5、6 行是两次**局部判据被全局行为推翻**——这也是本课最想让读者记住的一点：线性化是局部工具，用它回答全局问题会出事。
-
-<Callout variant="info">
-本课的规矩是**叙述服从测量**：正文里出现的每一个数字都来自下面某个 Notebook 的实际运行输出。测量与直觉冲突时（本课至少三次），改的是叙述和实验设计，不是数据。第 5 行那条结论就是被测量改写过两次的产物。
-</Callout>
-
-> 📐 本文用到泰勒展开、二阶矩阵特征值、以及傅里叶级数，详见 [复数基础](/math/complex-numbers) 与 [Lyapunov 方法与现代稳定性](/modern/lyapunov-modern)。本课是"非线性控制"章的入口：识别出的多平衡点与极限环在 [相平面分析](/nonlinear/phase-plane) 里画相图，自激振荡的幅值预测在 [描述函数法](/nonlinear/describing-function) 里做，稳定性证明在 [Lyapunov 稳定性](/nonlinear/lyapunov-stability) 里给。
-
-## 什么是非线性系统？
-
-### 叠加原理：定义与它的两个分量
-
-一个系统 $\Sigma: u \mapsto y$ 是**线性**的，当且仅当对任意两个输入 $u_1, u_2$ 和任意标量 $a, b$：
+把输入送进系统得到输出，记作 $\Sigma:u\mapsto y$。**初始状态为零、初始时刻相同**时，线性输入输出映射满足
 
 $$
-\Sigma(a u_1 + b u_2) = a\,\Sigma(u_1) + b\,\Sigma(u_2)
+\Sigma(au_1+bu_2)=a\Sigma(u_1)+b\Sigma(u_2).
 $$
 
-这条式子可以拆成两个独立可测的分量：
+分别取 $a=b=1$ 检验可加性，取 $b=0$ 检验齐次性。动态线性系统如果固定了非零初态，输出还包含自由响应，此时不能直接把总输出相加；应先减去零输入响应，或将初态也作为叠加的一部分。
+
+最短的反例是 $y=u+0.2u^3$。两个输入都为1时，分别作用再相加得到2.4，一起作用得到3.6，残差为1.2。一般地，
 
 $$
-\begin{aligned}
-\text{可加性：}\quad & \Sigma(u_1 + u_2) = \Sigma(u_1) + \Sigma(u_2) \\
-\text{齐次性：}\quad & \Sigma(a u) = a\,\Sigma(u)
-\end{aligned}
+f(u+v)-f(u)-f(v)=0.6uv(u+v).
 $$
 
-这个拆分很重要，因为它把"系统是不是线性的"从一个抽象命题变成了**两次可以跑的实验**：跑三次仿真测可加性残差，跑两次仿真测齐次性比值。
+一个反例就能否定线性；有限次实验恰好吻合却不能证明对所有输入都线性。$\dot x=-2x+3u+5$ 在原坐标中是仿射模型；移到零输入平衡点 $x_e=5/2$，令 $\delta x=x-x_e$，才得到 $\delta\dot x=-2\delta x+3u$。
 
-<Callout variant="warning">
-一个常见误解：$\dot x = -2x + 3u + 5$ 这样的**仿射**系统被当作线性系统。它不满足叠加原理——常数项 $5$ 在 $\Sigma(u_1+u_2)$ 里只出现一次，在 $\Sigma(u_1)+\Sigma(u_2)$ 里出现两次。它可以通过平移平衡点变成线性系统，但那是**变量替换之后**的结论，不是原系统本身的性质。
-</Callout>
+## 常见非线性
 
-### 实测：叠加原理被破坏到什么程度
+| 类型 | 简化关系或行为 | 看什么 |
+|---|---|---|
+| 饱和 | $y=\operatorname{clip}(u,-M,M)$ | 幅值受限；速率限制需要另加动态模型 |
+| 死区 | $y=\operatorname{sign}(u)\max(\lvert u\rvert-a,0)$ | 小指令可能完全无输出 |
+| 理想继电器 | $y=M\operatorname{sign}(u)$ | 零点输出跳变，需声明零点取值 |
+| 三次硬化 | $y=u+\beta u^3$ | 斜率随工作点变 |
+| 滞环 | 往返经过同一输入时输出不同 | 需要历史；下面用双支教学模型 |
+| 间隙 | 换向后输出先保持，再重新跟随 | 需要记住上一步输出 |
 
-取同一个质量-弹簧-阻尼系统 $m\ddot x + c\dot x + f(x) = u$，$m=1$、$c=0.2$，只换弹簧：
-
-- 线性弹簧 $f(x) = kx$，$k=1$
-- 硬弹簧 $f(x) = kx + \alpha x^3$，$\alpha = 0.5$
-
-两个输入 $u_1 = \sin t$、$u_2 = 0.6\sin 1.3t$，仿真 $T=200$ s、$\mathrm dt=0.01$，取 $t\ge150$ s 的稳态段做统计。
-
-<JupyterNotebook
-  title="Notebook 1：叠加原理的定量破坏——同一系统，只换弹簧"
-  setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def rk4(f, y0, T, dt):
-    n = int(round(T / dt))
-    ys = np.empty((n + 1, len(y0)), dtype=float)
-    ys[0] = y0
-    y = np.array(y0, dtype=float)
-    for i in range(n):
-        t = i * dt
-        k1 = np.array(f(t, y), dtype=float)
-        k2 = np.array(f(t + dt / 2, y + dt / 2 * k1), dtype=float)
-        k3 = np.array(f(t + dt / 2, y + dt / 2 * k2), dtype=float)
-        k4 = np.array(f(t + dt, y + dt * k3), dtype=float)
-        y = y + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        ys[i + 1] = y
-    return ys`}
-  cells={[
-    { code: `# 叠加原理的定量破坏：同一质量-弹簧-阻尼，线性弹簧 vs 硬弹簧
-c, k, alpha = 0.2, 1.0, 0.5
-u1 = lambda t: 1.0 * np.sin(1.0 * t)
-u2 = lambda t: 0.6 * np.sin(1.3 * t)
-T, dt = 200.0, 0.01
-ts = np.arange(0, T + dt, dt)
-
-def run(f, u):
-    ys = rk4(lambda t, y: [y[1], -c * y[1] - f(y[0]) + u(t)], [0.0, 0.0], T, dt)
-    return ys[:, 0]
-
-lin = lambda x: k * x
-hard = lambda x: k * x + alpha * x ** 3
-res = {}
-for tag, f in [("lin", lin), ("hard", hard)]:
-    y1 = run(f, u1)
-    y2 = run(f, u2)
-    y12 = run(f, lambda t: u1(t) + u2(t))
-    y2x = run(f, lambda t: 2.0 * u2(t))
-    res[tag] = (y1, y2, y12, y2x)
-
-sel = ts >= 150.0
-for tag, label in [("lin", "线性弹簧 alpha=0  "), ("hard", "硬弹簧   alpha=0.5")]:
-    y1, y2, y12, y2x = res[tag]
-    resid = float(np.max(np.abs((y12 - y1 - y2)[sel])))
-    ref = float(np.max(np.abs(y12[sel])))
-    a1 = float(np.max(np.abs(y2[sel]))); a2 = float(np.max(np.abs(y2x[sel])))
-    print(f"{label}:")
-    print(f"  可加性: max|y(u1+u2)|={ref:.6f}, 残差={resid:.6e}, 相对误差={resid/ref*100:.6e}%")
-    print(f"  齐次性: A(u2)={a1:.6f}, A(2u2)={a2:.6f}, 比值={a2/a1:.6f} (线性应为 2.000000)")
-
-fig, axes = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
-w = (ts >= 150) & (ts <= 165)
-for ax, tag, ttl in [(axes[0], "lin", "线性弹簧：叠加成立"), (axes[1], "hard", "硬弹簧：叠加破坏")]:
-    y1, y2, y12, y2x = res[tag]
-    ax.plot(ts[w], y12[w], "k-", linewidth=2.5, label="y(u1+u2) 实测")
-    ax.plot(ts[w], (y1 + y2)[w], "r--", linewidth=1.5, label="y(u1)+y(u2)")
-    ax.set_ylabel("位移 x(t)")
-    ax.set_title(ttl)
-    ax.legend(fontsize=10); ax.grid(True, alpha=0.3)
-axes[1].set_xlabel("时间 t (s)")
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-四次运行给出：
-
-| | 线性弹簧 $\alpha=0$ | 硬弹簧 $\alpha=0.5$ |
-| --- | --- | --- |
-| $\max\lvert y(u_1+u_2)\rvert$（参考幅值） | 5.813027 | 2.123509 |
-| 可加性残差 $\max\lvert y(u_1{+}u_2)-y(u_1)-y(u_2)\rvert$ | $1.010303\times10^{-14}$ | $1.705805$ |
-| 相对误差 | $1.737998\times10^{-13}\,\%$ | $80.32953\,\%$ |
-| $A(u_2)$ | 0.813714 | 1.623869 |
-| $A(2u_2)$ | 1.627427 | 1.889730 |
-| 齐次性比值 | **2.000000** | **1.163721** |
-
-线性弹簧那一列的残差是 $10^{-14}$ 量级——这就是双精度浮点的机器噪声水平，说明"叠加原理成立"在数值上是被验证到了极限精度。硬弹簧那一列的残差比参考幅值只小 25%：**用 $y(u_1)+y(u_2)$ 去预测 $y(u_1+u_2)$，误差和信号本身一样大**，等于什么都没预测。
-
-齐次性那一行更值得看。线性系统里"输入翻倍，稳态幅值翻倍"是雷打不动的；硬弹簧的比值是 $1.163721$，也就是输入翻倍只换来 16% 的幅值增长。工程后果非常直接：**你不能用小信号实验去标定大信号行为**。在试验台上用 0.6 的幅值测出来的模型，推到 1.2 的幅值上会系统性低估响应。
-
-<Callout variant="tip">
-$\alpha x^3$ 这一项在做可加性检验时展开成 $(x_1+x_2)^3 = x_1^3 + x_2^3 + 3x_1^2x_2 + 3x_1x_2^2$。多出来的两个**交叉项**就是残差的来源，它正比于 $x_1^2 x_2$，所以两个输入**同时都不小**时破坏最严重。这解释了为什么"小信号下看起来线性"是完全可能的：交叉项是三次量级，幅值减半它就缩到八分之一。
-</Callout>
-
-### 固有频率不再是常数：振幅依赖
-
-线性系统 $\ddot x + \omega_0^2 x = 0$ 的周期 $T = 2\pi/\omega_0$，与振幅无关——这是"固有频率"这个词能成立的前提。加上三次项
+下面的滞环简化为上升支 $y=u+c$、下降支 $y=u-c$，转向处有跳变。它是用于辨认路径依赖的教学模型，不是完整磁滞或材料本构关系。间隙用半宽 $b$ 的递推：
 
 $$
-\ddot x + \omega_0^2 x + \alpha x^3 = 0
+y_k=\min\bigl(\max(y_{k-1},u_k-b),u_k+b\bigr).
 $$
 
-（Duffing 振子，无阻尼无激励），Lindstedt-Poincaré 一阶近似给出
-
-$$
-\omega \approx \omega_0\left(1 + \frac{3\alpha A_0^2}{8}\right)
-\quad\Longrightarrow\quad
-T \approx \frac{2\pi/\omega_0}{1 + \dfrac{3\alpha A_0^2}{8}}
-$$
-
-这里 $\omega_0 = 1$，$A_0$ 是初始振幅（也是最大振幅，因为系统保守）。**周期成了振幅的函数**，"这个系统的固有频率是多少"变成一个不完整的问题——必须补上"在多大振幅下"。
-
-### 实测：硬弹簧变快，软弹簧变慢，软弹簧还有上限
-
-<JupyterNotebook
-  title="Notebook 2：振幅依赖的周期，以及软弹簧的振幅上限"
-  setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def rk4(f, y0, T, dt):
-    n = int(round(T / dt))
-    ys = np.empty((n + 1, len(y0)), dtype=float)
-    ys[0] = y0
-    y = np.array(y0, dtype=float)
-    for i in range(n):
-        t = i * dt
-        k1 = np.array(f(t, y), dtype=float)
-        k2 = np.array(f(t + dt / 2, y + dt / 2 * k1), dtype=float)
-        k3 = np.array(f(t + dt / 2, y + dt / 2 * k2), dtype=float)
-        k4 = np.array(f(t + dt, y + dt * k3), dtype=float)
-        y = y + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        ys[i + 1] = y
-    return ys
-
-def upward_crossings(t, x, level=0.0):
-    s = x - level
-    idx = np.where((s[:-1] < 0) & (s[1:] >= 0))[0]
-    out = []
-    for i in idx:
-        frac = -s[i] / (s[i + 1] - s[i])
-        out.append(t[i] + frac * (t[i + 1] - t[i]))
-    return np.array(out)
-
-def measure_period(t, x, level=0.0, skip=0.0):
-    m = t >= skip
-    ct = upward_crossings(t[m], x[m], level)
-    if len(ct) < 2:
-        return float('nan'), 0
-    return float(np.mean(np.diff(ct))), len(ct) - 1`}
-  cells={[
-    { code: `# 振幅依赖的固有频率，以及软弹簧的振幅上限
-rows = []
-for name, alpha in [("硬弹簧", 0.5), ("软弹簧", -0.3)]:
-    for A0 in [0.1, 0.5, 1.0, 1.5]:
-        T, dt = 200.0, 0.005
-        ts = np.arange(0, T + dt, dt)
-        ys = rk4(lambda t, y, a=alpha: [y[1], -y[0] - a * y[0] ** 3], [A0, 0.0], T, dt)
-        Tm, nc = measure_period(ts, ys[:, 0], 0.0, skip=20.0)
-        TL = 2 * np.pi / (1 + 3 * alpha * A0 ** 2 / 8)
-        rows.append((name, A0, Tm, TL, nc))
-        print(f"{name} A0={A0:4.2f}: T_实测={Tm:.6f}s, T_Lindstedt={TL:.6f}s, T_线性={2*np.pi:.6f}s, "
-              f"实测vs线性={(Tm-2*np.pi)/(2*np.pi)*100:+7.3f}%, 实测vsLindstedt={(Tm-TL)/TL*100:+7.3f}% ({nc} cycles)")
-
-alpha = -0.3
-xb = np.sqrt(-1.0 / alpha)
-Vb = xb ** 2 / 2 + alpha * xb ** 4 / 4
-print(f"软弹簧 alpha={alpha}: 势垒位置 x_b=sqrt(-1/alpha)={xb:.6f}, V(x_b)={Vb:.6f}")
-esc = {}
-for A0 in [1.82, 1.825, 1.83, 1.90]:
-    T, dt = 300.0, 0.005
-    ts = np.arange(0, T + dt, dt)
-    with np.errstate(over="ignore", invalid="ignore"):
-        ys = rk4(lambda t, y: [y[1], -y[0] - alpha * y[0] ** 3], [A0, 0.0], T, dt)
-    big = np.where(np.abs(ys[:, 0]) > 50)[0]
-    esc[A0] = (ts, ys[:, 0], big)
-    if len(big):
-        print(f"  A0={A0:.3f} > x_b: 逃逸, |x|>50 于 t={float(ts[big[0]]):.3f}s")
-    else:
-        Tm, nc = measure_period(ts, ys[:, 0], 0.0, skip=20.0)
-        print(f"  A0={A0:.3f} < x_b: 有界, T={Tm:.6f}s ({nc} cycles), max|x|={float(np.max(np.abs(ys[:,0]))):.6f}")
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-A_grid = np.linspace(0.05, 2.0, 200)
-axes[0].axhline(2 * np.pi, color="k", linestyle=":", label="线性 T=2pi")
-for nm, al, cc in [("硬弹簧 alpha=+0.5", 0.5, "r"), ("软弹簧 alpha=-0.3", -0.3, "g")]:
-    Tm = [r[2] for r in rows if r[0] == nm[:3]]
-    A0s = [r[1] for r in rows if r[0] == nm[:3]]
-    axes[0].plot(A0s, Tm, cc + "o-", linewidth=2, label=nm + " 实测")
-    axes[0].plot(A_grid, 2 * np.pi / (1 + 3 * al * A_grid ** 2 / 8), cc + "--", alpha=0.5, label=nm + " Lindstedt")
-axes[0].axvline(np.sqrt(1 / 0.3), color="g", linestyle=":", alpha=0.6)
-axes[0].set_xlabel("初始振幅 A0"); axes[0].set_ylabel("周期 T (s)")
-axes[0].set_title("周期随振幅变化"); axes[0].legend(fontsize=8); axes[0].grid(True, alpha=0.3)
-axes[0].set_xlim(0, 2.0); axes[0].set_ylim(3.0, 30.0)
-for A0 in [1.82, 1.90]:
-    ts, x, big = esc[A0]
-    m = ts <= 40
-    axes[1].plot(ts[m], x[m], linewidth=2, label=f"A0={A0} (" + ("逃逸" if len(big) else "有界") + ")")
-axes[1].set_ylim(-4, 4); axes[1].set_xlabel("时间 t (s)"); axes[1].set_ylabel("位移 x(t)")
-axes[1].set_title("软弹簧的振幅上限 (x_b=1.826)"); axes[1].legend(fontsize=10); axes[1].grid(True, alpha=0.3)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-硬弹簧（$\alpha=+0.5$）：
-
-| $A_0$ | $T_{\text{实测}}$ (s) | $T_{\text{Lindstedt}}$ (s) | vs 线性 $6.283185$ | vs Lindstedt | 圈数 |
-| --- | --- | --- | --- | --- | --- |
-| 0.10 | 6.271439 | 6.271426 | $-0.187\%$ | $+0.000\%$ | 28 |
-| 0.50 | 6.008794 | 6.001849 | $-4.367\%$ | $+0.116\%$ | 29 |
-| 1.00 | 5.366659 | 5.291103 | $-14.587\%$ | $+1.428\%$ | 33 |
-| 1.50 | 4.647763 | 4.418944 | $-26.029\%$ | $+5.178\%$ | 38 |
-
-软弹簧（$\alpha=-0.3$）：
-
-| $A_0$ | $T_{\text{实测}}$ (s) | $T_{\text{Lindstedt}}$ (s) | vs 线性 | vs Lindstedt | 圈数 |
-| --- | --- | --- | --- | --- | --- |
-| 0.10 | 6.290267 | 6.290262 | $+0.113\%$ | $+0.000\%$ | 28 |
-| 0.50 | 6.468201 | 6.465014 | $+2.945\%$ | $+0.049\%$ | 27 |
-| 1.00 | 7.149816 | 7.079645 | $+13.793\%$ | $+0.991\%$ | 24 |
-| 1.50 | 9.151281 | 8.412633 | $+45.647\%$ | $+8.780\%$ | 19 |
-
-三个观察：
-
-1. **方向相反**：硬弹簧周期随振幅缩短（$A_0=1.5$ 时快 26%），软弹簧拉长（$A_0=1.5$ 时慢 46%）。$\alpha$ 的符号直接决定趋势，没有"非线性让系统变慢"这种笼统说法。
-2. **一阶近似有明确的有效范围**：Lindstedt 公式在 $A_0=0.1$ 时精确到小数点后 5 位（偏差 $0.000\%$），$A_0=1.0$ 时偏差升到 $1.4\%$（硬）/$1.0\%$（软），$A_0=1.5$ 时已经到 $5.2\%$/$8.8\%$。**它是渐近展开的一阶项**，$\alpha A_0^2$ 越接近 1 越不可信。
-3. **软弹簧有一个振幅上限**，这是线性系统完全没有的概念。
-
-### 软弹簧的势垒：一个"能量不够就出不去"的门槛
-
-$\alpha \lt 0$ 时势能
-
-$$
-V(x) = \frac{x^2}{2} + \frac{\alpha x^4}{4}
-$$
-
-不再是单井。令 $V'(x) = x + \alpha x^3 = 0$，除了 $x=0$ 还有 $x = \pm\sqrt{-1/\alpha}$。取 $\alpha=-0.3$：
-
-$$
-x_b = \sqrt{1/0.3} = 1.825742, \qquad V(x_b) = \frac{5}{6} = 0.833333
-$$
-
-$x_b$ 是势垒（局部极大），$V(x_b)$ 是门槛高度。实测四条轨迹：
-
-| $A_0$ | 与 $x_b$ 的关系 | 结果 |
-| --- | --- | --- |
-| 1.820 | 内侧 | 有界，$T=20.222879$ s（13 圈），$\max\lvert x\rvert = 1.820000$ |
-| 1.825 | 内侧（差 $0.000742$） | 有界，$T=26.006924$ s（9 圈），$\max\lvert x\rvert = 1.825000$ |
-| 1.830 | **外侧** | 逃逸，$\lvert x\rvert \gt 50$ 于 $t=5.215$ s |
-| 1.900 | 外侧 | 逃逸，$t=3.185$ s |
-
-$A_0$ 只变了 $0.55\%$（$1.825\to1.830$），结局从"永远在里面转"变成"5 秒内跑飞"。这是**临界现象**，工程上意味着：软弹簧类结构（受压柱、屈曲梁、带间隙的支撑）的安全边界不能用"留 10% 裕度"的线性思维去设，因为跨越阈值时响应不是变大 10%，而是**定性改变**。
-
-<Callout variant="warning">
-**这里有一个容易踩的坑，实测逼出来的。** 直觉判据是"总能量 $E$ 超过势垒高度 $V(x_b)$ 就逃逸"。但代入 $E(A_0) = A_0^2/2 + \alpha A_0^4/4$ 解 $E = V(x_b)$，判别式 $0.25 - 4\times0.075\times(5/6) = 0$——是个**重根**，$E(A_0) \le V(x_b)$ 对所有 $A_0$ 都成立，等号只在 $A_0 = x_b$ 处取到。所以 $A_0=1.830$ 的能量（0.833315）其实**略低于**势垒（0.833333），按能量判据应该"有界"，可它就是逃逸了。
-
-正确的判据是**位置**而非能量：从静止释放，若 $A_0 \lt x_b$，滑块被夹在 $x=\pm A_0$ 之间的势阱里（阱壁就是那段 $V \gt E$ 的势垒）；若 $A_0 \gt x_b$，它已经在势垒外侧，而外侧 $V$ 单调下降，于是直接滚向无穷。$A_0$ 恰好等于 $x_b$ 时它停在**不稳定平衡点**上不动。这也解释了 $A_0=1.825$ 的周期为什么暴涨到 26 s：轨迹贴着势垒顶走，速度趋于零。
-</Callout>
-
-## 常见非线性类型
-
-工程上的非线性可以按"出现在哪"分成两大类：**静态非线性**（输出只取决于当前输入，无记忆）和**动态非线性**（输出取决于历史，有记忆或含微分方程）。先讲静态的六种——它们是所有更复杂结构的积木。
-
-| 名称 | 表达式 | 物理来源 | 关键特征 |
-| --- | --- | --- | --- |
-| 饱和 | $y = \mathrm{clip}(u, -M, M)$ | 放大器电压上限、执行器行程/速率限制 | 大增益区变小增益，$N(A)$ 随 $A$ 下降 |
-| 死区 | $y = \mathrm{sign}(u)\max(\lvert u\rvert - a, 0)$ | 阀重叠量、传感器阈值、齿侧间隙的近似 | 小信号完全无响应 → 极限环、静差 |
-| 理想继电器 | $y = M\,\mathrm{sign}(u)$ | 开关控制、接触器、比较器输出 | 增益在 $u=0$ 处无穷大，**不连续** |
-| 三次硬化 | $y = u + \beta u^3$ | 弹簧硬化、磁路饱和的反向近似 | 光滑、奇对称，只产生奇次谐波 |
-| 滞环 | $y = ku \pm c$（符号由 $\dot u$ 决定） | 磁滞、材料内摩擦、预紧轴承 | **有记忆**，环面积 $=4cA$，每周期耗能 |
-| 间隙（backlash） | 见下方递推 | 齿轮齿侧间隙、联轴器、丝杠螺母 | **有记忆**，环宽 $=2b$，最大输出误差 $=b$ |
-
-间隙的输入-输出关系不是代数式，而是**路径依赖的递推**。设间隙半宽 $b$，则
-
-$$
-y_k = \begin{cases}
-\max(y_{k-1},\; u_k - b), & u_k \gt u_{k-1} \quad(\text{正向})\\
-\min(y_{k-1},\; u_k + b), & u_k \lt u_{k-1} \quad(\text{反向})\\
-y_{k-1}, & u_k = u_{k-1}
-\end{cases}
-$$
-
-"输入反向后要走 $2b$ 的距离输出才重新开始动"——这就是齿侧间隙在低速换向时产生定位误差的机制。
-
-还有一类必须单独列出来，因为它是**自激振荡的来源**：
-
-**Stribeck 摩擦**。静摩擦大于动摩擦，且动摩擦在低速段随速度**下降**：
-
-$$
-F(v) = \mathrm{sign}(v)\left[F_c + (F_s - F_c)e^{-\lvert v\rvert / v_s}\right] + \sigma v
-$$
-
-$F_s$ 静摩擦、$F_c$ 库仑摩擦、$v_s$ Stribeck 速度、$\sigma$ 粘性摩擦系数。$v\to0^+$ 处的斜率是 $-(F_s-F_c)/v_s$，**负值**，等效于负阻尼。
-
-### 实测：六种静态非线性的曲线、环面积与负斜率区
-
-<JupyterNotebook
-  title="Notebook 3：六种静态非线性——曲线、滞环能耗、间隙环宽、Stribeck 负斜率区"
-  setupCode={`import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)`}
-  cells={[
-    { code: `# 六种静态非线性：曲线、滞环能耗、间隙环宽、Stribeck 负斜率区
-u = np.linspace(-3, 3, 4001)
-M, a, b, c, k = 1.0, 0.3, 0.3, 0.2, 1.0
-sat = np.clip(u, -M, M)
-dead = np.where(u > a, u - a, np.where(u < -a, u + a, 0.0))
-relay = np.where(u > 0, 1.0, -1.0)
-cub = u + 0.2 * u ** 3
-
-A = 1.5
-N = 40000
-t = np.linspace(0, 2 * np.pi, N, endpoint=False)
-ui = A * np.sin(t)
-slope = np.cos(t)
-yi = np.where(slope > 0, k * ui + c, k * ui - c)
-area = float(np.abs(np.sum(yi * np.gradient(ui))))
-print(f"滞环环面积 = {area:.6f} (A={A}, k={k}, c={c}); 解析 4cA={4*c*A:.6f}; 差={abs(area-4*c*A):.2e}")
-for cc in [0.1, 0.4]:
-    y2 = np.where(slope > 0, k * ui + cc, k * ui - cc)
-    print(f"  c={cc}: 环面积={float(np.abs(np.sum(y2*np.gradient(ui)))):.6f}, 解析 4cA={4*cc*A:.6f}")
-
-tt = np.linspace(0, 20, 40001)
-s = (tt % 4) / 4
-tri = 2 * np.abs(2 * s - 1) - 1
-y_bl = np.zeros_like(tri)
-py, pu = tri[0], tri[0]
-for i in range(len(tri)):
-    du = tri[i] - pu
-    y_bl[i] = max(py, tri[i] - b) if du > 0 else (min(py, tri[i] + b) if du < 0 else py)
-    py, pu = y_bl[i], tri[i]
-st = tt >= 12.0
-print(f"间隙 2b={2*b}: 稳态最大输出误差={float(np.max(np.abs(tri-y_bl)[st])):.6f} (=b), 平均={float(np.mean(np.abs(tri-y_bl)[st])):.6f}")
-
-Fc, Fs, vs, sig = 0.3, 0.5, 0.05, 0.02
-def stribeck(v):
-    return np.sign(v) * (Fc + (Fs - Fc) * np.exp(-np.abs(v) / vs)) + sig * v
-for v in [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]:
-    print(f"Stribeck F({v}) = {float(stribeck(v)):.6f} N*m")
-vmin_an = vs * np.log((Fs - Fc) / (sig * vs))
-vv = np.linspace(1e-4, 1.0, 200001)
-fv = Fc + (Fs - Fc) * np.exp(-vv / vs) + sig * vv
-print(f"负斜率区终点: 实测 v_min={float(vv[np.argmin(fv)]):.6f}, 解析 vs*ln((Fs-Fc)/(sig*vs))={vmin_an:.6f}, F_min={float(np.min(fv)):.6f}")
-print(f"v→0 处斜率 -(Fs-Fc)/vs = {-(Fs-Fc)/vs:.4f} N*s/m → 等效负阻尼，自激振动能量来源")
-
-fig, axes = plt.subplots(2, 3, figsize=(13, 7))
-axes[0, 0].plot(u, sat, "b-", linewidth=2); axes[0, 0].plot(u, u, "k:", alpha=0.5)
-axes[0, 0].set_title(f"饱和 M={M}"); axes[0, 0].grid(True, alpha=0.3)
-axes[0, 1].plot(u, dead, "b-", linewidth=2); axes[0, 1].plot(u, u, "k:", alpha=0.5)
-axes[0, 1].set_title(f"死区 a={a}"); axes[0, 1].grid(True, alpha=0.3)
-axes[0, 2].plot(u, relay, "b-", linewidth=2)
-axes[0, 2].set_title("理想继电器"); axes[0, 2].grid(True, alpha=0.3)
-axes[1, 0].plot(u, cub, "b-", linewidth=2); axes[1, 0].plot(u, u, "k:", alpha=0.5)
-axes[1, 0].set_title("三次硬化 y=u+0.2u^3"); axes[1, 0].grid(True, alpha=0.3)
-axes[1, 1].plot(ui[:4000], yi[:4000], "b-", linewidth=2)
-axes[1, 1].set_title(f"滞环 c={c}, 环面积={area:.3f}"); axes[1, 1].grid(True, alpha=0.3)
-axes[1, 1].set_xlabel("输入 u"); axes[1, 1].set_ylabel("输出 y")
-axes[1, 2].plot(tri[st], y_bl[st], "b-", linewidth=1.5)
-axes[1, 2].plot(tri[st], tri[st], "k:", alpha=0.6)
-axes[1, 2].set_title(f"间隙 2b={2*b}"); axes[1, 2].grid(True, alpha=0.3)
-for ax in axes.ravel():
-    ax.set_xlim(-3, 3); ax.set_ylim(-3, 3)
-axes[1, 1].set_xlim(-1.6, 1.6); axes[1, 1].set_ylim(-1.7, 1.7)
-axes[1, 2].set_xlim(-1.1, 1.1); axes[1, 2].set_ylim(-1.1, 1.1)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-**滞环环面积**（输入 $u = A\sin t$，$A=1.5$，$k=1$）：
-
-| $c$ | 实测环面积 | 解析 $4cA$ |
-| --- | --- | --- |
-| 0.1 | 0.600000 | 0.600000 |
-| 0.2 | 1.200000（差 $7.40\times10^{-9}$） | 1.200000 |
-| 0.4 | 2.400000 | 2.400000 |
-
-环面积就是**一个周期内耗散的能量**，它正比于 $c$ 和 $A$。这个"正比于振幅"很关键：滞环是非线性阻尼，等效阻尼比随振幅变化，所以它既耗能又改变频率响应，不能简单当成一个常数阻尼处理。
-
-**间隙** $2b = 0.6$：三角波输入下稳态最大输出误差 $= 0.300000 = b$，平均误差 $0.255003$。最大误差恰好等于半宽——这是可以直接写进精度预算的数字。
-
-**Stribeck**（$F_c=0.3$、$F_s=0.5$、$v_s=0.05$、$\sigma=0.02$）：
-
-| $v$ (m/s) | $F(v)$ (N·m) |
-| --- | --- |
-| 0.001 | 0.496060 |
-| 0.01 | 0.463946 |
-| 0.05 | 0.374576 |
-| 0.1 | 0.329067 |
-| 0.5 | 0.310009 |
-| 1.0 | 0.320000 |
-
-从 0.496 一路降到 0.310 再回升到 0.320。负斜率区的终点：实测 $v_{\min}=0.264914$，解析 $v_s\ln\frac{F_s-F_c}{\sigma v_s} = 0.264916$，$F_{\min}=0.306298$；$v\to0$ 处斜率 $-(F_s-F_c)/v_s = -4.0000$ N·s/m。
-
-$-4.0$ N·s/m 这个负阻尼是引言里那台定位平台抖动的**能量来源**，本课最后一个 Notebook 会把它变成一条可测的极限环。
-
-### 动态后果一：谐波产生
-
-线性系统有个极强的性质：**正弦进，同频正弦出**。频率不会变，只会改幅值和相位。非线性系统没有这个性质。
-
-对 $y = x + \beta x^3$，代入 $x = A\sin\omega t$，用 $\sin^3\theta = \frac{3\sin\theta - \sin3\theta}{4}$：
-
-$$
-y = \left(A + \frac{3\beta A^3}{4}\right)\sin\omega t - \frac{\beta A^3}{4}\sin 3\omega t
-$$
-
-基波幅值被**抬高**了（$A \to A + 3\beta A^3/4$），同时凭空出现了三次谐波。注意基波增益依赖 $A$——这就是"增益随幅值变化"，描述函数法的整个出发点。
-
-### 动态后果二：互调
-
-两个频率同时进去，出来的不只是它们各自的谐波，还有**和频与差频**。对 $x = \sin\omega_1 t + \sin\omega_2 t$，$x^3$ 展开会产生 $2\omega_1-\omega_2$、$2\omega_2-\omega_1$、$\omega_1+\omega_2$ 等分量。其中 $2\omega_1-\omega_2$ 这类**差频项**尤其讨厌：如果 $\omega_1,\omega_2$ 很接近，$2\omega_1-\omega_2$ 会落在 $\omega_1$ 附近，滤波器滤不掉。
-
-### 实测：解析值 vs FFT
-
-<JupyterNotebook
-  title="Notebook 4：谐波产生与双音互调——解析值与 FFT 逐位对齐"
-  setupCode={`import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def harmonic_amps(x, fs, f0, n=9):
-    N = len(x)
-    k = np.arange(N) / fs
-    out = []
-    for i in range(1, n + 1):
-        f = i * f0
-        c = 2.0 * np.sum(x * np.cos(2 * np.pi * f * k)) / N
-        s = 2.0 * np.sum(x * np.sin(2 * np.pi * f * k)) / N
-        out.append(np.hypot(c, s))
-    return np.array(out)`}
-  cells={[
-    { code: `# 谐波产生与互调：解析值 vs FFT 实测
-A, beta, f0, fs = 1.0, 0.2, 1.0, 2000.0
-P = 10
-N = int(fs * P / f0)
-t = np.arange(N) / fs
-x = A * np.sin(2 * np.pi * f0 * t)
-y = x + beta * x ** 3
-h = harmonic_amps(y, fs, f0, 5)
-fund_an = A + 3 * beta * A ** 3 / 4
-third_an = beta * A ** 3 / 4
-print(f"y = x + {beta} x^3, x = A sin(w t), A={A}, 采样 {P} 个整周期 (N={N})")
-print(f"  基波: FFT={h[0]:.12f}, 解析 A+3bA^3/4={fund_an:.12f}, 差={abs(h[0]-fund_an):.2e}")
-print(f"  三次: FFT={h[2]:.12f}, 解析 bA^3/4 ={third_an:.12f}, 差={abs(h[2]-third_an):.2e}")
-print(f"  三次/基波={h[2]/h[0]*100:.4f}%; 二次={h[1]:.2e}, 四次={h[3]:.2e}, 五次={h[4]:.2e} (奇对称只有奇次)")
-for Aa in [0.5, 1.0, 2.0, 4.0]:
-    ys = np.clip(Aa * np.sin(2 * np.pi * f0 * t), -1.0, 1.0)
-    hs = harmonic_amps(ys, fs, f0, 25)
-    thd = float(np.sqrt(np.sum(hs[1:] ** 2)) / hs[0] * 100)
-    print(f"  饱和 M=1, A={Aa}: 基波={hs[0]:.6f}, 三次={hs[2]:.6f}, THD={thd:.4f}%")
-
-f1, f2 = 1.0, 1.4
-N2 = int(fs * 20)
-t2 = np.arange(N2) / fs
-x2 = np.sin(2 * np.pi * f1 * t2) + np.sin(2 * np.pi * f2 * t2)
-y2 = x2 + beta * x2 ** 3
-X = np.abs(np.fft.rfft(y2)) / (N2 / 2)
-freqs = np.fft.rfftfreq(N2, 1 / fs)
-idx = np.where((X > 0.02) & (freqs > 0.05) & (freqs < 6))[0]
-names = {"f1": f1, "f2": f2, "2f1-f2": 2*f1-f2, "2f2-f1": 2*f2-f1, "2f1": 2*f1, "2f2": 2*f2,
-         "f1+f2": f1+f2, "3f1": 3*f1, "3f2": 3*f2, "2f1+f2": 2*f1+f2, "f1+2f2": f1+2*f2}
-print(f"双音互调 f1={f1} Hz, f2={f2} Hz (各幅值 1.0)，幅值>0.02 的谱线:")
-peaks = []
-for g in np.split(idx, np.where(np.diff(idx) > 3)[0] + 1):
-    j = g[np.argmax(X[g])]
-    tag = next((nm for nm, val in names.items() if abs(freqs[j] - val) < 0.02), "")
-    peaks.append((float(freqs[j]), float(X[j]), tag))
-    print(f"  f={freqs[j]:6.3f} Hz  幅值={X[j]:.6f}  {tag}")
-print(f"  输入端只有 f1/f2 两根谱线，{peaks[0][2]}={peaks[0][0]:.3f} Hz 与 3f1=3.000 Hz 等都是非线性新产生的")
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-axes[0].plot(t[t < 3], x[t < 3], "b-", linewidth=2, label="输入 x")
-axes[0].plot(t[t < 3], y[t < 3], "r-", linewidth=2, label="输出 y=x+0.2x^3")
-axes[0].set_xlabel("时间 t (s)"); axes[0].set_title("波形畸变"); axes[0].legend(fontsize=10); axes[0].grid(True, alpha=0.3)
-kk = np.arange(1, 10)
-bars = np.zeros(9)
-bars[0] = h[0]; bars[2] = h[2]; bars[4] = h[4]
-axes[1].bar(kk - 0.2, bars, 0.4)
-axes[1].set_xticks(kk); axes[1].set_xlabel("谐波次数"); axes[1].set_ylabel("幅值")
-axes[1].set_title("奇次谐波 (b=0.2, A=1)"); axes[1].grid(True, alpha=0.3, axis="y")
-axes[1].set_ylim(0, 1.3)
-axes[2].stem(freqs[(X > 0.01) & (freqs < 6)], X[(X > 0.01) & (freqs < 6)], basefmt=" ")
-axes[2].set_xlabel("频率 (Hz)"); axes[2].set_ylabel("幅值")
-axes[2].set_title("双音互调谱 (f1=1.0, f2=1.4 Hz)"); axes[2].grid(True, alpha=0.3)
-axes[2].set_xlim(0, 6); axes[2].set_ylim(0, 1.6)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-三次非线性 $y = x + 0.2x^3$，$x = \sin(2\pi t)$，采 10 个整周期：
-
-| 分量 | FFT | 解析 | 差 |
-| --- | --- | --- | --- |
-| 基波 | 1.150000000000 | $A + 3\beta A^3/4 = 1.15$ | $0.00\times10^{0}$ |
-| 三次 | 0.050000000000 | $\beta A^3/4 = 0.05$ | $6.94\times10^{-18}$ |
-| 二次 | $5.40\times10^{-17}$ | 0 | — |
-| 四次 | $5.20\times10^{-17}$ | 0 | — |
-| 五次 | $1.89\times10^{-17}$ | 0 | — |
-
-三次/基波 $= 4.3478\%$。偶次谐波全部落在 $10^{-17}$——这是奇对称非线性的必然结果（$f(-u) = -f(u)$ 只产生奇次谐波），数值上也验证到了机器精度。
-
-饱和（$M=1$）的 THD：
-
-| $A$ | 基波 | 三次 | THD |
-| --- | --- | --- | --- |
-| 0.5 | 0.500000 | 0.000000 | 0.0000% |
-| 1.0 | 1.000000 | 0.000000 | 0.0000% |
-| 2.0 | 1.217995 | 0.275664 | **23.2900%** |
-| 4.0 | 1.259849 | 0.385251 | **35.4169%** |
-
-$A \le M$ 时 THD 恰好为 0（根本没进饱和区，是纯线性的）；$A=2M$ 时 THD 跳到 23.3%。**这个跳变是"非本质非线性"的典型特征**：小信号下系统完全线性，大信号下突然面目全非。也解释了为什么音频功放标称 THD 要在额定功率下测——低功率测出来的数字没有意义。
-
-双音互调 $f_1=1.0$ Hz、$f_2=1.4$ Hz（各幅值 1.0），实测幅值 $>0.02$ 的谱线：
-
-| 频率 (Hz) | 幅值 | 来源 |
-| --- | --- | --- |
-| 0.600 | 0.150000 | $2f_1 - f_2$ |
-| 1.000 | 1.450000 | $f_1$（原 1.0 + 互调 $0.45$） |
-| 1.400 | 1.450000 | $f_2$ |
-| 1.800 | 0.150000 | $2f_2 - f_1$ |
-| 3.000 | 0.050000 | $3f_1$ |
-| 3.400 | 0.150000 | $2f_1 + f_2$ |
-| 3.800 | 0.150000 | $f_1 + 2f_2$ |
-| 4.200 | 0.050000 | $3f_2$ |
-
-输入端只有 $f_1$ 和 $f_2$ 两根谱线，$0.600$ Hz 和 $3.000$ Hz **全部是非线性新产生的**。其中 $2f_1-f_2 = 0.6$ Hz 低于两个输入频率，$3f_1=3.0$ Hz 高于它们——**带通滤波挡不住互调**，因为新分量可以落在通带内甚至通带外任意位置。这是射频接收机"三阶交调"指标的由来，也是多轴运动控制里两轴耦合振动的机理之一。
-
-## 非线性的分类
-
-给非线性分类不是为了 taxonomy，而是因为**不同类别对应不同的可用工具**。四条分类维度，每条都直接决定"你下一步该拿什么方法"。
-
-### 维度一：有无记忆（静态 / 动态）
-
-- **无记忆（静态）**：$y(t) = \varphi(u(t))$，输出只取决于当前输入。饱和、死区、继电器、三次硬化属于此类。它们的 $u$-$y$ 曲线是一条**单值曲线**，同一输入值永远给同一输出。
-- **有记忆（动态）**：输出取决于历史。滞环、间隙属于此类——它们的 $u$-$y$ 图是一条**闭合环**，同一输入值可以对应两个不同输出，取决于输入是升还是降。
-
-这条判据可以直接在图上读出来，也正是下面交互组件做的事。有记忆非线性无法写成 $y=\varphi(u)$，必须引入内部状态（滞环的 $\dot u$ 符号、间隙的 $y_{k-1}$），因此**必须放进状态空间里处理**。
-
-### 维度二：连续性（光滑 / 不连续）
-
-- **光滑**：$\varphi$ 可微。三次硬化、Stribeck 摩擦（$v\ne0$ 处）。可以求 Jacobian，**可以线性化**。
-- **不连续**：理想继电器、库仑摩擦（$\mathrm{sign}(v)$ 在 $v=0$ 处跳变）、间隙（斜率跳变）。Jacobian 不存在或无穷大，**线性化在跳变点直接失效**，需要 Filippov 解概念或滑模理论。
-
-这条维度决定了微分方程解的存在唯一性能不能用标准定理保证。不连续系统可能出现 **Zeno 行为**（有限时间内无穷次切换），仿真器会在切换点附近抖死。
-
-### 维度三：本质 / 非本质
-
-这是工程上最实用的一条。
-
-- **非本质非线性**：由外部约束人为引入，小信号下可以忽略。执行器饱和、死区、量化。**特点**：在额定工作范围内系统是线性的，只有超出范围才暴露。Notebook 4 里 $A\le M$ 时 THD $=0.0000\%$ 就是这个性质。
-- **本质非线性**：物理机理内生，**无论多小的信号都不能忽略**。负斜率摩擦导致的自激振荡、单摆的 $\sin\theta$（大角度）、屈曲、极限环。
-
-判断方法：**把幅值缩到零，非线性会不会跟着消失？** 会 → 非本质；不会（比如 $\sin\theta \approx \theta - \theta^3/6$ 的三次项在小角度下相对误差仍有 $1.7\%$ @ $\theta=0.5$ rad，而自激振荡的能量来源与幅值无关）→ 本质。
-
-<Callout variant="tip">
-**这条分类决定了你的工作重心。** 非本质非线性的对策是**抗饱和（anti-windup）、限幅补偿、间隙逆模型**——本质上是"让控制器知道执行器受限了"。本质非线性的对策是**反馈线性化、滑模、backstepping、自适应**——本质上是"重新设计控制律"。用错方向会白费力气：给一台粘滑抖动的平台加抗饱和逻辑，一点用都没有。
-</Callout>
-
-### 维度四：输入仿射 / 非仿射
-
-写成状态空间 $\dot{\boldsymbol x} = \boldsymbol f(\boldsymbol x) + \boldsymbol g(\boldsymbol x)\boldsymbol u$：
-
-- **输入仿射**：$\boldsymbol u$ 只以一次项出现，系数可以依赖 $\boldsymbol x$。反馈线性化、backstepping、滑模都能直接用。
-- **非仿射**：$\boldsymbol u$ 出现在非线性内部，如 $\dot x = f(x, u)$ 且 $\partial^2 f/\partial u^2 \ne 0$。需要隐函数定理反解 $u$，或者用近似线性化，工具链明显更弱。
-
-### 动手试：把曲线拖出来，看它是单值还是闭合环
-
-下面这个组件把 Notebook 3 的六种静态非线性做成了可调参数版本。左边是 $u$-$y$ 曲线（正弦输入扫出来的轨迹），右边是输入输出波形。判据很简单：**左边是一条不自我重叠的曲线 → 无记忆；左边是一个闭合环 → 有记忆**。
+初始输出须在允许带内；之后每一步将旧输出投影到新的允许带。足幅往返时换向空程为 $2b$，且 $\lvert y-u\rvert\le b$。小幅往返未必用完整个间隙，不能看不到环就断定“无记忆”。
 
 <NonlinearityExplorer />
 
-默认显示的是**滞环**，$A=1.5$、$k=1$、$c=0.2$，读数框给出环面积 $1.200000$——与 Notebook 3 实测的 $4cA = 1.200000$ 完全一致。切到"间隙"会看到宽度 $2b$ 的平行四边形环；切到"饱和""死区""继电器""三次硬化"，环退化成单值曲线，读数框会标出"无记忆"。拖动 $A$ 滑块可以看到滞环面积线性增长（$4cA$），而饱和在 $A \le M$ 时完全线性、$A \gt M$ 时突然弯折。
-
-## 为什么线性化会失效？
-
-### 线性化在做什么
-
-对 $f(x)$ 在工作点 $x_0$ 处泰勒展开：
-
-$$
-f(x) = f(x_0) + f'(x_0)(x - x_0) + \frac{f''(x_0)}{2}(x-x_0)^2 + \cdots
-$$
-
-线性化就是**只保留前两项**：
-
-$$
-f_{\text{lin}}(x) = f(x_0) + f'(x_0)(x-x_0)
-$$
-
-误差是二阶项起的余项。对 $f(x) = x + 0.2x^3$、$x_0 = 1$：$f(1) = 1.2$、$f'(1) = 1 + 0.6 = 1.6$，所以 $f_{\text{lin}}(x) = 1.6x - 0.4$。
-
-关键问题不是"能不能线性化"（几乎处处都能），而是**"线性化的有效半径有多大"**——这个半径是有限的、不对称的、可以算出来的。
-
-### 实测：有效半径到底是多少
+默认 $A=1.5,c=0.2$，双支模型的几何回线面积为 $4cA=1.2$。只有当输入和输出确实是一对力与位移等功共轭量、并约定方向时，回线积分才可解释为功；任意信号图上的面积并不自动等于耗能。
 
 <JupyterNotebook
-  title="Notebook 5：线性化的实测有效半径——静态误差与动态（周期）误差"
+  title="叠加与六种非线性"
   setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
+from scipy.integrate import solve_ivp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['figure.dpi']=100
+np.set_printoptions(precision=6, suppress=True)
+`}
+  cells={[
+    { code: `u=np.array([-1.,0.,1.]);v=np.array([.5,0.,.5])
+linear=lambda x:2*x
+cubic=lambda x:x+.2*x**3
+assert np.max(abs(linear(u+v)-linear(u)-linear(v)))==0
+res=cubic(u+v)-cubic(u)-cubic(v)
+assert np.allclose(res, .6*u*v*(u+v))
+print('cubic additivity residual=',res,'at u=v=1:',cubic(2)-2*cubic(1))
+# Independently reproduce the Explorer's default and six types.
+N=2048;theta=-np.pi/2+2*np.pi*np.arange(N+1)/N
+for kind,A,p in [('hysteresis',1.5,.2),('backlash',1.,.3),('saturation',2.,1.),('deadzone',1.5,.3),('relay',1.,1.),('cubic',1.,.2)]:
+    inp=A*np.sin(theta)
+    if kind=='hysteresis':y=inp+p*np.where(np.cos(theta)>1e-9,1,np.where(np.cos(theta)<-1e-9,-1,1))
+    elif kind=='backlash':
+        # Periodic play operator: initialized at the lower turning point.
+        y=[];previous=-A+p
+        for value in inp:
+            previous=np.clip(previous,value-p,value+p);y.append(previous)
+        y=np.array(y)
+    elif kind=='saturation':y=np.clip(inp,-p,p)
+    elif kind=='deadzone':y=np.sign(inp)*np.maximum(abs(inp)-p,0)
+    elif kind=='relay':y=np.where(inp>=0,p,-p)
+    else:y=inp+p*inp**3
+    harmonics=np.array([2/N*abs(np.sum(y[:-1]*np.exp(-2j*np.pi*n*np.arange(N)/N))) for n in range(1,26)])
+    area=4*p*A if kind=='hysteresis' else 4*p*(A-p) if kind=='backlash' and A>p else 0.
+    print(kind,'area=',area,'fundamental=',harmonics[0],'third=',harmonics[2],'THD through 25=',100*np.linalg.norm(harmonics[1:])/harmonics[0] if harmonics[0]>1e-12 else 0.,'max deviation=',max(abs(y-inp)))
+assert np.isclose(4*.2*1.5,1.2)
+` }
+  ]}
+/>
+
+## 分类与工具
+
+先问三个彼此独立的问题：
+
+1. **有没有记忆？** 饱和是静态映射；间隙依赖历史。反过来，线性积分器也有记忆，因此“动态”不等于“非线性”。
+2. **是否光滑？** 三次项处处可微；饱和和死区连续，但折点不可微；理想继电器在零点不连续。间隙的轨迹可以连续，斜率却在接触/脱离时改变。不可把这几种情况统称为输出跳变。
+3. **输入是否仿射？** $\dot x=f(x)+g(x)u$ 对输入是一次的，状态仍可非线性。输入仿射只是结构条件，使用反馈线性化或滑模等方法还要满足各自的可逆性、相对阶和可测量性条件。
+
+有时还会遇到“本质/非本质非线性”的分类，教材口径并不完全统一。本课不用它直接选控制器，而是明确写出工作点、幅值范围和允许误差。$\sin\theta$ 在零点附近可近似为 $\theta$；死区在内部的小信号增益却为零，不能一概说“幅值越小越容易控制”。
+
+## 谐波与互调
+
+稳定的线性时不变系统在正弦稳态下只改变幅值和相位。这个说法有“时不变”和“稳态”两个条件；线性时变系统不受同样限制。
+
+令 $u=A\sin\omega t$，代入三次项并用三倍角公式：
+
+$$
+y=\left(A+\frac{3\beta A^3}{4}\right)\sin\omega t-\frac{\beta A^3}{4}\sin3\omega t.
+$$
+
+$A=1,\beta=0.2$ 时，基波幅值1.15、三次谐波幅值0.05；THD为 $0.05/1.15\approx4.347826\%$。这里幅值取非负，三次项系数的负号表示相位关系。奇次谐波结论针对奇对称静态映射与正弦输入，不推广到任意非线性动态系统。
+
+两个频率一起输入时，三次展开还会产生 $2\omega_1\pm\omega_2$、$2\omega_2\pm\omega_1$ 和各自三次谐波。纯三次奇对称项并不一般产生单纯的 $\omega_1+\omega_2$；二次项才会产生这种和频。新频率若落在有用频带内，就无法仅靠频带选择把它与信号分开。
+
+<JupyterNotebook
+  title="三次项的频谱"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['figure.dpi']=100
+np.set_printoptions(precision=6, suppress=True)
+`}
+  cells={[
+    { code: `N=4096;t=np.arange(N)/N;inp=np.sin(2*np.pi*t);y=inp+.2*inp**3
+amplitude=2*abs(np.fft.rfft(y))/N
+assert np.allclose(amplitude[[1,3]],[1.15,.05],atol=1e-12)
+assert max(amplitude[2::2])<1e-12
+print('fundamental=',amplitude[1],'third=',amplitude[3],'THD=',100*.05/1.15)
+fig,ax=plt.subplots(figsize=(5,2.8));ax.stem(np.arange(7),amplitude[:7]);ax.set(xlabel='harmonic',ylabel='amplitude',xlim=(0,6),ylim=(0,1.3));plt.tight_layout();plt.show()
+# Continuous onset of saturation distortion, with an unsaturated tie.
+for A in [.5,1.,1.01,2.]:
+    signal=np.clip(A*inp,-1,1);amp=2*abs(np.fft.rfft(signal))/N
+    print('A=',A,'fundamental=',amp[1],'THD all resolved=',100*np.linalg.norm(amp[2:-1])/amp[1])
+` }
+  ]}
+/>
+
+饱和在 $A\le M$ 时不削顶，失真为零；从阈值继续增加幅值，失真连续出现，**不是在阈值处阶跃上升**。上面实验同时列出未触发限幅和刚越过阈值的工况。图中只是指定映射的频谱，没有给不同控制方法排名。
+
+## 局部近似
+
+在平衡点 $(x_e,u_e)$ 附近，若动力学足够光滑，展开 $\dot x=f(x,u)$：
+
+$$
+\delta\dot x=A\delta x+B\delta u+\text{高阶余项},\qquad
+A=\left.\frac{\partial f}{\partial x}\right|_e,\quad
+B=\left.\frac{\partial f}{\partial u}\right|_e.
+$$
+
+小范围能不能用，要看余项相对任务容许误差有多大。以静态 $f(x)=x+0.2x^3$ 为例，在 $x_e=1$ 的切线为
+
+$$
+f_{\rm lin}(x)=1.2+1.6(x-1),\qquad
+f(x)-f_{\rm lin}(x)=0.6(x-1)^2+0.2(x-1)^3.
+$$
+
+在0.9和1.1处，绝对误差分别是0.0058和0.0062。若以 $\lvert f(x)\rvert$ 作分母，相对误差约0.5546%和0.4538%，并不左右对称。分母接近零时要换用绝对误差或明确的参考尺度。静态曲线误差小也不能代替整个动态闭环的精度验证。
+
+<JupyterNotebook
+  title="切线与局部误差"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['figure.dpi']=100
+np.set_printoptions(precision=6, suppress=True)
+`}
+  cells={[
+    { code: `f=lambda x:x+.2*x**3
+line=lambda x:1.2+1.6*(x-1)
+for x in [.9,1.,1.1]:
+    error=f(x)-line(x);relative=abs(error)/abs(f(x))
+    assert abs(error-(.6*(x-1)**2+.2*(x-1)**3))<1e-12
+    print('x=',x,'exact=',f(x),'tangent=',line(x),'absolute error=',error,'relative %=',100*relative)
+grid=np.linspace(.5,1.5,501);fig,ax=plt.subplots(figsize=(5,2.8));ax.plot(grid,f(grid),label='nonlinear');ax.plot(grid,line(grid),'--',label='tangent at 1');ax.set(xlabel='x',ylabel='y',xlim=(.5,1.5),ylim=(.3,2.3));ax.legend();plt.tight_layout();plt.show()
+` }
+  ]}
+/>
+
+稳定性也要分清条件：光滑自治系统的Jacobian全部特征值实部为负，可推出该平衡点局部渐近稳定；存在正实部特征值则不稳定；出现零实部时通常不能由一阶项决定。例如 $\dot x=-x^3$ 和 $\dot x=x^3$ 在原点的一阶模型都是 $\delta\dot x=0$，前者趋向原点，后者离开。
+
+> 线性化与局部稳定的条件可参看 Åström 与 Murray 的 [Feedback Systems，第6章](https://www.cds.caltech.edu/~murray/FBS/Linear_Systems.html)。本页数值由下方教学实验独立复算，不采用教材图中的读数。
+
+## 多种运动
+
+$\dot x=x-x^3$ 有平衡点 $-1,0,1$，导数分别为 $-2,1,-2$。因此两侧平衡点局部渐近稳定，原点不稳定。通过一维相线还可判断：正初值趋向1，负初值趋向−1，零初值保持零。这是该方程的解析性质，不能仅凭几条仿真就宣称得到一般系统的完整吸引域。
+
+振动也可能依赖振幅。无阻尼、无外力的无量纲Duffing振子为
+
+$$
+\ddot x+x+\alpha x^3=0.
+$$
+
+从 $x(0)=A,\dot x(0)=0$ 出发，本课逐组比较事件测周期与能量积分。在这组参数下，$\alpha=0.5$、$A=0.1,1,1.5$ 的周期约为6.271439、5.366659、4.647763；$\alpha=0$ 时均为 $2\pi$。这描述指定保守模型的周期，不是说硬弹簧控制性能更好。
+
+当 $\alpha=-0.3$，势能 $V(x)=x^2/2-0.3x^4/4$ 在 $x_b=\sqrt{1/0.3}\approx1.825742$ 有势垒，高度 $5/6$。从静止释放时，内侧初值留在中央势阱，外侧初值可向外逃逸；能量低于势垒也要先确认初始位置属于哪个连通区域。例如1.83已在外侧，虽然 $V(1.83)=0.83331530925$ 低于 $5/6$，仍不能据此判定有界。恰在势垒顶的理想静止状态是不稳定平衡，但不是“任意方向微扰都逃逸”：向内的小位移且零速度可以回到中央井内振动。
+
+<JupyterNotebook
+  title="平衡点与振幅相关周期"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['figure.dpi']=100
+np.set_printoptions(precision=6, suppress=True)
+`}
+  cells={[
+    { code: `# Scalar equilibria and an exact zero-eigenvalue counterexample.
+for x in [-1.,0.,1.]:print('equilibrium=',x,'Jacobian=',1-3*x*x)
+for sign in [-1,1]:
+    sol=solve_ivp(lambda t,z:[sign*z[0]**3],[0,2],[.1],rtol=1e-11,atol=1e-13)
+    exact=.1/np.sqrt(1-sign*.02*2)
+    assert abs(sol.y[0,-1]-exact)<1e-10
+    print('xdot=',sign,'* x^3, x(2)=',sol.y[0,-1])
+# Dimensionless Duffing: zero damping, zero forcing, omega0=1.
+records=[]
+for alpha in [0.,.5,-.3]:
+    for A in [.1,1.,1.5]:
+        def cross(t,z):return z[0]
+        cross.direction=-1
+        sol=solve_ivp(lambda t,z:[z[1],-z[0]-alpha*z[0]**3],[0,30],[A,0.],events=cross,max_step=.02,rtol=1e-10,atol=1e-12)
+        period=float(np.mean(np.diff(sol.t_events[0])))
+        # Energy quadrature, x=A sin(phi), avoids the turning-point singularity.
+        reference=4*quad(lambda phi:1/np.sqrt(1+alpha*A*A*(1+np.sin(phi)**2)/2),0,np.pi/2,epsabs=1e-11)[0]
+        assert abs(period-reference)<1e-7
+        records.append([alpha,A,period,reference]);print('alpha,A,T,event-energy diff=',alpha,A,period,period-reference)
+xb=np.sqrt(1/.3);V=lambda x:x*x/2-.3*x**4/4
+print('soft barrier x=',xb,'V=',V(xb),'V(1.83)=',V(1.83))
+assert 1.83>xb and V(1.83)<V(xb)
+` }
+  ]}
+/>
+
+还有极限环、跳跃和分岔等现象，将在[相平面](/nonlinear/phase-plane)及[分岔与混沌](/nonlinear/bifurcation-chaos)继续讨论。无阻尼Duffing的连续族闭合轨道不是孤立极限环。摩擦可在外部驱动供能的系统里影响振荡；摩擦本身不凭空产生能量。识别极限环和吸引域需要明确模型、稳定性与初值范围，有限窗口的周期波形还不够。
+
+## 限幅与积分
+
+即使被控对象是线性的，执行器受限后，闭环也可能成为非线性系统。看一个最简位置轴：$\dot x=u$，参考位置 $r$，误差 $e=r-x$，积分状态 $I$ 满足
+
+$$
+u_{\rm raw}=1.4e+I,\qquad\dot I=e,\qquad
+u=\operatorname{clip}(u_{\rm raw},-0.3,0.3).
+$$
+
+初值均为零、$r=2$。起始请求为2.8，执行器却只能给0.3。只要仍在正饱和，$x=0.3t$、$I=2t-0.15t^2$。到 $t=1$，位置0.3、积分1.85、请求4.23：误差有所缩小，请求反而增大了。这叫积分饱和问题，根源是请求与实际执行不一致，积分仍不断累积。
+
+一种入门处理是条件积分：当执行器饱和且当前误差还会把请求推得更远时暂停积分；若误差有助于退出饱和则继续积分。不是所有饱和期间都无条件冻结。
+
+<JupyterNotebook
+  title="限幅期间积分了多少"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['figure.dpi']=100
 np.set_printoptions(precision=6, suppress=True)
 
-def rk4(f, y0, T, dt):
-    n = int(round(T / dt))
-    ys = np.empty((n + 1, len(y0)), dtype=float)
-    ys[0] = y0
-    y = np.array(y0, dtype=float)
-    for i in range(n):
-        t = i * dt
-        k1 = np.array(f(t, y), dtype=float)
-        k2 = np.array(f(t + dt / 2, y + dt / 2 * k1), dtype=float)
-        k3 = np.array(f(t + dt / 2, y + dt / 2 * k2), dtype=float)
-        k4 = np.array(f(t + dt, y + dt * k3), dtype=float)
-        y = y + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        ys[i + 1] = y
-    return ys
-
-def upward_crossings(t, x, level=0.0):
-    s = x - level
-    idx = np.where((s[:-1] < 0) & (s[1:] >= 0))[0]
-    out = []
-    for i in idx:
-        frac = -s[i] / (s[i + 1] - s[i])
-        out.append(t[i] + frac * (t[i + 1] - t[i]))
-    return np.array(out)
-
-def measure_period(t, x, level=0.0, skip=0.0):
-    m = t >= skip
-    ct = upward_crossings(t[m], x[m], level)
-    if len(ct) < 2:
-        return float('nan'), 0
-    return float(np.mean(np.diff(ct))), len(ct) - 1`}
+def simulate(reference,limit,freeze,dt):
+    x=0.;integral=0.;rows=[]
+    for i in range(round(12/dt)+1):
+        t=i*dt;error=reference-x;raw=1.4*error+integral
+        applied=np.clip(raw,-limit,limit) if limit is not None else raw
+        rows.append([t,x,integral,raw,applied])
+        # Conditional integration: integrate when it helps leave saturation.
+        derivative=0. if freeze and (raw-applied)*error>0 else error
+        x+=dt*applied;integral+=dt*derivative
+    return np.array(rows)
+`}
   cells={[
-    { code: `# 线性化的实测有效半径：静态误差 + 动态（周期）误差
-f = lambda x: x + 0.2 * x ** 3
-x0 = 1.0
-a = f(x0); s = 1 + 0.6 * x0 ** 2
-flin = lambda x: a + s * (x - x0)
-print(f"f(x)=x+0.2x^3, x0={x0}: f(x0)={a:.6f}, f'(x0)={s:.6f} → f_lin(x)={s:.4f}x+({a-s*x0:.4f})")
-for x in [1.05, 1.1, 1.2, 1.5, 2.0]:
-    print(f"  x={x:4.2f}: f={f(x):.6f}, f_lin={flin(x):.6f}, 相对误差={abs(f(x)-flin(x))/abs(f(x))*100:.4f}%")
-grid = np.linspace(0.2, 3.0, 280001)
-err = np.abs(f(grid) - flin(grid)) / np.abs(f(grid)) * 100
-bands = {}
-for thr in [1.0, 5.0, 10.0]:
-    ok = err < thr
-    hi = grid[np.where(ok & (grid >= x0))[0]]
-    lo = grid[np.where(ok & (grid <= x0))[0]]
-    bands[thr] = (float(lo.min()), float(hi.max()))
-    print(f"  误差<{thr:4.1f}%: x in [{lo.min():.4f}, {hi.max():.4f}] (向上 +{hi.max()-x0:.4f}, 向下 -{x0-lo.min():.4f})")
-
-dyn = []
-for A0 in [0.1, 0.5, 1.0, 1.5, 2.0]:
-    T, dt = 200.0, 0.005
-    ts = np.arange(0, T + dt, dt)
-    y = rk4(lambda t, st: [st[1], -st[0] - 0.5 * st[0] ** 3], [A0, 0.0], T, dt)
-    Tnl, _ = measure_period(ts, y[:, 0], 0.0, skip=20.0)
-    dyn.append((A0, Tnl))
-    print(f"  Duffing A0={A0:4.2f}: T_nonlin={Tnl:.6f}, T_lin={2*np.pi:.6f}, 误差={(Tnl-2*np.pi)/(2*np.pi)*100:+.3f}%")
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
-gg = np.linspace(0.2, 2.5, 2000)
-axes[0].plot(gg, f(gg), "b-", linewidth=2, label="f(x)=x+0.2x^3")
-axes[0].plot(gg, flin(gg), "r--", linewidth=2, label="线性化 (x0=1)")
-axes[0].axvspan(bands[5.0][0], bands[5.0][1], color="g", alpha=0.12, label="误差<5% 区间")
-axes[0].axvspan(bands[1.0][0], bands[1.0][1], color="orange", alpha=0.15, label="误差<1% 区间")
-axes[0].set_xlabel("x"); axes[0].set_ylabel("f(x)")
-axes[0].set_title("局部线性化的有效范围"); axes[0].legend(fontsize=9); axes[0].grid(True, alpha=0.3)
-axes[0].set_xlim(0.2, 2.5); axes[0].set_ylim(0, 8)
-axes[1].plot([d[0] for d in dyn], [(d[1] - 2 * np.pi) / (2 * np.pi) * 100 for d in dyn], "o-", linewidth=2)
-axes[1].axhline(-5, color="g", linestyle=":", label="-5% 门限")
-axes[1].axhline(0, color="k", linestyle="-", linewidth=0.8)
-axes[1].set_xlabel("初始振幅 A0"); axes[1].set_ylabel("周期误差 (%)")
-axes[1].set_title("动态层面的线性化误差 (Duffing alpha=0.5)")
-axes[1].legend(fontsize=10); axes[1].grid(True, alpha=0.3)
-axes[1].set_xlim(0, 2.1); axes[1].set_ylim(-40, 5)
-plt.tight_layout(); plt.show()` },
+    { code: `for reference in [.05,.5,2.]:
+    for label,limit,freeze in [('unlimited',None,False),('limited',.3,False),('conditional',.3,True)]:
+        a=simulate(reference,limit,freeze,.001);b=simulate(reference,limit,freeze,.0005)
+        error=np.max(abs(a[:,1:3]-b[::2,1:3]));assert error<.02
+        print('r=',reference,label,'x(1)=',a[1000,1],'integral(1)=',a[1000,2],'peak raw=',max(abs(a[:,3])),'dt-half max state difference=',error)
+        if reference==2. and label=='limited':
+            assert abs(a[1000,1]-.3)<1e-10
+            assert abs(a[1000,2]-1.85)<.001
+            assert abs(a[1000,3]-4.23)<.001
+        if reference==.05 and label!='unlimited':assert np.max(abs(a[:,1:]-simulate(reference,None,False,.001)[:,1:]))<1e-12
+a=simulate(2.,.3,False,.001);b=simulate(2.,.3,True,.001)
+fig,axs=plt.subplots(2,1,figsize=(5,4),sharex=True)
+for d,label in [(a,'limited'),(b,'conditional integration')]:
+    axs[0].plot(d[:,0],d[:,1],label=label);axs[1].plot(d[:,0],d[:,2],label=label)
+axs[0].axhline(2,color='gray',linestyle='--');axs[0].set(ylabel='position');axs[1].set(xlabel='t',ylabel='integral')
+for ax in axs:ax.legend();ax.grid(alpha=.3)
+plt.tight_layout();plt.show()
+` }
   ]}
 />
 
-**静态层面**，$f(x) = x + 0.2x^3$ 在 $x_0=1$ 处：
-
-| $x$ | $f(x)$ | $f_{\text{lin}}(x)$ | 相对误差 |
-| --- | --- | --- | --- |
-| 1.05 | 1.281525 | 1.280000 | 0.1190% |
-| 1.10 | 1.366200 | 1.360000 | 0.4538% |
-| 1.20 | 1.545600 | 1.520000 | 1.6563% |
-| 1.50 | 2.175000 | 2.000000 | 8.0460% |
-| 2.00 | 3.600000 | 2.800000 | 22.2222% |
-
-扫描全区间得到的**误差带**：
-
-| 门限 | $x$ 区间 | 向上 | 向下 |
-| --- | --- | --- | --- |
-| $\lt 1\%$ | $[0.8680,\ 1.1521]$ | $+0.1521$ | $-0.1320$ |
-| $\lt 5\%$ | $[0.7283,\ 1.3746]$ | $+0.3746$ | $-0.2717$ |
-| $\lt 10\%$ | $[0.6383,\ 1.5738]$ | $+0.5738$ | $-0.3617$ |
-
-**向上和向下不对称**（$5\%$ 门限下 $+0.3746$ vs $-0.2717$），因为 $f$ 是凸的：向上偏时线性化低估，曲率帮助"看起来还准"的时间更长；向下偏时误差增长更快。工程含义：**线性化模型的适用范围必须写成区间，不能写成"$\pm x\%$"**。
-
-**动态层面**更能说明问题——Duffing $\alpha=0.5$ 的周期误差（对照线性化预测的 $T=2\pi$）：
-
-| $A_0$ | $T_{\text{nonlin}}$ | 误差 |
-| --- | --- | --- |
-| 0.10 | 6.271439 | $-0.187\%$ |
-| 0.50 | 6.008794 | $-4.367\%$ |
-| 1.00 | 5.366659 | $-14.587\%$ |
-| 1.50 | 4.647763 | $-26.029\%$ |
-| 2.00 | 4.004310 | $-36.269\%$ |
-
-如果按 $5\%$ 门限，动态层面的线性化只在 $A_0 \lesssim 0.55$ 有效，比静态层面（$x\in[0.73,1.37]$，即偏离 $x_0$ 约 $\pm0.3$）**更保守**。这是一个普适规律：**误差会随时间累积，动态指标对线性化误差比静态指标更敏感**。用静态拟合精度去论证动态模型够用，是模型验证里最常见的漏洞。
-
-### 失效模式一：响应多值与跳跃
-
-线性系统的频率响应 $A(\omega)$ 是**单值函数**：给定激励频率，稳态幅值唯一。硬弹簧 Duffing 受迫振动
-
-$$
-\ddot x + c\dot x + x + \alpha x^3 = F\cos\omega t
-$$
-
-用谐波平衡（设 $x \approx A\cos(\omega t + \phi)$，只保留基波）得幅值方程
-
-$$
-\left[\left(1 - \omega^2 + \frac{3\alpha A^2}{4}\right)^2 + c^2\omega^2\right]A^2 = F^2
-$$
-
-对 $A^2$ 是**三次方程**，最多三个正实根。三个根意味着同一个 $\omega$ 下有三个可能的稳态幅值——响应变成**多值**的，其中中间那支不稳定。多值区间端点是**折叠点**（鞍结分岔），扫频经过折叠点时幅值会**突跳**。
-
-### 实测：跳跃共振
-
-<JupyterNotebook
-  title="Notebook 6：跳跃共振——谐波平衡三分支与升/降频延拓仿真互相对质"
-  setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def rk4(f, y0, T, dt):
-    n = int(round(T / dt))
-    ys = np.empty((n + 1, len(y0)), dtype=float)
-    ys[0] = y0
-    y = np.array(y0, dtype=float)
-    for i in range(n):
-        t = i * dt
-        k1 = np.array(f(t, y), dtype=float)
-        k2 = np.array(f(t + dt / 2, y + dt / 2 * k1), dtype=float)
-        k3 = np.array(f(t + dt / 2, y + dt / 2 * k2), dtype=float)
-        k4 = np.array(f(t + dt, y + dt * k3), dtype=float)
-        y = y + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        ys[i + 1] = y
-    return ys
-
-def harmonic_amps(x, fs, f0, n=9):
-    N = len(x)
-    k = np.arange(N) / fs
-    out = []
-    for i in range(1, n + 1):
-        f = i * f0
-        c = 2.0 * np.sum(x * np.cos(2 * np.pi * f * k)) / N
-        s = 2.0 * np.sum(x * np.sin(2 * np.pi * f * k)) / N
-        out.append(np.hypot(c, s))
-    return np.array(out)`}
-  cells={[
-    { code: `# 跳跃共振：谐波平衡折叠点 + 升/降频连续延拓仿真仲裁
-c, alpha, F = 0.2, 0.5, 1.5
-def hb_amps(w):
-    z = np.roots([9 * alpha ** 2 / 16, 3 * alpha * (1 - w ** 2) / 2,
-                  (1 - w ** 2) ** 2 + c ** 2 * w ** 2, -F ** 2])
-    real = z[np.abs(z.imag) < 1e-9].real
-    return np.sqrt(np.sort(real[real > 0]))
-
-ws = np.linspace(0.5, 3.0, 251)
-multi = [(w, hb_amps(w)) for w in ws if len(hb_amps(w)) > 1]
-print(f"谐波平衡多解区间: w in [{multi[0][0]:.4f}, {multi[-1][0]:.4f}] ({len(multi)}/251 个采样点有 3 个实根)")
-for w, a in multi[::20]:
-    print(f"   w={w:.4f}: A = {np.array2string(a, precision=5)}  (下/中/上分支，中间支不稳定)")
-
-def sweep(w_list, x_start):
-    out = []; x0, v0 = x_start, 0.0; ph = 0.0
-    for w in w_list:
-        T, dt = 120.0, 0.02
-        ys = rk4(lambda t, y, w=w: [y[1], -c * y[1] - y[0] - alpha * y[0] ** 3 + F * np.cos(w * t + ph)],
-                 [x0, v0], T, dt)
-        Nw = int(round(12 * (2 * np.pi / w) / dt))
-        seg = ys[-Nw:, 0]
-        harm = harmonic_amps(seg, 1 / dt, w / (2 * np.pi), 5)
-        fund = float(harm[0])
-        thd = float(np.sqrt(np.sum(harm[1:] ** 2)) / harm[0] * 100)
-        roots = hb_amps(w)
-        hb = float(roots[np.argmin(np.abs(roots - fund))]) if len(roots) else float("nan")
-        out.append((w, float(np.max(np.abs(seg))), fund, hb, thd))
-        x0, v0 = ys[-1, 0], ys[-1, 1]
-        ph = ph + w * T
-    return out
-
-grid = np.linspace(0.8, 2.6, 37)
-up = sweep(grid, 0.05)
-dn = sweep(grid[::-1], up[-1][1])
-wu = np.array([a[0] for a in up]); au = np.array([a[1] for a in up]); fu = np.array([a[2] for a in up])
-wd = np.array([a[0] for a in dn]); ad = np.array([a[1] for a in dn]); fd = np.array([a[2] for a in dn])
-iu = int(np.argmax(np.abs(np.diff(fu)))); idn = int(np.argmax(np.abs(np.diff(fd))))
-print(f"升频跳跃: w {wu[iu]:.3f}→{wu[iu+1]:.3f}, 基波 {fu[iu]:.4f}→{fu[iu+1]:.4f} (跌 {(fu[iu]-fu[iu+1])/fu[iu]*100:.1f}%)")
-print(f"降频跳跃: w {wd[idn]:.3f}→{wd[idn+1]:.3f}, 基波 {fd[idn]:.4f}→{fd[idn+1]:.4f} (涨 {(fd[idn+1]-fd[idn])/fd[idn]*100:.1f}%)")
-print(f"仿真双稳频带 w in [{wd[idn+1]:.3f}, {wu[iu+1]:.3f}]（频率网格 0.05），谐波平衡预测 [{multi[0][0]:.3f}, {multi[-1][0]:.3f}]")
-print(f"仿真基波 vs 谐波平衡同分支最大偏差 = {float(np.max(np.abs(fu - np.array([a[3] for a in up])))):.5f}")
-print(f"响应 THD: {float(np.min([a[4] for a in up])):.2f}% ~ {float(np.max([a[4] for a in up])):.2f}%（大振幅支上谐波含量更高）")
-print(f"max|x| 比基波大 {float(np.max(au/fu - 1))*100:.2f}%（峰值 vs 基波，非线性波形变尖）")
-
-fig, ax = plt.subplots(1, 1, figsize=(9, 6))
-hb_w = np.linspace(0.7, 2.8, 400)
-for br in range(3):
-    xs, ys_ = [], []
-    for w in hb_w:
-        r = hb_amps(w)
-        if len(r) > br:
-            xs.append(w); ys_.append(r[br])
-    if xs:
-        ax.plot(xs, ys_, "k-", alpha=0.45, linewidth=1.5)
-ax.plot(wu, au, "r.-", linewidth=2, markersize=6, label="升频延拓（仿真）")
-ax.plot(wd, ad, "b.-", linewidth=2, markersize=6, label="降频延拓（仿真）")
-ax.annotate("跳跃（升频）", xy=(wu[iu + 1], au[iu + 1]), xytext=(2.0, 2.6),
-            arrowprops=dict(arrowstyle="->", color="r"), fontsize=11, color="r")
-ax.annotate("跳跃（降频）", xy=(wd[idn + 1], ad[idn + 1]), xytext=(1.15, 1.4),
-            arrowprops=dict(arrowstyle="->", color="b"), fontsize=11, color="b")
-ax.set_xlabel("激励频率 w (rad/s)"); ax.set_ylabel("稳态幅值 A")
-ax.set_title("跳跃共振：黑线=谐波平衡三分支，红/蓝=升/降频仿真")
-ax.legend(fontsize=11); ax.grid(True, alpha=0.3)
-ax.set_xlim(0.7, 2.8); ax.set_ylim(0, 3.6)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-参数 $c=0.2$、$\alpha=0.5$、$F=1.5$。谐波平衡给出多解区间 $\omega\in[1.6600,\ 2.2600]$（251 个采样点中 61 个有三实根）：
-
-| $\omega$ | 三个根（下/中/上分支） |
-| --- | --- |
-| 1.6600 | 1.15570, 1.40757, 2.45892 |
-| 1.8600 | 0.64250, 2.25595, 2.75966 |
-| 2.0600 | 0.47062, 2.77834, 3.05917 |
-| 2.2600 | 0.36746, 3.28240, 3.31633 |
-
-时域延拓仿真（每个频率点跑 120 s，用上一个频率点的终态作为初值，保证连续性）给出：
-
-- **升频跳跃**：$\omega$ 从 $2.250 \to 2.300$，基波幅值 $3.2573 \to 0.3513$，**跌 89.2%**
-- **降频跳跃**：$\omega$ 从 $1.700 \to 1.650$，基波幅值 $0.9418 \to 2.4012$，**涨 155.0%**
-- 仿真双稳频带 $[1.650,\ 2.300]$（频率网格 $0.05$），谐波平衡预测 $[1.660,\ 2.260]$——两者一致，差异来自网格分辨率
-- 仿真基波与谐波平衡同分支的最大偏差 $0.05807$
-- 响应 THD $0.01\%\sim6.69\%$，大振幅支上谐波含量更高
-- $\max\lvert x\rvert$ 比基波大 $9.62\%$（波形变尖）
-
-**升频和降频的跳跃点不重合**（$2.25$ vs $1.70$），中间那段 $\omega\in[1.70,2.25]$ 系统**同时存在两个稳定稳态**，实际停在哪个取决于历史。这叫**滞后（hysteresis in frequency）**，是线性系统里完全不存在的现象。
-
-<Callout variant="warning">
-工程后果：一台带硬化支撑的旋转机械，升速通过临界转速时振幅可能突然跌掉 89%（看起来像"过了临界就好了"），降速回来时却在**更低的转速**上突然涨 155%。升速和降速的安全转速区间**不对称**。用线性 Bode 图做升降速规划会漏掉降速方向的那个跳跃点。
-</Callout>
-
-### 失效模式二：平衡点不是一个
-
-线性系统 $\dot{\boldsymbol x} = A\boldsymbol x + B\boldsymbol u$ 在给定 $\boldsymbol u$ 下**只有一个**平衡点（$A$ 可逆时），所以"这个系统稳定吗"是一个有唯一答案的问题。非线性系统可以有任意多个平衡点，每个稳定性不同，"系统稳定吗"必须先问"在哪个平衡点附近"。
-
-最经典的例子：带恒定转矩的单摆
-
-$$
-\ddot\theta + d\dot\theta + \sin\theta = \tau
-$$
-
-平衡点满足 $\sin\theta_e = \tau$。$|\tau| \lt 1$ 时有**两个**解：$\theta_e = \arcsin\tau$（稳定）和 $\pi - \arcsin\tau$（不稳定）。$|\tau| = 1$ 时两个解合并成一个，$|\tau| \gt 1$ 时**一个都没有**。
-
-### 实测：鞍结分岔与线性化的彻底失效
-
-<JupyterNotebook
-  title="Notebook 7：多平衡点、鞍结分岔、以及 tau 越过 1 之后的持续旋转"
-  setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def rk4(f, y0, T, dt):
-    n = int(round(T / dt))
-    ys = np.empty((n + 1, len(y0)), dtype=float)
-    ys[0] = y0
-    y = np.array(y0, dtype=float)
-    for i in range(n):
-        t = i * dt
-        k1 = np.array(f(t, y), dtype=float)
-        k2 = np.array(f(t + dt / 2, y + dt / 2 * k1), dtype=float)
-        k3 = np.array(f(t + dt / 2, y + dt / 2 * k2), dtype=float)
-        k4 = np.array(f(t + dt, y + dt * k3), dtype=float)
-        y = y + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        ys[i + 1] = y
-    return ys`}
-  cells={[
-    { code: `# 多平衡点与鞍结分岔：带恒定转矩的摆
-d = 0.2
-def equilibria(tau):
-    if abs(tau) > 1:
-        return []
-    e1 = float(np.arcsin(tau))
-    return [e1] if abs(tau) == 1 else [e1, float(np.pi - e1)]
-
-print("theta'' + 0.2 theta' + sin(theta) = tau ；平衡点满足 sin(theta_e)=tau")
-for tau in [0.0, 0.5, 0.95, 1.0, 1.05]:
-    eq = equilibria(tau)
-    print(f"tau={tau}: {len(eq)} 个平衡点")
-    for te in eq:
-        ev = np.roots([1, d, np.cos(te)])
-        if np.min(np.abs(ev.real)) < 1e-9:
-            kind = "非双曲（特征值含 0 → 线性化失效，鞍结分岔点）"
-        elif np.all(ev.real < 0):
-            kind = "稳定" + ("焦点" if abs(ev[0].imag) > 1e-9 else "结点")
-        else:
-            kind = "不稳定（鞍点）"
-        print(f"   theta_e={te:+.6f} rad ({np.degrees(te):+8.3f} deg), eig={np.array2string(ev, precision=4)}, {kind}")
-
-print("tau>1: 无平衡点 → 持续旋转")
-rot = {}
-for tau in [1.05, 1.2, 1.5, 2.0]:
-    T, dt = 300.0, 0.01
-    ys = rk4(lambda t, y: [y[1], -d * y[1] - np.sin(y[0]) + tau], [0.0, 0.0], T, dt)
-    ts = np.arange(0, T + dt, dt)
-    m = ts >= 200
-    rot[tau] = (ts, ys[:, 0], ys[:, 1])
-    print(f"  tau={tau}: 平均角速度={float(np.mean(ys[m,1])):.6f} rad/s (tau/d={tau/d:.4f}), 波动峰峰={float(np.ptp(ys[m,1])):.6f}")
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-tau_g = np.linspace(-1, 1, 400)
-axes[0].plot(tau_g, np.arcsin(tau_g), "b-", linewidth=2, label="稳定支 arcsin(tau)")
-axes[0].plot(tau_g, np.pi - np.arcsin(tau_g), "r--", linewidth=2, label="不稳定支 pi-arcsin(tau)")
-axes[0].plot([1, 1], [np.pi / 2, np.pi / 2], "ko", markersize=8, label="鞍结分岔点")
-for tau in [0.0, 0.5, 0.95]:
-    for te in equilibria(tau):
-        ev = np.roots([1, d, np.cos(te)])
-        axes[0].plot(tau, te, "ko" if np.all(ev.real < 0) else "rx", markersize=7)
-axes[0].set_xlabel("恒定转矩 tau"); axes[0].set_ylabel("平衡点 theta_e (rad)")
-axes[0].set_title("平衡点随 tau 的分岔图"); axes[0].legend(fontsize=9); axes[0].grid(True, alpha=0.3)
-axes[0].set_xlim(-1.1, 1.1); axes[0].set_ylim(-1.8, 3.4)
-ts, th, om = rot[1.2]
-m = (ts >= 200) & (ts <= 210)
-axes[1].plot(ts[m], th[m], "b-", linewidth=2)
-axes[1].set_xlabel("时间 t (s)"); axes[1].set_ylabel("theta (rad)")
-axes[1].set_title("tau=1.2: 无平衡点 → 持续旋转"); axes[1].grid(True, alpha=0.3)
-axes[2].plot(np.mod(th[(ts >= 200)], 2 * np.pi), om[ts >= 200], "g-", linewidth=1.5)
-axes[2].axhline(1.2 / d, color="k", linestyle=":", label="tau/d=6.0")
-axes[2].set_xlabel("theta (rad)"); axes[2].set_ylabel("角速度 (rad/s)")
-axes[2].set_title("旋转解的相轨迹（周期波纹）"); axes[2].legend(fontsize=10); axes[2].grid(True, alpha=0.3)
-axes[2].set_xlim(0, 2 * np.pi); axes[2].set_ylim(5.5, 6.5)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-$d = 0.2$，线性化矩阵特征值来自 $s^2 + ds + \cos\theta_e = 0$：
-
-| $\tau$ | $\theta_e$ (rad) | $\theta_e$ (deg) | 特征值 | 类型 |
-| --- | --- | --- | --- | --- |
-| 0.0 | 0.000000 | 0.000 | $-0.1\pm0.995j$ | 稳定焦点 |
-| 0.0 | 3.141593 | 180.000 | $-1.105,\ +0.905$ | 不稳定（鞍点） |
-| 0.5 | 0.523599 | 30.000 | $-0.1\pm0.9252j$ | 稳定焦点 |
-| 0.5 | 2.617994 | 150.000 | $-1.036,\ +0.836$ | 不稳定（鞍点） |
-| 0.95 | 1.253236 | 71.805 | $-0.1\pm0.5498j$ | 稳定焦点 |
-| 0.95 | 1.888357 | 108.195 | $-0.6677,\ +0.4677$ | 不稳定（鞍点） |
-| 1.0 | 1.570796 | 90.000 | $-0.2,\ -0.0$ | **非双曲（特征值含 0）** |
-| 1.05 | — | — | — | **0 个平衡点** |
-
-$\tau=1.0$ 那一行是本节的核心：$\cos(\pi/2) = 0$，特征方程退化成 $s(s+0.2)=0$，有一个特征值**恰好为零**。此时
-
-<Callout variant="warning">
-**线性化在 $\tau=1$ 处给不出任何结论。** 特征值实部为零的平衡点叫**非双曲平衡点**，Hartman-Grobman 定理不适用，线性化系统与原系统在这一点附近的拓扑可以完全不同。这里的实际情况是：$\tau$ 从 0.95 到 1.05，两个平衡点（一个稳定焦点、一个鞍点）**互相靠近、合并、然后一起消失**——这叫**鞍结分岔**（saddle-node bifurcation）。参数穿过分岔点时，系统的定性行为发生突变，而线性化模型在分岔点上恰好是**退化的**，看不见这件事。
-</Callout>
-
-$\tau \gt 1$ 之后没有平衡点，摆只能持续旋转。实测平均角速度：
-
-| $\tau$ | 平均 $\dot\theta$ (rad/s) | $\tau/d$ | 波动峰峰 |
-| --- | --- | --- | --- |
-| 1.05 | 5.246291 | 5.2500 | 0.380801 |
-| 1.2 | 5.997660 | 6.0000 | 0.333212 |
-| 1.5 | 7.499119 | 7.5000 | 0.266593 |
-| 2.0 | 9.999506 | 10.0000 | 0.199965 |
-
-平均角速度收敛到 $\tau/d$（此时重力矩相对阻尼矩可忽略，摆近似匀速转），但**波动峰峰不为零**且随 $\tau$ 增大而减小：$\tau=1.05$ 时是 $0.380801$（占均值的 7.3%），$\tau=2.0$ 时降到 $0.199965$（占 2.0%）。这个波动是 $\sin\theta$ 周期性造成的**转速纹波**，在电机负载转矩接近最大静转矩时最严重——正好对应 $\tau$ 略大于 1 的工况。
-
-## 何时需要非线性分析？
-
-上面五个 Notebook 已经把"线性化会怎么失效"摆清楚了。但工程判断的另一半是：**什么时候可以不管它**。这一节给一份可执行的检查清单。
-
-### 五条判据
-
-**判据一：工作范围是否落在实测的线性化有效区间内？**
-
-不是"小信号就够小"，而是要**算出区间**。方法就是 Notebook 5 那套：在工作点展开，扫描误差带，取门限（静态 5%、动态更严）。若工作范围超出区间，线性模型不能用。
-
-**判据二：是否存在多个平衡点，且工作点会跨越它们？**
-
-检查 $\boldsymbol f(\boldsymbol x, \boldsymbol u) = 0$ 的解的个数。多平衡点意味着"稳定"是局部概念，还需要知道**吸引域**。单摆、屈曲结构、磁悬浮、带死区的闭环系统都有这个问题。
-
-**判据三：是否存在自激振荡的能量来源？**
-
-找负阻尼：摩擦曲线的负斜率段、气动力的负阻尼分量、控制器的相位滞后与结构模态耦合。判据是**局部**的 $dF/dv \lt 0$，但结论要**全局**验证——见下面的案例二。
-
-**判据四：是否存在不连续？**
-
-继电器、开关、干摩擦、间隙、量化。不连续点上线性化不存在，且仿真会出问题（刚性、Zeno、事件抖振）。必须用滑模/Filippov 框架或事件驱动仿真。
-
-**判据五：性能指标是否要求大信号行为？**
-
-最快速度、最大加速度、饱和恢复时间、故障穿越。这些指标定义在**大范围**上，线性化模型（定义在小范围上）在原理上就答不了。
-
-### 决策表
-
-| 场景 | 用线性工具够吗 | 该用什么 |
-| --- | --- | --- |
-| 稳态附近的小扰动调节，工作范围在实测误差带内 | 够 | 传递函数 / 状态空间 / LQR |
-| 执行器饱和 + 积分器（PI/PID 定位轴） | **不够**（超调可从 21% 变 80%） | 抗饱和补偿（clamping / back-calculation），见案例一 |
-| 低速运动 + 干摩擦 | **不够**（自激振荡） | Stribeck 模型 + 摩擦补偿 / dither，见案例二 |
-| 大幅值周期响应、扫频通过共振 | **不够**（跳跃、多值） | 谐波平衡 + 延拓仿真，见 Notebook 6 |
-| 参数变化导致平衡点数量改变 | **不够**（分岔点线性化退化） | 分岔分析 / 相平面，见 Notebook 7 |
-| 需要全局稳定性保证 | **不够**（线性化只给局部） | Lyapunov 直接法 |
-| 系统本身可精确反解 | 不需要线性化 | 反馈线性化 / 滑模 / backstepping |
-
-<Callout variant="info">
-**一句话版本**：线性化是"在一个点上"的工具。只要你的问题需要跨越**多个点**（大幅值）、**多个平衡点**（吸引域）、或**参数临界值**（分岔），就必须换非线性工具。反过来，如果你的工况确实被限制在一个小邻域内，硬上非线性设计只会增加复杂度和调试成本——先测有效半径，再决定。
-</Callout>
-
-## 实例与案例
-
-### 案例一：PI 定位轴的积分饱和——非本质非线性的典型
-
-速度指令型定位轴 $\dot x = Ku$（$K=1.0$），PI 控制器 $K_p=1.4$、$K_i=1.0$，速度限幅 $M=0.3$ m/s，阶跃指令 $r=2.0$ m。
-
-闭环传递函数（无限幅时）：
-
-$$
-\frac{X(s)}{R(s)} = \frac{KK_p s + KK_i}{s^2 + KK_p s + KK_i} = \frac{1.4s + 1.0}{s^2 + 1.4s + 1.0}
-$$
-
-极点 $-0.7\pm0.7141j$，$\omega_n = 1.0000$ rad/s，$\zeta = 0.7000$，闭环零点 $s = -K_i/K_p = -0.7143$。
-
-**先算一下会发生什么**：$u(0) = K_p r = 1.4 \times 2.0 = 2.800$ m/s，是限幅的 **9.33 倍**。也就是说从 $t=0$ 起执行器就在饱和区，而且要等误差减小到 $K_p e + K_i \int e \le 0.3$ 才能退出来。这段时间里积分器**一直在累加**（因为 $e \gt 0$），累加到一个巨大的值——这就是积分饱和（windup）。
-
-<JupyterNotebook
-  title="Notebook 8：积分饱和的正确对照——同一组 PI 增益，三种幅值处理"
-  setupCode={`import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)`}
-  cells={[
-    { code: `# 积分饱和的正确对照：同一组 PI 增益，三种幅值处理
-Kp, Ki = 1.4, 1.0
-K_, r, M = 1.0, 2.0, 0.3
-T, dt = 30.0, 0.001
-n = int(T / dt)
-ts = np.arange(n + 1) * dt
-
-def simulate(mode):
-    x = 0.0; xi = 0.0
-    xs = np.empty(n + 1); uraws = np.empty(n + 1); us = np.empty(n + 1)
-    for i in range(n + 1):
-        e = r - x
-        uraw = Kp * e + Ki * xi
-        u = uraw if mode == "ideal" else float(np.clip(uraw, -M, M))
-        xs[i] = x; uraws[i] = uraw; us[i] = u
-        if i == n:
-            break
-        x = x + dt * K_ * u
-        sat = (uraw > M) or (uraw < -M)
-        if mode != "antiwindup" or not sat:
-            xi = xi + dt * e
-    return xs, uraws, us
-
-wn = np.sqrt(Ki * K_); zeta = Kp * K_ / 2 / wn
-print(f"速度指令型定位轴 x' = K u (K={K_}), PI: Kp={Kp}, Ki={Ki}, 限幅 M={M} m/s, 阶跃 r={r} m")
-print(f"闭环 X/R = ({K_*Kp}s + {K_*Ki})/(s^2 + {K_*Kp}s + {K_*Ki}), 极点={np.array2string(np.roots([1, K_*Kp, K_*Ki]), precision=4)}")
-print(f"  wn={wn:.4f} rad/s, zeta={zeta:.4f}, 闭环零点 s=-Ki/Kp={-Ki/Kp:.4f}")
-print(f"  无零点二阶理论超调={np.exp(-np.pi*zeta/np.sqrt(1-zeta**2))*100:.3f}%, 有零点时实测超调见下（零点顶高超调）")
-print(f"  u(0)=Kp*r={Kp*r:.3f} m/s = 限幅的 {Kp*r/M:.2f} 倍 → 必然长时间饱和")
-out = {}
-for mode, name in [("ideal", "无限幅"), ("windup", "饱和+无抗饱和"), ("antiwindup", "饱和+抗饱和")]:
-    x, uraw, u = simulate(mode)
-    out[mode] = (x, uraw, u)
-    over = (float(np.max(x)) - r) / r * 100
-    idx = np.where(np.abs(x - r) > 0.02 * r)[0]
-    tset = float(ts[idx[-1]]) if len(idx) else 0.0
-    sat_t = float(np.sum(np.abs(u) >= M - 1e-12) * dt)
-    print(f"{name:14s}: 超调={over:8.3f}%  峰值x={float(np.max(x)):7.4f}  2%调节时间={tset:6.3f}s  "
-          f"峰值|u_raw|={float(np.max(np.abs(uraw))):8.4f} ({float(np.max(np.abs(uraw)))/M:.2f}倍限幅)  饱和时长={sat_t:6.3f}s  终值={x[-1]:.6f}")
-
-fig, axes = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
-sty = {"ideal": ("b--", "无限幅"), "windup": ("r-", "饱和+无抗饱和"), "antiwindup": ("g-", "饱和+抗饱和")}
-for mode, (s_, lb) in sty.items():
-    x, uraw, u = out[mode]
-    axes[0].plot(ts, x, s_, linewidth=2, label=lb)
-    axes[1].plot(ts, u, s_, linewidth=2, label=lb + " 实际 u")
-axes[0].axhline(r, color="k", linestyle=":", label="设定值 r=2.0")
-axes[0].set_ylabel("位置 x (m)"); axes[0].set_title("PI 定位轴的三种幅值处理")
-axes[0].legend(fontsize=10); axes[0].grid(True, alpha=0.3); axes[0].set_ylim(-0.5, 4.2)
-axes[1].axhline(M, color="k", linestyle=":"); axes[1].axhline(-M, color="k", linestyle=":")
-axes[1].set_xlabel("时间 t (s)"); axes[1].set_ylabel("速度指令 u (m/s)")
-axes[1].legend(fontsize=10); axes[1].grid(True, alpha=0.3); axes[1].set_ylim(-0.6, 1.0)
-axes[1].set_xlim(0, 30)
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-三种处理方式的实测对比（同一组增益、同一限幅、同一指令）：
-
-| | 无限幅 | 饱和 + 无抗饱和 | 饱和 + 抗饱和 |
-| --- | --- | --- | --- |
-| 超调 | 21.052% | **80.181%** | **2.254%** |
-| 峰值 $x$ | 2.4210 | 3.6036 | 2.0451 |
-| 2% 调节时间 | 4.879 s | **25.426 s** | 8.719 s |
-| 峰值 $\lvert u_{\text{raw}}\rvert$ | 2.8000（9.33×） | **6.9615（23.20×）** | 2.8000（9.33×） |
-| 饱和时长 | 1.717 s | **21.225 s** | 5.953 s |
-| 终值 | 2.000000 | 1.998360 | 2.000000 |
-
-四个必须注意的点：
-
-1. **饱和让超调变大，不是变小。** $21.052\% \to 80.181\%$，几乎 4 倍。直觉上"限幅削平了控制量，响应应该更温和"是**错的**。真正发生的是：积分器在饱和期间累加到 $6.9615$（限幅的 23.2 倍），退出饱和后需要先把这个巨大的积分项"倒扣"回来，倒扣期间控制量一直是 $-M$，位置冲过设定值很远。
-2. **无零点二阶理论超调是 4.599%，实测无限幅是 21.052%。** 差的这一截来自闭环零点 $s=-0.7143$——它离极点很近，"顶高"了超调。这说明**用标准二阶公式估超调时，必须先检查有没有闭环零点**。
-3. **抗饱和把超调压到 2.254%，比无限幅的 21.052% 还低。** 这不是抗饱和"更好"，而是它改变了闭环动力学：饱和期间冻结积分器等价于把 $K_i$ 暂时设为 0，闭环变成纯比例（一阶），没有超调。代价是调节时间从 4.879 s 变成 8.719 s——**慢了 79%，但平稳了**。
-4. **终值 1.998360 vs 2.000000。** 无抗饱和那一栏在 30 s 时还没完全收敛，这不是稳态误差（积分器最终会消掉），而是**收敛太慢，仿真窗口不够**。这个细节提醒我们：报告"稳态精度"时必须确认仿真时长足够，否则会把"还没到"当成"到不了"。
-
-抗饱和的实现只有一行：饱和时不更新积分器。
-
-$$
-\xi_{k+1} = \begin{cases} \xi_k + \mathrm dt \cdot e_k, & \lvert u_{\text{raw}}\rvert \le M \\ \xi_k, & \text{否则（冻结）} \end{cases}
-$$
-
-这是 **clamping** 方案。另一种是 back-calculation：$\xi_{k+1} = \xi_k + \mathrm dt\,(e_k + K_t(u_k - u_{\text{raw},k}))$，把饱和差值反馈回积分器，退饱和更平滑但要调 $K_t$。
-
-<Callout variant="tip">
-按"非线性的分类"这一节的语言：执行器饱和是**非本质非线性**——小信号下（$u(0) = K_p r \le M$，即 $r \le 0.214$ m）系统完全线性，抗饱和逻辑根本不触发。所以这个案例的正确解法不是"重新设计非线性控制器"，而是**让线性控制器知道执行器受限了**。用错方向（比如上一套反馈线性化）在这里是过度设计。
-</Callout>
-
-### 案例二：皮带-滑块粘滑——本质非线性与局部判据的陷阱
-
-这是引言里那台定位平台的机理模型。滑块（质量 $m=1$）由弹簧（刚度 $k=10$）连接到以恒定速度 $v_b$ 运动的皮带上，滑块与皮带之间是 Stribeck 摩擦（$F_c=0.3$、$F_s=0.5$、$v_s=0.05$、$\sigma=0.02$）。以皮带为参考，令相对位移 $z = x - v_b t$：
-
-$$
-m\ddot z + F(\dot z + v_b) + kz = 0
-$$
-
-**教科书判据**：平滑滑动（$\dot z = 0$，即 $v = v_b$）是平衡点，其等效阻尼为 $F'(v_b)$。若 $F'(v_b) \lt 0$ 则负阻尼 → 不稳定 → 粘滑；若 $F'(v_b) \gt 0$ 则稳定 → 平滑滑动。临界带速是摩擦曲线的负斜率区终点：
-
-$$
-v_{\min} = v_s\ln\frac{F_s - F_c}{\sigma v_s} = 0.05\ln\frac{0.2}{0.001} = 0.264916 \text{ m/s}
-$$
-
-**所以只要 $v_b \gt 0.265$ 就不会粘滑。** 这个结论是错的——或者更准确地说，它只在一个非常窄的意义下是对的。
-
-<JupyterNotebook
-  title="Notebook 9：粘滑自激振荡——局部稳定性判据 vs 全局归宿（含正则化收敛性检查）"
-  setupCode={`import numpy as np
-from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
-plt.rcParams['figure.dpi'] = 100
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-np.set_printoptions(precision=6, suppress=True)
-
-def upward_crossings(t, x, level=0.0):
-    s = x - level
-    idx = np.where((s[:-1] < 0) & (s[1:] >= 0))[0]
-    out = []
-    for i in idx:
-        frac = -s[i] / (s[i + 1] - s[i])
-        out.append(t[i] + frac * (t[i + 1] - t[i]))
-    return np.array(out)
-
-def measure_period(t, x, level=0.0, skip=0.0):
-    m = t >= skip
-    ct = upward_crossings(t[m], x[m], level)
-    if len(ct) < 2:
-        return float('nan'), 0
-    return float(np.mean(np.diff(ct))), len(ct) - 1`}
-  cells={[
-    { code: `# 自激振荡：皮带-滑块 + Stribeck 摩擦 → 粘滑极限环（无外部周期输入）
-m, kk = 1.0, 10.0
-Fc, Fs, vs, sig = 0.3, 0.5, 0.05, 0.02
-EPS = 1e-4   # tanh 正则化宽度：静摩擦的连续近似，下面先做收敛性检查
-
-def dFdv(vb):
-    return -(Fs - Fc) / vs * np.exp(-vb / vs) + sig
-
-def belt(vb, T, x0=0.0, v0=0.0, eps=EPS, dense=0.005):
-    def rhs(t, y):
-        v = y[1]
-        fr = (Fc + (Fs - Fc) * np.exp(-abs(v) / vs)) * np.tanh(v / eps) + sig * v
-        return [v, (kk * (vb * t - y[0]) - fr) / m]
-    sol = solve_ivp(rhs, (0, T), [x0, v0], t_eval=np.arange(0, T, dense),
-                    rtol=1e-9, atol=1e-12, method="LSODA")
-    return sol.t, sol.y[0], sol.y[1]
-
-def zstat(vb, t, x, v):
-    seg = t >= 0.6 * t[-1]
-    z = (x - vb * t)[seg]
-    Tp, nc = measure_period(t[seg], z, float(np.mean(z)))
-    return float(np.ptp(z)), Tp, nc, float(np.min(v[seg])), float(np.max(v[seg])), float(np.mean(v[seg]))
-
-print("=== 第 0 步：正则化参数 eps 的收敛性（vb=0.02 冷启动, T=200s）===")
-grid_eps = [3e-3, 1e-3, 3e-4, 1e-4]
-pe = [zstat(0.02, *belt(0.02, 200.0, eps=e))[0] for e in grid_eps]
-for e, p in zip(grid_eps, pe):
-    print(f"  eps={e:6.1e}: 相对位移峰峰值={p:.6f} m")
-chg = [(pe[i + 1] - pe[i]) / pe[i] * 100 for i in range(len(pe) - 1)]
-print("  相邻两档的相对变化: " + ", ".join(f"{c:+.1f}%" for c in chg))
-print(f"  → 变化率从 {abs(chg[1]):.1f}% 降到 {abs(chg[2]):.1f}%，已接近收敛 → 后续统一取 eps=1e-4")
-
-vmin = vs * np.log((Fs - Fc) / (sig * vs))
-print(f"摩擦曲线负斜率区终点 v_min = vs*ln((Fs-Fc)/(sig*vs)) = {vmin:.6f} m/s")
-print(f"滑动平衡点 v=vb 的等效阻尼 = dF/dv|_(vb)；线性化衰减时间常数 tau = 2m/(dF/dv)")
-for vb in [0.10, 0.25, vmin, 0.35, 0.60]:
-    d = dFdv(vb)
-    if d > 1e-9:
-        verdict = f"稳定，tau=2m/(dF/dv)={2*m/d:6.1f}s"
-    elif d < -1e-9:
-        verdict = "负阻尼 → 平滑滑动不稳定"
-    else:
-        verdict = "临界（dF/dv=0，线性化给不出结论）"
-    print(f"  vb={vb:7.4f}: dF/dv={d:+.6f} N*s/m → {verdict}")
-
-print()
-print("=== 第 1 步：冷启动（滑块静止、弹簧原长）的带速扫描，T=400s ===")
-print("      vb      峰峰值(m)   周期(s)  圈数   v_min      v_max    平均v")
-cold = {}
-for vb in [0.02, 0.10, 0.25, 0.35, 0.60, 1.00]:
-    t, x, v = belt(vb, 400.0)
-    cold[vb] = (t, x, v)
-    p, Tp, nc, vlo, vhi, vme = zstat(vb, t, x, v)
-    print(f"    {vb:5.2f}   {p:9.6f}  {Tp:8.4f}  {nc:4d}  {vlo:+.6f}  {vhi:.6f}  {vme:.6f}"
-          f"   {'粘滑' if vlo < 1e-3 else '平滑'}  (dF/dv={dFdv(vb):+.6f})")
-print("  → v_min=0.265 以上（vb=0.35/0.60/1.00）冷启动依然粘滑，且峰峰值随带速单调增大")
-
-print()
-print("=== 第 2 步：同一带速 vb=0.35，从滑动平衡点出发的小扰动 ===")
-vb0 = 0.35
-Fk = Fc + (Fs - Fc) * np.exp(-vb0 / vs) + sig * vb0
-z_eq = Fk / kk
-print(f"滑动平衡点: v=vb={vb0}, z_eq=F(vb)/k={z_eq:.6f} m; 理论 tau=2m/(dF/dv)={2*m/dFdv(vb0):.1f}s")
-dec = {}
-for pert in [0.01, 0.05]:
-    t, x, v = belt(vb0, 800.0, x0=-z_eq, v0=vb0 * (1 + pert))
-    dv = np.abs(v - vb0)
-    dec[pert] = (t, x, dv)
-    w = [(a, float(np.mean(dv[(t >= a) & (t < a + 50)]))) for a in [0, 200, 400, 600, 750]]
-    print(f"  v0=vb*(1+{pert:.2f}): |v-vb| = " + ", ".join(f"t={a}:{val:.3e}" for a, val in w))
-t, x, dv = dec[0.01]
-i1 = np.argmin(np.abs(t - 300.0)); i2 = np.argmin(np.abs(t - 750.0))
-tau_fit = -(t[i2] - t[i1]) / np.log(dv[i2] / dv[i1])
-print(f"  用 t=300~750s 的两点拟合衰减: 实测 tau={tau_fit:.1f}s vs 理论 {2*m/dFdv(vb0):.1f}s "
-      f"(偏差 {(tau_fit-2*m/dFdv(vb0))/(2*m/dFdv(vb0))*100:+.1f}%)")
-print(f"  末段峰峰值={float(np.ptp((x-vb0*t)[t>=700])):.3e} m → 扰动完全衰减，平滑滑动是稳定平衡点")
-
-print()
-print("=== 第 3 步：吸引域（vb=0.35, z0=z_eq, 扫描 v0=c*vb, T=300s）===")
-print("      c     v0      末段峰峰值(m)   v_min      归宿")
-basin = []
-for c in np.arange(0.0, 2.001, 0.125):
-    t, x, v = belt(vb0, 300.0, x0=-z_eq, v0=c * vb0)
-    p, _, _, vlo, _, _ = zstat(vb0, t, x, v)
-    dest = "粘滑极限环" if vlo < 1e-3 else "平滑滑动"
-    basin.append((c, p, vlo, dest))
-    print(f"   {c:5.3f}  {c*vb0:6.4f}   {p:.6e}   {vlo:+.6f}   {dest}")
-ok = [b[0] for b in basin if b[3] == "平滑滑动"]
-print(f"  → 平滑滑动的吸引域: c in [{min(ok):.3f}, {max(ok):.3f}]，即初速偏差在 "
-      f"{(min(ok)-1)*100:.1f}% ~ {(max(ok)-1)*100:+.1f}% 之内（网格分辨率 0.125）")
-print(f"  → 冷启动 (v0=0, z0=0) 落在吸引域之外，所以任何带速下都会先粘滑")
-
-fig, axes = plt.subplots(2, 2, figsize=(13, 8.5))
-t, x, v = cold[0.02]
-w = (t >= 300) & (t <= 312)
-axes[0, 0].plot(t[w], (x - 0.02 * t)[w], color="#1f77b4", linewidth=1.8)
-axes[0, 0].set_xlabel("时间 t (s)"); axes[0, 0].set_ylabel("相对位移 z = x - vb*t (m)")
-axes[0, 0].set_title("粘滑极限环（vb=0.02 < v_min，冷启动）")
-axes[0, 0].grid(True, alpha=0.3); axes[0, 0].set_xlim(300, 312); axes[0, 0].set_ylim(-0.025, 0.025)
-axes[0, 1].plot(t[w], v[w], color="#c026d3", linewidth=1.8)
-axes[0, 1].axhline(0.02, color="k", linestyle=":", label="带速 vb=0.02")
-axes[0, 1].set_xlabel("时间 t (s)"); axes[0, 1].set_ylabel("滑块速度 v (m/s)")
-axes[0, 1].set_title("锯齿速度波形：平台段=粘着（自激，无外部周期输入）")
-axes[0, 1].legend(fontsize=9); axes[0, 1].grid(True, alpha=0.3)
-axes[0, 1].set_xlim(300, 312); axes[0, 1].set_ylim(-0.01, 0.09)
-t, x, dv = dec[0.01]
-axes[1, 0].semilogy(t, np.maximum(dv, 1e-16), color="#1f77b4", linewidth=1.8, label="仿真 |v-vb| (扰动 1%)")
-axes[1, 0].semilogy(t, dv[0] * np.exp(-t / (2 * m / dFdv(vb0))), "k--", linewidth=1.5,
-                    label="exp(-t/tau), tau=2m/(dF/dv)=%.1fs" % (2 * m / dFdv(vb0)))
-axes[1, 0].set_xlabel("时间 t (s)"); axes[1, 0].set_ylabel("|v - vb| (m/s, 对数轴)")
-axes[1, 0].set_title("vb=0.35 > v_min：小扰动按线性化预测衰减")
-axes[1, 0].legend(fontsize=9); axes[1, 0].grid(True, alpha=0.3, which="both")
-axes[1, 0].set_xlim(0, 800); axes[1, 0].set_ylim(1e-8, 1e-1)
-axes[1, 0].set_yticks([1e-8, 1e-6, 1e-4, 1e-2])
-axes[1, 0].set_yticklabels(["1e-8", "1e-6", "1e-4", "1e-2"])
-cc = [b[0] for b in basin]
-pp = [max(b[1], 1e-9) for b in basin]
-for b in basin:
-    axes[1, 1].scatter(b[0], max(b[1], 1e-9), s=60,
-                       color="#d62728" if b[3] == "粘滑极限环" else "#2ca02c", zorder=3)
-axes[1, 1].plot(cc, pp, color="#7f7f7f", linewidth=1, alpha=0.6)
-axes[1, 1].axvline(1.0, color="k", linestyle=":", label="c=1（精确滑动平衡点）")
-axes[1, 1].set_yscale("log")
-axes[1, 1].set_xlabel("初速比 c = v0/vb"); axes[1, 1].set_ylabel("末段 z 峰峰值 (m, 对数轴)")
-axes[1, 1].set_title("双稳：红=被粘滑极限环捕获，绿=收敛到平滑滑动")
-axes[1, 1].legend(fontsize=9); axes[1, 1].grid(True, alpha=0.3, which="both")
-axes[1, 1].set_xlim(-0.05, 2.05); axes[1, 1].set_ylim(1e-8, 1.0)
-axes[1, 1].set_yticks([1e-8, 1e-6, 1e-4, 1e-2, 1e0])
-axes[1, 1].set_yticklabels(["1e-8", "1e-6", "1e-4", "1e-2", "1e0"])
-plt.tight_layout(); plt.show()` },
-  ]}
-/>
-
-**第 0 步：先检查正则化参数。** 静摩擦的 $\mathrm{sign}(v)$ 不连续，直接积分会抖。用 $\tanh(v/\varepsilon)$ 做连续近似，$\varepsilon$ 是正则化宽度。**但 $\varepsilon$ 不是纯数值参数——它是有物理含义的**（对应接触面弹性变形的特征速度），取得太大会把粘滑现象整个抹掉。$v_b=0.02$ 冷启动、$T=200$ s 的相对位移峰峰值：
-
-| $\varepsilon$ | 峰峰值 (m) | 相邻变化 |
-| --- | --- | --- |
-| $3\times10^{-3}$ | 0.026968 | — |
-| $1\times10^{-3}$ | 0.034725 | $+28.8\%$ |
-| $3\times10^{-4}$ | 0.037739 | $+8.7\%$ |
-| $1\times10^{-4}$ | 0.038703 | $+2.6\%$ |
-
-变化率从 8.7% 降到 2.6%，已接近收敛，后续统一取 $\varepsilon = 10^{-4}$。**这一步不能省**：如果直接用 $\varepsilon=10^{-2}$，$v_b=0.02$ 的峰峰值会算成 0.000000——粘滑现象被正则化抹掉了，而你会得出"低速也不抖"的错误结论。
-
-**局部判据的实测值**（$F'(v_b) = -\frac{F_s-F_c}{v_s}e^{-v_b/v_s} + \sigma$，衰减时间常数 $\tau = 2m/F'(v_b)$）：
-
-| $v_b$ | $F'(v_b)$ (N·s/m) | 判据结论 |
-| --- | --- | --- |
-| 0.02 | $-2.661280$ | 负阻尼 → 平滑滑动不稳定 |
-| 0.10 | $-0.521341$ | 负阻尼 → 平滑滑动不稳定 |
-| 0.25 | $-0.006952$ | 负阻尼 → 平滑滑动不稳定 |
-| 0.2649 | $-0.000000$ | **临界（$F'=0$，线性化给不出结论）** |
-| 0.35 | $+0.016352$ | 稳定，$\tau = 2m/F' = 122.3$ s |
-| 0.60 | $+0.019975$ | 稳定，$\tau = 100.1$ s |
-
-**第 1 步：冷启动带速扫描**（滑块静止、弹簧原长，$T=400$ s）：
-
-| $v_b$ | 峰峰值 (m) | 周期 (s) | 圈数 | $v_{\min}$ | $v_{\max}$ | 平均 $v$ | 归宿 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 0.02 | 0.038703 | 3.1176 | 51 | $+0.000035$ | 0.080656 | 0.020211 | 粘滑 |
-| 0.10 | 0.091458 | 2.1474 | 73 | $-0.000010$ | 0.244602 | 0.099632 | 粘滑 |
-| 0.25 | 0.178349 | 2.0147 | 78 | $-0.000033$ | 0.531994 | 0.250119 | 粘滑 |
-| 0.35 | 0.238040 | 1.9998 | 79 | $-0.000039$ | 0.726373 | 0.349969 | **粘滑** |
-| 0.60 | 0.390356 | 1.9901 | 79 | $-0.000043$ | 1.217206 | 0.599714 | **粘滑** |
-| 1.00 | 0.637545 | 1.9875 | 79 | $-0.000020$ | 2.008045 | 0.996022 | **粘滑** |
-
-**$v_b = 0.35$、$0.60$、$1.00$ 全部高于 $v_{\min}=0.265$，判据说它们该平滑滑动，实测全部粘滑。** 而且峰峰值随带速**单调增大**（$0.038703 \to 0.637545$），也就是说**跑得越快抖得越凶**，与"高速平稳、低速抖动"的日常直觉正好相反。
-
-注意"平均 $v$"那一列：$v_b=1.00$ 时平均速度 $0.996022$，非常接近带速——**宏观上皮带确实在被跟随，微观上速度在 $-0.00002$ 和 $2.008$ 之间来回甩**。这是粘滑的典型签名：均值正确、瞬时值剧烈。
-
-**第 2 步：那局部判据是不是全错了？** 不是。它说的是"**已经**在平滑滑动时，小扰动会不会衰减"。验证：$v_b=0.35$，从滑动平衡点 $z_{\text{eq}} = F(v_b)/k = 0.030718$ m 出发，给速度加 1% 和 5% 的扰动，跑 800 s：
-
-| 扰动 | $t=0$ | $t=200$ | $t=400$ | $t=600$ | $t=750$ |
-| --- | --- | --- | --- | --- | --- |
-| 1% | $1.832\times10^{-3}$ | $3.545\times10^{-4}$ | $6.915\times10^{-5}$ | $1.322\times10^{-5}$ | $3.688\times10^{-6}$ |
-| 5% | $9.164\times10^{-3}$ | $1.777\times10^{-3}$ | $3.479\times10^{-4}$ | $6.752\times10^{-5}$ | $1.957\times10^{-5}$ |
-
-用 $t=300\sim750$ s 两点拟合：实测 $\tau = 119.9$ s，理论 $2m/F'(v_b) = 122.3$ s，偏差 $-2.0\%$。末段峰峰值 $6.846\times10^{-6}$ m——扰动完全衰减。**线性化预测的衰减时间常数被验证到 2%。**
-
-所以局部判据是**对的**，它只是被问了一个它答不了的问题。
-
-**第 3 步：吸引域**。$v_b=0.35$、$z_0=z_{\text{eq}}$，扫描初速 $v_0 = c\,v_b$，$T=300$ s，判据用"滑块是否曾经停下"（$v_{\min} \lt 10^{-3}$）：
-
-| $c$ | 末段峰峰值 (m) | $v_{\min}$ | 归宿 |
-| --- | --- | --- | --- |
-| 0.000 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 0.125 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 0.250 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 0.375 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 0.500 | $3.418683\times10^{-2}$ | $+0.295945$ | 平滑滑动 |
-| 0.625 | $2.136667\times10^{-2}$ | $+0.316216$ | 平滑滑动 |
-| 0.750 | $1.320342\times10^{-2}$ | $+0.329123$ | 平滑滑动 |
-| 0.875 | $6.374225\times10^{-3}$ | $+0.339921$ | 平滑滑动 |
-| 1.000 | $1.421085\times10^{-14}$ | $+0.350000$ | 平滑滑动 |
-| 1.125 | $6.374221\times10^{-3}$ | $+0.340003$ | 平滑滑动 |
-| 1.250 | $1.320342\times10^{-2}$ | $+0.329292$ | 平滑滑动 |
-| 1.375 | $2.136650\times10^{-2}$ | $+0.316487$ | 平滑滑动 |
-| 1.500 | $3.418477\times10^{-2}$ | $+0.296372$ | 平滑滑动 |
-| 1.625 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 1.750 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 1.875 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-| 2.000 | $2.380399\times10^{-1}$ | $-0.000039$ | 粘滑极限环 |
-
-平滑滑动的吸引域是 $c\in[0.500,\ 1.500]$，即初速偏差在 $-50\%\sim+50\%$ 之内（网格分辨率 $0.125$）。峰峰值关于 $c=1$ **完全对称**（$c=0.5$ 与 $c=1.5$ 都是 $3.418\times10^{-2}$，$c=0.875$ 与 $c=1.125$ 都是 $6.374\times10^{-3}$），因为线性化后的方程在 $z_{\text{eq}}$ 附近是线性的。
-
-**冷启动对应 $c=0$、$z_0=0$，落在吸引域之外。** 这就是第 1 步全部粘滑的原因，而且与 $v_b$ 多大无关——**任何带速下冷启动都会先粘滑**，区别只是极限环的幅值。
-
-<Callout variant="warning">
-**这个案例的方法论教训比结论更重要。** 系统有两个吸引子（平滑滑动平衡点、粘滑极限环），它们的吸引域互相竞争。$F'(v_b) \gt 0$ 只保证了**第一个吸引子局部存在且稳定**，完全没说它的**吸引域有多大**。冷启动是一个大扰动（$c=0$ 距 $c=1$ 偏差 $-100\%$，远超 $-50\%$ 的边界），必然被第二个吸引子捕获。
-
-**局部稳定性判据 + 全局初值 = 错误结论。** 这是非线性分析里最常见的一类失误，形式是"线性化算出极点在左半平面，所以系统稳定"——稳定，但只在吸引域内稳定，而你的启动条件可能不在里面。
-
-工程对策也就清楚了：不是去改摩擦（改不了），而是**把初值推进吸引域**——启动时给一个高于 $0.5v_b$ 的速度前馈，或者用 dither 高频小幅振动把静摩擦"打散"。
-</Callout>
-
-## 深入讨论
-
-### 正则化参数的双重身份
-
-Notebook 9 的 $\varepsilon$ 值得多说两句，因为它代表了一类普遍陷阱。把 $\mathrm{sign}(v)$ 换成 $\tanh(v/\varepsilon)$，从数值角度 $\varepsilon$ 越小越好（越接近真实的不连续）；从物理角度 $\varepsilon$ 对应接触面弹性变形的特征速度尺度，**它不是可以任意缩小的数值旋钮**。
-
-实测数据把这件事说得很清楚：$\varepsilon$ 从 $3\times10^{-3}$ 到 $1\times10^{-4}$，峰峰值从 $0.026968$ 涨到 $0.038703$，涨了 44%。如果只取一个 $\varepsilon$ 就下结论，你会得到定量上错误的答案，而且**不知道自己错了**。
-
-正确做法就是 Notebook 9 第 0 步那样：**把收敛性检查写进实验本身**，看相邻两档的变化率是否降到可接受水平（这里从 28.8% 降到 2.6%）。同样的纪律适用于：网格分辨率、积分容差（本例 rtol=$10^{-9}$、atol=$10^{-12}$）、截断的谐波阶数、FFT 的周期数。**任何数值实验，不报告收敛性就没有可信度。**
-
-### 为什么用 LSODA 而不是事件驱动的混合积分
-
-粘滑系统最"物理正确"的建模方式是**混合系统**：粘着相（$\dot z = 0$，代数约束 $|kz| \le F_s$）和滑动相（微分方程）之间用事件切换。这个方案在本课的早期尝试里**失败了**：切换逻辑在静→动过渡点产生退化的零长度相位，积分器抖振，跑 6000 个相位还没到稳态，而且记录到的重新粘着时弹簧力达到 0.735 / 1.174 N·m，**超过静摩擦上限 $F_s = 0.5$**——物理上不可能。
-
-换成 $\tanh$ 正则化 + LSODA 后，同样的物理量收敛、可复现、且 400 s 的仿真在 1 s 内跑完。代价是引入了 $\varepsilon$ 这个必须做收敛性检查的参数。
-
-这里的取舍是通用的：**事件驱动方案在切换点附近数值脆弱，正则化方案把脆弱性换成了一个可控的偏差源**。当你的问题关心的是"极限环存在吗、幅值多大、吸引域多宽"（定性 + 中等定量精度），正则化更好；当问题关心"每次切换的精确时刻"（比如继电器控制的抖振分析），必须用事件驱动并仔细处理退化相位。
-
-### 三种"非线性分析"的分工
-
-本课反复出现的现象，其实分属三套不同的工具：
-
-| 现象 | 本课在哪测的 | 对应的专门工具 |
-| --- | --- | --- |
-| 多平衡点、鞍结分岔 | Notebook 7 | **相平面分析**（画 nullcline、分界线、吸引域） |
-| 自激振荡的幅值与频率 | Notebook 9（时域仿真） | **描述函数法**（用 $N(A)$ 与 $-1/N(A)$ 的交点解析预测极限环） |
-| 受迫响应的多值与跳跃 | Notebook 6（谐波平衡 + 延拓） | **谐波平衡 / 分岔延拓**（继续法追踪折叠点） |
-| "从任何初值都收敛吗" | Notebook 9（吸引域扫描） | **Lyapunov 直接法**（构造 $V$ 给出解析的吸引域估计） |
-
-相平面扫描吸引域是**数值**方法：要跑很多次仿真，只能给出网格分辨率下的边界（本课 $0.125$）。Lyapunov 方法给的是**解析**的保守估计，一次证明覆盖整个区域，但通常比真实吸引域小。两者互补：先用数值扫描找到大概边界，再尝试构造 Lyapunov 函数去证明一个内接区域。
-
-### 非线性的"好处"
-
-本课讲的全是非线性带来的麻烦，但有几处其实反过来了：
-
-- **Notebook 8 里抗饱和后的超调 2.254% 远低于线性系统的 21.052%。** 饱和这个非线性被正确利用后，性能反而更好。时间代价（4.879 s → 8.719 s）换来的是没有超调——对很多定位任务这是划算的交易。
-- **硬弹簧让周期缩短**（$A_0=1.5$ 时快 26%）。隔振设计里这叫"负刚度补偿"，用非线性把系统的等效刚度做低，从而在保持静载支撑能力的同时降低固有频率。
-- **饱和让 THD 在 $A \le M$ 时恰好为 0**（Notebook 4）。合理设置限幅可以把系统锁在纯线性区。
-
-非线性本身不是敌人，**未被识别和未被量化的非线性**才是。
+实验固定同一组增益，比较三种参考幅值，并以步长减半检查离散误差。小参考0.05下没有触发限幅，三条路径持平；大参考下出现差异。它只说明机制，不证明条件积分在所有对象上更快或超调更小。重新设计仍要核响应、输入、稳态误差与可达目标；积分项也不能直接解释成“提供相位超前”。
 
 ## 小结
 
-1. **叠加原理可以被定量地证伪。** 硬弹簧 $\alpha=0.5$、双频输入下，可加性残差 $1.705805$（相对误差 $80.32953\%$），齐次性比值 $1.163721$（线性应为 $2.000000$）。误差与信号同量级，意味着线性预测毫无价值。
-2. **固有频率是振幅的函数。** Duffing 硬弹簧 $A_0=1.5$ 时周期比线性快 $26.029\%$，软弹簧慢 $45.647\%$。Lindstedt 一阶近似在 $A_0=0.1$ 精确到 $0.000\%$，$A_0=1.5$ 偏到 $5.2\%\sim8.8\%$。
-3. **软弹簧有振幅上限** $x_b = \sqrt{-1/\alpha} = 1.825742$。$A_0$ 从 1.825 到 1.830（$+0.27\%$）结局从有界（$T=26.006924$ s）变成逃逸（5.215 s 内 $\lvert x\rvert \gt 50$）。判据是**初始位置在势垒内侧还是外侧**，不是能量大小（能量判据在此退化为重根）。
-4. **六种静态非线性各有可测的签名**：滞环环面积 $4cA$（实测 $1.200000$，与解析差 $7.4\times10^{-9}$）；间隙最大输出误差 $=b$（实测 $0.300000$）；Stribeck 负斜率区终点 $v_s\ln\frac{F_s-F_c}{\sigma v_s}$（实测 $0.264914$ vs 解析 $0.264916$）。
-5. **非线性产生新频率。** 三次项给出基波 $A+3\beta A^3/4 = 1.15$ 与三次谐波 $\beta A^3/4 = 0.05$（FFT 逐位吻合，差 $0$ 和 $6.94\times10^{-18}$）；饱和在 $A=2M$ 时 THD 达 $23.2900\%$；双音输入产生 $2f_1-f_2 = 0.600$ Hz 等输入端不存在的谱线，带通滤波挡不住。
-6. **线性化的有效半径有限且不对称。** $f(x)=x+0.2x^3$ 在 $x_0=1$ 处，$5\%$ 误差带是 $[0.7283, 1.3746]$（向上 $+0.3746$、向下 $-0.2717$）。动态层面更严：Duffing 周期误差 $5\%$ 对应 $A_0 \lesssim 0.55$。
-7. **响应可以多值。** 受迫 Duffing 在 $\omega\in[1.6600, 2.2600]$ 有三个稳态幅值；升频跳跃 $\omega=2.250\to2.300$ 时基波跌 $89.2\%$，降频跳跃 $\omega=1.700\to1.650$ 时涨 $155.0\%$，两个跳跃点不重合形成滞后。
-8. **平衡点可以成对生灭。** 单摆 $\tau=1.0$ 处特征值含 $0$（非双曲），稳定焦点与鞍点合并消失，$\tau=1.05$ 时 $0$ 个平衡点、摆持续旋转（平均角速度 $5.246291 \approx \tau/d$，转速纹波峰峰 $0.380801$）。线性化在分岔点上**必然退化**。
-9. **饱和会让超调变大而非变小。** 同一组 PI 增益：无限幅超调 $21.052\%$，饱和无抗饱和 $80.181\%$、调节时间 $25.426$ s、积分器冲到限幅的 $23.20$ 倍；加 clamping 抗饱和后超调 $2.254\%$、调节时间 $8.719$ s。
-10. **局部稳定 ≠ 全局可达。** 皮带-滑块在 $v_b=0.35 \gt v_{\min}=0.264916$ 时，平滑滑动确实是稳定平衡点（小扰动按 $\tau=119.9$ s 衰减，理论 $122.3$ s，偏差 $-2.0\%$），但它的吸引域只有 $c\in[0.500,1.500]$；冷启动（$c=0$）在域外，**所有测试带速（$0.02\sim1.00$）冷启动全部粘滑**，且峰峰值随带速单调增大（$0.038703\to0.637545$ m）。
-11. **数值实验必须自带收敛性检查。** 正则化参数 $\varepsilon$ 从 $3\times10^{-3}$ 到 $1\times10^{-4}$，粘滑峰峰值变化 $+28.8\%\to+8.7\%\to+2.6\%$；取 $\varepsilon=10^{-2}$ 会把现象完全抹掉（峰峰值算成 0）。
+- 叠加检验要声明初态。一个反例足以否定线性，有限次通过不足以证明线性。
+- 记忆、连续性、光滑性和输入仿射是不同维度，分别影响建模和工具条件。
+- 局部线性化有明确工作点；余项、闭环精度与全局运动需要分别核查。
+- 多平衡点、振幅相关周期和限幅积分说明：先确定任务与适用范围，再选分析和控制工具。
 
 ## 习题
 
-**习题 1（叠加原理）** 判断下列系统是否满足叠加原理，并说明理由。若不满足，指出是哪一部分破坏了它。
-
-(a) $\dot x = -2x + 3u$
-
-(b) $\dot x = -2x + 3u^2$
-
-(c) $\dot x = -2x^3 + 3u$
-
-(d) $\dot x = -2x + 3u + 5$
-
-(e) $y(t) = \int_0^t u(\tau)^2\,\mathrm d\tau$
-
-**习题 2（振幅依赖的周期）** 对 Duffing 振子 $\ddot x + x + \alpha x^3 = 0$：
-
-(a) 写出 Lindstedt-Poincaré 一阶近似的周期公式。
-
-(b) 计算 $\alpha=0.5$、$A_0=1.0$ 时的近似周期，与实测值 $5.366659$ s 比较，求相对误差。
-
-(c) 计算 $\alpha=-0.3$、$A_0=1.5$ 时的近似周期，与实测值 $9.151281$ s 比较，求相对误差。
-
-(d) 根据 (b)(c) 的结果，说明一阶近似的适用条件。
-
-**习题 3（软弹簧的势垒）** 系统 $\ddot x + x - 0.3x^3 = 0$，从 $x(0)=A_0$、$\dot x(0)=0$ 释放。
-
-(a) 写出势能 $V(x)$，求势垒位置 $x_b$ 与势垒高度 $V(x_b)$。
-
-(b) 计算 $A_0 = 1.80$ 时的总能量 $E$，与 $V(x_b)$ 比较。仅凭能量比较能否判断运动有界？为什么？
-
-(c) 判断 $A_0 = 1.80$ 与 $A_0 = 1.83$ 两种情况下运动是否有界，给出正确的判据。
-
-**习题 4（有记忆非线性）** 滞环 $y = ku \pm c$（$+$ 用于 $\dot u \gt 0$，$-$ 用于 $\dot u \lt 0$），输入 $u = A\sin\omega t$。
-
-(a) 证明一个周期内 $u$-$y$ 曲线围成的环面积为 $4cA$，且与 $\omega$、$k$ 无关。
-
-(b) 用 $A=1.5$、$k=1$、$c=0.2$ 计算环面积，并说明它的物理意义。
-
-(c) 间隙（半宽 $b$）在同样输入下的最大输出误差是多少？为什么？
-
-**习题 5（谐波与饱和）** 
-
-(a) 对 $y = x + \beta x^3$、$x = A\sin\omega t$，推导基波与三次谐波幅值。用 $A=1$、$\beta=0.2$ 计算数值。
-
-(b) 对饱和非线性 $y = \mathrm{clip}(A\sin\theta,\ -M,\ M)$，$A \gt M$，令 $\theta_1 = \arcsin(M/A)$，证明基波幅值为
-
-$$
-b_1 = \frac{4}{\pi}\left[A\int_0^{\theta_1}\sin^2\theta\,\mathrm d\theta + M\int_{\theta_1}^{\pi/2}\sin\theta\,\mathrm d\theta\right]
-$$
-
-(c) 用 $A=2$、$M=1$ 计算 $b_1$，与实测 $1.217995$ 比较。
-
-(d) 解释为什么 $A \le M$ 时 THD 恰好为 $0.0000\%$。
-
-**习题 6（积分饱和）** 系统 $\dot x = u$，PI 控制 $u = K_p e + K_i\int e\,\mathrm dt$，$e = r - x$，$K_p=1.4$、$K_i=1.0$，限幅 $M=0.3$ m/s，阶跃 $r=2.0$ m。
-
-(a) 求无限幅时的闭环传递函数、极点、$\omega_n$、$\zeta$ 与闭环零点。
-
-(b) 计算 $u(0)$，判断执行器是否饱和，以及饱和会持续多久的量级。
-
-(c) 实测：无限幅超调 $21.052\%$，饱和无抗饱和超调 $80.181\%$、调节时间 $25.426$ s、峰值 $\lvert u_{\text{raw}}\rvert = 6.9615$（限幅的 $23.20$ 倍）、饱和时长 $21.225$ s。解释为什么限幅反而让超调变大。
-
-(d) clamping 抗饱和（饱和期间冻结积分器）实测超调 $2.254\%$、调节时间 $8.719$ s。为什么超调比无限幅的 $21.052\%$ 还低？调节时间为什么反而变长？
-
-**习题 7（粘滑与吸引域）** 皮带-滑块系统 $m\ddot z + F(\dot z + v_b) + kz = 0$，$m=1$、$k=10$，Stribeck 摩擦 $F(v) = \mathrm{sign}(v)[F_c + (F_s-F_c)e^{-|v|/v_s}] + \sigma v$，$F_c=0.3$、$F_s=0.5$、$v_s=0.05$、$\sigma=0.02$。
-
-(a) 求 $F'(v)$（$v \gt 0$），令 $F'(v)=0$ 解出临界带速 $v_{\min}$ 的解析式并计算数值。
-
-(b) 求 $v_b = 0.35$ 时的 $F'(v_b)$ 与线性化衰减时间常数 $\tau = 2m/F'(v_b)$，与实测拟合值 $119.9$ s 比较。
-
-(c) 实测表明 $v_b = 0.35$、$0.60$、$1.00$（均大于 $v_{\min}$）冷启动仍然粘滑，而平滑滑动平衡点的吸引域是初速比 $c = v_0/v_b \in [0.500, 1.500]$。解释这两件事为什么不矛盾，并指出局部判据的适用边界。
-
-(d) 基于 (c)，给出两条不改摩擦参数就能消除冷启动粘滑的工程对策，并说明各自的原理。
+1. 判断 $\dot x=-2x+3u$、$\dot x=-2x+u^2$、$\dot x=-2x^3+3u$、$\dot x=-2x+3u+5$ 的线性与输入仿射性质。说明初态条件。
+2. 推导 $y=u+\beta u^3$ 在正弦输入下的基波和三次谐波。为何这里没有二次谐波？
+3. 推导本课 $x_e=1$ 的切线及精确余项，计算0.9和1.1两处的相对误差。
+4. 求 $\dot x=x-x^3$ 的平衡点和局部性质。为何零特征值的两个立方方程结论不同？
+5. 推导软Duffing的势垒。仅知总能量小于势垒，为什么不足以判定任意初始状态有界？
+6. 推导位置轴正饱和期间的 $x(t),I(t),u_{\rm raw}(t)$。条件积分为什么还要检查误差方向？
+7. 有人看到一个输入输出闭合环就说“它耗能”，看到摩擦曲线局部正斜率就说“所有启动都稳定”。分别还缺哪些条件？
 
 ## 答案
 
-**习题 1**
+1. 第一式是线性动力学，零初态下输入输出映射线性。第二式对输入非线性且非输入仿射；第三式状态非线性但输入仿射，$f(x)=-2x^3,g(x)=3$；第四式原坐标仿射，移到 $x_e=5/2$ 后增量动力学线性。固定非零初态时应先扣除自由响应，不能直接把两次总输出相加。
+2. 用 $\sin^3\theta=(3\sin\theta-\sin3\theta)/4$ 得基波系数 $A+3\beta A^3/4$、三次系数 $-\beta A^3/4$。正弦输入经过奇对称静态映射具有半波反对称性，偶次系数为零。$A=1,\beta=0.2$ 的非负幅值为1.15与0.05。
+3. $f(1)=1.2,f'(1)=1.6$。令 $h=x-1$，展开 $f(1+h)=1.2+1.6h+0.6h^2+0.2h^3$。因此误差0.0058与0.0062，真实输出1.0458与1.3662；相对百分数为 $100(0.0058/1.0458)\approx0.5546\%$ 和 $100(0.0062/1.3662)\approx0.4538\%$。这两个点满足某个精度并不证明两点之外的整个区间。
+4. 解 $x(1-x^2)=0$ 得−1、0、1；$f'(x)=1-3x^2$，分别为−2、1、−2。对 $\dot x=-x^3$，非零状态的导数指向原点，可用 $V=x^2/2$ 得 $\dot V=-x^4<0$；正号时导数背离原点。它们的高阶项决定了被一阶模型遗漏的行为。
+5. $V'=x-0.3x^3=0$ 给出 $x_b=\sqrt{1/0.3}$，$V''(x_b)=-2$，代回得 $V(x_b)=5/6$。能量曲线可能分成互不连通的允许位置区间；外侧初态也可低于势垒而继续向外。中央井内且能量低于势垒才给出相应的围限，不能遗漏初始位置和速度。
+6. 正饱和时 $\dot x=0.3$，从零积分得 $x=0.3t$；$\dot I=2-0.3t$ 给出 $I=2t-0.15t^2$，故 $u_{\rm raw}=2.8+1.58t-0.15t^2$。只在这段饱和区间有效。若 $(u_{\rm raw}-u)e>0$，积分会继续加剧饱和，应暂停；若乘积为负，积分有助于退出，不能一并冻结。到1时刻的三个数由上式直接算出。
+7. 回线面积先要明确输入输出的单位、共轭关系和方向，几何面积不自动是耗散功。局部摩擦斜率还须放进具体运动方程，核对其它阻尼、驱动与平衡点；即使线性化局部稳定，也未给出所有初值的吸引域或真实干摩擦接触过程。不能从这两条孤立观察直接下全局工程结论。
 
-判据：$\Sigma(au_1 + bu_2) = a\Sigma(u_1) + b\Sigma(u_2)$ 是否对所有 $u_1,u_2,a,b$ 成立。
-
-(a) **线性**。$x$ 和 $u$ 都只以一次项出现，无交叉项、无常数项。
-
-(b) **非线性**（输入非线性）。$u^2$ 项：$(u_1+u_2)^2 = u_1^2 + u_2^2 + 2u_1u_2$，交叉项 $2u_1u_2$ 破坏可加性；$(au)^2 = a^2u^2 \ne au^2$ 破坏齐次性。注意它仍是**输入仿射以外的**情形，不能用 $\dot x = f(x) + g(x)u$ 表示。
-
-(c) **非线性**（状态非线性），但是**输入仿射**。$-2x_1^3 + 3u_1 - 2x_2^3 + 3u_2 \ne -2(x_1+x_2)^3 + 3(u_1+u_2)$，因为 $(x_1+x_2)^3$ 有交叉项。写成 $\dot x = f(x) + g(x)u$ 时 $f(x) = -2x^3$、$g(x) = 3$（常数），符合仿射形式——所以反馈线性化、滑模、backstepping 都可直接用。
-
-(d) **仿射但不满足叠加原理**。设 $\Sigma(0) = y_0(t)$（零输入响应，因常数项 5 而不为零）。则 $\Sigma(u_1+u_2)$ 中常数项只贡献一次 $y_0$，而 $\Sigma(u_1)+\Sigma(u_2)$ 贡献两次，差一个 $y_0$。**可加性被破坏，齐次性也被破坏**（$\Sigma(au) \ne a\Sigma(u)$，除非 $a=1$）。可通过平移 $\tilde x = x - x_e$（$x_e = 5/2$）化为线性系统，但那是变量替换后的结论。
-
-(e) **非线性**。积分本身是线性算子，但被积函数是 $u^2$：$\int(u_1+u_2)^2 \ne \int u_1^2 + \int u_2^2$，差 $2\int u_1u_2$。这是**动态**（有记忆）非线性。
-
-**习题 2**
-
-(a) Lindstedt-Poincaré 一阶：把 $x \approx A_0\cos\omega t$ 代入，$x^3$ 的基波分量是 $\frac{3A_0^3}{4}\cos\omega t$（用 $\cos^3\theta = \frac{3\cos\theta+\cos3\theta}{4}$），于是基波平衡要求 $-\omega^2 + 1 + \frac{3\alpha A_0^2}{4} = 0$：
-
-$$
-\omega \approx \sqrt{1 + \frac{3\alpha A_0^2}{4}} \approx 1 + \frac{3\alpha A_0^2}{8}
-\quad\Longrightarrow\quad
-T \approx \frac{2\pi}{1 + \dfrac{3\alpha A_0^2}{8}}
-$$
-
-（第二个约号用了 $\sqrt{1+\epsilon}\approx1+\epsilon/2$，要求 $|3\alpha A_0^2/4| \ll 1$。）
-
-(b) $\alpha=0.5$、$A_0=1.0$：$\dfrac{3\times0.5\times1}{8} = 0.1875$，$T = \dfrac{2\pi}{1.1875} = \dfrac{6.283185}{1.1875} = 5.291103$ s。
-
-相对误差 $= \dfrac{5.366659 - 5.291103}{5.291103} = \dfrac{0.075556}{5.291103} = +1.428\%$（与 Notebook 2 输出的 $+1.428\%$ 一致）。
-
-(c) $\alpha=-0.3$、$A_0=1.5$：$\dfrac{3\times(-0.3)\times2.25}{8} = -0.253125$，$T = \dfrac{6.283185}{1 - 0.253125} = \dfrac{6.283185}{0.746875} = 8.412633$ s。
-
-相对误差 $= \dfrac{9.151281 - 8.412633}{8.412633} = \dfrac{0.738648}{8.412633} = +8.780\%$（与 Notebook 2 一致）。
-
-(d) 展开参数是 $\dfrac{3\alpha A_0^2}{8}$。(b) 中它是 $0.1875$，误差 $1.4\%$；(c) 中它是 $-0.253125$，误差 $8.8\%$。可见**一阶近似的适用条件是 $|3\alpha A_0^2/8| \lesssim 0.1$**（对应误差 $1\%$ 量级）；到 $0.25$ 时误差已接近 $10\%$，需要二阶项或直接用数值仿真。Notebook 2 里 $A_0=0.1$ 时偏差是 $0.000\%$，正对应展开参数 $0.0075\sim0.0038$。
-
-**习题 3**
-
-(a) $V(x) = \dfrac{x^2}{2} - \dfrac{0.3x^4}{4} = \dfrac{x^2}{2} - 0.075x^4$。
-
-$V'(x) = x - 0.3x^3 = x(1 - 0.3x^2) = 0 \Rightarrow x = 0$ 或 $x^2 = 1/0.3$。所以
-
-$$
-x_b = \sqrt{1/0.3} = 1.825742
-$$
-
-$$
-V(x_b) = \frac{1/0.3}{2} - 0.075\cdot\frac{1}{0.09} = \frac{10}{6} - \frac{0.075\times 100}{9} = 1.666667 - 0.833333 = 0.833333 = \frac{5}{6}
-$$
-
-（$V''(x_b) = 1 - 0.9x_b^2 = 1 - 0.9/0.3 = -2 \lt 0$，确认是极大值。）
-
-(b) $E = V(1.80) = \dfrac{3.24}{2} - 0.075\times 1.80^4 = 1.62 - 0.075\times10.4976 = 1.62 - 0.787320 = 0.832680$。
-
-$E = 0.832680 \lt V(x_b) = 0.833333$，能量低于势垒。
-
-**但仅凭能量比较不能判断有界性。** 解 $V(A) = V(x_b)$：令 $s = A^2$，$\dfrac{s}{2} - 0.075s^2 = \dfrac{5}{6}$，即 $0.075s^2 - 0.5s + 0.833333 = 0$，判别式 $\Delta = 0.25 - 4\times0.075\times0.833333 = 0.25 - 0.25 = 0$——**重根** $s = 0.5/0.15 = 10/3$，$A = \sqrt{10/3} = x_b$。
-
-这说明 $V(A) \le V(x_b)$ 对**所有** $A$ 成立，等号只在 $A = x_b$ 处取到。所以"能量是否超过势垒"这个判据在此**退化**了，它永远回答"不超过"，无法区分 $A_0=1.820$（有界）和 $A_0=1.830$（逃逸）。
-
-(c) 正确判据是**初始位置在势垒内侧还是外侧**（对从静止释放的情形）：
-
-- $A_0 = 1.80 \lt x_b = 1.825742$：在势垒**内侧**。$V(x) \gt E$ 的区间把轨迹封在 $[-A_0, A_0]$ 内（保守系统从静止释放，最大位移就是 $A_0$）。**有界**，$\max|x| = 1.800000$。
-- $A_0 = 1.83 \gt x_b$：在势垒**外侧**。$x \gt x_b$ 时 $V$ 单调下降，$V(x) \lt E$，滑块一路加速滚向无穷。**逃逸**。实测 $\lvert x\rvert \gt 50$ 于 $t=5.215$ s。
-- $A_0 = x_b$ 恰好：停在**不稳定平衡点**上（$V'(x_b)=0$、$\dot x=0$），理论上永不动，任意微扰即逃逸。
-
-$A_0=1.825$ 略小于 $x_b$，虽然不逃逸，但轨迹贴着势垒顶走，速度趋于零，周期暴涨到实测 $26.006924$ s（对照 $A_0=1.5$ 的 $9.151281$ s）。
-
-**习题 4**
-
-(a) 输入 $u = A\sin\omega t$，$\dot u = A\omega\cos\omega t$，所以 $\dot u \gt 0 \Leftrightarrow \cos\omega t \gt 0$（第一、四象限）。
-
-一个周期内环面积 $= \oint y\,\mathrm du = \int_0^{2\pi} y(\theta)\,\frac{\mathrm du}{\mathrm d\theta}\,\mathrm d\theta$，$\theta = \omega t$。
-
-**上升段**（$\theta\in[-\pi/2, \pi/2]$，$y = ku + c$，$\mathrm du = A\cos\theta\,\mathrm d\theta$）：
-
-$$
-\int_{-\pi/2}^{\pi/2}(kA\sin\theta + c)A\cos\theta\,\mathrm d\theta
-= kA^2\underbrace{\int_{-\pi/2}^{\pi/2}\sin\theta\cos\theta\,\mathrm d\theta}_{=0} + cA\underbrace{\int_{-\pi/2}^{\pi/2}\cos\theta\,\mathrm d\theta}_{=2}
-= 2cA
-$$
-
-**下降段**（$\theta\in[\pi/2, 3\pi/2]$，$y = ku - c$）：同理，$kA^2$ 项仍为零（奇函数在整周期上积分），$-cA\int_{\pi/2}^{3\pi/2}\cos\theta\,\mathrm d\theta = -cA\times(-2) = 2cA$。
-
-$$
-\oint y\,\mathrm du = 2cA + 2cA = 4cA
-$$
-
-（面积取绝对值。）结果中不含 $\omega$（因为换元到 $\theta$ 后 $\omega$ 消掉了）也不含 $k$（因为 $kA^2$ 项在对称区间上积分为零——弹性部分是**保守**的，不耗能）。$\blacksquare$
-
-(b) $4cA = 4\times0.2\times1.5 = 1.200000$，与 Notebook 3 实测的 $1.200000$（差 $7.40\times10^{-9}$）一致。
-
-**物理意义**：环面积是**一个周期内耗散的能量**（$\oint y\,\mathrm du$ 就是力-位移回线的功）。滞环因此是一种**非线性阻尼**：耗散量正比于振幅 $A$，而线性粘性阻尼一个周期耗能 $\propto A^2\omega$。区别在于滞环耗能**与频率无关**——慢速往复和快速往复每周期损失一样多，这正是材料内摩擦、磁滞的实验特征。
-
-(c) 最大输出误差 $= b$（半宽）。原因：换向时输入必须先反向走过 $2b$ 的距离，输出才重新开始跟随；在这段"空程"里输出停在上一端的极值，输入已经变了 $b$（走到中点时误差最大）。实测 $2b=0.6$ 时最大误差 $0.300000 = b$，平均误差 $0.255003$。
-
-**习题 5**
-
-(a) $x^3 = A^3\sin^3\omega t$，用 $\sin^3\theta = \dfrac{3\sin\theta - \sin3\theta}{4}$：
-
-$$
-y = A\sin\omega t + \beta A^3\cdot\frac{3\sin\omega t - \sin3\omega t}{4}
-= \left(A + \frac{3\beta A^3}{4}\right)\sin\omega t - \frac{\beta A^3}{4}\sin3\omega t
-$$
-
-基波幅值 $= A + \dfrac{3\beta A^3}{4}$，三次谐波幅值 $= \dfrac{\beta A^3}{4}$。
-
-$A=1$、$\beta=0.2$：基波 $= 1 + 0.15 = 1.15$（FFT 实测 $1.150000000000$，差 $0$），三次 $= 0.05$（FFT $0.050000000000$，差 $6.94\times10^{-18}$）。三次/基波 $= 0.05/1.15 = 4.3478\%$。
-
-偶次谐波为零：$f(-x) = -f(x)$ 是奇函数，半波对称 $f(x+\pi) = -f(x)$（对正弦输入），只含奇次谐波。实测二次 $5.40\times10^{-17}$、四次 $5.20\times10^{-17}$ 就是机器噪声。
-
-(b) 饱和输出 $y(\theta)$ 在 $[0,\pi/2]$ 上分两段：$\theta \lt \theta_1$ 时 $y = A\sin\theta$（未饱和），$\theta \gt \theta_1$ 时 $y = M$（削顶）。傅里叶正弦系数
-
-$$
-b_1 = \frac{1}{\pi}\int_0^{2\pi} y(\theta)\sin\theta\,\mathrm d\theta
-$$
-
-被积函数关于 $\theta=\pi/2$ 对称且以 $\pi$ 为半波对称，$\int_0^{2\pi} = 4\int_0^{\pi/2}$，故
-
-$$
-b_1 = \frac{4}{\pi}\int_0^{\pi/2} y(\theta)\sin\theta\,\mathrm d\theta
-= \frac{4}{\pi}\left[A\int_0^{\theta_1}\sin^2\theta\,\mathrm d\theta + M\int_{\theta_1}^{\pi/2}\sin\theta\,\mathrm d\theta\right] \quad\blacksquare
-$$
-
-(c) $A=2$、$M=1$：$\theta_1 = \arcsin(0.5) = \pi/6$。
-
-$$
-\int_0^{\pi/6}\sin^2\theta\,\mathrm d\theta = \left[\frac{\theta}{2} - \frac{\sin2\theta}{4}\right]_0^{\pi/6} = \frac{\pi}{12} - \frac{\sin(\pi/3)}{4} = 0.261799 - 0.216506 = 0.045293
-$$
-
-$$
-A\times0.045293 = 2\times0.045293 = 0.090586
-$$
-
-$$
-\int_{\pi/6}^{\pi/2}\sin\theta\,\mathrm d\theta = [-\cos\theta]_{\pi/6}^{\pi/2} = 0 + \cos\frac{\pi}{6} = 0.866025
-$$
-
-$$
-M\times0.866025 = 0.866025
-$$
-
-$$
-b_1 = \frac{4}{\pi}(0.090586 + 0.866025) = \frac{4}{\pi}\times0.956611 = 1.217996
-$$
-
-与实测 $1.217995$ 一致（末位是四舍五入）。实测三次谐波 $0.275664$、THD $23.2900\%$。
-
-(d) $A \le M$ 时 $\lvert A\sin\theta\rvert \le A \le M$，$\mathrm{clip}$ **永不触发**，$y(\theta) = A\sin\theta$ 是纯正弦，所有谐波系数精确为零，THD $= 0.0000\%$。实测 $A=0.5$、$A=1.0$（$M=1$）都是 $0.0000\%$；$A=2.0$ 突然跳到 $23.2900\%$。
-
-这正是**非本质非线性**的定义性特征：小信号下系统**完全**线性（不是"近似"线性），大信号下突然面目全非。工程上意味着限幅值 $M$ 是一个设计自由度——把 $M$ 设在预期最大信号之上，就能把系统锁在纯线性区；但一旦瞬时超出（冲击、故障、启动），THD 会阶跃式恶化，没有过渡。
-
-**习题 6**
-
-(a) $e = r - x$，$u = K_p(r-x) + K_i\dfrac{r-x}{s}$（拉氏域，零初始条件）。$\dot x = u \Rightarrow X = U/s$。
-
-$$
-U = \left(K_p + \frac{K_i}{s}\right)(R - X) = \frac{K_p s + K_i}{s}(R - X)
-$$
-
-$$
-sX = \frac{K_ps + K_i}{s}(R-X)
-\;\Longrightarrow\;
-s^2X = (K_ps + K_i)R - (K_ps+K_i)X
-$$
-
-$$
-\frac{X}{R} = \frac{K_ps + K_i}{s^2 + K_ps + K_i} = \frac{1.4s + 1.0}{s^2 + 1.4s + 1.0}
-$$
-
-极点：$s = \dfrac{-1.4\pm\sqrt{1.96-4}}{2} = -0.7 \pm 0.7141j$。
-
-$\omega_n = \sqrt{K_i} = 1.0000$ rad/s，$\zeta = \dfrac{K_p}{2\omega_n} = \dfrac{1.4}{2} = 0.7000$。
-
-闭环零点：$1.4s + 1.0 = 0 \Rightarrow s = -K_i/K_p = -0.7143$。
-
-(b) $u(0^+) = K_p\cdot e(0) = 1.4\times2.0 = 2.800$ m/s（积分器初值为零）。$2.800/0.3 = 9.33$ 倍限幅，**必然饱和**。
-
-量级估计：饱和退出需要 $K_pe + K_i\xi \le 0.3$。饱和期间 $u = M = 0.3$，$x = 0.3t$，$e = 2 - 0.3t$；$\xi = \int e = 2t - 0.15t^2$。解 $1.4(2-0.3t) + (2t-0.15t^2) = 0.3$，即 $0.15t^2 - 1.58t + 0.02 = 0$，$t \approx 10.5$ s。实测饱和时长 $21.225$ s——比这个粗估长约一倍，因为粗估忽略了退出饱和后的反饱和段（$u = -M$ 期间 $|u_{\text{raw}}|$ 仍远超 $M$）。
-
-(c) 限幅不改变积分器的**输入**（误差 $e$），只改变它的**输出**是否被执行。饱和期间 $e \gt 0$ 持续存在，积分器 $\xi$ 一直累加，冲到 $\lvert u_{\text{raw}}\rvert = 6.9615$（限幅的 $23.20$ 倍）。当 $x$ 接近 $r$ 时，$u_{\text{raw}}$ 需要降到 $0.3$ 以下才能脱离饱和，但 $\xi$ 巨大，$K_i\xi$ 项远超 $0.3$，于是即使 $e$ 已经变负，$u$ 仍被钳在 $+M$ 上继续正向推。$x$ 冲过 $r$ 很远（峰值 $3.6036$，超调 $80.181\%$），然后要花很长时间把 $\xi$ 倒扣回来才能反向。
-
-**"限幅削平控制量所以响应更温和"的直觉错在只看了瞬时值。** 决定超调的是**控制量的时间积分**（即位置增量），饱和期间 $u$ 一直是 $+M$，累计位移比线性情形（$u$ 快速衰减到零甚至变负）**更多**。
-
-(d) clamping 在饱和期间冻结 $\xi$，$\xi$ 停在进入饱和时的值（很小，接近 0）。退出饱和后控制律近似纯比例 $u \approx K_pe$，闭环退化成一阶系统 $\dot x = K_p(r-x)$，**一阶系统没有超调**。实测超调 $2.254\%$ 来自退饱和瞬间的过渡（$\xi$ 不是精确为零，加上限幅边界处的切换）。
-
-调节时间变长（$4.879 \to 8.719$ s）是因为积分作用被削弱了：无限幅时 $K_i$ 提供了额外的"相位超前"（闭环零点 $-0.7143$ 加快响应），冻结积分器等于暂时去掉这个零点，闭环带宽下降。这就是**超调与速度的交换**：$2.254\%$ / $8.719$ s vs $21.052\%$ / $4.879$ s。哪个更好取决于任务——定位平台通常要小超调（避免撞限位、避免激励结构模态），愿意多花 80% 的时间。
-
-**习题 7**
-
-(a) $v \gt 0$ 时 $\mathrm{sign}(v) = 1$，$F(v) = F_c + (F_s-F_c)e^{-v/v_s} + \sigma v$：
-
-$$
-F'(v) = -\frac{F_s - F_c}{v_s}e^{-v/v_s} + \sigma
-$$
-
-令 $F'(v) = 0$：
-
-$$
-e^{-v/v_s} = \frac{\sigma v_s}{F_s - F_c}
-\;\Longrightarrow\;
-v_{\min} = v_s\ln\frac{F_s - F_c}{\sigma v_s}
-= 0.05\ln\frac{0.5-0.3}{0.02\times0.05}
-= 0.05\ln\frac{0.2}{0.001} = 0.05\ln 200
-$$
-
-$\ln 200 = 5.298317$，所以 $v_{\min} = 0.05\times5.298317 = 0.264916$ m/s（Notebook 9 解析值），Notebook 3 的网格实测 $0.264914$，$F_{\min} = 0.306298$。
-
-(b) $v_b = 0.35$：$e^{-0.35/0.05} = e^{-7} = 0.000911882$。
-
-$$
-F'(0.35) = -\frac{0.2}{0.05}\times0.000911882 + 0.02 = -4\times0.000911882 + 0.02 = -0.003647528 + 0.02 = +0.016352 \text{ N·s/m}
-$$
-
-（与实测 $+0.016352$ 一致。）正阻尼 → 平滑滑动平衡点局部稳定。
-
-$$
-\tau = \frac{2m}{F'(v_b)} = \frac{2\times1}{0.016352} = 122.3 \text{ s}
-$$
-
-实测两点拟合（$t=300\sim750$ s）$\tau = 119.9$ s，偏差 $\dfrac{119.9-122.3}{122.3} = -2.0\%$。**线性化预测被验证到 2%。**
-
-$\tau$ 的来历：令 $z = x - v_bt$，$m\ddot z + F(\dot z + v_b) + kz = 0$。在 $\dot z = 0$ 处线性化 $F(\dot z + v_b) \approx F(v_b) + F'(v_b)\dot z$，得
-
-$$
-m\ddot z + F'(v_b)\dot z + kz = -F(v_b)
-$$
-
-这是标准二阶系统，阻尼系数 $c = F'(v_b)$，振幅衰减时间常数 $= 2m/c$。常数项 $-F(v_b)$ 只造成平衡点偏移 $z_{\text{eq}} = F(v_b)/k = 0.030718$ m，不影响 $\tau$。
-
-(c) **不矛盾，因为它们回答的是两个不同的问题。**
-
-- 局部判据 $F'(v_b) \gt 0$ 回答：「**已经在**平滑滑动时，小扰动会不会衰减？」答案：会，按 $\tau = 122.3$ s 指数衰减（第 2 步实测验证）。
-- 吸引域回答：「**从某个初值出发**，会不会走到平滑滑动？」答案：只有 $c = v_0/v_b \in [0.500, 1.500]$ 会。
-
-冷启动是 $v_0 = 0$、$z_0 = 0$，即 $c = 0$，距平衡点偏差 $-100\%$，**远超吸引域下界 $-50\%$**，所以被粘滑极限环捕获。这与 $v_b$ 多大无关——$v_b$ 只改变吸引子的形状和 $F'(v_b)$ 的数值，不改变"冷启动在大扰动区"这个事实。
-
-**局部判据的适用边界**：它是**线性化**的结论，只在平衡点的某个邻域内成立。邻域大小就是吸引域，必须**另外测量或另外估计**（数值扫描，或构造 Lyapunov 函数给出保守的内接区域）。把 $F'(v_b) \gt 0$ 读成"系统会平滑滑动"，等于把局部结论推广到全局——这正是引言里那台定位平台被误诊的原因：诊断者算了 $F'$，看到 $v_b$ 高于 $v_{\min}$，就断言"不是摩擦问题"。
-
-（补充：峰峰值随 $v_b$ **单调增大**（$0.038703 \to 0.637545$），因为每周期弹簧从皮带吸收的能量 $\propto$ 粘着段皮带走过的距离 $\propto v_b$。所以高速并不更安全，只是抖动幅值更大、频率接近 $\sqrt{k/m} = 3.162$ rad/s（实测周期 $1.9875\sim1.9998$ s，对应 $3.14\sim3.16$ rad/s，即接近无阻尼固有频率）。）
-
-(d) 目标：把初值推进吸引域 $c \in [0.500, 1.500]$，或消除吸引域之外的第二个吸引子。
-
-**对策一：启动速度前馈。** 启动瞬间给一个速度前馈 $u_{\text{ff}} \ge 0.5v_b$，让滑块初速直接落在吸引域内，跳过 $c \lt 0.5$ 的区域。原理是**直接改变初值**——吸引域没变，但你把系统放进了域内。代价是需要知道 $v_b$（指令速度是已知的，所以这个前馈几乎是免费的），且前馈幅值必须足够大（$0.5v_b$ 是网格分辨率 $0.125$ 下的实测边界，工程上取 $0.7\sim0.8\,v_b$ 留裕度）。
-
-**对策二：高频小幅 dither（抖振激励）。** 在控制量上叠加一个频率远高于系统带宽（$\gg 3.16$ rad/s）、幅值足以让滑块**不完全停下**的高频振动。原理是**改变有效摩擦曲线**：滑块在每个 dither 周期内都经历正反两个速度方向，时间平均后的等效摩擦 $\bar F(v)$ 在低速段斜率变正（静摩擦被"打散"），负阻尼的能量来源被移除，粘滑极限环这个吸引子**消失**（而不是被绕开）。代价是需要额外的执行器带宽、可能引入噪声与磨损。
-
-（**不可行的对策**：加大 $K_p$。这只会提高 $\sqrt{k/m}$ 等效刚度、缩短粘滑周期，不改变吸引域；实测中加大刚度会增大粘着段储存的弹性能，抖动更凶。加 $K_i$ 同理，还会引入相位滞后。加 $K_d$ 在理论上能提供正阻尼，但干摩擦在零速附近的不连续性会把微分项放大成噪声，实践中通常失效。）

@@ -57,6 +57,7 @@
 | [052](2026-10-18-052.md) | 2026-10-18 | content/modern/lqr-controller.mdx | DRE/DARE实跑与单位边界 | BOTH | 林矩+柯验+秦构+何疑（既有清单未执行） | 保留CARE三例十题，补有限/离散/单位，真实TS785组、四图与Callout |
 | [053](2026-10-18-053.md) | 2026-10-18 | content/modern/multivariable-systems.mdx | RGA物理解释与解耦动态实证 | BOTH | 林矩+柯验+秦构+何疑（既有清单未执行） | 保留三例八题，补约束增益/单位/静态逆中途偏移，真实TS2116组全501点核验 |
 | [054](2026-10-18-054.md) | 2026-10-18 | content/modern/modern-case-study.mdx | 倒立摆模型与LQG噪声一致性 | BOTH | 林矩+柯验+秦构+何疑（既有清单未执行） | 统一均匀杆/噪声时标，迁widget，公开目标与非线性失败；六实验独立核验 |
+| [055](2026-10-18-055.md) | 2026-10-18 | content/nonlinear/nonlinear-characteristics.mdx | 非线性分类与局部边界 | BOTH | 卫韧+何疑+秦构（既有清单未执行） | 修连续性/耗能/THD与全局推断，五实验与30组组件独立核验；长扫描保留来源待审 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）

@@ -85,7 +85,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [x] 非线性系统 (nonlinear-characteristics) | v1.3 重写: 1个交互组件（NonlinearityExplorer 六种非线性的 u-y 回线+时间波形，按类型固定坐标轴，默认滞环 A=1.5/c=0.2 复现环面积 4cA=1.200000；间隙 settle 相位陷阱见讨论日志附录 C），9个静态JupyterNotebook（叠加原理定量破坏 / 振幅依赖周期+Lindstedt+软弹簧逃逸 / 滞环·间隙·Stribeck / 谐波产生与双频互调 / 线性化误差带 / 跳跃共振与谐波平衡三分支 / 多平衡点与鞍结分岔 / PI三种幅值处理 / 粘滑极限环与吸引域）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/01-nonlinear-characteristics.md（含11条旧稿错误对照） |
+| [x] 非线性系统 (nonlinear-characteristics) | 学期3重构：11短H2、六类型Explorer、5份Notebook/5cell、7题与答案；修连续性/THD/耗能/局部边界及PI推导，30组组件独立核；43旧ID兼容；日志 docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md；验收 .agent/semester-03/nonlinear-01/acceptance.md；长扫描来源与后续W13见followup.md |
 | [x] 相平面 (phase-plane) | v1.3 重写: 2个交互组件（PhasePlaneExplorer 五系统相平面 + TraceDetExplorer 迹-行列式平面，默认参数复现手算例，见 fix-logs 016），12个静态JupyterNotebook组件（NB10 拆上/下：Van der Pol 极限环 / 迹-行列式分类+2000抽查 / 非双曲中心三情形 / Duffing 手算例全程核对 / 鞍点流形与吸引域 / μ扫描张弛振荡 / 极限环孤立性 / 真假中心对照 / Lotka-Volterra 首次积分 / 受迫Duffing截面+Floquet+延拓 / 无轮辐轮混合系统）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/02-phase-plane.md；顺带修复组件双注册表问题（fix-logs 015） |
 | [x] Lyapunov稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/semester-01/07-nonlinear/04-lyapunov-stability.md |
 | [x] 描述函数 (describing-function) | v1.3 重写: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer，后者修正 -1/N 轨迹范围与交点存在性判断，见 fix-logs 014），6个静态JupyterNotebook（21 cell：波形畸变与复数惯例 / 五个闭式核对与串联≠乘积 / 手算例仿真仲裁与泄漏指标L / Routh交叉核对与双交点算例 / 三个应用案例 / 四种失效模式）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md |

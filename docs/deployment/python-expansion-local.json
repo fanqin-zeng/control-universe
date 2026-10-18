@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T08:55:59.604Z",
-  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
+  "testedAt": "2026-10-18T09:31:50.890Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fnonlinear-characteristics",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -2922,31 +2922,26 @@
     {
       "key": "nonlinear/nonlinear-characteristics",
       "title": "非线性系统",
-      "sourceHash": "0a0d961b69699a94a099bbbf086a131c21bb4b28d79df9ac09d47e22f94925dc",
+      "sourceHash": "802b96fb06d39205bbcf7baca4e3f64437acfc642ef5bb8c95469c90ff8f7994",
       "notebooks": [
         {
           "id": "nonlinear/nonlinear-characteristics#1",
-          "title": "Notebook 1：叠加原理的定量破坏——同一系统，只换弹簧",
+          "title": "叠加与六种非线性",
           "index": 1,
-          "line": 74,
+          "line": 61,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 7455,
+              "milliseconds": 4651,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "线性弹簧 alpha=0  :\n  可加性: max|y(u1+u2)|=5.813027, 残差=1.010303e-14, 相对误差=1.737998e-13%\n  齐次性: A(u2)=0.813714, A(2u2)=1.627427, 比值=2.000000 (线性应为 2.000000)\n硬弹簧   alpha=0.5:\n  可加性: max|y(u1+u2)|=2.123509, 残差=1.705805e+00, 相对误差=8.032953e+01%\n  齐次性: A(u2)=1.623869, A(2u2)=1.889730, 比值=1.163721 (线性应为 2.000000)\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 128736
+                  "text": "cubic additivity residual= [0.15 0.   0.45] at u=v=1: 1.2000000000000002\nhysteresis area= 1.2000000000000002 fundamental= 1.5214616182493266 third= 0.08488203710358619 THD through 25= 7.751420171685621 max deviation= 0.20000000000000007\nbacklash area= 0.84 fundamental= 0.7940554516527885 third= 0.0891268965349828 THD through 25= 11.876459431497288 max deviation= 0.30000000000000004\nsaturation area= 0.0 fundamental= 1.2179952743597515 third= 0.27566387088898736 THD through 25= 23.29002038057393 max deviation= 1.0\ndeadzone area= 0.0 fundamental= 1.120590232489398 third= 0.1197611009496361 THD through 25= 12.837173820976076 max deviation= 0.30000000000000004\nrelay area= 0.0 fundamental= 1.2732385460495972 third= 0.4244101855179313 THD through 25= 46.31295649481493 max deviation= 1.0\ncubic area= 0.0 fundamental= 1.15 third= 0.04999999999999993 THD through 25= 4.347826086956516 max deviation= 0.19999999999999996\n"
                 }
               ]
             }
@@ -2954,27 +2949,27 @@
         },
         {
           "id": "nonlinear/nonlinear-characteristics#2",
-          "title": "Notebook 2：振幅依赖的周期，以及软弹簧的振幅上限",
+          "title": "三次项的频谱",
           "index": 2,
-          "line": 183,
+          "line": 125,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 7800,
+              "milliseconds": 118,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "硬弹簧 A0=0.10: T_实测=6.271439s, T_Lindstedt=6.271426s, T_线性=6.283185s, 实测vs线性= -0.187%, 实测vsLindstedt= +0.000% (28 cycles)\n硬弹簧 A0=0.50: T_实测=6.008794s, T_Lindstedt=6.001849s, T_线性=6.283185s, 实测vs线性= -4.367%, 实测vsLindstedt= +0.116% (29 cycles)\n硬弹簧 A0=1.00: T_实测=5.366659s, T_Lindstedt=5.291103s, T_线性=6.283185s, 实测vs线性=-14.587%, 实测vsLindstedt= +1.428% (33 cycles)\n硬弹簧 A0=1.50: T_实测=4.647763s, T_Lindstedt=4.418944s, T_线性=6.283185s, 实测vs线性=-26.029%, 实测vsLindstedt= +5.178% (38 cycles)\n软弹簧 A0=0.10: T_实测=6.290267s, T_Lindstedt=6.290262s, T_线性=6.283185s, 实测vs线性= +0.113%, 实测vsLindstedt= +0.000% (28 cycles)\n软弹簧 A0=0.50: T_实测=6.468201s, T_Lindstedt=6.465014s, T_线性=6.283185s, 实测vs线性= +2.945%, 实测vsLindstedt= +0.049% (27 cycles)\n软弹簧 A0=1.00: T_实测=7.149816s, T_Lindstedt=7.079645s, T_线性=6.283185s, 实测vs线性=+13.793%, 实测vsLindstedt= +0.991% (24 cycles)\n软弹簧 A0=1.50: T_实测=9.151281s, T_Lindstedt=8.412633s, T_线性=6.283185s, 实测vs线性=+45.647%, 实测vsLindstedt= +8.780% (19 cycles)\n软弹簧 alpha=-0.3: 势垒位置 x_b=sqrt(-1/alpha)=1.825742, V(x_b)=0.833333\n  A0=1.820 < x_b: 有界, T=20.222879s (13 cycles), max|x|=1.820000\n  A0=1.825 < x_b: 有界, T=26.006924s (9 cycles), max|x|=1.825000\n  A0=1.830 > x_b: 逃逸, |x|>50 于 t=5.215s\n  A0=1.900 > x_b: 逃逸, |x|>50 于 t=3.185s\n"
+                  "text": "fundamental= 1.15 third= 0.04999999999999996 THD= 4.347826086956522\nA= 0.5 fundamental= 0.5 THD all resolved= 2.392789186066097e-14\nA= 1.0 fundamental= 1.0 THD all resolved= 2.392789186066097e-14\nA= 1.01 fundamental= 1.0088073140507174 THD all resolved= 0.2827569175982636\nA= 2.0 fundamental= 1.2179954899435947 THD all resolved= 23.293798821525446\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 102732
+                  "base64Length": 13392
                 }
               ]
             }
@@ -2982,27 +2977,27 @@
         },
         {
           "id": "nonlinear/nonlinear-characteristics#3",
-          "title": "Notebook 3：六种静态非线性——曲线、滞环能耗、间隙环宽、Stribeck 负斜率区",
+          "title": "切线与局部误差",
           "index": 3,
-          "line": 369,
+          "line": 170,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 953,
+              "milliseconds": 79,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "滞环环面积 = 1.200000 (A=1.5, k=1.0, c=0.2); 解析 4cA=1.200000; 差=7.40e-09\n  c=0.1: 环面积=0.600000, 解析 4cA=0.600000\n  c=0.4: 环面积=2.400000, 解析 4cA=2.400000\n间隙 2b=0.6: 稳态最大输出误差=0.300000 (=b), 平均=0.255003\nStribeck F(0.001) = 0.496060 N*m\nStribeck F(0.01) = 0.463946 N*m\nStribeck F(0.05) = 0.374576 N*m\nStribeck F(0.1) = 0.329067 N*m\nStribeck F(0.5) = 0.310009 N*m\nStribeck F(1.0) = 0.320000 N*m\n负斜率区终点: 实测 v_min=0.264914, 解析 vs*ln((Fs-Fc)/(sig*vs))=0.264916, F_min=0.306298\nv→0 处斜率 -(Fs-Fc)/vs = -4.0000 N*s/m → 等效负阻尼，自激振动能量来源\n"
+                  "text": "x= 0.9 exact= 1.0458 tangent= 1.04 absolute error= 0.005800000000000027 relative %= 0.5545993497800753\nx= 1.0 exact= 1.2 tangent= 1.2 absolute error= 0.0 relative %= 0.0\nx= 1.1 exact= 1.3662 tangent= 1.36 absolute error= 0.006199999999999983 relative %= 0.45381349729175696\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 114092
+                  "base64Length": 23016
                 }
               ]
             }
@@ -3010,27 +3005,22 @@
         },
         {
           "id": "nonlinear/nonlinear-characteristics#4",
-          "title": "Notebook 4：谐波产生与双音互调——解析值与 FFT 逐位对齐",
+          "title": "平衡点与振幅相关周期",
           "index": 4,
-          "line": 489,
+          "line": 209,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 513,
+              "milliseconds": 835,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "y = x + 0.2 x^3, x = A sin(w t), A=1.0, 采样 10 个整周期 (N=20000)\n  基波: FFT=1.150000000000, 解析 A+3bA^3/4=1.150000000000, 差=0.00e+00\n  三次: FFT=0.050000000000, 解析 bA^3/4 =0.050000000000, 差=0.00e+00\n  三次/基波=4.3478%; 二次=6.65e-17, 四次=4.57e-17, 五次=1.62e-17 (奇对称只有奇次)\n  饱和 M=1, A=0.5: 基波=0.500000, 三次=0.000000, THD=0.0000%\n  饱和 M=1, A=1.0: 基波=1.000000, 三次=0.000000, THD=0.0000%\n  饱和 M=1, A=2.0: 基波=1.217995, 三次=0.275664, THD=23.2900%\n  饱和 M=1, A=4.0: 基波=1.259849, 三次=0.385251, THD=35.4169%\n双音互调 f1=1.0 Hz, f2=1.4 Hz (各幅值 1.0)，幅值>0.02 的谱线:\n  f= 0.600 Hz  幅值=0.150000  2f1-f2\n  f= 1.000 Hz  幅值=1.450000  f1\n  f= 1.400 Hz  幅值=1.450000  f2\n  f= 1.800 Hz  幅值=0.150000  2f2-f1\n  f= 3.000 Hz  幅值=0.050000  3f1\n  f= 3.400 Hz  幅值=0.150000  2f1+f2\n  f= 3.800 Hz  幅值=0.150000  f1+2f2\n  f= 4.200 Hz  幅值=0.050000  3f2\n  输入端只有 f1/f2 两根谱线，2f1-f2=0.600 Hz 与 3f1=3.000 Hz 等都是非线性新产生的\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 89524
+                  "text": "equilibrium= -1.0 Jacobian= -2.0\nequilibrium= 0.0 Jacobian= 1.0\nequilibrium= 1.0 Jacobian= -2.0\nxdot= -1 * x^3, x(2)= 0.09805806756909978\nxdot= 1 * x^3, x(2)= 0.10206207261596764\nalpha,A,T,event-energy diff= 0.0 0.1 6.283185307179632 4.618527782440651e-14\nalpha,A,T,event-energy diff= 0.0 1.0 6.283185307179531 -5.5067062021407764e-14\nalpha,A,T,event-energy diff= 0.0 1.5 6.283185307179456 -1.305622276959184e-13\nalpha,A,T,event-energy diff= 0.5 0.1 6.271439189142468 9.414691248821327e-14\nalpha,A,T,event-energy diff= 0.5 1.0 5.366659355251933 6.016609432890618e-11\nalpha,A,T,event-energy diff= 0.5 1.5 4.647762653043107 1.644782088305874e-10\nalpha,A,T,event-energy diff= -0.3 0.1 6.290266507716194 -3.419486915845482e-13\nalpha,A,T,event-energy diff= -0.3 1.0 7.149816346174776 -1.290612061666252e-11\nalpha,A,T,event-energy diff= -0.3 1.5 9.15128135281144 -9.57776080667827e-11\nsoft barrier x= 1.8257418583505538 V= 0.8333333333333334 V(1.83)= 0.8333151592500002\n"
                 }
               ]
             }
@@ -3038,139 +3028,27 @@
         },
         {
           "id": "nonlinear/nonlinear-characteristics#5",
-          "title": "Notebook 5：线性化的实测有效半径——静态误差与动态（周期）误差",
+          "title": "限幅期间积分了多少",
           "index": 5,
-          "line": 673,
+          "line": 260,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3466,
+              "milliseconds": 1422,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "f(x)=x+0.2x^3, x0=1.0: f(x0)=1.200000, f'(x0)=1.600000 → f_lin(x)=1.6000x+(-0.4000)\n  x=1.05: f=1.281525, f_lin=1.280000, 相对误差=0.1190%\n  x=1.10: f=1.366200, f_lin=1.360000, 相对误差=0.4538%\n  x=1.20: f=1.545600, f_lin=1.520000, 相对误差=1.6563%\n  x=1.50: f=2.175000, f_lin=2.000000, 相对误差=8.0460%\n  x=2.00: f=3.600000, f_lin=2.800000, 相对误差=22.2222%\n  误差< 1.0%: x in [0.8680, 1.1521] (向上 +0.1521, 向下 -0.1320)\n  误差< 5.0%: x in [0.7283, 1.3746] (向上 +0.3746, 向下 -0.2717)\n  误差<10.0%: x in [0.6383, 1.5738] (向上 +0.5738, 向下 -0.3617)\n  Duffing A0=0.10: T_nonlin=6.271439, T_lin=6.283185, 误差=-0.187%\n  Duffing A0=0.50: T_nonlin=6.008794, T_lin=6.283185, 误差=-4.367%\n  Duffing A0=1.00: T_nonlin=5.366659, T_lin=6.283185, 误差=-14.587%\n  Duffing A0=1.50: T_nonlin=4.647763, T_lin=6.283185, 误差=-26.029%\n  Duffing A0=2.00: T_nonlin=4.004310, T_lin=6.283185, 误差=-36.269%\n"
+                  "text": "r= 0.05 unlimited x(1)= 0.04719530834485865 integral(1)= 0.022785316382664813 peak raw= 0.06999999999999999 dt-half max state difference= 9.108112515483768e-06\nr= 0.05 limited x(1)= 0.04719530834485865 integral(1)= 0.022785316382664813 peak raw= 0.06999999999999999 dt-half max state difference= 9.108112515483768e-06\nr= 0.05 conditional x(1)= 0.04719530834485865 integral(1)= 0.022785316382664813 peak raw= 0.06999999999999999 dt-half max state difference= 9.108112515483768e-06\nr= 0.5 unlimited x(1)= 0.4719530834485862 integral(1)= 0.22785316382664844 peak raw= 0.7 dt-half max state difference= 9.108112515598954e-05\nr= 0.5 limited x(1)= 0.3000000000000007 integral(1)= 0.35015000000000107 peak raw= 0.7107067 dt-half max state difference= 0.00015204063647500377\nr= 0.5 conditional x(1)= 0.2997654403700648 integral(1)= 0.009742015626938449 peak raw= 0.7 dt-half max state difference= 0.00010712499999999806\nr= 2.0 unlimited x(1)= 1.8878123337943449 integral(1)= 0.9114126553065938 peak raw= 2.8 dt-half max state difference= 0.00036432450062395816\nr= 2.0 limited x(1)= 0.3000000000000007 integral(1)= 1.8501500000000008 peak raw= 6.961456700000298 dt-half max state difference= 0.0008963934322738787\nr= 2.0 conditional x(1)= 0.3000000000000007 integral(1)= 0.0 peak raw= 2.8 dt-half max state difference= 0.00010712499999978986\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 93616
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "nonlinear/nonlinear-characteristics#6",
-          "title": "Notebook 6：跳跃共振——谐波平衡三分支与升/降频延拓仿真互相对质",
-          "index": 6,
-          "line": 811,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 9417,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "谐波平衡多解区间: w in [1.6600, 2.2600] (61/251 个采样点有 3 个实根)\n   w=1.6600: A = [1.1557  1.40757 2.45892]  (下/中/上分支，中间支不稳定)\n   w=1.8600: A = [0.6425  2.25595 2.75966]  (下/中/上分支，中间支不稳定)\n   w=2.0600: A = [0.47062 2.77834 3.05917]  (下/中/上分支，中间支不稳定)\n   w=2.2600: A = [0.36746 3.2824  3.31633]  (下/中/上分支，中间支不稳定)\n升频跳跃: w 2.250→2.300, 基波 3.2573→0.3513 (跌 89.2%)\n降频跳跃: w 1.700→1.650, 基波 0.9418→2.4012 (涨 155.0%)\n仿真双稳频带 w in [1.650, 2.300]（频率网格 0.05），谐波平衡预测 [1.660, 2.260]\n仿真基波 vs 谐波平衡同分支最大偏差 = 0.05807\n响应 THD: 0.01% ~ 6.69%（大振幅支上谐波含量更高）\nmax|x| 比基波大 9.62%（峰值 vs 基波，非线性波形变尖）\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 99276
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "nonlinear/nonlinear-characteristics#7",
-          "title": "Notebook 7：多平衡点、鞍结分岔、以及 tau 越过 1 之后的持续旋转",
-          "index": 7,
-          "line": 954,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 2521,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "theta'' + 0.2 theta' + sin(theta) = tau ；平衡点满足 sin(theta_e)=tau\ntau=0.0: 2 个平衡点\n   theta_e=+0.000000 rad (  +0.000 deg), eig=[-0.1+0.995j -0.1-0.995j], 稳定焦点\n   theta_e=+3.141593 rad (+180.000 deg), eig=[-1.105  0.905], 不稳定（鞍点）\ntau=0.5: 2 个平衡点\n   theta_e=+0.523599 rad ( +30.000 deg), eig=[-0.1+0.9252j -0.1-0.9252j], 稳定焦点\n   theta_e=+2.617994 rad (+150.000 deg), eig=[-1.036  0.836], 不稳定（鞍点）\ntau=0.95: 2 个平衡点\n   theta_e=+1.253236 rad ( +71.805 deg), eig=[-0.1+0.5498j -0.1-0.5498j], 稳定焦点\n   theta_e=+1.888357 rad (+108.195 deg), eig=[-0.6677  0.4677], 不稳定（鞍点）\ntau=1.0: 1 个平衡点\n   theta_e=+1.570796 rad ( +90.000 deg), eig=[-0.2 -0. ], 非双曲（特征值含 0 → 线性化失效，鞍结分岔点）\ntau=1.05: 0 个平衡点\ntau>1: 无平衡点 → 持续旋转\n  tau=1.05: 平均角速度=5.246291 rad/s (tau/d=5.2500), 波动峰峰=0.380801\n  tau=1.2: 平均角速度=5.997660 rad/s (tau/d=6.0000), 波动峰峰=0.333212\n  tau=1.5: 平均角速度=7.499119 rad/s (tau/d=7.5000), 波动峰峰=0.266593\n  tau=2.0: 平均角速度=9.999506 rad/s (tau/d=10.0000), 波动峰峰=0.199965\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 104980
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "nonlinear/nonlinear-characteristics#8",
-          "title": "Notebook 8：积分饱和的正确对照——同一组 PI 增益，三种幅值处理",
-          "index": 8,
-          "line": 1125,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 783,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "速度指令型定位轴 x' = K u (K=1.0), PI: Kp=1.4, Ki=1.0, 限幅 M=0.3 m/s, 阶跃 r=2.0 m\n闭环 X/R = (1.4s + 1.0)/(s^2 + 1.4s + 1.0), 极点=[-0.7+0.7141j -0.7-0.7141j]\n  wn=1.0000 rad/s, zeta=0.7000, 闭环零点 s=-Ki/Kp=-0.7143\n  无零点二阶理论超调=4.599%, 有零点时实测超调见下（零点顶高超调）\n  u(0)=Kp*r=2.800 m/s = 限幅的 9.33 倍 → 必然长时间饱和\n无限幅           : 超调=  21.052%  峰值x= 2.4210  2%调节时间= 4.879s  峰值|u_raw|=  2.8000 (9.33倍限幅)  饱和时长= 1.717s  终值=2.000000\n饱和+无抗饱和       : 超调=  80.181%  峰值x= 3.6036  2%调节时间=25.426s  峰值|u_raw|=  6.9615 (23.20倍限幅)  饱和时长=21.225s  终值=1.998360\n饱和+抗饱和        : 超调=   2.254%  峰值x= 2.0451  2%调节时间= 8.719s  峰值|u_raw|=  2.8000 (9.33倍限幅)  饱和时长= 5.953s  终值=2.000000\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 108040
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "nonlinear/nonlinear-characteristics#9",
-          "title": "Notebook 9：粘滑自激振荡——局部稳定性判据 vs 全局归宿（含正则化收敛性检查）",
-          "index": 9,
-          "line": 1237,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 39422,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "=== 第 0 步：正则化参数 eps 的收敛性（vb=0.02 冷启动, T=200s）===\n  eps=3.0e-03: 相对位移峰峰值=0.026968 m\n  eps=1.0e-03: 相对位移峰峰值=0.034725 m\n  eps=3.0e-04: 相对位移峰峰值=0.037739 m\n  eps=1.0e-04: 相对位移峰峰值=0.038703 m\n  相邻两档的相对变化: +28.8%, +8.7%, +2.6%\n  → 变化率从 8.7% 降到 2.6%，已接近收敛 → 后续统一取 eps=1e-4\n摩擦曲线负斜率区终点 v_min = vs*ln((Fs-Fc)/(sig*vs)) = 0.264916 m/s\n滑动平衡点 v=vb 的等效阻尼 = dF/dv|_(vb)；线性化衰减时间常数 tau = 2m/(dF/dv)\n  vb= 0.1000: dF/dv=-0.521341 N*s/m → 负阻尼 → 平滑滑动不稳定\n  vb= 0.2500: dF/dv=-0.006952 N*s/m → 负阻尼 → 平滑滑动不稳定\n  vb= 0.2649: dF/dv=-0.000000 N*s/m → 临界（dF/dv=0，线性化给不出结论）\n  vb= 0.3500: dF/dv=+0.016352 N*s/m → 稳定，tau=2m/(dF/dv)= 122.3s\n  vb= 0.6000: dF/dv=+0.019975 N*s/m → 稳定，tau=2m/(dF/dv)= 100.1s\n\n=== 第 1 步：冷启动（滑块静止、弹簧原长）的带速扫描，T=400s ===\n      vb      峰峰值(m)   周期(s)  圈数   v_min      v_max    平均v\n     0.02    0.038703    3.1176    51  +0.000035  0.080656  0.020211   粘滑  (dF/dv=-2.661280)\n     0.10    0.091458    2.1474    73  -0.000010  0.244602  0.099632   粘滑  (dF/dv=-0.521341)\n     0.25    0.178349    2.0147    78  -0.000033  0.531994  0.250119   粘滑  (dF/dv=-0.006952)\n     0.35    0.238040    1.9998    79  -0.000039  0.726373  0.349969   粘滑  (dF/dv=+0.016352)\n     0.60    0.390356    1.9901    79  -0.000043  1.217206  0.599714   粘滑  (dF/dv=+0.019975)\n     1.00    0.637545    1.9875    79  -0.000020  2.008045  0.996022   粘滑  (dF/dv=+0.020000)\n  → v_min=0.265 以上（vb=0.35/0.60/1.00）冷启动依然粘滑，且峰峰值随带速单调增大\n\n=== 第 2 步：同一带速 vb=0.35，从滑动平衡点出发的小扰动 ===\n滑动平衡点: v=vb=0.35, z_eq=F(vb)/k=0.030718 m; 理论 tau=2m/(dF/dv)=122.3s\n  v0=vb*(1+0.01): |v-vb| = t=0:1.832e-03, t=200:3.545e-04, t=400:6.914e-05, t=600:1.323e-05, t=750:3.703e-06\n  v0=vb*(1+0.05): |v-vb| = t=0:9.164e-03, t=200:1.777e-03, t=400:3.479e-04, t=600:6.750e-05, t=750:1.957e-05\n  用 t=300~750s 的两点拟合衰减: 实测 tau=120.0s vs 理论 122.3s (偏差 -1.9%)\n  末段峰峰值=6.851e-06 m → 扰动完全衰减，平滑滑动是稳定平衡点\n\n=== 第 3 步：吸引域（vb=0.35, z0=z_eq, 扫描 v0=c*vb, T=300s）===\n      c     v0      末段峰峰值(m)   v_min      归宿\n   0.000  0.0000   2.380399e-01   -0.000039   粘滑极限环\n   0.125  0.0437   2.380399e-01   -0.000039   粘滑极限环\n   0.250  0.0875   2.380399e-01   -0.000039   粘滑极限环\n   0.375  0.1312   2.380399e-01   -0.000039   粘滑极限环\n   0.500  0.1750   3.418683e-02   +0.295945   平滑滑动\n   0.625  0.2188   2.136667e-02   +0.316216   平滑滑动\n   0.750  0.2625   1.320342e-02   +0.329123   平滑滑动\n   0.875  0.3062   6.374221e-03   +0.339921   平滑滑动\n   1.000  0.3500   2.842171e-14   +0.350000   平滑滑动\n   1.125  0.3937   6.374226e-03   +0.340003   平滑滑动\n   1.250  0.4375   1.320342e-02   +0.329292   平滑滑动\n   1.375  0.4812   2.136653e-02   +0.316487   平滑滑动\n   1.500  0.5250   3.418477e-02   +0.296372   平滑滑动\n   1.625  0.5687   2.380399e-01   -0.000039   粘滑极限环\n   1.750  0.6125   2.380399e-01   -0.000039   粘滑极限环\n   1.875  0.6562   2.380399e-01   -0.000039   粘滑极限环\n   2.000  0.7000   2.380399e-01   -0.000039   粘滑极限环\n  → 平滑滑动的吸引域: c in [0.500, 1.500]，即初速偏差在 -50.0% ~ +50.0% 之内（网格分辨率 0.125）\n  → 冷启动 (v0=0, z0=0) 落在吸引域之外，所以任何带速下都会先粘滑\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 209164
+                  "base64Length": 43664
                 }
               ]
             }
@@ -11584,14 +11462,14 @@
   "complete": true,
   "totals": {
     "lessons": 73,
-    "notebooks": 351,
-    "enabled": 327,
+    "notebooks": 347,
+    "enabled": 323,
     "codeOnly": 24
   },
   "releaseTotals": {
     "lessons": 73,
-    "notebooks": 351,
-    "enabled": 326,
+    "notebooks": 347,
+    "enabled": 322,
     "codeOnly": 25
   },
   "provenance": [
@@ -11939,6 +11817,16 @@
       "testedAt": "2026-10-18T08:55:59.604Z",
       "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
       "inputPath": ".agent/semester-03/modern-09/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T09:29:00.735Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fnonlinear-characteristics",
+      "inputPath": ".agent/semester-03/nonlinear-01/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T09:31:50.890Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fnonlinear-characteristics",
+      "inputPath": ".agent/semester-03/nonlinear-01/pyodide.json"
     }
   ]
 }

@@ -44,6 +44,7 @@
 | W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
+| W13 | 非线性入口课长扫描来源保留与后续审查 | [ ] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;NONLINEAR-02/12执行时审查粘滑/吸引域/跳跃，不继承旧结论 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
@@ -111,7 +112,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| NONLINEAR-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md;.agent/semester-03/nonlinear-01/acceptance.md;.agent/semester-03/nonlinear-01/reconciliation.json |
 | NONLINEAR-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |

@@ -2036,51 +2036,51 @@ export const catalog: Chapter[] = [
         "slug": "nonlinear-characteristics",
         "title": "非线性系统",
         "subsections": [
-          {
-            "slug": "引言",
-            "title": "引言"
-          },
-          {
-            "slug": "什么是非线性系统",
-            "title": "什么是非线性系统？"
-          },
-          {
-            "slug": "常见非线性类型",
-            "title": "常见非线性类型"
-          },
-          {
-            "slug": "非线性的分类",
-            "title": "非线性的分类"
-          },
-          {
-            "slug": "为什么线性化会失效",
-            "title": "为什么线性化会失效？"
-          },
-          {
-            "slug": "何时需要非线性分析",
-            "title": "何时需要非线性分析？"
-          },
-          {
-            "slug": "实例与案例",
-            "title": "实例与案例"
-          },
-          {
-            "slug": "深入讨论",
-            "title": "深入讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+  {
+    "slug": "从哪里看见非线性",
+    "title": "从哪里看见非线性"
+  },
+  {
+    "slug": "叠加原理",
+    "title": "叠加原理"
+  },
+  {
+    "slug": "常见非线性",
+    "title": "常见非线性"
+  },
+  {
+    "slug": "分类与工具",
+    "title": "分类与工具"
+  },
+  {
+    "slug": "谐波与互调",
+    "title": "谐波与互调"
+  },
+  {
+    "slug": "局部近似",
+    "title": "局部近似"
+  },
+  {
+    "slug": "多种运动",
+    "title": "多种运动"
+  },
+  {
+    "slug": "限幅与积分",
+    "title": "限幅与积分"
+  },
+  {
+    "slug": "小结",
+    "title": "小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
         "prereq": [
           "modern/state-space",
           "math/ode-matrix-exponential"

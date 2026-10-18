@@ -633,3 +633,7 @@ LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE
 ### MODERN-09 本轮执行记录（2026-10-18）
 
 现代控制案例按重构专用Phase1–4，保留12主题/七步链/八题/五原实验用途，统一均匀杆质量矩阵、Q/R、噪声SDE时标和实际限幅输入，补双输入弹簧项/平衡映射与局部稳定边界。新增噪声React实际CARE，123工况/三种子、九参数与四初角实测；公开3秒未达与85度退出，六实验十一cell/41旧ID。PY-004/PY-005本地闭环，其它25项与W08/W09/W10保留；签发/实际master回执见checklist及.agent/semester-03/modern-09/acceptance.md。本轮未发布Pages，本对话只交付本课。
+
+### NONLINEAR-01 本轮执行记录（2026-10-18）
+
+非线性系统按重构专用技能完成Phase1–4：抽屉间隙/推力上限引入，保留六类模型、叠加/频谱/切线/周期/限幅教学目的与七题，形成11短H2、五实验五cell。修连续性/光滑性、任意回线耗能、THD跳变、局部到全局与PI推导，真实TS组件30组对独立Python闭式/FFT及轴范围核验，原始Notebook严格Jupyter与Pyodide全部通过，43旧ID保留。旧跳跃/粘滑长扫描完整保留source-before快照，移入W13待NONLINEAR-02/12分别审查，未冒称其完成。签发、实际master提交与命令输出见全局checklist及.agent/semester-03/nonlinear-01/acceptance.md。原25项Python待办及W08/W09/W10保持；本轮不发布Pages，下一课另开对话。
