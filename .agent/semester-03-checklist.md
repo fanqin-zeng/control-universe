@@ -46,7 +46,7 @@
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
 | W13 | 非线性入口课长扫描来源保留与后续审查 | [x] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-12/source-audit.md;.agent/semester-03/nonlinear-12/w13-audit.json;指定材料已审，未认证全局主张已撤销/限定，不继承完整吸引域或抖振保证 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
-| P08 | 明确换课时的逐课顺序例外登记与守卫 | [x] | .agent/semester-03/discrete-02/acceptance.md;.agent/semester-03/discrete-03/acceptance.md;.agent/semester-03/discrete-04/acceptance.md;scripts/check-semester03.test.mjs;按用户逐课登记DISCRETE-02/03/04暂缓DISCRETE-01，不自动放行其它课程 |
+| P08 | 明确换课时的逐课顺序例外登记与守卫 | [x] | .agent/semester-03/discrete-02/acceptance.md;.agent/semester-03/discrete-03/acceptance.md;.agent/semester-03/discrete-04/acceptance.md;.agent/semester-03/discrete-05/acceptance.md;scripts/check-semester03.test.mjs;按用户逐课登记DISCRETE-02/03/04/05暂缓DISCRETE-01，不自动放行其它课程 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
 | LP01 | 独立中文润色交接、完整计划与专用分支 | [x] | .agent/semester-03/zh-lang-edit/README.md;.agent/semester-03/zh-lang-edit/PLAN.md |
@@ -142,7 +142,7 @@
 | DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;commit:5e5a16dd088c9c330560e379b0b3c81513b4e61a |
 | DISCRETE-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/03-difference-equation.md;.agent/semester-03/discrete-03/acceptance.md;commit:3a579d90706c37f7b12ab085fccfffdaf061b399 |
 | DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;commit:149bac2092969d2d817f68f879a29376f073d7f4 |
-| DISCRETE-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| DISCRETE-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/05-discrete-stability-criteria.md;.agent/semester-03/discrete-05/acceptance.md;验收完成，待真实master提交回执 |
 | DISCRETE-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | DISCRETE-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

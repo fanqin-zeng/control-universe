@@ -46,6 +46,7 @@
 | DISCRETE-02 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-02”；上一课未验收草稿保留，当前课局部补足采样编号定义 | .agent/semester-03/discrete-02/acceptance.md |
 | DISCRETE-03 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-03”；先修DISCRETE-02与Z变换已交付，保留DISCRETE-01未验收草稿 | .agent/semester-03/discrete-03/acceptance.md |
 | DISCRETE-04 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-04”；先修差分方程与Z变换已交付，采样/保持定义本课局部补足，保留DISCRETE-01草稿 | .agent/semester-03/discrete-04/acceptance.md |
+| DISCRETE-05 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-05”；04已交付，保留01草稿，本课局部补足采样定义 | .agent/semester-03/discrete-05/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -713,3 +714,8 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### DISCRETE-04 本轮执行记录（2026-10-19）
 
 Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID、原三组实验及四组全部子题，纠正ZOH增益、离散模态指数、终值适用条件、反变换答案、频率方向和递推延迟。新增模态映射交互与SVG；实际TS十配置对独立60位mpmath，五Notebook六cell由严格原生内核、Pyodide及两种实际页面核验。证据.agent/semester-03/discrete-04/acceptance.md，真实master回执见checklist。PY-007关闭，Python待办25→24；其余任务元数据保留。必要fix索引历史七处元数据问题补齐后双向校验通过，未改历史正文。用户明确指定本课的顺序例外单独登记，DISCRETE-01草稿、proofreading及四处本地端口排除提交；仅本地Pages验收，不发布、不续写下一课。
+
+
+### DISCRETE-05 本轮执行记录（2026-10-19）
+
+离散系统稳定性按重构专用Phase1–4完成，保留原9H2/38标题主题/41旧课程ID、三实验组四cell和全部四题。纠正状态/BIBO与单位根条件、二阶根、采样PI数值、伪临界回退、理想PID不真有理、离散频响与裕度交点、Schur-Cohn定义及题3近似冒充精确上限；原正确w映射保留并补z1例外。新增Jury交互与SVG，五Notebook六cell、真实TS十三配置、独立状态矩阵指数/解析频响/SymPy、375px及Pages本地页面验收通过。证据.agent/semester-03/discrete-05/acceptance.md；真实master回执见全局checklist。PY-008/009实测修复，Python待办24→22，其余任务元数据保留。用户指定05的顺序例外独立登记，01草稿与用户批阅、本地端口四文件不提交；本次不发布Pages、不顺带生产下一课。

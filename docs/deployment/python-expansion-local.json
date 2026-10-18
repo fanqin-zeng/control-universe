@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T18:39:32.511Z",
-  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fz-transform-analysis",
+  "testedAt": "2026-10-18T19:13:40.764Z",
+  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-stability-criteria",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -6271,31 +6271,31 @@
     {
       "key": "discrete-sampled/discrete-stability-criteria",
       "title": "离散系统稳定性",
-      "sourceHash": "50b8151a553c0a157914e5263c7b1cbb983bd6ed1a7f4b5c91a92ca0307d5fcb",
+      "sourceHash": "28f262c87f829fd58fdb9aac11c979d562e073086fd839c3a8f598548670ee2b",
       "notebooks": [
         {
           "id": "discrete-sampled/discrete-stability-criteria#1",
-          "title": "实验 1",
+          "title": "实验1：系数、根与稳定三角形",
           "index": 1,
-          "line": 211,
+          "line": 172,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3976,
+              "milliseconds": 8466,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== Jury 判据与 w 变换对比 ===\n\n多项式                            Jury       w-Routh    直接求根      \n------------------------------------------------------------\nz² - 1.5z + 0.7                稳定         稳定         稳定        \n  根: 0.7500+0.3708j, 0.7500-0.3708j, |z| = 0.8367, 0.8367\nz² - 2.0z + 0.9                不稳定        不稳定        不稳定       \n  根: 1.3162, 0.6838, |z| = 1.3162, 0.6838\nz² - 2.1z + 0.9 (不稳定)          不稳定        不稳定        不稳定       \n  根: 1.5000, 0.6000, |z| = 1.5000, 0.6000\nz² + 0.5z + 0.5                稳定         稳定         稳定        \n  根: -0.2500+0.6614j, -0.2500-0.6614j, |z| = 0.7071, 0.7071\n"
+                  "text": "Jury,w-Routh,roots,radius: [[True, True, True, np.float64(0.836660027)], [False, False, False, np.float64(1.316227766)], [False, False, False, np.float64(1.5)], [True, True, True, np.float64(0.707106781)]]\ndefault roots: [[0.75, 0.370809924], [0.75, -0.370809924]]\ndefault Jury: [0.2, 3.2, 0.3]\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 99532
+                  "base64Length": 36708
                 }
               ]
             }
@@ -6303,33 +6303,44 @@
         },
         {
           "id": "discrete-sampled/discrete-stability-criteria#2",
-          "title": "实验 2",
+          "title": "实验2：采样周期与闭环极点",
           "index": 2,
-          "line": 341,
+          "line": 276,
           "cellCount": 2,
-          "status": "code",
-          "reason": "ValueError: Time steps `T` must be multiples of sampling time",
+          "status": "passed",
+          "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 1572,
-              "status": "error",
+              "milliseconds": 1137,
+              "status": "passed",
               "outputs": [
                 {
-                  "type": "error",
-                  "ename": "ValueError",
-                  "evalue": "Time steps `T` must be multiples of sampling time",
-                  "traceback": [
-                    "Traceback (most recent call last):",
-                    "  File \"<exec>\", line 54, in _cu_execute",
-                    "  File \"<cell>\", line 28, in <module>",
-                    "  File \"/lib/python3.12/site-packages/control/timeresp.py\", line 1509, in step_response",
-                    "    response = forced_response(sys, T, U, X0, squeeze=True, params=params)",
-                    "               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/control/timeresp.py\", line 1219, in forced_response",
-                    "    raise ValueError(\"Time steps `T` must be multiples of \"",
-                    "ValueError: Time steps `T` must be multiples of sampling time"
-                  ]
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "PI continuous PM,wgc: 16.506929854 1.303697875\nPI T,radius,PM,wgc: [[0.01, 0.997900372, 16.13376424, 1.303691275], [0.05, 0.990518875, 14.64762108, 1.303532889], [0.1, 0.983545718, 12.805509361, 1.303037882], [0.5, 1.006501878, -1.103257367, 1.287182644], [1.0, 1.159510252, -15.185909835, 1.238493894], [2.0, 1.54809973, -24.451667856, 1.091757947]]\nPI first crossing: 0.466247793 estimate: 0.441973989\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 205304
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 360,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "K10 continuous roots: [[-3.30890732, 0.0], [0.15445366, 1.731557033], [0.15445366, -1.731557033]]\nK10 original scan radius range: 1.020846592 2.127243376\nK1 crossing: 6.992659631 radii: [0.830680434, 1.0, 3.264820571]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 104072
                 }
               ]
             }
@@ -6337,59 +6348,77 @@
         },
         {
           "id": "discrete-sampled/discrete-stability-criteria#3",
-          "title": "实验 3",
+          "title": "实验3：可实现PID的稳定裕度",
           "index": 3,
-          "line": 585,
+          "line": 414,
           "cellCount": 1,
-          "status": "code",
-          "reason": "ValueError: Improper transfer function. `num` is longer than `den`.",
+          "status": "passed",
+          "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 13,
-              "status": "error",
+              "milliseconds": 790,
+              "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 连续系统稳定裕度 ===\n增益裕度: inf dB @ ω = 8.47 rad/s\n相位裕度: 54.0° @ ω = nan rad/s\n\n=== 离散系统稳定裕度 ===\nTs (s)     GM (dB)      PM (°)     ΔPM (°)    状态        \n-------------------------------------------------------\n"
+                  "text": "filtered continuous gm,PM,wpc,wgc: inf 49.733317371 nan 8.843667987\nfiltered T,gm,PM,wpc,wgc,radius: [[0.01, 28.960887444, 47.213735211, 86.112727473, 8.843730987, 0.996537635], [0.05, 5.673268516, 37.417016412, 30.691856501, 8.845279037, 0.982787144], [0.1, 2.728088802, 25.852960489, 18.076335759, 8.850668613, 0.965818659], [0.2, 1.229530099, 5.864156916, 10.230574753, 8.889942397, 0.932594899]]\n"
                 },
                 {
-                  "type": "error",
-                  "ename": "ValueError",
-                  "evalue": "Improper transfer function. `num` is longer than `den`.",
-                  "traceback": [
-                    "Traceback (most recent call last):",
-                    "  File \"<exec>\", line 54, in _cu_execute",
-                    "  File \"<cell>\", line 24, in <module>",
-                    "  File \"/lib/python3.12/site-packages/control/dtime.py\", line 83, in sample_system",
-                    "    return sysc.sample(Ts,",
-                    "           ^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/control/xferfcn.py\", line 1247, in sample",
-                    "    numd, dend, _ = cont2discrete(sys, Twarp, method, alpha)",
-                    "                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/scipy/signal/_lti_conversion.py\", line 437, in cont2discrete",
-                    "    sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,",
-                    "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/scipy/signal/_lti_conversion.py\", line 82, in tf2ss",
-                    "    raise ValueError(msg)",
-                    "ValueError: Improper transfer function. `num` is longer than `den`."
-                  ]
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 101840
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "1f8934f9f63af9de54aef6b5dde16453f20b05c72381d4e2adf5aa800796c1a1",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "discrete-sampled/discrete-stability-criteria",
-          "fromSourceHash": "1f8934f9f63af9de54aef6b5dde16453f20b05c72381d4e2adf5aa800796c1a1",
-          "toSourceHash": "50b8151a553c0a157914e5263c7b1cbb983bd6ed1a7f4b5c91a92ca0307d5fcb",
-          "notebookPayloadHash": "1dd5041629c2cefe58fc07f88d36264385b3550bf01dc167765b1f8e33148659",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "discrete-sampled/discrete-stability-criteria#4",
+          "title": "实验4：判据和Lyapunov复核",
+          "index": 4,
+          "line": 523,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2432,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "w polynomial: w**2/5 + 3*w/5 + 16/5\nw roots: [[-1.5, -3.708099244], [-1.5, 3.708099244]]\nQ1a roots: [-1.06394103, 0.56394103] stable: False\nQ1b roots: [[0.661708773, 0.358398078], [0.661708773, -0.358398078], [0.176582453, 0.0]] stable: True\nQ2 roots: [[0.9, 0.3], [0.9, -0.3]] radius: 0.948683298\nSchur-Cohn H: [[0.51, -0.4500000000000002], [-0.4500000000000002, 0.5100000000000002]] leading minors: [np.float64(0.51), np.float64(0.0576)]\nLyapunov P: [[17.708333333, -10.9375], [-10.9375, 9.677083333]] min eigenvalue: 2.041350027 residual: 0.0\nunit mode and Jordan k5: 1 5\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-stability-criteria#5",
+          "title": "实验5：采样约束与反馈增益",
+          "index": 5,
+          "line": 659,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 32,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q3 wgc,continuous PM,estimated Ts: 1.755317302 111.564257749 0.198861966\nQ3 exact first limit,loss at estimate: 0.191163749 10.421681806\nQ3 loss at .19,.20: 9.936400852 10.484163808\nQ4 K,root,strict: [[-1.0, 1.5, False], [-0.5, 1.0, False], [0.0, 0.5, True], [1.0, -0.5, True], [1.5, -1.0, False], [2.0, -1.5, False]]\nunit-circle step of 1/(z-1): [0, 1, 2, 3, 4, 5]\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -12646,15 +12675,15 @@
   "complete": true,
   "totals": {
     "lessons": 79,
-    "notebooks": 379,
-    "enabled": 356,
-    "codeOnly": 23
+    "notebooks": 381,
+    "enabled": 360,
+    "codeOnly": 21
   },
   "releaseTotals": {
     "lessons": 79,
-    "notebooks": 379,
-    "enabled": 355,
-    "codeOnly": 24
+    "notebooks": 381,
+    "enabled": 359,
+    "codeOnly": 22
   },
   "provenance": [
     {
@@ -13163,6 +13192,16 @@
       "testedAt": "2026-10-18T18:39:32.511Z",
       "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fz-transform-analysis",
       "inputPath": ".agent/semester-03/discrete-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T19:09:28.158Z",
+      "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-stability-criteria",
+      "inputPath": ".agent/semester-03/discrete-05/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T19:13:40.764Z",
+      "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-stability-criteria",
+      "inputPath": ".agent/semester-03/discrete-05/pyodide.json"
     }
   ]
 }
