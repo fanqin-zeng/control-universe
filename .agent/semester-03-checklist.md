@@ -82,7 +82,7 @@
 | CLASSIC-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/06-root-locus.md;.agent/semester-03/classic-06/acceptance.md;commit:605c2827164fcbd5c0d9cbed0a6055a79108a9db |
 | CLASSIC-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/07-pid-controller.md;.agent/semester-03/classic-07/acceptance.md;commit:b6d6322da07120330c796585a4864d95cf0bbd2f |
 | CLASSIC-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/08-compensator-design.md;.agent/semester-03/classic-08/acceptance.md;commit:5c65da108a2376b81e52b6aeed49c4cda86a36ef |
-| CLASSIC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| CLASSIC-09 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/09-frequency-response-design.md;.agent/semester-03/classic-09/acceptance.md |
 | CLASSIC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 

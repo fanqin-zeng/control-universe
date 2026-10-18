@@ -1416,12 +1416,12 @@ export const catalog: Chapter[] = [
             "title": "时滞对频率响应的影响"
           },
           {
-            "slug": "工程实例从bode图设计增益",
-            "title": "工程实例：从Bode图设计增益"
+            "slug": "增益设计",
+            "title": "增益设计"
           },
           {
-            "slug": "工程应用ziegler-nichols-整定法",
-            "title": "工程应用：Ziegler-Nichols整定法"
+            "slug": "临界整定",
+            "title": "临界整定"
           },
           {
             "slug": "深入讨论",

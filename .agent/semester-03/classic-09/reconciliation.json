@@ -1,0 +1,143 @@
+{
+  "sourceHash": "2d0ab54ec9b8838b746ea895af44057be9f67eac64de411ecb4417cd72946733",
+  "gainCases": 200,
+  "zetaCases": 142,
+  "delayCases": 5,
+  "maxFrequencyError": 1.1264116723563899e-13,
+  "maxPeakError": 6.187641663581514e-12,
+  "maxSecondError": 3.951458094064719e-7,
+  "defaults": {
+    "second": {
+      "mr": 1.1547005383792517,
+      "wr": 7.0710678118654755,
+      "wb": 12.72019649514069,
+      "mrDb": 1.2493873660830006,
+      "mp": 16.303353482158045
+    },
+    "delay": {
+      "wc": 3.0842328377167627,
+      "pm0": 17.964235916371386,
+      "limit": 0.10165739126810197,
+      "pm": 9.128559684529995,
+      "status": "渐近稳定"
+    },
+    "sensitivity": {
+      "wc": 3.0145428804977286,
+      "pm": 1.5763281077508111,
+      "gm": 0.8278537031645015,
+      "status": "渐近稳定",
+      "ms": 37.98639291683204,
+      "wms": 3.026220564957866
+    }
+  },
+  "notebooks": [
+    {
+      "index": 1,
+      "title": "二阶闭环指标",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "zeta,mr,db,wr,wb,mp 0.1 5.02518907629606 14.023048140744876 9.899494936611665 15.427711592634116 72.9247614287671\nzeta,mr,db,wr,wb,mp 0.3 1.7471413945365304 4.846561069116191 9.055385138137417 14.53689462308294 37.232610492658644\nzeta,mr,db,wr,wb,mp 0.43 1.2879413960366302 2.1979220437531137 7.938513714795736 13.461841854637138 22.39617418716186\nzeta,mr,db,wr,wb,mp 0.5 1.1547005383792517 1.2493873660830008 7.0710678118654755 12.72019649514069 16.303353482158048\nzeta,mr,db,wr,wb,mp 0.59 1.0496088941807364 0.4205500434756223 5.5118055118082685 11.614339889589528 10.069287584114015\nzeta,mr,db,wr,wb,mp 0.7071067811865475 1.0 0.0 0.0 10.0 4.3213918263772255\nzeta,mr,db,wr,wb,mp 1.0 1.0 0.0 0.0 6.435942529055827 0.0\nzeta,mr,db,wr,wb,mp 1.5 1.0 0.0 0.0 3.742391543388519 0.0\nminus3 exact dB -3.010299956639812\nGM 10dB ratio, 10x dB 3.1622776601683795 20.0\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 39424
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 2,
+      "title": "精确时滞与近似边界",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "delay wc,PM0,critical 3.0842328377167627 17.964235916371386 0.10165739126810197\ntau,PM,classification 0 17.964235916371386 stable\ntau,PM,classification 0.05 9.128559684529995 stable\ntau,PM,classification 0.10165739126810197 0.0 boundary\ntau,PM,classification 0.15 -8.54279277915279 unstable\ntau,PM,classification 0.3 -35.04982147467697 unstable\nexact crossing dReal/dtau 4.533536342499147\nPade order,critical 1 0.1024984394500781\nPade order,critical 2 0.1016587478038313\nPade order,critical 4 0.10165739126847415\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 38960
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 3,
+      "title": "频段预算与增益矛盾",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "PM45 wc,K,Kv 0.8442887702247601 11.088931702290383 1.1088931702290383\nplain 1 GMratio,GMdB,PM,wg,wc 110.0 40.8278537031645 83.7474690031226 3.1622776601683795 0.09950367120587844\nplain 1 closed poles [-10.01108515+0.j  -0.87471901+0.j  -0.11419584+0.j]\nformal peak gain,w,mag 1 0.5116695084686335 1.0806586659438193\nplain 10 GMratio,GMdB,PM,wg,wc 11.0 20.827853703164504 47.4039396296765 3.1622776601683795 0.7844079147578316\nplain 10 closed poles [-10.10860673+0.j          -0.44569663+0.88916282j\n  -0.44569663-0.88916282j]\nformal peak gain,w,mag 10 1.1197438324991693 1.6106918780969905\nplain 100 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.0145428804977277\nplain 100 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nformal peak gain,w,mag 100 3.026220564957866 37.98639291683206\nplain 110 GMratio,GMdB,PM,wg,wc 1.0 0.0 0.0 3.1622776601683795 3.1622776601683795\nplain 110 closed poles [-1.10000000e+01+0.j         -1.11022302e-16+3.16227766j\n -1.11022302e-16-3.16227766j]\nK110 pole on imaginary axis, infinite formal peak\nplain 200 GMratio,GMdB,PM,wg,wc 0.55 -5.192746210115122 -9.656631132230984 3.1622776601683795 4.233697548541338\nplain 200 closed poles [-11.62053229+0.j           0.31026615+4.13698567j\n   0.31026615-4.13698567j]\nformal peak gain,w,mag 200 4.171523783462141 6.050316859411573\nlag candidate GMratio,GMdB,PM,wg,wc 18.724535488741783 25.448221053808204 55.18105383037641 3.0790647393149606 0.5000000000000001\nlag candidate closed poles [-10.06080928+0.j          -0.44358106+0.55516141j\n  -0.44358106-0.55516141j  -0.05481333+0.j        ]\ncandidate K,beta,T,Kv 100.0 0.055694620644496665 359.10110830382774 10.0\nK10 S@.01,T@100 0.010001105021545071 9.949885255754102e-06\nK100 S@.01,T@100 0.0010000609994200561 9.949982727465608e-05\ncandidate S@.01,T@100 0.0036674641229137027 5.541548850354611e-06\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 39332
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 4,
+      "title": "临界整定与完整分子",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "ZN Ku,wu,Tu,Kp,Ti,Td 8.0 1.7320508075688772 3.6275987284684357 4.8 1.8137993642342178 0.45344984105855446\ncorrect numerator,denominator [3.94784176 8.70623695 4.8       ] [1.81379936 0.        ]\nold still-wrong formula GMratio,GMdB,PM,wg,wc 0.9140725213670011 -0.7803869303985629 0.1770550282490433 1.0675489136327303 1.1015609814625635\nold still-wrong formula closed poles [-1.49881641e+00+1.30756162j -1.49881641e+00-1.30756162j\n -1.18358773e-03+1.1014962j  -1.18358773e-03-1.1014962j ]\nZN scale 1 GMratio,GMdB,PM,wg,wc inf inf 30.619096497197518 nan 1.3754511416780963\nZN scale 1 closed poles [-0.40432145+1.42832886j -0.40432145-1.42832886j -1.09567855+0.02057223j\n -1.09567855-0.02057223j]\nZN scale 0.5 GMratio,GMdB,PM,wg,wc inf inf 42.36845531262881 nan 0.9034809438974132\nZN scale 0.5 closed poles [-0.40954833+0.97180555j -0.40954833-0.97180555j -1.09045167+0.02623492j\n -1.09045167-0.02623492j]\nZN scale 0.25 GMratio,GMdB,PM,wg,wc inf inf 56.37054053308617 nan 0.5544545321900975\nZN scale 0.25 closed poles [-1.08285897+0.03155433j -1.08285897-0.03155433j -0.41714103+0.62428705j\n -0.41714103-0.62428705j]\nZN test w,absC,absG,absL 1.0 4.822937935105664 0.3535533905932738 1.7051660595775293\nZN test w,absC,absG,absL 1.3 4.8652029297627655 0.2266582754088076 1.102738505573906\nZN test w,absC,absG,absL 1.4 4.937453430502486 0.1963642546348299 0.9695393626748045\n"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 5,
+      "title": "灵敏度通道与反例",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "channels 10 GMratio,GMdB,PM,wg,wc 11.0 20.827853703164504 47.4039396296765 3.1622776601683795 0.7844079147578316\nchannels 10 closed poles [-10.10860673+0.j          -0.44569663+0.88916282j\n  -0.44569663-0.88916282j]\nat crossover K,S,T,identity 10 1.2438452773346238 1.2438452773346231 1.2438452773346236\nchannels 100 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.0145428804977277\nchannels 100 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nat crossover K,S,T,identity 100 36.34876919106364 36.34876919106361 36.34876919106399\nchannels 200 GMratio,GMdB,PM,wg,wc 0.55 -5.192746210115122 -9.656631132230984 3.1622776601683795 4.233697548541338\nchannels 200 closed poles [-11.62053229+0.j           0.31026615+4.13698567j\n   0.31026615-4.13698567j]\nat crossover K,S,T,identity 200 5.9403376445346305 5.940337644534629 5.940337644534631\nno-peak counterexample S=s/(s+1),T=1/(s+1) verified\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "RHP 1 GMratio,GMdB,PM,wg,wc 5.999999999999998 15.56302500767287 inf 2.82842712474619 nan\nRHP 1 closed poles [-1.25+1.19895788j -1.25-1.19895788j]\nLHP 1 GMratio,GMdB,PM,wg,wc inf inf inf nan nan\nLHP 1 closed poles [-2. +0.j -1.5+0.j]\nRHP 2 GMratio,GMdB,PM,wg,wc 2.999999999999999 9.542425094393247 inf 2.82842712474619 nan\nRHP 2 closed poles [-1.+1.73205081j -1.-1.73205081j]\nLHP 2 GMratio,GMdB,PM,wg,wc inf inf inf nan nan\nLHP 2 closed poles [-2.+0.j -2.+0.j]\nRHP 4 GMratio,GMdB,PM,wg,wc 1.4999999999999996 3.5218251811136225 38.21321070173815 2.82842712474619 1.7320508075688776\nRHP 4 closed poles [-0.5+2.39791576j -0.5-2.39791576j]\nLHP 4 GMratio,GMdB,PM,wg,wc inf inf 120.0 nan 1.7320508075688776\nLHP 4 closed poles [-3.+0.j -2.+0.j]\n10dB ratio 3.1622776601683795 10x dB 20.0\n"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 6,
+      "title": "十一题完整复算",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Q1 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.0145428804977277\nQ1 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nQ2 zeta0.1 GMratio,GMdB,PM,wg,wc inf inf 11.420619089024342 nan 9.90050493663833\nQ2 zeta0.1 closed poles [-1.+9.94987437j -1.-9.94987437j]\nQ2 zeta0.5 GMratio,GMdB,PM,wg,wc inf inf 51.827292372987756 nan 7.861513777574234\nQ2 zeta0.5 closed poles [-5.+8.66025404j -5.-8.66025404j]\nQ2 zeta1.0 GMratio,GMdB,PM,wg,wc inf inf 76.34541525402449 nan 4.858682717566458\nQ2 zeta1.0 closed poles [-10.+0.j -10.+0.j]\nQ2 zeta1.5 GMratio,GMdB,PM,wg,wc inf inf 83.69781427986959 nan 3.3131892286201174\nQ2 zeta1.5 closed poles [-26.18033989+0.j  -3.81966011+0.j]\nQ2 small-z degree coefficient 114.59155902616465\nQ3 clarified model GMratio,GMdB,PM,wg,wc 0.11000000000000001 -19.172146296835496 -34.324692655715495 3.1622776601683795 8.664742329543396\nQ3 clarified model closed poles [-14.85721039+0.j           1.9286052 +7.97420017j\n   1.9286052 -7.97420017j]\nQ4 GMratio,GMdB,PM,wg,wc 1.9999999999999991 6.02059991327962 21.386389751875015 1.9999999999999996 1.3646556076560388\nQ4 closed poles [-3.50975533+0.j         -0.24512233+1.48972353j -0.24512233-1.48972353j]\nQ5 original rejected G2 GMratio,GMdB,PM,wg,wc inf inf 46.45989390573777 nan 1.4648536400676715\nQ5 original rejected G2 closed poles [-19.59951011+0.j          -0.70024495+1.43552819j\n  -0.70024495-1.43552819j]\nQ5 timescale 1 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 3.0842328377167627\nQ5 timescale 1 closed poles [-0.5+3.122499j -0.5-3.122499j]\nQ5 timescale 2 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 6.168465675433525\nQ5 timescale 2 closed poles [-1.+6.244998j -1.-6.244998j]\nQ5 timescale 4 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 12.33693135086705\nQ5 timescale 4 closed poles [-2.+12.489996j -2.-12.489996j]\nQ6 mr,db,wr,wb,mp 1.7471413945365304 4.846561069116191 9.055385138137417 14.53689462308294 37.232610492658644\nQ7 GMratio,GMdB,PM,wg,wc 1.6203774750922353 4.192323948301362 44.99999999999994 0.7265425280053609 0.509525449494429\nQ7 closed poles [-2.12232624+0.j         -1.34681788+1.06739568j -1.34681788-1.06739568j\n -0.092019  +0.65968681j -0.092019  -0.65968681j]\nQ7 K,heuristicMp,heuristicRise 1.7807197670523842 20.534602842208866 3.5326989099092714\nQ7 actual grid step info {'RiseTime': 2.016, 'SettlingTime': nan, 'SettlingMin': 0.39674179272806365, 'SettlingMax': 1.017946683930834, 'Overshoot': 58.95956894427095, 'Undershoot': 0.0, 'Peak': 1.017946683930834, 'PeakTime': 6.191, 'SteadyStateValue': 0.6403808784155122}\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 29308
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Q8 wc,K,PM_K2,totalCritical,remaining 2.3695007318473906 2.571873581307083 70.38039941203871 1.2091995761561452 0.7091995761561452\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 23928
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Q9 RHP GMratio,GMdB,PM,wg,wc 1.4999999999999996 3.5218251811136225 38.21321070173815 2.82842712474619 1.7320508075688776\nQ9 RHP closed poles [-0.5+2.39791576j -0.5-2.39791576j]\nQ9 LHP GMratio,GMdB,PM,wg,wc inf inf 120.0 nan 1.7320508075688776\nQ9 LHP closed poles [-3.+0.j -2.+0.j]\nQ10 ZN GMratio,GMdB,PM,wg,wc inf inf 30.619096497197518 nan 1.3754511416780963\nQ10 ZN closed poles [-0.40432145+1.42832886j -0.40432145-1.42832886j -1.09567855+0.02057223j\n -1.09567855-0.02057223j]\nQ10 candidate GMratio,GMdB,PM,wg,wc inf inf 56.37054053308617 nan 0.5544545321900975\nQ10 candidate closed poles [-1.08285897+0.03155433j -1.08285897-0.03155433j -0.41714103+0.62428705j\n -0.41714103-0.62428705j]\nQ11 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 31.622776601683793 30.145428804977275\nQ11 closed poles [-109.22663214 +0.j           -0.38668393+30.25521622j\n   -0.38668393-30.25521622j]\nQ11 w,absS,dB 1 0.010060942557329552 -39.94722661170185\nQ11 w,absS,dB 10 0.15888262673348072 -15.978471775963548\nQ11 percent 1.0060942557329553\nQ7 GMdB 4.192323948301362\n"
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "pass": true
+}
