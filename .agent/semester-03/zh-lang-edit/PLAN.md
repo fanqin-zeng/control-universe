@@ -40,7 +40,7 @@
 | 32 | MODERN-03 | 线性系统稳定性 | content/modern/lyapunov-modern.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-03.md) |
 | 33 | MODERN-04 | 状态反馈 | content/modern/state-feedback.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-04.md) |
 | 34 | MODERN-05 | 状态观测器 | content/modern/state-observer.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-05.md) |
-| 35 | MODERN-06 | 最优控制 | content/modern/optimal-control-basics.mdx | 已完成 | 待润色 | — |
+| 35 | MODERN-06 | 最优控制 | content/modern/optimal-control-basics.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-06.md) |
 | 36 | MODERN-07 | LQR控制 | content/modern/lqr-controller.mdx | 已完成 | 待润色 | — |
 | 37 | MODERN-08 | 多变量系统 | content/modern/multivariable-systems.mdx | 已完成 | 待润色 | — |
 | 38 | MODERN-09 | 现代控制案例 | content/modern/modern-case-study.mdx | 已完成 | 待润色 | — |
