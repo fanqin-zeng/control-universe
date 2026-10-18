@@ -23,7 +23,7 @@
 | 15 | MATH-15 | 微分几何入门 | content/math/diff-geometry.mdx | 已完成 | 待合入 | [润色记录](records/MATH-15.md) |
 | 16 | MATH-16 | 图论基础 | content/math/graph-theory.mdx | 已完成 | 待合入 | [润色记录](records/MATH-16.md) |
 | 17 | MATH-17 | 博弈论基础 | content/math/game-theory-math.mdx | 已完成 | 待合入 | [润色记录](records/MATH-17.md) |
-| 18 | MATH-18 | 数值方法 | content/math/numerical-methods.mdx | 已完成 | 待润色 | — |
+| 18 | MATH-18 | 数值方法 | content/math/numerical-methods.mdx | 已完成 | 待合入 | [润色记录](records/MATH-18.md) |
 | 19 | CLASSIC-01 | 系统建模 | content/classic/system-modeling.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-01.md) |
 | 20 | CLASSIC-02 | 传递函数 | content/classic/transfer-function.mdx | 已完成 | 待润色 | — |
 | 21 | CLASSIC-03 | 时域分析 | content/classic/time-domain-analysis.mdx | 已完成 | 待润色 | — |
