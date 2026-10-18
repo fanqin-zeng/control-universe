@@ -33,3 +33,5 @@
 ## 合并回执
 
 验收后--no-ff合master；真实课程提交与合并hash在完成合并后追加，全局checklist据此勾最后一列。下一课CLASSIC-10需另起对话。
+
+课程提交f7ce82d0d0e23b7c9fb1b3cea49c1ad6a55de2ed；实际--no-ff课程合并950cbc5627c0f6ea70709fafa0c8c9d1a0c361e7。取得真实hash后勾全局checklist最后一列；合并后check-merged.log与semester-merged.log记录21PASS/2已知WARN/0FAIL、merged27。回执单独提交并合master后删除工作包分支，未推送/发布。
