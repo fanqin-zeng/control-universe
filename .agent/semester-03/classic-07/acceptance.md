@@ -38,3 +38,5 @@ W06/W07/W08/W09与27Python待办仍开放，不把浏览器Pyodide通过当作�
 ## 合并
 
 正文/讨论日志/台账/清单/验收同提交；实际no-ff后回填课程提交与合并hash，再勾全局合并格。本轮不发布gh-pages。
+
+实际课程提交：11473277bb77fc1955f9fbdfdde82ab890edb16e。master no-ff合并：b6d6322da07120330c796585a4864d95cf0bbd2f。全局checklist据实勾合并格；合并后npm run check与node scripts/check-semester03.mjs输出见check-merged.log/semester-merged.log（均退出码0）。未推送或发布gh-pages。
