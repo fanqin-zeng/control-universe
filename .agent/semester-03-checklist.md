@@ -139,7 +139,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | DISCRETE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 未验收检查点保留于 git stash：DISCRETE-01 unfinished checkpoint before DISCRETE-02；不计交付，恢复后继续 |
-| DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;等待本课进入master的真实提交回执 |
+| DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;commit:5e5a16dd088c9c330560e379b0b3c81513b4e61a |
 | DISCRETE-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

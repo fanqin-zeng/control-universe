@@ -33,3 +33,5 @@
 统计刷新命令首次退出1，原因是旧OUTLINE两行与tracker统计一行待更新；自动重算后独立运行check退出0，未掩盖失败输出（refresh.log保留）。
 
 本地端口四处改动不提交：scripts/serve.mjs、scripts/serve-pages.mjs、scripts/verify-lesson.mjs、components/wiki/jupyter-notebook.tsx。用户proofreading修改保持。DISCRETE-01未完成草稿在git stash保存，交付后恢复至工作区；本课不夹带该课正文、组件、注册或签发。
+
+master交付提交：5e5a16dd088c9c330560e379b0b3c81513b4e61a；合入列据此勾选，课程生产计51。阶段与顺序例外复核输出见semester-check.log（合入51）。
