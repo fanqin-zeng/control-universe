@@ -617,3 +617,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### MODERN-05 本轮执行记录（2026-10-18）
 
 状态观测器使用重构技能Phase1–4，保留九主题、三例十题与原两实验用途。小车只测位置引入，真实SVG；纠正Q2伴随型/增益、Q5增广矩阵、例3根虚部，补可检测、分离性瞬态/实际输入/已知D、降阶z完整实现与偏差边界。真实组件26档×401对独立ODE，五原始实验严格内核/Pyodide，31旧ID兼容。最终签发及提交以全局checklist与.agent/semester-03/modern-05/acceptance.md为准；27项Python待办及W08/W09/W10不关闭，未发布Pages，MODERN-06另开会话。
+
+### MODERN-06 本轮执行记录（2026-10-18）
+
+最优控制按重构专用技能Phase1–4，保留10主题、四例十题与原BVP/代价cell用途。小车按时停车的目标冲突引入与任务SVG；修例3方向、Q1完整积分、Q5/Q7中间轨迹及Q9链式，补PMP正常型/必要与充分/终端条件/奇异弧、同T基线与可行性。真实组件三图全46档×401对独立Gramian/ODE，五实验六cell严格内核与Pyodide，35旧ID兼容。签发/实际master提交见checklist与.agent/semester-03/modern-06/acceptance.md；W08/W09/W10及27Python待办不关闭，未发布Pages，MODERN-07另开会话。

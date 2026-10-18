@@ -1,0 +1,46 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8891 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+modern/optimal-control-basics  [FAIL]  5 个 notebook · 6 个 cell
+      FAIL S6  Notebook 3 cell 1（:753）执行报错 AssertionError:
+          ---------------------------------------------------------------------------
+          AssertionError                            Traceback (most recent call last)
+          Cell In[2], line 13
+      9     delta=quad(lambda time:(np.sinh(time)/np.sinh(1)+h(time))**2+(np.cosh(time)/np.sinh(1)+hd(time))**2,0,1)[0]-J1
+     10     expected=quad(lambda time:h(time)**2+hd(time)**2,0,1)[0]
+     11     assert abs(delta-expected)<1e-10
+     12 slope=sp.symbols('slope',real=True)
+---> 13 assert sp.diff(sp.sqrt(1+slope*slope),slope,2)==(1+slope*slope)**(-sp.Rational(3,2))
+     14 print('example2/Q2 straight length sqrt2=',np.sqrt(2),'global length bound is endpoint distance')
+     15 assert sp.integrate(sp.Rational(1,2),(t,0,1))==sp.Rational(1,2)
+     16 print('Q3 u=-1, x=1-t, J=.5')
+
+          AssertionError:
+      FAIL S6  Notebook 4 cell 1（:796）执行报错 AssertionError:
+          ---------------------------------------------------------------------------
+          AssertionError                            Traceback (most recent call last)
+          Cell In[2], line 17
+     13 second=solve_ivp(lambda time,z:[z[1],1],(1,2),first.y[:,-1],rtol=1e-12,atol=1e-13,dense_output=True)
+     14 assert np.max(abs(first.y[:,-1]-[.5,-1]))<1e-12 and np.max(abs(second.y[:,-1]))<1e-12
+     15 for times,solution,control in [(np.linspace(0,1,201),first.sol,-1),(np.linspace(1,2,201),second.sol,1)]:
+     16     values=solution(times);H=1+values[1]+(times-1)*control
+---> 17     assert np.max(abs(H))<1e-12
+     18 assert abs(quad(lambda time:abs(1-time),0,2)[0]-1)<1e-12
+     19 print('Q7 switch [q,v]=',first.y[:,-1],'final=',second.y[:,-1],'T=2 lower bound T^2/4=1')
+     20 for T in [1.,1.5,2.]:print('displacement bound at T=',T,':',T*T/4)
+
+          AssertionError:
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 5 个 notebook · 6 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 6 个 cell，其中 error 2 个
+      按判据：S6×2
+      FAIL 课程：modern/optimal-control-basics
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/modern-06/notebooks.json

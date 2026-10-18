@@ -1814,28 +1814,28 @@ export const catalog: Chapter[] = [
         "title": "最优控制",
         "subsections": [
           {
-            "slug": "为什么需要最优控制",
-            "title": "为什么需要最优控制"
+            "slug": "为什么要定义代价",
+            "title": "为什么要定义代价"
           },
           {
-            "slug": "最优控制问题的数学表述",
-            "title": "最优控制问题的数学表述"
+            "slug": "任务与代价",
+            "title": "任务与代价"
           },
           {
-            "slug": "变分法对泛函求极值",
-            "title": "变分法：对泛函求极值"
+            "slug": "变分法",
+            "title": "变分法"
           },
           {
-            "slug": "hamilton-函数与极小值原理",
-            "title": "Hamilton 函数与极小值原理"
+            "slug": "极小值原理",
+            "title": "极小值原理"
           },
           {
-            "slug": "最小时间问题与-bang-bang-控制",
-            "title": "最小时间问题与 Bang-Bang 控制"
+            "slug": "最短时间",
+            "title": "最短时间"
           },
           {
-            "slug": "线性二次型最优控制引向-lqr",
-            "title": "线性二次型最优控制——引向 LQR"
+            "slug": "线性二次型",
+            "title": "线性二次型"
           },
           {
             "slug": "深入讨论",

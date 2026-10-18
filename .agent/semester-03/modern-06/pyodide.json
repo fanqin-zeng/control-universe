@@ -1,0 +1,164 @@
+{
+  "testedAt": "2026-10-18T07:44:20.577Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/optimal-control-basics",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "modern/optimal-control-basics",
+      "title": "最优控制",
+      "sourceHash": "693b5bb754fa8f2e2289e781d60ddbbb99dc2f878f67f1c7d97d9b1a4c9959ff",
+      "notebooks": [
+        {
+          "id": "modern/optimal-control-basics#1",
+          "title": "边值求解与完整代价",
+          "index": 1,
+          "line": 298,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6625,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "lambda0= 0.03731472072756636 C= 1.018657360363774 u0= -0.03731472072756636 uT= -0.2757205647718519 boundary residual= [0.0000000e+00 4.5279189e-28]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 69204
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "J numerical/analytic= 0.018657360363781555 0.01865736036377405 constant c= -0.15651764274966565 Jc= 0.024497772491911964 saving %= 23.840584404423492\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#2",
+          "title": "终时扫描与同端点比较",
+          "index": 2,
+          "line": 337,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 327,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "T= 0.5 J= 0.581976706869332 Jc= 0.5940510016239913 saving %= 2.032535038515393 peak |u|= 1.919034751334961\nT= 2.0 J= 0.01865736036378536 Jc= 0.024497772491911964 saving %= 23.84058440437733 peak |u|= 0.2757205647719076\nT= 5.0 J= 4.5401991010528476e-05 Jc= 0.00011504493471956368 saving %= 60.535428073212024 peak |u|= 0.013476505830830337\nNine same-endpoint perturbations verified: [{'T': 0.5, 'amplitude': -0.2, 'extra': 0.20239208802178718}, {'T': 0.5, 'amplitude': 0.0, 'extra': 0.0}, {'T': 0.5, 'amplitude': 0.2, 'extra': 0.20239208802178718}, {'T': 2.0, 'amplitude': -0.2, 'extra': 0.0693480220054468}, {'T': 2.0, 'amplitude': 0.0, 'extra': 0.0}, {'T': 2.0, 'amplitude': 0.2, 'extra': 0.0693480220054468}, {'T': 5.0, 'amplitude': -0.2, 'extra': 0.06973920880217872}, {'T': 5.0, 'amplitude': 0.0, 'extra': 0.0}, {'T': 5.0, 'amplitude': 0.2, 'extra': 0.06973920880217872}]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#3",
+          "title": "变分与习题核验",
+          "index": 3,
+          "line": 739,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 293,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 J= 1.3130352854993317 straight= 1.3333333333333333 gap= 0.020298047834001576\nexample2/Q2 straight length sqrt2= 1.4142135623730951 global length bound is endpoint distance\nQ3 u=-1, x=1-t, J=.5\nQ4 TPBVP matrix= [[-2. -1.]\n [-1.  2.]] initial costate= 0.7099547665685978 terminal x= 0.0\nQ8 lambda=.5, u=-.5, x(1)=.5, J= 1/4\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#4",
+          "title": "最短时间的可行性与下界",
+          "index": 4,
+          "line": 782,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 133,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "x0= 1.0 T= 0.6931471805599453 lambda0= 0.5 H=0, terminal residual= 5.155869221146192e-14\nx0= 2.0 T= 1.0986122886681098 lambda0= 0.3333333333333333 H=0, terminal residual= 1.0479984935418685e-13\nQ7 switch [q,v]= [ 0.5 -1. ] final= [3.88578059e-16 1.11022302e-16] T=2 lower bound T^2/4=1\ndisplacement bound at T= 1.0 : 0.25\ndisplacement bound at T= 1.5 : 0.5625\ndisplacement bound at T= 2.0 : 1.0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 47608
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#5",
+          "title": "极小值条件与输入边界",
+          "index": 5,
+          "line": 823,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sigma= -2.0 pointwise chosen u= 1 H input term= -2.0\nsigma= 0.0 pointwise chosen u= 0 H input term= -0.0\nsigma= 3.0 pointwise chosen u= -1 H input term= -3.0\nexample3 fixed-time H= -0.038010914919035556 constant, not zero\nT=.5 clipped |u|<=1 terminal x= 0.21306131942531983 does not satisfy x(T)=0; time lower bound ln2= 0.6931471805599453\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "modern/optimal-control-basics",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 5,
+    "enabled": 5,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 5,
+    "codeOnly": 0
+  }
+}

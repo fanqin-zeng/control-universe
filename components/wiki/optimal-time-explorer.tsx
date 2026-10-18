@@ -1,76 +1,18 @@
 "use client";
-
-import { useMemo, useState } from "react";
-import { useECharts } from "@/components/wiki/use-echarts";
-
-/**
- * 终端时间探索器（modern/optimal-control-basics）
- * 最小能量问题 ẋ=−x+u, x(0)=1, x(t_f)=0, J=½∫u²。
- * 解析解：x*=(e^{2tf−t}−e^t)/(e^{2tf}−1)、u*=−2e^t/(e^{2tf}−1)、J*=1/(e^{2tf}−1)。
- * 滑块 t_f∈[0.5,5]，默认 2 复现例3 手算链（λ(0)=0.0373、J*=0.0187）。
- */
-export function OptimalTimeExplorer() {
-  const [tf, setTf] = useState(2);
-  const d = useMemo(() => {
-    const D = Math.exp(2 * tf) - 1;
-    const t: number[] = [], x: number[] = [], u: number[] = [];
-    for (let i = 0; i <= 400; i++) {
-      const ti = (tf * i) / 400;
-      t.push(ti);
-      x.push((Math.exp(2 * tf - ti) - Math.exp(ti)) / D);
-      u.push((-2 * Math.exp(ti)) / D);
-    }
-    const tfC: number[] = [], Jc: number[] = [];
-    for (let i = 0; i <= 200; i++) {
-      const v = 0.5 + (4.5 * i) / 200;
-      tfC.push(v);
-      Jc.push(1 / (Math.exp(2 * v) - 1));
-    }
-    return { t, x, u, lam0: 2 / D, J: 1 / D, tfC, Jc };
-  }, [tf]);
-  const left = useMemo(() => ({
-    title: { text: `最优轨迹与控制（t_f=${tf.toFixed(1)}）`, left: "center", textStyle: { fontSize: 14 } },
-    tooltip: { trigger: "axis" as const },
-    legend: { top: 26, data: ["x*(t)", "u*(t)"] },
-    grid: { top: 60, left: 55, right: 15, bottom: 45 },
-    xAxis: { type: "value" as const, name: "t", min: 0, max: 5 },
-    yAxis: { type: "value" as const, name: "x / u", min: -0.15, max: 1.05 },
-    series: [
-      { name: "x*(t)", type: "line" as const, data: d.t.map((v, i) => [v, d.x[i]]), lineStyle: { width: 2, color: "#2563eb" }, symbol: "none" },
-      { name: "u*(t)", type: "line" as const, data: d.t.map((v, i) => [v, d.u[i]]), lineStyle: { width: 2, color: "#dc2626", type: "dashed" as const }, symbol: "none" },
-    ],
-    animation: false,
-  }), [d, tf]);
-  const right = useMemo(() => ({
-    title: { text: "最优代价 J*(t_f) = 1/(e^{2t_f}−1)", left: "center", textStyle: { fontSize: 14 } },
-    tooltip: { trigger: "axis" as const },
-    grid: { top: 50, left: 60, right: 15, bottom: 45 },
-    xAxis: { type: "value" as const, name: "t_f", min: 0.5, max: 5 },
-    yAxis: { type: "log" as const, name: "J*", min: 1e-5, max: 1 },
-    series: [
-      { type: "line" as const, data: d.tfC.map((v, i) => [v, d.Jc[i]]), lineStyle: { width: 2, color: "#16a34a" }, symbol: "none" },
-      { type: "scatter" as const, data: [[tf, d.J]], itemStyle: { color: "#dc2626" }, symbolSize: 10 },
-    ],
-    animation: false,
-  }), [d, tf]);
-  const lref = useECharts(left);
-  const rref = useECharts(right);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px" }}>
-        <label style={{ fontSize: 14 }}>终端时间 t_f:</label>
-        <input type="range" min={0.5} max={5} step={0.1} value={tf} onChange={(e) => setTf(parseFloat(e.target.value))} style={{ flex: 1 }} />
-        <span style={{ fontSize: 14, minWidth: 32 }}>{tf.toFixed(1)}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div ref={lref} style={{ height: 360 }} />
-        <div ref={rref} style={{ height: 360 }} />
-      </div>
-      <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, fontSize: 14, lineHeight: 1.9 }}>
-        <strong>读数（默认 t_f=2 复现例3 手算链）：</strong><br />
-        λ(0) = 2/(e^(2t_f)−1) = {d.lam0.toFixed(4)}（例3：0.0373）· J* = {d.J.toFixed(4)}（例3：0.0187）· u*(0) = −λ(0) = {(0 - d.lam0).toFixed(4)}<br />
-        时间换能量：t_f→∞ 时 J*→0（不花能量慢慢漂），t_f→0 时 J*→∞（瞬间到位需无穷能量）——右图对数刻度下的陡降曲线
-      </div>
-    </div>
-  );
+import {useMemo,useState} from "react";
+import {useECharts} from "@/components/wiki/use-echarts";
+import {optimalTrajectory} from "@/lib/optimal-trajectory";
+export function OptimalTimeExplorer(){
+ const [T,setT]=useState(2);
+ const d=useMemo(()=>Array.from({length:401},(_,i)=>({t:T*i/400,...optimalTrajectory(T,T*i/400)})),[T]);
+ const costs=useMemo(()=>Array.from({length:201},(_,i)=>{const tf=.5+4.5*i/200;return [tf,optimalTrajectory(tf,0).J];}),[]);
+ const stateOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis" as const},legend:{top:0,data:["最优状态"]},grid:{top:42,left:50,right:18,bottom:42},xAxis:{type:"value" as const,min:0,max:5,name:"t",nameLocation:"middle" as const,nameGap:26},yAxis:{type:"value" as const,min:-.05,max:1.05,name:"x"},series:[{name:"最优状态",type:"line" as const,symbol:"none",data:d.map(v=>[v.t,v.x]),itemStyle:{color:"#2563eb"},lineStyle:{color:"#2563eb"}}]}),[d]);
+ const controlOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis" as const},legend:{top:0,data:["最优输入","同终时恒定输入"]},grid:{top:42,left:50,right:18,bottom:42},xAxis:{type:"value" as const,min:0,max:5,name:"t",nameLocation:"middle" as const,nameGap:26},yAxis:{type:"value" as const,min:-2.1,max:.05,name:"u"},series:[{name:"最优输入",type:"line" as const,symbol:"none",data:d.map(v=>[v.t,v.u]),itemStyle:{color:"#b45309"},lineStyle:{color:"#b45309"}},{name:"同终时恒定输入",type:"line" as const,symbol:"none",data:[[0,d[0].c],[T,d[0].c]],itemStyle:{color:"#64748b"},lineStyle:{color:"#64748b",type:"dashed" as const}}]}),[d,T]);
+ const costOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis" as const},legend:{top:0,data:["最优代价","当前终时"]},grid:{top:42,left:60,right:18,bottom:42},xAxis:{type:"value" as const,min:.5,max:5,name:"T",nameLocation:"middle" as const,nameGap:26},yAxis:{type:"log" as const,min:1e-5,max:1,name:"J"},series:[{name:"最优代价",type:"line" as const,symbol:"none",data:costs,itemStyle:{color:"#15803d"},lineStyle:{color:"#15803d"}},{name:"当前终时",type:"scatter" as const,data:[[T,d[0].J]],itemStyle:{color:"#b45309"}}]}),[costs,d,T]);
+ const r1=useECharts(stateOption),r2=useECharts(controlOption),r3=useECharts(costOption),v=d[0];
+ return <section aria-label="终时与代价探索" style={{display:"flex",flexDirection:"column",gap:12,margin:"20px 0",color:"#1e293b"}}>
+ <label style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"center",fontSize:14}}>终时T<input aria-label="终端时间" type="range" min={.5} max={5} step={.1} value={T} onChange={e=>setT(Number(e.target.value))} style={{flex:"1 1 130px",minWidth:0}}/><span>{T.toFixed(1)}</span><button type="button" onClick={()=>setT(2)} style={{border:"1px solid #94a3b8",padding:"4px 9px",borderRadius:4}}>恢复默认</button></label>
+ <p style={{margin:0,fontSize:14}}>无量纲一阶模型；x(0)=1，x(T)=0，无输入幅值约束。每条恒定基线与当前方案使用相同终时；改变T就是改变任务。</p>
+ <div ref={r1} style={{height:270,width:"100%",minWidth:0}}/><div ref={r2} style={{height:270,width:"100%",minWidth:0}}/><div ref={r3} style={{height:270,width:"100%",minWidth:0}}/>
+ <div role="status" style={{padding:12,background:"#f1f5f9",borderRadius:8,fontSize:14,lineHeight:1.8}}>λ(0)={v.lambda0.toFixed(6)}；J*={v.J.toFixed(6)}<br/>u(0)={v.u.toFixed(6)}；u(T)={d[400].u.toFixed(6)}；x(T)={d[400].x.toFixed(6)}<br/>恒定输入c={v.c.toFixed(6)}，代价={v.Jconstant.toFixed(6)}，二次努力节省={v.saving.toFixed(4)}%<br/>最大|u|={v.peak.toFixed(6)}；{v.peak>1?"超过1，不满足另立的|u|≤1合同":"此解幅值不超过1，仍不是最短时间的比较"}。<br/>等待更久可降低此稳定教学模型的二次努力，不是普遍的省电/省燃料结论。</div></section>;
 }
