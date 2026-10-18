@@ -1222,8 +1222,8 @@ export const catalog: Chapter[] = [
             "title": "基本概念"
           },
           {
-            "slug": "根轨迹的数学基础",
-            "title": "根轨迹的数学基础"
+            "slug": "幅角条件",
+            "title": "幅角条件"
           },
           {
             "slug": "绘制规则",
@@ -1234,12 +1234,12 @@ export const catalog: Chapter[] = [
             "title": "完整绘制示例"
           },
           {
-            "slug": "从根轨迹读取时域性能",
-            "title": "从根轨迹读取时域性能"
+            "slug": "极点与性能",
+            "title": "极点与性能"
           },
           {
-            "slug": "用根轨迹设计控制器",
-            "title": "用根轨迹设计控制器"
+            "slug": "零极点设计",
+            "title": "零极点设计"
           },
           {
             "slug": "广义根轨迹",

@@ -1,145 +1,47 @@
 "use client";
-
-import { useState, useMemo } from "react";
-import { useECharts } from "@/components/wiki/use-echarts";
-import type { EChartsOption } from "echarts";
-
-function computeStepResponse(K: number): [number[], number[]] {
-  const tEnd = 10;
-  const numPoints = 500;
-  const t: number[] = [];
-  const y: number[] = [];
-  
-  // Closed-loop transfer function: T(s) = K / (s^3 + 6s^2 + 8s + K)
-  // Numerical step response using inverse Laplace approximation
-  
-  for (let i = 0; i <= numPoints; i++) {
-    const time = (i / numPoints) * tEnd;
-    
-    // Simplified numerical computation for third-order system
-    // Using dominant pole approximation for visualization
-    let response: number;
-    
-    if (K < 3.08) {
-      // Overdamped - three real poles
-      response = 1 - Math.exp(-time) * (1 + 0.5 * time);
-    } else if (Math.abs(K - 3.08) < 0.1) {
-      // Breakaway point
-      response = 1 - Math.exp(-0.845 * time) * (1 + 0.845 * time);
-    } else if (K < 48) {
-      // Underdamped - complex conjugate poles
-      const zeta = Math.min(0.99, 0.5 + (48 - K) / 100);
-      const wn = Math.sqrt(K) / 2;
-      const wd = wn * Math.sqrt(1 - zeta * zeta);
-      response = 1 - (Math.exp(-zeta * wn * time) / Math.sqrt(1 - zeta * zeta)) * 
-                 Math.sin(wd * time + Math.acos(zeta));
-    } else if (Math.abs(K - 48) < 0.5) {
-      // Marginally stable
-      response = 1 + 0.1 * Math.sin(2.83 * time);
-    } else {
-      // Unstable
-      const growthRate = (K - 48) / 50;
-      response = 1 + growthRate * time * Math.sin(3 * time);
-    }
-    
-    t.push(time);
-    y.push(response);
-  }
-  
-  return [t, y];
-}
+import {useMemo, useState} from 'react';
+import type {EChartsOption} from 'echarts';
+import {useECharts} from '@/components/wiki/use-echarts';
+import {BREAK_GAIN, DEFAULT_GAIN, rootLocusBackground, rootLocusExample} from '@/lib/root-locus';
 
 export function RootLocusKExplorer() {
-  const [K, setK] = useState(10.0);
-
-  const [t, y] = useMemo(() => computeStepResponse(K), [K]);
-
-  // Determine behavior category and color
-  const { behavior, color } = useMemo(() => {
-    if (K < 3.08) {
-      return { behavior: "overdamped", color: "#2ecc71" };
-    } else if (Math.abs(K - 3.08) < 0.1) {
-      return { behavior: "breakaway", color: "#f1c40f" };
-    } else if (K < 48) {
-      return { behavior: "underdamped", color: "#3498db" };
-    } else if (Math.abs(K - 48) < 0.5) {
-      return { behavior: "marginal", color: "#e67e22" };
-    } else {
-      return { behavior: "UNSTABLE", color: "#e74c3c" };
-    }
-  }, [K]);
-
-  const yMax = useMemo(() => {
-    let max = 1.5;
-    for (const v of y) {
-      if (Math.abs(v) > max) max = Math.abs(v);
-    }
-    return Math.min(max * 1.2, 10); // Cap at reasonable range
-  }, [y]);
-
-  const option: EChartsOption = useMemo(() => ({
+  const [gain, setGain] = useState(DEFAULT_GAIN);
+  const model = useMemo(() => rootLocusExample(gain), [gain]);
+  const background = useMemo(() => rootLocusBackground(), []);
+  const locusOption = useMemo<EChartsOption>(() => ({
     animation: false,
-    grid: { left: 70, right: 30, top: 60, bottom: 60 },
-    xAxis: { 
-      type: "value", 
-      name: "Time (s)",
-      min: 0,
-      max: 10,
-      nameLocation: "center",
-      nameGap: 30
-    },
-    yAxis: { 
-      type: "value", 
-      name: "y(t)",
-      min: -yMax * 0.2,
-      max: yMax,
-      nameLocation: "center",
-      nameGap: 40
-    },
+    grid: {left: '15%', top: '10%', width: '75%', height: '75%'},
+    tooltip: {trigger: 'item'},
+    xAxis: {type: 'value', min: -8, max: 2, name: 'Re(s)', nameLocation: 'middle', nameGap: 25},
+    yAxis: {type: 'value', min: -5, max: 5, name: 'Im(s)'},
     series: [
-      {
-        type: "line",
-        data: t.map((time, i) => [time, y[i]]),
-        smooth: true,
-        showSymbol: false,
-        lineStyle: { width: 2, color },
-        markLine: {
-          data: [{ yAxis: 1.0 }],
-          lineStyle: { color: "gray", type: "dashed" },
-          label: { formatter: "Steady state", position: "insideEndTop" }
-        }
-      }
-    ],
-    title: {
-      text: `Closed-loop Step Response (K=${K.toFixed(1)}, ${behavior})`,
-      left: "center",
-      top: 10,
-      textStyle: { fontSize: 14, fontWeight: 500, color }
-    }
-  }), [t, y, K, behavior, color, yMax]);
-
-  const chartRef = useECharts(option);
-
-  return (
-    <div style={{ padding: "20px", fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "inline-block", width: 80, fontWeight: 500 }}>
-          K (gain):
-        </label>
-        <input
-          type="range"
-          min={0.5}
-          max={60}
-          step={0.5}
-          value={K}
-          onChange={(e) => setK(parseFloat(e.target.value))}
-          style={{ width: 300, verticalAlign: "middle" }}
-        />
-        <span style={{ marginLeft: 12, fontVariantNumeric: "tabular-nums", fontWeight: 500, color }}>
-          {K.toFixed(1)} ({behavior})
-        </span>
-      </div>
-      <div ref={chartRef} style={{ width: "100%", height: 400 }} />
+      {name: 'K=0…60采样', type: 'scatter', data: background, symbolSize: 2, itemStyle: {color: '#94a3b8'}},
+      {name: '当前三个根', type: 'scatter', data: model.poles, symbolSize: 10, itemStyle: {color: '#dc2626'}},
+      {name: '开环极点', type: 'scatter', data: [[0, 0], [-2, 0], [-4, 0]], symbol: 'diamond', symbolSize: 7, itemStyle: {color: '#111827'}}
+    ]
+  }), [background, model.poles]);
+  const stepOption = useMemo<EChartsOption>(() => ({
+    animation: false,
+    grid: {left: 42, right: 18, top: 25, bottom: 50},
+    tooltip: {trigger: 'axis'},
+    xAxis: {type: 'value', min: 0, max: 10, name: 't(s)', nameLocation: 'middle', nameGap: 25},
+    yAxis: {type: 'value', min: -4, max: 6, name: 'y(t)'},
+    series: [{name: '完整三阶响应', type: 'line', data: model.steps, showSymbol: false, lineStyle: {color: '#2563eb'},
+      markLine: {silent: true, label: {show: false}, data: gain > 0 && gain < 48 ? [{yAxis: 1}] : [], lineStyle: {color: '#64748b', type: 'dashed'}}}]
+  }), [model.steps, gain]);
+  const locusRef = useECharts(locusOption), stepRef = useECharts(stepOption);
+  return <section aria-label="根轨迹增益探索" style={{border: '1px solid #cbd5e1', borderRadius: 8, padding: 12, margin: '20px 0', color: '#1e293b', minWidth: 0}}>
+    <p>对象1/[s(s+2)(s+4)]，单位负反馈。红点是D+KN的三个实际根，灰点只是K=0…60的有限采样；分离处重根会重叠。</p>
+    <label>K <input aria-label="根轨迹增益K" type="range" min={0} max={60} step="any" value={gain} onChange={e => setGain(+e.target.value)} style={{width: '65%'}}/> {gain.toFixed(6)}</label>
+    <div style={{display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8}}>
+      <button onClick={() => setGain(DEFAULT_GAIN)}>恢复默认ζ=.5算例</button>
+      <button onClick={() => setGain(BREAK_GAIN)}>精确分离点</button>
+      <button onClick={() => setGain(48)}>虚轴边界K48</button>
     </div>
-  );
+    <div ref={locusRef} style={{aspectRatio: '1', width: '100%'}}/>
+    <p style={{overflowWrap: 'anywhere'}}>闭环根：{model.poles.map(p => `${p[0].toFixed(6)}${p[1] < 0 ? '' : '+'}${p[1].toFixed(6)}j`).join('；')}。{model.status}。</p>
+    <p>下图是完整三阶、零初始单位阶跃，不用二阶近似拼接。内部dt=.001s、每.02s显示；固定0…10s、y−4…6，超过窗口的响应不会被改写。虚轴边界和不稳定时不标稳态。</p>
+    <div ref={stepRef} style={{height: 300, width: '100%'}}/>
+    <p>y(10s)={model.last.toFixed(6)}，是有限时刻读数，不是稳态或连续峰值。</p>
+  </section>;
 }

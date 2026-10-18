@@ -1,19 +1,17 @@
 ---
-title: 根轨迹法
+title: 根轨迹
 description: 用根轨迹分析闭环极点随增益变化的轨迹——从"分析"走向"设计"。
 ---
 
-# 根轨迹法
+# 根轨迹
 
 ## 为什么需要根轨迹法
 
-前两章，我们分别用**时域分析**（阶跃响应、性能指标）和**频域分析**（Bode 图、Nyquist 图）来**分析**一个给定系统的行为。但工程师的核心任务不是"分析"，而是**"设计"**——给定性能要求，求出控制器参数。
+前一课用频率响应检查给定回路，这次把问题向前推进：自动窗帘快到目标位置时，电机应该推得多用力？增益太小，窗帘迟迟停不到位；一味增大增益，又可能让它在目标附近来回晃动。我们已经知道，这些变化要回到闭环极点来解释。
 
-一个典型场景：系统有开环传递函数 $KG(s)$，增益 $K$ 是我们可以调节的参数。不同的 $K$ 值会导致不同的闭环极点，从而产生完全不同的时域响应。
+本课用归一化的三阶教学对象研究这个问题：**增益K改变时，三个闭环特征根怎样一起移动？** 它不是某台窗帘电机的辨识模型，参数也不能直接照搬到硬件。
 
-问题：**$K$ 从 0 变到 ∞ 时，闭环极点如何在 $s$ 平面上移动？**
-
-根轨迹法（Root Locus）由 Walter R. Evans 于 1948 年提出，正是回答这个问题的工具。它让我们**不用逐个试 $K$ 值**，就能一眼看到所有可能的闭环极点位置，从而选择合适的 $K$ 来满足性能要求。
+根轨迹法（Root Locus）由Walter R. Evans于1948年前后提出，用几何规则组织整族特征根，而非只比较几个试出来的增益。规则给出走向，计算机仍须数值求根、核实际响应，不能从粗略图形直接签发性能指标。
 
 本章路线图：
 
@@ -27,7 +25,7 @@ $$
 
 ### 闭环特征方程
 
-考虑单位反馈系统：
+考虑实系数、连续SISO对象，单位**负反馈**，互联适定且无隐藏不稳定约消。先取互素多项式$G=N/D$，严格真有理、固定阶数、正最高系数比，增益$K\gt 0$。本课示例输入输出归一化，以秒为时间基准；K相对指定模型定义，不代表任意电机电压或力矩增益。
 
 $$
 \text{参考输入 } R(s) \to \boxed{K} \to \boxed{G(s)} \to Y(s) \to \boxed{H(s)=1} \to \text{反馈}
@@ -45,33 +43,37 @@ $$
 \boxed{1 + KG(s) = 0}
 $$
 
-即 $KG(s) = -1$。
+应先写$D(s)+KN(s)=0$，再在$D(s)\ne0$处写$KG(s)=-1$。根轨迹跟踪这个多项式的全部根；若事先约消不稳定模态，它们会从输入输出传函中消失，内部稳定性就不能靠剩下的图保证。等阶模型还须检查最高阶系数是否随K变零，不能照搬下面固定n分支的规则。
 
 ### 根轨迹的定义
 
-**根轨迹**：当参数 $K$ 从 $0$ 变化到 $+\infty$ 时，闭环特征方程的根（即闭环极点）在 $s$ 平面上描绘出的轨迹。
+**根轨迹**：当参数K取正值并变化时，$D+KN$的全部根在s平面上的集合；常把$K\to0^+$和趋于无穷的极限一同画出。
 
 关键观察：
-- $K = 0$ 时：闭环极点 = 开环极点（系统"未控制"）
+- $K\to0^+$时：特征根趋近开环极点。K=0可作为$D+KN$的端点，但约分后的输入输出传函$T=0$没有这些可见极点，不能称它们是“未控制时T的极点”。
 - $K \to \infty$ 时：闭环极点趋向开环零点或无穷远
 - 中间的轨迹：告诉我们 $K$ 取每个值时，闭环极点在哪里
 
 ### 为什么根轨迹有用？
 
-知道了闭环极点的位置，就能预测时域响应：
+极点决定自然模态的指数或振荡因子；输入输出响应的幅度还取决于零点、留数和初值。下表读的是模态，不是仅凭极点就能知道整条阶跃曲线：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 极点位置 | 时域行为 |
 |---------|---------|
 | 左半平面实轴 | 指数衰减（无振荡）|
 | 左半平面复数 | 衰减振荡 |
-| 虚轴 | 等幅振荡（临界稳定）|
+| 虚轴 | 简单非零虚轴模态可等幅振荡；零根/重根另核，不能据此宣称BIBO稳定 |
 | 右半平面 | 发散（不稳定）|
+
+</div>
 
 根轨迹让我们**一眼看到**：随着 $K$ 增大，系统从稳定变为不稳定、从过阻尼变为欠阻尼、振荡越来越剧烈……这些转变发生在什么 $K$ 值。
 
 ---
 
-## 根轨迹的数学基础
+## 幅角条件
 
 ### 幅值条件和相角条件
 
@@ -91,7 +93,7 @@ $$
 \boxed{K = \frac{1}{|G(s)|}}
 $$
 
-> 💡 **相角条件是关键**：根轨迹上的点**只由相角条件决定**，与 $K$ 无关。一旦确定了轨迹上的点，再用幅值条件算出对应的 $K$。
+> 💡 **相角条件是关键**：在普通非零非极点处，正K轨迹的候选点由相角条件决定；这不表示各个点对应同一个K。一旦确定了轨迹上的点，再用幅值条件算出对应的 $K$。
 
 ### 相角条件的几何解释
 
@@ -117,10 +119,14 @@ $$
 
 从各极点指向 $s = -1+j$ 的向量角度：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 极点 | 向量 | 角度 |
 |------|------|------|
-| $p_1 = 0$ | $(-1+j) - 0 = -1+j$ | $\arctan(1/-1) = 135°$ |
+| $p_1 = 0$ | $(-1+j) - 0 = -1+j$ | $\operatorname{atan2}(1,-1) = 135°$（不可只用商的反正切） |
 | $p_2 = -2$ | $(-1+j) - (-2) = 1+j$ | $\arctan(1/1) = 45°$ |
+
+</div>
 
 相角之和：$-(135° + 45°) = -180°$。满足相角条件！$s = -1+j$ **在根轨迹上**。
 
@@ -155,7 +161,7 @@ $$
 
 ### 规则 4：渐近线
 
-当 $n > m$ 时，$n - m$ 条分支趋向无穷远，方向由渐近线决定：
+当 $n \gt  m$ 时，$n - m$ 条分支趋向无穷远，方向由渐近线决定：
 
 **渐近线角度**：
 
@@ -169,7 +175,7 @@ $$
 \sigma_a = \frac{\sum p_i - \sum z_j}{n - m}
 $$
 
-所有渐近线交于实轴上的同一点 $\sigma_a$。
+所有渐近线交于实轴上的同一点 $\sigma_a$。这是无穷远方向的渐近描述，不表示有限增益的根落在线上。
 
 ### 规则 5：分离点与会合点
 
@@ -187,9 +193,11 @@ $$
 \sum_{i=1}^{n} \frac{1}{s - p_i} = \sum_{j=1}^{m} \frac{1}{s - z_j}
 $$
 
+候选解还必须是实数、落在正确实轴轨迹段，且$K=-D/N$有限并满足$K\gt 0$；零极点处另核。导数等于零只是必要候选条件，不自动等于实际分离点。
+
 ### 规则 6：与虚轴的交点
 
-根轨迹与虚轴的交点标志着系统从稳定变为不稳定的**临界点**。
+虚轴交点是稳定边界的候选；仍要核两侧根数、穿越方向、端点和重数，并非每次相切都改变稳定性。
 
 求法有两种：
 1. **Routh 判据**：令 Routh 表某行全为零，解出临界 $K$ 和对应的 $\omega$
@@ -203,9 +211,11 @@ $$
 \theta_{\text{departure}} = 180° + \sum \angle(p - z_j) - \sum_{i \neq k} \angle(p - p_i)
 $$
 
-到达复数零点**进入**的角度（入射角）：类似公式，符号相反。
+对简单复零点z，若角度取从z指向附近轨迹点的向量方向，则为$180^\circ-\sum_{j\ne k}\angle(z-z_j)+\sum_i\angle(z-p_i)$（模360度）；沿运动方向“进入z”的切向再相差180度。重零极点要按重数分配角度，不能套简单点公式。
 
 ### 绘制规则汇总
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 规则 | 确定什么 | 怎么做 |
 |------|---------|--------|
@@ -217,6 +227,8 @@ $$
 | 6. 虚轴交点 | 稳定与不稳定的分界 | Routh 判据或 $s = j\omega$ |
 | 7. 出射/入射角 | 从复数极点出发/到达复数零点的角度 | 相角条件 |
 
+</div>
+
 ---
 
 ## 完整绘制示例
@@ -225,7 +237,7 @@ $$
 
 $G(s) = \dfrac{1}{s(s+2)(s+4)}$，绘制根轨迹。
 
-> 💡 **物理背景**：这个传递函数可以理解为简化后的**直流电机位置控制系统**。电机转子有惯性（$1/s$，积分环节），轴上有摩擦（$1/(s+2)$，一阶环节），驱动器有响应延迟（$1/(s+4)$，一阶环节）。增益 $K$ 是放大器增益——我们唯一能调节的参数。
+> 这个归一化对象可看作位置积分环节与两个衰减环节的串联。$1/s$把速度积分为位置，并不是“转子惯性”；$1/(s+4)$是一阶滞后，也不是纯时延。这里只研究固定模型的比例增益，不宣称已辨识出某台电机。
 
 ### 步骤 1：基本信息
 
@@ -238,12 +250,16 @@ $G(s) = \dfrac{1}{s(s+2)(s+4)}$，绘制根轨迹。
 
 从右向左检查各段右侧的零极点总数：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 实轴段 | 右侧零极点数 | 是否在根轨迹上 |
 |--------|------------|-------------|
-| $s > 0$ | 0 | 否 |
-| $-2 < s < 0$ | 1（$p_1=0$）| **是** |
-| $-4 < s < -2$ | 2（$p_1, p_2$）| 否 |
-| $s < -4$ | 3（$p_1, p_2, p_3$）| **是** |
+| $s \gt  0$ | 0 | 否 |
+| $-2 \lt  s \lt  0$ | 1（$p_1=0$）| **是** |
+| $-4 \lt  s \lt  -2$ | 2（$p_1, p_2$）| 否 |
+| $s \lt  -4$ | 3（$p_1, p_2, p_3$）| **是** |
+
+</div>
 
 ### 步骤 3：渐近线
 
@@ -284,7 +300,7 @@ $s_2 = -3.155$ 不在根轨迹上（$(-4, -2)$ 段不是根轨迹），舍去。
 分离点处的 $K$ 值：
 
 $$
-K = -(-0.845)(-0.845+2)(-0.845+4) = 0.845 \times 1.155 \times 3.155 = 3.08
+K_d=16\sqrt3/9\approx3.0792014357
 $$
 
 ### 步骤 5：与虚轴的交点
@@ -309,112 +325,123 @@ $\omega = 0$（对应 $K = 0$，起点）或 $\omega^2 = 8 \implies \omega = \pm
 
 临界增益：$K_{\text{crit}} = 6 \times 8 = 48$
 
-**结论**：$K < 48$ 时系统稳定，$K = 48$ 时临界稳定（振荡频率 $\omega = 2\sqrt{2} \approx 2.83$ rad/s），$K > 48$ 时不稳定。
+**结论**：严格稳定范围是$0\lt K\lt 48$。K0含零特征根；K48为$(s+6)(s^2+8)$，有简单虚轴对，零输入可等幅振荡但不渐近稳定，也不BIBO稳定。K大于48有两个右半平面根。
 
 ### 步骤 6：汇总
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | $K$ 范围 | 闭环极点特征 | 系统行为 |
 |---------|------------|---------|
-| $0 < K < 3.08$ | 三个实数极点 | 过阻尼，无振荡 |
-| $K = 3.08$ | 两个极点重合于 $s = -0.845$ | 分离点 |
-| $3.08 < K < 48$ | 一对复数极点 + 一个实数极点 | 欠阻尼振荡 |
-| $K = 48$ | 复数极点在虚轴上 $\pm j2.83$ | 临界稳定 |
-| $K > 48$ | 复数极点进入右半平面 | 不稳定 |
+| $0\lt K\lt K_d$ | 三个实数极点 | 过阻尼，无振荡 |
+| $K = K_d$ | 两个极点重合于 $s = -0.845$ | 分离点 |
+| $K_d\lt K\lt48$ | 一对复数极点 + 一个实数极点 | 欠阻尼振荡 |
+| $K=48$ | 根−6与$\pm j\sqrt8$ | 不渐近稳定、不BIBO稳定 |
+| $K \gt  48$ | 复数极点进入右半平面 | 不稳定 |
+
+</div>
 
 <JupyterNotebook
-  title="📍 根轨迹绘制：G(s) = 1/[s(s+2)(s+4)]"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="规则与主例复算"
+  setupCode={`import numpy as np
+import control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, root_locus`}
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+`}
   cells={[
-    { code: `G = tf([1], [1, 6, 8, 0])
-
-fig, ax = plt.subplots(figsize=(10, 8))
-root_locus(G, ax=ax)
-
-ax.plot(-0.845, 0, 'ro', markersize=10, label='Breakaway s=-0.845')
-ax.plot(0, 2.83, 'g^', markersize=10, label='Im-axis crossing +j2.83')
-ax.plot(0, -2.83, 'g^', markersize=10, label='Im-axis crossing -j2.83')
-ax.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
-ax.axvline(x=0, color='gray', linestyle='-', alpha=0.3)
-ax.set_title('Root Locus: G(s) = 1/[s(s+2)(s+4)]', fontsize=14)
-ax.legend(fontsize=10)
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
+    {code: `G=ct.tf([1],[1,6,8,0]);gains=np.unique(np.r_[np.linspace(0,60,601),16*np.sqrt(3)/9,224/27,48])
+rl=ct.root_locus_map(G,gains=gains)
+for roots,k in zip(rl.loci,rl.gains):assert np.max(abs(np.polyval([1,6,8,k],roots)))<1e-8
+fig,ax=plt.subplots(figsize=(6,5));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)
+ax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_xlabel('Real (1/s)');ax.set_ylabel('Imag (1/s)');plt.show()
+for sd in np.roots([3,12,8]):print('main derivative candidate s,K:',sd,-sd*(sd+2)*(sd+4))
+for k in [0,16*np.sqrt(3)/9,224/27,10,48,60]:print('main K,poles:',k,np.roots([1,6,8,k]))
+print('main centroid/asymptote degrees:',sum([0,-2,-4])/3,[(2*i+1)*180/3 for i in range(3)])
+s=-1+1j;print('angle test 135/45 and K:',np.degrees(np.angle(s)),np.degrees(np.angle(s+2)),abs(s*(s+2)))
+print('K48 factor:',np.polymul([1,6],[1,0,8]))
+`}
   ]}
 />
 
 ---
 
-## 从根轨迹读取时域性能
+## 极点与性能
 
-根轨迹图上的每一点对应一个 $K$ 值和一组闭环极点。从极点位置可以**直接读出**时域性能指标。
+根轨迹图上的一个普通点可以确定K，但同一K还对应其它全部根。能直接读出的是各模态的衰减率、振荡频率；要知道超调和调节时间，还须重建完整闭环响应。
 
 ### 等阻尼比线与等自然频率线
 
 在 $s$ 平面上：
 
-- **等阻尼比线**：从原点出发的射线，与负实轴夹角 $\theta = \arccos\zeta$。$\zeta = 0.707$ 对应 $45°$ 线。
+- **等阻尼比线**：从原点出发的射线，与负实轴夹角 $\theta = \arccos\zeta$。$\zeta=1/\sqrt2$精确对应45度，.707是其近似。实负单根的几何阻尼比取1；不要把三阶系统整体称为某一个二阶阻尼比。
 - **等自然频率线**：以原点为圆心的圆弧，半径 $= \omega_n$。
 - **等时间常数线**：竖直线，$\text{Re}(s) = -\zeta\omega_n$。决定衰减速度。
 
 在根轨迹图上叠加这些线，就能找到满足性能要求的 $K$ 值。
 
 <JupyterNotebook
-  title="🎯 等阻尼比线与等自然频率线"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="几何指标与完整响应"
+  setupCode={`import numpy as np
+import control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, root_locus`}
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+def settling(num,den):
+ p=np.roots(den)
+ if np.max(p.real)>=-1e-10:return None
+ r,ps,_=residue(num,np.polymul(den,[1,0]))
+ mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]
+ assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5
+ def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))
+ def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))
+ def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))
+ T=1.
+ while envelope(T)>.005:T*=2
+ def events(dt):
+  t=np.linspace(0,T,int(np.ceil(T/dt))+1)
+  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))
+  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]
+  cuts=[0.]+extrema+[T];cross=[]
+  for a,b in zip(cuts[:-1],cuts[1:]):
+   for target in [-.02,.02]:
+    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))
+  return sorted(cross),extrema
+ dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))
+ cross,extrema=events(dt);fine,_=events(dt/2)
+ assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9
+ ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])
+ assert envelope(T)<.005 and T>ts
+ return ts,100*peak,T,envelope(T),len(cross)
+`}
   cells={[
-    { code: `G = tf([1], [1, 6, 8, 0])
-
-fig, ax = plt.subplots(figsize=(10, 8))
-root_locus(G, ax=ax)
-
-for zeta, style in [(0.3, ':'), (0.5, '--'), (0.707, '-')]:
-    theta = np.arccos(zeta)
-    r = np.linspace(0, 6, 100)
-    ax.plot(-r*np.cos(theta), r*np.sin(theta), style, color='green', alpha=0.7,
-            label=f'ζ={zeta}')
-    ax.plot(-r*np.cos(theta), -r*np.sin(theta), style, color='green', alpha=0.7)
-
-for wn in [2, 4, 6]:
-    theta_arc = np.linspace(np.arccos(0.9), np.arccos(-0.9), 100)
-    ax.plot(wn*np.cos(theta_arc), wn*np.sin(theta_arc), ':', color='orange', alpha=0.5)
-    ax.text(wn*np.cos(np.arccos(0.5)), wn*np.sin(np.arccos(0.5))+0.3,
-            f'wn={wn}', fontsize=8, color='orange')
-
-ax.set_xlim(-8, 3)
-ax.set_ylim(-6, 6)
-ax.set_title('Root Locus + Constant ζ Lines + Constant ωn Arcs', fontsize=14)
-ax.legend(fontsize=9, loc='upper left')
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
+    {code: `G=ct.tf([1],[1,6,8,0]);rl=ct.root_locus_map(G,gains=np.linspace(0,60,601))
+fig,ax=plt.subplots(figsize=(6,6));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)
+for z in [.3,.5,1/np.sqrt(2)]:
+ r=np.linspace(0,7,101);ax.plot(-z*r,np.sqrt(1-z*z)*r,'g--');ax.plot(-z*r,-np.sqrt(1-z*z)*r,'g--')
+theta=np.linspace(np.pi/2,3*np.pi/2,301)
+for wn in [2,4,6]:ax.plot(wn*np.cos(theta),wn*np.sin(theta),':',color='orange')
+ax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_xlabel('Real');ax.set_ylabel('Imag');plt.show()
+k=224/27;T=ct.tf([k],[1,6,8,k]);t=np.linspace(0,10,501);_,y=ct.step_response(T,t)
+print('default K,poles,y(0),y(10):',k,ct.poles(T),y[0],y[-1])
+print('default full settling/MP%,tailT,tailBound,crossings:',settling([k],[1,6,8,k]))
+z=-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2);print('5% second-order zeta,angle degrees:',z,np.degrees(np.arccos(z)))
+print('exact 45degree zeta:',1/np.sqrt(2))
+`}
   ]}
 />
 
 ### 设计流程
 
-1. 将时域指标转化为 $s$ 平面上的**允许区域**：
-   - $M_p \leq 5\% \implies \zeta \geq 0.69 \implies$ 极点在 $45°$ 线以左
-   - $t_s \leq 2\text{s} \implies \zeta\omega_n \geq 2 \implies$ 极点在 $\text{Re}(s) = -2$ 以左
-2. 在根轨迹图上标出允许区域
-3. 找到根轨迹与允许区域的**交集**
-4. 用幅值条件计算对应的 $K$
+1. 先将指标转成**设计候选区域**：单位直流增益、无零点标准二阶模型有$M_p\le5\%$对应$\zeta\ge.690107$，与负实轴夹角不超过约46.36度；不是精确45度。若用$t_s\approx4/\sigma$，$t_s\le2$s只给$\sigma\gtrsim2$的粗估线。
+2. 在根轨迹中找候选K，检查全部特征根而非只挑一对。
+3. 用完整传函、同一初值和输入，复算真实超调与首次/最后穿越误差带；不达标就调整候选。
 
 ### 主导极点的作用
 
-如果根轨迹上某段有一对复数极点**远靠近虚轴**（实部绝对值比其他极点小 5 倍以上），则这对极点**主导**系统的动态响应，可以用二阶系统近似。
+如果根轨迹上某段有一对复数极点**远靠近虚轴**（实部绝对值比其他极点小 5 倍以上），只能把它们作为主导候选；还要核零点、模态留数和所需时间窗的误差。五倍是经验筛选，不能自动保证二阶超调公式或2%调节时间。
 
 这也是为什么根轨迹特别有用：它让你直接看到主导极点是否存在，以及它们在什么 $K$ 范围内保持主导地位。
 
@@ -426,16 +453,16 @@ plt.show()` }
 
 特征方程 $s^3 + 6s^2 + 8s + K = 0$。
 
-Routh 判据给出稳定范围 $0 < K < 48$（$K = 48$ 时极点穿越虚轴，$s = \pm j2\sqrt{2}$）。
+Routh 判据给出稳定范围 $0 \lt  K \lt  48$（$K = 48$ 时极点穿越虚轴，$s = \pm j2\sqrt{2}$）。
 
 分离点：$dK/ds = -(3s^2 + 12s + 8) = 0$，$s = (-6 + 2\sqrt{3})/3 \approx -0.845$，$K_d \approx 3.08$。
 
-- $0 < K < 3.08$：三个实数极点，$\zeta = 1$（过阻尼）
-- $3.08 < K < 48$：一对复数极点 + 一个实数极点
+- $0\lt K\lt K_d$：三个实数极点，$\zeta = 1$（过阻尼）
+- $K_d\lt K\lt48$：一对复数极点 + 一个实数极点
 
 **第二步**：求根轨迹与 $\zeta = 0.5$ 的 $60°$ 线的交点。
 
-在 $60°$ 线上取 $s = -a + ja\sqrt{3}$（$a > 0$），代入特征方程。利用 $s = 2a \cdot e^{j2\pi/3}$：
+在 $60°$ 线上取 $s = -a + ja\sqrt{3}$（$a \gt  0$），代入特征方程。利用 $s = 2a \cdot e^{j2\pi/3}$：
 
 $$
 s^2 = a^2(-2 - 2j\sqrt{3}), \quad s^3 = 8a^3
@@ -457,12 +484,14 @@ $$
 \text{Re} = 8\left(\frac{2}{3}\right)^3 - 12\left(\frac{2}{3}\right)^2 - 8\left(\frac{2}{3}\right) = \frac{64}{27} - \frac{48}{9} - \frac{16}{3} = \frac{64 - 144 - 144}{27} = -\frac{224}{27}
 $$
 
-特征方程要求 $s(s+2)(s+4) = -K$。此处乘积为 $-224/27$（负实数），所以 $K = 224/27 \approx 8.30 > 0$。
+特征方程要求 $s(s+2)(s+4) = -K$。此处乘积为 $-224/27$（负实数），所以 $K = 224/27 \approx 8.30 \gt  0$。
 
 **验证**（幅值条件）：$s = -\dfrac{2}{3} + j\dfrac{2\sqrt{3}}{3}$
 
 $$
 |s| = \frac{4}{3}, \quad |s+2| = \frac{2\sqrt{7}}{3}, \quad |s+4| = \frac{4\sqrt{7}}{3}
+
+
 $$
 
 $$
@@ -472,95 +501,102 @@ $$
 **验证**（相角条件）：
 
 $$
-\angle s = 120°, \quad \angle(s+2) \approx 40.9°, \quad \angle(s+4) \approx 19.1°
+\angle s = 120°, \quad \angle(s+2) \approx 40.893395°, \quad \angle(s+4) \approx 19.106605°
 $$
 
 $$
-120° + 40.9° + 19.1° = 180° \quad \checkmark
+120° + 40.893395° + 19.106605° = 180° \quad \checkmark
 $$
 
 **第三步**：确定 $\zeta \geq 0.5$ 的范围。
 
-根轨迹从分离点（$\zeta = 1$）出发，随 $K$ 增大穿越 $60°$ 线（$\zeta = 0.5$，$K = 8.30$），继续向虚轴移动（$\zeta$ 继续减小）。
+根轨迹从分离点（几何$\zeta = 1$）出发，随 $K$ 增大穿越 $60°$ 线（$\zeta = 0.5$，$K = 8.30$），继续向虚轴移动（$\zeta$ 继续减小）。
 
-- $K < 3.08$：极点在实轴上，$\zeta = 1 \geq 0.5$ ✓
-- $3.08 \leq K \leq 8.30$：复数极点在 $60°$ 线以左，$\zeta \geq 0.5$ ✓
-- $K > 8.30$：复数极点在 $60°$ 线以右，$\zeta < 0.5$ ✗
+- $0\lt K\lt K_d$：极点在实轴上，$\zeta = 1 \geq 0.5$ ✓
+- $K_d\leq K\leq224/27$：复数极点在 $60°$ 线以左，$\zeta \geq 0.5$ ✓
+- $K \gt  8.30$：复数极点在 $60°$ 线以右，$\zeta \lt  0.5$ ✗
 
 $$
-\boxed{0 < K \leq \frac{224}{27} \approx 8.30 \text{ 时 } \zeta \geq 0.5}
+\boxed{0 \lt  K \leq \frac{224}{27} \approx 8.30 \text{ 时 } \zeta \geq 0.5}
 $$
 
-对应的自然频率 $\omega_n = |s| = 4/3 \approx 1.33$ rad/s。第三个极点 $p_3 = -6 - 2(-2/3) = -14/3 \approx -4.67$，满足主导极点条件（$|p_3|/|\text{Re}(s)| = 7 > 5$）。
+对应的自然频率 $\omega_n = |s| = 4/3 \approx 1.33$ rad/s。第三个极点 $p_3 = -6 - 2(-2/3) = -14/3 \approx -4.67$，实部衰减率比为7，只构成主导近似候选。完整三阶仍有第三模态；不能把二阶超调16.303353%直接当本系统精确结果。
+
+默认取精确$K=224/27=8.296296\ldots$，三个根为$-14/3$与$-2/3\pm j2\sqrt3/3$，对应几何$\zeta=.5$、$\omega_n=4/3$。下图实际求出三根，再积分完整三阶状态方程；y(10s)由下方实验复算，它只是有限时刻读数。
 
 <RootLocusKExplorer />
 
 <JupyterNotebook
-  title="📐 从根轨迹选择 K：ζ ≥ 0.5 区域"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="选择阻尼候选"
+  setupCode={`import numpy as np
+import control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, root_locus`}
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+def settling(num,den):
+ p=np.roots(den)
+ if np.max(p.real)>=-1e-10:return None
+ r,ps,_=residue(num,np.polymul(den,[1,0]))
+ mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]
+ assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5
+ def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))
+ def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))
+ def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))
+ T=1.
+ while envelope(T)>.005:T*=2
+ def events(dt):
+  t=np.linspace(0,T,int(np.ceil(T/dt))+1)
+  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))
+  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]
+  cuts=[0.]+extrema+[T];cross=[]
+  for a,b in zip(cuts[:-1],cuts[1:]):
+   for target in [-.02,.02]:
+    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))
+  return sorted(cross),extrema
+ dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))
+ cross,extrema=events(dt);fine,_=events(dt/2)
+ assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9
+ ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])
+ assert envelope(T)<.005 and T>ts
+ return ts,100*peak,T,envelope(T),len(cross)
+`}
   cells={[
-    { code: `G = tf([1], [1, 6, 8, 0])
-
-fig, ax = plt.subplots(figsize=(10, 8))
-root_locus(G, ax=ax)
-
-theta = np.arccos(0.5)
-r = np.linspace(0, 8, 100)
-ax.plot(-r*np.cos(theta), r*np.sin(theta), 'g-', linewidth=2, label='ζ=0.5 boundary')
-ax.plot(-r*np.cos(theta), -r*np.sin(theta), 'g-', linewidth=2)
-
-ax.plot(-2/3, 2*np.sqrt(3)/3, 'r*', markersize=15, label='ζ=0.5 point (K=8.30)')
-ax.plot(-2/3, -2*np.sqrt(3)/3, 'r*', markersize=15)
-ax.plot(-0.845, 0, 'ko', markersize=10, label='Breakaway (K=3.08)')
-
-ax.set_xlim(-8, 3)
-ax.set_ylim(-6, 6)
-ax.set_title('Selecting K: ζ ≥ 0.5 requires K ≤ 8.30', fontsize=14)
-ax.legend(fontsize=9)
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
+    {code: `s=-2/3+2j*np.sqrt(3)/3;k=-s*(s+2)*(s+4)
+print('zeta .5 point,K,omega_n:',s,k,abs(s))
+print('vector magnitudes:',*[abs(s+a) for a in [0,2,4]])
+print('vector angles:',*[np.angle(s+a,deg=True) for a in [0,2,4]])
+for k in [1,3,16*np.sqrt(3)/9,224/27,10,47,48]:
+ p=np.roots([1,6,8,k]);z=[-q.real/abs(q) for q in p]
+ print('K,poles,individual geometric zeta:',k,p,z)
+print('default separated decay ratio:',(14/3)/(2/3))
+print('Two-pole formula MP%,not exact third-order:',100*np.exp(-np.pi/np.sqrt(3)))
+print('default full third-order:',settling([224/27],[1,6,8,224/27]))
+`}
   ]}
 />
 
 ---
 
-## 用根轨迹设计控制器
+## 零极点设计
 
 根轨迹不仅是分析工具，更是**设计工具**。通过添加零点和极点（即设计控制器），可以"塑造"根轨迹的形状，使其通过期望的区域。
 
 ### 添加零点的影响
 
-在开环传递函数中添加一个左半平面零点 $s = -z$：
-
-- 根轨迹被"拉向"零点方向
-- 渐近线角度改变（$m$ 增大，$n-m$ 减小）
-- 渐近线交点左移（更稳定）
-- **效果**：让系统在更大的 $K$ 范围内保持稳定，且响应更快
-
-物理直觉：零点提供"超前"作用（类似 PD 控制），增加系统阻尼。
+添加左半平面零点会改变相角条件和分支终点，但**不保证所有根左移或性能改善**。假设原对象有n个极点、m个零点，$r=n-m\gt 1$，原重心为σa。添零点−z后，重心是$(r\sigma_a+z)/(r-1)$：左右移动取决于$\sigma_a+z$的符号，绝不是“减去一个正z就左移”。
 
 ### 添加极点的影响
 
-在开环传递函数中添加一个极点 $s = -p$：
-
-- 根轨迹被"推离"极点方向
-- 渐近线交点右移（更不稳定）
-- **效果**：降低稳定裕度
-
-物理直觉：极点提供"滞后"作用（类似增加惯性），让系统响应变慢。
+添极点−p后重心为$(r\sigma_a-p)/(r+1)$，同样不是必定右移；还改变分支数和相角。实际滤波极点、执行器滞后和设计目标必须一并放进特征多项式核验。几何“拉向/推离”是画图直觉，不是性能定理。
 
 ### PD 控制的根轨迹解释
 
 PD 控制器 $C(s) = K_p + K_d s = K_d(s + z)$，其中 $z = K_p/K_d$。
 
 **定量对比**（以 $G(s) = \frac{1}{s(s+2)(s+4)}$ 为例）：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 指标 | 原系统 | PD 控制 $C(s) = s+1$ |
 |------|--------|---------------------|
@@ -570,60 +606,66 @@ PD 控制器 $C(s) = K_p + K_d s = K_d(s + z)$，其中 $z = K_p/K_d$。
 | 渐近线角度 | $60°, 180°, 300°$ | $90°, 270°$ |
 | 临界增益 $K_{\text{crit}}$ | 48 | $\infty$（根轨迹不穿越虚轴）|
 
-添加零点后，根轨迹完全留在左半平面——**系统对任意增益都稳定**！这就是 PD 控制的威力。
+</div>
+
+对指定零点−1，闭环多项式为$s^3+6s^2+(8+K)s+K$，正K下Routh条件$6(8+K)\gt K$恒成立，因此**在该理想模型中所有K>0严格稳定**；K0不包括在内。
+
+若改为零点−z，条件变为$48+(6-z)K\gt 0$。z1/6/10分别给重心−2.5/0/+2；z10只在$0\lt K\lt 12$稳定，比原来的0…48还窄。下面同K1/10/40的响应比较只展示固定候选的变化，不是经过独立整定的控制器优劣排名：z1在K1反而收敛更慢，z10在K40失稳。PD理想导数还会放大高频噪声，实际滤波引入的额外极点须重新分析。
 
 <JupyterNotebook
-  title="🔧 PD 控制对根轨迹的影响"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="零点位置与PD观察"
+  setupCode={`import numpy as np
+import control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, root_locus, step_response`}
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+def settling(num,den):
+ p=np.roots(den)
+ if np.max(p.real)>=-1e-10:return None
+ r,ps,_=residue(num,np.polymul(den,[1,0]))
+ mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]
+ assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5
+ def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))
+ def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))
+ def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))
+ T=1.
+ while envelope(T)>.005:T*=2
+ def events(dt):
+  t=np.linspace(0,T,int(np.ceil(T/dt))+1)
+  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))
+  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]
+  cuts=[0.]+extrema+[T];cross=[]
+  for a,b in zip(cuts[:-1],cuts[1:]):
+   for target in [-.02,.02]:
+    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))
+  return sorted(cross),extrema
+ dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))
+ cross,extrema=events(dt);fine,_=events(dt/2)
+ assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9
+ ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])
+ assert envelope(T)<.005 and T>ts
+ return ts,100*peak,T,envelope(T),len(cross)
+`}
   cells={[
-    { code: `G_orig = tf([1], [1, 6, 8, 0])
-G_pd = tf([1, 1], [1, 6, 8, 0])
-
-fig, axes = plt.subplots(1, 2, figsize=(16, 7))
-
-root_locus(G_orig, ax=axes[0])
-axes[0].set_title('Original System', fontsize=14)
-axes[0].set_xlim(-8, 3)
-axes[0].set_ylim(-6, 6)
-
-root_locus(G_pd, ax=axes[1])
-axes[1].plot(-1, 0, 'go', markersize=12, label='Added zero s=-1')
-axes[1].set_title('With PD Control (zero pulls locus left)', fontsize=14)
-axes[1].legend(fontsize=10)
-axes[1].set_xlim(-8, 3)
-axes[1].set_ylim(-6, 6)
-
-for ax in axes:
-    ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()` },
-    { code: `fig, ax = plt.subplots(figsize=(12, 6))
-t = np.linspace(0, 10, 2000)
-
-K = 10
-T_orig = tf([K], [1, 6, 8, K])
-_, y_orig = step_response(T_orig, T=t)
-ax.plot(t, y_orig, 'b-', linewidth=2, label=f'Original K={K}')
-
-T_pd = tf([K, K], [1, 6, 8+K, K])
-_, y_pd = step_response(T_pd, T=t)
-ax.plot(t, y_pd, 'r-', linewidth=2, label=f'PD control K={K}')
-
-ax.axhline(y=1.0, color='gray', linestyle='--', alpha=0.5)
-ax.set_xlabel('Time (s)', fontsize=12)
-ax.set_ylabel('y(t)', fontsize=12)
-ax.set_title('Step Response: Original vs PD Control (K=10)', fontsize=14)
-ax.legend(fontsize=11)
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
+    {code: `fig,axes=plt.subplots(1,2,figsize=(10,5))
+for ax,z in zip(axes,[None,1]):
+ G=ct.tf([1] if z is None else [1,z],[1,6,8,0]);rl=ct.root_locus_map(G,gains=np.linspace(0,60,601));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)
+ ax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_title('Original' if z is None else 'Added zero -1')
+plt.tight_layout();plt.show()
+for z in [1,6,10]:print('zero z,centroid,K upper:',z,(z-6)/2,np.inf if z<=6 else 48/(z-6))
+`},
+    {code: `fig,ax=plt.subplots(figsize=(7,4));t=np.linspace(0,10,2001)
+for k in [1,10,40]:
+ for z in [None,1,10]:
+  num=[k] if z is None else [k,k*z];den=[1,6,8,k] if z is None else [1,6,8+k,k*z]
+  p=np.roots(den);result=settling(num,den)
+  print('same K,z,poles,ts/MP/tail:',k,z,p,result)
+  if k==10:
+   _,y=ct.step_response(ct.tf(num,den),t);ax.plot(t,y,label='original' if z is None else 'zero -'+str(z))
+ax.set_xlabel('t(s)');ax.set_ylabel('y(t)');ax.legend();plt.show()
+print('Same-K illustration, not independently tuned ranking. z1 at K1 is slower; z10 at K40 is unstable. Ideal derivative needs filtering in hardware.')
+`}
   ]}
 />
 
@@ -631,11 +673,9 @@ plt.show()` }
 
 PI 控制器 $C(s) = K_p + K_i/s = K_p(1 + 1/(T_i s))$，添加了一个极点 $s = 0$ 和一个零点 $s = -1/T_i$。
 
-- 添加的极点 $s = 0$ 把根轨迹推向右边（不稳定倾向）
-- 添加的零点把根轨迹拉回来
-- **净效果**：如果零点足够靠近极点，根轨迹形状变化不大，但系统类型数增加——**消除稳态误差**
+PI增加一个积分器和一个零点，可能改善指定输入的稳态误差，也可能破坏稳定性。只有闭环稳定且终值定理条件成立，才能按系统类型计算误差；它不消除任意输入/扰动的误差。
 
-这就是 PI 控制的核心权衡：改善稳态精度，但可能恶化动态性能。
+本例原对象已有积分器，P闭环对阶跃的稳态误差本来就为零。写PI为$C=K(s+z)/s$，特征多项式为$s^4+6s^3+8s^2+Ks+Kz$；z>0时Routh给$0\lt K\lt 48-36z$，因而须$0\lt z\lt 4/3$。稳定时阶跃和斜坡误差均为零；若z2，不存在稳定的正K，不能再引用终值定理“保证零误差”。详细整定留给后续PID课。
 
 ---
 
@@ -645,7 +685,7 @@ PI 控制器 $C(s) = K_p + K_i/s = K_p(1 + 1/(T_i s))$，添加了一个极点 $
 
 标准根轨迹研究增益 $K$ 变化的影响。但有时需要研究其他参数（如时间常数、阻尼系数）变化的影响。
 
-方法：将特征方程重新整理为 $1 + \alpha \cdot P(s) = 0$ 的形式，其中 $\alpha$ 是目标参数，$P(s)$ 是等效的"开环传递函数"。然后对 $P(s)$ 画标准根轨迹。
+若参数仿射进入$A(s)+\alpha B(s)=0$且阶数/系数不退化，可将特征方程重新整理为 $1 + \alpha \cdot P(s) = 0$ 的形式，其中$\alpha$是目标参数、$P=B/A$只是等效比式；A=0端点仍用原多项式核。非仿射参数或采样周期引入指数映射时，不一定能化为标准单参数轨迹；离散极点稳定区域是单位圆内部，不能照搬连续左半平面。
 
 ### 正反馈根轨迹（0° 根轨迹）
 
@@ -659,14 +699,40 @@ $$
 
 与负反馈的 $\pm 180°$ 不同。这导致两条关键规则变化：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 规则 | 负反馈（180° 根轨迹）| 正反馈（0° 根轨迹）|
 |------|-------------------|------------------|
 | 渐近线角度 | $\frac{(2k+1) \times 180°}{n-m}$ | $\frac{360° \cdot k}{n-m}$ |
 | 实轴规则 | 右侧零极点数为**奇数** | 右侧零极点数为**偶数** |
 
+</div>
+
 其余规则（起点终点、分离点、出射角等）形式不变，只需将相角条件中的 $180°$ 替换为 $0°$。
 
 ---
+
+<JupyterNotebook
+  title="PI与广义轨迹"
+  setupCode={`import numpy as np
+import control as ct
+import matplotlib.pyplot as plt
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+`}
+  cells={[
+    {code: `for z in [.1,1,2]:
+ print('PI z,positive K upper:',z,48-36*z)
+ for k in [1,10,40]:print('PI z,K,poles:',z,k,np.roots([1,6,8,k,k*z]))
+print('For stable PI, original plant type1 becomes type2: ramp error0; original P already has step error0.')
+for alpha in [0,1,4]:
+ p=np.roots([1,alpha,1]);print('parameter s^2+alpha*s+1 roots:',alpha,p)
+for k in [0,1,4]:print('positive feedback 1/[s(s+2)],K,poles:',k,np.roots([1,2,-k]))
+print('At K0, characteristic D remains but the reduced input-output transfer is zero. No hidden unstable cancellation may be discarded.')
+`}
+  ]}
+/>
 
 ## 深入讨论
 
@@ -677,7 +743,7 @@ $$
 - **根轨迹**：展示闭环极点随 $K$ 变化的轨迹，直接关联时域性能
 - **Bode 图**：展示开环频率响应，直接关联频域性能
 
-两者的联系：根轨迹上极点越靠近虚轴，Bode 图的谐振峰越高、相位裕度越小。根轨迹穿越虚轴时，Bode 图的增益裕度为 0 dB。
+两者通过同一个特征方程联系，但闭环谐振峰与开环PM不是任意系统的一一对应量。在本课无零点三阶族中，K48有虚轴对，开环在$\omega=\sqrt8$同时满足幅比1和相位−180度；这是该交点的边界倍率1（0dB）。有多交点、隐藏模态或不同零点时须完整复核，不从“极点近虚轴”直接推出所有Bode指标的次序。
 
 工程实践中，通常先用根轨迹确定 $K$ 的大致范围，再用 Bode 图精细设计校正网络。
 
@@ -703,20 +769,24 @@ $$
 - 根轨迹展示闭环极点随增益 $K$ 变化的轨迹，是连接"分析"和"设计"的桥梁
 - **相角条件**决定轨迹位置，**幅值条件**决定对应的 $K$ 值
 - 绘制规则（起点终点、实轴段、渐近线、分离点、虚轴交点）让你快速手绘根轨迹
-- 在根轨迹上叠加**等阻尼比线**和**等自然频率线**，可以直接读出时域性能
-- 添加零点把根轨迹拉向左边（改善动态性能），添加极点把根轨迹推向右边（降低稳定性）
+- 等阻尼比线与等自然频率线给出模态几何指标；完整响应的性能仍需单独复算
+- 添加零极点会改变轨迹，移动方向与稳定范围取决于位置；不能把几何直觉当性能保证
 - PD 控制 = 添加零点，PI 控制 = 添加极点+零点
 
 ### 核心公式速查
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 公式 | 表达式 |
 |------|--------|
 | 特征方程 | $1 + KG(s) = 0$ |
 | 相角条件 | $\angle G(s) = \pm 180°(2k+1)$ |
-| 幅值条件 | $K = 1/\|G(s)\|$ |
+| 幅值条件 | $K = 1/\vert G(s)\vert $ |
 | 渐近线角度 | $\phi_a = (2k+1) \times 180° / (n-m)$ |
 | 渐近线交点 | $\sigma_a = (\sum p_i - \sum z_j)/(n-m)$ |
 | 分离点 | $dK/ds = 0$ |
+
+</div>
 
 ---
 
@@ -730,11 +800,11 @@ $$
 
 **4.** 某单位反馈系统的开环传递函数为 $G(s) = \dfrac{K}{s(s+4)(s+6)}$。设计要求闭环系统的阻尼比 $\zeta \geq 0.5$。求满足条件的 $K$ 范围。
 
-**5.** 在题 4 的基础上，如果还要求调节时间 $t_s \leq 3$ 秒（2% 误差带），求同时满足两个指标的 $K$ 范围。
+**5.** 在题4基础上再要求$t_s\le3$s（2%误差带）。先用$t_s\approx4/\sigma$得到候选K区间，再对$K=448/27,20,25,880/27$用完整三阶、零初始单位阶跃验收。该候选区间能否直接当作满足两个指标的精确范围？说明理由，不把四个样本当全域可行域。
 
 **6.** 系统 $G(s) = \dfrac{K}{s^2(s+4)}$。画出根轨迹，判断是否存在使闭环系统稳定的 $K$ 值。如果不存在，说明需要添加什么样的控制器才能稳定系统。
 
-**7.** 思考题：解释为什么在开环传递函数中添加一个左半平面零点，通常能改善系统的动态性能。用根轨迹的几何特征（渐近线交点、根轨迹走向）来支持你的解释。
+**7.** 思考题：对本课三阶对象添加零点−z，推导新的重心与严格稳定条件。比较z1/6/10，解释为什么不能把“左半平面零点吸引轨迹”推成“任何零点都使响应更快、更稳”。
 
 ---
 
@@ -756,7 +826,7 @@ $$
 \sigma_a = \frac{0 + (-6)}{2} = -3
 $$
 
-**实轴上的根轨迹**：$-6 < s < 0$ 段（右侧 1 个极点，奇数）。
+**实轴上的根轨迹**：$-6 \lt  s \lt  0$ 段（右侧 1 个极点，奇数）。
 
 **分离点**：$K = -s(s+6) = -(s^2 + 6s)$
 
@@ -777,7 +847,7 @@ $$
 根轨迹从 $s = 0$ 和 $s = -6$ 出发，在 $s = -3$ 处分离后沿 $\text{Re}(s) = -3$ 的竖直线上下延伸，始终在左半平面。
 
 $$
-\boxed{\text{所有 } K > 0 \text{ 均稳定}}
+\boxed{\text{所有 } K \gt  0 \text{ 均稳定}}
 $$
 
 ---
@@ -796,7 +866,7 @@ $$
 \sigma_a = \frac{-1 + (-3) + (-5)}{3} = -3
 $$
 
-**实轴上的根轨迹**：$-3 < s < -1$ 和 $s < -5$。
+**实轴上的根轨迹**：$-3 \lt  s \lt  -1$ 和 $s \lt  -5$。
 
 **分离点**：$K = -(s+1)(s+3)(s+5)$
 
@@ -837,7 +907,7 @@ K_{\text{crit}} = 9 \times 23 - 15 = 207 - 15 = \boxed{192}
 $$
 
 $$
-\boxed{0 < K < 192 \text{ 时系统稳定}}
+\boxed{0 \lt  K \lt  192 \text{ 时系统稳定}}
 $$
 
 ---
@@ -860,12 +930,16 @@ $$
 
 **实轴上的根轨迹**：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 段 | 右侧零极点数 | 是否在根轨迹上 |
 |----|------------|-------------|
-| $s > 0$ | 0 | 否 |
-| $-1 < s < 0$ | 1 | **是** |
-| $-2 < s < -1$ | 2 | 否 |
-| $s < -2$ | 3 | **是** |
+| $s \gt  0$ | 0 | 否 |
+| $-1 \lt  s \lt  0$ | 1 | **是** |
+| $-2 \lt  s \lt  -1$ | 2 | 否 |
+| $s \lt  -2$ | 3 | **是** |
+
+</div>
 
 **分离点/会合点**：
 
@@ -903,7 +977,7 @@ $s_2 = -3.414$ 在 $(-\infty, -2)$ 段上 → **会合点**
 
 **渐近线**：$\sigma_a = (0-4-6)/3 = -10/3$，$\phi_a = 60°, 180°, 300°$
 
-**实轴上的根轨迹**：$-4 < s < 0$ 和 $s < -6$。
+**实轴上的根轨迹**：$-4 \lt  s \lt  0$ 和 $s \lt  -6$。
 
 **分离点**：$K = -(s^3 + 10s^2 + 24s)$
 
@@ -925,12 +999,16 @@ $$
 
 Routh 表：
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | | $s^0$ 列 | $s^1$ 列 |
 |---|---------|---------|
 | $s^3$ | 1 | 24 |
 | $s^2$ | 10 | $K$ |
 | $s^1$ | $(240-K)/10$ | 0 |
 | $s^0$ | $K$ | |
+
+</div>
 
 $s^1$ 行全为零：$K = 240$
 
@@ -956,6 +1034,8 @@ $K = 43.776 = \dfrac{5472}{125} \approx 43.8$
 
 $$
 |s| = 2.4, \quad |s+4| = \sqrt{2.8^2 + (1.2\sqrt{3})^2} = \sqrt{12.16} \approx 3.49, \quad |s+6| = \sqrt{4.8^2 + (1.2\sqrt{3})^2} = \sqrt{27.36} \approx 5.23
+
+
 $$
 
 $$
@@ -964,27 +1044,27 @@ $$
 
 相角验证：$\angle s = 120°$，$\angle(s+4) \approx 36.6°$，$\angle(s+6) \approx 23.4°$，总和 $= 180°$ ✓
 
-第三个极点：$p_3 = -10 - 2(-1.2) = -7.6$。主导极点检验：$|p_3|/|\text{Re}(s)| = 7.6/1.2 = 6.3 > 5$ ✓
+第三个极点：$p_3 = -10 - 2(-1.2) = -7.6$。衰减率比为$7.6/1.2=6.333\ldots$，仅是主导近似候选，真实超调/调节时间仍须完整响应验收。
 
-根轨迹从分离点（$\zeta = 1$）出发，随 $K$ 增大穿越 $60°$ 线（$\zeta = 0.5$，$K \approx 43.8$），继续向虚轴移动。
+根轨迹从分离点（几何$\zeta = 1$）出发，随 $K$ 增大穿越 $60°$ 线（$\zeta = 0.5$，$K \approx 43.8$），继续向虚轴移动。
 
 $$
-\boxed{K_{\text{分离}} \leq K \leq \frac{5472}{125}，\text{即 } 16.90 \leq K \leq 43.8}
+\boxed{0\lt K\leq \frac{5472}{125}=43.776}
 $$
 
-（$K < K_{\text{分离}}$ 时极点在实轴上，$\zeta = 1 \geq 0.5$，也满足。完整范围：$0 < K \leq 43.8$。）
+（$K \lt  K_{\text{分离}}$ 时极点在实轴上，$\zeta = 1 \geq 0.5$，也满足。完整范围：$0\lt K\leq43.776$。）
 
 ---
 
 **5.** 在题 4 的基础上，增加 $t_s \leq 3$ 秒（2% 误差带）。
 
-调节时间由主导极点的实部决定：$t_s \approx 4/\sigma$，其中 $\sigma = |\text{Re}(s)|$。
+先作明确的**近似候选筛选**：$t_s\approx4/\sigma$，其中σ取最慢模态的衰减率；这不是本三阶系统的调节时间公式。以下保留极点线交点推导，最后必须验完整响应。
 
 $$
 t_s \leq 3 \implies \sigma \geq \frac{4}{3} \implies \text{Re}(s) \leq -\frac{4}{3}
 $$
 
-**复数极点范围**（$K > K_{\text{分离}} \approx 16.90$）：
+**复数极点范围**（$K \gt  K_{\text{分离}} \approx 16.90$）：
 
 令 $s = -\dfrac{4}{3} + j\omega$，代入特征方程 $s^3 + 10s^2 + 24s + K = 0$。
 
@@ -1025,20 +1105,33 @@ $$
 **验证阻尼比**：$s = -\dfrac{4}{3} + j\dfrac{2\sqrt{6}}{3}$
 
 $$
-\zeta = \frac{|\text{Re}(s)|}{|s|} = \frac{4/3}{\sqrt{16/9 + 24/9}} = \frac{4/3}{2\sqrt{10}/3} = \frac{2}{\sqrt{10}} \approx 0.632 > 0.5 \quad \checkmark
+\zeta = \frac{|\text{Re}(s)|}{|s|} = \frac{4/3}{\sqrt{16/9 + 24/9}} = \frac{4/3}{2\sqrt{10}/3} = \frac{2}{\sqrt{10}} \approx 0.632 \gt  0.5 \quad \checkmark
 $$
 
 **单调性**：根轨迹从分离点 $\text{Re} = -1.569$（$K = 16.90$）出发，随 $K$ 增大，复数极点的实部单调递增趋向 0。因此 $\text{Re}(s) \leq -4/3$ 对应 $K \leq 880/27$。
 
-**实数极点范围**（$K < K_{\text{分离}}$）：主导极点从 $s = 0$（$K = 0$）移向分离点 $s = -1.569$。令主导极点 $= -4/3$，得 $K = \frac{4}{3} \cdot \frac{8}{3} \cdot \frac{14}{3} = \frac{448}{27} \approx 16.59$。故 $K \geq 448/27$ 时 $t_s \leq 3$。此范围极窄（$16.59 \leq K < 16.90$），且主导极点近似在此处精度有限。
+**实数极点范围**（$K \lt  K_{\text{分离}}$）：主导极点从 $s = 0$（$K = 0$）移向分离点 $s = -1.569$。令主导极点 $= -4/3$，得 $K = \frac{4}{3} \cdot \frac{8}{3} \cdot \frac{14}{3} = \frac{448}{27} \approx 16.59$。故$K\ge448/27$只满足实部线的候选约束，不能直接推出真实$t_s\le3$。此范围极窄（$16.59 \leq K \lt  16.90$），且主导极点近似在此处精度有限。
 
-**综合两个指标**：
+**两条近似几何约束给出的候选区间**：
 
 $$
 \boxed{\frac{448}{27} \leq K \leq \frac{880}{27}，\text{即 } 16.59 \leq K \leq 32.59}
 $$
 
-（主要范围：$K_{\text{分离}} \leq K \leq 880/27$，即 $16.90 \leq K \leq 32.59$。$t_s$ 约束比 $\zeta$ 约束更严格——$t_s$ 要求 $K \leq 32.59$，而 $\zeta$ 允许到 $K \leq 43.8$。）
+不能将上述候选框签发为真实可行区间。完整三阶复算如下：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
+| K | 真实2%调节时间(s) | 是否满足3s |
+|---|---|---|
+| 448/27 | 3.996414 | 否 |
+| 20 | 2.908469 | 是 |
+| 25 | 3.058924 | 否 |
+| 880/27 | 2.987951 | 是 |
+
+</div>
+
+四点都满足题4的模态阻尼约束，却出现通过与失败交错。误差带的最后穿越会随振荡峰改变，真实调节时间不必随K单调。实验用连续求根与尾部包络证明最后出带之后不再出带；这些点只否定旧保证，不枚举整个可行域。若要求精确全域，须继续跟踪全部误差带穿越和峰切触事件，不能用粗K扫描冒充证明。
 
 ---
 
@@ -1052,16 +1145,16 @@ $$
 \begin{array}{c|cc} s^3 & 1 & 0 \\ s^2 & 4 & K \\ s^1 & \dfrac{4 \cdot 0 - 1 \cdot K}{4} = -\dfrac{K}{4} & \\ s^0 & K & \end{array}
 $$
 
-对任意 $K > 0$：$s^1$ 行 $= -K/4 < 0$。第一列符号变化：$+4 \to -K/4 \to +K$，共 **2 次符号变化**，即 2 个右半平面极点。
+对任意 $K \gt  0$：$s^1$ 行 $= -K/4 \lt  0$。第一列符号变化：$+4 \to -K/4 \to +K$，共 **2 次符号变化**，即 2 个右半平面极点。
 
 $$
-\boxed{\text{系统对所有 } K > 0 \text{ 都不稳定}}
+\boxed{\text{系统对所有 } K \gt  0 \text{ 都不稳定}}
 $$
 
 **根轨迹特征**：
 
 - 极点：$s = 0$（二重），$s = -4$（$n = 3, m = 0$）
-- 实轴上的根轨迹：$s < -4$（右侧 3 个零极点，奇数）；$-4 < s < 0$ 段右侧有 2 个极点（偶数），不是根轨迹
+- 实轴上的根轨迹：$s \lt  -4$（右侧 3 个零极点，奇数）；$-4 \lt  s \lt  0$ 段右侧有 2 个极点（偶数），不是根轨迹
 - 渐近线：$\sigma_a = (0 + 0 - 4)/3 = -4/3$，$\phi_a = 60°, 180°, 300°$
 - 从二重极点 $s = 0$ 的出射角：$2\theta_{\text{dep}} - \angle(0 - (-4)) = 180° \implies \theta_{\text{dep}} = \pm 90°$
 
@@ -1079,7 +1172,7 @@ $$
 \begin{array}{c|cc} s^3 & 1 & K \\ s^2 & 4 & 2K \\ s^1 & \dfrac{4K - 2K}{4} = \dfrac{K}{2} & \\ s^0 & 2K & \end{array}
 $$
 
-$K > 0$ 时第一列全部为正 $\implies$ **系统对所有 $K > 0$ 稳定**。
+$K \gt  0$ 时第一列全部为正 $\implies$ **系统对所有 $K \gt  0$ 稳定**。
 
 $$
 \boxed{\text{添加 PD 控制器（左半平面零点）可稳定系统}}
@@ -1087,23 +1180,65 @@ $$
 
 ---
 
-**7.** 在开环传递函数中添加左半平面零点 $s = -z$（$z > 0$），从根轨迹的几何特征来看有三个效果：
+**7.** 原重心−2；加零点−z后$n-m=2$，新重心$(z-6)/2$。z1/6/10对应−2.5/0/+2，已经否定“必然左移”。
 
-**（1）渐近线交点左移**
+闭环$s^3+6s^2+(8+K)s+Kz$，在z>0、K>0下还需$48+(6-z)K\gt 0$：z1和6的所有正K稳定，z10仅$0\lt K\lt 12$。K40时原系统稳定而z10失稳；z1在K1的慢实根约−.120615，比原−.139194更靠近虚轴。补零点的效果必须结合位置、完整响应与导数噪声/滤波代价，不能宣称普适优胜。
 
-$$
-\sigma_a = \frac{\sum p_i - \sum z_j}{n - m}
-$$
 
-添加零点使分母 $n - m$ 减小（趋向无穷远的分支减少），同时分子中减去 $z$ 使 $\sigma_a$ 更负。渐近线交点左移意味着根轨迹整体向左半平面深处移动，闭环极点实部绝对值更大，响应更快、衰减更迅速。
+<JupyterNotebook
+  title="七题答案复算"
+  setupCode={`import numpy as np
+import control as ct
+import matplotlib.pyplot as plt
+from scipy.signal import residue
+from scipy.optimize import brentq
+print('python-control',ct.__version__)
+def settling(num,den):
+ p=np.roots(den)
+ if np.max(p.real)>=-1e-10:return None
+ r,ps,_=residue(num,np.polymul(den,[1,0]))
+ mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]
+ assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5
+ def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))
+ def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))
+ def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))
+ T=1.
+ while envelope(T)>.005:T*=2
+ def events(dt):
+  t=np.linspace(0,T,int(np.ceil(T/dt))+1)
+  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))
+  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]
+  cuts=[0.]+extrema+[T];cross=[]
+  for a,b in zip(cuts[:-1],cuts[1:]):
+   for target in [-.02,.02]:
+    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))
+  return sorted(cross),extrema
+ dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))
+ cross,extrema=events(dt);fine,_=events(dt/2)
+ assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9
+ ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])
+ assert envelope(T)<.005 and T>ts
+ return ts,100*peak,T,envelope(T),len(cross)
+`}
+  cells={[
+    {code: `print('Q1 centroid,breakK,all positive K stable:',-6/2,9)
+for k in [1,9,20]:print('Q1 K,poles',k,np.roots([1,6,k]))
+for sd in np.roots([3,18,23]):print('Q2 candidates s,K:',sd,-(sd+1)*(sd+3)*(sd+5))
+print('Q2 centroid,wcrit,Kcrit:',-3,np.sqrt(23),9*23-15)
+for sd in [-2+np.sqrt(2),-2-np.sqrt(2)]:print('Q3 s,K:',sd,-sd*(sd+1)/(sd+2))
+print('Q3 centroid:',1,'complex arc circle center/radius:',-2,np.sqrt(2))
+sd=(-10+2*np.sqrt(7))/3;print('Q4 break s,K:',sd,-sd*(sd+4)*(sd+6))
+s=-1.2+1.2j*np.sqrt(3);print('Q4 zeta .5 K:',-s*(s+4)*(s+6),'angles:',*[np.angle(s+a,deg=True) for a in [0,4,6]])
+print('Q4 magnitudes:',*[abs(s+a) for a in [0,4,6]])
+print('Q4 crossing K,w:',240,np.sqrt(24),'third pole:',-7.6,'decay ratio:',7.6/1.2)
+print('Q5 candidate K bounds:',448/27,880/27,'boundary zeta:',2/np.sqrt(10))
+for k in [448/27,20,25,880/27]:print('Q5 K,actual ts/MP/tail:',k,settling([k],[1,10,24,k]))
+for k in [1,10,40]:
+ print('Q6 K,original poles:',k,np.roots([1,4,0,k]),'PDzero2 poles:',np.roots([1,4,k,2*k]))
+print('Q6 centroid and departure degrees:',-4/3,[-90,90])
+for z in [1,6,10]:print('Q7 z,centroid,strict upper:',z,(z-6)/2,np.inf if z<=6 else 48/(z-6))
+`}
+  ]}
+/>
 
-**（2）渐近线角度改变**
-
-$n - m$ 减小，渐近线之间的间距增大。例如原来 3 条渐近线（$60°, 180°, 300°$）变为 2 条（$90°, 270°$），根轨迹不再沿 $60°$ 方向趋向无穷，而是沿更陡的方向——更晚穿越虚轴，甚至可能完全不穿越虚轴（如题中 PD 控制示例，临界增益变为 $\infty$）。
-
-**（3）零点"吸引"根轨迹**
-
-从相角条件看，零点贡献正相角，为了维持 $\pm 180°$ 的相角条件，根轨迹上的点必须向零点方向偏移。这使得根轨迹被"拉向"零点，进一步向左半平面弯曲。
-
-**综合效果**：更大的稳定增益范围、更快的响应速度、更好的阻尼特性。极端情况下（如习题 6），添加零点可以将一个"对所有增益都不稳定"的系统变为"对所有增益都稳定"的系统。这就是 PD 控制的根轨迹本质——通过引入零点来"重塑"根轨迹的形状。
-
+参考：[Illinois ECE486根轨迹讲义](https://courses.physics.illinois.edu/ece486/fa2026/documentation/handbook/lec10.html)与[渐近线推导](https://courses.physics.illinois.edu/ece486/fa2026/documentation/handbook/lec11.html)；实验使用[python-control 0.10.2 root_locus_map](https://python-control.readthedocs.io/en/0.10.2/generated/control.root_locus_map.html)，显式指定增益数组，读取实际loci/gains，不依赖旧版root_locus返回值或自动选窗。
