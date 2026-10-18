@@ -12,39 +12,9 @@ import { useECharts } from "@/components/wiki/use-echarts";
  * - Tf 越小，滤波效果越弱，接近理想微分；Tf 越大，高频抑制越强
  */
 
-function computeBodeData(Kd: number, Tf: number) {
-  const omegaPoints = 200;
-  const omegaMin = -2; // log10 scale
-  const omegaMax = 3;
-  
-  const idealMag: number[] = [];
-  const idealPhase: number[] = [];
-  const actualMag: number[] = [];
-  const actualPhase: number[] = [];
-  const omega: number[] = [];
-  
-  for (let i = 0; i <= omegaPoints; i++) {
-    const logOmega = omegaMin + (i / omegaPoints) * (omegaMax - omegaMin);
-    const w = Math.pow(10, logOmega);
-    
-    // Ideal derivative: H(s) = Kd * s
-    const magIdeal = 20 * Math.log10(Kd * w);
-    const phaseIdeal = 90; // constant +90 degrees
-    
-    // Actual derivative with filter: H(s) = Kd * s / (1 + Tf * s)
-    const numerator = Kd * w;
-    const denominator = Math.sqrt(1 + Math.pow(Tf * w, 2));
-    const magActual = 20 * Math.log10(numerator / denominator);
-    const phaseActual = 90 - Math.atan(Tf * w) * (180 / Math.PI);
-    
-    omega.push(w);
-    idealMag.push(magIdeal);
-    idealPhase.push(phaseIdeal);
-    actualMag.push(magActual);
-    actualPhase.push(phaseActual);
-  }
-  
-  return { omega, idealMag, idealPhase, actualMag, actualPhase };
+import { pidFilter } from "@/lib/pid-response";
+function computeBodeData(kd: number, tf: number) {
+ const a=pidFilter(kd,tf); return {omega:a.map(p=>p.w),idealMag:a.map(p=>p.ideal),idealPhase:a.map(()=>90),actualMag:a.map(p=>p.actual),actualPhase:a.map(p=>p.phase)};
 }
 
 export function PidDerivativeFilterExplorer() {
@@ -128,18 +98,20 @@ export function PidDerivativeFilterExplorer() {
   
   return (
     <div style={{ padding: "16px 0" }}>
+      <button onClick={() => setTf(.05)}>恢复滤波默认</button>
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontWeight: 600, marginRight: 12 }}>
           Tf (滤波器时间常数):
         </label>
         <input
+          aria-label="Tf 滤波时间常数"
           type="range"
           min={0.005}
           max={0.2}
           step={0.005}
           value={tf}
           onChange={(e) => setTf(parseFloat(e.target.value))}
-          style={{ width: 300, verticalAlign: "middle" }}
+          style={{ width: "min(100%, 300px)", verticalAlign: "middle" }}
         />
         <span style={{ marginLeft: 12, fontFamily: "monospace" }}>
           Tf = {tf.toFixed(3)} s
@@ -157,7 +129,7 @@ export function PidDerivativeFilterExplorer() {
         高频增益限制: Kd/Tf = {highFreqGain.toFixed(1)} ({highFreqGainDb.toFixed(1)} dB)
       </div>
       
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 16 }}>
         <div style={{ height: 350 }}>
           <div ref={useECharts(magOption)} style={{ width: "100%", height: "100%" }} />
         </div>

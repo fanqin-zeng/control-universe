@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T01:53:45.906Z",
-  "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/root-locus",
+  "testedAt": "2026-10-18T02:20:24.199Z",
+  "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/pid-controller",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -1114,31 +1114,31 @@
     {
       "key": "classic/pid-controller",
       "title": "PID控制",
-      "sourceHash": "2ae14f159118cd600ff0ef6b09761ad7b766c7371c72fa557dfbf02065194694",
+      "sourceHash": "87aec36f6b7c0da88220e2518c04f091ca21e4d6962f5588107715a078f3d1fd",
       "notebooks": [
         {
           "id": "classic/pid-controller#1",
-          "title": "🧪 Ziegler-Nichols 临界比例度法",
+          "title": "临界比例整定",
           "index": 1,
-          "line": 308,
+          "line": 263,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5247,
+              "milliseconds": 5297,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Ziegler-Nichols PID 参数:\n  Kp = 4.80\n  Ki = 2.64  (Ti = 1.81)\n  Kd = 2.18  (Td = 0.45)\n\n超调量: 40.5%\n"
+                  "text": "Ku,Tu,Kp,Ti,Td,Ki,Kd 8.0 3.6275987284684357 4.8 1.8137993642342178 0.45344984105855446 2.6463786980246016 2.176559237081061\nsample peak, y(20) 1.4057209134330821 1.0003170904622074\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 47716
+                  "base64Length": 25788
                 }
               ]
             }
@@ -1146,22 +1146,27 @@
         },
         {
           "id": "classic/pid-controller#2",
-          "title": "🧪 Z-N 阶跃响应法：从FOPDT模型提取参数",
+          "title": "纯延迟阶跃与整定",
           "index": 2,
-          "line": 430,
+          "line": 312,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 114,
+              "milliseconds": 61,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "y(L), y(L+T) 0.0 1.2642411176571153\nZN PI 1.5 5.0\nCC PI Kp,Ti 1.5416666666666667 3.0899999999999994\nCC PID Kp,Ti,Td 2.3472222222222223 3.2922077922077917 0.5172413793103449\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 54628
+                  "base64Length": 35412
                 }
               ]
             }
@@ -1169,27 +1174,37 @@
         },
         {
           "id": "classic/pid-controller#3",
-          "title": "🧪 抗积分饱和效果对比",
+          "title": "饱和与积分状态",
           "index": 3,
-          "line": 523,
+          "line": 374,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 229,
+              "milliseconds": 463,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "超调量对比：\n  标准PID:     53.9%\n  反饱和:      13.8%\n  积分分离:    18.7%\n  两者结合:    18.7%\n"
+                  "text": "level,AW,separation, y(10),I(10),y(20) 0.5 False False 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 True False 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 False True 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 True True 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 1.0 False False 0.9999546000702376 1.004962706011708 0.5030429749391898\nlevel,AW,separation, y(10),I(10),y(20) 1.0 True False 0.991507434076575 0.9777852144680271 0.5028102165436029\nlevel,AW,separation, y(10),I(10),y(20) 1.0 False True 0.9897096927599686 0.9730826972066876 0.5027711984205937\nlevel,AW,separation, y(10),I(10),y(20) 1.0 True True 0.9867155035195805 0.9652505211026202 0.5027062126281645\nlevel,AW,separation, y(10),I(10),y(20) 3.0 False False 0.9999546000702376 21.004962706011717 0.9999999979388462\nlevel,AW,separation, y(10),I(10),y(20) 3.0 True False 0.9999546000702376 -1.0004040522485198 0.48435053475869266\nlevel,AW,separation, y(10),I(10),y(20) 3.0 False True 0.9999546000702376 0.0 0.493268894680938\nlevel,AW,separation, y(10),I(10),y(20) 3.0 True True 0.9437231221066686 -3.168830633669556 -0.38740311676001393\nhalf-step max y error 0.0008746478147196035\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 88380
+                  "base64Length": 27644
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 34756
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32684
                 }
               ]
             }
@@ -1197,27 +1212,27 @@
         },
         {
           "id": "classic/pid-controller#4",
-          "title": "🧪 离散增量式PID仿真",
+          "title": "离散增量与限幅",
           "index": 4,
-          "line": 663,
+          "line": 477,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 242,
+              "milliseconds": 62,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "离散PID性能（Ts=0.05s）：\n  超调量: 243.8%\n  稳态值: 0.2161\n  稳态误差: 0.783866\n"
+                  "text": "gains, last y, sampled peak, max |u| (3.0, 1.0, 0.2) -2.4928290647486517 3.4383255726996618 10.0\ngains, last y, sampled peak, max |u| (0.1, 0.1, 0.0) 0.9928471678923942 0.9928471678923942 0.10500000000000001\nQ9 positions/increments [ 7.1   0.07 -1.91 -1.52] [np.float64(7.1), np.float64(0.0699999999999994), np.float64(-1.9099999999999993), np.float64(-1.5199999999999996)]\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 137984
+                  "base64Length": 84728
                 }
               ]
             }
@@ -1225,27 +1240,50 @@
         },
         {
           "id": "classic/pid-controller#5",
-          "title": "🧪 P / PI / PID 对比（直流电机）",
+          "title": "电机模型与候选验证",
           "index": 5,
-          "line": 845,
+          "line": 536,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 99,
+              "milliseconds": 160,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "P 控制稳态误差: 52.0%\nPI 控制稳态误差: 13.646563%\nPID 控制稳态误差: 12.503057%\n"
+                  "text": "physical denominator [0.005  0.06   0.1004] normalized [ 1.   12.   20.08] numerator 4.0\nopen poles [-9.98998747 -2.01001253]\nP Kp=5 ess 0.500998003992016 P gain for ess<1% 496.98\nP den [ 1.   12.   40.08] poles [-6.+2.01990099j -6.-2.01990099j] limit 0.49900199600798395 sample tr 10-90 0.49000000000000005 sample overshoot wrt limit 0.008855180611133662 y(10) 0.4990019960079875\nPI den [  1.    12.    40.08 200.  ] poles [-9.99199487+0.j         -1.00400256+4.35981673j -1.00400256-4.35981673j] limit 1.0 sample tr 10-90 0.275 sample overshoot wrt limit 48.49909020095393 y(10) 0.9999633362566579\nideal PID den [  1.    14.    40.08 200.  ] poles [-12.05130769+0.j          -0.97434616+3.95554787j\n  -0.97434616-3.95554787j] limit 1.0 sample tr 10-90 0.34800000000000003 sample overshoot wrt limit 39.286007821433344 y(10) 1.0000050666735765\nfiltered PID den [1.00000e+00 1.12000e+02 1.44008e+03 4.20800e+03 2.00000e+04] poles [-97.67619018+0.j         -12.3475534 +0.j\n  -0.98812821+3.95050609j  -0.98812821-3.95050609j] limit 1.0 sample tr 10-90 0.341 sample overshoot wrt limit 38.89763241047024 y(10) 1.000002647161223\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 80648
+                  "base64Length": 38192
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#6",
+          "title": "三项模型与九题复算",
+          "index": 6,
+          "line": 956,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 21,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 1 0.16666666666666666 0.08333333333333333\nQ1 5 0.038461538461538464 0.019230769230769232\nQ1 20 0.009900990099009901 0.0049504950495049506\nexplorer 1 2 0 y0,y10 0.0 1.0000380937884845\nexplorer 2 1 0.2 y0,y10 0.16666666666666669 0.9943874067298546\nexplorer 1 0 0 y0,y10 0.0 0.4999999989694232\nexplorer 2 1 0 y0,y10 0.0 0.9939372445848296\nexplorer 2 1 2 y0,y10 0.6666666666666666 1.001192768064862\nfilter 23.010299956639813 45.0 26.020599913279625\nQ3 poles [-0.17610056+0.86071662j -0.17610056-0.86071662j -0.64779887+0.j        ]\nQ4 8 3.6275987284684357 4.8 2.6463786980246016 2.1765592370810616\nQ6 2.25 6.666666666666667 0.33749999999999997\nQ7 poles [-1.9486833 -0.0513167]\nQ8 Routh 1 8 14.5 18.620689655172413 2.5\nQ9 7.1 -12 5\n"
                 }
               ]
             }
@@ -10440,14 +10478,14 @@
   "complete": true,
   "totals": {
     "lessons": 70,
-    "notebooks": 309,
-    "enabled": 284,
+    "notebooks": 310,
+    "enabled": 285,
     "codeOnly": 25
   },
   "releaseTotals": {
     "lessons": 70,
-    "notebooks": 309,
-    "enabled": 282,
+    "notebooks": 310,
+    "enabled": 283,
     "codeOnly": 27
   },
   "provenance": [
@@ -10650,6 +10688,16 @@
       "testedAt": "2026-10-18T01:53:45.906Z",
       "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/root-locus",
       "inputPath": ".agent/semester-03/classic-06/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T02:11:43.663Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/pid-controller",
+      "inputPath": ".agent/semester-03/classic-07/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T02:20:24.199Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/pid-controller",
+      "inputPath": ".agent/semester-03/classic-07/browser-python.json"
     }
   ]
 }
