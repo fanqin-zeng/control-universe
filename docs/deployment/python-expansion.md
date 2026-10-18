@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 73 课 / 336 个实验 / 511 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 309 个实验，保留 27 个。实际执行 486 个单元格（含异常单元格），生成 160 张 PNG。原始记录中 311 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 73 课 / 339 个实验 / 514 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 312 个实验，保留 27 个。实际执行 489 个单元格（含异常单元格），生成 161 张 PNG。原始记录中 314 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -25,7 +25,7 @@
 | modern/controllability-observability（可控性与可观性） | 6/6 | 6 | 无 |
 | modern/lyapunov-modern（线性系统稳定性） | 5/5 | 11 | 无 |
 | modern/state-feedback（状态反馈） | 5/5 | 6 | 无 |
-| modern/state-observer（状态观测器） | 2/2 | 2 | 无 |
+| modern/state-observer（状态观测器） | 5/5 | 5 | 无 |
 | modern/optimal-control-basics（最优控制） | 1/1 | 2 | 无 |
 | modern/lqr-controller（LQR控制） | 1/1 | 4 | 无 |
 | modern/multivariable-systems（多变量系统） | 1/1 | 6 | 无 |
@@ -145,3 +145,5 @@ CLASSIC-05本轮关闭历史PY-001/PY-002/PY-003：三个widgets实验改为静�
 MODERN-03（2026-10-18）：仅本课五实验/11cell按最终源指纹重新执行通过，加入小车能量与半正定边界；原27项待办ID/原因/处置保留。证据见.agent/semester-03/modern-03/pyodide.json。本轮未发布Pages。
 
 MODERN-04（2026-10-18）：本课五实验六cell按最终源指纹重新执行，覆盖原两实验，统一基线DC并补施力、矩阵/十题、前馈零点与电机精确指标。原27项待办保留。证据.agent/semester-03/modern-04/pyodide.json；本轮未发布Pages。
+
+MODERN-05（2026-10-18）：本课五实验五cell按最终源指纹实际执行通过，补非零初差、真实自由响应/速度峰值、全题与降阶/输入/偏差边界；保留原两实验用途和27待办原ID/原因/处置。证据.agent/semester-03/modern-05/pyodide.json；本轮未发布Pages。

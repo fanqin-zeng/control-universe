@@ -613,3 +613,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### MODERN-04 本轮执行记录（2026-10-18）
 
 状态反馈按重构技能Phase1–4完成，保留八主题/五例/十题/原两实验用途，扩五Notebook六cell。纠正SISO/MIMO边界、Ackermann坐标与行向量证明、Q6矩阵/Q7缩放/Q10正常秩及含D输出；原组件开环闭式纠错、等DC基线与施力双图，独立物理ODE核全部19滑块值×501点。Q9保留正确K并补精确指标/包络验收。路径/先修不变，短标题保留旧ID；签发、验收与master真实提交以全局checklist及.agent/semester-03/modern-04/acceptance.md为准。W08/W09/W10与27Python待办不关闭，未发布Pages，MODERN-05另开会话。
+
+### MODERN-05 本轮执行记录（2026-10-18）
+
+状态观测器使用重构技能Phase1–4，保留九主题、三例十题与原两实验用途。小车只测位置引入，真实SVG；纠正Q2伴随型/增益、Q5增广矩阵、例3根虚部，补可检测、分离性瞬态/实际输入/已知D、降阶z完整实现与偏差边界。真实组件26档×401对独立ODE，五原始实验严格内核/Pyodide，31旧ID兼容。最终签发及提交以全局checklist与.agent/semester-03/modern-05/acceptance.md为准；27项Python待办及W08/W09/W10不关闭，未发布Pages，MODERN-06另开会话。

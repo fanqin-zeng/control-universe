@@ -1,0 +1,32 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8891 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+modern/state-observer  [FAIL]  5 个 notebook · 5 个 cell
+      FAIL S6  Notebook 3 cell 1（:489）执行报错 AssertionError:
+          ---------------------------------------------------------------------------
+          AssertionError                            Traceback (most recent call last)
+          Cell In[2], line 9
+      5 for p in range(-30,-4):
+      6     L=np.asarray(acker(A.T,C.T,[p,p])).reshape(-1,1);F=A-L@C
+      7     x=np.array([expm(A*ti)@x0 for ti in t]);err=np.array([expm(F*ti)@e0 for ti in t]);estimate=x+err
+      8     expected=np.c_[(-1+(p+3)*t)*np.exp(p*t),(p+3)**2*t*np.exp(p*t)]
+----> 9     assert np.max(abs(err-expected))<1e-10
+     10     peakTime=-1/p;peak=float((expm(F*peakTime)@e0)[1])
+     11     noise=abs(np.linalg.solve(100j*np.eye(2)-F,L)[1,0])
+     12     assert abs(peak-(p+3)**2/(-p*np.e))<1e-10
+
+          AssertionError:
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 5 个 notebook · 5 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 5 个 cell，其中 error 1 个
+      按判据：S6×1
+      FAIL 课程：modern/state-observer
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/modern-05/notebooks.json

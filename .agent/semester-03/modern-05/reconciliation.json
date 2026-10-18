@@ -1,0 +1,164 @@
+{
+  "sourceHash": "9088f4534beeac45f3748cb4ab65b31a0fd4f49023af16ab1da7dc945d4f5fd6",
+  "notebooks": [
+    {
+      "title": "对偶增益设计",
+      "cells": 1,
+      "pass": true,
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Expected place rejection: at least one of the requested pole is repeated more than rank(B) times\np= -10 L= [17. 47.] characteristic= [  1.  20. 100.]\np= -15 L= [ 27. 142.] characteristic= [  1.  30. 225.]\ndistinct poles agree: [ 26. 130.]\n"
+        }
+      ]
+    },
+    {
+      "title": "观测器闭环响应",
+      "cells": 1,
+      "pass": true,
+      "outputs": [
+        {
+          "type": "image",
+          "length": 55528
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "example3 K= [[7.  1.2]] L= [ 27. 142.] N= 9.0 polynomial= [1.000e+00 3.420e+01 3.600e+02 1.215e+03 2.025e+03] two actual initial errors verified\n"
+        }
+      ]
+    },
+    {
+      "title": "真实估计与速度峰值",
+      "cells": 1,
+      "pass": true,
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "p= -30 L= [ 57. 727.] velocity peak= 8.939470420466046 time= 0.03333333333333333 noise@100= 6.669732970730545 e@2= [4.64095070e-25 1.27669927e-23]\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "p= -15 L= [ 27. 142.] velocity peak= 3.531642635245845 time= 0.06666666666666667 noise@100= 1.3887630978665164 e@2= [2.15225328e-12 2.69499542e-11]\np= -5 L= [7. 2.] velocity peak= 0.29430355293715377 time= 0.2 noise@100= 0.019998942764700663 e@2= [0.0001362 0.0003632]\n"
+        },
+        {
+          "type": "image",
+          "length": 70432
+        }
+      ]
+    },
+    {
+      "title": "三例与十题核验",
+      "cells": 1,
+      "pass": true,
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "examples1/2 L= [[17, 47]] polynomial= s**2 + 20*s + 100\nexample3 L= [[27, 142]] polynomial= s**2 + 30*s + 225\nQ1 L= [[11, 3]] polynomial= s**2 + 16*s + 64\nQ2 L= [[24, 145, -140]] polynomial= s**3 + 30*s**2 + 300*s + 1000\nQ3 L= [[3/2, 15/2]] polynomial= s**2 + 5*s + 6\nQ5 full M= [[0, 1, 0, 0], [-18, -6, -17, -6], [0, 0, -20, 1], [0, 0, -100, 0]] Q6 block determinant verified\nQ7 L= [[50, 400]] polynomial= s**2 + 60*s + 900\nQ10 L= [[10, 25, 0, 0], [0, 1, 10, 25]] polynomial= s**4 + 20*s**3 + 150*s**2 + 500*s + 625\nQ10 full O= [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0]] rank= 4 chosen minor=-1\n"
+        }
+      ]
+    },
+    {
+      "title": "降阶与误差边界",
+      "cells": 1,
+      "pass": true,
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Q8 bias/d= [ 0.98 -0.34] output error/d= 0.9799999999999999\ndetectable but unobservable example F= [[-3, 0], [0, -2]]\nbias as constant state: this model augmented rank=3, not an automatic integrator fix\nreduced z0= -7.0 initial speed error= 0.0 max residual= 2.220446049250313e-15\nreduced z0= 0.0 initial speed error= 7.0 max residual= 2.2147728095944785e-11\nobserver assumed input= 0.5 final error= [-0.  0.]\nobserver assumed input= 1.0 final error= [0.005 0.085]\nQ7 zero initial error: MO= 4.3213918263772255 tp= 0.3141592653589793 last2%= 0.4216184030629444\nQ7 initial error= [0.0, 0.0] sampled position peak= 1.043213808533273 sample y(.5)= 1.0045498801675208\nQ7 initial error= [-0.1, 0.0] sampled position peak= 1.0394886309361386 sample y(.5)= 1.0048211818891553\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Q9 matching actual input and known D cancellation verified\n"
+        }
+      ]
+    }
+  ],
+  "component": {
+    "cases": 26,
+    "nodes": 401,
+    "maxError": 2.4495960815329454e-12,
+    "default": {
+      "position": 0.25235492758449124,
+      "velocity": -0.23403928869575705,
+      "estimate": 0.2523549275866435,
+      "velocityEstimate": -0.2340392886688071,
+      "e1": 2.15225328283324e-12,
+      "e2": 2.6949954150259705e-11,
+      "l1": 27,
+      "l2": 142,
+      "peakTime": 0.06666666666666667,
+      "peak": 3.5316426352458468,
+      "noiseVelocity": 1.3887630978665162
+    },
+    "endpoints": [
+      {
+        "position": 0.25235492758449124,
+        "velocity": -0.23403928869575705,
+        "estimate": 0.25235492758449124,
+        "velocityEstimate": -0.23403928869575705,
+        "e1": 4.640950704229156e-25,
+        "e2": 1.2766992692011526e-23,
+        "l1": 57,
+        "l2": 727,
+        "peakTime": 0.03333333333333333,
+        "peak": 8.93947042046605,
+        "noiseVelocity": 6.6697329707305455
+      },
+      {
+        "position": 0.25235492758449124,
+        "velocity": -0.23403928869575705,
+        "estimate": 0.2524911273737787,
+        "velocityEstimate": -0.23367608925765718,
+        "e1": 0.00013619978928745456,
+        "e2": 0.0003631994380998788,
+        "l1": 7,
+        "l2": 2,
+        "peakTime": 0.2,
+        "peak": 0.2943035529371539,
+        "noiseVelocity": 0.01999894276470066
+      }
+    ]
+  },
+  "maxNotebookResponseError": 2.446931546273845e-12,
+  "observations": [
+    {
+      "p": -30,
+      "L": [
+        57,
+        727
+      ],
+      "peak": 8.939470420466046,
+      "peakTime": 0.03333333333333333,
+      "noise": 6.669732970730545
+    },
+    {
+      "p": -15,
+      "L": [
+        27,
+        142
+      ],
+      "peak": 3.531642635245845,
+      "peakTime": 0.06666666666666667,
+      "noise": 1.3887630978665164
+    },
+    {
+      "p": -5,
+      "L": [
+        7,
+        2
+      ],
+      "peak": 0.29430355293715377,
+      "peakTime": 0.2,
+      "noise": 0.019998942764700663
+    }
+  ],
+  "oldIds": 31,
+  "pass": true
+}
