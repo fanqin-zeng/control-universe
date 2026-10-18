@@ -46,7 +46,7 @@
 | 38 | MODERN-09 | 现代控制案例 | content/modern/modern-case-study.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-09.md) |
 | 39 | NONLINEAR-01 | 非线性系统 | content/nonlinear/nonlinear-characteristics.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-01.md) |
 | 40 | NONLINEAR-02 | 相平面 | content/nonlinear/phase-plane.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-02.md) |
-| 41 | NONLINEAR-03 | Lyapunov稳定性 | content/nonlinear/lyapunov-stability.mdx | 已完成 | 待润色 | — |
+| 41 | NONLINEAR-03 | Lyapunov稳定性 | content/nonlinear/lyapunov-stability.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-03.md) |
 | 42 | NONLINEAR-04 | 描述函数 | content/nonlinear/describing-function.mdx | 已完成 | 待润色 | — |
 | 43 | NONLINEAR-05 | 反馈线性化 | content/nonlinear/feedback-linearization.mdx | 已完成 | 待润色 | — |
 | 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 已完成 | 待润色 | — |
