@@ -2522,45 +2522,127 @@ export const catalog: Chapter[] = [
       {
         "slug": "passivity-control",
         "title": "无源控制",
+        "subsections": [
+          {
+                    "slug": "引言",
+                    "title": "引言"
+          },
+          {
+                    "slug": "给小车记能量账",
+                    "title": "给小车记能量账"
+          },
+          {
+                    "slug": "无源性的定义",
+                    "title": "无源性的定义"
+          },
+          {
+                    "slug": "阻尼反馈能保证什么",
+                    "title": "阻尼反馈能保证什么"
+          },
+          {
+                    "slug": "把目标位置变成能量最低点",
+                    "title": "把目标位置变成能量最低点"
+          },
+          {
+                    "slug": "无源系统的互联",
+                    "title": "无源系统的互联"
+          },
+          {
+                    "slug": "实现中的边界",
+                    "title": "实现中的边界"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "modern/multivariable-systems"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "iss-small-gain",
         "title": "输入状态稳定性",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "从无扰动到有扰动", "title": "从无扰动到有扰动" },
+          { "slug": "输入状态稳定性的定义", "title": "输入状态稳定性的定义" },
+          { "slug": "用lyapunov函数估计误差", "title": "用Lyapunov函数估计误差" },
+          { "slug": "两个系统相互影响", "title": "两个系统相互影响" },
+          { "slug": "小增益条件", "title": "小增益条件" },
+          { "slug": "条件没通过怎么办", "title": "条件没通过怎么办" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "classic/frequency-domain-analysis"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "switched-hybrid-systems",
         "title": "切换与混杂系统",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "模式与切换规则", "title": "模式与切换规则" },
+          { "slug": "稳定模式也会切坏", "title": "稳定模式也会切坏" },
+          { "slug": "共同lyapunov函数", "title": "共同Lyapunov函数" },
+          { "slug": "驻留时间", "title": "驻留时间" },
+          { "slug": "状态跳变的模型", "title": "状态跳变的模型" },
+          { "slug": "zeno现象", "title": "Zeno现象" },
+          { "slug": "建模与仿真检查", "title": "建模与仿真检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "bifurcation-chaos",
         "title": "分岔与混沌",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "平衡点怎样消失", "title": "平衡点怎样消失" },
+          { "slug": "对称分支", "title": "对称分支" },
+          { "slug": "振荡怎样出现", "title": "振荡怎样出现" },
+          { "slug": "从连续到逐步更新", "title": "从连续到逐步更新" },
+          { "slug": "周期倍化", "title": "周期倍化" },
+          { "slug": "混沌与预测", "title": "混沌与预测" },
+          { "slug": "读懂分岔图", "title": "读懂分岔图" },
+          { "slug": "受迫系统的跳跃", "title": "受迫系统的跳跃" },
+          { "slug": "数值检查", "title": "数值检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/phase-plane",
           "math/numerical-methods"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },

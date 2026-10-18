@@ -2,7 +2,7 @@
 
 > **本文件由 `npm run check -- --fix-outline` 自动生成，请勿手工编辑。**
 > 唯一权威数据源：`content/catalog.ts`；核对脚本：`scripts/check-catalog.mjs`。
-> 生成日期：2026-10-18
+> 生成日期：2026-10-19
 
 ## 1. 控制导论 (introduction)
 
@@ -77,10 +77,10 @@
 | 5.6 | 滑模控制 | sliding-mode-control | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability |
 | 5.7 | 反步设计 | backstepping | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>math/multivariable-calculus |
 | 5.8 | 自适应控制 | adaptive-control-basics | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>modern/state-feedback |
-| 5.9 | 无源控制 | passivity-control | ⬜ 骨架（占位页） | grad | theory | 10 | nonlinear/lyapunov-stability<br>modern/multivariable-systems |
-| 5.10 | 输入状态稳定性 | iss-small-gain | ⬜ 骨架（占位页） | grad | theory | 10 | nonlinear/lyapunov-stability<br>classic/frequency-domain-analysis |
-| 5.11 | 切换与混杂系统 | switched-hybrid-systems | ⬜ 骨架（占位页） | grad | theory | 10 | nonlinear/lyapunov-stability |
-| 5.12 | 分岔与混沌 | bifurcation-chaos | ⬜ 骨架（占位页） | grad | theory | 9 | nonlinear/phase-plane<br>math/numerical-methods |
+| 5.9 | 无源控制 | passivity-control | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>modern/multivariable-systems |
+| 5.10 | 输入状态稳定性 | iss-small-gain | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>classic/frequency-domain-analysis |
+| 5.11 | 切换与混杂系统 | switched-hybrid-systems | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability |
+| 5.12 | 分岔与混沌 | bifurcation-chaos | ✅ 已交付 v1.3 | grad | theory | 9 | nonlinear/phase-plane<br>math/numerical-methods |
 
 ## 6. 离散控制 (discrete-sampled)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 49（status = v1.3）
+- **已交付 v1.3**: 53（status = v1.3）
 - **有正文待审校**: 25（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 131（status = empty，渲染占位页）
+- **骨架占位**: 127（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 156（= draft 25 + empty 131 + 无 status 0）
-- **有 MDX 正文**: 74
-- **catalog 小节总数**: 870
-- **讨论日志**: 70 篇（覆盖 49 门；有 MDX 无日志 25 门）
-- **交互组件**: 64 个文件（被正文引用 64，孤儿 0）
+- **未完成 v1.3**: 152（= draft 25 + empty 127 + 无 status 0）
+- **有 MDX 正文**: 78
+- **catalog 小节总数**: 914
+- **讨论日志**: 74 篇（覆盖 53 门；有 MDX 无日志 25 门）
+- **交互组件**: 68 个文件（被正文引用 68，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

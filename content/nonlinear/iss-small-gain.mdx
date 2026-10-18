@@ -1,0 +1,320 @@
+---
+title: "输入状态稳定性"
+description: "用初始误差与扰动幅度估计状态，理解ISS、Lyapunov估计和小增益条件，分清充分条件与失稳判定。"
+---
+
+# 输入状态稳定性
+
+## 引言
+
+汽车开了定速巡航，没有风时，车速偏离设定值后能慢慢恢复。遇到持续顶风，情况就不同了：即使控制器没有失稳，车速也可能一直差一点。我们现在想问的，不只是“最后能不能回来”，还有**“风有多大，车速误差最多能有多大？”**
+
+在[Lyapunov稳定性](/nonlinear/lyapunov-stability)中，我们主要检查没有外扰时状态是否回到平衡点。这一课把扰动也放进估计：初始偏差的影响应当逐渐消退；持续扰动留下的影响，则由扰动幅度约束。这就是输入状态稳定性，简称**ISS（input-to-state stability）**。
+
+下面的方程用于说明这两个影响，不是某款汽车的精确模型。状态、输入和时间都经过归一化，数值不对应真实车速、风速或秒数。我们先研究一个状态，再看两个稳定的小系统为什么可能在连接后失稳。所需工具是微分方程求解、Lyapunov函数和简单的特征值判断；频域增益的背景见[频域分析](/classic/frequency-domain-analysis)。
+
+## 从无扰动到有扰动
+
+先看最简单的误差方程：
+
+$$
+\dot x=-ax+d(t),\qquad a>0.
+$$
+
+$x$表示归一化误差，$d$表示控制器没有抵消的外部影响。若$d=0$，解为$x(t)=e^{-at}x(0)$，初始误差会消失。若$d(t)$一直等于常数$D$，则
+
+$$
+x(t)=e^{-at}x(0)+\frac{D}{a}(1-e^{-at}).
+$$
+
+前一项随时间消退，后一项最后趋于$D/a$。**有持续外扰时不回到零，并不等于失稳。** 这也不是所有巡航控制器必有静差的结论；这里研究的只是写出的误差方程。
+
+扰动不必恒定。只要在所考察的时间内$|d(t)|\le D$，由积分解可得
+
+$$
+|x(t)|\le e^{-at}|x(0)|+\int_0^t e^{-a(t-s)}|d(s)|\,ds
+\le e^{-at}|x(0)|+\frac{D}{a}(1-e^{-at}).
+$$
+
+因此可以再放宽一点，写成容易记的形式：
+
+$$
+|x(t)|\le e^{-at}|x(0)|+\frac{D}{a}.
+$$
+
+取$a=2$、$D=0.4$，扰动留下的幅度上界为$0.2$。这是对一整类扰动的保证，不是说每条轨迹都恰好停在$0.2$；正弦扰动可能让误差一直振动。
+
+## 输入状态稳定性的定义
+
+对一般系统$\dot x=f(x,d)$，令$f(0,0)=0$。假设$f$对状态和输入局部Lipschitz：在每个有界的小邻域内，函数的变化量能用一个常数乘变量的变化量来约束。本课的光滑方程满足这一条件，它用来保证给定初态和允许输入能够唯一确定轨迹。输入允许可测、局部本质有界的函数，不要求处处连续。这里“本质”表示可以忽略孤立点等零测集上的数值；对本课的连续扰动，它就是通常的幅度上界。
+
+记
+
+$$
+\|d\|_{[0,t]}=\mathop{\mathrm{ess\ sup}}_{0\le s\le t}|d(s)|.
+$$
+
+如果存在函数$\beta$和$\gamma$，使任意初态和允许输入都能让解延续到所有有限时间，并满足
+
+$$
+|x(t)|\le\beta(|x(0)|,t)+\gamma(\|d\|_{[0,t]}),
+$$
+
+就称系统是**输入状态稳定的**。多维状态的$|x|$表示选定的范数。
+
+这两个函数各管一件事：
+
+- $\gamma$从$0$出发，连续、严格递增，称为$\mathcal K$类函数。扰动幅度越大，允许的状态界越大。本课可使用$\gamma(r)=r/2$；这是一份可用保证，不一定是最小的界。
+- $\beta$对第一个变量具有上述$\mathcal K$性质；固定第一个变量后，它随时间不增并趋于$0$，称为$\mathcal{KL}$类函数。它描述初态影响逐渐被忘掉。例如$\beta(r,t)=re^{-2t}$。
+
+读定义时，先抓住“**逐渐消退的一项，加上由扰动决定的一项**”，再记函数类别。有限时刻的输入上界只用已经发生的扰动，不需要预知未来。
+
+由定义立刻能读出两件事：零输入时原点全局渐近稳定；全程有界的输入使状态保持有界。这里约束的是整个状态，不只是某个输出。反过来，只知道零输入稳定，还不足以保证ISS，后面会给反例。
+
+## 用Lyapunov函数估计误差
+
+给刚才的模型增加一个非线性恢复项：
+
+$$
+\dot x=-2x-x^3+d.
+$$
+
+当$x$偏离零时，$-x^3$总把它往回拉。下面证明，它不会破坏刚才的输入幅度界。取$V=x^2/2$，沿轨迹有
+
+$$
+\dot V=-2x^2-x^4+xd\le-2x^2+|x||d|.
+$$
+
+先看$|x|$本身：在$x\ne0$处，
+
+$$
+\frac{d}{dt}|x|=-2|x|-|x|^3+\operatorname{sign}(x)d
+\le-2|x|+|d|.
+$$
+
+过零时$|x|$可能不可微，但上述比较可用几乎处处导数，或右上导数来理解；积分比较仍然成立。于是对$|d|\le D$，
+
+$$
+|x(t)|\le e^{-2t}|x(0)|+\frac D2(1-e^{-2t})
+\le e^{-2t}|x(0)|+\frac D2.
+$$
+
+如果只想使用光滑的$V$，也有一条常见路线。由$(|x|-|d|/2)^2\ge0$得到$|x||d|\le x^2+d^2/4$，所以
+
+$$
+\dot V\le-x^2+\frac{d^2}{4}=-2V+\frac{d^2}{4}.
+$$
+
+积分后再换回$x$：
+
+$$
+V(t)\le e^{-2t}V(0)+\frac{D^2}{8}(1-e^{-2t}),
+\qquad |x(t)|\le e^{-t}|x(0)|+\frac D2.
+$$
+
+最后一步用了$\sqrt{A+B}\le\sqrt A+\sqrt B$。它给出了较保守的初态衰减估计，但同样能证明ISS。**从平方能量换回状态时，不能漏掉平方根。** 两份合法的界不一样，也不说明其中一定有一份算错。
+
+<JupyterNotebook title="实验1：扰动幅度与状态上界" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq`} cells={[{code:`t=np.linspace(0,8,1601)
+D=.4; x0=1.
+tight=np.exp(-2*t)*abs(x0)+D/2*(1-np.exp(-2*t))
+loose=np.exp(-t)*abs(x0)+D/2
+inputs=[('constant',lambda t:.4),('negative',lambda t:-.4),('sine',lambda t:.4*np.sin(2*t)),('decaying',lambda t:.4*np.exp(-t))]
+plt.figure(figsize=(8,3))
+for name,d in inputs:
+    sol=solve_ivp(lambda t,x:-2*x-x**3+d(t),[0,8],[x0],t_eval=t,method='DOP853',rtol=1e-11,atol=1e-12)
+    assert sol.success
+    violation=np.max(np.abs(sol.y[0])-tight)
+    assert violation<1e-8
+    print('%s: x(8)=%.6f, max bound violation=%.3e' % (name,sol.y[0,-1],violation))
+    plt.plot(t,abs(sol.y[0]),label=name)
+root=brentq(lambda x:2*x+x**3-.4,0,1)
+print('线性输入幅度界 D/a=%.6f；非线性恒定扰动平衡=%.6f' % (D/2,root))
+print('V路线：D²/8=%.6f；换回状态 D/2=%.6f' % (D**2/8,D/2))
+plt.plot(t,tight,'k--',label='direct bound'); plt.plot(t,loose,':',label='V bound')
+plt.xlabel('normalized time'); plt.ylabel('|x|'); plt.legend(); plt.grid(); plt.show()`}]} />
+
+恒定$d=0.4$时，非线性系统的平衡约为$x_*=0.196222$，小于统一幅度界$0.2$。这很正常：界要覆盖允许的整类输入，不必和某条输入的平衡重合。
+
+若$d(t)$逐渐趋于零，ISS还保证状态趋于零。理解这个结论时，可以从较晚的时刻重新开始估计：过去积累的状态成为新的初态，而此后的扰动幅度越来越小。不能把$[0,t]$上始终含有早期大扰动的上确界，直接说成随$t$趋零。
+
+## 两个系统相互影响
+
+实际控制中，两个部分常常互相影响：例如控制误差影响观测器，估计误差又影响控制器。各自面对外部输入时能控制住误差，不代表接起来后一定没问题——影响可能绕着反馈环一圈圈积累。
+
+先用两个一阶系统看清这件事：
+
+$$
+\dot x=-x+gz+d_1,\qquad
+\dot z=-z+gx+d_2,\qquad g\ge0.
+$$
+
+若把另一状态当作输入，两个子系统都具有自身衰减项。由上一节的积分方法可得
+
+$$
+|x(t)|\le e^{-t}|x(0)|+g\|z\|_{[0,t]}+\|d_1\|_{[0,t]},
+$$
+
+$$
+|z(t)|\le e^{-t}|z(0)|+g\|x\|_{[0,t]}+\|d_2\|_{[0,t]}.
+$$
+
+单看每条式子没有问题，但$z$的界里又有$x$，不能把两边当作互不相关的已知常数。需要检查相互影响会不会越绕越大。
+
+![两个自身衰减的系统通过耦合系数相互影响](/images/nonlinear/iss-coupling.svg)
+
+## 小增益条件
+
+令$M(t)=\max(|x(t)|,|z(t)|)$。如果当前$|x|$较大，那么
+
+$$
+\frac{d}{dt}|x|\le-|x|+g|z|+|d_1|
+\le-(1-g)M+|d_1|.
+$$
+
+如果$|z|$较大，也得到同样的形式。两者相等或过零时用右上导数，便有
+
+$$
+D^+M\le-(1-g)M+D,\qquad
+|d_1(t)|\le D,\quad |d_2(t)|\le D.
+$$
+
+这里$D^+$表示从右侧看的最大变化率；它让我们可以比较带有尖点的最大值函数。若$g<1$，比较方程给出
+
+$$
+M(t)\le e^{-(1-g)t}M(0)
++\frac{D}{1-g}(1-e^{-(1-g)t}).
+$$
+
+这就是整个互联系统的一份ISS估计。两条内部影响路径的增益都是$g$，绕一圈的乘积为$g^2$，条件也可以写成$g^2<1$，所以叫**小增益条件**。它的“增益”比较的是输入幅度与状态幅度，不是要求某条Bode曲线在某个频点小于零。
+
+取$g=0.5$、$d_1=0.2$、$d_2=0$、$x(0)=1,z(0)=0$，则$g^2=0.25$，初态项的衰减率为$0.5$，最终幅度上界为$0.4$。而恒定输入下的实际平衡是
+
+$$
+x_* =\frac{0.2}{1-g^2}=\frac4{15},\qquad
+z_*=gx_* =\frac2{15}.
+$$
+
+因此平衡约为$(0.266667,0.133333)$，不必取到$0.4$的界。默认仿真在$t=8$时约为$(0.272164,0.138825)$，仍有初态的残余影响。
+
+<JupyterNotebook title="实验2：连接后的增益和稳定性" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp`} cells={[{code:`t=np.linspace(0,8,1601)
+def run(g,D=.2,opposite=False):
+    sign=-1 if opposite else 1
+    A=np.array([[-1.,g],[sign*g,-1.]])
+    s=solve_ivp(lambda t,y:A@y+np.array([D,0.]),[0,8],[1.,0.],t_eval=t,method='DOP853',rtol=1e-11,atol=1e-12)
+    assert s.success
+    return A,s.y
+plt.figure(figsize=(8,3))
+for g in [0.,.5,.95,1.,1.2]:
+    A,y=run(g)
+    eig=np.linalg.eigvals(A)
+    if g<1:
+        bound=np.exp(-(1-g)*t)+.2/(1-g)*(1-np.exp(-(1-g)*t))
+        assert np.max(np.max(abs(y),axis=0)-bound)<1e-8
+    print('same g=%.2f: g²=%.4f, max real=%.4f, x(8)=%.6f, z(8)=%.6f' % (g,g*g,np.max(eig.real),y[0,-1],y[1,-1]))
+    plt.plot(t,y[0],label='g='+str(g))
+A,y=run(1.2,opposite=True)
+print('opposite g=1.2: max real=%.4f, x(8)=%.6f, z(8)=%.6f' % (np.max(np.linalg.eigvals(A).real),y[0,-1],y[1,-1]))
+g=.5; D=.2; steady=np.linalg.solve(np.array([[1.,-g],[-g,1.]]),[D,0])
+print('default: product=%.6f, decay=%.6f, ultimate bound=%.6f, steady=(%.6f, %.6f)' % (g*g,1-g,D/(1-g),*steady))
+A,y=run(1.,D=0.)
+print('critical zero input: x(8)+z(8)=%.6f' % np.sum(y[:,-1]))
+plt.xlabel('normalized time'); plt.ylabel('x'); plt.legend(); plt.grid(); plt.show()`}]} />
+
+<IssSmallGainExplorer />
+
+更一般地，若两条状态幅度不等式是$D^+|x|\le-a|x|+b|z|+D_1$、$D^+|z|\le-c|z|+h|x|+D_2$，其中$a,c>0$、$b,h\ge0$，两条路径的增益分别是$b/a$与$h/c$。乘积小于$1$，也就是$bh<ac$，可以选择适当的加权最大范数来得到同类ISS估计。习题会练习怎样选择这个权重。
+
+对于更一般的非线性增益，乘积要改成函数复合。若两子系统已有**最大值形式**的ISS估计，内部增益为$\gamma_{12}$和$\gamma_{21}$，典型条件为
+
+$$
+\gamma_{12}(\gamma_{21}(r))<r,\qquad r>0.
+$$
+
+它表示绕一圈的幅度估计比出发时小。这里有一个技术区别：前面写的是求和形式；改成最大值形式时，通常需要放大增益，不能只把加号换成“最大值”而保留全部原系数。应用非线性小增益定理时，还要核对估计形式、解的存在性、输入及互联条件；本课的二维结论已经直接证明，不靠省略这些步骤。
+
+## 条件没通过怎么办
+
+先问清楚：没通过的是一个充分条件，还是系统真的不稳定？在刚才的**同向线性耦合**中，特征方程是
+
+$$
+(\lambda+1)^2-g^2=0,
+\qquad \lambda=-1+g,\ -1-g.
+$$
+
+所以对这个特定模型，$g<1$也恰好是零输入渐近稳定的充要条件。$g=1$时有零特征值，初态在相应方向上的分量不会消失；恒定外扰还可能造成持续增长。$g>1$时有正特征值，原点不稳定。这里的判定来自特征值，不是来自有限时间曲线“看起来在涨”。
+
+如果把第二条耦合改成反号，
+
+$$
+\dot x=-x+gz+d_1,\qquad
+\dot z=-z-gx+d_2,
+$$
+
+使用绝对值估计时仍会得到$g^2<1$这份充分条件。但真实特征值是$-1\pm\mathrm{i}g$，对所有有限$g$实部均为$-1$；这个线性系统始终稳定且ISS。取$g=1.2$，小增益幅度条件没通过，系统却仍稳定。这说明忽略符号的界可能保守，不能把条件的失败当成系统失稳。
+
+再看另一个容易混淆的判断：
+
+$$
+\dot x=-x+dx.
+$$
+
+$d=0$时，全局解指数趋零。但有界输入$d=2$让方程变成$\dot x=x$，非零状态无限增长。因此“零输入全局渐近稳定”不能单独推出ISS。ISS要求用同一份幅度关系，约束所有允许初态和有界输入。
+
+<JupyterNotebook title="实验3：核对界与反例" setupCode={`import numpy as np
+import sympy as sp`} cells={[{code:`x,d=sp.symbols('x d',real=True)
+Vdot=-2*x*x-x**4+x*d
+upper=-x*x+d*d/4
+assert sp.expand(upper-Vdot-((x-d/2)**2+x**4))==0
+print('Young余项恒等式验证通过；V衰减系数=2，D=.4时D²/8=%.6f，状态输入界=%.6f' % (.4**2/8,.4/2))
+# General weighted max: a=2,b=1,c=3,h=1, choose rho=1.
+a,b,c,h,rho=2.,1.,3.,1.,1.
+rate=min(a-b/rho,c-rho*h)
+print('加权例：两路增益=%.6f, %.6f；乘积=%.6f；rho=%.1f，衰减率=%.6f' % (b/a,h/c,b*h/(a*c),rho,rate))
+assert rate>0
+# xdot=(-1+d)x; x(0)=1, bounded constant d=2.
+for t in [0.,2.,4.]:
+    print('d=2: t=%.0f, x=%.6f' % (t,np.exp(t)))
+print('同向g=1.2的特征值',np.linalg.eigvals([[-1.,1.2],[1.2,-1.]]))
+print('反向g=1.2的实部',np.linalg.eigvals([[-1.,1.2],[-1.2,-1.]]).real)
+xx,zz=sp.symbols('xx zz')
+eq=sp.solve([-xx+zz/2+sp.Rational(1,5),-zz+xx/2],[xx,zz])
+assert eq=={xx:sp.Rational(4,15),zz:sp.Rational(2,15)}
+print('默认精确平衡',eq)`}]} />
+
+实际设计中，先把执行器误差、外扰或估计误差放进准确的闭环方程，再判断是否ISS。输入“通常不大”不能替代幅度范围；只在小范围成立的估计，也不能标成全局ISS。更完整的定义、Lyapunov判据与互联系统讨论可读[Sontag的ISS讲义](https://www.sontaglab.org/FTPDIR/04cetraro_reprint.pdf)；本课算例和参数是独立设计的教学例，不是实车试验。
+
+## 小结
+
+ISS把两类影响放进同一个界：初始偏差会逐渐消退，持续扰动留下的状态范围由输入幅度约束。Lyapunov函数能帮助找到这样的界，但它可能保守。多个系统连接后，还要限制彼此放大的程度；小增益条件提供一份充分保证，没通过时应继续分析，而不是立即宣布失稳。
+
+## 习题
+
+**习题1。** 对$\dot x=-2x+d$，取$x(0)=1$、$|d|\le0.4$。写出一组ISS函数$\beta,\gamma$。若$d$恒为$0.4$，求平衡值；若$d=0.4\sin t$，是否必须趋于同一个平衡值？
+
+**习题2。** 对$\dot x=-2x-x^3+d$，取$V=x^2/2$。证明$\dot V\le-2V+d^2/4$，求$V(t)$和$|x(t)|$的界。为什么其中的初态衰减率与直接估计$|x|$时不同？
+
+**习题3。** 已知$D^+|x|\le-a|x|+b|z|+D_1$、$D^+|z|\le-c|z|+h|x|+D_2$。尝试$M=\max(|x|,\rho|z|)$，推导对$\rho>0$的条件。取$a=2,b=1,c=3,h=1$，给出可用权重及衰减率。
+
+**习题4。** 解释为什么$\dot x=-x+dx$不是ISS。对两种符号的二维耦合系统，分别计算$g=1.2$时的特征值实部，并说明为什么不能把小增益条件的失败当成统一的失稳结论。
+
+## 答案
+
+**答案1。** 可取$\beta(r,t)=re^{-2t}$、$\gamma(r)=r/2$。由积分解得$|x(t)|\le e^{-2t}|x(0)|+0.2(1-e^{-2t})\le e^{-2t}|x(0)|+0.2$。恒定输入时解趋于$0.4/2=0.2$；正弦输入一般产生持续振动，不要求收敛到同一个点，ISS约束的是幅度。
+
+**答案2。** $\dot V=-2x^2-x^4+xd\le-2x^2+|x||d|\le-x^2+d^2/4=-2V+d^2/4$。若$|d|\le D$，比较方程得$V(t)\le e^{-2t}V(0)+D^2(1-e^{-2t})/8$。开平方后$|x(t)|\le e^{-t}|x(0)|+D/2$。中间丢弃了负项，并用平方不等式放宽交叉项，故暂态估计更保守；它与直接得到的$e^{-2t}|x(0)|+D(1-e^{-2t})/2$都可成立。
+
+**答案3。** 当$|x|$主导时，$|z|\le M/\rho$，故$D^+M\le-(a-b/\rho)M+D_1$；当$\rho|z|$主导时，$|x|\le M$，故$D^+M\le-(c-\rho h)M+\rho D_2$。因此只需
+
+$$
+\frac ba<\rho<\frac ch,
+\qquad \mu=\min(a-b/\rho,c-\rho h)>0.
+$$
+
+这里先按$b,h>0$写区间；某一路为零时直接检查两项正性。区间有解等价于$bh<ac$。题设可取$\rho=1$，$\mu=\min(1,2)=1$。输入项为$\max(D_1,\rho D_2)$，积分后得到$M(t)\le e^{-\mu t}M(0)+\max(D_1,\rho D_2)(1-e^{-\mu t})/\mu$。
+
+**答案4。** 零输入时$x=x(0)e^{-t}$，但恒定有界输入$d=2$时$x=x(0)e^t$，初态非零就无界，无法满足ISS的统一有界保证。同向二维系统特征值为$-1\pm1.2$，即$0.2,-2.2$，原点不稳定；反向系统特征值为$-1\pm1.2\mathrm{i}$，实部都为$-1$，线性系统稳定且ISS。两者的绝对值增益乘积都为$1.44$，因此这份忽略符号的充分条件不能区分它们，必须进一步分析。

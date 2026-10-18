@@ -1,0 +1,323 @@
+---
+title: "分岔与混沌"
+description: "从摆的平衡点消失出发，理解分支、振荡、周期倍化，以及混沌和数值证据之间的区别。"
+---
+
+# 分岔与混沌
+
+## 引言
+
+想象一根由电机施加转矩的摆。转矩较小时，摆可以偏过一个角度停住：电机的转矩与重力矩互相抵消。继续增大转矩，平衡角也会变。可重力矩有上限，电机再使劲，摆还能找到一个新的角度停住吗？
+
+问题已经从“这个平衡点稳不稳”，变成了“参数改变后，原来的平衡点还在不在”。这就是本课的入口。**分岔**指参数跨过某个值时，系统的定性行为改变，例如平衡点合并消失，或原来收敛到一点的运动变成持续振荡。幅度稍微变大、衰减稍微变慢，本身还不够叫分岔。
+
+我们先看连续运动，再看一步一步更新的模型。后者只需一条简单公式，就能从收敛、交替走到不规则变化。先修是[相平面](/nonlinear/phase-plane)和[数值方法](/math/numerical-methods)；读到复杂图形时，先问“它到底记录了什么”，别急着给它贴上“混沌”的标签。
+
+![电机转矩与摆的重力矩平衡示意](/images/nonlinear/bifurcation-pendulum.svg)
+
+## 平衡点怎样消失
+
+把时间和转矩归一化，取带阻尼的摆模型
+
+$$
+\ddot\theta+0.2\dot\theta+\sin\theta=\tau.
+$$
+
+$\theta$是从竖直向下方向量起的角度，$\tau\ge0$是恒定电机转矩。平衡要求$\dot\theta=0$、$\sin\theta_e=\tau$。按角度模$2\pi$计数：
+
+- $0\le\tau<1$时，有两个平衡位置：$\arcsin\tau$和$\pi-\arcsin\tau$。前一个局部渐近稳定，后一个是鞍点。
+- $\tau=1$时，两者在$\theta=\pi/2$处合并。线性化有一个零特征值，必须看非线性项。
+- $\tau>1$时，没有平衡位置，因为$\sin\theta$不可能大于$1$。
+
+这里稳定性的依据是特征方程$s^2+0.2s+\cos\theta_e=0$，不是只看曲线画在上方还是下方。**无平衡点并不自动等于任意系统都持续旋转**；那还取决于方程、状态空间与外力。对这根摆，正转矩超过重力矩上限才是关键。
+
+把每个参数对应的平衡点连起来，得到**平衡分支**。最简单的合并模型是
+
+$$
+\dot x=\mu-x^2.
+$$
+
+$\mu>0$时，平衡点为$x=\pm\sqrt\mu$；$f_x=-2x$说明正的一支稳定、负的一支不稳定。$\mu<0$时，两支都不存在。在$\mu=0$，$\dot x=-x^2$：从右边靠近原点，从左边却离开，所以原点不是双侧稳定的。这叫**鞍结分岔**，也常叫折叠分岔。摆的参数增大到临界值时，是沿相反的方向走过这类局部结构；不要求把摆的全局运动都化成这一维方程。
+
+一般标量方程$\dot x=f(x,\mu)$中，$f=0$、$f_x=0$只给候选点。要得到这种普通折叠，还需$f_\mu\ne0$、$f_{xx}\ne0$等非退化条件。简单说，就是参数真的推动两支相遇，曲线也真的弯了起来。
+
+## 对称分支
+
+并不是所有分岔都让平衡点消失。考虑
+
+$$
+\dot x=\mu x-x^3.
+$$
+
+原点一直存在。$\mu<0$时，只有原点，且稳定；$\mu>0$时，原点变得不稳定，同时出现两支稳定平衡$x=\pm\sqrt\mu$。图形像一把叉子，因此称为**超临界叉形分岔**。
+
+可以直接验算：原点的导数是$\mu$，非零平衡处的导数是$\mu-3\mu=-2\mu$。临界值$\mu=0$时，$\dot x=-x^3$仍把两侧的状态推向原点，只是没有指数衰减。这也提醒我们：**零特征值表示线性化判不出，并不表示原系统必然不稳定。**
+
+这类叉形依赖$x\mapsto-x$的对称性。额外加一个小常数外力，两边就不再完全对称，不能把这幅理想图当成所有设备的通用分岔图。
+
+<JupyterNotebook title="实验1：平衡分支与临界点" setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt`} cells={[{code:`x,mu=sp.symbols('x mu',real=True)
+for name,f in [('fold',mu-x*x),('pitchfork',mu*x-x**3)]:
+    print(name,'f_x=',sp.diff(f,x),'f_mu=',sp.diff(f,mu),'f_xx=',sp.diff(f,x,2))
+for tau in [.95,1.,1.05]:
+    angles=[] if tau>1 else [np.arcsin(tau)] if tau==1 else [np.arcsin(tau),np.pi-np.arcsin(tau)]
+    print('torque=%.2f, equilibrium count per 2pi=%d' % (tau,len(angles)))
+    for th in angles:
+        ev=np.roots([1,.2,0. if tau==1 else np.cos(th)])
+        print('  theta=%.6f, eigenvalues=%s' % (th,np.array2string(ev,precision=6)))
+print('mu=.25: fold equilibria=+-.5, derivatives=-1,+1; pitchfork equilibria=0,+-.5, derivatives=.25,-.5,-.5')
+assert sp.diff(mu-x*x,mu)==1 and sp.diff(mu-x*x,x,2)==-2
+assert sp.simplify(sp.diff(mu*x-x**3,x).subs(x,sp.sqrt(mu)))==-2*mu
+fig,ax=plt.subplots(1,2,figsize=(8,3))
+g=np.linspace(0,1,301)
+ax[0].plot(g,np.sqrt(g),'b-',label='stable'); ax[0].plot(g,-np.sqrt(g),'r--',label='unstable')
+ax[1].plot([-1,0],[0,0],'b-'); ax[1].plot([0,1],[0,0],'r--')
+ax[1].plot(g,np.sqrt(g),'b-'); ax[1].plot(g,-np.sqrt(g),'b-')
+for a,title in zip(ax,['saddle-node','pitchfork']):
+    a.set(xlim=(-1,1),ylim=(-1.1,1.1),xlabel='mu',ylabel='equilibrium x',title=title); a.grid()
+ax[0].legend(); plt.tight_layout(); plt.show()`}]} />
+
+## 振荡怎样出现
+
+前两例改变的是平衡位置。若两个状态互相带动，平衡点失稳后也可能出现一个稳定的圈。看这个归一化模型：
+
+$$
+\begin{aligned}
+\dot x&=\mu x-y-(x^2+y^2)x,\\
+\dot y&=x+\mu y-(x^2+y^2)y.
+\end{aligned}
+$$
+
+令$R=\sqrt{x^2+y^2}$表示到原点的距离，$\phi$表示方向角。在$R>0$处换成极坐标，得到
+
+$$
+\dot R=\mu R-R^3,\qquad \dot\phi=1.
+$$
+
+这次叉形里的一维变量，变成了不能为负的半径。当$\mu<0$，半径缩到零；当$\mu>0$，任意非零初态的半径趋向$\sqrt\mu$，同时不断转动，于是出现一个半径$\sqrt\mu$、周期$2\pi$的稳定极限环。**稳定的是这个圈，不是圈上某一个固定相位。** 精确从原点出发仍停在原点，不会凭空自己跳到圈上。
+
+原点的特征值是$\mu\pm i$。这给出**超临界Hopf分岔**的一份可直接验证的模型：参数过零，原点失稳，旁边出现稳定的小振荡。一般系统中，只看见纯虚特征值还不够，还要检查实部是否真正穿过零、非线性项是否退化；如果仅有$\dot x=-y,\dot y=x$，每个圆都闭合，却没有随参数产生极限环的过程。
+
+取$\mu=0.25$，极限环半径为$0.5$。从$(0.1,0)$出发，到$t=40$时半径已约为$0.500000$；而$\mu=0$时半径仍约为$0.074536$。后者收敛慢，不是“不收敛”。
+
+<JupyterNotebook title="实验2：从衰减到持续振荡" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp`} cells={[{code:`fig,ax=plt.subplots(1,2,figsize=(8,3))
+tt=np.linspace(0,40,801); R0=.1; q0=R0*R0
+for mu in [-.25,0,.25]:
+    def rhs(t,z):
+        x,y=z; q=x*x+y*y
+        return [mu*x-y-q*x,x+mu*y-q*y]
+    sol=solve_ivp(rhs,[0,40],[R0,0],method='DOP853',rtol=1e-10,atol=1e-12,t_eval=tt,max_step=.1)
+    q=q0/(1+2*q0*tt) if mu==0 else mu/(1+(mu/q0-1)*np.exp(-2*mu*tt))
+    exact=np.sqrt(q)
+    err=max(abs(np.linalg.norm(sol.y,axis=0)-exact)); assert err<1e-8
+    print('mu=%+.2f, R(40)=%.6f, limiting radius=%.6f' % (mu,exact[-1],np.sqrt(max(0,mu))))
+    ax[0].plot(tt,np.linalg.norm(sol.y,axis=0),label='mu='+str(mu)); ax[1].plot(*sol.y,label='mu='+str(mu))
+print('mu=.25: cycle radius=.500000; period=%.6f' % (2*np.pi))
+ax[0].set(xlim=(0,40),ylim=(0,.55),xlabel='normalized time',ylabel='radius')
+ax[1].set(xlim=(-.55,.55),ylim=(-.55,.55),xlabel='x',ylabel='y'); ax[1].set_aspect('equal')
+for a in ax:a.grid(); a.legend()
+plt.tight_layout(); plt.show()`}]} />
+
+## 从连续到逐步更新
+
+如果每隔一个驱动周期观察一次受迫系统，记录的是“这一次的状态怎样变成下一次的状态”。这就是相平面课里的Poincaré映射。现在先用更简单的一维映射学习同样的思想：
+
+$$
+x_{n+1}=F_r(x_n)=r x_n(1-x_n),\qquad 0\le x_n\le1,\quad 0\le r\le4.
+$$
+
+$n$是更新次数，不是连续时间；$r$是增长参数。它叫**Logistic映射**，可以把$x$想成相对种群数量：数量少时增长，数量多时受到资源限制。这是教学模型，不是对任意种群都准确的预报公式。它也不等于连续微分方程$\dot x=r x(1-x)$；“把导数换成下一步”会彻底改变动力学。
+
+不动点满足$F_r(x^*)=x^*$。在$r>1$时，除了零点，还有区间内的非零不动点$x^*=1-1/r$。小误差经过一步变为
+
+$$
+\delta x_{n+1}\approx F_r'(x^*)\delta x_n.
+$$
+
+这个一步放大因子叫**乘子**。其绝对值小于$1$，扰动逐步缩小；大于$1$，扰动增大；恰好等于$1$则需要继续分析非线性项。连续系统要求特征值实部为负，离散系统要求乘子在单位圆内，两套判据不要串台。
+
+对非零不动点，$F_r'(x^*)=2-r$，所以$1<r<3$时它局部渐近稳定。$r=3$时乘子到达$-1$：误差每次反号，线性衰减恰好失效。接下来会怎样？
+
+## 周期倍化
+
+超过$r=3$后，可以寻找两个交替的值：$F_r(x_-)=x_+$、$F_r(x_+)=x_-$。把不动点从$F_r(F_r(x))=x$的解中去掉，得到
+
+$$
+x_\pm=\frac{r+1\pm\sqrt{(r-3)(r+1)}}{2r},\qquad r>3.
+$$
+
+扰动要走完两步才回到同一位置，所以整个周期的乘子是两步导数相乘：
+
+$$
+m_2=F_r'(x_-)F_r'(x_+)=4+2r-r^2.
+$$
+
+$|m_2|<1$给出稳定区间$3<r<1+\sqrt6$，上端约为$3.449490$。在$r=3.2$时，两个值约为$0.513045$和$0.799455$，两步乘子为$0.160000$；旧的不动点乘子已是$-1.2$。原来每一步重复一次，现在两步才重复，这叫**周期倍化**。
+
+接着还能出现周期4、8等分支，但“参数越大，周期必然越来越长”并不对。某些区间里，会重新出现稳定的短周期，称为**周期窗口**。下面的实验把固定参数下的时间序列，与逐个参数分别计算的末段点云并排画出。
+
+<BifurcationExplorer />
+
+## 混沌与预测
+
+不规则变化不一定来自噪声。Logistic公式没有随机数，相同初态与精确算术会给相同轨迹；但两个很近的初态，经过多次更新可能分开得很快。若长期运动仍然有界，却对初态非常敏感，就可能出现确定性混沌。本课用这一图景认识混沌，不试图用一张有限点云代替严格定义与证明。
+
+小误差的累积倍率约为$\prod_{n=0}^{N-1}|F_r'(x_n)|$。取对数，再除以步数，得到有限时间Lyapunov指数估计：
+
+$$
+\widehat\lambda_N=\frac1N\sum_{n=0}^{N-1}\ln|r(1-2x_n)|.
+$$
+
+它衡量每一步平均放大还是缩小。正值表示这个窗口中的微小扰动平均增长，负值表示平均衰减。它与前几课用于证明稳定性的Lyapunov函数不是同一个对象。若窗口内导数为零，对数为$-\infty$；不能偷偷加一个小数再把它当原定义。
+
+默认$r=3.2$的稳定周期2给出$\lambda=\tfrac12\ln|0.16|\approx-0.916291$。$r=3.9$的多组非特殊初态实验，有限窗口估计为正；但这只是该参数、初态和窗口的数值证据，需要加长窗口、改变初态来复核。
+
+$r=4$还有一个能帮助理解的精确关系。令$x=\sin^2(\pi\vartheta)$，三角恒等式给出
+
+$$
+4x(1-x)=\sin^2(2\pi\vartheta).
+$$
+
+也就是角变量每步倍增、再按模$1$折回。初态的细小差别被不断放大，末尾的小数位也会逐渐影响到前面。对几乎所有初态，相应的不变分布下长期指数为$\ln2\approx0.693147$；“几乎所有”允许例外，并不是“每一个”。
+
+一个特别有用的反例是$r=4,x_0=0.75$：它精确停在$0.75$，轨迹周期为1，乘子却是$-2$，指数仍为$\ln2>0$。**正指数不能单独证明所看到的那条轨迹不周期**，它也可能是一条不稳定周期轨道。浮点数只有有限种状态，数值序列最终也会重复；计算机不可能靠有限步数直接展示“永不重复”。
+
+<JupyterNotebook title="实验3：周期、窗口与敏感性" setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+
+def orbit(r,x0=.2,burn=2000,keep=256):
+    x=x0
+    for _ in range(burn): x=r*x*(1-x)
+    values=[]
+    for _ in range(keep):
+        x=r*x*(1-x); values.append(x)
+    return np.array(values)
+
+def finite_exponent(r,x0=.2,burn=2000,N=8000):
+    x=x0
+    for _ in range(burn):x=r*x*(1-x)
+    total=0.
+    for _ in range(N):
+        d=abs(r*(1-2*x))
+        if d==0:return -np.inf
+        total+=np.log(d); x=r*x*(1-x)
+    return total/N`} cells={[{code:`r=3.2
+p=np.array([(r+1-np.sqrt((r-3)*(r+1)))/(2*r),(r+1+np.sqrt((r-3)*(r+1)))/(2*r)])
+assert np.max(abs(np.sort(orbit(r)[-2:])-p))<1e-12
+print('r=3.2: x-=%.6f, x+=%.6f, fixed multiplier=%.6f, two-step multiplier=%.6f' % (*p,2-r,4+2*r-r*r))
+print('period-2 upper endpoint=%.6f; exponent=%.6f' % (1+np.sqrt(6),np.log(abs(4+2*r-r*r))/2))
+z,a=sp.symbols('z a'); f=lambda z:a*z*(1-z)
+assert sp.expand((f(f(z))-z)-(-z*(a*z-a+1)*(a*a*z*z-a*a*z-a*z+a+1)))==0
+fig,ax=plt.subplots(1,2,figsize=(9,3))
+for r in [2.8,3.2,3.5,3.83,3.9]:
+    values=orbit(r)
+    print('r=%.2f, final eight=%s' % (r,np.array2string(values[-8:],precision=6)))
+    ax[0].plot(np.arange(2001,2033),values[:32],'.-',label='r='+str(r))
+for r in np.linspace(2.8,4,121):ax[1].plot(np.full(48,r),orbit(r,keep=48),'k.',ms=.4)
+ax[0].set(xlim=(2001,2032),ylim=(0,1),xlabel='iteration n',ylabel='x'); ax[0].legend(fontsize=7)
+ax[1].set(xlim=(2.8,4),ylim=(0,1),xlabel='r',ylabel='post-transient samples')
+plt.tight_layout(); plt.show()`},{code:`for r in [3.2,3.83,3.9,4.]:
+    vals=[finite_exponent(r,N=n) for n in [4000,8000,16000]]
+    print('r=%.2f, exponent for N=4000/8000/16000: %s' % (r,np.array2string(np.array(vals),precision=6)))
+for seed in [.123,.2,.731]:
+    print('r=3.9, x0=%.3f, exponent=%.6f' % (seed,finite_exponent(3.9,seed)))
+assert all(finite_exponent(3.9,s)>0 for s in [.123,.2,.731])
+print('r=4, x0=.75: values=',orbit(4,.75,keep=4),'exponent=%.6f; ln2=%.6f' % (finite_exponent(4,.75),np.log(2)))
+assert np.all(orbit(4,.75)==.75)
+assert np.isneginf(finite_exponent(2,.5))
+print('r=2, x0=.5: zero derivative, exponent=-infinity; no artificial epsilon')`}]} />
+
+## 读懂分岔图
+
+实验台的点云，对每个$r$都重新从同一个$x_0$出发，先丢弃2000步，再保留48步。因此它画的是**这组初态与计算预算下的末段样本**：一条细线常对应收敛到不动点，两条细线常对应周期2，一片散点则需要进一步检查。
+
+它没有画出所有不稳定分支，也未必能找到共存的全部吸引子。临近临界点时，收敛可能很慢，丢弃2000步也未必足够；看见一条宽带，可能是长暂态、很长的周期、准周期或混沌，不能仅凭“很乱”定案。有限窗口指数也不是自动识别器。
+
+$r=3.83$附近的短周期窗口，正好反驳“越往右越乱”的读图习惯。想判断周期，可以比较隔$p$步的状态，并计算整周期乘子；想研究不稳定分支，需要解方程或做延拓，而不能只靠让系统自由运行。
+
+## 受迫系统的跳跃
+
+回到连续时间。受迫硬化弹簧可以写成
+
+$$
+\ddot x+0.2\dot x+x+0.5x^3=1.5\cos(\omega t).
+$$
+
+固定$\omega$时，右端外力每隔$T_p=2\pi/\omega$重复。每个驱动周期取一次状态$(x,\dot x)$，就得到一个二维的一周期映射$P$。周期1响应满足$P(z)=z$；$DP(z)$的两个特征值就是该响应的乘子，模都小于$1$才有局部渐近稳定。
+
+同一频率可能有多个周期响应。下面通过求解$P(z)-z=0$找候选，并同时积分变分方程$\dot\Phi=J(t)\Phi,\Phi(0)=I$得到$DP$。这里$J(t)$是沿候选轨迹的状态Jacobian。初猜由只保留基频的谐波平衡近似产生，但**近似方程的三个幅值根，不等于真实方程三条已证稳定的响应**；收敛残差和乘子都要另验。
+
+在$\omega=2$的本例中，三个找到的周期1解有两条局部稳定、一条不稳定。中间解的最大乘子模约为$1.962669>1$，这份判断来自真实变分积分，不是来自“中间那条通常不稳”的印象。它们不是全部解的穷尽证明，也没有给出各自完整吸引域。
+
+<JupyterNotebook title="实验4：同一频率的多个周期响应" setupCode={`import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import root`} cells={[{code:`c,alpha,F,w=.2,.5,1.5,2.; P=2*np.pi/w
+zroots=np.roots([9*alpha**2/16,3*alpha*(1-w*w)/2,(1-w*w)**2+c*c*w*w,-F*F])
+amps=np.sqrt(np.sort(zroots.real[(abs(zroots.imag)<1e-9)&(zroots.real>0)]))
+def flow(z):
+    def rhs(t,y):
+        x,v=y[:2]; J=np.array([[0.,1.],[-1-3*alpha*x*x,-c]])
+        return np.r_[v,-c*v-x-alpha*x**3+F*np.cos(w*t),(J@y[2:].reshape(2,2)).ravel()]
+    sol=solve_ivp(rhs,[0,P],np.r_[z,np.eye(2).ravel()],method='DOP853',rtol=1e-10,atol=1e-12)
+    assert sol.success
+    return sol.y[:2,-1],sol.y[2:,-1].reshape(2,2)
+solutions=[]
+for A in amps:
+    phase=np.arctan2(c*w,1-w*w+.75*alpha*A*A)
+    guess=[A*np.cos(phase),w*A*np.sin(phase)]
+    answer=root(lambda z:flow(z)[0]-z,guess,jac=lambda z:flow(z)[1]-np.eye(2),tol=1e-10)
+    end,J=flow(answer.x); residual=np.linalg.norm(end-answer.x)
+    assert answer.success and residual<1e-8
+    assert abs(np.linalg.det(J)-np.exp(-c*P))<1e-8
+    multipliers=np.linalg.eigvals(J); rho=max(abs(multipliers))
+    solutions.append(answer.x)
+    print('seed amplitude=%.6f, state=(%.6f, %.6f), max multiplier modulus=%.6f, stable=%s' % (A,*answer.x,rho,rho<1))
+assert min(np.linalg.norm(solutions[i]-solutions[j]) for i in range(3) for j in range(i))>1e-2
+print('Liouville determinant=%.6f; all shooting residuals below 1e-8' % np.exp(-c*P))`}]} />
+
+实际扫频时，上一个频率的终态会影响下一点落到哪条响应上；升频和降频因此可能走不同路径，并在某处跳到另一条稳定响应。必须传递**完整的位移、速度和驱动相位**，不能把上一点的峰值当作位移初态、再把速度和相位清零。
+
+扫频观察到的跳跃区间，也不等于已经精确定位周期轨道的折叠点。参数网格、每点驻留时间、暂态和外界扰动都会影响结果。要确认分支在哪里折叠，需要连续跟踪周期解及其乘子，并处理转折处普通参数延拓的失效；求解失败本身不能证明分支结束。受迫周期响应的跳跃，也不能直接当作自治系统平衡点的全局结论。
+
+## 数值检查
+
+遇到分岔图或不规则轨迹，依次问四个问题：
+
+1. **分析对象是什么？** 连续平衡点看特征值实部；逐步更新或周期截面看乘子模。不要把“焦点变结点”这种衰减外形变化直接当成失稳。
+2. **临界处还差什么？** 零特征值、纯虚对或单位圆边界通常只给候选，还要检查分支、非退化和参数穿越。上面的简单模型能直接求解，不必靠口号判断。
+3. **图中记录的是什么？** 交代初态、丢弃长度、保留窗口、扫参方向、失败点。加长计算或减小步长后，结论是否保留？
+4. **哪些话还说不了？** 点云不证明混沌，正的有限指数不证明轨迹非周期，扫频不保证找到不稳定分支，更不保证找全吸引域。
+
+理论背景可读[MIT的二维分岔讲义](https://ocw.mit.edu/courses/12-006j-nonlinear-dynamics-chaos-fall-2022/mit12_006jf22_lec10-11.pdf)；Logistic模型可参阅[May的原始论文](https://www.nature.com/articles/261459a0)。
+
+## 小结
+
+分岔研究参数改变时“发生了哪一种变化”。平衡点可能合并，也可能分出新支；振荡可能从平衡点附近产生；逐步更新的周期还可能翻倍。分析时先选对连续或离散的稳定判据，再把解析结论、局部证据与有限数值观察分开，复杂图形就不会只剩一句“看起来很乱”。
+
+## 习题
+
+**习题1。** 本课摆在$\tau=0.95,1,1.05$时，按角度模$2\pi$分别有几个平衡位置？对$\dot x=\mu-x^2$，求$\mu=0.25$的平衡点及稳定性，并解释$\mu=0$为什么不是双侧稳定。
+
+**习题2。** 对$\dot x=\mu x-x^3$求所有平衡分支及稳定性。临界$\mu=0$时，从非零$x_0$出发的解是什么？这说明“线性化有零根”不能直接推出什么？
+
+**习题3。** 推导本课Hopf模型的半径方程。在$\mu=0.25$时求极限环半径、周期及原点特征值。为什么不能说圈上的相位也收敛到一个预先指定的值？
+
+**习题4。** 推导Logistic非零不动点的乘子，以及周期2的稳定区间。代入$r=3.2$核对两点、两步乘子和指数；为什么不能只看某一步的导数？
+
+**习题5。** $r=4,x_0=0.75$的Logistic轨迹是不是非周期？它的指数为什么仍为正？再指出以下扫频做法的问题：“降频从升频终点的峰值出发，速度清零；某一频率求解失败，因此该处分支结束。”
+
+## 答案
+
+**答案1。** 平衡位置个数分别为$2,1,0$。折叠模型在$\mu=0.25$时有$x=\pm0.5$，导数分别为$-1,+1$，因此正支稳定、负支不稳定。在$\mu=0$，$x>0$时向原点减小，$x<0$时继续向负方向运动，所以原点不能留住两侧的扰动。
+
+**答案2。** $x=0$始终存在；$\mu>0$还存在$\pm\sqrt\mu$。原点导数$\mu$，非零支导数$-2\mu$。在$\mu=0$时，分离变量得$x(t)=x_0/\sqrt{1+2x_0^2t}$，两侧都趋零但不是指数衰减。零根不能直接推出不稳定，也不能让线性化代替非线性证明。
+
+**答案3。** 将$x\dot x+y\dot y$除以$R$得$\dot R=\mu R-R^3$，再由$(x\dot y-y\dot x)/R^2$得$\dot\phi=1$。$\mu=0.25$时稳定半径为$0.5$，周期为$2\pi\approx6.283185$，原点特征值$0.25\pm i$。不同初始相位保留角度差，收敛的是到轨道集合的距离；精确原点仍是不稳定平衡。
+
+**答案4。** 解$rx(1-x)=x$得非零点$1-1/r$，导数为$2-r$。解二次迭代并除去不动点得到正文$x_\pm$，整周期导数乘积$4+2r-r^2$；严格满足绝对值小于1时，$3<r<1+\sqrt6$。$r=3.2$给$0.513045,0.799455$，两步乘子$0.16$，指数$\ln(0.16)/2\approx-0.916291$。扰动必须走完两步再比较，一步可能放大、另一步再缩小。
+
+**答案5。** $4(0.75)(0.25)=0.75$，所以轨迹是周期1；但该点的导数$4(1-1.5)=-2$，指数为$\ln2>0$，说明这条不动轨迹对扰动不稳定，并不把它变成非周期。扫频的峰值不是末时刻位移，速度和驱动相位也不能任意重置；那相当于每次重新做另一个初值实验。求解失败可能来自初猜、步长、转折或数值精度，不能单凭失败断言分支终结。

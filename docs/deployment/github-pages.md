@@ -54,4 +54,6 @@ git checkout master
 
 经典控制授权发布（2026-10-18）：用户要求将已有内容更新到 Pages，master `bbab75b` 合入 gh-pages 得到 `0dad5f04b701f443752e10529720e07bcb46b918` 并推送。Actions 构建与部署成功，205 课程页、9 旧入口、235 请求及九份原始 Python 实验公网验收通过；经典控制已交付 11/11。详见[经典控制章发布记录](classic11-release.md)。后续仍逐次获同意再发布。
 
-最新授权发布（2026-10-18）：用户要求本课完成后发布当前修改，master `75c4f3b` 合入 gh-pages 得到 `42eed1d509b90699fda0eff8d45f369d7dd7a210` 并推送。Actions 构建、部署与公网 235 请求通过；MODERN-01 五份 Python 实验缓存后复跑和课程页内运行通过，首次冷加载超时保留记录。数学两课引入、传递函数四张 SVG、手机目录滚动修复已上线。详见[MODERN-01 发布记录](modern01-release.md)。后续仍逐次获同意再发布。
+MODERN-01授权发布（2026-10-18）：用户要求本课完成后发布当前修改，master `75c4f3b` 合入 gh-pages 得到 `42eed1d509b90699fda0eff8d45f369d7dd7a210` 并推送。Actions 构建、部署与公网 235 请求通过；MODERN-01 五份 Python 实验缓存后复跑和课程页内运行通过，首次冷加载超时保留记录。数学两课引入、传递函数四张 SVG、手机目录滚动修复已上线。详见[MODERN-01 发布记录](modern01-release.md)。
+
+最新授权发布（2026-10-18）：完成NONLINEAR-08后，按用户要求审核并合入29课中文润色；master `3d089d9`合入gh-pages得到`7c6bf5a9fde629d6fd2baf4b409e42964b69c368`。Actions构建部署成功，公网205课、9旧入口、235请求及本课10组39单元格全部通过，375px手机布局无横向溢出；微积分与系统建模润色及页内实验抽查通过。详见[课程与润色发布记录](nonlinear08-zh-release.md)。后续仍逐次获同意再发布。

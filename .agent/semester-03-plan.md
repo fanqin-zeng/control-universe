@@ -670,3 +670,21 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-08 本轮执行记录（2026-10-18）
 
 自适应控制按重构专用Phase1–4，仅本课。保留13主题、九原实验38cell、六题，纠高阶输入信息、固定V参数界、有限时域无界/PE推断、泄漏唯一性、RLS先验、机器人初速及谐波；追加核验共十实验39cell。组件真实19配置27465点独立对账、三种子、DOP853、原生/Pyodide及55旧ID验收见本期讨论日志与.agent/semester-03/nonlinear-08/acceptance.md。原25项Python待办及W08/W09/W10保留，中文润色分支不动，Pages另行授权；真实签发与master回执以全局checklist为准。
+
+### NONLINEAR-09 本轮执行记录（2026-10-18）
+
+无源控制从空占位按新写专用Phase1–4完成。以三次弹簧小车贯穿能量收支、无源输入输出、阻尼与目标能量整形，补互联适定、隐藏状态及限幅/延迟边界；10H2、3Notebook3cell、四题四答、SVG和PassivityExplorer。实际TS五配置2505点对独立DOP853、原生/Pyodide完整实验及375px页面通过，详见.agent/semester-03/nonlinear-09/acceptance.md。用户批阅与润色分支保持，25Python待办及W14保留；仅本课进入master，Pages另行授权。
+
+### NONLINEAR-10 本轮执行记录（2026-10-19）
+
+输入状态稳定性从空占位按新写专用Phase1–4完成：线性积分解引入ISS，标量非线性给直接界与Lyapunov界，二维耦合证明小增益，保留临界/失败及反向仍稳定反例。10H2、3Notebook3cell、四题四答、耦合SVG和IssSmallGainExplorer；真实TS九配置3609点对独立增广矩阵指数、原生/Pyodide全部实验、真实标题/锚点与375px页面通过。证据.agent/semester-03/nonlinear-10/acceptance.md，实际master回执以全局checklist为准。用户批阅与长期润色分支保持，25Python待办及W14不关闭，Pages另行授权，不交付下一课。
+
+
+### NONLINEAR-11 本轮执行记录（2026-10-19）
+
+切换与混杂系统从空占位按新写专用Phase1–4完成。恒温器引入模式记忆、守卫与重置；稳定矩阵的快切反例引出共同Lyapunov与最小驻留证明；事件检测弹跳球说明Zeno有限累积与接触续接缺口。11H2、4Notebook4cell、四题四答、状态图SVG与SwitchedHybridExplorer；实际TS九配置7209点对独立SciPy矩阵指数、原生/Pyodide全部实验、真实锚点和375px页面通过。证据.agent/semester-03/nonlinear-11/acceptance.md，实际master回执以全局checklist为准。25项Python待办及W14保留，用户批阅和长期润色分支保持，Pages另行授权，本对话不续写下一课。
+
+
+### NONLINEAR-12 本轮执行记录（2026-10-19）
+
+分岔与混沌从空占位按新写专用Phase1–4完成：电机带摆平衡消失引入折叠/叉形，再以径向方程证明Hopf；Logistic逐步更新解释乘子、周期倍化、窗口和有限指数，保留正指数不稳定不动点反例。13H2、4Notebook5cell、五题五答、SVG与BifurcationExplorer；14配置140014实际TS轨道点及三初态17424点云核高精度短程/稳定周期/逐步残差，Duffing周期解由独立Radau+差分乘子复算，原生/Pyodide、真实锚点/375px页面通过。W13指定旧跳跃/鞍结/吸引子材料逐项审完，四组修正扫频核驻留/步长/网格；只认有限窗口区间，不认证完整分支或吸引域。证据.agent/semester-03/nonlinear-12/acceptance.md及source-audit.md；实际master回执以checklist为准。25Python待办及W14保持，用户批阅和长期润色分支保持，Pages另行授权，不顺带交付后续课。
