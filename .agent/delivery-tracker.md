@@ -57,7 +57,7 @@
 |------|------|
 | [x] 系统建模 (system-modeling) | CLASSIC-01学期3重构；13节/6题/7严格内核与Pyodide实验、自由响应/能量双图SuspensionExplorer、三SVG、36旧标题ID保留；讨论docs/discuss-log/semester-03/03-classic/01-system-modeling.md，验收.agent/semester-03/classic-01/acceptance.md；纠正过期FirstOrderComparisonExplorer引用说明 |
 | [x] 传递函数 (transfer-function) | CLASSIC-02学期3重构；11节/9题/5严格内核与Pyodide实验、两交互同默认与归一化、25旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/02-transfer-function.md，验收.agent/semester-03/classic-02/acceptance.md；二阶增益/频响/内部对消通道纠错 |
-| [x] 时域分析 (time-domain-analysis) | v1.3: 5个交互组件（ImpulseExplorer + FirstOrderStepExplorer + PerformanceMetricsExplorer + SecondOrderStepExplorer + SuspensionTimeExplorer），2个静态JupyterNotebook |
+| [x] 时域分析 (time-domain-analysis) | CLASSIC-03学期3重构；11节/9题/7严格内核与Pyodide实验，五交互36组独立复算，43旧ID兼容；讨论docs/discuss-log/semester-03/03-classic/03-time-domain-analysis.md，验收.agent/semester-03/classic-03/acceptance.md；路面零点/连续调节时间/主导误差纠错 |
 | [x] 系统稳定性 (stability-analysis) | v1.3: 2个交互组件（StabilityThirdOrderExplorer + StabilityDelayExplorer）。**A6 由第 7 位提前到第 4 位**；§2.3 要求的"剥离频域/根轨迹部分"属正文改写，留阶段 C |
 | [x] 频域分析 (frequency-domain-analysis) | v1.3: 4个交互组件（BodeZetaExplorer + NyquistZetaExplorer + BandwidthCorrespondenceExplorer + RCFilterBodeExplorer），6个JupyterNotebook（3静态 + **3个A6搬入的ipywidgets笔记本**）。**A6 结构已改（吸收 frequency-response 的 4 个小节，H2 10 → 13），内容待 v1.3 复核**——详见下方 A6 说明 |
 | [x] 根轨迹 (root-locus) | v1.3: 1个交互组件（RootLocusKExplorer），4个静态JupyterNotebook |

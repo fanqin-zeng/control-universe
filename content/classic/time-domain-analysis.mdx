@@ -7,19 +7,11 @@ description: 从传递函数回到时间域，计算系统对典型输入的具�
 
 ## 为什么需要时域分析
 
-上一章，我们把微分方程变成了传递函数——一个关于 $s$ 的代数表达式。传递函数告诉我们系统的极点和零点，让我们**不求解方程就能判断稳定性和大致行为**。
+上一课[传递函数](/classic/transfer-function)中，车身起初静止在平衡位置，随后受到持续外力。我们已知道它最后会移动多少。现在再问：车身是否会越过最后的位置？越过多少？多久之后，位移才会一直留在允许的范围里？
 
-但工程师最终需要的是**数字**：超调量是多少百分比？调节时间是多少秒？稳态误差有多大？当甲方说"响应要在2秒内稳定、超调不超过5%"，这就是**时域指标**——它是连接"工程需求"和"系统设计"的桥梁。
+这些问题都需要看随时间变化的曲线，而不能只报极点。**时域分析**就是从指定输入、初值和模型出发，计算输出，再按照约定提取指标。即便同一条曲线，“第一次碰到目标”与“进入后再也不离开误差带”也可能是两个不同的时刻。
 
-时域分析的任务：从传递函数出发，**回到时间域**，计算系统对典型输入信号的具体响应，并从中提取动态性能指标。
-
-本章的路线图：
-
-$$
-\text{典型信号} \to \text{一阶系统} \to \text{二阶系统} \to \text{性能指标} \to \text{高阶近似} \to \text{工程实例}
-$$
-
----
+本课先推一阶、二阶响应，再核验指标、近似模型和路面输入。除特别说明，均为因果LTI模型、零初始状态；一阶与标准二阶模型直流增益为1，输出是归一化量。传递函数若另有增益或零点，需要重新计算，不能照搬表格。
 
 ## 典型输入信号
 
@@ -42,7 +34,7 @@ $$
 
 ### 信号之间的关系
 
-这四种信号不是独立的——它们之间有积分关系：
+前三种信号之间有积分关系（正弦不在这条链上）：
 
 $$
 \text{脉冲} \xrightarrow{\int} \text{阶跃} \xrightarrow{\int} \text{斜坡}
@@ -50,7 +42,9 @@ $$
 
 这意味着：系统对阶跃的响应 = 系统对脉冲响应的积分。这个关系在数学上是卷积积分的特殊情况。
 
-> 💡 **关于 $\delta(t)$**：脉冲信号可以理解为"持续时间极短、总冲量为1"的极限情况。它的效果是给系统一个瞬时的"踢"——让系统获得初始速度但初始位移不变。物理上就像用锤子敲一下。
+> 💡 **关于 $\delta(t)$**：脉冲信号可以理解为"持续时间极短、总冲量为1"的极限情况。若它作为冲量作用于质量块，位置连续，速度跳变量为冲量除质量；其它系统未必是速度跳变，例如RC电路的电流冲激可改变电容电压。数学上采用从0−起算的因果约定。
+
+下图采用标准二阶 $G(s)=64/(s^2+8s+64)$，默认 $\zeta=.5,\omega_n=8\,\mathrm{rad/s}$。输入为单位面积冲激，$h(t)$ 的单位为 $\mathrm{s^{-1}}$；它不是外力为1N时的位移。默认 $h(.25)\approx3.354237\,\mathrm{s^{-1}}$（数值由下方实验复算）。
 
 <ImpulseExplorer />
 
@@ -68,7 +62,7 @@ $$
 G(s) = \frac{1}{Ts + 1}
 $$
 
-其中 $T$ 是**时间常数**。
+其中 $T>0$ 是**时间常数**，单位为秒；若真实模型为 $K/(Ts+1)$，本节曲线需再乘以输入幅值与增益 $K$。
 
 ### 推导阶跃响应
 
@@ -107,25 +101,51 @@ $$
 
 | 指标 | 表达式 | 说明 |
 |------|--------|------|
-| 上升时间 $t_r$（10%→90%）| $\approx 2.2T$ | |
-| 调节时间 $t_s$（2%）| $4T$ | |
-| 调节时间 $t_s$（5%）| $3T$ | |
+| 上升时间 $t_r$（10%→90%）| $T\ln9\approx2.1972T$ | $2.2T$为近似 |
+| 调节时间 $t_s$（2%）| $-T\ln(.02)\approx3.9120T$ | $4T$为近似 |
+| 调节时间 $t_s$（5%）| $-T\ln(.05)\approx2.9957T$ | $3T$为近似 |
 | 超调量 | 0 | 一阶系统**无超调** |
-| 稳态误差（阶跃）| 0 | |
+| 稳态误差（单位阶跃）| 0 | 仅对这里的单位直流增益输入输出模型 |
 
-一阶系统没有超调、没有振荡——因为它只有一个实数极点，没有虚部来产生振荡。
+这里的无零点、正增益一阶模型单调无超调；不能把所有含实极点但还带零点/直通的模型都归入这个结论。
 
 ### 拖动感受：时间常数 T 如何影响响应
 
-下面的交互控件让你直观体验时间常数 $T$ 的物理意义。拖动滑块改变 $T$，观察曲线和各指标如何变化。
+默认 $T=.5\,\mathrm{s}$，精确10%→90%上升时间1.098612s，2%调节时间1.956012s。拖动时比较的是同一模型的时间尺度，增益与初值不变。
 
 <FirstOrderStepExplorer />
 
 ---
 
+
+<JupyterNotebook
+  title="典型信号与一阶响应核对"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.signal import StateSpace, impulse`}
+  cells={[
+    { code: `t,s,T=sp.symbols('t s T',positive=True)
+for f,F in [(1,1/s),(t,1/s**2),(sp.sin(2*t),2/(s*s+4))]:
+    assert sp.simplify(sp.laplace_transform(f,t,s,noconds=True)-F)==0
+print('单位冲激变换1，阶跃1/s，斜坡1/s²，正弦2/(s²+4)')
+first=1-sp.exp(-t/T)
+assert sp.simplify(sp.laplace_transform(first,t,s,noconds=True)-1/(s*(T*s+1)))==0
+for ratio in [1,3,4,5]: print('t/T, 阶跃归一化输出:',ratio,1-np.exp(-ratio))
+print('tr/T, ts2/T, ts5/T:',np.log(9),-np.log(.02),-np.log(.05))
+print('T=.5s的精确tr/ts2/ts5:',.5*np.log(9),-.5*np.log(.02),-.5*np.log(.05))
+A=np.array([[0.,1.],[-64.,-8.]])
+times=np.linspace(0,3,601)
+_,h=impulse(StateSpace(A,[[0],[64]],[[1,0]],[[0]]),T=times)
+analytic=8/np.sqrt(.75)*np.exp(-4*times)*np.sin(8*np.sqrt(.75)*times)
+assert max(abs(h-analytic))<1e-10
+print('默认冲激 h(.25)s^-1:',8/np.sqrt(.75)*np.exp(-1)*np.sin(2*np.sqrt(.75)))
+print('默认冲激 3s末样:',h[-1])` },
+  ]}
+/>
+
 ## 二阶系统阶跃响应
 
-上一章定义了标准二阶系统，解释了 $\zeta$ 和 $\omega_n$ 的物理意义，还用交互滑块让你"看到"了不同阻尼的响应。这一章要做的是：**从"看到"变成"算出来"**。
+上一课定义了标准二阶系统，解释了 $\zeta$ 和 $\omega_n$ 的物理意义，还用交互滑块让你"看到"了不同阻尼的响应。这一章要做的是：**从"看到"变成"算出来"**。
 
 ### 标准形式回顾
 
@@ -177,21 +197,25 @@ $$
 这个公式有三个关键部分：
 
 1. **稳态值 1**：系统最终到达的值
-2. **包络线 $e^{-\zeta\omega_n t}$**：振荡被指数衰减包裹着，衰减速度由 $\zeta\omega_n$（极点实部的绝对值）决定
+2. **误差包络 $e^{-\zeta\omega_n t}/\sqrt{1-\zeta^2}$**：振荡被指数衰减包裹着，衰减速度由 $\zeta\omega_n$（极点实部的绝对值）决定
 3. **振荡项 $\sin(\omega_d t + \phi)$**：以频率 $\omega_d$ 振荡
 
 注意 $\omega_d < \omega_n$：**阻尼让振荡变慢了**。无阻尼时振荡频率是 $\omega_n$，有阻尼后频率降低为 $\omega_d$。
 
 ### 四种阻尼情况的响应
 
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
 | 阻尼比 | 极点 | 响应 $y(t)$ | 特征 |
 |--------|------|------------|------|
 | $\zeta = 0$ | $\pm j\omega_n$ | $1 - \cos\omega_n t$ | 等幅振荡，永不稳定 |
 | $0 < \zeta < 1$ | $-\zeta\omega_n \pm j\omega_d$ | $1 - \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}\sin(\omega_d t + \phi)$ | 衰减振荡 |
-| $\zeta = 1$ | $-\omega_n$（重根）| $1 - (1+\omega_n t)e^{-\omega_n t}$ | 最快无超调 |
+| $\zeta = 1$ | $-\omega_n$（重根）| $1 - (1+\omega_n t)e^{-\omega_n t}$ | 单调无超调；这里固定自然频率 |
 | $\zeta > 1$ | 两个不等实根 $s_1, s_2$ | 两个指数衰减的叠加 | 缓慢无超调 |
 
-> 💡 **过阻尼不需要记精确公式**。重要的是知道：过阻尼响应等价于两个一阶系统的叠加，因此**比临界阻尼更慢**。工程中很少让系统工作在过阻尼状态（太慢了），除非对超调有严格要求。
+</div>
+
+> 固定 $\omega_n$、同一无零点单位增益模型时，增大到过阻尼会使慢极点靠近原点。响应是带系数的指数项之和，不是两个任意一阶输出简单相加；能否接受取决于具体指标，不用“工程很少采用”代替判断。
 
 ### 极点位置与时域响应的对应
 
@@ -232,7 +256,7 @@ $$
 \boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{\omega_n\sqrt{1-\zeta^2}}}
 $$
 
-物理直觉：峰值出现在振荡项 $\sin(\omega_d t + \phi)$ 第一次到达极值时。
+这里必须对**整个响应**求导：$\dot y=(\omega_n^2/\omega_d)e^{-\zeta\omega_n t}\sin(\omega_dt)$。第一正零点为 $\omega_dt=\pi$。不能只对被指数包裹的正弦项取极值。
 
 ### 最大超调量 $M_p$
 
@@ -242,16 +266,16 @@ $$
 \boxed{M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%}
 $$
 
-**关键观察**：$M_p$ **只取决于 $\zeta$**，与 $\omega_n$ 无关。这是因为 $\omega_n$ 只影响时间尺度（快慢），不影响振荡的"相对幅度"。这意味着你可以独立设计"快慢"和"振荡程度"。
+**关键观察**：$M_p$ **只取决于 $\zeta$**，与 $\omega_n$ 无关。这是因为 $\omega_n$ 只影响时间尺度（快慢），不影响振荡的"相对幅度"。这是这个标准模型的参数化性质；真实反馈系统的增益、零点、带宽与执行器限制可能耦合，不能保证两参数可独立实现。
 
 **$\zeta$-$M_p$ 数值对照表**：
 
 | $\zeta$ | $M_p$ | 极点角度 | 物理感觉 |
 |---------|-------|---------|---------|
-| 0 | 100% | 90°（虚轴）| 永远振荡 |
+| 0 | 不定义稳态超调 | 90°（虚轴）| 围绕参考1持续振荡，无稳态 |
 | 0.3 | 37.2% | 72.5° | 振荡明显 |
 | 0.5 | 16.3% | 60° | 适度振荡 |
-| 0.707 | 4.3% | 45° | **"最佳阻尼"** |
+| 0.707 | 4.3% | 约45° | 一个可选折中，不是普遍最优 |
 | 1.0 | 0% | 0°（实轴）| 临界阻尼 |
 | 2.0 | 0% | — | 过阻尼，很慢 |
 
@@ -271,74 +295,108 @@ $$
 t_s \approx \frac{3}{\zeta\omega_n}
 $$
 
-**近似条件**：这个公式来自包络线分析。欠阻尼响应的包络线为 $1 \pm \frac{e^{-\zeta\omega_n t}}{\sqrt{1-\zeta^2}}$。当包络线进入 ±2% 范围时认为"调节完成"。忽略 $\frac{1}{\sqrt{1-\zeta^2}}$ 因子（在 $\zeta$ 不太接近1时约为1），得到 $e^{-\zeta\omega_n t_s} \approx 0.02$。
+**先区分三个数**：真实调节时间是最后一次离开误差带的边界时刻；包络进入误差带给出充分上界；$4/(\zeta\omega_n)$ 是常用粗略估计，未必是上界。对 $0<\zeta<1$，保留完整包络可得
 
-> 💡 **临界阻尼（$\zeta = 1$）的调节时间**不能直接用 $4/(\zeta\omega_n)$ 估算。临界阻尼响应 $y(t) = 1 - (1+\omega_n t)e^{-\omega_n t}$，令 $y(t_s) = 0.98$，即 $(1+\omega_n t_s)e^{-\omega_n t_s} = 0.02$。令 $x = \omega_n t_s$，数值求解得 $x \approx 5.83$，因此 $t_s \approx 5.83/\omega_n$——比欠阻尼公式 $4/\omega_n$ 的预测长约 46%。
+$$
+t_{\mathrm{env},\epsilon}=\frac{\ln\!\left(1/(\epsilon\sqrt{1-\zeta^2})\right)}{\zeta\omega_n}.
+$$
+
+当 $t\ge t_{\mathrm{env},\epsilon}$ 时，误差绝对值不超过 $\epsilon$。真实曲线可能更早进入并保持，不能把这个上界叫精确调节时间。接近临界阻尼时该包络很松。
+
+临界阻尼应直接解 $(1+\omega_nt_s)e^{-\omega_nt_s}=.02$，得 $\omega_nt_s\approx5.833922$；过阻尼也要按实际响应求最后一次边界。无阻尼响应没有阶跃稳态，不能填“调节时间0”。
+
+**默认算例**：$\zeta=.5,\omega_n=8$，0→100%上升时间约.302300s，峰时.453450s，连续超调16.303353%，2%调节时间约1.009544s，包络上界约1.013966s，而粗估 $4/(\zeta\omega_n)=1$s。三个时间不应混称。
 
 ### 性能指标之间的权衡
 
 这些指标之间存在**矛盾**：
 
 - **快 vs 平稳**：增大 $\omega_n$ 可以同时加快所有指标，但 $\zeta$ 的选择面临权衡——$\zeta$ 小则 $t_r$ 短但 $M_p$ 大；$\zeta$ 大则 $M_p$ 小但 $t_r$ 长
-- **工程经验**：$\zeta \approx 0.707$ 被称为"最佳阻尼"，此时 $M_p \approx 4.3\%$，响应快且超调小
+- $\zeta\approx.707$ 是常用的教学折中，标准阶跃超调约4.3%；“最佳”必须先指定代价与约束。固定 $\omega_n=8$ 比较 $\zeta=.3,1,2$：欠阻尼有超调，临界与过阻尼单调，但过阻尼的慢尾部更长；没有一个指标说明它普遍最好。
 
 <PerformanceMetricsExplorer />
 
-<JupyterNotebook
-  title="🎯 反向设计：从指标到参数"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, step_response
-from scipy.optimize import fsolve`}
-  cells={[
-    { code: `# Design requirements: Mp <= 5%, ts <= 2s
-def mp_eq(zeta):
-    return np.exp(-np.pi * zeta / np.sqrt(1 - zeta**2)) - 0.05
-
-zeta_min = fsolve(mp_eq, 0.5)[0]
-print(f"Mp <= 5% requires: zeta >= {zeta_min:.3f}")
-
-ts_target = 2.0
-sigma_min = 4 / ts_target
-print(f"ts <= {ts_target}s requires: zeta*wn >= {sigma_min:.2f}")
-
-zeta_design = 0.7
-wn_min = sigma_min / zeta_design
-print(f"\\nChoose zeta = {zeta_design}, then wn >= {wn_min:.2f} rad/s")
-
-G_design = tf([wn_min**2], [1, 2*zeta_design*wn_min, wn_min**2])
-t, y = step_response(G_design, T=np.linspace(0, 5, 1000))
-print(f"\\nVerification:")
-print(f"  Mp = {np.exp(-np.pi*zeta_design/np.sqrt(1-zeta_design**2))*100:.1f}%")
-print(f"  ts ~ {4/(zeta_design*wn_min):.2f} s")
-
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(t, y, linewidth=2, label=f"zeta={zeta_design}, wn={wn_min:.1f}")
-ax.axhline(y=1.0, color="gray", linestyle="--", alpha=0.5)
-ax.fill_between(t, 0.98, 1.02, alpha=0.1, color="green")
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("y(t)")
-ax.set_title("Reverse Design: From Specs to Parameters")
-ax.legend()
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
-  ]}
-/>
+反向设计也要经过这三层：先用超调公式筛选 $\zeta$，再用包络给足够保守的时间要求，最后用实际响应求根验收。若只用 $4/(\zeta\omega_n)\le2$，取 $\zeta=.7,\omega_n=2/.7$，真实调节时间约2.092577s，**未通过2s要求**；改为 $\omega_n=3.2$ 后，真实值约1.868373s，超调约4.598791%，才在该模型中通过。完整实验见本节末尾。
 
 ### 拖动感受：ζ 和 ω<sub>n</sub> 如何影响响应
 
-下面的交互控件让你直观体验阻尼比 $\zeta$ 和自然频率 $\omega_n$ 的物理意义。拖动滑块观察曲线和指标如何变化——注意 ζ 从 0 拖到 1.5 时，响应从等幅振荡变为缓慢无超调；ω<sub>n</sub> 决定整体快慢。
+第二个控件独立调两个参数，默认仍为 $\zeta=.5,\omega_n=8$。固定显示0…15s，超过窗口的过程不会被当作已经调节；无阻尼时明确标记稳态指标不适用。
 
 <SecondOrderStepExplorer />
 
 ---
 
-## 高阶系统与主导极点
+
+<JupyterNotebook
+  title="反向设计与精确指标"
+  setupCode={`import numpy as np
+from scipy.linalg import expm, eig
+from scipy.signal import StateSpace, step, impulse
+from scipy.optimize import brentq, minimize_scalar
+
+def state(z,wn,road=False):
+    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])
+
+def at(z,wn,t,road=False):
+    A,B,C=state(z,wn,road)
+    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))
+
+def settle(z,wn,road=False,band=.02):
+    if z==0:return None
+    A,B,C=state(z,wn,road)
+    if z==1:
+        tail=lambda t:(1+wn*t)*np.exp(-wn*t)
+    else:
+        vals,V=eig(A)
+        # Independent modal bound on the initial displacement from equilibrium.
+        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))
+        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))
+    end=1/wn
+    while tail(end)>.01:end*=2
+    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)
+    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    bad=np.flatnonzero(abs(ys-1)>band)
+    if not len(bad):return 0.
+    j=bad[-1]
+    assert j<len(times)-1
+    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))
+
+def metrics(z,wn,road=False):
+    ts=settle(z,wn,road)
+    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)
+    A,B,C=state(z,wn,road)
+    # Derivative of the forced step is the impulse C exp(At) B.
+    deriv=lambda t:float(C@expm(A*t)@B)
+    if not road and z>=1:tp=None;mp=0.
+    else:
+        grid=np.linspace(1e-9,20/wn,2001)
+        signs=[deriv(t) for t in grid]
+        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])
+        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)
+    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None
+    return dict(tp=tp,mp=mp,tr=tr,ts=ts)`}
+  cells={[
+    { code: `for z in [0.,.3,.5,.707,1.,2.]:
+    print('zeta,标准模型精确指标:',z,metrics(z,8))
+for z in [0.,.3,.5,.707,1.,2.]:
+    mp=None if z==0 else (100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0.)
+    angle=np.degrees(np.arccos(z)) if z<=1 else None
+    print('超调对照/极点角度:',z,mp,angle)
+zmin=-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2)
+print('5%超调最低欠阻尼:',zmin)
+for wn in [2/.7,3.2,4.]:
+    measured=metrics(.7,wn)
+    bound=np.log(1/(.02*np.sqrt(1-.7**2)))/(.7*wn)
+    passed=measured['mp']<=5 and measured['ts']<=2
+    print('zeta=.7,wn,粗估ts,包络上界,实际指标,通过:',wn,4/(.7*wn),bound,measured,passed)
+print('默认.5/8包络上界:',np.log(1/(.02*np.sqrt(.75)))/4)
+print('临界wn*ts:',settle(1,1))
+assert metrics(.7,2/.7)['ts']>2
+assert metrics(.7,3.2)['ts']<2` },
+  ]}
+/>
+
+## 主导极点
 
 实际系统几乎都不是"纯二阶"的。传递函数可能有多个极点：
 
@@ -348,16 +406,11 @@ $$
 
 ### 主导极点的概念
 
-如果某对复数极点的实部**远小于**其他极点的实部（比如5倍以上），那么这对极点**衰减最慢**，其他极点的影响很快就衰减完了，剩下的行为主要由这对极点决定。
-
-用工程语言说：**最靠近虚轴的极点主导了系统的动态响应**。
+当某些可见模态衰减慢、系数又不小，它们可能控制较晚时段的响应。这是“主导极点”的用途。判断要看实部**绝对值**、模态系数与观察窗口，而不是把负数的“远小于”当快慢。
 
 ### 近似条件
 
-主导极点近似成立需要满足：
-
-1. 主导极点的实部绝对值比其他极点**小5倍以上**（此时近似误差通常在 10% 以内；若要求更高精度，可用 10 倍规则，误差 < 3%）
-2. 没有零点靠近主导极点（零点会改变各模态的权重）
+极点实部相差五倍、十倍可以提示候选近似，**不能保证最大输出误差在10%或3%以内**。还需检查零点、残量、直流增益与所关心的输入，并用完整模型核验。对跟踪的初期要求严格时，一个很快的模态也可能不能删。
 
 ### 数值例子
 
@@ -365,154 +418,210 @@ $$
 
 - 二阶部分的极点：$s = -1 \pm j3$，实部绝对值 = 1
 - 一阶极点：$s = -10$，实部绝对值 = 10
-- 比值：$10/1 = 10 > 5$ ✓，可以用二阶近似
+- 衰减率之比为10，可提出二阶候选，但尚不能宣称误差合格
 
 近似后的二阶系统：$G_{\text{approx}}(s) = \frac{10}{s^2 + 2s + 10}$
 
-参数：$\omega_n = \sqrt{10} \approx 3.16$ rad/s，$\zeta = \frac{1}{\sqrt{10}} \approx 0.316$
+参数：$\omega_n=\sqrt{10}\approx3.16$rad/s，$\zeta=1/\sqrt{10}\approx.316$。对0…8s、步长.001s的单位阶跃，原三阶与候选的最大绝对输出差约.198062，**不是小于3%**。若快极点改为−5/−20并保持直流增益为1，差分别约.354845/.102901。这里误差以单位最终输出为基准，不能换成别的范数后沿用数字。
 
 ---
 
-## 工程实例：悬挂系统时域分析
 
-延续上一章的悬挂系统（$m = 250$ kg, $k = 16000$ N/m），上一章我们建立了传递函数并分析了极点分布与稳定性的关系。这一章算出具体的时域指标。
+<JupyterNotebook
+  title="主导极点候选误差"
+  setupCode={`import numpy as np
+from scipy.signal import TransferFunction, step`}
+  cells={[
+    { code: `t=np.linspace(0,8,8001)
+_,approx=step(TransferFunction([10],[1,2,10]),T=t)
+for p in [5.,10.,20.]:
+    _,full=step(TransferFunction([10*p],np.polymul([1,p],[1,2,10])),T=t)
+    error=abs(full-approx)
+    j=np.argmax(error)
+    print('快极点/相同直流增益/最大绝对输出误差/发生时刻:',-p,1.,error[j],t[j])
+    if p==10: assert error[j]>.19
+print('候选wn,zeta,wd,tp,Mp:',np.sqrt(10),1/np.sqrt(10),3.,np.pi/3,100*np.exp(-np.pi/3))
+print('网格误差以最终输出1为基准；不宣称普遍误差保证')` },
+  ]}
+/>
+
+## 路面阶跃响应
+
+上一课明确区分了外力与路面输入。现在保留旧稿的**路面输入模型**：车身质量 $m=250\,\mathrm{kg}$、刚度 $k=16000\,\mathrm{N/m}$，路面位移 $r(t)$ 驱动弹簧与阻尼的支点，车身位移 $y$ 相对原静平衡，向下为正。
 
 ### 系统模型
 
-考虑路面位移 $y_r(t)$ 到车身位移 $y(t)$ 的传递函数。由牛顿第二定律：
-
 $$
-m\ddot{y} + c\dot{y} + ky = c\dot{y}_r + ky_r
-$$
-
-取拉普拉斯变换（零初始条件），得到：
-
-$$
-G(s) = \frac{Y(s)}{Y_r(s)} = \frac{cs + k}{ms^2 + cs + k}
+m\ddot y+c(\dot y-\dot r)+k(y-r)=0,\qquad
+\frac{Y}{R}=\frac{cs+k}{ms^2+cs+k}.
 $$
 
-注意分子含有 $s$ 项，这意味着传递函数有一个**零点** $s = -k/c$。零点会影响超调量——实际超调量比标准二阶公式预测的稍大。
-
-自然频率 $\omega_n = \sqrt{k/m} = \sqrt{16000/250} = 8$ rad/s。
+这与外力模型不同：分子多了 $cs$，不能套无零点二阶的峰时、超调公式。取理想路面阶跃 $r=R_0 1(t)$，显示归一化位移 $q=y/R_0$。初始状态在阶跃前为零；因为 $\dot r$ 含冲激，速度在瞬间跳变，理想模型给 $\dot y(0^+)=cR_0/m$，不应同时假定阶跃后的速度仍为零。
 
 ### 设计指标
 
-工程设计要求：
-- **超调量** $M_p < 10\%$（乘坐舒适性）
-- **调节时间** $t_s < 2$ s（快速稳定，2% 误差带）
+作为**教学筛选要求**，取归一化位移超调不超过10%、2%调节时间不超过2s。它们不是乘坐舒适性标准；舒适性至少还涉及车身加速度、输入频谱与轮胎动力学。
 
 ### 三种阻尼方案对比
 
-| 阻尼比 $\zeta$ | 阻尼系数 $c$ (N·s/m) | 场景 |
-|---------------|---------------------|------|
-| 0.3 | $2 \times 0.3 \times 8 \times 250 = 1200$ | 偏软，舒适但晃 |
-| 0.707 | $2 \times 0.707 \times 8 \times 250 = 2828$ | "最佳阻尼" |
-| 1.0 | $2 \times 1.0 \times 8 \times 250 = 4000$ | 临界阻尼，无超调但硬 |
+保留原三种阻尼，并补过阻尼反例。均固定 $\omega_n=\sqrt{k/m}=8\,\mathrm{rad/s}$，$c=4000\zeta\,\mathrm{N\,s/m}$；不调其它参数：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
+
+| $\zeta$ | $c$ (N·s/m) | 连续超调(%) | 峰时(s) | 2%调节时间(s) | 教学指标 |
+|---|---|---|---|---|---|
+| .3 | 1200 | 45.097545 | .331809 | 1.637813 | 超调不通过 |
+| .5（默认） | 2000 | 29.843606 | .302300 | .938149 | 超调不通过 |
+| .707 | 2828 | 20.791542 | .277692 | .611657 | 超调不通过 |
+| 1 | 4000 | 13.533528 | .250000 | .673969 | 超调不通过 |
+| 2 | 8000 | 4.776873 | .190086 | .631002 | 两项通过 |
+
+</div>
 
 ### 时域指标计算
 
-**$\zeta = 0.3$（偏软）**：
+为何临界阻尼也超调？令 $x=\omega_nt$，临界阻尼的**路面**响应是
 
 $$
-\omega_d = 8\sqrt{1 - 0.09} = 8 \times 0.954 = 7.63 \text{ rad/s}
+q(t)=1+(x-1)e^{-x},\qquad
+\dot q(t)=\omega_n(2-x)e^{-x}.
 $$
 
-$$
-t_p = \frac{\pi}{7.63} = 0.412 \text{ s}
-$$
-
-$$
-M_p = e^{-\pi \times 0.3/0.954} = e^{-0.987} = 37.3\%
-$$
-
-$$
-t_s \approx \frac{4}{0.3 \times 8} = 1.67 \text{ s}
-$$
-
-评判：$M_p = 37.3\% > 10\%$，**不满足**设计要求。乘坐体验：过弯后车身晃动明显，乘客会感到不安。
-
-**$\zeta = 0.707$（最佳阻尼）**：
-
-$$
-\omega_d = 8\sqrt{1 - 0.5} = 8 \times 0.707 = 5.66 \text{ rad/s}
-$$
-
-$$
-t_p = \frac{\pi}{5.66} = 0.555 \text{ s}
-$$
-
-$$
-M_p = e^{-\pi \times 0.707/0.707} = e^{-\pi} = 4.3\%
-$$
-
-$$
-t_s \approx \frac{4}{0.707 \times 8} = 0.707 \text{ s}
-$$
-
-评判：$M_p = 4.3\% < 10\%$ ✓，$t_s = 0.707 < 2$ s ✓。**满足**设计要求。乘坐体验：快速平稳，超调几乎感觉不到。
-
-**$\zeta = 1.0$（临界阻尼）**：
-
-无超调。调节时间需解 $(1+8t_s)e^{-8t_s} = 0.02$，数值解 $t_s \approx 5.83/8 = 0.73$ s。
-
-评判：$M_p = 0\% < 10\%$ ✓，$t_s = 0.73 < 2$ s ✓。**满足**设计要求。乘坐体验：没有晃动，但路面颠簸会直接传到车身——"硬"。
+故峰值在 $x=2$，超调为 $100e^{-2}\%\approx13.533528\%$。原无零点公式给0，正好说明不能只看极点。其它阻尼按完整模型计算，调节时间求最后一次误差带边界；表内不是0…3s图的末样读数。
 
 ### 模型局限性
 
-上述分析基于简化的二自由度模型。实际悬挂系统还需考虑：
-- **轮胎动力学**：轮胎刚度和非簧载质量（unsprung mass）引入额外的高频模态
-- **弹簧非线性**：实际弹簧刚度随位移变化（渐进刚度）
-- **阻尼器非线性**：库仑摩擦、阀门开启特性使阻尼力不是速度的线性函数
-
-这些非线性因素在"小信号"（小幅颠簸）条件下影响不大，线性分析仍然有效。但在大信号（急转弯、大坑洼）条件下，需要用非线性仿真验证。
+这是**单自由度**基座激励模型，轮胎与非簧载质量没有作为第二个自由度。理想路面跳变不可由真实道路瞬时实现；小幅值也不能自动保证轮胎/阻尼非线性可忽略。转弯侧倾与本模型的垂向基座输入不同，不从这里推出“软/硬/最佳/舒适”。若加入轮胎、非线性阻尼或执行器，应重新建模验收。
 
 <SuspensionTimeExplorer />
 
+
 <JupyterNotebook
-  title="🔍 逆向辨识：从阶跃响应估计参数"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from control import tf, step_response`}
+  title="完整路面模型复算"
+  setupCode={`import numpy as np
+from scipy.linalg import expm, eig
+from scipy.signal import StateSpace, step, impulse
+from scipy.optimize import brentq, minimize_scalar
+
+def state(z,wn,road=False):
+    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])
+
+def at(z,wn,t,road=False):
+    A,B,C=state(z,wn,road)
+    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))
+
+def settle(z,wn,road=False,band=.02):
+    if z==0:return None
+    A,B,C=state(z,wn,road)
+    if z==1:
+        tail=lambda t:(1+wn*t)*np.exp(-wn*t)
+    else:
+        vals,V=eig(A)
+        # Independent modal bound on the initial displacement from equilibrium.
+        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))
+        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))
+    end=1/wn
+    while tail(end)>.01:end*=2
+    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)
+    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    bad=np.flatnonzero(abs(ys-1)>band)
+    if not len(bad):return 0.
+    j=bad[-1]
+    assert j<len(times)-1
+    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))
+
+def metrics(z,wn,road=False):
+    ts=settle(z,wn,road)
+    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)
+    A,B,C=state(z,wn,road)
+    # Derivative of the forced step is the impulse C exp(At) B.
+    deriv=lambda t:float(C@expm(A*t)@B)
+    if not road and z>=1:tp=None;mp=0.
+    else:
+        grid=np.linspace(1e-9,20/wn,2001)
+        signs=[deriv(t) for t in grid]
+        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])
+        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)
+    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None
+    return dict(tp=tp,mp=mp,tr=tr,ts=ts)`}
   cells={[
-    { code: `wn = 8.0
-G_mystery = tf([wn**2], [1, 2*0.35*wn, wn**2])
-t, y = step_response(G_mystery, T=np.linspace(0, 4, 2000))
+    { code: `for z in [.3,.5,.707,1.,2.]:
+    print('路面zeta/c/精确指标:',z,4000*z,metrics(z,8,True))
+    A,B,C=state(z,8,True)
+    times=np.linspace(0,3,601)
+    _,q=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    print('601点采样最大/3s末样:',max(q),q[-1])
+print('默认路面 .5/8 的 t=1:',at(.5,8,1,True))
+print('临界路面超调/峰时:',100*np.exp(-2),2/8)
+print('零状态阶跃后速度/R0=c/m，默认:',2000/250)
+assert abs(metrics(1,8,True)['mp']-100*np.exp(-2))<1e-9` },
+  ]}
+/>
 
-idx_peak = np.argmax(y)
-y_peak = y[idx_peak]
-t_peak = t[idx_peak]
-Mp_measured = y_peak - 1.0
+原逆向辨识实验继续保留，但它使用另一个**无零点标准二阶模型**，不是从上表的路面响应估计阻尼。其假设、有限采样误差和三组测试在下方原始实验中单独列出。
 
-print(f"From response curve:")
-print(f"  Peak value: {y_peak:.4f}")
-print(f"  Peak time:  tp = {t_peak:.4f} s")
-print(f"  Overshoot:  Mp = {Mp_measured*100:.1f}%")
 
-ln_Mp = np.log(Mp_measured)
-zeta_est = -ln_Mp / np.sqrt(np.pi**2 + ln_Mp**2)
-print(f"\\nEstimated zeta = {zeta_est:.3f} (true: 0.350)")
+<JupyterNotebook
+  title="逆向辨识及采样误差"
+  setupCode={`import numpy as np
+from scipy.linalg import expm, eig
+from scipy.signal import StateSpace, step, impulse
+from scipy.optimize import brentq, minimize_scalar
 
-wn_est = np.pi / (t_peak * np.sqrt(1 - zeta_est**2))
-print(f"Estimated wn   = {wn_est:.3f} rad/s (true: {wn:.1f})")
+def state(z,wn,road=False):
+    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])
 
-G_estimated = tf([wn_est**2], [1, 2*zeta_est*wn_est, wn_est**2])
-_, y_est = step_response(G_estimated, T=t)
+def at(z,wn,t,road=False):
+    A,B,C=state(z,wn,road)
+    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))
 
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(t, y, "b-", linewidth=2, label="Actual (mystery system)")
-ax.plot(t, y_est, "r--", linewidth=2, label=f"Estimated (ζ={zeta_est:.2f}, ωn={wn_est:.1f})")
-ax.axhline(y=1.0, color="gray", linestyle="--", alpha=0.5)
-ax.set_xlabel("Time (s)", fontsize=12)
-ax.set_ylabel("y(t)", fontsize=12)
-ax.set_title("Reverse Engineering: Estimate Parameters from Step Response", fontsize=14)
-ax.legend(fontsize=11)
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` }
+def settle(z,wn,road=False,band=.02):
+    if z==0:return None
+    A,B,C=state(z,wn,road)
+    if z==1:
+        tail=lambda t:(1+wn*t)*np.exp(-wn*t)
+    else:
+        vals,V=eig(A)
+        # Independent modal bound on the initial displacement from equilibrium.
+        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))
+        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))
+    end=1/wn
+    while tail(end)>.01:end*=2
+    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)
+    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    bad=np.flatnonzero(abs(ys-1)>band)
+    if not len(bad):return 0.
+    j=bad[-1]
+    assert j<len(times)-1
+    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))
+
+def metrics(z,wn,road=False):
+    ts=settle(z,wn,road)
+    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)
+    A,B,C=state(z,wn,road)
+    # Derivative of the forced step is the impulse C exp(At) B.
+    deriv=lambda t:float(C@expm(A*t)@B)
+    if not road and z>=1:tp=None;mp=0.
+    else:
+        grid=np.linspace(1e-9,20/wn,2001)
+        signs=[deriv(t) for t in grid]
+        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])
+        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)
+    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None
+    return dict(tp=tp,mp=mp,tr=tr,ts=ts)`}
+  cells={[
+    { code: `times=np.linspace(0,4,2001)
+for z in [.2,.35,.7]:
+    A,B,C=state(z,8)
+    _,y=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    j=np.argmax(y); mp=y[j]-1; tp=times[j]
+    logmp=np.log(mp)
+    ze=-logmp/np.sqrt(np.pi**2+logmp**2)
+    we=np.pi/(tp*np.sqrt(1-ze*ze))
+    Ae,Be,Ce=state(ze,we)
+    _,ye=step(StateSpace(Ae,Be[:,None],Ce[None,:],[[0.]]),T=times)
+    print('真zeta/采样峰/峰时/估计zeta/估计wn/最大曲线差:',z,y[j],tp,ze,we,max(abs(y-ye)))
+print('无噪声、无零点、二阶、已知终值1；有额外极点/零点/噪声不保证可识别')` },
   ]}
 />
 
@@ -520,15 +629,20 @@ plt.show()` }
 
 ### 零点对时域响应的影响
 
-传递函数的**极点**决定响应的"模态"（振荡频率、衰减速率），**零点**决定各模态的"权重"。
+极点决定可见模式，零点会改变系数，但不能只凭零点左右位置给每条曲线贴同一标签。
 
-- **左半平面零点**（$s = -a, a > 0$）：会"加速"响应，使上升时间缩短，但同时**增大超调量**。直觉解释：零点相当于在输入中加入了"微分"成分，提前"预判"了变化趋势，导致过冲。
-- **右半平面零点**（$s = +a, a > 0$）：会导致**反向响应**——阶跃响应先向反方向运动，再转向正方向。这类系统称为**非最小相位系统**。
+给出两个具体、单位直流增益的稳定模型：
 
-物理例子：
-- **飞机升降舵**（经典教材例子）：偏转时飞机先短暂下沉再上升。现代电传飞机通过控制律设计可减轻这一效应
-- **锅炉水位**（shrink-swell 效应）：增加燃料时，水中的气泡增多、体积膨胀，水位先上升；但更常见的操作是增加进水流量——此时冷水冲走气泡，水位先短暂下降再上升
-- **倒立摆**：某些控制构型下会出现反向响应
+$$
+G_L(s)=\frac{s+2}{2(s+1)},\qquad
+G_R(s)=\frac{1-s}{(s+1)^2}.
+$$
+
+$G_L$ 有左半平面零点，单位阶跃响应 $1-\tfrac12e^{-t}$ 从.5单调到1，**没有超调**。所以“左零点必增超调”不成立。它包含直接馈通，输出跳变也要明确。
+
+$G_R$ 的单位阶跃为 $1-(1+2t)e^{-t}$，初始导数为−1，先反向后趋向1。这证明了一个右半平面零点反向响应的具体例子，不把所有带右零点的高阶系统都断言为相同初始方向。
+
+旧稿提到飞机升降舵、锅炉水位和倒立摆作为联想入口；这些对象有不同的执行器、测量量和工况，同一设备名称不能确定零点位置。本课不再把“先下沉/气泡被冲走”等没有指定模型的细节当作已验证事实。
 
 ### 时域分析的局限性
 
@@ -536,18 +650,43 @@ plt.show()` }
 
 1. **线性**：系统是LTI的。实际系统有饱和、死区等非线性
 2. **零初始条件**：假设系统初始静止
-3. **无纯时延**：响应不是立刻开始的（实际执行器有时延）
+3. **本课解析公式不含纯时延**：实际时延会把响应起点向后移动
 4. **执行器无饱和**：控制信号有物理上限
 
-这些假设在"小信号"条件下近似成立。大信号情况下，需要用仿真或实验验证。
+这些假设是否适用要逐项检查：小信号不会自动消除时延、噪声、初始状态或未建模动态。
 
 > 💡 **关于纯时延**：纯时延 $e^{-s\tau}$ 是工业控制系统中最常见的"隐形杀手"。管道传输、信号处理、计算延迟都会引入时延。纯时延不改变系统的幅值响应，但会引入额外的相位滞后 $\Delta\phi = -\omega\tau$，直接蚕食相位裕度。处理时延的常用方法是 **Padé 近似**：
 > $$
 > e^{-s\tau} \approx \frac{1 - s\tau/2}{1 + s\tau/2} \quad \text{（一阶 Padé）}
 > $$
-> 将时延转化为有理传递函数后，就可以用本章和后续章节的方法分析。注意 Padé 近似引入了一个**右半平面零点** $s = 2/\tau$——这正是时延降低系统稳定性的数学本质。
+> Padé是有限频段近似，会引入右半平面零点 $s=2/\tau$；它不是物理时延本身多出来的零点，也不证明任意开环系统因时延失稳。例如 $e^{-s\tau}/(s+1)$ 仍是稳定输入输出模型，阶跃只整体延后。用近似模型预测初始反向响应时，应与真实延迟响应对照。
 
 ---
+
+
+<JupyterNotebook
+  title="零点反例与延迟边界"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.signal import TransferFunction,step`}
+  cells={[
+    { code: `s,t=sp.symbols('s t',positive=True)
+left=1-sp.exp(-t)/2
+right=1-(1+2*t)*sp.exp(-t)
+assert sp.simplify(sp.laplace_transform(left,t,s,noconds=True)-(s+2)/(2*s*(s+1)))==0
+assert sp.simplify(sp.laplace_transform(right,t,s,noconds=True)-(1-s)/(s*(s+1)**2))==0
+print('左零点例 y0+,终值,导数:',left.subs(t,0),1,sp.diff(left,t))
+print('右零点例 y0+,初始导数:',right.subs(t,0),sp.diff(right,t).subs(t,0))
+tau=.5; times=np.linspace(0,4,4001)
+exact=np.where(times>=tau,1-np.exp(-(times-tau)),0.)
+_,pade=step(TransferFunction([-tau/2,1],np.polymul([tau/2,1],[1,1])),T=times)
+print('一阶Pade零点:',2/tau,'精确延迟响应t0/tau/tau+1:',0.,0.,1-np.exp(-1))
+print('Pade初始区间最小值:',min(pade[times<tau]))
+assert np.all(exact[times<tau]==0)
+assert min(pade[times<tau])<0
+print('精确延迟不提前运动，Pade反向初期是近似效应；开环稳定不等于闭环裕度不变')` },
+  ]}
+/>
 
 ## 小结
 
@@ -555,9 +694,9 @@ plt.show()` }
 - **一阶系统**由时间常数 $T$ 决定快慢，无超调
 - **二阶系统**由 $\zeta$ 和 $\omega_n$ 共同决定：$\omega_n$ 控制快慢，$\zeta$ 控制振荡
 - **极点位置**直接对应时域特征：实部→衰减，虚部→振荡频率，角度→振荡程度
-- **主导极点**：最靠近虚轴的极点主导动态响应，可近似为二阶系统
+- **主导极点**：衰减率、模态系数、观察窗口共同决定是否可近似，误差必须指定范数实测
 - **性能指标之间存在权衡**：快 vs 平稳，$\zeta \approx 0.707$ 是工程常用折中
-- **零点**会改变超调量：左半平面零点增大超调，右半平面零点导致反向响应
+- **零点**会改变响应系数；本课用具体模型展示左零点无超调反例与右零点反向例，不作无条件推广
 
 ### 公式速查表
 
@@ -567,8 +706,8 @@ plt.show()` }
 | $t_r$（10%→90%）| $\approx 2.2T$ | 一阶系统 |
 | $t_p$ | $\dfrac{\pi}{\omega_d}$ | |
 | $M_p$ | $e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%$ | 只取决于 $\zeta$ |
-| $t_s$（2%）| $\dfrac{4}{\zeta\omega_n}$ | 欠阻尼近似 |
-| $t_s$（5%）| $\dfrac{3}{\zeta\omega_n}$ | 欠阻尼近似 |
+| $t_s$（2%）| $\approx\dfrac{4}{\zeta\omega_n}$ | 欠阻尼粗估，非保证 |
+| $t_s$（5%）| $\approx\dfrac{3}{\zeta\omega_n}$ | 欠阻尼粗估，非保证 |
 | $\omega_d$ | $\omega_n\sqrt{1-\zeta^2}$ | 阻尼振荡频率 |
 
 ---
@@ -579,15 +718,15 @@ plt.show()` }
 
 **2.** 某系统的传递函数为 $G(s) = \dfrac{36}{s^2 + 4.8s + 36}$。求 $\omega_n$、$\zeta$，判断阻尼类型，并计算 $t_p$、$M_p$、$t_s$（2%误差带）。
 
-**3.** 设计要求：超调量 $M_p \leq 5\%$，调节时间 $t_s \leq 2$ 秒（2%误差带）。求满足条件的 $\zeta$ 和 $\omega_n$ 的范围。
+**3.** 对无零点、单位直流增益的标准二阶模型，限定 $0<\zeta<1$。要求超调不超过5%、2%调节时间不超过2s。推导超调的精确约束和调节时间的**包络充分条件**，并检验 $\zeta=.7,\omega_n=3.2$。
 
-**4.** 某三阶系统的传递函数为 $G(s) = \dfrac{100}{(s+10)(s^2 + 2s + 10)}$。判断是否可以用二阶主导极点近似。如果可以，计算近似的 $\omega_n$、$\zeta$、$t_p$、$M_p$、$t_s$。
+**4.** 某三阶系统的传递函数为 $G(s) = \dfrac{100}{(s+10)(s^2 + 2s + 10)}$。提出二阶主导极点候选，并计算0…8s、.001s网格的最大绝对阶跃误差。再计算候选的 $\omega_n$、$\zeta$、$t_p$、$M_p$、$t_s$。
 
-**5.** 悬挂系统参数 $m = 250$ kg, $k = 16000$ N/m（承接上一章）。设计要求超调量不超过 10%，求阻尼系数 $c$ 的范围。在此条件下，计算最小的调节时间。
+**5.** 明确使用外力到位移模型 $Y/F=1/(ms^2+cs+k)$，$m=250$kg、$k=16000$N/m，定义 $q=ky/F_0$。对 $q$ 的单位阶跃要求超调≤10%。推导欠阻尼范围内 $c$ 的下界，再比较 $c=2400,4000,8000$N·s/m的实际2%调节时间，选出**这三个候选中**调节最快的；不要把它叫全域最优，也不要套用于路面输入。
 
-**6.** 某系统的单位阶跃响应数据如下：峰值为 1.16，峰值出现在 $t = 0.5$ 秒，响应在 $t = 2.0$ 秒后进入并保持在稳态值的 ±2% 范围内。估算该系统的 $\zeta$ 和 $\omega_n$。
+**6.** 某系统的单位阶跃响应数据如下：峰值为 1.16，峰值出现在 $t = 0.5$ 秒，已知从 $t=2.0$ 秒起始终处于稳态值的±2%范围内（不声称这是最早时刻），稳态值为1。按无零点标准二阶假设估计 $\zeta,\omega_n$，再核对最短调节时间与这个上界是否相容。
 
-**7.** 思考题：如果一个系统有一个传递函数零点 $s = -a$（$a > 0$），定性说明这个零点对阶跃响应的超调量有什么影响。如果零点在右半平面（$s = +a$），响应会出现什么特殊现象？
+**7.** 用本课 $G_L=(s+2)/(2(s+1))$ 与 $G_R=(1-s)/(s+1)^2$ 的阶跃响应，检验“左零点必增加超调”和“右零点可能引起反向响应”。指出各结论的适用范围。
 
 **8.** 一阶系统 $G(s) = \dfrac{1}{2s + 1}$，输入信号为斜坡 $r(t) = 3t$（$t \geq 0$）。求系统的输出响应 $y(t)$，并计算稳态跟踪误差 $e(t) = r(t) - y(t)$ 当 $t \to \infty$ 时的值。
 
@@ -597,216 +736,47 @@ plt.show()` }
 
 ## 答案
 
-**1.** 将传递函数化为标准形式：
+**1.** $T=.5$s，部分分式 $Y=1/s-1/(s+2)$，故 $y=1-e^{-2t}$。精确阈值为
 
 $$
-G(s) = \frac{1}{0.5s + 1} = \frac{2}{s + 2}
+t_{10}=-.5\ln(.9)=.0526803\ \mathrm{s},\quad
+t_{90}=-.5\ln(.1)=1.1512925\ \mathrm{s}.
 $$
 
-时间常数 $T = 0.5$ s。
+所以 $t_r=.5\ln9=1.0986123$s，$t_s=-.5\ln(.02)=1.9560115$s。$2.2T=1.1$s与$4T=2$s是近似。
 
-阶跃响应：$Y(s) = \dfrac{1}{s} \cdot \dfrac{2}{s+2} = \dfrac{1}{s} - \dfrac{1}{s+2}$
+**2.** 分母与标准形比较得 $\omega_n=6$rad/s、$\zeta=4.8/(2\times6)=.4$，欠阻尼；$\omega_d=6\sqrt{.84}=5.4990908$rad/s。故 $t_p=\pi/\omega_d=.5712931$s，$M_p=100e^{-\pi(.4)/\sqrt{.84}}\%=25.3826722\%$。粗估 $4/(.4\times6)=1.6666667$s；按完整曲线最后出带求根，实际 $t_s=1.4015533$s，不能将两者写成等号。
 
-$$
-\boxed{y(t) = 1 - e^{-2t} = 1 - e^{-t/T}}
-$$
-
-上升时间（10%→90%）：
-
-$$
-t_{10\%} = -T\ln(0.9) = 0.5 \times 0.105 = 0.053 \text{ s}
-$$
-$$
-t_{90\%} = -T\ln(0.1) = 0.5 \times 2.303 = 1.151 \text{ s}
-$$
-$$
-\boxed{t_r = 1.151 - 0.053 \approx 1.1 \text{ s}} \quad (\text{验证：} 2.2T = 1.1 \text{ s} \checkmark)
-$$
-
-调节时间（2%）：$\boxed{t_s = 4T = 2.0 \text{ s}}$
-
----
-
-**2.** 对比标准形式 $s^2 + 2\zeta\omega_n s + \omega_n^2$：
-
-$$
-\omega_n^2 = 36 \implies \boxed{\omega_n = 6 \text{ rad/s}}
-$$
-
-$$
-2\zeta\omega_n = 4.8 \implies \zeta = \frac{4.8}{2 \times 6} = \boxed{0.4}
-$$
-
-$0 < \zeta < 1$，**欠阻尼**。
-
-$$
-\omega_d = \omega_n\sqrt{1-\zeta^2} = 6\sqrt{1-0.16} = 6 \times 0.917 = 5.50 \text{ rad/s}
-$$
-
-$$
-\boxed{t_p = \frac{\pi}{\omega_d} = \frac{\pi}{5.50} = 0.571 \text{ s}}
-$$
-
-$$
-\boxed{M_p = e^{-\pi \times 0.4/0.917} = e^{-1.371} = 25.4\%}
-$$
-
-$$
-\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{0.4 \times 6} = 1.67 \text{ s}}
-$$
-
----
-
-**3.** 由 $M_p \leq 5\%$：
-
-$$
-e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.05 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.05) = 2.996
-$$
-
-$$
-\frac{\zeta}{\sqrt{1-\zeta^2}} \geq \frac{2.996}{\pi} = 0.954
-$$
-
-两边平方：$\zeta^2 \geq 0.910(1-\zeta^2) \implies \zeta^2 \geq 0.476$
-
-$$
-\boxed{\zeta \geq 0.690}
-$$
-
-由 $t_s \leq 2$ s：
-
-$$
-\frac{4}{\zeta\omega_n} \leq 2 \implies \zeta\omega_n \geq 2
-$$
-
-当 $\zeta = 0.690$ 时，$\omega_n \geq 2/0.690 = 2.90$ rad/s。
-
-$$
-\boxed{\zeta \geq 0.690, \quad \omega_n \geq \frac{2}{\zeta}}
-$$
-
----
-
-**4.** 二阶部分极点：$s^2 + 2s + 10 = 0 \implies s = -1 \pm j3$，实部绝对值 = 1。
-
-一阶极点：$s = -10$，实部绝对值 = 10。
-
-比值 $10/1 = 10 > 5$，**可以用二阶近似** ✓。
+**3.** 设 $L=-\ln(.05)$，从 $e^{-\pi\zeta/\sqrt{1-\zeta^2}}\le.05$ 得
 
-由稳态增益确定近似系统：$G(0) = \frac{100}{10 \times 10} = 1$
-
-$$
-G_{\text{approx}}(s) = \frac{10}{s^2 + 2s + 10}
-$$
-
-$$
-\boxed{\omega_n = \sqrt{10} = 3.16 \text{ rad/s}, \quad \zeta = \frac{1}{\sqrt{10}} = 0.316}
-$$
-
-$$
-\omega_d = \sqrt{10}\sqrt{1-0.1} = \sqrt{9} = 3.00 \text{ rad/s}
-$$
-
-$$
-\boxed{t_p = \frac{\pi}{3.00} = 1.05 \text{ s}}
-$$
-
-$$
-\boxed{M_p = e^{-\pi \times 0.316/0.949} = e^{-1.046} = 35.1\%}
-$$
-
-$$
-\boxed{t_s \approx \frac{4}{\zeta\omega_n} = \frac{4}{1} = 4.0 \text{ s}}
-$$
-
----
-
-**5.** $\omega_n = \sqrt{k/m} = \sqrt{16000/250} = 8$ rad/s。
-
-由 $M_p \leq 10\%$：
-
-$$
-e^{-\pi\zeta/\sqrt{1-\zeta^2}} \leq 0.10 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} \geq -\ln(0.1) = 2.303
-$$
-
-$$
-\frac{\zeta}{\sqrt{1-\zeta^2}} \geq 0.733 \implies \zeta^2 \geq 0.537(1-\zeta^2) \implies \zeta^2 \geq 0.349
-$$
-
 $$
-\boxed{\zeta \geq 0.591}
+\zeta\ge\frac{L}{\sqrt{\pi^2+L^2}}\approx.6901067.
 $$
 
-阻尼系数 $c = 2\zeta\omega_n m$：
+在 $0<\zeta<1$ 内，要求完整包络到2s时不超过.02，得到充分条件
 
 $$
-\boxed{c \geq 2 \times 0.591 \times 8 \times 250 = 2364 \text{ N·s/m}}
+\omega_n\ge\frac{\ln(1/(.02\sqrt{1-\zeta^2}))}{2\zeta}.
 $$
 
-取 $\zeta = 0.591$ 时调节时间最小：
+它是充分条件，不是全部可行参数的精确边界。选 $\zeta=.7,\omega_n=3.2$，超调4.5987910%、精确调节时间1.8683726s，满足本题指标；旧粗估选 $\omega_n=2/.7$ 则真实2.0925773s，失败。$\zeta\ge1$ 不在本题欠阻尼推导范围内，要另用对应响应。
 
-$$
-\boxed{t_s \approx \frac{4}{0.591 \times 8} = 0.85 \text{ s}}
-$$
-
-$\zeta$ 越大，$t_s$ 越大，所以最小调节时间为 0.85 s。
-
----
-
-**6.** 由峰值 $y_{\max} = 1.16$：
-
-$$
-M_p = \frac{1.16 - 1.0}{1.0} = 16\%
-$$
-
-$$
-e^{-\pi\zeta/\sqrt{1-\zeta^2}} = 0.16 \implies \frac{\pi\zeta}{\sqrt{1-\zeta^2}} = -\ln(0.16) = 1.833
-$$
-
-$$
-\frac{\zeta}{\sqrt{1-\zeta^2}} = 0.583 \implies \zeta^2 = \frac{0.340}{1.340} = 0.254
-$$
+**4.** 原极点−1±j3和−10。直流增益为1，候选取 $G_a=10/(s^2+2s+10)$；十倍衰减率并不保证误差。规定网格最大绝对输出差约.1980618。候选 $\omega_n=\sqrt{10}=3.1622777$rad/s、$\zeta=1/\sqrt{10}=.3162278$、$\omega_d=3$rad/s，峰时1.0471976s、超调35.0919807%、精确2%调节时间3.5359892s；4s只是粗估。能否接受近似应与需求误差限比较，本题未给误差限，不能直接签“可以”。
 
-$$
-\boxed{\zeta \approx 0.50}
-$$
-
-由 $t_p = 0.5$ s：
-
-$$
-\omega_d = \frac{\pi}{t_p} = \frac{\pi}{0.5} = 6.28 \text{ rad/s}
-$$
-
-$$
-\omega_n = \frac{\omega_d}{\sqrt{1-\zeta^2}} = \frac{6.28}{\sqrt{1-0.254}} = \frac{6.28}{0.863}
-$$
+**5.** $\omega_n=8$，$c=4000\zeta$。标准无零点模型的10%超调要求在欠阻尼范围给
 
 $$
-\boxed{\omega_n \approx 7.3 \text{ rad/s}}
+\zeta\ge\frac{\ln10}{\sqrt{\pi^2+(\ln10)^2}}\approx.5911550,\qquad
+c\ge2364.6201\ \mathrm{N\,s/m}.
 $$
-
-**验证**：$t_s \approx \frac{4}{0.50 \times 7.3} = 1.1$ s，但题目给出 $t_s = 2.0$ s。两者不一致，暗示系统可能**不是纯二阶系统**——可能有零点或额外极点的影响。这本身就是一个有价值的发现：实际数据与理想公式之间的差距，往往揭示了系统的复杂动态。
-
----
-
-**7.** **左半平面零点** $s = -a$（$a > 0$）：
-
-零点会"加速"响应，使上升时间缩短，但同时**增大超调量**。
-
-直觉解释：零点相当于在输入信号中加入了"微分"成分（$1 + s/a$ 中的 $s/a$ 项），提前"预判"了变化趋势。这种"提前量"导致系统过冲更大。
 
-**右半平面零点** $s = +a$（$a > 0$）：
+这个下界限定了 $0<\zeta<1$ 的推导；临界/过阻尼在该无零点模型下超调为0，也可满足。对 $c=2400,4000,8000$，对应 $\zeta=.6,1,2$，分别实算调节时间并比较（见答案Notebook）。在这三个候选中临界阻尼最快；这不是对全部连续阻尼范围的最优证明，更不是含零点路面模型的结论。
 
-会导致**反向响应**（inverse response）：阶跃响应先向反方向运动，再转向正方向。
+**6.** $M_p=(1.16-1)/1=.16$，由对数公式得 $\zeta=-\ln(.16)/\sqrt{\pi^2+\ln^2(.16)}=.5038681$。$\omega_d=\pi/.5$，故 $\omega_n=7.2740523$rad/s。按该模型实际求最后出带根得 $t_s=1.1049470$s，早于2s，因此与给出的上界相容。只有题目另声称最短调节时间**恰为**2s，才需进一步核查噪声、额外动态或模型假设，不能只拿粗估式诊断高阶。
 
-物理机制：右半平面零点可以分解为一个"正方向"和一个"反方向"的效应，反方向效应在初始时刻占主导。
+**7.** $G_L/s=1/s-1/(2(s+1))$，所以 $y_L=1-\tfrac12e^{-t}$，从.5单调到1、超调0，是左零点“必增超调”的反例。$G_R/s=1/s-1/(s+1)-2/(s+1)^2$，故 $y_R=1-(1+2t)e^{-t}$，$\dot y_R(0^+)=-1$，先反向后趋向1；这是指定模型的结论，不是所有右零点模型初始方向的定理。
 
-这类系统称为**非最小相位系统**。工程实例：
-- 飞机升降舵：偏转时飞机先短暂下沉再上升
-- 锅炉水位：增加进水流量时，水位先下降（气泡被冲走）再上升
-- 倒立摆：某些控制构型下会出现反向响应
 
----
 
 **8.** 输入 $R(s) = 3/s^2$，系统 $G(s) = \frac{1}{2s+1} = \frac{0.5}{s + 0.5}$。
 
@@ -844,21 +814,13 @@ $$
 \boxed{e(\infty) = 6}
 $$
 
-物理意义：一阶系统跟踪斜坡输入时，稳态误差为常数 $= T \times A = 0.5 \times 3 \times 2 = 3 \times T \times 2$... 实际上 $e(\infty) = T \cdot \dot{r} = 0.5 \times 3 \times 2$... 让我重新推导。
-
-对于 $G(s) = \frac{1}{Ts+1}$，斜坡输入 $r(t) = At$，稳态误差 $e_{ss} = AT$。这里 $A = 3$，$T = 2$... 不对，$G(s) = \frac{1}{2s+1}$，所以 $T = 2$。
-
-$$
-\boxed{e_{ss} = AT = 3 \times 2 = 6}
-$$
-
-与上面的计算结果一致 ✓。
+物理意义：这里 $T=2$s，输入斜率 $A=3$单位/秒，长期跟踪误差为 $AT=6$单位。$G=1/(Ts+1)$ 是指令到输出的单位增益模型；该量不是任意反馈结构都能直接套用的误差常数。
 
 ---
 
 **9.** 标准形式：$\omega_n^2 = 25 \implies \omega_n = 5$ rad/s，$2\zeta\omega_n = 4 \implies \zeta = 0.4$。
 
-欠阻尼（$0 < \zeta < 1$）。$\omega_d = 5\sqrt{1-0.16} = 5 \times 0.917 = 4.58$ rad/s。
+欠阻尼（$0 < \zeta < 1$）。$\omega_d = 5\sqrt{1-0.16} = 4.5825757 \approx 4.58$ rad/s。
 
 **脉冲响应**：对 $U(s) = 1$（单位脉冲），
 
@@ -869,33 +831,95 @@ $$
 查表（$\mathcal{L}^{-1}\left\{\frac{\omega_n^2}{(s+\sigma)^2 + \omega_d^2}\right\} = \frac{\omega_n^2}{\omega_d} e^{-\sigma t}\sin(\omega_d t)$）：
 
 $$
-\boxed{y(t) = \frac{25}{4.58} e^{-2t}\sin(4.58t) = 5.46\, e^{-2t}\sin(4.58t), \quad t \geq 0}
+\boxed{y(t)=\frac{25}{\sqrt{21}}e^{-2t}\sin(\sqrt{21}t),\quad t\ge0}
 $$
 
-**脉冲响应的峰值时间**：令 $\dot{y}(t) = 0$。
+**冲激响应峰时**：对完整响应求导，$\tan(\omega_dt)=\omega_d/2$，首个正峰为
 
 $$
-\dot{y}(t) = 5.46\,e^{-2t}[-2\sin(4.58t) + 4.58\cos(4.58t)] = 0
-$$
-
-$$
-\tan(4.58\,t_p^{\text{impulse}}) = \frac{4.58}{2} = 2.29
-$$
-
-$$
-4.58\,t_p^{\text{impulse}} = \arctan(2.29) = 1.156 \text{ rad}
-$$
-
-$$
-\boxed{t_p^{\text{impulse}} = \frac{1.156}{4.58} = 0.252 \text{ s}}
+t_p^{\mathrm{impulse}}=\frac{\arccos(.4)}{\sqrt{21}}\approx.2529755\ \mathrm{s}.
 $$
 
 **与阶跃响应对比**：阶跃响应的峰值时间
 
 $$
-t_p^{\text{step}} = \frac{\pi}{\omega_d} = \frac{\pi}{4.58} = 0.686 \text{ s}
+t_p^{\text{step}}=\frac{\pi}{\sqrt{21}}\approx.6855517\ \mathrm{s}
 $$
 
-脉冲响应的峰值时间（0.252 s）**早于**阶跃响应的峰值时间（0.686 s）。
+脉冲响应的峰值时间（约0.253 s）**早于**阶跃响应的峰值时间（0.686 s）。
 
 物理解释：脉冲响应是阶跃响应的导数。阶跃响应在 $t_p^{\text{step}}$ 处达到极值时，其导数（即脉冲响应）恰好过零。而脉冲响应自身的峰值出现在更早的时刻——对应阶跃响应上升最快的时刻。
+
+<JupyterNotebook
+  title="九题答案复算"
+  setupCode={`import numpy as np
+from scipy.linalg import expm, eig
+from scipy.signal import StateSpace, step, impulse
+from scipy.optimize import brentq, minimize_scalar
+
+def state(z,wn,road=False):
+    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])
+
+def at(z,wn,t,road=False):
+    A,B,C=state(z,wn,road)
+    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))
+
+def settle(z,wn,road=False,band=.02):
+    if z==0:return None
+    A,B,C=state(z,wn,road)
+    if z==1:
+        tail=lambda t:(1+wn*t)*np.exp(-wn*t)
+    else:
+        vals,V=eig(A)
+        # Independent modal bound on the initial displacement from equilibrium.
+        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))
+        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))
+    end=1/wn
+    while tail(end)>.01:end*=2
+    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)
+    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)
+    bad=np.flatnonzero(abs(ys-1)>band)
+    if not len(bad):return 0.
+    j=bad[-1]
+    assert j<len(times)-1
+    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))
+
+def metrics(z,wn,road=False):
+    ts=settle(z,wn,road)
+    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)
+    A,B,C=state(z,wn,road)
+    # Derivative of the forced step is the impulse C exp(At) B.
+    deriv=lambda t:float(C@expm(A*t)@B)
+    if not road and z>=1:tp=None;mp=0.
+    else:
+        grid=np.linspace(1e-9,20/wn,2001)
+        signs=[deriv(t) for t in grid]
+        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])
+        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)
+    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None
+    return dict(tp=tp,mp=mp,tr=tr,ts=ts)
+import sympy as sp`}
+  cells={[
+    { code: `print('Q1 t10,t90,tr,ts2:',-.5*np.log(.9),-.5*np.log(.1),.5*np.log(9),-.5*np.log(.02))
+print('Q2 wn,zeta,wd,指标,粗估:',6.,.4,6*np.sqrt(.84),metrics(.4,6),4/(.4*6))
+print('Q3 zeta_min:',-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2))
+print('Q3 candidate:',metrics(.7,3.2))
+print('Q4 wn,zeta,wd/指标:',np.sqrt(10),1/np.sqrt(10),3.,metrics(1/np.sqrt(10),np.sqrt(10)))
+print('Q5 zeta_min,c_min:',np.log(10)/np.sqrt(np.pi**2+np.log(10)**2),4000*np.log(10)/np.sqrt(np.pi**2+np.log(10)**2))
+for c in [2400.,4000.,8000.]: print('Q5 c,zeta,exact metrics:',c,c/4000,metrics(c/4000,8))
+z=-np.log(.16)/np.sqrt(np.pi**2+np.log(.16)**2)
+wn=np.pi/(.5*np.sqrt(1-z*z))
+print('Q6 zeta,wn,exact metrics:',z,wn,metrics(z,wn))
+print('Q7 左例单调无超调0，右例初始导数-1；NB6已符号验证')
+s,t=sp.symbols('s t',positive=True)
+y=3*t-6*(1-sp.exp(-t/2))
+assert sp.simplify(sp.laplace_transform(y,t,s,noconds=True)-3/(s*s*(2*s+1)))==0
+print('Q8 partial fractions:',sp.apart(3/(s*s*(2*s+1)),s),'tracking error:',sp.simplify(3*t-y),'limit:',6)
+wd=np.sqrt(21)
+peak=np.arccos(.4)/wd
+h=25/wd*sp.exp(-2*t)*sp.sin(wd*t)
+assert abs(float(sp.diff(h,t).subs(t,peak)))<1e-10
+print('Q9 wn,zeta,wd,impulse coefficient:',5.,.4,wd,25/wd)
+print('Q9 impulse peak time/step peak time:',peak,np.pi/wd)` },
+  ]}
+/>
