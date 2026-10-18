@@ -78,7 +78,7 @@
 | CLASSIC-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/02-transfer-function.md;.agent/semester-03/classic-02/acceptance.md;commit:1b3481632b724d91c6d9eee481b19ccbff2e864d |
 | CLASSIC-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/03-time-domain-analysis.md;.agent/semester-03/classic-03/acceptance.md;commit:54e282c063f164ae4d6c21cfa6ab7af57be6b0c0 |
 | CLASSIC-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/04-stability-analysis.md;.agent/semester-03/classic-04/acceptance.md;commit:e2ef9828b225e15b2fa7714e45589802605b86ea |
-| CLASSIC-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/05-frequency-domain-analysis.md;.agent/semester-03/classic-05/acceptance.md |
+| CLASSIC-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/05-frequency-domain-analysis.md;.agent/semester-03/classic-05/acceptance.md;commit:be726e8967190e4d01e979fcf6fec62c9183a7cf |
 | CLASSIC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | CLASSIC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
