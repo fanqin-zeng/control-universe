@@ -100,7 +100,7 @@
 | MODERN-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/02-controllability-observability.md;.agent/semester-03/modern-02/acceptance.md;commit:0d30ee53c995c853053625854687ca18b7d070da |
 | MODERN-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/03-lyapunov-modern.md;.agent/semester-03/modern-03/acceptance.md;commit:58d4e41048ac211950c14581e071c638501c1a00 |
 | MODERN-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/04-state-feedback.md;.agent/semester-03/modern-04/acceptance.md;commit:d58259df22e3c214f372da5472ce4764bff71bb8 |
-| MODERN-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/04-modern/05-state-observer.md;.agent/semester-03/modern-05/acceptance.md |
+| MODERN-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/05-state-observer.md;.agent/semester-03/modern-05/acceptance.md;commit:acf35e839be30e6a902d2d684509ae7626c7cd00 |
 | MODERN-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
