@@ -100,7 +100,7 @@
 
 ## Phase 4: 定稿与签发
 
-[郑核-签发] A.1全部通过、何疑限定观察放行、秦构九项及四补充均有实际证据。check退出0（PASS21/WARN2/FAIL0）、学期守卫退出0、两构建/页面/严格内核与三方对账通过，四份档案齐备，准予本课进入master。实际提交hash在提交后登记，不预填。交付清单：正文、纯TS/Explorer/SVG、单一注册表、catalog、自动OUTLINE/tracker、讨论日志、学期3checklist/plan、zh生产交接状态、Python支持实跑证据。
+[郑核-签发] A.1全部通过、何疑限定观察放行、秦构九项及四补充均有实际证据。check退出0（PASS21/WARN2/FAIL0）、学期守卫退出0、两构建/页面/严格内核与三方对账通过，四份档案齐备，准予本课进入master。实际master交付提交：1f3b9894304d32587533c88d85b193829c4c39d1；提交后据实勾选进入master列，学期3完成/进入master均58课。交付清单：正文、纯TS/Explorer/SVG、单一注册表、catalog、自动OUTLINE/tracker、讨论日志、学期3checklist/plan、zh生产交接状态、Python支持实跑证据。
 
 ## 附录 A.1 三方数值对账
 

@@ -1,6 +1,6 @@
 # DISCRETE-09 离散最优控制验收
 
-仅本课新写wiki-lesson-new Phase1–4，起点master15c4136。Phase1–4、证据与命令已完成，郑核据实签发，真实master hash待提交后登记。不发布gh-pages；01未交付草稿隔离、用户批阅及四个本地端口文件排除提交。
+仅本课新写wiki-lesson-new Phase1–4，起点master15c4136。Phase1–4、证据与命令已完成，郑核据实签发，真实master交付提交 1f3b9894304d32587533c88d85b193829c4c39d1。不发布gh-pages；01未交付草稿隔离、用户批阅及四个本地端口文件排除提交。
 
 独立参考通过Fraction消去状态后解完整N变量二次优化，各后缀独立求价值和首输入；实际TS调用15个配置，最大偏差2.22e−16。原始Notebook70个量对独立参考最大偏差2.22e−16，阈值1e−9。原生、Pyodide两Notebook四cell均通过，最终文本hash见reconciliation.json。
 
@@ -26,6 +26,8 @@
 | node --test scripts/check-semester03.test.mjs scripts/lesson-route.test.mjs scripts/mdx-headings.test.mjs | 0；32/32，09例外不放行10 | tests.log |
 | npm run check -- --fix-outline --fix-tracker-stats | 1；旧统计5FAIL，随后自动刷新，未把此轮当通过 | refresh.log |
 | npm run check（刷新后独立复验） | 0；PASS21/WARN2/FAIL0 | check.log |
-| node scripts/check-semester03.mjs | 0；58生产完成，合入列提交后再记 | semester-check.log |
+| node scripts/check-semester03.mjs | 0；58生产完成，真实交付后merged=58 | semester-check.log |
 
 最终源hash bc853f14cd517ede9a056fddff1e8996e887b5a17996f86f37b997ca1b9500d4；两实际页面/原生/Pyodide输出按1e−9容差一致。catalog全站61/205交付、74Explorer，学期3完成58课（口径不同）。保留既有WARN/W任务，不新建历史fix；本地Pages验收不等于发布，gh-pages保持不动。01草稿与本地端口/批阅不提交，交付末恢复草稿并核验。
+
+真实master交付提交：1f3b9894304d32587533c88d85b193829c4c39d1。checklist合入列已据真实提交登记，semester-check.log回执merged=58。本次不发布gh-pages。
