@@ -52,4 +52,6 @@ git checkout master
 
 数学章授权发布（2026-10-18）：用户要求将已有内容更新到Pages，master `98492e1`以`--no-ff`合入gh-pages得到`f01e0bbb52308a9cf277f1f2ff65b377c7e73cac`并推送。Actions成功，205课程/9旧入口/235成功请求及数学章18课公网、最新七Python实验通过。详见[数学章发布记录](math18-release.md)；后续仍逐次获同意再发布。
 
-最新授权发布（2026-10-18）：用户要求将已有内容更新到 Pages，master `bbab75b` 合入 gh-pages 得到 `0dad5f04b701f443752e10529720e07bcb46b918` 并推送。Actions 构建与部署成功，205 课程页、9 旧入口、235 请求及九份原始 Python 实验公网验收通过；经典控制已交付 11/11。详见[经典控制章发布记录](classic11-release.md)。后续仍逐次获同意再发布。
+经典控制授权发布（2026-10-18）：用户要求将已有内容更新到 Pages，master `bbab75b` 合入 gh-pages 得到 `0dad5f04b701f443752e10529720e07bcb46b918` 并推送。Actions 构建与部署成功，205 课程页、9 旧入口、235 请求及九份原始 Python 实验公网验收通过；经典控制已交付 11/11。详见[经典控制章发布记录](classic11-release.md)。后续仍逐次获同意再发布。
+
+最新授权发布（2026-10-18）：用户要求本课完成后发布当前修改，master `75c4f3b` 合入 gh-pages 得到 `42eed1d509b90699fda0eff8d45f369d7dd7a210` 并推送。Actions 构建、部署与公网 235 请求通过；MODERN-01 五份 Python 实验缓存后复跑和课程页内运行通过，首次冷加载超时保留记录。数学两课引入、传递函数四张 SVG、手机目录滚动修复已上线。详见[MODERN-01 发布记录](modern01-release.md)。后续仍逐次获同意再发布。
