@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T12:48:49.350Z",
-  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Ffeedback-linearization",
+  "testedAt": "2026-10-18T13:15:30.702Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fsliding-mode-control",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -4448,44 +4448,44 @@
     {
       "key": "nonlinear/sliding-mode-control",
       "title": "滑模控制",
-      "sourceHash": "ef7446e01c8a27dd3a389871498c5b3a7d7bbff690325e9d9cc6c83601fa779a",
+      "sourceHash": "a4177570009f9fdb62ac8c520460d0bf3f2e82a74a146cbaca91c10d6f5b9362",
       "notebooks": [
         {
           "id": "nonlinear/sliding-mode-control#1",
           "title": "Notebook 1：到达条件、滑动模态与等效控制的数值验证",
           "index": 1,
-          "line": 147,
+          "line": 167,
           "cellCount": 4,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5112,
+              "milliseconds": 5384,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "eta = K - D = 1.70,  s(0) = 4.5000,  解析上界 t_r <= |s(0)|/eta = 2.6471 s\n实测到达时间 t_r = 2.2609 s（满足上界；上界按最坏扰动估计，偏保守）\n滑动阶段 log|x| 斜率 = -2.9949，理论 -lambda = -3.0（滑动模态 e' = -lambda*e 成立）\n"
+                  "text": "eta = K - D = 1.70,  s(0) = 4.5000,  解析上界 t_r <= |s(0)|/eta = 2.6471 s\n阈值带进入时刻 = 2.2609 s；理想精确到达与此不是同一指标\n滑动阶段 log|x| 斜率 = -2.9949，理论 -lambda = -3.0（滑动模态 e' = -lambda*e 成立）\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 21295,
+              "milliseconds": 30744,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "滑动段内 u 的 0.2s 窗口平均，应等于 u_eq - d（等效控制自动吸收扰动）\n积分格式            dt    max|mean(u)-(u_eq-d)|\neuler        1e-03                   0.0124\neuler        1e-04                   0.0009\neuler        1e-05                   0.0001\nrk4          1e-03                   1.1592\nrk4          1e-04                   1.1493\nrk4          1e-05                   1.1400\n=> 一阶（采样数据）格式的平均值随 dt 收敛到等效控制；\n   RK4 的中间阶段跨越不连续面，平均值失真且不随 dt 收敛，不能用来验证 Filippov 结论\n"
+                  "text": "滑动段内 u 的 0.2s 窗口平均，应等于 u_eq - d（等效控制自动吸收扰动）\n积分格式            dt    max|mean(u)-(u_eq-d)|\neuler        1e-03                   0.0124  stage-weighted error=0.012395\neuler        1e-04                   0.0009  stage-weighted error=0.000887\neuler        1e-05                   0.0001  stage-weighted error=0.000136\nrk4          1e-03                   1.1592  stage-weighted error=0.006309\nrk4          1e-04                   1.1493  stage-weighted error=0.000761\nrk4          1e-05                   1.1400  stage-weighted error=0.000055\n比较端点控制平均与积分器实际stage加权控制平均；二者不可混用。\n固定窗口与步长残差不是任意高阶方法失效的定理。\n"
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 1671,
+              "milliseconds": 1746,
               "status": "passed",
               "outputs": [
                 {
@@ -4497,7 +4497,7 @@
             },
             {
               "index": 4,
-              "milliseconds": 876,
+              "milliseconds": 809,
               "status": "passed",
               "outputs": [
                 {
@@ -4513,38 +4513,38 @@
           "id": "nonlinear/sliding-mode-control#2",
           "title": "Notebook 2：四种控制律的抖振代价与稳态精度定量对比",
           "index": 2,
-          "line": 360,
+          "line": 411,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3962,
+              "milliseconds": 4061,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "STA 增益(Levant): alpha=1.837, beta=1.650  (L=|d'|<=1.50)\n\n   控制律     到达t_r     稳态rms|e|     稳态max|e|      max|s|    TV(u)2s     u变号   max|u|\n   sgn    1.7971    9.793e-06    1.641e-05   1.150e-04  144372.35   19208     4.54\n   sat    1.8066    9.051e-04    1.291e-03   7.446e-03       6.19       1     3.32\n  tanh    1.8149    9.100e-04    1.298e-03   7.500e-03       6.19       1     3.32\n   sta    2.4281    9.657e-06    1.387e-05   2.229e-08       6.36       1     3.43\n"
+                  "text": "STA 实验增益: alpha=1.837, beta=1.650  (L=|d'|<=1.50)\n\n   控制律     到达t_r     稳态rms|e|     稳态max|e|      max|s|    TV(u)2s     u变号   max|u|\n   sgn    1.7971    9.793e-06    1.641e-05   1.150e-04  144372.35   19208     4.54\n   sat    1.8066    9.051e-04    1.291e-03   7.446e-03       6.19       1     3.32\n  tanh    1.8149    9.100e-04    1.298e-03   7.500e-03       6.19       1     3.32\n   sta    2.4281    9.657e-06    1.387e-05   2.229e-08       6.36       1     3.43\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 3,
+              "milliseconds": 2,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "理论对照：\n  边界层保守界 |e_ss| <= Phi/lambda = 0.01667\n  精细界 |s_ss| <= Phi*D/K = 0.00750  ->  |e_ss| <= 0.002500\n  实测 sat 的 max|s| = 0.00745，与 Phi*D/K 之比 = 0.993\n  => 精细界几乎精确；保守界 Phi/lambda 偏大一个量级，只适合做量级估计\n\n结论：sgn 精度最高但 TV(u) 达 1e5 量级（2s 内换号约 2 万次）；\n      sat/tanh 把 TV(u) 降到个位数，代价是稳态误差抬高约两个量级；\n      STA 同时拿到 sgn 的精度与 sat 的平滑（TV(u) 同为个位数），代价是到达更慢、整定更复杂\n"
+                  "text": "理论对照：\n  边界层保守界 |e_ss| <= Phi/lambda = 0.01667\n  精细界 |s_ss| <= Phi*D/K = 0.00750  ->  |e_ss| <= 0.002500\n  实测 sat 的 max|s| = 0.00745，与 Phi*D/K 之比 = 0.993\n  指定正弦/时间窗口与最终带上界分开；上界不要求被轨迹达到。\n\n结论：sgn 精度最高但 TV(u) 达 1e5 量级（2s 内换号约 2 万次）；\n      sat/tanh 把 TV(u) 降到个位数，代价是稳态误差抬高约两个量级；\n      这里只比较当前四组增益、步长与窗口，不作通用最优结论。\n"
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 903,
+              "milliseconds": 910,
               "status": "passed",
               "outputs": [
                 {
@@ -4560,14 +4560,14 @@
           "id": "nonlinear/sliding-mode-control#3",
           "title": "Notebook 3：四种到达律的到达时间解析式核对与残差带",
           "index": 3,
-          "line": 508,
+          "line": 572,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 1876,
+              "milliseconds": 1774,
               "status": "passed",
               "outputs": [
                 {
@@ -4579,19 +4579,19 @@
             },
             {
               "index": 2,
-              "milliseconds": 2,
+              "milliseconds": 1,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "纯幂次律残差带: 平衡时 k|s|^alpha=|d| => |s|_res=(D/k)^(1/alpha)=0.0225\n  对应误差量级 |e| ~ |s|_res/lambda = 0.0075（实测 rms|e|=1.90e-03，同量级）\n  => 纯幂次律近处权限不足；叠加常值项(mixed)即恢复精确滑动\n\n指数律最快(t_r=1.39s)但峰值最大(max|u|=8.50)；\nmixed 律 t_r=1.57s、峰值 3.75、精度 9.0e-06，综合最优\n"
+                  "text": "纯幂次律残差带: 平衡时 k|s|^alpha=|d| => |s|_res=(D/k)^(1/alpha)=0.0225\n  对应误差量级 |e| ~ |s|_res/lambda = 0.0075（实测 rms|e|=1.90e-03，同量级）\n  幂次最终带界与有限窗rms不是同一个量；mixed的理想滑动需足够常值裕度。\n\n指数律最快(t_r=1.39s)但峰值最大(max|u|=8.50)；\nmixed 律 t_r=1.57s、峰值 3.75、精度 9.0e-06，当前配置观察值，不作最优排名\n"
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 1467,
+              "milliseconds": 1491,
               "status": "passed",
               "outputs": [
                 {
@@ -4607,14 +4607,14 @@
           "id": "nonlinear/sliding-mode-control#4",
           "title": "Notebook 4：匹配 vs 不匹配——秩条件判定与 K 扫描实验",
           "index": 4,
-          "line": 624,
+          "line": 693,
           "cellCount": 4,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4,
+              "milliseconds": 2,
               "status": "passed",
               "outputs": [
                 {
@@ -4626,7 +4626,7 @@
             },
             {
               "index": 2,
-              "milliseconds": 7954,
+              "milliseconds": 8202,
               "status": "passed",
               "outputs": [
                 {
@@ -4638,25 +4638,25 @@
             },
             {
               "index": 3,
-              "milliseconds": 675,
+              "milliseconds": 707,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "K=2.0, 仅不匹配扰动:\n  实测稳态 rms|e|            = 0.016310\n  由 e'=-lambda e+d_u 预测    = 0.016308\n  最大偏差 max|e-e_pred|      = 3.436e-06  <- 机理确认\n  解析幅值 Du/sqrt(lambda^2+w^2) = 0.023570 (w=3), 对应 rms = 0.016667\n\n对照: 同样 K=2.0, 仅匹配扰动时 rms|e| = 1.859e-06 (被完全抑制)\nK 从 1 加到 8: 不匹配残差 0.01631 -> 0.01631 (不变),\n              而 TV(u) 64947 -> 624968 (约 10 倍)\n=> 对不匹配扰动, 加大 K 只买抖振, 不买精度\n"
+                  "text": "K=2.0, 仅不匹配扰动:\n  实测稳态 rms|e|            = 0.016310\n  由 e'=-lambda e+d_u 预测    = 0.016308\n  最大偏差 max|e-e_pred|      = 3.436e-06  <- 机理确认\n  解析幅值 Du/sqrt(lambda^2+w^2) = 0.023570 (w=3), 对应 rms = 0.016667\n\n同样 K=2.0, 仅匹配扰动有限窗 rms|e| = 1.859e-06\nK 从 1 加到 8: 不匹配残差 0.01631 -> 0.01631 (不变),\n              而 TV(u) 64947 -> 624968 (约 10 倍)\n=> 在本例理想滑动的面上方程里，不匹配扰动仍保留；数字实现另有步长偏差。\n"
                 }
               ]
             },
             {
               "index": 4,
-              "milliseconds": 2041,
+              "milliseconds": 2132,
               "status": "passed",
               "outputs": [
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 108232
+                  "base64Length": 110180
                 }
               ]
             }
@@ -4666,38 +4666,38 @@
           "id": "nonlinear/sliding-mode-control#5",
           "title": "Notebook 5：电机位置伺服——PID / 计算力矩 / SMC / STA 六方对比",
           "index": 5,
-          "line": 750,
+          "line": 824,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 9015,
+              "milliseconds": 6698,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "STA(L=6): alpha=3.674, beta=6.60;  STA(L=60): alpha=11.619, beta=66.00\n\n控制器                     过渡max|e|      加载前rms      加载跌落      加载后rms      恢复时间      TV(u)  max|u|\nPID                       0.0169   2.876e-03    0.0098   7.672e-04     0.866        1.9    0.59\n计算力矩                      0.0222   4.579e-03    0.0368   3.545e-02       nan        1.5    0.58\n计算力矩+sgn                  0.0000   5.644e-06    0.0000   3.217e-05     0.000   199879.0    1.21\n计算力矩+sat                  0.0005   7.431e-08    0.0009   9.146e-04     0.000        1.5    0.59\n计算力矩+STA(L=6)             0.0089   8.685e-04    0.0191   7.551e-03     2.772        2.2    0.59\n计算力矩+STA(L=60)            0.0004   4.449e-09    0.0049   4.768e-10     0.314       34.0    0.59\n"
+                  "text": "STA(L=6): alpha=3.674, beta=6.60;  STA(L=60): alpha=11.619, beta=66.00\n\n控制器                     过渡max|e|      加载前rms      加载跌落      加载后rms      恢复时间      TV(u)  max|u|\n  common band=0.002 rad, hold=.3s, event recovery=1.2269s; original band=0.0057513\nPID                       0.0169   2.876e-03    0.0098   7.672e-04     0.866        1.9    0.59\n  common band=0.002 rad, hold=.3s, event recovery=未在8s窗口内恢复; original band=0.00915802\n计算力矩                      0.0222   4.579e-03    0.0368   3.545e-02       nan        1.5    0.58\n  common band=0.002 rad, hold=.3s, event recovery=未出带，记0s; original band=0.002\n计算力矩+sgn                  0.0000   5.644e-06    0.0000   3.217e-05     0.000   199879.0    1.21\n  common band=0.002 rad, hold=.3s, event recovery=未出带，记0s; original band=0.002\n计算力矩+sat                  0.0005   7.431e-08    0.0009   9.146e-04     0.000        1.5    0.59\n  common band=0.002 rad, hold=.3s, event recovery=2.7720s; original band=0.002\n计算力矩+STA(L=6)             0.0089   8.685e-04    0.0191   7.551e-03     2.772        2.2    0.59\n  common band=0.002 rad, hold=.3s, event recovery=0.3138s; original band=0.002\n计算力矩+STA(L=60)            0.0004   4.449e-09    0.0049   4.768e-10     0.314       34.0    0.59\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 4,
+              "milliseconds": 5,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "机理核对：\n  纯计算力矩无积分/无鲁棒项 => 静差 = 扰动加速度/Kp = 0.0341 rad\n  STA 积分项速率上限 = beta，抵消负载需 v 变化 13.64 rad/s^2：\n    L=6  (beta=6.6) => 恢复时间下界 2.07 s\n    L=60 (beta=66.0) => 恢复时间下界 0.21 s\n  电压峰值 1.21 V，远小于限幅 24.0 V（本工况执行器余量充足）\n"
+                  "text": "机理核对：\n  纯计算力矩静止平衡 e = -T_LOAD/(J0*Kp) = -0.0375 rad；有限8s末值不等于平衡\n  STA 积分项速率上限 = beta，抵消负载需 v 变化 15.00 rad/s^2：\n    L=6  (beta=6.6) => 仅v独自变化相应量的时间 2.27 s\n    L=60 (beta=66.0) => 仅v独自变化相应量的时间 0.23 s\n  电压峰值 1.21 V，远小于限幅 24.0 V（本工况执行器余量充足）\n"
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 1970,
+              "milliseconds": 2129,
               "status": "passed",
               "outputs": [
                 {
@@ -4708,17 +4708,29 @@
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "74d6be713d3f7ffa0d25b155717996db2bdc52b106a4ca02bf0a30b333f418a8",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "nonlinear/sliding-mode-control",
-          "fromSourceHash": "74d6be713d3f7ffa0d25b155717996db2bdc52b106a4ca02bf0a30b333f418a8",
-          "toSourceHash": "ef7446e01c8a27dd3a389871498c5b3a7d7bbff690325e9d9cc6c83601fa779a",
-          "notebookPayloadHash": "d481aaf946d0b3d6dd1c642d28bb6056b1eb20847bb57fd26044467e1757571c",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "nonlinear/sliding-mode-control#6",
+          "title": "Notebook 6：手算、习题与组件默认值核验",
+          "index": 6,
+          "line": 1132,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 975,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 lambda,eta,time multiplier= 5.0 0.5 2.0\npendulum g/l,b,eta,s0,tr,decay= 19.6 4.0 1.6 2.5 1.5625 0.049787068367863944\npendulum conservative/fine rad,degree= 0.01 0.5729577951308232 0.0020000000000000005 0.11459155902616468\nQ4 Phi limits, fine s at Phi=2/3= 0.1 0.6666666666666666 0.09999999999999999\nQ6 tr,residual band= 1.7320508075688772 0.0225\nspace s0,eta,tr= 0.04363323129985824 0.002 21.81661564992912\nbuck duty,ripple,mean current,half ripple= 0.5 0.6 2.4 0.3\nmotor equilibrium, nominal load, v-only scales= -0.0375 15.0 2.272727272727273 0.22727272727272727\nideal exact reach, bound= 2.26963921600694 2.6470588235294117\nExplorer default reach,band,rms,tv,last= 2.2662 0.0074424884613545515 0.0008313263886469036 1.8555475226907796 6.0\ninput gain inequality boundary checks= 36\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -11623,14 +11635,14 @@
   "complete": true,
   "totals": {
     "lessons": 73,
-    "notebooks": 354,
-    "enabled": 330,
+    "notebooks": 355,
+    "enabled": 331,
     "codeOnly": 24
   },
   "releaseTotals": {
     "lessons": 73,
-    "notebooks": 354,
-    "enabled": 329,
+    "notebooks": 355,
+    "enabled": 330,
     "codeOnly": 25
   },
   "provenance": [
@@ -12043,6 +12055,16 @@
       "testedAt": "2026-10-18T12:48:49.350Z",
       "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Ffeedback-linearization",
       "inputPath": ".agent/semester-03/nonlinear-05/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T13:10:04.979Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fsliding-mode-control",
+      "inputPath": ".agent/semester-03/nonlinear-06/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T13:15:30.702Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fsliding-mode-control",
+      "inputPath": ".agent/semester-03/nonlinear-06/pyodide.json"
     }
   ]
 }

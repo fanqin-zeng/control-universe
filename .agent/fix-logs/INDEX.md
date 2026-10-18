@@ -63,6 +63,7 @@
 | [058](2026-10-18-058.md) | 2026-10-18 | content/nonlinear/lyapunov-stability.mdx | 稳定性与吸引域 | BOTH | 卫韧+柯验（既有检查执行不足） | 纠正包含反向与反例，撤圆外不收敛断言；摆保留展开角/多圈边界与真实末时，195工况独立核 |
 | [059](2026-10-18-059.md) | 2026-10-18 | nonlinear/describing-function及两Explorer | HB与证明边界/根与复数读数 | BOTH | 卫韧+柯验+何疑+秦构（既有检查执行不足） | 撤圆判据全局保证、区分HB候选/临界解族；独立DF390/HB4608工况、7实验22cell与完整提取核验 |
 | [060](2026-10-18-060.md) | 2026-10-18 | nonlinear/feedback-linearization及ZeroDynamicsExplorer | 条件/跟踪/失配与零动态 | BOTH | 林矩+卫韧+柯验+何疑+秦构（既有检查执行不足） | 修对合分布、误差符号、机械臂失配及球梁局部证明；40工况20040点、6实验15cell独立核验 |
+| [061](2026-10-18-061.md) | 2026-10-18 | nonlinear/sliding-mode-control及SlidingModeExplorer | 滑模条件/离散指标/恢复比较 | BOTH | 卫韧+何仿+柯验+何疑+秦构（既有检查执行不足） | 修不变性、增益/边界层/STA条件、RK4控制与电机静差；48工况72048点、6实验18cell独立核验 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）

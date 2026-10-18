@@ -90,7 +90,7 @@
 | [x] Lyapunov稳定性 (lyapunov-stability) | semester-03 NONLINEAR-03：1个交互组件、6份Notebook/10cell、6题；本期讨论日志 docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md；验收 .agent/semester-03/nonlinear-03/acceptance.md；旧semester-01日志保留 |
 | [x] 描述函数 (describing-function) | semester-03 NONLINEAR-04：2个交互组件、7份Notebook/22cell、6题；本期日志 docs/discuss-log/semester-03/05-nonlinear/04-describing-function.md；验收 .agent/semester-03/nonlinear-04/acceptance.md；旧semester-01日志保留 |
 | [x] 反馈线性化 (feedback-linearization) | semester-03 NONLINEAR-05：1个交互组件、6份Notebook/15cell、6题；本期日志 docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md；验收 .agent/semester-03/nonlinear-05/acceptance.md；旧semester-01日志保留 |
-| [x] 滑模控制 (sliding-mode-control) | v1.3: 1个交互组件（SlidingModeExplorer），5个静态JupyterNotebook（到达条件与等效控制 / 四种控制律抖振对比 / 四种到达律 / 匹配性K扫描 / 电机六控制器），2张按实测重算的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/06-sliding-mode-control.md |
+| [x] 滑模控制 (sliding-mode-control) | v1.3；semester-03 NONLINEAR-06：1个SlidingModeExplorer，6个Notebook/18cell、六题、两SVG；原五实验17cell及44旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md；验收 .agent/semester-03/nonlinear-06/acceptance.md |
 | [x] 反步设计 (backstepping) | v1.3: 1个交互组件（BacksteppingExplorer），6个静态JupyterNotebook（结构判定/手算复核/复杂度与DSC/自适应/柔性关节机器人/七律对比与可达域），1张按实测重画的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/07-backstepping.md |
 | [x] 自适应控制 (adaptive-control-basics) | v1.3: 1个交互组件（MracExplorer，三面板固定坐标轴，JS↔Python 交叉验证 Rohrs 临界增益 3/4 与发散时刻），9个静态JupyterNotebook（V̇恒等式 / 手算与PE流形 / γ两面性 / 高阶匹配条件 / RLS与协方差windup / STR除零保护 / 噪声与四种修正 / 机械臂负载突变 / 飞行器爬升三方对比），1张matplotlib计算概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/08-adaptive-control-basics.md（含18条"叙述服从测量"修正） |
 | [ ] 无源控制 (passivity-control) | 本期新增骨架；尚未编写 |
