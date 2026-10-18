@@ -49,6 +49,7 @@
 | DISCRETE-05 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-05”；04已交付，保留01草稿，本课局部补足采样定义 | .agent/semester-03/discrete-05/acceptance.md |
 | DISCRETE-06 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-06”；04/05已交付，保留01草稿，采样保持本课局部解释 | .agent/semester-03/discrete-06/acceptance.md |
 | DISCRETE-07 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-07”；02–06已交付，保留01草稿，本课局部解释采样保持 | .agent/semester-03/discrete-07/acceptance.md |
+| DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -733,3 +734,10 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 用户指定继续“采样周期”，单独登记暂缓DISCRETE-01，草稿隔离保存。按重构SKILL推进Phase1–4，仅本课。三旧Notebook均因ipywidgets导致setup失败，S04完整性债务随本课修复；原七H2/十二H3/三实验对象与用途/四题保留，来源映射见.agent/semester-03/discrete-07/source-audit.md。新增微分滤波明确建立可实现PID新基线，所有数字独立状态复算；单位圆频响/相位支路、无交越、真实采样轴、ADC串行预算与多率固定精度/整数调度纠错，保留未胜/失稳和执行代价。
 
 本课verify唯一WARN：event-triggered-control为后续阅读占位，不作为前置；归DISCRETE-10交付后复核链接。PY-012/013/014经真实浏览器原始cell实跑后关闭，其余17项保留。S04历史快照不改，当前PASS证据在本课acceptance；W10仅本课三字符图已审/图文及SVG替代，其余候选未清零。fix-068归因既有职责执行不足，不扩编角色或改润色SKILL。最终签发、命令/退出码及master提交见checklist链接。
+
+
+### DISCRETE-08 本轮执行记录（2026-10-19）
+
+用户指定继续08，单独登记暂缓01，草稿隔离。空占位按wiki-lesson-new完整Phase1–4，仅交付采样数据系统：一阶精确段内轨迹/保持、Phi/Gamma积分与奇异A、采样状态反馈及一拍延迟、旋转输出漏采、完整Schur采样状态到连续指数衰减的有条件证明。七H2、两Notebook四cell、一个真实TS交互与SVG，四题答案独立复算。十三TS配置与39493个原始cell数值量核验；顺读把实验移到对应矩阵解释后，源hash变化全链路重跑。
+
+新课不追认旧v1.3/历史讨论，无旧正文迁移或历史fix需伪造。新增两实验通过浏览器实跑才启用Pyodide，原17待办与W08/W09/W10保持；不借此生产09/10或关闭07后续占位提示。实际命令/退出码与最终签发、master回执见本课checklist链接。本次不发布Pages。

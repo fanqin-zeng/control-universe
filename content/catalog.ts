@@ -2993,13 +2993,43 @@ export const catalog: Chapter[] = [
       {
         "slug": "sampled-data-systems",
         "title": "采样数据系统",
+        "subsections": [
+          {
+            "slug": "两次更新之间",
+            "title": "两次更新之间"
+          },
+          {
+            "slug": "精确采样模型",
+            "title": "精确采样模型"
+          },
+          {
+            "slug": "闭环与延迟",
+            "title": "闭环与延迟"
+          },
+          {
+            "slug": "采样会漏掉什么",
+            "title": "采样会漏掉什么"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discretization-methods",
           "discrete-sampled/sampling-period-selection"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "discrete-optimal-control",

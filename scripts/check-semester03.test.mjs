@@ -50,4 +50,6 @@ test('master普通提交和历史合并均可交付，未进入master或不存�
   assert.doesNotThrow(()=>assertCommitOnMaster(root,other));
 });
 
-rejects('已登记例外不自动放行DISCRETE-08',()=>({checklist:input.checklist.replace(/^\| DISCRETE-08 .*$/m,'| DISCRETE-08 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-08/);
+rejects('其它课例外本身不放行DISCRETE-08',()=>({plan:input.plan.replace(/^\| DISCRETE-08 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-08 .*$/m,'| DISCRETE-08 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-08/);
+
+rejects('已登记例外不自动放行DISCRETE-09',()=>({checklist:input.checklist.replace(/^\| DISCRETE-09 .*$/m,'| DISCRETE-09 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-09/);

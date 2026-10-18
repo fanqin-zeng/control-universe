@@ -1,0 +1,346 @@
+---
+title: "采样数据系统"
+description: "把连续对象、采样和保持放进同一个模型，算清采样点与两次更新之间的状态，识别漏采与延迟的边界。"
+---
+
+# 采样数据系统
+
+把小球系在细绳上，让它绕圈运动，再隔一段时间拍张照。如果每次都恰好等它转完一圈再拍，照片里的小球会一直停在同一个位置。只看照片，很容易以为它没动；实际的小球可没停下来。
+
+数字控制也有这个问题。[上一课](/discrete-sampled/sampling-period-selection)讨论了多久更新一次指令。现在再问一步：**计算机只在采样时刻读数，两次读数之间，真实系统怎样运动？采样点上的判断能说明多少？**
+
+我们先把一段采样间隔算清楚，再看照片为什么会漏掉运动。用到的状态方程、矩阵指数会在推导中回顾，不要求读者先知道新的分析工具。
+
+## 两次更新之间
+
+一个数字控制回路同时有两种时间节奏：对象一直运动，计算机按固定节拍更新。
+
+![连续对象的输出经采样进入数字控制器，控制器的负反馈指令经零阶保持施加到对象](/images/sampled-data-loop.svg)
+
+在本课的模型里，采样周期是 $T$ 秒，第 $k$ 次采样发生在 $kT$。采样器读出当时的状态 $x_k=x(kT)$，数字控制器立即算出指令 $u_k$。**零阶保持器**把这个指令维持到下一次更新：
+
+$$
+u(t)=u_k,\qquad kT\leq t\lt(k+1)T.
+$$
+
+指令保持不变，不代表对象的状态保持不变。例如电机收到固定电压后，转速仍可能继续上升。
+
+我们暂时假设测量和计算没有额外延迟，且没有限幅、噪声或外扰。后面会单独加入一拍延迟，看看模型怎样变。这样的**连续对象加离散更新**组成的回路，称为采样数据系统。
+
+## 精确采样模型
+
+### 先算一段时间
+
+先用一个无量纲的一阶教学模型：
+
+$$
+\dot x(t)=-x(t)+u(t).
+$$
+
+时间以秒计。若 $u=0$，状态按指数衰减；若输入保持不变，状态逐渐接近这个输入值。在第 $k$ 段内，已知起点 $x_k$，输入是常数 $u_k$，微分方程的解为
+
+$$
+x(kT+\tau)=e^{-\tau}x_k+(1-e^{-\tau})u_k,
+\qquad 0\leq\tau\leq T.
+$$
+
+这里 $\tau$ 是**距离本段起点过去的时间**。取 $\tau=T$，就得到下一次采样值：
+
+$$
+x_{k+1}=\Phi x_k+\Gamma u_k,\qquad
+\Phi=e^{-T},\quad \Gamma=1-e^{-T}.
+$$
+
+这不是欧拉法的近似递推，而是这个对象在零阶保持输入下的精确关系。它精确描述采样点；前一个公式还告诉我们采样点之间的状态。
+
+### 推广到状态方程
+
+对常系数线性对象 $\dot x=Ax+Bu$，$x$ 可以包含多个状态。矩阵指数 $e^{A\tau}$ 描述零输入状态在 $\tau$ 秒内怎样变化；保持输入的作用需要在这段时间内累积：
+
+$$
+x(kT+\tau)=e^{A\tau}x_k+
+\left(\int_0^\tau e^{Av}B\,dv\right)u_k.
+$$
+
+令 $\tau=T$，得到
+
+$$
+x_{k+1}=\Phi x_k+\Gamma u_k,\qquad
+\Phi=e^{AT},\quad \Gamma=\int_0^T e^{Av}B\,dv.
+$$
+
+这就是 ZOH 精确离散模型。注意先按积分式定义 $\Gamma$，不要求 $A$ 可逆。只有 $A$ 可逆时，才能进一步写成 $A^{-1}(e^{AT}-I)B$；例如积分对象 $\dot x=u$ 的 $A=0$，积分式仍给出 $\Phi=1$、$\Gamma=T$。
+
+数值计算也可以利用一个增广矩阵，一次得到 $\Phi$ 与 $\Gamma$：
+
+$$
+\exp\left(\begin{bmatrix}A&B\\0&0\end{bmatrix}T\right)
+=\begin{bmatrix}\Phi&\Gamma\\0&I\end{bmatrix}.
+$$
+
+本课的实验用这个关系计算，再用直接积分的结果核对。它针对已声明的线性对象与保持输入；模型不准、输入在中途改变，或中途出现未知外扰，都需要重新写出对应方程。
+
+## 闭环与延迟
+
+### 同一个增益，两种更新方式
+
+让一阶对象回到零点，初值 $x(0)=1$。数字控制器每次测完状态后施加
+
+$$
+u_k=-2x_k.
+$$
+
+代入采样模型：
+
+$$
+x_{k+1}=p x_k,\qquad p=\Phi-2\Gamma=3e^{-T}-2.
+$$
+
+默认 $T=0.5$ s 时，$\Phi\approx0.606531$、$\Gamma\approx0.393469$、$p\approx-0.180408$。第一段的输入为 $u_0=-2$，所以
+
+$$
+x(t)=3e^{-t}-2,\qquad 0\leq t\leq0.5.
+$$
+
+半段时刻 $t=0.25$ s，状态约为 **0.336402**；到 $0.5$ s 时，状态约为 **−0.180408**。它在两次更新之间越过了零点，第一次过零时刻为 $\ln(1.5)\approx0.405465$ s。控制器要等到下一次采样，才会根据新的负状态反向给指令。
+
+<SampledDataExplorer />
+
+如果是连续反馈 $u(t)=-2x(t)$，则闭环为 $\dot x=-3x$，响应 $x(t)=e^{-3t}$ 始终为正。两种控制使用同一个增益，但一段时间内是否继续更新指令不同，响应自然也不同。
+
+按[单位圆条件](/discrete-sampled/discrete-stability-criteria)，采样状态趋于零要求 $\lvert p\rvert\lt1$。本例可以直接解出
+
+$$
+\lvert3e^{-T}-2\rvert\lt1
+\quad\Longleftrightarrow\quad 0\lt T\lt\ln3.
+$$
+
+临界周期是 $\ln3\approx1.098612$ s。在临界点 $p=-1$，采样状态正负交替而不衰减；$T=1.2$ s 时 $p\approx-1.096417$，幅度逐拍增大。$T=0.1$ s 时 $p\approx0.714512$，采样状态保持同号衰减。这里比较的是同一模型、同一增益，没有重新设计控制器；不能据此给所有连续和数字控制排优劣。
+
+### 迟一拍会怎样
+
+上面的控制量在采样后立即生效。如果实际装置要到下一拍才施加结果，那么本段输入取决于**上一拍**状态：$u_k=-2x_{k-1}$。这时不能继续套 $x_{k+1}=p x_k$。
+
+把本段正在施加的输入也作为一个状态，就能写成
+
+$$
+\begin{bmatrix}x_{k+1}\\u_{k+1}\end{bmatrix}
+=\begin{bmatrix}\Phi&\Gamma\\-2&0\end{bmatrix}
+\begin{bmatrix}x_k\\u_k\end{bmatrix}.
+$$
+
+现在需要检查这个二阶矩阵的两个特征值。以 $T=0.8$ s 为例，无延迟时 $p\approx-0.652013$，满足严格稳定条件；迟一拍后的最大特征值模约 **1.049448**，已经不稳定。
+
+实验为两种实现指定相同的起始输入 $u_0=-2$；对延迟模型，这对应 $x_{-1}=1$。先说清楚控制量何时生效，再建模，才能避免把同一段延迟漏算或算两遍。
+
+<JupyterNotebook
+  title="精确轨迹与一拍延迟"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+
+def sample_model(T):
+    # exp([[A,B],[0,0]]T), valid even when A=0.
+    E=expm(np.array([[-1.,1.],[0.,0.]])*T)
+    phi,gamma=E[0]
+    return float(phi),float(gamma),float(phi-2*gamma)
+
+def trajectory(T):
+    phi,gamma,p=sample_model(T)
+    N=int(np.floor(6/T+1e-10))
+    times=[]; values=[]; numeric=[]; nodes=[1.]; inputs=[]
+    x=1.
+    for k in range(N):
+        u=-2*x; tau=np.linspace(0,T,101)
+        E=np.exp(-tau)
+        flow=E*x+(1-E)*u
+        ode=solve_ivp(lambda t,z:-z+u,(0,T),[x],t_eval=tau,rtol=1e-11,atol=1e-13)
+        assert ode.success
+        times.extend((k*T+tau[:-1]).tolist()); values.extend(flow[:-1].tolist());numeric.extend(ode.y[0,:-1].tolist())
+        inputs.append(u); x=phi*x+gamma*u;nodes.append(x)
+    times.append(N*T);values.append(x);numeric.append(float(ode.y[0,-1]))
+    return dict(T=T,phi=phi,gamma=gamma,p=p,times=times,values=values,numeric=numeric,nodes=nodes,inputs=inputs)`}
+  cells={[
+    {code: `main_periods=[.1,.5,np.log(3),1.2]
+main_results=[trajectory(float(T)) for T in main_periods]
+fig,axes=plt.subplots(2,1,figsize=(10,6),sharex=True)
+for result in main_results:
+    T=result['T']; t=np.array(result['times']);x=np.array(result['values'])
+    axes[0].plot(t,x,label=f'T={T:.6g}s')
+    axes[0].plot(np.arange(len(result['nodes']))*T,result['nodes'],'o',markersize=3)
+    axes[1].step(np.arange(len(result['inputs'])+1)*T,result['inputs']+[result['inputs'][-1]],where='post',label=f'T={T:.6g}s')
+    error=max(abs(x-np.array(result['numeric'])))
+    print(f'T={T:.9f}s phi={result["phi"]:.9f} gamma={result["gamma"]:.9f} p={result["p"]:.9f} last_t={t[-1]:.9f}s last_x={x[-1]:.9f} ODE_error={error:.2e}')
+ref_t=np.linspace(0,6,601)
+axes[0].plot(ref_t,np.exp(-3*ref_t),'k--',label='continuous feedback, same K=2')
+axes[0].set(ylabel='state x',ylim=(-4,4));axes[1].set(ylabel='held u',xlabel='t (s)',ylim=(-8,8))
+for ax in axes:ax.set_xlim(0,6);ax.grid();ax.legend(fontsize=7)
+plt.tight_layout();plt.show()
+phi,gamma,p=sample_model(.5)
+default_values=[phi,gamma,p,float(3*np.exp(-.25)-2),float(np.log(3)),float(np.log(1.5))]
+print('default phi/gamma/p/x(T/2)/critical_T/first_zero:',', '.join(f'{x:.12f}' for x in default_values))`},
+    {code: `delay_periods=[.1,.5,.8,1.2]
+delay_results=[]
+fig,ax=plt.subplots(figsize=(9,4))
+for T in delay_periods:
+    phi,gamma,p=sample_model(T)
+    M=np.array([[phi,gamma],[-2.,0.]])
+    roots=np.linalg.eigvals(M);rho=float(max(abs(roots)))
+    # x[-1]=1, so u[0]=-2. Undelayed experiment also starts with u[0]=-2.
+    state=np.array([1.,-2.]);history=[state.copy()]
+    for k in range(int(np.floor(6/T+1e-10))):
+        state=M@state;history.append(state.copy())
+    history=np.array(history)
+    delay_results.append(dict(T=T,phi=phi,gamma=gamma,p=p,rho=rho,history=history.tolist()))
+    ax.plot(np.arange(len(history))*T,history[:,0],'-o',markersize=3,label=f'T={T:g}s delayed')
+    print(f'T={T:g}s no_delay_abs_p={abs(p):.9f} one_tick_delay_rho={rho:.9f} last_t={(len(history)-1)*T:.9f}s')
+ax.set(xlabel='t (s)',ylabel='sampled x',xlim=(0,6));ax.grid();ax.legend();plt.tight_layout();plt.show()`}
+  ]}
+/>
+
+## 采样会漏掉什么
+
+### 照片里的静止
+
+回到开头的小球。用两个状态描述一个旋转运动，并允许振幅逐渐缩小或放大：
+
+$$
+\dot x=
+\begin{bmatrix}\alpha&2\pi\\-2\pi&\alpha\end{bmatrix}x,
+\qquad x(0)=\begin{bmatrix}0\\1\end{bmatrix},
+\qquad y=\begin{bmatrix}1&0\end{bmatrix}x.
+$$
+
+这里没有控制输入。两个状态以每秒一圈的速度旋转，$\alpha$ 决定振幅怎样变化：负值使振幅衰减，零值保持振幅，正值使振幅增长。测量只读第一个状态，解析解是
+
+$$
+x(t)=e^{\alpha t}\begin{bmatrix}\sin(2\pi t)\\\cos(2\pi t)\end{bmatrix},
+\qquad y(t)=e^{\alpha t}\sin(2\pi t).
+$$
+
+若每隔 $T=1$ s 拍一张“照片”，在整数时刻都有 $\sin(2\pi k)=0$，于是**每个采样输出都是零**。但第二个状态并不是零，完整采样状态满足
+
+$$
+x_{k+1}=e^\alpha I x_k.
+$$
+
+| $\alpha$（每秒） | 完整采样状态的特征值模 | 状态行为 | 采样输出 |
+|---|---|---|---|
+| −0.2 | 0.818731 | 衰减到零 | 全为零 |
+| 0 | 1 | 振幅不变，不收敛到零 | 全为零 |
+| 0.2 | 1.221403 | 振幅增长 | 全为零 |
+
+同样的零读数，可以对应三种完全不同的状态行为。代码中的零附近小数是浮点误差，解析采样值确实为零。
+
+在衰减例 $\alpha=-0.2$ 中，第一次正峰出现在约 **0.244936 s**，峰值约 **0.951711**；采样点上的输出却一个也没记录下来。即便状态确实稳定，采样点的输出也不能代替连续时间峰值。
+
+### 测不到与不稳定要分开
+
+这里丢失的是测量信息：只读 $y_k$，无法区分某些不同的初始状态。这叫**采样后的不可观测**。例如 $T=1$ s 时，连续两次读数都是第一状态乘以一个衰减或放大因子，仍然没有第二状态的信息。
+
+对本例，将周期改为 0.9 或 1.1 s，测量就不再总落在同一旋转相位上。用于从前两次测量识别初态的矩阵为
+
+$$
+\begin{bmatrix}C\\C\Phi\end{bmatrix},
+\qquad C=\begin{bmatrix}1&0\end{bmatrix}.
+$$
+
+当 $\alpha=-0.2$ 时，这个矩阵的行列式在 0.9 s、1 s、1.1 s 下分别约为 **−0.490960、0、0.471709**。非零行列式意味着，在这个无噪声模型里，两次测量足以解出两个初始状态。改变周期解决了这个特定频率的退化，不代表任意系统只要换个周期就能可靠观测。
+
+<JupyterNotebook
+  title="采样遗漏与习题复算"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+omega=2*np.pi
+x0=np.array([0.,1.]); C=np.array([[1.,0.]])
+def oscillator(alpha,T):
+    A=np.array([[alpha,omega],[-omega,alpha]])
+    Phi=expm(A*T)
+    samples=np.array([np.linalg.matrix_power(Phi,k)@x0 for k in range(7)])
+    time=np.linspace(0,6,2401)
+    y=np.exp(alpha*time)*np.sin(omega*time)
+    peak_t=float(np.arctan2(omega,-alpha)/omega)
+    peak_y=float(np.exp(alpha*peak_t)*np.sin(omega*peak_t))
+    O=np.vstack([C,C@Phi])
+    return dict(alpha=alpha,T=T,Phi=Phi.tolist(),samples=samples.tolist(),time=time.tolist(),y=y.tolist(),rho=float(max(abs(np.linalg.eigvals(Phi)))),peak_t=peak_t,peak_y=peak_y,observation_det=float(np.linalg.det(O)))`}
+  cells={[
+    {code: `alias_results=[oscillator(alpha,1.) for alpha in [-.2,0.,.2]]
+fig,ax=plt.subplots(figsize=(10,4))
+for result in alias_results:
+    alpha=result['alpha'];s=np.array(result['samples'])
+    ax.plot(result['time'],result['y'],label=f'alpha={alpha:g}/s')
+    ax.plot(np.arange(7),s[:,0],'o',markersize=4)
+    print(f'alpha={alpha:g}/s sampled_rho={result["rho"]:.9f} max_abs_sample_y={max(abs(s[:,0])):.2e} norm_x(6s)={np.linalg.norm(s[-1]):.9f} first_positive_peak_t={result["peak_t"]:.9f}s peak_y={result["peak_y"]:.9f}')
+ax.set(xlabel='t (s)',ylabel='continuous y and sample markers',xlim=(0,6),ylim=(-3.5,3.5));ax.grid();ax.legend();plt.tight_layout();plt.show()`},
+    {code: `qphi,qgamma,qp=np.exp(-.5),1-np.exp(-.5),3*np.exp(-.5)-2
+qmid=3*np.exp(-.25)-2
+# Integrator: A=0, B=1, K=2; x[k+1]=(1-2T)x[k].
+E=expm(np.array([[0.,1.],[0.,0.]])*.5)
+qdelay_phi=np.exp(-.8);qdelay_gamma=1-qdelay_phi
+qdelay_roots=np.linalg.eigvals([[qdelay_phi,qdelay_gamma],[-2.,0.]])
+answer_values=[float(qphi),float(qgamma),float(qp),float(qmid),float(np.log(3)),float(E[0,0]),float(E[0,1]),float(1-2*.5),float(1.),float(3*np.exp(-.8)-2),float(max(abs(qdelay_roots)))]
+observations=[oscillator(-.2,T) for T in [.9,1.,1.1]]
+print('Q1 phi/gamma/p/x(T/2)/critical_T:',', '.join(f'{x:.12f}' for x in answer_values[:5]))
+print('Q2 integrator phi/gamma/p at .5s:',answer_values[5:8],'; stability interval 0<T<1s')
+print(f'Q4 T=.8s p={answer_values[-2]:.12f} delayed_rho={answer_values[-1]:.12f}')
+for obs in observations:print(f'alpha=-.2/s T={obs["T"]:g}s two_sample_observation_det={obs["observation_det"]:.12f}')`}
+  ]}
+/>
+
+### 完整状态稳定能说明什么
+
+不能从“输出照片全为零”推出内部稳定，但也不要走向另一个误区：认为离散模型无论如何都不能说明连续状态稳定。
+
+对固定周期、有限维线性对象、零阶保持和无外扰的状态反馈 $u_k=-Kx_k$，若完整闭环矩阵 $F=\Phi-\Gamma K$ 的全部特征值严格在单位圆内，则 $x_k$ 指数衰减。采样间隔内还有
+
+$$
+x(kT+\tau)=M(\tau)x_k,\qquad
+M(\tau)=e^{A\tau}-\left(\int_0^\tau e^{Av}B\,dv\right)K.
+$$
+
+由于 $\tau$ 只在闭区间 $[0,T]$ 内变化，连续矩阵 $M(\tau)$ 的范数有有限上界。若 $\lVert x_k\rVert\leq c\rho^k\lVert x_0\rVert$，其中 $0\lt\rho\lt1$，就有
+
+$$
+\lVert x(kT+\tau)\rVert\leq
+\left(\max_{0\leq v\leq T}\lVert M(v)\rVert\right)c\rho^k\lVert x_0\rVert.
+$$
+
+因此，**在这些条件下，完整采样状态的严格稳定确实能推出连续状态指数衰减**。有动态控制器或整拍延迟时，要检查包含控制器和延迟状态的完整模型。
+
+这项结论仍没有给出满意的峰值、调节时间或抗噪性能。那些要求需要回到连续轨迹检验；限幅、变周期、非线性和外扰也不能自动继承这份证明。
+
+## 小结
+
+采样数据系统不是只有采样点的一串数。先说明指令如何保持、何时生效，再由连续方程推导采样模型；需要检查峰值时，还要把采样间隔内的轨迹算出来。
+
+判断稳定要看完整状态，不能只看采样输出。固定周期线性模型下，完整采样闭环严格稳定可以保证连续状态衰减；输出恰好采成零，却可能只是没有看见运动。
+
+## 习题
+
+1. 对 $\dot x=-x+u$、$u_k=-2x_k$、$x_0=1$，取 $T=0.5$ s。求 $\Phi,\Gamma,p$，算出 $x(T/2)$ 和 $x(T)$，并求严格稳定的周期范围。为什么不能把两个采样值之间画直线当作精确轨迹？
+
+2. 将对象换为积分器 $\dot x=u$，仍取 $u_k=-2x_k$。在 $A=0$ 不可逆的情况下求精确采样模型与严格稳定范围。$T=0.5$ s 时，下一拍的状态是多少？
+
+3. 对旋转模型，令 $\alpha=0.2$、$T=1$ s、$x_0=[0,1]^\mathsf{T}$。采样输出全为零，能否说明完整状态稳定？它与 $\alpha=-0.2$ 的例子有什么区别？
+
+4. 对第一题的一阶对象，改用 $T=0.8$ s。分别计算立即更新与迟一拍更新的闭环特征值条件，说明为什么不能把延迟只当作图上平移一格。
+
+## 答案
+
+**习题 1**：$\Phi\approx0.606531$、$\Gamma\approx0.393469$、$p\approx-0.180408$。由区间解得到 $x(T/2)\approx0.336402$、$x(T)\approx-0.180408$；严格稳定要求 $0\lt T\lt\ln3\approx1.098612$ s，边界不包含在内。区间解是指数函数，直线连点只是画法，不能替代微分方程。
+
+**习题 2**：直接积分可得 $x_{k+1}=x_k+Tu_k=(1-2T)x_k$，所以 $\Phi=1$、$\Gamma=T$。由 $\lvert1-2T\rvert\lt1$ 得 $0\lt T\lt1$ s。$T=0.5$ s 时 $p=0$，下一拍状态为零；区间内则是 $x(kT+\tau)=(1-2\tau)x_k$，到端点才到零。
+
+**习题 3**：不能。$\Phi=e^{0.2}I$ 的特征值模约为 **1.221403**，第二状态在采样时刻也增长，完整状态不稳定。$\alpha=-0.2$ 时模约为 **0.818731**，完整状态衰减；两者都把第一个状态的测量采在零点上，问题在于只看这个输出无法分辨状态行为。
+
+**习题 4**：立即更新时 $p=3e^{-0.8}-2\approx-0.652013$，严格稳定。迟一拍更新时的特征多项式为
+
+$$
+\lambda^2-\Phi\lambda+2\Gamma=0.
+$$
+
+这对共轭特征值的模为 $\sqrt{2\Gamma}\approx1.049448$，不稳定。延迟增加了记忆状态，后续控制量也随之变化，整条响应不是把无延迟曲线向右挪一下。
+
+代码中 ZOH 离散化与返回矩阵的接口可查 [SciPy `cont2discrete` 官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cont2discrete.html)。
