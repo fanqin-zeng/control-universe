@@ -1,25 +1,80 @@
 ---
-title: "Lyapunov 方法与现代稳定性"
+title: "线性系统稳定性"
 description: "Lyapunov 稳定性、内部/外部稳定性、可稳定性与可检测性——现代控制理论的数学基石"
 ---
 
-# Lyapunov 方法与现代稳定性
+# 线性系统稳定性
 
-## 为什么需要 Lyapunov 理论
+<span id="lyapunov-方法与现代稳定性" />
 
-在[状态空间表示](/modern/state-space)中，线性自治系统写成 $\dot x=Ax$。不论单输入还是多输入、实现是否最小，**$A$ 的全部特征值实部为负，就能判断内部渐近稳定**。真正需要区分的是：传递函数只呈现输入到输出可见的模态，可能漏掉内部不稳定状态。
+<span id="为什么需要-lyapunov-理论" />
 
-本课用二次型函数把“特征值稳定”变成可检查的矩阵等式，随后区分内部稳定、BIBO 稳定、可稳定与可检测。它们是后续状态反馈、观测器和 LQR 的基础。
+## 从运动看稳定
 
-<Callout type="info" title="本课边界与阅读顺序">
+把[系统建模](/classic/system-modeling)里的弹簧小车拉开一段距离，再松手。刚松手时速度为零，接下来速度的绝对值反而增大；但有阻尼时，小车最终仍会停在平衡位置。**某个状态暂时变大，为什么不等于系统不稳定？能不能找一个量，记录整个运动过程是否在接近平衡？**
+
+前一课[可控性与可观性](/modern/controllability-observability)讨论能否改变、推断全部状态。本课接着问：当外力撤去，状态自身怎样变化？先看小车的机械能，再把“检查一个量的变化”推广为可以求解的矩阵证书。一般证书是数学上的度量，不一定等于物理能量。
+
+![弹簧与阻尼器并联连接固定端和小车，位移向右为正，松手后没有外力](/diagrams/linear-stability/spring-damper.svg)
+
+实验固定质量1kg、弹簧刚度1N/m、初始位移1m、速度0，无外力。比较阻尼系数 $c=-0.5,0,1\ \mathrm{N\,s/m}$：正阻尼耗能，零阻尼只交换动能与势能；负阻尼代表主动加能的简化模型，不能当成普通被动阻尼器。上图看位移，下图看机械能；都只显示0–6s，有限窗口不能代替稳定性证明。
+
+运动方程为 $m\ddot q+c\dot q+kq=0$。机械能与变化率是
+
+$$
+E=\frac12kq^2+\frac12m\dot q^2,\qquad \dot E=\dot q(kq+m\ddot q)=-c\dot q^2.
+$$
+
+所以速度暂时增大，只是弹簧势能正在转为动能；能量变化还要看阻尼的符号。先观察下面的固定工况，再把这个思路变成一般矩阵方程。
+
+<JupyterNotebook
+  title="小车的位移与机械能"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm, solve_continuous_lyapunov
+from scipy.integrate import solve_ivp`}
+  cells={[{ code: `times=np.linspace(0,6,601)
+motion_records=[]
+plt.rcParams.update({'font.size':12})
+fig,axes=plt.subplots(2,1,figsize=(5,6.8))
+for damping in [-.5,0.,1.]:
+    A=np.array([[0.,1.],[-1.,-damping]])
+    states=np.array([expm(A*t)@[1.,0.] for t in times])
+    E=np.sum(states*states,axis=1)/2
+    dE=-damping*states[:,1]**2
+    direct=solve_ivp(lambda t,x:[x[1],-x[0]-damping*x[1]],[0,6],[1.,0.],t_eval=times,rtol=1e-11,atol=1e-12).y.T
+    assert np.max(abs(direct-states))<1e-8
+    derivative=np.sum(states*(states@A.T),axis=1)
+    assert np.max(abs(derivative-dE))<1e-10
+    assert np.max(abs(states[:,0]))<5 and max(E)<13
+    motion_records.append({'c':damping,'states':states.tolist(),'E':E.tolist()})
+    print('c N s/m=',damping,'state at 6s m,m/s=',states[-1],'E(6s) J=',E[-1],'eigenvalues=',np.linalg.eigvals(A))
+    axes[0].plot(times,states[:,0],label=f'c={damping:g}')
+    axes[1].plot(times,E,label=f'c={damping:g}')
+axes[0].set(xlim=(0,6),ylim=(-5,5),xlabel='Time (s)',ylabel='Position (m)')
+axes[1].set(xlim=(0,6),ylim=(0,13),xlabel='Time (s)',ylabel='Mechanical energy (J)')
+for ax in axes: ax.grid(True); ax.legend()
+fig.tight_layout();plt.show()
+Am=np.array([[0.,1.],[-1.,-1.]])
+Pm=solve_continuous_lyapunov(Am.T,-np.eye(2))
+assert np.allclose(Pm,[[1.5,.5],[.5,1.]])
+print('normalized strict certificate P=',Pm,'initial E derivative=',0,'initial V derivative=',-1)
+` }]}
+/>
+
+<Callout variant="info">
+
+**本课边界与阅读顺序**
 
 本课主讲线性系统的 Lyapunov 方程与稳定性证书；非线性系统的直接法、LaSalle 不变集和吸引域估计，见 [非线性 Lyapunov 稳定性](/nonlinear/lyapunov-stability)。后面的 LQR 关系是应用预览，首次阅读可先看完本课，再到 [LQR控制器](/modern/lqr-controller)学习最优性推导。
 
 </Callout>
 
-> 📐 本文用到了二次型、特征值和矩阵指数，详见 [线性代数基础](/math/linear-algebra-basics)、[特征值与特征分解](/math/eigen-decomposition)、[常微分方程与矩阵指数](/math/ode-matrix-exponential)。最小解释：正定二次型在原点外取正值，矩阵指数给出零输入轨迹，负实部特征值让轨迹衰减。
+> 📐 本文用到了二次型、特征值和矩阵指数，详见 [线性代数基础](/math/linear-algebra-basics)、[特征值与特征分解](/math/eigen-decomposition)、[常微分方程与矩阵指数](/math/ode-matrix-exponential)。可先复习正定二次型的特征值上下界和矩阵指数，再回来检查下面的证书。
 
-## Lyapunov 稳定性理论
+<span id="lyapunov-稳定性理论" />
+
+## 二次型证书
 
 ### 平衡点与稳定性
 
@@ -40,9 +95,11 @@ $$
 | **指数稳定** | 稳定 + $\|\boldsymbol{x}(t) - \boldsymbol{x}_e\| \leq c \|\boldsymbol{x}(0) - \boldsymbol{x}_e\| e^{-\alpha t}$ | 以指数速率收敛 |
 | **不稳定** | 不满足稳定定义 | 任意小的初态偏差都可能离开某个固定邻域 |
 
-对于有限维连续时间 LTI 系统，下面三条等价（**不包括单纯的 Lyapunov 稳定**）：**渐近稳定 ⟺ 指数稳定 ⟺ $A$ 的所有特征值实部 < 0**。
+指数稳定的定义还要求存在与初态无关的常数 $c\geq1,\alpha>0$；上表的渐近收敛只针对某个足够小邻域内的所有初态。对于有限维连续时间 LTI 系统，这些性质若在原点局部成立便全局成立，下面三条等价（**不包括单纯的 Lyapunov 稳定**）：**渐近稳定 ⟺ 指数稳定 ⟺ $A$ 的所有特征值实部 < 0**。
 
-<Callout type="info" title="稳定与收敛不是一回事">
+<Callout variant="info">
+
+**稳定与收敛不是一回事**
 
 $\dot x=0$ 的轨迹保持初值，原点稳定但不渐近稳定。线性系统在虚轴上的特征值还须检查 Jordan 块：半单虚轴模态可保持有界，非平凡 Jordan 块可使轨迹多项式增长。仅凭“没有正实部特征值”不能宣称稳定。
 
@@ -50,7 +107,7 @@ $\dot x=0$ 的轨迹保持初值，原点稳定但不渐近稳定。线性系统
 
 ### 二次型能量证书
 
-对线性系统，我们寻找 $V(x)=x^TPx$。正定矩阵 $P$ 将状态空间变成一组围绕原点的椭圆能量等高线；若沿每条非零轨迹都有 $\dot V<0$，能量持续下降，就能证明原点渐近稳定。下面直接给出线性情形的系统化构造，非线性函数构造留给后续章节。
+对线性系统，我们寻找 $V(x)=x^TPx$。对称正定矩阵 $P$ 给出围绕原点的椭圆等值线；高维时是椭球。这里先固定状态的单位与缩放，避免把位置和速度的平方不加说明地相加。$V$ 可理解为数学上的“离平衡还有多远”，并不自动以焦耳计量。若把它视为能量类比，应记住这个区别。若沿每条非零轨迹都有 $\dot V<0$，就有严格下降的证书，能证明本课线性模型的原点渐近稳定。下面直接给出线性情形的系统化构造，非线性函数构造留给后续章节。
 
 ### 线性系统的 Lyapunov 方程
 
@@ -78,13 +135,13 @@ $$
 
 **证明思路**：
 
-**必要性**（$A$ 稳定 → 解存在且正定）：构造
+**必要性**（$A$ 为 Hurwitz → 解存在且正定）：构造
 
 $$
 P = \int_0^\infty e^{A^T t} Q e^{At} \, dt
 $$
 
-$A$ 稳定保证积分收敛。直接验证：
+$A$ 为 Hurwitz 保证矩阵指数衰减、积分收敛；仅有 Lyapunov 稳定还不够。直接验证：
 
 $$
 A^T P + PA = \int_0^\infty (A^T e^{A^T t} Q e^{At} + e^{A^T t} Q e^{At} A) \, dt = \int_0^\infty \frac{d}{dt}(e^{A^T t} Q e^{At}) \, dt
@@ -96,18 +153,27 @@ $$
 
 $P > 0$：对任意 $\boldsymbol{x} \neq 0$，$\boldsymbol{x}^T P \boldsymbol{x} = \int_0^\infty \|Q^{1/2} e^{At} \boldsymbol{x}\|^2 dt > 0$（因为 $e^{At}\boldsymbol{x}$ 不恒为零）。
 
-**充分性**（解存在 → $A$ 稳定）：取 $V = \boldsymbol{x}^T P \boldsymbol{x}$，则 $\dot{V} = \boldsymbol{x}^T(A^T P + PA)\boldsymbol{x} = -\boldsymbol{x}^T Q \boldsymbol{x} < 0$。由 Lyapunov 定理，$A$ 渐近稳定。$\blacksquare$
+**唯一性**：若 $P_1,P_2$ 都解同一方程，令 $\Delta=P_1-P_2$。则 $A^T\Delta+\Delta A=0$，所以 $e^{A^Tt}\Delta e^{At}$ 对时间的导数为零，恒等于 $\Delta$。当 $A$ 为 Hurwitz，左式趋于零，故 $\Delta=0$。
 
-> [!question] 李稳的追问
-> "为什么 $Q$ 可以任意选？"
->
-> 因为定理说的是"对**任意** $Q > 0$"。不同 $Q$ 给出不同 $P$，但只要存在一个 $P > 0$ 就足以证明稳定。实际中常取 $Q = I$ 简化计算。
+**充分性**（存在正定证书 → $A$ 为 Hurwitz）：把 $P,Q$ 的最小、最大特征值用于二次型，得到
 
-<Callout type="warning" title="有返回矩阵不等于有稳定性证书">
+$$
+\lambda_{\min}(P)\|x\|^2\leq V(x)\leq\lambda_{\max}(P)\|x\|^2,
+\qquad \dot V=-x^TQx\leq-\frac{\lambda_{\min}(Q)}{\lambda_{\max}(P)}V.
+$$
+
+记 $\beta=\lambda_{\min}(Q)/\lambda_{\max}(P)>0$，积分不等式给出 $V(t)\leq e^{-\beta t}V(0)$，于是
+
+$$
+\|x(t)\|\leq\sqrt{\frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}}\,e^{-\beta t/2}\|x(0)\|.
+$$
+
+这直接给出了指数收敛，而不必在证明中循环引用待证的矩阵定理。前面的常数可能大于1：该上界并不要求每个分量、甚至所选欧氏范数都单调下降，也不是精确的最快收敛率。检查一组固定 $Q>0$ 的正定解就足够；定理的“任意 $Q$”保证更换正定权重仍可构造证书。
+
+> **为什么常取 $Q=I$？** 它是正定权重的简单选择。检查一个给定 $Q>0$ 对应的 $P>0$ 已可证明稳定；更换权重只改变证书，不改变同一个 $A$ 的稳定性。
 
 对不稳定或奇异的 $A$，Lyapunov 方程可能无解、非唯一或有非正定解。先看残差是否接近零，再查对称性与正定性；不能仅凭求解器返回了一个数组就宣布稳定。SciPy 的连续接口解的是 $AX+XA^T=Q$，本课需传入 $A^T,-Q$，见[官方接口定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_continuous_lyapunov.html)。
 
-</Callout>
 
 ### 例1：用 Lyapunov 方程检验稳定性
 
@@ -185,10 +251,40 @@ p3=(1+Fraction(1,100)*p1+Fraction(3,50)*p2)/Fraction(91,100)
 print("答9 P =",Pd,"p22精确 =",p3,"det精确 =",p1*p3-p2*p2,"det =",np.linalg.det(Pd),"eigP =",np.linalg.eigvalsh(Pd))
 print("Ad特征值 =",np.linalg.eigvals(Ad),"residual =",np.max(np.abs(res)))
 ` },
+    { code: `# Exact algebra and an explicit exponential certificate, independent of SciPy's solver.
+import sympy as sp
+p11,p12,p22=sp.symbols('p11 p12 p22');S=sp.Matrix([[p11,p12],[p12,p22]])
+exact_cases=[('example1',sp.Matrix([[-1,2],[0,-3]]),sp.eye(2)),('unstable unique',sp.diag(1,-2),sp.eye(2)),('Q1a',sp.Matrix([[-2,1],[0,-3]]),sp.eye(2)),('Q1b',sp.Matrix([[0,1],[-2,-1]]),sp.eye(2)),('Q2',sp.Matrix([[0,1],[-1,-1]]),sp.diag(1,2)),('mechanical',sp.Matrix([[0,1],[-1,-1]]),sp.eye(2))]
+for label,a,q in exact_cases:
+    solution=sp.solve(list(a.T*S+S*a+q),[p11,p12,p22]);exact=S.subs(solution)
+    assert a.T*exact+exact*a+q==sp.zeros(2)
+    got=lyap(np.array(a,dtype=float),np.array(q,dtype=float))
+    assert np.max(abs(got-np.array(exact,dtype=float)))<1e-12
+    print('exact',label,'P=',exact.tolist(),'det=',exact.det(),'eigA=',a.eigenvals())
+a=sp.Matrix([[sp.Rational(1,2),sp.Rational(1,10)],[0,sp.Rational(3,10)]])
+solution=sp.solve(list(a.T*S*a-S+sp.eye(2)),[p11,p12,p22]);exact=S.subs(solution)
+assert exact==sp.Matrix([[sp.Rational(4,3),sp.Rational(4,51)],[sp.Rational(4,51),sp.Rational(5192,4641)]])
+print('exact Q9 P=',exact.tolist(),'det=',exact.det())
+A=np.array([[-1.,2.],[0.,-3.]]);P=lyap(A,np.eye(2))
+eigenP=np.linalg.eigvalsh(P);beta=1/eigenP[-1];prefactor=np.sqrt(eigenP[-1]/eigenP[0])
+print('certificate eigenP=',eigenP,'beta=',beta,'norm exponent=',beta/2,'prefactor=',prefactor)
+cert_records=[]
+for angle in np.linspace(0,2*np.pi,16,endpoint=False):
+    initial=np.array([np.cos(angle),np.sin(angle)]);times=np.linspace(0,6,301)
+    states=np.array([expm(A*t)@initial for t in times]);norm=np.linalg.norm(states,axis=1)
+    values=np.einsum('ij,jk,ik->i',states,P,states)
+    bound=prefactor*np.exp(-beta*times/2)
+    assert np.all(norm<=bound+1e-12)
+    assert np.all(values<=values[0]*np.exp(-beta*times)+1e-12)
+    cert_records.append({'initial':initial.tolist(),'norm':norm.tolist(),'V':values.tolist(),'bound':bound.tolist()})
+print('certificate 16 initial directions x 301 samples passed')
+` },
   ]}
 />
 
-## 内部稳定性与外部稳定性
+<span id="内部稳定性与外部稳定性" />
+
+## 内部与外部稳定
 
 ### 两种稳定性
 
@@ -198,9 +294,9 @@ $$
 \dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}, \quad \boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}
 $$
 
-**内部渐近稳定性**（Internal Stability，本课后文“内部稳定”均指这一含义）：零输入响应 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的稳定性。取决于 $A$ 的特征值。
+**内部渐近稳定性**（Internal Stability，本课后文“内部稳定”均指这一含义）：零输入响应 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的渐近稳定性，等价于 $A$ 为Hurwitz；不依赖SISO/MIMO，也不要求实现最小。
 
-**外部稳定性**（BIBO Stability）：零初态下，每个有界输入产生有界输出。对于有限维、因果、适当有理的系统，约简后传递矩阵各元素的全部极点必须严格在左半平面；虚轴极点不属于 BIBO 稳定。取决于传递函数 $G(s) = C(sI - A)^{-1}B + D$ 的极点。
+**外部稳定性**（BIBO Stability）：零初态下，每个有界输入产生有界输出（假定有限维、连续时间、因果且适当的实现）。对于有限维、因果、适当有理的系统，约简后传递矩阵各元素的全部极点必须严格在左半平面；虚轴极点不属于 BIBO 稳定。取决于传递函数 $G(s) = C(sI - A)^{-1}B + D$ 的极点。
 
 ### 它们等价吗？
 
@@ -220,7 +316,9 @@ BIBO 稳定（极点在 $-1$）✓。但 $A$ 有特征值 $+1$，内部**不稳�
 
 原因：不稳定模式 $x_1$ 既不可控（$B$ 的第一行为 0）又不可观（$C$ 的第一列为 0）——它被"隐藏"了，传递函数看不到。
 
-<Callout type="info" title="精确关系">
+<Callout variant="info">
+
+**精确关系**
 
 | 条件 | 内部稳定 ⟺ BIBO 稳定？ |
 |------|------------------------|
@@ -230,7 +328,7 @@ BIBO 稳定（极点在 $-1$）✓。但 $A$ 有特征值 $+1$，内部**不稳�
 
 </Callout>
 
-**工程意义**：BIBO 稳定只回答零初态输入-输出有界性，不能用来保证内部状态安全。但如果关心系统内部所有状态（比如估计所有状态、防止饱和），必须保证内部稳定。
+**工程意义**：BIBO 稳定只回答零初态输入-输出有界性，不能用来保证内部状态安全。但如果关心系统内部所有状态（比如估计所有状态、防止饱和），仍需检查内部稳定，并单独检查初值、扰动与执行器限幅；即使渐近稳定也不自动保证整个瞬态都在安全范围内。
 
 ### 例2：隐藏的不稳定模式
 
@@ -240,17 +338,21 @@ BIBO 稳定（极点在 $-1$）✓。但 $A$ 有特征值 $+1$，内部**不稳�
 
 $x_1(t) = e^t \to \infty$（不稳定！）
 
-输出 $y = C\boldsymbol{x} = x_2$，$x_2(0) = 0$，所以 $y(0) = 0$。输出看起来正常——但内部状态 $x_1(t) = e^t$ 在发散！
+输出 $y = C\boldsymbol{x} = x_2$，$x_2(0) = 0$，所以 $y(0) = 0$。$y(t)$ 在整个零输入轨迹上恒为0。输出看起来正常——但内部状态 $x_1(t) = e^t$ 在发散！
 
 传递函数：$G(s) = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} s-1 & 0 \\ 0 & s+1 \end{bmatrix}^{-1} \begin{bmatrix} 0 \\ 1 \end{bmatrix} = \frac{1}{s+1}$
 
 BIBO 稳定 ✓。但 $x_1(t) = e^t$ 发散，$x_1$ 不可控（$B_1 = 0$）且不可观（$C_1 = 0$）。传递函数完全看不到这个不稳定模式。
 
-<Callout type="warning" title="教训">
+<Callout variant="warning">
+
+**教训**
 
 传递函数只描述可控且可观的部分。设计控制器时，如果只基于传递函数，可能遗漏内部不稳定模式——这就是为什么需要状态空间方法。
 
 </Callout>
+
+隐藏模态实验采用无量纲数学状态，横轴为模型时间；初态[1,1]便于同时看见两种变化。上下图纵轴范围不同，不用曲线的屏幕高度比较数值。正文初态[1,0]的输出则恒为零，代码同时打印了该读数。
 
 <JupyterNotebook
   title="隐藏模态、PBH 与三重积分器"
@@ -283,10 +385,14 @@ assert np.allclose(xx[:,0],np.exp(t))
 assert np.allclose(xx[:,1],np.exp(-t))
 print("初态[1,0]在t=3的状态 =",expm(A*3)@[1.,0.],"输出 = 0")
 print("绘图初态[1,1]在t=3的状态 =",xx[-1],"y =",xx[-1,1])
-fig,ax=plt.subplots(figsize=(8,3.5))
-ax.plot(t,xx[:,0],label="hidden x1");ax.plot(t,xx[:,1],label="x2 = output")
-ax.set(xlim=(0,3),ylim=(0,21),xlabel="t",ylabel="state/output")
-ax.grid(True,alpha=.3);ax.legend();plt.tight_layout();plt.show()
+plt.rcParams.update({'font.size':12})
+fig,axes=plt.subplots(2,1,figsize=(5,6.8))
+axes[0].plot(t,xx[:,0],label="hidden x1")
+axes[1].plot(t,xx[:,1],label="x2 = output")
+axes[0].set(xlim=(0,3),ylim=(0,21),xlabel="Time",ylabel="Hidden state")
+axes[1].set(xlim=(0,3),ylim=(0,1.1),xlabel="Time",ylabel="Measured state")
+for ax in axes: ax.grid(True,alpha=.3);ax.legend()
+plt.tight_layout();plt.show()
 ` },
     { code: `# 例3与题3/4：只检查实部非负模态，包括虚轴
 def stabilizable(A,B):
@@ -319,7 +425,9 @@ assert np.allclose((v*np.eye(3)-A)@inv,np.eye(3))
   ]}
 />
 
-## 可稳定性与可检测性
+<span id="可稳定性与可检测性" />
+
+## 可稳定与可检测
 
 后续 LQR 设计将要求 $(A, B)$ 可稳定、$(A, Q^{1/2})$ 可检测；卡尔曼滤波需要 $(A, C)$ 可检测。这里先给出精确定义。
 
@@ -343,7 +451,7 @@ $(A, C)$ **可检测** ⟺ 存在 $L$ 使 $A - LC$ 渐近稳定。
 
 ### 后续控制与估计设计如何使用这些条件
 
-**LQR**：ARE 的解 $P$ 保证 $A - BK$ 稳定，前提是 $(A, B)$ 可稳定、$(A, Q^{1/2})$ 可检测。
+**LQR预览**：对 $Q\geq0,R>0$，满足下述标准充分条件时，ARE存在唯一的对称半正定稳定化解；它给出使 $A-BK$ 为Hurwitz的反馈。不是任意代数解 $P$ 都保证 $A - BK$ 稳定，前提是 $(A, B)$ 可稳定、$(A, Q^{1/2})$ 可检测。
 - 可稳定：不可控模式不受 $K$ 影响，必须自身稳定
 - 可检测：保证代价函数 $J$ 能"看到"所有不稳定模式，否则优化器会忽略它们
 
@@ -371,7 +479,45 @@ $s = 1$ 时：$\text{rank}\begin{bmatrix} 0 & 0 & 0 \\ 0 & 3 & 1 \end{bmatrix} =
 
 结论：$(A, B)$ **不可稳定**。不存在 $K$ 使 $A - BK$ 稳定——因为 $x_1$ 完全不受 $u$ 影响，而 $x_1$ 自身不稳定。
 
-## Lyapunov 方程与 LQR 的关系
+### 半正定下降还需要什么
+
+若 $P>0$，但方程右端仅有 $Q\geq0$，只能直接得到 $\dot V\leq0$，不足以单独推出渐近稳定。例如 $A=0,P=I,Q=0$ 满足等式，却没有收敛。
+
+线性情形可以补充已经学过的可检测性：写 $Q=H^TH$。若 $(A,H)$ 可检测，则证书仍足以推出 $A$ 为Hurwitz。对特征向量 $Av=\lambda v$，矩阵等式给出
+
+$$
+2\operatorname{Re}(\lambda)\,v^*Pv=-\|Hv\|^2.
+$$
+
+$P>0$先排除正实部；若实部为零，则$Hv=0$，又与可检测性矛盾。因此没有虚轴模态。要区分这个推论与“Hurwitz时半正定$Q$的解必正定”：后者并不成立，$A=-I,Q=0$的解就是$P=0$。
+
+小车的机械能恰是一个半正定下降的例子。取归一化状态 $z=[q/(1\mathrm m),v/(1\mathrm{m/s})]^T$、归一化时间 $\tau=t/(1\mathrm s)$，正阻尼$c=1$给出 $A=\begin{bmatrix}0&1\\-1&-1\end{bmatrix}$。令$P=I/2$、$Q=\operatorname{diag}(0,1)$，$H=[0,1]$，则可观性矩阵$\begin{bmatrix}0&1\\-1&-1\end{bmatrix}$满秩，排除了永远不耗能的非零轨迹；初始时刻速度为零、$\dot E=0$，并不妨碍随后收敛。
+
+<JupyterNotebook
+  title="半正定证书与隐藏模态边界"
+  setupCode={`import numpy as np
+from scipy.linalg import solve_continuous_lyapunov`}
+  cells={[{ code: `A=np.array([[0.,1.],[-1.,-1.]])
+P=np.eye(2)/2;Q=np.diag([0.,1.]);H=np.array([[0.,1.]])
+assert np.max(abs(A.T@P+P@A+Q))<1e-12
+O=np.vstack([H,H@A]);assert np.linalg.matrix_rank(O)==2
+print('mechanical semidefinite certificate P=',P,'Q=',Q,'O=',O,'rank=',np.linalg.matrix_rank(O),'eigenA=',np.linalg.eigvals(A))
+print('A=0,P=I,Q=0 residual=',np.max(abs(np.zeros((2,2)))),'not asymptotically stable')
+print('A=-I,Q=0 Lyapunov solution=',solve_continuous_lyapunov(-np.eye(2),np.zeros((2,2))))
+for hidden in [-1.,0.,1.]:
+    a=np.diag([-1.,hidden]);b=np.array([[1.],[0.]]);c=b.T
+    rankC=np.linalg.matrix_rank(np.hstack([b,a@b]));rankO=np.linalg.matrix_rank(np.vstack([c,c@a]))
+    pbhC=np.linalg.matrix_rank(np.hstack([hidden*np.eye(2)-a,b]))
+    pbhO=np.linalg.matrix_rank(np.vstack([hidden*np.eye(2)-a,c]))
+    print('hidden eigenvalue=',hidden,'rankC/O=',rankC,rankO,'PBH at hidden eigenvalue=',pbhC,pbhO,'stabilizable/detectable=',hidden<0)
+` }]}
+/>
+
+<span id="lyapunov-方程与-lqr-的关系" />
+
+## LQR证书
+
+本节是证书的应用预览，反馈与最优性推导在后续课程展开；第一次学习可先跳到小结。这里仍完整列出验证所需的模型、方程和假设。
 
 ### ARE 是带最优性的 Lyapunov 方程
 
@@ -401,7 +547,15 @@ $$
 (A-\alpha BK)^TP+P(A-\alpha BK)=-Q-(2\alpha-1)K^TRK
 $$
 
-当 $Q>0$、$P>0$ 时，$\alpha>1/2$ 使右侧负定，给出稳定性证书；半正定 $Q$ 的推广需要可检测性论证。单输入的回差等式、相位裕度与输入端扰动边界详见 [LQR控制器](/modern/lqr-controller#lqr-的鲁棒性)。这不是任意模型误差或 LQG 输出反馈的鲁棒性保证。
+单输入且 $R>0$ 时，令 $H(j\omega)=(j\omega I-A)^{-1}B$、$L=KH$。在逆矩阵存在的频率上，把ARE左右乘 $H^*,H$，利用 $AH=j\omega H-B$，得到
+
+$$
+|1+L(j\omega)|^2=1+\frac{H(j\omega)^*QH(j\omega)}{R}\geq1.
+$$
+
+星号表示复共轭转置。这个恒等式解释题8中的返回差圆盘；开环虚轴极点处不能直接求逆，需要极限或用前面的时域证书处理。网格扫描只是复核，不是全频证明。
+
+当 $Q>0$、$P>0$ 时，$\alpha>1/2$ 使右侧负定，给出稳定性证书；半正定 $Q$ 的推广需要可检测性论证。单输入的回差等式、相位裕度与输入端扰动边界详见 [LQR控制器](/modern/lqr-controller#lqr-的鲁棒性)。这不是任意模型误差或 LQG 输出反馈的鲁棒性保证。下方双积分器在$\alpha=0.25$时也稳定，是“保证区间不是精确阈值”的反例；$\alpha=0$则不渐近稳定。
 
 <JupyterNotebook
   title="LQR、观测器与 Lyapunov 证书"
@@ -438,6 +592,28 @@ print("题10 Kf =",L,"控制/误差极点 =",np.linalg.eigvals(Ac),np.linalg.eig
 print("Pcl =",Pcl,"Pobs =",Pobs,"det =",np.linalg.det(Pcl),np.linalg.det(Pobs))
 joint=np.block([[Ac,B@K],[np.zeros((2,2)),Ao]])
 print("联合极点 =",np.linalg.eigvals(joint))
+# Exact ARE and the scalar polynomial behind return difference.
+import sympy as sp
+r=sp.sqrt(3);Ps=sp.Matrix([[r,1],[1,r]]);As=sp.Matrix([[0,1],[0,0]]);Bs=sp.Matrix([0,1]);Cs=sp.Matrix([[1,0]])
+assert As.T*Ps+Ps*As-Ps*Bs*Bs.T*Ps+sp.eye(2)==sp.zeros(2)
+assert As*Ps+Ps*As.T-Ps*Cs.T*Cs*Ps+sp.eye(2)==sp.zeros(2)
+Pcs=sp.Matrix([[5/(2*r),sp.Rational(1,2)],[sp.Rational(1,2),1/r]])
+Pos=sp.Matrix([[1/r,-sp.Rational(1,2)],[-sp.Rational(1,2),5/(2*r)]])
+Ks=Bs.T*Ps;Ls=Ps*Cs.T
+assert sp.simplify((As-Bs*Ks).T*Pcs+Pcs*(As-Bs*Ks)+sp.eye(2))==sp.zeros(2)
+assert sp.simplify((As-Ls*Cs).T*Pos+Pos*(As-Ls*Cs)+sp.eye(2))==sp.zeros(2)
+assert Pcs.det()==Pos.det()==sp.Rational(7,12)
+print('exact Q6 ARE residual=0; exact Q10 Pcl=',Pcs.tolist(),'Pobs=',Pos.tolist(),'det=',Pcs.det())
+frequencies=np.logspace(-2,2,401)
+return_difference=[]
+for w in frequencies:
+    h=np.linalg.solve(1j*w*np.eye(2)-A,B)
+    loop=(K@h).item()
+    got=abs(1+loop)**2;expected=(1+(h.conj().T@Q@h).item()).real
+    assert np.isclose(got,expected,rtol=1e-10,atol=1e-10)
+    assert np.isclose(got,1+1/w**2+1/w**4,rtol=1e-10,atol=1e-10)
+    return_difference.append(got)
+print('return difference 401 positive frequencies: residual passed; not a proof of all frequencies')
 # 题5：例1非零轨迹上的严格下降
 Ae=np.array([[-1.,2.],[0.,-3.]]);Pl=lyap(Ae,np.eye(2))
 for t in [0.,1.,2.]:
@@ -447,10 +623,12 @@ for t in [0.,1.,2.]:
     print("题5 t =",t,"Vdot =",derivative)
 ` },
     { code: `# 输入倍率证书的回代与Q半正定边界
-for alpha in [.6,1.,2.]:
+gain_records=[]
+for alpha in [0.,.25,.5,.6,1.,2.]:
     aa=A-alpha*B@K
     residual=aa.T@P+P@aa+Q+(2*alpha-1)*K.T@R@K
     assert np.max(np.abs(residual))<1e-12
+    gain_records.append({"alpha":alpha,"roots":[[float(v.real),float(v.imag)] for v in np.linalg.eigvals(aa)]})
     print("alpha =",alpha,"证书残差 =",np.max(np.abs(residual)),"极点 =",np.linalg.eigvals(aa))
 # Q=0时稳定化P可以为0，右侧并非严格负定
 Az=-np.eye(2);Bz=np.eye(2)
@@ -471,9 +649,9 @@ assert np.allclose(Pz,0)
 | 未知量 | $P$（线性） | $P$（非线性，含 $P^2$ 项） |
 | 解法 | 线性方程组（向量化） | 迭代法或 Schur 分解 |
 | 物理意义 | 给定系统的"能量" | 最优控制的代价 |
-| 存在条件 | $A$ 稳定 | $(A,B)$ 可稳定，$(A,Q^{1/2})$ 可检测 |
+| 标准保证条件 | $Q>0$且$A$为Hurwitz时唯一正定解；不稳定时也可能有不定解 | $Q\geq0,R>0$，$(A,B)$可稳定、$(A,Q^{1/2})$可检测时有唯一半正定稳定化解 |
 
-**联系**：ARE 可以看作"在 Lyapunov 方程中加入了最优性约束"。如果令 $B = 0$（没有控制），ARE 退化为 Lyapunov 方程。
+**联系**：给定 $K$ 后，闭环的代价矩阵满足线性 Lyapunov 等式；再加上最优反馈关系 $K=R^{-1}B^TP$，才得到非线性的 ARE。令 $B=0$，代数形式退化为 Lyapunov 方程，但是否有正定稳定证书仍须检查 $A$，不能只看方程长什么样。
 
 ### 从线性到非线性的分工
 
@@ -487,9 +665,18 @@ $$
 A^T P A - P = -Q
 $$
 
-$A$ 渐近稳定 ⟺ 对任意 $Q > 0$，有唯一 $P > 0$。
+对实对称 $Q>0$，$A$ 为 Schur（全部特征值模严格小于1）等价于该方程有唯一正定解。构造式为
+
+$$
+P=\sum_{k=0}^{\infty}(A^T)^kQA^k,
+\qquad V(x_{k+1})-V(x_k)=-x_k^TQx_k.
+$$
+
+移去级数首项即可验证等式；Schur条件保证级数收敛。数值上同样要查残差与正定性，不用连续时间的特征值实部条件代替单位圆条件。
 
 与连续时间的区别：稳定条件从 $\text{Re}(\lambda_i) < 0$ 变为 $|\lambda_i| < 1$（单位圆内）。
+
+参考：[MIT动态系统与控制第14章](https://ocw.mit.edu/courses/6-241j-dynamic-systems-and-control-spring-2011/996025f6db0d90b00f11c44fc49b85f9_MIT6_241JS11_textbook.pdf)给出线性Lyapunov矩阵证书；本课的物理工况、手算答案与界限另行复算，不能以引用代替实验。
 
 ## 小结
 
@@ -669,7 +856,7 @@ $p_1 = 2 > 0$，$\det(P) = 3 - 1/4 = 11/4 > 0$ → $P > 0$ ✓
 
 **5.** 设 $A$ 渐近稳定，$P$ 满足 $A^T P + PA = -Q$，$Q > 0$。
 
-取 $V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}$。由 Lyapunov 定理，$P > 0$，故 $V(\boldsymbol{x}) > 0$ for $\boldsymbol{x} \neq 0$。
+取 $V(\boldsymbol{x}) = \boldsymbol{x}^T P \boldsymbol{x}$。由 Lyapunov 定理，$P > 0$，故 $V(\boldsymbol{x}) > 0$（$\boldsymbol{x} \neq 0$时）。
 
 沿 $\dot{\boldsymbol{x}} = A\boldsymbol{x}$ 的轨迹：
 
@@ -683,7 +870,13 @@ $$
 
 **6.** (a) $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$Q = I$，$R = 1$
 
-由 LQR 例2（双积分器）：$P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}$
+本题就地求解，不预设已经学过LQR设计。设 $P=\begin{bmatrix}p_{11}&p_{12}\\p_{12}&p_{22}\end{bmatrix}$，把它代入ARE，可得三条标量等式：
+
+$$
+1-p_{12}^2=0,\qquad p_{11}-p_{12}p_{22}=0,\qquad 1+2p_{12}-p_{22}^2=0.
+$$
+
+取实对称正定稳定化分支：$p_{12}=-1$会导致$p_{22}^2=-1$，故取$p_{12}=1$；正定要求$p_{22}=\sqrt3$，再得$p_{11}=\sqrt3$。因此 $P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}$
 
 $K = B^T P = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$
 
@@ -711,7 +904,7 @@ $$
 
 (c) 可控性矩阵为反序单位阵、可观性矩阵为单位阵，秩均为3。此实现最小；内部渐近稳定与BIBO稳定的判定一致，本例两者都不成立。
 
-**8.** 输入端环路记为 $L(s)$。若某个正增益 $\alpha$ 导致虚轴穿越，则 $L(j\omega)=-1/\alpha$，于是返回差条件要求
+**8.** 输入端标称环路为 $L(s)=K(sI-A)^{-1}B$，是严格适当的单输入全状态负反馈环路；比较的是同一个实现乘以常数增益 $\alpha$，不是任意动态扰动。若某个正增益 $\alpha$ 导致虚轴穿越，则 $L(j\omega)=-1/\alpha$，于是返回差条件要求
 
 $$
 \lvert1-1/\alpha\rvert\geq1
@@ -731,9 +924,13 @@ $$
 
 $A^T P A = \begin{bmatrix} 0.5 & 0 \\ 0.1 & 0.3 \end{bmatrix} \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix} \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$
 
-$= \begin{bmatrix} 0.5p_1 & 0.5p_2 \\ 0.1p_1+0.3p_2 & 0.1p_2+0.3p_3 \end{bmatrix} \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}$
+$$
+= \begin{bmatrix} 0.5p_1 & 0.5p_2 \\ 0.1p_1+0.3p_2 & 0.1p_2+0.3p_3 \end{bmatrix} \begin{bmatrix} 0.5 & 0.1 \\ 0 & 0.3 \end{bmatrix}
+$$
 
-$= \begin{bmatrix} 0.25p_1 & 0.05p_1+0.15p_2 \\ 0.05p_1+0.15p_2 & 0.01p_1+0.06p_2+0.09p_3 \end{bmatrix}$
+$$
+= \begin{bmatrix} 0.25p_1 & 0.05p_1+0.15p_2 \\ 0.05p_1+0.15p_2 & 0.01p_1+0.06p_2+0.09p_3 \end{bmatrix}
+$$
 
 $A^T PA - P = -I$：
 
@@ -749,13 +946,13 @@ $\dfrac{1}{75} + \dfrac{2}{425} - 0.91p_3 = -1$
 
 $\dfrac{23}{1275} - 0.91p_3 = -1$
 
-$p_3 = \dfrac{1298/1275}{91/100} = \dfrac{5192}{4641} \approx 1.119$
+$p_3 = \dfrac{1298/1275}{91/100} = \dfrac{5192}{4641} \approx 1.118724$
 
 $P = \begin{bmatrix} 4/3 & 4/51 \\ 4/51 & 5192/4641 \end{bmatrix}$
 
 $p_1 = 4/3 > 0$，$\det(P) = (4/3)(5192/4641) - (4/51)^2 =117200/78897\approx1.485481>0$ → $P > 0$ ✓
 
-数值验证：用 `scipy.linalg.solve_discrete_lyapunov(A.T, I)` 可得精确解。
+数值验证：用 `scipy.linalg.solve_discrete_lyapunov(A.T, I)` 得到浮点近似；上面的有理数结果才是本题精确解。两者应在给定容差内一致。
 
 **10.** (a) $P=\begin{bmatrix}\sqrt3&1\\1&\sqrt3\end{bmatrix}$，$K=[1,\sqrt3]$，控制极点为 $-\sqrt3/2\pm j/2$。
 

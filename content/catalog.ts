@@ -1670,24 +1670,24 @@ export const catalog: Chapter[] = [
         "title": "线性系统稳定性",
         "subsections": [
           {
-            "slug": "为什么需要-lyapunov-理论",
-            "title": "为什么需要 Lyapunov 理论"
+            "slug": "从运动看稳定",
+            "title": "从运动看稳定"
           },
           {
-            "slug": "lyapunov-稳定性理论",
-            "title": "Lyapunov 稳定性理论"
+            "slug": "二次型证书",
+            "title": "二次型证书"
           },
           {
-            "slug": "内部稳定性与外部稳定性",
-            "title": "内部稳定性与外部稳定性"
+            "slug": "内部与外部稳定",
+            "title": "内部与外部稳定"
           },
           {
-            "slug": "可稳定性与可检测性",
-            "title": "可稳定性与可检测性"
+            "slug": "可稳定与可检测",
+            "title": "可稳定与可检测"
           },
           {
-            "slug": "lyapunov-方程与-lqr-的关系",
-            "title": "Lyapunov 方程与 LQR 的关系"
+            "slug": "lqr证书",
+            "title": "LQR证书"
           },
           {
             "slug": "深入讨论",
@@ -1708,6 +1708,7 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "modern/state-space",
+          "modern/controllability-observability",
           "math/matrix-decomposition"
         ],
         "level": "undergrad",

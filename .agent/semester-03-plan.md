@@ -603,3 +603,8 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ## MODERN-02 执行回执（2026-10-18）
 
 仅本课modern/controllability-observability按重构SKILL完整Phase1–4，九主题/七例/十题及原三实验目的保留，扩六原始Notebook。对偶/PBH左右向量与Jordan、SISO证明及MIMO边界、反馈符号/坐标、Q1/Q6/Q9矩阵和Gramian时域/尺度/Hankel平方根纠错；两车具体入口与SVG、上下双图。六严格内核/Pyodide、44项对账、独立模态解析3×301全状态节点及Gramian，33旧标题ID保留；实际命令见semester-03/modern-02/acceptance.md。直接master验收提交并推送，真实hash随后登记全局checklist；不自动发布Pages，不交付MODERN-03。W08/W09/W10及27Python待办保持开放。
+
+
+### MODERN-03 本轮执行记录（2026-10-18）
+
+线性系统稳定性按重构技能Phase1–4推进，范围仅modern/lyapunov-modern。保留三例/十题/原三Notebook八cell用途；补小车能量SVG与三阻尼图、唯一性与指数界、半正定证书反例和可检测条件，LQR/Q6/Q8明确就地推导与边界。五H2缩短并保留旧ID，新增实际PBH先修modern/controllability-observability；OUTLINE拓扑层级由工具自动传播。学期3签发与master真实提交以全局checklist及.agent/semester-03/modern-03/acceptance.md为准。五Notebook十一cell严格Jupyter、独立闭式/符号/解析复核与Pyodide逐份执行；Pages仅本地构建预览，本轮未发布。W08/W09/W10及27Python待办不关闭，下一课MODERN-04另开会话。
