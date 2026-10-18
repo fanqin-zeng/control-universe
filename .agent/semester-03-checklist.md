@@ -141,7 +141,7 @@
 | DISCRETE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 未验收检查点保留于 git stash：DISCRETE-01 unfinished checkpoint before DISCRETE-02；不计交付，恢复后继续 |
 | DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;commit:5e5a16dd088c9c330560e379b0b3c81513b4e61a |
 | DISCRETE-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/03-difference-equation.md;.agent/semester-03/discrete-03/acceptance.md;commit:3a579d90706c37f7b12ab085fccfffdaf061b399 |
-| DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;验收完成，待真实master提交回执 |
+| DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;commit:149bac2092969d2d817f68f879a29376f073d7f4 |
 | DISCRETE-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
