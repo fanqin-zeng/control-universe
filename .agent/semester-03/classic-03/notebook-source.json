@@ -1,0 +1,142 @@
+{
+  "source": "content/classic/time-domain-analysis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 7,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 121,
+      "title": "典型信号与一阶响应核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.signal import StateSpace, impulse",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 127,
+          "delim": "`",
+          "code": "t,s,T=sp.symbols('t s T',positive=True)\r\nfor f,F in [(1,1/s),(t,1/s**2),(sp.sin(2*t),2/(s*s+4))]:\r\n    assert sp.simplify(sp.laplace_transform(f,t,s,noconds=True)-F)==0\r\nprint('单位冲激变换1，阶跃1/s，斜坡1/s²，正弦2/(s²+4)')\r\nfirst=1-sp.exp(-t/T)\r\nassert sp.simplify(sp.laplace_transform(first,t,s,noconds=True)-1/(s*(T*s+1)))==0\r\nfor ratio in [1,3,4,5]: print('t/T, 阶跃归一化输出:',ratio,1-np.exp(-ratio))\r\nprint('tr/T, ts2/T, ts5/T:',np.log(9),-np.log(.02),-np.log(.05))\r\nprint('T=.5s的精确tr/ts2/ts5:',.5*np.log(9),-.5*np.log(.02),-.5*np.log(.05))\r\nA=np.array([[0.,1.],[-64.,-8.]])\r\ntimes=np.linspace(0,3,601)\r\n_,h=impulse(StateSpace(A,[[0],[64]],[[1,0]],[[0]]),T=times)\r\nanalytic=8/np.sqrt(.75)*np.exp(-4*times)*np.sin(8*np.sqrt(.75)*times)\r\nassert max(abs(h-analytic))<1e-10\r\nprint('默认冲激 h(.25)s^-1:',8/np.sqrt(.75)*np.exp(-1)*np.sin(2*np.sqrt(.75)))\r\nprint('默认冲激 3s末样:',h[-1])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 330,
+      "title": "反向设计与精确指标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm, eig\r\nfrom scipy.signal import StateSpace, step, impulse\r\nfrom scipy.optimize import brentq, minimize_scalar\r\n\r\ndef state(z,wn,road=False):\r\n    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])\r\n\r\ndef at(z,wn,t,road=False):\r\n    A,B,C=state(z,wn,road)\r\n    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))\r\n\r\ndef settle(z,wn,road=False,band=.02):\r\n    if z==0:return None\r\n    A,B,C=state(z,wn,road)\r\n    if z==1:\r\n        tail=lambda t:(1+wn*t)*np.exp(-wn*t)\r\n    else:\r\n        vals,V=eig(A)\r\n        # Independent modal bound on the initial displacement from equilibrium.\r\n        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))\r\n        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))\r\n    end=1/wn\r\n    while tail(end)>.01:end*=2\r\n    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)\r\n    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    bad=np.flatnonzero(abs(ys-1)>band)\r\n    if not len(bad):return 0.\r\n    j=bad[-1]\r\n    assert j<len(times)-1\r\n    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))\r\n\r\ndef metrics(z,wn,road=False):\r\n    ts=settle(z,wn,road)\r\n    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)\r\n    A,B,C=state(z,wn,road)\r\n    # Derivative of the forced step is the impulse C exp(At) B.\r\n    deriv=lambda t:float(C@expm(A*t)@B)\r\n    if not road and z>=1:tp=None;mp=0.\r\n    else:\r\n        grid=np.linspace(1e-9,20/wn,2001)\r\n        signs=[deriv(t) for t in grid]\r\n        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])\r\n        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)\r\n    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None\r\n    return dict(tp=tp,mp=mp,tr=tr,ts=ts)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 379,
+          "delim": "`",
+          "code": "for z in [0.,.3,.5,.707,1.,2.]:\r\n    print('zeta,标准模型精确指标:',z,metrics(z,8))\r\nfor z in [0.,.3,.5,.707,1.,2.]:\r\n    mp=None if z==0 else (100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0.)\r\n    angle=np.degrees(np.arccos(z)) if z<=1 else None\r\n    print('超调对照/极点角度:',z,mp,angle)\r\nzmin=-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2)\r\nprint('5%超调最低欠阻尼:',zmin)\r\nfor wn in [2/.7,3.2,4.]:\r\n    measured=metrics(.7,wn)\r\n    bound=np.log(1/(.02*np.sqrt(1-.7**2)))/(.7*wn)\r\n    passed=measured['mp']<=5 and measured['ts']<=2\r\n    print('zeta=.7,wn,粗估ts,包络上界,实际指标,通过:',wn,4/(.7*wn),bound,measured,passed)\r\nprint('默认.5/8包络上界:',np.log(1/(.02*np.sqrt(.75)))/4)\r\nprint('临界wn*ts:',settle(1,1))\r\nassert metrics(.7,2/.7)['ts']>2\r\nassert metrics(.7,3.2)['ts']<2",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 430,
+      "title": "主导极点候选误差",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.signal import TransferFunction, step",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 435,
+          "delim": "`",
+          "code": "t=np.linspace(0,8,8001)\r\n_,approx=step(TransferFunction([10],[1,2,10]),T=t)\r\nfor p in [5.,10.,20.]:\r\n    _,full=step(TransferFunction([10*p],np.polymul([1,p],[1,2,10])),T=t)\r\n    error=abs(full-approx)\r\n    j=np.argmax(error)\r\n    print('快极点/相同直流增益/最大绝对输出误差/发生时刻:',-p,1.,error[j],t[j])\r\n    if p==10: assert error[j]>.19\r\nprint('候选wn,zeta,wd,tp,Mp:',np.sqrt(10),1/np.sqrt(10),3.,np.pi/3,100*np.exp(-np.pi/3))\r\nprint('网格误差以最终输出1为基准；不宣称普遍误差保证')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 499,
+      "title": "完整路面模型复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm, eig\r\nfrom scipy.signal import StateSpace, step, impulse\r\nfrom scipy.optimize import brentq, minimize_scalar\r\n\r\ndef state(z,wn,road=False):\r\n    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])\r\n\r\ndef at(z,wn,t,road=False):\r\n    A,B,C=state(z,wn,road)\r\n    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))\r\n\r\ndef settle(z,wn,road=False,band=.02):\r\n    if z==0:return None\r\n    A,B,C=state(z,wn,road)\r\n    if z==1:\r\n        tail=lambda t:(1+wn*t)*np.exp(-wn*t)\r\n    else:\r\n        vals,V=eig(A)\r\n        # Independent modal bound on the initial displacement from equilibrium.\r\n        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))\r\n        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))\r\n    end=1/wn\r\n    while tail(end)>.01:end*=2\r\n    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)\r\n    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    bad=np.flatnonzero(abs(ys-1)>band)\r\n    if not len(bad):return 0.\r\n    j=bad[-1]\r\n    assert j<len(times)-1\r\n    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))\r\n\r\ndef metrics(z,wn,road=False):\r\n    ts=settle(z,wn,road)\r\n    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)\r\n    A,B,C=state(z,wn,road)\r\n    # Derivative of the forced step is the impulse C exp(At) B.\r\n    deriv=lambda t:float(C@expm(A*t)@B)\r\n    if not road and z>=1:tp=None;mp=0.\r\n    else:\r\n        grid=np.linspace(1e-9,20/wn,2001)\r\n        signs=[deriv(t) for t in grid]\r\n        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])\r\n        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)\r\n    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None\r\n    return dict(tp=tp,mp=mp,tr=tr,ts=ts)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 548,
+          "delim": "`",
+          "code": "for z in [.3,.5,.707,1.,2.]:\r\n    print('路面zeta/c/精确指标:',z,4000*z,metrics(z,8,True))\r\n    A,B,C=state(z,8,True)\r\n    times=np.linspace(0,3,601)\r\n    _,q=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    print('601点采样最大/3s末样:',max(q),q[-1])\r\nprint('默认路面 .5/8 的 t=1:',at(.5,8,1,True))\r\nprint('临界路面超调/峰时:',100*np.exp(-2),2/8)\r\nprint('零状态阶跃后速度/R0=c/m，默认:',2000/250)\r\nassert abs(metrics(1,8,True)['mp']-100*np.exp(-2))<1e-9",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 564,
+      "title": "逆向辨识及采样误差",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm, eig\r\nfrom scipy.signal import StateSpace, step, impulse\r\nfrom scipy.optimize import brentq, minimize_scalar\r\n\r\ndef state(z,wn,road=False):\r\n    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])\r\n\r\ndef at(z,wn,t,road=False):\r\n    A,B,C=state(z,wn,road)\r\n    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))\r\n\r\ndef settle(z,wn,road=False,band=.02):\r\n    if z==0:return None\r\n    A,B,C=state(z,wn,road)\r\n    if z==1:\r\n        tail=lambda t:(1+wn*t)*np.exp(-wn*t)\r\n    else:\r\n        vals,V=eig(A)\r\n        # Independent modal bound on the initial displacement from equilibrium.\r\n        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))\r\n        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))\r\n    end=1/wn\r\n    while tail(end)>.01:end*=2\r\n    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)\r\n    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    bad=np.flatnonzero(abs(ys-1)>band)\r\n    if not len(bad):return 0.\r\n    j=bad[-1]\r\n    assert j<len(times)-1\r\n    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))\r\n\r\ndef metrics(z,wn,road=False):\r\n    ts=settle(z,wn,road)\r\n    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)\r\n    A,B,C=state(z,wn,road)\r\n    # Derivative of the forced step is the impulse C exp(At) B.\r\n    deriv=lambda t:float(C@expm(A*t)@B)\r\n    if not road and z>=1:tp=None;mp=0.\r\n    else:\r\n        grid=np.linspace(1e-9,20/wn,2001)\r\n        signs=[deriv(t) for t in grid]\r\n        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])\r\n        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)\r\n    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None\r\n    return dict(tp=tp,mp=mp,tr=tr,ts=ts)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 613,
+          "delim": "`",
+          "code": "times=np.linspace(0,4,2001)\r\nfor z in [.2,.35,.7]:\r\n    A,B,C=state(z,8)\r\n    _,y=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    j=np.argmax(y); mp=y[j]-1; tp=times[j]\r\n    logmp=np.log(mp)\r\n    ze=-logmp/np.sqrt(np.pi**2+logmp**2)\r\n    we=np.pi/(tp*np.sqrt(1-ze*ze))\r\n    Ae,Be,Ce=state(ze,we)\r\n    _,ye=step(StateSpace(Ae,Be[:,None],Ce[None,:],[[0.]]),T=times)\r\n    print('真zeta/采样峰/峰时/估计zeta/估计wn/最大曲线差:',z,y[j],tp,ze,we,max(abs(y-ye)))\r\nprint('无噪声、无零点、二阶、已知终值1；有额外极点/零点/噪声不保证可识别')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 667,
+      "title": "零点反例与延迟边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.signal import TransferFunction,step",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 673,
+          "delim": "`",
+          "code": "s,t=sp.symbols('s t',positive=True)\r\nleft=1-sp.exp(-t)/2\r\nright=1-(1+2*t)*sp.exp(-t)\r\nassert sp.simplify(sp.laplace_transform(left,t,s,noconds=True)-(s+2)/(2*s*(s+1)))==0\r\nassert sp.simplify(sp.laplace_transform(right,t,s,noconds=True)-(1-s)/(s*(s+1)**2))==0\r\nprint('左零点例 y0+,终值,导数:',left.subs(t,0),1,sp.diff(left,t))\r\nprint('右零点例 y0+,初始导数:',right.subs(t,0),sp.diff(right,t).subs(t,0))\r\ntau=.5; times=np.linspace(0,4,4001)\r\nexact=np.where(times>=tau,1-np.exp(-(times-tau)),0.)\r\n_,pade=step(TransferFunction([-tau/2,1],np.polymul([tau/2,1],[1,1])),T=times)\r\nprint('一阶Pade零点:',2/tau,'精确延迟响应t0/tau/tau+1:',0.,0.,1-np.exp(-1))\r\nprint('Pade初始区间最小值:',min(pade[times<tau]))\r\nassert np.all(exact[times<tau]==0)\r\nassert min(pade[times<tau])<0\r\nprint('精确延迟不提前运动，Pade反向初期是近似效应；开环稳定不等于闭环裕度不变')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 853,
+      "title": "九题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm, eig\r\nfrom scipy.signal import StateSpace, step, impulse\r\nfrom scipy.optimize import brentq, minimize_scalar\r\n\r\ndef state(z,wn,road=False):\r\n    return np.array([[0.,1.],[-wn*wn,-2*z*wn]]),np.array([0.,1.]),np.array([wn*wn,2*z*wn if road else 0.])\r\n\r\ndef at(z,wn,t,road=False):\r\n    A,B,C=state(z,wn,road)\r\n    return float(C@np.linalg.solve(A,(expm(A*t)-np.eye(2))@B))\r\n\r\ndef settle(z,wn,road=False,band=.02):\r\n    if z==0:return None\r\n    A,B,C=state(z,wn,road)\r\n    if z==1:\r\n        tail=lambda t:(1+wn*t)*np.exp(-wn*t)\r\n    else:\r\n        vals,V=eig(A)\r\n        # Independent modal bound on the initial displacement from equilibrium.\r\n        coef=(C@V)*np.linalg.solve(V,np.linalg.solve(A,B))\r\n        tail=lambda t:float(np.sum(abs(coef)*np.exp(np.real(vals)*t)))\r\n    end=1/wn\r\n    while tail(end)>.01:end*=2\r\n    times=np.linspace(0,end,int(np.ceil(end*wn/.01))+1)\r\n    _,ys=step(StateSpace(A,B[:,None],C[None,:],[[0.]]),T=times)\r\n    bad=np.flatnonzero(abs(ys-1)>band)\r\n    if not len(bad):return 0.\r\n    j=bad[-1]\r\n    assert j<len(times)-1\r\n    return float(brentq(lambda t:abs(at(z,wn,t,road)-1)-band,times[j],times[j+1],xtol=1e-12))\r\n\r\ndef metrics(z,wn,road=False):\r\n    ts=settle(z,wn,road)\r\n    if z==0:return dict(tp=None,mp=None,tr=None,ts=None)\r\n    A,B,C=state(z,wn,road)\r\n    # Derivative of the forced step is the impulse C exp(At) B.\r\n    deriv=lambda t:float(C@expm(A*t)@B)\r\n    if not road and z>=1:tp=None;mp=0.\r\n    else:\r\n        grid=np.linspace(1e-9,20/wn,2001)\r\n        signs=[deriv(t) for t in grid]\r\n        j=next(i for i in range(1,len(grid)) if signs[i]<=0<signs[i-1])\r\n        tp=float(brentq(deriv,grid[j-1],grid[j],xtol=1e-13));mp=100*(at(z,wn,tp,road)-1)\r\n    tr=float(brentq(lambda t:at(z,wn,t)-1,1e-12,tp)) if not road and z<1 else None\r\n    return dict(tp=tp,mp=mp,tr=tr,ts=ts)\r\nimport sympy as sp",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 903,
+          "delim": "`",
+          "code": "print('Q1 t10,t90,tr,ts2:',-.5*np.log(.9),-.5*np.log(.1),.5*np.log(9),-.5*np.log(.02))\r\nprint('Q2 wn,zeta,wd,指标,粗估:',6.,.4,6*np.sqrt(.84),metrics(.4,6),4/(.4*6))\r\nprint('Q3 zeta_min:',-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2))\r\nprint('Q3 candidate:',metrics(.7,3.2))\r\nprint('Q4 wn,zeta,wd/指标:',np.sqrt(10),1/np.sqrt(10),3.,metrics(1/np.sqrt(10),np.sqrt(10)))\r\nprint('Q5 zeta_min,c_min:',np.log(10)/np.sqrt(np.pi**2+np.log(10)**2),4000*np.log(10)/np.sqrt(np.pi**2+np.log(10)**2))\r\nfor c in [2400.,4000.,8000.]: print('Q5 c,zeta,exact metrics:',c,c/4000,metrics(c/4000,8))\r\nz=-np.log(.16)/np.sqrt(np.pi**2+np.log(.16)**2)\r\nwn=np.pi/(.5*np.sqrt(1-z*z))\r\nprint('Q6 zeta,wn,exact metrics:',z,wn,metrics(z,wn))\r\nprint('Q7 左例单调无超调0，右例初始导数-1；NB6已符号验证')\r\ns,t=sp.symbols('s t',positive=True)\r\ny=3*t-6*(1-sp.exp(-t/2))\r\nassert sp.simplify(sp.laplace_transform(y,t,s,noconds=True)-3/(s*s*(2*s+1)))==0\r\nprint('Q8 partial fractions:',sp.apart(3/(s*s*(2*s+1)),s),'tracking error:',sp.simplify(3*t-y),'limit:',6)\r\nwd=np.sqrt(21)\r\npeak=np.arccos(.4)/wd\r\nh=25/wd*sp.exp(-2*t)*sp.sin(wd*t)\r\nassert abs(float(sp.diff(h,t).subs(t,peak)))<1e-10\r\nprint('Q9 wn,zeta,wd,impulse coefficient:',5.,.4,wd,25/wd)\r\nprint('Q9 impulse peak time/step peak time:',peak,np.pi/wd)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
