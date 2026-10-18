@@ -23,7 +23,7 @@ A=\begin{bmatrix}3/4&1/4\\1/4&3/4\end{bmatrix},\qquad
 x_0=\begin{bmatrix}2\\0\end{bmatrix}.
 $$
 
-$k$ 是已经交换的轮数，$x_k$ 的两个分量记录第 $k$ 轮后两杯水量的数值，单位均为升；矩阵里的比例没有单位。这里没有额外加水，也不把一轮交换对应为一秒。后文的“两路”就对应这两个分量。矩阵记号、逆与行列式可回看[线性代数基础](/math/linear-algebra-basics)；后面的旋转例子还会用到[复数基础](/math/complex-numbers)。
+$k$ 是已经交换的轮数，$x_k$ 的两个分量记录第 $k$ 轮后两杯水量的数值，单位均为升；矩阵里的比例没有单位。后文的“两路”就对应这两个分量。矩阵记号、逆与行列式可回看[线性代数基础](/math/linear-algebra-basics)；后面的旋转例子还会用到[复数基础](/math/complex-numbers)。
 
 这课要找的，是矩阵作用时一些特别好算的向量。沿着它们看，反复乘矩阵就会变成反复乘一个数。
 
@@ -144,11 +144,9 @@ $$
 
 更一般地，若初始向量是 $x_0=c_1v_1+c_2v_2$，则 $x_k=c_1\lambda_1^kv_1+c_2\lambda_2^kv_2$。每一项叫一个**模态**：在这里，它就是沿一个特征方向独立变化的那部分。某个 $c_i=0$ 时，对应模态没有被这个初值激发。
 
-下面保留初值 $(2,0)^T$ 和基底 $v_1,v_2$，改两个特征值 $p,q$。此时矩阵为 $\frac12\begin{bmatrix}p+q&p-q\\p-q&p+q\end{bmatrix}$；$p,q$ 分别是第一、第二模态每步的倍率。默认 $p=1,q=1/2$ 就是正文算例。拖动步数只选中一项读数，不改变计算规则。
+下面保留初值 $(2,0)^T$ 和基底 $v_1,v_2$，改两个特征值 $p,q$。此时矩阵为 $\frac12\begin{bmatrix}p+q&p-q\\p-q&p+q\end{bmatrix}$；$p,q$ 分别是第一、第二模态每步的倍率。默认 $p=1,q=1/2$ 就是正文算例。
 
 <EigenIterationExplorer />
-
-先确认默认第3步读数，再把第二倍率改成负数，观察差异如何交替；让两个倍率都小于 $1$ 且大于 $0$，两路会一起靠近零。“第一模态增长”按钮只展示该指定参数，是否长期增长仍要看公式及初值。
 
 <JupyterNotebook title="核对换坐标和多步公式" setupCode={`import sympy as sp`} cells={[{code:`A = sp.Matrix([[sp.Rational(3,4), sp.Rational(1,4)], [sp.Rational(1,4), sp.Rational(3,4)]])
 P = sp.Matrix([[1, 1], [1, -1]])
