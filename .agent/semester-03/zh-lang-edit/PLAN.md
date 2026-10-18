@@ -33,7 +33,7 @@
 | 25 | CLASSIC-07 | PID控制 | content/classic/pid-controller.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-07.md) |
 | 26 | CLASSIC-08 | 校正网络 | content/classic/compensator-design.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-08.md) |
 | 27 | CLASSIC-09 | 回路整形 | content/classic/frequency-response-design.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-09.md) |
-| 28 | CLASSIC-10 | 设计方法选型 | content/classic/design-methods-comparison.mdx | 已完成 | 待润色 | — |
+| 28 | CLASSIC-10 | 设计方法选型 | content/classic/design-methods-comparison.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-10.md) |
 | 29 | CLASSIC-11 | 经典控制案例 | content/classic/classic-case-study.mdx | 已完成 | 待润色 | — |
 | 30 | MODERN-01 | 状态空间 | content/modern/state-space.mdx | 已完成 | 待润色 | — |
 | 31 | MODERN-02 | 可控性与可观性 | content/modern/controllability-observability.mdx | 已完成 | 待润色 | — |
