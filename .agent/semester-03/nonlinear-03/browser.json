@@ -1,0 +1,148 @@
+{
+  "default": "V₀ = 1.416147；t = 60.00 时 θ = -0.000021，ω = -0.000222，V = 0.000000。展开角所在圈：0。",
+  "h2": [
+    {
+      "id": "为什么看能量",
+      "text": "为什么看能量"
+    },
+    {
+      "id": "稳定性定义",
+      "text": "稳定性定义"
+    },
+    {
+      "id": "直接法",
+      "text": "直接法"
+    },
+    {
+      "id": "非线性弹簧",
+      "text": "非线性弹簧"
+    },
+    {
+      "id": "lasalle原理",
+      "text": "LaSalle原理"
+    },
+    {
+      "id": "线性化与证书",
+      "text": "线性化与证书"
+    },
+    {
+      "id": "怎样构造函数",
+      "text": "怎样构造函数"
+    },
+    {
+      "id": "吸引域估计",
+      "text": "吸引域估计"
+    },
+    {
+      "id": "应用案例",
+      "text": "应用案例"
+    },
+    {
+      "id": "适用边界",
+      "text": "适用边界"
+    },
+    {
+      "id": "小结",
+      "text": "小结"
+    },
+    {
+      "id": "习题",
+      "text": "习题"
+    },
+    {
+      "id": "答案",
+      "text": "答案"
+    }
+  ],
+  "ids": [
+    "base-ui-:R3sqfkq:",
+    "lyapunov稳定性",
+    "李雅普诺夫稳定性",
+    "为什么看能量",
+    "引言",
+    "稳定性定义",
+    "直接法",
+    "李雅普诺夫直接法",
+    "非线性弹簧",
+    "手算例子：非线性弹簧-质量系统",
+    "手算例子非线性弹簧-质量系统",
+    "lasalle原理",
+    "LaSalle 不变集原理",
+    "lasalle-不变集原理",
+    "线性化与证书",
+    "李雅普诺夫间接法",
+    "怎样构造函数",
+    "李雅普诺夫函数的构造方法",
+    "吸引域估计",
+    "应用案例",
+    "适用边界",
+    "何时失效？",
+    "何时失效",
+    "小结",
+    "习题",
+    "答案",
+    "codex-browser-sidebar-comments-root"
+  ],
+  "images": [
+    {
+      "loaded": true,
+      "src": "/control-universe/images/nonlinear/lyapunov-energy.svg"
+    }
+  ],
+  "katexErrors": 0,
+  "targets": [],
+  "mobile": {
+    "scrollWidth": 360,
+    "viewport": 375,
+    "width": 360
+  },
+  "undamped": "阻尼摆：同一张能量图，不同的运动\n\n阻尼 d = 0.00 \n初始角度 θ₀ = 2.0 \n初始角速度 ω₀ = 0.0 \n恢复默认\n\nV₀ = 1.416147；t = 60.00 时 θ = 0.860658，ω = -1.461565，V = 1.416147。展开角所在圈：0。\n\n无阻尼时能量守恒；低于顶点能量的轨迹往复摆动，高能量轨迹可以持续转圈。图中只折回角度显示，跨边界断线；计算与读数保留展开角。60时刻的读数不是无穷时刻的极限。",
+  "high": "阻尼摆：同一张能量图，不同的运动\n\n阻尼 d = 0.30 \n初始角度 θ₀ = 3.0 \n初始角速度 ω₀ = 3.0 \n恢复默认\n\nV₀ = 6.489992；t = 60.00 时 θ = 12.566918，ω = -0.000068，V = 0.000000。展开角所在圈：2。\n\nV₀ ≥ 2：本课的低能量吸引域保证不适用；是否跨圈要看实际运动，不能直接说回到 θ = 0。图中只折回角度显示，跨边界断线；计算与读数保留展开角。60时刻的读数不是无穷时刻的极限。",
+  "boundary": "V₀ = 6.489992；t = 60.00 时 θ = -6.283185，ω = -0.000000，V = 0.000000。展开角所在圈：-1。",
+  "reset": "V₀ = 1.416147；t = 60.00 时 θ = -0.000021，ω = -0.000222，V = 0.000000。展开角所在圈：0。",
+  "toolbars": [
+    {
+      "outputs": [
+        "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import solve_ivp\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\nfrom scipy.integrate import solve_ivp as _solve_ivp\ndef solve_ivp(fun, t_span, y0, **kwargs):\n    sol = _solve_ivp(fun, t_span, y0, **kwargs)\n    assert sol.success and abs(sol.t[-1]-t_span[1]) < 1e-9, sol.message\n    return sol",
+        "c=0.0: V(0)=2.390625, V(30)=2.390625, 最大偏离=3.15e-08\nc=0.5: V(0)=2.390625, V(30)=0.000000, 最大偏离=2.39e+00\n"
+      ],
+      "status": "运行完成",
+      "title": "Notebook 1：能量函数 V 的守恒与衰减验证"
+    },
+    {
+      "outputs": [
+        "import numpy as np\nfrom scipy.integrate import solve_ivp\nfrom scipy.linalg import expm, solve_continuous_lyapunov\nimport matplotlib.pyplot as plt",
+        "d,theta0,omega0= (0.3, 2, 0) V0= 1.416147 theta60,omega60,V60= [-2.10e-05 -2.22e-04  0.00e+00] t_last= 60.0\nd,theta0,omega0= (0, 2, 0) V0= 1.416147 theta60,omega60,V60= [ 0.860658 -1.461565  1.416147] t_last= 60.0\nd,theta0,omega0= (0.3, 3, 3) V0= 6.489992 theta60,omega60,V60= [ 1.2566918e+01 -6.8000000e-05  0.0000000e+00] t_last= 60.0\nd,theta0,omega0= (0, 0, 3) V0= 4.5 theta60,omega60,V60= [156.128783   2.856919   4.5     ] t_last= 60.0\nd,theta0,omega0= (2, -3, -3) V0= 6.489992 theta60,omega60,V60= [-6.283185  0.        0.      ] t_last= 60.0\nd,theta0,omega0= (0.05, 0, 3) V0= 4.5 theta60,omega60,V60= [25.822004  0.187872  0.245933] t_last= 60.0\n"
+      ],
+      "status": "运行完成",
+      "title": "Notebook 5：复算探索器的默认值与边界"
+    },
+    {
+      "outputs": [
+        "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import solve_ivp\nfrom scipy.linalg import solve_lyapunov\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\nfrom scipy.integrate import solve_ivp as _solve_ivp\ndef solve_ivp(fun, t_span, y0, **kwargs):\n    sol = _solve_ivp(fun, t_span, y0, **kwargs)\n    assert sol.success and abs(sol.t[-1]-t_span[1]) < 1e-9, sol.message\n    return sol"
+      ],
+      "title": "Notebook 2：线性化 + Lyapunov 方程验证间接法"
+    },
+    {
+      "outputs": [
+        "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import solve_ivp\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\nfrom scipy.integrate import solve_ivp as _solve_ivp\ndef solve_ivp(fun, t_span, y0, **kwargs):\n    sol = _solve_ivp(fun, t_span, y0, **kwargs)\n    assert sol.success and abs(sol.t[-1]-t_span[1]) < 1e-9, sol.message\n    return sol"
+      ],
+      "title": "Notebook 3：吸引域内估计与圆外初值"
+    },
+    {
+      "outputs": [
+        "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import solve_ivp\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\nfrom scipy.integrate import solve_ivp as _solve_ivp\ndef solve_ivp(fun, t_span, y0, **kwargs):\n    sol = _solve_ivp(fun, t_span, y0, **kwargs)\n    assert sol.success and abs(sol.t[-1]-t_span[1]) < 1e-9, sol.message\n    return sol"
+      ],
+      "title": "Notebook 4：卫星姿态机动闭环仿真（PD + Lyapunov 证书）"
+    },
+    {
+      "outputs": [
+        "import numpy as np\nfrom scipy.integrate import solve_ivp\nfrom scipy.linalg import expm, solve_continuous_lyapunov\nimport matplotlib.pyplot as plt",
+        "Q1 eigenvalues= [1. 2.] det= 2.0\nQ1 eigenvalues= [0.38196601 2.61803399] det= 1.0\nQ1 eigenvalues= [-0.56155281  3.56155281] det= -2.0\nQ1(c) V(2,-1)= -2.0\nenergy,Q2dot,Q4dot= 2.635625 -0.9800000000000004 0.4899999999999993\nenergy,Q2dot,Q4dot= 0.2924 -0.31999999999999995 -0.512\nenergy,Q2dot,Q4dot= 0.5 -2.0 -2.0\nROA V(.7,.7)= 0.9799999999999999 Q4 radius c=.5= 0.7071067811865476\nKrasovskii x2= -2.0 trace= -28.0 det= 51.0\nKrasovskii x2= 0.0 trace= -4.0 det= 2.9999999999999996\nKrasovskii x2= 2.0 trace= -28.0 det= 51.0\nPD wn,zeta= 0.6324555320336759 0.4743416490252569\nPD theta40,omega40= [-1.09115141e-05  1.95117419e-06]\nQ3 eigen down/up= [0.+1.j 0.-1.j] [ 1. -1.]\nQ6 scalar closed forms: PASS\n"
+      ],
+      "status": "运行完成",
+      "title": "Notebook 6：手算与习题复核"
+    }
+  ],
+  "console": []
+}

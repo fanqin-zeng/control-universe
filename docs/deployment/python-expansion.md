@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 73 课 / 349 个实验 / 526 个单元格全部纳入盘点。54 课全部可运行，10 课混合，9 课全部保留代码；启用 324 个实验，保留 25 个。实际执行 503 个单元格（含异常单元格），生成 161 张 PNG。原始记录中 325 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 73 课 / 351 个实验 / 528 个单元格全部纳入盘点。54 课全部可运行，10 课混合，9 课全部保留代码；启用 326 个实验，保留 25 个。实际执行 505 个单元格（含异常单元格），生成 161 张 PNG。原始记录中 327 个实验完整执行，发布门槛继续按缺字等渲染记录筛选，以启用清单为准。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -32,7 +32,7 @@
 | modern/modern-case-study（现代控制案例） | 6/6 | 11 | 无 |
 | nonlinear/nonlinear-characteristics（非线性系统） | 5/5 | 5 | 无 |
 | nonlinear/phase-plane（相平面） | 14/14 | 27 | 无 |
-| nonlinear/lyapunov-stability（Lyapunov稳定性） | 4/4 | 8 | 无 |
+| nonlinear/lyapunov-stability（Lyapunov稳定性） | 6/6 | 10 | 无 |
 | nonlinear/describing-function（描述函数） | 6/6 | 21 | 无 |
 | nonlinear/feedback-linearization（反馈线性化） | 4/4 | 12 | 无 |
 | nonlinear/sliding-mode-control（滑模控制） | 5/5 | 17 | 无 |
@@ -137,3 +137,5 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 NONLINEAR-02：相平面原十二实验与新增两实验，共14Notebook/27cell已按最终源码在Pyodide实跑通过；见.agent/semester-03/nonlinear-02/pyodide.json。原25项待办ID/原因/处置保持；仅本地验收，Pages未发布。
 
 CLASSIC-01语言润色试点：七份原始setup/cell及模型未改，最终正文已重新实跑Pyodide并更新指纹；证据.agent/semester-03/polish/classic-01/pyodide.json。25项待办不变。
+
+NONLINEAR-03：六Notebook十cell原始代码在本地Pyodide完整实跑；修正摆势阱与全局边界，新增默认/边界与习题核验。证据见.agent/semester-03/nonlinear-03/pyodide.json；原25项待办ID/原因/处置不变，本轮未发布Pages。

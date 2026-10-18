@@ -646,3 +646,7 @@ LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE
 润色目的、要求、完整205课计划和逐课记录统一维护在 [.agent/semester-03/zh-lang-edit/README.md](semester-03/zh-lang-edit/README.md) 及同目录 PLAN.md。由其他模型在 `codex/semester-03-zh-lang-edit` 长期分支完成，不使用角色讨论或 Phase 1–4，不向既有内容生产 SKILL 添加润色职责。原22人团队恢复，课程生产规则照旧。
 
 润色结果仅在用户明确要求合入时，由维护 Agent 做简单审核后合入 master；不得自行合并或发布 Pages。当前 CLASSIC-01 试稿保留，未视为用户认可；历史材料迁入该目录 archive，仅供参考。
+
+### NONLINEAR-03 本轮执行记录（2026-10-18）
+
+Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、原四实验八cell与五题，补抽屉储能SVG/两核验实验/临界第六题；纠稳定性包含、反例-2、圆外收敛过推、摆多圈与紧势阱、平面PD/关节调节/电网边界。实际TS195组292695点对独立DOP853，六符号恒等与PD独立expm；六Notebook十cell严格Jupyter/Pyodide及真实工具栏通过，17旧ID保留、375px表内滚动。签发/真实master回执见全局checklist及.agent/semester-03/nonlinear-03/acceptance.md；原25Python待办及W08/W09/W10不关闭，独立中文润色目录/分支不动，本轮不发布Pages。

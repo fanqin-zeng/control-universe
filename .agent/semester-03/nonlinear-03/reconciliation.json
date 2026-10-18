@@ -1,0 +1,149 @@
+{
+  "pass": true,
+  "sourceHash": "40088b2f4556739b937752aea7291aa1f6b3ff5ccf2af68d6fcc02c891cd9a5b",
+  "numericsHash": "fcc84616d174bf76412afe1d706aec2865ace3e79d15552f67e9200029c2b6d5",
+  "componentHash": "2889c558cf99941ebfa9dca03f759832a3e8b92bf58bbd926caee10e42f0cbe8",
+  "component": {
+    "pass": true,
+    "cases": 195,
+    "points": 292695,
+    "maxStateError": 3.344014753992042e-8,
+    "maxConservativeDrift": 1.6827659266027695e-9,
+    "symbolicIdentities": 6,
+    "lyapunovResidual": 0,
+    "pdExpmError": 3.2843172625973693e-12
+  },
+  "default": [
+    {
+      "t": 0,
+      "theta": 2,
+      "omega": 0,
+      "energy": 1.4161468365471424
+    },
+    {
+      "t": 60,
+      "theta": -0.00002104283462465948,
+      "omega": -0.00022189162853732925,
+      "energy": 2.4839347911864706e-8
+    }
+  ],
+  "notebooks": [
+    {
+      "title": "Notebook 1：能量函数 V 的守恒与衰减验证",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "c=0.0: V(0)=2.390625, V(30)=2.390625, 最大偏离=3.15e-08\nc=0.5: V(0)=2.390625, V(30)=0.000000, 最大偏离=2.39e+00\n"
+            }
+          ]
+        },
+        {
+          "outputs": [
+            {
+              "type": "image",
+              "bytes": 61460
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Notebook 5：复算探索器的默认值与边界",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "d,theta0,omega0= (0.3, 2, 0) V0= 1.416147 theta60,omega60,V60= [-2.10e-05 -2.22e-04  0.00e+00] t_last= 60.0\nd,theta0,omega0= (0, 2, 0) V0= 1.416147 theta60,omega60,V60= [ 0.860658 -1.461565  1.416147] t_last= 60.0\nd,theta0,omega0= (0.3, 3, 3) V0= 6.489992 theta60,omega60,V60= [ 1.2566918e+01 -6.8000000e-05  0.0000000e+00] t_last= 60.0\nd,theta0,omega0= (0, 0, 3) V0= 4.5 theta60,omega60,V60= [156.128783   2.856919   4.5     ] t_last= 60.0\nd,theta0,omega0= (2, -3, -3) V0= 6.489992 theta60,omega60,V60= [-6.283185  0.        0.      ] t_last= 60.0\nd,theta0,omega0= (0.05, 0, 3) V0= 4.5 theta60,omega60,V60= [25.822004  0.187872  0.245933] t_last= 60.0\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Notebook 2：线性化 + Lyapunov 方程验证间接法",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "theta=0 处特征值: [-0.25+0.9682j -0.25-0.9682j] -> Hurwitz, 局部渐近稳定\ntheta=pi 处特征值: [ 0.7808 -1.2808] -> 有正实部, 不稳定\nP = [[2.25 0.5 ]\n [0.5  2.  ]]\nP 的特征值: [1.6096 2.6404] -> 全正, V=x'Px 是合法证书\n"
+            }
+          ]
+        },
+        {
+          "outputs": [
+            {
+              "type": "image",
+              "bytes": 45900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Notebook 3：吸引域内估计与圆外初值",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "y0=(0.7, 0.7): V0=0.98, t_last=40.0, 末样=(-0.000, -0.000)\ny0=(1.5, 0.0): V0=2.25, t_last=40.0, 末样=(-0.000, +0.000)\n"
+            }
+          ]
+        },
+        {
+          "outputs": [
+            {
+              "type": "image",
+              "bytes": 63364
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Notebook 4：卫星姿态机动闭环仿真（PD + Lyapunov 证书）",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "image",
+              "bytes": 61604
+            }
+          ]
+        },
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "V 的最大正向增量(应约为0, 仅数值误差): -1.56e-14\n终端角度误差 (rad): -1.09e-05\n理论值: wn=0.632 rad/s, zeta=0.474\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Notebook 6：手算与习题复核",
+      "cells": [
+        {
+          "outputs": [
+            {
+              "type": "stream",
+              "name": "stdout",
+              "text": "Q1 eigenvalues= [1. 2.] det= 2.0\nQ1 eigenvalues= [0.38196601 2.61803399] det= 1.0\nQ1 eigenvalues= [-0.56155281  3.56155281] det= -2.0\nQ1(c) V(2,-1)= -2.0\nenergy,Q2dot,Q4dot= 2.635625 -0.9800000000000004 0.4899999999999993\nenergy,Q2dot,Q4dot= 0.2924 -0.31999999999999995 -0.512\nenergy,Q2dot,Q4dot= 0.5 -2.0 -2.0\nROA V(.7,.7)= 0.9799999999999999 Q4 radius c=.5= 0.7071067811865476\nKrasovskii x2= -2.0 trace= -28.0 det= 51.0\nKrasovskii x2= 0.0 trace= -4.0 det= 2.9999999999999996\nKrasovskii x2= 2.0 trace= -28.0 det= 51.0\nPD wn,zeta= 0.6324555320336759 0.4743416490252569\nPD theta40,omega40= [-1.09115141e-05  1.95117419e-06]\nQ3 eigen down/up= [0.+1.j 0.-1.j] [ 1. -1.]\nQ6 scalar closed forms: PASS\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "oldIds": 17
+}

@@ -2167,32 +2167,32 @@ export const catalog: Chapter[] = [
         "title": "Lyapunov稳定性",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "为什么看能量",
+            "title": "为什么看能量"
           },
           {
             "slug": "稳定性定义",
             "title": "稳定性定义"
           },
           {
-            "slug": "李雅普诺夫直接法",
-            "title": "李雅普诺夫直接法"
+            "slug": "直接法",
+            "title": "直接法"
           },
           {
-            "slug": "手算例子非线性弹簧-质量系统",
-            "title": "手算例子：非线性弹簧-质量系统"
+            "slug": "非线性弹簧",
+            "title": "非线性弹簧"
           },
           {
-            "slug": "lasalle-不变集原理",
-            "title": "LaSalle 不变集原理"
+            "slug": "lasalle原理",
+            "title": "LaSalle原理"
           },
           {
-            "slug": "李雅普诺夫间接法",
-            "title": "李雅普诺夫间接法"
+            "slug": "线性化与证书",
+            "title": "线性化与证书"
           },
           {
-            "slug": "李雅普诺夫函数的构造方法",
-            "title": "李雅普诺夫函数的构造方法"
+            "slug": "怎样构造函数",
+            "title": "怎样构造函数"
           },
           {
             "slug": "吸引域估计",
@@ -2203,8 +2203,8 @@ export const catalog: Chapter[] = [
             "title": "应用案例"
           },
           {
-            "slug": "何时失效",
-            "title": "何时失效？"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
