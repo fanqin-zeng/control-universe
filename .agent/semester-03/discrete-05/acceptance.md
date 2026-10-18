@@ -35,3 +35,5 @@ PY-008/PY-009本课旧实验实跑后关闭，待办24→22，其余task/categor
 `npm run check`最终退出0：PASS21/WARN2/FAIL0；`node scripts/check-semester03.mjs`退出0。签发见讨论日志Phase4；本期生产完成54课，合入数需等实际提交后再从53变54。
 
 用户明确指定DISCRETE-05，独立登记暂缓DISCRETE-01；已交付04与Lyapunov为起点，局部解释采样/保持，不使用未验收01数值。本对话仅交付05；本地端口四文件、用户proofreading与01草稿排除提交。Pages仅本地构建，另行授权才发布。
+
+master交付提交：8aa700be5d624925f7814f6a460db1d9c38b25b3。据真实提交勾合入列，本学期生产及合入均54课；semester-check.log回执merged=54。原source-before.mdx历史空格原样保留，交付代码无新增行尾空格。

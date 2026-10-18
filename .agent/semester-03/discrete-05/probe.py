@@ -23,4 +23,3 @@ def qmargin(T): return ct.margin(ct.c2d(Gq,T,'zoh')*ct.c2d(Cq,T,'tustin'))[1]
 exact=brentq(lambda T:pm-qmargin(T)-10,.001,.4)
 print('Q3',wc,pm,estimate,qmargin(estimate),exact,qmargin(exact))
 print('example roots',np.roots([1,-1.5,.7]),'q1b',np.roots([1,-1.5,.8,-.1]))
-
