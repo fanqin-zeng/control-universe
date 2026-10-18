@@ -2,7 +2,7 @@
 
 目标范围与课程顺序见 [semester-03-plan.md](semester-03-plan.md)，历史起点见 [baseline](semester-03-baseline.json)。本文件是学期3唯一进度总入口；已有v1.3不等于本期完成。校验：`node scripts/check-semester03.mjs`。
 
-状态规则：`[ ]` 未完成（进行中/阻塞写证据栏）；`[x]` 完成且有持久证据。课程逐列顺序推进；每个阶段应及时链接同一课日志，合并列须有真实 `commit:<hash>`。任务新增到任务表，课程新增/合并/拆分先改计划；不要删除来源或重置已完成历史。所有证据路径相对仓库根目录，支持 `#锚点`；多份证据用分号分隔。
+状态规则：`[ ]` 未完成（进行中/阻塞写证据栏）；`[x]` 完成且有持久证据。课程逐列顺序推进；每个阶段应及时链接同一课日志，旧“合并”列表示交付已进入master，须有真实 `commit:<hash>`（普通提交或历史合并提交均可）；日常直接在master提交并推送，Pages另行授权。任务新增到任务表，课程新增/合并/拆分先改计划；不要删除来源或重置已完成历史。所有证据路径相对仓库根目录，支持 `#锚点`；多份证据用分号分隔。
 
 ## 治理、结构、基建与收官
 
@@ -44,6 +44,7 @@
 | W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
+| P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
