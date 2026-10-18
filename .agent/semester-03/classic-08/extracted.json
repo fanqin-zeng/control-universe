@@ -1,0 +1,123 @@
+{
+  "source": "content/classic/compensator-design.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 177,
+      "title": "超前设计与完整响应",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 203,
+          "delim": "`",
+          "code": "for gain,pole,alpha in [(40,2,5),(500,5,6.5),(400,4,7)]:\r\n    wc,time,C=lead_design(gain,pole,alpha)\r\n    P=gain/(s*(s+pole))\r\n    info(\"uncorrected \"+str(gain),P)\r\n    w,pm,p=info(\"lead \"+str(gain),P*C)\r\n    print(\"gain,alpha,T,zero,pole\",gain,alpha,time,-1/(alpha*time),-1/time)\r\n    assert abs(w-wc)<1e-8 and pm>50 and np.max(p.real)<0\r\n    t=np.linspace(0,5,501)\r\n    for label,L in [('plain',P),('lead',P*C)]:\r\n        t,y=ct.step_response(ct.feedback(L,1),t)\r\n        print(gain,label,\"y(5)\",y[-1],\"sampled peak\",np.max(y))\r\n        plt.plot(t,y,label=label)\r\n    plt.legend();plt.xlabel('t (s)');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 230,
+      "title": "网络极限与相位",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 256,
+          "delim": "`",
+          "code": "for angle in [20,30,40,50,60]:\r\n    alpha=(1+np.sin(np.deg2rad(angle)))/(1-np.sin(np.deg2rad(angle)))\r\n    print(\"angle,alpha\",angle,alpha)\r\nalpha=10.;time=1.;wm=1/(time*np.sqrt(alpha));h=(1+alpha*time*1j*wm)/(1+time*1j*wm)\r\nprint(\"Q1 phase,wm*T,db\",np.angle(h,deg=True),wm*time,20*np.log10(abs(h)))\r\nassert abs(abs(h)-np.sqrt(alpha))<1e-12\r\nbeta=.1;wm=1/np.sqrt(beta)\r\nh=(1+beta*1j*wm)/(1+1j*wm)\r\nprint(\"Q9 lag phase,wm*T\",np.angle(h,deg=True),wm)\r\nw=np.logspace(-4,4,401)\r\nfor factor in [5,.1]:\r\n    h=(1+factor*1j*w)/(1+1j*w)\r\n    plt.semilogx(w,20*np.log10(abs(h)),label=str(factor))\r\nplt.legend();plt.xlabel('rad/s');plt.ylabel('dB');plt.show()\r\nprint(\"limits lead/lag/combined\",5,.1,5*.1)\r\n# The old lead decomposition was wrong; verify corrected identity.\r\nz=1j*2; assert np.allclose((1+5*z)/(1+z),1+4*z/(1+z))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 341,
+      "title": "滞后设计与题目复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 367,
+          "delim": "`",
+          "code": "P=60/(s*(s+1)*(s+2));C=(1+.0215*846*s)/(1+846*s)\r\ninfo(\"lag60 plain\",P);wc,pm,p=info(\"lag60 corrected\",P*C)\r\nassert pm>40 and np.max(p.real)<0\r\nprint(\"lag60 beta,T,high gain\",.0215,846.,.0215)\r\nfor gain,a,b,w in [(250,1,5,.5),(1280,2,8,1.),(3200,2,8,1.)]:\r\n    P=gain/(s*(s+a)*(s+b));info(\"question plain \"+str(gain),P)\r\n    beta,time,C=lag_at(P,w)\r\n    wgc,pm,p=info(\"question lag \"+str(gain),P*C)\r\n    print(\"gain,beta,T,Kv\",gain,beta,time,gain/(a*b))\r\n    assert abs(wgc-w)<1e-8 and pm>45 and np.max(p.real)<0\r\nprint(\"K increase factor/db\",3200/1280,20*np.log10(3200/1280))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 429,
+      "title": "组合网络联合设计",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 455,
+          "delim": "`",
+          "code": "P=1000/(s*(s+1)*(s+10));alpha=12.;wc=3.;zero=.3\r\nT1=1/(wc*np.sqrt(alpha));target=1/(abs(ct.evalfr(P,1j*wc))*np.sqrt(alpha))\r\nbeta=wc/(zero*np.sqrt((1+(wc/zero)**2)/target**2-1));T2=1/(zero*beta)\r\nC=(1+alpha*T1*s)/(1+T1*s)*(1+beta*T2*s)/(1+T2*s)\r\nprint(\"alpha,T1,beta,T2,HF\",alpha,T1,beta,T2,alpha*beta)\r\ninfo(\"combined plain\",P);w,pm,p=info(\"combined new\",P*C)\r\nassert abs(w-3)<1e-8 and pm>45 and np.max(p.real)<0\r\nold=(1+1.08*s)/(1+.0902*s)*(1+1.67*s)/(1+16.7*s)\r\ninfo(\"old candidate actual\",P*old)\r\nfor gain in [100,1000,2000]:\r\n    Q=gain/(s*(s+1)*(s+10))\r\n    for label,L in [('plain',Q),('combined',Q*C)]:\r\n        info(str(gain)+label,L)\r\n        t=np.linspace(0,5,501);t,y=ct.step_response(ct.feedback(L,1),t)\r\n        print(\"gain,mode,y5\",gain,label,y[-1])\r\n        plt.plot(t,y,label=label)\r\n    plt.ylim(-10,10);plt.legend();plt.title('gain '+str(gain));plt.show()\r\n# Curves outside [-10,10] are clipped for unstable responses, not changed to stable.\r\nprint(\"Kv default\",1000/10)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 618,
+      "title": "真实二阶对象与抗饱和",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 644,
+          "delim": "`",
+          "code": "# Old PI5/10 is on the imaginary-axis boundary: (s+2)(s^2+5).\r\nprint(\"old PI poles\",np.roots([1,2,5,10]))\r\nprint(\"new PI poles\",np.roots([1,2,5,2]))\r\ndef run_aw(limit,mode,level=1):\r\n    def fun(t,x):\r\n        raw=5*(level-x[0])+x[2]\r\n        u=raw if mode=='ideal' else np.clip(raw,-limit,limit)\r\n        return [x[1],u-2*x[1],2*(level-x[0])+(u-raw if mode=='back' else 0)]\r\n    t=np.linspace(0,10,501)\r\n    sol=solve_ivp(fun,[0,10],[0,0,0],t_eval=t,rtol=1e-10,atol=1e-12,max_step=.01)\r\n    assert sol.success\r\n    raw=5*(level-sol.y[0])+sol.y[2]\r\n    u=raw if mode=='ideal' else np.clip(raw,-limit,limit)\r\n    if mode!='ideal': assert np.max(abs(u))<=limit\r\n    return t,sol.y[0],u,sol.y[2]\r\nfor limit in [.5,2.,5.,100.]:\r\n    for mode in ['ideal','plain','back']:\r\n        t,y,u,xI=run_aw(limit,mode)\r\n        print(\"limit,mode,y10,sample peak,u10,I10\",limit,mode,y[-1],np.max(y),u[-1],xI[-1])\r\n        if limit==2:plt.plot(t,y,label=mode)\r\n    if limit==100:\r\n        assert np.max(abs(run_aw(limit,'plain')[1]-run_aw(limit,'back')[1]))<1e-10\r\nplt.legend();plt.xlabel('t (s)');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 771,
+      "title": "十题与数字实现复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef info(name, loop):\r\n    gm,pm,wpc,wgc=ct.margin(loop)\r\n    poles=ct.poles(ct.feedback(loop,1))\r\n    print(name,\"wc\",wgc,\"PM\",pm,\"poles\",poles)\r\n    return wgc,pm,poles\r\n\r\ndef lead_design(gain,pole,alpha):\r\n    wc=np.sqrt((-pole**2+np.sqrt(pole**4+4*gain**2*alpha))/2)\r\n    time=1/(wc*np.sqrt(alpha))\r\n    return wc,time,(1+alpha*time*s)/(1+time*s)\r\n\r\ndef lag_at(plant,wc):\r\n    zero=wc/10\r\n    amp=abs(ct.evalfr(plant,1j*wc))\r\n    beta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1))\r\n    time=1/(zero*beta)\r\n    return beta,time,(1+beta*time*s)/(1+time*s)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 797,
+          "delim": "`",
+          "code": "# Q1/Q6/Q9 are verified in the network-shape experiment.\r\nprint(\"Q2 K\",4*100)\r\nfor gain,a,b in [(250,1,5),(1280,2,8),(3200,2,8)]:\r\n    print(\"Kv\",gain,gain/(a*b))\r\n# Q8: failure of a heuristic is not an impossibility proof.\r\nP=1280/(s*(s+2)*(s+8))\r\nfor alpha,time in [(5,.05),(20,.05),(100,.05)]:\r\n    info(\"single lead trial \"+str(alpha),P*(1+alpha*time*s)/(1+time*s))\r\nTs=.01;w=20.;z=np.exp(1j*w*Ts)\r\nCc=(1+.1j*w)/(1+.02j*w);Cd=(21*z-19)/(5*z-3)\r\nprint(\"Q10 ws,ratio,phic,phid\",2*np.pi/Ts,2*np.pi/(Ts*w),np.angle(Cc,deg=True),np.angle(Cd,deg=True))\r\nprint(\"Q10 warped frequency\",2/Ts*np.tan(w*Ts/2))\r\nassert np.allclose(Cd,(1+.1j*(2/Ts*np.tan(w*Ts/2)))/(1+.02j*(2/Ts*np.tan(w*Ts/2))))\r\n# Bilinear mapped pole .6 and zero19/21.\r\nprint(\"Q10 coefficients\",[21,-19],[5,-3],\"zero,pole\",19/21,3/5)\r\n# Delay counterexample: same magnitude/slope, different phase.\r\nprint(\"delay at wc20, .05s: phase reduction deg\",20*.05*180/np.pi)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

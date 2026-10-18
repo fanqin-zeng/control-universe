@@ -579,3 +579,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### CLASSIC-07执行回执（2026-10-18）
 
 本轮仅交付classic/pid-controller，按重构专用SKILL完成Phase1–4。十三主题/九题/原五实验用途保留，52旧ID+5别名；真TS响应与独立SciPy115组对账，六原Notebook严格内核/Pyodide通过。修电机模型/虚假达标、Routh与结构排名、滤波/饱和/离散状态；87行对账和实际验收见.agent/semester-03/classic-07/acceptance.md。W06–09与27Python待办不关闭；仅合master，不发布。进度以全局checklist真实合并回执为准。
+
+### CLASSIC-08执行回执（2026-10-18）
+
+本轮仅交付classic/compensator-design「校正网络」，按重构专用SKILL完整Phase1–4。12主题/十题及四交互用途保留，54旧ID以2别名兼容；真实完整传函与状态方程替伪二阶/错误抗饱和模型。六原始Notebook严格内核及Pyodide执行，102环路独立幅相/根/响应与12限幅工况三状态量对照；98行对账、生产十图/端点恢复/390px与课程运行通过。撤销旧组合虚假达标及结构排名，Kv归一化/电机位置/题8启发式条件明确，见.agent/semester-03/classic-08/acceptance.md。W06–09及27Python待办开放；仅合master，不发布。真实合并回执见全局checklist，CLASSIC-09另起对话。
