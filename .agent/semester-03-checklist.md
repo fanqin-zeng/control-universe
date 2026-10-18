@@ -50,7 +50,7 @@
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
 | LP01 | 独立中文润色交接、完整计划与专用分支 | [x] | .agent/semester-03/zh-lang-edit/README.md;.agent/semester-03/zh-lang-edit/PLAN.md |
 | LP02 | 清理代码框/前置课程的内部流程文案（已完成） | [x] | .agent/semester-03/zh-lang-edit/archive/classic-01/acceptance.md |
-| LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
+| LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/archive/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
 | W14 | 自适应失配实验停止前的数值收敛审查 | [ ] | .agent/semester-03/nonlinear-08/followup.md;当前仅放行有限停止事件，参数末值不作定量结论 |
 | ZH01 | 数学18课与经典11课润色分支快速审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/261e9ed/acceptance.md;.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json;commit:847d9a424c9adb65a8508af1cd0adbbcd4f85293 |
 | DEP09 | NONLINEAR-08及29课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear08-zh-release.md;docs/deployment/nonlinear08-zh-public-validation.json;commit:7c6bf5a9fde629d6fd2baf4b409e42964b69c368 |
