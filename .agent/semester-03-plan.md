@@ -575,3 +575,7 @@ CLASSIC-04「系统稳定性」按重构专用技能完整Phase1–4，原稿/�
 ### CLASSIC-06执行回执（2026-10-18）
 
 CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七题及原四实验全部教学目的，扩六原始实验七cell。纠正K0与隐藏模态、主导近似/4sigma保证、零点重心符号与普适优胜、PI输入条件；原Explorer改真实三阶根/响应双图，127增益×501全响应点与601背景根独立核、92行对账，48旧ID以4别名兼容。Q5保留原候选代数而改完整响应验收，不以采样签发假连续区间。生产默认/分离/零/48/60端点、390px无溢出和答案Pyodide通过，详见[验收](semester-03/classic-06/acceptance.md)。W06/W07/W08/W09与27待办保持开放；仅本课，不自动发布；真实合并hash登记全局checklist。
+
+### CLASSIC-07执行回执（2026-10-18）
+
+本轮仅交付classic/pid-controller，按重构专用SKILL完成Phase1–4。十三主题/九题/原五实验用途保留，52旧ID+5别名；真TS响应与独立SciPy115组对账，六原Notebook严格内核/Pyodide通过。修电机模型/虚假达标、Routh与结构排名、滤波/饱和/离散状态；87行对账和实际验收见.agent/semester-03/classic-07/acceptance.md。W06–09与27Python待办不关闭；仅合master，不发布。进度以全局checklist真实合并回执为准。

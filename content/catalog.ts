@@ -1282,16 +1282,16 @@ export const catalog: Chapter[] = [
             "title": "PID控制律"
           },
           {
-            "slug": "比例控制p看见误差立即行动",
-            "title": "比例控制P：看见误差，立即行动"
+            "slug": "比例控制",
+            "title": "比例控制"
           },
           {
-            "slug": "积分控制i记住历史消除残差",
-            "title": "积分控制I：记住历史，消除残差"
+            "slug": "积分控制",
+            "title": "积分控制"
           },
           {
-            "slug": "微分控制d预判趋势提前刹车",
-            "title": "微分控制D：预判趋势，提前刹车"
+            "slug": "微分控制",
+            "title": "微分控制"
           },
           {
             "slug": "各项作用的物理直觉",
@@ -1306,8 +1306,8 @@ export const catalog: Chapter[] = [
             "title": "PID的工程实现"
           },
           {
-            "slug": "工程实例直流电机转速控制",
-            "title": "工程实例：直流电机转速控制"
+            "slug": "电机转速控制",
+            "title": "电机转速控制"
           },
           {
             "slug": "深入讨论",

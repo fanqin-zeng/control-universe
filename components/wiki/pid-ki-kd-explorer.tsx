@@ -13,56 +13,9 @@ import { useECharts } from "@/components/wiki/use-echarts";
  * 右图展示不同 Kd 对 PID 响应的影响（Kp=2, Ki=1）
  */
 
-// 简化的阶跃响应计算（二阶系统近似）
-function computeStepResponse(Kp: number, Ki: number, Kd: number, tEnd: number = 10, numPoints: number = 500) {
-  const t: number[] = [];
-  const y: number[] = [];
-  
-  // 被控对象 G(s) = 1/(s+1)，控制器 C(s) = Kp + Ki/s + Kd*s
-  // 开环传递函数 L(s) = C(s)*G(s) = (Kd*s^2 + Kp*s + Ki) / (s*(s+1))
-  // 闭环传递函数 T(s) = L(s)/(1+L(s)) = (Kd*s^2 + Kp*s + Ki) / ((1+Kd)*s^2 + (1+Kp)*s + Ki)
-  
-  const a2 = 1 + Kd;
-  const a1 = 1 + Kp;
-  const a0 = Ki;
-  
-  // 特征方程: a2*s^2 + a1*s + a0 = 0
-  const discriminant = a1 * a1 - 4 * a2 * a0;
-  
-  for (let i = 0; i <= numPoints; i++) {
-    const time = (i / numPoints) * tEnd;
-    let response: number;
-    
-    if (Ki === 0) {
-      // 纯 P 或 PD 控制，无积分作用，有稳态误差
-      const steadyState = Kp / (1 + Kp);
-      const tau = (1 + Kd) / (1 + Kp);
-      response = steadyState * (1 - Math.exp(-time / tau));
-    } else if (discriminant > 0) {
-      // 过阻尼
-      const s1 = (-a1 + Math.sqrt(discriminant)) / (2 * a2);
-      const s2 = (-a1 - Math.sqrt(discriminant)) / (2 * a2);
-      const A = s2 / (s2 - s1);
-      const B = -s1 / (s2 - s1);
-      response = 1 + A * Math.exp(s1 * time) + B * Math.exp(s2 * time);
-    } else if (discriminant === 0) {
-      // 临界阻尼
-      const s = -a1 / (2 * a2);
-      response = 1 - Math.exp(s * time) * (1 - s * time);
-    } else {
-      // 欠阻尼振荡
-      const sigma = -a1 / (2 * a2);
-      const wd = Math.sqrt(-discriminant) / (2 * a2);
-      const phi = Math.atan(wd / (-sigma));
-      const amplitude = Math.sqrt(1 + Math.pow(sigma / wd, 2));
-      response = 1 - amplitude * Math.exp(sigma * time) * Math.sin(wd * time + phi);
-    }
-    
-    t.push(time);
-    y.push(response);
-  }
-  
-  return [t, y];
+import { pidResponse } from "@/lib/pid-response";
+function computeStepResponse(kp: number, ki: number, kd: number) {
+  const points=pidResponse(kp,ki,kd); return [points.map(p=>p[0]),points.map(p=>p[1])];
 }
 
 export function PidKiKdExplorer() {
@@ -100,9 +53,10 @@ export function PidKiKdExplorer() {
   }, [kd]);
   
   const leftOption = useMemo(() => ({
-    title: { text: "不同 Ki 对 PI 响应的影响", left: "center" },
+    title: { text: "Ki 与响应（Kp=1）", left: "center", textStyle: {fontSize: 15} },
     tooltip: { trigger: "axis" as const },
-    legend: { top: 30, data: ["Ki=0.5", "Ki=2.0", "Ki=10.0", `Ki=${ki.toFixed(1)} (当前)`] },
+    legend: { type: "scroll" as const, top: 30, left: 10, right: 10 },
+    grid: {top: 85, bottom: 45, left: 45, right: 25},
     xAxis: {
       type: "value" as const,
       name: "Time (s)",
@@ -142,9 +96,10 @@ export function PidKiKdExplorer() {
   }), [kiCurves, ki]);
   
   const rightOption = useMemo(() => ({
-    title: { text: "不同 Kd 对闭环响应的影响（Kp=2, Ki=1）", left: "center" },
+    title: { text: "Kd 与响应（Kp=2, Ki=1）", left: "center", textStyle: {fontSize: 15} },
     tooltip: { trigger: "axis" as const },
-    legend: { top: 30, data: ["Kd=0 (PI)", "Kd=0.2", "Kd=1.0", `Kd=${kd.toFixed(2)} (当前)`] },
+    legend: { type: "scroll" as const, top: 30, left: 10, right: 10 },
+    grid: {top: 85, bottom: 45, left: 45, right: 25},
     xAxis: {
       type: "value" as const,
       name: "Time (s)",
@@ -185,14 +140,18 @@ export function PidKiKdExplorer() {
   
   return (
     <div style={{ padding: "16px 0" }}>
-      <div style={{ marginBottom: 16, display: "flex", gap: 32 }}>
+      <p>理想微分教学模型；包含零点和直通，不能直接作为执行器控制律。</p>
+      <button onClick={() => {setKi(2);setKd(.2);}}>恢复 Ki/Kd 默认</button>
+      <p data-testid="pid-response-values">默认左图 y(0)=0，当前 y(10)={kiCurves.yCurrent[500].toFixed(6)}；右图 y(0+)={kdCurves.yCurrent[0].toFixed(6)}，y(10)={kdCurves.yCurrent[500].toFixed(6)}</p>
+      <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 16 }}>
         <div>
           <label style={{ fontWeight: 600, marginRight: 12 }}>
             Ki (积分增益):
           </label>
           <input
+            aria-label={"Ki 积分增益"}
             type="range"
-            min={0.1}
+            min={0}
             max={15.0}
             step={0.1}
             value={ki}
@@ -209,6 +168,7 @@ export function PidKiKdExplorer() {
             Kd (微分增益):
           </label>
           <input
+            aria-label="Kd 微分增益"
             type="range"
             min={0.0}
             max={2.0}
@@ -223,7 +183,7 @@ export function PidKiKdExplorer() {
         </div>
       </div>
       
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 16 }}>
         <div style={{ height: 350 }}>
           <div ref={useECharts(leftOption)} style={{ width: "100%", height: "100%" }} />
         </div>
