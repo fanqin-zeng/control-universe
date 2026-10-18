@@ -1,40 +1,40 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前40课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前46课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
 | 序号 | ID | 课程 | 路径 | 本期生产 | 润色状态 | 记录 |
 |---|---|---|---|---|---|---|
-| 1 | MATH-01 | 微积分入门 | content/math/calculus-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-01.md) |
-| 2 | MATH-02 | 复数基础 | content/math/complex-numbers.mdx | 已完成 | 待合入 | [润色记录](records/MATH-02.md) |
-| 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-03.md) |
-| 4 | MATH-04 | 特征值与对角化 | content/math/eigen-decomposition.mdx | 已完成 | 待合入 | [润色记录](records/MATH-04.md) |
-| 5 | MATH-05 | 矩阵分解 | content/math/matrix-decomposition.mdx | 已完成 | 待合入 | [润色记录](records/MATH-05.md) |
-| 6 | MATH-06 | 多元微积分 | content/math/multivariable-calculus.mdx | 已完成 | 待合入 | [润色记录](records/MATH-06.md) |
-| 7 | MATH-07 | 微分方程与矩阵指数 | content/math/ode-matrix-exponential.mdx | 已完成 | 待合入 | [润色记录](records/MATH-07.md) |
-| 8 | MATH-08 | 拉普拉斯变换 | content/math/laplace-transform.mdx | 已完成 | 待合入 | [润色记录](records/MATH-08.md) |
-| 9 | MATH-09 | 傅里叶分析 | content/math/fourier-analysis.mdx | 已完成 | 待合入 | [润色记录](records/MATH-09.md) |
-| 10 | MATH-10 | Z变换 | content/math/z-transform.mdx | 已完成 | 待合入 | [润色记录](records/MATH-10.md) |
-| 11 | MATH-11 | 概率基础 | content/math/probability-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-11.md) |
-| 12 | MATH-12 | 随机过程 | content/math/stochastic-processes.mdx | 已完成 | 待合入 | [润色记录](records/MATH-12.md) |
-| 13 | MATH-13 | 凸优化 | content/math/convex-optimization.mdx | 已完成 | 待合入 | [润色记录](records/MATH-13.md) |
-| 14 | MATH-14 | 变分法与动态规划 | content/math/variational-dp.mdx | 已完成 | 待合入 | [润色记录](records/MATH-14.md) |
-| 15 | MATH-15 | 微分几何入门 | content/math/diff-geometry.mdx | 已完成 | 待合入 | [润色记录](records/MATH-15.md) |
-| 16 | MATH-16 | 图论基础 | content/math/graph-theory.mdx | 已完成 | 待合入 | [润色记录](records/MATH-16.md) |
-| 17 | MATH-17 | 博弈论基础 | content/math/game-theory-math.mdx | 已完成 | 待合入 | [润色记录](records/MATH-17.md) |
-| 18 | MATH-18 | 数值方法 | content/math/numerical-methods.mdx | 已完成 | 待合入 | [润色记录](records/MATH-18.md) |
-| 19 | CLASSIC-01 | 系统建模 | content/classic/system-modeling.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-01.md) |
-| 20 | CLASSIC-02 | 传递函数 | content/classic/transfer-function.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-02.md) |
-| 21 | CLASSIC-03 | 时域分析 | content/classic/time-domain-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-03.md) |
-| 22 | CLASSIC-04 | 系统稳定性 | content/classic/stability-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-04.md) |
-| 23 | CLASSIC-05 | 频域分析 | content/classic/frequency-domain-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-05.md) |
-| 24 | CLASSIC-06 | 根轨迹 | content/classic/root-locus.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-06.md) |
-| 25 | CLASSIC-07 | PID控制 | content/classic/pid-controller.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-07.md) |
-| 26 | CLASSIC-08 | 校正网络 | content/classic/compensator-design.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-08.md) |
-| 27 | CLASSIC-09 | 回路整形 | content/classic/frequency-response-design.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-09.md) |
-| 28 | CLASSIC-10 | 设计方法选型 | content/classic/design-methods-comparison.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-10.md) |
-| 29 | CLASSIC-11 | 经典控制案例 | content/classic/classic-case-study.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-11.md) |
+| 1 | MATH-01 | 微积分入门 | content/math/calculus-basics.mdx | 已完成 | 已合入 | [润色记录](records/MATH-01.md) |
+| 2 | MATH-02 | 复数基础 | content/math/complex-numbers.mdx | 已完成 | 已合入 | [润色记录](records/MATH-02.md) |
+| 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 已合入 | [润色记录](records/MATH-03.md) |
+| 4 | MATH-04 | 特征值与对角化 | content/math/eigen-decomposition.mdx | 已完成 | 已合入 | [润色记录](records/MATH-04.md) |
+| 5 | MATH-05 | 矩阵分解 | content/math/matrix-decomposition.mdx | 已完成 | 已合入 | [润色记录](records/MATH-05.md) |
+| 6 | MATH-06 | 多元微积分 | content/math/multivariable-calculus.mdx | 已完成 | 已合入 | [润色记录](records/MATH-06.md) |
+| 7 | MATH-07 | 微分方程与矩阵指数 | content/math/ode-matrix-exponential.mdx | 已完成 | 已合入 | [润色记录](records/MATH-07.md) |
+| 8 | MATH-08 | 拉普拉斯变换 | content/math/laplace-transform.mdx | 已完成 | 已合入 | [润色记录](records/MATH-08.md) |
+| 9 | MATH-09 | 傅里叶分析 | content/math/fourier-analysis.mdx | 已完成 | 已合入 | [润色记录](records/MATH-09.md) |
+| 10 | MATH-10 | Z变换 | content/math/z-transform.mdx | 已完成 | 已合入 | [润色记录](records/MATH-10.md) |
+| 11 | MATH-11 | 概率基础 | content/math/probability-basics.mdx | 已完成 | 已合入 | [润色记录](records/MATH-11.md) |
+| 12 | MATH-12 | 随机过程 | content/math/stochastic-processes.mdx | 已完成 | 已合入 | [润色记录](records/MATH-12.md) |
+| 13 | MATH-13 | 凸优化 | content/math/convex-optimization.mdx | 已完成 | 已合入 | [润色记录](records/MATH-13.md) |
+| 14 | MATH-14 | 变分法与动态规划 | content/math/variational-dp.mdx | 已完成 | 已合入 | [润色记录](records/MATH-14.md) |
+| 15 | MATH-15 | 微分几何入门 | content/math/diff-geometry.mdx | 已完成 | 已合入 | [润色记录](records/MATH-15.md) |
+| 16 | MATH-16 | 图论基础 | content/math/graph-theory.mdx | 已完成 | 已合入 | [润色记录](records/MATH-16.md) |
+| 17 | MATH-17 | 博弈论基础 | content/math/game-theory-math.mdx | 已完成 | 已合入 | [润色记录](records/MATH-17.md) |
+| 18 | MATH-18 | 数值方法 | content/math/numerical-methods.mdx | 已完成 | 已合入 | [润色记录](records/MATH-18.md) |
+| 19 | CLASSIC-01 | 系统建模 | content/classic/system-modeling.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-01.md) |
+| 20 | CLASSIC-02 | 传递函数 | content/classic/transfer-function.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-02.md) |
+| 21 | CLASSIC-03 | 时域分析 | content/classic/time-domain-analysis.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-03.md) |
+| 22 | CLASSIC-04 | 系统稳定性 | content/classic/stability-analysis.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-04.md) |
+| 23 | CLASSIC-05 | 频域分析 | content/classic/frequency-domain-analysis.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-05.md) |
+| 24 | CLASSIC-06 | 根轨迹 | content/classic/root-locus.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-06.md) |
+| 25 | CLASSIC-07 | PID控制 | content/classic/pid-controller.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-07.md) |
+| 26 | CLASSIC-08 | 校正网络 | content/classic/compensator-design.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-08.md) |
+| 27 | CLASSIC-09 | 回路整形 | content/classic/frequency-response-design.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-09.md) |
+| 28 | CLASSIC-10 | 设计方法选型 | content/classic/design-methods-comparison.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-10.md) |
+| 29 | CLASSIC-11 | 经典控制案例 | content/classic/classic-case-study.mdx | 已完成 | 已合入 | [润色记录](records/CLASSIC-11.md) |
 | 30 | MODERN-01 | 状态空间 | content/modern/state-space.mdx | 已完成 | 待润色 | — |
 | 31 | MODERN-02 | 可控性与可观性 | content/modern/controllability-observability.mdx | 已完成 | 待润色 | — |
 | 32 | MODERN-03 | 线性系统稳定性 | content/modern/lyapunov-modern.mdx | 已完成 | 待润色 | — |
@@ -46,12 +46,12 @@
 | 38 | MODERN-09 | 现代控制案例 | content/modern/modern-case-study.mdx | 已完成 | 待润色 | — |
 | 39 | NONLINEAR-01 | 非线性系统 | content/nonlinear/nonlinear-characteristics.mdx | 已完成 | 待润色 | — |
 | 40 | NONLINEAR-02 | 相平面 | content/nonlinear/phase-plane.mdx | 已完成 | 待润色 | — |
-| 41 | NONLINEAR-03 | Lyapunov稳定性 | content/nonlinear/lyapunov-stability.mdx | 待完成 | 待生产 | — |
-| 42 | NONLINEAR-04 | 描述函数 | content/nonlinear/describing-function.mdx | 待完成 | 待生产 | — |
-| 43 | NONLINEAR-05 | 反馈线性化 | content/nonlinear/feedback-linearization.mdx | 待完成 | 待生产 | — |
-| 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 待完成 | 待生产 | — |
-| 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 待完成 | 待生产 | — |
-| 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 待完成 | 待生产 | — |
+| 41 | NONLINEAR-03 | Lyapunov稳定性 | content/nonlinear/lyapunov-stability.mdx | 已完成 | 待润色 | — |
+| 42 | NONLINEAR-04 | 描述函数 | content/nonlinear/describing-function.mdx | 已完成 | 待润色 | — |
+| 43 | NONLINEAR-05 | 反馈线性化 | content/nonlinear/feedback-linearization.mdx | 已完成 | 待润色 | — |
+| 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 已完成 | 待润色 | — |
+| 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待润色 | — |
+| 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待润色 | — |
 | 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 待完成 | 待生产 | — |
 | 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 待完成 | 待生产 | — |
 | 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 待完成 | 待生产 | — |

@@ -151,3 +151,7 @@ NONLINEAR-07：保留原六实验26cell与六题，纠自适应两估计器、PE
 ### NONLINEAR-08（2026-10-18）
 
 自适应控制保留原九实验38cell并纠错，追加证明边界核验，共10实验39cell全部原始代码实跑通过。证据：`.agent/semester-03/nonlinear-08/pyodide.json`。更新本课源指纹，不代表已发布Pages；25项依赖待办逐字保留。
+
+### 学期3润色合入（2026-10-18）
+
+MATH-01–18与CLASSIC-01–11共29课仅讲解/排版变更，180组Notebook181cell的求值后Python载荷逐字不变，原执行证据继续适用。已依据版本化等价核验刷新MDX源指纹，并在原始记录逐课登记执行来源与新稿审核来源；没有把未重新执行的实验写成新一次实跑。证据：`.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json`。
