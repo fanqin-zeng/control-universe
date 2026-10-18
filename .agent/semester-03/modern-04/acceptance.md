@@ -25,3 +25,5 @@
 ## master回执
 
 课程提交 `d58259df22e3c214f372da5472ce4764bff71bb8` 已直接进入master。全局checklist依真实hash勾选旧“合并”列；本回执普通提交后与课程一起推送origin master。gh-pages保持42eed1d，本轮未发布。
+
+回执格式复核：首次填为master文本而非校验器要求的commit:引用，check-semester03拦截；已改机器可读引用，重新通过后提交。课程本体及源指纹未改变。
