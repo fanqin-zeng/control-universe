@@ -46,7 +46,7 @@
 | 36 | MODERN-07 | LQR控制 | content/modern/lqr-controller.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-07.md) |
 | 37 | MODERN-08 | 多变量系统 | content/modern/multivariable-systems.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-08.md) |
 | 38 | MODERN-09 | 现代控制案例 | content/modern/modern-case-study.mdx | 已完成 | 待合入 | [润色记录](records/MODERN-09.md) |
-| 39 | NONLINEAR-01 | 非线性系统 | content/nonlinear/nonlinear-characteristics.mdx | 已完成 | 待润色 | — |
+| 39 | NONLINEAR-01 | 非线性系统 | content/nonlinear/nonlinear-characteristics.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-01.md) |
 | 40 | NONLINEAR-02 | 相平面 | content/nonlinear/phase-plane.mdx | 已完成 | 待润色 | — |
 | 41 | NONLINEAR-03 | Lyapunov稳定性 | content/nonlinear/lyapunov-stability.mdx | 已完成 | 待润色 | — |
 | 42 | NONLINEAR-04 | 描述函数 | content/nonlinear/describing-function.mdx | 已完成 | 待润色 | — |
