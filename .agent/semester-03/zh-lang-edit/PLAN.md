@@ -12,7 +12,7 @@
 | 2 | MATH-02 | 复数基础 | content/math/complex-numbers.mdx | 已完成 | 待合入 | [润色记录](records/MATH-02.md) |
 | 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-03.md) |
 | 4 | MATH-04 | 特征值与对角化 | content/math/eigen-decomposition.mdx | 已完成 | 待合入 | [润色记录](records/MATH-04.md) |
-| 5 | MATH-05 | 矩阵分解 | content/math/matrix-decomposition.mdx | 已完成 | 待润色 | — |
+| 5 | MATH-05 | 矩阵分解 | content/math/matrix-decomposition.mdx | 已完成 | 待合入 | [润色记录](records/MATH-05.md) |
 | 6 | MATH-06 | 多元微积分 | content/math/multivariable-calculus.mdx | 已完成 | 待润色 | — |
 | 7 | MATH-07 | 微分方程与矩阵指数 | content/math/ode-matrix-exponential.mdx | 已完成 | 待润色 | — |
 | 8 | MATH-08 | 拉普拉斯变换 | content/math/laplace-transform.mdx | 已完成 | 待润色 | — |
