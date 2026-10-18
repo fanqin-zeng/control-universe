@@ -1,0 +1,191 @@
+{
+  "sourceHash": "c92b0fe4a7c8f6ba440f9571a165c08ba2fa31d5a6620619ec7a6a2cbbd805ac",
+  "reference": {
+    "pass_": true,
+    "maxResponseError": 1.509903313490213e-14,
+    "nodes": 2001,
+    "amplitudes": [
+      0.25,
+      1,
+      1.7
+    ],
+    "rows": [
+      {
+        "name": "P4",
+        "roots": [
+          -5
+        ],
+        "residual": 0.19999999999999996,
+        "rise": null,
+        "peak": 4,
+        "contracts": [
+          {
+            "contract": "A",
+            "entry": null,
+            "peak": 4,
+            "passed": false
+          },
+          {
+            "contract": "B",
+            "entry": 0.5991464547107983,
+            "peak": 1,
+            "passed": true
+          },
+          {
+            "contract": "C",
+            "entry": null,
+            "peak": 4,
+            "passed": false
+          },
+          {
+            "contract": "D",
+            "entry": null,
+            "peak": 4,
+            "passed": false
+          }
+        ],
+        "noise100": [
+          0.03995009355511379,
+          3.995209100985642
+        ]
+      },
+      {
+        "name": "PI11",
+        "roots": [
+          -0.9999999999999999,
+          -0.9999999999999999
+        ],
+        "residual": 0,
+        "rise": 2.1972245773362338,
+        "peak": 1,
+        "contracts": [
+          {
+            "contract": "A",
+            "entry": 3.9120230054281397,
+            "peak": 1,
+            "passed": true
+          },
+          {
+            "contract": "B",
+            "entry": 1.427116355640146,
+            "peak": 0.25,
+            "passed": true
+          },
+          {
+            "contract": "C",
+            "entry": 3.9120230054281397,
+            "peak": 1,
+            "passed": true
+          },
+          {
+            "contract": "D",
+            "entry": 3.9120230054281397,
+            "peak": 1,
+            "passed": false
+          }
+        ],
+        "noise100": [
+          0.009999500037496877,
+          1
+        ]
+      },
+      {
+        "name": "PI21",
+        "roots": [
+          -2.618033988749895,
+          -0.38196601125010515
+        ],
+        "residual": 0,
+        "rise": 2.625336654477486,
+        "peak": 2,
+        "contracts": [
+          {
+            "contract": "A",
+            "entry": 6.875200143735614,
+            "peak": 2,
+            "passed": true
+          },
+          {
+            "contract": "B",
+            "entry": 1.006833709694483,
+            "peak": 0.5,
+            "passed": true
+          },
+          {
+            "contract": "C",
+            "entry": 6.875200143735614,
+            "peak": 2,
+            "passed": false
+          },
+          {
+            "contract": "D",
+            "entry": 6.875200143735614,
+            "peak": 2,
+            "passed": false
+          }
+        ],
+        "noise100": [
+          0.019993253483945202,
+          1.999425312162908
+        ]
+      }
+    ]
+  },
+  "notebooks": [
+    {
+      "index": 1,
+      "title": "候选的完整响应",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "versions numpy,scipy,control 2.4.4 1.18.1 0.10.2\nP4 poles,DC [-5.+0.j] 0.8\nP4 PM,wc 104.47751218592992 3.872983346207417\nP4 residual,target10to90,t_epsilon,u_peak 0.2 inf inf 4.0\nP4 y20 finite sample 0.8000000000000003\nPI11 poles,DC [-1.+0.j -1.+0.j] 1.0\nPI11 PM,wc 90.0 0.9999999999999999\nPI11 residual,target10to90,t_epsilon,u_peak 0.0 2.1972245773362196 3.912023005428146 1.0\nPI11 y20 finite sample 0.9999999979388463\nPI21 poles,DC [-2.61803399+0.j -0.38196601+0.j] 1.0\nPI21 PM,wc 103.4388894554719 1.817354021023971\nPI21 residual,target10to90,t_epsilon,u_peak 0.0 2.625336654477471 6.875200143735631 2.0\nPI21 y20 finite sample 0.999867011913146\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 40924
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "PI state roots 1.0 [-1. -1.]\nPI state roots 2.0 [-2.61803399 -0.38196601]\n"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 2,
+      "title": "四份合同的筛选",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "contract A A,epsilon,input_limit,deadline 1.0 0.02 3.0 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 True\naccepted fixed candidates ['PI11', 'PI21']\ncontract B A,epsilon,input_limit,deadline 0.25 0.06 1.2 2.0\nP4 continuous entry time,peak,pass 0.5991464547107983 1.0 True\nPI11 continuous entry time,peak,pass 1.4271163556401458 0.25 True\nPI21 continuous entry time,peak,pass 1.0068337096944768 0.5 True\naccepted fixed candidates ['P4', 'PI11', 'PI21']\ncontract C A,epsilon,input_limit,deadline 1.0 0.02 1.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates ['PI11']\ncontract D A,epsilon,input_limit,deadline 1.0 0.02 0.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 False\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates []\nD reachable upper bound at t8 0.49983226868604874\nD asymptotic upper bound .5, required lower band 0.98\n"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "index": 3,
+      "title": "通道与边界复算",
+      "outputs": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "P4 measurement noise absT,absCS at100 0.03995009355511379 3.995209100985642\nP4 control noise high frequency limit Kp 4.0\nPI11 measurement noise absT,absCS at100 0.009999500037496877 1.0\nPI11 control noise high frequency limit Kp 1.0\nPI21 measurement noise absT,absCS at100 0.019993253483945202 1.9994253121629082\nPI21 control noise high frequency limit Kp 2.0\nTp,full roots 0.5 [-3.41421356+0.j -0.58578644+0.j]\nTp,full roots 1.0 [-1.+0.j -1.+0.j]\nTp,full roots 2.0 [-0.5+0.5j -0.5-0.5j]\n"
+        },
+        {
+          "type": "image",
+          "base64Length": 30320
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "exercise2 P gain, pole,residual ratio 4.0 -5.0 0.2\nexercise2 required P gain for .02 49.0\nexercise3 PI11 full polynomial [1.0, 2.0, 1.0]\nexercise4 B times [0.5991464547107983, 1.4271163556401458, 1.0068337096944768]\nexercise5 D lower required 0.98 max equilibrium .5\nversions numpy,scipy,control 2.4.4 1.18.1 0.10.2\n"
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "pass": true
+}

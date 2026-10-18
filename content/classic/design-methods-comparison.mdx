@@ -1,0 +1,400 @@
+---
+title: 设计方法选型
+description: 从需求、模型和执行限制筛选控制器，让时域、根轨迹和频域方法共同服务于同一份验收合同。
+---
+
+# 设计方法选型
+
+## 先分清三个问题
+
+在[回路整形](/classic/frequency-response-design)里，我们已学会把跟踪、扰动和噪声要求分配到不同频段。但面对新任务，往往还会犹豫：先调PID，还是先画根轨迹？是不是方法越新，结果越好？
+
+先想一个恒温箱。设定温度提高后，我们希望温度尽快靠近目标，又不希望加热功率超过上限。如果允许留一点温差，简单比例控制可能够用；如果必须消除恒定偏差，就需要考虑积分等机制。**变化的是需求，不是某种方法突然变得“先进”。**
+
+这里有三个不同的问题：
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:600}}>
+
+| 层次 | 回答什么 | 例子 |
+|---|---|---|
+| 设计视角 | 从哪里寻找参数、理解取舍 | 时间响应、根轨迹、频域与回路整形 |
+| 控制器结构 | 实际执行什么运算 | P、PI、带滤波的PID、超前/滞后网络 |
+| 验收合同 | 凭什么接受这组参数 | 输入、误差、响应时间、控制量及模型范围 |
+
+</div>
+</div>
+
+根轨迹不是与PI互斥的控制器；你可以用根轨迹设计PI，再用频域和时域复验。同样，PID也可以按模型整定，并非只能试凑。前面的[校正网络](/classic/compensator-design)和本课之前的[PID控制](/classic/pid-controller)已经提供了这些结构，本课负责把它们组织成选择流程。
+
+## 把需求写成合同
+
+本课用归一化恒温箱偏差模型贯穿讨论：
+
+$$
+\dot y=-y+u,\qquad G(s)=\frac1{s+1}.
+$$
+
+y是相对工作点的温差，u是相对维持功率的输入偏差，两者均已归一化，时间单位为秒。负u表示比维持功率少，不表示加热器能输出负功率。这是教学模型，不是某台恒温箱的识别结果。
+
+采用单位负反馈，$e=r-y$，零初值，参考是幅值A的阶跃。先把“快、准、稳”换成可检查的问题：
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:600}}>
+
+| 必须声明 | 本课采用的含义 |
+|---|---|
+| 要跟随什么 | A的阶跃；不是斜坡、任意轨迹或负载扰动 |
+| 允许差多少 | 绝对误差 $\lvert r-y\rvert\le\varepsilon$，不是相对各自终值的百分比 |
+| 什么时候算到位 | 首次进入且此后一直保持误差带的时间 $t_\varepsilon$ |
+| 控制量可多大 | 零初值阶跃下，整个响应的 $\sup_{t\ge0}\lvert u(t)\rvert$ |
+| 模型用在哪里 | 上面的线性对象与工作点；限幅、噪声和模型变化另核 |
+
+</div>
+</div>
+
+特别要分清：输出最终停在0.8，而目标是1时，不能围绕0.8量“2%调节时间”后宣布跟踪合格。**目标、允许误差与评价窗口必须是所有候选共有的。**
+
+## 同一对象的三组候选
+
+以下参数由简单模型构造，作为可复算的候选集，不是各类控制器全域最优整定的比较。
+
+### 比例候选
+
+取 $C_P=4$，则环路 $L=4/(s+1)$，参考到输出为
+
+$$
+T_P(s)=\frac4{s+5},\qquad
+y_P(t)=0.8A(1-e^{-5t}).
+$$
+
+闭环极点为−5，稳定；阶跃终值为0.8A，误差为0.2A。增益让初期变化更快，但并没有凭空消除残差。实际控制量为 $u_P(t)=A(0.8+3.2e^{-5t})$，最大值在初始时刻，为4A。
+
+### 两个PI候选
+
+记 $C=K_p+K_i/s$。将它乘回对象，完整闭环为
+
+$$
+T(s)=\frac{K_ps+K_i}{s^2+(1+K_p)s+K_i}.
+$$
+
+选 $(K_p,K_i)=(1,1)$，得到 $T=(s+1)/(s+1)^2$。零初值输出可约成 $1/(s+1)$，所以 $y=A(1-e^{-t})$，控制量恒为A。完整闭环仍有两个−1模态；约掉的是稳定因子，不代表积分状态消失。
+
+从状态也能看清：令积分输出为 $x_I$，有
+
+$$
+\dot y=-(1+K_p)y+x_I+K_pr,\qquad
+\dot x_I=K_i(r-y),\qquad
+u=K_p(r-y)+x_I.
+$$
+
+同一组PI可从时域读响应，从完整特征式读极点，也可从 $L=1/s$ 读到交越1 rad/s、PM90°。这就是几个设计视角在同一个控制器上配合。
+
+再选 $(K_p,K_i)=(2,1)$，完整特征式为 $s^2+3s+1$，两根约−0.381966、−2.618034。它的初始输出斜率是2A，而前一个PI是A；但响应包含更慢的尾段，不能凭初始斜率断言整体更快。
+
+### 用共同指标验算
+
+A=1时，三个输出都单调。两个PI趋于目标1，P只趋于0.8，因此P永远到不了目标的90%。按目标1的10%到90%量上升时间，结果如下：
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:600}}>
+
+| 候选 | 阶跃残差 | 目标10–90%时间 | 误差带±0.02的进入时间 | 控制量峰值 |
+|---|---|---|---|---|
+| P4 | 0.2 | 达不到90% | 不能持续进入 | 4 |
+| PI(1,1) | 0 | 2.197225 s | 3.912023 s | 1 |
+| PI(2,1) | 0 | 2.625337 s | 6.875200 s | 2 |
+
+</div>
+</div>
+
+这是连续时间模型的计算值，不是根据有限窗口末样认定的稳态。PI(2,1)的初始斜率更大，却没有更短的这两个时间指标。也不能据此推出在其它对象上，PI(1,1)也都优于PI(2,1)：对象、输入、参数和目标一换，必须重算。
+
+<JupyterNotebook
+ title="候选的完整响应"
+ setupCode={`import numpy as np
+import scipy
+import control as ct
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+s=ct.tf('s');G=1/(s+1)
+controllers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}
+a=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2
+c=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2
+def error(name,t):
+    if name=='P4':return .2+.8*np.exp(-5*t)
+    if name=='PI11':return np.exp(-t)
+    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)
+def command(name,t):
+    if name=='P4':return .8+3.2*np.exp(-5*t)
+    if name=='PI11':return np.ones_like(t,dtype=float)
+    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)
+def settling(name,A,eps):
+    if eps>=A:return 0.
+    residual=.2*A if name=='P4' else 0.
+    if eps<=residual:return np.inf
+    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)
+def u_peak(name,A):
+    # P4 decreases; PI11 constant; PI21 has a single interior minimum.
+    if name=='PI21':
+        tmin=np.log(b*(1+h)/(a*h))/(b-a)
+        return A*max(2.,1.,abs(command(name,tmin)))
+    return A*(4. if name=='P4' else 1.)
+contracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]
+`}
+ cells={[{ code: `print('versions numpy,scipy,control',np.__version__,scipy.__version__,ct.__version__)
+t=np.arange(2001)/100
+fig,axes=plt.subplots(2,1,figsize=(7,6))
+for name,C in controllers.items():
+    T=ct.feedback(C*G);U=ct.feedback(C,G)
+    tt,y=ct.step_response(T,t);_,u=ct.step_response(U,t)
+    assert np.max(abs(y-(1-error(name,t))))<1e-9
+    assert np.max(abs(u-command(name,t)))<1e-9
+    print(name,'poles,DC',ct.poles(T),ct.dcgain(T))
+    print(name,'PM,wc',ct.margin(C*G)[1],ct.margin(C*G)[3])
+    rise=np.inf if name=='P4' else brentq(lambda t:error(name,t)-.1,0,30)-brentq(lambda t:error(name,t)-.9,0,30)
+    print(name,'residual,target10to90,t_epsilon,u_peak',.2 if name=='P4' else 0.,rise,settling(name,1,.02),u_peak(name,1))
+    print(name,'y20 finite sample',y[-1])
+    axes[0].plot(t,y,label=name)
+    axes[1].plot(t,u,label=name)
+for ax,ylabel,limits in zip(axes,['y','u'],[[-.05,1.1],[0,4.3]]):
+    ax.set(xlim=(0,20),ylim=limits,xlabel='t (s)',ylabel=ylabel);ax.legend()
+fig.tight_layout();plt.show()
+# Independent state realization keeps both PI modes including the stable cancellation.
+for kp in [1.,2.]:
+    A=np.array([[-1-kp,1.],[-1.,0.]]);print('PI state roots',kp,np.linalg.eigvals(A))` }]}
+/>
+
+## 需求改变后的选择
+
+下面只改变合同，不改变对象和三个候选。每项都要求在给定截止时间前进入误差带，并且线性控制量峰值不超过输入上限。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:600}}>
+
+| 合同 | 阶跃A | 绝对容差ε | 输入上限 | 截止时间 | 通过的候选 |
+|---|---|---|---|---|---|
+| A | 1 | 0.02 | 3 | 8 s | 两个PI |
+| B | 0.25 | 0.06 | 1.2 | 2 s | 三个都通过 |
+| C | 1 | 0.02 | 1.5 | 8 s | PI(1,1) |
+| D | 1 | 0.02 | 0.5 | 8 s | 没有 |
+
+</div>
+</div>
+
+### 允许残差时
+
+合同B的P残差是0.05，小于容差0.06；进入误差带的时间约0.599146s，输入峰值1，也在1.2以内。它可以进入下一轮评估，不必因为“没有积分”就先淘汰。
+
+两个PI在B中也通过，进入时间分别约1.427116s与1.006834s、输入峰值分别0.25与0.5。三个都可行时，还应按模型可信度、实现复杂度、噪声和后续任务比较；本课没有给这些项目权重，因此不能偷偷宣布唯一最佳。
+
+### 输入受限时
+
+合同C里，PI(2,1)在线性模型下刚接到阶跃就要求u=2，超过1.5。不能继续引用那条未限幅线性曲线作为实际响应。PI(1,1)的恒定输入1及进入时间3.912023s满足这份名义合同；这也不意味着加上传感器噪声、计算延迟之后自动合格。
+
+若实际要允许限幅，就必须把饱和放回状态方程，重新验证，并按[PID控制](/classic/pid-controller)处理积分累积。**发现线性候选越界，应补非线性验收，而不是把越界曲线截平。**
+
+### 没有候选通过时
+
+D不只是这三个参数选得不好。对本对象，平衡要求 $y_\infty=u_\infty$；若输入始终不超过0.5，从零初值有
+
+$$
+y(t)=\int_0^t e^{-(t-\xi)}u(\xi)\,d\xi
+\le0.5(1-e^{-t})\lt0.5.
+$$
+
+所以目标1、容差0.02在这个模型和输入上限下不可达。此时应讨论执行能力、目标或误差要求，换成更复杂的控制算法也不能违反这个界。
+
+<JupyterNotebook
+ title="四份合同的筛选"
+ setupCode={`import numpy as np
+import scipy
+import control as ct
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+s=ct.tf('s');G=1/(s+1)
+controllers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}
+a=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2
+c=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2
+def error(name,t):
+    if name=='P4':return .2+.8*np.exp(-5*t)
+    if name=='PI11':return np.exp(-t)
+    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)
+def command(name,t):
+    if name=='P4':return .8+3.2*np.exp(-5*t)
+    if name=='PI11':return np.ones_like(t,dtype=float)
+    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)
+def settling(name,A,eps):
+    if eps>=A:return 0.
+    residual=.2*A if name=='P4' else 0.
+    if eps<=residual:return np.inf
+    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)
+def u_peak(name,A):
+    # P4 decreases; PI11 constant; PI21 has a single interior minimum.
+    if name=='PI21':
+        tmin=np.log(b*(1+h)/(a*h))/(b-a)
+        return A*max(2.,1.,abs(command(name,tmin)))
+    return A*(4. if name=='P4' else 1.)
+contracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]
+`}
+ cells={[{ code: `for label,A,eps,limit,deadline in contracts:
+    print('contract',label,'A,epsilon,input_limit,deadline',A,eps,limit,deadline)
+    passed=[]
+    for name in controllers:
+        ts=settling(name,A,eps);peak=u_peak(name,A)
+        ok=bool(np.isfinite(ts) and ts<=deadline and peak<=limit)
+        print(name,'continuous entry time,peak,pass',ts,peak,ok)
+        if ok:passed.append(name)
+    print('accepted fixed candidates',passed)
+    expected={'A':['PI11','PI21'],'B':['P4','PI11','PI21'],'C':['PI11'],'D':[]}[label]
+    assert passed==expected
+# Exponential error coefficients are positive: entry is permanent, not just a first crossing.
+assert a>0 and b>0 and c>0 and 1-c>0
+for name in controllers:
+    eps=.06;A=.25;ts=settling(name,A,eps)
+    assert abs(A*error(name,ts)-eps)<1e-10
+    assert A*error(name,ts+.1)<eps
+print('D reachable upper bound at t8',.5*(1-np.exp(-8)))
+print('D asymptotic upper bound .5, required lower band',1-.02)
+# The equality epsilon=residual is approached only at infinity for P4.
+assert np.isinf(settling('P4',1,.2))` }]}
+/>
+
+## 何时换一种工具
+
+先问缺少的是哪类证据，再选工具补足。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:600}}>
+
+| 眼前的问题 | 可以从哪里入手 | 还要补什么证据 |
+|---|---|---|
+| 一个可靠低阶模型，目标是极点与暂态 | 系数配对、根轨迹 | 零点、完整响应、控制量及内部稳定 |
+| 跟踪、扰动和噪声分布在不同频段 | 回路整形、超前/滞后或PID参数设计 | 真实交越、全频S/T/CS、时域与输入限制 |
+| 模型不够可靠，只拿到实验数据 | 在允许的工作条件下辨识与初始整定 | 数据覆盖范围、未测动态、模型外验证 |
+| 输入约束已经决定不可达 | 先检查对象与需求合同 | 不把换算法当扩大执行能力的替代品 |
+
+</div>
+</div>
+
+这里没有把其它章节的方法排成“升级路线”。例如状态空间方法适合组织更多状态信息，但是否有可测信息、可用模型与计算资源，仍需单独判断。本课不要求读者先会尚未交付的现代方法。
+
+### 噪声从哪里进入
+
+记 $S=1/(1+CG)$、$T=CG/(1+CG)$。测量噪声n到输出为−T，到控制量为−CS；输出端加性扰动到输出才是S。没有说清进入位置，“抗扰更好”就没有明确含义。
+
+例如在100rad/s这一指定频点，三个候选的 $|CS|$ 分别约3.995209、1、1.999425。这里PI并没有仅因包含积分就比P需要更大的高频控制量。它们的高频极限是各自Kp，而实际噪声还取决于整个噪声频谱，单点不能替代全频或时域验收。
+
+### 模型改变后重新验
+
+PI(1,1)的名义约分使用了对象极点−1。将对象改为 $G_p=1/(T_p s+1)$，完整闭环特征式变为
+
+$$
+T_ps^2+2s+1.
+$$
+
+对这个明确的一参数模型族，$T_p>0$ 时二阶系数保证稳定；但这并不保证相同响应时间或控制量。实验分别取Tp=0.5、1、2复算，并保留所有结果。不能把这三点扫描说成任意时滞、任意未建模动态下的鲁棒性证明。
+
+## 交付前的复核
+
+把选择结论写成一张能复查的卡片：
+
+1. **对象与假设**：模型、工作点、初值、反馈符号和输入范围。
+2. **候选及来源**：结构、参数、设计依据；哪些只是试探，哪些经过整定。
+3. **共同合同**：输入、误差带、时间定义、控制量和噪声通道。
+4. **计算与边界**：完整特征根、响应、失败工况，以及没有验证的范围。
+5. **选择理由**：这组候选为何符合这份合同；多个可行时还缺哪些权重与工程信息。
+
+本例可写成：“对名义G、零初值单位阶跃和合同C，PI(1,1)在三个固定候选中通过；实际加入噪声或限幅逻辑后需要重验。”这比“PI综合性能最好”多了可复查的条件，也不会承诺算例没有证明的事情。
+
+<Callout variant="tip">
+设计视角可以配合使用，控制器结构只是候选。先写清合同，再选参数，最后保留失败工况与适用边界。
+</Callout>
+
+<JupyterNotebook
+ title="通道与边界复算"
+ setupCode={`import numpy as np
+import scipy
+import control as ct
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+s=ct.tf('s');G=1/(s+1)
+controllers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}
+a=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2
+c=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2
+def error(name,t):
+    if name=='P4':return .2+.8*np.exp(-5*t)
+    if name=='PI11':return np.exp(-t)
+    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)
+def command(name,t):
+    if name=='P4':return .8+3.2*np.exp(-5*t)
+    if name=='PI11':return np.ones_like(t,dtype=float)
+    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)
+def settling(name,A,eps):
+    if eps>=A:return 0.
+    residual=.2*A if name=='P4' else 0.
+    if eps<=residual:return np.inf
+    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)
+def u_peak(name,A):
+    # P4 decreases; PI11 constant; PI21 has a single interior minimum.
+    if name=='PI21':
+        tmin=np.log(b*(1+h)/(a*h))/(b-a)
+        return A*max(2.,1.,abs(command(name,tmin)))
+    return A*(4. if name=='P4' else 1.)
+contracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]
+`}
+ cells={[{ code: `w=100.
+for name,C in controllers.items():
+    L=C*G;T=ct.feedback(L);CS=ct.feedback(C,G)
+    print(name,'measurement noise absT,absCS at100',abs(ct.evalfr(T,1j*w)),abs(ct.evalfr(CS,1j*w)))
+    kp={'P4':4.,'PI11':1.,'PI21':2.}[name]
+    print(name,'control noise high frequency limit Kp',kp)
+for Tp in [.5,1.,2.]:
+    P=1/(Tp*s+1);C=controllers['PI11'];T=ct.feedback(C*P)
+    roots=ct.poles(T);assert np.max(roots.real)<0
+    print('Tp,full roots',Tp,roots)
+    t=np.arange(2001)/100;tt,y=ct.step_response(T,t)
+    plt.plot(t,y,label='Tp='+str(Tp))
+plt.xlim(0,20);plt.ylim(0,1.5);plt.legend();plt.xlabel('t (s)');plt.ylabel('y');plt.show()
+print('exercise2 P gain, pole,residual ratio',4.,-5.,1/5)
+print('exercise2 required P gain for .02',1/.02-1)
+print('exercise3 PI11 full polynomial',[1.,2.,1.])
+print('exercise4 B times',[settling(n,.25,.06) for n in controllers])
+print('exercise5 D lower required',1-.02,'max equilibrium .5')
+print('versions numpy,scipy,control',np.__version__,scipy.__version__,ct.__version__)` }]}
+/>
+
+## 习题
+
+**习题1**：有人说“PI、根轨迹和频域法里选一个就行”。指出分类上的问题，并给出它们可以配合的一条设计流程。
+
+**习题2**：对本课对象使用P控制。若希望名义闭环极点位于−5，求Kp、单位阶跃残差和初始控制量。若只允许残差0.02，单纯提高Kp要付出什么代价？
+
+**习题3**：从本课PI状态方程推导特征式。PI(1,1)输出传函可约分，为什么不能据此说积分状态已经没有了？
+
+**习题4**：合同B为什么不能按“存在稳态残差”就淘汰P4？计算它的残差、误差带进入时间和输入峰值，再说明这些结果能否证明P普遍优于PI。
+
+**习题5**：合同D里没有固定候选通过。说明为什么本例不只是需要继续调参；若执行上限不能改，至少应重新讨论哪一类需求？
+
+**习题6**：PI(2,1)初始斜率较大，是否意味着更短的10–90%时间？再解释为什么噪声到输出很小，仍可能需要检查执行器控制量。
+
+## 答案
+
+**答案1**：PI是结构，根轨迹与频域是设计和分析视角。可先明确模型/合同，用特征式或根轨迹选PI参数，再用频域核裕度和S/T/CS，最后验完整时域、输入限制与模型变化。不同视角不能代替最后的共同合同。
+
+**答案2**：P闭环特征式 $s+1+K_p$，故 $K_p=4$。单位阶跃残差为 $1/(1+K_p)=0.2$，初始控制量4。要使残差不超过0.02，需 $K_p\ge49$，初始单位阶跃控制量也至少49；若输入上限不足，原线性响应就不是实际限幅响应。仅凭更左的名义极点不能宣布满足工程要求。
+
+**答案3**：状态矩阵为
+
+$$
+A_{\rm cl}=\begin{bmatrix}-(1+K_p)&1\\-K_i&0\end{bmatrix},
+\qquad\det(sI-A_{\rm cl})=s^2+(1+K_p)s+K_i.
+$$
+
+PI(1,1)有两个−1特征根。零初值参考到输出的稳定因子可以约掉，但内部仍有积分输出状态；模型改变、其它输入或非零初态都应重新看完整实现，不能从一个约分通道抹去状态。
+
+**答案4**：A=.25时残差.05，小于.06。误差为 $.05+.2e^{-5t}$；令其等于.06，得 $t_\varepsilon=\ln20/5=0.599146$ s，输入峰值1，不超过1.2，故满足B。三个候选在B都通过；这里没有其它工程权重，也没有对所有P/PI独立最优整定，不能得出结构普遍优胜。
+
+**答案5**：输入限制.5时，从零初值有 $y(t)\le.5(1-e^{-t})$，达不到目标误差带的下边界.98。必须讨论目标幅值、允许误差、对象/执行能力或工作点，不能指望换一种算法突破这条模型界。
+
+**答案6**：不能。单位阶跃下PI(2,1)初始斜率2而PI(1,1)为1，但二者相对目标的10–90%时间分别2.625337s和2.197225s。更快的初始变化不等于更快进入目标附近。测量噪声到输出看−T，到控制量看−CS；执行器可能在忙于抑制测量噪声，不能只依据输出曲线判断输入代价。
