@@ -102,7 +102,7 @@
 | MODERN-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/04-state-feedback.md;.agent/semester-03/modern-04/acceptance.md;commit:d58259df22e3c214f372da5472ce4764bff71bb8 |
 | MODERN-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/05-state-observer.md;.agent/semester-03/modern-05/acceptance.md;commit:acf35e839be30e6a902d2d684509ae7626c7cd00 |
 | MODERN-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/06-optimal-control-basics.md;.agent/semester-03/modern-06/acceptance.md;commit:cbfc8a937171640a7a8667a89032444d5a11a766 |
-| MODERN-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MODERN-07 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/04-modern/07-lqr-controller.md |
 | MODERN-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 

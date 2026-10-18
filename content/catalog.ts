@@ -1868,28 +1868,28 @@ export const catalog: Chapter[] = [
         "title": "LQR控制",
         "subsections": [
           {
-            "slug": "为什么需要-lqr",
-            "title": "为什么需要 LQR"
+            "slug": "lqr解决什么",
+            "title": "LQR解决什么"
           },
           {
-            "slug": "有限时间-lq-问题",
-            "title": "有限时间 LQ 问题"
+            "slug": "有限时域",
+            "title": "有限时域"
           },
           {
-            "slug": "无穷时间-lqr代数-riccati-方程",
-            "title": "无穷时间 LQR——代数 Riccati 方程"
+            "slug": "无穷时域",
+            "title": "无穷时域"
           },
           {
-            "slug": "lqr-的鲁棒性",
-            "title": "LQR 的鲁棒性"
+            "slug": "输入端裕度",
+            "title": "输入端裕度"
           },
           {
-            "slug": "q-和-r-的选择",
-            "title": "Q 和 R 的选择"
+            "slug": "权重怎么选",
+            "title": "权重怎么选"
           },
           {
-            "slug": "lqr-与参考跟踪",
-            "title": "LQR 与参考跟踪"
+            "slug": "参考跟踪",
+            "title": "参考跟踪"
           },
           {
             "slug": "深入讨论",

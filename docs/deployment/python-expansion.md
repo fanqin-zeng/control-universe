@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 73 课 / 343 个实验 / 518 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 316 个实验，保留 27 个。实际执行 493 个单元格（含异常单元格），生成 162 张 PNG。原始记录中 318 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 73 课 / 347 个实验 / 522 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 320 个实验，保留 27 个。实际执行 497 个单元格（含异常单元格），生成 163 张 PNG。原始记录中 322 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -27,7 +27,7 @@
 | modern/state-feedback（状态反馈） | 5/5 | 6 | 无 |
 | modern/state-observer（状态观测器） | 5/5 | 5 | 无 |
 | modern/optimal-control-basics（最优控制） | 5/5 | 6 | 无 |
-| modern/lqr-controller（LQR控制） | 1/1 | 4 | 无 |
+| modern/lqr-controller（LQR控制） | 5/5 | 8 | 无 |
 | modern/multivariable-systems（多变量系统） | 1/1 | 6 | 无 |
 | modern/modern-case-study（现代控制案例） | 3/5 | 6 | 3, 4 |
 | nonlinear/nonlinear-characteristics（非线性系统） | 9/9 | 9 | 无 |
@@ -149,3 +149,5 @@ MODERN-04（2026-10-18）：本课五实验六cell按最终源指纹重新执行
 MODERN-05（2026-10-18）：本课五实验五cell按最终源指纹实际执行通过，补非零初差、真实自由响应/速度峰值、全题与降阶/输入/偏差边界；保留原两实验用途和27待办原ID/原因/处置。证据.agent/semester-03/modern-05/pyodide.json；本轮未发布Pages。
 
 MODERN-06（2026-10-18）：本课原BVP与代价两cell用途保留，扩五实验六cell按最终源指纹实际执行通过；全终时/可行扰动、完整代价/全部题目与最短时间/输入边界。原27项待办ID/原因/处置保留。证据.agent/semester-03/modern-06/pyodide.json；本轮未发布Pages。
+
+MODERN-07（2026-10-18）：保留本课原四cell用途，扩五实验八cell按最终源指纹实际执行；有限DRE/BVP、离散DARE/尾项、权重单位和两模式参数。27待办ID/原因/处置不变。证据.agent/semester-03/modern-07/pyodide.json；本轮未发布Pages。

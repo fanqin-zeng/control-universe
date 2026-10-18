@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T07:44:20.577Z",
-  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/optimal-control-basics",
+  "testedAt": "2026-10-18T08:00:32.776Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lqr-controller",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -2360,20 +2360,48 @@
     {
       "key": "modern/lqr-controller",
       "title": "LQR控制",
-      "sourceHash": "b4b1b94c95abb8946621b0af0f2c00984e533b2051fa1803cb705db0adceed89",
+      "sourceHash": "918167edd306b7ad90594efe324eb327839c8d79e03bbd24e06221970f04b181",
       "notebooks": [
         {
           "id": "modern/lqr-controller#1",
-          "title": "动手实验：LQR 求解、裕度与习题复算",
+          "title": "有限时域的终端条件与价值",
           "index": 1,
-          "line": 215,
+          "line": 149,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6853,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "finite S= 0.0 P0= [[1.53647493 0.83323627]\n [0.83323627 1.53647493]] K0= [0.83323627 1.53647493] KT= [0. 0.] J/value= 0.7682374670754674 0.7682374670759842 xT= [ 0.48441039 -0.26657812]\nfinite S= 10.0 P0= [[2.43640361 1.5073606 ]\n [1.5073606  2.10831434]] K0= [1.5073606  2.10831434] KT= [ 0. 10.] J/value= 1.2182018052680492 1.2182018052687822 xT= [ 0.12978574 -0.10174618]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 62460
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#2",
+          "title": "动手实验：LQR 求解、裕度与习题复算",
+          "index": 2,
+          "line": 326,
           "cellCount": 4,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4620,
+              "milliseconds": 90,
               "status": "passed",
               "outputs": [
                 {
@@ -2385,7 +2413,7 @@
             },
             {
               "index": 2,
-              "milliseconds": 9,
+              "milliseconds": 6,
               "status": "passed",
               "outputs": [
                 {
@@ -2397,7 +2425,7 @@
             },
             {
               "index": 3,
-              "milliseconds": 2809,
+              "milliseconds": 2797,
               "status": "passed",
               "outputs": [
                 {
@@ -2409,7 +2437,7 @@
             },
             {
               "index": 4,
-              "milliseconds": 314,
+              "milliseconds": 246,
               "status": "passed",
               "outputs": [
                 {
@@ -2420,22 +2448,80 @@
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 45904
+                  "base64Length": 52256
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "e907c7683a003ff8cc53c8ee1c5e05405757affd151f9d0aea130f3668691c03",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/lqr-controller",
-          "fromSourceHash": "e907c7683a003ff8cc53c8ee1c5e05405757affd151f9d0aea130f3668691c03",
-          "toSourceHash": "b4b1b94c95abb8946621b0af0f2c00984e533b2051fa1803cb705db0adceed89",
-          "notebookPayloadHash": "b76efabb04823d3a587887aa0586ddfce7d96991183ffd662d36bc4de6b81edc",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "modern/lqr-controller#3",
+          "title": "离散增益与代价求和",
+          "index": 3,
+          "line": 595,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "DARE P= [[1.783493 1.001249]\n [1.001249 1.785659]] K= [[0.917075 1.635596]] poles= [0.915928+0.045854j 0.915928-0.045854j] sum+tail= 0.891746566109448 value= 0.8917465661094488 wrong continuous K= [[1.090424 1.835721]]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#4",
+          "title": "权重单位、缩放与解的边界",
+          "index": 4,
+          "line": 836,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 114,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "common scale= 0.1 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\ncommon scale= 1.0 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\ncommon scale= 10.0 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\nmeters to centimeters: Qz= [[0.0001 0.    ]\n [0.     1.    ]] Kz= [[0.01     1.732051]] same physical u for x=[1,0]: -1.0000000000000004\nscalar a/b/q/P= -1.0 0.0 1.0 0.5 pole= -1.0\nscalar a/b/q/P= -1.0 1.0 0.0 0.0 pole= -1.0\nscalar a/b/q/P= 1.0 1.0 0.0 0.0 pole= 1.0\nscalar a/b/q/P= 1.0 1.0 0.0 2.0 pole= -1.0\noriginal example2/Q1 exact residuals passed; tracking N=1 and J default=sqrt3/2= 0.8660254037844386\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#5",
+          "title": "两模式参数与真实轨迹核验",
+          "index": 5,
+          "line": 874,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 727,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "all slider values + corners/critical: 785 each 4 independent time readings; full601 default/existing cell retained\n{'params': [1.0, 1.0, 1.0, 0.1], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.9531536806842715, -0.09029690300459826], [0.2169243620534197, -0.212975042062361], [-0.11765284333869912, 0.08868271335250388]], 'u': [-0.09999999999999996, -0.0796754856914188, 0.015195923154270844, -0.0035950121940904567]}\n{'params': [1.0, 1.0, 1.0, 0.5], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.8162591720631296, -0.3076486869130859], [-0.07773811338554504, -0.03485434247715846], [0.00024351799281344447, -0.0011649540899318985]], 'u': [-0.4999999999999998, -0.141698007723907, 0.06905380271019478, 0.0008871208397168836]}\n{'params': [1.0, 1.0, 1.0, 1.0], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.7184072074542298, -0.4033119650774156], [0.003099780800972833, -0.015758818962627583], [4.4988516916953425e-06, -4.281362615450825e-06]], 'u': [-0.9999999999999996, -0.019850392639700787, 0.024195294309578015, 2.9166858838914625e-06]}\n{'params': [1.0, 1.0, 1.0, 3.0], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.6023488078946324, -0.3914048346906533], [0.04284278621095773, -0.02834412483853662], [5.736573524452945e-05, -3.795228346310121e-05]], 'u': [-2.9999999999999987, 0.22675275635303083, 0.018752034316388173, 2.5108643930453966e-05]}\n{'params': [1.0, 2.0, 1.0, 1.0], 'P': [[2.0000000000000004, 0.9999999999999996], [0.9999999999999996, 1.9999999999999996]], 'K': [0.9999999999999996, 1.9999999999999996], 'states': [[1.0, 0.0], [0.7357588823428847, -0.3678794411714423], [0.04042768199451282, -0.033689734995427344], [4.894437128029233e-06, -4.588534807527405e-06]], 'u': [-0.9999999999999996, 1.1102230246251565e-16, 0.026951787996341875, 4.282632487025578e-06]}\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -11358,14 +11444,14 @@
   "complete": true,
   "totals": {
     "lessons": 73,
-    "notebooks": 343,
-    "enabled": 318,
+    "notebooks": 347,
+    "enabled": 322,
     "codeOnly": 25
   },
   "releaseTotals": {
     "lessons": 73,
-    "notebooks": 343,
-    "enabled": 316,
+    "notebooks": 347,
+    "enabled": 320,
     "codeOnly": 27
   },
   "provenance": [
@@ -11693,6 +11779,11 @@
       "testedAt": "2026-10-18T07:44:20.577Z",
       "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/optimal-control-basics",
       "inputPath": ".agent/semester-03/modern-06/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T08:00:32.776Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lqr-controller",
+      "inputPath": ".agent/semester-03/modern-07/pyodide.json"
     }
   ]
 }
