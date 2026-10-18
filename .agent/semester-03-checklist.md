@@ -147,7 +147,7 @@
 | DISCRETE-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/07-sampling-period-selection.md;.agent/semester-03/discrete-07/acceptance.md;commit:82e95f1f6ee5797e6fd129b7d50b4a021db7a051 |
 | DISCRETE-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/08-sampled-data-systems.md;.agent/semester-03/discrete-08/acceptance.md;commit:33a3931c0e3f33192d1edb43d9f3eecabd432cb5 |
 | DISCRETE-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/09-discrete-optimal-control.md;.agent/semester-03/discrete-09/acceptance.md;commit:1f3b9894304d32587533c88d85b193829c4c39d1 |
-| DISCRETE-10 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/06-discrete-sampled/10-event-triggered-control.md;.agent/semester-03/discrete-10/acceptance.md |
+| DISCRETE-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/10-event-triggered-control.md;.agent/semester-03/discrete-10/acceptance.md;commit:8b80f851772de7799270cb1ad46707a119fa6764 |
 
 ### 控制实现
 

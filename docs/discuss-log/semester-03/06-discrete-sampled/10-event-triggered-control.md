@@ -110,7 +110,7 @@
 
 [孙助] 四题答案与四学习目标匹配，数值和推理核验完成，终态和长期极限区分清楚。
 
-[郑核-签发] 学术条件、数值对账、红队、九项门槛及四份档案齐备。最终check退出0，PASS21/WARN2/FAIL0；学期守卫退出0，准予本课进入master。真实交付hash在提交后登记，不预填。交付清单：正文、纯TS/Explorer/SVG、注册表、catalog、自动OUTLINE/tracker、讨论日志、学期3plan/checklist、zh生产交接状态、Pyodide支持及版本化证据。
+[郑核-签发] 学术条件、数值对账、红队、九项门槛及四份档案齐备。最终check退出0，PASS21/WARN2/FAIL0；学期守卫退出0，准予本课进入master。实际master交付提交：8b80f851772de7799270cb1ad46707a119fa6764；提交后据实勾选进入master列，学期3生产/进入master均59课。交付清单：正文、纯TS/Explorer/SVG、注册表、catalog、自动OUTLINE/tracker、讨论日志、学期3plan/checklist、zh生产交接状态、Pyodide支持及版本化证据。
 
 ## 附录 A.1 三方数值对账
 

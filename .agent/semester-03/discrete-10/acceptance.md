@@ -1,6 +1,6 @@
 # DISCRETE-10 事件触发控制验收
 
-仅本课新写wiki-lesson-new Phase1–4，起点master3b6fd6c。Phase1–4和全部验收已完成，郑核据实签发；真实master hash待提交后登记。01草稿隔离，本地四处端口与用户批阅排除提交，不发布Pages。
+仅本课新写wiki-lesson-new Phase1–4，起点master3b6fd6c。Phase1–4和全部验收已完成，郑核据实签发；真实master交付提交 8b80f851772de7799270cb1ad46707a119fa6764。01草稿隔离，本地四处端口与用户批阅排除提交，不发布Pages。
 
 核心：分清测量/发送/输入更新，旧读数误差与理想连续Lyapunov充分条件；周期检查不继承全时误差界，默认/持平/发散/漏检四工况完整报告。八H2/四题四答、一Explorer/SVG、两Notebook四cell。独立60位闭式事件段对实际TS17配置误差1.33e−15，195组合轴范围通过；原始solve_ivp实验36610变量对独立参考最大8.49e−12<1e−9。
 
@@ -24,6 +24,8 @@
 | node --test scripts/check-semester03.test.mjs scripts/lesson-route.test.mjs scripts/mdx-headings.test.mjs | 0；33/33，10例外不放行IMPL-01 | tests.log |
 | npm run check -- --fix-outline --fix-tracker-stats | 1；旧统计五FAIL后自动刷新，未当通过 | refresh.log |
 | npm run check（刷新后独立复验） | 0；PASS21/WARN2/FAIL0 | check.log |
-| node scripts/check-semester03.mjs | 0；生产完成59课，进入master列据真实提交再登记 | semester-check.log |
+| node scripts/check-semester03.mjs | 0；生产完成59课，真实交付后merged=59 | semester-check.log |
 
 最终源hash fe21ff86218020ddde30d93116f08df60cecf1014de0efa27158a596db0d5892。独立TS最大误差1.33e−15、原始ODE最大8.49e−12，容差1e−9；两页面与原生/Pyodide输出一致。catalog全站62/205交付、75Explorer；学期3完成59课（不同口径）。17项Python待办task/category/next保留，既有全站WARN/W任务不关闭。仅本课交付，不发gh-pages；01草稿交付末恢复并核验，四处本地端口与用户批阅不提交。
+
+真实master交付提交：8b80f851772de7799270cb1ad46707a119fa6764。进入master列已据真实提交勾选，semester-check.log回执merged=59。全学期生产/进入master均59课，01仍未交付。本次不发布gh-pages。
