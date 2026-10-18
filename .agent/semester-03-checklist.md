@@ -103,7 +103,7 @@
 | MODERN-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/05-state-observer.md;.agent/semester-03/modern-05/acceptance.md;commit:acf35e839be30e6a902d2d684509ae7626c7cd00 |
 | MODERN-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/06-optimal-control-basics.md;.agent/semester-03/modern-06/acceptance.md;commit:cbfc8a937171640a7a8667a89032444d5a11a766 |
 | MODERN-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/07-lqr-controller.md;commit:e9ff6c6bb0cf5ffceee48713ff9dc2bd76ac222a |
-| MODERN-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MODERN-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/04-modern/08-multivariable-systems.md |
 | MODERN-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 
 ### 非线性控制

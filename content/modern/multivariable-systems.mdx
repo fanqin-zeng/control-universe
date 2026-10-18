@@ -1,23 +1,29 @@
 ---
-title: 多变量系统分析
+title: 多变量系统
 description: 分析 MIMO 系统的极点、零点与传输零点，掌握 RGA 交互分析和解耦控制方法。
 ---
 
-# 多变量系统分析
+# 多变量系统
 
-状态空间、可控性、状态反馈、观测器与 LQR 本来就适用于多输入多输出系统。本课增加一个设计视角：怎样辨认输入与输出之间的交互，哪些配对值得继续设计，哪些结论不能仅凭一个稳态矩阵作出。
+<span id="多变量系统分析" />
 
-实际工程系统往往是**多输入多输出**（MIMO）的。例如发动机有燃油、节气门、点火角等多个输入，转速、温度、排放等多个输出。建模时哪些量是操纵量、哪些量是被控量，必须先由设计目标确定。
+冬天给相邻的两个房间供暖：提高房间一的加热功率，房间一变暖，热量也会穿过墙体，让房间二的温度变化。如果房间二的温控器随即减小功率，它又会影响房间一。**两个温度各有目标，却不能把两个回路当成互不相干的系统。**
 
-MIMO 带来一个 SISO 中不存在的问题：**交互**。你调一个输入，不只影响"对应的"输出——所有输出都跟着动。这种交互让控制设计变得复杂得多。
+上一课 LQR 已经允许多个状态和输入一起进入设计。本课换一个问题：先不选控制器，怎样看出一个输入会影响哪些输出？为什么单看各通道的增益，甚至单看一个行列式，仍可能漏掉关键信息？
 
-本课分析 MIMO 系统的固有特性——极点、零点和交互结构——为后续的 MIMO 控制设计打基础。
+![两个房间的加热器分别升温，墙体传热使另一个房间也受影响；后文采用独立归一化模型](/diagrams/mimo/rooms.svg)
+
+**多输入多输出**（MIMO）系统中的这种现象叫作**耦合**：一个输入可能影响多个输出。供暖只是直觉入口；后面的矩阵均为归一化教学例子，不是实测房间参数。输入是工作点附近的功率偏差，所以负输入表示减少原有供暖，不是加热器产生负功率。
+
+本课沿着“通道与方向 → 极点零点 → 配对线索 → 解耦边界”展开。目标是读懂这些分析能回答什么，之后再决定怎样设计反馈。
 
 > 📖 本课需要状态空间和传递函数的基础：[状态空间表示](/modern/state-space)、[传递函数入门](/classic/transfer-function)。
 
 > 📐 本文用到了矩阵秩、逆矩阵与奇异值，详见 [线性代数基础](/math/linear-algebra-basics)与[矩阵分解](/math/matrix-decomposition)。最小解释：秩表示独立方向的数量；可逆方阵能把输出要求唯一映射回输入；最小奇异值接近零意味着某个方向难以驱动或逆运算敏感。
 
-## 为什么需要多变量分析
+<span id="为什么需要多变量分析" />
+
+## 通道如何耦合
 
 ### 从 SISO 到 MIMO
 
@@ -53,7 +59,7 @@ $$
 
 在变量已合理归一化、且工作频段内交叉通道的影响确实较小时，可以尝试近似成两个 SISO 回路；仅比较带有不同单位的传递函数数值并不可靠。这叫**分散控制**——每个回路独立设计控制器。
 
-但如果 $G_{12}$ 和 $G_{21}$ 不可忽略，分散控制就会出问题：你调 $u_1$ 想让 $y_1$ 到设定值，但 $y_2$ 也被拉偏了；然后你调 $u_2$ 修正 $y_2$，又把 $y_1$ 拉偏了……两个回路互相"打架"。
+当交叉通道不可忽略时，就需要检查回路间的相互影响：你调 $u_1$ 想让 $y_1$ 到设定值，但 $y_2$ 也被拉偏了；然后你调 $u_2$ 修正 $y_2$，又把 $y_1$ 拉偏了……两个回路互相"打架"。
 
 ### 一个数值例子
 
@@ -75,7 +81,9 @@ $$
 
 这些输入-输出通道如何配对？RGA（相对增益矩阵）提供稳态候选线索；最终选择仍需考虑动态特性、可用测量、执行器限制与闭环稳定性。
 
-## MIMO 极点与零点
+<span id="mimo-极点与零点" />
+
+## 极点与零点
 
 ### MIMO 极点
 
@@ -139,7 +147,9 @@ $$
 
 右半平面传输零点限制沿特定输入-输出方向的跟踪和扰动抑制性能。逆响应是否出现在某条标量阶跃曲线上，还取决于通道、输入方向和输出选择；不能说每个 MIMO 输出都会先反向。用不稳定逆去对消这些零点会破坏内部稳定，应在后续解耦设计中保留这个限制。
 
-## 交互分析与 RGA
+<span id="交互分析与-rga" />
+
+## 相对增益
 
 ### 稳态增益矩阵
 
@@ -148,6 +158,8 @@ $$
 $$
 \boldsymbol{y} = K \boldsymbol{u}
 $$
+
+这里假设对象渐近稳定且直流增益有限，零初态下的常值输入才会收敛到这个关系。仅有代数值G(0)存在，并不能保证不稳定对象的实际响应趋于稳态。
 
 其中 $K=G(0)$ 是有限的稳态增益矩阵（与本章其他课的状态反馈增益不同）。本节传统 RGA 要求方阵且 $K$ 可逆；奇异或非方阵不能直接套这个逆矩阵公式。
 
@@ -166,6 +178,14 @@ $\lambda_{ij}$ 的物理意义：
 $$
 \lambda_{ij} = \frac{\text{开环增益：} u_j \to y_i \text{（其他输入固定）}}{\text{闭环增益：} u_j \to y_i \text{（其他输出固定）}}
 $$
+
+“其他输出固定”不是把某个实际闭环控制器的传递函数放进分母，而是假设其他回路已经把稳态输出偏差保持为零。以本课的 $K=\begin{bmatrix}2&1\\1&2\end{bmatrix}$ 为例：
+
+- 固定另一个输入 $u_2=0$，得到 $y_1=2u_1$。
+- 要保持另一个输出 $y_2=0$，须由 $u_1+2u_2=0$ 得 $u_2=-u_1/2$，代回得到 $y_1=3u_1/2$。
+- 两个稳态增益之比是 $2/(3/2)=4/3$，正是后面的 $\lambda_{11}$。
+
+一般地，保持其余输出为零时，由 $u=K^{-1}y$ 得 $u_j=[K^{-1}]_{ji}y_i$。若这个系数非零，受约束增益就是它的倒数，于是增益比成为 $k_{ij}[K^{-1}]_{ji}$。这也解释了为什么逆矩阵要先转置再逐元素相乘。
 
 这个增益比需要相应的约束增益有定义。其解释是局部稳态的，不等于闭环动态保证：
 
@@ -187,6 +207,26 @@ $$
 $$
 
 3. **配对启发式**：优先研究正值且接近1的成套配对（每个输入/输出使用一次）；负值或很大的元素提示风险。数值阈值不是稳定性定理，还需检查工作频段的动态 RGA 与闭环。
+
+### 单位和弱方向
+
+RGA 的一个好处是：分别改变各输入、输出的单位，不改变它的数值。令输出缩放为 $y'=D_y y$、输入缩放为 $u'=D_u u$，其中两个D都是非奇异对角矩阵，那么
+
+$$
+K'=D_yKD_u^{-1},\qquad \operatorname{RGA}(K')=\operatorname{RGA}(K).
+$$
+
+将逆矩阵 $K'^{-1}=D_uK^{-1}D_y^{-1}$ 代入逐元素公式，每个行列缩放因子恰好抵消。这里限于**对角缩放**，不是任意混合变量后RGA都不变。这个性质及其条件见 [Skogestad 与 Morari 的原始论文，式(26)](https://folk.ntnu.no/skoge/publications/1987/Skogestad87c/Skogestad87c.pdf)。
+
+但奇异值与条件数依赖所选尺度；先按允许变化量归一化，再讨论“哪个方向难驱动”。例如
+
+$$
+K_\varepsilon=\begin{bmatrix}1&1\\1&1+\varepsilon\end{bmatrix},\qquad
+K_\varepsilon^{-1}\begin{bmatrix}1\\-1\end{bmatrix}
+=\begin{bmatrix}1+2/\varepsilon\\-2/\varepsilon\end{bmatrix},\quad\varepsilon>0.
+$$
+
+两行越来越相似时，让两输出反向变化就需要越来越大的、彼此抵消的输入。取 $\varepsilon=1,0.1,0.01$，输入依次为 $[3,-2]^T$、$[21,-20]^T$、$[201,-200]^T$。这是指定矩阵与命令的代数结果，不是对所有方向都很难驱动的断言。例如命令 $[1,1]^T$ 只需输入 $[1,0]^T$。实际逆补偿要把执行器余量和模型误差一起检查。
 
 ### 例2：RGA 计算
 
@@ -246,6 +286,7 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy.integrate import solve_ivp
 np.set_printoptions(precision=6, suppress=True)
+plt.rcParams.update({"font.family":"DejaVu Sans","font.size":12})
 def rga(K):
     result=K*np.linalg.inv(K).T
     assert np.allclose(result.sum(axis=0),1)
@@ -341,13 +382,53 @@ yinf=np.linalg.solve(np.eye(2)+Kdc@kp,Kdc@kp@r)
 peak=np.argmax(np.abs(yy[1]))
 print("默认y(10) =",yy[:,-1],"u(10) =",uu[:,-1],"yinf =",yinf,"e1inf =",1-yinf[0])
 print("采样max|y2| =",abs(yy[1,peak]),"tpeak =",tt[peak],"闭环极点 =",np.linalg.eigvals(Ac))
-fig,axes=plt.subplots(2,1,figsize=(8,5),sharex=True)
+fig,axes=plt.subplots(2,1,figsize=(5.4,6.4),sharex=True)
 axes[0].plot(tt,yy.T);axes[0].set(ylim=(-.1,1.1),ylabel="output")
 axes[1].plot(tt,uu.T);axes[1].set(xlim=(0,10),ylim=(-1,5.1),ylabel="input",xlabel="t")
 for ax in axes:ax.grid(True,alpha=.3)
 plt.tight_layout();plt.show()
 ` },
   ]}
+/>
+
+
+<JupyterNotebook
+  title="RGA的约束增益与尺度"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+plt.rcParams.update({"font.family":"DejaVu Sans","font.size":12})
+np.set_printoptions(precision=10,suppress=True)
+`}
+  cells={[{code:`K=np.array([[2.,1.],[1.,2.]])
+# Independent constrained solve: fix y2=0, then calculate effective y1/u1.
+u1=1.;u2=-K[1,0]*u1/K[1,1];y=K@np.array([u1,u2])
+assert abs(y[1])<1e-12 and abs(y[0]-1.5)<1e-12
+Lambda=K*np.linalg.inv(K).T
+assert np.allclose(Lambda,[[4/3,-1/3],[-1/3,4/3]])
+print('fixed u2: gain=',K[0,0],'fixed y2: gain=',y[0],'ratio=',K[0,0]/y[0])
+for dy,du in [(np.diag([100.,1.]),np.diag([.1,10.])),(np.diag([.01,1000.]),np.diag([2.,3.]))]:
+    transformed=dy@K@np.linalg.inv(du)
+    assert np.max(abs(transformed*np.linalg.inv(transformed).T-Lambda))<1e-10
+    print('scaled K=',transformed,'RGA=',transformed*np.linalg.inv(transformed).T,'cond=',np.linalg.cond(transformed))
+for eps in [1.,.1,.01]:
+    Ke=np.array([[1.,1.],[1.,1.+eps]]);ref=np.array([1.,-1.]);u=np.linalg.solve(Ke,ref)
+    assert np.allclose(u,[1+2/eps,-2/eps])
+    assert np.allclose(Ke@np.array([1.,0.]),[1.,1.])
+    delta=np.linalg.solve(Ke,np.array([0.,.001]));assert np.allclose(delta,[-.001/eps,.001/eps])
+    print('eps=',eps,'input=',u,'sigma=',np.linalg.svd(Ke,compute_uv=False),'cond=',np.linalg.cond(Ke),'delta input=',delta)
+# Symbolic row/column sums, the 2x2 formula and diagonal scaling.
+a,b,c,d,dy1,dy2,du1,du2=sp.symbols('a b c d dy1 dy2 du1 du2',nonzero=True)
+Ks=sp.Matrix([[a,b],[c,d]]);L=Ks.multiply_elementwise(Ks.inv().T)
+assert all(sp.simplify(sum(L.row(i))-1)==0 for i in range(2))
+assert all(sp.simplify(sum(L.col(i))-1)==0 for i in range(2))
+assert sp.simplify(L[0,0]-a*d/(a*d-b*c))==0
+Knew=sp.diag(dy1,dy2)*Ks*sp.diag(1/du1,1/du2)
+assert (Knew.multiply_elementwise(Knew.inv().T)-L).applyfunc(sp.simplify)==sp.zeros(2)
+print('symbolic RGA properties passed on nonsingular domain')
+`}]}
 />
 
 ## 解耦控制
@@ -360,9 +441,17 @@ plt.tight_layout();plt.show()
 
 最简单的思路：在被控对象输入前加一个**预补偿器** $T$（$u=Tv$），使得 $G(s) T$ 为对角阵。
 
-对于稳态情况：选择 $T = K^{-1}$（如果 $K$ 可逆），则 $K T = I$——完全解耦。
+对于稳态情况：选择 $T = K^{-1}$（如果 $K$ 可逆），则 $K T = I$——在这个稳态代数关系上解耦。
 
-但问题是：$K^{-1}$ 是稳态逆，动态过程中 $G(s) K^{-1}$ 不是对角的。所以静态解耦只在低频有效。
+但问题是：$K^{-1}$ 是稳态逆，动态过程中 $G(s) K^{-1}$ 不是对角的。它在直流处精确；能近似使用到多高的频率，还要计算动态残差，不能仅凭“低频”两个字给出带宽。
+
+沿用后面探索器的四状态对象，静态逆的第一列为 $[40/39,-2/13]^T$。虚拟输入取 $v=[1,0]^T$ 阶跃时，两个实际输入从一开始就分别为这两个常数；交叉输出是
+
+$$
+y_2(t)=\frac{2}{13}(e^{-t}-e^{-2t}).
+$$
+
+它的终值为零，途中却有正偏移：导数为零给出 $t=\ln2$，连续峰值为 $1/26\approx0.038462$。**稳态解耦不等于整个过程解耦。** 这个开环预补偿实验与下方分散比例反馈的合同不同，不能把两幅图的峰值直接当作控制方法优劣比较。
 
 ### 动态解耦
 
@@ -394,6 +483,57 @@ $$
 
 <MimoProportionalExplorer />
 
+
+<JupyterNotebook
+  title="静态解耦与可实现边界"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+plt.rcParams.update({"font.family":"DejaVu Sans","font.size":12})
+np.set_printoptions(precision=10,suppress=True)
+`}
+  cells={[{code:`s=sp.symbols('s');G=sp.Matrix([[1/(s+1),sp.Rational(1,2)/(s+3)],[sp.Rational(3,10)/(s+2),1/(s+1)]])
+K=G.subs(s,0);T=K.inv();H=(G*T).applyfunc(sp.factor)
+assert K*T==sp.eye(2)
+assert sp.simplify(H[1,0]-(sp.Rational(4,13)/(s+2)-sp.Rational(2,13)/(s+1)))==0
+print('T=',T,'G*T=',H)
+A=np.diag([-1.,-3.,-2.,-1.]);B=np.array([[1.,0.],[0.,.5],[.3,0.],[0.,1.]])
+C=np.array([[1.,1.,0.,0.],[0.,0.,1.,1.]])
+u=np.array(T[:,0],dtype=float).ravel();tt=np.linspace(0,10,501)
+sol=solve_ivp(lambda t,x:A@x+B@u,[0,10],np.zeros(4),t_eval=tt,rtol=1e-11,atol=1e-13)
+y=C@sol.y;exact=2/13*(np.exp(-tt)-np.exp(-2*tt));assert np.max(abs(y[1]-exact))<1e-10
+peak_t=np.log(2.);peak=2/13*(np.exp(-peak_t)-np.exp(-2*peak_t));assert abs(peak-1/26)<1e-12
+print('continuous peak=',peak,'at=',peak_t,'DC output=',np.array(K,dtype=float)@u)
+# Proper target makes the formal inverse proper in this particular stable teaching plant.
+Tdyn=(G.inv()/(s+1)).applyfunc(sp.cancel)
+assert (G*Tdyn-sp.eye(2)/(s+1)).applyfunc(sp.simplify)==sp.zeros(2)
+for value in Tdyn:
+    num,den=sp.fraction(value);assert sp.degree(num,s)<=sp.degree(den,s)
+print('one proper dynamic target Tdyn=',Tdyn,'det G=',sp.factor(G.det()))
+# This identity alone is not an internal-stability/robustness certificate.
+w=np.r_[0.,np.logspace(-2,2,201)];freq=[];cross=[]
+for omega in w:
+    Gw=C@np.linalg.solve(1j*omega*np.eye(4)-A,B)
+    L=Gw*np.linalg.inv(Gw).T
+    assert np.max(abs(L.sum(axis=0)-1))<1e-10
+    assert np.max(abs(L.sum(axis=1)-1))<1e-10
+    freq.append(L[0,0]);cross.append(abs((Gw@np.array(T,dtype=float))[1,0]))
+for omega in [0.,1.,10.]:
+    Gw=C@np.linalg.solve(1j*omega*np.eye(4)-A,B);print('omega=',omega,'RGA=',Gw*np.linalg.inv(Gw).T,'cross=',abs((Gw@np.array(T,dtype=float))[1,0]))
+# General D!=0 state feedback: A=-1,B=1,C=2,D=3,F=4,T=5.
+state=5/(s+5);actual=2*state+3*(-4*state+5);formula=(2-3*4)/(s+1+4)*5+3*5
+assert sp.simplify(actual-formula)==0
+print('nonzero D closed transfer=',sp.factor(actual))
+fig,axs=plt.subplots(2,1,figsize=(5.4,6.4))
+axs[0].plot(tt,y[0],label='y1');axs[0].plot(tt,y[1],label='y2');axs[0].set(xlabel='t',ylabel='output',xlim=(0,10),ylim=(-.1,1.1))
+axs[1].semilogx(w[1:],np.real(freq)[1:],label='Re RGA11');axs[1].semilogx(w[1:],np.imag(freq)[1:],label='Im RGA11');axs[1].set(xlabel='omega',ylabel='RGA11')
+for ax in axs:ax.grid(True,alpha=.3);ax.legend()
+plt.tight_layout();plt.show()
+`}]}
+/>
+
 ## 深入讨论
 
 ### 频率依赖 RGA
@@ -406,7 +546,7 @@ $$
 \Lambda(j\omega) = G(j\omega) \circ (G(j\omega)^{-1})^T
 $$
 
-画出 $\lambda_{ij}(j\omega)$ 随频率变化的曲线，可以看到交互在不同频率下的强度。复数 RGA 的幅值与相位应结合拟设计的闭环带宽解读；高频大偏离提示进一步检查，不能单独判失稳。这里是普通转置，不是共轭转置。
+只在G(jω)有限且可逆的频率使用这个公式。画出 $\lambda_{ij}(j\omega)$ 随频率变化的曲线，可以看到交互在不同频率下的强度。复数 RGA 的幅值与相位应结合拟设计的闭环带宽解读；高频大偏离提示进一步检查，不能单独判失稳。这里是普通转置，不是共轭转置。
 
 ### 结构化不确定性的边界
 
@@ -414,7 +554,7 @@ $$
 
 ### 从 MIMO 到 MPC
 
-多变量系统分析的另一个重要延伸是**模型预测控制**（MPC）。MPC 天然处理 MIMO 系统和约束——它用模型预测未来行为，在约束下优化控制输入。本课的 RGA 分析可以帮助理解 MPC 中"哪些输入-输出配对重要"。
+多变量系统分析的另一个重要延伸是**模型预测控制**（MPC）。MPC 能将多输入多输出模型和约束一起写入优化。RGA 可以为分散架构提供配对线索；集中式MPC通常保留完整耦合矩阵，不必先把所有输入输出一一配对。可行性、模型误差和求解预算仍要另外核查。
 
 ## 小结
 
@@ -588,3 +728,35 @@ $$
 - $a=1$：两列相同，正常秩变为1；在非极点处秩仍为1，没有进一步下降的有限零点。矩阵不可逆不等于“每个 $s$ 都是零点”。
 
 (b) 两种情形均无额外有限传输零点，但只有 $a\neq1$ 时矩阵在一般 $s$ 处可逆。若题意是问能否直接使用方阵逆，则必须排除 $a=1$。
+
+<JupyterNotebook
+  title="分散反馈全参数核验"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+plt.rcParams.update({"font.family":"DejaVu Sans","font.size":12})
+np.set_printoptions(precision=10,suppress=True)
+`}
+  cells={[{code:`A=np.diag([-1.,-3.,-2.,-1.]);B=np.array([[1.,0.],[0.,.5],[.3,0.],[0.,1.]])
+C=np.array([[1.,1.,0.,0.],[0.,0.,1.,1.]])
+Kdc=-C@np.linalg.solve(A,B);tt=np.linspace(0,10,501);grid_records=[]
+for i in range(5,51):
+    for j in range(5,51):
+        kp=np.diag([i/10,j/10]);F=A-B@kp@C;forcing=B@kp@np.array([1.,0.])
+        assert np.max(np.real(np.linalg.eigvals(F)))<0
+        aug=np.zeros((5,5));aug[:4,:4]=F;aug[:4,4]=forcing
+        step=expm(.02*aug);state=np.r_[np.zeros(4),1.];xs=[]
+        for k in range(501):xs.append(state[:4].copy());state=step@state
+        yy=np.array(xs)@C.T;uu=(np.array([1.,0.])-yy)@kp
+        yinf=np.linalg.solve(np.eye(2)+Kdc@kp,Kdc@kp@np.array([1.,0.]))
+        assert np.min(yy)>=-.1 and np.max(yy)<=1.1 and np.min(uu)>=-1 and np.max(uu)<=5.1
+        peak=int(np.argmax(abs(yy[:,1])))
+        grid_records.append({'params':[i/10,j/10],'samples':np.c_[yy,uu][[0,50,250,500]].tolist(),'steady':yinf.tolist(),'peak':[float(abs(yy[peak,1])),float(tt[peak])]})
+assert len(grid_records)==2116
+for params in [[.5,.5],[.5,5.],[2.,2.],[5.,.5],[5.,5.]]:
+    print(next(row for row in grid_records if row['params']==params))
+print('2116 pairs x501 points: exact ZOH augmented matrix exponential; axis checks passed; no all-system monotonicity claim')
+`}]}
+/>

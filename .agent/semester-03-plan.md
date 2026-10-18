@@ -625,3 +625,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ### MODERN-07 本轮执行记录（2026-10-18）
 
 LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE四cell用途。小车状态/加速度权衡引入与SVG；补DRE对TPBVP/终项、DARE正确Kd/求和尾项、权重缩放/单位、标量b0与采样边界。两模式组件真实模块785组、每组601轴界/四独立时刻与默认601全点复核；五实验八cell严格内核/Pyodide，30旧ID兼容。签发/真实master回执见checklist与.agent/semester-03/modern-07/acceptance.md；27Python待办/W08/W09/W10不关闭，本轮未发布Pages，MODERN-08另开会话。
+
+### MODERN-08 本轮执行记录（2026-10-18）
+
+多变量系统按重构专用技能Phase1–4，保留8主题/三例八题/原六cell用途。供暖耦合SVG入口；补约束增益/单位缩放、近奇异方向、静态逆瞬态/频率与适当性实证，澄清稳态条件与集中MPC。真实组件提纯模块，2116组各501点对独立ODE，四实验九cell严格内核与Pyodide，29旧ID兼容。实际签发/提交见checklist与.agent/semester-03/modern-08/acceptance.md；27Python待办和W08/W09/W10不关闭，本轮未发布Pages，MODERN-09另开会话。

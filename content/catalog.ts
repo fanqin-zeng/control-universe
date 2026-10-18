@@ -1921,16 +1921,16 @@ export const catalog: Chapter[] = [
         "title": "多变量系统",
         "subsections": [
           {
-            "slug": "为什么需要多变量分析",
-            "title": "为什么需要多变量分析"
+            "slug": "通道如何耦合",
+            "title": "通道如何耦合"
           },
           {
-            "slug": "mimo-极点与零点",
-            "title": "MIMO 极点与零点"
+            "slug": "极点与零点",
+            "title": "极点与零点"
           },
           {
-            "slug": "交互分析与-rga",
-            "title": "交互分析与 RGA"
+            "slug": "相对增益",
+            "title": "相对增益"
           },
           {
             "slug": "解耦控制",
