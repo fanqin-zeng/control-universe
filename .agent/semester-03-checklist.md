@@ -84,7 +84,7 @@
 | CLASSIC-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/08-compensator-design.md;.agent/semester-03/classic-08/acceptance.md;commit:5c65da108a2376b81e52b6aeed49c4cda86a36ef |
 | CLASSIC-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/09-frequency-response-design.md;.agent/semester-03/classic-09/acceptance.md;commit:950cbc5627c0f6ea70709fafa0c8c9d1a0c361e7 |
 | CLASSIC-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/10-design-methods-comparison.md;.agent/semester-03/classic-10/acceptance.md;commit:5194247ebad0d62c72b96e26ce67eb123f016f1f |
-| CLASSIC-11 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/11-classic-case-study.md;.agent/semester-03/classic-11/acceptance.md |
+| CLASSIC-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/11-classic-case-study.md;.agent/semester-03/classic-11/acceptance.md;commit:eed1fd736d54b3bd5620ee4884957aa3609f88a3 |
 
 ### 现代控制
 

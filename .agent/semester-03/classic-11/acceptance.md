@@ -38,3 +38,5 @@ W06/W07/W08/W09与27全局Python待办保持开放，无未迁材料。下节按
 ## 合并回执
 
 本课验收后--no-ff合master，取得真实课程提交/合并hash后补入并勾checklist最后一列；本轮不推送gh-pages。
+
+真实课程提交87f984dcf22a0ae0f5d3616abe487a95f0865a1f；--no-ff课程合并eed1fd736d54b3bd5620ee4884957aa3609f88a3。取得真实hash后勾全局checklist合并列；check-merged.log/semester-merged.log记录合并态21PASS/2已登记WARN/0FAIL与merged29。回执单独提交、--no-ff合master后删除工作包分支，本轮未推送或发布。
