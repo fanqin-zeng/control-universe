@@ -21,3 +21,7 @@
 兼容聚合73课/343实验/518cell，本轮仅实跑本课；27原待办ID/原因/处置以及W08/W09/W10保留，不冒报全站重跑。Phase4在实际最终验收后签发，master实际回执随后登记。
 
 最终node scripts/verify-modern06-delivery.mjs退出0，35旧ID/40目标、375px截图与最终源指纹一致。Phase4据此签发。本课旧日志不覆盖，用户三份proofreading不纳入。
+
+## master回执
+
+课程完成提交 `cbfc8a937171640a7a8667a89032444d5a11a766` 已直接进入master，全局checklist依真实hash勾选旧“合并”列。本回执普通提交后与课程一起推送origin master；gh-pages保持42eed1d，本轮未发布。
