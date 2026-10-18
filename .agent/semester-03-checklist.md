@@ -46,6 +46,7 @@
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
+| DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
