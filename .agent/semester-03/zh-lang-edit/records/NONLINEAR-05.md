@@ -1,6 +1,6 @@
 # NONLINEAR-05 反馈线性化
 
-- 状态：待合入
+- 状态：已合入
 - 正文路径：content/nonlinear/feedback-linearization.mdx
 - 起始提交：cc3578e；本次重做提交：见 git log（提交后由 PLAN 行 43 关联）
 - 日期：2026-10-19
@@ -24,3 +24,5 @@
 ## 合入回执（由维护Agent在用户授权后填写）
 
 （空）
+
+维护审核回执（2026-10-19）：用户本轮明确授权，快速技术审核并修正本轮指代/旧锚点问题后合入master 9cafbd4020cd72457b36bbbf1b8edb7d5c5e570e。审核见[本轮记录](../merges/d05e876/acceptance.md)。已合入表示版本管理状态，不代替用户语言精读认可。

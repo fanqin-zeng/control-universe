@@ -15,3 +15,5 @@ Python：执行载荷不变的227实验按精确payloadHash迁移正文指纹，
 实际本地验收：npm run build退出0；37实际修改课verify退出0，逐课九项无FAIL；check退出0、math/glossary退出0、37回归测试通过；semester守卫退出0，59课生产进度不变。日志均在本目录。Pages构建最初拦下数学legacy reference源hash过期，pages-build-rejected.log保留；按已证相同Python载荷刷新meta后重跑，不关闭门槛或伪造参考输出。最终Pages构建以pages-build.log实际结果为准。
 
 最终Pages本地构建退出0，205课/9旧路由通过；普通和静态微积分首实验实际按钮运行通过，新稿六Notebook浏览器抽测通过。alias-native.json确认旧ID及新标题同时存在。所有门槛已过，准予将固定d05e876合入master，再按本轮明确授权发布。
+
+实际master merge 9cafbd4020cd72457b36bbbf1b8edb7d5c5e570e，两父为69e43d3与固定d05e876；45条PLAN/记录据真实提交更新已合入，59课生产状态保留。Pages本地构建最终退出0，发布回执在docs/deployment/discrete10-zh-release.md。
