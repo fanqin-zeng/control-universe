@@ -2433,54 +2433,18 @@ export const catalog: Chapter[] = [
         "slug": "backstepping",
         "title": "反步设计",
         "subsections": [
-          {
-            "slug": "引言",
-            "title": "引言"
-          },
-          {
-            "slug": "严格反馈系统",
-            "title": "严格反馈系统"
-          },
-          {
-            "slug": "二阶系统的反步法设计",
-            "title": "二阶系统的反步法设计"
-          },
-          {
-            "slug": "手算例子",
-            "title": "手算例子"
-          },
-          {
-            "slug": "n阶系统的反步法设计",
-            "title": "n阶系统的反步法设计"
-          },
-          {
-            "slug": "处理参数不确定性",
-            "title": "处理参数不确定性"
-          },
-          {
-            "slug": "应用案例",
-            "title": "应用案例"
-          },
-          {
-            "slug": "与其他非线性控制方法的对比",
-            "title": "与其他非线性控制方法的对比"
-          },
-          {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
+          {"slug":"先设计期望速度","title":"先设计期望速度"},
+          {"slug":"严格反馈结构","title":"严格反馈结构"},
+          {"slug":"二阶递推","title":"二阶递推"},
+          {"slug":"手算与核验","title":"手算与核验"},
+          {"slug":"高阶递推","title":"高阶递推"},
+          {"slug":"自适应递推","title":"自适应递推"},
+          {"slug":"柔性关节案例","title":"柔性关节案例"},
+          {"slug":"二阶增益比较","title":"二阶增益比较"},
+          {"slug":"适用边界","title":"适用边界"},
+          {"slug":"小结","title":"小结"},
+          {"slug":"习题","title":"习题"},
+          {"slug":"答案","title":"答案"}
         ],
         "prereq": [
           "nonlinear/lyapunov-stability",

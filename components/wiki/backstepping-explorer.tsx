@@ -4,138 +4,8 @@ import { useMemo, useState } from "react";
 import { useECharts } from "./use-echarts";
 import type { EChartsOption } from "echarts";
 
-const A_TRUE = 3.0;
-const B_TRUE = 1.0;
-const W_AMP = 0.3;
-const W_FRQ = 5.0;
-const G1 = 1.0;
-const DT = 5e-4;
-const T_STEP = 10;
-const T_SINE = 12;
-const SINE_AMP = 0.5;
-const SINE_FRQ = 2.0;
-const ZETA_TARGET = 0.7;
-
-type RefKind = "step" | "sine";
-type Law = "bs" | "fl" | "fl7";
-
-const LAW_LABEL: Record<Law, string> = {
-  bs: "反步 (k1,k2)",
-  fl: "反馈线性化（同增益）",
-  fl7: "反馈线性化（ζ=0.7 目标）",
-};
-
-function refSignal(kind: RefKind, t: number): [number, number, number] {
-  if (kind === "step") return [1.0, 0.0, 0.0];
-  return [
-    SINE_AMP * Math.sin(SINE_FRQ * t),
-    SINE_AMP * SINE_FRQ * Math.cos(SINE_FRQ * t),
-    -SINE_AMP * SINE_FRQ * SINE_FRQ * Math.sin(SINE_FRQ * t),
-  ];
-}
-
-function plant(x1: number, x2: number, u: number, t: number): [number, number] {
-  return [x2, -A_TRUE * Math.sin(x1) - B_TRUE * x2 + u + W_AMP * Math.sin(W_FRQ * t)];
-}
-
-interface SimResult {
-  t: number[];
-  x1: number[];
-  e: number[];
-  u: number[];
-  maxU: number;
-  rmsE: number;
-  overshoot: number;
-  diverged: boolean;
-}
-
-function simulate(
-  law: Law,
-  kind: RefKind,
-  k1: number,
-  k2: number,
-  m: number
-): SimResult {
-  const T = kind === "step" ? T_STEP : T_SINE;
-  const steps = Math.round(T / DT);
-  const ah = m * A_TRUE;
-  const bh = m * B_TRUE;
-  const Kp = G1 + k1 * k2;
-  const Kv = k1 + k2;
-  const Kp7 = Kp;
-  const Kv7 = 2 * ZETA_TARGET * Math.sqrt(Kp7);
-
-  let x1 = kind === "step" ? 0.0 : refSignal(kind, 0)[0];
-  let x2 = kind === "step" ? 0.0 : refSignal(kind, 0)[1];
-
-  const control = (t: number, xa: number, xb: number): number => {
-    const [xd, xdd, xddd] = refSignal(kind, t);
-    const e = xa - xd;
-    const ed = xb - xdd;
-    const f2h = -ah * Math.sin(xa) - bh * xb;
-    if (law === "fl") return -f2h + xddd - Kp * e - Kv * ed;
-    if (law === "fl7") return -f2h + xddd - Kp7 * e - Kv7 * ed;
-    const z1 = e;
-    const a1 = xdd - k1 * z1;
-    const z2 = xb - a1;
-    const a1d = xddd + k1 * k1 * z1 - k1 * z2;
-    return -z1 - f2h + a1d - k2 * z2;
-  };
-
-  const t: number[] = [];
-  const xs: number[] = [];
-  const es: number[] = [];
-  const us: number[] = [];
-  let maxU = 0;
-  let diverged = false;
-  const stride = 4;
-  const tailStart = kind === "step" ? 4 : 0.6 * T;
-  let sq = 0;
-  let cnt = 0;
-  let peak = 0;
-
-  for (let i = 0; i <= steps; i++) {
-    const time = i * DT;
-    const u = control(time, x1, x2);
-    const [xd] = refSignal(kind, time);
-    const e = x1 - xd;
-    if (i % stride === 0) {
-      t.push(time);
-      xs.push(x1);
-      es.push(e);
-      us.push(u);
-    }
-    if (time > tailStart) {
-      sq += e * e;
-      cnt += 1;
-    }
-    if (Math.abs(u) > maxU) maxU = Math.abs(u);
-    if (x1 > peak) peak = x1;
-
-    const k1a = plant(x1, x2, u, time);
-    const k2a = plant(x1 + 0.5 * DT * k1a[0], x2 + 0.5 * DT * k1a[1], u, time + 0.5 * DT);
-    const k3a = plant(x1 + 0.5 * DT * k2a[0], x2 + 0.5 * DT * k2a[1], u, time + 0.5 * DT);
-    const k4a = plant(x1 + DT * k3a[0], x2 + DT * k3a[1], u, time + DT);
-    x1 = x1 + (DT / 6) * (k1a[0] + 2 * k2a[0] + 2 * k3a[0] + k4a[0]);
-    x2 = x2 + (DT / 6) * (k1a[1] + 2 * k2a[1] + 2 * k3a[1] + k4a[1]);
-    if (!Number.isFinite(x1) || !Number.isFinite(x2) || Math.abs(x1) > 1e3) {
-      diverged = true;
-      break;
-    }
-  }
-
-  const base = kind === "step" ? 1.0 : 0.0;
-  return {
-    t,
-    x1: xs,
-    e: es,
-    u: us,
-    maxU,
-    rmsE: cnt > 0 ? Math.sqrt(sq / cnt) : NaN,
-    overshoot: kind === "step" ? Math.max(0, (peak - base) * 100) : NaN,
-    diverged,
-  };
-}
+import {simulateBackstepping, refSignal, LAW_LABEL, type RefKind, type Law, type SimResult} from "@/lib/backstepping";
+const G1=1,T_STEP=10,T_SINE=12,ZETA_TARGET=.7;
 
 export function BacksteppingExplorer() {
   const [k1, setK1] = useState(3.0);
@@ -158,7 +28,7 @@ export function BacksteppingExplorer() {
   const runs = useMemo(() => {
     const out = {} as Record<Law, SimResult>;
     (Object.keys(LAW_LABEL) as Law[]).forEach((law) => {
-      out[law] = simulate(law, kind, k1, k2, m);
+      out[law] = simulateBackstepping(law, kind, k1, k2, m);
     });
     return out;
   }, [kind, k1, k2, m]);
@@ -230,7 +100,7 @@ export function BacksteppingExplorer() {
   const regionOption = useMemo<EChartsOption>(() => {
     const boundary: [number, number][] = [];
     const iso: [number, number][] = [];
-    for (let kp = G1; kp <= 40; kp += 0.25) {
+    for (let kp = G1; kp <= 70; kp += 0.25) {
       boundary.push([kp, 2 * Math.sqrt(kp - G1)]);
       iso.push([kp, 2 * ZETA_TARGET * Math.sqrt(kp)]);
     }
@@ -244,7 +114,7 @@ export function BacksteppingExplorer() {
       xAxis: {
         type: "value",
         min: 0,
-        max: 40,
+        max: 70,
         name: "Kp",
         nameLocation: "middle",
         nameGap: 25,
@@ -326,12 +196,14 @@ export function BacksteppingExplorer() {
   return (
     <div
       className="not-prose"
+      data-backstepping-explorer
       style={{
         border: "1px solid #d1d5db",
         borderRadius: 8,
         margin: "24px 0",
         padding: 16,
         background: "#fff",
+        color: "#1e293b",
       }}
     >
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
@@ -366,6 +238,7 @@ export function BacksteppingExplorer() {
         <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
           k₁ = {k1.toFixed(1)}
           <input
+            aria-label="反步k1"
             type="range"
             min={0.5}
             max={8}
@@ -421,29 +294,32 @@ export function BacksteppingExplorer() {
         {stat("max|u_反步 − u_FL|", maxDiff.toExponential(1), "#16a34a")}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-        <div ref={trackRef} style={{ width: "48%", minWidth: 320, height: 330 }} />
-        <div ref={regionRef} style={{ width: "48%", minWidth: 320, height: 330 }} />
+      <button onClick={()=>{setK1(3);setK2(5);setM(1);setKind("step");setShow({bs:true,fl:true,fl7:true});}} style={{padding:"6px 10px",marginBottom:12}}>恢复反步默认</button>
+      <p data-backstepping-reading style={{fontSize:13,overflowWrap:"anywhere"}}>t={runs.bs.lastTime.toFixed(1)}s；rms(e)={runs.bs.rmsE.toExponential(6)}；max|u|={runs.bs.maxU.toFixed(6)}；等价残差={runs.bs.equivalenceResidual.toExponential(3)}。</p>
+      <p style={{fontSize:13}}>dt=0.0005s；控制每步更新并零阶保持，植物以RK4积分；阶跃尾窗4&lt;t≤10，正弦尾窗7.2&lt;t≤12。所有节点计算指标，图每4步取点；未限幅。阻尼比是标称连续误差方程的参数，非扰动曲线的实测值。</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))",gap:16}}>
+        <div ref={trackRef} style={{width:"100%",minWidth:0,height:330}} />
+        <div ref={regionRef} style={{width:"100%",minWidth:0,height:330}} />
       </div>
 
       <div style={{ fontSize: 13, color: "#475569", marginTop: 8 }}>
         {runs.bs.diverged ? (
           <span style={{ color: "#dc2626" }}>
-            反步闭环发散：k₁、k₂ 太小盖不住 30% 以上的模型误差与扰动，把增益调大或把 m 调回 1.00。
+            轨迹达到数值停止条件；本窗口不足以判断连续系统稳定性，请查看实际终时。
           </span>
         ) : (
           <>
             <strong>max|u_反步 − u_反馈线性化| = {maxDiff.toExponential(1)}</strong>
-            ：两条曲线在浮点舍入量级内完全重合，说明标称反步与反馈线性化是同一个控制律，
+            ：两条曲线在浮点舍入量级内完全重合，核验本节二阶配方与对应反馈线性化的代数等价，
             增益映射就是 Kp = 1 + k₁k₂、Kv = k₁ + k₂。
             {reachable
               ? ` 当前 (Kp, Kv) = (${Kp.toFixed(2)}, ${Kv.toFixed(2)}) 在可达域内（边界 Kv ≥ 2√(Kp−1) = ${(2 * Math.sqrt(Kp - G1)).toFixed(2)}）。`
               : " 当前增益落在可达域外（理论上不会发生，因为 k₁,k₂ 取正实数）。"}
             {zetaMin > ZETA_TARGET
-              ? ` 但同一刚度下反步能达到的最小阻尼是 ζ_min = ${zetaMin.toFixed(3)} > 0.7，所以绿色的 ζ=0.7 目标点落在红色边界下方——反步给不出这个响应，反馈线性化可以。`
+              ? ` 但同一刚度下反步能达到的最小阻尼是 ζ_min = ${zetaMin.toFixed(3)} > 0.7，所以绿色的 ζ=0.7 目标点落在红色边界下方——这组单位权重配方给不出该标称极点；其它权重或设计需另推。`
               : ` 当前刚度较低（Kp = ${Kp.toFixed(2)}），ζ_min = ${zetaMin.toFixed(3)} 已经小于 0.7，ζ=0.7 目标可达；把 k₁k₂ 调大再看，ζ_min 会迅速逼近 1。`}
             {m < 1
-              ? ` m = ${m.toFixed(2)} 时反步与反馈线性化的 rms 误差一起变差（标称设计对模型误差没有免疫力），这正是第 6 节自适应反步要解决的问题。`
+              ? ` m = ${m.toFixed(2)} 时两律仍使用同一个估计模型。误差大小看当前读数；m减小并不保证每个有限窗指标都单调变化。`
               : ""}
           </>
         )}

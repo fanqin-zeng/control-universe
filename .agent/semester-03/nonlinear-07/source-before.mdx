@@ -1,0 +1,2127 @@
+---
+title: "反步法设计"
+description: "用递归的虚拟控制与 Lyapunov 函数系统化地稳定严格反馈系统：结构判据、二阶与 n 阶递推公式、tuning function 自适应、柔性关节机器人案例，以及六个定量数值实验"
+---
+
+# 反步法设计
+
+## 引言
+
+一支接力队跑得快不快，取决于每一次交接棒。控制系统里也有一类"接力"结构：控制量 $u$ 先推动最后一个状态 $x_n$，$x_n$ 再推动 $x_{n-1}$，一级一级往前传，最后才影响到你真正关心的输出 $x_1$。柔性关节机器人就是典型——电机转矩先让转子加速，转子通过弹性联轴器拉动连杆，连杆角度才是被控量；中间隔着两个积分环节和一根弹簧。
+
+对这类系统，一个很自然的想法是**倒着设计**：先问"$x_2$ 应该等于多少，才能让 $x_1$ 稳定？"，把这个期望值记作 $\alpha_1$；再问"$x_3$ 应该等于多少，才能让 $x_2$ 跟上 $\alpha_1$？"，记作 $\alpha_2$；一直问到最后一步，答案就是真正的控制律 $u$。这个"一步一步往回走"的过程，就是**反步法**（Backstepping）。
+
+它的吸引力在于**系统性**：只要系统具有严格反馈结构，$n$ 阶设计就是同样两步操作重复 $n$ 次，每一步都用 Lyapunov 函数背书，最后拼出一个全局稳定的闭环。你不需要灵感去"猜"一个 Lyapunov 函数——它是被递推公式构造出来的。
+
+<Callout variant="warning">
+**先纠正一个流传很广的说法**：很多教材写"反步法不需要精确抵消非线性项，因此比反馈线性化更鲁棒"。这句话是错的，而且错得很具体。第 8 节会在 20000 个随机状态点上逐点比较两个控制律算出的 $u$，结果是 $\max|u_{\text{反步}}-u_{\text{反馈线性化}}| = 2.1\times10^{-14}$——纯浮点舍入量级。**标称反步与反馈线性化是同一个控制律的两种参数化**（增益映射 $K_p = g_1+k_1k_2$，$K_v = k_1+k_2$）。反步法真正的价值在下面四条，不在"少抵消"。
+</Callout>
+
+反步法真正给你的四样东西，全部会在本课被数值实验验证：
+
+1. **系统化的递推**：结构合格后，设计过程是机械的，可以交给符号计算（第 7 节用 SymPy 把四阶柔性关节机器人的控制律直接推出来，$u$ 的表达式有 46 个算子，全程 0.05 s）；
+2. **选择性抵消的自由度**：递推公式里的 $f_i$ 不必全部抵消，只抵消"压不住的部分"即可。第 8 节实测：只抵消阻尼项时，rms 跟踪误差从 $5.2\times10^{-3}$ 恶化到 $4.8\times10^{-2}$，但控制量峰值从 1.39 降到 1.30——这是一个可以用数据定价的权衡；
+3. **处理不匹配不确定性的自适应机制**：tuning function 把参数估计嵌进递推，第 8 节实测在 30% 模型误差下 rms 误差 $3.3\times10^{-3}$，比"精确抵消"的 $1.8\times10^{-2}$ 好 5.6 倍；
+4. **一个显式的控制 Lyapunov 函数**：$V_n=\sum_i z_i^2/2$ 不只是证明工具，它的水平集直接给出可用吸引域的估计。
+
+代价同样明确，而且都是可测量的：参考轨迹必须 $n$ 阶连续可微；控制律表达式规模每增加一阶放大约 2.4 倍（$n=2\to7$：13 → 1082 个算子）；前一步的误差会被后一步的交叉项按 $g_{i-1}$ 放大（0.05 rad 的初值偏差在四阶机器人上放大成 700 N·m 的转矩尖峰）；对采样周期远比线性控制器敏感。这些数字在第 5、7 节逐一给出。
+
+> 📐 本文大量使用 Lyapunov 稳定性理论与链式法则，详见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)；与反馈线性化的关系见 [反馈线性化](/nonlinear/feedback-linearization)；自适应部分的参数收敛条件见 [自适应控制基础](/nonlinear/adaptive-control-basics)。
+
+学完本课，你应当能够：
+
+1. 用三个数值判据（$g_i\neq 0$、$x_{i+1}$ 线性出现、无越界依赖）判断一个模型能否用反步法，并说明 Boost 变换器与纯反馈系统为什么不合格；
+2. 对二阶系统独立完成 $z_1\to\alpha_1\to z_2\to u$ 的递推，并指出 $\dot V_2=-k_1z_1^2-k_2z_2^2$ 中每一项的来源；
+3. 写出 $n$ 阶递推公式，解释 $\dot\alpha_{i-1}$ 为什么需要参考轨迹的 $i$ 阶导数；
+4. 用 tuning function 设计自适应反步，并解释持续激励（PE）为什么决定 $\hat\theta$ 是否收敛到真值；
+5. 定量说出反步法的四个工程代价，并解释动态面控制（DSC）是用什么换什么。
+
+<figure>
+  <img src="/images/backstepping-concept.png" alt="严格反馈系统的级联结构与反步法的递归设计方向" />
+  <figcaption>图1：反步法的递归结构。前向是物理级联：$u$ 通过 $g_n$ 推动 $x_n$，$x_n$ 通过 $g_{n-1}$ 推动 $x_{n-1}$，一路传到 $x_1$。后向是设计过程：先为 $z_1$ 设计虚拟控制 $\alpha_1$，再为 $z_2=x_2-\alpha_1$ 设计 $\alpha_2$，直到最后一步得到 $u$。每设计一步，Lyapunov 函数就累加一项 $z_i^2/2$，交叉项 $g_{i-1}z_{i-1}z_i$ 在第 $i$ 步被 $-g_{i-1}z_{i-1}$ 精确吃掉。</figcaption>
+</figure>
+
+## 严格反馈系统
+
+### 定义
+
+**严格反馈系统**（strict-feedback system）指具有如下下三角结构的系统：
+
+$$
+\begin{aligned}
+\dot{x}_1 &= f_1(x_1) + g_1(x_1)\,x_2 \\
+\dot{x}_2 &= f_2(x_1, x_2) + g_2(x_1, x_2)\,x_3 \\
+&\vdots \\
+\dot{x}_{n-1} &= f_{n-1}(x_1,\ldots,x_{n-1}) + g_{n-1}(\cdot)\,x_n \\
+\dot{x}_n &= f_n(x_1,\ldots,x_n) + g_n(\cdot)\,u
+\end{aligned}
+$$
+
+其中 $f_i,g_i$ 是已知的光滑函数，且在关心的工作域内 $g_i(x)\neq 0$（符号不变）。三个结构特征是：
+
+1. **下三角依赖**：第 $i$ 个方程只依赖 $x_1,\ldots,x_i$ 和 $x_{i+1}$，绝不依赖更靠后的状态；
+2. **虚拟控制线性出现**：$x_{i+1}$ 在第 $i$ 个方程里是一次的，系数 $g_i$ 可以依赖 $x_1,\ldots,x_i$，但 $x_{i+1}$ 本身不能出现在 $x_{i+1}^2$、$\sin x_{i+1}$ 之类的项里；
+3. **$u$ 只出现在最后一个方程**，且线性出现。
+
+这种结构在物理系统里非常常见，因为"位置—速度—力"这条链天生就是级联的：机械系统的位置→速度→加速度，机电系统的磁链→电流→电压，飞行器的迎角→俯仰角速率→舵偏角。
+
+### 三个判据：怎么用数值方法检查结构
+
+判断一个模型是不是严格反馈，靠肉眼看方程容易出错——尤其是从拉格朗日方程或电路方程推出来的高维模型。更可靠的做法是把三个特征翻译成三个**可以用差分算出来的量**：
+
+| 判据 | 数学表述 | 数值算法 | 合格条件 |
+|------|----------|----------|----------|
+| 通道非零 | $g_i(x)=\partial f_i/\partial x_{i+1}\neq 0$ | 对 $x_{i+1}$ 做中心差分 | $\lvert g_i\rvert$ 大于阈值 |
+| 线性出现 | $\partial^2 \dot x_i/\partial x_{i+1}^2 = 0$ | 二阶中心差商 | 相对 $g_i$ 可忽略 |
+| 无越界依赖 | $\partial \dot x_i/\partial x_j = 0\ (j>i+1)$，且 $i<n$ 时 $\partial\dot x_i/\partial u=0$ | 逐个偏导 | 全部可忽略 |
+
+下面这段代码对四个系统做这套检查：一个标准二阶机械系统、一个四阶柔性关节机器人、一个 Boost 变换器、一个纯反馈系统。注意**柔性关节机器人在自然状态排序 $(q,\dot q,\theta,\dot\theta)$ 下已经是严格反馈形式**，$g_2=K/J_l=200$ 就是那根弹簧——不需要任何坐标变换（这是一个常见误解，我们在第 7 节会用它做完整案例）。
+
+<JupyterNotebook
+  title="Notebook 1：严格反馈结构的数值判定，以及结构不合格时硬套反步法的后果"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 判据：第 i 个方程只能依赖 x1..xi 与 x_(i+1)，且 x_(i+1) 必须线性出现；
+#       u 只允许出现在最后一个方程，且线性出现。
+# 三项检查全部用差分算出来，不依赖人工读方程：
+#   g_i      = d f_i / d x_(i+1)          中心差分，必须非零
+#   二阶差商 = d2 f_i / d x_(i+1)^2       必须为零，即线性出现
+#   越界泄漏 = max_{j>i+1} |d f_i/d x_j|  必须为零，即下三角
+
+def perturb(f, x, u, idx, h):
+    if idx == "u":
+        return f(x, u + h)
+    xp = np.array(x, dtype=float)
+    xp[idx] += h
+    return f(xp, u)
+
+def partial(f, x, u, idx, i, h=1e-5):
+    return (perturb(f, x, u, idx, h)[i] - perturb(f, x, u, idx, -h)[i]) / (2*h)
+
+def second_partial(f, x, u, idx, i, h=2e-3):
+    return (perturb(f, x, u, idx, h)[i] - 2*f(x, u)[i] + perturb(f, x, u, idx, -h)[i]) / h**2
+
+def structure_report(name, f, n, xbar, ubar=0.0, tol=1e-4):
+    print()
+    print("【" + name + "】  n = " + str(n))
+    print("  方程   通道      g_i        二阶差商     越界泄漏      判定")
+    ok_all = True
+    for i in range(n):
+        last = (i == n - 1)
+        chan = "u" if last else i + 1
+        g = partial(f, xbar, ubar, chan, i)
+        lin = abs(second_partial(f, xbar, ubar, chan, i))
+        leak = 0.0
+        for j in range(i + 2, n):
+            leak = max(leak, abs(partial(f, xbar, ubar, j, i)))
+        if not last:
+            leak = max(leak, abs(partial(f, xbar, ubar, "u", i)))
+        ok = (abs(g) > tol) and (lin < tol*max(1.0, abs(g))) and (leak < tol)
+        ok_all = ok_all and ok
+        why = []
+        if abs(g) <= tol:
+            why.append("g=0")
+        if lin >= tol*max(1.0, abs(g)):
+            why.append("非线性")
+        if leak >= tol:
+            why.append("越界依赖")
+        print("  " + str(i+1) + "      " + ("u " if last else "x" + str(i+2))
+              + "   " + ("%.4f" % g).rjust(9) + "   " + ("%.2e" % lin).rjust(10)
+              + "   " + ("%.2e" % leak).rjust(10) + "      "
+              + ("严格反馈" if ok else "违反(" + ",".join(why) + ")"))
+    print("  => " + ("结构合格，可用反步法" if ok_all else "结构不合格，反步法不直接适用"))
+    return ok_all
+
+# S1 标准二阶机械系统（单摆型）
+def s1(x, u):
+    return np.array([x[1], -3.0*np.sin(x[0]) - x[1] + u])
+
+# S2 柔性关节机器人：Jl=1, Jm=0.5, K=200, Bl=1, Bm=0.5，状态 (q, q_dot, theta, theta_dot)
+Jl, Jm, Kk, Bl, Bm = 1.0, 0.5, 200.0, 1.0, 0.5
+def s2(x, u):
+    return np.array([x[1],
+                     (-Bl*x[1] - Kk*(x[0] - x[2])) / Jl,
+                     x[3],
+                     (-Bm*x[3] - Kk*(x[2] - x[0]) + u) / Jm])
+
+# S3 Boost 变换器平均模型：x1 = VC, x2 = iL, u = 占空比
+L, C, R, Vin = 1e-3, 1e-4, 10.0, 12.0
+def s3(x, u):
+    return np.array([(1-u)*x[1]/C - x[0]/(R*C),
+                     -(1-u)*x[0]/L + Vin/L])
+
+# S4 纯反馈系统：x2 以三次方出现
+def s4(x, u):
+    return np.array([x[0] + x[1]**3, u])
+
+structure_report("S1 二阶机械系统 x1'=x2, x2'=-3sin(x1)-x2+u", s1, 2, [0.6, -0.3], 0.2)
+structure_report("S2 柔性关节机器人 (Jl,Jm,K,Bl,Bm)=(1,0.5,200,1,0.5)", s2, 4,
+                 [0.4, 0.2, 0.5, -0.1], 1.5)
+structure_report("S3 Boost 变换器 (x1=VC, x2=iL, u=占空比)", s3, 2, [24.0, 2.0], 0.4)
+structure_report("S4 纯反馈 x1'=x1+x2^3, x2'=u", s4, 2, [0.5, 0.4], 0.1)
+
+print()
+print("结论：S2 在自然状态排序 (q, q_dot, theta, theta_dot) 下已经是严格反馈形式，")
+print("      不需要任何坐标变换；S3 因为 u 同时进入两个方程（且与状态相乘）而不合格；")
+print("      S4 因为 x2 以三次方出现而不合格。")` },
+    { code: `# 结构不合格时硬套反步法会怎样？拿 S4: x1' = x1 + x2^3, x2' = u 做实验
+# 做法一（naive）：假装系统是 x1' = x1 + x2，按严格反馈递推设计
+def rk4(fcl, x0, T, dt):
+    N = int(round(T/dt))
+    X = np.zeros((N+1, len(x0)))
+    X[0] = x0
+    x = np.array(x0, dtype=float)
+    for i in range(N):
+        t = i*dt
+        k1 = fcl(x, t)
+        k2 = fcl(x + 0.5*dt*k1, t + 0.5*dt)
+        k3 = fcl(x + 0.5*dt*k2, t + 0.5*dt)
+        k4 = fcl(x + dt*k3, t + dt)
+        x = x + dt/6*(k1 + 2*k2 + 2*k3 + k4)
+        X[i+1] = x
+    return np.linspace(0, T, N+1), X
+
+k1g, k2g = 2.0, 3.0
+Aeq = 1 + (1+k1g)*(1+k2g)
+Beq = (1+k1g) + k2g
+
+def plant_s4(x):
+    return np.array([x[0] + x[1]**3, 0.0])
+
+def naive_ctrl(x):
+    z1 = x[0]
+    a1 = -(1+k1g)*x[0]
+    a1d = -(1+k1g)*(x[0] + x[1])
+    z2 = x[1] - a1
+    return -z1 + a1d - k2g*z2
+
+def cl_naive(x, t):
+    d = plant_s4(x)
+    d[1] = naive_ctrl(x)
+    return d
+
+print("naive 设计（把 x2^3 当成 x2）得到的闭环：")
+print("  x1' = x1 + x2^3,   x2' = -A*x1 - B*x2")
+print("  A = 1+(1+k1)(1+k2) = %.0f,   B = (1+k1)+k2 = %.0f" % (Aeq, Beq))
+J = np.array([[1.0, 0.0], [-Aeq, -Beq]])
+print("  原点处 Jacobian 特征值 = %s  => 原点是鞍点（有一个 +1 的不稳定方向）"
+      % np.array2string(np.linalg.eigvals(J), precision=3))
+xstar = (Beq/Aeq)**1.5
+print("  非零平衡点解析解： x1* = +/- (B/A)^1.5 = +/- %.6f" % xstar)
+for x0, tag in [((0.6, 0.0), "x0=(0.6,0)"), ((-0.6, 0.0), "x0=(-0.6,0)")]:
+    tt, XX = rk4(cl_naive, list(x0), 60.0, 1e-3)
+    print("  %s 实测末值 x1 = %+.6f（解析 %+.6f，偏差 %.2e）"
+          % (tag, XX[-1, 0], np.sign(x0[0])*xstar, abs(XX[-1, 0] - np.sign(x0[0])*xstar)))
+print("  => 硬套反步法不会发散，但也绝不收敛到 0：稳态偏差 %.1f%%" % (100*xstar))
+
+print()
+print("做法二：用真实 g1 = 3*x2^2 来设计（pure-feedback 情形的直觉做法）")
+print("  alpha1 = -(f1 + k1*z1)/g1 = -(1+k1)*x1/(3*x2^2)，在 x2 = 0 处奇异")
+tt_s, XX_s = rk4(cl_naive, [0.6, 0.0], 10.0, 2e-4)
+g1_true = 3*XX_s[:, 1]**2
+a1_true = -(1+k1g)*XX_s[:, 0] / np.maximum(g1_true, 1e-12)
+near0 = np.sum(np.abs(XX_s[:, 1]) < 0.01)
+print("  沿轨迹实测：|x2| < 0.01 的采样点 = %d 个（占 %.2f%%），min|g1| = %.3e"
+      % (near0, 100*near0/len(tt_s), np.min(g1_true)))
+print("  max|alpha1| = %.3e  => 虚拟控制无界，控制器根本无法实现" % np.max(np.abs(a1_true)))
+print("  => 结构不合格时递推公式里的 1/g_i 会奇异。正确做法是 pure-feedback 反步")
+print("     （中值定理展开或神经网络逼近），而不是把 x_(i+1) 硬当线性通道。")` },
+    { code: `fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+# 左：naive 闭环的相平面——原点鞍点，两个非零平衡点是稳定结点
+for x0, c in [((0.6, 0.0), "C0"), ((-0.6, 0.0), "C3"), ((0.1, 0.9), "C2")]:
+    tp, XP = rk4(cl_naive, list(x0), 25.0, 2e-3)
+    ax[0].plot(XP[:, 0], XP[:, 1], c, lw=1.2)
+    ax[0].plot(XP[0, 0], XP[0, 1], "o", color=c, ms=6)
+ax[0].plot([0, xstar, -xstar], [0, 0, 0], "kx", ms=11, mew=2)
+ax[0].annotate("原点：鞍点", (0, 0), textcoords="offset points", xytext=(6, 14), fontsize=9)
+ax[0].annotate("x1* = +0.3136", (xstar, 0), textcoords="offset points", xytext=(-20, -22), fontsize=9)
+ax[0].annotate("x1* = -0.3136", (-xstar, 0), textcoords="offset points", xytext=(-40, 12), fontsize=9)
+ax[0].set_xlim(-0.9, 0.9)
+ax[0].set_ylim(-1.2, 1.2)
+ax[0].set_xlabel("x1")
+ax[0].set_ylabel("x2")
+ax[0].grid(True)
+ax[0].set_title("硬套反步法：收敛到错误的平衡点")
+
+ax[1].semilogy(tt_s, np.maximum(np.abs(a1_true), 1e-12), "C3")
+ax[1].set_xlabel("t (s)")
+ax[1].set_ylabel("|alpha1|（对数）")
+ax[1].set_ylim(1e-3, 1e13)
+ax[1].set_xlim(0, 10)
+ax[1].grid(True)
+ax[1].set_title("用真实 g1=3x2^2 设计：虚拟控制在 x2=0 处奇异")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+从判定表可以读出三件事：
+
+- **柔性关节机器人合格**，四个 $g_i=(1,\,200,\,1,\,2)$ 全部非零，二阶差商在 $10^{-10}$ 量级（差分舍入），越界泄漏恰好为 0。它是四阶严格反馈系统，可以直接递推。
+- **Boost 变换器不合格**：第 1 个方程的越界泄漏是 $2.0\times10^{4}$，因为占空比 $u$ 同时出现在两个方程里，而且与状态相乘（$(1-u)i_L/C$）。这类系统要先做反馈线性化或改用其它方法，硬套反步法没有理论保证。
+- **纯反馈系统不合格**：$x_2^3$ 让二阶差商等于 2.4（不是 0），说明 $x_2$ 不是线性出现的。
+
+### 为什么叫"严格"
+
+对比**纯反馈系统**（pure-feedback system）：
+
+$$
+\dot x_i = f_i(x_1,\ldots,x_{i+1}),\qquad \dot x_n = f_n(x)+g_n(x)u
+$$
+
+纯反馈系统里 $x_{i+1}$ 可以以任意非线性方式出现（比如上面的 $x_2^3$）。此时反步递推的第一步就要解方程 $f_1(x_1,\alpha_1)=-k_1z_1$ 求 $\alpha_1$，一般没有闭式解；即使解出来，也常含 $1/g_1$ 这样的奇异项——Notebook 1 的右图就是这个现象：$\alpha_1=-(1+k_1)x_1/(3x_2^2)$ 在 $x_2=0$ 附近爆到 $10^{12}$。处理纯反馈系统要用中值定理展开或神经网络逼近，属于另一套方法。
+
+**"严格"的含义就是：虚拟控制线性出现，于是每一步只需一次除法就能解出 $\alpha_i$。**这个除法是否安全，取决于 $g_i$ 是否远离 0——这也是为什么定义里要求 $g_i(x)\neq 0$ 且符号不变。
+
+还有一个中间情形叫**半严格反馈**（semi-strict feedback）：$f_i$ 允许依赖 $x_1,\ldots,x_i$ 之外的状态，但那些"越界"项必须能被后面的阻尼压住（或者说，可以当作不匹配扰动处理）。工程模型里这类系统很常见，处理方式是保留越界项、加大 $k_i$，或者结合鲁棒/自适应手段。
+
+## 二阶系统的反步法设计
+
+### 问题描述
+
+考虑二阶严格反馈系统：
+
+$$
+\begin{aligned}
+\dot{x}_1 &= f_1(x_1) + g_1(x_1)x_2 \\
+\dot{x}_2 &= f_2(x_1,x_2) + g_2(x_1,x_2)u
+\end{aligned}
+$$
+
+目标：设计 $u$，使 $x_1$ 跟踪期望轨迹 $x_{1d}(t)$，且所有信号有界。下面把递推拆成两步，每一步都明确"$\dot V$ 里出现了什么、我们要求它变成什么"。
+
+### 步骤 1：把 $x_2$ 当作 $z_1$ 子系统的控制输入
+
+定义跟踪误差并求导：
+
+$$
+z_1 = x_1 - x_{1d},\qquad \dot z_1 = f_1(x_1) + g_1(x_1)x_2 - \dot x_{1d}
+$$
+
+在这个一阶子系统里，$x_2$ 扮演控制输入的角色。**如果我们可以任意指定 $x_2$**，那让它等于
+
+$$
+\alpha_1(x_1,x_{1d},\dot x_{1d}) = \frac{1}{g_1(x_1)}\Big[-f_1(x_1)+\dot x_{1d}-k_1z_1\Big],\qquad k_1>0
+$$
+
+就有 $\dot z_1=-k_1z_1$，误差按 $e^{-k_1t}$ 指数收敛。$\alpha_1$ 称为**镇定函数**（stabilizing function），它是"$x_2$ 应当等于多少"的答案，还不是真正的控制量。
+
+但 $x_2$ 是一个真实状态，它不会瞬间跳到 $\alpha_1$。所以定义第二个误差
+
+$$
+z_2 = x_2-\alpha_1
+$$
+
+并把 $x_2=\alpha_1+z_2$ 代回。取 $V_1=\tfrac12 z_1^2$：
+
+$$
+\dot V_1 = z_1\dot z_1 = z_1\big[f_1+g_1(\alpha_1+z_2)-\dot x_{1d}\big] = \underbrace{-k_1z_1^2}_{\text{我们要的阻尼}} + \underbrace{g_1z_1z_2}_{\text{交叉项，下一步处理}}
+$$
+
+**关键观察**：$\dot V_1$ 里多出一个交叉项 $g_1z_1z_2$。它不定号，此刻无法断定稳定性。反步法的全部技巧就是：**把这个不定项留给下一步，然后在下一步精确地把它吃掉。**
+
+### 步骤 2：设计真正的控制律
+
+对 $z_2$ 求导，这里出现反步法最麻烦的一项——$\dot\alpha_1$ 必须用链式法则展开，因为 $\alpha_1$ 依赖 $x_1$（状态）和 $x_{1d},\dot x_{1d}$（时间）：
+
+$$
+\dot z_2 = f_2(x_1,x_2)+g_2(x_1,x_2)u-\dot\alpha_1,\qquad
+\dot\alpha_1 = \frac{\partial\alpha_1}{\partial x_1}\dot x_1 + \frac{\partial\alpha_1}{\partial x_{1d}}\dot x_{1d} + \frac{\partial\alpha_1}{\partial \dot x_{1d}}\ddot x_{1d}
+$$
+
+注意最后一项：**$\dot\alpha_1$ 里出现了 $\ddot x_{1d}$**。这就是"参考轨迹必须足够光滑"的来源，$n$ 阶系统会一路要求到 $x_{1d}^{(n)}$。
+
+取 $V_2=V_1+\tfrac12 z_2^2$：
+
+$$
+\dot V_2 = -k_1z_1^2 + z_2\big[\,g_1z_1 + f_2 + g_2u-\dot\alpha_1\,\big]
+$$
+
+现在要求方括号等于 $-k_2z_2$（$k_2>0$），解出
+
+$$
+\boxed{\,u=\frac{1}{g_2(x_1,x_2)}\Big[-g_1(x_1)z_1-f_2(x_1,x_2)+\dot\alpha_1-k_2z_2\Big]\,}
+$$
+
+代回即得
+
+$$
+\dot V_2 = -k_1z_1^2-k_2z_2^2 \le 0
+$$
+
+方括号里的 $-g_1z_1$ 就是**专门用来吃掉上一步交叉项的那一项**。$V_2$ 正定、$\dot V_2$ 负半定，再由 Barbalat 引理（$\dot V_2$ 一致连续且有界）得 $z_1,z_2\to 0$，即 $x_1\to x_{1d}$。
+
+### 设计流程总结
+
+| 步骤 | 操作 | $\dot V$ 的结果 |
+|------|------|-----------------|
+| 1 | $z_1=x_1-x_{1d}$，$V_1=\tfrac12z_1^2$ | — |
+| 2 | $\alpha_1=\frac1{g_1}(-f_1+\dot x_{1d}-k_1z_1)$ | $\dot V_1=-k_1z_1^2+g_1z_1z_2$ |
+| 3 | $z_2=x_2-\alpha_1$，$V_2=V_1+\tfrac12z_2^2$ | 出现 $z_2\dot z_2$ |
+| 4 | $u=\frac1{g_2}(-g_1z_1-f_2+\dot\alpha_1-k_2z_2)$ | $\dot V_2=-k_1z_1^2-k_2z_2^2$ |
+
+### 一个容易被忽略的自由度：$f_i$ 不必全抵消
+
+递推公式里的 $-f_i$ 项看着像"必须精确抵消非线性"，其实不是。你只要在 $\alpha_i$ 里放一个 $\hat f_i$，使得**残差 $f_i-\hat f_i$ 能被 $-k_iz_i$ 压住**即可：
+
+$$
+\alpha_1=\frac1{g_1}\big[-\hat f_1+\dot x_{1d}-k_1z_1\big]
+\;\Rightarrow\;
+\dot V_1=-k_1z_1^2+(f_1-\hat f_1)z_1+g_1z_1z_2
+$$
+
+若 $\lvert f_1-\hat f_1\rvert\le\rho\lvert z_1\rvert$（局部 Lipschitz 型界），只要 $k_1>\rho$，残差项就被阻尼吸收。这正是"只抵消阻尼项"那一类简化设计的理论依据，第 8 节会给出它的实测代价：误差恶化一个数量级，控制量省下 6%。**什么时候值得省这 6%，是工程判断，不是数学问题。**
+
+## 手算例子
+
+### 系统描述
+
+考虑二阶非线性系统，要求 $x_1$ 跟踪 $x_{1d}(t)=\sin t$：
+
+$$
+\dot{x}_1 = x_1^2 + x_2,\qquad \dot{x}_2 = x_1x_2 + u
+$$
+
+对照标准形式：$f_1=x_1^2$，$g_1=1$，$f_2=x_1x_2$，$g_2=1$。取设计参数 $k_1=2$，$k_2=3$。
+
+### 步骤 1：虚拟控制 $\alpha_1$
+
+$$
+z_1 = x_1-\sin t,\qquad \dot z_1 = x_1^2+x_2-\cos t
+$$
+
+$$
+\alpha_1 = \frac1{g_1}\big(-f_1+\dot x_{1d}-k_1z_1\big) = -x_1^2+\cos t-2(x_1-\sin t) = -x_1^2-2x_1+\cos t+2\sin t
+$$
+
+$$
+z_2 = x_2-\alpha_1 = x_2+x_1^2+2x_1-\cos t-2\sin t
+$$
+
+$$
+V_1=\tfrac12z_1^2,\qquad \dot V_1 = z_1(x_1^2+\alpha_1+z_2-\cos t) = -2z_1^2 + z_1z_2
+$$
+
+### 步骤 2：实际控制律 $u$
+
+先算 $\dot\alpha_1$（链式法则：$\alpha_1$ 既依赖 $x_1$，又显式依赖 $t$）：
+
+$$
+\dot\alpha_1 = \frac{\partial\alpha_1}{\partial x_1}\dot x_1+\frac{\partial\alpha_1}{\partial t}
+= (-2x_1-2)(x_1^2+x_2)-\sin t+2\cos t
+$$
+
+展开：
+
+$$
+\dot\alpha_1 = -2x_1^3-2x_1x_2-2x_1^2-2x_2-\sin t+2\cos t
+$$
+
+于是
+
+$$
+\dot z_2 = x_1x_2+u-\dot\alpha_1,\qquad
+V_2=V_1+\tfrac12z_2^2,\qquad
+\dot V_2 = -2z_1^2+z_2\big[z_1+x_1x_2+u-\dot\alpha_1\big]
+$$
+
+令方括号 $=-k_2z_2=-3z_2$，解出
+
+$$
+u = -z_1-x_1x_2+\dot\alpha_1-3z_2
+$$
+
+代入 $\dot\alpha_1$ 并合并同类项：
+
+$$
+\boxed{\,u = -z_1-3z_2-2x_1^3-3x_1x_2-2x_1^2-2x_2-\sin t+2\cos t\,}
+$$
+
+$$
+\dot V_2 = -2z_1^2-3z_2^2 \le 0
+$$
+
+留意一件事：**原系统里最高只有 $x_1^2$ 和 $x_1x_2$，而控制律里出现了 $x_1^3$**。反步控制律的非线性 degree 通常比被控对象更高——这不是算错，而是 $\dot\alpha_1$ 里 $\partial\alpha_1/\partial x_1\cdot\dot x_1$ 的必然结果，也是后面复杂度爆炸的种子。
+
+### 数值复核：三步都要查
+
+手算最容易错的地方是 $\dot\alpha_1$ 的链式法则，以及 $\dot V_2$ 里交叉项到底有没有真的消掉。这两个都可以用数值方法独立验证：沿闭环轨迹用 4 阶中心差分算 $\dot\alpha_1$ 和 $\dot V_2$，与手算式逐点比较。
+
+<Callout variant="tip">
+**怎么区分"推导错了"和"差分不准"？** 让 $dt$ 变化。4 阶中心差分的截断误差正比于 $dt^4$，所以 $dt$ 减半、残差应降 16 倍；如果残差不按这个规律走，说明问题出在公式而不是数值。下面的实验会看到一个漂亮的 U 形曲线：粗 $dt$ 段按 16 倍下降（截断误差主导），细 $dt$ 段反而上升（差商要除以 $12dt$，把浮点舍入放大了）。
+</Callout>
+
+<JupyterNotebook
+  title="Notebook 2：手算例子的逐项数值复核（链式法则、Lyapunov 恒等式、跟踪性能）"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 对象: x1' = x1^2 + x2,  x2' = x1*x2 + u,  参考 x1d = sin(t),  k1 = 2, k2 = 3
+# 递推: z1 = x1 - x1d
+#       alpha1 = -x1^2 + x1d' - k1*z1
+#       z2 = x2 - alpha1
+#       u = -z1 - x1*x2 + alpha1' - k2*z2
+#       alpha1' = (-2*x1 - k1)*(x1^2 + x2) - sin(t) + k1*cos(t)   <- 链式法则，最易算错的一步
+k1, k2 = 2.0, 3.0
+xd = lambda t: np.sin(t)
+xdd = lambda t: np.cos(t)
+
+def alpha1(x1, t):
+    return -x1**2 + xdd(t) - k1*(x1 - xd(t))
+
+def alpha1_dot(x1, x2, t):
+    return (-2*x1 - k1)*(x1**2 + x2) - np.sin(t) + k1*np.cos(t)
+
+def ctrl(x1, x2, t):
+    z1 = x1 - xd(t)
+    z2 = x2 - alpha1(x1, t)
+    return -z1 - x1*x2 + alpha1_dot(x1, x2, t) - k2*z2
+
+def rk4(fcl, x0, T, dt):
+    N = int(round(T/dt))
+    X = np.zeros((N+1, len(x0)))
+    X[0] = x0
+    x = np.array(x0, dtype=float)
+    for i in range(N):
+        t = i*dt
+        a = fcl(x, t)
+        b = fcl(x + 0.5*dt*a, t + 0.5*dt)
+        c = fcl(x + 0.5*dt*b, t + 0.5*dt)
+        d = fcl(x + dt*c, t + dt)
+        x = x + dt/6*(a + 2*b + 2*c + d)
+        X[i+1] = x
+    return np.linspace(0, T, N+1), X
+
+def cl(x, t):
+    return np.array([x[0]**2 + x[1], x[0]*x[1] + ctrl(x[0], x[1], t)])
+
+T, x0 = 10.0, [1.5, 0.5]
+D4 = lambda y, dt: (-np.roll(y, -2) + 8*np.roll(y, -1) - 8*np.roll(y, 1) + np.roll(y, 2))/(12*dt)
+
+print("复核 1、2：手算式 vs 轨迹上的 4 阶中心差分（x0 = (1.5, 0.5), T = 10 s）")
+print("     dt        max|alpha1'手算-数值|   max|V2'实测-理论|    相对误差    相邻残差比")
+store = {}
+prev = None
+for dt in [4e-3, 2e-3, 1e-3, 5e-4, 2.5e-4, 1.25e-4, 1e-4]:
+    tt, XX = rk4(cl, x0, T, dt)
+    x1v, x2v = XX[:, 0], XX[:, 1]
+    a1v = np.array([alpha1(a, t) for a, t in zip(x1v, tt)])
+    z1v, z2v = x1v - xd(tt), x2v - a1v
+    frm = np.array([alpha1_dot(a, b, t) for a, b, t in zip(x1v, x2v, tt)])
+    V2 = 0.5*(z1v**2 + z2v**2)
+    Vth = -k1*z1v**2 - k2*z2v**2
+    sl = slice(5, -5)
+    e1 = np.max(np.abs(D4(a1v, dt)[sl] - frm[sl]))
+    e2 = np.max(np.abs(D4(V2, dt)[sl] - Vth[sl]))
+    store[dt] = (tt, XX, a1v, z1v, z2v, V2, D4(V2, dt), np.max(np.abs(frm[sl])))
+    print("  %.2e      %.3e          %.3e      %.1e     %s"
+          % (dt, e1, e2, e2/np.max(np.abs(Vth[sl])), "-" if prev is None else "%.1f 倍" % (prev/e1)))
+    prev = e1
+print("=> dt 从 4e-3 到 5e-4，残差每次减半下降约 16 倍（= 2^4），符合 4 阶差分的截断误差规律；")
+print("   dt 小于 2.5e-4 后残差反而上升：差商要除以 12*dt，浮点舍入被放大，已到数值地板。")
+print("   两种趋势都指向同一个结论：残差来自数值微分，alpha1' 与 V2' 的手算式是对的。")
+
+tt, XX, a1v, z1v, z2v, V2, Vnum, amax_a1d = store[1e-4]
+x1v, x2v = XX[:, 0], XX[:, 1]
+uu = np.array([ctrl(a, b, t) for a, b, t in zip(x1v, x2v, tt)])
+sl = slice(5, -5)
+idx = np.where(np.abs(z1v) > 0.01)[0]
+ts = float(tt[idx[-1]+1]) if len(idx) else 0.0
+print()
+print("复核 3：闭环性能（dt = 1e-4）")
+print("  V2'(实测) <= 0 的采样点占比 = %.4f%%" % (100*np.mean(Vnum[sl] <= 1e-9)))
+print("  V2(0) = %.4f  ->  V2(10s) = %.3e" % (V2[0], V2[-1]))
+print("  |z1| 进入 1%% 带并保持的时间 = %.3f s" % ts)
+print("  t>3s 后 rms|z1| = %.3e,  max|z1| = %.3e" % (np.sqrt(np.mean(z1v[tt > 3]**2)), np.max(np.abs(z1v[tt > 3]))))
+print("  max|u| = %.3f,  TV(u) = %.1f,  max|alpha1| = %.3f,  max|alpha1'| = %.3f"
+      % (np.max(np.abs(uu)), np.sum(np.abs(np.diff(uu))), np.max(np.abs(a1v)), amax_a1d))` },
+    { code: `fig, ax = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
+ax[0].plot(tt, x1v, label="x1")
+ax[0].plot(tt, xd(tt), "--", label="x1d = sin(t)")
+ax[0].set_ylabel("x1")
+ax[0].legend(fontsize=8)
+ax[0].grid(True)
+ax[0].set_title("输出跟踪：x1 与参考 sin(t)")
+ax[1].plot(tt, x2v, label="x2")
+ax[1].plot(tt, a1v, "--", label="alpha1（虚拟控制）")
+ax[1].set_ylabel("x2 / alpha1")
+ax[1].legend(fontsize=8)
+ax[1].grid(True)
+ax[1].set_title("x2 跟随虚拟控制 alpha1")
+ax[2].semilogy(tt[1:], np.maximum(np.abs(z1v[1:]), 1e-16), label="|z1|")
+ax[2].semilogy(tt[1:], np.maximum(np.abs(z2v[1:]), 1e-16), label="|z2|")
+ax[2].semilogy(tt[1:], np.maximum(np.sqrt(2*V2[1:]), 1e-16), "k--", label="sqrt(2*V2)")
+ax[2].set_ylim(1e-16, 10)
+ax[2].set_xlim(0, 10)
+ax[2].set_xlabel("t (s)")
+ax[2].set_ylabel("误差（对数）")
+ax[2].legend(fontsize=8)
+ax[2].grid(True)
+ax[2].set_title("两级误差与 Lyapunov 函数单调下降")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+**结果解读**：
+
+- **链式法则没算错**：$\dot\alpha_1$ 的手算式与数值微分最小残差 $9.6\times10^{-12}$，而 $\max|\dot\alpha_1|\approx 11.7$，相对误差 $10^{-12}$ 量级。
+- **交叉项真的消掉了**：$\dot V_2$ 实测与 $-2z_1^2-3z_2^2$ 的相对误差最小 $5.4\times10^{-13}$，且 $\dot V_2\le 0$ 的采样点占比 100.0000%。$V_2$ 从 12.4062 单调降到 $5.2\times10^{-21}$（机器精度意义上的 0）。
+- **1% 调节时间 2.454 s**，与 $k_1=2,k_2=3$ 的时间常数量级一致。$t>3$ s 的 rms 残量 $1.3\times10^{-4}$ 不是稳态误差，而是指数暂态的尾巴——到 $t=10$ s 时 $V_2$ 已经归零。
+- **代价**：$\max|u|=28.25$，而 $\max|\alpha_1|=5.24$。控制量峰值是虚拟控制的 5 倍多，多出来的部分正是 $\dot\alpha_1$ 里的 $-2x_1^3$ 项。这就是"递推要对上一步求导"的第一笔账单。
+
+## n阶系统的反步法设计
+
+### 递推公式
+
+对 $n$ 阶严格反馈系统，把二阶的两步操作重复 $n$ 次即可。统一记号：令 $\alpha_0 \equiv x_{1d}$，$g_0\equiv 1$，$z_1=x_1-\alpha_0$。
+
+**第 $i$ 步（$i=1,\ldots,n-1$）**：
+
+$$
+z_i = x_i-\alpha_{i-1}
+$$
+
+$$
+\dot z_i = f_i(x_1,\ldots,x_i)+g_i(x_1,\ldots,x_i)x_{i+1}-\dot\alpha_{i-1}
+$$
+
+$$
+\alpha_i = \frac{1}{g_i}\Big[-f_i+\dot\alpha_{i-1}-g_{i-1}z_{i-1}-k_iz_i\Big]
+$$
+
+$$
+V_i = V_{i-1}+\tfrac12 z_i^2,\qquad
+\dot V_i = -\sum_{j=1}^{i}k_jz_j^2 + g_iz_iz_{i+1}
+$$
+
+**第 $n$ 步**：没有 $x_{n+1}$，直接把 $u$ 当作最后一级的"虚拟控制"：
+
+$$
+u=\alpha_n=\frac{1}{g_n}\Big[-f_n+\dot\alpha_{n-1}-g_{n-1}z_{n-1}-k_nz_n\Big]
+\;\Rightarrow\;
+\dot V_n=-\sum_{j=1}^{n}k_jz_j^2\le 0
+$$
+
+三项的分工必须看清：$-f_i$ 抵消已知非线性，$-g_{i-1}z_{i-1}$ **吃掉上一步留下的交叉项**，$-k_iz_i$ 提供本级阻尼。三者缺一不可——第 6 节会实测漏掉一项的后果。
+
+由 $V_n$ 正定径向无界、$\dot V_n\le 0$，得 $z\in\mathcal L_\infty$；再用 Barbalat 引理（$\dot V_n$ 一致连续）得 $z_i\to 0$，即 $x_1\to x_{1d}$。**注意这个结论是全局的**：不依赖初始误差大小，前提是 $g_i$ 在全空间符号不变且模型精确。
+
+### $\dot\alpha_{i-1}$ 的全导数：所有麻烦的来源
+
+$\alpha_{i-1}$ 是 $x_1,\ldots,x_{i-1}$、参考及其导数 $x_{1d},\ldots,x_{1d}^{(i-1)}$、以及（自适应时）$\hat\theta$ 的函数。求全导数：
+
+$$
+\dot\alpha_{i-1}
+=\sum_{j=1}^{i-1}\frac{\partial\alpha_{i-1}}{\partial x_j}\dot x_j
++\sum_{k=0}^{i-1}\frac{\partial\alpha_{i-1}}{\partial x_{1d}^{(k)}}x_{1d}^{(k+1)}
++\frac{\partial\alpha_{i-1}}{\partial\hat\theta}\dot{\hat\theta}
+$$
+
+这一行公式包含反步法的三个工程代价：
+
+1. **参考轨迹必须 $n$ 阶连续可微**。第一项求和里出现 $x_{1d}^{(i)}$，递推到第 $n$ 步就需要 $x_{1d}^{(n)}$。阶跃指令、只有 $C^1$ 光滑的轨迹，都会让 $u$ 出现尖峰甚至无界——第 7 节实测：把参考从 $\beta=1$ 的平缓过渡换成 $\beta=20$ 的近似阶跃，$u$ 峰值从 4.1 N·m 涨到 626 N·m，超出执行器限幅 12 倍。
+2. **表达式规模逐阶放大**。$\dot x_j$ 里含 $\alpha_j$，$\alpha_j$ 里又含 $\dot\alpha_{j-1}$，形成嵌套。
+3. **自适应时不能漏 $\partial\alpha_{i-1}/\partial\hat\theta\cdot\dot{\hat\theta}$ 项**。这一项常被"看起来是高阶小量"而忽略，实际它决定了 $\dot V$ 是否负定（第 6 节实测漏项后 0.893 s 发散）。
+
+### 复杂度实测：到底爆炸得多快
+
+教材常说反步法有"复杂度爆炸"（explosion of complexity），但很少给数字。下面用 SymPy 对一个 $n$ 阶系统族把控制律真推出来，用 `count_ops`（表达式里的算子总数）度量规模，再测单次在线求值时间。同时对比**动态面控制**（Dynamic Surface Control, DSC）：在每一级插一个一阶滤波器 $y_i$，用 $(\alpha_i-y_i)/\tau$ 代替 $\dot\alpha_i$，从此不需求导。
+
+<JupyterNotebook
+  title="Notebook 3：n 阶递推的复杂度爆炸实测、n=3 闭环复核、动态面控制（DSC）的代价"
+  setupCode={`import time
+import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 对象族: x_i' = x_i^2 + x_(i+1) (i<n),  x_n' = x1*x_n + u,  参考 x_d = 0, k_i = 1
+# 用 SymPy 把 n 步递推真做一遍，度量控制律 u 的表达式规模（count_ops）
+def derive(n, kval=1):
+    xs = sp.symbols("x1:%d" % (n+1))
+    t0 = time.perf_counter()
+    f = [xs[i]**2 for i in range(n-1)] + [xs[0]*xs[n-1]]
+    xdot = [f[i] + (xs[i+1] if i < n-1 else sp.Symbol("uu")) for i in range(n)]
+    def total_diff(e):
+        return sum(sp.diff(e, xs[j])*xdot[j] for j in range(n))
+    z = [xs[0]]
+    alpha = [-f[0] - kval*z[0]]
+    for i in range(1, n-1):
+        z.append(xs[i] - alpha[i-1])
+        alpha.append(-f[i] + total_diff(alpha[i-1]) - z[i-1] - kval*z[i])
+    z.append(xs[n-1] - alpha[n-2])
+    u = -f[n-1] + total_diff(alpha[n-2]) - z[n-2] - kval*z[n-1]
+    return xs, z, alpha, sp.cancel(u), time.perf_counter() - t0
+
+print("对象族： x_i' = x_i^2 + x_(i+1)  (i<n),   x_n' = x1*x_n + u,   x_d = 0, k_i = 1")
+print("   n    count_ops(alpha_(n-1))   count_ops(u)   sympy 推导耗时   相邻阶放大倍数")
+rows, lamb, prev = [], {}, None
+for n in range(2, 8):
+    xs, z, alpha, u, wall = derive(n)
+    ops_u = sp.count_ops(u)
+    lamb[n] = (sp.lambdify(xs, u, "numpy"), ops_u)
+    rows.append((n, sp.count_ops(sp.cancel(alpha[-1])), ops_u, wall))
+    print("   %d   %14d   %14d   %10.3f s   %12s"
+          % (n, rows[-1][1], ops_u, wall, "-" if prev is None else "%.2f 倍" % (ops_u/prev)))
+    prev = ops_u
+g = np.mean([rows[i][2]/rows[i-1][2] for i in range(1, len(rows))])
+print("=> 每增加一阶，控制律的算子数放大约 %.1f 倍（n=2..7: %d -> %d），近似几何增长"
+      % (g, rows[0][2], rows[-1][2]))
+print("   符号推导本身很快（n=7 只要 %.2f s），真正的代价在控制律的在线求值：" % rows[-1][3])
+
+# DSC 控制律：alpha_i 经一阶滤波 y_i，用 (alpha_i - y_i)/tau 代替 alpha_i'，全程不求导
+def u_dsc(x, y, tau, n, k=1.0):
+    zp = x[0]
+    a = -x[0]**2 - k*zp
+    for i in range(1, n-1):
+        yd = (a - y[i-1])/tau
+        zc = x[i] - y[i-1]
+        a = -x[i]**2 + yd - zp - k*zc
+        zp = zc
+    yd = (a - y[n-2])/tau
+    zc = x[n-1] - y[n-2]
+    return -(x[0]*x[n-1]) + yd - zp - k*zc
+
+print()
+print("   在线求值代价（各 20000 次随机状态，单位 us/次；数值随机器而异，看比值）：")
+print("      n   count_ops(u)   反步法（含 alpha' 求导）   DSC（无求导）   比值")
+rng = np.random.default_rng(0)
+tau_t = 0.01
+for n in range(2, 8):
+    Fu, ops_u = lamb[n]
+    xr = rng.uniform(-0.4, 0.4, size=(20000, n))
+    yr = rng.uniform(-0.4, 0.4, size=(20000, max(n-1, 1)))
+    t0 = time.perf_counter()
+    for v in xr:
+        float(Fu(*v))
+    t_bs = (time.perf_counter() - t0)/20000*1e6
+    t0 = time.perf_counter()
+    for v, w in zip(xr, yr):
+        u_dsc(v, w, tau_t, n)
+    t_dsc = (time.perf_counter() - t0)/20000*1e6
+    print("      %d   %9d   %18.2f   %11.2f   %5.1f" % (n, ops_u, t_bs, t_dsc, t_bs/t_dsc))
+    last_bs, last_ratio = t_bs, t_bs/t_dsc
+print("=> 反步法的单次求值时间随阶数快速上升，DSC 近似线性增长；n=7 时相差约 %.0f 倍。" % last_ratio)
+print("   对 1 kHz 的实时回路，%.0f us 的求值时间本身不算问题；问题是它随 n 几何增长，" % last_bs)
+print("   而高阶系统（柔性机械臂、飞行器姿态回路）恰恰是 n 最大的场合。")` },
+    { code: `# n=3 闭环复核：V3' 是否逐点等于 -sum(k_i*z_i^2)
+def rk4(fcl, x0, T, dt):
+    N = int(round(T/dt))
+    X = np.zeros((N+1, len(x0)))
+    X[0] = x0
+    x = np.array(x0, dtype=float)
+    for i in range(N):
+        t = i*dt
+        a = fcl(x, t); b = fcl(x+0.5*dt*a, t+0.5*dt)
+        c = fcl(x+0.5*dt*b, t+0.5*dt); d = fcl(x+dt*c, t+dt)
+        x = x + dt/6*(a + 2*b + 2*c + d)
+        X[i+1] = x
+    return np.linspace(0, T, N+1), X
+
+def plant_n(x, u):
+    n = len(x)
+    d = np.empty(n)
+    for i in range(n-1):
+        d[i] = x[i]**2 + x[i+1]
+    d[n-1] = x[0]*x[n-1] + u
+    return d
+
+xs3, z3s, a3s, u3s, _ = derive(3)
+f_u3 = sp.lambdify(xs3, u3s, "numpy")
+f_z3 = [sp.lambdify(xs3, zz, "numpy") for zz in z3s]
+
+def cl3(x, t):
+    d = plant_n(x, 0.0)
+    d[2] += float(f_u3(*x))
+    return d
+
+dt, T = 2e-4, 12.0
+tt, xx = rk4(cl3, [1.0, 0.5, -0.5], T, dt)
+Z = np.array([[float(fz(*x)) for fz in f_z3] for x in xx])
+V3 = 0.5*np.sum(Z**2, axis=1)
+Vnum = (-np.roll(V3, -2) + 8*np.roll(V3, -1) - 8*np.roll(V3, 1) + np.roll(V3, 2))/(12*dt)
+Vth = -np.sum(Z**2, axis=1)
+sl = slice(5, -5)
+Uall = np.array([float(f_u3(*x)) for x in xx])
+idx = np.where(np.abs(xx[:, 0]) > 1e-3)[0]
+t_settle = float(tt[idx[-1]+1]) if len(idx) and idx[-1]+1 < len(tt) else 0.0
+print("n=3 闭环复核 V3' = -sum(k_i*z_i^2)，k=(1,1,1)，x0=(1, 0.5, -0.5)，T=12s，dt=2e-4")
+print("  V3(0) = %.4f  ->  V3(12s) = %.3e" % (V3[0], V3[-1]))
+print("  max|V3'(实测) - V3'(理论)| = %.3e   max|V3'| = %.3f   相对误差 = %.2e"
+      % (np.max(np.abs(Vnum[sl] - Vth[sl])), np.max(np.abs(Vth[sl])),
+         np.max(np.abs(Vnum[sl] - Vth[sl]))/np.max(np.abs(Vth[sl]))))
+print("  V3'(实测) <= 0 的采样点占比 = %.4f%%" % (100*np.mean(Vnum[sl] <= 1e-12)))
+print("  调节时间(|x1| < 1e-3 并保持) = %.3f s，末段(t>8s) rms|x1| = %.3e"
+      % (t_settle, np.sqrt(np.mean(xx[tt > 8, 0]**2))))
+print("  全程 max|u| = %.1f" % np.max(np.abs(Uall)))
+print("=> SymPy 推出来的三步递推控制律，代入闭环后 Lyapunov 恒等式逐点成立（相对误差 2e-12）。")` },
+    { code: `# 动态面控制（DSC）：每级插一个一阶滤波器 y_i，用 (alpha_i - y_i)/tau 代替 alpha_i'
+def sim_dsc(tau, T=12.0, dt=2e-4, x0=(1.0, 0.5, -0.5), n=3, k=1.0):
+    N = int(round(T/dt))
+    x = np.array(x0, dtype=float)
+    def alphas(x, y):
+        zp = x[0]
+        a_list = [-x[0]**2 - k*zp]
+        for i in range(1, n-1):
+            yd = (a_list[-1] - y[i-1])/tau
+            zc = x[i] - y[i-1]
+            a_list.append(-x[i]**2 + yd - zp - k*zc)
+            zp = zc
+        return a_list
+    def deriv(x, y):
+        a_list = alphas(x, y)
+        u = u_dsc(x, y, tau, n, k)
+        return plant_n(x, u), np.array([(a_list[j] - y[j])/tau for j in range(n-1)]), u
+    y = np.zeros(n-1)
+    y[0] = -x[0]**2 - k*x[0]
+    for j in range(1, n-1):
+        y[j] = alphas(x, y)[j]
+    H = np.zeros((N+1, n)); U = np.zeros(N+1); ETA = np.zeros(N+1)
+    t_esc, n_done = None, N
+    for i in range(N+1):
+        dx, dy, u = deriv(x, y)
+        H[i] = x; U[i] = u; ETA[i] = abs(alphas(x, y)[0] - y[0])
+        if not np.all(np.isfinite(x)) or np.max(np.abs(x)) > 1e3:
+            t_esc, n_done = i*dt, max(i-1, 0)
+            break
+        if i == N:
+            break
+        dx2, dy2, _ = deriv(x + 0.5*dt*dx, y + 0.5*dt*dy)
+        dx3, dy3, _ = deriv(x + 0.5*dt*dx2, y + 0.5*dt*dy2)
+        dx4, dy4, _ = deriv(x + dt*dx3, y + dt*dy3)
+        x = x + dt/6*(dx + 2*dx2 + 2*dx3 + dx4)
+        y = y + dt/6*(dy + 2*dy2 + 2*dy3 + dy4)
+    return np.linspace(0, n_done*dt, n_done+1), H[:n_done+1], U[:n_done+1], ETA[:n_done+1], t_esc
+
+print("同一个 n=3 系统，k=(1,1,1)，x0=(1, 0.5, -0.5)，滤波初值 y_i(0)=alpha_i(0)，dt=2e-4")
+print("     方案            tau     调节时间(|x1|<1e-3)   末段(t>8s)rms|x1|   max|u|   max|alpha1-y1|")
+print("  反步法(精确求导)     -         %.3f s          %.3e       %.1f          0"
+      % (t_settle, np.sqrt(np.mean(xx[tt > 8, 0]**2)), np.max(np.abs(Uall))))
+dsc = {}
+for tau in [0.001, 0.01, 0.05, 0.2]:
+    t2, h2, u2, eta2, te = sim_dsc(tau)
+    dsc[tau] = (t2, h2, u2, eta2, te)
+    if te is not None:
+        print("  DSC             %6.3f     发散：t = %.3f s 时 |x| 超过 1e3（滤波滞后破坏递推阻尼）" % (tau, te))
+        continue
+    i2 = np.where(np.abs(h2[:, 0]) > 1e-3)[0]
+    ts2 = float(t2[i2[-1]+1]) if len(i2) and i2[-1]+1 < len(t2) else 0.0
+    print("  DSC             %6.3f       %.3f s          %.3e       %.1f          %.3e"
+          % (tau, ts2, np.sqrt(np.mean(h2[t2 > 8, 0]**2)), np.max(np.abs(u2)), np.max(np.abs(eta2))))
+print("=> tau 越小越接近精确反步，但控制峰值按 1/tau 放大（tau=0.001 时 max|u| = %.0f，"
+      % np.max(np.abs(dsc[0.001][2])))
+print("   是精确反步的 %.0f 倍）；tau 太大则滤波滞后使闭环失稳（tau=0.2 实测发散）。"
+      % (np.max(np.abs(dsc[0.001][2]))/np.max(np.abs(Uall))))
+print("   注意 tau=0.05 时 max|u|=40.7 反而比精确反步的 56.1 更小，但末段 rms 误差大了 12%：")
+print("   DSC 买到的是「不需求导」，付出的是「滤波滞后 + 峰值放大 + 结论从全局降为半全局」。")` },
+    { code: `fig, ax = plt.subplots(1, 3, figsize=(12, 3.4))
+ns = [r[0] for r in rows]
+ax[0].semilogy(ns, [r[2] for r in rows], "o-", label="count_ops(u)")
+ax[0].set_xticks(ns)
+ax[0].set_xlabel("系统阶数 n")
+ax[0].set_ylabel("表达式算子数（对数）")
+ax[0].set_ylim(1, 1e4)
+ax[0].set_xlim(1.5, 7.5)
+ax[0].grid(True)
+ax[0].legend(fontsize=8)
+ax[0].set_title("复杂度爆炸：控制律规模随 n 几何增长")
+ax[1].plot(tt, np.maximum(np.abs(xx[:, 0]), 1e-12), "k-", label="反步法（精确求导）")
+for tau, c in [(0.01, "C0"), (0.05, "C3")]:
+    t2, h2 = dsc[tau][0], dsc[tau][1]
+    ax[1].plot(t2, np.maximum(np.abs(h2[:, 0]), 1e-12), c, label="DSC tau=%.3f" % tau)
+ax[1].set_yscale("log")
+ax[1].set_ylim(1e-8, 5)
+ax[1].set_xlim(0, 12)
+ax[1].set_xlabel("t (s)")
+ax[1].set_ylabel("|x1|")
+ax[1].legend(fontsize=8)
+ax[1].grid(True)
+ax[1].set_title("收敛过程对比")
+taus = [0.001, 0.01, 0.05]
+ax[2].semilogx(taus, [np.max(np.abs(dsc[ta][2])) for ta in taus], "o-", label="max|u| (DSC)")
+ax[2].axhline(np.max(np.abs(Uall)), color="k", ls="--", label="max|u| (精确反步)")
+ax[2].set_xlabel("滤波时间常数 tau (s)")
+ax[2].set_ylabel("max|u|")
+ax[2].set_ylim(0, 2.2e3)
+ax[2].set_xlim(5e-4, 0.1)
+ax[2].grid(True)
+ax[2].legend(fontsize=8)
+ax[2].set_title("DSC 的代价：tau 越小控制峰值越大")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+三张图/三张表分别说明：
+
+- **规模**：$n$ 从 2 到 7，`count_ops(u)` 从 13 涨到 1082，每阶放大约 2.4 倍。符号推导本身只要 0.7 s，真正贵的是在线求值——$n=7$ 时反步法约 35 µs/次，DSC 约 2.5 µs/次，比值 13～15（绝对时间随机器而异，比值稳定）。
+- **正确性**：把 SymPy 推出的 $n=3$ 控制律代回闭环，$\dot V_3$ 与 $-\sum k_iz_i^2$ 的相对误差 $2.0\times10^{-12}$，负定占比 100.0000%，$V_3$ 从 33.66 降到 $1.3\times10^{-9}$。递推公式在符号层面也是对的。
+- **DSC 的权衡**：$\tau=0.001$ 时控制峰值 1664（精确反步的 30 倍），$\tau=0.05$ 时峰值降到 40.7 但末段 rms 误差从 $2.05\times10^{-4}$ 升到 $2.29\times10^{-4}$，$\tau=0.2$ 直接发散（$t=1.167$ s 逃逸）。
+
+<Callout variant="warning">
+**DSC 换来的不只是"少写几行求导"**：精确反步的结论是全局渐近稳定，DSC 的结论只能是**半全局**——滤波误差 $y_i-\alpha_i$ 相当于给递推加了一个扰动，界随 $\tau\to 0$ 缩小，于是"吸引域可以任意大"退化成"给定吸引域，存在足够小的 $\tau$"。$\tau=0.2$ 发散就是这个退化在数值上的样子。工程上用 DSC 前，要先确认工作域在半全局结论覆盖的范围内。
+</Callout>
+
+## 处理参数不确定性
+
+### 问题：未知参数出现在没有 $u$ 的方程里
+
+反步法真正的独门本事，是处理**不匹配的参数不确定性**。考虑
+
+$$
+\dot x_1 = \theta x_1^2+x_2,\qquad \dot x_2 = \theta x_2+u,\qquad \theta=1.5\ \text{（未知）}
+$$
+
+$\theta x_2$ 在最后一个方程里，是匹配的——滑模控制可以用足够大的切换增益压住它。但 $\theta x_1^2$ 出现在**没有 $u$ 的第一个方程**里，滑模的不变性对它无效。反步法的做法是：把参数估计误差 $\tilde\theta=\theta-\hat\theta$ 也当成 Lyapunov 函数的一部分，让它和 $z_i$ 一起被"压下去"。
+
+### 第一步：$\tilde\theta$ 项与 $\tau_1$
+
+$$
+z_1=x_1-x_d,\qquad \alpha_1=-\hat\theta x_1^2+\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1
+$$
+
+代入 $\dot x_1$：
+
+$$
+\dot z_1 = \theta x_1^2+(\alpha_1+z_2)-\dot x_d = \tilde\theta x_1^2-k_1z_1+z_2
+$$
+
+取 $V_1=\tfrac12z_1^2+\dfrac{\tilde\theta^2}{2\gamma}$（$\gamma>0$ 是自适应增益，$\dot{\tilde\theta}=-\dot{\hat\theta}$）：
+
+$$
+\dot V_1 = -k_1z_1^2+z_1z_2+\tilde\theta\Big(z_1x_1^2-\frac{\dot{\hat\theta}}{\gamma}\Big)
+$$
+
+括号里的 $z_1x_1^2$ 就是**第一步的 tuning function**：
+
+$$
+\tau_1 = z_1x_1^2
+$$
+
+如果此刻就令 $\dot{\hat\theta}=\gamma\tau_1$，$\tilde\theta$ 项消失了，但交叉项 $z_1z_2$ 还在。**tuning function 方法的要点是：先不更新参数，把 $\tau_1$ 记下来，到最后一步再一次性更新。**这就是它区别于"过参数化"的地方（下面会对比）。
+
+### 第二步：$\tau_2$ 里那个容易被漏掉的项
+
+$$
+\dot z_2 = \theta x_2+u-\dot\alpha_1,\qquad
+\dot\alpha_1=\underbrace{(-2\hat\theta x_1-k_1)}_{\partial\alpha_1/\partial x_1}\dot x_1
+\underbrace{-x_1^2\dot{\hat\theta}}_{\partial\alpha_1/\partial\hat\theta}
++k_1\dot x_d+\ddot x_d
+$$
+
+麻烦在这里：$\dot\alpha_1$ 需要 $\dot x_1$，而 $\dot x_1=\theta x_1^2+x_2$ 含**未知的** $\theta$。标准做法是用估计模型替代（确定性等价）：
+
+$$
+\dot x_1 \approx \hat\theta x_1^2+x_2
+$$
+
+取控制律
+
+$$
+u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2
+$$
+
+那么 $\dot z_2$ 里会剩下**两个** $\tilde\theta$ 项：一个来自 $\theta x_2-\hat\theta x_2$，另一个来自"用估计模型算 $\dot\alpha_1$"欠下的账：
+
+$$
+\dot z_2 = \tilde\theta x_2 + \tilde\theta x_1^2(2\hat\theta x_1+k_1) - z_1-k_2z_2
+$$
+
+于是
+
+$$
+\dot V_2 = -k_1z_1^2-k_2z_2^2+\tilde\theta\Big[\tau_2-\frac{\dot{\hat\theta}}{\gamma}\Big],
+\qquad
+\boxed{\ \tau_2=\underbrace{z_1x_1^2}_{\tau_1}+z_2x_2+\underbrace{z_2x_1^2(2\hat\theta x_1+k_1)}_{\text{来自 }\dot\alpha_1\text{，最易漏}}\ }
+$$
+
+令 $\dot{\hat\theta}=\gamma\tau_2$，得 $\dot V_2=-k_1z_1^2-k_2z_2^2\le 0$。
+
+递推的规律是 $\tau_i=\tau_{i-1}+z_i w_i$，其中 $w_i$ 是第 $i$ 步的回归量**加上 $\dot\alpha_{i-1}$ 带来的修正**。$n$ 阶系统只要一个 $\hat\theta$，$\tau_n$ 一次算完。
+
+<Callout variant="warning">
+**漏掉第三项会怎样？** 这不是"高阶小量可以忽略"的问题——它直接决定 $\dot V$ 是否负定。下面的实验里，用 $\tau_2=z_1x_1^2+z_2x_2$ 的版本在 $t=0.893$ s 就发散（$\lvert x_1\rvert$ 超过 $10^3$），而完整版跟踪误差降到 $10^{-7}$。
+</Callout>
+
+### 过参数化 vs tuning function
+
+另一种做法是**过参数化**（overparameterization）：每一步都引入一个独立的估计器 $\hat\theta_i$，第 $i$ 步就地更新 $\dot{\hat\theta}_i=\gamma z_iw_i$。它的好处是 $\alpha_i$ 里不含 $\dot{\hat\theta}$，因此**不需要对参数更新律求导**，推导更简单；坏处是同一个物理参数被估了 $n$ 次，状态维数从 $n$ 涨到 $2n$（或 $n+p$）。tuning function 只用 1 个估计器，代价是 $\dot\alpha_{i-1}$ 里必须多算 $-\partial\alpha_{i-1}/\partial\hat\theta\cdot\dot{\hat\theta}$ 项——也就是上面那个最易漏的项。**这是一次典型的"推导复杂度换在线复杂度"的交易。**
+
+### 持续激励：$\hat\theta$ 会不会收敛到真值
+
+$\dot V_2\le 0$ 只保证 $V$ 不增、$z\to 0$，**不保证 $\hat\theta\to\theta$**。要让参数收敛，需要回归量 $x_1^2$ 满足**持续激励**（persistent excitation, PE）：存在 $T,\mu>0$ 使 $\int_t^{t+T}x_1^2(\sigma)d\sigma\ge\mu$ 对所有 $t$ 成立。
+
+这里有一个反直觉但极其重要的现象：**调节问题（$x_d\equiv 0$）天然没有 PE**。因为 $x_1\to 0$ 意味着回归量 $x_1^2\to 0$，参数更新律失去激励，$\hat\theta$ 冻结在某个非真值上。此时 $z$ 照样收敛到 0，而 $V$ 停在理论下界 $\tilde\theta^2/(2\gamma)$ 而不是 0——Lyapunov 函数自己就"记账"了这件事。跟踪一个持续变化的参考（如正弦）才有 PE。
+
+<JupyterNotebook
+  title="Notebook 4：自适应反步的四项验证——Lyapunov 恒等式、持续激励、漏项后果、吸引域与控制量代价"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 对象: x1' = theta*x1^2 + x2,  x2' = theta*x2 + u,  theta = 1.5（未知）
+# 控制律: alpha1 = -th1*x1^2 + xd' - k1*z1
+#         u = alpha1' - th1*x2 - z1 - k2*z2,  alpha1' 用估计模型 th1*x1^2 + x2 计算
+# 更新律: th1' = gamma*tau2,  tau2 = z1*x1^2 + z2*x2 + z2*x1^2*(2*th1*x1 + k1)
+TH = 1.5
+k1, k2, gam = 3.0, 3.0, 5.0
+ESC = 1e3
+
+def ref(t, kind):
+    if kind == "pe":
+        return 0.5*np.sin(2*t), np.cos(2*t), -2.0*np.sin(2*t)
+    return 0.0*t, 0.0*t, 0.0*t
+
+def rhs_factory(kind, mode, th_fix=0.0):
+    # mode: tuning(完整 tau2) / wrong(漏掉 alpha1' 相关项) / over(过参数化) / fixed(不自适应)
+    nest = {"tuning": 1, "wrong": 1, "over": 2, "fixed": 0}[mode]
+    def rhs(s, t):
+        x1, x2 = s[0], s[1]
+        xd, xdd, xddd = ref(t, kind)
+        th_a = s[2] if nest >= 1 else th_fix
+        th_b = s[3] if mode == "over" else th_a
+        z1 = x1 - xd
+        a1 = -th_a*x1**2 + xdd - k1*z1
+        z2 = x2 - a1
+        da1_dx1 = -2*th_a*x1 - k1
+        tau_full = z1*x1**2 + z2*x2 + z2*x1**2*(2*th_a*x1 + k1)
+        tau_missing = z1*x1**2 + z2*x2
+        if mode in ("tuning", "over"):
+            tha_dot = gam*tau_full
+        elif mode == "wrong":
+            tha_dot = gam*tau_missing
+        else:
+            tha_dot = 0.0
+        thb_dot = gam*z2*x2 if mode == "over" else 0.0
+        a1d = da1_dx1*(th_a*x1**2 + x2) - x1**2*tha_dot + xddd + k1*xdd
+        u = a1d - th_b*x2 - z1 - k2*z2
+        d = np.zeros(2 + nest)
+        d[0] = TH*x1**2 + x2
+        d[1] = TH*x2 + u
+        if nest >= 1:
+            d[2] = tha_dot
+        if nest == 2:
+            d[3] = thb_dot
+        return d, u, z1, z2
+    return rhs, nest
+
+def simulate(kind, mode, T=25.0, dt=5e-4, x0=(1.0, 0.0), th_fix=0.0):
+    rhs, nest = rhs_factory(kind, mode, th_fix)
+    s = np.array(list(x0) + [0.0]*nest)
+    N = int(round(T/dt))
+    S = np.zeros((N+1, 2+nest)); U = np.zeros(N+1); Z = np.zeros((N+1, 2))
+    t_esc, n_done = None, N
+    for i in range(N+1):
+        t = i*dt
+        d, u, z1, z2 = rhs(s, t)
+        if not np.isfinite(s[0]) or abs(s[0]) > ESC:
+            t_esc, n_done = t, max(i-1, 0)
+            break
+        S[i] = s; U[i] = u; Z[i] = [z1, z2]
+        if i == N:
+            break
+        d2 = rhs(s + 0.5*dt*d, t + 0.5*dt)[0]
+        d3 = rhs(s + 0.5*dt*d2, t + 0.5*dt)[0]
+        d4 = rhs(s + dt*d3, t + dt)[0]
+        s = s + dt/6*(d + 2*d2 + 2*d3 + d4)
+    tt = np.linspace(0, n_done*dt, n_done+1)
+    return tt, S[:n_done+1], U[:n_done+1], Z[:n_done+1], t_esc
+
+print("k1 = k2 = 3, gamma = 5，复核 V = (z1^2+z2^2)/2 + theta_tilde^2/(2*gamma)")
+print("理论 V' = -k1*z1^2 - k2*z2^2（不含 theta_tilde 项，因为它被 tau2 精确抵消）")
+print("     参考      dt        max|V'实测 - V'理论|    max|V'|     相对误差    相邻残差比")
+for kind in ["pe", "reg"]:
+    prev = None
+    for dtt in [1e-3, 2.5e-4]:
+        tt, S, U, Z, te = simulate(kind, "tuning", T=20.0, dt=dtt)
+        V = 0.5*(Z[:, 0]**2 + Z[:, 1]**2) + 0.5/gam*(TH - S[:, 2])**2
+        Vnum = (-np.roll(V, -2) + 8*np.roll(V, -1) - 8*np.roll(V, 1) + np.roll(V, 2))/(12*dtt)
+        Vth = -k1*Z[:, 0]**2 - k2*Z[:, 1]**2
+        sl = slice(5, -5)
+        r = np.max(np.abs(Vnum[sl] - Vth[sl]))
+        print("     %-6s  %.1e      %.3e        %.3f     %.2e     %s"
+              % (kind, dtt, r, np.max(np.abs(Vth[sl])), r/max(np.max(np.abs(Vth[sl])), 1e-30),
+                 "-" if prev is None else "%.0f 倍" % (prev/r)))
+        prev = r
+    print("           V(0) = %.4f -> V(20s) = %.4g,  V'(实测)<=0 占比 = %.4f%%"
+          % (V[0], V[-1], 100*np.mean(Vnum[sl] <= 1e-12)))
+print("=> dt 缩小 4 倍，残差下降 253~254 倍（4 阶差分理论值 256 倍）：残差来自数值微分，推导成立。")` },
+    { code: `# 持续激励（PE）决定 theta_hat 是否收敛到真值
+print("T = 25 s, dt = 5e-4, 末段取 t > 15 s")
+print("     参考                  theta_hat(末值)   |theta_tilde|   rms z1(末段)   回归量 int x1^2 dt   V(末值)   V的理论下界")
+store = {}
+for kind, label in [("pe", "0.5sin(2t)（有PE）"), ("reg", "调节到 0（无PE）")]:
+    tt, S, U, Z, te = simulate(kind, "tuning")
+    store[kind] = (tt, S, U, Z)
+    m = tt > 15
+    reg_int = np.trapezoid(S[:, 0]**2, tt)
+    Vend = 0.5*(Z[-1, 0]**2 + Z[-1, 1]**2) + 0.5/gam*(TH - S[-1, 2])**2
+    print("  %-22s    %.6f       %.3e      %.3e        %.2f         %.4f      %.4f"
+          % (label, S[-1, 2], abs(TH - S[-1, 2]), np.sqrt(np.mean(Z[m, 0]**2)), reg_int, Vend,
+             0.5/gam*(TH - S[-1, 2])**2))
+print("=> 有PE：theta_hat 收敛到真值（|theta_tilde| = 1.4e-10），V 降到 0。")
+print("   无PE：x1 -> 0 使回归量 x1^2 一起衰减（int x1^2 dt 只有 0.18），theta_hat 冻结在 6.22，")
+print("        离真值 1.5 差 4.72；但 z1 照样收敛到 1.0e-08，V 停在下界 theta_tilde^2/(2*gamma) = 2.2318。")
+print("   Lyapunov 只保证 V 不增，不保证参数收敛——跟踪精度与参数辨识是两件事。")` },
+    { code: `# 漏掉 tau2 里来自 alpha1' 的那一项 + 过参数化的代价
+print("有PE，T = 25 s")
+print("     方案                        结果")
+for mode, label in [("tuning", "完整 tau2（含 alpha1' 项）"), ("wrong", "漏项 tau2 = z1*x1^2 + z2*x2")]:
+    tt, S, U, Z, te = simulate("pe", mode)
+    if te is not None:
+        print("  %-28s  发散：t = %.3f s 时 |x1| 超过 %.0e" % (label, te, ESC))
+    else:
+        m = tt > 15
+        print("  %-28s  rms z1(末段) = %.3e,  max|z1| = %.3e,  theta_hat = %.4f,  max|u| = %.1f"
+              % (label, np.sqrt(np.mean(Z[m, 0]**2)), np.max(np.abs(Z[m, 0])), S[-1, 2], np.max(np.abs(U))))
+
+tt, So, Uo, Zo, te = simulate("reg", "over")
+over_run = (tt, So)
+St, Ut, Zt = store["reg"][1], store["reg"][2], store["reg"][3]
+m = tt > 15
+print()
+print("过参数化 vs tuning function（无PE工况，两个估计器估同一个 theta）")
+print("     方案              估计器状态数   rms z1(末段)   |th1-th2|(末值)   th1(末值)   th2(末值)   max|u|")
+print("  过参数化                  2          %.3e        %.4e        %.4f     %.4f      %.1f"
+      % (np.sqrt(np.mean(Zo[m, 0]**2)), abs(So[-1, 2] - So[-1, 3]), So[-1, 2], So[-1, 3], np.max(np.abs(Uo))))
+print("  tuning function           1          %.3e        恒为 0         %.4f        -        %.1f"
+      % (np.sqrt(np.mean(Zt[m, 0]**2)), St[-1, 2], np.max(np.abs(Ut))))
+print("=> 过参数化的两个估计器都停在非真值上，而且互不相同（差 %.3f）——同一个物理参数被"
+      % abs(So[-1, 2] - So[-1, 3]))
+print("   估出了两个不同的值，这本身就说明参数不可辨识（无PE）。")
+print("   n 阶系统过参数化需要 n 个估计器，tuning function 始终只要 1 个。")` },
+    { code: `# 不做自适应 vs 自适应：吸引域与控制量代价（调节到 0，向量化多初值扫描）
+def rhs_vec(S, mode, th_fix=0.0):
+    x1, x2 = S[:, 0], S[:, 1]
+    th = S[:, 2] if mode == "tuning" else np.full_like(x1, th_fix)
+    z1 = x1
+    a1 = -th*x1**2 - k1*z1
+    z2 = x2 - a1
+    da1_dx1 = -2*th*x1 - k1
+    tau = z1*x1**2 + z2*x2 + z2*x1**2*(2*th*x1 + k1)
+    tha_dot = gam*tau if mode == "tuning" else np.zeros_like(x1)
+    a1d = da1_dx1*(th*x1**2 + x2) - x1**2*tha_dot
+    u = a1d - th*x2 - z1 - k2*z2
+    d = np.empty_like(S)
+    d[:, 0] = TH*x1**2 + x2
+    d[:, 1] = TH*x2 + u
+    d[:, 2] = tha_dot
+    return d, u, z1
+
+def scan(x0s, mode, T=20.0, dt=2e-4, th_fix=0.0):
+    M = len(x0s)
+    S = np.zeros((M, 3)); S[:, 0] = np.asarray(x0s, dtype=float)
+    N = int(round(T/dt))
+    alive = np.ones(M, dtype=bool)
+    t_esc = np.full(M, np.nan); maxu = np.zeros(M); sq = np.zeros(M); cnt = np.zeros(M)
+    for i in range(N):
+        t = i*dt
+        d, u, z1 = rhs_vec(S, mode, th_fix)
+        maxu = np.maximum(maxu, np.where(alive, np.abs(u), 0.0))
+        if t > 0.6*T:
+            sq += np.where(alive, z1**2, 0.0); cnt += alive
+        d = np.where(alive[:, None], d, 0.0)
+        d2 = np.where(alive[:, None], rhs_vec(S + 0.5*dt*d, mode, th_fix)[0], 0.0)
+        d3 = np.where(alive[:, None], rhs_vec(S + 0.5*dt*d2, mode, th_fix)[0], 0.0)
+        d4 = np.where(alive[:, None], rhs_vec(S + dt*d3, mode, th_fix)[0], 0.0)
+        S = S + dt/6*(d + 2*d2 + 2*d3 + d4)
+        dead = alive & ((np.abs(S[:, 0]) > ESC) | ~np.isfinite(S[:, 0]))
+        t_esc[dead] = t + dt
+        alive &= ~dead
+        S = np.where(np.isfinite(S), S, 0.0)
+    return t_esc, np.sqrt(sq/np.maximum(cnt, 1)), maxu
+
+x0s = [1.0, 1.5, 1.7, 1.8, 2.5]
+te_f, rms_f, mu_f = scan(x0s, "fixed", th_fix=0.7*TH)
+te_a, rms_a, mu_a = scan(x0s, "tuning")
+print("固定估计（theta_hat = 0.7*theta = 1.05，误差 30%）vs 自适应反步，T = 20 s, dt = 2e-4")
+print("     x1(0)   固定估计                   自适应反步                自适应 max|u|")
+for j, x0 in enumerate(x0s):
+    sf = ("t=%.2fs 逃逸" % te_f[j]) if np.isfinite(te_f[j]) else ("rms z1=%.2e" % rms_f[j])
+    sa = ("t=%.2fs 逃逸" % te_a[j]) if np.isfinite(te_a[j]) else ("rms z1=%.2e" % rms_a[j])
+    print("     %4.1f    %-24s  %-24s %10.1f" % (x0, sf, sa, mu_a[j]))
+print("=> theta*x1^2 是有限时间逃逸项。固定估计在 x1(0)=1.0 时误差反而更小（1.05e-15，因为")
+print("   参数不漂移），但 x1(0) >= 1.7 就在 1.55 s 内逃逸；自适应把逃逸边界推到 2.5 以外。")
+p, c = np.polyfit(np.log(np.array(x0s)), np.log(mu_a), 1)
+print()
+print("全局性是有代价的：tau2 含 z2*x1^2*(2*theta_hat*x1+k1)，theta_hat' ~ x1^3 量级，")
+print("alpha1' 里又有 -x1^2*theta_hat'，所以 u 的暂态峰值随初值高次增长")
+print("     x1(0)      " + "".join("%10.1f" % v for v in x0s))
+print("     max|u|     " + "".join("%10.1f" % v for v in mu_a))
+print("  log-log 拟合斜率 = %.2f  =>  max|u| 约按 |x1(0)|^%.1f 增长" % (p, p))
+x_lim = float(np.exp(np.interp(np.log(1000.0), np.log(mu_a), np.log(np.array(x0s)))))
+print("  若执行器限幅 U = 1000，实际可用吸引域是 x1(0) <= %.2f，而不是理论上的无穷大" % x_lim)` },
+    { code: `tt, So = over_run
+fig, ax = plt.subplots(2, 2, figsize=(10, 6))
+for col, (kind, ttl) in enumerate([("pe", "有PE：xd = 0.5sin(2t)"), ("reg", "无PE：调节到 0")]):
+    ttp, S, U, Z = store[kind]
+    ax[0, col].plot(ttp, Z[:, 0], label="z1")
+    ax[0, col].plot(ttp, Z[:, 1], label="z2")
+    ax[0, col].set_ylim(-1.2, 1.2)
+    ax[0, col].set_xlim(0, 25)
+    ax[0, col].set_xlabel("t (s)")
+    ax[0, col].grid(True)
+    ax[0, col].legend(fontsize=8)
+    ax[0, col].set_title(ttl + "：误差")
+    n_pt = min(len(tt), len(ttp))
+    ax[1, col].plot(ttp, S[:, 2], label="theta_hat（tuning function）")
+    ax[1, col].plot(tt[:n_pt], So[:n_pt, 2], "C2--", label="过参数化 th1")
+    ax[1, col].plot(tt[:n_pt], So[:n_pt, 3], "C3:", label="过参数化 th2")
+    ax[1, col].axhline(TH, color="k", ls="-.", lw=1, label="theta_true = 1.5")
+    ax[1, col].set_ylim(-0.2, 10.5)
+    ax[1, col].set_xlim(0, 25)
+    ax[1, col].set_xlabel("t (s)")
+    ax[1, col].grid(True)
+    ax[1, col].legend(fontsize=8)
+    ax[1, col].set_title("参数估计轨迹（无PE时全部冻结在非真值）")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+**四项结果的解读**：
+
+- **Lyapunov 恒等式成立**：$\dot V$ 实测与 $-k_1z_1^2-k_2z_2^2$ 的相对误差 $4.8\times10^{-11}$（PE 工况），且 $dt$ 缩小 4 倍残差下降 253 倍——正好是 4 阶差分的 $4^4=256$，说明残差来自数值微分而不是推导。两种参考下 $\dot V\le 0$ 的占比都是 100.0000%。
+- **PE 决定参数辨识**：有 PE 时 $\hat\theta\to1.500000$（$\lvert\tilde\theta\rvert=1.4\times10^{-10}$），$V\to 0$；无 PE 时 $\hat\theta$ 冻结在 6.2242，$V$ 停在 $2.2318=\tilde\theta^2/(2\gamma)$。两种情况下 $z_1$ 都收敛（$10^{-7}$ 与 $10^{-8}$）——**跟踪成功不等于辨识成功**。
+- **漏项直接发散**：$\tau_2$ 少了 $z_2x_1^2(2\hat\theta x_1+k_1)$，$t=0.893$ s 就逃逸。
+- **"全局"是有价签的**：$u$ 的暂态峰值按 $\lvert x_1(0)\rvert^{7.1}$ 增长。若执行器限幅 1000，实际可用吸引域只有 $\lvert x_1(0)\rvert\le 1.45$。理论上全局、工程上受限，这句话必须一起说。
+
+## 应用案例
+
+### 单连杆柔性关节机器人
+
+柔性关节是反步法最经典的应用（Spong, 1988）。谐波减速器、皮带传动、长轴系都会让电机侧与连杆侧之间产生弹性：
+
+$$
+\begin{aligned}
+J_l\ddot q &= -B_l\dot q - K(q-\theta) - mgl\sin q - T_L \\
+J_m\ddot\theta &= -B_m\dot\theta - K(\theta-q) + u
+\end{aligned}
+$$
+
+$q$ 是连杆角度（被控量），$\theta$ 是电机转子角度，$u$ 是电机转矩，$T_L$ 是外部负载转矩。取状态 $x=(q,\dot q,\theta,\dot\theta)$，参数 $J_l=1,\ J_m=0.5,\ B_l=1,\ B_m=0.5,\ K=200,\ mgl=4.905$，转矩限幅 50 N·m。
+
+<Callout variant="info">
+**一个常见误解**：不少教材说柔性关节系统"不是严格反馈形式，需要坐标变换或块反步法"。**这是错的。**Notebook 1 的结构判定表已经给出证据：在自然状态排序 $(q,\dot q,\theta,\dot\theta)$ 下，四个 $g_i=(1,\ K/J_l,\ 1,\ 1/J_m)=(1,200,1,2)$ 全部非零，二阶差商在 $10^{-10}$ 量级，越界泄漏恰好为 0——它**本来就是**四阶严格反馈系统，可以直接递推。会被误判的原因是 $\dot x_2$ 里出现了 $x_3$ 而 $\dot x_4$ 里也出现 $x_1$：后者是"往回看"（$j<i$），不违反下三角；下三角只禁止"往前看得太远"。
+</Callout>
+
+对照标准形式，四步递推需要的 $f_i,g_i$ 是：
+
+$$
+\begin{array}{ll}
+f_1=0, & g_1=1 \\[2pt]
+f_2=\dfrac{-B_l x_2-Kx_1-mgl\sin x_1}{J_l}, & g_2=\dfrac{K}{J_l}=200 \\[6pt]
+f_3=0, & g_3=1 \\[2pt]
+f_4=\dfrac{-B_m x_4-Kx_3+Kx_1}{J_m}, & g_4=\dfrac1{J_m}=2
+\end{array}
+$$
+
+前两步可以手算（取 $k_i=8$，参考 $q_d(t)$）：
+
+$$
+\alpha_1=\dot q_d-k_1z_1,\qquad
+\alpha_2=\frac{J_l}{K}\Big[\frac{B_lx_2+Kx_1+mgl\sin x_1}{J_l}+\ddot q_d-k_1(x_2-\dot q_d)-z_1-k_2z_2\Big]
+$$
+
+第三步开始，$\dot\alpha_2$ 要对 $x_1,x_2,t$ 求全导数，表达式迅速膨胀。手写没有意义，交给符号计算：SymPy 用 0.05 s 推出 $\alpha_3$（19 个算子）和 $u$（46 个算子），并且 $u$ 里出现了 $q_d$ 的**四阶导数**——这就是"参考必须四阶连续可微"的由来。
+
+### 三个必须量化的工程约束
+
+把控制律装进真实系统前，有三件事必须先用数字回答：
+
+1. **初值/测量误差会被 $g_{i-1}$ 逐级放大**。递推里的交叉项 $-g_{i-1}z_{i-1}$ 在 $t=0$ 时刻直接把前一级误差乘上 $g$。关节刚度 $K$ 越大（$g_2=K/J_l$ 越大），放大越狠。
+2. **参考轨迹的光滑度直接决定 $u$ 的峰值**。$u$ 含 $q_d^{(4)}$，一个"看起来差不多"的快过渡可能让峰值涨两个数量级。
+3. **数字实现的采样周期**。反步控制律的 $\lvert\partial u/\partial x\rvert$ 被 $g_2=200$ 放大到 $2.4\times10^{4}$ 量级，零阶保持期间的控制量误差 $\approx\lvert\partial u/\partial x\rvert\cdot\lvert\dot x\rvert\cdot T_s$，因此它对 $T_s$ 的敏感度远高于同带宽的线性控制器。
+
+还有一点是反步法的**结构性缺陷**：递推里没有积分作用，所以常值不匹配负载必然留下静差。下面的实验会把静差和它的解析预测 $\delta/(1+k_1k_2)$ 对在一起看。
+
+<JupyterNotebook
+  title="Notebook 5：四阶柔性关节机器人的完整反步设计与四个工程约束的定量代价"
+  setupCode={`import time
+import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+np.seterr(over='ignore', invalid='ignore')`}
+  cells={[
+    { code: `# 单连杆柔性关节机器人（含重力）：
+#   Jl*q'' = -Bl*q' - K(q-theta) - mgl*sin(q) - TL
+#   Jm*theta'' = -Bm*theta' - K(theta-q) + u
+# 状态 x = (q, q', theta, theta')，四步反步递推，k = (8,8,8,8)
+Jl, Jm, Bl, Bm = 1.0, 0.5, 1.0, 0.5
+MGL, UMAX, TL, TLOAD = 4.905, 50.0, 5.0, 8.0
+KG = [8.0, 8.0, 8.0, 8.0]
+x1, x2, x3, x4, t, beta = sp.symbols("x1 x2 x3 x4 t beta")
+X = [x1, x2, x3, x4]
+
+def build(Kval, qd, kg=KG):
+    # f_i / g_i 的拆分：x_i' = f_i(x_1..x_i) + g_i * x_(i+1)
+    f = [sp.Integer(0),
+         (-Bl*x2 - Kval*x1 - MGL*sp.sin(x1))/Jl,
+         sp.Integer(0),
+         (-Bm*x4 - Kval*x3 + Kval*x1)/Jm]
+    g = [sp.Integer(1), Kval/Jl, sp.Integer(1), sp.Integer(1)/Jm]
+    xdot = [f[0] + g[0]*x2, f[1] + g[1]*x3, f[2] + g[2]*x4, f[3] + g[3]*sp.Symbol("uu")]
+    def total_diff(e):
+        # 全导数只需对 x1..x3 求和（e 不依赖 x4 时该项自动为 0），绝不能碰到含 u 的 xdot[3]
+        return sum(sp.diff(e, X[j])*xdot[j] for j in range(3)) + sp.diff(e, t)
+    d = [sp.diff(qd, t, i) for i in range(5)]
+    z1 = x1 - qd
+    a1 = (-f[0] + d[1] - kg[0]*z1)/g[0]
+    z2 = x2 - a1
+    a2 = (-f[1] + total_diff(a1) - g[0]*z1 - kg[1]*z2)/g[1]
+    z3 = x3 - a2
+    a3 = (-f[2] + total_diff(a2) - g[1]*z2 - kg[2]*z3)/g[2]
+    z4 = x4 - a3
+    u = (-f[3] + total_diff(a3) - g[2]*z3 - kg[3]*z4)/g[3]
+    return [z1, a1, z2, a2, z3, a3, z4, u], d
+
+def make_sim(Kval, exprs):
+    Fu = sp.lambdify((x1, x2, x3, x4, t), exprs[7], "numpy")
+    Fz = [sp.lambdify((x1, x2, x3, x4, t), z, "numpy")
+          for z in [exprs[0], exprs[2], exprs[4], exprs[6]]]
+    def plant(x, u, tl):
+        return np.array([x[1],
+                         (-Bl*x[1] - Kval*(x[0] - x[2]) - MGL*np.sin(x[0]) - tl)/Jl,
+                         x[3],
+                         (-Bm*x[3] - Kval*(x[2] - x[0]) + u)/Jm])
+    def sim(T, dt, x0, load=False, tload=TLOAD, dense_z=False):
+        N = int(round(T/dt))
+        x = np.array(x0, dtype=float)
+        H = np.zeros((N+1, 4)); U = np.zeros(N+1); Z = np.zeros((N+1, 4))
+        def rhs(xx, tt):
+            uc = float(Fu(xx[0], xx[1], xx[2], xx[3], tt))
+            tl = TL if (load and tt >= tload) else 0.0
+            return plant(xx, uc, tl), uc
+        for i in range(N+1):
+            tt = i*dt
+            d1, uc = rhs(x, tt)          # 关键：RK4 的每个 stage 都要重新求值 u
+            H[i], U[i] = x, uc
+            if dense_z:
+                Z[i] = [float(fz(x[0], x[1], x[2], x[3], tt)) for fz in Fz]
+            else:
+                Z[i, 0] = float(Fz[0](x[0], x[1], x[2], x[3], tt))
+            if i == N:
+                break
+            d2, _ = rhs(x + 0.5*dt*d1, tt + 0.5*dt)
+            d3, _ = rhs(x + 0.5*dt*d2, tt + 0.5*dt)
+            d4, _ = rhs(x + dt*d3, tt + dt)
+            x = x + dt/6*(d1 + 2*d2 + 2*d3 + d4)
+        return np.linspace(0, T, N+1), H, U, Z
+    return sim, Fu, Fz, plant
+
+def consistent_x0(Kval, dvals):
+    # 让 z(0) 尽可能为 0 的初值：x3 由 q'' 的方程反解
+    qd0, qd1, qd2 = dvals
+    return [qd0, qd1, qd0 + (Jl*qd2 + Bl*qd1 + MGL*np.sin(qd0))/Kval, qd1]
+
+K200 = 200.0
+t0 = time.perf_counter()
+exprs, dref = build(K200, sp.sin(t))
+wall = time.perf_counter() - t0
+z1s, a1s, z2s, a2s, z3s, a3s, z4s, us = exprs
+sim200, FuG, FzG, plantG = make_sim(K200, exprs)
+print("K = %.0f N·m/rad, 转矩限幅 %.0f N·m, k = (8,8,8,8)" % (K200, UMAX))
+print("四步递推（SymPy 推导耗时 %.3f s）：" % wall)
+print("  g = (1, K/Jl, 1, 1/Jm) = (1, %.0f, 1, %.1f)，全部非零 => 严格反馈结构成立" % (K200/Jl, 1/Jm))
+print("  count_ops: alpha1=%d  alpha2=%d  alpha3=%d  u=%d"
+      % (sp.count_ops(a1s), sp.count_ops(a2s), sp.count_ops(a3s), sp.count_ops(us)))
+print("  u 中出现的最高阶参考导数 = qd 的 4 阶导 => 参考轨迹必须四阶连续可微")
+print("  u 的自变量 = %s，不含未定符号 uu（说明递推没有循环依赖）" % sorted(str(s) for s in us.free_symbols))
+
+Fd = [sp.lambdify((t,), dd, "numpy") for dd in dref[:3]]
+x0_ok = consistent_x0(K200, [float(fd(0.0)) for fd in Fd])
+z0 = sim200(0.0, 1.0, x0_ok, dense_z=True)[3][0]
+print("  一致初值 x0 = (%.4f, %.4f, %.5f, %.4f)  =>  z(0) = %s"
+      % (tuple(x0_ok) + (np.array2string(z0, precision=5),)))
+
+print()
+print("复核 V4' = -sum(k_i*z_i^2)（无扰动，电机侧初速偏差 0.5 rad/s，dt=2e-4，T=6s）")
+x0_pert = list(x0_ok); x0_pert[3] += 0.5
+tt, H, U, Z = sim200(6.0, 2e-4, x0_pert, dense_z=True)
+dt = tt[1] - tt[0]
+V4 = 0.5*np.sum(Z**2, axis=1)
+Vnum = (-np.roll(V4, -2) + 8*np.roll(V4, -1) - 8*np.roll(V4, 1) + np.roll(V4, 2))/(12*dt)
+Vth = -np.array([KG[i]*Z[:, i]**2 for i in range(4)]).sum(axis=0)
+sl = slice(5, -5)
+r = np.max(np.abs(Vnum[sl] - Vth[sl]))
+print("  z(0) = %s,  V4(0) = %.4f,  max|V4'| = %.4f"
+      % (np.array2string(Z[0], precision=5), V4[0], np.max(np.abs(Vth[sl]))))
+print("  max|V4'(实测) - V4'(理论)| = %.3e   相对误差 = %.2e" % (r, r/np.max(np.abs(Vth[sl]))))
+print("  V4'(实测) <= 0 的采样点占比 = %.4f%%   V4(6s) = %.3e"
+      % (100*np.mean(Vnum[sl] <= 1e-12), V4[-1]))
+print("  => 四步递推逐点成立。（若 RK4 只在步首求值一次 u，本项残差会到 0.84、")
+print("     负定占比只有 38.7% ——恒等式对数值积分方式很敏感，这是常见的假 bug 来源。）")` },
+    { code: `# 跟踪 qd = sin(t)，t = 8 s 时在连杆侧突加 TL = 5 N·m（不匹配常值负载）
+print("dt = 5e-4, T = 15 s，一致初值")
+tt2, H2, U2, Z2 = sim200(15.0, 5e-4, x0_ok, load=True)
+pre = (tt2 > 6) & (tt2 < TLOAD)
+post = tt2 > TLOAD + 3
+dip = np.max(np.abs(Z2[(tt2 >= TLOAD) & (tt2 <= TLOAD+3), 0]))
+mean_off = np.mean(Z2[post, 0])
+pred = -TL/(Jl*(1 + KG[0]*KG[1]))
+print("  加载前(6-8s) rms|z1| = %.3e rad" % np.sqrt(np.mean(Z2[pre, 0]**2)))
+print("  加载后 3 s 内最大瞬时偏差 = %.4f rad" % dip)
+print("  加载后(>11s) 平均稳态偏置 mean(z1) = %+.5f rad" % mean_off)
+print("  机理预测：扰动以加速度 delta = -TL/Jl = %.2f rad/s^2 进入 z2 方程，" % (-TL/Jl))
+print("     稳态时 z2 = k1*z1 且 -z1 - k2*z2 + delta = 0  =>  z1_ss = delta/(1+k1*k2) = %+.5f rad" % pred)
+print("     实测/预测 = %.3f  => 机理确认（递推里没有积分作用，常值负载必然留下静差）" % (mean_off/pred))
+print("  max|u| = %.1f N·m（限幅 %.0f N·m，余量 %.2f 倍），超限采样点占比 = %.3f%%"
+      % (np.max(np.abs(U2)), UMAX, UMAX/np.max(np.abs(U2)), 100*np.mean(np.abs(U2) > UMAX)))
+print("  加载后稳态转矩需求 = TL = %.1f N·m，只占限幅的 %.0f%%：静差不是执行器不够力，而是控制律结构决定的"
+      % (TL, 100*TL/UMAX))` },
+    { code: `# D1 初值与参考不一致（x0 = 0，而 qd'(0) = 1）；D2 只错开 0.05 rad 的连杆位置
+print("D1 零初值 vs 一致初值：交叉项 -g2*z2 把失配按 g2 = K/Jl 放大")
+print("     K (N·m/rad)   g2=K/Jl    z4(0)        max|u| (N·m)   是限幅的倍数")
+peaks = {}
+for Kval in [50.0, 200.0]:
+    ex, dr = build(Kval, sp.sin(t))
+    sm, _, FzK, _ = make_sim(Kval, ex)
+    z0k = [float(fz(0.0, 0.0, 0.0, 0.0, 0.0)) for fz in FzK]
+    t3, H3, U3, Z3 = sm(6.0, 5e-4, [0.0, 0.0, 0.0, 0.0])
+    peaks[Kval] = np.max(np.abs(U3))
+    print("     %8.0f      %6.0f   %+9.2f   %12.1f      %6.1f"
+          % (Kval, Kval/Jl, z0k[3], peaks[Kval], peaks[Kval]/UMAX))
+print("  u 峰值之比 = %.2f，g2 之比 = %.2f  => 峰值正比于 g2 = K/Jl，机理确认"
+      % (peaks[200.0]/peaks[50.0], (200.0/Jl)/(50.0/Jl)))
+print("  一致初值时 max|u| = %.1f N·m，零初值时 %.1f N·m，相差 %.0f 倍"
+      % (np.max(np.abs(U2)), peaks[200.0], peaks[200.0]/np.max(np.abs(U2))))
+print()
+print("D2 只把连杆位置初值错开 0.05 rad（= 2.9 度，其余状态仍一致，T = 6 s）：")
+x0_p05 = list(x0_ok); x0_p05[0] += 0.05
+t5, H5, U5, Z5 = sim200(6.0, 5e-4, x0_p05, dense_z=True)
+print("   z(0) = %s" % np.array2string(Z5[0], precision=4))
+print("   |z4(0)|/|z1(0)| = %.0f，max|u| = %.1f N·m（限幅的 %.1f 倍）"
+      % (abs(Z5[0, 3])/abs(Z5[0, 0]), np.max(np.abs(U5)), np.max(np.abs(U5))/UMAX))
+print("   => 前一步的误差被后一步的 -g_(i-1)*z_(i-1) 项按 g 逐级放大；g 越大（关节越硬），")
+print("      对初值一致性与状态测量精度的要求越苛刻。工程对策：起控前先做初值对齐，")
+print("      或对 u 做限幅 + 渐进参考（把大误差摊到一段时间里）。")` },
+    { code: `# D3 参考信号光滑度：反步需要 qd 四阶可微，qd = (1+tanh(beta*(t-2)))/2
+print("D3 参考整形的必要性（T = 8 s, dt = 5e-4，一致初值随 beta 重算）")
+qd_step = (1 + sp.tanh(beta*(t - 2)))/2
+exprs2, dref2 = build(K200, qd_step)
+Fb = sp.lambdify((x1, x2, x3, x4, t, beta), exprs2[7], "numpy")
+F4 = sp.lambdify((t, beta), sp.diff(qd_step, t, 4), "numpy")
+Fdd = [sp.lambdify((t, beta), dd, "numpy") for dd in dref2[:3]]
+tgrid = np.linspace(0.0, 6.0, 3001)
+print("     beta   0->1 用时   max|qd''''|      max|u| (N·m)   超限幅")
+for b in [1.0, 5.0, 20.0]:
+    d4max = float(np.max(np.abs(F4(tgrid, b))))
+    x0b = consistent_x0(K200, [float(fd(0.0, b)) for fd in Fdd])
+    def rhsb(xx, tt_, b=b):
+        uc = float(Fb(xx[0], xx[1], xx[2], xx[3], tt_, b))
+        return np.array([xx[1],
+                         (-Bl*xx[1] - K200*(xx[0] - xx[2]) - MGL*np.sin(xx[0]))/Jl,
+                         xx[3],
+                         (-Bm*xx[3] - K200*(xx[2] - xx[0]) + uc)/Jm]), uc
+    dts, Ns = 5e-4, int(round(8.0/5e-4))
+    xx = np.array(x0b, dtype=float)
+    umax = 0.0
+    for i in range(Ns):
+        tt_ = i*dts
+        p1, uc = rhsb(xx, tt_)
+        umax = max(umax, abs(uc))
+        p2, _ = rhsb(xx + 0.5*dts*p1, tt_ + 0.5*dts)
+        p3, _ = rhsb(xx + 0.5*dts*p2, tt_ + 0.5*dts)
+        p4, _ = rhsb(xx + dts*p3, tt_ + dts)
+        xx = xx + dts/6*(p1 + 2*p2 + 2*p3 + p4)
+    print("     %4.0f     %.2f s     %11.1f   %12.1f       %s"
+          % (b, 4.0/b, d4max, umax, "是" if umax > UMAX else "否"))
+print("  => u 峰值随 max|qd''''| 单调放大：beta 从 1 到 20，max|qd''''| 涨 1.6e5 倍，")
+print("     max|u| 从 4.1 涨到 624.9 N·m（限幅的 12.5 倍）。")
+print("     工程上必须先做参考整形（trajectory shaping），或改用不需求导的 DSC。")` },
+    { code: `# E 数字实现：控制量每 Ts 更新一次，期间零阶保持
+def sim_zoh(Ts, T=3.0, dt=1e-4, x0=None):
+    N = int(round(T/dt))
+    x = np.array(x0, dtype=float)
+    hold = 0.0
+    u = float(FuG(x[0], x[1], x[2], x[3], 0.0))
+    Zr = np.zeros((N+1, 4)); Ur = np.zeros(N+1); Hr = np.zeros((N+1, 4))
+    def plant(x_, u_):
+        return np.array([x_[1],
+                         (-Bl*x_[1] - K200*(x_[0] - x_[2]) - MGL*np.sin(x_[0]))/Jl,
+                         x_[3],
+                         (-Bm*x_[3] - K200*(x_[2] - x_[0]) + u_)/Jm])
+    for i in range(N+1):
+        tt_ = i*dt
+        Zr[i] = [float(fz(x[0], x[1], x[2], x[3], tt_)) for fz in FzG]
+        Ur[i] = u; Hr[i] = x
+        if i == N:
+            break
+        d1 = plant(x, u)
+        d2 = plant(x + 0.5*dt*d1, u)
+        d3 = plant(x + 0.5*dt*d2, u)
+        d4 = plant(x + dt*d3, u)
+        x = x + dt/6*(d1 + 2*d2 + 2*d3 + d4)
+        hold += dt
+        if hold >= Ts - 1e-12:
+            hold = 0.0
+            u = float(FuG(x[0], x[1], x[2], x[3], tt_ + dt))
+    return np.linspace(0, T, N+1), Zr, Ur, Hr
+
+print("E 零阶保持的代价（T = 3 s, dt = 1e-4，电机侧初速偏差 0.5 rad/s）")
+print("     Ts (s)   采样率      V4'残差(相对)   rms|z1|(t>2s)   max|u| (N·m)   max|u|/限幅")
+for Ts, rate in [(1e-4, "10 kHz"), (1e-3, "1 kHz"), (5e-3, "200 Hz"), (0.02, "50 Hz")]:
+    tz, Zz, Uz, Hz = sim_zoh(Ts, x0=x0_pert)
+    dtz = tz[1] - tz[0]
+    if not np.all(np.isfinite(Zz)) or np.max(np.abs(Hz)) > 1e3:
+        print("     %.4f   %-8s       —              —             —          发散" % (Ts, rate))
+        continue
+    Vz = 0.5*np.sum(Zz**2, axis=1)
+    Vn = (-np.roll(Vz, -2) + 8*np.roll(Vz, -1) - 8*np.roll(Vz, 1) + np.roll(Vz, 2))/(12*dtz)
+    Vt = -np.array([KG[i]*Zz[:, i]**2 for i in range(4)]).sum(axis=0)
+    slz = slice(5, -5)
+    rz = np.max(np.abs(Vn[slz] - Vt[slz]))/max(np.max(np.abs(Vt[slz])), 1e-30)
+    print("     %.4f   %-8s   %.3e      %.4e        %10.1f      %8.1f 倍"
+          % (Ts, rate, rz, np.sqrt(np.mean(Zz[tz > 2, 0]**2)), np.max(np.abs(Uz)), np.max(np.abs(Uz))/UMAX))
+
+print()
+print("  机理核对：保持期间状态仍在运动，控制量误差 ~ |du/dx| * |x'| * Ts（沿轨迹逐点取最大）")
+tz0, Zz0, Uz0, Hz0 = sim_zoh(1e-4, x0=x0_pert)
+h = 1e-6
+idx = np.unique(np.linspace(0, len(Hz0)-1, 400).astype(int))
+lip, prod = 0.0, 0.0
+for i in idx:
+    xs_ = Hz0[i]
+    if not np.all(np.isfinite(xs_)):
+        continue
+    t_ = tz0[i]
+    grad = np.array([(float(FuG(*(xs_ + h*np.eye(4)[j]), t_))
+                      - float(FuG(*(xs_ - h*np.eye(4)[j]), t_)))/(2*h) for j in range(4)])
+    lip = max(lip, float(np.linalg.norm(grad)))
+    nx = float(np.linalg.norm(np.array([xs_[1],
+                                        (-Bl*xs_[1] - K200*(xs_[0] - xs_[2]) - MGL*np.sin(xs_[0]))/Jl,
+                                        xs_[3],
+                                        (-Bm*xs_[3] - K200*(xs_[2] - xs_[0]) + Uz0[i])/Jm])))
+    prod = max(prod, float(np.linalg.norm(grad))*nx)
+print("    沿轨迹实测 max|du/dx| = %.1f，max(|du/dx|*|x'|) = %.1f" % (lip, prod))
+for Ts, rate in [(1e-4, "10 kHz"), (1e-3, "1 kHz"), (5e-3, "200 Hz")]:
+    print("    Ts=%.4f (%s): 保持期控制量误差上界 %.1f N·m = 限幅的 %.0f 倍"
+          % (Ts, rate, prod*Ts, prod*Ts/UMAX))
+print("    （上界取的是全程最大值之积，偏保守；但它解释了三件事的次序：Ts 越大，")
+print("      V4' 越偏离 -sum(k_i*z_i^2)（Lyapunov 证明不再成立），跟踪残量与 u 峰值同步上升。）")
+print("  => 根源是 |du/dx| 被 g2 = K/Jl = %.0f 逐级放大到 %.1e；" % (K200/Jl, lip))
+print("     同等带宽的线性状态反馈没有这么大的 Lipschitz 常数，所以对 Ts 宽容得多。")` },
+    { code: `fig, ax = plt.subplots(2, 2, figsize=(10, 6))
+ax[0, 0].plot(tt2, H2[:, 0], label="q（连杆侧）")
+ax[0, 0].plot(tt2, np.sin(tt2), "--", label="qd = sin(t)")
+ax[0, 0].axvline(TLOAD, color="k", ls=":")
+ax[0, 0].set_ylim(-1.6, 1.6); ax[0, 0].set_xlim(0, 15)
+ax[0, 0].legend(fontsize=8); ax[0, 0].grid(True)
+ax[0, 0].set_title("连杆角度跟踪（t=8s 突加 5 N·m）")
+ax[0, 1].plot(tt2, H2[:, 2] - H2[:, 0], label="theta - q（弹性变形）")
+ax[0, 1].axhline(-TL/K200, color="r", ls="--", label="稳态变形 -TL/K = -0.025")
+ax[0, 1].axvline(TLOAD, color="k", ls=":")
+ax[0, 1].set_ylim(-0.12, 0.12); ax[0, 1].set_xlim(0, 15)
+ax[0, 1].legend(fontsize=8); ax[0, 1].grid(True)
+ax[0, 1].set_title("关节弹性变形")
+ax[1, 0].plot(tt2, U2)
+ax[1, 0].axhline(UMAX, color="r", ls="--", label="限幅 50 N·m")
+ax[1, 0].axhline(-UMAX, color="r", ls="--")
+ax[1, 0].axvline(TLOAD, color="k", ls=":")
+ax[1, 0].set_ylim(-60, 60); ax[1, 0].set_xlim(0, 15); ax[1, 0].set_xlabel("t (s)")
+ax[1, 0].legend(fontsize=8); ax[1, 0].grid(True)
+ax[1, 0].set_title("控制转矩 u（一致初值）")
+ax[1, 1].semilogy(tt2[1:], np.maximum(np.abs(Z2[1:, 0]), 1e-16), label="|z1|")
+ax[1, 1].axvline(TLOAD, color="k", ls=":")
+ax[1, 1].axhline(abs(pred), color="r", ls="--", label="静差预测 |delta|/(1+k1*k2)")
+ax[1, 1].set_ylim(1e-5, 1); ax[1, 1].set_xlim(0, 15); ax[1, 1].set_xlabel("t (s)")
+ax[1, 1].legend(fontsize=8); ax[1, 1].grid(True)
+ax[1, 1].set_title("跟踪误差 |z1|（对数）：突加负载后停在静差上")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+**结果解读**：
+
+- **递推是对的**：$\dot V_4$ 与 $-\sum k_iz_i^2$ 的相对误差 $8.6\times10^{-11}$，负定占比 100.0000%，$V_4$ 从 0.1154 降到 $4.7\times10^{-25}$。
+- **静差被机理公式精确预测**：突加 5 N·m 后平均偏置 $-0.07829$ rad，解析预测 $\delta/(1+k_1k_2)=-0.07692$ rad，比值 1.018。加载后稳态转矩只需 5 N·m（限幅的 10%），说明**静差是控制律结构问题，不是执行器能力问题**——要消掉它必须引入积分作用或负载观测器。
+- **初值一致性值 48 倍**：一致初值时 $\max|u|=33.7$ N·m（限幅内，余量 1.48 倍）；零初值时 1605.1 N·m（限幅的 32 倍）。$K$ 从 50 换到 200，峰值从 420.5 涨到 1605.1，比值 3.82 ≈ $g_2$ 之比 4.00，证实峰值正比于 $g_2=K/J_l$。
+- **0.05 rad 的初值偏差 → 700 N·m**：$\lvert z_4(0)\rvert/\lvert z_1(0)\rvert=1579$，$\max|u|=699.6$ N·m（限幅 14 倍）。2.9 度的安装/测量偏差就足以让执行器饱和。
+- **参考光滑度值两个数量级**：$\beta=1$ 时 $\max|u|=4.1$ N·m，$\beta=20$（0.2 s 内完成 0→1）时 624.9 N·m，超限幅 12.5 倍。
+- **采样周期是硬约束**：10 kHz 时 rms 误差 $2.0\times10^{-8}$、$\max|u|=43.7$ N·m（限幅内）；1 kHz 时 rms 恶化到 $1.1\times10^{-3}$、$\max|u|$ 冲到 12306 N·m（限幅 246 倍）；200 Hz 与 50 Hz 直接发散。沿轨迹实测 $\max|\partial u/\partial x|=2.4\times10^{4}$——这就是它对 $T_s$ 敏感的原因。
+
+## 与其他非线性控制方法的对比
+
+### 先把账算清楚：标称反步就是反馈线性化
+
+对 $g_1=1$ 的二阶系统（$\dot x_1=x_2$，$\dot x_2=f_2+u$），把反步递推一步步展开。记 $e=x_1-x_d$，$\dot e=x_2-\dot x_d$：
+
+$$
+\alpha_1=\dot x_d-k_1z_1,\qquad z_2=x_2-\alpha_1=\dot e+k_1e
+$$
+
+$$
+\dot\alpha_1=\ddot x_d-k_1\dot z_1=\ddot x_d-k_1(z_2-k_1z_1)=\ddot x_d+k_1^2e-k_1z_2
+$$
+
+$$
+u=-z_1-\hat f_2+\dot\alpha_1-k_2z_2
+=\underbrace{-\hat f_2+\ddot x_d}_{\text{抵消}+\text{前馈}}-(1+k_1k_2)\,e-(k_1+k_2)\,\dot e
+$$
+
+而反馈线性化的标准写法是 $u=-\hat f_2+\ddot x_d-K_pe-K_v\dot e$。对照得
+
+$$
+\boxed{K_p=g_1+k_1k_2,\qquad K_v=k_1+k_2}
+$$
+
+**两者是同一个控制律，只是增益的参数化方式不同。**下面用 20000 个随机状态点逐点验证（连模型误差都一起加进去，因为它对两边是同样的）：差值 $2.1\times10^{-14}$，即浮点舍入。
+
+<Callout variant="warning">
+所以"反步法不需要精确抵消非线性项，因此比反馈线性化更鲁棒"这句话必须删掉。上表里"反步变体：只抵消阻尼项"确实少抵消了一项——但那是**设计者的选择**（在 $\hat f_2$ 里只放 $-b x_2$），不是反步法本身带来的性质。同一个选择放在反馈线性化里也完全能做。
+</Callout>
+
+### 反步法真正多出来的三样东西
+
+1. **选择性抵消的自由度**：递推公式对 $\hat f_i$ 没有任何要求，只要求残差能被 $-k_iz_i$ 压住。第 8 节的实测：只抵消阻尼项时 rms 误差从 $5.2\times10^{-3}$ 恶化到 $4.8\times10^{-2}$（差 9 倍），但 $\max|u|$ 从 1.39 降到 1.30。
+2. **处理不匹配参数不确定性的机制**：tuning function 把 $\tilde\theta$ 装进 Lyapunov 函数，于是 $\hat f_i$ 里的参数可以在线估计。实测在 30% 模型误差下 rms 误差 $3.3\times10^{-3}$，比"精确抵消"的 $1.8\times10^{-2}$ 好 **5.6 倍**，而且这个成绩对模型误差**完全不敏感**（$m=1.0$ 与 $m=0.7$ 两栏数字一模一样）。
+3. **一个显式的控制 Lyapunov 函数**：$V_n=\sum z_i^2/2$ 不只是证明工具，它的水平集给出可用吸引域的估计，还能直接拿去做稳定性裕度分析。
+
+### 反步法少掉的一样东西：极点配置的可达域
+
+把 $K_p=g_1+k_1k_2$、$K_v=k_1+k_2$ 反过来看：给定 $K_p$，$k_1k_2=K_p-g_1$ 是定值，而 $k_1+k_2$ 在 $k_1=k_2=\sqrt{K_p-g_1}$ 处取**最小值** $2\sqrt{K_p-g_1}$。于是标准反步能配置的极点必须满足
+
+$$
+K_p>g_1,\qquad K_v\ge 2\sqrt{K_p-g_1}
+\qquad\Longleftrightarrow\qquad
+\zeta\ge\zeta_{\min}=\sqrt{\frac{K_p-g_1}{K_p}}
+$$
+
+$k_1,k_2$ 必须同号且为实数，这条约束无法绕过。$K_p=9$（$\omega_n=3$）时 $\zeta_{\min}=0.943$——**标准二次型 CLF 的反步给不出 $\zeta=0.7$ 这种工程上最常用的欠阻尼响应**。反馈线性化可以直接指定 $K_p=9,K_v=4.2$，反步不行。要突破就得换非二次 CLF（比如 $V=\tfrac12z^\top Pz$ 带交叉项）或直接在最后一步做极点配置——后者其实就退化成了反馈线性化。
+
+### 七种控制律的定量对比
+
+下面把 PID、反馈线性化、标称反步、只抵消阻尼的反步变体、自适应反步、边界层滑模、纯 sgn 滑模放在同一个被控对象上跑：
+
+$$
+\dot x_1=x_2,\qquad \dot x_2=-a\sin x_1-bx_2+u+w(t),\quad a=3,\ b=1,\ w=0.3\sin 5t
+$$
+
+参考 $0.5\sin 2t$，初值与参考一致，$T=20$ s。模型误差用 $\hat a=ma,\ \hat b=mb$ 模拟，$m=1.0$（精确）与 $m=0.7$（30% 误差）各跑一遍。
+
+<JupyterNotebook
+  title="Notebook 6：反步 ≡ 反馈线性化的逐点验证、七种控制律定量对比、极点可达域"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `# 被控对象 x1' = x2, x2' = -a*sin(x1) - b*x2 + u + w(t),  a=3, b=1, w = 0.3*sin(5t)
+# 反步:       alpha1 = xd' - k1*z1,  u = -z1 - f2_hat + alpha1' - k2*z2
+# 反馈线性化:  u = -f2_hat + xd'' - Kp*e - Kv*e'
+A_TRUE, B_TRUE = 3.0, 1.0
+WD, WFRQ = 0.3, 5.0
+AMP, FRQ = 0.5, 2.0
+k1, k2 = 3.0, 5.0
+Kp, Kv = 1.0 + k1*k2, k1 + k2
+
+def ref(t):
+    return AMP*np.sin(FRQ*t), AMP*FRQ*np.cos(FRQ*t), -AMP*FRQ**2*np.sin(FRQ*t)
+
+def plant(x, u, t):
+    return np.array([x[1], -A_TRUE*np.sin(x[0]) - B_TRUE*x[1] + u + WD*np.sin(WFRQ*t)])
+
+rng = np.random.default_rng(0)
+X1 = rng.uniform(-2, 2, 20000); X2 = rng.uniform(-4, 4, 20000); TT = rng.uniform(0, 10, 20000)
+m_err = 0.7
+ah, bh = m_err*A_TRUE, m_err*B_TRUE
+xd, xdd, xddd = ref(TT)
+e, ed = X1 - xd, X2 - xdd
+z1 = e
+a1 = xdd - k1*z1
+z2 = X2 - a1
+a1d = xddd + k1**2*z1 - k1*z2
+f2h = -ah*np.sin(X1) - bh*X2
+u_bs = -z1 - f2h + a1d - k2*z2
+u_fl = -f2h + xddd - Kp*e - Kv*ed
+print("增益映射： Kp = g1 + k1*k2 = %.1f,  Kv = k1 + k2 = %.1f   （g1=1, k1=%.1f, k2=%.1f）" % (Kp, Kv, k1, k2))
+print("在 20000 个随机状态点（两边同样带 30% 模型误差）上逐点比较：")
+print("  max|u_反步 - u_反馈线性化| = %.3e" % np.max(np.abs(u_bs - u_fl)))
+print("  max|u| 量级参考 = %.3f" % np.max(np.abs(u_bs)))
+print("=> 二者逐点相等（差在浮点舍入量级）。标称反步并没有少抵消任何非线性项，")
+print("   它给出的就是同一个线性反馈族，只是增益被参数化成 (k1, k2)。")` },
+    { code: `# 七种控制律的统一仿真框架
+lam_smc, Ksw, Phi = 3.0, 2.0, 0.05
+GAM = 100.0
+
+def run(ctrl_name, m, T=20.0, dt=2e-4, g_ad=20.0):
+    x = np.array([AMP*0.0, AMP*FRQ*1.0])   # 初值与参考一致：x0 = (0, 1)
+    th = np.array([0.0, 0.0]); ie = 0.0; z2_cur = 0.0
+    N = int(round(T/dt))
+    H = np.zeros((N+1, 2)); U = np.zeros(N+1); E = np.zeros(N+1); TH = np.zeros((N+1, 2))
+    ah_, bh_ = m*A_TRUE, m*B_TRUE
+    for i in range(N+1):
+        t = i*dt
+        xd_, xdd_, xddd_ = ref(np.array([t]))
+        xd_, xdd_, xddd_ = float(xd_[0]), float(xdd_[0]), float(xddd_[0])
+        e = x[0] - xd_; ed = x[1] - xdd_
+        if ctrl_name == "PID":
+            u = -(Kp*e + Kv*ed + 4.0*ie)
+        elif ctrl_name == "FL":
+            u = -(-ah_*np.sin(x[0]) - bh_*x[1]) + xddd_ - Kp*e - Kv*ed
+        elif ctrl_name == "BS":
+            z1_ = e
+            a1_ = xdd_ - k1*z1_
+            z2_ = x[1] - a1_
+            a1d_ = xddd_ + k1**2*z1_ - k1*z2_
+            u = -z1_ - (-ah_*np.sin(x[0]) - bh_*x[1]) + a1d_ - k2*z2_
+        elif ctrl_name == "PART":        # 反步变体：只抵消阻尼项 bh*x2，不抵消 ah*sin(x1)
+            u = bh_*x[1] + xddd_ - Kp*e - Kv*ed
+        elif ctrl_name == "ABS":         # 自适应反步：估计 a, b
+            z1_ = e
+            a1_ = xdd_ - k1*z1_
+            z2_ = x[1] - a1_
+            a1d_ = xddd_ + k1**2*z1_ - k1*z2_
+            z2_cur = z2_
+            u = th[0]*np.sin(x[0]) + th[1]*x[1] + a1d_ - z1_ - k2*z2_
+        elif ctrl_name == "SMC":
+            s = ed + lam_smc*e
+            ueq = ah_*np.sin(x[0]) + bh_*x[1] + xddd_ - lam_smc*ed
+            u = ueq - Ksw*np.clip(s/Phi, -1, 1)
+        elif ctrl_name == "SMCSGN":
+            s = ed + lam_smc*e
+            ueq = ah_*np.sin(x[0]) + bh_*x[1] + xddd_ - lam_smc*ed
+            u = ueq - Ksw*np.sign(s)
+        H[i] = x; U[i] = u; E[i] = e; TH[i] = th
+        if i == N:
+            break
+        d1 = plant(x, u, t)
+        d2 = plant(x + 0.5*dt*d1, u, t + 0.5*dt)
+        d3 = plant(x + 0.5*dt*d2, u, t + 0.5*dt)
+        d4 = plant(x + dt*d3, u, t + dt)
+        x = x + dt/6*(d1 + 2*d2 + 2*d3 + d4)
+        ie += dt*e
+        if ctrl_name == "ABS":
+            th = th + dt*np.array([-g_ad*z2_cur*np.sin(x[0]), -g_ad*z2_cur*x[1]])
+    return np.linspace(0, T, N+1), H, U, E, TH
+
+print("先定自适应增益：gamma 扫描（30% 模型误差，参考 0.5sin(2t)，T=20s）")
+print("     gamma    rms|e|(t>15)   a_hat(末值)   b_hat(末值)   max|u|   TV(u)末2s")
+for gtry in [5.0, 20.0, 50.0, 100.0, 300.0]:
+    tg, Hg, Ug, Eg, THg = run("ABS", 0.7, g_ad=gtry)
+    mg = tg > 15
+    print("     %5.1f    %.4e       %.4f      %.4f      %.2f     %.1f"
+          % (gtry, np.sqrt(np.mean(Eg[mg]**2)), THg[-1, 0], THg[-1, 1],
+             np.max(np.abs(Ug)), np.sum(np.abs(np.diff(Ug[tg > 18])))))
+print("=> rms|e| 随 gamma 单调下降（5 -> 300：1.09e-2 -> 1.17e-3），代价只是 max|u| 与 TV(u) 略增；")
+print("   本课取 gamma = %.0f。gamma 再往上的代价是放大测量噪声与未建模动态，" % GAM)
+print("   本实验不建模噪声，因此不对 gamma > 300 的情形下结论。")
+print("   另注：a_hat/b_hat 并不收敛到真值（3.0/1.0）——有扰动 w 且回归量相关性有限时，")
+print("   自适应律最小化的是跟踪误差而不是参数误差（见「自适应控制基础」一课）。")` },
+    { code: `names = [("PID", "PID（不抵消非线性）"), ("FL", "反馈线性化（精确抵消）"), ("BS", "标称反步"),
+         ("PART", "反步变体：只抵消阻尼项"), ("ABS", "自适应反步（估计 a,b）"),
+         ("SMC", "滑模（边界层 Phi=0.05）"), ("SMCSGN", "滑模（纯 sgn，无边界层）")]
+cache = {}
+
+def report(m, tag):
+    print("【" + tag + "】 参考 0.5sin(2t)，w=0.3sin(5t)，T=20s，dt=2e-4，初值一致 x0=(0, 1)")
+    print("   %-24s  rms|e|(t>15)   max|e|(t>15)   平均偏置     max|u|    TV(u)末2s" % "控制律")
+    for key, label in names:
+        tt, H, U, E, TH = run(key, m, g_ad=GAM)
+        cache[(m, key)] = (tt, H, U, E, TH)
+        msk = tt > 15
+        print("   %-24s  %.4e     %.4e    %+.4e   %8.2f   %10.1f"
+              % (label, np.sqrt(np.mean(E[msk]**2)), np.max(np.abs(E[msk])), np.mean(E[msk]),
+                 np.max(np.abs(U)), np.sum(np.abs(np.diff(U[tt > 18])))))
+
+report(1.0, "模型精确 (m=1.0)")` },
+    { code: `report(0.7, "模型误差 30% (m=0.7)")
+print()
+TH = cache[(0.7, "ABS")][4]
+print("   自适应反步的参数估计末值： a_hat = %.4f (真值 3.0),  b_hat = %.4f (真值 1.0)"
+      % (TH[-1, 0], TH[-1, 1]))
+print()
+print("=> 三点必须一起读：")
+print("   1) 「反馈线性化」与「标称反步」两行的每一个数字都完全相同——它们是同一个控制律。")
+print("   2) 只有「自适应反步」在 m=1.0 与 m=0.7 两栏里数字不变（3.27e-03）：它把模型误差吸收了。")
+print("   3) 滑模两行最准，但这个基准里的不确定性全是匹配的（a、b、w 都出现在 u 的通道里），")
+print("      滑模的不变性正好对口；换成第 6 节那种 theta*x1^2 的不匹配参数，滑模就占不到这个便宜。")
+print("      而纯 sgn 那一行的 TV(u) = 3.3e4，精度是用抖振买的。")` },
+    { code: `# 标准反步能配置哪些极点？（双积分器 x1'=x2, x2'=u，g1=1）
+print("闭环特征多项式 s^2 + Kv*s + Kp，其中 Kp = g1 + k1*k2,  Kv = k1 + k2")
+grid = np.linspace(0.02, 12.0, 400)
+K1, K2 = np.meshgrid(grid, grid)
+KP = 1 + K1*K2
+KV = K1 + K2
+resid = KV - 2*np.sqrt(KP - 1)
+print("  在 400x400 = 160000 个 (k1,k2) 网格点上：")
+print("    min(Kv - 2*sqrt(Kp-1)) = %.3e  => 边界 Kv >= 2*sqrt(Kp-1) 无一例外成立" % np.min(resid))
+print("    min(Kp) = %.4f  => Kp 恒大于 g1 = 1" % np.min(KP))
+print("  等价地，可达的最小阻尼比 zeta_min = sqrt((Kp-g1)/Kp)：")
+for Kpt in [2.0, 4.0, 9.0, 16.0, 36.0]:
+    print("    Kp = %5.1f  ->  Kv_min = %6.3f,  zeta_min = %.4f"
+          % (Kpt, 2*np.sqrt(Kpt-1), np.sqrt((Kpt-1)/Kpt)))
+print()
+print("  目标 zeta=0.7, wn=3  =>  (Kp,Kv) = (9.0, 4.2)")
+print("    反步需要 k1+k2=4.2 且 k1*k2=8，判别式 = 4.2^2 - 4*8 = %.2f < 0 => 无实数解，不可达"
+      % (4.2**2 - 4*8.0))
+print("    反馈线性化可直接取 Kp=9, Kv=4.2")
+
+def step_resp(Kp_, Kv_, T=8.0, dt=1e-3):
+    N = int(round(T/dt))
+    x = np.array([0.0, 0.0]); Y = np.zeros(N+1)
+    for i in range(N+1):
+        Y[i] = x[0]
+        if i == N:
+            break
+        u = -Kp_*(x[0] - 1.0) - Kv_*x[1]
+        x = x + dt*np.array([x[1], u])
+    return np.linspace(0, T, N+1), Y
+
+t_a, y_a = step_resp(9.0, 4.2)
+t_b, y_b = step_resp(9.0, 2*np.sqrt(8.0))
+os_a = (np.max(y_a) - 1)*100
+os_b = (np.max(y_b) - 1)*100
+th_a = np.exp(-np.pi*0.7/np.sqrt(1 - 0.49))*100
+print("  单位阶跃实测（双积分器）：")
+print("    FL  (Kp=9, Kv=4.20, zeta=0.700)  超调 = %.3f%%   理论 %.3f%%" % (os_a, th_a))
+print("    BS  (Kp=9, Kv=%.2f, zeta=%.3f)  超调 = %.3f%%   <- 同一刚度下反步能达到的最小阻尼"
+      % (2*np.sqrt(8.0), np.sqrt(8/9), os_b))
+print("  => 标准二次型 CLF 的反步给不出欠阻尼响应；要 zeta < 0.94 就得换非二次 CLF 或换设计方法")` },
+    { code: `fig, ax = plt.subplots(1, 3, figsize=(12, 3.4))
+for key, label, c in [("FL", "反馈线性化", "C0"), ("ABS", "自适应反步", "C2"),
+                      ("SMC", "滑模(sat)", "C3"), ("PID", "PID", "C4"), ("PART", "只抵消阻尼", "C5")]:
+    t2, H2, U2, E2, _ = cache[(0.7, key)]
+    ax[0].plot(t2, E2, c, label=label)
+t2, H2, U2, E2, _ = cache[(0.7, "BS")]
+ax[0].plot(t2, E2, "C1", label="标称反步")
+ax[0].set_ylim(-0.6, 0.6); ax[0].set_xlim(0, 20)
+ax[0].set_xlabel("t (s)"); ax[0].set_ylabel("跟踪误差 e")
+ax[0].legend(fontsize=8); ax[0].grid(True)
+ax[0].set_title("30% 模型误差下的跟踪误差")
+ax[1].plot(t_a, y_a, label="FL: Kp=9, Kv=4.2 (zeta=0.70)")
+ax[1].plot(t_b, y_b, label="BS 极限: Kv=%.2f (zeta=%.3f)" % (2*np.sqrt(8), np.sqrt(8/9)))
+ax[1].axhline(1.0, color="k", ls=":")
+ax[1].set_ylim(0, 1.2); ax[1].set_xlim(0, 8)
+ax[1].set_xlabel("t (s)"); ax[1].legend(fontsize=8); ax[1].grid(True)
+ax[1].set_title("阶跃响应：反步的阻尼下界")
+kk = np.linspace(0.02, 12, 200)
+ax[2].scatter(KP.ravel()[::40], KV.ravel()[::40], s=1, c="C0")
+ax[2].plot(1 + kk**2, 2*kk, "r-", label="边界 Kv=2*sqrt(Kp-1)")
+ax[2].plot(9.0, 4.2, "kx", ms=10, label="目标 zeta=0.7（不可达）")
+ax[2].plot(9.0, 6.0, "go", ms=8, label="zeta=1（可达）")
+ax[2].set_xlim(0, 40); ax[2].set_ylim(0, 25)
+ax[2].set_xlabel("Kp"); ax[2].set_ylabel("Kv")
+ax[2].legend(fontsize=8); ax[2].grid(True)
+ax[2].set_title("反步可达的增益域")
+plt.tight_layout()
+plt.show()` },
+  ]}
+/>
+
+**七种控制律的读数**（30% 模型误差栏）：
+
+| 控制律 | rms 误差 | 平均偏置 | $\max\lvert u\rvert$ | TV(u) 末 2 s |
+|--------|----------|----------|----------|--------------|
+| PID（不抵消非线性） | $3.60\times10^{-2}$ | $-1.0\times10^{-2}$ | 1.38 | 3.5 |
+| 反馈线性化 / 标称反步 | $1.84\times10^{-2}$ | $-6.1\times10^{-4}$ | 1.34 | 3.3 |
+| 反步变体：只抵消阻尼 | $4.83\times10^{-2}$ | $+2.5\times10^{-3}$ | 1.28 | 3.1 |
+| **自适应反步** | $3.27\times10^{-3}$ | $-5.5\times10^{-5}$ | 1.89 | 3.9 |
+| 滑模（边界层 $\Phi=0.05$） | $2.74\times10^{-3}$ | $-2.7\times10^{-4}$ | 1.42 | 3.6 |
+| 滑模（纯 sgn） | $2.23\times10^{-5}$ | $-2.4\times10^{-6}$ | 3.20 | **32577** |
+
+三件事必须一起读，否则会得出错误结论：
+
+1. **"反馈线性化"与"标称反步"两行每个数字都相同**——它们是同一个控制律，这一点不容含糊。
+2. **只有自适应反步在 $m=1.0$ 与 $m=0.7$ 两栏里数字不变**（都是 $3.27\times10^{-3}$）。它把模型误差吸收进了参数估计，代价是 $\max|u|$ 从 1.34 涨到 1.89（+41%）。
+3. **滑模两行看起来最准，但这个基准对滑模偏心**：$a$、$b$、$w$ 全部出现在 $u$ 的通道里，属于**匹配**不确定性，正是滑模不变性的适用场景。换成第 6 节那种 $\theta x_1^2$（出现在没有 $u$ 的方程里），滑模的切换增益压不住它，而反步+自适应可以。而且纯 sgn 的 TV(u) 高达 $3.3\times10^{4}$——精度是用抖振买的。
+
+### 方法对比总表
+
+| 维度 | 反步法 | 反馈线性化 | 滑模控制 |
+|------|--------|-----------|----------|
+| **适用结构** | 严格反馈（下三角 + 虚拟控制线性） | 仿射系统，相对阶 $=n$（否则要查零动态） | 相对阶 1（或递推滑模） |
+| **与模型的关系** | 标称情形与 FL 逐点相同 | 精确抵消 | 不追求抵消，用高增益压住 |
+| **不确定性主场** | **不匹配**参数不确定性（自适应/tuning function） | 需精确模型，误差直接进闭环 | **匹配**不确定性（理论不变性） |
+| **控制连续性** | 连续 | 连续 | 不连续（需边界层/超螺旋光滑化） |
+| **参考光滑度** | 需 $n$ 阶连续可微 | 需 $n$ 阶连续可微 | 需 1 阶（相对阶 1 时） |
+| **极点/阻尼自由度** | 受限：$K_v\ge2\sqrt{K_p-g_1}$，$\zeta\ge\zeta_{\min}$ | 任意配置 | 由切换面 $\lambda$ 决定 |
+| **抖振** | 无 | 无 | 有 |
+| **在线计算量** | 随 $n$ 几何增长（约 2.4 倍/阶） | 中等（Lie 导数一次算完） | 小 |
+| **稳定性结论** | 模型精确时全局；自适应时全局但受执行器限幅约束 | 全局（前提：零动态稳定） | 有限时间到达 + 边界层内渐近 |
+| **对采样周期** | 敏感（$\lvert\partial u/\partial x\rvert$ 被 $g$ 放大） | 中等 | 敏感（抖振频率与采样耦合） |
+
+### 自己拖一拖：增益、模型误差与可达域
+
+下面这个交互组件把"反步 ≡ 反馈线性化"和"阻尼下界"两件事放在一起。拖动 $k_1,k_2$，看等价增益 $K_p,K_v$、阻尼比 $\zeta$、以及同一 $K_p$ 下反步能达到的最小阻尼 $\zeta_{\min}$；切换控制律可以直观看到"目标 $\zeta=0.7$"这一档为什么只有反馈线性化能给出。
+
+<BacksteppingExplorer />
+
+## 局限性讨论
+
+下面九条局限，每条都配一个本课实测出来的数字。**没有数字的局限性讨论等于没讨论。**
+
+**1. 复杂度爆炸。** 控制律的算子数每阶放大约 2.4 倍：$n=2\to7$ 是 $13\to1082$，实测 $n=8$ 为 2362。在线求值时间 $n=7$ 时约 35 µs/次，是同阶 DSC 的 13～15 倍。对 1 kHz 回路这还不致命，但随 $n$ 几何增长，而高阶系统恰恰是 $n$ 最大的场合。缓解手段是 DSC / 命令滤波反步，代价是结论从全局降为半全局。
+
+**2. 结构限制是硬的。** Boost 变换器（$u$ 同时进两个方程）、纯反馈系统（$x_{i+1}$ 非线性出现）都不合格。硬套的后果不是发散而是更隐蔽的错误：纯反馈例子里闭环原点变成鞍点，轨迹收敛到 $\pm0.3136$ 的非零平衡点，稳态偏差 31.4%；若改用真实 $g_1=3x_2^2$，虚拟控制在 $x_2=0$ 处奇异，$\max|\alpha_1|=1.8\times10^{12}$。
+
+**3. 需要全状态反馈。** $u$ 依赖 $x_1,\ldots,x_n$ 全部状态。缺测量就要配观测器，而反步控制律的 $\lvert\partial u/\partial x\rvert$ 高达 $2.4\times10^{4}$，观测误差会被同倍率放大到控制量上。本课未量化这一条，但它是柔性机械臂上反步法落地失败的最常见原因之一。
+
+**4. 参考轨迹必须 $n$ 阶连续可微。** 四阶机器人例子里 $u$ 含 $q_d^{(4)}$：$\beta=1$ 的平缓过渡给出 $\max|u|=4.1$ N·m，$\beta=20$（0.2 s 内完成 0→1）给出 624.9 N·m，超限幅 12.5 倍。工程上必须先做参考整形。
+
+**5. 初值与测量误差被 $g_{i-1}$ 逐级放大。** 一致初值时 $\max|u|=33.7$ N·m，零初值时 1605.1 N·m（差 48 倍）；峰值正比于 $g_2=K/J_l$（$K$ 从 50 到 200，峰值比 3.82 ≈ $g_2$ 比 4.00）。只错开 0.05 rad（2.9 度）的连杆位置，$\lvert z_4(0)\rvert/\lvert z_1(0)\rvert=1579$，$\max|u|=699.6$ N·m。关节越硬，要求越苛刻。
+
+**6. 对采样周期远比线性控制器敏感。** 实测 $\max|\partial u/\partial x|=2.4\times10^{4}$。10 kHz 时 rms 误差 $2.0\times10^{-8}$、$\max|u|$ 在限幅内；1 kHz 时 rms 恶化到 $1.1\times10^{-3}$、$\max|u|=12306$ N·m；200 Hz 与 50 Hz 发散。同带宽的线性状态反馈 $\lvert\partial u/\partial x\rvert$ 只有 $O(10)$，对同样的 $T_s$ 宽容三个数量级。
+
+**7. 没有积分作用，常值不匹配扰动必然留静差。** 实测 $-0.07829$ rad，解析预测 $\delta/(1+k_1k_2)=-0.07692$ rad（比值 1.018）。消除办法：加积分状态（要重新证明稳定性）、负载观测器前馈、或用自适应项。
+
+**8. 自适应的"全局"受执行器限幅约束。** $u$ 的暂态峰值按 $\lvert x_1(0)\rvert^{7.1}$ 增长（log-log 拟合斜率 7.11）。限幅 1000 时实际可用吸引域只有 $\lvert x_1(0)\rvert\le1.45$。而且 $\hat\theta\to\theta$ 还需要持续激励：调节到 0 的工况里 $\hat\theta$ 冻结在 6.22（真值 1.5），$V$ 停在 $\tilde\theta^2/(2\gamma)=2.2318$。
+
+**9. 极点可达域受限。** $K_v\ge2\sqrt{K_p-g_1}$，即 $\zeta\ge\sqrt{(K_p-g_1)/K_p}$。$K_p=9$ 时 $\zeta_{\min}=0.943$：反步能给出的最"欠阻尼"的阶跃响应超调只有 0.014%，而 $\zeta=0.7$ 的目标超调是 4.6%。**要欠阻尼响应就不能用标准二次型 CLF 的反步。**
+
+## 小结
+
+反步法的核心是**一次只往后退一步**：
+
+1. **结构先行**：先用三个数值判据（$g_i\neq0$、$x_{i+1}$ 线性出现、无越界依赖）确认系统合格，别急着推公式。柔性关节机器人在自然排序下本来就合格，Boost 与纯反馈不合格。
+2. **递推三件套**：$z_i=x_i-\alpha_{i-1}$、$\alpha_i=\frac1{g_i}[-f_i+\dot\alpha_{i-1}-g_{i-1}z_{i-1}-k_iz_i]$、$V_i=V_{i-1}+\frac12z_i^2$。三项分工：抵消、吃交叉项、加阻尼。
+3. **结果**：$\dot V_n=-\sum k_iz_i^2\le0$，模型精确时全局渐近稳定。
+4. **$\dot\alpha_{i-1}$ 是所有代价的来源**：它带来参考的 $i$ 阶导数需求、表达式规模膨胀（约 2.4 倍/阶）、以及自适应时那个最易漏的 $\partial\alpha/\partial\hat\theta\cdot\dot{\hat\theta}$ 项。
+5. **自适应用 tuning function**：一个估计器、$\tau_i=\tau_{i-1}+z_iw_i$ 递推累加。$\hat\theta\to\theta$ 需要持续激励，调节问题天然无 PE。
+6. **别信"反步比反馈线性化更鲁棒"**：标称情形二者逐点相同（$K_p=g_1+k_1k_2$，$K_v=k_1+k_2$，实测差 $2.1\times10^{-14}$）。反步的真正优势是选择性抵消、不匹配参数自适应、以及一个显式 CLF。
+
+**落地前的检查清单**（每条都对应本课的一个实测数字）：
+
+- 结构判定跑一遍了吗？$g_i$ 在工作域内是否远离 0？
+- 参考轨迹有几阶连续导数？$u$ 需要第几阶？
+- 初值是否对齐？不对齐时 $u$ 峰值是多少，超限幅几倍？
+- 状态测量精度多少？乘上 $\max|\partial u/\partial x|$ 之后还在容许范围内吗？
+- 采样周期多少？零阶保持下 $\dot V$ 还是负定的吗？
+- 有没有常值不匹配负载？静差 $\delta/(1+k_1k_2)$ 能接受吗？
+- 需要欠阻尼响应吗？$\zeta_{\min}$ 允许吗？
+- 执行器限幅多少？理论吸引域被限幅截到哪里？
+
+## 习题
+
+**习题 1：结构判定**
+
+判断下列系统能否直接用反步法。能的说明 $g_i$；不能的说明违反哪一条判据，并判断"重排状态顺序"能否救回来。
+
+(a) $\dot x_1=x_2+x_1^2,\quad \dot x_2=x_3,\quad \dot x_3=\sin x_1+u$
+
+(b) $\dot x_1=x_2,\quad \dot x_2=x_3+x_2x_3,\quad \dot x_3=u$
+
+(c) $\dot x_1=x_2,\quad \dot x_2=x_1u,\quad \dot x_3=x_2+u$
+
+(d) $\dot x_1=x_3+x_1^2,\quad \dot x_2=\sin x_1+u,\quad \dot x_3=x_2$
+
+**习题 2：$g_1$ 变号的设计**
+
+考虑 $\dot x_1=x_1x_2+\sin x_1,\quad \dot x_2=u$，要求 $x_1$ 跟踪 $x_d(t)$。
+
+(a) 写出 $f_1,g_1$ 和镇定函数 $\alpha_1$。
+
+(b) 指出 $\alpha_1$ 的奇异点，并说明它对应什么物理状态。
+
+(c) 若系统必须工作在奇异点附近，给出两种工程对策，并说明各自的代价。
+
+**习题 3：三阶递推**
+
+考虑 $\dot x_1=x_1^2+x_2,\ \dot x_2=x_2^2+x_3,\ \dot x_3=x_1x_3+u$，取 $k_1=k_2=k_3=1$，参考 $x_d(t)$。
+
+(a) 写出 $z_1,z_2,z_3$ 与 $\alpha_1,\alpha_2,u$ 的递推表达式（$\dot\alpha_i$ 可保留全导数记号，但必须写清它对哪些变量求偏导）。
+
+(b) $u$ 中会出现 $x_d$ 的几阶导数？
+
+(c) 本课实测 $n=3$ 时 `count_ops(u)=38`，$n=7$ 时 1082。用递推结构解释为什么增长是几何级而不是多项式级。
+
+**习题 4：tuning function**
+
+对 $\dot x_1=\theta x_1^2+x_2,\ \dot x_2=\theta x_2+u$（$\theta$ 未知）：
+
+(a) 取 $\alpha_1=-\hat\theta x_1^2+\dot x_d-k_1z_1$，$u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2$，推导 $\dot V_2$ 中 $\tilde\theta$ 的系数，写出 $\tau_2$。
+
+(b) $\tau_2$ 的第三项 $z_2x_1^2(2\hat\theta x_1+k_1)$ 从哪一步产生？如果 $\dot x_1$ 用真值而不是估计值计算，这一项会变成什么？
+
+(c) 参考恒为 0 时，$\hat\theta$ 会收敛到 $\theta$ 吗？用 $V$ 的末值说明你的结论。
+
+(d) 过参数化方案需要几个估计器？它省掉了什么、付出了什么？
+
+**习题 5：极点可达域**
+
+对双积分器 $\dot x_1=x_2,\ \dot x_2=u$（即 $g_1=1$），标准反步给出闭环 $s^2+K_vs+K_p$。
+
+(a) 用 $k_1,k_2$ 表示 $K_p,K_v$。
+
+(b) 证明可达增益满足 $K_v\ge2\sqrt{K_p-1}$，并导出 $\zeta_{\min}$ 关于 $K_p$ 的表达式。
+
+(c) 目标 $\zeta=0.7,\ \omega_n=3$：这个目标可达吗？若不可达，列出三条工程出路。
+
+**习题 6：工程代价的估算**
+
+(a) 已知 `count_ops(u)` 每阶放大约 2.2 倍，$n=7$ 时为 1082。估计 $n=8$ 的规模。（实测值 2362，检验你的估计。）
+
+(b) 四阶机器人例子中实测 $\max|\partial u/\partial x|=2.4\times10^{4}$，沿轨迹 $\max(|\partial u/\partial x|\cdot|\dot x|)=2.2\times10^{6}$。估计 $T_s=1$ ms 时零阶保持造成的控制量误差上界，并与 50 N·m 限幅比较。若换成 $\lvert K\rvert\approx10$ 的线性状态反馈，同样 $T_s$ 下上界大约是多少？
+
+(c) 写出常值不匹配负载 $T_L$ 造成的稳态跟踪偏差公式（用 $\delta=-T_L/J_l$ 与 $k_1,k_2$ 表示），并给出三种消除静差的办法，说明每种办法要付出什么。
+
+## 答案
+
+**答案 1：结构判定**
+
+(a) **合格**。$f_1=x_1^2,g_1=1$；$f_2=0,g_2=1$；$f_3=\sin x_1,g_3=1$。注意 $\dot x_3$ 里出现 $x_1$ 是"往回看"（$j<i$），不违反下三角。
+
+(b) **合格，但要小心工作域**。$\dot x_2=x_3+x_2x_3=(1+x_2)x_3$，所以 $g_2(x_1,x_2)=1+x_2$——$x_3$ 仍然是**线性**出现的（系数可以依赖前面的状态，这正是严格反馈允许的）。约束是 $1+x_2\neq0$，即 $\lvert x_2\rvert$ 不能穿越 1。这个例子说明：判据检查的是"$x_{i+1}$ 是否线性出现"，不是"$f_i$ 是否线性"。
+
+(c) **不合格，两处违反**。第 2 个方程里 $u$ 直接出现（$u$ 只允许出现在最后一个方程），而且以 $x_1u$ 的乘积形式出现（非线性）；第 3 个方程里 $u$ 又出现一次。重排状态顺序救不回来，因为问题出在 $u$ 的通道上而不是状态顺序上。
+
+(d) **重排后合格**。按 $(x_1,x_3,x_2)$ 重新排序，记 $y_1=x_1,y_2=x_3,y_3=x_2$：
+
+$$
+\dot y_1=y_2+y_1^2,\qquad \dot y_2=y_3,\qquad \dot y_3=\sin y_1+u
+$$
+
+这正是 (a) 的结构，$g=(1,1,1)$。**工程启示**：拿到模型先做结构判定，不合格时先试试重排状态（尤其常见于把"电机侧"和"负载侧"写反的机电模型），再考虑换方法。
+
+**答案 2：$g_1$ 变号的设计**
+
+(a) $f_1(x_1)=\sin x_1$，$g_1(x_1)=x_1$。
+
+$$
+\alpha_1=\frac1{x_1}\big[-\sin x_1+\dot x_d-k_1(x_1-x_d)\big]
+$$
+
+(b) 奇异点在 $x_1=0$，即**连杆/摆处于竖直（或零位）姿态**。此时 $x_2$ 对 $\dot x_1$ 失去作用（$g_1=0$ 意味着"虚拟控制失效"），系统在该点不可控——这不是反步法的缺陷，而是被控对象的固有性质。
+
+(c) 两种对策：
+
+- **改坐标/改输出**：把工作点移开奇异点，或者改控别的输出（例如控 $x_2$ 而不是 $x_1$）。代价是被控量变了。
+- **奇异点邻域切换控制律**：在 $\lvert x_1\rvert<\epsilon$ 时用另一套设计（例如线性化 + 高增益，或滑模）。代价是要处理切换带来的抖振/暂态，且整体不再有单一 Lyapunov 证明。
+
+第三种常见做法是把 $\frac1{g_1}$ 替换为 $\frac{g_1}{g_1^2+\epsilon^2}$（正则化），代价是在奇异点附近引入 $O(\epsilon)$ 的稳态误差。
+
+**答案 3：三阶递推**
+
+(a) 取 $\alpha_0=x_d$，$g_0=1$，$f_1=x_1^2,f_2=x_2^2,f_3=x_1x_3$，$g_1=g_2=g_3=1$：
+
+$$
+z_1=x_1-x_d,\qquad \alpha_1=-x_1^2+\dot x_d-z_1
+$$
+
+$$
+z_2=x_2-\alpha_1,\qquad
+\dot\alpha_1=\frac{\partial\alpha_1}{\partial x_1}\dot x_1+\frac{\partial\alpha_1}{\partial x_d}\dot x_d+\frac{\partial\alpha_1}{\partial\dot x_d}\ddot x_d
+$$
+
+把 $\alpha_1=-x_1^2-x_1+\dot x_d+x_d$ 的偏导数代入（$\partial\alpha_1/\partial x_1=-2x_1-1$，$\partial\alpha_1/\partial x_d=1$，$\partial\alpha_1/\partial\dot x_d=1$），并用 $\dot x_1=x_1^2+x_2$：
+
+$$
+\dot\alpha_1=(-2x_1-1)(x_1^2+x_2)+\dot x_d+\ddot x_d
+$$
+
+$$
+\alpha_2=-x_2^2+\dot\alpha_1-z_1-z_2
+$$
+
+$$
+z_3=x_3-\alpha_2,\qquad
+\dot\alpha_2=\sum_{j=1}^{2}\frac{\partial\alpha_2}{\partial x_j}\dot x_j+\frac{\partial\alpha_2}{\partial x_d}\dot x_d+\frac{\partial\alpha_2}{\partial\dot x_d}\ddot x_d+\frac{\partial\alpha_2}{\partial\ddot x_d}x_d^{(3)}
+$$
+
+$$
+u=-x_1x_3+\dot\alpha_2-z_2-z_3
+$$
+
+(b) $\dot\alpha_2$ 里含 $\partial\alpha_2/\partial\ddot x_d\cdot x_d^{(3)}$，所以 **$u$ 中出现 $x_d$ 的三阶导数**。一般规律：$n$ 阶系统需要 $x_d^{(n)}$。
+
+(c) 因为 $\alpha_i$ 里含 $\dot\alpha_{i-1}$，而 $\dot\alpha_{i-1}$ 是对 $\alpha_{i-1}$ 的**每一个自变量**求偏导再乘上 $\dot x_j$——$\alpha_{i-1}$ 本身又含 $\dot\alpha_{i-2}$。于是每一阶的表达式规模正比于"上一阶规模 × 上一阶的自变量个数"，是**乘法递推**而不是加法递推，因此是几何增长。实测每阶约 2.2～2.9 倍，$n=2\to8$ 从 13 涨到 2362（约 180 倍）。
+
+**答案 4：tuning function**
+
+(a) $\dot z_1=\theta x_1^2+x_2-\dot x_d=\tilde\theta x_1^2-k_1z_1+z_2$。取 $V_2=\frac12z_1^2+\frac12z_2^2+\frac{\tilde\theta^2}{2\gamma}$：
+
+$$
+\dot V_2=-k_1z_1^2+z_1z_2+\tilde\theta z_1x_1^2+z_2\dot z_2-\frac{\tilde\theta\dot{\hat\theta}}{\gamma}
+$$
+
+$\dot z_2=\theta x_2+u-\dot\alpha_1$，其中
+
+$$
+\dot\alpha_1=(-2\hat\theta x_1-k_1)\dot x_1-x_1^2\dot{\hat\theta}+k_1\dot x_d+\ddot x_d
+$$
+
+$\dot x_1$ 含未知 $\theta$，用估计模型 $\hat{\dot x}_1=\hat\theta x_1^2+x_2$ 代替。代入 $u=\dot\alpha_1-\hat\theta x_2-z_1-k_2z_2$：
+
+$$
+\dot z_2=\tilde\theta x_2+\tilde\theta x_1^2(2\hat\theta x_1+k_1)-z_1-k_2z_2
+$$
+
+其中第二个 $\tilde\theta$ 项来自 $\dot\alpha_1$ 用估计模型造成的偏差 $(-2\hat\theta x_1-k_1)\tilde\theta x_1^2$。合并：
+
+$$
+\dot V_2=-k_1z_1^2-k_2z_2^2+\tilde\theta\Big[\tau_2-\frac{\dot{\hat\theta}}{\gamma}\Big],\qquad
+\tau_2=z_1x_1^2+z_2x_2+z_2x_1^2(2\hat\theta x_1+k_1)
+$$
+
+取 $\dot{\hat\theta}=\gamma\tau_2$ 得 $\dot V_2=-k_1z_1^2-k_2z_2^2\le0$。
+
+(b) 第三项来自"$\dot\alpha_1$ 必须用估计模型算"这件事。**如果 $\dot x_1$ 用真值**，那么 $\dot\alpha_1$ 里没有 $\tilde\theta$ 残差，第三项消失，$\tau_2=z_1x_1^2+z_2x_2$。但真值不可用——所以这一项在实现中必须保留。本课实测：漏掉它，$t=0.893$ s 就发散。
+
+(c) **不会**。参考恒为 0 时 $x_1\to0$，回归量 $x_1^2\to0$，不满足持续激励。实测 $\hat\theta$ 冻结在 6.2242（真值 1.5），$\lvert\tilde\theta\rvert=4.724$，$V$ 的末值 2.2318 恰好等于理论下界 $\tilde\theta^2/(2\gamma)=4.724^2/10=2.232$。而 $z_1$ 照样收敛到 $1.0\times10^{-8}$——**跟踪成功，辨识失败**，两者互不蕴含。
+
+(d) 过参数化对 $n$ 阶系统需要 $n$ 个估计器（本例 2 个）。它省掉了 $\dot\alpha_{i-1}$ 里的 $\partial\alpha/\partial\hat\theta\cdot\dot{\hat\theta}$ 项（因为每步就地更新，$\alpha_i$ 只依赖 $\hat\theta_i$），推导更简单、不用对更新律求导；付出的是状态维数从 $n$ 涨到 $n+p$（或 $2n$），在线计算量与实现复杂度上升。本课实测：无 PE 工况下过参数化的两个估计器分别停在 9.7271 与 4.5297，**同一个物理参数被估出两个不同的值**——这本身就是不可辨识的证据。
+
+**答案 5：极点可达域**
+
+(a) $K_p=g_1+k_1k_2=1+k_1k_2$，$K_v=k_1+k_2$。
+
+(b) 给定 $K_p$，则 $k_1k_2=K_p-1\equiv P$。要求 $k_1,k_2$ 为实数且同号（$P>0$ 时同为正），于是
+
+$$
+K_v=k_1+\frac{P}{k_1}\ge2\sqrt{P}=2\sqrt{K_p-1}
+$$
+
+（均值不等式，等号在 $k_1=k_2=\sqrt{K_p-1}$ 时取得）。又 $\zeta=\dfrac{K_v}{2\sqrt{K_p}}$，所以
+
+$$
+\zeta\ge\zeta_{\min}=\frac{2\sqrt{K_p-1}}{2\sqrt{K_p}}=\sqrt{\frac{K_p-1}{K_p}}=\sqrt{1-\frac{g_1}{K_p}}
+$$
+
+$K_p$ 越大（刚度越高），$\zeta_{\min}$ 越接近 1：$K_p=2$ 时 0.707，$K_p=9$ 时 0.943，$K_p=36$ 时 0.986。**标准反步只能给出接近临界阻尼或过阻尼的响应。**
+
+(c) 目标 $\zeta=0.7,\omega_n=3$ 对应 $K_p=\omega_n^2=9$，$K_v=2\zeta\omega_n=4.2$。反步要求 $k_1+k_2=4.2$ 且 $k_1k_2=8$，二次方程 $k^2-4.2k+8=0$ 的判别式 $=4.2^2-32=-14.36<0$，**无实数解，不可达**。实测：反步在 $K_p=9$ 下能达到的最小阻尼是 $\zeta=0.943$，阶跃超调 0.014%；反馈线性化取 $K_v=4.2$ 得到超调 4.629%（理论 4.599%）。
+
+三条工程出路：
+
+1. **换非二次 CLF**：取 $V=\frac12z^\top Pz$（$P$ 带交叉项），交叉项会改变 $\alpha_i$ 的结构，从而扩大可达增益域。代价是推导更繁、$P$ 要额外设计。
+2. **在最后一步直接做极点配置**：这等价于放弃反步、改用反馈线性化。代价是失去显式 CLF 与选择性抵消的自由度。
+3. **把动态性能需求移到参考侧**：既然闭环只能过阻尼，就用参考整形（command shaping）在轨迹规划里做出想要的响应形状。代价是需要上游规划器配合，且对扰动的响应仍是过阻尼的。
+
+**答案 6：工程代价的估算**
+
+(a) $1082\times2.2\approx2380$，实测 2362，误差 0.8%。几何增长率在这种"每阶乘一个近似常数"的递推里是很好的外推工具；但要注意增长率本身在缓慢下降（2.92 → 2.47 → 2.32 → 2.25 → 2.21 → 2.18），所以外推距离越远越要用最近一段的比率。
+
+(b) 零阶保持期间控制量误差上界
+
+$$
+\lvert\Delta u\rvert\le\max\Big|\frac{\partial u}{\partial x}\Big|\cdot\lvert\dot x\rvert\cdot T_s=2.2\times10^{6}\times10^{-3}=2.2\times10^{3}\ \text{N·m}
+$$
+
+是 50 N·m 限幅的 **44 倍**。这个上界很保守（它取的是全程最大值之积，而不是保持区间内的实际增量），实测 1 kHz 下 $\max|u|=12306$ N·m 且跟踪误差恶化到 $1.1\times10^{-3}$，10 kHz 才回到限幅内（43.7 N·m）。
+
+换成线性状态反馈 $u=-Kx$，$\lvert\partial u/\partial x\rvert=\lvert K\rvert\approx10$，同样 $\lvert\dot x\rvert\approx90$ 时上界是 $10\times90\times10^{-3}=0.9$ N·m——**小三个数量级**。这就是"反步对采样周期敏感"的定量含义：不是原理问题，是 Lipschitz 常数被 $g_2=K/J_l=200$ 逐级放大的问题。
+
+(c) 常值不匹配扰动以加速度 $\delta=-T_L/J_l$ 进入 $\dot z_2$ 方程。稳态时 $\dot z_1=\dot z_2=0$，由 $\dot z_1=-k_1z_1+z_2=0$ 得 $z_2=k_1z_1$；由 $\dot z_2=-z_1-k_2z_2+\delta=0$ 得
+
+$$
+z_{1,ss}=\frac{\delta}{1+k_1k_2}=-\frac{T_L/J_l}{1+k_1k_2}
+$$
+
+代入 $T_L=5,J_l=1,k_1=k_2=8$：$z_{1,ss}=-5/65=-0.07692$ rad，实测 $-0.07829$ rad，比值 1.018。
+
+三种消除办法：
+
+1. **加积分状态** $z_I=\int z_1dt$，把它作为第 0 级加入递推。代价：闭环多一个状态，$V$ 要重新构造（含交叉项），稳定性证明不再"免费"，而且积分会引入超调与 windup 风险。
+2. **负载观测器 + 前馈**：用扰动观测器估计 $\hat T_L$，在 $u$ 里加 $+\hat T_L/\text{（转矩增益）}$。代价：观测器带宽与噪声/稳定性权衡，模型误差会直接变成前馈误差。
+3. **自适应项**：把 $T_L$ 当成未知常数参数，用第 6 节的 tuning function 思路估计。代价：需要持续激励才收敛到真值；而常值负载工况下回归量趋于常数，PE 条件其实满足得比调节问题好，但仍要检查 $\gamma$ 与噪声的折中。

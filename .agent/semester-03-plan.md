@@ -662,3 +662,7 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-06 本轮执行记录（2026-10-18）
 
 滑模控制按重构专用Phase1–4，仅本课。保留13主题、原五实验17cell、六题与四应用，纠滑动不变性、输入增益/量纲、sat/tanh界、STA导数假设、RK4阶段控制、电机静差及恢复比较；增真实SVG与手算/默认核验，共六实验18cell。组件全步指标与真实终时、四律禁用参数及恢复通过；实际TS48工况72048点、4符号/秩核验、连续DOP853/步长收敛、原生/Pyodide及44旧ID、375px通过。实际签发与master回执见全局checklist及.agent/semester-03/nonlinear-06/acceptance.md。原25Python待办与W08/W09/W10保留，不动中文润色分支，不发布Pages，不交付下一课。
+
+### NONLINEAR-07 本轮执行记录（2026-10-18）
+
+反步设计按重构专用Phase1–4，仅本课。保留12主题、六原实验26cell、六题，纠二阶等价推广、全局条件、自适应两估计器与PE平方窗口、四阶静差、采样和吸引域误称。增SVG与完整数学/默认核验，共七实验27cell；组件公开ZOH、实际终时、全节点指标、默认恢复及完整增益域。真实TS36配置198036绘图节点、4符号恒等、expm/自适应与机器人DOP853、原生/Pyodide、41旧ID及375px通过。实际签发与master回执见全局checklist及.agent/semester-03/nonlinear-07/acceptance.md；原25Python待办与W08/W09/W10保留，不动中文润色分支，不发布Pages，不续做下一课。
