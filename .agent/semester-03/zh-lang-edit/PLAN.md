@@ -29,7 +29,7 @@
 | 21 | CLASSIC-03 | 时域分析 | content/classic/time-domain-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-03.md) |
 | 22 | CLASSIC-04 | 系统稳定性 | content/classic/stability-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-04.md) |
 | 23 | CLASSIC-05 | 频域分析 | content/classic/frequency-domain-analysis.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-05.md) |
-| 24 | CLASSIC-06 | 根轨迹 | content/classic/root-locus.mdx | 已完成 | 待润色 | — |
+| 24 | CLASSIC-06 | 根轨迹 | content/classic/root-locus.mdx | 已完成 | 待合入 | [润色记录](records/CLASSIC-06.md) |
 | 25 | CLASSIC-07 | PID控制 | content/classic/pid-controller.mdx | 已完成 | 待润色 | — |
 | 26 | CLASSIC-08 | 校正网络 | content/classic/compensator-design.mdx | 已完成 | 待润色 | — |
 | 27 | CLASSIC-09 | 回路整形 | content/classic/frequency-response-design.mdx | 已完成 | 待润色 | — |
