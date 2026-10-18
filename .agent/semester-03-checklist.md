@@ -127,7 +127,7 @@
 | NONLINEAR-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md;.agent/semester-03/nonlinear-07/acceptance.md;commit:dd961a7caf18390888c3e3c78ee29044cb82f789 |
 | NONLINEAR-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md;.agent/semester-03/nonlinear-08/acceptance.md;commit:932a40b46200c2db16a297aeb4218ba17d91c144 |
 | NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json;commit:aa691ca7d211255d2713c9856f5be10c02380b65 |
-| NONLINEAR-10 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/10-iss-small-gain.md;.agent/semester-03/nonlinear-10/acceptance.md;.agent/semester-03/nonlinear-10/validation.json |
+| NONLINEAR-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/10-iss-small-gain.md;.agent/semester-03/nonlinear-10/acceptance.md;.agent/semester-03/nonlinear-10/validation.json;commit:b90b4ed1366e2b72380295c6daf0119347102810 |
 | NONLINEAR-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
