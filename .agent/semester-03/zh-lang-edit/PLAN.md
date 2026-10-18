@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前47课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前48课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -53,7 +53,7 @@
 | 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待润色 | — |
 | 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待润色 | — |
 | 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 已完成 | 待润色 | — |
-| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 待完成 | 待生产 | — |
+| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 已完成 | 待润色 | — |
 | 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 待完成 | 待生产 | — |
 | 50 | NONLINEAR-12 | 分岔与混沌 | content/nonlinear/bifurcation-chaos.mdx | 待完成 | 待生产 | — |
 | 51 | DISCRETE-01 | 采样与量化 | content/discrete-sampled/discrete-time-freq.mdx | 待完成 | 待生产 | — |

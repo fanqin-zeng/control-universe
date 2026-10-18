@@ -674,3 +674,7 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-09 本轮执行记录（2026-10-18）
 
 无源控制从空占位按新写专用Phase1–4完成。以三次弹簧小车贯穿能量收支、无源输入输出、阻尼与目标能量整形，补互联适定、隐藏状态及限幅/延迟边界；10H2、3Notebook3cell、四题四答、SVG和PassivityExplorer。实际TS五配置2505点对独立DOP853、原生/Pyodide完整实验及375px页面通过，详见.agent/semester-03/nonlinear-09/acceptance.md。用户批阅与润色分支保持，25Python待办及W14保留；仅本课进入master，Pages另行授权。
+
+### NONLINEAR-10 本轮执行记录（2026-10-19）
+
+输入状态稳定性从空占位按新写专用Phase1–4完成：线性积分解引入ISS，标量非线性给直接界与Lyapunov界，二维耦合证明小增益，保留临界/失败及反向仍稳定反例。10H2、3Notebook3cell、四题四答、耦合SVG和IssSmallGainExplorer；真实TS九配置3609点对独立增广矩阵指数、原生/Pyodide全部实验、真实标题/锚点与375px页面通过。证据.agent/semester-03/nonlinear-10/acceptance.md，实际master回执以全局checklist为准。用户批阅与长期润色分支保持，25Python待办及W14不关闭，Pages另行授权，不交付下一课。

@@ -2575,13 +2575,25 @@ export const catalog: Chapter[] = [
       {
         "slug": "iss-small-gain",
         "title": "输入状态稳定性",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "从无扰动到有扰动", "title": "从无扰动到有扰动" },
+          { "slug": "输入状态稳定性的定义", "title": "输入状态稳定性的定义" },
+          { "slug": "用lyapunov函数估计误差", "title": "用Lyapunov函数估计误差" },
+          { "slug": "两个系统相互影响", "title": "两个系统相互影响" },
+          { "slug": "小增益条件", "title": "小增益条件" },
+          { "slug": "条件没通过怎么办", "title": "条件没通过怎么办" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "classic/frequency-domain-analysis"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "switched-hybrid-systems",
