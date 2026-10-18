@@ -1,0 +1,9 @@
+import{readFileSync,writeFileSync}from'node:fs';import{execFileSync}from'node:child_process';import assert from'node:assert/strict';
+const base='11187fb',key='classic/stability-analysis',old=f=>JSON.parse(execFileSync('git',['show',base+':'+f],{encoding:'utf8',maxBuffer:16*1024*1024})),report=JSON.parse(readFileSync('docs/deployment/python-expansion-local.json','utf8')),policy=JSON.parse(readFileSync('lib/python-support.json','utf8'));
+for(const l of old('docs/deployment/python-expansion-local.json').lessons.filter(l=>l.key!==key))assert.deepEqual(report.lessons.find(r=>r.key===l.key),l);
+for(const[k,v]of Object.entries(old('lib/python-support.json').lessons).filter(([k])=>k!==key))assert.deepEqual(policy.lessons[k],v);
+assert.deepEqual(JSON.parse(readFileSync('docs/deployment/python-expansion-pending.json','utf8')),old('docs/deployment/python-expansion-pending.json'));
+for(const name of ['StabilityThirdOrderExplorer','StabilityDelayExplorer'])assert.deepEqual(execFileSync('git',['grep','-l',name,base,'--','content'],{encoding:'utf8'}).trim().split('\n'),[base+':content/'+key+'.mdx']);
+const bodies=execFileSync('git',['diff','--name-only',base,'--','content'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);assert(bodies.every(p=>['content/catalog.ts','content/'+key+'.mdx'].includes(p)));
+const checklist=readFileSync('.agent/semester-03-checklist.md','utf8');for(const task of ['W06','W07','W08','W09'])assert(new RegExp('^\\| '+task+' \\|[^\\n]+\\| \\[ \\] \\|','m').test(checklist));
+const result={pass:true,previousLessonsUnchanged:69,pendingUnchanged:30,onlyCourse:key,componentCallersOnlyThisCourse:2,otherCourseBodiesUnchanged:true,pendingTasks:['W06','W07','W08','W09']};writeFileSync('.agent/semester-03/classic-04/scope-check.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

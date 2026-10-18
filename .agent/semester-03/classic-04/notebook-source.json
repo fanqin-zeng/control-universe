@@ -1,0 +1,161 @@
+{
+  "source": "content/classic/stability-analysis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 8,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 60,
+      "title": "稳定定义与反例",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 99,
+          "delim": "`",
+          "code": "y=(sp.sin(t)-t*sp.cos(t))/2\r\nassert sp.simplify(sp.diff(y,t,2)+y-sp.sin(t))==0\r\nassert y.subs(t,0)==0 and sp.diff(y,t).subs(t,0)==0\r\nprint('共振有界输入sin(t)，输出:',y)\r\nA=sp.diag(-1,1);B=sp.Matrix([1,0]);C=sp.Matrix([[1,0]])\r\nprint('隐藏增长状态传函:',(C*(s*sp.eye(2)-A).inv()*B)[0],'; 状态特征值:',A.eigenvals())\r\nJ=sp.Matrix([[0,1],[0,0]])\r\nprint('双零根状态转移:',sp.exp(J*t))\r\nfor c in [[1,2,3,4,5],[1,1,1,1,1]]:\r\n tab,events,rhp=routh(c);print('系数/表/RHP:',c,tab,rhp)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 239,
+      "title": "Routh表与特殊行",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 278,
+          "delim": "`",
+          "code": "for c in [[1,2,3,4,5],[1,0,2,1],[1,3,2,6],[1,1,2,2,1,1],[1,0,-1]]:\r\n tab,events,rhp=routh(c)\r\n print('coeff=',c,'factor=',sp.factor(sum(v*s**(len(c)-1-i) for i,v in enumerate(c))))\r\n print('table=',tab,'events=',events,'RHP=',rhp)\r\nassert routh([1,0,2,1])[2]==2\r\nassert routh([1,1,2,2,1,1])[2]==0\r\nassert routh([1,0,-1])[2]==1",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 369,
+      "title": "参数范围与Hurwitz核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 408,
+          "delim": "`",
+          "code": "for k in [0,3,6,9]:\r\n c=[1,3,2,k];tab,ev,rhp=routh(c)\r\n print('K=',k,'表=',tab,'事件=',ev,'RHP=',rhp,'roots=',np.roots(c))\r\nfor c in [[2,5,7,3],[1,4,6,12]]:\r\n print('Hurwitz:',c,hurwitz(c),'Routh:',routh(c))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 445,
+      "title": "平移与衰减界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 484,
+          "delim": "`",
+          "code": "z=sp.Symbol('z')\r\nfor c in [[1,4,13],[1,3,5,15],[1,4,8,12,7]]:\r\n poly=sum(v*s**(len(c)-1-i) for i,v in enumerate(c))\r\n print('原多项式:',poly,'平移sigma1:',sp.expand(poly.subs(s,z-1)))\r\nfor sigma in [0,1,2,3]:\r\n shifted=sp.Poly(((s-sigma)**2+4*(s-sigma)+13),s).all_coeffs()\r\n print('sigma=',sigma,'表/事件/RHP=',routh(shifted),'roots=',np.roots(list(map(float,shifted))))\r\nprint('严格范围sigma<2，2是上确界不可取')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 744,
+      "title": "根轨迹与幅相边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 783,
+          "delim": "`",
+          "code": "for k in [10,30,40]:\r\n c=[1,6,5,k];print('K=',k,'表=',routh(c),'roots=',np.roots(c))\r\nwc=brentq(lambda w:w*w*(1+w*w)*(25+w*w)-100,.01,10)\r\npm=90-np.degrees(np.arctan(wc)+np.arctan(wc/5))\r\nprint('wc,PM,wg,GMdB:',wc,pm,np.sqrt(5),20*np.log10(3))\r\nprint('breakaway:',-2+np.sqrt(21)/3,'centroid:',-2,'angles:',[60,180,300])\r\nprint('高阶原例:',routh([1,2,3,4,5,6]),np.roots([1,2,3,4,5,6]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 859,
+      "title": "三阶与转矩摆核验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 898,
+          "delim": "`",
+          "code": "print('a2=3,a1=5严格边界a0<',3*5)\r\nfor a0 in [10,15,20]: print('a0=',a0,'表=',routh([1,3,5,a0]),'roots=',np.roots([1,3,5,a0]))\r\nprint('摆开环根:',np.roots([1,0,-9.8]))\r\nfor kp,kd in [(8,0),(9.8,0),(12,0),(12,2),(12,-2)]:\r\n print('kp,kd=',kp,kd,'roots=',np.roots([1,kd,kp-9.8]))\r\nprint('默认12/2:',np.roots([1,2,2.2]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 1021,
+      "title": "精确时滞与Padé边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1060,
+          "delim": "`",
+          "code": "for k in [1,2,5,10,15]:\r\n w,exact,pade=delay_bounds(k)\r\n derivative=k*1j*w*np.exp(-1j*w*exact)/(2j*w+2-k*exact*np.exp(-1j*w*exact))\r\n assert derivative.real>0\r\n print('K/omega/exact/Pade/穿越根实部导数:',k,w,exact,pade,derivative.real)\r\nfor l in [.2,.46,.6]:\r\n k=5;w,edge,pe=delay_bounds(k)\r\n coeff=[l/2,1+l,2-k*l/2,k]\r\n print('K5/L/精确严格/Pade严格/Pade根:',l,l<edge,l<pe,np.roots(coeff))\r\n# 精确特征方程复根的局部续接，不据此声称穷尽无穷根。\r\nw,edge,pe=delay_bounds(5)\r\nfor l in [.44,.46]:\r\n def f(v):\r\n  q=complex(*v);v=q*(q+2)+5*np.exp(-l*q);return [v.real,v.imag]\r\n ans=root(f,[0,w]);assert ans.success and np.linalg.norm(f(ans.x))<1e-9\r\n print('精确局部根L=',l,ans.x)\r\nprint('Q8 Pade s²+2s+16 roots:',np.roots([1,2,16]))\r\nw8=np.sqrt(8);edge8=np.arccos(-1/3)/w8\r\nprint('Q8另一个模型精确边界:',edge8,'L.5<edge:',.5<edge8)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "line": 1643,
+      "title": "十题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport sympy as sp\r\nfrom scipy.optimize import brentq, root\r\nfrom scipy.linalg import expm\r\ns,t=sp.symbols('s t',real=True)\r\neps=sp.Symbol('eps',positive=True)\r\ndef routh(coeffs):\r\n    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2\r\n    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')\r\n    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]\r\n    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]\r\n    events=[]\r\n    for i in range(1,n+1):\r\n        if all(v==0 for v in tab[i]):\r\n            power=n-i+1\r\n            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)\r\n            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))\r\n            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]\r\n        if tab[i][0]==0:\r\n            events.append(('epsilon',n-i));tab[i][0]=eps\r\n        if i<n:\r\n            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])\r\n    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]\r\n    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))\r\n    return tab,events,changes\r\n\r\ndef hurwitz(c):\r\n    n=len(c)-1\r\n    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)\r\n    return h,[h[:i,:i].det() for i in range(1,n+1)]\r\n\r\ndef delay_bounds(k):\r\n    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)\r\n    exact=(np.pi/2-np.arctan(w/2))/w\r\n    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)\r\n    return w,exact,pade",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1682,
+          "delim": "`",
+          "code": "for name,c in [('Q1a',[1,6,11,6]),('Q1b',[1,2,10,8,25]),('Q1c',[1,1,1,10]),('Q7',[1,1,3,3,2,2]),('Q10',[1,4,6,12])]:\r\n print(name,'表/事件/RHP=',routh(c),'因式=',sp.factor(sum(v*s**(len(c)-1-i) for i,v in enumerate(c))))\r\nk=sp.Symbol('K',real=True)\r\nfor name,poly in [('Q2',s**3+7*s**2+10*s+k),('Q3',s**4+6*s**3+11*s**2+6*s+k),('Q9',s**4+4*s**3+8*s**2+12*s+k)]:\r\n print(name,'poly=',poly)\r\n for kv in ({'Q2':[0,35,70,80],'Q3':[0,5,10,12],'Q9':[0,7,15,16]}[name]):\r\n  c=sp.Poly(poly.subs(k,kv),s).all_coeffs();print(kv,routh(c),sp.factor(poly.subs(k,kv)))\r\nprint('Q2临界频率sqrt10:',np.sqrt(10))\r\nprint('Q3 K0:',sp.factor((s**4+6*s**3+11*s**2+6*s)),'K10:',sp.factor(s**4+6*s**3+11*s**2+6*s+10))\r\nprint('Q4 shift:',sp.expand(((s-1)**3+3*(s-1)**2+5*(s-1)+15)),'原分解:',sp.factor(s**3+3*s**2+5*s+15))\r\nprint('Q5开环±2，PI闭环s³+(Kp−4)s+Ki缺s²；PD Kd>0/Kp>4')\r\nfor kp,kd in [(3,2),(4,2),(5,2)]:print('Q5 PD:',kp,kd,np.roots([1,kd,kp-4]))\r\nprint('Q6第一列1,a,(ab−c)/a,c；a,b,c>0时两向等价')\r\nprint('Q8 L0闭环s+1+K；Pade系数:',[1,2,16], 'roots:',np.roots([1,2,16]))\r\nprint('Q9 shift:',sp.expand((s-1)**4+4*(s-1)**3+8*(s-1)**2+12*(s-1)+k))\r\nprint('Q10 Hurwitz:',hurwitz([1,4,6,12]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
