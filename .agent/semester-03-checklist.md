@@ -55,7 +55,7 @@
 | ZH01 | 数学18课与经典11课润色分支快速审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/261e9ed/acceptance.md;.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json;commit:847d9a424c9adb65a8508af1cd0adbbcd4f85293 |
 | DEP09 | NONLINEAR-08及29课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear08-zh-release.md;docs/deployment/nonlinear08-zh-public-validation.json;commit:7c6bf5a9fde629d6fd2baf4b409e42964b69c368 |
 | ZH02 | 现代9课及非线性前8课润色增量审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/6ab3775/acceptance.md;.agent/semester-03/zh-lang-edit/merges/6ab3775/review.json;commit:1a0ea71af824828a085379101a122d8d71c7092a |
-| DEP10 | NONLINEAR-12及17课润色授权发布与公网验收 | [ ] | docs/deployment/nonlinear12-zh-release.md;进行中，用户2026-10-19授权全部现有更新 |
+| DEP10 | NONLINEAR-12及17课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear12-zh-release.md;docs/deployment/nonlinear12-zh-public-validation.json;commit:de07d3e9a8495e40693d44baba79e5fe8a6cb13f |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
