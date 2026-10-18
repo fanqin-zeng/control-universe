@@ -26,3 +26,5 @@ A.1四十行、A.2/六组审校/原九项与四补充/红队六列表见本期�
 初稿slug大小写、Python插公式的BEL字符及375px长行内增益/表格溢出均被实际门槛拦截并修复；initial-*/pre-sign-*保留。统计fix首次退出1反映修正前旧统计，随后自动生成OUTLINE/tracker并重跑退出0，不手改派生物。
 
 真实交付进入master后回填提交号。
+
+master交付提交：`3a29ccf820779fe8ef6ef9016bfaa27d49351d7d`；全局六列已勾，回执另提交。按主干策略推送origin/master；本轮gh-pages保持42eed1d509b90699fda0eff8d45f369d7dd7a210。
