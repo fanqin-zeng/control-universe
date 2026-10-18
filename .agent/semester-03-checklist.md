@@ -48,6 +48,9 @@
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
+| LP01 | 初学者润色计划、语言双角色/技能与顺读记忆机制 | [x] | .agent/semester-03-plan.md;.agent/skills/wiki-discussion/references/language-review.md |
+| LP02 | 清理代码框/前置课程的内部流程文案 | [x] | .agent/semester-03/polish/classic-01/acceptance.md;components/wiki/browser-notebook.tsx;components/wiki/lesson-nav.tsx |
+| LP03 | CLASSIC-01润色试点及用户精读反馈 | [ ] | docs/discuss-log/semester-03/03-classic/polish/01-system-modeling.md;试稿验收后仍待用户精读，未认可不推进其余课 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -365,3 +368,52 @@
 | INTRO-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | INTRO-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 <!-- S3-PROGRESS-END -->
+
+## 逐课润色（独立于原生产完成状态）
+
+先交CLASSIC-01试点，待用户明确认可后，按下表原生产顺序逐课推进。技术验收和顺读通过不等于用户通过；当前只有试点获准动工。
+
+<!-- S3-POLISH-BEGIN -->
+| 课程ID | 改稿 | 顺读 | 技术验收 | 用户确认 | 证据/下一步 |
+|---|---|---|---|---|---|
+| MATH-01 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-02 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-03 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-04 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-05 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-06 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-07 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-08 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-09 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-10 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-11 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-12 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-13 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-14 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-15 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-16 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-17 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MATH-18 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-01 | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/03-classic/polish/01-system-modeling.md;试稿技术与语言验收通过，等用户精读 |
+| CLASSIC-02 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-03 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-04 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-05 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-06 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-07 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-08 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-09 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-10 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| CLASSIC-11 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-01 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-02 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-03 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-04 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-05 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-06 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-07 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-08 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| MODERN-09 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| NONLINEAR-01 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+| NONLINEAR-02 | [ ] | [ ] | [ ] | [ ] | 待试点获用户认可后按序开展 |
+<!-- S3-POLISH-END -->

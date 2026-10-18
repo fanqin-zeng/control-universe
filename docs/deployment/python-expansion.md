@@ -135,3 +135,5 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
 
 NONLINEAR-02：相平面原十二实验与新增两实验，共14Notebook/27cell已按最终源码在Pyodide实跑通过；见.agent/semester-03/nonlinear-02/pyodide.json。原25项待办ID/原因/处置保持；仅本地验收，Pages未发布。
+
+CLASSIC-01语言润色试点：七份原始setup/cell及模型未改，最终正文已重新实跑Pyodide并更新指纹；证据.agent/semester-03/polish/classic-01/pyodide.json。25项待办不变。

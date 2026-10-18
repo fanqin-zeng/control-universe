@@ -69,7 +69,7 @@ const TAG: CSSProperties = {
 };
 
 function StatusTag({ label }: { label: StatusLabel }) {
-  return <span style={TAG}>{label.text}</span>;
+  return label.tone === "skeleton" ? <span style={TAG}>尚未编写</span> : null;
 }
 
 function InlineLink({ href, children }: { href: string; children: ReactNode }) {
@@ -82,49 +82,25 @@ function InlineLink({ href, children }: { href: string; children: ReactNode }) {
 
 export function PrereqCard({
   items,
-  chapterTitle,
-  selfKey,
-  start,
 }: {
   items: PrereqItem[];
   chapterTitle: string;
   selfKey: string;
   start?: LessonNode;
 }) {
+  if (items.length === 0) return null;
   return (
     <div style={CARD} data-lesson-nav="prereq">
       <p style={EYEBROW}>前置课程</p>
-      {items.length === 0 ? (
-        <p style={NOTE} data-prereq="none">
-          {start && start.key !== selfKey ? (
-            <>
-              目录未登记本课的前置依赖。第一次读「{chapterTitle}」建议从《
-              <InlineLink href={start.href}>{start.title}</InlineLink>》开始。
-            </>
-          ) : (
-            <>本课是「{chapterTitle}」的第 1 门，目录中未登记前置依赖。</>
-          )}
-        </p>
-      ) : (
-        <div style={CHIP_ROW} data-prereq="list">
-          {items.map((item) =>
-            item.missing ? (
-              <span key={item.key} style={{ ...CHIP, ...TONE.skeleton }}>
-                <span>{item.title}</span>
-                <StatusTag label={item.status} />
-              </span>
-            ) : (
-              <Link key={item.key} href={item.href} style={{ ...CHIP, ...TONE[item.status.tone] }}>
-                <span>
-                  {item.fromChapterTitle ? `${item.fromChapterTitle} · ` : ""}
-                  {item.title}
-                </span>
-                <StatusTag label={item.status} />
-              </Link>
-            )
-          )}
-        </div>
-      )}
+      <div style={CHIP_ROW} data-prereq="list">
+        {items.map(item => item.missing ? (
+          <span key={item.key} style={{...CHIP,...TONE.skeleton}}>{item.title}</span>
+        ) : (
+          <Link key={item.key} href={item.href} style={{...CHIP,...TONE[item.status.tone]}}>
+            {item.fromChapterTitle ? `${item.fromChapterTitle} · ` : ""}{item.title}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
@@ -193,7 +169,7 @@ export function ChapterPathLine({ path }: { path: ChapterPath }) {
       style={{ margin: "-0.25rem 0 0.75rem", fontSize: "0.8125rem", lineHeight: 1.7, color: "var(--muted-foreground)" }}
       data-chapter-path={path.slug}
     >
-      {path.total} 课 · 已交付 {path.delivered} · 有正文 {path.written} · 建议起点：
+      共 {path.total} 课 · 建议起点：
       {path.start ? (
         <>
           <InlineLink href={path.start.href}>{path.start.title}</InlineLink>

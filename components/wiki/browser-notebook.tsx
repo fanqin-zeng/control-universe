@@ -6,7 +6,7 @@ const buttonStyle: CSSProperties = {border: '1px solid #94a3b8', borderRadius: 4
 export function BrowserNotebook({title, setupCode = '', cells: initial, workerVersion = ''}: {title?: string; setupCode?: string; cells: {code: string}[]; workerVersion?: string}) {
   const [cells, setCells] = useState(() => initial.map(c => ({...c, outputs: [] as PythonOutput[]})));
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('首次运行需下载 Python 和科学计算库，计算使用本机浏览器。');
+  const [message, setMessage] = useState('');
   const key = useRef('');
   const mounted = useRef(true);
   useEffect(() => {key.current = crypto.randomUUID(); mounted.current = true; return () => {mounted.current = false; releaseBrowserPython(key.current);};}, []);
@@ -20,7 +20,7 @@ export function BrowserNotebook({title, setupCode = '', cells: initial, workerVe
         setCells(previous => previous.map((cell, i) => i === index ? {...cell, outputs} : cell));
         if (outputs.some(output => output.type === 'error')) {setMessage('运行出错，请查看单元格输出。'); return;}
       }
-      setMessage('运行完成 · Pyodide 0.27.7 · 浏览器本地计算');
+      setMessage('运行完成');
     } catch (error) {if (mounted.current) setMessage(String(error));}
     finally {if (mounted.current) setBusy(false);}
   }
@@ -31,8 +31,7 @@ export function BrowserNotebook({title, setupCode = '', cells: initial, workerVe
   }
   return <section data-python-mode="browser" aria-label={title || '浏览器 Python'} className="not-prose" style={{border: '1px solid #94a3b8', borderRadius: 8, padding: 14, margin: '16px 0', color:'#111827', background:'#fff'}}>
     <strong style={{color:'#111827'}}>{title || 'Python Notebook'}</strong>
-    <p role="status" style={{color:'#334155'}}>{message}</p>
-    <p style={{color:'#334155'}}>本实验默认代码已通过浏览器验收；自行修改后可能需要额外依赖。刷新页面会清空变量，停止会结束本页所有 Python 实验。</p>
+    {message && <p role="status" style={{color:'#334155'}}>{message}</p>}
     <button style={{...buttonStyle, opacity: busy ? 0.5 : 1}} disabled={busy} onClick={() => run(cells.map((_, i) => i))}>全部运行</button>{' '}
     <button style={{...buttonStyle, opacity: busy ? 0.5 : 1}} disabled={busy} onClick={reset}>重置实验</button>{' '}
     <button style={{...buttonStyle, opacity: busy ? 1 : 0.5}} disabled={!busy} onClick={stopBrowserPython}>停止本页 Python</button>
