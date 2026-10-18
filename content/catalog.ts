@@ -1113,8 +1113,8 @@ export const catalog: Chapter[] = [
             "title": "从频域看稳定性"
           },
           {
-            "slug": "工程实例倒立摆的稳定性",
-            "title": "工程实例：倒立摆的稳定性"
+            "slug": "倒立摆反馈",
+            "title": "倒立摆反馈"
           },
           {
             "slug": "时滞系统的稳定性",
