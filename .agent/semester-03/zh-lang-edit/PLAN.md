@@ -21,7 +21,7 @@
 | 11 | MATH-11 | 概率基础 | content/math/probability-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-11.md) |
 | 12 | MATH-12 | 随机过程 | content/math/stochastic-processes.mdx | 已完成 | 待合入 | [润色记录](records/MATH-12.md) |
 | 13 | MATH-13 | 凸优化 | content/math/convex-optimization.mdx | 已完成 | 待合入 | [润色记录](records/MATH-13.md) |
-| 14 | MATH-14 | 变分法与动态规划 | content/math/variational-dp.mdx | 已完成 | 待润色 | — |
+| 14 | MATH-14 | 变分法与动态规划 | content/math/variational-dp.mdx | 已完成 | 待合入 | [润色记录](records/MATH-14.md) |
 | 15 | MATH-15 | 微分几何入门 | content/math/diff-geometry.mdx | 已完成 | 待润色 | — |
 | 16 | MATH-16 | 图论基础 | content/math/graph-theory.mdx | 已完成 | 待润色 | — |
 | 17 | MATH-17 | 博弈论基础 | content/math/game-theory-math.mdx | 已完成 | 待润色 | — |
