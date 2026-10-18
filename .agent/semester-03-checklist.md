@@ -96,7 +96,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MODERN-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/04-modern/01-state-space.md;.agent/semester-03/modern-01/acceptance.md;.agent/semester-03/modern-01/reconciliation.json |
+| MODERN-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/04-modern/01-state-space.md;.agent/semester-03/modern-01/acceptance.md;commit:7e4ee5f20a2eea96801cd309c8ccfbf126d83a55 |
 | MODERN-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MODERN-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
