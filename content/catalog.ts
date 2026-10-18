@@ -2598,12 +2598,25 @@ export const catalog: Chapter[] = [
       {
         "slug": "switched-hybrid-systems",
         "title": "切换与混杂系统",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "模式与切换规则", "title": "模式与切换规则" },
+          { "slug": "稳定模式也会切坏", "title": "稳定模式也会切坏" },
+          { "slug": "共同lyapunov函数", "title": "共同Lyapunov函数" },
+          { "slug": "驻留时间", "title": "驻留时间" },
+          { "slug": "状态跳变的模型", "title": "状态跳变的模型" },
+          { "slug": "zeno现象", "title": "Zeno现象" },
+          { "slug": "建模与仿真检查", "title": "建模与仿真检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "bifurcation-chaos",

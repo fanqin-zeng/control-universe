@@ -678,3 +678,8 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-10 本轮执行记录（2026-10-19）
 
 输入状态稳定性从空占位按新写专用Phase1–4完成：线性积分解引入ISS，标量非线性给直接界与Lyapunov界，二维耦合证明小增益，保留临界/失败及反向仍稳定反例。10H2、3Notebook3cell、四题四答、耦合SVG和IssSmallGainExplorer；真实TS九配置3609点对独立增广矩阵指数、原生/Pyodide全部实验、真实标题/锚点与375px页面通过。证据.agent/semester-03/nonlinear-10/acceptance.md，实际master回执以全局checklist为准。用户批阅与长期润色分支保持，25Python待办及W14不关闭，Pages另行授权，不交付下一课。
+
+
+### NONLINEAR-11 本轮执行记录（2026-10-19）
+
+切换与混杂系统从空占位按新写专用Phase1–4完成。恒温器引入模式记忆、守卫与重置；稳定矩阵的快切反例引出共同Lyapunov与最小驻留证明；事件检测弹跳球说明Zeno有限累积与接触续接缺口。11H2、4Notebook4cell、四题四答、状态图SVG与SwitchedHybridExplorer；实际TS九配置7209点对独立SciPy矩阵指数、原生/Pyodide全部实验、真实锚点和375px页面通过。证据.agent/semester-03/nonlinear-11/acceptance.md，实际master回执以全局checklist为准。25项Python待办及W14保留，用户批阅和长期润色分支保持，Pages另行授权，本对话不续写下一课。

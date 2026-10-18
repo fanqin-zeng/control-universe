@@ -1,0 +1,306 @@
+---
+title: "切换与混杂系统"
+description: "从恒温器与碰撞理解模式、触发和重置，用共同Lyapunov函数与驻留时间分析切换稳定性，并认识Zeno现象。"
+---
+
+# 切换与混杂系统
+
+## 引言
+
+暖气开着，房间慢慢变暖；关掉暖气，房间又慢慢变冷。温度的变化是连续的，开关的变化却是一瞬间的。如果温度刚到设定值就开、刚超过又关，测量值稍微抖一下，开关就可能忙个不停。
+
+常见的办法是设两个阈值：低于$19^\circ\mathrm C$开，到$21^\circ\mathrm C$关，中间保持原来的状态。于是同样是$20^\circ\mathrm C$，暖气可能开着，也可能关着，要看它是从哪边走来的。**仅知道温度，已经不足以决定接下来怎样运动；还要知道当前模式。**
+
+这一课研究两件事：怎样把连续运动和开关规则一起写成模型；怎样判断切换之后是否仍然稳定。后半课再看弹跳球：它不仅改变运动规则，碰撞时速度本身还会跳变。先修是[Lyapunov稳定性](/nonlinear/lyapunov-stability)，矩阵指数可参阅[微分方程](/math/ode-matrix-exponential)。
+
+## 模式与切换规则
+
+对只有模式改变、连续状态不跳变的系统，可以写成
+
+$$
+\dot x=f_{\sigma(t)}(x).
+$$
+
+$x$是连续状态，$\sigma(t)$是当前模式编号，通常是分段常值的信号。切换时$x$保持连续，右端的函数却可以换成另一个。切换可以由外部时刻表规定，也可以由当前状态触发。
+
+恒温器有一个连续状态$\theta$和一个离散状态$q\in\{0,1\}$，分别表示温度与加热器开关。取一个简化模型：
+
+$$
+\dot\theta=-0.1(\theta-18)+q.
+$$
+
+时间单位是min，温度单位是$^\circ\mathrm C$；环境温度为$18$，热损失系数为$0.1\,\mathrm{min}^{-1}$，开启加热增加$1^\circ\mathrm C/\mathrm{min}$的温升速率。因此关机时趋向$18$，持续开机时趋向$28$。这是教学参数，不是某台暖气的测量结果。
+
+规则要连同模式一起写清：
+
+- 当$q=1$且$\theta\ge21$时，触发$q^+=0$。
+- 当$q=0$且$\theta\le19$时，触发$q^+=1$。
+- 两种切换都令$\theta^+=\theta$，温度不跳变；阈值之间保持当前$q$。
+
+上标$+$表示事件刚发生后的值。触发切换的条件也叫**守卫条件**，从事件前状态得到事件后状态的规则叫**重置映射**。这里满足守卫时优先切换，否则按当前模式连续演化。因此越界初态也有规则可循；正常运动会在刚到阈值时切换。温度没有被重置。
+
+![恒温器的两个模式、阈值及保持规则](/images/nonlinear/hybrid-thermostat.svg)
+
+两个阈值之间的间隔形成**滞回**：它让开关保留一点历史。在温度变化率有界、温度不跳变的前提下，跨过一个非零温度间隔需要时间，因此不会在同一温度附近无限快地来回切换。传感器误差、延迟和初始模式仍然需要另外说明。
+
+<JupyterNotebook title="实验1：按阈值切换的恒温器" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp`} cells={[{code:`theta=19.; q=1; now=0.; durations=[]
+plt.figure(figsize=(8,3))
+for event_index in range(8):
+    threshold=21. if q==1 else 19.
+    def event(t,y):
+        return y[0]-threshold
+    event.terminal=True
+    event.direction=1 if q==1 else -1
+    sol=solve_ivp(lambda t,y:-.1*(y-18)+q,[now,now+30],[theta],events=event,dense_output=True,rtol=1e-11,atol=1e-12)
+    assert len(sol.t_events[0])==1
+    end=sol.t_events[0][0]
+    durations.append(end-now)
+    tt=np.linspace(now,end,81); yy=sol.sol(tt)[0]
+    assert np.min(yy)>=19-1e-8 and np.max(yy)<=21+1e-8
+    plt.plot(tt,yy,color='tab:red' if q else 'tab:blue')
+    print('事件%d：q=%d -> %d, t=%.6f min, theta=%.6f' % (event_index+1,q,1-q,end,sol.y_events[0][0,0]))
+    now=end; theta=threshold; q=1-q
+heat=10*np.log(9/7); cool=10*np.log(3)
+assert np.max(abs(np.array(durations)-np.tile([heat,cool],4)))<1e-7
+print('完整升温段=%.6f min，降温段=%.6f min，周期=%.6f min' % (heat,cool,heat+cool))
+plt.axhline(19,color='gray',ls='--'); plt.axhline(21,color='gray',ls='--')
+plt.xlabel('t (min)'); plt.ylabel('temperature (deg C)'); plt.grid(); plt.show()`}]} />
+
+## 稳定模式也会切坏
+
+现在先把跳变放在一边，只研究连续状态不变的模式切换。考虑两个归一化线性系统：
+
+$$
+A_1=\begin{bmatrix}-1&3\\0&-1\end{bmatrix},\qquad
+A_2=\begin{bmatrix}-1&0\\3&-1\end{bmatrix}.
+$$
+
+两个矩阵的特征值都为$-1$。固定使用任一个模式，原点都渐近稳定。但衰减过程中，状态仍可能先沿某个方向被拉长；如果恰好在拉长后换到另一个模式，就可能再次被拉长。
+
+规定每个模式停留$\tau$，先$A_1$、再$A_2$，反复交替。一个完整周期是$2\tau$，周期起点的状态满足
+
+$$
+x(2\tau)=Mx(0),\qquad M=e^{A_2\tau}e^{A_1\tau}.
+$$
+
+次序不能反写：右侧矩阵先作用。每段的解析流为
+
+$$
+e^{A_1s}=e^{-s}\begin{bmatrix}1&3s\\0&1\end{bmatrix},\qquad
+e^{A_2s}=e^{-s}\begin{bmatrix}1&0\\3s&1\end{bmatrix},
+$$
+
+因此
+
+$$
+M=e^{-2\tau}\begin{bmatrix}1&3\tau\\3\tau&1+9\tau^2\end{bmatrix}.
+$$
+
+周期矩阵的**谱半径**$\rho(M)$是其特征值模的最大值。对这条周期规则，$\rho(M)<1$保证每个周期起点的状态趋零，而每个周期内的有限时段运动也有统一界，所以整个周期切换系统渐近稳定；$\rho(M)>1$则存在增长方向。
+
+当$\tau=1$时，$\rho(M)\approx1.476282$，切换系统不稳定；当$\tau=2$时，$\rho(M)\approx0.695512$，这条周期规则下稳定。**结论针对规定的交替时刻表，不代表同一对矩阵在任意切换下都稳定。**
+
+<JupyterNotebook title="实验2：稳定模式的周期切换" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm`} cells={[{code:`A1=np.array([[-1.,3.],[0.,-1.]])
+A2=A1.T
+print('两个模式特征值',np.linalg.eigvals(A1),np.linalg.eigvals(A2))
+plt.figure(figsize=(8,3))
+for tau in [.2,1.,2.,4.,8.]:
+    E1=expm(A1*tau); E2=expm(A2*tau); M=E2@E1
+    rho=max(abs(np.linalg.eigvals(M)))
+    states=[]; times=np.linspace(0,16,801)
+    for t in times:
+        segment=int(np.floor((t+1e-12)/tau)); cycles=segment//2
+        z=np.linalg.matrix_power(M,cycles)@np.array([1.,0.])
+        if segment%2: z=E1@z
+        rem=max(0.,t-segment*tau)
+        z=expm((A2 if segment%2 else A1)*rem)@z
+        states.append(z)
+    states=np.array(states)
+    print('tau=%.1f, rho=%.6f, x(16)=(%.6f, %.6f), norm=%.6e' % (tau,rho,*states[-1],np.linalg.norm(states[-1])))
+    plt.semilogy(times,np.linalg.norm(states,axis=1),label='tau='+str(tau))
+plt.xlabel('normalized time'); plt.ylabel('state norm'); plt.legend(); plt.grid(); plt.show()`}]} />
+
+<SwitchedHybridExplorer />
+
+## 共同Lyapunov函数
+
+如果想保证一整类切换都安全，逐个检查模式的特征值还不够。一种直接方法是找到所有模式都能使用的同一个函数$V(x)$。例如存在统一常数$c_1,c_2,c_3>0$，使
+
+$$
+c_1\|x\|^2\le V(x)\le c_2\|x\|^2,\qquad
+\nabla V(x)f_i(x)\le-c_3V(x)
+$$
+
+对每个模式$i$都成立。那么无论当前是哪种模式，$V$都在下降；切换瞬间$x$不跳、使用的函数也没换，所以$V$不会突然增大。
+
+在每个有限时间区间只切换有限次的前提下，把各段不等式接起来，有$V(t)\le e^{-c_3t}V(0)$，从而得到统一的指数稳定保证。这里同时需要各模式在原点有共同平衡，以及解可按上述规则延续。
+
+一个能手算的例子：把上面两矩阵中的$3$都改为$1$，取$V=x_1^2+x_2^2$。两个模式下都有
+
+$$
+\dot V=-2(x_1^2+x_2^2)+2x_1x_2
+\le-(x_1^2+x_2^2)=-V.
+$$
+
+这里用了$2x_1x_2\le x_1^2+x_2^2$。因此这一对新矩阵允许任意局部有限切换。对原来系数为$3$的那一对，不能沿用这份证明。没有找到共同函数，也不自动说明某条具体切换规则不稳定。
+
+## 驻留时间
+
+找共同函数不容易时，可以限制切换速度。**最小驻留时间**$\tau_d$要求相邻两次切换至少间隔$\tau_d$；它限制每一段，不只是“平均切得不多”。
+
+设每个模式有自己的函数$V_i$，并且存在统一常数$\lambda>0$、$\mu\ge1$，使
+
+$$
+\dot V_i\le-\lambda V_i,\qquad
+V_j(x)\le\mu V_i(x),
+$$
+
+所有$V_i$还要有统一的正定上下界，例如$c_1\|x\|^2\le V_i(x)\le c_2\|x\|^2$。在模式内部，当前函数逐渐减小；切换时虽然$x$不变，却换了一把“量尺”，数值最多乘上$\mu$。这不是物理状态跳变。
+
+记$N(t)$为到$t$为止的切换次数，有
+
+$$
+V_{\sigma(t)}(x(t))\le\mu^{N(t)}e^{-\lambda t}V_{\sigma(0)}(x(0)).
+$$
+
+最小驻留时间给出$N(t)\le1+t/\tau_d$，因此
+
+$$
+V_{\sigma(t)}(x(t))\le
+\mu e^{-(\lambda-\ln\mu/\tau_d)t}V_{\sigma(0)}(x(0)).
+$$
+
+所以只要
+
+$$
+\tau_d>\frac{\ln\mu}{\lambda},
+$$
+
+就有统一指数衰减。这份条件适用于所有满足驻留限制的切换，不只针对等时交替，因此可能比某一条周期规则的精确条件保守。
+
+对系数为$3$的原矩阵，解$A_i^{\mathsf T}P_i+P_iA_i=-I$，取$V_i=x^{\mathsf T}P_ix$。可以得到$\lambda\approx0.335899$、$\mu\approx8.107426$，驻留充分条件为$\tau_d>6.230378$。默认交替规则的$\tau=2$未满足这份充分条件，但周期谱仍能证明它稳定；这两件事并不矛盾。
+
+<JupyterNotebook title="实验3：共同函数与驻留时间界" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import solve_continuous_lyapunov, eigvalsh`} cells={[{code:`x,y=sp.symbols('x y',real=True)
+X=sp.Matrix([x,y]); V=x*x+y*y
+for B in [sp.Matrix([[-1,1],[0,-1]]),sp.Matrix([[-1,0],[1,-1]])]:
+    vd=(sp.Matrix([[2*x,2*y]])*B*X)[0]
+    assert sp.expand(-V-vd-(x-y)**2)==0
+print('共同V核验：-V-Vdot=(x-y)^2>=0；V衰减系数=1')
+A1=np.array([[-1.,3.],[0.,-1.]])
+A2=A1.T
+P=[solve_continuous_lyapunov(A.T,-np.eye(2)) for A in [A1,A2]]
+for A,p in zip([A1,A2],P):
+    assert np.min(np.linalg.eigvalsh(p))>0
+    assert np.max(abs(A.T@p+p@A+np.eye(2)))<1e-12
+lam=min(1/np.max(np.linalg.eigvalsh(p)) for p in P)
+mu=max(eigvalsh(P[1],P[0])[-1],eigvalsh(P[0],P[1])[-1])
+print('P1=',P[0]); print('P2=',P[1])
+print('lambda=%.6f, mu=%.6f, tau_d threshold=%.6f' % (lam,mu,np.log(mu)/lam))
+print('tau=2 满足驻留充分条件？',2>np.log(mu)/lam)
+print('tau=8 满足驻留充分条件？',8>np.log(mu)/lam)`}]} />
+
+## 状态跳变的模型
+
+恒温器切换时温度连续；球碰到地面时，速度却会突然反向。这时只写一个模式编号还不够，必须把连续运动、何时跳变、跳变后状态分别给出。这种连续演化与离散事件并存的系统称为**混杂系统（hybrid system）**。
+
+令$h$为球离地高度，$v$为向上的速度，重力加速度为$g$。忽略空气阻力、把碰撞看成瞬间发生，则空中运动为
+
+$$
+\dot h=v,\qquad \dot v=-g.
+$$
+
+要求$h\ge0$；球落到地面且向下运动时优先触发碰撞：$h=0,v<0$。取恢复系数$0<r<1$，重置为
+
+$$
+h^+=0,\qquad v^+=-rv^-.
+$$
+
+上标$-$和$+$分别表示碰撞前后。负的下落速度变成正的向上速度，大小缩小为原来的$r$倍。连续方程只用于飞行；不能让积分器穿过地面后才随意把高度改回零。
+
+若球质量为$m$，机械能$E=mgh+mv^2/2$在飞行中守恒；碰撞前后$h=0$，所以$E^+=r^2E^-$。但能量下降还没有回答两个问题：事件会不会越挤越密？球最终接触地面后怎样继续？
+
+## Zeno现象
+
+从$h(0)=h_0>0,v(0)=0$释放球，第一次碰撞时间为$t_0=\sqrt{2h_0/g}$。碰撞前速率为$\sqrt{2gh_0}=gt_0$。第一次碰撞后的往返飞行需要$2rt_0$；下一次需要$2r^2t_0$，再下一次需要$2r^3t_0$。
+
+虽然碰撞次数可以无限多，总时间却是有限的：
+
+$$
+t_Z=t_0+2t_0\sum_{j=1}^{\infty}r^j
+=t_0\frac{1+r}{1-r}.
+$$
+
+这叫**Zeno现象**：有限的连续时间内发生无限次离散事件。取$h_0=1$ m、$g=9.81\,\mathrm{m/s^2}$、$r=0.8$，第一次碰撞约在$0.451524$ s，能量每次乘$0.64$，累计极限时间约为$4.063713$ s。
+
+这不是说真实球会在有限时间内完成无穷多次可分辨的碰撞，而是说当前的理想模型出现了这种行为。到$(h,v)=(0,0)$后，若仍只保留重力飞行和上述碰撞规则，模型没有给出“静止接触”的后续运动。要描述停在地上的球，需要增加接触模式或采用更完整的接触模型。
+
+<JupyterNotebook title="实验4：逐次检测碰撞与Zeno尾部" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp`} cells={[{code:`g=9.81; r=.8; h0=1.; now=0.; state=np.array([h0,0.])
+t0=np.sqrt(2*h0/g); tz=t0*(1+r)/(1-r)
+times=[]; ratios=[]
+plt.figure(figsize=(8,3))
+for j in range(1,13):
+    def ground(t,y):
+        return y[0]
+    ground.direction=-1; ground.terminal=True
+    sol=solve_ivp(lambda t,y:[y[1],-g],[now,now+2],state,events=ground,dense_output=True,rtol=1e-11,atol=1e-12,max_step=.05)
+    assert len(sol.t_events[0])==1
+    end=sol.t_events[0][0]; pre=sol.y_events[0][0]
+    exact=t0+2*t0*r*(1-r**(j-1))/(1-r)
+    assert abs(end-exact)<1e-8
+    tt=np.linspace(now,end,41); hh=sol.sol(tt)[0]
+    assert min(hh)>-1e-8
+    plt.plot(tt,hh,color='tab:blue')
+    post=np.array([0.,-r*pre[1]])
+    ratios.append(post[1]**2/pre[1]**2); times.append(end)
+    now=end; state=post
+assert np.max(abs(np.array(ratios)-r*r))<1e-12
+print('首次碰撞 %.6f s；能量倍率 %.6f；Zeno时间 %.6f s' % (t0,r*r,tz))
+print('12次碰撞后 t=%.6f s；尚余时间 %.6f s，未模拟无限尾部' % (now,tz-now))
+print('最大事件时刻误差 %.3e s' % max(abs(np.array(times)-(t0+2*t0*r*(1-r**np.arange(12))/(1-r)))))
+plt.axvline(tz,color='gray',ls='--',label='Zeno limit, not simulated')
+plt.xlabel('t (s)'); plt.ylabel('height (m)'); plt.legend(); plt.grid(); plt.show()`}]} />
+
+## 建模与仿真检查
+
+遇到带开关、逻辑或碰撞的系统，可以依次检查：
+
+1. **连续运动是什么？** 每个模式给出方程、状态范围、输入和单位；模式单独稳定与整体稳定分开判断。
+2. **事件何时发生？** 写出方向和触发条件。恒温器上阈值只负责关、下阈值只负责开；落地事件只检测向下穿越。
+3. **事件后改变什么？** 恒温器温度连续，球的速度跳变；若改变了连续状态，切换系统中“状态不跳”的证明就不能直接套用，还要检查$V(x^+)$与$V(x^-)$。
+4. **时间还能继续吗？** 给出事件优先级、重置后是否立即再触发、最大事件数等。程序达到事件数上限，只表示这次计算停止，不表示已经算完Zeno之后的运动。
+
+本课的驻留条件限制每次停留；平均驻留时间允许局部快切、总体限制切换次数，是另一套条件，不能偷换。滞回也不等于所有混杂系统都没有Zeno：它的防快切解释依赖非零阈值间隔、状态连续和变化率有界。
+
+理论背景可读[Liberzon的切换系统讲义](https://liberzon.csl.illinois.edu/teaching/Liberzon-LectureNotes.pdf)的共同函数与慢切换章节；碰撞模型可参阅[HyEQ工具箱的弹跳球示例](https://hyeq.github.io/matlab/creating-and-simulating-hybrid-systems)。这里的参数、程序和证明步骤均是本课教学设计，没有把模拟轨迹当成设备测试。
+
+## 小结
+
+切换规则是模型的一部分。固定模式稳定，不能保证任意切换稳定；共同Lyapunov函数给出统一保证，驻留时间则用足够的连续衰减抵消换函数时的增幅。若连续状态本身会跳变，还需要明确重置映射，并检查事件能否在有限时间内无限累积。
+
+## 习题
+
+**习题1。** 写出本课恒温器的连续方程、两个守卫条件和重置映射。为什么$20^\circ\mathrm C$时不能只凭温度决定开关？从$19$且$q=1$出发，计算到$21$所需时间，再计算关机后回到$19$的时间。
+
+**习题2。** 对系数为$3$的两个矩阵，推导周期矩阵$M$。各模式特征值都为$-1$为什么仍不够？用$\tau=1,2$的谱半径说明两条周期规则的区别。
+
+**习题3。** 把矩阵中的$3$改为$1$，证明$V=x_1^2+x_2^2$为共同Lyapunov函数。再推导多函数条件$\tau_d>\ln\mu/\lambda$。为什么原矩阵在$\tau=2$时未满足$6.230378$的充分界，却能周期稳定？
+
+**习题4。** 推导球碰撞的能量倍率与无限事件累计时间。代入$h_0=1,g=9.81,r=0.8$核对结果。若程序只计算12次碰撞，能否宣称已算完无限次碰撞并自动得到了接触静止状态？
+
+## 答案
+
+**答案1。** 连续方程为$\dot\theta=-0.1(\theta-18)+q$；$q=1,\theta\ge21$时优先改成$q^+=0$，$q=0,\theta\le19$时优先改成$q^+=1$，两者均有$\theta^+=\theta$。中间温度保持原模式，所以要记录$q$。开机解为$\theta=28+(19-28)e^{-0.1t}$，到$21$所需时间为$10\ln(9/7)\approx2.513144$ min；关机解为$\theta=18+(21-18)e^{-0.1t}$，回到$19$需$10\ln3\approx10.986123$ min。这两个完整阈值间的时间，不代表从任意初态到首次事件的时间下界。
+
+**答案2。** 先用$e^{A_1\tau}$推进，再用$e^{A_2\tau}$，相乘得$M=e^{-2\tau}\begin{bmatrix}1&3\tau\\3\tau&1+9\tau^2\end{bmatrix}$。各模式渐近衰减不排除暂态方向放大，而切换能重复利用这种放大。$\tau=1$的$\rho\approx1.476282>1$，存在增长方向；$\tau=2$的$\rho\approx0.695512<1$，周期状态趋零，各周期内的有限时段流也有界。结论只针对对应规则。
+
+**答案3。** 两模式都有$\dot V=-2(x_1^2+x_2^2)+2x_1x_2\le-V$，且状态不跳，故局部有限任意切换下$V(t)\le e^{-t}V(0)$。多函数时，每次换模式最多乘$\mu$，连续运动贡献$e^{-\lambda t}$；利用$N(t)\le1+t/\tau_d$得$V(t)\le\mu e^{-(\lambda-\ln\mu/\tau_d)t}V(0)$，指数系数严格正即为所求。$6.230378$保证所有满足最小驻留限制的规则稳定，是保守充分界；$\tau=2$只用周期矩阵证明特定交替规则稳定，没有矛盾。
+
+**答案4。** 碰撞时高度为零，速度乘$-r$，动能便乘$r^2=0.64$。首次时间$t_0=\sqrt{2/9.81}\approx0.451524$ s；以后飞行时间为$2r^jt_0$，几何级数给$t_Z=t_0(1+r)/(1-r)\approx4.063713$ s。12次只覆盖有限段轨迹，仍有无限尾部；增加接触模式才描述地面静止，不能从截断次数或能量下降自动推得模型已给出这一后续运动。

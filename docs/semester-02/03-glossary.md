@@ -242,6 +242,13 @@
 | 布朗运动 | Brownian motion | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 独立增量 | independent increments | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
 | 离散Lyapunov方程 | discrete Lyapunov equation | — | MATH-12 | 本课局部定义，注意条件与时间语义 |
+| 切换系统 | switched system | — | NONLINEAR-11 | 模式改变，本文连续状态不重置 |
+| 混杂系统 | hybrid system | — | NONLINEAR-11 | 连续演化与离散事件并存 |
+| 共同Lyapunov函数 | common Lyapunov function | — | NONLINEAR-11 | 所有模式共用同一正定函数 |
+| 驻留时间 | dwell time | — | NONLINEAR-11 | 最小驻留限制每两次切换的间隔，区别于平均驻留 |
+| 守卫条件 | guard condition | — | NONLINEAR-11 | 触发事件的条件，须说明边界和优先级 |
+| 重置映射 | reset map | — | NONLINEAR-11 | 从事件前状态给出事件后状态 |
+| Zeno现象 | Zeno phenomenon | — | NONLINEAR-11 | 有限连续时间内无限次离散事件 |
 
 ### §2.2 无冲突的条目（按英文键字母序）
 
