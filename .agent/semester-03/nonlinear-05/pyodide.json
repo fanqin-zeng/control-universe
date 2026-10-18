@@ -1,0 +1,298 @@
+{
+  "testedAt": "2026-10-18T12:48:49.350Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Ffeedback-linearization",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "nonlinear/feedback-linearization",
+      "title": "反馈线性化",
+      "sourceHash": "5e3547bcc35cdc00d8a50f6e91bcf1868f9d36d4b6f37592ace1fd1f006e4180",
+      "notebooks": [
+        {
+          "id": "nonlinear/feedback-linearization#1",
+          "title": "Notebook 1：Lie导数的数值验证与输入-输出线性化",
+          "index": 1,
+          "line": 87,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4835,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "状态点 x0 = [ 0.7 -0.4]\n\nL_g h 数值 = 0.0  手算 = 0\nL_f h 数值 = -0.40000000001150227  手算 = -0.4\nL_g L_f h 数值 = 0.9999778782798785  手算 = 1\nL_f^2 h 数值 = -0.24424906541753444  手算 = -0.244217687237691\n\nad_f g 数值 = [-1.  1.]  手算 = [-1, 1]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 27,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "指令 v = 3.0\n控制量 u = 3.244218\n解析 y'' = L_f^2 h + L_g L_f h * u = 3.0\n数值 y''（二阶差分）= 3.0\n偏差 = 1.5347723092418164e-12\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 360,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "最大偏差 = 7.105427357601002e-15\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 69532
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/feedback-linearization#2",
+          "title": "Notebook 2：零动态特征值的数值验证（定义式仿真 + 闭环对照）",
+          "index": 2,
+          "line": 321,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 155,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "零动态直接仿真：log|x1| 的斜率应精确等于特征值 -1/a\n     a       -1/a      log|x1|斜率         |y|max     |y|/|x1| 最大值\n  1.00     -1.000        -1.0000       1.11e-16         2.24e-14\n  0.50     -2.000        -2.0000       1.11e-16         1.81e-11\n  0.25     -4.000        -4.0000       2.22e-16         5.88e-06\n -0.50      2.000         2.0000       3.42e-08         2.79e-13\n -1.00      1.000         1.0000       6.25e-13         1.89e-15\n\n稳定方向的x1接近零后，相对误差会放大；请读实际表格，而非把求解器容差当成误差界。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 531,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "闭环仿真：v = -2y，x(0) = (1, 0)\na=+1.00  特征值 -1/a = -1.00  |  y(8)=1.125e-07  x1(8)=+6.7081e-04  最小相位\na=+0.25  特征值 -1/a = -4.00  |  y(8)=1.125e-07  x1(8)=+2.2507e-07  最小相位\na=-0.50  特征值 -1/a = +2.00  |  y(8)=-5.635e-06  x1(8)=+4.4431e+06  非最小相位\na=-1.00  特征值 -1/a = +1.00  |  y(8)=1.125e-07  x1(8)=+1.9873e+03  非最小相位\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 93396
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 55,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "x1(8) 仿真 = 4443055.2604    解析 cosh(16) = 4443055.2603    相对误差 = 2.63e-11\ny(8)  仿真 = -5.6354e-06   解析 e^(-16)  = 1.1254e-07\n\ny(8) 对不上，不是控制律失效，而是浮点相消：\n  y = x1 + a*x2 是两个约 1e6 量级数的相减，x1 的相对误差 1e-11\n  放大成 y 的绝对误差约 5.7e-06，远大于 e^(-16)=1.1e-07 本身。\n工程启示：非最小相位系统里内部状态一旦发散，输出量的数值精度（乃至物理测量精度）都会崩塌。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/feedback-linearization#3",
+          "title": "Notebook 3：大摆角下 IOL 与 Jacobian 线性化的三组对比实验",
+          "index": 3,
+          "line": 541,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 45,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "=== 实验一：镇定，theta0 = +/-1.0 rad（约 +/-57 度），设计双重极点 -3 ===\ntheta0=+1.0  IOL: ts= 1.95s  与设计解析解最大偏差 = 3.21e-10 rad\n             Jac: ts= 1.82s  与设计解析解最大偏差 = 0.0590 rad\ntheta0=-1.0  IOL: ts= 1.95s  与设计解析解最大偏差 = 3.21e-10 rad\n             Jac: ts= 1.82s  与设计解析解最大偏差 = 0.0590 rad\n\n残余项 R(theta) = G*(sin(theta) - theta)：闭环里没被抵消掉的部分\n theta(rad)    R(rad/s^2)         等效附加刚度\n        0.2        -0.016           0.08\n        0.6        -0.424           0.71\n        1.0        -1.902           1.90\n        1.5        -6.030           4.02\n设计的 k0 = 9.00，附加刚度与之同量级 -> 当前残差改变了设计误差方程\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 437,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "=== 实验二：跟踪 theta_d = 0.8*sin(1.5*t) ===\nIOL: 12<t<=20s max|e| = 4.839e-10 rad（本次积分容差下）\nJac: 12<t<=20s max|e| = 0.06426 rad = 3.68 度，rms = 0.04043 rad\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 109552
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 141,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "=== 实验三：外环调慢（设计 omega_n=0.5, zeta=1，理论无超调），theta0=1.5 rad ===\n      IOL 越过目标的最大幅度 =   0.00%   2%调节时间 =  11.71s   theta_min = +0.0000 rad\n Jacobian 越过目标的最大幅度 =  41.33%   2%调节时间 =   5.96s   theta_min = -0.6200 rad\n初始角割线近似：附加刚度 4.02 使初角割线估计 k0 由 0.25 升至 4.27，zeta 由 1.00 降到 0.24\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 48312
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 482,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Jac bandwidth,max error,rms= 3.0 0.0642598145412474 0.040427547473243924\nJac bandwidth,max error,rms= 6.0 0.02237971246078352 0.012779313890543433\nJac bandwidth,max error,rms= 12.0 0.00645895774548233 0.0035539635420851695\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/feedback-linearization#4",
+          "title": "Notebook 4：球-梁系统的近似反馈线性化调节",
+          "index": 4,
+          "line": 729,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 29,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "初值: r=0.40 m, rdot=0.00, theta=0.35 rad (20.1 deg), thetadot=0.00\nt=12s 时: r=-0.00000, theta=0.00000, |u|max=8.066\nr 的网格2%调节时间 = 5.50 s\n梁倾角范围 = [-0.118, 0.350] rad (cos 最小值 0.939，远离奇异)\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 277,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 83244
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "被丢弃项峰值 = 0.2117 m/s^2（出现在 t = 0.21 s）\n保留项峰值   = 3.3638 m/s^2\n峰值之比     = 6.3%\nt<=6s 且 |z3|>0.2 时段内的最大瞬时比值 = 15.2%\n\n两个峰值通常不在同一时刻；瞬时比值只在上述掩码内定义。\n这些数只描述当前轨迹，不证明全时段比值<20%，也不确定吸引域。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/feedback-linearization#5",
+          "title": "Notebook 5：惯性缩放下的轨迹误差",
+          "index": 5,
+          "line": 876,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 428,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "delta,frequency factor,damping factor,late peak,exact= -0.1 0.9486832980505138 0.9486832980505138 0.022518865261121457 0.022518867455552247\ndelta,frequency factor,damping factor,late peak,exact= 0.0 1.0 1.0 0.0 0.0\ndelta,frequency factor,damping factor,late peak,exact= 0.1 1.0488088481701516 1.0488088481701516 0.01798374880459199 0.01798375003164016\nconstant gravity residual: (hat_g-g)/M=.3, Kp=4 -> e_ss= 0.075\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 81744
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/feedback-linearization#6",
+          "title": "Notebook 6：手算、习题与组件默认值复核",
+          "index": 6,
+          "line": 1136,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 33,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q3 sin,u,uJ,diff,pct= 0.7833269096274834 -9.9499614577649 -10.65 -0.7000385422351005 14.894559211300585\nangle,linearization percent,residual,secant stiffness= 0.2 0.6697909534468804 -0.015968030459265536 0.07984015229632768\nangle,linearization percent,residual,secant stiffness= 0.6 6.2619318012635095 -0.4242903192595753 0.7071505320992921\nangle,linearization percent,residual,secant stiffness= 1.0 18.839510577812124 -1.902348182305242 1.902348182305242\nangle,linearization percent,residual,secant stiffness= 1.4 42.06711488128312 -4.974603240138477 3.553288028670341\nangle,linearization percent,residual,secant stiffness= 1.5 50.37669563700873 -6.030060160751347 4.020040107167564\nExplorer a,t,x1,y,x2,u= 1.0 0.0 1.0 1.0 0.0 -2.0\nExplorer a,t,x1,y,x2,u= 1.0 8.0 0.0006708127206303045 1.1253517471925912e-07 -0.0006707001854555852 0.0006709250293222795\nExplorer a,t,x1,y,x2,u= 1.0 10.0 9.079779837134727e-05 2.061153622438558e-09 -9.079573721772483e-05 9.079985896352082e-05\nExplorer a,t,x1,y,x2,u= 0.5 0.0 1.0 1.0 0.0 -4.0\nExplorer a,t,x1,y,x2,u= 0.5 8.0 1.913097970227405e-06 1.1253517471925912e-07 -3.6011255910162917e-06 6.752117372461605e-06\nExplorer a,t,x1,y,x2,u= 0.5 10.0 4.3284226071209714e-08 2.061153622438558e-09 -8.244614489754232e-08 1.5664767887394799e-07\nExplorer a,t,x1,y,x2,u= 0.25 0.0 1.0 1.0 0.0 -8.0\nExplorer a,t,x1,y,x2,u= 0.25 8.0 2.2507033677435267e-07 1.1253517471925912e-07 -4.501406482203742e-07 9.002812964407311e-07\nExplorer a,t,x1,y,x2,u= 0.25 10.0 4.122307240628762e-09 2.061153622438558e-09 -8.244614472760815e-09 1.648922894552163e-08\nExplorer a,t,x1,y,x2,u= -0.5 0.0 1.0 1.0 -0.0 4.0\nExplorer a,t,x1,y,x2,u= -0.5 8.0 4443055.260253992 1.1253517471925912e-07 8886110.520507758 -39481462319119.3\nExplorer a,t,x1,y,x2,u= -0.5 10.0 242582597.70489514 2.061153622438558e-09 485165195.4097903 -1.1769263244817962e+17\nExplorer a,t,x1,y,x2,u= -1.0 0.0 1.0 1.0 -0.0 2.0\nExplorer a,t,x1,y,x2,u= -1.0 8.0 1987.3053247319972 1.1253517471925912e-07 1987.305324619462 -3947395.1481596623\nExplorer a,t,x1,y,x2,u= -1.0 10.0 14684.310529871833 2.061153622438558e-09 14684.310529869772 -215614291.42714465\nQ4 x1(8),x2(8),y(8)= 4443055.260253992 8886110.52050776 1.1253517471925912e-07\nexact critical 2percent settling= 3.0 1.944640567305797\nexact critical 2percent settling= 0.5 11.667843403834782\ntracking e,de,u= 0.49999999999999994 -0.7 1.58\nQ1,Q2,Q5 x,drift1,drift2,z,dz= -1.0 0.3 -3.4414709848078964 0.78 [-1.   0.6] [0.6 0.6]\nQ1,Q2,Q5 x,drift1,drift2,z,dz= 0.7 -0.4 0.7702176872376909 -0.0719999999999999 [ 0.7   -0.596] [-0.596  0.6  ]\nQ1,Q2,Q5 x,drift1,drift2,z,dz= 2.0 1.0 20.90929742682568 10.0 [2. 5.] [5.  0.6]\nQ2 next coefficient at x1=0,x2=1= 4.0\nball beam linear poles= [-2.00043433+0.j         -1.99999994+0.00043426j -1.99999994-0.00043426j\n -1.9995658 +0.j        ]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "nonlinear/feedback-linearization",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 6,
+    "enabled": 6,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 6,
+    "codeOnly": 0
+  }
+}

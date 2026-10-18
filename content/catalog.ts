@@ -2296,52 +2296,52 @@ export const catalog: Chapter[] = [
         "title": "反馈线性化",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "先补上重力",
+            "title": "先补上重力"
           },
           {
-            "slug": "仿射非线性系统与lie导数",
-            "title": "仿射非线性系统与Lie导数"
+            "slug": "沿状态求导",
+            "title": "沿状态求导"
           },
           {
-            "slug": "相对阶严格定义",
-            "title": "相对阶严格定义"
+            "slug": "相对阶",
+            "title": "相对阶"
           },
           {
-            "slug": "输入-输出线性化",
-            "title": "输入-输出线性化"
+            "slug": "输出线性化",
+            "title": "输出线性化"
           },
           {
-            "slug": "零动态与内部稳定性",
-            "title": "零动态与内部稳定性"
+            "slug": "零动态",
+            "title": "零动态"
           },
           {
             "slug": "全状态线性化",
             "title": "全状态线性化"
           },
           {
-            "slug": "坐标变换到brunovsky标准型",
-            "title": "坐标变换到Brunovsky标准型"
+            "slug": "变换坐标",
+            "title": "变换坐标"
           },
           {
-            "slug": "应用案例倒立摆镇定",
-            "title": "应用案例：倒立摆镇定"
+            "slug": "倒立摆",
+            "title": "倒立摆"
           },
           {
-            "slug": "应用案例球-梁系统",
-            "title": "应用案例：球-梁系统"
+            "slug": "球梁",
+            "title": "球梁"
           },
           {
-            "slug": "应用案例机器人计算力矩控制",
-            "title": "应用案例：机器人计算力矩控制"
+            "slug": "计算力矩",
+            "title": "计算力矩"
           },
           {
-            "slug": "与jacobian线性化的对比",
-            "title": "与Jacobian线性化的对比"
+            "slug": "两种线性化",
+            "title": "两种线性化"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2358,7 +2358,8 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "nonlinear/lyapunov-stability",
-          "math/diff-geometry"
+          "math/diff-geometry",
+          "modern/state-feedback"
         ],
         "level": "grad",
         "type": "theory",
