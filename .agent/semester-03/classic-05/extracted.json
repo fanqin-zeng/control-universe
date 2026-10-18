@@ -1,0 +1,180 @@
+{
+  "source": "content/classic/frequency-domain-analysis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 9,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 270,
+      "title": "正弦稳态与Bode复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 280,
+          "delim": "`",
+          "code": "w=np.logspace(-2,3,601)\r\nG=ct.tf([10,10],[.01,.25,1,0])\r\nmag,phase,omega=ct.frequency_response(G,w)\r\nassert np.ptp(phase)>1\r\nfig,ax=plt.subplots(2,1,figsize=(7,5),sharex=True)\r\nax[0].semilogx(omega,20*np.log10(mag));ax[0].set_ylabel('Magnitude (dB)')\r\nax[1].semilogx(omega,np.degrees(phase));ax[1].set_ylabel('Phase (deg)');ax[1].set_xlabel('omega (rad/s)')\r\nplt.tight_layout();plt.show()\r\nfor q in [1,5,20]:\r\n h=ct.evalfr(G,1j*q); print('Bode example',q,abs(h),20*np.log10(abs(h)),np.angle(h,deg=True))\r\nfor q in [.1,1,10]:\r\n h=1/(1+1j*q);print('RC normalized sine',q,abs(h),np.angle(h,deg=True))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 334,
+      "title": "归一化与裕度",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 344,
+          "delim": "`",
+          "code": "G=ct.tf([10],[1,8,17,10])\r\nwg=np.sqrt(17);h=ct.evalfr(G,1j*wg)\r\ngm,pm,wpc,wgc=ct.margin(G)\r\nprint('G(0), phase crossing, complex response:',ct.dcgain(G),wg,h)\r\nprint('GM linear/dB, PM, wpc,wgc:',gm,20*np.log10(gm),pm,wpc,wgc)\r\nprint('all crossings:',ct.stability_margins(G,returnall=True))\r\nprint('closed poles:',ct.poles(ct.feedback(G)))\r\nassert abs(h.real+10/126)<1e-12 and abs(h.imag)<1e-12\r\nassert abs(gm-12.6)<1e-10 and not np.isfinite(wgc)\r\nprint('No finite positive gain crossing: PM is unavailable, not a measured finite angle.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 455,
+      "title": "增益与Bode交点",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 465,
+          "delim": "`",
+          "code": "fig,ax=plt.subplots(2,1,figsize=(7,5),sharex=True)\r\nfor a,b,ks in [(1,10,[10,50,110,150]),(1,2,[5,6,10])]:\r\n for k in ks:\r\n  G=ct.tf([k],[1,a+b,a*b,0]);gm,pm,wpc,wgc=ct.margin(G)\r\n  print('family a,b,K / GM dB / PM / wc / poles',a,b,k,20*np.log10(gm),pm,wgc,ct.poles(ct.feedback(G)))\r\n  if b==10:\r\n   mag,ph,w=ct.frequency_response(G,np.logspace(-2,3,601));ax[0].semilogx(w,20*np.log10(mag),label=str(k));ax[1].semilogx(w,np.degrees(ph))\r\nax[0].axhline(0,color='black');ax[0].legend(title='K');ax[0].set_ylabel('dB');ax[1].set_ylabel('deg');ax[1].set_xlabel('rad/s')\r\nplt.tight_layout();plt.show()\r\nprint('Routh strict intervals: 0<K<110; 0<K<6. Equality is a boundary.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 655,
+      "title": "Nyquist完整围线",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 665,
+          "delim": "`",
+          "code": "def contour(R,eps):\r\n w=np.geomspace(eps,R,10001)\r\n return np.concatenate([-1j*w[::-1],eps*np.exp(1j*np.linspace(-np.pi/2,np.pi/2,3001)),1j*w,R*np.exp(1j*np.linspace(np.pi/2,-np.pi/2,3001))])\r\ndef winding(fun,R,eps):\r\n v=1+fun(contour(R,eps));return -(np.unwrap(np.angle(v))[-1]-np.unwrap(np.angle(v))[0])/(2*np.pi)\r\nfor R,eps in [(1e3,1e-3),(1e4,1e-4)]:\r\n for k in [5,10]:\r\n  n=winding(lambda s:k/(s*(s+1)*(s+2)),R,eps)\r\n  roots=np.roots([1,3,2,k]);print('K,R,eps,Ncw,Z:',k,R,eps,n,sum(roots.real>1e-8))\r\n  assert abs(n-(0 if k==5 else 2))<1e-8\r\n n=winding(lambda s:2/(s-1),R,eps);print('P=1, K=2, Ncw,Z:',n,1+n);assert abs(n+1)<1e-8\r\nw=np.logspace(-3,3,3001);v=5/(1j*w*(1j*w+1)*(1j*w+2))\r\nplt.figure(figsize=(5,5));plt.plot(v.real,v.imag);plt.plot(v.real,-v.imag,color='gray')\r\nt=np.linspace(0,2*np.pi,301);plt.plot(np.cos(t),np.sin(t),'--');plt.plot([-1],[0],'rx');plt.xlim(-3,2);plt.ylim(-3,3);plt.gca().set_aspect('equal');plt.xlabel('Real');plt.ylabel('Imag');plt.show()\r\nprint('Plot is a clipped frequency trace; winding above uses the full closed contour. K=6 is excluded from winding.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 698,
+      "title": "稳定判据与API核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 708,
+          "delim": "`",
+          "code": "G=ct.tf([50],[1,11,10,0]);gm,pm,wpc,wgc=ct.margin(G)\r\nprint('50/[s(s+1)(s+10)] margins',gm,20*np.log10(gm),pm,wpc,wgc)\r\nmag,phase,w=ct.frequency_response(G,[.1,1,10])\r\nfor i,q in enumerate(w):\r\n h=ct.evalfr(G,1j*q);assert abs(mag[i]*np.exp(1j*phase[i])-h)<1e-10\r\n print('omega, abs, phase degrees',q,mag[i],np.degrees(phase[i]))\r\nfor q in [.1,1,10,100]:\r\n allpass=(1-1j*q/10)/(1+1j*q/10)\r\n print('allpass',q,abs(allpass),np.angle(allpass,deg=True));assert abs(abs(allpass)-1)<1e-12\r\nprint('Use all crossings plus P/N/Z for nonminimum-phase or multiple-crossing loops; one PM alone is insufficient.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 861,
+      "title": "二阶频时指标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 871,
+          "delim": "`",
+          "code": "def step_value(z,t):\r\n A=np.array([[0.,1.],[-1.,-2*z]]);B=np.array([0.,1.]);return float((np.linalg.solve(A,(expm(A*t)-np.eye(2)))@B)[0])\r\nfor z in [.3,.5,.707,1]:\r\n end=np.pi/np.sqrt(1-z*z) if z<1 else 20\r\n tr=brentq(lambda t:step_value(z,t)-.9,0,end)-brentq(lambda t:step_value(z,t)-.1,0,end)\r\n wb=brentq(lambda w:abs(1/((1j*w)**2+2*z*1j*w+1))**2-.5,0,4)\r\n L=ct.tf([1],[1,2*z,0]);gm,pm,wpc,wgc=ct.margin(L)\r\n mr=1/(2*z*np.sqrt(1-z*z)) if z<1/np.sqrt(2) else 1\r\n mp=100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0\r\n print('z,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn:',z,tr,wb,tr*wb,mr,20*np.log10(mr),mp,pm,wgc)\r\nfor target in [30,45,60,75]:\r\n z=brentq(lambda z:ct.margin(ct.tf([1],[1,2*z,0]))[1]-target,.01,2)\r\n print('PM to exact zeta and MP',target,z,100*np.exp(-np.pi*z/np.sqrt(1-z*z)) if z<1 else 0)\r\nprint('default z=.5,wn=8:',ct.frequency_response(ct.tf([64],[1,8,64]),[8])[0],ct.frequency_response(ct.tf([64],[1,8,64]),[8])[1]*180/np.pi)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "line": 1033,
+      "title": "RC与路面模型",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1043,
+          "delim": "`",
+          "code": "for q in [10,100,1000,10000,100000]:\r\n h=1/(1+1j*q*.001);print('RC rad/s,abs,dB,deg:',q,abs(h),20*np.log10(abs(h)),np.angle(h,deg=True))\r\nprint('R1000 C1uF: T=.001 s, wc=1000 rad/s, fc=',1000/(2*np.pi),'Hz')\r\nfor z in [.3,.707,1]:\r\n def mag(w):return abs((1+2*z*1j*w)/(1-w*w+2*z*1j*w))\r\n p=minimize_scalar(lambda w:-mag(w),bounds=(0,3),method='bounded',options={'xatol':1e-13})\r\n high=20*np.log10(mag(1e5)/mag(1e4))\r\n print('road z,c for m250 k16000, peak rad/s,dB,high decade slope:',z,4000*z,8*p.x,20*np.log10(mag(p.x)),high)\r\nprint('Road model has a numerator zero; even z=1 has a resonance. No vehicle safety conclusion follows from displacement alone.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "line": 1104,
+      "title": "时延与Padé",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1114,
+          "delim": "`",
+          "code": "for w in [.1,1,2,5]:\r\n base=-90-np.degrees(np.arctan(w))\r\n print('w, base, exact, Pade (deg)',w,base,base-np.degrees(.5*w),base-2*np.degrees(np.arctan(.25*w)))\r\nfor k in [.5,1,5]:\r\n wc=brentq(lambda w:w*np.sqrt(1+w*w)-k,1e-10,10)\r\n edge=np.arctan(1/wc)/wc\r\n pade=ct.tf([-k*.25,k],[.25,1.25,1,0]);poles=ct.poles(ct.feedback(pade))\r\n print('K,wc,exact delay limit, exact PM at tau .5,Pade poles',k,wc,edge,np.degrees(np.arctan(1/wc)-.5*wc),poles)\r\n assert (edge>.5)==bool(np.max(poles.real)<0)\r\nprint('For this family each crossing moves roots into RHP as delay increases; first limit is the strict stability edge, equality excluded.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "line": 1477,
+      "title": "九题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nfrom scipy import signal\r\nfrom scipy.optimize import brentq, minimize_scalar\r\nfrom scipy.linalg import expm\r\nimport matplotlib.pyplot as plt\r\nprint(\"python-control\", ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1487,
+          "delim": "`",
+          "code": "print('Q1 RC T=.001; wc1000 rad/s; fc',1000/(2*np.pi))\r\nfor w in [100,1000,10000]:\r\n h=1/(1+.001j*w);print(w,20*np.log10(abs(h)),np.angle(h,deg=True))\r\nprint('Q2 normalized gain,corner,asymptote at corner:',100/10,10,20*np.log10(10)-20*np.log10(10))\r\nu=brentq(lambda u:(1-u)**2+.36*u-2,1,4);print('Q3 u,bandwidth',u,5*np.sqrt(u))\r\nprint('Q3 resonance rad/s,linear,dB:',5*np.sqrt(1-2*.3**2),1/(2*.3*np.sqrt(1-.3**2)),20*np.log10(1/(2*.3*np.sqrt(1-.3**2))))\r\nh=10*(1+1j)/(1j*(1+1j/5)*(1+1j/50));print('Q4 exact dB,phase at 1:',20*np.log10(abs(h)),np.angle(h,deg=True))\r\nwg=np.sqrt(10);print('Q5 wg,Kcrit:',wg,abs(1j*wg*(1j*wg+2)*(1j*wg+5)))\r\nfor k in [0,35,70,100]:print('Q5 K,poles:',k,np.roots([1,7,10,k]))\r\nprint('Q6 fixed z=.5 bandwidth2/20')\r\ndef y(t):return 1-np.exp(-t/2)*(np.cos(np.sqrt(.75)*t)+np.sin(np.sqrt(.75)*t)/np.sqrt(3))\r\ntr=brentq(lambda t:y(t)-.9,0,3.7)-brentq(lambda t:y(t)-.1,0,3.7)\r\nratio=np.sqrt(.5+np.sqrt(1.25))\r\nprint('tr2,tr20,MP:',tr*ratio/2,tr*ratio/20,100*np.exp(-np.pi/np.sqrt(3)))\r\nprint('Q7 wg,Re,GMlinear,GMdB:',np.sqrt(17),-10/126,12.6,20*np.log10(12.6))\r\nfor w in [0,10,1e10]:\r\n h=(1-1j*w/10)/(1+1j*w/10);print('Q8 omega,abs,deg:',w,abs(h),np.angle(h,deg=True))\r\nfor w in [.1,1,2,5]:\r\n base=-90-np.degrees(np.arctan(w));print('Q9:',w,base,base-np.degrees(.5*w),base-2*np.degrees(np.arctan(.25*w)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

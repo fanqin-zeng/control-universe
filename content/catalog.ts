@@ -1161,24 +1161,24 @@ export const catalog: Chapter[] = [
             "title": "Bode 图"
           },
           {
-            "slug": "在bode图上读取裕度",
-            "title": "在Bode图上读取裕度"
+            "slug": "bode裕度",
+            "title": "Bode裕度"
           },
           {
             "slug": "nyquist-图",
             "title": "Nyquist 图"
           },
           {
-            "slug": "在nyquist图上读取裕度",
-            "title": "在Nyquist图上读取裕度"
+            "slug": "nyquist裕度",
+            "title": "Nyquist裕度"
           },
           {
             "slug": "稳定性判据",
             "title": "稳定性判据"
           },
           {
-            "slug": "频域指标与时域指标的对应",
-            "title": "频域指标与时域指标的对应"
+            "slug": "频域与时域",
+            "title": "频域与时域"
           },
           {
             "slug": "工程实例",
