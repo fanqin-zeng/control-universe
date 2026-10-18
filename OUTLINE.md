@@ -87,15 +87,15 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 6.1 | 采样与量化 | discrete-time-freq | 🟨 有正文待审校 | undergrad | theory | 7 | classic/frequency-domain-analysis<br>math/fourier-analysis |
-| 6.2 | 离散时间系统 | discrete-time-systems | ⬜ 骨架（占位页） | undergrad | theory | 8 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>math/z-transform |
-| 6.3 | 差分方程 | difference-equation | ⬜ 骨架（占位页） | undergrad | math | 9 | discrete-sampled/discrete-time-systems<br>math/z-transform |
-| 6.4 | Z域系统分析 | z-transform-analysis | 🟨 有正文待审校 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
-| 6.5 | 离散系统稳定性 | discrete-stability-criteria | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/z-transform-analysis<br>modern/lyapunov-modern |
-| 6.6 | 离散化方法 | discretization-methods | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/discrete-time-freq<br>discrete-sampled/discrete-time-systems<br>math/numerical-methods<br>discrete-sampled/z-transform-analysis |
-| 6.7 | 采样周期 | sampling-period-selection | 🟨 有正文待审校 | undergrad | impl | 12 | discrete-sampled/discrete-stability-criteria<br>discrete-sampled/discretization-methods |
-| 6.8 | 采样数据系统 | sampled-data-systems | ⬜ 骨架（占位页） | grad | theory | 13 | discrete-sampled/discretization-methods<br>discrete-sampled/sampling-period-selection |
-| 6.9 | 离散最优控制 | discrete-optimal-control | ⬜ 骨架（占位页） | grad | theory | 12 | discrete-sampled/discrete-stability-criteria<br>modern/lqr-controller |
-| 6.10 | 事件触发控制 | event-triggered-control | ⬜ 骨架（占位页） | grad | theory | 14 | discrete-sampled/sampled-data-systems<br>nonlinear/lyapunov-stability |
+| 6.2 | 离散时间系统 | discrete-time-systems | ✅ 已交付 v1.3 | undergrad | theory | 8 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>math/z-transform |
+| 6.3 | 差分方程 | difference-equation | ✅ 已交付 v1.3 | undergrad | math | 9 | discrete-sampled/discrete-time-systems<br>math/z-transform |
+| 6.4 | Z域系统分析 | z-transform-analysis | ✅ 已交付 v1.3 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
+| 6.5 | 离散系统稳定性 | discrete-stability-criteria | ✅ 已交付 v1.3 | undergrad | theory | 11 | discrete-sampled/z-transform-analysis<br>modern/lyapunov-modern |
+| 6.6 | 离散化方法 | discretization-methods | ✅ 已交付 v1.3 | undergrad | theory | 11 | discrete-sampled/discrete-time-freq<br>discrete-sampled/discrete-time-systems<br>math/numerical-methods<br>discrete-sampled/z-transform-analysis |
+| 6.7 | 采样周期 | sampling-period-selection | ✅ 已交付 v1.3 | undergrad | impl | 12 | discrete-sampled/discrete-stability-criteria<br>discrete-sampled/discretization-methods |
+| 6.8 | 采样数据系统 | sampled-data-systems | ✅ 已交付 v1.3 | grad | theory | 13 | discrete-sampled/discretization-methods<br>discrete-sampled/sampling-period-selection |
+| 6.9 | 离散最优控制 | discrete-optimal-control | ✅ 已交付 v1.3 | grad | theory | 12 | discrete-sampled/discrete-stability-criteria<br>modern/lqr-controller |
+| 6.10 | 事件触发控制 | event-triggered-control | ✅ 已交付 v1.3 | grad | theory | 14 | discrete-sampled/sampled-data-systems<br>nonlinear/lyapunov-stability |
 
 ## 7. 控制实现 (implementation)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 53（status = v1.3）
-- **有正文待审校**: 25（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 127（status = empty，渲染占位页）
+- **已交付 v1.3**: 62（status = v1.3）
+- **有正文待审校**: 21（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **骨架占位**: 122（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 152（= draft 25 + empty 127 + 无 status 0）
-- **有 MDX 正文**: 78
-- **catalog 小节总数**: 914
-- **讨论日志**: 74 篇（覆盖 53 门；有 MDX 无日志 25 门）
-- **交互组件**: 68 个文件（被正文引用 68，孤儿 0）
+- **未完成 v1.3**: 143（= draft 21 + empty 122 + 无 status 0）
+- **有 MDX 正文**: 83
+- **catalog 小节总数**: 954
+- **讨论日志**: 83 篇（覆盖 62 门；有 MDX 无日志 21 门）
+- **交互组件**: 75 个文件（被正文引用 75，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

@@ -1,0 +1,100 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8981",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S7": 3,
+    "S6": 2
+  },
+  "failLessons": [
+    "discrete-sampled/z-transform-analysis"
+  ],
+  "lessons": [
+    {
+      "key": "discrete-sampled/z-transform-analysis",
+      "file": "content/discrete-sampled/z-transform-analysis.mdx",
+      "level": "FAIL",
+      "notebooks": 3,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 0,
+          "index": 1,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "'blue-' is not a valid format string (unrecognized character 'l')",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[3], line 57\n     53         p = re + 1j * im\n     54         p_conj = re - 1j * im\n     55         h = (p ** (t_samples / Ts) + p_conj ** (t_samples / Ts)) / 2 / Ts\n     56 \n---> 57     markerline, stemlines, baseline = ax.stem(t_samples, h, linefmt=colors[i]+'-', \n     58                                                 markerfmt=colors[i]+'o', basefmt='k-')\n     59     plt.setp(stemlines, linewidth=1.5)\n     60     plt.setp(markerline, markersize=4)\n",
+            "    [... skipping hidden 1 frame]\n"
+          ],
+          "stderr": "",
+          "images": 1
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "Font 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\n",
+          "nOut": 7
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 3
+        }
+      ],
+      "findings": [
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 1（:206） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 207
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 2（:477） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 478
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 3（:592） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 593
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 1 cell 2（:291）执行报错 ValueError: 'blue-' is not a valid format string (unrecognized character 'l')\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[3], line 57\n     53         p = re + 1j * im\n     54         p_conj = re - 1j * im\n     55         h = (p ** (t_samples / Ts) + p_conj ** (t_samples / Ts)) / 2 / Ts\n     56 \n---> 57     markerline, stemlines, baseline = ax.stem(t_samples, h, linefmt=colors[i]+'-', \n     58                                                 markerfmt=colors[i]+'o', basefmt='k-')\n     59     plt.setp(stemlines, linewidth=1.5)\n     60     plt.setp(markerline, markersize=4)\n\n              [... skipping hidden 1 frame]\n",
+          "line": 291
+        },
+        {
+          "level": "WARN",
+          "code": "S6",
+          "msg": "良性 stderr 4 行：matplotlib 字体缺字形（负号 U+2212，不影响出图）（完整原文见 --out 导出的 JSON）",
+          "line": null
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,14 @@ rejects('遗漏课程进度会失败',()=>({checklist:input.checklist.replace(/^
 rejects('跳阶段打勾会失败',()=>({checklist:input.checklist.replace(/^\| MATH-01 .*$/m,'| MATH-01 | [ ] | [x] | [ ] | [ ] | [ ] | [ ] | — |')}),/阶段跳勾 MATH-01/);
 rejects('无master提交证据不能交付',()=>({checklist:input.checklist.replace(/^\| MATH-01 .*$/m,'| MATH-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/fake.md |')}),/合并缺commit证据/);
 rejects('不能跳过前课',()=>({checklist:input.checklist.replace(/^\| MATH-01 .*$/m,'| MATH-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |')}),/跳过未合入前课/);
+rejects('移除用户换课登记后仍拒绝跳过前课',()=>({plan:input.plan.replace(/<!-- S3-ORDER-EXCEPTIONS-BEGIN -->[\s\S]*?<!-- S3-ORDER-EXCEPTIONS-END -->/,'')}),/跳过未合入前课 DISCRETE-02/);
+rejects('DISCRETE-02例外本身不放行DISCRETE-03',()=>({plan:input.plan.replace(/^\| DISCRETE-03 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-03 .*$/m,'| DISCRETE-03 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-03/);
+rejects('其它课例外本身不放行DISCRETE-04',()=>({plan:input.plan.replace(/^\| DISCRETE-04 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-04 .*$/m,'| DISCRETE-04 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-04/);
+rejects('其它课例外本身不放行DISCRETE-05',()=>({plan:input.plan.replace(/^\| DISCRETE-05 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-05 .*$/m,'| DISCRETE-05 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-05/);
+rejects('其它课例外本身不放行DISCRETE-06',()=>({plan:input.plan.replace(/^\| DISCRETE-06 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-06 .*$/m,'| DISCRETE-06 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-06/);
+rejects('其它课例外本身不放行DISCRETE-07',()=>({plan:input.plan.replace(/^\| DISCRETE-07 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-07 .*$/m,'| DISCRETE-07 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-07/);
+rejects('换课例外不能登记不存在的前课',()=>({plan:input.plan.replace('| DISCRETE-02 | DISCRETE-01 |','| DISCRETE-02 | NONEXISTENT-01 |')}),/顺序例外不是有效前课/);
+rejects('换课例外必须有用户依据',()=>({plan:input.plan.replace('2026-10-19用户明确要求“继续DISCRETE-02”','模型自行决定')}),/顺序例外缺用户换课依据/);
 rejects('不能改成长章名',()=>({plan:input.plan.replace('| 数学基础 | 18 |','| 数学基础：控制理论所需的全部工具 | 18 |')}),/章名过长/);
 test('证据文件不存在会失败',()=>{
   const result=validateSemester03({...input,evidence:true,checklist:input.checklist.replace('.agent/semester-03-baseline.json;','.agent/semester-03-never-exists.json;')});
@@ -41,3 +49,11 @@ test('master普通提交和历史合并均可交付，未进入master或不存�
   assert.doesNotThrow(()=>assertCommitOnMaster(root,git('rev-parse','HEAD')));
   assert.doesNotThrow(()=>assertCommitOnMaster(root,other));
 });
+
+rejects('其它课例外本身不放行DISCRETE-08',()=>({plan:input.plan.replace(/^\| DISCRETE-08 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-08 .*$/m,'| DISCRETE-08 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-08/);
+
+rejects('其它课例外本身不放行DISCRETE-09',()=>({plan:input.plan.replace(/^\| DISCRETE-09 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-09 .*$/m,'| DISCRETE-09 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-09/);
+
+rejects('其它课例外本身不放行DISCRETE-10',()=>({plan:input.plan.replace(/^\| DISCRETE-10 \| DISCRETE-01 \|.*\r?\n/m,''),checklist:input.checklist.replace(/^\| DISCRETE-10 .*$/m,'| DISCRETE-10 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 DISCRETE-10/);
+
+rejects('离散课例外不自动放行IMPL-01',()=>({checklist:input.checklist.replace(/^\| IMPL-01 .*$/m,'| IMPL-01 | [x] | [ ] | [ ] | [ ] | [ ] | [ ] | docs/discuss-log/semester-03/fake.md |')}),/跳过未合入前课 IMPL-01/);

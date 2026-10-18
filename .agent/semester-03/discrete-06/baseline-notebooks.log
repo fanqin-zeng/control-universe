@@ -1,0 +1,83 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8981 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+discrete-sampled/discretization-methods  [FAIL]  3 个 notebook · 4 个 cell
+      WARN S7  Notebook 1（:187） 传了组件没有的属性 language="python" → 被静默忽略
+      WARN S7  Notebook 2（:379） 传了组件没有的属性 language="python" → 被静默忽略
+      WARN S7  Notebook 3（:704） 传了组件没有的属性 language="python" → 被静默忽略
+      FAIL S6  Notebook 1 cell 1（:198）执行报错 ValueError: Unknown transformation method 'forward_euler'
+          ---------------------------------------------------------------------------
+          ValueError                                Traceback (most recent call last)
+          Cell In[2], line 11
+      7 
+      8 Ts = 0.01  # 采样周期
+      9 
+     10 # 四种离散化方法
+---> 11 K_fwd = ctrl.c2d(K_cont, Ts, method='forward_euler')
+     12 K_bwd = ctrl.c2d(K_cont, Ts, method='backward_euler')
+     13 K_tus = ctrl.c2d(K_cont, Ts, method='tustin')
+     14 K_mp  = ctrl.c2d(K_cont, Ts, method='matched')
+
+          File ~\AppData\Local\Programs\Python\Python313\Lib\site-packages\control\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)
+     80 if not isctime(sysc):
+     81     raise ValueError("First argument must be continuous-time system")
+---> 83 return sysc.sample(Ts,
+     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,
+     85     name=name, copy_names=copy_names, **kwargs)
+
+      FAIL S6  Notebook 3 cell 1（:716）执行报错 ValueError: Time steps `T` must match sampling time
+          ---------------------------------------------------------------------------
+          ValueError                                Traceback (most recent call last)
+          Cell In[2], line 26
+     22 
+     23 # 阶跃响应对比
+     24 t = np.linspace(0, 3, 3000)
+     25 t_c, y_c = ctrl.step_response(T_cont, T=t)
+---> 26 t_d, y_d = ctrl.step_response(Tz, T=t)
+     27 
+     28 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+     29 
+
+          File ~\AppData\Local\Programs\Python\Python313\Lib\site-packages\control\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)
+   1506 U = np.zeros((sys.ninputs, T.size))
+   1507 U[i, :] = np.ones_like(T)
+-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)
+   1510 inpidx = i if input is None else 0
+   1511 yout[:, inpidx, :] = response.y if output is None \
+   1512     else response.y[output]
+
+      FAIL S6  Notebook 3 cell 2（:785）执行报错 ValueError: Time steps `T` must be multiples of sampling time
+          ---------------------------------------------------------------------------
+          ValueError                                Traceback (most recent call last)
+          Cell In[3], line 19
+     15 for i, Ts_i in enumerate(Ts_values):
+     16     Gz_i = ctrl.c2d(G, Ts_i, method='zoh')
+     17     Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')
+     18     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+---> 19     t_i, y_i = ctrl.step_response(Tz_i, T=t_step)
+     20 
+     21     axes[0].plot(t_i, y_i, color=colors[i], linewidth=1.5, 
+     22                  label=f'Ts = {Ts_i*1000:.0f} ms')
+
+          File ~\AppData\Local\Programs\Python\Python313\Lib\site-packages\control\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)
+   1506 U = np.zeros((sys.ninputs, T.size))
+   1507 U[i, :] = np.ones_like(T)
+-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)
+   1510 inpidx = i if input is None else 0
+   1511 yout[:, inpidx, :] = response.y if output is None \
+   1512     else response.y[output]
+
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 3 个 notebook · 4 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 4 个 cell，其中 error 3 个
+      按判据：S6×3  S7×3
+      FAIL 课程：discrete-sampled/discretization-methods
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/discrete-06/baseline-notebooks.json

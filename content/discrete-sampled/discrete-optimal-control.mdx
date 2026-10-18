@@ -1,0 +1,229 @@
+---
+title: 离散最优控制
+description: 从最后一次动作倒推有限步LQR，理解终端权重、价值函数与输入约束。
+---
+
+# 离散最优控制
+
+假设你在调节一个保温箱的温度，还有三次调整机会，随后就要交给下一班。你既想让交班时的温差小一些，也不想每次都把加热器开得很猛。第一次该用多大力？最后一次还值得调整吗？
+
+[LQR控制](/modern/lqr-controller)已经把“偏差”和“用力”写成了代价。这节课把时间换成一拍一拍的更新，认真算一遍**只剩有限次动作时的最优选择**。先从最后一步算起，再把答案往前传，比同时猜出所有动作容易得多。
+
+## 只剩几次调整
+
+用一个极简模型练习：$x_k$ 是除以参考温差后的偏差，$u_k$ 是本次动作带来的归一化温差变化。
+
+$$
+x_{k+1}=x_k+u_k,\qquad x_0=1.
+$$
+
+正输入使温度升高，负输入使温度降低。这里假设两种动作都能实现；模型忽略散热、滞后和扰动，是教学用的离散积分器，不是某款保温箱的实测模型。
+
+允许做 $N$ 次动作：$u_0,\ldots,u_{N-1}$。对应的状态却有 $N+1$ 个：$x_0,\ldots,x_N$。$x_N$ 是最后一次动作之后的结果，不再配一个 $u_N$。
+
+给每拍偏差和输入分别记一笔代价，再给交班时的偏差记一笔：
+
+$$
+J=\sum_{k=0}^{N-1}(q x_k^2+r u_k^2)+s x_N^2,
+\qquad q\geq0,\ r>0,\ s\geq0.
+$$
+
+$q$、$r$、$s$ 是设计者选的权重。本课先取 $N=3$、$q=r=s=1$。所谓最优，就是在**这个模型、这组权重和这三次动作**内让 $J$ 最小。输入平方只是用力程度的惩罚，不自动等于电费。
+
+## 从最后一步倒推
+
+到了第 $N$ 拍，已经没有动作可选，只剩终端代价 $s x_N^2$。把“从第 $k$ 拍起，未来能做到的最小总代价”叫作**价值函数** $V_k(x)$。这里的“价值”就是成本，并非奖励，越小越好。
+
+$$
+V_N(x)=s x^2.
+$$
+
+如果已经知道下一拍的价值函数，当前只需选一个 $u$：
+
+$$
+V_k(x)=\min_u\left[qx^2+ru^2+V_{k+1}(x+u)\right].
+$$
+
+这就是本课用到的 **Bellman递推**：眼前这一笔，加上以后最省的那几笔。它成立的前提是当前状态已经包含预测未来所需的信息；本例是已知状态、确定模型、无约束的有限步问题。
+
+假设下一拍已经算成 $V_{k+1}(x)=P_{k+1}x^2$。把它代入，关于 $u$ 配方：
+
+$$
+qx^2+ru^2+P_{k+1}(x+u)^2
+=(r+P_{k+1})\left(u+\frac{P_{k+1}}{r+P_{k+1}}x\right)^2
++\left(q+P_{k+1}-\frac{P_{k+1}^2}{r+P_{k+1}}\right)x^2.
+$$
+
+第一项非负，让括号为零就取得唯一最小值。因此
+
+$$
+u_k^*=-K_kx_k,\qquad K_k=\frac{P_{k+1}}{r+P_{k+1}},
+\qquad P_k=q+\frac{rP_{k+1}}{r+P_{k+1}},\qquad P_N=s.
+$$
+
+这串从 $P_N$ 往回算的式子叫**离散Riccati递推**。注意 $K_k$ 用的是 $P_{k+1}$，不是 $P_k$：动作先改变下一拍状态，再影响后面的代价。
+
+以三步、所有权重为一为例，从 $P_3=1$ 开始：
+
+| 当前拍 $k$ | 下一拍系数 $P_{k+1}$ | 当前增益 $K_k$ | 当前系数 $P_k$ |
+|---|---|---|---|
+| 2 | $1$ | $1/2$ | $3/2$ |
+| 1 | $3/2$ | $3/5$ | $8/5$ |
+| 0 | $8/5$ | $8/13$ | $21/13$ |
+
+![上排由终端P3向左倒推P和K，下排从初态x0向右执行三次控制](/images/discrete-optimal-timeline.svg)
+
+## 向前执行
+
+增益表算好后，实际运行按正常的时间顺序：读 $x_k$，算 $u_k=-K_kx_k$，再更新状态。倒推的是设计计算，设备不会倒着运行。
+
+| 拍 $k$ | 状态 $x_k$ | 输入 $u_k$ |
+|---|---|---|
+| 0 | $1$ | $-8/13$ |
+| 1 | $5/13$ | $-3/13$ |
+| 2 | $2/13$ | $-1/13$ |
+| 3 | $1/13$ | 无动作 |
+
+逐拍把状态平方、输入平方以及终端平方相加，得到
+
+$$
+J^*=\frac{21}{13}\approx1.615385=P_0x_0^2.
+$$
+
+同一个答案，一边来自轨迹累加，一边来自价值函数，正好相互核对。终点仍有 $1/13$ 的偏差：**惩罚终点偏差，并不等于要求终点严格为零**。
+
+<DiscreteOptimalExplorer />
+
+先按“不计终点”。当 $s=0$，最后一次输入变成零：它不能改变已经记账的 $x_{N-1}$，又没有 $x_N$ 的惩罚，继续动作只会增加 $r u_{N-1}^2$。这不是控制器偷懒，而是我们给它的目标里没有交班后的损失。
+
+<JupyterNotebook
+ title="从倒推增益到正向轨迹"
+ setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_discrete_are
+def finite(N=3,s=1.0):
+    P=np.zeros(N+1);K=np.zeros(N);P[N]=s
+    for k in range(N-1,-1,-1):
+        K[k]=P[k+1]/(1+P[k+1]);P[k]=1+P[k+1]/(1+P[k+1])
+    x=np.ones(N+1);u=np.zeros(N)
+    for k in range(N):
+        u[k]=-K[k]*x[k];x[k+1]=x[k]+u[k]
+    stage=x[:-1]**2+u**2
+    return dict(P=P,K=K,x=x,u=u,stage=stage,terminal=s*x[-1]**2,J=float(sum(stage)+s*x[-1]**2))
+`}
+ cells={[{code:`default=finite()
+for name in ['P','K','x','u']:
+    print(name,np.array2string(default[name],precision=9))
+print('J=%.9f, P0*x0^2=%.9f'%(default['J'],default['P'][0]))
+# Eliminate states: X = 1 + G U. This solves all inputs at once.
+G=np.tril(np.ones((3,3)));H=np.eye(3)+G.T@G
+dense_u=np.linalg.solve(H,-G.T@np.ones(3))
+print('dense difference=%.9f'%np.max(abs(dense_u-default['u'])))
+fig,ax=plt.subplots(figsize=(6,3))
+ax.plot(range(4),default['x'],'o-',label='state')
+ax.stem(range(3),default['u'],linefmt='C1-',markerfmt='C1o',basefmt=' ')
+ax.set(xlabel='k',ylabel='normalized value',xlim=(-.1,3.1),ylim=(-.8,1.1));ax.legend();ax.grid();plt.show()
+`},{code:`terminal_cases=[]
+for s in [0.,1.,8.]:
+    z=finite(3,s)
+    terminal_cases.append([s,float(z['K'][0]),float(z['u'][-1]),float(z['x'][-1]),z['J']])
+    print('s=%.0f K0=%.9f last_u=%.9f xN=%.9f J=%.9f'%tuple(terminal_cases[-1]))
+print('Different s means different objectives; do not rank by their J.')
+`}]}
+/>
+
+## 从有限步到长期
+
+多状态系统 $\boldsymbol{x}_{k+1}=A\boldsymbol{x}_k+B\boldsymbol{u}_k$ 也沿用相同思路。用 $\boldsymbol{x}^{\mathsf T}Q\boldsymbol{x}$、$\boldsymbol{u}^{\mathsf T}R\boldsymbol{u}$、$\boldsymbol{x}_N^{\mathsf T}S\boldsymbol{x}_N$ 替换三个标量惩罚；$Q,S$ 对称半正定，$R$ 对称正定。二次型的含义可回看[LQR控制](/modern/lqr-controller)。
+
+$$
+P_N=S,\qquad
+K_k=(R+B^{\mathsf T}P_{k+1}B)^{-1}B^{\mathsf T}P_{k+1}A,
+$$
+
+$$
+P_k=Q+A^{\mathsf T}P_{k+1}A
+-A^{\mathsf T}P_{k+1}B(R+B^{\mathsf T}P_{k+1}B)^{-1}B^{\mathsf T}P_{k+1}A.
+$$
+
+公式里的逆矩阵表示解线性方程；编程时优先用 `solve`，不必显式求逆。有限步下，即使某些方向不可控，也可以求这个无约束问题的唯一最优输入序列；这不意味着那些状态最终能被稳定下来。
+
+如果问题没有交班时刻，而是一直运行，才考虑**无限时域**。对定常系统，在 $(A,B)$ 可稳定、$(Q^{1/2},A)$ 可检测等条件下，DARE的稳定化解给出恒定增益。可稳定意为不能控制的模态本身严格稳定；可检测意为代价看不见的模态本身严格稳定。它们防止“根本管不住”或“代价根本不在乎”的不稳定状态溜过去。
+
+本课积分器的正解满足 $P=1+P/(1+P)$，所以
+
+$$
+P_\infty=\frac{1+\sqrt5}{2}\approx1.618034,\quad
+K_\infty=\frac{\sqrt5-1}{2}\approx0.618034,\quad
+1-K_\infty\approx0.381966.
+$$
+
+最后一个数是闭环根，模小于一，因而状态渐近趋于零。但不能把这个保证直接搬给任意有限步方案：取 $N=1,s=0$，最优动作就是零；若每拍都照这个一步目标重新算，$x_{k+1}=x_k$，偏差永远不消失。至于三步计划执行完之后怎么办，也必须另行规定。
+
+本课直接设计离散代价。若你从连续模型出发，采样周期改变后，不仅 $A,B$ 要重新离散化，连续积分代价的精确变换一般还会产生状态与输入的交叉项；不能随手把连续 $Q,R$ 原样搬过来，就宣称两者严格等价。
+
+## 输入有上限
+
+真实设备往往不能任意加热或降温。若增加 $\lvert u_k\rvert\leq0.2$，前面配方找到的最低点可能落在允许范围外。此时问题变成**带约束的优化**，价值函数通常不再是一个覆盖全部状态的二次型。
+
+把无约束输入截到上下限之间，可以得到一个可执行动作，但一般不能保证整个序列最优。后面的代价取决于你这一拍留下了什么状态，不能只看当前动作有没有越界。
+
+用本课积分器、$N=2,q=r=s=1$ 看一个具体例子：$x_0=1$ 时，无约束输入为 $(-0.6,-0.2)$，第一步不允许。按反馈计算并限幅，得到 $(-0.2,-0.2)$，状态为 $(1,0.8,0.6)$，代价为 $2.08$。在**这个两步例子**里，直接求约束问题也得到相同答案；这只是个持平案例，不能据此把截断当成通用约束求解器。下面同时核对 $x_0=0.1,1,-1$ 三种情况。
+
+<JupyterNotebook
+ title="长期解与输入约束"
+ setupCode={`import numpy as np
+from scipy.linalg import solve_discrete_are
+from itertools import product
+def constrained(x0,bound=.2):
+    H=np.array([[3.,1.],[1.,2.]]);g=np.array([2*x0,x0]);candidates=[]
+    # Enumerate free/lower/upper coordinates of this two-variable convex QP.
+    for status in product([-1,0,1],repeat=2):
+        u=np.array(status,dtype=float)*bound
+        free=np.flatnonzero(np.array(status)==0);fixed=np.flatnonzero(np.array(status)!=0)
+        if len(free):
+            u[free]=np.linalg.solve(H[np.ix_(free,free)],-g[free]-H[np.ix_(free,fixed)]@u[fixed])
+        if np.max(abs(u))<=bound+1e-12:
+            states=np.array([x0,x0+u[0],x0+sum(u)])
+            J=float(sum(states**2)+sum(u**2));candidates.append((J,u,states))
+    return min(candidates,key=lambda z:z[0])
+`}
+ cells={[{code:`Pinf=float(solve_discrete_are([[1.]],[[1.]],[[1.]],[[1.]])[0,0])
+Kinf=Pinf/(1+Pinf);root=1-Kinf
+print('Pinf=%.9f Kinf=%.9f root=%.9f'%(Pinf,Kinf,root))
+print('N=1 s=0: K0=0, repeated closed-loop root=1')
+`},{code:`constraint_results=[]
+for x0 in [.1,1.,-1.]:
+    J,optimal,states=constrained(x0)
+    x=x0;clipped=[]
+    for gain in [.6,.5]:
+        u=float(np.clip(-gain*x,-.2,.2));clipped.append(u);x+=u
+    constraint_results.append([x0,J,*optimal,*states,float(np.max(abs(optimal-clipped)))])
+    print('x0=%.1f J=%.9f u=(%.9f,%.9f) xN=%.9f clip_difference=%.9f'%(x0,J,*optimal,states[-1],constraint_results[-1][-1]))
+hard_terminal_input=-1.
+answer_values=[0.,-1/13,1/13,21/13,2.08]
+print('answers:',np.array2string(np.array(answer_values),precision=9))
+`}]}
+/>
+
+更一般的状态/输入约束会交给后续的模型预测控制课程处理。这里先记住：无约束LQR给你一个有用的起点，设备限制仍要放进问题里重新核查。
+
+## 小结
+
+有限步LQR先规定最后一拍的代价，再通过Bellman递推倒算增益，最后按时间顺序执行反馈。终端权重影响临近结束时的动作，却不强制终点为零。无限时域稳定性和带约束最优性都有各自的条件，不能只凭“这是最优控制”四个字就一起打包带走。
+
+进一步阅读：[MIT离散Riccati讲义](https://underactuated.mit.edu/lqr.html)、[SciPy离散ARE文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_discrete_are.html)。本课的代价没有乘 $1/2$，所以价值函数写成 $x^{\mathsf T}Px$；保持定义一致即可。
+
+## 习题
+
+1. 取 $N=1,q=r=1,s=0,x_0=1$。写出代价，求最优输入。若每拍都重新执行这一步方案，状态会收敛吗？
+2. 默认三步例子的最后一次状态为 $x_2=2/13$。用 $K_2$ 求 $u_2,x_3$，再核对总代价与 $P_0x_0^2$。
+3. 有限的终端权重 $s$ 是否等于硬要求 $x_N=0$？用默认例子解释。若硬要求一步到零，$x_0=1$ 时必须取什么输入？
+4. 两步例子取 $x_0=1$，输入上限为 $0.2$。复算输入 $(-0.2,-0.2)$ 的状态和代价，并说明为什么这个例子不能证明截断LQR总是约束最优。
+
+## 答案
+
+1. $J=1+u_0^2$，因此 $u_0=0$，$x_1=1$。每次重新求解仍是零输入，状态保持原值，不渐近收敛。
+2. $K_2=1/2$，故 $u_2=-1/13$、$x_3=1/13$。三拍代价加终端代价为 $(169+64+25+9+4+1+1)/169=273/169=21/13$，等于 $P_0x_0^2$。
+3. 不等于。默认 $s=1$ 时终点为 $1/13$，不是零；有限惩罚允许用一些残差换取较小输入。硬要求一步到零时，由 $0=1+u_0$ 得 $u_0=-1$，即使它比软惩罚下的输入更大也必须如此；有输入限幅时还可能不可行。
+4. 状态依次为 $1,0.8,0.6$，代价 $1^2+0.2^2+0.8^2+0.2^2+0.6^2=2.08$。该二变量凸二次问题的直接求解也给此输入，但其他模型、权重或约束会改变未来代价，单个持平案例不是一般最优性证明。

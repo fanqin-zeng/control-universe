@@ -1,3 +1,10 @@
+import { EventTriggeredExplorer } from "@/components/wiki/event-triggered-explorer";
+import { DiscreteOptimalExplorer } from "@/components/wiki/discrete-optimal-explorer";
+import { SampledDataExplorer } from "@/components/wiki/sampled-data-explorer";
+import { SamplingBudgetExplorer } from "@/components/wiki/sampling-budget-explorer";
+import { DiscretizationModeExplorer } from "@/components/wiki/discretization-mode-explorer";
+import { JuryStabilityExplorer } from "@/components/wiki/jury-stability-explorer";
+import { SampledModeExplorer } from "@/components/wiki/sampled-mode-explorer";
 import { CoolingNumericsExplorer } from "@/components/wiki/cooling-numerics-explorer";
 import { ChargingGameExplorer } from "@/components/wiki/charging-game-explorer";
 import { GraphConsensusExplorer } from "@/components/wiki/graph-consensus-explorer";
@@ -89,6 +96,13 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EventTriggeredExplorer,
+  DiscreteOptimalExplorer,
+  SampledDataExplorer,
+  SamplingBudgetExplorer,
+  DiscretizationModeExplorer,
+  JuryStabilityExplorer,
+  SampledModeExplorer,
   CoolingNumericsExplorer,
   ChargingGameExplorer,
   GraphConsensusExplorer,

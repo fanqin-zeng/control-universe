@@ -1,0 +1,23 @@
+import fs from 'node:fs';import ts from 'typescript';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {createHash,randomUUID} from 'node:crypto';import {request} from 'node:http';
+import {extractNotebooks} from './lib-mdx.mjs';import {renderedHeadings} from './rendered-headings.mjs';
+const dir='.agent/semester-03/discrete-05/',key='discrete-sampled/discrete-stability-criteria',read=p=>fs.readFileSync(p,'utf8');
+const mod={};new Function('exports',ts.transpileModule(read('lib/jury-stability.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod);
+const cases=[[-1.5,.7],[-3,-1.5],[3,1.5],[-2.1,.9],[-1.5,.5],[-2,1],[2,1],[0,1],[0,0],[1,.25],[0,-1.5],[.5,.5],[-2,.9]].map(params=>({params,result:mod.juryStability(...params)}));
+for(const params of [[-4,0],[0,2],[NaN,0]])assert.throws(()=>mod.juryStability(...params),RangeError);
+fs.writeFileSync(dir+'actual-ts.json',JSON.stringify(cases,null,2)+'\n');
+const independent=JSON.parse(execFileSync('python',[dir+'reference.py',dir+'actual-ts.json'],{encoding:'utf8'}));
+const source=read('content/'+key+'.mdx'),nbs=extractNotebooks(source);assert.equal(nbs.length,5);assert.equal(nbs.reduce((n,b)=>n+b.cells.length,0),6);
+const port=Number(process.env.JUPYTER_PORT||8891);
+function http(path,method,body){return new Promise((resolve,reject)=>{const data=body?Buffer.from(JSON.stringify(body)):null;const req=request({hostname:'127.0.0.1',port,path,method,headers:data?{'Content-Type':'application/json','Content-Length':data.length}:{}},res=>{let raw='';res.on('data',s=>raw+=s);res.on('end',()=>{try{assert.equal(res.statusCode,200,raw);resolve(JSON.parse(raw));}catch(e){reject(e);}});});req.on('error',reject);req.setTimeout(120000,()=>req.destroy(Error('timeout')));if(data)req.write(data);req.end();});}
+const queries=[
+ 'import json\nprint("AUDIT:"+json.dumps({"defaultRoots":[[float(x.real),float(x.imag)] for x in np.roots(cases[0])]}))',
+ 'import json\nprint("AUDIT:"+json.dumps({"metrics":metrics,"responses":responses,"critical":float(critical),"oldradii":oldradii,"boundary":float(boundary),"newradii":newradii}))',
+ 'import json\nprint("AUDIT:"+json.dumps({"filtered":filtered,"curves":curves}))',
+ 'import json\nprint("AUDIT:"+json.dumps({"Ply":Ply.tolist()}))',
+ 'import json\nprint("AUDIT:"+json.dumps({"limit":float(limit),"estimate":float(estimate),"pmq":float(pmq),"wcq":float(wcq),"qLoss":[float(loss(x)) for x in [.19,.2,estimate]]}))'
+];
+const close=(actual,expected,tol=1e-8)=>{if(Array.isArray(expected)){assert.equal(actual.length,expected.length);expected.forEach((v,i)=>close(actual[i],v,tol));}else{assert(Number.isFinite(actual));assert(Math.abs(actual-expected)<=tol,`${actual} != ${expected}`);}};
+const report={pass:true,sourceHash:createHash('sha256').update(source.replace(/\r\n/g,'\n')).digest('hex'),configs:cases.length,independent,notebooks:[]};
+for(const [i,nb]of nbs.entries()){const id='discrete05-'+randomUUID();try{await http('/api/notebook','POST',{notebook_id:id,setup_code:''});const outputs=[];for(const code of [nb.setup.value,...nb.cells.map(c=>c.value)]){const out=await http('/api/notebook/'+id+'/execute','POST',{code});assert(Array.isArray(out.outputs));assert(!out.outputs.some(o=>o.type==='error'),JSON.stringify(out.outputs));outputs.push(out.outputs.map(o=>o.type==='image'?{type:'image',bytes:o.data.length}:o));}const audit=await http('/api/notebook/'+id+'/execute','POST',{code:queries[i]});assert(!audit.outputs.some(o=>o.type==='error'),JSON.stringify(audit.outputs));const values=JSON.parse(audit.outputs.filter(o=>o.type==='stream').map(o=>o.text).join('').match(/AUDIT:(.+)/)[1]);for(const [name,value]of Object.entries(values))close(value,independent[name],name==="filtered"?1e-7:1e-8);report.notebooks.push({title:nb.title,outputs,values});}finally{await http('/api/notebook/'+id,'DELETE');}}
+report.rendered=await renderedHeadings(source,key);const before=JSON.parse(read(dir+'headings-before.json'));const explicitAliases=[...source.matchAll(/<span id="([^"]+)" \/>/g)].map(m=>m[1]);report.preservation={oldIds:before.ids.length,explicitAliases,missing:before.ids.filter(id=>![...report.rendered.ids,...explicitAliases].includes(id)),oldHeadings:before.headings.length};assert.equal(report.preservation.missing.length,0);assert.equal(report.rendered.h2.length,9);assert.equal(new Set(report.rendered.ids).size,report.rendered.ids.length);
+fs.writeFileSync(dir+'reconciliation.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,sourceHash:report.sourceHash,configs:cases.length,notebooks:5,cells:6,preservation:report.preservation,metrics:independent.metrics,answers3:independent.answers3}));

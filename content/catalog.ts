@@ -2703,6 +2703,40 @@ export const catalog: Chapter[] = [
       {
         "slug": "discrete-time-systems",
         "title": "离散时间系统",
+        "subsections": [
+          {
+            "slug": "从读数到递推",
+            "title": "从读数到递推"
+          },
+          {
+            "slug": "初值和输入各做了什么",
+            "title": "初值和输入各做了什么"
+          },
+          {
+            "slug": "离散状态空间",
+            "title": "离散状态空间"
+          },
+          {
+            "slug": "从脉冲到输入输出",
+            "title": "从脉冲到输入输出"
+          },
+          {
+            "slug": "模型的边界",
+            "title": "模型的边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-freq",
           "modern/state-space",
@@ -2710,18 +2744,56 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "difference-equation",
         "title": "差分方程",
+        "subsections": [
+          {
+            "slug": "从递推到差分",
+            "title": "从递推到差分"
+          },
+          {
+            "slug": "先解一阶方程",
+            "title": "先解一阶方程"
+          },
+          {
+            "slug": "输入怎样改变解",
+            "title": "输入怎样改变解"
+          },
+          {
+            "slug": "二阶方程与特征根",
+            "title": "二阶方程与特征根"
+          },
+          {
+            "slug": "重根为什么多一个k",
+            "title": "重根为什么多一个k"
+          },
+          {
+            "slug": "用z变换核对",
+            "title": "用Z变换核对"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-systems",
           "math/z-transform"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "z-transform-analysis",
@@ -2779,7 +2851,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "discrete-stability-criteria",
@@ -2828,14 +2900,14 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "discretization-methods",
         "title": "离散化方法",
         "subsections": [
           {
-            "slug": "离散化方法",
+            "slug": "离散化方法-1",
             "title": "离散化方法"
           },
           {
@@ -2875,7 +2947,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "sampling-period-selection",
@@ -2916,18 +2988,48 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "sampled-data-systems",
         "title": "采样数据系统",
+        "subsections": [
+          {
+            "slug": "两次更新之间",
+            "title": "两次更新之间"
+          },
+          {
+            "slug": "精确采样模型",
+            "title": "精确采样模型"
+          },
+          {
+            "slug": "闭环与延迟",
+            "title": "闭环与延迟"
+          },
+          {
+            "slug": "采样会漏掉什么",
+            "title": "采样会漏掉什么"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discretization-methods",
           "discrete-sampled/sampling-period-selection"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "discrete-optimal-control",
@@ -2936,9 +3038,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/discrete-stability-criteria",
           "modern/lqr-controller"
         ],
+        "subsections": [
+          {
+            "slug": "只剩几次调整",
+            "title": "只剩几次调整"
+          },
+          {
+            "slug": "从最后一步倒推",
+            "title": "从最后一步倒推"
+          },
+          {
+            "slug": "向前执行",
+            "title": "向前执行"
+          },
+          {
+            "slug": "从有限步到长期",
+            "title": "从有限步到长期"
+          },
+          {
+            "slug": "输入有上限",
+            "title": "输入有上限"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "event-triggered-control",
@@ -2947,9 +3083,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/sampled-data-systems",
           "nonlinear/lyapunov-stability"
         ],
+        "subsections": [
+          {
+            "slug": "消息一定要按时发吗",
+            "title": "消息一定要按时发吗"
+          },
+          {
+            "slug": "旧读数还能用多久",
+            "title": "旧读数还能用多久"
+          },
+          {
+            "slug": "为什么误差不能太大",
+            "title": "为什么误差不能太大"
+          },
+          {
+            "slug": "按周期检查事件",
+            "title": "按周期检查事件"
+          },
+          {
+            "slug": "少发消息也有代价",
+            "title": "少发消息也有代价"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },

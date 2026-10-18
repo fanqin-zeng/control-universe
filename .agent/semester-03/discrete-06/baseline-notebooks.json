@@ -1,0 +1,120 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8981",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S7": 3,
+    "S6": 3
+  },
+  "failLessons": [
+    "discrete-sampled/discretization-methods"
+  ],
+  "lessons": [
+    {
+      "key": "discrete-sampled/discretization-methods",
+      "file": "content/discrete-sampled/discretization-methods.mdx",
+      "level": "FAIL",
+      "notebooks": 3,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Unknown transformation method 'forward_euler'",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[2], line 11\n      7 \n      8 Ts = 0.01  # 采样周期\n      9 \n     10 # 四种离散化方法\n---> 11 K_fwd = ctrl.c2d(K_cont, Ts, method='forward_euler')\n     12 K_bwd = ctrl.c2d(K_cont, Ts, method='backward_euler')\n     13 K_tus = ctrl.c2d(K_cont, Ts, method='tustin')\n     14 K_mp  = ctrl.c2d(K_cont, Ts, method='matched')\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n"
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Time steps `T` must match sampling time",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[2], line 26\n     22 \n     23 # 阶跃响应对比\n     24 t = np.linspace(0, 3, 3000)\n     25 t_c, y_c = ctrl.step_response(T_cont, T=t)\n---> 26 t_d, y_d = ctrl.step_response(Tz, T=t)\n     27 \n     28 fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n     29 \n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n"
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 2,
+          "index": 1,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Time steps `T` must be multiples of sampling time",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[3], line 19\n     15 for i, Ts_i in enumerate(Ts_values):\n     16     Gz_i = ctrl.c2d(G, Ts_i, method='zoh')\n     17     Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')\n     18     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)\n---> 19     t_i, y_i = ctrl.step_response(Tz_i, T=t_step)\n     20 \n     21     axes[0].plot(t_i, y_i, color=colors[i], linewidth=1.5, \n     22                  label=f'Ts = {Ts_i*1000:.0f} ms')\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n"
+          ],
+          "stderr": "",
+          "images": 1
+        }
+      ],
+      "findings": [
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 1（:187） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 188
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 2（:379） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 380
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 3（:704） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 705
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 1 cell 1（:198）执行报错 ValueError: Unknown transformation method 'forward_euler'\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[2], line 11\n      7 \n      8 Ts = 0.01  # 采样周期\n      9 \n     10 # 四种离散化方法\n---> 11 K_fwd = ctrl.c2d(K_cont, Ts, method='forward_euler')\n     12 K_bwd = ctrl.c2d(K_cont, Ts, method='backward_euler')\n     13 K_tus = ctrl.c2d(K_cont, Ts, method='tustin')\n     14 K_mp  = ctrl.c2d(K_cont, Ts, method='matched')\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n",
+          "line": 198
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 1（:716）执行报错 ValueError: Time steps `T` must match sampling time\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[2], line 26\n     22 \n     23 # 阶跃响应对比\n     24 t = np.linspace(0, 3, 3000)\n     25 t_c, y_c = ctrl.step_response(T_cont, T=t)\n---> 26 t_d, y_d = ctrl.step_response(Tz, T=t)\n     27 \n     28 fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n     29 \n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n",
+          "line": 716
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 2（:785）执行报错 ValueError: Time steps `T` must be multiples of sampling time\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[3], line 19\n     15 for i, Ts_i in enumerate(Ts_values):\n     16     Gz_i = ctrl.c2d(G, Ts_i, method='zoh')\n     17     Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')\n     18     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)\n---> 19     t_i, y_i = ctrl.step_response(Tz_i, T=t_step)\n     20 \n     21     axes[0].plot(t_i, y_i, color=colors[i], linewidth=1.5, \n     22                  label=f'Ts = {Ts_i*1000:.0f} ms')\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n",
+          "line": 785
+        }
+      ]
+    }
+  ]
+}

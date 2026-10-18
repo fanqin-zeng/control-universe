@@ -1,0 +1,120 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8981",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S7": 3,
+    "S6": 3
+  },
+  "failLessons": [
+    "discrete-sampled/discrete-stability-criteria"
+  ],
+  "lessons": [
+    {
+      "key": "discrete-sampled/discrete-stability-criteria",
+      "file": "content/discrete-sampled/discrete-stability-criteria.mdx",
+      "level": "FAIL",
+      "notebooks": 3,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Time steps `T` must be multiples of sampling time",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[2], line 28\n     24 for i, Ts in enumerate(Ts_values):\n     25     Gz = ctrl.c2d(G, Ts, method='zoh')\n     26     Kz = ctrl.c2d(K_cont, Ts, method='tustin')\n     27     Tz = ctrl.feedback(Gz * Kz, 1)\n---> 28     t_i, y_i = ctrl.step_response(Tz, T=t)\n     29 \n     30     poles = ctrl.pole(Tz)\n     31     max_pole = np.max(np.abs(poles))\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n"
+          ],
+          "stderr": "",
+          "images": 1
+        },
+        {
+          "notebook": 1,
+          "index": 1,
+          "status": "ERROR",
+          "ename": "AttributeError",
+          "evalue": "module 'control' has no attribute 'pole'",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "AttributeError                            Traceback (most recent call last)",
+            "Cell In[3], line 13\n      9 for Ts_i in Ts_crit_range:\n     10     Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')\n     11     Kz_i = ctrl.tf([K3], [1])\n     12     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)\n---> 13     poles = ctrl.pole(Tz_i)\n     14     max_pole = np.max(np.abs(poles))\n     15 \n     16     if abs(max_pole - 1.0) < 0.05:\n",
+            "AttributeError: module 'control' has no attribute 'pole'"
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Improper transfer function. `num` is longer than `den`.",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[2], line 24\n     20 print(\"-\" * 55)\n     21 \n     22 for Ts_i in Ts_test:\n     23     Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')\n---> 24     Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')\n     25     Lz_i = Gz_i * Kz_i\n     26 \n     27     omega = np.logspace(-2, 2, 2000)\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n"
+          ],
+          "stderr": "",
+          "images": 0
+        }
+      ],
+      "findings": [
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 1（:255） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 256
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 2（:393） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 394
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 3（:641） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 642
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 2 cell 1（:404）执行报错 ValueError: Time steps `T` must be multiples of sampling time\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[2], line 28\n     24 for i, Ts in enumerate(Ts_values):\n     25     Gz = ctrl.c2d(G, Ts, method='zoh')\n     26     Kz = ctrl.c2d(K_cont, Ts, method='tustin')\n     27     Tz = ctrl.feedback(Gz * Kz, 1)\n---> 28     t_i, y_i = ctrl.step_response(Tz, T=t)\n     29 \n     30     poles = ctrl.pole(Tz)\n     31     max_pole = np.max(np.abs(poles))\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)\n   1506 U = np.zeros((sys.ninputs, T.size))\n   1507 U[i, :] = np.ones_like(T)\n-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)\n   1510 inpidx = i if input is None else 0\n   1511 yout[:, inpidx, :] = response.y if output is None \\\n   1512     else response.y[output]\n",
+          "line": 404
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 2 cell 2（:528）执行报错 AttributeError: module 'control' has no attribute 'pole'\n          ---------------------------------------------------------------------------\n          AttributeError                            Traceback (most recent call last)\n          Cell In[3], line 13\n      9 for Ts_i in Ts_crit_range:\n     10     Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')\n     11     Kz_i = ctrl.tf([K3], [1])\n     12     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)\n---> 13     poles = ctrl.pole(Tz_i)\n     14     max_pole = np.max(np.abs(poles))\n     15 \n     16     if abs(max_pole - 1.0) < 0.05:\n\n          AttributeError: module 'control' has no attribute 'pole'",
+          "line": 528
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 1（:652）执行报错 ValueError: Improper transfer function. `num` is longer than `den`.\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[2], line 24\n     20 print(\"-\" * 55)\n     21 \n     22 for Ts_i in Ts_test:\n     23     Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')\n---> 24     Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')\n     25     Lz_i = Gz_i * Kz_i\n     26 \n     27     omega = np.logspace(-2, 2, 2000)\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n",
+          "line": 652
+        }
+      ]
+    }
+  ]
+}

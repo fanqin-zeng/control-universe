@@ -1,0 +1,340 @@
+---
+title: 差分方程
+description: 从温差递推求出第k次读数，理解初值、特解、特征根、重根和Z变换的初值项。
+---
+
+# 差分方程
+
+上一课[离散时间系统](/discrete-sampled/discrete-time-systems)中，房间每分钟保留原有温差的八成，满功率加热再贡献 $2$ °C。初始温差为 $4$ °C 时，前几次读数是 $4,5.2,6.16,\ldots$。
+
+逐次代入当然能一直算下去。但如果想直接知道第 $k$ 分钟的温差，或者判断输入换掉以后会怎样，难道还得从头按计算器？本课学习把递推关系变成**可以直接代入编号的表达式**，并用初始条件选出我们真正需要的那一条解。
+
+## 从递推到差分
+
+仍用 $x[k]$ 表示第 $k$ 次记录的室内外温差，$u[k]$ 是随后一分钟的加热功率比例。教学模型为
+
+$$
+x[k+1]=0.8x[k]+2u[k].
+$$
+
+两边都减去 $x[k]$，就能看见相邻两次读数的变化量：
+
+$$
+\Delta x[k]\equiv x[k+1]-x[k]=-0.2x[k]+2u[k].
+$$
+
+这里的 $\Delta x[k]$ 表示一次向前差分，也就是“下一条减这一条”。它的单位仍是摄氏度；除以采样间隔 $T_s$ 才得到一个区间内的平均变化率，不能直接把差分当作连续时间的导数。本例 $T_s=1$ 分钟，系数也针对这一间隔给定。
+
+**差分方程**是联系一个序列在不同编号处取值的方程。它不一定要显式写出 $\Delta$。例如 $x[k+1]-0.8x[k]=2u[k]$ 就是一阶差分方程：给定输入以后，知道一条初值 $x[0]$，就能往后计算。
+
+如果新值要用到前两条记录，例如
+
+$$
+y[k+2]-1.2y[k+1]+0.32y[k]=u[k],
+$$
+
+它就是二阶方程，需要 $y[0]$ 和 $y[1]$ 两条初值。这与“方程里有没有平方”无关：这里每一项对 $y$ 都是一次的，二阶说的是保留了两步记忆。后面的 $y$ 是一个无量纲数字模型的输出，不把它当成前面房间的另一条实测规律。
+
+本例 $u[0]$ 首次进入 $y[2]$ 的计算，但输入延迟由方程右端怎样写决定，不能仅凭“二阶”就判定输入一定延迟两步。
+
+![二阶模型保留两次输出，由旧的两项计算新值，再将记忆向前移动一格](/images/difference-equation-memory.svg)
+
+本课讨论的是**线性常系数差分方程**：未知序列按常数系数相加，右端输入已知。系数随 $k$ 变化、出现 $y[k]^2$ 或饱和等情况，需要另外分析，不能直接套用本课公式。
+
+## 先解一阶方程
+
+先关掉加热，研究最简单的一阶方程：
+
+$$
+x[k+1]=a x[k],\qquad x[0]=x_0.
+$$
+
+每过一步乘一次 $a$，所以
+
+$$
+x[1]=a x_0,\quad x[2]=a^2x_0,\quad x[k]=a^k x_0.
+$$
+
+验证也很直接：将 $x[k]=a^k x_0$ 代回原式，左右都得到 $a^{k+1}x_0$；再代入 $k=0$，恰好返回 $x_0$。**既满足方程，又满足初值，才是这个初值问题的解。**
+
+在温差例中，$a=0.8,x_0=4$，于是关掉加热后的温差是 $4(0.8)^k$。每一步都只留下八成，因此会逐渐趋于零。初值若变成 $8$，公式前面的系数也随之改变；方程本身没有替我们指定初值。
+
+## 输入怎样改变解
+
+现在持续满功率加热，方程变为
+
+$$
+x[k+1]=a x[k]+b,\qquad a=0.8,\quad b=2,\quad x[0]=4.
+$$
+
+多展开几步，得到上一课见过的有限几何和：
+
+$$
+x[k]=a^k x[0]+b\sum_{j=0}^{k-1}a^j
+=a^k x[0]+b\frac{1-a^k}{1-a},\qquad a\ne1.
+$$
+
+求和式用于 $k\geq1$；最后的闭式也与 $k=0$ 的初值相符。代入本例参数，整理成
+
+$$
+x[k]=10-6(0.8)^k.
+$$
+
+还有一种更方便推广到二阶方程的做法。先找一条满足带输入方程的解，叫作**特解**，记为 $x_p[k]$。因为输入一直不变，可以试一个常数 $c$：
+
+$$
+c=0.8c+2,\qquad c=10.
+$$
+
+常数 $10$ 确实满足方程，但它不满足我们指定的初值 $4$。怎么办？给它加上不带输入的方程 $x_h[k+1]=0.8x_h[k]$ 的解：
+
+$$
+x[k]=x_p[k]+x_h[k]=10+C(0.8)^k.
+$$
+
+这里 $C$ 是待定常数。用 $x[0]=4$ 得到 $C=-6$，又回到了同一个结果。$x_h$ 叫作**齐次解**，“齐次”指方程右端的输入项为零。两条解为什么可以相加？将它们相加后代回方程，$x_p$ 提供右端的 $2$，$x_h$ 不增加右端，所以和仍满足原方程；初值再决定 $C$。
+
+**特解不必单独满足原初值。** 本例的常数特解 $10$，也不等于上一课从零温差开始加热的零状态响应 $10[1-(0.8)^k]$。两种拆法都能得到总响应，别把名称相近当成曲线相同。
+
+试常数也有失效的时候。若 $a=1$，方程成为 $x[k+1]-x[k]=2$。常数代入左边只能得到零，怎么也不等于 $2$；此时每一步都加 $2$，应取 $x[k]=x[0]+2k$，而不是继续使用分母为 $1-a$ 的公式。
+
+<JupyterNotebook
+  title="实验1：递推和闭式是同一串读数"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt`}
+  cells={[{title: "一阶方程与边界", code: `k = np.arange(9)
+x = np.empty(9); x[0] = 4.0
+off = np.empty(9); off[0] = 4.0
+unit = np.empty(9); unit[0] = 4.0
+for j in range(8):
+    x[j+1] = 0.8*x[j]+2.0
+    off[j+1] = 0.8*off[j]
+    unit[j+1] = unit[j]+2.0
+closed = 10.0-6.0*0.8**k
+assert np.max(np.abs(x-closed)) < 1e-12
+assert np.max(np.abs(off-4.0*0.8**k)) < 1e-12
+assert np.max(np.abs(unit-(4.0+2.0*k))) < 1e-12
+print("k:", k.tolist())
+print("heated:", np.round(x, 8).tolist())
+print("no input:", np.round(off, 8).tolist())
+print("a=1:", unit.tolist())
+print("x5:", round(float(x[5]), 5))
+fig, ax = plt.subplots(figsize=(7, 3))
+ax.plot(k, x, "o", label="recurrence")
+ax.plot(k, closed, "--", label="closed form at samples")
+ax.set(xlabel="time (min)", ylabel="temperature difference (deg C)", xlim=(0, 8), ylim=(0, 11))
+ax.grid(True); ax.legend(); plt.show()`}]}
+/>
+
+两种算法得到相同的采样点，第 $5$ 分钟温差都是 $8.03392$ °C。连线只帮助辨认顺序，不补充采样间隔内的温度信息。
+
+## 二阶方程与特征根
+
+回到需要两步记忆的方程。先把输入置零：
+
+$$
+y[k+2]-1.2y[k+1]+0.32y[k]=0.
+$$
+
+一阶方程的解是“每步乘同一个数”，于是我们也试 $y[k]=r^k$。代入并整理：
+
+$$
+r^{k+2}-1.2r^{k+1}+0.32r^k=0.
+$$
+
+本例的根都不为零，提出 $r^k$ 后，原来关于一整串序列的问题变成一个二次方程：
+
+$$
+r^2-1.2r+0.32=(r-0.8)(r-0.4)=0.
+$$
+
+这个多项式叫**特征多项式**，它的根叫**特征根**。两个不同的根给出两种基本变化方式：$(0.8)^k$ 和 $(0.4)^k$。利用线性，它们的组合仍满足齐次方程：
+
+$$
+y_h[k]=C_1(0.8)^k+C_2(0.4)^k.
+$$
+
+为什么这就足够？给定 $y[0],y[1]$ 后，两条线性方程能唯一确定 $C_1,C_2$，因为两个根不同；而原递推也能从这两条初值唯一算出以后各项。两者有相同的初值并满足同一个递推，就不可能在某一步突然分开。
+
+接着让输入恒为 $1$：
+
+$$
+y[k+2]-1.2y[k+1]+0.32y[k]=1,\qquad y[0]=0,\quad y[1]=1.
+$$
+
+试常数特解 $c$，得到 $(1-1.2+0.32)c=1$，即 $c=25/3$。因此
+
+$$
+y[k]=\frac{25}{3}+C_1(0.8)^k+C_2(0.4)^k.
+$$
+
+代入两条初值：
+
+$$
+C_1+C_2=-\frac{25}{3},\qquad 0.8C_1+0.4C_2=-\frac{22}{3}.
+$$
+
+解得 $C_1=-10,C_2=5/3$，所以
+
+$$
+y[k]=\frac{25}{3}-10(0.8)^k+\frac{5}{3}(0.4)^k.
+$$
+
+前几项为 $0,1,2.2,3.32,4.28,\ldots$，其中 $y[5]=5.0736$。两种指数项都趋于零，最终趋于 $25/3$；这不是说第 $5$ 项就已达到该值。
+
+## 重根为什么多一个k
+
+如果特征多项式变成 $(r-0.8)^2$ 呢？相应方程是
+
+$$
+y[k+2]-1.6y[k+1]+0.64y[k]=0.
+$$
+
+“两个根都是 $0.8$”称为**重根**。不能把解写成 $C_1(0.8)^k+C_2(0.8)^k$ 就算完事：它合起来只有一个常数，通常无法同时满足两条初值。
+
+我们试着把已知的指数部分拿出去，设 $y[k]=(0.8)^k v[k]$。代入原式，除以非零的 $(0.8)^{k+2}$，得到
+
+$$
+v[k+2]-2v[k+1]+v[k]=0.
+$$
+
+移项后，这其实是在说
+
+$$
+v[k+2]-v[k+1]=v[k+1]-v[k].
+$$
+
+相邻两项之差始终相同，所以 $v[k]$ 是等差数列，可写成 $C_1+C_2k$。于是重根对应的解为
+
+$$
+y[k]=(C_1+C_2k)(0.8)^k.
+$$
+
+多出来的 $k$ 就来自这串等差变化，并非需要死记的一条补丁。取 $y[0]=1,y[1]=1.6$，得到 $C_1=1,C_2=1$，即 $y[k]=(1+k)(0.8)^k$，$y[5]=1.96608$。
+
+这个序列开始几步会上升，却仍然趋于零。可以直接检查相邻项比值：
+
+$$
+\frac{y[k+1]}{y[k]}=0.8\frac{k+2}{k+1}\leq0.96\qquad(k\geq4).
+$$
+
+因此从第 $4$ 项起，每一步至多保留前一步的 $0.96$，后面的正数项可以用一个趋于零的几何数列作上界。**重根不自动意味着发散，趋于零也不意味着每一步都下降。** 若初值使 $C_2=0$，含 $k$ 的那项甚至不会出现，习题3就核对这种情况。
+
+二次方程也可能产生复数根，那时解可表现为振荡。本课把重点放在不同实根和一个非零重根的推导；复数运算可回看[复数基础](/math/complex-numbers)，更一般的稳定性判断留给后续课程。
+
+<JupyterNotebook
+  title="实验2：两种根，两套初值"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt`}
+  cells={[{title: "二阶公式与递推核对", code: `k = np.arange(9)
+distinct = np.empty(9); distinct[:2] = [0.0, 1.0]
+repeated = np.empty(9); repeated[:2] = [1.0, 1.6]
+for j in range(7):
+    distinct[j+2] = 1.2*distinct[j+1]-0.32*distinct[j]+1.0
+    repeated[j+2] = 1.6*repeated[j+1]-0.64*repeated[j]
+distinct_closed = 25/3-10*0.8**k+(5/3)*0.4**k
+repeated_closed = (1+k)*0.8**k
+assert np.max(np.abs(distinct-distinct_closed)) < 1e-12
+assert np.max(np.abs(repeated-repeated_closed)) < 1e-12
+ratios = repeated[5:]/repeated[4:-1]
+assert np.max(ratios) <= 0.96+1e-12
+assert all(abs(r*r-1.2*r+0.32) < 1e-12 for r in [0.8, 0.4])
+print("distinct roots:", [0.8, 0.4])
+print("distinct:", np.round(distinct, 8).tolist())
+print("repeated root:", 0.8)
+print("repeated:", np.round(repeated, 8).tolist())
+print("k5:", round(float(distinct[5]), 5), round(float(repeated[5]), 5))
+print("ratios from k=4:", np.round(ratios, 8).tolist())
+fig, axes = plt.subplots(1, 2, figsize=(9, 3))
+for ax, values, formula, title in zip(axes, [distinct, repeated], [distinct_closed, repeated_closed], ["distinct roots, input=1", "repeated root, input=0"]):
+    ax.plot(k, values, "o", label="recurrence")
+    ax.plot(k, formula, "--", label="closed form at samples")
+    ax.set(title=title, xlabel="k", ylabel="output", xlim=(0, 8), ylim=(0, 9 if title.startswith("distinct") else 2.5))
+    ax.grid(True); ax.legend()
+fig.tight_layout(); plt.show()`}]}
+/>
+
+左右两图是**不同方程、不同初值与输入**，各自只核对公式和递推是否一致，不能拿两图的高低比较某个控制方法好坏。
+
+## 用Z变换核对
+
+[Z变换](/math/z-transform)把序列改写为关于 $z$ 的代数式；这里用从 $k=0$ 开始求和的单边形式，记为 $X_+(z)$。回到一阶温差方程 $x[k+1]-0.8x[k]=2$，先把移位项的初值写完整：
+
+$$
+\mathcal Z_+\{x[k+1]\}=zX_+(z)-zx[0].
+$$
+
+它可以由换求和编号直接得到：从 $x[1]$ 开始的级数，等于完整级数去掉 $x[0]$ 后再乘 $z$。常数输入 $2$ 的变换为 $2z/(z-1)$，因此
+
+$$
+(z-0.8)X_+(z)-4z=\frac{2z}{z-1}.
+$$
+
+整理并做部分分式分解：
+
+$$
+X_+(z)=\frac{4z}{z-0.8}+\frac{2z}{(z-1)(z-0.8)}
+=\frac{10z}{z-1}-\frac{6z}{z-0.8},\qquad |z|>1.
+$$
+
+这里用到变换对 $a^k\leftrightarrow z/(z-a)$（$k\geq0$，$|z|>|a|$）。于是逆变换仍为 $x[k]=10-6(0.8)^k$。标出的收敛区域 $|z|>1$ 来自这条不趋于零的温差序列，不是“系统一定不稳定”的判据。
+
+若遗漏 $-zx[0]$，算出来的就是从零温差开始加热的另一条响应，开头会变成零，已经不符合题目给定的 $x[0]=4$。**先核初值、再核递推残差**，通常比只盯着长公式更容易发现错误。
+
+<JupyterNotebook
+  title="实验3：Z变换与答案核验"
+  setupCode={`import sympy as sp
+import numpy as np
+z = sp.symbols('z')
+a = sp.Rational(4, 5)`}
+  cells={[{title: "保留初值并核四道题", code: `X = 4*z/(z-a)+2*z/((z-1)*(z-a))
+expected = 10*z/(z-1)-6*z/(z-a)
+residual = sp.factor((z-a)*X-4*z-2*z/(z-1))
+assert residual == 0
+assert sp.factor(X-expected) == 0
+missing_initial = 2*z/((z-1)*(z-a))
+print("Z equation residual:", residual)
+print("partial fraction residual:", sp.factor(X-expected))
+print("initial value with/without initial term:", sp.limit(X, z, sp.oo), sp.limit(missing_initial, z, sp.oo))
+q1 = [2*(1-sp.Rational(1, 2)**j) for j in range(4)]
+q2 = [-a**j+2*sp.Rational(2, 5)**j for j in range(4)]
+q3 = [a**j for j in range(6)]
+q4 = [4+2*j for j in range(4)]
+print("Q1:", [float(v) for v in q1])
+print("Q2:", [float(v) for v in q2])
+print("Q3:", [float(v) for v in q3])
+print("Q4:", q4)
+Q1 = z/((z-1)*(z-sp.Rational(1, 2)))
+assert sp.factor(Q1-(2*z/(z-1)-2*z/(z-sp.Rational(1, 2)))) == 0
+assert q1[0] == 0 and q1[3] == sp.Rational(7, 4)
+assert q2[0] == 1 and q2[1] == 0 and q2[2] == -sp.Rational(8, 25)
+assert q3[1] == a and q3[5] == sp.Rational(1024, 3125)
+assert q4[0] == 4 and q4[3] == 10`}]}
+/>
+
+本课不同根与重根的求解思路可参阅 MIT《计算机科学数学》讲义中的[线性递推](https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2010/93cad640cf3ed0b23ef70688f452d4d5_MIT6_042JF10_notes.pdf)。书中用几何数列的组合处理递推；本课将它用在数字系统的预测上。
+
+## 小结
+
+求差分方程，先看需要几条初值，再找满足方程的序列，最后用初值确定常数。一阶例子可以展开成几何和；带输入时可以先找特解，再补齐次解。二阶例子的特征根来自代入 $r^k$，重根则可能需要 $kr^k$。无论用哪种方法，结果都应同时经得起初值和逐步递推的检查。
+
+下一课[Z域系统分析](/discrete-sampled/z-transform-analysis)将用这些输入输出关系继续研究离散控制系统。
+
+## 习题
+
+1. 求 $y[k+1]=0.5y[k]+1$、$y[0]=0$ 的闭式，计算 $y[3]$，再写出单边 Z 变换 $Y_+(z)$。
+2. 求 $y[k+2]-1.2y[k+1]+0.32y[k]=0$、$y[0]=1,y[1]=0$ 的解，并用原递推核对 $y[2]$。
+3. 重根方程 $y[k+2]-1.6y[k+1]+0.64y[k]=0$ 改取 $y[0]=1,y[1]=0.8$。求解并计算 $y[5]$；为什么这一次没有含 $k$ 的项？
+4. 求 $y[k+1]-y[k]=2$、$y[0]=4$ 的解和 $y[3]$。解释为什么常数特解在这里行不通。
+
+## 答案
+
+1. 由几何和得 $y[k]=2[1-(0.5)^k]$，所以 $y[3]=1.75$。保留初值的变换方程为 $(z-0.5)Y_+(z)=z/(z-1)$，故
+
+   $$
+   Y_+(z)=\frac{z}{(z-1)(z-0.5)}=\frac{2z}{z-1}-\frac{2z}{z-0.5},\qquad |z|>1.
+   $$
+
+2. 先写 $y[k]=C_1(0.8)^k+C_2(0.4)^k$。初值给出 $C_1+C_2=1$、$0.8C_1+0.4C_2=0$，解得 $C_1=-1,C_2=2$。于是 $y[k]=-(0.8)^k+2(0.4)^k$，$y[2]=-0.32$；原式直接计算也得到 $1.2\times0-0.32\times1=-0.32$。
+3. 写成 $y[k]=(C_1+C_2k)(0.8)^k$。$y[0]=1$ 给出 $C_1=1$，$y[1]=0.8$ 给出 $0.8(1+C_2)=0.8$，所以 $C_2=0$。解为 $y[k]=(0.8)^k$，$y[5]=0.32768$；重根允许出现含 $k$ 的项，但是否出现还由初值决定。
+4. 每步增加 $2$，所以 $y[k]=4+2k$，$y[3]=10$。若试常数 $c$，左边 $c-c=0$ 不可能等于 $2$。此时特解可以取 $2k$，再用齐次常数解补上初值 $4$。
