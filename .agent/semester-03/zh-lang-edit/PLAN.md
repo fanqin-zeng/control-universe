@@ -50,7 +50,7 @@
 | 42 | NONLINEAR-04 | 描述函数 | content/nonlinear/describing-function.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-04.md) |
 | 43 | NONLINEAR-05 | 反馈线性化 | content/nonlinear/feedback-linearization.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-05.md) |
 | 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-06.md) |
-| 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待润色 | — |
+| 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-07.md) |
 | 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待润色 | — |
 
 | 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 待完成 | 待生产 | — |
