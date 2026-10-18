@@ -44,3 +44,5 @@ W06/W07/W08/W09均保持待办。严格直接内核与生产Pyodide不是原生I
 ## 合并
 
 正文、日志、台账与验收同提交；真实no-ff合master后回填本回执及checklist合并列。无gh-pages推送授权，不发布。
+
+实际交付提交b4bd61b；课程no-ff合并e2ef9828b225e15b2fa7714e45589802605b86ea。全局checklist六格按真实合并回填，回执再次no-ff合master后删除工作分支。最终master复核见check-merged.log/semester-merged.log。
