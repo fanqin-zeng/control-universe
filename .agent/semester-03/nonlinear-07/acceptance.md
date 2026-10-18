@@ -31,4 +31,4 @@
 | npm run check | 退出0；PASS21/WARN2/FAIL0，既有WARN已登记 | check.log |
 | node scripts/check-semester03.mjs | 退出0；PASS，提交前merged44 | checklist.log |
 
-Phase4已签发，实际master提交回执待提交成功后填写。
+Phase4已签发，实际课程提交已进入master：dd961a7caf18390888c3e3c78ee29044cb82f789；全局checklist六列已勾，本期merged45。
