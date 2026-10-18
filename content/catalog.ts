@@ -2094,52 +2094,52 @@ export const catalog: Chapter[] = [
         "title": "相平面",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "位置和速度",
+            "title": "位置和速度"
           },
           {
-            "slug": "相平面与向量场",
-            "title": "相平面与向量场"
+            "slug": "向量场",
+            "title": "向量场"
           },
           {
-            "slug": "nullcline-与平衡点",
-            "title": "Nullcline 与平衡点"
+            "slug": "零导数线",
+            "title": "零导数线"
           },
           {
-            "slug": "平衡点分类迹-行列式平面",
-            "title": "平衡点分类：迹-行列式平面"
+            "slug": "平衡点分类",
+            "title": "平衡点分类"
           },
           {
-            "slug": "线性化何时失效",
-            "title": "线性化何时失效"
+            "slug": "线性化边界",
+            "title": "线性化边界"
           },
           {
-            "slug": "手算例非线性振子的完整相平面",
-            "title": "手算例：非线性振子的完整相平面"
+            "slug": "duffing算例",
+            "title": "Duffing算例"
           },
           {
-            "slug": "鞍点分界线与吸引域",
-            "title": "鞍点分界线与吸引域"
+            "slug": "分界线",
+            "title": "分界线"
           },
           {
-            "slug": "poincaré-bendixson-定理与极限环",
-            "title": "Poincaré-Bendixson 定理与极限环"
+            "slug": "闭轨与极限环",
+            "title": "闭轨与极限环"
           },
           {
-            "slug": "应用案例",
-            "title": "应用案例"
+            "slug": "模型案例",
+            "title": "模型案例"
           },
           {
-            "slug": "高维推广poincaré-截面与-floquet-乘子",
-            "title": "高维推广：Poincaré 截面与 Floquet 乘子"
+            "slug": "截面与乘子",
+            "title": "截面与乘子"
           },
           {
-            "slug": "分岔相图的拓扑突变",
-            "title": "分岔：相图的拓扑突变"
+            "slug": "分支与失稳",
+            "title": "分支与失稳"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "方法边界",
+            "title": "方法边界"
           },
           {
             "slug": "小结",

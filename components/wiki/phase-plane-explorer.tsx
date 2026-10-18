@@ -6,6 +6,7 @@ import type { EChartsOption } from "echarts";
 
 type SysKey = "pendulum" | "vanderpol" | "duffing" | "lotka" | "cubic";
 type Pt = [number, number];
+type Trajectory = Pt[] & { times: number[]; termination: string };
 type Names = [string, string];
 
 type ExtraReadout =
@@ -284,9 +285,17 @@ function sampleCurve(g: (x: number) => number, box: SysDef["box"]): Pt[] {
   return sampleRange(g, box.x1[0], box.x1[1], box.x2);
 }
 
-function rk4(def: SysDef, ic: Pt, p: number): Pt[] {
-  const steps = Math.max(400, Math.round(def.T * 60));
+function rk4(def: SysDef, ic: Pt, p: number): Trajectory {
+  const steps = Math.max(400, Math.round(def.T * 240));
   const dt = def.T / steps;
+  // The exactly critical undamped release has a known separatrix. Generic
+  // floating-point integration eventually chooses a side due to energy drift.
+  if (def.key === "pendulum" && p === 0 && ic[0] === 0 && Math.abs(ic[1]) === 2) {
+    const points = Object.assign([] as Pt[], {times:[] as number[],termination:"horizon-analytic"});
+    const keep = Math.max(1, Math.round(steps/1200)), sign = Math.sign(ic[1]);
+    for(let i=0;i<=steps;i++) if(i%keep===0||i===steps){const t=i*dt;points.push([sign*(4*Math.atan(Math.exp(t))-Math.PI),sign*2/Math.cosh(t)]);points.times.push(t);}
+    return points;
+  }
   const lim = Math.max(
     Math.abs(def.box.x1[0]),
     Math.abs(def.box.x1[1]),
@@ -296,7 +305,7 @@ function rk4(def: SysDef, ic: Pt, p: number): Pt[] {
   let x = ic[0];
   let y = ic[1];
   const f = def.deriv;
-  const pts: Pt[] = [[x, y]];
+  const pts = Object.assign([[x, y]] as Pt[], {times:[0],termination:"horizon"});
   const keep = Math.max(1, Math.round(steps / 1200));
   for (let i = 0; i < steps; i++) {
     const [k1x, k1y] = f([x, y], p);
@@ -305,12 +314,12 @@ function rk4(def: SysDef, ic: Pt, p: number): Pt[] {
     const [k4x, k4y] = f([x + dt * k3x, y + dt * k3y], p);
     x += (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
     y += (dt / 6) * (k1y + 2 * k2y + 2 * k3y + k4y);
-    if (!isFinite(x) || !isFinite(y)) break;
+    if (!isFinite(x) || !isFinite(y)) {pts.termination="nonfinite";break;}
     if (Math.abs(x) > lim || Math.abs(y) > lim) {
-      pts.push([x, y]);
+      pts.push([x, y]);pts.times.push((i+1)*dt);pts.termination="display-cutoff";
       break;
     }
-    if (i % keep === 0) pts.push([x, y]);
+    if ((i+1) % keep === 0 || i===steps-1) {pts.push([x, y]);pts.times.push((i+1)*dt);}
   }
   return pts;
 }
@@ -319,7 +328,7 @@ function classify(tr: number, det: number): { label: string; color: string; hype
   const disc = tr * tr - 4 * det;
   const EPS = 1e-9;
   if (Math.abs(det) < EPS)
-    return { label: "非孤立平衡点", color: "#64748b", hyperbolic: false };
+    return { label: "零特征值（非线性待判）", color: "#64748b", hyperbolic: false };
   if (det < 0) return { label: "鞍点", color: "#dc2626", hyperbolic: true };
   if (Math.abs(tr) < EPS)
     return { label: "中心（线性化）", color: "#7c3aed", hyperbolic: false };
@@ -411,6 +420,7 @@ export function PhasePlaneExplorer() {
       x1min: Math.min(...xs),
       x1max: Math.max(...xs),
       endPt,
+      endTime: mainTraj.times[mainTraj.times.length-1],
       settled: nearest.d < 1e-3,
       nearest,
       leftBox:
@@ -419,76 +429,7 @@ export function PhasePlaneExplorer() {
     };
   }, [mainTraj, eqData, def]);
 
-  const extra = useMemo<ExtraReadout>(() => {
-    if (key === "pendulum") {
-      const wCrit = bisectThreshold(
-        (w0) => {
-          const tr = rk4(def, [0, w0], p);
-          return Math.max(...tr.map((q) => q[0])) > Math.PI + 0.05;
-        },
-        0.5,
-        6
-      );
-      return { sys: "pendulum", wCrit };
-    }
-    if (key === "duffing") {
-      const esc = (v0: number) => {
-        const tr = rk4(def, [0, v0], p);
-        return Math.max(...tr.map((q) => q[0])) > Math.sqrt(5) + 0.1;
-      };
-      const vCrit = p < 1e-6 ? Math.sqrt(2 * 1.25) : bisectThreshold(esc, 0.2, 6);
-      const V = (x: number) => 0.5 * x * x - (DUF_K / 4) * x ** 4;
-      return {
-        sys: "duffing",
-        vCrit,
-        barrier: V(Math.sqrt(5)) - V(0),
-        E0: V(ic1) + 0.5 * ic2 * ic2,
-      };
-    }
-    if (key === "vanderpol") {
-      const Tlong = 400;
-      const long = rk4({ ...def, T: Tlong }, ic, p);
-      const tail = long.slice(Math.floor(long.length * 0.75));
-      const xs = tail.map((q) => q[0]);
-      // rk4 decimates to ~1200 stored samples, so index i is not an integration step.
-      const dtStored = Tlong / (long.length - 1);
-      const ups: number[] = [];
-      for (let i = 1; i < long.length; i++) {
-        if (long[i - 1][0] < 0 && long[i][0] >= 0 && i > long.length * 0.75) {
-          const frac = -long[i - 1][0] / (long[i][0] - long[i - 1][0]);
-          ups.push((i - 1 + frac) * dtStored);
-        }
-      }
-      const gaps: number[] = [];
-      for (let i = 1; i < ups.length; i++) gaps.push(ups[i] - ups[i - 1]);
-      gaps.sort((a, b) => a - b);
-      return {
-        sys: "vanderpol",
-        amp: Math.max(...xs),
-        ampMin: Math.min(...xs),
-        period: gaps.length ? gaps[Math.floor(gaps.length / 2)] : NaN,
-        smallMu: 2 * Math.PI * (1 + (p * p) / 16),
-        relax: (3 - 2 * Math.LN2) * p,
-      };
-    }
-    if (key === "lotka") {
-      const H = (x: number, y: number) =>
-        LV_DELTA * x - LV_GAMMA * Math.log(x) + LV_BETA * y - p * Math.log(y);
-      const h0 = H(ic[0], ic[1]);
-      const endP = mainTraj[mainTraj.length - 1];
-      const h1 = H(endP[0], endP[1]);
-      return { sys: "lotka", h0, h1, drift: Math.abs(h1 / h0 - 1) };
-    }
-    const r0 = Math.hypot(ic1, ic2);
-    const rEnd = Math.hypot(stats.endPt[0], stats.endPt[1]);
-    const blow = p > 1e-9 ? 1 / (2 * p * r0 * r0) : Infinity;
-    const Tanalytic = Math.min(def.T, blow * 0.99);
-    const rAna =
-      p > 1e-9 && Tanalytic < blow
-        ? r0 / Math.sqrt(Math.max(1e-300, 1 - 2 * p * r0 * r0 * Tanalytic))
-        : r0;
-    return { sys: "cubic", r0, rEnd, blow, rAna, Tanalytic };
-  }, [key, def, p, ic, ic1, ic2, mainTraj, stats.endPt]);
+  const extra = useMemo(() => phaseExtra(key, def, p, ic, mainTraj, stats), [key,def,p,ic1,ic2,mainTraj,stats]);
 
   const option = useMemo<EChartsOption>(() => {
     const series: Record<string, unknown>[] = [];
@@ -583,7 +524,9 @@ export function PhasePlaneExplorer() {
         margin: "24px 0",
         padding: 16,
         background: "#fff",
+        color:"#0f172a",
       }}
+      aria-label="相平面探索"
       className="not-prose"
     >
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>
@@ -613,9 +556,10 @@ export function PhasePlaneExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 10 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap:"wrap", gap: 8 }}>
           {def.paramSymbol} = {p.toFixed(2)}（{def.paramName}）
           <input
+            aria-label="模型参数"
             type="range"
             min={def.pMin}
             max={def.pMax}
@@ -625,9 +569,10 @@ export function PhasePlaneExplorer() {
             style={{ width: 150 }}
           />
         </label>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap:"wrap", gap: 8 }}>
           {def.axisNames[0].split(" ")[0]}₀ = {ic1.toFixed(3)}
           <input
+            aria-label="初始位置"
             type="range"
             min={def.icRange.x1[0]}
             max={def.icRange.x1[1]}
@@ -637,9 +582,10 @@ export function PhasePlaneExplorer() {
             style={{ width: 130 }}
           />
         </label>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap:"wrap", gap: 8 }}>
           {def.axisNames[1].split(" ")[0]}₀ = {ic2.toFixed(3)}
           <input
+            aria-label="初始速度"
             type="range"
             min={def.icRange.x2[0]}
             max={def.icRange.x2[1]}
@@ -668,6 +614,7 @@ export function PhasePlaneExplorer() {
         </label>
       </div>
 
+      <button onClick={() => switchTo("duffing")} style={{padding:6,marginBottom:10}}>恢复默认相图</button>
       <div ref={chartRef} style={{ width: "100%", height: 430 }} />
 
       <div
@@ -679,6 +626,8 @@ export function PhasePlaneExplorer() {
           border: "1px solid #e2e8f0",
           borderRadius: 6,
           padding: "8px 10px",
+          overflowX: "auto",
+          maxWidth: "100%",
         }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -724,6 +673,81 @@ export function PhasePlaneExplorer() {
   );
 }
 
+export function phaseExtra(key: SysKey, def: SysDef, p: number, ic: Pt, mainTraj: Trajectory, stats: {endPt:Pt}): ExtraReadout {
+
+    if (key === "pendulum") {
+      const wCrit = bisectThreshold(
+        (w0) => {
+          const tr = rk4(def, [0, w0], p);
+          return Math.max(...tr.map((q) => q[0])) > Math.PI + 0.05;
+        },
+        0.5,
+        6
+      );
+      return { sys: "pendulum", wCrit };
+    }
+    if (key === "duffing") {
+      const esc = (v0: number) => {
+        const tr = rk4(def, [0, v0], p);
+        return Math.max(...tr.map((q) => q[0])) > Math.sqrt(5) + 0.1;
+      };
+      const vCrit = p < 1e-6 ? Math.sqrt(2 * 1.25) : bisectThreshold(esc, 0.2, 6);
+      const V = (x: number) => 0.5 * x * x - (DUF_K / 4) * x ** 4;
+      return {
+        sys: "duffing",
+        vCrit,
+        barrier: V(Math.sqrt(5)) - V(0),
+        E0: V(ic[0]) + 0.5 * ic[1] * ic[1],
+      };
+    }
+    if (key === "vanderpol") {
+      const Tlong = 400;
+      const long = rk4({ ...def, T: Tlong }, ic, p);
+      const tail = long.slice(Math.floor(long.length * 0.75));
+      const xs = tail.map((q) => q[0]);
+      // rk4 decimates to ~1200 stored samples, so index i is not an integration step.
+      // Every retained point carries its actual integration timestamp.
+      const ups: number[] = [];
+      for (let i = 1; i < long.length; i++) {
+        if (long[i - 1][0] < 0 && long[i][0] >= 0 && i > long.length * 0.75) {
+          const frac = -long[i - 1][0] / (long[i][0] - long[i - 1][0]);
+          ups.push(long.times[i-1]+frac*(long.times[i]-long.times[i-1]));
+        }
+      }
+      const gaps: number[] = [];
+      for (let i = 1; i < ups.length; i++) gaps.push(ups[i] - ups[i - 1]);
+      gaps.sort((a, b) => a - b);
+      return {
+        sys: "vanderpol",
+        amp: Math.max(...xs),
+        ampMin: Math.min(...xs),
+        period: gaps.length ? gaps[Math.floor(gaps.length / 2)] : NaN,
+        smallMu: 2 * Math.PI * (1 + (p * p) / 16),
+        relax: (3 - 2 * Math.LN2) * p,
+      };
+    }
+    if (key === "lotka") {
+      const H = (x: number, y: number) =>
+        LV_DELTA * x - LV_GAMMA * Math.log(x) + LV_BETA * y - p * Math.log(y);
+      const h0 = H(ic[0], ic[1]);
+      const endP = mainTraj[mainTraj.length - 1];
+      const h1 = H(endP[0], endP[1]);
+      return { sys: "lotka", h0, h1, drift: Math.abs(h1-h0)/Math.max(1,Math.abs(h0)) };
+    }
+    const r0 = Math.hypot(ic[0], ic[1]);
+    const rEnd = Math.hypot(stats.endPt[0], stats.endPt[1]);
+    const blow = p > 1e-9 ? 1 / (2 * p * r0 * r0) : Infinity;
+    const Tanalytic = mainTraj.times[mainTraj.times.length-1];
+    const rAna =
+      Tanalytic < blow
+        ? r0 / Math.sqrt(Math.max(1e-300, 1 - 2 * p * r0 * r0 * Tanalytic))
+        : r0;
+    return { sys: "cubic", r0, rEnd, blow, rAna, Tanalytic };
+
+}
+
+export const phasePlaneNumerics = {DEFS,rk4,classify,bisectThreshold,phaseExtra};
+
 function Readout({
   p,
   ic,
@@ -736,6 +760,7 @@ function Readout({
     x1min: number;
     x1max: number;
     endPt: Pt;
+    endTime: number;
     settled: boolean;
     nearest: { d: number; e: { pt: Pt; cl: { label: string } } };
     leftBox: boolean;
@@ -743,20 +768,20 @@ function Readout({
   extra: ExtraReadout;
 }) {
   const dest = stats.settled
-    ? `收敛到平衡点 (${stats.nearest.e.pt[0].toFixed(3)}, ${stats.nearest.e.pt[1].toFixed(3)})`
+    ? `末样点靠近平衡点 (${stats.nearest.e.pt[0].toFixed(3)}, ${stats.nearest.e.pt[1].toFixed(3)})`
     : stats.leftBox
-      ? "已离开显示区域（逃逸到无穷）"
-      : "仍在有限区域内运动（未收敛到平衡点）";
+      ? "轨迹越过显示范围/达到数值截断；这不等于数值证明无穷远"
+      : "当前窗口末样点未靠近平衡点；不能据此断言长期有界";
 
   if (extra.sys === "pendulum") {
     return (
       <>
         <div>
-          初值 ({ic[0].toFixed(3)}, {ic[1].toFixed(3)})，积分 40 s 后：{dest}；x₁ 范围 [
+          初值 ({ic[0].toFixed(3)}, {ic[1].toFixed(3)})，实际积分到 {stats.endTime.toFixed(3)} s：{dest}；x₁ 范围 [
           {stats.x1min.toFixed(3)}, {stats.x1max.toFixed(3)}]。
         </div>
         <div>
-          d = {p.toFixed(2)} 时，从 θ = 0 出发能翻过顶点 θ = π 的临界初速 ω_crit ={" "}
+          d = {p.toFixed(2)} 时，从 θ = 0 出发能翻过顶点 θ = π 的有限窗口越顶阈值估计 ω_crit ={" "}
           <b>{extra.wCrit.toFixed(6)}</b>；无阻尼能量判据 2·(1−cos π) = ½ω² 给出 ω = 2。
           两者之比 = {(extra.wCrit / 2).toFixed(4)}。
         </div>
@@ -770,10 +795,10 @@ function Readout({
         <div>
           初值 ({ic[0].toFixed(3)}, {ic[1].toFixed(3)})：E = ½x₂² + V(x₁) ={" "}
           <b>{extra.E0.toFixed(6)}</b>，势垒高度 ΔV = V(√5) − V(0) ={" "}
-          <b>{extra.barrier.toFixed(6)}</b>；积分 60 s 后{dest}。
+          <b>{extra.barrier.toFixed(6)}</b>；实际积分到 {stats.endTime.toFixed(3)} s：{dest}。
         </div>
         <div>
-          沿 x₂ 轴（初值 (0, v₀)）的逃逸临界速度 v_crit = <b>{extra.vCrit.toFixed(6)}</b>
+          沿 x₂ 轴（初值 (0, v₀)）的有限窗口越界速度估计 v_crit = <b>{extra.vCrit.toFixed(6)}</b>
           ；无阻尼能量判据 √(2ΔV) = {Math.sqrt(2 * extra.barrier).toFixed(6)}，比值 ={" "}
           {(extra.vCrit / Math.sqrt(2 * extra.barrier)).toFixed(4)}。
         </div>
@@ -791,16 +816,16 @@ function Readout({
         <div>
           μ = {p.toFixed(2)}：极限环振幅 x₁ ∈ [{extra.ampMin.toFixed(6)},{" "}
           {extra.amp.toFixed(6)}]，峰峰值 {(extra.amp - extra.ampMin).toFixed(6)}，实测周期{" "}
-          <b>{extra.period.toFixed(6)}</b> s。
+          <b>{Number.isFinite(extra.period) ? extra.period.toFixed(6) : "未检出完整周期"}</b> s。
         </div>
         <div>
           小 μ 渐近式 2π(1 + μ²/16) = {extra.smallMu.toFixed(6)}（相对误差{" "}
-          {(Math.abs(extra.period / extra.smallMu - 1) * 100).toFixed(3)}%）；
+          {Number.isFinite(extra.period) ? (Math.abs(extra.period / extra.smallMu - 1) * 100).toFixed(3) : "未定义"}%）；
           大 μ 张弛振荡渐近式 (3 − 2ln2)μ = {extra.relax.toFixed(6)}（比值{" "}
-          {(extra.period / Math.max(extra.relax, 1e-12)).toFixed(4)}）。
+          {Number.isFinite(extra.period) && extra.relax>0 ? (extra.period / extra.relax).toFixed(4) : "未定义"}）。
         </div>
         <div>
-          振幅由非线性项 (1 − x₁²) 的过零点决定，与初值无关——这就是「孤立」闭合轨道。
+          这里显示后段采样峰值与周期估计；稳定极限环及其吸引域需另证，振幅不直接等于阻尼项过零位置。
         </div>
       </>
     );
@@ -812,7 +837,7 @@ function Readout({
         <div>
           首次积分 H = {LV_DELTA}x₁ − {LV_GAMMA}ln x₁ + {LV_BETA}x₂ − {p.toFixed(2)}ln x₂：
           H(0) = <b>{extra.h0.toFixed(9)}</b>，H(T) = <b>{extra.h1.toFixed(9)}</b>，
-          相对漂移 {extra.drift.toExponential(2)}。
+          按 max(1, |H(0)|) 归一的漂移 {extra.drift.toExponential(2)}。
         </div>
         <div>
           H 守恒说明这里的闭合轨道是一族守恒量水平线（真正的非线性中心），
@@ -831,14 +856,14 @@ function Readout({
         ，解析解 r(T) = r₀/√(1 − 2ar₀²T) = <b>{extra.rAna.toFixed(6)}</b>。
       </div>
       <div>
-        {p > 1e-9
+        {extra.r0===0 ? "零初态保持原点，径向爆破公式不适用于零半径。" : p > 1e-9
           ? `a > 0：解析爆破时刻 t* = 1/(2ar₀²) = ${extra.blow.toFixed(4)} s，轨道在有限时间内跑到无穷。`
           : p < -1e-9
             ? "a < 0：r 单调衰减到 0，原点是全局渐近稳定的焦点。"
             : "a = 0：r 恒定，原点才是真正的中心。"}
       </div>
       <div style={{ color: "#b45309" }}>
-        三种情况下 J(0) 都是 [[0, −1], [1, 0]]，tr = 0、det = 1、λ = ±j，线性化一律判为「中心」。
+        三种情况下 J(0) 都是 [[0, −1], [1, 0]]，tr = 0、det = 1、λ = ±j，一阶模型为线性中心，原非线性系统需另判。
         非双曲点上 Hartman-Grobman 失效，三次项才是真正的裁判。
       </div>
     </>

@@ -637,3 +637,6 @@ LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE
 ### NONLINEAR-01 本轮执行记录（2026-10-18）
 
 非线性系统按重构专用技能完成Phase1–4：抽屉间隙/推力上限引入，保留六类模型、叠加/频谱/切线/周期/限幅教学目的与七题，形成11短H2、五实验五cell。修连续性/光滑性、任意回线耗能、THD跳变、局部到全局与PI推导，真实TS组件30组对独立Python闭式/FFT及轴范围核验，原始Notebook严格Jupyter与Pyodide全部通过，43旧ID保留。旧跳跃/粘滑长扫描完整保留source-before快照，移入W13待NONLINEAR-02/12分别审查，未冒称其完成。签发、实际master提交与命令输出见全局checklist及.agent/semester-03/nonlinear-01/acceptance.md。原25项Python待办及W08/W09/W10保持；本轮不发布Pages，下一课另开对话。
+### NONLINEAR-02 本轮执行记录（2026-10-18）
+
+相平面按重构专用技能Phase1–4，保留十二组原实验/六题并补拖块摩擦与分类/答案核验，形成15短H2、14Notebook/27cell。秋千位置/速度SVG引入；修奇异J与双曲重根、nullcline、PB条件、有限扫描/数值停止/混沌断言和冲击状态/夹角；两真实组件对独立DOP853/矩阵指数/径向闭式，保留全部旧ID。W13中本课局部材料已审，NONLINEAR-12仍待审；25Python待办、W08/W09/W10不关闭。签发与实际master提交见全局checklist及.agent/semester-03/nonlinear-02/acceptance.md。本轮不发布Pages，不交付下一课。

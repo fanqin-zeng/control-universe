@@ -1,0 +1,545 @@
+{
+  "testedAt": "2026-10-18T09:51:32.664Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=nonlinear%2Fphase-plane",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "nonlinear/phase-plane",
+      "title": "相平面",
+      "sourceHash": "6ac1bf785587c80705ce5861a3e218e8ac1004234402c8649f7be084d7aedfba",
+      "notebooks": [
+        {
+          "id": "nonlinear/phase-plane#1",
+          "title": "Notebook 1：Van der Pol 的向量场、流线与「初值遗忘」",
+          "index": 1,
+          "line": 55,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4828,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 349488
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3287,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "mu = 0.5，每个初值积分 T = 200 s；周期由 x 上行过零事件的中位间隔给出（不受采样分辨率影响）\nIC             x_min       x_max       峰峰值         周期          事件数\n[0.2, 0.0]     -2.002487   +2.002485   4.004973    6.380676    16\n[2.8, 0.0]     -2.002487   +2.002483   4.004970    6.380676    16\n[0.0, 2.4]     -2.002483   +2.002487   4.004970    6.380676    16\n[0.001, 0.0]   -2.002486   +2.002487   4.004973    6.380676    16\n[-3.0, -2.0]   -2.002486   +2.002486   4.004971    6.380676    15\n\n五个初值（含 1e-3 这种几乎就在平衡点上的）给出完全相同的 x_min / x_max / 周期。\n=> 这条闭合轨道是孤立的：振幅由系统参数决定，与初值无关 —— 这就是极限环。\n   对比线性中心（如无阻尼振子）：振幅由初值决定，闭合轨道连续成族。\n   小 mu 渐近式：振幅 -> 2，周期 -> 2pi(1+mu^2/16) = 6.381360\n   实测：      振幅 = 2.002486，           周期 = 6.380676\n   周期相对误差 = 0.011%\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#2",
+          "title": "Notebook 2：迹-行列式分类表，以及 2000 次随机抽查",
+          "index": 2,
+          "line": 221,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1832,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "类型                   tr      det    tr^2-4det   特征值\n稳定节点             -4.000    3.000        4.000   -1.0000, -3.0000\n不稳定节点             4.000    3.000        4.000   1.0000, 3.0000\n稳定焦点             -1.000    4.250      -16.000   -0.5000+2.0000j, -0.5000-2.0000j\n不稳定焦点             1.000    4.250      -16.000   0.5000+2.0000j, 0.5000-2.0000j\n鞍点                0.000   -1.000        4.000   1.0000, -1.0000\n中心(线性)            0.000    1.000       -4.000   0.0000+1.0000j, 0.0000-1.0000j\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 536352
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 51,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "随机 2x2 矩阵：2000 个\n  其中双曲且非退化（判据可裁决）：2000 个\n  落在退化边界上被跳过：          0 个\n  判据与特征值分类不一致：        0 个\n\n=> 只要 det != 0 且 tr^2 != 4det（即平衡点是双曲的），\n   看 tr / det / tr^2-4det 三个数就足以分类，无需解特征方程。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#3",
+          "title": "Notebook 3：Jacobian 完全相同的三个系统，三种命运",
+          "index": 3,
+          "line": 329,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 141,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "J(0) = [[0.0, -1.0], [1.0, 0.0]]   tr = 0.0000   det = 1.0000   特征值 = [1j, -1j]\n=> Re(lambda) = 0，平衡点非双曲，Hartman-Grobman 定理不适用：\n   线性化不能定性，三次项才是真正的裁判。\n\na       T         r(T) 数值       r(T) 解析       相对误差\n-0.10   30.000    0.352655      0.352655      2.26e-10\n0.00    30.000    0.700000      0.700000      3.65e-10\n0.10    10.102    7.000000      7.000000      3.29e-09\n\na = +0.1, r0 = 0.7 的解析爆破时刻 1/(2*a*r0^2) = 10.2041\n=> a=+0.1 时轨道在有限时间 t=10.2041 内跑到无穷：这不是中心，是不稳定焦点（且有限时间逃逸）。\n   a=-0.1 时 r(30) = 0.3527 < r0 = 0.7：稳定焦点。\n   a= 0.0 时 r 恒为 0.7000 = r0：这才是真正的中心。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 954,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 360488
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#4",
+          "title": "Notebook 4：Duffing 振子手算例的全程数值核对",
+          "index": 4,
+          "line": 500,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "平衡点方程：x2 = 0 且 x1(0.2 x1^2 - 1) = 0\n  => x1 = 0 或 x1^2 = 5，即 x1 = 0, +2.236068, -2.236068\n\nx1 = +0.000000 :\n  J = [[0.0, 1.0], [-1.0, -0.5]]   tr = -0.5000   det = +1.0000   tr^2-4det = -3.7500\n  特征值 = [(-0.25+0.968246j), (-0.25-0.968246j)]   ->  焦点，稳定\n  平衡点残差 |F(x*)|_inf = 0.00e+00\nx1 = +2.236068 :\n  J = [[0.0, 1.0], [2.0, -0.5]]   tr = -0.5000   det = -2.0000   tr^2-4det = +8.2500\n  特征值 = [1.186141, -1.686141]   ->  鞍点（不稳定）\n  平衡点残差 |F(x*)|_inf = 4.44e-16\nx1 = -2.236068 :\n  J = [[0.0, 1.0], [2.0, -0.5]]   tr = -0.5000   det = -2.0000   tr^2-4det = +8.2500\n  特征值 = [1.186141, -1.686141]   ->  鞍点（不稳定）\n  平衡点残差 |F(x*)|_inf = 4.44e-16\n\n势函数 V(x) = x^2/2 - 0.05 x^4   （力 = -dV/dx，d2V/dx2 = 1 - 0.6 x^2）\n  V(+0.000000) = +0.000000   d2V/dx2 = +1.0000  (极小：势阱底)\n  V(+2.236068) = +1.250000   d2V/dx2 = -2.0000  (极大：势垒顶)\n  V(-2.236068) = +1.250000   d2V/dx2 = -2.0000  (极大：势垒顶)\n  势垒高度 dV = V(sqrt5) - V(0) = 1.250000\n\n注意：V(x) 在 x -> +-inf 时趋于 -inf，所以这是「单势阱 + 两侧势垒」，\n      不是双势阱。标准 Duffing 双阱需要负线性刚度，例如\n          xdd + d*xd - x + x^3 = 0\n      那时原点才是鞍点，两个非零平衡点才是势阱底。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1123,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "NUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 2.4341447149049684\nE(x0)     x0           |x1| 终值        逃逸?         结论\n0.4000    0.936426     0.000000       False       留在井内，螺旋收敛到原点\n0.8000    1.414214     0.000000       False       留在井内，螺旋收敛到原点\n1.2000    2.000000     0.000000       False       留在井内，螺旋收敛到原点\n1.2400    2.133726     0.000000       False       留在井内，螺旋收敛到原点\n1.2499    2.226046     0.000000       False       留在井内，螺旋收敛到原点\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 3.861711510978435\n1.2458    2.300000     1.493e+13      True        越过势垒逃逸\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 2.6707525396406036\n1.1719    2.500000     1.479e+13      True        越过势垒逃逸\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 1.8062097416446272\n0.4500    3.000000     2.969e+13      True        越过势垒逃逸\n\n注意上表最后几行：x0 越过 sqrt(5) = 2.236068 之后，V(x) 反而开始下降，\n所以 E(x0) 可以低于势垒高度 1.25 而轨迹仍然逃逸 —— 例如 x0 = 2.50 时\nE = 1.171875 < 1.25，但它已经在势垒外侧，力 -dV/dx = 0.6250 > 0 把它继续推出去。\n=> 能量判据只在\"初值位于势阱内侧\"时有效；一般的逃逸判据是看初值落在\n   鞍点稳定流形的哪一侧。下一节数值算出这条流形。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 291416
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 6372,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "NUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 2.808034402118287\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 4.166311661740258\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 6.50860581522846\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 8.485147010916968\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 9.230248080083713\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 10.273120842959438\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 11.069569767072942\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 12.369317824433484\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 14.478818245280966\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 15.495405076702305\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 16.23660114052333\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 17.264208400458532\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 18.02801404374903\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 19.154593503680438\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 20.17305474968812\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 20.918035429110216\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 21.961248087730883\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 22.75864903230945\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 24.06440843388501\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 26.264141479845343\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 27.570178840811735\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 29.759549090882814\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 31.008298421555548\n扫描线 1：初值 (x0, 0)，沿 x1 轴\n  临界 x0 = 2.236067977\n  sqrt(5) = 2.236067977      比值 = 1.000000000\n  => 阈值恰好就是鞍点本身：势垒顶在 x2=0 轴上，所以这条轴上的边界与阻尼无关。\n\n扫描线 2：初值 (0, v0)，沿 x2 轴\n  临界 v0（有阻尼 b=0.5） = 2.378738421\n  无阻尼能量判据 sqrt(2*1.25) = 1.581138830\n  比值 = 1.504446\n  => 阻尼耗散能量，越过势垒需要更大的初速：无阻尼能量判据只是必要条件，不是充分条件。\n\n验证：dE/dt = x2*(xdd + dV/dx) = x2*(-0.5*x2) = -0.5 x2^2 <= 0，\n  沿 v0 = 2.378638（略低于临界）积分 150 s 的能量损耗：\n  E(0) = 2.828960  ->  E(150) = 0.000000   （最高点 E_max 沿途 = 2.828960）\n  最终 |x1| = 0.000000  ->  未逃逸\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#5",
+          "title": "Notebook 5：鞍点的稳定流形就是吸引域的边界",
+          "index": 5,
+          "line": 706,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1342,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "NUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 30.99258271522627\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 31.206350529210766\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 15.053754479539961\n鞍点 (+2.236068, 0)：特征值 = [1.186141, -1.686141]\n   稳定流形方向   (Re<0) = [-0.510106, 0.860111]\n   不稳定流形方向 (Re>0) = [0.644567, 0.764548]\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 31.206350529210766\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 30.99258271522627\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 15.053754479539961\n鞍点 (-2.236068, 0)：特征值 = [1.186141, -1.686141]\n   稳定流形方向   (Re<0) = [-0.510106, 0.860111]\n   不稳定流形方向 (Re>0) = [0.644567, 0.764548]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 226420
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 547,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "右鞍点 (2.236068, 0) 的不稳定流形（正向积分 T=60）：\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 15.05385927383318\n  分支 +1 （初始沿 [6.4e-08, 7.6e-08]）: 逃逸到 + inf\n  分支 -1 （初始沿 [-6.4e-08, -7.6e-08]）: 收敛到原点（稳定焦点）\n\n右鞍点的稳定流形（反向积分，等价于把时间倒流 T=25）：\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 12.789611258915501\n  分支 +1 : 倒流终点 x1 = -2.318e+12, x2 = +1.699e+24  -> 逃逸到 - inf\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 10.971312158990187\n  分支 -1 : 倒流终点 x1 = +2.321e+12, x2 = -1.704e+24  -> 逃逸到 + inf\n\n=> 不稳定流形一支进入原点（属于吸引域边界内侧），另一支逃逸到 +inf；\n   稳定流形两支都逃逸到无穷，它把相平面切成三块：\n   中间块（含原点）= 稳定焦点的吸引域；两侧块 = 逃逸区。\n\n吸引域边界的定量检查：取稳定流形上距鞍点弧长很小的点，向两侧各偏移 1e-4，\n看它们的归宿是否相反：\nNUMERICAL STOP (not a full-horizon/accurate-infinity result): Required step size is less than spacing between numbers. last t= 9.181853858947113\n  偏移 +1*1e-4 法向 -> 逃逸到 + inf\n  偏移 -1*1e-4 法向 -> 收敛到原点（稳定焦点）\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#6",
+          "title": "Notebook 7：Poincare-Bendixson 的环形区域逐条验证",
+          "index": 6,
+          "line": 864,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4778,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "解析结论：\n  dr/dt = x2^2 (1-r^2)/r  ->  r=1 是不变圆；r<1 时向外，r>1 时向内（x2 != 0 处）\n  r=1 上 dtheta/dt = -1   ->  周期恰为 2pi = 6.283185\n\nr0      T      r(T)          |r(T)-1|     周期(实测)       圈数\n0.05    150    1.000000000   1.51e-12     6.283185307  23.8\n0.30    150    1.000000000   1.58e-12     6.283185307  23.9\n0.50    150    1.000000000   1.53e-12     6.283185307  23.9\n0.90    150    1.000000000   1.72e-12     6.283185307  23.9\n1.10    150    1.000000000   1.79e-12     6.283185307  23.9\n1.50    150    1.000000000   6.49e-13     6.283185307  23.8\n3.00    150    1.000000000   1.79e-12     6.283185307  23.4\n\n实测周期：min = 6.283185307，max = 6.283185307，与 2pi = 6.283185 的最大相对误差 = 1.210e-13\n=> 七个初值的周期一致到 1.2e-13 且都等于 2pi：这条极限环就是单位圆，\n   振幅与周期都由系统参数决定，与初值无关 —— 这正是「孤立闭合轨道」的含义。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 15469,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "在 x2 = 0 处 dr/dt = x2^2(1-r^2)/r = 0，流向与圆相切，\n所以\"环内边界上 dr/dt > 0\"这句话在两个点上是错的。正确的说法要看下一时刻：\n\n角度(deg)    r(0)          r(0.01)       r(0.5)        \n0          0.500000000   0.500000126   0.519191527   \n30         0.500000000   0.500926833   0.522746691   \n60         0.500000000   0.502804103   0.613259814   \n90         0.500000000   0.503754496   0.677793409   \n120        0.500000000   0.502836515   0.676203884   \n150        0.500000000   0.500959450   0.608664003   \n180        0.500000000   0.500000126   0.519191527   \n210        0.500000000   0.500926833   0.522746691   \n270        0.500000000   0.503754496   0.677793409   \n330        0.500000000   0.500959450   0.608664003   \n\n72 个起始角，r1=0.5 圆上出发的轨迹在 60 s 内到达的最小半径 = 0.500000000\n=> 环域 0.5 <= r <= 1.5 是正向不变集：轨迹既不会向内穿出，也不会向外穿出。\n\n环域内唯一的平衡点是原点：J(0) = [[0.0, 1.0], [-1.0, 1.0]]，tr = +1.000，det = +1.000，特征值 = [(0.5+0.866025j), (0.5-0.866025j)]\n=> 不稳定焦点。把原点从环域里挖掉后应用 Poincare-Bendixson：环域内必有闭合轨道。\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 682,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 247528
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#7",
+          "title": "Notebook 6：Van der Pol 极限环随 mu 的幅值与周期",
+          "index": 7,
+          "line": 997,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 11220,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "每个 mu 积分 T = max(300, 12*mu) s，周期取 x 上行过零事件中位间隔（后半段）\nmu      振幅 x_max      周期(实测)        2pi(1+mu^2/16)    (3-2ln2)mu    实测/(3-2ln2)mu\n0.05    1.999381      6.284087      6.28417           0.08069       77.88393\n0.10    2.000104      6.287111      6.28711           0.16137       38.96071\n0.25    2.000639      6.307688      6.30773           0.40343       15.63529\n0.50    2.002486      6.380676      6.38136           0.80685       7.90810\n1.00    2.008618      6.663287      6.67588           1.61371       4.12918\n2.00    2.019891      7.629874      7.85398           3.22741       2.36408\n5.00    2.021506      11.612231     16.10066          8.06853       1.43920\n10.00   2.014285      19.078370     45.55309          16.13706      1.18227\n20.00   2.007790      34.682323     163.36282         32.27411      1.07462\n40.00   2.003789      66.501369     634.60172         64.54823      1.03026\n\n=> 振幅：min = 1.999381 (mu=0.05)，max = 2.021506 (mu=5.00)，全区间波动不足 1.1%。\n   周期：从 mu=0.05 的 6.2841 s 涨到 mu=40 的 66.501 s，增长 11 倍。\n   与张弛振荡渐近式 (3-2ln2)mu = 1.6137 mu 的比值：mu=5 时 1.439，mu=10 时 1.182，mu=40 时 1.030\n   => 渐近式要在 mu 达到几十时才有 5% 级精度；mu=5 时误差 43.9%，mu=10 时 18.2%，mu=20 时 7.5%。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3994,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "mu=10 时的极限环已经变成\"两段慢爬升 + 两段快跳跃\"的张弛振荡，\n但峰峰值仍约为 4：振幅由非线性项 (1-x^2) 的过零点决定，而不是由 mu 决定。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 411632
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#8",
+          "title": "Notebook 8：单摆分界线与「越顶」临界速度",
+          "index": 8,
+          "line": 1107,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 903,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "平衡点：th = n*pi, w = 0   （n 为整数）\n  n=-2  th=-6.283185 : tr=-0.1000 det=+1.0000  特征值=[(-0.05+0.998749j), (-0.05-0.998749j)] -> 稳定焦点\n  n=-1  th=-3.141593 : tr=-0.1000 det=-1.0000  特征值=[0.951249, -1.051249] -> 鞍点\n  n=+0  th=+0.000000 : tr=-0.1000 det=+1.0000  特征值=[(-0.05+0.998749j), (-0.05-0.998749j)] -> 稳定焦点\n  n=+1  th=+3.141593 : tr=-0.1000 det=-1.0000  特征值=[0.951249, -1.051249] -> 鞍点\n  n=+2  th=+6.283185 : tr=-0.1000 det=+1.0000  特征值=[(-0.05+0.998749j), (-0.05-0.998749j)] -> 稳定焦点\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 304736
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 21298,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "b = 0.10 :\n  临界初速 w_crit（从 theta=0 出发）= 2.203798919\n  无阻尼能量判据 0.5 w0^2 = 2(1-cos pi) = 2  ->  w0 = 2.000000\n  比值 实测/无阻尼 = 1.101899\n\nb       w_crit         相对无阻尼值 2 的倍数\n0.00    2.000000       1.000000\n0.05    2.100958       1.050479\n0.10    2.203799       1.101899\n0.30    2.633030       1.316515\n0.60    3.325132       1.662566\n1.00    4.322167       2.161084\n\n=> 阻尼越大，越过鞍点所需的初速越大：能量沿途被耗散，\n   所以\"能量刚好等于势垒高度\"只是无阻尼时的判据。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#9",
+          "title": "Notebook 9：Lotka-Volterra 的中心是真是假",
+          "index": 9,
+          "line": 1256,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 771,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "平衡点：x'=0 -> x=0 或 y=al/be=2.0000 ； y'=0 -> y=0 或 x=ga/de=2.0000\n  (0.0000, 0.0000): J=[[1.0, -0.0], [0.0, -1.5]]  tr=-0.5000 det=-1.5000  特征值=[1.0, -1.5]\n  (2.0000, 2.0000): J=[[0.0, -1.0], [1.5, 0.0]]  tr=+0.0000 det=+1.5000  特征值=[1.224745j, -1.224745j]\n\n首次积分 H(x,y) = 0.75 x - 1.50 ln x + 0.50 y - 1.00 ln y\nIC           T      H(0)            H(T)            相对漂移        周期\n[2.0, 3.5]   40     0.957516261     0.957516261     3.63e-12    5.266703\n[3.5, 2.0]   40     1.052708367     1.052708367     1.62e-12    5.335633\n[1.2, 1.5]   40     0.971052557     0.971052557     3.30e-12    5.276418\n[2.0, 8.0]   40     2.380837687     2.380837687     4.04e-12    6.332758\n\nH 在 40 s 内的最大相对漂移 = 4.04e-12（纯积分器舍入）\n=> 闭合轨道是真的守恒量水平线，\n这是\"非线性中心\"，而不是 NB3 里那种 tr(J)=0 却螺旋发散的假中心。\n区别在于：这里存在解析的首次积分；NB3 里没有。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1689,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 289344
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#10",
+          "title": "Notebook 11：无轮辐轮的被动行走——带碰撞的混合系统极限环",
+          "index": 10,
+          "line": 1373,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 94,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "无轮辐轮：alpha = 24.0 deg（腿间夹角），slope = 12.0 deg（坡度）\n触地碰撞律 w+ = w- * cos(2*half) = w- * 0.913545\n\n周期步态（极限环）：w- = 0.933954607 rad/s\n步周期 = 0.434789587 s   ->  步频 = 2.299963 Hz\nPoincare 映射乘子 dP/dw = 0.834565300\n|乘子| < 1  => 步态是稳定极限环；偏差每步乘 0.8346 倍\n恢复到 1% 所需步数 = 25.46 步\n\nw-(0)        w-(1)         w-(2)         w-(10)        收敛到\n0.466977     0.571223      0.645460      0.874666      0.933955\n0.747164     0.781155      0.808429      0.905981      0.933955\n1.120746     1.092052      1.067514      0.967047      0.933955\n1.681118     1.582061      1.494374      1.092031      0.933955\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 271,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "映射在不动点处的斜率 = 0.834565\n斜率为正且小于 1 -> 单调收敛，不振荡；若斜率落在 (-1, 0)，相邻两步会一高一低交替。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 77412
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#11",
+          "title": "拖块摩擦的局部相图",
+          "index": 11,
+          "line": 1526,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 41188,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "v_b,z_equilibrium,Fprime,eigen= 0.1 -0.03290670566473226 -0.5213411329464508 [0.260671+3.151516j 0.260671-3.151516j]\nvb,offset,tail error,max step-check= [0.1, 0.001, 0.14085309901095888, 1.7918735689681498e-08]\nvb,offset,tail error,max step-check= [0.1, 0.02, 0.14085322912860498, 1.852169534410919e-08]\nvb,offset,tail error,max step-check= [0.1, 0.04, 0.14085361919713446, 1.9465811781915754e-08]\nv_b,z_equilibrium,Fprime,eigen= 0.35 -0.030718237639311093 0.01635247213778193 [-0.008176+3.162267j -0.008176-3.162267j]\nvb,offset,tail error,max step-check= [0.35, 0.001, 0.00018049707207379347, 1.2266790946728612e-10]\nvb,offset,tail error,max step-check= [0.35, 0.02, 0.0036977713189906875, 2.1827483293046512e-09]\nvb,offset,tail error,max step-check= [0.35, 0.04, 0.008118228203385256, 4.471004844130988e-09]\nv_b,z_equilibrium,Fprime,eigen= 1.0 -0.032000000041223074 0.01999999175538551 [-0.01+3.162262j -0.01-3.162262j]\nvb,offset,tail error,max step-check= [1.0, 0.001, 9.529506151289825e-05, 1.0024897058313886e-10]\nvb,offset,tail error,max step-check= [1.0, 0.02, 0.00190590134086881, 1.7273290991992596e-09]\nvb,offset,tail error,max step-check= [1.0, 0.04, 0.0038118033035591243, 3.1161898755849293e-09]\nFinite-time trajectories only: no certified basin, no true static-friction contact or dither guarantee.\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 39736
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#12",
+          "title": "Notebook 10（上）：受迫 Duffing 的同步截面与 Floquet 乘子",
+          "index": 12,
+          "line": 1585,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 19576,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "A = 1.5 的截面算完：100 个点\nA = 0.3 的截面算完：100 个点\n\nA = 1.5 : ptp(x) = 2.087e-14, ptp(v) = 8.971e-14\nA = 0.3 : ptp(x) = 2.742e+00, ptp(v) = 1.667e+00\n展宽之比 = 1.314e+14 倍\n=> A = 1.5：100 个截面点在 2e-14 量级内重合，运动是周期-1（截面退化为一个不动点）\n=> A = 0.3：100 个截面点铺满一片二维区域，运动不是周期-1\n\nA = 0.3 时，两条只差 1e-9 的轨道经过 k 个驱动周期后的距离：\n  k =   1 : |差| = 2.0662e-10\n  k =   5 : |差| = 3.9372e-09\n  k =  10 : |差| = 1.9991e-07\n  k =  20 : |差| = 1.6369e-03\n  k =  40 : |差| = 7.1824e-01\n  k =  80 : |差| = 7.6803e-01\n  k = 160 : |差| = 1.0722e+00\n  k = 250 : |差| = 1.3199e+00\n=> 距离从 1e-9 指数放大到 O(1) 后饱和：初值敏感性，这是混沌的操作性判据。\n\n=> 二维相平面装不下受迫系统（状态是 (x, v, t) 三维，非自治）；\n   按驱动周期取同步截面，就把三维流降回二维映射。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 31916
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 6283,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "  迭代  50 次：s = (+1.977150817, +1.019036175)，|P(s)-s| = 1.443e-10\n  迭代 100 次：s = (+1.977150817, +1.019036175)，|P(s)-s| = 7.885e-15\n  迭代 150 次：s = (+1.977150817, +1.019036175)，|P(s)-s| = 9.339e-15\n  迭代 200 次：s = (+1.977150817, +1.019036175)，|P(s)-s| = 8.951e-15\n  迭代 250 次：s = (+1.977150817, +1.019036175)，|P(s)-s| = 3.399e-14\n\nA = 1.5 的周期-1 轨道：s* = (1.977150817, 1.019036175)\n残差 |P(s*) - s*| = 1.321e-14（迭代 250 次 + Newton 2 步）\n映射 Jacobian DP（增广变分积分）=\n[[-2.26372903 -0.54764698]\n [ 9.03200724  2.01291332]]\n\n交叉验证 1：有限差分 DP 与变分 DP 的最大元素差 = 1.158e-08\n交叉验证 2：det(DP) 数值 = 0.3896611374，Liouville 解析值 exp(-d*Tp) = 0.3896611374，相对误差 = 1.54e-11\n\ntr(DP) = -0.25081570   det(DP) = 0.38966114   tr^2 - 4det = -1.49573603\nFloquet 乘子 = [(-0.12540785+0.61150144j), (-0.12540785-0.61150144j)]   （共轭复数对）\nmax |乘子| = 0.62422843  ->  单位圆内：周期-1 轨道渐近稳定\n复数对时 |mu1| = |mu2| = sqrt(det) = 0.62422843，与实测之差 = 0.00e+00\n辐角 = 1.773073 rad -> 扰动要绕 3.5 个驱动周期才回到同方向\n偏差每个驱动周期乘 0.6242 倍；衰减到 1% 需要 9.8 个周期 = 61.40 s\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#13",
+          "title": "Notebook 10（下）：沿周期-1 分支延拓，把判别式变号点与失稳点分开",
+          "index": 13,
+          "line": 1804,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 30740,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Liouville：det(DP) = exp(-d*Tp) = 0.38966114，与 A 无关\n乘子若为共轭复数对，则 |mu| = sqrt(det) = 0.62422843，同样与 A 无关\n\nA      不动点 (x, v)             tr(DP)      det(DP)     tr^2-4det   max|mu|    残差        结论\n0.60   (+1.47804,+1.40722) -1.041008   0.38966114  -0.4749     0.624228   3.0e-15   稳定（复数对）\n0.80   (+1.66546,+1.28210) -1.244071   0.38966114  -0.0109     0.624228   1.9e-15   稳定（复数对）\n1.00   (+1.78446,+1.17872) -1.171434   0.38966114  -0.1864     0.624228   1.6e-14   稳定（复数对）\n1.20   (+1.87281,+1.10061) -0.904116   0.38966114  -0.7412     0.624228   2.6e-14   稳定（复数对）\n1.40   (+1.94496,+1.04236) -0.495605   0.38966114  -1.3130     0.624228   3.2e-14   稳定（复数对）\n1.60   (+2.00745,+0.99889) 0.015780    0.38966114  -1.5584     0.624228   1.5e-14   稳定（复数对）\n1.80   (+2.06366,+0.96651) 0.601979    0.38966114  -1.1963     0.624228   2.2e-14   稳定（复数对）\n2.00   (+2.11552,+0.94259) 1.242417    0.38966114  -0.0150     0.624228   2.6e-14   稳定（复数对）\n2.20   (+2.21418,-0.79329) 0.315191    0.38966114  -1.4593     0.624228   1.2e-14   稳定（复数对）\n2.40   (+2.13858,-1.60861) -1.105386   0.38966114  -0.3368     0.624228   2.2e-14   稳定（复数对）\n2.60   (+1.14937,+2.45149) -2.461969   0.38966114  +4.5026     2.291957   9.1e-03   延拓失败（残差 9.1e-03）\n2.80   (+0.22730,+1.97877) 1.947614    0.38966114  +2.2346     1.721229   3.0e+00   延拓失败（残差 3.0e+00）\n3.00   (+1.39121,-2.45946) 1.053675    0.38966114  -0.4484     0.624228   1.2e+00   延拓失败（残差 1.2e+00）\n\n延拓成功 10 / 13 个 A\ndet(DP)：min = 0.3896611373, max = 0.3896611373，跨度 7.26e-12（纯舍入，验证 Liouville）\ntr(DP)：min = -1.244071, max = +1.242417，跨度 2.486489（这才是 A 真正改变的量）\nmax|mu|：min = 0.624228, max = 0.624228\n复数对分支上 max|mu|：min = 0.62422843, max = 0.62422843，sqrt(det) = 0.62422843\n判别式 tr^2-4det 沿分支变号 0 次（乘子在实数与共轭复数之间切换）\n全程 max|mu| < 1 的 A 个数 = 10 / 10\n\n本次扫描区间内判别式未发生「负 -> 正」的变号，未定位到失稳点。\n\n=> 结论由测量给出：沿这条分支，det(DP) 恒定（Liouville），A 只改变 tr(DP)。\n   乘子是共轭复数对时 |mu| = sqrt(det) = exp(-d*Tp/2)，与 A 完全无关；\n   失稳只能发生在判别式变号、乘子转为实数之后，由一个实乘子穿出单位圆完成。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nonlinear/phase-plane#14",
+          "title": "分类边界与答案复核",
+          "index": 14,
+          "line": 2056,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 1 trace,det,disc,eigen= -3.0 2.0 1.0 [-2. -1.]\nQ1 2 trace,det,disc,eigen= -0.4 4.0 -15.84 [-0.2+1.989975j -0.2-1.989975j]\nQ1 3 trace,det,disc,eigen= 1.0 -6.0 25.0 [ 3. -2.]\nQ1 4 trace,det,disc,eigen= 0.0 9.000000000000002 -36.00000000000001 [0.+3.j 0.-3.j]\nNonzero repeated eigenvalues are hyperbolic: [-1. -1.]\nNonlinear xdot=-x^3, ydot=-y: only equilibrium is (0,0), despite singular Jacobian.\nomega_n= 2.0615528128088303 zeta= 0.24253562503633297\nlogistic coexistence= 2.0 1.6 Jacobian= [[-0.2 -1. ]\n [ 1.2  0. ]] eigen= [-0.1+1.090871j -0.1-1.090871j]\nDulac divergence with B=1/(x*y): -alpha/(K*y)<0 for x,y>0, hence no periodic orbit there.\nDefault Duffing E(2.3,0)= 1.245795 barrier= 1.25\nFirst-integral conservation is an analytic fact; drift is a numerical error measurement, not a proof.\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "nonlinear/phase-plane",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 14,
+    "enabled": 14,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 14,
+    "codeOnly": 0
+  }
+}
