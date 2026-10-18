@@ -40,3 +40,5 @@ PY-001/PY-002/PY-003保留旧hash/记录及新去向于resolved-python-debts.jso
 ## 合并
 
 正文/组件/讨论日志/台账/验收同提交；真实no-ff后回填hash和checklist合并列，未合并前不预填。仅合master，不推远端或发布gh-pages。
+
+实际交付提交8925371；课程no-ff合并be726e8967190e4d01e979fcf6fec62c9183a7cf。全局checklist六格已按真实合并回填；课程合入后再次check与semester检查见check-merged.log/semester-merged.log。回执通过工作分支再次no-ff合master后删除分支。
