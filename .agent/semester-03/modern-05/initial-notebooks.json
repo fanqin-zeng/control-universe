@@ -1,0 +1,83 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8891",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S6": 1
+  },
+  "failLessons": [
+    "modern/state-observer"
+  ],
+  "lessons": [
+    {
+      "key": "modern/state-observer",
+      "file": "content/modern/state-observer.mdx",
+      "level": "FAIL",
+      "notebooks": 5,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "AssertionError",
+          "evalue": "",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "AssertionError                            Traceback (most recent call last)",
+            "Cell In[2], line 9\n      5 for p in range(-30,-4):\n      6     L=np.asarray(acker(A.T,C.T,[p,p])).reshape(-1,1);F=A-L@C\n      7     x=np.array([expm(A*ti)@x0 for ti in t]);err=np.array([expm(F*ti)@e0 for ti in t]);estimate=x+err\n      8     expected=np.c_[(-1+(p+3)*t)*np.exp(p*t),(p+3)**2*t*np.exp(p*t)]\n----> 9     assert np.max(abs(err-expected))<1e-10\n     10     peakTime=-1/p;peak=float((expm(F*peakTime)@e0)[1])\n     11     noise=abs(np.linalg.solve(100j*np.eye(2)-F,L)[1,0])\n     12     assert abs(peak-(p+3)**2/(-p*np.e))<1e-10\n",
+            "AssertionError: "
+          ],
+          "stderr": "",
+          "images": 1
+        },
+        {
+          "notebook": 3,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 4,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 2
+        }
+      ],
+      "findings": [
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 1（:489）执行报错 AssertionError: \n          ---------------------------------------------------------------------------\n          AssertionError                            Traceback (most recent call last)\n          Cell In[2], line 9\n      5 for p in range(-30,-4):\n      6     L=np.asarray(acker(A.T,C.T,[p,p])).reshape(-1,1);F=A-L@C\n      7     x=np.array([expm(A*ti)@x0 for ti in t]);err=np.array([expm(F*ti)@e0 for ti in t]);estimate=x+err\n      8     expected=np.c_[(-1+(p+3)*t)*np.exp(p*t),(p+3)**2*t*np.exp(p*t)]\n----> 9     assert np.max(abs(err-expected))<1e-10\n     10     peakTime=-1/p;peak=float((expm(F*peakTime)@e0)[1])\n     11     noise=abs(np.linalg.solve(100j*np.eye(2)-F,L)[1,0])\n     12     assert abs(peak-(p+3)**2/(-p*np.e))<1e-10\n\n          AssertionError: ",
+          "line": 489
+        }
+      ]
+    }
+  ]
+}

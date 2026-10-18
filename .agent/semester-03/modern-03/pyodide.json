@@ -1,0 +1,224 @@
+{
+  "testedAt": "2026-10-18T06:42:41.901Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "modern/lyapunov-modern",
+      "title": "线性系统稳定性",
+      "sourceHash": "3dba3745ed610f4c05bcad5a7e009f9db2347d4aee8bae7597f79ebb849af32c",
+      "notebooks": [
+        {
+          "id": "modern/lyapunov-modern#1",
+          "title": "小车的位移与机械能",
+          "index": 1,
+          "line": 30,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5078,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "c N s/m= -0.5 state at 6s m,m/s= [4.516063   2.11155757] E(6s) J= 12.426750218023564 eigenvalues= [0.25+0.96824584j 0.25-0.96824584j]\nc N s/m= 0.0 state at 6s m,m/s= [0.96017029 0.2794155 ] E(6s) J= 0.5000000000000004 eigenvalues= [ 0.+1.j -0.-1.j]\nc N s/m= 1.0 state at 6s m,m/s= [-0.00228949  0.05089232] E(6s) J= 0.0012976349171079644 eigenvalues= [-0.5+0.8660254j -0.5-0.8660254j]\nnormalized strict certificate P= [[1.5 0.5]\n [0.5 1. ]] initial E derivative= 0 initial V derivative= -1\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 63212
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#2",
+          "title": "矩阵方程：连续、奇异与离散证书",
+          "index": 2,
+          "line": 200,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 640,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "例1 P = [[0.5      0.25    ]\n [0.25     0.333333]] eigP = [0.153144 0.68019 ] detP = 0.10416666666666666 eigA = [-1. -3.]\n不稳定但可解 P = [[-0.5   0.  ]\n [ 0.    0.25]] eigP = [-0.5   0.25]\n奇异解族 off = 0.0 P = [[-0.5  0. ]\n [ 0.   0.5]] eigP = [-0.5  0.5]\n奇异解族 off = 1.0 P = [[-0.5  1. ]\n [ 1.   0.5]] eigP = [-1.118034  1.118034]\nA=0,Q=I: 左端恒为0，右端-I非零，无解\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "答案 1a P = [[0.25     0.05    ]\n [0.05     0.183333]] det = 0.04333333333333334 eigA = [-2. -3.] eigP = [0.156574 0.276759]\n答案 1b P = [[1.75 0.25]\n [0.25 0.75]] det = 1.2500000000000002 eigA = [-0.5+1.322876j -0.5-1.322876j] eigP = [0.690983 1.809017]\n答案 2 P = [[2.  0.5]\n [0.5 1.5]] det = 2.75 eigA = [-0.5+0.866025j -0.5-0.866025j] eigP = [1.190983 2.309017]\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "答9 P = [[1.333333 0.078431]\n [0.078431 1.118724]] p22精确 = 5192/4641 det精确 = 117200/78897 det = 1.485481070256157 eigP = [1.093116 1.358941]\nAd特征值 = [0.5 0.3] residual = 2.220446049250313e-16\n"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 2466,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exact example1 P= [[1/2, 1/4], [1/4, 1/3]] det= 5/48 eigA= {-3: 1, -1: 1}\nexact unstable unique P= [[-1/2, 0], [0, 1/4]] det= -1/8 eigA= {1: 1, -2: 1}\nexact Q1a P= [[1/4, 1/20], [1/20, 11/60]] det= 13/300 eigA= {-3: 1, -2: 1}\nexact Q1b P= [[7/4, 1/4], [1/4, 3/4]] det= 5/4 eigA= {-1/2 - sqrt(7)*I/2: 1, -1/2 + sqrt(7)*I/2: 1}\nexact Q2 P= [[2, 1/2], [1/2, 3/2]] det= 11/4 eigA= {-1/2 - sqrt(3)*I/2: 1, -1/2 + sqrt(3)*I/2: 1}\nexact mechanical P= [[3/2, 1/2], [1/2, 1]] det= 5/4 eigA= {-1/2 - sqrt(3)*I/2: 1, -1/2 + sqrt(3)*I/2: 1}\nexact Q9 P= [[4/3, 4/51], [4/51, 5192/4641]] det= 117200/78897\ncertificate eigenP= [0.153144 0.68019 ] beta= 1.4701778718652965 norm exponent= 0.7350889359326482 prefactor= 2.1074910296635316\ncertificate 16 initial directions x 301 samples passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#3",
+          "title": "隐藏模态、PBH 与三重积分器",
+          "index": 3,
+          "line": 357,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 148,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "例2未约简分子/分母 = [[ 0.  1. -1.]] [ 1.  0. -1.] 约简后 G=1/(s+1)\n可控rank = 1 可观rank = 1\n初态[1,0]在t=3的状态 = [20.085537  0.      ] 输出 = 0\n绘图初态[1,1]在t=3的状态 = [20.085537  0.049787] y = 0.049787068367863944\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 50804
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "例3 可稳定 = False rankC = 1\n题3a 可稳定 = False rankC = 1\n题3b 可稳定 = True rankC = 1\n题4a 可检测 = False rankO = 1\n题4b 可检测 = True rankO = 1\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题7 numerator/denominator = (array([[ 0.,  0., -0.,  1.]]), array([1., 0., 0., 0.]))\nrankC = 3 rankO = 3\nt = 1.0 零输入x = [0.5 1.  1. ] 单位阶跃y = 0.16666666666666666\nt = 2.0 零输入x = [2. 2. 1.] 单位阶跃y = 1.3333333333333333\nt = 3.0 零输入x = [4.5 3.  1. ] 单位阶跃y = 4.5\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#4",
+          "title": "半正定证书与隐藏模态边界",
+          "index": 4,
+          "line": 496,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "mechanical semidefinite certificate P= [[0.5 0. ]\n [0.  0.5]] Q= [[0. 0.]\n [0. 1.]] O= [[ 0.  1.]\n [-1. -1.]] rank= 2 eigenA= [-0.5+0.866025j -0.5-0.866025j]\nA=0,P=I,Q=0 residual= 0.0 not asymptotically stable\nA=-I,Q=0 Lyapunov solution= [[0. 0.]\n [0. 0.]]\nhidden eigenvalue= -1.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= True\nhidden eigenvalue= 0.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= False\nhidden eigenvalue= 1.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= False\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#5",
+          "title": "LQR、观测器与 Lyapunov 证书",
+          "index": 5,
+          "line": 560,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 35,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题6 P = [[1.732051 1.      ]\n [1.       1.732051]] K = [[1.       1.732051]] Lyapunov两边 = [[-2.       -1.732051]\n [-1.732051 -4.      ]] V([1,0]) = 1.7320508075688765 J* = 0.8660254037844383\n题10 Kf = [[1.732051]\n [1.      ]] 控制/误差极点 = [-0.866025+0.5j -0.866025-0.5j] [-0.866025+0.5j -0.866025-0.5j]\nPcl = [[1.443376 0.5     ]\n [0.5      0.57735 ]] Pobs = [[ 0.57735  -0.5     ]\n [-0.5       1.443376]] det = 0.5833333333333333 0.5833333333333331\n联合极点 = [-0.866025+0.5j -0.866025-0.5j -0.866025+0.5j -0.866025-0.5j]\nexact Q6 ARE residual=0; exact Q10 Pcl= [[5*sqrt(3)/6, 1/2], [1/2, sqrt(3)/3]] Pobs= [[sqrt(3)/3, -1/2], [-1/2, 5*sqrt(3)/6]] det= 7/12\nreturn difference 401 positive frequencies: residual passed; not a proof of all frequencies\n题5 t = 0.0 Vdot = -2.0\n题5 t = 1.0 Vdot = -0.47303608174484757\n题5 t = 2.0 Vdot = -0.07193299346803333\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "alpha = 0.0 证书残差 = 2.220446049250313e-15 极点 = [0. 0.]\nalpha = 0.25 证书残差 = 2.220446049250313e-15 极点 = [-0.216506+0.450694j -0.216506-0.450694j]\nalpha = 0.5 证书残差 = 2.220446049250313e-15 极点 = [-0.433013+0.559017j -0.433013-0.559017j]\nalpha = 0.6 证书残差 = 1.7763568394002505e-15 极点 = [-0.519615+0.574456j -0.519615-0.574456j]\nalpha = 1.0 证书残差 = 2.220446049250313e-15 极点 = [-0.866025+0.5j -0.866025-0.5j]\nalpha = 2.0 证书残差 = 3.552713678800501e-15 极点 = [-0.732051 -2.732051]\nQ=0且A=-I: P = [[0. 0.]\n [0. 0.]] 闭环极点 = [-1. -1.]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "modern/lyapunov-modern",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 5,
+    "enabled": 5,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 5,
+    "codeOnly": 0
+  }
+}

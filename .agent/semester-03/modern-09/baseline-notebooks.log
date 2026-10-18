@@ -1,0 +1,22 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8891 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+modern/modern-case-study  [FAIL]  5 个 notebook · 8 个 cell
+      FAIL S2  Notebook 4（:619） setupCode（:621） 出现 ipywidgets 家族 2 处（ipywidgets, FloatSlider）→ 轻量内核不支持 widget，应改 React 交互组件
+      FAIL S2  Notebook 4（:619） cell 2（:667） 出现 ipywidgets 家族 3 处（interact(, FloatSlider）→ 轻量内核不支持 widget，应改 React 交互组件
+      WARN S6  Notebook 3 cell 1（:486）有 stderr：C:\Users\Administrator\AppData\Local\Temp\ipykernel_32328\537660433.py:73: UserWarning: Glyph 7819 (\N{LATIN SMALL LETTER X WITH DOT ABOVE}) missing from font(s
+      FAIL S6  Notebook 4（:619）内核执行中断：setup 执行失败：ModuleNotFoundError: No module named 'ipywidgets'
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 5 个 notebook · 8 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 6 个 cell，其中 error 0 个
+      按判据：S2×2  S6×2
+      FAIL 课程：modern/modern-case-study
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/modern-09/baseline-notebooks.json

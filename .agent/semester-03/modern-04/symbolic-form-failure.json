@@ -1,0 +1,91 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8891",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S6": 1
+  },
+  "failLessons": [
+    "modern/state-feedback"
+  ],
+  "lessons": [
+    {
+      "key": "modern/state-feedback",
+      "file": "content/modern/state-feedback.mdx",
+      "level": "FAIL",
+      "notebooks": 5,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 4
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "AssertionError",
+          "evalue": "",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "AssertionError                            Traceback (most recent call last)",
+            "Cell In[2], line 46\n     42 assert Aq3**2+3*Aq3+2*sp.eye(2)==sp.Matrix([[12,8],[0,20]])\n     43 Aq5=sp.Matrix([[0,1],[-1,0]])-sp.Matrix([0,1])*sp.Matrix([[24,7]])\n     44 assert -(sp.Matrix([[1,0]])*Aq5.inv()*sp.Matrix([0,1]))[0]==sp.Rational(1,25)\n     45 Am=sp.Matrix([[0,1],[0,-10]]);Bm=sp.Matrix([0,50])\n---> 46 assert (svar*sp.eye(2)-Am).inv()*Bm==sp.Matrix([50/(svar*(svar+10)),50/(svar+10)])\n     47 assert (Am-Bm*sp.Matrix([[4,sp.Rational(1,5)]])).inv()==sp.Matrix([[-sp.Rational(1,10),-sp.Rational(1,200)],[1,0]])\n     48 print('Q3 exact R/inverse/pd verified; Q5 N25; Q9 full resolvent [50,50s]/(s(s+10)) verified')\n     49 \n",
+            "AssertionError: "
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 2,
+          "index": 1,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 3,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 4,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        }
+      ],
+      "findings": [
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 1（:673）执行报错 AssertionError: \n          ---------------------------------------------------------------------------\n          AssertionError                            Traceback (most recent call last)\n          Cell In[2], line 46\n     42 assert Aq3**2+3*Aq3+2*sp.eye(2)==sp.Matrix([[12,8],[0,20]])\n     43 Aq5=sp.Matrix([[0,1],[-1,0]])-sp.Matrix([0,1])*sp.Matrix([[24,7]])\n     44 assert -(sp.Matrix([[1,0]])*Aq5.inv()*sp.Matrix([0,1]))[0]==sp.Rational(1,25)\n     45 Am=sp.Matrix([[0,1],[0,-10]]);Bm=sp.Matrix([0,50])\n---> 46 assert (svar*sp.eye(2)-Am).inv()*Bm==sp.Matrix([50/(svar*(svar+10)),50/(svar+10)])\n     47 assert (Am-Bm*sp.Matrix([[4,sp.Rational(1,5)]])).inv()==sp.Matrix([[-sp.Rational(1,10),-sp.Rational(1,200)],[1,0]])\n     48 print('Q3 exact R/inverse/pd verified; Q5 N25; Q9 full resolvent [50,50s]/(s(s+10)) verified')\n     49 \n\n          AssertionError: ",
+          "line": 673
+        }
+      ]
+    }
+  ]
+}

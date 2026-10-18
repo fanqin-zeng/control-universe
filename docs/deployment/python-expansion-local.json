@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T05:28:14.617Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=modern/state-space",
+  "testedAt": "2026-10-18T08:55:59.604Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -1586,26 +1586,31 @@
     {
       "key": "modern/controllability-observability",
       "title": "可控性与可观性",
-      "sourceHash": "1b09dc052f12a802889961bcfc10001e463126a9e05e13c854f050e7ffc628a5",
+      "sourceHash": "e4ebe7a83b4d19006e31dc23a5a1d31a8f8507db4758bb400c16d81a6306f0d1",
       "notebooks": [
         {
           "id": "modern/controllability-observability#1",
-          "title": " 动手实验：可控性与可观性判定",
+          "title": "两车之间的输入与测量通路",
           "index": 1,
-          "line": 102,
+          "line": 32,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5339,
+              "milliseconds": 7319,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "系统1 (A=[[1,1],[0,2]], B=[1;0], C=[1,0]):\n  可控性矩阵 rank = 1 (n=2) → 不可控\n  可观性矩阵 rank = 2 (n=2) → 可观\n\n系统2 (A=[[0,1],[-2,-3]], B=[0;1], C=[1,0]):\n  可控性矩阵 rank = 2 (n=2) → 可控\n  可观性矩阵 rank = 2 (n=2) → 可观\n"
+                  "text": "coupling N/m= 0.0 ranks= 2 2 t=6s q2 forced m= 0.0 initial q2=1m output difference m= 0.0\ncoupling N/m= 0.1 ranks= 4 4 t=6s q2 forced m= 1.3365987067879297 initial q2=1m output difference m= -0.12036013941210294\ncoupling N/m= 1.0 ranks= 4 4 t=6s q2 forced m= 1.8238450280673195 initial q2=1m output difference m= 0.0520459191735905\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 66044
                 }
               ]
             }
@@ -1613,22 +1618,22 @@
         },
         {
           "id": "modern/controllability-observability#2",
-          "title": " 动手实验：PBH 判据与不可控模态定位",
+          "title": " 动手实验：可控性与可观性判定",
           "index": 2,
-          "line": 163,
+          "line": 136,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 6,
+              "milliseconds": 10,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "特征值: [1. 2.]\n\nλ=2.0: 左特征向量 v = [0.000, 1.000]\n  v^T B = 0.000 → 不可控!\n\nλ=1.0: 左特征向量 v = [0.707, -0.707]\n  v^T B = 0.707 → 可控\n\n"
+                  "text": "系统1 (A=[[1,1],[0,2]], B=[1;0], C=[1,0]):\n  可控性矩阵 rank = 1 (n=2) → 不可控\n  可观性矩阵 rank = 2 (n=2) → 可观\n\n系统2 (A=[[0,1],[-2,-3]], B=[0;1], C=[1,0]):\n  可控性矩阵 rank = 2 (n=2) → 可控\n  可观性矩阵 rank = 2 (n=2) → 可观\nex1/4 C= [[1, 1], [0, 0]] O= [[1, 0], [1, 1]] rank= 1 2 dual ranks= 2 1\nex2 C= [[0, 1], [1, -3]] O= [[1, 0], [0, 1]] rank= 2 2 dual ranks= 2 2\nex5/6 C= [[1, 1], [0, 0]] O= [[0, 1], [0, 2]] rank= 1 1 dual ranks= 1 1\n"
                 }
               ]
             }
@@ -1636,57 +1641,143 @@
         },
         {
           "id": "modern/controllability-observability#3",
-          "title": " 动手实验：结构分解与最小实现",
+          "title": "PBH 与左右特征向量",
           "index": 3,
-          "line": 387,
+          "line": 209,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 9,
+              "milliseconds": 7,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "可控性 rank = 2/3\n可观性 rank = 2/3\n\n传递函数: G(s) = <TransferFunction>: sys[1]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n      s^2 - 5 s + 6\n  ----------------------\n  s^3 - 6 s^2 + 11 s - 6\n\n可控性矩阵奇异值: [4.83753597 0.77346348 0.        ]\n→ 第三个奇异值为零，对应不可控方向\n可观性矩阵奇异值: [9.63744152e+00 1.05816871e+00 6.41658832e-18]\n→ 第三个奇异值为零，对应不可观方向\n"
+                  "text": "example3 lambda= 2 PBH control/observe ranks= 1 2\nleft row= [0, 1] left B= [0]\nright vector= [1, 1] C right= [1]\nexample3 lambda= 1 PBH control/observe ranks= 2 2\nleft row= [-1, 1] left B= [-1]\nright vector= [1, 0] C right= [1]\nJordan Q4 lambda= 1 PBH control/observe ranks= 3 3\nleft row= [1, 0, 0] left B= [1]\nright vector= [1, 0, 0] C right= [1]\nJordan Q4 lambda= 2 PBH control/observe ranks= 3 3\nleft row= [0, 0, 1] left B= [1]\nright vector= [0, 1, 0] C right= [1]\n"
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "5a41c65f1e713b1524b44425d98852a1368425c779c42aff2c1fe0b73ffd2a07",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/controllability-observability",
-          "fromSourceHash": "5a41c65f1e713b1524b44425d98852a1368425c779c42aff2c1fe0b73ffd2a07",
-          "toSourceHash": "1b09dc052f12a802889961bcfc10001e463126a9e05e13c854f050e7ffc628a5",
-          "notebookPayloadHash": "944f5279991d25be6cb3be5814d5ea20a4798f19437177407ac806bb14e0dd74",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "modern/controllability-observability#4",
+          "title": "结构分解与最小实现",
+          "index": 4,
+          "line": 432,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 45,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "reach matrix= [[1.0, 1.0, 1.0], [1.0, 2.0, 4.0], [0.0, 0.0, 0.0]] rank= 2 singular values= [4.83753597 0.77346348 0.        ]\nobserve matrix= [[1.0, 0.0, 1.0], [1.0, 0.0, 3.0], [1.0, 0.0, 9.0]] rank= 2 singular values= [9.63744152e+00 1.05816871e+00 6.41658832e-18]\nunreduced numerical tf: <TransferFunction>: sys[1]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n      s^2 - 5 s + 6\n  ----------------------\n  s^3 - 6 s^2 + 11 s - 6\nexact minimal G= 1/(s - 1) minimal ABCD= 1 1 1 0\ninitial state e3 at t=1s: y= 20.085536923187668 zero-input minimal y= 0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/controllability-observability#5",
+          "title": "有限时间与无限时间 Gramian",
+          "index": 5,
+          "line": 490,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 26,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "infinite W= [[0.5, 0.3333333333333333], [0.3333333333333333, 0.25]] det= 0.013888888888888902 eigenvalues= [0.01899984 0.73100016]\nfinite T=1 W= [[0.4323323583816937, 0.3167376438773786], [0.3167376438773786, 0.24542109027781647]] minimum input squared integral for xf=[1,0]= 42.45493360356436\nLyapunov residual= 0.0\nchange first state unit by 1000, smallest eigenvalue= 0.027777765432103613\nHankel singular values= [0.73100016 0.01899984]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/controllability-observability#6",
+          "title": "七例与十题的完整核验",
+          "index": 6,
+          "line": 846,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 321,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 R= [[0, 0, 1], [0, 1, -6], [1, -6, 25]] O= [[1, 0, 0], [0, 1, 0], [0, 0, 1]] ranks= 3 3 G= [[1/(s**3 + 6*s**2 + 11*s + 6)]]\ndet R= -1\ndet O= 1\nQ2 R= [[1, 2, 4], [1, 3, 9], [0, 0, 0]] O= [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [0, 3, 0], [0, 0, 5], [4, 0, 0], [0, 9, 0], [0, 0, 25]] ranks= 2 3 G= [[1/(s - 2)], [1/(s - 3)], [0]]\ndet R= 0\nQ3 R= [[0, 1], [1, -2*wn*zeta]] O= [[1, 0], [0, 1]] ranks= 2 2 G= [[1/(s**2 + 2*s*wn*zeta + wn**2)]]\ndet R= -1\ndet O= 1\nQ4 R= [[1, 1, 1], [0, 1, 4], [1, 2, 4]] O= [[1, 1, 0], [1, 2, 1], [1, 4, 4]] ranks= 3 3 G= [[(s**2 - 3*s + 3)/((s - 1)*(s**2 - 4*s + 4))]]\ndet R= -1\ndet O= 1\nQ5 Kc= [[-18, -6]] T= [[1, 2], [0, 1]] K original= [[-18, -42]] closed roots= {-4: 1, -5: 1}\nQ6 R= [[0, 0, 0, 0, 1, 0, 0, 1], [0, 0, 1, 0, 0, 1, -1, 0], [1, 0, 0, 1, -1, 0, 0, -1], [0, 1, -1, 0, 0, -1, 2, 0]] O= [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [1, 0, -1, 0], [0, 0, 0, 1], [0, 1, 0, -1]] ranks= 4 4 G= [[s/(s**4 + s**2 - 1), 1/(s**4 + s**2 - 1)], [s**3/(s**4 + s**2 - 1), s**2/(s**4 + s**2 - 1)]]\nQ6 AB= [[0, 0], [1, 0], [0, 1], [-1, 0]] A2B= [[1, 0], [0, 1], [-1, 0], [0, -1]] CA= [[0, 1, 0, 0], [0, 0, 0, 1]] CA2= [[0, 0, 1, 0], [1, 0, -1, 0]]\nQ7 R= [[0, 0, 1], [0, 1, -6], [1, -6, 25]] O= [[1, 1, 0], [0, 1, 1], [-6, -11, -5]] ranks= 3 2 G= [[1/(s**2 + 5*s + 6)]]\ndet R= -1\ndet O= 0\nQ7 minimal R= [[0, 1], [1, -5]] O= [[1, 0], [0, 1]] ranks= 2 2 G= [[1/(s**2 + 5*s + 6)]]\ndet R= -1\ndet O= 1\nQ8 eigenvector identity= [0, 0, -a0 - a1*lam - a2*lam**2 - lam**3]\nQ9 R= [[0, 1, 0, -2], [1, 0, -2, 0], [0, 0, 0, 1], [0, 0, 1, 0]] O= [[1, 0, 0, 0], [0, 1, 0, 0], [-2, 0, 1, 0], [0, -2, 0, 1]] ranks= 4 4 G= [[(s**2 + 1)/(s**4 + 3*s**2 + 1)]]\ndet R= 1\ndet O= 1\nQ9 two sensors R= [[0, 1, 0, -2], [1, 0, -2, 0], [0, 0, 0, 1], [0, 0, 1, 0]] O= [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1], [-2, 0, 1, 0], [1, 0, -1, 0], [0, -2, 0, 1], [0, 1, 0, -1]] ranks= 4 4 G= [[(s**2 + 1)/(s**4 + 3*s**2 + 1)], [1/(s**4 + 3*s**2 + 1)]]\ndet R= 1\nQ10 W= [[1/2, 1/3], [1/3, 1/4]] det= 1/72\nMIMO counterexample R= [[1, 0, -1, 0], [0, 1, 0, -2]] O= [[1, 0], [0, 1], [-1, 0], [0, -2]] ranks= 2 2 G= [[1/(s + 1), 0], [0, 1/(s + 2)]]\nall checks passed\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "key": "modern/lyapunov-modern",
       "title": "线性系统稳定性",
-      "sourceHash": "ffd7a3cc83217262d58775e9598c3ffeeba689a61f952a6a15026b5907cc024d",
+      "sourceHash": "3dba3745ed610f4c05bcad5a7e009f9db2347d4aee8bae7597f79ebb849af32c",
       "notebooks": [
         {
           "id": "modern/lyapunov-modern#1",
-          "title": "矩阵方程：连续、奇异与离散证书",
+          "title": "小车的位移与机械能",
           "index": 1,
-          "line": 120,
-          "cellCount": 3,
+          "line": 30,
+          "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5053,
+              "milliseconds": 5078,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "c N s/m= -0.5 state at 6s m,m/s= [4.516063   2.11155757] E(6s) J= 12.426750218023564 eigenvalues= [0.25+0.96824584j 0.25-0.96824584j]\nc N s/m= 0.0 state at 6s m,m/s= [0.96017029 0.2794155 ] E(6s) J= 0.5000000000000004 eigenvalues= [ 0.+1.j -0.-1.j]\nc N s/m= 1.0 state at 6s m,m/s= [-0.00228949  0.05089232] E(6s) J= 0.0012976349171079644 eigenvalues= [-0.5+0.8660254j -0.5-0.8660254j]\nnormalized strict certificate P= [[1.5 0.5]\n [0.5 1. ]] initial E derivative= 0 initial V derivative= -1\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 63212
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#2",
+          "title": "矩阵方程：连续、奇异与离散证书",
+          "index": 2,
+          "line": 200,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 640,
               "status": "passed",
               "outputs": [
                 {
@@ -1698,7 +1789,7 @@
             },
             {
               "index": 2,
-              "milliseconds": 8,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
@@ -1710,7 +1801,7 @@
             },
             {
               "index": 3,
-              "milliseconds": 22,
+              "milliseconds": 3,
               "status": "passed",
               "outputs": [
                 {
@@ -1719,21 +1810,33 @@
                   "text": "答9 P = [[1.333333 0.078431]\n [0.078431 1.118724]] p22精确 = 5192/4641 det精确 = 117200/78897 det = 1.485481070256157 eigP = [1.093116 1.358941]\nAd特征值 = [0.5 0.3] residual = 2.220446049250313e-16\n"
                 }
               ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 2466,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exact example1 P= [[1/2, 1/4], [1/4, 1/3]] det= 5/48 eigA= {-3: 1, -1: 1}\nexact unstable unique P= [[-1/2, 0], [0, 1/4]] det= -1/8 eigA= {1: 1, -2: 1}\nexact Q1a P= [[1/4, 1/20], [1/20, 11/60]] det= 13/300 eigA= {-3: 1, -2: 1}\nexact Q1b P= [[7/4, 1/4], [1/4, 3/4]] det= 5/4 eigA= {-1/2 - sqrt(7)*I/2: 1, -1/2 + sqrt(7)*I/2: 1}\nexact Q2 P= [[2, 1/2], [1/2, 3/2]] det= 11/4 eigA= {-1/2 - sqrt(3)*I/2: 1, -1/2 + sqrt(3)*I/2: 1}\nexact mechanical P= [[3/2, 1/2], [1/2, 1]] det= 5/4 eigA= {-1/2 - sqrt(3)*I/2: 1, -1/2 + sqrt(3)*I/2: 1}\nexact Q9 P= [[4/3, 4/51], [4/51, 5192/4641]] det= 117200/78897\ncertificate eigenP= [0.153144 0.68019 ] beta= 1.4701778718652965 norm exponent= 0.7350889359326482 prefactor= 2.1074910296635316\ncertificate 16 initial directions x 301 samples passed\n"
+                }
+              ]
             }
           ]
         },
         {
-          "id": "modern/lyapunov-modern#2",
+          "id": "modern/lyapunov-modern#3",
           "title": "隐藏模态、PBH 与三重积分器",
-          "index": 2,
-          "line": 237,
+          "index": 3,
+          "line": 357,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 166,
+              "milliseconds": 148,
               "status": "passed",
               "outputs": [
                 {
@@ -1744,7 +1847,7 @@
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 34936
+                  "base64Length": 50804
                 }
               ]
             },
@@ -1762,7 +1865,7 @@
             },
             {
               "index": 3,
-              "milliseconds": 7,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
@@ -1775,76 +1878,88 @@
           ]
         },
         {
-          "id": "modern/lyapunov-modern#3",
-          "title": "LQR、观测器与 Lyapunov 证书",
-          "index": 3,
-          "line": 384,
-          "cellCount": 2,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 11,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "题6 P = [[1.732051 1.      ]\n [1.       1.732051]] K = [[1.       1.732051]] Lyapunov两边 = [[-2.       -1.732051]\n [-1.732051 -4.      ]] V([1,0]) = 1.7320508075688765 J* = 0.8660254037844383\n题10 Kf = [[1.732051]\n [1.      ]] 控制/误差极点 = [-0.866025+0.5j -0.866025-0.5j] [-0.866025+0.5j -0.866025-0.5j]\nPcl = [[1.443376 0.5     ]\n [0.5      0.57735 ]] Pobs = [[ 0.57735  -0.5     ]\n [-0.5       1.443376]] det = 0.5833333333333333 0.5833333333333331\n联合极点 = [-0.866025+0.5j -0.866025-0.5j -0.866025+0.5j -0.866025-0.5j]\n题5 t = 0.0 Vdot = -2.0\n题5 t = 1.0 Vdot = -0.47303608174484757\n题5 t = 2.0 Vdot = -0.07193299346803333\n"
-                }
-              ]
-            },
-            {
-              "index": 2,
-              "milliseconds": 3,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "alpha = 0.6 证书残差 = 1.7763568394002505e-15 极点 = [-0.519615+0.574456j -0.519615-0.574456j]\nalpha = 1.0 证书残差 = 2.220446049250313e-15 极点 = [-0.866025+0.5j -0.866025-0.5j]\nalpha = 2.0 证书残差 = 3.552713678800501e-15 极点 = [-0.732051 -2.732051]\nQ=0且A=-I: P = [[0. 0.]\n [0. 0.]] 闭环极点 = [-1. -1.]\n"
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "executedSourceHash": "9df335bdb3662b8216c6b6713b2a85baccc7b4cbeb32110b1a01f63322879998",
-      "formattingProvenance": [
-        {
-          "lesson": "modern/lyapunov-modern",
-          "fromSourceHash": "9df335bdb3662b8216c6b6713b2a85baccc7b4cbeb32110b1a01f63322879998",
-          "toSourceHash": "ffd7a3cc83217262d58775e9598c3ffeeba689a61f952a6a15026b5907cc024d",
-          "notebookPayloadHash": "9c68966d223b570dbe7763f9dc8de90b3a0a3e0ce4a2b2324d248919d22cfa90",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
-        }
-      ]
-    },
-    {
-      "key": "modern/state-feedback",
-      "title": "状态反馈",
-      "sourceHash": "12227407e4c1db76da2666d7706625ad0356a5eadb626b7b79790134c5abf293",
-      "notebooks": [
-        {
-          "id": "modern/state-feedback#1",
-          "title": " 动手实验：place() 与 acker() 对比",
-          "index": 1,
-          "line": 234,
+          "id": "modern/lyapunov-modern#4",
+          "title": "半正定证书与隐藏模态边界",
+          "index": 4,
+          "line": 496,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5584,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "place() 拒绝重根极点：at least one of the requested pole is repeated more than rank(B) times\n→ place() 基于 KNV 算法，要求每个极点的重数不超过 rank(B)\n\nacker() 结果: K = [23.  7.]\n\n闭环特征值: [-5. -5.]\n期望特征值: [-5, -5]\n\n互异极点 [-5,-4]: place K = [[18.  6.]], acker K = [18.  6.]（一致）\n"
+                  "text": "mechanical semidefinite certificate P= [[0.5 0. ]\n [0.  0.5]] Q= [[0. 0.]\n [0. 1.]] O= [[ 0.  1.]\n [-1. -1.]] rank= 2 eigenA= [-0.5+0.866025j -0.5-0.866025j]\nA=0,P=I,Q=0 residual= 0.0 not asymptotically stable\nA=-I,Q=0 Lyapunov solution= [[0. 0.]\n [0. 0.]]\nhidden eigenvalue= -1.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= True\nhidden eigenvalue= 0.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= False\nhidden eigenvalue= 1.0 rankC/O= 1 1 PBH at hidden eigenvalue= 1 1 stabilizable/detectable= False\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lyapunov-modern#5",
+          "title": "LQR、观测器与 Lyapunov 证书",
+          "index": 5,
+          "line": 560,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 35,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题6 P = [[1.732051 1.      ]\n [1.       1.732051]] K = [[1.       1.732051]] Lyapunov两边 = [[-2.       -1.732051]\n [-1.732051 -4.      ]] V([1,0]) = 1.7320508075688765 J* = 0.8660254037844383\n题10 Kf = [[1.732051]\n [1.      ]] 控制/误差极点 = [-0.866025+0.5j -0.866025-0.5j] [-0.866025+0.5j -0.866025-0.5j]\nPcl = [[1.443376 0.5     ]\n [0.5      0.57735 ]] Pobs = [[ 0.57735  -0.5     ]\n [-0.5       1.443376]] det = 0.5833333333333333 0.5833333333333331\n联合极点 = [-0.866025+0.5j -0.866025-0.5j -0.866025+0.5j -0.866025-0.5j]\nexact Q6 ARE residual=0; exact Q10 Pcl= [[5*sqrt(3)/6, 1/2], [1/2, sqrt(3)/3]] Pobs= [[sqrt(3)/3, -1/2], [-1/2, 5*sqrt(3)/6]] det= 7/12\nreturn difference 401 positive frequencies: residual passed; not a proof of all frequencies\n题5 t = 0.0 Vdot = -2.0\n题5 t = 1.0 Vdot = -0.47303608174484757\n题5 t = 2.0 Vdot = -0.07193299346803333\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "alpha = 0.0 证书残差 = 2.220446049250313e-15 极点 = [0. 0.]\nalpha = 0.25 证书残差 = 2.220446049250313e-15 极点 = [-0.216506+0.450694j -0.216506-0.450694j]\nalpha = 0.5 证书残差 = 2.220446049250313e-15 极点 = [-0.433013+0.559017j -0.433013-0.559017j]\nalpha = 0.6 证书残差 = 1.7763568394002505e-15 极点 = [-0.519615+0.574456j -0.519615-0.574456j]\nalpha = 1.0 证书残差 = 2.220446049250313e-15 极点 = [-0.866025+0.5j -0.866025-0.5j]\nalpha = 2.0 证书残差 = 3.552713678800501e-15 极点 = [-0.732051 -2.732051]\nQ=0且A=-I: P = [[0. 0.]\n [0. 0.]] 闭环极点 = [-1. -1.]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "modern/state-feedback",
+      "title": "状态反馈",
+      "sourceHash": "cd18b0107e54b080b88b5c684582b5f950e97cd719fe0d8e4aeb8cb360cd9fec",
+      "notebooks": [
+        {
+          "id": "modern/state-feedback#1",
+          "title": "place 与 Ackermann",
+          "index": 1,
+          "line": 247,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7664,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Expected rank(B)=1 repeated-pole rejection: at least one of the requested pole is repeated more than rank(B) times\nacker repeated K= [[23.  7.]] polynomial= [ 1. 10. 25.]\ndistinct roots: place and acker K= [[18.  6.]]\nPython library versions:\ncontrol 0.10.2 scipy 1.14.1\n"
                 }
               ]
             }
@@ -1852,27 +1967,113 @@
         },
         {
           "id": "modern/state-feedback#2",
-          "title": " 动手实验：开环 vs 闭环阶跃响应",
+          "title": "小车定位与施力",
           "index": 2,
-          "line": 329,
+          "line": 353,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 238,
+              "milliseconds": 1580,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "前馈增益 N = 25.00\n"
+                  "text": "p= -10.0 K= [[98. 17.]] N= 100.0 u0 N= 100.0 q4 m= 0.9999999999999998\np= -5.0 K= [[23.  7.]] N= 25.0 u0 N= 25.0 q4 m= 0.9999999567157739\np= -1.0 K= [[-1. -1.]] N= 1.0 u0 N= 1.0 q4 m= 0.9084218055563291\np= -0.5 K= [[-1.75 -2.  ]] N= 0.25 u0 N= 0.25 q4 m= 0.593994150290162\nRaw open-loop limit=.5m; fair baseline limit=1m; feedback limit=1m (analytic DC)\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 56420
+                  "base64Length": 65564
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#3",
+          "title": "算例与十题核验",
+          "index": 3,
+          "line": 664,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 316,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "example1/4/5 K= [[23, 7]] char= s**2 + 10*s + 25\nexample2 K= [[94, 15]] char= s**2 + 20*s + 100\nQ1 K= [[6, 4]] char= s**2 + 5*s + 6\nQ2b K= [[125, 73, 12]] char= s**3 + 15*s**2 + 75*s + 125\nQ2c K= [[24, 24, 6]] char= s**3 + 9*s**2 + 26*s + 24\nQ3 K= [[12, -2]] char= s**2 + 3*s + 2\nQ5 K= [[24, 7]] char= s**2 + 7*s + 25\nQ6 AB,A2B,A3B= [[0, 0], [1, 0], [0, 1], [1, 0]] [[1, 0], [0, 1], [1, 0], [-2, 1]] [[0, 1], [1, 0], [-2, 1], [2, -2]] minor det= -1\nQ6 family K= [[6, 11, 6, 0], [1, -2, 1, 4]] char= s**4 + 10*s**3 + 35*s**2 + 50*s + 24\nQ6 family K= [[6, 11, 6, 2], [1, -2, 1, 4]] char= s**4 + 10*s**3 + 35*s**2 + 50*s + 24\nQ8 canonical row identities and transformed K= [[23, -39]]\nQ3 exact R/inverse/pd verified; Q5 N25; Q9 full resolvent [50,50s]/(s(s+10)) verified\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q7 wn2: {'wn': 2.0, 'zeta': 0.2, 'K': [[3.0, 1.2]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(52.66205993303031), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.6859943405700354)}\nQ7 wn2: {'wn': 2.0, 'zeta': 0.7, 'K': [[3.0, 0.7]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(4.598791026026775), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.5)}\nQ7 wn2: {'wn': 2.0, 'zeta': 0.9, 'K': [[3.0, 0.4999999999999999]], 'poly': [1.0, 5.6, 16.0], 'openOvershoot': np.float64(0.15237558205194096), 'closedOvershoot': np.float64(4.598791026026775), 'peakTimeRatio': np.float64(0.3051839689465368)}\nQ7 symbolic K valid for every wn>0; N=4; repeated root polynomial checks avoid ill-conditioned eig rounding\nQ7 wn2,zeta.5 example K=[3,.9], roots= [-2.8+2.85657137j -2.8-2.85657137j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#4",
+          "title": "前馈与零点边界",
+          "index": 4,
+          "line": 749,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 31,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "zero example open= (s - 1)/((s + 1)*(s + 2)) closed unreduced= s - 1 / s**2 - 1 reduced= 1/(s + 1)\nD1 example: Ccl=-2, g0= 3/5 N= 5/3 both invariant zeros= [-3]\nzero DC example A=-1,B=1,C=-1,D=1: g0= 0\nmodel mismatch k2.2, nominal K23/7,N25: qss= 0.9920634920634921 constant force disturbance .5N: qss= 1.02\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-feedback#5",
+          "title": "电机指标验收",
+          "index": 5,
+          "line": 782,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 200,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q9 K= [[4.  0.2]] N= 3.999999999999999 poles= [-10.+10.j -10.-10.j] u0 V= 3.999999999999999\novershoot %= 4.3213918263772255 tp s= 0.3141592653589793 last 2% crossing s= 0.4216184030629444 envelope-safe time s= 0.4258596595708119 zeta threshold for5%= 0.6901067305598217\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32960
                 }
               ]
             }
@@ -1883,26 +2084,26 @@
     {
       "key": "modern/state-observer",
       "title": "状态观测器",
-      "sourceHash": "37bfea47d7df16b1898fca191704135d33ef68b1677a65885bdbf5907af71e45",
+      "sourceHash": "9088f4534beeac45f3748cb4ab65b31a0fd4f49023af16ab1da7dc945d4f5fd6",
       "notebooks": [
         {
           "id": "modern/state-observer#1",
-          "title": " 动手实验：观测器增益设计（对偶原理）",
+          "title": "对偶增益设计",
           "index": 1,
-          "line": 222,
+          "line": 247,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5369,
+              "milliseconds": 7413,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "观测器增益 L = \n[[ 27.]\n [142.]]\n\nA - LC 的特征值: [-14.99999985 -15.00000015]\n期望特征值: [-15, -15]\n"
+                  "text": "Expected place rejection: at least one of the requested pole is repeated more than rank(B) times\np= -10 L= [17. 47.] characteristic= [  1.  20. 100.]\np= -15 L= [ 27. 142.] characteristic= [  1.  30. 225.]\ndistinct poles agree: [ 26. 130.]\n"
                 }
               ]
             }
@@ -1910,68 +2111,136 @@
         },
         {
           "id": "modern/state-observer#2",
-          "title": " 动手实验：基于观测器的控制器仿真",
+          "title": "观测器闭环响应",
           "index": 2,
-          "line": 339,
+          "line": 379,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 222,
+              "milliseconds": 675,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "example3 K= [[7.  1.2]] L= [ 27. 142.] N= 9.0 polynomial= [1.000e+00 3.420e+01 3.600e+02 1.215e+03 2.025e+03] two actual initial errors verified\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 48012
+                  "base64Length": 64700
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "d4d9977f92a2748bdb76a0806599eb1f5078304d1175f5b87d0f070a4fa20a78",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/state-observer",
-          "fromSourceHash": "d4d9977f92a2748bdb76a0806599eb1f5078304d1175f5b87d0f070a4fa20a78",
-          "toSourceHash": "37bfea47d7df16b1898fca191704135d33ef68b1677a65885bdbf5907af71e45",
-          "notebookPayloadHash": "6432d40bd989cedbe697e01e154f3c01823bcf9390c5f3376f372afa6bda8a79",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "modern/state-observer#3",
+          "title": "真实估计与速度峰值",
+          "index": 3,
+          "line": 479,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1867,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "p= -30 L= [ 57. 727.] velocity peak= 8.939470420466046 time= 0.03333333333333333 noise@100= 6.669732970730545 e@2= [4.64095070e-25 1.27669927e-23]\np= -15 L= [ 27. 142.] velocity peak= 3.5316426352458463 time= 0.06666666666666667 noise@100= 1.3887630978665164 e@2= [2.15225328e-12 2.69499542e-11]\np= -5 L= [7. 2.] velocity peak= 0.29430355293715393 time= 0.2 noise@100= 0.019998942764700663 e@2= [0.0001362 0.0003632]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 76712
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-observer#4",
+          "title": "三例与十题核验",
+          "index": 4,
+          "line": 813,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 116,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "examples1/2 L= [[17, 47]] polynomial= s**2 + 20*s + 100\nexample3 L= [[27, 142]] polynomial= s**2 + 30*s + 225\nQ1 L= [[11, 3]] polynomial= s**2 + 16*s + 64\nQ2 L= [[24, 145, -140]] polynomial= s**3 + 30*s**2 + 300*s + 1000\nQ3 L= [[3/2, 15/2]] polynomial= s**2 + 5*s + 6\nQ5 full M= [[0, 1, 0, 0], [-18, -6, -17, -6], [0, 0, -20, 1], [0, 0, -100, 0]] Q6 block determinant verified\nQ7 L= [[50, 400]] polynomial= s**2 + 60*s + 900\nQ10 L= [[10, 25, 0, 0], [0, 1, 10, 25]] polynomial= s**4 + 20*s**3 + 150*s**2 + 500*s + 625\nQ10 full O= [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0]] rank= 4 chosen minor=-1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/state-observer#5",
+          "title": "降阶与误差边界",
+          "index": 5,
+          "line": 865,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 626,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q8 bias/d= [ 0.98 -0.34] output error/d= 0.9799999999999999\ndetectable but unobservable example F= [[-3, 0], [0, -2]]\nbias as constant state: this model augmented rank=3, not an automatic integrator fix\nreduced z0= -7.0 initial speed error= 0.0 max residual= 2.1094237467877974e-15\nreduced z0= 0.0 initial speed error= 7.0 max residual= 2.2146895428676316e-11\nobserver assumed input= 0.5 final error= [0. 0.]\nobserver assumed input= 1.0 final error= [0.005 0.085]\nQ7 zero initial error: MO= 4.3213918263772255 tp= 0.3141592653589793 last2%= 0.4216184030629444\nQ7 initial error= [0.0, 0.0] sampled position peak= 1.043213808533273 sample y(.5)= 1.0045498801675208\nQ7 initial error= [-0.1, 0.0] sampled position peak= 1.0394886309361389 sample y(.5)= 1.0048211818891553\nQ9 matching actual input and known D cancellation verified\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "key": "modern/optimal-control-basics",
       "title": "最优控制",
-      "sourceHash": "89dd7d0d017779e3e05ee45427cfbf0a438cfdae50bedd03ce177b861aa72bc8",
+      "sourceHash": "693b5bb754fa8f2e2289e781d60ddbbb99dc2f878f67f1c7d97d9b1a4c9959ff",
       "notebooks": [
         {
           "id": "modern/optimal-control-basics#1",
-          "title": " 动手实验：最优控制数值求解",
+          "title": "边值求解与完整代价",
           "index": 1,
-          "line": 244,
+          "line": 298,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4905,
+              "milliseconds": 6625,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "求解成功: True\nλ(0) 数值 = 0.037315\nλ(0) 解析 = 0.037315\n"
+                  "text": "lambda0= 0.03731472072756636 C= 1.018657360363774 u0= -0.03731472072756636 uT= -0.2757205647718519 boundary residual= [0.0000000e+00 4.5279189e-28]\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 75228
+                  "base64Length": 69204
                 }
               ]
             },
@@ -1983,42 +2252,156 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "解析最优代价 J* = 0.018657\n数值最优代价 J* = 0.018657\n\n均匀控制 u = -0.1565, J = 0.024498\n最优控制节省能量: 23.8%\n"
+                  "text": "J numerical/analytic= 0.018657360363781555 0.01865736036377405 constant c= -0.15651764274966565 Jc= 0.024497772491911964 saving %= 23.840584404423492\n"
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "2ed74c75c153a15948fe6dfd5b1a423de15f143e64d71c7f26d0ce19f830c15c",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/optimal-control-basics",
-          "fromSourceHash": "2ed74c75c153a15948fe6dfd5b1a423de15f143e64d71c7f26d0ce19f830c15c",
-          "toSourceHash": "89dd7d0d017779e3e05ee45427cfbf0a438cfdae50bedd03ce177b861aa72bc8",
-          "notebookPayloadHash": "961dfd7ccc3c46769a3345bacb06b3acd9b365df013bce9874c5372211ca66f5",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "modern/optimal-control-basics#2",
+          "title": "终时扫描与同端点比较",
+          "index": 2,
+          "line": 337,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 327,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "T= 0.5 J= 0.581976706869332 Jc= 0.5940510016239913 saving %= 2.032535038515393 peak |u|= 1.919034751334961\nT= 2.0 J= 0.01865736036378536 Jc= 0.024497772491911964 saving %= 23.84058440437733 peak |u|= 0.2757205647719076\nT= 5.0 J= 4.5401991010528476e-05 Jc= 0.00011504493471956368 saving %= 60.535428073212024 peak |u|= 0.013476505830830337\nNine same-endpoint perturbations verified: [{'T': 0.5, 'amplitude': -0.2, 'extra': 0.20239208802178718}, {'T': 0.5, 'amplitude': 0.0, 'extra': 0.0}, {'T': 0.5, 'amplitude': 0.2, 'extra': 0.20239208802178718}, {'T': 2.0, 'amplitude': -0.2, 'extra': 0.0693480220054468}, {'T': 2.0, 'amplitude': 0.0, 'extra': 0.0}, {'T': 2.0, 'amplitude': 0.2, 'extra': 0.0693480220054468}, {'T': 5.0, 'amplitude': -0.2, 'extra': 0.06973920880217872}, {'T': 5.0, 'amplitude': 0.0, 'extra': 0.0}, {'T': 5.0, 'amplitude': 0.2, 'extra': 0.06973920880217872}]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#3",
+          "title": "变分与习题核验",
+          "index": 3,
+          "line": 739,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 293,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 J= 1.3130352854993317 straight= 1.3333333333333333 gap= 0.020298047834001576\nexample2/Q2 straight length sqrt2= 1.4142135623730951 global length bound is endpoint distance\nQ3 u=-1, x=1-t, J=.5\nQ4 TPBVP matrix= [[-2. -1.]\n [-1.  2.]] initial costate= 0.7099547665685978 terminal x= 0.0\nQ8 lambda=.5, u=-.5, x(1)=.5, J= 1/4\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#4",
+          "title": "最短时间的可行性与下界",
+          "index": 4,
+          "line": 782,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 133,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "x0= 1.0 T= 0.6931471805599453 lambda0= 0.5 H=0, terminal residual= 5.155869221146192e-14\nx0= 2.0 T= 1.0986122886681098 lambda0= 0.3333333333333333 H=0, terminal residual= 1.0479984935418685e-13\nQ7 switch [q,v]= [ 0.5 -1. ] final= [3.88578059e-16 1.11022302e-16] T=2 lower bound T^2/4=1\ndisplacement bound at T= 1.0 : 0.25\ndisplacement bound at T= 1.5 : 0.5625\ndisplacement bound at T= 2.0 : 1.0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 47608
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/optimal-control-basics#5",
+          "title": "极小值条件与输入边界",
+          "index": 5,
+          "line": 823,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sigma= -2.0 pointwise chosen u= 1 H input term= -2.0\nsigma= 0.0 pointwise chosen u= 0 H input term= -0.0\nsigma= 3.0 pointwise chosen u= -1 H input term= -3.0\nexample3 fixed-time H= -0.038010914919035556 constant, not zero\nT=.5 clipped |u|<=1 terminal x= 0.21306131942531983 does not satisfy x(T)=0; time lower bound ln2= 0.6931471805599453\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "key": "modern/lqr-controller",
       "title": "LQR控制",
-      "sourceHash": "b4b1b94c95abb8946621b0af0f2c00984e533b2051fa1803cb705db0adceed89",
+      "sourceHash": "918167edd306b7ad90594efe324eb327839c8d79e03bbd24e06221970f04b181",
       "notebooks": [
         {
           "id": "modern/lqr-controller#1",
-          "title": "动手实验：LQR 求解、裕度与习题复算",
+          "title": "有限时域的终端条件与价值",
           "index": 1,
-          "line": 215,
+          "line": 149,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6853,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "finite S= 0.0 P0= [[1.53647493 0.83323627]\n [0.83323627 1.53647493]] K0= [0.83323627 1.53647493] KT= [0. 0.] J/value= 0.7682374670754674 0.7682374670759842 xT= [ 0.48441039 -0.26657812]\nfinite S= 10.0 P0= [[2.43640361 1.5073606 ]\n [1.5073606  2.10831434]] K0= [1.5073606  2.10831434] KT= [ 0. 10.] J/value= 1.2182018052680492 1.2182018052687822 xT= [ 0.12978574 -0.10174618]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 62460
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#2",
+          "title": "动手实验：LQR 求解、裕度与习题复算",
+          "index": 2,
+          "line": 326,
           "cellCount": 4,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4620,
+              "milliseconds": 90,
               "status": "passed",
               "outputs": [
                 {
@@ -2030,7 +2413,7 @@
             },
             {
               "index": 2,
-              "milliseconds": 9,
+              "milliseconds": 6,
               "status": "passed",
               "outputs": [
                 {
@@ -2042,7 +2425,7 @@
             },
             {
               "index": 3,
-              "milliseconds": 2809,
+              "milliseconds": 2797,
               "status": "passed",
               "outputs": [
                 {
@@ -2054,7 +2437,7 @@
             },
             {
               "index": 4,
-              "milliseconds": 314,
+              "milliseconds": 246,
               "status": "passed",
               "outputs": [
                 {
@@ -2065,42 +2448,100 @@
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 45904
+                  "base64Length": 52256
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "e907c7683a003ff8cc53c8ee1c5e05405757affd151f9d0aea130f3668691c03",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/lqr-controller",
-          "fromSourceHash": "e907c7683a003ff8cc53c8ee1c5e05405757affd151f9d0aea130f3668691c03",
-          "toSourceHash": "b4b1b94c95abb8946621b0af0f2c00984e533b2051fa1803cb705db0adceed89",
-          "notebookPayloadHash": "b76efabb04823d3a587887aa0586ddfce7d96991183ffd662d36bc4de6b81edc",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "modern/lqr-controller#3",
+          "title": "离散增益与代价求和",
+          "index": 3,
+          "line": 595,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "DARE P= [[1.783493 1.001249]\n [1.001249 1.785659]] K= [[0.917075 1.635596]] poles= [0.915928+0.045854j 0.915928-0.045854j] sum+tail= 0.891746566109448 value= 0.8917465661094488 wrong continuous K= [[1.090424 1.835721]]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#4",
+          "title": "权重单位、缩放与解的边界",
+          "index": 4,
+          "line": 836,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 114,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "common scale= 0.1 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\ncommon scale= 1.0 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\ncommon scale= 10.0 P/c= [[1.732051 1.      ]\n [1.       1.732051]] K= [[1.       1.732051]]\nmeters to centimeters: Qz= [[0.0001 0.    ]\n [0.     1.    ]] Kz= [[0.01     1.732051]] same physical u for x=[1,0]: -1.0000000000000004\nscalar a/b/q/P= -1.0 0.0 1.0 0.5 pole= -1.0\nscalar a/b/q/P= -1.0 1.0 0.0 0.0 pole= -1.0\nscalar a/b/q/P= 1.0 1.0 0.0 0.0 pole= 1.0\nscalar a/b/q/P= 1.0 1.0 0.0 2.0 pole= -1.0\noriginal example2/Q1 exact residuals passed; tracking N=1 and J default=sqrt3/2= 0.8660254037844386\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/lqr-controller#5",
+          "title": "两模式参数与真实轨迹核验",
+          "index": 5,
+          "line": 874,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 727,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "all slider values + corners/critical: 785 each 4 independent time readings; full601 default/existing cell retained\n{'params': [1.0, 1.0, 1.0, 0.1], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.9531536806842715, -0.09029690300459826], [0.2169243620534197, -0.212975042062361], [-0.11765284333869912, 0.08868271335250388]], 'u': [-0.09999999999999996, -0.0796754856914188, 0.015195923154270844, -0.0035950121940904567]}\n{'params': [1.0, 1.0, 1.0, 0.5], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.8162591720631296, -0.3076486869130859], [-0.07773811338554504, -0.03485434247715846], [0.00024351799281344447, -0.0011649540899318985]], 'u': [-0.4999999999999998, -0.141698007723907, 0.06905380271019478, 0.0008871208397168836]}\n{'params': [1.0, 1.0, 1.0, 1.0], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.7184072074542298, -0.4033119650774156], [0.003099780800972833, -0.015758818962627583], [4.4988516916953425e-06, -4.281362615450825e-06]], 'u': [-0.9999999999999996, -0.019850392639700787, 0.024195294309578015, 2.9166858838914625e-06]}\n{'params': [1.0, 1.0, 1.0, 3.0], 'P': [[1.7320508075688765, 0.9999999999999996], [0.9999999999999996, 1.7320508075688776]], 'K': [0.9999999999999996, 1.7320508075688776], 'states': [[1.0, 0.0], [0.6023488078946324, -0.3914048346906533], [0.04284278621095773, -0.02834412483853662], [5.736573524452945e-05, -3.795228346310121e-05]], 'u': [-2.9999999999999987, 0.22675275635303083, 0.018752034316388173, 2.5108643930453966e-05]}\n{'params': [1.0, 2.0, 1.0, 1.0], 'P': [[2.0000000000000004, 0.9999999999999996], [0.9999999999999996, 1.9999999999999996]], 'K': [0.9999999999999996, 1.9999999999999996], 'states': [[1.0, 0.0], [0.7357588823428847, -0.3678794411714423], [0.04042768199451282, -0.033689734995427344], [4.894437128029233e-06, -4.588534807527405e-06]], 'u': [-0.9999999999999996, 1.1102230246251565e-16, 0.026951787996341875, 4.282632487025578e-06]}\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "key": "modern/multivariable-systems",
       "title": "多变量系统",
-      "sourceHash": "c4dfd127cd78fff4ed70eebf2b423f7e9ff554a15bd6500762c6a9d6eb813afd",
+      "sourceHash": "97d9d49f83bcec6bb34a53335848549f58e1cf9775ac3c6ccb288c39e3eaa99e",
       "notebooks": [
         {
           "id": "modern/multivariable-systems#1",
           "title": "RGA、零点与默认闭环的独立复算",
           "index": 1,
-          "line": 197,
+          "line": 281,
           "cellCount": 6,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 6188,
+              "milliseconds": 5740,
               "status": "passed",
               "outputs": [
                 {
@@ -2112,7 +2553,7 @@
             },
             {
               "index": 2,
-              "milliseconds": 9,
+              "milliseconds": 7,
               "status": "passed",
               "outputs": [
                 {
@@ -2124,7 +2565,7 @@
             },
             {
               "index": 3,
-              "milliseconds": 5,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
@@ -2136,7 +2577,7 @@
             },
             {
               "index": 4,
-              "milliseconds": 156,
+              "milliseconds": 144,
               "status": "passed",
               "outputs": [
                 {
@@ -2148,7 +2589,7 @@
             },
             {
               "index": 5,
-              "milliseconds": 12,
+              "milliseconds": 13,
               "status": "passed",
               "outputs": [
                 {
@@ -2160,7 +2601,7 @@
             },
             {
               "index": 6,
-              "milliseconds": 231,
+              "milliseconds": 205,
               "status": "passed",
               "outputs": [
                 {
@@ -2171,48 +2612,111 @@
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 27884
+                  "base64Length": 30240
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "a5d15defb452f4b1494c0502d7d5f6993e8df5bba440034138cf8c9303aa14f0",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "modern/multivariable-systems",
-          "fromSourceHash": "a5d15defb452f4b1494c0502d7d5f6993e8df5bba440034138cf8c9303aa14f0",
-          "toSourceHash": "c4dfd127cd78fff4ed70eebf2b423f7e9ff554a15bd6500762c6a9d6eb813afd",
-          "notebookPayloadHash": "81f4c3a85590cb58088238008757d7d09bd062ef5d563a9ea948ee8e918b422d",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
-        }
-      ]
-    },
-    {
-      "key": "modern/modern-case-study",
-      "title": "现代控制案例",
-      "sourceHash": "4be82d39966f9cae59b31a7fa81975d00a694c9984740e187a88b414b9a68c33",
-      "notebooks": [
-        {
-          "id": "modern/modern-case-study#1",
-          "title": "倒立摆状态空间建模与分析",
-          "index": 1,
-          "line": 213,
+          "id": "modern/multivariable-systems#2",
+          "title": "RGA的约束增益与尺度",
+          "index": 2,
+          "line": 395,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3958,
+              "milliseconds": 86,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "系统矩阵 A:\n[[ 0.     1.     0.     0.   ]\n [ 0.    -0.1   -0.981  0.   ]\n [ 0.     0.     0.     1.   ]\n [ 0.     0.2   21.582  0.   ]]\n\n输入矩阵 B:\n[[ 0.]\n [ 1.]\n [ 0.]\n [-2.]]\n\n输出矩阵 C:\n[[1 0 0 0]\n [0 0 1 0]]\n\n开环极点:\n  s_1 = 0.0000\n  s_2 = -0.0909\n  s_3 = -4.6503\n  s_4 = 4.6412\n\n可控性矩阵秩 = 4 (满秩 = 4) → 完全可控 ✓\n可观性矩阵秩 = 4 (满秩 = 4) → 完全可观 ✓\n"
+                  "text": "fixed u2: gain= 2.0 fixed y2: gain= 1.5 ratio= 1.3333333333333333\nscaled K= [[2000.    10. ]\n [  10.     0.2]] RGA= [[ 1.3333333333 -0.3333333333]\n [-0.3333333333  1.3333333333]] cond= 13334.000058337086\nscaled K= [[  0.01           0.0033333333]\n [500.           666.6666666667]] RGA= [[ 1.3333333333 -0.3333333333]\n [-0.3333333333  1.3333333333]] cond= 138888.8889015234\neps= 1.0 input= [ 3. -2.] sigma= [2.6180339887 0.3819660113] cond= 6.854101966249685 delta input= [-0.001  0.001]\neps= 0.1 input= [ 21. -20.] sigma= [2.0512492197 0.0487507803] cond= 42.07623361422563 delta input= [-0.01  0.01]\neps= 0.01 input= [ 201. -200.] sigma= [2.0050124999 0.0049875001] cond= 402.0075124842952 delta input= [-0.1  0.1]\nsymbolic RGA properties passed on nonsingular domain\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/multivariable-systems#3",
+          "title": "静态解耦与可实现边界",
+          "index": 3,
+          "line": 487,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 557,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "T= Matrix([[40/39, -20/117], [-2/13, 40/39]]) G*T= Matrix([[(37*s + 117)/(39*(s + 1)*(s + 3)), 40*s/(117*(s + 1)*(s + 3))], [2*s/(13*(s + 1)*(s + 2)), 2*(19*s + 39)/(39*(s + 1)*(s + 2))]])\ncontinuous peak= 0.038461538461538464 at= 0.6931471805599453 DC output= [ 1. -0.]\none proper dynamic target Tdyn= Matrix([[(20*s**2 + 100*s + 120)/(17*s**2 + 94*s + 117), (-10*s**2 - 30*s - 20)/(17*s**2 + 94*s + 117)], [(-6*s**2 - 24*s - 18)/(17*s**2 + 94*s + 117), (20*s**2 + 100*s + 120)/(17*s**2 + 94*s + 117)]]) det G= (17*s**2 + 94*s + 117)/(20*(s + 1)**2*(s + 2)*(s + 3))\nomega= 0.0 RGA= [[ 1.0256410256+0.j -0.0256410256+0.j]\n [-0.0256410256+0.j  1.0256410256+0.j]] cross= 2.7755575615628914e-17\nomega= 1.0 RGA= [[ 1.029942663+0.0318538968j -0.029942663-0.0318538968j]\n [-0.029942663-0.0318538968j  1.029942663+0.0318538968j]] cross= 0.04865042554105197\nomega= 10.0 RGA= [[ 1.1553481956+0.0543444749j -0.1553481956-0.0543444749j]\n [-0.1553481956-0.0543444749j  1.1553481956+0.0543444749j]] cross= 0.015010988312518543\nnonzero D closed transfer= 5*(3*s + 5)/(s + 5)\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 49872
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/multivariable-systems#4",
+          "title": "分散反馈全参数核验",
+          "index": 4,
+          "line": 732,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2089,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{'params': [0.5, 0.5], 'samples': [[0.0, 0.0, 0.5, 0.0], [0.2564526996778123, 0.04118300031350718, 0.37177365016109387, -0.02059150015675359], [0.33129667845557365, 0.03342109458918106, 0.3343516607722132, -0.01671054729459053], [0.3314762232441579, 0.03342611258114658, 0.33426188837792103, -0.01671305629057329]], 'steady': [0.33147632311977715, 0.033426183844011144], 'peak': [0.041303440959630594, 0.9]}\n{'params': [0.5, 5.0], 'samples': [[0.0, 0.0, 0.5, 0.0], [0.251080281650959, 0.010977631044683939, 0.3744598591745205, -0.05488815522341969], [0.3284949503139906, 0.008387162313790449, 0.33575252484300466, -0.04193581156895224], [0.32867122133346355, 0.008391605162922353, 0.33566438933326825, -0.04195802581461176]], 'steady': [0.3286713286713287, 0.008391608391608393], 'peak': [0.01622637031643943, 0.34]}\n{'params': [2.0, 2.0], 'samples': [[0.0, 0.0, 2.0, 0.0], [0.6262239773147195, 0.04697367312012252, 0.7475520453705611, -0.09394734624024503], [0.6629165639497738, 0.03369794422799785, 0.6741668721004523, -0.0673958884559957], [0.6629213476963358, 0.03370786398164513, 0.6741573046073284, -0.06741572796329026]], 'steady': [0.6629213483146067, 0.033707865168539325], 'peak': [0.07637957647712573, 0.36]}\n{'params': [5.0, 0.5], 'samples': [[0.0, 0.0, 5.0, 0.0], [0.8295987466563652, 0.10977631044683939, 0.8520062667181738, -0.05488815522341969], [0.8321676715127162, 0.08387162313790422, 0.839161642436419, -0.04193581156895211], [0.8321678316187051, 0.0839160516292234, 0.8391608419064744, -0.0419580258146117]], 'steady': [0.8321678321678322, 0.08391608391608392], 'peak': [0.16226370316439442, 0.34]}\n{'params': [5.0, 5.0], 'samples': [[0.0, 0.0, 5.0, 0.0], [0.8317490429140673, 0.01803221132707644, 0.8412547854296637, -0.09016105663538221], [0.8303877387533481, 0.021199318519083257, 0.8480613062332593, -0.10599659259541629], [0.8303886924917855, 0.021201413234435237, 0.8480565375410726, -0.10600706617217619]], 'steady': [0.8303886925795053, 0.02120141342756184], 'peak': [0.09407770075735716, 0.18]}\n2116 pairs x501 points: exact ZOH augmented matrix exponential; axis checks passed; no all-system monotonicity claim\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "modern/modern-case-study",
+      "title": "现代控制案例",
+      "sourceHash": "930189acda3064dca68e76d84ba0d33378baf79b87f4a768e4287a13d902899d",
+      "notebooks": [
+        {
+          "id": "modern/modern-case-study#1",
+          "title": "倒立摆状态空间建模与分析",
+          "index": 1,
+          "line": 124,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6683,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "A= [[ 0.           1.           0.           0.         ]\n [ 0.           0.          -0.717804878  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 0.           0.          15.791707317  0.         ]] B= [[ 0.         ]\n [ 0.975609756]\n [ 0.         ]\n [-1.463414634]] H= [[1.1         0.05       ]\n [0.05        0.033333333]] open poles= [ 0.           0.           3.973878121 -3.973878121]\nCtrb= [[  0.            0.975609756   0.            1.050446163]\n [  0.975609756   0.            1.050446163   0.         ]\n [  0.           -1.463414634   0.          -23.109815586]\n [ -1.463414634   0.          -23.109815586   0.         ]] ranks= 4 4\nsymbolic nonlinear Jacobian and characteristic polynomial passed; a43= 15.791707317073174 sqrt= 3.9738781205609683\n"
                 }
               ]
             }
@@ -2220,39 +2724,39 @@
         },
         {
           "id": "modern/modern-case-study#2",
-          "title": "极点配置 vs LQR 阶跃响应对比",
+          "title": "极点配置与LQR的指定设计",
           "index": 2,
-          "line": 332,
+          "line": 224,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 1637,
+              "milliseconds": 6,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "极点配置增益 K_place = [ -6.1162  -7.9491 -49.3491 -10.9246]\nLQR 增益 K_lqr       = [ -3.1623  -4.3409 -37.1218  -8.1862]\n"
+                  "text": "place K= [[ -8.358817533 -10.727149168 -64.880211689 -16.718099445]] N= -8.358817533129677 poles= [-5. -4. -3. -2.]\nLQR K= [[ -3.16227766   -6.324639356 -57.325564562 -17.629412347]] N= -3.1622776601683946 poles= [-15.884311401+0.j          -1.339175061+0.94204483j\n  -1.339175061-0.94204483j  -1.066098637+0.j        ]\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 299,
+              "milliseconds": 538,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "前馈增益 N_place = -6.1162, N_lqr = -3.1623\n"
+                  "text": "{'design': 'place', 'settling_sample': 2.92, 'theta_peak': 0.013524728850878786, 'force_peak': 0.8358817533129678, 'x8': 0.09999991808473604}\n{'design': 'LQR', 'settling_sample': 4.61, 'theta_peak': 0.005121808604293076, 'force_peak': 0.3162277660168395, 'x8': 0.0999449433306313}\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 81508
+                  "base64Length": 83144
                 }
               ]
             }
@@ -2262,30 +2766,25 @@
           "id": "modern/modern-case-study#3",
           "title": "观测器设计与基于观测器的控制",
           "index": 3,
-          "line": 473,
+          "line": 314,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 449,
+              "milliseconds": 461,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "观测器增益 L =\n[[ 19.2328   0.9725]\n [ 91.7117   8.5212]\n [  0.9725  18.7672]\n [  9.239  103.08  ]]\n观测器误差极点: [ -8.  -9. -10. -11.]\n\n稳态估计误差 (t=5s):\n  ẋ 误差: 0.000000\n  θ̇ 误差: 0.000000\n"
+                  "text": "Lo= [[ 19.232807256   0.972522552]\n [ 91.711668429   8.521159659]\n [  0.972523238  18.767192744]\n [  9.238970712 103.080038889]] error poles= [ -8. -11.  -9. -10.] error8= [ 0. -0. -0. -0.] input_peak= 2.8334143063721524\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 93328
-                },
-                {
-                  "type": "stream",
-                  "name": "stderr",
-                  "text": "<cell>:73: UserWarning: Glyph 7819 (\\N{LATIN SMALL LETTER X WITH DOT ABOVE}) missing from current font.\n<exec>:36: UserWarning: Glyph 7819 (\\N{LATIN SMALL LETTER X WITH DOT ABOVE}) missing from current font.\n"
+                  "base64Length": 83456
                 }
               ]
             }
@@ -2293,32 +2792,62 @@
         },
         {
           "id": "modern/modern-case-study#4",
-          "title": "卡尔曼滤波与 LQG 控制",
+          "title": "卡尔曼滤波与LQG控制",
           "index": 4,
-          "line": 619,
-          "cellCount": 2,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        },
-        {
-          "id": "modern/modern-case-study#5",
-          "title": "Lyapunov 验证与 MIMO RGA 分析",
-          "index": 5,
-          "line": 809,
+          "line": 395,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 7,
+              "milliseconds": 8,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== Lyapunov 稳定性验证 ===\nP 的特征值: [ 0.0299  0.2044  1.1589 24.2214]\nP > 0: True → 闭环渐近稳定 ✓\nLyapunov 方程残差: 4.55e-13\n"
+                  "text": "fixed design Pe= [[ 0.000099047  0.000045074 -0.000028364 -0.000113055]\n [ 0.000045074  0.000064133 -0.000140488 -0.000558895]\n [-0.000028364 -0.000140488  0.00079483   0.003154797]\n [-0.000113055 -0.000558895  0.003154797  0.012555621]] L= [[ 0.990469139 -0.283644418]\n [ 0.450741636 -1.404882618]\n [-0.283644418  7.948301069]\n [-1.130549658 31.547972022]]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3693,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "seed= 7 rmse= [0.004700739913078389, 0.028756657005881352] peak= 7.349621436100977\nseed= 23 rmse= [0.008664782540628607, 0.027860347394201932] peak= 6.012137776243626\nseed= 101 rmse= [0.0035279838444250847, 0.028572701332153182] peak= 5.581428357629935\nall 121 UI pairs +2 other default seeds checked; 3001-step statistics/301 plotted nodes\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 126120
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#5",
+          "title": "Lyapunov验证与MIMO RGA分析",
+          "index": 5,
+          "line": 531,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Pv eigenvalues= [ 0.029884493  0.204448328  1.158945871 24.221368288] Pc eigenvalues= [ 0.372757149  0.727218036  1.915866524 65.883298468] Lyapunov residual= 4.547473508864641e-13\n"
                 }
               ]
             },
@@ -2330,7 +2859,59 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== MIMO RGA 分析（b=0.1, k_s=2.0）===\nA_f =\n[[ 0.      1.      0.      0.    ]\n [-1.6851 -0.0976 -0.7178  0.    ]\n [ 0.      0.      0.      1.    ]\n [ 0.      0.1463 15.7917  0.    ]]\n\nB_f =\n[[ 0.      0.    ]\n [ 0.9756 -1.4634]\n [ 0.      0.    ]\n [-1.4634 32.1951]]\n\n稳态增益矩阵 G_ss =\n[[ 0.5395 -0.    ]\n [ 0.0927 -2.0387]]\n\nRGA Λ =\n[[ 1. -0.]\n [-0.  1.]]\n\nλ₁₁ = 1.0000\n→ 对角配对推荐 (F→x, τ→θ)\n"
+                  "text": "Af= [[ 0.           1.           0.           0.         ]\n [-1.951219512 -0.097560976 -0.717804878  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 2.926829268  0.146341463 15.791707317  0.         ]] Bf= [[ 0.           0.         ]\n [ 0.975609756 -1.463414634]\n [ 0.           0.         ]\n [-1.463414634 32.195121951]] G0= [[ 0.5          0.         ]\n [-0.          -2.038735984]] RGA= [[ 1. -0.]\n [-0.  1.]] open poles= [-3.961576773+0.j          -0.046111019+1.352713394j\n -0.046111019-1.352713394j  3.956237837+0.j         ]\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 14,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q3 A= [[ 0.           1.           0.           0.         ]\n [ 0.           0.          -1.731176471  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 0.           0.          28.852941176  0.         ]] B= [[ 0.         ]\n [ 0.470588235]\n [ 0.         ]\n [-1.176470588]] ctrb= [[  0.            0.470588235   0.            2.036678201]\n [  0.470588235   0.            2.036678201   0.         ]\n [  0.           -1.176470588   0.          -33.944636678]\n [ -1.176470588   0.          -33.944636678   0.         ]]\nQ4 P= [[16.618832428  8.123105626]\n [ 8.123105626  4.03065891 ]] det= 1.0000000000000009 K= [[8.123105626 4.03065891 ]] poles= [-2.015329455+0.248098393j -2.015329455-0.248098393j]\nQ5 L= [[10.]\n [29.]] poles= [-5. -5.]\nQ6 Pv= [[1.124306327 0.121267813]\n [0.121267813 0.154135546]] eigen= [0.139207218 1.139234654] det= 0.15858968733650156\nQ7 RGA and Q8 symbolic separation proof passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#6",
+          "title": "参数、步长与非线性边界",
+          "index": 6,
+          "line": 601,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 222,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fixed design Pe= [[ 0.000099047  0.000045074 -0.000028364 -0.000113055]\n [ 0.000045074  0.000064133 -0.000140488 -0.000558895]\n [-0.000028364 -0.000140488  0.00079483   0.003154797]\n [-0.000113055 -0.000558895  0.003154797  0.012555621]] L= [[ 0.990469139 -0.283644418]\n [ 0.450741636 -1.404882618]\n [-0.283644418  7.948301069]\n [-1.130549658 31.547972022]]\nsame Brownian path seed= 7 dt .004/.002 max state difference= 0.01201951123488032\nsame Brownian path seed= 23 dt .004/.002 max state difference= 0.01697673525135268\nsame Brownian path seed= 101 dt .004/.002 max state difference= 0.010892310752698663\nfixed K mass/length/max real pole= 0.05 0.25 -0.9846499694679643\nfixed K mass/length/max real pole= 0.05 0.5 -1.131597254592901\nfixed K mass/length/max real pole= 0.05 0.75 -1.1019279067546235\nfixed K mass/length/max real pole= 0.1 0.25 -0.955854142475197\nfixed K mass/length/max real pole= 0.1 0.5 -1.06609863658648\nfixed K mass/length/max real pole= 0.1 0.75 -1.151426097708998\nfixed K mass/length/max real pole= 0.15 0.25 -0.9303597975481893\nfixed K mass/length/max real pole= 0.15 0.5 -1.0166521684433374\nfixed K mass/length/max real pole= 0.15 0.75 -1.2116444374305795\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1137,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{'initial_degrees': 5.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10017053166282189, 'theta_end': 1.6398246158753477e-05, 'sample_force_peak': 4.686371469848267, 'sample_theta_peak': 0.08726646259971647, 'linear_x8': 0.10016998247380024}\n{'initial_degrees': 30.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10142152574716301, 'theta_end': 0.00013762921108702815, 'sample_force_peak': 29.6993676491738, 'sample_theta_peak': 0.5235987755982988, 'linear_x8': 0.10129517818764588}\n{'initial_degrees': 60.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10312853474512768, 'theta_end': 0.0002795874789153239, 'sample_force_peak': 50.0, 'sample_theta_peak': 1.0471975511965976, 'linear_x8': 0.10264541304425616}\n{'initial_degrees': 85.0, 'terminated': True, 't_end': 0.13438895385905644, 'x_end': 0.41029046171652167, 'theta_end': 1.5707963267948966, 'sample_force_peak': 50.0, 'sample_theta_peak': 1.5707963267948966, 'linear_x8': 0.10377060875809173}\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 81944
                 }
               ]
             }
@@ -11003,15 +11584,15 @@
   "complete": true,
   "totals": {
     "lessons": 73,
-    "notebooks": 328,
-    "enabled": 303,
-    "codeOnly": 25
+    "notebooks": 351,
+    "enabled": 327,
+    "codeOnly": 24
   },
   "releaseTotals": {
     "lessons": 73,
-    "notebooks": 328,
-    "enabled": 301,
-    "codeOnly": 27
+    "notebooks": 351,
+    "enabled": 326,
+    "codeOnly": 25
   },
   "provenance": [
     {
@@ -11278,6 +11859,86 @@
       "testedAt": "2026-10-18T05:28:14.617Z",
       "url": "http://localhost:8080/python-expansion.html?lesson=modern/state-space",
       "inputPath": ".agent/semester-03/modern-01/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T05:56:11.594Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/controllability-observability",
+      "inputPath": ".agent/semester-03/modern-02/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:01:00.790Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/controllability-observability",
+      "inputPath": ".agent/semester-03/modern-02/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:04:57.736Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/controllability-observability",
+      "inputPath": ".agent/semester-03/modern-02/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:09:44.813Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/controllability-observability",
+      "inputPath": ".agent/semester-03/modern-02/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:33:03.533Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
+      "inputPath": ".agent/semester-03/modern-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:37:35.934Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
+      "inputPath": ".agent/semester-03/modern-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T06:42:41.901Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lyapunov-modern",
+      "inputPath": ".agent/semester-03/modern-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:02:14.566Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-feedback",
+      "inputPath": ".agent/semester-03/modern-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:10:10.722Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-feedback",
+      "inputPath": ".agent/semester-03/modern-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:26:14.578Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-observer",
+      "inputPath": ".agent/semester-03/modern-05/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:28:33.359Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/state-observer",
+      "inputPath": ".agent/semester-03/modern-05/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T07:44:20.577Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/optimal-control-basics",
+      "inputPath": ".agent/semester-03/modern-06/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T08:00:32.776Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/lqr-controller",
+      "inputPath": ".agent/semester-03/modern-07/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T08:26:25.235Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/multivariable-systems",
+      "inputPath": ".agent/semester-03/modern-08/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T08:50:05.228Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
+      "inputPath": ".agent/semester-03/modern-09/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T08:55:59.604Z",
+      "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
+      "inputPath": ".agent/semester-03/modern-09/pyodide.json"
     }
   ]
 }

@@ -81,6 +81,7 @@ import { ComplexPolarExplorer } from "@/components/wiki/complex-polar-explorer";
 
 import { LqrExplorer } from "@/components/wiki/lqr-explorer";
 
+import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explorer";
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
@@ -146,6 +147,7 @@ export const wikiComponents: MDXComponents = {
   OptimalTimeExplorer,
   LqrExplorer,
   MimoProportionalExplorer,
+  CartPoleNoiseExplorer,
   ComplexPolarExplorer,
   LinearMapExplorer,
   EigenIterationExplorer,

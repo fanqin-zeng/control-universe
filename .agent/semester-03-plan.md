@@ -599,3 +599,37 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ## MODERN-01交付（2026-10-18）
 
 状态空间按重构技能Phase1–4完成，保留10节/三物理例/十题及原两实验用途，五严格内核/Pyodide、65行对账、真实TS21×601点与独立物理参考、36旧ID/两别名/390px/两构建验收通过，详见semester-03/modern-01/acceptance.md。直接master提交推送后登记回执；用户另授权本课完成后发布届时master已有修改，DEP07据实际结果更新。不生产MODERN-02。
+
+## MODERN-02 执行回执（2026-10-18）
+
+仅本课modern/controllability-observability按重构SKILL完整Phase1–4，九主题/七例/十题及原三实验目的保留，扩六原始Notebook。对偶/PBH左右向量与Jordan、SISO证明及MIMO边界、反馈符号/坐标、Q1/Q6/Q9矩阵和Gramian时域/尺度/Hankel平方根纠错；两车具体入口与SVG、上下双图。六严格内核/Pyodide、44项对账、独立模态解析3×301全状态节点及Gramian，33旧标题ID保留；实际命令见semester-03/modern-02/acceptance.md。直接master验收提交并推送，真实hash随后登记全局checklist；不自动发布Pages，不交付MODERN-03。W08/W09/W10及27Python待办保持开放。
+
+
+### MODERN-03 本轮执行记录（2026-10-18）
+
+线性系统稳定性按重构技能Phase1–4推进，范围仅modern/lyapunov-modern。保留三例/十题/原三Notebook八cell用途；补小车能量SVG与三阻尼图、唯一性与指数界、半正定证书反例和可检测条件，LQR/Q6/Q8明确就地推导与边界。五H2缩短并保留旧ID，新增实际PBH先修modern/controllability-observability；OUTLINE拓扑层级由工具自动传播。学期3签发与master真实提交以全局checklist及.agent/semester-03/modern-03/acceptance.md为准。五Notebook十一cell严格Jupyter、独立闭式/符号/解析复核与Pyodide逐份执行；Pages仅本地构建预览，本轮未发布。W08/W09/W10及27Python待办不关闭，下一课MODERN-04另开会话。
+
+
+### MODERN-04 本轮执行记录（2026-10-18）
+
+状态反馈按重构技能Phase1–4完成，保留八主题/五例/十题/原两实验用途，扩五Notebook六cell。纠正SISO/MIMO边界、Ackermann坐标与行向量证明、Q6矩阵/Q7缩放/Q10正常秩及含D输出；原组件开环闭式纠错、等DC基线与施力双图，独立物理ODE核全部19滑块值×501点。Q9保留正确K并补精确指标/包络验收。路径/先修不变，短标题保留旧ID；签发、验收与master真实提交以全局checklist及.agent/semester-03/modern-04/acceptance.md为准。W08/W09/W10与27Python待办不关闭，未发布Pages，MODERN-05另开会话。
+
+### MODERN-05 本轮执行记录（2026-10-18）
+
+状态观测器使用重构技能Phase1–4，保留九主题、三例十题与原两实验用途。小车只测位置引入，真实SVG；纠正Q2伴随型/增益、Q5增广矩阵、例3根虚部，补可检测、分离性瞬态/实际输入/已知D、降阶z完整实现与偏差边界。真实组件26档×401对独立ODE，五原始实验严格内核/Pyodide，31旧ID兼容。最终签发及提交以全局checklist与.agent/semester-03/modern-05/acceptance.md为准；27项Python待办及W08/W09/W10不关闭，未发布Pages，MODERN-06另开会话。
+
+### MODERN-06 本轮执行记录（2026-10-18）
+
+最优控制按重构专用技能Phase1–4，保留10主题、四例十题与原BVP/代价cell用途。小车按时停车的目标冲突引入与任务SVG；修例3方向、Q1完整积分、Q5/Q7中间轨迹及Q9链式，补PMP正常型/必要与充分/终端条件/奇异弧、同T基线与可行性。真实组件三图全46档×401对独立Gramian/ODE，五实验六cell严格内核与Pyodide，35旧ID兼容。签发/实际master提交见checklist与.agent/semester-03/modern-06/acceptance.md；W08/W09/W10及27Python待办不关闭，未发布Pages，MODERN-07另开会话。
+
+### MODERN-07 本轮执行记录（2026-10-18）
+
+LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE四cell用途。小车状态/加速度权衡引入与SVG；补DRE对TPBVP/终项、DARE正确Kd/求和尾项、权重缩放/单位、标量b0与采样边界。两模式组件真实模块785组、每组601轴界/四独立时刻与默认601全点复核；五实验八cell严格内核/Pyodide，30旧ID兼容。签发/真实master回执见checklist与.agent/semester-03/modern-07/acceptance.md；27Python待办/W08/W09/W10不关闭，本轮未发布Pages，MODERN-08另开会话。
+
+### MODERN-08 本轮执行记录（2026-10-18）
+
+多变量系统按重构专用技能Phase1–4，保留8主题/三例八题/原六cell用途。供暖耦合SVG入口；补约束增益/单位缩放、近奇异方向、静态逆瞬态/频率与适当性实证，澄清稳态条件与集中MPC。真实组件提纯模块，2116组各501点对独立ODE，四实验九cell严格内核与Pyodide，29旧ID兼容。实际签发/提交见checklist与.agent/semester-03/modern-08/acceptance.md；27Python待办和W08/W09/W10不关闭，本轮未发布Pages，MODERN-09另开会话。
+
+### MODERN-09 本轮执行记录（2026-10-18）
+
+现代控制案例按重构专用Phase1–4，保留12主题/七步链/八题/五原实验用途，统一均匀杆质量矩阵、Q/R、噪声SDE时标和实际限幅输入，补双输入弹簧项/平衡映射与局部稳定边界。新增噪声React实际CARE，123工况/三种子、九参数与四初角实测；公开3秒未达与85度退出，六实验十一cell/41旧ID。PY-004/PY-005本地闭环，其它25项与W08/W09/W10保留；签发/实际master回执见checklist及.agent/semester-03/modern-09/acceptance.md。本轮未发布Pages，本对话只交付本课。

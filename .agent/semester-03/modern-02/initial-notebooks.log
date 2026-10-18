@@ -1,0 +1,32 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8891 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+modern/controllability-observability  [FAIL]  6 个 notebook · 6 个 cell
+      FAIL S6  Notebook 6 cell 1（:845）执行报错 AssertionError:
+          ---------------------------------------------------------------------------
+          AssertionError                            Traceback (most recent call last)
+          Cell In[2], line 37
+     33 a0,a1,a2,lam=sp.symbols('a0 a1 a2 lam'); companion=sp.Matrix([[0,1,0],[0,0,1],[-a0,-a1,-a2]])
+     34 w=sp.Matrix([1,lam,lam**2]);assert (companion*w-lam*w)[2]==-a0-a1*lam-a2*lam**2-lam**3
+     35 print('Q8 eigenvector identity=',list(companion*w-lam*w))
+     36 A9=sp.Matrix([[0,1,0,0],[-2,0,1,0],[0,0,0,1],[1,0,-1,0]]);B9=sp.Matrix([0,1,0,0]);C9=sp.Matrix([[1,0,0,0]])
+---> 37 R,O,G=audit('Q9',A9,B9,C9);assert R.det()==-1 and O.det()==1
+     38 _,On,_=audit('Q9 two sensors',A9,B9,sp.Matrix([[1,0,0,0],[0,0,1,0]]));assert On.rank()==4
+     39 W=sp.Matrix([[sp.Rational(1,2),sp.Rational(1,3)],[sp.Rational(1,3),sp.Rational(1,4)]])
+     40 assert sp.diag(-1,-2)*W+W*sp.diag(-1,-2)+sp.ones(2)==sp.zeros(2)
+
+          AssertionError:
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 6 个 notebook · 6 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 6 个 cell，其中 error 1 个
+      按判据：S6×1
+      FAIL 课程：modern/controllability-observability
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/modern-02/notebooks.json

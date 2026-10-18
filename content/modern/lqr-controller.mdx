@@ -1,29 +1,33 @@
 ---
-title: LQR控制器
+title: LQR控制
 description: 推导线性二次型调节器（LQR），掌握代数 Riccati 方程的求解，理解 LQR 的鲁棒性裕度和 Q/R 权重选择方法。
 ---
 
-# LQR控制器
+# LQR控制
 
-上一课，我们建立了最优控制的一般框架——用 Hamilton 函数和极小值原理求最优控制。但那个框架是通用的，每种问题都要重新推导。
+<span id="lqr控制器" />
 
-有没有一种"标准形式"的最优控制问题，既有清晰的物理意义，又能给出**解析解**？答案是**线性二次型调节器**（Linear Quadratic Regulator, LQR）——线性系统 + 二次型代价 = 最优状态反馈。
+上一课讨论了小车“按时到达”与“少用力”的冲突。现在先不规定到达时刻，只希望小车长期停在目标附近：位置偏离目标、速度还没降下来、执行器一直大力推，都可以记成代价。位置误差看得重一些，和推力看得重一些，会得到怎样不同的反馈？
 
-LQR 是现代控制中最常用的控制器之一。它自动给出状态反馈增益 $K$，不需要你手动选极点；它在规定条件下有输入端裕度保证；它自然支持 MIMO 系统。
+**LQR**把这三个要求写成二次型权重，用线性模型算出状态反馈增益。它替我们求解给定权重下的优化，选择权重和核查实际限幅仍是设计者的工作。下面用质量归一化的小车：x₁为位置偏差、x₂为速度，u为加速度输入；把位置和速度分别除以允许尺度后再比较代价，不能把不同单位的数直接当同一种“误差”。
 
-> 📖 本课需要上一课的基础：[最优控制基础](/modern/optimal-control-basics)，特别是 Hamilton 函数和极小值原理。也用到[状态反馈](/modern/state-feedback)的概念。
+![归一化小车的位置、速度和加速度分别进入状态与输入惩罚，Riccati解给出反馈增益，再检查实际轨迹和限幅](/diagrams/lqr/cart.svg)
+
+本课沿用[最优控制](/modern/optimal-control-basics)、[状态反馈](/modern/state-feedback)、[线性系统稳定性](/modern/lyapunov-modern)。它们帮助我们区分代价最优、闭环稳定和实际约束；三者需要分别验收。
 
 本课的三类 Riccati 方程不要混淆：
 
 | 缩写 | 全称 | 用途 |
 |------|------|------|
-| DRE | 微分 Riccati 方程 | 连续时间、有限时域、从终端向前回推 |
+| DRE | 微分 Riccati 方程 | 连续时间、有限时域、从终端向过去回推（或按剩余时间向前积分） |
 | ARE | 代数 Riccati 方程 | 连续时间、无限时域的稳态解 |
 | DARE | 离散代数 Riccati 方程 | 离散时间、无限时域的稳态解 |
 
 > 📐 本文用到了二次型、正定矩阵与矩阵指数，详见 [线性代数基础](/math/linear-algebra-basics)与[常微分方程与矩阵指数](/math/ode-matrix-exponential)。最小解释：二次型把状态映射成非负代价，矩阵指数把初态映射成线性系统轨迹。
 
-## 为什么需要 LQR
+<span id="为什么需要-lqr" />
+
+## LQR解决什么
 
 ### 极点配置 vs LQR
 
@@ -33,9 +37,9 @@ LQR 是现代控制中最常用的控制器之一。它自动给出状态反馈�
 | 物理意义 | 间接（极点 → 动态） | 直接（"状态偏差"和"控制能耗"的权衡） |
 | 求解方式 | Ackermann 公式 / `place` | 解 Riccati 方程 |
 | 鲁棒性 | 需针对所选反馈单独分析 | 连续时间单输入全状态反馈有输入端裕度下界（见后文） |
-| MIMO | 极点选择困难 | $Q, R$ 的选择更直观 |
+| MIMO | 可按可达谱设计，需核实现与代价 | 以矩阵权重表达耦合代价，同样需设计判断 |
 
-极点配置的根本问题：**给了你 $n$ 个自由度，但没告诉你怎么选**。LQR 把选择转化为"状态偏差 vs 控制能耗"的权衡——这是一个有物理意义的设计参数。
+对于可控单输入系统，极点配置把目标谱交给设计者选择；LQR把选择转为状态与输入的权重。多输入K一般有m×n个元素，不能都按n个自由度计数。二次输入惩罚不自动等于电能或燃料，物理含义取决于输入变量和模型。
 
 ### LQ 问题回顾
 
@@ -49,7 +53,9 @@ $$
 
 上一课说了一个关键结论：**LQ 问题的最优控制是状态反馈** $\boldsymbol{u}^* = -K(t)\boldsymbol{x}$。这一课的目标：推导 $K(t)$ 的表达式。
 
-## 有限时间 LQ 问题
+<span id="有限时间-lq-问题" />
+
+## 有限时域
 
 ### 从极小值原理出发
 
@@ -71,7 +77,7 @@ $$
 \dot{\boldsymbol{\lambda}} = -\frac{\partial H}{\partial \boldsymbol{x}} = -Q\boldsymbol{x} - A^T\boldsymbol{\lambda}
 $$
 
-**步骤3**：终值横截条件。
+**步骤3**：终时固定、终态自由且只有终端二次惩罚时的横截条件。固定终态不能再强加这一条件。
 
 $$
 \boldsymbol{\lambda}(t_f) = \frac{\partial}{\partial \boldsymbol{x}}\left[\frac{1}{2}\boldsymbol{x}^T S \boldsymbol{x}\right]_{t_f} = S\boldsymbol{x}(t_f)
@@ -127,28 +133,77 @@ $$
 
 这就是**微分 Riccati 方程**（DRE），终值条件 $P(t_f) = S$。
 
-<Callout type="tip" title="记忆技巧">
+<Callout variant="tip">
+
+**记忆技巧**
 
 Riccati 方程的结构：
 - $A^T P + PA$：类似 Lyapunov 方程（线性项）
 - $-PBR^{-1}B^T P$：二次项（非线性来源）
 - $+Q$：驱动项
 
-从 $t_f$ 向后积分到 $t = 0$，得到 $P(0)$，然后 $K(0) = R^{-1}B^T P(0)$ 就是最优初始增益。
+从 $t_f$ 向过去积分到 $t = 0$，得到 $P(0)$，然后 $K(0) = R^{-1}B^T P(0)$ 就是最优初始增益。
 
 </Callout>
 
+<JupyterNotebook
+ title="有限时域的终端条件与价值"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
+from scipy.integrate import solve_ivp, solve_bvp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+A=np.array([[0.,1.],[0.,0.]])
+B=np.array([[0.],[1.]])
+Q=np.eye(2);R=np.eye(1)
+`}
+ cells={[{ code: `T=2.;finite_records=[]
+fig,axs=plt.subplots(2,1,figsize=(5,6.8))
+for terminal in [0.,10.]:
+    S=terminal*np.eye(2)
+    def riccati(tau,p):
+        P=p.reshape(2,2);return (A.T@P+P@A-P@B@B.T@P+Q).ravel()
+    solution=solve_ivp(riccati,(0,T),S.ravel(),rtol=1e-11,atol=1e-12,dense_output=True)
+    assert solution.success
+    P=lambda time:solution.sol(T-time).reshape(2,2)
+    def ode(time,x):return (A-B@B.T@P(time))@x
+    state=solve_ivp(ode,(0,T),[1.,0.],rtol=1e-11,atol=1e-12,dense_output=True)
+    mesh=np.linspace(0,T,101)
+    def bvp_ode(time,z):return np.vstack([A@z[:2]-B@B.T@z[2:],-Q@z[:2]-A.T@z[2:]])
+    def bc(za,zb):return np.r_[za[:2]-[1.,0.],zb[2:]-S@zb[:2]]
+    bv=solve_bvp(bvp_ode,bc,mesh,np.zeros((4,mesh.size)),tol=1e-10,max_nodes=5000)
+    assert bv.success,bv.message
+    times=np.linspace(0,T,401);x=state.sol(times);gain=np.array([(B.T@P(time)).ravel() for time in times]);u=-np.sum(gain*x.T,axis=1)
+    assert np.max(abs(bv.sol(times)[:2]-x))<1e-8
+    assert np.max(abs(bv.sol(times)[2:]-np.column_stack([P(time)@x[:,i] for i,time in enumerate(times)])))<1e-8
+    J=quad(lambda time:float((state.sol(time)@Q@state.sol(time)+(B.T@P(time)@state.sol(time)).item()**2)/2),0,T,epsabs=1e-11)[0]+.5*x[:,-1]@S@x[:,-1]
+    certificate=P(0)[0,0]/2
+    assert abs(J-certificate)<1e-9
+    assert np.max(abs(P(T)-S))<1e-12
+    finite_records.append({'S':terminal,'P0':P(0).tolist(),'K0':gain[0].tolist(),'KT':gain[-1].tolist(),'J':float(J),'value':float(certificate),'xT':x[:,-1].tolist()})
+    print('finite S=',terminal,'P0=',P(0),'K0=',gain[0],'KT=',gain[-1],'J/value=',J,certificate,'xT=',x[:,-1])
+    axs[0].plot(times,gain[:,0],label='S='+str(terminal));axs[1].plot(times,u,label='S='+str(terminal))
+for ax in axs:ax.set(xlim=(0,T),xlabel='Time');ax.grid(True);ax.legend()
+axs[0].set_ylabel('Position gain');axs[1].set_ylabel('Input');fig.tight_layout();plt.show()
+assert np.max(abs(np.array(finite_records[0]['KT'])))<1e-12
+` }]}
+/>
+
 ### 有限时间的含义
 
-有限时间 LQ 问题的最优增益 $K(t)$ 是**时变**的——随着时间变化。这在终端制导等问题中很重要（比如导弹在接近目标时需要更激进的控制）。
+有限时域的K(t)通常随时间变化，但不保证“越临近终点越激进”。例如终态自由且S=0时，P(T)=0，故K(T)=0；终端不罚状态，最后时刻就没有继续用力的收益。若S=P∞，则可得到常数解。它与要求末态精确等于目标的固定终态问题不同。
 
-但大多数工程问题关心的是**稳态**性能——让系统长期运行在平衡点附近。这时 $t_f \to \infty$，$P(t)$ 趋向常数矩阵 $P$，$\dot{P} = 0$。
+但大多数工程问题关心的是**稳态**性能——让系统长期运行在平衡点附近。在定常模型和可稳定/可检测等条件下，拉长规划时域会在远离终点处得到稳态极限，不能不加条件地把每个有限时域P(t)直接当常数。
 
-## 无穷时间 LQR——代数 Riccati 方程
+<span id="无穷时间-lqr代数-riccati-方程" />
+
+## 无穷时域
 
 ### 从 DRE 到 ARE
 
-当 $t_f \to \infty$，$P(t)$ 趋向稳态值 $P$（假设 $(A, B)$ 可控，$(A, Q^{1/2})$ 可观）。令 $\dot{P} = 0$：
+当 $t_f \to \infty$，$P(t)$ 趋向稳态值 $P$（假设 $(A, B)$ 可控，$(Q^{1/2},A)$ 可观）。令 $\dot{P} = 0$：
 
 $$
 \boxed{A^T P + PA - PBR^{-1}B^T P + Q = 0}
@@ -164,15 +219,17 @@ $$
 
 闭环系统：$\dot{\boldsymbol{x}} = (A - BK)\boldsymbol{x}$
 
-<Callout type="tip" title="稳定化解的存在与唯一性">
+<Callout variant="tip">
 
-若 $(A,B)$ 可稳定，$(A,Q^{1/2})$ 可检测，则 ARE 有唯一半正定稳定化解 $P$，且 $A-BK$ 为 Hurwitz 矩阵。可检测意味着未受代价观察的模式本身稳定；可观是更强条件，可保证 $P$ 正定。这里可检测性的输出矩阵是 $Q^{1/2}$，不是物理传感器矩阵 $C$。
+**稳定化解的存在与唯一性**
+
+若 $(A,B)$ 可稳定，$(Q^{1/2},A)$ 可检测，则 ARE 有唯一半正定稳定化解 $P$，且 $A-BK$ 为 Hurwitz 矩阵。可检测意味着未受代价观察的模式本身稳定；可观是更强条件，可保证 $P$ 正定。这里可检测性的输出矩阵是 $Q^{1/2}$，不是物理传感器矩阵 $C$。
 
 </Callout>
 
 ### 例1：标量 LQR
 
-系统 $\dot{x} = ax + bu$，代价 $J = \frac{1}{2}\int_0^\infty (qx^2 + ru^2) \, dt$，其中 $q > 0, r > 0$。
+系统 $\dot{x} = ax + bu$，代价 $J = \frac{1}{2}\int_0^\infty (qx^2 + ru^2) \, dt$，其中b≠0、q>0、r>0。若b=0且a为负，无控制也稳定，P=−q/(2a)、K=0；若b=0且a≥0、q>0，非零初态的无穷时域代价发散，不能套下面除以b的公式。
 
 ARE（$P$ 是标量）：
 
@@ -196,10 +253,12 @@ $$
 
 **闭环总是稳定的！** 这就是 LQR 的威力。
 
-<Callout type="info" title="观察">
+<Callout variant="info">
+
+**观察**
 
 - $q/r$ 越大 → 闭环极点越左，增益绝对值越大（$b<0$ 时增益本身为负）
-- $q/r \to 0$ → $k \to 2a/b$（如果 $a > 0$）——最小控制 effort
+- $q/r \to 0$ → $k \to 2a/b$（如果 $a > 0$）——这是q/r从正侧趋零的稳定化分支极限，不把q=0端点的另一优化问题混进来
 - $q/r \to \infty$ → $\lvert k \rvert \to \infty$——无限快响应，无限大控制
 
 </Callout>
@@ -214,9 +273,21 @@ ARE：$A^T P + PA - PBB^T P + Q = 0$
 
 设 $P = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}$，展开：
 
-$A^T P = \begin{bmatrix} 0 & 0 \\ 1 & 0 \end{bmatrix}\begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ p_{11} & p_{12} \end{bmatrix}$
 
-$PA = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix} = \begin{bmatrix} 0 & p_{11} \\ 0 & p_{12} \end{bmatrix}$
+
+$$
+A^T P = \begin{bmatrix} 0 & 0 \\ 1 & 0 \end{bmatrix}\begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ p_{11} & p_{12} \end{bmatrix}
+$$
+
+
+
+
+
+$$
+PA = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix} = \begin{bmatrix} 0 & p_{11} \\ 0 & p_{12} \end{bmatrix}
+$$
+
+
 
 $PBB^T P = \begin{bmatrix} p_{12}^2 & p_{12}p_{22} \\ p_{12}p_{22} & p_{22}^2 \end{bmatrix}$
 
@@ -230,7 +301,13 @@ $(2,2)$：$2p_{12} - p_{22}^2 + 1 = 0 \implies 2 - p_{22}^2 + 1 = 0 \implies p_{
 
 $P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}$
 
-$K = R^{-1}B^T P = \begin{bmatrix} 0 & 1 \end{bmatrix}\begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix} = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$
+
+
+$$
+K = R^{-1}B^T P = \begin{bmatrix} 0 & 1 \end{bmatrix}\begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix} = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}
+$$
+
+
 
 闭环极点：$A - BK = \begin{bmatrix} 0 & 1 \\ -1 & -\sqrt{3} \end{bmatrix}$
 
@@ -238,7 +315,9 @@ $K = R^{-1}B^T P = \begin{bmatrix} 0 & 1 \end{bmatrix}\begin{bmatrix} \sqrt{3} &
 
 $\zeta = \sqrt{3}/2 \approx 0.866$，$\omega_n = 1$。
 
-<Callout type="info" title="观察">
+<Callout variant="info">
+
+**观察**
 
 LQR 在本组权重下给出 $\zeta = 0.866$ 的阻尼比。$Q = I, R = 1$ 的选择给出了这一组闭环极点；改变权重会改变极点，不能仅凭阻尼比比较设计优劣。
 
@@ -250,6 +329,8 @@ LQR 在本组权重下给出 $\zeta = 0.866$ 的阻尼比。$Q = I, R = 1$ 的�
 import matplotlib.pyplot as plt
 from scipy.linalg import solve_continuous_are, expm
 from scipy.integrate import solve_ivp
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
 np.set_printoptions(precision=6, suppress=True)
 def design(A, B, Q, r):
     P = solve_continuous_are(A, B, Q, np.atleast_2d(r))
@@ -294,6 +375,7 @@ print("答1 p=k =", p, "pole =", 2-p)
 A2 = np.array([[0.,1.],[-2.,-3.]])
 P2,K2 = design(A2,B,np.eye(2),1.)
 print("答2 P =", P2, "K =", K2, "poles =", np.linalg.eigvals(A2-B@K2))
+assert np.allclose(P2,[[np.sqrt(5)-1,np.sqrt(5)-2],[np.sqrt(5)-2,np.sqrt(5)-2]])
 print("答2 指定配置极点 =", np.linalg.eigvals(A2-B@np.array([[7.,1.2]])))
 for q in [1.,16.]:
     P4,K4 = design(A,B,np.diag([q,0.]),1.)
@@ -302,6 +384,7 @@ for q in [1.,16.]:
     print("答4 q =",q,"P =",P4,"K =",K4,"poles =",np.linalg.eigvals(A-B@K4))
 A6=np.diag([-1.,-2.]); B6=np.eye(2)
 P6=solve_continuous_are(A6,B6,np.diag([1.,2.]),np.eye(2))
+assert np.allclose(P6,np.diag([np.sqrt(2)-1,np.sqrt(6)-2]))
 print("答6 P=K =",P6,"poles =",np.linalg.eigvals(A6-P6))
 for p9 in [0.,2.]:
     print("答9 P =",p9,"ARE残差 =",2*p9-p9*p9,"pole =",1-p9)
@@ -328,8 +411,9 @@ assert abs(J-P0[0,0]/2)<1e-6
 A10=np.array([[0.,1.],[0.,-10.]])
 B10=np.array([[0.],[50.]])
 P10,K10=design(A10,B10,np.diag([100.,1.]),1.)
+assert np.allclose(P10,[[12,.2],[.2,.02]]) and np.allclose(K10,[[10,1]])
 print("答10 P =",P10,"K =",K10,"poles =",np.linalg.eigvals(A10-B10@K10))
-fig,axes=plt.subplots(1,2,figsize=(11,3.5))
+fig,axes=plt.subplots(2,1,figsize=(5,6.8))
 for label,k in [("specified poles",np.array([[4.,.2]])),("specified Q/R",K10)]:
     ac=A10-B10@k
     n=-1./(np.array([[1.,0.]])@np.linalg.solve(ac,B10)).item()
@@ -346,7 +430,9 @@ plt.tight_layout(); plt.show()
   ]}
 />
 
-## LQR 的鲁棒性
+<span id="lqr-的鲁棒性" />
+
+## 输入端裕度
 
 ### 增益裕度和相位裕度
 
@@ -377,7 +463,9 @@ Nyquist 曲线不进入以 $(-1,0)$ 为圆心、半径为 1 的开圆盘。增�
 
 <LqrExplorer mode="gain" />
 
-## Q 和 R 的选择
+<span id="q-和-r-的选择" />
+
+## 权重怎么选
 
 ### Bryson 规则
 
@@ -387,9 +475,19 @@ $$
 q_{ii} = \frac{1}{x_{i,\max}^2}, \quad r_{jj} = \frac{1}{u_{j,\max}^2}
 $$
 
-其中 $x_{i,\max}$ 和 $u_{j,\max}$ 是各状态和控制量的**允许最大值**。
+其中x_i,max和u_j,max是设计时选的参考尺度；即使取自允许最大值，放进权重也只构成软惩罚，不会生成硬约束。
 
 物理意义：如果 $x_i$ 的允许范围小，$q_{ii}$ 就大——更严格地惩罚 $x_i$ 的偏差。如果 $u_j$ 的允许范围小，$r_{jj}$ 就大——更严格地惩罚控制量。
+
+若把Q、R（有限时域还包括S）同时乘正数c，最优K不变，P与代价值乘c；真正影响权衡的是相对权重。换状态单位也要同步换权重：z=Tx时，应使用
+
+$$
+Q_z=T^{-T}QT^{-1},\quad P_z=T^{-T}PT^{-1},\quad K_z=KT^{-1}.
+$$
+
+不能只把米改成厘米后仍沿用同一个数值Q。
+
+例如T=diag(100,1)将米改厘米，原Q=I对应新Q_z=diag(.0001,1)。这只是同一设计的坐标表达，反馈实际输入应保持一致。实验会与原CARE解逐项核对。
 
 ### 调参方法
 
@@ -401,22 +499,28 @@ $$
    - 某个状态收敛慢 → 尝试增大对应的 $q_{ii}$，检查耦合影响
 4. **迭代优化**：重复 2-3 直到满意
 
-<Callout type="info" title="Q 的结构选择">
+<Callout variant="info">
+
+**Q 的结构选择**
 
 通常 $Q$ 取对角矩阵 $Q = \text{diag}(q_1, q_2, \ldots, q_n)$——各状态的惩罚相互独立。
-非对角元素 $q_{ij}$ 可以惩罚状态之间的"相关性"，但物理意义不直观，一般不用。
+非对角元素 $q_{ij}$ 可以惩罚状态之间的"相关性"，但物理意义不直观，应由所要惩罚的线性组合与单位解释，并保持Q半正定，不能因不直观就一律排除。
 
 </Callout>
 
-<Callout type="info" title="Bryson 权重不是硬约束">
+<Callout variant="info">
 
-归一化只会惩罚越界，不会禁止越界。权重应配合指定初态、扰动与执行器限幅验证；需要硬约束时应考虑约束优化。下面默认例2参数，固定初态为 $[1,0]^T$。
+**Bryson 权重不是硬约束**
+
+归一化会对状态与输入的全部幅度计代价，并不是只在越界后才计罚，更不会禁止越界。权重应配合指定初态、扰动与执行器限幅验证；需要硬约束时应考虑约束优化。下面默认例2参数，固定初态为 $[1,0]^T$。
 
 </Callout>
 
 <LqrExplorer />
 
-## LQR 与参考跟踪
+<span id="lqr-与参考跟踪" />
+
+## 参考跟踪
 
 ### 调节器 vs 跟踪器
 
@@ -428,7 +532,7 @@ $$
 \boldsymbol{u} = -K\boldsymbol{x} + N r
 $$
 
-前馈增益 $N$ 的计算和上一课状态反馈中一样：
+前馈增益N的计算见前面的状态反馈课：
 
 $$
 N = -\frac{1}{C(A-BK)^{-1}B}
@@ -444,9 +548,21 @@ LQR 增益 $K = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$。
 
 $A - BK = \begin{bmatrix} 0 & 1 \\ -1 & -\sqrt{3} \end{bmatrix}$
 
-$(A-BK)^{-1} = \frac{1}{1}\begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix} = \begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix}$
 
-$C(A-BK)^{-1}B = \begin{bmatrix} 1 & 0 \end{bmatrix}\begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -1$
+
+$$
+(A-BK)^{-1} = \frac{1}{1}\begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix} = \begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix}
+$$
+
+
+
+
+
+$$
+C(A-BK)^{-1}B = \begin{bmatrix} 1 & 0 \end{bmatrix}\begin{bmatrix} -\sqrt{3} & -1 \\ 1 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -1
+$$
+
+
 
 $N = -\frac{1}{-1} = 1$
 
@@ -468,7 +584,44 @@ $$
 P(k) = A^T P(k+1) A - A^T P(k+1) B (R + B^T P(k+1) B)^{-1} B^T P(k+1) A + Q
 $$
 
-稳态时 $P(k) = P(k+1) = P$，得到**离散代数 Riccati 方程**（DARE）。Python 中用 `scipy.linalg.solve_discrete_are`。
+稳态时 $P(k) = P(k+1) = P$，得到**离散代数 Riccati 方程**（DARE）。Python 中用 `scipy.linalg.solve_discrete_are`。离散控制增益为
+
+$$
+K_d=(R+B^TPB)^{-1}B^TPA,
+$$
+
+不能把连续时间的R⁻¹BᵀP直接搬来；需要A−BK的特征值在单位圆内。本课小实验用双积分器保持输入dt=.1得到A_d=[[1,.1],[0,1]]、B_d=[.005,.1]ᵀ，阶段Q_d=.1I、R_d=.1是独立指定的离散代价，不声称它是连续代价的精确积分等价。
+
+<JupyterNotebook
+ title="离散增益与代价求和"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
+from scipy.integrate import solve_ivp, solve_bvp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+A=np.array([[0.,1.],[0.,0.]])
+B=np.array([[0.],[1.]])
+Q=np.eye(2);R=np.eye(1)
+`}
+ cells={[{ code: `dt=.1;Ad=np.array([[1.,dt],[0.,1.]]);Bd=np.array([[dt*dt/2],[dt]])
+Qd=dt*np.eye(2);Rd=np.array([[dt]])
+P=solve_discrete_are(Ad,Bd,Qd,Rd)
+K=np.linalg.solve(Rd+Bd.T@P@Bd,Bd.T@P@Ad);F=Ad-Bd@K
+res=Ad.T@P@Ad-P-Ad.T@P@Bd@K+Qd
+assert np.max(abs(res))<1e-10 and np.max(abs(np.linalg.eigvals(F)))<1
+x=np.array([1.,0.]);J=0.
+for k in range(300):
+    u=-(K@x).item();J+=(x@Qd@x+u*u*Rd[0,0])/2;x=F@x
+J+=x@P@x/2
+assert abs(J-P[0,0]/2)<1e-10
+continuousFormula=Bd.T@P/Rd[0,0]
+assert np.max(abs(continuousFormula-K))>.01
+print('DARE P=',P,'K=',K,'poles=',np.linalg.eigvals(F),'sum+tail=',J,'value=',P[0,0]/2,'wrong continuous K=',continuousFormula)
+discrete_record={'P':P.tolist(),'K':K.tolist(),'J':float(J),'polesAbs':np.abs(np.linalg.eigvals(F)).tolist()}
+` }]}
+/>
 
 ### LQG：LQR + 卡尔曼滤波
 
@@ -485,7 +638,7 @@ LQR 假设全部状态可测。实际中只有输出 $\boldsymbol{y}$ 可测。
 ### LQR 的局限性
 
 1. **需要精确模型**：$A, B$ 必须已知。模型误差大时性能下降
-2. **线性系统**：非线性系统需要先线性化（增益调度）
+2. **线性系统**：在平衡点附近可线性化后设计；线性化不等于已完成增益调度，非线性稳定域须另核
 3. **Q/R 选择**：虽然有物理意义，但仍需工程判断和迭代
 4. **调节器问题**：标准 LQR 只处理零参考。跟踪问题需要加前馈或积分
 
@@ -532,7 +685,7 @@ LQR 假设全部状态可测。实际中只有输出 $\boldsymbol{y}$ 可测。
 
 **8.** 证明：LQR 闭环系统的最优代价 $J^* = \frac{1}{2}\boldsymbol{x}_0^T P \boldsymbol{x}_0$，其中 $P$ 是 ARE 的解。（提示：对 $V(\boldsymbol{x}) = \frac{1}{2}\boldsymbol{x}^T P \boldsymbol{x}$ 求导。）
 
-**9.** 讨论：如果 $(A, Q^{1/2})$ 不可观，ARE 的解 $P$ 还有什么性质？闭环系统是否仍然稳定？
+**9.** 讨论：如果 $(Q^{1/2},A)$ 不可观，ARE 的解 $P$ 还有什么性质？闭环系统是否仍然稳定？
 
 **10.** 比较极点配置和 LQR 设计同一系统的控制器。系统 $A = \begin{bmatrix} 0 & 1 \\ 0 & -10 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 50 \end{bmatrix}$。
 - (a) 极点配置：闭环极点 $-10 \pm 10j$（$\zeta = 0.707, \omega_n = 14.1$）
@@ -643,7 +796,7 @@ $$
 
 闭环极点为 $-5.590170\pm4.330127j$。
 
-(c) $x(0)=[0.1,0]^T$ 时 $u(0)=-5$，在 notebook 的 $0$–$5$ 秒、5001 点复算中，最大绝对值 $x_1=0.1$、$x_2\approx0.3020$、$u=5$，该轨迹满足给定边界。换成同样在允许状态盒内的初态 $[0.1,1]^T$，立即有 $u(0)=-16.180340$，违反控制限幅。这说明 Bryson 权重不保证硬约束。
+(c) $x(0)=[0.1,0]^T$ 时 $u(0)=-5$，在 notebook 的 $0$–$5$ 秒、5001 点复算中，最大绝对值 $x_1=0.1$、$x_2\approx0.3020$、$u=5$，这次采样没有发现越界；它不是连续全时域可行性的证明，实机仍需更严格的峰值/离散与扰动检查。换成同样在允许状态盒内的初态 $[0.1,1]^T$，立即有 $u(0)=-16.180340$，违反控制限幅。这说明 Bryson 权重不保证硬约束。
 
 **8.** 令 $A_c=A-BK$。用 $K=R^{-1}B^TP$ 与 ARE 整理得
 
@@ -659,7 +812,7 @@ $$
 
 闭环稳定使 $V(x(\infty))=0$，积分即得 $J^*=V(x_0)=\frac12x_0^TPx_0$。也可对任意可行控制完成平方，多出的项为 $\frac12\int(u+Kx)^TR(u+Kx)dt\geq0$；在相应终端趋零条件下，最小值由 $u=-Kx$ 取得。
 
-**9.** 在 $(A,B)$ 可稳定、$(A,Q^{1/2})$ 可检测条件下，即使不可观，仍有唯一半正定稳定化解，闭环稳定；$P$ 可以奇异，例如 $A=-1,B=1,Q=0,R=1$ 时 $P=0$，不施加控制也已稳定。
+**9.** 在 $(A,B)$ 可稳定、$(Q^{1/2},A)$ 可检测条件下，即使不可观，仍有唯一半正定稳定化解，闭环稳定；$P$ 可以奇异，例如 $A=-1,B=1,Q=0,R=1$ 时 $P=0$，不施加控制也已稳定。
 
 若不可检测，则不能直接套用上述保证，也不能断言所有 ARE 分支都不稳定。反例 $A=B=R=1,Q=0$：ARE 为 $2P-P^2=0$，有 $P=0$ 与 $P=2$。前者给 $K=0$、极点 $+1$、无约束代价零；后者给 $K=2$、极点 $-1$，是稳定化解，但对非零初态不是“不要求稳定”的零代价最优解。缺可检测性时，必须说明究竟在求哪一类问题。
 
@@ -678,3 +831,73 @@ P=\begin{bmatrix}12&0.2\\0.2&0.02\end{bmatrix},\qquad K_{\text{LQR}}=[10,1],\qqu
 $$
 
 (c) 单位阶跃跟踪时，$N_{\text{place}}=4,N_{\text{LQR}}=10$；零初态的初始控制分别为 $4,10$。notebook 绘制这两组指定参数下的输出与控制，不能从中宣称 LQR 普遍更快、能耗更低或极点配置缺乏鲁棒性。实际设计还需按同一规格独立整定并考虑输入饱和。
+
+
+<JupyterNotebook
+ title="权重单位、缩放与解的边界"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
+from scipy.integrate import solve_ivp, solve_bvp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+A=np.array([[0.,1.],[0.,0.]])
+B=np.array([[0.],[1.]])
+Q=np.eye(2);R=np.eye(1)
+`}
+ cells={[{ code: `P=solve_continuous_are(A,B,Q,R);K=B.T@P
+for c in [.1,1.,10.]:
+    Pc=solve_continuous_are(A,B,c*Q,c*R);Kc=np.linalg.solve(c*R,B.T@Pc)
+    assert np.max(abs(Pc-c*P))<1e-9 and np.max(abs(Kc-K))<1e-9
+    print('common scale=',c,'P/c=',Pc/c,'K=',Kc)
+T=np.diag([100.,1.]);Ti=np.linalg.inv(T);Az=T@A@Ti;Bz=T@B;Qz=Ti.T@Q@Ti
+Pz=solve_continuous_are(Az,Bz,Qz,R);Kz=Bz.T@Pz
+assert np.max(abs(Pz-Ti.T@P@Ti))<1e-9 and np.max(abs(Kz-K@Ti))<1e-9
+assert np.allclose(Qz,np.diag([.0001,1.]))
+print('meters to centimeters: Qz=',Qz,'Kz=',Kz,'same physical u for x=[1,0]:',(-Kz@T@np.array([1.,0.])).item())
+# Scalar b=0 boundary and undetected Q=0 branch.
+assert -.5*1/(-1)==.5
+for a,q,p in [(-1.,1.,.5),(-1.,0.,0.),(1.,0.,0.),(1.,0.,2.)]:
+    b=0. if q==1 else 1.
+    assert abs(2*a*p-b*b*p*p+q)<1e-12
+    print('scalar a/b/q/P=',a,b,q,p,'pole=',a-b*b*p)
+# Cross-check all original gains exactly/symbolically, not just successful printouts.
+s=sp.symbols('s');Ps=sp.Matrix([[sp.sqrt(3),1],[1,sp.sqrt(3)]]);As=sp.Matrix([[0,1],[0,0]]);Bs=sp.Matrix([0,1])
+assert As.T*Ps+Ps*As-Ps*Bs*Bs.T*Ps+sp.eye(2)==sp.zeros(2)
+assert sp.expand((s*sp.eye(2)-As+Bs*sp.Matrix([[1,sp.sqrt(3)]])).det())==s*s+sp.sqrt(3)*s+1
+assert sp.simplify((2+sp.sqrt(7))**2-4*(2+sp.sqrt(7))-3)==0
+print('original example2/Q1 exact residuals passed; tracking N=1 and J default=sqrt3/2=',np.sqrt(3)/2)
+` }]}
+/>
+
+<JupyterNotebook
+ title="两模式参数与真实轨迹核验"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
+from scipy.integrate import solve_ivp, solve_bvp, quad
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+A=np.array([[0.,1.],[0.,0.]])
+B=np.array([[0.],[1.]])
+Q=np.eye(2);R=np.eye(1)
+`}
+ cells={[{ code: `cases=[]
+for i in range(1,201):cases.extend([(i/10,1.,1.,1.),(1.,i/10,1.,1.)])
+for i in range(1,321):cases.append((1.,1.,i/10,1.))
+for i in range(59):cases.append((1.,1.,1.,round(.1+.05*i,10)))
+import itertools
+cases+=list(itertools.product([.1,20.],[.1,20.],[.1,32.],[1.]))+[(1.,1.,1.,4/3),(1.,2.,1.,1.)]
+cases=list(dict.fromkeys(cases));component_records=[]
+for q1,q2,r,alpha in cases:
+    Q=np.diag([q1,q2]);P=solve_continuous_are(A,B,Q,[[r]]);K=B.T@P/r;F=A-alpha*B@K
+    assert np.max(abs(A.T@P+P@A-P@B@K+Q))<1e-7
+    times=np.array([0.,1.,5.,15.]);states=np.array([expm(F*time)@np.array([1.,0.]) for time in times]);u=-alpha*(states@K.T).ravel()
+    component_records.append({'params':[q1,q2,r,alpha],'P':P.tolist(),'K':K.ravel().tolist(),'states':states.tolist(),'u':u.tolist()})
+print('all slider values + corners/critical:',len(cases),'each 4 independent time readings; full601 default/existing cell retained')
+for params in [(1.,1.,1.,.1),(1.,1.,1.,.5),(1.,1.,1.,1.),(1.,1.,1.,3.),(1.,2.,1.,1.)]:
+    row=next(row for row in component_records if row['params']==list(params));print(row)
+` }]}
+/>

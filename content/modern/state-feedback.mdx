@@ -1,48 +1,54 @@
 ---
-title: 状态反馈与极点配置
+title: 状态反馈
 description: 引入状态反馈控制律，掌握极点配置方法和Ackermann公式，实现闭环系统的性能设计。
 ---
 
-# 状态反馈与极点配置
+# 状态反馈
 
-前两章，我们建立了状态空间表示，并分析了系统的可控性和可观性。现在进入**设计**阶段：如何设计控制器，让系统按照我们期望的方式运行？
+<span id="状态反馈与极点配置" />
 
-在经典控制中，我们用 PID 控制器或超前-滞后校正器来"塑造"闭环极点。但这些方法通过输出反馈间接影响极点，设计过程往往需要反复试凑。现代控制提供了一种更直接的方法：**状态反馈**——把全部状态变量反馈到输入端，直接指定闭环极点的位置。
+上一课[线性系统稳定性](/modern/lyapunov-modern)中，弹簧小车松手后会自己回到平衡点。现在给小车装一个能推也能拉的执行器：我们希望它从原点移动到1m处，再停稳。只看位置，离目标越远就推得越用力；但小车已经高速接近目标时，还照样用力推，就容易冲过头。**如果同时知道位置和速度，能不能把“推多大”和“何时收力”一起设计出来？**
 
-> 📖 本章需要前两章的基础：[状态空间表示](/modern/state-space) 和 [可控性与可观性](/modern/controllability-observability)，特别是状态方程、特征值和可控性的概念。
+这就是状态反馈的入口。本课仍用已学过的位置、速度作为状态，把它们乘以不同增益后合成输入；先设计回到零的动态，再加入参考补偿实现标称定位。图中r是期望位置，u是执行器施力，x包含位置和速度；两者单位不同，不能把r原样当作u。
 
-## 状态反馈的基本概念
+![期望位置经前馈N进入求和点，减去状态增益Kx后形成执行器力u，小车的全状态回送K](/diagrams/state-feedback/feedback.svg)
+
+> 📐 本课用到[可控性与可观性](/modern/controllability-observability)的可控性与PBH判据，以及[线性系统稳定性](/modern/lyapunov-modern)的Hurwitz条件；矩阵坐标变换见[线性代数基础](/math/linear-algebra-basics)。观测器如何估计未测状态，留给下一课。
+
+<span id="状态反馈的基本概念" />
+
+## 状态怎样反馈
 
 ### 从输出反馈到状态反馈
 
 在经典控制中，反馈的是**输出** $y$：
 
 $$
-u(t) = -k\,y(t) + r(t)
+u(t) = -k\,y(t) + v(t)
 $$
 
-其中 $k$ 是标量增益（SISO 系统），$r(t)$ 是参考输入。输出反馈只能影响传递函数的极点，而且可调参数只有一个 $k$——对于高阶系统，一个参数往往不够用。
+这里先取SISO且D=0，v是与u同单位的附加输入。这只是**静态比例输出反馈**，可调量仅k，不能代表含内部状态的PID或动态校正器。闭环矩阵为A−BkC，不能任意独立指定所有内部模态。
 
 **状态反馈**反馈的是**全部状态** $\boldsymbol{x}$：
 
 $$
-\boldsymbol{u}(t) = -K\boldsymbol{x}(t) + \boldsymbol{r}(t)
+\boldsymbol{u}(t) = -K\boldsymbol{x}(t) + \boldsymbol{v}(t)
 $$
 
-其中 $K$ 是 $p \times n$ 的**反馈增益矩阵**，$\boldsymbol{r}(t)$ 是参考输入。对于 $n$ 阶系统，$K$ 有 $n$ 个可调参数——自由度大幅增加。
+设n个状态、m个输入，K为m×n矩阵；只有单输入时才是n个增益。负号是本课固定约定，设计时检查A−BK。v是输入端命令，后面用v=Nr把输出参考转换为它。不同状态有不同单位，K每列的单位也随之变化。
 
 ### 闭环系统
 
 把状态反馈代入状态方程 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$：
 
 $$
-\dot{\boldsymbol{x}} = A\boldsymbol{x} + B(-K\boldsymbol{x} + \boldsymbol{r}) = (A - BK)\boldsymbol{x} + B\boldsymbol{r}
+\dot{\boldsymbol{x}} = A\boldsymbol{x} + B(-K\boldsymbol{x} + \boldsymbol{v}) = (A - BK)\boldsymbol{x} + B\boldsymbol{v}
 $$
 
 闭环系统的矩阵变为 $A_{cl} = A - BK$。输出方程变为：
 
 $$
-\boldsymbol{y} = (C - DK)\boldsymbol{x} + D\boldsymbol{r}
+\boldsymbol{y} = (C - DK)\boldsymbol{x} + D\boldsymbol{v}
 $$
 
 （通常 $D = 0$，所以 $\boldsymbol{y} = C\boldsymbol{x}$。）
@@ -53,7 +59,7 @@ $$
 
 ### 例1：状态反馈的效果
 
-设开环系统 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$。
+把开篇小车取质量1kg、阻尼3N·s/m、刚度2N/m，x=[q,速度]ᵀ、u为力N，运动方程是q̈+3q̇+2q=u。其开环系统 $A = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$。
 
 开环特征值：$\det(sI - A) = s^2 + 3s + 2 = (s+1)(s+2)$，$\lambda_1 = -1, \lambda_2 = -2$。系统稳定，但响应较慢。
 
@@ -69,7 +75,7 @@ $$
 \det(sI - A_{cl}) = s^2 + (3+k_2)s + (2+k_1)
 $$
 
-如果希望闭环极点为 $\lambda_1 = -5, \lambda_2 = -5$（更快、临界阻尼），期望特征多项式为 $s^2 + 10s + 25$。比较系数：
+如果希望闭环极点为 $\lambda_1 = -5, \lambda_2 = -5$（该二阶模型的临界阻尼配置），期望特征多项式为 $s^2 + 10s + 25$。比较系数：
 
 $$
 3 + k_2 = 10 \implies k_2 = 7
@@ -81,7 +87,7 @@ $$
 所以 $K = \begin{bmatrix} 23 & 7 \end{bmatrix}$。
 
 <Callout variant="info">
-**观察**：在这个例子中，$K$ 的两个元素分别调节特征多项式的一次项系数和常数项——两个自由度，恰好可以独立指定两个极点的位置。这就是状态反馈的威力。
+**观察**：k₁改变常数项、k₂改变一次项；本例分别为23N/m和7N·s/m。闭环极点描述无输入动态；定位到1m还需要下一节的N。实轴重根在数值上敏感，不能只看eig输出末位是否完全相同。
 </Callout>
 
 ## 极点配置问题
@@ -104,11 +110,13 @@ $$
 
 **必要性**（直觉）：如果系统不可控，有些模态不受输入影响，无论怎么设计 $K$ 都改变不了那些模态的极点。
 
-**充分性**（构造性证明思路）：如果 $(A, B)$ 可控，可以通过相似变换化为**可控标准型**。在可控标准型中，$K$ 的元素直接对应特征多项式的系数，因此可以任意指定。
+**充分性**：对可控的单输入系统，可变换到下面的伴随可控标准型，逐项比较系数构造K，证明在习题8完整展开。多输入也有任意配置的定理，但不能只靠相似变换把多列B变成下面的单列B；其计算用多输入极点配置算法。
+
+不可控并不等于所有指定极点都无解：不可控块的极点必须原样保留，可控块仍能配置。只想让闭环Hurwitz时，所需条件是**可稳定**，比完全可控弱。
 
 ### 可控标准型下的极点配置
 
-设 $(A, B)$ 已化为可控标准型：
+以下专指**单输入**伴随可控标准型：
 
 $$
 A = \begin{bmatrix} 0 & 1 & 0 & \cdots & 0 \\ 0 & 0 & 1 & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \cdots & 1 \\ -a_0 & -a_1 & -a_2 & \cdots & -a_{n-1} \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}
@@ -150,11 +158,13 @@ $$
 
 特征多项式：$s^2 + 20s + 100 = (s+10)^2$ ✓
 
-## 一般系统的极点配置
+<span id="一般系统的极点配置" />
+
+## 一般坐标配置
 
 ### Ackermann 公式
 
-实际系统通常不是可控标准型。有两种方法处理：
+以下两条路径适用于可控的**单输入**系统，输入增益必须包含在B中，不能擅自归一化后仍沿用原K：
 
 **方法一**：先变换到可控标准型，求 $K$，再变换回原坐标系。
 
@@ -167,17 +177,18 @@ $$
 其中 $\mathcal{C} = \begin{bmatrix} B & AB & \cdots & A^{n-1}B \end{bmatrix}$ 是可控性矩阵，$p_d(A) = A^n + \alpha_{n-1}A^{n-1} + \cdots + \alpha_1 A + \alpha_0 I$ 是把期望多项式代入 $A$。
 
 <Callout variant="warning">
-**前提条件**：Ackermann 公式要求 $\mathcal{C}$ 可逆，即系统可控。如果系统不可控，$\mathcal{C}^{-1}$ 不存在，极点配置问题无解（不可控的模态无法移动）。
+**前提与数值边界**：本公式要求单输入且可控。多输入的可控性矩阵通常为长方阵，不能套这个逆矩阵公式。不可控时只能配置可控块；任意配置全谱才无保证。高阶或尺度悬殊时，显式求逆与矩阵高次幂可能放大舍入误差；工程计算优先使用合适的place算法、缩放并回查闭环多项式/极点。
 </Callout>
 
 ### 推导思路
 
-为什么 Ackermann 公式有效？核心思路：
+固定坐标约定z=Tx，故A_c=TAT⁻¹、B_c=TB、K=K_cT。对伴随型，先记住两个容易检验的事实：
 
-1. 在可控标准型中，$K_{\text{cf}} = \begin{bmatrix} \alpha_0 - a_0 & \cdots & \alpha_{n-1} - a_{n-1} \end{bmatrix}$
-2. 由 Cayley-Hamilton 定理，$A$ 满足自己的特征多项式：$p(A) = A^n + a_{n-1}A^{n-1} + \cdots + a_0 I = 0$
-3. 所以 $p_d(A) = p_d(A) - p(A) = (\alpha_0 - a_0)I + (\alpha_1 - a_1)A + \cdots + (\alpha_{n-1} - a_{n-1})A^{n-1}$
-4. 可以证明 $\begin{bmatrix} 0 & \cdots & 0 & 1 \end{bmatrix} \mathcal{C}^{-1} A^i = \begin{bmatrix} 0 & \cdots & 0 & 1 & 0 & \cdots \end{bmatrix}$（第 $i+1$ 个位置为 1），从而 $K = K_{\text{cf}} T^{-1}$（$T$ 为变换矩阵）
+$$
+e_n^T\mathcal C_c^{-1}=e_1^T,\qquad e_1^TA_c^i=e_{i+1}^T\quad(0\leq i<n).
+$$
+
+第一条来自e₁ᵀ[B_c,A_cB_c,…,A_cⁿ⁻¹B_c]=eₙᵀ；第二条来自伴随矩阵前n−1行的移位结构。再用Cayley–Hamilton把p_d(A_c)写成“期望系数减原系数”的低次幂组合，左乘e₁ᵀ就依次取出各个系数差。完整的坐标消去见答案8；不能把这个基向量等式直接用于任意原坐标。
 
 ### 例3：用 Ackermann 公式求极点配置
 
@@ -189,9 +200,9 @@ $$
 \mathcal{C} = \begin{bmatrix} B & AB \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 0 & 0 \end{bmatrix}
 $$
 
-$\text{rank}(\mathcal{C}) = 1 < 2$，**不可控**！极点配置问题无解。
+$\text{rank}(\mathcal{C}) = 1 < 2$，**不可控**。闭环总保留极点2，故不能把两个极点都移到左半平面；并非任何保留极点2的目标谱都无解。
 
-这与我们在上一章例1中的结论一致：$\lambda_2 = 2$ 不可控，无法通过状态反馈移动。
+这复习了前课的PBH结论：$\lambda_2 = 2$ 不可控，无法通过状态反馈移动。
 
 ### 例4：用 Ackermann 公式（可控系统）
 
@@ -231,42 +242,43 @@ $$
 
 与例1的结果一致！
 
+工具边界不等于数学定理的边界：python-control 0.10.2的[place官方说明](https://python-control.readthedocs.io/en/0.10.2/generated/control.place.html)写明默认调用SciPy的YT算法，拒绝重数大于rank(B)的目标极点。SISO用acker可构造重根，但要回查特征多项式，且不消除重根对误差的敏感性。下面只捕获预期ValueError，其余异常仍失败。
+
 <JupyterNotebook
-  title=" 动手实验：place() 与 acker() 对比"
+  title="place 与 Ackermann"
   setupCode={`import numpy as np
-from control import place, acker`}
-  cells={[
-    { code: `# ===== 极点配置：place() vs acker() =====
-# 场景：把极点配置到二重根 -5, -5
-A = np.array([[0, 1], [-2, -3]])
-B = np.array([[0], [1]])
-poles_desired = [-5, -5]
-
-# ① 先试 place()——注意它会拒绝重根！
+import matplotlib.pyplot as plt
+import sympy as sp
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams.update({'font.size':12})
+`}
+  cells={[{ code: `A=np.array([[0.,1.],[-2.,-3.]])
+B=np.array([[0.],[1.]])
+rejected=False
 try:
-    K_place = place(A, B, poles_desired)
-    print(f"place() 结果: K = {K_place}")
-except ValueError as err:
-    print(f"place() 拒绝重根极点：{err}")
-    print("→ place() 基于 KNV 算法，要求每个极点的重数不超过 rank(B)")
-    print()
-
-# ② acker() 支持重根（SIMO 专用，基于 Ackermann 公式）
-K_acker = acker(A, B, poles_desired)
-print(f"acker() 结果: K = {K_acker}")
-
-A_cl = A - B @ K_acker.reshape(1, -1)  # acker 返回一维数组，恢复成 1x2
-print(f"\\n闭环特征值: {np.linalg.eigvals(A_cl)}")
-print(f"期望特征值: {poles_desired}")
-
-# ③ 对互异极点，两者一致
-K_p2 = place(A, B, [-5, -4])
-K_a2 = acker(A, B, [-5, -4])
-print(f"\\n互异极点 [-5,-4]: place K = {K_p2}, acker K = {K_a2}（一致）")` },
-  ]}
+    place(A,B,[-5,-5])
+except ValueError as error:
+    rejected=True
+    print('Expected rank(B)=1 repeated-pole rejection:',error)
+assert rejected
+Kacker=np.asarray(acker(A,B,[-5,-5])).reshape(1,-1)
+assert np.allclose(Kacker,[[23,7]],rtol=0,atol=1e-10)
+print('acker repeated K=',Kacker,'polynomial=',np.poly(A-B@Kacker))
+Kplace=place(A,B,[-5,-4]);Ka=np.asarray(acker(A,B,[-5,-4])).reshape(1,-1)
+assert np.allclose(Kplace,[[18,6]]) and np.allclose(Ka,Kplace)
+print('distinct roots: place and acker K=',Kplace)
+print('Python library versions:')
+import control, scipy
+print('control',control.__version__,'scipy',scipy.__version__)
+` }]}
 />
 
-## 前馈补偿与参考跟踪
+<span id="前馈补偿与参考跟踪" />
+
+## 参考跟踪
 
 ### 问题：纯状态反馈只能"调节"
 
@@ -280,7 +292,11 @@ $$
 
 其中 $N$ 是前馈增益。
 
-### 求前馈增益 $N$
+<span id="求前馈增益-nnn" />
+
+### 前馈增益
+
+以下先假设SISO、D=0、A−BK为Hurwitz，参考r为常数，模型准确且执行器不饱和；于是A−BK可逆。还须检查闭环直流增益非零。
 
 稳态时 $\dot{\boldsymbol{x}} = 0$，$\boldsymbol{x} = \boldsymbol{x}_{ss}$：
 
@@ -298,7 +314,13 @@ $$
 \boxed{N = \frac{1}{-C(A - BK)^{-1}B}}
 $$
 
-（SISO 系统，$N$ 是标量。）
+若分母为零，任何有限常数N都不能实现该常值跟踪。若D≠0，要同时修改输出：
+
+$$
+g_0=D-(C-DK)(A-BK)^{-1}B,\qquad N=1/g_0.
+$$
+
+MIMO时应解矩阵方程或稳态调节方程，存在性依赖秩和参考方向，不能逐元素取倒数。N只是标称前馈；恒定扰动或模型失配会留下误差，不能代替积分反馈。
 
 ### 例5：前馈增益计算
 
@@ -323,50 +345,56 @@ $$
 验证：稳态输出 $y_{ss} = -C(A-BK)^{-1}BN \cdot r = \frac{1}{25} \times 25 \times r = r$ ✓
 
 <Callout variant="info">
-**物理含义**：前馈增益 $N$ 的作用是"抵消"状态反馈在稳态时的效果。状态反馈倾向于把状态拉回零，前馈则提供一个恒定的"推力"，让稳态输出恰好等于参考值。
+**物理含义**：本例u=−23q−7q̇+25r。在q=r=1m、q̇=0时，u=2N恰好抵消弹簧力；在初态为零时，初始力却是25N。若限幅低于这个值，下面的线性轨迹就不再成立。
 </Callout>
 
+下面保留原输入u=1N的响应作参考（终值.5m），另外加入N=2的恒力基线，使它与状态反馈都以1m为目标。比较速度应看后两条曲线；下图同时显示力。交互组件沿用完全相同的模型、初态与0–4s/501点网格，默认p=−5；末样值不是稳态极限。
+
 <JupyterNotebook
-  title=" 动手实验：开环 vs 闭环阶跃响应"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="小车定位与施力"
+  setupCode={`import numpy as np
 import matplotlib.pyplot as plt
-from control import ss, place, acker, step_response
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    { code: `# ===== 开环 vs 闭环阶跃响应 =====
-A = np.array([[0, 1], [-2, -3]])
-B = np.array([[0], [1]])
-C = np.array([[1, 0]])
-D = np.array([[0]])
-
-sys_open = ss(A, B, C, D)
-
-K = acker(A, B, [-5, -5]).flatten()  # 二重根须用 acker（place 拒绝重根，见上一节实验）
-A_cl = A - B @ K.reshape(1, -1)
-N = 1 / (-C @ np.linalg.inv(A_cl) @ B)
-print(f"前馈增益 N = {N[0][0]:.2f}")
-
-sys_closed = ss(A_cl, B * N, C, D)
-
-t = np.linspace(0, 3, 500)
-t_open, y_open = step_response(sys_open, T=t)
-t_closed, y_closed = step_response(sys_closed, T=t)
-
-plt.figure(figsize=(10, 6))
-plt.plot(t_open, y_open, 'b--', linewidth=2, label='开环')
-plt.plot(t_closed, y_closed, 'r-', linewidth=2.5, label='闭环 (极点 = -5, -5)')
-plt.axhline(y=1.0, color='k', linestyle=':', alpha=0.5, label='参考值 r=1')
-plt.xlabel('Time (s)', fontsize=12)
-plt.ylabel('y(t)', fontsize=12)
-plt.title('开环 vs 闭环阶跃响应', fontsize=14)
-plt.legend(fontsize=11)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` },
-  ]}
+import sympy as sp
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams.update({'font.size':12})
+`}
+  cells={[{ code: `A=np.array([[0.,1.],[-2.,-3.]])
+B=np.array([[0.],[1.]]);C=np.array([[1.,0.]])
+t=np.linspace(0,4,501)
+response_records=[]
+for pole in np.arange(-10.,-.49,.5):
+    K=np.asarray(acker(A,B,[pole,pole])).reshape(1,2)
+    Acl=A-B@K
+    N=float((-1/(C@np.linalg.solve(Acl,B))).item())
+    steady=-np.linalg.solve(Acl,B[:,0]*N)
+    states=np.array([steady-expm(Acl*ti)@steady for ti in t])
+    force=N-states@K[0]
+    response_records.append({'p':float(pole),'K':K[0].tolist(),'N':N,'states':states.tolist(),'force':force.tolist()})
+    if pole in [-10.,-5.,-1.,-.5]:
+        direct=solve_ivp(lambda ti,x:Acl@x+B[:,0]*N,[0,4],[0.,0.],t_eval=t,rtol=1e-11,atol=1e-12).y.T
+        assert np.max(abs(direct-states))<1e-8
+        print('p=',pole,'K=',K,'N=',N,'u0 N=',force[0],'q4 m=',states[-1,0])
+_,raw=np.asarray(step_response(ss(A,B,C,0),T=t))
+_,baseline=np.asarray(step_response(ss(A,2*B,C,0),T=t))
+assert np.max(abs(baseline-2*raw))<1e-10
+assert np.max(abs(raw-.5*(1-np.exp(-t))**2))<1e-10
+chosen=next(v for v in response_records if v['p']==-5.)
+x=np.array(chosen['states'])
+fig,axes=plt.subplots(2,1,figsize=(5,6.8))
+axes[0].plot(t,raw,label='Raw u=1 N',linestyle=':')
+axes[0].plot(t,baseline,label='Baseline N=2',linestyle='--')
+axes[0].plot(t,x[:,0],label='Feedback p=-5')
+axes[0].set(xlim=(0,4),ylim=(0,1.1),xlabel='Time (s)',ylabel='Position (m)')
+axes[1].plot(t,np.full_like(t,2),label='Baseline 2 N',linestyle='--')
+axes[1].plot(t,chosen['force'],label='Feedback force')
+axes[1].set(xlim=(0,4),ylim=(-30,105),xlabel='Time (s)',ylabel='Force (N)')
+for ax in axes:ax.legend();ax.grid(True)
+fig.tight_layout();plt.show()
+print('Raw open-loop limit=.5m; fair baseline limit=1m; feedback limit=1m (analytic DC)')
+` }]}
 />
 
 <StateFeedbackPoleExplorer />
@@ -375,51 +403,43 @@ plt.show()` },
 
 ### 极点配置与零点
 
-状态反馈可以任意配置**极点**，但**不能改变零点**。这是因为：
+全状态反馈保留**同一实现的有限不变零点**，但必须把输出也正确改为C−DK；不能漏掉D。用系统矩阵的正常秩下降来定义这些零点，答案10给出可逆块列变换证明。
 
-$$
-G_{cl}(s) = C(sI - A + BK)^{-1}B
-$$
+若实现最小，这与通常的传输零点相联系；反馈后可能失去可观性、发生极零对消，因此“约简后的传递函数分子根一概不变”并不成立。本课默认例1没有有限零点；另一个D=0小例取同一A、B但C=[−1,1]，开环G=(s−1)/[(s+1)(s+2)]。若K=[−3,−3]，闭环未约简G=(s−1)/[(s−1)(s+1)]，约简后不再显示零点1，但内部不稳定极点1被藏住了，不能据约简传函宣布内部稳定。
 
-传递函数的零点由 $(A, B, C)$ 的结构决定，$K$ 只影响分母（极点），不影响分子（零点）。
-
-工程含义：如果系统有右半平面零点（非最小相位系统），即使把极点配置到理想位置，阶跃响应仍然会有 undershoot 或反向响应。这是系统的"固有特性"，状态反馈无法改变。
+右半平面零点约束可实现的稳定跟踪；是否出现怎样的反向响应，还要看相对阶、输入方向和参考通道。不能仅凭极点位置承诺任意响应形状。
 
 ### 极点配置的唯一性
 
-对于 SISO 系统，给定期望极点后 $K$ 是**唯一**的（假设系统可控）。但对于 MIMO 系统（多输入），$K$ 不唯一——多余的输入自由度可以用来优化其他性能指标（如控制能量最小化）。
+可控单输入系统在本约定下K唯一。多输入时一般存在多组解，可另选目标优化，但不能机械地把“mn减n”当成所有问题的精确解集维数；输入冗余、重复极点和结构约束都会影响参数化。只指定极点并未指定LQR代价。
 
 ### 极点选择的工程考量
 
-理论上可以把极点放到任意位置，但工程上要注意：
+极点只决定线性模态，不直接保证时域指标。对高阶系统还要检查零点、留数、初态与模态耦合；“其他极点更快”不自动保证二阶近似误差很小。
 
-1. **极点不要放得太远**：极点实部越大（越靠左），控制量 $u$ 越大。实际执行器有饱和限制，过大的 $K$ 会导致执行器饱和，系统性能反而下降。
+在开篇小车的二重极点族中，K=[p²−2,−2p−3]、N=p²。零初态和1m参考下u(0)=N·r=p²（数值按r=1m代入），所以p=−.5、−1、−5、−10分别需要.25、1、25、100N初始力。这里p²的单位是s⁻²，乘本例质量及1m后才得到力；不是把任意对象的增益都说成平方增长。测量误差也以−Kδx进入控制量，位置/速度噪声的单位不能混用。
 
-2. **主导极点设计**：对于高阶系统，可以配置一对"主导极点"（靠近虚轴）决定主要动态，其他极点放得更远（更快衰减），使系统近似为二阶系统。
-
-3. **鲁棒性**：极点放得太远会增加对模型误差的敏感度。如果模型参数有 10% 的误差，期望极点的位置也会有偏差——极点越远，偏差越大。
+模型失配敏感性与极点/特征向量条件数、缩放及不确定性结构有关，不存在“极点越左，10%模型误差必使偏差越大”的通则。重根尤其敏感；回查特征多项式与实际响应，必要时使用分离极点设计。上述实验不包含饱和、延迟和离散采样，这些因素须在实机前另行验证。
 
 ### 与经典控制的对比
 
-| 特性 | 经典控制（PID/校正器） | 现代控制（极点配置） |
-|------|----------------------|-------------------|
-| 反馈信号 | 输出 $y$ | 全部状态 $\boldsymbol{x}$ |
-| 设计方法 | 频域（Bode图、根轨迹） | 时域（直接指定极点） |
-| 可调参数 | 2-3 个（$K_p, K_i, K_d$） | $n$ 个（$K$ 的每个元素） |
-| 适用系统 | SISO | SISO 和 MIMO |
-| 状态测量 | 不需要 | 需要全部状态 |
-| 对模型精度的要求 | 较低（鲁棒性好） | 较高（依赖精确模型） |
+| 项目 | 输出反馈设计 | 本课全状态极点配置 |
+|---|---|---|
+| 所用信息 | 可测输出；动态控制器还含内部状态 | 全部状态，或另加观测器估计 |
+| 常见描述 | 频域与时域都可分析 | 在状态空间指定闭环谱 |
+| 参数与结构 | 取决于控制器阶次，不限于一个比例系数 | K为m×n，任意配置还需可控 |
+| 性能与鲁棒性 | 取决于对象、结构和整定 | 同样需要检验，不由“现代”二字保证 |
 
-极点配置不是要"取代" PID，而是在需要更高性能或处理 MIMO 系统时提供更强大的工具。
+两类描述可相互联系；本课不比较PID与极点配置的性能排名。
 
 ## 小结
 
-- **状态反馈**：$\boldsymbol{u} = -K\boldsymbol{x} + \boldsymbol{r}$，闭环系统矩阵变为 $A - BK$
+- **状态反馈**：$\boldsymbol{u} = -K\boldsymbol{x} + \boldsymbol{v}$，闭环系统矩阵变为 $A - BK$
 - **极点配置定理**：$(A, B)$ 可控 $\iff$ 可以任意配置闭环极点
 - **可控标准型**：$K$ 的元素 = 期望系数 - 原系数，计算简单直观
-- **Ackermann 公式**：$K = \begin{bmatrix} 0 & \cdots & 0 & 1 \end{bmatrix} \mathcal{C}^{-1} p_d(A)$，适用于一般系统
-- **前馈补偿**：$N = 1 / (-C(A-BK)^{-1}B)$，实现参考跟踪（稳态 $y = r$）
-- 状态反馈可以配置极点，但**不能改变零点**
+- **Ackermann 公式**：$K = \begin{bmatrix} 0 & \cdots & 0 & 1 \end{bmatrix} \mathcal{C}^{-1} p_d(A)$，适用于可控单输入系统
+- **前馈补偿**：$N = 1 / (-C(A-BK)^{-1}B)$，在D=0、稳定、非零直流增益等条件下实现标称常值跟踪
+- 状态反馈保持同一实现的不变零点，约简传函可能隐藏内部模态
 - 极点选择要平衡性能、控制量和鲁棒性——不是越远越好
 
 ## 习题
@@ -452,14 +472,14 @@ $$
 - (b) 用极点配置设计 $K$，使闭环 $\zeta_{cl} = 0.7$，$\omega_{n,cl} = 2\omega_n$
 - (c) 比较开环和闭环的阶跃响应特征
 
-**8.** 证明 Ackermann 公式：对可控系统 $(A, B)$，$K = \begin{bmatrix} 0 & \cdots & 0 & 1 \end{bmatrix} \mathcal{C}^{-1} p_d(A)$ 使得 $A - BK$ 的特征多项式等于 $p_d(s)$。（提示：先对可控标准型证明，再用相似变换推广。）
+**8.** 证明 Ackermann 公式：对可控单输入系统 $(A, B)$，$K = \begin{bmatrix} 0 & \cdots & 0 & 1 \end{bmatrix} \mathcal{C}^{-1} p_d(A)$ 使得 $A - BK$ 的特征多项式等于 $p_d(s)$。（提示：先对可控标准型证明，再用相似变换推广。）
 
 **9.** 直流电机模型：$A = \begin{bmatrix} 0 & 1 \\ 0 & -10 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 50 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$（状态为角位置和角速度，输入为电枢电压，输出为角位置）。
 - (a) 求开环传递函数
 - (b) 设计要求：调节时间 $t_s < 0.5$ 秒（2% 准则），超调量 $\sigma < 5\%$。选择期望极点并求 $K$
 - (c) 求前馈增益 $N$
 
-**10.** 证明：状态反馈不改变传递函数的零点。（提示：计算 $G_{cl}(s) = C(sI - A + BK)^{-1}B$，利用矩阵求逆引理或行列式性质。）
+**10.** 证明全状态反馈不改变同一实现的有限不变零点，允许D≠0；解释为什么约简传递函数不一定保留可见分子根。（提示：用系统矩阵的正常秩与可逆块列变换。）
 
 ## 答案
 
@@ -493,17 +513,25 @@ $AB = \begin{bmatrix} 2 & 1 \\ 0 & 3 \end{bmatrix}\begin{bmatrix} 1 \\ 2 \end{bm
 
 用 Ackermann 公式 $K = \begin{bmatrix} 0 & 1 \end{bmatrix} \mathcal{C}^{-1} p_d(A)$：
 
-$p_d(A) = A^2 + 3A + 2I = \begin{bmatrix} 4 & 5 \\ 0 & 9 \end{bmatrix} + \begin{bmatrix} 6 & 3 \\ 0 & 9 \end{bmatrix} + \begin{bmatrix} 2 & 0 \\ 0 & 2 \end{bmatrix} = \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix}$
+$$
+p_d(A) = A^2 + 3A + 2I = \begin{bmatrix} 4 & 5 \\ 0 & 9 \end{bmatrix} + \begin{bmatrix} 6 & 3 \\ 0 & 9 \end{bmatrix} + \begin{bmatrix} 2 & 0 \\ 0 & 2 \end{bmatrix} = \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix}
+$$
 
 $\mathcal{C}^{-1} = \frac{1}{-2}\begin{bmatrix} 6 & -4 \\ -2 & 1 \end{bmatrix} = \begin{bmatrix} -3 & 2 \\ 1 & -1/2 \end{bmatrix}$
 
-$K = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} -3 & 2 \\ 1 & -1/2 \end{bmatrix} \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix} = \begin{bmatrix} 1 & -1/2 \end{bmatrix} \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix} = \begin{bmatrix} 12 & -2 \end{bmatrix}$
+$$
+K = \begin{bmatrix} 0 & 1 \end{bmatrix} \begin{bmatrix} -3 & 2 \\ 1 & -1/2 \end{bmatrix} \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix} = \begin{bmatrix} 1 & -1/2 \end{bmatrix} \begin{bmatrix} 12 & 8 \\ 0 & 20 \end{bmatrix} = \begin{bmatrix} 12 & -2 \end{bmatrix}
+$$
 
-验证：$A - BK = \begin{bmatrix} 2 & 1 \\ 0 & 3 \end{bmatrix} - \begin{bmatrix} 1 \\ 2 \end{bmatrix}\begin{bmatrix} 12 & -2 \end{bmatrix} = \begin{bmatrix} -10 & 3 \\ -24 & 7 \end{bmatrix}$
+验证：
+
+$$
+A - BK = \begin{bmatrix} 2 & 1 \\ 0 & 3 \end{bmatrix} - \begin{bmatrix} 1 \\ 2 \end{bmatrix}\begin{bmatrix} 12 & -2 \end{bmatrix} = \begin{bmatrix} -10 & 3 \\ -24 & 7 \end{bmatrix}
+$$
 
 $\text{tr} = -3$，$\det = -70 + 72 = 2$，特征多项式 $s^2 + 3s + 2 = (s+1)(s+2)$ ✓
 
-**4.** 由 PBH 判据，$(A, B)$ 不可控 $\implies$ 存在 $A$ 的特征值 $\lambda$ 和非零向量 $\boldsymbol{w}$，使得 $A^T \boldsymbol{w} = \lambda \boldsymbol{w}$，$B^T \boldsymbol{w} = \boldsymbol{0}$。
+**4.** 允许复数向量，以下用转置而非共轭转置表示左行向量的对偶。由 PBH 判据，$(A, B)$ 不可控 $\implies$ 存在 $A$ 的特征值 $\lambda$ 和非零向量 $\boldsymbol{w}$，使得 $A^T \boldsymbol{w} = \lambda \boldsymbol{w}$，$B^T \boldsymbol{w} = \boldsymbol{0}$。
 
 对任意 $K$：$(A - BK)^T \boldsymbol{w} = A^T \boldsymbol{w} - K^T B^T \boldsymbol{w} = \lambda \boldsymbol{w} - \boldsymbol{0} = \lambda \boldsymbol{w}$。
 
@@ -521,23 +549,37 @@ $k_2 = 7$，$1 + k_1 = 25 \implies k_1 = 24$。$K = \begin{bmatrix} 24 & 7 \end{
 
 (c) $A - BK = \begin{bmatrix} 0 & 1 \\ -25 & -7 \end{bmatrix}$，$(A-BK)^{-1} = \frac{1}{25}\begin{bmatrix} -7 & -1 \\ 25 & 0 \end{bmatrix}$。
 
-$-C(A-BK)^{-1}B = -\begin{bmatrix} 1 & 0 \end{bmatrix} \frac{1}{25}\begin{bmatrix} -7 & -1 \\ 25 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -\frac{1}{25}(-1) = \frac{1}{25}$。
+$$
+-C(A-BK)^{-1}B = -\begin{bmatrix} 1 & 0 \end{bmatrix} \frac{1}{25}\begin{bmatrix} -7 & -1 \\ 25 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -\frac{1}{25}(-1) = \frac{1}{25}
+$$
+
+。
 
 $N = 25$。
 
-**6.** (a) 可控性矩阵 $\mathcal{C} = \begin{bmatrix} B & AB & A^2B & A^3B \end{bmatrix}$（$4 \times 8$ 矩阵）。
+**6.** (a) 可控性矩阵为4×8，逐列计算得
 
-$AB = \begin{bmatrix} 0 & 0 \\ 1 & 0 \\ 0 & 1 \\ -2 & 1 \end{bmatrix}$，$A^2B = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ -2 & 1 \\ -3 & -1 \end{bmatrix}$，$A^3B = \begin{bmatrix} 0 & 1 \\ -2 & 1 \\ -3 & -1 \\ 4 & -4 \end{bmatrix}$
+$$
+AB=\begin{bmatrix}0&0\\1&0\\0&1\\1&0\end{bmatrix},\quad
+A^2B=\begin{bmatrix}1&0\\0&1\\1&0\\-2&1\end{bmatrix},\quad
+A^3B=\begin{bmatrix}0&1\\1&0\\-2&1\\2&-2\end{bmatrix}.
+$$
 
-取第 1、2、3、5 列组成 $4 \times 4$ 子矩阵：$\begin{bmatrix} 0 & 0 & 1 & 0 \\ 0 & 1 & 0 & 0 \\ 1 & 0 & 0 & 1 \\ 0 & 0 & 1 & -2 \end{bmatrix}$，行列式 $= 1 \neq 0$。
+取第1、2、3、5列的子式行列式为−1，所以秩4，可控。
 
-$\text{rank}(\mathcal{C}) = 4$，**可控**。
+(b) 可以。例如
 
-(b) 可以。$K$ 是 $2 \times 4$ 矩阵，共 8 个自由参数，只需配置 4 个极点。多余的 4 个自由度可用于优化其他指标（如控制能量最小化、鲁棒性增强等），$K$ 不唯一。
+$$
+K=\begin{bmatrix}6&11&6&0\\1&-2&1&4\end{bmatrix}
+$$
+
+使闭环成为一个三阶伴随块与极点−4的块上三角形式，特征多项式为(s+1)(s+2)(s+3)(s+4)。把K右上角的0改为2，仍保留同一谱，直接展示非唯一性；两者控制量和噪声通路可以不同。极点相同不是代价最优性证明。
 
 **7.** (a) $G(s) = C(sI-A)^{-1}B$。
 
-$(sI - A)^{-1}B = \begin{bmatrix} s & -1 \\ \omega_n^2 & s + 2\zeta\omega_n \end{bmatrix}^{-1}\begin{bmatrix} 0 \\ \omega_n^2 \end{bmatrix} = \frac{1}{s^2 + 2\zeta\omega_n s + \omega_n^2}\begin{bmatrix} \omega_n^2 \\ \omega_n^2 s \end{bmatrix}$
+$$
+(sI - A)^{-1}B = \begin{bmatrix} s & -1 \\ \omega_n^2 & s + 2\zeta\omega_n \end{bmatrix}^{-1}\begin{bmatrix} 0 \\ \omega_n^2 \end{bmatrix} = \frac{1}{s^2 + 2\zeta\omega_n s + \omega_n^2}\begin{bmatrix} \omega_n^2 \\ \omega_n^2 s \end{bmatrix}
+$$
 
 $G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$
 
@@ -547,35 +589,48 @@ $G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$
 
 $A - BK = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 - k_1\omega_n^2 & -2\zeta\omega_n - k_2\omega_n^2 \end{bmatrix}$，特征多项式 $s^2 + (2\zeta\omega_n + k_2\omega_n^2)s + \omega_n^2(1 + k_1)$。
 
-（注意 $B = [0, \omega_n^2]^T \neq [0,1]^T$——$k_1, k_2$ 要先乘上 $\omega_n^2$ 才进入特征多项式；原稿漏了这一因子，已按实测更正。）
+这里B含ω_n²，不能漏乘：
 
-$2\zeta\omega_n + k_2 = 2.8\omega_n \implies k_2 = (2.8 - 2\zeta)\omega_n$
+$$
+k_1=3,\qquad k_2=\frac{2.8-2\zeta}{\omega_n},\qquad\omega_n>0.
+$$
 
-$K = \begin{bmatrix} 3\omega_n^2 & (2.8 - 2\zeta)\omega_n \end{bmatrix}$
+例如ω_n=2、ζ=.5，K=[3,.9]，闭环极点为−2.8±j√8.16。若要比较单位参考跟踪，必须补N=4，闭环才具有单位直流增益；直接把原输入通道当参考且N=1时，终值是1/4。
 
-(c) 闭环自然频率是开环的 2 倍→响应快 2 倍；阻尼比从 $\zeta$ 提高到 $0.7$→超调减小（除非原来 $\zeta$ 已经 $> 0.7$）。
+(c) 在单位直流增益、欠阻尼的二阶模型中，超调只由ζ决定；提高到.7时，原阻尼比小于.7才会减少超调，原阻尼比大于.7则可能增加。自然频率加倍但阻尼也变，峰值时间、调节时间不会普遍都变为一半。ζ=.2/.7/.9的三个固定例在后面实验核对，包括阻尼已经较高的反例。
 
-**8.** 先在可控标准型下证明。设 $(A, B)$ 为可控标准型，$B = \boldsymbol{e}_n$（第 $n$ 个标准基向量）。
+**8.** 在本课伴随型下，e₁ᵀ𝒞_c=eₙᵀ，因此eₙᵀ𝒞_c⁻¹=e₁ᵀ；前n−1行的移位结构给出e₁ᵀA_cⁱ=$e_{i+1}^T$。Cayley–Hamilton给出
 
-$K_{\text{cf}} = \begin{bmatrix} \alpha_0 - a_0 & \cdots & \alpha_{n-1} - a_{n-1} \end{bmatrix}$
+$$
+p_d(A_c)=\sum_{i=0}^{n-1}(\alpha_i-a_i)A_c^i.
+$$
 
-由 Cayley-Hamilton 定理，$p(A) = A^n + a_{n-1}A^{n-1} + \cdots + a_0 I = 0$，故：
+左乘eₙᵀ𝒞_c⁻¹，得到
 
-$p_d(A) = p_d(A) - p(A) = (\alpha_0 - a_0)I + (\alpha_1 - a_1)A + \cdots + (\alpha_{n-1} - a_{n-1})A^{n-1}$
+$$
+e_n^T\mathcal C_c^{-1}p_d(A_c)
+=\sum_{i=0}^{n-1}(\alpha_i-a_i)e_{i+1}^T
+=[\alpha_0-a_0,\ldots,\alpha_{n-1}-a_{n-1}]=K_c.
+$$
 
-$\mathcal{C}^{-1} p_d(A) = \sum_{i=0}^{n-1}(\alpha_i - a_i)\mathcal{C}^{-1}A^i$
+对原坐标取z=Tx，𝒞_c=T𝒞，p_d(A_c)=Tp_d(A)T⁻¹，且K=K_cT。代入相乘即有
 
-可以证明 $\boldsymbol{e}_n^T \mathcal{C}^{-1} A^i = \boldsymbol{e}_{n-i}^T$（$i = 0, \ldots, n-1$），因此：
+$$
+K=e_n^T(T\mathcal C)^{-1}Tp_d(A)T^{-1}T
+=e_n^T\mathcal C^{-1}p_d(A).
+$$
 
-$K = \boldsymbol{e}_n^T \mathcal{C}^{-1} p_d(A) = \sum_{i=0}^{n-1}(\alpha_i - a_i)\boldsymbol{e}_{n-i}^T = \begin{bmatrix} \alpha_0 - a_0 & \alpha_1 - a_1 & \cdots & \alpha_{n-1} - a_{n-1} \end{bmatrix} = K_{\text{cf}}$
+这证明了任意可控单输入坐标下的公式；基向量恒等式只用于伴随坐标，没有把次序反写。
 
-对一般可控系统，通过相似变换 $\bar{A} = TAT^{-1}$，$\bar{B} = TB$ 化为可控标准型。求得 $\bar{K} = K_{\text{cf}}$ 后，$K = \bar{K}T = K_{\text{cf}}T$。可以证明此 $K$ 恰好等于 $\boldsymbol{e}_n^T \mathcal{C}^{-1} p_d(A)$（因为相似变换下 $\mathcal{C}$ 和 $p_d(A)$ 的变换关系恰好抵消）。证毕。
+**9.** (a) 
 
-**9.** (a) $G(s) = C(sI-A)^{-1}B = \begin{bmatrix} 1 & 0 \end{bmatrix}\frac{1}{s(s+10)}\begin{bmatrix} 50 \\ 0 \end{bmatrix} = \frac{50}{s(s+10)} = \frac{50}{s^2 + 10s}$
+$$
+G(s) = C(sI-A)^{-1}B = \begin{bmatrix} 1 & 0 \end{bmatrix}\frac{1}{s(s+10)}\begin{bmatrix} 50 \\ 50s \end{bmatrix} = \frac{50}{s(s+10)} = \frac{50}{s^2 + 10s}
+$$
 
-(b) 2% 准则 $t_s \approx 4/(\zeta\omega_n) < 0.5 \implies \zeta\omega_n > 8$。$\sigma < 5\% \implies \zeta > 0.69$。
+(b) 先用近似t_s≈4/(ζω_n)挑选候选，再以实际闭环验收，不能把近似不等式当严格保证。标准二阶超调公式要求ζ>约.690107，以下选有余量的配置。
 
-选 $\zeta\omega_n = 10$，$\zeta = 0.707$（$\omega_n = 10\sqrt{2} \approx 14.14$）。期望极点 $-10 \pm 10j$。
+选 $\zeta\omega_n = 10$，$\zeta = 1/\sqrt2\approx0.707107$（$\omega_n = 10\sqrt{2} \approx 14.14$）。期望极点 $-10 \pm 10j$。
 
 期望多项式：$(s+10)^2 + 100 = s^2 + 20s + 200$。
 
@@ -589,34 +644,171 @@ $-C(A-BK)^{-1}B = -\frac{1}{200}\begin{bmatrix} -20 & -1 \end{bmatrix}\begin{bma
 
 验证：$y_{ss} = \frac{1}{4} \times 4 \times r = r$ ✓
 
-**10.** 开环传递函数 $G(s) = C(sI-A)^{-1}B$ 的零点满足 $\text{rank}\begin{bmatrix} sI-A & B \\ C & 0 \end{bmatrix} < n + \min(p, m)$。
+1rad阶跃参考、零初态、N=4时，闭环误差为e(t)=e⁻¹⁰ᵗ(cos10t+sin10t)。超调为100e⁻π≈4.321392%，峰值时间π/10≈.314159s；对最后一次2%带穿越求根得到t_s≈.421618s，之后用单调衰减包络排除再出带，满足本题要求。初始电压u(0)=4V。这里是忽略电气快动态的简化电机模型，真实电压限制、采样/延迟和被忽略极点仍须核查，不由这组线性指标保证实机达标。
 
-闭环系统 $G_{cl}(s) = C(sI - A + BK)^{-1}B$。利用矩阵恒等式：
-
-$(sI - A + BK)^{-1} = (sI-A)^{-1} - (sI-A)^{-1}BK(sI-A+ BK)^{-1}$
-
-$\det(sI - A + BK) = \det(sI-A) \cdot \det(I + K(sI-A)^{-1}B)$
-
-闭环零点由 $\text{rank}\begin{bmatrix} sI-A+BK & B \\ C & 0 \end{bmatrix} < n + \min(p,m)$ 决定。对该矩阵做行变换（减去 $K$ 倍第一行）：
-
-$\begin{bmatrix} I & 0 \\ -K & I \end{bmatrix}\begin{bmatrix} sI-A+BK & B \\ C & 0 \end{bmatrix} = \begin{bmatrix} sI-A+BK & B \\ C - K(sI-A+BK) & -KB \end{bmatrix}$
-
-最简洁的证明（SISO，Schur 补）：闭环系统矩阵的系统矩阵为
+**10.** 对n状态、m输入、ℓ输出，使用系统矩阵
 
 $$
-\Sigma_{cl}(s) = \begin{bmatrix} sI-A+BK & B \\ -C & 0 \end{bmatrix}, \qquad \Sigma_{open}(s) = \begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix}
+\mathcal S(s)=\begin{bmatrix}sI-A&-B\\C&D\end{bmatrix}.
 $$
 
-对 $\Sigma_{open}$ 做初等行变换（第二行加上 $K$ 倍第一行）不改变秩与零点：
+正常秩ρ是该多项式矩阵在一般复数s处的最大秩，有限不变零点是秩低于ρ的点；不能对秩亏系统一律拿n+min(m,ℓ)作阈值。令u=−Kx+v，则
 
 $$
-\begin{bmatrix} I & 0 \\ K & I \end{bmatrix}\begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix} = \begin{bmatrix} sI-A & B \\ K(sI-A)-C & KB \end{bmatrix}
+\mathcal S_{cl}(s)=\begin{bmatrix}sI-A+BK&-B\\C-DK&D\end{bmatrix}
+=\mathcal S(s)\begin{bmatrix}I&0\\-K&I\end{bmatrix}.
 $$
 
-再把第一行的 $-B \cdot K$ 倍加到……不如直接做**块列变换**：$\Sigma_{cl} = \Sigma_{open} \cdot \begin{bmatrix} I & 0 \\ K & I \end{bmatrix}$（右乘行列式为 1 的块下三角阵）：
+右侧块矩阵恒可逆，其逆把−K改成K。因此每个s处秩和正常秩都不变，有限不变零点不变。SISO最小实现时可与传函零点对应，但极零对消可能使反馈后的实现不最小，约简后不再显示某个根；正文C=[−1,1]的例子正是此反例。若再加入非方阵或奇异的参考前馈，其参考传递矩阵的零点还需另外分析。本证明说的是状态反馈本身，不能扩大为任意参考预滤器。
 
-$$
-\begin{bmatrix} sI-A & B \\ -C & 0 \end{bmatrix}\begin{bmatrix} I & 0 \\ K & I \end{bmatrix} = \begin{bmatrix} sI-A+BK & B \\ -C & 0 \end{bmatrix} = \Sigma_{cl}(s)
-$$
+<JupyterNotebook
+  title="算例与十题核验"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams.update({'font.size':12})
+`}
+  cells={[{ code: `svar=sp.symbols('s')
+def check(A,B,K,desired,label):
+    A=sp.Matrix(A);B=sp.Matrix(B);K=sp.Matrix(K)
+    polynomial=sp.expand((svar*sp.eye(A.rows)-A+B*K).det())
+    assert sp.expand(polynomial-sp.prod(svar-r for r in desired))==0,label
+    print(label,'K=',K.tolist(),'char=',polynomial)
+A=sp.Matrix([[0,1],[-2,-3]]);B=sp.Matrix([0,1]);R=B.row_join(A*B)
+phi=A**2+10*A+25*sp.eye(2)
+assert R.det()==-1 and phi==sp.Matrix([[23,7],[-14,2]])
+assert R.inv()==sp.Matrix([[3,1],[1,0]])
+check(A,B,[[23,7]],[-5,-5],'example1/4/5')
+check([[0,1],[-6,-5]],B,[[94,15]],[-10,-10],'example2')
+for gain in [sp.Matrix([[0,0]]),sp.Matrix([[3,-7]])]:
+    Au=sp.Matrix([[1,1],[0,2]])-sp.Matrix([1,0])*gain
+    assert (Au-2*sp.eye(2)).det()==0
+check([[0,1],[0,-1]],B,[[6,4]],[-2,-3],'Q1')
+A3=sp.Matrix([[0,1,0],[0,0,1],[0,-2,-3]]);B3=sp.Matrix([0,0,1])
+check(A3,B3,[[125,73,12]],[-5,-5,-5],'Q2b')
+check(A3,B3,[[24,24,6]],[-2,-3,-4],'Q2c')
+check([[2,1],[0,3]],[[1],[2]],[[12,-2]],[-1,-2],'Q3')
+check([[0,1],[-1,0]],B,[[24,7]],[(-7+sp.sqrt(51)*sp.I)/2,(-7-sp.sqrt(51)*sp.I)/2],'Q5')
+A4=sp.Matrix([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,-2,1,0]])
+B4=sp.Matrix([[0,0],[0,0],[1,0],[0,1]])
+R4=B4.row_join(A4*B4).row_join(A4**2*B4).row_join(A4**3*B4)
+assert R4.rank()==4 and R4[:,[0,1,2,4]].det()==-1
+print('Q6 AB,A2B,A3B=',(A4*B4).tolist(),(A4**2*B4).tolist(),(A4**3*B4).tolist(),'minor det=',R4[:,[0,1,2,4]].det())
+for corner in [0,2]:check(A4,B4,[[6,11,6,corner],[1,-2,1,4]],[-1,-2,-3,-4],'Q6 family')
+for Ac,Bc in [(A,B),(A3,B3)]:
+    n=Ac.rows;Rc=sp.Matrix.hstack(*[Ac**i*Bc for i in range(n)])
+    e1=sp.eye(n)[0,:];en=sp.eye(n)[-1,:]
+    assert en*Rc.inv()==e1
+    for i in range(n):assert e1*Ac**i==sp.eye(n)[i,:]
+T=sp.Matrix([[1,2],[0,1]])
+Ac=T*A*T.inv();Bc=T*B
+Rc=Bc.row_join(Ac*Bc)
+Kt=sp.Matrix([[0,1]])*Rc.inv()*(Ac**2+10*Ac+25*sp.eye(2))
+assert Kt==sp.Matrix([[23,7]])*T.inv()
+print('Q8 canonical row identities and transformed K=',Kt.tolist())
+Aq3=sp.Matrix([[2,1],[0,3]]);Bq3=sp.Matrix([1,2]);Rq3=Bq3.row_join(Aq3*Bq3)
+assert Rq3==sp.Matrix([[1,4],[2,6]]) and Rq3.det()==-2
+assert Rq3.inv()==sp.Matrix([[-3,2],[1,-sp.Rational(1,2)]])
+assert Aq3**2+3*Aq3+2*sp.eye(2)==sp.Matrix([[12,8],[0,20]])
+Aq5=sp.Matrix([[0,1],[-1,0]])-sp.Matrix([0,1])*sp.Matrix([[24,7]])
+assert -(sp.Matrix([[1,0]])*Aq5.inv()*sp.Matrix([0,1]))[0]==sp.Rational(1,25)
+Am=sp.Matrix([[0,1],[0,-10]]);Bm=sp.Matrix([0,50])
+assert ((svar*sp.eye(2)-Am).inv()*Bm-sp.Matrix([50/(svar*(svar+10)),50/(svar+10)])).applyfunc(sp.simplify)==sp.zeros(2,1)
+assert (Am-Bm*sp.Matrix([[4,sp.Rational(1,5)]])).inv()==sp.Matrix([[-sp.Rational(1,10),-sp.Rational(1,200)],[1,0]])
+print('Q3 exact R/inverse/pd verified; Q5 N25; Q9 full resolvent [50,50s]/(s(s+10)) verified')
 
-右乘可逆阵不改变秩，故 $\text{rank}\,\Sigma_{cl}(s) = \text{rank}\,\Sigma_{open}(s)$ 对**所有** $s$ 成立——闭环零点集合与开环零点集合完全相同，状态反馈只搬极点、不动零点。证毕。（原稿用"使 $C(sI-A+BK)^{-1}B=0$ 等价于使 $C(sI-A)^{-1}B=0$"直接断言了结论，属循环论证，已替换为上述块矩阵一行证明。）
+` },{ code: `w,z=sp.symbols('w z',positive=True)
+A=sp.Matrix([[0,1],[-w*w,-2*z*w]]);B=sp.Matrix([0,w*w])
+K=sp.Matrix([[3,(sp.Rational(14,5)-2*z)/w]])
+assert sp.simplify((svar*sp.eye(2)-A+B*K).det()-(svar**2+sp.Rational(14,5)*w*svar+4*w*w))==0
+q7_records=[]
+for wn in [.5,2.,5.]:
+    for zeta in [.2,.7,.9]:
+        A=np.array([[0.,1.],[-wn*wn,-2*zeta*wn]])
+        B=np.array([[0.],[wn*wn]])
+        K=np.array([[3.,(2.8-2*zeta)/wn]])
+        coefficients=np.poly(A-B@K)
+        assert np.allclose(coefficients,[1,2.8*wn,4*wn*wn],rtol=1e-10)
+        dc=float((-np.array([[1.,0.]])@np.linalg.solve(A-B@K,B)).item())
+        assert abs(dc-.25)<1e-10
+        mo=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta));mc=100*np.exp(-np.pi*.7/np.sqrt(1-.7**2))
+        q7_records.append({'wn':wn,'zeta':zeta,'K':K.tolist(),'poly':coefficients.tolist(),'openOvershoot':mo,'closedOvershoot':mc,'peakTimeRatio':np.sqrt(1-zeta*zeta)/(2*np.sqrt(1-.7**2))})
+for r in q7_records:
+    if r['wn']==2:print('Q7 wn2:',r)
+print('Q7 symbolic K valid for every wn>0; N=4; repeated root polynomial checks avoid ill-conditioned eig rounding')
+assert np.allclose(np.roots([1,5.6,16]),[-2.8+np.sqrt(8.16)*1j,-2.8-np.sqrt(8.16)*1j])
+print('Q7 wn2,zeta.5 example K=[3,.9], roots=',np.roots([1,5.6,16]))
+
+` }]}
+/>
+
+<JupyterNotebook
+  title="前馈与零点边界"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams.update({'font.size':12})
+`}
+  cells={[{ code: `s=sp.symbols('s');A=sp.Matrix([[0,1],[-2,-3]]);B=sp.Matrix([0,1]);C=sp.Matrix([[-1,1]]);K=sp.Matrix([[-3,-3]])
+G=(C*(s*sp.eye(2)-A).inv()*B)[0];Acl=A-B*K
+num=sp.expand((C*(s*sp.eye(2)-Acl).adjugate()*B)[0]);den=sp.expand((s*sp.eye(2)-Acl).det())
+print('zero example open=',sp.factor(G),'closed unreduced=',num,'/',den,'reduced=',sp.cancel(num/den))
+M=(s*sp.eye(2)-A).row_join(-B).col_join(C.row_join(sp.zeros(1,1)))
+Mc=(s*sp.eye(2)-Acl).row_join(-B).col_join(C.row_join(sp.zeros(1,1)))
+U=sp.eye(3);U[2,0]=-K[0,0];U[2,1]=-K[0,1]
+assert Mc==M*U and sp.factor(M.det())==s-1 and sp.factor(Mc.det())==s-1
+assert Mc.subs(s,1).rank()==2 and Mc.subs(s,2).rank()==3
+# D=1 changes the feedback output matrix as well.
+Ad=sp.Matrix([[-2]]);Bd=sp.Matrix([[1]]);Cd=sp.Matrix([[1]]);D=sp.Matrix([[1]]);Kd=sp.Matrix([[3]])
+Md=(s*sp.eye(1)-Ad).row_join(-Bd).col_join(Cd.row_join(D))
+Mdc=(s*sp.eye(1)-Ad+Bd*Kd).row_join(-Bd).col_join((Cd-D*Kd).row_join(D))
+assert Mdc==Md*sp.Matrix([[1,0],[-3,1]])
+g0=(D-(Cd-D*Kd)*(Ad-Bd*Kd).inv()*Bd)[0]
+assert g0==sp.Rational(3,5)
+print('D1 example: Ccl=-2, g0=',g0,'N=',1/g0,'both invariant zeros=',sp.solve(Md.det(),s))
+print('zero DC example A=-1,B=1,C=-1,D=1: g0=',1-(-1)*(-1))
+print('model mismatch k2.2, nominal K23/7,N25: qss=',25/25.2,'constant force disturbance .5N: qss=',25.5/25)
+` }]}
+/>
+
+<JupyterNotebook
+  title="电机指标验收"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams.update({'font.size':12})
+`}
+  cells={[{ code: `A=np.array([[0.,1.],[0.,-10.]])
+B=np.array([[0.],[50.]]);C=np.array([[1.,0.]])
+K=place(A,B,[-10+10j,-10-10j]);Acl=A-B@K
+N=float((-1/(C@np.linalg.solve(Acl,B))).item())
+assert np.allclose(K,[[4,.2]],atol=1e-10) and abs(N-4)<1e-10
+error=lambda t:np.exp(-10*t)*(np.cos(10*t)+np.sin(10*t))
+ts=brentq(lambda t:error(t)+.02,.32,.5,xtol=1e-14)
+tp=np.pi/10;overshoot=100*np.exp(-np.pi);envelopeTime=np.log(np.sqrt(2)/.02)/10
+assert ts<.5 and overshoot<5 and ts<envelopeTime<.5
+# Between ts and envelopeTime |e| decreases; afterwards the envelope is <.02.
+assert np.pi<10*ts<10*envelopeTime<1.5*np.pi
+assert abs(error(ts)+.02)<1e-12
+mt=np.linspace(0,.8,801)
+_,my=step_response(ss(Acl,B*N,C,0),T=mt)
+assert np.max(abs(my-(1-error(mt))))<1e-10
+print('Q9 K=',K,'N=',N,'poles=',np.linalg.eigvals(Acl),'u0 V=',N)
+print('overshoot %=',overshoot,'tp s=',tp,'last 2% crossing s=',ts,'envelope-safe time s=',envelopeTime,'zeta threshold for5%=',-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2))
+fig,ax=plt.subplots(figsize=(5,3.8));ax.plot(mt,my,label='Motor position');ax.axhline(1.02,color='gray',linestyle='--');ax.axhline(.98,color='gray',linestyle='--');ax.axvline(ts,color='orange',label='Last 2% crossing')
+ax.set(xlim=(0,.8),ylim=(0,1.08),xlabel='Time (s)',ylabel='Position (rad)');ax.legend();ax.grid(True);fig.tight_layout();plt.show()
+motor_records={'K':K.tolist(),'N':N,'ts':ts,'tp':tp,'overshoot':overshoot,'statesY':my.tolist()}
+` }]}
+/>

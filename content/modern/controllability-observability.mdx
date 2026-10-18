@@ -5,49 +5,81 @@ description: 定义可控性和可观性两个现代控制的核心概念，掌�
 
 # 可控性与可观性
 
-上一章我们建立了状态空间表示 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$。但这里隐藏着一个关键问题：**状态空间中的每一个状态变量，是否都"有用"？**
+在[状态空间](/modern/state-space)里，我们发现：汽车车身处于同一位置，速度不同，接下来的运动也不同。因此需要记录位移和速度。现在再问一步：**记录了所有状态，就一定能用手里的执行器改变它们、用已有传感器推断它们吗？**
 
-有些状态可能完全不受输入影响——你无论怎么操作控制器，都改变不了它。有些状态可能完全不出现在输出中——你无论怎么测量，都推断不出它的值。这两种情况分别叫做**不可控**和**不可观**。
+想象桌上两辆可以直线滑动的小车，中间连着弹簧。你只推第一辆，也只用尺子记录第一辆的位置。弹簧完好时，第二辆会通过弹簧受到影响；弹簧脱开后，无论怎样推第一辆，都改变不了第二辆的运动，也无法从第一辆的位置记录中看出第二辆原来在哪里。本课把这两个问题分别叫作可控性和可观性。
 
-> 📖 本章需要上一章 [状态空间表示](/modern/state-space) 的基础，特别是状态方程、传递函数与状态空间的关系、以及特征值的概念。
+先修是[状态空间](/modern/state-space)、[矩阵分解](/math/matrix-decomposition)中的秩与零空间，以及[特征分解](/math/eigen-decomposition)中的特征向量。本课先讨论连续时间、有限维、实常矩阵的线性时不变模型；输入已知且不受幅值限制，测量理想无噪声。现实中的力、行程与测量误差会在后面单独说明。
 
 ## 为什么需要可控性与可观性
 
 ### 一个直觉例子
 
-想象一个双质量块系统：两个质量块 $m_1$ 和 $m_2$ 通过弹簧 $k$ 连接，但外力 $F$ 只作用在 $m_1$ 上。
+把两辆小车简化为质量块：第一辆通过弹簧 $k_1$ 连到固定端，两辆之间由弹簧 $k_2$ 连接；外力 $F$ 只作用在第一辆。忽略摩擦，传感器只记录第一辆位移。
 
-```
-  F → [m₁] ～k～ [m₂]
-```
+![外力作用于第一辆小车，弹簧连接两车，位置传感器只测第一辆](/diagrams/controllability/two-carts.svg)
 
-你能控制 $m_1$ 的位置——力直接作用在它上面。通过弹簧的耦合，$m_2$ 也会被带动。看起来一切正常。
+力先改变第一辆的加速度，再改变速度和位置。弹簧的形变把影响传给第二辆。输入不是直接设定位置；能否到达指定的完整状态，还要用下面的判据验证。
 
-但如果弹簧断了（$k = 0$），$m_2$ 就和 $m_1$ 完全解耦了。此时无论你如何施加力 $F$，$m_2$ 的运动完全不受影响——$m_2$ 相关的状态**不可控**。
+但如果弹簧断了（$k_2 = 0$），$m_2$ 就和 $m_1$ 完全解耦了。此时无论你如何施加力 $F$，$m_2$ 的运动完全不受影响——$m_2$ 相关的状态**不可控**。
 
 反过来，假设你只能测量 $m_1$ 的位置。弹簧连接时，你能从 $m_1$ 的运动中间接推断 $m_2$ 的状态。但弹簧断了之后，$m_2$ 的运动完全不影响 $m_1$——$m_2$ 相关的状态**不可观**。
 
-这个例子说明：**可控性和可观性不是"控制器设计得好不好"的问题，而是系统本身的结构属性**。如果系统不可控，再高级的控制器也无能为力；如果系统不可观，再多的信号处理也推断不出隐藏的状态。
+可控性描述输入能改变哪些状态方向，可观性描述不同初始状态是否会留下不同的输出记录。它们属于选定模型与执行器、传感器配置，不是控制器参数整定的成绩。
+
+取两车各1kg、墙弹簧1N/m，比较耦合弹簧0、0.1、1N/m。上图是从静止开始推第一车（恒力1N）后第二车的位移；下图是在相同输入下，仅第二车初始位置相差1m造成的第一车输出差。零耦合时两条通路都断开；非零耦合时精确秩均为4，但有限时间内的响应随参数改变，不据此比较控制器性能。
+
+<JupyterNotebook
+  title="两车之间的输入与测量通路"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from control import ctrb, obsv
+`}
+  cells={[{ code: `times=np.linspace(0,6,301)
+records=[]
+plt.rcParams.update({'font.size':12})
+fig,axes=plt.subplots(2,1,figsize=(5,6.8))
+for k in [0.,.1,1.]:
+    A=np.array([[0,1,0,0],[-1-k,0,k,0],[0,0,0,1],[k,0,-k,0]])
+    B=np.array([0.,1.,0.,0.]); C=np.array([[1.,0.,0.,0.]])
+    M=np.zeros((5,5)); M[:4,:4]=A; M[:4,4]=B
+    forced=np.array([(expm(M*t)@np.array([0,0,0,0,1.]))[:4] for t in times])
+    free=np.array([expm(A*t)@np.array([0,0,1.,0]) for t in times])
+    # Independent physical equations, including constant force.
+    def physical(t,z):
+        q1,v1,q2,v2=z
+        return [v1,-q1-k*(q1-q2)+1,v2,k*(q1-q2)]
+    reference=solve_ivp(physical,[0,6],[0,0,0,0],t_eval=times,rtol=1e-11,atol=1e-12).y.T
+    assert np.max(abs(reference-forced))<1e-8
+    rc=sp.Matrix(ctrb(A,B[:,None])).rank()
+    ro=sp.Matrix(obsv(A,C)).rank()
+    print('coupling N/m=',k,'ranks=',rc,ro,'t=6s q2 forced m=',forced[-1,2],'initial q2=1m output difference m=',free[-1,0])
+    records.append({'k':k,'forced':forced.tolist(),'free':free.tolist()})
+    axes[0].plot(times,forced[:,2],label=f'k2={k:g}')
+    axes[1].plot(times,free[:,0],label=f'k2={k:g}')
+for ax,title in zip(axes,['Second cart, force on first','First-cart output difference']):
+    ax.set(xlim=(0,6),ylim=(-2,4),xlabel='Time (s)',ylabel='Displacement (m)',title=title)
+    ax.grid(True); ax.legend()
+fig.tight_layout(); plt.show()
+` }]}
+/>
 
 ### 工程中的后果
 
-**不可控的危险**：
-- 飞机方向舵卡死→偏航模态不可控→飞机可能失控
-- 卫星某个反作用轮故障→某个旋转自由度不可控→姿态无法维持
+结构振动中，若执行器与某个模态没有耦合，该模态不能由此输入改变；若传感器恰在该模态的位移节点，又没有其它测量通路，该模态不会出现在记录中。不能把“一个舵面卡死”直接等同于“飞机必然不可控”，其它执行器与耦合也可能提供通路；同样，GPS 与 IMU 的组合并不自动保证所有姿态或偏置可观，须结合运动和测量模型判断。
 
-**不可观的危险**：
-- 只测量电机转速，但内部有一个不可观的电气振荡模式→振荡越来越大→电机烧毁
-- 桥梁只测量某几个点的振动，但有些模态在传感器位置恰好是节点→不可观的模态共振→结构破坏
-
-因此，在设计控制系统之前，**必须先检查系统的可控性和可观性**。这就像盖房子之前先检查地基——不可控/不可观的系统需要重新设计执行器/传感器布局，而不是硬上控制器。
+**不可控不等于一定会发散**。不可控但本来衰减的模态可能不妨碍稳定控制；真正需要警惕的是不能控制或不能推断的非衰减模态。后续稳定性、状态反馈和观测器课再展开可稳定性与可检测性。本课先把“能否任意改变”和“能否唯一推断”判断准确。
 
 ## 可控性
 
 ### 定义
 
-> **定义（状态可控性）**：线性时不变系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$ 称为**完全状态可控**（controllable），如果存在有限时间 $t_1 > 0$ 和一个容许控制 $\boldsymbol{u}(t)$（$t \in [0, t_1]$），使得从任意初始状态 $\boldsymbol{x}(0)$ 出发，都能在 $t_1$ 时刻到达原点 $\boldsymbol{x}(t_1) = \boldsymbol{0}$。
+> **定义（状态可控性）**：线性时不变系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$ 称为**完全状态可控**（controllable），如果存在有限时间 $t_1 > 0$ ，并且对每个初始状态都存在相应的分段连续控制 $\boldsymbol{u}(t)$（$t \in [0, t_1]$），使得从任意初始状态 $\boldsymbol{x}(0)$ 出发，都能在 $t_1$ 时刻到达原点 $\boldsymbol{x}(t_1) = \boldsymbol{0}$。
 
-直觉解读：不管系统现在处于什么状态，你都能找到一个控制输入序列，把它"推"到零状态。如果能做到这一点，系统就是可控的。
+这里不限制输入幅值。对连续时间 LTI 模型，任意状态到原点、原点到任意状态、任意两状态间转移等价：状态转移矩阵 $e^{At_1}$ 可逆，而可达输入项的像空间等于可控性矩阵列空间。这种等价不能直接搬到任意离散或受约束模型。数学上可控，也不保证在给定力限、行程和时间内可完成任务。
 
 <Callout variant="tip">
 **注意**：可控性是系统 $(A, B)$ 的属性，与控制器无关。它回答的问题是"这个系统**能不能**被控制"，而不是"怎么控制"。
@@ -104,7 +136,8 @@ $\det(\mathcal{C}) = 0 \times (-3) - 1 \times 1 = -1 \neq 0$，$\text{rank}(\mat
 <JupyterNotebook
   title=" 动手实验：可控性与可观性判定"
   setupCode={`import numpy as np
-from control import ctrb, obsv`}
+from control import ctrb, obsv
+import sympy as sp`}
   cells={[
     { code: `# ===== 例1：不可控系统 =====
 A1 = np.array([[1, 1], [0, 2]])
@@ -127,7 +160,14 @@ C_mat2 = ctrb(A2, B2)
 O_mat2 = obsv(A2, C2)
 print("系统2 (A=[[0,1],[-2,-3]], B=[0;1], C=[1,0]):")
 print(f"  可控性矩阵 rank = {np.linalg.matrix_rank(C_mat2)} (n=2) → {'可控' if np.linalg.matrix_rank(C_mat2)==2 else '不可控'}")
-print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat2)} (n=2) → {'可观' if np.linalg.matrix_rank(O_mat2)==2 else '不可观'}")` },
+print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat2)} (n=2) → {'可观' if np.linalg.matrix_rank(O_mat2)==2 else '不可观'}")
+# Exact verification of examples 1,2,4,5,6; no floating rank tolerance.
+for label,a,b,c in [('ex1/4',sp.Matrix([[1,1],[0,2]]),sp.Matrix([1,0]),sp.Matrix([[1,0]])),('ex2',sp.Matrix([[0,1],[-2,-3]]),sp.Matrix([0,1]),sp.Matrix([[1,0]])),('ex5/6',sp.Matrix([[1,1],[0,2]]),sp.Matrix([1,0]),sp.Matrix([[0,1]]))]:
+    reach=b.row_join(a*b); observe=c.col_join(c*a)
+    assert reach.T==b.T.col_join(b.T*a.T)
+    assert observe.T==c.T.row_join(a.T*c.T)
+    print(label,'C=',reach.tolist(),'O=',observe.tolist(),'rank=',reach.rank(),observe.rank(),'dual ranks=',observe.rank(),reach.rank())
+` },
   ]}
 />
 
@@ -142,9 +182,11 @@ print(f"  可观性矩阵 rank = {np.linalg.matrix_rank(O_mat2)} (n=2) → {'可
 >
 > 等价地：$A$ 的每个**左特征向量** $\boldsymbol{v}^T$（满足 $\boldsymbol{v}^T A = \lambda \boldsymbol{v}^T$）都不能与 $B$ 正交，即 $\boldsymbol{v}^T B \neq \boldsymbol{0}$。
 
-PBH 判据只需要检查 $A$ 的特征值处的秩条件（其他 $s$ 自动满足），因此计算量更小。更重要的是，它揭示了不可控的**本质**：
+PBH 判据只需要检查 $A$ 的特征值处的秩条件，因为其它 $s$ 下 $sI-A$ 已可逆。不据此断言它在所有数值问题中都更快或更稳定。更重要的是，它揭示了不可控的**本质**：
 
 > 如果存在 $A$ 的特征值 $\lambda$ 和对应的左特征向量 $\boldsymbol{v}$，使得 $\boldsymbol{v}^T B = 0$，那么与 $\lambda$ 对应的模态不可控。
+
+重特征值和 Jordan 块也适用 PBH。可控性看**所有非零左特征行向量**，可观性看所有非零右特征向量；存在一个满足零耦合就失败。不能只检查数值 eig 返回的某个基向量，也不能用右特征向量代替左特征向量。上式 $v^T$ 表示复数行向量的代数转置记法，不要求 $v$ 为实数。
 
 ### 例3：用 PBH 判据判断可控性
 
@@ -165,27 +207,20 @@ $$
 </Callout>
 
 <JupyterNotebook
-  title=" 动手实验：PBH 判据与不可控模态定位"
-  setupCode={`import numpy as np`}
-  cells={[
-    { code: `# ===== 例3：PBH 判据 =====
-A = np.array([[1, 1], [0, 2]])
-B = np.array([[1], [0]])
-
-eigenvalues, eigvecs = np.linalg.eig(A)
-print("特征值:", eigenvalues)
-print()
-
-# 左特征向量 = A^T 的右特征向量
-eigenvalues_L, eigvecs_L = np.linalg.eig(A.T)
-
-for i, (lam, v) in enumerate(zip(eigenvalues_L, eigvecs_L.T)):
-    vB = v @ B.flatten()
-    print(f"λ={lam:.1f}: 左特征向量 v = [{v[0]:.3f}, {v[1]:.3f}]")
-    print(f"  v^T B = {vB:.3f} → {'不可控!' if abs(vB) < 1e-10 else '可控'}")
-    print()` },
-  ]}
+  title="PBH 与左右特征向量"
+  setupCode={`import sympy as sp`}
+  cells={[{ code: `for label,A,B,C in [('example3',sp.Matrix([[1,1],[0,2]]),sp.Matrix([1,0]),sp.Matrix([[1,0]])),('Jordan Q4',sp.Matrix([[1,0,0],[0,2,1],[0,0,2]]),sp.Matrix([1,0,1]),sp.Matrix([[1,1,0]]))]:
+    for lam in A.eigenvals():
+        M=lam*sp.eye(A.rows)-A
+        print(label,'lambda=',lam,'PBH control/observe ranks=',M.row_join(B).rank(),M.col_join(C).rank())
+        for v in M.T.nullspace():
+            print('left row=',list(v),'left B=',list(v.T*B))
+        for w in M.nullspace():
+            print('right vector=',list(w),'C right=',list(C*w))
+` }]}
 />
+
+
 
 ### 可控性的物理含义
 
@@ -196,6 +231,8 @@ for i, (lam, v) in enumerate(zip(eigenvalues_L, eigvecs_L.T)):
 - $A^2B$ 的列：经过两步动态后，输入间接影响的状态方向
 - ……
 
+这里的“一步、两步”是理解动态传播的类比，并非把连续时间的 $A$ 当成采样转移矩阵。
+
 如果这些方向合起来能充满整个 $\mathbb{R}^n$（即 $\mathcal{C}$ 满秩），那么输入通过"直接推动 + 动态传递"可以影响所有状态——系统可控。
 
 ## 可观性
@@ -204,7 +241,7 @@ for i, (lam, v) in enumerate(zip(eigenvalues_L, eigvecs_L.T)):
 
 > **定义（状态可观性）**：线性时不变系统 $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$\boldsymbol{y} = C\boldsymbol{x} + D\boldsymbol{u}$ 称为**完全状态可观**（observable），如果存在有限时间 $t_1 > 0$，使得通过观测 $[0, t_1]$ 上的输入 $\boldsymbol{u}(t)$ 和输出 $\boldsymbol{y}(t)$，能唯一确定初始状态 $\boldsymbol{x}(0)$。
 
-直觉解读：如果你能通过输入和输出的"记录"反推出系统一开始处于什么状态，系统就是可观的。
+直觉解读：如果对同一个已知输入，不同初始状态一定给出不同的输出记录，系统就是可观的。将已知强迫响应与 $Du$ 扣除后，只需检查 $Ce^{At}x(0)$ 是否能区分初值；所以可观性由 $(A,C)$ 决定，与已知 $B,D$ 无关。用输出导数作解释，不代表实际工程应直接对带噪信号求导。
 
 ### 可观性秩判据
 
@@ -269,7 +306,7 @@ $$
 \mathcal{C}^T = \begin{bmatrix} B^T \\ (AB)^T \\ \vdots \\ (A^{n-1}B)^T \end{bmatrix} = \begin{bmatrix} B^T \\ B^T A^T \\ \vdots \\ B^T (A^T)^{n-1} \end{bmatrix}
 $$
 
-这正是对偶系统 $(A^T, C^T)$ 的可观性矩阵（将 $B^T$ 视为对偶系统的"输出矩阵"）。因此 $(A, B)$ 的可控性矩阵满秩 $\iff$ $(A^T, C^T)$ 的可观性矩阵满秩。
+这正是状态矩阵 $A^T$、输出矩阵 $B^T$ 的可观性矩阵。因此 $(A,B)$ 可控 $\iff (A^T,B^T)$ 可观；同理 $(A,C)$ 可观 $\iff (A^T,C^T)$ 可控。完整对偶实现写作 $(A^T,C^T,B^T,D^T)$，不要把它的输入矩阵 $C^T$ 当成输出矩阵。
 
 对偶原理的意义：
 - **理论层面**：可控性和可观性本质上是同一个概念的两个面。关于可控性的定理，转置后就得到可观性的对应定理，反之亦然。
@@ -292,7 +329,7 @@ $$
 \mathcal{C}_{\text{dual}} = \begin{bmatrix} C^T & A^T C^T \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ 1 & 2 \end{bmatrix}
 $$
 
-$\text{rank} = 1 < 2$，不可控。与 $(A, B)$ 不可控一致 ✓
+$\text{rank} = 1 < 2$，不可控。对应原系统 $(A,C)$ 不可观。
 
 $(A^T, B^T=\begin{bmatrix}1 & 0\end{bmatrix})$ 的可观性——
 
@@ -300,13 +337,13 @@ $$
 \mathcal{O}_{\text{dual}} = \begin{bmatrix} B^T \\ B^T A^T \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 1 & 0 \end{bmatrix}
 $$
 
-$\text{rank} = 1 < 2$，不可观。与 $(A, C)$ 不可观一致 ✓
+$\text{rank} = 1 < 2$，不可观。对应原系统 $(A,B)$ 不可控。
 
 ## 可控/可观分解与最小实现
 
 ### 四个子空间
 
-一个 $n$ 维系统可能同时包含可控和不可控、可观和不可观的状态。线性代数告诉我们，状态空间可以分解为四个子空间：
+一个 $n$ 维系统可能同时包含可控和不可控、可观和不可观的状态。Kalman 分解可以选取四组适配的状态坐标。它们依赖基的选择，一般不应把四块都当成彼此独立、分别 $A$ 不变的正交子空间；下面保留传统的四类记号：
 
 | 子空间 | 含义 | 维度 |
 |--------|------|------|
@@ -348,9 +385,9 @@ $$
 
 > **定义（最小实现）**：给定传递函数 $G(s)$，阶数最低的状态空间表示 $(A, B, C, D)$ 称为 $G(s)$ 的**最小实现**。
 
-> **定理**：$G(s)$ 的最小实现 $\iff$ 实现是可控的且可观的。最小实现的阶数等于 $G(s)$ 分母多项式的阶数（假设 $G(s)$ 已化为最简分式）。
+> **定理**：$G(s)$ 的最小实现 $\iff$ 实现是可控的且可观的。对于 SISO，最小实现阶数等于约分后分母次数；对于 MIMO，要看整个传递矩阵的最小状态维数，不能逐通道数分母。
 
-如果从传递函数转换得到的状态空间表示不是最小实现（比如存在极零对消），可以通过删除不可控或不可观的状态来"降阶"。
+如果从传递函数转换得到的状态空间表示不是最小实现（比如存在极零对消），可以先作适当坐标变换，再提取可控可观块，得到保持零初值输入输出关系的较低阶实现；不能在任意原坐标中随意删除变量。
 
 ### 例7：分解与最小实现
 
@@ -390,45 +427,26 @@ $$
 
 传递函数只保留了 $\lambda = 1$（可控且可观的模态）。$\lambda = 2$（可控不可观）和 $\lambda = 3$（不可控可观）都被"隐藏"了。
 
-**最小实现**：只保留可控可观部分，即 $A_{min} = 1, B_{min} = 1, C_{min} = 1, D_{min} = 0$。这是一阶系统，阶数等于 $G(s)$ 分母的阶数。
+**最小实现**：只保留可控可观部分，即 $A_{min} = 1, B_{min} = 1, C_{min} = 1, D_{min} = 0$。这是零初值输入输出的一阶最小实现。它不保留原实现中其它初始状态的自由响应，也不证明原实现内部稳定。
 
 <JupyterNotebook
-  title=" 动手实验：结构分解与最小实现"
+  title="结构分解与最小实现"
   setupCode={`import numpy as np
+import sympy as sp
 from control import ss, tf, ctrb, obsv`}
-  cells={[
-    { code: `# ===== 例7：结构分解与最小实现 =====
-A = np.diag([1.0, 2.0, 3.0])
-B = np.array([[1], [1], [0]])
-C = np.array([[1, 0, 1]])
-
-# 可控性
-C_mat = ctrb(A, B)
-rank_c = np.linalg.matrix_rank(C_mat)
-print(f"可控性 rank = {rank_c}/3")
-
-# 可观性
-O_mat = obsv(A, C)
-rank_o = np.linalg.matrix_rank(O_mat)
-print(f"可观性 rank = {rank_o}/3")
-print()
-
-# 传递函数
-sys = ss(A, B, C, np.array([[0]]))
-G = tf(sys)
-print(f"传递函数: G(s) = {G}")
-print()
-
-# 奇异值分析
-U, S, Vt = np.linalg.svd(C_mat)
-print("可控性矩阵奇异值:", S)
-print("→ 第三个奇异值为零，对应不可控方向")
-
-U2, S2, Vt2 = np.linalg.svd(O_mat)
-print("可观性矩阵奇异值:", S2)
-print("→ 第三个奇异值为零，对应不可观方向")` },
-  ]}
+  cells={[{ code: `A=np.diag([1.,2.,3.]); B=np.array([[1.],[1.],[0.]]); C=np.array([[1.,0.,1.]])
+for label,M in [('reach',ctrb(A,B)),('observe',obsv(A,C))]:
+    print(label,'matrix=',M.tolist(),'rank=',np.linalg.matrix_rank(M),'singular values=',np.linalg.svd(M,compute_uv=False))
+print('unreduced numerical tf:',tf(ss(A,B,C,[[0.]])))
+s=sp.symbols('s'); a=sp.diag(1,2,3); b=sp.Matrix([1,1,0]); c=sp.Matrix([[1,0,1]])
+G=sp.cancel((c*(s*sp.eye(3)-a).inv()*b)[0]); assert G==1/(s-1)
+print('exact minimal G=',G,'minimal ABCD=',1,1,1,0)
+# Same-input output differences expose the initial state that reduction omits.
+print('initial state e3 at t=1s: y=',np.exp(3.),'zero-input minimal y=',0)
+` }]}
 />
+
+
 
 ## 深入讨论
 
@@ -446,48 +464,69 @@ print("→ 第三个奇异值为零，对应不可观方向")` },
 
 一个经典的例子：如果只测量结构某几个点的位移，而某些振动模态在这些点恰好是节点（振幅为零），那些模态就不可观。解决方案：增加传感器数量，或者改变传感器位置。
 
-在航天器导航中，GPS 提供位置信息，IMU 提供加速度信息。两者的组合确保了所有状态（位置、速度、姿态）都是可观的。如果只用 GPS（位置），速度的可观性依赖于动态模型——如果模型不准，速度估计就会漂移。
+增加传感器可以维持或增加可观性矩阵的精确秩；若本来满秩，秩不能再增加。噪声精度是否改善还取决于噪声、单位尺度与估计方法。
 
 ### Gramian 方法
 
-除了秩判据和 PBH 判据，还有一种基于**Gramian 矩阵**的方法：
+秩回答“有没有方向完全缺失”，Gramian 还把给定时间内的通路强弱写成二次型。对任意 $T>0$，定义有限时间 Gramian：
 
-**可控性 Gramian**：$W_c = \int_0^\infty e^{At}BB^T e^{A^Tt} dt$（稳定系统）
+$$
+W_c(T)=\int_0^T e^{At}BB^Te^{A^Tt}\,dt,\qquad
+W_o(T)=\int_0^T e^{A^Tt}C^TCe^{At}\,dt.
+$$
 
-$W_c$ 满足 Lyapunov 方程：$AW_c + W_c A^T + BB^T = 0$
+即使 $A$ 不稳定，有限时间积分仍存在。$W_c(T)$ 正定等价于可控，$W_o(T)$ 正定等价于可观。例如 $q^TW_o(T)q=\int_0^T\|Ce^{At}q\|^2dt$：如果它为零，初值差 $q$ 在整段记录里都不可见。解析展开与 Cayley–Hamilton 定理将该条件化为 $\mathcal Oq=0$。
 
-$W_c$ 正定 $\iff$ 系统可控。
+本课只有在额外假设 $A$ 为 Hurwitz（所有特征值实部严格为负），才使用标准的无限时域 Gramian 及唯一 Lyapunov 解：
 
-**可观性 Gramian**：$W_o = \int_0^\infty e^{A^Tt}C^T C e^{At} dt$
+$$
+AW_c+W_cA^T+BB^T=0,\qquad A^TW_o+W_oA+C^TC=0.
+$$
 
-$W_o$ 满足 Lyapunov 方程：$A^T W_o + W_o A + C^T C = 0$
+在状态、输入单位和时域固定后，零初值到目标 $x_f$ 的最小输入平方积分为 $x_f^TW_c(T)^{-1}x_f$（可控时）。它不必等于物理能量。变换状态单位会改变 Gramian 特征值，不能把最小特征值当成跨模型的绝对可控性评分；病态问题也不会因为解 Lyapunov 方程就自动消失。
 
-$W_o$ 正定 $\iff$ 系统可观。
+稳定最小实现的 Hankel 奇异值是 $\sqrt{\lambda_i(W_cW_o)}$，不是乘积的特征值本身。平衡截断按平衡坐标衡量状态贡献，不把任意原状态逐个贴上重要性标签。
 
-Gramian 方法的优势：
-- $W_c$ 的最小特征值量化了"离不可控有多远"——不只是"是/否"，而是"程度"
-- 在模型降阶（balanced truncation）中，$W_c$ 和 $W_o$ 的乘积的特征值（Hankel 奇异值）决定了每个状态的重要性
-- 数值计算比秩判据更稳定
+<JupyterNotebook
+  title="有限时间与无限时间 Gramian"
+  setupCode={`import numpy as np`}
+  cells={[{ code: `import numpy as np
+from scipy.linalg import expm, solve_continuous_lyapunov
+from scipy.integrate import quad_vec
+A=np.diag([-1.,-2.]); B=np.ones((2,1)); C=B.T
+W=solve_continuous_lyapunov(A,-B@B.T)
+Wint=quad_vec(lambda t: expm(A*t)@B@B.T@expm(A.T*t),0,np.inf,epsabs=1e-12)[0]
+WT=quad_vec(lambda t: expm(A*t)@B@B.T@expm(A.T*t),0,1,epsabs=1e-12)[0]
+assert np.max(abs(W-Wint))<1e-10
+assert np.allclose(W,[[.5,1/3],[1/3,.25]],atol=1e-12)
+print('infinite W=',W.tolist(),'det=',np.linalg.det(W),'eigenvalues=',np.linalg.eigvalsh(W))
+print('finite T=1 W=',WT.tolist(),'minimum input squared integral for xf=[1,0]=',np.array([1,0])@np.linalg.solve(WT,[1,0]))
+print('Lyapunov residual=',np.max(abs(A@W+W@A.T+B@B.T)))
+T=np.diag([1000.,1.]); Wz=T@W@T.T
+print('change first state unit by 1000, smallest eigenvalue=',np.linalg.eigvalsh(Wz)[0])
+Wo=solve_continuous_lyapunov(A.T,-C.T@C)
+print('Hankel singular values=',np.sort(np.sqrt(np.linalg.eigvals(W@Wo)))[::-1])
+` }]}
+/>
 
 ### 可控性与传递函数的零点
 
-传递函数的**零点**与可控/可观性有深刻联系。当传递函数出现极零对消时，被对消的极点就是不可控或不可观的模态。
+要区分“实现中消掉的模态”与“约分后传递函数的零点”。对 SISO，若 $C\operatorname{adj}(sI-A)B+D\det(sI-A)$ 与 $\det(sI-A)$ 有公因子，约分后实现阶数可能降低；此时原实现不是最小实现。不能先把约分前的 $0/0$ 当作 $G(\lambda)=0$。
 
-具体来说：
-- 如果 $G(s)$ 的零点恰好等于某个极点 $s = p$，对消后 $p$ 不出现在传递函数中
-- 这个被隐藏的极点 $p$ 要么不可控，要么不可观（或两者兼有）
-- 如果 $p$ 在右半平面（不稳定），即使传递函数看起来稳定，系统内部也可能在发散
+对于 MIMO，某个通道发生对消，不代表整个实现不可控或不可观。例如 $A=\operatorname{diag}(-1,-2)$、$B=C=I$，整体可控可观，但 $G_{11}=1/(s+1)$ 看不到另一条通道的模态。最小性应对整个实现检查。
 
-这就是**内部稳定性**与**外部稳定性**的区别——传递函数只反映外部稳定性，而状态空间方法能揭示内部稳定性。
+如果隐藏模态不稳定，即使零初值传递函数 BIBO 稳定，内部状态仍可能增长。例7只提取零初值输入输出部分；需要初值响应时不能把被删状态当作不存在。
+
+参考推导：[MIT 6.241 Lecture 20](https://ocw.mit.edu/courses/6-241j-dynamic-systems-and-control-spring-2011/43a02bc538e449c1e5eae487139b5030_MIT6_241JS11_lec20.pdf) 的有限时间可达性、可观性与 Gramian；本课的具体矩阵和实验独立复算。
 
 ## 小结
 
 - **可控性**：输入能否影响所有状态。秩判据 $\text{rank}(\mathcal{C}) = n$，PBH 判据检查左特征向量与 $B$ 的正交性
 - **可观性**：输出能否反映所有状态。秩判据 $\text{rank}(\mathcal{O}) = n$，PBH 判据检查右特征向量是否被 $C$ 消灭
-- **对偶原理**：$(A, B)$ 可控 $\iff$ $(A^T, C^T)$ 可观——两个概念本质相同
+- **对偶原理**：$(A, B)$ 可控 $\iff$ $(A^T, B^T)$ 可观——两个概念本质相同
 - **结构分解**：状态空间可分为四个子空间（可控可观、可控不可观、不可控可观、不可控不可观）
 - **传递函数只反映可控可观部分**：不可控或不可观的模态被"隐藏"，不出现在 $G(s)$ 中
-- **最小实现**：既可控又可观的最低阶状态空间表示，阶数等于 $G(s)$ 分母阶数
+- **最小实现**：既可控又可观的最低阶状态空间表示，对约分后的 SISO 有理传递函数，其阶数等于分母次数；MIMO 用最小状态维数（McMillan 次数），不能逐元素数分母
 - 可控性决定执行器布局，可观性决定传感器布局——这是系统设计阶段的硬约束
 
 ## 习题
@@ -504,7 +543,7 @@ $$
 A = \begin{bmatrix} 2 & 0 & 0 \\ 0 & 3 & 0 \\ 0 & 0 & 5 \end{bmatrix}, \quad B = \begin{bmatrix} 1 \\ 1 \\ 0 \end{bmatrix}
 $$
 
-**3.** 一个系统 $A = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 & -2\zeta\omega_n \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。证明：当 $\omega_n \neq 0$ 时系统可控且可观。这与经典控制中二阶系统的结论一致吗？
+**3.** 一个系统 $A = \begin{bmatrix} 0 & 1 \\ -\omega_n^2 & -2\zeta\omega_n \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。证明系统对所有实数 $\omega_n,\zeta$ 都可控且可观，特别检查 $\omega_n=0$。这能否推出系统稳定？
 
 **4.** 给定系统：
 
@@ -516,7 +555,7 @@ $$
 - (b) 判断可观性
 - (c) 求传递函数 $G(s)$，验证它只反映可控可观部分的动态
 
-**5.** 证明对偶原理的一个推论：如果 $(A, B)$ 可控，则存在状态反馈 $\boldsymbol{u} = K\boldsymbol{x}$ 使得闭环系统 $A + BK$ 的特征值可以任意配置。（提示：先考虑可控标准型的情况。）
+**5.** 证明极点配置定理的 SISO 情形（并非仅靠对偶原理）：如果单输入 $(A, B)$ 可控，则存在状态反馈 $\boldsymbol{u} = K\boldsymbol{x}$ 使得闭环系统 $A + BK$ 的特征值可以任意配置。（提示：先考虑可控标准型的情况。）
 
 **6.** 一个 MIMO 系统：
 
@@ -532,7 +571,7 @@ $$
 - (b) 如果不化简，直接按可控标准型写出三阶实现，指出哪个模态不可控或不可观
 - (c) 计算三阶实现的传递函数，验证极零对消确实发生
 
-**8.** 证明：如果系统 $(A, B, C)$ 既可控又可观，则传递函数 $G(s) = C(sI-A)^{-1}B$ 没有极零对消。
+**8.** 证明：如果 SISO 系统 $(A, B, C)$ 既可控又可观且 $D=0$，则传递函数 $G(s) = C(sI-A)^{-1}B$ 没有极零对消。
 
 **9.** 一个弹簧-质量系统：两个质量 $m_1 = m_2 = 1$，弹簧 $k_1 = k_2 = 1$。$m_1$ 连接墙壁（弹簧 $k_1$），$m_1$ 和 $m_2$ 之间连接弹簧 $k_2$。力 $F$ 只作用在 $m_1$ 上，只测量 $m_1$ 的位移。
 - (a) 建立状态空间模型（状态变量 $x_1 = y_1, x_2 = \dot{y}_1, x_3 = y_2, x_4 = \dot{y}_2$）
@@ -556,7 +595,7 @@ $\det(\mathcal{C}) = -1 \neq 0$，$\text{rank} = 3 = n$，**可控**。
 可观性矩阵：
 
 $$
-\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & -6 & 1 \end{bmatrix}
+\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix}
 $$
 
 $\det(\mathcal{O}) = 1 \neq 0$，$\text{rank} = 3 = n$，**可观**。
@@ -599,9 +638,9 @@ $\text{rank} = 2$，系统**可观**。
 
 $C = [1, 0]$ 直接测量 $x_1$，而 $\dot{x}_1 = x_2$，所以 $x_2$ 也可观。
 
-当 $\omega_n \neq 0$ 时，系统可控可观。这与经典控制一致：二阶传递函数 $G(s) = \frac{1}{s^2 + 2\zeta\omega_n s + \omega_n^2}$ 的阶数为2，最小实现就是2阶——可控且可观。
+所以 $\omega_n=0$ 也可控可观，此时传函为 $1/s^2$，不渐近稳定。可控可观不等于稳定。对于一般参数，二阶传递函数 $G(s) = \frac{1}{s^2 + 2\zeta\omega_n s + \omega_n^2}$ 的阶数为2，最小实现就是2阶——可控且可观。
 
-**4.**（2026-10-16 柯验更正：原答案把 $AB$ 误算为 $[1,0,1]^T$（实为 $[1,1,2]^T$）、把 $CA^2$ 误算为 $[1,4,3]$（实为 $[1,4,4]$），导致 (a)(b) 结论反向，(c) 的"隐藏模态"推理随之不成立。以下按实测重写。）
+**4.** 保留原题，按直接矩阵运算检验。
 
 (a) 可控性矩阵：
 
@@ -635,23 +674,24 @@ $$
 
 三阶分母、无极零对消——与 (a)(b) 的"可控且可观"完全自洽：该三阶实现就是 $G(s)$ 的最小实现。
 
-**Jordan 块的 PBH 教训**（原答案在此失足）：$\lambda=2$ 是二重特征值，真特征向量 $\boldsymbol{w}_1 = [0,1,0]^T$ 满足 $\boldsymbol{w}_1^T B = 0$，看似"不可控"；但重根时 PBH 的正确用法是**秩条件** $\text{rank}[\lambda I - A \mid B] = n$：在 $s=2$ 处该矩阵为
+**Jordan 块的 PBH 检查**：$\lambda=2$ 是二重特征值，真特征向量 $\boldsymbol{w}_1 = [0,1,0]^T$ 满足 $\boldsymbol{w}_1^T B = 0$，它不能用于检验可控性；正确的 PBH **秩条件**为 $\text{rank}[\lambda I - A \mid B] = n$：在 $s=2$ 处该矩阵为
 
 $$
 \begin{bmatrix} 1 & 0 & 0 & 1 \\ 0 & 0 & -1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}, \quad \text{rank} = 3 = n
 $$
 
-Jordan 链上的广义特征向量方向补回了真特征向量方向的"缺口"——单看一个特征向量判断重根模态的可控性是**错误的**，这正是 Jordan 结构的微妙之处。
+根本原因是**用了右特征向量检验可控性**，不是重根使 PBH 失效。$[0,1,0]^T$ 是右特征向量；正确左特征行向量可取 $[0,0,1]$，与 $B$ 的乘积为1。右向量则满足 $C[0,1,0]^T=1$，对应可观性检查。PBH 对重根仍成立；不能把“单个基向量不正交”代替对全部左特征向量的条件。
+
 **5.** 证明思路：对可控系统 $(A, B)$，通过相似变换化为可控标准型。在可控标准型中，$A$ 的最后一行包含特征多项式系数，$B = [0, \ldots, 0, 1]^T$。
 
-设期望的闭环特征多项式为 $s^n + \alpha_{n-1}s^{n-1} + \cdots + \alpha_0$。选择反馈增益 $K = [\alpha_0 - a_0, \alpha_1 - a_1, \ldots, \alpha_{n-1} - a_{n-1}]$，则 $A + BK$ 的最后一行变为 $[-\alpha_0, -\alpha_1, \ldots, -\alpha_{n-1}]$，闭环特征多项式恰好是期望的多项式。
+设期望的闭环特征多项式为 $s^n + \alpha_{n-1}s^{n-1} + \cdots + \alpha_0$。选择标准坐标反馈增益 $K_c = [a_0-\alpha_0, a_1-\alpha_1, \ldots, a_{n-1}-\alpha_{n-1}]$，则 $A_c + B_cK_c$ 的最后一行变为 $[-\alpha_0, -\alpha_1, \ldots, -\alpha_{n-1}]$，闭环特征多项式恰好是期望的多项式。
 
-由于相似变换不改变特征值，在原坐标系中 $K_{\text{orig}} = K T^{-1}$（$T$ 为变换矩阵）也能实现任意极点配置。证毕。
+由于相似变换不改变特征值，统一取 $z=Tx$，则 $u=K_cz=K_cTx$，所以原坐标 $K=K_cT$。实增益的目标多项式须为实系数（复根成共轭对），这里不宣称能任意指定不成共轭的复根。多输入需一般极点配置定理，不能直接套单输入标准型。
 
 **6.** (a) 可控性矩阵 $\mathcal{C} = [B, AB, A^2B, A^3B]$，维度 $4 \times 8$。
 
 $$
-AB = \begin{bmatrix} 0 & 0 \\ 1 & 0 \\ 0 & 1 \\ 1 & 0 \end{bmatrix}, \quad A^2B = \begin{bmatrix} 0 & 1 \\ 0 & 1 \\ 1 & 0 \\ -1 & 0 \end{bmatrix}
+AB = \begin{bmatrix} 0 & 0 \\ 1 & 0 \\ 0 & 1 \\ -1 & 0 \end{bmatrix}, \quad A^2B = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ -1 & 0 \\ 0 & -1 \end{bmatrix}
 $$
 
 合并所有列，$\text{rank}(\mathcal{C}) = 4 = n$，**可控**。
@@ -720,25 +760,13 @@ $$
 
 分子分母的 $(s+1)$ 对消——极零对消确实发生 ✓
 
-**8.** 证明（反证法）：假设 $(A, B, C)$ 可控可观，但 $G(s) = C(sI-A)^{-1}B$ 有极零对消。
-
-设极零对消发生在 $s = \lambda$，即 $\lambda$ 是 $A$ 的特征值（极点），同时 $G(s)$ 在 $s = \lambda$ 处有零点。
-
-$G(s)$ 可写为 $G(s) = \frac{N(s)}{D(s)}$，其中 $D(s) = \det(sI - A)$。$G(\lambda) = 0$ 意味着 $N(\lambda) = 0$。
-
-由 Rosenbrock 的系统矩阵理论，$G(s)$ 在 $s = \lambda$ 处有零点的充要条件是：
+**8.** 对 SISO 可控实现取可控标准坐标 $z=Tx$。设首一特征多项式 $p(s)=s^n+a_{n-1}s^{n-1}+\cdots+a_0$，输出行为 $C_c=[b_0,\ldots,b_{n-1}]$，则
 
 $$
-\text{rank}\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix} < n + \min(p, q)
+G(s)=\frac{q(s)}{p(s)},\qquad q(s)=b_0+b_1s+\cdots+b_{n-1}s^{n-1}.
 $$
 
-对 SISO 系统（$p = q = 1$），这等价于 $\text{rank}\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix} < n + 1$。
-
-由于 $\lambda$ 是 $A$ 的特征值，$\text{rank}(\lambda I - A) < n$，存在右特征向量 $\boldsymbol{w}$ 使得 $(\lambda I - A)\boldsymbol{w} = 0$。
-
-如果 $C\boldsymbol{w} \neq 0$（可观性保证），则 $\begin{bmatrix} \lambda I - A & B \\ C & 0 \end{bmatrix}\begin{bmatrix} \boldsymbol{w} \\ 0 \end{bmatrix} = \begin{bmatrix} 0 \\ C\boldsymbol{w} \end{bmatrix} \neq 0$，这说明系统矩阵的零空间不包含 $\begin{bmatrix} \boldsymbol{w} \\ 0 \end{bmatrix}$。
-
-但 $G(\lambda) = 0$ 要求系统矩阵秩亏，这与可控可观矛盾。因此，可控可观的系统传递函数没有极零对消。证毕。
+若存在公因子，则在复数域内有共同根 $\lambda$。伴随矩阵在该根处有非零右特征向量 $w=[1,\lambda,\ldots,\lambda^{n-1}]^T$，因为最后一行的特征方程恰为 $p(\lambda)=0$。但 $C_cw=q(\lambda)=0$，由可观性 PBH 判据矛盾。故无公因子。证明对重根同样成立；不需要错误地假定约分前的 $G(\lambda)$ 已定义，也不以“某个向量不在零空间”推出矩阵满秩。
 
 **9.** (a) 运动方程：
 
@@ -763,10 +791,10 @@ B = \begin{bmatrix}0\\1\\0\\0\end{bmatrix}, AB = \begin{bmatrix}1\\0\\0\\0\end{b
 $$
 
 $$
-\mathcal{C} = \begin{bmatrix} 0 & 1 & 0 & -2 \\ 1 & 0 & -2 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
+\mathcal{C} = \begin{bmatrix} 0 & 1 & 0 & -2 \\ 1 & 0 & -2 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 1 & 0 \end{bmatrix}
 $$
 
-$\det(\mathcal{C}) = 1 \cdot \det\begin{bmatrix}1&0&-2\\0&1&0\\0&0&1\end{bmatrix} = 1 \neq 0$（按第一列展开），$\text{rank} = 4$，**可控**。
+$\det(\mathcal{C}) = -\det\begin{bmatrix}1&0&-2\\0&0&1\\0&1&0\end{bmatrix} = 1 \neq 0$（按第一列展开），$\text{rank} = 4$，**可控**。
 
 可观性矩阵 $\mathcal{O}$：
 
@@ -794,7 +822,7 @@ $$
 
 由于原来单传感器 $C_1$ 时 $\mathcal{O}$ 已经满秩（$\text{rank} = 4$），新增的行只会增加或保持秩——不会减少。因此 $\text{rank}(\mathcal{O}_{\text{new}}) \geq \text{rank}(\mathcal{O}_{\text{old}}) = 4$，系统仍然可观。
 
-物理含义：原来只测 $y_1$ 就能推断全部状态（因为弹簧耦合把 $y_2$ 的信息传递到了 $y_1$）。现在直接测量 $y_2$，信息更丰富，可观性不会变差。
+物理含义：原来只测 $y_1$ 就能推断全部状态（因为弹簧耦合把 $y_2$ 的信息传递到了 $y_1$）。现在直接测量 $y_2$，精确秩仍为4。不能仅凭这一点量化有噪声时的估计精度；需额外给出噪声和测量单位。
 
 **10.** $A = \begin{bmatrix}-1&0\\0&-2\end{bmatrix}$，$B = \begin{bmatrix}1\\1\end{bmatrix}$，$BB^T = \begin{bmatrix}1&1\\1&1\end{bmatrix}$。
 
@@ -814,3 +842,55 @@ W_c = \begin{bmatrix} 1/2 & 1/3 \\ 1/3 & 1/4 \end{bmatrix}
 $$
 
 验证正定性：$w_{11} = 1/2 > 0$，$\det(W_c) = 1/8 - 1/9 = 1/72 > 0$。$W_c$ 正定，系统可控 ✓
+
+<JupyterNotebook
+  title="七例与十题的完整核验"
+  setupCode={`import sympy as sp
+import numpy as np`}
+  cells={[{ code: `s=sp.symbols('s')
+def audit(label,A,B,C):
+    n=A.rows; R=sp.Matrix.hstack(*[A**k*B for k in range(n)])
+    O=sp.Matrix.vstack(*[C*A**k for k in range(n)])
+    G=sp.simplify(C*(s*sp.eye(n)-A).inv()*B)
+    print(label,'R=',R.tolist(),'O=',O.tolist(),'ranks=',R.rank(),O.rank(),'G=',G.tolist())
+    if R.rows==R.cols: print('det R=',R.det())
+    if O.rows==O.cols: print('det O=',O.det())
+    return R,O,G
+A=sp.Matrix([[0,1,0],[0,0,1],[-6,-11,-6]]); B=sp.Matrix([0,0,1])
+R,O,G=audit('Q1',A,B,sp.Matrix([[1,0,0]])); assert R.det()==-1 and O==sp.eye(3)
+audit('Q2',sp.diag(2,3,5),sp.Matrix([1,1,0]),sp.eye(3))
+wn,zeta=sp.symbols('wn zeta',real=True)
+R,O,G=audit('Q3',sp.Matrix([[0,1],[-wn**2,-2*zeta*wn]]),sp.Matrix([0,1]),sp.Matrix([[1,0]])); assert R.det()==-1 and O==sp.eye(2)
+A4=sp.Matrix([[1,0,0],[0,2,1],[0,0,2]]);B4=sp.Matrix([1,0,1]);C4=sp.Matrix([[1,1,0]])
+R,O,G=audit('Q4',A4,B4,C4); assert R.det()==-1 and O.det()==1
+assert sp.cancel(G[0]-(s*s-3*s+3)/((s-1)*(s-2)**2))==0
+# Q5 plus-sign feedback. Canonical and nontrivial original coordinates.
+Ac=sp.Matrix([[0,1],[-2,-3]]);Bc=sp.Matrix([0,1]);Kc=sp.Matrix([[-18,-6]])
+T=sp.Matrix([[1,2],[0,1]]); Ao=T.inv()*Ac*T; Bo=T.inv()*Bc; K=Kc*T
+assert sp.expand((Ac+Bc*Kc).charpoly(s).as_expr()-(s+4)*(s+5))==0
+assert sp.expand((Ao+Bo*K).charpoly(s).as_expr()-(s+4)*(s+5))==0
+print('Q5 Kc=',Kc.tolist(),'T=',T.tolist(),'K original=',K.tolist(),'closed roots=',(Ao+Bo*K).eigenvals())
+A6=sp.Matrix([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,-1,0]])
+B6=sp.Matrix([[0,0],[0,0],[1,0],[0,1]]);C6=sp.Matrix([[1,0,0,0],[0,0,1,0]])
+R,O,G=audit('Q6',A6,B6,C6);assert R.rank()==O.rank()==4
+print('Q6 AB=',(A6*B6).tolist(),'A2B=',(A6**2*B6).tolist(),'CA=',(C6*A6).tolist(),'CA2=',(C6*A6**2).tolist())
+R,O,G=audit('Q7',A,B,sp.Matrix([[1,1,0]]));assert R.rank()==3 and O.rank()==2
+assert sp.cancel(G[0]-1/((s+2)*(s+3)))==0
+w=sp.Matrix([1,-1,1]);assert (A+sp.eye(3))*w==sp.zeros(3,1) and sp.Matrix([[1,1,0]])*w==sp.zeros(1,1)
+audit('Q7 minimal',sp.Matrix([[0,1],[-6,-5]]),sp.Matrix([0,1]),sp.Matrix([[1,0]]))
+# Q8 algebraic proof uses eigenvector polynomial: arbitrary cubic coefficients.
+a0,a1,a2,lam=sp.symbols('a0 a1 a2 lam'); companion=sp.Matrix([[0,1,0],[0,0,1],[-a0,-a1,-a2]])
+w=sp.Matrix([1,lam,lam**2]);assert sp.expand((companion*w-lam*w)[2]+a0+a1*lam+a2*lam**2+lam**3)==0
+print('Q8 eigenvector identity=',list(companion*w-lam*w))
+A9=sp.Matrix([[0,1,0,0],[-2,0,1,0],[0,0,0,1],[1,0,-1,0]]);B9=sp.Matrix([0,1,0,0]);C9=sp.Matrix([[1,0,0,0]])
+R,O,G=audit('Q9',A9,B9,C9);assert R.det()==1 and O.det()==1
+_,On,_=audit('Q9 two sensors',A9,B9,sp.Matrix([[1,0,0,0],[0,0,1,0]]));assert On.rank()==4
+W=sp.Matrix([[sp.Rational(1,2),sp.Rational(1,3)],[sp.Rational(1,3),sp.Rational(1,4)]])
+assert sp.diag(-1,-2)*W+W*sp.diag(-1,-2)+sp.ones(2)==sp.zeros(2)
+assert W.det()==sp.Rational(1,72)
+print('Q10 W=',W.tolist(),'det=',W.det())
+# MIMO channel cancellation is not a nonminimal overall realization.
+R,O,G=audit('MIMO counterexample',sp.diag(-1,-2),sp.eye(2),sp.eye(2));assert R.rank()==O.rank()==2
+print('all checks passed')
+` }]}
+/>

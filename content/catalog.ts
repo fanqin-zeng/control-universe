@@ -1670,24 +1670,24 @@ export const catalog: Chapter[] = [
         "title": "线性系统稳定性",
         "subsections": [
           {
-            "slug": "为什么需要-lyapunov-理论",
-            "title": "为什么需要 Lyapunov 理论"
+            "slug": "从运动看稳定",
+            "title": "从运动看稳定"
           },
           {
-            "slug": "lyapunov-稳定性理论",
-            "title": "Lyapunov 稳定性理论"
+            "slug": "二次型证书",
+            "title": "二次型证书"
           },
           {
-            "slug": "内部稳定性与外部稳定性",
-            "title": "内部稳定性与外部稳定性"
+            "slug": "内部与外部稳定",
+            "title": "内部与外部稳定"
           },
           {
-            "slug": "可稳定性与可检测性",
-            "title": "可稳定性与可检测性"
+            "slug": "可稳定与可检测",
+            "title": "可稳定与可检测"
           },
           {
-            "slug": "lyapunov-方程与-lqr-的关系",
-            "title": "Lyapunov 方程与 LQR 的关系"
+            "slug": "lqr证书",
+            "title": "LQR证书"
           },
           {
             "slug": "深入讨论",
@@ -1708,6 +1708,7 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "modern/state-space",
+          "modern/controllability-observability",
           "math/matrix-decomposition"
         ],
         "level": "undergrad",
@@ -1719,20 +1720,20 @@ export const catalog: Chapter[] = [
         "title": "状态反馈",
         "subsections": [
           {
-            "slug": "状态反馈的基本概念",
-            "title": "状态反馈的基本概念"
+            "slug": "状态怎样反馈",
+            "title": "状态怎样反馈"
           },
           {
             "slug": "极点配置问题",
             "title": "极点配置问题"
           },
           {
-            "slug": "一般系统的极点配置",
-            "title": "一般系统的极点配置"
+            "slug": "一般坐标配置",
+            "title": "一般坐标配置"
           },
           {
-            "slug": "前馈补偿与参考跟踪",
-            "title": "前馈补偿与参考跟踪"
+            "slug": "参考跟踪",
+            "title": "参考跟踪"
           },
           {
             "slug": "深入讨论",
@@ -1764,20 +1765,20 @@ export const catalog: Chapter[] = [
         "title": "状态观测器",
         "subsections": [
           {
-            "slug": "为什么需要状态观测器",
-            "title": "为什么需要状态观测器"
+            "slug": "为什么要估计状态",
+            "title": "为什么要估计状态"
           },
           {
-            "slug": "全阶观测器的设计",
-            "title": "全阶观测器的设计"
+            "slug": "全阶观测器",
+            "title": "全阶观测器"
           },
           {
             "slug": "对偶原理",
             "title": "对偶原理"
           },
           {
-            "slug": "基于观测器的控制器分离性原理",
-            "title": "基于观测器的控制器——分离性原理"
+            "slug": "分离性原理",
+            "title": "分离性原理"
           },
           {
             "slug": "降阶观测器",
@@ -1813,28 +1814,28 @@ export const catalog: Chapter[] = [
         "title": "最优控制",
         "subsections": [
           {
-            "slug": "为什么需要最优控制",
-            "title": "为什么需要最优控制"
+            "slug": "为什么要定义代价",
+            "title": "为什么要定义代价"
           },
           {
-            "slug": "最优控制问题的数学表述",
-            "title": "最优控制问题的数学表述"
+            "slug": "任务与代价",
+            "title": "任务与代价"
           },
           {
-            "slug": "变分法对泛函求极值",
-            "title": "变分法：对泛函求极值"
+            "slug": "变分法",
+            "title": "变分法"
           },
           {
-            "slug": "hamilton-函数与极小值原理",
-            "title": "Hamilton 函数与极小值原理"
+            "slug": "极小值原理",
+            "title": "极小值原理"
           },
           {
-            "slug": "最小时间问题与-bang-bang-控制",
-            "title": "最小时间问题与 Bang-Bang 控制"
+            "slug": "最短时间",
+            "title": "最短时间"
           },
           {
-            "slug": "线性二次型最优控制引向-lqr",
-            "title": "线性二次型最优控制——引向 LQR"
+            "slug": "线性二次型",
+            "title": "线性二次型"
           },
           {
             "slug": "深入讨论",
@@ -1867,28 +1868,28 @@ export const catalog: Chapter[] = [
         "title": "LQR控制",
         "subsections": [
           {
-            "slug": "为什么需要-lqr",
-            "title": "为什么需要 LQR"
+            "slug": "lqr解决什么",
+            "title": "LQR解决什么"
           },
           {
-            "slug": "有限时间-lq-问题",
-            "title": "有限时间 LQ 问题"
+            "slug": "有限时域",
+            "title": "有限时域"
           },
           {
-            "slug": "无穷时间-lqr代数-riccati-方程",
-            "title": "无穷时间 LQR——代数 Riccati 方程"
+            "slug": "无穷时域",
+            "title": "无穷时域"
           },
           {
-            "slug": "lqr-的鲁棒性",
-            "title": "LQR 的鲁棒性"
+            "slug": "输入端裕度",
+            "title": "输入端裕度"
           },
           {
-            "slug": "q-和-r-的选择",
-            "title": "Q 和 R 的选择"
+            "slug": "权重怎么选",
+            "title": "权重怎么选"
           },
           {
-            "slug": "lqr-与参考跟踪",
-            "title": "LQR 与参考跟踪"
+            "slug": "参考跟踪",
+            "title": "参考跟踪"
           },
           {
             "slug": "深入讨论",
@@ -1920,16 +1921,16 @@ export const catalog: Chapter[] = [
         "title": "多变量系统",
         "subsections": [
           {
-            "slug": "为什么需要多变量分析",
-            "title": "为什么需要多变量分析"
+            "slug": "通道如何耦合",
+            "title": "通道如何耦合"
           },
           {
-            "slug": "mimo-极点与零点",
-            "title": "MIMO 极点与零点"
+            "slug": "极点与零点",
+            "title": "极点与零点"
           },
           {
-            "slug": "交互分析与-rga",
-            "title": "交互分析与 RGA"
+            "slug": "相对增益",
+            "title": "相对增益"
           },
           {
             "slug": "解耦控制",
@@ -1970,36 +1971,36 @@ export const catalog: Chapter[] = [
             "title": "问题描述"
           },
           {
-            "slug": "第一步建立状态空间模型",
-            "title": "第一步：建立状态空间模型"
+            "slug": "建立模型",
+            "title": "建立模型"
           },
           {
-            "slug": "第二步分析系统性质",
-            "title": "第二步：分析系统性质"
+            "slug": "检查可控可观",
+            "title": "检查可控可观"
           },
           {
-            "slug": "第三步状态反馈设计",
-            "title": "第三步：状态反馈设计"
+            "slug": "设计状态反馈",
+            "title": "设计状态反馈"
           },
           {
-            "slug": "第四步观测器设计",
-            "title": "第四步：观测器设计"
+            "slug": "估计状态",
+            "title": "估计状态"
           },
           {
-            "slug": "第五步处理噪声卡尔曼滤波与-lqg",
-            "title": "第五步：处理噪声——卡尔曼滤波与 LQG"
+            "slug": "噪声与lqg",
+            "title": "噪声与LQG"
           },
           {
-            "slug": "第六步稳定性验证lyapunov-方程",
-            "title": "第六步：稳定性验证——Lyapunov 方程"
+            "slug": "验证稳定性",
+            "title": "验证稳定性"
           },
           {
-            "slug": "第七步mimo-扩展rga-分析",
-            "title": "第七步：MIMO 扩展——RGA 分析"
+            "slug": "双输入扩展",
+            "title": "双输入扩展"
           },
           {
-            "slug": "深入讨论",
-            "title": "深入讨论"
+            "slug": "边界检验",
+            "title": "边界检验"
           },
           {
             "slug": "小结",
@@ -2022,7 +2023,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "draft"
+        "status": "v1.3"
       }
     ]
   },

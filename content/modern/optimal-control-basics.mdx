@@ -1,25 +1,29 @@
 ---
-title: 最优控制基础
+title: 最优控制
 description: 从极点配置到最优控制，引入性能指标和变分法，掌握 Hamilton 函数和极小值原理，求解经典最优控制问题。
 ---
 
-# 最优控制基础
+# 最优控制
 
-前四章，我们学会了用状态反馈任意配置闭环极点，用观测器估计不可测的状态。但有一个根本问题没回答：**极点应该放在哪？**
+<span id="最优控制基础" />
 
-工程经验说"阻尼比 0.7，观测器极点快 3 倍"——但为什么是 0.7 不是 0.5？为什么快 3 倍不是 5 倍？极点配置给了你 $n$ 个自由度，却没告诉你怎么选。
+上一课的观测器让我们在只测位置时也能估计小车速度。把估计接回状态反馈，确实能决定何时推、何时收力；但上一课也看到，极点放得快，瞬态峰值可能更大。现在想让一辆电动小车按时停在目标点：早到一秒是否值得多用电？如果允许慢一点，输入能不能更温和？
 
-最优控制的答案是：**定义一个"性能指标"（代价），然后找使代价最小的控制律**。不再靠经验试凑，而是让数学告诉你"最优"答案。
+回答之前，先把“按时”“省电”“停稳”分别写清楚。不同目标可能冲突，不能只说“效果最好”。**最优控制**把任务写成状态方程、边界条件、允许输入和代价，再在这些约定内找最省代价的方案；权重和模型仍由人选择。
 
-> 📖 本章需要前四章的基础：[状态空间表示](/modern/state-space)、[可控性与可观性](/modern/controllability-observability)、[状态反馈与极点配置](/modern/state-feedback) 和 [状态观测器设计](/modern/state-observer)，特别是状态方程和矩阵运算。
+![先约定终态、时长与输入限制，再比较可行方案的轨迹和积分代价；改变任务条件需要重新计算](/diagrams/optimal-control/task.svg)
 
-## 为什么需要最优控制
+本课沿用[状态空间](/modern/state-space)与[状态反馈](/modern/state-feedback)，数学工具用[微积分](/math/calculus-basics)和已交付的[变分与动态规划](/math/variational-dp)。一阶例子是无量纲教学模型，其u²积分是二次努力指标，不能直接当作任何电机的电能或卫星燃料。
+
+<span id="为什么需要最优控制" />
+
+## 为什么要定义代价
 
 ### 极点配置的困境
 
 回顾状态反馈：$\boldsymbol{u} = -K\boldsymbol{x}$，闭环系统 $\dot{\boldsymbol{x}} = (A - BK)\boldsymbol{x}$。
 
-对于 $n$ 阶 SISO 系统，$K$ 有 $n$ 个参数，可以配置 $n$ 个闭环极点。但：
+对于可控的n阶单输入系统，K含n个增益，可配置共轭成对的目标极点。不可控时不能任意配置全谱；多输入也不能按“n个增益”计数。但：
 
 - **选哪些极点？** 阻尼比、自然频率的选择依赖经验和试凑
 - **多目标冲突**：快速响应需要大带宽（极点远离虚轴），但大控制量意味着高能耗、饱和风险
@@ -31,14 +35,16 @@ description: 从极点配置到最优控制，引入性能指标和变分法，�
 
 | 问题类型 | 代价函数 | 应用场景 |
 |----------|----------|----------|
-| 最小能量 | $J = \int_0^{t_f} u^2 \, dt$ | 卫星姿态控制（省燃料） |
+| 最小能量 | $J = \int_0^{t_f} u^2 \, dt$ | 归一化执行器努力；燃料常另用∫|u| |
 | 最小时间 | $J = t_f$ | 机器人快速定位 |
 | 最小误差 | $J = \int_0^{t_f} e^2 \, dt$ | 精密跟踪 |
-| 线性二次型 (LQR) | $J = \int_0^{\infty} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt$ | 通用，下一章重点 |
+| 线性二次型 (LQR) | $J = \int_0^{\infty} (\boldsymbol{x}^T Q \boldsymbol{x} + \boldsymbol{u}^T R \boldsymbol{u}) \, dt$ | 下一课继续 |
 
 这些问题的共同结构：**最小化一个泛函，约束是系统动态方程**。
 
-## 最优控制问题的数学表述
+<span id="最优控制问题的数学表述" />
+
+## 任务与代价
 
 ### 一般形式
 
@@ -56,9 +62,9 @@ $$
 各部分的含义：
 
 - **终值代价** $\phi(\boldsymbol{x}(t_f), t_f)$：终态的"代价"。比如要求终态接近目标 $\boldsymbol{x}_f$，可以设 $\phi = \frac{1}{2}(\boldsymbol{x}(t_f) - \boldsymbol{x}_f)^T S (\boldsymbol{x}(t_f) - \boldsymbol{x}_f)$
-- **运行代价** $L(\boldsymbol{x}, \boldsymbol{u}, t)$：过程中的"代价率"。比如 $L = \frac{1}{2}\boldsymbol{u}^T R \boldsymbol{u}$ 表示能耗
+- **运行代价** $L(\boldsymbol{x}, \boldsymbol{u}, t)$：过程中的"代价率"。比如 $L = \frac{1}{2}\boldsymbol{u}^T R \boldsymbol{u}$ 表示二次控制努力；只有特定物理模型下才与能量成比例
 - **系统约束** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}, t)$：控制不能无视物理规律
-- **控制约束** $\boldsymbol{u} \in U$： actuators 有上下限，如 $|u| \leq 10$
+- **控制约束** $\boldsymbol{u} \in U$： 执行器有上下限，如 $|u| \leq 10$
 
 <Callout variant="tip">
 **关键区别**
@@ -78,13 +84,13 @@ $$
 
 物理意义：把一个一阶系统从 $x=1$ 驱动到 $x=0$，用最小的控制能量。
 
-## 变分法：对泛函求极值
+## 变分法
 
 ### 从微积分到变分法
 
-**微积分**：找 $x^*$ 使 $f(x^*)$ 最小 → 必要条件 $f'(x^*) = 0$
+**微积分**：找 $x^*$ 使 $f(x^*)$ 最小 → 内点可微极小值的必要条件 $f'(x^*) = 0$；边界点需另查
 
-**变分法**：找函数 $u^*(t)$ 使泛函 $J[u]$ 最小 → 必要条件 $\delta J = 0$（变分为零）
+**变分法**：找函数 $u^*(t)$ 使泛函 $J[u]$ 最小 → 对允许扰动的驻值条件 $\delta J = 0$；有约束时也可能是变分不等式
 
 **泛函**（functional）：输入是一个**函数**，输出是一个**数**。
 
@@ -102,13 +108,13 @@ $$
 \boxed{\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 0}
 $$
 
-这是关于 $x(t)$ 的二阶常微分方程，配合两个边界条件 $x(0) = x_0$、$x(T) = x_T$，可以解出最优轨迹 $x^*(t)$。
+这是驻值轨迹的必要条件，不保证解存在、唯一或为最小值；F可能使它降阶。直觉是取x+εh、h(0)=h(T)=0，一阶变化为∫(F_x h+F_xdot hdot)dt；分部积分后为∫(F_x−dF_xdot/dt)h dt。对所有允许h为零才得到此式，充分性还需凸性或其他证明。
 
 ### 例2：最短路径问题
 
 找连接 $(0, 0)$ 和 $(1, 1)$ 的最短曲线 $y(x)$。
 
-曲线长度：$J[y] = \int_0^1 \sqrt{1 + \dot{y}^2} \, dx$
+本例独立变量是横坐标x，下面点号暂表示对x求导，而非时间；也可统一记y′。曲线长度：$J[y] = \int_0^1 \sqrt{1 + \dot{y}^2} \, dx$
 
 这里 $F(y, \dot{y}) = \sqrt{1 + \dot{y}^2}$（不显含 $y$ 和 $x$）。
 
@@ -125,10 +131,10 @@ $$
 <Callout variant="info">
 **变分法的意义**
 
-最优控制问题的核心工具就是变分法。Euler-Lagrange 方程处理无约束的变分问题；当有系统动态约束时，需要推广为 **Hamilton 函数 + 极小值原理**。
+最优控制问题的核心工具就是变分法。Euler-Lagrange 方程给出指定端点下光滑变分的驻值条件；当有系统动态约束时，需要推广为 **Hamilton 函数 + 极小值原理**。
 </Callout>
 
-## Hamilton 函数与极小值原理
+## 极小值原理
 
 ### 从 Lagrange 乘子到 Hamilton 函数
 
@@ -144,7 +150,7 @@ $$
 
 ### Pontryagin 极小值原理
 
-最优控制 $\boldsymbol{u}^*(t)$ 使 Hamilton 函数取**最小值**：
+以下采用最小化符号H=L+λᵀf，并只讲运行代价乘子可归一化为1的**正常极值**；异常极值不在本课推导内。在适当正则性和可行性条件下，局部最优解必须满足PMP，包括几乎处处的点态最小化：
 
 $$
 \boxed{\boldsymbol{u}^*(t) = \arg\min_{\boldsymbol{u} \in U} H(\boldsymbol{x}^*, \boldsymbol{u}, \boldsymbol{\lambda}^*, t)}
@@ -162,7 +168,9 @@ $$
 
 边界条件：
 - **初始条件**：$\boldsymbol{x}(0) = \boldsymbol{x}_0$（已知）
-- **终值横截条件**：$\boldsymbol{\lambda}(t_f) = \frac{\partial \phi}{\partial \boldsymbol{x}}\bigg|_{t_f}$
+- **固定终时、终态自由**：$\boldsymbol{\lambda}(t_f) = \phi_x$
+- **固定终态**：用给定x(t_f)，不能再强加λ(t_f)=φ_x
+- **自由终时**：还需H(t_f)+φ_t=0（端点无显式时间约束的情形）；一般终端约束需加入其乘子
 
 <Callout variant="tip">
 
@@ -172,9 +180,9 @@ $$
 - 协态方程：$\dot{\boldsymbol{\lambda}} = -\partial H / \partial \boldsymbol{x}$（对状态求偏导，加负号）
 - 最优控制：$\boldsymbol{u}^* = \arg\min H$
 
-这三条构成一个完整的方程组，解出来就是最优轨迹和最优控制。
+配合正确边界，这些式子产生候选轨迹；PMP一般只是必要条件。后面线性动态、严格凸二次代价的例子会另外证明全局最优。
 
-> **两个补充直觉**：① 当 $H = \frac{1}{2}u^2 + \lambda^T f$ 时，$H$ 对 $u$ 严格凸，驻点 $u^* = -\lambda$ 即全局最小；当控制受约束且 $H$ 对 $u$ 线性时，最小值落在边界上——bang-bang 的分野正在于此。② 协态 $\lambda(t)$ 可理解为状态的**影子价格**（拉格朗日乘子的时变版）——现阶段当数学配角即可，LQR 章会看到它以 $K(t)x$ 的身份回来。横截条件 $\lambda(t_f) = \partial\phi/\partial x$ 只在**终态自由**时使用；终态固定则 $x(t_f)$ 已知、$\lambda(t_f)$ 自由。
+> **两个补充直觉**：① 当f对u仿射且输入系数为1时，H=½u²+λ(f₀+u)对u严格凸，点态最小u=−λ；一般线性输入B则u=−R⁻¹Bᵀλ，非线性f不能照搬；当控制受约束且 $H$ 对 $u$ 线性时，最小值落在边界上——bang-bang 的分野正在于此。② 协态 $\lambda(t)$ 可理解为状态的**影子价格**（拉格朗日乘子的时变版）——现阶段当数学配角即可，LQR 章会看到它以P(t)x的形式联系价值函数，控制增益另含R⁻¹Bᵀ。横截条件 $\lambda(t_f) = \partial\phi/\partial x$ 只在**终态自由**时使用；终态固定则 $x(t_f)$ 已知、$\lambda(t_f)$ 自由。
 
 </Callout>
 
@@ -193,9 +201,9 @@ $$
 极小值原理给出的是一个**两点边值问题**（TPBVP）：
 
 - $\boldsymbol{x}(0) = \boldsymbol{x}_0$（初始条件在 $t = 0$）
-- $\boldsymbol{\lambda}(t_f) = \partial \phi / \partial \boldsymbol{x}|_{t_f}$（终值条件在 $t = t_f$）
+- 终端给定x(t_f)，或在终态自由时给λ(t_f)=φ_x；不能两者同时任意指定
 
-状态方程从 $t=0$ 向前积分，协态方程从 $t=t_f$ 向后积分——两边往中间凑。这比初值问题难解，通常需要数值方法。
+边界信息分在两端，初始协态通常未知；可用配点、射击等方法联合求解，而非任意向前/向后积分就会相遇。实验检查[solve_bvp官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_bvp.html)中的success、边界残差和实际代价；success本身也不是全局最优证明。
 
 ### 例3：用极小值原理求解例1
 
@@ -276,71 +284,97 @@ $$
 <Callout variant="info">
 **观察**
 
-最优控制 $u^*(t) = -\frac{2e^t}{e^4-1}$ 是一个指数递减的函数（$u^*(0) = -0.0373$）。初始时刻控制量相对最大（把状态拉向零），之后按 $e^t$ 增长趋势被分母压制而快速衰减——这比"均匀用力"更省能量（实测节省 23.8%）。
+u*(t)为负，数值随时间继续减小，**绝对值反而增大**：u*(0)≈−.037315，u*(2)≈−.275721。自然衰减先帮助状态接近零，越临近终点越施加额外负输入，才能精确到达零；不是“开头最用力、以后快速衰减”。
+
+同T=2、同初末态的恒定输入唯一为c=−1/(e²−1)，其代价约.024498，对比最优.018657，节省约23.8406%。这是二次努力指标的比较，不是实机省电百分比。令可行扰动u=u*+v，则末态约束给∫₀ᵀeᵗv dt=0，而u*正比eᵗ，故交叉项消失：
+
+$$
+J[u]-J[u^*]=\frac12\int_0^T v(t)^2dt\ge0.
+$$
+
+这才是本例全局最优的证据；严格正定积分还给几乎处处意义下的唯一解。后面实验跨T复验，短T方案可能超过|u|≤1，不能冒充有输入约束问题的可行解。
 </Callout>
 
 <JupyterNotebook
-  title=" 动手实验：最优控制数值求解"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+ title="边值求解与完整代价"
+ setupCode={`import numpy as np
+import sympy as sp
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_bvp, quad
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
+from scipy.integrate import solve_bvp, solve_ivp, quad
+from scipy.linalg import expm
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
 
-def min_energy_ode(t, y):
-    return np.array([-y[0] - y[1], y[1]])
-
-def min_energy_bc(ya, yb):
-    return np.array([ya[0] - 1, yb[0]])`}
-  cells={[
-    { code: `# ===== 最小能量控制 — 数值求解 =====
-# TPBVP: x' = -x - λ, λ' = λ, x(0)=1, x(2)=0（u* = -λ）
-t_init = np.linspace(0, 2, 100)
-y_init = np.zeros((2, len(t_init)))
-y_init[0] = 1 - t_init / 2
-y_init[1] = 0.03
-
-sol = solve_bvp(min_energy_ode, min_energy_bc, t_init, y_init)
-print(f"求解成功: {sol.success}")
-print(f"λ(0) 数值 = {sol.y[1, 0]:.6f}")
-print(f"λ(0) 解析 = {2 / (np.exp(4) - 1):.6f}")
-
-t_plot = np.linspace(0, 2, 200)
-x_opt = sol.sol(t_plot)[0]
-lam_opt = sol.sol(t_plot)[1]
-u_opt = -lam_opt  # u* = -λ（向量，不是函数句柄）
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-for ax, y, label, color in zip(axes, [x_opt, u_opt, lam_opt],
-                                 ['最优状态轨迹 x*(t)', '最优控制 u*(t)=-λ(t)', '协态变量 λ(t)'],
-                                 ['blue', 'red', 'green']):
-    ax.plot(t_plot, y, color=color, linewidth=2)
-    ax.axhline(y=0, color='k', linestyle=':', alpha=0.3)
-    ax.set_title(label)
-    ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` },
-    { code: `# ===== 验证最优代价 =====
-J_analytical = 1 / (np.exp(4) - 1)
-print(f"解析最优代价 J* = {J_analytical:.6f}")
-
-u_sq = lambda t: sol.sol(t)[1]**2
-J_numerical, _ = quad(u_sq, 0, 2)
-J_numerical *= 0.5
-print(f"数值最优代价 J* = {J_numerical:.6f}")
-
-c_uniform = -1 / (np.exp(2) - 1)
-J_uniform = 0.5 * c_uniform**2 * 2
-print(f"\\n均匀控制 u = {c_uniform:.4f}, J = {J_uniform:.6f}")
-print(f"最优控制节省能量: {(1 - J_analytical/J_uniform)*100:.1f}%")` },
-  ]}
+def min_energy_ode(t,z):return np.vstack([-z[0]-z[1],z[1]])
+def min_energy_bc(za,zb):return np.array([za[0]-1,zb[0]])`}
+ cells={[
+  { code: `T=2.;mesh=np.linspace(0,T,100)
+guess=np.vstack([1-mesh/T,np.full(mesh.size,.03)])
+sol=solve_bvp(min_energy_ode,min_energy_bc,mesh,guess,tol=1e-10,max_nodes=5000)
+assert sol.success,sol.message
+assert np.max(abs(min_energy_bc(sol.y[:,0],sol.y[:,-1])))<1e-10
+t=np.linspace(0,T,401);values=sol.sol(t);x_opt=values[0];lam_opt=values[1];u_opt=-lam_opt
+D=np.expm1(2*T)
+assert np.max(abs(x_opt-(np.exp(2*T-t)-np.exp(t))/D))<1e-9
+assert np.max(abs(lam_opt-2*np.exp(t)/D))<1e-9
+print('lambda0=',values[1,0],'C=',np.exp(4)/D,'u0=',u_opt[0],'uT=',u_opt[-1],'boundary residual=',min_energy_bc(sol.y[:,0],sol.y[:,-1]))
+fig,axs=plt.subplots(3,1,figsize=(5,8.4))
+for ax,y,label in zip(axs,[x_opt,u_opt,lam_opt],['State x','Input u','Costate lambda']):
+    ax.plot(t,y);ax.set(xlim=(0,T),xlabel='Time',ylabel=label);ax.grid(True)
+fig.tight_layout();plt.show()` },
+  { code: `J_num=quad(lambda time:float(sol.sol(time)[1]**2)/2,0,2,epsabs=1e-12)[0]
+J=1/np.expm1(4);c=-1/np.expm1(2);Jc=c*c
+assert abs(J_num-J)<1e-10
+assert abs(np.exp(-2)+c*(1-np.exp(-2)))<1e-12
+saving=100*(1-J/Jc)
+assert abs(saving-23.8405844044)<1e-8
+print('J numerical/analytic=',J_num,J,'constant c=',c,'Jc=',Jc,'saving %=',saving)` }
+ ]}
 />
 
 <OptimalTimeExplorer />
 
-## 最小时间问题与 Bang-Bang 控制
+<JupyterNotebook
+ title="终时扫描与同端点比较"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp, solve_ivp, quad
+from scipy.linalg import expm
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+
+def min_energy_ode(t,z):return np.vstack([-z[0]-z[1],z[1]])
+def min_energy_bc(za,zb):return np.array([za[0]-1,zb[0]])`}
+ cells={[
+  { code: `energy_records=[]
+for k in range(46):
+    T=.5+.1*k;mesh=np.linspace(0,T,81);guess=np.vstack([1-mesh/T,np.ones(mesh.size)])
+    solution=solve_bvp(min_energy_ode,min_energy_bc,mesh,guess,tol=1e-10,max_nodes=5000)
+    assert solution.success,solution.message
+    t=np.linspace(0,T,401);z=solution.sol(t);u=-z[1];J=quad(lambda time:float(solution.sol(time)[1]**2)/2,0,T,epsabs=1e-12)[0]
+    c=-1/np.expm1(T);Jc=T*c*c/2
+    assert np.max(abs(min_energy_bc(solution.y[:,0],solution.y[:,-1])))<1e-10
+    assert abs(J-1/np.expm1(2*T))<1e-9
+    assert np.all(z[0]>=-1e-9) and np.max(z[0])<=1+1e-9 and np.min(u)>-2.1
+    energy_records.append({'T':T,'x':z[0].tolist(),'u':u.tolist(),'lambda0':float(z[1,0]),'J':J,'c':float(c),'Jc':float(Jc),'saving':float(100*(1-J/Jc)),'peak':float(-u[-1])})
+    if k in [0,15,45]:print('T=',T,'J=',J,'Jc=',Jc,'saving %=',100*(1-J/Jc),'peak |u|=',-u[-1])
+# Same endpoint feasible perturbations: v=h_dot+h for state perturbation h.
+perturbations=[]
+for T in [.5,2.,5.]:
+    D=np.expm1(2*T);ustar=lambda time:-2*np.exp(time)/D
+    for amplitude in [-.2,0.,.2]:
+        v=lambda time:amplitude*((np.pi/T)*np.cos(np.pi*time/T)+np.sin(np.pi*time/T))
+        cross=quad(lambda time:ustar(time)*v(time),0,T,epsabs=1e-12)[0]
+        extra=quad(lambda time:v(time)**2/2,0,T,epsabs=1e-12)[0]
+        difference=quad(lambda time:(ustar(time)+v(time))**2/2,0,T,epsabs=1e-12)[0]-1/D
+        assert abs(cross)<1e-10 and abs(difference-extra)<1e-10
+        perturbations.append({'T':T,'amplitude':amplitude,'extra':extra})
+print('Nine same-endpoint perturbations verified:',perturbations)` }
+ ]}
+/>
+
+## 最短时间
 
 ### 问题描述
 
@@ -372,7 +406,7 @@ $$
 u^* = \arg\min_{|u| \leq 1} (\lambda b u) = \begin{cases} -1 & \text{if } \lambda b > 0 \\ +1 & \text{if } \lambda b < 0 \end{cases}
 $$
 
-控制量只取 $+1$ 或 $-1$——这就是 **bang-bang 控制**。
+切换函数σ=λb不为零时，输入取边界±1；σ=0时点态最小化不能决定u。若σ在区间恒零，可能出现奇异弧，需要高阶条件；因此“H对u线性”本身不足以保证每个最优方案全程bang-bang。
 
 ### 例4：一阶系统的最小时间控制
 
@@ -390,15 +424,15 @@ $\dot{x} = -x - 1$，解：$x(t) = (x(0) + 1)e^{-t} - 1 = 2e^{-t} - 1$
 
 $x(t_f) = 0 \implies 2e^{-t_f} = 1 \implies t_f = \ln 2 \approx 0.693$
 
-验证：如果 $u^* = +1$，$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 1$（常数），永远到不了零。所以 $u^* = -1$ 是正确的。
+验证：如果 $u^* = +1$，$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 1$（常数），永远到不了零。所以u=−1是可行最快候选。进一步，由u≥−1可得任何可行x(t)≥2e⁻ᵗ−1，达到零必须T≥ln2；候选正好达到下界。自由终时的正常乘子可取λ(t)=eᵗ/2，沿候选H=0，补齐自由终时条件。
 
 <Callout variant="tip">
 **Bang-bang 控制的物理直觉**
 
-最小时间问题要求"最快到达"——策略很简单：**全力加速，到终点前全力刹车**。对于高阶系统，切换时刻需要精确计算，但控制结构不变：总是在边界值之间切换。注意：并非所有问题都需要切换——低阶或"单向"问题可能全程不切换（如例4，$\lambda$ 不变号则 $u^*$ 全程 $-1$）。
+最小时间问题要求"最快到达"——策略很简单：**全力加速，到终点前全力刹车**。双积分器等满足无奇异弧条件的系统可出现先加速后刹车；一般高阶系统不能不查切换函数就断言相同结构。注意：并非所有问题都需要切换——低阶或"单向"问题可能全程不切换（如例4，$\lambda$ 不变号则 $u^*$ 全程 $-1$）。
 </Callout>
 
-## 线性二次型最优控制——引向 LQR
+## 线性二次型
 
 ### 二次型性能指标
 
@@ -417,53 +451,52 @@ $$
 
 ### 为什么 LQ 问题特别重要
 
-1. **二次型代价物理意义清晰**：$\boldsymbol{x}^T Q \boldsymbol{x}$ = "偏离目标的代价"，$\boldsymbol{u}^T R \boldsymbol{u}$ = "能耗代价"
+1. **二次型代价约定清晰**：$\boldsymbol{x}^T Q \boldsymbol{x}$ = "偏离目标的代价"，$\boldsymbol{u}^T R \boldsymbol{u}$ = "控制努力惩罚"
 2. **最优控制是状态反馈**：$\boldsymbol{u}^* = -K(t)\boldsymbol{x}$——最优控制自动具有状态反馈的形式！
 3. **Riccati 方程**：增益 $K(t)$ 由 Riccati 微分方程确定，可以数值求解
-4. **无穷时间情况**：$t_f \to \infty$ 时，$K$ 变成常数矩阵，由**代数 Riccati 方程**（ARE）确定——这就是下一章的 **LQR 控制器**
+4. **无穷时间情况**：在定常模型、R正定、(A,B)可稳定与(Q¹ᐟ²,A)可检测等条件下，得到稳定化ARE解与常数K；不能只令终时趋无穷就无条件保证——这就是下一课的 **LQR 控制器**
 
-> 下一章 [LQR 控制器](/modern/lqr-controller) 将详细推导 LQ 问题的解和 Riccati 方程。
+> 下一课 [LQR 控制器](/modern/lqr-controller) 将详细推导 LQ 问题的解和 Riccati 方程。
 
 ## 深入讨论
 
 ### 最优控制 vs 极点配置
 
-| 特性 | 极点配置 | 最优控制 (LQR) |
-|------|----------|----------------|
-| 设计参数 | 期望极点位置 | 代价权重 $Q, R$ |
-| 物理意义 | 间接（极点 → 动态） | 直接（能耗、误差） |
-| 多变量系统 | 极点选择困难 | $Q, R$ 的选择更直观 |
-| 计算方式 | 矩阵运算 | 解 Riccati 方程 |
-| 鲁棒性 | 依赖极点选择 | LQR 有良好的鲁棒性裕度 |
+| 设计入口 | 要选择的量 | 仍需核查 |
+|---|---|---|
+| 极点配置 | 可达的目标谱 | 输入、噪声、采样和模型误差 |
+| LQ设计 | 状态/输入权重与任务边界 | 权重单位、可稳定/可检测、约束与实际代价 |
+
+这里不作两类方法的性能或鲁棒性排名。二次最优只针对所写合同；加入观测器、饱和或采样后不能直接继承全状态连续LQR的结论。
 
 ### 极小值原理的推广
 
-Pontryagin 极小值原理不仅适用于线性系统。对于**非线性系统** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，极小值原理同样成立——只是求解更困难。
+Pontryagin 极小值原理不仅适用于线性系统。对于**非线性系统** $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，在相应正则性/可行性条件下PMP仍给必要条件，可能有多个候选或奇异/异常情形，并非只把线性公式换个f。
 
 非线性最优控制的求解方法：
 - **间接法**：用极小值原理推导 TPBVP，数值求解（如 `solve_bvp`）
 - **直接法**：参数化控制/状态，转化为非线性规划（NLP）求解
-- **动态规划**：Bellman 最优性原理，HJB 方程（下一章 LQR 的另一个推导路径）
+- **动态规划**：Bellman 最优性原理，HJB 方程（下一课 LQR 的另一个推导路径）
 
 ### 最优控制的局限性
 
 1. **依赖模型精度**：最优控制基于模型 $(A, B, C)$。模型不准，"最优"可能变成"最差"
 2. **计算复杂度**：非线性系统的 TPBVP 求解困难，实时性差
 3. **代价权重选择**：$Q, R$ 的选择仍然需要工程判断——"最优"取决于你如何定义"好"
-4. **开环 vs 闭环**：极小值原理给出的是开环最优控制；实际中需要闭环（LQR 自动给出反馈形式）
+4. **开环 vs 闭环**：固定初态的边值求解通常给一条开环候选轨迹；PMP也可用于分析反馈最优解，并非原理本身只能开环
 
-> 下一章 LQR 将解决这些问题中的大部分——它给出**闭环**最优控制，并且有良好的鲁棒性。
+> 下一课LQR给线性二次合同下的反馈解；模型误差、约束和权重选择仍需单独验收。
 
 ## 小结
 
 - **最优控制**：找使性能指标 $J$ 最小的控制律 $\boldsymbol{u}^*(t)$
 - **问题结构**：最小化泛函，约束是系统动态方程
 - **变分法**：对泛函求极值的数学工具，Euler-Lagrange 方程是核心
-- **Hamilton 函数**：$H = L + \boldsymbol{\lambda}^T f$，把约束优化转化为无约束
+- **Hamilton 函数**：$H = L + \boldsymbol{\lambda}^T f$，把动态约束纳入乘子条件，其他约束仍须处理
 - **极小值原理**：$\boldsymbol{u}^* = \arg\min H$，配合状态方程和协态方程
 - **两点边值问题**：初始条件在 $t=0$，终值条件在 $t=t_f$，通常需数值求解
-- **Bang-bang 控制**：最小时间问题的最优控制，在约束边界之间切换
-- **LQ 问题**：二次型代价 + 线性系统 → 最优控制是状态反馈 → 下一章 LQR
+- **Bang-bang 控制**：切换函数非零时取输入边界，奇异区间另析；一阶例子可全程不切换
+- **LQ 问题**：二次型代价 + 线性系统 → 最优控制是状态反馈 → 下一课 LQR
 
 ## 习题
 
@@ -484,7 +517,7 @@ $$
 
 **5.** 系统 $\dot{x} = -x + u$，$x(0) = 2$，$x(t_f) = 0$，$|u| \leq 1$。求最小时间控制的 $u^*(t)$ 和 $t_f^*$。
 
-**6.** 证明：对于最小时间问题 $\min t_f$ s.t. $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$|\boldsymbol{u}| \leq 1$（分量约束），如果 $H$ 对每个 $u_i$ 是线性的，则最优控制是 bang-bang 形式。
+**6.** 检查并修正以下命题，再证明其适用部分：对于最小时间问题 $\min t_f$ s.t. $\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u}$，$|\boldsymbol{u}| \leq 1$（分量约束），如果 $H$ 对每个 $u_i$ 是线性的，则最优控制是 bang-bang 形式。
 
 **7.** 系统 $\dot{x}_1 = x_2$，$\dot{x}_2 = u$（双积分器），$x_1(0) = 1, x_2(0) = 0$，$x_1(t_f) = 0, x_2(t_f) = 0$，$|u| \leq 1$。
 - (a) 写出 Hamilton 函数和协态方程
@@ -503,7 +536,13 @@ $$
 
 **1.** $F(x, \dot{x}) = \dot{x}^2 + x^2$。
 
-Euler-Lagrange 方程：$\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 2x - \frac{d}{dt}(2\dot{x}) = 2x - 2\ddot{x} = 0$
+Euler-Lagrange 方程：
+
+$$
+\frac{\partial F}{\partial x} - \frac{d}{dt}\frac{\partial F}{\partial \dot{x}} = 2x - \frac{d}{dt}(2\dot{x}) = 2x - 2\ddot{x} = 0
+$$
+
+
 
 $\ddot{x} - x = 0$，通解 $x(t) = Ae^t + Be^{-t}$。
 
@@ -515,7 +554,19 @@ $$
 x^*(t) = \frac{\sinh t}{\sinh 1}
 $$
 
-**数值抽查**：$J(x^*) = \frac{1}{\sinh^2 1}\int_0^1 \cosh^2 t \, dt \approx 1.0185$；对比直线 $x(t)=t$ 的 $J = \int_0^1 (1 + t^2)\,dt = 4/3 \approx 1.3333$——最优性肉眼可见。
+**完整代价**：原积分含x²和xdot²，两项都必须保留。由于最优轨迹满足xddot=x，可用分部积分得
+
+$$
+J[x^*]=[x^*\dot x^*]_0^1=\coth1\approx1.313035.
+$$
+
+直线x=t的代价4/3≈1.333333。对任何同端点扰动h，交叉项经分部积分为零，
+
+$$
+J[x^*+h]-J[x^*]=\int_0^1(h^2+\dot h^2)dt\ge0.
+$$
+
+因此是全局最小；两条曲线的数值比较本身不是证明。
 
 **2.** 曲线长度 $L[y] = \int_{x_0}^{x_1} \sqrt{1 + y'^2} \, dx$。
 
@@ -525,7 +576,7 @@ $\frac{\partial F}{\partial y} = 0$，$\frac{\partial F}{\partial y'} = \frac{y'
 
 Euler-Lagrange：$0 - \frac{d}{dx}\frac{y'}{\sqrt{1+y'^2}} = 0 \implies \frac{y'}{\sqrt{1+y'^2}} = C$（常数）。
 
-所以 $y' = \text{const}$，即 $y(x) = ax + b$——**直线**。
+所以 $y' = \text{const}$，即 $y(x) = ax + b$——**直线**（x₀小于x₁、可表示为函数图像时）。全局下界来自曲线长度≥端点欧氏距离，直线取等；竖直线用参数曲线表达，不能把y(x)图像证明覆盖到x₀=x₁。
 
 **3.** Hamilton 函数：$H = \frac{1}{2}u^2 + \lambda u$。
 
@@ -574,7 +625,7 @@ $\lambda(t) = \lambda_0 e^t$ 不变号，所以 $u^*$ 不切换。
 
 $x(t_f) = 0$：$3e^{-t_f} = 1 \implies t_f = \ln 3 \approx 1.099$。
 
-验证 $\lambda_0 < 0$（$u^* = +1$）：$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = 2e^{-t} + 1 > 0$，永远到不了零。
+验证 $\lambda_0 < 0$（$u^* = +1$）：$\dot{x} = -x + 1$，$x(t) = (x(0)-1)e^{-t} + 1 = e^{-t} + 1 > 0$，永远到不了零。
 
 $$
 u^*(t) = -1, \quad t_f^* = \ln 3 \approx 1.099
@@ -592,7 +643,7 @@ $\min_{|u_i| \leq 1} (\lambda^T b_i) u_i$：
 - 如果 $\lambda^T b_i > 0$：$u_i^* = -1$
 - 如果 $\lambda^T b_i < 0$：$u_i^* = +1$
 
-每个 $u_i$ 只取边界值 $\pm 1$，即 **bang-bang 控制**。证毕。
+当切换函数σ_i=λᵀb_i≠0时得到bang边界；σ_i=0的点无法据此决定输入，区间恒零可能是奇异弧。故原题无附加条件的全称结论过强：应补“每个σ_i几乎处处非零”。例如xdot=u、x(0)=x(T)=0的固定T可行问题若代价恒零，H=0、u=0也是最优，H对u仿射却不要求边界。这个反例只说明仿射性本身不够，不能冒充本题自由时间的最优时间反例。
 
 **7.** (a) $H = 1 + \lambda_1 x_2 + \lambda_2 u$。
 
@@ -600,7 +651,7 @@ $\min_{|u_i| \leq 1} (\lambda^T b_i) u_i$：
 
 $\dot{\lambda}_2 = -\partial H / \partial x_2 = -\lambda_1 = -c_1 \implies \lambda_2(t) = -c_1 t + c_2$。
 
-$\lambda_2(t)$ 是 $t$ 的线性函数，**最多过零一次**。
+$\lambda_2(t)$ 是仿射函数。它不能在区间恒零：否则c₁=c₂=0，正常自由终时条件H=0与H=1矛盾。因此最多有一个零点。
 
 (b) $u^* = \arg\min_{|u|\leq 1} \lambda_2 u = -\text{sign}(\lambda_2(t))$。
 
@@ -610,9 +661,9 @@ $\lambda_2(t)$ 最多过零一次 → $u^*$ 最多切换一次。证毕。
 
 设 $u = +1$（$0 \leq t < t_s$），$u = -1$（$t_s \leq t \leq t_f$）。
 
-第一阶段：$\ddot{x}_1 = 1$，$x_1(t) = \frac{1}{2}t^2 + t + 1$，$x_2(t) = t$（用了 $x_1(0)=1, x_2(0)=0$）。
+第一阶段：$\ddot{x}_1 = 1$，$x_1(t) = \frac{1}{2}t^2 + 1$，$x_2(t) = t$（用了 $x_1(0)=1, x_2(0)=0$）。
 
-在 $t_s$：$x_1(t_s) = \frac{1}{2}t_s^2 + t_s + 1$，$x_2(t_s) = t_s$。
+在 $t_s$：$x_1(t_s) = \frac{1}{2}t_s^2 + 1$，$x_2(t_s) = t_s$。
 
 第二阶段：$\ddot{x}_1 = -1$，从 $(x_1(t_s), x_2(t_s))$ 出发。
 
@@ -622,9 +673,7 @@ $x_2(t_f) = 0 \implies t_f = 2t_s$
 
 $x_1(t) = x_1(t_s) + t_s(t-t_s) - \frac{1}{2}(t-t_s)^2$
 
-$x_1(t_f) = x_1(t_s) + t_s^2 - \frac{1}{2}t_s^2 = \frac{1}{2}t_s^2 + t_s + 1 + \frac{1}{2}t_s^2 = t_s^2 + t_s + 1$
-
-$x_1(t_f) = 0 \implies t_s^2 + t_s + 1 = 0$。判别式 $1 - 4 = -3 < 0$，无实数解。
+$x_1(t_f)=1+t_s^2>0$，不能到达原点。原稿多出的t项违背了初速度0，已去除。
 
 设 $u = -1$（$0 \leq t < t_s$），$u = +1$（$t_s \leq t \leq t_f$）。
 
@@ -643,6 +692,14 @@ $x_1(t_f) = 0 \implies t_s = 1$。$t_f = 2$。
 $$
 u^*(t) = \begin{cases} -1 & 0 \leq t < 1 \\ +1 & 1 \leq t \leq 2 \end{cases}, \quad t_f^* = 2
 $$
+
+对任意可行输入，终速为零给∫₀ᵀu dt=0；位移−1满足
+
+$$
+-1=\int_0^T(T-t)u(t)dt=\int_0^T(T/2-t)u(t)dt.
+$$
+
+由|u|≤1，位移绝对值≤∫₀ᵀ|T/2−t|dt=T²/4，所以T≥2；上面的两段输入取等，证明全局最短。可取λ₁=1、λ₂=1−t，沿两段H=0，切换点左右一致。
 
 **8.** (a) 终值代价 $\phi = \frac{1}{2}x^2(t_f)$。
 
@@ -666,22 +723,134 @@ $$
 
 验证：$x(1) = \frac{1}{2}$，$\lambda(1) = \frac{1}{2} = x(1)$ ✓
 
-**9.** $H = L(\boldsymbol{x}, \boldsymbol{u}, t) + \boldsymbol{\lambda}^T f(\boldsymbol{x}, \boldsymbol{u}, t)$。
-
-沿最优轨迹：
+**9.** 在光滑的无约束内点弧上，应写完整链式法则：
 
 $$
-\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \dot{\boldsymbol{x}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \dot{\boldsymbol{\lambda}} + \frac{\partial H}{\partial t}
+\frac{dH}{dt}=H_x^T\dot x+H_\lambda^T\dot\lambda+H_u^T\dot u+H_t.
 $$
 
-由正则方程：$\dot{\boldsymbol{x}} = \partial H / \partial \boldsymbol{\lambda}$，$\dot{\boldsymbol{\lambda}} = -\partial H / \partial \boldsymbol{x}$。
+正则方程使前两项抵消，内点驻值H_u=0，故dH/dt=H_t；自治时为零。不能未解释就漏掉控制链式项。固定控制集合、没有状态路径约束的自治PMP问题，可在适当正则性下把沿最优轨迹的最小化Hamilton量取为常数；bang切换点不要硬套经典导数，应检查相邻弧的Hamilton值连续。本题双积分器的两段H=0可直接验证。自由终时再配φ_t=0时为H=0；固定终时一般只是常数，不必为零。
 
-$$
-\frac{dH}{dt} = \frac{\partial H}{\partial \boldsymbol{x}} \frac{\partial H}{\partial \boldsymbol{\lambda}} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \left(-\frac{\partial H}{\partial \boldsymbol{x}}\right) + \frac{\partial H}{\partial t} = \frac{\partial H}{\partial t}
-$$
-
-如果 $H$ 不显含 $t$，则 $\partial H / \partial t = 0$，所以 $dH/dt = 0$，即 $H$ 是常数。证毕。
-
-**10.** 极点配置方法假设 $\boldsymbol{u} = -K\boldsymbol{x}$ 可以取任意值。当 $|u| > u_{\max}$ 时，实际控制被截断为 $\text{sat}(-K\boldsymbol{x})$，闭环系统变成非线性，极点配置的设计结果不再有效。
+**10.** 极点配置方法假设 $\boldsymbol{u} = -K\boldsymbol{x}$ 可以取任意值。当 $|u| > u_{\max}$ 时，实际控制被截断为 $\text{sat}(-K\boldsymbol{x})$，闭环系统变成非线性，线性闭环极点不再自动保证全局性能；仍可在不触发饱和的状态域内分析或另作约束设计。
 
 极小值原理**直接处理**控制约束：$\boldsymbol{u}^* = \arg\min_{\boldsymbol{u} \in U} H$。当 $U = \{u : |u| \leq u_{\max}\}$ 时，最优控制自动满足约束，可能产生 bang-bang 结构。这是极小值原理相比极点配置的核心优势之一。
+
+
+<JupyterNotebook
+ title="变分与习题核验"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp, solve_ivp, quad
+from scipy.linalg import expm
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+
+def min_energy_ode(t,z):return np.vstack([-z[0]-z[1],z[1]])
+def min_energy_bc(za,zb):return np.array([za[0]-1,zb[0]])`}
+ cells={[
+  { code: `t=sp.symbols('t',real=True);xs=sp.sinh(t)/sp.sinh(1);xd=sp.diff(xs,t)
+assert sp.simplify(sp.diff(xs,t,2)-xs)==0
+assert xs.subs(t,0)==0 and xs.subs(t,1)==1
+J1=quad(lambda time:(np.sinh(time)**2+np.cosh(time)**2)/np.sinh(1)**2,0,1,epsabs=1e-12)[0]
+assert abs(J1-1/np.tanh(1))<1e-12
+print('Q1 J=',J1,'straight=',4/3,'gap=',4/3-J1)
+for amp in [-.2,0.,.2]:
+    h=lambda time:amp*np.sin(np.pi*time);hd=lambda time:amp*np.pi*np.cos(np.pi*time)
+    delta=quad(lambda time:(np.sinh(time)/np.sinh(1)+h(time))**2+(np.cosh(time)/np.sinh(1)+hd(time))**2,0,1)[0]-J1
+    expected=quad(lambda time:h(time)**2+hd(time)**2,0,1)[0]
+    assert abs(delta-expected)<1e-10
+slope=sp.symbols('slope',real=True)
+assert sp.simplify(sp.diff(sp.sqrt(1+slope*slope),slope,2)-(1+slope*slope)**(-sp.Rational(3,2)))==0
+print('example2/Q2 straight length sqrt2=',np.sqrt(2),'global length bound is endpoint distance')
+assert sp.integrate(sp.Rational(1,2),(t,0,1))==sp.Rational(1,2)
+print('Q3 u=-1, x=1-t, J=.5')
+x,lam,u=sp.symbols('x lam u');H=(x*x+u*u)/2+lam*(-2*x+u)
+assert sp.diff(H,u)==u+lam and -sp.diff(H,x)==-x+2*lam
+M=np.array([[-2.,-1.],[-1.,2.]])
+E=expm(M*2);l0=-3*E[0,0]/E[0,1]
+assert abs((E@np.array([3.,l0]))[0])<1e-10
+print('Q4 TPBVP matrix=',M,'initial costate=',l0,'terminal x=',(E@np.array([3.,l0]))[0])
+# Free endpoint integrator, Q8.
+assert sp.diff((1-t/2),t)==-sp.Rational(1,2)
+J8=sp.Rational(1,2)*(sp.Rational(1,2))**2+sp.integrate(sp.Rational(1,2)*(sp.Rational(1,2))**2,(t,0,1))
+assert J8==sp.Rational(1,4)
+print('Q8 lambda=.5, u=-.5, x(1)=.5, J=',J8)` }
+ ]}
+/>
+
+<JupyterNotebook
+ title="最短时间的可行性与下界"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp, solve_ivp, quad
+from scipy.linalg import expm
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+
+def min_energy_ode(t,z):return np.vstack([-z[0]-z[1],z[1]])
+def min_energy_bc(za,zb):return np.array([za[0]-1,zb[0]])`}
+ cells={[
+  { code: `# Example4/Q5: independent ODE and free-time Hamilton normalization.
+for x0 in [1.,2.]:
+    T=np.log(x0+1);times=np.linspace(0,T,401)
+    trajectory=solve_ivp(lambda time,z:-z-1,(0,T),[x0],t_eval=times,rtol=1e-12,atol=1e-13).y[0]
+    target=(x0+1)*np.exp(-times)-1
+    costate=np.exp(times)/(x0+1)
+    assert np.max(abs(trajectory-target))<1e-10
+    assert abs(trajectory[-1])<1e-10
+    assert np.max(abs(1+costate*(-target-1)))<1e-12
+    print('x0=',x0,'T=',T,'lambda0=',costate[0],'H=0, terminal residual=',trajectory[-1])
+# Q7: actual two ODE integrations, no interpolating across the switch.
+first=solve_ivp(lambda time,z:[z[1],-1],(0,1),[1.,0.],rtol=1e-12,atol=1e-13,dense_output=True)
+second=solve_ivp(lambda time,z:[z[1],1],(1,2),first.y[:,-1],rtol=1e-12,atol=1e-13,dense_output=True)
+assert np.max(abs(first.y[:,-1]-[.5,-1]))<1e-12 and np.max(abs(second.y[:,-1]))<1e-12
+for times,solution,control in [(np.linspace(0,1,201),first.sol,-1),(np.linspace(1,2,201),second.sol,1)]:
+    values=solution(times);H=1+values[1]+(1-times)*control
+    assert np.max(abs(H))<1e-12
+assert abs(quad(lambda time:abs(1-time),0,2)[0]-1)<1e-12
+print('Q7 switch [q,v]=',first.y[:,-1],'final=',second.y[:,-1],'T=2 lower bound T^2/4=1')
+for T in [1.,1.5,2.]:print('displacement bound at T=',T,':',T*T/4)
+fig,axs=plt.subplots(2,1,figsize=(5,6.8))
+for times,solution,control in [(np.linspace(0,1,201),first.sol,-1),(np.linspace(1,2,201),second.sol,1)]:
+    values=solution(times);axs[0].plot(times,values[0],color='blue');axs[1].plot(times,values[1],color='orange')
+for ax in axs:ax.set(xlim=(0,2),xlabel='Time');ax.grid(True)
+axs[0].set_ylabel('Position');axs[1].set_ylabel('Velocity');fig.tight_layout();plt.show()` }
+ ]}
+/>
+
+<JupyterNotebook
+ title="极小值条件与输入边界"
+ setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_bvp, solve_ivp, quad
+from scipy.linalg import expm
+plt.rcParams['font.family']='DejaVu Sans'
+plt.rcParams['font.size']=12
+
+def min_energy_ode(t,z):return np.vstack([-z[0]-z[1],z[1]])
+def min_energy_bc(za,zb):return np.array([za[0]-1,zb[0]])`}
+ cells={[
+  { code: `# Q6: pointwise box minimization and its zero-switching-function exception.
+for sigma in [-2.,0.,3.]:
+    grid=np.linspace(-1,1,1001);minimum=np.min(sigma*grid)
+    chosen=1 if sigma<0 else (-1 if sigma>0 else 0)
+    assert abs(sigma*chosen-minimum)<1e-12
+    print('sigma=',sigma,'pointwise chosen u=',chosen,'H input term=',minimum)
+# Autonomous fixed-T energy problem: Hamilton is constant but generally not zero.
+T=2.;times=np.linspace(0,T,401);D=np.expm1(2*T)
+x=(np.exp(2*T-times)-np.exp(times))/D;lam=2*np.exp(times)/D;u=-lam
+Hamilton=u*u/2+lam*(-x+u)
+assert np.ptp(Hamilton)<1e-12 and abs(Hamilton[0])>1e-3
+print('example3 fixed-time H=',Hamilton[0],'constant, not zero')
+# H_u=u+lambda=0; the chain-rule term is zero on the interior arc.
+assert np.max(abs(u+lam))<1e-12
+# Same endpoint error under a saturated formerly unconstrained control.
+T=.5;D=np.expm1(2*T)
+solution=solve_ivp(lambda time,z:-z+np.clip(-2*np.exp(time)/D,-1,1),(0,T),[1.],rtol=1e-12,atol=1e-13)
+assert solution.y[0,-1]>0
+print('T=.5 clipped |u|<=1 terminal x=',solution.y[0,-1],'does not satisfy x(T)=0; time lower bound ln2=',np.log(2))` }
+ ]}
+/>

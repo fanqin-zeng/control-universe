@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 73 课 / 328 个实验 / 501 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 301 个实验，保留 27 个。实际执行 476 个单元格（含异常单元格），生成 157 张 PNG。原始记录中 303 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 73 课 / 351 个实验 / 528 个单元格全部纳入盘点。54 课全部可运行，10 课混合，9 课全部保留代码；启用 326 个实验，保留 25 个。实际执行 505 个单元格（含异常单元格），生成 166 张 PNG。原始记录中 327 个实验完整执行，发布门槛另将 1 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -22,14 +22,14 @@
 | classic/pid-controller（PID控制） | 6/6 | 6 | 无 |
 | classic/classic-case-study（经典控制案例） | 6/6 | 6 | 无 |
 | modern/state-space（状态空间） | 5/5 | 5 | 无 |
-| modern/controllability-observability（可控性与可观性） | 3/3 | 3 | 无 |
-| modern/lyapunov-modern（线性系统稳定性） | 3/3 | 8 | 无 |
-| modern/state-feedback（状态反馈） | 2/2 | 2 | 无 |
-| modern/state-observer（状态观测器） | 2/2 | 2 | 无 |
-| modern/optimal-control-basics（最优控制） | 1/1 | 2 | 无 |
-| modern/lqr-controller（LQR控制） | 1/1 | 4 | 无 |
-| modern/multivariable-systems（多变量系统） | 1/1 | 6 | 无 |
-| modern/modern-case-study（现代控制案例） | 3/5 | 6 | 3, 4 |
+| modern/controllability-observability（可控性与可观性） | 6/6 | 6 | 无 |
+| modern/lyapunov-modern（线性系统稳定性） | 5/5 | 11 | 无 |
+| modern/state-feedback（状态反馈） | 5/5 | 6 | 无 |
+| modern/state-observer（状态观测器） | 5/5 | 5 | 无 |
+| modern/optimal-control-basics（最优控制） | 5/5 | 6 | 无 |
+| modern/lqr-controller（LQR控制） | 5/5 | 8 | 无 |
+| modern/multivariable-systems（多变量系统） | 4/4 | 9 | 无 |
+| modern/modern-case-study（现代控制案例） | 6/6 | 11 | 无 |
 | nonlinear/nonlinear-characteristics（非线性系统） | 9/9 | 9 | 无 |
 | nonlinear/phase-plane（相平面） | 12/12 | 25 | 无 |
 | nonlinear/lyapunov-stability（Lyapunov稳定性） | 4/4 | 8 | 无 |
@@ -92,8 +92,6 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-004 | modern/modern-case-study#3：观测器设计与基于观测器的控制（源码 L473） | FONT | 绘图字形未通过验收：ẋ（U+1E8B)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
-| PY-005 | modern/modern-case-study#4：卡尔曼滤波与 LQG 控制（源码 L619） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-006 | discrete-sampled/discrete-time-freq#3：实验 3（源码 L418） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 | PY-007 | discrete-sampled/z-transform-analysis#1：实验 1（源码 L206） | RUNTIME | ValueError: 'blue-' is not a valid format string (unrecognized character 'l') | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 | PY-008 | discrete-sampled/discrete-stability-criteria#2：实验 2（源码 L393） | RUNTIME | ValueError: Time steps `T` must be multiples of sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
@@ -139,3 +137,19 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 CLASSIC-05本轮关闭历史PY-001/PY-002/PY-003：三个widgets实验改为静态复算与React参数交互，九个新实验实际通过。历史记录及映射见[处置回执](../../.agent/semester-03/classic-05/resolved-python-debts.json)。其余27项保留原编号。
 
 2026-10-18 MODERN-01：原两实验保留核验，新增非零初值、隐藏模态/ZOH与十题复算三实验，共五实验浏览器原代码全部通过；证据见.agent/semester-03/modern-01/pyodide.json。27项已有待办保持原ID与处置方案。
+
+2026-10-18 MODERN-02：原三实验用途保留并扩为六实验，新增两车通路、有限/无限Gramian与完整十题核验；六份浏览器原始setup/cell通过，证据见.agent/semester-03/modern-02/pyodide.json。27项已有待办保留原ID和处置方案。
+
+MODERN-03（2026-10-18）：仅本课五实验/11cell按最终源指纹重新执行通过，加入小车能量与半正定边界；原27项待办ID/原因/处置保留。证据见.agent/semester-03/modern-03/pyodide.json。本轮未发布Pages。
+
+MODERN-04（2026-10-18）：本课五实验六cell按最终源指纹重新执行，覆盖原两实验，统一基线DC并补施力、矩阵/十题、前馈零点与电机精确指标。原27项待办保留。证据.agent/semester-03/modern-04/pyodide.json；本轮未发布Pages。
+
+MODERN-05（2026-10-18）：本课五实验五cell按最终源指纹实际执行通过，补非零初差、真实自由响应/速度峰值、全题与降阶/输入/偏差边界；保留原两实验用途和27待办原ID/原因/处置。证据.agent/semester-03/modern-05/pyodide.json；本轮未发布Pages。
+
+MODERN-06（2026-10-18）：本课原BVP与代价两cell用途保留，扩五实验六cell按最终源指纹实际执行通过；全终时/可行扰动、完整代价/全部题目与最短时间/输入边界。原27项待办ID/原因/处置保留。证据.agent/semester-03/modern-06/pyodide.json；本轮未发布Pages。
+
+MODERN-07（2026-10-18）：保留本课原四cell用途，扩五实验八cell按最终源指纹实际执行；有限DRE/BVP、离散DARE/尾项、权重单位和两模式参数。27待办ID/原因/处置不变。证据.agent/semester-03/modern-07/pyodide.json；本轮未发布Pages。
+
+MODERN-08（2026-10-18）：保留原六cell用途，扩四实验九cell按最终源指纹实际执行；RGA约束增益/缩放、静态解耦与2116组参数。27待办ID/原因/处置不变，证据.agent/semester-03/modern-08/pyodide.json，本轮未发布Pages。
+
+MODERN-09（2026-10-18）：原五实验八cell用途保留并纠正模型/噪声，扩六实验十一cell最终源实跑通过。PY-004字体显示与PY-005 widget迁React两项在本课关闭，原记录与证据见.agent/semester-03/modern-09/python-resolved.json；其它25待办原ID/原因/处置保留。本轮未发布Pages。

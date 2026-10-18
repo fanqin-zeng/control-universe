@@ -1,19 +1,23 @@
 ---
-title: 状态观测器设计
+title: 状态观测器
 description: 设计 Luenberger 观测器从输出测量中估计全部状态，掌握对偶原理和分离性原理，实现基于观测器的输出反馈控制。
 ---
 
-# 状态观测器设计
+# 状态观测器
 
-上一章，我们学会了用状态反馈 $\boldsymbol{u} = -K\boldsymbol{x}$ 任意配置闭环极点。但这个设计有一个**前提假设**：我们能测量到全部状态 $\boldsymbol{x}$。
+<span id="状态观测器设计" />
 
-实际中，传感器往往只能测量**输出** $\boldsymbol{y}$。比如直流电机只装了编码器测角位置，角速度测不到；汽车悬挂只装了加速度计，位移和速度需要推算。状态反馈需要的全部状态，从哪里来？
+上一课[状态反馈](/modern/state-feedback)用小车的位置和速度决定推力。假如现在只装了位置传感器：屏幕上能看到小车到了哪里，却没有直接显示它跑得多快。小车正高速接近目标时，控制器该继续推，还是提前收力？把相邻两次位置相减可以估速度，但位置读数的小抖动也可能变成很大的速度波动。
 
-解决方案：**状态观测器**——用一个"虚拟系统"在线估计状态。观测器读取输入 $\boldsymbol{u}$ 和输出 $\boldsymbol{y}$，构造一个状态估计 $\hat{\boldsymbol{x}}$，让 $\hat{\boldsymbol{x}}$ 尽快逼近真实的 $\boldsymbol{x}$。然后用 $\hat{\boldsymbol{x}}$ 代替 $\boldsymbol{x}$ 做状态反馈。
+我们已经知道小车的运动方程，也知道执行器刚才施加了多大的力。能否先按模型预测位置与速度，再用实测位置不断修正预测？**状态观测器**就是这样一个随真实小车一起运行的模型。它没有凭空增加传感器，而是利用已知输入和输出随时间携带的信息。
 
-> 📖 本章需要前三章的基础：[状态空间表示](/modern/state-space)、[可控性与可观性](/modern/controllability-observability) 和 [状态反馈与极点配置](/modern/state-feedback)，特别是可观性、对偶原理和极点配置的概念。
+![真实小车接受输入u并测出位置y；观测器用相同输入预测状态，利用y与预测位置之差修正估计，再将估计状态交给控制器](/diagrams/state-observer/observer.svg)
 
-## 为什么需要状态观测器
+本课沿用[状态空间](/modern/state-space)、[可控性与可观性](/modern/controllability-observability)和[状态反馈](/modern/state-feedback)。先设计误差怎样消失，再把观测器接入控制回路，最后讨论测量偏差、噪声和实际输入不一致时会发生什么。
+
+<span id="为什么需要状态观测器" />
+
+## 为什么要估计状态
 
 ### 状态反馈的困境
 
@@ -41,7 +45,7 @@ $$
 \dot{\boldsymbol{e}} = A\boldsymbol{e}
 $$
 
-误差的演化完全由 $A$ 的特征值决定。如果 $A$ 有不稳定特征值，误差会指数增长——这个"开环副本"完全不可用。
+误差的演化完全由 $A$ 的特征值决定。若A有右半平面极点，一些初始误差会增长；若A本来Hurwitz，开环副本也会收敛，但速度无法由我们调整。虚轴模态还可能使误差不消失；不能把所有非Hurwitz情况都称为指数增长。
 
 ### 关键改进：引入输出反馈
 
@@ -61,9 +65,13 @@ $$
 
 这就是 **Luenberger 全阶观测器**。
 
-## 全阶观测器的设计
+<span id="全阶观测器的设计" />
+
+## 全阶观测器
 
 ### 观测器结构
+
+以下先假定连续时间、精确的线性定常模型、D=0，无过程扰动和测量噪声；观测器拿到与对象完全相同的实际输入。
 
 Luenberger 全阶观测器：
 
@@ -96,7 +104,7 @@ $$
 $$
 
 <Callout variant="tip">
-**核心结论**：误差动态完全由矩阵 $A - LC$ 决定，与输入 $\boldsymbol{u}$ 无关！只要选择合适的 $L$ 使 $A - LC$ 的特征值都在左半平面，误差就会指数衰减到零。
+**核心结论**：误差动态完全由矩阵 $A - LC$ 决定，在上述模型与输入一致的条件下，与输入 $\boldsymbol{u}$ 无关！只要选择合适的 $L$ 使 $A - LC$ 的特征值都在左半平面，误差就会指数衰减到零。
 </Callout>
 
 ### 观测器极点配置
@@ -108,6 +116,10 @@ $$
 - **观测器设计**：选择 $L$ 配置 $A - LC$ 的特征值 → 需要 $(A, C)$ **可观**
 
 > **定理**：系统 $(A, C)$ 可以通过观测器增益 $L$ 任意配置观测器极点的**充要条件**是 $(A, C)$ **完全可观**。
+
+只要求估计误差收敛，不必任意配置全部极点：条件是**可检测**，即不可观模态已经稳定。例如A=diag(−1,−2)、C=[1,0]不可观，取L=[2,0]ᵀ仍使A−LC=diag(−3,−2)稳定；若隐藏模态改为+1，则任何L都无法修正它。
+
+若输出含已知直通项D，使用预测输出C xhat+D u，创新为y−C xhat−D u；相同实际输入的D项会抵消。遗漏这项就不再得到本课的误差方程。
 
 ### 例1：观测器设计
 
@@ -137,7 +149,7 @@ $$
 = s^2 + (l_1+3)s + (3l_1 + 2 + l_2)
 $$
 
-**步骤3**：期望观测器极点 $\mu_1 = \mu_2 = -10$（比控制极点快 2 倍）。
+**步骤3**：期望观测器极点 $\mu_1 = \mu_2 = -10$（相对上一课−5控制极点，其实部绝对值为2倍；不是收敛时间严格减半）。
 
 期望多项式：$s^2 + 20s + 100$。
 
@@ -158,7 +170,7 @@ $$
 特征多项式：$s^2 + 20s + 100 = (s+10)^2$ ✓
 
 <Callout variant="info">
-**观察**：和上一章例1的状态反馈增益 $K = \begin{bmatrix} 23 & 7 \end{bmatrix}$ 对比——同一个系统，状态反馈和观测器设计都需要配置极点，但计算的是不同的增益矩阵。
+**观察**：和上一课例1的状态反馈增益 $K = \begin{bmatrix} 23 & 7 \end{bmatrix}$ 对比——同一个系统，状态反馈和观测器设计都需要配置极点，但计算的是不同的增益矩阵。
 </Callout>
 
 ## 对偶原理
@@ -170,12 +182,12 @@ $$
 | | 状态反馈 | 观测器设计 |
 |---|---|---|
 | 目标矩阵 | $A - BK$ | $A - LC$ |
-| 增益 | $K$（$1 \times n$） | $L$（$n \times 1$，SISO） |
+| 增益 | $K$（$m \times n$） | $L$（$n \times p$） |
 | 条件 | $(A, B)$ 可控 | $(A, C)$ 可观 |
 
 取转置：$(A - LC)^T = A^T - C^T L^T$。
 
-这和状态反馈的形式 $A^T - C^T K^T$ 完全一样！其中：
+这和对偶状态反馈的形式 $A^T - C^T\bar K$ 相同，取 $\bar K=L^T$。其中：
 - $A^T$ 对应 $A$
 - $C^T$ 对应 $B$
 - $L^T$ 对应 $K$
@@ -184,7 +196,9 @@ $$
 
 > **对偶原理**：$(A, C)$ 的观测器设计等价于 $(A^T, C^T)$ 的状态反馈设计。具体地，$(A, C)$ 可观 $\iff$ $(A^T, C^T)$ 可控。
 
-### 利用对偶原理计算 $L$
+<span id="利用对偶原理计算-lll" />
+
+### 对偶增益计算
 
 **方法**：
 
@@ -208,7 +222,13 @@ $$
 
 **步骤3**：用极点配置求 $\bar{K}$。
 
-$\bar{A} - \bar{B}\bar{K} = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix} - \begin{bmatrix} 1 \\ 0 \end{bmatrix}\begin{bmatrix} \bar{k}_1 & \bar{k}_2 \end{bmatrix} = \begin{bmatrix} -\bar{k}_1 & -2-\bar{k}_2 \\ 1 & -3 \end{bmatrix}$
+
+
+$$
+\bar{A} - \bar{B}\bar{K} = \begin{bmatrix} 0 & -2 \\ 1 & -3 \end{bmatrix} - \begin{bmatrix} 1 \\ 0 \end{bmatrix}\begin{bmatrix} \bar{k}_1 & \bar{k}_2 \end{bmatrix} = \begin{bmatrix} -\bar{k}_1 & -2-\bar{k}_2 \\ 1 & -3 \end{bmatrix}
+$$
+
+
 
 特征多项式：$s^2 + (\bar{k}_1 + 3)s + (3\bar{k}_1 + 2 + \bar{k}_2)$。
 
@@ -221,33 +241,40 @@ $\bar{k}_1 = 17$，$\bar{k}_2 = 47$。$\bar{K} = \begin{bmatrix} 17 & 47 \end{bm
 和例1的结果一致！
 
 <Callout variant="info">
-**实用技巧**：在 MATLAB/Python 中，可以直接用 `place` 函数设计观测器：`L = place(A', C', poles)'`。这就是利用对偶原理。
+**实用技巧**：在 MATLAB/Python 中，可以直接用 `place` 函数设计观测器：MATLAB写作`L = place(A', C', poles)'`，Python写作`L = place(A.T, C.T, poles).T`。单输出重根可用`acker(A.T,C.T,poles).reshape(-1,1)`；这不是所有多输出重根问题的通用替代。[python-control 0.10.2文档](https://python-control.readthedocs.io/en/0.10.2/generated/control.place.html)说明place默认使用YT算法，重复次数不能超过rank(C)。算法拒绝不代表数学上不存在L。
 </Callout>
 
 <JupyterNotebook
-  title=" 动手实验：观测器增益设计（对偶原理）"
+  title="对偶增益设计"
   setupCode={`import numpy as np
-from control import place, acker`}
+import sympy as sp
+import matplotlib.pyplot as plt
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 12`}
   cells={[
-    { code: `# ===== 利用对偶原理设计观测器 =====
-A = np.array([[0, 1], [-2, -3]])
-B = np.array([[0], [1]])
-C = np.array([[1, 0]])
-
-obs_poles = [-15, -15]
-
-# 利用对偶：place(A', C', poles) 给出 K_bar，L = K_bar'
-L = acker(A.T, C.T, obs_poles).reshape(-1, 1)  # acker 返回一维，恢复 n×1  # 二重根须用 acker（place 拒绝重根，见 state-feedback 课）
-print(f"观测器增益 L = \\n{L}")
-
-# 验证观测器极点
-A_LC = A - L @ C
-print(f"\\nA - LC 的特征值: {np.linalg.eigvals(A_LC)}")
-print(f"期望特征值: {obs_poles}")` },
+    { code: `A=np.array([[0.,1.],[-2.,-3.]])
+B=np.array([[0.],[1.]]);C=np.array([[1.,0.]])
+try:
+    place(A.T,C.T,[-15,-15])
+    raise AssertionError('expected repeated-pole rejection')
+except ValueError as error:print('Expected place rejection:',error)
+for p in [-10,-15]:
+    L=np.asarray(acker(A.T,C.T,[p,p])).reshape(-1,1)
+    assert np.allclose(L,[[ -2*p-3],[p*p+6*p+7]])
+    assert np.allclose(np.poly(A-L@C),[1,-2*p,p*p])
+    print('p=',p,'L=',L.ravel(),'characteristic=',np.poly(A-L@C))
+Lp=place(A.T,C.T,[-14,-15]).T
+La=np.asarray(acker(A.T,C.T,[-14,-15])).reshape(-1,1)
+assert np.allclose(Lp,La)
+print('distinct poles agree:',Lp.ravel())` }
   ]}
 />
 
-## 基于观测器的控制器——分离性原理
+## 分离性原理
 
 ### 组合结构
 
@@ -285,7 +312,7 @@ $$
 \begin{bmatrix} \dot{\boldsymbol{x}} \\ \dot{\boldsymbol{e}} \end{bmatrix} = \begin{bmatrix} A - BK & -BK \\ 0 & A - LC \end{bmatrix} \begin{bmatrix} \boldsymbol{x} \\ \boldsymbol{e} \end{bmatrix} + \begin{bmatrix} B \\ 0 \end{bmatrix} Nr
 $$
 
-这是一个**上三角矩阵**！其特征值 = 对角块的特征值之和：
+这是一个**分块上三角矩阵**，不是每个对角块都为三角阵。特征多项式为两对角块特征多项式的乘积，特征值按代数重数合并：
 
 $$
 \boxed{\text{闭环极点} = \underbrace{\text{eig}(A - BK)}_{\text{控制极点}} \cup \underbrace{\text{eig}(A - LC)}_{\text{观测器极点}}}
@@ -297,8 +324,8 @@ $$
 **分离性原理的工程意义**：
 1. 先设计状态反馈 $K$（假设全部状态可测），配置控制极点
 2. 再设计观测器 $L$，配置观测器极点
-3. 两步设计互不影响——可以分别优化
-4. 通常观测器极点比控制极点快 2~5 倍（让估计误差快速衰减，不影响主导动态）
+3. K与L分别决定对角块极点；误差经−BKe进入真实系统，瞬态仍受L和初始误差影响，不能据此声称分别优化即可整体最优
+4. “实部快2–5倍”只是起始选点经验，须实际核噪声、初始峰值、采样与模型误差；不保证主导动态不受影响
 </Callout>
 
 ### 例3：完整的基于观测器的控制器设计
@@ -309,7 +336,7 @@ $$
 
 **步骤1**：设计状态反馈 $K$。
 
-期望控制极点：$s = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2} = -2.1 \pm j\sqrt{4.71}$。
+期望控制极点：$s = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2} = -2.1 \pm j\sqrt{4.59}$。
 
 期望多项式：$s^2 + 2\zeta\omega_n s + \omega_n^2 = s^2 + 4.2s + 9$。
 
@@ -333,155 +360,199 @@ $L = \begin{bmatrix} 27 \\ 142 \end{bmatrix}$
 
 $A - BK = \begin{bmatrix} 0 & 1 \\ -9 & -4.2 \end{bmatrix}$，$(A-BK)^{-1} = \frac{1}{9}\begin{bmatrix} -4.2 & -1 \\ 9 & 0 \end{bmatrix}$
 
-$-C(A-BK)^{-1}B = -\begin{bmatrix} 1 & 0 \end{bmatrix}\frac{1}{9}\begin{bmatrix} -4.2 & -1 \\ 9 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -\frac{1}{9}(-1) = \frac{1}{9}$
+
+
+$$
+-C(A-BK)^{-1}B = -\begin{bmatrix} 1 & 0 \end{bmatrix}\frac{1}{9}\begin{bmatrix} -4.2 & -1 \\ 9 & 0 \end{bmatrix}\begin{bmatrix} 0 \\ 1 \end{bmatrix} = -\frac{1}{9}(-1) = \frac{1}{9}
+$$
+
+
 
 $N = 9$
 
 **步骤4**：验证分离性原理。
 
-闭环增广矩阵 $\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix}$ 是 $4 \times 4$ 矩阵。其特征值 = $\{-2.1 \pm j\sqrt{4.71}\} \cup \{-15, -15\}$。
+闭环增广矩阵 $\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix}$ 是 $4 \times 4$ 矩阵。其特征值 = $\{-2.1 \pm j\sqrt{4.59}\} \cup \{-15, -15\}$。
 
 控制极点和观测器极点完全独立 ✓
 
 <JupyterNotebook
-  title=" 动手实验：基于观测器的控制器仿真"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+  title="观测器闭环响应"
+  setupCode={`import numpy as np
+import sympy as sp
 import matplotlib.pyplot as plt
-from control import ss, place, acker, step_response
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 12`}
   cells={[
-    { code: `# ===== 基于观测器的控制器阶跃响应 =====
-A = np.array([[0, 1], [-2, -3]])
-B = np.array([[0], [1]])
-C = np.array([[1, 0]])
-
-# 观测器增益（例1结果）
-L = acker(A.T, C.T, [-15, -15]).reshape(-1, 1)  # acker 返回一维，恢复 n×1  # 二重根须用 acker
-
-# 状态反馈增益（上一章的结果）
-K = np.array([[7, 1.2]])
-N = 9  # 前馈增益
-
-# 构造 4 维增广系统 [x; e]
-A_cl = np.block([
-    [A - B @ K, -B @ K],
-    [np.zeros((2, 2)), A - L @ C]
-])
-B_cl = np.block([
-    [B * N],
-    [np.zeros((2, 1))]
-])
-C_cl = np.block([[np.array([[1, 0]]), np.zeros((1, 2))]])
-D_cl = np.array([[0]])
-
-sys_closed = ss(A_cl, B_cl, C_cl, D_cl)
-
-t = np.linspace(0, 3, 500)
-t_out, y_out = step_response(sys_closed, T=t)
-
-plt.figure(figsize=(10, 6))
-plt.plot(t_out, np.squeeze(y_out), 'b-', linewidth=2, label='输出 y(t)')
-plt.axhline(y=1.0, color='k', linestyle=':', alpha=0.5, label='参考值 r=1')
-plt.xlabel('Time (s)', fontsize=12)
-plt.ylabel('y(t)', fontsize=12)
-plt.title('基于观测器的控制器 — 阶跃响应', fontsize=14)
-plt.legend(fontsize=11)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` },
+    { code: `A=np.array([[0.,1.],[-2.,-3.]])
+B=np.array([[0.],[1.]]);C=np.array([[1.,0.]])
+K=np.array([[7.,1.2]]);N=9.
+L=np.asarray(acker(A.T,C.T,[-15,-15])).reshape(-1,1)
+M=np.block([[A-B@K,-B@K],[np.zeros((2,2)),A-L@C]])
+Br=np.vstack([B*N,np.zeros((2,1))]);Cr=np.array([[1.,0.,0.,0.]])
+assert np.allclose(np.poly(M),np.polymul([1,4.2,9],[1,30,225]))
+assert np.allclose(np.sort_complex(np.linalg.eigvals(A-B@K)),[-2.1-np.sqrt(4.59)*1j,-2.1+np.sqrt(4.59)*1j])
+assert abs((-C@np.linalg.solve(A-B@K,B*N)).item()-1)<1e-10
+t=np.linspace(0,3,601)
+_,zero=step_response(ss(M,Br,Cr,0),T=t);zero=np.squeeze(zero)
+records=[]
+fig,axs=plt.subplots(2,1,figsize=(5,6.8))
+for e0 in [[0.,0.],[-.1,0.]]:
+    z0=np.array([0.,0.,*e0])
+    states=np.array([np.linalg.solve(M,(expm(M*ti)-np.eye(4))@Br).ravel()+expm(M*ti)@z0 for ti in t])
+    physical=solve_ivp(lambda time,z:np.r_[A@z[:2]+B.ravel()*(N-(K@z[2:]).item()),A@z[2:]+B.ravel()*(N-(K@z[2:]).item())+L.ravel()*(C@(z[:2]-z[2:])).item()],(0,3),np.r_[z0[:2],z0[:2]+z0[2:]],t_eval=t,rtol=1e-11,atol=1e-12).y.T
+    assert np.max(abs(physical[:,:2]-states[:,:2]))<1e-8
+    assert np.max(abs(physical[:,2:]-physical[:,:2]-states[:,2:]))<1e-8
+    if e0==[0.,0.]:assert np.max(abs(states[:,0]-zero))<1e-10
+    force=N-(states[:,:2]+states[:,2:])@K.ravel()
+    records.append({'e0':e0,'states':states.tolist(),'force':force.tolist()})
+    axs[0].plot(t,states[:,0],label='e0='+str(e0))
+    axs[1].plot(t,states[:,2],label='position error '+str(e0))
+for ax in axs:ax.set(xlim=(0,3),xlabel='Time (s)');ax.grid(True);ax.legend()
+axs[0].set_ylabel('Position (m)');axs[1].set_ylabel('Estimate error (m)');fig.tight_layout();plt.show()
+print('example3 K=',K,'L=',L.ravel(),'N=',N,'polynomial=',np.poly(M),'two actual initial errors verified')` }
   ]}
 />
 
-<ObserverSpeedExplorer />
+
 
 ## 降阶观测器
 
 ### 为什么需要降阶观测器
 
-全阶观测器估计全部 $n$ 个状态。但如果输出 $\boldsymbol{y}$ 已经直接给出了 $p$ 个状态的线性组合，只需要估计 $n - p$ 个未知量。
+全阶观测器估计n个状态。如果D=0且C具有行满秩p，可选坐标使y就是前p个状态，只为其余n−p个量建立动态。若输出有冗余，先取rank(C)个独立测量；单输出情形要求C不为零。
 
-**降阶观测器**只估计不可直接测量的 $n - p$ 个状态，维度更低，计算量更小。
+<span id="基本思路sisop1p--1p1" />
 
-### 基本思路（SISO，$p = 1$）
+### 不对位置直接求导
 
-设 $C = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix}$（通过坐标变换总可以做到），则 $y = x_1$——第一个状态直接可测。
-
-只需要估计 $x_2, \ldots, x_n$（$n-1$ 维）。定义变换后的变量，可以构造 $(n-1)$ 维的降阶观测器。
-
-降阶观测器的设计公式和全阶类似，但用 $(n-1)$ 维的子系统 $(A_{22}, A_{12})$ 代替 $(A, C)$：
+分块写成下面的形式，y已测得，x_r尚未测得：
 
 $$
-\dot{\hat{\boldsymbol{x}}}_r = (A_{22} - L_r A_{12})\hat{\boldsymbol{x}}_r + \cdots
+\dot y=A_{11}y+A_{12}x_r+B_1u,\qquad
+\dot x_r=A_{21}y+A_{22}x_r+B_2u.
 $$
 
-其中 $L_r$ 是 $(n-1) \times 1$ 的降阶观测器增益。
+为避免直接微分带噪测量，定义内部变量z的观测器，并重构未测状态：
 
-<Callout variant="info">
-**降阶 vs 全阶**：
-- 降阶观测器维度低，计算快，但结构更复杂，对输出噪声更敏感（因为需要微分输出信号）
-- 全阶观测器虽然维度高，但结构统一，对噪声更鲁棒
-- 实际中**全阶观测器更常用**，除非 $n$ 很大而 $p$ 也很大
-</Callout>
+$$
+F_r=A_{22}-L_rA_{12},\qquad
+\hat x_r=z+L_ry,
+$$
+
+$$
+\dot z=F_rz+(A_{21}+F_rL_r-L_rA_{11})y+(B_2-L_rB_1)u.
+$$
+
+相减可验证 $\dot e_r=F_re_r$，其中 $e_r=\hat x_r-x_r$。实现只用y与u，**不需要数值微分y**。仍有L_ry的直接测量通路，降阶不等于自动抗噪；全阶与降阶谁更好，需要同噪声合同下另验。
+
+对本课小车，y=q、x_r为速度，取L_r=7，则F_r=−10：
+
+$$
+\dot z=-10z-72y+u,\qquad \widehat{\dot q}=z+7y.
+$$
+
+若q(0)=1、速度为0，且希望初始速度估计也为0，应置z(0)=−7。模型和实际输入一致时速度估计误差始终为零；故实验还单独用z(0)=0，展示初始误差7按e⁻¹⁰ᵗ衰减。不能把初值变换漏掉。
 
 ## 深入讨论
 
 ### 观测器极点的选择
 
-观测器极点应该放多快？经验法则：**观测器极点实部 = 控制极点实部的 2~5 倍**。
+观测器极点实部可先取控制极点实部的2–5倍作为候选，再验收。重根还带多项式因子，1/|p|只是指数因子的时间尺度，不是保证收敛的时间。
 
-- **太快**：观测器带宽大，放大测量噪声。实际传感器都有噪声，过快的观测器会让控制量剧烈抖动
-- **太慢**：估计误差衰减慢，在误差消失之前系统的动态由"控制 + 观测器"的耦合决定，性能下降
+下图固定小车u=0、真实初值[1,0]、估计初值[0,0]，只改变二重极点p。上图真实位置也随时间运动；下图显示速度估计误差。误差取e=xhat−x，有e₁(0)=−1、e₂(0)=0；由F=pI+H且H²=0得到：
 
-工程中通常先设计控制极点（根据性能需求），再选观测器极点为控制极点的 3 倍左右，然后在仿真中调整。
+$$
+e_1(t)=[-1-(p+3)t]e^{pt},\qquad e_2(t)=(p+3)^2t e^{pt}.
+$$
+
+速度误差连续峰值为(p+3)²/(|p|e)，时刻1/|p|。默认p=−15时峰值约3.531643m/s，并非位置误差一消失就从未有过速度峰值。默认增益L=[27,142]，控制侧K=[7,1.2]、N=9保持不变，但本图是自由响应，没有施加这组控制律。
+
+另列100rad/s单位测量扰动到速度估计误差的幅值，按(jωI−F)⁻¹L计算；这是单频增益，不是随机噪声方差。p=−5/−15/−30是固定观察工况，全26档原始结果在实验中复算。更快的候选有更大的初始速度误差峰值与该频率增益，不能仅凭极点说性能更好。
+
+<ObserverSpeedExplorer />
+
+<JupyterNotebook
+  title="真实估计与速度峰值"
+  setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 12`}
+  cells={[
+    { code: `A=np.array([[0.,1.],[-2.,-3.]])
+C=np.array([[1.,0.]]);x0=np.array([1.,0.]);e0=-x0
+t=np.linspace(0,2,401);observer_records=[]
+fig,axs=plt.subplots(2,1,figsize=(5,6.8))
+for p in range(-30,-4):
+    L=np.asarray(acker(A.T,C.T,[p,p])).reshape(-1,1);F=A-L@C
+    x=np.array([expm(A*ti)@x0 for ti in t]);err=np.array([expm(F*ti)@e0 for ti in t]);estimate=x+err
+    expected=np.c_[(-1-(p+3)*t)*np.exp(p*t),(p+3)**2*t*np.exp(p*t)]
+    assert np.max(abs(err-expected))<1e-10
+    peakTime=-1/p;peak=float((expm(F*peakTime)@e0)[1])
+    noise=abs(np.linalg.solve(100j*np.eye(2)-F,L)[1,0])
+    assert abs(peak-(p+3)**2/(-p*np.e))<1e-10
+    observer_records.append({'p':p,'L':L.ravel().tolist(),'x':x.tolist(),'e':err.tolist(),'estimate':estimate.tolist(),'peak':peak,'peakTime':peakTime,'noise':float(noise)})
+    if p in [-30,-15,-5]:
+        axs[0].plot(t,estimate[:,0],label='estimated p='+str(p));axs[1].plot(t,err[:,1],label='p='+str(p))
+        print('p=',p,'L=',L.ravel(),'velocity peak=',peak,'time=',peakTime,'noise@100=',noise,'e@2=',err[-1])
+axs[0].plot(t,x[:,0],color='black',linestyle='--',label='true cart')
+for ax in axs:ax.set(xlim=(0,2),xlabel='Time (s)');ax.grid(True);ax.legend()
+axs[0].set(ylim=(-.1,1.2),ylabel='Position (m)');axs[1].set(ylim=(0,10),ylabel='Velocity error (m/s)');fig.tight_layout();plt.show()` }
+  ]}
+/>
 
 ### 观测器与卡尔曼滤波的关系
 
-Luenberger 观测器假设没有噪声。实际中：
+前面的收敛推导没有噪声，并不意味着Luenberger结构不能接收有噪测量。若实际中存在：
 - **过程噪声**：$\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}$
 - **测量噪声**：$\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}$
 
-**卡尔曼滤波**是 Luenberger 观测器的随机推广——它在噪声环境下给出**最优**的状态估计（最小化估计误差的方差）。卡尔曼滤波的增益矩阵 $K_f$ 不是任意选的，而是由噪声统计特性自动确定。
+在模型、协方差、初始统计等假设成立时，**卡尔曼滤波**给出最小均方误差的线性估计；线性高斯情形下也在更广的估计类中最优。它不是对任意未知噪声都最优。卡尔曼滤波的增益矩阵 $K_f$ 不是任意选的，而是由噪声统计特性自动确定。
 
-> 下一章 [卡尔曼滤波](/estimation/kalman-filter) 将详细介绍。
+> 后续 [卡尔曼滤波](/estimation/kalman-filter) 将详细介绍。
 
 ### 非线性系统的观测器
 
 Luenberger 观测器只适用于线性系统。对于非线性系统 $\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u})$，$\boldsymbol{y} = h(\boldsymbol{x})$：
 
 - **扩展观测器**：在工作点线性化，用 Luenberger 方法设计（局部有效）
-- **高增益观测器**：用大增益强制误差快速收敛（但放大噪声）
-- **滑模观测器**：利用滑模变结构控制的思想，对模型不确定具有鲁棒性
+- **高增益观测器**：在适用的可观结构与正则条件下用高增益设计，须验初始峰值和噪声
+- **滑模观测器**：利用滑模变结构控制的思想，对满足特定匹配和有界条件的扰动设计，不能泛称对任意不确定性鲁棒
 
 ### 与经典控制的对比
 
-| 特性 | 经典控制（PID） | 现代控制（观测器 + 状态反馈） |
-|------|----------------|---------------------------|
-| 反馈信号 | 输出 $y$ | 估计状态 $\hat{\boldsymbol{x}}$ |
-| 是否需要模型 | 不需要（基于误差调节） | 需要精确模型 $(A, B, C)$ |
-| 设计参数 | $K_p, K_i, K_d$（3 个） | $K$（$n$ 个）+ $L$（$n \times p$ 个） |
-| 对噪声的态度 | 较鲁棒（积分可能漂移） | 观测器放太大会放大噪声 |
-| MIMO 适用性 | 困难 | 自然支持 |
+| 结构 | 使用的信息 | 设计时核查 |
+|---|---|---|
+| PID等输出反馈 | 参考与测量，可包含内部动态 | 整定、滤波、饱和和采样；模型可显式使用，也可实验辨识 |
+| 观测器与状态反馈 | 实际输入、输出和状态模型 | 可稳定/可检测、模型误差、噪声与实现约束 |
+
+这里不作两者的性能、抗噪或MIMO能力排名。状态反馈K一般为m×n，L为n×p，不能把所有系统都算作n个控制增益。
 
 ### 分离性原理的局限
 
-分离性原理在以下条件下**不成立**：
-1. **输入约束/饱和**：当 $\boldsymbol{u}$ 饱和时，观测器和控制器的耦合不可忽略
-2. **非线性系统**：非线性系统的观测器和控制器不能独立设计
-3. **自适应控制**：当模型参数在线估计时，估计和控制的交互影响稳定性
+分离性原理是精确线性模型下的极点分解。可稳定与可检测足以存在稳定的K/L，任意配置全谱才要求可控/可观；参考跟踪还需上一课的稳定、非零DC等条件。
+
+若执行器饱和，只要观测器拿到**饱和后的实际输入**且模型准确，误差中的Bu仍抵消；但真实对象已是非线性闭环，整体不再由固定增广矩阵的极点保证。若观测器错用未饱和命令，误差另有B(u_cmd−u_actual)。已知D项也须用相同输入。模型失配、噪声、扰动会再引入误差项；不能把“Bu抵消”泛化到这些情况。非线性和自适应系统要按各自条件分析，不能由本节推导直接保证或直接否定一切分离设计。
 
 ## 小结
 
 - **观测器**从输入 $\boldsymbol{u}$ 和输出 $\boldsymbol{y}$ 中估计全部状态 $\hat{\boldsymbol{x}}$
 - **Luenberger 全阶观测器**：$\dot{\hat{\boldsymbol{x}}} = (A - LC)\hat{\boldsymbol{x}} + B\boldsymbol{u} + L\boldsymbol{y}$
 - **误差动态**：$\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e}$，由 $A - LC$ 的特征值决定
-- **可观性**是观测器设计的充要条件（类比：可控性是状态反馈的充要条件）
+- **可观性**是任意配置观测器全谱的充要条件，可检测性足以让误差收敛（类比：可控性是状态反馈的充要条件）
 - **对偶原理**：观测器设计 = 对偶系统的状态反馈设计，$L = \text{place}(A^T, C^T, \text{poles})^T$
 - **分离性原理**：基于观测器的控制器的闭环极点 = 控制极点 $\cup$ 观测器极点，$K$ 和 $L$ 可独立设计
-- 观测器极点通常比控制极点快 2~5 倍
-- 观测器是卡尔曼滤波的确定性版本
+- 2–5倍只作初选；须验初始误差峰值、噪声和实际输入
+- Kalman估计的最优性依赖模型与统计假设
 
 ## 习题
 
@@ -534,25 +605,27 @@ $L = \begin{bmatrix} 11 \\ 3 \end{bmatrix}$
 
 (c) $A - LC = \begin{bmatrix} -11 & 1 \\ -9 & -5 \end{bmatrix}$，$\text{tr} = -16$，$\det = 55 + 9 = 64$。特征多项式 $s^2 + 16s + 64 = (s+8)^2$ ✓
 
-**2.** (a) $A$ 的结构：次对角线为 1，最后一列为 $[-6, -11, -6]^T$。$C = \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}$ 提取第一个状态。这是**可观测标准型**（转置的可控标准型）✓
+**2.** (a) 题给A的**超对角线**为1，系数在最后一行，是伴随可控型的A形状；C取首状态使本题可观矩阵恰为I。不能据此把A写成它的转置，或直接从L逐项减多项式系数。
 
-(b) 可观测标准型中，$L$ 的计算类似可控标准型中 $K$ 的计算。
+(b) 实际有
 
-$CA = \begin{bmatrix} 0 & 1 & 0 \end{bmatrix}$，$CA^2 = \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}$。
+$$
+A-LC=\begin{bmatrix}-l_1&1&0\\-l_2&0&1\\-6-l_3&-11&-6\end{bmatrix}.
+$$
 
-$\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix} = I$
+其特征多项式为
 
-$A - LC$ 的第一列为 $\begin{bmatrix} -l_1 \\ -6-l_2 \\ -6-l_3 \end{bmatrix}$（$L$ 影响第一列），其余部分不变。
+$$
+s^3+(6+l_1)s^2+(11+6l_1+l_2)s+(6+11l_1+6l_2+l_3).
+$$
 
-特征多项式：$s^3 + (6+l_3)s^2 + (11+l_2)s + (6+l_1)$。
+与(s+10)³比较：l₁=24，l₂=300−11−144=145，l₃=1000−6−264−870=−140。因此
 
-期望：$(s+10)^3 = s^3 + 30s^2 + 300s + 1000$。
+$$
+L=\begin{bmatrix}24\\145\\-140\end{bmatrix}.
+$$
 
-$6 + l_1 = 1000 \implies l_1 = 994$
-$11 + l_2 = 300 \implies l_2 = 289$
-$6 + l_3 = 30 \implies l_3 = 24$
-
-$L = \begin{bmatrix} 994 \\ 289 \\ 24 \end{bmatrix}$
+代回特征多项式为s³+30s²+300s+1000。负的第三个增益并非错误，必须用A−LC整体验证。
 
 **3.** 对偶系统：$\bar{A} = A^T = \begin{bmatrix} 1 & 0 \\ 2 & 3 \end{bmatrix}$，$\bar{B} = C^T = \begin{bmatrix} 1 \\ 1 \end{bmatrix}$。
 
@@ -562,15 +635,33 @@ $L = \begin{bmatrix} 994 \\ 289 \\ 24 \end{bmatrix}$
 
 $\bar{A}^2 = \begin{bmatrix} 1 & 0 \\ 8 & 9 \end{bmatrix}$
 
-$p_d(\bar{A}) = \bar{A}^2 + 5\bar{A} + 6I = \begin{bmatrix} 1 & 0 \\ 8 & 9 \end{bmatrix} + \begin{bmatrix} 5 & 0 \\ 10 & 15 \end{bmatrix} + \begin{bmatrix} 6 & 0 \\ 0 & 6 \end{bmatrix} = \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix}$
+
+
+$$
+p_d(\bar{A}) = \bar{A}^2 + 5\bar{A} + 6I = \begin{bmatrix} 1 & 0 \\ 8 & 9 \end{bmatrix} + \begin{bmatrix} 5 & 0 \\ 10 & 15 \end{bmatrix} + \begin{bmatrix} 6 & 0 \\ 0 & 6 \end{bmatrix} = \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix}
+$$
+
+
 
 $\bar{\mathcal{C}}^{-1} = \frac{1}{4}\begin{bmatrix} 5 & -1 \\ -1 & 1 \end{bmatrix}$
 
-$\bar{K} = \begin{bmatrix} 0 & 1 \end{bmatrix} \frac{1}{4}\begin{bmatrix} 5 & -1 \\ -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} 6 & 30 \end{bmatrix} = \begin{bmatrix} 1.5 & 7.5 \end{bmatrix}$
+
+
+$$
+\bar{K} = \begin{bmatrix} 0 & 1 \end{bmatrix} \frac{1}{4}\begin{bmatrix} 5 & -1 \\ -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} -1 & 1 \end{bmatrix} \begin{bmatrix} 12 & 0 \\ 18 & 30 \end{bmatrix} = \frac{1}{4}\begin{bmatrix} 6 & 30 \end{bmatrix} = \begin{bmatrix} 1.5 & 7.5 \end{bmatrix}
+$$
+
+
 
 $L = \bar{K}^T = \begin{bmatrix} 1.5 \\ 7.5 \end{bmatrix}$
 
-验证：$A - LC = \begin{bmatrix} 1 & 2 \\ 0 & 3 \end{bmatrix} - \begin{bmatrix} 1.5 \\ 7.5 \end{bmatrix}\begin{bmatrix} 1 & 1 \end{bmatrix} = \begin{bmatrix} -0.5 & 0.5 \\ -7.5 & -4.5 \end{bmatrix}$
+验证：
+
+$$
+A - LC = \begin{bmatrix} 1 & 2 \\ 0 & 3 \end{bmatrix} - \begin{bmatrix} 1.5 \\ 7.5 \end{bmatrix}\begin{bmatrix} 1 & 1 \end{bmatrix} = \begin{bmatrix} -0.5 & 0.5 \\ -7.5 & -4.5 \end{bmatrix}
+$$
+
+
 
 $\text{tr} = -5$，$\det = 2.25 + 3.75 = 6$。特征多项式 $s^2 + 5s + 6 = (s+2)(s+3)$ ✓
 
@@ -582,7 +673,7 @@ $(A - LC)^T = A^T - C^T L^T$
 
 由极点配置定理，$(A^T, C^T)$ 可以任意配置极点的充要条件是 $(A^T, C^T)$ 完全可控。
 
-由对偶原理（上一章），$(A^T, C^T)$ 可控 $\iff$ $(A, C)$ 可观。
+由对偶原理（上一课），$(A^T, C^T)$ 可控 $\iff$ $(A, C)$ 可观。
 
 因此，$(A, C)$ 可观 $\iff$ 可以任意配置观测器极点。证毕。
 
@@ -605,7 +696,7 @@ $l_1 = 20$，$1 + l_2 = 100 \implies l_2 = 99$。$L = \begin{bmatrix} 20 \\ 99 \
 (d) 增广矩阵：
 
 $$
-\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix} = \begin{bmatrix} -17 & -5 & -17 & -6 \\ -18 & -6 & -18 & -6 \\ 0 & 0 & -20 & 1 \\ 0 & 0 & -100 & 0 \end{bmatrix}
+\begin{bmatrix} A-BK & -BK \\ 0 & A-LC \end{bmatrix} = \begin{bmatrix} 0 & 1 & 0 & 0 \\ -18 & -6 & -17 & -6 \\ 0 & 0 & -20 & 1 \\ 0 & 0 & -100 & 0 \end{bmatrix}
 $$
 
 这是上三角分块矩阵，特征值 = $\text{eig}(A-BK) \cup \text{eig}(A-LC) = \{-3 \pm 3j\} \cup \{-10, -10\}$ ✓
@@ -622,11 +713,11 @@ $\det(sI - M) = \det(sI - A + BK) \cdot \det(sI - A + LC)$
 
 **7.** (a) $\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$，$\det = 1 \neq 0$，**可观** ✓
 
-(b) 开环传递函数 $G(s) = \frac{50}{s^2 + 10s}$（见上一章习题 9）。
+(b) 开环传递函数 $G(s) = \frac{50}{s^2 + 10s}$（见上一课习题 9）。
 
-$t_s < 0.5$ 秒 $\implies \zeta\omega_n > 8$。$\sigma < 5\% \implies \zeta > 0.69$。
+先用近似t_s≈4/(ζω_n)选候选，不将其当严格充分条件。标准二阶超调公式要求ζ>约.690107；以下用精确模型复验。
 
-选 $\zeta\omega_n = 10$，$\zeta = 0.707$。期望控制极点 $-10 \pm 10j$，期望多项式 $s^2 + 20s + 200$。
+选 $\zeta\omega_n = 10$，$\zeta = 1/\sqrt2$。期望控制极点 $-10 \pm 10j$，期望多项式 $s^2 + 20s + 200$。
 
 $A - BK$：$50k_1 = 200 \implies k_1 = 4$，$10 + 50k_2 = 20 \implies k_2 = 0.2$。$K = \begin{bmatrix} 4 & 0.2 \end{bmatrix}$。
 
@@ -641,13 +732,27 @@ $L = \begin{bmatrix} 50 \\ 400 \end{bmatrix}$
 
 (c) $(A-BK)^{-1} = \frac{1}{200}\begin{bmatrix} -20 & -1 \\ 200 & 0 \end{bmatrix}$
 
-$-C(A-BK)^{-1}B = -\frac{1}{200}\begin{bmatrix} -20 & -1 \end{bmatrix}\begin{bmatrix} 0 \\ 50 \end{bmatrix} = \frac{50}{200} = \frac{1}{4}$
+
+
+$$
+-C(A-BK)^{-1}B = -\frac{1}{200}\begin{bmatrix} -20 & -1 \end{bmatrix}\begin{bmatrix} 0 \\ 50 \end{bmatrix} = \frac{50}{200} = \frac{1}{4}
+$$
+
+
 
 $N = 4$
 
+在零真实初态、零估计初态和1rad阶跃参考下，e恒为零，响应就是上一课的精确二阶响应：超调4.321392%，峰值时间.314159s，最后2%带穿越.421618s，满足本题指标。若估计初差非零，这个二阶指标不能原样继承，须用完整四维模型；实验另外测e(0)=[−.1,0]，不承诺任意初差也达标。
+
 **8.** 测量值 $y_m = y + d = C\boldsymbol{x} + d$。观测器方程变为：
 
-$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(y_m - C\hat{\boldsymbol{x}}) = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(C\boldsymbol{x} + d - C\hat{\boldsymbol{x}})$
+
+
+$$
+\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(y_m - C\hat{\boldsymbol{x}}) = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(C\boldsymbol{x} + d - C\hat{\boldsymbol{x}})
+$$
+
+
 
 误差方程：$\dot{\boldsymbol{e}} = (A - LC)\boldsymbol{e} + Ld$
 
@@ -659,21 +764,33 @@ $\boldsymbol{e}_{ss} = -(A - LC)^{-1}Ld$
 
 $A - LC = \begin{bmatrix} -17 & 1 \\ -49 & -3 \end{bmatrix}$，$(A-LC)^{-1} = \frac{1}{100}\begin{bmatrix} -3 & -1 \\ 49 & -17 \end{bmatrix}$
 
-$\boldsymbol{e}_{ss} = -\frac{1}{100}\begin{bmatrix} -3 & -1 \\ 49 & -17 \end{bmatrix}\begin{bmatrix} 17 \\ 47 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -51-47 \\ 833-799 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -98 \\ 34 \end{bmatrix}d = \begin{bmatrix} 0.98 \\ -0.34 \end{bmatrix}d$
+
+
+$$
+\boldsymbol{e}_{ss} = -\frac{1}{100}\begin{bmatrix} -3 & -1 \\ 49 & -17 \end{bmatrix}\begin{bmatrix} 17 \\ 47 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -51-47 \\ 833-799 \end{bmatrix}d = -\frac{1}{100}\begin{bmatrix} -98 \\ 34 \end{bmatrix}d = \begin{bmatrix} 0.98 \\ -0.34 \end{bmatrix}d
+$$
+
+
 
 输出估计误差：$C\boldsymbol{e}_{ss} = 0.98d$。
 
-**结论**：恒定测量偏差导致**非零稳态估计误差**。Luenberger 观测器无法消除恒定偏差——需要加入积分作用（类似 PID 中的 I 项）。
+**结论**：恒定测量偏差导致**非零稳态估计误差**。本例既定L对偏差没有零误差保证。可考虑把偏差建为常值状态，但要重新检查增广可观性/可检测性；简单加入积分项并不自动解决传感器偏差。这里假设A−LC Hurwitz、d恒定；否则上述逆矩阵并不保证存在吸引的稳态。
 
 **9.** 误差方程推导：
 
-$\dot{\boldsymbol{e}} = \dot{\hat{\boldsymbol{x}}} - \dot{\boldsymbol{x}} = [A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})] - [A\boldsymbol{x} + B\boldsymbol{u}]$
+
+
+$$
+\dot{\boldsymbol{e}} = \dot{\hat{\boldsymbol{x}}} - \dot{\boldsymbol{x}} = [A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})] - [A\boldsymbol{x} + B\boldsymbol{u}]
+$$
+
+
 
 $= A(\hat{\boldsymbol{x}} - \boldsymbol{x}) - LC(\hat{\boldsymbol{x}} - \boldsymbol{x}) = (A - LC)\boldsymbol{e}$
 
 $B\boldsymbol{u}$ 项在相减时**完全消去**，因此误差动态与 $\boldsymbol{u}(t)$ 无关。
 
-这个性质对**任何** $(A, B, C)$ 和 $L$ 都成立——它是 Luenberger 观测器结构的固有特性，不依赖额外条件。关键在于观测器中 $B\boldsymbol{u}$ 项和真实系统中的 $B\boldsymbol{u}$ 项使用完全相同的模型，因此输入的影响在误差中完全抵消。
+代数抵消不要求可观或稳定，但要求精确模型、无额外扰动、已知D正确处理，以及双方接收同一实际输入。误差收敛另需A−LC Hurwitz。关键在于观测器中 $B\boldsymbol{u}$ 项和真实系统中的 $B\boldsymbol{u}$ 项使用完全相同的模型，因此输入的影响在误差中完全抵消。
 
 **10.** (a) $C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}$（测量第 1 和第 3 个状态）。
 
@@ -681,6 +798,121 @@ $CA = \begin{bmatrix} 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
 $\mathcal{O} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
-这是行置换的单位矩阵，$\det = \pm 1 \neq 0$，$\text{rank} = 4$，**可观** ✓
+这是由C、CA选取的四行非奇异子矩阵，行次序为1、3、2、4，行列式−1；完整可观矩阵还含CA²和CA³，是8×4矩阵，秩4。该子式非零即可证明可观，**可观** ✓
 
-(b) 可以。$L$ 是 $4 \times 2$ 矩阵（$n \times p = 4 \times 2$），共 8 个自由参数，需配置 4 个极点。多余的 4 个自由度可用于优化噪声抑制等性能。
+(b) 可以，L为4×2。给出一个可直接检验的解：
+
+$$
+L=\begin{bmatrix}10&0\\25&1\\0&10\\0&25\end{bmatrix}.
+$$
+
+A−LC为两个[[−10,1],[−25,0]]的对角块，特征多项式(s+5)⁴。多输出配置可能非唯一，但不能仅按8个元素减4个极点就保证四个独立可用于优化的自由度。place的重数限制rank(C)=2会拒绝四重−5，这不推翻上述构造。
+
+
+
+<JupyterNotebook
+  title="三例与十题核验"
+  setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 12`}
+  cells={[
+    { code: `s=sp.symbols('s')
+def obs(A,C,L,desired,label):
+    A=sp.Matrix(A);C=sp.Matrix(C);L=sp.Matrix(L)
+    poly=sp.expand((s*sp.eye(A.rows)-A+L*C).det())
+    assert sp.expand(poly-desired)==0,label
+    print(label,'L=',L.T.tolist(),'polynomial=',poly)
+obs([[0,1],[-2,-3]],[[1,0]],[[17],[47]],(s+10)**2,'examples1/2')
+obs([[0,1],[-2,-3]],[[1,0]],[[27],[142]],(s+15)**2,'example3')
+obs([[0,1],[-6,-5]],[[1,0]],[[11],[3]],(s+8)**2,'Q1')
+A3=sp.Matrix([[0,1,0],[0,0,1],[-6,-11,-6]]);C3=sp.Matrix([[1,0,0]])
+O3=C3.col_join(C3*A3).col_join(C3*A3**2);assert O3==sp.eye(3)
+a,b,c=sp.symbols('l1 l2 l3');Q=s*sp.eye(3)-A3+sp.Matrix([a,b,c])*C3
+assert sp.expand(Q.det()-(s**3+(6+a)*s**2+(11+6*a+b)*s+6+11*a+6*b+c))==0
+obs(A3,C3,[[24],[145],[-140]],(s+10)**3,'Q2')
+A=sp.Matrix([[1,2],[0,3]]);C=sp.Matrix([[1,1]]);R=C.T.row_join(A.T*C.T)
+assert R==sp.Matrix([[1,1],[1,5]]) and R.det()==4
+assert A.T**2+5*A.T+6*sp.eye(2)==sp.Matrix([[12,0],[18,30]])
+assert sp.Matrix([[0,1]])*R.inv()*(A.T**2+5*A.T+6*sp.eye(2))==sp.Matrix([[sp.Rational(3,2),sp.Rational(15,2)]])
+obs(A,C,[[sp.Rational(3,2)],[sp.Rational(15,2)]],(s+2)*(s+3),'Q3')
+A=sp.Matrix([[0,1],[-1,0]]);B=sp.Matrix([0,1]);C=sp.Matrix([[1,0]]);K=sp.Matrix([[17,6]]);L=sp.Matrix([20,99]);Z=sp.zeros(2)
+M=(A-B*K).row_join(-B*K).col_join(Z.row_join(A-L*C))
+assert M==sp.Matrix([[0,1,0,0],[-18,-6,-17,-6],[0,0,-20,1],[0,0,-100,0]])
+assert sp.expand((s*sp.eye(4)-M).det()-(s*s+6*s+18)*(s+10)**2)==0
+assert B.row_join(A*B).det()==-1 and C.col_join(C*A).det()==1
+print('Q5 full M=',M.tolist(),'Q6 block determinant verified')
+A=sp.Matrix([[0,1],[0,-10]]);B=sp.Matrix([0,50]);C=sp.Matrix([[1,0]]);K=sp.Matrix([[4,sp.Rational(1,5)]]);L=sp.Matrix([50,400])
+assert sp.expand((s*sp.eye(2)-A+B*K).det())==s*s+20*s+200
+obs(A,C,L,(s+30)**2,'Q7')
+assert -(C*(A-B*K).inv()*B)[0]==sp.Rational(1,4)
+A4=sp.zeros(4)
+for i in range(3):A4[i,i+1]=1
+C4=sp.Matrix([[1,0,0,0],[0,0,1,0]])
+O4=sp.Matrix.vstack(*[C4*A4**i for i in range(4)])
+L4=sp.Matrix([[10,0],[25,1],[0,10],[0,25]])
+assert O4.shape==(8,4) and O4.rank()==4 and O4[:4,:].det()==-1
+obs(A4,C4,L4,(s+5)**4,'Q10')
+print('Q10 full O=',O4.tolist(),'rank=',O4.rank(),'chosen minor=-1')` }
+  ]}
+/>
+
+<JupyterNotebook
+  title="降阶与误差边界"
+  setupCode={`import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+from control import place, acker, ss, step_response
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 12`}
+  cells={[
+    { code: `A=np.array([[0.,1.],[-2.,-3.]]);B=np.array([0.,1.]);C=np.array([[1.,0.]]);L=np.array([[17.],[47.]])
+F=A-L@C;bias=-np.linalg.solve(F,L).ravel()
+assert np.allclose(bias,[.98,-.34]);print('Q8 bias/d=',bias,'output error/d=',bias[0])
+Ad=sp.diag(-1,-2);Cd=sp.Matrix([[1,0]]);Ld=sp.Matrix([2,0])
+assert Ad-Ld*Cd==sp.diag(-3,-2)
+print('detectable but unobservable example F=',(Ad-Ld*Cd).tolist())
+Aaug=np.zeros((3,3));Aaug[:2,:2]=A;Caug=np.array([[1.,0.,1.]])
+assert np.linalg.matrix_rank(np.vstack([Caug,Caug@Aaug,Caug@Aaug@Aaug]))==3
+print('bias as constant state: this model augmented rank=3, not an automatic integrator fix')
+t=np.linspace(0,2,401)
+for z0 in [-7.,0.]:
+    sol=solve_ivp(lambda time,q: [q[1],-2*q[0]-3*q[1]+np.sin(time),-10*q[2]-72*q[0]+np.sin(time)],(0,2),[1.,0.,z0],t_eval=t,rtol=1e-11,atol=1e-12).y.T
+    err=sol[:,2]+7*sol[:,0]-sol[:,1]
+    assert np.max(abs(err-(z0+7)*np.exp(-10*t)))<1e-9
+    print('reduced z0=',z0,'initial speed error=',err[0],'max residual=',np.max(abs(err-(z0+7)*np.exp(-10*t))))
+# Saturation: true plant receives .5N; observer with the same input cancels it.
+for assumed in [.5,1.]:
+    sol=solve_ivp(lambda time,z:np.r_[A@z[:2]+B*.5,A@z[2:]+B*assumed+L.ravel()*(C@(z[:2]-z[2:])).item()],(0,2),np.zeros(4),t_eval=t,rtol=1e-11,atol=1e-12).y.T
+    delta=B*(assumed-.5);pred=np.array([np.linalg.solve(F,(expm(F*ti)-np.eye(2))@delta) for ti in t])
+    assert np.max(abs(sol[:,2:]-sol[:,:2]-pred))<1e-9
+    print('observer assumed input=',assumed,'final error=',pred[-1])
+# Q7 exact zero-error motor metrics; nonzero initial error is separately evaluated.
+error=lambda time:np.exp(-10*time)*(np.cos(10*time)+np.sin(10*time))
+ts=brentq(lambda time:error(time)+.02,.32,.5,xtol=1e-14)
+assert ts<np.log(np.sqrt(2)/.02)/10<.5
+assert np.pi<10*ts<10*np.log(np.sqrt(2)/.02)/10<1.5*np.pi
+print('Q7 zero initial error: MO=',100*np.exp(-np.pi),'tp=',np.pi/10,'last2%=',ts)
+Am=np.array([[0.,1.],[0.,-10.]]);Bm=np.array([[0.],[50.]]);Cm=np.array([[1.,0.]]);Km=np.array([[4.,.2]]);Lm=np.array([[50.],[400.]])
+M=np.block([[Am-Bm@Km,-Bm@Km],[np.zeros((2,2)),Am-Lm@Cm]])
+Mr=np.vstack([Bm*4,np.zeros((2,1))]);mt=np.linspace(0,1,1001)
+for initial in [[0.,0.],[-.1,0.]]:
+    states=np.array([np.linalg.solve(M,(expm(M*ti)-np.eye(4))@Mr).ravel()+expm(M*ti)@np.array([0.,0.,*initial]) for ti in mt])
+    print('Q7 initial error=',initial,'sampled position peak=',states[:,0].max(),'sample y(.5)=',states[500,0])
+    if initial==[0.,0.]:assert np.max(abs(states[:,0]-(1-error(mt))))<1e-10
+# Known D and input agree: innovation cancels D*u exactly.
+xs=sp.Matrix(sp.symbols('x0:2'));xh=sp.Matrix(sp.symbols('h0:2'));u,D=sp.symbols('u D')
+ys=sp.Matrix([[1,0]])*xs+sp.Matrix([D*u])
+innovation=ys-sp.Matrix([[1,0]])*xh-sp.Matrix([D*u])
+assert innovation==sp.Matrix([[1,0]])*(xs-xh)
+print('Q9 matching actual input and known D cancellation verified')` }
+  ]}
+/>
