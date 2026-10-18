@@ -72,7 +72,7 @@
 | 5.1 | 非线性系统 | nonlinear-characteristics | ✅ 已交付 v1.3 | undergrad | theory | 7 | modern/state-space<br>math/ode-matrix-exponential |
 | 5.2 | 相平面 | phase-plane | ✅ 已交付 v1.3 | undergrad | theory | 8 | nonlinear/nonlinear-characteristics<br>math/eigen-decomposition |
 | 5.3 | Lyapunov稳定性 | lyapunov-stability | ✅ 已交付 v1.3 | grad | theory | 9 | nonlinear/phase-plane<br>modern/lyapunov-modern<br>math/multivariable-calculus |
-| 5.4 | 描述函数 | describing-function | ✅ 已交付 v1.3 | grad | theory | 8 | nonlinear/nonlinear-characteristics<br>classic/frequency-domain-analysis |
+| 5.4 | 描述函数 | describing-function | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/nonlinear-characteristics<br>math/fourier-analysis<br>nonlinear/lyapunov-stability<br>classic/frequency-domain-analysis |
 | 5.5 | 反馈线性化 | feedback-linearization | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>math/diff-geometry |
 | 5.6 | 滑模控制 | sliding-mode-control | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability |
 | 5.7 | 反步设计 | backstepping | ✅ 已交付 v1.3 | grad | theory | 10 | nonlinear/lyapunov-stability<br>math/multivariable-calculus |
@@ -327,9 +327,9 @@
 - **未完成 v1.3**: 156（= draft 25 + empty 131 + 无 status 0）
 - **有 MDX 正文**: 74
 - **catalog 小节总数**: 870
-- **讨论日志**: 65 篇（覆盖 49 门；有 MDX 无日志 25 门）
+- **讨论日志**: 66 篇（覆盖 49 门；有 MDX 无日志 25 门）
 - **交互组件**: 64 个文件（被正文引用 64，孤儿 0）
-- **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **prereq 边**: 474 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

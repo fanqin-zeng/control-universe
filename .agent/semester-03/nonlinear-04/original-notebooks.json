@@ -1,0 +1,243 @@
+{
+  "source": "content/nonlinear/describing-function.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 59,
+      "title": "Notebook 1：波形畸变、谐波含量与复数惯例核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\n\r\ndef sat(u, k=1.0, a=1.0):\r\n    return np.clip(k * u, -k * a, k * a)\r\n\r\n\r\ndef fourier(y, th, nmax=7):\r\n    N = len(th)\r\n    out = []\r\n    for n in range(1, nmax + 1):\r\n        bn = (2.0 / N) * np.sum(y * np.sin(n * th))\r\n        an = (2.0 / N) * np.sum(y * np.cos(n * th))\r\n        out.append((an, bn))\r\n    return out\r\n\r\n\r\ndef relay_h_periodic(u, M, h, nper=2):\r\n    per = len(u)\r\n    s = -M\r\n    y = None\r\n    for p in range(nper):\r\n        y = np.empty(per)\r\n        for i in range(per):\r\n            if u[i] > h:\r\n                s = M\r\n            elif u[i] < -h:\r\n                s = -M\r\n            y[i] = s\r\n    return y",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 95,
+          "delim": "`",
+          "code": "# 正弦过饱和：振幅越大，削顶越狠，三次谐波占比越高\r\nth = np.linspace(0, 2 * np.pi, 40000, endpoint=False)\r\nprint('%-6s %-10s %-12s %-10s %-8s' % ('A', 'b1', 'N=b1/A', '3次/1次', 'THD'))\r\nfor A in [0.5, 1.0, 2.0]:\r\n    y = sat(A * np.sin(th), 1.0, 1.0)\r\n    co = fourier(y, th)\r\n    amp = [np.hypot(a, b) for a, b in co]\r\n    thd = np.sqrt(np.sum(np.array(amp[1:]) ** 2)) / amp[0]\r\n    print('%-6.1f %-10.4f %-12.4f %-10.4f %-8.4f' % (A, co[0][1], co[0][1] / A, amp[2] / amp[0], thd))\r\nprint()\r\nprint('A=0.5 完全在线性区：N = 1.0000 = k，THD = 0。')\r\nprint('A=2 时各次谐波幅值：', ' '.join('%.4f' % a for a in\r\n      [np.hypot(a, b) for a, b in fourier(sat(2 * np.sin(th), 1.0, 1.0), th)]))\r\nprint('只有奇次谐波（偶次与 cos 项全为 0）——这是奇对称非线性的傅里叶指纹。')\r\n\r\nfig, axes = plt.subplots(1, 3, figsize=(12, 3.2), sharey=True)\r\nfor ax, A in zip(axes, [0.5, 1.0, 2.0]):\r\n    u = A * np.sin(th)\r\n    y = sat(u, 1.0, 1.0)\r\n    b1 = fourier(y, th)[0][1]\r\n    ax.plot(th, u, color='#94a3b8', lw=1.2, label='输入')\r\n    ax.plot(th, y, color='#2563eb', lw=1.8, label='输出')\r\n    ax.plot(th, b1 * np.sin(th), color='#dc2626', ls='--', lw=1.4, label='基波')\r\n    ax.set_title('A = %.1f' % A)\r\n    ax.set_xlabel('theta (rad)')\r\n    ax.grid(alpha=0.3)\r\naxes[0].set_ylabel('幅值')\r\naxes[0].legend(fontsize=8)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 125,
+          "delim": "`",
+          "code": "# 复数惯例核对：滞环继电器 M=1, h=0.3, A=1\r\nM, h, A = 1.0, 0.3, 1.0\r\ny = relay_h_periodic(A * np.sin(th), M, h)\r\na1, b1 = fourier(y, th)[0]\r\nnum = (b1 + 1j * a1) / A\r\nwrong = (a1 + 1j * b1) / A\r\nclosed = (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))\r\nprint('数值 (b1 + j a1)/A = %.6f %+.6fj' % (num.real, num.imag))\r\nprint('数值 (a1 + j b1)/A = %.6f %+.6fj   <- 写反顺序的结果' % (wrong.real, wrong.imag))\r\nprint('闭式 4M/(piA)(sqrt(1-(h/A)^2) - j h/A) = %.6f %+.6fj' % (closed.real, closed.imag))\r\nprint('|正确 - 闭式| = %.2e；|写反 - 闭式| = %.2e' % (abs(num - closed), abs(wrong - closed)))\r\ndeg = lambda z: np.degrees(np.arctan2(z.imag, z.real))\r\nprint('相位: 正确 %.1f deg（滞后）；写反 %.1f deg（超前）' % (deg(num), deg(wrong)))\r\nprint()\r\nprint('虚部为负 = 输出相位滞后 = 滞环的记忆效应。奇对称无记忆非线性则 a1 = 0，N 为实数。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 140,
+          "delim": "`",
+          "code": "# 闭式自洽：N_sat(2) 既等于 b1/A，也等于 (2k/pi)(alpha + sin alpha cos alpha)\r\nA = 2.0\r\nb1 = fourier(sat(A * np.sin(th), 1.0, 1.0), th)[0][1]\r\nalpha = np.arcsin(1.0 / A)\r\nclosed = (2 * 1.0 / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))\r\nprint('傅里叶:  N(2) = b1/A = %.6f' % (b1 / A))\r\nprint('闭式:    N(2) = %.6f   (alpha = arcsin(0.5) = pi/6)' % closed)\r\nprint('差 = %.2e' % abs(b1 / A - closed))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 171,
+      "title": "Notebook 2：五个闭式对傅里叶积分的核对，以及串联不等于乘积",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\n\r\ndef sat(u, k=1.0, a=1.0):\r\n    return np.clip(k * u, -k * a, k * a)\r\n\r\n\r\ndef dz(u, k=1.0, a=0.3):\r\n    return k * (u - a * np.sign(u)) * (np.abs(u) >= a)\r\n\r\n\r\ndef relay(u, M=1.0):\r\n    return M * np.sign(u)\r\n\r\n\r\ndef relay_h(u, M, h, nper=2):\r\n    per = len(u)\r\n    s = -M\r\n    y = None\r\n    for p in range(nper):\r\n        y = np.empty(per)\r\n        for i in range(per):\r\n            if u[i] > h:\r\n                s = M\r\n            elif u[i] < -h:\r\n                s = -M\r\n            y[i] = s\r\n    return y\r\n\r\n\r\ndef backlash(u, k, b, nper=2):\r\n    per = len(u)\r\n    cur = k * (u[0] - b)\r\n    out = []\r\n    for p in range(nper):\r\n        for i in range(per):\r\n            rising = u[i] > u[i - 1] if i > 0 else True\r\n            if rising:\r\n                cur = max(cur, k * (u[i] - b))\r\n            else:\r\n                cur = min(cur, k * (u[i] + b))\r\n            out.append(cur)\r\n    return np.array(out[-per:])\r\n\r\n\r\ndef df_num(f, A, N=40000):\r\n    th = np.linspace(0, 2 * np.pi, N, endpoint=False)\r\n    y = f(A * np.sin(th))\r\n    b1 = (2.0 / N) * np.sum(y * np.sin(th))\r\n    a1 = (2.0 / N) * np.sum(y * np.cos(th))\r\n    return (b1 + 1j * a1) / A\r\n\r\n\r\ndef N_sat(A, k=1.0, a=1.0):\r\n    if A <= a:\r\n        return k + 0j\r\n    al = np.arcsin(a / A)\r\n    return (2 * k / np.pi) * (al + np.sin(al) * np.cos(al)) + 0j\r\n\r\n\r\ndef N_dz(A, k=1.0, a=0.3):\r\n    if A <= a:\r\n        return 0j\r\n    al = np.arcsin(a / A)\r\n    return (2 * k / np.pi) * (np.pi / 2 - al - np.sin(al) * np.cos(al)) + 0j\r\n\r\n\r\ndef N_relay(A, M=1.0):\r\n    return 4 * M / (np.pi * A) + 0j\r\n\r\n\r\ndef N_relay_h(A, M=1.0, h=0.2):\r\n    if A <= h:\r\n        return 0j\r\n    return (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))\r\n\r\n\r\ndef N_bl(A, k=1.0, b=0.3):\r\n    if A <= b:\r\n        return 0j\r\n    be = np.arcsin(1 - 2 * b / A)\r\n    return (k / np.pi) * (np.pi / 2 + be + np.sin(be) * np.cos(be)\r\n                          - 4j * (b / A) * (1 - b / A))",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 260,
+          "delim": "`",
+          "code": "Ag = np.linspace(0.4, 6, 60)\r\ncases = [('饱和 k=1 a=1', lambda A: df_num(lambda u: sat(u, 1, 1), A), lambda A: N_sat(A, 1, 1)),\r\n         ('死区 k=1 a=0.3', lambda A: df_num(lambda u: dz(u, 1, 0.3), A), lambda A: N_dz(A, 1, 0.3)),\r\n         ('理想继电器 M=1', lambda A: df_num(lambda u: relay(u, 1), A), lambda A: N_relay(A, 1)),\r\n         ('滞环继电器 M=1 h=0.3', lambda A: df_num(lambda u: relay_h(u, 1, 0.3), A),\r\n          lambda A: N_relay_h(A, 1, 0.3)),\r\n         ('间隙 k=1 b=0.3', lambda A: df_num(lambda u: backlash(u, 1, 0.3), A),\r\n          lambda A: N_bl(A, 1, 0.3))]\r\nprint('%-24s %s' % ('非线性', 'max|数值-闭式| (A in [0.4,6])'))\r\nfor name, fn, cf in cases:\r\n    err = max(abs(fn(A) - cf(A)) for A in Ag)\r\n    print('%-24s %.3e' % (name, err))\r\nprint()\r\nprint('光滑被积函数（饱和/死区）是谱精度；含跳变的（继电器/滞环/间隙）退化为 O(1/N)。')\r\nprint('间隙在 A=1,2,5 的数值值：')\r\nfor A in [1.0, 2.0, 5.0]:\r\n    n = df_num(lambda u: backlash(u, 1, 0.3), A)\r\n    print('   A=%.1f  %.6f %+.6fj' % (A, n.real, n.imag))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 278,
+          "delim": "`",
+          "code": "# 串联（死区 -> 饱和）的精确 DF vs 两个 DF 的乘积\r\ncomp = lambda u: sat(dz(u, 1, 0.3), 1, 1)\r\nAa = np.linspace(0.31, 6, 200)\r\nex = np.array([df_num(comp, A).real for A in Aa])\r\npr = np.array([(N_dz(A, 1, 0.3) * N_sat(A, 1, 1)).real for A in Aa])\r\nprint('%-6s %-12s %-12s %-10s' % ('A', '组合精确', 'DF 乘积', '相对差'))\r\nfor A in [0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0]:\r\n    e = df_num(comp, A).real\r\n    p = (N_dz(A, 1, 0.3) * N_sat(A, 1, 1)).real\r\n    print('%-6.1f %-12.6f %-12.6f %-10.1f%%' % (A, e, p, abs(e - p) / e * 100))\r\nprint()\r\nprint('A <= 1 时饱和没起作用，乘积碰巧精确；A > 1 后中间信号非正弦，乘积最多错 15.4%。')\r\n\r\nfig, ax = plt.subplots(figsize=(7.5, 4.0))\r\nax.plot(Aa, ex, color='#2563eb', lw=2.0, label='组合映射的精确 DF')\r\nax.plot(Aa, pr, color='#dc2626', ls='--', lw=1.6, label='N_dead x N_sat（错误做法）')\r\nax.set_xlabel('A')\r\nax.set_ylabel('N(A)')\r\nax.set_xlim(0, 6)\r\nax.set_ylim(0, 0.8)\r\nax.legend(fontsize=9)\r\nax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 335,
+      "title": "Notebook 3：手算例的每一步，以及仿真仲裁",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nG3 = lambda w: 1.0 / (1j * w * (1j * w + 1) * (0.5j * w + 1))\r\n\r\n\r\ndef sim_relay(T, dt, Tc, K, h=0.0, M=1.0, x0=None):\r\n    x = np.zeros(3) if x0 is None else np.array(x0, float)\r\n    s = M\r\n    n = int(T / dt)\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    for k in range(n):\r\n        e = -x[0]\r\n        if e > h:\r\n            s = M\r\n        elif e < -h:\r\n            s = -M\r\n        ts[k], es[k] = k * dt, e\r\n        a3 = -(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * s\r\n        x[2] += dt * a3\r\n        x[1] += dt * x[2]\r\n        x[0] += dt * x[1]\r\n    return ts, es\r\n\r\n\r\ndef measure(ts, sig, t_from, dt):\r\n    m = ts >= t_from\r\n    t, s = ts[m], sig[m]\r\n    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])\r\n          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]\r\n    zc = np.array(zc)\r\n    per = float(np.mean(np.diff(zc)))\r\n    w = 2 * np.pi / per\r\n    kk = len(zc) // 2\r\n    ta, tb = zc[kk], zc[-1]\r\n    mm = (t >= ta) & (t <= tb)\r\n    tt, ss = t[mm], s[mm]\r\n    c1 = np.sin(w * (tt - ta))\r\n    c2 = np.cos(w * (tt - ta))\r\n    A1 = 2 * np.trapezoid(ss * c1, tt) / (tb - ta)\r\n    A2 = 2 * np.trapezoid(ss * c2, tt) / (tb - ta)\r\n    amp = np.hypot(A1, A2)\r\n    harm = []\r\n    for nh in range(2, 8):\r\n        a = 2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta)\r\n        b = 2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)\r\n        harm.append(np.hypot(a, b))\r\n    return dict(per=per, w=w, amp=amp,\r\n                thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 390,
+          "delim": "`",
+          "code": "# 手算的每一步都打印出来\r\nw = np.linspace(0.1, 3, 3001)\r\nden = -1.5 * w ** 2 + 1j * (w - 0.5 * w ** 3)\r\ni0 = int(np.argmin(np.abs(den.imag)))\r\nw0 = w[i0]\r\nprint('Im G = 0 的数值解 w0 = %.6f（手算 sqrt(2) = %.6f）' % (w0, np.sqrt(2)))\r\nprint('G(j w0) = %.6f %+.6fj（手算 -1/3）' % (G3(w0).real, G3(w0).imag))\r\nA0 = 4 * abs(G3(w0)) / np.pi\r\nprint('A0 = 4|G|/pi = %.6f（手算 4/(3pi) = %.6f）' % (A0, 4 / (3 * np.pi)))\r\nprint()\r\nws = np.logspace(-1, 1.3, 400)\r\nAs = np.linspace(0.05, 3, 200)\r\nfig, ax = plt.subplots(figsize=(7.0, 6.0))\r\nGc = G3(ws)\r\nax.plot(Gc.real, Gc.imag, color='#2563eb', lw=2.0, label='G(jw)')\r\nax.plot(-np.pi * As / 4, np.zeros_like(As), color='#dc2626', lw=2.0,\r\n        label='-1/N(A)（A 增大向左）')\r\nax.plot([-1 / 3], [0], 'o', color='#16a34a', ms=10, label='交点 (w0, A0)')\r\nax.axhline(0, color='#94a3b8', lw=0.8)\r\nax.axvline(0, color='#94a3b8', lw=0.8)\r\nax.set_xlim(-1.6, 0.3)\r\nax.set_ylim(-1.2, 0.3)\r\nax.set_xlabel('Re')\r\nax.set_ylabel('Im')\r\nax.legend(fontsize=9)\r\nax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 418,
+          "delim": "`",
+          "code": "# 仿真仲裁：预测 vs 实测（两个环路：Tc = 0.5 与 Tc = 0.05）\r\ndt = 1e-4\r\nfor Tc in (0.5, 0.05):\r\n    w0 = np.sqrt(1 / Tc)\r\n    G0 = -Tc / (1 + Tc)\r\n    Ap = 4 * abs(G0) / np.pi\r\n    ts, es = sim_relay(80.0, dt, Tc, 1.0)\r\n    r = measure(ts, es, 40.0, dt)\r\n    Tp = 2 * np.pi / w0\r\n    print('Tc=%.2f: w0=%.6f, G(jw0)=%.6f, 预测 A0=%.6f, 周期=%.6f s' % (Tc, w0, G0, Ap, Tp))\r\n    print('        实测 基波=%.6f (%+.2f%%), 周期=%.6f (%+.2f%%), THD=%.4f'\r\n          % (r['amp'], (r['amp'] / Ap - 1) * 100, r['per'], (r['per'] / Tp - 1) * 100, r['thd']))\r\nprint()\r\nprint('THD 只有 2.4%~3.3%，说明 e(t) 确实接近正弦；但幅值误差 4.9%~10.6% 提醒我们：')\r\nprint('被丢掉的谐波仍会移动继电器的切换时刻。描述函数给的是估计，不是等式。')\r\nprint('注意 Tc 变小（极点推远）后 w0 从 1.414 升到 4.472，误差反而从 4.9% 涨到 10.6%。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 434,
+          "delim": "`",
+          "code": "# 谐波泄漏指标 L：把\"滤波好不好\"变成一个数\r\ndef leak(G, w0, nmax=9):\r\n    num = 0.0\r\n    for n in range(3, nmax + 1, 2):\r\n        num += abs(G(n * w0)) / n\r\n    return num / abs(G(w0) + 0j)\r\n\r\n\r\nGw = lambda x: 1.0 / (1j * x * (1j * x + 1) * (0.05j * x + 1))\r\nG2 = lambda x: 2.0 / (1j * x * (1j * x + 1))\r\nG3b = lambda x: 2.0 / (1j * x * (1j * x + 1) * (0.1j * x + 1))\r\nrows = [('G3, 理想继电器, w0=sqrt(2)', G3, np.sqrt(2)),\r\n        ('G(0.05s+1), 理想继电器, w0=sqrt(20)', Gw, np.sqrt(20)),\r\n        ('2/(s(s+1)), 滞环 h=0.2, w0=2.1925', G2, 2.1925),\r\n        ('2/(s(s+1)(0.1s+1)), 滞环 h=0.2, w0=1.8448', G3b, 1.8448)]\r\nprint('%-42s %-10s %-10s' % ('环路', 'L', 'L (dB)'))\r\nfor nm, G, w0 in rows:\r\n    L = leak(G, w0)\r\n    print('%-42s %-10.4f %-10.1f' % (nm, L, 20 * np.log10(L)))\r\nprint()\r\nprint('对应的实测幅值误差（Notebook 3 打印前两行，Notebook 5 打印后两行）：')\r\nprint('   +4.9% / +10.6% / -1.2% / +3.0%；第五行（谐振）见 Notebook 6：+18.1%。')\r\nprint('L 只是筛查：第二行 -27.9 dB 仍有 10.6% 误差，因为谐波还会移动切换时刻。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 481,
+      "title": "Notebook 4：稳定性判据——Routh 交叉核对与双交点算例",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\n\r\ndef sat(u, k=1.0, a=1.0):\r\n    return np.clip(k * u, -k * a, k * a)\r\n\r\n\r\ndef dz(u, k=1.0, a=0.3):\r\n    return k * (u - a * np.sign(u)) * (np.abs(u) >= a)\r\n\r\n\r\ncomp = lambda u: sat(dz(u, 1, 0.3), 1, 1)\r\n\r\n\r\ndef df_static(f, A, N=40000):\r\n    th = np.linspace(0, 2 * np.pi, N, endpoint=False)\r\n    y = f(A * np.sin(th))\r\n    b1 = (2.0 / N) * np.sum(y * np.sin(th))\r\n    a1 = (2.0 / N) * np.sum(y * np.cos(th))\r\n    return (b1 + 1j * a1) / A\r\n\r\n\r\ndef sim_static(f, T, dt, Tc, K, x0):\r\n    x = np.array(x0, float)\r\n    n = int(T / dt)\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    for k in range(n):\r\n        e = -x[0]\r\n        ts[k], es[k] = k * dt, e\r\n        u = f(e)\r\n        a3 = -(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * u\r\n        x[2] += dt * a3\r\n        x[1] += dt * x[2]\r\n        x[0] += dt * x[1]\r\n    return ts, es",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 523,
+          "delim": "`",
+          "code": "# 交叉核对：等效增益 K 的线性稳定性边界确实是 3\r\nfor K in [2.9, 3.0, 3.1]:\r\n    r = np.roots([0.5, 1.5, 1.0, K])\r\n    print('K=%.1f  极点实部 = %s  -> %s'\r\n          % (K, np.round(r.real, 4), '稳定' if max(r.real) < 0 else '不稳定'))\r\nprint()\r\nprint('谐波平衡在 w0=sqrt(2) 处要求 K*N(A)/3 = 1，即 N(A) = 3/K；')\r\nprint('K=3 时要求 N=1，而组合 N 的峰值只有 0.7112 -> 无交点 -> 无极限环预测。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 531,
+          "delim": "`",
+          "code": "# 双交点：N(A) 曲线与水平线 3/K\r\nAg = np.linspace(0.31, 8, 400)\r\nNv = np.array([df_static(comp, A).real for A in Ag])\r\ni_max = int(np.argmax(Nv))\r\nK = 3.0 / (0.6 * Nv[i_max])\r\ntgt = 3.0 / K\r\nidx = np.where(Nv >= tgt)[0]\r\nA1, A2 = Ag[idx[0]], Ag[idx[-1]]\r\nprint('N 峰值 %.6f @ A=%.3f；取 K=%.4f，水平线 N=3/K=%.6f' % (Nv[i_max], Ag[i_max], K, tgt))\r\nprint('交点: A1(升支) = %.4f, A2(降支) = %.4f' % (A1, A2))\r\n\r\nfig, ax = plt.subplots(figsize=(7.5, 4.0))\r\nax.plot(Ag, Nv, color='#2563eb', lw=2.0, label='组合 N(A)')\r\nax.axhline(tgt, color='#dc2626', ls='--', lw=1.5, label='3/K = %.4f' % tgt)\r\nax.plot([A1, A2], [tgt, tgt], 'o', color='#16a34a', ms=9)\r\nax.annotate('A1 不稳定', (A1, tgt), textcoords='offset points', xytext=(-6, 10), fontsize=9)\r\nax.annotate('A2 稳定', (A2, tgt), textcoords='offset points', xytext=(-6, 10), fontsize=9)\r\nax.set_xlabel('A')\r\nax.set_ylabel('N(A)')\r\nax.set_xlim(0, 8)\r\nax.set_ylim(0, 0.8)\r\nax.legend(fontsize=9)\r\nax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 556,
+          "delim": "`",
+          "code": "# 初值扫描：冻结 / 衰减 / 被吸到 A2\r\ndt = 5e-4\r\nfor a0 in [0.10, 0.25, 0.40, 0.60, 0.66, 0.70, 3.00]:\r\n    ts, es = sim_static(comp, 60.0, dt, 0.5, K, [-a0, 0.0, 0.0])\r\n    pk = float(np.max(np.abs(es[ts >= 40])))\r\n    if pk > 0.5:\r\n        m = ts >= 40\r\n        t, s = ts[m], es[m]\r\n        zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])\r\n              for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]\r\n        zc = np.array(zc)\r\n        per = float(np.mean(np.diff(zc)))\r\n        w = 2 * np.pi / per\r\n        ta, tb = zc[len(zc) // 2], zc[-1]\r\n        mm = (t >= ta) & (t <= tb)\r\n        tt, ss = t[mm], s[mm]\r\n        A1c = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)\r\n        A2c = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)\r\n        print('e(0)=%.2f -> 极限环，基波 %.4f，周期 %.4f' % (a0, np.hypot(A1c, A2c), per))\r\n    else:\r\n        print('e(0)=%.2f -> 不起振，末段 |e| 峰值 %.4f（冻在死区内）' % (a0, pk))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 3,
+          "line": 577,
+          "delim": "`",
+          "code": "# 二分法测阈值（= 不稳定极限环 A1 的吸引域边界）\r\ndt = 5e-4\r\nlo, hi = 0.66, 0.70\r\nfor _ in range(12):\r\n    mid = 0.5 * (lo + hi)\r\n    ts, es = sim_static(comp, 40.0, dt, 0.5, K, [-mid, 0.0, 0.0])\r\n    if np.max(np.abs(es[ts >= 25])) > 0.5:\r\n        hi = mid\r\n    else:\r\n        lo = mid\r\nthr = 0.5 * (lo + hi)\r\nprint('实测阈值初值 = %.4f；预测 A1 = %.4f（差 %.1f%%）' % (thr, A1, (thr / A1 - 1) * 100))\r\nts, es = sim_static(comp, 80.0, dt, 0.5, K, [-3.0, 0.0, 0.0])\r\nm = ts >= 60\r\nt, s = ts[m], es[m]\r\nzc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])\r\n      for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]\r\nzc = np.array(zc)\r\nper = float(np.mean(np.diff(zc)))\r\nw = 2 * np.pi / per\r\nta, tb = zc[len(zc) // 2], zc[-1]\r\nmm = (t >= ta) & (t <= tb)\r\ntt, ss = t[mm], s[mm]\r\nA1c = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)\r\nA2c = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)\r\namp = np.hypot(A1c, A2c)\r\nprint('实测 A2 基波 = %.4f（预测 %.4f，差 %+.1f%%），周期 %.4f s（预测 %.4f s）'\r\n      % (amp, A2, (amp / A2 - 1) * 100, per, 2 * np.pi / np.sqrt(2)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 662,
+      "title": "Notebook 5：三个应用案例——预测、诊断、反推设计",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import brentq, fsolve\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nSUMMARY = []\r\n\r\n\r\ndef sat(u, k=1.0, a=1.0):\r\n    return np.clip(k * u, -k * a, k * a)\r\n\r\n\r\ndef hrelay(M, h):\r\n    st = {'s': -M}\r\n\r\n    def f(e):\r\n        if e > h:\r\n            st['s'] = M\r\n        elif e < -h:\r\n            st['s'] = -M\r\n        return st['s']\r\n    return f\r\n\r\n\r\ndef N_rh(A, M=1.0, h=0.2):\r\n    if A <= h:\r\n        return 0j\r\n    return (4 * M / (np.pi * A)) * (np.sqrt(1 - (h / A) ** 2) - 1j * (h / A))\r\n\r\n\r\ndef N_sat(A, k=1.0, a=1.0):\r\n    if A <= a:\r\n        return k + 0j\r\n    al = np.arcsin(a / A)\r\n    return (2 * k / np.pi) * (al + np.sin(al) * np.cos(al)) + 0j\r\n\r\n\r\ndef leak(G, w0, nmax=9):\r\n    return sum(abs(G(n * w0)) / n for n in range(3, nmax + 1, 2)) / abs(G(w0))\r\n\r\n\r\ndef sim(f, T, dt, K, Tc, x0, order):\r\n    x = np.array(x0, float)\r\n    n = int(round(T / dt))\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    sw = 0\r\n    ulast = None\r\n    for k in range(n):\r\n        e = -x[0]\r\n        u = f(e)\r\n        if ulast is not None and u != ulast:\r\n            sw += 1\r\n        ulast = u\r\n        ts[k] = k * dt\r\n        es[k] = e\r\n        if order == 3:\r\n            x[2] += dt * (-(1 + 1 / Tc) * x[2] - (1 / Tc) * x[1] + (K / Tc) * u)\r\n            x[1] += dt * x[2]\r\n            x[0] += dt * x[1]\r\n        else:\r\n            x[1] += dt * (-x[1] + K * u)\r\n            x[0] += dt * x[1]\r\n    return ts, es, sw\r\n\r\n\r\ndef rise_crossings(ts, sig, t_from, dt):\r\n    m = np.where((sig[:-1] < 0) & (sig[1:] >= 0) & (ts[1:] >= t_from))[0]\r\n    return [ts[i] + dt * (-sig[i]) / (sig[i + 1] - sig[i]) for i in m]\r\n\r\n\r\ndef measure(ts, sig, t_from, dt):\r\n    m = ts >= t_from\r\n    t, s = ts[m], sig[m]\r\n    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])\r\n          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]\r\n    zc = np.array(zc)\r\n    if len(zc) < 4:\r\n        return None\r\n    per = float(np.mean(np.diff(zc)))\r\n    w = 2 * np.pi / per\r\n    kk = len(zc) // 2\r\n    ta, tb = zc[kk], zc[-1]\r\n    mm = (t >= ta) & (t <= tb)\r\n    tt, ss = t[mm], s[mm]\r\n    A1 = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)\r\n    A2 = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)\r\n    amp = float(np.hypot(A1, A2))\r\n    harm = [float(np.hypot(2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta),\r\n                           2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)))\r\n            for nh in range(2, 8)]\r\n    return dict(per=per, w=w, amp=amp, thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 758,
+          "delim": "`",
+          "code": "# 案例1（解析）：二阶植物 + 滞环继电器，谐波平衡闭式求解\r\nM, K2 = 1.0, 2.0\r\nG2 = lambda w: K2 / (1j * w * (1j * w + 1))\r\nprint('闭式条件： w = sqrt(1-r^2)/r,  4MK r^3 = pi h sqrt(1-r^2),  r = h/A')\r\nprint()\r\nprint('%-6s %-10s %-10s %-10s %-9s %-9s %s' % ('h', 'r', 'A', 'w', 'f(Hz)', 'L(dB)', 'HB残差'))\r\nhb2 = {}\r\nfor hh in (0.1, 0.2, 0.4):\r\n    rr = brentq(lambda r: 4 * M * K2 * r ** 3 - np.pi * hh * np.sqrt(1 - r ** 2), 1e-9, 1 - 1e-12)\r\n    A = hh / rr\r\n    w = np.sqrt(1 - rr ** 2) / rr\r\n    hb2[hh] = (A, w)\r\n    print('%-6.2f %-10.6f %-10.6f %-10.6f %-9.6f %-9.1f %.1e'\r\n          % (hh, rr, A, w, w / (2 * np.pi), 20 * np.log10(leak(G2, w)),\r\n             abs(N_rh(A, M, hh) * G2(w) + 1)))\r\nprint()\r\nprint('h: 0.10 -> 0.20 -> 0.40，f: %.4f -> %.4f -> %.4f Hz（滞环越宽，开关频率越低）'\r\n      % (hb2[0.1][1] / (2 * np.pi), hb2[0.2][1] / (2 * np.pi), hb2[0.4][1] / (2 * np.pi)))\r\nprint('h: 0.10 -> 0.20 -> 0.40，A: %.4f -> %.4f -> %.4f（振幅同步变大）'\r\n      % (hb2[0.1][0], hb2[0.2][0], hb2[0.4][0]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 778,
+          "delim": "`",
+          "code": "# 案例1（仿真）：二阶与三阶植物，预测 vs 实测\r\nG3b = lambda w: 2.0 / (1j * w * (1j * w + 1) * (0.1j * w + 1))\r\nfun = lambda v: [(N_rh(v[0], M, 0.2) * G3b(v[1]) + 1).real,\r\n                 (N_rh(v[0], M, 0.2) * G3b(v[1]) + 1).imag]\r\nsol, info, ier, msg = fsolve(fun, [0.6, 1.9], full_output=True)\r\nA3, w3 = float(sol[0]), float(sol[1])\r\nres = abs(fun([A3, w3])[0] + 1j * fun([A3, w3])[1])\r\nprint('2/(s(s+1)(0.1s+1)): fsolve ier=%d, A=%.6f, w=%.6f, 残差=%.2e, L=%.1f dB'\r\n      % (ier, A3, w3, res, 20 * np.log10(leak(G3b, w3))))\r\nprint()\r\nprint('%-24s %-8s %-8s %-9s %-8s %-8s %-9s %s' % ('植物', '预测A', '实测A', '幅值误差', '预测T', '实测T', '周期误差', 'THD'))\r\nfig, axes = plt.subplots(2, 1, figsize=(9.0, 6.0))\r\ncases = [('2/(s(s+1))', 2.0, 1.0, 2, [-0.5, 0.0], hb2[0.2]),\r\n         ('2/(s(s+1)(0.1s+1))', 2.0, 0.1, 3, [-0.5, 0.0, 0.0], (A3, w3))]\r\nfor ax, (nm, Kp, Tc, order, x0, pred) in zip(axes, cases):\r\n    Ap, wp = pred\r\n    Tp = 2 * np.pi / wp\r\n    ts, es, sw = sim(hrelay(M, 0.2), 80.0, 1e-4, Kp, Tc, x0, order)\r\n    r = measure(ts, es, 40.0, 1e-4)\r\n    print('%-24s %-8.4f %-8.4f %+7.2f%%  %-8.4f %-8.4f %+7.2f%%  %.4f'\r\n          % (nm, Ap, r['amp'], (r['amp'] / Ap - 1) * 100, Tp, r['per'],\r\n             (r['per'] / Tp - 1) * 100, r['thd']))\r\n    SUMMARY.append(dict(case='案例1 ' + nm, pred=Ap, meas=r['amp'],\r\n                        ea=(r['amp'] / Ap - 1) * 100, Tp=Tp, Tm=r['per'],\r\n                        et=(r['per'] / Tp - 1) * 100, thd=r['thd']))\r\n    t0 = rise_crossings(ts, es, 70.0, 1e-4)[0]\r\n    msk = (ts >= t0) & (ts <= t0 + 3 * Tp)\r\n    tt = ts[msk] - t0\r\n    ax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')\r\n    ax.plot(tt, Ap * np.sin(wp * tt), color='#dc2626', lw=1.2, ls='--',\r\n            label='pred A sin(wt)')\r\n    ax.set_xlabel('t (s)')\r\n    ax.set_ylabel('e')\r\n    ax.set_title(nm + ' : hysteresis relay M=1 h=0.2 K=2', fontsize=11)\r\n    ax.legend(fontsize=9)\r\n    ax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 816,
+          "delim": "`",
+          "code": "# 案例2：饱和放大器伺服 —— K=6 有极限环，K=2 无解且衰减\r\nG3 = lambda w: 1.0 / (1j * w * (1j * w + 1) * (0.5j * w + 1))\r\nprint('等效线性环特征方程 0.5s^3 + 1.5s^2 + s + K N(A)；Routh 稳定条件 K N(A) < 3')\r\nprint('谐波平衡在 w0 = sqrt(2) 处要求 N(A) = 3/K；饱和的最大增益是 k = 1')\r\nprint()\r\nfig, axes = plt.subplots(1, 2, figsize=(10.0, 3.4))\r\nfor ax, K in zip(axes, (6.0, 2.0)):\r\n    tgt = 3.0 / K\r\n    if tgt > 1.0:\r\n        print('K=%.1f: 需要 N=%.3f > 1 -> 无解，预测不振荡' % (K, tgt))\r\n        ts, es, sw = sim(lambda e: sat(e, 1, 1), 40.0, 1e-4, K, 0.5, [-1.0, 0.0, 0.0], 3)\r\n        pk = float(np.max(np.abs(es[ts >= 30])))\r\n        print('       仿真: 末段 |e| 峰值 = %.6f (t>=30 s)' % pk)\r\n        SUMMARY.append(dict(case='案例2 K=2 (线性稳定)', pred=0.0, meas=pk,\r\n                            ea=0.0, Tp=0.0, Tm=0.0, et=0.0, thd=0.0))\r\n        msk = ts <= 15\r\n        ax.plot(ts[msk], es[msk], color='#2563eb', lw=1.4)\r\n        ax.set_title('K=2: no limit cycle, |e| -> %.4f' % pk, fontsize=11)\r\n    else:\r\n        Ap = brentq(lambda A: N_sat(A).real - tgt, 1.0 + 1e-9, 50.0)\r\n        wp = np.sqrt(2.0)\r\n        Tp = 2 * np.pi / wp\r\n        print('K=%.1f: 需要 N=%.3f -> A=%.6f, w0=%.6f (线性环不稳定, K>3)' % (K, tgt, Ap, wp))\r\n        ts, es, sw = sim(lambda e: sat(e, 1, 1), 80.0, 1e-4, K, 0.5, [-0.2, 0.0, 0.0], 3)\r\n        r = measure(ts, es, 50.0, 1e-4)\r\n        print('       仿真: 基波 %.6f (%+.2f%%), 周期 %.4f (%+.2f%%), THD %.4f'\r\n              % (r['amp'], (r['amp'] / Ap - 1) * 100, r['per'],\r\n                 (r['per'] / Tp - 1) * 100, r['thd']))\r\n        SUMMARY.append(dict(case='案例2 K=6 (线性不稳定)', pred=Ap, meas=r['amp'],\r\n                            ea=(r['amp'] / Ap - 1) * 100, Tp=Tp, Tm=r['per'],\r\n                            et=(r['per'] / Tp - 1) * 100, thd=r['thd']))\r\n        t0 = rise_crossings(ts, es, 70.0, 1e-4)[0]\r\n        msk = (ts >= t0) & (ts <= t0 + 2 * Tp)\r\n        ax.plot(ts[msk] - t0, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')\r\n        ax.plot(ts[msk] - t0, Ap * np.sin(wp * (ts[msk] - t0)), color='#dc2626',\r\n                lw=1.2, ls='--', label='pred A sin(wt)')\r\n        ax.legend(fontsize=9)\r\n        ax.set_title('K=6: limit cycle, pred A=%.4f meas %.4f' % (Ap, r['amp']), fontsize=11)\r\n    ax.set_xlabel('t (s)')\r\n    ax.set_ylabel('e')\r\n    ax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 3,
+          "line": 859,
+          "delim": "`",
+          "code": "# 案例3：反推设计 —— 目标 A=1, f=0.5 Hz (w=pi), M=1, 植物 K/(s(s+1))\r\nMt, At, wt = 1.0, 1.0, np.pi\r\nct = 4 * Mt / (np.pi * At)\r\nrt = 1.0 / np.sqrt(1 + wt ** 2)\r\nhd = rt * At\r\nKd = (np.sqrt(1 - rt ** 2) / ct) * (wt ** 2 + 1)\r\nGd = lambda w: Kd / (1j * w * (1j * w + 1))\r\nprint('目标: A = %.2f, w = pi = %.6f rad/s (f = 0.5 Hz), M = %.1f' % (At, wt, Mt))\r\nprint('  r = h/A = 1/sqrt(1+w^2) = %.6f  ->  h = %.6f' % (rt, hd))\r\nprint('  c = 4M/(piA) = %.6f;  K/(w^2+1) = sqrt(1-r^2)/c  ->  K = %.6f' % (ct, Kd))\r\nprint('  HB 残差 |N G + 1| = %.2e   L = %.1f dB'\r\n      % (abs(N_rh(At, Mt, hd) * Gd(wt) + 1), 20 * np.log10(leak(Gd, wt))))\r\nts, es, sw = sim(hrelay(Mt, hd), 40.0, 1e-4, Kd, 1.0, [-0.6, 0.0], 2)\r\nr = measure(ts, es, 20.0, 1e-4)\r\nt_on = float(ts[np.argmax(np.abs(es) > 0.9)])\r\nprint('  仿真: 基波 %.6f (%+.2f%%), 周期 %.6f s (%+.2f%%), THD %.4f'\r\n      % (r['amp'], (r['amp'] / At - 1) * 100, r['per'], (r['per'] / 2.0 - 1) * 100, r['thd']))\r\nprint('  |e| 首次超过 0.9 的时刻 = %.2f s; 40 s 内继电器切换 %d 次' % (t_on, sw))\r\nSUMMARY.append(dict(case='案例3 反推设计 (A=1, f=0.5Hz)', pred=At, meas=r['amp'],\r\n                    ea=(r['amp'] / At - 1) * 100, Tp=2.0, Tm=r['per'],\r\n                    et=(r['per'] / 2.0 - 1) * 100, thd=r['thd']))\r\nfig, ax = plt.subplots(figsize=(9.0, 3.2))\r\nt0 = rise_crossings(ts, es, 20.0, 1e-4)[0]\r\nmsk = (ts >= t0) & (ts <= t0 + 4.0)\r\ntt = ts[msk] - t0\r\nax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')\r\nax.plot(tt, At * np.sin(wt * tt), color='#dc2626', lw=1.2, ls='--', label='target sin(pi t)')\r\nax.set_xlabel('t (s)')\r\nax.set_ylabel('e')\r\nax.set_title('Design by describing function: h=%.4f, K=%.4f' % (hd, Kd), fontsize=11)\r\nax.legend(fontsize=9)\r\nax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 4,
+          "line": 893,
+          "delim": "`",
+          "code": "# 三个案例汇总：预测 vs 实测\r\nprint('%-32s %-8s %-8s %-9s %-8s %-8s %-9s %s'\r\n      % ('案例', '预测A', '实测A', '幅值误差', '预测T', '实测T', '周期误差', 'THD'))\r\nfor d in SUMMARY:\r\n    if d['pred'] == 0.0:\r\n        print('%-32s 无极限环：预测不振荡，仿真末段 |e| 峰值 %.6f' % (d['case'], d['meas']))\r\n    else:\r\n        print('%-32s %-8.4f %-8.4f %+7.2f%%  %-8.4f %-8.4f %+7.2f%%  %.4f'\r\n              % (d['case'], d['pred'], d['meas'], d['ea'], d['Tp'], d['Tm'], d['et'], d['thd']))\r\nea = [abs(d['ea']) for d in SUMMARY if d['pred'] > 0]\r\net = [abs(d['et']) for d in SUMMARY if d['pred'] > 0]\r\nprint()\r\nprint('有极限环的四个算例：幅值误差最大 %.2f%%，周期误差最大 %.2f%%，THD 最大 %.4f'\r\n      % (max(ea), max(et), max(d['thd'] for d in SUMMARY if d['pred'] > 0)))\r\nprint('这些环路的 L 都在 -25 dB 以下 —— 与引言的定价表一致。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 959,
+      "title": "Notebook 6：四种失效模式的实测证据",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\n\r\ndef leak(G, w0, nmax=9):\r\n    return sum(abs(G(n * w0)) / n for n in range(3, nmax + 1, 2)) / abs(G(w0))\r\n\r\n\r\ndef measure(ts, sig, t_from, dt):\r\n    m = ts >= t_from\r\n    t, s = ts[m], sig[m]\r\n    zc = [t[i - 1] + dt * (-s[i - 1]) / (s[i] - s[i - 1])\r\n          for i in range(1, len(s)) if s[i - 1] < 0 <= s[i]]\r\n    zc = np.array(zc)\r\n    if len(zc) < 4:\r\n        return None\r\n    per = float(np.mean(np.diff(zc)))\r\n    w = 2 * np.pi / per\r\n    kk = len(zc) // 2\r\n    ta, tb = zc[kk], zc[-1]\r\n    mm = (t >= ta) & (t <= tb)\r\n    tt, ss = t[mm], s[mm]\r\n    A1 = 2 * np.trapezoid(ss * np.sin(w * (tt - ta)), tt) / (tb - ta)\r\n    A2 = 2 * np.trapezoid(ss * np.cos(w * (tt - ta)), tt) / (tb - ta)\r\n    amp = float(np.hypot(A1, A2))\r\n    harm = [float(np.hypot(2 * np.trapezoid(ss * np.sin(nh * w * (tt - ta)), tt) / (tb - ta),\r\n                           2 * np.trapezoid(ss * np.cos(nh * w * (tt - ta)), tt) / (tb - ta)))\r\n            for nh in range(2, 8)]\r\n    return dict(per=per, w=w, amp=amp, peak=float(np.max(np.abs(ss))),\r\n                h3=harm[1] / amp,\r\n                thd=float(np.sqrt(np.sum(np.array(harm) ** 2)) / amp))\r\n\r\n\r\ndef sim_res(zeta, T=120.0, dt=1e-4):\r\n    wr = 3 * np.sqrt(2)\r\n    den = np.polymul([0.5, 1.5, 1.0, 0.0], [1.0, 2 * zeta * wr, wr ** 2])\r\n    num = [wr ** 2]\r\n    p = np.zeros(3)\r\n    q = np.zeros(2)\r\n    n = int(round(T / dt))\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    for k in range(n):\r\n        e = -q[0]\r\n        u = 1.0 if e > 0 else -1.0\r\n        ts[k] = k * dt\r\n        es[k] = e\r\n        p[2] += dt * (-3.0 * p[2] - 2.0 * p[1] + 2.0 * u)\r\n        p[1] += dt * p[2]\r\n        p[0] += dt * p[1]\r\n        q[1] += dt * (-2 * zeta * wr * q[1] - wr ** 2 * q[0] + wr ** 2 * p[0])\r\n        q[0] += dt * q[1]\r\n    return ts, es, num, den, wr\r\n\r\n\r\ndef sim_di(a0, T=40.0, dt=1e-4, M=1.0):\r\n    x = np.array([a0, 0.0])\r\n    n = int(round(T / dt))\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    vs = np.empty(n)\r\n    for k in range(n):\r\n        e = x[0]\r\n        u = M if e > 0 else -M\r\n        ts[k] = k * dt\r\n        es[k] = e\r\n        vs[k] = x[1]\r\n        x[1] += dt * (-u)\r\n        x[0] += dt * x[1]\r\n    return ts, es, vs",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1034,
+          "delim": "`",
+          "code": "# 失效一：三次谐波处的谐振峰（zeta = 0.02）与它的缓解（zeta = 0.2）\r\nfig, axes = plt.subplots(1, 2, figsize=(11.0, 3.6))\r\nfor ax, zeta in zip(axes, (0.02, 0.2)):\r\n    ts, es, num, den, wr = sim_res(zeta)\r\n    dt = 1e-4\r\n    G = lambda w: np.polyval(num, 1j * w) / np.polyval(den, 1j * w)\r\n    ws = np.linspace(0.2, 3.0, 20001)\r\n    im = np.array([G(w).imag for w in ws])\r\n    ix = np.where(np.sign(im[:-1]) != np.sign(im[1:]))[0]\r\n    w0 = ws[ix[0]]\r\n    g0 = G(w0)\r\n    A0 = 4 * abs(g0) / np.pi\r\n    ratio = abs(G(3 * w0) / g0)\r\n    L = leak(G, w0)\r\n    r = measure(ts, es, 60.0, dt)\r\n    print('zeta = %.2f: w0=%.4f (wr/w0=%.2f), G(jw0)=%.6f, 预测 A0=%.6f' % (zeta, w0, wr / w0, g0.real, A0))\r\n    print('   |G(j3w0)/G(jw0)| = %.3f (%+.1f dB),  L = %.4f (%+.1f dB)'\r\n          % (ratio, 20 * np.log10(ratio), L, 20 * np.log10(L)))\r\n    print('   实测: 基波 %.6f (%+.1f%%), 周期 %.4f (%+.1f%%), THD %.4f, 3次/1次 %.4f'\r\n          % (r['amp'], (r['amp'] / A0 - 1) * 100, r['per'],\r\n             (r['per'] / (2 * np.pi / w0) - 1) * 100, r['thd'], r['h3']))\r\n    zc = [ts[i - 1] + dt * (-es[i - 1]) / (es[i] - es[i - 1])\r\n          for i in range(1, len(es)) if es[i - 1] < 0 <= es[i] and ts[i] >= 100.0]\r\n    t0 = zc[0]\r\n    msk = (ts >= t0) & (ts <= t0 + 2 * r['per'])\r\n    tt = ts[msk] - t0\r\n    ax.plot(tt, es[msk], color='#2563eb', lw=1.6, label='sim e(t)')\r\n    ax.plot(tt, A0 * np.sin(r['w'] * tt), color='#dc2626', lw=1.2, ls='--',\r\n            label='pred A0 sin(w t)')\r\n    ax.set_title('zeta=%.2f: L=%.1f dB, err=%+.1f%%, THD=%.3f'\r\n                 % (zeta, 20 * np.log10(L), (r['amp'] / A0 - 1) * 100, r['thd']), fontsize=11)\r\n    ax.set_xlabel('t (s)')\r\n    ax.set_ylabel('e')\r\n    ax.legend(fontsize=9)\r\n    ax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()\r\nprint()\r\nprint('加大阻尼把 L 从 -7.6 dB 压到 -24.6 dB，误差从 +18.1% 降到 +8.7%；')\r\nprint('但 wr/w0 只从 3.05 变到 3.43，谐振峰仍在三倍频附近，所以修不彻底。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 1074,
+          "delim": "`",
+          "code": "# 失效二：双积分器 + 继电器 —— 周期解族，T 正比于 sqrt(A)\r\nprint('G(jw) = -1/w^2 恒为负实数，-1/N(A) = -pi A/(4M) 也在负实轴上：两条轨迹整段重合')\r\nprint()\r\nprint('%-6s %-9s %-9s %-9s %-13s %-13s %s'\r\n      % ('a0', '峰值Ap', '基波A1', '周期实测', 'DF pi*sqrt(pi*A1)', '精确 4*sqrt(2Ap)', 'A1/Ap'))\r\nfig, ax = plt.subplots(figsize=(6.4, 5.6))\r\ncols = ['#2563eb', '#dc2626', '#16a34a']\r\nratios = []\r\nfor c, a0 in zip(cols, (0.5, 1.0, 2.0)):\r\n    ts, es, vs = sim_di(a0)\r\n    r = measure(ts, es, 10.0, 1e-4)\r\n    Tdf = np.pi * np.sqrt(np.pi * r['amp'])\r\n    Tex = 4 * np.sqrt(2 * r['peak'])\r\n    ratios.append(r['amp'] / r['peak'])\r\n    print('%-6.1f %-9.6f %-9.6f %-9.6f %-13.6f %-13.6f %.6f'\r\n          % (a0, r['peak'], r['amp'], r['per'], Tdf, Tex, r['amp'] / r['peak']))\r\n    msk = (ts >= 20) & (ts <= 20 + 2 * r['per'])\r\n    ax.plot(es[msk], vs[msk], color=c, lw=1.4, label='a0=%.1f, T=%.4f s' % (a0, r['per']))\r\nax.plot([0], [0], 'kx', ms=10, markeredgewidth=2)\r\nax.set_xlabel('e')\r\nax.set_ylabel('de/dt')\r\nax.set_title('Relay + double integrator: a family, not one cycle', fontsize=11)\r\nax.legend(fontsize=9)\r\nax.grid(alpha=0.3)\r\nplt.tight_layout()\r\nplt.show()\r\nprint()\r\nprint('基波/峰值比实测 = %.6f ~ %.6f，32/pi^3 = %.6f（最大相对差 %.1e）'\r\n      % (min(ratios), max(ratios), 32 / np.pi ** 3,\r\n         max(abs(v - 32 / np.pi ** 3) / (32 / np.pi ** 3) for v in ratios)))\r\nprint('代入 A1 = (32/pi^3) Ap：pi*sqrt(pi*32/pi^3) = sqrt(32) = 4*sqrt(2)，两式恒等。')\r\nprint('结论：周期公式对，振幅由初值决定 —— DF 在这里给不出\"系统会振多大\"。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 1106,
+          "delim": "`",
+          "code": "# 失效三：滑动与抖振 —— 切换频率随 dt 发散\r\nprint('(a) 继电器 + 1/s：G = -j/w 永不落在实轴上，HB 无解')\r\nfor dt in (1e-3, 1e-4):\r\n    e, sw, ulast = 1.0, 0, None\r\n    for k in range(int(round(2.0 / dt))):\r\n        u = 1.0 if e > 0 else -1.0\r\n        if ulast is not None and u != ulast:\r\n            sw += 1\r\n        ulast = u\r\n        e += dt * (-u)\r\n    print('    dt=%.0e: 2 s 内切换 %d 次（平均切换周期 %.1e s），|e| 末值 %.1e'\r\n          % (dt, sw, 2.0 / sw, abs(e)))\r\nprint()\r\nprint('(b) 无滞环继电器 + 2/(s(s+1)), K=2：同样无 HB 解')\r\nfor dt in (1e-4, 5e-5):\r\n    x = np.array([-0.5, 0.0])\r\n    n = int(round(30.0 / dt))\r\n    ts = np.empty(n)\r\n    es = np.empty(n)\r\n    sw, ulast = 0, None\r\n    for k in range(n):\r\n        e = -x[0]\r\n        u = 1.0 if e > 0 else -1.0\r\n        if ulast is not None and u != ulast and k * dt >= 25.0:\r\n            sw += 1\r\n        ulast = u\r\n        ts[k] = k * dt\r\n        es[k] = e\r\n        x[1] += dt * (-x[1] + 2.0 * u)\r\n        x[0] += dt * x[1]\r\n    print('    dt=%.0e: 末段 |e| 峰值 %.2e (t>=20 s)，末 5 s 切换 %d 次（平均周期 %.2e s）'\r\n          % (dt, float(np.max(np.abs(es[ts >= 20]))), sw, 5.0 / sw))\r\nprint()\r\nprint('dt 减半：误差 7.2e-05 -> 2.7e-05（趋零），切换 294 -> 480 次（发散）=> 滑动模态。')\r\nprint('DF 判\"无极限环\"是对的，但它给不出稳态误差和每秒切换次数这两个工程指标。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 3,
+          "line": 1141,
+          "delim": "`",
+          "code": "# 失效模式清单：每条都对应一个可计算的判据与本课的实测数字\r\nrows = [('谐振峰在 3w0 附近', 'L 与 wr/w0', 'L=-7.6 dB, wr/w0=3.05 -> 误差 +18.1%, THD 0.113',\r\n         '加阻尼/陷波: zeta=0.2 时 L=-24.6 dB, 误差 +8.7%; 频率 -11.2%'),\r\n        ('G(jw) 整段在负实轴', 'G 的相位是否恒为 -180deg',\r\n         '双积分器: T 正比 sqrt(A), 三个初值三条轨道',\r\n         '用相平面判孤立性; 加极点/阻尼让相位随 w 变化'),\r\n        ('环路阶数不足', 'HB 无解但仿真误差趋零',\r\n         '切换 1000 次(dt=1e-3) -> 9999 次(dt=1e-4) / 2 s',\r\n         '改用滑模理论; 或加滞环把频率钉在 0.349 Hz(代价 A>h)'),\r\n        ('多个非线性串联', 'N 是否可乘', 'A=1.5 处乘积近似错 15.4%',\r\n         '把组合映射当一个非线性做傅里叶积分'),\r\n        ('死区 + 积分（连续平衡点）', '是否存在平衡点段',\r\n         '冻点非单调 0.0791 / 0.2597; 阈值初值只能仿真二分得 0.6735',\r\n         '相平面 + 初值扫描; DF 无法给吸引域'),\r\n        ('参数时变 / 多频 / 混沌', 'f 是否静态单值',\r\n         '本课未测（定义层面失效）', '多谐波平衡或直接仿真; 慢时变可冻结时间')]\r\nprint('%-22s %-20s %-44s %s' % ('失效模式', '判据', '本课实测', '缓解手段与价格'))\r\nfor a, b, c, d in rows:\r\n    print('%-22s %-20s %-44s %s' % (a, b, c, d))\r\nprint()\r\nprint('一句话总结：L < -25 dB 且 G 的相位随 w 单调变化且非线性只有一个 => DF 可信到百分之几；')\r\nprint('          任一条不满足，DF 的结论必须用仿真或相平面复核。')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

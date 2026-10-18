@@ -2233,40 +2233,40 @@ export const catalog: Chapter[] = [
         "title": "描述函数",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "开关为何会振荡",
+            "title": "开关为何会振荡"
           },
           {
-            "slug": "描述函数的定义与滤波假设",
-            "title": "描述函数的定义与滤波假设"
+            "slug": "只保留基波",
+            "title": "只保留基波"
           },
           {
-            "slug": "常见非线性的描述函数",
-            "title": "常见非线性的描述函数"
+            "slug": "五种描述函数",
+            "title": "五种描述函数"
           },
           {
-            "slug": "谐波平衡与极限环预测",
-            "title": "谐波平衡与极限环预测"
+            "slug": "寻找候选振荡",
+            "title": "寻找候选振荡"
           },
           {
-            "slug": "极限环的稳定性判据",
-            "title": "极限环的稳定性判据"
+            "slug": "振幅会被拉回吗",
+            "title": "振幅会被拉回吗"
           },
           {
             "slug": "应用案例",
             "title": "应用案例"
           },
           {
-            "slug": "何时失效",
-            "title": "何时失效"
+            "slug": "四类失效",
+            "title": "四类失效"
           },
           {
-            "slug": "与其他非线性方法的接口",
-            "title": "与其他非线性方法的接口"
+            "slug": "怎样交叉检查",
+            "title": "怎样交叉检查"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2283,6 +2283,8 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "nonlinear/nonlinear-characteristics",
+          "math/fourier-analysis",
+          "nonlinear/lyapunov-stability",
           "classic/frequency-domain-analysis"
         ],
         "level": "grad",

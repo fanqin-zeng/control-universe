@@ -650,3 +650,7 @@ LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE
 ### NONLINEAR-03 本轮执行记录（2026-10-18）
 
 Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、原四实验八cell与五题，补抽屉储能SVG/两核验实验/临界第六题；纠稳定性包含、反例-2、圆外收敛过推、摆多圈与紧势阱、平面PD/关节调节/电网边界。实际TS195组292695点对独立DOP853，六符号恒等与PD独立expm；六Notebook十cell严格Jupyter/Pyodide及真实工具栏通过，17旧ID保留、375px表内滚动。签发/真实master回执见全局checklist及.agent/semester-03/nonlinear-03/acceptance.md；原25Python待办及W08/W09/W10不关闭，独立中文润色目录/分支不动，本轮不发布Pages。
+
+### NONLINEAR-04 本轮执行记录（2026-10-18）
+
+描述函数按重构专用Phase1–4，仅本课。保留原12主题、六实验21cell和六题，增恒温器SVG引入及手算/习题核验，共七实验22cell；修正圆判据全局保证、HB候选与真实周期轨道混淆、双根网格误差、饱和临界解族、谐波指标与步长解释。两实际组件共享纯数值实现，对独立分段积分390组、HB4608组和事件驱动连续仿真复核；真实页面分支/恢复/375px及20旧ID通过。S04本课组件第5项债务关闭，W08/W09/W10及原25项Python待办保留；实际签发和master回执见全局checklist与.agent/semester-03/nonlinear-04/acceptance.md。不操作中文润色分支、不发布Pages，下一课另起对话。
