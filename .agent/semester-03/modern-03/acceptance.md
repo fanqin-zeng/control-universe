@@ -27,3 +27,7 @@
 W08/W09/W10不关闭；不交付MODERN-04。三份用户proofreading改动不加入提交，日常直接master验收提交/推送。
 
 整体验收：node scripts/verify-modern03-delivery.mjs退出0；5实验11cell/26旧ID/35目标/375px实际截图与最终源指纹一致，见delivery-validation.json。讨论日志Phase4据实际证据签发。普通构建及Pages构建均对最后两行矩阵排版版本重跑，未部署公网。
+
+## master回执
+
+课程完成提交 `58d4e41048ac211950c14581e071c638501c1a00` 已直接进入master；全局checklist据实际hash勾选旧“合并”列。回执随后普通提交，并一起推送origin master；gh-pages保持42eed1d，本轮不发布。
