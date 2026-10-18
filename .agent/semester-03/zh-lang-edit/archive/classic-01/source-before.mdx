@@ -1,0 +1,409 @@
+---
+title: 系统建模
+description: 从压下车身再松手出发，建立受力、储能与耦合方程，检验输入、初值、工作点和模型简化的边界。
+---
+
+# 系统建模
+
+## 从按下车身开始
+
+停车时，把车身向下压一点，再松手：车身会回弹，有时还要上下晃几次。换一个减震器，晃动会怎样变？在改装或制造实物之前，我们希望先用方程回答这个问题。
+
+下面先做一个**给定模型的自由释放实验**：车轮端固定，把车身相对静平衡位置向下压 $5$ cm，速度为零，随后松手。调节阻尼比，观察位移与机械能。它帮助我们检查建模，不代表完整车辆的舒适性试验。
+
+<SuspensionExplorer />
+
+默认质量 $m=250$ kg、刚度 $k=16000$ N/m，阻尼比 $\zeta=0.3$，对应 $c=1200$ N·s/m、无阻尼自然频率 $\omega_n=8$ rad/s。初始机械能为 $20$ J；$1$ s时位移约 $0.2392109$ cm、速度约 $-0.0371019$ m/s、机械能约 $0.2178459$ J。下文会解释这些参数、初值和能量各从哪里来。
+
+一份模型至少要说明：研究对象、坐标与单位、输入与扰动、输出、初值、假设和用途。参数相同，外力推动、路面移动与松手回弹也会得到不同的曲线。**先说清楚在算哪个问题，再比较曲线。**
+
+## 受力与平衡位置
+
+### 静平衡与增量坐标
+
+把车身视作一个质量块，弹簧和阻尼器并联连接到给定位移的基座。取向下为正，用 $y$ 表示车身相对**静平衡位置**的位移，$r$ 表示基座位移，$F$ 表示额外作用在车身上的力。重力已由静态弹簧压缩平衡，不能在增量方程里再漏算或重复加入。
+
+<img src="/images/classic/modeling-suspension.svg" alt="向下为正的车身与给定位移基座，弹簧和阻尼并联，额外力作用于车身" width={720} />
+
+弹簧的伸缩取决于 $y-r$，阻尼器两端的相对速度为 $\dot y-\dot r$。作用在车身上的力分别为 $-k(y-r)$、$-c(\dot y-\dot r)$，所以
+
+$$
+m\ddot y+c\dot y+ky=F+c\dot r+kr.
+$$
+
+每一项都是力：$m$ 的单位kg，$c$ 为N·s/m，$k$ 为N/m。先隔离质量块画自由体图，再列牛顿第二定律，能避免把“作用力”和“反作用力”方向混淆。
+
+这个单自由度模型忽略轮胎弹性和车轮质量；它是悬挂教学简化。常见带车轮质量的四分之一车模型有两个自由度，不能只凭“四分之一车”这个名称判断阶数。更完整的对象可参看[密歇根大学悬挂建模教程](https://ctms.engin.umich.edu/CTMS/index.php?example=Suspension&section=SimulinkModeling)。
+
+### 输入和初值不能混用
+
+- **自由释放**：$F=r=0$，$y(0)=0.05$ m、$\dot y(0)=0$，正是开篇实验。
+- **外力作用**：$r=0$，右端为 $F$。恒力 $1000$ N时，平衡位移为 $F/k=0.0625$ m。
+- **基座移动**：$F=0$，右端为 $c\dot r+kr$。恒定基座位移 $r=0.05$ m时，静态平衡为 $y=r$。
+
+基座位移有突跳时，$\dot r$ 含冲激，不能把它偷换成有限的普通外力阶跃。真实路面有有限形状与速度；道路舒适性还要定义车身加速度、轮胎接地等指标。本课只比较已声明的自由响应。
+
+### 用能量检查符号
+
+对于固定基座、无外力的主例，定义机械能
+
+$$
+E=\frac12m\dot y^2+\frac12ky^2,\qquad \dot E=-c\dot y^2.
+$$
+
+当 $c\ge0$ 时，能量不会增加；若仿真显示没有外部输入却不断增能，应查受力符号、模型或数值误差。$c=0$ 时能量保持 $20$ J，位移持续振荡；$c>0$ 时能量耗散。阻尼耗散的是总机械能，位移本身仍可能换向。
+
+阻尼比定义为 $\zeta=c/(2\sqrt{mk})$。本主例 $0<\zeta<1$ 时振荡衰减，$\zeta=1$ 临界，$\zeta>1$ 过阻尼；后者存在慢模态，不能把“阻尼更大”直接翻译为“所有性能更好”。在相同初值下，$\zeta=2$ 时 $1$ s位移约 $0.6315040$ cm，临界阻尼约 $0.0150958$ cm。这只是本例、本时刻的位移观察，不是参数最优或车辆舒适性排名。
+
+<JupyterNotebook title="自由释放与能量核验" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `m=250.;k=16000.;y0=.05;t=np.linspace(0,3,301)
+for zeta in [0.,.3,1.,2.]:
+    c=2*zeta*np.sqrt(m*k);A=np.array([[0.,1.],[-k/m,-c/m]])
+    states=np.array([expm(A*tt)@np.array([y0,0.]) for tt in t])
+    E=.5*m*states[:,1]**2+.5*k*states[:,0]**2
+    print('zeta/c/wn/E0:',zeta,c,np.sqrt(k/m),E[0])
+    for j in [100,300]:print('t/y/v/E/dissipation:',t[j],*states[j],E[j],c*states[j,1]**2)
+    print('sample energy maximum/increase:',max(E),max(np.diff(E)))
+y,v,c,k=sp.symbols('y v c k',real=True);m=sp.symbols('m',positive=True)
+E=m*v*v/2+k*y*y/2
+print('symbolic E derivative:',sp.simplify(sp.diff(E,y)*v+sp.diff(E,v)*(-c*v-k*y)/m))
+print('force1000 equilibrium/base.05 equilibrium:',1000/16000,.05)
+`}]} />
+
+### 双质量块的作用与反作用
+
+看一个双质量块例子。弹簧 $k_1$ 将墙壁与质量块 $m_1$ 相连；两质量之间连接弹簧 $k$ 和阻尼 $c$，外力 $F$ 作用在 $m_2$。位移都向右为正。
+
+<img src="/images/classic/modeling-two-mass.svg" alt="墙壁弹簧k1连接m1，m1和m2间弹簧k与阻尼c并联，外力F向右作用在m2" width={720} />
+
+当 $x_2>x_1$ 时，中间弹簧向右拉 $m_1$、向左拉 $m_2$。分别隔离两个质量块，得到
+
+$$
+\begin{aligned}
+m_1\ddot x_1&=-k_1x_1+k(x_2-x_1)+c(\dot x_2-\dot x_1),\\
+m_2\ddot x_2&=-k(x_2-x_1)-c(\dot x_2-\dot x_1)+F.
+\end{aligned}
+$$
+
+整理成 $M\ddot x+C\dot x+Kx=f$，其中
+
+$$
+M=\begin{bmatrix}m_1&0\\0&m_2\end{bmatrix},\quad
+C=\begin{bmatrix}c&-c\\-c&c\end{bmatrix},\quad
+K=\begin{bmatrix}k_1+k&-k\\-k&k\end{bmatrix},\quad
+f=\begin{bmatrix}0\\F\end{bmatrix}.
+$$
+
+这些矩阵的对称性来自本例的互易弹簧、粘性阻尼与独立质量元件，不能推广为“一切有能量的机械模型都对称”。无外力时，能量为 $\frac12\dot x^TM\dot x+\frac12k_1x_1^2+\frac12k(x_2-x_1)^2$，其导数为 $-c(\dot x_2-\dot x_1)^2$。这也再次检查了交叉项符号。
+
+## 旋转机械系统
+
+平移的位移、速度、力、质量分别对应旋转的角位移 $\theta$、角速度 $\omega=\dot\theta$、力矩 $\tau$ 与转动惯量 $J$。对粘性摩擦系数 $B$、扭转刚度 $K_\theta$，固定参考端时
+
+$$
+J\ddot\theta+B\dot\theta+K_\theta\theta=\tau.
+$$
+
+单位分别为kg·m²、N·m·s/rad、N·m/rad；每项都是力矩。转动摩擦不总是粘性的，库仑摩擦、间隙等会引入本式没有包含的非线性。没有扭转弹簧的电机速度模型只需保留 $J\dot\omega+B\omega$，不能凭形式相似额外加弹簧。
+
+## 电气系统建模
+
+<img src="/images/classic/rlc-circuit.png" alt="输入电压作用于串联电感电阻电容，输出为电容电压，电流流入电容正端" width={720} />
+
+串联RLC电路取电流流入电容正端为正。基尔霍夫电压定律与电容关系为 $L\dot i+Ri+v_C=v$、$i=C\dot v_C$，消去电流得到
+
+$$
+LC\ddot v_C+RC\dot v_C+v_C=v.
+$$
+
+给定 $R=10$ Ω、$L=0.5$ H、$C=0.01$ F，有 $0.005\ddot v_C+0.1\dot v_C+v_C=v$。需要两个初始条件，例如 $v_C(0)$ 和 $i(0)$；后者决定 $\dot v_C(0)=i(0)/C$。
+
+这些常参数方程是线性的。**零初值的输入—输出映射**满足叠加；若固定一个非零初值，只把输入相加再把整段输出相加，会把初始响应重复计算。也可把初值与输入一起当作被线性组合的变量。含 $\sin\theta$ 或乘积状态的非线性模型不直接满足这种叠加。
+
+## 机电类比
+
+力—电压类比把力 $F$ 对应电压 $v$、速度 $\dot y$ 对应电流 $i$，二者乘积都对应功率。取电荷 $q=\int i\,dt$ 为坐标，电路变为 $L\ddot q+R\dot q+q/C=v$，因此 $m\leftrightarrow L$、$c\leftrightarrow R$、$k\leftrightarrow1/C$。
+
+这与上节以 $v_C=q/C$ 为坐标的方程相容：只是变量与方程整体缩放不同。不能把 $LC,RC,1$ 的系数表和 $L,R,1/C$ 的物理类比表当成同一坐标下的数值。对上节电路，两组系数分别为 $(0.005,0.1,1)$ 与 $(0.5,10,100)$。
+
+类比帮助复用方程和能量直觉，不意味着机械量与电量有相同单位。两个储能元件也不自动保证振荡：阻尼大小、约束和独立动态状态都要检查。
+
+<JupyterNotebook title="双质量受力与电路坐标" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `m1,m2,c,k,k1=sp.symbols('m1 m2 c k k1',positive=True)
+x1,x2,v1,v2=sp.symbols('x1 x2 v1 v2',real=True)
+M=sp.diag(m1,m2);D=sp.Matrix([[c,-c],[-c,c]]);K=sp.Matrix([[k1+k,-k],[-k,k]])
+print('M/C/K:',M,D,K)
+x=sp.Matrix([x1,x2]);v=sp.Matrix([v1,v2]);f=sp.Matrix([-k1*x1+k*(x2-x1)+c*(v2-v1),-k*(x2-x1)-c*(v2-v1)])
+print('force sign residual:',sp.simplify(f+D*v+K*x))
+energy=(v.T*M*v)[0]/2+k1*x1*x1/2+k*(x2-x1)**2/2
+acc=M.inv()*f;edot=sum(sp.diff(energy,xx)*vv for xx,vv in zip(x,v))+sum(sp.diff(energy,vv)*aa for vv,aa in zip(v,acc))
+print('two-mass dissipation:',sp.factor(edot))
+R=sp.Integer(10);L=sp.Rational(1,2);C=sp.Rational(1,100)
+print('RLC vC coefficients:',L*C,R*C,1,'charge coefficients:',L,R,1/C)
+print('original exercise wn/zeta:',sp.sqrt(50/sp.Integer(2)),4/(2*sp.sqrt(2*50)))
+`}]} />
+
+## 直流电机
+
+电压驱动电流，电流产生力矩；转速又通过反电动势影响电流。分别写电气和机械方程：
+
+$$
+L\dot i+Ri+K_e\omega=v,\qquad
+J\dot\omega+B\omega=K_ti-\tau_L.
+$$
+
+<img src="/images/classic/modeling-motor.svg" alt="电气方程经电流产生Kt i力矩驱动机械侧，转速经Ke omega反电动势回到电气侧，负载力矩单独作用于机械侧" width={720} />
+
+$K_e\omega$ 的单位是V，$K_ti$ 是N·m，两种耦合量不能画成同一种力。理想能量一致、单位约定一致的SI模型中 $K_e$ 与 $K_t$ 数值相同；实际参数含齿轮比、测量约定时仍要核定义。模型假定恒定磁通、线性元件与粘性摩擦，不包含饱和、换向细节或温升参数漂移。方程亦见[密歇根大学电机教程](https://ctms.engin.umich.edu/CTMS/?example=MotorSpeed&section=SimulinkModeling)。
+
+### 先消元，再决定简化
+
+先取 $\tau_L=0$，从机械方程解出 $i=(J\dot\omega+B\omega)/K_t$，代入电气式：
+
+$$
+LJ\ddot\omega+(LB+RJ)\dot\omega+(RB+K_eK_t)\omega=K_tv.
+$$
+
+若研究范围允许忽略电感，令 $L=0$，得到
+
+$$
+J\dot\omega+\left(B+\frac{K_tK_e}{R}\right)\omega=\frac{K_t}{R}v-\tau_L.
+$$
+
+上式也写回了负载项。即使 $B=0$，反电动势仍产生速度反馈项 $K_tK_e/R$，不能未经说明再把它删掉。零初值、无负载下，用已学拉普拉斯符号可写成
+
+$$
+\frac{\Omega(s)}{V(s)}=\frac{K_t}{RJ\,s+RB+K_tK_e}.
+$$
+
+分母的常数项只决定直流增益的一部分，**不能漏掉 $RJ\,s$ 后还称它为一阶动态模型**；系统性的传递函数定义留到下一课。
+
+### 三种电感的同条件核验
+
+选教学参数 $R=1$ Ω、$J=0.01$ kg·m²、$B=0.1$ N·m·s/rad、$K_e=K_t=0.1$，输入 $1$ V，初始电流与转速均为零。约化模型时间常数为 $0.0909091$ s、稳态转速 $0.9090909$ rad/s；全阶也有相同稳态，但过程不必相同。
+
+对 $L=0.001,0.01,0.1$ H，在 $[0,1]$ s的相同601时刻检查速度最大绝对差，分别约 $0.0094727,0.0753844,0.3452350$ rad/s。实验采用DOP853、rtol为 $10^{-10}$、atol为 $10^{-12}$，内部最大步长0.001s，再用独立解析解核对；容差本身不保证每个输出点的全局误差。它们是**采样网格上的误差**，不是连续时间最大值，也不是求解器排名。$L=0.1$ 时全阶极点是 $-10\pm3.1622777j$，已经不能解释成一快一慢的两个实模态。
+
+更直接的反例是初始电流：全阶为 $0$ A，约化代数关系却立即给出 $1$ A；全阶初始角加速度为 $0$，约化为 $10$ rad/s²。即使小电感下速度误差较小，电流保护、快速启动等问题也不能靠此模型保证。关注带宽、初值边界层与允许误差都必须分别给出。
+
+<JupyterNotebook title="电机降阶的三种电感" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `R=1.;J=.01;B=.1;K=.1;t=np.linspace(0,1,601);a=(B+K*K/R)/J;gain=K/(R*B+K*K)
+reduced=gain*(1-np.exp(-a*t))
+for L in [.001,.01,.1]:
+    A=np.array([[-R/L,-K/L],[K/J,-B/J]]);u=np.array([1/L,0.])
+    sol=solve_ivp(lambda tt,x:A@x+u,(0,1),[0.,0.],t_eval=t,method='DOP853',rtol=1e-10,atol=1e-12,max_step=.001)
+    assert sol.success
+    equilibrium=np.linalg.solve(-A,u)
+    r1,r2=np.linalg.eigvals(A).astype(complex)
+    wr=gain*(1+(r2*np.exp(r1*t)-r1*np.exp(r2*t))/(r1-r2))
+    dw=gain*r1*r2*(np.exp(r1*t)-np.exp(r2*t))/(r1-r2)
+    reference=np.column_stack([(J*dw+B*wr)/K,wr]).real
+    assert np.max(abs(sol.y.T-reference))<1e-8
+    print('L/poles/tau_e/tau_reduced:',L,np.linalg.eigvals(A),L/R,1/a)
+    print('steady i/w/max sampled speed error:',equilibrium,np.max(abs(sol.y[1]-reduced)))
+    print('at1s full/reduced speed/reference error:',sol.y[1,-1],reduced[-1],np.max(abs(sol.y.T-reference)))
+print('initial full/reduced current:',0.,1/R,'initial full/reduced acceleration:',0.,K/(R*J))
+s,L,R,J,B,Ke,Kt=sp.symbols('s L R J B Ke Kt')
+print('full speed denominator:',sp.expand((L*s+R)*(J*s+B)+Ke*Kt))
+print('reduced speed denominator:',R*J*s+R*B+Ke*Kt)
+`}]} />
+
+## 模型验证与简化
+
+1. **量纲与符号**：所有相加项单位一致，坐标与正方向明确；用储能和耗散再查符号。
+2. **边界与极限**：无阻尼应保能，去掉弹簧就不再有位置恢复力；参数设零可能改变方程约束，不能总当普通代入。
+3. **平衡与动态**：令导数为零只是在求平衡；是否会趋近该平衡，要另分析动态和初值。
+4. **数值复核**：减半步长、收紧容差或换独立解析参考，检查真实时间与指标；沿用[数值方法](/math/numerical-methods)的口径。
+5. **数据验证**：与真实测量在相同输入、初值、单位和工况下对照；辨识/调参数据与验证数据应分开，保留误差与适用范围。
+
+前四步不能代替最后一步。本课没有实车或电机测量，只完成给定教学方程的代数与数值检验。模型“没有编程错误”也可能不适合真实对象。
+
+时间尺度差异只提供降阶线索，不是“差5—10倍就一定可删”的定理。保留哪些动态取决于输出、输入频段、误差预算与用途；某些小参数极限会改变阶数和允许初值。不要在没有闭环论证时，把一个被删项的相位直接当作最终裕度损失。
+
+## 跨领域建模
+
+下面看看不同领域如何选择状态和方程；每个模型都有自己的假设。“守恒/收支”很有用，**不是所有状态都有物理守恒量，也不是所有驱动都等于势差除以阻力**。
+
+### 热容与散热
+
+对内部近似均匀温度的物体，热容 $C_{th}=mc_p$、总换热系数 $H=hA$，有 $C_{th}\dot T=H(T_\infty-T)$，$\tau=C_{th}/H$。教学参数 $C_{th}=1000$ J/K、$H=10$ W/K时，时间常数 $100$ s；初温80℃、环境20℃，100 s后约42.0727665℃。
+
+这是集总常环境模型的单状态单调冷却，不是“所有热系统一阶且不会振荡”。内部导热、多部件、控制与时变热源都可能要求更多状态；集总近似通常需内导热快于外换热。常用经验检查为Biot数 $Bi=hL_c/k_{cond}<0.1$，其中 $L_c=V/A$、$k_{cond}$ 是物体导热系数；这仍不是适合所有形状与工况的精确误差保证。热阻 $1/H$ 与热容的乘积像RC时间常数，但温度不是电压、热流单位是W。集总热容与Biot判据可参看[BYU传热讲义](https://www.et.byu.edu/~vps/ME340/TABLES/5.1.pdf)。
+
+### 液压的压缩性
+
+线性化阀流量 $q_L=K_qx_v-K_cP_L$；对称双腔缸在本约定下，等效液容 $C_h=V_t/(4\beta_e)$，连续方程与负载方程为
+
+$$
+C_h\dot P_L=K_qx_v-K_cP_L-A_p\dot x,\qquad
+m\ddot x+b\dot x+kx=A_pP_L-F_{ext}.
+$$
+
+$P_L$ 是负载压差，$A_p$ 为活塞面积；$K_c$ 的单位为流量/压力。状态可取 $(x,\dot x,P_L)$，通常三阶。若令 $C_h=0$ 且 $K_c>0$，先由连续方程解出 $P_L=(K_qx_v-A_p\dot x)/K_c$，再代入：
+
+$$
+m\ddot x+\left(b+\frac{A_p^2}{K_c}\right)\dot x+kx
+=\frac{A_pK_q}{K_c}x_v-F_{ext}.
+$$
+
+这时一般变为二阶。$A_p^2/K_c$ 的单位才是N·s/m；不能再除以流量增益 $K_q$。$K_c=0$ 时这套除法失效，应按代数约束另处理。管道阻力、液容和流体惯性可分别写 $\Delta P=R_hq$、$C_h\dot P=q_{in}-q_{out}$、$L_h\dot q=\Delta P$；阀方程仍只限所选工作点附近。
+
+### 辐射收支与时间尺度
+
+零维教学模型使用**单位面积热容** $C_A$（J/(m²·K)）：
+
+$$
+C_A\dot T=\frac{S(1-\alpha)}4-\varepsilon\sigma T^4.
+$$
+
+$S$ 是入射通量参数，$\alpha$ 为反照率，$\varepsilon$ 为有效发射率；温度必须用K，右端单位W/m²。取教学数 $S=1361$ W/m²、$\alpha=0.3$、$\varepsilon=1$、$\sigma=5.67\times10^{-8}$ W/(m²·K⁴)、$C_A=10^8$ J/(m²·K)，**这个模型自身**的平衡温度约254.5823428K。绕该平衡的小扰动时间常数为
+
+$$
+\tau=\frac{C_A}{4\varepsilon\sigma T_*^3}\approx0.8467752\ \text{年}.
+$$
+
+年按365.25天计算；同参数在288K处的导数尺度约0.5848918年，但288K不是上式参数下的平衡点。不能由一个单热容方程声称地球所有变化都要数十年或百年。若只把发射率降低1%，该模型新平衡增加约0.6404638K，也不是现实气候敏感度估计。冰反照率若随温度变化，还须把相应反馈显式写进模型；不能从这里的常参数方程直接推出临界跃迁。
+
+<JupyterNotebook title="跨领域模型的单位与尺度" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `Ch,m,b,k,Ap,Kc,Kq,s=sp.symbols('Ch m b k Ap Kc Kq s',positive=True)
+poly=sp.expand((Ch*s+Kc)*(m*s*s+b*s+k)+Ap*Ap*s)
+print('hydraulic full coefficients:',[poly.coeff(s,j) for j in [3,2,1,0]])
+print('incompressible divided coefficients:',m,b+Ap*Ap/Kc,k,'input gain:',Ap*Kq/Kc)
+print('thermal tau/T100:',1000/10,20+60*np.exp(-100/(1000/10)))
+S=1361.;albedo=.3;sig=5.67e-8;Carea=1e8;eps=1.
+Te=(S*(1-albedo)/(4*eps*sig))**.25;tau=Carea/(4*eps*sig*Te**3)
+print('radiation equilibrium/tau seconds/tau years:',Te,tau,tau/(365.25*86400))
+print('epsilon drop1pct temperature change:',Te*((1/.99)**.25-1))
+print('288K derivative timescale years, NOT equilibrium:',Carea/(4*sig*288**3)/(365.25*86400))
+`}]} />
+
+### 生态相互作用
+
+Lotka–Volterra模型写作：$\dot x=\alpha x-\beta xy$、$\dot y=\delta xy-\gamma y$，正参数对应猎物增长/捕食及捕食者转化/死亡。它是现象模型，不是两个种群总数守恒，也没有显式时滞项。
+
+在正象限，正平衡为 $(\gamma/\delta,\alpha/\beta)$，首次积分 $V=\delta x-\gamma\log x+\beta y-\alpha\log y$ 沿解保持常数。正象限内非平衡轨道是闭合曲线；并非吸引周围轨迹的稳定极限环。附近小振幅角频率为 $\sqrt{\alpha\gamma}$，不含 $\beta$，所以不能仅凭捕食更“高效”就断言周期缩短；也不能说增大 $\beta$ 会降低这里的平衡猎物数。真实观测是否支持模型需另做数据验证，不拿毛皮贸易周期当数学证明。
+
+### 传播与恢复
+
+传播方程 $\dot I=\beta I(N-I)-\gamma I$ 采用**恢复后回到易感状态**的SIS假设，$S=N-I$。恢复流从 $I$ 回到 $S$，总人口守恒；并非带永久免疫的SIR，也不自动等同所有谣言传播。
+
+取 $N=10000$、$\beta=0.0002$ 人⁻¹·日⁻¹、$\gamma=0.1$ 日⁻¹，早期增长率为 $1.9$ 日⁻¹，基本传播数 $R_0=20$。非零平衡是 $I_*=N-\gamma/\beta=9500$，不是10000；当 $I=N$ 时感染流为零，仍有恢复流，所以 $\dot I=-1000$ 人/日。$R_0\le1$ 时没有正的流行平衡；不能用“传播项饱和”掩盖恢复项。
+
+<JupyterNotebook title="生态首次积分与SIS平衡" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `x,y,alpha,beta,gamma,delta=sp.symbols('x y alpha beta gamma delta',positive=True)
+fx=alpha*x-beta*x*y;fy=delta*x*y-gamma*y
+V=delta*x-gamma*sp.log(x)+beta*y-alpha*sp.log(y)
+print('LV first integral derivative:',sp.simplify(sp.diff(V,x)*fx+sp.diff(V,y)*fy))
+print('positive equilibrium:',gamma/delta,alpha/beta)
+Jac=sp.Matrix([fx,fy]).jacobian([x,y]).subs({x:gamma/delta,y:alpha/beta})
+print('equilibrium Jacobian/determinant:',Jac,sp.factor(Jac.det()))
+for beta0 in [.1,.2]:print('beta/xstar/ystar/local frequency:',beta0,2/.2,1/beta0,np.sqrt(1*2))
+N=10000.;rate=.0002;recovery=.1
+print('SIS r/R0/Istar/f(N):',rate*N-recovery,rate*N/recovery,N-recovery/rate,rate*N*(N-N)-recovery*N)
+for rate0 in [.000005,.00001,.0002]:print('SIS rate/initial growth/R0:',rate0,rate0*N-recovery,rate0*N/recovery)
+`}]} />
+
+### 反应釜的物料与能量
+
+充分搅拌、固定容积、单一一阶放热反应的教学CSTR模型为
+
+$$
+\begin{aligned}
+\dot C&=\frac qV(C_{in}-C)-k_0e^{-E/(R_gT)}C,\\
+\dot T&=\frac qV(T_{in}-T)+\frac{-\Delta H}{\rho c_p}k_0e^{-E/(R_gT)}C
+-\frac{UA}{V\rho c_p}(T-T_c).
+\end{aligned}
+$$
+
+$C$ 为浓度，$q$ 为体积流量，$\Delta H<0$ 表示放热，温度用K，$R_g$ 为气体常数。物料守恒须算反应消耗，能量须算流入流出、反应热与夹套换热。温度影响反应速率，反应又影响温度；特定参数下可能有多稳态或振荡，但不是只写出正反馈就已证明热失控。这里不作真实反应器安全设计或数值预测。
+
+### 库存与价格
+
+库存收支 $\dot I=q-d$ 是商品量的流入减流出。若 $q=q_0-g(I-I_*)$、$d=q_0$、$g>0$，则 $\dot I=-g(I-I_*)$；必须说明生产能力和库存非负等约束，不能把数学解直接当可执行生产计划。
+
+价格调整 $\dot P=\lambda[D(P)-S(P)]$ 则是行为假设，不是价格或货币守恒律。其稳定性取决于需求/供给函数的斜率、约束与时滞等结构，不能把任何经济变化都套成“高增益导致振荡”。这两个例子说明：先决定状态表达什么，再决定能用哪条定律或假设。
+
+## 建模方法论总结
+
+从需求写出能检验的问题，选择对象、坐标和状态；说明输入、扰动、输出与初值；用受力/电路/收支和元件关系列方程；消元时记录约束与适用条件；先做单位、能量、极限、平衡与独立数值检查，再用保留的真实数据验证；最后按用途与误差预算简化。
+
+不必强行把所有模型消成一个高阶标量方程。保留一阶耦合形式有利于跟踪初值与物理量，后续状态空间课会系统展开。完整也不等于越复杂越好：多余参数若无法确定，复杂模型仍可能更不可信。
+
+## 工作点与线性化
+
+对 $\dot x=f(x,u)$，先选平衡 $(x_*,u_*)$ 使 $f(x_*,u_*)=0$，令增量 $\xi=x-x_*$、$\eta=u-u_*$。由已学多元泰勒展开，一阶近似为 $\dot\xi=A\xi+B\eta$，其中 $A=\partial f/\partial x$、$B=\partial f/\partial u$ 在该点求值。若工作点不是平衡，还要保留常数项，或围绕满足动力学的标称轨迹建模。
+
+以无阻尼单摆为例，$ml^2\ddot\theta+mgl\sin\theta=0$；下垂点 $\theta=0$ 附近有 $\ddot\theta+(g/l)\theta=0$。倒立点令 $\phi=\theta-\pi$，得到 $\ddot\phi-(g/l)\phi=0$。记 $a=\sqrt{g/l}$，完整初值解为
+
+$$
+\phi(t)=\phi_0\cosh(at)+\frac{\dot\phi_0}{a}\sinh(at).
+$$
+
+一般含增长和衰减两个模态；只有 $\dot\phi_0=a\phi_0$ 时才恰好是纯增长指数。稳定模态初值恰好抵消增长项也不改变倒立平衡的不稳定性。可对照[MIT单摆讲义](https://underactuated.mit.edu/pend.html)的动力学与状态描述。
+
+小角近似需要说明角度与关注误差；并不存在适合所有用途的统一“小角度”阈值。线性化不保留全部非线性现象，不能据局部模型推出全局稳定、极限环或约束满足。
+
+<JupyterNotebook title="工作点与单摆初值" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `t,w,p0,v0=sp.symbols('t w p0 v0',real=True)
+p=p0*sp.cosh(w*t)+v0/w*sp.sinh(w*t)
+print('inverted equation/initial value/initial velocity residual:',sp.simplify(sp.diff(p,t,2)-w*w*p),sp.simplify(p.subs(t,0)-p0),sp.simplify(sp.diff(p,t).subs(t,0)-v0))
+print('growth/decay coefficients:',p0/2+v0/(2*w),p0/2-v0/(2*w))
+for angle in [.1,.5,1.]:print('angle/sine/absolute sine approximation error:',angle,np.sin(angle),abs(np.sin(angle)-angle))
+print('exercise pendulum g/l and frequency:',9.81,1.,np.sqrt(9.81))
+x,u,xe,ue,A,B=sp.symbols('x u xe ue A B')
+print('local model format:',A*(x-xe)+B*(u-ue))
+`}]} />
+
+## 小结
+
+模型连接问题与可检验方程。先分清输入、初值、坐标和适用范围，再查单位、力与能量；跨领域可以复用数学结构，但不能凭类比改变物理单位或假设。简化和线性化必须保留工作点、误差口径与被舍弃的动态，数值正确还需要真实对象验证。
+
+## 习题
+
+1. $m=2$ kg、$k=50$ N/m、$c=4$ N·s/m，固定基座且无外力。写增量方程、自然频率与阻尼比，并判断响应类型。
+2. RLC串联，$R=10$ Ω、$L=0.5$ H、$C=0.01$ F。分别用电容电压与电荷作输出写方程；解释力—电压类比的“质量、阻尼、刚度”为何不是同一张系数表。
+3. 写无阻尼单摆非线性方程、下垂与倒立线性模型。对倒立增量给定位置与速度，写完整初值解；为何不能只写一个增长指数？
+4. 对主悬挂模型，分别写外力输入、基座输入与自由释放的条件。比较1000N恒力与0.05m基座恒位移的平衡位置，并给自由响应能量导数。
+5. 从电机两方程消元，给无负载完整速度方程与忽略L后的模型；指出初始电流失配。对液压不可压缩模型取 $m=2,b=3,k=4,A_p=0.5,K_c=0.25,K_q=2$（各为正文相应SI单位），给约化方程系数。
+6. 求正文SIS的增长率、基本传播数、正平衡及 $I=N$ 处导数；解释辐射时间常数为什么必须与所选平衡一致。最后列出把教学模型用于实物前还缺哪一步。
+
+## 答案
+
+1. $2\ddot y+4\dot y+50y=0$；$\omega_n=\sqrt{50/2}=5$ rad/s，$\zeta=4/(2\sqrt{2\cdot50})=0.2$，故为欠阻尼；初值决定幅值与相位，不能仅凭系数填一条唯一轨迹。
+2. 电压坐标为 $0.005\ddot v_C+0.1\dot v_C+v_C=v$；电荷坐标为 $0.5\ddot q+10\dot q+100q=v$，且 $v_C=100q$。物理类比 $m\leftrightarrow L=0.5$、$c\leftrightarrow R=10$、$k\leftrightarrow1/C=100$ 对应电荷坐标；不能给机械参数强加电气单位。
+3. 原式 $ml^2\ddot\theta+mgl\sin\theta=0$，正弦项非线性；下垂 $\ddot\theta+(g/l)\theta=0$，倒立 $\ddot\phi-(g/l)\phi=0$。完整解如正文的cosh/sinh式，增长系数 $(\phi_0+\dot\phi_0/a)/2$、衰减系数 $(\phi_0-\dot\phi_0/a)/2$。例如取 $g=9.81$ m/s²、$l=1$ m，自然频率约 $3.1320920$ rad/s。
+4. 总式 $m\ddot y+c\dot y+ky=F+c\dot r+kr$。固定基座外力问题右端为F；无额外力的基座问题右端为 $c\dot r+kr$；自由释放两输入为零、初位移0.05m且初速度0。恒力平衡 $1000/16000=0.0625$ m，恒基座平衡0.05m；自由能量导数 $-c\dot y^2$，非正但位移可振荡。
+5. 完整无负载为 $LJ\ddot\omega+(LB+RJ)\dot\omega+(RB+K_tK_e)\omega=K_tv$；约化为 $J\dot\omega+(B+K_tK_e/R)\omega=K_tv/R$。教学参数下时间常数约0.0909091s、增益约0.9090909rad/(s·V)；全阶初始电流0、约化1A，不能用后者核启动电流。液压代入得到 $2\ddot x+4\dot x+4x=4x_v-F_{ext}$，阻尼增量为 $A_p^2/K_c=1$。
+6. $r=1.9$ 日⁻¹、$R_0=20$、$I_*=9500$，$I=N$ 处导数为−1000人/日。辐射参数给自己的平衡约254.5823428K、时间常数约0.8467752年，不能把288K的导数尺度当同一平衡的响应时间。真实对象还需独立工况的数据验证、参数不确定性和适用范围检查；本课数值实验不代替它们。
+
+<JupyterNotebook title="六题答案复算" setupCode={`import numpy as np
+import sympy as sp
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp
+`} cells={[{code: `print('Q1 wn/zeta/case:',sp.sqrt(50/sp.Integer(2)),sp.Rational(4,20),'underdamped')
+print('Q2 RLC vC/charge:',[sp.Rational(1,200),sp.Rational(1,10),1],[sp.Rational(1,2),10,100])
+print('Q3 pendulum frequency l1:',np.sqrt(9.81))
+print('Q4 force1000/base.05 equilibrium:',1000/16000,.05)
+print('Q5 reduced motor tau/gain/initial current:',.01/(.1+.1**2),.1/(.1+.1**2),1.)
+print('Q5 hydraulic coefficients m2/b3/k4/Ap.5/Kc.25/Kq2:',2,3+.5**2/.25,4,.5*2/.25)
+print('Q6 SIS r/R0/Istar/fN:',1.9,20,9500,-1000)
+print('Q6 radiant tau at own equilibrium years:',1e8/(4*5.67e-8*(1361*.7/(4*5.67e-8))**.75)/(365.25*86400))
+`}]} />

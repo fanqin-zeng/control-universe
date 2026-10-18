@@ -29,7 +29,7 @@ const KIND_LABEL: Record<Kind, string> = {
   "stable-focus": "稳定焦点",
   "unstable-focus": "不稳定焦点",
   center: "中心（线性化）",
-  singular: "非孤立平衡点",
+  singular: "零特征值（非线性待判）",
 };
 
 const KIND_COLOR: Record<Kind, string> = {
@@ -251,7 +251,9 @@ export function TraceDetExplorer() {
         margin: "24px 0",
         padding: 16,
         background: "#fff",
+        color:"#0f172a",
       }}
+      aria-label="迹行列式探索"
       className="not-prose"
     >
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
@@ -259,7 +261,7 @@ export function TraceDetExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 12 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap:"wrap", gap: 8 }}>
           tr = {tr.toFixed(2)}
           <input
             type="range"
@@ -271,7 +273,7 @@ export function TraceDetExplorer() {
             style={{ width: 170 }}
           />
         </label>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap:"wrap", gap: 8 }}>
           det = {det.toFixed(2)}
           <input
             type="range"
@@ -286,10 +288,11 @@ export function TraceDetExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ flex: "1 1 340px", minWidth: 300 }}>
-          <div ref={planeRef} style={{ width: "100%", height: 330 }} />
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
+          <button onClick={() => {setTr(-.5);setDet(1);}} style={{padding:6,marginBottom:10}}>恢复默认分类</button>
+      <div ref={planeRef} style={{ width: "100%", height: 330 }} />
         </div>
-        <div style={{ flex: "1 1 340px", minWidth: 300 }}>
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
           <div ref={portraitRef} style={{ width: "100%", height: 330 }} />
         </div>
       </div>
@@ -321,3 +324,5 @@ export function TraceDetExplorer() {
     </div>
   );
 }
+
+export const traceDetNumerics={classify,eigenvalues,rk4};

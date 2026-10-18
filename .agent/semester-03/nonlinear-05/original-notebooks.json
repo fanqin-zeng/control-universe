@@ -1,0 +1,186 @@
+[
+  {
+    "index": 0,
+    "line": 96,
+    "endLine": 189,
+    "selfClosing": true,
+    "badCommas": [],
+    "title": "Notebook 1：Lie导数的数值验证与输入-输出线性化",
+    "unknownAttrs": [],
+    "setup": {
+      "raw": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "value": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "issues": [],
+      "line": 98,
+      "unterminated": false
+    },
+    "cells": [
+      {
+        "index": 0,
+        "line": 104,
+        "delim": "`",
+        "raw": "def f(x):\r\n    return np.array([x[1], -np.sin(x[0]) - x[1]])\r\n\r\ndef g(x):\r\n    return np.array([0.0, 1.0])\r\n\r\ndef h(x):\r\n    return x[0]\r\n\r\ndef num_dir_deriv(func, x, v, eps=1e-6):\r\n    \"\"\"向量场 v 方向上 func 的方向导数（中心差分）\"\"\"\r\n    return (func(x + eps*v) - func(x - eps*v)) / (2*eps)\r\n\r\ndef num_jac_vec(func, x, v, eps=1e-6):\r\n    \"\"\"数值 Jacobian 作用在向量 v 上，即 (d func/d x) v\"\"\"\r\n    n = len(x)\r\n    J = np.zeros((n, n))\r\n    for i in range(n):\r\n        e = np.zeros(n); e[i] = eps\r\n        J[:, i] = (func(x + e) - func(x - e)) / (2*eps)\r\n    return J @ v\r\n\r\nx0 = np.array([0.7, -0.4])\r\nprint(\"状态点 x0 =\", x0)\r\nprint()\r\nprint(\"L_g h 数值 =\", num_dir_deriv(h, x0, g(x0)), \" 手算 = 0\")\r\nprint(\"L_f h 数值 =\", num_dir_deriv(h, x0, f(x0)), \" 手算 =\", x0[1])\r\nLf_h = lambda x: num_dir_deriv(h, x, f(x))\r\nprint(\"L_g L_f h 数值 =\", num_dir_deriv(Lf_h, x0, g(x0)), \" 手算 = 1\")\r\nprint(\"L_f^2 h 数值 =\", num_dir_deriv(Lf_h, x0, f(x0)),\r\n      \" 手算 =\", -np.sin(x0[0]) - x0[1])\r\nprint()\r\n# Lie 括号 ad_f g = (dg/dx) f - (df/dx) g；本例 g 为常向量场，故 ad_f g = -(df/dx) g\r\nad_num = num_jac_vec(g, x0, f(x0)) - num_jac_vec(f, x0, g(x0))\r\nprint(\"ad_f g 数值 =\", np.round(ad_num, 6), \" 手算 = [-1, 1]\")",
+        "value": "def f(x):\r\n    return np.array([x[1], -np.sin(x[0]) - x[1]])\r\n\r\ndef g(x):\r\n    return np.array([0.0, 1.0])\r\n\r\ndef h(x):\r\n    return x[0]\r\n\r\ndef num_dir_deriv(func, x, v, eps=1e-6):\r\n    \"\"\"向量场 v 方向上 func 的方向导数（中心差分）\"\"\"\r\n    return (func(x + eps*v) - func(x - eps*v)) / (2*eps)\r\n\r\ndef num_jac_vec(func, x, v, eps=1e-6):\r\n    \"\"\"数值 Jacobian 作用在向量 v 上，即 (d func/d x) v\"\"\"\r\n    n = len(x)\r\n    J = np.zeros((n, n))\r\n    for i in range(n):\r\n        e = np.zeros(n); e[i] = eps\r\n        J[:, i] = (func(x + e) - func(x - e)) / (2*eps)\r\n    return J @ v\r\n\r\nx0 = np.array([0.7, -0.4])\r\nprint(\"状态点 x0 =\", x0)\r\nprint()\r\nprint(\"L_g h 数值 =\", num_dir_deriv(h, x0, g(x0)), \" 手算 = 0\")\r\nprint(\"L_f h 数值 =\", num_dir_deriv(h, x0, f(x0)), \" 手算 =\", x0[1])\r\nLf_h = lambda x: num_dir_deriv(h, x, f(x))\r\nprint(\"L_g L_f h 数值 =\", num_dir_deriv(Lf_h, x0, g(x0)), \" 手算 = 1\")\r\nprint(\"L_f^2 h 数值 =\", num_dir_deriv(Lf_h, x0, f(x0)),\r\n      \" 手算 =\", -np.sin(x0[0]) - x0[1])\r\nprint()\r\n# Lie 括号 ad_f g = (dg/dx) f - (df/dx) g；本例 g 为常向量场，故 ad_f g = -(df/dx) g\r\nad_num = num_jac_vec(g, x0, f(x0)) - num_jac_vec(f, x0, g(x0))\r\nprint(\"ad_f g 数值 =\", np.round(ad_num, 6), \" 手算 = [-1, 1]\")",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 1,
+        "line": 139,
+        "delim": "`",
+        "raw": "# 核心恒等式验证：y^(r) = L_f^r h + L_g L_f^(r-1) h * u\r\n# 取 IOL 控制律 u = (v - L_f^2 h) / (L_g L_f h)，则 y'' = v 精确成立\r\ndef Lf2_h(x):\r\n    return -np.sin(x[0]) - x[1]\r\n\r\ndef LgLf_h(x):\r\n    return 1.0\r\n\r\nv_cmd = 3.0\r\nu = (v_cmd - Lf2_h(x0)) / LgLf_h(x0)\r\n# 用数值二阶导数直接检验 y'' = d/dt(L_f h) = L_f^2 h + L_g L_f h * u\r\nydd_analytic = Lf2_h(x0) + LgLf_h(x0) * u\r\nprint(\"指令 v =\", v_cmd)\r\nprint(\"控制量 u =\", round(u, 6))\r\nprint(\"解析 y'' = L_f^2 h + L_g L_f h * u =\", round(ydd_analytic, 6))\r\n\r\n# 独立数值验证：仿真一小段时间，用有限差分估计 y''\r\ndef closed_loop(t, x):\r\n    uu = (v_cmd - (-np.sin(x[0]) - x[1])) / 1.0\r\n    return f(x) + g(x)*uu\r\n\r\nsol = solve_ivp(closed_loop, [0, 0.02], x0, rtol=1e-11, atol=1e-12,\r\n                dense_output=True, max_step=1e-4)\r\nts = np.linspace(0, 0.02, 5)\r\nys = np.array([sol.sol(t)[0] for t in ts])\r\nydd_num = np.gradient(np.gradient(ys, ts), ts)[2]\r\nprint(\"数值 y''（二阶差分）=\", round(ydd_num, 6))\r\nprint(\"偏差 =\", abs(ydd_num - v_cmd))",
+        "value": "# 核心恒等式验证：y^(r) = L_f^r h + L_g L_f^(r-1) h * u\r\n# 取 IOL 控制律 u = (v - L_f^2 h) / (L_g L_f h)，则 y'' = v 精确成立\r\ndef Lf2_h(x):\r\n    return -np.sin(x[0]) - x[1]\r\n\r\ndef LgLf_h(x):\r\n    return 1.0\r\n\r\nv_cmd = 3.0\r\nu = (v_cmd - Lf2_h(x0)) / LgLf_h(x0)\r\n# 用数值二阶导数直接检验 y'' = d/dt(L_f h) = L_f^2 h + L_g L_f h * u\r\nydd_analytic = Lf2_h(x0) + LgLf_h(x0) * u\r\nprint(\"指令 v =\", v_cmd)\r\nprint(\"控制量 u =\", round(u, 6))\r\nprint(\"解析 y'' = L_f^2 h + L_g L_f h * u =\", round(ydd_analytic, 6))\r\n\r\n# 独立数值验证：仿真一小段时间，用有限差分估计 y''\r\ndef closed_loop(t, x):\r\n    uu = (v_cmd - (-np.sin(x[0]) - x[1])) / 1.0\r\n    return f(x) + g(x)*uu\r\n\r\nsol = solve_ivp(closed_loop, [0, 0.02], x0, rtol=1e-11, atol=1e-12,\r\n                dense_output=True, max_step=1e-4)\r\nts = np.linspace(0, 0.02, 5)\r\nys = np.array([sol.sol(t)[0] for t in ts])\r\nydd_num = np.gradient(np.gradient(ys, ts), ts)[2]\r\nprint(\"数值 y''（二阶差分）=\", round(ydd_num, 6))\r\nprint(\"偏差 =\", abs(ydd_num - v_cmd))",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 2,
+        "line": 167,
+        "delim": "`",
+        "raw": "# 直观图：v 取常数 3 时，y 应当是精确的抛物线 y = y0 + ydot0*t + 1.5*t^2\r\nT = 2.0\r\nsol = solve_ivp(closed_loop, [0, T], x0, rtol=1e-9, atol=1e-9,\r\n                t_eval=np.linspace(0, T, 200))\r\nt = sol.t\r\ny = sol.y[0]\r\ny_exact = x0[0] + x0[1]*t + 0.5*v_cmd*t**2\r\n\r\nfig, ax = plt.subplots(1, 2, figsize=(11, 3.6))\r\nax[0].plot(t, y, 'b-', lw=2, label='仿真 y(t)')\r\nax[0].plot(t, y_exact, 'r--', lw=1.5, label='解析 y0+ydot0*t+1.5*t^2')\r\nax[0].set_xlabel('t (s)'); ax[0].set_ylabel('y')\r\nax[0].set_title(\"输入-输出精确线性化: y'' = v = 3\")\r\nax[0].legend(fontsize=8); ax[0].grid(alpha=0.3)\r\n\r\nax[1].semilogy(t, np.abs(y - y_exact) + 1e-16, 'k-', lw=1.5)\r\nax[1].set_xlabel('t (s)'); ax[1].set_ylabel('|误差|')\r\nax[1].set_title('仿真与解析解的偏差（对数坐标）')\r\nax[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()\r\nprint(\"最大偏差 =\", np.max(np.abs(y - y_exact)))",
+        "value": "# 直观图：v 取常数 3 时，y 应当是精确的抛物线 y = y0 + ydot0*t + 1.5*t^2\r\nT = 2.0\r\nsol = solve_ivp(closed_loop, [0, T], x0, rtol=1e-9, atol=1e-9,\r\n                t_eval=np.linspace(0, T, 200))\r\nt = sol.t\r\ny = sol.y[0]\r\ny_exact = x0[0] + x0[1]*t + 0.5*v_cmd*t**2\r\n\r\nfig, ax = plt.subplots(1, 2, figsize=(11, 3.6))\r\nax[0].plot(t, y, 'b-', lw=2, label='仿真 y(t)')\r\nax[0].plot(t, y_exact, 'r--', lw=1.5, label='解析 y0+ydot0*t+1.5*t^2')\r\nax[0].set_xlabel('t (s)'); ax[0].set_ylabel('y')\r\nax[0].set_title(\"输入-输出精确线性化: y'' = v = 3\")\r\nax[0].legend(fontsize=8); ax[0].grid(alpha=0.3)\r\n\r\nax[1].semilogy(t, np.abs(y - y_exact) + 1e-16, 'k-', lw=1.5)\r\nax[1].set_xlabel('t (s)'); ax[1].set_ylabel('|误差|')\r\nax[1].set_title('仿真与解析解的偏差（对数坐标）')\r\nax[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()\r\nprint(\"最大偏差 =\", np.max(np.abs(y - y_exact)))",
+        "issues": [],
+        "unterminated": false
+      }
+    ],
+    "parseErrors": []
+  },
+  {
+    "index": 1,
+    "line": 326,
+    "endLine": 403,
+    "selfClosing": true,
+    "badCommas": [],
+    "title": "Notebook 2：零动态特征值的数值验证（定义式仿真 + 闭环对照）",
+    "unknownAttrs": [],
+    "setup": {
+      "raw": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "value": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "issues": [],
+      "line": 328,
+      "unterminated": false
+    },
+    "cells": [
+      {
+        "index": 0,
+        "line": 334,
+        "delim": "`",
+        "raw": "def zero_dyn(a, x10=1.0, t_end=6.0):\r\n    \"\"\"按定义仿真零动态：初值取在流形 y=0 上（x2(0)=-x1(0)/a），控制取 v=0 时的 u=-L_f h/a\"\"\"\r\n    def rhs(t, x):\r\n        x1, x2 = x\r\n        Lfh = x2 + a*x1*x2\r\n        u = -Lfh / a\r\n        return [x2, x1*x2 + u]\r\n    sol = solve_ivp(rhs, [0, t_end], [x10, -x10/a], rtol=1e-11, atol=1e-13,\r\n                    t_eval=np.linspace(0, t_end, 601))\r\n    return sol.t, sol.y[0], sol.y[1]\r\n\r\nprint(\"零动态直接仿真：log|x1| 的斜率应精确等于特征值 -1/a\")\r\nprint(\"%6s %10s %14s %14s %16s\"\r\n      % (\"a\", \"-1/a\", \"log|x1|斜率\", \"|y|max\", \"|y|/|x1| 最大值\"))\r\nfor a in [1.0, 0.5, 0.25, -0.5, -1.0]:\r\n    t, x1, x2 = zero_dyn(a)\r\n    y = x1 + a*x2                      # 应恒为 0（初值在流形上，控制律保持在流形上）\r\n    m = (t >= 1.0) & (t <= 5.0)\r\n    slope = np.polyfit(t[m], np.log(np.abs(x1[m])), 1)[0]\r\n    rel = np.max(np.abs(y) / np.maximum(np.abs(x1), 1e-300))\r\n    print(\"%6.2f %10.3f %14.4f %14.2e %16.2e\"\r\n          % (a, -1.0/a, slope, np.max(np.abs(y)), rel))\r\nprint()\r\nprint(\"斜率与 -1/a 逐位吻合；|y|/|x1| 停在积分器容差 1e-11 量级，\")\r\nprint(\"说明轨迹确实被约束在 y=0 流形上——这就是零动态的定义。\")\r\nprint(\"（a<0 时 |y| 的绝对值随 x1 发散而放大，但相对偏差仍是 1e-11。）\")",
+        "value": "def zero_dyn(a, x10=1.0, t_end=6.0):\r\n    \"\"\"按定义仿真零动态：初值取在流形 y=0 上（x2(0)=-x1(0)/a），控制取 v=0 时的 u=-L_f h/a\"\"\"\r\n    def rhs(t, x):\r\n        x1, x2 = x\r\n        Lfh = x2 + a*x1*x2\r\n        u = -Lfh / a\r\n        return [x2, x1*x2 + u]\r\n    sol = solve_ivp(rhs, [0, t_end], [x10, -x10/a], rtol=1e-11, atol=1e-13,\r\n                    t_eval=np.linspace(0, t_end, 601))\r\n    return sol.t, sol.y[0], sol.y[1]\r\n\r\nprint(\"零动态直接仿真：log|x1| 的斜率应精确等于特征值 -1/a\")\r\nprint(\"%6s %10s %14s %14s %16s\"\r\n      % (\"a\", \"-1/a\", \"log|x1|斜率\", \"|y|max\", \"|y|/|x1| 最大值\"))\r\nfor a in [1.0, 0.5, 0.25, -0.5, -1.0]:\r\n    t, x1, x2 = zero_dyn(a)\r\n    y = x1 + a*x2                      # 应恒为 0（初值在流形上，控制律保持在流形上）\r\n    m = (t >= 1.0) & (t <= 5.0)\r\n    slope = np.polyfit(t[m], np.log(np.abs(x1[m])), 1)[0]\r\n    rel = np.max(np.abs(y) / np.maximum(np.abs(x1), 1e-300))\r\n    print(\"%6.2f %10.3f %14.4f %14.2e %16.2e\"\r\n          % (a, -1.0/a, slope, np.max(np.abs(y)), rel))\r\nprint()\r\nprint(\"斜率与 -1/a 逐位吻合；|y|/|x1| 停在积分器容差 1e-11 量级，\")\r\nprint(\"说明轨迹确实被约束在 y=0 流形上——这就是零动态的定义。\")\r\nprint(\"（a<0 时 |y| 的绝对值随 x1 发散而放大，但相对偏差仍是 1e-11。）\")",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 1,
+        "line": 360,
+        "delim": "`",
+        "raw": "def closed_loop(a, kv=2.0, x0=(1.0, 0.0), t_end=8.0):\r\n    \"\"\"真实闭环：u = (v - L_f h)/a, v = -kv*y，初值不在 y=0 流形上\"\"\"\r\n    def rhs(t, x):\r\n        x1, x2 = x\r\n        y = x1 + a*x2\r\n        u = (-kv*y - (x2 + a*x1*x2)) / a\r\n        return [x2, x1*x2 + u]\r\n    return solve_ivp(rhs, [0, t_end], x0, rtol=1e-11, atol=1e-13,\r\n                     t_eval=np.linspace(0, t_end, 801))\r\n\r\nprint(\"闭环仿真：v = -2y，x(0) = (1, 0)\")\r\nfig, axes = plt.subplots(1, 2, figsize=(11, 3.6))\r\nfor a, c in [(1.0, 'tab:green'), (0.25, 'tab:blue'), (-0.5, 'tab:orange'), (-1.0, 'tab:red')]:\r\n    sol = closed_loop(a)\r\n    t, x1, x2 = sol.t, sol.y[0], sol.y[1]\r\n    y = x1 + a*x2\r\n    print(\"a=%+.2f  特征值 -1/a = %+.2f  |  y(8)=%.3e  x1(8)=%+.4e  %s\"\r\n          % (a, -1.0/a, y[-1], x1[-1], \"最小相位\" if a > 0 else \"非最小相位\"))\r\n    axes[0].plot(t, y, color=c, lw=1.6, label=\"a=%.2f\" % a)\r\n    axes[1].semilogy(t, np.abs(x1) + 1e-18, color=c, lw=1.6, label=\"a=%.2f\" % a)\r\naxes[0].set_yscale('symlog', linthresh=1e-8)\r\naxes[0].set_xlabel('t (s)'); axes[0].set_ylabel('y(t)')\r\naxes[0].set_title('输出 y：四种 a 都按 e^(-2t) 收敛（左图 a=-0.5 末端抬升见下一 cell）')\r\naxes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)\r\naxes[1].set_xlabel('t (s)'); axes[1].set_ylabel('|x1(t)|')\r\naxes[1].set_title('内部状态 x1：a>0 收敛，a<0 以速率 1/|a| 发散')\r\naxes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "value": "def closed_loop(a, kv=2.0, x0=(1.0, 0.0), t_end=8.0):\r\n    \"\"\"真实闭环：u = (v - L_f h)/a, v = -kv*y，初值不在 y=0 流形上\"\"\"\r\n    def rhs(t, x):\r\n        x1, x2 = x\r\n        y = x1 + a*x2\r\n        u = (-kv*y - (x2 + a*x1*x2)) / a\r\n        return [x2, x1*x2 + u]\r\n    return solve_ivp(rhs, [0, t_end], x0, rtol=1e-11, atol=1e-13,\r\n                     t_eval=np.linspace(0, t_end, 801))\r\n\r\nprint(\"闭环仿真：v = -2y，x(0) = (1, 0)\")\r\nfig, axes = plt.subplots(1, 2, figsize=(11, 3.6))\r\nfor a, c in [(1.0, 'tab:green'), (0.25, 'tab:blue'), (-0.5, 'tab:orange'), (-1.0, 'tab:red')]:\r\n    sol = closed_loop(a)\r\n    t, x1, x2 = sol.t, sol.y[0], sol.y[1]\r\n    y = x1 + a*x2\r\n    print(\"a=%+.2f  特征值 -1/a = %+.2f  |  y(8)=%.3e  x1(8)=%+.4e  %s\"\r\n          % (a, -1.0/a, y[-1], x1[-1], \"最小相位\" if a > 0 else \"非最小相位\"))\r\n    axes[0].plot(t, y, color=c, lw=1.6, label=\"a=%.2f\" % a)\r\n    axes[1].semilogy(t, np.abs(x1) + 1e-18, color=c, lw=1.6, label=\"a=%.2f\" % a)\r\naxes[0].set_yscale('symlog', linthresh=1e-8)\r\naxes[0].set_xlabel('t (s)'); axes[0].set_ylabel('y(t)')\r\naxes[0].set_title('输出 y：四种 a 都按 e^(-2t) 收敛（左图 a=-0.5 末端抬升见下一 cell）')\r\naxes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)\r\naxes[1].set_xlabel('t (s)'); axes[1].set_ylabel('|x1(t)|')\r\naxes[1].set_title('内部状态 x1：a>0 收敛，a<0 以速率 1/|a| 发散')\r\naxes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 2,
+        "line": 388,
+        "delim": "`",
+        "raw": "# 解析解对照：a=-0.5, x(0)=(1,0), v=-2y 时 x1(t)=cosh(2t), y(t)=e^(-2t)\r\na = -0.5\r\nsol = closed_loop(a)\r\nx1_num = sol.y[0][-1]\r\ny_num = sol.y[0][-1] + a*sol.y[1][-1]\r\nprint(\"x1(8) 仿真 = %.4f    解析 cosh(16) = %.4f    相对误差 = %.2e\"\r\n      % (x1_num, np.cosh(16), abs(x1_num - np.cosh(16))/np.cosh(16)))\r\nprint(\"y(8)  仿真 = %.4e   解析 e^(-16)  = %.4e\" % (y_num, np.exp(-16)))\r\nprint()\r\nprint(\"y(8) 对不上，不是控制律失效，而是浮点相消：\")\r\nprint(\"  y = x1 + a*x2 是两个约 1e6 量级数的相减，x1 的相对误差 1e-11\")\r\nprint(\"  放大成 y 的绝对误差约 %.1e，远大于 e^(-16)=%.1e 本身。\"\r\n      % (abs(y_num - np.exp(-16)), np.exp(-16)))\r\nprint(\"工程启示：非最小相位系统里内部状态一旦发散，输出量的数值精度（乃至物理测量精度）都会崩塌。\")",
+        "value": "# 解析解对照：a=-0.5, x(0)=(1,0), v=-2y 时 x1(t)=cosh(2t), y(t)=e^(-2t)\r\na = -0.5\r\nsol = closed_loop(a)\r\nx1_num = sol.y[0][-1]\r\ny_num = sol.y[0][-1] + a*sol.y[1][-1]\r\nprint(\"x1(8) 仿真 = %.4f    解析 cosh(16) = %.4f    相对误差 = %.2e\"\r\n      % (x1_num, np.cosh(16), abs(x1_num - np.cosh(16))/np.cosh(16)))\r\nprint(\"y(8)  仿真 = %.4e   解析 e^(-16)  = %.4e\" % (y_num, np.exp(-16)))\r\nprint()\r\nprint(\"y(8) 对不上，不是控制律失效，而是浮点相消：\")\r\nprint(\"  y = x1 + a*x2 是两个约 1e6 量级数的相减，x1 的相对误差 1e-11\")\r\nprint(\"  放大成 y 的绝对误差约 %.1e，远大于 e^(-16)=%.1e 本身。\"\r\n      % (abs(y_num - np.exp(-16)), np.exp(-16)))\r\nprint(\"工程启示：非最小相位系统里内部状态一旦发散，输出量的数值精度（乃至物理测量精度）都会崩塌。\")",
+        "issues": [],
+        "unterminated": false
+      }
+    ],
+    "parseErrors": []
+  },
+  {
+    "index": 2,
+    "line": 548,
+    "endLine": 647,
+    "selfClosing": true,
+    "badCommas": [],
+    "title": "Notebook 3：大摆角下 IOL 与 Jacobian 线性化的三组对比实验",
+    "unknownAttrs": [],
+    "setup": {
+      "raw": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "value": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "issues": [],
+      "line": 550,
+      "unterminated": false
+    },
+    "cells": [
+      {
+        "index": 0,
+        "line": 556,
+        "delim": "`",
+        "raw": "G = 12.0    # g/l\r\nB = 2.0     # 控制增益\r\n\r\ndef plant(t, x, u):\r\n    \"\"\"真实非线性被控对象（两个控制器共用，保证对比公平）\"\"\"\r\n    return [x[1], G*np.sin(x[0]) + B*u]\r\n\r\ndef make(kind, k1, k0):\r\n    \"\"\"kind='IOL' 抵消 G*sin(theta)；kind='Jac' 抵消 G*theta\"\"\"\r\n    def ctrl(x, thd=0.0, dthd=0.0, ddthd=0.0):\r\n        v = ddthd - k1*(x[1] - dthd) - k0*(x[0] - thd)\r\n        comp = G*np.sin(x[0]) if kind == 'IOL' else G*x[0]\r\n        return (v - comp) / B\r\n    return ctrl\r\n\r\ndef settle(th, t, th0):\r\n    idx = np.where(np.abs(th) > 0.02*abs(th0))[0]\r\n    return t[idx[-1]] if len(idx) else 0.0\r\n\r\ndef run_reg(ctrl, th0, T=8.0):\r\n    return solve_ivp(lambda t, x: plant(t, x, ctrl(x)), [0, T], [th0, 0.0],\r\n                     rtol=1e-9, atol=1e-9, t_eval=np.linspace(0, T, 800))\r\n\r\nprint(\"=== 实验一：镇定，theta0 = +/-1.0 rad（约 +/-57 度），设计双重极点 -3 ===\")\r\nfor th0 in [1.0, -1.0]:\r\n    si = run_reg(make('IOL', 6.0, 9.0), th0)\r\n    sj = run_reg(make('Jac', 6.0, 9.0), th0)\r\n    e_des = th0*np.exp(-3*si.t)*(1 + 3*si.t)     # 设计的解析误差轨迹\r\n    print(\"theta0=%+.1f  IOL: ts=%5.2fs  与设计解析解最大偏差 = %.2e rad\"\r\n          % (th0, settle(si.y[0], si.t, th0), np.max(np.abs(si.y[0] - e_des))))\r\n    print(\"             Jac: ts=%5.2fs  与设计解析解最大偏差 = %.4f rad\"\r\n          % (settle(sj.y[0], sj.t, th0), np.max(np.abs(sj.y[0] - e_des))))\r\nprint()\r\nprint(\"残余项 R(theta) = G*(sin(theta) - theta)：闭环里没被抵消掉的部分\")\r\nprint(\"%11s %13s %14s\" % (\"theta(rad)\", \"R(rad/s^2)\", \"等效附加刚度\"))\r\nfor th in [0.2, 0.6, 1.0, 1.5]:\r\n    print(\"%11.1f %13.3f %14.2f\" % (th, G*(np.sin(th)-th), G*(th-np.sin(th))/th))\r\nprint(\"设计的 k0 = 9.00，附加刚度与之同量级 -> Jacobian 闭环已不是设计的那个二阶系统\")",
+        "value": "G = 12.0    # g/l\r\nB = 2.0     # 控制增益\r\n\r\ndef plant(t, x, u):\r\n    \"\"\"真实非线性被控对象（两个控制器共用，保证对比公平）\"\"\"\r\n    return [x[1], G*np.sin(x[0]) + B*u]\r\n\r\ndef make(kind, k1, k0):\r\n    \"\"\"kind='IOL' 抵消 G*sin(theta)；kind='Jac' 抵消 G*theta\"\"\"\r\n    def ctrl(x, thd=0.0, dthd=0.0, ddthd=0.0):\r\n        v = ddthd - k1*(x[1] - dthd) - k0*(x[0] - thd)\r\n        comp = G*np.sin(x[0]) if kind == 'IOL' else G*x[0]\r\n        return (v - comp) / B\r\n    return ctrl\r\n\r\ndef settle(th, t, th0):\r\n    idx = np.where(np.abs(th) > 0.02*abs(th0))[0]\r\n    return t[idx[-1]] if len(idx) else 0.0\r\n\r\ndef run_reg(ctrl, th0, T=8.0):\r\n    return solve_ivp(lambda t, x: plant(t, x, ctrl(x)), [0, T], [th0, 0.0],\r\n                     rtol=1e-9, atol=1e-9, t_eval=np.linspace(0, T, 800))\r\n\r\nprint(\"=== 实验一：镇定，theta0 = +/-1.0 rad（约 +/-57 度），设计双重极点 -3 ===\")\r\nfor th0 in [1.0, -1.0]:\r\n    si = run_reg(make('IOL', 6.0, 9.0), th0)\r\n    sj = run_reg(make('Jac', 6.0, 9.0), th0)\r\n    e_des = th0*np.exp(-3*si.t)*(1 + 3*si.t)     # 设计的解析误差轨迹\r\n    print(\"theta0=%+.1f  IOL: ts=%5.2fs  与设计解析解最大偏差 = %.2e rad\"\r\n          % (th0, settle(si.y[0], si.t, th0), np.max(np.abs(si.y[0] - e_des))))\r\n    print(\"             Jac: ts=%5.2fs  与设计解析解最大偏差 = %.4f rad\"\r\n          % (settle(sj.y[0], sj.t, th0), np.max(np.abs(sj.y[0] - e_des))))\r\nprint()\r\nprint(\"残余项 R(theta) = G*(sin(theta) - theta)：闭环里没被抵消掉的部分\")\r\nprint(\"%11s %13s %14s\" % (\"theta(rad)\", \"R(rad/s^2)\", \"等效附加刚度\"))\r\nfor th in [0.2, 0.6, 1.0, 1.5]:\r\n    print(\"%11.1f %13.3f %14.2f\" % (th, G*(np.sin(th)-th), G*(th-np.sin(th))/th))\r\nprint(\"设计的 k0 = 9.00，附加刚度与之同量级 -> Jacobian 闭环已不是设计的那个二阶系统\")",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 1,
+        "line": 594,
+        "delim": "`",
+        "raw": "print(\"=== 实验二：跟踪 theta_d = 0.8*sin(1.5*t) ===\")\r\nAd, wd = 0.8, 1.5\r\nthd   = lambda t: Ad*np.sin(wd*t)\r\ndthd  = lambda t: Ad*wd*np.cos(wd*t)\r\nddthd = lambda t: -Ad*wd**2*np.sin(wd*t)\r\n\r\ndef run_trk(ctrl, T=20.0):\r\n    return solve_ivp(lambda t, x: plant(t, x, ctrl(x, thd(t), dthd(t), ddthd(t))),\r\n                     [0, T], [thd(0), dthd(0)], rtol=1e-9, atol=1e-9,\r\n                     t_eval=np.linspace(0, T, 4000))\r\n\r\nsi = run_trk(make('IOL', 6.0, 9.0)); sj = run_trk(make('Jac', 6.0, 9.0))\r\nei = si.y[0] - thd(si.t); ej = sj.y[0] - thd(sj.t)\r\nm = si.t > 12.0      # 只看稳态段\r\nprint(\"IOL: 稳态 max|e| = %.3e rad（机器精度，精确跟踪）\" % np.max(np.abs(ei[m])))\r\nprint(\"Jac: 稳态 max|e| = %.5f rad = %.2f 度，rms = %.5f rad\"\r\n      % (np.max(np.abs(ej[m])), np.degrees(np.max(np.abs(ej[m]))),\r\n         np.sqrt(np.mean(ej[m]**2))))\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(11, 3.6))\r\naxes[0].plot(si.t, thd(si.t), 'k-', lw=1.2, label='theta_d 指令')\r\naxes[0].plot(si.t, si.y[0], 'b--', lw=1.5, label='IOL 输出')\r\naxes[0].plot(sj.t, sj.y[0], 'r-', lw=1.0, alpha=0.85, label='Jacobian 输出')\r\naxes[0].set_xlim(0, 12); axes[0].set_xlabel('t (s)'); axes[0].set_ylabel('theta (rad)')\r\naxes[0].set_title('正弦跟踪：Jacobian 存在持续误差')\r\naxes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)\r\naxes[1].plot(si.t, ei, 'b--', lw=1.5, label='IOL 误差')\r\naxes[1].plot(sj.t, ej, 'r-', lw=1.5, label='Jacobian 误差')\r\naxes[1].set_xlim(0, 12); axes[1].set_xlabel('t (s)'); axes[1].set_ylabel('e (rad)')\r\naxes[1].set_title('跟踪误差对比（注意纵轴量级差异）')\r\naxes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "value": "print(\"=== 实验二：跟踪 theta_d = 0.8*sin(1.5*t) ===\")\r\nAd, wd = 0.8, 1.5\r\nthd   = lambda t: Ad*np.sin(wd*t)\r\ndthd  = lambda t: Ad*wd*np.cos(wd*t)\r\nddthd = lambda t: -Ad*wd**2*np.sin(wd*t)\r\n\r\ndef run_trk(ctrl, T=20.0):\r\n    return solve_ivp(lambda t, x: plant(t, x, ctrl(x, thd(t), dthd(t), ddthd(t))),\r\n                     [0, T], [thd(0), dthd(0)], rtol=1e-9, atol=1e-9,\r\n                     t_eval=np.linspace(0, T, 4000))\r\n\r\nsi = run_trk(make('IOL', 6.0, 9.0)); sj = run_trk(make('Jac', 6.0, 9.0))\r\nei = si.y[0] - thd(si.t); ej = sj.y[0] - thd(sj.t)\r\nm = si.t > 12.0      # 只看稳态段\r\nprint(\"IOL: 稳态 max|e| = %.3e rad（机器精度，精确跟踪）\" % np.max(np.abs(ei[m])))\r\nprint(\"Jac: 稳态 max|e| = %.5f rad = %.2f 度，rms = %.5f rad\"\r\n      % (np.max(np.abs(ej[m])), np.degrees(np.max(np.abs(ej[m]))),\r\n         np.sqrt(np.mean(ej[m]**2))))\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(11, 3.6))\r\naxes[0].plot(si.t, thd(si.t), 'k-', lw=1.2, label='theta_d 指令')\r\naxes[0].plot(si.t, si.y[0], 'b--', lw=1.5, label='IOL 输出')\r\naxes[0].plot(sj.t, sj.y[0], 'r-', lw=1.0, alpha=0.85, label='Jacobian 输出')\r\naxes[0].set_xlim(0, 12); axes[0].set_xlabel('t (s)'); axes[0].set_ylabel('theta (rad)')\r\naxes[0].set_title('正弦跟踪：Jacobian 存在持续误差')\r\naxes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)\r\naxes[1].plot(si.t, ei, 'b--', lw=1.5, label='IOL 误差')\r\naxes[1].plot(sj.t, ej, 'r-', lw=1.5, label='Jacobian 误差')\r\naxes[1].set_xlim(0, 12); axes[1].set_xlabel('t (s)'); axes[1].set_ylabel('e (rad)')\r\naxes[1].set_title('跟踪误差对比（注意纵轴量级差异）')\r\naxes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 2,
+        "line": 626,
+        "delim": "`",
+        "raw": "print(\"=== 实验三：外环调慢（设计 omega_n=0.5, zeta=1，理论无超调），theta0=1.5 rad ===\")\r\nsi = run_reg(make('IOL', 1.0, 0.25), 1.5, T=40.0)\r\nsj = run_reg(make('Jac', 1.0, 0.25), 1.5, T=40.0)\r\nfor name, s in [('IOL', si), ('Jacobian', sj)]:\r\n    th = s.y[0]\r\n    print(\"%9s 越过目标的最大幅度 = %6.2f%%   2%%调节时间 = %6.2fs   theta_min = %+.4f rad\"\r\n          % (name, max(0.0, -th.min())/1.5*100, settle(th, s.t, 1.5), th.min()))\r\nth0 = 1.5\r\nk_extra = G*(th0 - np.sin(th0))/th0\r\nprint(\"解释：附加刚度 %.2f 使等效 k0 由 0.25 升至 %.2f，zeta 由 1.00 降到 %.2f\"\r\n      % (k_extra, 0.25 + k_extra, 1.0/(2*np.sqrt(0.25 + k_extra))))\r\n\r\nfig, ax = plt.subplots(figsize=(7, 3.4))\r\nax.plot(si.t, si.y[0], 'b-', lw=2, label='IOL（临界阻尼，无超调，与设计一致）')\r\nax.plot(sj.t, sj.y[0], 'r--', lw=2, label='Jacobian（越过目标，出现设计时未预期的超调）')\r\nax.axhline(0, color='gray', lw=0.8)\r\nax.set_xlabel('t (s)'); ax.set_ylabel('theta (rad)')\r\nax.set_title('慢外环 + 大摆角：残余项把 zeta=1 拉低到 zeta=0.24')\r\nax.legend(fontsize=8); ax.grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "value": "print(\"=== 实验三：外环调慢（设计 omega_n=0.5, zeta=1，理论无超调），theta0=1.5 rad ===\")\r\nsi = run_reg(make('IOL', 1.0, 0.25), 1.5, T=40.0)\r\nsj = run_reg(make('Jac', 1.0, 0.25), 1.5, T=40.0)\r\nfor name, s in [('IOL', si), ('Jacobian', sj)]:\r\n    th = s.y[0]\r\n    print(\"%9s 越过目标的最大幅度 = %6.2f%%   2%%调节时间 = %6.2fs   theta_min = %+.4f rad\"\r\n          % (name, max(0.0, -th.min())/1.5*100, settle(th, s.t, 1.5), th.min()))\r\nth0 = 1.5\r\nk_extra = G*(th0 - np.sin(th0))/th0\r\nprint(\"解释：附加刚度 %.2f 使等效 k0 由 0.25 升至 %.2f，zeta 由 1.00 降到 %.2f\"\r\n      % (k_extra, 0.25 + k_extra, 1.0/(2*np.sqrt(0.25 + k_extra))))\r\n\r\nfig, ax = plt.subplots(figsize=(7, 3.4))\r\nax.plot(si.t, si.y[0], 'b-', lw=2, label='IOL（临界阻尼，无超调，与设计一致）')\r\nax.plot(sj.t, sj.y[0], 'r--', lw=2, label='Jacobian（越过目标，出现设计时未预期的超调）')\r\nax.axhline(0, color='gray', lw=0.8)\r\nax.set_xlabel('t (s)'); ax.set_ylabel('theta (rad)')\r\nax.set_title('慢外环 + 大摆角：残余项把 zeta=1 拉低到 zeta=0.24')\r\nax.legend(fontsize=8); ax.grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "issues": [],
+        "unterminated": false
+      }
+    ],
+    "parseErrors": []
+  },
+  {
+    "index": 3,
+    "line": 720,
+    "endLine": 791,
+    "selfClosing": true,
+    "badCommas": [],
+    "title": "Notebook 4：球-梁系统的近似反馈线性化调节",
+    "unknownAttrs": [],
+    "setup": {
+      "raw": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "value": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import solve_ivp\r\nplt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "issues": [],
+      "line": 722,
+      "unterminated": false
+    },
+    "cells": [
+      {
+        "index": 0,
+        "line": 728,
+        "delim": "`",
+        "raw": "G = 9.81\r\n\r\ndef plant(t, x, u):\r\n    x1, x2, x3, x4 = x\r\n    return [x2, x1*x4**2 - G*np.sin(x3), x4, u]\r\n\r\n# 期望闭环特征多项式 (s+2)^4 = s^4 + 8s^3 + 24s^2 + 32s + 16\r\nK = np.array([16.0, 32.0, 24.0, 8.0])\r\n\r\ndef u_approx_iol(x, rd=0.0):\r\n    x1, x2, x3, x4 = x\r\n    z = np.array([x1, x2, -G*np.sin(x3), -G*np.cos(x3)*x4])\r\n    v = -(K[3]*z[3] + K[2]*z[2] + K[1]*z[1] + K[0]*(z[0] - rd))\r\n    return (G*np.sin(x3)*x4**2 - v) / (G*np.cos(x3))\r\n\r\nx0 = np.array([0.40, 0.0, 0.35, 0.0])   # 球偏 0.4 m，梁倾 0.35 rad (约20度)\r\n\r\ndef rhs(t, x):\r\n    return plant(t, x, u_approx_iol(x))\r\n\r\nsol = solve_ivp(rhs, [0, 12], x0, rtol=1e-9, atol=1e-9,\r\n                t_eval=np.linspace(0, 12, 1200))\r\nt, X = sol.t, sol.y\r\nU = np.array([u_approx_iol(X[:, i]) for i in range(X.shape[1])])\r\n\r\nprint(\"初值: r=%.2f m, rdot=%.2f, theta=%.2f rad (%.1f deg), thetadot=%.2f\"\r\n      % (x0[0], x0[1], x0[2], np.degrees(x0[2]), x0[3]))\r\nprint(\"t=12s 时: r=%.5f, theta=%.5f, |u|max=%.3f\"\r\n      % (X[0, -1], X[2, -1], np.max(np.abs(U))))\r\nidx = np.where(np.abs(X[0]) > 0.02*0.4)[0]\r\nprint(\"r 的 2%% 调节时间 = %.2f s\" % (t[idx[-1]] if len(idx) else 0.0))\r\nprint(\"梁倾角范围 = [%.3f, %.3f] rad (cos 最小值 %.3f，远离奇异)\"\r\n      % (X[2].min(), X[2].max(), np.cos(X[2]).min()))",
+        "value": "G = 9.81\r\n\r\ndef plant(t, x, u):\r\n    x1, x2, x3, x4 = x\r\n    return [x2, x1*x4**2 - G*np.sin(x3), x4, u]\r\n\r\n# 期望闭环特征多项式 (s+2)^4 = s^4 + 8s^3 + 24s^2 + 32s + 16\r\nK = np.array([16.0, 32.0, 24.0, 8.0])\r\n\r\ndef u_approx_iol(x, rd=0.0):\r\n    x1, x2, x3, x4 = x\r\n    z = np.array([x1, x2, -G*np.sin(x3), -G*np.cos(x3)*x4])\r\n    v = -(K[3]*z[3] + K[2]*z[2] + K[1]*z[1] + K[0]*(z[0] - rd))\r\n    return (G*np.sin(x3)*x4**2 - v) / (G*np.cos(x3))\r\n\r\nx0 = np.array([0.40, 0.0, 0.35, 0.0])   # 球偏 0.4 m，梁倾 0.35 rad (约20度)\r\n\r\ndef rhs(t, x):\r\n    return plant(t, x, u_approx_iol(x))\r\n\r\nsol = solve_ivp(rhs, [0, 12], x0, rtol=1e-9, atol=1e-9,\r\n                t_eval=np.linspace(0, 12, 1200))\r\nt, X = sol.t, sol.y\r\nU = np.array([u_approx_iol(X[:, i]) for i in range(X.shape[1])])\r\n\r\nprint(\"初值: r=%.2f m, rdot=%.2f, theta=%.2f rad (%.1f deg), thetadot=%.2f\"\r\n      % (x0[0], x0[1], x0[2], np.degrees(x0[2]), x0[3]))\r\nprint(\"t=12s 时: r=%.5f, theta=%.5f, |u|max=%.3f\"\r\n      % (X[0, -1], X[2, -1], np.max(np.abs(U))))\r\nidx = np.where(np.abs(X[0]) > 0.02*0.4)[0]\r\nprint(\"r 的 2%% 调节时间 = %.2f s\" % (t[idx[-1]] if len(idx) else 0.0))\r\nprint(\"梁倾角范围 = [%.3f, %.3f] rad (cos 最小值 %.3f，远离奇异)\"\r\n      % (X[2].min(), X[2].max(), np.cos(X[2]).min()))",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 1,
+        "line": 761,
+        "delim": "`",
+        "raw": "fig, axes = plt.subplots(2, 2, figsize=(11, 5.6))\r\naxes[0,0].plot(t, X[0], 'b-', lw=2)\r\naxes[0,0].set_ylabel('r (m)'); axes[0,0].set_title('球位置 r → 0')\r\naxes[0,0].set_xlabel('t (s)')\r\naxes[0,1].plot(t, np.degrees(X[2]), 'm-', lw=2)\r\naxes[0,1].set_ylabel('theta (deg)'); axes[0,1].set_xlabel('t (s)')\r\naxes[0,1].set_title('梁倾角（控制量的积分）')\r\naxes[1,0].plot(t, U, 'r-', lw=2)\r\naxes[1,0].set_ylabel('u (rad/s^2)'); axes[1,0].set_xlabel('t (s)')\r\naxes[1,0].set_title('近似 IOL 控制量')\r\naxes[1,1].plot(np.degrees(X[2]), X[0], 'c-', lw=1.5)\r\naxes[1,1].set_xlabel('theta (deg)'); axes[1,1].set_ylabel('r (m)')\r\naxes[1,1].set_title('相轨迹 (theta, r)')\r\nfor ax in axes.ravel():\r\n    ax.grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "value": "fig, axes = plt.subplots(2, 2, figsize=(11, 5.6))\r\naxes[0,0].plot(t, X[0], 'b-', lw=2)\r\naxes[0,0].set_ylabel('r (m)'); axes[0,0].set_title('球位置 r → 0')\r\naxes[0,0].set_xlabel('t (s)')\r\naxes[0,1].plot(t, np.degrees(X[2]), 'm-', lw=2)\r\naxes[0,1].set_ylabel('theta (deg)'); axes[0,1].set_xlabel('t (s)')\r\naxes[0,1].set_title('梁倾角（控制量的积分）')\r\naxes[1,0].plot(t, U, 'r-', lw=2)\r\naxes[1,0].set_ylabel('u (rad/s^2)'); axes[1,0].set_xlabel('t (s)')\r\naxes[1,0].set_title('近似 IOL 控制量')\r\naxes[1,1].plot(np.degrees(X[2]), X[0], 'c-', lw=1.5)\r\naxes[1,1].set_xlabel('theta (deg)'); axes[1,1].set_ylabel('r (m)')\r\naxes[1,1].set_title('相轨迹 (theta, r)')\r\nfor ax in axes.ravel():\r\n    ax.grid(alpha=0.3)\r\nplt.tight_layout(); plt.show()",
+        "issues": [],
+        "unterminated": false
+      },
+      {
+        "index": 2,
+        "line": 777,
+        "delim": "`",
+        "raw": "# 自洽性检查：被丢弃项 r*thetadot^2 相对于保留项 |z3| = G*|sin(theta)| 的量级\r\ndropped = np.abs(X[0]*X[3]**2)     # 近似中被丢掉的项\r\nkept    = np.abs(G*np.sin(X[2]))   # 保留的主导项 |z3|\r\nprint(\"被丢弃项峰值 = %.4f m/s^2（出现在 t = %.2f s）\" % (dropped.max(), t[dropped.argmax()]))\r\nprint(\"保留项峰值   = %.4f m/s^2\" % kept.max())\r\nprint(\"峰值之比     = %.1f%%\" % (dropped.max()/kept.max()*100))\r\nmask = (t <= 6) & (kept > 0.2)     # 只在保留项有意义的时段比较，避免除以趋于零的量\r\nprint(\"t<=6s 且 |z3|>0.2 时段内的最大瞬时比值 = %.1f%%\"\r\n      % (np.max(dropped[mask]/kept[mask])*100))\r\nprint()\r\nprint(\"丢弃项始终是主导项的一个小量（<20%），且随 r 与 thetadot 同时衰减而迅速消失，\")\r\nprint(\"因此近似在整段仿真中自洽。若把初值放大（例如 r0=1.5 m），该比值会显著上升，\")\r\nprint(\"近似线性化的稳定裕度随之缩小——此时应改用其他方法或补一层鲁棒外环。\")",
+        "value": "# 自洽性检查：被丢弃项 r*thetadot^2 相对于保留项 |z3| = G*|sin(theta)| 的量级\r\ndropped = np.abs(X[0]*X[3]**2)     # 近似中被丢掉的项\r\nkept    = np.abs(G*np.sin(X[2]))   # 保留的主导项 |z3|\r\nprint(\"被丢弃项峰值 = %.4f m/s^2（出现在 t = %.2f s）\" % (dropped.max(), t[dropped.argmax()]))\r\nprint(\"保留项峰值   = %.4f m/s^2\" % kept.max())\r\nprint(\"峰值之比     = %.1f%%\" % (dropped.max()/kept.max()*100))\r\nmask = (t <= 6) & (kept > 0.2)     # 只在保留项有意义的时段比较，避免除以趋于零的量\r\nprint(\"t<=6s 且 |z3|>0.2 时段内的最大瞬时比值 = %.1f%%\"\r\n      % (np.max(dropped[mask]/kept[mask])*100))\r\nprint()\r\nprint(\"丢弃项始终是主导项的一个小量（<20%），且随 r 与 thetadot 同时衰减而迅速消失，\")\r\nprint(\"因此近似在整段仿真中自洽。若把初值放大（例如 r0=1.5 m），该比值会显著上升，\")\r\nprint(\"近似线性化的稳定裕度随之缩小——此时应改用其他方法或补一层鲁棒外环。\")",
+        "issues": [],
+        "unterminated": false
+      }
+    ],
+    "parseErrors": []
+  }
+]

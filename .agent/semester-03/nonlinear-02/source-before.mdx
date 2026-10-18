@@ -1,0 +1,2127 @@
+---
+title: "相平面分析"
+description: "把时间消掉，只看状态平面上的几何：向量场、nullcline、迹-行列式分类、鞍点分界线、Poincaré-Bendixson 与极限环——每一条结论都配一次实测，包括它失效的地方。"
+---
+
+# 相平面分析
+
+## 引言
+
+同一台设备、同一组参数、同一套控制器：从 A 位置启动，它平稳收敛；从离 A 只有 7% 距离的 B 位置启动，它直接飞车撞上限位。工程师换了电机、重整了两次 PID，问题照旧——因为这根本不是参数问题，是**初值落在吸引域的哪一侧**的问题。
+
+这类问题有一个专门的工具：把时间消掉，不再画 $x(t)$，而是画状态在 $(x_1, x_2)$ 平面上走过的曲线。这个平面叫**相平面**，这张图叫**相图**。它牺牲了"什么时候到达"，换来了"从任何地方出发会到哪里"——而后者才是安全边界、启动逻辑、故障恢复真正需要的答案。
+
+本课把六个系统的相图全部画出来并且**逐条测量**。下面这张表是全文的浓缩：左列是线性化（局部、便宜）的说法，右列是相平面分析加数值实验（全局、昂贵）的说法。
+
+| 系统 | 线性化说 | 相平面 / 实测说 |
+| --- | --- | --- |
+| Van der Pol，$\mu=0.5$ | 原点是不稳定焦点 | 5 个初值（含 $r_0=10^{-3}$）全部收敛到同一条闭轨：峰峰值 $4.004970\sim4.004973$，周期 $6.380676$ |
+| $\ddot x + 0.5\dot x + x - 0.2x^3 = 0$ | 原点稳定焦点，$\pm\sqrt5$ 是鞍点 | $x_2=0$ 轴上的逃逸阈值**恰好**是 $\sqrt5 = 2.236067977$，且与阻尼无关（实测比值 $1.000000000$） |
+| $\dot x_1 = -x_2 + \alpha x_1 r^2,\ \dot x_2 = x_1 + \alpha x_2 r^2$ | $J(0)=\begin{bmatrix}0&-1\\1&0\end{bmatrix}$，中心，**与 $\alpha$ 无关** | $\alpha=-0.1$：$r(30)=0.352655$ 收敛；$\alpha=0$：真中心；$\alpha=+0.1$：$t=10.20$ 有限时间爆炸 |
+| $\dot x_1 = x_2,\ \dot x_2 = -x_1 + x_2(1-r^2)$ | 原点不稳定焦点，$\lambda = 0.5\pm0.866025j$ | 7 个 $r_0\in[0.05,3.0]$ 全部 $r(150)=1.000000000$，周期 $6.283185307$，与 $2\pi$ 的相对误差 $1.2\times10^{-13}$ |
+| Lotka-Volterra | $(2,2)$ 是中心，$\lambda=\pm1.224745j$ | 中心是真的（首次积分 $H$ 在 40 s 内最大相对漂移 $4.04\times10^{-12}$），但周期随初值变（$5.267\to6.333$），所以**不是**极限环 |
+| 受迫 Duffing，$A$ 从 $1.5$ 扫到 $2.44$ | 非自治系统，谈不上平衡点分类 | Floquet 乘子模恒为 $0.62422843$（由 Liouville 公式钉死，与 $A$ 无关），直到 $A=2.44027$ 处一个乘子穿过 $-1$：周期倍化分岔 |
+
+**读法**：第 1、4 行说明线性化只能给出局部信息，全局的极限环它一个字都没提；第 3 行说明线性化在非双曲点上可以**完全错**；第 5 行说明"中心"有时是真的，但你必须另外证明；第 2 行说明相平面能给出一个**精确到小数点后九位的工程阈值**；第 6 行说明相平面方法一旦升到受迫/高维系统，就必须换成 Poincaré 截面与 Floquet 乘子。
+
+二维自治系统还有一条令人意外的硬约束：**长期行为只有三种可能**——趋向平衡点、趋向闭轨、或趋向由平衡点和连接它们的轨道组成的图。不会有混沌。这就是 Poincaré-Bendixson 定理。三维（或受迫的二维）就不成立了，本课最后用受迫 Duffing 实测出一个混沌吸引子作为对照。
+
+> 📐 本文用到二阶矩阵的特征值与迹-行列式判据，详见 [Lyapunov 方法与现代稳定性](/modern/lyapunov-modern) 与 [复数基础](/math/complex-numbers)；非线性从哪来、为什么必须单独处理，见 [非线性系统特性](/nonlinear/nonlinear-characteristics)。
+
+<Callout variant="info">
+本课的规矩是**叙述服从测量**：正文里出现的每一个数字都来自下面某个 Notebook 的实际运行输出。当测量与直觉冲突时（本课至少四次），改的是叙述和实验设计，不是数据。
+</Callout>
+
+## 相平面与向量场
+
+考虑**二维自治**系统
+
+$$
+\dot{\boldsymbol x} = \boldsymbol f(\boldsymbol x), \qquad \boldsymbol x = \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} \in \mathbb R^2
+$$
+
+"自治"指 $\boldsymbol f$ 不显含时间 $t$。这一条是整个几何方法的前提：它意味着把一条解曲线沿时间平移，得到的还是解曲线。
+
+**向量场**是在平面上每一点画一个箭头 $\boldsymbol f(\boldsymbol x)$——它告诉你"如果状态此刻在这里，它将往哪个方向、以多快的速率离开"。**相轨迹**（流线）是通过某初值的那条积分曲线。
+
+相平面方法的核心动作是**消去时间**：
+
+$$
+\frac{\mathrm d x_2}{\mathrm d x_1} = \frac{f_2(x_1, x_2)}{f_1(x_1, x_2)}
+$$
+
+这是一阶方程，解出来就是轨道的**形状**。代价是丢掉了"走多快"：两条形状相同的轨道可以有完全不同的时间尺度。工程上这一点必须记住——**相图给几何，不给时序**。判断"多久才收敛到位"要回到时间域（见 [时域分析](/classic/time-domain-analysis)）。
+
+消去时间换来的最大好处是**唯一性**：只要 $\boldsymbol f$ 局部 Lipschitz，过每一点只有一条轨道。于是
+
+<Callout variant="tip">
+**相轨迹不能相交**（除了在平衡点处）。这条看似平凡的事实是全部定性分析的基石：它意味着二维自治系统里"从哪来、到哪去"是被几何锁死的，长期行为的可能性被压缩到极小的几种。Poincaré-Bendixson 定理就是这条性质的推论。
+</Callout>
+
+Notebook 1 用 Van der Pol 振子把上面三件事一次性画出来：向量场（箭头）、nullcline（两条零斜率曲线）、以及五条相轨迹。
+
+$$
+\ddot x - \mu(1-x^2)\dot x + x = 0 \quad\Longleftrightarrow\quad
+\begin{cases} \dot x_1 = x_2 \\ \dot x_2 = \mu(1-x_1^2)x_2 - x_1 \end{cases}
+$$
+
+取 $\mu = 0.5$，从五个相差悬殊的初值出发，每个积分 $T=200$ s。
+
+<JupyterNotebook
+  title="Notebook 1：Van der Pol 的向量场、流线与「初值遗忘」"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 向量场 + nullcline + 相轨迹：Van der Pol，mu = 0.5
+mu = 0.5
+def vdp(t, s):
+    x, y = s
+    return [y, mu * (1 - x*x) * y - x]
+
+xs = np.linspace(-3, 3, 24); ys = np.linspace(-2.5, 2.5, 20)
+X, Y = np.meshgrid(xs, ys)
+U = Y; V = mu*(1-X**2)*Y - X
+N = np.hypot(U, V); N[N == 0] = 1.0
+
+Xf, Yf = np.meshgrid(np.linspace(-3, 3, 900), np.linspace(-2.5, 2.5, 900))
+Uf = Yf; Vf = mu*(1-Xf**2)*Yf - Xf
+
+fig, ax = plt.subplots(figsize=(8.4, 5.6))
+ax.quiver(X, Y, U/N, V/N, np.hypot(U, V), cmap='coolwarm', scale=30, width=0.0035, alpha=0.9)
+ax.contour(Xf, Yf, Uf, levels=[0], colors='#16a34a', linestyles='--', linewidths=1.7)
+ax.contour(Xf, Yf, Vf, levels=[0], colors='#c026d3', linestyles='-.', linewidths=1.7)
+ax.plot([], [], color='#16a34a', ls='--', lw=1.7, label='dx1/dt = 0  (x2 = 0)')
+ax.plot([], [], color='#c026d3', ls='-.', lw=1.7, label='dx2/dt = 0')
+for ic, c in [([0.2, 0.0], '#1f77b4'), ([2.8, 0.0], '#ff7f0e'), ([0.0, 2.4], '#2ca02c')]:
+    sol = solve_ivp(vdp, [0, 60], ic, t_eval=np.linspace(0, 60, 4000), rtol=1e-9, atol=1e-11)
+    ax.plot(sol.y[0], sol.y[1], color=c, lw=1.5,
+            label='IC %s -> end (%+.3f, %+.3f)' % (ic, sol.y[0, -1], sol.y[1, -1]))
+    ax.plot(ic[0], ic[1], 'o', color=c, ms=7)
+ax.plot(0, 0, 'rx', ms=13, mew=2.5, label='平衡点 (0,0)')
+ax.set_xlim(-3, 3); ax.set_ylim(-2.5, 2.5)
+ax.set_xlabel('x1'); ax.set_ylabel('x2')
+ax.set_title('Van der Pol 相平面 (mu = %.1f)：向量场 / nullcline / 三条相轨迹' % mu)
+ax.legend(fontsize=7.5, loc='upper left'); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()` },
+    { code: `# 三条轨迹最终重合 => 闭合轨道是"孤立"的（极限环），不是线性中心那样的连续族
+def measure(mu, ic, T=200.0):
+    def f(t, s):
+        x, y = s
+        return [y, mu*(1-x*x)*y - x]
+    def up(t, s):                 # x 由负变正的过零点：一个周期一个
+        return s[0]
+    up.direction = 1
+    sol = solve_ivp(f, [0, T], ic, rtol=1e-11, atol=1e-13, events=up)
+    te = sol.t_events[0]
+    te = te[te > T/2]
+    x = sol.y[0]
+    seg = sol.t > T - 20
+    per = np.median(np.diff(te)) if len(te) > 2 else float('nan')
+    return x[seg].min(), x[seg].max(), per, len(te)
+
+print('mu = 0.5，每个初值积分 T = 200 s；周期由 x 上行过零事件的中位间隔给出（不受采样分辨率影响）')
+print('%-14s %-11s %-11s %-11s %-11s %s' % ('IC', 'x_min', 'x_max', '峰峰值', '周期', '事件数'))
+last = None
+for ic in [[0.2, 0.0], [2.8, 0.0], [0.0, 2.4], [1e-3, 0.0], [-3.0, -2.0]]:
+    lo, hi, per, nev = measure(0.5, ic)
+    last = (lo, hi, per)
+    print('%-14s %+-11.6f %+-11.6f %-11.6f %-11.6f %d' % (str(ic), lo, hi, hi - lo, per, nev))
+print()
+print('五个初值（含 1e-3 这种几乎就在平衡点上的）给出完全相同的 x_min / x_max / 周期。')
+print('=> 这条闭合轨道是孤立的：振幅由系统参数决定，与初值无关 —— 这就是极限环。')
+print('   对比线性中心（如无阻尼振子）：振幅由初值决定，闭合轨道连续成族。')
+print('   小 mu 渐近式：振幅 -> 2，周期 -> 2pi(1+mu^2/16) = %.6f' % (2*np.pi*(1+0.5**2/16)))
+print('   实测：      振幅 = %.6f，           周期 = %.6f' % (last[1], last[2]))
+print('   周期相对误差 = %.3f%%' % (100*abs(last[2] - 2*np.pi*(1+0.5**2/16))/(2*np.pi*(1+0.5**2/16))))` }
+  ]}
+/>
+
+结果值得逐行读。五个初值里有一个是 $(10^{-3}, 0)$——几乎就贴在原点（不稳定平衡点）上；还有一个是 $(-3,-2)$——在极限环外面很远。它们的最终归宿完全相同：
+
+| 初值 | $x_{\min}$ | $x_{\max}$ | 峰峰值 | 周期 |
+| --- | --- | --- | --- | --- |
+| $(0.2, 0)$ | $-2.002487$ | $+2.002485$ | $4.004972$ | $6.380676$ |
+| $(2.8, 0)$ | $-2.002487$ | $+2.002485$ | $4.004972$ | $6.380676$ |
+| $(0, 2.4)$ | $-2.002487$ | $+2.002485$ | $4.004972$ | $6.380676$ |
+| $(10^{-3}, 0)$ | $-2.002487$ | $+2.002485$ | $4.004970$ | $6.380676$ |
+| $(-3, -2)$ | $-2.002487$ | $+2.002485$ | $4.004973$ | $6.380676$ |
+
+峰峰值的极差只有 $3\times10^{-6}$，周期完全一致到打印的位数。这个现象有个名字：**初值遗忘**。它正是振荡器设计者要的东西——一台正弦振荡器必须"无论怎么踢，最后都以同样振幅、同样频率振荡"，否则它的输出就取决于开机瞬间的状态。
+
+而线性化对此**一无所知**。原点处 $J = \begin{bmatrix}0&1\\-1&\mu\end{bmatrix}$，$\operatorname{tr}=\mu=0.5>0$，$\det=1$，$\lambda = 0.25\pm0.968246j$——只说"原点不稳定，附近轨道螺旋向外"。它没法告诉你螺旋**停在哪里**、停下来之后是什么形状。那条闭合轨道（极限环）是纯非线性对象，需要第 8 节的 Poincaré-Bendixson 定理才能保证它存在。
+
+顺带核对一个解析结果：$\mu\ll1$ 时 Van der Pol 极限环的周期有渐近式 $T \approx 2\pi(1+\mu^2/16)$，代入 $\mu=0.5$ 得 $6.381360$；实测 $6.380676$，**相对误差 $0.011\%$**。渐近式和数值积分两条完全独立的路径给出同一个数，这是"测量可信"的第一道保险。
+
+## Nullcline 与平衡点
+
+手画相图不需要积分器。只需要两条曲线：
+
+- **$x_1$-nullcline**：$f_1(x_1,x_2)=0$ 的点集。在这条线上 $\dot x_1 = 0$，所以流是**竖直**的（只有 $x_2$ 在动）。
+- **$x_2$-nullcline**：$f_2(x_1,x_2)=0$ 的点集。在这条线上流是**水平**的。
+
+两条 nullcline 把平面切成若干块，每块里 $(\operatorname{sgn} f_1, \operatorname{sgn} f_2)$ 固定，于是箭头方向确定。这就是相图的骨架，纸上几分钟就能画出来。
+
+**平衡点**就是两条 nullcline 的交点：$f_1 = f_2 = 0$，即 $\boldsymbol f(\boldsymbol x^*) = \boldsymbol 0$。
+
+<Callout variant="warning">
+nullcline 上的流是**切向**的，不是静止的。只有交点才静止。这个区别在第 8 节会变得要命：判断环形区域是否"正向不变"时，很多人写"内边界上 $\dot r > 0$"，而在 $x_2 = 0$ 的两点上 $\dot r$ 恰好等于 $0$——流与边界相切。Notebook 7 会实测到这件事，并给出正确的判据。
+</Callout>
+
+对控制系统来说，平衡点就是**稳态**。线性系统只有一个稳态（若 $A$ 非奇异），非线性系统可以有很多个：Duffing 有 3 个，Lotka-Volterra 有 2 个，单摆有无穷多个（$\theta = n\pi$）。多稳态直接改变了控制问题的性质——你不再只问"稳不稳"，还要问"从当前状态出发会落到哪一个稳态"，以及"能不能把它推到我要的那一个"。
+
+下面这个交互组件覆盖本课出现的五个系统。打开 nullcline 开关可以看到骨架如何决定箭头方向；表格里列出每个平衡点的 $\operatorname{tr}$、$\det$、判别式和分类；右侧读数区给出**当前参数下实测**的量（逃逸阈值、极限环周期、守恒量漂移、爆破时刻等）。默认参数就是本课手算例用的那一组。
+
+<PhasePlaneExplorer />
+
+## 平衡点分类：迹-行列式平面
+
+在平衡点 $\boldsymbol x^*$ 处线性化：
+
+$$
+\dot{\boldsymbol\xi} = J\boldsymbol\xi, \qquad J = \left.\frac{\partial \boldsymbol f}{\partial \boldsymbol x}\right|_{\boldsymbol x^*}, \qquad \boldsymbol\xi = \boldsymbol x - \boldsymbol x^*
+$$
+
+特征方程是 $\lambda^2 - (\operatorname{tr} J)\lambda + \det J = 0$，于是
+
+$$
+\lambda_{1,2} = \frac{\operatorname{tr} J \pm \sqrt{(\operatorname{tr} J)^2 - 4\det J}}{2}, \qquad \Delta \triangleq (\operatorname{tr} J)^2 - 4\det J
+$$
+
+关键观察：**你根本不需要解出特征值**。$\operatorname{tr} J$、$\det J$、$\Delta$ 三个数就完全决定了局部相图。记 $\tau = \operatorname{tr} J$，$\delta = \det J$：
+
+| 条件 | 类型 | 局部行为 |
+| --- | --- | --- |
+| $\delta < 0$ | 鞍点 | 一正一负实特征值，两个方向进、两个方向出 |
+| $\delta > 0,\ \Delta > 0,\ \tau < 0$ | 稳定节点 | 两个负实根，单调趋近 |
+| $\delta > 0,\ \Delta > 0,\ \tau > 0$ | 不稳定节点 | 两个正实根，单调离开 |
+| $\delta > 0,\ \Delta < 0,\ \tau < 0$ | 稳定焦点 | 共轭复根，负实部，螺旋收敛 |
+| $\delta > 0,\ \Delta < 0,\ \tau > 0$ | 不稳定焦点 | 共轭复根，正实部，螺旋发散 |
+| $\delta > 0,\ \Delta = 0,\ \tau \ne 0$ | 退化节点（重根） | 可能亏损，只有一条特征方向 |
+| $\delta > 0,\ \tau = 0$ | 中心 | 纯虚根，一族闭合椭圆轨道 |
+| $\delta = 0$ | 非孤立平衡点 | $J$ 奇异，平衡点连成一条线 |
+
+在 $(\tau, \delta)$ 平面上，这八种情形被三条曲线分开：
+
+- **抛物线 $\delta = \tau^2/4$**（即 $\Delta = 0$）：焦点与节点的分界。
+- **横轴 $\delta = 0$**：鞍点与其余的分界，也是 $J$ 奇异的地方。
+- **纵轴 $\tau = 0$**（限 $\delta>0$）：稳定与不稳定的分界，也是 Hopf 分岔发生的地方。
+
+<TraceDetExplorer />
+
+对控制工程师，这张图有一个直接翻译。二阶标准形式 $s^2 + 2\zeta\omega_n s + \omega_n^2$ 给出
+
+$$
+\tau = -2\zeta\omega_n, \qquad \delta = \omega_n^2
+$$
+
+所以：$\delta$ 就是 $\omega_n^2$（决定快慢），$-\tau/2\sqrt\delta$ 就是 $\zeta$（决定振铃）。**极点配置本质上就是在迹-行列式平面上挪一个点**（见 [状态反馈与极点配置](/modern/state-feedback)）。Notebook 2 表里的"稳定焦点"一行可以直接核对：$\tau=-1$，$\delta=4.25$，于是 $\omega_n=\sqrt{4.25}=2.0616$，$\zeta = 1/(2\times2.0616)=0.1213$，特征值 $-0.5\pm2j$——正是欠阻尼二阶响应的极点。
+
+<JupyterNotebook
+  title="Notebook 2：迹-行列式分类表，以及 2000 次随机抽查"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 六类双曲平衡点：迹-行列式判据 vs 特征值
+cases = [
+    ('稳定节点', [[-1, 0], [0, -3]]),
+    ('不稳定节点', [[1, 0], [0, 3]]),
+    ('稳定焦点', [[-0.5, -2], [2, -0.5]]),
+    ('不稳定焦点', [[0.5, -2], [2, 0.5]]),
+    ('鞍点', [[1, 0], [0, -1]]),
+    ('中心(线性)', [[0, -1], [1, 0]]),
+]
+print('%-14s %8s %8s %12s   %s' % ('类型', 'tr', 'det', 'tr^2-4det', '特征值'))
+for name, Jl in cases:
+    Jm = np.array(Jl, float)
+    tr, det = Jm.trace(), np.linalg.det(Jm)
+    ev = np.linalg.eigvals(Jm)
+    s = ', '.join(('%.4f%+.4fj' % (e.real, e.imag)) if abs(e.imag) > 1e-12 else '%.4f' % e.real for e in ev)
+    print('%-14s %8.3f %8.3f %12.3f   %s' % (name, tr, det, tr*tr - 4*det, s))
+
+fig, axes = plt.subplots(2, 3, figsize=(11.5, 6.8))
+for ax, (name, Jl) in zip(axes.ravel(), cases):
+    Jm = np.array(Jl, float)
+    g = np.linspace(-2, 2, 15); A, B = np.meshgrid(g, g)
+    U = Jm[0, 0]*A + Jm[0, 1]*B; V = Jm[1, 0]*A + Jm[1, 1]*B
+    ax.streamplot(A, B, U, V, density=0.9, color=np.hypot(U, V), cmap='coolwarm',
+                  linewidth=0.8, arrowsize=0.8)
+    ax.plot(0, 0, 'kx', ms=9, mew=2)
+    ax.set_title('%s   tr=%.2f  det=%.2f' % (name, Jm.trace(), np.linalg.det(Jm)), fontsize=10)
+    ax.set_xlim(-2, 2); ax.set_ylim(-2, 2); ax.set_aspect('equal'); ax.grid(alpha=0.25)
+plt.tight_layout(); plt.show()` },
+    { code: `# 穷举检验：2000 个随机 2x2 矩阵，(tr,det) 判据与特征值分类是否一致
+rng = np.random.default_rng(7)
+mis = 0; tot = 0; skipped = 0
+for _ in range(2000):
+    Jm = rng.normal(size=(2, 2)) * 2
+    tr, det = Jm.trace(), np.linalg.det(Jm)
+    if abs(tr) < 1e-6 or abs(det) < 1e-6 or abs(tr*tr - 4*det) < 1e-6:
+        skipped += 1     # 非双曲 / 退化：判据不裁决，必须单独分析
+        continue
+    tot += 1
+    ev = np.linalg.eigvals(Jm)
+    if det < 0:
+        pred = 'saddle'
+    elif tr*tr > 4*det:
+        pred = 'node-stable' if tr < 0 else 'node-unstable'
+    else:
+        pred = 'focus-stable' if tr < 0 else 'focus-unstable'
+    if det < 0:
+        truth = 'saddle'
+    elif np.all(np.abs(ev.imag) < 1e-9):
+        truth = 'node-stable' if ev.real.max() < 0 else 'node-unstable'
+    else:
+        truth = 'focus-stable' if ev.real.max() < 0 else 'focus-unstable'
+    if pred != truth:
+        mis += 1
+print('随机 2x2 矩阵：2000 个')
+print('  其中双曲且非退化（判据可裁决）：%d 个' % tot)
+print('  落在退化边界上被跳过：          %d 个' % skipped)
+print('  判据与特征值分类不一致：        %d 个' % mis)
+print()
+print('=> 只要 det != 0 且 tr^2 != 4det（即平衡点是双曲的），')
+print('   看 tr / det / tr^2-4det 三个数就足以分类，无需解特征方程。')` }
+  ]}
+/>
+
+Notebook 2 的第二个 cell 做了一件更该做的事：**随机抽查**。生成 2000 个随机 $2\times2$ 矩阵，对每个都用"看 $\tau,\delta,\Delta$"的判据分类，再和直接求特征值的结果比对。实测：2000 个全部可裁决，0 个落在退化边界被跳过，**0 个不一致**。判据不是记忆口诀，是等价命题。
+
+最后强调一个词：**双曲**。当 $\delta \ne 0$ 且 $\Delta \ne 0$ 且（$\delta>0$ 时）$\tau \ne 0$，即所有特征值实部非零，平衡点称为双曲的。双曲性是下一节那条定理的前提，也是"线性化可信"的全部条件。
+
+## 线性化何时失效
+
+**Hartman-Grobman 定理**：若 $\boldsymbol x^*$ 是双曲平衡点（$J$ 的所有特征值实部非零），则存在 $\boldsymbol x^*$ 的一个邻域，其中的非线性相图与线性化相图**拓扑等价**（可以连续变形互相得到，轨道的进出方向一致）。
+
+注意"拓扑等价"的强度：它保证**定性**结构（几个进方向、几个出方向），不保证形状、不保证时间尺度、更不保证邻域有多大。
+
+反过来，非双曲时定理**不适用**，此时线性化可以完全说错。失效只有两种入口：
+
+1. **$\det J = 0$**：有零特征值，平衡点可能根本不孤立（一条平衡线），高阶项决定结构。
+2. **$\operatorname{tr} J = 0$ 且 $\det J > 0$**：纯虚特征值，线性化说"中心"。但**非线性中心是脆弱对象**——任何一点点径向的非线性项都会把闭合椭圆变成螺旋。
+
+第 2 种是工程上最常见的陷阱，Notebook 3 用一个单参数族把它彻底摊开：
+
+$$
+\dot x_1 = -x_2 + \alpha x_1(x_1^2+x_2^2), \qquad \dot x_2 = x_1 + \alpha x_2(x_1^2+x_2^2)
+$$
+
+在原点处，$J(0) = \begin{bmatrix}0&-1\\1&0\end{bmatrix}$，$\operatorname{tr}=0$，$\det=1$，$\lambda=\pm j$——**对每一个 $\alpha$ 都一模一样**。但系统行为天差地别。
+
+<JupyterNotebook
+  title="Notebook 3：Jacobian 完全相同的三个系统，三种命运"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 线性化失效：tr(J)=0 时"中心"是假象
+#   dx/dt = -y + a*x*(x^2+y^2),   dy/dt = x + a*y*(x^2+y^2)
+#   J(0) = [[0,-1],[1,0]]  ->  tr=0, det=1, 特征值 = +-1j（线性化说：中心）
+#   极坐标：dr/dt = a*r^3, dtheta/dt = 1  ->  解析解 r(t) = r0 / sqrt(1 - 2*a*r0^2*t)
+Jm = np.array([[0.0, -1.0], [1.0, 0.0]])
+print('J(0) = %s   tr = %.4f   det = %.4f   特征值 = %s'
+      % (Jm.tolist(), Jm.trace(), np.linalg.det(Jm), np.round(np.linalg.eigvals(Jm), 6).tolist()))
+print('=> Re(lambda) = 0，平衡点非双曲，Hartman-Grobman 定理不适用：')
+print('   线性化不能定性，三次项才是真正的裁判。')
+print()
+
+def fa(a):
+    return lambda t, s: [-s[1] + a*s[0]*(s[0]**2 + s[1]**2),
+                          s[0] + a*s[1]*(s[0]**2 + s[1]**2)]
+
+r0 = 0.7
+print('%-7s %-9s %-13s %-13s %s' % ('a', 'T', 'r(T) 数值', 'r(T) 解析', '相对误差'))
+res = {}
+for a in (-0.1, 0.0, 0.1):
+    T = 30.0 if a <= 0 else min(30.0, 0.99/(2*a*r0*r0))
+    sol = solve_ivp(fa(a), [0, T], [r0, 0.0], t_eval=np.linspace(0, T, 2000), rtol=1e-10, atol=1e-12)
+    rn = np.hypot(sol.y[0, -1], sol.y[1, -1])
+    re_ = r0/np.sqrt(1 - 2*a*r0*r0*sol.t[-1]) if a != 0 else r0
+    res[a] = (sol.t[-1], rn)
+    print('%-7.2f %-9.3f %-13.6f %-13.6f %.2e' % (a, T, rn, re_, abs(rn-re_)/re_))
+t_star = 1/(2*0.1*r0*r0)
+print()
+print('a = +0.1, r0 = 0.7 的解析爆破时刻 1/(2*a*r0^2) = %.4f' % t_star)
+print('=> a=+0.1 时轨道在有限时间 t=%.4f 内跑到无穷：这不是中心，是不稳定焦点（且有限时间逃逸）。' % t_star)
+print('   a=-0.1 时 r(%.0f) = %.4f < r0 = %.1f：稳定焦点。' % (res[-0.1][0], res[-0.1][1], r0))
+print('   a= 0.0 时 r 恒为 %.4f = r0：这才是真正的中心。' % res[0.0][1])` },
+    { code: `# 三个系统 J(0) 完全相同，相图却完全不同
+def fa(a):
+    return lambda t, s: [-s[1] + a*s[0]*(s[0]**2 + s[1]**2),
+                          s[0] + a*s[1]*(s[0]**2 + s[1]**2)]
+
+fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.2))
+labels = {-0.1: 'a = -0.1   稳定焦点', 0.0: 'a = 0      真中心', 0.1: 'a = +0.1   不稳定焦点'}
+for ax, a in zip(axes, (-0.1, 0.0, 0.1)):
+    g = np.linspace(-1.4, 1.4, 17); A, B = np.meshgrid(g, g)
+    U = -B + a*A*(A**2+B**2); V = A + a*B*(A**2+B**2)
+    ax.streamplot(A, B, U, V, density=1.0, color='0.7', linewidth=0.7, arrowsize=0.8)
+    r0 = 0.45
+    T = 26.0 if a <= 0 else min(26.0, 0.9/(2*a*r0*r0))
+    sol = solve_ivp(fa(a), [0, T], [r0, 0.0], t_eval=np.linspace(0, T, 4000), rtol=1e-10, atol=1e-12)
+    ax.plot(sol.y[0], sol.y[1], color='#1f77b4', lw=1.9)
+    ax.plot(sol.y[0, 0], sol.y[1, 0], 'o', color='#16a34a', ms=7)
+    ax.plot(0, 0, 'rx', ms=11, mew=2.5)
+    ax.set_xlim(-1.4, 1.4); ax.set_ylim(-1.4, 1.4); ax.set_aspect('equal')
+    ax.set_title(labels[a] + '  (tr=0, det=1)', fontsize=10)
+    ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+这个系统好在有精确解析解。转极坐标，$r^2 = x_1^2+x_2^2$：
+
+$$
+\dot r = \frac{x_1\dot x_1 + x_2\dot x_2}{r} = \frac{\alpha r^4}{r} = \alpha r^3, \qquad \dot\theta = 1
+$$
+
+于是 $r(t) = \dfrac{r_0}{\sqrt{1 - 2\alpha r_0^2 t}}$。实测与解析的对照：
+
+| $\alpha$ | $r_0$ | $T$ | $r(T)$ 数值 | $r(T)$ 解析 | 相对误差 |
+| --- | --- | --- | --- | --- | --- |
+| $-0.10$ | $0.7$ | $30.000$ | $0.352655$ | $0.352655$ | $2.26\times10^{-10}$ |
+| $0.00$ | $0.7$ | $30.000$ | $0.700000$ | $0.700000$ | $3.65\times10^{-10}$ |
+| $+0.10$ | $0.7$ | $10.102$ | $7.000000$ | $7.000000$ | $3.29\times10^{-9}$ |
+
+$\alpha=+0.1$ 时的解析爆破时刻是 $t^* = 1/(2\alpha r_0^2) = 10.2041$，Notebook 特意积分到 $t=10.102$（离爆破只差 $0.1$ s），此时 $r$ 已经涨到 $7$，是初值的 $10$ 倍。
+
+**三个系统的 Jacobian 逐位相同，一个收敛到零、一个原地转圈、一个在有限时间内跑到无穷。** 这就是"线性化只在双曲点局部有效"的全部含义——不是精度差一点，而是定性上可以完全错。
+
+<Callout variant="warning">
+工程判据：只要设计让某个平衡点接近 $\operatorname{tr} J = 0$（极低阻尼、纯积分器、谐振环节、$\zeta \to 0$ 的欠阻尼），就**必须**回到非线性模型判断。线性化在这里给出的"临界稳定"是假的——真实系统由高阶项裁决，可能是稳定焦点、可能是中心、也可能有限时间发散。
+</Callout>
+
+那"中心"是不是永远不可信？不是。第 9 节的 Lotka-Volterra 系统线性化也给出纯虚根 $\pm1.224745j$，而它的中心是**真的**——因为它有一个解析的首次积分 $H(x,y)$，轨道被锁在 $H$ 的水平线上（Notebook 9 实测 $H$ 在 40 s 内的最大相对漂移是 $4.04\times10^{-12}$，纯积分器舍入）。
+
+区别不在于线性化，而在于**你能不能另外拿出一个证明**。可用的两条路：
+
+- 找一个**首次积分**（守恒量），证明轨道被限制在闭合水平线上；
+- 找一个 **Lyapunov 函数**，用直接法判定稳定性（见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)）。
+
+两者都比"算特征值"贵得多。这就是非双曲情形的代价。
+
+## 手算例：非线性振子的完整相平面
+
+现在把一个系统从头到尾算完。取
+
+$$
+\ddot x + 0.5\dot x + x - 0.2x^3 = 0 \quad\Longleftrightarrow\quad
+\begin{cases} \dot x_1 = x_2 \\ \dot x_2 = -x_1 - 0.5x_2 + 0.2x_1^3 \end{cases}
+$$
+
+**第一步：平衡点。** $x_2 = 0$ 且 $x_1(0.2x_1^2 - 1) = 0$，所以
+
+$$
+x_1 = 0, \quad x_1 = \pm\sqrt5 = \pm2.236068
+$$
+
+三个平衡点。
+
+**第二步：Jacobian 与分类。**
+
+$$
+J(x_1) = \begin{bmatrix} 0 & 1 \\ -1 + 0.6x_1^2 & -0.5 \end{bmatrix}
+$$
+
+在原点：$J = \begin{bmatrix}0&1\\-1&-0.5\end{bmatrix}$，$\tau = -0.5$，$\delta = 1$，$\Delta = 0.25 - 4 = -3.75 < 0$，
+
+$$
+\lambda = -0.25 \pm 0.968246j \quad\Rightarrow\quad \text{稳定焦点}
+$$
+
+在 $x_1 = \pm\sqrt5$：$0.6\times5 = 3$，故 $J = \begin{bmatrix}0&1\\2&-0.5\end{bmatrix}$，$\tau=-0.5$，$\delta = -2 < 0$，
+
+$$
+\lambda = \frac{-0.5 \pm \sqrt{0.25+8}}{2} = \frac{-0.5 \pm 2.872281}{2} = 1.186141,\ -1.686141 \quad\Rightarrow\quad \text{鞍点}
+$$
+
+**第三步：势函数。** 系统写成 $\ddot x = -V'(x) - 0.5\dot x$，其中
+
+$$
+V(x) = \frac{x^2}{2} - 0.05x^4, \qquad V'(x) = x - 0.2x^3, \qquad V''(x) = 1 - 0.6x^2
+$$
+
+$V(0) = 0$，$V''(0) = +1 > 0$：势阱底。$V(\pm\sqrt5) = 2.5 - 1.25 = 1.25$，$V''(\pm\sqrt5) = 1-3 = -2 < 0$：势垒顶。**势垒高度 $\Delta V = 1.25$。**
+
+<Callout variant="warning">
+这**不是**双势阱。$V(x) = x^2/2 - 0.05x^4$ 在 $\lvert x\rvert\to\infty$ 时趋于 $-\infty$，所以图像是"一个阱 + 两侧各一道会塌下去的坝"。标准的双阱 Duffing 需要**负**线性刚度：$\ddot x + d\dot x - x + x^3 = 0$，那时原点才是鞍点，两个非零平衡点才是阱底。这个区别直接决定"逃逸"的物理图像——在这里逃逸意味着 $x\to\infty$（发散、飞车、撞限位），而不是"跳到另一个阱里"。
+</Callout>
+
+**第四步：能量。** $E = \dfrac{x_2^2}{2} + V(x_1)$，沿轨道
+
+$$
+\dot E = x_2\ddot x + V'(x)\dot x = x_2\big(-0.5x_2 - V'(x)\big) + V'(x)x_2 = -0.5x_2^2 \le 0
+$$
+
+能量单调不增，只在 $x_2 = 0$ 处瞬时不变。于是**无阻尼**情形（$d=0$）能量守恒，逃逸条件就是 $E > \Delta V$。
+
+**第五步：逃逸阈值。** 从 $(x_0, 0)$ 出发，$E = V(x_0)$。令 $V(x_0) = 1.25$：
+
+$$
+\frac{x_0^2}{2} - 0.05x_0^4 = 1.25 \;\Longrightarrow\; x_0^4 - 10x_0^2 + 25 = 0 \;\Longrightarrow\; (x_0^2 - 5)^2 = 0 \;\Longrightarrow\; x_0 = \sqrt5
+$$
+
+这是个**二重根**——不是巧合：势垒顶点本来就落在 $x_2 = 0$ 轴上。所以沿这条轴的阈值是纯粹的几何位置问题，与阻尼无关。
+
+<JupyterNotebook
+  title="Notebook 4：Duffing 振子手算例的全程数值核对"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 手算例：x'' + 0.5 x' + x - 0.2 x^3 = 0    (x1 = x, x2 = x')
+def F(s):
+    x, y = s
+    return np.array([y, -x - 0.5*y + 0.2*x**3])
+
+def Jac(s):
+    x, y = s
+    return np.array([[0.0, 1.0], [-1.0 + 0.6*x*x, -0.5]])
+
+print('平衡点方程：x2 = 0 且 x1(0.2 x1^2 - 1) = 0')
+print('  => x1 = 0 或 x1^2 = 5，即 x1 = 0, +%.6f, -%.6f' % (np.sqrt(5), np.sqrt(5)))
+print()
+for x0 in [0.0, np.sqrt(5.0), -np.sqrt(5.0)]:
+    s = np.array([x0, 0.0]); Jm = Jac(s)
+    tr, det = Jm.trace(), np.linalg.det(Jm); disc = tr*tr - 4*det
+    ev = np.linalg.eigvals(Jm)
+    if det < 0:
+        kind = '鞍点（不稳定）'
+    elif disc > 0:
+        kind = '节点，' + ('稳定' if tr < 0 else '不稳定')
+    elif disc < 0:
+        kind = '焦点，' + ('稳定' if tr < 0 else '不稳定')
+    else:
+        kind = '退化节点'
+    print('x1 = %+.6f :' % x0)
+    print('  J = %s   tr = %+.4f   det = %+.4f   tr^2-4det = %+.4f' % (Jm.tolist(), tr, det, disc))
+    print('  特征值 = %s   ->  %s' % (np.round(ev, 6).tolist(), kind))
+    print('  平衡点残差 |F(x*)|_inf = %.2e' % np.abs(F(s)).max())
+print()
+V = lambda x: 0.5*x**2 - 0.05*x**4
+print('势函数 V(x) = x^2/2 - 0.05 x^4   （力 = -dV/dx，d2V/dx2 = 1 - 0.6 x^2）')
+for x0 in [0.0, np.sqrt(5.0), -np.sqrt(5.0)]:
+    print('  V(%+.6f) = %+.6f   d2V/dx2 = %+.4f  (%s)'
+          % (x0, V(x0), 1 - 0.6*x0*x0, '极小：势阱底' if 1 - 0.6*x0*x0 > 0 else '极大：势垒顶'))
+print('  势垒高度 dV = V(sqrt5) - V(0) = %.6f' % (V(np.sqrt(5)) - V(0)))
+print()
+print('注意：V(x) 在 x -> +-inf 时趋于 -inf，所以这是「单势阱 + 两侧势垒」，')
+print('      不是双势阱。标准 Duffing 双阱需要负线性刚度，例如')
+print('          xdd + d*xd - x + x^3 = 0')
+print('      那时原点才是鞍点，两个非零平衡点才是势阱底。')` },
+    { code: `# 相图 + 势函数：能量判据与数值积分是否一致
+xg = np.linspace(-4.2, 4.2, 3000)
+Vg = 0.5*xg**2 - 0.05*xg**4
+fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.2))
+
+ax = axes[0]
+ax.plot(xg, Vg, 'k-', lw=2)
+ax.axhline(1.25, color='#dc2626', ls='--', lw=1.3, label='势垒高度 V = 1.25')
+for x0, c in [(0.0, '#16a34a'), (np.sqrt(5), '#dc2626'), (-np.sqrt(5), '#dc2626')]:
+    ax.plot(x0, 0.5*x0**2 - 0.05*x0**4, 'o', color=c, ms=10)
+ax.set_ylim(-5, 2); ax.set_xlim(-4.2, 4.2); ax.grid(alpha=0.3); ax.legend(fontsize=9)
+ax.set_xlabel('x'); ax.set_ylabel('V(x)')
+ax.set_title('势函数：单阱（x=0）+ 两道势垒（x = +-%.4f）' % np.sqrt(5))
+
+ax = axes[1]
+g = np.linspace(-3.4, 3.4, 26); A, B = np.meshgrid(g, g/1.4)
+U = B; W = -A - 0.5*B + 0.2*A**3
+ax.streamplot(A, B, U, W, density=1.3, color='0.75', linewidth=0.7, arrowsize=0.8)
+ax.plot(g, -2*g + 0.4*g**3, color='#c026d3', ls='-.', lw=1.5, label='dx2/dt = 0 :  x2 = -2 x1 + 0.4 x1^3')
+ax.axhline(0, color='#16a34a', ls='--', lw=1.4, label='dx1/dt = 0 :  x2 = 0')
+for E, c, lab in [(0.6, '#1f77b4', 'E = 0.6  < 1.25'), (1.0, '#2ca02c', 'E = 1.0  < 1.25'), (1.6, '#d62728', 'E = 1.6  > 1.25')]:
+    if E < 1.25:
+        x0 = brentq(lambda x: 0.5*x**2 - 0.05*x**4 - E, 0.0, np.sqrt(5))
+    else:
+        x0 = np.sqrt(5) + 0.35          # 直接放到势垒外侧，速度为零
+    sol = solve_ivp(lambda t, s: F(s), [0, 25], [x0, 0.0], t_eval=np.linspace(0, 25, 3000), rtol=1e-10, atol=1e-12)
+    ax.plot(sol.y[0], sol.y[1], color=c, lw=1.7, label='%s : x0 = %.4f' % (lab, x0))
+    ax.plot(x0, 0, 'o', color=c, ms=6)
+ax.plot(0, 0, 'o', color='#16a34a', ms=11, mec='k', label='稳定焦点')
+ax.plot([np.sqrt(5), -np.sqrt(5)], [0, 0], 'rx', ms=12, mew=2.5, label='鞍点')
+ax.set_xlim(-3.4, 3.4); ax.set_ylim(-2.4, 2.4); ax.grid(alpha=0.3)
+ax.legend(fontsize=7, loc='upper left'); ax.set_xlabel('x1'); ax.set_ylabel('x2')
+ax.set_title('相平面：nullcline 与三条能量水平线')
+plt.tight_layout(); plt.show()
+
+print('%-9s %-12s %-14s %-11s %s' % ('E(x0)', 'x0', '|x1| 终值', '逃逸?', '结论'))
+for E in [0.4, 0.8, 1.2, 1.24, 1.2499]:
+    x0 = brentq(lambda x: 0.5*x**2 - 0.05*x**4 - E, 0.0, np.sqrt(5))
+    sol = solve_ivp(lambda t, s: F(s), [0, 80], [x0, 0.0], rtol=1e-10, atol=1e-12)
+    esc = abs(sol.y[0, -1]) > np.sqrt(5) + 0.05
+    print('%-9.4f %-12.6f %-14.6f %-11s %s'
+          % (E, x0, abs(sol.y[0, -1]), str(bool(esc)), '越过势垒逃逸' if esc else '留在井内，螺旋收敛到原点'))
+for x0 in [2.30, 2.50, 3.00]:
+    E0 = 0.5*x0**2 - 0.05*x0**4
+    sol = solve_ivp(lambda t, s: F(s), [0, 80], [x0, 0.0], rtol=1e-10, atol=1e-12)
+    esc = abs(sol.y[0, -1]) > np.sqrt(5) + 0.05
+    print('%-9.4f %-12.6f %-14.4g %-11s %s'
+          % (E0, x0, abs(sol.y[0, -1]), str(bool(esc)), '越过势垒逃逸' if esc else '被阻尼拉回，收敛到原点'))
+print()
+print('注意上表最后几行：x0 越过 sqrt(5) = %.6f 之后，V(x) 反而开始下降，' % np.sqrt(5))
+print('所以 E(x0) 可以低于势垒高度 1.25 而轨迹仍然逃逸 —— 例如 x0 = 2.50 时')
+print('E = %.6f < 1.25，但它已经在势垒外侧，力 -dV/dx = %.4f > 0 把它继续推出去。'
+      % (0.5*2.5**2 - 0.05*2.5**4, -(2.5 - 0.2*2.5**3)))
+print('=> 能量判据只在"初值位于势阱内侧"时有效；一般的逃逸判据是看初值落在')
+print('   鞍点稳定流形的哪一侧。下一节数值算出这条流形。')` },
+    { code: `# 逃逸阈值的两条扫描线：x2=0 轴与 x1=0 轴
+def F(s):
+    x, y = s
+    return [y, -x - 0.5*y + 0.2*x**3]
+
+def esc_x(x0, T=150.0):
+    sol = solve_ivp(lambda t, s: F(s), [0, T], [x0, 0.0], rtol=1e-10, atol=1e-12)
+    return abs(sol.y[0, -1]) > 3.5
+
+def esc_v(v0, T=150.0):
+    sol = solve_ivp(lambda t, s: F(s), [0, T], [0.0, v0], rtol=1e-10, atol=1e-12)
+    return abs(sol.y[0, -1]) > 3.5
+
+lo, hi = 1.0, np.sqrt(5) - 1e-10
+for _ in range(60):
+    mid = 0.5*(lo+hi)
+    if esc_x(mid): hi = mid
+    else: lo = mid
+xc = 0.5*(lo+hi)
+lo, hi = 0.5, 6.0
+for _ in range(50):
+    mid = 0.5*(lo+hi)
+    if esc_v(mid): hi = mid
+    else: lo = mid
+vc = 0.5*(lo+hi)
+print('扫描线 1：初值 (x0, 0)，沿 x1 轴')
+print('  临界 x0 = %.9f' % xc)
+print('  sqrt(5) = %.9f      比值 = %.9f' % (np.sqrt(5), xc/np.sqrt(5)))
+print('  => 阈值恰好就是鞍点本身：势垒顶在 x2=0 轴上，所以这条轴上的边界与阻尼无关。')
+print()
+print('扫描线 2：初值 (0, v0)，沿 x2 轴')
+print('  临界 v0（有阻尼 b=0.5） = %.9f' % vc)
+print('  无阻尼能量判据 sqrt(2*1.25) = %.9f' % np.sqrt(2*1.25))
+print('  比值 = %.6f' % (vc/np.sqrt(2*1.25)))
+print('  => 阻尼耗散能量，越过势垒需要更大的初速：无阻尼能量判据只是必要条件，不是充分条件。')
+print()
+print('验证：dE/dt = x2*(xdd + dV/dx) = x2*(-0.5*x2) = -0.5 x2^2 <= 0，')
+print('  沿 v0 = %.6f（略低于临界）积分 150 s 的能量损耗：' % (vc - 1e-4))
+sol = solve_ivp(lambda t, s: F(s), [0, 150], [0.0, vc - 1e-4], t_eval=np.linspace(0, 150, 3000), rtol=1e-10, atol=1e-12)
+E = lambda x, y: 0.5*y*y + 0.5*x*x - 0.05*x**4
+print('  E(0) = %.6f  ->  E(150) = %.6f   （最高点 E_max 沿途 = %.6f）'
+      % (E(sol.y[0, 0], sol.y[1, 0]), E(sol.y[0, -1], sol.y[1, -1]), E(sol.y[0], sol.y[1]).max()))
+print('  最终 |x1| = %.6f  ->  未逃逸' % abs(sol.y[0, -1]))` }
+  ]}
+/>
+
+Notebook 4 的第二个 cell 打出了一张值得反复看的表。前五行符合能量判据的预期，后三行**不符合**：
+
+| $E(x_0)$ | $x_0$ | 终值 $\lvert x_1\rvert$ | 逃逸？ |
+| --- | --- | --- | --- |
+| $0.4000$ | $0.936426$ | $0$ | 否 |
+| $0.8000$ | $1.414214$ | $0$ | 否 |
+| $1.2000$ | $2.000000$ | $0$ | 否 |
+| $1.2400$ | $2.133726$ | $0$ | 否 |
+| $1.2499$ | $2.226046$ | $0$ | 否 |
+| $1.2458$ | $2.300000$ | $1.492\times10^{13}$ | **是** |
+| $1.1719$ | $2.500000$ | $1.479\times10^{13}$ | **是** |
+| $0.4500$ | $3.000000$ | $2.966\times10^{13}$ | **是** |
+
+$x_0 = 2.50$ 的能量是 $1.171875$，**低于**势垒高度 $1.25$，但它照样逃逸；$x_0=3.00$ 的能量只有 $0.45$，逃逸得更干脆。原因很直白：$V(x)$ 过了 $x=\sqrt5$ 之后是**下降**的，所以 $x_0 = 2.5$ 已经在坝的外侧，那里的力 $-V'(2.5) = -(2.5 - 0.2\times15.625) = +0.625 > 0$ 还在往外推它。
+
+<Callout variant="warning">
+**能量判据 $E < \Delta V$ 只在初值位于势阱内侧时有效。** 一旦初值越过势垒顶点，能量数字再小也救不了它。一般情形下正确的判据是：**初值落在鞍点稳定流形的哪一侧**——下一节数值算出这条流形。
+</Callout>
+
+Notebook 4 的第三个 cell 沿两条轴扫描出临界值，结论有两处反直觉：
+
+| 扫描线 | 实测临界值 | 无阻尼能量判据 | 比值 |
+| --- | --- | --- | --- |
+| $(x_0, 0)$，沿 $x_1$ 轴 | $x_0 = 2.236067977$ | $\sqrt5 = 2.236067977$ | $1.000000000$ |
+| $(0, v_0)$，沿 $x_2$ 轴 | $v_0 = 2.378738421$ | $\sqrt{2\times1.25} = 1.581138830$ | $1.504446$ |
+
+- **沿 $x_1$ 轴，阈值与阻尼完全无关。** 因为势垒顶就在这条轴上，而初速为零——"决定"在你出发的那一刻就已经做完了，阻尼还没来得及做任何功。
+- **沿 $x_2$ 轴，阻尼让阈值变大 1.5 倍。** 阻尼耗散能量，所以要越坝需要**更多**初速。这意味着无阻尼能量判据是**保守**的：它会低估安全区。Notebook 沿 $v_0 = 2.378638$（略低于临界）积分 150 s 做了核对：$E(0) = 2.828960$，沿途最大值 $E_{\max} = 2.828960$（能量确实从不增加），$E(150) = 0$，终值 $\lvert x_1\rvert = 0$——它的初始能量 $2.83$ 远超势垒 $1.25$，却因为阻尼耗散而**没有逃逸**。
+
+## 鞍点分界线与吸引域
+
+鞍点是相图上信息最丰富的对象。它有两条特殊曲线：
+
+- **不稳定流形** $W^u$：沿 $\operatorname{Re}\lambda > 0$ 的特征方向离开鞍点的轨道。正向积分得到。
+- **稳定流形** $W^s$：沿 $\operatorname{Re}\lambda < 0$ 的特征方向趋向鞍点的轨道。**正向积分抓不到它**（它是不稳定的吸引方向），必须从鞍点沿稳定特征向量偏移 $\pm\varepsilon$ 后**反向积分**。
+
+计算方法就是这两句话，Notebook 5 用的也是这两句话。对手算例的右鞍点 $(\sqrt5, 0)$，特征值 $1.186141$ 与 $-1.686141$：
+
+$$
+\text{不稳定方向} = \begin{bmatrix}0.644567\\0.764548\end{bmatrix}, \qquad
+\text{稳定方向} = \begin{bmatrix}-0.510106\\0.860111\end{bmatrix}
+$$
+
+<JupyterNotebook
+  title="Notebook 5：鞍点的稳定流形就是吸引域的边界"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 数值计算两个鞍点的稳定 / 不稳定流形（separatrix）
+xs = np.sqrt(5.0)
+def F(s):
+    x, y = s
+    return [y, -x - 0.5*y + 0.2*x**3]
+def Jac(s):
+    x, y = s
+    return np.array([[0.0, 1.0], [-1.0 + 0.6*x*x, -0.5]])
+
+g = np.linspace(-3.4, 3.4, 26); A, B = np.meshgrid(g, g/1.4)
+U = B; W = -A - 0.5*B + 0.2*A**3
+fig, ax = plt.subplots(figsize=(9.8, 5.8))
+ax.streamplot(A, B, U, W, density=1.2, color='0.82', linewidth=0.6, arrowsize=0.7)
+
+eps, T = 1e-7, 45.0
+for sgn, col in [(1.0, '#d62728'), (-1.0, '#9467bd')]:
+    p = np.array([sgn*xs, 0.0])
+    ev, evec = np.linalg.eig(Jac(p))
+    k = np.argsort(ev.real)
+    v_st = np.real(evec[:, k[0]]); v_st = v_st/np.linalg.norm(v_st)
+    v_un = np.real(evec[:, k[1]]); v_un = v_un/np.linalg.norm(v_un)
+    for v, ls in [(v_st, '-'), (v_un, '--')]:
+        for d in (+1, -1):
+            sol = solve_ivp(lambda t, s: F(s), [0, T], p + d*eps*v,
+                            t_eval=np.linspace(0, T, 12000), rtol=1e-11, atol=1e-13)
+            ax.plot(sol.y[0], sol.y[1], color=col, ls=ls, lw=1.9)
+    ax.plot(p[0], p[1], 'kx', ms=13, mew=2.8)
+    print('鞍点 (%+.6f, 0)：特征值 = %s' % (sgn*xs, np.round(ev, 6).tolist()))
+    print('   稳定流形方向   (Re<0) = %s' % np.round(v_st, 6).tolist())
+    print('   不稳定流形方向 (Re>0) = %s' % np.round(v_un, 6).tolist())
+
+ax.plot(0, 0, 'o', color='#16a34a', ms=11, mec='k', mew=1.2)
+ax.plot([], [], color='#d62728', ls='-', lw=1.9, label='稳定流形（吸引域边界）')
+ax.plot([], [], color='#d62728', ls='--', lw=1.9, label='不稳定流形')
+ax.set_xlim(-3.4, 3.4); ax.set_ylim(-2.4, 2.4); ax.grid(alpha=0.3)
+ax.legend(fontsize=9, loc='upper left')
+ax.set_title('separatrix：实线 = 稳定流形，虚线 = 不稳定流形')
+ax.set_xlabel('x1'); ax.set_ylabel('x2')
+plt.tight_layout(); plt.show()` },
+    { code: `# 检验：不稳定流形去哪里？稳定流形是不是吸引域边界？
+xs = np.sqrt(5.0)
+def F(s):
+    x, y = s
+    return [y, -x - 0.5*y + 0.2*x**3]
+def Jac(s):
+    x, y = s
+    return np.array([[0.0, 1.0], [-1.0 + 0.6*x*x, -0.5]])
+
+p = np.array([xs, 0.0])
+ev, evec = np.linalg.eig(Jac(p))
+k = np.argsort(ev.real)
+v_st = np.real(evec[:, k[0]]); v_st = v_st/np.linalg.norm(v_st)
+v_un = np.real(evec[:, k[1]]); v_un = v_un/np.linalg.norm(v_un)
+
+def where(sol):
+    x, y = sol.y[0, -1], sol.y[1, -1]
+    if np.hypot(x, y) < 1e-3:
+        return '收敛到原点（稳定焦点）'
+    if abs(x) > 1e3:
+        return '逃逸到 %s inf' % ('+' if x > 0 else '-')
+    return '仍在有限区域 (x1=%+.3f, x2=%+.3f)' % (x, y)
+
+print('右鞍点 (%.6f, 0) 的不稳定流形（正向积分 T=60）：' % xs)
+for d in (+1, -1):
+    sol = solve_ivp(lambda t, s: F(s), [0, 60], p + d*1e-7*v_un, rtol=1e-11, atol=1e-13)
+    print('  分支 %+d （初始沿 %s）: %s' % (d, np.round(d*1e-7*v_un, 9).tolist(), where(sol)))
+print()
+print('右鞍点的稳定流形（反向积分，等价于把时间倒流 T=25）：')
+for d in (+1, -1):
+    sol = solve_ivp(lambda t, s: [-q for q in F(s)], [0, 25], p + d*1e-7*v_st, rtol=1e-11, atol=1e-13)
+    print('  分支 %+d : 倒流终点 x1 = %+.4g, x2 = %+.4g  -> %s'
+          % (d, sol.y[0, -1], sol.y[1, -1], where(sol)))
+print()
+print('=> 不稳定流形一支进入原点（属于吸引域边界内侧），另一支逃逸到 +inf；')
+print('   稳定流形两支都逃逸到无穷，它把相平面切成三块：')
+print('   中间块（含原点）= 稳定焦点的吸引域；两侧块 = 逃逸区。')
+print()
+print('吸引域边界的定量检查：取稳定流形上距鞍点弧长很小的点，向两侧各偏移 1e-4，')
+print('看它们的归宿是否相反：')
+q = p + 1e-3*v_st
+nvec = np.array([v_st[1], -v_st[0]])
+for s_ in (+1, -1):
+    sol = solve_ivp(lambda t, s: F(s), [0, 80], q + s_*1e-4*nvec, rtol=1e-10, atol=1e-12)
+    print('  偏移 %+d*1e-4 法向 -> %s' % (s_, where(sol)))` }
+  ]}
+/>
+
+实测结果，逐条读：
+
+- **不稳定流形**，$+1$ 支：逃逸到 $+\infty$。
+- **不稳定流形**，$-1$ 支：收敛到原点，终点 $(1.2\times10^{-5},\ -9.9\times10^{-6})$。这是一条从鞍点到稳定焦点的**异宿型**连接。
+- **稳定流形**，两支反向积分都逃逸：终点分别 $x_1 = -2.32\times10^{12},\ x_2 = +1.701\times10^{24}$ 与 $x_1 = +2.32\times10^{12},\ x_2 = -1.703\times10^{24}$。倒着看，这两支来自无穷远。
+
+于是稳定流形把相平面切成三块：**中间一块（含原点）是稳定焦点的吸引域，两侧两块是逃逸区**。
+
+这不是推测。Notebook 5 直接做了边界测试：在稳定流形上取一个离鞍点很近的点，沿法向各偏移 $10^{-4}$，然后积分看归宿——
+
+$$
++10^{-4} \;\longrightarrow\; \text{逃逸到 } +\infty, \qquad -10^{-4} \;\longrightarrow\; \text{收敛到原点}
+$$
+
+$10^{-4}$ 的偏移就翻转了最终命运。这既是"$W^s$ 就是吸引域边界"的证据，也是一条重要的**数值警告**：在分界线附近，"这条轨道会不会逃逸"这个问题在数值上本质上不可判定——你需要初值精度和积分精度同时远小于 $10^{-4}$，而且误差会沿不稳定方向指数放大。
+
+<Callout variant="tip">
+**为什么这一节对工程最有用**：吸引域就是**安全工作区**。它给出的是"多大扰动/多大初始偏差可以被吸收"，这比"平衡点渐近稳定"这个二元结论信息量大得多。同一个思路在几个地方以不同名字出现——电力系统的暂态稳定（等面积法则是能量法的近似版本，精确边界就是分界线）、机器人的跌倒判据、MPC 的终端约束集（见 [约束处理](/mpc/constraint-handling)）。凡是"线性化说稳定但实际会飞车"的事故，根因几乎都是工作点跑到了吸引域外。
+</Callout>
+
+最后注意方法论上的分工：$J$ 告诉你鞍点**附近**有两个特殊方向，但分界线的**全局形状**必须积分才能得到。局部线性化 + 全局数值积分，这是相平面分析的标准配方。
+
+## Poincaré-Bendixson 定理与极限环
+
+二维自治系统有一条硬约束，值得单独陈述。定义 $\boldsymbol\omega(\boldsymbol x_0)$ 为从 $\boldsymbol x_0$ 出发的轨道的 **$\omega$-极限集**（所有"无限接近且无限频繁回访"的点）。
+
+**Poincaré-Bendixson 定理**：设 $D \subset \mathbb R^2$ 是有界闭区域，正向不变（轨道一旦进入就永不离开），且 **$D$ 内不含平衡点**。则从 $D$ 内出发的每条轨道的 $\omega$-极限集都是一条**闭合轨道**。
+
+推论（二维定性理论的核心）：二维自治系统的 $\omega$-极限集只能是三种之一——(a) 一个平衡点；(b) 一条闭合轨道；(c) 由有限个平衡点和连接它们的轨道组成的图。**不存在奇怪吸引子，不存在混沌。** 混沌至少要三维自治系统（或二维受迫系统，见第 10 节）。
+
+<Callout variant="warning">
+定理的条件是"$D$ 内**不含**平衡点"。常见的错误写法是"或只含一个不稳定平衡点"——这**不成立**，因为区域里有平衡点时，轨道的极限集可能就是那个平衡点，定理的结论失效。正确的用法是**把平衡点挖掉**，改用一个**环形区域**（annulus）：内边界 $r=r_1$ 上流向外，外边界 $r=r_2$ 上流向内，环内无平衡点，于是环内必有闭轨。
+</Callout>
+
+Notebook 7 用一个有精确解析解的系统把这套论证逐条落地：
+
+$$
+\dot x_1 = x_2, \qquad \dot x_2 = -x_1 + x_2(1 - x_1^2 - x_2^2)
+$$
+
+极坐标下
+
+$$
+\dot r = \frac{x_1\dot x_1 + x_2\dot x_2}{r} = \frac{x_2^2(1-r^2)}{r}, \qquad
+\dot\theta = \frac{x_1\dot x_2 - x_2\dot x_1}{r^2} = -1 + \frac{x_1x_2(1-r^2)}{r^2}
+$$
+
+在 $r=1$ 上：$\dot r = 0$（不变），$\dot\theta = -1$（匀速）。所以**单位圆是一条闭合轨道，周期恰为 $2\pi$**。原点处 $J(0)=\begin{bmatrix}0&1\\-1&1\end{bmatrix}$，$\tau=+1$，$\delta=+1$，$\lambda = 0.5\pm0.866025j$：不稳定焦点。取环域 $0.5 \le r \le 1.5$，挖掉原点，Poincaré-Bendixson 保证环内有闭轨——而我们已经知道它就是 $r=1$。
+
+<JupyterNotebook
+  title="Notebook 7：Poincare-Bendixson 的环形区域逐条验证"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 可解析验证的极限环：dx1 = x2, dx2 = -x1 + x2(1 - x1^2 - x2^2)
+#   极坐标：dr/dt = x2^2 (1-r^2)/r ；在 r=1 上 dtheta/dt = -(x1^2+x2^2) = -1
+def G(s):
+    x, y = s
+    return [y, -x + y*(1 - x*x - y*y)]
+
+print('解析结论：')
+print('  dr/dt = x2^2 (1-r^2)/r  ->  r=1 是不变圆；r<1 时向外，r>1 时向内（x2 != 0 处）')
+print('  r=1 上 dtheta/dt = -1   ->  周期恰为 2pi = %.6f' % (2*np.pi))
+print()
+def up_ev(t, s):
+    return s[0]
+up_ev.direction = 1
+
+print('%-7s %-6s %-13s %-12s %-12s %s' % ('r0', 'T', 'r(T)', '|r(T)-1|', '周期(实测)', '圈数'))
+pers = []
+for r0 in [0.05, 0.3, 0.5, 0.9, 1.1, 1.5, 3.0]:
+    T = 150.0
+    sol = solve_ivp(lambda t, s: G(s), [0, T], [r0, 0.0], t_eval=np.linspace(0, T, 15000),
+                    rtol=1e-11, atol=1e-13, events=up_ev)
+    x, y, t = sol.y[0], sol.y[1], sol.t
+    r = np.hypot(x, y)
+    th = np.unwrap(np.arctan2(y, x))
+    te = sol.t_events[0]
+    te = te[te > T - 60]          # 只取尾段（已收敛到极限环）
+    per = float(np.median(np.diff(te))) if te.size > 2 else float('nan')
+    pers.append(per)
+    print('%-7.2f %-6.0f %-13.9f %-12.2e %-12.9f %.1f'
+          % (r0, T, r[-1], abs(r[-1]-1), per, abs(th[-1]-th[0])/(2*np.pi)))
+print()
+pers = np.array(pers)
+print('实测周期：min = %.9f，max = %.9f，与 2pi = %.6f 的最大相对误差 = %.3e'
+      % (pers.min(), pers.max(), 2*np.pi, np.abs(pers/(2*np.pi) - 1).max()))
+print('=> 七个初值的周期一致到 %.1e 且都等于 2pi：这条极限环就是单位圆，'
+      % np.abs(pers/(2*np.pi) - 1).max())
+print('   振幅与周期都由系统参数决定，与初值无关 —— 这正是「孤立闭合轨道」的含义。')` },
+    { code: `# 环域不变性的严格检查：r=r1 上 dr/dt 并非处处 > 0（x2=0 处恰为 0）
+def G(s):
+    x, y = s
+    return [y, -x + y*(1 - x*x - y*y)]
+r1 = 0.5
+print('在 x2 = 0 处 dr/dt = x2^2(1-r^2)/r = 0，流向与圆相切，')
+print('所以"环内边界上 dr/dt > 0"这句话在两个点上是错的。正确的说法要看下一时刻：')
+print()
+print('%-10s %-13s %-13s %-13s %s' % ('角度(deg)', 'r(0)', 'r(0.01)', 'r(0.5)', ''))
+for phi_deg in [0, 30, 60, 90, 120, 150, 180, 210, 270, 330]:
+    phi = phi_deg*np.pi/180.0
+    s0 = [r1*np.cos(phi), r1*np.sin(phi)]
+    sol = solve_ivp(lambda t, s: G(s), [0, 0.5], s0, t_eval=[0, 0.01, 0.5], rtol=1e-11, atol=1e-13)
+    r = np.hypot(sol.y[0], sol.y[1])
+    note = '<- 相切起步，下一时刻立刻向外' if abs(r[1]-r[0]) < 1e-10 else ''
+    print('%-10d %-13.9f %-13.9f %-13.9f %s' % (phi_deg, r[0], r[1], r[2], note))
+print()
+mn = []
+for phi_deg in range(0, 360, 5):
+    phi = phi_deg*np.pi/180.0
+    sol = solve_ivp(lambda t, s: G(s), [0, 60], [r1*np.cos(phi), r1*np.sin(phi)],
+                    t_eval=np.linspace(0, 60, 6000), rtol=1e-11, atol=1e-13)
+    mn.append(np.hypot(sol.y[0], sol.y[1]).min())
+print('72 个起始角，r1=0.5 圆上出发的轨迹在 60 s 内到达的最小半径 = %.9f' % min(mn))
+print('=> 环域 0.5 <= r <= 1.5 是正向不变集：轨迹既不会向内穿出，也不会向外穿出。')
+print()
+Jm = np.array([[0.0, 1.0], [-1.0, 1.0]])
+print('环域内唯一的平衡点是原点：J(0) = %s，tr = %+.3f，det = %+.3f，特征值 = %s'
+      % (Jm.tolist(), Jm.trace(), np.linalg.det(Jm), np.round(np.linalg.eigvals(Jm), 6).tolist()))
+print('=> 不稳定焦点。把原点从环域里挖掉后应用 Poincare-Bendixson：环域内必有闭合轨道。')` },
+    { code: `# 图：正向不变环域 + 不变圆 + 从内外出发的四条轨迹
+def G(s):
+    x, y = s
+    return [y, -x + y*(1 - x*x - y*y)]
+
+fig, ax = plt.subplots(figsize=(8.6, 6.6))
+th = np.linspace(0, 2*np.pi, 500)
+for rr, c, ls, lw, lab in [(1.5, '0.45', '--', 1.5, 'r2 = 1.5'), (1.0, '#d62728', '-', 2.4, '极限环 r = 1'), (0.5, '0.45', '--', 1.5, 'r1 = 0.5')]:
+    ax.plot(rr*np.cos(th), rr*np.sin(th), color=c, ls=ls, lw=lw, label=lab)
+g = np.linspace(-1.75, 1.75, 23); A, B = np.meshgrid(g, g)
+U = B; V = -A + B*(1-A**2-B**2)
+ax.streamplot(A, B, U, V, density=1.1, color='0.86', linewidth=0.6, arrowsize=0.7)
+for r0, c in [(0.15, '#1f77b4'), (0.5, '#2ca02c'), (1.45, '#ff7f0e'), (1.65, '#9467bd')]:
+    sol = solve_ivp(lambda t, s: G(s), [0, 25], [r0, 0.0], t_eval=np.linspace(0, 25, 4000), rtol=1e-10, atol=1e-12)
+    ax.plot(sol.y[0], sol.y[1], color=c, lw=1.8, label='r0 = %.2f' % r0)
+    ax.plot(sol.y[0, 0], sol.y[1, 0], 'o', color=c, ms=6)
+ax.plot(0, 0, 'rx', ms=12, mew=2.5, label='不稳定焦点（被挖掉）')
+ax.set_xlim(-1.75, 1.75); ax.set_ylim(-1.75, 1.75); ax.set_aspect('equal'); ax.grid(alpha=0.3)
+ax.legend(fontsize=8, loc='upper left')
+ax.set_title('Poincare-Bendixson：正向不变环域 0.5 <= r <= 1.5，其中不含平衡点')
+plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+三个实测结论：
+
+**1. 七个初值全部收敛到同一个圆，周期全部等于 $2\pi$。** $r_0 \in \{0.05, 0.3, 0.5, 0.9, 1.1, 1.5, 3.0\}$，积分 $T=150$：$\lvert r(T)-1\rvert$ 介于 $6.49\times10^{-13}$ 与 $1.79\times10^{-12}$；实测周期 $\min = \max = 6.283185307$，与 $2\pi$ 的最大相对误差 $1.232\times10^{-13}$。这是"孤立闭合轨道"的定义式表现——振幅和周期都由系统参数决定，与初值无关。
+
+**2. 内边界上的不变性判据要小心。** 在 $x_2 = 0$ 处 $\dot r = x_2^2(1-r^2)/r = 0$，流与圆**相切**。所以"内边界 $r=r_1$ 上 $\dot r > 0$"这句话在两个点上是错的。Notebook 改看"下一时刻"：从 $r_1=0.5$ 上十个不同角度出发，$r(0.01)$ 和 $r(0.5)$ 全部大于 $0.5$（例如 $0^\circ$：$0.500000000 \to 0.500000126 \to 0.519191527$；$90^\circ$：$0.500000000 \to 0.503754496 \to 0.677793409$）。再用 72 个起始角扫描，60 s 内到达的最小半径是 $0.500000000$——环域 $0.5\le r\le1.5$ 确实是正向不变集。
+
+正确的判据是**法向分量非负且不恒为零**，而不是逐点严格为正。这个精度差别在纸面证明里是致命的，在工程估算里通常无害——但你要知道自己在用哪一种。
+
+**3. 极限环与线性中心是两种东西。** 这一点必须钉死：
+
+| | 线性中心 | 极限环 |
+| --- | --- | --- |
+| 闭轨个数 | 连续的一族 | **孤立**的一条 |
+| 振幅由什么决定 | 初值 | 系统参数 |
+| 初值扰动后 | 换到相邻的另一条闭轨，永久保持偏差 | 回到同一条闭轨 |
+| 工程价值 | 几乎为零（振幅不可控） | 振荡器的基础 |
+
+Notebook 1 里 Van der Pol 的"初值遗忘"就是右列；第 9 节 Lotka-Volterra 的"周期随初值变"就是左列。
+
+现在看一个**没有**解析首次积分的真实极限环。Notebook 6 扫描 Van der Pol 的 $\mu$，从 $\mu=0.05$（近线性）到 $\mu=40$（强张弛振荡），周期由上行过零事件的中位间隔测得。
+
+<JupyterNotebook
+  title="Notebook 6：Van der Pol 极限环随 mu 的幅值与周期"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# Van der Pol 极限环：振幅与周期随 mu 的变化，对照两个渐近公式
+def vdpf(t, s, mu):
+    x, y = s
+    return [y, mu*(1-x*x)*y - x]
+
+def up(t, s):
+    return s[0]
+up.direction = 1
+
+print('每个 mu 积分 T = max(300, 12*mu) s，周期取 x 上行过零事件中位间隔（后半段）')
+print('%-7s %-13s %-13s %-17s %-13s %s' % ('mu', '振幅 x_max', '周期(实测)', '2pi(1+mu^2/16)', '(3-2ln2)mu', '实测/(3-2ln2)mu'))
+rows = []
+for mu in [0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 40.0]:
+    T = max(300.0, 12.0*mu)
+    tol = (1e-11, 1e-13) if mu <= 2 else (1e-9, 1e-11)
+    sol = solve_ivp(lambda t, s: vdpf(t, s, mu), [0, T], [0.05, 0.0],
+                    rtol=tol[0], atol=tol[1], events=up)
+    te = sol.t_events[0]; te = te[te > T/2]
+    per = np.median(np.diff(te)) if len(te) > 2 else float('nan')
+    amp = sol.y[0][sol.t > T - 3*per].max()
+    big = (3 - 2*np.log(2))*mu
+    rows.append((mu, amp, per, big, per/big))
+    print('%-7.2f %-13.6f %-13.6f %-17.5f %-13.5f %.5f'
+          % (mu, amp, per, 2*np.pi*(1 + mu**2/16.0), big, per/big))
+print()
+print('=> 振幅：min = %.6f (mu=%.2f)，max = %.6f (mu=%.2f)，全区间波动不足 %.1f%%。'
+      % (min(r[1] for r in rows), min(rows, key=lambda r: r[1])[0],
+         max(r[1] for r in rows), max(rows, key=lambda r: r[1])[0],
+         100*(max(r[1] for r in rows)/min(r[1] for r in rows) - 1)))
+print('   周期：从 mu=0.05 的 %.4f s 涨到 mu=40 的 %.3f s，增长 %.0f 倍。' % (rows[0][2], rows[-1][2], rows[-1][2]/rows[0][2]))
+print('   与张弛振荡渐近式 (3-2ln2)mu = %.4f mu 的比值：mu=5 时 %.3f，mu=10 时 %.3f，mu=40 时 %.3f'
+      % (3-2*np.log(2), rows[6][4], rows[7][4], rows[-1][4]))
+print('   => 渐近式要在 mu 达到几十时才有 5%% 级精度；mu=5 时误差 %.1f%%，mu=10 时 %.1f%%，mu=20 时 %.1f%%。'
+      % (100*abs(rows[6][4]-1), 100*abs(rows[7][4]-1), 100*abs(rows[8][4]-1)))` },
+    { code: `# mu 增大时极限环形状的剧变：从近正弦到张弛振荡
+fig, axes = plt.subplots(2, 3, figsize=(13, 6.6))
+for ax, mu in zip(axes.ravel(), [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]):
+    T = 30.0 if mu <= 1 else 22.0*mu
+    sol = solve_ivp(lambda t, s: vdpf(t, s, mu), [0, T], [2.5, 0.0],
+                    t_eval=np.linspace(0, T, int(T*400)), rtol=1e-10, atol=1e-12)
+    g = np.linspace(-2.6, 2.6, 21); Aa, Bb = np.meshgrid(g, g/1.3)
+    U = Bb; V = mu*(1-Aa**2)*Bb - Aa
+    ax.streamplot(Aa, Bb, U, V, density=0.9, color='0.8', linewidth=0.6, arrowsize=0.7)
+    tail = sol.t > T - 0.4*T
+    ax.plot(sol.y[0][tail], sol.y[1][tail], color='#1f77b4', lw=1.9)
+    ax.plot(0, 0, 'rx', ms=10, mew=2.2)
+    ax.set_xlim(-2.6, 2.6); ax.set_ylim(-2.0, 2.0); ax.grid(alpha=0.25)
+    ax.set_title('mu = %.1f   振幅 = %.4f' % (mu, np.abs(sol.y[0][tail]).max()), fontsize=10)
+plt.tight_layout(); plt.show()
+print('mu=10 时的极限环已经变成"两段慢爬升 + 两段快跳跃"的张弛振荡，')
+print('但峰峰值仍约为 4：振幅由非线性项 (1-x^2) 的过零点决定，而不是由 mu 决定。')` }
+  ]}
+/>
+
+| $\mu$ | 振幅 $x_{\max}$ | 周期（实测） | $2\pi(1+\mu^2/16)$ | $(3-2\ln2)\mu$ | 实测 / $(3-2\ln2)\mu$ |
+| --- | --- | --- | --- | --- | --- |
+| $0.05$ | $1.999381$ | $6.284087$ | $6.28417$ | $0.08069$ | $77.88$ |
+| $0.50$ | $2.002486$ | $6.380676$ | $6.38136$ | $0.80685$ | $7.91$ |
+| $2.00$ | $2.019891$ | $7.629874$ | $7.85398$ | $3.22741$ | $2.36$ |
+| $5.00$ | $2.021506$ | $11.612231$ | $16.10066$ | $8.06853$ | $1.43920$ |
+| $10.00$ | $2.014285$ | $19.078370$ | $45.55309$ | $16.13706$ | $1.18227$ |
+| $20.00$ | $2.007790$ | $34.682323$ | $163.36282$ | $32.27411$ | $1.07462$ |
+| $40.00$ | $2.003789$ | $66.501369$ | $634.60172$ | $64.54823$ | $1.03026$ |
+
+两条渐近式各有各的适用域，实测把它们钉清楚了：
+
+- **振幅几乎与 $\mu$ 无关**：全区间 $\min = 1.999381$（$\mu=0.05$），$\max = 2.021506$（$\mu=5.00$），波动不足 $1.1\%$。原因在方程里：阻尼项 $\mu(1-x^2)\dot x$ 的**过零点固定在 $x = \pm1$**，极限环必须在那里切换"注入能量/耗散能量"，所以振幅被非线性项自己钉住，$\mu$ 只控制切换的剧烈程度。
+- **小 $\mu$ 用 $2\pi(1+\mu^2/16)$**：$\mu=0.5$ 时误差 $0.011\%$，$\mu=2$ 时已经差到 $7.85$ 对 $7.63$（$2.9\%$），$\mu=10$ 时给出 $45.6$ 对实测 $19.1$——彻底不可用。
+- **大 $\mu$ 用 $(3-2\ln2)\mu \approx 1.6137\mu$**：$\mu=5$ 时比值 $1.43920$（误差 $43.9\%$），$\mu=10$ 时 $18.2\%$，$\mu=20$ 时 $7.5\%$，$\mu=40$ 时 $3.0\%$。
+
+<Callout variant="warning">
+"$\mu$ 很大就用张弛振荡渐近式 $(3-2\ln2)\mu$"这条经验法则，要到 $\mu\approx40$ 才做到 $3\%$ 精度；$\mu=5$（很多教材里已经画成典型张弛振荡波形）时它还有 $43.9\%$ 的误差。周期从 $6.284$ 涨到 $66.501$（$11$ 倍）而振幅基本不动，这个组合是张弛振荡的签名：$\mu=10$ 的波形已经是"两段慢爬升 + 两段快跳跃"。
+</Callout>
+
+## 应用案例
+
+### 案例一：单摆与机器人关节的"越顶"临界速度
+
+$$
+\ddot\theta + b\dot\theta + \sin\theta = 0
+$$
+
+平衡点 $\theta = n\pi,\ \dot\theta = 0$。线性化：$n$ 为偶数时 $\delta = +\cos(n\pi) = +1$，$\tau = -b$，是稳定焦点（$\lambda = -0.05\pm0.998749j$ 当 $b=0.1$）；$n$ 为奇数时 $\delta = -1$，是鞍点（$\lambda = 0.951249,\ -1.051249$）。
+
+**这就是单摆相图的骨架：下垂位置和倒立位置交替，中间由鞍点的分界线隔开。** 分界线以内的轨道是"摆动"（$\theta$ 不越过 $\pi$），以外是"旋转"（连续转圈）。
+
+工程问题：从下垂位置 $\theta=0$ 甩起，需要多大初始角速度才能越顶？能量法给 $\frac12\omega_0^2 = V(\pi)-V(0) = 2$，即 $\omega_0 = 2$。但这只在 $b=0$ 时成立。
+
+<JupyterNotebook
+  title="Notebook 8：单摆分界线与「越顶」临界速度"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 单摆 th'' + 0.1 th' + sin(th) = 0：鞍点分界线分开"摆动区"与"旋转区"
+b = 0.1
+def F(s):
+    th, w = s
+    return [w, -np.sin(th) - b*w]
+def Jac(s):
+    th, w = s
+    return np.array([[0.0, 1.0], [-np.cos(th), -b]])
+
+print('平衡点：th = n*pi, w = 0   （n 为整数）')
+for n in range(-2, 3):
+    th0 = n*np.pi; Jm = Jac([th0, 0.0]); ev = np.linalg.eigvals(Jm)
+    tr, det = Jm.trace(), np.linalg.det(Jm)
+    kind = '鞍点' if det < 0 else ('稳定焦点' if tr*tr < 4*det else '稳定节点')
+    print('  n=%+d  th=%+.6f : tr=%+.4f det=%+.4f  特征值=%s -> %s'
+          % (n, th0, tr, det, np.round(ev, 6).tolist(), kind))
+
+fig, ax = plt.subplots(figsize=(11.8, 4.8))
+g = np.linspace(-2*np.pi, 2*np.pi, 42); A, B = np.meshgrid(g, np.linspace(-3, 3, 20))
+U = B; V = -np.sin(A) - b*B
+ax.streamplot(A, B, U, V, density=1.6, color='0.82', linewidth=0.6, arrowsize=0.7)
+for n in range(-2, 3):
+    p = np.array([n*np.pi, 0.0])
+    if np.linalg.det(Jac(p)) >= 0:
+        continue                      # 只给鞍点画流形
+    ev, evec = np.linalg.eig(Jac(p))
+    if ev[0].real > 0:
+        v_un, v_st = np.real(evec[:, 0]), np.real(evec[:, 1])
+    else:
+        v_un, v_st = np.real(evec[:, 1]), np.real(evec[:, 0])
+    for v in (v_un/np.linalg.norm(v_un), v_st/np.linalg.norm(v_st)):
+        for d in (+1, -1):
+            sol = solve_ivp(lambda t, s: F(s), [0, 30], p + d*1e-8*v, t_eval=np.linspace(0, 30, 6000), rtol=1e-11, atol=1e-13)
+            ax.plot(sol.y[0], sol.y[1], color='#d62728', lw=1.8)
+for w0, c, lab in [(1.0, '#1f77b4', 'w0 = 1.0 摆动'), (1.95, '#2ca02c', 'w0 = 1.95 摆动'),
+                   (2.3, '#ff7f0e', 'w0 = 2.3 旋转'), (3.0, '#9467bd', 'w0 = 3.0 旋转')]:
+    sol = solve_ivp(lambda t, s: F(s), [0, 25], [0.0, w0], t_eval=np.linspace(0, 25, 4000), rtol=1e-10, atol=1e-12)
+    ax.plot(sol.y[0], sol.y[1], color=c, lw=1.7, label=lab)
+for n in range(-2, 3):
+    if n % 2:
+        ax.plot(n*np.pi, 0, 'x', color='#d62728', ms=11, mew=2.4)
+    else:
+        ax.plot(n*np.pi, 0, 'o', color='#16a34a', ms=10, mec='k', mew=1.0)
+ax.set_xlim(-2*np.pi, 2*np.pi); ax.set_ylim(-3, 3); ax.grid(alpha=0.3)
+ax.set_xticks([-2*np.pi, -np.pi, 0, np.pi, 2*np.pi])
+ax.set_xticklabels(['-2pi', '-pi', '0', 'pi', '2pi'])
+ax.legend(fontsize=8, loc='upper right'); ax.set_xlabel('theta'); ax.set_ylabel('omega')
+ax.set_title('阻尼单摆：红线 = 鞍点分界线（摆动区 / 旋转区的边界）')
+plt.tight_layout(); plt.show()` },
+    { code: `# 实测临界初速：theta=0 轴上摆动与旋转的分界
+b = 0.1
+def F(s):
+    th, w = s
+    return [w, -np.sin(th) - b*w]
+
+def rotates(w0, T=80.0):
+    sol = solve_ivp(lambda t, s: F(s), [0, T], [0.0, w0], rtol=1e-10, atol=1e-12)
+    return sol.y[0].max() > np.pi
+
+lo, hi = 1.0, 4.0
+for _ in range(55):
+    mid = 0.5*(lo+hi)
+    if rotates(mid): hi = mid
+    else: lo = mid
+wc = 0.5*(lo+hi)
+print('b = %.2f :' % b)
+print('  临界初速 w_crit（从 theta=0 出发）= %.9f' % wc)
+print('  无阻尼能量判据 0.5 w0^2 = 2(1-cos pi) = 2  ->  w0 = 2.000000')
+print('  比值 实测/无阻尼 = %.6f' % (wc/2.0))
+print()
+print('%-7s %-14s %s' % ('b', 'w_crit', '相对无阻尼值 2 的倍数'))
+for bb in [0.0, 0.05, 0.1, 0.3, 0.6, 1.0]:
+    def G(s, bb=bb):
+        return [s[1], -np.sin(s[0]) - bb*s[1]]
+    lo, hi = 1.0, 8.0
+    for _ in range(45):
+        mid = 0.5*(lo+hi)
+        sol = solve_ivp(lambda t, s: G(s), [0, 80.0], [0.0, mid], rtol=1e-10, atol=1e-12)
+        if sol.y[0].max() > np.pi: hi = mid
+        else: lo = mid
+    w = 0.5*(lo+hi)
+    print('%-7.2f %-14.6f %.6f' % (bb, w, w/2.0))
+print()
+print('=> 阻尼越大，越过鞍点所需的初速越大：能量沿途被耗散，')
+print('   所以"能量刚好等于势垒高度"只是无阻尼时的判据。')` }
+  ]}
+/>
+
+| $b$ | 实测 $\omega_{\text{crit}}$ | 相对无阻尼值 $2$ 的倍数 |
+| --- | --- | --- |
+| $0.00$ | $2.000000$ | $1.000000$ |
+| $0.05$ | $2.100958$ | $1.050479$ |
+| $0.10$ | $2.203799$ | $1.101899$ |
+| $0.30$ | $2.633030$ | $1.316515$ |
+| $0.60$ | $3.325132$ | $1.662566$ |
+| $1.00$ | $4.322167$ | $2.161084$ |
+
+$b=0$ 时实测精确回到 $2.000000$（能量法被数值验证），$b=0.1$ 时需要多给 $10.2\%$，$b=1.0$ 时需要多给 $116\%$。
+
+这条曲线的工程含义：**腿式/机械臂的"甩腿越顶"动作，所需最小角速度对关节阻尼高度敏感**。低阻尼（$b \le 0.1$，多数伺服关节在这一档）时能量法够用，误差 $10\%$ 以内可以靠余量吸收；高阻尼时必须积分，否则指令速度会系统性偏低，动作在半途停住然后倒回来。
+
+顺带说明为什么这里没有 Poincaré-Bendixson 的用武之地：单摆有阻尼时所有轨道都趋向某个下垂平衡点，没有闭轨。极限环要在**受迫**单摆（$\ddot\theta + b\dot\theta + \sin\theta = A\cos\omega t$）里才会出现，那时相图升到三维——见第 10 节。
+
+### 案例二：Lotka-Volterra 与"中心"的真伪
+
+捕食者-猎物模型，$\alpha=1,\ \beta=0.5,\ \gamma=1.5,\ \delta=0.75$：
+
+$$
+\dot x = \alpha x - \beta xy, \qquad \dot y = -\gamma y + \delta xy
+$$
+
+nullcline：$\dot x = 0$ 给 $x=0$ 或 $y = \alpha/\beta = 2.0000$；$\dot y = 0$ 给 $y=0$ 或 $x = \gamma/\delta = 2.0000$。两个平衡点：$(0,0)$ 与 $(2,2)$。
+
+$$
+J(0,0) = \begin{bmatrix}1&0\\0&-1.5\end{bmatrix},\ \delta_J = -1.5 \Rightarrow \text{鞍点},\ \lambda = 1,\ -1.5
+$$
+
+$$
+J(2,2) = \begin{bmatrix}0&-1\\1.5&0\end{bmatrix},\ \tau = 0,\ \delta_J = 1.5 \Rightarrow \text{线性中心},\ \lambda = \pm1.224745j
+$$
+
+$(2,2)$ 落在第 5 节的危险区：非双曲，线性化不能定性。这次要判定它是不是真中心，就得找首次积分。Lotka-Volterra 恰好有：
+
+$$
+H(x,y) = \delta x - \gamma\ln x + \beta y - \alpha\ln y = 0.75x - 1.50\ln x + 0.50y - 1.00\ln y
+$$
+
+<JupyterNotebook
+  title="Notebook 9：Lotka-Volterra 的中心是真是假"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# Lotka-Volterra：x' = x(1 - 0.5y), y' = y(-1.5 + 0.75x)  -> (0,0) 鞍点，(2,2) 真中心
+al, be, ga, de = 1.0, 0.5, 1.5, 0.75
+def F(s):
+    x, y = s
+    return [al*x - be*x*y, -ga*y + de*x*y]
+
+print("平衡点：x'=0 -> x=0 或 y=al/be=%.4f ； y'=0 -> y=0 或 x=ga/de=%.4f" % (al/be, ga/de))
+for p in [(0.0, 0.0), (ga/de, al/be)]:
+    x, y = p
+    Jm = np.array([[al - be*y, -be*x], [de*y, -ga + de*x]])
+    print('  (%.4f, %.4f): J=%s  tr=%+.4f det=%+.4f  特征值=%s'
+          % (x, y, Jm.tolist(), Jm.trace(), np.linalg.det(Jm), np.round(np.linalg.eigvals(Jm), 6).tolist()))
+print()
+H = lambda x, y: de*x - ga*np.log(x) + be*y - al*np.log(y)
+print('首次积分 H(x,y) = %.2f x - %.2f ln x + %.2f y - %.2f ln y' % (de, ga, be, al))
+print('%-12s %-6s %-15s %-15s %-11s %s' % ('IC', 'T', 'H(0)', 'H(T)', '相对漂移', '周期'))
+drifts = []
+for ic, T in [([2.0, 3.5], 40.0), ([3.5, 2.0], 40.0), ([1.2, 1.5], 40.0), ([2.0, 8.0], 40.0)]:
+    sol = solve_ivp(lambda t, s: F(s), [0, T], ic, t_eval=np.linspace(0, T, 40000), rtol=1e-12, atol=1e-14)
+    x, y = sol.y[0], sol.y[1]
+    h0, h1 = H(x[0], y[0]), H(x[-1], y[-1])
+    idx = np.where((x[:-1] < ga/de) & (x[1:] >= ga/de))[0]
+    per = np.diff(sol.t[idx]).mean() if len(idx) > 2 else float('nan')
+    drifts.append(abs(h1-h0)/abs(h0))
+    print('%-12s %-6.0f %-15.9f %-15.9f %-11.2e %.6f' % (str(ic), T, h0, h1, drifts[-1], per))
+print()
+print('H 在 40 s 内的最大相对漂移 = %.2e（纯积分器舍入）' % max(drifts))
+print('=> 闭合轨道是真的守恒量水平线，')
+print('这是"非线性中心"，而不是 NB3 里那种 tr(J)=0 却螺旋发散的假中心。')
+print('区别在于：这里存在解析的首次积分；NB3 里没有。')` },
+    { code: `# 一族闭合轨道 + 时间历程（捕食者滞后于猎物）
+al, be, ga, de = 1.0, 0.5, 1.5, 0.75
+def F(s):
+    x, y = s
+    return [al*x - be*x*y, -ga*y + de*x*y]
+
+fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9))
+ax = axes[0]
+g = np.linspace(0.01, 7, 25); A, B = np.meshgrid(g, np.linspace(0.01, 9, 25))
+U = al*A - be*A*B; V = -ga*B + de*A*B
+ax.streamplot(A, B, U, V, density=1.2, color='0.86', linewidth=0.6, arrowsize=0.7)
+for ic, c in [([2.0, 3.5], '#1f77b4'), ([3.5, 2.0], '#2ca02c'), ([1.2, 1.5], '#ff7f0e'), ([2.0, 8.0], '#9467bd')]:
+    sol = solve_ivp(lambda t, s: F(s), [0, 60], ic, t_eval=np.linspace(0, 60, 8000), rtol=1e-11, atol=1e-13)
+    ax.plot(sol.y[0], sol.y[1], color=c, lw=1.8, label='IC = %s' % ic)
+ax.plot(0, 0, 'kx', ms=11, mew=2.4, label='鞍点 (0,0)')
+ax.plot(2, 2, 'o', color='#16a34a', ms=10, mec='k', label='中心 (2,2)')
+ax.set_xlim(0, 7); ax.set_ylim(0, 9); ax.grid(alpha=0.3); ax.legend(fontsize=8)
+ax.set_xlabel('猎物 x'); ax.set_ylabel('捕食者 y'); ax.set_title('闭合轨道连续成族：振幅由初值决定')
+
+ax = axes[1]
+T = 40.0
+sol = solve_ivp(lambda t, s: F(s), [0, T], [3.5, 2.0], t_eval=np.linspace(0, T, 4000), rtol=1e-11, atol=1e-13)
+ax.plot(sol.t, sol.y[0], label='猎物 x(t)', lw=1.8)
+ax.plot(sol.t, sol.y[1], label='捕食者 y(t)', lw=1.8)
+idx = np.where((sol.y[0][:-1] < 2) & (sol.y[0][1:] >= 2))[0]
+per = np.diff(sol.t[idx]).mean() if len(idx) > 2 else float('nan')
+pk_x = np.where((sol.y[0][1:-1] > sol.y[0][:-2]) & (sol.y[0][1:-1] >= sol.y[0][2:]))[0] + 1
+pk_y = np.where((sol.y[1][1:-1] > sol.y[1][:-2]) & (sol.y[1][1:-1] >= sol.y[1][2:]))[0] + 1
+lag = (sol.t[pk_y[0]] - sol.t[pk_x[0]]) if len(pk_x) and len(pk_y) else float('nan')
+for kk in idx[1:5]:
+    ax.axvline(sol.t[kk], color='0.75', ls=':')
+ax.set_xlabel('t'); ax.grid(alpha=0.3); ax.legend(fontsize=9)
+ax.set_title('时间历程：周期 = %.5f，捕食者峰值滞后 %.5f s（占周期 %.1f%%）' % (per, lag, 100*lag/per), fontsize=9.5)
+plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+| 初值 | $H(0)$ | $H(40)$ | 相对漂移 | 周期 |
+| --- | --- | --- | --- | --- |
+| $(2.0, 3.5)$ | $0.957516261$ | $0.957516261$ | $3.62\times10^{-12}$ | $5.266703$ |
+| $(3.5, 2.0)$ | $1.052708367$ | $1.052708367$ | $1.62\times10^{-12}$ | $5.335633$ |
+| $(1.2, 1.5)$ | $0.971052557$ | $0.971052557$ | $3.30\times10^{-12}$ | $5.276418$ |
+| $(2.0, 8.0)$ | $2.380837687$ | $2.380837687$ | $4.04\times10^{-12}$ | $6.332758$ |
+
+$H$ 的最大相对漂移 $4.04\times10^{-12}$，是积分器舍入量级。所以 $(2,2)$ 是**真中心**，轨道是 $H$ 的闭合水平线。
+
+但请看最后一列：四个初值的周期是 $5.2667$、$5.3356$、$5.2764$、$6.3328$——**周期依赖初值**。这正是第 8 节那张对照表的左列：一族连续闭轨，不是极限环。
+
+<Callout variant="warning">
+这个区别对建模有实际后果。Lotka-Volterra 的振荡振幅和周期**完全由初始种群数量决定**，任何扰动都会永久改变它们（轨道跳到另一条 $H$ 水平线上）。真实的生态振荡、化学振荡（如 BZ 反应）、心跳、时钟电路都是**极限环**：振幅和频率由系统参数决定，扰动后自己恢复。所以 Lotka-Volterra 的周期振荡是一个建模假象；把猎物方程换成带自限的 logistic 项 $\dot x = \alpha x(1-x/K) - \beta xy$，中心就会变成极限环（此时可以用 Poincaré-Bendixson 证明）。
+</Callout>
+
+### 案例三：被动动态行走——带碰撞的混合系统
+
+最后一个案例打破"连续光滑向量场"的假设。**无轮辐轮**（rimless wheel）是最简单的被动行走模型：一个有若干条刚性腿的轮子，在斜面上靠重力"走"下去，全程没有电机。
+
+它的动力学分两段：
+
+1. **飞行段**（连续）：单腿支撑，倒立摆方程，直到下一条腿触地。
+2. **碰撞**（离散）：完全塑性碰撞，角速度瞬间跳变。取腿间夹角 $2\alpha$，碰撞律为
+$$
+\omega^+ = \omega^-\cos(2\alpha_{\text{half}})
+$$
+在 $\alpha = 24^\circ$、坡度 $12^\circ$、$g=1$ 的设置下，系数实测为 $0.913545$——**每次落地损失 $8.6\%$ 的角速度**。
+
+<JupyterNotebook
+  title="Notebook 11：无轮辐轮的被动行走——带碰撞的混合系统极限环"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 混合系统（无轮辐轮 / 被动行走器）：步态极限环与 Poincare 映射乘子
+import math
+g, alpha_deg, slope_deg = 1.0, 24.0, 12.0
+alpha = alpha_deg*DEG; slope = slope_deg*DEG
+half = alpha/2.0
+cf = math.cos(2*half)
+
+def flight(w0, tmax=10.0):
+    # 从 th = -half 起，积分 th'' = g sin(th + slope)，直到 th = +half（下一次触地）
+    def ev(t, s):
+        return s[0] - half
+    ev.terminal = True; ev.direction = 1
+    sol = solve_ivp(lambda t, s: [s[1], g*np.sin(s[0] + slope)], [0, tmax], [-half, w0],
+                    events=ev, rtol=1e-11, atol=1e-13)
+    if sol.t_events[0].size == 0:
+        return None
+    return sol.y_events[0][0][1], sol.t_events[0][0]
+
+def P(w):
+    r = flight(w)
+    return None if r is None else (r[0]*cf, r[1])
+
+print('无轮辐轮：alpha = %.1f deg（腿间夹角），slope = %.1f deg（坡度）' % (alpha_deg, slope_deg))
+print('触地碰撞律 w+ = w- * cos(2*half) = w- * %.6f' % cf)
+print()
+try:
+    w_star = brentq(lambda w: P(w)[0] - w, 0.05, 8.0, xtol=1e-14)
+except Exception as e:
+    w_star = float('nan'); print('brentq failed:', e)
+if np.isfinite(w_star):
+    _, stride = P(w_star)
+    h = 1e-7
+    mult = (P(w_star+h)[0] - P(w_star-h)[0])/(2*h)
+    print('周期步态（极限环）：w- = %.9f rad/s' % w_star)
+    print('步周期 = %.9f s   ->  步频 = %.6f Hz' % (stride, 1/stride))
+    print('Poincare 映射乘子 dP/dw = %.9f' % mult)
+    print('|乘子| < 1  => 步态是稳定极限环；偏差每步乘 %.4f 倍' % abs(mult))
+    print('恢复到 1%% 所需步数 = %.2f 步' % (math.log(0.01)/math.log(abs(mult))))
+    print()
+    print('%-12s %-13s %-13s %-13s %s' % ('w-(0)', 'w-(1)', 'w-(2)', 'w-(10)', '收敛到'))
+    for f_ in [0.5, 0.8, 1.2, 1.8]:
+        seq = [w_star*f_]
+        for _ in range(10):
+            out = P(seq[-1])
+            if out is None:
+                break
+            seq.append(out[0])
+        print('%-12.6f %-13.6f %-13.6f %-13.6f %.6f'
+              % (seq[0], seq[1] if len(seq) > 1 else float('nan'),
+                 seq[2] if len(seq) > 2 else float('nan'),
+                 seq[10] if len(seq) > 10 else float('nan'), w_star))` },
+    { code: `# 蛛网图：步态极限环的几何图像
+g, alpha_deg, slope_deg = 1.0, 24.0, 12.0
+alpha = alpha_deg*DEG; slope = slope_deg*DEG
+half = alpha/2.0
+cf = np.cos(2*half)
+def Pw(w):
+    def ev(t, s):
+        return s[0] - half
+    ev.terminal = True; ev.direction = 1
+    sol = solve_ivp(lambda t, s: [s[1], g*np.sin(s[0]+slope)], [0, 12.0], [-half, w],
+                    events=ev, rtol=1e-11, atol=1e-13)
+    return sol.y_events[0][0][1]*cf if sol.t_events[0].size else float('nan')
+
+ws = np.linspace(0.4, 3.4, 80)
+Ps = np.array([Pw(x) for x in ws])
+w_star = brentq(lambda x: Pw(x)-x, 0.4, 3.4, xtol=1e-14)
+fig, ax = plt.subplots(figsize=(7.8, 5.8))
+ok = np.isfinite(Ps)
+ax.plot(ws[ok], Ps[ok], color='#1f77b4', lw=2.3, label='步态映射 P(w-)')
+ax.plot(ws, ws, 'k--', lw=1.2, label='恒等线')
+ax.plot(w_star, w_star, 'ro', ms=12, label='不动点 w* = %.5f' % w_star)
+cur = ws[8]
+for _ in range(16):
+    nxt = Pw(cur)
+    if not np.isfinite(nxt):
+        break
+    ax.plot([cur, cur], [cur, nxt], color='0.55', lw=0.9)
+    ax.plot([cur, nxt], [nxt, nxt], color='0.55', lw=0.9)
+    cur = nxt
+ax.set_xlabel('触地前角速度 w- (rad/s)'); ax.set_ylabel('触地后角速度 w- (rad/s)')
+ax.set_title('蛛网图：单调收敛到步态极限环（映射斜率 = %.4f，|斜率| < 1）' % ((Pw(w_star+1e-7)-Pw(w_star-1e-7))/2e-7))
+ax.grid(alpha=0.3); ax.legend(fontsize=9); ax.set_xlim(0.3, 3.5); ax.set_ylim(0.3, 3.5)
+plt.tight_layout(); plt.show()
+print('映射在不动点处的斜率 = %.6f' % ((Pw(w_star+1e-7)-Pw(w_star-1e-7))/2e-7))
+print('斜率为正且小于 1 -> 单调收敛，不振荡；若斜率落在 (-1, 0)，相邻两步会一高一低交替。')` }
+  ]}
+/>
+
+这个系统没有光滑向量场，谈不上 Jacobian，但相平面思路照样成立：**取碰撞前角速度 $\omega^-$ 作为一维 Poincaré 截面上的坐标**，一个步态就是一个不动点。实测：
+
+| 量 | 值 |
+| --- | --- |
+| 周期步态 $\omega^{-*}$ | $0.933954607$ rad/s |
+| 步周期 | $0.434789587$ s |
+| 步频 | $2.299963$ Hz |
+| Poincaré 映射乘子 $\mathrm dP/\mathrm d\omega$ | $0.834565304$ |
+
+乘子的绝对值小于 $1$，所以这条步态是**稳定极限环**：偏差每步乘 $0.8346$，恢复到 $1\%$ 需要 $25.46$ 步。蛛网图（cobweb）从四个不同起点出发——$0.466977$、$0.747164$、$1.120746$、$1.681118$——第 10 步分别到 $0.874666$、$0.905981$、$0.967047$、$1.092031$，全部收敛到 $0.933955$。
+
+映射斜率为**正且小于 1**，所以收敛是单调的，不会一高一低交替。若斜率落在 $(-1, 0)$，相邻两步就会交替过冲——这是判断步态"平滑还是抖动"的快速指标。
+
+<Callout variant="tip">
+工程要点有三条。第一，**混合系统的 Poincaré 截面要取在离散事件时刻**（这里是触地），而不是任意截面——这样映射才是良定义的一维/低维映射。第二，**稳定性可以完全来自几何与碰撞，不需要任何控制器**：这台"机器人"没有电机、没有传感器、没有计算，却能稳定行走。第三，乘子 $0.8346$ 直接给出**扰动恢复速率**（$25.5$ 步到 $1\%$），这是设计腿式机器人步态鲁棒性的定量指标——同样的量在第 10 节会以 Floquet 乘子的形式再次出现。
+</Callout>
+
+## 高维推广：Poincaré 截面与 Floquet 乘子
+
+Poincaré-Bendixson 只在二维自治系统里成立。三维自治系统（Lorenz、Chua）或**二维受迫**系统都可以混沌。受迫振子
+
+$$
+\ddot x + d\dot x - x + x^3 = A\cos\omega t
+$$
+
+状态是 $(x, \dot x, t)$，三维，而且非自治——相平面装不下它。
+
+但只要驱动是周期的，就有一个降维技巧：**同步截面**（stroboscopic section）。每经过一个驱动周期 $T_p = 2\pi/\omega$ 采样一次状态，得到一个二维映射
+
+$$
+P:\ (x_k, v_k) \longmapsto (x_{k+1}, v_{k+1})
+$$
+
+这叫 **Poincaré 映射**，截面点集的样子直接读出运动类型：
+
+- 周期-1（与驱动同周期）→ 截面上**一个点**；
+- 周期-$n$ → $n$ 个点；
+- 准周期 → 一条**闭合曲线**；
+- 混沌 → **一片有面积的区域**。
+
+<JupyterNotebook
+  title="Notebook 10（上）：受迫 Duffing 的同步截面与 Floquet 乘子"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 受迫 Duffing：三维自治流的同步（stroboscopic）Poincare 截面
+#   x'' + 0.15 x' - x + x^3 = A cos(w t)，双势阱 Duffing，w = 1，驱动周期 Tp = 2pi
+d, w = 0.15, 1.0
+Tp = 2*np.pi/w
+def step(s, A):
+    return solve_ivp(lambda t, z: [z[1], -d*z[1] + z[0] - z[0]**3 + A*np.cos(w*t)],
+                     [0, Tp], s, rtol=1e-10, atol=1e-12).y[:, -1]
+def section(A, ic, nper=600, nskip=500):
+    s = np.array(ic, float)
+    pts = []
+    for k in range(nper):
+        s = step(s, A)
+        if k >= nskip:
+            pts.append([s[0], s[1]])
+    return np.array(pts)
+
+A1, A2 = 1.5, 0.3
+p1 = section(A1, [0.5, 0.0])
+print('A = %.1f 的截面算完：%d 个点' % (A1, len(p1)))
+p2 = section(A2, [0.5, 0.0])
+print('A = %.1f 的截面算完：%d 个点' % (A2, len(p2)))
+print()
+
+w1 = float(np.ptp(p1[:, 0])); w2 = float(np.ptp(p2[:, 0]))
+fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.2))
+for ax, A, pts, ww in [(axes[0], A1, p1, w1), (axes[1], A2, p2, w2)]:
+    ax.plot(pts[:, 0], pts[:, 1], '.', ms=4.5, color='#1f77b4')
+    ax.set_xlabel('x 在 t = 2k pi 处'); ax.set_ylabel('v 在 t = 2k pi 处')
+    ax.set_title('A = %.1f : %d 个截面点，x 展宽 = %.2e' % (A, len(pts), ww), fontsize=10)
+    ax.set_xlim(-2.6, 2.6); ax.set_ylim(-3.2, 3.2); ax.grid(alpha=0.3)
+plt.tight_layout(); plt.show()
+
+print('A = %.1f : ptp(x) = %.3e, ptp(v) = %.3e' % (A1, w1, float(np.ptp(p1[:, 1]))))
+print('A = %.1f : ptp(x) = %.3e, ptp(v) = %.3e' % (A2, w2, float(np.ptp(p2[:, 1]))))
+print('展宽之比 = %.3e 倍' % (w2/w1))
+print('=> A = %.1f：%d 个截面点在 %.0e 量级内重合，运动是周期-1（截面退化为一个不动点）' % (A1, len(p1), w1))
+print('=> A = %.1f：%d 个截面点铺满一片二维区域，运动不是周期-1' % (A2, len(p2)))
+print()
+
+sA = np.array([0.5, 0.0]); sB = np.array([0.5 + 1e-9, 0.0])
+rec = {1, 5, 10, 20, 40, 80, 160, 250}
+print('A = %.1f 时，两条只差 1e-9 的轨道经过 k 个驱动周期后的距离：' % A2)
+for k in range(1, 251):
+    sA = step(sA, A2); sB = step(sB, A2)
+    if k in rec:
+        print('  k = %3d : |差| = %.4e' % (k, float(np.linalg.norm(sA - sB))))
+print('=> 距离从 1e-9 指数放大到 O(1) 后饱和：初值敏感性，这是混沌的操作性判据。')
+print()
+print('=> 二维相平面装不下受迫系统（状态是 (x, v, t) 三维，非自治）；')
+print('   按驱动周期取同步截面，就把三维流降回二维映射。')` },
+    { code: `# Floquet 乘子 = Poincare 映射 Jacobian 的特征值
+#   增广积分一次拿到 P(s) 与 DP(s)：状态取 [x, v, phi11, phi12, phi21, phi22]
+#   变分方程 phi' = At(t) phi，At(t) = [[0, 1], [1 - 3x^2, -d]]，phi(0) = I
+d, w = 0.15, 1.0
+Tp = 2*np.pi/w
+A = 1.5
+
+def aug(t, z):
+    x, v = z[0], z[1]
+    p11, p12, p21, p22 = z[2], z[3], z[4], z[5]
+    a21 = 1.0 - 3.0*x*x
+    return [v, -d*v + x - x**3 + A*np.cos(w*t),
+            p21, p22, a21*p11 - d*p21, a21*p12 - d*p22]
+def one_period(s0):
+    z0 = np.array([s0[0], s0[1], 1.0, 0.0, 0.0, 1.0])
+    z = solve_ivp(aug, [0, Tp], z0, rtol=1e-11, atol=1e-13).y[:, -1]
+    return z[:2], np.array([[z[2], z[3]], [z[4], z[5]]])
+def cheap(s0):
+    return solve_ivp(lambda t, z: [z[1], -d*z[1] + z[0] - z[0]**3 + A*np.cos(w*t)],
+                     [0, Tp], s0, rtol=1e-11, atol=1e-13).y[:, -1]
+
+# 周期-1 轨道是稳定的，所以先迭代映射收敛过去，再用 Newton 抛光。
+# 直接 Newton 会因为初值太远而发散（实测过：从 [0.5, 0] 纯 Newton 两步就跑到残差 3.4）。
+s = np.array([0.5, 0.0])
+for k in range(250):
+    s = cheap(s)
+    if (k+1) % 50 == 0:
+        print('  迭代 %3d 次：s = (%+.9f, %+.9f)，|P(s)-s| = %.3e'
+              % (k+1, s[0], s[1], float(np.linalg.norm(cheap(s) - s))))
+print()
+nit = 0
+for it in range(8):
+    Ps, DP = one_period(s)
+    r = Ps - s
+    nit = it + 1
+    if float(np.linalg.norm(r)) < 1e-13:
+        break
+    try:
+        ds = np.linalg.solve(DP - np.eye(2), r)
+    except np.linalg.LinAlgError:
+        break
+    if not np.all(np.isfinite(ds)) or float(np.linalg.norm(ds)) > 1.0:
+        break
+    s = s - ds
+Ps, DP = one_period(s)
+print('A = %.1f 的周期-1 轨道：s* = (%.9f, %.9f)' % (A, s[0], s[1]))
+print('残差 |P(s*) - s*| = %.3e（迭代 250 次 + Newton %d 步）' % (float(np.linalg.norm(Ps - s)), nit))
+print('映射 Jacobian DP（增广变分积分）=')
+print(np.array2string(DP, precision=8))
+print()
+
+h = 1e-6
+DF = np.zeros((2, 2))
+for j in range(2):
+    sp = s.copy(); sp[j] += h
+    sm = s.copy(); sm[j] -= h
+    DF[:, j] = (one_period(sp)[0] - one_period(sm)[0])/(2*h)
+print('交叉验证 1：有限差分 DP 与变分 DP 的最大元素差 = %.3e' % float(np.abs(DF - DP).max()))
+det_exact = np.exp(-d*Tp); det_num = float(np.linalg.det(DP))
+print('交叉验证 2：det(DP) 数值 = %.10f，Liouville 解析值 exp(-d*Tp) = %.10f，相对误差 = %.2e'
+      % (det_num, det_exact, abs(det_num/det_exact - 1)))
+print()
+
+tr = float(DP[0, 0] + DP[1, 1]); disc = tr*tr - 4*det_num
+fl = np.linalg.eigvals(DP); m = float(np.abs(fl).max())
+print('tr(DP) = %+.8f   det(DP) = %.8f   tr^2 - 4det = %+.8f' % (tr, det_num, disc))
+print('Floquet 乘子 = %s   （%s）' % (np.round(fl, 8).tolist(),
+      '共轭复数对' if disc < 0 else '两个实数'))
+print('max |乘子| = %.8f  ->  %s' % (m, '单位圆内：周期-1 轨道渐近稳定' if m < 1 else '单位圆外：不稳定'))
+if disc < 0:
+    print('复数对时 |mu1| = |mu2| = sqrt(det) = %.8f，与实测之差 = %.2e'
+          % (np.sqrt(det_num), abs(np.sqrt(det_num) - m)))
+    print('辐角 = %.6f rad -> 扰动要绕 %.1f 个驱动周期才回到同方向'
+          % (abs(float(np.angle(fl[0]))), 2*np.pi/abs(float(np.angle(fl[0])))))
+print('偏差每个驱动周期乘 %.4f 倍；衰减到 1%% 需要 %.1f 个周期 = %.2f s'
+      % (m, np.log(0.01)/np.log(m), np.log(0.01)/np.log(m)*Tp))` }
+  ]}
+/>
+
+Notebook 10 的第一个 cell 对 $A=1.5$ 与 $A=0.3$ 各取 100 个截面点：
+
+| $A$ | $\operatorname{ptp}(x)$ | $\operatorname{ptp}(v)$ | 判读 |
+| --- | --- | --- | --- |
+| $1.5$ | $1.688\times10^{-14}$ | $7.150\times10^{-14}$ | 100 个点在 $10^{-14}$ 量级内重合 → **周期-1** |
+| $0.3$ | $2.752\times10^{0}$ | $1.666\times10^{0}$ | 铺满一片二维区域 → **不是周期-1** |
+
+展宽之比 $1.631\times10^{14}$。反直觉的地方在于：**驱动更弱（$A=0.3$）时反而更乱**。原因是这个系统的势 $V(x) = -x^2/2 + x^4/4$ 是双阱的，弱驱动不足以规律地翻越中央势垒，轨道在两个阱之间以不可预测的方式跳跃；强驱动则把它牢牢锁在一个大振幅周期轨道上。
+
+"看起来乱"不是判据。Notebook 补了一个**可操作的混沌测试**：两条只差 $10^{-9}$ 的轨道，在 $A=0.3$ 下经过 $k$ 个驱动周期后的距离：
+
+| $k$ | $1$ | $5$ | $10$ | $20$ | $40$ | $80$ | $160$ | $250$ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 距离 | $2.07\times10^{-10}$ | $3.94\times10^{-9}$ | $2.00\times10^{-7}$ | $1.64\times10^{-3}$ | $5.47\times10^{-1}$ | $2.67$ | $0.902$ | $1.14$ |
+
+从 $10^{-9}$ 指数放大到 $O(1)$，然后**饱和**（饱和是因为吸引子有界）。取两端 $k=1$ 与 $k=40$ 算平均放大因子：$(5.4734\times10^{-1} / 2.0662\times10^{-10})^{1/39} = 1.74$，对应最大 Lyapunov 指数约 $+0.56$ /驱动周期——**正的** Lyapunov 指数，这是混沌的定义性特征。
+
+现在回到 $A=1.5$ 的周期-1 轨道，问它稳不稳。答案是 **Floquet 乘子**：Poincaré 映射在不动点处的 Jacobian $DP(s^*)$ 的特征值。计算方法有两种，Notebook 两种都用并互相核对：
+
+- **有限差分**：对 $P$ 的每个分量做中心差分。便宜，但精度受步长限制。
+- **增广变分积分**：把状态扩成六维 $[x, v, \phi_{11}, \phi_{12}, \phi_{21}, \phi_{22}]$，其中 $\dot\Phi = A(t)\Phi$，$A(t) = \begin{bmatrix}0&1\\1-3x^2&-d\end{bmatrix}$，$\Phi(0)=I$。**一次积分同时得到 $P(s)$ 和 $DP(s)$**，精度到积分器容差。
+
+实测（$A=1.5$，先迭代映射 250 次收敛过去，再用 Newton 抛光 2 步）：
+
+$$
+s^* = (1.977150817,\ 1.019036175), \qquad \lVert P(s^*) - s^*\rVert = 4.885\times10^{-15}
+$$
+
+$$
+DP = \begin{bmatrix}-2.26372903 & -0.54764698\\ 9.03200724 & 2.01291332\end{bmatrix}
+$$
+
+$$
+\tau = -0.25081570,\quad \det = 0.38966114,\quad \Delta = -1.49573603 \;\Rightarrow\; \mu = -0.12540785 \pm 0.61150144j
+$$
+
+$$
+\max\lvert\mu\rvert = 0.62422843 < 1 \;\Rightarrow\; \text{周期-1 轨道渐近稳定}
+$$
+
+两道交叉验证都通过：有限差分 $DP$ 与变分 $DP$ 的最大元素差 $8.358\times10^{-9}$；$\det(DP)$ 数值 $0.3896611374$ 对解析值 $0.3896611374$，相对误差 $1.54\times10^{-11}$。
+
+那个解析值来自本节最有用的恒等式。
+
+<Callout variant="tip">
+**Liouville 公式**：对 $\dot{\boldsymbol x} = \boldsymbol f(\boldsymbol x, t)$ 的变分方程 $\dot\Phi = \frac{\partial \boldsymbol f}{\partial \boldsymbol x}\Phi$，有
+$$
+\det\Phi(T) = \det\Phi(0)\cdot\exp\!\left(\int_0^T \operatorname{tr}\frac{\partial \boldsymbol f}{\partial \boldsymbol x}\,\mathrm dt\right)
+$$
+这里 $A(t) = \begin{bmatrix}0&1\\1-3x^2&-d\end{bmatrix}$，迹恒为 $-d$，于是
+$$
+\boxed{\det(DP) = e^{-d\,T_p}}
+$$
+**与 $A$ 无关，与势函数形状无关。** 代入 $d=0.15$，$T_p=2\pi$：$e^{-0.15\times2\pi} = 0.3896611374$。
+</Callout>
+
+立刻得到一个强推论：当乘子是共轭复数对时，$\lvert\mu_1\rvert = \lvert\mu_2\rvert = \sqrt{\det(DP)} = e^{-dT_p/2}$。实测 $\sqrt{\det} = 0.62422843$，与 $\max\lvert\mu\rvert$ 之差 $3.33\times10^{-16}$（机器精度）。
+
+也就是说：**在复数对分支上，驱动幅值 $A$ 根本改变不了乘子的模，只能改变它的辐角。** 实测辐角 $1.773073$ rad，意味着扰动要绕 $2\pi/1.773073 = 3.5$ 个驱动周期才回到同一方向；偏差每周期乘 $0.6242$，衰减到 $1\%$ 需要 $\ln(0.01)/\ln(0.6242) = 9.8$ 个周期 $= 61.40$ s。
+
+这个结论直接否掉了一种很常见的错误推理——"$A$ 增大，所以乘子模增大，所以失稳"。下一节用延拓实测证明它错在哪。
+
+## 分岔：相图的拓扑突变
+
+**分岔**是参数连续变化时相图发生的**拓扑**突变：平衡点个数变了、稳定性换了、闭轨诞生或消失。余维一分岔只有几种，判据全在乘子上。
+
+要看清楚 $A$ 到底改变了什么，需要沿**同一条**周期轨道分支跟踪。直接对每个 $A$ 独立求解会跳到不同分支上（这个系统存在多个共存的周期轨道），所以用**延拓**（continuation）：上一个 $A$ 的解作为下一个 $A$ 的初值。
+
+<JupyterNotebook
+  title="Notebook 10（下）：沿周期-1 分支延拓，把判别式变号点与失稳点分开"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+np.set_printoptions(precision=6, suppress=True)
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+DEG = np.pi / 180.0`}
+  cells={[
+    { code: `# 延拓（continuation）：沿同一条周期-1 分支跟踪驱动幅值 A 的变化
+#   用上一个 A 的解作为下一个 A 的初值，这样跟住的是同一条分支
+d, w = 0.15, 1.0
+Tp = 2*np.pi/w
+
+def make(A):
+    def aug(t, z):
+        x, v = z[0], z[1]
+        p11, p12, p21, p22 = z[2], z[3], z[4], z[5]
+        a21 = 1.0 - 3.0*x*x
+        return [v, -d*v + x - x**3 + A*np.cos(w*t),
+                p21, p22, a21*p11 - d*p21, a21*p12 - d*p22]
+    def op(s0):
+        z0 = np.array([s0[0], s0[1], 1.0, 0.0, 0.0, 1.0])
+        z = solve_ivp(aug, [0, Tp], z0, rtol=1e-10, atol=1e-12).y[:, -1]
+        return z[:2], np.array([[z[2], z[3]], [z[4], z[5]]])
+    def cp(s0):
+        return solve_ivp(lambda t, z: [z[1], -d*z[1] + z[0] - z[0]**3 + A*np.cos(w*t)],
+                         [0, Tp], s0, rtol=1e-10, atol=1e-12).y[:, -1]
+    return op, cp
+
+def find_periodic(A, s_init, n_iter=150, n_newton=6):
+    op, cp = make(A)
+    s = np.array(s_init, float)
+    for _ in range(n_iter):
+        s = cp(s)
+    for _ in range(n_newton):
+        Ps, DP = op(s)
+        r = Ps - s
+        if float(np.linalg.norm(r)) < 1e-13:
+            break
+        try:
+            ds = np.linalg.solve(DP - np.eye(2), r)
+        except np.linalg.LinAlgError:
+            break
+        if not np.all(np.isfinite(ds)) or float(np.linalg.norm(ds)) > 1.0:
+            break
+        s = s - ds
+    Ps, DP = op(s)
+    return s, DP, float(np.linalg.norm(Ps - s))
+
+print('Liouville：det(DP) = exp(-d*Tp) = %.8f，与 A 无关' % np.exp(-d*Tp))
+print('乘子若为共轭复数对，则 |mu| = sqrt(det) = %.8f，同样与 A 无关' % np.exp(-d*Tp/2))
+print()
+print('%-6s %-22s %-11s %-11s %-11s %-10s %-9s %s'
+      % ('A', '不动点 (x, v)', 'tr(DP)', 'det(DP)', 'tr^2-4det', 'max|mu|', '残差', '结论'))
+
+As = np.arange(0.6, 3.01, 0.2)
+s_prev = np.array([1.0, 0.5])
+rows = []
+for A in As:
+    s, DP, res = find_periodic(A, s_prev)
+    s_prev = s
+    tr = float(DP[0, 0] + DP[1, 1]); det = float(np.linalg.det(DP)); disc = tr*tr - 4*det
+    fl = np.linalg.eigvals(DP); m = float(np.abs(fl).max())
+    if res > 1e-8:
+        verdict = '延拓失败（残差 %.1e）' % res
+    elif m < 1:
+        verdict = '稳定（%s）' % ('复数对' if disc < 0 else '实乘子')
+    else:
+        verdict = '不稳定（%s）' % ('复数对' if disc < 0 else '实乘子')
+    rows.append((A, tr, det, disc, m, res, verdict, s.copy()))
+    print('%-6.2f (%+8.5f,%+8.5f) %-11.6f %-11.8f %-+11.4f %-10.6f %-9.1e %s'
+          % (A, s[0], s[1], tr, det, disc, m, res, verdict))
+
+print()
+good = [r for r in rows if r[5] <= 1e-8]
+trs = np.array([r[1] for r in good]); dets = np.array([r[2] for r in good])
+discs = np.array([r[3] for r in good]); ms = np.array([r[4] for r in good])
+print('延拓成功 %d / %d 个 A' % (len(good), len(rows)))
+print('det(DP)：min = %.10f, max = %.10f，跨度 %.2e（纯舍入，验证 Liouville）'
+      % (dets.min(), dets.max(), dets.max() - dets.min()))
+print('tr(DP)：min = %+.6f, max = %+.6f，跨度 %.6f（这才是 A 真正改变的量）'
+      % (trs.min(), trs.max(), trs.max() - trs.min()))
+print('max|mu|：min = %.6f, max = %.6f' % (ms.min(), ms.max()))
+cx = ms[discs < 0]
+if cx.size:
+    print('复数对分支上 max|mu|：min = %.8f, max = %.8f，sqrt(det) = %.8f'
+          % (cx.min(), cx.max(), np.exp(-d*Tp/2)))
+sgn = np.sign(discs)
+flip = int(np.where(np.diff(sgn) != 0)[0].size)
+print('判别式 tr^2-4det 沿分支变号 %d 次（乘子在实数与共轭复数之间切换）' % flip)
+print('全程 max|mu| < 1 的 A 个数 = %d / %d' % (int((ms < 1).sum()), len(good)))
+print()
+
+# 二分细化：把「判别式由负变正」的 A 夹到 1e-4 以内（延拓基点始终取区间左端）
+lo = hi = None
+for i in range(len(rows) - 1):
+    a0, a1 = rows[i], rows[i+1]
+    if a0[5] <= 1e-8 and a1[5] <= 1e-8 and a0[3] < 0 <= a1[3]:
+        lo, hi, s_lo = float(a0[0]), float(a1[0]), a0[7].copy()
+        break
+if lo is not None:
+    print('在 A = %.2f（复数对）与 A = %.2f（实乘子）之间二分细化：' % (lo, hi))
+    for _ in range(14):
+        mid = 0.5*(lo + hi)
+        sm, DPm, resm = find_periodic(mid, s_lo)
+        trm = float(DPm[0, 0] + DPm[1, 1]); detm = float(np.linalg.det(DPm))
+        dm = trm*trm - 4*detm
+        if resm <= 1e-8 and dm < 0:
+            lo, s_lo = mid, sm.copy()
+        else:
+            hi = mid
+    sm, DPm, resm = find_periodic(hi, s_lo)
+    flm = np.linalg.eigvals(DPm)
+    mm = float(np.abs(flm).max())
+    print('  判别式变号点 A 位于 [%.5f, %.5f]，区间宽度 %.2e' % (lo, hi, hi - lo))
+    print('  A = %.5f（刚变号）：残差 %.1e，max|mu| = %.6f，sqrt(det) = %.6f -> %s'
+          % (hi, resm, mm, np.exp(-d*Tp/2),
+             '仍稳定' if mm < 1 else '已失稳'))
+    print('  => 判别式变号只是让乘子由共轭复数对变成两个实数（焦点型 -> 结点型），')
+    print('     此时 |mu| 略微离开 sqrt(det) 但仍在单位圆内，轨道还没有失稳。')
+
+    # 再二分：定位 max|mu| 真正穿越 1 的 A（周期-1 轨道失稳 = 分岔）
+    lo2, hi2 = hi, 2.60
+    s_lo2 = find_periodic(lo2, s_lo)[0]
+    for _ in range(14):
+        mid = 0.5*(lo2 + hi2)
+        s_mid, DP_mid, res_mid = find_periodic(mid, s_lo2)
+        mm2 = float(np.abs(np.linalg.eigvals(DP_mid)).max())
+        if res_mid <= 1e-8 and mm2 < 1:
+            lo2, s_lo2 = mid, s_mid.copy()
+        else:
+            hi2 = mid
+    s_h, DP_h, res_h = find_periodic(hi2, s_lo2)
+    fl_h = np.linalg.eigvals(DP_h)
+    big = float(fl_h[int(np.argmax(np.abs(fl_h)))])
+    print('  max|mu| = 1 的 A 位于 [%.5f, %.5f]，区间宽度 %.2e' % (lo2, hi2, hi2 - lo2))
+    print('  A = %.5f（失稳一侧）：残差 %.1e，乘子 = %s' % (hi2, res_h, np.round(fl_h, 6).tolist()))
+    print('  冲出单位圆的乘子 = %+.6f，它是从 %s 穿出去的' % (big, '-1（负实轴）' if big < 0 else '+1（正实轴）'))
+    if big < 0:
+        print('  => 乘子穿越 -1 是周期倍化（flip）分岔：周期-1 轨道失稳，诞生周期-2 轨道。')
+    else:
+        print('  => 乘子穿越 +1 是鞍-结点型分岔：周期-1 轨道与另一条轨道碰撞后消失。')
+    print('     此后（A = 2.8, 3.0）延拓不再收敛，这条周期-1 分支已经终结。')
+else:
+    print('本次扫描区间内判别式未发生「负 -> 正」的变号，未定位到失稳点。')
+print()
+print('=> 结论由测量给出：沿这条分支，det(DP) 恒定（Liouville），A 只改变 tr(DP)。')
+print('   乘子是共轭复数对时 |mu| = sqrt(det) = exp(-d*Tp/2)，与 A 完全无关；')
+print('   失稳只能发生在判别式变号、乘子转为实数之后，由一个实乘子穿出单位圆完成。')` }
+  ]}
+/>
+
+延拓从 $A=0.6$ 走到 $A=3.0$，步长 $0.2$，13 个点里 11 个收敛（残差 $\le 5.7\times10^{-14}$）：
+
+| $A$ | 不动点 $(x, v)$ | $\operatorname{tr}(DP)$ | $\det(DP)$ | $\Delta=\tau^2-4\det$ | $\max\lvert\mu\rvert$ | 结论 |
+| --- | --- | --- | --- | --- | --- | --- |
+| $0.60$ | $(+1.47804,+1.40722)$ | $-1.041008$ | $0.38966114$ | $-0.4749$ | $0.624228$ | 稳定（复数对） |
+| $1.00$ | $(+1.78446,+1.17872)$ | $-1.171434$ | $0.38966114$ | $-0.1864$ | $0.624228$ | 稳定（复数对） |
+| $1.60$ | $(+2.00745,+0.99889)$ | $+0.015780$ | $0.38966114$ | $-1.5584$ | $0.624228$ | 稳定（复数对） |
+| $2.00$ | $(+2.11552,+0.94259)$ | $+1.242417$ | $0.38966114$ | $-0.0150$ | $0.624228$ | 稳定（复数对） |
+| $2.40$ | $(+2.13858,-1.60861)$ | $-1.105386$ | $0.38966114$ | $-0.3368$ | $0.624228$ | 稳定（复数对） |
+| $2.60$ | $(+1.15234,+2.45214)$ | $-2.485685$ | $0.38966114$ | $+4.6200$ | $2.317550$ | **不稳定（实乘子）** |
+| $2.80$ | — | — | $0.38966114$ | — | — | 延拓失败，残差 $2.1$ |
+| $3.00$ | — | — | $0.38966114$ | — | — | 延拓失败，残差 $2.7$ |
+
+两个汇总数字，它们是本节的核心：
+
+$$
+\det(DP):\ \min = \max = 0.3896611373,\ \text{跨度 } 1.67\times10^{-11}\ \text{（纯舍入）}
+$$
+
+$$
+\operatorname{tr}(DP):\ \min = -2.485685,\ \max = +1.242417,\ \text{跨度 } 3.728103
+$$
+
+**$A$ 从 $0.6$ 扫到 $2.6$，$\det(DP)$ 一动不动，$\operatorname{tr}(DP)$ 变了 $3.73$。** Liouville 公式在整条分支上被验证到 $10^{-11}$。所以"复数对分支上 $\max\lvert\mu\rvert$ 恒为 $0.624228$"不是巧合而是必然——实测复数对分支上 $\max\lvert\mu\rvert$ 的 $\min$ 和 $\max$ 都是 $0.62422843$，与 $\sqrt{\det}$ 逐位相同。
+
+于是失稳的路径被完全确定：$A$ 必须先让 $\Delta$ 变号（乘子从共轭复数对变成两个实数），然后其中一个实乘子才能穿出单位圆。Notebook 用两次二分把这两个时刻分开。
+
+**第一次二分：判别式变号点。** $A \in [2.42023,\ 2.42024]$，区间宽度 $1.22\times10^{-5}$。在 $A=2.42024$ 处残差 $9.1\times10^{-15}$，$\max\lvert\mu\rvert = 0.631093$，$\sqrt{\det}=0.624228$。
+
+<Callout variant="warning">
+**$\Delta = 0$ 不是分岔。** 实测：判别式变号处 $\max\lvert\mu\rvert = 0.631093$，仍然稳稳地在单位圆内。这里发生的只是 Poincaré 映射由**焦点型变成结点型**（扰动衰减从"旋转着衰减"变成"单调衰减"），拓扑结构没有变化。对照第 4 节的迹-行列式平面：$\Delta=0$ 那条抛物线只是分类的边界，**不是**分岔线；真正的分岔线是 $\delta=0$（鞍-结）和 $\tau=0$（Hopf）。
+</Callout>
+
+**第二次二分：$\max\lvert\mu\rvert = 1$。** $A \in [2.44026,\ 2.44027]$，区间宽度 $1.10\times10^{-5}$。在 $A=2.44027$ 处残差 $4.4\times10^{-15}$，乘子为
+
+$$
+\mu_1 = -0.389618, \qquad \mu_2 = -1.000112
+$$
+
+冲出单位圆的是 $\mu_2$，而它是从 **$-1$**（负实轴）穿出去的，不是 $+1$。
+
+$$
+\mu = -1 \;\Longrightarrow\; \textbf{周期倍化（flip）分岔}
+$$
+
+周期-1 轨道失稳，同时诞生一条周期-2 轨道。这也解释了延拓为什么在 $A=2.8,\ 3.0$ 失败：**这条周期-1 分支已经终结**，不动点求解器找的是周期-1 解，而分岔之后存在的是周期-2 解（在 $P$ 下是两个点，在 $P^2$ 下才是不动点）。
+
+<Callout variant="tip">
+一个漂亮的自洽检查：$\mu_1\mu_2$ 必须等于 $\det(DP)$。实测 $(-0.389618)\times(-1.000112) = 0.3896616$，而 Liouville 给 $0.3896611374$——吻合到 $5\times10^{-7}$。更强的版本：若 $\mu_1$ 恰好为 $-1$，则 $\mu_2 = -\det = -0.389661$，与实测的 $-0.389618$ 相差 $4.3\times10^{-5}$，正好对应"我们已经越过分岔点 $10^{-5}$"。**两个完全独立的量（数值特征值与解析 Liouville 值）互相锁定**，这比分岔点本身的小数点后五位更值得相信。
+</Callout>
+
+余维一分岔速查表：
+
+| 分岔 | 乘子穿越位置 | 相图变化 | 迹-行列式平面上的分岔线 |
+| --- | --- | --- | --- |
+| 鞍-结（saddle-node） | $\mu = +1$ | 一对平衡点（或一对周期轨道）产生/湮灭 | $\det = 0$ |
+| 周期倍化（flip） | $\mu = -1$ | 周期轨道周期翻倍，通往混沌的典型路径 | 连续系统无直接对应；映射的 $\det$ 越过某阈值 |
+| Hopf / Neimark-Sacker | $\lvert\mu\rvert = 1$ 且为复数对 | 平衡点失稳并生出一条闭轨（离散情形是不变环） | $\tau = 0,\ \det > 0$ |
+| 同宿（homoclinic） | — | 鞍点的 $W^s$ 与 $W^u$ 相接，吸引域边界突然重组 | 非局部，迹-行列式平面看不出来 |
+
+**本课实测到的是第二种。** 从 $A=2.44$ 的 flip 出发继续加驱动，会经历一系列周期倍化（周期 2、4、8……）最终进入混沌——这正是第 10 节 $A=0.3$ 那个铺满二维区域的截面图的来历（注意 $A=0.3$ 处的混沌吸引子不属于这条延拓分支，双阱系统在不同 $A$ 区间有多条共存分支）。
+
+## 局限性讨论
+
+诚实地列出这套方法的边界。
+
+**1. 只适用于二维自治系统。** 三维自治系统的 $\omega$-极限集可以是奇怪吸引子，Poincaré-Bendixson 失效（第 10 节的受迫 Duffing 实测到正 Lyapunov 指数）。二维受迫系统可以用同步截面降成二维映射，但那已经是**离散映射**理论，工具换成 Floquet 乘子、蛛网图、倍化级联——相平面的直观（向量场、nullcline、流线）大部分不再可用。
+
+**2. 线性化只在双曲点局部有效。** Notebook 3 是最硬的反例：三个 Jacobian 逐位相同的系统，一个收敛、一个中心、一个有限时间爆炸。任何 $\operatorname{tr} J \approx 0$ 或 $\det J \approx 0$ 的设计都不能靠特征值判断。
+
+**3. 局部邻域的大小是未知的。** Hartman-Grobman 保证"存在一个邻域"，但不告诉你多大。工程上这意味着：线性化结论只在"小信号"下可信，而"小"是多少必须数值验证（第 6 节的逃逸阈值就是这种验证）。
+
+**4. 高维吸引域画不出来。** $n$ 维系统的吸引域边界是 $n-1$ 维曲面，只能看切片。第 7 节在二维里已经需要"沿分界线法向偏移 $10^{-4}$"这种精细操作，高维情形没有廉价替代。
+
+**5. 对参数不鲁棒。** 相图是**某个参数值下**的图像。参数漂移跨过分岔线，拓扑结构突变（第 11 节实测：$A$ 从 $2.44026$ 到 $2.44027$，只差 $10^{-5}$，周期轨道就失稳）。相平面分析回答"这个参数下会怎样"，不回答"参数变多少会出事"——后者是鲁棒性的问题（见 [鲁棒性概念](/robust/robustness-concept)）。
+
+**6. 数值陷阱，必须逐条防。**
+
+- **伪极限环**：积分器的能量误差不对称时，会画出根本不存在的闭合轨道。防御方法是**守恒量检查**（Notebook 9 用 $H$ 的漂移 $4\times10^{-12}$ 证明闭轨是真的）或 **Poincaré 截面检查**（Notebook 10 用 $\operatorname{ptp}=1.7\times10^{-14}$ 证明周期-1 是真的）。任何"我看到一个极限环"的断言都应该配一道这样的核对。
+- **轨迹相交的假象**：步长太大时流线会交叉，而理论上它们不能。这是积分器精度不足的直接信号。
+- **分界线附近的初值**：Notebook 5 实测 $\pm10^{-4}$ 的法向偏移就翻转归宿。在这类区域里"会不会逃逸"本质上不可数值判定，只能给出概率或区间。
+- **延拓跳分支**：多个共存吸引子时，独立求解会随机落到不同分支上。必须用延拓（上一点的解做初值）才能跟住一条分支——这是 Notebook 10 第三个 cell 之所以那样写的原因。
+- **延拓失败是信息，不是错误**：$A=2.8,\ 3.0$ 的残差 $2.1$ 和 $2.7$ 告诉你分支已经终结（分岔发生了），而不是"求解器坏了"。
+
+**7. 混合系统需要额外结构。** Notebook 11 的被动行走器没有光滑向量场，相平面方法只在"把截面取在碰撞时刻"之后才能用。带饱和、死区、切换的系统同理：先写出离散事件的映射，再谈不动点和乘子。
+
+## 小结
+
+- **相平面 = 消去时间**。换来的是全局几何（从哪到哪）和轨迹不相交的唯一性，付出的是时间尺度信息。$\mathrm dx_2/\mathrm dx_1 = f_2/f_1$。
+- **nullcline 交点就是平衡点**，nullcline 骨架决定箭头方向，纸上就能画。注意 nullcline 上流是切向的，只有交点静止。
+- **分类只需三个数**：$\tau=\operatorname{tr}J$、$\delta=\det J$、$\Delta=\tau^2-4\delta$。2000 个随机矩阵抽查，0 个不一致。与控制术语的对应是 $\tau=-2\zeta\omega_n$，$\delta=\omega_n^2$。
+- **Hartman-Grobman 只在双曲点成立**。$\det J=0$ 或（$\delta>0$ 且 $\tau=0$）时线性化可以完全错——Notebook 3 的三个系统 Jacobian 逐位相同，行为分别是收敛、真中心、$t=10.20$ 有限时间爆炸。判"中心"真伪必须另找首次积分或 Lyapunov 函数。
+- **势函数给能量判据，但能量判据有条件**：$E<\Delta V$ 只在初值位于势阱内侧时有效。Duffing 手算例中 $x_0=2.5$ 的 $E=1.171875<1.25$ 却逃逸，因为它已经在坝外。
+- **鞍点的稳定流形 $W^s$ 就是吸引域边界**。$W^u$ 沿不稳定特征方向正向积分，$W^s$ 沿稳定特征方向**反向**积分。实测 $\pm10^{-4}$ 的法向偏移翻转归宿。
+- **Poincaré-Bendixson**：有界、正向不变、**不含平衡点**的区域里必有闭轨。有平衡点时要**挖掉它**、改用环形区域。二维自治系统不会有混沌。
+- **极限环是孤立闭轨**，振幅由系统参数决定；线性中心是一族连续闭轨，振幅由初值决定。Van der Pol 五个初值收敛到峰峰值差 $3\times10^{-6}$ 的同一条环，Lotka-Volterra 四个初值给出四个不同周期（$5.27\sim6.33$）。
+- **高维/受迫用 Poincaré 截面 + Floquet 乘子**。截面点集的维度直接读出运动类型；乘子是 $DP(s^*)$ 的特征值，用增广变分积分一次算出 $P$ 和 $DP$。
+- **Liouville 公式钉死 $\det(DP)=e^{-dT_p}$**，与驱动幅值和势函数都无关。推论：复数对分支上 $\lvert\mu\rvert=e^{-dT_p/2}$ 恒定，$A$ 只能改变辐角。实测 $\det$ 沿整条分支跨度 $1.67\times10^{-11}$，$\tau$ 跨度 $3.728103$。
+- **分岔看乘子穿越位置**：$+1$ 鞍-结，$-1$ 周期倍化，复数对穿单位圆 Hopf/Neimark-Sacker。实测受迫 Duffing 在 $A=2.44027$ 处 $\mu=-1.000112$，是 flip 分岔。而 $\Delta=0$（$A=2.42024$，$\max\lvert\mu\rvert=0.631093$）**不是**分岔，只是焦点型到结点型的转换。
+- **每个"我看到了 X"都要配一道独立核对**：守恒量漂移、Liouville 恒等式、有限差分对变分、解析渐近式对数值积分。本课的每一处断言都这样验过。
+
+## 习题
+
+**习题 1（迹-行列式分类）** 对下列四个 Jacobian，用 $\tau$、$\delta$、$\Delta=\tau^2-4\delta$ 三个数分类平衡点，并求出特征值核对。指出哪些是双曲的。
+
+$$
+(a)\ J=\begin{bmatrix}-3&1\\-2&0\end{bmatrix}\quad
+(b)\ J=\begin{bmatrix}0&1\\-4&-0.4\end{bmatrix}\quad
+(c)\ J=\begin{bmatrix}1&2\\3&0\end{bmatrix}\quad
+(d)\ J=\begin{bmatrix}0&1\\-9&0\end{bmatrix}
+$$
+
+**习题 2（线性化失效的判定）** 考虑单参数族
+
+$$
+\dot x_1 = -x_2 + \alpha x_1^3, \qquad \dot x_2 = x_1 + \alpha x_2^3
+$$
+
+(a) 求 $J(0)$，说明为什么线性化无法判定原点类型。
+(b) 计算 $\dot r$（$r^2=x_1^2+x_2^2$），并用它的符号对 $\alpha<0$、$\alpha=0$、$\alpha>0$ 三种情形分别下结论。
+(c) 对 $\alpha>0$，利用 $x_1^4+x_2^4 \ge r^4/2$ 证明轨道在有限时间内爆破，并给出爆破时刻 $t^*$ 的一个上界。
+
+**习题 3（Poincaré-Bendixson 的完整论证）** 系统
+
+$$
+\dot x_1 = x_2, \qquad \dot x_2 = -x_1 + x_2(1 - x_1^2 - x_2^2)
+$$
+
+(a) 证明 $r=1$ 是不变集，并求该闭轨上的 $\dot\theta$ 与精确周期。
+(b) 求 $J(0)$ 并分类。
+(c) 取环域 $0.5\le r\le1.5$，说明为什么必须"挖掉原点"才能用 Poincaré-Bendixson。
+(d) 在 $r=0.5$ 上找出 $\dot r = 0$ 的点，并说明这为什么不影响"$0.5\le r\le1.5$ 正向不变"的结论。
+
+**习题 4（逃逸阈值与阻尼无关性）** 对 $\ddot x + b\dot x + x - 0.2x^3 = 0$：
+
+(a) 求全部平衡点并分类。
+(b) 求势函数 $V(x)$、势垒高度 $\Delta V$，并说明为什么这不是双势阱系统。
+(c) 证明从 $(x_0,0)$ 出发的逃逸阈值是 $x_0=\sqrt5$，且方程 $V(x_0)=\Delta V$ 有**二重根**；由此解释为什么阈值与 $b$ 无关。
+(d) 解释为什么 $x_0=2.5$ 处 $E=1.171875<\Delta V=1.25$ 却仍然逃逸。
+(e) 从 $(0,v_0)$ 出发时阈值为什么依赖 $b$？实测 $b=0.5$ 时 $v_0^{\text{crit}}=2.378738$，而无阻尼能量判据给 $\sqrt{2.5}=1.581139$，比值 $1.504446$。这个偏差的物理来源是什么？
+
+**习题 5（Liouville 公式）** 对受迫振子 $\ddot x + d\dot x + g(x) = A\cos\omega t$，令 $T_p = 2\pi/\omega$，$P$ 为一个驱动周期的 Poincaré 映射。
+
+(a) 写出状态空间形式与变分方程的系数矩阵 $A(t)$，求 $\operatorname{tr}A(t)$。
+(b) 用 Liouville 公式证明 $\det(DP) = e^{-dT_p}$，并明确指出它为什么与 $A$ 和 $g$ 都无关。
+(c) 代入 $d=0.15$、$T_p=2\pi$ 算出 $\det(DP)$ 与复数对情形下的 $\lvert\mu\rvert$，与实测值 $0.3896611374$、$0.62422843$ 核对。
+(d) 由此说明：在乘子为共轭复数对的参数区间内，增大驱动幅值 $A$ 能不能使周期轨道失稳？$A$ 实际改变的是哪个量？
+
+**习题 6（从乘子反推分岔）** 某受迫系统 Poincaré 映射在周期-1 不动点处的 Jacobian 为
+
+$$
+DP=\begin{bmatrix}-2.26372903&-0.54764698\\9.03200724&2.01291332\end{bmatrix}
+$$
+
+(a) 求 $\tau$、$\det$、$\Delta$ 与两个乘子，判断该周期轨道的稳定性。
+(b) 参数改变后测得乘子为 $-0.389618$ 与 $-1.000112$。这是哪种余维一分岔？周期轨道的周期变成多少？
+(c) 用 $\mu_1\mu_2=\det(DP)$ 做一次自洽检查，并与 Liouville 值 $e^{-0.15\times2\pi}$ 比较。
+(d) 若某参数下 $\Delta = 0$ 而 $\max\lvert\mu\rvert = 0.631$，这算不算分岔？为什么？
+
+## 答案
+
+**答案 1**
+
+| | $\tau$ | $\delta$ | $\Delta=\tau^2-4\delta$ | 特征值 | 类型 | 双曲？ |
+| --- | --- | --- | --- | --- | --- | --- |
+| (a) | $-3$ | $(-3)(0)-1(-2)=2$ | $9-8=1>0$ | $\frac{-3\pm1}{2}=-1,\ -2$ | 稳定节点 | 是 |
+| (b) | $-0.4$ | $0-1(-4)=4$ | $0.16-16=-15.84<0$ | $-0.2\pm1.98997j$ | 稳定焦点 | 是 |
+| (c) | $1$ | $0-2\cdot3=-6$ | $1+24=25>0$ | $\frac{1\pm5}{2}=3,\ -2$ | 鞍点 | 是 |
+| (d) | $0$ | $0-1(-9)=9$ | $0-36=-36<0$ | $\pm3j$ | 线性中心 | **否** |
+
+(a)(b)(c) 都是双曲的，Hartman-Grobman 适用，线性化可以定性。(d) 有 $\tau=0$、纯虚特征值 $\pm3j$，**非双曲**，线性化不能定性：非线性系统里它可能是真中心、可能是稳定焦点、也可能有限时间爆破（见习题 2 与 Notebook 3）。判它必须另找首次积分或 Lyapunov 函数。
+
+对照控制术语：(b) 的 $\omega_n=\sqrt4=2$，$\zeta = 0.4/(2\times2)=0.1$，是典型的欠阻尼二阶极点。
+
+**答案 2**
+
+(a) $J(0) = \begin{bmatrix}0&-1\\1&0\end{bmatrix}$，与 $\alpha$ 无关。$\tau=0$，$\delta=1$，$\Delta=-4$，$\lambda=\pm j$。平衡点非双曲，Hartman-Grobman 不适用；线性化说"中心"，而三次项（$\alpha$ 所在的地方）在线性化中完全消失，所以线性化没有任何信息量。
+
+(b) 用 $\dot r = (x_1\dot x_1 + x_2\dot x_2)/r$：
+
+$$
+x_1\dot x_1 + x_2\dot x_2 = -x_1x_2 + \alpha x_1^4 + x_1x_2 + \alpha x_2^4 = \alpha(x_1^4 + x_2^4)
+$$
+
+$$
+\dot r = \frac{\alpha(x_1^4+x_2^4)}{r}
+$$
+
+因为 $x_1^4+x_2^4 > 0$ 且 $r>0$，$\dot r$ 的符号**完全由 $\alpha$ 决定**：
+
+- $\alpha<0$：$\dot r<0$，$r$ 单调减小，原点是**渐近稳定焦点**（不是中心）。
+- $\alpha=0$：$\dot r=0$，$r$ 恒定，$\dot\theta=1$，这是**真中心**，闭轨是圆。
+- $\alpha>0$：$\dot r>0$，**不稳定焦点**，且有限时间爆破。
+
+三种情形的 Jacobian 一模一样。
+
+(c) 由 $(x_1^2+x_2^2)^2 = x_1^4+2x_1^2x_2^2+x_2^4 \le 2(x_1^4+x_2^4)$，得 $x_1^4+x_2^4 \ge r^4/2$。于是
+
+$$
+\dot r \ge \frac{\alpha r^4}{2r} = \frac{\alpha}{2}r^3
+$$
+
+分离变量：$\dfrac{\mathrm dr}{r^3} \ge \dfrac{\alpha}{2}\mathrm dt$，积分得 $-\dfrac{1}{2r^2}\Big|_{r_0}^{r} \ge \dfrac{\alpha t}{2}$，即
+
+$$
+\frac{1}{r_0^2} - \frac{1}{r^2} \ge \alpha t \;\Longrightarrow\; r^2 \ge \frac{r_0^2}{1-\alpha r_0^2 t}
+$$
+
+分母在 $t = 1/(\alpha r_0^2)$ 处过零，所以 **$t^* \le 1/(\alpha r_0^2)$**：轨道在有限时间内跑到无穷。（对比 Notebook 3 的 $\dot r=\alpha r^3$ 情形，那里 $t^*=1/(2\alpha r_0^2)$；本题系数不同是因为 $\dot r$ 的下界松了一半。）
+
+**答案 3**
+
+(a) $\dot r = \dfrac{x_1\dot x_1+x_2\dot x_2}{r} = \dfrac{x_1x_2 + x_2(-x_1+x_2(1-r^2))}{r} = \dfrac{x_2^2(1-r^2)}{r}$。
+
+在 $r=1$ 上 $\dot r = 0$，故单位圆不变。
+
+$\dot\theta = \dfrac{x_1\dot x_2 - x_2\dot x_1}{r^2} = \dfrac{x_1(-x_1+x_2(1-r^2)) - x_2^2}{r^2} = -1 + \dfrac{x_1x_2(1-r^2)}{r^2}$。
+
+在 $r=1$ 上第二项为零，$\dot\theta = -1$（顺时针匀速）。周期 $T = 2\pi/\lvert\dot\theta\rvert = 2\pi = 6.283185$。Notebook 7 对七个初值实测周期均为 $6.283185307$，最大相对误差 $1.232\times10^{-13}$。
+
+(b) $J(0)=\begin{bmatrix}0&1\\-1&1\end{bmatrix}$，$\tau=+1$，$\delta=+1$，$\Delta=1-4=-3$，$\lambda = 0.5\pm0.866025j$：**不稳定焦点**（双曲）。
+
+(c) Poincaré-Bendixson 要求区域内**不含平衡点**。环域 $0.5\le r\le1.5$ 已经自动满足这一条：原点的半径 $r=0<0.5$，它落在环域的**洞**里，不在环域内。
+
+关键是要说清**为什么不能图省事直接用圆盘 $r\le1.5$**：圆盘包含原点这个平衡点，定理的假设被破坏，结论随之失效——因为从圆盘内出发的轨道，其 $\omega$-极限集完全可能就是原点本身（对本系统不会发生，但定理没法替你排除）。"挖掉原点、改用环形区域"不是修辞，而是让定理的假设成立所必需的构造。
+
+(d) $\dot r = x_2^2(1-r^2)/r$ 在 $r=0.5$ 上为零当且仅当 $x_2=0$，即点 $(\pm0.5,\ 0)$ 两处。在这两点流是**切向**的（沿 $x_1$ 轴），所以"内边界上处处 $\dot r>0$"是错的。
+
+不影响结论的原因：正向不变性只要求流**不指向区域外**（法向分量 $\ge 0$），而不是严格 $>0$。在 $(\pm0.5,0)$ 处法向分量为 $0$（相切），其余各点为正，所以轨道不会向内穿出。Notebook 7 用两种方式实测确认：一是从 $r=0.5$ 上十个角度出发，$r(0.01)$ 与 $r(0.5)$ 全部 $\ge 0.5$（例如 $0^\circ$：$0.500000000\to0.500000126\to0.519191527$）；二是 72 个起始角扫描，60 s 内到达的最小半径为 $0.500000000$。
+
+外边界 $r=1.5$：$\dot r = x_2^2(1-2.25)/1.5 < 0$（除 $x_2=0$ 外），同理不会向外穿出。故环域正向不变，且不含平衡点，Poincaré-Bendixson 给出环内存在闭轨——即 $r=1$。
+
+**答案 4**
+
+(a) $x_2=0$ 且 $x_1(0.2x_1^2-1)=0$，得 $x_1 = 0,\ \pm\sqrt5 = \pm2.236068$。
+
+$J=\begin{bmatrix}0&1\\-1+0.6x_1^2&-b\end{bmatrix}$。
+
+- 原点：$\tau=-b$，$\delta=1$。$b=0.5$ 时 $\Delta=0.25-4=-3.75$，$\lambda=-0.25\pm0.968246j$，**稳定焦点**。
+- $\pm\sqrt5$：$-1+0.6\times5=2$，故 $\tau=-b$，$\delta=-2<0$，$\lambda=\frac{-0.5\pm\sqrt{8.25}}{2}=1.186141,\ -1.686141$（$b=0.5$），**鞍点**。
+
+(b) $V(x)=\int(x-0.2x^3)\mathrm dx = x^2/2 - 0.05x^4$。$V(0)=0$，$V''(0)=1>0$（阱底）；$V(\pm\sqrt5)=2.5-1.25=1.25$，$V''=1-3=-2<0$（垒顶）。$\Delta V = 1.25$。
+
+$V$ 的首项是正的 $x^2/2$、末项是负的 $-0.05x^4$，所以 $\lvert x\rvert\to\infty$ 时 $V\to-\infty$：这是**单阱 + 两侧会塌下去的势垒**，不是双阱。双阱 Duffing 需要负线性刚度 $\ddot x + d\dot x - x + x^3=0$，那时原点才是鞍点。因此本题中"逃逸"意味着 $x\to\infty$（发散/飞车），而不是跳到另一个阱。
+
+(c) $\dot E = -b x_2^2 \le 0$。从 $(x_0,0)$ 出发时 $E_0 = V(x_0)$。令 $V(x_0)=1.25$：
+
+$$
+0.05x_0^4 - 0.5x_0^2 + 1.25 = 0 \;\xrightarrow{\times 20}\; x_0^4 - 10x_0^2 + 25 = 0 \;\Longrightarrow\; (x_0^2-5)^2 = 0
+$$
+
+所以 $x_0=\sqrt5$ 是**二重根**。
+
+与 $b$ 无关的原因：势垒顶点 $(\sqrt5, 0)$ **就在 $x_2=0$ 轴上**，而初值也在这条轴上（初速为零）。阈值情形是初值恰好在垒顶，此时 $\dot x=0$ 且力为零——阻尼项 $-b\dot x$ 也为零，**阻尼在"做决定"的那一刻不做任何功**。所以判据退化成纯几何的位置比较 $\lvert x_0\rvert \lessgtr \sqrt5$。Notebook 4 实测临界值 $2.236067977$，与 $\sqrt5$ 的比值 $1.000000000$。
+
+(d) $V(x)$ 过了垒顶就**下降**：$V(2.5) = 3.125 - 0.05\times39.0625 = 3.125-1.953125 = 1.171875 < 1.25$。$x_0=2.5$ 已经在坝的**外侧**，那里的力 $-V'(2.5) = -(2.5 - 0.2\times15.625) = -(2.5-3.125) = +0.625>0$ 继续往外推。所以"能量低于垒高"不再意味着"被困住"——**能量判据只在初值位于阱内侧时有效**。一般判据是初值落在鞍点稳定流形的哪一侧。
+
+(e) 从 $(0,v_0)$ 出发时，初值在阱底正上方（$V(0)=0$），必须靠动能爬过整道 $1.25$ 的势垒，而沿途阻尼持续做负功 $-b\int x_2^2\mathrm dt$。所以需要的初速比无阻尼情形更大。无阻尼能量判据 $\frac12v_0^2 = 1.25 \Rightarrow v_0=\sqrt{2.5}=1.581139$ 只是**必要条件**（有阻尼时它会低估安全区）。实测 $b=0.5$ 时 $v_0^{\text{crit}}=2.378738$，比值 $1.504446$，多出的 $50.4\%$ 正是阻尼沿途耗散掉的能量。
+
+Notebook 4 的能量核对：沿 $v_0=2.378638$（略低于临界）积分 150 s，$E(0)=2.828960$，沿途 $E_{\max}=2.828960$（从不增加，与 $\dot E=-0.5x_2^2\le0$ 一致），$E(150)=0$，终值 $\lvert x_1\rvert=0$——初始能量 $2.83$ 远超势垒 $1.25$ 却没有逃逸。
+
+**答案 5**
+
+(a) 令 $x_1=x$，$x_2=\dot x$：
+
+$$
+\dot x_1 = x_2, \qquad \dot x_2 = -d x_2 - g(x_1) + A\cos\omega t
+$$
+
+变分方程 $\dot\Phi = A(t)\Phi$，其中
+
+$$
+A(t) = \frac{\partial \boldsymbol f}{\partial \boldsymbol x} = \begin{bmatrix}0&1\\-g'(x_1(t))&-d\end{bmatrix}, \qquad \operatorname{tr}A(t) = 0 + (-d) = -d
+$$
+
+(b) Liouville 公式：$\det\Phi(T) = \det\Phi(0)\exp\!\big(\int_0^T\operatorname{tr}A(t)\,\mathrm dt\big)$。取 $\Phi(0)=I$（$\det=1$）、$T=T_p$：
+
+$$
+\det(DP) = \exp\!\left(\int_0^{T_p}(-d)\,\mathrm dt\right) = e^{-dT_p}
+$$
+
+**与 $A$ 无关**：驱动幅值 $A$ 只出现在 $\dot x_2$ 的加性项 $A\cos\omega t$ 里，对 $x$ 求偏导为零，不进 $A(t)$。
+
+**与 $g$ 无关**：$g'(x_1)$ 出现在 $A(t)$ 的 $(2,1)$ 位置，而迹只取对角元，所以它不进 $\det$。
+
+这是一个很强的结论：只要阻尼系数 $d$ 和驱动周期 $T_p$ 定了，**任何**势函数、**任何**驱动幅值下，周期映射的面积收缩率都是同一个数 $e^{-dT_p}$。
+
+(c) $\det(DP) = e^{-0.15\times2\pi} = e^{-0.942478} = 0.3896611374$（Notebook 实测 $0.3896611374$，相对误差 $1.54\times10^{-11}$）。
+
+复数对情形：$\lvert\mu_1\rvert=\lvert\mu_2\rvert=\sqrt{\det} = e^{-dT_p/2} = \sqrt{0.3896611374} = 0.62422843$（Notebook 实测 $\max\lvert\mu\rvert = 0.62422843$，与 $\sqrt{\det}$ 之差 $3.33\times10^{-16}$）。
+
+(d) **不能。** 在复数对分支上 $\lvert\mu\rvert$ 被 Liouville 恒等式钉死在 $0.62422843<1$，$A$ 无论怎么变都动不了它。$A$ 实际改变的是 $\operatorname{tr}(DP)$，也就是乘子对的**辐角**（扰动衰减时旋转的快慢）。
+
+失稳的必要前提是先让 $\Delta = \tau^2 - 4\det$ 变号，把乘子变成两个实数；此后 $\lvert\mu\rvert$ 才脱离 $\sqrt{\det}$ 并可能穿出单位圆。Notebook 10 的延拓实测把这两步分开了：$\Delta$ 变号在 $A=2.42024$（此处 $\max\lvert\mu\rvert=0.631093$，**仍稳定**），$\max\lvert\mu\rvert=1$ 在 $A=2.44027$。
+
+**答案 6**
+
+(a) $\tau = -2.26372903 + 2.01291332 = -0.25081571$（实测 $-0.25081570$）。
+
+$\det = (-2.26372903)(2.01291332) - (-0.54764698)(9.03200724) = -4.55643 + 4.94609 = 0.38966$。
+
+$\Delta = \tau^2 - 4\det = 0.062908 - 1.558645 = -1.49573603 < 0$：共轭复数对。
+
+$$
+\mu = \frac{-0.25081570 \pm \sqrt{-1.49573603}\,j}{2} = -0.12540785 \pm 0.61150144j
+$$
+
+$\lvert\mu\rvert = \sqrt{0.12540785^2 + 0.61150144^2} = \sqrt{0.015727+0.373934} = \sqrt{0.389661} = 0.62422843 < 1$：**周期-1 轨道渐近稳定**。偏差每驱动周期乘 $0.6242$，衰减到 $1\%$ 需 $\ln0.01/\ln0.62422843 = 9.8$ 个周期 $=61.40$ s。
+
+（注意 $\lvert\mu\rvert$ 恰好等于 $\sqrt{\det}$——这正是答案 5(c) 的推论。）
+
+(b) 乘子 $-1.000112$ 从 **$-1$** 穿出单位圆 $\Rightarrow$ **周期倍化（flip）分岔**。原周期-1 轨道失稳，同时诞生一条**周期-2** 轨道：它在 $P$ 下是两个交替的点，在 $P^2$ 下才是不动点。以驱动周期计，新轨道的周期是 $2T_p$。
+
+（若穿过的是 $+1$，则是鞍-结分岔；若是一对共轭复数穿过单位圆，则是 Neimark-Sacker 分岔，产生不变环。）
+
+(c) $\mu_1\mu_2 = (-0.389618)(-1.000112) = 0.3896616$。
+
+Liouville 值 $e^{-0.15\times2\pi} = 0.3896611374$。两者相差 $5\times10^{-7}$，考虑到我们已经在分岔点外侧 $1.12\times10^{-4}$ 处，这个吻合是量级正确的。
+
+更强的检查：设 $\mu_1$ 恰为 $-1$，则 $\mu_2 = \det/\mu_1 = -0.3896611$。实测 $\mu_2 = -0.389618$，相差 $4.3\times10^{-5}$，与"刚越过分岔点"一致。
+
+(d) **不算分岔。** $\Delta=0$ 只是把乘子从共轭复数对变成两个相等/邻近的实数，是 Poincaré 映射的**焦点型 $\to$ 结点型**转换：扰动衰减的定性方式变了（从旋转着衰减变成单调衰减），但轨道的稳定性、周期、拓扑结构都没变。实测此处 $\max\lvert\mu\rvert=0.631093<1$，系统依然稳定。
+
+对照第 4 节的迹-行列式平面：$\Delta=0$ 是**分类边界**（抛物线），$\det=0$ 和 $\tau=0$ 才是**分岔线**。这个区分在延拓扫描里很实用——沿分支跟踪时 $\Delta$ 变号是常事（Notebook 10 实测变号 1 次），看到它不必紧张；要盯的是 $\max\lvert\mu\rvert$ 有没有到 $1$。

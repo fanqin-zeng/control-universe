@@ -1,0 +1,21 @@
+import{request}from'node:http';import{readFileSync,writeFileSync,unlinkSync}from'node:fs';import{execFileSync}from'node:child_process';import{createHash,randomUUID}from'node:crypto';import assert from'node:assert/strict';import ts from'typescript';import{extractNotebooks}from'./lib-mdx.mjs';import{renderedHeadings}from'./rendered-headings.mjs';import{requireSuccess}from'./verify-reproducibility.mjs';
+const dir='.agent/semester-03/nonlinear-08/',hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex'),read=p=>readFileSync(p,'utf8');
+function http(path,method='GET',body){return new Promise((resolve,reject)=>{let data=body===undefined?null:Buffer.from(JSON.stringify(body));let q=request({hostname:'127.0.0.1',port:8891,path,method,headers:data?{'Content-Type':'application/json','Content-Length':data.length}:{}},r=>{let text='';r.setEncoding('utf8');r.on('data',s=>text+=s);r.on('end',()=>{let json;try{json=JSON.parse(text)}catch{}resolve({status:r.statusCode,text,json})})});q.on('error',reject);q.setTimeout(240000,()=>q.destroy(Error('240s request timeout')));if(data)q.write(data);q.end()})}
+const source=read('content/nonlinear/adaptive-control-basics.mdx'),nbs=extractNotebooks(source);assert.deepEqual(nbs.map(n=>n.cells.length),[3,4,3,6,4,3,8,4,3,1]);
+const e={};new Function('exports',ts.transpileModule(read('lib/mrac.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(e);
+const params=[];for(const kind of ['step','sine','multi'])for(const gamma of [1,50,200])params.push([kind,gamma,0,0,false]);for(const seed of [1,2,3])for(const sigma of [0,.1])params.push(['multi',50,sigma,.1,false,seed]);for(const gamma of [3,4,50])params.push(['multi',gamma,0,0,true]);params.push(['multi',50,1,0,true]);
+const cases=params.map(params=>({params,result:e.simulateMrac(...params)}));let report={pass:true,sourceHash:hash(source),numericsHash:hash(read('lib/mrac.ts')),componentHash:hash(read('components/wiki/mrac-explorer.tsx')),notebooks:[],default:cases[1].result};
+let previous=null;
+if(process.argv.includes('--refresh-changed')){
+ previous=JSON.parse(read(dir+'reconciliation.json'));const oldSource=read(dir+'source-acceptance-before.mdx'),before=extractNotebooks(oldSource);assert.equal(previous.sourceHash,hash(oldSource));report.reuse=[];
+ for(let i=0;i<nbs.length;i++)if(before[i].setup.value===nbs[i].setup.value&&JSON.stringify(before[i].cells.map(c=>c.value))===JSON.stringify(nbs[i].cells.map(c=>c.value)))report.reuse.push(i);
+}
+if(process.argv.includes('--reuse-native')){const old=JSON.parse(read(dir+'reconciliation.json'));assert.equal(old.sourceHash,report.sourceHash);report.notebooks=old.notebooks;}
+else for(const[i,nb]of nbs.entries()){
+ if(report.reuse?.includes(i)){report.notebooks.push(previous.notebooks[i]);console.log('Identical original code reused:',i+1);continue;}
+ console.log('Notebook',i+1,nb.title);let id='nonlinear08-'+randomUUID();try{assert.equal((await http('/api/notebook','POST',{notebook_id:id,setup_code:''})).status,200);const run=async code=>requireSuccess(await http('/api/notebook/'+id+'/execute','POST',{code}),'NB'+(i+1));await run(nb.setup.value);let cells=[];for(const[j,c]of nb.cells.entries()){let begin=Date.now(),out=await run(c.value);console.log(' cell',j+1,Date.now()-begin,'ms');cells.push({outputs:out.map(o=>o.type==='image'?{type:'image',bytes:o.data.length}:o)});writeFileSync('logs/nonlinear08-progress.json',JSON.stringify({notebook:i+1,cell:j+1,elapsed:Date.now()-begin}));}report.notebooks.push({title:nb.title,cells});}finally{await http('/api/notebook/'+id,'DELETE')}
+ writeFileSync(dir+'reconciliation.json',JSON.stringify(report,null,2)+'\n');
+}
+const temp='logs/nonlinear08-actual.json';try{writeFileSync(temp,JSON.stringify({cases}));report.independent=JSON.parse(execFileSync('python',[dir+'reference.py',temp],{encoding:'utf8',maxBuffer:8*1024*1024}));}finally{try{unlinkSync(temp)}catch{}}
+const headings=await renderedHeadings(source,'nonlinear/adaptive-control-basics'),old=JSON.parse(read(dir+'baseline-headings.json'));old.ids.forEach(id=>assert(headings.ids.includes(id),id));assert.equal(new Set(headings.ids).size,headings.ids.length);report.oldIds=old.ids.length;
+writeFileSync(dir+'reconciliation.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report.independent));

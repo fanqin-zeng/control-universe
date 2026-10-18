@@ -85,14 +85,14 @@
 
 | 课程 | 状态 |
 |------|------|
-| [x] 非线性系统 (nonlinear-characteristics) | v1.3 重写: 1个交互组件（NonlinearityExplorer 六种非线性的 u-y 回线+时间波形，按类型固定坐标轴，默认滞环 A=1.5/c=0.2 复现环面积 4cA=1.200000；间隙 settle 相位陷阱见讨论日志附录 C），9个静态JupyterNotebook（叠加原理定量破坏 / 振幅依赖周期+Lindstedt+软弹簧逃逸 / 滞环·间隙·Stribeck / 谐波产生与双频互调 / 线性化误差带 / 跳跃共振与谐波平衡三分支 / 多平衡点与鞍结分岔 / PI三种幅值处理 / 粘滑极限环与吸引域）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/01-nonlinear-characteristics.md（含11条旧稿错误对照） |
-| [x] 相平面 (phase-plane) | v1.3 重写: 2个交互组件（PhasePlaneExplorer 五系统相平面 + TraceDetExplorer 迹-行列式平面，默认参数复现手算例，见 fix-logs 016），12个静态JupyterNotebook组件（NB10 拆上/下：Van der Pol 极限环 / 迹-行列式分类+2000抽查 / 非双曲中心三情形 / Duffing 手算例全程核对 / 鞍点流形与吸引域 / μ扫描张弛振荡 / 极限环孤立性 / 真假中心对照 / Lotka-Volterra 首次积分 / 受迫Duffing截面+Floquet+延拓 / 无轮辐轮混合系统）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/02-phase-plane.md；顺带修复组件双注册表问题（fix-logs 015） |
-| [x] Lyapunov稳定性 (lyapunov-stability) | v1.3: 1个交互组件（LyapunovExplorer），4个静态JupyterNotebook；讨论日志 docs/discuss-log/semester-01/07-nonlinear/04-lyapunov-stability.md |
-| [x] 描述函数 (describing-function) | v1.3 重写: 2个交互组件（DescribingFunctionExplorer + NyquistLimitCycleExplorer，后者修正 -1/N 轨迹范围与交点存在性判断，见 fix-logs 014），6个静态JupyterNotebook（21 cell：波形畸变与复数惯例 / 五个闭式核对与串联≠乘积 / 手算例仿真仲裁与泄漏指标L / Routh交叉核对与双交点算例 / 三个应用案例 / 四种失效模式）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/03-describing-function.md |
-| [x] 反馈线性化 (feedback-linearization) | v1.3: 1个交互组件（ZeroDynamicsExplorer），4个静态JupyterNotebook（Lie导数验证 / 零动态定义式仿真 / 倒立摆IOL-vs-Jacobian三组实验 / 球-梁近似IOL）；讨论日志 docs/discuss-log/semester-01/07-nonlinear/05-feedback-linearization.md（含实测修正附录）；顺带修复全站级 kernel id 冲突（fix-logs 011） |
-| [x] 滑模控制 (sliding-mode-control) | v1.3: 1个交互组件（SlidingModeExplorer），5个静态JupyterNotebook（到达条件与等效控制 / 四种控制律抖振对比 / 四种到达律 / 匹配性K扫描 / 电机六控制器），2张按实测重算的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/06-sliding-mode-control.md |
-| [x] 反步设计 (backstepping) | v1.3: 1个交互组件（BacksteppingExplorer），6个静态JupyterNotebook（结构判定/手算复核/复杂度与DSC/自适应/柔性关节机器人/七律对比与可达域），1张按实测重画的概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/07-backstepping.md |
-| [x] 自适应控制 (adaptive-control-basics) | v1.3: 1个交互组件（MracExplorer，三面板固定坐标轴，JS↔Python 交叉验证 Rohrs 临界增益 3/4 与发散时刻），9个静态JupyterNotebook（V̇恒等式 / 手算与PE流形 / γ两面性 / 高阶匹配条件 / RLS与协方差windup / STR除零保护 / 噪声与四种修正 / 机械臂负载突变 / 飞行器爬升三方对比），1张matplotlib计算概念图；讨论日志 docs/discuss-log/semester-01/07-nonlinear/08-adaptive-control-basics.md（含18条"叙述服从测量"修正） |
+| [x] 非线性系统 (nonlinear-characteristics) | 学期3重构：11短H2、六类型Explorer、5份Notebook/5cell、7题与答案；修连续性/THD/耗能/局部边界及PI推导，30组组件独立核；43旧ID兼容；日志 docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md；验收 .agent/semester-03/nonlinear-01/acceptance.md；长扫描来源与后续W13见followup.md |
+| [x] 相平面 (phase-plane) | 学期3 NONLINEAR-02重构：15短H2，保留原12Notebook/六题，补摩擦局部核验与答案复算，共14Notebook/27cell；两原组件纠错并独立核验，25旧ID兼容。Phase1–4日志 docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md；最终验收/实际master回执见.agent/semester-03/nonlinear-02/acceptance.md。历史semester-01日志保留；W13后续NONLINEAR-12未完成。 |
+| [x] Lyapunov稳定性 (lyapunov-stability) | semester-03 NONLINEAR-03：1个交互组件、6份Notebook/10cell、6题；本期讨论日志 docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md；验收 .agent/semester-03/nonlinear-03/acceptance.md；旧semester-01日志保留 |
+| [x] 描述函数 (describing-function) | semester-03 NONLINEAR-04：2个交互组件、7份Notebook/22cell、6题；本期日志 docs/discuss-log/semester-03/05-nonlinear/04-describing-function.md；验收 .agent/semester-03/nonlinear-04/acceptance.md；旧semester-01日志保留 |
+| [x] 反馈线性化 (feedback-linearization) | semester-03 NONLINEAR-05：1个交互组件、6份Notebook/15cell、6题；本期日志 docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md；验收 .agent/semester-03/nonlinear-05/acceptance.md；旧semester-01日志保留 |
+| [x] 滑模控制 (sliding-mode-control) | v1.3；semester-03 NONLINEAR-06：1个SlidingModeExplorer，6个Notebook/18cell、六题、两SVG；原五实验17cell及44旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md；验收 .agent/semester-03/nonlinear-06/acceptance.md |
+| [x] 反步设计 (backstepping) | v1.3；semester-03 NONLINEAR-07：1个BacksteppingExplorer，7Notebook27cell、六题、SVG；原六实验26cell及41旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md；验收 .agent/semester-03/nonlinear-07/acceptance.md |
+| [x] 自适应控制 (adaptive-control-basics) | v1.3；semester-03 NONLINEAR-08：1个MracExplorer，10Notebook39cell、六题、SVG；原九实验38cell及55旧ID保留；日志 docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md；验收 .agent/semester-03/nonlinear-08/acceptance.md |
 | [ ] 无源控制 (passivity-control) | 本期新增骨架；尚未编写 |
 | [ ] 输入状态稳定性 (iss-small-gain) | 本期新增骨架；尚未编写 |
 | [ ] 切换与混杂系统 (switched-hybrid-systems) | 本期新增骨架；尚未编写 |

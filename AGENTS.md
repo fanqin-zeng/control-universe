@@ -232,3 +232,7 @@ git push origin master
 ### 12.4 GitHub Pages发布闸门（2026-10-17用户要求）
 
 gh-pages是额外长期源码发布分支，GitHub Actions只发布该分支。日常更新正常验收后提交并推送master；**每次必须先取得用户对具体版本的明确同意，才把更新反合到gh-pages并推送**，首次发布也一样。禁止master自动部署或后台同步发布分支。操作与能力限制见docs/deployment/github-pages.md；没有远端Actions成功与公网实测，不得宣称已上线。
+
+## 独立中文润色（2026-10-18用户裁决）
+
+课程中文润色交给其他模型，入口 `.agent/semester-03/zh-lang-edit/README.md`，完整名单与进度在同目录 PLAN.md，记录在 records/。该任务不走角色讨论；既有课程新写/重构仍按原SKILL。专用长期分支 `codex/semester-03-zh-lang-edit`，仅在用户明确要求时简单审核并合入 master；不得自动合并或发布 Pages。普通课程开发仍直接在master进行。

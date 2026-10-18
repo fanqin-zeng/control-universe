@@ -1,0 +1,16 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const read=p=>JSON.parse(readFileSync(p,'utf8').replace(/^\uFEFF/,''));
+const prefix='docs/deployment/modern09-public-';
+const sha='9c8e988cd6cd10c1066c479f57799c76ef2514a4';
+const actions=read(prefix+'actions.json'),http=read(prefix+'http.json'),browser=read(prefix+'browser.json'),python=read(prefix+'python.json');
+assert.equal(actions.head_sha,sha);assert.equal(actions.conclusion,'success');assert(actions.jobs.every(j=>j.conclusion==='success'));
+assert(http.pass);assert.equal(http.release.sourceCommit,sha);assert.equal(http.release.sourceDirty,false);assert.equal(http.lessons,205);assert.equal(http.legacyRoutes,9);assert.equal(http.missingStatus,404);
+assert.equal(browser.dom.errors,0);assert.equal(browser.dom.h2.length,12);assert.equal(browser.dom.runAll,6);assert(browser.dom.images.every(i=>i.loaded));assert.equal(new Set(browser.dom.ids).size,browser.dom.ids.length);
+assert.equal(browser.controls.default,browser.controls.reset);assert.notEqual(browser.controls.endpoint,browser.controls.default);assert(browser.controls.default.includes('0.004701'));assert(browser.courseRun.includes('运行完成 · Pyodide 0.27.7'));
+assert.equal(browser.mobile.width,browser.mobile.scrollWidth);assert.equal(browser.mobile.errors,0);assert(browser.mobile.menu.includes('现代控制案例'));
+assert(python.complete);assert.equal(python.releaseTotals.enabled,6);assert.equal(python.releaseTotals.codeOnly,0);
+const policy=read('lib/python-support.json');assert.equal(python.workerHash,policy.workerHash);assert.equal(python.lessons[0].sourceHash,policy.lessons['modern/modern-case-study'].sourceHash);
+assert(python.lessons[0].notebooks.every(n=>n.status==='passed'&&n.cells.every(c=>c.status==='passed')));
+const result={pass:true,release:sha,actions:actions.id,lessons:http.lessons,legacyRoutes:http.legacyRoutes,requests:http.results.length,publicPythonExperiments:6,publicPythonCells:python.lessons[0].notebooks.reduce((n,b)=>n+b.cells.length,0),mobileWidth:browser.mobile.width};
+writeFileSync(prefix+'validation.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2));

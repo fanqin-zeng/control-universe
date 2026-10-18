@@ -4,13 +4,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { useECharts } from "./use-echarts";
 import type { EChartsOption } from "echarts";
 
-type NlType =
-  | "saturation"
-  | "deadzone"
-  | "relay"
-  | "cubic"
-  | "hysteresis"
-  | "backlash";
+import {analyse, N_BRANCH, type NlType} from "@/lib/nonlinearity-model";
 
 type Spec = {
   name: string;
@@ -137,102 +131,6 @@ const ORDER: NlType[] = [
   "cubic",
 ];
 
-// dir = +1 输入上升, -1 输入下降, 0 保持
-function apply(type: NlType, u: number, p: number, prevY: number, dir: number): number {
-  if (type === "hysteresis") {
-    return u + p * (dir === 0 ? 1 : dir);
-  }
-  if (type === "backlash") {
-    if (dir > 0) return Math.max(prevY, u - p);
-    if (dir < 0) return Math.min(prevY, u + p);
-    return prevY;
-  }
-  if (type === "saturation") return Math.min(Math.max(u, -p), p);
-  if (type === "deadzone") return u > p ? u - p : u < -p ? u + p : 0;
-  if (type === "relay") return u >= 0 ? p : -p;
-  return u + p * u * u * u;
-}
-
-const N_BRANCH = 1024;
-const N_TIME = 2048;
-const N_HARM = 25;
-
-function analyse(type: NlType, A: number, p: number) {
-  // 先跑 3 个周期让有记忆非线性进入周期轨道；相位停在 theta=-pi/2（u=-A），
-  // 与上升支扫描的起点重合，否则 prevY 会带着下降支的残留污染上升支
-  let prevY = -A;
-  for (let i = 1; i <= 3 * N_TIME; i++) {
-    const t = -Math.PI / 2 + (2 * Math.PI * i) / N_TIME;
-    const u = A * Math.sin(t);
-    prevY = apply(type, u, p, prevY, Math.cos(t) > 0 ? 1 : -1);
-  }
-
-  // 上升支 theta = asin(u/A)，下降支 theta = pi - asin(u/A)，共用同一组 u 网格
-  const uGrid: number[] = [];
-  const yRise: number[] = [];
-  const yFall: number[] = [];
-  let yR = prevY;
-  for (let i = 0; i <= N_BRANCH; i++) {
-    const u = -A + (2 * A * i) / N_BRANCH;
-    uGrid.push(u);
-    yR = apply(type, u, p, yR, 1);
-    yRise.push(yR);
-  }
-  let yF = yR;
-  for (let i = N_BRANCH; i >= 0; i--) {
-    yF = apply(type, uGrid[i], p, yF, -1);
-    yFall[i] = yF;
-  }
-
-  // 环面积 = | ∮ y du | = | ∫ (y_rise − y_fall) du |
-  let area = 0;
-  for (let i = 0; i < N_BRANCH; i++) {
-    const d = yRise[i] - yFall[i] + (yRise[i + 1] - yFall[i + 1]);
-    area += 0.5 * d * (uGrid[i + 1] - uGrid[i]);
-  }
-  area = Math.abs(area);
-
-  // 稳态周期波形，从 u = −A（theta = −pi/2）开始
-  const th: number[] = [];
-  const uu: number[] = [];
-  const yy: number[] = [];
-  let yT = yF;
-  for (let i = 0; i <= N_TIME; i++) {
-    const t = -Math.PI / 2 + (2 * Math.PI * i) / N_TIME;
-    const u = A * Math.sin(t);
-    const c = Math.cos(t);
-    yT = apply(type, u, p, yT, c > 1e-9 ? 1 : c < -1e-9 ? -1 : 0);
-    th.push(t + Math.PI / 2);
-    uu.push(u);
-    yy.push(yT);
-  }
-
-  // 整周期傅里叶投影，1..N_HARM 次
-  const amps: number[] = [];
-  for (let n = 1; n <= N_HARM; n++) {
-    let ca = 0;
-    let sa = 0;
-    for (let i = 0; i < N_TIME; i++) {
-      const ang = (2 * Math.PI * n * i) / N_TIME;
-      ca += yy[i] * Math.cos(ang);
-      sa += yy[i] * Math.sin(ang);
-    }
-    amps.push((2 / N_TIME) * Math.hypot(ca, sa));
-  }
-  const b1 = amps[0];
-  const b3 = amps[2];
-  let tail = 0;
-  for (let n = 1; n < amps.length; n++) tail += amps[n] * amps[n];
-  const thd = b1 > 1e-12 ? (Math.sqrt(tail) / b1) * 100 : 0;
-
-  let maxDev = 0;
-  for (let i = 0; i <= N_TIME; i++) {
-    maxDev = Math.max(maxDev, Math.abs(yy[i] - uu[i]));
-  }
-
-  return { uGrid, yRise, yFall, th, uu, yy, area, b1, b3, thd, maxDev };
-}
-
 export function NonlinearityExplorer() {
   const [type, setType] = useState<NlType>("hysteresis");
   const [A, setA] = useState(SPEC.hysteresis.aDef);
@@ -316,8 +214,8 @@ export function NonlinearityExplorer() {
         name: "幅值",
         nameLocation: "middle",
         nameGap: 38,
-        min: spec.yWin[0],
-        max: spec.yWin[1],
+        min: Math.min(spec.yWin[0], spec.uWin[0]),
+        max: Math.max(spec.yWin[1], spec.uWin[1]),
       },
       series: [
         {
@@ -344,6 +242,7 @@ export function NonlinearityExplorer() {
 
   return (
     <div
+      aria-label="非线性类型探索"
       className="not-prose"
       style={{
         border: "1px solid #d1d5db",
@@ -351,6 +250,7 @@ export function NonlinearityExplorer() {
         margin: "24px 0",
         padding: 16,
         background: "#fff",
+        color: "#0f172a",
       }}
     >
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
@@ -361,6 +261,7 @@ export function NonlinearityExplorer() {
         {ORDER.map((t) => (
           <button
             key={t}
+            aria-pressed={t === type}
             onClick={() => pick(t)}
             style={{
               fontSize: 13,
@@ -382,37 +283,40 @@ export function NonlinearityExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 12 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           输入幅值 A = {A.toFixed(2)}
           <input
+            aria-label="输入幅值"
             type="range"
             min={spec.aMin}
             max={spec.aMax}
             step={spec.aStep}
             value={A}
             onChange={(e) => setA(Number(e.target.value))}
-            style={{ width: 200 }}
+            style={{ width: "100%", maxWidth: 200 }}
           />
         </label>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           {spec.pLabel} = {p.toFixed(2)}
           <input
+            aria-label="非线性参数"
             type="range"
             min={spec.pMin}
             max={spec.pMax}
             step={spec.pStep}
             value={p}
             onChange={(e) => setP(Number(e.target.value))}
-            style={{ width: 200 }}
+            style={{ width: "100%", maxWidth: 200 }}
           />
         </label>
       </div>
 
+      <button onClick={() => pick("hysteresis")} style={{padding:6,marginBottom:12}}>恢复默认</button>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ flex: "1 1 340px", minWidth: 300 }}>
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
           <div ref={curveRef} style={{ width: "100%", height: 320 }} />
         </div>
-        <div style={{ flex: "1 1 340px", minWidth: 300 }}>
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
           <div ref={timeRef} style={{ width: "100%", height: 320 }} />
         </div>
       </div>
@@ -429,7 +333,7 @@ export function NonlinearityExplorer() {
         <div style={cellStyle}>
           <span style={labelStyle}>记忆性</span>
           <strong style={{ color: spec.memory ? "#b45309" : "#15803d" }}>
-            {spec.memory ? "有记忆（闭合环）" : "无记忆（单值曲线）"}
+            {spec.memory ? "有记忆（可能形成回线）" : "无记忆（单值曲线）"}
           </strong>
         </div>
         <div style={cellStyle}>
@@ -445,7 +349,7 @@ export function NonlinearityExplorer() {
           <strong>{r.b3.toFixed(6)}</strong>
         </div>
         <div style={cellStyle}>
-          <span style={labelStyle}>THD</span>
+          <span style={labelStyle}>THD（2–25次）</span>
           <strong>{r.thd.toFixed(4)} %</strong>
         </div>
         <div style={cellStyle}>
@@ -456,41 +360,40 @@ export function NonlinearityExplorer() {
 
       <div style={{ fontSize: 13, color: "#475569", marginTop: 10 }}>
         {spec.memory ? (
-          <>上升支与下降支不重合，∮ y du ≠ 0 → 必须引入内部状态。</>
+          <>本模型依赖输入历史；当前输入行程不一定足以形成明显回线。</>
         ) : (
-          <>上升支与下降支逐点重合，∮ y du ≡ 0 → 可写成 y = φ(u)。</>
+          <>本模型是无记忆静态映射 y = φ(u)，往返轨迹重合。</>
         )}
         {type === "hysteresis" && (
           <>
             {" "}
             解析环面积 4cA = <strong>{(4 * p * A).toFixed(6)}</strong>，与实测一致；
-            面积正比于 A，所以滞环是<strong>非线性阻尼</strong>——每周期耗能 4cA，与频率无关。
+            这是双支教学模型的几何面积；只有定义了共轭物理量及方向，才能解释为每周期的功。
           </>
         )}
         {type === "backlash" && (
           <>
             {" "}
-            环宽恒为 2b = <strong>{(2 * p).toFixed(2)}</strong>；换向后输入要走完这段空程输出才动，
-            最大输出误差 = b = <strong>{p.toFixed(2)}</strong>（见 max |y − u|）。
+            足幅换向空程 2b = <strong>{(2 * p).toFixed(2)}</strong>；换向后输入要走完这段空程输出才动，
+            最大输出偏差不超过 b = <strong>{p.toFixed(2)}</strong>（见 max |y − u|）。
           </>
         )}
         {type === "saturation" && (
           <>
             {" "}
-            A ≤ M 时 clip 从不触发，THD = 0，系统<strong>完全线性</strong>；A 越过 M 的瞬间 THD
-            阶跃式上升（A = 2、M = 1 时为 23.29%）——这是&quot;非本质非线性&quot;的签名。
+            A ≤ M 时 clip 从不触发，THD = 0，该次输入没有触发限幅；超过阈值后失真连续增加，不是阶跃跳变。
           </>
         )}
         {type === "deadzone" && (
           <>
             {" "}
-            A ≤ a 时输出恒为 0，小信号被完全丢弃；这就是死区导致静差与极限环的机理。
+            A ≤ a 时输出恒为 0，小信号被完全丢弃；是否产生静差或振荡还取决于完整闭环。
           </>
         )}
         {type === "relay" && (
           <>
             {" "}
-            u = 0 处增益无穷大、不连续，Jacobian 不存在，<strong>无法线性化</strong>；
+            u = 0 处不连续，经典导数不存在；此处约定 u = 0 时取 +M，不能在跳变处直接求切线；
             基波 b₁ = 4M/π = <strong>{((4 * p) / Math.PI).toFixed(6)}</strong>。
           </>
         )}

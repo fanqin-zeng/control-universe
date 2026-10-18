@@ -1,0 +1,20 @@
+import{request}from'node:http';
+import{readFileSync,writeFileSync,unlinkSync}from'node:fs';import{execFileSync}from'node:child_process';import{createHash,randomUUID}from'node:crypto';import assert from'node:assert/strict';import ts from'typescript';import{extractNotebooks}from'./lib-mdx.mjs';import{renderedHeadings}from'./rendered-headings.mjs';import{requireSuccess}from'./verify-reproducibility.mjs';
+function directHttp(port,path,method='GET',body){return new Promise((resolve,reject)=>{const data=body===undefined?null:Buffer.from(JSON.stringify(body));const req=request({hostname:'127.0.0.1',port,path,method,headers:data?{'Content-Type':'application/json','Content-Length':data.length}:{}},res=>{let text='';res.setEncoding('utf8');res.on('data',c=>text+=c);res.on('end',()=>{let json;try{json=JSON.parse(text);}catch{}resolve({status:res.statusCode,text,json});});});req.setTimeout(600000,()=>req.destroy(Error('HTTP timeout 600s')));req.on('error',reject);if(data)req.write(data);req.end();});}
+const dir='.agent/semester-03/nonlinear-03/',source=readFileSync('content/nonlinear/lyapunov-stability.mdx','utf8');
+const e={};new Function('exports',ts.transpileModule(readFileSync('lib/lyapunov-pendulum.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText)(e);
+const triples=new Map();const add=(d,theta,omega)=>triples.set(JSON.stringify([d,theta,omega]),{d,theta,omega});
+for(let i=0;i<=40;i++)add(i*.05,2,0);
+for(let i=0;i<=60;i++){add(.3,-3+i*.1,0);add(.3,2,-3+i*.1);}
+for(const d of [0,.05,.3,2])for(const q of [-3,0,3])for(const w of [-3,0,3])add(d,q,w);
+const cases=[...triples.values()].map(c=>({...c,samples:e.pendulumTrajectory(c.d,c.theta,c.omega).map(s=>[s.t,s.theta,s.omega,s.energy])}));
+for(const c of cases){const points=e.wrappedPhase(c.samples.map(s=>({t:s[0],theta:s[1],omega:s[2],energy:s[3]})));let prev=null;for(const p of points){if(p){assert(Math.abs(p[0])<=Math.PI+1e-12);if(prev)assert(Math.abs(p[0]-prev[0])<=Math.PI);}prev=p;}}
+for(const c of [.25,.75,1.5,1.9])for(const [q,w]of e.pendulumLevel(c))assert(Math.abs(e.pendulumEnergy(q,w)-c)<1e-12);
+for(const args of [[-1,0,0],[3,0,0],[0,4,0],[0,0,4],[NaN,0,0]])assert.throws(()=>e.pendulumTrajectory(...args),RangeError);
+const temp='logs/nonlinear03-actual.json';let reference;try{writeFileSync(temp,JSON.stringify(cases));reference=JSON.parse(execFileSync('python',[dir+'reference.py',temp],{encoding:'utf8'}));}finally{try{unlinkSync(temp);}catch{}}
+const hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex');
+const report={pass:true,sourceHash:hash(source),numericsHash:hash(readFileSync('lib/lyapunov-pendulum.ts','utf8')),componentHash:hash(readFileSync('components/wiki/lyapunov-explorer.tsx','utf8')),component:reference,default:e.pendulumTrajectory(.3,2,0).filter(s=>[0,60].includes(s.t)),notebooks:[]};
+for(const [index,nb]of extractNotebooks(source).entries()){
+ console.log('Running',index+1,nb.title);const id='nonlinear03-'+randomUUID();try{assert.equal((await directHttp(8891,'/api/notebook','POST',{notebook_id:id,setup_code:''})).status,200);const execute=async code=>requireSuccess(await directHttp(8891,`/api/notebook/${id}/execute`,'POST',{code}),'source code');await execute(nb.setup.value);const cells=[];for(const c of nb.cells){const out=await execute(c.value);cells.push({outputs:out.map(o=>o.type==='image'?{type:'image',bytes:o.data.length}:o)});}report.notebooks.push({title:nb.title,cells});}finally{await directHttp(8891,`/api/notebook/${id}`,'DELETE');}
+}
+const h=await renderedHeadings(source,'nonlinear/lyapunov-stability'),old=JSON.parse(readFileSync(dir+'baseline-headings.json','utf8'));old.ids.forEach(id=>assert(h.ids.includes(id),id));assert.equal(new Set(h.ids).size,h.ids.length);report.oldIds=old.ids.length;writeFileSync(dir+'headings.json',JSON.stringify(h,null,2)+'\n');writeFileSync(dir+'reconciliation.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,component:reference,default:report.default,oldIds:report.oldIds,notebooks:report.notebooks.length}));
