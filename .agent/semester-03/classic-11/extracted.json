@@ -1,0 +1,123 @@
+{
+  "source": "content/classic/classic-case-study.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 71,
+      "title": "电机模型建立",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 109,
+          "delim": "`",
+          "code": "print('versions',np.__version__,scipy.__version__,ct.__version__)\r\nprint('physical denominator',[.01*.01,.01*.001+1*.01,1*.001+.1*.1])\r\nprint('plant poles',ct.poles(G),'DC',ct.dcgain(G),'time constants',-1/ct.poles(G))\r\nprint('load DC',ct.dcgain(Gd),'load normalized numerator',Gd.num[0][0])\r\nA=np.array([[-100.,-10.],[10.,-.1]])\r\nprint('physical matrix roots',np.linalg.eigvals(A))\r\nassert np.allclose(np.sort(np.linalg.eigvals(A)),np.sort(ct.poles(G)))\r\nprint('P gain threshold strict',99/ct.dcgain(G))\r\nprint('breakaway s,K',-50.05,(50.05**2-110)/1000)\r\nprint('zeta .5 intersection K',(100.1**2-110)/1000)\r\nprint('zeta for 10 percent',-np.log(.1)/np.sqrt(np.pi**2+np.log(.1)**2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 202,
+      "title": "PI 与滤波PID验证",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 240,
+          "delim": "`",
+          "code": "print_metrics()\r\nideal=5+5.5/s+.3*s\r\nprint('ideal PID PM,wc',ct.margin(ideal*G)[1::2],'numerator',ideal.num[0][0])\r\nfor name,C in controllers.items():\r\n r,p=expansion(ct.feedback(C,G));print(name,'alltime voltage absolute upper bound',sum(abs(r)))\r\n print(name,'noise @10000 absT,absCS',abs(ct.evalfr(ct.feedback(C*G),10000j)),abs(ct.evalfr(ct.feedback(C,G),10000j)))\r\nt=np.arange(10001)/2000\r\nfig,ax=plt.subplots(figsize=(7,4))\r\nfor name in ['PI','PIDf','PIsoft']:ax.plot(t,response(ct.feedback(controllers[name]*G),t),label=name)\r\nax.set(xlim=(0,1),ylim=(0,1.3),xlabel='t (s)',ylabel='speed (rad/s)');ax.legend();fig.tight_layout();plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 265,
+      "title": "超前校正与离散复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 303,
+          "delim": "`",
+          "code": "C=controllers['Lead'];print('lead zero,pole',ct.zeros(C),ct.poles(C));print('lead metrics',metrics(C))\r\nfor fs in [500,5000]:print('discrete',discrete_metrics(fs))\r\nPr=plant(R=1.3);print('Q5 Ra1.3 poles',ct.poles(Pr),'PM,wc',ct.margin(C*Pr)[1::2])\r\nprint('Q6 hypothetical wc180 minimum fs',10*180/(2*np.pi),'500Hz ZOH phase deg',np.degrees(180/(2*500)))\r\nprint('derivative filter phase at wc277',-np.degrees(np.arctan(.001*277.2154526981821)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 345,
+      "title": "同合同验证与十题复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 383,
+          "delim": "`",
+          "code": "print_metrics()\r\n# Q1: physical J is changed, not all time constants scaled.\r\nP1=plant(J=.03);z=min(-ct.poles(P1).real);kp=abs(1/ct.evalfr((s+z)/s*P1,30j))\r\nprint('Q1 denominator',P1.den[0][0],'poles',ct.poles(P1),'P50 PM,wc',ct.margin(50*P1)[1::2],'PI kp,ki,PM,wc',kp,kp*z,ct.margin(kp*(s+z)/s*P1)[1::2]);print('Q1 full PI roots',ct.poles(ct.feedback(kp*(s+z)/s*P1)))\r\nz=min(-ct.poles(G).real);kp=abs(1/ct.evalfr((s+z)/s*G,55j));print('Q2 PI kp,ki,PM,wc',kp,kp*z,ct.margin(kp*(s+z)/s*G)[1::2]);print('Q2 full roots',ct.poles(ct.feedback(kp*(s+z)/s*G)))\r\nprint('Q3 phi70 alpha',(1+np.sin(np.deg2rad(70)))/(1-np.sin(np.deg2rad(70))),'alpha20 phi',np.degrees(np.arcsin(19/21)))\r\nprint('Q4 ideal PID zero magnitudes',-np.roots([.3,5,5.5]))\r\nP7=10/((s+1)*(s+5)*(s+50));C7=1250/s*(1+s)/(1+s/5)*(1+s/.01)/(1+s/.0002)\r\nprint('Q7 original finite DC Kv',0,'alternative Kv',1250*ct.dcgain(P7))\r\ngm,pm,_,wc=ct.margin(C7*P7);print('Q7 integral extension GMdB,PM,wc',20*np.log10(gm),pm,wc,'closed roots',ct.poles(ct.feedback(C7*P7)))\r\nprint('Q8 PI5,25 roots',np.roots([1,100.1,5110,25000]))\r\nprint('Q8 P load DC for K50',-10000/(110+1000*50))\r\nfor fs in [500,5000]:print('Q9',discrete_metrics(fs))\r\nP10=5/((s+2)*(s+20));kp=abs(1/ct.evalfr((s+2)/s*P10,10j));C10=kp*(s+2)/s\r\nprint('Q10 P strict lower gain',99/ct.dcgain(P10),'PI kp,ki',kp,2*kp,'metrics',metrics(C10,P10))\r\n# A lead attempt is evaluated too; this is not a claim of exhaustive optimal design.\r\nC10lead=800*(1+s/5)/(1+s/100)\r\nprint('Q10 lead fixed attempt',metrics(C10lead,P10))\r\nprint('Q10 P800 fixed attempt',metrics(ct.tf([800],[1]),P10))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 430,
+      "title": "多种子参数检验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 468,
+          "delim": "`",
+          "code": "for label,P in [('nominal',G),('J+50%',plant(J=.015)),('R+30%',plant(R=1.3))]:\r\n for name,C in controllers.items():print('condition',label,name,metrics(C,P,dt=.002))\r\nfig,axes=plt.subplots(1,3,figsize=(11,3))\r\nfor seed in [42,43,44]:\r\n rng=np.random.default_rng(seed);data={n:[] for n in controllers}\r\n for _ in range(120):\r\n  R,J,B,K=rng.uniform([.8,.005,.0005,.09],[1.2,.015,.002,.11]);P=plant(R,J,B,K)\r\n  for name,C in controllers.items():data[name].append(metrics(C,P,dt=.002))\r\n for name,rs in data.items():\r\n  vals=np.array([[r['peak_target_pct'],r['ts_grid'] if r['ts_grid'] is not None else np.inf,r['pm']] for r in rs])\r\n  failed=np.sum((vals[:,0]>=10)|(vals[:,1]>=1.5)|(vals[:,2]<50))\r\n  print('MC seed,name,n,failed,columns peak/ts/PM',seed,name,len(rs),int(failed),'min',np.min(vals,axis=0),'median',np.median(vals,axis=0),'max',np.max(vals,axis=0))\r\n  if name=='PIsoft':\r\n   for j,ax in enumerate(axes):ax.hist(vals[:,j],bins=12,alpha=.4,label=str(seed))\r\nfor ax,label,lim in zip(axes,['target peak (%)','grid settling (s)','PM (deg)'],[(-1,15),(0,1.5),(0,140)]):\r\n ax.set(xlim=lim,ylim=(0,120),xlabel=label,ylabel='count');ax.legend()\r\nfig.tight_layout();plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 520,
+      "title": "负载与限幅状态验证",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np, scipy, control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nfrom scipy.integrate import solve_ivp\r\ns=ct.tf('s')\r\ndef plant(R=1.,J=.01,B=.001,K=.1):\r\n return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])\r\nG=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])\r\ncontrollers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}\r\ndef expansion(H):\r\n n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0\r\n return r,p\r\ndef response(H,t):\r\n r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)\r\ndef metrics(C,P=G,dt=.0005,end=5.):\r\n T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)\r\n roots=ct.poles(T);assert np.max(roots.real)<0\r\n r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)\r\n ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)\r\n gm,pm,wg,wc=ct.margin(C*P)\r\n return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)\r\ndef print_metrics():\r\n for n,C in controllers.items():print(n,metrics(C))\r\ndef discrete_metrics(fs):\r\n Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz\r\n # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.\r\n w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)\r\n pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)\r\n return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])\r\ndef saturated(amp,aw):\r\n kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05\r\n def rhs(t,x):\r\n  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)\r\n  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]\r\n t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success\r\n i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)\r\n return t,w,u,xi\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 558,
+          "delim": "`",
+          "code": "t=np.arange(10001)/2000;fig,axes=plt.subplots(1,2,figsize=(10,3.5))\r\nfor name in ['P50','PI','PIDf','Lead','PIsoft']:\r\n C=controllers[name];H=Gd*ct.feedback(1,C*G);y=.01*response(H,t)\r\n print('load .01',name,'DC',.01*ct.dcgain(H),'finite y5',y[-1]);axes[0].plot(t,y,label=name)\r\nfor aw in [False,True]:\r\n tt,w,u,xi=saturated(100,aw)\r\n print('sat100 aw',aw,'grid_peak_y',max(w),'y8',w[-1],'max_abs_u',max(abs(u)),'max_abs_integral',max(abs(xi)))\r\n axes[1].plot(tt,w,label='AW='+str(aw))\r\naxes[0].set(xlim=(0,5),ylim=(-.03,.005),xlabel='t (s)',ylabel='speed deviation (rad/s)');axes[0].legend()\r\naxes[1].set(xlim=(0,8),ylim=(0,140),xlabel='t (s)',ylabel='speed (rad/s)');axes[1].legend()\r\nfig.tight_layout();plt.show()\r\nprint('Tf .001 cutoff Hz',1/(2*np.pi*.001))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

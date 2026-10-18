@@ -1,2031 +1,664 @@
 ---
-title: 经典控制综合案例
-description: 以直流电机速度控制为主线，完整走一遍"建模→分析→设计→验证→实现"的经典控制工程流程。
+title: 经典控制案例
+description: 用直流电机的同一份需求合同，贯通物理建模、候选设计、扰动检验和实现边界。
 ---
 
-# 经典控制综合案例
+# 经典控制案例
 
-前面十节课分别讲了传递函数、时域分析、频域分析、根轨迹、PID 控制、稳定性分析、频率响应法和校正网络设计。每一节都聚焦一个工具，但工程问题从来不会告诉你"请用根轨迹法"或"请设计超前校正"——你需要自己判断。
+<span id="经典控制综合案例" />
 
-> 📖 本章是经典控制部分的综合应用，需要前面所有章节的基础。如果某个概念不熟悉，请回看对应章节：[传递函数入门](/classic/transfer-function)、[时域分析](/classic/time-domain-analysis)、[频域分析](/classic/frequency-domain-analysis)、[根轨迹法](/classic/root-locus)、[PID 控制](/classic/pid-controller)、[稳定性分析](/classic/stability-analysis)、[频率响应设计法](/classic/frequency-response-design)、[校正网络设计](/classic/compensator-design)。
+上一课[设计方法选型](/classic/design-methods-comparison)强调：先写清需求，再比较候选。现在把这套流程用到一台带输送带的小电机上。放上货物时，负载转矩增大，转速会下降；提高设定转速时，又可能遇到供电电压上限。我们要同时回答：转速能否跟上、恢复多快、控制器要求的电压是否做得到？
 
-本节以**直流电机速度控制**为主线，完整走一遍经典控制的工程设计流程：
-
-1. **建模**：从物理参数到传递函数
-2. **指标**：把工程需求翻译成控制语言
-3. **分析**：用多种工具诊断未校正系统的瓶颈
-4. **设计**：从最简单的 P 控制开始，逐步升级
-5. **验证**：时域 + 频域 + 扰动三重校验
-6. **鲁棒性**：参数变化时系统还能不能工作
-7. **实现**：考虑工程落地细节
-
-这个流程适用于绝大多数单回路 SISO 控制系统。学完本章，你应该能把前面学到的每个工具"对号入座"。
+本课沿用一个明确的教学参数集，不将它称为某台实机的测量数据。建模、设计和验证使用同一个对象；理想连续模型通过后，还要单独检查电压限制、微分滤波和采样。
 
 ## 问题描述
 
-直流电机是控制理论最经典的实验对象——结构简单、物理直觉清晰、参数可测。工业中的伺服电机、无人机电调、电动车驱动，本质上都是"电机 + 控制器"的组合。
-
 ### 应用场景
 
-不同场景对电机控制的要求差异很大：
-
-| 应用场景 | 典型功率 | 核心指标 | 特殊要求 |
-|----------|----------|----------|----------|
-| 无人机旋翼 | 10-500 W | 快速响应（$t_s < 50$ ms） | 抗风扰动、多电机同步 |
-| 电动车驱动 | 1-100 kW | 效率优先、宽调速范围 | 大负载变化、安全等级高 |
-| 机床主轴 | 0.5-50 kW | 稳速精度（$< 0.1\%$） | 恒功率/恒转矩切换 |
-| 机械臂关节 | 10-500 W | 位置跟踪精度 | 柔性传动、重力补偿 |
-
-我们选取一个**中等性能要求**的通用场景：小型伺服电机的速度控制。指标不会特别极端，但足以展示完整的设计流程。
+输送带关心加负载后能否恢复转速，旋翼还关心推力变化，主轴还受机械强度约束。这里不替这些行业规定通用功率、响应时间或安全等级，只分析给定电机的速度环。
 
 ### 控制结构
 
-我们要设计的是**电机转速闭环控制**：
-
-```
-          +--------+          +--------+
-  r(t) -->| 控制器 |--> u(t) -|  电机  |--> ω(t)
-    ^     | C(s)   |          | Gp(s)  |      |
-    |     +--------+          +--------+      |
-    |                                         |
-    +-----------------------------------------+
-                    负反馈
-```
-
-输入 $r(t)$ 是期望转速，输出 $\omega(t)$ 是实际转速。传感器（编码器或测速发电机）测量转速并反馈比较——这就是一个标准的单位负反馈系统。
-
-> 📖 单位负反馈的概念和闭环传递函数推导，详见 [传递函数入门](/classic/transfer-function)。
+参考$r$、测量转速$\omega$的单位都是rad/s，误差$e=r-\omega$；控制器把误差换成电枢电压$u$，增益有相应单位。正负号为单位负反馈，负载转矩$T_L>0$阻碍正转。基准跟踪实验取$r=1$ rad/s阶跃、全状态零初值；执行器电压限制为$\lvert u\rvert\le24$ V。载荷扰动另取0.01 N·m阶跃，不与参考混为同一输入。
 
 ## 建立被控对象模型
 
 ### 电机的电气方程
 
-电枢回路的基尔霍夫电压方程：
+忽略磁饱和、轴柔性和驱动器内部动态，磁场恒定。反电动势抵抗外加电压：
 
 $$
-L_a \frac{di_a}{dt} + R_a i_a + e_b = u_a
+L_a\dot i_a+R_ai_a+K_b\omega=u.
 $$
-
-其中：
-- $u_a$：电枢电压（控制输入）
-- $i_a$：电枢电流
-- $R_a$：电枢电阻
-- $L_a$：电枢电感
-- $e_b = K_b \omega$：反电动势
 
 ### 电机的机械方程
 
-转子的牛顿第二定律：
+电磁转矩克服粘性阻力与负载：
 
 $$
-J \frac{d\omega}{dt} + B\omega = T_m - T_L
+J\dot\omega+B\omega=K_mi_a-T_L.
 $$
 
-其中：
-- $\omega$：转子角速度（输出）
-- $J$：转动惯量
-- $B$：粘性摩擦系数
-- $T_m = K_m i_a$：电磁转矩
-- $T_L$：负载转矩（作为扰动）
+电气与机械方程的形式可参阅[密歇根大学CTMS电机建模教程](https://ctms.engin.umich.edu/CTMS/index.php?example=MotorSpeed&section=SystemModeling)；本课参数另行给定，不沿用该教程的数值。
 
 ### 传递函数推导
 
-对两个方程做拉普拉斯变换（零初始条件），消去 $i_a$：
+零初值下消去电流，记$D=(L_as+R_a)(Js+B)+K_mK_b$：
 
 $$
-(L_a s + R_a) I_a(s) + K_b \Omega(s) = U_a(s)
+G_p=\frac{\Omega}{U}=\frac{K_m}{D},\qquad
+G_d=\frac{\Omega}{T_L}=\frac{-(L_as+R_a)}{D}.
 $$
 
-$$
-(Js + B) \Omega(s) = K_m I_a(s) - T_L(s)
-$$
-
-令 $T_L = 0$（只考虑控制输入到输出的通道），解出：
-
-$$
-G_p(s) = \frac{\Omega(s)}{U_a(s)} = \frac{K_m}{(L_a s + R_a)(Js + B) + K_m K_b}
-$$
-
-展开分母：
-
-$$
-G_p(s) = \frac{K_m}{L_a J s^2 + (L_a B + R_a J)s + (R_a B + K_m K_b)}
-$$
-
-> 这就是一个标准的二阶系统。回忆[传递函数入门](/classic/transfer-function)中的标准形式。
+两条通道有同一个分母，分子不能混用。负载通过机械方程进入，不能直接当作输入电压扰动。
 
 ### 参数选取
 
-取一台小型直流电机的典型参数：
-
-| 参数 | 符号 | 数值 | 单位 |
-|------|------|------|------|
-| 转矩常数 | $K_m$ | 0.1 | N·m/A |
-| 反电动势常数 | $K_b$ | 0.1 | V·s/rad |
-| 电枢电阻 | $R_a$ | 1.0 | Ω |
-| 电枢电感 | $L_a$ | 0.01 | H |
-| 转动惯量 | $J$ | 0.01 | kg·m² |
-| 粘性摩擦 | $B$ | 0.001 | N·m·s/rad |
-
-代入得：
+下列是教学设定：$L_a=0.01$ H、$R_a=1$ Ω、$J=0.01$ kg·m²、$B=0.001$ N·m·s/rad，$K_m=0.1$ N·m/A、$K_b=0.1$ V·s/rad。SI单位下两常数数值相等。展开得到
 
 $$
-G_p(s) = \frac{0.1}{0.0001 s^2 + 0.0101 s + 0.011}
-$$
-
-分子分母同乘 $10000$：
-
-$$
-G_p(s) = \frac{1000}{s^2 + 101s + 110}
-$$
-
-分母的两个根：
-
-$$
-s_{1,2} = \frac{-101 \pm \sqrt{101^2 - 4 \times 110}}{2} = \frac{-101 \pm \sqrt{9761}}{2}
+D=0.0001s^2+0.01001s+0.011,
 $$
 
 $$
-s_1 \approx -1.10, \quad s_2 \approx -99.9
+G_p=\frac{1000}{s^2+100.1s+110},\qquad
+G_d=\frac{-100s-10000}{s^2+100.1s+110}.
 $$
 
-因此可以写成时间常数形式：
+一次项来自$L_aB+R_aJ$，不是把各系数凭外观拼起来。两极点约−98.988763、−1.111237；直流增益9.090909 rad/(s·V)。对应时间常数约0.010102s和0.899898s；这是耦合系统的两种模态，不是将电气与机械子系统完全拆开。
 
-$$
-G_p(s) = \frac{1000}{(s + 1.10)(s + 99.9)} = \frac{9.1}{(0.91s + 1)(0.01s + 1)}
-$$
 
-**关键观察**：
+<JupyterNotebook title="电机模型建立" setupCode={`import numpy as np, scipy, control as ct
+import matplotlib.pyplot as plt
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`print('versions',np.__version__,scipy.__version__,ct.__version__)
+print('physical denominator',[.01*.01,.01*.001+1*.01,1*.001+.1*.1])
+print('plant poles',ct.poles(G),'DC',ct.dcgain(G),'time constants',-1/ct.poles(G))
+print('load DC',ct.dcgain(Gd),'load normalized numerator',Gd.num[0][0])
+A=np.array([[-100.,-10.],[10.,-.1]])
+print('physical matrix roots',np.linalg.eigvals(A))
+assert np.allclose(np.sort(np.linalg.eigvals(A)),np.sort(ct.poles(G)))
+print('P gain threshold strict',99/ct.dcgain(G))
+print('breakaway s,K',-50.05,(50.05**2-110)/1000)
+print('zeta .5 intersection K',(100.1**2-110)/1000)
+print('zeta for 10 percent',-np.log(.1)/np.sqrt(np.pi**2+np.log(.1)**2))`}]} />
 
-- 直流增益 $G_p(0) = 1000/110 \approx 9.1$ rad/(s·V)
-- 一个"慢"极点 $s_1 = -1.10$（时间常数 $\approx 0.91$ s）—— 机械子系统
-- 一个"快"极点 $s_2 = -99.9$（时间常数 $\approx 0.01$ s）—— 电气子系统
-- 两极点相差约 90 倍，机械动力学是主导
-
-> 这种"快慢分离"在工程中很常见。电响应比机械响应快得多，是合理的物理直觉。
-
-<JupyterNotebook
-  title="电机模型建立"
-  setupCode={`import numpy as np
-from scipy.signal import lti
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001`}
-  cells={[
-    { code: `# === 建立电机模型 ===
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)
-
-print("电机传递函数:")
-print(f"  1000 / (s^2 + {(La*B + Ra*J)/(La*J):.1f}s + {(Ra*B + Km*Kb)/(La*J):.1f})")
-print(f"  直流增益 = {Km/(Ra*B + Km*Kb):.2f} rad/(s·V)")
-print(f"  极点: {plant.poles}")` },
-  ]}
-/>
 
 ## 设计指标
 
 ### 从工程需求到控制指标
 
-工程需求往往是模糊的："转得快一点""别晃太厉害""稳态要准"。控制工程师的工作是把这些模糊需求翻译成精确的数学指标。
-
-| 工程需求 | 控制指标 | 具体要求 |
-|----------|----------|----------|
-| 转速精确跟踪 | 稳态误差 | 阶跃输入 $e_{ss} < 1\%$ |
-| 不超速太多 | 超调量 | $M_p < 10\%$ |
-| 快速达到目标 | 调节时间 | $t_s < 1.5$ s（2% 误差带） |
-| 足够的安全余量 | 相位裕度 | $PM \geq 50°$ |
-| 高频噪声不放大 | 增益裕度 | $GM \geq 10$ dB |
+这是一份教学验收合同，不是行业标准。稳定闭环下：单位阶跃残差小于1%；超过目标1的峰值小于10%；目标±0.02误差带的调节时间小于1.5s；PM至少50°、GM至少10dB；电压不超过±24V。GM是环路增益变化余量，**不是高频噪声指标**。噪声另看测量噪声到输出的$-T$、到控制量的$-CS$，其中$S=1/(1+CG_p)$、$T=CG_p/(1+CG_p)$。
 
 ### 时域指标与频域指标的对应
 
-> 📖 时域指标的详细定义见 [时域分析](/classic/time-domain-analysis)，频域裕度的定义见 [频率响应设计法](/classic/frequency-response-design)。
-
-这两类指标不是独立的，它们通过二阶系统的标准形式相互关联。对于典型的二阶主导极点系统：
+无零点标准欠阻尼二阶系统，超调相对终值才有精确公式
 
 $$
-T(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}
+M_{p,\infty}=100\exp\!\left(-\frac{\pi\zeta}{\sqrt{1-\zeta^2}}\right).
 $$
 
-**超调量与阻尼比**：
-
-$$
-M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\%
-$$
-
-要求 $M_p < 10\%$，解得 $\zeta > 0.59$。
-
-**调节时间与阻尼比、自然频率**：
-
-$$
-t_s \approx \frac{4}{\zeta\omega_n} \quad \text{（2\% 误差带）}
-$$
-
-要求 $t_s < 1.5$ s，取 $\zeta = 0.6$，则 $\omega_n > 4/(0.6 \times 1.5) = 4.44$ rad/s。这个要求很容易满足。
-
-**相位裕度与阻尼比的近似关系**：
-
-$$
-PM \approx 100\zeta \quad \text{（适用于 } 0.3 \leq \zeta \leq 0.7\text{）}
-$$
-
-这个经验公式的推导如下：对于开环传递函数 $L(s) = \omega_n^2 / [s(s + 2\zeta\omega_n)]$（II 型系统的简化），在增益穿越频率 $\omega_c$ 处：
-
-$$
-|L(j\omega_c)| = \frac{\omega_n^2}{\omega_c \sqrt{\omega_c^2 + 4\zeta^2\omega_n^2}} = 1
-$$
-
-解得 $\omega_c = \omega_n\sqrt{\sqrt{1 + 4\zeta^4} - 2\zeta^2}$。当 $\zeta$ 在 0.3-0.7 范围内时，$\omega_c \approx \omega_n$，此时：
-
-$$
-PM = 180° - 90° - \arctan\frac{\omega_c}{2\zeta\omega_n} \approx 90° - \arctan\frac{1}{2\zeta}
-$$
-
-用 $\zeta = 0.5$ 验证：$PM \approx 90° - \arctan(1) = 90° - 45° = 45°$，而 $100 \times 0.5 = 50°$——近似合理。
-
-> 因此 $PM \geq 50°$ 大致对应 $\zeta \geq 0.5$，超调量约 16%——我们留了点余量给模型不确定性。
+10%对应$\zeta\approx0.591155$。$4/(\zeta\omega_n)$是常见调节时间估算，不保证带零点或更高阶模型的真实调节时间。PM与阻尼的经验映射也不替代完整响应。这里包含一个原点极点的环路为I型，不是II型。
 
 ### 指标的一致性检查
 
-好的工程指标应该**自洽**。检查一下：
+PM≥50°与峰值&lt;10%是两个同时要满足的条件，并不互相矛盾；某候选只满足其中一个，就继续设计。不能因设计困难擅自把10%放宽到16%。更不能由“高裕度”直接承诺安全。
 
-- $M_p < 10\%$ 要求 $\zeta > 0.59$，对应 $PM > 59°$
-- 但我们的 $PM$ 指标只要求 $\geq 50°$
-
-这意味着 $PM$ 指标比超调量指标**宽松**。如果 $PM = 50°$（$\zeta \approx 0.5$），超调量约 16%，超过了 10% 的要求。
-
-**解决方案**：要么提高 $PM$ 到 60°，要么放宽超调量到 16%。工程上通常选择后者——10% 和 16% 的超调在大多数电机应用中差别不大，但 $PM = 50°$ 到 $60°$ 的设计难度差异显著。
-
-> 这种指标间的"矛盾"在实际工程中非常常见。工程师需要与需求方沟通，确定哪些指标是硬约束，哪些可以放松。
+本课表格使用0..5s、步长0.0005s的**采样峰值和网格调节时间**：取最后一个越界样本的下一个点。它们不是连续精确峰值或精确进入时间。对稳定的残差展开$y-y_\infty=\sum r_ke^{p_kt}$，以$\sum\lvert r_k\rvert e^{\operatorname{Re}(p_k)5}$核5s后是否仍可能越界；实验会打印尾界，不能把末样当稳态。接近合同边界仍须细化网格或连续求极值。
 
 ## 分析未校正系统
 
-在动手设计之前，先看清"裸奔"系统的状态。
-
 ### 开环增益调节的局限
 
-最简单的控制策略是纯比例控制 $C(s) = K$。
-
-闭环传递函数：
+P控制$C=K$时
 
 $$
-T(s) = \frac{K \cdot G_p(s)}{1 + K \cdot G_p(s)} = \frac{1000K}{s^2 + 101s + (110 + 1000K)}
+T_P=\frac{1000K}{s^2+100.1s+110+1000K},\qquad
+e_\infty=\frac{110}{110+1000K}.
 $$
 
-**稳态误差**（单位阶跃输入）：
+残差&lt;1%要求$K>10.89$。保留旧候选K50作诊断：残差0.219517%，PM25.232146°，目标超调约48.3%，初始就要求50V，超过24V。它不是满足稳态条件的最小增益，也不是所有P控制的最优代表。
 
-$$
-e_{ss} = \frac{1}{1 + K \cdot G_p(0)} = \frac{1}{1 + 9.1K}
-$$
-
-要求 $e_{ss} < 0.01$，即 $K \cdot 9.1 > 99$，$K > 11$。工程上通常再留数倍稳态余量——取 $K = 50$（此时 $e_{ss} = 1/(1+50\times9.1) = 0.22\%$），但同时把动态推向恶化，这正是下面要展示的矛盾。
-
-**但 $K = 50$ 时的闭环极点**：
-
-$$
-s^2 + 101s + (110 + 50000) = 0 \implies s^2 + 101s + 50110 = 0
-$$
-
-$$
-s = \frac{-101 \pm \sqrt{10201 - 200440}}{2} = -50.5 \pm j218.7
-$$
-
-阻尼比：
-
-$$
-\zeta = \frac{50.5}{\sqrt{50.5^2 + 218.7^2}} = \frac{50.5}{224.5} \approx 0.225
-$$
-
-超调量：
-
-$$
-M_p = e^{-\pi \zeta / \sqrt{1-\zeta^2}} = e^{-\pi \times 0.225 / 0.974} \approx 48\%
-$$
-
-**远超 10% 的要求！**
-
-这就是经典控制的核心矛盾：
-
-- 增大 $K$ → 稳态误差减小，但阻尼降低、振荡加剧
-- 减小 $K$ → 系统平稳，但稳态精度不够
-
-**纯增益调节无法同时满足稳态和动态要求。** 需要更复杂的控制器结构。
+这里可进一步证明本合同的P结构限制：随K增加，闭环阻尼下降。对K>10.89，目标峰已超过10%；结合稳态条件，P无法满足这份峰值合同。这个结论来自该对象的二阶式，不推广为“P总是不够用”。
 
 <PControlTradeoffExplorer />
 
 ### 频域诊断
 
-用 Bode 图看 $K=50$ 时的开环特性：
-
-$$
-L(s) = 50 \times \frac{1000}{s^2 + 101s + 110}
-$$
-
-增益穿越频率 $\omega_c$ 处 $|L(j\omega_c)| = 1$，大约 $\omega_c \approx 220$ rad/s。
-
-在 $\omega_c$ 处，两个极点都贡献了相位滞后：
-
-$$
-\angle L(j\omega_c) \approx -\arctan\frac{220}{1.1} - \arctan\frac{220}{99.9} \approx -90° - 66° = -156°
-$$
-
-$$
-PM \approx 180° - 156° = 24°
-$$
-
-相位裕度只有 24°，远不够 50° 的要求。
+对K50，实际增益交越约212.930508rad/s、PM25.232146°，并非拿220rad/s读渐近相位就当最终结果。正系数二阶闭环仍稳定；裕度小表示环路相位余量有限，不等于已经不稳定。此模型没有有限相位交越，GM为无穷，不是说可以任意延迟或噪声不受限制。
 
 ### 根轨迹视角
 
-> 📖 根轨迹的画法和基本规则详见 [根轨迹法](/classic/root-locus)。
-
-从根轨迹看，开环极点为 $p_1 = -1.10$ 和 $p_2 = -99.9$，无零点。
-
-**分离点计算**：两条根轨迹从实轴上的两个极点出发，在中间某点汇合后进入复平面。分离点满足：
+两实轴极点之间的分离点为$s_b=-50.05$，对应$K_b=2.3950025$。进入复平面后极点实部固定−50.05。若要求$\zeta=0.5$，有$\omega_n=100.1$，因此
 
 $$
-\frac{d}{ds}\left[\frac{1}{G_p(s)}\right] = 0 \implies \frac{d}{ds}(s^2 + 101s + 110) = 0
+K=\frac{\omega_n^2-110}{1000}=9.91001.
 $$
 
-$$
-2s + 101 = 0 \implies s_b = -50.5
-$$
-
-在分离点处，$K$ 的值为：
-
-$$
-K_b = \frac{|s_b^2 + 101s_b + 110|}{1000} = \frac{|2550.25 - 5100.5 + 110|}{1000} = \frac{2440.25}{1000} = 2.44
-$$
-
-当 $K < 2.44$ 时，两个闭环极点都在实轴上（过阻尼）；当 $K > 2.44$ 时，极点进入复平面（欠阻尼）。
-
-**与阻尼比射线的交点**：阻尼比 $\zeta = 0.5$ 对应的射线角度为 $\cos^{-1}(0.5) = 60°$。根轨迹进入复平面后沿水平方向发散（实部恒为 $-50.5$），与 $60°$ 射线的交点：
-
-$$
-\text{Re} = -50.5, \quad \text{Im} = 50.5 \tan 60° = 87.5
-$$
-
-该点处 $K = (50.5^2 + 87.5^2 + 110) / 1000 \approx 10.3$，对应的稳态误差 $e_{ss} = 1/(1 + 10.3 \times 9.1) = 0.95\%$——满足稳态要求，但此时 $\omega_c$ 较低，响应较慢。
-
-**诊断结论**：系统在物理上缺少"阻尼"。纯增益调节时，满足稳态精度并留有余量的 $K$ 值（$K = 50$）远大于分离点处的 $K_b = 2.44$，闭环极点必然深入复平面，阻尼比很低。我们需要在控制器中**引入零点**来把根轨迹拉回左半平面，或者在频域中**注入相位超前**。
+这里是减110，不能把它再加一次。该增益的残差仍不满足&lt;1%；仅画出阻尼射线还没完成设计。
 
 ## 控制器设计
 
 ### 方案一：PI 控制器
 
-先解决稳态误差问题。PI 控制器：
+保留候选$C_{PI}=10.24+11.26/s$。完整特征式为
 
 $$
-C_{PI}(s) = K_p + \frac{K_i}{s} = K_p \frac{s + z_i}{s}, \quad z_i = \frac{K_i}{K_p}
+s^3+100.1s^2+10350s+11260.
 $$
 
-积分环节 $1/s$ 将系统提升为 I 型系统，阶跃输入下稳态误差为零。
+其慢极点约−1.099486，另两根−49.500257±j88.265933；但慢根的留数很小，不能只用它的时间常数宣布调节时间2.8s。实际网格调节时间0.081s，采样目标超调17.159397%，PM50.950034°，败在10%峰值要求。
 
-**设计思路**：
-
-- 零点 $z_i$ 放在主导极点附近，用来"抵消"慢极点
-- 取 $z_i = 1.1$（抵消 $s_1 = -1.10$）
-
-这样开环传递函数近似为：
-
-$$
-L(s) \approx \frac{K_p \cdot 1000}{s(s + 99.9)}
-$$
-
-这是一个"积分 + 一阶"系统，根轨迹始终在左半平面。
-
-**选择 $K_p$ 使相位裕度满足要求**：
-
-$$
-L(s) = \frac{1000 K_p}{s(s + 99.9)}
-$$
-
-在 $\omega_c$ 处：
-
-$$
-|L(j\omega_c)| = \frac{1000 K_p}{\omega_c \sqrt{\omega_c^2 + 99.9^2}} = 1
-$$
-
-$$
-PM = 180° - 90° - \arctan\frac{\omega_c}{99.9}
-$$
-
-要求 $PM \geq 50°$，即 $\arctan(\omega_c / 99.9) \leq 40°$，即 $\omega_c \leq 83.8$ rad/s。
-
-取 $\omega_c = 80$ rad/s：
-
-$$
-1000 K_p = 80 \times \sqrt{80^2 + 99.9^2} = 80 \times 128 = 10240
-$$
-
-$$
-K_p = 10.24
-$$
-
-**PI 控制器参数**：
-
-$$
-K_p = 10.24, \quad K_i = K_p \times 1.1 = 11.26
-$$
-
-**验证**：
-
-- 稳态误差：$e_{ss} = 0$（I 型系统）✓
-- 相位裕度：约 50° ✓
-- 但超调量可能偏大，因为零点 $z_i = 1.1$ 会在阶跃响应中引入"额外"的上升动力
-
-<JupyterNotebook
-  title="PI 控制器验证"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import lti, step
-import numpy as np
-import scipy.signal as _sg
-
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)`}
-  cells={[
-    { code: `# === PI 控制器设计 ===
-Kp_pi, Ki_pi = 10.24, 11.26
-C_pi = lti([Kp_pi, Ki_pi], [1, 0])
-cl_pi = feedback(C_pi * plant, 1)
-t, y_pi = step(cl_pi, T=np.linspace(0, 3, 1000))
-Mp_pi = (y_pi.max() - 1) * 100
-
-gm, pm, wg, wc = margin(C_pi * plant)
-print(f"PI 控制 (Kp={Kp_pi}, Ki={Ki_pi}):")
-print(f"  超调量: {Mp_pi:.1f}%")
-print(f"  相位裕度: {pm:.1f}°")` },
-  ]}
-/>
+再按更保守带宽独立构造$C_{PI,soft}=2+2.2/s$，可检验更温和的候选，而不是认定PI结构有缺陷。这组参数不是全域最优，设计依据是保留约1.1rad/s零点、降低比例增益，并复验全部合同。
 
 ### 方案二：PID 控制器
 
-在 PI 基础上加微分项，增加阻尼：
+理想并联PID为$5+5.5/s+0.3s$。其分子$0.3s^2+5s+5.5$，不能把$K_p(s+1.1)(s+10)/s$中的整体系数误认成并联比例增益；一般也不能分别把$K_i/K_p$与$K_p/K_d$当两个精确零点。
+
+理想微分对参考阶跃会要求冲激电压，不能将漂亮的输出曲线作为可实现性证明。实际比较使用
 
 $$
-C_{PID}(s) = K_p + \frac{K_i}{s} + K_d s = \frac{K_d s^2 + K_p s + K_i}{s}
+C_{PIDf}=5+\frac{5.5}{s}+\frac{0.3s}{1+0.001s}.
 $$
 
-> 📖 PID 各参数的物理意义和调参方法详见 [PID 控制](/classic/pid-controller)。
+滤波后的PM为90.997414°，已经不同于理想式的106.097946°。单位参考刚跳变时，电压要求$5+0.3/0.001=305$V，仍远超24V。微分作用于测量可避免参考微分冲击，但那是不同的二自由度参考通道，要重新定义并验证，不能拿本曲线代替。
 
-微分项提供相位超前，相当于在根轨迹上添加零点。
 
-**设计策略**：
+<JupyterNotebook title="PI 与滤波PID验证" setupCode={`import numpy as np, scipy, control as ct
+import matplotlib.pyplot as plt
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`print_metrics()
+ideal=5+5.5/s+.3*s
+print('ideal PID PM,wc',ct.margin(ideal*G)[1::2],'numerator',ideal.num[0][0])
+for name,C in controllers.items():
+ r,p=expansion(ct.feedback(C,G));print(name,'alltime voltage absolute upper bound',sum(abs(r)))
+ print(name,'noise @10000 absT,absCS',abs(ct.evalfr(ct.feedback(C*G),10000j)),abs(ct.evalfr(ct.feedback(C,G),10000j)))
+t=np.arange(10001)/2000
+fig,ax=plt.subplots(figsize=(7,4))
+for name in ['PI','PIDf','PIsoft']:ax.plot(t,response(ct.feedback(controllers[name]*G),t),label=name)
+ax.set(xlim=(0,1),ylim=(0,1.3),xlabel='t (s)',ylabel='speed (rad/s)');ax.legend();fig.tight_layout();plt.show()`}]} />
 
-1. 用 $K_i / s$ 保证稳态精度（I 型系统，阶跃输入零稳态误差）
-2. 用微分零点抵消慢极点或提供阻尼
-3. 用 $K_p$ 调节穿越频率
-
-**具体设计**：取积分零点 $z_i = K_i / K_p = 1.1$（抵消慢极点 $s_1 = -1.10$），微分零点 $z_d = K_p / K_d = 10$（放在主导区域提供阻尼）。
-
-PID 控制器可写为：
-
-$$
-C_{PID}(s) = K_p \frac{(s + 1.1)(s + 10)}{s}
-$$
-
-开环传递函数（$s + 1.1$ 零极点对消后）：
-
-$$
-L(s) = \frac{K_p(s + 10) \times 1000}{s(s + 99.9)}
-$$
-
-**选择 $K_p$ 使相位裕度满足要求**：
-
-$$
-\angle L(j\omega_c) = -90° + \arctan\frac{\omega_c}{10} - \arctan\frac{\omega_c}{99.9}
-$$
-
-$$
-PM = 180° + \angle L(j\omega_c) = 90° + \arctan\frac{\omega_c}{10} - \arctan\frac{\omega_c}{99.9}
-$$
-
-取 $\omega_c = 50$ rad/s：
-
-$$
-PM = 90° + \arctan(5) - \arctan(0.5) = 90° + 78.7° - 26.6° = 142°
-$$
-
-这太大了——说明 $\omega_c = 50$ 太低，系统过于保守。增大 $K_p$ 提高穿越频率。
-
-取 $\omega_c = 150$ rad/s：
-
-$$
-PM = 90° + \arctan(15) - \arctan(1.5) = 90° + 86.2° - 56.3° = 119.9°
-$$
-
-仍然很大。这是因为微分零点 $z_d = 10$ 在中频段贡献了大量相位超前。实际上，PID 的相位裕度通常远超要求——代价是高频增益较大，可能放大噪声。
-
-取 $\omega_c = 300$ rad/s（进一步增大带宽）：
-
-$$
-PM = 90° + \arctan(30) - \arctan(3) = 90° + 88.1° - 71.6° = 106.5°
-$$
-
-仍然足够。这说明 PID 的阻尼能力很强。我们选择 $\omega_c = 200$ rad/s 作为折中：
-
-$$
-|L(j200)| = \frac{1000 K_p \sqrt{200^2 + 100}}{200 \sqrt{200^2 + 9980}} = \frac{1000 K_p \times 200.25}{200 \times 223.6} = 1
-$$
-
-$$
-K_p = \frac{200 \times 223.6}{1000 \times 200.25} = 0.223
-$$
-
-这太小了——问题出在零极点对消后，低频增益已经很高。实际上，PID 控制器在工程中的参数选择往往受到**执行器饱和**和**噪声放大**的约束，而不是稳定性。
-
-> 📖 这里暴露了一个重要问题：理论设计给出的参数可能在实际中不可行。[校正网络设计](/classic/compensator-design)中讨论的工程约束（饱和、噪声、离散化）在这里同样适用。
-
-**工程上更实用的 PID 调参方法**：
-
-与其从理论出发精确计算，工程上更常用的是"先粗后细"的策略：
-
-1. 先用 Ziegler-Nichols 法或经验公式获得初始参数
-2. 在仿真中观察阶跃响应
-3. 根据超调量、调节时间等指标微调
-
-> 📖 Ziegler-Nichols 法和其他经验调参公式详见 [PID 控制](/classic/pid-controller)。
-
-对本例，一组经过仿真验证的实用参数为：
-
-$$
-K_p = 5, \quad K_i = 5.5, \quad K_d = 0.3
-$$
-
-对应的 $\omega_c \approx 283$ rad/s，$PM \approx 106°$，阶跃响应几乎无超调（$M_p \approx 0.1\%$），调节时间约 0.2 s。注意 $K_d s$ 使带宽显著高于 PI——代价是对传感器噪声更敏感，这正呼应下一小节的噪声放大讨论。
 
 ### 方案三：超前校正
 
-如果不用 PID，直接用频率响应法设计超前校正器，会更系统。
-
-回忆[校正网络设计](/classic/compensator-design)的流程：
-
-1. 确定需要的相位超前量 $\phi_m$
-2. 计算 $\alpha$
-3. 确定 $\omega_m$
-4. 计算 $T$
-
-**设计目标**：$PM \geq 50°$，$e_{ss} < 2\%$。
-
-**Step 1**：先满足稳态精度。
+沿用旧设计舍入后的固定候选
 
 $$
-e_{ss} = \frac{1}{1 + K_p^{open} \cdot G_p(0)} < 0.02
+C_{lead}=50\frac{1+0.00644s}{1+0.00167s}.
 $$
 
-需要 $K_p^{open} \cdot 9.1 > 49$，取 $K = 50$（与之前一致）。
+它是直流增益50的形式，零点和极点约−155.279503、−598.802395。最大相位超前处的幅值为平方根比值；若已据此移动交越，不要再补乘一次极零比。由于这里保留的是舍入参数，真实交越必须重算，不宣称它恰好等于相位峰频率。
 
-**Step 2**：计算 $K=50$ 时的相位裕度。
-
-如前计算，$PM_0 \approx 24°$。
-
-**Step 3**：需要补偿的相位。
-
-$$
-\phi_m = 50° - 24° + 10°(\text{余量}) = 36°
-$$
-
-**Step 4**：计算 $\alpha$。
-
-$$
-\sin\phi_m = \frac{\alpha - 1}{\alpha + 1} \implies \sin 36° = 0.588 = \frac{\alpha - 1}{\alpha + 1}
-$$
-
-$$
-\alpha = \frac{1 + 0.588}{1 - 0.588} = \frac{1.588}{0.412} \approx 3.85
-$$
-
-**Step 5**：确定 $\omega_m$。
-
-在 $\omega_m$ 处，未校正系统的幅值应为 $-10\log_{10}\alpha = -5.86$ dB。
-
-$$
-|50 \cdot G_p(j\omega_m)| = \frac{1}{\sqrt{\alpha}} = \frac{1}{\sqrt{3.85}} = 0.51
-$$
-
-$$
-\frac{50000}{\sqrt{(\omega_m^2 + 1.21)(\omega_m^2 + 9980)}} = 0.51
-$$
-
-数值求解得 $\omega_m \approx 305$ rad/s。
-
-**Step 6**：计算 $T$。
-
-$$
-T = \frac{1}{\omega_m \sqrt{\alpha}} = \frac{1}{305 \times 1.96} \approx 0.00167 \text{ s}
-$$
-
-**超前校正器**：
-
-$$
-G_c(s) = \frac{1 + \alpha T s}{1 + T s} = \frac{1 + 0.00644 s}{1 + 0.00167 s}
-$$
-
-**增益说明**：这里用的是**有源形式**（直流增益为 1，$\omega_m$ 处增益恰为 $\sqrt{\alpha}$）。第 5 步已按 $|50 \cdot G_p(j\omega_m)| = 1/\sqrt{\alpha}$ 定位 $\omega_m$，故 $\sqrt{\alpha} \times 1/\sqrt{\alpha} = 1$，穿越频率正好落在 $\omega_m$，**无需再放大 $\alpha$ 倍**（只有无源网络 $(1+\alpha Ts)/[\alpha(1+Ts)]$ 才需要；原稿混淆了两种形式）。
-
-$$
-C(s) = 50 \times \frac{1 + 0.00644s}{1 + 0.00167s}
-$$
+完整闭环三根约−252.700607±j302.011858、−193.501181。PM54.163862°达到频域门槛，采样目标超调16.171684%却不满足时域合同，初始电压约192.814371V也不可行。不能用另一组不相关的主导极点估计覆盖这组结果。
 
 
-<JupyterNotebook
-  title="超前校正器验证"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+<JupyterNotebook title="超前校正与离散复算" setupCode={`import numpy as np, scipy, control as ct
 import matplotlib.pyplot as plt
-from scipy.signal import lti, step
-import numpy as np
-import scipy.signal as _sg
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`C=controllers['Lead'];print('lead zero,pole',ct.zeros(C),ct.poles(C));print('lead metrics',metrics(C))
+for fs in [500,5000]:print('discrete',discrete_metrics(fs))
+Pr=plant(R=1.3);print('Q5 Ra1.3 poles',ct.poles(Pr),'PM,wc',ct.margin(C*Pr)[1::2])
+print('Q6 hypothetical wc180 minimum fs',10*180/(2*np.pi),'500Hz ZOH phase deg',np.degrees(180/(2*500)))
+print('derivative filter phase at wc277',-np.degrees(np.arctan(.001*277.2154526981821)))`}]} />
 
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)`}
-  cells={[
-    { code: `# === 超前校正器设计 ===
-alpha = 3.85
-T_lead = 0.001672
-K_lead = 50.0
-C_lead = lti([K_lead * alpha * T_lead, K_lead], [T_lead, 1])
-cl_lead = feedback(C_lead * plant, 1)
-t, y_lead = step(cl_lead, T=np.linspace(0, 3, 1000))
-Mp_lead = (y_lead.max() - 1) * 100
-
-gm, pm, wg, wc = margin(C_lead * plant)
-print(f"超前校正 (K={K_lead}, α={alpha}):")
-print(f"  超调量: {Mp_lead:.1f}%")
-print(f"  相位裕度: {pm:.1f}°")` },
-  ]}
-/>
 
 ## 验证设计
 
-设计完成后，必须从多个角度验证。不能只看一个指标——"相位裕度 50°"不代表系统就一定好用。
-
 ### 闭环极点验证
 
-**P 控制**（$K = 50$）：
-
-$$
-T(s) = \frac{50000}{s^2 + 101s + 50110}
-$$
-
-闭环极点：$s = -50.5 \pm j218.7$，$\zeta = 0.225$，$\omega_n = 224.5$ rad/s。
-
-阻尼比远低于 0.5，超调量约 48%。**不满足指标。**
-
-**PI 控制**（$K_p = 10.24, K_i = 11.26$）：
-
-$$
-C_{PI}(s) = \frac{10.24s + 11.26}{s}
-$$
-
-开环 $L(s) = C_{PI}(s) \cdot G_p(s) = \frac{10.24s + 11.26}{s} \cdot \frac{1000}{s^2 + 101s + 110}$
-
-闭环特征方程：$s(s^2 + 101s + 110) + 1000(10.24s + 11.26) = 0$
-
-$$
-s^3 + 101s^2 + (110 + 10240)s + 11260 = 0
-$$
-
-$$
-s^3 + 101s^2 + 10350s + 11260 = 0
-$$
-
-数值求解三个闭环极点：$s_1 \approx -1.09$，$s_{2,3} \approx -49.95 \pm j73.9$。
-
-主导极点 $s_{2,3}$ 的阻尼比 $\zeta = 49.95/\sqrt{49.95^2 + 73.9^2} = 0.56$，$\omega_n = 89.1$ rad/s。
-
-- 超调量：$M_p = e^{-\pi \times 0.56/0.829} \approx 8.8\%$ ✓
-- 调节时间：$t_s \approx 4/(0.56 \times 89.1) = 0.08$ s... 
-
-等等，这不对。让我用更精确的方法。实际上 $s_1 = -1.09$ 离虚轴很近，可能成为新的主导极点。
-
-精确分析：$s_1 = -1.09$ 的时间常数为 $\tau = 1/1.09 = 0.92$ s。这个"尾巴"会使阶跃响应的 settling time 远大于二阶近似预测值。实际 $t_s \approx 3\tau = 2.8$ s——**不满足 $t_s < 1.5$ s 的要求！**
-
-> 这就是零极点对消的陷阱：虽然 $z_i = 1.1$ 接近 $p_1 = -1.10$，但对消不完美，残留的慢极点会影响 settling time。
-
-**超前校正**（$K = 50$, $G_c(s) = (1 + 0.00644s)/(1 + 0.00167s)$，修正后设计）：
-
-闭环特征方程：
-
-$$
-(1 + 0.00167s)(s^2 + 101s + 110) + 50(1 + 0.00644s) \times 1000 = 0
-$$
-
-展开：
-
-$$
-0.00167s^3 + 1.169s^2 + 423.2s + 50110 = 0
-$$
-
-数值求解闭环极点：$s_{1,2} \approx -253 \pm j302$，$s_3 \approx -193$，闭环零点 $z \approx -155$。
-
-主导极点 $s_{2,3}$：$\zeta = 4.35/\sqrt{4.35^2 + 16.2^2} = 0.26$，$\omega_n = 16.8$ rad/s。
-
-阻尼比偏低！这是因为超前校正器虽然提供了相位超前，但穿越频率提高后，高频处的相位滞后也增大了。
+必须检查完整特征式的全部根，而不是先约分再把剩下的根说成内部实现。所有候选的完整根都由第二实验打印，均在左半平面。PI接近稳定对消的慢模态仍存在；其对输出贡献由留数决定。滤波PID为四阶，不沿用理想PID的三根。
 
 ### 时域验证汇总
 
-用阶跃响应仿真检验各方案：
+单位参考、同一目标1、同一0..5s窗口与0.0005s步长的结果如下。峰值相对目标，不是相对每个候选自己的终值。
 
-| 方案 | $e_{ss}$ | $M_p$ | $t_s$ (2%) | $PM$ | 是否满足全部指标 |
-|------|----------|-------|------------|------|:---:|
-| P ($K=50$) | 0.22% | ~48% | ~0.08s | 25.5° | ✗ ($M_p$ 超标) |
-| PI ($K_p=10.2, K_i=11.3$) | 0% | ~17% | ~0.08s | ~51° | ✗ ($M_p$ 超标) |
-| PID ($K_p=5, K_i=5.5, K_d=0.3$) | 0% | ~0.1% | ~0.2s | ~106° | ✓ |
-| 超前 ($K=50$, $G_c$ 修正后) | 0.22% | ~16% | ~0.02s | ~54° | ✗ ($M_p$ 超标、噪声放大更差) |
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<div style={{minWidth:650}}>
 
-> 仿真结果揭示了一个重要事实：理论估算（设计阶段的近似计算）和实际仿真之间往往有差距。这就是为什么验证步骤不可省略。
+| 候选 | 残差% | 采样目标超调% | 网格调节时间s | PM° | 初始电压V |
+|---|---|---|---|---|---|
+| P50 | 0.219517 | 48.304600 | 0.0750 | 25.232146 | 50 |
+| PI | 0 | 17.159397 | 0.0810 | 50.950034 | 10.24 |
+| PIDf | 0 | 0.071485 | 0.2005 | 90.997414 | 305 |
+| Lead | 0.219517 | 16.171684 | 0.0170 | 54.163862 | 192.814371 |
+| PIsoft | 0 | 0 | 0.1575 | 78.715188 | 2 |
 
-<JupyterNotebook
-  title="三种方案阶跃响应与开环增益对比"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, step
-import numpy as np
-import scipy.signal as _sg
+</div>
+</div>
 
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)`}
-  cells={[
-    { code: `# === P 控制 ===
-K_p_only = 50.0
-cl_p = feedback(K_p_only * plant, 1)
-t, y_p = step(cl_p, T=np.linspace(0, 3, 1000))
-Mp_p = (y_p.max() - 1) * 100
-
-# === PI 控制 ===
-Kp_pi, Ki_pi = 10.24, 11.26
-C_pi = lti([Kp_pi, Ki_pi], [1, 0])
-cl_pi = feedback(C_pi * plant, 1)
-_, y_pi = step(cl_pi, T=np.linspace(0, 3, 1000))
-Mp_pi = (y_pi.max() - 1) * 100
-
-# === 超前校正 ===
-alpha = 3.85
-T_lead = 0.001672
-K_lead = 50.0
-C_lead = lti([K_lead * alpha * T_lead, K_lead], [T_lead, 1])
-cl_lead = feedback(C_lead * plant, 1)
-_, y_lead = step(cl_lead, T=np.linspace(0, 3, 1000))
-Mp_lead = (y_lead.max() - 1) * 100
-
-# === 对比图 ===
-plt.figure(figsize=(12, 5))
-
-plt.subplot(1, 2, 1)
-plt.plot(t, y_p, label=f'P (Mp={Mp_p:.0f}%)', linewidth=2)
-plt.plot(t, y_pi, label=f'PI (Mp={Mp_pi:.0f}%)', linewidth=2)
-plt.plot(t, y_lead, label=f'Lead (Mp={Mp_lead:.0f}%)', linewidth=2)
-plt.axhline(1.0, color='k', linestyle='--', alpha=0.3)
-plt.xlabel("Time (s)")
-plt.ylabel("ω(t) / ω_ref")
-plt.title("阶跃响应对比")
-plt.legend()
-plt.grid(True, alpha=0.3)
-
-plt.subplot(1, 2, 2)
-w = np.logspace(-1, 4, 500)
-_, H_p = plant.freqresp(w)
-mag_p = np.abs(H_p)
-_, H_pi = (C_pi * plant).freqresp(w)
-mag_pi = np.abs(H_pi)
-_, H_lead = (C_lead * plant).freqresp(w)
-mag_lead = np.abs(H_lead)
-plt.semilogx(w, 20*np.log10(mag_p), label='P', alpha=0.7)
-plt.semilogx(w, 20*np.log10(mag_pi), label='PI', alpha=0.7)
-plt.semilogx(w, 20*np.log10(mag_lead), label='Lead', alpha=0.7)
-plt.axhline(0, color='k', linestyle='--', alpha=0.3)
-plt.xlabel("ω (rad/s)")
-plt.ylabel("Magnitude (dB)")
-plt.title("开环增益")
-plt.legend()
-plt.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()` },
-  ]}
-/>
+PIsoft在这组名义候选中同时满足上述采样时域与频域要求。它的电压全时域绝对值上界由稳定留数三角界得到4.628390V，小于24V；不只依靠采样峰判断不饱和。它因此是可以继续评估的设计，**不是证明PI比PID最优**。高幅值参考、负载变化与采样仍要重验。
 
 ### 频域验证
 
-画出各方案的 Bode 图，检查：
-
-- 增益穿越频率 $\omega_c$ 是否合理
-- 相位裕度 $PM$ 是否达标
-- 增益裕度 $GM$ 是否足够（至少 10 dB）
-- 高频增益是否过大（噪声放大问题）
-
-超前校正器的高频增益为 $K \cdot \alpha = 50 \times 3.85 = 192.5$ 倍（45.7 dB），比 P 控制的 50 倍（34 dB）高出约 12 dB——传感器噪声被放大约 4 倍，且其带宽（$\omega_c \approx 306$ rad/s）远高于其他方案，对高频噪声尤其敏感。
+测量噪声到控制电压是$-CS$。例如在10000rad/s，P、PI、PIDf、Lead、PIsoft五条通道的读数由实验完整打印。它们的高频极限分别为50、10.24、305、192.814371、2。理想微分的控制噪声增益则无界。比较控制器本身的高频增益和检查真实闭环噪声通道是两件事；单点也不是噪声频谱的总预算。
 
 ### 扰动响应验证
 
-电机控制不仅要跟踪参考转速，还要抵抗负载扰动。当负载转矩 $T_L$ 突然变化时，转速会暂时偏离目标值。
+负载到输出为$G_dS$，正负载使转速下降。P50的单位负载稳态偏差为$-10000/50110=-0.199561$ rad/s；本课0.01N·m负载对应约−0.001996rad/s。稳定且没有持续饱和时，含积分候选对恒定负载的稳态偏差为零；这不代表瞬态不下降，也不保证超出执行能力的负载能被抵消。
 
-从框图看，扰动 $T_L$ 到输出 $\omega$ 的传递函数为：
 
-$$
-\frac{\Omega(s)}{T_L(s)} = \frac{G_d(s)}{1 + C(s)G_p(s)}
-$$
-
-其中 $G_d(s)$ 是扰动到输出的通道。从机械方程 $(Js + B)\Omega = K_m I_a - T_L$，可以推导出：
-
-$$
-G_d(s) = \frac{-(L_a s + R_a)}{(L_a s + R_a)(Js + B) + K_m K_b}
-$$
-
-**稳态扰动响应**（阶跃负载 $T_L = T_0/s$）：
-
-$$
-\Delta\omega_{ss} = \lim_{s \to 0} s \cdot \frac{G_d(s)}{1 + C(s)G_p(s)} \cdot \frac{T_0}{s} = \frac{G_d(0)}{1 + C(0)G_p(0)} \cdot T_0
-$$
-
-$$
-G_d(0) = \frac{-R_a}{R_a B + K_m K_b} = \frac{-1}{0.011} = -90.9
-$$
-
-- **P 控制**（$K = 50$）：$\Delta\omega_{ss} = \frac{-90.9}{1 + 50 \times 9.1} T_0 = \frac{-90.9}{456} T_0 = -0.20 T_0$
-- **PI 控制**（$C(0) \to \infty$，因为积分项）：$\Delta\omega_{ss} = 0$ ✓
-
-PI 和 PID 控制器由于积分作用，对恒定负载扰动具有**完全抑制**能力——这是纯 P 控制或纯超前校正无法做到的。
-
-> 这进一步说明：选择控制器结构时，不仅要看跟踪性能，还要看扰动抑制能力。积分项的价值不仅在于消除跟踪稳态误差，还在于消除扰动引起的稳态偏差。
-
-<JupyterNotebook
-  title="负载扰动响应对比"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+<JupyterNotebook title="同合同验证与十题复算" setupCode={`import numpy as np, scipy, control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, step
-import numpy as np
-import scipy.signal as _sg
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`print_metrics()
+# Q1: physical J is changed, not all time constants scaled.
+P1=plant(J=.03);z=min(-ct.poles(P1).real);kp=abs(1/ct.evalfr((s+z)/s*P1,30j))
+print('Q1 denominator',P1.den[0][0],'poles',ct.poles(P1),'P50 PM,wc',ct.margin(50*P1)[1::2],'PI kp,ki,PM,wc',kp,kp*z,ct.margin(kp*(s+z)/s*P1)[1::2]);print('Q1 full PI roots',ct.poles(ct.feedback(kp*(s+z)/s*P1)))
+z=min(-ct.poles(G).real);kp=abs(1/ct.evalfr((s+z)/s*G,55j));print('Q2 PI kp,ki,PM,wc',kp,kp*z,ct.margin(kp*(s+z)/s*G)[1::2]);print('Q2 full roots',ct.poles(ct.feedback(kp*(s+z)/s*G)))
+print('Q3 phi70 alpha',(1+np.sin(np.deg2rad(70)))/(1-np.sin(np.deg2rad(70))),'alpha20 phi',np.degrees(np.arcsin(19/21)))
+print('Q4 ideal PID zero magnitudes',-np.roots([.3,5,5.5]))
+P7=10/((s+1)*(s+5)*(s+50));C7=1250/s*(1+s)/(1+s/5)*(1+s/.01)/(1+s/.0002)
+print('Q7 original finite DC Kv',0,'alternative Kv',1250*ct.dcgain(P7))
+gm,pm,_,wc=ct.margin(C7*P7);print('Q7 integral extension GMdB,PM,wc',20*np.log10(gm),pm,wc,'closed roots',ct.poles(ct.feedback(C7*P7)))
+print('Q8 PI5,25 roots',np.roots([1,100.1,5110,25000]))
+print('Q8 P load DC for K50',-10000/(110+1000*50))
+for fs in [500,5000]:print('Q9',discrete_metrics(fs))
+P10=5/((s+2)*(s+20));kp=abs(1/ct.evalfr((s+2)/s*P10,10j));C10=kp*(s+2)/s
+print('Q10 P strict lower gain',99/ct.dcgain(P10),'PI kp,ki',kp,2*kp,'metrics',metrics(C10,P10))
+# A lead attempt is evaluated too; this is not a claim of exhaustive optimal design.
+C10lead=800*(1+s/5)/(1+s/100)
+print('Q10 lead fixed attempt',metrics(C10lead,P10))
+print('Q10 P800 fixed attempt',metrics(ct.tf([800],[1]),P10))`}]} />
 
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)`}
-  cells={[
-    { code: `# === 扰动响应仿真 ===
-num_d = [-(La), -Ra]
-den_d = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-Gd = lti(num_d, den_d)
-
-C_pid = lti([0.3, 5, 5.5], [1, 0])
-
-t_dist = np.linspace(0, 5, 2000)
-_, y_dist_p = step(lti([-Ra], [1]) * feedback(1, 50 * plant) * Gd, T=t_dist)
-_, y_dist_pid = step(feedback(Gd, C_pid * plant), T=t_dist)
-
-plt.figure(figsize=(10, 4))
-plt.plot(t_dist, y_dist_p, label='P (K=50)', linewidth=2)
-plt.plot(t_dist, y_dist_pid, label='PID', linewidth=2)
-plt.axhline(0, color='k', linestyle='--', alpha=0.3)
-plt.xlabel("Time (s)")
-plt.ylabel("Δω (rad/s)")
-plt.title("负载扰动响应 (T_L = 1 N·m 阶跃)")
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()` },
-  ]}
-/>
 
 ## 鲁棒性检验
 
-真实电机的参数不会恰好等于标称值。一个好的设计必须在参数变化时仍然工作。
-
 ### 参数不确定性来源
 
-| 参数 | 标称值 | 可能变化范围 | 变化原因 |
-|------|--------|-------------|----------|
-| $R_a$ | 1.0 Ω | ±20% | 温度变化（铜线电阻温度系数 ~0.4%/°C） |
-| $J$ | 0.01 kg·m² | ±50% | 负载惯量变化 |
-| $B$ | 0.001 N·m·s/rad | ±100% | 摩擦特性不确定（润滑、温度、磨损） |
-| $K_m$ | 0.1 N·m/A | ±10% | 磁铁退磁、制造公差 |
+下面的范围是教学压力测试的假设，不是厂商公差或实测概率：$R_a\in[0.8,1.2]$、$J\in[0.005,0.015]$、$B\in[0.0005,0.002]$、$K_m=K_b\in[0.09,0.11]$。各项独立均匀抽样，但两个电机常数保持数值相等。
 
 ### 参数灵敏度分析
 
-定义灵敏度函数：
+若$G_p$只是乘上一个独立比例因子，闭环对这个因子的相对灵敏度才恰为$S$。改变本电机的$K_m$不仅改分子，还会改$K_mK_b$项。一般应使用链式法则：
 
 $$
-S_p^T = \frac{\partial T / T}{\partial p / p}
+\frac{p}{T}\frac{\partial T}{\partial p}
+=S\frac{p}{G_p}\frac{\partial G_p}{\partial p}.
 $$
 
-表示参数 $p$ 变化 $\Delta p / p$ 时，闭环传递函数变化 $\Delta T / T$ 的比例。
-
-对于闭环传递函数 $T(s) = C G_p / (1 + C G_p)$，被控对象增益 $K_m$ 的灵敏度：
-
-$$
-S_{K_m}^T = \frac{1}{1 + C(s)G_p(s)} = S(s)
-$$
-
-这正是[频率响应设计法](/classic/frequency-response-design)中讨论的**灵敏度函数**！在低频段，$|C G_p| \gg 1$，所以 $|S| \ll 1$——反馈降低了参数变化的影响。这正是反馈控制的核心优势之一。
+固定$K_b$改变$K_m$，右侧第二因子为$1-K_mK_b/D$；两常数同时按K改变则为$1-2K^2/D$。不能把物理常数变化简化成独立增益误差。
 
 ### 最坏情况分析
 
-当 $J$ 增大 50%（带重负载），机械极点变慢：
-
-$$
-s_1 = -\frac{R_a B + K_m K_b}{R_a J_{new}} = -\frac{0.011}{0.015} = -0.73
-$$
-
-原来的超前校正器零点位置不变，但被控对象变慢了。相位裕度可能下降 5°~10°。
-
-**如果标称设计 $PM = 52°$，最坏情况 $PM \approx 42°$——仍然稳定，但可能不满足 50° 的要求。**
-
-这就是为什么工程设计要留余量。如果指标严格要求 $PM \geq 50°$ 在所有工况下成立，标称设计需要提高到 $PM \geq 55°$~$60°$。
+单独增大J或Ra只是指定工况，不一定最坏。对名义、J增大50%、Ra增大30%三种工况，实验打印所有候选，不先决定哪条曲线应该变差。Ra增加后的超前PM反而约59.618778°，这说明“参数变大就固定损失若干度”的说法没有依据。
 
 ### 蒙特卡洛仿真
 
-更系统的方法是做蒙特卡洛分析：随机采样参数组合，统计性能指标的分布。
+三个种子42、43、44各120组，共360组，同一批参数评价全部五候选；窗口0..5s、步长0.002s，尾界仍单独检查。打印各种子的最小/中位/最大值及失败数，不删除不合格结果。这里失败数合并检查采样峰值、网格调节时间和PM三项，未将输入限幅纳入计数，不能称为全合同达标。有限样本不是整个参数盒的鲁棒证明；这里的随机分析也没有包含饱和、延迟或采样。
 
-具体步骤：
-1. 假设各参数独立均匀分布：$R_a \in [0.8, 1.2]$，$J \in [0.005, 0.015]$，$B \in [0.0005, 0.002]$
-2. 随机采样 $N = 1000$ 组参数
-3. 对每组参数计算闭环阶跃响应
-4. 统计 $M_p$、$t_s$、$PM$ 的分布
 
-> 下面的代码用 500 次随机采样统计 PID 控制器在参数不确定性下的性能分布。
-
-<JupyterNotebook
-  title="蒙特卡洛鲁棒性分析"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
+<JupyterNotebook title="多种子参数检验" setupCode={`import numpy as np, scipy, control as ct
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-from scipy.signal import lti, step
-import numpy as np
-import scipy.signal as _sg
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`for label,P in [('nominal',G),('J+50%',plant(J=.015)),('R+30%',plant(R=1.3))]:
+ for name,C in controllers.items():print('condition',label,name,metrics(C,P,dt=.002))
+fig,axes=plt.subplots(1,3,figsize=(11,3))
+for seed in [42,43,44]:
+ rng=np.random.default_rng(seed);data={n:[] for n in controllers}
+ for _ in range(120):
+  R,J,B,K=rng.uniform([.8,.005,.0005,.09],[1.2,.015,.002,.11]);P=plant(R,J,B,K)
+  for name,C in controllers.items():data[name].append(metrics(C,P,dt=.002))
+ for name,rs in data.items():
+  vals=np.array([[r['peak_target_pct'],r['ts_grid'] if r['ts_grid'] is not None else np.inf,r['pm']] for r in rs])
+  failed=np.sum((vals[:,0]>=10)|(vals[:,1]>=1.5)|(vals[:,2]<50))
+  print('MC seed,name,n,failed,columns peak/ts/PM',seed,name,len(rs),int(failed),'min',np.min(vals,axis=0),'median',np.median(vals,axis=0),'max',np.max(vals,axis=0))
+  if name=='PIsoft':
+   for j,ax in enumerate(axes):ax.hist(vals[:,j],bins=12,alpha=.4,label=str(seed))
+for ax,label,lim in zip(axes,['target peak (%)','grid settling (s)','PM (deg)'],[(-1,15),(0,1.5),(0,140)]):
+ ax.set(xlim=lim,ylim=(0,120),xlabel=label,ylabel='count');ax.legend()
+fig.tight_layout();plt.show()`}]} />
 
-def _tf(x):
-    return x if isinstance(x, _sg.lti) else lti([float(x)], [1.0])
-
-def _mul(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.num), np.polymul(a.den, b.den))
-
-def _add(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polyadd(np.polymul(a.num, b.den), np.polymul(b.num, a.den)), np.polymul(a.den, b.den))
-
-def _div(a, b):
-    a, b = _tf(a), _tf(b)
-    return lti(np.polymul(a.num, b.den), np.polymul(a.den, b.num))
-
-def _neg(a):
-    a = _tf(a)
-    return lti([-v for v in a.num], a.den)
-
-_T = type(lti([1.0], [1.0]))
-_T.__mul__ = lambda s, o: _mul(s, o)
-_T.__rmul__ = lambda s, o: _mul(o, s)
-_T.__add__ = lambda s, o: _add(s, o)
-_T.__radd__ = lambda s, o: _add(o, s)
-_T.__sub__ = lambda s, o: _add(s, _neg(o))
-_T.__rsub__ = lambda s, o: _add(o, _neg(s))
-_T.__neg__ = lambda s: _neg(s)
-_T.__truediv__ = lambda s, o: _div(s, o)
-_T.__rtruediv__ = lambda s, o: _div(o, s)
-
-def feedback(G, H=1):
-    GH = _mul(G, H)
-    return _div(GH, _add(1, GH))
-
-def margin(L):
-    w = np.logspace(-2, 5, 40000)
-    _, Hjw = L.freqresp(w)
-    mag = np.abs(Hjw)
-    ph = np.unwrap(np.angle(Hjw)) * 180 / np.pi
-    wc = wg = np.nan
-    gm = np.inf
-    pm = np.nan
-    i = np.where(np.diff(np.sign(mag - 1)))[0]
-    if len(i):
-        k = i[0]
-        wc = np.interp(1, mag[k:k+2][::-1], w[k:k+2][::-1])
-        pm = 180 + np.interp(wc, w, ph)
-    j = np.where(np.diff(np.sign(ph + 180)))[0]
-    if len(j):
-        k = j[0]
-        wg = np.interp(-180, ph[k:k+2], w[k:k+2])
-        gm = -20 * np.log10(np.interp(wg, w, mag))
-    return gm, pm, wg, wc
-
-Km, Kb = 0.1, 0.1
-La, Ra = 0.01, 1.0
-J, B = 0.01, 0.001
-num_p = [Km]
-den_p = [La*J, La*B + Ra*J, Ra*B + Km*Kb]
-plant = lti(num_p, den_p)`}
-  cells={[
-    { code: `# === 蒙特卡洛鲁棒性分析 ===
-np.random.seed(42)
-N = 500
-Mp_list = []
-ts_list = []
-pm_list = []
-
-for i in range(N):
-    Ra_i = np.random.uniform(0.8, 1.2)
-    J_i = np.random.uniform(0.005, 0.015)
-    B_i = np.random.uniform(0.0005, 0.002)
-    Km_i = np.random.uniform(0.09, 0.11)
-    Kb_i = Km_i
-
-    den_i = [La*J_i, La*B_i + Ra_i*J_i, Ra_i*B_i + Km_i*Kb_i]
-    plant_i = lti([Km_i], den_i)
-    C_i = lti([0.3, 5, 5.5], [1, 0])
-    cl_i = feedback(C_i * plant_i, 1)
-
-    t_i, y_i = step(cl_i, T=np.linspace(0, 5, 1000))
-    Mp_list.append((y_i.max() - 1) * 100)
-
-    settle_idx = np.where(np.abs(y_i - 1) > 0.02)[0]
-    ts_list.append(t_i[settle_idx[-1]] if len(settle_idx) > 0 else 0)
-
-    try:
-        gm_i, pm_i, _, _ = margin(C_i * plant_i)
-        pm_list.append(pm_i)
-    except:
-        pm_list.append(np.nan)
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-axes[0].hist(Mp_list, bins=30, edgecolor='black', alpha=0.7)
-axes[0].axvline(10, color='red', linestyle='--', label='Mp=10% limit')
-axes[0].set_xlabel("Mp (%)")
-axes[0].set_ylabel("Count")
-axes[0].set_title("超调量分布")
-axes[0].legend()
-
-axes[1].hist(ts_list, bins=30, edgecolor='black', alpha=0.7, color='orange')
-axes[1].axvline(1.5, color='red', linestyle='--', label='ts=1.5s limit')
-axes[1].set_xlabel("ts (s)")
-axes[1].set_ylabel("Count")
-axes[1].set_title("调节时间分布")
-axes[1].legend()
-
-pm_valid = [p for p in pm_list if not np.isnan(p)]
-axes[2].hist(pm_valid, bins=30, edgecolor='black', alpha=0.7, color='green')
-axes[2].axvline(50, color='red', linestyle='--', label='PM=50° limit')
-axes[2].set_xlabel("PM (°)")
-axes[2].set_ylabel("Count")
-axes[2].set_title("相位裕度分布")
-axes[2].legend()
-
-plt.tight_layout()
-plt.show()
-
-print(f"Mp > 10% 比例: {sum(1 for m in Mp_list if m > 10)/N*100:.1f}%")
-print(f"ts > 1.5s 比例: {sum(1 for t in ts_list if t > 1.5)/N*100:.1f}%")
-print(f"PM < 50° 比例: {sum(1 for p in pm_valid if p < 50)/len(pm_valid)*100:.1f}%")` },
-  ]}
-/>
-
-**蒙特卡洛分析的典型结果**（PID 控制器，$K_p=5, K_i=5.5, K_d=0.3$）：
-
-| 指标 | 最小值 | 中位数 | 最大值 | 不达标比例 |
-|------|--------|--------|--------|-----------|
-| $M_p$ | 0% | 0% | 1.3% | 0% |
-| $t_s$ | 0.20s | 0.20s | 0.23s | 0% |
-| $PM$ | 96° | 106° | 115° | 0% |
-
-约 8% 的参数组合导致 $t_s > 1.5$ s——主要是 $J$ 偏大的情况。如果需要更可靠的性能保证，可以：
-- 增大 $K_d$ 提高阻尼（但噪声放大更严重）
-- 缩小参数变化范围（更好的电机选型）
-- 采用增益调度（根据负载估计切换控制器参数）
 
 ## 工程实现细节
 
-理论设计只是第一步。实际落地时，还有一系列工程问题需要处理。
-
 ### 执行器饱和
 
-电机的电枢电压有上限。假设功率放大器最大输出 $u_{max} = 24$ V，则控制器输出需要限幅：
-
-$$
-u(t) = \text{sat}(v(t)) = \begin{cases} 24 & v(t) > 24 \\ v(t) & -24 \leq v(t) \leq 24 \\ -24 & v(t) < -24 \end{cases}
-$$
-
-饱和会严重影响系统性能：
-- **大阶跃信号**：控制器输出长时间饱和，相当于开环运行，积分项持续累积
-- **超调增大**：饱和期间的"丢失控制"导致系统过冲
-- **稳定性降低**：等效增益下降，相位裕度减小
+限制作用于真实电压$u=\operatorname{clip}(v,-24,24)$，必须放回电机的电流、转速方程。线性曲线超出限制时，不是将那条曲线截平就得到真实响应。大参考取100rad/s，从零状态积分实际方程，比较同一滤波PID有无反算；负载实验仍与参考实验分开。
 
 ### 抗积分饱和
 
-PI/PID 控制器在饱和时必须加抗饱和（anti-windup）。当执行器饱和时，积分项继续累积，导致"积分饱和"——松开饱和后系统严重超调。
-
-常用方法：**反算（back-calculation）**
+令$x_I$为积分输出，$v$为未限幅命令，正确的反算方向是
 
 $$
-\frac{dx_i}{dt} = K_i e + \frac{1}{T_t}(u_{cmd} - u_{actual})
+\dot x_I=K_ie+\frac{u-v}{T_t}.
 $$
 
-$T_t$ 为反算时间常数。当 $u_{cmd} = u_{actual}$（未饱和）时，反算项为零，积分器正常工作。当饱和时，$u_{cmd} \neq u_{actual}$，反算项阻止积分器继续累积。
-
-$T_t$ 的选择：通常取 $T_t \approx T_i = K_p / K_i$。$T_t$ 太小会引入额外振荡，太大则抗饱和效果不明显。
+命令过大而实际电压被压低时，$u-v\lt0$，反算才会压低积分输出。取$T_t=0.05$s是本实验的固定候选，不是通用整定规则；反算可能产生较大的负积分状态，不能以“积分绝对值必然减小”作为定义。
 
 ### 微分滤波器
 
-纯微分 $K_d s$ 在高频增益无穷大，会放大传感器噪声。实际实现：
-
-$$
-C_d(s) = \frac{K_d s}{1 + T_f s}
-$$
-
-$T_f$ 通常取采样周期的 1/10 到 1/4，或根据噪声频谱确定。对本例，假设编码器噪声主要在 1 kHz 以上，取 $T_f = 0.001$ s（截止频率 1000 rad/s），不影响控制带宽内的相位超前。
+实现滤波微分可用状态$\dot x_f=(e-x_f)/T_f$，微分输出为$(K_d/T_f)(e-x_f)$。本例$T_f=0.001$s，截止角频率1000rad/s，约159.15Hz，不能把rad/s误写成Hz。在交越附近它增加了相位滞后，所以必须把滤波后的控制器放回环路复算。
 
 ### 无扰动切换
 
-在手动/自动切换时，需要"无扰动切换（bumpless transfer）"：切换瞬间控制器输出不能突变。
-
-实现方法：在手动模式下，让控制器内部状态（积分器输出）跟踪当前的手动控制信号，这样切换到自动时，控制器输出从当前值平滑过渡。
+手动切到自动时，应让积分输出跟踪当前实际电压减去比例/微分贡献，从而使切换瞬间命令连续。状态跟踪、反算与输出限幅要使用同一电压单位；命令连续不等于此后无超调或安全保证。
 
 ### 采样与离散化
 
-实际控制器在数字处理器上运行。连续控制器 $C(s)$ 需要离散化：
+前向差分、后向差分与Tustin都是近似；ZOH离散对象描述采样输入在周期内保持，不能只写$z=e^{sT_s}$就称整个控制系统精确。Tustin有频率扭曲，不存在对所有任务都“最准确”的方法。
 
-| 方法 | 公式 | 特点 |
-|------|------|------|
-| 前向差分 | $s \approx (z-1)/T_s$ | 简单，但可能不稳定 |
-| 后向差分 | $s \approx (z-1)/(zT_s)$ | 稳定，但频率响应有偏差 |
-| Tustin（双线性） | $s = \frac{2}{T_s}\frac{z-1}{z+1}$ | 最常用，频率响应最准确 |
-| ZOH 等价 | $z = e^{sT_s}$ | 精确保持阶跃响应 |
+本例超前控制器Tustin化、对象ZOH化后，500Hz时交越约306.532660rad/s、PM36.564690°；5000Hz时约305.948965rad/s、PM52.410519°。没有额外计算延迟的这个数字闭环中，前者不满足50°，后者满足；实验也打印全部闭环极点在单位圆内。只看采样频率大于交越Hz十倍，不能宣布达标。
 
-**采样频率选择**：
+$\omega_cT_s/2$只估计ZOH相位损失；若存在一拍计算延迟，还要另加$z^{-1}$并重新求实际交越。
 
-$$
-f_s \geq \frac{10 \omega_c}{2\pi}
-$$
 
-对本例 PID 控制 $\omega_c \approx 60$ rad/s：$f_s \geq 10 \times 60 / (2\pi) \approx 95$ Hz，取 $f_s = 1$ kHz（$T_s = 1$ ms）足够。
+<JupyterNotebook title="负载与限幅状态验证" setupCode={`import numpy as np, scipy, control as ct
+import matplotlib.pyplot as plt
+from scipy.signal import residue
+from scipy.optimize import brentq
+from scipy.integrate import solve_ivp
+s=ct.tf('s')
+def plant(R=1.,J=.01,B=.001,K=.1):
+ return ct.tf([K],[.01*J,.01*B+R*J,R*B+K*K])
+G=plant();Gd=ct.tf([-.01,-1],[.0001,.01001,.011])
+controllers={'P50':ct.tf([50],[1]),'PI':(10.24*s+11.26)/s,'PIDf':5+5.5/s+.3*s/(1+.001*s),'Lead':50*(1+.00644*s)/(1+.00167*s),'PIsoft':2+2.2/s}
+def expansion(H):
+ n=np.asarray(H.num[0][0]);d=np.asarray(H.den[0][0]);r,p,k=residue(n,np.polymul(d,[1,0]));assert len(k)==0
+ return r,p
+def response(H,t):
+ r,p=expansion(H);return np.real(np.exp(np.outer(t,p))@r)
+def metrics(C,P=G,dt=.0005,end=5.):
+ T=ct.feedback(C*P);U=ct.feedback(C,P);t=np.arange(round(end/dt)+1)*dt;y=response(T,t);u=response(U,t)
+ roots=ct.poles(T);assert np.max(roots.real)<0
+ r,p=expansion(T);nz=abs(p)>1e-8;tail=float(np.sum(abs(r[nz])*np.exp(p[nz].real*end)));dc=float(ct.dcgain(T));bad=np.flatnonzero(abs(y-1)>.02)
+ ts=None if abs(dc-1)+tail>=.02 or (len(bad)>0 and bad[-1]==len(t)-1) else float(t[bad[-1]+1] if len(bad) else 0.)
+ gm,pm,wg,wc=ct.margin(C*P)
+ return dict(ess=1-dc,peak_target_pct=float(max(0,(max(y)-1)*100)),ts_grid=ts,u_peak_grid=float(max(abs(u))),pm=float(pm),wc=float(wc),gm_db=None if np.isinf(gm) else float(20*np.log10(gm)),roots=[[float(z.real),float(z.imag)] for z in roots],tail_bound=tail,grid_dt=dt,window=end)
+def print_metrics():
+ for n,C in controllers.items():print(n,metrics(C))
+def discrete_metrics(fs):
+ Cz=ct.sample_system(controllers['Lead'],1/fs,method='tustin');Pz=ct.sample_system(G,1/fs,method='zoh');L=Cz*Pz
+ # Direct discrete frequency root avoids polynomial margin fallback on fine sample times.
+ w=brentq(lambda w:abs(ct.evalfr(L,np.exp(1j*w/fs)))-1,100,600)
+ pm=180+np.angle(ct.evalfr(L,np.exp(1j*w/fs)),deg=True)
+ return dict(fs=fs,wc=w,pm=float(pm),num=Cz.num[0][0].tolist(),den=Cz.den[0][0].tolist(),closed_poles=[[float(z.real),float(z.imag)] for z in ct.poles(ct.feedback(L))])
+def saturated(amp,aw):
+ kp,ki,kd,tf,tt=5.,5.5,.3,.001,.05
+ def rhs(t,x):
+  i,w,xi,xf=x;e=amp-w;v=kp*e+xi+kd/tf*(e-xf);u=np.clip(v,-24,24)
+  return [(u-i-.1*w)/.01,(.1*i-.001*w)/.01,ki*e+((u-v)/tt if aw else 0),(e-xf)/tf]
+ t=np.arange(8001)/1000;sol=solve_ivp(rhs,[0,8],[0,0,0,0],t_eval=t,rtol=1e-7,atol=1e-9,max_step=.001);assert sol.success
+ i,w,xi,xf=sol.y;e=amp-w;v=kp*e+xi+300*(e-xf);u=np.clip(v,-24,24)
+ return t,w,u,xi
+`} cells={[{code:`t=np.arange(10001)/2000;fig,axes=plt.subplots(1,2,figsize=(10,3.5))
+for name in ['P50','PI','PIDf','Lead','PIsoft']:
+ C=controllers[name];H=Gd*ct.feedback(1,C*G);y=.01*response(H,t)
+ print('load .01',name,'DC',.01*ct.dcgain(H),'finite y5',y[-1]);axes[0].plot(t,y,label=name)
+for aw in [False,True]:
+ tt,w,u,xi=saturated(100,aw)
+ print('sat100 aw',aw,'grid_peak_y',max(w),'y8',w[-1],'max_abs_u',max(abs(u)),'max_abs_integral',max(abs(xi)))
+ axes[1].plot(tt,w,label='AW='+str(aw))
+axes[0].set(xlim=(0,5),ylim=(-.03,.005),xlabel='t (s)',ylabel='speed deviation (rad/s)');axes[0].legend()
+axes[1].set(xlim=(0,8),ylim=(0,140),xlabel='t (s)',ylabel='speed (rad/s)');axes[1].legend()
+fig.tight_layout();plt.show()
+print('Tf .001 cutoff Hz',1/(2*np.pi*.001))`}]} />
 
-**采样引入的相位滞后**：ZOH（零阶保持器）等效引入约 $T_s/2$ 的延迟，在 $\omega_c$ 处的相位滞后为：
-
-$$
-\Delta\phi = \frac{\omega_c T_s}{2} = \frac{60 \times 0.001}{2} = 0.03 \text{ rad} = 1.7°
-$$
-
-$PM$ 从 80° 降到 78.3°——影响很小。但如果 $\omega_c$ 更高（如超前校正的 180 rad/s），$T_s = 2$ ms 时相位滞后达 10°，就需要认真对待了。
 
 ## 深入讨论
 
 ### 经典控制的设计哲学
 
-回顾整个设计流程，经典控制的核心思想是：
-
-1. **用频率特性思考**：Bode 图是设计的"画布"，通过调整幅频和相频特性来塑造闭环行为
-2. **用零极点对消或接近对消**：控制器的零点用来"补偿"被控对象的不利极点
-3. **在多个指标间权衡**：稳态精度 vs 动态性能，快速性 vs 鲁棒性，性能 vs 噪声抑制
-4. **留足余量**：标称设计要超过指标，给不确定性留空间
+频域、根轨迹和时域是相互校验的视角。近似对消可以启发参数选择，但完整模型负责最终判断。每次改参数都要追到正文、实验、默认读数与答案，避免各段拿不同对象讨论。
 
 ### 本案例的教训
 
-从四个方案的设计过程中，我们可以总结出几条实用经验：
-
-**1. 纯增益调节几乎总是不够的。** P 控制的稳态-动态矛盾是结构性的，不是"调参"能解决的。
-
-**2. PI 控制是工业默认选择。** 它能消除稳态误差，结构简单，大多数场景够用。但它引入了一个额外的极点（积分器），可能降低响应速度。
-
-**3. PID 比超前校正更灵活。** 本例中，PID 同时解决了稳态精度、动态性能和扰动抑制，而超前校正在稳态误差和超调量上不达标。这也是为什么工业界 90%+ 的控制回路使用 PID。
-
-**4. 理论设计和仿真结果之间有差距。** 设计阶段的近似计算（零极点对消、二阶近似）会引入误差。仿真验证不可省略。
-
-**5. 鲁棒性要靠统计证据而非感觉。** 蒙特卡洛分析在本例的不确定集内给出了"全达标"的定量结论——但结论依赖于不确定范围与指标的设定，范围一变结论就可能反转。工程上需要通过增益调度、更精确的传感器或更保守的设计来主动管理这份裕度。
+先核量纲和物理系数，再谈更精致的算法。P50、原PI与超前候选失败，并不能证明那些结构普遍不好；温和PI给出了直接反例。滤波PID的名义输出很好，却要求超过24V的瞬态输入，代价必须一起公开。
 
 ### 经典控制 vs 现代控制
 
-| 维度 | 经典控制 | 现代控制 |
-|------|----------|----------|
-| 数学工具 | 传递函数、频率响应 | 状态空间、矩阵 |
-| 适用系统 | SISO 为主 | MIMO 自然处理 |
-| 设计直觉 | Bode 图、根轨迹提供物理直觉 | 需要较强的线性代数基础 |
-| 工程落地 | 工业界主流（PID 占 90%+） | 航空航天、高端装备 |
-| 鲁棒性处理 | 增益/相位裕度 | H∞、μ综合 |
-| 扰动抑制 | 积分器消除恒值扰动 | 观测器估计并补偿 |
-
-> 经典和现代不是替代关系，而是互补。很多现代控制方案最终落地时，还是用 PID 或超前/滞后校正来实现。
+状态空间便于同时组织电流、转速等状态，传递函数便于观察单通道频率特性。两者描述同一物理模型，不是“高级”替代“低级”；方法适用还受测量、约束和模型可信度限制，不以无来源的工业占比论证优劣。
 
 ### 同一个电机问题，现代控制怎么做？
 
-如果用电机状态空间模型：
+取$x=(i_a,\omega)^T$，本课状态矩阵为
 
 $$
-\dot{x} = \begin{bmatrix} -R_a/L_a & -K_b/L_a \\ K_m/J & -B/J \end{bmatrix} x + \begin{bmatrix} 1/L_a \\ 0 \end{bmatrix} u
+\dot x=\begin{bmatrix}-100&-10\\10&-0.1\end{bmatrix}x
++\begin{bmatrix}100\\0\end{bmatrix}u
++\begin{bmatrix}0\\-100\end{bmatrix}T_L.
 $$
 
-- **极点配置**：选择状态反馈 $u = -Kx + r$，使闭环极点位于期望位置。可以精确指定阻尼比和自然频率，但"期望位置"的选择需要经验。
-- **LQR**：自动计算最优反馈增益，平衡控制能量和状态偏差。代价函数 $J = \int (x^T Q x + u^T R u) dt$ 中的权重矩阵 $Q, R$ 需要调节。
-- **状态观测器**：如果只有转速可测（电流不可测），需要设计观测器估计电流状态。
-
-> 📖 这些方法的详细内容将在[状态空间表示](/modern/state-space)、[状态反馈与极点配置](/modern/state-feedback)、[LQR 控制器](/modern/lqr-controller)等章节中展开。
+后续可用状态反馈、观测器或最优控制组织设计；状态反馈$u=-Kx$本身不自动保证参考单位增益或恒值负载零误差，仍需参考前馈或积分机制。这里只给联系，不要求先学未交付的后续章。
 
 ### 从本案例看一般流程
 
-直流电机案例的流程可以推广到几乎所有 SISO 控制系统：
-
-```
-物理系统 → 数学建模 → 简化假设 → 传递函数
-    ↓
-设计指标（时域 + 频域）
-    ↓
-未校正系统分析（Bode / 根轨迹 / 阶跃响应）
-    ↓
-诊断瓶颈（稳态不够？动态不好？不稳定？）
-    ↓
-选择控制器结构（P / PI / PID / 超前 / 滞后 / 超前-滞后）
-    ↓
-参数计算（公式 + Bode 图 + 试凑）
-    ↓
-仿真验证（时域 + 频域 + 扰动）
-    ↓
-鲁棒性检验（参数变化、蒙特卡洛）
-    ↓
-工程实现（离散化、抗饱和、滤波、无扰动切换）
-    ↓
-实验调试
-```
+观察负载与转速 → 写物理方程与适用工作区 → 定共同需求 → 构造候选 → 完整模型核时域/频域/输入 → 扰动与参数变化 → 带饱和/滤波/采样重验 → 实机小范围测试。每步都能推翻前一步的暂定选择，不能只沿着成功曲线往下走。
 
 ### 当经典控制不够用时
 
-如果系统有以下特点，需要考虑更高级的方法：
-
-- **多输入多输出（MIMO）**：用状态空间或传递函数矩阵
-- **强非线性**：用反馈线性化、滑模控制
-- **大不确定性**：用鲁棒控制（H∞、μ综合）
-- **有约束**：用模型预测控制（MPC）
-- **模型未知**：用自适应控制或强化学习
-
-但即使在这些场景中，经典控制的直觉——"看 Bode 图、想零极点、留裕量"——仍然是工程师最有价值的思维工具。
+多通道、强非线性、约束或模型变化可能需要其它工具，但选择的第一步仍是明确缺少的证据。不能因为模型未知就直接承诺强化学习能解决，也不能因为引入预测控制就承诺执行器有了更多能力。
 
 ## 小结
 
-| 要点 | 说明 |
-|------|------|
-| 设计流程 | 建模 → 指标 → 分析 → 设计 → 验证 → 实现 |
-| 核心矛盾 | 稳态精度 vs 动态性能，纯增益调节无法两全 |
-| 解决方案 | 引入控制器零点（PI/PID/超前/滞后）改变频率特性形状 |
-| 验证方法 | 时域（阶跃响应）+ 频域（Bode 图）+ 扰动响应三重校验 |
-| 鲁棒性 | 蒙特卡洛分析揭示参数不确定性的影响，标称设计要留余量 |
-| 工程落地 | 执行器饱和、抗饱和、微分滤波、离散化、无扰动切换 |
-| 实用建议 | PID 是工业默认选择；理论设计必须仿真验证；鲁棒性不是可选项 |
+本课把建模、需求、候选设计、时域/频域/扰动验证、参数抽样和实现串成一个可复查案例。结论只属于给定对象与合同：温和PI值得继续评估，原几组参数的失败和滤波PID的输入代价同样要保留。有限抽样、网格峰和连续精确保证不是同一层证据。
 
 ## 习题
 
-**1. 电机参数变化的影响**
+**1. 电机参数变化的影响**：J增为0.03，其他参数不变。(a)求对象；(b)算P50裕度；(c)重设PI使PM≥45°，给参数与实际交越。
 
-如果电机的转动惯量 $J$ 因负载增加而变为原来的 3 倍（$J = 0.03$ kg·m²），其他参数不变：
+**2. 从指标反推控制器**：对本课物理对象，设计PI使稳定闭环阶跃残差0、PM≥60°、交越≥50rad/s，明确对消条件与完整特征根。
 
-(a) 求新的被控对象传递函数
-(b) 用 $K=50$ 的 P 控制，计算新的相位裕度
-(c) 重新设计 PI 控制器使 $PM \geq 45°$
+**3. 超前校正的极限**：对象$K/[s(s+5)(s+20)]$要PM≥70°。(a)说明只给PM为何不能唯一确定所需超前；(b)推单级极限；(c)若另设所需补相70°或限定α≤20，如何处理？
 
-**2. 从指标反推控制器**
+**4. PID 与超前-滞后的等价性**：审查“任意理想PID都严格等价有限极点超前-滞后网络加积分”的命题；给正确因式形式及实零点条件。
 
-设计要求：$e_{ss} = 0$（阶跃输入），$PM \geq 60°$，$\omega_c \geq 50$ rad/s。
+**5. 鲁棒性分析**：本课固定超前候选遇到Ra=1.3时，求新对象、交越和PM，判断是否仍满足45°。不要预设变化必使PM下降。
 
-被控对象 $G_p(s) = \frac{1000}{s^2 + 101s + 110}$。
+**6. 采样频率选择**：独立假设交越180rad/s，按十倍交越Hz估采样频率；500Hz下ZOH相位损失多少？能否据此断言本课实际数字环路达标？
 
-设计一个 PI 控制器满足要求。
+**7. 综合设计题**：$G=10/[(s+1)(s+5)(s+50)]$要求Kv≥50、PM≥45°、GM≥10dB。先判断有限DC滞后-超前结构是否可行；若不可行，允许加积分，给一组可复验设计，不能把位置误差系数当速度误差系数。
 
-**3. 超前校正的极限**
+**8. 扰动抑制设计**：用本课物理对象及同尺度的Gd。(a)求P下单位负载稳态偏差；(b)怎样实现稳定闭环恒值扰动零偏差；(c)给PI使全部极点实部&lt;−5，并验证。
 
-被控对象 $G(s) = \frac{K}{s(s+5)(s+20)}$。
+**9. 离散化效应分析**：本课固定超前控制器在500Hz用Tustin离散，对象用ZOH离散；求Cz及完整数字环路的交越、PM、稳定性，再与5000Hz比较。不要混入另一套控制器系数。
 
-(a) 若要求 $PM \geq 70°$，计算需要的相位超前量是否可能超过超前校正器的能力？
-(b) 超前校正器的最大相位超前量是多少？
-(c) 如果不够，应该怎么办？
-
-**4. PID 与超前-滞后的等价性**
-
-证明：PID 控制器 $C(s) = K_p + K_i/s + K_d s$ 可以写成"超前-滞后 + 积分"的形式，并说明两者的对应关系。
-
-**5. 鲁棒性分析**
-
-本节设计的超前校正器 $C(s) = 50 \times \frac{1 + 0.00644s}{1 + 0.00167s}$（修正后参数：$\omega_m = 305$ rad/s、$T = 0.00167$ s、有源形式无需 $\alpha$ 倍增益补偿）。
-
-当电枢电阻 $R_a$ 因温升增大 30%（$R_a = 1.3$ Ω），计算：
-
-(a) 新的被控对象传递函数
-(b) 新系统的相位裕度
-(c) 是否仍满足 $PM \geq 45°$？
-
-**6. 采样频率选择**
-
-如果超前校正后的闭环系统穿越频率 $\omega_c = 180$ rad/s：
-
-(a) 按"采样频率 ≥ 10 倍穿越频率"的规则，最小采样频率是多少？
-(b) 如果实际采样频率选为 500 Hz，是否足够？
-(c) 采样带来的相位滞后会如何影响相位裕度？
-
-**7. 综合设计题**
-
-被控对象 $G(s) = \frac{10}{(s+1)(s+5)(s+50)}$。
-
-设计指标：
-- 速度误差系数 $K_v \geq 50$
-- 相位裕度 $PM \geq 45°$
-- 增益裕度 $GM \geq 10$ dB
-
-设计一个**滞后-超前校正器**满足所有指标，给出完整的计算过程和仿真验证。
-
-**8. 扰动抑制设计**
-
-考虑直流电机速度控制，被控对象 $G_p(s) = \frac{1000}{s^2 + 101s + 110}$，负载转矩扰动通过通道 $G_d(s) = \frac{-(0.01s + 1)}{s^2 + 101s + 110}$ 作用于系统。
-
-(a) 用 P 控制 $C(s) = K$，计算阶跃负载扰动 $T_L = 1$ N·m 下的稳态转速偏差
-(b) 若要求稳态转速偏差为零，控制器必须包含什么环节？
-(c) 设计 PI 控制器使阶跃扰动下的稳态偏差为零，且闭环极点实部小于 $-5$
-
-**9. 离散化效应分析**
-
-超前校正器 $C(s) = 50 \times \frac{1 + 0.00644s}{1 + 0.00167s}$（修正后参数），被控对象 $G_p(s) = \frac{1000}{s^2 + 101s + 110}$。
-
-(a) 用 Tustin 变换离散化控制器，采样频率 $f_s = 500$ Hz，求离散控制器 $C(z)$
-(b) 计算离散化后系统的相位裕度（含 ZOH 延迟）
-(c) 如果采样频率提高到 $f_s = 5$ kHz，相位裕度改善多少？
-
-**10. 方案选择与论证**
-
-被控对象 $G(s) = \frac{5}{(s+2)(s+20)}$。
-
-设计指标：$e_{ss} < 1\%$（阶跃输入），$PM \geq 55°$，$t_s < 2$ s。
-
-(a) 分别用 P、PI、超前校正三种方案尝试设计
-(b) 对每种方案，判断是否能满足所有指标
-(c) 选择最优方案，给出完整设计参数和验证结果
+**10. 方案选择与论证**：坚持$G=5/[(s+2)(s+20)]$，要求阶跃残差&lt;1%、PM≥55°、调节时间&lt;2s。分别尝试P、PI、超前，给参数和实测；说明能否从三次尝试宣称全局最优。
 
 ## 答案
 
-**1. 电机参数变化的影响**
+**1. 电机参数变化的影响**：分母为$0.0003s^2+0.03001s+0.011$，分子0.1；两根约−99.665436、−0.367898。P50交越111.464147rad/s、PM41.990533°。选精确慢极点幅值为PI零点、指定交越30，得Kp9.367439、Ki3.446258，实际PM73.247834°。这只是名义稳定对消设计；参数改变后要重验，不能抹掉内部慢状态。
 
-(a) $J = 0.03$ 时：
+**2. 从指标反推控制器**：取零点1.111237，指定交越55，由幅值方程求Kp6.228316、Ki6.921137，实际PM60.942635°，满足题设。零点对消的是稳定名义极点；参考通道约分不代表积分状态没有了。完整三阶特征式仍应检查，不只核约分后的二阶响应。
 
-$$
-G_p(s) = \frac{0.1}{(0.01s + 1)(0.03s + 0.001) + 0.01} = \frac{0.1}{0.0003s^2 + 0.0103s + 0.011}
-$$
-
-$$
-= \frac{333.3}{s^2 + 34.3s + 36.7}
-$$
-
-极点：$s_{1,2} = \frac{-34.3 \pm \sqrt{1176.5 - 146.8}}{2} = \frac{-34.3 \pm 32.5}{2}$
-
-$s_1 \approx -0.9, \quad s_2 \approx -33.4$
-
-(b) $K=50$ 时开环传递函数：
-
-$$
-L(s) = \frac{50 \times 333.3}{s^2 + 34.3s + 36.7} = \frac{16667}{s^2 + 34.3s + 36.7}
-$$
-
-求 $\omega_c$：$|L(j\omega_c)| = 1$
-
-$$
-\frac{16667}{\sqrt{(36.7 - \omega_c^2)^2 + (34.3\omega_c)^2}} = 1
-$$
-
-数值求解 $\omega_c \approx 125$ rad/s。
-
-$$
-\angle L(j\omega_c) = -\arctan\frac{34.3 \times 125}{36.7 - 125^2} = -\arctan\frac{4287.5}{-15588} \approx -180° + 15.4°
-$$
-
-$$
-PM \approx 15.4°
-$$
-
-相位裕度严重不足！
-
-(c) 重新设计 PI：取 $z_i = 0.9$（抵消新慢极点），$K_p$ 使 $\omega_c \approx 30$ rad/s 达到 $PM \approx 50°$。
-
-$$
-L(s) \approx \frac{333.3 K_p}{s(s + 33.4)}
-$$
-
-$\omega_c = 30$：$PM = 180° - 90° - \arctan(30/33.4) = 90° - 42° = 48°$。
-
-$$
-333.3 K_p = 30 \times \sqrt{30^2 + 33.4^2} = 30 \times 44.9 = 1347
-$$
-
-$$
-K_p = 4.04, \quad K_i = 4.04 \times 0.9 = 3.64
-$$
-
-**2. 从指标反推控制器**
-
-PI 控制器 $C(s) = K_p(s + z_i)/s$。
-
-$e_{ss} = 0$ 自动满足（I 型系统）。
-
-取 $z_i = 1.1$（抵消慢极点），开环近似：
-
-$$
-L(s) \approx \frac{1000 K_p}{s(s + 99.9)}
-$$
-
-要求 $PM \geq 60°$：
-
-$$
-PM = 180° - 90° - \arctan\frac{\omega_c}{99.9} \geq 60°
-$$
-
-$$
-\arctan\frac{\omega_c}{99.9} \leq 30° \implies \omega_c \leq 57.7 \text{ rad/s}
-$$
-
-同时要求 $\omega_c \geq 50$ rad/s，取 $\omega_c = 55$ rad/s。
-
-$$
-1000 K_p = 55 \times \sqrt{55^2 + 99.9^2} = 55 \times 114 = 6270
-$$
-
-$$
-K_p = 6.27, \quad K_i = 6.27 \times 1.1 = 6.9
-$$
-
-验证：$PM = 90° - \arctan(55/99.9) = 90° - 28.9° = 61.1° \geq 60°$ ✓
-
-**3. 超前校正的极限**
-
-(a) 若需要 $PM \geq 70°$，先计算当前系统的 $PM_0$。
-
-设 $K$ 满足稳态要求后，$PM_0$ 可能很小。若 $PM_0 = 10°$，需要补偿 $\phi_m = 70° - 10° + 10° = 70°$。
-
-(b) 超前校正器的最大相位超前量：
-
-$$
-\sin\phi_{max} = \frac{\alpha - 1}{\alpha + 1}
-$$
-
-当 $\alpha \to \infty$ 时，$\phi_{max} \to 90°$。但 $\alpha$ 过大会导致高频增益过大，噪声严重。
-
-工程上 $\alpha \leq 20$，对应 $\phi_{max} \leq \arcsin(19/21) \approx 64.6°$。
-
-(c) 如果需要 $70°$ 的相位超前，单级超前校正器不够。解决方案：
-
-- 用两级超前校正器串联
-- 改用 PID 控制器（两个零点提供更多相位超前）
-- 重新审视指标是否合理
-
-**4. PID 与超前-滞后的等价性**
-
-$$
-C(s) = K_p + \frac{K_i}{s} + K_d s = \frac{K_d s^2 + K_p s + K_i}{s}
-$$
-
-分子是两个零点的二阶多项式，可以分解为：
-
-$$
-= \frac{K_d(s + z_1)(s + z_2)}{s}
-$$
-
-其中 $z_1, z_2 = \frac{K_p \pm \sqrt{K_p^2 - 4K_d K_i}}{2K_d}$。
-
-写成"超前-滞后 + 积分"的形式：
-
-$$
-= \frac{K_p}{s} \cdot \frac{(s + z_1)(s + z_2)}{(s + p_1)(s + p_2)} \cdot \text{gain}
-$$
-
-实际上，PID 等价于：
-
-- 积分项 $K_i/s$：提供低频增益（类似滞后）
-- 微分项 $K_d s$：提供高频相位超前（类似超前）
-- 比例项 $K_p$：调节中频增益
-
-更准确地说，PID 是"积分 + 两个零点"，而超前-滞后是"一个零点 + 一个极点"。PID 的两个零点可以提供更多的相位超前能力。
-
-**5. 鲁棒性分析**
-
-(a) $R_a = 1.3$ Ω 时：
-
-$$
-G_p(s) = \frac{0.1}{(0.01s + 1.3)(0.01s + 0.001) + 0.01}
-$$
-
-$$
-= \frac{0.1}{0.0001s^2 + 0.01301s + 0.0113}
-$$
-
-$$
-= \frac{1000}{s^2 + 130.1s + 113}
-$$
-
-极点：$s_1 \approx -0.88, \quad s_2 \approx -129.2$
-
-(b) 校正器不变 $C(s) = 50 \times \frac{1 + 0.00644s}{1 + 0.00167s}$（修正后参数，按与正文相同的方法重算）。
-
-开环传递函数：
-
-$$
-L(s) = C(s) \cdot G_p(s) = \frac{50(1 + 0.00644s) \times 1000}{(1 + 0.00167s)(s^2 + 130.1s + 113)}
-$$
-
-数值计算 Bode 图，得 $\omega_c \approx 195$ rad/s，$PM \approx 47°$。
-
-(c) $PM \approx 47° \geq 45°$，勉强满足。但如果 $R_a$ 变化更大，可能不够。建议标称设计提高到 $PM \geq 52°$。
-
-**6. 采样频率选择**
-
-(a) $\omega_c = 180$ rad/s，$f_c = 180/(2\pi) = 28.6$ Hz。
-
-最小采样频率 $f_s \geq 10 \times 28.6 = 286$ Hz。
-
-(b) $f_s = 500$ Hz > 286 Hz，满足基本要求。
-
-(c) 采样引入的相位滞后约为 $\omega_c T_s / 2$（ZOH 等效）。
-
-$T_s = 1/500 = 0.002$ s。
-
-$$
-\Delta\phi = \frac{180 \times 0.002}{2} = 0.18 \text{ rad} = 10.3°
-$$
-
-原始 $PM = 52°$，采样后 $PM \approx 52° - 10.3° = 41.7°$。
-
-相位裕度显著下降！建议提高采样频率到 1 kHz 以上，或重新设计校正器补偿采样延迟。
-
-**7. 综合设计题**
-
-$G(s) = \frac{10}{(s+1)(s+5)(s+50)}$。
-
-**Step 1**：满足 $K_v \geq 50$。
-
-$$
-K_v = \lim_{s \to 0} s \cdot C(s) \cdot G(s) = C(0) \cdot G(0) = C(0) \cdot \frac{10}{1 \times 5 \times 50} = C(0) \times 0.04
-$$
-
-需要 $C(0) \geq 50/0.04 = 1250$。
-
-取 $K = 1250$，开环 $L(s) = \frac{12500}{(s+1)(s+5)(s+50)}$。
-
-**Step 2**：计算 $K=1250$ 时的相位裕度。
+**3. 超前校正的极限**：K或交越/稳态约束没有给定，因此PM目标不能唯一确定补相。单级$\sin\phi_m=(\alpha-1)/(\alpha+1)$，有限α时严格小于90°。70°需α约32.163437，数学上可行；若额外限定α≤20，最大约64.791235°才不够。可分级或重新安排交越/指标，但每次都要核真实交越及噪声代价；α≤20是额外设计限制，不是物理定律。
 
-$$
-|L(j\omega_c)| = 1 \implies \omega_c \approx 45 \text{ rad/s}
-$$
-
-$$
-\angle L(j\omega_c) = -\arctan(45) - \arctan(45/5) - \arctan(45/50)
-$$
-
-$$
-= -88.7° - 83.7° - 42° = -214.4°
-$$
-
-$$
-PM = 180° - 214.4° = -34.4°
-$$
-
-不稳定！需要大量相位超前。
-
-**Step 3**：设计滞后-超前校正器。
-
-滞后部分：提高低频增益，取 $z_{lag} = 0.1, p_{lag} = 0.01$（$\beta = 10$）。
-
-超前部分：提供相位超前，取 $\phi_m = 50°$（补偿大部分负相位），$\alpha = 8$。
-
-最终校正器：
-
-$$
-C(s) = K \cdot \frac{(1 + s/0.1)(1 + s/z_{lead})}{(1 + s/0.01)(1 + s/p_{lead})}
-$$
-
-其中 $z_{lead} = \omega_m / \sqrt{\alpha}$，$p_{lead} = \omega_m \sqrt{\alpha}$，$\omega_m$ 选在新的穿越频率处。
-
-具体参数需要通过 Bode 图迭代确定，最终仿真验证满足所有指标。
-
-**Step 4**：确定超前部分参数。
-
-需要补偿的相位：当前 $PM = -34.4°$，需要 $PM \geq 45°$，加上 $10°$ 余量，需要超前 $\phi_m = 45° + 34.4° + 10° = 89.4°$。
-
-单级超前校正器最大相位超前约 $65°$（$\alpha = 20$），不够。需要两级超前或增大滞后比。
-
-实际设计中，滞后部分会将穿越频率降低，从而减少需要补偿的相位。设滞后部分将 $\omega_c$ 从 45 降到 10 rad/s：
-
-在 $\omega = 10$ rad/s 处：
-
-$$
-\angle L(j10) = -\arctan(10) - \arctan(2) - \arctan(0.2) = -84.3° - 63.4° - 11.3° = -159°
-$$
-
-$$
-PM_{10} = 180° - 159° = 21°
-$$
-
-需要超前 $\phi_m = 45° - 21° + 10° = 34°$。
-
-$$
-\sin 34° = 0.559 = \frac{\alpha - 1}{\alpha + 1} \implies \alpha = \frac{1.559}{0.441} = 3.53
-$$
-
-$$
-T_1 = \frac{1}{\omega_m \sqrt{\alpha}} = \frac{1}{10 \times 1.88} = 0.0532
-$$
-
-**最终校正器**：
-
-$$
-C(s) = 1250 \times \frac{(1 + 10s)(1 + 0.188s)}{(1 + 100s)(1 + 0.0532s)}
-$$
-
-验证：$\omega_c \approx 10$ rad/s，$PM \approx 47° > 45°$ ✓，$K_v = 1250 \times 0.04 = 50 \geq 50$ ✓。
-
-> 完整的数值求解和仿真验证见代码示例。
-
-**8. 扰动抑制设计**
-
-(a) P 控制 $C(s) = K$，扰动到输出的闭环传递函数：
-
-$$
-\frac{\Omega(s)}{T_L(s)} = \frac{G_d(s)}{1 + K \cdot G_p(s)}
-$$
-
-稳态偏差（终值定理）：
-
-$$
-\Delta\omega_{ss} = \lim_{s \to 0} \frac{G_d(s)}{1 + K \cdot G_p(s)} \cdot 1 = \frac{G_d(0)}{1 + K \cdot G_p(0)}
-$$
-
-$$
-G_d(0) = \frac{-1}{110} = -0.00909, \quad G_p(0) = \frac{1000}{110} = 9.09
-$$
-
-$$
-\Delta\omega_{ss} = \frac{-0.00909}{1 + 9.09K}
-$$
-
-取 $K = 50$：$\Delta\omega_{ss} = -0.00909 / 455.5 = -2.0 \times 10^{-5}$ rad/s。
+**4. PID 与超前-滞后的等价性**：理想PID为$K_d(s+z_1)(s+z_2)/s$，$z_{1,2}=(K_p\pm\sqrt{K_p^2-4K_dK_i})/(2K_d)$。在正参数下，还需判别式非负才有两个实负零点。不能无中生有加入有限极点仍称严格相等；理想PID不是真有界高频增益网络。加入微分滤波后是另一个有理函数，应重新展开。对5/5.5/.3，零点由第四实验打印。
 
-(b) 要使稳态偏差为零，控制器必须包含**积分环节** $1/s$。因为：
+**5. 鲁棒性分析**：新对象为$1000/(s^2+130.1s+113)$，两根约−129.225560、−0.874440。固定超前的交越约298.182273rad/s、PM59.618778°，满足45°；本次裕度增加，不代表所有参数变化都改善性能。
 
-$$
-\Delta\omega_{ss} = \lim_{s \to 0} \frac{G_d(s)}{1 + C(s)G_p(s)}
-$$
-
-当 $C(s)$ 包含 $1/s$ 时，$C(0) \to \infty$，所以分母 $\to \infty$，$\Delta\omega_{ss} = 0$。
-
-(c) PI 控制器 $C(s) = K_p(s + z_i)/s$。
-
-闭环特征方程：$s(s^2 + 101s + 110) + 1000K_p(s + z_i) = 0$
-
-$$
-s^3 + 101s^2 + (110 + 1000K_p)s + 1000K_p z_i = 0
-$$
-
-要求所有极点实部 $< -5$。做变量替换 $s = p - 5$：
-
-$$
-(p-5)^3 + 101(p-5)^2 + (110 + 1000K_p)(p-5) + 1000K_p z_i = 0
-$$
-
-展开并用 Routh 判据确保所有 $p$ 的实部 $> 0$。
-
-取 $z_i = 2$（不抵消慢极点，留一定阻尼），通过试凑：
-
-$K_p = 2$：特征方程 $s^3 + 101s^2 + 2110s + 4000 = 0$。
-
-极点：$s_1 \approx -2.0$，$s_{2,3} \approx -49.5 \pm j32.4$。
-
-$s_1 = -2.0$ 实部不满足 $< -5$。
-
-取 $K_p = 5, z_i = 5$：特征方程 $s^3 + 101s^2 + 5110s + 25000 = 0$。
-
-极点：$s_1 \approx -5.5$，$s_{2,3} \approx -47.75 \pm j57.5$。
-
-所有极点实部 $< -5$ ✓。
-
-$K_p = 5, K_i = 25$。
-
-**9. 离散化效应分析**
-
-(a) Tustin 变换 $s = \frac{2}{T_s}\frac{z-1}{z+1}$，$T_s = 1/500 = 0.002$ s。
-
-$$
-C(z) = 50 \times \frac{1 + 0.00644 \times 1000\frac{z-1}{z+1}}{1 + 0.00167 \times 1000\frac{z-1}{z+1}}
-$$
-
-$$
-= 50 \times \frac{1 + 6.44\frac{z-1}{z+1}}{1 + 1.67\frac{z-1}{z+1}}
-$$
-
-$$
-= 50 \times \frac{(z+1) + 6.44(z-1)}{(z+1) + 1.67(z-1)}
-$$
-
-$$
-= 50 \times \frac{7.44z - 5.44}{2.67z - 0.67}
-$$
+**6. 采样频率选择**：$10\times180/(2\pi)\approx286.478898$Hz。500Hz下ZOH半拍近似损失0.18rad≈10.313240°。这是独立的180rad/s假设，不是本课超前真实交越；只给这两个数，没有连续环路相位、离散频率扭曲和延迟模型，不能算真实数字PM。
 
-$$
-= 50 \times \frac{7.44}{2.67} \times \frac{z - 0.731}{z - 0.251} = 139.3 \times \frac{z - 0.731}{z - 0.251}
-$$
+**7. 综合设计题**：原有限DC网络下$K_v=\lim_{s\to0}sC(s)G(s)=0$，所以原要求不可行。允许积分后可取
 
 $$
-= 600.4 \times \frac{z - 0.832}{z - 0.478}
+C(s)=\frac{1250}{s}\frac{1+s}{1+s/5}\frac{1+s/0.01}{1+s/0.0002}.
 $$
 
-(b) ZOH 引入的相位滞后：
+此时Kv50，实际交越0.964031rad/s、PM66.486878°、GM18.455469dB。完整闭环根全部负实部。代价是带宽很低并保留约−0.0101的慢模态；题目未规定时间要求，这不等于工程上“最快”。有限DC滞后-超前本身仍不满足原题，不能拿扩展解冒充原结构可行。
 
-$$
-\Delta\phi = \frac{\omega_c T_s}{2} = \frac{180 \times 0.002}{2} = 0.18 \text{ rad} = 10.3°
-$$
+**8. 扰动抑制设计**：P下偏差为$-10000/(110+1000K)$ rad/s，K50时约−0.199561。无需被漏乘10000的扰动分子误导。积分在闭环内部稳定、负载可达、无持续饱和条件下给恒值负载零偏差。取Kp5、Ki25，完整根约−47.329643±j48.527217、−5.440713，均&lt;−5。若用$s=p-5$做平移，要求的是p根实部&lt;0，方向不能写反。
 
-连续系统 $PM \approx 52°$，离散化后 $PM \approx 52° - 10.3° = 41.7°$。
+**9. 离散化效应分析**：500Hz时
 
-(c) $f_s = 5$ kHz，$T_s = 0.0002$ s：
-
 $$
-\Delta\phi = \frac{180 \times 0.0002}{2} = 0.018 \text{ rad} = 1.03°
+C(z)=\frac{139.325842697z-101.872659176}{z-0.250936330}.
 $$
-
-$PM \approx 52° - 1.0° = 51°$。比 $f_s = 500$ Hz 改善了约 $9.3°$。
-
-**10. 方案选择与论证**
-
-$G(s) = \frac{5}{(s+2)(s+5)} = \frac{5}{s^2 + 7s + 10}$。
-
-直流增益 $G(0) = 5/10 = 0.5$。
-
-**(a) P 控制**：$C(s) = K$。
-
-$e_{ss} = 1/(1 + 0.5K) < 0.01 \implies K > 198$。
-
-取 $K = 200$，闭环特征方程 $s^2 + 7s + 1010 = 0$。
-
-$s = -3.5 \pm j31.5$，$\zeta = 3.5/31.7 = 0.11$。
-
-$PM \approx 90° - \arctan(\omega_c / 3.5)$。$\omega_c \approx 31.5$，$PM \approx 90° - 84° = 6°$。
-
-**不满足 $PM \geq 55°$。**
-
-**(b) PI 控制**：$C(s) = K_p(s + z_i)/s$。
-
-$e_{ss} = 0$（I 型系统）✓。
-
-取 $z_i = 2$（抵消慢极点），开环 $L(s) \approx 5K_p / [s(s+5)]$。
-
-$PM = 90° - \arctan(\omega_c/5)$。要求 $PM \geq 55°$：$\arctan(\omega_c/5) \leq 35°$，$\omega_c \leq 3.5$ rad/s。
-
-$t_s \approx 4/(\zeta\omega_n)$。对于 $L(s) = 5K_p/[s(s+5)]$，$\omega_n = \sqrt{5K_p}$，$\zeta = 5/(2\omega_n)$。
-
-$\omega_c = 3.5$：$5K_p = 3.5\sqrt{3.5^2 + 25} = 3.5 \times 5.39 = 18.9$，$K_p = 3.78$。
-
-$\omega_n = \sqrt{18.9} = 4.35$，$\zeta = 5/(2 \times 4.35) = 0.575$。
-
-$t_s \approx 4/(0.575 \times 4.35) = 1.6$ s $< 2$ s ✓。
-
-**PI 控制满足所有指标！** $K_p = 3.78, K_i = 7.56$。
-
-**(c) 最优方案**：PI 控制最简单且满足所有指标。
-
-验证：$e_{ss} = 0$ ✓，$PM \approx 55°$ ✓，$t_s \approx 1.6$ s ✓。
 
-超前校正也能满足，但结构更复杂、高频增益更大（噪声放大）。PI 是此场景的最优选择。
+对象ZOH化后实际PM36.564690°、交越306.532660rad/s；5000Hz时PM52.410519°、交越305.948965rad/s，PM改善约15.845829°。两者数字闭环极点均在单位圆内，但前者不满足50°合同。高采样率结果不含额外计算延迟；不要叠用半拍近似代替已建立的完整离散模型。
 
+**10. 方案选择与论证**：本题DC增益0.125，P需K>792。P800的PM约19.826436°；超前尝试$800(1+s/5)/(1+s/100)$的PM约23.615519°，两者都不满足55°。全部指标由第四实验打印；它们不是独立最优整定。PI取零点2、交越10，Kp44.721360、Ki89.442719，PM63.434949°、阶跃残差0，网格调节时间0.402s，满足题设。这给出可行PI而非“唯一最优”，没有代价函数/执行限制就不能排出全局最优；对象中的20不能在答案里换成5。

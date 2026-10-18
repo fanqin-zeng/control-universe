@@ -65,7 +65,7 @@
 | [x] 校正网络 (compensator-design) | 学期3 CLASSIC-08：Phase1–4、12主题/十题/六严格内核与Pyodide实验；四原交互改真实完整模型，102环路独立核、54旧ID兼容、98行对账；验收.agent/semester-03/classic-08/acceptance.md |
 | [x] 回路整形 (frequency-response-design) | 学期3 CLASSIC-09：Phase1–4、10主题/十一题/六严格内核与Pyodide实验；三原交互真实TS对200K/142ζ/五延迟独立核，39旧ID兼容、128行对账；修频段合同/复数互补/归一化/ZN分子与高阶近似；验收.agent/semester-03/classic-09/acceptance.md；学期2旧日志保留为历史来源 |
 | [x] 设计方法选型 (design-methods-comparison) | 学期3 CLASSIC-10新写：Phase1–4、八节/六题/三严格内核及Pyodide实验，四合同同对象筛选、63行数值对账；独立状态空间与真实页面/390px/普通及Pages构建验收见.agent/semester-03/classic-10/acceptance.md |
-| [x] 经典控制案例 (classic-case-study) | v1.3（C1 第 2 课，2026-10-16）：**柯验全量数值审计修正 5 组系统性错误**——e_ss 链漏对象增益 9.1（指标改 <1%、K=50 定位为余量）、PI 结论反转（ts=0.08s 达标、败在 Mp=16.8%；对消陷阱改写为失配场景）、PID 实测 wc=283/PM=106°/Mp=0.1%、超前设计双错（ωm 180→305；有源网络误加 α 倍补偿 K 192.5→50，修正后 PM=54.3°）、蒙特卡洛表换实测（0% 超标）；P 控制矛盾转 PControlTradeoffExplorer（默认复现手算例）；何疑红队三条件放行；讨论日志 semester-02/02-classic/11；[待定] 答案 8/9 个别数值下轮抽查 |
+| [x] 经典控制案例 (classic-case-study) | 学期3 CLASSIC-11：重构Phase1–4，12主题/十题/六严格内核及Pyodide实验；物理系数/负载尺度/反算与数字环路纠错，实际TS107K对独立状态，136行对账；验收.agent/semester-03/classic-11/acceptance.md；旧日志保留为历史来源 |
 
 ### 现代控制 (modern)
 
