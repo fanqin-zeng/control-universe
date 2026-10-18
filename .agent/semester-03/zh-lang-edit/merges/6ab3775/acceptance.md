@@ -13,3 +13,6 @@ review.json固定提交核查：107Notebook、230cell的title/setup/cell求值�
 Pages本地构建和最终公网发布验收另补真实输出；不得以本地结果冒充公网成功。
 
 Pages本地构建退出0，verify-pages pass=true、205课/9旧入口。实际页面抽查LQR与相平面（browser.json）：修订文字可见、KaTeX0，首组实验均运行完成，无console warn/error。此抽样与载荷等价核验互补，不声称重跑107实验。
+
+
+真实merge提交1a0ea71af824828a085379101a122d8d71c7092a已进入master，两父提交为f0816e8与6ab3775。17课PLAN和逐课记录更新已合入；50课生产进度保持。
