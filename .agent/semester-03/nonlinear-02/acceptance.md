@@ -20,7 +20,7 @@
 
 W13本课拖块模型只审坐标/平衡偏移/三速度三扰动T400局部结果，NONLINEAR-12跳跃与分支来源仍待审。25项Python待办ID、原因和下一步保持；W08/W09/W10不关闭。Phase3六组、A.1六列表/A.2原始输出、B九门槛与四补充、C限定比较/D保留映射见本期讨论日志；历史semester-01日志不改。
 
-Phase4已签发；本课实际交付提交进入master后再登记hash/勾合并列。
+Phase4已签发；实际交付已进入master：064e0d47a70f7e805d4d6a7df777ed5b82e4da41；全局checklist六列已勾。按主干策略推送origin/master，发布分支gh-pages保持9c8e988cd6cd10c1066c479f57799c76ef2514a4，本轮未发布。
 
 最终聚合验证：node .agent/semester-03/nonlinear-02/validate.mjs退出0；完整MDX/两TS指纹、14/27原始运行、25项待办不变、34页内目标、全部旧ID、三工具栏及两窄屏断言均通过。实际组件最大状态误差5.73e-7，独立反向稳定流形对默认二分阈值差5.50e-12。
 

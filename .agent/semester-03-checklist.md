@@ -113,7 +113,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | NONLINEAR-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md;.agent/semester-03/nonlinear-01/acceptance.md;.agent/semester-03/nonlinear-01/delivery-validation.json;commit:9d6d31e22b460a1102d3dbf6d8672770939f4be8 |
-| NONLINEAR-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-02/delivery-validation.json |
+| NONLINEAR-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-02/delivery-validation.json;commit:064e0d47a70f7e805d4d6a7df777ed5b82e4da41 |
 | NONLINEAR-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | NONLINEAR-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
