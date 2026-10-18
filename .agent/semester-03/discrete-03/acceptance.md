@@ -32,3 +32,5 @@
 用户明确“继续DISCRETE-03”，按计划§2.3登记本课暂缓DISCRETE-01的单课例外；先修DISCRETE-02与MATH-10已交付，不使用前课未验收实验。顺序守卫未修改，只补本课配置并更新回归测试，保证DISCRETE-02的例外本身不会授权DISCRETE-03，也不会自动放行DISCRETE-04。
 
 工作区临时端口四文件、proofreading文件和DISCRETE-01草稿不提交。Pages仅作本地构建验收，未授权公网发布。
+
+master交付提交：3a579d90706c37f7b12ab085fccfffdaf061b399。合入列据真实提交勾选，本学期生产完成52课，回执阶段semester-check.log显示merged=52。
