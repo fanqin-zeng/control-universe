@@ -40,3 +40,5 @@ W06/W07/W08/W09与27全局Python待办仍开放；直接内核与Pyodide不代�
 ## 合并
 
 正文/讨论日志/台账/验收同提交；实际no-ff后回填hash和全局checklist合并格。仅合master，不推送或发布gh-pages。
+
+实际课程提交：5b166001b3190d3cc1fc7153d9d29bc179b1543a。master 的 no-ff 合并：605c2827164fcbd5c0d9cbed0a6055a79108a9db。全局 checklist 合并格已据实勾选；合并后 npm run check 与学期清单复验输出见 check-merged.log / semester-merged.log（均退出码 0）。未推送或发布 gh-pages。
