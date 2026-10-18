@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|---|
 | 1 | MATH-01 | 微积分入门 | content/math/calculus-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-01.md) |
 | 2 | MATH-02 | 复数基础 | content/math/complex-numbers.mdx | 已完成 | 待合入 | [润色记录](records/MATH-02.md) |
-| 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 待润色 | — |
+| 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-03.md) |
 | 4 | MATH-04 | 特征值与对角化 | content/math/eigen-decomposition.mdx | 已完成 | 待润色 | — |
 | 5 | MATH-05 | 矩阵分解 | content/math/matrix-decomposition.mdx | 已完成 | 待润色 | — |
 | 6 | MATH-06 | 多元微积分 | content/math/multivariable-calculus.mdx | 已完成 | 待润色 | — |
