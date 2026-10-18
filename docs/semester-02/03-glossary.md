@@ -249,6 +249,15 @@
 | 守卫条件 | guard condition | — | NONLINEAR-11 | 触发事件的条件，须说明边界和优先级 |
 | 重置映射 | reset map | — | NONLINEAR-11 | 从事件前状态给出事件后状态 |
 | Zeno现象 | Zeno phenomenon | — | NONLINEAR-11 | 有限连续时间内无限次离散事件 |
+| 分岔 | bifurcation | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 平衡分支 | equilibrium branch | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 超临界叉形分岔 | supercritical pitchfork bifurcation | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 超临界Hopf分岔 | supercritical Hopf bifurcation | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 乘子 | multiplier | — | semester-03 NONLINEAR-12 | 本课定义 |
+| Logistic映射 | logistic map | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 周期窗口 | periodic window | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 有限时间Lyapunov指数 | finite-time Lyapunov exponent | — | semester-03 NONLINEAR-12 | 本课定义 |
+| 混沌 | chaos | — | semester-03 NONLINEAR-12 | 本课定义 |
 
 ### §2.2 无冲突的条目（按英文键字母序）
 

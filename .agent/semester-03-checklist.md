@@ -44,7 +44,7 @@
 | W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
-| W13 | 非线性入口课长扫描来源保留与后续审查 | [ ] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;NONLINEAR-02已审拖块坐标/平衡偏移并做三速度三扰动T400局部核验；NONLINEAR-12跳跃/分支仍待审，不继承完整吸引域或抖振保证 |
+| W13 | 非线性入口课长扫描来源保留与后续审查 | [x] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-12/source-audit.md;.agent/semester-03/nonlinear-12/w13-audit.json;指定材料已审，未认证全局主张已撤销/限定，不继承完整吸引域或抖振保证 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
@@ -129,7 +129,7 @@
 | NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json;commit:aa691ca7d211255d2713c9856f5be10c02380b65 |
 | NONLINEAR-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/10-iss-small-gain.md;.agent/semester-03/nonlinear-10/acceptance.md;.agent/semester-03/nonlinear-10/validation.json;commit:b90b4ed1366e2b72380295c6daf0119347102810 |
 | NONLINEAR-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/11-switched-hybrid-systems.md;.agent/semester-03/nonlinear-11/acceptance.md;.agent/semester-03/nonlinear-11/validation.json;commit:2a7af2f9146592ad6e319857b444ff056138f3a1 |
-| NONLINEAR-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-12 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/05-nonlinear/12-bifurcation-chaos.md;.agent/semester-03/nonlinear-12/acceptance.md;.agent/semester-03/nonlinear-12/validation.json |
 
 ### 离散控制
 

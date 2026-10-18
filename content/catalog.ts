@@ -2621,13 +2621,28 @@ export const catalog: Chapter[] = [
       {
         "slug": "bifurcation-chaos",
         "title": "分岔与混沌",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "平衡点怎样消失", "title": "平衡点怎样消失" },
+          { "slug": "对称分支", "title": "对称分支" },
+          { "slug": "振荡怎样出现", "title": "振荡怎样出现" },
+          { "slug": "从连续到逐步更新", "title": "从连续到逐步更新" },
+          { "slug": "周期倍化", "title": "周期倍化" },
+          { "slug": "混沌与预测", "title": "混沌与预测" },
+          { "slug": "读懂分岔图", "title": "读懂分岔图" },
+          { "slug": "受迫系统的跳跃", "title": "受迫系统的跳跃" },
+          { "slug": "数值检查", "title": "数值检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/phase-plane",
           "math/numerical-methods"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },
