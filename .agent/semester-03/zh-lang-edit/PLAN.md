@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前52课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前53课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -62,7 +62,7 @@
 | 51 | DISCRETE-01 | 采样与量化 | content/discrete-sampled/discrete-time-freq.mdx | 待完成 | 待生产 | — |
 | 52 | DISCRETE-02 | 离散时间系统 | content/discrete-sampled/discrete-time-systems.mdx | 已完成 | 待润色 | — |
 | 53 | DISCRETE-03 | 差分方程 | content/discrete-sampled/difference-equation.mdx | 已完成 | 待润色 | — |
-| 54 | DISCRETE-04 | Z域系统分析 | content/discrete-sampled/z-transform-analysis.mdx | 待完成 | 待生产 | — |
+| 54 | DISCRETE-04 | Z域系统分析 | content/discrete-sampled/z-transform-analysis.mdx | 已完成 | 待润色 | — |
 | 55 | DISCRETE-05 | 离散系统稳定性 | content/discrete-sampled/discrete-stability-criteria.mdx | 待完成 | 待生产 | — |
 | 56 | DISCRETE-06 | 离散化方法 | content/discrete-sampled/discretization-methods.mdx | 待完成 | 待生产 | — |
 | 57 | DISCRETE-07 | 采样周期 | content/discrete-sampled/sampling-period-selection.mdx | 待完成 | 待生产 | — |

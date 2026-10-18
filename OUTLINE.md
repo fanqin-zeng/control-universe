@@ -89,7 +89,7 @@
 | 6.1 | 采样与量化 | discrete-time-freq | 🟨 有正文待审校 | undergrad | theory | 7 | classic/frequency-domain-analysis<br>math/fourier-analysis |
 | 6.2 | 离散时间系统 | discrete-time-systems | ✅ 已交付 v1.3 | undergrad | theory | 8 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>math/z-transform |
 | 6.3 | 差分方程 | difference-equation | ✅ 已交付 v1.3 | undergrad | math | 9 | discrete-sampled/discrete-time-systems<br>math/z-transform |
-| 6.4 | Z域系统分析 | z-transform-analysis | 🟨 有正文待审校 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
+| 6.4 | Z域系统分析 | z-transform-analysis | ✅ 已交付 v1.3 | undergrad | theory | 10 | discrete-sampled/discrete-time-freq<br>discrete-sampled/difference-equation<br>classic/transfer-function |
 | 6.5 | 离散系统稳定性 | discrete-stability-criteria | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/z-transform-analysis<br>modern/lyapunov-modern |
 | 6.6 | 离散化方法 | discretization-methods | 🟨 有正文待审校 | undergrad | theory | 11 | discrete-sampled/discrete-time-freq<br>discrete-sampled/discrete-time-systems<br>math/numerical-methods<br>discrete-sampled/z-transform-analysis |
 | 6.7 | 采样周期 | sampling-period-selection | 🟨 有正文待审校 | undergrad | impl | 12 | discrete-sampled/discrete-stability-criteria<br>discrete-sampled/discretization-methods |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 55（status = v1.3）
-- **有正文待审校**: 25（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 56（status = v1.3）
+- **有正文待审校**: 24（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 125（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 150（= draft 25 + empty 125 + 无 status 0）
+- **未完成 v1.3**: 149（= draft 24 + empty 125 + 无 status 0）
 - **有 MDX 正文**: 80
 - **catalog 小节总数**: 931
-- **讨论日志**: 76 篇（覆盖 55 门；有 MDX 无日志 25 门）
-- **交互组件**: 68 个文件（被正文引用 68，孤儿 0）
+- **讨论日志**: 77 篇（覆盖 56 门；有 MDX 无日志 24 门）
+- **交互组件**: 69 个文件（被正文引用 69，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

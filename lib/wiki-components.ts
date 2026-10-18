@@ -1,3 +1,4 @@
+import { SampledModeExplorer } from "@/components/wiki/sampled-mode-explorer";
 import { CoolingNumericsExplorer } from "@/components/wiki/cooling-numerics-explorer";
 import { ChargingGameExplorer } from "@/components/wiki/charging-game-explorer";
 import { GraphConsensusExplorer } from "@/components/wiki/graph-consensus-explorer";
@@ -89,6 +90,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  SampledModeExplorer,
   CoolingNumericsExplorer,
   ChargingGameExplorer,
   GraphConsensusExplorer,
