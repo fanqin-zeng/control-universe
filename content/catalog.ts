@@ -903,58 +903,58 @@ export const catalog: Chapter[] = [
         "title": "系统建模",
         "subsections": [
           {
-            "slug": "为什么需要数学建模",
-            "title": "为什么需要数学建模"
+                    "slug": "从按下车身开始",
+                    "title": "从按下车身开始"
           },
           {
-            "slug": "从一个实际问题开始汽车悬挂",
-            "title": "从一个实际问题开始：汽车悬挂"
+                    "slug": "受力与平衡位置",
+                    "title": "受力与平衡位置"
           },
           {
-            "slug": "旋转机械系统",
-            "title": "旋转机械系统"
+                    "slug": "旋转机械系统",
+                    "title": "旋转机械系统"
           },
           {
-            "slug": "电气系统建模",
-            "title": "电气系统建模"
+                    "slug": "电气系统建模",
+                    "title": "电气系统建模"
           },
           {
-            "slug": "机电类比同一个数学不同的物理",
-            "title": "机电类比：同一个数学，不同的物理"
+                    "slug": "机电类比",
+                    "title": "机电类比"
           },
           {
-            "slug": "耦合系统直流电机",
-            "title": "耦合系统：直流电机"
+                    "slug": "直流电机",
+                    "title": "直流电机"
           },
           {
-            "slug": "模型验证与简化",
-            "title": "模型验证与简化"
+                    "slug": "模型验证与简化",
+                    "title": "模型验证与简化"
           },
           {
-            "slug": "跨领域建模控制理论远不止机械和电气",
-            "title": "跨领域建模：控制理论远不止机械和电气"
+                    "slug": "跨领域建模",
+                    "title": "跨领域建模"
           },
           {
-            "slug": "建模方法论总结",
-            "title": "建模方法论总结"
+                    "slug": "建模方法论总结",
+                    "title": "建模方法论总结"
           },
           {
-            "slug": "深入讨论",
-            "title": "深入讨论"
+                    "slug": "工作点与线性化",
+                    "title": "工作点与线性化"
           },
           {
-            "slug": "小结",
-            "title": "小结"
+                    "slug": "小结",
+                    "title": "小结"
           },
           {
-            "slug": "习题",
-            "title": "习题"
+                    "slug": "习题",
+                    "title": "习题"
           },
           {
-            "slug": "答案",
-            "title": "答案"
+                    "slug": "答案",
+                    "title": "答案"
           }
-        ],
+],
         "prereq": [
           "math/ode-matrix-exponential",
           "math/multivariable-calculus"
@@ -976,8 +976,8 @@ export const catalog: Chapter[] = [
             "title": "微分方程的困难"
           },
           {
-            "slug": "拉普拉斯变换把微分变代数",
-            "title": "拉普拉斯变换：把微分变代数"
+            "slug": "变换回顾",
+            "title": "变换回顾"
           },
           {
             "slug": "传递函数的定义",
@@ -988,12 +988,12 @@ export const catalog: Chapter[] = [
             "title": "传递函数好在哪里"
           },
           {
-            "slug": "二阶系统最重要的范例",
-            "title": "二阶系统：最重要的范例"
+            "slug": "二阶模型",
+            "title": "二阶模型"
           },
           {
-            "slug": "从传递函数看频率响应",
-            "title": "从传递函数看频率响应"
+            "slug": "频率响应",
+            "title": "频率响应"
           },
           {
             "slug": "传递函数的局限",
@@ -1045,12 +1045,12 @@ export const catalog: Chapter[] = [
             "title": "动态性能指标"
           },
           {
-            "slug": "高阶系统与主导极点",
-            "title": "高阶系统与主导极点"
+            "slug": "主导极点",
+            "title": "主导极点"
           },
           {
-            "slug": "工程实例悬挂系统时域分析",
-            "title": "工程实例：悬挂系统时域分析"
+            "slug": "路面阶跃响应",
+            "title": "路面阶跃响应"
           },
           {
             "slug": "深入讨论",
@@ -1113,8 +1113,8 @@ export const catalog: Chapter[] = [
             "title": "从频域看稳定性"
           },
           {
-            "slug": "工程实例倒立摆的稳定性",
-            "title": "工程实例：倒立摆的稳定性"
+            "slug": "倒立摆反馈",
+            "title": "倒立摆反馈"
           },
           {
             "slug": "时滞系统的稳定性",
@@ -1161,24 +1161,24 @@ export const catalog: Chapter[] = [
             "title": "Bode 图"
           },
           {
-            "slug": "在bode图上读取裕度",
-            "title": "在Bode图上读取裕度"
+            "slug": "bode裕度",
+            "title": "Bode裕度"
           },
           {
             "slug": "nyquist-图",
             "title": "Nyquist 图"
           },
           {
-            "slug": "在nyquist图上读取裕度",
-            "title": "在Nyquist图上读取裕度"
+            "slug": "nyquist裕度",
+            "title": "Nyquist裕度"
           },
           {
             "slug": "稳定性判据",
             "title": "稳定性判据"
           },
           {
-            "slug": "频域指标与时域指标的对应",
-            "title": "频域指标与时域指标的对应"
+            "slug": "频域与时域",
+            "title": "频域与时域"
           },
           {
             "slug": "工程实例",
@@ -1222,8 +1222,8 @@ export const catalog: Chapter[] = [
             "title": "基本概念"
           },
           {
-            "slug": "根轨迹的数学基础",
-            "title": "根轨迹的数学基础"
+            "slug": "幅角条件",
+            "title": "幅角条件"
           },
           {
             "slug": "绘制规则",
@@ -1234,12 +1234,12 @@ export const catalog: Chapter[] = [
             "title": "完整绘制示例"
           },
           {
-            "slug": "从根轨迹读取时域性能",
-            "title": "从根轨迹读取时域性能"
+            "slug": "极点与性能",
+            "title": "极点与性能"
           },
           {
-            "slug": "用根轨迹设计控制器",
-            "title": "用根轨迹设计控制器"
+            "slug": "零极点设计",
+            "title": "零极点设计"
           },
           {
             "slug": "广义根轨迹",
@@ -1282,16 +1282,16 @@ export const catalog: Chapter[] = [
             "title": "PID控制律"
           },
           {
-            "slug": "比例控制p看见误差立即行动",
-            "title": "比例控制P：看见误差，立即行动"
+            "slug": "比例控制",
+            "title": "比例控制"
           },
           {
-            "slug": "积分控制i记住历史消除残差",
-            "title": "积分控制I：记住历史，消除残差"
+            "slug": "积分控制",
+            "title": "积分控制"
           },
           {
-            "slug": "微分控制d预判趋势提前刹车",
-            "title": "微分控制D：预判趋势，提前刹车"
+            "slug": "微分控制",
+            "title": "微分控制"
           },
           {
             "slug": "各项作用的物理直觉",
@@ -1306,8 +1306,8 @@ export const catalog: Chapter[] = [
             "title": "PID的工程实现"
           },
           {
-            "slug": "工程实例直流电机转速控制",
-            "title": "工程实例：直流电机转速控制"
+            "slug": "电机转速控制",
+            "title": "电机转速控制"
           },
           {
             "slug": "深入讨论",
@@ -1367,8 +1367,8 @@ export const catalog: Chapter[] = [
             "title": "从根轨迹看校正"
           },
           {
-            "slug": "工程实例电机速度控制设计",
-            "title": "工程实例：电机速度控制设计"
+            "slug": "电机位置控制",
+            "title": "电机位置控制"
           },
           {
             "slug": "深入讨论",
@@ -1416,12 +1416,12 @@ export const catalog: Chapter[] = [
             "title": "时滞对频率响应的影响"
           },
           {
-            "slug": "工程实例从bode图设计增益",
-            "title": "工程实例：从Bode图设计增益"
+            "slug": "增益设计",
+            "title": "增益设计"
           },
           {
-            "slug": "工程应用ziegler-nichols-整定法",
-            "title": "工程应用：Ziegler-Nichols整定法"
+            "slug": "临界整定",
+            "title": "临界整定"
           },
           {
             "slug": "深入讨论",
@@ -1451,6 +1451,40 @@ export const catalog: Chapter[] = [
       {
         "slug": "design-methods-comparison",
         "title": "设计方法选型",
+        "subsections": [
+          {
+            "slug": "先分清三个问题",
+            "title": "先分清三个问题"
+          },
+          {
+            "slug": "把需求写成合同",
+            "title": "把需求写成合同"
+          },
+          {
+            "slug": "同一对象的三组候选",
+            "title": "同一对象的三组候选"
+          },
+          {
+            "slug": "需求改变后的选择",
+            "title": "需求改变后的选择"
+          },
+          {
+            "slug": "何时换一种工具",
+            "title": "何时换一种工具"
+          },
+          {
+            "slug": "交付前的复核",
+            "title": "交付前的复核"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "classic/pid-controller",
           "classic/compensator-design",
@@ -1458,7 +1492,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "classic-case-study",

@@ -1,10 +1,10 @@
 # Python 逐课兼容验收与待处理清单
 
-2026-10-17；当前浏览器兼容清单。起点为DEP04，后续按课程交付合并实跑证据（见原始记录provenance）；MATH-03新增4个、MATH-04新增5个、MATH-05与MATH-06各新增6个、MATH-07、MATH-08与MATH-09各新增7个、MATH-10新增6个、MATH-11与MATH-12各新增7个、MATH-13与MATH-14各新增6个、MATH-15、MATH-16、MATH-17与MATH-18各新增7个实验；各次实跑日期见对应报告。DEP04的自动发布授权仅限其原工作包，后续发布仍需用户逐次同意。本文不代表课程内容签发。
+2026-10-17；当前浏览器兼容清单。起点为DEP04，后续按课程交付合并实跑证据（见原始记录provenance）；MATH-03新增4个、MATH-04新增5个、MATH-05与MATH-06各新增6个、MATH-07、MATH-08与MATH-09各新增7个、MATH-10新增6个、MATH-11与MATH-12各新增7个、MATH-13与MATH-14各新增6个、MATH-15、MATH-16、MATH-17与MATH-18各新增7个实验，CLASSIC-01新增7个实验；各次实跑日期见对应报告。DEP04的自动发布授权仅限其原工作包，后续发布仍需用户逐次同意。本文不代表课程内容签发。
 
 ## 结果口径
 
-含 notebook 的 69 课 / 285 个实验 / 458 个单元格全部纳入盘点。48 课全部可运行，12 课混合，9 课全部保留代码；启用 255 个实验，保留 30 个。实际执行 430 个单元格（含异常单元格），生成 144 张 PNG。原始记录中 257 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 73 课 / 325 个实验 / 498 个单元格全部纳入盘点。53 课全部可运行，11 课混合，9 课全部保留代码；启用 298 个实验，保留 27 个。实际执行 473 个单元格（含异常单元格），生成 156 张 PNG。原始记录中 300 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -14,12 +14,12 @@
 |---|---|---|---|
 | math/calculus-basics（微积分入门） | 6/6 | 6 | 无 |
 | math/complex-numbers（复数基础） | 3/3 | 3 | 无 |
-| classic/transfer-function（传递函数） | 2/2 | 2 | 无 |
-| classic/time-domain-analysis（时域分析） | 2/2 | 2 | 无 |
-| classic/stability-analysis（系统稳定性） | 4/4 | 4 | 无 |
-| classic/frequency-domain-analysis（频域分析） | 3/6 | 3 | 3, 4, 6 |
-| classic/root-locus（根轨迹） | 4/4 | 5 | 无 |
-| classic/pid-controller（PID控制） | 5/5 | 5 | 无 |
+| classic/transfer-function（传递函数） | 5/5 | 5 | 无 |
+| classic/time-domain-analysis（时域分析） | 7/7 | 7 | 无 |
+| classic/stability-analysis（系统稳定性） | 8/8 | 8 | 无 |
+| classic/frequency-domain-analysis（频域分析） | 9/9 | 9 | 无 |
+| classic/root-locus（根轨迹） | 6/6 | 7 | 无 |
+| classic/pid-controller（PID控制） | 6/6 | 6 | 无 |
 | classic/classic-case-study（经典控制案例） | 6/6 | 6 | 无 |
 | modern/state-space（状态空间） | 2/2 | 2 | 无 |
 | modern/controllability-observability（可控性与可观性） | 3/3 | 3 | 无 |
@@ -81,6 +81,10 @@
 | math/graph-theory（图论基础） | 7/7 | 7 | 无 |
 | math/game-theory-math（博弈论基础） | 7/7 | 7 | 无 |
 | math/numerical-methods（数值方法） | 7/7 | 7 | 无 |
+| classic/system-modeling（系统建模） | 7/7 | 7 | 无 |
+| classic/compensator-design（校正网络） | 6/6 | 6 | 无 |
+| classic/frequency-response-design（回路整形） | 6/6 | 6 | 无 |
+| classic/design-methods-comparison（设计方法选型） | 3/3 | 3 | 无 |
 
 ## 待处理实验
 
@@ -88,9 +92,6 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-001 | classic/frequency-domain-analysis#3：🧪 不同增益下的 Bode 图与稳定裕度（源码 L524） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-002 | classic/frequency-domain-analysis#4：🧪 Nyquist 图上的稳定裕度（源码 L811） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-003 | classic/frequency-domain-analysis#6：🧪 相位裕度与超调量的对应关系（源码 L1154） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-004 | modern/modern-case-study#3：观测器设计与基于观测器的控制（源码 L473） | FONT | 绘图字形未通过验收：ẋ（U+1E8B)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
 | PY-005 | modern/modern-case-study#4：卡尔曼滤波与 LQG 控制（源码 L619） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-006 | discrete-sampled/discrete-time-freq#3：实验 3（源码 L418） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
@@ -134,3 +135,5 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 ## 验收与发布
 
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
+
+CLASSIC-05本轮关闭历史PY-001/PY-002/PY-003：三个widgets实验改为静态复算与React参数交互，九个新实验实际通过。历史记录及映射见[处置回执](../../.agent/semester-03/classic-05/resolved-python-debts.json)。其余27项保留原编号。

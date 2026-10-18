@@ -1,0 +1,142 @@
+{
+  "testedAt": "2026-10-17T22:32:41.998Z",
+  "url": "http://localhost:8080/python-expansion.html?lesson=classic/transfer-function",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "classic/transfer-function",
+      "title": "传递函数",
+      "sourceHash": "8265e2dfe22e0eb265e7c27cc1dcf99b9d1bcbacf0174d5e047b8024acfcedd0",
+      "notebooks": [
+        {
+          "id": "classic/transfer-function#1",
+          "title": "变换与模型核对",
+          "index": 1,
+          "line": 124,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5168,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "1 -> 1/s\nt -> s**(-2)\nexp(-a*t) -> 1/(a + s)\nsin(t*w) -> w/(s**2 + w**2)\ncos(t*w) -> s/(s**2 + w**2)\nt*exp(-a*t) -> (a + s)**(-2)\n一阶阶跃: -tau/(s*tau + 1) + 1/s -> 1-exp(-t/tau)\n外力/位移分母: c*s + k + m*s**2\n电机分母: B*L*s + B*R + J*L*s**2 + J*R*s + Ke*Kt\nRLC电压坐标系数: C*L C*R 1\n冲激变换为1，采用0-因果约定；这项是广义函数恒等式\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#2",
+          "title": "🧪 动手实验：方框图代数 — feedback() 计算闭环传递函数",
+          "index": 2,
+          "line": 309,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1396,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "电机开环传递函数: <TransferFunction>: sys[0]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n               0.1\n  ------------------------------\n  0.0001 s^2 + 0.01001 s + 0.011\nK=10 闭环传递函数: <TransferFunction>: sys[4]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n                1\n  ------------------------------\n  0.0001 s^2 + 0.01001 s + 1.011\n开环极点: [-98.98876276+0.j  -1.11123724+0.j]\n闭环极点: [-50.05+87.20663679j -50.05-87.20663679j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#3",
+          "title": "二阶归一化与频响核对",
+          "index": 3,
+          "line": 450,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 273,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "m,c,k; wn,zeta: 250.0 2000.0 16000.0 8.0 0.5\n极点: [-4.+6.92820323j -4.-6.92820323j]\n极点角度(deg): 60.00000000000001\nt=1归一化位移: 0.9790066267804659\n采样峰值/末样: 1.1629708731458994 0.9999988742947047\n连续峰值/峰时: 1.1630335348215806 0.45344984105855446\n频率/柔度m每N/归一化/相位deg: 0.0 6.25e-05 1.0 0.0\n频率/柔度m每N/归一化/相位deg: 4.0 6.933752452815365e-05 1.1094003924504583 -33.690067525979785\n频率/柔度m每N/归一化/相位deg: 8.0 6.25e-05 1.0 -90.0\n频率/柔度m每N/归一化/相位deg: 40.0 2.549428176400013e-06 0.04079085082240021 -168.23171106797935\n幅值峰频率/归一化峰: 5.656854249492381 1.1547005383792517\n相对直流-3dB频率: 10.176157196112552\n阻尼/极点/采样峰/3s末样: 0.0 [ 0.+8.j -0.-8.j] 1.9999885855671584 0.5758209926630036\n阻尼/极点/采样峰/3s末样: 0.5 [-4.+6.92820323j -4.-6.92820323j] 1.1629708731458994 0.9999988742947047\n阻尼/极点/采样峰/3s末样: 1.0 [-8. -8.] 0.9999999990562164 0.9999999990562164\n阻尼/极点/采样峰/3s末样: 2.0 [ -2.14359354 -29.85640646] 0.9982641812004239 0.9982641812004239\n高频近似 m/N: 2.5e-06\n路面输入需要分子cs+k，不能套用外力柔度\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#4",
+          "title": "🧪 动手实验：零极点对消 — 传递函数会隐藏内部状态",
+          "index": 4,
+          "line": 551,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "约分后极点: [-2.+0.j]\nt, 输入阶跃输出, 中间扰动阶跃输出: 0.0 0.0 0.0\nt, 输入阶跃输出, 中间扰动阶跃输出: 1.0 0.4323323583816925 1.7182818284590453\nt, 输入阶跃输出, 中间扰动阶跃输出: 5.0 0.49997730003514107 147.4131591025766\n内部特征值: [ 1. -2.]\n反向顺序的中间扰动通道是Ga，极点: [-2.+0.j]\n极点失配, 不稳定阶跃残余系数: -0.001 -0.00033377825975358487\n极点失配, 不稳定阶跃残余系数: 0.0 0.0\n极点失配, 不稳定阶跃残余系数: 0.001 0.0003328893698770407\n对消仅掩盖输入通道，不能保证内部稳定\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#5",
+          "title": "九题答案复算",
+          "index": 5,
+          "line": 849,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 46,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1 wn,zeta: 6.324555320336759 0.31622776601683794\n题2 poles,wn,zeta: [-1.5+2.78388218j -1.5-2.78388218j] 3.1622776601683795 0.4743416490252569\n题3 串联/并联/串联直流: <TransferFunction>: sys[11]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n        5\n  -------------\n  s^2 + 3 s + 2 <TransferFunction>: sys[14]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n     6 s + 7\n  -------------\n  s^2 + 3 s + 2 2.5\n题4 电荷坐标L,R,1/C: 0.1 2.0 100.0\n题4 电压坐标LC,RC,1;wn,zeta: 0.001 0.02 1.0 31.622776601683793 0.31622776601683794\n题5 下垂/倒立固有根: +/-j*sqrt(g/l), +/-sqrt(g/l)\n题6 闭环: <TransferFunction>: sys[19]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n        40\n  --------------\n  s^2 + 2 s + 20\n题6 poles,wn,zeta,终值,超调百分比: [-1.+4.35889894j -1.-4.35889894j] 4.47213595499958 0.22360679774997896 2.0 48.639667507071096\n有限直流增益反例 C=G=1,H=.5: 终值= 0.6666666666666666\n题7 U通道1/(s+2)，D通道1/(s-1)，d阶跃输出exp(t)-1\n题8 poles,zero,DC,y0+,终值: -3.0 -0.5 0.3333333333333333 2.0 0.3333333333333333\n题8 部分分式: 5/(3*(s + 3)) + 1/(3*s)\n题9 舍入测量tau: 0.20011945343929166 理想tau=.2时幅值: 0.8944271909999159\n题9 tau=.2转折频率/2倍转折频率: 5.0 10.0\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "classic/transfer-function",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 5,
+    "enabled": 5,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 5,
+    "codeOnly": 0
+  }
+}

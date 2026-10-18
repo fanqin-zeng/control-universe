@@ -1,0 +1,66 @@
+{
+  "source": "content/classic/design-methods-comparison.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 113,
+      "title": "候选的完整响应",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport scipy\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import brentq\r\ns=ct.tf('s');G=1/(s+1)\r\ncontrollers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}\r\na=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2\r\nc=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2\r\ndef error(name,t):\r\n    if name=='P4':return .2+.8*np.exp(-5*t)\r\n    if name=='PI11':return np.exp(-t)\r\n    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)\r\ndef command(name,t):\r\n    if name=='P4':return .8+3.2*np.exp(-5*t)\r\n    if name=='PI11':return np.ones_like(t,dtype=float)\r\n    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)\r\ndef settling(name,A,eps):\r\n    if eps>=A:return 0.\r\n    residual=.2*A if name=='P4' else 0.\r\n    if eps<=residual:return np.inf\r\n    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)\r\ndef u_peak(name,A):\r\n    # P4 decreases; PI11 constant; PI21 has a single interior minimum.\r\n    if name=='PI21':\r\n        tmin=np.log(b*(1+h)/(a*h))/(b-a)\r\n        return A*max(2.,1.,abs(command(name,tmin)))\r\n    return A*(4. if name=='P4' else 1.)\r\ncontracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 145,
+          "delim": "`",
+          "code": "print('versions numpy,scipy,control',np.__version__,scipy.__version__,ct.__version__)\r\nt=np.arange(2001)/100\r\nfig,axes=plt.subplots(2,1,figsize=(7,6))\r\nfor name,C in controllers.items():\r\n    T=ct.feedback(C*G);U=ct.feedback(C,G)\r\n    tt,y=ct.step_response(T,t);_,u=ct.step_response(U,t)\r\n    assert np.max(abs(y-(1-error(name,t))))<1e-9\r\n    assert np.max(abs(u-command(name,t)))<1e-9\r\n    print(name,'poles,DC',ct.poles(T),ct.dcgain(T))\r\n    print(name,'PM,wc',ct.margin(C*G)[1],ct.margin(C*G)[3])\r\n    rise=np.inf if name=='P4' else brentq(lambda t:error(name,t)-.1,0,30)-brentq(lambda t:error(name,t)-.9,0,30)\r\n    print(name,'residual,target10to90,t_epsilon,u_peak',.2 if name=='P4' else 0.,rise,settling(name,1,.02),u_peak(name,1))\r\n    print(name,'y20 finite sample',y[-1])\r\n    axes[0].plot(t,y,label=name)\r\n    axes[1].plot(t,u,label=name)\r\nfor ax,ylabel,limits in zip(axes,['y','u'],[[-.05,1.1],[0,4.3]]):\r\n    ax.set(xlim=(0,20),ylim=limits,xlabel='t (s)',ylabel=ylabel);ax.legend()\r\nfig.tight_layout();plt.show()\r\n# Independent state realization keeps both PI modes including the stable cancellation.\r\nfor kp in [1.,2.]:\r\n    A=np.array([[-1-kp,1.],[-1.,0.]]);print('PI state roots',kp,np.linalg.eigvals(A))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 208,
+      "title": "四份合同的筛选",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport scipy\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import brentq\r\ns=ct.tf('s');G=1/(s+1)\r\ncontrollers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}\r\na=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2\r\nc=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2\r\ndef error(name,t):\r\n    if name=='P4':return .2+.8*np.exp(-5*t)\r\n    if name=='PI11':return np.exp(-t)\r\n    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)\r\ndef command(name,t):\r\n    if name=='P4':return .8+3.2*np.exp(-5*t)\r\n    if name=='PI11':return np.ones_like(t,dtype=float)\r\n    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)\r\ndef settling(name,A,eps):\r\n    if eps>=A:return 0.\r\n    residual=.2*A if name=='P4' else 0.\r\n    if eps<=residual:return np.inf\r\n    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)\r\ndef u_peak(name,A):\r\n    # P4 decreases; PI11 constant; PI21 has a single interior minimum.\r\n    if name=='PI21':\r\n        tmin=np.log(b*(1+h)/(a*h))/(b-a)\r\n        return A*max(2.,1.,abs(command(name,tmin)))\r\n    return A*(4. if name=='P4' else 1.)\r\ncontracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 240,
+          "delim": "`",
+          "code": "for label,A,eps,limit,deadline in contracts:\r\n    print('contract',label,'A,epsilon,input_limit,deadline',A,eps,limit,deadline)\r\n    passed=[]\r\n    for name in controllers:\r\n        ts=settling(name,A,eps);peak=u_peak(name,A)\r\n        ok=bool(np.isfinite(ts) and ts<=deadline and peak<=limit)\r\n        print(name,'continuous entry time,peak,pass',ts,peak,ok)\r\n        if ok:passed.append(name)\r\n    print('accepted fixed candidates',passed)\r\n    expected={'A':['PI11','PI21'],'B':['P4','PI11','PI21'],'C':['PI11'],'D':[]}[label]\r\n    assert passed==expected\r\n# Exponential error coefficients are positive: entry is permanent, not just a first crossing.\r\nassert a>0 and b>0 and c>0 and 1-c>0\r\nfor name in controllers:\r\n    eps=.06;A=.25;ts=settling(name,A,eps)\r\n    assert abs(A*error(name,ts)-eps)<1e-10\r\n    assert A*error(name,ts+.1)<eps\r\nprint('D reachable upper bound at t8',.5*(1-np.exp(-8)))\r\nprint('D asymptotic upper bound .5, required lower band',1-.02)\r\n# The equality epsilon=residual is approached only at infinity for P4.\r\nassert np.isinf(settling('P4',1,.2))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 314,
+      "title": "通道与边界复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport scipy\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import brentq\r\ns=ct.tf('s');G=1/(s+1)\r\ncontrollers={'P4':ct.tf([4],[1]),'PI11':(s+1)/s,'PI21':(2*s+1)/s}\r\na=(3-np.sqrt(5))/2;b=(3+np.sqrt(5))/2\r\nc=(np.sqrt(5)-1)/(2*np.sqrt(5));h=(3/np.sqrt(5)-1)/2\r\ndef error(name,t):\r\n    if name=='P4':return .2+.8*np.exp(-5*t)\r\n    if name=='PI11':return np.exp(-t)\r\n    return c*np.exp(-a*t)+(1-c)*np.exp(-b*t)\r\ndef command(name,t):\r\n    if name=='P4':return .8+3.2*np.exp(-5*t)\r\n    if name=='PI11':return np.ones_like(t,dtype=float)\r\n    return 1-h*np.exp(-a*t)+(1+h)*np.exp(-b*t)\r\ndef settling(name,A,eps):\r\n    if eps>=A:return 0.\r\n    residual=.2*A if name=='P4' else 0.\r\n    if eps<=residual:return np.inf\r\n    return brentq(lambda t:A*error(name,t)-eps,0,100,xtol=1e-12)\r\ndef u_peak(name,A):\r\n    # P4 decreases; PI11 constant; PI21 has a single interior minimum.\r\n    if name=='PI21':\r\n        tmin=np.log(b*(1+h)/(a*h))/(b-a)\r\n        return A*max(2.,1.,abs(command(name,tmin)))\r\n    return A*(4. if name=='P4' else 1.)\r\ncontracts=[('A',1.,.02,3.,8.),('B',.25,.06,1.2,2.),('C',1.,.02,1.5,8.),('D',1.,.02,.5,8.)]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 346,
+          "delim": "`",
+          "code": "w=100.\r\nfor name,C in controllers.items():\r\n    L=C*G;T=ct.feedback(L);CS=ct.feedback(C,G)\r\n    print(name,'measurement noise absT,absCS at100',abs(ct.evalfr(T,1j*w)),abs(ct.evalfr(CS,1j*w)))\r\n    kp={'P4':4.,'PI11':1.,'PI21':2.}[name]\r\n    print(name,'control noise high frequency limit Kp',kp)\r\nfor Tp in [.5,1.,2.]:\r\n    P=1/(Tp*s+1);C=controllers['PI11'];T=ct.feedback(C*P)\r\n    roots=ct.poles(T);assert np.max(roots.real)<0\r\n    print('Tp,full roots',Tp,roots)\r\n    t=np.arange(2001)/100;tt,y=ct.step_response(T,t)\r\n    plt.plot(t,y,label='Tp='+str(Tp))\r\nplt.xlim(0,20);plt.ylim(0,1.5);plt.legend();plt.xlabel('t (s)');plt.ylabel('y');plt.show()\r\nprint('exercise2 P gain, pole,residual ratio',4.,-5.,1/5)\r\nprint('exercise2 required P gain for .02',1/.02-1)\r\nprint('exercise3 PI11 full polynomial',[1.,2.,1.])\r\nprint('exercise4 B times',[settling(n,.25,.06) for n in controllers])\r\nprint('exercise5 D lower required',1-.02,'max equilibrium .5')\r\nprint('versions numpy,scipy,control',np.__version__,scipy.__version__,ct.__version__)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

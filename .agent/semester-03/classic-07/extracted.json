@@ -1,0 +1,123 @@
+{
+  "source": "content/classic/pid-controller.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 263,
+      "title": "临界比例整定",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 277,
+          "delim": "`",
+          "code": "Ku=8.; Tu=2*np.pi/np.sqrt(3)\r\nkp=.6*Ku; ti=Tu/2; td=Tu/8\r\nki=kp/ti; kd=kp*td\r\nprint(\"Ku,Tu,Kp,Ti,Td,Ki,Kd\",Ku,Tu,kp,ti,td,ki,kd)\r\nassert np.allclose(np.sort_complex(np.roots([1,3,3,9])),np.sort_complex([-3,1j*np.sqrt(3),-1j*np.sqrt(3)]))\r\nsys=closed([1],[1,3,3,1],[kd,kp,ki],[1,0])\r\nt,y=curve(sys,20,2001)\r\nprint(\"sample peak, y(20)\",float(np.max(y)),float(y[-1]))\r\nplt.plot(t,y); plt.axhline(1,color='gray'); plt.xlabel('t (s)');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 312,
+      "title": "纯延迟阶跃与整定",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 326,
+          "delim": "`",
+          "code": "gain,tau,delay=2.,5.,1.5\r\nt=np.linspace(0,20,2001)\r\ny=np.where(t>=delay,gain*(1-np.exp(-np.maximum(t-delay,0)/tau)),0.)\r\nassert y[0]==0 and y[150]==0\r\nprint(\"y(L), y(L+T)\",y[150],y[650])\r\nplt.plot(t,y,label='Exact FOPDT');plt.plot([delay,delay+tau],[0,gain],'--',label='right tangent at L');plt.legend();plt.show()\r\nprint(\"ZN PI\",.9*tau/(gain*delay),delay/.3)\r\n# Cohen-Coon parallel/standard conversion, q=L/T.\r\nq=delay/tau\r\nprint(\"CC PI Kp,Ti\",tau/(gain*delay)*(.9+q/12),delay*(30+3*q)/(9+20*q))\r\nprint(\"CC PID Kp,Ti,Td\",tau/(gain*delay)*(4/3+q/4),delay*(32+6*q)/(13+8*q),4*delay/(11+2*q))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 374,
+      "title": "饱和与积分状态",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 388,
+          "delim": "`",
+          "code": "# Fixed PI: Kp=2, Ki=1, plant y'=-y+u. Exact ZOH plant, controller dt=.01.\r\n# Compare only this implementation, not optimized controller rankings.\r\ndef run_aw(level, aw=False, separation=False, dt=.01):\r\n    y=0.; z=0.; rows=[]\r\n    for k in range(round(20/dt)+1):\r\n        t=k*dt; r=level if t<10 else .5\r\n        e=r-y; raw=2*e+z; u=np.clip(raw,-1,1)\r\n        rows.append((t,r,y,u,z))\r\n        dz=e if not separation or abs(e)<=.5 else 0.\r\n        if aw: dz+=u-raw\r\n        z+=dt*dz\r\n        y=np.exp(-dt)*y+(1-np.exp(-dt))*u\r\n    return np.array(rows)\r\nfor level in [.5,1.,3.]:\r\n    for aw,sep in [(False,False),(True,False),(False,True),(True,True)]:\r\n        a=run_aw(level,aw,sep)\r\n        print(\"level,AW,separation, y(10),I(10),y(20)\",level,aw,sep,*a[1000,[2,4]],a[-1,2])\r\n        assert np.max(abs(a[:,3]))<=1\r\n        if level==3: assert a[999,2]<1.001 # impossible to track r=3 with u<=1\r\n    a=run_aw(level);b=run_aw(level,True)\r\n    if level==.5: assert np.allclose(a,b)\r\n    plt.plot(a[:,0],a[:,2],label='plain');plt.plot(b[:,0],b[:,2],label='back calculation');plt.title('reference '+str(level));plt.legend();plt.show()\r\n# Half-step convergence, same times, no comparison tuning claim.\r\na=run_aw(3,True);b=run_aw(3,True,dt=.005)\r\nprint(\"half-step max y error\",np.max(abs(a[:,2]-b[::2,2])))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 477,
+      "title": "离散增量与限幅",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 491,
+          "delim": "`",
+          "code": "# Retain old G=10/(s+1), Ts=.05; exact ZOH. Raw PID can oscillate with saturation.\r\nTs=.05; t=np.arange(101)*Ts\r\nfor gains in [(3.,1.,.2),(.1,.1,0.)]:\r\n    kp,ki,kd=gains; y=0.;u=0.; ep=0.;epp=0.; rows=[]\r\n    for time in t:\r\n        e=1-y;du=kp*(e-ep)+ki*Ts*e+kd/Ts*(e-2*ep+epp)\r\n        u=float(np.clip(u+du,-10,10));rows.append((y,u))\r\n        y=np.exp(-Ts)*y+10*(1-np.exp(-Ts))*u\r\n        epp,ep=ep,e\r\n    rows=np.array(rows)\r\n    print(\"gains, last y, sampled peak, max |u|\",gains,rows[-1,0],np.max(rows[:,0]),np.max(abs(rows[:,1])))\r\n    assert np.max(abs(rows[:,1]))<=10\r\n    plt.plot(t,rows[:,0],label=str(gains))\r\nplt.legend();plt.xlabel('t (s)');plt.show()\r\n# Position/increment equality only before saturation, identical initial states.\r\ne=np.array([1.,.7,.2,-.1]);pos=2*e+.1*np.cumsum(e)+5*np.diff(np.r_[0,e]);inc=[];u=0.;ep=0.;epp=0.\r\nfor v in e:\r\n    u+=7.1*v-12*ep+5*epp;inc.append(u);epp,ep=ep,v\r\nassert np.allclose(pos,inc);print(\"Q9 positions/increments\",pos,inc)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 536,
+      "title": "电机模型与候选验证",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 550,
+          "delim": "`",
+          "code": "R,L,J,B,km,kb=1.,.5,.01,.1,.02,.02\r\nphysical=np.polymul([L,R],[J,B]);physical[-1]+=km*kb\r\nprint(\"physical denominator\",physical,\"normalized\",physical/physical[0],\"numerator\",km/physical[0])\r\nassert np.allclose(physical,[.005,.06,.1004])\r\nprint(\"open poles\",np.roots(physical))\r\nprint(\"P Kp=5 ess\",1/(1+5*km/physical[-1]),\"P gain for ess<1%\",99*physical[-1]/km)\r\n# Same historical candidates, no independent tuning or ranking. Unit speed step, no load/noise/limits.\r\nfor name,cn,cd in [('P',[5],[1]),('PI',[5,50],[1,0]),('ideal PID',[.5,5,50],[1,0]),('filtered PID',[.55,5.5,50],[.01,1,0])]:\r\n    sys=closed([km],physical,cn,cd)\r\n    poles=np.roots(sys.den); assert np.max(poles.real)<0\r\n    t,y=curve(sys,10,10001); limit=sys.num[-1]/sys.den[-1]\r\n    crossings=[t[np.flatnonzero(y>=v)[0]] if np.any(y>=v) else np.nan for v in [.1*limit,.9*limit]]\r\n    print(name,\"den\",sys.den,\"poles\",poles,\"limit\",limit,\"sample tr 10-90\",crossings[1]-crossings[0],\"sample overshoot wrt limit\",max(0,np.max(y)/limit-1)*100,\"y(10)\",y[-1])\r\n    plt.plot(t,y,label=name)\r\nplt.legend();plt.xlabel('t (s)');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 956,
+      "title": "三项模型与九题复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef closed(num, den, cn, cd):\r\n    n=np.polymul(num,cn)\r\n    d=np.polyadd(np.polymul(den,cd),n)\r\n    return signal.TransferFunction(n,d)\r\n\r\ndef curve(sys, end=10, count=501):\r\n    return signal.step(sys,T=np.linspace(0,end,count))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 970,
+          "delim": "`",
+          "code": "for kp in [1,5,20]:\r\n    print(\"Q1\",kp,2/(2+10*kp),1/(2+10*kp))\r\nfor kp,ki,kd in [(1,2,0),(2,1,.2),(1,0,0),(2,1,0),(2,1,2)]:\r\n    sys=signal.TransferFunction(np.trim_zeros([kd,kp,ki],'f'),[1+kd,1+kp,ki])\r\n    t,y=curve(sys);print(\"explorer\",kp,ki,kd,\"y0,y10\",y[0],y[-1])\r\n    if (kp,ki,kd)==(1,2,0): assert np.allclose(y,1-np.exp(-t)*np.cos(t))\r\nw=20.;h=1j*w/(1+.05j*w)\r\nprint(\"filter\",20*np.log10(abs(h)),np.angle(h,deg=True),20*np.log10(20))\r\nprint(\"Q3 poles\",np.roots([1,1,1,.5]))\r\nassert np.max(np.roots([1,1,1,.5]).real)<0\r\nprint(\"Q4\",8,2*np.pi/np.sqrt(3),4.8,4.8/(np.pi/np.sqrt(3)),4.8*np.pi/(4*np.sqrt(3)))\r\nprint(\"Q6\",2.25,2/.3,2.25/(2/.3))\r\nprint(\"Q7 poles\",np.roots([1,2,.1]))\r\nt,y=curve(signal.TransferFunction([.1],[1,2,.1]),150,3001)\r\nassert np.min(np.diff(y))>=-1e-12 and np.max(y)<=1\r\nprint(\"Q8 Routh\",1,8,(8*17-20)/8,((8*17-20)/8*20-8*2.5)/((8*17-20)/8),2.5)\r\nassert np.max(np.roots([1,8,17,20,2.5]).real)<0\r\nprint(\"Q9\",2+5+.1,-2-10,5)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

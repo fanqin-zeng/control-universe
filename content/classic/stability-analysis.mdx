@@ -1,54 +1,49 @@
 ---
-title: 系统稳定性分析
+title: 系统稳定性
 description: 从物理直觉到代数判据——不求解特征根，判断系统是否稳定。
 ---
 
-# 系统稳定性分析
+# 系统稳定性
 
 ## 为什么需要稳定性分析
 
-前面我们学了传递函数、时域分析、频域分析、根轨迹、PID 控制器设计。回顾一下，稳定性这个概念其实已经反复出现：
+上一课里，车身受力后可能先越过最终位置，再逐渐停下来。现在把外力撤掉：车身偏离平衡位置后，偏差会消失、保持振荡，还是越摆越大？如果反馈增益改变，这个答案会不会变？
 
-- **传递函数**章：我们说闭环极点的位置决定了系统的自然行为，但还没给出系统化的判断方法
-- **时域分析**章：二阶系统的阻尼比 $\zeta > 0$ 就意味着稳定，但那只是二阶的特殊情况
-- **根轨迹**章：我们看到增益 $K$ 太大会把极点推入右半平面——系统失稳
-- **PID 控制器**章：设计直流电机控制器时，我们用 Routh 判据验证了闭环稳定性
+这就是本课要解决的问题。我们先说清楚“稳定”指哪一种响应，再从特征多项式的系数判断根的位置。对于具体高阶多项式，数值求根通常可行；但五次及以上多项式**一般不存在通用根式公式**，不等于每个高阶方程都无解析解。Routh判据尤其适合直接推导参数范围。
 
-所有这些线索都指向同一个核心问题：
-
-**系统稳不稳定？**
-
-不稳定意味着：给一个有限的输入，输出会无限增长——电机飞车、桥梁坍塌、火箭坠毁。在工程中，**稳定性是一切的前提**。不稳定的系统，谈什么性能指标都没有意义。
-
-那怎么判断稳定性？最直接的方法是求解特征方程的根，看是否都在左半平面。但对于高阶系统（$n \geq 5$），特征方程没有解析解。我们需要一种**不求根就能判断稳定性**的方法。
-
-本章介绍几种经典的代数稳定判据，以及它们与根轨迹、频域方法之间的联系。
+本课以前三课的模型、传递函数和时域响应为起点。根轨迹与频域段只作后续方法的预览，不要求已经学过它们。除特别说明，讨论有限维、连续时间、实系数LTI系统；闭环均为单位**负反馈**。本文“严格稳定多项式”指全部根实部严格小于0。
 
 ## 稳定性的定义
 
 ### 什么是"稳定"
 
-直觉上，稳定就是"推一下能回来"。一个球放在碗里（稳定），放在山顶上（不稳定），放在平面上（临界稳定）。
+“推一下能回来”说的是初始偏差；“持续输入会不会导致无界输出”说的是输入输出关系。这两个问题要分开。
 
-数学上有几种精确定义：
+- **BIBO稳定**：零初始状态下，每一个有界输入都产生有界输出。对真有理或适当有理的有理传递函数，先约去公因子后，全部极点在开左半平面是BIBO稳定的充要条件。
+- **内部渐近稳定**：零输入下，任意初始状态都趋于平衡。有限维LTI状态模型中，全部状态矩阵特征值须在开左半平面。
+- **Lyapunov稳定**：足够小的初始偏差始终保持足够小，不要求趋于零。线性状态模型中，不允许右半平面特征值；虚轴特征值还须是**半单的**，即没有产生时间多项式增长的Jordan块。
 
-**BIBO稳定性**（有界输入有界输出）：对任意有界输入 $|u(t)| \leq M$，输出也有界 $|y(t)| \leq N$。
+约分可能隐藏内部模态，所以BIBO稳定不自动等于内部渐近稳定。最小实现时，前两者才等价。比如内部有一个不参与输出的增长状态，输出传递函数仍可能稳定；不能仅看外部曲线便说所有内部状态安全。
 
-**内部稳定性**（Lyapunov意义）：系统在零输入下，从任意初始状态出发，响应都趋于零（渐近稳定）或有界（Lyapunov稳定）。
+本课“临界稳定”仅指无右半平面特征值、虚轴模态半单而其余模态衰减的**零输入**情况。它不等于BIBO稳定：$G(s)=1/(s^2+1)$在零初值、输入$u(t)=\sin t$时，有
 
-**临界稳定**：系统响应不增长也不衰减，维持等幅振荡。
+$$
+y(t)=\frac{\sin t-t\cos t}{2}.
+$$
 
-对线性定常系统，这三种定义在大多数情况下等价。我们主要使用：
-
-> **线性系统稳定的充要条件**：闭环传递函数的所有极点均位于 $s$ 平面的左半开平面（即所有极点的实部严格为负）。
+输入有界，输出却因共振无界。$1/s^2$的零输入解还可包含线性增长项，不能把“在虚轴上”一律叫临界稳定。
 
 ### 极点在 $s$ 平面上的位置
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 极点位置 | 系统行为 | 稳定性 |
 |---------|---------|--------|
 | 左半平面（$\text{Re}(s) < 0$） | 响应衰减至零 | 稳定 |
-| 虚轴上（$\text{Re}(s) = 0$） | 等幅振荡 | 临界稳定 |
+| 虚轴上（$\text{Re}(s) = 0$） | 可能常值、振荡或多项式增长 | 须查重数/Jordan结构；不据此判BIBO稳定 |
 | 右半平面（$\text{Re}(s) > 0$） | 响应发散 | 不稳定 |
+
+</div>
 
 具体来说：
 
@@ -56,11 +51,63 @@ description: 从物理直觉到代数判据——不求解特征根，判断系�
 - 实极点 $s = a$（$a > 0$）：响应 $e^{at}$，指数增长
 - 共轭极点 $s = -\sigma \pm j\omega_d$：响应 $e^{-\sigma t}\sin(\omega_d t)$，衰减振荡
 - 共轭极点 $s = \pm j\omega$：响应 $\sin(\omega t)$，等幅振荡
-- 原点处的极点 $s = 0$：响应为常数或斜坡增长
+- 原点处的简单模态：零输入为常数；非平凡Jordan块可产生斜坡增长
 
 ### 一个直觉
 
 特征方程的根（闭环极点）决定了系统的"自然频率"。如果所有自然频率都有负实部，那所有模态都会衰减，系统最终回到平衡——这就是稳定。
+
+<JupyterNotebook
+  title="稳定定义与反例"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
+  cells={[
+    { code: `y=(sp.sin(t)-t*sp.cos(t))/2
+assert sp.simplify(sp.diff(y,t,2)+y-sp.sin(t))==0
+assert y.subs(t,0)==0 and sp.diff(y,t).subs(t,0)==0
+print('共振有界输入sin(t)，输出:',y)
+A=sp.diag(-1,1);B=sp.Matrix([1,0]);C=sp.Matrix([[1,0]])
+print('隐藏增长状态传函:',(C*(s*sp.eye(2)-A).inv()*B)[0],'; 状态特征值:',A.eigenvals())
+J=sp.Matrix([[0,1],[0,0]])
+print('双零根状态转移:',sp.exp(J*t))
+for c in [[1,2,3,4,5],[1,1,1,1,1]]:
+ tab,events,rhp=routh(c);print('系数/表/RHP:',c,tab,rhp)` },
+  ]}
+/>
 
 ## Routh判据
 
@@ -78,7 +125,7 @@ $$
 
 其中 $a_n > 0$（若 $a_n < 0$，两边乘以 $-1$）。
 
-**必要条件**（先检查这个）：所有系数 $a_i > 0$。如果有任何系数为零或为负，系统一定不稳定（或有虚轴极点）。
+**必要条件**（先检查这个）：所有系数 $a_i > 0$。若有系数非正，就不能严格Hurwitz稳定；仍需区分右半平面根、简单虚轴根和重根。
 
 注意：这只是必要条件，不是充分条件。系数全为正，系统也可能不稳定（如 $s^4 + s^3 + s^2 + s + 1 = 0$ 需要进一步检验）。
 
@@ -117,7 +164,7 @@ $$
 
 ### 判据
 
-**Routh判据**：系统稳定的充要条件是 Routh 表**第一列所有元素均为正**。
+**Routh判据（常规表）**：当首项系数为正、构表过程中无首元零或全零行时，严格Hurwitz稳定的充要条件是第一列全正。遇到特殊行，必须按下一节处理，不能把补入的正数当作原系统严格稳定的证明。
 
 第一列**符号变化的次数**等于特征方程在**右半平面的极点数**。
 
@@ -127,9 +174,9 @@ Routh 判据看起来像魔术：只看系数就能知道极点在哪儿？背�
 
 多项式的系数编码了根的全部信息。比如二阶多项式 $s^2 + as + b = (s - p_1)(s - p_2)$，展开后 $a = -(p_1 + p_2)$，$b = p_1 p_2$。如果两根都在左半平面（实部为负），则 $a > 0$，$b > 0$——系数全为正。
 
-高阶情况下，系数和根的关系更复杂，但本质相同。Routh 表的每一行计算，本质上是在对多项式做**降阶分解**——类似辗转相除法。第一列的元素，记录的是多项式在不同阶数下的"根分布信息"。符号变化意味着有根从"安全区域"（左半平面）跑到了"危险区域"（右半平面）。
+高阶情况下，系数和根的关系更复杂，但本质相同。Routh 表的每一行计算，本质上是在对多项式做**降阶分解**——类似辗转相除法。第一列的元素，记录的是多项式在不同阶数下的"根分布信息"。符号变化计数表示右半平面根数；单张表本身不描述随参数移动的过程。
 
-严格的数学证明涉及 **Sturm 序列**和 **Cauchy 指数**理论（详见深入讨论），但工程上你只需要记住：**Routh 表把系数中隐含的根分布信息"解码"成了第一列的符号。**
+严格的数学证明涉及 **Sturm 序列**和 **Cauchy 指数**理论（证明超出本课范围），但工程上你只需要记住：**Routh 表把系数中隐含的根分布信息"解码"成了第一列的符号。**
 
 ### 完整示例
 
@@ -190,41 +237,54 @@ $$
 **结论**：系统有 2 个右半平面极点，**不稳定**。
 
 <JupyterNotebook
-  title="🧪 Routh 判据的 Python 实现"
-  setupCode={`import numpy as np`}
+  title="Routh表与特殊行"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
   cells={[
-    { code: `def routh_table(coeffs):
-    """构造 Routh 表，返回表格和稳定性判断"""
-    n = len(coeffs) - 1
-    rows = n + 1
-    cols = (n + 2) // 2
-    table = np.zeros((rows, cols))
-    table[0, :len(coeffs[0::2])] = coeffs[0::2]
-    table[1, :len(coeffs[1::2])] = coeffs[1::2]
-    for i in range(2, rows):
-        for j in range(cols - 1):
-            if abs(table[i-1, 0]) < 1e-12:
-                table[i-1, 0] = 1e-10
-            det = table[i-1, 0] * table[i-2, j+1] - table[i-2, 0] * table[i-1, j+1]
-            table[i, j] = det / table[i-1, 0]
-    first_col = table[:, 0]
-    sign_changes = int(np.sum(np.diff(np.sign(first_col)) != 0))
-    is_stable = sign_changes == 0
-    return table, is_stable, sign_changes
-
-# 测试：s^4 + 2s^3 + 3s^2 + 4s + 5 = 0
-coeffs = [1, 2, 3, 4, 5]
-table, stable, changes = routh_table(coeffs)
-
-print("Routh 表:")
-labels = [f's^{4-i}' for i in range(5)]
-for i, row in enumerate(table):
-    ncols = 3 - (i % 2)
-    print(f"  {labels[i]}: {row[:ncols]}")
-print(f"\\n第一列符号变化次数: {changes}")
-print(f"系统{'稳定' if stable else '不稳定'}（{changes}个右半平面极点）")` },
+    { code: `for c in [[1,2,3,4,5],[1,0,2,1],[1,3,2,6],[1,1,2,2,1,1],[1,0,-1]]:
+ tab,events,rhp=routh(c)
+ print('coeff=',c,'factor=',sp.factor(sum(v*s**(len(c)-1-i) for i,v in enumerate(c))))
+ print('table=',tab,'events=',events,'RHP=',rhp)
+assert routh([1,0,2,1])[2]==2
+assert routh([1,1,2,2,1,1])[2]==0
+assert routh([1,0,-1])[2]==1` },
   ]}
 />
+
 
 ## Routh判据的特殊情况
 
@@ -232,31 +292,15 @@ print(f"系统{'稳定' if stable else '不稳定'}（{changes}个右半平面�
 
 **处理方法**：用一个无穷小正数 $\epsilon$ 替代零，继续计算，最后令 $\epsilon \to 0^+$ 判断符号。
 
-**例**：$s^3 + 3s^2 + 2s + K = 0$，当 $K = 6$ 时：
+**例**：$s^3+2s+1=0$。前两行为$[1,2]$、$[0,1]$；第二行不全为零。把它的首元换成符号量$\epsilon>0$，得第一列
 
-$s^3 + 3s^2 + 2s + 6 = 0$
+$$
+1,\quad\epsilon,\quad 2-1/\epsilon,\quad1.
+$$
 
-$s^3$ 行：1, 2
+取$\epsilon\to0^+$，符号为$+,+,-,+$，有2个右半平面根。这是正无穷小的**符号极限**，不是任选一个小浮点数后直接判稳。
 
-$s^2$ 行：3, 6
-
-$s^1$ 行：$\frac{3 \times 2 - 1 \times 6}{3} = 0$
-
-第一列出现零！用 $\epsilon$ 替代：
-
-$s^1$ 行：$\epsilon$
-
-$s^0$ 行：$\frac{\epsilon \times 6 - 3 \times 0}{\epsilon} = 6$
-
-第一列：1, 3, $\epsilon$, 6。
-
-当 $\epsilon \to 0^+$ 时，第一列为 1, 3, $0^+$, 6——全部为正，零次符号变化。
-
-但等等——这实际上意味着系统有**虚轴上的极点**（临界稳定），而不是渐近稳定。
-
-验证：$s^3 + 3s^2 + 2s + 6 = s^2(s+3) + 2(s+3) = (s^2+2)(s+3) = 0$
-
-极点：$s = -3, \pm j\sqrt{2}$。确实有一对虚轴极点。
+原来的$s^3+3s^2+2s+6=(s+3)(s^2+2)$在$s^1$行只有零，实际上属于下一种全零行：上一行辅助多项式$3s^2+6$的导数为$6s$。它有$-3,\pm j\sqrt2$，零输入模态有界但不渐近衰减，相关无约消传递函数不BIBO稳定。
 
 ### 情况二：出现全零行
 
@@ -286,9 +330,9 @@ $s^2$ 行：$\frac{4 \times 2 - 1 \times 4}{4} = 1$, $\frac{4 \times 1 - 1 \time
 
 $s^1$ 行：$\frac{1 \times 4 - 4 \times 1}{1} = 0$ → 又一个零
 
-再用 $\epsilon$ 替代...或者注意到 $A(s) = (s^2+1)^2$，有重根 $s = \pm j$。
+此处再次是全零行，应从上一行$A_2(s)=s^2+1$求导，以$2s$的系数替换。也可直接分解$A(s)=(s^2+1)^2$，识别$\pm j$重根。
 
-第一列：1, 1, 4, 1, 0, 1。零次符号变化，但有虚轴上的重极点，系统**不稳定**（虚轴重极点对应 $t\sin(\omega t)$ 形式的发散响应）。
+替换后第一列为1, 1, 4, 1, 2, 1。零次符号变化只说明无右半平面根；本例无约消传递函数仍有虚轴重极点，系统**不稳定**（虚轴重极点对应 $t\sin(\omega t)$ 形式的发散响应）。
 
 ## Routh判据的应用
 
@@ -323,74 +367,58 @@ $$
 所以 $0 < K < 6$ 时系统稳定。$K = 6$ 时临界稳定（虚轴极点），$K > 6$ 时不稳定。
 
 <JupyterNotebook
-  title="🧪 参数稳定域可视化"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+  title="参数范围与Hurwitz核对"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
   cells={[
-    { code: `def routh_table(coeffs):
-    n = len(coeffs) - 1
-    rows = n + 1
-    cols = (n + 2) // 2
-    table = np.zeros((rows, cols))
-    table[0, :len(coeffs[0::2])] = coeffs[0::2]
-    table[1, :len(coeffs[1::2])] = coeffs[1::2]
-    for i in range(2, rows):
-        for j in range(cols - 1):
-            if abs(table[i-1, 0]) < 1e-12:
-                table[i-1, 0] = 1e-10
-            det = table[i-1, 0] * table[i-2, j+1] - table[i-2, 0] * table[i-1, j+1]
-            table[i, j] = det / table[i-1, 0]
-    first_col = table[:, 0]
-    sign_changes = int(np.sum(np.diff(np.sign(first_col)) != 0))
-    return table, sign_changes == 0, sign_changes
-
-# G(s) = K / (s(s+1)(s+2))，闭环特征方程 s^3 + 3s^2 + 2s + K = 0
-K_values = np.linspace(0, 10, 200)
-stable = []
-poles_rhp = []
-
-for K in K_values:
-    coeffs = [1, 3, 2, K]
-    table, is_stable, changes = routh_table(coeffs)
-    stable.append(is_stable)
-    poles_rhp.append(changes)
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-
-ax1.fill_between(K_values, 0, 1, where=stable, alpha=0.3, color='green', label='稳定')
-ax1.fill_between(K_values, 0, 1, where=[not s for s in stable], alpha=0.3, color='red', label='不稳定')
-ax1.axvline(x=6, color='orange', linestyle='--', label='K=6（临界稳定）')
-ax1.set_xlabel('K')
-ax1.set_ylabel('稳定性')
-ax1.set_title('参数稳定域')
-ax1.legend()
-ax1.grid(True, alpha=0.3)
-
-ax2.plot(K_values, poles_rhp, linewidth=2)
-ax2.axvline(x=6, color='orange', linestyle='--', label='K=6')
-ax2.set_xlabel('K')
-ax2.set_ylabel('右半平面极点数')
-ax2.set_title('Routh 判据：不稳定极点数')
-ax2.legend()
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print(f"稳定范围: 0 < K < 6")
-print(f"K=6 时临界稳定（虚轴极点）")` },
+    { code: `for k in [0,3,6,9]:
+ c=[1,3,2,k];tab,ev,rhp=routh(c)
+ print('K=',k,'表=',tab,'事件=',ev,'RHP=',rhp,'roots=',np.roots(c))
+for c in [[2,5,7,3],[1,4,6,12]]:
+ print('Hurwitz:',c,hurwitz(c),'Routh:',routh(c))` },
   ]}
 />
+
 
 ### 应用二：相对稳定性
 
 不仅判断"是否稳定"，还要判断"离不稳定有多远"。
 
-方法：做坐标平移 $s = z - \sigma$（$\sigma > 0$），将特征方程变换到 $z$ 域，再用 Routh 判据。如果变换后的系统稳定，说明原系统的所有极点实部都小于 $-\sigma$，即有 $\sigma$ 的**稳定裕度**。
+方法：做坐标平移 $s = z - \sigma$（$\sigma > 0$），将特征方程变换到 $z$ 域，再用 Routh 判据。如果变换后的系统稳定，说明原系统的所有极点实部都小于 $-\sigma$，即有该实部衰减界。它与频域的增益裕度/相位裕度是不同量，不能混用单位。
 
 **例**：判断 $s^2 + 4s + 13 = 0$ 的极点是否都在 $\text{Re}(s) < -1$ 的区域内。
 
@@ -415,60 +443,55 @@ $$
 验证：$s^2 + 4s + 13 = 0$，$s = -2 \pm 3j$，实部为 $-2 < -1$。正确。
 
 <JupyterNotebook
-  title="🧪 相对稳定性：坐标平移验证"
-  setupCode={`import matplotlib
-matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+  title="平移与衰减界"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
   cells={[
-    { code: `def routh_table(coeffs):
-    n = len(coeffs) - 1
-    rows = n + 1
-    cols = (n + 2) // 2
-    table = np.zeros((rows, cols))
-    table[0, :len(coeffs[0::2])] = coeffs[0::2]
-    table[1, :len(coeffs[1::2])] = coeffs[1::2]
-    for i in range(2, rows):
-        for j in range(cols - 1):
-            if abs(table[i-1, 0]) < 1e-12:
-                table[i-1, 0] = 1e-10
-            det = table[i-1, 0] * table[i-2, j+1] - table[i-2, 0] * table[i-1, j+1]
-            table[i, j] = det / table[i-1, 0]
-    first_col = table[:, 0]
-    sign_changes = int(np.sum(np.diff(np.sign(first_col)) != 0))
-    return table, sign_changes == 0, sign_changes
-
-def check_relative_stability(coeffs, sigma):
-    n = len(coeffs) - 1
-    z_poly = np.poly1d([1, -sigma])
-    shifted = np.poly1d([0])
-    for i, c in enumerate(coeffs):
-        power = n - i
-        shifted = shifted + c * z_poly**power
-    _, is_stable, _ = routh_table(shifted.coeffs)
-    return is_stable
-
-# 测试 s^2 + 4s + 13 = 0（极点 -2±3j）
-sigmas = np.linspace(0, 4, 40)
-results = [check_relative_stability([1, 4, 13], s) for s in sigmas]
-
-plt.figure(figsize=(10, 4))
-plt.plot(sigmas, results, 'o-', linewidth=2, markersize=4)
-plt.axvline(x=2, color='red', linestyle='--', label='σ=2（实际极点实部）')
-plt.xlabel('σ（稳定裕度）')
-plt.ylabel('是否稳定')
-plt.title('相对稳定性：极点实部是否都小于 -σ')
-plt.yticks([0, 1], ['否', '是'])
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
-
-print("极点: s = -2 ± 3j")
-print("所有极点实部 < -σ 的最大 σ ≈ 2")` },
+    { code: `z=sp.Symbol('z')
+for c in [[1,4,13],[1,3,5,15],[1,4,8,12,7]]:
+ poly=sum(v*s**(len(c)-1-i) for i,v in enumerate(c))
+ print('原多项式:',poly,'平移sigma1:',sp.expand(poly.subs(s,z-1)))
+for sigma in [0,1,2,3]:
+ shifted=sp.Poly(((s-sigma)**2+4*(s-sigma)+13),s).all_coeffs()
+ print('sigma=',sigma,'表/事件/RHP=',routh(shifted),'roots=',np.roots(list(map(float,shifted))))
+print('严格范围sigma<2，2是上确界不可取')` },
   ]}
 />
+
 
 ### 应用三：检验必要条件
 
@@ -477,7 +500,7 @@ print("所有极点实部 < -σ 的最大 σ ≈ 2")` },
 1. 特征方程的所有系数是否同号？
 2. 是否缺项（某些 $s^k$ 的系数为零）？
 
-如果系数不同号或缺项，系统一定不稳定（或有虚轴极点），不需要继续构造 Routh 表。
+若归一化首项为正后系数非正，可直接排除严格稳定；若还要知道右半平面根数或虚轴重数，仍须继续分析。
 
 ## Hurwitz判据
 
@@ -497,7 +520,7 @@ a_n & a_{n-2} & a_{n-4} & \cdots \\
 \end{pmatrix}
 $$
 
-规则：对角线元素为 $a_{n-1}, a_{n-2}, \ldots, a_0$。从左到右、从上到下，下标递减。下标为负或大于 $n$ 的元素取零。
+规则：对角线元素为 $a_{n-1}, a_{n-2}, \ldots, a_0$。从左到右、从上到下，每行向右下标减2，下移两行右移一列；越界下标取零。
 
 ### 判据
 
@@ -517,6 +540,8 @@ $$
 2. $a_1 a_2 > a_0 a_3$
 
 这个三阶条件在工程中非常实用——很多系统是三阶的。
+
+默认三阶$a_2=3$，取$a_1=5$时严格范围为$0<a_0<15$，等号是虚轴边界。下图固定显示$a_0\le10$，所以部分边界会在图窗外，不能把窗沿当成理论边界。局部转矩摆默认$K_p=12$、$K_d=2$，闭环$s^2+2s+2.2$的极点为$-1\pm j1.095445$，严格稳定；$K_d=0$时则不渐近稳定。
 
 <StabilityThirdOrderExplorer />
 
@@ -555,7 +580,7 @@ $\Delta_3 = 3 \times \Delta_2 = 3 \times 29 = 87 > 0$
 
 验证三阶简化条件：$a_1 a_2 = 7 \times 5 = 35 > a_0 a_3 = 3 \times 2 = 6$。满足。
 
-注意：Hurwitz 判据和 Routh 判据给出完全相同的结果——它们本质上是同一个判据的两种表达形式。Hurwitz 用行列式，Routh 用表格，计算量也基本相同。
+注意：Hurwitz 判据和 Routh 判据给出完全相同的结果——它们本质上是同一个判据的两种表达形式。Hurwitz 用行列式，Routh 用表格，不要从等价性推断实际计算耗时相同。
 
 ## 从根轨迹看稳定性
 
@@ -568,7 +593,7 @@ $\Delta_3 = 3 \times \Delta_2 = 3 \times 29 = 87 > 0$
 
 1. 画出根轨迹
 2. 找出根轨迹与虚轴的交点（临界增益 $K_u$）
-3. $K < K_u$ 时稳定，$K > K_u$ 时不稳定
+3. 分别检查交点之间各区间；一般系统可能有多个交点或稳定区间，不能普遍写成“增益越小越稳定”
 
 这和 Routh 判据的结果完全一致——Routh 判据中 $K = K_u$ 对应第一列出现零的情况。
 
@@ -621,52 +646,39 @@ $\omega = \sqrt{5}$ 时：$K_u = 6 \times 5 = 30$。
 
 ## 从频域看稳定性
 
-频域方法提供了另一种判断稳定性的途径——而且不需要系统的数学模型，只需要频率响应实验数据。
+这一节只预览：频率响应可以把代数判据的边界解释为幅相条件。详细作图在后续课学习。仅有有限频带的实验数据，仍需开环不稳定极点数、频带外信息与互联假设；不能说“无需任何模型知识便可保证稳定”。
 
 ### Nyquist判据
 
-Nyquist 判据的核心公式：
+采用**顺时针**绕右半平面的闭合Nyquist围线、像曲线对$-1$的**顺时针**净包围数$N_{cw}$，有
 
 $$
-Z = P - N
+Z=P+N_{cw}.
 $$
 
-- $P$：开环传递函数在右半平面的极点数
-- $N$：Nyquist 曲线（$\omega$ 从 $-\infty$ 到 $+\infty$）逆时针包围 $(-1, j0)$ 的圈数
-- $Z$：闭环传递函数在右半平面的极点数
-
-$Z = 0$ 则稳定。
-
-**直觉理解**：开环频率响应曲线"绕着 $(-1, j0)$ 点转了几圈"，这个圈数与开环极点和闭环极点的关系就是 Nyquist 判据。
-
-**对开环稳定系统**（$P = 0$）：Nyquist 曲线不包围 $(-1, j0)$ 则闭环稳定。这就是为什么 $(-1, j0)$ 点被称为"临界点"——离它越远，系统越"安全"。
+$P$为开环右半平面极点数，$Z$为$1+G(s)$在右半平面的零点数。没有虚轴闭环根、互联适定且不存在隐藏的不稳定约消等条件下，$Z=0$才能据此判闭环稳定。若开环在虚轴有极点，围线必须缩进绕开，不能只画普通频率曲线而忽略原点极点。
 
 ### Bode图判据
 
-对最小相位系统（$P = 0$），直接从 Bode 图读取稳定裕度：
+增益裕度在相位为$-180^\circ$的交点读取，相位裕度在幅值为1的交点读取。开环稳定、简单的单穿越情形常能由正裕度判断稳定；多穿越或开环不稳定时，要回到完整Nyquist计数。“最小相位”也不等同于$P=0$。
 
-- **增益裕度** $GM$：相位到达 $-180°$ 时，幅值距 0 dB 还有多少余量
-- **相位裕度** $PM$：幅值到达 0 dB 时，相位距 $-180°$ 还有多少余量
-
-稳定条件：$GM > 0$ dB **且** $PM > 0°$。
-
-工程经验：$PM > 30°$（最好 $45° \sim 60°$），$GM > 6$ dB，系统才有足够的鲁棒性。
+本课不把某个PM/GM经验阈值当鲁棒性保证；稳定裕度要结合不确定性、频段和任务要求。
 
 ### 频域方法的独特优势
 
-与 Routh 判据和根轨迹相比，频域方法有三个独特优势：
-
-1. **实验可得**：不需要数学模型，给系统输入不同频率的正弦信号，测量输出幅值和相位，就能画出 Bode 图/Nyquist 图，判断稳定性
-2. **直接给出稳定裕度**：不仅告诉你"是否稳定"，还告诉你"离不稳定有多远"
-3. **处理非有理传递函数**：时滞环节 $e^{-Ls}$ 在频域中只是相位旋转 $-L\omega$，不影响幅值——可以直接在 Bode 图上分析
+频率响应可由实验估计；它给出增益/相位变化的余量，并可直接保留时滞$e^{-j\omega L}$的相位。代价是必须说明测量频带、开环极点与围线条件，不能用一条曲线代替所有内部状态检查。
 
 ### 三种方法的比较
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 方法 | 输入 | 输出 | 优势 |
 |------|------|------|------|
 | Routh判据 | 特征方程系数 | 是否稳定 + 不稳定极点数 | 代数计算，可求参数范围 |
 | 根轨迹 | 开环零极点 | 极点位置随 $K$ 变化 | 直观，含动态性能信息 |
-| Nyquist/Bode | 开环频率响应 | 稳定裕度 | 实验可得，不需模型 |
+| Nyquist/Bode | 开环频率响应 | 稳定裕度 | 可用实验估计；需开环极点/频带等条件 |
+
+</div>
 
 三种方法殊途同归，各有适用场景。
 
@@ -698,7 +710,7 @@ Routh 告诉我们：**稳定的 $K$ 范围**，以及 $K = 30$ 时有虚轴极�
 - 三个开环极点 $0, -1, -5$，无零点
 - 实轴根轨迹：$[-1, 0]$ 和 $(-\infty, -5]$
 - 渐近线中心 $\sigma_a = (0 - 1 - 5)/3 = -2$，角度 $60°, 180°, 300°$
-- 分离点：$dK/ds = 0 \Rightarrow 3s^2 + 12s + 5 = 0 \Rightarrow s = -0.47$（在 $[-1, 0]$ 内）
+- 分离点：$dK/ds = 0 \Rightarrow 3s^2 + 12s + 5 = 0 \Rightarrow s = -0.472475$（在 $[-1, 0]$ 内）
 - 与虚轴交点：$K_u = 30$，$\omega_u = \sqrt{5} \approx 2.24$ rad/s
 
 根轨迹告诉我们：**极点怎么随 $K$ 移动**。$K$ 小时三个极点都在左半平面；$K$ 增大时，一对共轭极点向虚轴靠近；$K = 30$ 时穿过虚轴。
@@ -711,17 +723,11 @@ Routh 告诉我们：**稳定的 $K$ 范围**，以及 $K = 30$ 时有虚轴极�
 - $\omega = 1$ 处：极点 $s = -1$，斜率变为 $-40$ dB/dec，相位趋向 $-180°$
 - $\omega = 5$ 处：极点 $s = -5$，斜率变为 $-60$ dB/dec，相位趋向 $-270°$
 
-穿越频率 $\omega_c$（幅值为 0 dB）：约 $\omega_c \approx 1.3$ rad/s。
-
-在 $\omega_c$ 处相位约 $-150°$，所以 $PM \approx 30°$。
-
-相位穿越频率 $\omega_g$（相位为 $-180°$）：约 $\omega_g \approx 2.2$ rad/s。
-
-在该频率处幅值约 $-10$ dB，所以 $GM \approx 10$ dB。
-
-Bode 图告诉我们：**稳定裕度的大小**——$PM = 30°$，$GM = 10$ dB。系统稳定，但相位裕度偏小，响应会有一定超调。
+由幅值条件$\omega_c^2(1+\omega_c^2)(25+\omega_c^2)=100$解得$\omega_c\approx1.227064$rad/s。由相位$-90^\circ-\arctan\omega-\arctan(\omega/5)$，得$PM\approx25.389823^\circ$。相位穿越在$\omega_g=\sqrt5\approx2.236068$rad/s，幅值为$1/3$，所以$GM=20\log_{10}3\approx9.542425$dB。这些是该模型和$K=10$的读数，不是普适性能指标。
 
 **三种方法的互补性**：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 问题 | 用哪种方法 |
 |------|-----------|
@@ -731,72 +737,73 @@ Bode 图告诉我们：**稳定裕度的大小**——$PM = 30°$，$GM = 10$ dB
 | 系统有纯延迟，怎么分析？ | Bode 图 / Nyquist |
 | 要设计控制器满足性能指标？ | 根轨迹 + Bode 图 |
 
+</div>
+
 工程设计中，三种方法通常配合使用：先用 Routh 确定参数范围，再用根轨迹选择工作点，最后用 Bode 图验证稳定裕度。
 
 <JupyterNotebook
-  title="🧪 Routh 判据 vs 直接求根验证"
-  setupCode={`import numpy as np`}
+  title="根轨迹与幅相边界"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
   cells={[
-    { code: `def routh_table(coeffs):
-    n = len(coeffs) - 1
-    rows = n + 1
-    cols = (n + 2) // 2
-    table = np.zeros((rows, cols))
-    table[0, :len(coeffs[0::2])] = coeffs[0::2]
-    table[1, :len(coeffs[1::2])] = coeffs[1::2]
-    for i in range(2, rows):
-        for j in range(cols - 1):
-            if abs(table[i-1, 0]) < 1e-12:
-                table[i-1, 0] = 1e-10
-            det = table[i-1, 0] * table[i-2, j+1] - table[i-2, 0] * table[i-1, j+1]
-            table[i, j] = det / table[i-1, 0]
-    first_col = table[:, 0]
-    sign_changes = int(np.sum(np.diff(np.sign(first_col)) != 0))
-    return table, sign_changes == 0, sign_changes
-
-# 高阶系统：s^5 + 2s^4 + 3s^3 + 4s^2 + 5s + 6 = 0
-coeffs = [1, 2, 3, 4, 5, 6]
-
-# Routh 判据
-table, stable, changes = routh_table(coeffs)
-print(f"Routh 判据: {'稳定' if stable else '不稳定'}，{changes} 个右半平面极点")
-
-# 直接求根
-roots = np.roots(coeffs)
-print(f"\\n特征根:")
-for i, r in enumerate(roots):
-    loc = "左半平面" if r.real < -1e-10 else ("虚轴" if abs(r.real) < 1e-10 else "右半平面")
-    print(f"  s{i+1} = {r.real:.4f} + {r.imag:.4f}j  ({loc})")
-
-rhp_count = sum(1 for r in roots if r.real > 1e-10)
-print(f"\\n右半平面极点数: {rhp_count}")
-print(f"Routh 判据与直接求根结果{'一致' if changes == rhp_count else '不一致'}！")` },
+    { code: `for k in [10,30,40]:
+ c=[1,6,5,k];print('K=',k,'表=',routh(c),'roots=',np.roots(c))
+wc=brentq(lambda w:w*w*(1+w*w)*(25+w*w)-100,.01,10)
+pm=90-np.degrees(np.arctan(wc)+np.arctan(wc/5))
+print('wc,PM,wg,GMdB:',wc,pm,np.sqrt(5),20*np.log10(3))
+print('breakaway:',-2+np.sqrt(21)/3,'centroid:',-2,'angles:',[60,180,300])
+print('高阶原例:',routh([1,2,3,4,5,6]),np.roots([1,2,3,4,5,6]))` },
   ]}
 />
 
-## 工程实例：倒立摆的稳定性
+
+## 倒立摆反馈
 
 ### 问题描述
 
-小车-倒立摆系统是最经典的不稳定系统。摆杆在竖直上方是不稳定平衡点。
-
-线性化后的摆杆角度方程（简化）：
+用**固定转轴、驱动转矩作用的倒立摆**说明反馈怎样改变特征多项式。令$\theta$为竖直向上的小角度偏差，$J$为转动惯量、$m$为质量、$l$为质心距。忽略摩擦并在上平衡点线性化，选择正转矩使角度增加：
 
 $$
-\ddot{\theta} - \frac{g}{L}\theta = \frac{1}{ML}u
+J\ddot\theta-mgl\theta=\tau.
 $$
 
-传递函数（从力 $u$ 到角度 $\theta$）：
+取教学参数$J=1$kg·m²、$mgl=9.8$N·m，$\Theta(s)/\Tau(s)=1/(s^2-9.8)$，单位rad/(N·m)。这是局部转矩模型，**不是完整小车-摆系统的力到角度模型**；不包含小车位移、轨道、饱和与大角度运动。
 
-$$
-G(s) = \frac{\theta(s)}{U(s)} = \frac{1/(ML)}{s^2 - g/L}
-$$
-
-取 $M = 1$ kg，$L = 1$ m，$g = 9.8$ m/s²：
-
-$$
-G(s) = \frac{1}{s^2 - 9.8}
-$$
+下文$\tau=K_p(r-\theta)-K_d\dot\theta$，$r=0$；$K_p$单位N·m/rad，$K_d$单位N·m·s/rad。理想导数只用于特征方程教学，真实实现需要滤波及噪声检查。
 
 ### 开环稳定性分析
 
@@ -809,13 +816,13 @@ $$
 用 $C(s) = K_p$（比例控制），闭环特征方程：
 
 $$
-s^2 - 9.8 + \frac{K_p}{ML} = s^2 + (K_p - 9.8) = 0
+s^2 + (K_p - 9.8) = 0
 $$
 
 极点 $s = \pm\sqrt{9.8 - K_p}$。
 
 - $K_p < 9.8$：仍有右半平面极点，不稳定
-- $K_p = 9.8$：极点在 $s = 0$（双重），临界稳定
+- $K_p = 9.8$：极点在$s=0$（双重），一般初速度产生$\theta(t)=\theta(0)+\dot\theta(0)t$，不Lyapunov稳定
 - $K_p > 9.8$：极点在 $s = \pm j\sqrt{K_p - 9.8}$（纯虚数），等幅振荡
 
 **结论**：纯比例控制无法使倒立摆渐近稳定！
@@ -829,7 +836,7 @@ $$
 闭环特征方程：
 
 $$
-s^2 + \frac{K_d}{ML}s + \frac{K_p}{ML} - \frac{g}{L} = s^2 + K_d s + (K_p - 9.8) = 0
+s^2 + K_d s + (K_p - 9.8) = 0
 $$
 
 Routh 表：
@@ -847,7 +854,55 @@ $$
 1. $K_d > 0$
 2. $K_p > 9.8$
 
-**物理直觉**：$K_p > 9.8$ 提供足够的"弹簧力"把摆杆拉回竖直位置；$K_d > 0$ 提供阻尼，让摆杆不来回摆动。
+**物理直觉**：$K_p > 9.8$ 提供足够的"弹簧力"把摆杆拉回竖直位置；$K_d > 0$ 提供阻尼，使该局部模型的零输入偏差渐近衰减；欠阻尼时仍可能摆动，但振幅会变小。
+
+<JupyterNotebook
+  title="三阶与转矩摆核验"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
+  cells={[
+    { code: `print('a2=3,a1=5严格边界a0<',3*5)
+for a0 in [10,15,20]: print('a0=',a0,'表=',routh([1,3,5,a0]),'roots=',np.roots([1,3,5,a0]))
+print('摆开环根:',np.roots([1,0,-9.8]))
+for kp,kd in [(8,0),(9.8,0),(12,0),(12,2),(12,-2)]:
+ print('kp,kd=',kp,kd,'roots=',np.roots([1,kd,kp-9.8]))
+print('默认12/2:',np.roots([1,2,2.2]))` },
+  ]}
+/>
 
 ## 时滞系统的稳定性
 
@@ -879,7 +934,7 @@ $$
 
 ### 示例：确定最大允许时滞
 
-**例**：单位反馈系统，$G(s) = \frac{K e^{-Ls}}{s(s+2)}$，$K = 5$。求使闭环稳定的最大时滞 $L_{max}$。
+**例**：单位反馈系统，$G(s) = \frac{K e^{-Ls}}{s(s+2)}$，$K = 5$。分别求一阶Padé近似和精确时滞模型的首次失稳边界；严格稳定区间不包含边界。
 
 用一阶 Padé 近似：
 
@@ -946,15 +1001,89 @@ $$
 
 综合所有条件：$L < 0.477$ s。
 
-**结论**：$K = 5$ 时，最大允许时滞 $L_{max} \approx 0.477$ s。超过这个值，系统不稳定。
+**近似结论**：一阶Padé模型在$0\le L\lt L_{P1}$严格稳定，其中$L_{P1}=(\sqrt{29}-3)/5\approx.477033$s；$L=0$单独回到二阶模型，不能用$2/L$归一化。边界是上确界，不是可以取到的“最大稳定时滞”。
+
+精确模型在虚轴穿越时，幅值和相位须同时满足：
+
+$$
+\omega_*^2(\omega_*^2+4)=K^2,\qquad
+L_*=\frac{\arctan(2/\omega_*)}{\omega_*},\qquad
+\omega_*=\sqrt{-2+\sqrt{4+K^2}}.
+$$
+
+对$K>0$，$L=0$时稳定；幅值方程只有一个正频率，随时滞增加各次穿越均向右，首次穿越后不会恢复稳定。因此该模型严格稳定范围是$0\le L\lt L_*$，并非只靠找到一个虚轴根便断言全区间。由特征方程隐式微分，$ds/dL=Ks e^{-Ls}/(2s+2-KLe^{-Ls})$，在每个穿越点实部为正。
+
+默认$K=5$得到$\omega_*\approx1.839882$rad/s、$L_*\approx.449525$s。取$L=.46$s，精确模型已经不稳定，Padé却仍判稳定。两者在$L=.2$s同判稳定、$.6$s同判不稳定；这些是同模型有限观察，不是近似可一概替代原系统的证据。交互同时显示两条边界，并对比$K=1,2,5,10$；当边界超出图窗时明确报出数值，不截成1s。
+
 
 <StabilityDelayExplorer />
+
+<JupyterNotebook
+  title="精确时滞与Padé边界"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
+  cells={[
+    { code: `for k in [1,2,5,10,15]:
+ w,exact,pade=delay_bounds(k)
+ derivative=k*1j*w*np.exp(-1j*w*exact)/(2j*w+2-k*exact*np.exp(-1j*w*exact))
+ assert derivative.real>0
+ print('K/omega/exact/Pade/穿越根实部导数:',k,w,exact,pade,derivative.real)
+for l in [.2,.46,.6]:
+ k=5;w,edge,pe=delay_bounds(k)
+ coeff=[l/2,1+l,2-k*l/2,k]
+ print('K5/L/精确严格/Pade严格/Pade根:',l,l<edge,l<pe,np.roots(coeff))
+# 精确特征方程复根的局部续接，不据此声称穷尽无穷根。
+w,edge,pe=delay_bounds(5)
+for l in [.44,.46]:
+ def f(v):
+  q=complex(*v);v=q*(q+2)+5*np.exp(-l*q);return [v.real,v.imag]
+ ans=root(f,[0,w]);assert ans.success and np.linalg.norm(f(ans.x))<1e-9
+ print('精确局部根L=',l,ans.x)
+print('Q8 Pade s²+2s+16 roots:',np.roots([1,2,16]))
+w8=np.sqrt(8);edge8=np.arccos(-1/3)/w8
+print('Q8另一个模型精确边界:',edge8,'L.5<edge:',.5<edge8)` },
+  ]}
+/>
 
 ### 时滞对稳定性的影响
 
 时滞只影响相位，不影响幅值。在 Bode 图上，$e^{-jL\omega}$ 的幅值恒为 1（0 dB），但贡献 $-L\omega$ 弧度的相位滞后。频率越高，相位滞后越大。
 
-这意味着：时滞会降低相位裕度，但不会改变增益穿越频率。工程上，时滞越大，系统越难稳定——这就是为什么过程控制中大延迟系统（$L/T > 1$）特别棘手。
+这意味着：时滞会降低相位裕度，但不会改变增益穿越频率。对本课指定的负反馈模型，可由上述穿越分析证明时滞增加会失稳；其它反馈结构可能出现不同稳定区间，不能只凭相位滞后作无条件推广。
 
 ## 深入讨论
 
@@ -993,9 +1122,9 @@ $$
 G(s) = \frac{1}{s^2 - s + 1}
 $$
 
-特征方程 $s^2 - s + 1 = 0$，系数不同号（$a_1 = -1 < 0$），一定不稳定。这不是参数的问题，而是系统**结构**的问题。
+特征方程 $s^2 - s + 1 = 0$，系数不同号（$a_1 = -1 < 0$），一定不稳定。这说明给定开环多项式不是Hurwitz多项式，不能推出对象在任何控制器下都不可稳定。
 
-工程设计中，首先要确保系统结构上可稳定（所有系数同号、不缺项），然后再调参数。
+工程设计中，应区分“当前闭环多项式严格稳定”与“对象可被某种反馈稳定”。系数同号不缺项只是前者的必要条件；本课倒立摆即为开环不稳定而PD可以稳定的反例。
 
 ### 稳定性的鲁棒性
 
@@ -1007,11 +1136,15 @@ $$
 
 Routh判据只适用于线性系统。非线性系统的稳定性分析需要 Lyapunov 方法（详见非线性控制章节）。
 
-但有一个有用的近似：**描述函数法**可以将非线性系统等效为一个增益随幅值变化的线性系统，然后用频域方法（Nyquist判据）分析稳定性。
+但有一个有用的近似：**描述函数法**用基波近似寻找某些非线性振荡候选，不能把非线性系统精确等效为线性系统，也不是一般稳定性证明。
+
+参考：判据条件参见[Illinois ECE486 Lecture 7](https://courses.physics.illinois.edu/ece486/fa2026/documentation/handbook/lec07.html)，Nyquist计数约定参见[Lecture 18](https://courses.physics.illinois.edu/ece486/fa2026/documentation/handbook/lec18.html)（2026-10-18核对）；时滞边界为本课对指定模型的推导及复算。
 
 ## 小结
 
 稳定性分析是控制理论的基石。核心要点：
+
+<div style={{overflowX: "auto", maxWidth: "100%"}}>
 
 | 方法 | 原理 | 适用场景 |
 |------|------|---------|
@@ -1021,6 +1154,8 @@ Routh判据只适用于线性系统。非线性系统的稳定性分析需要 Ly
 | 根轨迹 | 极点轨迹是否进入右半平面 | 分析增益对稳定性的影响 |
 | Nyquist/Bode | 频率响应的包围特性 | 实验数据，含稳定裕度 |
 
+</div>
+
 **实用建议**：
 
 1. 先检查必要条件（系数全为正、不缺项）
@@ -1029,7 +1164,7 @@ Routh判据只适用于线性系统。非线性系统的稳定性分析需要 Ly
 4. 确保稳定裕度足够（不是"刚好稳定"）
 
 <Callout variant="warning">
-  稳定性是必要条件，不是充分条件。一个系统可以"稳定但性能极差"（如响应极慢、超调极大）。工程设计需要同时满足稳定性和性能指标。
+  稳定性是满足本课工程性能目标的必要条件之一，单凭稳定不足以保证性能。一个系统可以"稳定但性能极差"（如响应极慢、超调极大）。工程设计需要同时满足稳定性和性能指标。
 </Callout>
 
 ## 习题
@@ -1196,7 +1331,7 @@ $s^0$ 行：$K$
 
 **稳定范围：$0 < K < 10$**。
 
-(b) $K = 10$ 时，辅助多项式用 $s^2$ 行：$10s^2 + 10 = 0$，$s^2 = -1$，$s = \pm j$。
+(b) 稳定区间两端均需检查。$K=0$时多项式为$s(s+1)(s+2)(s+3)$，虚轴根为0。$K = 10$ 时，辅助多项式用 $s^2$ 行：$10s^2 + 10 = 0$，$s^2 = -1$，$s = \pm j$。
 
 **虚轴极点：$s = \pm j$**（$\omega = 1$ rad/s）。
 
@@ -1217,7 +1352,7 @@ $$
 z^3 & 1 & 2 \\
 z^2 & 0^+ & 12 \\
 z^1 & \frac{0^+ \times 2 - 1 \times 12}{0^+} \to -\infty & \\
-z^2 & 12 &
+z^0 & 12 &
 \end{array}
 $$
 
@@ -1251,7 +1386,7 @@ $s^2$ 的系数为零——**缺项**！不满足稳定的必要条件。
 
 **结论：PI 控制器无法使该系统稳定。**
 
-原因：PI 控制器引入了原点处的极点，但没有改变 $s^2$ 项的系数（仍为零），系统结构上不可稳定。
+原因：PI 控制器引入了原点处的极点，但没有改变 $s^2$ 项的系数（仍为零），该PI控制器族无法令闭环多项式严格稳定；这不等于对象不可被其它控制器稳定。
 
 (c) PD 控制器 $C(s) = K_p + K_d s$。
 
@@ -1277,27 +1412,7 @@ $$
 
 **答案6**：
 
-**必要性**：系统稳定则所有极点在左半平面。设极点为 $p_1, p_2, p_3$（实部均负）。
-
-特征方程 $(s-p_1)(s-p_2)(s-p_3) = s^3 - (p_1+p_2+p_3)s^2 + (p_1p_2+p_1p_3+p_2p_3)s - p_1p_2p_3$
-
-对比系数：
-
-$a = -(p_1+p_2+p_3) > 0$（三个负实部之和的负值）
-
-$b = p_1p_2 + p_1p_3 + p_2p_3$
-
-$c = -p_1p_2p_3 > 0$（三个负实部之积的负值）
-
-计算 $ab - c$：
-
-$ab = -(p_1+p_2+p_3)(p_1p_2+p_1p_3+p_2p_3)$
-
-$c = -p_1p_2p_3$
-
-$ab - c = -(p_1+p_2+p_3)(p_1p_2+p_1p_3+p_2p_3) + p_1p_2p_3$
-
-展开后（利用 $p_i$ 实部为负），可以证明 $ab - c > 0$，即 $ab > c$。
+**必要性**：若严格稳定，常规Routh第一列必须全正；$a>0$，所以$(ab-c)/a>0$，即$ab>c$。由严格稳定多项式不存在特殊零行/首元零，此处使用常规判据合法。不能把复数根当负实数直接比较乘积。
 
 **充分性**：用 Routh 判据。
 
@@ -1379,7 +1494,7 @@ $$
 
 对任意 $K > -1$，极点在左半平面。但物理上 $K > 0$（正增益），所以 **$K > 0$ 时系统始终稳定**。
 
-实际上，一阶系统加正反馈增益，只要 $1 + K > 0$ 就稳定。
+这里始终是单位负反馈；$K>-1$是代数范围，若另外限定正增益则所有$K>0$均满足。
 
 (b) $K = 3$，$L = 0.5$。一阶 Padé 近似：
 
@@ -1427,7 +1542,7 @@ $$
 
 实部为 $-1 < 0$，确认稳定。
 
-注意：这是 Padé 近似的结论。实际时滞系统的稳定性需要用 Nyquist 判据或其他方法验证。一阶 Padé 近似在 $L$ 较小时精度较好。
+注意：这是 Padé 近似的结论。实际时滞系统的稳定性需要用 Nyquist 判据或其他方法验证。近似误差取决于相关频段的$|L\omega|$和边界距离，不能只凭时滞数值小便签发精确系统稳定。
 
 **答案9**：
 
@@ -1480,7 +1595,7 @@ $z^3$ 的系数为零——**缺项**！
 
 **结论**：不存在使所有极点实部都小于 $-1$ 的 $K$ 值。
 
-验证：取 $K = 7$（使 $z^0 = 0$），$z^4 + 2z^2 + 4z = z(z^3 + 2z + 4) = 0$，$z = 0$ 是一个根，对应 $s = -1$。说明有一个极点恰好在 $\text{Re}(s) = -1$ 上，无法严格小于 $-1$。
+另一种全域证明：四个原根实部之和固定为$-4$。若每一个实部都严格小于$-1$，总和就严格小于$-4$，矛盾；所以无任何实数$K$满足。本结论不是由单个$K=7$样本外推的。
 
 **答案10**：
 
@@ -1524,3 +1639,61 @@ $$
 第一列：1, 4, 3, 12。全为正，**系统稳定**。
 
 **对比**：两种方法给出完全相同的结论。Hurwitz 行列式 $\Delta_2 = 12$ 对应 Routh 表中 $s^1$ 行的 $3$（$\Delta_2 / a_2 = 12/4 = 3$）。这验证了两种判据的等价性。
+
+<JupyterNotebook
+  title="十题答案复算"
+  setupCode={`import numpy as np
+import sympy as sp
+from scipy.optimize import brentq, root
+from scipy.linalg import expm
+s,t=sp.symbols('s t',real=True)
+eps=sp.Symbol('eps',positive=True)
+def routh(coeffs):
+    c=list(map(sp.Rational,coeffs));n=len(c)-1;m=(n+2)//2
+    if n<1 or c[0]==0: raise ValueError('nonzero leading coefficient required')
+    tab=[[sp.S(0) for _ in range(m)] for _ in range(n+1)]
+    tab[0][:len(c[::2])]=c[::2];tab[1][:len(c[1::2])]=c[1::2]
+    events=[]
+    for i in range(1,n+1):
+        if all(v==0 for v in tab[i]):
+            power=n-i+1
+            aux=sum(v*s**(power-2*j) for j,v in enumerate(tab[i-1]) if power-2*j>=0)
+            events.append(('zero-row',n-i,str(aux),str(sp.factor(aux))))
+            tab[i]=[sp.expand(sp.diff(aux,s)).coeff(s,n-i-2*j) if n-i-2*j>=0 else sp.S(0) for j in range(m)]
+        if tab[i][0]==0:
+            events.append(('epsilon',n-i));tab[i][0]=eps
+        if i<n:
+            for j in range(m-1):tab[i+1][j]=sp.cancel((tab[i][0]*tab[i-1][j+1]-tab[i-1][0]*tab[i][j+1])/tab[i][0])
+    signs=[int(sp.sign(v.as_leading_term(eps).subs(eps,1))) for v in [r[0] for r in tab]]
+    changes=sum(a*b<0 for a,b in zip(signs,signs[1:]))
+    return tab,events,changes
+
+def hurwitz(c):
+    n=len(c)-1
+    h=sp.Matrix(n,n,lambda i,j: c[2*j-i+1] if 0<=2*j-i+1<=n else 0)
+    return h,[h[:i,:i].det() for i in range(1,n+1)]
+
+def delay_bounds(k):
+    w=brentq(lambda w:w*np.sqrt(w*w+4)-k,1e-8,20)
+    exact=(np.pi/2-np.arctan(w/2))/w
+    pade=brentq(lambda l: 2+(2-k)*l-k*l*l/2,0,20)
+    return w,exact,pade`}
+  cells={[
+    { code: `for name,c in [('Q1a',[1,6,11,6]),('Q1b',[1,2,10,8,25]),('Q1c',[1,1,1,10]),('Q7',[1,1,3,3,2,2]),('Q10',[1,4,6,12])]:
+ print(name,'表/事件/RHP=',routh(c),'因式=',sp.factor(sum(v*s**(len(c)-1-i) for i,v in enumerate(c))))
+k=sp.Symbol('K',real=True)
+for name,poly in [('Q2',s**3+7*s**2+10*s+k),('Q3',s**4+6*s**3+11*s**2+6*s+k),('Q9',s**4+4*s**3+8*s**2+12*s+k)]:
+ print(name,'poly=',poly)
+ for kv in ({'Q2':[0,35,70,80],'Q3':[0,5,10,12],'Q9':[0,7,15,16]}[name]):
+  c=sp.Poly(poly.subs(k,kv),s).all_coeffs();print(kv,routh(c),sp.factor(poly.subs(k,kv)))
+print('Q2临界频率sqrt10:',np.sqrt(10))
+print('Q3 K0:',sp.factor((s**4+6*s**3+11*s**2+6*s)),'K10:',sp.factor(s**4+6*s**3+11*s**2+6*s+10))
+print('Q4 shift:',sp.expand(((s-1)**3+3*(s-1)**2+5*(s-1)+15)),'原分解:',sp.factor(s**3+3*s**2+5*s+15))
+print('Q5开环±2，PI闭环s³+(Kp−4)s+Ki缺s²；PD Kd>0/Kp>4')
+for kp,kd in [(3,2),(4,2),(5,2)]:print('Q5 PD:',kp,kd,np.roots([1,kd,kp-4]))
+print('Q6第一列1,a,(ab−c)/a,c；a,b,c>0时两向等价')
+print('Q8 L0闭环s+1+K；Pade系数:',[1,2,16], 'roots:',np.roots([1,2,16]))
+print('Q9 shift:',sp.expand((s-1)**4+4*(s-1)**3+8*(s-1)**2+12*(s-1)+k))
+print('Q10 Hurwitz:',hurwitz([1,4,6,12]))` },
+  ]}
+/>

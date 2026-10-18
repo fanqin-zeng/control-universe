@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-17T21:22:12.491Z",
-  "url": "http://localhost:8080/python-expansion.html?lesson=math/numerical-methods",
+  "testedAt": "2026-10-18T04:26:55.166Z",
+  "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/classic-case-study",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -227,20 +227,43 @@
     {
       "key": "classic/transfer-function",
       "title": "传递函数",
-      "sourceHash": "ab7ddc54957801c3df37273d00d1676fda694122a7a82a7e008fe4d7e364ef94",
+      "sourceHash": "8265e2dfe22e0eb265e7c27cc1dcf99b9d1bcbacf0174d5e047b8024acfcedd0",
       "notebooks": [
         {
           "id": "classic/transfer-function#1",
-          "title": "🧪 动手实验：方框图代数 — feedback() 计算闭环传递函数",
+          "title": "变换与模型核对",
           "index": 1,
-          "line": 258,
+          "line": 124,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5140,
+              "milliseconds": 5168,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "1 -> 1/s\nt -> s**(-2)\nexp(-a*t) -> 1/(a + s)\nsin(t*w) -> w/(s**2 + w**2)\ncos(t*w) -> s/(s**2 + w**2)\nt*exp(-a*t) -> (a + s)**(-2)\n一阶阶跃: -tau/(s*tau + 1) + 1/s -> 1-exp(-t/tau)\n外力/位移分母: c*s + k + m*s**2\n电机分母: B*L*s + B*R + J*L*s**2 + J*R*s + Ke*Kt\nRLC电压坐标系数: C*L C*R 1\n冲激变换为1，采用0-因果约定；这项是广义函数恒等式\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#2",
+          "title": "🧪 动手实验：方框图代数 — feedback() 计算闭环传递函数",
+          "index": 2,
+          "line": 309,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1396,
               "status": "passed",
               "outputs": [
                 {
@@ -253,10 +276,392 @@
           ]
         },
         {
-          "id": "classic/transfer-function#2",
+          "id": "classic/transfer-function#3",
+          "title": "二阶归一化与频响核对",
+          "index": 3,
+          "line": 450,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 273,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "m,c,k; wn,zeta: 250.0 2000.0 16000.0 8.0 0.5\n极点: [-4.+6.92820323j -4.-6.92820323j]\n极点角度(deg): 60.00000000000001\nt=1归一化位移: 0.9790066267804659\n采样峰值/末样: 1.1629708731458994 0.9999988742947047\n连续峰值/峰时: 1.1630335348215806 0.45344984105855446\n频率/柔度m每N/归一化/相位deg: 0.0 6.25e-05 1.0 0.0\n频率/柔度m每N/归一化/相位deg: 4.0 6.933752452815365e-05 1.1094003924504583 -33.690067525979785\n频率/柔度m每N/归一化/相位deg: 8.0 6.25e-05 1.0 -90.0\n频率/柔度m每N/归一化/相位deg: 40.0 2.549428176400013e-06 0.04079085082240021 -168.23171106797935\n幅值峰频率/归一化峰: 5.656854249492381 1.1547005383792517\n相对直流-3dB频率: 10.176157196112552\n阻尼/极点/采样峰/3s末样: 0.0 [ 0.+8.j -0.-8.j] 1.9999885855671584 0.5758209926630036\n阻尼/极点/采样峰/3s末样: 0.5 [-4.+6.92820323j -4.-6.92820323j] 1.1629708731458994 0.9999988742947047\n阻尼/极点/采样峰/3s末样: 1.0 [-8. -8.] 0.9999999990562164 0.9999999990562164\n阻尼/极点/采样峰/3s末样: 2.0 [ -2.14359354 -29.85640646] 0.9982641812004239 0.9982641812004239\n高频近似 m/N: 2.5e-06\n路面输入需要分子cs+k，不能套用外力柔度\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#4",
           "title": "🧪 动手实验：零极点对消 — 传递函数会隐藏内部状态",
+          "index": 4,
+          "line": 551,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "约分后极点: [-2.+0.j]\nt, 输入阶跃输出, 中间扰动阶跃输出: 0.0 0.0 0.0\nt, 输入阶跃输出, 中间扰动阶跃输出: 1.0 0.4323323583816925 1.7182818284590453\nt, 输入阶跃输出, 中间扰动阶跃输出: 5.0 0.49997730003514107 147.4131591025766\n内部特征值: [ 1. -2.]\n反向顺序的中间扰动通道是Ga，极点: [-2.+0.j]\n极点失配, 不稳定阶跃残余系数: -0.001 -0.00033377825975358487\n极点失配, 不稳定阶跃残余系数: 0.0 0.0\n极点失配, 不稳定阶跃残余系数: 0.001 0.0003328893698770407\n对消仅掩盖输入通道，不能保证内部稳定\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/transfer-function#5",
+          "title": "九题答案复算",
+          "index": 5,
+          "line": 849,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 46,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "题1 wn,zeta: 6.324555320336759 0.31622776601683794\n题2 poles,wn,zeta: [-1.5+2.78388218j -1.5-2.78388218j] 3.1622776601683795 0.4743416490252569\n题3 串联/并联/串联直流: <TransferFunction>: sys[11]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n        5\n  -------------\n  s^2 + 3 s + 2 <TransferFunction>: sys[14]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n     6 s + 7\n  -------------\n  s^2 + 3 s + 2 2.5\n题4 电荷坐标L,R,1/C: 0.1 2.0 100.0\n题4 电压坐标LC,RC,1;wn,zeta: 0.001 0.02 1.0 31.622776601683793 0.31622776601683794\n题5 下垂/倒立固有根: +/-j*sqrt(g/l), +/-sqrt(g/l)\n题6 闭环: <TransferFunction>: sys[19]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n        40\n  --------------\n  s^2 + 2 s + 20\n题6 poles,wn,zeta,终值,超调百分比: [-1.+4.35889894j -1.-4.35889894j] 4.47213595499958 0.22360679774997896 2.0 48.639667507071096\n有限直流增益反例 C=G=1,H=.5: 终值= 0.6666666666666666\n题7 U通道1/(s+2)，D通道1/(s-1)，d阶跃输出exp(t)-1\n题8 poles,zero,DC,y0+,终值: -3.0 -0.5 0.3333333333333333 2.0 0.3333333333333333\n题8 部分分式: 5/(3*(s + 3)) + 1/(3*s)\n题9 舍入测量tau: 0.20011945343929166 理想tau=.2时幅值: 0.8944271909999159\n题9 tau=.2转折频率/2倍转折频率: 5.0 10.0\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/time-domain-analysis",
+      "title": "时域分析",
+      "sourceHash": "1742be6d4af02088928fcb2cc530e03d409317d44f77c13af59523b24772da49",
+      "notebooks": [
+        {
+          "id": "classic/time-domain-analysis#1",
+          "title": "典型信号与一阶响应核对",
+          "index": 1,
+          "line": 121,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7219,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "单位冲激变换1，阶跃1/s，斜坡1/s²，正弦2/(s²+4)\nt/T, 阶跃归一化输出: 1 0.6321205588285577\nt/T, 阶跃归一化输出: 3 0.950212931632136\nt/T, 阶跃归一化输出: 4 0.9816843611112658\nt/T, 阶跃归一化输出: 5 0.9932620530009145\ntr/T, ts2/T, ts5/T: 2.1972245773362196 3.912023005428146 2.995732273553991\nT=.5s的精确tr/ts2/ts5: 1.0986122886681098 1.956011502714073 1.4978661367769954\n默认冲激 h(.25)s^-1: 3.354237037330655\n默认冲激 3s末样: 5.3033841287644785e-05\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#2",
+          "title": "反向设计与精确指标",
           "index": 2,
-          "line": 440,
+          "line": 330,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1497,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "zeta,标准模型精确指标: 0.0 {'tp': None, 'mp': None, 'tr': None, 'ts': None}\nzeta,标准模型精确指标: 0.3 {'tp': 0.41166049273939403, 'mp': 37.232610492658665, 'tr': 0.24575583250280877, 'ts': 1.4037601834690157}\nzeta,标准模型精确指标: 0.5 {'tp': 0.45344984105855457, 'mp': 16.303353482158034, 'tr': 0.30229989403903645, 'ts': 1.0095436217409997}\nzeta,标准模型精确指标: 0.707 {'tp': 0.5552765268437163, 'mp': 4.325493120391766, 'tr': 0.41643070588116443, 'ts': 0.7453572589607}\nzeta,标准模型精确指标: 1.0 {'tp': None, 'mp': 0.0, 'tr': None, 'ts': 0.7292402127396733}\nzeta,标准模型精确指标: 2.0 {'tp': None, 'mp': 0.0, 'tr': None, 'ts': 1.8597404331063092}\n超调对照/极点角度: 0.0 None 90.0\n超调对照/极点角度: 0.3 37.232610492658644 72.54239687627792\n超调对照/极点角度: 0.5 16.303353482158048 60.00000000000001\n超调对照/极点角度: 0.707 4.325493120391749 45.00865166283799\n超调对照/极点角度: 1.0 0.0 0.0\n超调对照/极点角度: 2.0 0.0 None\n5%超调最低欠阻尼: 0.6901067305598217\nzeta=.7,wn,粗估ts,包络上界,实际指标,通过: 2.857142857142857 2.0 2.1243476410300146 {'tp': 1.539688368732674, 'mp': 4.598791026026783, 'tr': 1.149864969464563, 'ts': 2.0925773285902736} False\nzeta=.7,wn,粗估ts,包络上界,实际指标,通过: 3.2 1.7857142857142858 1.8967389652053703 {'tp': 1.3747217577970297, 'mp': 4.598791026026783, 'tr': 1.0266651513076421, 'ts': 1.8683726148127415} True\nzeta=.7,wn,粗估ts,包络上界,实际指标,通过: 4.0 1.4285714285714286 1.5173911721642963 {'tp': 1.0997774062376238, 'mp': 4.598791026026783, 'tr': 0.821332121046115, 'ts': 1.4946980918501964} True\n默认.5/8包络上界: 1.013966010413509\n临界wn*ts: 5.833921701917389\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#3",
+          "title": "主导极点候选误差",
+          "index": 3,
+          "line": 430,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 77,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "快极点/相同直流增益/最大绝对输出误差/发生时刻: -5.0 1.0 0.3548446149286574 0.602\n快极点/相同直流增益/最大绝对输出误差/发生时刻: -10.0 1.0 0.1980617889137135 0.521\n快极点/相同直流增益/最大绝对输出误差/发生时刻: -20.0 1.0 0.10290109222001476 0.46900000000000003\n候选wn,zeta,wd,tp,Mp: 3.1622776601683795 0.31622776601683794 3.0 1.0471975511965976 35.091980717841096\n网格误差以最终输出1为基准；不宣称普遍误差保证\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#4",
+          "title": "完整路面模型复算",
+          "index": 4,
+          "line": 499,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1121,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "路面zeta/c/精确指标: 0.3 1200.0 {'tp': 0.3318093204731696, 'mp': 45.09754528931285, 'tr': None, 'ts': 1.6378129462156288}\n601点采样最大/3s末样: 1.4509280740508328 1.000277686997889\n路面zeta/c/精确指标: 0.5 2000.0 {'tp': 0.3022998940390363, 'mp': 29.8436059192275, 'tr': None, 'ts': 0.9381489617679375}\n601点采样最大/3s末样: 1.298385234787554 1.0000055035248656\n路面zeta/c/精确指标: 0.707 2828.0 {'tp': 0.2776916419251038, 'mp': 20.791541789300382, 'tr': None, 'ts': 0.6116574757651886}\n601点采样最大/3s末样: 1.207880273276825 0.9999999721097926\n路面zeta/c/精确指标: 1.0 4000.0 {'tp': 0.24999999999999972, 'mp': 13.533528323661258, 'tr': None, 'ts': 0.673968877272292}\n601点采样最大/3s末样: 1.1353352832366128 1.0000000008682814\n路面zeta/c/精确指标: 2.0 8000.0 {'tp': 0.19008649907523673, 'mp': 4.776873250562019, 'tr': None, 'ts': 0.6310018221015475}\n601点采样最大/3s末样: 1.0477687210579425 1.0001246261826366\n默认路面 .5/8 的 t=1: 0.9917217224038113\n临界路面超调/峰时: 13.53352832366127 0.25\n零状态阶跃后速度/R0=c/m，默认: 8.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#5",
+          "title": "逆向辨识及采样误差",
+          "index": 5,
+          "line": 564,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 34,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "真zeta/采样峰/峰时/估计zeta/估计wn/最大曲线差: 0.2 1.5266098905969112 0.4 0.20000608836708791 8.015946606178169 0.003733050879490829\n真zeta/采样峰/峰时/估计zeta/估计wn/最大曲线差: 0.35 1.3091834812011633 0.42 0.3500051582098164 7.98505502588839 0.0019126587912764448\n真zeta/采样峰/峰时/估计zeta/估计wn/最大曲线差: 0.7 1.0459878920389747 0.55 0.7000000459347075 7.998381640552726 0.0001391643957173727\n无噪声、无零点、二阶、已知终值1；有额外极点/零点/噪声不保证可识别\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#6",
+          "title": "零点反例与延迟边界",
+          "index": 6,
+          "line": 667,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 95,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "左零点例 y0+,终值,导数: 1/2 1 exp(-t)/2\n右零点例 y0+,初始导数: 0 -1\n一阶Pade零点: 4.0 精确延迟响应t0/tau/tau+1: 0.0 0.0 0.6321205588285577\nPade初始区间最小值: -0.0687347310274814\n精确延迟不提前运动，Pade反向初期是近似效应；开环稳定不等于闭环裕度不变\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/time-domain-analysis#7",
+          "title": "九题答案复算",
+          "index": 7,
+          "line": 853,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 993,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 t10,t90,tr,ts2: 0.05268025782891314 1.1512925464970227 1.0986122886681098 1.956011502714073\nQ2 wn,zeta,wd,指标,粗估: 6.0 0.4 5.499090833947008 {'tp': 0.5712931007060486, 'mp': 25.382672198010848, 'tr': 0.36048016530753996, 'ts': 1.401553271277232} 1.6666666666666665\nQ3 zeta_min: 0.6901067305598217\nQ3 candidate: {'tp': 1.3747217577970297, 'mp': 4.598791026026783, 'tr': 1.0266651513076421, 'ts': 1.8683726148127415}\nQ4 wn,zeta,wd/指标: 3.1622776601683795 0.31622776601683794 3.0 {'tp': 1.0471975511965976, 'mp': 35.091980717841096, 'tr': 0.6308489603971644, 'ts': 3.535989216006376}\nQ5 zeta_min,c_min: 0.5911550337988976 2364.62013519559\nQ5 c,zeta,exact metrics: 2400.0 0.6 {'tp': 0.4908738521234054, 'mp': 9.47802248421552, 'tr': 0.3459839743103832, 'ts': 0.7428734848305913}\nQ5 c,zeta,exact metrics: 4000.0 1.0 {'tp': None, 'mp': 0.0, 'tr': None, 'ts': 0.7292402127396733}\nQ5 c,zeta,exact metrics: 8000.0 2.0 {'tp': None, 'mp': 0.0, 'tr': None, 'ts': 1.8597404331063092}\nQ6 zeta,wn,exact metrics: 0.5038681020461064 7.274052301809014 {'tp': 0.5000000000000001, 'mp': 15.999999999999993, 'tr': 0.33404512012483817, 'ts': 1.1049469899454814}\nQ7 左例单调无超调0，右例初始导数-1；NB6已符号验证\nQ8 partial fractions: 12/(2*s + 1) - 6/s + 3/s**2 tracking error: 6 - 6*exp(-t/2) limit: 6\nQ9 wn,zeta,wd,impulse coefficient: 5.0 0.4 4.58257569495584 5.45544725589981\nQ9 impulse peak time/step peak time: 0.25297552247821187 0.6855517208472576\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/stability-analysis",
+      "title": "系统稳定性",
+      "sourceHash": "dc5b9e96edc386a4eb74a55d503795a3b284bbdbde5e0fdb2b8d8986825f4190",
+      "notebooks": [
+        {
+          "id": "classic/stability-analysis#1",
+          "title": "稳定定义与反例",
+          "index": 1,
+          "line": 60,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5694,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "共振有界输入sin(t)，输出: -t*cos(t)/2 + sin(t)/2\n隐藏增长状态传函: 1/(s + 1) ; 状态特征值: {-1: 1, 1: 1}\n双零根状态转移: Matrix([[1, t], [0, 1]])\n系数/表/RHP: [1, 2, 3, 4, 5] [[1, 3, 5], [2, 4, 0], [1, 5, 0], [-6, 0, 0], [5, 0, 0]] 2\n系数/表/RHP: [1, 1, 1, 1, 1] [[1, 1, 1], [1, 1, 0], [eps, 1, 0], [(eps - 1)/eps, 0, 0], [1, 0, 0]] 2\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#2",
+          "title": "Routh表与特殊行",
+          "index": 2,
+          "line": 239,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 28,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "coeff= [1, 2, 3, 4, 5] factor= s**4 + 2*s**3 + 3*s**2 + 4*s + 5\ntable= [[1, 3, 5], [2, 4, 0], [1, 5, 0], [-6, 0, 0], [5, 0, 0]] events= [] RHP= 2\ncoeff= [1, 0, 2, 1] factor= s**3 + 2*s + 1\ntable= [[1, 2], [eps, 1], [(2*eps - 1)/eps, 0], [1, 0]] events= [('epsilon', 2)] RHP= 2\ncoeff= [1, 3, 2, 6] factor= (s + 3)*(s**2 + 2)\ntable= [[1, 2], [3, 6], [6, 0], [6, 0]] events= [('zero-row', 1, '3*s**2 + 6', '3*(s**2 + 2)')] RHP= 0\ncoeff= [1, 1, 2, 2, 1, 1] factor= (s + 1)*(s**2 + 1)**2\ntable= [[1, 2, 1], [1, 2, 1], [4, 4, 0], [1, 1, 0], [2, 0, 0], [1, 0, 0]] events= [('zero-row', 3, 's**4 + 2*s**2 + 1', '(s**2 + 1)**2'), ('zero-row', 1, 's**2 + 1', 's**2 + 1')] RHP= 0\ncoeff= [1, 0, -1] factor= (s - 1)*(s + 1)\ntable= [[1, -1], [2, 0], [-1, 0]] events= [('zero-row', 1, 's**2 - 1', '(s - 1)*(s + 1)')] RHP= 1\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#3",
+          "title": "参数范围与Hurwitz核对",
+          "index": 3,
+          "line": 369,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "K= 0 表= [[1, 2], [3, 0], [2, 0], [2, 0]] 事件= [('zero-row', 0, '2*s', '2*s')] RHP= 0 roots= [-2. -1.  0.]\nK= 3 表= [[1, 2], [3, 3], [1, 0], [3, 0]] 事件= [] RHP= 0 roots= [-2.67169988+0.j         -0.16415006+1.04686932j -0.16415006-1.04686932j]\nK= 6 表= [[1, 2], [3, 6], [6, 0], [6, 0]] 事件= [('zero-row', 1, '3*s**2 + 6', '3*(s**2 + 2)')] RHP= 0 roots= [-3.00000000e+00+0.j          1.74339709e-16+1.41421356j\n  1.74339709e-16-1.41421356j]\nK= 9 表= [[1, 2], [3, 9], [-1, 0], [9, 0]] 事件= [] RHP= 2 roots= [-3.24004099+0.j        0.12002049+1.662329j  0.12002049-1.662329j]\nHurwitz: [2, 5, 7, 3] (Matrix([\n[5, 3, 0],\n[2, 7, 0],\n[0, 5, 3]]), [5, 29, 87]) Routh: ([[2, 7], [5, 3], [29/5, 0], [3, 0]], [], 0)\nHurwitz: [1, 4, 6, 12] (Matrix([\n[4, 12,  0],\n[1,  6,  0],\n[0,  4, 12]]), [4, 12, 144]) Routh: ([[1, 6], [4, 12], [3, 0], [12, 0]], [], 0)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#4",
+          "title": "平移与衰减界",
+          "index": 4,
+          "line": 445,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 14,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "原多项式: s**2 + 4*s + 13 平移sigma1: z**2 + 2*z + 10\n原多项式: s**3 + 3*s**2 + 5*s + 15 平移sigma1: z**3 + 2*z + 12\n原多项式: s**4 + 4*s**3 + 8*s**2 + 12*s + 7 平移sigma1: z**4 + 2*z**2 + 4*z\nsigma= 0 表/事件/RHP= ([[1, 13], [4, 0], [13, 0]], [], 0) roots= [-2.+3.j -2.-3.j]\nsigma= 1 表/事件/RHP= ([[1, 10], [2, 0], [10, 0]], [], 0) roots= [-1.+3.j -1.-3.j]\nsigma= 2 表/事件/RHP= ([[1, 9], [2, 0], [9, 0]], [('zero-row', 1, 's**2 + 9', 's**2 + 9')], 0) roots= [-0.+3.j  0.-3.j]\nsigma= 3 表/事件/RHP= ([[1, 10], [-2, 0], [10, 0]], [], 2) roots= [1.+3.j 1.-3.j]\n严格范围sigma<2，2是上确界不可取\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#5",
+          "title": "根轨迹与幅相边界",
+          "index": 5,
+          "line": 744,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 17,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "K= 10 表= ([[1, 5], [6, 10], [10/3, 0], [10, 0]], [], 0) roots= [-5.41780209+0.j         -0.29109896+1.32703743j -0.29109896-1.32703743j]\nK= 30 表= ([[1, 5], [6, 30], [12, 0], [30, 0]], [('zero-row', 1, '6*s**2 + 30', '6*(s**2 + 5)')], 0) roots= [-6.00000000e+00+0.j          2.22044605e-16+2.23606798j\n  2.22044605e-16-2.23606798j]\nK= 40 表= ([[1, 5], [6, 40], [-5/3, 0], [40, 0]], [], 2) roots= [-6.22835039+0.j          0.1141752 +2.53164182j  0.1141752 -2.53164182j]\nwc,PM,wg,GMdB: 1.2270638838477832 25.38982326335376 2.23606797749979 9.542425094393248\nbreakaway: -0.47247476834805346 centroid: -2 angles: [60, 180, 300]\n高阶原例: ([[1, 3, 5], [2, 4, 6], [1, 2, 0], [eps, 6, 0], [(2*eps - 6)/eps, 0, 0], [6, 0, 0]], [('epsilon', 2)], 2) [ 0.55168546+1.25334886j  0.55168546-1.25334886j -1.49179799+0.j\n -0.80578647+1.22290471j -0.80578647-1.22290471j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#6",
+          "title": "三阶与转矩摆核验",
+          "index": 6,
+          "line": 859,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "a2=3,a1=5严格边界a0< 15\na0= 10 表= ([[1, 5], [3, 10], [5/3, 0], [10, 0]], [], 0) roots= [-2.5689464+0.j         -0.2155268+1.96117174j -0.2155268-1.96117174j]\na0= 15 表= ([[1, 5], [3, 15], [6, 0], [15, 0]], [('zero-row', 1, '3*s**2 + 15', '3*(s**2 + 5)')], 0) roots= [-3.00000000e+00+0.j          5.55111512e-16+2.23606798j\n  5.55111512e-16-2.23606798j]\na0= 20 表= ([[1, 5], [3, 20], [-5/3, 0], [20, 0]], [], 2) roots= [-3.3129735 +0.j          0.15648675+2.45201648j  0.15648675-2.45201648j]\n摆开环根: [ 3.13049517 -3.13049517]\nkp,kd= 8 0 roots= [ 1.34164079 -1.34164079]\nkp,kd= 9.8 0 roots= [0. 0.]\nkp,kd= 12 0 roots= [-0.+1.4832397j  0.-1.4832397j]\nkp,kd= 12 2 roots= [-1.+1.09544512j -1.-1.09544512j]\nkp,kd= 12 -2 roots= [1.+1.09544512j 1.-1.09544512j]\n默认12/2: [-1.+1.09544512j -1.-1.09544512j]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/stability-analysis#7",
+          "title": "精确时滞与Padé边界",
+          "index": 7,
+          "line": 1021,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
@@ -269,188 +674,223 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "1 states have been removed from the model\nGa 的极点: [-2.+0.j]\nGb 的极点: [1.+0.j]  <- 不稳定!\n串联对消后: <TransferFunction>: sys[8]\nInputs (1): ['u[0]']\nOutputs (1): ['y[0]']\n\n    1\n  -----\n  s + 2\n对消后的极点: [-2.+0.j]  <- 看起来稳定\n\n危险: Gb 内部的 e^t 发散模式只是没出现在输出里,\n一个进入两环节之间的扰动就会让它爆发。\n"
+                  "text": "K/omega/exact/Pade/穿越根实部导数: 1 0.485868271757038 2.7424693943611964 3.23606797749979 0.07012452919206646\nK/omega/exact/Pade/穿越根实部导数: 2 0.9101797211246282 1.2565845116711216 1.4142135623730796 0.26336828711271626\nK/omega/exact/Pade/穿越根实部导数: 5 1.8398817372685954 0.4495249623419708 0.477032961426865 1.2712754089752936\nK/omega/exact/Pade/穿越根实部导数: 10 2.8632217914764424 0.2129516600802752 0.21980390271852968 3.4611334170395116\nK/omega/exact/Pade/穿越根实部导数: 15 3.623913071587333 0.1391569845923405 0.14218306336143705 5.828154915639411\nK5/L/精确严格/Pade严格/Pade根: 0.2 True True [-11.05212974+0.j          -0.47393513+2.07349956j\n  -0.47393513-2.07349956j]\nK5/L/精确严格/Pade严格/Pade根: 0.46 False True [-6.3082715+0.j         -0.0197773+1.85627044j -0.0197773-1.85627044j]\nK5/L/精确严格/Pade严格/Pade根: 0.6 False False [-5.57115372+0.j          0.11891019+1.72553208j  0.11891019-1.72553208j]\n精确局部根L= 0.44 [-0.01229388  1.85087819]\n精确局部根L= 0.46 [0.01309705 1.82777461]\nQ8 Pade s²+2s+16 roots: [-1.+3.87298335j -1.-3.87298335j]\nQ8另一个模型精确边界: 0.6755108588560399 L.5<edge: True\n"
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "b3232d81c9cc3903851ff1a028c282d411f918305ecf477b38b5759fbcd0d1a2",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "classic/transfer-function",
-          "fromSourceHash": "b3232d81c9cc3903851ff1a028c282d411f918305ecf477b38b5759fbcd0d1a2",
-          "toSourceHash": "ab7ddc54957801c3df37273d00d1676fda694122a7a82a7e008fe4d7e364ef94",
-          "notebookPayloadHash": "975be21fcfe75320e76b39e06bc90a627ac989016266e71d1277608e62a42d0b",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "classic/stability-analysis#8",
+          "title": "十题答案复算",
+          "index": 8,
+          "line": 1643,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 61,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1a 表/事件/RHP= ([[1, 11], [6, 6], [10, 0], [6, 0]], [], 0) 因式= (s + 1)*(s + 2)*(s + 3)\nQ1b 表/事件/RHP= ([[1, 10, 25], [2, 8, 0], [6, 25, 0], [-1/3, 0, 0], [25, 0, 0]], [], 2) 因式= s**4 + 2*s**3 + 10*s**2 + 8*s + 25\nQ1c 表/事件/RHP= ([[1, 1], [1, 10], [-9, 0], [10, 0]], [], 2) 因式= s**3 + s**2 + s + 10\nQ7 表/事件/RHP= ([[1, 3, 2], [1, 3, 2], [4, 6, 0], [3/2, 2, 0], [2/3, 0, 0], [2, 0, 0]], [('zero-row', 3, 's**4 + 3*s**2 + 2', '(s**2 + 1)*(s**2 + 2)')], 0) 因式= (s + 1)*(s**2 + 1)*(s**2 + 2)\nQ10 表/事件/RHP= ([[1, 6], [4, 12], [3, 0], [12, 0]], [], 0) 因式= s**3 + 4*s**2 + 6*s + 12\nQ2 poly= K + s**3 + 7*s**2 + 10*s\n0 ([[1, 10], [7, 0], [10, 0], [10, 0]], [('zero-row', 0, '10*s', '10*s')], 0) s*(s + 2)*(s + 5)\n35 ([[1, 10], [7, 35], [5, 0], [35, 0]], [], 0) s**3 + 7*s**2 + 10*s + 35\n70 ([[1, 10], [7, 70], [14, 0], [70, 0]], [('zero-row', 1, '7*s**2 + 70', '7*(s**2 + 10)')], 0) (s + 7)*(s**2 + 10)\n80 ([[1, 10], [7, 80], [-10/7, 0], [80, 0]], [], 2) s**3 + 7*s**2 + 10*s + 80\nQ3 poly= K + s**4 + 6*s**3 + 11*s**2 + 6*s\n0 ([[1, 11, 0], [6, 6, 0], [10, 0, 0], [6, 0, 0], [6, 0, 0]], [('zero-row', 0, '6*s', '6*s')], 0) s*(s + 1)*(s + 2)*(s + 3)\n5 ([[1, 11, 5], [6, 6, 0], [10, 5, 0], [3, 0, 0], [5, 0, 0]], [], 0) s**4 + 6*s**3 + 11*s**2 + 6*s + 5\n10 ([[1, 11, 10], [6, 6, 0], [10, 10, 0], [20, 0, 0], [10, 0, 0]], [('zero-row', 1, '10*s**2 + 10', '10*(s**2 + 1)')], 0) (s**2 + 1)*(s**2 + 6*s + 10)\n12 ([[1, 11, 12], [6, 6, 0], [10, 12, 0], [-6/5, 0, 0], [12, 0, 0]], [], 2) s**4 + 6*s**3 + 11*s**2 + 6*s + 12\nQ9 poly= K + s**4 + 4*s**3 + 8*s**2 + 12*s\n0 ([[1, 8, 0], [4, 12, 0], [5, 0, 0], [12, 0, 0], [12, 0, 0]], [('zero-row', 0, '12*s', '12*s')], 0) s*(s**3 + 4*s**2 + 8*s + 12)\n7 ([[1, 8, 7], [4, 12, 0], [5, 7, 0], [32/5, 0, 0], [7, 0, 0]], [], 0) (s + 1)*(s**3 + 3*s**2 + 5*s + 7)\n15 ([[1, 8, 15], [4, 12, 0], [5, 15, 0], [10, 0, 0], [15, 0, 0]], [('zero-row', 1, '5*s**2 + 15', '5*(s**2 + 3)')], 0) (s**2 + 3)*(s**2 + 4*s + 5)\n16 ([[1, 8, 16], [4, 12, 0], [5, 16, 0], [-4/5, 0, 0], [16, 0, 0]], [], 2) s**4 + 4*s**3 + 8*s**2 + 12*s + 16\nQ2临界频率sqrt10: 3.1622776601683795\nQ3 K0: s*(s + 1)*(s + 2)*(s + 3) K10: (s**2 + 1)*(s**2 + 6*s + 10)\nQ4 shift: s**3 + 2*s + 12 原分解: (s + 3)*(s**2 + 5)\nQ5开环±2，PI闭环s³+(Kp−4)s+Ki缺s²；PD Kd>0/Kp>4\nQ5 PD: 3 2 [-2.41421356  0.41421356]\nQ5 PD: 4 2 [-2.  0.]\nQ5 PD: 5 2 [-1. -1.]\nQ6第一列1,a,(ab−c)/a,c；a,b,c>0时两向等价\nQ8 L0闭环s+1+K；Pade系数: [1, 2, 16] roots: [-1.+3.87298335j -1.-3.87298335j]\nQ9 shift: K + s**4 + 2*s**2 + 4*s - 7\nQ10 Hurwitz: (Matrix([\n[4, 12,  0],\n[1,  6,  0],\n[0,  4, 12]]), [4, 12, 144])\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
-      "key": "classic/time-domain-analysis",
-      "title": "时域分析",
-      "sourceHash": "d90e344f879217142d8d1eac2ec737296c77a2a64cf28b5f5ae253c276d45e37",
+      "key": "classic/frequency-domain-analysis",
+      "title": "频域分析",
+      "sourceHash": "5934740fc9c3d16013f732b13d8afc855b854aa91669f83c2d746ee2da8d038e",
       "notebooks": [
         {
-          "id": "classic/time-domain-analysis#1",
-          "title": "🎯 反向设计：从指标到参数",
+          "id": "classic/frequency-domain-analysis#1",
+          "title": "正弦稳态与Bode复算",
           "index": 1,
-          "line": 255,
+          "line": 270,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5315,
+              "milliseconds": 5320,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Mp <= 5% requires: zeta >= 0.690\nts <= 2.0s requires: zeta*wn >= 2.00\n\nChoose zeta = 0.7, then wn >= 2.86 rad/s\n\nVerification:\n  Mp = 4.6%\n  ts ~ 2.00 s\n"
+                  "text": "python-control 0.10.2\nBode example 1 13.850202958898674 22.82912275072981 -59.17233770013197\nBode example 5 6.995797057561649 16.8967440491245 -70.3461759419467\nBode example 20 1.717128245578852 4.696054642499648 -123.82616175818528\nRC normalized sine 0.1 0.9950371902099892 -5.710593137499643\nRC normalized sine 1 0.7071067811865476 -45.0\nRC normalized sine 10 0.09950371902099892 -84.28940686250037\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 43504
+                  "base64Length": 46164
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/time-domain-analysis#2",
-          "title": "🔍 逆向辨识：从阶跃响应估计参数",
+          "id": "classic/frequency-domain-analysis#2",
+          "title": "归一化与裕度",
           "index": 2,
-          "line": 417,
+          "line": 334,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 140,
+              "milliseconds": 10,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "From response curve:\n  Peak value: 1.3092\n  Peak time:  tp = 0.4202 s\n  Overshoot:  Mp = 30.9%\n\nEstimated zeta = 0.350 (true: 0.350)\nEstimated wn   = 7.981 rad/s (true: 8.0)\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 61756
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "executedSourceHash": "1ecd557b6488dab067f7cb60837f19f59d0a1564c67fae0eac639f885f3fe5ff",
-      "formattingProvenance": [
-        {
-          "lesson": "classic/time-domain-analysis",
-          "fromSourceHash": "1ecd557b6488dab067f7cb60837f19f59d0a1564c67fae0eac639f885f3fe5ff",
-          "toSourceHash": "d90e344f879217142d8d1eac2ec737296c77a2a64cf28b5f5ae253c276d45e37",
-          "notebookPayloadHash": "74881d38a113ef1ac281855e9292943322686f0511fb8287d7042568180c1b23",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
-        }
-      ]
-    },
-    {
-      "key": "classic/stability-analysis",
-      "title": "系统稳定性",
-      "sourceHash": "9cf2148cd6d979811044224e0ed3cd7a88efae2cda8d02ec18e56d181312d1ee",
-      "notebooks": [
-        {
-          "id": "classic/stability-analysis#1",
-          "title": "🧪 Routh 判据的 Python 实现",
-          "index": 1,
-          "line": 192,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 3678,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "Routh 表:\n  s^4: [1. 3. 5.]\n  s^3: [2. 4.]\n  s^2: [1. 5. 0.]\n  s^1: [-6.  0.]\n  s^0: [5. 0. 0.]\n\n第一列符号变化次数: 2\n系统不稳定（2个右半平面极点）\n"
+                  "text": "python-control 0.10.2\nG(0), phase crossing, complex response: 1.0 4.123105625617661 (-0.07936507936507936-0j)\nGM linear/dB, PM, wpc,wgc: 12.600000000000001 22.00741090235126 inf 4.123105625617661 nan\nall crossings: (array([12.6]), array([], dtype=float64), array([0.83135411]), array([4.12310563]), array([], dtype=float64), array([2.27053076]))\nclosed poles: [-5.60297589+0.j         -1.19851206+1.46051379j -1.19851206-1.46051379j]\nNo finite positive gain crossing: PM is unavailable, not a measured finite angle.\n"
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/stability-analysis#2",
-          "title": "🧪 参数稳定域可视化",
-          "index": 2,
-          "line": 325,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 267,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "稳定范围: 0 < K < 6\nK=6 时临界稳定（虚轴极点）\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 56384
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/stability-analysis#3",
-          "title": "🧪 相对稳定性：坐标平移验证",
+          "id": "classic/frequency-domain-analysis#3",
+          "title": "增益与Bode交点",
           "index": 3,
-          "line": 417,
+          "line": 455,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 68,
+              "milliseconds": 342,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "极点: s = -2 ± 3j\n所有极点实部 < -σ 的最大 σ ≈ 2\n"
+                  "text": "python-control 0.10.2\nfamily a,b,K / GM dB / PM / wc / poles 1 10 10 20.827853703164504 47.4039396296765 0.7844079147578312 [-10.10860673+0.j          -0.44569663+0.88916282j\n  -0.44569663-0.88916282j]\nfamily a,b,K / GM dB / PM / wc / poles 1 10 50 6.848453616444125 13.570879082046162 2.102034066196525 [-10.50113871+0.j          -0.24943065+2.16775754j\n  -0.24943065-2.16775754j]\nfamily a,b,K / GM dB / PM / wc / poles 1 10 110 0.0 0.0 3.1622776601683804 [-1.10000000e+01+0.j          4.99600361e-16+3.16227766j\n  4.99600361e-16-3.16227766j]\nfamily a,b,K / GM dB / PM / wc / poles 1 10 150 -2.6939714779491233 -5.051198193339843 3.6855672192233686 [-11.29094013+0.j           0.14547007+3.64195361j\n   0.14547007-3.64195361j]\nfamily a,b,K / GM dB / PM / wc / poles 1 2 5 1.5836249209524977 5.022684214294827 1.2885134288643572 [-2.90416086+0.j         -0.04791957+1.31124804j -0.04791957-1.31124804j]\nfamily a,b,K / GM dB / PM / wc / poles 1 2 6 1.928654933106574e-15 0.0 1.414213562373095 [-3.00000000e+00+0.j          8.81239526e-16+1.41421356j\n  8.81239526e-16-1.41421356j]\nfamily a,b,K / GM dB / PM / wc / poles 1 2 10 -4.436974992327126 -12.997208015488667 1.802203304606924 [-3.30890732+0.j          0.15445366+1.73155703j  0.15445366-1.73155703j]\nRouth strict intervals: 0<K<110; 0<K<6. Equality is a boundary.\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 34044
+                  "base64Length": 55432
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/stability-analysis#4",
-          "title": "🧪 Routh 判据 vs 直接求根验证",
+          "id": "classic/frequency-domain-analysis#4",
+          "title": "Nyquist完整围线",
           "index": 4,
-          "line": 736,
+          "line": 655,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 60,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nK,R,eps,Ncw,Z: 5 1000.0 0.001 -0.0 0\nK,R,eps,Ncw,Z: 10 1000.0 0.001 2.0 2\nP=1, K=2, Ncw,Z: -1.0 0.0\nK,R,eps,Ncw,Z: 5 10000.0 0.0001 -0.0 0\nK,R,eps,Ncw,Z: 10 10000.0 0.0001 2.0 2\nP=1, K=2, Ncw,Z: -1.0 0.0\nPlot is a clipped frequency trace; winding above uses the full closed contour. K=6 is excluded from winding.\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 26308
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-domain-analysis#5",
+          "title": "稳定判据与API核对",
+          "index": 5,
+          "line": 698,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\n50/[s(s+1)(s+10)] margins 2.2 6.848453616444125 13.570879082046162 3.1622776601683795 2.102034066196525\nomega, abs, phase degrees 0.1 49.74937210407785 -96.28353183518314\nomega, abs, phase degrees 1.0 3.5179877236514594 -140.71059313749964\nomega, abs, phase degrees 10.0 0.03517987723651459 140.71059313749964\nallpass 0.1 0.9999999999999999 -1.145877395366972\nallpass 1 1.0 -11.421186274999286\nallpass 10 1.0 -90.0\nallpass 100 1.0 -168.57881372500074\nUse all crossings plus P/N/Z for nonminimum-phase or multiple-crossing loops; one PM alone is insufficient.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-domain-analysis#6",
+          "title": "二阶频时指标",
+          "index": 6,
+          "line": 861,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 67,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nz,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn: 0.3 1.3213399795660297 1.453689462308528 1.9208180044221028 1.7471413945365304 4.846561069116191 37.232610492658644 33.272490961303106 0.9143691069094814\nz,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn: 0.5 1.63757294732835 1.272019649514069 2.0830249665143286 1.1547005383792517 1.2493873660830008 16.303353482158048 51.827292372987756 0.786151377757423\nz,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn: 0.707 2.1477072672426516 1.0001510113987793 2.148031595521246 1.000000045602003 3.9609395684496666e-07 4.325493120391749 65.5246301806323 0.6436629803323736\nz,tr*wn,wb/wn,product,Mr,Mr dB,MP%,PM,wc/wn: 1 3.3579085614779958 0.6435942529057583 2.1611306519502804 1 0.0 0 76.34541525402449 0.4858682717566456\nPM to exact zeta and MP 30 0.26864248295606175 41.63731511301258\nPM to exact zeta and MP 45 0.4204482076264568 23.321228386238214\nPM to exact zeta and MP 60 0.6123724356957948 8.773211934181454\nPM to exact zeta and MP 75 0.9493266376824356 0.007565837828602803\ndefault z=.5,wn=8: [1.] [-90.]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-domain-analysis#7",
+          "title": "RC与路面模型",
+          "index": 7,
+          "line": 1033,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nRC rad/s,abs,dB,deg: 10 0.9999500037496876 -0.0004342727686263609 -0.5729386976834859\nRC rad/s,abs,dB,deg: 100 0.9950371902099892 -0.04321373782642559 -5.710593137499643\nRC rad/s,abs,dB,deg: 1000 0.7071067811865476 -3.0102999566398116 -45.0\nRC rad/s,abs,dB,deg: 10000 0.09950371902099892 -20.043213737826427 -84.28940686250037\nRC rad/s,abs,dB,deg: 100000 0.009999500037496873 -40.00043427276863 -89.42706130231652\nR1000 C1uF: T=.001 s, wc=1000 rad/s, fc= 159.15494309189535 Hz\nroad z,c for m250 k16000, peak rad/s,dB,high decade slope: 0.3 1200.0 7.44147775484712 5.997151147289653 -20.000000189943034\nroad z,c for m250 k16000, peak rad/s,dB,high decade slope: 0.707 2828.0 6.28947344573843 2.0903245943886892 -20.00000002153004\nroad z,c for m250 k16000, peak rad/s,dB,high decade slope: 1 4000 5.656854286625556 1.2493873660830008 -19.99999992475848\nRoad model has a numerator zero; even z=1 has a resonance. No vehicle safety conclusion follows from displacement alone.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-domain-analysis#8",
+          "title": "时延与Padé",
+          "index": 8,
+          "line": 1104,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
@@ -463,164 +903,65 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Routh 判据: 不稳定，2 个右半平面极点\n\n特征根:\n  s1 = 0.5517 + 1.2533j  (右半平面)\n  s2 = 0.5517 + -1.2533j  (右半平面)\n  s3 = -1.4918 + 0.0000j  (左半平面)\n  s4 = -0.8058 + 1.2229j  (左半平面)\n  s5 = -0.8058 + -1.2229j  (左半平面)\n\n右半平面极点数: 2\nRouth 判据与直接求根结果一致！\n"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "key": "classic/frequency-domain-analysis",
-      "title": "频域分析",
-      "sourceHash": "42469941bcd68d58664d66d3925a243dc3d79ba79500ab29b26c5e4a7937b3d7",
-      "notebooks": [
-        {
-          "id": "classic/frequency-domain-analysis#1",
-          "title": "📐 渐近线 vs 实际 Bode 图",
-          "index": 1,
-          "line": 236,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 5656,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 83576
+                  "text": "python-control 0.10.2\nw, base, exact, Pade (deg) 0.1 -95.71059313749964 -98.57538211315376 -98.57478550582894\nw, base, exact, Pade (deg) 1 -135.0 -163.64788975654116 -163.07248693585296\nw, base, exact, Pade (deg) 2 -153.43494882292202 -210.73072833600435 -206.565051177078\nw, base, exact, Pade (deg) 5 -168.69006752597977 -311.9295163086856 -271.3704510177996\nK,wc,exact delay limit, exact PM at tau .5,Pade poles 0.5 0.45508986056181383 2.5131690233459163 52.4928353246229 [-4.2932776+0.j         -0.3533612+0.58393529j -0.3533612-0.58393529j]\nK,wc,exact delay limit, exact PM at tau .5,Pade poles 1 0.7861513777576367 1.15061414365557 29.305714371026482 [-4.53284247+0.j         -0.23357877+0.90988431j -0.23357877-0.90988431j]\nK,wc,exact delay limit, exact PM at tau .5,Pade poles 5 2.1271901209248747 0.20658512726711137 -35.76111601273144 [-5.77326227+0.j          0.38663113+1.82064885j  0.38663113-1.82064885j]\nFor this family each crossing moves roots into RHP as delay increases; first limit is the strict stability edge, equality excluded.\n"
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/frequency-domain-analysis#2",
-          "title": "📏 稳定裕度标注",
-          "index": 2,
-          "line": 312,
+          "id": "classic/frequency-domain-analysis#9",
+          "title": "九题答案复算",
+          "index": 9,
+          "line": 1477,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 362,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Gain Margin: 22.0 dB (at w=4.12 rad/s)\nPhase Margin: inf deg (at w=nan rad/s)\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 75792
+                  "text": "python-control 0.10.2\nQ1 RC T=.001; wc1000 rad/s; fc 159.15494309189535\n100 -0.04321373782642559 -5.710593137499643\n1000 -3.0102999566398116 -45.0\n10000 -20.043213737826427 -84.28940686250037\nQ2 normalized gain,corner,asymptote at corner: 10.0 10 0.0\nQ3 u,bandwidth 2.1132130528261763 7.268447311541469\nQ3 resonance rad/s,linear,dB: 4.527692569068709 1.7471413945365304 4.846561069116191\nQ4 exact dB,phase at 1: 22.838229733067358 -57.455695312195324\nQ5 wg,Kcrit: 3.1622776601683795 70.00000000000001\nQ5 K,poles: 0 [-5. -2.  0.]\nQ5 K,poles: 35 [-6.29468225+0.j        -0.35265887+2.3314975j -0.35265887-2.3314975j]\nQ5 K,poles: 70 [-7.00000000e+00+0.j          1.27675648e-15+3.16227766j\n  1.27675648e-15-3.16227766j]\nQ5 K,poles: 100 [-7.45724397+0.j        0.22862199+3.654793j  0.22862199-3.654793j]\nQ6 fixed z=.5 bandwidth2/20\ntr2,tr20,MP: 1.0415124832571714 0.10415124832571714 16.303353482158048\nQ7 wg,Re,GMlinear,GMdB: 4.123105625617661 -0.07936507936507936 12.6 22.00741090235126\nQ8 omega,abs,deg: 0 1.0 0.0\nQ8 omega,abs,deg: 10 1.0 -90.0\nQ8 omega,abs,deg: 10000000000.0 1.0 -179.99999988540844\nQ9: 0.1 -95.71059313749964 -98.57538211315376 -98.57478550582894\nQ9: 1 -135.0 -163.64788975654116 -163.07248693585296\nQ9: 2 -153.43494882292202 -210.73072833600435 -206.565051177078\nQ9: 5 -168.69006752597977 -311.9295163086856 -271.3704510177996\n"
                 }
               ]
             }
           ]
-        },
-        {
-          "id": "classic/frequency-domain-analysis#3",
-          "title": "🧪 不同增益下的 Bode 图与稳定裕度",
-          "index": 3,
-          "line": 476,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        },
-        {
-          "id": "classic/frequency-domain-analysis#4",
-          "title": "🧪 Nyquist 图上的稳定裕度",
-          "index": 4,
-          "line": 755,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        },
-        {
-          "id": "classic/frequency-domain-analysis#5",
-          "title": "🧪 从 Bode 图直接读取稳定裕度",
-          "index": 5,
-          "line": 836,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 459,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "\n稳定裕度:\n  增益裕度 GM = 16.7 dB @ ωg = 3.16 rad/s\n  相位裕度 PM = 13.6° @ ωc = 2.10 rad/s\n  系统稳定\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 97804
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/frequency-domain-analysis#6",
-          "title": "🧪 相位裕度与超调量的对应关系",
-          "index": 6,
-          "line": 1090,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "104377cbe46040dc4e3ac03bdc827fdb0dd0638c967fc1cb9326712b3514f72e",
-      "formattingProvenance": [
-        {
-          "lesson": "classic/frequency-domain-analysis",
-          "fromSourceHash": "104377cbe46040dc4e3ac03bdc827fdb0dd0638c967fc1cb9326712b3514f72e",
-          "toSourceHash": "42469941bcd68d58664d66d3925a243dc3d79ba79500ab29b26c5e4a7937b3d7",
-          "notebookPayloadHash": "3cabba7cfd948c2e36152799076e89c36eb088190af333eb6d99222dd414aab8",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
         }
       ]
     },
     {
       "key": "classic/root-locus",
       "title": "根轨迹",
-      "sourceHash": "811a471832bb49173cc8f5450f2469131accfe8972bc2d92e074adc3988dc8b9",
+      "sourceHash": "094e2e8f0314526e5b7f4ad2ee593d6204fc17cf3ad518cdc487809bc39ea29a",
       "notebooks": [
         {
           "id": "classic/root-locus#1",
-          "title": "📍 根轨迹绘制：G(s) = 1/[s(s+2)(s+4)]",
+          "title": "规则与主例复算",
           "index": 1,
-          "line": 280,
+          "line": 344,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5343,
+              "milliseconds": 4966,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nmain derivative candidate s,K: -3.1547005383792515 -3.0792014356780038\nmain derivative candidate s,K: -0.8452994616207485 3.079201435678004\nmain K,poles: 0 [-4. -2.  0.]\nmain K,poles: 3.0792014356780038 [-4.30940108 -0.84529948 -0.84529945]\nmain K,poles: 8.296296296296296 [-4.66666667+0.j         -0.66666667+1.15470054j -0.66666667-1.15470054j]\nmain K,poles: 10 [-4.76081783+0.j         -0.61959108+1.31018561j -0.61959108-1.31018561j]\nmain K,poles: 48 [-6.00000000e+00+0.j          3.48679419e-16+2.82842712j\n  3.48679419e-16-2.82842712j]\nmain K,poles: 60 [-6.25466446+0.j          0.12733223+3.09461262j  0.12733223-3.09461262j]\nmain centroid/asymptote degrees: -2.0 [60.0, 180.0, 300.0]\nangle test 135/45 and K: 135.0 45.0 2.0\nK48 factor: [ 1  6  8 48]\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 57580
+                  "base64Length": 15764
                 }
               ]
             }
@@ -628,22 +969,27 @@
         },
         {
           "id": "classic/root-locus#2",
-          "title": "🎯 等阻尼比线与等自然频率线",
+          "title": "几何指标与完整响应",
           "index": 2,
-          "line": 324,
+          "line": 384,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 210,
+              "milliseconds": 132,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\ndefault K,poles,y(0),y(10): 8.296296296296296 [-4.66666667+0.j         -0.66666667+1.15470054j -0.66666667-1.15470054j] 0.0 1.0004126256112775\ndefault full settling/MP%,tailT,tailBound,crossings: (6.243814510346703, 15.537305251184517, 16.0, 3.0168980281581874e-05, 5)\n5% second-order zeta,angle degrees: 0.6901067305598217 46.36144189013903\nexact 45degree zeta: 0.7071067811865475\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 113768
+                  "base64Length": 55080
                 }
               ]
             }
@@ -651,22 +997,22 @@
         },
         {
           "id": "classic/root-locus#3",
-          "title": "📐 从根轨迹选择 K：ζ ≥ 0.5 区域",
+          "title": "选择阻尼候选",
           "index": 3,
-          "line": 436,
+          "line": 529,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 165,
+              "milliseconds": 9,
               "status": "passed",
               "outputs": [
                 {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 79768
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nzeta .5 point,K,omega_n: (-0.6666666666666666+1.1547005383792515j) (8.296296296296298-4.440892098500626e-16j) 1.3333333333333333\nvector magnitudes: 1.3333333333333333 1.763834207376394 3.5276684147527875\nvector angles: 120.00000000000001 40.893394649130904 19.106605350869096\nK,poles,individual geometric zeta: 1 [-4.11490754 -1.74589831 -0.13919415] [np.float64(1.0), np.float64(1.0), np.float64(1.0)]\nK,poles,individual geometric zeta: 3 [-4.30277564 -1.         -0.69722436] [np.float64(1.0), np.float64(1.0), np.float64(1.0)]\nK,poles,individual geometric zeta: 3.0792014356780038 [-4.30940108 -0.84529948 -0.84529945] [np.float64(1.0), np.float64(1.0), np.float64(1.0)]\nK,poles,individual geometric zeta: 8.296296296296296 [-4.66666667+0.j         -0.66666667+1.15470054j -0.66666667-1.15470054j] [np.float64(1.0), np.float64(0.49999999999999983), np.float64(0.49999999999999983)]\nK,poles,individual geometric zeta: 10 [-4.76081783+0.j         -0.61959108+1.31018561j -0.61959108-1.31018561j] [np.float64(1.0), np.float64(0.42750966831181647), np.float64(0.42750966831181647)]\nK,poles,individual geometric zeta: 47 [-5.97713036+0.j         -0.01143482+2.80413523j -0.01143482-2.80413523j] [np.float64(1.0), np.float64(0.004077808451024173), np.float64(0.004077808451024173)]\nK,poles,individual geometric zeta: 48 [-6.00000000e+00+0.j          3.48679419e-16+2.82842712j\n  3.48679419e-16-2.82842712j] [np.float64(1.0), np.float64(-1.2327679070134326e-16), np.float64(-1.2327679070134326e-16)]\ndefault separated decay ratio: 7.000000000000001\nTwo-pole formula MP%,not exact third-order: 16.303353482158048\ndefault full third-order: (6.243814510346703, 15.537305251184517, 16.0, 3.0168980281581874e-05, 5)\n"
                 }
               ]
             }
@@ -674,250 +1020,77 @@
         },
         {
           "id": "classic/root-locus#4",
-          "title": "🔧 PD 控制对根轨迹的影响",
+          "title": "零点位置与PD观察",
           "index": 4,
-          "line": 513,
+          "line": 615,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 238,
+              "milliseconds": 249,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "python-control 0.10.2\nzero z,centroid,K upper: 1 -2.5 inf\nzero z,centroid,K upper: 6 0.0 inf\nzero z,centroid,K upper: 10 2.0 12.0\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 62680
+                  "base64Length": 21132
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 158,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 63420
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "executedSourceHash": "594d4b99e0e8e9b80a14105ea127dac9d04554a00bddbf32bbad0fbee0785352",
-      "formattingProvenance": [
-        {
-          "lesson": "classic/root-locus",
-          "fromSourceHash": "594d4b99e0e8e9b80a14105ea127dac9d04554a00bddbf32bbad0fbee0785352",
-          "toSourceHash": "811a471832bb49173cc8f5450f2469131accfe8972bc2d92e074adc3988dc8b9",
-          "notebookPayloadHash": "f202314c8ea611a2c7e0b18f1c0d44e6801f220273a1b7a7f11d07410dbcca83",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
-        }
-      ]
-    },
-    {
-      "key": "classic/pid-controller",
-      "title": "PID控制",
-      "sourceHash": "2ae14f159118cd600ff0ef6b09761ad7b766c7371c72fa557dfbf02065194694",
-      "notebooks": [
-        {
-          "id": "classic/pid-controller#1",
-          "title": "🧪 Ziegler-Nichols 临界比例度法",
-          "index": 1,
-          "line": 308,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 5247,
+              "milliseconds": 171,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Ziegler-Nichols PID 参数:\n  Kp = 4.80\n  Ki = 2.64  (Ti = 1.81)\n  Kd = 2.18  (Td = 0.45)\n\n超调量: 40.5%\n"
+                  "text": "same K,z,poles,ts/MP/tail: 1 None [-4.11490754 -1.74589831 -0.13919415] (28.9489141258781, 0.0, 64.0, 0.00015210659482085433, 1)\nsame K,z,poles,ts/MP/tail: 1 1 [-3.53208889 -2.34729636 -0.12061476] (32.09381323463699, 0.0, 64.0, 0.00042629455179130755, 1)\nsame K,z,poles,ts/MP/tail: 1 10 [-4.4920333 +0.j        -0.75398335+1.2875063j -0.75398335-1.2875063j] (5.461690856793106, 15.045394059377603, 8.0, 0.0029512197381565907, 5)\nsame K,z,poles,ts/MP/tail: 10 None [-4.76081783+0.j         -0.61959108+1.31018561j -0.61959108-1.31018561j] (5.997133265192901, 21.46288275087979, 16.0, 6.002114178235069e-05, 5)\nsame K,z,poles,ts/MP/tail: 10 1 [-2.65013549+2.69592813j -2.65013549-2.69592813j -0.69972902+0.j        ] (4.235799176178168, 0.0, 8.0, 0.0014363010324819172, 1)\nsame K,z,poles,ts/MP/tail: 10 10 [-5.84669587+0.j         -0.07665206+4.13494883j -0.07665206-4.13494883j] (49.448682831721825, 83.06329323239481, 128.0, 4.854748492492895e-05, 131)\nsame K,z,poles,ts/MP/tail: 40 None [-5.80832172+0.j         -0.09583914+2.62249609j -0.09583914-2.62249609j] (39.78708796399461, 81.09076663286551, 64.0, 0.002005178481853809, 67)\nsame K,z,poles,ts/MP/tail: 40 1 [-2.53823094+6.07199124j -2.53823094-6.07199124j -0.92353811+0.j        ] (1.379624822592955, 19.457949722404603, 4.0, 0.0021251178850081372, 5)\nsame K,z,poles,ts/MP/tail: 40 10 [ 0.56636662+7.4671757j  0.56636662-7.4671757j -7.13273324+0.j       ] None\nSame-K illustration, not independently tuned ranking. z1 at K1 is slower; z10 at K40 is unstable. Ideal derivative needs filtering in hardware.\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 47716
+                  "base64Length": 62100
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/pid-controller#2",
-          "title": "🧪 Z-N 阶跃响应法：从FOPDT模型提取参数",
-          "index": 2,
-          "line": 430,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 114,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 54628
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/pid-controller#3",
-          "title": "🧪 抗积分饱和效果对比",
-          "index": 3,
-          "line": 523,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 229,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "超调量对比：\n  标准PID:     53.9%\n  反饱和:      13.8%\n  积分分离:    18.7%\n  两者结合:    18.7%\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 88380
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/pid-controller#4",
-          "title": "🧪 离散增量式PID仿真",
-          "index": 4,
-          "line": 663,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 242,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "离散PID性能（Ts=0.05s）：\n  超调量: 243.8%\n  稳态值: 0.2161\n  稳态误差: 0.783866\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 137984
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/pid-controller#5",
-          "title": "🧪 P / PI / PID 对比（直流电机）",
+          "id": "classic/root-locus#5",
+          "title": "PI与广义轨迹",
           "index": 5,
-          "line": 845,
+          "line": 715,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 99,
+              "milliseconds": 4,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "P 控制稳态误差: 52.0%\nPI 控制稳态误差: 13.646563%\nPID 控制稳态误差: 12.503057%\n"
-                },
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 80648
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "key": "classic/classic-case-study",
-      "title": "经典控制案例",
-      "sourceHash": "a636b6369d1dc2645b3b0882f110242ccb3bd38e2f175d385152436675c9e59e",
-      "notebooks": [
-        {
-          "id": "classic/classic-case-study#1",
-          "title": "电机模型建立",
-          "index": 1,
-          "line": 167,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 5046,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "电机传递函数:\n  1000 / (s^2 + 100.1s + 110.0)\n  直流增益 = 9.09 rad/(s·V)\n  极点: [-98.98876276  -1.11123724]\n"
+                  "text": "python-control 0.10.2\nPI z,positive K upper: 0.1 44.4\nPI z,K,poles: 0.1 1 [-4.11232119+0.j         -1.76077569+0.j         -0.06345156+0.09891605j\n -0.06345156-0.09891605j]\nPI z,K,poles: 0.1 10 [-4.74960293+0.j         -0.57085096+1.26930774j -0.57085096-1.26930774j\n -0.10869515+0.j        ]\nPI z,K,poles: 0.1 40 [-5.79074945+0.j         -0.05366453+2.60277995j -0.05366453-2.60277995j\n -0.10192148+0.j        ]\nPI z,positive K upper: 1 12\nPI z,K,poles: 1 1 [-4.08846952+0.j         -1.88240244+0.j         -0.01456402+0.36017089j\n -0.01456402-0.36017089j]\nPI z,K,poles: 1 10 [-4.64030909+0.j         -1.31776546+0.j         -0.02096272+1.27864248j\n -0.02096272-1.27864248j]\nPI z,K,poles: 1 40 [-5.61778481+0.j          0.34803146+2.54602058j  0.34803146-2.54602058j\n -1.07827812+0.j        ]\nPI z,positive K upper: 2 -24\nPI z,K,poles: 2 1 [-4.06064703+0.j        -2.        +0.j         0.03032351+0.4953248j\n  0.03032351-0.4953248j]\nPI z,K,poles: 2 10 [-4.49493967+0.j         -2.        +0.j          0.24746984+1.47087819j\n  0.24746984-1.47087819j]\nPI z,K,poles: 2 40 [-5.3812949 +0.j          0.69064745+2.63745356j  0.69064745-2.63745356j\n -2.        +0.j        ]\nFor stable PI, original plant type1 becomes type2: ramp error0; original P already has step error0.\nparameter s^2+alpha*s+1 roots: 0 [-0.+1.j  0.-1.j]\nparameter s^2+alpha*s+1 roots: 1 [-0.5+0.8660254j -0.5-0.8660254j]\nparameter s^2+alpha*s+1 roots: 4 [-3.73205081 -0.26794919]\npositive feedback 1/[s(s+2)],K,poles: 0 [-2.  0.]\npositive feedback 1/[s(s+2)],K,poles: 1 [-2.41421356  0.41421356]\npositive feedback 1/[s(s+2)],K,poles: 4 [-3.23606798  1.23606798]\nAt K0, characteristic D remains but the reduced input-output transfer is zero. No hidden unstable cancellation may be discarded.\n"
                 }
               ]
             }
           ]
         },
         {
-          "id": "classic/classic-case-study#2",
-          "title": "PI 控制器验证",
-          "index": 2,
-          "line": 439,
-          "cellCount": 1,
-          "status": "passed",
-          "reason": null,
-          "cells": [
-            {
-              "index": 1,
-              "milliseconds": 43,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "PI 控制 (Kp=10.24, Ki=11.26):\n  超调量: 17.1%\n  相位裕度: 51.0°\n"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "classic/classic-case-study#3",
-          "title": "超前校正器验证",
-          "index": 3,
-          "line": 694,
+          "id": "classic/root-locus#6",
+          "title": "七题答案复算",
+          "index": 6,
+          "line": 1188,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
@@ -930,7 +1103,268 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "超前校正 (K=50.0, α=3.85):\n  超调量: 16.1%\n  相位裕度: 54.1°\n"
+                  "text": "python-control 0.10.2\nQ1 centroid,breakK,all positive K stable: -3.0 9\nQ1 K,poles 1 [-5.82842712 -0.17157288]\nQ1 K,poles 9 [-3.+3.7252903e-08j -3.-3.7252903e-08j]\nQ1 K,poles 20 [-3.+3.31662479j -3.-3.31662479j]\nQ2 candidates s,K: -4.154700538379251 -3.079201435678004\nQ2 candidates s,K: -1.845299461620749 3.079201435678004\nQ2 centroid,wcrit,Kcrit: -3 4.795831523312719 192\nQ3 s,K: -0.5857864376269049 0.1715728752538099\nQ3 s,K: -3.414213562373095 5.82842712474619\nQ3 centroid: 1 complex arc circle center/radius: -2 1.4142135623730951\nQ4 break s,K: -1.5694991259569395 16.900894327379042\nQ4 zeta .5 K: (43.775999999999996+3.552713678800501e-15j) angles: 120.00000000000001 36.586775553629465 23.41322444637054\nQ4 magnitudes: 2.4 3.4871191548325386 5.230678732248808\nQ4 crossing K,w: 240 4.898979485566356 third pole: -7.6 decay ratio: 6.333333333333333\nQ5 candidate K bounds: 16.59259259259259 32.592592592592595 boundary zeta: 0.6324555320336759\nQ5 K,actual ts/MP/tail: 16.59259259259259 (3.996413969246214, 0.0, 8.0, 0.00011060620148048185, 1)\nQ5 K,actual ts/MP/tail: 20 (2.9084692953993256, 0.17592119185261085, 8.0, 1.5302864276968898e-05, 1)\nQ5 K,actual ts/MP/tail: 25 (3.0589238187830343, 2.215809896945824, 8.0, 1.9269125934680678e-05, 3)\nQ5 K,actual ts/MP/tail: 32.592592592592595 (2.9879512959612495, 7.301241964231266, 8.0, 3.5488117305200475e-05, 3)\nQ6 K,original poles: 1 [-4.06064703+0.j         0.03032351+0.4953248j  0.03032351-0.4953248j] PDzero2 poles: [-3.87512979+0.j       -0.0624351 +0.715691j -0.0624351 -0.715691j]\nQ6 K,original poles: 10 [-4.49493967+0.j          0.24746984+1.47087819j  0.24746984-1.47087819j] PDzero2 poles: [-2.92069642+0.j         -0.53965179+2.56055811j -0.53965179-2.56055811j]\nQ6 K,original poles: 40 [-5.3812949 +0.j          0.69064745+2.63745356j  0.69064745-2.63745356j] PDzero2 poles: [-0.89037069+5.93761858j -0.89037069-5.93761858j -2.21925863+0.j        ]\nQ6 centroid and departure degrees: -1.3333333333333333 [-90, 90]\nQ7 z,centroid,strict upper: 1 -2.5 inf\nQ7 z,centroid,strict upper: 6 0.0 inf\nQ7 z,centroid,strict upper: 10 2.0 12.0\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/pid-controller",
+      "title": "PID控制",
+      "sourceHash": "87aec36f6b7c0da88220e2518c04f091ca21e4d6962f5588107715a078f3d1fd",
+      "notebooks": [
+        {
+          "id": "classic/pid-controller#1",
+          "title": "临界比例整定",
+          "index": 1,
+          "line": 263,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5297,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ku,Tu,Kp,Ti,Td,Ki,Kd 8.0 3.6275987284684357 4.8 1.8137993642342178 0.45344984105855446 2.6463786980246016 2.176559237081061\nsample peak, y(20) 1.4057209134330821 1.0003170904622074\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 25788
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#2",
+          "title": "纯延迟阶跃与整定",
+          "index": 2,
+          "line": 312,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 61,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "y(L), y(L+T) 0.0 1.2642411176571153\nZN PI 1.5 5.0\nCC PI Kp,Ti 1.5416666666666667 3.0899999999999994\nCC PID Kp,Ti,Td 2.3472222222222223 3.2922077922077917 0.5172413793103449\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 35412
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#3",
+          "title": "饱和与积分状态",
+          "index": 3,
+          "line": 374,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 463,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "level,AW,separation, y(10),I(10),y(20) 0.5 False False 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 True False 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 False True 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 0.5 True True 0.4970054610634894 0.4921669091708412 0.49993500661784696\nlevel,AW,separation, y(10),I(10),y(20) 1.0 False False 0.9999546000702376 1.004962706011708 0.5030429749391898\nlevel,AW,separation, y(10),I(10),y(20) 1.0 True False 0.991507434076575 0.9777852144680271 0.5028102165436029\nlevel,AW,separation, y(10),I(10),y(20) 1.0 False True 0.9897096927599686 0.9730826972066876 0.5027711984205937\nlevel,AW,separation, y(10),I(10),y(20) 1.0 True True 0.9867155035195805 0.9652505211026202 0.5027062126281645\nlevel,AW,separation, y(10),I(10),y(20) 3.0 False False 0.9999546000702376 21.004962706011717 0.9999999979388462\nlevel,AW,separation, y(10),I(10),y(20) 3.0 True False 0.9999546000702376 -1.0004040522485198 0.48435053475869266\nlevel,AW,separation, y(10),I(10),y(20) 3.0 False True 0.9999546000702376 0.0 0.493268894680938\nlevel,AW,separation, y(10),I(10),y(20) 3.0 True True 0.9437231221066686 -3.168830633669556 -0.38740311676001393\nhalf-step max y error 0.0008746478147196035\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 27644
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 34756
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32684
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#4",
+          "title": "离散增量与限幅",
+          "index": 4,
+          "line": 477,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 62,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "gains, last y, sampled peak, max |u| (3.0, 1.0, 0.2) -2.4928290647486517 3.4383255726996618 10.0\ngains, last y, sampled peak, max |u| (0.1, 0.1, 0.0) 0.9928471678923942 0.9928471678923942 0.10500000000000001\nQ9 positions/increments [ 7.1   0.07 -1.91 -1.52] [np.float64(7.1), np.float64(0.0699999999999994), np.float64(-1.9099999999999993), np.float64(-1.5199999999999996)]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 84728
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#5",
+          "title": "电机模型与候选验证",
+          "index": 5,
+          "line": 536,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 160,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "physical denominator [0.005  0.06   0.1004] normalized [ 1.   12.   20.08] numerator 4.0\nopen poles [-9.98998747 -2.01001253]\nP Kp=5 ess 0.500998003992016 P gain for ess<1% 496.98\nP den [ 1.   12.   40.08] poles [-6.+2.01990099j -6.-2.01990099j] limit 0.49900199600798395 sample tr 10-90 0.49000000000000005 sample overshoot wrt limit 0.008855180611133662 y(10) 0.4990019960079875\nPI den [  1.    12.    40.08 200.  ] poles [-9.99199487+0.j         -1.00400256+4.35981673j -1.00400256-4.35981673j] limit 1.0 sample tr 10-90 0.275 sample overshoot wrt limit 48.49909020095393 y(10) 0.9999633362566579\nideal PID den [  1.    14.    40.08 200.  ] poles [-12.05130769+0.j          -0.97434616+3.95554787j\n  -0.97434616-3.95554787j] limit 1.0 sample tr 10-90 0.34800000000000003 sample overshoot wrt limit 39.286007821433344 y(10) 1.0000050666735765\nfiltered PID den [1.00000e+00 1.12000e+02 1.44008e+03 4.20800e+03 2.00000e+04] poles [-97.67619018+0.j         -12.3475534 +0.j\n  -0.98812821+3.95050609j  -0.98812821-3.95050609j] limit 1.0 sample tr 10-90 0.341 sample overshoot wrt limit 38.89763241047024 y(10) 1.000002647161223\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 38192
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/pid-controller#6",
+          "title": "三项模型与九题复算",
+          "index": 6,
+          "line": 956,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 21,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 1 0.16666666666666666 0.08333333333333333\nQ1 5 0.038461538461538464 0.019230769230769232\nQ1 20 0.009900990099009901 0.0049504950495049506\nexplorer 1 2 0 y0,y10 0.0 1.0000380937884845\nexplorer 2 1 0.2 y0,y10 0.16666666666666669 0.9943874067298546\nexplorer 1 0 0 y0,y10 0.0 0.4999999989694232\nexplorer 2 1 0 y0,y10 0.0 0.9939372445848296\nexplorer 2 1 2 y0,y10 0.6666666666666666 1.001192768064862\nfilter 23.010299956639813 45.0 26.020599913279625\nQ3 poles [-0.17610056+0.86071662j -0.17610056-0.86071662j -0.64779887+0.j        ]\nQ4 8 3.6275987284684357 4.8 2.6463786980246016 2.1765592370810616\nQ6 2.25 6.666666666666667 0.33749999999999997\nQ7 poles [-1.9486833 -0.0513167]\nQ8 Routh 1 8 14.5 18.620689655172413 2.5\nQ9 7.1 -12 5\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/classic-case-study",
+      "title": "经典控制案例",
+      "sourceHash": "008c19835700fd32592e00625015b957680e552441a9edfb60e5f816977ca67c",
+      "notebooks": [
+        {
+          "id": "classic/classic-case-study#1",
+          "title": "电机模型建立",
+          "index": 1,
+          "line": 71,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5131,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "versions 2.0.2 1.14.1 0.10.2\nphysical denominator [0.0001, 0.01001, 0.011000000000000003]\nplant poles [-98.98876276+0.j  -1.11123724+0.j] DC 9.09090909090909 time constants [0.01010216-0.j 0.89989784-0.j]\nload DC -90.90909090909092 load normalized numerator [-0.01 -1.  ]\nphysical matrix roots [-98.98876276  -1.11123724]\nP gain threshold strict 10.89\nbreakaway s,K -50.05 2.3950024999999995\nzeta .5 intersection K 9.910009999999998\nzeta for 10 percent 0.5911550337988976\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/classic-case-study#2",
+          "title": "PI 与滤波PID验证",
+          "index": 2,
+          "line": 202,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 220,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P50 {'ess': 0.0021951706246259306, 'peak_target_pct': 48.30460003462651, 'ts_grid': 0.075, 'u_peak_grid': 49.999999999999986, 'pm': 25.23214578047626, 'wc': 212.93050823229345, 'gm_db': None, 'roots': [[-50.05, 218.18569499396608], [-50.05, -218.18569499396608]], 'tail_bound': 2.1280774674256457e-109, 'grid_dt': 0.0005, 'window': 5.0}\nPI {'ess': 0.0, 'peak_target_pct': 17.15939706906433, 'ts_grid': 0.081, 'u_peak_grid': 10.240000000000002, 'pm': 50.95003400771142, 'wc': 80.32631139072325, 'gm_db': None, 'roots': [[-49.50025706916098, 88.26593275150407], [-49.50025706916098, -88.26593275150407], [-1.0994858616781586, 0.0]], 'tail_bound': 4.6511571744007517e-07, 'grid_dt': 0.0005, 'window': 5.0}\nPIDf {'ess': 0.0, 'peak_target_pct': 0.07148463897368451, 'ts_grid': 0.2005, 'u_peak_grid': 305.0, 'pm': 90.99741430425968, 'wc': 277.21545269818193, 'gm_db': None, 'roots': [[-543.5282758794076, 309.1827640178304], [-543.5282758794076, -309.1827640178304], [-11.857171595675586, 0.0], [-1.186276645509652, 0.0]], 'tail_bound': 4.679434498648895e-06, 'grid_dt': 0.0005, 'window': 5.0}\nLead {'ess': 0.0021951706246259306, 'peak_target_pct': 16.171683755644793, 'ts_grid': 0.017, 'u_peak_grid': 192.814371257485, 'pm': 54.16386177507479, 'wc': 305.94258044683136, 'gm_db': None, 'roots': [[-252.7006071862736, 302.01185799251994], [-252.7006071862736, -302.01185799251994], [-193.50118083703353, 0.0]], 'tail_bound': 0.0, 'grid_dt': 0.0005, 'window': 5.0}\nPIsoft {'ess': 0.0, 'peak_target_pct': 0.0, 'ts_grid': 0.1575, 'u_peak_grid': 2.000608078804307, 'pm': 78.71518789532303, 'wc': 19.810830712549315, 'gm_db': None, 'roots': [[-70.69274906969747, 0.0], [-28.30788996805423, 0.0], [-1.099360962248221, 0.0]], 'tail_bound': 2.5171619534059077e-06, 'grid_dt': 0.0005, 'window': 5.0}\nideal PID PM,wc (np.float64(106.09794569738187), np.float64(283.6714854448901)) numerator [0.3 5.  5.5]\nP50 alltime voltage absolute upper bound 51.2957987943995\nP50 noise @10000 absT,absCS 0.0005002255897801525 50.025010025887305\nPI alltime voltage absolute upper bound 11.787166956310788\nPI noise @10000 absT,absCS 0.00010240546867501945 10.241048642523477\nPIDf alltime voltage absolute upper bound 531.139580539307\nPIDf noise @10000 absT,absCS 0.003043901635505443 304.4050783185586\nLead alltime voltage absolute upper bound 230.10131674054588\nLead noise @10000 absT,absCS 0.0019285405135560383 192.8635009823692\nPIsoft alltime voltage absolute upper bound 4.628389613368226\nPIsoft noise @10000 absT,absCS 1.9999420141214048e-05 2.0000400089804864\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 31060
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/classic-case-study#3",
+          "title": "超前校正与离散复算",
+          "index": 3,
+          "line": 265,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 43,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "lead zero,pole [-155.27950311+0.j] [-598.80239521+0.j]\nlead metrics {'ess': 0.0021951706246259306, 'peak_target_pct': 16.171683755644793, 'ts_grid': 0.017, 'u_peak_grid': 192.814371257485, 'pm': 54.16386177507479, 'wc': 305.94258044683136, 'gm_db': None, 'roots': [[-252.7006071862736, 302.01185799251994], [-252.7006071862736, -302.01185799251994], [-193.50118083703353, 0.0]], 'tail_bound': 0.0, 'grid_dt': 0.0005, 'window': 5.0}\ndiscrete {'fs': 500, 'wc': 306.5326600838694, 'pm': 36.5646895388596, 'num': [139.3258426966292, -101.87265917602997], 'den': [1.0, -0.25093632958801504], 'closed_poles': [[0.5593733343706362, 0.49389841622409447], [0.5593733343706362, -0.49389841622409447], [0.689416412557633, 0.0]]}\ndiscrete {'fs': 5000, 'wc': 305.94896519594647, 'pm': 52.41051861870321, 'num': [184.7457627118644, -179.09604519774007], 'den': [1.0, -0.887005649717514], 'closed_poles': [[0.9623089416253119, 0.0], [0.9506005209738848, 0.05923636245829044], [0.9506005209738848, -0.05923636245829044]]}\nQ5 Ra1.3 poles [-129.22555999+0.j   -0.87444001+0.j] PM,wc (np.float64(59.618777673009845), np.float64(298.1822725575025))\nQ6 hypothetical wc180 minimum fs 286.4788975654116 500Hz ZOH phase deg 10.313240312354818\nderivative filter phase at wc277 -15.494195748435985\n"
                 }
               ]
             }
@@ -938,22 +1372,22 @@
         },
         {
           "id": "classic/classic-case-study#4",
-          "title": "三种方案阶跃响应与开环增益对比",
+          "title": "同合同验证与十题复算",
           "index": 4,
-          "line": 861,
+          "line": 345,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 457,
+              "milliseconds": 78,
               "status": "passed",
               "outputs": [
                 {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 93400
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P50 {'ess': 0.0021951706246259306, 'peak_target_pct': 48.30460003462651, 'ts_grid': 0.075, 'u_peak_grid': 49.999999999999986, 'pm': 25.23214578047626, 'wc': 212.93050823229345, 'gm_db': None, 'roots': [[-50.05, 218.18569499396608], [-50.05, -218.18569499396608]], 'tail_bound': 2.1280774674256457e-109, 'grid_dt': 0.0005, 'window': 5.0}\nPI {'ess': 0.0, 'peak_target_pct': 17.15939706906433, 'ts_grid': 0.081, 'u_peak_grid': 10.240000000000002, 'pm': 50.95003400771142, 'wc': 80.32631139072325, 'gm_db': None, 'roots': [[-49.50025706916098, 88.26593275150407], [-49.50025706916098, -88.26593275150407], [-1.0994858616781586, 0.0]], 'tail_bound': 4.6511571744007517e-07, 'grid_dt': 0.0005, 'window': 5.0}\nPIDf {'ess': 0.0, 'peak_target_pct': 0.07148463897368451, 'ts_grid': 0.2005, 'u_peak_grid': 305.0, 'pm': 90.99741430425968, 'wc': 277.21545269818193, 'gm_db': None, 'roots': [[-543.5282758794076, 309.1827640178304], [-543.5282758794076, -309.1827640178304], [-11.857171595675586, 0.0], [-1.186276645509652, 0.0]], 'tail_bound': 4.679434498648895e-06, 'grid_dt': 0.0005, 'window': 5.0}\nLead {'ess': 0.0021951706246259306, 'peak_target_pct': 16.171683755644793, 'ts_grid': 0.017, 'u_peak_grid': 192.814371257485, 'pm': 54.16386177507479, 'wc': 305.94258044683136, 'gm_db': None, 'roots': [[-252.7006071862736, 302.01185799251994], [-252.7006071862736, -302.01185799251994], [-193.50118083703353, 0.0]], 'tail_bound': 0.0, 'grid_dt': 0.0005, 'window': 5.0}\nPIsoft {'ess': 0.0, 'peak_target_pct': 0.0, 'ts_grid': 0.1575, 'u_peak_grid': 2.000608078804307, 'pm': 78.71518789532303, 'wc': 19.810830712549315, 'gm_db': None, 'roots': [[-70.69274906969747, 0.0], [-28.30788996805423, 0.0], [-1.099360962248221, 0.0]], 'tail_bound': 2.5171619534059077e-06, 'grid_dt': 0.0005, 'window': 5.0}\nQ1 denominator [0.0003  0.03001 0.011  ] poles [-99.66543581+0.j  -0.36789752+0.j] P50 PM,wc (np.float64(41.99053346758882), np.float64(111.4641474897664)) PI kp,ki,PM,wc 9.367438960380774 3.4462575623907603 (np.float64(73.24783430957956), np.float64(30.0))\nQ1 full PI roots [-49.83271791+25.28200703j -49.83271791-25.28200703j\n  -0.36789752 +0.j        ]\nQ2 PI kp,ki,PM,wc 6.22831597096288 6.921136679937104 (np.float64(60.94263474073546), np.float64(55.00000000000001))\nQ2 full roots [-49.49438138+61.47049848j -49.49438138-61.47049848j\n  -1.11123724 +0.j        ]\nQ3 phi70 alpha 32.16343747752632 alpha20 phi 64.79123470324164\nQ4 ideal PID zero magnitudes [15.48253686  1.1841298 ]\nQ7 original finite DC Kv 0 alternative Kv 50.0\nQ7 integral extension GMdB,PM,wc 18.45546946948309 66.48687806325219 0.9640308539128348 closed roots [-4.99876469e+01+0.j         -7.03248629e+00+0.j\n -1.48498362e+00+1.14698773j -1.48498362e+00-1.14698773j\n -1.00000000e+00+0.j         -1.00995575e-02+0.j        ]\nQ8 PI5,25 roots [-47.3296435+48.52721744j -47.3296435-48.52721744j\n  -5.440713  +0.j        ]\nQ8 P load DC for K50 -0.19956096587507482\nQ9 {'fs': 500, 'wc': 306.5326600838694, 'pm': 36.5646895388596, 'num': [139.3258426966292, -101.87265917602997], 'den': [1.0, -0.25093632958801504], 'closed_poles': [[0.5593733343706362, 0.49389841622409447], [0.5593733343706362, -0.49389841622409447], [0.689416412557633, 0.0]]}\nQ9 {'fs': 5000, 'wc': 305.94896519594647, 'pm': 52.41051861870321, 'num': [184.7457627118644, -179.09604519774007], 'den': [1.0, -0.887005649717514], 'closed_poles': [[0.9623089416253119, 0.0], [0.9506005209738848, 0.05923636245829044], [0.9506005209738848, -0.05923636245829044]]}\nQ10 P strict lower gain 792.0 PI kp,ki 44.721359549995796 89.44271909999159 metrics {'ess': 0.0, 'peak_target_pct': 5.926610187540193, 'ts_grid': 0.402, 'u_peak_grid': 45.14520839451431, 'pm': 63.434948822922024, 'wc': 10.000000000000004, 'gm_db': None, 'roots': [[-10.0, 11.117859405028426], [-10.0, -11.117859405028426], [-2.0000000000000013, 0.0]], 'tail_bound': 1.4015246318104378e-20, 'grid_dt': 0.0005, 'window': 5.0}\nQ10 lead fixed attempt {'ess': 0.009900990099009799, 'peak_target_pct': 48.666053069783665, 'ts_grid': 0.093, 'u_peak_grid': 16000.0, 'pm': 23.61551853380263, 'wc': 273.7792100455778, 'gm_db': None, 'roots': [[-58.52635614122318, 279.7062247985369], [-58.52635614122318, -279.7062247985369], [-4.9472877175538645, 0.0]], 'tail_bound': 1.8996838483529011e-13, 'grid_dt': 0.0005, 'window': 5.0}\nQ10 P800 fixed attempt {'ess': 0.00990099009900991, 'peak_target_pct': 56.01447377153623, 'ts_grid': 0.41100000000000003, 'u_peak_grid': 799.9999999999999, 'pm': 19.826436218434765, 'wc': 61.667637394418676, 'gm_db': None, 'roots': [[-10.999999999999998, 62.60191690355816], [-10.999999999999998, -62.60191690355816]], 'tail_bound': 1.3064270750385672e-24, 'grid_dt': 0.0005, 'window': 5.0}\n"
                 }
               ]
             }
@@ -961,22 +1395,27 @@
         },
         {
           "id": "classic/classic-case-study#5",
-          "title": "负载扰动响应对比",
+          "title": "多种子参数检验",
           "index": 5,
-          "line": 1037,
+          "line": 430,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 108,
+              "milliseconds": 7051,
               "status": "passed",
               "outputs": [
                 {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "condition nominal P50 {'ess': 0.0021951706246259306, 'peak_target_pct': 48.12124573958676, 'ts_grid': 0.076, 'u_peak_grid': 49.999999999999986, 'pm': 25.23214578047626, 'wc': 212.93050823229345, 'gm_db': None, 'roots': [[-50.05, 218.18569499396608], [-50.05, -218.18569499396608]], 'tail_bound': 2.1280774674256457e-109, 'grid_dt': 0.002, 'window': 5.0}\ncondition nominal PI {'ess': 0.0, 'peak_target_pct': 17.1457422166988, 'ts_grid': 0.082, 'u_peak_grid': 10.240000000000002, 'pm': 50.95003400771142, 'wc': 80.32631139072325, 'gm_db': None, 'roots': [[-49.50025706916098, 88.26593275150407], [-49.50025706916098, -88.26593275150407], [-1.0994858616781586, 0.0]], 'tail_bound': 4.6511571744007517e-07, 'grid_dt': 0.002, 'window': 5.0}\ncondition nominal PIDf {'ess': 0.0, 'peak_target_pct': 0.07148463897368451, 'ts_grid': 0.202, 'u_peak_grid': 305.0, 'pm': 90.99741430425968, 'wc': 277.21545269818193, 'gm_db': None, 'roots': [[-543.5282758794076, 309.1827640178304], [-543.5282758794076, -309.1827640178304], [-11.857171595675586, 0.0], [-1.186276645509652, 0.0]], 'tail_bound': 4.679434498648895e-06, 'grid_dt': 0.002, 'window': 5.0}\ncondition nominal Lead {'ess': 0.0021951706246259306, 'peak_target_pct': 15.805806826157042, 'ts_grid': 0.018000000000000002, 'u_peak_grid': 192.814371257485, 'pm': 54.16386177507479, 'wc': 305.94258044683136, 'gm_db': None, 'roots': [[-252.7006071862736, 302.01185799251994], [-252.7006071862736, -302.01185799251994], [-193.50118083703353, 0.0]], 'tail_bound': 0.0, 'grid_dt': 0.002, 'window': 5.0}\ncondition nominal PIsoft {'ess': 0.0, 'peak_target_pct': 0.0, 'ts_grid': 0.158, 'u_peak_grid': 2.0, 'pm': 78.71518789532303, 'wc': 19.810830712549315, 'gm_db': None, 'roots': [[-70.69274906969747, 0.0], [-28.30788996805423, 0.0], [-1.099360962248221, 0.0]], 'tail_bound': 2.5171619534059077e-06, 'grid_dt': 0.002, 'window': 5.0}\ncondition J+50% P50 {'ess': 0.0021951706246259306, 'peak_target_pct': 40.57522457463427, 'ts_grid': 0.078, 'u_peak_grid': 50.0, 'pm': 30.60583025064824, 'wc': 169.59660216572402, 'gm_db': None, 'roots': [[-50.03333333333334, 175.7934362319089], [-50.03333333333334, -175.7934362319089]], 'tail_bound': 2.3439947174728308e-109, 'grid_dt': 0.002, 'window': 5.0}\ncondition J+50% PI {'ess': 0.0, 'peak_target_pct': 10.010953299657777, 'ts_grid': 0.074, 'u_peak_grid': 10.239999999999998, 'pm': 58.90744047027616, 'wc': 59.07590249875411, 'gm_db': None, 'roots': [[-49.48060876557008, 65.89592372687518], [-49.48060876557008, -65.89592372687518], [-1.105449135526392, 0.0]], 'tail_bound': 2.146240229801234e-05, 'grid_dt': 0.002, 'window': 5.0}\ncondition J+50% PIDf {'ess': 0.0, 'peak_target_pct': 0.7723618538455046, 'ts_grid': 0.22, 'u_peak_grid': 304.99999999999955, 'pm': 104.56570038601359, 'wc': 174.80825717282977, 'gm_db': None, 'roots': [[-617.672025054899, 0.0], [-470.712245455036, 0.0], [-10.478907519601904, 0.0], [-1.2034886371305762, 0.0]], 'tail_bound': 4.136779179748114e-05, 'grid_dt': 0.002, 'window': 5.0}\ncondition J+50% Lead {'ess': 0.0021951706246259306, 'peak_target_pct': 11.417785855616946, 'ts_grid': 0.024, 'u_peak_grid': 192.8143712574851, 'pm': 58.87951845236543, 'wc': 223.7205794556478, 'gm_db': None, 'roots': [[-281.62971037969294, 0.0], [-208.61967574827767, 165.8530685737431], [-208.61967574827767, -165.8530685737431]], 'tail_bound': 0.0, 'grid_dt': 0.002, 'window': 5.0}\ncondition J+50% PIsoft {'ess': 0.0, 'peak_target_pct': 1.8514938773569911, 'ts_grid': 0.216, 'u_peak_grid': 2.000000000000001, 'pm': 80.80966990248373, 'wc': 13.329033159491566, 'gm_db': None, 'roots': [[-83.41372899574414, 0.0], [-15.520010832739013, 0.0], [-1.1329268381835842, 0.0]], 'tail_bound': 0.00011347396591828064, 'grid_dt': 0.002, 'window': 5.0}\ncondition R+30% P50 {'ess': 0.002254903917147333, 'peak_target_pct': 37.76505555878478, 'ts_grid': 0.062, 'u_peak_grid': 50.0, 'pm': 32.3723931025246, 'wc': 205.77244781312885, 'gm_db': None, 'roots': [[-65.05000000000001, 214.19966736668854], [-65.05000000000001, -214.19966736668854]], 'tail_bound': 5.806250543792849e-142, 'grid_dt': 0.002, 'window': 5.0}\ncondition R+30% PI {'ess': 0.0, 'peak_target_pct': 7.6843963793195025, 'ts_grid': 0.062, 'u_peak_grid': 10.239999999999998, 'pm': 61.46105995874319, 'wc': 69.73792207418212, 'gm_db': None, 'roots': [[-64.49862016712058, 77.78608514961206], [-64.49862016712058, -77.78608514961206], [-1.1027596657590635, 0.0]], 'tail_bound': 1.1709559655819552e-05, 'grid_dt': 0.002, 'window': 5.0}\ncondition R+30% PIDf {'ess': 0.0, 'peak_target_pct': 0.4502829250921714, 'ts_grid': 0.218, 'u_peak_grid': 305.0, 'pm': 97.73576689652907, 'wc': 265.49405768779417, 'gm_db': None, 'roots': [[-558.9979372524615, 330.43743784555846], [-558.9979372524615, -330.43743784555846], [-10.90840024921552, 0.0], [-1.1957252458614172, 0.0]], 'tail_bound': 2.5483932070877165e-05, 'grid_dt': 0.002, 'window': 5.0}\ncondition R+30% Lead {'ess': 0.002254903917147333, 'peak_target_pct': 9.755426839629777, 'ts_grid': 0.016, 'u_peak_grid': 192.81437125748505, 'pm': 59.618777673009845, 'wc': 298.1822725575025, 'gm_db': None, 'roots': [[-278.9090421329454, 312.42180863725815], [-278.9090421329454, -312.42180863725815], [-171.08431094369, 0.0]], 'tail_bound': 0.0, 'grid_dt': 0.002, 'window': 5.0}\ncondition R+30% PIsoft {'ess': 0.0, 'peak_target_pct': 0.9944871107219422, 'ts_grid': 0.20400000000000001, 'u_peak_grid': 2.0, 'pm': 82.37490320610351, 'wc': 15.382721848960722, 'gm_db': None, 'roots': [[-111.29143616003665, 0.0], [-17.69117520321824, 0.0], [-1.11738863674516, 0.0]], 'tail_bound': 6.38574597542566e-05, 'grid_dt': 0.002, 'window': 5.0}\nMC seed,name,n,failed,columns peak/ts/PM 42 P50 120 120 min [35.0619413   0.058      15.95071346] median [47.90768014  0.076      25.02292487] max [62.54262515  0.098      34.64368614]\nMC seed,name,n,failed,columns peak/ts/PM 42 PI 120 101 min [ 5.96020224  0.056      33.90978399] median [17.41018205  0.076      50.60985311] max [35.60775893  0.106      63.96691993]\nMC seed,name,n,failed,columns peak/ts/PM 42 PIDf 120 0 min [ 0.          0.162      69.82408808] median [4.97673967e-03 2.04000000e-01 9.09773442e+01] max [  1.17107157   0.232      110.70685314]\nMC seed,name,n,failed,columns peak/ts/PM 42 Lead 120 114 min [8.17716699e+00 1.20000000e-02 4.31824147e+01] median [1.61654078e+01 1.80000000e-02 5.38095832e+01] max [2.77327717e+01 2.60000000e-02 6.20738737e+01]\nMC seed,name,n,failed,columns peak/ts/PM 42 PIsoft 120 0 min [ 0.          0.068      65.98378131] median [ 0.          0.17       78.45396014] max [ 2.81651896  0.872      82.3842428 ]\nMC seed,name,n,failed,columns peak/ts/PM 43 P50 120 120 min [35.46968504  0.058      15.10686353] median [48.1423578   0.074      25.22674648] max [65.28238403  0.098      34.46033868]\nMC seed,name,n,failed,columns peak/ts/PM 43 PI 120 99 min [ 5.95989685  0.054      32.23554248] median [17.13432671  0.074      50.94426813] max [37.7283018   0.102      63.83428073]\nMC seed,name,n,failed,columns peak/ts/PM 43 PIDf 120 0 min [ 0.          0.172      69.77350456] median [3.49023585e-02 2.04000000e-01 9.07525414e+01] max [  1.12387021   0.234      109.35289527]\nMC seed,name,n,failed,columns peak/ts/PM 43 Lead 120 109 min [8.47179442e+00 1.20000000e-02 4.23798009e+01] median [1.59495018e+01 1.80000000e-02 5.40844789e+01] max [2.93921450e+01 2.60000000e-02 6.19890452e+01]\nMC seed,name,n,failed,columns peak/ts/PM 43 PIsoft 120 0 min [ 0.          0.072      64.03338983] median [ 0.09786021  0.178      78.64156477] max [ 3.67270897  0.818      82.25199153]\nMC seed,name,n,failed,columns peak/ts/PM 44 P50 120 120 min [32.76539541  0.06       16.11447046] median [48.06520449  0.076      25.2190067 ] max [62.87599595  0.1        36.43805811]\nMC seed,name,n,failed,columns peak/ts/PM 44 PI 120 105 min [ 4.49484209  0.056      34.25014094] median [17.24768238  0.076      50.85472711] max [35.49922808  0.1        65.9720594 ]\nMC seed,name,n,failed,columns peak/ts/PM 44 PIDf 120 0 min [ 0.          0.168      71.27107797] median [ 0.12449893  0.202      93.08623038] max [  1.2649122    0.236      112.99695133]\nMC seed,name,n,failed,columns peak/ts/PM 44 Lead 120 111 min [7.18955040e+00 1.20000000e-02 4.35672012e+01] median [1.62202742e+01 1.80000000e-02 5.40188409e+01] max [2.79738858e+01 2.40000000e-02 6.35542890e+01]\nMC seed,name,n,failed,columns peak/ts/PM 44 PIsoft 120 0 min [ 0.          0.088      66.26786529] median [ 0.26115425  0.174      78.47449782] max [ 3.01360007  0.958      82.11209762]\n"
+                },
+                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 31216
+                  "base64Length": 27484
                 }
               ]
             }
@@ -984,27 +1423,27 @@
         },
         {
           "id": "classic/classic-case-study#6",
-          "title": "蒙特卡洛鲁棒性分析",
+          "title": "负载与限幅状态验证",
           "index": 6,
-          "line": 1192,
+          "line": 520,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3271,
+              "milliseconds": 1967,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "Mp > 10% 比例: 0.0%\nts > 1.5s 比例: 0.0%\nPM < 50° 比例: 0.0%\n"
+                  "text": "load .01 P50 DC -0.001995609658750749 finite y5 -0.00199560965875075\nload .01 PI DC 0.0 finite y5 -3.998853146246425e-05\nload .01 PIDf DC 0.0 finite y5 -6.300447334361206e-05\nload .01 Lead DC -0.001995609658750749 finite y5 -0.0019956096587507442\nload .01 PIsoft DC 0.0 finite y5 -0.00021413815522237405\nsat100 aw False grid_peak_y 121.54263859753031 y8 100.00484268181275 max_abs_u 24.0 max_abs_integral 141.83745530886003\nsat100 aw True grid_peak_y 99.9900344686492 y8 99.9900344686492 max_abs_u 24.0 max_abs_integral 591.4645244898921\nTf .001 cutoff Hz 159.15494309189532\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 52940
+                  "base64Length": 66520
                 }
               ]
             }
@@ -9874,22 +10313,631 @@
           ]
         }
       ]
+    },
+    {
+      "key": "classic/system-modeling",
+      "title": "系统建模",
+      "sourceHash": "20763b08bdc6840cfe870dddcadb4c7884ec23adbadc97e2ccb6f21877ad471b",
+      "notebooks": [
+        {
+          "id": "classic/system-modeling#1",
+          "title": "自由释放与能量核验",
+          "index": 1,
+          "line": 58,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6675,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "zeta/c/wn/E0: 0.0 0.0 8.0 20.000000000000004\nt/y/v/E/dissipation: 1.0 -0.007275001690430685 -0.3957432986493526 19.99999999999999 0.0\nt/y/v/E/dissipation: 3.0 0.02120895036684989 0.3622313448026499 20.000000000000046 0.0\nsample energy maximum/increase: 20.000000000000096 1.5987211554602254e-13\nzeta/c/wn/E0: 0.3 1200.0 8.0 20.000000000000004\nt/y/v/E/dissipation: 1.0 0.0023921087228575056 -0.03710185689756943 0.21784594629173276 1.6518573422972647\nt/y/v/E/dissipation: 3.0 -3.232551519129198e-05 0.0002458822039582811 1.5916768736982306e-05 7.25496698680581e-05\nsample energy maximum/increase: 20.000000000000004 -2.31374291427894e-09\nzeta/c/wn/E0: 1.0 4000.0 8.0 20.000000000000004\nt/y/v/E/dissipation: 1.0 0.0001509581825561297 -0.001073480409288035 0.00032635200668584916 0.004609440756500829\nt/y/v/E/dissipation: 3.0 4.718918180349067e-11 -3.62412916250806e-10 3.4232441267439873e-17 5.253724874616549e-16\nsample energy maximum/increase: 20.000000000000004 -5.677889385231093e-18\nzeta/c/wn/E0: 2.0 8000.0 8.0 20.000000000000004\nt/y/v/E/dissipation: 1.0 0.0063150396722647245 -0.013536878242819104 0.34194369256833257 1.4659765804872738\nt/y/v/E/dissipation: 3.0 8.679093997880433e-05 -0.0001860444982212693 6.458790751403581e-05 0.000276900442547231\nsample energy maximum/increase: 20.000000000000004 -2.829218032447087e-06\nsymbolic E derivative: -c*v**2\nforce1000 equilibrium/base.05 equilibrium: 0.0625 0.05\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#2",
+          "title": "双质量受力与电路坐标",
+          "index": 2,
+          "line": 134,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 58,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "M/C/K: Matrix([[m1, 0], [0, m2]]) Matrix([[c, -c], [-c, c]]) Matrix([[k + k1, -k], [-k, k]])\nforce sign residual: Matrix([[0], [0]])\ntwo-mass dissipation: -c*(v1 - v2)**2\nRLC vC coefficients: 1/200 1/10 1 charge coefficients: 1/2 10 100\noriginal exercise wn/zeta: 5 1/5\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#3",
+          "title": "电机降阶的三种电感",
+          "index": 3,
+          "line": 195,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 363,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "L/poles/tau_e/tau_reduced: 0.001 [-998.98886627  -11.01113373] 0.001 0.0909090909090909\nsteady i/w/max sampled speed error: [0.90909091 0.90909091] 0.009472675084241593\nat1s full/reduced speed/reference error: 0.909075726489569 0.9090757257265543 4.8255288653820116e-11\nL/poles/tau_e/tau_reduced: 0.01 [-98.87482194 -11.12517806] 0.01 0.0909090909090909\nsteady i/w/max sampled speed error: [0.90909091 0.90909091] 0.07538439959635887\nat1s full/reduced speed/reference error: 0.9090758137048762 0.9090757257265543 5.578870698741412e-15\nL/poles/tau_e/tau_reduced: 0.1 [-10.+3.16227766j -10.-3.16227766j] 0.1 0.0909090909090909\nsteady i/w/max sampled speed error: [0.90909091 0.90909091] 0.3452349770027322\nat1s full/reduced speed/reference error: 0.9091348724489601 0.9090757257265543 5.551115123125783e-16\ninitial full/reduced current: 0.0 1.0 initial full/reduced acceleration: 0.0 10.0\nfull speed denominator: B*L*s + B*R + J*L*s**2 + J*R*s + Ke*Kt\nreduced speed denominator: B*R + J*R*s + Ke*Kt\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#4",
+          "title": "跨领域模型的单位与尺度",
+          "index": 4,
+          "line": 276,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "hydraulic full coefficients: [Ch*m, Ch*b + Kc*m, Ap**2 + Ch*k + Kc*b, Kc*k]\nincompressible divided coefficients: m Ap**2/Kc + b k input gain: Ap*Kq/Kc\nthermal tau/T100: 100.0 42.07276647028654\nradiation equilibrium/tau seconds/tau years: 254.58234278554602 26722194.057473086 0.8467752318767298\nepsilon drop1pct temperature change: 0.6404637844169457\n288K derivative timescale years, NOT equilibrium: 0.58489178206507\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#5",
+          "title": "生态首次积分与SIS平衡",
+          "index": 5,
+          "line": 304,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 34,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "LV first integral derivative: 0\npositive equilibrium: gamma/delta alpha/beta\nequilibrium Jacobian/determinant: Matrix([[0, -beta*gamma/delta], [alpha*delta/beta, 0]]) alpha*gamma\nbeta/xstar/ystar/local frequency: 0.1 10.0 10.0 1.4142135623730951\nbeta/xstar/ystar/local frequency: 0.2 10.0 5.0 1.4142135623730951\nSIS r/R0/Istar/f(N): 1.9 20.0 9500.0 -1000.0\nSIS rate/initial growth/R0: 5e-06 -0.05 0.5\nSIS rate/initial growth/R0: 1e-05 0.0 1.0\nSIS rate/initial growth/R0: 0.0002 1.9 20.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#6",
+          "title": "工作点与单摆初值",
+          "index": 6,
+          "line": 361,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 23,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "inverted equation/initial value/initial velocity residual: 0 0 0\ngrowth/decay coefficients: p0/2 + v0/(2*w) p0/2 - v0/(2*w)\nangle/sine/absolute sine approximation error: 0.1 0.09983341664682815 0.0001665833531718508\nangle/sine/absolute sine approximation error: 0.5 0.479425538604203 0.020574461395796995\nangle/sine/absolute sine approximation error: 1.0 0.8414709848078965 0.1585290151921035\nexercise pendulum g/l and frequency: 9.81 1.0 3.132091952673165\nlocal model format: A*(x - xe) + B*(u - ue)\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/system-modeling#7",
+          "title": "六题答案复算",
+          "index": 7,
+          "line": 397,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 wn/zeta/case: 5 1/5 underdamped\nQ2 RLC vC/charge: [1/200, 1/10, 1] [1/2, 10, 100]\nQ3 pendulum frequency l1: 3.132091952673165\nQ4 force1000/base.05 equilibrium: 0.0625 0.05\nQ5 reduced motor tau/gain/initial current: 0.0909090909090909 0.9090909090909091 1.0\nQ5 hydraulic coefficients m2/b3/k4/Ap.5/Kc.25/Kq2: 2 4.0 4 4.0\nQ6 SIS r/R0/Istar/fN: 1.9 20 9500 -1000\nQ6 radiant tau at own equilibrium years: 0.8467752318767297\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/compensator-design",
+      "title": "校正网络",
+      "sourceHash": "df453758b140aaaf10c2c6677c6feff83607d41052658dcfd3b93ecc0ea1bdd7",
+      "notebooks": [
+        {
+          "id": "classic/compensator-design#1",
+          "title": "超前设计与完整响应",
+          "index": 1,
+          "line": 177,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5190,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "uncorrected 40 wc 6.168465675433525 PM 17.964235916371365 poles [-1.+6.244998j -1.-6.244998j]\nlead 40 wc 9.352276566985179 PM 53.88129298121834 poles [-8.493447  +8.30850904j -8.493447  -8.30850904j -5.92543215+0.j        ]\ngain,alpha,T,zero,pole 40 5 0.0478186880271145 -4.182465229631448 -20.912326148157238\n40 plain y(5) 0.9935892608552295 sampled peak 1.6045657890000156\n40 lead y(5) 1.000000000000106 sampled peak 1.1831190230903705\nuncorrected 500 wc 22.08293969546545 PM 12.757752127054204 poles [-2.5+22.22048604j -2.5-22.22048604j]\nlead 500 wc 35.529088972520405 PM 55.17718635634591 poles [-37.08026788+27.19104886j -37.08026788-27.19104886j\n -21.42122322 +0.j        ]\ngain,alpha,T,zero,pole 500 6.5 0.01103975028967774 -13.935655228542743 -90.58175898552783\n500 plain y(5) 1.0000019156861701 sampled peak 1.7019199281860629\n500 lead y(5) 0.9999999999999997 sampled peak 1.1849650624766217\nuncorrected 400 wc 19.801009873276655 PM 11.420619089024342 poles [-2.+19.89974874j -2.-19.89974874j]\nlead 400 wc 32.408806845543225 PM 55.62642531951053 poles [-35.29834784+23.34859293j -35.29834784-23.34859293j\n -19.14894752 +0.j        ]\ngain,alpha,T,zero,pole 400 7 0.011662400125082168 -12.249377600233585 -85.74564320163509\n400 plain y(5) 0.9999806307176621 sampled peak 1.7285884848833029\n400 lead y(5) 1.0 sampled peak 1.1853716470554958\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 34912
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32356
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 34296
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/compensator-design#2",
+          "title": "网络极限与相位",
+          "index": 2,
+          "line": 230,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 198,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "angle,alpha 20 2.0396067291614743\nangle,alpha 30 3.0\nangle,alpha 40 4.598909932113389\nangle,alpha 50 7.548632170413029\nangle,alpha 60 13.928203230275503\nQ1 phase,wm*T,db 54.90319877241541 0.31622776601683794 10.0\nQ9 lag phase,wm*T -54.90319877241541 3.162277660168379\nlimits lead/lag/combined 5 0.1 0.5\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 23408
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/compensator-design#3",
+          "title": "滞后设计与题目复算",
+          "index": 3,
+          "line": 341,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 23,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "lag60 plain wc 3.7081141080345748 PM -46.567028552202856 poles [-5.+0.j          1.+3.31662479j  1.-3.31662479j]\nlag60 corrected wc 0.5482029669228042 PM 40.33653693811797 poles [-2.38270683+0.j         -0.27925716+0.64685968j -0.27925716-0.64685968j\n -0.05996088+0.j        ]\nlag60 beta,T,high gain 0.0215 846.0 0.0215\nquestion plain 250 wc 5.699023843490037 PM -38.785826525521856 poles [-8.71669455+0.j          1.35834728+5.18029818j  1.35834728-5.18029818j]\nquestion lag 250 wc 0.5000000000000002 PM 52.0778211901758 poles [-5.13061849+0.j         -0.40746661+0.57372889j -0.40746661-0.57372889j\n -0.0550073 +0.j        ]\ngain,beta,T,Kv 250 0.01118034687521793 1788.8532639654932 50.0\nquestion plain 1280 wc 9.922075139995556 PM -39.724918098473694 poles [-14.77823428+0.j           2.38911714+8.99477543j\n   2.38911714-8.99477543j]\nquestion lag 1280 wc 1.0000000000000004 PM 50.67963531569788 poles [-8.33564685+0.j         -0.77791937+1.16305742j -0.77791937-1.16305742j\n -0.10991583+0.j        ]\ngain,beta,T,Kv 1280 0.014014301302286217 713.5568006068668 80.0\nquestion plain 3200 wc 14.012034934385445 PM -52.15310926496376 poles [-18.49237809 +0.j           4.24618904+12.45046766j\n   4.24618904-12.45046766j]\nquestion lag 3200 wc 1.0000000000000002 PM 50.63145771936021 poles [-8.33561561+0.j         -0.77746795+1.16264831j -0.77746795-1.16264831j\n -0.11000906+0.j        ]\ngain,beta,T,Kv 3200 0.005605715896858373 1783.893473018197 200.0\nK increase factor/db 2.5 7.958800173440752\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/compensator-design#4",
+          "title": "组合网络联合设计",
+          "index": 4,
+          "line": 429,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 200,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "alpha,T1,beta,T2,HF 12.0 0.09622504486493763 0.028450175606256876 117.16389309738578 0.3414021072750825\ncombined plain wc 8.664742329543396 PM -34.324692655715495 poles [-14.85721039+0.j           1.9286052 +7.97420017j\n   1.9286052 -7.97420017j]\ncombined new wc 3.0000000000000004 PM 53.98389100652227 poles [-14.95410943+0.j          -2.65281696+3.83779099j\n  -2.65281696-3.83779099j  -0.80080578+0.j\n  -0.34029076+0.j        ]\nold candidate actual wc 7.300048935253178 PM 16.858985448152538 poles [-18.5041847 +0.j          -1.04871421+7.80772068j\n  -1.04871421-7.80772068j  -0.90827431+0.j\n  -0.63646732+0.j        ]\n100plain wc 3.014542880497727 PM 1.5763281077508111 poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\ngain,mode,y5 100 plain 1.5173943963184142\n100combined wc 0.3721664720826327 PM 51.10102162001965 poles [-11.89130098+0.j          -8.15935787+0.j\n  -1.05205733+0.j          -0.14906186+0.25431333j\n  -0.14906186-0.25431333j]\ngain,mode,y5 100 combined 1.1191288372535113\n1000plain wc 8.664742329543396 PM -34.324692655715495 poles [-14.85721039+0.j           1.9286052 +7.97420017j\n   1.9286052 -7.97420017j]\ngain,mode,y5 1000 plain 4878.5463592875085\n1000combined wc 3.0000000000000004 PM 53.98389100652227 poles [-14.95410943+0.j          -2.65281696+3.83779099j\n  -2.65281696-3.83779099j  -0.80080578+0.j\n  -0.34029076+0.j        ]\ngain,mode,y5 1000 combined 1.026543725694761\n2000plain wc 11.44862678364102 PM -43.87192409989606 poles [-17.1880301  +0.j           3.09401505+10.33378529j\n   3.09401505-10.33378529j]\ngain,mode,y5 2000 plain -1404692.2253909404\n2000combined wc 5.198874179682576 PM 34.175445551432546 poles [-16.58597815+0.j          -1.82900885+6.06590979j\n  -1.82900885-6.06590979j  -0.83941447+0.j\n  -0.31742957+0.j        ]\ngain,mode,y5 2000 combined 1.0121326773217598\nKv default 100.0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 26688
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 41344
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 36020
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/compensator-design#5",
+          "title": "真实二阶对象与抗饱和",
+          "index": 5,
+          "line": 618,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1086,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "old PI poles [-2.00000000e+00+0.j         -5.41233725e-16+2.23606798j\n -5.41233725e-16-2.23606798j]\nnew PI poles [-0.76658842+1.92265955j -0.76658842-1.92265955j -0.46682317+0.j        ]\nlimit,mode,y10,sample peak,u10,I10 0.5 ideal 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\nlimit,mode,y10,sample peak,u10,I10 0.5 plain 1.1799258952667 1.6871096698270522 -0.5 0.3599547325252181\nlimit,mode,y10,sample peak,u10,I10 0.5 back 0.989274595609302 0.989274595609302 0.00900935189752456 -0.04461767005596556\nlimit,mode,y10,sample peak,u10,I10 2.0 ideal 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\nlimit,mode,y10,sample peak,u10,I10 2.0 plain 1.0065868482467513 1.4755911827807195 -0.005431644907763621 0.027502596325992702\nlimit,mode,y10,sample peak,u10,I10 2.0 back 0.9988232223409892 1.1536864928930746 0.001681654869383811 -0.00420223342567023\nlimit,mode,y10,sample peak,u10,I10 5.0 ideal 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\nlimit,mode,y10,sample peak,u10,I10 5.0 plain 1.0011934782545446 1.4299420069189877 0.0014885197712804412 0.007455911044003607\nlimit,mode,y10,sample peak,u10,I10 5.0 back 1.001170673803145 1.4280441676613906 0.001499968592025237 0.007353337607749989\nlimit,mode,y10,sample peak,u10,I10 100.0 ideal 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\nlimit,mode,y10,sample peak,u10,I10 100.0 plain 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\nlimit,mode,y10,sample peak,u10,I10 100.0 back 1.0011828499551634 1.4294185962952857 0.001493883831683476 0.007408133607500369\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 40888
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/compensator-design#6",
+          "title": "十题与数字实现复算",
+          "index": 6,
+          "line": 771,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q2 K 400\nKv 250 50.0\nKv 1280 80.0\nKv 3200 200.0\nsingle lead trial 5 wc 15.202871586154606 PM -16.73240954246785 poles [-29.41718449 +0.j           1.75001571+14.49423148j\n   1.75001571-14.49423148j  -4.08284693 +0.j        ]\nsingle lead trial 20 wc 27.00005047733906 PM -34.851569188459166 poles [-40.24407698 +0.j          5.61943826+24.6549339j\n   5.61943826-24.6549339j  -0.99479955 +0.j       ]\nsingle lead trial 100 wc 48.88413061722927 PM -56.34639808825064 poles [-60.91861047 +0.j          15.55908845+43.16993974j\n  15.55908845-43.16993974j  -0.19956644 +0.j        ]\nQ10 ws,ratio,phic,phid 628.3185307179587 31.41592653589793 41.6335393365702 41.6439444943721\nQ10 warped frequency 20.06693441709011\nQ10 coefficients [21, -19] [5, -3] zero,pole 0.9047619047619048 0.6\ndelay at wc20, .05s: phase reduction deg 57.29577951308232\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/frequency-response-design",
+      "title": "回路整形",
+      "sourceHash": "2d0ab54ec9b8838b746ea895af44057be9f67eac64de411ecb4417cd72946733",
+      "notebooks": [
+        {
+          "id": "classic/frequency-response-design#1",
+          "title": "二阶闭环指标",
+          "index": 1,
+          "line": 122,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5109,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "zeta,mr,db,wr,wb,mp 0.1 5.02518907629606 14.023048140744876 9.899494936611665 15.427711592634116 72.9247614287671\nzeta,mr,db,wr,wb,mp 0.3 1.7471413945365304 4.846561069116191 9.055385138137417 14.53689462308294 37.232610492658644\nzeta,mr,db,wr,wb,mp 0.43 1.2879413960366302 2.1979220437531137 7.938513714795736 13.461841854637138 22.39617418716186\nzeta,mr,db,wr,wb,mp 0.5 1.1547005383792517 1.2493873660830008 7.0710678118654755 12.72019649514069 16.303353482158048\nzeta,mr,db,wr,wb,mp 0.59 1.0496088941807364 0.4205500434756223 5.5118055118082685 11.614339889589528 10.069287584114015\nzeta,mr,db,wr,wb,mp 0.7071067811865475 1.0 0.0 0.0 10.0 4.3213918263772255\nzeta,mr,db,wr,wb,mp 1.0 1.0 0.0 0.0 6.435942529055827 0.0\nzeta,mr,db,wr,wb,mp 1.5 1.0 0.0 0.0 3.742391543388519 0.0\nminus3 exact dB -3.010299956639812\nGM 10dB ratio, 10x dB 3.1622776601683795 20.0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 39904
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-response-design#2",
+          "title": "精确时滞与近似边界",
+          "index": 2,
+          "line": 213,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 153,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "delay wc,PM0,critical 3.0842328377167627 17.964235916371386 0.10165739126810197\ntau,PM,classification 0 17.964235916371386 stable\ntau,PM,classification 0.05 9.128559684529995 stable\ntau,PM,classification 0.10165739126810197 0.0 boundary\ntau,PM,classification 0.15 -8.54279277915279 unstable\ntau,PM,classification 0.3 -35.04982147467697 unstable\nexact crossing dReal/dtau 4.533536342499147\nPade order,critical 1 0.1024984394500783\nPade order,critical 2 0.10165874780383155\nPade order,critical 4 0.10165739126847241\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 40692
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-response-design#3",
+          "title": "频段预算与增益矛盾",
+          "index": 3,
+          "line": 292,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 213,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "PM45 wc,K,Kv 0.8442887702247601 11.088931702290383 1.1088931702290383\nplain 1 GMratio,GMdB,PM,wg,wc 110.0 40.8278537031645 83.7474690031226 3.1622776601683795 0.09950367120587843\nplain 1 closed poles [-10.01108515+0.j  -0.87471901+0.j  -0.11419584+0.j]\nformal peak gain,w,mag 1 0.5116695084686335 1.0806586659438193\nplain 10 GMratio,GMdB,PM,wg,wc 11.0 20.827853703164504 47.4039396296765 3.1622776601683795 0.7844079147578312\nplain 10 closed poles [-10.10860673+0.j          -0.44569663+0.88916282j\n  -0.44569663-0.88916282j]\nformal peak gain,w,mag 10 1.1197438324991693 1.6106918780969905\nplain 100 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.014542880497727\nplain 100 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nformal peak gain,w,mag 100 3.0262205649578657 37.98639291683212\nplain 110 GMratio,GMdB,PM,wg,wc 1.0 0.0 0.0 3.1622776601683795 3.1622776601683804\nplain 110 closed poles [-1.10000000e+01+0.j          4.99600361e-16+3.16227766j\n  4.99600361e-16-3.16227766j]\nK110 pole on imaginary axis, infinite formal peak\nplain 200 GMratio,GMdB,PM,wg,wc 0.55 -5.192746210115122 -9.656631132230984 3.1622776601683795 4.233697548541339\nplain 200 closed poles [-11.62053229+0.j           0.31026615+4.13698567j\n   0.31026615-4.13698567j]\nformal peak gain,w,mag 200 4.171523783462141 6.0503168594115735\nlag candidate GMratio,GMdB,PM,wg,wc 18.724535488741783 25.448221053808204 55.18105383037641 3.0790647393149606 0.4999999999999999\nlag candidate closed poles [-10.06080928+0.j          -0.44358106+0.55516141j\n  -0.44358106-0.55516141j  -0.05481333+0.j        ]\ncandidate K,beta,T,Kv 100.0 0.055694620644496665 359.10110830382774 10.0\nK10 S@.01,T@100 0.010001105021545071 9.949885255754102e-06\nK100 S@.01,T@100 0.0010000609994200561 9.949982727465608e-05\ncandidate S@.01,T@100 0.0036674641229137027 5.541548850354611e-06\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 39344
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-response-design#4",
+          "title": "临界整定与完整分子",
+          "index": 4,
+          "line": 378,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "ZN Ku,wu,Tu,Kp,Ti,Td 8.0 1.7320508075688772 3.6275987284684357 4.8 1.8137993642342178 0.45344984105855446\ncorrect numerator,denominator [3.94784176 8.70623695 4.8       ] [1.81379936 0.        ]\nold still-wrong formula GMratio,GMdB,PM,wg,wc 0.9140725213670011 -0.7803869303985629 0.1770550282490433 1.0675489136327303 1.1015609814625635\nold still-wrong formula closed poles [-1.49881641e+00+1.30756162j -1.49881641e+00-1.30756162j\n -1.18358773e-03+1.1014962j  -1.18358773e-03-1.1014962j ]\nZN scale 1 GMratio,GMdB,PM,wg,wc inf inf 30.619096497197546 nan 1.3754511416780952\nZN scale 1 closed poles [-0.40432145+1.42832886j -0.40432145-1.42832886j -1.09567855+0.02057223j\n -1.09567855-0.02057223j]\nZN scale 0.5 GMratio,GMdB,PM,wg,wc inf inf 42.368455312628754 nan 0.9034809438974147\nZN scale 0.5 closed poles [-0.40954833+0.97180555j -0.40954833-0.97180555j -1.09045167+0.02623492j\n -1.09045167-0.02623492j]\nZN scale 0.25 GMratio,GMdB,PM,wg,wc inf inf 56.37054053308617 nan 0.5544545321900978\nZN scale 0.25 closed poles [-1.08285897+0.03155433j -1.08285897-0.03155433j -0.41714103+0.62428705j\n -0.41714103-0.62428705j]\nZN test w,absC,absG,absL 1.0 4.822937935105663 0.3535533905932738 1.705166059577529\nZN test w,absC,absG,absL 1.3 4.8652029297627655 0.2266582754088076 1.102738505573906\nZN test w,absC,absG,absL 1.4 4.937453430502486 0.19636425463482987 0.9695393626748045\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-response-design#5",
+          "title": "灵敏度通道与反例",
+          "index": 5,
+          "line": 505,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 458,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "channels 10 GMratio,GMdB,PM,wg,wc 11.0 20.827853703164504 47.4039396296765 3.1622776601683795 0.7844079147578312\nchannels 10 closed poles [-10.10860673+0.j          -0.44569663+0.88916282j\n  -0.44569663-0.88916282j]\nat crossover K,S,T,identity 10 1.2438452773346231 1.2438452773346231 1.2438452773346236\nchannels 100 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.014542880497727\nchannels 100 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nat crossover K,S,T,identity 100 36.3487691910634 36.34876919106332 36.34876919106399\nchannels 200 GMratio,GMdB,PM,wg,wc 0.55 -5.192746210115122 -9.656631132230984 3.1622776601683795 4.233697548541339\nchannels 200 closed poles [-11.62053229+0.j           0.31026615+4.13698567j\n   0.31026615-4.13698567j]\nat crossover K,S,T,identity 200 5.940337644534628 5.9403376445346225 5.940337644534631\nno-peak counterexample S=s/(s+1),T=1/(s+1) verified\nRHP 1 GMratio,GMdB,PM,wg,wc 6.0 15.563025007672874 inf 2.8284271247461903 nan\nRHP 1 closed poles [-1.25+1.19895788j -1.25-1.19895788j]\nLHP 1 GMratio,GMdB,PM,wg,wc inf inf inf nan nan\nLHP 1 closed poles [-2. +0.j -1.5+0.j]\nRHP 2 GMratio,GMdB,PM,wg,wc 3.0 9.542425094393248 inf 2.8284271247461903 nan\nRHP 2 closed poles [-1.+1.73205081j -1.-1.73205081j]\nLHP 2 GMratio,GMdB,PM,wg,wc inf inf inf nan nan\nLHP 2 closed poles [-2.+0.j -2.+0.j]\nRHP 4 GMratio,GMdB,PM,wg,wc 1.5 3.5218251811136247 38.21321070173815 2.8284271247461903 1.7320508075688776\nRHP 4 closed poles [-0.5+2.39791576j -0.5-2.39791576j]\nLHP 4 GMratio,GMdB,PM,wg,wc inf inf 120.0 nan 1.7320508075688776\nLHP 4 closed poles [-3.+0.j -2.+0.j]\n10dB ratio 3.1622776601683795 10x dB 20.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/frequency-response-design#6",
+          "title": "十一题完整复算",
+          "index": 6,
+          "line": 653,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 408,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 3.1622776601683795 3.014542880497727\nQ1 closed poles [-10.92266321+0.j          -0.03866839+3.02552162j\n  -0.03866839-3.02552162j]\nQ2 zeta0.1 GMratio,GMdB,PM,wg,wc inf inf 11.420619089024342 nan 9.900504936638328\nQ2 zeta0.1 closed poles [-1.+9.94987437j -1.-9.94987437j]\nQ2 zeta0.5 GMratio,GMdB,PM,wg,wc inf inf 51.827292372987756 nan 7.861513777574231\nQ2 zeta0.5 closed poles [-5.+8.66025404j -5.-8.66025404j]\nQ2 zeta1.0 GMratio,GMdB,PM,wg,wc inf inf 76.34541525402449 nan 4.858682717566457\nQ2 zeta1.0 closed poles [-10.+0.j -10.+0.j]\nQ2 zeta1.5 GMratio,GMdB,PM,wg,wc inf inf 83.69781427986959 nan 3.3131892286201174\nQ2 zeta1.5 closed poles [-26.18033989+0.j  -3.81966011+0.j]\nQ2 small-z degree coefficient 114.59155902616465\nQ3 clarified model GMratio,GMdB,PM,wg,wc 0.11000000000000001 -19.172146296835496 -34.324692655715495 3.1622776601683795 8.664742329543396\nQ3 clarified model closed poles [-14.85721039+0.j           1.9286052 +7.97420017j\n   1.9286052 -7.97420017j]\nQ4 GMratio,GMdB,PM,wg,wc 2.000000000000001 6.020599913279627 21.386389751875015 2.0000000000000004 1.3646556076560388\nQ4 closed poles [-3.50975533+0.j         -0.24512233+1.48972353j -0.24512233-1.48972353j]\nQ5 original rejected G2 GMratio,GMdB,PM,wg,wc inf inf 46.4598939057378 nan 1.4648536400676713\nQ5 original rejected G2 closed poles [-19.59951011+0.j          -0.70024495+1.43552819j\n  -0.70024495-1.43552819j]\nQ5 timescale 1 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 3.0842328377167627\nQ5 timescale 1 closed poles [-0.5+3.122499j -0.5-3.122499j]\nQ5 timescale 2 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 6.168465675433525\nQ5 timescale 2 closed poles [-1.+6.244998j -1.-6.244998j]\nQ5 timescale 4 GMratio,GMdB,PM,wg,wc inf inf 17.964235916371365 nan 12.33693135086705\nQ5 timescale 4 closed poles [-2.+12.489996j -2.-12.489996j]\nQ6 mr,db,wr,wb,mp 1.7471413945365304 4.846561069116191 9.055385138137417 14.53689462308294 37.232610492658644\nQ7 GMratio,GMdB,PM,wg,wc 1.6203774750922353 4.192323948301362 45.00000000000003 0.7265425280053609 0.5095254494944287\nQ7 closed poles [-2.12232624+0.j         -1.34681788+1.06739568j -1.34681788-1.06739568j\n -0.092019  +0.65968681j -0.092019  -0.65968681j]\nQ7 K,heuristicMp,heuristicRise 1.7807197670523842 20.534602842208866 3.5326989099092714\nQ7 actual grid step info {'RiseTime': 2.016, 'SettlingTime': nan, 'SettlingMin': 0.3967417927280616, 'SettlingMax': 1.0179466839308338, 'Overshoot': 58.95956894427091, 'Undershoot': 0.0, 'Peak': 1.0179466839308338, 'PeakTime': 6.191, 'SteadyStateValue': 0.6403808784155122}\nQ8 wc,K,PM_K2,totalCritical,remaining 2.3695007318473906 2.571873581307083 70.38039941203871 1.2091995761561452 0.7091995761561452\nQ9 RHP GMratio,GMdB,PM,wg,wc 1.5 3.5218251811136247 38.21321070173815 2.8284271247461903 1.7320508075688776\nQ9 RHP closed poles [-0.5+2.39791576j -0.5-2.39791576j]\nQ9 LHP GMratio,GMdB,PM,wg,wc inf inf 120.0 nan 1.7320508075688776\nQ9 LHP closed poles [-3.+0.j -2.+0.j]\nQ10 ZN GMratio,GMdB,PM,wg,wc inf inf 30.619096497197546 nan 1.3754511416780952\nQ10 ZN closed poles [-0.40432145+1.42832886j -0.40432145-1.42832886j -1.09567855+0.02057223j\n -1.09567855-0.02057223j]\nQ10 candidate GMratio,GMdB,PM,wg,wc inf inf 56.37054053308617 nan 0.5544545321900978\nQ10 candidate closed poles [-1.08285897+0.03155433j -1.08285897-0.03155433j -0.41714103+0.62428705j\n -0.41714103-0.62428705j]\nQ11 GMratio,GMdB,PM,wg,wc 1.1 0.8278537031645016 1.5763281077508111 31.622776601683796 30.14542880497727\nQ11 closed poles [-109.22663214 +0.j           -0.38668393+30.25521622j\n   -0.38668393-30.25521622j]\nQ11 w,absS,dB 1 0.01006094255732955 -39.94722661170186\nQ11 w,absS,dB 10 0.15888262673348072 -15.978471775963548\nQ11 percent 1.006094255732955\nQ7 GMdB 4.192323948301362\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 31356
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 26088
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "classic/design-methods-comparison",
+      "title": "设计方法选型",
+      "sourceHash": "c92b0fe4a7c8f6ba440f9571a165c08ba2fa31d5a6620619ec7a6a2cbbd805ac",
+      "notebooks": [
+        {
+          "id": "classic/design-methods-comparison#1",
+          "title": "候选的完整响应",
+          "index": 1,
+          "line": 113,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4884,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "versions numpy,scipy,control 2.0.2 1.14.1 0.10.2\nP4 poles,DC [-5.+0.j] 0.8\nP4 PM,wc 104.47751218592992 3.872983346207417\nP4 residual,target10to90,t_epsilon,u_peak 0.2 inf inf 4.0\nP4 y20 finite sample 0.8000000000000003\nPI11 poles,DC [-1.+0.j -1.+0.j] 1.0\nPI11 PM,wc 90.0 0.9999999999999999\nPI11 residual,target10to90,t_epsilon,u_peak 0.0 2.1972245773362196 3.912023005428146 1.0\nPI11 y20 finite sample 0.9999999979388463\nPI21 poles,DC [-2.61803399+0.j -0.38196601+0.j] 1.0\nPI21 PM,wc 103.4388894554719 1.817354021023971\nPI21 residual,target10to90,t_epsilon,u_peak 0.0 2.625336654477471 6.875200143735631 2.0\nPI21 y20 finite sample 0.9998670119131462\nPI state roots 1.0 [-1. -1.]\nPI state roots 2.0 [-2.61803399 -0.38196601]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 41844
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/design-methods-comparison#2",
+          "title": "四份合同的筛选",
+          "index": 2,
+          "line": 208,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "contract A A,epsilon,input_limit,deadline 1.0 0.02 3.0 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 True\naccepted fixed candidates ['PI11', 'PI21']\ncontract B A,epsilon,input_limit,deadline 0.25 0.06 1.2 2.0\nP4 continuous entry time,peak,pass 0.5991464547107983 1.0 True\nPI11 continuous entry time,peak,pass 1.4271163556401458 0.25 True\nPI21 continuous entry time,peak,pass 1.0068337096944768 0.5 True\naccepted fixed candidates ['P4', 'PI11', 'PI21']\ncontract C A,epsilon,input_limit,deadline 1.0 0.02 1.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 True\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates ['PI11']\ncontract D A,epsilon,input_limit,deadline 1.0 0.02 0.5 8.0\nP4 continuous entry time,peak,pass inf 4.0 False\nPI11 continuous entry time,peak,pass 3.912023005428146 1.0 False\nPI21 continuous entry time,peak,pass 6.875200143735631 2.0 False\naccepted fixed candidates []\nD reachable upper bound at t8 0.49983226868604874\nD asymptotic upper bound .5, required lower band 0.98\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic/design-methods-comparison#3",
+          "title": "通道与边界复算",
+          "index": 3,
+          "line": 314,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 124,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "P4 measurement noise absT,absCS at100 0.03995009355511379 3.995209100985642\nP4 control noise high frequency limit Kp 4.0\nPI11 measurement noise absT,absCS at100 0.009999500037496875 1.0\nPI11 control noise high frequency limit Kp 1.0\nPI21 measurement noise absT,absCS at100 0.019993253483945202 1.9994253121629082\nPI21 control noise high frequency limit Kp 2.0\nTp,full roots 0.5 [-3.41421356+0.j -0.58578644+0.j]\nTp,full roots 1.0 [-1.+0.j -1.+0.j]\nTp,full roots 2.0 [-0.5+0.5j -0.5-0.5j]\nexercise2 P gain, pole,residual ratio 4.0 -5.0 0.2\nexercise2 required P gain for .02 49.0\nexercise3 PI11 full polynomial [1.0, 2.0, 1.0]\nexercise4 B times [0.5991464547107983, 1.4271163556401458, 1.0068337096944768]\nexercise5 D lower required 0.98 max equilibrium .5\nversions numpy,scipy,control 2.0.2 1.14.1 0.10.2\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 33376
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 69,
-    "notebooks": 285,
-    "enabled": 257,
-    "codeOnly": 28
+    "lessons": 73,
+    "notebooks": 325,
+    "enabled": 300,
+    "codeOnly": 25
   },
   "releaseTotals": {
-    "lessons": 69,
-    "notebooks": 285,
-    "enabled": 255,
-    "codeOnly": 30
+    "lessons": 73,
+    "notebooks": 325,
+    "enabled": 298,
+    "codeOnly": 27
   },
   "provenance": [
     {
@@ -10026,6 +11074,121 @@
       "testedAt": "2026-10-17T21:22:12.491Z",
       "url": "http://localhost:8080/python-expansion.html?lesson=math/numerical-methods",
       "inputPath": ".agent/semester-03/math-18/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T21:59:21.184Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/system-modeling",
+      "inputPath": ".agent/semester-03/classic-01/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T22:05:04.464Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/system-modeling",
+      "inputPath": ".agent/semester-03/classic-01/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T22:09:56.856Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/system-modeling",
+      "inputPath": ".agent/semester-03/classic-01/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T22:32:41.998Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/transfer-function",
+      "inputPath": ".agent/semester-03/classic-02/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-17T23:57:49.069Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/time-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-03/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T00:00:16.050Z",
+      "url": "http://localhost:8080/python-expansion.html?lesson=classic/time-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-03/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T00:13:44.384Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/time-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-03/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T00:21:24.299Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/time-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-03/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T00:36:33.422Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/stability-analysis",
+      "inputPath": ".agent/semester-03/classic-04/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T01:09:15.997Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/frequency-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-05/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T01:12:28.712Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/frequency-domain-analysis",
+      "inputPath": ".agent/semester-03/classic-05/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T01:41:53.251Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/root-locus",
+      "inputPath": ".agent/semester-03/classic-06/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T01:53:45.906Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/root-locus",
+      "inputPath": ".agent/semester-03/classic-06/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T02:11:43.663Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/pid-controller",
+      "inputPath": ".agent/semester-03/classic-07/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T02:20:24.199Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/pid-controller",
+      "inputPath": ".agent/semester-03/classic-07/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T02:54:44.696Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/compensator-design",
+      "inputPath": ".agent/semester-03/classic-08/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T03:02:52.787Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/compensator-design",
+      "inputPath": ".agent/semester-03/classic-08/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T03:28:37.053Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/frequency-response-design",
+      "inputPath": ".agent/semester-03/classic-09/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T03:52:02.379Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/design-methods-comparison",
+      "inputPath": ".agent/semester-03/classic-10/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T03:57:08.165Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/design-methods-comparison",
+      "inputPath": ".agent/semester-03/classic-10/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T04:18:57.815Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/classic-case-study",
+      "inputPath": ".agent/semester-03/classic-11/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T04:22:23.735Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/classic-case-study",
+      "inputPath": ".agent/semester-03/classic-11/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-18T04:26:55.166Z",
+      "url": "http://127.0.0.1:8080/python-expansion.html?lesson=classic/classic-case-study",
+      "inputPath": ".agent/semester-03/classic-11/browser-python.json"
     }
   ]
 }

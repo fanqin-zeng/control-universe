@@ -34,9 +34,11 @@
 | DEP02 | 首次远端发布及公网验收 | [x] | docs/deployment/first-release.md;docs/deployment/first-release-http.json;docs/deployment/first-release-actions.json |
 | DEP03 | Pyodide数学两课试验、控制库支持清单与授权发布 | [x] | docs/deployment/pyodide-trial.md;docs/deployment/pyodide-public-results.json;docs/deployment/pyodide-public-actions.json;docs/deployment/pyodide-public-ui.json |
 | DEP04 | Pyodide逐课扩展、实验级降级与待办清单、授权发布 | [x] | docs/deployment/python-expansion-delivery.md;docs/deployment/python-expansion.md;docs/deployment/python-expansion-final-public-actions.json;docs/deployment/python-expansion-final-public-http.json;docs/deployment/python-expansion-final-public-ui.json |
+| DEP05 | 数学章18课现有成果授权发布与公网验收 | [x] | docs/deployment/math18-release.md;docs/deployment/math18-public-actions.json;docs/deployment/math18-public-http.json;docs/deployment/math18-public-browser.json;docs/deployment/math18-public-python.json;发布commit:f01e0bbb52308a9cf277f1f2ff65b377c7e73cac |
 | W06 | MATH-03开篇改用生活直观例子并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第3条，另课返修 |
 | W07 | MATH-04开篇建立已有概念或生活入口并讨论验收 | [ ] | .agent/semester-03/proofreading-followup-2026-10-18.md;批阅第4条，另课返修 |
 | W08 | 数学不等号被轻量MDX扫描误认JSX导致实验漏检，补强扫描并全仓审计 | [ ] | .agent/semester-03/math-11/scanner-followup.md;.agent/semester-03/math-11/scanner-count.json |
+| W09 | 开发IAB直连本地Jupyter网关的连接边界复核 | [ ] | .agent/semester-03/classic-01/acceptance.md;IAB页面显示Failed to fetch，8891原始严格内核与生产Pyodide实跑正常；后续区分浏览器环境/跨端口连接原因，不伪记原生UI通过 |
 | P06 | 固化批阅新增开篇入口要求并核对MATH-06 | [x] | .agent/semester-03/proofreading-followup-2026-10-18.md;.agent/skills/wiki-discussion/references/semester-03-core.md;docs/discuss-log/semester-03/02-math/06-multivariable-calculus.md |
 <!-- S3-TASKS-END -->
 
@@ -72,17 +74,17 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| CLASSIC-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| CLASSIC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| CLASSIC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| CLASSIC-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/01-system-modeling.md;.agent/semester-03/classic-01/acceptance.md;commit:c8fb52614a20e35331d666f2ab0d5c68e80e7508 |
+| CLASSIC-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/02-transfer-function.md;.agent/semester-03/classic-02/acceptance.md;commit:1b3481632b724d91c6d9eee481b19ccbff2e864d |
+| CLASSIC-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/03-time-domain-analysis.md;.agent/semester-03/classic-03/acceptance.md;commit:54e282c063f164ae4d6c21cfa6ab7af57be6b0c0 |
+| CLASSIC-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/04-stability-analysis.md;.agent/semester-03/classic-04/acceptance.md;commit:e2ef9828b225e15b2fa7714e45589802605b86ea |
+| CLASSIC-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/05-frequency-domain-analysis.md;.agent/semester-03/classic-05/acceptance.md;commit:be726e8967190e4d01e979fcf6fec62c9183a7cf |
+| CLASSIC-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/06-root-locus.md;.agent/semester-03/classic-06/acceptance.md;commit:605c2827164fcbd5c0d9cbed0a6055a79108a9db |
+| CLASSIC-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/07-pid-controller.md;.agent/semester-03/classic-07/acceptance.md;commit:b6d6322da07120330c796585a4864d95cf0bbd2f |
+| CLASSIC-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/08-compensator-design.md;.agent/semester-03/classic-08/acceptance.md;commit:5c65da108a2376b81e52b6aeed49c4cda86a36ef |
+| CLASSIC-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/09-frequency-response-design.md;.agent/semester-03/classic-09/acceptance.md;commit:950cbc5627c0f6ea70709fafa0c8c9d1a0c361e7 |
+| CLASSIC-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/10-design-methods-comparison.md;.agent/semester-03/classic-10/acceptance.md;commit:5194247ebad0d62c72b96e26ce67eb123f016f1f |
+| CLASSIC-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/03-classic/11-classic-case-study.md;.agent/semester-03/classic-11/acceptance.md;commit:eed1fd736d54b3bd5620ee4884957aa3609f88a3 |
 
 ### 现代控制
 

@@ -1,0 +1,131 @@
+{
+  "source": "content/classic/root-locus.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 344,
+      "title": "规则与主例复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 354,
+          "delim": "`",
+          "code": "G=ct.tf([1],[1,6,8,0]);gains=np.unique(np.r_[np.linspace(0,60,601),16*np.sqrt(3)/9,224/27,48])\r\nrl=ct.root_locus_map(G,gains=gains)\r\nfor roots,k in zip(rl.loci,rl.gains):assert np.max(abs(np.polyval([1,6,8,k],roots)))<1e-8\r\nfig,ax=plt.subplots(figsize=(6,5));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)\r\nax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_xlabel('Real (1/s)');ax.set_ylabel('Imag (1/s)');plt.show()\r\nfor sd in np.roots([3,12,8]):print('main derivative candidate s,K:',sd,-sd*(sd+2)*(sd+4))\r\nfor k in [0,16*np.sqrt(3)/9,224/27,10,48,60]:print('main K,poles:',k,np.roots([1,6,8,k]))\r\nprint('main centroid/asymptote degrees:',sum([0,-2,-4])/3,[(2*i+1)*180/3 for i in range(3)])\r\ns=-1+1j;print('angle test 135/45 and K:',np.degrees(np.angle(s)),np.degrees(np.angle(s+2)),abs(s*(s+2)))\r\nprint('K48 factor:',np.polymul([1,6],[1,0,8]))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 384,
+      "title": "几何指标与完整响应",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\ndef settling(num,den):\r\n p=np.roots(den)\r\n if np.max(p.real)>=-1e-10:return None\r\n r,ps,_=residue(num,np.polymul(den,[1,0]))\r\n mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]\r\n assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5\r\n def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))\r\n def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))\r\n def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))\r\n T=1.\r\n while envelope(T)>.005:T*=2\r\n def events(dt):\r\n  t=np.linspace(0,T,int(np.ceil(T/dt))+1)\r\n  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))\r\n  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]\r\n  cuts=[0.]+extrema+[T];cross=[]\r\n  for a,b in zip(cuts[:-1],cuts[1:]):\r\n   for target in [-.02,.02]:\r\n    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))\r\n  return sorted(cross),extrema\r\n dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))\r\n cross,extrema=events(dt);fine,_=events(dt/2)\r\n assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9\r\n ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])\r\n assert envelope(T)<.005 and T>ts\r\n return ts,100*peak,T,envelope(T),len(cross)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 420,
+          "delim": "`",
+          "code": "G=ct.tf([1],[1,6,8,0]);rl=ct.root_locus_map(G,gains=np.linspace(0,60,601))\r\nfig,ax=plt.subplots(figsize=(6,6));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)\r\nfor z in [.3,.5,1/np.sqrt(2)]:\r\n r=np.linspace(0,7,101);ax.plot(-z*r,np.sqrt(1-z*z)*r,'g--');ax.plot(-z*r,-np.sqrt(1-z*z)*r,'g--')\r\ntheta=np.linspace(np.pi/2,3*np.pi/2,301)\r\nfor wn in [2,4,6]:ax.plot(wn*np.cos(theta),wn*np.sin(theta),':',color='orange')\r\nax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_xlabel('Real');ax.set_ylabel('Imag');plt.show()\r\nk=224/27;T=ct.tf([k],[1,6,8,k]);t=np.linspace(0,10,501);_,y=ct.step_response(T,t)\r\nprint('default K,poles,y(0),y(10):',k,ct.poles(T),y[0],y[-1])\r\nprint('default full settling/MP%,tailT,tailBound,crossings:',settling([k],[1,6,8,k]))\r\nz=-np.log(.05)/np.sqrt(np.pi**2+np.log(.05)**2);print('5% second-order zeta,angle degrees:',z,np.degrees(np.arccos(z)))\r\nprint('exact 45degree zeta:',1/np.sqrt(2))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 529,
+      "title": "选择阻尼候选",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\ndef settling(num,den):\r\n p=np.roots(den)\r\n if np.max(p.real)>=-1e-10:return None\r\n r,ps,_=residue(num,np.polymul(den,[1,0]))\r\n mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]\r\n assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5\r\n def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))\r\n def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))\r\n def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))\r\n T=1.\r\n while envelope(T)>.005:T*=2\r\n def events(dt):\r\n  t=np.linspace(0,T,int(np.ceil(T/dt))+1)\r\n  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))\r\n  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]\r\n  cuts=[0.]+extrema+[T];cross=[]\r\n  for a,b in zip(cuts[:-1],cuts[1:]):\r\n   for target in [-.02,.02]:\r\n    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))\r\n  return sorted(cross),extrema\r\n dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))\r\n cross,extrema=events(dt);fine,_=events(dt/2)\r\n assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9\r\n ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])\r\n assert envelope(T)<.005 and T>ts\r\n return ts,100*peak,T,envelope(T),len(cross)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 565,
+          "delim": "`",
+          "code": "s=-2/3+2j*np.sqrt(3)/3;k=-s*(s+2)*(s+4)\r\nprint('zeta .5 point,K,omega_n:',s,k,abs(s))\r\nprint('vector magnitudes:',*[abs(s+a) for a in [0,2,4]])\r\nprint('vector angles:',*[np.angle(s+a,deg=True) for a in [0,2,4]])\r\nfor k in [1,3,16*np.sqrt(3)/9,224/27,10,47,48]:\r\n p=np.roots([1,6,8,k]);z=[-q.real/abs(q) for q in p]\r\n print('K,poles,individual geometric zeta:',k,p,z)\r\nprint('default separated decay ratio:',(14/3)/(2/3))\r\nprint('Two-pole formula MP%,not exact third-order:',100*np.exp(-np.pi/np.sqrt(3)))\r\nprint('default full third-order:',settling([224/27],[1,6,8,224/27]))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 615,
+      "title": "零点位置与PD观察",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\ndef settling(num,den):\r\n p=np.roots(den)\r\n if np.max(p.real)>=-1e-10:return None\r\n r,ps,_=residue(num,np.polymul(den,[1,0]))\r\n mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]\r\n assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5\r\n def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))\r\n def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))\r\n def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))\r\n T=1.\r\n while envelope(T)>.005:T*=2\r\n def events(dt):\r\n  t=np.linspace(0,T,int(np.ceil(T/dt))+1)\r\n  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))\r\n  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]\r\n  cuts=[0.]+extrema+[T];cross=[]\r\n  for a,b in zip(cuts[:-1],cuts[1:]):\r\n   for target in [-.02,.02]:\r\n    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))\r\n  return sorted(cross),extrema\r\n dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))\r\n cross,extrema=events(dt);fine,_=events(dt/2)\r\n assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9\r\n ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])\r\n assert envelope(T)<.005 and T>ts\r\n return ts,100*peak,T,envelope(T),len(cross)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 651,
+          "delim": "`",
+          "code": "fig,axes=plt.subplots(1,2,figsize=(10,5))\r\nfor ax,z in zip(axes,[None,1]):\r\n G=ct.tf([1] if z is None else [1,z],[1,6,8,0]);rl=ct.root_locus_map(G,gains=np.linspace(0,60,601));ax.plot(rl.loci.real,rl.loci.imag,'.',markersize=2)\r\n ax.set_xlim(-8,2);ax.set_ylim(-5,5);ax.set_aspect('equal');ax.set_title('Original' if z is None else 'Added zero -1')\r\nplt.tight_layout();plt.show()\r\nfor z in [1,6,10]:print('zero z,centroid,K upper:',z,(z-6)/2,np.inf if z<=6 else 48/(z-6))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 658,
+          "delim": "`",
+          "code": "fig,ax=plt.subplots(figsize=(7,4));t=np.linspace(0,10,2001)\r\nfor k in [1,10,40]:\r\n for z in [None,1,10]:\r\n  num=[k] if z is None else [k,k*z];den=[1,6,8,k] if z is None else [1,6,8+k,k*z]\r\n  p=np.roots(den);result=settling(num,den)\r\n  print('same K,z,poles,ts/MP/tail:',k,z,p,result)\r\n  if k==10:\r\n   _,y=ct.step_response(ct.tf(num,den),t);ax.plot(t,y,label='original' if z is None else 'zero -'+str(z))\r\nax.set_xlabel('t(s)');ax.set_ylabel('y(t)');ax.legend();plt.show()\r\nprint('Same-K illustration, not independently tuned ranking. z1 at K1 is slower; z10 at K40 is unstable. Ideal derivative needs filtering in hardware.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 715,
+      "title": "PI与广义轨迹",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 725,
+          "delim": "`",
+          "code": "for z in [.1,1,2]:\r\n print('PI z,positive K upper:',z,48-36*z)\r\n for k in [1,10,40]:print('PI z,K,poles:',z,k,np.roots([1,6,8,k,k*z]))\r\nprint('For stable PI, original plant type1 becomes type2: ramp error0; original P already has step error0.')\r\nfor alpha in [0,1,4]:\r\n p=np.roots([1,alpha,1]);print('parameter s^2+alpha*s+1 roots:',alpha,p)\r\nfor k in [0,1,4]:print('positive feedback 1/[s(s+2)],K,poles:',k,np.roots([1,2,-k]))\r\nprint('At K0, characteristic D remains but the reduced input-output transfer is zero. No hidden unstable cancellation may be discarded.')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 1188,
+      "title": "七题答案复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ct\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\nfrom scipy.optimize import brentq\r\nprint('python-control',ct.__version__)\r\ndef settling(num,den):\r\n p=np.roots(den)\r\n if np.max(p.real)>=-1e-10:return None\r\n r,ps,_=residue(num,np.polymul(den,[1,0]))\r\n mask=np.abs(ps)>1e-9;r=r[mask];ps=ps[mask]\r\n assert np.min([abs(a-b) for i,a in enumerate(ps) for b in ps[i+1:]])>1e-5\r\n def err(t):return float(np.real(np.sum(r*np.exp(ps*t))))\r\n def deriv(t):return float(np.real(np.sum(r*ps*np.exp(ps*t))))\r\n def envelope(t):return float(np.sum(abs(r)*np.exp(ps.real*t)))\r\n T=1.\r\n while envelope(T)>.005:T*=2\r\n def events(dt):\r\n  t=np.linspace(0,T,int(np.ceil(T/dt))+1)\r\n  v=np.real(np.sum((r*ps)[:,None]*np.exp(ps[:,None]*t),axis=0))\r\n  extrema=[brentq(deriv,t[i],t[i+1],xtol=1e-12) for i in range(len(t)-1) if v[i]*v[i+1]<0]\r\n  cuts=[0.]+extrema+[T];cross=[]\r\n  for a,b in zip(cuts[:-1],cuts[1:]):\r\n   for target in [-.02,.02]:\r\n    if (err(a)-target)*(err(b)-target)<0:cross.append(brentq(lambda t:err(t)-target,a,b,xtol=1e-12))\r\n  return sorted(cross),extrema\r\n dt=min(.02,np.pi/(32*max(1.,np.max(abs(ps.imag)))))\r\n cross,extrema=events(dt);fine,_=events(dt/2)\r\n assert len(cross)==len(fine) and np.max(abs(np.asarray(cross)-fine))<1e-9\r\n ts=cross[-1];peak=max([err(t) for t in [0.]+extrema+[T]]+[0.])\r\n assert envelope(T)<.005 and T>ts\r\n return ts,100*peak,T,envelope(T),len(cross)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 1224,
+          "delim": "`",
+          "code": "print('Q1 centroid,breakK,all positive K stable:',-6/2,9)\r\nfor k in [1,9,20]:print('Q1 K,poles',k,np.roots([1,6,k]))\r\nfor sd in np.roots([3,18,23]):print('Q2 candidates s,K:',sd,-(sd+1)*(sd+3)*(sd+5))\r\nprint('Q2 centroid,wcrit,Kcrit:',-3,np.sqrt(23),9*23-15)\r\nfor sd in [-2+np.sqrt(2),-2-np.sqrt(2)]:print('Q3 s,K:',sd,-sd*(sd+1)/(sd+2))\r\nprint('Q3 centroid:',1,'complex arc circle center/radius:',-2,np.sqrt(2))\r\nsd=(-10+2*np.sqrt(7))/3;print('Q4 break s,K:',sd,-sd*(sd+4)*(sd+6))\r\ns=-1.2+1.2j*np.sqrt(3);print('Q4 zeta .5 K:',-s*(s+4)*(s+6),'angles:',*[np.angle(s+a,deg=True) for a in [0,4,6]])\r\nprint('Q4 magnitudes:',*[abs(s+a) for a in [0,4,6]])\r\nprint('Q4 crossing K,w:',240,np.sqrt(24),'third pole:',-7.6,'decay ratio:',7.6/1.2)\r\nprint('Q5 candidate K bounds:',448/27,880/27,'boundary zeta:',2/np.sqrt(10))\r\nfor k in [448/27,20,25,880/27]:print('Q5 K,actual ts/MP/tail:',k,settling([k],[1,10,24,k]))\r\nfor k in [1,10,40]:\r\n print('Q6 K,original poles:',k,np.roots([1,4,0,k]),'PDzero2 poles:',np.roots([1,4,k,2*k]))\r\nprint('Q6 centroid and departure degrees:',-4/3,[-90,90])\r\nfor z in [1,6,10]:print('Q7 z,centroid,strict upper:',z,(z-6)/2,np.inf if z<=6 else 48/(z-6))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

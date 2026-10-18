@@ -1,289 +1,46 @@
 "use client";
+import {useMemo,useState} from "react";
+import type {EChartsOption} from "echarts";
+import {useECharts} from "@/components/wiki/use-echarts";
+import {responseAt,responseCurve,responseMetrics,firstOrder} from "@/lib/time-domain";
 
-import { useState, useMemo } from "react";
-import { useECharts } from "@/components/wiki/use-echarts";
-import type { EChartsOption } from "echarts";
-
-const T_END = 15;
-const NUM_POINTS = 1500;
-
-export function SecondOrderStepExplorer() {
-  const [zeta, setZeta] = useState(0.5);
-  const [wn, setWn] = useState(2.0);
-
-  const curveData = useMemo(() => {
-    const dt = T_END / NUM_POINTS;
-    const points: [number, number][] = [];
-
-    for (let i = 0; i <= NUM_POINTS; i++) {
-      const t = i * dt;
-      let y: number;
-
-      if (zeta === 0) {
-        y = 1 - Math.cos(wn * t);
-      } else if (zeta < 1) {
-        const wd = wn * Math.sqrt(1 - zeta * zeta);
-        const phi = Math.acos(zeta);
-        y = 1 - (Math.exp(-zeta * wn * t) / Math.sqrt(1 - zeta * zeta)) * Math.sin(wd * t + phi);
-      } else if (zeta === 1) {
-        y = 1 - (1 + wn * t) * Math.exp(-wn * t);
-      } else {
-        const sq = Math.sqrt(zeta * zeta - 1);
-        const s1 = wn * (-zeta + sq);
-        const s2 = wn * (-zeta - sq);
-        const e1 = Math.exp(s1 * t);
-        const e2 = Math.exp(s2 * t);
-        y = 1 + (s1 * e1 - s2 * e2) / (s2 - s1) + (e2 - e1) / (s2 - s1);
-      }
-
-      points.push([t, y]);
-    }
-    return points;
-  }, [zeta, wn]);
-
-  const isUnderdamped = zeta > 0 && zeta < 1;
-  const wd = isUnderdamped ? wn * Math.sqrt(1 - zeta * zeta) : null;
-  const tp = wd ? Math.PI / wd : null;
-  const Mp = isUnderdamped ? Math.exp(-Math.PI * zeta / Math.sqrt(1 - zeta * zeta)) * 100 : 0;
-  const ts = isUnderdamped ? 4 / (zeta * wn) : null;
-
-  const dampingLabel = zeta === 0 ? "无阻尼" : zeta < 1 ? "欠阻尼" : zeta === 1 ? "临界阻尼" : "过阻尼";
-  const dampingColor = zeta === 0 ? "#f59e0b" : zeta < 1 ? "#2ecc71" : zeta === 1 ? "#3498db" : "#e74c3c";
-
-  const yMax = zeta === 0 ? 2.2 : zeta < 0.3 ? 1.8 : 1.5;
-
-  const option: EChartsOption = useMemo(() => {
-    const markData: EChartsOption[] = [];
-    void markData;
-
-    const seriesMarkPoint = isUnderdamped && tp !== null
-      ? {
-          data: [
-            {
-              name: "Peak",
-              coord: [tp, 1 + Mp / 100] as [number, number],
-              symbol: "circle",
-              symbolSize: 10,
-              itemStyle: { color: "#ef4444" },
-              label: {
-                show: true,
-                formatter: `Mp = ${Mp.toFixed(1)}%`,
-                fontSize: 11,
-                color: "#ef4444",
-              },
-            },
-          ],
-        }
-      : undefined;
-
-    const markLineData: Array<{ yAxis?: number; xAxis?: number; lineStyle?: Record<string, unknown>; label?: Record<string, unknown> }> = [
-      {
-        yAxis: 1.0,
-        lineStyle: { type: "dashed" as const, color: "#6b7280", width: 1 },
-        label: { show: false },
-      },
-    ];
-
-    if (isUnderdamped && tp !== null) {
-      markLineData.push({
-        xAxis: tp,
-        lineStyle: { color: "#ef4444", width: 2, type: "solid" as const },
-        label: { show: true, formatter: `tp=${tp.toFixed(2)}s`, position: "start", fontSize: 10, color: "#ef4444" },
-      });
-    }
-
-    if (ts !== null) {
-      markLineData.push({
-        xAxis: ts,
-        lineStyle: { color: "#8b5cf6", width: 2, type: "solid" as const },
-        label: { show: true, formatter: `ts=${ts.toFixed(2)}s`, position: "start", fontSize: 10, color: "#8b5cf6" },
-      });
-    }
-
-    return {
-      animation: false,
-      grid: { left: 60, right: 30, top: 50, bottom: 50 },
-      xAxis: {
-        type: "value",
-        name: "t (s)",
-        min: 0,
-        max: T_END,
-        nameLocation: "center",
-        nameGap: 30,
-      },
-      yAxis: {
-        type: "value",
-        name: "y(t)",
-        min: 0,
-        max: yMax,
-      },
-      series: [
-        {
-          type: "line",
-          data: curveData,
-          smooth: true,
-          showSymbol: false,
-          lineStyle: { width: 2.5, color: "#3b82f6" },
-          markLine: {
-            silent: true,
-            symbol: "none",
-            data: markLineData,
-          },
-          markPoint: seriesMarkPoint,
-          markArea: ts !== null
-            ? {
-                silent: true,
-                data: [
-                  [
-                    { yAxis: 0.98, itemStyle: { color: "rgba(16,185,129,0.08)" } },
-                    { yAxis: 1.02 },
-                  ],
-                ],
-              }
-            : undefined,
-        },
-      ],
-      title: {
-        text: `二阶系统阶跃响应  ζ=${zeta.toFixed(2)} (${dampingLabel}), ωn=${wn.toFixed(1)} rad/s`,
-        left: "center",
-        textStyle: { fontSize: 13, fontWeight: 500, color: "#333" },
-      },
-    };
-  }, [curveData, zeta, wn, dampingLabel, yMax, isUnderdamped, tp, Mp, ts]);
-
-  const chartRef = useECharts(option);
-
-  return (
-    <div style={s.wrapper}>
-      <div ref={chartRef} style={s.chart} />
-
-      <div style={s.controls}>
-        <div style={s.sliderRow}>
-          <label style={s.label}>ζ 阻尼比</label>
-          <input
-            type="range"
-            min={0}
-            max={1.5}
-            step={0.05}
-            value={zeta}
-            onChange={(e) => setZeta(parseFloat(e.target.value))}
-            style={s.slider}
-          />
-          <span style={s.value}>{zeta.toFixed(2)}</span>
-        </div>
-        <div style={s.sliderRow}>
-          <label style={s.label}>ωn 自然频率</label>
-          <input
-            type="range"
-            min={1.0}
-            max={5.0}
-            step={0.1}
-            value={wn}
-            onChange={(e) => setWn(parseFloat(e.target.value))}
-            style={s.slider}
-          />
-          <span style={s.value}>{wn.toFixed(1)}</span>
-        </div>
-
-        <div style={s.infoGrid}>
-          <div style={s.infoItem}>
-            <span style={s.infoLabel}>阻尼状态</span>
-            <span style={{ ...s.infoValue, color: dampingColor }}>{dampingLabel}</span>
-          </div>
-          {isUnderdamped ? (
-            <>
-              <div style={s.infoItem}>
-                <span style={s.infoLabel}>ωd</span>
-                <span style={s.infoValue}>{wd!.toFixed(2)} rad/s</span>
-              </div>
-              <div style={s.infoItem}>
-                <span style={s.infoLabel}>tp</span>
-                <span style={s.infoValue}>{tp!.toFixed(2)} s</span>
-              </div>
-              <div style={s.infoItem}>
-                <span style={s.infoLabel}>Mp</span>
-                <span style={s.infoValue}>{Mp.toFixed(1)}%</span>
-              </div>
-              <div style={s.infoItem}>
-                <span style={s.infoLabel}>ts (2%)</span>
-                <span style={s.infoValue}>{ts!.toFixed(2)} s</span>
-              </div>
-            </>
-          ) : (
-            <div style={s.infoItem}>
-              <span style={s.infoLabel}>特性</span>
-              <span style={s.infoValue}>无超调，无振荡</span>
-            </div>
-          )}
-        </div>
-      </div>
+type Mode="impulse"|"first"|"second"|"metrics"|"road";
+const names={impulse:"冲激响应探索",first:"一阶阶跃探索",second:"二阶响应探索",metrics:"时域指标探索",road:"路面阶跃探索"};
+function TimeDomainPanel({mode}:{mode:Mode}){
+  const [zeta,setZeta]=useState(.5),[wn,setWn]=useState(8),[tau,setTau]=useState(.5);
+  const end=mode==="first"?30:mode==="second"?15:3,count=mode==="second"?1500:mode==="first"?500:600;
+  const data=useMemo(()=>mode==="first"?firstOrder(tau).samples:responseCurve(zeta,wn,end,count,mode==="impulse"?"impulse":mode==="road"?"road":"step"),[mode,tau,zeta,wn,end,count]);
+  const metrics=useMemo(()=>mode==="first"||mode==="impulse"?null:responseMetrics(zeta,wn,mode==="road"),[mode,zeta,wn]);
+  const one=useMemo(()=>firstOrder(tau),[tau]);
+  const option:EChartsOption=useMemo(()=>({animation:false,grid:{left:54,right:18,top:42,bottom:48},
+    title:{text:names[mode],left:"center",textStyle:{fontSize:13,color:"#334155"}},
+    xAxis:{type:"value",name:"时间 (s)",min:0,max:end,nameLocation:"center",nameGap:28},
+    yAxis:{type:"value",name:mode==="impulse"?"h (s⁻¹)":"归一化输出",min:mode==="impulse"?-10:0,max:mode==="impulse"?10:2.1},
+    series:[{name:"响应",type:"line",data,smooth:false,showSymbol:false,lineStyle:{color:"#2563eb",width:2.3},
+      markPoint:metrics?.tp!=null&&metrics.tp<=end?{data:[{name:"连续峰",coord:[metrics.tp,1+metrics.mp!/100] as [number,number],symbol:"circle",symbolSize:9,label:{show:false}}]}:undefined,
+      markArea:mode!=="impulse"&&(mode==="first"||zeta>0)?{silent:true,data:[[{yAxis:.98,itemStyle:{color:"rgba(16,185,129,.12)"}},{yAxis:1.02}]]}:undefined,
+      markLine:{silent:true,symbol:"none",label:{show:false},data:[{yAxis:mode==="impulse"?0:1}]}}]}),[data,end,mode,metrics,zeta]);
+  const chartRef=useECharts(option);
+  const fmt=(x:number|null)=>x===null?"不适用":x.toFixed(6);
+  const controls=mode==="first"?[{name:"时间常数",value:tau,min:.2,max:5,step:.1,set:setTau}]:[
+    {name:"阻尼比",value:zeta,min:mode==="second"?0:.1,max:2,step:.05,set:setZeta},
+    ...(mode==="second"?[{name:"自然频率",value:wn,min:1,max:10,step:.5,set:setWn}]:[])];
+  return <section aria-label={names[mode]} style={{border:"1px solid #cbd5e1",borderRadius:8,padding:14,margin:"20px 0",background:"#f8fafc",color:"#1e293b"}}>
+    <p style={{marginTop:0}}>{mode==="first"?"G=1/(Ts+1)，零初值，单位阶跃。":mode==="road"?"Y/R=(2ζωn s+ωn²)/(s²+2ζωn s+ωn²)，m=250kg、k=16000N/m，理想路面阶跃，显示y/R₀。":mode==="impulse"?"G=ωn²/(s²+2ζωn s+ωn²)，零初值，单位面积冲激；h的单位是s⁻¹。":"G=ωn²/(s²+2ζωn s+ωn²)，零初值，单位阶跃；输出无量纲。"}</p>
+    <div ref={chartRef} style={{width:"100%",height:310}}/>
+    {controls.map(c=><label key={c.name} style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"center",marginTop:12}}>
+      <span style={{minWidth:85}}>{c.name}</span><input aria-label={names[mode]+c.name} type="range" min={c.min} max={c.max} step={c.step} value={c.value} onChange={e=>c.set(Number(e.target.value))} style={{flex:"1 1 90px",minWidth:0}}/><span>{c.value.toFixed(2)}</span>
+    </label>)}
+    <div style={{overflowWrap:"anywhere",lineHeight:1.8}}>
+      {mode==="first"?<p>T={tau.toFixed(2)}s；tᵣ(10→90%)={fmt(one.tr)}s；tₛ(2%)={fmt(one.ts2)}s；tₛ(5%)={fmt(one.ts5)}s。均为精确阈值。</p>:mode==="impulse"?<p>ζ={zeta.toFixed(2)}，ωn=8rad/s；h(0.25s)={fmt(responseAt(zeta,8,.25,"impulse"))}s⁻¹；3s末样={fmt(data.at(-1)![1])}s⁻¹。</p>:<>
+      <p>ζ={zeta.toFixed(2)}，ωn={wn.toFixed(2)}rad/s{mode==="road"?`，c=${(4000*zeta).toFixed(1)}N·s/m`:""}；Mₚ={fmt(metrics!.mp)}{metrics!.mp===null?"":"%"}；tₚ={fmt(metrics!.tp)}{metrics!.tp===null?"":"s"}；tₛ(2%)={fmt(metrics!.ts)}{metrics!.ts===null?"":"s"}。</p>
+      <p>0→100%上升时间={fmt(metrics!.tr)}{metrics!.tr===null?"":"s"}；{end}s末样={fmt(data.at(-1)![1])}；采样最大={fmt(Math.max(...data.map(x=>x[1])))}。末样不是极限，采样峰不冒充连续峰。</p>
+      {zeta===0&&<p>无阻尼：不存在阶跃稳态极限，调节时间与相对稳态超调不适用。</p>}
+      </>}
+      <p>{mode==="first"?"改变T只缩放时间，不改变最终值1。":mode==="impulse"?"同一归一化模型中，冲激响应等于阶跃响应的导数。":mode==="road"?"这里是带零点的基座阶跃响应，不能套无零点超调公式，也不等于舒适性。":"调节时间按连续响应的最后出带边界计算，可能超过图的时间窗口。"}</p>
     </div>
-  );
+    <button type="button" onClick={()=>{setZeta(.5);setWn(8);setTau(.5);}} style={{padding:"6px 12px",background:"white",border:"1px solid #94a3b8",borderRadius:6,color:"#1e293b"}}>恢复{names[mode]}默认值</button>
+  </section>;
 }
 
-const s: Record<string, React.CSSProperties> = {
-  wrapper: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 8,
-    padding: 16,
-    margin: "20px 0",
-    background: "#fafafa",
-  },
-  chart: {
-    width: "100%",
-    height: 340,
-  },
-  controls: {
-    marginTop: 16,
-    padding: 16,
-    background: "#fff",
-    borderRadius: 6,
-    border: "1px solid #e5e7eb",
-  },
-  sliderRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 500,
-    color: "#374151",
-    minWidth: 100,
-  },
-  slider: {
-    flex: 1,
-    height: 6,
-    cursor: "pointer",
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "#2563eb",
-    minWidth: 50,
-    textAlign: "right" as const,
-    fontFamily: "monospace",
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: 12,
-    marginTop: 4,
-  },
-  infoItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "#1f2937",
-    fontFamily: "monospace",
-  },
-};
+export function SecondOrderStepExplorer(){return <TimeDomainPanel mode="second"/>;}

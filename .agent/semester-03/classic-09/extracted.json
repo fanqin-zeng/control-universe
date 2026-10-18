@@ -1,0 +1,123 @@
+{
+  "source": "content/classic/frequency-response-design.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 6,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 122,
+      "title": "二阶闭环指标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 142,
+          "delim": "`",
+          "code": "for zeta in [.1,.3,.43,.5,.59,1/np.sqrt(2),1.,1.5]:\r\n    values=second(zeta);print('zeta,mr,db,wr,wb,mp',zeta,*values)\r\n    T=100/(s*s+20*zeta*s+100)\r\n    assert abs(abs(ct.evalfr(T,1j*values[3]))-1/np.sqrt(2))<1e-10\r\n    w=np.logspace(-2,3,801);h=np.array([ct.evalfr(T,1j*x) for x in w])\r\n    plt.semilogx(w,20*np.log10(abs(h)),label=str(round(zeta,3)))\r\nassert second(1)[4]==0 and second(1.5)[4]==0\r\nprint('minus3 exact dB',-10*np.log10(2))\r\nprint('GM 10dB ratio, 10x dB',10**(10/20),20*np.log10(10))\r\nplt.legend();plt.xlabel('rad/s');plt.ylabel('dB');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 213,
+      "title": "精确时滞与近似边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 233,
+          "delim": "`",
+          "code": "wc=np.sqrt((-1+np.sqrt(401))/2);pm0=np.arctan(1/wc)*180/np.pi\r\ncritical=pm0*np.pi/(180*wc)\r\nprint('delay wc,PM0,critical',wc,pm0,critical)\r\nfor tau in [0,.05,critical,.15,.3]:\r\n    pm=pm0-wc*tau*180/np.pi\r\n    print('tau,PM,classification',tau,pm,'boundary' if abs(tau-critical)<1e-10 else 'stable' if tau<critical else 'unstable')\r\n    w=np.logspace(-2,2,401);h=10/(1j*w*(1+1j*w))*np.exp(-1j*w*tau)\r\n    assert np.allclose(abs(h),10/(w*np.sqrt(1+w*w)))\r\n    if tau in [0,.05,.15]:plt.semilogx(w,-90-np.arctan(w)*180/np.pi-w*tau*180/np.pi,label=str(tau))\r\nassert abs((1j*wc)*(1+1j*wc)+10*np.exp(-1j*wc*critical))<1e-10\r\n# Positive real crossing derivative for the exact quasipolynomial.\r\nroot=1j*wc;derivative=10*root*np.exp(-critical*root)/(2*root+1-10*critical*np.exp(-critical*root))\r\nprint('exact crossing dReal/dtau',derivative.real);assert derivative.real>0\r\nfor order in [1,2,4]:\r\n    def edge(tau):\r\n        n,d=ct.pade(tau,order);return np.max(ct.poles(ct.feedback(ct.tf(n,d)*10/(s*(s+1)))).real)\r\n    print('Pade order,critical',order,brentq(edge,.01,.3))\r\nplt.legend();plt.xlabel('rad/s');plt.ylabel('degree');plt.ylim(-450,-80);plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 292,
+      "title": "频段预算与增益矛盾",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 312,
+          "delim": "`",
+          "code": "P=1/(s*(s+1)*(s+10))\r\nw45=(-11+np.sqrt(161))/2;K45=w45*np.sqrt(1+w45*w45)*np.sqrt(100+w45*w45)\r\nprint('PM45 wc,K,Kv',w45,K45,K45/10)\r\nfor gain in [1,10,100,110,200]:\r\n    audit('plain '+str(gain),gain*P)\r\n    if gain!=110:\r\n        roots=np.roots([-44,3*gain-2222,202*gain,100*gain]);x=next(x.real for x in roots if abs(x.imag)<1e-8 and x.real>0)\r\n        wms=np.sqrt(x);peak=abs(ct.evalfr(1/(1+gain*P),1j*wms))\r\n        print('formal peak gain,w,mag',gain,wms,peak)\r\n    else:print('K110 pole on imaginary axis, infinite formal peak')\r\ngain=100.;wc=.5;zero=.05;amp=abs(ct.evalfr(gain*P,1j*wc))\r\nbeta=wc/(zero*np.sqrt((1+(wc/zero)**2)*amp**2-1));time=1/(zero*beta)\r\nC=(1+beta*time*s)/(1+time*s);_,pm,_,w,p=audit('lag candidate',gain*P*C)\r\nprint('candidate K,beta,T,Kv',gain,beta,time,gain/10)\r\nassert pm>45 and abs(w-wc)<1e-8 and np.max(p.real)<0\r\nfor label,L in [('K10',10*P),('K100',100*P),('candidate',gain*P*C)]:\r\n    w=np.logspace(-3,3,801);S=1/(1+L);T=L/(1+L)\r\n    print(label,'S@.01,T@100',abs(ct.evalfr(S,.01j)),abs(ct.evalfr(T,100j)))\r\n    plt.semilogx(w,20*np.log10([abs(ct.evalfr(S,1j*x)) for x in w]),label=label)\r\nplt.legend();plt.xlabel('rad/s');plt.ylabel('|S| dB');plt.show()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 378,
+      "title": "临界整定与完整分子",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 398,
+          "delim": "`",
+          "code": "G=1/(s+1)**3;ku=8.;wu=np.sqrt(3);tu=2*np.pi/wu\r\nkp=.6*ku;ti=tu/2;td=tu/8\r\nprint('ZN Ku,wu,Tu,Kp,Ti,Td',ku,wu,tu,kp,ti,td)\r\nC=kp*(1+1/(ti*s)+td*s);correct=ct.tf([kp*ti*td,kp*ti,kp],[ti,0])\r\nfor w in [.1,1,10]:assert abs(ct.evalfr(C,1j*w)-ct.evalfr(correct,1j*w))<1e-10\r\nprint('correct numerator,denominator',correct.num[0][0],correct.den[0][0])\r\nwrong=ct.tf([kp*ti*td,kp,kp*ti],[ti,0]);audit('old still-wrong formula',wrong*G)\r\nfor factor in [1,.5,.25]:audit('ZN scale '+str(factor),factor*C*G)\r\nfor w in [1.,1.3,1.4]:print('ZN test w,absC,absG,absL',w,abs(ct.evalfr(C,1j*w)),abs(ct.evalfr(G,1j*w)),abs(ct.evalfr(C*G,1j*w)))\r\nassert np.max(ct.poles(ct.feedback(.25*C*G)).real)<0",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "line": 505,
+      "title": "灵敏度通道与反例",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 525,
+          "delim": "`",
+          "code": "w=np.logspace(-3,3,801)\r\nfor gain in [10,100,200]:\r\n    L=gain/(s*(s+1)*(s+10));S=1/(1+L);T=L/(1+L)\r\n    assert all(abs(ct.evalfr(S+T,1j*x)-1)<1e-8 for x in w)\r\n    _,pm,_,wc,_=audit('channels '+str(gain),L)\r\n    v=abs(ct.evalfr(S,1j*wc));expected=1/(2*abs(np.sin(np.deg2rad(pm)/2)))\r\n    print('at crossover K,S,T,identity',gain,v,abs(ct.evalfr(T,1j*wc)),expected);assert abs(v-expected)<1e-8\r\nS=s/(s+1);T=1/(s+1)\r\nassert all(abs(ct.evalfr(S,1j*x))<=1 and abs(ct.evalfr(T,1j*x))<=1 for x in w)\r\nprint('no-peak counterexample S=s/(s+1),T=1/(s+1) verified')\r\nfor gain in [1,2,4]:\r\n    R=gain*(1-.5*s)/((s+1)*(s+2));M=gain*(1+.5*s)/((s+1)*(s+2))\r\n    assert all(abs(abs(ct.evalfr(R,1j*x))-abs(ct.evalfr(M,1j*x)))<1e-10 for x in w)\r\n    audit('RHP '+str(gain),R);audit('LHP '+str(gain),M)\r\nprint('10dB ratio',10**.5,'10x dB',20*np.log10(10))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "line": 653,
+      "title": "十一题完整复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ct\r\nfrom scipy.optimize import brentq, minimize_scalar\r\ns=ct.tf('s')\r\ndef audit(name,loop):\r\n    gm,pm,wg,wc=ct.margin(loop)\r\n    roots=ct.poles(ct.feedback(loop,1))\r\n    print(name,'GMratio,GMdB,PM,wg,wc',gm,20*np.log10(gm),pm,wg,wc)\r\n    print(name,'closed poles',roots)\r\n    return gm,pm,wg,wc,roots\r\ndef second(zeta,wn=10):\r\n    mr=1/(2*zeta*np.sqrt(1-zeta*zeta)) if zeta<1/np.sqrt(2) else 1.\r\n    wr=wn*np.sqrt(1-2*zeta*zeta) if zeta<1/np.sqrt(2) else 0.\r\n    wb=wn*np.sqrt(1-2*zeta*zeta+np.sqrt(2-4*zeta*zeta+4*zeta**4))\r\n    mp=100*np.exp(-np.pi*zeta/np.sqrt(1-zeta*zeta)) if zeta<1 else 0.\r\n    return mr,20*np.log10(mr),wr,wb,mp\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 673,
+          "delim": "`",
+          "code": "P=100/(s*(s+1)*(s+10));audit('Q1',P)\r\nfor zeta in [.1,.5,1.,1.5]:audit('Q2 zeta'+str(zeta),100/(s*(s+20*zeta)))\r\nprint('Q2 small-z degree coefficient',2*180/np.pi)\r\naudit('Q3 clarified model',1000/(s*(s+1)*(s+10)))\r\naudit('Q4',8/(s*(s+2)**2))\r\nbase=10/(s*(s+1));audit('Q5 original rejected G2',10*(s+5)/(s*(s+1)*(s+20)))\r\nfor a in [1,2,4]:audit('Q5 timescale '+str(a),10*a*a/(s*(s+a)))\r\nprint('Q6 mr,db,wr,wb,mp',*second(.3))\r\nwc=np.tan(np.deg2rad(27));gain=(1+wc*wc)**2.5;L=gain/(s+1)**5\r\naudit('Q7',L);T=ct.feedback(L);t=np.arange(30001)/1000\r\nprint('Q7 K,heuristicMp,heuristicRise',gain,100*np.exp(-np.pi*.45/np.sqrt(1-.45**2)),1.8/wc)\r\nprint('Q7 actual grid step info',ct.step_info(T,T=t))\r\nplt.plot(*ct.step_response(T,t));plt.xlabel('t (s)');plt.ylabel('Q7 y');plt.show()\r\nwc8=brentq(lambda w:np.arctan(w)+.5*w-3*np.pi/4,1,4)\r\nprint('Q8 wc,K,PM_K2,totalCritical,remaining',wc8,np.sqrt(1+wc8**2),120-.5*np.sqrt(3)*180/np.pi,2*np.pi/(3*np.sqrt(3)),2*np.pi/(3*np.sqrt(3))-.5)\r\nw=np.logspace(-2,2,401);plt.semilogx(w,-np.arctan(w)*180/np.pi-.5*w*180/np.pi);plt.xlabel('rad/s');plt.ylabel('Q8 phase');plt.show()\r\naudit('Q9 RHP',4*(1-.5*s)/((s+1)*(s+2)));audit('Q9 LHP',4*(1+.5*s)/((s+1)*(s+2)))\r\ntu=2*np.pi/np.sqrt(3);C=4.8*(1+1/((tu/2)*s)+(tu/8)*s)\r\naudit('Q10 ZN',C/(s+1)**3);audit('Q10 candidate',.25*C/(s+1)**3)\r\nL=100000/(s*(s+10)*(s+100));audit('Q11',L)\r\nfor w in [1,10]:\r\n    value=abs(ct.evalfr(1/(1+L),1j*w));print('Q11 w,absS,dB',w,value,20*np.log10(value))\r\nprint('Q11 percent',100*abs(ct.evalfr(1/(1+L),1j)))\r\nprint('Q7 GMdB',20*np.log10(ct.margin(gain/(s+1)**5)[0]))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
