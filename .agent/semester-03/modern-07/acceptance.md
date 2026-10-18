@@ -23,3 +23,5 @@
 最终验收：Phase4已依实际结果签发，B九项及四补充通过；check PASS21/WARN2/FAIL0，verify PASS9/WARN0/FAIL0/SKIPPED0，glossary PASS3/WARN2/FAIL0。最终build与build:pages均退出0，205课/9旧入口静态导出；页面五份实验逐一点击全部运行均完成，手机375/360px无整页横向溢出、SVG与生成PNG加载成功、console空。四滑块共八端点和两模式恢复实际通过；截图desktop.png/narrow.png。verify-modern07-delivery.mjs退出0，最终MDX/Python策略/内核/Pyodide指纹一致。
 
 手机首轮提示框保留桌面位置导致375px页面scroll508，修复confine/四位数值/容器裁剪及极点横轴重叠后重做生产构建和页面验收；中途误带其它目录标题已撤回，最终catalog diff只本课。全部更改完成后再签发，不保留过期通过状态。
+
+master交付提交：`e9ff6c6bb0cf5ffceee48713ff9dc2bd76ac222a`（普通主干提交）；六列checklist全勾，回执另提交。origin/master推送后核对一致；gh-pages保持42eed1d509b90699fda0eff8d45f369d7dd7a210。
