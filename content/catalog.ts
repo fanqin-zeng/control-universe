@@ -2167,32 +2167,32 @@ export const catalog: Chapter[] = [
         "title": "Lyapunov稳定性",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "为什么看能量",
+            "title": "为什么看能量"
           },
           {
             "slug": "稳定性定义",
             "title": "稳定性定义"
           },
           {
-            "slug": "李雅普诺夫直接法",
-            "title": "李雅普诺夫直接法"
+            "slug": "直接法",
+            "title": "直接法"
           },
           {
-            "slug": "手算例子非线性弹簧-质量系统",
-            "title": "手算例子：非线性弹簧-质量系统"
+            "slug": "非线性弹簧",
+            "title": "非线性弹簧"
           },
           {
-            "slug": "lasalle-不变集原理",
-            "title": "LaSalle 不变集原理"
+            "slug": "lasalle原理",
+            "title": "LaSalle原理"
           },
           {
-            "slug": "李雅普诺夫间接法",
-            "title": "李雅普诺夫间接法"
+            "slug": "线性化与证书",
+            "title": "线性化与证书"
           },
           {
-            "slug": "李雅普诺夫函数的构造方法",
-            "title": "李雅普诺夫函数的构造方法"
+            "slug": "怎样构造函数",
+            "title": "怎样构造函数"
           },
           {
             "slug": "吸引域估计",
@@ -2203,8 +2203,8 @@ export const catalog: Chapter[] = [
             "title": "应用案例"
           },
           {
-            "slug": "何时失效",
-            "title": "何时失效？"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2233,40 +2233,40 @@ export const catalog: Chapter[] = [
         "title": "描述函数",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "开关为何会振荡",
+            "title": "开关为何会振荡"
           },
           {
-            "slug": "描述函数的定义与滤波假设",
-            "title": "描述函数的定义与滤波假设"
+            "slug": "只保留基波",
+            "title": "只保留基波"
           },
           {
-            "slug": "常见非线性的描述函数",
-            "title": "常见非线性的描述函数"
+            "slug": "五种描述函数",
+            "title": "五种描述函数"
           },
           {
-            "slug": "谐波平衡与极限环预测",
-            "title": "谐波平衡与极限环预测"
+            "slug": "寻找候选振荡",
+            "title": "寻找候选振荡"
           },
           {
-            "slug": "极限环的稳定性判据",
-            "title": "极限环的稳定性判据"
+            "slug": "振幅会被拉回吗",
+            "title": "振幅会被拉回吗"
           },
           {
             "slug": "应用案例",
             "title": "应用案例"
           },
           {
-            "slug": "何时失效",
-            "title": "何时失效"
+            "slug": "四类失效",
+            "title": "四类失效"
           },
           {
-            "slug": "与其他非线性方法的接口",
-            "title": "与其他非线性方法的接口"
+            "slug": "怎样交叉检查",
+            "title": "怎样交叉检查"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2283,6 +2283,8 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "nonlinear/nonlinear-characteristics",
+          "math/fourier-analysis",
+          "nonlinear/lyapunov-stability",
           "classic/frequency-domain-analysis"
         ],
         "level": "grad",
@@ -2294,52 +2296,52 @@ export const catalog: Chapter[] = [
         "title": "反馈线性化",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "先补上重力",
+            "title": "先补上重力"
           },
           {
-            "slug": "仿射非线性系统与lie导数",
-            "title": "仿射非线性系统与Lie导数"
+            "slug": "沿状态求导",
+            "title": "沿状态求导"
           },
           {
-            "slug": "相对阶严格定义",
-            "title": "相对阶严格定义"
+            "slug": "相对阶",
+            "title": "相对阶"
           },
           {
-            "slug": "输入-输出线性化",
-            "title": "输入-输出线性化"
+            "slug": "输出线性化",
+            "title": "输出线性化"
           },
           {
-            "slug": "零动态与内部稳定性",
-            "title": "零动态与内部稳定性"
+            "slug": "零动态",
+            "title": "零动态"
           },
           {
             "slug": "全状态线性化",
             "title": "全状态线性化"
           },
           {
-            "slug": "坐标变换到brunovsky标准型",
-            "title": "坐标变换到Brunovsky标准型"
+            "slug": "变换坐标",
+            "title": "变换坐标"
           },
           {
-            "slug": "应用案例倒立摆镇定",
-            "title": "应用案例：倒立摆镇定"
+            "slug": "倒立摆",
+            "title": "倒立摆"
           },
           {
-            "slug": "应用案例球-梁系统",
-            "title": "应用案例：球-梁系统"
+            "slug": "球梁",
+            "title": "球梁"
           },
           {
-            "slug": "应用案例机器人计算力矩控制",
-            "title": "应用案例：机器人计算力矩控制"
+            "slug": "计算力矩",
+            "title": "计算力矩"
           },
           {
-            "slug": "与jacobian线性化的对比",
-            "title": "与Jacobian线性化的对比"
+            "slug": "两种线性化",
+            "title": "两种线性化"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2356,7 +2358,8 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "nonlinear/lyapunov-stability",
-          "math/diff-geometry"
+          "math/diff-geometry",
+          "modern/state-feedback"
         ],
         "level": "grad",
         "type": "theory",
@@ -2367,44 +2370,44 @@ export const catalog: Chapter[] = [
         "title": "滑模控制",
         "subsections": [
           {
-            "slug": "引言",
-            "title": "引言"
+            "slug": "先选想要的运动",
+            "title": "先选想要的运动"
           },
           {
-            "slug": "滑模控制的基本概念",
-            "title": "滑模控制的基本概念"
+            "slug": "滑面与到达",
+            "title": "滑面与到达"
           },
           {
-            "slug": "二阶系统的滑模控制器设计",
-            "title": "二阶系统的滑模控制器设计"
+            "slug": "设计二阶控制",
+            "title": "设计二阶控制"
           },
           {
-            "slug": "手算例子倒立摆镇定",
-            "title": "手算例子：倒立摆镇定"
+            "slug": "倒立摆手算",
+            "title": "倒立摆手算"
           },
           {
-            "slug": "抖振现象与抑制策略",
-            "title": "抖振现象与抑制策略"
+            "slug": "抖振与平滑",
+            "title": "抖振与平滑"
           },
           {
-            "slug": "到达律方法",
-            "title": "到达律方法"
+            "slug": "到达律",
+            "title": "到达律"
           },
           {
-            "slug": "匹配与不匹配不确定性",
-            "title": "匹配与不匹配不确定性"
+            "slug": "匹配条件",
+            "title": "匹配条件"
           },
           {
             "slug": "应用案例",
             "title": "应用案例"
           },
           {
-            "slug": "与其他非线性控制方法的对比",
-            "title": "与其他非线性控制方法的对比"
+            "slug": "方法的适用条件",
+            "title": "方法的适用条件"
           },
           {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
+            "slug": "适用边界",
+            "title": "适用边界"
           },
           {
             "slug": "小结",
@@ -2430,54 +2433,18 @@ export const catalog: Chapter[] = [
         "slug": "backstepping",
         "title": "反步设计",
         "subsections": [
-          {
-            "slug": "引言",
-            "title": "引言"
-          },
-          {
-            "slug": "严格反馈系统",
-            "title": "严格反馈系统"
-          },
-          {
-            "slug": "二阶系统的反步法设计",
-            "title": "二阶系统的反步法设计"
-          },
-          {
-            "slug": "手算例子",
-            "title": "手算例子"
-          },
-          {
-            "slug": "n阶系统的反步法设计",
-            "title": "n阶系统的反步法设计"
-          },
-          {
-            "slug": "处理参数不确定性",
-            "title": "处理参数不确定性"
-          },
-          {
-            "slug": "应用案例",
-            "title": "应用案例"
-          },
-          {
-            "slug": "与其他非线性控制方法的对比",
-            "title": "与其他非线性控制方法的对比"
-          },
-          {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
+          {"slug":"先设计期望速度","title":"先设计期望速度"},
+          {"slug":"严格反馈结构","title":"严格反馈结构"},
+          {"slug":"二阶递推","title":"二阶递推"},
+          {"slug":"手算与核验","title":"手算与核验"},
+          {"slug":"高阶递推","title":"高阶递推"},
+          {"slug":"自适应递推","title":"自适应递推"},
+          {"slug":"柔性关节案例","title":"柔性关节案例"},
+          {"slug":"二阶增益比较","title":"二阶增益比较"},
+          {"slug":"适用边界","title":"适用边界"},
+          {"slug":"小结","title":"小结"},
+          {"slug":"习题","title":"习题"},
+          {"slug":"答案","title":"答案"}
         ],
         "prereq": [
           "nonlinear/lyapunov-stability",
@@ -2491,59 +2458,59 @@ export const catalog: Chapter[] = [
         "slug": "adaptive-control-basics",
         "title": "自适应控制",
         "subsections": [
-          {
-            "slug": "引言",
-            "title": "引言"
-          },
-          {
-            "slug": "自适应控制的基本概念",
-            "title": "自适应控制的基本概念"
-          },
-          {
-            "slug": "模型参考自适应控制mrac",
-            "title": "模型参考自适应控制（MRAC）"
-          },
-          {
-            "slug": "手算例子一阶系统的mrac设计",
-            "title": "手算例子：一阶系统的MRAC设计"
-          },
-          {
-            "slug": "高阶系统的mrac设计",
-            "title": "高阶系统的MRAC设计"
-          },
-          {
-            "slug": "自整定调节器str",
-            "title": "自整定调节器（STR）"
-          },
-          {
-            "slug": "处理参数不确定性",
-            "title": "处理参数不确定性"
-          },
-          {
-            "slug": "应用案例",
-            "title": "应用案例"
-          },
-          {
-            "slug": "与其他非线性控制方法的对比",
-            "title": "与其他非线性控制方法的对比"
-          },
-          {
-            "slug": "局限性讨论",
-            "title": "局限性讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+            {
+              "slug": "引言",
+              "title": "引言"
+            },
+            {
+              "slug": "未知参数与控制目标",
+              "title": "未知参数与控制目标"
+            },
+            {
+              "slug": "一阶mrac",
+              "title": "一阶MRAC"
+            },
+            {
+              "slug": "跟踪与参数收敛",
+              "title": "跟踪与参数收敛"
+            },
+            {
+              "slug": "高阶mrac",
+              "title": "高阶MRAC"
+            },
+            {
+              "slug": "辨识与自整定",
+              "title": "辨识与自整定"
+            },
+            {
+              "slug": "噪声与鲁棒化",
+              "title": "噪声与鲁棒化"
+            },
+            {
+              "slug": "两个应用模型",
+              "title": "两个应用模型"
+            },
+            {
+              "slug": "怎样选择方法",
+              "title": "怎样选择方法"
+            },
+            {
+              "slug": "适用边界",
+              "title": "适用边界"
+            },
+            {
+              "slug": "小结",
+              "title": "小结"
+            },
+            {
+              "slug": "习题",
+              "title": "习题"
+            },
+            {
+              "slug": "答案",
+              "title": "答案"
+            }
+          ],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "modern/state-feedback"

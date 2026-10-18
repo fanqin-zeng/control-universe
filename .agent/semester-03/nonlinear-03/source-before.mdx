@@ -1,0 +1,433 @@
+---
+title: "李雅普诺夫稳定性"
+description: "不求解微分方程，用能量型的李雅普诺夫函数证明非线性系统稳定性：直接法、LaSalle不变集原理、间接法与吸引域估计"
+---
+
+# 李雅普诺夫稳定性
+
+## 引言
+
+到目前为止，我们手里有两件分析非线性系统的武器，但它们都有明显的射程限制：
+
+- **相平面分析**（见[相平面分析](/nonlinear/phase-plane)）：直观、漂亮，但只伺候得了二阶系统。三阶以上，图画不出来。
+- **线性化**（见[非线性系统特性](/nonlinear/nonlinear-characteristics)）：只给出平衡点**附近**的局部结论；一旦 Jacobian 的特征值落在虚轴上（临界情形），线性化直接哑火。
+
+工程验收却不管这些：姿态控制器要在 1.6 rad 的大角度机动后稳稳指回目标，验收试验不可能跑无穷长时间去"观察它是否收敛"。我们需要一种**用有限的一次构造，换无限的时域保证**的方法——前提是找得到那个证书函数。
+
+1892 年，李雅普诺夫（A. M. Lyapunov）给出了答案。直觉来自一个碗：把小球放在碗底，它的高度 $V$ 永远非负、只在碗底为零；只要有摩擦，高度就沿轨迹单调下降。于是**不需要解出小球的运动方程**，仅凭"高度为正且一直降"这两条，就能断言小球最终停在碗底。
+
+把"高度"抽象成状态空间上的标量函数 $V(x)$——**李雅普诺夫函数**——就是本课的全部内容：
+
+1. 什么样的 $V$ 才有资格当证书（正定性）；
+2. 怎么沿轨迹求它的变化率 $\dot V$（直接法）；
+3. $\dot V$ 只是"不增"时怎么办（LaSalle 不变集原理）；
+4. 与线性化的关系（间接法）；
+5. 工程上构造 $V$ 的套路清单，以及它能给出多大的吸引域估计。
+
+## 稳定性定义
+
+**人话先行**：稳定 = 初值扰动小，轨迹就跑不远；渐近稳定 = 不仅跑不远，还最终回到平衡点；指数稳定 = 以不低于指数速率回去；全局 = 以上结论对任意大的初值都成立。
+
+设自治系统
+
+$$
+\dot{x} = f(x), \quad f: \mathbb{R}^n \to \mathbb{R}^n
+$$
+
+**平衡点**是满足 $f(x_e) = 0$ 的点。通过坐标平移 $x - x_e$，总可以把平衡点移到原点，因此本课一律讨论原点 $x=0$ 处的稳定性。记 $x(t; x_0)$ 为初值 $x(0)=x_0$ 的解。
+
+**Lyapunov 稳定（ε-δ 定义）**：对任意 $\varepsilon > 0$，存在 $\delta > 0$，使得 $\|x_0\| < \delta$ 时对所有 $t \ge 0$ 有 $\|x(t; x_0)\| < \varepsilon$。
+
+**渐近稳定**：Lyapunov 稳定，且存在 $\delta_0 > 0$ 使得 $\|x_0\| < \delta_0$ 时 $\lim_{t\to\infty} x(t; x_0) = 0$。
+
+**指数稳定**：存在 $a, \lambda, \delta_0 > 0$，使得 $\|x_0\| < \delta_0$ 时
+
+$$
+\|x(t; x_0)\| \le a \|x_0\| e^{-\lambda t}, \quad \forall t \ge 0
+$$
+
+**全局（渐近/指数）稳定**：上述结论中 $\delta_0$ 可取任意大（即对一切初值成立）。
+
+**不稳定**：不满足 Lyapunov 稳定。
+
+| 类型 | 人话 | 形式要点 |
+|------|------|----------|
+| Lyapunov 稳定 | 扰动小则跑不远 | ε-δ 语言 |
+| 渐近稳定 | 跑不远且最终回来 | 稳定 + 收敛到 0 |
+| 指数稳定 | 以指数速率回来 | $\|x(t)\| \le a\|x_0\|e^{-\lambda t}$ |
+| 全局渐近稳定 | 任意初值都回来 | $\delta_0$ 无界 |
+
+一个必须记住的分界线例子：**无阻尼摆** $\ddot\theta + \sin\theta = 0$ 在 $\theta=0$ 处。给一个小初值，它永远做周期摆动——扰动小则摆幅小（ε-δ 成立），但永远不回到 0。所以它**稳定而不渐近稳定**。这个例子会在后文反复出现。
+
+<Callout variant="info">
+**为什么线性系统不用这套语言？** 线性系统 $\dot x = Ax$ 的稳定性完全由特征值决定，且局部结论自动全局成立（齐次性）。上面这套精细的定义，是为非线性系统准备的：非线性系统的稳定性**依赖初值大小**，局部与全局是两回事。
+</Callout>
+
+## 李雅普诺夫直接法
+
+**正定函数**：连续可微函数 $V: D \to \mathbb{R}$（$D$ 为含原点的开集）称为正定的，若 $V(0)=0$ 且对所有 $x \in D \setminus \{0\}$ 有 $V(x) > 0$。若 $-V$ 正定则称 $V$ 负定；若 $V(x) \ge 0$ 则称半正定。
+
+<Callout variant="tip">
+**为什么要求 $V(0)=0$？** 这是归一化约定而非额外限制：任何"碗形"函数减去它在原点的值就满足。它的意义在于给 $\dot V$ 的符号分析一个锚点——$V$ 沿轨迹单调下降且有下界 0，才能被"压"向原点。
+</Callout>
+
+**沿轨迹的导数**。设 $x(t)$ 是系统轨迹，$V$ 沿轨迹的变化率为
+
+$$
+\dot V(x) = \frac{\partial V}{\partial x} f(x) = \nabla V(x) \cdot f(x)
+$$
+
+注意：**不需要解出 $x(t)$**。$\dot V$ 是状态 $x$ 的函数，由链式法则 $\dot V = \frac{d}{dt}V(x(t)) = \nabla V \cdot \dot x = \nabla V \cdot f(x)$ 直接得到。几何图景：$V$ 的等值面像一层层洋葱皮，$\dot V < 0$ 意味着轨迹从外往里逐层穿越等值面。
+
+**李雅普诺夫直接法定理**：设 $V$ 在含原点的开集 $D$ 上连续可微且正定。
+
+1. 若在 $D$ 内 $\dot V(x) \le 0$，则原点 **Lyapunov 稳定**；
+2. 若在 $D \setminus\{0\}$ 内 $\dot V(x) < 0$（负定），则原点 **渐近稳定**；
+3. 若另有 $D = \mathbb{R}^n$ 且 $V$ **径向无界**（$\|x\|\to\infty \Rightarrow V(x)\to\infty$），则 **全局渐近稳定**。
+
+<Callout variant="warning">
+**负半定推不出渐近稳定。** 无阻尼摆取能量 $V=\tfrac12\dot\theta^2+(1-\cos\theta)$，有 $\dot V \equiv 0$（半定），轨迹是周期轨道而非收敛到原点。$\dot V \le 0$ 只保证"能量不增"，轨迹完全可能停在 $\dot V = 0$ 的集合上打转。要突破这一点，需要下一节的 LaSalle 原理。
+</Callout>
+
+## 手算例子：非线性弹簧-质量系统
+
+考虑质量块连在一个**硬弹簧**和阻尼器上：
+
+$$
+m\ddot x + c\dot x + kx + \beta x^3 = 0
+$$
+
+取 $m=k=1$、$\beta=1$，状态 $x_1=x,\ x_2=\dot x$：
+
+$$
+\dot x_1 = x_2, \qquad \dot x_2 = -c\,x_2 - x_1 - x_1^3
+$$
+
+**第 1 步（候选函数）**：机械系统的套路是取总能量。弹簧力 $F = x + x^3$ 对应的势能是 $\int_0^x (s+s^3)\,ds = \tfrac12 x^2 + \tfrac14 x^4$，于是
+
+$$
+V(x) = \tfrac12 x_2^2 + \tfrac12 x_1^2 + \tfrac14 x_1^4
+$$
+
+**第 2 步（正定性）**：三项均非负，且 $V=0 \iff x_1=x_2=0$；$\|x\|\to\infty$ 时 $V\to\infty$（径向无界）。✓
+
+**第 3 步（求 $\dot V$）**：
+
+$$
+\dot V = x_2\dot x_2 + x_1\dot x_1 + x_1^3\dot x_1 = x_2(-c x_2 - x_1 - x_1^3) + x_1 x_2 + x_1^3 x_2 = -c\,x_2^2
+$$
+
+**第 4 步（结论）**：
+
+- $c=0$（无阻尼）：$\dot V \equiv 0$，由定理 1 得原点 **Lyapunov 稳定**（物理上：能量守恒，周期振荡）。
+- $c>0$（有阻尼）：$\dot V = -c x_2^2 \le 0$ 负**半**定——定理 2 用不上！物理直觉说它该渐近稳定，但数学上要把"$x_2=0$ 时轨迹停不住"这件事证明出来。这正是下一节 LaSalle 的工作。
+
+下面用数值仿真验证手算：$c=0$ 时 $V$ 应严格守恒（检验积分精度与推导），$c=0.5$ 时 $V$ 应单调下降。
+
+<JupyterNotebook
+  title="Notebook 1：能量函数 V 的守恒与衰减验证"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `def spring_mass(t, y, c):
+    x1, x2 = y
+    return [x2, -c*x2 - x1 - x1**3]
+
+def V_energy(y):
+    x1, x2 = y
+    return 0.5*x2**2 + 0.5*x1**2 + 0.25*x1**4
+
+for c in [0.0, 0.5]:
+    sol = solve_ivp(spring_mass, [0, 30], [1.5, 0.0], args=(c,),
+                    rtol=1e-9, atol=1e-9, dense_output=True)
+    ts = np.linspace(0, 30, 601)
+    Vs = np.array([V_energy(sol.sol(t)) for t in ts])
+    print(f"c={c}: V(0)={Vs[0]:.6f}, V(30)={Vs[-1]:.6f}, 最大偏离={np.max(np.abs(Vs-Vs[0])):.2e}")` },
+    { code: `fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+for c, color in [(0.0, '#2563eb'), (0.5, '#dc2626')]:
+    sol = solve_ivp(spring_mass, [0, 30], [1.5, 0.0], args=(c,),
+                    rtol=1e-9, atol=1e-9, dense_output=True)
+    ts = np.linspace(0, 30, 601)
+    Y = sol.sol(ts)
+    axes[0].plot(ts, [V_energy(Y[:, i]) for i in range(len(ts))], color=color, label=f'c={c}')
+    axes[1].plot(Y[0], Y[1], color=color, label=f'c={c}')
+axes[0].set_xlabel('t (s)'); axes[0].set_ylabel('V'); axes[0].set_title('V 沿轨迹：守恒 vs 单调降')
+axes[0].legend(); axes[0].grid(alpha=0.3)
+axes[1].set_xlabel('x'); axes[1].set_ylabel('dx/dt'); axes[1].set_title('相轨迹')
+axes[1].legend(); axes[1].grid(alpha=0.3)
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+## LaSalle 不变集原理
+
+先给定义：集合 $M$ 是**不变集**，指从 $M$ 内出发的轨迹永远留在 $M$ 内（正向与负向时间都成立）。平衡点、周期轨道、以及它们的并，都是不变集。
+
+**LaSalle 不变集原理**：设 $V: D \to \mathbb{R}$ 连续可微，$\Omega \subset D$ 是**紧**集且对系统**正不变**（从 $\Omega$ 出发的轨迹永远留在 $\Omega$ 内）。若在 $\Omega$ 内 $\dot V \le 0$，记
+
+$$
+E = \{ x \in \Omega : \dot V(x) = 0 \}
+$$
+
+$M$ 为 $E$ 内的**最大不变集**，则从 $\Omega$ 内出发的每条轨迹都满足 $x(t) \to M$（$t\to\infty$）。
+
+**回到阻尼弹簧-质量系统**（$c>0$）。取任意 $c_0 > 0$，集合 $\Omega = \{ V \le c_0 \}$ 有界闭（$V$ 径向无界）且正不变（其内 $\dot V \le 0$，$V$ 不增故轨迹出不去）。在 $\Omega$ 内 $E = \{ x_2 = 0 \}$。问：$E$ 内的最大不变集是什么？若轨迹整个留在 $E$ 内，则恒有 $x_2 \equiv 0 \Rightarrow \dot x_2 \equiv 0 \Rightarrow -x_1 - x_1^3 \equiv 0 \Rightarrow x_1 \equiv 0$。所以 $M = \{0\}$，所有轨迹收敛到原点；$c_0$ 任意大 ⇒ **全局渐近稳定**。手算例子的悬念在此落地。
+
+下面的探索器把这幅图景画出来：系统换成阻尼摆 $\ddot\theta + d\dot\theta + \sin\theta = 0$，取 $V = \tfrac12\omega^2 + (1-\cos\theta)$，则 $\dot V = -d\,\omega^2 \le 0$。灰色闭曲线是 $V$ 的等值线（$V < 2$ 时为闭曲线），橙色虚线是过初值的等值线。拖动滑块观察：
+
+- $d=0$：轨迹**沿**等值线周期运动——稳定不渐近；
+- $d>0$：轨迹逐层向内穿越等值线，收敛到原点——$\dot V$ 负半定，靠 LaSalle 收尾。
+
+<LyapunovExplorer />
+
+## 李雅普诺夫间接法
+
+**间接法（线性化方法）定理**：设 $f$ 连续可微，$A = \left.\frac{\partial f}{\partial x}\right|_{x=0}$ 为 Jacobian。
+
+1. 若 $A$ 的所有特征值实部为负（Hurwitz），则原点**局部渐近稳定**（且是指数稳定）；
+2. 若 $A$ 至少有一个特征值实部为正，则原点**不稳定**；
+3. 若特征值实部均非正、但存在实部为零的特征值（**临界情形**），线性化**不能下任何结论**——稳定性由被丢掉的高阶项决定。
+
+间接法与直接法之间有一座桥——**Lyapunov 方程**：$A$ Hurwitz 当且仅当对任意给定 $Q=Q^T>0$，方程
+
+$$
+A^T P + P A = -Q
+$$
+
+存在唯一解 $P=P^T>0$。此时 $V(x) = x^T P x$ 就是线性系统 $\dot x = Ax$ 的李雅普诺夫函数：$\dot V = x^T(A^TP+PA)x = -x^TQx < 0$。也就是说：**间接法的每个成功结论，背后都藏着一个二次型证书**；而直接法把这个思路推广到了非线性 $V$ 与非线性系统。
+
+<JupyterNotebook
+  title="Notebook 2：线性化 + Lyapunov 方程验证间接法"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.linalg import solve_lyapunov
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `d = 0.5
+A0 = np.array([[0.0, 1.0], [-1.0, -d]])    # 摆在 theta=0 处的 Jacobian
+Api = np.array([[0.0, 1.0], [1.0, -d]])    # 摆在 theta=pi 处的 Jacobian (cos pi = -1)
+print("theta=0 处特征值:", np.round(np.linalg.eigvals(A0), 4), "-> Hurwitz, 局部渐近稳定")
+print("theta=pi 处特征值:", np.round(np.linalg.eigvals(Api), 4), "-> 有正实部, 不稳定")
+
+Q = np.eye(2)
+P = solve_lyapunov(A0.T, -Q)   # scipy 签名: 解 A X + X A^H = Q, 故传 (A0.T, -Q) 得 A0^T P + P A0 = -Q
+print("P =", np.round(P, 4))
+print("P 的特征值:", np.round(np.linalg.eigvalsh(P), 4), "-> 全正, V=x'Px 是合法证书")` },
+    { code: `def pend(t, y, d):
+    th, w = y
+    return [w, -np.sin(th) - d*w]
+
+sol_a = solve_ivp(pend, [0, 12], [0.5, 0.0], args=(d,), rtol=1e-9, atol=1e-9)
+sol_b = solve_ivp(pend, [0, 12], [np.pi + 0.05, 0.0], args=(d,), rtol=1e-9, atol=1e-9)
+plt.figure(figsize=(8, 4))
+plt.plot(sol_a.t, sol_a.y[0], label='初值 0.5 (收敛到 0)')
+plt.plot(sol_b.t, sol_b.y[0], label='初值 pi+0.05 (翻离 pi)')
+plt.axhline(np.pi, color='gray', ls=':', label='theta=pi (不稳定平衡点)')
+plt.xlabel('t (s)'); plt.ylabel('theta (rad)'); plt.legend(); plt.grid(alpha=0.3)
+plt.title('间接法预言的数值验证')
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+## 李雅普诺夫函数的构造方法
+
+构造 $V$ 没有万能算法，但有成熟的**套路清单**。工程上 90% 的情况落在前两类：
+
+| 套路 | 候选函数 | 适用场景 | 关键条件 / 局限 |
+|------|----------|----------|------------------|
+| 二次型 | $V = x^TPx$ | 线性系统、线性化局部分析 | 解 $A^TP+PA=-Q$；$P>0$ 用 Sylvester 判据（顺序主子式全正）或特征值检查 |
+| 能量法 | 动能 + 势能 | 机械、电气、机电系统 | 势能需积分获得（如 $\tfrac14\beta x^4$）；$\dot V$ 常负半定，配 LaSalle |
+| 变量梯度法 | 先设 $\nabla V = a(x)$ 再积分 | 低阶非线性系统 | 必须校验可积条件 $\partial a_i/\partial x_j = \partial a_j/\partial x_i$ |
+| Krasovskii 法 | $V = f^T f$ | $f(0)=0$ 且 Jacobian 条件成立 | 充分条件 $F+F^T<0$（$F=\partial f/\partial x$），保守 |
+
+**变量梯度法三步**：① 设 $\nabla V = a(x)$（常取含待定系数的线性组合）；② 由 $\dot V = a^T f < 0$ 解出系数范围；③ 校验可积条件后由 $V(x) = \int_0^1 a^T(\tau x)\, x \, d\tau$ 积出 $V$，并回头确认 $V$ 正定。
+
+**Krasovskii 手算小例**：系统 $\dot x_1 = -x_1$，$\dot x_2 = -x_1 - x_2 - x_2^3$。Jacobian $F = \begin{bmatrix} -1 & 0 \\ -1 & -1-3x_2^2 \end{bmatrix}$，于是
+
+$$
+F + F^T = \begin{bmatrix} -2 & -1 \\ -1 & -2-6x_2^2 \end{bmatrix}
+$$
+
+迹 $= -4-6x_2^2 < 0$，行列式 $= 4+12x_2^2-1 = 3+12x_2^2 > 0$，故 $F+F^T$ 负定。取 $V = f^Tf = x_1^2 + (x_1+x_2+x_2^3)^2$（正定、径向无界），Krasovskii 定理直接给出**全局渐近稳定**——全程没有灵感，只有查表。
+
+<Callout variant="tip">
+**给工程师的实话**：先试能量法（物理系统几乎总有天然能量），再试二次型（局部分析永远够用），最后才考虑变量梯度/Krasovskii。找不到 $V$ 不代表系统不稳定——只代表这张证书没开出来（见"何时失效？"）。
+</Callout>
+
+## 吸引域估计
+
+直接法的副产品是**吸引域（region of attraction）的定量估计**，这对工程安全边界极有价值。
+
+**定理**：设 $V$ 正定、连续可微，$D$ 为含原点的开集，其内 $\dot V < 0$（除原点外）。若对某 $c>0$，集合 $\Omega_c = \{ x : V(x) \le c \}$ **有界**且 $\Omega_c \subset D$，则 $\Omega_c$ 正不变，且从 $\Omega_c$ 出发的轨迹渐近收敛到原点。即 $\Omega_c$ 是吸引域的一个内估计。
+
+**标准例**：系统
+
+$$
+\dot x_1 = x_2, \qquad \dot x_2 = -x_1 - x_2(1 - x_1^2)
+$$
+
+取 $V = x_1^2 + x_2^2$（正定），则
+
+$$
+\dot V = 2x_1x_2 + 2x_2\big(-x_1 - x_2(1-x_1^2)\big) = -2x_2^2(1 - x_1^2)
+$$
+
+在区域 $D = \{ |x_1| < 1 \}$ 内 $\dot V \le 0$（负半定）。在 $\Omega_c = \{V \le c\}$ 上恒有 $|x_1| \le \sqrt c$，故只要 $c < 1$ 就有 $\Omega_c \subset D$，其内 $\dot V \le 0$；再用 LaSalle：$E=\{x_2=0\}$，其上 $\dot x_2 = -x_1 = 0 \Rightarrow x_1=0$，故 $M=\{0\}$。结论：**$\{V < 1\}$（开单位圆）含于吸引域**。
+
+注意这个估计是**保守的**：真实吸引域通常比 $\{V<1\}$ 大得多，估计质量取决于 $V$ 选得好不好。
+
+<JupyterNotebook
+  title="Notebook 3：吸引域估计的内外初值对比"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `def f(t, y):
+    x1, x2 = y
+    return [x2, -x1 - x2*(1 - x1**2)]
+
+def V(y):
+    return y[0]**2 + y[1]**2
+
+for y0 in [(0.7, 0.7), (1.5, 0.0)]:
+    sol = solve_ivp(f, [0, 40], y0, rtol=1e-9, atol=1e-9)
+    print(f"y0={y0}: V0={V(y0):.2f}, 终态=({sol.y[0,-1]:+.3f}, {sol.y[1,-1]:+.3f})")` },
+    { code: `fig, ax = plt.subplots(figsize=(6.5, 6.5))
+th = np.linspace(0, 2*np.pi, 200)
+ax.plot(np.cos(th), np.sin(th), 'g--', label='估计边界 V=1')
+for y0, color in [((0.7, 0.7), '#2563eb'), ((1.5, 0.0), '#dc2626')]:
+    sol = solve_ivp(f, [0, 40], y0, rtol=1e-9, atol=1e-9)
+    ax.plot(sol.y[0], sol.y[1], color=color, label=f'初值 {y0}')
+    ax.plot(y0[0], y0[1], 'o', color=color)
+ax.set_xlim(-2.2, 2.2); ax.set_ylim(-2.2, 2.2)
+ax.set_xlabel('x1'); ax.set_ylabel('x2'); ax.set_title('圆内初值收敛，圆外初值不收敛到原点')
+ax.legend(); ax.grid(alpha=0.3); ax.set_aspect('equal')
+plt.tight_layout(); plt.show()` },
+  ]}
+/>
+
+## 应用案例
+
+**案例 1：航天器大角度姿态机动（[领域-航空航天]）**。平面刚体卫星 $J\ddot\theta = u$，取 PD 力矩 $u = -k_p\theta - k_d\dot\theta$（$k_p, k_d > 0$）。取
+
+$$
+V = \tfrac12 J\dot\theta^2 + \tfrac12 k_p\theta^2
+$$
+
+$V$ 正定、径向无界；$\dot V = J\dot\theta\ddot\theta + k_p\theta\dot\theta = \dot\theta(u + k_p\theta) = -k_d\dot\theta^2 \le 0$。LaSalle：$E=\{\dot\theta=0\}$，其上 $J\ddot\theta = u = -k_p\theta = 0 \Rightarrow \theta=0$。故**全局渐近稳定**——任意大角度机动都收敛，这正是线性化给不了的结论。三维版本把 $\theta$ 换成四元数/MRP 姿态误差，套路完全相同。
+
+<JupyterNotebook
+  title="Notebook 4：卫星姿态机动闭环仿真（PD + Lyapunov 证书）"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    { code: `J, kp, kd = 50.0, 20.0, 30.0
+
+def sat(t, y):
+    th, w = y
+    u = -kp*th - kd*w
+    return [w, u/J]
+
+sol = solve_ivp(sat, [0, 40], [1.6, 0.0], rtol=1e-9, atol=1e-9, dense_output=True)
+ts = np.linspace(0, 40, 801)
+Y = sol.sol(ts)
+Vt = 0.5*J*Y[1]**2 + 0.5*kp*Y[0]**2
+
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.6))
+axes[0].plot(ts, Y[0]); axes[0].set_title('theta (rad)'); axes[0].set_xlabel('t (s)'); axes[0].grid(alpha=0.3)
+axes[1].plot(ts, Y[1]); axes[1].set_title('omega (rad/s)'); axes[1].set_xlabel('t (s)'); axes[1].grid(alpha=0.3)
+axes[2].plot(ts, Vt, color='#dc2626'); axes[2].set_title('V(t) 单调降'); axes[2].set_xlabel('t (s)'); axes[2].grid(alpha=0.3)
+plt.tight_layout(); plt.show()` },
+    { code: `dV = np.diff(Vt)
+print("V 的最大正向增量(应约为0, 仅数值误差):", f"{dV.max():.2e}")
+print("终端角度误差 (rad):", f"{Y[0,-1]:.2e}")
+print(f"理论值: wn={np.sqrt(kp/J):.3f} rad/s, zeta={kd/(2*np.sqrt(kp*J)):.3f}")` },
+  ]}
+/>
+
+**案例 2：机器人关节 PD + 重力补偿**。单关节机械臂 $M(q)\ddot q + C(q,\dot q)\dot q + g(q) = \tau$，取 $\tau = g(q) - K_p(q-q_d) - K_d\dot q$。取能量型 $V = \tfrac12\dot q^T M(q)\dot q + \tfrac12 (q-q_d)^T K_p (q-q_d)$，利用 $\dot M - 2C$ 的斜对称性可得 $\dot V = -\dot q^T K_d \dot q \le 0$，LaSalle 给出全局渐近跟踪。能量法 + LaSalle 的教科书级组合。
+
+**案例 3：电力系统暂态稳定**。发电机摆动方程 $M\ddot\delta + D\dot\delta + P_{max}\sin\delta = P_m$ 与阻尼摆同构。取能量函数 $V = \tfrac12 M\dot\delta^2 + \int_{\delta_e}^{\delta}(P_{max}\sin s - P_m)\,ds$，$\dot V = -D\dot\delta^2 \le 0$。满足 $\dot V \le 0$ 的最大等值集 $\{V \le c\}$ 给出**临界清除角**的估计——故障切除后系统能否回到同步运行，就看状态是否落在这个估计里。吸引域估计从数学定理变成了电网安全判据。
+
+## 何时失效？
+
+诚实清单——李雅普诺夫方法不是万能的：
+
+1. **保守系统只能证"稳定"**。$\dot V \equiv 0$ 时直接法只给 Lyapunov 稳定（无阻尼摆）。想证渐近稳定必须有耗散通道或 LaSalle 可用的结构。
+2. **构造无通用算法**。找不到 $V$ **不代表系统不稳定**——证书没开出来不等于结论为假。 converse 定理（如 Kurzweil 定理）保证渐近稳定系统必存在某个 $V$，但它是存在性结果，不给构造方法。
+3. **吸引域估计保守**。$\Omega_c$ 通常远小于真实吸引域。改进手段（有理 Lyapunov 函数、SOS/凸优化搜索、迭代估计）是活跃研究方向，本课不展开。
+4. **间接法的临界情形失效**——但直接法常常能救场。反转例：$\dot x_1 = x_2,\ \dot x_2 = -x_1 - x_2^3$。Jacobian 在原点为 $\begin{bmatrix}0&1\\-1&0\end{bmatrix}$，特征值 $\pm j$，间接法哑火；而 $V = x_1^2+x_2^2$ 给 $\dot V = -2x_2^4 \le 0$，LaSalle 收尾得**全局渐近稳定**。高阶项救了系统，也只有直接法看得见高阶项。
+5. **时变/时滞系统需要扩展**。$\dot x = f(t,x)$ 要求 $V$ 与 $\dot V$ 的一致性条件（uniformity）；时滞系统需要 Lyapunov-Krasovskii **泛函**而非函数。这些是后续章节的内容。
+
+## 小结
+
+- 稳定性是分层的：Lyapunov 稳定 ⊂ 渐近稳定 ⊂ 指数稳定；局部与全局是两回事（非线性特有）。
+- 直接法：找正定 $V$，算 $\dot V = \nabla V \cdot f$（不求解轨迹）；$\dot V$ 负定⇒渐近稳定，$\dot V\le 0$⇒稳定。
+- $\dot V$ 负半定时用 **LaSalle 不变集原理**：轨迹趋于 $E=\{\dot V=0\}$ 内最大不变集。
+- 间接法=线性化看特征值；临界情形（虚轴特征值）失效；其与直接法由 Lyapunov 方程 $A^TP+PA=-Q$ 桥接。
+- 构造套路：二次型、能量法、变量梯度法、Krasovskii 法；物理系统先试能量法。
+- 吸引域估计：有界 $\Omega_c=\{V\le c\}$ 内 $\dot V<0$ ⇒ $\Omega_c$ 正不变且含于吸引域；估计保守但定量。
+- 失效边界：保守系统、构造无算法、估计保守、时滞/时变需扩展。
+
+## 习题
+
+**习题 1**：判断下列函数是否正定（$x\in\mathbb{R}^2$）：
+(a) $V = x_1^2 + 2x_2^2$
+(b) $V = x_1^2 - 2x_1x_2 + 2x_2^2$
+(c) $V = x_1^2 + 4x_1x_2 + 2x_2^2$
+(d) $V = x_1^2 + x_2^4$
+
+**习题 2**：系统 $\dot x_1 = x_2$，$\dot x_2 = -x_1 - x_2 - x_1^3$。取 $V = x_1^2 + x_2^2 + \tfrac12 x_1^4$，证明原点全局渐近稳定。（提示：$\dot V$ 负半定，需 LaSalle。）
+
+**习题 3**：无阻尼摆 $\ddot\theta + \sin\theta = 0$。
+(a) 分别在 $\theta=0$ 与 $\theta=\pi$ 处线性化，求特征值，并说明间接法各能给出什么结论；
+(b) 取 $V = \tfrac12\dot\theta^2 + (1-\cos\theta)$，证明 $\theta=0$ 是 Lyapunov 稳定的（并说明为何证不出渐近稳定）。
+
+**习题 4**：系统 $\dot x_1 = x_2$，$\dot x_2 = -x_1 - x_2 + x_1x_2$。取 $V = x_1^2 + x_2^2$：
+(a) 求 $\dot V$ 并化简；
+(b) 给出使 $\dot V \le 0$ 的区域 $D$；
+(c) 用吸引域估计定理给出一个具体的吸引域内估计 $\Omega_c$，并说明 $c$ 的取值范围。
+
+**习题 5**：平面卫星 $J\ddot\theta = u$，控制律 $u = -k_p\theta - k_d\dot\theta$（$J,k_p,k_d>0$）。取 $V = \tfrac12 J\dot\theta^2 + \tfrac12 k_p\theta^2$：
+(a) 验证 $V$ 正定且径向无界；
+(b) 求 $\dot V$；
+(c) 用 LaSalle 证明全局渐近稳定；
+(d) 说明为何该结论是全局的，而线性化只能给局部结论。
+
+## 答案
+
+**答案 1**：
+(a) 二次型矩阵 $\begin{bmatrix}1&0\\0&2\end{bmatrix}$，特征值 $1,2>0$，**正定**。
+(b) 矩阵 $\begin{bmatrix}1&-1\\-1&2\end{bmatrix}$：顺序主子式 $1>0$、$\det=2-1=1>0$，**正定**。
+(c) 矩阵 $\begin{bmatrix}1&2\\2&2\end{bmatrix}$：$\det = 2-4 = -2 < 0$，特征值一正一负，**不定**（如 $x=(2,-1)$ 时 $V=4-16+2=-10 < 0$）。
+(d) 非二次型但 $V(0)=0$、$x\ne0$ 时两项至少一项为正且均非负，故 $V(x)>0$，**正定**。
+
+**答案 2**：
+$V$ 正定：$x_1^2+x_2^2+\tfrac12x_1^4 = 0 \iff x=0$，其余为正；$\|x\|\to\infty$ 时 $V\to\infty$（径向无界）。
+$\dot V = 2x_1x_2 + 2x_2(-x_1-x_2-x_1^3) + 2x_1^3x_2 = 2x_1x_2 - 2x_1x_2 - 2x_2^2 - 2x_1^3x_2 + 2x_1^3x_2 = -2x_2^2 \le 0$。
+LaSalle：对任意 $c_0>0$，$\Omega=\{V\le c_0\}$ 有界（径向无界）正不变；$E=\{x_2=0\}$；轨迹若整个留在 $E$ 内则 $x_2\equiv0 \Rightarrow \dot x_2 \equiv 0 \Rightarrow -x_1-x_1^3\equiv0 \Rightarrow x_1\equiv0$，故最大不变集 $M=\{0\}$。$c_0$ 任意 ⇒ **全局渐近稳定**。∎
+
+**答案 3**：
+(a) 状态 $(\theta,\omega)$，$f=(\omega, -\sin\theta)$。Jacobian $\begin{bmatrix}0&1\\-\cos\theta&0\end{bmatrix}$。$\theta=0$：$A=\begin{bmatrix}0&1\\-1&0\end{bmatrix}$，特征值 $\lambda=\pm j$——临界情形，间接法**无结论**。$\theta=\pi$：$A=\begin{bmatrix}0&1\\1&0\end{bmatrix}$，特征值 $\lambda=\pm1$——有正实部，**不稳定**。
+(b) $V(0,0)=0$；在 $|\theta| < 2\pi$ 邻域内 $1-\cos\theta>0$（$\theta\ne0$），故 $V$ 局部正定。$\dot V = \dot\theta\ddot\theta + \sin\theta\,\dot\theta = \dot\theta(-\sin\theta) + \sin\theta\,\dot\theta = 0 \le 0$。由直接法定理 1，原点 **Lyapunov 稳定**。证不出渐近稳定：$\dot V\equiv 0$ 意味着 $V$ 沿轨迹守恒，非零初值的轨迹是周期轨道，不收敛到原点（与相平面课的闭轨结论一致）。∎
+
+**答案 4**：
+(a) $\dot V = 2x_1x_2 + 2x_2(-x_1-x_2+x_1x_2) = 2x_1x_2 - 2x_1x_2 - 2x_2^2 + 2x_1x_2^2 = -2x_2^2(1-x_1)$。
+(b) $D = \{ x_1 < 1 \}$：其内 $1-x_1>0$，故 $\dot V \le 0$（等号当且仅当 $x_2=0$）。
+(c) $\Omega_c=\{V\le c\}$ 上 $x_1^2 \le c$ 即 $|x_1|\le\sqrt c$。要 $\Omega_c \subset D$ 只需 $\sqrt c < 1$ 即 $0 < c < 1$。此时 $\Omega_c$ 有界正不变、其内 $\dot V\le0$；LaSalle：$E=\{x_2=0\}$，其上 $\dot x_2=-x_1=0\Rightarrow x_1=0$（注意 $\Omega_c$ 内 $x_1\ge-\sqrt c>-1$ 且 $x_1=0$ 是唯一使 $\dot x_2=0$ 的点），故 $M=\{0\}$。取例如 $c=0.5$：$\{x_1^2+x_2^2 \le 0.5\}$ 是吸引域的一个内估计（上确界为 $c\to1$，即开单位圆 $\{V<1\}$ 亦含于吸引域）。∎
+
+**答案 5**：
+(a) $J,k_p>0$ ⇒ 两个平方项系数为正，$V=0 \iff (\theta,\dot\theta)=0$；$\|(\theta,\dot\theta)\|\to\infty$ 时 $V\to\infty$，径向无界。✓
+(b) $\dot V = J\dot\theta\ddot\theta + k_p\theta\dot\theta = \dot\theta(J\ddot\theta + k_p\theta) = \dot\theta(u + k_p\theta) = \dot\theta(-k_d\dot\theta) = -k_d\dot\theta^2 \le 0$。
+(c) 任意 $c_0>0$，$\Omega=\{V\le c_0\}$ 有界正不变；$E=\{\dot\theta=0\}$；轨迹留在 $E$ 内 ⇒ $\ddot\theta\equiv0$ ⇒ $u\equiv0$ ⇒ $-k_p\theta\equiv0$ ⇒ $\theta\equiv0$ ⇒ $M=\{0\}$。$c_0$ 任意 ⇒ **全局渐近稳定**。∎
+(d) 全局性来自 $V$ 的正定+径向无界与 LaSalle 论证对**任意** $c_0$ 成立，不依赖任何小量假设；而线性化定理的结论形式上只在平衡点某邻域内有效（它丢弃了高阶项，无法对大初值负责）。本例闭环恰为线性系统 $\ddot\theta + \frac{k_d}{J}\dot\theta + \frac{k_p}{J}\theta=0$，二者结论一致；但一旦加入执行器饱和、重力梯度矩等非线性项，线性化的局部性就是硬约束，而 Lyapunov 论证（适当修改 $V$）仍可给全局或半全局结论。∎

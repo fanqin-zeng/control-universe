@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="310" viewBox="0 0 760 310" role="img" aria-labelledby="title desc">
+<title id="title">反步设计：先定期望速度，再求实际输入</title><desc id="desc">上排从实际输入到后级状态，再到输出，箭头表示物理作用方向。下排从输出误差开始，设计虚拟控制，再向实际输入推进。</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#2563eb"/></marker><marker id="green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#15803d"/></marker></defs>
+<rect width="760" height="310" rx="12" fill="#f8fafc"/>
+<g font-family="Microsoft YaHei, sans-serif" fill="#1e293b" text-anchor="middle"><text x="380" y="32" font-size="19" font-weight="bold">物理作用逐级传递，设计从输出误差开始</text>
+<g fill="#eff6ff" stroke="#2563eb"><rect x="30" y="66" width="125" height="58" rx="8"/><rect x="215" y="66" width="125" height="58" rx="8"/><rect x="400" y="66" width="125" height="58" rx="8"/><rect x="590" y="66" width="140" height="58" rx="8"/></g>
+<g font-size="17"><text x="92" y="101">实际输入 u</text><text x="277" y="101">后级状态 xₙ</text><text x="462" y="101">状态 x₂</text><text x="660" y="101">输出 x₁</text></g>
+<g stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"><path d="M155 95H210"/><path d="M340 95H395" stroke-dasharray="5 4"/><path d="M525 95H585"/></g>
+<text x="370" y="82" font-size="13">中间环节</text>
+<g fill="#f0fdf4" stroke="#15803d"><rect x="30" y="181" width="125" height="60" rx="8"/><rect x="215" y="181" width="125" height="60" rx="8"/><rect x="400" y="181" width="125" height="60" rx="8"/><rect x="590" y="181" width="140" height="60" rx="8"/></g>
+<g font-size="16"><text x="92" y="206">求出 u</text><text x="92" y="226">完成最后一级</text><text x="277" y="206">继续设计</text><text x="277" y="226">期望状态</text><text x="462" y="206">设计 α₁</text><text x="462" y="226">x₂ 的期望值</text><text x="660" y="206">先看误差</text><text x="660" y="226">z₁ = x₁ − x_d</text></g>
+<g stroke="#15803d" stroke-width="2" marker-end="url(#green)"><path d="M590 211H530"/><path d="M400 211H345" stroke-dasharray="5 4"/><path d="M215 211H160"/></g>
+<text x="380" y="281" font-size="16">每多处理一级误差 zᵢ，就把 zᵢ²/2 加进 Lyapunov 函数</text></g></svg>

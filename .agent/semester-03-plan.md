@@ -646,3 +646,27 @@ LQR控制按重构专用技能Phase1–4，保留10主题/三例十题和原CARE
 润色目的、要求、完整205课计划和逐课记录统一维护在 [.agent/semester-03/zh-lang-edit/README.md](semester-03/zh-lang-edit/README.md) 及同目录 PLAN.md。由其他模型在 `codex/semester-03-zh-lang-edit` 长期分支完成，不使用角色讨论或 Phase 1–4，不向既有内容生产 SKILL 添加润色职责。原22人团队恢复，课程生产规则照旧。
 
 润色结果仅在用户明确要求合入时，由维护 Agent 做简单审核后合入 master；不得自行合并或发布 Pages。当前 CLASSIC-01 试稿保留，未视为用户认可；历史材料迁入该目录 archive，仅供参考。
+
+### NONLINEAR-03 本轮执行记录（2026-10-18）
+
+Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、原四实验八cell与五题，补抽屉储能SVG/两核验实验/临界第六题；纠稳定性包含、反例-2、圆外收敛过推、摆多圈与紧势阱、平面PD/关节调节/电网边界。实际TS195组292695点对独立DOP853，六符号恒等与PD独立expm；六Notebook十cell严格Jupyter/Pyodide及真实工具栏通过，17旧ID保留、375px表内滚动。签发/真实master回执见全局checklist及.agent/semester-03/nonlinear-03/acceptance.md；原25Python待办及W08/W09/W10不关闭，独立中文润色目录/分支不动，本轮不发布Pages。
+
+### NONLINEAR-04 本轮执行记录（2026-10-18）
+
+描述函数按重构专用Phase1–4，仅本课。保留原12主题、六实验21cell和六题，增恒温器SVG引入及手算/习题核验，共七实验22cell；修正圆判据全局保证、HB候选与真实周期轨道混淆、双根网格误差、饱和临界解族、谐波指标与步长解释。两实际组件共享纯数值实现，对独立分段积分390组、HB4608组和事件驱动连续仿真复核；真实页面分支/恢复/375px及20旧ID通过。S04本课组件第5项债务关闭，W08/W09/W10及原25项Python待办保留；实际签发和master回执见全局checklist与.agent/semester-03/nonlinear-04/acceptance.md。不操作中文润色分支、不发布Pages，下一课另起对话。
+
+### NONLINEAR-05 本轮执行记录（2026-10-18）
+
+反馈线性化按重构专用Phase1–4，仅本课。保留15主题、四原实验十二cell与五题，纠对合分布、跟踪符号、Q2导数/Q4速度、球梁三阶余项与局部证明、机械臂向量相对阶及惯性/重力失配。增真实SVG、三带宽及三惯性缩放/答案核验，共六实验十五cell/六题；零动态组件统一初值、解析实际末时/控制量、a0改r2与默认恢复。实际TS40工况20040点、9符号恒等、摆误差坐标及球梁z坐标DOP853、原始内核/Pyodide、42旧ID与375px通过。验收与实际master回执见全局checklist及.agent/semester-03/nonlinear-05/acceptance.md。W08/W09/W10和原25项Python待办保留，不操作中文润色分支，不发布Pages，不交付下一课。
+
+### NONLINEAR-06 本轮执行记录（2026-10-18）
+
+滑模控制按重构专用Phase1–4，仅本课。保留13主题、原五实验17cell、六题与四应用，纠滑动不变性、输入增益/量纲、sat/tanh界、STA导数假设、RK4阶段控制、电机静差及恢复比较；增真实SVG与手算/默认核验，共六实验18cell。组件全步指标与真实终时、四律禁用参数及恢复通过；实际TS48工况72048点、4符号/秩核验、连续DOP853/步长收敛、原生/Pyodide及44旧ID、375px通过。实际签发与master回执见全局checklist及.agent/semester-03/nonlinear-06/acceptance.md。原25Python待办与W08/W09/W10保留，不动中文润色分支，不发布Pages，不交付下一课。
+
+### NONLINEAR-07 本轮执行记录（2026-10-18）
+
+反步设计按重构专用Phase1–4，仅本课。保留12主题、六原实验26cell、六题，纠二阶等价推广、全局条件、自适应两估计器与PE平方窗口、四阶静差、采样和吸引域误称。增SVG与完整数学/默认核验，共七实验27cell；组件公开ZOH、实际终时、全节点指标、默认恢复及完整增益域。真实TS36配置198036绘图节点、4符号恒等、expm/自适应与机器人DOP853、原生/Pyodide、41旧ID及375px通过。实际签发与master回执见全局checklist及.agent/semester-03/nonlinear-07/acceptance.md；原25Python待办与W08/W09/W10保留，不动中文润色分支，不发布Pages，不续做下一课。
+
+### NONLINEAR-08 本轮执行记录（2026-10-18）
+
+自适应控制按重构专用Phase1–4，仅本课。保留13主题、九原实验38cell、六题，纠高阶输入信息、固定V参数界、有限时域无界/PE推断、泄漏唯一性、RLS先验、机器人初速及谐波；追加核验共十实验39cell。组件真实19配置27465点独立对账、三种子、DOP853、原生/Pyodide及55旧ID验收见本期讨论日志与.agent/semester-03/nonlinear-08/acceptance.md。原25项Python待办及W08/W09/W10保留，中文润色分支不动，Pages另行授权；真实签发与master回执以全局checklist为准。

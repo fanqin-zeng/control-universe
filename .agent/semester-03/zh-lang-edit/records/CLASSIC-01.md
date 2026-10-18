@@ -66,3 +66,5 @@
 > 正文：content/classic/system-modeling.mdx。历史讨论记录：docs/discuss-log/semester-03/03-classic/polish/01-system-modeling.md。旧验收与原稿快照：../archive/classic-01/。此处保留来源，不要求继续模拟角色、顺读记忆或Phase1–4。
 >
 > 接手模型应重新判断表达和学习负荷，按当前README记录实际改动；不要把旧自评当作用户验收。
+
+维护者合入回执（2026-10-18）：用户本对话已授权；已快速审查本课diff与代码/块公式/组件/标题/锚点不变量，随润色分支261e9ed合入master，合并提交847d9a424c9adb65a8508af1cd0adbbcd4f85293。共同审核与实际门槛见 `../merges/261e9ed/acceptance.md`。本回执不宣称重新执行未改的Python代码。

@@ -1,0 +1,16 @@
+import{readFileSync,writeFileSync}from'node:fs';import{createHash}from'node:crypto';import assert from'node:assert/strict';
+import{extractNotebooks}from'../../../scripts/lib-mdx.mjs';import{renderedHeadings}from'../../../scripts/rendered-headings.mjs';
+const d='.agent/semester-03/nonlinear-05/',read=p=>readFileSync(p,'utf8'),json=p=>JSON.parse(read(p)),hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex');
+const s=read('content/nonlinear/feedback-linearization.mdx'),r=json(d+'reconciliation.json'),py=json(d+'pyodide.json'),nb=json(d+'notebooks.json'),b=json(d+'browser.json');
+assert(r.pass&&r.independent.pass_);assert.equal(r.sourceHash,hash(s));assert.equal(r.numericsHash,hash(read('lib/zero-dynamics.ts')));assert.equal(r.componentHash,hash(read('components/wiki/zero-dynamics-explorer.tsx')));
+assert.equal(r.independent.cases,40);assert.equal(r.independent.points,20040);assert.equal(r.independent.symbolicChecks,9);assert(r.independent.maxComponentRelativeError<2e-10&&r.independent.maxPendulumStateError<2e-7&&r.independent.maxBallStateError<2e-7);
+assert(py.complete);assert.equal(py.lessons.length,1);assert.equal(py.lessons[0].sourceHash,r.sourceHash);assert.equal(py.lessons[0].notebooks.length,6);assert(py.lessons[0].notebooks.every(n=>n.status==='passed'&&n.cells.every(c=>c.status==='passed')));
+assert.equal(nb.executionStatus,'EXECUTED');assert.equal(nb.totals.FAIL,0);assert.equal(nb.totals.SKIPPED,0);assert.equal(nb.lessons[0].notebooks,6);assert.equal(nb.lessons[0].cells.length,15);
+const old=extractNotebooks(read(d+'source-before.mdx')),now=extractNotebooks(s);assert.equal(old.length,4);assert.deepEqual(old.map(n=>n.cells.length),[3,3,3,3]);assert.deepEqual(now.map(n=>n.cells.length),[3,3,4,3,1,1]);assert.equal((s.match(/<JupyterNotebook\b/g)||[]).length,6);assert.equal(b.sectionCount,6);
+assert.deepEqual(json('docs/deployment/python-expansion-pending.json'),json(d+'pending-before.json'));
+const h=await renderedHeadings(s,'nonlinear/feedback-linearization');assert.equal(h.h2.length,15);assert.deepEqual(b.h2,h.h2.map(n=>({id:n.id,text:n.text})));assert.equal(new Set(b.ids).size,b.ids.length);for(const id of json(d+'baseline-headings.json').ids)assert(b.ids.includes(id),id);for(const href of b.targets)assert(b.ids.includes(decodeURIComponent(href.split('#')[1])));
+assert.equal(b.katexErrors,0);assert(b.images.length&&b.images.every(i=>i.loaded));assert.equal(b.console.length,0);assert.equal(b.default,b.reset);assert(b.default.includes('9.079780e-5'));assert(b.negative.includes('1.187305e+2'));assert(b.positive.includes('8.983929e-3'));assert(b.zero.includes('相对阶为2'));assert(b.nearZero.includes('4.480195e+42'));
+for(const i of [0,4,5])assert.equal(b.toolbars[i].status,'运行完成');assert.equal(b.mobile.viewport,375);assert.equal(b.mobile.width,b.mobile.scrollWidth);
+assert(read(d+'verify.log').includes('PASS 9 · WARN 0 · FAIL 0 · SKIPPED 0'));
+for(const name of ['build.log','pages-build.log']){assert(read(d+name).includes('Compiled successfully'));assert(!read(d+name).includes('Failed to compile'));}
+const result={pass:true,sourceHash:r.sourceHash,cases:40,points:20040,symbolicChecks:9,notebooks:6,cells:15,h2:15,oldIds:42,pythonPending:25};writeFileSync(d+'delivery-validation.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

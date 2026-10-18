@@ -1,243 +1,105 @@
 ---
-title: "自适应控制基础"
-description: "从Lyapunov设计MRAC与STR两条技术路线，用数值实验测清参数收敛、持续激励、鲁棒化修正与未建模动态失稳的真实边界"
+title: "自适应控制"
+description: "从机械臂负载变化出发，推导MRAC与STR，理解跟踪、参数辨识和鲁棒化修正各自能保证什么"
 ---
 
-# 自适应控制基础
+# 自适应控制
 
 ## 引言
 
-上一课的[反步法设计](/nonlinear/backstepping)给了一个漂亮的保证：只要系统是严格反馈形式、$g_i$ 不穿越零，就能一步步构造出使 $\dot V_n = -\sum k_i z_i^2$ 的控制律。但那个保证有一个常被忽略的前提——$f_i$ 和 $g_i$ 里的**参数是已知的**。反步法不要求你抵消非线性，却要求你**知道**非线性长什么样。
+机械臂空手移动时，原来的控制器工作得很好。可一抓起较重的工件，同样的力矩就未必能让它按原来的速度运动，抬起手臂所需的重力补偿也变了。每换一次工件，就停机重调控制器，显然不太方便。
 
-真实系统里这个前提几乎从不成立：
+我们希望控制器在运行中观察偏差，逐步调整自己的参数。这就是<strong>自适应控制</strong>要解决的一类问题。它不等于“什么都不知道也能自动控制”：哪些参数未知、控制量作用在哪个方程、传感器能测到什么，仍然要事先说明。
 
-- 机械臂抓起不同工件，转动惯量 $J$ 和重力矩 $mgL$ 一起变（本课案例 1 里 $J$ 从 0.45 变到 1.45 kg·m²、$mgL$ 从 4.905 变到 24.525 N·m，都是 3～5 倍的变化）
-- 飞行器爬升，空气密度按 $\exp(-h/8500)$ 衰减，所有气动导数同比例缩水（案例 2 里控制效能在 60 秒内降到 30.8%）
-- 电机绕组电阻随温度上升，化工反应速率常数随催化剂老化衰减，电容等效串联电阻随老化增大
+[反步设计](/nonlinear/backstepping)已经展示了把参数估计放进控制律的思路。本课先用一个更简单的一阶系统，把更新律为什么这样选完整算一遍，然后再看递推辨识和两个应用模型。读者需要了解[李雅普诺夫方法](/nonlinear/lyapunov-stability)中的正定函数与Barbalat引理，以及[状态空间表示](/modern/state-space)。
 
-**自适应控制**（adaptive control）要做的事很朴素：既然参数不知道，就让它成为控制器的内部状态，一边控制一边估计，用估计值算控制量。
+阅读时先记住一个问题：<strong>输出已经跟上了参考，是否就说明控制器把对象参数认准了？</strong> 答案是否定的。理解这一点，比记住几种更新公式更重要。
 
-> 📐 本文的核心工具是 Lyapunov 直接法与 Barbalat 引理，详见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)；矩阵形式的推导用到状态空间与 Lyapunov 方程，详见 [状态空间表示](/modern/state-space)；递归设计的对照见 [反步法设计](/nonlinear/backstepping)。
+## 未知参数与控制目标
 
-### 本课要先拆掉四个直觉
-
-自适应控制的教材推导都很干净，干净到容易让人以为结论也很干净。本课的每一条结论都由数值实验给出。先列出四个将被实测推翻或修正的常见说法：
-
-| 常见说法 | 实测结果 |
-| --- | --- |
-| "跟踪误差趋于零，参数就会收敛到真值" | 阶跃输入下 $e(60\,\mathrm{s}) = 8.66\times 10^{-15}$（机器精度级零），但 $k_1 = -0.0441$、$k_2 = 0.7107$，距理想值 $(-1,\ 1.6667)$ 还有 $1.35$。参数误差精确落在一条**直流增益匹配流形**上，偏差 $1.3\times 10^{-13}$ |
-| "自适应增益 $\gamma$ 越大，收敛越快" | $\gamma$ 从 0.5 加到 10 时确实变快（拟合速率 $0.0067 \to 0.0406\ \mathrm{s}^{-1}$）；但 $\gamma=200$ 在 $t=400$ s 时残差 $6.00\times 10^{-4}$、$\gamma=1000$ 卡在 $1.71\times 10^{-2}$，都比 $\gamma=10$ 的 $4.49\times 10^{-8}$ 差好几个数量级 |
-| "加上 $\sigma$-修正、死区就鲁棒了" | 噪声场景下修正手段把 $\mathrm{std}(k_1)$ 从 4.11 压到 0.36、把 $\max\lvert u\rvert$ 从 11.4 压到 4.8，但 $\mathrm{rms}\lvert e\rvert$ 只从 0.126 改善到 0.083——理想无噪声时是 $4.3\times 10^{-4}$。**修正保住的是参数和控制量，不是精度** |
-| "自适应能处理参数不确定性" | 只能处理**匹配**的那部分。二阶例子里把参考模型第一行改掉（匹配条件无解），闭环在 $t=15.20$ s 发散；把未知参数放到 $A$ 的第一行（不匹配），$t=41.08$ s 发散 |
-
-这四条不是边角料，它们决定了你在工程上敢不敢用自适应、用在哪、怎么整定。
-
-## 自适应控制的基本概念
-
-### 不确定性的两种分类
-
-自适应控制只对付其中一种，这个区分必须先说清楚。
-
-**结构化不确定性**（parametric / structured）：不确定的是**参数的数值**，模型结构已知。例如 $J\ddot q + B\dot q + mgL\sin q = u$，你不知道 $m$，但你知道"$m$ 乘在 $gL\sin q$ 上"。这类不确定性可以写成**线性参数化**形式：
+假设电机的运动方程形式已知，但惯量、摩擦系数还不准确。这是参数不确定性。本课主要讨论能写成“未知常参数乘已知函数”的情形，例如
 
 $$
-f(x, \theta) = \theta^{\mathsf T}\phi(x)
+f(x,\theta)=\theta^{\mathsf T}\phi(x).
 $$
 
-其中 $\theta$ 是未知常向量，$\phi(x)$ 是已知的**回归量**（regressor）。自适应控制的全部机制都建立在这个形式上——只有线性参数化，才能用 Lyapunov 函数里的二次项 $\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta$ 把参数误差"配平"掉。
+$\theta$是待估参数，$\phi$是由可测量信号算出的<strong>回归量</strong>。对参数线性，不要求对状态线性：$\theta_1\sin x+\theta_2x^3$也符合这种形式。不是所有自适应方法都要求这一形式，但本课的证明依赖它。
 
-**非结构化不确定性**（unstructured）：连结构都不知道。未建模的高频动态、死区、间隙、量化、外部扰动都属于这一类。对付它们要用[鲁棒控制](/robust/robustness-concept)或[滑模控制](/nonlinear/sliding-mode-control)，而不是自适应。
+还有一类差异是模型漏掉了执行器滞后、柔性振动等动态。多估几个常数未必能弥补这些遗漏，后面会专门做实验。
 
-两者的边界在实践中是模糊的，而且这个模糊会咬人：第 7 节的 Rohrs 反例说明，**一点点非结构化成分（两个未建模极点）就足以让一个理论上全局稳定的自适应闭环失稳**，实测临界增益 $\gamma$ 落在 3 和 4 之间。
+两条常见路线如下。<strong>模型参考自适应控制（MRAC）</strong>先规定希望跟随的参考模型，再直接调整控制器增益；<strong>自整定调节器（STR）</strong>先估计对象参数，再代入设计公式重算增益。前者的增益不一定有“惯量估计”这样的物理含义。
 
-### 匹配与不匹配
+![MRAC与STR的信号及更新方向](/images/nonlinear/adaptive-control-routes.svg)
 
-即使不确定性是参数化的，还要看它出现在哪个"通道"里。对 $\dot x = A x + B u + \Delta(x,\theta)$：
+## 一阶MRAC
 
-- **匹配**（matched）：$\Delta$ 落在 $B$ 的列空间里，即存在 $\theta$ 使 $\Delta = B\theta^{\mathsf T}\phi(x)$。控制量 $u$ 有"权限"直接抵消它。
-- **不匹配**（unmatched）：$\Delta$ 有分量在 $B$ 的列空间之外。$u$ 无论怎么算都碰不到那部分。
+### 模型与假设
 
-对 $B = [0,\ 1]^{\mathsf T}$ 的二阶系统，$BK^{\mathsf T}$ 只能修改 $A$ 的**最后一行**。所以未知参数出现在第一行就是不匹配的——第 5 节会用数值实验展示（$\Gamma = 1000$、$\theta = 0.5$），此时闭环在 $t = 41.08$ s 发散，而且稳态跟踪残差恒等于 $\lvert\theta\rvert$，与增益 $K$ 取多大无关。
-
-> 这个限制不是 MRAC 独有的缺陷，而是"用单个输入去抵消分布在多个状态方程里的不确定性"这件事本身的极限。反步法之所以能处理不匹配的参数化不确定性，是因为它递归地在每一步注入虚拟控制，而不是只在最后一步注入一个真实控制——见 [反步法设计](/nonlinear/backstepping) 的"处理参数不确定性"一节。
-
-### 两条技术路线
-
-<img
-  src="/images/adaptive-control-concept.png"
-  alt="MRAC 直接法与 STR 间接法的回路结构对比"
-/>
-
-**路线一：模型参考自适应控制（MRAC，直接法）**
-
-先指定一个**参考模型** $\dot x_m = A_m x_m + B_m r$，它描述"你希望闭环长什么样"。然后设计一个增益可调的控制器，用自适应律直接把**控制器增益**往"能让被控对象表现得像参考模型"的方向推。
+对象与参考模型分别是
 
 $$
-r \longrightarrow [\text{参考模型}] \longrightarrow x_m, \qquad e = x_p - x_m \longrightarrow [\text{自适应律}] \longrightarrow \theta \longrightarrow [\text{控制律}] \longrightarrow u \longrightarrow [\text{被控对象}] \longrightarrow x_p
+\dot x_p=ax_p+bu,\qquad \dot x_m=a_mx_m+b_mr.
 $$
 
-关键特征：**被调整的是控制器参数，不是被控对象参数**。你从头到尾不知道 $a$、$b$ 是多少，你只想知道 $k_1$、$k_2$ 该取多少。
+$a,b$是未知常数，$b\ne0$且<strong>符号已知</strong>；$a_m<0,b_m$已知，参考$r$有界。状态$x_p$可准确测量，暂不考虑噪声、饱和和未建模动态。目标是让跟踪误差$e=x_p-x_m$趋于零。
 
-**路线二：自整定调节器（STR，间接法）**
-
-把问题拆成两步：先用递推最小二乘（RLS）**在线辨识被控对象参数** $\hat\theta_p$，再把 $\hat\theta_p$ 当真值代进控制器设计公式（极点配置、LQR 等）**实时重算增益**。
+取可调控制律
 
 $$
-(u, y) \longrightarrow [\text{RLS 辨识器}] \longrightarrow \hat\theta_p \longrightarrow [\text{控制器设计}] \longrightarrow K(\hat\theta_p) \longrightarrow u
+u=k_1x_p+k_2r.
 $$
 
-第二步"把估计值当真值用"叫**确认等价**（certainty equivalence）。它简单直观、模块化好，但有个致命细节：设计公式里往往有除法，$\hat\theta_p$ 穿过零点时增益会爆炸（第 6 节实测：$\hat\beta(0)=0$ 时第一步就得到 nan）。
-
-| 特性 | MRAC（直接法） | STR（间接法） |
-| --- | --- | --- |
-| 被估计的量 | 控制器增益 $K,\ k_r$ | 被控对象参数 $\alpha,\ \beta$ |
-| 稳定性分析 | Lyapunov 直接给出 $\dot V \le 0$，闭环一体化分析 | 辨识与控制两个回路耦合，需要额外的分离性论证 |
-| 需要的先验 | 参考模型（期望闭环动态）、$\mathrm{sign}(b)$ | 模型结构与阶次、采样周期 |
-| 对噪声的态度 | 自适应律是纯积分器，噪声直接被积分成参数随机游走 | RLS 有协方差矩阵 $P$ 做加权，可用遗忘因子调节 |
-| 工程上的典型故障 | 参数漂移、未建模动态导致失稳 | 除零、协方差 windup、bursting |
-| 本课实测锚点 | Rohrs 临界增益 $\gamma \in (3, 4)$ | $\lambda=0.95$ 时无激励段 $\lVert P\rVert$ 涨 $2.71\times 10^{4}$ 倍 |
-
-两者不是竞争关系：**MRAC 适合"我知道想要什么响应，但不知道对象"，STR 适合"我需要知道对象参数本身"**（比如要做故障诊断、要监控设备老化）。
-
-### 一个共同的机制，和它带来的共同麻烦
-
-两条路线的核心都是**积分**：
+如果知道对象参数，就能选择
 
 $$
-\dot{\hat\theta} = -\Gamma \cdot (\text{误差}) \cdot (\text{回归量})
+k_1^*=\frac{a_m-a}{b},\qquad k_2^*=\frac{b_m}{b},
 $$
 
-积分器的好处是能实现**无静差**——只要误差不恒为零，参数就一直往减小误差的方向走。坏处也是积分器的坏处：
+使$a+bk_1^*=a_m$、$bk_2^*=b_m$。$b\ne0$保证这两个式子有解；它本身并不告诉我们$b$的符号。
 
-1. **需要激励才能收敛到真值**。参数误差 $\tilde\theta$ 的收敛速度正比于回归量的信息量 $\int\phi\phi^{\mathsf T}\mathrm{d}t$。输入是常数时这个矩阵奇异，$\tilde\theta$ 只能收敛到零空间里的某个点——由初值决定。这就是**持续激励**（PE）条件，第 4 节会实测。
-2. **噪声被积分成随机游走**。实测 $\gamma=200$、量测噪声标准差 0.1 时 $\mathrm{std}(k_1)$ 达到 4.11，而无噪声对照只有 $6.9\times 10^{-3}$——差 596 倍。
-3. **积分饱和类现象会重演**。STR 里的协方差 windup 与 PID 的积分饱和是同构的：无激励时 $P$ 按 $\lambda^{-k}$ 指数膨胀，激励一恢复，巨大的 $P$ 让第一个新息把 $\hat\theta$ 猛推一把（bursting），实测参数跳变幅度比 $\lambda=1$ 时大 837 倍。
+### 从误差方程选更新律
 
-记住这三条，后面所有的"修正手段"（$\sigma$-修正、死区、e-修正、投影、遗忘因子）都是围绕它们打补丁。
-
-## 模型参考自适应控制（MRAC）
-
-### 问题表述
-
-考虑一阶被控对象：
+定义$\tilde k_i=k_i-k_i^*$。把控制律代入对象，减去参考模型，得到
 
 $$
-\dot x_p = a x_p + b u
+\dot e=a_me+b\tilde k_1x_p+b\tilde k_2r.
 $$
 
-其中 $a$、$b$ 是**未知常数**，但假设 $b \neq 0$ 且 $\mathrm{sign}(b)$ 已知（这个假设很重要，后面说明为什么）。参考模型：
+后两项妨碍我们直接判断误差是否减小。为此，把参数误差也放进候选函数：
 
 $$
-\dot x_m = a_m x_m + b_m r
+V=\frac12e^2+\frac{|b|}{2\gamma_1}\tilde k_1^2+\frac{|b|}{2\gamma_2}\tilde k_2^2,\qquad \gamma_i>0.
 $$
 
-$a_m < 0$（参考模型自身稳定），$b_m$ 已知，$r(t)$ 有界。控制目标：设计 $u(t)$ 使 $x_p(t) \to x_m(t)$。
-
-### 控制器结构与理想增益
-
-取线性反馈加前馈的可调控制器：
+虽然$V$含未知的$k_i^*$，它仍可以用于证明；真正运行的控制器不计算$V$。因为真参数为常数，$\dot{\tilde k}_i=\dot k_i$，所以
 
 $$
-u = k_1 x_p + k_2 r
+\dot V=a_me^2+b\tilde k_1ex_p+b\tilde k_2er
++\frac{|b|}{\gamma_1}\tilde k_1\dot k_1+\frac{|b|}{\gamma_2}\tilde k_2\dot k_2.
 $$
 
-**如果**参数已知，令闭环动态等于参考模型：
+现在选
 
 $$
-a + b k_1^* = a_m, \qquad b k_2^* = b_m
+\dot k_1=-\gamma_1\operatorname{sign}(b)ex_p,\qquad
+\dot k_2=-\gamma_2\operatorname{sign}(b)er.
 $$
 
-解出**理想增益**：
+由于$b=|b|\operatorname{sign}(b)$，参数相关的交叉项恰好相消：
 
 $$
-k_1^* = \frac{a_m - a}{b}, \qquad k_2^* = \frac{b_m}{b}
+\dot V=a_me^2\le0.
 $$
 
-这两个式子有解当且仅当 $b \neq 0$——这就是"控制方向已知"的最低要求。参数未知时 $k_1^*, k_2^*$ 算不出来，但它们**客观存在**，于是定义参数误差：
+更新律需要的只有误差、测得的状态、参考和$b$的符号。若把符号写反，上述抵消不成立，证明失效；这不等于所有初值都必然发散。
 
-$$
-\tilde k_1 = k_1 - k_1^*, \qquad \tilde k_2 = k_2 - k_2^*
-$$
+### 为什么误差趋于零
 
-$\tilde k_i$ 是分析工具，控制器里永远用不到它（因为 $k_i^*$ 未知）。
+对任意固定、有限、正的$\gamma_i$，$V(t)\le V(0)$保证$e$和两个参数误差有界。增益很大时，相应的参数界可能更宽，但绝不是“$V$管不住参数”。
 
-### 误差动力学
+由$\dot V=a_me^2$积分，得到$\int_0^\infty e^2\,dt<\infty$。参考模型稳定且$r$有界，故$x_m$有界，$x_p=e+x_m$也有界；误差方程右端各项有界，因此$\dot e$有界。于是$e$一致连续，结合平方可积，由Barbalat引理得到$e(t)\to0$。
 
-对 $e = x_p - x_m$ 求导，代入被控对象、控制律与参考模型：
-
-$$
-\begin{aligned}
-\dot e &= a x_p + b(k_1 x_p + k_2 r) - a_m x_m - b_m r \\
-&= (a + b k_1) x_p + (b k_2 - b_m) r - a_m x_m \\
-&= (a_m + b\tilde k_1) x_p + b\tilde k_2 r - a_m x_m
-\end{aligned}
-$$
-
-（第二行到第三行用了 $a + bk_1 = a + b(k_1^* + \tilde k_1) = a_m + b\tilde k_1$。）合并 $a_m$ 项：
-
-$$
-\dot e = a_m e + b\tilde k_1 x_p + b\tilde k_2 r
-$$
-
-这是 MRAC 的**核心误差方程**。它的结构决定了后面所有设计：$\dot e$ 由一个稳定线性项 $a_m e$，加上两个"未知系数 × 已知信号"的项组成。$x_p$ 和 $r$ 都可测，未知的只有 $\tilde k_1, \tilde k_2$。
-
-### Lyapunov 设计与自适应律
-
-构造候选 Lyapunov 函数：
-
-$$
-V = \frac{1}{2}e^2 + \frac{|b|}{2\gamma_1}\tilde k_1^2 + \frac{|b|}{2\gamma_2}\tilde k_2^2
-$$
-
-$\gamma_1, \gamma_2 > 0$ 是**自适应增益**（adaptation gains）。$V$ 正定（$|b| > 0$），且因为 $k_i^*$ 是常数、$\dot{\tilde k}_i = \dot k_i$：
-
-$$
-\dot V = e\dot e + \frac{|b|}{\gamma_1}\tilde k_1 \dot k_1 + \frac{|b|}{\gamma_2}\tilde k_2 \dot k_2
-$$
-
-代入误差方程：
-
-$$
-\dot V = a_m e^2 + b\tilde k_1 e x_p + b\tilde k_2 e r + \frac{|b|}{\gamma_1}\tilde k_1\dot k_1 + \frac{|b|}{\gamma_2}\tilde k_2 \dot k_2
-$$
-
-现在**选择** $\dot k_1, \dot k_2$ 把含 $\tilde k_i$ 的交叉项消掉。要让 $b\tilde k_1 ex_p + \frac{|b|}{\gamma_1}\tilde k_1\dot k_1 = 0$ 对任意 $\tilde k_1$ 成立，需要：
-
-$$
-\dot k_1 = -\frac{\gamma_1 b}{|b|}\, e x_p = -\gamma_1\,\mathrm{sign}(b)\, e x_p
-$$
-
-$$
-\dot k_2 = -\gamma_2\,\mathrm{sign}(b)\, e r
-$$
-
-于是：
-
-$$
-\dot V = a_m e^2 \le 0
-$$
-
-$V$ 单调不增且有下界 0，所以 $V(t)$ 收敛到有限值，$e,\ k_1,\ k_2$ 全部有界。
-
-> **$\mathrm{sign}(b)$ 为什么必须已知**：如果 $b$ 的符号搞反，自适应律会把参数往**增大**误差的方向推，交叉项不再相消，$\dot V$ 里多出 $2b\tilde k_1 ex_p$，闭环会发散。工程上这意味着"你必须知道执行器的正指令产生正效果还是负效果"。阀门装反、电机相序接错的系统上，这个假设不成立时会出大事。放宽它的办法（Nussbaum 增益）超出本课范围。
-
-### 从 $\dot V \le 0$ 到 $e \to 0$：Barbalat 引理
-
-$\dot V = a_m e^2$ 只是**半负定**：它在 $e = 0$ 时为零，而 $\tilde k \neq 0$ 时也可能为零。所以 Lyapunov 直接法只能给出"$V$ 收敛、所有信号有界"，**不能**直接给出 $e \to 0$。要用 Barbalat 引理补一步：
-
-1. $V$ 单调递减有下界 $\Rightarrow V(\infty)$ 存在有限，于是 $\int_0^\infty (-\dot V)\,\mathrm{d}t = V(0) - V(\infty) < \infty$，即 $\int_0^\infty e^2 \mathrm{d}t < \infty$，$e \in L_2$。
-2. $\dot e = a_m e + b\tilde k_1 x_p + b\tilde k_2 r$，右边每一项都有界（$e, \tilde k$ 有界，$x_p = e + x_m$ 有界，$r$ 有界），所以 $\dot e$ 有界 $\Rightarrow e$ 一致连续。
-3. Barbalat 引理：$e$ 一致连续且 $e \in L_2$ $\Rightarrow e(t) \to 0$。
-
-> 详见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)。这一步是自适应控制证明里的标准套路，也是最容易被跳过的一步——跳过它就只得到有界性，得不到渐近跟踪。
-
-### 一个被 $\dot V = a_m e^2$ 藏起来的机制
-
-$V$ 里参数误差的权重是 $|b|/(2\gamma)$。**$\gamma$ 越大，$V$ 越不在乎参数误差**。而 $\dot V = a_m e^2$ 说明：$V$ 只能通过 $e$ 这一个通道往下掉。
-
-这解释了一个后面会实测到的现象：$\gamma$ 很大时 $e$ 被极快地压到极小（$t>10$ s 的 $\mathrm{rms}\lvert e\rvert$：$\gamma=2$ 是 $1.62\times 10^{-2}$，$\gamma=10$ 是 $3.34\times 10^{-3}$，$\gamma=200$ 是 $2.37\times 10^{-4}$，$\gamma=1000$ 是 $2.66\times 10^{-5}$），"消耗 $V$ 的燃料"迅速耗尽，于是剩下的参数误差只能靠一条很慢的尾巴去磨——$\gamma=200$ 在 $t=400$ s 时残差 $6.00\times 10^{-4}$，反而比 $\gamma=10$ 的 $4.49\times 10^{-8}$ 差四个数量级。
-
-下面先验证这套推导本身没写错。
+注意，$\dot V$中没有负的$\tilde k_i^2$项。我们还没有证明参数趋于理想值。
 
 <JupyterNotebook
   title="Notebook 1：一阶 MRAC 的 V̇ = a_m·e² 恒等式验证与阶跃跟踪"
@@ -290,9 +152,9 @@ def sim_mrac(kind='step', gamma=2.0, T=20.0, dt=2e-4, k10=0.0, k20=0.0,
             break
         s1 = deriv(xp, xm, k1, k2, r)
         s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
-                   k2 + .5*dt*s1[3], r)
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
         s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
-                   k2 + .5*dt*s2[3], r)
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
         s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
                    k2 + dt*s3[3], rf(t + dt))
         xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
@@ -305,7 +167,7 @@ def sim_mrac(kind='step', gamma=2.0, T=20.0, dt=2e-4, k10=0.0, k20=0.0,
                 k1=np.array(k1s), k2=np.array(k2s), e_true=np.array(ets),
                 u=np.array(us))`}
   cells={[
-    { code: `# 检验 1：V̇ = a_m e^2 是代数恒等式，与轨迹无关
+{ title: "计算", code: `# 检验 1：V̇ = a_m e^2 是代数恒等式，与轨迹无关
 # 在随机状态点上用解析式算 V̇，与 a_m*e^2 比较
 rng = np.random.default_rng(0)
 g1, g2 = 2.0, 2.0
@@ -342,7 +204,7 @@ for _ in range(20000):
     Vd = e * edot + absb / g1 * kt1 * dk1 + absb / g2 * kt2 * dk2
     max_abs2 = max(max_abs2, abs(Vd - AM * e * e))
 print('  最大绝对偏差 = %.3e（不再为零，多出 2*b*kt*e*phi 项）' % max_abs2)` },
-    { code: `# 检验 2：沿真实仿真轨迹，V 必须严格单调下降，且 V̇ 的积分对得上
+{ title: "计算", code: `# 检验 2：沿真实仿真轨迹，V 必须严格单调下降，且 V̇ 的积分对得上
 d = sim_mrac(kind='step', gamma=2.0, T=30.0, dt=2e-4, store_every=2)
 e = d['e_true']
 kt1 = d['k1'] - K1S
@@ -361,7 +223,7 @@ print('能量核算：int V̇ dt 应等于 a_m * int e^2 dt')
 print('  a_m * int e^2 dt = %.6e' % lhs)
 print('  V(末) - V(0)     = %.6e' % rhs)
 print('  相对偏差 = %.3e  （差值来自梯形积分误差）' % (abs(lhs - rhs) / abs(rhs)))` },
-    { code: `# 阶跃跟踪的基本面貌：e -> 0，但参数走向哪里？
+{ title: "计算", code: `# 阶跃跟踪的基本面貌：e -> 0，但参数走向哪里？
 d = sim_mrac(kind='step', gamma=2.0, T=30.0, dt=2e-4, store_every=10)
 fig, ax = plt.subplots(3, 1, figsize=(9, 8), sharex=True)
 ax[0].plot(d['t'], d['xp'], 'b-', lw=2, label='x_p 被控对象')
@@ -391,66 +253,27 @@ print('闭环稳态增益 -b*k2/(a+b*k1) = %.6f  （参考模型 -b_m/a_m = %.6f
       % (-B_TRUE*d['k2'][-1]/(A_TRUE + B_TRUE*d['k1'][-1]), -BM/AM))
 print()
 print('跟踪是完美的，稳态增益是对的，闭环极点是错的。下一节解释为什么。')` }
-  ]}
+]}
 />
 
-## 手算例子：一阶系统的MRAC设计
 
-### 题目
+## 跟踪与参数收敛
 
-被控对象：
+### 手算一个控制器
 
-$$
-\dot x_p = -2 x_p + 3 u
-$$
-
-其中 $a = -2$、$b = 3$ **对控制器未知**，只知道 $b > 0$。参考模型：
+取对象$\dot x_p=-2x_p+3u$，参考模型$\dot x_m=-5x_m+5r$。控制器只知道输入系数为正。理想增益为
 
 $$
-\dot x_m = -5 x_m + 5 r
+k_1^*=-1,\qquad k_2^*=\frac53.
 $$
 
-即 $a_m = -5$、$b_m = 5$。设计自适应控制器使 $x_p \to x_m$。
-
-**选参考模型的依据**：$a_m = -5$ 对应时间常数 0.2 s，比被控对象开环的 0.5 s 快 2.5 倍，是一个"跳一跳够得着"的目标。选得太快（比如 $a_m = -50$）会要求超出执行器能力的控制量——[反步法设计](/nonlinear/backstepping) 的局限性一节实测过：参考带宽提高 20 倍，所需力矩从 30 N·m 涨到 625 N·m，超过 50 N·m 限幅 12 倍。
-
-### 步骤 1：理想增益
+选择$\gamma_1=\gamma_2=2$，就有$\dot k_1=-2ex_p$、$\dot k_2=-2er$，且
 
 $$
-k_1^* = \frac{a_m - a}{b} = \frac{-5 - (-2)}{3} = -1
+V=\frac12e^2+\frac34\tilde k_1^2+\frac34\tilde k_2^2,\qquad \dot V=-5e^2.
 $$
 
-$$
-k_2^* = \frac{b_m}{b} = \frac{5}{3} \approx 1.6667
-$$
-
-**校验**：$a + bk_1^* = -2 + 3(-1) = -5 = a_m$ ✓，$bk_2^* = 3 \times \frac{5}{3} = 5 = b_m$ ✓。
-
-### 步骤 2：自适应律
-
-取 $\gamma_1 = \gamma_2 = 2$，$\mathrm{sign}(b) = +1$：
-
-$$
-\dot k_1 = -2\, e\, x_p, \qquad \dot k_2 = -2\, e\, r
-$$
-
-### 步骤 3：Lyapunov 函数与结论
-
-$$
-V = \frac{1}{2}e^2 + \frac{3}{4}\tilde k_1^2 + \frac{3}{4}\tilde k_2^2
-$$
-
-（$|b|/(2\gamma) = 3/4$。）求导并代入自适应律：
-
-$$
-\dot V = -5 e^2 + 3\tilde k_1 e x_p + 3\tilde k_2 e r + \frac{3}{2}\tilde k_1(-2ex_p) + \frac{3}{2}\tilde k_2(-2er) = -5e^2
-$$
-
-所以 $V$ 单调不增，$e \in L_2$，$\dot e$ 有界，由 Barbalat 引理 $e(t) \to 0$。
-
-### 步骤 4：数值验证与步长收敛性
-
-理论说 $e \to 0$，但"数值上看到 $e \to 0$"和"数值误差恰好让它看起来像 0"是两回事。所以先做**步长收敛性检验**：如果结果随步长改变，说明看到的是数值假象。
+下面保留步长减半、四种参考及多组初始增益的实验。先看各步长是否给出接近的输出，再比较跟踪误差和参数误差；两列不能混着读。
 
 <JupyterNotebook
   title="Notebook 2：手算例子的步长收敛性、PE 度量与参数等效流形"
@@ -500,9 +323,9 @@ def sim_mrac(kind='step', gamma=2.0, T=20.0, dt=2e-4, k10=0.0, k20=0.0,
             break
         s1 = deriv(xp, xm, k1, k2, r)
         s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
-                   k2 + .5*dt*s1[3], r)
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
         s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
-                   k2 + .5*dt*s2[3], r)
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
         s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
                    k2 + dt*s3[3], rf(t + dt))
         xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
@@ -532,9 +355,8 @@ def k2_manifold(k1):
     """直流增益匹配流形：b*k2/(a+b*k1) = b_m/a_m"""
     return (BM / AM) * (A_TRUE + B_TRUE * k1) / B_TRUE`}
   cells={[
-    { code: `# 步长收敛性：若结果随 dt 改变，说明看到的是数值假象
-print('手算例子（r=1 阶跃，gamma=2，T=60）的步长收敛性：')
-print('  %-10s %-14s %-14s %-14s %-10s' % ('dt', 'e(末)', 'k1(末)', 'k2(末)', '相邻比值'))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 步长收敛性：若结果随 dt 改变，说明看到的是数值假象
 prev = None
 for dt_ in [8e-4, 4e-4, 2e-4, 1e-4]:
     d = sim_mrac(kind='step', gamma=2.0, T=60.0, dt=dt_,
@@ -544,15 +366,10 @@ for dt_ in [8e-4, 4e-4, 2e-4, 1e-4]:
     print('  %-10.0e %-14.6e %-14.8f %-14.8f %-10s'
           % (dt_, val, d['k1'][-1], d['k2'][-1], ratio))
     prev = val
-print()
-print('  k1、k2 的末值在小数点后 5 位都不随步长变化；')
-print('  e(末) 停在 1e-14 量级是浮点精度底，不是"还在收敛"。')
-print('  下面所有结论都与步长无关。')` },
-    { code: `# PE 度量：phi = [x_p, r] 在长度 2*pi 的窗口上的最小特征值
-# lambda_min > 0 <=> 满足持续激励；== 0 <=> 回归量线性相关，参数不可辨识
-print('四种参考输入的 PE 度量与参数收敛结果 (gamma=2, T=60, dt=2e-4)：')
-print('  %-14s %-13s %-13s %-11s %-11s %-11s'
-      % ('r(t)', 'PE lam_min', 'rms|e| 末段', 'k1(末)', 'k2(末)', '距理想点'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# PE 度量：phi = [x_p, r] 在长度 2*pi 的窗口上的最小特征值
+# 有限窗口Gram检查，不等于全未来PE证明
 res = {}
 for kind, label in [('step', '1 (阶跃)'), ('sine', 'sin(t)'),
                     ('multi', '1+多正弦'), ('zero', '0 (调节)')]:
@@ -564,18 +381,9 @@ for kind, label in [('step', '1 (阶跃)'), ('sine', 'sin(t)'),
           % (label, lam, np.sqrt(np.mean(d['e_true'][tail]**2)),
              d['k1'][-1], d['k2'][-1],
              np.hypot(d['k1'][-1] - K1S, d['k2'][-1] - K2S)))
-print()
-print('判读：')
-print('  阶跃：lam_min 在 1e-16 量级（数值零）=> 不满足 PE。')
-print('        稳态后 x_p 和 r 都等于 1，phi=[1,1] 只剩一个方向，两个参数不可分辨。')
-print('  sin(t) / 多正弦：lam_min = 0.121 / 0.182 > 0 => 满足 PE，参数确实在往真值走，')
-print('        60 s 还没走完，因为 gamma=2 的收敛速率只有 0.018 /s 量级（时间常数 54 s）。')
-print('  r=0：phi=[x_p, 0]，第二个分量恒为零，k2 完全不更新，末值 %.6f 就是初值。'
-      % res['zero']['k2'][-1])` },
-    { code: `# 等效流形：阶跃输入下参数终点在哪？换五组初值再试
-print('阶跃输入、gamma=2、T=60，五组不同的初值：')
-print('  %-16s %-11s %-11s %-13s %-15s'
-      % ('(k1_0, k2_0)', 'k1(末)', 'k2(末)', '距理想点', '距 DC 匹配流形'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 等效流形：阶跃输入下参数终点在哪？换五组初值再试
 pts = []
 for k10, k20 in [(0.0, 0.0), (-2.0, 0.0), (0.5, 3.0), (-1.0, 1.6667), (-3.0, -2.0)]:
     d = sim_mrac(kind='step', gamma=2.0, T=60.0, dt=2e-4, k10=k10, k20=k20)
@@ -584,11 +392,9 @@ for k10, k20 in [(0.0, 0.0), (-2.0, 0.0), (0.5, 3.0), (-1.0, 1.6667), (-3.0, -2.
     print('  %-16s %-11.5f %-11.5f %-13.5f %-15.3e'
           % ('(%.1f, %.1f)' % (k10, k20), d['k1'][-1], d['k2'][-1],
              np.hypot(d['k1'][-1] - K1S, d['k2'][-1] - K2S), dev))
-print()
-print('  => 五个终点各不相同，但到 DC 匹配流形的偏差都在 1e-12 以下（机器精度级）。')
-print('     流形方程：k2 = (b_m/a_m)*(a + b*k1)/b')
-print('     终点在流形上的位置完全由初值决定。')` },
-    { code: `# 把流形画出来，并对照满足 PE 的情形
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 把流形画出来，并对照满足 PE 的情形
 d_step = res['step']
 d_multi = sim_mrac(kind='multi', gamma=10.0, T=400.0, dt=5e-4, store_every=40)
 kk = np.linspace(-3.0, 0.6, 300)
@@ -608,64 +414,40 @@ ax[1].plot(K1S, K2S, 'r*', ms=16, label='理想点 (k1*, k2*)')
 ax[1].set_xlim(-3.2, 0.8); ax[1].set_ylim(-2.2, 3.4)
 ax[1].set_xlabel('k1'); ax[1].set_ylabel('k2')
 ax[1].legend(fontsize=8, loc='upper left'); ax[1].grid(alpha=0.3)
-ax[1].set_title('满足 PE 的多正弦：轨迹走向理想点')
+ax[1].set_title('多正弦：给定配置的参数轨迹')
 plt.tight_layout(); plt.show()
-print('多正弦、gamma=10、T=400 s 的末值：k1 = %.6f, k2 = %.6f'
-      % (d_multi['k1'][-1], d_multi['k2'][-1]))
-print('距理想点 = %.4e' % np.hypot(d_multi['k1'][-1] - K1S, d_multi['k2'][-1] - K2S))
-print('理想点本身就在流形上（代入验证，偏差 %.3e）' % abs(K2S - k2_manifold(K1S)))` }
-  ]}
+` }
+]}
 />
 
-### 为什么阶跃输入下参数不收敛到真值？
 
-跟踪误差趋于零，对阶跃输入来说只需要两件事：
+### 阶跃为什么不够
 
-1. **闭环稳定**：$a + bk_1 < 0$
-2. **直流增益匹配**：$\dfrac{-bk_2}{a+bk_1} = \dfrac{-b_m}{a_m}$
-
-第二个条件解出 $k_2$ 关于 $k_1$ 的函数：
+当$r=1$且已进入常值平衡时，$x_m=-b_m/a_m$。若希望$x_p=x_m$，增益只需满足
 
 $$
-k_2 = \frac{b_m}{a_m}\cdot\frac{a + bk_1}{b}
+k_2=\frac{b_m}{a_m}\frac{a+bk_1}{b}=\frac23-k_1.
 $$
 
-这是一条**一维流形**（本例中是直线）。理想点 $(k_1^*, k_2^*)$ 只是这条直线上的一个点——代入 $k_1^* = -1$ 得 $k_2 = (-1)\cdot(-2-3)/3 = 5/3 = k_2^*$ ✓。自适应律 $\dot k_i = -\gamma e\phi_i$ 在 $e \to 0$ 之后就停下来了，停在直线上哪里，**由初值决定**。实测五组初值给出五个不同终点，到直线的偏差都在 $10^{-12}$ 以下。
+这是一条直线，而不是唯一的点。理想增益在直线上，其他增益也可能给出相同常值输出。若把终点增益<strong>冻结</strong>，它对应的对象闭环极点是$a+bk_1$，未必等于$a_m$。这是对冻结控制器的解释，不能把自适应暂态也说成固定极点系统。
 
-代价是什么？闭环极点。终点 $k_1 = -0.0441$ 给出 $a + bk_1 = -2.13$，而参考模型要求 $-5$。
+所以，对这一个恒定参考跟踪得好，不足以说明换成别的信号以后也能复现参考模型的全部动态，更不能据此宣称辨识出了真实对象。
 
-<Callout variant="warning">
-阶跃输入下的 MRAC 只保证**稳态值**和参考模型一致，**瞬态形状完全不像参考模型**（实测时间常数 0.47 s 而不是 0.2 s）。你以为你指定了闭环动态，其实你只指定了直流增益。要真正拿到参考模型的动态，参考输入必须满足 PE。
-</Callout>
+### 持续激励
 
-这与 [反步法设计](/nonlinear/backstepping) 里自适应反步的实测结论是同一件事：$\hat a$、$\hat b$ 并不收敛到真值 3.0 和 1.0，因为有扰动时自适应律最小化的是**跟踪误差**，不是**参数误差**。
-
-### PE 条件的正式表述
-
-回归量 $\phi(t) \in \mathbb R^p$ 满足**持续激励**（persistent excitation），若存在 $\alpha_1, \alpha_2, T > 0$ 使对所有 $t \ge 0$：
+要分清多个参数，需要信号反复提供不同方向的信息。数学上，回归量$\phi(t)$满足<strong>持续激励（PE）</strong>，是指存在$T>0$和$\alpha_2\ge\alpha_1>0$，对所有$t\ge0$有
 
 $$
-\alpha_1 I \le \int_t^{t+T}\phi(\tau)\phi(\tau)^{\mathsf T}\mathrm d\tau \le \alpha_2 I
+\alpha_1 I\le\int_t^{t+T}\phi(\tau)\phi(\tau)^{\mathsf T}\,d\tau\le\alpha_2 I.
 $$
 
-左边那个不等式是关键：它要求在任何长度 $T$ 的窗口里，$\phi$ 都要**张满整个 $p$ 维空间**。$p$ 个参数就需要至少 $p$ 个独立方向的激励。
+积分得到的矩阵叫Gram矩阵。它的最小特征值若为零，说明这个窗口内至少有一个参数方向没有被充分区分。例如$\phi=[1,1]^{\mathsf T}$始终指向同一方向，就区分不了两个系数各自的贡献。
 
-对本例 $\phi = [x_p,\ r]$，$p = 2$：
+本课MRAC的$\phi=[x_p,r]^{\mathsf T}$取决于闭环，不能只数参考中有几个频率就宣布PE。实验计算起点0到19秒、长度$2\pi$秒的20个窗口。这些有限窗口的正值是诊断信息，<strong>不能证明所有未来窗口都满足统一正下界</strong>。缺少PE也不等于对象在任何实验下都结构不可辨识。
 
-| $r(t)$ | 实测 $\lambda_{\min}$ | 是否 PE | 原因 |
-| --- | --- | --- | --- |
-| $1$（阶跃） | $0$（打印为 `0.000e+00`，$10^{-16}$ 量级） | 否 | 稳态后 $x_p \equiv r \equiv 1$，两列线性相关 |
-| $\sin t$ | $0.1213$ | 是 | $x_p$ 与 $r$ 之间有相位差，两列不共线 |
-| $1 + 0.5\sin 2t + 0.3\sin 5t$ | $0.1821$ | 是 | 三个频率分量，信息更足 |
-| $0$（纯调节） | $0$ | 否 | $\phi_2 \equiv 0$，$k_2$ 永不更新 |
+### 增益与快慢
 
-**工程含义**：恒温控制、定速巡航、液位调节这类"设定点长期不变"的任务，天然不满足 PE。参数估计会停在由初值决定的某个点上。这不一定是坏事（跟踪仍然无差），但意味着**你拿不到对象参数**，不能拿 $\hat\theta$ 去做故障诊断或老化监控——而这恰恰是很多人上自适应控制的初衷。
-
-要在正常工作的同时满足 PE，做法是在参考信号上叠加小幅探测信号（dither），或用 PRBS。代价是探测信号本身会污染输出。
-
-### $\gamma$ 的作用：不是越大越好
-
-PE 成立时参数误差指数收敛，速率随 $\gamma$ 增大。但"随 $\gamma$ 增大"有范围限制。
+$\gamma$增大使同一瞬间的更新更快，但整个闭环也随之改变。初段跟踪、长时间参数误差、控制峰值可能有不同的变化趋势。下面保留五个增益的长时实验和小增益速率拟合；它们只比较所列配置，不给“增益越大一定越好”的结论。
 
 <JupyterNotebook
   title="Notebook 3：自适应增益 γ 的两面性——初始段更快，尾部更慢"
@@ -702,9 +484,9 @@ def sim_mrac(gamma=2.0, T=400.0, dt=2e-4, store_every=20, k10=0.0, k20=0.0):
             break
         s1 = deriv(xp, xm, k1, k2, r)
         s2 = deriv(xp + .5*dt*s1[0], xm + .5*dt*s1[1], k1 + .5*dt*s1[2],
-                   k2 + .5*dt*s1[3], r)
+                   k2 + .5*dt*s1[3], rf(t+.5*dt))
         s3 = deriv(xp + .5*dt*s2[0], xm + .5*dt*s2[1], k1 + .5*dt*s2[2],
-                   k2 + .5*dt*s2[3], r)
+                   k2 + .5*dt*s2[3], rf(t+.5*dt))
         s4 = deriv(xp + dt*s3[0], xm + dt*s3[1], k1 + dt*s3[2],
                    k2 + dt*s3[3], rf(t + dt))
         xp += dt/6*(s1[0] + 2*s2[0] + 2*s3[0] + s4[0])
@@ -716,11 +498,9 @@ def sim_mrac(gamma=2.0, T=400.0, dt=2e-4, store_every=20, k10=0.0, k20=0.0):
     return dict(t=np.array(ts), k1=np.array(k1s), k2=np.array(k2s),
                 e_true=np.array(ets))`}
   cells={[
-    { code: `# |k~|(t) 的完整时间序列：分别看初始段和尾部
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# |k~|(t) 的完整时间序列：分别看初始段和尾部
 times = [1, 2, 5, 10, 20, 50, 100, 200, 400]
-print('r = 1+0.5sin(2t)+0.3sin(5t)（满足 PE），T=400 s，')
-print('dt = min(1e-3, 2/(7.5*gamma)) 保证 RK4 稳定；表中为 |k~| = 距理想点的距离')
-print('  %-8s %-9s' % ('gamma', 'dt') + ''.join('%-11s' % ('t=%d' % x) for x in times))
 res = {}
 for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
     dt_ = min(1e-3, 2.0 / (7.5 * g))
@@ -729,21 +509,14 @@ for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
     res[g] = (d, err)
     print('  %-8.0f %-9.0e' % (g, dt_)
           + ''.join('%-11.3e' % err[np.argmin(np.abs(d['t'] - x))] for x in times))` },
-    { code: `# 把上面这张表读出来
-print('初始段（t=1 那一列）：')
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 把上面这张表读出来
 for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
     i1 = np.argmin(np.abs(res[g][0]['t'] - 1))
     print('  gamma=%-6.0f |k~|(1) = %.4e' % (g, res[g][1][i1]))
-print('  gamma 从 2 到 200，t=1 时的误差从 1.13 降到 0.193 —— 初始段确实越快。')
-print()
-print('长时间（t=400 那一列）：')
 for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
     print('  gamma=%-6.0f |k~|(400) = %.4e' % (g, res[g][1][-1]))
 best = min(res, key=lambda g: res[g][1][-1])
-print('  最优是 gamma=%.0f，比 gamma=1000 好 %.1e 倍'
-      % (best, res[1000.0][1][-1] / res[best][1][-1]))
-print()
-print('小 gamma 段的对数线性拟合速率（窗口：t > 2 且误差已衰减到高于底噪 2 倍）：')
 rates = {}
 for g in [0.5, 2.0, 10.0]:
     dt_ = min(1e-3, 2.0 / (7.5 * g))
@@ -755,19 +528,13 @@ for g in [0.5, 2.0, 10.0]:
     rates[g] = -p[0]
     print('  gamma=%-5.1f 速率 = %.5f /s   拟合窗口 [%.0f, %.0f] s，%d 个点'
           % (g, -p[0], d['t'][m][0], d['t'][m][-1], m.sum()))
-print('  gamma 从 0.5 -> 2 -> 10（20 倍），速率 %.4f -> %.4f -> %.4f（%.1f 倍）：'
-      % (rates[0.5], rates[2.0], rates[10.0], rates[10.0] / rates[0.5]))
-print('  接近但略慢于线性，因为速率还受 PE 常数（本例 lam_min = 0.182）限制。')
-print()
-print('对照：跟踪误差 rms|e|（t > 10 s，去掉初始瞬态）')
 for g in [2.0, 10.0, 50.0, 200.0, 1000.0]:
     d = res[g][0]
     m = d['t'] > 10
     print('  gamma=%-6.0f rms|e| = %.4e' % (g, np.sqrt(np.mean(d['e_true'][m]**2))))
-print('  => 无噪声、无失配时，跟踪误差随 gamma 单调变好（1.62e-2 -> 2.66e-5），')
-print('     与参数误差的非单调（最优在 gamma=10）形成鲜明对比。')
-print('     "gamma 大好不好"取决于你问的是哪一个指标。')` },
-    { code: `# 画出来：五条 |k~|(t) 与五条 |e|(t)
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 画出来：五条 |k~|(t) 与五条 |e|(t)
 fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
 for c, g in zip(['C0', 'C1', 'C2', 'C3', 'C4'], [2.0, 10.0, 50.0, 200.0, 1000.0]):
     d, err = res[g]
@@ -780,117 +547,70 @@ ax[0].set_title('参数误差：大 gamma 初始快，但留下慢尾')
 ax[1].set_xlim(0, 400); ax[1].set_ylim(1e-9, 3)
 ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('|e| 跟踪误差')
 ax[1].grid(alpha=0.3, which='both')
-ax[1].set_title('跟踪误差：无噪声时大 gamma 单调更好')
+ax[1].set_title('跟踪误差：五个给定增益的比较')
 plt.tight_layout(); plt.show()
-print('两张图的对比就是本节要点：无噪声、无失配时，')
-print('gamma 增大让跟踪误差单调变好，但参数误差的长时间精度反而变差。')
-print('第 7 节会看到，一旦有噪声或未建模动态，跟踪误差也不再单调变好。')` }
-  ]}
+` }
+]}
 />
 
-<Callout variant="info">
-为什么大 $\gamma$ 会留下慢尾？回到 $\dot V = a_m e^2$：$V$ 只能通过 $e$ 消耗。$\gamma$ 大时 $e$ 被迅速压到极小，"燃料"提前耗尽，剩下的参数误差只能靠极小的 $e$ 慢慢磨。理论上 PE 保证 $\tilde k \to 0$（实测五条曲线确实都在往下走，只是 $\gamma=1000$ 到 $t=400$ s 还剩 $1.7\times 10^{-2}$），但**收敛速率并不随 $\gamma$ 单调上升**。工程结论：$\gamma$ 按"够快就行"来选，不要往大里调。
-</Callout>
 
-## 高阶系统的MRAC设计
+## 高阶MRAC
 
-### 问题设定
+### 先检查能否匹配
 
-$n$ 阶线性被控对象与参考模型：
+考虑状态可测的单输入系统
 
 $$
-\dot x_p = A_p x_p + B_p u, \qquad \dot x_m = A_m x_m + B_m r
+\dot x_p=A_px_p+B_pu,\qquad \dot x_m=A_mx_m+B_mr,
 $$
 
-$A_p, B_p$ 未知，$A_m$ Hurwitz，$B_m$ 已知，$u, r \in \mathbb R$（单输入单输出）。
+其中$A_m$为Hurwitz矩阵。本节采用<strong>已知非零列向量$B_p$</strong>的设计，$A_p$中的参数未知；这比前面“只知道标量$b$的符号”假设更强。
 
-### 匹配条件
-
-控制器取 $u = K^{\mathsf T}x_p + k_r r$。若存在常数 $K^*, k_r^*$ 使：
+选$u=K^{\mathsf T}x_p+k_rr$，常理想增益存在须满足
 
 $$
-A_p + B_p K^{*\mathsf T} = A_m, \qquad B_p k_r^* = B_m
+A_p+B_pK^{*\mathsf T}=A_m,\qquad B_pk_r^*=B_m.
 $$
 
-则 $u^* = K^{*\mathsf T}x_p + k_r^* r$ 能让闭环与参考模型**完全一致**。这两个方程叫**匹配条件**（matching conditions），是整个 MRAC 理论的地基。
-
-它们不一定有解。用 Moore-Penrose 伪逆可以把可解性写成一个判据：
+用伪逆$B_p^+$检查，就是
 
 $$
-\left(I - B_p B_p^{+}\right)\left(A_m - A_p\right) = 0, \qquad \left(I - B_p B_p^{+}\right) B_m = 0
+(I-B_pB_p^+)(A_m-A_p)=0,\qquad (I-B_pB_p^+)B_m=0.
 $$
 
-对 $B_p = [0,\ \cdots,\ 0,\ 1]^{\mathsf T}$（可控标准形），$B_pB_p^+$ 是只有右下角为 1 的矩阵，$I - B_pB_p^+$ 只保留**前 $n-1$ 行**。于是判据变成一句大白话：
+若$B_p=[0,\ldots,0,1]^{\mathsf T}$，反馈只能直接修改矩阵最后一行；其他行要与参考模型一致。所谓“不匹配”，是某个差异不能由这一输入方向即时抵消，<strong>不是说输入永远影响不到那些状态</strong>。投影矩阵的残差是匹配方程的残差，也不是稳态跟踪误差。
 
-> $A_m$ 的前 $n-1$ 行必须与 $A_p$ 的前 $n-1$ 行**逐元素相等**，$B_m$ 的前 $n-1$ 个元素必须为零。参考模型只能改被控对象的**最后一行**。
+### 矩阵推导
 
-这不是整定问题，是**结构问题**。
-
-### 误差动力学
-
-定义 $e = x_p - x_m$，$\tilde K = K - K^*$，$\tilde k_r = k_r - k_r^*$。代入并用匹配条件 $A_p = A_m - B_pK^{*\mathsf T}$、$B_m = B_pk_r^*$：
+匹配成立时，$e=x_p-x_m$满足
 
 $$
-\begin{aligned}
-\dot e &= A_p x_p + B_p(K^{\mathsf T}x_p + k_r r) - A_m x_m - B_m r \\
-&= A_m x_p - B_pK^{*\mathsf T}x_p + B_pK^{\mathsf T}x_p + B_pk_r r - A_m x_m - B_pk_r^* r \\
-&= A_m e + B_p\tilde K^{\mathsf T}x_p + B_p\tilde k_r r
-\end{aligned}
+\dot e=A_me+B_p\tilde K^{\mathsf T}x_p+B_p\tilde k_rr.
 $$
 
-形式与一阶完全一样，只是标量 $b\tilde k_1 x_p + b\tilde k_2 r$ 换成了 $B_p\tilde K^{\mathsf T}x_p + B_p\tilde k_r r$。
-
-### Lyapunov 设计
-
-解 Lyapunov 方程得到 $P = P^{\mathsf T} > 0$：
+取$Q>0$，解$A_m^{\mathsf T}P+PA_m=-Q$，得到$P>0$。令$\Gamma>0,\gamma_r>0$，并取
 
 $$
-A_m^{\mathsf T}P + PA_m = -Q, \qquad Q = Q^{\mathsf T} > 0
+V=e^{\mathsf T}Pe+\tilde K^{\mathsf T}\Gamma^{-1}\tilde K+\frac{\tilde k_r^2}{\gamma_r}.
 $$
 
-取：
+$K,x_p$都是$n$维列向量，$\tilde K^{\mathsf T}x_p$和$e^{\mathsf T}PB_p$都是标量。求导得
 
 $$
-V = e^{\mathsf T}Pe + \mathrm{tr}\!\left(\tilde K^{\mathsf T}\Gamma^{-1}\tilde K\right) + \frac{1}{\gamma_r}\tilde k_r^2
+\dot V=-e^{\mathsf T}Qe+2(e^{\mathsf T}PB_p)(\tilde K^{\mathsf T}x_p+\tilde k_rr)
++2\tilde K^{\mathsf T}\Gamma^{-1}\dot K+\frac{2\tilde k_r\dot k_r}{\gamma_r}.
 $$
 
-其中 $\Gamma = \Gamma^{\mathsf T} > 0$（矩阵增益），$\gamma_r > 0$。求导（注意 $\dot{\tilde K} = \dot K$）：
+选择
 
 $$
-\dot V = -e^{\mathsf T}Qe + 2e^{\mathsf T}PB_p\tilde K^{\mathsf T}x_p + 2e^{\mathsf T}PB_p\tilde k_r r + 2\,\mathrm{tr}\!\left(\tilde K^{\mathsf T}\Gamma^{-1}\dot K\right) + \frac{2}{\gamma_r}\tilde k_r\dot k_r
+\dot K=-\Gamma x_pe^{\mathsf T}PB_p,\qquad
+\dot k_r=-\gamma_rr e^{\mathsf T}PB_p,
 $$
 
-标量 $e^{\mathsf T}PB_p\tilde K^{\mathsf T}x_p$ 可以写成迹的形式（$\tilde K^{\mathsf T}x_p$ 是 $1\times n$，$e^{\mathsf T}PB_p$ 是 $1\times 1$，用 $\mathrm{tr}(AB) = \mathrm{tr}(BA)$）：
+就得到$\dot V=-e^{\mathsf T}Qe$。在常参数、精确状态、无饱和、匹配且参考有界等假设下，可像一阶一样证明跟踪误差趋于零。这里<strong>实际用了$B_p$</strong>，不能把它当成“不需要知道控制方向”的方法。
 
-$$
-e^{\mathsf T}PB_p\tilde K^{\mathsf T}x_p = \mathrm{tr}\!\left(\tilde K^{\mathsf T}x_p e^{\mathsf T}PB_p\right)
-$$
-
-于是选择：
-
-$$
-\dot K = -\Gamma x_p e^{\mathsf T}PB_p, \qquad \dot k_r = -\gamma_r r\, e^{\mathsf T}PB_p
-$$
-
-代入后：
-
-$$
-2\,\mathrm{tr}\!\left(\tilde K^{\mathsf T}\Gamma^{-1}\dot K\right) = -2\,\mathrm{tr}\!\left(\tilde K^{\mathsf T}\Gamma^{-1}\Gamma x_pe^{\mathsf T}PB_p\right) = -2\,\mathrm{tr}\!\left(\tilde K^{\mathsf T}x_pe^{\mathsf T}PB_p\right)
-$$
-
-交叉项精确相消：
-
-$$
-\dot V = -e^{\mathsf T}Qe \le 0
-$$
-
-> 矩阵形式**不需要** $\mathrm{sign}(b)$：一阶推导里的 $\mathrm{sign}(b)$ 来自标量 $|b|$ 与 $b$ 的换算，矩阵形式直接用 $B_p$ 本身，$V$ 里也不需要 $|b|$ 加权。二者是一致的——取 $n=1$、$P = p > 0$、$B_p = b$、$\Gamma = \gamma p\lvert b\rvert/b^2$ 就退化回一阶形式。
-
-余下的收敛论证与一阶相同：$V$ 有界单调 $\Rightarrow e \in L_2$；$\dot e$ 有界 $\Rightarrow e$ 一致连续；Barbalat $\Rightarrow e \to 0$。参数收敛到 $K^*$ 则需要 $\phi = [x_p,\ r]$ 满足 PE。
-
-### 一个容易被忽略的量级问题
-
-自适应律里出现的标量是 $e^{\mathsf T}PB_p$。对下面这个二阶例子，$B_p^{\mathsf T}P = [0.0313,\ 0.0830]$——**两个分量都远小于 1**。这意味着同样的 $\Gamma$，在二阶系统上产生的参数更新速度比一阶小一到两个数量级。整定 $\Gamma$ 时必须把它和 $B_p^{\mathsf T}P$ 的量级、以及 $\lVert K^*\rVert$ 需要走多远一起考虑：本例 $\lVert K^*\rVert = 10.1$，所以 $\Gamma$ 取到 1000，而一阶例子取 2 就够。
+二阶实验保留匹配检查、Lyapunov恒等式、增益扫描和两种失配。诊断现在从实际对象方程算$\dot e$；失配时不会再借用本已不成立的匹配公式“验证”恒等式。失配实验接近停止阈值时，末段增益对数值实现很敏感，不用于精确数值比较；触阈值也不单独证明连续时间对象必然失稳。
 
 <JupyterNotebook
   title="Notebook 4：二阶 MRAC 的匹配条件、V̇=-eᵀQe 验证与失配后果"
@@ -952,7 +672,7 @@ def sim2(gam=1000.0, T=60.0, dt=5e-4, theta_row1=0.0, A_m_use=None, store_every=
             e = x - xm
             Kt = K - KS; krt = kr - KRS
             V = e @ Pm @ e + Kt @ Pinv @ Kt + krt**2 / gam
-            edot = Am @ e + B_P * (Kt @ x) + B_P * (krt * r)
+            edot = At @ x + B_P * (K @ x + kr*r) - Am @ xm - B_M*r
             spb = float(e @ Pm @ B_P)
             Kd = -gam * x * spb; krd = -gam * r * spb
             Vd = 2*e @ Pm @ edot + 2*Kt @ Pinv @ Kd + 2*krt*krd/gam
@@ -977,51 +697,26 @@ def sim2(gam=1000.0, T=60.0, dt=5e-4, theta_row1=0.0, A_m_use=None, store_every=
         kr = kr + dt/6*(s1[3]+2*s2[3]+2*s3[3]+s4[3])
         if not np.all(np.isfinite(x)) or np.max(np.abs(x)) > 1e3:
             return dict(t=np.array(ts), e=np.array(es), K=np.array(Kh), kr=np.array(krh),
-                        V=np.array(Vh), id_rel=id_rel, id_abs=id_abs, mono=mono, div_t=t)
+                        V=np.array(Vh), id_rel=id_rel, id_abs=id_abs, mono=mono, div_t=t+dt)
     return dict(t=np.array(ts), e=np.array(es), K=np.array(Kh), kr=np.array(krh),
                 V=np.array(Vh), id_rel=id_rel, id_abs=id_abs, mono=mono, div_t=np.nan)`}
   cells={[
-    { code: `# 匹配条件的可解性：三个情形
-print('被控对象 A_p = [[0,1],[-6,-5]], B_p = [0,1]^T')
-print('参考模型 A_m = [[0,1],[-16,-6.4]] (wn=4, zeta=0.8), B_m = [0,16]^T')
-print()
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 匹配条件的可解性：三个情形
 K, kr, r1, r2 = match_residual(A_P, B_P, A_M, B_M)
-print('情形 1（正常设计）：')
-print('  最优 K = [%.6f, %.6f], k_r = %.6f' % (K[0], K[1], kr))
-print('  残差 ||B K - (A_m - A_p)||_F = %.3e,  ||B k_r - B_m||_F = %.3e' % (r1, r2))
-print('  闭环特征值 = %s' % np.round(np.linalg.eigvals(A_P + np.outer(B_P, K)), 6))
-print('  期望特征值 = %s' % np.round(np.linalg.eigvals(A_M), 6))
-print()
 A_M2 = np.array([[-1.0, 1.0], [-WM**2, -2*ZM*WM]])
 K2, kr2, r1b, _ = match_residual(A_P, B_P, A_M2, B_M)
-print('情形 2（把 A_m 第一行改成 [-1, 1]）：')
-print('  最优 K = [%.4f, %.4f]，残差 = %.4f > 0  =>  匹配条件无解' % (K2[0], K2[1], r1b))
 proj = (np.eye(2) - np.outer(B_P, B_P)) @ (A_M2 - A_P)
-print('  判据 (I - B_p B_p^+)(A_m - A_p) = [[%+.4f, %+.4f], [%+.4f, %+.4f]] 非零'
-      % (proj[0,0], proj[0,1], proj[1,0], proj[1,1]))
-print('  注意最优 K 与情形 1 完全相同：最小二乘只能改最后一行，第一行的差它无能为力。')
-print()
-print('情形 3（未知参数 theta 出现在 A 的第一行，即不匹配不确定性）：')
 for th in [0.0, 0.5, -1.0]:
     At = A_P.copy(); At[0,0] = th
     K3, _, r1c, _ = match_residual(At, B_P, A_M, B_M)
     print('  theta = %+.1f -> 最优 K = [%+.4f, %+.4f], 残差 = %.4f' % (th, K3[0], K3[1], r1c))
-print('  => 残差恰等于 |theta|：B_p K^T 只能改最后一行，第一行的未知量碰不到。')` },
-    { code: `# Lyapunov 方程的解 P，以及 B^T P 的量级
-print('解 A_m^T P + P A_m = -Q (Q = I)：')
-print('  P = [[%.6f, %.6f],' % (P[0,0], P[0,1]))
-print('       [%.6f, %.6f]]' % (P[1,0], P[1,1]))
-print('  P 的特征值 = %s （均正 => P > 0）' % np.round(np.linalg.eigvalsh(P), 6))
-print('  方程残差 ||A_m^T P + P A_m + Q||_F = %.3e' % norm(A_M.T @ P + P @ A_M + Q))
-print('  B_p^T P = [%.6f, %.6f]' % ((P @ B_P)[0], (P @ B_P)[1]))
-print()
-print('自适应律里的标量是 e^T P B_p，被 B_p^T P = [%.4f, %.4f] 加权。'
-      % ((P @ B_P)[0], (P @ B_P)[1]))
-print('两个分量都远小于 1，要推动 K 走完 ||K*|| = %.2f 的距离，' % norm(KS))
-print('Gamma 必须比一阶例子（gamma=2 就够）大两三个数量级 —— 下面实测最优在 1000 附近。')` },
-    { code: `# V̇ = -e^T Q e 的代数验证 + V 单调性（Gamma = 10 和 100）
-print('  %-10s %-18s %-18s %-16s %-14s'
-      % ('Gamma', '恒等式相对偏差', '恒等式绝对偏差', 'V 最大增量', '|K-K*|(末)'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Lyapunov 方程的解 P，以及 B^T P 的量级
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# V̇ = -e^T Q e 的代数验证 + V 单调性（Gamma = 10 和 100）
 G4 = {}
 for g in [10.0, 100.0]:
     d = sim2(gam=g, T=60.0, dt=5e-4)
@@ -1029,16 +724,9 @@ for g in [10.0, 100.0]:
              np.sqrt(np.mean(np.sum(d['e'][d['t'] > 48]**2, 1))), d['V'][-1])
     print('  %-10.0f %-18.3e %-18.3e %-16.3e %-14.4f'
           % (g, d['id_rel'], d['id_abs'], d['mono'], G4[g][0]))
-print()
-print('  恒等式偏差 = |V̇_代数 + e^T Q e|，用解析式而非数值微分，所以是机器精度量级；')
-print('  V 最大增量 = max(V[k+1] - V[k])，为负说明沿仿真轨迹 V 严格单调下降。')
-print('  两者一起说明：推导正确，且数值实现忠实地复现了推导。')
-print('  但注意 |K-K*|(末) 还很大（%.2f 和 %.2f）：60 s 根本没走完，'
-      % (G4[10.0][0], G4[100.0][0]))
-print('  因为 B_p^T P 的两个分量只有 0.031 和 0.083，Gamma=10 的推动力太弱。')` },
-    { code: `# Gamma 扫描后半段：与一阶同样的"过大反而变差"
-print('  %-10s %-14s %-16s %-14s %-16s %-14s'
-      % ('Gamma', '|K-K*|(末)', 'rms||e||末20%', 'V(末)', '恒等式相对偏差', 'V 最大增量'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Gamma 扫描后半段：与一阶同样的"过大反而变差"
 for g in [10.0, 100.0]:
     print('  %-10.0f %-14.4f %-16.4e %-14.4e %-16s %-14s'
           % (g, G4[g][0], G4[g][1], G4[g][2], '（见上）', '（见上）'))
@@ -1049,17 +737,10 @@ for g in [1000.0, 5000.0]:
              np.sqrt(np.mean(np.sum(d['e'][tail]**2, 1))), d['V'][-1])
     print('  %-10.0f %-14.4e %-16.4e %-14.4e %-16.3e %-14.3e'
           % (g, G4[g][0], G4[g][1], G4[g][2], d['id_rel'], d['mono']))
-print()
-print('  四档合起来看 |K-K*|(末)：%.2f -> %.3f -> %.3e -> %.3e'
-      % (G4[10.0][0], G4[100.0][0], G4[1000.0][0], G4[5000.0][0]))
-print('  最优是 Gamma=1000：|K-K*| = %.3e，rms||e|| = %.3e' % (G4[1000.0][0], G4[1000.0][1]))
-print('  Gamma=5000 退回 %.3e —— 与一阶 gamma=1000 卡在 1.71e-2 是同一个现象。'
-      % G4[5000.0][0])` },
-    { code: `# Gamma=1000 的收敛轨迹与出图
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Gamma=1000 的收敛轨迹与出图
 d = sim2(gam=1000.0, T=60.0, dt=5e-4)
-print('K(末) = [%.6f, %.6f]   (K* = [-10, -1.4])' % (d['K'][-1,0], d['K'][-1,1]))
-print('k_r(末) = %.6f   (k_r* = 16)' % d['kr'][-1])
-print('  %-8s %-14s %-14s %-14s' % ('t (s)', '||e||', '|K - K*|', 'V'))
 for tt in [1, 5, 10, 20, 40, 60]:
     i = np.argmin(np.abs(d['t'] - tt))
     print('  %-8.1f %-14.4e %-14.4e %-14.4e'
@@ -1078,118 +759,55 @@ ax[2].semilogy(d['t'], np.maximum(d['V'], 1e-14), 'C3', lw=1.6)
 ax[2].set_xlabel('t (s)'); ax[2].set_ylabel('V'); ax[2].grid(alpha=0.3, which='both')
 ax[2].set_title('Lyapunov 函数单调下降')
 plt.tight_layout(); plt.show()` },
-    { code: `# 匹配条件不成立时会怎样：两个对照实验
-print('对照 1：参考模型第一行改成 [-1, 1]（匹配条件无解，残差 1.0）')
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 匹配条件不成立时会怎样：两个对照实验
 A_M2 = np.array([[-1.0, 1.0], [-WM**2, -2*ZM*WM]])
 d2 = sim2(gam=1000.0, T=60.0, dt=5e-4, A_m_use=A_M2)
 if np.isfinite(d2['div_t']):
-    print('  实测：t = %.2f s 时 ||x|| > 1e3，闭环发散' % d2['div_t'])
-    print('  发散前 K 涨到 [%.3f, %.3f]（||K|| = %.3f）'
+    print('  实测：t = %.2f s 时 ||x|| > 1e3，触及数值停止阈值' % d2['div_t'])
+    print('  停止前最后记录的 K 涨到 [%.3f, %.3f]（||K|| = %.3f）'
           % (d2['K'][-1,0], d2['K'][-1,1], norm(d2['K'][-1])))
 else:
-    print('  有界，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d2['e'][d2['t']>48]**2, 1))))
-print()
-print('对照 2：theta = 0.5 出现在 A 的第一行（不匹配不确定性，A_m 名义匹配）')
+    print('  完成有限时域，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d2['e'][d2['t']>48]**2, 1))))
 d3 = sim2(gam=1000.0, T=60.0, dt=5e-4, theta_row1=0.5)
 if np.isfinite(d3['div_t']):
-    print('  实测：t = %.2f s 时 ||x|| > 1e3，闭环发散' % d3['div_t'])
-    print('  发散前 K = [%.3f, %.3f]' % (d3['K'][-1,0], d3['K'][-1,1]))
+    print('  实测：t = %.2f s 时 ||x|| > 1e3，触及数值停止阈值' % d3['div_t'])
+    print('  停止前最后记录的 K = [%.3f, %.3f]' % (d3['K'][-1,0], d3['K'][-1,1]))
 else:
-    print('  有界，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d3['e'][d3['t']>48]**2, 1))))
-print()
-print('结论：匹配条件不成立 => 不存在 K* => Lyapunov 论证的起点就没了。')
-print('自适应律仍然在拼命推 K，但没有一个"正确的终点"可去，参数持续漂移直到闭环失稳。')
-print('这不是把 Gamma 调小就能绕过去的：不匹配的参数化不确定性需要换设计结构，')
-print('例如自适应反步（见「反步法设计」一课），或者直接靠鲁棒控制兜底。')` }
-  ]}
+    print('  完成有限时域，rms||e|| = %.4e' % np.sqrt(np.mean(np.sum(d3['e'][d3['t']>48]**2, 1))))
+` }
+]}
 />
 
-<Callout variant="warning">
-**设计参考模型时的检查清单**：给定 $A_p, B_p$ 的结构，先算 $(I - B_pB_p^+)(A_m - A_p)$ 是否为零。对可控标准形，这等价于"参考模型的前 $n-1$ 行是否与对象一致"。很多人把 $A_m$ 直接按期望的 $\omega_n, \zeta$ 写成伴侣矩阵就完事，恰好满足了这个条件（前 $n-1$ 行都是 $[0\ \cdots\ 1\ \cdots\ 0]$），所以从来不会撞上这个坑——直到对象不是可控标准形（柔性结构、有零点耦合的机电系统）为止。
-</Callout>
 
-## 自整定调节器（STR）
+## 辨识与自整定
 
-### 间接法的架构
+### RLS怎样逐次利用数据
 
-MRAC 直接调整控制器增益，从不问"对象到底是什么"。STR 反过来：**先辨识对象，再设计控制器**。
+对离散对象$y(k+1)=\alpha y(k)+\beta u(k)+v(k)$，令$\theta=[\alpha,\beta]^{\mathsf T}$、$\phi(k)=[y(k),u(k)]^{\mathsf T}$。先取$\lambda=1$。带先验的最小二乘使用
 
 $$
-\underbrace{(u(k), y(k))}_{\text{输入输出数据}} \longrightarrow \underbrace{[\text{RLS 辨识器}]}_{\text{估计 } \hat\alpha, \hat\beta} \longrightarrow \underbrace{[\text{极点配置公式}]}_{K_p = (z_d - \hat\alpha)/\hat\beta} \longrightarrow u(k)
+R_N=P_0^{-1}+\sum_{k=0}^N\phi(k)\phi(k)^{\mathsf T},\qquad
+g_N=P_0^{-1}\theta_0+\sum_{k=0}^N\phi(k)y(k+1),\qquad \hat\theta_N=R_N^{-1}g_N.
 $$
 
-第二步"把估计值当真值代进设计公式"叫**确认等价**（certainty equivalence）。它的合理性来自一个直觉：如果 $\hat\theta \to \theta$，那么 $K(\hat\theta) \to K(\theta)$，闭环就趋于理想闭环。这个直觉在**辨识收敛足够快、且设计公式对 $\theta$ 连续**时成立；两个前提都可能失效，第 6 节末尾的除零实验就是第二种失效。
-
-### 递推最小二乘（RLS）
-
-考虑离散时间 ARX 模型（一阶为例）：
-
-$$
-y(k+1) = \alpha y(k) + \beta u(k) + v(k) = \phi^{\mathsf T}(k)\theta + v(k)
-$$
-
-其中 $\phi(k) = [y(k),\ u(k)]^{\mathsf T}$，$\theta = [\alpha,\ \beta]^{\mathsf T}$，$v$ 是噪声。
-
-**批量最小二乘**在时刻 $N$ 最小化 $J(N) = \sum_{k=0}^{N}(y(k+1) - \phi^{\mathsf T}(k)\theta)^2 + (\theta-\theta_0)^{\mathsf T}P_0^{-1}(\theta-\theta_0)$（第二项是把先验 $\theta_0$、$P_0$ 加进去的正则化），解为：
-
-$$
-\hat\theta(N) = R^{-1}(N)\left[\sum_{k=0}^{N}\phi(k)y(k+1) + P_0^{-1}\theta_0\right], \qquad R(N) = \sum_{k=0}^{N}\phi(k)\phi^{\mathsf T}(k) + P_0^{-1}
-$$
-
-直接算 $R^{-1}(N)$ 每一步都要做 $O(p^3)$ 的矩阵求逆，而且要把所有历史数据存下来。递推形式两样都不需要。由：
-
-$$
-R(N) = R(N-1) + \phi(N)\phi^{\mathsf T}(N)
-$$
-
-这是"矩阵加一个秩一更新"，用**矩阵求逆引理**（Sherman-Morrison）：
-
-$$
-(A + bc^{\mathsf T})^{-1} = A^{-1} - \frac{A^{-1}bc^{\mathsf T}A^{-1}}{1 + c^{\mathsf T}A^{-1}b}
-$$
-
-取 $A = R(N-1)$、$b = c = \phi(N)$，记 $P(N) = R^{-1}(N)$：
-
-$$
-P(N) = P(N-1) - \frac{P(N-1)\phi(N)\phi^{\mathsf T}(N)P(N-1)}{1 + \phi^{\mathsf T}(N)P(N-1)\phi(N)}
-$$
-
-定义**增益向量**：
-
-$$
-L(N) = \frac{P(N-1)\phi(N)}{1 + \phi^{\mathsf T}(N)P(N-1)\phi(N)}
-$$
-
-则 $P(N) = [I - L(N)\phi^{\mathsf T}(N)]P(N-1)$。参数更新可以整理成（推导只用到 $\hat\theta(N-1) = P(N-1)g(N-1)$，其中 $g$ 是累积的互相关向量）：
-
-$$
-\hat\theta(N) = \hat\theta(N-1) + L(N)\underbrace{\left[y(N+1) - \phi^{\mathsf T}(N)\hat\theta(N-1)\right]}_{\text{预测误差 } \varepsilon(N+1)}
-$$
-
-**RLS 三步递推**（每个采样周期执行一次）：
+只需累加$R_N,g_N$就不必保存全部历史；<strong>递推最小二乘（RLS）</strong>进一步用矩阵求逆引理免去每步重新求逆。记$P=R^{-1}$，对每个新样本依次计算
 
 $$
 \begin{aligned}
-L(k) &= \frac{P(k-1)\phi(k)}{\lambda + \phi^{\mathsf T}(k)P(k-1)\phi(k)} \\
-\hat\theta(k) &= \hat\theta(k-1) + L(k)\left[y(k+1) - \phi^{\mathsf T}(k)\hat\theta(k-1)\right] \\
-P(k) &= \frac{1}{\lambda}\left[I - L(k)\phi^{\mathsf T}(k)\right]P(k-1)
+L_k&=\frac{P_{k-1}\phi_k}{\lambda+\phi_k^{\mathsf T}P_{k-1}\phi_k},\\
+\hat\theta_k&=\hat\theta_{k-1}+L_k(y_{k+1}-\phi_k^{\mathsf T}\hat\theta_{k-1}),\\
+P_k&=\frac1\lambda(I-L_k\phi_k^{\mathsf T})P_{k-1}.
 \end{aligned}
 $$
 
-初值 $\hat\theta(0) = \theta_0$，$P(0) = P_0 > 0$（常取 $10^4 \sim 10^6$ 倍的单位阵，表示"我完全不知道"）。
+首个样本之前给定$\hat\theta_{-1}=\theta_0,P_{-1}=P_0>0$，避免把初始化和首步更新混为同一个下标。$P$首先是逆信息矩阵；只有进一步规定噪声、先验及尺度，它才可解释为估计协方差。更新形式与卡尔曼滤波有关，但不能直接等同。
 
-> 这个形式与[卡尔曼滤波](/estimation/kalman-filter)是同一套代数：$P$ 是估计协方差，$L$ 是卡尔曼增益，$\varepsilon$ 是新息。区别在于卡尔曼滤波有过程噪声模型，RLS（$\lambda = 1$）假设参数是常数、只有量测噪声。
+### 遗忘旧数据的代价
 
-### $P$ 的物理意义与遗忘因子
+$0<\lambda<1$使旧数据权重逐步衰减，便于跟随参数变化，也会降低长期平均噪声的能力。若一段时间<strong>完全无激励</strong>，即$\phi=0$，则$L=0$、估计不变，而$P\leftarrow P/\lambda$。重新出现数据时，更新可能很大，这称为协方差膨胀（windup）及突发变化（bursting）。只有部分方向失去激励时，要分别分析那些方向。
 
-$P(k)$ 大致正比于**参数估计的协方差**。数据越多，$P$ 越小，增益 $L$ 越小，估计越"固执"。这是好事（噪声被平均掉）也是坏事（对象参数真的变了，估计跟不上）。
-
-**遗忘因子** $\lambda \in (0, 1]$ 通过 $R(N) = \lambda R(N-1) + \phi\phi^{\mathsf T}$ 引入指数加权：越久远的数据权重按 $\lambda^{N-k}$ 衰减。等效记忆长度约 $1/(1-\lambda)$ 个采样周期（$\lambda = 0.98$ 约 50 步，$\lambda = 0.95$ 约 20 步）。
-
-$\lambda$ 的代价是双向的：
-
-- $\lambda = 1$：方差最小，但对参数突变几乎无反应，而且**无激励时 $P$ 不再增长**（好事，见下）
-- $\lambda < 1$：能跟踪时变参数，但方差增大，而且**无激励时 $P$ 按 $\lambda^{-k}$ 指数膨胀**（坏事，叫协方差 windup）
+原实验保留无遗忘对照、四种遗忘因子、参数跳变及人为构造的零回归量窗口。输出上直接加测量噪声会让下一步回归量也含噪声，属于变量含误差的情形；不能用它证明一般RLS无偏或一致。后面补充核验比较<strong>相同先验</strong>的批量和递推解。
 
 <JupyterNotebook
   title="Notebook 5：RLS 的正确性检验、遗忘因子权衡与协方差 windup"
@@ -1246,39 +864,28 @@ def rls(y, u, lam=1.0, P0=1e6, theta0=None):
         PN[k] = np.linalg.norm(P)
     return TH, PN`}
   cells={[
-    { code: `# 检验 1：RLS 是否真的等价于批量最小二乘？
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 1：RLS 是否真的等价于批量最小二乘？
 # 若实现正确，偏差应随 P0 增大按 1/P0 缩小，直到撞上浮点底
-print('连续对象 a=%.1f, b=%.1f, Ts=%.2f -> alpha=%.6f, beta=%.6f' % (A0, B0, TS, AL0, BE0))
-print()
 N = 300
 u = prbs(N, seed=3)
 y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.0)
 PHI = np.stack([y[:-1], u], 1)
 batch = np.linalg.lstsq(PHI, y[1:], rcond=None)[0]
-print('无噪声数据，lam=1：')
-print('  %-12s %-24s %-24s %-14s' % ('P0', 'RLS 末值', '批量 lstsq', '最大偏差'))
 for P0 in [1e3, 1e6, 1e9, 1e12]:
     TH, _ = rls(y, u, lam=1.0, P0=P0)
     print('  %-12.0e [%9.7f, %9.7f]  [%9.7f, %9.7f]  %.3e'
           % (P0, TH[-1,0], TH[-1,1], batch[0], batch[1], np.max(np.abs(TH[-1] - batch))))
-print()
-print('  偏差按 1/P0 精确缩放（4.009e-6 -> 4.009e-9 -> 4.009e-12），到 P0=1e12 撞上浮点底。')
-print('  这说明 RLS 实现的确实是同一个目标函数，P0 只是先验权重。')
-print()
 yn = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.02, seed=9)
 THn, _ = rls(yn, u, lam=1.0)
 PHIn = np.stack([yn[:-1], u], 1)
 bn = np.linalg.lstsq(PHIn, yn[1:], rcond=None)[0]
-print('带噪声（std=0.02）时两者仍应一致：')
-print('  RLS = [%.8f, %.8f]   批量 = [%.8f, %.8f]   偏差 = %.3e'
-      % (THn[-1,0], THn[-1,1], bn[0], bn[1], np.max(np.abs(THn[-1] - bn))))
-print('  真值 = [%.8f, %.8f]，噪声造成的估计偏差 = %.3e' % (AL0, BE0, np.max(np.abs(bn - np.array([AL0, BE0])))))` },
-    { code: `# 检验 2：遗忘因子的权衡 —— 定常参数下的方差
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 2：遗忘因子的权衡 —— 定常参数下的方差
 N = 800
 u = prbs(N, seed=5)
 y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.02)
-print('定常参数 + 量测噪声 std=0.02，N=800，PRBS 激励：')
-print('  %-8s %-16s %-18s %-16s' % ('lam', '|θ̂-θ|(末)', 'std(θ̂) 后20%', '||P||(末)'))
 L2 = {}
 for lam in [1.0, 0.995, 0.98, 0.95]:
     TH, PN = rls(y, u, lam=lam)
@@ -1286,22 +893,15 @@ for lam in [1.0, 0.995, 0.98, 0.95]:
     L2[lam] = (np.linalg.norm(TH[-1] - np.array([AL0, BE0])),
                np.mean(np.std(tail, 0)), PN[-1])
     print('  %-8s %-16.4e %-18.4e %-16.4e' % ((lam,) + L2[lam]))
-print()
-print('  => 定常参数下 lam=1 全面最优：偏差和方差都最小，P 也最小。')
-print('     lam 越小，P 停在越高的水平（新数据不断"忘掉"，估计器一直保持着高增益），')
-print('     于是噪声无法被平均掉：std(θ̂) 从 %.2e 一路涨到 %.2e（%.0f 倍），'
-      % (L2[1.0][1], L2[0.95][1], L2[0.95][1] / L2[1.0][1]))
-print('     ||P|| 从 %.2e 涨到 %.2e（%.0f 倍）。'
-      % (L2[1.0][2], L2[0.95][2], L2[0.95][2] / L2[1.0][2]))` },
-    { code: `# 检验 3：参数突变时，lam=1 就无能为力了
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 3：参数突变时，lam=1 就无能为力了
 N = 800
 u = prbs(N, seed=7)
 a_seq = np.where(np.arange(N) < 400, 2.0, 4.0)     # k=400 时 a 从 2 跳到 4
 y = gen_data(N, a_seq, np.full(N, B0), u, noise=0.02)
 AL1, BE1 = disc(4.0, B0)
 target = np.array([AL1, BE1])
-print('a 在 k=400 由 2 突变到 4，突变后真值 alpha=%.6f, beta=%.6f' % (AL1, BE1))
-print('  %-8s %-16s %-16s %-16s' % ('lam', 'IAE (k>400)', '|θ̂-θ|(末)', '相对噪声底'))
 res = {}
 for lam in [1.0, 0.995, 0.98, 0.95]:
     TH, PN = rls(y, u, lam=lam)
@@ -1309,15 +909,10 @@ for lam in [1.0, 0.995, 0.98, 0.95]:
     res[lam] = err
     print('  %-8s %-16.4f %-16.4e %-16.1f'
           % (lam, np.sum(err[400:]) * TS, err[-1],
-             err[-1] / np.array([5.33e-4, 1.51e-3, 2.58e-3, 2.47e-3][[1.0,0.995,0.98,0.95].index(lam)])))
-print()
-print('  => IAE 随 lam 减小而单调下降（5.31 -> 3.82 -> 1.40 -> 0.79）：遗忘越快，跟踪突变越好。')
-print('     但 lam=1 的 |θ̂-θ|(末) = 1.18e-1，比 lam=0.98 的 4.71e-3 大 25 倍：')
-print('     400 个样本过去后它还没忘掉旧参数。这就是"锁定"现象。')
-print()
-print('  对照上一个 cell 的定常参数结果：lam=1 在定常时最好，突变时最差。')
-print('  没有免费的午餐 —— lam 的选择取决于你对"参数会不会变"的判断。')` },
-    { code: `# 检验 4：协方差 windup 与 bursting
+             err[-1] / L2[lam][0]))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验 4：协方差 windup 与 bursting
 # 场景：k<200 有 PRBS 激励；200<=k<400 输入输出都为零（无激励）；k>=400 激励恢复
 N = 600
 u = np.zeros(N)
@@ -1325,8 +920,6 @@ u[:200] = prbs(200, seed=11)
 u[400:] = prbs(200, seed=12)
 y = gen_data(N, np.full(N, A0), np.full(N, B0), u, noise=0.0)
 y[200:400] = 0.0
-print('  %-8s %-16s %-20s %-18s %-18s'
-      % ('lam', '||P||(k=400)', '无激励段增长倍数', '理论 lam^-199', '恢复后 |Δθ̂| 峰值'))
 L4 = {}
 for lam in [1.0, 0.995, 0.98, 0.95]:
     TH, PN = rls(y, u, lam=lam)
@@ -1334,16 +927,9 @@ for lam in [1.0, 0.995, 0.98, 0.95]:
     burst = np.max(np.abs(np.diff(TH[395:420], axis=0)))
     L4[lam] = (PN[399], growth, lam**(-199), burst)
     print('  %-8s %-16.4e %-20.4e %-18.4e %-18.4e' % ((lam,) + L4[lam]))
-print()
-print('  => 无激励时 phi=[0,0]，于是 L=0、θ̂ 不动，但 P <- P/lam 每步放大 1/lam 倍。')
-print('     实测增长倍数与理论 lam^-199 逐行吻合到打印的全部位数：')
 for lam in [0.995, 0.98, 0.95]:
     print('       lam=%-6s 实测 %.4e  理论 %.4e  相对偏差 %.1e'
           % (lam, L4[lam][1], L4[lam][2], abs(L4[lam][1] / L4[lam][2] - 1)))
-print('     激励一恢复，巨大的 P 让第一个新息把 θ̂ 猛推一把：bursting 幅度')
-print('     从 lam=1 的 %.2e 涨到 lam=0.95 的 %.2e，放大 %.0f 倍。'
-      % (L4[1.0][3], L4[0.95][3], L4[0.95][3] / L4[1.0][3]))
-print()
 fig, ax = plt.subplots(1, 2, figsize=(11, 3.8))
 for c, lam in zip(['C0', 'C1', 'C2', 'C3'], [1.0, 0.995, 0.98, 0.95]):
     TH, PN = rls(y, u, lam=lam)
@@ -1359,36 +945,27 @@ ax[1].set_xlabel('k'); ax[1].set_ylabel('alpha_hat')
 ax[1].set_ylim(-0.5, 2.0); ax[1].grid(alpha=0.3)
 ax[1].set_title('bursting：k=400 处参数跳变')
 plt.tight_layout(); plt.show()` }
-  ]}
+]}
 />
 
-### STR 设计实例：极点配置
 
-被控对象 $\dot y = -ay + bu$，$a, b$ 未知。采样周期 $T_s$，精确离散化（零阶保持）：
+### 把估计值代入控制器
 
-$$
-y(k+1) = \alpha y(k) + \beta u(k), \qquad \alpha = e^{-aT_s}, \quad \beta = \frac{b}{a}\left(1 - e^{-aT_s}\right)
-$$
-
-期望闭环极点 $z_d$（$|z_d| < 1$）。控制器取 $u(k) = K_p y(k) + K_r r(k)$，闭环：
+对$\dot y=-ay+bu$作采样周期$T_s$的零阶保持离散化：
 
 $$
-y(k+1) = (\alpha + \beta K_p)y(k) + \beta K_r r(k)
+\alpha=e^{-aT_s},\qquad \beta=\frac ba(1-e^{-aT_s})\quad(a\ne0).
 $$
 
-令 $\alpha + \beta K_p = z_d$，并要求阶跃稳态 $y_\infty = r$：
+当$a=0$时取极限$\beta=bT_s$。希望闭环极点为$z_d$且直流增益为1，可选
 
 $$
-K_p = \frac{z_d - \alpha}{\beta}, \qquad K_r = \frac{1 - z_d}{\beta}
+u_k=K_py_k+K_rr_k,\qquad K_p=\frac{z_d-\hat\alpha}{\hat\beta},\quad K_r=\frac{1-z_d}{\hat\beta}.
 $$
 
-STR 就是把 $\alpha, \beta$ 换成 RLS 的实时估计值：
+把估计值当真值代入设计，叫<strong>确定性等价</strong>。危险也很直接：$\hat\beta$接近零时，控制量可能非常大。实验里的保护只把<strong>用于除法的分母</strong>夹离零，不修改RLS估计本身，所以不称为参数投影。
 
-$$
-K_p(k) = \frac{z_d - \hat\alpha(k)}{\hat\beta(k)}, \qquad K_r(k) = \frac{1 - z_d}{\hat\beta(k)}
-$$
-
-**注意这两个式子里都有 $\hat\beta$ 在分母上。**
+合理初值、已知输入符号的参数约束、分母保护、执行器限幅和后备控制器各有用途，也各有代价。加上一项保护不等于已经证明闭环稳定。恢复时间表示从某样本起直到本实验终点一直留在误差带内；终点仍超带则记“未恢复”。
 
 <JupyterNotebook
   title="Notebook 6：STR 闭环性能与确认等价的除零风险"
@@ -1414,7 +991,7 @@ AL0, BE0 = disc(A0, B0)
 def str_run(theta0, lam=0.98, adapt=True, a_jump=True, proj=0.0,
             N=400, u_lim=100.0):
     """STR 闭环。adapt=False 时冻结在 theta0（即固定增益控制器）。
-    proj>0 时对 beta_hat 做投影保护 |beta_hat| >= proj。"""
+    proj>0 时对 beta_hat 做控制分母保护（估计值本身不分母保护） |beta_hat| >= proj。"""
     th = np.array(theta0, dtype=float)
     P = 1e4 * np.eye(2)
     yk = 0.0
@@ -1444,22 +1021,13 @@ def str_run(theta0, lam=0.98, adapt=True, a_jump=True, proj=0.0,
             return Y, U, TH, k, sat
     return Y, U, TH, None, sat`}
   cells={[
-    { code: `# STR 闭环 vs 固定增益：a 在 t=20s 由 2 突变到 4，r=1 阶跃
-print('离散对象 alpha=%.6f, beta=%.6f；期望闭环极点 z_d=%.1f' % (AL0, BE0, ZD))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# STR 闭环 vs 固定增益：a 在 t=20s 由 2 突变到 4，r=1 阶跃
 Kp_nom = (ZD - AL0) / BE0
 Kr_nom = (1 - ZD) / BE0
-print('名义增益 K_p = %.4f, K_r = %.4f' % (Kp_nom, Kr_nom))
 al1, be1 = disc(4.0, B0)
 pole_after = al1 + be1 * Kp_nom
 yss = be1 * Kr_nom / (1 - pole_after)
-print()
-print('突变后（a=4）若增益不变，解析预测：')
-print('  闭环极点 = alpha1 + beta1*K_p = %.4f （仍稳定）' % pole_after)
-print('  稳态输出 = beta1*K_r/(1-极点) = %.4f  =>  稳态偏差 = %.4f' % (yss, 1 - yss))
-print()
-print('实测（N=400，即 40 s，突变发生在 k=200）：')
-print('  %-28s %-14s %-14s %-14s %-10s'
-      % ('控制器', '突变前偏差', '突变后偏差', '恢复样本数', 'max|u|'))
 C6 = {}
 for label, kw in [('STR (lam=0.98, 初值粗)', dict(theta0=[0.5, 0.1], lam=0.98, adapt=True)),
                   ('STR (lam=1.0, 初值粗)', dict(theta0=[0.5, 0.1], lam=1.0, adapt=True)),
@@ -1473,19 +1041,12 @@ for label, kw in [('STR (lam=0.98, 初值粗)', dict(theta0=[0.5, 0.1], lam=0.98
     C6[label] = (pre, post, rec, np.max(np.abs(U)))
     print('  %-28s %-14.4f %-14.4f %-14s %-10.3f'
           % (label, pre, post, ('未恢复' if rec is None else '%d' % rec), C6[label][3]))
-print()
 FX = '固定增益 (名义 a=2)'
 S98 = 'STR (lam=0.98, 初值粗)'
 S10 = 'STR (lam=1.0, 初值粗)'
-print('  固定增益的实测偏差 %.4f 与解析预测 %.4f 一致（相对偏差 %.1e）。'
-      % (C6[FX][1], 1 - yss, abs(C6[FX][1] / (1 - yss) - 1)))
-print('  STR (lam=0.98) 用 %d 个采样周期（%.1f s）把 |e| 压回 0.02 以内，'
-      % (C6[S98][2], C6[S98][2] * TS))
-print('     突变后平均偏差 %.4f，只有固定增益 %.4f 的 1/%.0f。'
-      % (C6[S98][1], C6[FX][1], C6[FX][1] / C6[S98][1]))
-print('  STR (lam=1.0) 因为 P 已经收缩，40 s 内都没恢复（突变后偏差 %.4f）' % C6[S10][1])
-print('     —— 与 Notebook 5 的锁定现象一致。')` },
-    { code: `# 出图：三条输出轨迹与参数估计
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 出图：三条输出轨迹与参数估计
 fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 for kw, lab, c in [(dict(theta0=[0.5, 0.1], lam=0.98), 'STR lam=0.98', 'C0'),
                    (dict(theta0=[0.5, 0.1], lam=1.0), 'STR lam=1.0', 'C1'),
@@ -1502,134 +1063,78 @@ ax[1].axvline(20.0, color='gray', ls='--', alpha=0.7)
 ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('u(k)'); ax[1].grid(alpha=0.3)
 ax[1].set_title('控制量')
 plt.tight_layout(); plt.show()` },
-    { code: `# 确认等价的除零风险：beta_hat 穿过零时会发生什么
-print('  %-38s %-12s %-14s %-18s %-14s'
-      % ('初值 / 保护', 'max|u|', '饱和样本数', '稳态偏差(t>30s)', '结局'))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 确认等价的除零风险：beta_hat 穿过零时会发生什么
 DZ = {}
 for label, th0, proj in [('theta0=[0,0]（beta_hat=0）无保护', [0.0, 0.0], 0.0),
-                         ('theta0=[0,0] + 投影 |beta_hat|>=0.05', [0.0, 0.0], 0.05),
+                         ('theta0=[0,0] + 分母保护 |beta_hat|>=0.05', [0.0, 0.0], 0.05),
                          ('theta0=[0.5,0.1] 无保护', [0.5, 0.1], 0.0),
-                         ('theta0=[0.5,0.1] + 投影 0.05', [0.5, 0.1], 0.05)]:
+                         ('theta0=[0.5,0.1] + 分母保护 0.05', [0.5, 0.1], 0.05)]:
     Y, U, TH, kdiv, sat = str_run(th0, lam=0.98, proj=proj)
     if kdiv is not None:
         out = '数值失效 k=%d' % kdiv
         dev = np.nan
     else:
-        out = '有界'
+        out = '完成有限窗口'
         dev = np.mean(np.abs(Y[300:] - 1.0))
     DZ[label] = (np.max(np.abs(U)), sat, dev, out)
     print('  %-38s %-12s %-14d %-18s %-14s'
           % (label, ('%.3f' % DZ[label][0]) if np.isfinite(DZ[label][0]) else 'nan',
              sat, ('%.4f' % dev) if np.isfinite(dev) else '-', out))
-print()
-P0 = 'theta0=[0,0] + 投影 |beta_hat|>=0.05'
+P0 = 'theta0=[0,0] + 分母保护 |beta_hat|>=0.05'
 G0 = 'theta0=[0.5,0.1] 无保护'
-G1 = 'theta0=[0.5,0.1] + 投影 0.05'
-print('  => theta0=[0,0] 是很自然的初值（"我什么都不知道"），但它让 K_p=(z_d-0)/0')
-print('     在第一步就变成 inf -> nan，整个闭环立刻报废（表里第一行的"数值失效 k=0"）。')
-print('     加投影 |beta_hat| >= 0.05 后闭环有界：max|u| = %.3f，稳态偏差 %.4f。'
-      % (DZ[P0][0], DZ[P0][2]))
-print('     对照"初值合理、不加投影"：max|u| = %.3f，稳态偏差 %.4f。' % (DZ[G0][0], DZ[G0][2]))
-print('     => 投影确实救回了闭环，代价是控制量翻倍（%.1f 对 %.1f）：' % (DZ[P0][0], DZ[G0][0]))
-print('        beta_hat 从零出发时被夹在 eps=0.05 上，K_p=(z_d-alpha)/0.05 变得很大，')
-print('        头几步会打出接近饱和的控制量。')
-print('     但稳态偏差两者相当（%.4f 对 %.4f）：beta_hat 只在最开始被夹住，'
-      % (DZ[P0][2], DZ[G0][2]))
-print('     估计收敛之后就不再撞边界，投影退化成一份不起作用的保险。')
-print('     三者里最好的是"初值合理 + 投影"：max|u| = %.3f、偏差 %.4f。' % (DZ[G1][0], DZ[G1][2]))
-print('     => 正确用法是"合理初值 + 投影兜底"，而不是只靠投影硬撑。')
-print()
-print('  工程上的三种保护，按推荐顺序：')
-print('    1. 给 beta_hat 一个物理上合理的非零初值（做一次阶跃试验就能拿到量级）')
-print('    2. 投影：把 theta_hat 限制在已知的物理范围内（不只是 |beta| >= eps）')
-print('    3. 冻结：当 |beta_hat| < eps 时保持上一步的增益不更新')` }
-  ]}
+G1 = 'theta0=[0.5,0.1] + 分母保护 0.05'
+` }
+]}
 />
 
-## 处理参数不确定性
 
-前四节的实验都在"模型结构完全正确"的理想条件下进行。这一节把三类现实因素逐个加进来，测量它们的代价：**量测噪声**、**鲁棒化修正**、**未建模动态**。
+## 噪声与鲁棒化
 
-### 参数漂移：自适应律是积分器
+### 原证明在哪里失效
 
-噪声进自适应律的路径是这样的。设量测 $x_p^m = x_p + n$，则：
+若测量为$x_p+n$，用于更新的误差是$e_m=x_p+n-x_m$，而真正的跟踪误差仍是$e=x_p-x_m$。乘积$e_m(x_p+n)$含相关项和$n^2$，不能直接当作独立零均值噪声。原先的$\dot V=a_me^2$也不再成立。
 
-$$
-\dot k_1 = -\gamma e x_p^m = -\gamma e x_p - \gamma e n
-$$
+参数可能因偏置和持续更新而偏离理想值，控制量也可能增大；但一条有限时长轨迹不能证明参数无界。比较不同噪声实现时，还要看多个种子，而不是只挑一条曲线。
 
-第二项 $-\gamma e n$ 是一个**零均值但被 $\gamma$ 放大**的驱动项，而 $k_1$ 是它的积分。零均值噪声的积分是**随机游走**——方差不收敛，只随时间线性增长。这就是**参数漂移**（parameter drift）。
+### 四种修正
 
-实测（量测噪声标准差 0.1、带宽 100 rad/s 的有色噪声，$r$ 为多正弦，$T=60$ s，统计窗口 $t>48$ s）：
+令$\phi=[x_p,r]^{\mathsf T}$，先写无噪声形式：
 
-| $\gamma$ | $\mathrm{rms}\lvert e\rvert$ 末段 | $\mathrm{std}(k_1)$ 末段 | $\max\lvert u\rvert$ |
-| --- | --- | --- | --- |
-| 2 | $2.307\times10^{-2}$ | $3.184\times10^{-2}$ | 2.16 |
-| 20 | $9.750\times10^{-2}$ | $4.250\times10^{-1}$ | 3.45 |
-| 200 | $1.264\times10^{-1}$ | 4.109 | 11.45 |
-| 200（无噪声对照） | $4.320\times10^{-4}$ | $6.897\times10^{-3}$ | 3.58 |
+| 修正 | 更新做法 | 需要付出的代价 |
+| --- | --- | --- |
+| $\sigma$修正 | 加$-\sigma\gamma_i k_i$ | 把参数拉向零，也可能引入跟踪偏差 |
+| $e$修正 | 加$-\nu\gamma_i\lvert e\rvert k_i$ | 误差小时泄漏变弱，保证仍需单独分析 |
+| 死区 | $\lvert e\rvert<\delta$时停止更新 | 阈值太小挡不住噪声，太大会留下误差 |
+| 投影 | 在允许集合的边界限制更新方向 | 要有包含合理参数的集合；不能修复任意模型遗漏 |
 
-$\mathrm{std}(k_1)$ 随 $\gamma$ 近似线性增长（0.032 → 0.425 → 4.109，每十倍 $\gamma$ 分别涨 13.3 倍和 9.7 倍）。**注意跟踪误差的方向和无噪声时相反**：第 4 节里无噪声时 $\mathrm{rms}\lvert e\rvert$ 随 $\gamma$ 单调变好（$1.62\times10^{-2} \to 2.66\times10^{-5}$），加了噪声之后却单调变差（$2.31\times10^{-2} \to 1.26\times10^{-1}$），$\gamma=200$ 比无噪声对照差 292 倍。原因就是 $-\gamma e n$ 这一项：$\gamma$ 越大，噪声被灌进积分器的功率越大。**噪声把渐近跟踪变成了有界误差，而且 $\gamma$ 越大界越宽。**
+连续时间投影算子和每步后裁剪参数不是一回事。本课代码的`projection`采用后者，是数值盒约束；控制增益范围也不等于惯量等物理参数范围。
 
-### 四种鲁棒化修正
+### 泄漏的一个可证明结论
 
-**1. $\sigma$-修正（leakage / 泄漏）**：在自适应律里加一个把参数往零拉的阻尼项：
+在本课一阶<strong>无噪声、常参数、无饱和且精确模型</strong>下，加入泄漏后有
 
 $$
-\dot k_i = -\gamma_i\,\mathrm{sign}(b)\,e\phi_i - \sigma\gamma_i k_i, \qquad \sigma > 0
+\dot V=a_me^2-\sigma|b|\sum_i\tilde k_i k_i
+\le -|a_m|e^2-\frac{\sigma|b|}{2}\sum_i\tilde k_i^2+C,
+\quad C=\frac{\sigma|b|}{2}\sum_i k_i^{*2}.
 $$
 
-平衡点被移走了。定常态下 $\dot k_i = 0$，自适应律给出
+取$c=\min(2|a_m|,\sigma\gamma_{\min})>0$，则$\dot V\le-cV+C$，从而
 
 $$
-e\,\phi_i = -\sigma k_i \qquad\Longrightarrow\qquad e_{ss} = -\frac{\sigma k_{2,ss}}{r}
+V(t)\le e^{-ct}V(0)+\frac Cc(1-e^{-ct}).
 $$
 
-（第二个等式取 $\phi_2 = r$。）**稳态跟踪误差正比于 $\sigma$**，参数不再收敛到 $k^*$，跟踪也不再无差。换来的是 $\dot V = a_me^2 - \sigma|b|\sum_i\tilde k_i k_i$，当 $\lvert k\rvert$ 变大时第二项提供负反馈，参数**保证有界**（习题 4 会让你把这个界算出来）。
+$\rho=C/c$是<strong>$V$的水平值</strong>，不是状态欧氏球的半径。它给出保守的最终范围；连同$V(0)$还可给全时段上界。它既不保证误差为零，也不保证唯一平衡点，不能直接拿去检验加入测量噪声后的轨迹。
 
-下面 Notebook 7 的第 3 个 cell 把这个平衡条件测了一遍：$r=1$、无噪声、$\gamma=200$、$T=60$ s（已完全稳态）。
+对$b>0$、$r=1$的无噪声常值平衡，第二条更新律给$e_{ss}=-\sigma k_{2,ss}$。由于$k_{2,ss}$也会随$\sigma$变化，这不表示误差严格正比于$\sigma$。补充实验会求出全部平衡根，避免把几组初值到达同一点当作唯一性证明。
 
-| $\sigma$ | $k_{1,ss}$ | $k_{2,ss}$ | $e_{ss}$ | $-\sigma k_{2,ss}$ | 闭环直流增益 |
-| --- | --- | --- | --- | --- | --- |
-| 0 | −0.90412 | 1.57079 | $0$（数值零） | — | 1.000000 |
-| 0.001 | 0.33321 | 0.33334 | $-3.333\times10^{-4}$ | $-3.333\times10^{-4}$ | 0.999667 |
-| 0.01 | 0.33222 | 0.33333 | $-3.333\times10^{-3}$ | $-3.333\times10^{-3}$ | 0.996667 |
-| 0.05 | 0.32773 | 0.33329 | $-1.666\times10^{-2}$ | $-1.666\times10^{-2}$ | 0.983336 |
-| 0.1 | 0.32204 | 0.33314 | $-3.331\times10^{-2}$ | $-3.331\times10^{-2}$ | 0.966686 |
-| 1.0 | 0.21443 | 0.31141 | $-3.114\times10^{-1}$ | $-3.114\times10^{-1}$ | 0.688594 |
-| 3.0 | 0.07690 | 0.21297 | $-6.389\times10^{-1}$ | $-6.389\times10^{-1}$ | 0.361103 |
+### 漏掉执行器动态会怎样
 
-$e_{ss}$ 与 $-\sigma k_{2,ss}$ 两列逐行吻合到 6 位有效数字，平衡条件得到验证。$\sigma \le 0.1$ 时 $e_{ss}$ **严格线性**于 $\sigma$（因为 $k_{2,ss}$ 几乎不动，一直是 0.3333），再往上 $k_{2,ss}$ 自己开始掉，线性关系才失效。直流增益从 1.000000 掉到 0.966686（$\sigma=0.1$）、0.688594（$\sigma=1.0$）——**泄漏换来的精度损失是定量的、可预测的**。
+原鲁棒化实验保留增益扫描、四种修正、泄漏平衡、30至240秒时域扩展和步长减半。还在输入前加入两个滞后环节：$\dot v_1=3(u-v_1)$、$\dot v_2=20(v_1-v_2)$，实际对象接收$v_2$。这是说明Rohrs类鲁棒性问题的<strong>教学模型</strong>，不声称逐项复现历史原例。
 
-$\sigma = 0$ 那一行值得多看一眼：它停在 $k_1 = -0.90412$、$k_2 = 1.57079$，**不是**理想点 $(-1,\ 5/3)$，可是 $e_{ss}$ 是数值零（$\lvert e_{ss}\rvert < 10^{-15}$）、直流增益是 1.000000。这正是第 4 节讲过的"阶跃输入不满足 PE，参数停在直流增益匹配流形上"。cell 3 里换了四组初值重跑，四个终点各不相同、误差都是 $10^{-16}$ 量级；而 $\sigma = 0.01$ 时同样这四组初值**全部收敛到同一点** $(0.33222,\ 0.33333)$，5 位小数完全一致。
-
-<Callout variant="tip">
-$\sigma$-修正做了一件常被忽略的事：**它打破了参数等效流形的简并**。$\sigma = 0$ 时平衡点是一整条流形，落在哪里由初值决定（第 4 节实测过五个终点各不相同）；$\sigma > 0$ 时泄漏项把平衡点收成唯一的一个，与初值无关。代价是这个唯一的平衡点不在 $k^*$ 上，稳态误差 $e_{ss} = -\sigma k_{2,ss}/r$。所以 $\sigma$-修正是"用无差跟踪换唯一性与有界性"的交易，不是免费的鲁棒化。
-</Callout>
-
-**2. e-修正**：阻尼强度随误差大小自动调节：
-
-$$
-\dot k_i = -\gamma_i\,\mathrm{sign}(b)\,e\phi_i - \nu\gamma_i\lvert e\rvert k_i
-$$
-
-$e$ 大时阻尼强（抑制瞬态漂移），$e \to 0$ 时阻尼消失（保留渐近无差的理想性质）。这是 $\sigma$-修正的改良版。
-
-**3. 死区**：误差小于阈值时完全停止更新：
-
-$$
-\dot k_i = \begin{cases} 0, & \lvert e\rvert < \delta \\ -\gamma_i\,\mathrm{sign}(b)\,e\phi_i, & \lvert e\rvert \ge \delta \end{cases}
-$$
-
-前提是**已知误差的上界**（噪声 + 未建模动态造成的稳态误差）。$\delta$ 取小了完全无效，取大了牺牲精度。
-
-**4. 投影**：把参数限制在已知的物理范围内 $k \in \Omega$：
-
-$$
-\dot k = \Pi_\Omega\left(-\gamma\,\mathrm{sign}(b)\,e\phi\right)
-$$
-
-如果你知道 $J \in [0.1, 5]\ \mathrm{kg\,m^2}$，投影就是最自然的保护——它保证参数永远不会跑到非物理的值（比如案例 1 里实测到的负惯量 $\hat J = -1.99$）。
+表中“触阈值”表示仿真按预定数值阈值停止；“完成”只表示没有提前停止。不能从所列几个增益推导适用于所有参考、噪声和初值的临界增益，也不能从240秒的平台证明无限时间有界。
 
 <JupyterNotebook
   title="Notebook 7：噪声下的参数漂移、四种鲁棒化修正与 sigma 的代价"
@@ -1697,9 +1202,9 @@ def sim_mrac(gamma=200.0, kind='multi', mod='none', par=0.0, noise=0.0,
             break
         s1 = deriv(xp, xm, k1, k2, v1, v2, n, r, xv)
         s2 = deriv(xp+.5*dt*s1[0], xm+.5*dt*s1[1], k1+.5*dt*s1[2], k2+.5*dt*s1[3],
-                   v1+.5*dt*s1[4], v2+.5*dt*s1[5], n+.5*dt*s1[6], r, xv)
+                   v1+.5*dt*s1[4], v2+.5*dt*s1[5], n+.5*dt*s1[6], rf(t+.5*dt), xv)
         s3 = deriv(xp+.5*dt*s2[0], xm+.5*dt*s2[1], k1+.5*dt*s2[2], k2+.5*dt*s2[3],
-                   v1+.5*dt*s2[4], v2+.5*dt*s2[5], n+.5*dt*s2[6], r, xv)
+                   v1+.5*dt*s2[4], v2+.5*dt*s2[5], n+.5*dt*s2[6], rf(t+.5*dt), xv)
         s4 = deriv(xp+dt*s3[0], xm+dt*s3[1], k1+dt*s3[2], k2+dt*s3[3],
                    v1+dt*s3[4], v2+dt*s3[5], n+dt*s3[6], rf(t+dt), xv)
         xp += dt/6*(s1[0]+2*s2[0]+2*s3[0]+s4[0])
@@ -1712,7 +1217,7 @@ def sim_mrac(gamma=200.0, kind='multi', mod='none', par=0.0, noise=0.0,
         if mod == 'projection':
             k1 = min(max(k1, k_lo), k_hi)
             k2 = min(max(k2, k_lo), k_hi)
-        if not np.isfinite(xp) or abs(xp) > 1e3 or abs(k1) > 1e4:
+        if not np.isfinite([xp,xm,k1,k2,v1,v2,n]).all() or abs(xp) > 1e3 or abs(k1) > 1e4:
             div_t = t
             break
     return dict(t=np.array(ts), e_true=np.array(ets), k1=np.array(k1s),
@@ -1721,16 +1226,15 @@ def sim_mrac(gamma=200.0, kind='multi', mod='none', par=0.0, noise=0.0,
 
 def summarize(tag, d, frac=0.8):
     if np.isfinite(d['div_t']):
-        print('  %-28s %-15s %-14s %-14s %-11s' % (tag, '发散 t=%.2f' % d['div_t'], '-', '-', '-'))
+        print('  %-28s %-15s %-14s %-14s %-11s' % (tag, '触阈值 t=%.2f' % d['div_t'], '-', '-', '-'))
         return
     tail = d['t'] > frac * d['t'][-1]
     print('  %-28s %-15.4e %-14.4e %-14.4f %-11.3f'
           % (tag, np.sqrt(np.mean(d['e_true'][tail]**2)), np.std(d['k1'][tail]),
              np.max(np.abs(d['k1'])), np.max(np.abs(d['u']))))`}
   cells={[
-    { code: `# 量测噪声标准差 0.1 下，gamma 决定参数漂移的幅度
-print('量测噪声 std=0.1（带宽 100 rad/s 有色噪声，约为参考幅值的 10%），r=多正弦，T=60 s，统计窗口 t > 48 s')
-print('  %-10s %-16s %-16s %-16s %-12s' % ('gamma', 'rms|e_true|末', 'std(k1) 末', 'std(k2) 末', 'max|u|'))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 量测噪声标准差 0.1 下，gamma 决定参数漂移的幅度
 G = {}
 for g in [2.0, 20.0, 200.0]:
     d = sim_mrac(gamma=g, noise=0.1, T=60.0, seed=1)
@@ -1742,16 +1246,9 @@ d0 = sim_mrac(gamma=200.0, noise=0.0, T=60.0)
 tail0 = d0['t'] > 48
 G[0.0] = (np.sqrt(np.mean(d0['e_true'][tail0]**2)), np.std(d0['k1'][tail0]),
           np.std(d0['k2'][tail0]), np.max(np.abs(d0['u'])))
-print('  %-10s %-16.4e %-16.4e %-16.4e %-12.3f' % (('200 无噪声',) + G[0.0]))
-print()
-print('  => std(k1) 随 gamma 增长：%.3f -> %.3f -> %.3f' % (G[2.0][1], G[20.0][1], G[200.0][1]))
-print('     每十倍 gamma 分别涨 %.1f 倍和 %.1f 倍，接近线性。'
-      % (G[20.0][1] / G[2.0][1], G[200.0][1] / G[20.0][1]))
-print('     gamma=200 有噪声 vs 无噪声：std(k1) %.3f vs %.3e，差 %.0f 倍；'
-      % (G[200.0][1], G[0.0][1], G[200.0][1] / G[0.0][1]))
-print('     rms|e| %.4f vs %.3e，差 %.0f 倍。噪声把渐近跟踪变成了有界误差。'
-      % (G[200.0][0], G[0.0][0], G[200.0][0] / G[0.0][0]))` },
-    { code: `# 四种修正的横向对比（噪声场景）
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 四种修正的横向对比（噪声场景）
 def stat(d, frac=0.8):
     tail = d['t'] > frac * d['t'][-1]
     return (np.sqrt(np.mean(d['e_true'][tail]**2)), np.std(d['k1'][tail]),
@@ -1766,40 +1263,16 @@ MODS = [('无修正', 'none', 0.0),
         ('e-mod  nu=0.1', 'emod', 0.1),
         ('e-mod  nu=1.0', 'emod', 1.0),
         ('投影  k in [-3, 3]', 'projection', 0.0)]
-print('gamma=200, 噪声 std=0.1, r=多正弦, T=60 s, 统计窗口 t > 48 s')
-print('  %-28s %-15s %-14s %-14s %-11s' % ('修正方式', 'rms|e_true|末', 'std(k1)末', 'max|k1|', 'max|u|'))
 S = {}
 for tag, m, p in MODS:
     S[tag] = stat(sim_mrac(gamma=200.0, mod=m, par=p, noise=0.1, T=60.0, seed=1))
     print('  %-28s %-15.4e %-14.4e %-14.4f %-11.3f' % ((tag,) + S[tag]))
 IDEAL = stat(sim_mrac(gamma=200.0, noise=0.0, T=60.0))
-print('  %-28s %-15.4e %-14.4e %-14.4f %-11.3f' % (('理想（无噪声无失配）',) + IDEAL))
-print()
 STRONG = [S['sigma-mod  sigma=0.1'], S['e-mod  nu=1.0'], S['投影  k in [-3, 3]']]
 ALLE = [S[t] for t, _, _ in MODS]
-print('判读：')
-print('  1) 强修正档（sigma=0.1 / e-mod nu=1.0 / 投影）把 std(k1) 从 %.2f 压到 %.3f~%.3f，'
-      % (S['无修正'][1], min(x[1] for x in STRONG), max(x[1] for x in STRONG)))
-print('     把 max|u| 从 %.2f 压到 %.2f~%.2f。'
-      % (S['无修正'][3], min(x[3] for x in STRONG), max(x[3] for x in STRONG)))
-print('  2) 但 rms|e_true| 只在 %.4f~%.4f 之间，比理想的 %.2e 差 %.0f~%.0f 倍。'
-      % (min(x[0] for x in ALLE), max(x[0] for x in ALLE), IDEAL[0],
-         min(x[0] for x in ALLE) / IDEAL[0], max(x[0] for x in ALLE) / IDEAL[0]))
-print('     修正保住的是"参数不飘、控制量不炸"，不是精度。精度由噪声功率决定。')
-print('  3) 死区 delta=0.02 完全无效（std(k1) %.3f vs 无修正 %.3f）：'
-      % (S['死区  delta=0.02'][1], S['无修正'][1]))
-print('     噪声造成的 rms|e| 就有 %.3f，|e| 几乎从不落到 0.02 以下，死区根本没被触发。'
-      % S['无修正'][0])
-print('     delta=0.1 也只把 std(k1) 从 %.3f 压到 %.3f。要用死区，delta 必须大于噪声误差底。'
-      % (S['无修正'][1], S['死区  delta=0.1'][1]))
-print('  4) 投影把 max|k1| 精确压在 3.0（盒子边界生效），是最"硬"的保护，')
-print('     代价是 rms|e| 从 %.4f 变到 %.4f、max|u| 从 %.2f 变到 %.2f。'
-      % (S['无修正'][0], S['投影  k in [-3, 3]'][0],
-         S['无修正'][3], S['投影  k in [-3, 3]'][3]))` },
-    { code: `# sigma-mod 的稳态平衡点：无噪声、r=1，验证平衡条件 e_ss = -sigma*k2_ss/r
-print('r=1 常数参考，无噪声，gamma=200，T=60 s，dt=1e-3（末 3 s 取平均，已完全稳态）')
-print('  %-8s %-11s %-11s %-13s %-13s %-12s'
-      % ('sigma', 'k1_ss', 'k2_ss', 'e_ss', '-sigma*k2', 'DC增益'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 的稳态平衡点：无噪声、r=1，验证平衡条件 e_ss = -sigma*k2_ss/r
 SIG = {}
 for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0, 3.0]:
     d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=s, noise=0.0,
@@ -1809,21 +1282,6 @@ for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0, 3.0]:
     SIG[s] = (k1, k2, e, -B_TRUE * k2 / (A_TRUE + B_TRUE * k1))
     print('  %-8.3f %-11.5f %-11.5f %-13.4e %-13.4e %-12.6f'
           % (s, k1, k2, e, -s * k2, -B_TRUE * k2 / (A_TRUE + B_TRUE * k1)))
-print()
-print('判读：')
-print('  1) e_ss 与 -sigma*k2_ss 两列逐行吻合（6 位有效数字）：')
-print('     平衡条件 e*phi_i = -sigma*k_i 取 phi_2 = r = 1 就是 e_ss = -sigma*k2_ss。')
-print('  2) sigma <= 0.1 时 e_ss 严格线性于 sigma（3.333e-4 / 3.333e-3 / 1.666e-2 / 3.331e-2），')
-print('     因为 k2_ss 几乎不动（一直是 0.3333）。再往上 k2_ss 自己开始掉，线性关系失效。')
-print('  3) 直流增益从 1.000000 掉到 0.966686（sigma=0.1）、0.688594（sigma=1.0）、')
-print('     0.361103（sigma=3.0）：泄漏换来的精度损失是定量的、可预测的。')
-print()
-print('sigma=0 那一行停在 k1=%.5f, k2=%.5f，不是理想点 (%.4f, %.4f)，'
-      % (SIG[0.0][0], SIG[0.0][1], K1S, K2S))
-print('但 e_ss = %.1e（数值零）、DC 增益 = %.6f —— 这是第 4 节讲过的"阶跃输入不满足 PE，'
-      % (SIG[0.0][2], SIG[0.0][3]))
-print('参数停在直流增益匹配流形上"。换四组初值重跑：')
-print('  %-16s %-11s %-11s %-11s' % ('(k1_0, k2_0)', 'k1_ss', 'k2_ss', 'e_ss'))
 IC = [(0.0, 0.0), (-2.0, 0.0), (0.5, 3.0), (-3.0, -2.0)]
 for k10, k20 in IC:
     d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=0.0, noise=0.0,
@@ -1832,23 +1290,18 @@ for k10, k20 in IC:
     print('  %-16s %-11.5f %-11.5f %-11.1e'
           % ('(%.1f, %.1f)' % (k10, k20), d['k1'][m].mean(), d['k2'][m].mean(),
              d['e_true'][m].mean()))
-print('  四个终点各不相同，误差都是 1e-16 量级 => 平衡点是一整条流形。')
-print()
-print('同样这四组初值，sigma=0.01：')
 for k10, k20 in IC:
     d = sim_mrac(gamma=200.0, kind='step', mod='sigma', par=0.01, noise=0.0,
                  T=60.0, dt=1e-3, seed=1, k10=k10, k20=k20)
     m = d['t'] > 57
     print('  (k1_0, k2_0) = (%.1f, %.1f) -> k_ss = (%.5f, %.5f)'
           % (k10, k20, d['k1'][m].mean(), d['k2'][m].mean()))
-print('  全部收敛到同一点，5 位小数完全一致。')
-print('  => sigma-mod 打破了流形的简并：牺牲无差跟踪，换来唯一且与初值无关的平衡点。')` },
-    { code: `# sigma-mod 的标度律：漂移随 sigma 单调下降，跟踪误差却有一个最优 sigma
+` },
+{ title: "计算", code: `print('注意：rho及参数界只适用于无噪声标称证明；右侧有噪声实测不能据此验界。')
+print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 的标度律：所列 sigma 配置的有限窗口比较
 Sg = K1S**2 + K2S**2
 g0 = 200.0
-print('gamma=200, 噪声 std=0.1, r=多正弦, T=60 s；k1*=%.4f, k2*=%.4f' % (K1S, K2S))
-print('  %-7s %-10s %-9s %-11s %-8s | %-9s %-10s %-11s %-8s'
-      % ('sigma', 'rho*', '|k1| 界', '区制', '速率', 'max|k1|', 'std(k1)', 'rms|e|末', 'max|u|'))
 for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0]:
     d = sim_mrac(gamma=g0, mod='sigma', par=s, noise=0.1, T=60.0, seed=1)
     tail = d['t'] > 48
@@ -1867,64 +1320,32 @@ for s in [0.0, 0.001, 0.01, 0.05, 0.1, 0.3, 1.0]:
     print('  %-7.3f %-10s %-9s %-11s %-8s | %-9.3f %-10.4f %-11.4f %-8.3f'
           % (s, rs, kb, reg, rr, np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
              np.sqrt(np.mean(d['e_true'][tail]**2)), np.max(np.abs(d['u']))))
-print()
-print('判读：')
-print('  1) max|k1| 随 sigma 单调下降：43.70 -> 7.98 -> 5.96 -> 3.19 -> 1.81 -> 1.03 -> 0.54。')
-print('     泄漏项 -sigma*gamma*k 把参数往零拉，sigma 越大盒子越小。')
-print('  2) rms|e| 却不是单调的：sigma=0.001 已经降到 0.088，sigma=0.1 最低（0.083），')
-print('     sigma=1.0 反而恶化到 0.279（比无修正的 0.126 还差）。')
-print('     因为泄漏把 k 拉向零而不是拉向 k*，稳态偏差正比于 sigma。存在一个最优 sigma。')
-print('  3) 理论界 rho* 在区制 B 随 sigma 增大（sigma=1.0 时是无修正区制的 20 倍），')
-print('     实测 max|k1| 反而减小——Lyapunov 界是保守的充分条件，')
-print('     只能用来判断"有没有界"，不能用来预测界的大小。sigma 必须靠实测扫参。')
-print('  4) 区制分界在 sigma*gamma = 2|a_m|，即 sigma = %.3f。' % (2 * abs(AM) / g0))
-print('  5) sigma=0 那一行是唯一"没有界"的：max|k1| = 43.70 只是 60 秒内随机游走的行程，')
-print('     把时间拉长它会一直涨（下一个 cell 实测）。')` },
-    { code: `# sigma=0 到底有没有"终极界"？把仿真时长从 30 s 拉到 240 s（上半：sigma=0）
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma=0 到底有没有"终极界"？把仿真时长从 30 s 拉到 240 s（上半：sigma=0）
 # 这个 cell 有 4 次长仿真，运行约 15 秒
 TSW = [30.0, 60.0, 120.0, 240.0]
 lres = {}
-print('gamma=200, 噪声 std=0.1, r=多正弦, dt=2e-4；只改仿真时长 T')
-print('  %-8s %-8s %-12s %-12s %-11s %-11s'
-      % ('sigma', 'T(s)', 'max|k1|', 'std(k1)末', 'max|u|', 'rms|e|末'))
 for T in TSW:
     d = sim_mrac(gamma=200.0, mod='sigma', par=0.0, noise=0.1, T=T, seed=1)
     tail = d['t'] > 0.5 * T
     lres[(0.0, T)] = (np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
                       np.max(np.abs(d['u'])), np.sqrt(np.mean(d['e_true'][tail]**2)))
     print('  %-8.1f %-8.0f %-12.3f %-12.3f %-11.2f %-11.4f' % ((0.0, T) + lres[(0.0, T)]))` },
-    { code: `# 下半：sigma=0.1，并与 sigma=0 对照（4 次长仿真，约 15 秒）
-print('  %-8s %-8s %-12s %-12s %-11s %-11s'
-      % ('sigma', 'T(s)', 'max|k1|', 'std(k1)末', 'max|u|', 'rms|e|末'))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 下半：sigma=0.1，并与 sigma=0 对照（4 次长仿真，约 15 秒）
 for T in TSW:
     d = sim_mrac(gamma=200.0, mod='sigma', par=0.1, noise=0.1, T=T, seed=1)
     tail = d['t'] > 0.5 * T
     lres[(0.1, T)] = (np.max(np.abs(d['k1'])), np.std(d['k1'][tail]),
                       np.max(np.abs(d['u'])), np.sqrt(np.mean(d['e_true'][tail]**2)))
     print('  %-8.1f %-8.0f %-12.3f %-12.3f %-11.2f %-11.4f' % ((0.1, T) + lres[(0.1, T)]))
-print()
 m0 = [lres[(0.0, T)][0] for T in TSW]
 m1 = [lres[(0.1, T)][0] for T in TSW]
 p0 = np.polyfit(np.log(np.array(TSW)), np.log(np.array(m0)), 1)[0]
-print('判读：')
-print('  sigma=0：max|k1| = %.2f -> %.2f -> %.2f -> %.2f，随 T 持续增长，' % tuple(m0))
-print('     对数-对数斜率 %.2f（随机游走的理论值是 0.5，即正比于 sqrt(T)）。' % p0)
-print('     => 不存在终极界。"43.7" 只是 T=60 这个时刻截出来的一个数，不是稳态值。')
-print('  sigma=0.1：max|k1| = %.3f -> %.3f -> %.3f -> %.3f，120 s 之后就饱和了，' % tuple(m1))
-print('     => 真正的有界。所以 sigma-mod 带来的不是"降了 24 倍"，而是"从无界变有界"，')
-print('        24 倍只是 T=60 时的表象。')
-print('  rms|e| 那一列：sigma=0 从 %.4f 涨到 %.4f（因为 k1 越来越大，噪声被放大得越来越多）；'
-      % (lres[(0.0, 30.0)][3], lres[(0.0, 240.0)][3]))
-print('     sigma=0.1 稳定在 %.4f 上下。' % np.mean([lres[(0.1, T)][3] for T in TSW]))
-print()
-print('  附：噪声幅度按 noise*sqrt(2*tau_n/dt) 缩放，保证连续时间噪声强度与步长无关。')
-print('     用 dt=5e-4 和 1e-3 重跑，max|k1| 分别落在 26.7/101.1 和 26.7/98.4（sigma=0），')
-print('     与 dt=2e-4 的 27.4/103.2 差 2~5%，是不同噪声实现序列的统计涨落，不是系统偏差。')` },
-    { code: `# Rohrs 型反例：两个未建模极点 + 自适应增益 => 存在临界增益
-print('在控制量与被控对象之间插入两个未建模极点：')
-print("  v1' = 3(u - v1),  v2' = 20(v1 - v2),  对象输入变成 v2")
-print('名义设计仍然按"对象是一阶"来做（a=-2, b=3），无噪声，r=多正弦')
-print()
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# Rohrs 型反例：两个未建模极点 + 自适应增益 ；只检查所列增益与有限时域
 
 
 def rms_tail(d, t0=32.0):
@@ -1934,7 +1355,6 @@ def rms_tail(d, t0=32.0):
 
 GS = [1.0, 2.0, 3.0, 4.0, 6.0, 10.0, 20.0, 100.0]
 DIV, RMS, SAME = {}, {}, True
-print('  %-10s %-10s %-22s %-22s' % ('gamma', 'dt', 'dt 下结局', 'dt/2 下结局'))
 for g in GS:
     dt_ = min(2e-4, 0.5 / (g * 4.0))
     row = []
@@ -1942,31 +1362,19 @@ for g in GS:
         d = sim_mrac(gamma=g, unm=True, noise=0.0, T=40.0, dt=dt_ * f,
                      store_every=max(1, int(2e-3 / (dt_ * f))), seed=0)
         if np.isfinite(d['div_t']):
-            row.append('发散 t=%.2f s' % d['div_t'])
+            row.append('触阈值 t=%.2f s' % d['div_t'])
         else:
-            row.append('有界 rms|e|=%.3e' % rms_tail(d))
+            row.append('完成40s rms|e|=%.3e' % rms_tail(d))
         if f == 1.0:
             DIV[g] = d['div_t']
             RMS[g] = None if np.isfinite(d['div_t']) else rms_tail(d)
     SAME = SAME and (row[0] == row[1])
     print('  %-10.1f %-10.0e %-22s %-22s' % (g, dt_, row[0], row[1]))
-print()
 ok = [g for g in GS if RMS[g] is not None]
 bad = [g for g in GS if RMS[g] is None]
-print('  => gamma <= %.0f 有界（rms|e| 分别 %s）；gamma >= %.0f 发散。'
-      % (max(ok), ' / '.join('%.3f' % RMS[g] for g in ok), min(bad)))
-print('     临界增益落在 %.0f 和 %.0f 之间，且发散时间随 gamma 单调缩短：' % (max(ok), min(bad)))
-print('     %s s（gamma = %s）。'
-      % (' -> '.join('%.2f' % DIV[g] for g in bad), ', '.join('%.0f' % g for g in bad)))
-print('     dt 减半后%s，说明这是真实的动力学失稳，不是积分器伪影。'
-      % ('两列输出完全一致' if SAME else '两列输出有差异（需警惕）'))
-print()
-print('  注意：gamma=%.0f 时的 rms|e| = %.3f 也远差于无未建模动态时的 4.32e-4（cell 2 的理想行）。'
-      % (max(ok), RMS[max(ok)]))
-print('     未建模动态即使不导致失稳，也把渐近跟踪变成了有界误差。')` },
-    { code: `# sigma-mod 能救回 Rohrs 失稳吗？（gamma=100，无修正时 0.76 s 发散）
-print('gamma=100, 两个未建模极点, 噪声 std=0.1, T=40 s')
-print('  %-28s %-15s %-14s %-14s %-11s' % ('修正方式', 'rms|e_true|末', 'std(k1)末', 'max|k1|', 'max|u|'))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# sigma-mod 能救回 Rohrs 失稳吗？（gamma=100，无修正时 0.76 s 发散）
 D8 = {}
 for tag, m, p in [('无修正', 'none', 0.0),
                   ('sigma-mod  sigma=0.1', 'sigma', 0.1),
@@ -1977,155 +1385,49 @@ for tag, m, p in [('无修正', 'none', 0.0),
     D8[tag] = sim_mrac(gamma=100.0, mod=m, par=p, noise=0.1, unm=True,
                        T=40.0, seed=1)
     summarize(tag, D8[tag])
-print()
-print('判读：')
-print('  sigma=0.1 只是把发散从 %.2f s 推迟到 %.2f s，救不回来；sigma=1.0 才有界，'
-      % (D8['无修正']['div_t'], D8['sigma-mod  sigma=0.1']['div_t']))
-print('  但 rms|e| = %.3f。死区完全无效（发散时间仍是 %.2f s，一点没变）。'
-      % (rms_tail(D8['sigma-mod  sigma=1.0']), D8['死区  delta=0.1']['div_t']))
-print('  e-mod nu=1.0 有界但 rms|e| = %.3f，比 sigma=1.0 更差。' % rms_tail(D8['e-mod  nu=1.0']))
-print('  投影靠"硬夹"保住了有界性，但 rms|e| = %.3f，几乎等于没控制。'
-      % rms_tail(D8['投影  k in [-3, 3]']))
-print()
-print('  对照：上一个 cell 里 gamma=%.0f、不加任何修正、无噪声时 rms|e| = %.3f。'
-      % (max(ok), RMS[max(ok)]))
 d3 = sim_mrac(gamma=3.0, unm=True, noise=0.1, T=40.0, seed=1)
-print('  加上噪声 std=0.1 后重测 gamma=3：rms|e| = %.4f' % rms_tail(d3))
-print('  => 把 gamma 降到临界值以下，比"大 gamma + 强修正"效果好得多，')
-print('     而且不需要知道修正参数该怎么选。这是本课最实用的一条工程结论。')` }
-  ]}
+` }
+]}
 />
 
-### $\sigma$ 该取多大：一条有最优值的曲线
 
-上面第四个 cell 把 $\sigma$ 从 0 扫到 1.0，结果不是"$\sigma$ 越大越安全"这么简单：
+### 自己调参数
 
-| $\sigma$ | 0 | 0.001 | 0.01 | 0.05 | 0.1 | 0.3 | 1.0 |
-|---|---|---|---|---|---|---|---|
-| $\max\lvert k_1\rvert$ | 43.70 | 7.98 | 5.96 | 3.19 | **1.81** | 1.03 | 0.54 |
-| $\mathrm{rms}\lvert e\rvert$（末段） | 0.126 | 0.088 | 0.118 | 0.095 | **0.083** | 0.118 | 0.279 |
-| $\max\lvert u\rvert$ | 11.45 | 7.78 | 11.52 | 9.27 | 6.79 | 3.60 | 2.10 |
-
-$\max\lvert k_1\rvert$ 随 $\sigma$ **单调下降**——泄漏项 $-\sigma\gamma k$ 就是把参数往零拉，$\sigma$ 越大盒子越小。但 $\mathrm{rms}\lvert e\rvert$ 不是单调的：它在 $\sigma = 0.1$ 这一档最低（0.083），$\sigma = 1.0$ 时恶化到 0.279（比不加修正的 0.126 还差一倍多）。原因就是 $\sigma$-修正一节里那个平衡点偏移：泄漏把 $k$ 拉向**零**而不是拉向 $k^*$，$\sigma$ 越大稳态偏差越大。$\max\lvert u\rvert$ 总体从 11.45 降到 2.10（因为控制量正比于 $k$），但也不是单调的：$\sigma = 0.001$ 和 $0.01$ 两档反而回升到 7.78 和 11.52。
-
-**$\sigma$ 有一个最优值**，它同时受两头夹击：太小则压不住漂移，太大则牺牲精度。工程上从这个表得到的实用建议是——**先用 $\sigma = 0$ 试，如果参数飘了，从 $\sigma \approx 0.001$ 开始往上按十倍加，盯着 $\mathrm{rms}\lvert e\rvert$，一旦它开始回升就退回上一档**。注意表里 $\sigma = 0.001$ 就已经把 $\max\lvert k_1\rvert$ 从 43.70 压到 7.98，$\mathrm{rms}\lvert e\rvert$ 还顺带改善了——所以"最小的能起作用的 $\sigma$"通常就在很靠下的位置。
-
-顺带说一句理论上界和实测的关系。习题 4(c) 会让你证出：正不变集半径 $\rho^*$ 在 $\sigma\gamma \le 2\lvert a_m\rvert$ 时等于 $\frac{\lvert b\rvert}{2\gamma}(k_1^{*2}+k_2^{*2}) = 0.0283$，在 $\sigma\gamma > 2\lvert a_m\rvert$ 时正比于 $\sigma$（$\sigma = 1.0$ 时 $\rho^* = 0.567$，是前者的 20 倍）。实测 $\max\lvert k_1\rvert$ 的变化方向恰好**相反**。这不矛盾：Lyapunov 界是保守的充分条件，它能告诉你"有没有界"，不能告诉你"界有多大"。这也是为什么整定 $\sigma$ 必须靠实测扫参，不能靠公式算。
-
-### $\sigma = 0$ 时的"漂移"到底有没有界
-
-前面表格里 $\sigma = 0$ 那一行的 $\max\lvert k_1\rvert = 43.70$，容易被误读成"参数稳定在 43.7 附近"。第五、六个 cell 把仿真时长从 30 s 一路拉到 240 s，其余条件完全不变：
-
-| $T$（s） | 30 | 60 | 120 | 240 |
-|---|---|---|---|---|
-| $\sigma=0$：$\max\lvert k_1\rvert$ | 27.38 | 43.70 | 69.40 | 103.21 |
-| $\sigma=0$：$\max\lvert u\rvert$ | 7.72 | 11.45 | 15.94 | 20.67 |
-| $\sigma=0.1$：$\max\lvert k_1\rvert$ | 1.807 | 1.807 | 1.930 | 1.930 |
-| $\sigma=0.1$：$\max\lvert u\rvert$ | 6.79 | 6.79 | 7.72 | 7.72 |
-
-$\sigma = 0$ 时 $\max\lvert k_1\rvert$ 的对数-对数斜率是 0.64，与随机游走的理论值 0.5（$\propto\sqrt{T}$）同量级；$\sigma = 0.1$ 时它在 120 s 之后就彻底饱和。**$\sigma = 0$ 根本不存在终极界**——$V$ 有界不等于 $\tilde k$ 有界，因为 $V$ 里的参数项权重是 $\frac{|b|}{2\gamma}$，$\gamma = 200$ 时这个权重只有 $7.5\times10^{-3}$，$V$ 可以在几乎不增加的情况下容纳巨大的 $\tilde k$。这正是"$\gamma$ 大 ⇒ 参数项在 Lyapunov 函数里几乎不受惩罚 ⇒ 漂移没人管"的另一面。
-
-工程含义很直接：**在噪声环境下跑大 $\gamma$ 的纯积分自适应律，运行时间越长越危险**。控制量 $\max\lvert u\rvert$ 从 7.72 涨到 20.67，迟早会撞到执行器上限。$\sigma$-修正（或投影）不是可选的优化，是长时间运行的必需品。
-
-### Rohrs 反例说明了什么
-
-1982 年 Rohrs 等人给出的这个反例，是自适应控制史上最重要的一记警钟：**一个用 Lyapunov 方法证明了全局渐近稳定的自适应闭环，加上两个未建模高频极点后，会在有限的自适应增益之上失稳**。
-
-机制可以这样理解（不严格，但抓住了要点）：自适应回路本身是一个反馈环，$\gamma$ 相当于这个环的增益。未建模极点在高频段提供额外相位滞后。$\gamma$ 小的时候，参数变化的速度远低于未建模极点的时间尺度，"对象是一阶"的假设在自适应回路的时间尺度上成立；$\gamma$ 大到让参数变化速度接近未建模极点带宽时，自适应律开始对相位滞后的信号做积分，等效于正反馈，于是发散。
-
-实测的临界增益 $\gamma \in (3, 4)$ 对应本例未建模极点在 3 和 20 rad/s。**这个数值本身没有普适性**——它取决于未建模极点的位置、参考信号的频谱、$P$ 矩阵的加权。有普适性的是这个结构：
-
-<Callout variant="warning">
-自适应增益 $\gamma$ 存在一个**上界**，上界由未建模动态的带宽决定。"自适应是全局稳定的，所以增益可以随便调大"是错的——那个全局稳定性结论建立在"模型结构完全正确"的前提上，而这个前提在任何真实系统里都不成立。整定顺序应该是：先把 $\gamma$ 调小到确认稳定，再缓慢上调到性能够用为止，**不要**反过来从大往小调。
-</Callout>
-
-### 自己动手：MRAC 交互实验台
-
-前面所有结论都是在固定参数下测出来的。下面这个实验台把 $\gamma$、$\sigma$、噪声幅度、未建模极点开关都做成可调的，你可以自己复现本节的关键现象。
+先用默认阶跃看参数终点与理想点的差别，再换正弦与多正弦；最后分别加噪声、泄漏和未建模极点。每次只改一个条件，先看真实跟踪误差，再看控制峰值和参数。默认值为$\gamma=50,\sigma=0$、无噪声、无额外极点，计算40秒；与前面的手算例采用同一对象和参考模型。默认终点增益约为$(-0.728771,1.395437)$，末段真实误差RMS约$1.1\times10^{-15}$，全时段采样控制峰值约$2.400381$；参数仍没有到达理想点。
 
 <MracExplorer />
 
-三个值得先做的实验：
+## 两个应用模型
 
-1. **复现"阶跃输入不收敛"**：参考信号选「阶跃」，$\gamma$ 拉到 50，看右侧参数平面——轨迹会停在一条直线上而不是停在理想点（红色菱形）上。那条直线就是直流增益匹配流形，第 4 节算过它的方程。
-2. **复现 PE 的作用**：参考信号换成「多正弦」，其他不动。同样的 $\gamma$，这次轨迹会一路收敛到红色菱形（理想点）。这就是持续激励的差别。
-3. **复现 $\gamma$ 的硬上界**：参考信号「多正弦」，打开「未建模极点」，然后把 $\gamma$ 从 5 往上推。你会看到某个值以上曲线直接炸掉——那就是本例的 Rohrs 临界增益。注意关掉未建模极点后再推 $\gamma$，它就怎么都不炸了。
+### 机械臂换负载
 
-底部统计栏里的 $\lambda_{\min}$（PE 强度）是实时算出来的：它取 $\int_{t}^{t+2\pi}\varphi\varphi^{\mathsf T}\mathrm d\tau$ 在整段仿真上滑动的 20 个窗口里的最小特征值，衡量当前参考信号在任意一个长度 $2\pi$ 秒（约 6.3 s）的窗口里能提供多少信息量。阶跃时它打印为 `0.00e+0`，多正弦时它是 $1.2\times10^{-1}$ 量级——这个数就是"参数能不能收敛到真值"的判据。（注意它算的是**闭环回归量** $\varphi = [x_p,\ r]$，所以会随 $\gamma$ 略有变化：实验台里 $\gamma=50$ 给 0.125、$\gamma=200$ 给 0.124；Notebook 2 那张表在 $\gamma=2$、$T=60$ s 下给 0.182，量级一致。）
-
-## 应用案例
-
-### 案例 1：单连杆机械臂的负载自适应
-
-**建模**。单连杆绕水平轴转动，末端负载质量 $m$：
+单连杆模型为
 
 $$
-J\ddot q + B\dot q + mgL\sin q = u
+J\ddot q+B\dot q+mgL\sin q=u.
 $$
 
-其中 $J = J_0 + mL^2$（$J_0$ 是电机与连杆自身惯量），$L$ 是质心到关节的距离，$u$ 是驱动力矩。取 $J_0 = 0.2\ \mathrm{kg\,m^2}$、$L = 0.5\ \mathrm m$、$B = 0.5\ \mathrm{N\,m\,s}$、$g = 9.81\ \mathrm{m/s^2}$：
+本例$B$已知，只估计$\theta=[J,mgL]^{\mathsf T}$。给定参考$q_d$，定义$e_q=q-q_d$、$\dot q_r=\dot q_d-\lambda e_q$、$s=\dot q-\dot q_r$，所以$s=\dot e_q+\lambda e_q$。让$s$趋于零，就会让角度误差按稳定的一阶方程减小。
 
-| 负载 $m$ | $J$ (kg·m²) | $mgL$ (N·m) |
-| --- | --- | --- |
-| 1 kg | 0.4500 | 4.905 |
-| 2 kg | 0.7000 | 9.810 |
-| 5 kg | 1.4500 | 24.525 |
-
-**哪些参数需要自适应**？$B$（粘性摩擦）由轴承和电机决定，与负载无关，可以离线标定；$J$ 和 $mgL$ 都随 $m$ 变，必须在线估计。这个判断很重要——第 4 节的教训是**待估参数越少，回归量越容易满足 PE**。只估两个参数，$\phi = [\ddot q_r,\ \sin q]$；估三个，$\phi = [\ddot q_r,\ \dot q,\ \sin q]$，而这三个信号在单频轨迹下近乎共线。
-
-**误差变量与参考速度**。给定 $q_d(t)$，定义：
+取$\phi=[\ddot q_r,\sin q]^{\mathsf T}$，控制律和更新律为
 
 $$
-e_1 = q - q_d, \qquad \dot q_r = \dot q_d - \lambda e_1, \qquad s = \dot q - \dot q_r = \dot e_1 + \lambda e_1
+u_{cmd}=\hat\theta^{\mathsf T}\phi+B\dot q-K_ds,\qquad
+\dot{\hat\theta}=-\Gamma\phi s.
 $$
 
-$s = 0$ 意味着 $e_1$ 按 $e^{-\lambda t}$ 收敛，所以"让 $s \to 0"就是"让跟踪误差收敛"。再记 $\ddot q_r = \ddot q_d - \lambda\dot e_1$。
-
-**线性参数化**。把动力学改写成：
+为方便本段推导，定义$\tilde\theta=\theta-\hat\theta$，方向与前面增益误差相反。常参数、无测量噪声且$u=u_{cmd}$时，$J\dot s=-\tilde\theta^{\mathsf T}\phi-K_ds$。因此
 
 $$
-J\ddot q = u - B\dot q - mgL\sin q \quad\Longrightarrow\quad J\dot s = u - B\dot q - mgL\sin q - J\ddot q_r
+V=\frac12Js^2+\frac12\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta,
+\qquad \dot V=-K_ds^2.
 $$
 
-取控制律（$\hat\theta = [\hat J,\ \widehat{mgL}]^{\mathsf T}$，$\phi = [\ddot q_r,\ \sin q]^{\mathsf T}$）：
+在$\lambda,K_d>0$、有界光滑参考等条件下可进一步得到跟踪收敛。若实际力矩被裁剪，$\dot V$还多出$s(u-u_{cmd})$；负载突然改变时，参数误差及$V$也可能跳变。下面的带限幅、负载跳变实验只能展示该配置的表现，不能套用刚才的恒等式证明全程单调。
 
-$$
-u = \hat\theta^{\mathsf T}\phi + B\dot q - K_d s
-$$
+负载在3秒由1kg变为5kg，$J=0.2+0.25m$由0.45变为1.45kg·m²，$mgL=4.905m$由4.905变为24.525N·m，限幅60N·m。模型假定换载瞬间角度和速度连续，不模拟抓取冲击。初始角度和<strong>速度</strong>均取参考初值。
 
-代入：
-
-$$
-J\dot s = \hat\theta^{\mathsf T}\phi + B\dot q - K_d s - B\dot q - mgL\sin q - J\ddot q_r = -\tilde\theta^{\mathsf T}\phi - K_d s
-$$
-
-其中 $\tilde\theta = \theta - \hat\theta$，$\theta = [J,\ mgL]^{\mathsf T}$。
-
-**Lyapunov 设计**。取：
-
-$$
-V = \frac{1}{2}Js^2 + \frac{1}{2}\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta
-$$
-
-（$J > 0$ 未知但为常数，所以 $V$ 仍是正定的。）求导：
-
-$$
-\dot V = Js\dot s + \tilde\theta^{\mathsf T}\Gamma^{-1}\dot{\tilde\theta} = s(-\tilde\theta^{\mathsf T}\phi - K_d s) - \tilde\theta^{\mathsf T}\Gamma^{-1}\dot{\hat\theta}
-$$
-
-选择：
-
-$$
-\dot{\hat\theta} = -\Gamma\phi s
-$$
-
-则 $\tilde\theta^{\mathsf T}\Gamma^{-1}\dot{\hat\theta} = -\tilde\theta^{\mathsf T}\phi s$，与第一项相消：
-
-$$
-\dot V = -K_d s^2 \le 0
-$$
-
-这套设计就是机器人控制里经典的 **Slotine-Li 自适应控制**。注意它和反步法的区别：反步法要递归地对虚拟控制求导（导致复杂度爆炸），这里只用了一阶滤波（$\dot q_r = \dot q_d - \lambda e_1$）就把二阶系统压成了一个标量 $s$。代价是 $\lambda$ 固定了误差收敛的"形状"，不像反步法那样每步都能单独配增益。
+若$q_d=\sin t$且跟踪较好，$\ddot q_r\approx-\sin t$，但$\sin(\sin t)$并不精确等于某个倍数的$\sin t$：它还有高次谐波。基波系数约0.880，可能让惯量和重力项难以分开；这属于激励强弱和数值条件问题，不能直接断言严格不可辨识。双频参考可改变这一条件，仍要检查实际回归量。
 
 <JupyterNotebook
   title="Notebook 8：机械臂负载突变的自适应控制实测"
@@ -2162,7 +1464,7 @@ def sim_arm(T=20.0, dt=2e-4, mode='adaptive', gam=200.0, m0=1.0, m1=5.0,
     Gm = gam * np.ones(2)
     N = int(round(T / dt))
     rng = np.random.default_rng(seed)
-    q0, _, v0 = ref_traj(0.0, rich)
+    q0, v0, _ = ref_traj(0.0, rich)
     q, v = q0, v0
     ts, es, us, ths, ss = [], [], [], [], []
     for i in range(N + 1):
@@ -2197,7 +1499,8 @@ def sim_arm(T=20.0, dt=2e-4, mode='adaptive', gam=200.0, m0=1.0, m1=5.0,
     return dict(t=np.array(ts), e=np.array(es), u=np.array(us), th=np.array(ths),
                 s=np.array(ss))`}
   cells={[
-    { code: `# 检验：V̇ = -K_d s^2 是代数恒等式吗？在随机状态点上验证
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 检验：V̇ = -K_d s^2 是代数恒等式吗？在随机状态点上验证
 rng = np.random.default_rng(0)
 max_abs, max_tgt = 0.0, 0.0
 for _ in range(20000):
@@ -2219,16 +1522,11 @@ for _ in range(20000):
     tgt = -KD * s * s
     max_abs = max(max_abs, abs(Vd - tgt))
     max_tgt = max(max_tgt, abs(tgt))
-print('在 20000 个随机状态点上验证 V̇ = -K_d s^2：')
-print('  最大绝对偏差 = %.3e' % max_abs)
-print('  样本中 |K_d s^2| 的最大值 = %.4f' % max_tgt)
-print('  相对偏差 = %.3e' % (max_abs / max_tgt))
-print('  => 交叉项被自适应律精确抵消，推导无误')` },
-    { code: `# 负载突变：五种控制器的对比
-print('参考 q_d = sin(t) + 0.5 sin(2.3t)（双频）；估计初值取 m=2 kg（真值 m=1 kg）；')
-print('t=3 s 时负载突变为 5 kg；|u| <= %.0f N*m；T=20 s' % U_LIM)
-print('  %-28s %-14s %-14s %-14s %-11s %-9s'
-      % ('控制器', 'rms|e| t<3s', 'rms|e| t>6s', 'max|e| t>3s', '恢复时间', 'max|u|'))
+
+print('常参数无饱和恒等式随机残差', max_abs, '相对残差', max_abs/max_tgt)
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 负载突变：五种控制器的对比
 runs = [('自适应 gamma=50', dict(mode='adaptive', gam=50.0)),
         ('自适应 gamma=200', dict(mode='adaptive', gam=200.0)),
         ('自适应 gamma=1000', dict(mode='adaptive', gam=1000.0)),
@@ -2240,20 +1538,14 @@ for label, kw in runs:
     out[label] = d
     e = np.abs(d['e'])
     bad = np.where((d['t'] > 3.0) & (e >= 0.02))[0]
-    rec = (d['t'][bad[-1]] - 3.0) if len(bad) else 0.0
+    rec = None if e[-1] >= 0.02 else (d['t'][bad[-1]+1] - 3.0 if len(bad) else 0.0)
     print('  %-28s %-14.4e %-14.4e %-14.4f %-11s %-9.2f'
           % (label, np.sqrt(np.mean(d['e'][d['t'] < 3.0]**2)),
              np.sqrt(np.mean(d['e'][d['t'] > 6.0]**2)), np.max(e[d['t'] > 3.0]),
-             '%.2f s' % rec, np.max(np.abs(d['u']))))
-print()
-print('  => 自适应 gamma=1000 在 1.33 s 内把误差压回 0.02 rad 以内，稳态 rms|e| = 1.19e-3；')
-print('     gamma=200 用 2.04 s，rms|e| = 1.72e-3；gamma=50 要 8.61 s，rms|e| = 1.89e-2。')
-print('     定增益计算力矩和纯 PD 在 17 s 内都没恢复到 0.02 rad（rms|e| = 0.154 / 0.176）。')
-print('     gamma=1000 时 max|u| = 60.0，已经顶到限幅 —— 这是"gamma 越大越好"的又一个边界。')` },
-    { code: `# 激励丰富度决定参数是否可辨识
-print('gamma=200，同一负载突变，只换参考信号：')
-print('  %-26s %-14s %-10s %-14s %-10s %-13s'
-      % ('参考', 'J_hat(末)', '偏差', '(mgL)_hat(末)', '偏差', 'rms|e| t>6s'))
+             ('窗口内未恢复' if rec is None else '%.2f s' % rec), np.max(np.abs(d['u']))))
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 激励丰富度决定参数是否可辨识
 pt = params(5.0)
 RID = {}
 for rich, lab in [(True, 'sin(t)+0.5sin(2.3t)'), (False, 'sin(t) 单频')]:
@@ -2264,27 +1556,17 @@ for rich, lab in [(True, 'sin(t)+0.5sin(2.3t)'), (False, 'sin(t) 单频')]:
     print('  %-26s %-14.4f %-10s %-14.4f %-10s %-13.4f'
           % (lab, RID[lab][0], '%.2f%%' % RID[lab][1],
              RID[lab][2], '%.2f%%' % RID[lab][3], RID[lab][4]))
-print()
 R1 = RID['sin(t)+0.5sin(2.3t)']
 R2 = RID['sin(t) 单频']
-print('  => 双频参考下 J 辨识到 %.2f%%、mgL 到 %.2f%%；' % (R1[1], R1[3]))
-print('     单频参考下 J_hat = %.2f（负惯量！偏差 %.0f%%），mgL 偏差 %.0f%%。'
-      % (R2[0], R2[1], R2[3]))
-print('     原因：q_d = sin(t) 时 q̈_r、sin(q) 都是 1 rad/s 的正弦，两列近共线，')
-print('     回归矩阵接近奇异，只有它们的某个组合可辨识，单个参数不可辨识。')
-print('     注意跟踪误差在两种情况下都不错（rms|e| = %.4f vs %.4f，单频甚至更小）——'
-      % (R1[4], R2[4]))
-print('     又一次印证：自适应律最小化的是跟踪误差，不是参数误差。')
-print('     （这正是「反步法设计」一课里提到的那一条，两课口径一致。）')` },
-    { code: `# 参数收敛过程与出图；再看量测噪声的影响
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 参数收敛过程与出图；再看量测噪声的影响
 d = sim_arm(gam=200.0, rich=True)
 pt = params(5.0)
-print('参数估计的收敛过程（gamma=200，双频参考，t=3 s 负载突变）：')
-print('  %-8s %-14s %-14s %-14s %-14s' % ('t (s)', 'J_hat', '真值', '(mgL)_hat', '真值'))
 for tt in [0, 3, 4, 5, 6, 8, 12, 20]:
     i = np.argmin(np.abs(d['t'] - tt))
     print('  %-8.1f %-14.4f %-14.4f %-14.4f %-14.4f'
-          % (d['t'][i], d['th'][i,0], pt[0], d['th'][i,1], pt[1]))
+          % (d['t'][i], d['th'][i,0], params(1.0 if d['t'][i] < 3 else 5.0)[0], d['th'][i,1], params(1.0 if d['t'][i] < 3 else 5.0)[1]))
 fig, ax = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
 for kw, lab, c in [(dict(mode='adaptive', gam=200.0), '自适应 gamma=200', 'C0'),
                    (dict(mode='adaptive', gam=1000.0), '自适应 gamma=1000', 'C1'),
@@ -2309,50 +1591,31 @@ ax[2].axvline(3.0, color='gray', ls='--', alpha=0.7)
 ax[2].set_xlabel('t (s)'); ax[2].set_ylabel('参数估计'); ax[2].legend(fontsize=9)
 ax[2].grid(alpha=0.3); ax[2].set_title('参数估计（虚线为突变后真值 J=1.45, mgL=24.525）')
 plt.tight_layout(); plt.show()
-print()
-print('量测噪声的影响（gamma=200，双频参考，T=20 s）：')
-print('  %-12s %-16s %-14s %-14s' % ('噪声 std', 'rms|e| t>10s', 'J_hat(末)', '(mgL)_hat(末)'))
 for nz in [0.0, 0.002, 0.01]:
     dn = sim_arm(gam=200.0, rich=True, noise=nz, seed=2)
     tail = dn['t'] > 10
     print('  %-12s %-16.4e %-14.4f %-14.4f'
           % (nz, np.sqrt(np.mean(dn['e'][tail]**2)), dn['th'][-1,0], dn['th'][-1,1]))
-print('  => 噪声 std 从 0 到 0.01 rad，rms|e| 从 7.4e-5 涨到 3.7e-4（5 倍），')
-print('     J_hat 从 1.4492 偏到 1.5341（5.8%）。比一阶 MRAC 的情况温和得多，')
-print('     因为这里的回归量幅值大（q̈_r 达 3 以上），信噪比高。')` }
-  ]}
+` }
+]}
 />
 
-### 案例 2：飞行器爬升过程中的气动参数适应
 
-**建模**。俯仰通道的短周期近似：
+噪声实验把同一个随机数加到角度和角速度的归一化测量上，是相关噪声敏感性演示，不是已标定的传感器模型。固定计算力矩和PD均按原配置保留，没有为每种方法重新优化。
 
-$$
-\ddot\theta = -a_0\theta - a_1\dot\theta + b u
-$$
+### 俯仰系数随高度变化
 
-$\theta$ 是俯仰角，$u$ 是升降舵偏角。气动导数正比于空气密度 $\rho(h)$：
+第二个例子使用简化的俯仰模型$\ddot x+a_1(h)\dot x+a_0(h)x=b(h)u$。三个系数都乘同一个因子$\eta(h)=e^{-h/8500}$；高度在60秒从0升到10000m，再保持不变。这是教学假设，不能代表所有真实气动导数的变化规律。它控制俯仰状态，<strong>不是高度控制器</strong>。
 
-$$
-a_0(h) = a_0^{SL}\sigma(h), \quad a_1(h) = a_1^{SL}\sigma(h), \quad b(h) = b^{SL}\sigma(h), \qquad \sigma(h) = \frac{\rho(h)}{\rho_0} = e^{-h/8500}
-$$
-
-取海平面 $a_0^{SL} = 16$、$a_1^{SL} = 2$、$b^{SL} = 40$（开环极点 $-1\pm 3.87j$，$\zeta = 0.25$，是典型的弱阻尼俯仰模态）。爬升剖面：60 秒内从 0 升到 10000 m，之后保持。顶点 $\sigma = 0.3084$，控制效能降到 30.8%。
-
-参考模型取 $\omega_n = 3$、$\zeta = 0.9$、单位直流增益：
+海平面$a_0=16,a_1=2,b=40$；参考模型$\omega_n=3,\zeta=0.9$，故
 
 $$
-A_m = \begin{bmatrix} 0 & 1 \\ -9 & -5.4 \end{bmatrix}, \qquad B_m = \begin{bmatrix} 0 \\ 9 \end{bmatrix}
+A_m=\begin{bmatrix}0&1\\-9&-5.4\end{bmatrix},\qquad B_m=\begin{bmatrix}0\\9\end{bmatrix}.
 $$
 
-**三种方案的理想增益**（按匹配条件 $k_1^* = (a_0 - \omega_m^2)/b$、$k_2^* = (a_1 - 2\zeta\omega_m)/b$、$k_r^* = \omega_m^2/b$）：
+每个固定高度的理想增益是$k_1^*=(a_0-9)/b$、$k_2^*=(a_1-5.4)/b$、$k_r^*=9/b$。精确调度器直接使用真高度和真系数，天然拥有信息优势；另一调度器将比例表放大30%。MRAC不读取高度，但使用已知输入方向和名义$B_p=[0,40]^{\mathsf T}$。
 
-| | $k_1^*$ | $k_2^*$ | $k_r^*$ |
-| --- | --- | --- | --- |
-| 海平面（$\sigma = 1$） | $+0.17500$ | $-0.08500$ | $0.22500$ |
-| 10 km（$\sigma = 0.3084$） | $-0.32965$ | $-0.38779$ | $0.72965$ |
-
-注意 $k_1^*$ **改变了符号**，而且三个增益涨的倍数完全不同：$k_r^*$ 涨 3.24 倍（恰好等于 $1/\sigma$）、$k_2^*$ 涨 4.56 倍、$k_1^*$ 绝对值只涨 1.88 倍还要翻号。固定在海平面整定的增益，到高空完全不对。
+爬升期间真系数和理想增益都在变，常参数证明不能原封不动照搬，$V$求导还会出现时变理想参数等附加项。比较的是固定海平面增益、两种调度表和两个MRAC增益在同一120秒实验中的表现；2rad输入限幅只是模型参数，不据此声称真实飞机可执行。
 
 <JupyterNotebook
   title="Notebook 9：固定增益 vs 增益调度 vs MRAC 的爬升跟踪对比"
@@ -2455,14 +1718,9 @@ def sim_pitch(mode='mrac', T=120.0, dt=1e-3, gam=200.0, table_err=0.0,
     return dict(t=np.array(ts), en=np.array(ens), u=np.array(us),
                 h=np.array(hs), k1=np.array(K1s))`}
   cells={[
-    { code: `# 三种方案在爬升剖面下的跟踪性能
-print('r = sin(2t)，T=120 s，爬升占前 60 s；|u| <= 2.0 rad')
-print('海平面理想增益 K* = [%.5f, %.5f], k_r* = %.5f' % (K1_SL, K2_SL, KR_SL))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 三种方案在爬升剖面下的跟踪性能
 k1t, k2t, krt = ideal_gains(sigma(T_CLIMB)[0])
-print('顶点理想增益   K* = [%.5f, %.5f], k_r* = %.5f' % (k1t, k2t, krt))
-print()
-print('  %-30s %-14s %-14s %-14s %-13s %-9s'
-      % ('方案', 'rms|e|爬升段', 'rms|e|顶点后', 'max|e|顶点后', '|e|末值', 'max|u|'))
 out = {}
 R9 = {}
 for label, kw in [('固定增益（海平面整定）', dict(mode='fixed')),
@@ -2478,21 +1736,10 @@ for label, kw in [('固定增益（海平面整定）', dict(mode='fixed')),
     R9[label] = (np.sqrt(np.mean(en[climb]**2)), np.sqrt(np.mean(en[top]**2)),
                  np.max(en[top]), en[-1], np.max(np.abs(d['u'])))
     print('  %-30s %-14.4e %-14.4e %-14.4e %-13.4e %-9.3f' % ((label,) + R9[label]))
-print()
 SC = '增益调度（密度表精确）'
 S3 = '增益调度（密度表偏差 30%）'
 MR = 'MRAC（Gamma=200，不知高度）'
 FX = '固定增益（海平面整定）'
-print('  => 精确增益调度达到机器精度（顶点后 rms|e| = %.1e），' % R9[SC][1])
-print('     因为它每一步都在用真值重算理想增益。')
-print('     MRAC 不知道高度、不知道气动系数，只靠跟踪误差在线调整，达到 %.2e，' % R9[MR][1])
-print('     比精确调度差 %.1e 倍（%.1f 个数量级），'
-      % (R9[MR][1] / R9[SC][1], np.log10(R9[MR][1] / R9[SC][1])))
-print('     但比"密度表有 30%% 误差的调度"（%.4f）好 %.0f 倍。'
-      % (R9[S3][1], R9[S3][1] / R9[MR][1]))
-print('     固定增益彻底失效（顶点后 rms|e| = %.3f，参考幅值才 1.0）。' % R9[FX][1])
-print()
-print('  收敛速度（|e| 首次持续低于阈值的时间）：')
 for lab in ['MRAC（Gamma=50，不知高度）', 'MRAC（Gamma=200，不知高度）']:
     en, t = out[lab]['en'], out[lab]['t']
     for thr in [1e-2, 1e-3]:
@@ -2503,8 +1750,8 @@ for lab in ['MRAC（Gamma=50，不知高度）', 'MRAC（Gamma=200，不知高�
                 break
         print('    %-28s |e| < %.0e 从 t = %s 起一直保持'
               % (lab, thr, ('%.2f s' % stay) if stay is not None else 'never'))` },
-    { code: `# 固定增益为什么还能保持稳定？闭环极点随高度的变化
-print('  %-24s %-22s %-9s %-9s %-10s' % ('时刻 / 高度', '闭环极点', 'wn', 'zeta', '直流增益'))
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 固定增益为什么还能保持稳定？闭环极点随高度的变化
 for tt in [0.0, 30.0, 60.0, 120.0]:
     s, h = sigma(tt)
     a0, a1, b = A0_SL*s, A1_SL*s, B_SL*s
@@ -2514,13 +1761,9 @@ for tt in [0.0, 30.0, 60.0, 120.0]:
     dc = b * KR_SL / (a0 - b*K1_SL)
     print('  %-24s %-22s %-9.3f %-9.3f %-10.4f'
           % ('t=%.0f s, h=%.0f m' % (tt, h), np.round(ev, 3), wn, zeta, dc))
-print()
-print('  => a0, a1, b 同比例按 sigma 衰减时：')
-print('     直流增益严格不变（分子分母同乘 sigma，约掉了），')
-print('     wn 按 sqrt(sigma) 下降（3.000 -> 1.666），zeta 也按 sqrt(sigma) 下降（0.900 -> 0.500）。')
-print('     所以固定增益不会失稳，但高空既变慢又变振荡，')
-print('     跟踪 sin(2t) 时的误差主要来自带宽下降造成的相位滞后。')` },
-    { code: `# 出图：误差包络与增益轨迹
+` },
+{ title: "计算", code: `print('本单元：。下表为给定配置的有限窗口实测，不代表无限时间证明。')
+# 出图：误差包络与增益轨迹
 fig, ax = plt.subplots(1, 2, figsize=(11, 4.0))
 for label, c in [('固定增益（海平面整定）', 'C2'), ('增益调度（密度表偏差 30%）', 'C1'),
                  ('MRAC（Gamma=200，不知高度）', 'C0')]:
@@ -2546,631 +1789,166 @@ ax[1].set_xlabel('t (s)'); ax[1].set_ylabel('k1')
 ax[1].legend(fontsize=8); ax[1].grid(alpha=0.3)
 ax[1].set_title('MRAC 的 k1 追着理想值走（并在顶点后继续微调）')
 plt.tight_layout(); plt.show()
-print('右图的关键：理想 k1* 随高度从 +0.175 一路变到 -0.330（改变符号），')
-print('MRAC 的 k1(t) 紧跟其后但不完全重合 —— 残差就是 rms|e| = 3.5e-4 的来源。')` }
-  ]}
+` }
+]}
 />
 
-<Callout variant="tip">
-**这个案例回答了"什么时候用自适应、什么时候用增益调度"**。如果你能测到调度变量（这里是气压高度，几乎所有飞行器都有气压计），并且有精确的气动数据表，增益调度能做到机器精度——比任何在线自适应都好。但气动数据表是风洞试验和 CFD 算出来的，30% 的误差在实际项目里很常见（外挂物、结冰、损伤、马赫数没进表）。MRAC 不需要这些数据，代价是收敛需要时间（本例 $\Gamma=200$ 时 $\lvert e\rvert$ 从 $t = 2.38$ s 起持续低于 $10^{-3}$，$\Gamma=50$ 则要等到 75 s）。
 
-工程上的常见做法是**两者叠加**：用调度提供前馈基线（保证一开始就大致对），用自适应吃掉表的误差和慢变化。
-</Callout>
+固定增益的冻结高度极点仍可稳定，但对正弦的幅相跟随变差；“跟踪差”不等于“失稳”。精确调度在这个模型上消除了系数变化，并不说明调度在所有任务都优于自适应。
 
-## 与其他非线性控制方法的对比
+## 怎样选择方法
 
-### 自适应控制 vs 鲁棒控制
+| 问题 | 设计时先检查什么 |
+| --- | --- |
+| 需要跟踪，还是还需要真实参数？ | 后者必须检查辨识条件，遗忘因子不能凭空补足信息 |
+| 参数变化能否由可测工况预测？ | 有可信模型可研究调度；没有时考虑在线估计，仍需稳定性分析 |
+| 不确定项能否由现有输入结构补偿？ | 先验匹配条件；严格反馈结构也可研究自适应反步 |
+| 主要问题是噪声和遗漏的快速动态吗？ | 检查传感器、带宽与模型；不能只增大自适应增益 |
+| 主要问题是有界外扰吗？ | 可研究鲁棒或滑模设计，并考虑扰动假设、采样、抖振及限幅 |
 
-两者的分工来自不确定性的类型：
+自适应、鲁棒、调度和滑模并不是按性能排成一列的替代品。本课没有实现同带宽、各自独立整定的全部基线，因此只解释各自需要什么信息，不作整体排名。超过某个百分比就必须换方法之类经验阈值，在这里没有依据。
 
-| 特性 | 自适应控制 | 鲁棒控制（H∞ / 滑模） |
-| --- | --- | --- |
-| 对付的不确定性 | 结构化（参数未知但线性参数化） | 非结构化（未建模动态、外扰、增益摄动） |
-| 处理方式 | 在线估计并**抵消** | 设计保守控制器**容忍**最坏情况 |
-| 参数收敛后的性能 | 渐近无差（PE 满足时 $\mathrm{rms}\lvert e\rvert = 4.3\times 10^{-4}$） | 始终保留保守裕度带来的性能损失 |
-| 无激励时 | 参数停在初值决定的点上，跟踪仍可能无差 | 性能不变（不依赖激励） |
-| 对未建模动态 | 差——$\gamma$ 有硬上界（实测 $\gamma_{\mathrm{crit}}\in(3,4)$） | 好——这正是它的设计目标 |
-| 对量测噪声 | 差——噪声被积分成随机游走（$\mathrm{std}(k_1)$ 从 $6.9\times10^{-3}$ 涨到 4.11） | 中——按 $\mathcal H_2/\mathcal H_\infty$ 指标显式设计 |
-| 在线计算量 | 小（一阶例子：控制律 2 次乘加 + 两条自适应律 5 次乘法，每步不到 10 次浮点运算） | 小（固定增益查表）；离线设计复杂 |
+## 适用边界
 
-实测数据把"谁更好"这个问题变成了"对付哪一类不确定性"：案例 2 里固定增益的 $\mathrm{rms}\lvert e\rvert = 0.934$，MRAC 是 $3.5\times 10^{-4}$——面对**已知的参数变化规律但未知的数值**，自适应完胜。而 Notebook 7 里，只要加入两个未建模极点，$\gamma \ge 4$ 就直接发散——面对**非结构化成分**，自适应毫无还手之力。
+回看本课的证明，每次保证成立都有清楚的前提：常参数、匹配、已知输入信息、可测状态、规定的参考、无额外噪声和饱和。更真实的实验逐项放宽这些条件，目的是发现问题，而不是让有限仿真替代证明。
 
-> **混合策略**是工程常态：用自适应吃掉慢时变的参数（负载、老化、高度），用鲁棒项（滑模切换项、$\sigma$-修正、$\mathcal H_\infty$ 加权）兜住快扰动和未建模动态。参见 [H∞控制基础](/robust/h-infinity-basics) 与 [滑模控制](/nonlinear/sliding-mode-control)。
+尤其要分开三件事：$e\to0$是跟踪结论，$\tilde\theta\to0$是辨识结论，仿真在截止时间没有触阈值是有限运行结果。三者互不等价。输出反馈、一般多输入系统、快速时变参数和真实机械臂抓取，都需要本课以外的设计。
 
-### 自适应控制 vs 增益调度
+下面补充检查更新律的符号、泄漏多平衡、RLS同先验一致性、机械臂谐波及交互默认值，也便于核对习题中的算术。
 
-**增益调度**（gain scheduling）：离线在若干工作点上设计好控制器，在线用可测的**调度变量**（马赫数、气压高度、负载称重）查表或插值。
+<JupyterNotebook
+  title="Notebook 10：证明边界与默认值核验"
+  setupCode={`import numpy as np`}
+  cells={[
+{ title: "符号、平衡、辨识、谐波及默认值", code: `import numpy as np
+import sympy as sp
+from scipy.linalg import solve_continuous_lyapunov
+from scipy.integrate import solve_ivp
+from scipy.special import jv
 
-案例 2 是两者的正面对决，同一个对象、同一个参考、同一段爬升剖面：
+# Independent symbolic checks: both control directions and matrix dimensions.
+e,x,r,b,g,a,kt1,kt2=sp.symbols('e x r b g a kt1 kt2', real=True)
+proofs=0
+for bb in [sp.Integer(3),sp.Integer(-2)]:
+    vd=e*(a*e+bb*kt1*x+bb*kt2*r)+abs(bb)/g*(kt1*(-g*sp.sign(bb)*e*x)+kt2*(-g*sp.sign(bb)*e*r))
+    assert sp.simplify(vd-a*e**2)==0
+    proofs+=1
+J,s,K,p1,p2,t1,t2,G=sp.symbols('J s K p1 p2 t1 t2 G', nonzero=True)
+assert sp.simplify(s*(-t1*p1-t2*p2-K*s)+(t1*(G*p1*s)+t2*(G*p2*s))/G+K*s*s)==0
+proofs+=1
+print('符号恒等式',proofs,'；Q1理想增益',(-3+4)/-2,3/-2)
 
-| 方案 | 需要知道什么 | $\mathrm{rms}\lvert e\rvert$（顶点后） | 备注 |
-| --- | --- | --- | --- |
-| 固定增益（海平面整定） | 海平面气动系数 | $9.34\times 10^{-1}$ | 不失稳但基本不跟踪 |
-| 增益调度（表精确） | 全部气动数据 + 高度 | $2.17\times 10^{-16}$ | 机器精度 |
-| 增益调度（表偏差 30%） | 同上，但表不准 | $1.25\times 10^{-1}$ | 比固定增益只好 7 倍 |
-| MRAC（$\Gamma=200$） | 只知道 $\mathrm{sign}(b)$ 和 $A_m$ 的结构 | $3.46\times 10^{-4}$ | $\lvert e\rvert$ 从 $t=2.38$ s 起持续低于 $10^{-3}$ |
+# Leakage step equilibria: e=x-1, k1=-e*x/sigma, k2=-e/sigma.
+# Object balance: -2*x -3*(x-1)*(x*x+1)/sigma=0.
+sigma=.01
+roots=np.roots([3.,-3.,3.+2*sigma,-3.])
+# All roots for the stated plant are reported, plus another admissible plant with multiple roots.
+def leak_roots(aa,bb,ss):
+    # a*x - b*(x-1)*(x*x+1)/sigma = 0
+    roots=np.roots([bb,-bb,bb-aa*ss,-bb])
+    ans=[]
+    for z in roots:
+        if abs(z.imag)<1e-9:
+            xx=float(z.real); ee=xx-1; k1=-ee*xx/ss; k2=-ee/ss
+            ans.append([xx,k1,k2])
+    return ans
+print('本课a=-2,b=3,sigma=.01的实平衡根',leak_roots(-2,3,.01))
+multi=leak_roots(10,1,1)
+assert len(multi)==3
+print('反例a=10,b=1,参考xm=1,sigma=1的三个实平衡[x,k1,k2]',multi)
+# Equilibrium existence is not a stability or attraction claim.
 
-这张表给出了一个不太常见但很重要的结论：**一张误差 30% 的气动表，其价值远低于一个粗糙的在线自适应律**。0.125 对 $3.5\times10^{-4}$，差 360 倍。原因是调度表的误差直接线性地变成增益误差，而自适应律是靠反馈把误差压下去的。
+# Same-prior RLS vs regularized batch, deterministic data and forgetting.
+rng=np.random.default_rng(23)
+Phi=rng.normal(size=(200,2)); y=Phi@np.array([.8,.27])+rng.normal(0,.01,200)
+th0=np.array([.3,.1]); P0=np.diag([3.,7.]); diffs=[]
+for lam in [1.,.995,.98,.95]:
+    th=th0.copy(); P=P0.copy(); R=np.linalg.inv(P0); rhs=R@th0
+    for ph,yy in zip(Phi,y):
+        L=P@ph/(lam+ph@P@ph); th+=L*(yy-ph@th); P=(np.eye(2)-np.outer(L,ph))@P/lam
+        R=lam*R+np.outer(ph,ph); rhs=lam*rhs+ph*yy
+    diff=float(np.max(abs(th-np.linalg.solve(R,rhs)))); diffs.append(diff)
+assert max(diffs)<1e-10
+print('同先验RLS/批量差',diffs,'；199步增长',.95**-199,.98**-199)
 
-| 特性 | 自适应控制 | 增益调度 |
-| --- | --- | --- |
-| 设计方式 | 在线自动调整 | 离线设计 + 在线查表 |
-| 传感器需求 | 状态/输出 + 参考 | 额外需要调度变量的测量 |
-| 对模型数据的依赖 | 只需结构与 $\mathrm{sign}(b)$ | 需要全工作范围的气动/参数数据表 |
-| 能否处理未预见的变化 | 能 | 不能（超出表的范围就失效） |
-| 切换/插值时的稳定性 | 连续更新，无切换问题 | 需要额外的切换稳定性分析 |
-| 工程成熟度 | 航空领域曾因 Rohrs 反例长期被回避 | 飞控中广泛使用 |
+# STR exact arithmetic, no simulation needed for the frozen controller.
+al=np.exp(-.2); be=1.5*(1-al); kp=(.5-al)/be; kr=.5/be
+al1=np.exp(-.4); be1=.75*(1-al1); pole=al1+be1*kp; yss=be1*kr/(1-pole)
+print('STR alpha,beta,Kp,Kr,newpole,yss,error',al,be,kp,kr,pole,yss,1-yss)
+print('冻结Q2极点与时间常数',-2+3*(-.0441),-1/(-2+3*(-.0441)))
 
-**选择建议**：调度变量可测且数据表可信 $\to$ 增益调度（简单、可验证、可认证）；数据表不可信或变化超出预期 $\to$ 自适应；两者叠加是常见做法（调度给前馈基线，自适应吃残差）。
+# Harmonic Gram: actual sin(sin t), no forced rank deficiency.
+tt=np.linspace(0,2*np.pi,100001); ph=np.array([-np.sin(tt),np.cos(tt),np.sin(np.sin(tt))]).T
+gram=np.trapezoid(ph[:,:,None]*ph[:,None,:],tt,axis=0)
+eig=np.linalg.eigvalsh(gram); assert eig[0]>0
+print('sin(sin t)基波系数',2*jv(1,1),'；一周期三回归量Gram特征值',eig)
 
-### 自适应控制 vs 自适应反步法
+# Default Explorer: continuous feedback RK4, full-node metrics, no downsampled RMS.
+def default_run(dt=.001):
+    N=int(round(40/dt)); z=np.zeros(4); sq=0.; count=0; peak=0.
+    def f(z):
+        xp,xm,k1,k2=z; ee=xp-xm; u=k1*xp+k2
+        return np.array([-2*xp+3*u,-5*xm+5,-50*ee*xp,-50*ee])
+    for i in range(N+1):
+        xp,xm,k1,k2=z; u=k1*xp+k2; peak=max(peak,abs(u))
+        if i*dt>32: sq+=(xp-xm)**2; count+=1
+        if i==N: break
+        a=f(z); b=f(z+dt*a/2); c=f(z+dt*b/2); d=f(z+dt*c); z+=dt/6*(a+2*b+2*c+d)
+    return dict(state=z.tolist(),rms=float(np.sqrt(sq/count)),maxu=float(peak))
+default=default_run()
+print('交互默认全部节点指标',default)
+assert np.isfinite(default['state']).all()
 
-[反步法设计](/nonlinear/backstepping) 的"处理参数不确定性"一节给出了**自适应反步**：在递归的每一步都注入参数估计，用 tuning function 避免过参数化。它与 MRAC 的本质区别在于**能处理不匹配的参数化不确定性**：
+# Analytic upper bound check in noise-free trajectories from an independent DOP853 solver.
+boundchecks=[]
+for sigma in [.001,.1,1.]:
+    gamma=200.; ks=np.array([-1.,5/3]); V0=3*np.dot(ks,ks)/(2*gamma)
+    C=sigma*3*np.dot(ks,ks)/2; rate=min(10,sigma*gamma)
+    def rhs(t,z):
+        x,m,k1,k2=z; rr=1+.5*np.sin(2*t)+.3*np.sin(5*t); ee=x-m
+        return [-2*x+3*(k1*x+k2*rr),-5*m+5*rr,-gamma*ee*x-sigma*gamma*k1,-gamma*ee*rr-sigma*gamma*k2]
+    sol=solve_ivp(rhs,[0,10],np.zeros(4),method='DOP853',rtol=1e-10,atol=1e-12,t_eval=np.linspace(0,10,1001))
+    vv=.5*(sol.y[0]-sol.y[1])**2+3/(2*gamma)*np.sum((sol.y[2:4]-ks[:,None])**2,axis=0)
+    upper=np.exp(-rate*sol.t)*V0+C/rate*(1-np.exp(-rate*sol.t))
+    violation=float(np.max(vv-upper)); assert violation<1e-8; boundchecks.append(violation)
+print('无噪声V包络最大超出量',boundchecks)
+` }
+]}
+/>
 
-$$
-\begin{aligned}
-\dot x_1 &= \theta^{\mathsf T}\phi_1(x_1) + g_1 x_2 \\
-\dot x_2 &= \theta^{\mathsf T}\phi_2(x_1, x_2) + g_2 u
-\end{aligned}
-$$
-
-$\theta$ 出现在**第一个**方程里，$u$ 碰不到它——这正是 Notebook 4 里让 MRAC 在 41.08 s 发散的那种不匹配结构。反步法能处理它，因为第一步的虚拟控制 $\alpha_1$ 里就含 $\hat\theta$，误差通过 $z_2$ 一层层传到真实控制量。
-
-| 特性 | MRAC | 自适应反步 |
-| --- | --- | --- |
-| 适用结构 | 线性参数化 + 匹配条件可解 | 严格反馈 + 线性参数化（可不匹配） |
-| 设计目标 | 跟踪参考模型 | 跟踪参考轨迹 |
-| 需要的导数 | $r$ 无需可导（$A_m, B_m$ 即可） | $x_{1d}$ 需要到 $n$ 阶导数 |
-| 复杂度 | 低（一个 Lyapunov 方程 + 增益更新） | 随阶数增长，$\dot\alpha_i$ 要求导（复杂度爆炸） |
-| 参数收敛 | 需要 PE | 同样需要 PE |
-| 实测锚点 | $\Gamma=1000$ 时 $\lVert K-K^*\rVert = 4.2\times10^{-3}$ | 反步法一课：$\hat a,\hat b$ 不收敛到真值，但 $\mathrm{rms}\lvert e\rvert$ 达 $10^{-3}$ 量级 |
-
-两者的共同点比不同点更重要：**都依赖线性参数化，都依赖 PE，都怕未建模动态，都用 Lyapunov 二次项配平参数误差**。学会一个，另一个只是结构上的变体。
-
-### 与滑模控制的对比
-
-[滑模控制](/nonlinear/sliding-mode-control)对**匹配**不确定性有近乎完美的鲁棒性（切换增益 $K$ 只要盖住扰动上界），且不需要参数线性化、不需要 PE。代价是抖振。
-
-| 特性 | 自适应控制 | 滑模控制 |
-| --- | --- | --- |
-| 需要知道扰动上界 | 不需要 | 需要（用来选 $K$） |
-| 需要参数线性化 | 需要 | 不需要 |
-| 需要 PE | 需要（参数收敛） | 不需要 |
-| 稳态精度 | 无噪声无失配时渐近无差 | 边界层内 $\mathcal O(\Phi D/K)$ 的残差 |
-| 控制量连续性 | 连续 | 不连续（需边界层/超螺旋光滑化） |
-| 对未建模动态 | 差（$\gamma$ 有上界） | 中（切换会激发未建模模态，即抖振的物理来源） |
-
-**如果扰动上界已知且不确定性与控制通道匹配，优先用滑模**——它更简单、不需要激励、收敛是有限时间的。自适应控制的优势场景是：扰动来自**已知的物理机制**（惯量、气动系数、电阻），其数值随工况大幅变化，而你不希望为最坏情况付出滑模那样的保守代价。
-
-### 方法选择清单
-
-按下面的顺序问自己：
-
-1. 不确定性是参数化的吗（能写成 $\theta^{\mathsf T}\phi(x)$）？不能 $\to$ 鲁棒控制或滑模。
-2. 参数变化幅度大吗（超过 30%）？不大 $\to$ 固定增益 + 鲁棒裕度就够了，别引入自适应的复杂度。
-3. 有可测的调度变量和可信的数据表吗？有 $\to$ 增益调度（可认证性最好）。
-4. 参数变化快吗（时间尺度接近闭环带宽）？快 $\to$ 自适应的积分器会成为负担，考虑滑模或高增益鲁棒控制。
-5. 工作信号满足 PE 吗？不满足而你又需要参数本身 $\to$ 必须注入探测信号，或改用 STR + 遗忘因子。
-6. 有未建模高频动态吗（柔性模态、执行器带宽）？有 $\to$ $\gamma$ 必须留足裕度，并加 $\sigma$-修正或投影兜底。
-
-## 局限性讨论
-
-以下十条全部有本课或前几课的实测数字支撑。
-
-**1. 参数收敛需要 PE，而工程参考信号常常不满足。** 阶跃设定值的 PE 度量 $\lambda_{\min}$ 实测打印为 `0.000e+00`（$10^{-16}$ 量级的数值零）。恒温、定速、定液位这类任务天然不 PE。后果不是失稳，而是**你拿不到对象参数**——$\hat\theta$ 停在由初值决定的一维流形上（实测五组初值给出五个不同终点，偏差都在 $10^{-12}$ 以下）。
-
-**2. 跟踪无差不代表动态匹配。** 阶跃输入下 $e \to 8.7\times10^{-15}$，但闭环极点是 $-2.13$ 而不是参考模型要求的 $-5$，瞬态时间常数 0.47 s 而不是 0.2 s。指定参考模型只保证了直流增益。
-
-**3. $\gamma$ 不是越大越好，即使没有噪声和失配。** 一阶例子：$\gamma=10$ 在 $t=400$ s 时残差 $4.49\times10^{-8}$，$\gamma=200$ 是 $6.00\times10^{-4}$，$\gamma=1000$ 是 $1.71\times10^{-2}$。二阶例子：$\Gamma=1000$ 给出 $4.2\times10^{-3}$，$\Gamma=5000$ 退回 $9.95\times10^{-1}$。机制是 $\dot V = a_m e^2$ 只允许 $V$ 通过 $e$ 消耗，$\gamma$ 大时"燃料"提前耗尽。注意这个非单调只出现在**参数误差**上——**跟踪误差** $\mathrm{rms}\lvert e\rvert$（$t>10$ s）随 $\gamma$ 单调变好：$1.62\times10^{-2}$（$\gamma=2$）、$3.34\times10^{-3}$（10）、$2.37\times10^{-4}$（200）、$2.66\times10^{-5}$（1000）。
-
-**4. $\gamma$ 存在由未建模动态决定的硬上界。** Rohrs 型实验：两个未建模极点（3 和 20 rad/s）下，$\gamma \le 3$ 有界、$\gamma \ge 4$ 发散，发散时间随 $\gamma$ 单调缩短（5.20 s 到 0.76 s）。$\mathrm{d}t$ 减半结果完全一致，不是数值假象。
-
-**5. 噪声被积分成随机游走，修正手段救不回精度。** $\gamma=200$、量测噪声 std 0.1 时 $\mathrm{std}(k_1) = 4.11$、$\max\lvert u\rvert = 11.45$（无噪声对照分别是 $6.9\times10^{-3}$ 和 3.58）。强修正档（$\sigma = 0.1$、$e$-修正 $\nu = 1.0$、投影）能把参数和控制量压回合理范围（$\mathrm{std}(k_1)$ 降到 0.36~0.61，$\max\lvert u\rvert$ 降到 4.8~7.2），但**所有**修正档的 $\mathrm{rms}\lvert e\rvert$ 都停在 0.083~0.126——离理想的 $4.3\times10^{-4}$ 还差 190~290 倍。修正保住的是"参数不飘、控制量不炸"，不是精度。
-
-**6. 死区可能完全无效。** $\delta = 0.02$ 时 $\mathrm{std}(k_1) = 4.10$，与无修正的 4.11 几乎没有区别——因为噪声造成的 $\mathrm{rms}\lvert e\rvert$ 就有 0.126，$\lvert e\rvert$ 几乎从不落进死区。死区阈值必须大于**噪声误差底**，而这个底通常事先不知道。
-
-**7. 匹配条件是结构性限制，失配可能直接发散。** 二阶例子：参考模型第一行改掉（匹配无解），$t=15.20$ s 发散；未知参数放进 $A$ 的第一行（不匹配），$t=41.08$ s 发散。这两种情况下降低 $\Gamma$ 只能推迟、不能避免。
-
-**8. 确认等价有除零风险，且是"第一步就失败"级别的。** STR 取 $\hat\theta(0) = [0, 0]$（最自然的"我什么都不知道"初值）时，$K_p = (z_d - \hat\alpha)/\hat\beta$ 在 $k=0$ 就产生 nan，闭环立刻报废。加投影 $\lvert\hat\beta\rvert \ge 0.05$ 能救回来，但 $\hat\beta$ 从零出发时被夹在 $\varepsilon$ 上，$K_p = (z_d-\hat\alpha)/\hat\beta$ 被放大 5.4 倍（$\hat\beta$ 真值 0.2719），实测 $\max\lvert u\rvert$ 从 5.0 涨到 10.0；稳态偏差倒是不受影响（0.0062 对 0.0066，$t>30$ s），因为 $\hat\beta$ 收敛之后就不再撞边界了。**结论：投影是兜底，合理初值才是主保护**，两者叠加最好（$\max\lvert u\rvert = 5.0$、偏差 0.0058）。
-
-**9. 遗忘因子带来协方差 windup 与 bursting。** $\lambda = 0.95$ 时，199 步无激励让 $\lVert P\rVert$ 涨 $2.7102\times10^{4}$ 倍（与理论 $\lambda^{-199} = 2.7102\times10^{4}$ 吻合到打印的全部位数，相对偏差 `0.0e+00`），激励恢复后的参数跳变幅度比 $\lambda=1$ 时大 837 倍。这是 PID 积分饱和在辨识器里的翻版。
-
-**10. 需要全状态反馈，且待估参数越少越好。** 本课所有设计都用了 $x_p$（不只是 $y$）。输出反馈版本需要额外的滤波器/观测器，会引入新的未建模动态。案例 1 还给出两条实操经验：**激励设计**比什么都关键——只把单频参考换成双频参考，$\hat J$ 的辨识误差就从 237% 降到 0.05%（$\widehat{mgL}$ 从 16% 降到 0.01%）；在此之上，只自适应**随工况变化**的参数（$J$、$mgL$）、把不变的参数（$B$）离线标定，能把回归量从 3 维降到 2 维，需要满足 PE 的方向数随之减少，同样的激励更容易张满空间。
-
-<Callout variant="info">
-把这十条串起来看，自适应控制的真实定位是：**在"参数化不确定性主导、未建模动态温和、工作信号有激励"这个交集里，它能给出其他方法给不出的渐近无差性能；出了这个交集，它比固定增益控制器更脆弱，而不是更强。**
-</Callout>
 
 ## 小结
 
-**两条技术路线**
+MRAC从理想匹配关系出发，用参数误差项配平Lyapunov导数；STR先递推辨识，再根据估计值设计控制。它们都需要明确模型和可用信息。
 
-- **MRAC（直接法）**：指定参考模型 $A_m, B_m$，直接调整控制器增益。误差方程 $\dot e = A_me + B_p\tilde K^{\mathsf T}x_p + B_p\tilde k_r r$，自适应律 $\dot K = -\Gamma x_pe^{\mathsf T}PB_p$ 给出 $\dot V = -e^{\mathsf T}Qe$。
-- **STR（间接法）**：RLS 在线辨识对象参数，确认等价代入设计公式重算增益。
+跟踪好不等于估参准。PE讨论的是持续获得足够信息，鲁棒化讨论的是更新在偏差、噪声等影响下如何受约束；两者解决的问题不同。选增益时，同时看误差、控制峰值和模型未描述的动态。
 
-**四个核心机制**
-
-1. **匹配条件**决定 MRAC 能不能用：$(I - B_pB_p^+)(A_m - A_p) = 0$。对可控标准形即"参考模型只能改最后一行"。
-2. **PE 条件**决定参数收不收敛到真值：$\alpha_1I \le \int_t^{t+T}\phi\phi^{\mathsf T}\mathrm d\tau$。不满足时参数停在由初值决定的等效流形上，跟踪仍可能无差。
-3. **$\dot V$ 只通过 $e$ 消耗**决定了 $\gamma$ 的双面性：初始段越大越快，长尾段越大越差。
-4. **自适应律是积分器**决定了它对噪声和未建模动态的脆弱性：随机游走、windup、bursting、Rohrs 失稳都是同一个根源的不同表现。
-
-**四种鲁棒化修正**
-
-$\sigma$-修正（泄漏）、e-修正（误差加权泄漏）、死区（阈值内冻结）、投影（限制在物理范围）。它们**保住参数有界和控制量不炸，但基本不改善跟踪精度**。工程上更划算的做法往往是直接把 $\gamma$ 降到临界值以下。
-
-**整定清单**
-
-1. 先确认匹配条件（算 $(I - B_pB_p^+)(A_m - A_p)$）。
-2. 参考模型带宽取"够快但执行器够得着"，别贪快。
-3. $\Gamma$ 的量级要匹配 $B_p^{\mathsf T}P$（本课文两个例子分别需要 2 和 1000）和 $\lVert K^*\rVert$ 的距离。
-4. 从**小** $\gamma$ 开始往上调，直到性能够用；不要从大往小调（大 $\gamma$ 可能在调下来的过程中就已经发散了）。
-5. 检查参考信号的 PE：设定值长期不变的任务要么注入探测信号，要么放弃"拿到真参数"这个目标。
-6. 加投影（用物理范围），必要时加 $\sigma$-修正；死区只有在阈值大于噪声误差底时才有意义。
-7. STR 侧：给 $\hat\theta$ 一个物理上合理的非零初值，$\lambda$ 按"参数会不会变"来选，长期无激励的场景要加 $P$ 的上限保护。
-
-**与其他方法的关系**
-
-自适应控制不是鲁棒控制或增益调度的替代品，而是**参数化不确定性**这一格里的最优解。混合使用（自适应吃慢参数 + 鲁棒兜快扰动）是现代工程的主流做法。
+理论与扩展阅读：[Lavretsky的自适应控制讲义](https://web.iitd.ac.in/~sbhasin/docs/IEEE_WorkShop_Slides_Lavretsky_Adaptive_Control.pdf)讨论匹配与参数收敛条件；[Ioannou与Sun《Robust Adaptive Control》](https://flyingv.ucsd.edu/krstic/teaching/282/ioannousun.pdf)系统分析鲁棒化修改。这里的具体数值和简化模型均由本课代码产生，不能当作文献原实验。
 
 ## 习题
 
-**习题 1（一阶 MRAC 的完整设计与证明）**
-被控对象 $\dot x_p = ax_p + bu$，$a = -4$、$b = -2$ 未知但对控制器**只已知 $b < 0$**。参考模型 $\dot x_m = -3x_m + 3r$。
-(a) 求理想增益 $k_1^*, k_2^*$。
-(b) 写出误差方程 $\dot e$。
-(c) 取 $\gamma_1 = \gamma_2 = \gamma$，写出自适应律（注意 $\mathrm{sign}(b)$），并证明 $\dot V = a_me^2$。
-(d) 用 Barbalat 引理证明 $e(t)\to 0$，明确指出"$\dot e$ 有界"这一步用到了哪些信号的有界性。
-(e) 如果把 $\mathrm{sign}(b)$ 写错成 $+1$，$\dot V$ 等于什么？闭环会怎样？
+<strong>习题1：一阶设计。</strong> 对象$a=-4,b=-2$，只知$b<0$，参考$a_m=-3,b_m=3$。(a)求理想增益；(b)写误差方程；(c)取相同$\gamma>0$，推导更新律及$\dot V$；(d)补齐Barbalat论证；(e)若误写成正控制方向，$\dot V$多出什么？是否足以断言每个初值必发散？
 
-**习题 2（PE 判定与等效流形）**
-(a) 对 $\phi(t) = [1,\ \sin\omega t]^{\mathsf T}$，取 $T = 2\pi/\omega$，计算 $\int_t^{t+T}\phi\phi^{\mathsf T}\mathrm d\tau$ 并判断是否满足 PE。
-(b) 对 $\phi(t) = [1,\ 1]^{\mathsf T}$（对应阶跃输入稳态后的 MRAC 回归量），判断是否满足 PE，并说明哪个参数不可辨识。
-(c) 对一阶 MRAC（对象 $a, b$，参考模型 $a_m, b_m$，$r \equiv 1$），推导使 $e\to 0$ 的 $(k_1, k_2)$ 集合，证明它是一条一维流形，并验证理想点 $(k_1^*, k_2^*)$ 在其上。
-(d) 若 $a = -2$、$b = 3$、$a_m = -5$、$b_m = 5$、初值 $(k_1(0), k_2(0)) = (0, 0)$，实测终点是 $(-0.0441,\ 0.7107)$。求该终点对应的闭环极点与时间常数，并与参考模型对比。
+<strong>习题2：激励与等效增益。</strong> (a)对$\phi=[1,\sin\omega t]^{\mathsf T}$、$\omega>0$计算一周期Gram矩阵；(b)对$[1,1]^{\mathsf T}$计算特征值并说明没有信息的参数方向；(c)推导$r=1$时的一阶零误差平衡增益集合及冻结稳定条件；(d)将本课对象的增益冻结为$(-0.0441,0.7107)$，计算极点和时间常数。此处四位数是题设，不声称是所有增益配置的共同终点。
 
-**习题 3（RLS 的推导与遗忘因子）**
-(a) 从 $R(N) = R(N-1) + \phi(N)\phi^{\mathsf T}(N)$ 出发，用矩阵求逆引理推导 $P(N) = [I - L(N)\phi^{\mathsf T}(N)]P(N-1)$ 与 $L(N)$ 的表达式。
-(b) 引入遗忘因子后 $R(N) = \lambda R(N-1) + \phi\phi^{\mathsf T}$，写出对应的 $L$、$\hat\theta$、$P$ 三步递推。
-(c) 证明无激励（$\phi \equiv 0$）时 $L = 0$、$\hat\theta$ 不变、$P \leftarrow P/\lambda$。
-(d) 计算 $\lambda = 0.95$ 与 $\lambda = 0.98$ 时，199 步无激励后 $\lVert P\rVert$ 的增长倍数，与实测值 $2.710\times10^{4}$ 和 $55.7$ 对比。
-(e) 解释为什么 $\lambda = 1$ 时不存在 windup，但代价是什么。
+<strong>习题3：RLS。</strong> (a)由$R_k=R_{k-1}+\phi_k\phi_k^{\mathsf T}$用求逆引理推导更新；(b)加入$\lambda$后写三步式；(c)证明$\phi=0$时$P$如何变化；(d)计算$\lambda=.95,.98$的199步增长倍数；(e)解释$\lambda=1$免去这一膨胀机制的代价，并说明$P$何时才能称协方差。
 
-**习题 4（$\sigma$-修正的有界性与代价）**
-一阶 MRAC 加 $\sigma$-修正：$\dot k_i = -\gamma_i\,\mathrm{sign}(b)\,e\phi_i - \sigma\gamma_i k_i$，$V = \frac12 e^2 + \frac{|b|}{2\gamma_1}\tilde k_1^2 + \frac{|b|}{2\gamma_2}\tilde k_2^2$。
-(a) 证明 $\dot V = a_me^2 - \sigma|b|(\tilde k_1k_1 + \tilde k_2k_2)$。
-(b) 用不等式 $\tilde k^2 + \tilde k k^* \ge \frac12\tilde k^2 - \frac12 k^{*2}$ 证明
-$$
-\dot V \le a_m e^2 - \frac{\sigma|b|}{2}(\tilde k_1^2 + \tilde k_2^2) + \frac{\sigma|b|}{2}(k_1^{*2} + k_2^{*2})
-$$
-(c) 记 $\gamma_{\min} = \min(\gamma_1,\gamma_2)$，$c = \frac{\sigma|b|}{2}(k_1^{*2}+k_2^{*2})$。证明：对**任意** $\sigma > 0$ 都存在 $\mu \in (0,1]$ 使 $\dot V \le -\sigma\gamma_{\min}\mu V + c$，从而系统一致终极有界。写出 $\mu$ 的取值范围，并分 $\sigma\gamma_{\min} \le 2|a_m|$ 与 $\sigma\gamma_{\min} > 2|a_m|$ 两种区制给出正不变集半径 $\rho^*$。解释第二个区制里 $\rho^*$ 为什么正比于 $\sigma\lvert k^*\rvert^2$ 而与 $\gamma_{\min}$ 无关。
-(d) 实测（$\gamma=200$、量测噪声 std 0.1、多正弦参考）：
+<strong>习题4：泄漏。</strong> (a)推导$\dot V=a_me^2-\sigma|b|\sum\tilde k_i k_i$；(b)用$\tilde k_i k_i\ge\tilde k_i^2/2-k_i^{*2}/2$求上界；(c)给出任意$\sigma>0$的$c,C,\rho$，并用$\mu\in(0,1]$写$c=\sigma\gamma_{\min}\mu$；分两种增益区间说明$\rho$；(d)阅读30至240秒实验：增长能否证明无界，平台能否证明有界？为何不能把无噪声界用于该噪声实验？解释泄漏对参数范围和跟踪误差的不同影响。
 
-| $T$（s） | 30 | 60 | 120 | 240 |
-|---|---|---|---|---|
-| $\sigma=0$：$\max\lvert k_1\rvert$ | 27.38 | 43.70 | 69.40 | 103.21 |
-| $\sigma=0.1$：$\max\lvert k_1\rvert$ | 1.807 | 1.807 | 1.930 | 1.930 |
+<strong>习题5：STR保护。</strong> 对象$\dot y=-2y+3u,T_s=.1$，期望$z_d=.5$。(a)求离散系数；(b)求增益；(c)$a$变4而增益冻结时求新极点、常值输出和偏差；(d)初值$[0,0]$为何让除法失效？列至少三种措施及代价，说明本课分母夹取是否改变RLS估计。
 
-另有 $T=60$ s 时 $\sigma=0$ 的 $\mathrm{rms}\lvert e\rvert = 0.126$、$\sigma=0.1$ 的是 $0.083$，$\mathrm{std}(k_1)$ 分别是 4.11 和 0.377，$\max\lvert u\rvert$ 是 11.45 和 6.79。请回答三问：① 上表说明 $\sigma=0$ 时"终极界"这个概念为什么不适用？② 为什么 $\max\lvert k_1\rvert$ 在 $T=60$ s 处降了 24 倍，而 $\mathrm{rms}\lvert e\rvert$ 只降了 1.5 倍？③ 继续加大 $\sigma$（0.3、1.0）时 $\mathrm{rms}\lvert e\rvert$ 回升到 0.118、0.279，用 (c) 的结论解释。
-
-**习题 5（STR 极点配置与除零保护）**
-对象 $\dot y = -ay + bu$，$a = 2$、$b = 3$（对控制器未知），$T_s = 0.1$ s，期望闭环极点 $z_d = 0.5$。
-(a) 求精确离散化系数 $\alpha, \beta$（保留 6 位小数）。
-(b) 求 $K_p, K_r$。
-(c) 若 $a$ 突变为 4 而增益保持不变，解析计算新的闭环极点与稳态输出，进而求稳态偏差。（实测值为 0.2661，请验证。）
-(d) 若 RLS 初值取 $\hat\theta(0) = [0,\ 0]$，第一步的 $K_p$ 等于多少？给出至少三种保护措施，说明各自的代价，并按推荐顺序排列。
-
-**习题 6（机械臂自适应律与可辨识性）**
-单连杆 $J\ddot q + B\dot q + mgL\sin q = u$，$\theta = [J,\ B,\ mgL]^{\mathsf T}$，$\phi = [\ddot q_r,\ \dot q,\ \sin q]^{\mathsf T}$，$s = \dot q - \dot q_r$。
-(a) 取 $u = \hat\theta^{\mathsf T}\phi - K_ds$，证明 $J\dot s = -\tilde\theta^{\mathsf T}\phi - K_ds$。
-(b) 取 $V = \frac12 Js^2 + \frac12\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta$，设计 $\dot{\hat\theta}$ 使 $\dot V = -K_ds^2$。
-(c) 说明为什么 $V$ 里含未知的 $J$ 仍然是合法的 Lyapunov 函数。
-(d) 若参考轨迹取 $q_d = \sin t$，$\phi$ 的三个分量之间有什么关系？这会带来什么后果？实测中 $\hat J$ 收敛到 $-1.99$（真值 1.45），$\widehat{mgL}$ 偏差 16%，而跟踪误差 $\mathrm{rms}\lvert e\rvert = 6\times10^{-4}$ 甚至比双频参考时的 $1.7\times10^{-3}$ 还小——解释这个组合。
-(e) 改成 $q_d = \sin t + 0.5\sin 2.3t$ 后，只自适应 $[J,\ mgL]$（$B$ 离线标定），实测 $\hat J$ 偏差 0.05%、$\widehat{mgL}$ 偏差 0.01%。说明这两个改动分别解决了 (d) 里的什么问题。
+<strong>习题6：机械臂。</strong> 先允许$\theta=[J,B,mgL]^{\mathsf T}$，$\phi=[\ddot q_r,\dot q,\sin q]^{\mathsf T}$，定义$\tilde\theta=\theta-\hat\theta$。(a)推导$J\dot s$；(b)设计更新使无噪声常参数无饱和时$\dot V=-K_ds^2$；(c)$V$含未知$J$是否合法？(d)$q_d=\sin t$时哪些分量近相关？保留高次谐波会怎样？为何跟踪好仍可能估参差？(e)双频参考和已知$B$各改变了什么？说明限幅、负载跳变时还缺哪些证明步骤。
 
 ## 答案
 
-**答案 1**
+<strong>答案1。</strong> (a)$k_1^*=-.5,k_2^*=-1.5$；(b)$\dot e=-3e-2\tilde k_1x_p-2\tilde k_2r$；(c)$\dot k_1=+\gamma ex_p,\dot k_2=+\gamma er$，取$V=e^2/2+(\tilde k_1^2+\tilde k_2^2)/\gamma$得到$\dot V=-3e^2$。(d)$V$界给$e,\tilde k$界，参考稳定给$x_m$界，再得$x_p$和$\dot e$界；$e\in L_2$且一致连续，所以趋零。(e)若误用$\dot k_i=-\gamma e\phi_i$，则$\dot V=-3e^2-4e(\tilde k_1x_p+\tilde k_2r)$，不再半负定。原证明失效，但零参考、零状态等特例已经足以否定“每个初值必发散”。
 
-**(a) 理想增益**
+<strong>答案2。</strong> (a)一个周期$T=2\pi/\omega$给$\operatorname{diag}(T,T/2)>0$，与窗口起点无关，满足PE。(b)得到$T\begin{bmatrix}1&1\\1&1\end{bmatrix}$，特征值$0,2T$，方向$[1,-1]^{\mathsf T}$没有信息，不能分别确定两参数贡献。(c)零误差平衡要求$k_2=(b_m/a_m)(a+bk_1)/b$；理想点满足它。若要把这组增益冻结成稳定控制器，还需$a+bk_1<0$；这不是任意直线上点都稳定的承诺。(d)极点$-2.1323$，时间常数约$.4690$秒；参考时间常数$.2$秒。它说明同一常值输出不唯一决定冻结动态。
 
-由 $a + bk_1^* = a_m$ 与 $bk_2^* = b_m$：
+<strong>答案3。</strong> (a)代入求逆引理，$P_k=P_{k-1}-P_{k-1}\phi\phi^{\mathsf T}P_{k-1}/(1+\phi^{\mathsf T}P_{k-1}\phi)$，取$L=P_{k-1}\phi/(1+\phi^{\mathsf T}P_{k-1}\phi)$即得正文式。(b)将分母1改$\lambda$，$P$更新整体除$\lambda$，估计仍加$L$乘预测误差。(c)$L=0$，估计冻结而$P$每步除$\lambda$。(d)倍数$\lambda^{-199}$，约$2.7102\times10^4$和$55.7200$，补充实验输出更多位。(e)无遗忘不会有上述零激励指数膨胀，但旧数据长期保留，参数变化后可能反应慢。$P$是逆信息矩阵；噪声和先验满足相应统计模型并对齐尺度时才有协方差解释。
 
-$$
-k_1^* = \frac{a_m - a}{b} = \frac{-3 - (-4)}{-2} = \frac{1}{-2} = -0.5
-$$
+<strong>答案4。</strong> (a)(b)先用原更新抵消交叉项，再保留泄漏项并逐项应用给定不等式，得到正文的$-cV+C$界。(c)令$\mu=\min(1,2|a_m|/(\sigma\gamma_{\min}))$，$C=\sigma|b|\|k^*\|^2/2$，$\rho=C/(\sigma\gamma_{\min}\mu)$。当$\sigma\gamma_{\min}\le2|a_m|$，$\rho=|b|\|k^*\|^2/(2\gamma_{\min})$；否则$\rho=\sigma|b|\|k^*\|^2/(4|a_m|)$。$\{V\le\rho\}$在这些假设下正不变，任意初值有$\limsup V\le\rho$，不保证有限时刻恰好进入边界；参数大小可再由$V$各正项换算。(d)有限增长或平台都不裁定无限时间性质。测量噪声破坏用于推导的原恒等式，须另行控制附加项。泄漏拉向零而非理想增益，因此参数幅度缩小不表示跟踪更准。多平衡也不能仅凭四组初值排除。
 
-$$
-k_2^* = \frac{b_m}{b} = \frac{3}{-2} = -1.5
-$$
+<strong>答案5。</strong> (a)$\alpha=.818731,\beta=.271904$；(b)$K_p\approx-1.172219,K_r\approx1.838885$；(c)新极点约$.380477$，常参考1的输出约$.733924$，偏差约$.266076$，由$\beta_1K_r/(1-\alpha_1-\beta_1K_p)$求得；补充实验按完整精度核对，舍入值不代回计算。(d)初始$\hat\beta=0$使公式没有定义。优先根据先验给合理带符号初值/约束；分母下界避免除零却可能放大控制；限幅保护执行器却改变闭环；后备控制增加切换设计要求。代码的分母夹取不改变估计值，不是RLS参数投影，也不是完整稳定保证。
 
-**校验**：$a + bk_1^* = -4 + (-2)(-0.5) = -4 + 1 = -3 = a_m$ ✓；$bk_2^* = (-2)(-1.5) = 3 = b_m$ ✓。
-
-**(b) 误差方程**
-
-$e = x_p - x_m$，$\tilde k_i = k_i - k_i^*$：
-
-$$
-\dot e = \dot x_p - \dot x_m = ax_p + b(k_1x_p + k_2r) - a_mx_m - b_mr
-$$
-
-$$
-= (a + bk_1)x_p + (bk_2 - b_m)r - a_mx_m = (a_m + b\tilde k_1)x_p + b\tilde k_2 r - a_mx_m
-$$
-
-$$
-\boxed{\dot e = a_me + b\tilde k_1x_p + b\tilde k_2 r}
-$$
-
-**(c) 自适应律与 $\dot V$**
-
-取 $V = \frac12 e^2 + \frac{|b|}{2\gamma}\tilde k_1^2 + \frac{|b|}{2\gamma}\tilde k_2^2$。因为 $b < 0$，$\mathrm{sign}(b) = -1$，所以：
-
-$$
-\dot k_1 = +\gamma e x_p, \qquad \dot k_2 = +\gamma e r
-$$
-
-（注意符号与 $b > 0$ 时**相反**。）求导：
-
-$$
-\dot V = e\dot e + \frac{|b|}{\gamma}\tilde k_1\dot k_1 + \frac{|b|}{\gamma}\tilde k_2\dot k_2
-$$
-
-$$
-= a_me^2 + b\tilde k_1ex_p + b\tilde k_2er + \frac{|b|}{\gamma}\tilde k_1(\gamma ex_p) + \frac{|b|}{\gamma}\tilde k_2(\gamma er)
-$$
-
-$$
-= a_me^2 + b\tilde k_1ex_p + b\tilde k_2er + |b|\tilde k_1ex_p + |b|\tilde k_2er
-$$
-
-由 $b = -|b|$（因 $b<0$），$b\tilde k_1ex_p + |b|\tilde k_1ex_p = 0$，第二组同理：
-
-$$
-\boxed{\dot V = a_me^2 = -3e^2 \le 0}
-$$
-
-**(d) Barbalat**
-
-- $V \ge 0$ 且 $\dot V \le 0$ $\Rightarrow$ $V(t)$ 单调递减有下界 $\Rightarrow$ $V(\infty)$ 存在有限，且 $e, \tilde k_1, \tilde k_2 \in L_\infty$。
-- $\int_0^\infty e^2\mathrm{d}t = \frac{V(0)-V(\infty)}{3} < \infty$，即 $e \in L_2$。
-- $\dot e = a_me + b\tilde k_1x_p + b\tilde k_2r$ 有界，用到的有界性是：$e \in L_\infty$（来自 $V$ 有界）、$\tilde k_1, \tilde k_2 \in L_\infty$（同样来自 $V$ 有界）、$x_p = e + x_m$ 有界（需要 $x_m$ 有界，即 $a_m < 0$ 且 $r \in L_\infty$）、$r \in L_\infty$（题设）。
-- $e$ 一致连续且 $e\in L_2$，由 Barbalat 引理 $\lim_{t\to\infty} e(t) = 0$。$\blacksquare$
-
-**(e) 符号写错的后果**
-
-若误取 $\dot k_1 = -\gamma ex_p$、$\dot k_2 = -\gamma er$，则：
-
-$$
-\dot V = a_me^2 + b\tilde k_1ex_p + b\tilde k_2er - |b|\tilde k_1ex_p - |b|\tilde k_2er = a_me^2 + 2b\tilde k_1ex_p + 2b\tilde k_2er
-$$
-
-（用了 $b = -|b|$，所以 $b\tilde k_1ex_p - |b|\tilde k_1ex_p = 2b\tilde k_1ex_p$。）后两项符号不定，$\dot V$ 不再是半负定，Lyapunov 论证失效。实际上此时参数误差满足 $\dot{\tilde k}_1 = -\gamma ex_p$ 而 $\dot e$ 含 $+b\tilde k_1x_p = -|b|\tilde k_1x_p$，两者构成一个**正反馈**回路，$e$ 与 $\tilde k$ 指数式增长，闭环发散。
-
----
-
-**答案 2**
-
-**(a)** 取 $T = 2\pi/\omega$：
-
-$$
-\int_t^{t+T}\phi\phi^{\mathsf T}\mathrm d\tau = \int_t^{t+T}\begin{bmatrix} 1 & \sin\omega\tau \\ \sin\omega\tau & \sin^2\omega\tau \end{bmatrix}\mathrm d\tau
-$$
-
-三个分量分别算：$\int_t^{t+T}1\,\mathrm d\tau = T$；$\int_t^{t+T}\sin\omega\tau\,\mathrm d\tau = 0$（整周期）；$\int_t^{t+T}\sin^2\omega\tau\,\mathrm d\tau = T/2$。所以：
-
-$$
-= \begin{bmatrix} T & 0 \\ 0 & T/2 \end{bmatrix} \succeq \frac{T}{2}I
-$$
-
-特征值 $T$ 与 $T/2$ 都严格为正，取 $\alpha_1 = T/2$、$\alpha_2 = T$ 即满足 PE。注意这个结论**与 $t$ 无关**（整周期积分），这是周期信号方便的地方。
-
-**(b)** $\phi \equiv [1,\ 1]^{\mathsf T}$ 是常向量：
-
-$$
-\int_t^{t+T}\phi\phi^{\mathsf T}\mathrm d\tau = T\begin{bmatrix} 1 & 1 \\ 1 & 1 \end{bmatrix}
-$$
-
-该矩阵行列式为零，特征值为 $2T$ 和 $0$，不存在 $\alpha_1 > 0$ 使它 $\succeq \alpha_1 I$。**不满足 PE**。
-
-不可辨识的方向是零特征值对应的特征向量 $[1,\ -1]^{\mathsf T}$：即 $k_1$ 与 $k_2$ 中"沿 $k_1 - k_2$ 方向"的分量。换句话说，只有 $k_1 + k_2$ 这个组合能被数据确定（因为它乘以稳态值 1 出现在 $\dot x_p$ 里），两者的分配完全由初值决定。这正是 Notebook 2 里五组初值给出五个不同终点、但都落在同一条直线上的原因。
-
-**(c)** $r \equiv 1$ 时，闭环 $\dot x_p = (a+bk_1)x_p + bk_2$，参考模型 $\dot x_m = a_mx_m + b_m$。
-
-**必要性**：$e \to 0$ 要求 $x_p$ 与 $x_m$ 有相同的稳态值与稳定性。稳态值：$x_{p,\infty} = \frac{-bk_2}{a+bk_1}$，$x_{m,\infty} = \frac{-b_m}{a_m}$。相等给出：
-
-$$
-\frac{bk_2}{a+bk_1} = \frac{b_m}{a_m} \quad\Longleftrightarrow\quad k_2 = \frac{b_m}{a_m}\cdot\frac{a+bk_1}{b}
-$$
-
-这是 $k_1$ 的**仿射函数**，图像是 $(k_1,k_2)$ 平面上的一条直线，即一维流形 $\mathcal M$。加上稳定性要求 $a + bk_1 < 0$，$\mathcal M$ 是这条直线的半条。
-
-**充分性**：若 $(k_1,k_2) \in \mathcal M$ 且 $a+bk_1<0$，则 $e$ 的动态为 $\dot e = (a+bk_1)x_p + bk_2 - a_mx_m - b_m$。这是两个稳定一阶系统的差，稳态值相同，故 $e(t) \to 0$（以 $\min\{|a+bk_1|,\ |a_m|\}$ 的速率指数收敛）。
-
-**理想点在 $\mathcal M$ 上**：代入 $k_1 = k_1^* = \frac{a_m-a}{b}$：
-
-$$
-\frac{b_m}{a_m}\cdot\frac{a + b\cdot\frac{a_m-a}{b}}{b} = \frac{b_m}{a_m}\cdot\frac{a_m}{b} = \frac{b_m}{b} = k_2^* \quad\blacksquare
-$$
-
-**(d)** 闭环极点 $a + bk_1 = -2 + 3(-0.0441) = -2.1325$，时间常数 $\tau = 1/2.1325 = 0.469$ s。参考模型要求极点 $-5$、$\tau = 0.2$ s。所以实际瞬态比设计目标**慢 2.35 倍**，尽管稳态值完全正确（直流增益实测 1.000000，参考模型 1.000000）。
-
----
-
-**答案 3**
-
-**(a)** 记 $P(N) = R^{-1}(N)$，$R(N) = R(N-1) + \phi\phi^{\mathsf T}$（省略自变量 $N$，$\phi = \phi(N)$）。矩阵求逆引理 $(A + bc^{\mathsf T})^{-1} = A^{-1} - \frac{A^{-1}bc^{\mathsf T}A^{-1}}{1 + c^{\mathsf T}A^{-1}b}$，取 $A = R(N-1)$、$b = c = \phi$：
-
-$$
-P(N) = P(N-1) - \frac{P(N-1)\phi\phi^{\mathsf T}P(N-1)}{1 + \phi^{\mathsf T}P(N-1)\phi}
-$$
-
-定义 $L(N) = \dfrac{P(N-1)\phi}{1 + \phi^{\mathsf T}P(N-1)\phi}$，则分子恰为 $L(N)\phi^{\mathsf T}P(N-1)$：
-
-$$
-P(N) = P(N-1) - L(N)\phi^{\mathsf T}P(N-1) = [I - L(N)\phi^{\mathsf T}]P(N-1)
-$$
-
-参数更新：由 $\hat\theta(N) = P(N)g(N)$、$g(N) = g(N-1) + \phi y(N+1)$，
-
-$$
-\hat\theta(N) = P(N)[g(N-1) + \phi y(N+1)] = P(N)[P^{-1}(N-1)\hat\theta(N-1) + \phi y(N+1)]
-$$
-
-用 $P^{-1}(N-1) = R(N) - \phi\phi^{\mathsf T}$ 与 $P(N)R(N) = I$：
-
-$$
-\hat\theta(N) = \hat\theta(N-1) + P(N)\phi[y(N+1) - \phi^{\mathsf T}\hat\theta(N-1)] = \hat\theta(N-1) + L(N)\varepsilon(N+1)
-$$
-
-（最后一步用了 $P(N)\phi = L(N)$，这可由 $L$ 的定义与 $P(N)$ 的表达式直接验证。）$\blacksquare$
-
-**(b)** 引入遗忘因子即把目标函数换成指数加权 $J(N) = \sum_{k}\lambda^{N-k}(y(k+1)-\phi^{\mathsf T}\theta)^2 + \cdots$，于是 $R(N) = \lambda R(N-1) + \phi\phi^{\mathsf T}$。同样的引理给出：
-
-$$
-L(k) = \frac{P(k-1)\phi(k)}{\lambda + \phi^{\mathsf T}(k)P(k-1)\phi(k)}
-$$
-
-$$
-\hat\theta(k) = \hat\theta(k-1) + L(k)\left[y(k+1) - \phi^{\mathsf T}(k)\hat\theta(k-1)\right]
-$$
-
-$$
-P(k) = \frac{1}{\lambda}\left[I - L(k)\phi^{\mathsf T}(k)\right]P(k-1)
-$$
-
-分母从 $1$ 变成 $\lambda$，以及末尾多出的 $1/\lambda$ 因子，就是遗忘因子的全部影响。
-
-**(c)** $\phi \equiv 0$ 时：$L = P\cdot 0/(\lambda + 0) = 0$；$\hat\theta \leftarrow \hat\theta + 0\cdot\varepsilon = \hat\theta$（不变）；$P \leftarrow \frac1\lambda[I - 0]P = P/\lambda$。$\blacksquare$
-
-迭代 $n$ 步得 $P \leftarrow P/\lambda^n$，即 $\lVert P\rVert$ 增长 $\lambda^{-n}$ 倍。
-
-**(d)** $\lambda^{-199}$：
-
-- $\lambda = 0.95$：$0.95^{-199} = e^{199\ln(1/0.95)} = e^{199\times 0.051293} = e^{10.207} = 2.7102\times 10^{4}$（实测 $2.7102\times10^{4}$，相对偏差 `0.0e+00`）
-- $\lambda = 0.98$：$0.98^{-199} = e^{199\times 0.020203} = e^{4.020} = 55.720$（实测 $55.720$，相对偏差 `0.0e+00`）
-
-两者都吻合到打印的全部位数（$\lambda = 0.995$ 那一行的相对偏差也只有 $4.4\times10^{-16}$），说明实测的 windup 完全由 $P\leftarrow P/\lambda$ 这一个机制解释，没有别的因素。
-
-**(e)** $\lambda = 1$ 时 $P \leftarrow [I - L\phi^{\mathsf T}]P$。由 $L\phi^{\mathsf T} = \frac{P\phi\phi^{\mathsf T}}{1+\phi^{\mathsf T}P\phi}$，可验证 $[I - L\phi^{\mathsf T}]P$ 的特征值都不超过 $P$ 的对应特征值（等价地，$P^{-1}$ 每步加上一个半正定矩阵 $\phi\phi^{\mathsf T}$，所以 $P^{-1}$ 单调增大、$P$ 单调减小）。因此 $\lVert P\rVert$ 永不增长，不存在 windup。
-
-**代价**：$P \to 0$ 意味着 $L \to 0$，估计器**锁死**。实测参数突变后 $\lambda=1$ 的 $\lvert\hat\theta-\theta\rvert$ 在 400 个样本后仍有 $1.18\times10^{-1}$（$\lambda=0.98$ 是 $4.7\times10^{-3}$，差 25 倍），STR 闭环在 40 s 内都没恢复；而 $\lambda=0.98$ 用 15 个采样周期就恢复了。
-
----
-
-**答案 4**
-
-**(a)** 修正后的自适应律 $\dot k_i = -\gamma_i\mathrm{sign}(b)e\phi_i - \sigma\gamma_i k_i$（$\phi_1 = x_p$，$\phi_2 = r$）。代入 $\dot V$：
-
-$$
-\dot V = a_me^2 + \sum_{i=1,2}\left[b\tilde k_ie\phi_i + \frac{|b|}{\gamma_i}\tilde k_i\dot k_i\right]
-$$
-
-单个 $i$ 的括号内：
-
-$$
-b\tilde k_ie\phi_i + \frac{|b|}{\gamma_i}\tilde k_i(-\gamma_i\mathrm{sign}(b)e\phi_i - \sigma\gamma_i k_i) = b\tilde k_ie\phi_i - |b|\mathrm{sign}(b)\tilde k_ie\phi_i - \sigma|b|\tilde k_ik_i
-$$
-
-由 $|b|\mathrm{sign}(b) = b$，前两项相消，只剩 $-\sigma|b|\tilde k_ik_i$。求和：
-
-$$
-\boxed{\dot V = a_me^2 - \sigma|b|(\tilde k_1k_1 + \tilde k_2k_2)}
-$$
-
-**(b)** 用 $\tilde k k = \tilde k(\tilde k + k^*) = \tilde k^2 + \tilde kk^*$，以及 $-\tilde kk^* \le \frac12\tilde k^2 + \frac12 k^{*2}$（由 $(\tilde k + k^*)^2 \ge 0$ 展开即 $\tilde kk^* \ge -\frac12\tilde k^2 - \frac12 k^{*2}$）：
-
-$$
--\sigma|b|\tilde kk = -\sigma|b|(\tilde k^2 + \tilde kk^*) \le -\sigma|b|\left(\tilde k^2 - \frac12\tilde k^2 - \frac12 k^{*2}\right) = -\frac{\sigma|b|}{2}\tilde k^2 + \frac{\sigma|b|}{2}k^{*2}
-$$
-
-对 $i = 1, 2$ 求和并代回 (a)：
-
-$$
-\dot V \le a_me^2 - \frac{\sigma|b|}{2}(\tilde k_1^2 + \tilde k_2^2) + \frac{\sigma|b|}{2}(k_1^{*2} + k_2^{*2}) \qquad\blacksquare
-$$
-
-**(c)** 记 $c = \frac{\sigma|b|}{2}(k_1^{*2}+k_2^{*2})$（常数），$\gamma_{\min} = \min(\gamma_1, \gamma_2)$。由 $V$ 的定义，$\frac{|b|}{2\gamma_i} \le \frac{|b|}{2\gamma_{\min}}$，所以
-
-$$
-V - \frac12 e^2 = \sum_{i=1,2}\frac{|b|}{2\gamma_i}\tilde k_i^2 \le \frac{|b|}{2\gamma_{\min}}(\tilde k_1^2+\tilde k_2^2)
-\quad\Longrightarrow\quad
-\tilde k_1^2+\tilde k_2^2 \ge \frac{2\gamma_{\min}}{|b|}\left(V-\frac12 e^2\right)
-$$
-
-代回 (b)：
-
-$$
-\dot V \le a_me^2 - \sigma\gamma_{\min}\left(V-\frac12 e^2\right) + c = \left(a_m + \frac{\sigma\gamma_{\min}}{2}\right)e^2 - \sigma\gamma_{\min}V + c
-$$
-
-这里有个麻烦：如果 $\sigma\gamma_{\min} > 2|a_m|$，$e^2$ 的系数变成正的，上面这个不等式就不足以给出有界性。**解决办法是不要把全部 $\tilde k^2$ 都换成 $V$**，只换一部分。引入 $\mu \in (0, 1]$，把 (b) 的负项拆成两块：
-
-$$
-\dot V \le a_me^2 - \frac{\sigma|b|}{2}(1-\mu)(\tilde k_1^2+\tilde k_2^2) - \frac{\sigma|b|}{2}\mu(\tilde k_1^2+\tilde k_2^2) + c
-$$
-
-对第二块用上面的下界，第一块直接丢掉（它 $\le 0$）：
-
-$$
-\dot V \le \left(a_m + \frac{\sigma\gamma_{\min}\mu}{2}\right)e^2 - \sigma\gamma_{\min}\mu V + c
-$$
-
-现在只要选 $\mu$ 满足 $\mu < \dfrac{2|a_m|}{\sigma\gamma_{\min}}$ 且 $\mu \le 1$，$e^2$ 的系数就是负的，于是
-
-$$
-\dot V \le -\sigma\gamma_{\min}\mu\, V + c
-$$
-
-**对任意 $\sigma > 0$ 这样的 $\mu$ 都存在**，所以系统一致终极有界。取允许范围内最大的 $\mu$ 得到最紧的界 $\rho^* = \dfrac{c}{\sigma\gamma_{\min}\mu} = \dfrac{|b|(k_1^{*2}+k_2^{*2})}{2\gamma_{\min}\mu}$，分两种区制：
-
-$$
-\rho^* =
-\begin{cases}
-\dfrac{|b|(k_1^{*2}+k_2^{*2})}{2\gamma_{\min}}, & \sigma\gamma_{\min} \le 2|a_m| \quad(\mu = 1,\ \text{进入速率 } \sigma\gamma_{\min}) \\[2mm]
-\dfrac{\sigma|b|(k_1^{*2}+k_2^{*2})}{4|a_m|}, & \sigma\gamma_{\min} > 2|a_m| \quad(\mu = \frac{2|a_m|}{\sigma\gamma_{\min}},\ \text{进入速率 } 2|a_m|)
-\end{cases}
-$$
-
-两种情形下 $\{V \le \rho^*\}$ 都是正不变集（边界上 $\dot V \le (\text{负})\cdot e^2 - \sigma\gamma_{\min}\mu\rho^* + c \le 0$），且 $V(t) \le \rho^* + (V(0)-\rho^*)e^{-\sigma\gamma_{\min}\mu t}$。
-
-**为什么残差集正比于 $\sigma\lvert k^*\rvert^2$**：看第二个区制。$\sigma$ 大时 $\mu$ 必须取小（否则 $e^2$ 项失控），$\mu = 2|a_m|/(\sigma\gamma_{\min})$ 代入后 $\gamma_{\min}$ 恰好约掉，$\rho^* = \sigma|b|(k_1^{*2}+k_2^{*2})/(4|a_m|)$。物理原因是 $\sigma$-修正把平衡点从 $k^*$ 移开，泄漏越强移得越远，残差自然正比于 $\sigma$ 和 $\lvert k^*\rvert^2$ 的乘积。第一个区制里 $\mu = 1$ 已经够用，$\rho^*$ 反而与 $\sigma$ 无关、只由 $\gamma_{\min}$ 决定——所以**小 $\sigma$ 配大 $\gamma$ 是更划算的组合**。
-
-最后一个诚实的提醒：$\rho^*$ 是**充分条件给出的上界**，通常比实际残差集大很多，而且趋势可能都不对。本例 $\gamma_{\min} = 200$、$k_1^* = -1$、$k_2^* = 5/3$，第一区制的 $\rho^* = 0.0283$（对应 $\lvert k_1\rvert \le 1 + \sqrt{2\gamma\rho^*/\lvert b\rvert} = 2.94$），第二区制 $\sigma = 1.0$ 时 $\rho^* = 0.567$（同样换算得 $\lvert k_1\rvert \le 9.69$）；实测 $\max\lvert k_1\rvert$ 却是 $\sigma = 0.1$ 时 1.81、$\sigma = 1.0$ 时 0.54，**随 $\sigma$ 单调下降**。理论与实测在"有没有界"上一致，在"界多大"上不一致——这是 Lyapunov 方法的固有性质，不是推导错了。整定 $\sigma$ 只能靠扫参实测。
-
-**(d)** 分三层说。
-
-**第一层：$\sigma = 0$ 根本没有终极界，43.7 不是一个"稳态值"。** 把 $\sigma = 0$、其余条件不变，只拉长仿真时间：
-
-| $T$（s） | 30 | 60 | 120 | 240 |
-|---|---|---|---|---|
-| $\sigma = 0$：$\max\lvert k_1\rvert$ | 27.38 | 43.70 | 69.40 | 103.21 |
-| $\sigma = 0$：$\max\lvert u\rvert$ | 7.72 | 11.45 | 15.94 | 20.67 |
-| $\sigma = 0.1$：$\max\lvert k_1\rvert$ | 1.807 | 1.807 | 1.930 | 1.930 |
-| $\sigma = 0.1$：$\max\lvert u\rvert$ | 6.79 | 6.79 | 7.72 | 7.72 |
-
-$\sigma = 0$ 时 $\max\lvert k_1\rvert$ 随 $T$ 持续增长（近似 $\propto\sqrt{T}$，是随机游走的特征），**不存在终极界**；$\sigma = 0.1$ 时它在 120 s 之后就饱和了。所以"降了 24 倍"这个说法其实低估了差别——真正的差别是**有界与无界**，24 倍只是在 $T = 60$ s 这个特定时刻截出来的一个比值。这也解释了 (c) 的结论为什么必须靠 $\sigma > 0$：$\sigma = 0$ 时 $\dot V = a_me^2 \le 0$ 只给出 $V$ 有界，而 $V$ 有界并不排除 $\tilde k$ 在 $\frac{|b|}{2\gamma}\tilde k^2 \le V$ 的椭球内做长时间漂移——噪声提供了持续推动，$a_me^2$ 只在 $e \ne 0$ 时才耗散，两者平衡的结果就是随机游走。
-
-**第二层：为什么 $\mathrm{rms}\lvert e\rvert$ 只从 0.126 降到 0.083（1.5 倍）。** 跟踪误差的下界由**噪声功率**决定，不由参数漂移决定。噪声走两条路进入 $e$：直接项 $e = (x_p + n) - x_m$，以及间接项——$u = k_1(x_p+n) + k_2 r$ 把噪声放大 $k_1$ 倍打进对象。$\sigma$-修正只能削弱第二条路：它把 $\mathrm{std}(k_1)$ 从 4.11 压到 0.377，于是 $\max\lvert u\rvert$ 从 11.45 降到 6.79，间接激励变小、$e$ 好一些。但直接项 $n$ 本身动不了，所以只能改善 1.5 倍，不可能回到无噪声的 $4.3\times10^{-4}$。
-
-**第三层：$\sigma$ 再往上加，精度反而变差。** $\sigma = 0.3$ 时 $\mathrm{rms}\lvert e\rvert = 0.118$，$\sigma = 1.0$ 时是 0.279——比不加修正的 0.126 还差一倍。这正是 (c) 里 $\rho^* \propto \sigma$ 的物理体现：泄漏把 $k$ 拉向零而不是拉向 $k^*$，稳态偏差随 $\sigma$ 线性增长。所以 $\sigma$ 有一个最优值（本例 $\approx 0.1$），两头都受夹击。
-
-一句话：**$\sigma$-修正治的是"参数和控制量无界漂移"，不治"精度"**。这与答案 3(e) 里遗忘因子的角色完全对称——遗忘因子治的是"协方差锁死导致参数跟不上突变"，同样不治精度。
-
----
-
-**答案 5**
-
-**(a)** 精确离散化（零阶保持）：
-
-$$
-\alpha = e^{-aT_s} = e^{-2\times0.1} = e^{-0.2} = 0.818731
-$$
-
-$$
-\beta = \frac{b}{a}(1 - e^{-aT_s}) = \frac{3}{2}(1 - 0.818731) = 1.5\times 0.181269 = 0.271904
-$$
-
-**(b)** 闭环 $y(k+1) = (\alpha + \beta K_p)y(k) + \beta K_rr(k)$。令极点为 $z_d$、阶跃稳态为 1：
-
-$$
-K_p = \frac{z_d - \alpha}{\beta} = \frac{0.5 - 0.818731}{0.271904} = \frac{-0.318731}{0.271904} = -1.172165
-$$
-
-$$
-K_r = \frac{1 - z_d}{\beta} = \frac{0.5}{0.271904} = 1.838884
-$$
-
-**(c)** $a \to 4$ 后：
-
-$$
-\alpha_1 = e^{-4\times0.1} = e^{-0.4} = 0.670320, \qquad \beta_1 = \frac{3}{4}(1 - 0.670320) = 0.75\times0.329680 = 0.247260
-$$
-
-增益不变，新闭环极点：
-
-$$
-z = \alpha_1 + \beta_1K_p = 0.670320 + 0.247260\times(-1.172165) = 0.670320 - 0.289827 = 0.380493
-$$
-
-仍然稳定（$\lvert z\rvert < 1$）。稳态输出（$r \equiv 1$）：
-
-$$
-y_\infty = \frac{\beta_1K_r}{1 - z} = \frac{0.247260\times1.838884}{1 - 0.380493} = \frac{0.454680}{0.619507} = 0.733938
-$$
-
-稳态偏差 $= 1 - 0.733938 = 0.266062 \approx 0.2661$ ✓ 与 Notebook 6 的实测值 0.2661 一致（相对偏差 $2.1\times10^{-7}$；实测取的是 $k\in[210,400]$ 的平均绝对偏差，已经衰减到稳态）。
-
-**(d)** $\hat\theta(0) = [0,0]$ 时 $\hat\beta = 0$：
-
-$$
-K_p = \frac{z_d - \hat\alpha}{\hat\beta} = \frac{0.5 - 0}{0} = \infty
-$$
-
-数值上是 `inf`，接着 $u = \infty\cdot y(0) + \infty\cdot r$；即使 $y(0)=0$ 也会得到 $0\times\infty = $ nan。实测 Notebook 6 中这一情形在 $k=0$ 就报废。
-
-**保护措施**（按推荐顺序）：
-
-1. **合理初值**：做一次开环阶跃试验，量出 $\alpha, \beta$ 的数量级（比如 $\hat\theta(0) = [0.5, 0.1]$）。代价几乎为零，实测 $\max\lvert u\rvert = 5.0$、稳态偏差（$t>30$ s）0.0066。这是**主保护**。
-2. **投影**：把 $\hat\beta$ 限制为 $\lvert\hat\beta\rvert \ge \varepsilon$（或把整个 $\hat\theta$ 限制在物理盒子内）。实测 $\hat\theta(0)=[0,0]$ + 投影（$\varepsilon=0.05$）后闭环有界，但 $\max\lvert u\rvert = 10.0$，是"初值合理"情形的两倍。原因不是估计被偏置，而是 $\hat\beta$ 从零出发时被夹在 $\varepsilon$ 上，$K_p = (z_d-\hat\alpha)/0.05$ 被放大约 5.4 倍（相对真值 $\beta=0.271904$），头几步打出接近饱和的控制量。稳态偏差倒不受影响（0.0062，甚至略好于 0.0066）——因为 $\hat\beta$ 收敛后就不再撞边界，投影退化成一份不起作用的保险。**投影是兜底，不是替代品。**
-3. **两者叠加最好**：实测 $\hat\theta(0)=[0.5,0.1]$ + 投影给出 $\max\lvert u\rvert = 5.0$、稳态偏差 0.0058，是四种配置里最优的。
-4. **冻结**：$\lvert\hat\beta\rvert < \varepsilon$ 时保持上一步的增益不更新。实现最简单，但在初值就是坏的情况下会永久冻结，等于没有自适应。
-
----
-
-**答案 6**
-
-**(a)** $s = \dot q - \dot q_r$，所以 $\dot s = \ddot q - \ddot q_r$，$J\dot s = J\ddot q - J\ddot q_r$。由动力学 $J\ddot q = u - B\dot q - mgL\sin q$：
-
-$$
-J\dot s = u - B\dot q - mgL\sin q - J\ddot q_r
-$$
-
-代入 $u = \hat\theta^{\mathsf T}\phi - K_ds$，其中 $\hat\theta^{\mathsf T}\phi = \hat J\ddot q_r + \hat B\dot q + \widehat{mgL}\sin q$：
-
-$$
-J\dot s = \hat J\ddot q_r + \hat B\dot q + \widehat{mgL}\sin q - K_ds - B\dot q - mgL\sin q - J\ddot q_r
-$$
-
-$$
-= -(J - \hat J)\ddot q_r - (B - \hat B)\dot q - (mgL - \widehat{mgL})\sin q - K_ds = -\tilde\theta^{\mathsf T}\phi - K_ds \qquad\blacksquare
-$$
-
-**(b)** $V = \frac12 Js^2 + \frac12\tilde\theta^{\mathsf T}\Gamma^{-1}\tilde\theta$。注意 $J$ 是常数，所以 $\frac{\mathrm{d}}{\mathrm{d}t}(\frac12 Js^2) = Js\dot s$：
-
-$$
-\dot V = Js\dot s + \tilde\theta^{\mathsf T}\Gamma^{-1}\dot{\tilde\theta} = s(-\tilde\theta^{\mathsf T}\phi - K_ds) + \tilde\theta^{\mathsf T}\Gamma^{-1}(-\dot{\hat\theta})
-$$
-
-$$
-= -K_ds^2 - \tilde\theta^{\mathsf T}\left(\phi s + \Gamma^{-1}\dot{\hat\theta}\right)
-$$
-
-取
-
-$$
-\boxed{\dot{\hat\theta} = -\Gamma\phi s}
-$$
-
-括号内为零，得 $\dot V = -K_ds^2 \le 0$。$\blacksquare$
-
-**(c)** Lyapunov 定理要求 $V$ 正定、$\dot V$ 半负定，**不要求 $V$ 的表达式可计算**。$J > 0$ 是物理事实（转动惯量恒正），所以 $V$ 确实是正定的、$\dot V = -K_ds^2 \le 0$ 确实成立，稳定性结论有效。控制器里从来不需要算 $V$——它只是证明工具。这与第 3 节一阶 MRAC 里 $V$ 含未知的 $\lvert b\rvert$ 是完全相同的情况。
-
-（如果要用 $V$ 做在线监控或切换逻辑，那才需要它的数值，此时必须换成用 $\hat J$ 的可计算版本，稳定性论证也要相应加强。）
-
-**(d)** $q_d = \sin t$ 时 $\dot q \approx \cos t$、$\ddot q_r \approx -\sin t - \lambda(\cos t - \cos t) = -\sin t$（跟踪好时 $e_2\approx 0$）、$\sin q = \sin(\sin t) \approx 0.880\sin t$（对 $\lvert q\rvert \le 1$ 用泰勒展开 $\sin(\sin t) = \sin t - \sin^3t/6 + \cdots$）。所以：
-
-$$
-\phi \approx [-\sin t,\ \cos t,\ 0.880\sin t]^{\mathsf T}
-$$
-
-第一列与第三列**近似成比例**（比例系数 $-0.880$），回归矩阵 $\int\phi\phi^{\mathsf T}$ 接近奇异。后果是：只有 $-J + mgL/0.880$ 这个组合可辨识，$J$ 与 $mgL$ 各自的值不可辨识，它们会沿着不可辨识方向一起漂移——漂到哪里由初值和噪声决定，甚至可以漂到**负惯量** $\hat J = -1.99$（实测值，真值 1.45，偏差 237%）。
-
-而跟踪误差不差（$\mathrm{rms}\lvert e\rvert = 6\times10^{-4}$，甚至比双频参考时的 $1.7\times10^{-3}$ 更小），因为 $u$ 里出现的是 $\hat\theta^{\mathsf T}\phi$ 这个**组合**，它恰好是可辨识的那个量。参数错了但组合对了，控制就对了。这是"自适应律最小化跟踪误差而非参数误差"最极端的一个实例。
-
-**(e)** 两个改动分别对应两个问题：
-
-- **双频参考** $q_d = \sin t + 0.5\sin 2.3t$ 解决**可辨识性**。此时 $\phi$ 的第一列含 $-\sin t - 2.645\sin 2.3t$、第三列含 $\sin(q)$，而 $\sin(q)$ 对双频输入会产生 $2.3\pm1$ 等**互调频率**分量，使得第一列与第三列不再成比例，回归矩阵满秩。实测 $\hat J$ 偏差从 237% 降到 0.05%、$\widehat{mgL}$ 从 16% 降到 0.01%。
-- **只自适应 $[J,\ mgL]$** 解决**参数冗余**。$B$（轴承与电机的粘性摩擦）与负载无关，离线标定一次即可。去掉它以后回归量从 3 维降到 2 维，需要满足 PE 的方向数也从 3 降到 2，同样的激励更容易"张满"空间；而且不会再出现 $\hat B$ 在共线方向上吸收其他两项误差的情况——在 (d) 那个近奇异的回归矩阵里，多一个待估参数就多一个不可辨识方向。
-
-两条合起来是工程上的通用原则：**只在线估计真正会变、且真正不可分离的参数；用激励设计保证剩下的那些可辨识。**
+<strong>答案6。</strong> (a)$u=\hat\theta^{\mathsf T}\phi-K_ds$，减去真实动力学和$J\ddot q_r$得$J\dot s=-\tilde\theta^{\mathsf T}\phi-K_ds$。(b)取$\dot{\hat\theta}=-\Gamma\phi s$，于是$\dot{\tilde\theta}=+\Gamma\phi s$，代入$V$使交叉项消去。(c)正定证明可使用未知但固定的$J>0$，控制器无需计算$V$。(d)跟踪好时$\phi\approx[-\sin t,\cos t,\sin(\sin t)]^{\mathsf T}$。第三项基波约$.880101\sin t$，与第一项近相关，但还有高次谐波；仅保留基波时可辨组合为$-J+.880101mgL$，不是$-J+mgL/.880101$。完整信号不能据此称精确秩亏，有限时域估参仍可能很差。控制主要使用参数与回归量的组合，跟踪指标不单独约束每个估计分量。(e)双频改变实际激励，已知$B$减少待估参数；$\cos t$并不因此天然冗余。更丰富的参考不自动证明闭环回归量全时域PE。限幅要保留$s(u-u_{cmd})$，负载跳变要分析$V$的跳变量及分段性质，测量噪声也需附加分析。

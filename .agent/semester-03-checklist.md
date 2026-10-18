@@ -51,6 +51,9 @@
 | LP01 | 独立中文润色交接、完整计划与专用分支 | [x] | .agent/semester-03/zh-lang-edit/README.md;.agent/semester-03/zh-lang-edit/PLAN.md |
 | LP02 | 清理代码框/前置课程的内部流程文案（已完成） | [x] | .agent/semester-03/zh-lang-edit/archive/classic-01/acceptance.md |
 | LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
+| W14 | 自适应失配实验停止前的数值收敛审查 | [ ] | .agent/semester-03/nonlinear-08/followup.md;当前仅放行有限停止事件，参数末值不作定量结论 |
+| ZH01 | 数学18课与经典11课润色分支快速审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/261e9ed/acceptance.md;.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json;commit:847d9a424c9adb65a8508af1cd0adbbcd4f85293 |
+| DEP09 | NONLINEAR-08及29课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear08-zh-release.md;docs/deployment/nonlinear08-zh-public-validation.json;commit:7c6bf5a9fde629d6fd2baf4b409e42964b69c368 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -117,12 +120,12 @@
 |---|---|---|---|---|---|---|---|
 | NONLINEAR-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/01-nonlinear-characteristics.md;.agent/semester-03/nonlinear-01/acceptance.md;.agent/semester-03/nonlinear-01/delivery-validation.json;commit:9d6d31e22b460a1102d3dbf6d8672770939f4be8 |
 | NONLINEAR-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/02-phase-plane.md;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-02/delivery-validation.json;commit:064e0d47a70f7e805d4d6a7df777ed5b82e4da41 |
-| NONLINEAR-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| NONLINEAR-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/03-lyapunov-stability.md;.agent/semester-03/nonlinear-03/acceptance.md;commit:15e7512a3361343fee8b75c80693c9f3f6310d6e |
+| NONLINEAR-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/04-describing-function.md;.agent/semester-03/nonlinear-04/acceptance.md;commit:8dc6b5234ad7a7b721895a3c11b928c106b159c4;S04本课第5项债务已验收 |
+| NONLINEAR-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/05-feedback-linearization.md;.agent/semester-03/nonlinear-05/acceptance.md;commit:c249d3bc0df1f2005f794d0c2a4486b4eedc8ead |
+| NONLINEAR-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md;.agent/semester-03/nonlinear-06/acceptance.md;commit:0e10841f328442190c4afab041f83af7d0f9b20b |
+| NONLINEAR-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md;.agent/semester-03/nonlinear-07/acceptance.md;commit:dd961a7caf18390888c3e3c78ee29044cb82f789 |
+| NONLINEAR-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md;.agent/semester-03/nonlinear-08/acceptance.md;commit:932a40b46200c2db16a297aeb4218ba17d91c144 |
 | NONLINEAR-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | NONLINEAR-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
