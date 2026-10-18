@@ -1,0 +1,127 @@
+
+> control-universe@0.1.0 check
+> node scripts/check-catalog.mjs
+
+check-catalog.mjs · 根目录：D:/Workspace/control-universe
+
+[1] catalog.ts 规模与分布
+  章数 21 · 课程数 205 · 小节数 954
+  各章课程数：introduction 3 / math 18 / classic 11 / modern 9 / nonlinear 12 / discrete-sampled 10 / implementation 10 / machine-learning 9 / identification 9 / estimation 8 / robust 11 / mpc 11 / intelligent 8 / rl-control 12 / multi-agent 9 / safety-ftc 8 / robotics 10 / robot-learning 10 / embodied 10 / autonomous-driving 11 / applications 6
+  status：empty=122  v1.3=62  draft=21
+  level ：undergrad=67  grad=124  advanced=14
+  type  ：history=4  math=20  theory=100  case=19  impl=11  learning=44  frontier=7
+  PASS  21 章 order 字段与数组下标一致（0..20）
+
+[2] catalog ↔ MDX 文件系统交叉核对
+  PASS  无「catalog 有条目但 MDX 缺失且 status≠empty」
+  PASS  无孤儿 MDX（83 个 MDX 全部有 catalog 条目）
+  PASS  status=empty 的课确实都没有 MDX
+  WARN  slug 跨章重复：motion-planning → robotics, autonomous-driving（路由按 (chapter,lesson) 组合键取文件，不冲突；A6 迁移期属预期）
+        MDX 文件 83 个 · catalog 骨架课(status=empty) 122 门 · 有正文 83 门
+
+[3] delivery-tracker.md ↔ catalog 交叉核对
+  PASS  tracker 21 章顺序 == catalog 数组顺序
+  PASS  tracker 205 行与 catalog 逐课 slug+标题一致
+  PASS  tracker 打勾行（62）与 catalog status="v1.3" 完全对应
+        识别到统计行：**统计**：62 / 205 课程已完成（21 章；75 个交互组件文件，其中 75 个被课程正文引用）
+
+[4] 讨论日志覆盖（0.2 节负债的自动化检测）
+  讨论日志 83 篇，可映射到课程 62 门
+  WARN  已有 MDX 但无讨论日志：**21 门**（占有正文课程的 25%）
+        discrete-sampled/discrete-time-freq, implementation/computer-control-architecture, implementation/digital-pid, implementation/realtime-control, estimation/kalman-filter, robust/robustness-concept, robust/uncertainty-modeling, robust/robust-stability, robust/robust-performance, robust/h-infinity-basics, robust/mixed-sensitivity, robust/mu-synthesis, robust/robust-case-study, mpc/mpc-principle, mpc/prediction-model, mpc/receding-horizon, mpc/constraint-handling, mpc/generalized-predictive-control, mpc/nonlinear-mpc, mpc/mpc-case-study, multi-agent/distributed-mpc
+
+[5] components/wiki 组件 ↔ MDX 引用 ↔ 单一来源注册表（E2 起，fix-015 已根治）
+  组件文件 84 个（其中 *-explorer.tsx 75 个）· MDX 引用的组件名 77 个
+  PASS  MDX 引用的组件全部有实现
+  PASS  无孤儿交互组件
+  PASS  单一来源 lib/wiki-components.ts 登记 77 个组件、覆盖 MDX 引用的全部 77 个；无 "use client"；mdx-components.tsx 与 lib/content.ts 均从它导入并展开、无内联残留（fix-015 已根治）
+
+[6] catalog subsections ↔ MDX 的 H2 序列
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "，" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "比" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "较" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "控" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "制" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "器" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "执" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "行" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "器" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "被" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "控" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "对" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "象" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "传" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "感" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "器" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unrecognized Unicode character "μ" (956) [unknownSymbol]
+No character metrics for 'μ' in style 'Main-Regular' and mode 'text'
+  PASS  83 门有 MDX 且有 subsections 的课程，H2 数与 catalog 全部相等
+        小节数不符 0 门（FAIL）· slug 不符 0 门（WARN/Q5）· 已核 83 门
+
+[7] OUTLINE.md ↔ 实际
+  PASS  OUTLINE.md slug 集合与 catalog 一致
+
+[8] tracker 底部统计行 vs 实测（0.1 节口径告警的自动化）
+  PASS  tracker 统计行 5 个已声明数字全部与实测一致：已完成数=62 / 课程总数=205 / 章数=21 / 交互组件文件数=75 / 被正文引用组件数=75
+
+[9] prereq 依赖图（P3/P6 守卫）
+  节点 205 · 有效边 475 · 无 prereq 的课 3 门
+  PASS  475 条 prereq 全部为合法 "chapter/slug"，无自环无重复
+  PASS  无悬空 prereq 边（475 条全部命中 catalog 条目）
+  PASS  依赖图无环，拓扑序存在
+        introduction 章前向边 6 条（§2.1 设计，整章豁免，逐条列出以便复核）：
+          introduction/why-feedback-works ←prereq← classic/transfer-function（章序 0 → 2）
+          introduction/controller-selection-guide ←prereq← classic/pid-controller（章序 0 → 2）
+          introduction/controller-selection-guide ←prereq← modern/state-feedback（章序 0 → 3）
+          introduction/controller-selection-guide ←prereq← mpc/mpc-principle（章序 0 → 11）
+          introduction/controller-selection-guide ←prereq← robust/h-infinity-basics（章序 0 → 10）
+          introduction/controller-selection-guide ←prereq← rl-control/rl-basics（章序 0 → 13）
+  PASS  无章序违反
+  PASS  无章内顺序倒置
+  PASS  无 prereq 指向 A6 迁出侧旧条目（3 个历史迁出路径均未被误指；S02已合并条目）
+        指向骨架课(status=empty)的 prereq 边 176 / 475 条 -> 课程页前置卡片对这部分须用禁用样式显示名称（A8 Part 2 要求）
+  PASS  无孤儿课
+  覆盖率：登记了 prereq 的课 202 / 205（99%）
+  各章边数：introduction 8 / math 33 / classic 21 / modern 23 / nonlinear 26 / discrete-sampled 24 / implementation 25 / machine-learning 18 / identification 26 / estimation 21 / robust 24 / mpc 24 / intelligent 16 / rl-control 26 / multi-agent 20 / safety-ftc 21 / robotics 22 / robot-learning 23 / embodied 24 / autonomous-driving 30 / applications 20
+  PASS  每章都至少有 1 条 prereq 边
+  拓扑层级 0..22（rank = 最长前置链长度；rank 0 = 无需前置即可开读）
+    第  0 章 introduction       rank  0–16 ·  3 课 · 可直接开读 1 门
+    第  1 章 math               rank  0–5  · 18 课 · 可直接开读 2 门
+    第  2 章 classic            rank  4–11 · 11 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  3 章 modern             rank  6–11 ·  9 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  4 章 nonlinear          rank  7–10 · 12 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  5 章 discrete-sampled   rank  7–14 · 10 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  6 章 implementation     rank 12–18 · 10 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  7 章 machine-learning   rank  2–10 ·  9 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  8 章 identification     rank  9–14 ·  9 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第  9 章 estimation         rank 11–16 ·  8 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 10 章 robust             rank 11–17 · 11 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 11 章 mpc                rank 14–20 · 11 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 12 章 intelligent        rank  5–12 ·  8 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 13 章 rl-control         rank  6–18 · 12 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 14 章 multi-agent        rank  7–20 ·  9 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 15 章 safety-ftc         rank 13–18 ·  8 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 16 章 robotics           rank  7–20 · 10 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 17 章 robot-learning     rank 12–21 · 10 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 18 章 embodied           rank 13–21 · 10 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 19 章 autonomous-driving rank 14–22 · 11 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+    第 20 章 applications       rank 14–21 ·  6 课 · 可直接开读 0 门（本章无自足起点，须先修外章）
+        加 --topo 可打印全部 205 门的逐课拓扑层级
+
+================ 唯一权威统计（由本脚本从 catalog + 文件系统实测）================
+  章节数            : 21
+  课程总数          : 205
+  已 v1.3 交付      : 62
+  有 MDX 正文       : 83（其中 draft 21 / v1.3 62 / 无 status 0）
+  骨架课 status=empty: 122（渲染占位页）
+  catalog 小节总数  : 954
+  讨论日志          : 83 篇 / 覆盖 62 门；有 MDX 但无日志 21 门
+  交互组件文件      : 75 个（被正文引用 75，孤儿 0）
+  prereq 边         : 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 + 未登记 0 · 章内倒置 0）
+  prereq 覆盖率     : 202 / 205 门登记了前置；孤儿课 0 门；零 prereq 边的章 0 个
+  拓扑层级          : 0..22（加 --topo 看逐课）
+=================================================================================
+
+---------------- 结果 ----------------
+  PASS 21 · WARN 2 · FAIL 0
+  退出码 0（仅 WARN，均为已登记的待裁决项）

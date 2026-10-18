@@ -44,16 +44,19 @@
 | W10 | 全站字符/公式框图逐项核图并重绘 | [ ] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/diagram-candidates.json;18课35候选待逐项处理，不含已修传递函数四图 |
 | W11 | 传递函数字符框图改用SVG图示 | [x] | .agent/semester-03/intro-proofreading/diagram-followup.md;.agent/semester-03/intro-proofreading/feedback.png;.agent/semester-03/intro-proofreading/transfer-notebooks.json |
 | W12 | 手机课程目录独立滚动与Pages验收 | [x] | .agent/semester-03/mobile-sidebar-scroll/acceptance.md;.agent/semester-03/mobile-sidebar-scroll/browser.json;.agent/semester-03/mobile-sidebar-scroll/pages-build.log;手机/横屏与Pages静态预览通过，待授权发布 |
-| W13 | 非线性入口课长扫描来源保留与后续审查 | [ ] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;NONLINEAR-02已审拖块坐标/平衡偏移并做三速度三扰动T400局部核验；NONLINEAR-12跳跃/分支仍待审，不继承完整吸引域或抖振保证 |
+| W13 | 非线性入口课长扫描来源保留与后续审查 | [x] | .agent/semester-03/nonlinear-01/followup.md;.agent/semester-03/nonlinear-01/source-before.mdx;.agent/semester-03/nonlinear-02/acceptance.md;.agent/semester-03/nonlinear-12/source-audit.md;.agent/semester-03/nonlinear-12/w13-audit.json;指定材料已审，未认证全局主张已撤销/限定，不继承完整吸引域或抖振保证 |
 | P07 | 改为master直接提交推送并兼容普通提交回执 | [x] | .agent/semester-03/master-workflow/acceptance.md;scripts/check-semester03.test.mjs;规则/技能与提交回执校验同步，11测试通过 |
+| P08 | 明确换课时的逐课顺序例外登记与守卫 | [x] | .agent/semester-03/discrete-02/acceptance.md;.agent/semester-03/discrete-03/acceptance.md;.agent/semester-03/discrete-04/acceptance.md;.agent/semester-03/discrete-05/acceptance.md;.agent/semester-03/discrete-06/acceptance.md;.agent/semester-03/discrete-07/acceptance.md;.agent/semester-03/discrete-08/acceptance.md;scripts/check-semester03.test.mjs;按用户逐课登记DISCRETE-02/03/04/05/06/07/08暂缓DISCRETE-01，不自动放行其它课程 |
 | DEP07 | MODERN-01及此前现有修改授权发布与公网验收 | [x] | docs/deployment/modern01-release.md;docs/deployment/modern01-public-validation.json;发布commit:42eed1d509b90699fda0eff8d45f369d7dd7a210 |
 | DEP08 | 现代控制章现有成果授权发布与公网验收 | [x] | docs/deployment/modern09-release.md;docs/deployment/modern09-public-validation.json;发布commit:9c8e988cd6cd10c1066c479f57799c76ef2514a4 |
 | LP01 | 独立中文润色交接、完整计划与专用分支 | [x] | .agent/semester-03/zh-lang-edit/README.md;.agent/semester-03/zh-lang-edit/PLAN.md |
 | LP02 | 清理代码框/前置课程的内部流程文案（已完成） | [x] | .agent/semester-03/zh-lang-edit/archive/classic-01/acceptance.md |
-| LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
+| LP03 | CLASSIC-01润色试稿后续处理 | [ ] | .agent/semester-03/zh-lang-edit/records/archive/CLASSIC-01.md;未收到用户认可，后续交其他模型 |
 | W14 | 自适应失配实验停止前的数值收敛审查 | [ ] | .agent/semester-03/nonlinear-08/followup.md;当前仅放行有限停止事件，参数末值不作定量结论 |
 | ZH01 | 数学18课与经典11课润色分支快速审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/261e9ed/acceptance.md;.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json;commit:847d9a424c9adb65a8508af1cd0adbbcd4f85293 |
 | DEP09 | NONLINEAR-08及29课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear08-zh-release.md;docs/deployment/nonlinear08-zh-public-validation.json;commit:7c6bf5a9fde629d6fd2baf4b409e42964b69c368 |
+| ZH02 | 现代9课及非线性前8课润色增量审核并合入 | [x] | .agent/semester-03/zh-lang-edit/merges/6ab3775/acceptance.md;.agent/semester-03/zh-lang-edit/merges/6ab3775/review.json;commit:1a0ea71af824828a085379101a122d8d71c7092a |
+| DEP10 | NONLINEAR-12及17课润色授权发布与公网验收 | [x] | docs/deployment/nonlinear12-zh-release.md;docs/deployment/nonlinear12-zh-public-validation.json;commit:de07d3e9a8495e40693d44baba79e5fe8a6cb13f |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -126,25 +129,25 @@
 | NONLINEAR-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/06-sliding-mode-control.md;.agent/semester-03/nonlinear-06/acceptance.md;commit:0e10841f328442190c4afab041f83af7d0f9b20b |
 | NONLINEAR-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/07-backstepping.md;.agent/semester-03/nonlinear-07/acceptance.md;commit:dd961a7caf18390888c3e3c78ee29044cb82f789 |
 | NONLINEAR-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/08-adaptive-control-basics.md;.agent/semester-03/nonlinear-08/acceptance.md;commit:932a40b46200c2db16a297aeb4218ba17d91c144 |
-| NONLINEAR-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| NONLINEAR-12 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| NONLINEAR-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/09-passivity-control.md;.agent/semester-03/nonlinear-09/acceptance.md;.agent/semester-03/nonlinear-09/validation.json;commit:aa691ca7d211255d2713c9856f5be10c02380b65 |
+| NONLINEAR-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/10-iss-small-gain.md;.agent/semester-03/nonlinear-10/acceptance.md;.agent/semester-03/nonlinear-10/validation.json;commit:b90b4ed1366e2b72380295c6daf0119347102810 |
+| NONLINEAR-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/11-switched-hybrid-systems.md;.agent/semester-03/nonlinear-11/acceptance.md;.agent/semester-03/nonlinear-11/validation.json;commit:2a7af2f9146592ad6e319857b444ff056138f3a1 |
+| NONLINEAR-12 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/05-nonlinear/12-bifurcation-chaos.md;.agent/semester-03/nonlinear-12/acceptance.md;.agent/semester-03/nonlinear-12/validation.json;commit:8325f097ce63d63d4c4875cd9665a969a934ad4b |
 
 ### 离散控制
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| DISCRETE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| DISCRETE-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DISCRETE-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| DISCRETE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 未验收检查点保留于 git stash：DISCRETE-01 unfinished checkpoint before DISCRETE-02；不计交付，恢复后继续 |
+| DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;commit:5e5a16dd088c9c330560e379b0b3c81513b4e61a |
+| DISCRETE-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/03-difference-equation.md;.agent/semester-03/discrete-03/acceptance.md;commit:3a579d90706c37f7b12ab085fccfffdaf061b399 |
+| DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;commit:149bac2092969d2d817f68f879a29376f073d7f4 |
+| DISCRETE-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/05-discrete-stability-criteria.md;.agent/semester-03/discrete-05/acceptance.md;commit:8aa700be5d624925f7814f6a460db1d9c38b25b3 |
+| DISCRETE-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/06-discretization-methods.md;.agent/semester-03/discrete-06/acceptance.md;commit:fe45658e2f879650390bfc962df59e635e9391c2 |
+| DISCRETE-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/07-sampling-period-selection.md;.agent/semester-03/discrete-07/acceptance.md;commit:82e95f1f6ee5797e6fd129b7d50b4a021db7a051 |
+| DISCRETE-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/08-sampled-data-systems.md;.agent/semester-03/discrete-08/acceptance.md;commit:33a3931c0e3f33192d1edb43d9f3eecabd432cb5 |
+| DISCRETE-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/09-discrete-optimal-control.md;.agent/semester-03/discrete-09/acceptance.md;commit:1f3b9894304d32587533c88d85b193829c4c39d1 |
+| DISCRETE-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/10-event-triggered-control.md;.agent/semester-03/discrete-10/acceptance.md;commit:8b80f851772de7799270cb1ad46707a119fa6764 |
 
 ### 控制实现
 

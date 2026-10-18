@@ -1,0 +1,76 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:8981 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+discrete-sampled/discrete-stability-criteria  [FAIL]  3 个 notebook · 4 个 cell
+      WARN S7  Notebook 1（:255） 传了组件没有的属性 language="python" → 被静默忽略
+      WARN S7  Notebook 2（:393） 传了组件没有的属性 language="python" → 被静默忽略
+      WARN S7  Notebook 3（:641） 传了组件没有的属性 language="python" → 被静默忽略
+      FAIL S6  Notebook 2 cell 1（:404）执行报错 ValueError: Time steps `T` must be multiples of sampling time
+          ---------------------------------------------------------------------------
+          ValueError                                Traceback (most recent call last)
+          Cell In[2], line 28
+     24 for i, Ts in enumerate(Ts_values):
+     25     Gz = ctrl.c2d(G, Ts, method='zoh')
+     26     Kz = ctrl.c2d(K_cont, Ts, method='tustin')
+     27     Tz = ctrl.feedback(Gz * Kz, 1)
+---> 28     t_i, y_i = ctrl.step_response(Tz, T=t)
+     29 
+     30     poles = ctrl.pole(Tz)
+     31     max_pole = np.max(np.abs(poles))
+
+          File ~\AppData\Local\Programs\Python\Python313\Lib\site-packages\control\timeresp.py:1509, in step_response(sysdata, timepts, initial_state, input_indices, output_indices, timepts_num, transpose, return_states, squeeze, params, **kwargs)
+   1506 U = np.zeros((sys.ninputs, T.size))
+   1507 U[i, :] = np.ones_like(T)
+-> 1509 response = forced_response(sys, T, U, X0, squeeze=True, params=params)
+   1510 inpidx = i if input is None else 0
+   1511 yout[:, inpidx, :] = response.y if output is None \
+   1512     else response.y[output]
+
+      FAIL S6  Notebook 2 cell 2（:528）执行报错 AttributeError: module 'control' has no attribute 'pole'
+          ---------------------------------------------------------------------------
+          AttributeError                            Traceback (most recent call last)
+          Cell In[3], line 13
+      9 for Ts_i in Ts_crit_range:
+     10     Gz_i = ctrl.c2d(G3, Ts_i, method='zoh')
+     11     Kz_i = ctrl.tf([K3], [1])
+     12     Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
+---> 13     poles = ctrl.pole(Tz_i)
+     14     max_pole = np.max(np.abs(poles))
+     15 
+     16     if abs(max_pole - 1.0) < 0.05:
+
+          AttributeError: module 'control' has no attribute 'pole'
+      FAIL S6  Notebook 3 cell 1（:652）执行报错 ValueError: Improper transfer function. `num` is longer than `den`.
+          ---------------------------------------------------------------------------
+          ValueError                                Traceback (most recent call last)
+          Cell In[2], line 24
+     20 print("-" * 55)
+     21 
+     22 for Ts_i in Ts_test:
+     23     Gz_i = ctrl.c2d(G2, Ts_i, method='zoh')
+---> 24     Kz_i = ctrl.c2d(K_pid, Ts_i, method='tustin')
+     25     Lz_i = Gz_i * Kz_i
+     26 
+     27     omega = np.logspace(-2, 2, 2000)
+
+          File ~\AppData\Local\Programs\Python\Python313\Lib\site-packages\control\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)
+     80 if not isctime(sysc):
+     81     raise ValueError("First argument must be continuous-time system")
+---> 83 return sysc.sample(Ts,
+     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,
+     85     name=name, copy_names=copy_names, **kwargs)
+
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 3 个 notebook · 4 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 4 个 cell，其中 error 3 个
+      按判据：S6×3  S7×3
+      FAIL 课程：discrete-sampled/discrete-stability-criteria
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/discrete-05/baseline-notebooks.json

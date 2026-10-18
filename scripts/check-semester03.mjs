@@ -81,18 +81,35 @@ export function validateSemester03({plan,checklist,baseline,root=process.cwd(),e
     check(['[ ]','[x]'].includes(state),`非法任务状态 ${id}`);
     if(state==='[x]')evidenceFiles(refs,id);
   }
-  let incomplete=false;
+  // Explicit user-directed lesson switches are recorded in the plan, not inferred
+  // from progress. An exception permits only its named unfinished predecessors.
+  let switches=[];
+  try{if(plan.includes('<!-- S3-ORDER-EXCEPTIONS-BEGIN -->'))switches=table(plan,'S3-ORDER-EXCEPTIONS',4);}
+  catch(e){check(false,e.message);}
+  unique(switches.map(s=>s[0]),'顺序例外课程');
+  const exceptions=new Map();
+  for(const [id,predecessors,reason,refs]of switches){
+    const skipped=predecessors.split(';').map(s=>s.trim());
+    const index=progress.findIndex(p=>p[0]===id);
+    check(index>=0,`顺序例外目标不存在 ${id}`);
+    check(reason.includes('用户')&&reason.length>=10,`顺序例外缺用户换课依据 ${id}`);
+    unique(skipped,`${id} 顺序例外前课`);
+    for(const previous of skipped)check(progress.slice(0,Math.max(0,index)).some(p=>p[0]===previous),`顺序例外不是有效前课 ${id}: ${previous}`);
+    evidenceFiles(refs,`顺序例外 ${id}`);
+    exceptions.set(id,new Set(skipped));
+  }
+  const incomplete=[];
   for(const p of progress){
     const states=p.slice(1,7);let missing=false;
     for(const state of states){check(['[ ]','[x]'].includes(state),`非法课程状态 ${p[0]}`);if(state==='[ ]')missing=true;else check(!missing,`阶段跳勾 ${p[0]}`);}
     if(states.some(s=>s==='[x]')){
-      check(!incomplete,`跳过未合入前课 ${p[0]}`);
+      check(incomplete.every(id=>exceptions.get(p[0])?.has(id)),`跳过未合入前课 ${p[0]}`);
       const refs=evidenceFiles(p[7],p[0],states[5]==='[x]');
       const log=refs.find(r=>r.startsWith('docs/discuss-log/semester-03/'));
       check(Boolean(log),`${p[0]} 缺学期3课程日志`);
       if(evidence&&log&&existsSync(resolve(root,log.split('#')[0])))check(readFileSync(resolve(root,log.split('#')[0]),'utf8').includes(p[0]),`${p[0]} 日志未标课程ID`);
     }
-    if(states[5]!=='[x]')incomplete=true;
+    if(states[5]!=='[x]')incomplete.push(p[0]);
   }
   const refactor=lessons.filter(l=>l[3]==='重构').length;
   return {errors,stats:{chapters:chapters.length,lessons:lessons.length,refactor,new:lessons.length-refactor,sources:sources.size,mdx:[...sources.values()].filter(s=>s.hasMdx).length,tasks:tasks.length,doneTasks:tasks.filter(t=>t[2]==='[x]').length,merged:progress.filter(p=>p[6]==='[x]').length}};

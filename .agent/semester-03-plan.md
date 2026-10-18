@@ -38,6 +38,22 @@
 
 默认选择全局 checklist 中生产顺序最前的未合入课程。本期首课 **MATH-01：微积分入门**。先修与基础设施阻塞时记录原因，只处理该课所必需的已登记阻塞，不顺带交付第二课。讨论未完继续同一课程；用户明确换课时保留检查点。课程合入后停止，下一对话再取下一课。
 
+明确换课需在下表登记目标、获准暂缓的前课、用户依据及可读证据；只放行该目标，不免除阶段顺序、验收或其它前课。历史例外保留，不改变课程导航和默认生产顺序。
+
+<!-- S3-ORDER-EXCEPTIONS-BEGIN -->
+| ID | 暂缓前课 | 用户依据 | 证据 |
+|---|---|---|---|
+| DISCRETE-02 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-02”；上一课未验收草稿保留，当前课局部补足采样编号定义 | .agent/semester-03/discrete-02/acceptance.md |
+| DISCRETE-03 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-03”；先修DISCRETE-02与Z变换已交付，保留DISCRETE-01未验收草稿 | .agent/semester-03/discrete-03/acceptance.md |
+| DISCRETE-04 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-04”；先修差分方程与Z变换已交付，采样/保持定义本课局部补足，保留DISCRETE-01草稿 | .agent/semester-03/discrete-04/acceptance.md |
+| DISCRETE-05 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-05”；04已交付，保留01草稿，本课局部补足采样定义 | .agent/semester-03/discrete-05/acceptance.md |
+| DISCRETE-06 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-06”；04/05已交付，保留01草稿，采样保持本课局部解释 | .agent/semester-03/discrete-06/acceptance.md |
+| DISCRETE-07 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-07”；02–06已交付，保留01草稿，本课局部解释采样保持 | .agent/semester-03/discrete-07/acceptance.md |
+| DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
+| DISCRETE-09 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-09”；02–08已交付，保留01草稿，本课不依赖其未验收内容 | .agent/semester-03/discrete-09/acceptance.md |
+| DISCRETE-10 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-10”；02–09已交付，保留01草稿，本课只依赖已交付先修 | .agent/semester-03/discrete-10/acceptance.md |
+<!-- S3-ORDER-EXCEPTIONS-END -->
+
 推荐新写 Prompt：
 
 > 继续学期3，读取 semester-03-plan.md 和全局 checklist，选择生产顺序最前的未合入课程。确认无正文后，按 wiki-lesson-new 及共同流程完成这一节的 Phase 1–4、真实验收、日志与台账，验收后 --no-ff 合入 master。本对话只交付这一节，不自动开始下一节。
@@ -670,3 +686,68 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### NONLINEAR-08 本轮执行记录（2026-10-18）
 
 自适应控制按重构专用Phase1–4，仅本课。保留13主题、九原实验38cell、六题，纠高阶输入信息、固定V参数界、有限时域无界/PE推断、泄漏唯一性、RLS先验、机器人初速及谐波；追加核验共十实验39cell。组件真实19配置27465点独立对账、三种子、DOP853、原生/Pyodide及55旧ID验收见本期讨论日志与.agent/semester-03/nonlinear-08/acceptance.md。原25项Python待办及W08/W09/W10保留，中文润色分支不动，Pages另行授权；真实签发与master回执以全局checklist为准。
+
+### NONLINEAR-09 本轮执行记录（2026-10-18）
+
+无源控制从空占位按新写专用Phase1–4完成。以三次弹簧小车贯穿能量收支、无源输入输出、阻尼与目标能量整形，补互联适定、隐藏状态及限幅/延迟边界；10H2、3Notebook3cell、四题四答、SVG和PassivityExplorer。实际TS五配置2505点对独立DOP853、原生/Pyodide完整实验及375px页面通过，详见.agent/semester-03/nonlinear-09/acceptance.md。用户批阅与润色分支保持，25Python待办及W14保留；仅本课进入master，Pages另行授权。
+
+### NONLINEAR-10 本轮执行记录（2026-10-19）
+
+输入状态稳定性从空占位按新写专用Phase1–4完成：线性积分解引入ISS，标量非线性给直接界与Lyapunov界，二维耦合证明小增益，保留临界/失败及反向仍稳定反例。10H2、3Notebook3cell、四题四答、耦合SVG和IssSmallGainExplorer；真实TS九配置3609点对独立增广矩阵指数、原生/Pyodide全部实验、真实标题/锚点与375px页面通过。证据.agent/semester-03/nonlinear-10/acceptance.md，实际master回执以全局checklist为准。用户批阅与长期润色分支保持，25Python待办及W14不关闭，Pages另行授权，不交付下一课。
+
+
+### NONLINEAR-11 本轮执行记录（2026-10-19）
+
+切换与混杂系统从空占位按新写专用Phase1–4完成。恒温器引入模式记忆、守卫与重置；稳定矩阵的快切反例引出共同Lyapunov与最小驻留证明；事件检测弹跳球说明Zeno有限累积与接触续接缺口。11H2、4Notebook4cell、四题四答、状态图SVG与SwitchedHybridExplorer；实际TS九配置7209点对独立SciPy矩阵指数、原生/Pyodide全部实验、真实锚点和375px页面通过。证据.agent/semester-03/nonlinear-11/acceptance.md，实际master回执以全局checklist为准。25项Python待办及W14保留，用户批阅和长期润色分支保持，Pages另行授权，本对话不续写下一课。
+
+
+### NONLINEAR-12 本轮执行记录（2026-10-19）
+
+分岔与混沌从空占位按新写专用Phase1–4完成：电机带摆平衡消失引入折叠/叉形，再以径向方程证明Hopf；Logistic逐步更新解释乘子、周期倍化、窗口和有限指数，保留正指数不稳定不动点反例。13H2、4Notebook5cell、五题五答、SVG与BifurcationExplorer；14配置140014实际TS轨道点及三初态17424点云核高精度短程/稳定周期/逐步残差，Duffing周期解由独立Radau+差分乘子复算，原生/Pyodide、真实锚点/375px页面通过。W13指定旧跳跃/鞍结/吸引子材料逐项审完，四组修正扫频核驻留/步长/网格；只认有限窗口区间，不认证完整分支或吸引域。证据.agent/semester-03/nonlinear-12/acceptance.md及source-audit.md；实际master回执以checklist为准。25Python待办及W14保持，用户批阅和长期润色分支保持，Pages另行授权，不顺带交付后续课。
+
+
+### DISCRETE-02 本轮执行记录（2026-10-19）
+
+离散时间系统由空占位按新写专用Phase1–4完成。每分钟房间温差引入递推，区分初始状态与加热输入，矩阵同步更新以错误覆盖反例解释，脉冲/卷积连接零初值传递函数。8H2、3Notebook3cell、四题四答、两SVG；独立几何和/矩阵幂/SciPy、原生与Pyodide、375px及Pages本地基路径验收通过。证据.agent/semester-03/discrete-02/acceptance.md；master真实回执见全局checklist。DISCRETE-01未完草稿保留检查点，不继承签发；本课局部解释采样编号，不依赖其未验收数值。25项Python待办、W14、用户批阅及长期润色分支保持；本地端口四文件不提交，Pages另行授权，不顺带交付下一课。
+
+
+### DISCRETE-03 本轮执行记录（2026-10-19）
+
+差分方程从空占位按新写专用Phase1–4完成，math课型由方数、岳自、小初、陆阅参与。沿用上一课温差递推引出差分与初值，一阶几何和/特解核a=1边界，二阶不同根与非零重根用代入与等差数列推导，单边Z保留初值并限定ROC。9H2、3Notebook3cell、四题四答、一SVG；独立Fraction精确算术与增广矩阵幂、原生/Pyodide/页面输出、375px及Pages本地基路径全部通过。目录Z大小写按真实渲染ID纠正；证据.agent/semester-03/discrete-03/acceptance.md，master真实回执见全局checklist。本次用户指定DISCRETE-03的顺序例外单独登记，未沿用上一课授权；DISCRETE-01未完草稿保留，不使用其未验收数值。25Python待办、W14及用户批阅不关闭，端口四处本地修改不提交，Pages另行授权，本对话不生产下一课。
+
+
+### DISCRETE-04 本轮执行记录（2026-10-19）
+
+Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID、原三组实验及四组全部子题，纠正ZOH增益、离散模态指数、终值适用条件、反变换答案、频率方向和递推延迟。新增模态映射交互与SVG；实际TS十配置对独立60位mpmath，五Notebook六cell由严格原生内核、Pyodide及两种实际页面核验。证据.agent/semester-03/discrete-04/acceptance.md，真实master回执见checklist。PY-007关闭，Python待办25→24；其余任务元数据保留。必要fix索引历史七处元数据问题补齐后双向校验通过，未改历史正文。用户明确指定本课的顺序例外单独登记，DISCRETE-01草稿、proofreading及四处本地端口排除提交；仅本地Pages验收，不发布、不续写下一课。
+
+
+### DISCRETE-05 本轮执行记录（2026-10-19）
+
+离散系统稳定性按重构专用Phase1–4完成，保留原9H2/38标题主题/41旧课程ID、三实验组四cell和全部四题。纠正状态/BIBO与单位根条件、二阶根、采样PI数值、伪临界回退、理想PID不真有理、离散频响与裕度交点、Schur-Cohn定义及题3近似冒充精确上限；原正确w映射保留并补z1例外。新增Jury交互与SVG，五Notebook六cell、真实TS十三配置、独立状态矩阵指数/解析频响/SymPy、375px及Pages本地页面验收通过。证据.agent/semester-03/discrete-05/acceptance.md；真实master回执见全局checklist。PY-008/009实测修复，Python待办24→22，其余任务元数据保留。用户指定05的顺序例外独立登记，01草稿与用户批阅、本地端口四文件不提交；本次不发布Pages、不顺带生产下一课。
+
+
+### DISCRETE-06 本轮执行记录（2026-10-19）
+
+离散化方法按重构专用Phase1–4完成，原八H2/39标题主题/41课程ID、三实验组四cell及四题保留纠错，新增一实验共四Notebook五cell。修Euler因果/绝对稳定区、Tustin方向/预扭曲、matched积分器增益与默认API、反算符号/单位/真实状态/未触饱和基线、导数滤波和首达指标。数字PI由原生/浏览器及独立MP/Decimal/状态模型核，真实TS十三配置、375px及Pages本地验收通过。正式H1与首H2同名，旧离散化方法ID转H1开篇，H2canonical为离散化方法-1，旧数字控制器设计span保留；歧义明确登记，未伪称段落未变。PID工程材料本页全文保留，IMPL-02迁移未完不计交付。证据.agent/semester-03/discrete-06/acceptance.md；master真实回执见checklist。PY-010/011实测修复，待办22→20，其它元数据保留；W10仅处理本课错误Euler字符图。01草稿、用户批阅及四端口不提交；Pages不发布，本对话止于06。
+
+
+### DISCRETE-07 本轮执行记录（2026-10-19）
+
+用户指定继续“采样周期”，单独登记暂缓DISCRETE-01，草稿隔离保存。按重构SKILL推进Phase1–4，仅本课。三旧Notebook均因ipywidgets导致setup失败，S04完整性债务随本课修复；原七H2/十二H3/三实验对象与用途/四题保留，来源映射见.agent/semester-03/discrete-07/source-audit.md。新增微分滤波明确建立可实现PID新基线，所有数字独立状态复算；单位圆频响/相位支路、无交越、真实采样轴、ADC串行预算与多率固定精度/整数调度纠错，保留未胜/失稳和执行代价。
+
+本课verify唯一WARN：event-triggered-control为后续阅读占位，不作为前置；归DISCRETE-10交付后复核链接。PY-012/013/014经真实浏览器原始cell实跑后关闭，其余17项保留。S04历史快照不改，当前PASS证据在本课acceptance；W10仅本课三字符图已审/图文及SVG替代，其余候选未清零。fix-068归因既有职责执行不足，不扩编角色或改润色SKILL。最终签发、命令/退出码及master提交见checklist链接。
+
+
+### DISCRETE-08 本轮执行记录（2026-10-19）
+
+用户指定继续08，单独登记暂缓01，草稿隔离。空占位按wiki-lesson-new完整Phase1–4，仅交付采样数据系统：一阶精确段内轨迹/保持、Phi/Gamma积分与奇异A、采样状态反馈及一拍延迟、旋转输出漏采、完整Schur采样状态到连续指数衰减的有条件证明。七H2、两Notebook四cell、一个真实TS交互与SVG，四题答案独立复算。十三TS配置与39493个原始cell数值量核验；顺读把实验移到对应矩阵解释后，源hash变化全链路重跑。
+
+新课不追认旧v1.3/历史讨论，无旧正文迁移或历史fix需伪造。新增两实验通过浏览器实跑才启用Pyodide，原17待办与W08/W09/W10保持；不借此生产09/10或关闭07后续占位提示。实际命令/退出码与最终签发、master回执见本课checklist链接。本次不发布Pages。
+
+### DISCRETE-09 本轮执行记录（2026-10-19）
+
+离散最优控制从空占位按新写专用Phase1–4完成。保温箱交班问题→离散有限步Bellman/标量配方→Riccati倒推/正向执行→DARE条件→输入约束边界；8H2、四题四答、一个Explorer与SVG、两Notebook四cell。实际TS十五参数配置对独立Fraction全输入稠密消元；原始内核、Pyodide、两种页面与375px验收通过。证据.agent/semester-03/discrete-09/acceptance.md；master真实提交见checklist。独立登记暂缓01的用户顺序例外，不继承08授权；01草稿、用户批阅及四处本地端口排除提交。本对话仅生产09，不发布Pages、不生产10。新增两实验支持，17项Python待办元数据保留；zh计划只更新生产交接、不代做润色。
+
+### DISCRETE-10 本轮执行记录（2026-10-19）
+
+事件触发控制从空占位按新写专用Phase1–4完成。温室无线读数入口→测量/发送/控制更新→保持误差与理想连续Lyapunov条件→周期检查→通信代价/漏检/Zeno/自触发边界；八H2、四题四答、两Notebook四cell、一个Explorer/SVG。17真实TS配置对独立60位解析事件段，195控件组合固定轴范围、36610个原始Notebook量、严格内核、Pyodide、两种真实页面与375px验收通过。默认/每拍持平/两路线发散/少发但趋−2均保留，未将连续定理套到周期程序。证据.agent/semester-03/discrete-10/acceptance.md，真实master回执见checklist。仅本课；01草稿、用户批阅、四处本地端口排除提交；本轮顺序例外独立登记，不发布Pages、不生产下一章。新增两实验可运行，17项Python待办元数据保持，zh只登记生产交接。07历史后续阅读的目标现已交付并验收HTTP200，不重写历史记录。

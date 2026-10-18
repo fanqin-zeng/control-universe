@@ -2522,45 +2522,127 @@ export const catalog: Chapter[] = [
       {
         "slug": "passivity-control",
         "title": "无源控制",
+        "subsections": [
+          {
+                    "slug": "引言",
+                    "title": "引言"
+          },
+          {
+                    "slug": "给小车记能量账",
+                    "title": "给小车记能量账"
+          },
+          {
+                    "slug": "无源性的定义",
+                    "title": "无源性的定义"
+          },
+          {
+                    "slug": "阻尼反馈能保证什么",
+                    "title": "阻尼反馈能保证什么"
+          },
+          {
+                    "slug": "把目标位置变成能量最低点",
+                    "title": "把目标位置变成能量最低点"
+          },
+          {
+                    "slug": "无源系统的互联",
+                    "title": "无源系统的互联"
+          },
+          {
+                    "slug": "实现中的边界",
+                    "title": "实现中的边界"
+          },
+          {
+                    "slug": "小结",
+                    "title": "小结"
+          },
+          {
+                    "slug": "习题",
+                    "title": "习题"
+          },
+          {
+                    "slug": "答案",
+                    "title": "答案"
+          }
+],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "modern/multivariable-systems"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "iss-small-gain",
         "title": "输入状态稳定性",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "从无扰动到有扰动", "title": "从无扰动到有扰动" },
+          { "slug": "输入状态稳定性的定义", "title": "输入状态稳定性的定义" },
+          { "slug": "用lyapunov函数估计误差", "title": "用Lyapunov函数估计误差" },
+          { "slug": "两个系统相互影响", "title": "两个系统相互影响" },
+          { "slug": "小增益条件", "title": "小增益条件" },
+          { "slug": "条件没通过怎么办", "title": "条件没通过怎么办" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability",
           "classic/frequency-domain-analysis"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "switched-hybrid-systems",
         "title": "切换与混杂系统",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "模式与切换规则", "title": "模式与切换规则" },
+          { "slug": "稳定模式也会切坏", "title": "稳定模式也会切坏" },
+          { "slug": "共同lyapunov函数", "title": "共同Lyapunov函数" },
+          { "slug": "驻留时间", "title": "驻留时间" },
+          { "slug": "状态跳变的模型", "title": "状态跳变的模型" },
+          { "slug": "zeno现象", "title": "Zeno现象" },
+          { "slug": "建模与仿真检查", "title": "建模与仿真检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/lyapunov-stability"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "bifurcation-chaos",
         "title": "分岔与混沌",
+        "subsections": [
+          { "slug": "引言", "title": "引言" },
+          { "slug": "平衡点怎样消失", "title": "平衡点怎样消失" },
+          { "slug": "对称分支", "title": "对称分支" },
+          { "slug": "振荡怎样出现", "title": "振荡怎样出现" },
+          { "slug": "从连续到逐步更新", "title": "从连续到逐步更新" },
+          { "slug": "周期倍化", "title": "周期倍化" },
+          { "slug": "混沌与预测", "title": "混沌与预测" },
+          { "slug": "读懂分岔图", "title": "读懂分岔图" },
+          { "slug": "受迫系统的跳跃", "title": "受迫系统的跳跃" },
+          { "slug": "数值检查", "title": "数值检查" },
+          { "slug": "小结", "title": "小结" },
+          { "slug": "习题", "title": "习题" },
+          { "slug": "答案", "title": "答案" }
+        ],
         "prereq": [
           "nonlinear/phase-plane",
           "math/numerical-methods"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },
@@ -2621,6 +2703,40 @@ export const catalog: Chapter[] = [
       {
         "slug": "discrete-time-systems",
         "title": "离散时间系统",
+        "subsections": [
+          {
+            "slug": "从读数到递推",
+            "title": "从读数到递推"
+          },
+          {
+            "slug": "初值和输入各做了什么",
+            "title": "初值和输入各做了什么"
+          },
+          {
+            "slug": "离散状态空间",
+            "title": "离散状态空间"
+          },
+          {
+            "slug": "从脉冲到输入输出",
+            "title": "从脉冲到输入输出"
+          },
+          {
+            "slug": "模型的边界",
+            "title": "模型的边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-freq",
           "modern/state-space",
@@ -2628,18 +2744,56 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "difference-equation",
         "title": "差分方程",
+        "subsections": [
+          {
+            "slug": "从递推到差分",
+            "title": "从递推到差分"
+          },
+          {
+            "slug": "先解一阶方程",
+            "title": "先解一阶方程"
+          },
+          {
+            "slug": "输入怎样改变解",
+            "title": "输入怎样改变解"
+          },
+          {
+            "slug": "二阶方程与特征根",
+            "title": "二阶方程与特征根"
+          },
+          {
+            "slug": "重根为什么多一个k",
+            "title": "重根为什么多一个k"
+          },
+          {
+            "slug": "用z变换核对",
+            "title": "用Z变换核对"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-systems",
           "math/z-transform"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "z-transform-analysis",
@@ -2697,7 +2851,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "discrete-stability-criteria",
@@ -2746,14 +2900,14 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "discretization-methods",
         "title": "离散化方法",
         "subsections": [
           {
-            "slug": "离散化方法",
+            "slug": "离散化方法-1",
             "title": "离散化方法"
           },
           {
@@ -2793,7 +2947,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "sampling-period-selection",
@@ -2834,18 +2988,48 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "sampled-data-systems",
         "title": "采样数据系统",
+        "subsections": [
+          {
+            "slug": "两次更新之间",
+            "title": "两次更新之间"
+          },
+          {
+            "slug": "精确采样模型",
+            "title": "精确采样模型"
+          },
+          {
+            "slug": "闭环与延迟",
+            "title": "闭环与延迟"
+          },
+          {
+            "slug": "采样会漏掉什么",
+            "title": "采样会漏掉什么"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discretization-methods",
           "discrete-sampled/sampling-period-selection"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "discrete-optimal-control",
@@ -2854,9 +3038,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/discrete-stability-criteria",
           "modern/lqr-controller"
         ],
+        "subsections": [
+          {
+            "slug": "只剩几次调整",
+            "title": "只剩几次调整"
+          },
+          {
+            "slug": "从最后一步倒推",
+            "title": "从最后一步倒推"
+          },
+          {
+            "slug": "向前执行",
+            "title": "向前执行"
+          },
+          {
+            "slug": "从有限步到长期",
+            "title": "从有限步到长期"
+          },
+          {
+            "slug": "输入有上限",
+            "title": "输入有上限"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "event-triggered-control",
@@ -2865,9 +3083,43 @@ export const catalog: Chapter[] = [
           "discrete-sampled/sampled-data-systems",
           "nonlinear/lyapunov-stability"
         ],
+        "subsections": [
+          {
+            "slug": "消息一定要按时发吗",
+            "title": "消息一定要按时发吗"
+          },
+          {
+            "slug": "旧读数还能用多久",
+            "title": "旧读数还能用多久"
+          },
+          {
+            "slug": "为什么误差不能太大",
+            "title": "为什么误差不能太大"
+          },
+          {
+            "slug": "按周期检查事件",
+            "title": "按周期检查事件"
+          },
+          {
+            "slug": "少发消息也有代价",
+            "title": "少发消息也有代价"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },

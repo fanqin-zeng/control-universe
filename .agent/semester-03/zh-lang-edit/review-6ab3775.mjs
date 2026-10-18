@@ -1,0 +1,15 @@
+import fs from'node:fs';import{execFileSync}from'node:child_process';import{createHash}from'node:crypto';import assert from'node:assert/strict';import{extractNotebooks,scanMdx}from'../../../scripts/lib-mdx.mjs';import{renderedHeadings}from'../../../scripts/rendered-headings.mjs';
+const branch='6ab3775', reviewedMaster='f0816e8',git=(...args)=>execFileSync('git',args,{encoding:'utf8',maxBuffer:12*1024*1024}),sha=git('rev-parse',branch).trim(),base=git('merge-base',reviewedMaster,branch).trim(),files=git('diff','--name-only',base,branch).trim().split('\n'),hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex');
+assert(files.every(p=>/^content\/(modern|nonlinear)\/[^/]+\.mdx$/.test(p)||p.startsWith('.agent/semester-03/zh-lang-edit/')),'scope');const rows=[];
+for(const p of files.filter(p=>p.startsWith('content/'))){
+ const before=git('show',base+':'+p),after=git('show',sha+':'+p),current=git('show',reviewedMaster+':'+p);assert.equal(hash(current),hash(before),'master changed the same file: '+p);
+ const nbA=extractNotebooks(before),nbB=extractNotebooks(after),payload=n=>n.map(b=>({title:b.title,setup:b.setup.value,cells:b.cells.map(c=>c.value)}));assert.deepEqual(payload(nbA),payload(nbB),p+' Python');
+ const tags=s=>scanMdx(s).tags.filter(t=>t.name!=='JupyterNotebook').map(t=>s.slice(t.start,t.end));assert.deepEqual(tags(before),tags(after),p+' components');
+ const hA=await renderedHeadings(before,p.slice(8,-4)),hB=await renderedHeadings(after,p.slice(8,-4));assert.deepEqual(hA,hB,p+' headings/IDs');
+ const mask=s=>{for(const t of scanMdx(s).tags.filter(t=>t.name==='JupyterNotebook').reverse())s=s.slice(0,t.start)+'\n'+s.slice(t.end);return s};
+ const math=s=>[...mask(s).matchAll(/\$\$[\s\S]*?\$\$/g)].map(m=>m[0]);assert.deepEqual(math(before),math(after),p+' display math');
+ const inline=s=>[...mask(s).replace(/\$\$[\s\S]*?\$\$/g,'').matchAll(/(?<!\\)\$([^$\n]+)\$/g)].map(m=>m[1]);let ia=inline(before),ib=inline(after);const removed=ia.filter(m=>!ib.includes(m)),added=ib.filter(m=>!ia.includes(m));
+ const links=s=>[...mask(s).matchAll(/\]\(([^)]+)\)/g)].map(m=>m[1]);assert(links(before).every(u=>links(after).includes(u)),p+' removed links');
+ rows.push({path:p,sourceBefore:hash(before),sourceAfter:hash(after),pythonPayloadHash:hash(JSON.stringify(payload(nbA))),notebooks:nbA.length,cells:nbA.reduce((n,b)=>n+b.cells.length,0),h2:hA.h2.length,ids:hA.ids.length,displayMath:math(before).length,inlineRemoved:removed,inlineAdded:added});
+}
+const report={pass:true,branch,sha,base,files:files.length,lessons:rows.length,notebooks:rows.reduce((n,r)=>n+r.notebooks,0),cells:rows.reduce((n,r)=>n+r.cells,0),rows};fs.writeFileSync('.agent/semester-03/zh-lang-edit/merges/6ab3775/review.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({sha,files:files.length,lessons:rows.length,notebooks:report.notebooks,cells:report.cells,inlineChanges:rows.filter(r=>r.inlineAdded.length||r.inlineRemoved.length).map(r=>({path:r.path,added:r.inlineAdded,removed:r.inlineRemoved}))},null,2));

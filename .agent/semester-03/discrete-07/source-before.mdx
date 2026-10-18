@@ -1,0 +1,740 @@
+---
+title: "采样周期选择"
+description: "数字控制系统中采样周期的选择——ZOH等效延迟、相位裕度约束、经验法则、硬件约束、多速率采样系统设计。"
+---
+
+# 采样周期选择
+
+前几节课讨论了离散系统的分析（Z 变换）和设计（数字控制器），但有一个参数始终被当作"已知"——**采样周期 $T_s$**。实际上，$T_s$ 是计算机控制系统中最关键的设计参数之一：它决定了系统性能的天花板，也决定了硬件资源的底线。
+
+> 📖 本课需要 [采样与量化](/discrete-sampled/discrete-time-freq)、[数字控制器设计](/discrete-sampled/discretization-methods) 和 [离散系统稳定性](/discrete-sampled/discrete-stability-criteria) 的前置知识。
+
+采样周期选太大，系统可能不稳定（相位裕度被吃光）；选太小，CPU 来不及算完下一个采样点就到了（计算溢出），或者量化误差相对变大（ADC 位数不够用）。本课的目标：**给定被控对象和硬件条件，学会快速估算合理的采样周期范围。**
+
+## 采样周期的影响
+
+### ZOH 等效延迟
+
+零阶保持器（ZOH）在两个采样时刻之间保持输出不变，这等效于引入了 $T_s/2$ 的**平均延迟**。
+
+从频域看，ZOH 的频率响应为：
+
+$$
+H_{ZOH}(j\omega) = \frac{1 - e^{-j\omega T_s}}{j\omega} = T_s \cdot \text{sinc}\!\left(\frac{\omega T_s}{2}\right) \cdot e^{-j\omega T_s / 2}
+$$
+
+其中 $\text{sinc}(x) = \sin(x)/x$。
+
+关键观察：
+
+| 特性 | 表达式 | 低频近似 ($\omega \ll \omega_s$) |
+|------|--------|------|
+| 幅值 | $T_s \cdot \text{sinc}(\omega T_s / 2)$ | $\approx T_s$（常数增益） |
+| 相位 | $-\omega T_s / 2$ | 等效延迟 $T_s / 2$ |
+
+相位滞后 $-\omega T_s / 2$ 是采样带来的**固有代价**——它不是控制器的问题，而是"用数字代替模拟"这件事本身的代价。
+
+### 对稳定裕度的影响
+
+设连续系统的开环传递函数为 $L_c(s)$，增益穿越频率为 $\omega_{gc}$，相位裕度为 $PM_c$。离散化后（ZOH + 采样），在 $\omega_{gc}$ 处额外引入的相位滞后为：
+
+$$
+\Delta\phi = -\frac{\omega_{gc} T_s}{2} \text{ (rad)} = -\frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi} \text{ (°)}
+$$
+
+因此离散系统的相位裕度近似为：
+
+$$
+\boxed{PM_d \approx PM_c - \frac{\omega_{gc} T_s}{2} \times \frac{180}{\pi}}
+$$
+
+> 💡 **核心公式**：每增加 1 ms 的采样周期，在 $\omega_{gc} = 100$ rad/s 处，相位裕度减少约 $2.9°$。在 $\omega_{gc} = 1000$ rad/s 处，减少约 $28.6°$——带宽越高，对采样周期越敏感。
+
+这意味着：对于**高带宽系统**（如电机控制、伺服系统），采样周期必须非常小；对于**低带宽系统**（如温度控制、液位控制），采样周期可以大得多。
+
+### 对动态性能的影响
+
+采样周期不仅影响稳定性，还影响动态性能：
+
+1. **超调增大**：相位裕度减小 → 阻尼比减小 → 超调增大
+2. **上升时间变化**：采样延迟使系统响应变慢
+3. **纹波**：采样频率不够高时，控制量在采样点之间振荡（inter-sample ripple）
+4. **干扰抑制**：高频干扰的抑制能力受限于采样频率（$f_s/2$ 以上的干扰无法响应）
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider, IntSlider
+from IPython.display import display
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u91c7\u6837\u5468\u671f\u5bf9\u95ed\u73af\u6027\u80fd\u7684\u5f71\u54cd \u2014 \u4ea4\u4e92\u6f14\u793a =====
+# \u5bf9\u8c61: G(s) = 100/(s\u00b2 + 2s + 100) \u2014 \u03c9n=10 rad/s, \u03b6=0.1
+# PID \u63a7\u5236\u5668: Kp=5, Ki=10, Kd=0.5
+
+def plot_step_response(Ts_ms=5):
+    Ts = Ts_ms / 1000.0
+    
+    # \u5bf9\u8c61
+    G = ctrl.tf([100], [1, 2, 100])
+    
+    # PID \u63a7\u5236\u5668
+    Kp, Ki, Kd = 5.0, 10.0, 0.5
+    K_cont = ctrl.tf([Kd, Kp, Ki], [1, 0])
+    
+    # \u8fde\u7eed\u95ed\u73af
+    L_c = G * K_cont
+    T_c = ctrl.feedback(L_c, 1)
+    
+    # \u79bb\u6563\u95ed\u73af
+    Gz = ctrl.c2d(G, Ts, method='zoh')
+    Kz = ctrl.c2d(K_cont, Ts, method='tustin')
+    L_d = Gz * Kz
+    T_d = ctrl.feedback(L_d, 1)
+    
+    # \u6781\u70b9
+    poles = ctrl.pole(T_d)
+    max_pole = np.max(np.abs(poles))
+    
+    # \u76f8\u4f4d\u88d5\u5ea6
+    omega = np.logspace(-1, 3, 2000)
+    mag_d = np.abs(L_d(1j * omega))
+    phase_d = np.degrees(np.angle(L_d(1j * omega)))
+    idx_gc = np.where(np.array(mag_d).flatten() <= 1)[0]
+    if len(idx_gc) > 0:
+        wgc = omega[idx_gc[0]]
+        pm_d = 180 + np.array(phase_d).flatten()[idx_gc[0]]
+    else:
+        wgc = np.nan
+        pm_d = np.nan
+    
+    # \u9636\u8dc3\u54cd\u5e94
+    t = np.linspace(0, 5, 5000)
+    t_c, y_c = ctrl.step_response(T_c, T=t)
+    t_d, y_d = ctrl.step_response(T_d, T=t)
+    
+    stable = "\u2705 \u7a33\u5b9a" if max_pole < 1 else "\u274c \u4e0d\u7a33\u5b9a"
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    ax = axes[0]
+    ax.plot(t_c, y_c, 'k-', linewidth=2, alpha=0.4, label='\u8fde\u7eed')
+    color = 'blue' if max_pole < 1 else 'red'
+    ax.plot(t_d, y_d, '-', color=color, linewidth=1.5, label=f'\u79bb\u6563 Ts={Ts_ms}ms')
+    ax.axhline(y=1, color='gray', linestyle=':', alpha=0.5)
+    ax.set_xlabel('\u65f6\u95f4 (s)')
+    ax.set_ylabel('\u8f93\u51fa')
+    ax.set_title(f'\u95ed\u73af\u9636\u8dc3\u54cd\u5e94 (Ts={Ts_ms}ms, max|p|={max_pole:.4f}, {stable})')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(-0.5, 3)
+    
+    ax = axes[1]
+    theta = np.linspace(0, 2*np.pi, 100)
+    ax.plot(np.cos(theta), np.sin(theta), 'k--', alpha=0.3, label='\u5355\u4f4d\u5706')
+    poles_c = ctrl.pole(T_c)
+    ax.plot(np.real(poles_c), np.imag(poles_c), 'kx', markersize=10, label='\u8fde\u7eed\u6781\u70b9')
+    ax.plot(np.real(poles), np.imag(poles), 'o', color=color, markersize=8, label='\u79bb\u6563\u6781\u70b9')
+    ax.set_xlabel('Re(z)')
+    ax.set_ylabel('Im(z)')
+    ax.set_title(f'\u6781\u70b9\u5206\u5e03 (PM\u2248{pm_d:.1f}\u00b0)' if not np.isnan(pm_d) else '\u6781\u70b9\u5206\u5e03')
+    ax.set_aspect('equal')
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=8)
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # \u8fde\u7eed\u7cfb\u7edf\u53c2\u8003
+    mag_c = np.abs(L_c(1j * omega))
+    phase_c = np.degrees(np.angle(L_c(1j * omega)))
+    idx_gc_c = np.where(np.array(mag_c).flatten() <= 1)[0]
+    if len(idx_gc_c) > 0:
+        pm_c = 180 + np.array(phase_c).flatten()[idx_gc_c[0]]
+    else:
+        pm_c = np.nan
+    
+    if not np.isnan(pm_d) and not np.isnan(pm_c):
+        print(f"\u8fde\u7eed PM = {pm_c:.1f}\u00b0, \u79bb\u6563 PM \u2248 {pm_d:.1f}\u00b0, \u0394PM = {pm_d - pm_c:.1f}\u00b0")
+        pm_pred = pm_c - wgc * Ts / 2 * 180 / np.pi
+        print(f"\u7406\u8bba\u9884\u6d4b PM \u2248 {pm_pred:.1f}\u00b0 (\u516c\u5f0f: PMc - \u03c9gc\u00b7Ts/2)")
+
+interact(plot_step_response,
+         Ts_ms=IntSlider(value=5, min=1, max=100, step=1,
+                         description='Ts (ms)', continuous_update=False))`
+    }
+  ]}
+/>
+
+拖动滑块，观察：
+- $T_s = 1$ ms：响应几乎与连续系统一致
+- $T_s = 10$ ms：超调略增，极点开始偏离连续极点
+- $T_s = 50$ ms：超调明显增大，相位裕度显著下降
+- $T_s > 80$ ms：系统可能不稳定
+
+## 采样周期选择方法
+
+### Shannon 定理与经验法则
+
+**Shannon 采样定理**给出了无混叠的最低采样频率：
+
+$$
+f_s > 2 f_{max}
+$$
+
+其中 $f_{max}$ 是信号中最高频率分量。但这是**信号重建**的最低要求，不是控制系统的要求。
+
+为什么控制系统需要更高的采样率？因为控制不仅需要"看到"信号，还需要**足够的相位裕度**。如果只按 Shannon 采样（$f_s = 2f_c$），在 $\omega_c$ 处的相位滞后为：
+
+$$
+\Delta\phi = -\frac{\omega_c \cdot \pi/\omega_c}{2} = -\frac{\pi}{2} = -90°
+$$
+
+直接吃掉 90° 的相位裕度——大多数系统会不稳定。
+
+**工程经验法则**：
+
+$$
+\boxed{\omega_s \geq (10 \sim 30)\,\omega_c \quad \Leftrightarrow \quad T_s \leq \frac{2\pi}{(10 \sim 30)\,\omega_c}}
+$$
+
+其中 $\omega_c$ 是期望的闭环带宽。
+
+| 系数 | 适用场景 | 相位滞后 ($\omega_c$ 处) |
+|:---:|---------|:---:|
+| 10 | 低性能要求、慢系统 | $-18°$ |
+| 20 | 一般工业应用 | $-9°$ |
+| 30 | 高性能伺服 | $-6°$ |
+| 50+ | 精密定位、光学 | $-3.6°$ |
+
+### 基于相位裕度的计算
+
+更精确的方法是直接从相位裕度要求反推最大允许采样周期。
+
+**设计约束**：要求离散系统相位裕度 $PM_d \geq PM_{min}$。
+
+由 $PM_d \approx PM_c - \omega_{gc} T_s / 2 \times 180/\pi$，得：
+
+$$
+\boxed{T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}}
+$$
+
+**例**：连续系统 $PM_c = 60°$，$\omega_{gc} = 100$ rad/s，要求 $PM_d \geq 45°$。
+
+$$
+T_s \leq \frac{2 \times (60 - 45)}{100} \times \frac{\pi}{180} = \frac{30}{100} \times \frac{\pi}{180} = 0.00524 \text{ s} \approx 5.2 \text{ ms}
+$$
+
+取标准值 $T_s = 5$ ms。
+
+> 💡 **注意**：这个公式只考虑了 ZOH 的延迟。实际还有**计算延迟** $T_{comp}$ 和**通信延迟** $T_{comm}$，总延迟为 $(T_s/2 + T_{comp} + T_{comm})$，需要一并纳入。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider
+from IPython.display import display
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u76f8\u4f4d\u88d5\u5ea6 vs \u91c7\u6837\u5468\u671f \u2014 \u4ea4\u4e92\u8ba1\u7b97 =====
+
+def plot_pm_vs_Ts(Kp=5.0, Ki=10.0, Kd=0.5, wn=10.0, zeta=0.1):
+    # \u5bf9\u8c61: \u03c9n\u00b2/(s\u00b2 + 2\u03b6\u03c9n\u00b7s + \u03c9n\u00b2)
+    G = ctrl.tf([wn**2], [1, 2*zeta*wn, wn**2])
+    
+    # PID
+    K_cont = ctrl.tf([Kd, Kp, Ki], [1, 0])
+    L_c = G * K_cont
+    
+    # \u8fde\u7eed\u7cfb\u7edf\u76f8\u4f4d\u88d5\u5ea6
+    omega = np.logspace(-1, 3, 2000)
+    mag_c = np.abs(L_c(1j * omega))
+    phase_c = np.degrees(np.angle(L_c(1j * omega)))
+    idx_gc_c = np.where(np.array(mag_c).flatten() <= 1)[0]
+    if len(idx_gc_c) > 0:
+        wgc_c = omega[idx_gc_c[0]]
+        pm_c = 180 + np.array(phase_c).flatten()[idx_gc_c[0]]
+    else:
+        wgc_c = np.nan
+        pm_c = np.nan
+    
+    # \u626b\u63cf\u91c7\u6837\u5468\u671f
+    Ts_range = np.linspace(0.001, 0.2, 200)
+    pm_values = []
+    
+    for Ts_i in Ts_range:
+        Gz = ctrl.c2d(G, Ts_i, method='zoh')
+        Kz = ctrl.c2d(K_cont, Ts_i, method='tustin')
+        L_d = Gz * Kz
+        
+        mag_d = np.abs(L_d(1j * omega))
+        phase_d = np.degrees(np.angle(L_d(1j * omega)))
+        idx_gc = np.where(np.array(mag_d).flatten() <= 1)[0]
+        if len(idx_gc) > 0:
+            pm_d = 180 + np.array(phase_d).flatten()[idx_gc[0]]
+        else:
+            pm_d = np.nan
+        pm_values.append(pm_d)
+    
+    pm_arr = np.array(pm_values)
+    
+    # \u7406\u8bba\u9884\u6d4b
+    pm_pred = pm_c - wgc_c * Ts_range / 2 * 180 / np.pi
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    ax = axes[0]
+    ax.plot(Ts_range * 1000, pm_arr, 'b-', linewidth=2, label='\u5b9e\u9645 (\u79bb\u6563)')
+    ax.plot(Ts_range * 1000, pm_pred, 'r--', linewidth=2, label=f'\u7406\u8bba\u9884\u6d4b (PMc={pm_c:.1f}\u00b0)')
+    ax.axhline(y=0, color='red', linestyle=':', alpha=0.5, label='PM = 0\u00b0 (\u7a33\u5b9a\u8fb9\u754c)')
+    ax.axhline(y=45, color='green', linestyle=':', alpha=0.5, label='PM = 45\u00b0 (\u63a8\u8350\u6700\u5c0f\u503c)')
+    ax.set_xlabel('\u91c7\u6837\u5468\u671f Ts (ms)')
+    ax.set_ylabel('\u76f8\u4f4d\u88d5\u5ea6 PM (\u00b0)')
+    ax.set_title(f'\u76f8\u4f4d\u88d5\u5ea6 vs \u91c7\u6837\u5468\u671f (\u03c9gc={wgc_c:.1f} rad/s)')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(-60, max(90, pm_c + 10))
+    ax.set_xlim(0, 200)
+    
+    # \u53f3\u56fe: \u6700\u5927\u5141\u8bb8 Ts vs PM_min
+    ax = axes[1]
+    pm_min_range = np.linspace(5, pm_c - 1, 100)
+    ts_max = 2 * (pm_c - pm_min_range) / wgc_c * np.pi / 180
+    
+    ax.plot(pm_min_range, ts_max * 1000, 'b-', linewidth=2)
+    ax.axhline(y=1, color='gray', linestyle=':', alpha=0.5, label='1 ms')
+    ax.axhline(y=10, color='gray', linestyle=':', alpha=0.3, label='10 ms')
+    ax.set_xlabel('\u6700\u5c0f\u8981\u6c42 PM_min (\u00b0)')
+    ax.set_ylabel('\u6700\u5927\u5141\u8bb8 Ts (ms)')
+    ax.set_title(f'\u91c7\u6837\u5468\u671f\u4e0a\u9650 vs \u76f8\u4f4d\u88d5\u5ea6\u8981\u6c42')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(0, max(ts_max * 1000) * 1.1)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # \u8bfb\u6570
+    ts_at_45 = 2 * (pm_c - 45) / wgc_c * np.pi / 180 if pm_c > 45 else 0
+    print(f"\u8fde\u7eed\u7cfb\u7edf: PM = {pm_c:.1f}\u00b0, \u03c9gc = {wgc_c:.1f} rad/s")
+    print(f"\u8981\u6c42 PM \u2265 45\u00b0 \u65f6: Ts_max \u2248 {ts_at_45*1000:.1f} ms")
+    print(f"\u7ecf\u9a8c\u6cd5\u5219 (20\u00d7\u03c9c): Ts \u2248 {2*np.pi/(20*wn)*1000:.1f} ms")
+
+interact(plot_pm_vs_Ts,
+         Kp=FloatSlider(value=5.0, min=0.5, max=20, step=0.5, description='Kp'),
+         Ki=FloatSlider(value=10.0, min=0, max=50, step=1, description='Ki'),
+         Kd=FloatSlider(value=0.5, min=0, max=5, step=0.1, description='Kd'),
+         wn=FloatSlider(value=10.0, min=1, max=50, step=1, description='\u03c9n'),
+         zeta=FloatSlider(value=0.1, min=0.01, max=1.0, step=0.01, description='\u03b6'))`
+    }
+  ]}
+/>
+
+调节参数观察：
+- 增大 $K_p$ → 带宽增大 → 允许的最大 $T_s$ 减小
+- 增大 $\omega_n$ → 同理，对采样更快
+- 增大 $\zeta$ → 连续系统相位裕度增大 → 允许更大的 $T_s$
+
+### 硬件约束
+
+理论计算给出了 $T_s$ 的**上界**（不能太慢），但硬件给出了 $T_s$ 的**下界**（不能太快）：
+
+| 约束来源 | 典型值 | 约束条件 |
+|---------|--------|---------|
+| A/D 转换时间 | $1 \sim 100$ μs | $T_s > N_{ch} \times T_{AD}$ |
+| CPU 计算时间 | $0.1 \sim 10$ ms | $T_s > T_{compute} + T_{margin}$ |
+| 通信总线周期 | $0.5 \sim 10$ ms | $T_s = k \times T_{bus}$（整数倍） |
+| 传感器带宽 | $10$ Hz $\sim 10$ kHz | $T_s < 1/(2f_{sensor})$ |
+| 执行器更新率 | $1 \sim 10$ kHz | $T_s > 1/f_{actuator}$ |
+
+**计算延迟** $T_{compute}$ 常被忽略，但在高速系统中不可忽略：
+
+$$
+\text{总等效延迟} = \frac{T_s}{2} + T_{compute} + T_{comm}
+$$
+
+修正后的相位裕度公式：
+
+$$
+PM_d \approx PM_c - \left(\frac{T_s}{2} + T_{compute} + T_{comm}\right) \omega_{gc} \times \frac{180}{\pi}
+$$
+
+### 工程设计流程
+
+综合以上分析，采样周期选择的完整流程：
+
+```
+步骤 1: 确定闭环带宽 ωc（从连续设计得到）
+   ↓
+步骤 2: 相位裕度约束 → 计算 Ts_max
+   Ts_max = 2(PMc - PMmin) / ωgc × π/180
+   ↓
+步骤 3: 经验法则校验
+   Ts ≤ 2π / (20 × ωc)  （一般工业应用）
+   ↓
+步骤 4: 硬件约束校验
+   Ts ≥ max(T_AD, T_compute, T_comm)
+   Ts = k × T_bus（通信同步）
+   ↓
+步骤 5: 取标准值
+   在满足约束的前提下，选最小的标准周期
+   标准值: 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50 ms
+   ↓
+步骤 6: 验证
+   离散仿真，检查阶跃响应和稳定裕度
+```
+
+**典型系统的采样周期参考**：
+
+| 应用 | 带宽 $\omega_c$ | 典型 $T_s$ | $\omega_s/\omega_c$ |
+|------|:---:|:---:|:---:|
+| 温度控制 | 0.01 rad/s | 1 s | 600 |
+| 液位控制 | 0.1 rad/s | 100 ms | 600 |
+| 化工过程 | 0.5 rad/s | 50 ms | 120 |
+| 电机速度 | 50 rad/s | 1 ms | 120 |
+| 电机位置 | 200 rad/s | 0.1 ms | 300 |
+| 精密伺服 | 1000 rad/s | 0.01 ms | 600 |
+
+## 多速率采样系统
+
+### 多环系统采样率分配
+
+多环级联系统（如电流环 → 速度环 → 位置环）中，不同环路的带宽差异很大。如果所有环都用同一个采样率，要么内环采样率不够（性能差），要么外环采样率过高（浪费算力）。
+
+**设计原则**：
+
+1. **相邻环采样率比**：3 $\sim$ 10 倍
+2. **从内到外设计**：先设计最内环（最快），闭合后作为外环的等效对象
+3. **内环等效**：内环闭合后，等效对象的带宽 ≈ 内环闭环带宽
+4. **同步**：所有环的采样时刻必须由同一硬件定时器触发，避免抖动
+
+```
+位置环 Ts = 1 ms (1 kHz)
+  ↓ 设定值
+速度环 Ts = 0.1 ms (10 kHz)
+  ↓ 设定值
+电流环 Ts = 0.01 ms (100 kHz)
+```
+
+> 💡 **为什么是 3-10 倍？** 内环采样率太低，外环看到的"等效对象"会引入过多相位滞后。3 倍是最低要求（内环相位滞后在外环带宽处 < 10°），10 倍是推荐值（内环几乎"透明"）。
+
+### 同步与调度
+
+多速率系统的实现需要注意**调度**问题：
+
+1. **定时器同步**：所有控制环由同一个基础定时器驱动。例如基础定时器 0.01 ms，电流环每次触发，速度环每 10 次触发，位置环每 100 次触发。
+
+2. **数据新鲜度**：外环读取内环输出时，要确保读到的是最新值（避免使用上一周期的旧数据）。
+
+3. **优先级**：内环优先级 > 外环优先级（内环的延迟对性能影响更大）。
+
+4. **抖动**：实际采样时刻与理想时刻的偏差称为**抖动**（jitter）。抖动等效为额外的采样延迟变化，会引入相位噪声。一般要求抖动 < $T_s / 10$。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider, IntSlider
+from IPython.display import display
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== \u591a\u7387\u7ea7\u8054\u63a7\u5236\u4eff\u771f =====
+# \u7535\u673a\u63a7\u5236: \u7535\u6d41\u73af(\u5185) \u2192 \u901f\u5ea6\u73af(\u4e2d) \u2192 \u4f4d\u7f6e\u73af(\u5916)
+
+def simulate_cascade(Ts_pos_ms=1.0, Ts_vel_ms=0.1, Ts_cur_ms=0.01):
+    Ts_pos = Ts_pos_ms / 1000
+    Ts_vel = Ts_vel_ms / 1000
+    Ts_cur = Ts_cur_ms / 1000
+    dt = Ts_cur  # \u4eff\u771f\u6b65\u957f = \u6700\u5feb\u73af\u7684\u91c7\u6837\u5468\u671f
+    t_end = 0.5
+    N = int(t_end / dt)
+    N_pos = int(Ts_pos / dt)
+    N_vel = int(Ts_vel / dt)
+    N_cur = int(Ts_cur / dt)
+    
+    # \u63a7\u5236\u5668\u53c2\u6570
+    Kp_pos, Ki_pos, Kd_pos = 8.0, 1.0, 0.05
+    Kp_vel, Ki_vel, Kd_vel = 5.0, 10.0, 0.01
+    Kp_cur, Ki_cur, Kd_cur = 2.0, 50.0, 0.001
+    
+    # \u72b6\u6001
+    pos = 0.0
+    vel = 0.0
+    cur = 0.0
+    u_vol = 0.0
+    
+    # \u79ef\u5206\u5668
+    int_pos = 0.0
+    int_vel = 0.0
+    int_cur = 0.0
+    e_pos_prev = 0.0
+    e_vel_prev = 0.0
+    e_cur_prev = 0.0
+    
+    r_vel = 0.0
+    r_cur = 0.0
+    
+    r_pos = 1.0  # \u76ee\u6807\u4f4d\u7f6e
+    
+    t_log = []
+    pos_log = []
+    vel_log = []
+    cur_log = []
+    
+    for step in range(N):
+        t = step * dt
+        
+        # \u5916\u73af: \u4f4d\u7f6e\u73af
+        if step % N_pos == 0:
+            e_pos = r_pos - pos
+            int_pos += Ki_pos * Ts_pos * e_pos
+            r_vel = Kp_pos * e_pos + int_pos + Kd_pos * (e_pos - e_pos_prev) / Ts_pos
+            r_vel = np.clip(r_vel, -100, 100)
+            e_pos_prev = e_pos
+        
+        # \u4e2d\u73af: \u901f\u5ea6\u73af
+        if step % N_vel == 0:
+            e_vel = r_vel - vel
+            int_vel += Ki_vel * Ts_vel * e_vel
+            r_cur = Kp_vel * e_vel + int_vel + Kd_vel * (e_vel - e_vel_prev) / Ts_vel
+            r_cur = np.clip(r_cur, -200, 200)
+            e_vel_prev = e_vel
+        
+        # \u5185\u73af: \u7535\u6d41\u73af
+        if step % N_cur == 0:
+            e_cur = r_cur - cur
+            int_cur += Ki_cur * Ts_cur * e_cur
+            u_vol = Kp_cur * e_cur + int_cur + Kd_cur * (e_cur - e_cur_prev) / Ts_cur
+            u_vol = np.clip(u_vol, -400, 400)
+            e_cur_prev = e_cur
+        
+        # \u7535\u673a\u6a21\u578b
+        # \u7535\u6c14: L di/dt = -Ri - Ke\u00b7\u03c9 + u  (L=0.001, R=0.5, Ke=0.01)
+        # \u673a\u68b0: J d\u03c9/dt = Kt\u00b7i - B\u00b7\u03c9  (J=0.01, Kt=0.01, B=0.001)
+        # \u4f4d\u7f6e: dx/dt = \u03c9
+        di = (-0.5 * cur - 0.01 * vel + u_vol) / 0.001
+        dw = (0.01 * cur - 0.001 * vel) / 0.01
+        
+        cur += di * dt
+        vel += dw * dt
+        pos += vel * dt
+        
+        if step % max(1, N_vel // 2) == 0:
+            t_log.append(t)
+            pos_log.append(pos)
+            vel_log.append(vel)
+            cur_log.append(cur)
+    
+    fig, axes = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
+    
+    ax = axes[0]
+    ax.plot(t_log, pos_log, 'b-', linewidth=1.5)
+    ax.axhline(y=r_pos, color='r', linestyle='--', alpha=0.5, label='\u76ee\u6807')
+    ax.set_ylabel('\u4f4d\u7f6e (rad)')
+    ax.set_title(f'\u591a\u7387\u7ea7\u8054\u63a7\u5236 (\u4f4d\u7f6e\u73af {1/Ts_pos:.0f}Hz / \u901f\u5ea6\u73af {1/Ts_vel:.0f}Hz / \u7535\u6d41\u73af {1/Ts_cur:.0f}Hz)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    ax = axes[1]
+    ax.plot(t_log, vel_log, 'g-', linewidth=1)
+    ax.set_ylabel('\u901f\u5ea6 (rad/s)')
+    ax.set_title('\u901f\u5ea6\u54cd\u5e94')
+    ax.grid(True, alpha=0.3)
+    
+    ax = axes[2]
+    ax.plot(t_log, cur_log, 'r-', linewidth=1)
+    ax.set_ylabel('\u7535\u6d41 (A)')
+    ax.set_title('\u7535\u6d41\u54cd\u5e94')
+    ax.grid(True, alpha=0.3)
+    
+    ax = axes[3]
+    ratios = [Ts_pos/Ts_vel, Ts_vel/Ts_cur]
+    ax.bar(['\u4f4d\u7f6e/\u901f\u5ea6', '\u901f\u5ea6/\u7535\u6d41'], ratios, color=['#4ecdc4', '#ff6b6b'])
+    ax.axhline(y=3, color='gray', linestyle=':', label='\u6700\u5c0f\u63a8\u8350 (3x)')
+    ax.axhline(y=10, color='gray', linestyle='--', label='\u63a8\u8350 (10x)')
+    ax.set_ylabel('\u91c7\u6837\u7387\u6bd4')
+    ax.set_title('\u76f8\u90bb\u73af\u91c7\u6837\u7387\u6bd4')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    pos_arr = np.array(pos_log)
+    os_val = (np.max(pos_arr) - r_pos) / r_pos * 100
+    ess = abs(r_pos - pos_arr[-1])
+    print(f"\u4f4d\u7f6e\u73af\u8d85\u8c03: {os_val:.1f}%, \u7a33\u6001\u8bef\u5dee: {ess:.4f}")
+    print(f"\u91c7\u6837\u7387\u6bd4: \u4f4d\u7f6e/\u901f\u5ea6 = {ratios[0]:.0f}x, \u901f\u5ea6/\u7535\u6d41 = {ratios[1]:.0f}x")
+    if ratios[0] < 3 or ratios[1] < 3:
+        print("\u26a0\ufe0f \u91c7\u6837\u7387\u6bd4 < 3\uff0c\u5efa\u8bae\u589e\u5927\u5185\u73af\u91c7\u6837\u7387\u6216\u51cf\u5c0f\u5916\u73af\u91c7\u6837\u7387")
+
+interact(simulate_cascade,
+         Ts_pos_ms=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='Ts\u4f4d\u7f6e(ms)'),
+         Ts_vel_ms=FloatSlider(value=0.1, min=0.01, max=1, step=0.01, description='Ts\u901f\u5ea6(ms)'),
+         Ts_cur_ms=FloatSlider(value=0.01, min=0.001, max=0.1, step=0.001, description='Ts\u7535\u6d41(ms)'))`
+    }
+  ]}
+/>
+
+调节三个环的采样周期，观察：
+- 当采样率比 < 3 时，系统性能下降，可能出现振荡
+- 当采样率比 > 10 时，内环几乎"透明"，外环性能接近连续系统
+- 极端情况（如位置环 10ms、电流环 0.1ms）展示多速率的优势
+
+## 深入讨论
+
+### 计算延迟的影响
+
+在很多教材中，只考虑 ZOH 的 $T_s/2$ 延迟。但实际系统中，**计算延迟**不可忽视：
+
+```
+采样时刻 tk ──→ A/D 转换 ──→ 计算控制量 ──→ D/A 输出 ──→ 下一采样时刻 tk+1
+              T_AD           T_compute        T_DA
+```
+
+从采样到输出生效的总延迟为 $T_{AD} + T_{compute} + T_{DA}$。如果这个延迟接近 $T_s$，等效延迟就从 $T_s/2$ 变成接近 $T_s$，相位裕度损失翻倍。
+
+**解决方案**：
+1. **快速 CPU**：$T_{compute} \ll T_s$
+2. **预测控制**：用模型预测当前时刻的状态，补偿计算延迟
+3. **中断优化**：控制算法在高优先级中断中执行
+
+### 非均匀采样
+
+理论上，非均匀采样（non-uniform sampling）可以在平均采样率更低的情况下保持稳定性。这是因为非均匀采样的"频谱泄漏"不同于均匀采样的周期性混叠。
+
+但工程上很少使用，原因：
+- 调度复杂，难以保证实时性
+- 分析和设计工具不成熟
+- 硬件定时器天然产生均匀采样
+
+### 采样周期与量化精度的权衡
+
+采样周期和 ADC 位数之间存在隐式权衡：
+
+- 采样越快 → 每次转换时间越短 → ADC 分辨率越低（位数少）
+- 采样越慢 → 可以用更高分辨率的 ADC → 量化误差更小
+
+对于精密定位系统（如光刻机），采样周期 1 ms、ADC 24 bit 是常见配置——因为低速允许高分辨率。
+
+## 小结
+
+| 要点 | 内容 |
+|------|------|
+| ZOH 延迟 | 等效 $T_s/2$，相位滞后 $-\omega T_s/2$ |
+| 相位裕度 | $PM_d \approx PM_c - \omega_{gc} T_s / 2 \times 180/\pi$ |
+| Shannon 定理 | $f_s > 2f_{max}$（最低要求，不够用） |
+| 经验法则 | $\omega_s \geq (10 \sim 30)\omega_c$ |
+| 硬件约束 | $T_s \geq \max(T_{AD}, T_{compute}, T_{comm})$ |
+| 多速率 | 相邻环采样率比 3-10 倍，从内到外设计 |
+| 计算延迟 | 高速系统中不可忽略，等效为额外延迟 |
+
+## 习题
+
+1. 某连续系统 $G(s) = \frac{10}{s(s+2)}$，采用 PI 控制器 $K(s) = 2 + \frac{5}{s}$。连续系统的相位裕度 $PM_c \approx 51.3°$，增益穿越频率 $\omega_{gc} \approx 4.5$ rad/s。若要求离散系统相位裕度 $PM_d \geq 40°$，求最大允许采样周期 $T_s$。
+
+2. 一个三环级联系统：电流环带宽 500 rad/s，速度环带宽 50 rad/s，位置环带宽 5 rad/s。按经验法则，三个环的采样周期各应取多少？采样率比是否满足要求？
+
+3. 某系统 $\omega_{gc} = 200$ rad/s，$PM_c = 55°$。已知 $T_{AD} = 10$ μs，$T_{compute} = 0.5$ ms，$T_{comm} = 0.2$ ms。考虑所有延迟，要求 $PM_d \geq 40°$，求最大允许 $T_s$。
+
+4. 解释为什么 Shannon 采样定理（$f_s > 2f_{max}$）对控制系统不够用，而需要 $\omega_s \geq (10 \sim 30)\omega_c$。
+
+## 答案
+
+**习题 1**：
+
+由相位裕度约束公式：
+
+$$
+T_s \leq \frac{2(PM_c - PM_{min})}{\omega_{gc}} \times \frac{\pi}{180}
+$$
+
+代入 $PM_c = 51.3°$，$PM_{min} = 40°$，$\omega_{gc} = 4.5$ rad/s：
+
+$$
+T_s \leq \frac{2 \times (51.3 - 40)}{4.5} \times \frac{\pi}{180} = \frac{2 \times 11.3}{4.5} \times 0.01745 = 5.02 \times 0.01745 \approx 0.0877 \text{ s}
+$$
+
+取标准值 $T_s = 50$ ms 或 $20$ ms。
+
+校验经验法则：闭环带宽 $\omega_c \approx \omega_{gc} = 4.5$ rad/s，$T_s = 50$ ms 时 $\omega_s = 2\pi/0.05 = 125.7$ rad/s，$\omega_s/\omega_c = 27.9$，满足 $10 \sim 30$ 的范围。
+
+**最大允许采样周期 $T_s \approx 87$ ms，工程上取 $T_s = 50$ ms。**
+
+**习题 2**：
+
+按经验法则 $\omega_s \geq 20\omega_c$（取中间值）：
+
+- 电流环：$T_{s,cur} \leq \frac{2\pi}{20 \times 500} = 0.628$ ms，取 $T_s = 0.5$ ms（$f_s = 2$ kHz）
+- 速度环：$T_{s,vel} \leq \frac{2\pi}{20 \times 50} = 6.28$ ms，取 $T_s = 5$ ms（$f_s = 200$ Hz）
+- 位置环：$T_{s,pos} \leq \frac{2\pi}{20 \times 5} = 62.8$ ms，取 $T_s = 50$ ms（$f_s = 20$ Hz）
+
+采样率比：
+- 电流/速度：$5/0.5 = 10$ 倍 ✓
+- 速度/位置：$50/5 = 10$ 倍 ✓
+
+均满足 3-10 倍的要求。
+
+**习题 3**：
+
+总等效延迟 $\tau = T_s/2 + T_{compute} + T_{comm} = T_s/2 + 0.5 + 0.2 = T_s/2 + 0.7$ ms。
+
+相位裕度约束：
+
+$$
+PM_d \approx PM_c - \tau \cdot \omega_{gc} \times \frac{180}{\pi} \geq 40°
+$$
+
+$$
+55 - (T_s/2 + 0.7 \times 10^{-3}) \times 200 \times \frac{180}{\pi} \geq 40
+$$
+
+$$
+(T_s/2 + 0.0007) \times 200 \times 57.3 \leq 15
+$$
+
+$$
+T_s/2 + 0.0007 \leq \frac{15}{200 \times 57.3} = 0.001309
+$$
+
+$$
+T_s/2 \leq 0.001309 - 0.0007 = 0.000609
+$$
+
+$$
+T_s \leq 0.001218 \text{ s} \approx 1.2 \text{ ms}
+$$
+
+取标准值 $T_s = 1$ ms。
+
+**注意**：如果不考虑计算和通信延迟，$T_s$ 上限为 $2 \times 15 / (200 \times 57.3) = 2.6$ ms。计算延迟使允许的采样周期缩小了一半——在高速系统中，这部分延迟不可忽略。
+
+**习题 4**：
+
+Shannon 定理 $f_s > 2f_{max}$ 保证的是信号无混叠重建——这是**信息论**的最低要求。但控制系统的目标不是重建信号，而是**维持稳定并保证性能**。
+
+关键区别在于**相位**：
+- 在 $f_s = 2f_c$ 时，ZOH 在 $\omega_c$ 处的相位滞后为 $-\omega_c \cdot T_s/2 = -\omega_c \cdot \pi/(2\omega_c) = -\pi/2 = -90°$
+- 这 90° 的相位滞后直接吃掉相位裕度，大多数系统会不稳定
+
+工程上需要 $\omega_s \geq (10 \sim 30)\omega_c$，使得在 $\omega_c$ 处的相位滞后仅为 $-18° \sim -6°$，对相位裕度的影响可控。
+
+简言之：Shannon 定理保证"看得见"，经验法则保证"控得住"。

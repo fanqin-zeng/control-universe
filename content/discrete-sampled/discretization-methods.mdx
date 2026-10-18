@@ -1,264 +1,200 @@
 ---
-title: "数字控制器设计"
-description: "连续控制器如何变成数字代码——四种离散化方法对比、直接数字设计思路、数字PID工程实现（抗积分饱和、微分滤波、无扰切换），以及完整的设计流程。"
+title: "离散化方法"
+description: "把连续方程变成逐步更新：欧拉、Tustin、零极点匹配与预扭曲，并用电机PI核对差分实现、采样性能和工程边界。"
 ---
 
-# 数字控制器设计
+# 离散化方法
 
-前两节课解决了两个基础问题：采样与量化把信号从连续世界搬到了数字世界，Z 变换给了我们分析离散系统的数学工具。现在到了最关键的一步：**怎么设计一个能跑在芯片上的控制器？**
+上一课已经看到，采样周期变了，同一套控制参数可能得到不同的闭环极点。现在继续追问：连续控制器写着积分和微分，芯片每隔一段时间才算一次，该怎么把它们变成加减乘除？
 
-> 📖 本课需要 [采样与量化](/discrete-sampled/discrete-time-freq) 和 [Z变换基础](/discrete-sampled/z-transform-analysis) 的前置知识，以及经典控制中 PID 和频率响应分析的基础。
+先想象电机正在减速：如果当前转速已知，怎样估计下一次采样时的转速？从这个简单问题出发，我们推导几种更新规则，再回到电机的PI控制。以下 $T_s$ 是采样间隔，单位s；零阶保持表示两次更新之间保持上一条控制命令。
 
-工程上有两条路线：
-
-1. **仿真法（Emulation）**：先在连续域设计好控制器 $K(s)$，再离散化成 $K(z)$。简单、直觉好，是工业界的主流做法。
-2. **直接数字设计（Direct Design）**：直接在 z 域设计 $K(z)$，把采样延迟当作已知特性。理论更优，但需要 z 域直觉。
-
-本节以仿真法为主线，完整讲解：
-
-1. 四种离散化方法的原理和对比
-2. Tustin 预畸变的操作步骤
-3. 直接数字设计的基本思路
-4. 数字 PID 的工程实现（抗积分饱和、微分滤波、无扰切换）
-5. 完整设计流程：连续设计 → 离散化 → 工程实现 → 验证
-
-学完后，你应该能回答：
-- 四种离散化方法该选哪个？
-- 离散化后性能差了多少？怎么补偿？
-- 执行器饱和时积分器饱和怎么办？
-- 从公式到代码，中间还有多少步？
+<span id="数字控制器设计" />
 
 ## 离散化方法
 
 ### 问题描述
 
-假设已经设计好连续控制器 $K(s)$，采样周期为 $T_s$。目标是找到离散控制器 $K(z)$，使得数字控制系统的行为尽可能接近连续系统。
+已知连续控制器 $C(s)$，希望构造可逐步执行的 $C(z)$。欧拉和Tustin可从积分近似推导；零极点匹配则从模态位置出发。它们并非同一种数值积分，也没有脱离对象、频段和实现条件的统一冠军。
 
-核心问题是：**用什么规则把 $s$ 域的运算变成 $z$ 域的运算？**
-
-不同的规则就是不同的离散化方法。每种方法本质上是选择不同的**数值积分方法**来近似连续控制器的微分/积分运算。
+先用零输入衰减 $\dot x=-ax$、a>0作比较。精确采样是 $x[k+1]=e^{-aT_s}x[k]$。下面四个每步乘数都描述这一模态，**不是完整反馈系统的结论**。
 
 ### 前向欧拉法
 
-**原理**：用前向差分近似微分
+用当前斜率向前走一步：
 
 $$
-\dot{x}(t) \approx \frac{x[k+1] - x[k]}{T_s}
+x[k+1]=x[k]+T_s\dot x[k]=(1-aT_s)x[k],\qquad
+s\approx\frac{z-1}{T_s}.
 $$
 
-对应 $s$ 域的替换：
+右侧只用当前信息，完全可以因果实现。对这个衰减模态，严格稳定要求 $|1-aT_s|\lt 1$，也就是 $0\lt aT_s\lt 2$。不能因为公式左边出现k+1，就说它“要看未来”。
 
-$$
-s \approx \frac{z - 1}{T_s}
-$$
-
-即 $K(z) = K\!\left(s = \frac{z-1}{T_s}\right)$。
-
-**稳定域分析**：$z = 1 + sT_s$。s 平面左半部分（$\text{Re}(s) < 0$）映射到 $|z - 1| < 1$——以 $z = 1$ 为圆心、半径为 1 的圆。这个圆**不完全在单位圆内**！
-
-```
-        Im(z)
-         ↑
-    ┌────┼────┐
-    │  ╱      ╲
-    │╱  单位圆  ╲
- ───●───────────●──→ Re(z)
-  0 │╲    1    ╱│
-    │  ╲     ╱  │
-    │    ╲ ╱    │
-    └─────●─────┘
-       前向欧拉
-       稳定域
-```
-
-**结论**：如果 $T_s$ 较大，某些稳定的连续控制器离散化后可能不稳定。工程上**几乎不使用**前向欧拉。
-
-> 💡 **记忆技巧**：前向欧拉"看未来"（用 $x[k+1]$ 算微分），因果系统不能看未来，所以它不稳定。
+对一般连续极点s，令 $\lambda=sT_s$；前向欧拉的绝对稳定区域为 $|1+\lambda|\lt 1$，是λ平面上以−1为圆心、半径1的圆。它不是整个连续左半平面在z平面上的映像。
 
 ### 后向欧拉法
 
-**原理**：用后向差分近似微分
+用下一步斜率写方程，再解出下一步：
 
 $$
-\dot{x}(t) \approx \frac{x[k] - x[k-1]}{T_s}
+x[k+1]=x[k]-aT_sx[k+1]
+\quad\Longrightarrow\quad x[k+1]=\frac{x[k]}{1+aT_s},\qquad
+s\approx\frac{1-z^{-1}}{T_s}.
 $$
 
-对应替换：
-
-$$
-s \approx \frac{z - 1}{T_s z} = \frac{1 - z^{-1}}{T_s}
-$$
-
-**稳定域**：$z = \frac{1}{1 - sT_s}$。s 平面左半部分映射到 $|z| < \frac{1}{|1 - sT_s|} < 1$（因为 $\text{Re}(s) < 0$ 时 $|1 - sT_s| > 1$）。**稳定域完全在单位圆内**——稳定性保持。
-
-**缺点**：频率响应畸变大。后向欧拉在高频把增益压得很低，相位也偏差大。对于需要精确频率响应的系统（比如谐振抑制），效果不好。
-
-**适用场景**：刚性系统（对频率精度要求不高，但需要绝对稳定）。
+虽然推导写了“下一步”，解出的线性递推同样因果。连续左半平面极点映为 $z=1/(1-sT_s)$，模严格小于1；这保持单个稳定模态，但不保证任意采样闭环都稳定。较强的数值衰减也不等于频率响应更准确。
 
 ### Tustin 法（双线性变换）
 
-**原理**：用梯形积分近似
+用两端斜率的平均值，也就是梯形积分：
 
 $$
-x(kT_s) = \int_0^{kT_s} \dot{x}(\tau)\,d\tau \approx \sum_{j=1}^{k} \frac{\dot{x}[j] + \dot{x}[j-1]}{2} T_s
+x[k+1]-x[k]\approx\frac{T_s}{2}(\dot x[k+1]+\dot x[k]),\qquad
+s\approx\frac2{T_s}\frac{z-1}{z+1}.
 $$
 
-对应替换：
+衰减模态的每步乘数为 $(1-aT_s/2)/(1+aT_s/2)$。它把左半平面映到单位圆内；当aTs很大时乘数可能接近−1，出现精确解中没有的交替，不能只凭“保稳定”就说精度够用。
+
+取a=10/s、Ts=0.01s，前向欧拉、后向欧拉、Tustin、精确采样的乘数依次为 **0.9、0.909091、0.904762、0.904837**。若Ts增至0.25s，前向欧拉变成−1.5，数值轨迹发散，而原连续过程仍在衰减。
+
+<DiscretizationModeExplorer />
+
+![从连续模态到离散更新，区分保持对象与离散控制器](/images/discretization-workflow.svg)
+
+Tustin没有脉冲不变法那种频谱叠加，但会扭曲频率。设连续角频率为 $\omega_a$，数字每步相角为Ω，数字物理角频率为 $\omega_d=\Omega/T_s$：
 
 $$
-s = \frac{2}{T_s} \cdot \frac{z - 1}{z + 1}
+\omega_a=\frac2{T_s}\tan\frac{\Omega}{2},\qquad
+\omega_d=\frac2{T_s}\arctan\frac{\omega_aT_s}{2}.
 $$
 
-反解 $z$：$z = \frac{1 + sT_s/2}{1 - sT_s/2}$
+第一个式子从数字频率映到连续频率，第二个反向。令 $x=\omega_dT_s$，下表列的是**反向比值** $\omega_a/\omega_d$：
 
-**这是最常用的离散化方法**，原因：
+| x | 比值 | 超过1的百分比 |
+|---|---|---|
+| 0.1 | 1.000834 | 0.0834% |
+| 0.3 | 1.007568 | 0.7568% |
+| 0.5 | 1.021368 | 2.1368% |
+| 1 | 1.092605 | 9.2605% |
+| π/2 | 1.273240 | 27.3240% |
 
-1. **保结构**：稳定 → 稳定，最小相位 → 最小相位
-2. **虚轴精确映射到单位圆**：$s = j\omega$ 映射到 $|z| = 1$
-3. **无频率混叠**（相比脉冲不变法）
-
-**频率畸变**：$s = j\omega$ 映射到 $z = e^{j\omega_d T_s}$，其中
-
-$$
-\omega_d = \frac{2}{T_s} \tan\left(\frac{\omega T_s}{2}\right)
-$$
-
-低频时 $\omega_d \approx \omega$（三阶误差），高频时 $\omega_d > \omega$（畸变增大）。
-
-| $\omega T_s$ | $\omega_d / \omega$ | 误差 |
-|:---:|:---:|:---:|
-| 0.1 | 1.0008 | 0.08% |
-| 0.3 | 1.0076 | 0.76% |
-| 0.5 | 1.0215 | 2.15% |
-| 1.0 | 1.0948 | 9.48% |
-| $\pi/2$ | 1.5708 | 57% |
-
-当 $\omega T_s < 0.3$（采样频率 > 20 倍信号频率）时，畸变可以忽略。
+这些是映射误差，不能直接当作某个闭环的幅值误差。
 
 ### Tustin 预畸变
 
-当采样频率不够高时，Tustin 的频率畸变不可忽略。**预畸变（Pre-warping）**修正关键频率点。
-
-**操作步骤**：
-
-假设连续控制器 $K(s)$ 在频率 $\omega_0$ 处有关键特征（比如积分截止频率、谐振频率），希望在离散化后精确保持该频率处的响应。
-
-**步骤 1**：计算预畸变频率
+本课把prewarping称为预扭曲。若希望数字频率ω0处与连续ω0处的**复频响**相同，可直接取
 
 $$
-\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right)
+s=\kappa\frac{z-1}{z+1},\qquad
+\kappa=\frac{\omega_0}{\tan(\omega_0T_s/2)},\qquad 0\lt \omega_0T_s\lt \pi.
 $$
 
-**步骤 2**：在 $K(s)$ 中，把 $\omega_0$ 替换为 $\omega_0'$
+因为代入 $z=e^{j\omega_0T_s}$ 后恰好得到s=jω0，所以该点幅值与相位同时匹配。其它频率仍有误差。
 
-例如，如果 $K(s)$ 中有因子 $(s^2 + \omega_0^2)$（陷波滤波器），替换为 $(s^2 + \omega_0'^2)$。
-
-**步骤 3**：对修正后的 $K'(s)$ 做 Tustin 变换
-
-这样得到的 $K(z)$ 在 $\omega_0$ 处的频率响应与原始 $K(s)$ 精确匹配。
-
-> 💡 **工程建议**：如果采样频率 > 30 倍闭环带宽，可以不做预畸变。如果在 10-30 倍之间，对关键频率做预畸变。如果 < 10 倍，考虑用直接数字设计。
+也可以先对连续控制器的**整个s变量**作缩放，再用普通Tustin：令 $\lambda=2/T_s$，构造 $C'(s)=C((\kappa/\lambda)s)$。这不是随意挑一个零点或谐振参数替换；只有变换等价时才成立。习题2保留一个可这样简化的PI例子。
 
 ### 零极点匹配法
 
-**原理**：直接把 s 域的零极点映射到 z 域。
+把有限连续零极点映为 $z_i=e^{s_iT_s}$，再指定增益匹配规则。零极点位置不能单独确定整个数字传递函数；无穷远零点如何补入也取决于具体约定，不能一律说映到z=0。
 
-映射规则：$z_i = e^{s_i T_s}$（其中 $s_i$ 是 $K(s)$ 的零点或极点）。
+本课的PI $C(s)=K_p+K_i/s$ 没有多余的无穷远零点，采用
 
-**额外规则**：
-- s 域在无穷远处的零点（分子阶数 < 分母阶数）映射到 $z = 0$
-- 增益在关键频率处匹配（通常选 DC 或带宽频率 $\omega_c$）：$|K(z)|_{z=e^{j\omega_c T_s}} = |K(s)|_{s=j\omega_c}$
+$$
+C_m(z)=g\frac{z-q}{z-1},\qquad q=e^{-(K_i/K_p)T_s}.
+$$
 
-**优点**：直观，保留了零极点的物理意义。
+积分器的DC增益无限大，不能拿“∞比∞”算g。本课统一在ωr=1rad/s处匹配幅值：
 
-**缺点**：对于没有明确零极点形式的控制器，操作不便。
+$$
+g=|C(j\omega_r)|\frac{|e^{j\omega_rT_s}-1|}{|e^{j\omega_rT_s}-q|}.
+$$
+
+这只保证该点幅值相同，不保证该点相位也相同。它也不等于对保持输入的精确ZOH等效。
 
 ### 四种方法对比
 
-| 方法 | s → z 映射 | 稳定性保持 | 频率精度 | 工程使用 |
-|------|-----------|:---:|:---:|:---:|
-| 前向欧拉 | $z = 1 + sT_s$ | ✗ | 差 | 几乎不用 |
-| 后向欧拉 | $z = \frac{1}{1-sT_s}$ | ✓ | 一般 | 刚性系统 |
-| Tustin | $z = \frac{1+sT_s/2}{1-sT_s/2}$ | ✓ | 好（需预畸变） | **最常用** |
-| 零极点匹配 | $z_i = e^{s_i T_s}$ | ✓ | 好 | 特定场景 |
+| 方法 | 本课规则 | 使用时先核对 |
+|---|---|---|
+| 前向欧拉 | 当前斜率显式更新 | 步长能否落在绝对稳定区 |
+| 后向欧拉 | 下一步斜率方程求解 | 数值衰减与频率偏差是否可接受 |
+| Tustin | 梯形积分、必要时单点预扭曲 | 频率方向、目标频率及额外零点 |
+| 零极点匹配 | 有限零极点指数映射＋声明增益规则 | 积分器、补零和匹配频率的约定 |
 
-> 💡 **默认选择**：Tustin + 预畸变。这是 MATLAB `c2d` 函数的默认方法，也是工业控制器的标准做法。
+库接口也要写清方法。以下使用`euler`、`backward_diff`、`tustin`；`python-control.c2d`默认是`zoh`，不是“Tustin＋预扭曲”。
+
+实验1保留旧稿PI参数Kp=0.005、Ki=0.05、Ts=0.01s，比较同一控制器的四种数字模型。matched在1rad/s处的幅值持平；其它频率同时报告幅值和相位，不能只挑一个指标排名。
 
 <JupyterNotebook
-  language="python"
+  title="实验1：四种PI离散化"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+from scipy.optimize import brentq
+import json
+plt.rcParams['font.sans-serif']=['DejaVu Sans']
+plt.rcParams['axes.unicode_minus']=False
+
+def matched_pi(kp,ki,T,wref=1.):
+    q=np.exp(-ki/kp*T);zref=np.exp(1j*wref*T)
+    gain=abs(kp+ki/(1j*wref))*abs(zref-1)/abs(zref-q)
+    return ctrl.tf([gain,-gain*q],[1.,-1.],T),float(q),float(gain)
+
+def motor(T,kp=.005,ki=.05,gain=1000.,rate=10.):
+    G=ctrl.tf([gain],[1.,rate]);C=ctrl.tf([kp,ki],[1.,0.])
+    Gd=ctrl.c2d(G,T,method='zoh');Cd=ctrl.c2d(C,T,method='tustin')
+    return G,C,Gd,Cd,ctrl.feedback(Gd*Cd,1)
+
+def crossover(Gd,Cd,T):
+    def H(w):return complex(Gd(np.exp(1j*w*T))*Cd(np.exp(1j*w*T)))
+    grid=np.geomspace(1e-4,np.pi/T*(1-1e-8),1000)
+    f=np.log([abs(H(w)) for w in grid]);cross=np.where(f[:-1]*f[1:]<0)[0]
+    if len(cross)!=1:raise ValueError('Expected one gain crossover')
+    i=int(cross[0]);wc=brentq(lambda w:np.log(abs(H(w))),grid[i],grid[i+1],xtol=1e-12)
+    return float(180+np.angle(H(wc),deg=True)),float(wc)
+
+def bandwidth(closed,T):
+    dc=float(np.real(closed(1)))
+    return float(brentq(lambda w:abs(complex(closed(np.exp(1j*w*T))))-dc/np.sqrt(2),1e-5,np.pi/T*(1-1e-8),xtol=1e-12))
+
+def aw_run(umax,release,kb,T=.01):
+    # I[k] is known before u[k]; tracking adjusts I[k+1], no algebraic loop.
+    N=int(5/T);p=np.exp(-10*T);b=100*(1-p)
+    y=np.zeros(N+1);integ=np.zeros(N+1);raw=np.zeros(N);applied=np.zeros(N);ref=np.zeros(N)
+    for k in range(N):
+        ref[k]=100. if not release or k*T<2.5 else 0.
+        error=ref[k]-y[k];raw[k]=.005*error+integ[k]
+        applied[k]=np.clip(raw[k],-umax,umax)
+        integ[k+1]=integ[k]+T*(.05*error+kb*(applied[k]-raw[k]))
+        y[k+1]=p*y[k]+b*applied[k]
+    return y,integ,raw,applied,ref`}
   cells={[
-    {
-      code: `# ===== 四种离散化方法对比 =====
-# 连续 PI 控制器
-Kp, Ki = 0.005, 0.05
-K_cont = ctrl.tf([Kp, Ki], [1, 0])  # 0.005 + 0.05/s
-print("连续 PI 控制器:")
-print(K_cont)
-
-Ts = 0.01  # 采样周期
-
-# 四种离散化方法
-K_fwd = ctrl.c2d(K_cont, Ts, method='forward_euler')
-K_bwd = ctrl.c2d(K_cont, Ts, method='backward_euler')
-K_tus = ctrl.c2d(K_cont, Ts, method='tustin')
-K_mp  = ctrl.c2d(K_cont, Ts, method='matched')
-
-print("\\n=== 离散化结果 ===")
-print(f"前向欧拉: {K_fwd}")
-print(f"后向欧拉: {K_bwd}")
-print(f"Tustin:   {K_tus}")
-print(f"零极点匹配: {K_mp}")
-
-# 频率响应对比
-omega = np.logspace(-1, 3, 1000)
-mag_c, phase_c, _ = ctrl.frequency_response(K_cont, omega)
-mag_c = np.abs(mag_c.flatten())
-phase_c = np.degrees(phase_c.flatten())
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-# 幅频
-ax = axes[0]
-ax.semilogx(omega, 20*np.log10(mag_c), 'k-', linewidth=2, label='连续')
-for name, K_d, color in [('前向欧拉', K_fwd, 'r'), ('后向欧拉', K_bwd, 'g'),
-                           ('Tustin', K_tus, 'b'), ('零极点匹配', K_mp, 'm')]:
-    mag_d = np.abs(K_d(1j * omega))
-    ax.semilogx(omega, 20*np.log10(mag_d), '--', color=color, alpha=0.7, label=name)
-ax.set_xlabel('ω (rad/s)'); ax.set_ylabel('|K(jω)| (dB)')
-ax.set_title('PI 控制器离散化 — 幅频响应对比')
-ax.legend(); ax.grid(True, which='both', alpha=0.3)
-
-# 相频
-ax = axes[1]
-ax.semilogx(omega, phase_c, 'k-', linewidth=2, label='连续')
-for name, K_d, color in [('前向欧拉', K_fwd, 'r'), ('后向欧拉', K_bwd, 'g'),
-                           ('Tustin', K_tus, 'b'), ('零极点匹配', K_mp, 'm')]:
-    phase_d = np.degrees(np.angle(K_d(1j * omega)))
-    ax.semilogx(omega, phase_d, '--', color=color, alpha=0.7, label=name)
-ax.set_xlabel('ω (rad/s)'); ax.set_ylabel('∠K(jω) (°)')
-ax.set_title('PI 控制器离散化 — 相频响应对比')
-ax.legend(); ax.grid(True, which='both', alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-# 定量对比：在带宽频率处的误差
-wc = 5.0
-mag_wc_c = np.abs(K_cont(1j * wc))
-print(f"\\n=== 在 ωc = {wc} rad/s 处的误差 ===")
-for name, K_d in [('前向欧拉', K_fwd), ('后向欧拉', K_bwd),
-                    ('Tustin', K_tus), ('零极点匹配', K_mp)]:
-    mag_wc_d = np.abs(K_d(np.exp(1j * wc * Ts)))
-    err = 100 * abs(mag_wc_d - mag_wc_c) / mag_wc_c
-    print(f"  {name}: |K| = {mag_wc_d:.6f}, 误差 = {err:.2f}%")`
-    }
+    {code: `kp,ki,T=.005,.05,.01
+C=ctrl.tf([kp,ki],[1.,0.])
+cm,q,gain=matched_pi(kp,ki,T)
+methods=[ctrl.c2d(C,T,method=m) for m in ['euler','backward_diff','tustin']]+[cm]
+labels=['forward Euler','backward Euler','Tustin','matched magnitude at 1 rad/s']
+omega=np.geomspace(.1,.95*np.pi/T,500);zc=np.exp(1j*omega*T)
+curves=[np.asarray(D(zc)) for D in methods]
+metrics=[]
+for w in [.1,1.,5.,50.]:
+    reference=complex(C(1j*w));row=[]
+    for D in methods:
+        H=complex(D(np.exp(1j*w*T)))
+        row.append([100*(abs(H)/abs(reference)-1),float(np.angle(H/reference,deg=True))])
+    metrics.append(row)
+print('PI matched q,gain:',round(q,12),round(gain,12))
+print('PI coefficients:',[np.round(D.num[0][0],12).tolist() for D in methods])
+print('frequency rows .1,1,5,50; magnitude%,phase deg:',np.round(metrics,9).tolist())
+fig,axes=plt.subplots(1,2,figsize=(11,4))
+for name,H in zip(labels,curves):
+    axes[0].semilogx(omega,20*np.log10(abs(H)),label=name)
+    axes[1].semilogx(omega,np.angle(H,deg=True),label=name)
+axes[0].semilogx(omega,20*np.log10(abs(C(1j*omega))),'k--',label='continuous')
+axes[1].semilogx(omega,np.angle(C(1j*omega),deg=True),'k--',label='continuous')
+axes[0].set(xlim=(.1,320),ylim=(-70,0),xlabel='omega (rad/s)',ylabel='magnitude (dB)')
+axes[1].set(xlim=(.1,320),ylim=(-100,10),xlabel='omega (rad/s)',ylabel='phase (deg)')
+for ax in axes:ax.grid();ax.legend(fontsize=7)
+plt.tight_layout();plt.show()`}
   ]}
 />
 
@@ -266,820 +202,476 @@ for name, K_d in [('前向欧拉', K_fwd), ('后向欧拉', K_bwd),
 
 ### 基本思路
 
-仿真法的前提是"先有连续控制器"。但有些场景下，直接在 z 域设计更合理：
+也可以先得到对象的数字模型，再直接在z域设计控制器。与先设计连续控制器再离散化相比，这条路线更直接地包含采样、延迟和离散约束；哪条合适取决于任务，不预设“理论更优”。
 
-- 采样频率低，离散化引入的延迟不可忽略
-- 对象本身就有采样延迟（网络控制系统）
-- 需要有限步收敛（deadbeat 控制）
-
-**步骤**：
-
-1. 对连续对象 $G(s)$ 做 ZOH 等效离散化（见 [Z变换基础](/discrete-sampled/z-transform-analysis)）：
+对零初值、保持输入的对象，ZOH脉冲传递函数由采样后的连续阶跃响应得到：
 
 $$
-G(z) = (1 - z^{-1})\,\mathcal{Z}\!\left\{\frac{G(s)}{s}\right\}
+G_d(z)=(1-z^{-1})\mathcal Z\{g_{step}(kT_s)\}.
 $$
 
-2. 在 z 域设计控制器 $K(z)$：
-   - **根轨迹法**：规则和 s 域类似，稳定域是单位圆内
-   - **频率响应法**：$z = e^{j\omega T_s}$ 代入，画 Bode 图
-   - **解析法**：deadbeat、最小拍控制等
+然后可在z域求根轨迹、频率响应或代数控制器。离散模型仍需核输入定义和延迟，不能只把所有连续极点取指数就宣称整个模型完成。
 
 ### z 域根轨迹要点
 
-z 域根轨迹的基本规则与 s 域相同（起点=极点，终点=零点，实轴上的段，渐近线等），但有两个关键区别：
-
-1. **稳定域是单位圆内**（$|z| < 1$），不是左半平面
-2. **采样延迟**体现在对象的零点位置：ZOH 等效离散化会在单位圆内引入额外零点
+根轨迹仍描述增益变化下的闭环根，稳定区改为单位圆内。采样延迟一般表现为 $z^{-d}$，而ZOH也可能产生采样零点；这些零点**不保证都在单位圆内**。不可用“额外零点在圆内”替代实际求零点。
 
 ### Deadbeat 控制器
 
-**目标**：在有限步内使跟踪误差为零。
-
-假设对象 $G(z) = \frac{B(z)}{A(z)}$（$n$ 阶），闭环传递函数设计为：
+理想目标可写成 $T(z)=z^{-d}$，即输出延迟d步后跟踪参考。由负单位反馈形式反解：
 
 $$
-T(z) = \frac{Y(z)}{R(z)} = z^{-d}
+C(z)=\frac{T(z)}{G(z)(1-T(z))}.
 $$
 
-其中 $d$ 是对象的纯延迟步数。这意味着输出在 $d$ 步后精确跟踪输入。
+但反解出一个有理式，并不代表它能实现。d必须足以保证因果，且要检查内部稳定、被抵消的模态、控制量和模型误差。非最小相位零点会使直接求逆出现不稳定极点；不能为了得到一个漂亮的T就消去不稳定因子。
 
-**控制器**：
-
-$$
-K(z) = \frac{T(z)}{G(z)(1 - T(z))} = \frac{z^{-d} \cdot A(z)}{B(z)(1 - z^{-d})}
-$$
-
-**限制条件**：
-- 对象必须是最小相位的（$B(z)$ 的根在单位圆内），否则控制器不稳定
-- 对参数变化敏感（鲁棒性差）
-- 控制量可能很大（"用力过猛"）
-
-> 💡 Deadbeat 控制器在理论上是"最快"的，但工程上很少直接使用，因为鲁棒性太差。它更多作为性能上限的参考。
+有限拍消除误差是特定理想模型下的性质，不是有噪声、有饱和和参数不确定性时的通用“最快控制”。本课保留该设计思路，不把它当电机例的工程推荐。
 
 ### 隐振现象
 
-直接数字设计中的一个陷阱：如果控制器 $K(z)$ 有单位圆外的零点，用来抵消对象 $G(z)$ 单位圆外的极点，闭环传递函数看起来稳定（极点都在单位圆内），但**内部信号可能发散**。
-
-原因：不稳定极点被控制器零点"隐藏"了，从输入到输出的传递函数稳定，但从干扰到内部状态的传递函数不稳定。
-
-**避免方法**：不要抵消单位圆外的零极点。如果对象有单位圆外零点，控制器设计中保留它。
+如果控制器用零点抵消对象的单位圆外极点，参考到输出的传递函数可能看起来稳定，但初始状态或其它扰动通道仍会增长。与上一课一样，输入输出约分不能代替内部状态检查。单位圆外零点也不应直接用不稳定逆系统消去。
 
 ## 数字 PID 工程实现
 
 ### 标准形式
 
-连续 PID：
+先区分算法。连续PID是 $u=K_pe+K_i\int e\,dt+K_d\dot e$。其中积分器采用Tustin时应写
 
 $$
-u(t) = K_p\, e(t) + K_i \int_0^t e(\tau)\,d\tau + K_d\, \dot{e}(t)
+I[k]=I[k-1]+\frac{K_iT_s}{2}(e[k]+e[k-1]).
 $$
 
-用 Tustin 离散化后，数字 PID 的标准形式：
-
-$$
-u[k] = K_p\, e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}
-$$
-
-但直接实现这个公式有三个严重问题。
+直接矩形累加与一阶差分微分，是另一种组合，不能也叫“整个PID都用Tustin”。理想微分不真有理；工程实现先给导数滤波，再指定离散规则。
 
 ### 问题一：积分饱和
 
-**现象**：当执行器饱和（$|u| > u_{\max}$）时，误差 $e[k]$ 仍然不为零，积分器继续累积。当误差反向时，积分器需要很长时间才能"退饱和"，导致严重超调。
-
-**示例**：电机启动时，设定值从 0 跳到 1000 rpm。执行器（电压）立刻饱和，电机缓慢加速。积分器在饱和期间持续累积，当电机接近设定值时，积分器已经累积了很大的值，导致电机大幅超调。
-
-**解决方案：反算法（Back-calculation）**
-
-引入反馈回路，当执行器饱和时把"多余的"控制量反馈到积分器：
+执行器到达限幅后，控制器要求更大的电压也没有用；若积分继续累积，目标回落后仍可能迟迟减不下来。下面明确采用**显式积分/反算**示例，I[k]在本拍输出前已知：
 
 $$
-u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b \cdot (u_{sat}[k] - u[k])
+u_\star[k]=P[k]+I[k]+D[k],\qquad
+u_a[k]=\operatorname{clip}(u_\star[k],u_{min},u_{max}),
+$$
+$$
+I[k+1]=I[k]+T_s\{K_ie[k]+K_b(u_a[k]-u_\star[k])\}.
 $$
 
-其中：
-- $u[k] = u_P[k] + u_{int}[k] + u_D[k]$（未饱和的控制量）
-- $u_{sat}[k] = \text{sat}(u[k], u_{\max})$（饱和后的控制量）
-- $K_b$ 是反算增益
+I的单位与输出u一致，Kb的单位为1/s。反馈是“实际减期望”，Ts不能漏掉。输出越过上限时该差值为负，会抑制积分继续增大。这里先算本拍输出，再更新下一拍I，没有用尚未算出的I反过来定义本拍u的代数环。
 
-当不饱和时，$u_{sat} = u$，反算项为零，正常工作。
-当饱和时，$u_{sat} - u \neq 0$，反算项把积分器往正确方向拉。
+原实验目标100rpm、限幅50V，对象DC增益100rpm/V，几乎不可能触发饱和。保留这组工况作为持平基线：有无反算输出一致，不能拿它证明抗饱和改善。
 
-**反算增益 $K_b$ 的选择**：
-
-| $K_b$ | 效果 |
-|-------|------|
-| 0 | 无反算（普通积分，饱和严重） |
-| $K_i$ | 慢速退饱和 |
-| $1/T_i = K_i/K_p$ | 常用默认值 |
-| $5 \sim 10 \times K_i$ | 快速退饱和，但可能振荡 |
-
-> 💡 **经验法则**：$K_b = 1/T_i$ 作为起点。如果退饱和太慢（超调大），增大 $K_b$。如果退饱和时出现振荡，减小 $K_b$。
+另加限幅0.6V的两组工况：持续100rpm目标不可达，最高稳态转速只有60rpm；以及2.5s后把目标降到0的恢复过程。同一PI参数下比较Kb=0与10/s，并记录真实I，不用另一个控制器的轨迹重建积分器。反算不能让不可达目标变得可达，也不保证任意Kb都更好。
 
 <JupyterNotebook
-  language="python"
+  title="实验2：真正触发饱和再比较"
   setupCode={`import numpy as np
+import control as ctrl
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+from scipy.optimize import brentq
+import json
+plt.rcParams['font.sans-serif']=['DejaVu Sans']
+plt.rcParams['axes.unicode_minus']=False
+
+def matched_pi(kp,ki,T,wref=1.):
+    q=np.exp(-ki/kp*T);zref=np.exp(1j*wref*T)
+    gain=abs(kp+ki/(1j*wref))*abs(zref-1)/abs(zref-q)
+    return ctrl.tf([gain,-gain*q],[1.,-1.],T),float(q),float(gain)
+
+def motor(T,kp=.005,ki=.05,gain=1000.,rate=10.):
+    G=ctrl.tf([gain],[1.,rate]);C=ctrl.tf([kp,ki],[1.,0.])
+    Gd=ctrl.c2d(G,T,method='zoh');Cd=ctrl.c2d(C,T,method='tustin')
+    return G,C,Gd,Cd,ctrl.feedback(Gd*Cd,1)
+
+def crossover(Gd,Cd,T):
+    def H(w):return complex(Gd(np.exp(1j*w*T))*Cd(np.exp(1j*w*T)))
+    grid=np.geomspace(1e-4,np.pi/T*(1-1e-8),1000)
+    f=np.log([abs(H(w)) for w in grid]);cross=np.where(f[:-1]*f[1:]<0)[0]
+    if len(cross)!=1:raise ValueError('Expected one gain crossover')
+    i=int(cross[0]);wc=brentq(lambda w:np.log(abs(H(w))),grid[i],grid[i+1],xtol=1e-12)
+    return float(180+np.angle(H(wc),deg=True)),float(wc)
+
+def bandwidth(closed,T):
+    dc=float(np.real(closed(1)))
+    return float(brentq(lambda w:abs(complex(closed(np.exp(1j*w*T))))-dc/np.sqrt(2),1e-5,np.pi/T*(1-1e-8),xtol=1e-12))
+
+def aw_run(umax,release,kb,T=.01):
+    # I[k] is known before u[k]; tracking adjusts I[k+1], no algebraic loop.
+    N=int(5/T);p=np.exp(-10*T);b=100*(1-p)
+    y=np.zeros(N+1);integ=np.zeros(N+1);raw=np.zeros(N);applied=np.zeros(N);ref=np.zeros(N)
+    for k in range(N):
+        ref[k]=100. if not release or k*T<2.5 else 0.
+        error=ref[k]-y[k];raw[k]=.005*error+integ[k]
+        applied[k]=np.clip(raw[k],-umax,umax)
+        integ[k+1]=integ[k]+T*(.05*error+kb*(applied[k]-raw[k]))
+        y[k+1]=p*y[k]+b*applied[k]
+    return y,integ,raw,applied,ref`}
   cells={[
-    {
-      code: `# ===== 抗积分饱和效果对比 =====
-# PI 控制器参数
-Kp, Ki = 0.005, 0.05
-u_max = 50  # 执行器限幅
-
-# 仿真参数
-Ts_sim = 0.001  # 仿真步长（远小于控制采样周期）
-T_ctrl = 0.01   # 控制采样周期
-t_end = 5.0
-N_steps = int(t_end / Ts_sim)
-N_ctrl = int(T_ctrl / Ts_sim)
-
-# 设定值：阶跃 r = 100
-r = 100.0
-
-def simulate_pi(antiwindup=True, Kb=10.0):
-    y = 0.0
-    u_int = 0.0
-    u_prev = 0.0
-    
-    t_log, y_log, u_log, u_sat_log = [], [], [], []
-    
-    for step in range(N_steps):
-        t = step * Ts_sim
-        
-        if step % N_ctrl == 0:
-            e = r - y
-            u_P = Kp * e
-            if antiwindup:
-                u_int = u_int + Ki * T_ctrl * e + Kb * (u_prev - (u_sat_log[-1] if u_sat_log else 0))
-            else:
-                u_int = u_int + Ki * T_ctrl * e
-            
-            u = u_P + u_int
-            u_sat = np.clip(u, -u_max, u_max)
-            u_prev = u
-        else:
-            u_sat = u_sat_log[-1] if u_sat_log else 0
-        
-        # 对象仿真: dy/dt = -10y + 1000u
-        y += (-10 * y + 1000 * u_sat) * Ts_sim
-        
-        if step % 10 == 0:
-            t_log.append(t)
-            y_log.append(y)
-            u_log.append(u if step % N_ctrl == 0 else (u_log[-1] if u_log else 0))
-            u_sat_log.append(u_sat)
-    
-    return np.array(t_log), np.array(y_log), np.array(u_log), np.array(u_sat_log)
-
-# 运行仿真
-t1, y1, u1, us1 = simulate_pi(antiwindup=False)
-t2, y2, u2, us2 = simulate_pi(antiwindup=True, Kb=10.0)
-
-fig, axes = plt.subplots(3, 1, figsize=(14, 10), sharex=True)
-
-# 输出
-ax = axes[0]
-ax.plot(t1, y1, 'r-', linewidth=1.5, label='无抗积分饱和')
-ax.plot(t2, y2, 'b-', linewidth=1.5, label='反算法 (Kb=10)')
-ax.axhline(y=r, color='gray', linestyle='--', alpha=0.5, label=f'设定值 r={r}')
-ax.set_ylabel('输出 (rpm)')
-ax.set_title('抗积分饱和效果对比')
-ax.legend(); ax.grid(True, alpha=0.3)
-
-# 控制量
-ax = axes[1]
-ax.plot(t1, us1, 'r-', linewidth=1, alpha=0.7, label='无抗饱和 (实际)')
-ax.plot(t1, u1, 'r--', linewidth=0.5, alpha=0.3, label='无抗饱和 (未饱和)')
-ax.plot(t2, us2, 'b-', linewidth=1, alpha=0.7, label='反算法 (实际)')
-ax.axhline(y=u_max, color='gray', linestyle=':', alpha=0.5)
-ax.axhline(y=-u_max, color='gray', linestyle=':', alpha=0.5)
-ax.set_ylabel('控制量 (V)')
-ax.legend(loc='upper right', fontsize=8); ax.grid(True, alpha=0.3)
-
-# 积分器状态
-ax = axes[2]
-u_int_1 = np.cumsum(Ki * T_ctrl * (r - y1[::N_ctrl])) * N_ctrl
-u_int_2 = np.zeros(len(t2[::N_ctrl]))
-u_int_val = 0
-for i, idx in enumerate(range(0, len(t2), N_ctrl)):
-    if i < len(y2):
-        e = r - y2[idx] if idx < len(y2) else 0
-        u_sat_prev = us2[idx-1] if idx > 0 else 0
-        u_int_val += Ki * T_ctrl * e + 10.0 * (us2[idx] - (u1[idx] if idx < len(u1) else 0))
-        u_int_2[i] = u_int_val
-
-ax.plot(t1[::N_ctrl][:len(u_int_1)], u_int_1, 'r-', linewidth=1.5, label='无抗饱和')
-ax.plot(t2[::N_ctrl][:len(u_int_2)], u_int_2, 'b-', linewidth=1.5, label='反算法')
-ax.set_xlabel('时间 (s)'); ax.set_ylabel('积分器状态')
-ax.set_title('积分器累积量对比')
-ax.legend(); ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-os1 = (np.max(y1) - r) / r * 100
-os2 = (np.max(y2) - r) / r * 100
-print(f"=== 抗积分饱和效果 ===")
-print(f"无抗饱和: 超调 = {os1:.1f}%")
-print(f"反算法:   超调 = {os2:.1f}%")
-print(f"超调减少: {os1 - os2:.1f}%")`
-    }
+    {code: `scenarios=[(50.,False),(.6,False),(.6,True)]
+aw=[];summary=[]
+fig,axes=plt.subplots(3,3,figsize=(13,10))
+for col,(umax,release) in enumerate(scenarios):
+    pairs=[];rows=[]
+    for kb in [0.,10.]:
+        y,I,raw,us,r=aw_run(umax,release,kb);pairs.append([y.tolist(),I.tolist(),raw.tolist(),us.tolist(),r.tolist()])
+        rows.append([float(np.max(y)),float(np.max(abs(I))),int(np.count_nonzero(abs(raw-us)>1e-12)),float(y[-1])])
+        time=np.arange(len(y))*.01;label=f'Kb={kb:g}/s'
+        axes[0,col].plot(time,y,label=label);axes[1,col].plot(time[:-1],us,label=label);axes[2,col].plot(time,I,label=label)
+    aw.append(pairs);summary.append(rows)
+    axes[0,col].set_title(f'limit={umax:g} V; '+('release at 2.5 s' if release else 'constant target'))
+    for row in range(3):axes[row,col].set_xlim(0,5);axes[row,col].grid();axes[row,col].legend(fontsize=7)
+    axes[0,col].set_ylim(-10,130);axes[1,col].set_ylim(-1.5,1.5);axes[2,col].set_ylim(-1,15)
+    axes[2,col].set_xlabel('time (s)')
+for row,name in enumerate(['speed (rpm)','applied voltage (V)','integral output (V)']):axes[row,0].set_ylabel(name)
+print('AW rows baseline/unreachable/release, each no-AW then AW: peak,maxI,saturated steps,final y:',np.round(summary,9).tolist())
+print('original unsaturated max difference:',round(np.max(abs(np.array(aw[0][0][0])-np.array(aw[0][1][0]))),12))
+plt.tight_layout();plt.show()`}
   ]}
 />
 
 ### 问题二：微分噪声
 
-**现象**：纯微分 $K_d \frac{e[k] - e[k-1]}{T_s}$ 在高频增益为 $K_d/T_s$。如果传感器噪声的高频成分显著，微分项的输出可能比比例项还大。
+后向差分 $K_d(e[k]-e[k-1])/T_s$ 在Nyquist频率的增益为 $2K_d/T_s$。差分容易放大高频噪声，所以先给连续滤波微分 $K_dNs/(s+N)$；N是截止角频率，单位1/s，高频增益上限是KdN。
 
-**解决方案：加低通滤波**
-
-连续域：$K_d s \to \frac{K_d N s}{s + N}$，其中 $N$ 是微分增益上限（通常 $N = 10 \sim 100$）。
-
-离散化后，等价于一阶递推：
+采用后向欧拉离散化，令 $v[k]=c r[k]-y[k]$，得到
 
 $$
-u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{e[k] - e[k-1]}{T_s}
+D[k]=\alpha D[k-1]+\beta(v[k]-v[k-1]),\qquad
+\alpha=\frac1{1+NT_s},\quad\beta=\frac{K_dN}{1+NT_s}.
 $$
 
-其中滤波系数：
-
-$$
-\alpha = \frac{N T_s}{1 + N T_s}
-$$
-
-| $N T_s$ | $\alpha$ | 含义 |
-|:---:|:---:|------|
-| 0.1 | 0.091 | 弱滤波（保留更多微分信息） |
-| 1.0 | 0.5 | 中等滤波 |
-| 10 | 0.909 | 强滤波（微分项很平滑） |
-
-> 💡 **经验法则**：$N = 10 / T_s$（即 $N T_s = 10$，$\alpha \approx 0.9$）是常用起点。如果传感器噪声大，增大 $N$。
+N变大意味着截止频率提高，保留更多高频成分；不是噪声越大就盲目把N调大。例如N=20/s、Ts=0.01s、Kd=0.1时，α约0.833333、β约1.666667，数字滤波微分的Nyquist增益约1.818182，远小于未滤波差分的20。
 
 ### 问题三：无扰切换
 
-**现象**：系统在手动模式和自动模式之间切换时，如果控制器输出与当前执行器输出不一致，切换瞬间会产生" bump"（阶跃跳变），可能损坏设备或引起安全事故。
-
-**解决方案**：
-
-**手动 → 自动**：
-- 切换前，让控制器内部的积分器跟踪当前执行器输出
-- $u_{int} = u_{act} - u_P - u_D$（其中 $u_{act}$ 是当前执行器输出）
-- 切换瞬间，控制器输出 = 执行器输出，无跳变
-
-**自动 → 手动**：
-- 切换前，让手动操作器的输出跟踪控制器输出
-- 切换瞬间，手动输出 = 控制器输出，无跳变
+手动转自动时，若希望第一拍u等于当前实际输出，可先按当前P、D设置 $I=u_a-P-D$；自动转手动则让手动输出先跟踪实际控制量。微分滤波状态、上一拍测量也需一致初始化。它只消除切换瞬间的跳变，不保证切换后的整段轨迹没有变化。
 
 ### 设定值加权
 
-工业 PID 很少用纯误差 $e = r - y$。常用**设定值加权**：
-
-$$
-e_P = b \cdot r - y \quad \text{（比例项用）}
-$$
-$$
-e_I = r - y \quad \text{（积分项用）}
-$$
-$$
-e_D = c \cdot r - y \quad \text{（微分项用）}
-$$
-
-其中 $b, c \in [0, 1]$ 是加权系数。
-
-| 参数 | 效果 |
-|------|------|
-| $b = 0$ | 比例项不含设定值，设定值变化不引起比例跳变 |
-| $b = 1$ | 标准形式 |
-| $c = 0$ | 微分项不含设定值，设定值变化不引起微分跳变 |
-| $c = 1$ | 标准形式 |
-
-> 💡 **推荐配置**：$b = 0, c = 0$（称为"设定值只进积分"）。这样设定值变化只通过积分器缓慢影响输出，避免比例和微分的跳变。
+可分别使用 $e_P=br-y$、$e_I=r-y$、$e_D=cr-y$。b、c在0到1之间；c=0时不直接微分设定值，可避免设定值阶跃引起微分冲击。b越小，设定值的比例动作也越弱，因此不能把b=c=0当成所有任务的默认最佳选择。
 
 ### 完整数字 PID 算法
 
-综合以上所有修改，完整的数字 PID 算法：
+沿用上面明确的显式积分/反算与后向欧拉导数滤波，每拍按顺序执行：
 
-$$
-u_P[k] = K_p (b \cdot r[k] - y[k])
-$$
+```text
+e = r - y
+P = Kp * (b*r - y)
+v = c*r - y
+D = alpha*D_prev + beta*(v - v_prev)
+u_star = P + I + D
+u_amp = clip(u_star, u_min, u_max)
+u_actual = clip(u_amp, u_actual_prev-rate*Ts, u_actual_prev+rate*Ts)
+I_next = I + Ts*(Ki*e + Kb*(u_actual-u_star))
+保存 I_next、D、v、u_actual；输出 u_actual
+```
 
-$$
-u_{int}[k] = u_{int}[k-1] + K_i T_s (r[k] - y[k]) + K_b (u_{sat}[k] - u[k])
-$$
+先限幅再限变化率，且上一拍实际值已在限幅内，则限速结果仍在幅值范围内。反算跟踪的是最终实际值，包括速率约束造成的差值；不能把未限幅值与实际值存到同一个变量后相减为零。
 
-$$
-u_D[k] = \alpha \cdot u_D[k-1] + (1 - \alpha) \cdot K_d \frac{(c \cdot r[k] - y[k]) - (c \cdot r[k-1] - y[k-1])}{T_s}
-$$
+共有七个列出的调参量Kp、Ki、Kd、Kb、N、b、c，另有执行器幅值/速率限制。它们的单位不同，不把Ki、Kb和无量纲的每拍系数KbTs直接互换。
 
-$$
-u[k] = u_P[k] + u_{int}[k] + u_D[k]
-$$
-
-$$
-u_{sat}[k] = \text{sat}(u[k], u_{\min}, u_{\max})
-$$
-
-这个算法有 6 个可调参数：$K_p, K_i, K_d, K_b, N, b, c$。其中 $K_p, K_i, K_d$ 从连续 PID 设计得到，$K_b, N, b, c$ 是工程实现参数。
+这部分保留为后续[数字PID](/implementation/digital-pid)的迁移来源；该课尚未完成本期重构，当前材料仍可在本页阅读。
 
 ## 设计实例：电机速度控制
 
 ### 问题描述
 
-直流电机速度控制，传递函数：
+保留直流电机简化对象
 
 $$
-G(s) = \frac{100}{0.1s + 1} = \frac{1000}{s + 10}
+G(s)=\frac{100}{0.1s+1}=\frac{1000}{s+10}.
 $$
 
-**设计需求**：
-- 闭环带宽 $\omega_c \approx 5$ rad/s
-- 相位裕度 $PM \geq 60°$
-- 稳态误差 < 1%（阶跃输入）
-- 控制量约束 $|u| \leq 50$ V
-- 采样周期 $T_s = 0.01$ s（采样频率 $\omega_s = 628$ rad/s，约为带宽的 126 倍）
+输入电压单位V，输出转速单位rpm。目标是连续名义闭环带宽5rad/s、PM至少60°、阶跃稳态误差小于1%；执行器限幅±50V，设计采样周期0.01s。先核无饱和线性模型，工程约束另行检查，不把单位阶跃试验等同于所有转速命令。
 
 ### 步骤 1：连续 PID 设计
 
-对象 $G(s) = \frac{1000}{s + 10}$。
-
-**PI 控制器**（速度控制通常不需要微分项，因为传感器噪声大）：
+取PI $C(s)=K_p+K_i/s$，选择 $T_i=K_p/K_i=0.1$ s。在**名义参数精确**时抵消稳定对象极点−10，开环化为 $1000K_p/s$。令穿越频率5rad/s，得
 
 $$
-K(s) = K_p + \frac{K_i}{s} = K_p \frac{T_i s + 1}{T_i s}
+K_p=0.005,\qquad K_i=0.05,\qquad T_c(s)=\frac5{s+5}.
 $$
 
-开环传递函数：
-
-$$
-L(s) = K(s) G(s) = K_p \frac{T_i s + 1}{T_i s} \cdot \frac{1000}{s + 10}
-$$
-
-选择 $T_i = 0.1$ s（抵消对象极点 $s = -10$）：
-
-$$
-L(s) = \frac{1000 K_p}{s}
-$$
-
-这是纯积分开环，相位裕度 = 90°。
-
-增益选择：$|L(j\omega_c)| = 1$ 在 $\omega_c = 5$ rad/s：
-
-$$
-\frac{1000 K_p}{5} = 1 \implies K_p = 0.005
-$$
-
-$K_i = K_p / T_i = 0.005 / 0.1 = 0.05$。
-
-验证：
-- 闭环带宽 = $1000 \times 0.005 = 5$ rad/s ✓
-- 相位裕度 = 90° ✓
-- 稳态误差 = 0（I 型系统跟踪阶跃） ✓
+名义连续闭环带宽5rad/s、PM90°、单位阶跃终值1。这里只抵消稳定极点；参数失配会留下额外动态，不能据此免除鲁棒性检查。
 
 ### 步骤 2：Tustin 离散化
 
-$K(s) = 0.005 + \frac{0.05}{s}$
-
-**比例项**：$K_p(z) = 0.005$（常数，不需要变换）
-
-**积分项**：$s = \frac{2}{T_s} \frac{z-1}{z+1}$
+Ts=0.01s时
 
 $$
-\frac{K_i}{s} = \frac{0.05}{\frac{2}{0.01} \frac{z-1}{z+1}} = \frac{0.05 \times 0.01}{2} \cdot \frac{z+1}{z-1} = 0.00025 \frac{z+1}{z-1}
+C_d(z)=0.005+0.00025\frac{z+1}{z-1}
+      =\frac{0.00525z-0.00475}{z-1}.
 $$
 
-**数字 PI 控制器**：
+对象采用ZOH等效 $G_d(z)=100(1-p)/(z-p)$，其中 $p=e^{-10T_s}$。控制器Tustin与对象ZOH是两件不同的事，不能给对象也随手套同一种方法。
 
-$$
-K(z) = 0.005 + 0.00025 \frac{z+1}{z-1} = \frac{0.005(z-1) + 0.00025(z+1)}{z-1} = \frac{0.00525 z - 0.00475}{z - 1}
-$$
-
-**预畸变检查**：$\omega_c T_s = 5 \times 0.01 = 0.05$，$\omega_d / \omega_c = \tan(0.025)/0.025 = 1.0002$，误差 0.02%，**不需要预畸变**。
+在数字物理频率5rad/s处，反向频率比为 $\tan(0.025)/0.025\approx1.000208$；本例先不预扭曲，最后直接复核实际数字闭环。
 
 ### 步骤 3：差分方程实现
 
-$$
-K(z) = \frac{U(z)}{E(z)} = \frac{0.00525 - 0.00475 z^{-1}}{1 - z^{-1}}
-$$
-
-交叉相乘：
+零历史时，交叉相乘得到
 
 $$
-U(z)(1 - z^{-1}) = E(z)(0.00525 - 0.00475 z^{-1})
+u[k]=u[k-1]+0.00525e[k]-0.00475e[k-1].
 $$
 
-$$
-u[k] - u[k-1] = 0.00525\, e[k] - 0.00475\, e[k-1]
-$$
-
-$$
-\boxed{u[k] = u[k-1] + 0.00525\, e[k] - 0.00475\, e[k-1]}
-$$
-
-这就是最终在芯片上运行的代码——三行乘法/加法。
+这是未饱和线性Tustin PI的递推；初值和保存顺序也属于算法，不能只记三个系数。
 
 ### 步骤 4：加入工程实现
 
-加入抗积分饱和（$K_b = 1/T_i = 10$）和速率限制（$\Delta u_{\max} = 100$ V/s）：
+若直接对上述增量式限幅，需要明确如何维护内部状态。本课前面的完整算法给出另一套显式积分/反算实现，Kb=10/s、Ts=.01s时每拍跟踪系数为0.1，而不是10。速率限制100V/s对应每拍最多1V。
 
-```
-每个采样周期执行：
-  e = r - y
-  u_P = Kp * e
-  u_int = u_int_prev + Ki * Ts * e + Kb * (u_sat_prev - u_prev)
-  u = u_P + u_int
-  u_sat = saturate(u, -50, 50)
-  // 保存状态
-  u_int_prev = u_int
-  u_sat_prev = u_sat
-  u_prev = u_sat
-  // 输出
-  output u_sat
-```
+两套积分规则应分别验证，不能把线性Tustin响应与混合了饱和、矩形积分和速率限制的结果混称为同一个传递函数。
+
+原电机实验保留三秒窗口：连续解为 $1-e^{-5t}$，数字响应在t=kTs处与它比较。90%上升时间是**首次达到**0.9的时刻；不是把所有超过0.9的点取最后一个，那只会返回仿真结束时间。
 
 <JupyterNotebook
-  language="python"
+  title="实验3：电机PI与采样周期"
   setupCode={`import numpy as np
 import control as ctrl
-from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+from scipy.optimize import brentq
+import json
+plt.rcParams['font.sans-serif']=['DejaVu Sans']
+plt.rcParams['axes.unicode_minus']=False
+
+def matched_pi(kp,ki,T,wref=1.):
+    q=np.exp(-ki/kp*T);zref=np.exp(1j*wref*T)
+    gain=abs(kp+ki/(1j*wref))*abs(zref-1)/abs(zref-q)
+    return ctrl.tf([gain,-gain*q],[1.,-1.],T),float(q),float(gain)
+
+def motor(T,kp=.005,ki=.05,gain=1000.,rate=10.):
+    G=ctrl.tf([gain],[1.,rate]);C=ctrl.tf([kp,ki],[1.,0.])
+    Gd=ctrl.c2d(G,T,method='zoh');Cd=ctrl.c2d(C,T,method='tustin')
+    return G,C,Gd,Cd,ctrl.feedback(Gd*Cd,1)
+
+def crossover(Gd,Cd,T):
+    def H(w):return complex(Gd(np.exp(1j*w*T))*Cd(np.exp(1j*w*T)))
+    grid=np.geomspace(1e-4,np.pi/T*(1-1e-8),1000)
+    f=np.log([abs(H(w)) for w in grid]);cross=np.where(f[:-1]*f[1:]<0)[0]
+    if len(cross)!=1:raise ValueError('Expected one gain crossover')
+    i=int(cross[0]);wc=brentq(lambda w:np.log(abs(H(w))),grid[i],grid[i+1],xtol=1e-12)
+    return float(180+np.angle(H(wc),deg=True)),float(wc)
+
+def bandwidth(closed,T):
+    dc=float(np.real(closed(1)))
+    return float(brentq(lambda w:abs(complex(closed(np.exp(1j*w*T))))-dc/np.sqrt(2),1e-5,np.pi/T*(1-1e-8),xtol=1e-12))
+
+def aw_run(umax,release,kb,T=.01):
+    # I[k] is known before u[k]; tracking adjusts I[k+1], no algebraic loop.
+    N=int(5/T);p=np.exp(-10*T);b=100*(1-p)
+    y=np.zeros(N+1);integ=np.zeros(N+1);raw=np.zeros(N);applied=np.zeros(N);ref=np.zeros(N)
+    for k in range(N):
+        ref[k]=100. if not release or k*T<2.5 else 0.
+        error=ref[k]-y[k];raw[k]=.005*error+integ[k]
+        applied[k]=np.clip(raw[k],-umax,umax)
+        integ[k+1]=integ[k]+T*(.05*error+kb*(applied[k]-raw[k]))
+        y[k+1]=p*y[k]+b*applied[k]
+    return y,integ,raw,applied,ref`}
   cells={[
-    {
-      code: `# ===== 连续 vs 离散闭环阶跃响应 =====
-# 对象与控制器
-G = ctrl.tf([1000], [1, 10])  # 1000/(s+10)
-Kp, Ki = 0.005, 0.05
-K_cont = ctrl.tf([Kp, Ki], [1, 0])  # PI 控制器
-Ts = 0.01  # 采样周期
-
-# 连续闭环
-L_cont = G * K_cont
-T_cont = ctrl.feedback(L_cont, 1)
-
-# 离散闭环（ZOH 等效 + Tustin 离散化控制器）
-Gz = ctrl.c2d(G, Ts, method='zoh')
-Kz = ctrl.c2d(K_cont, Ts, method='tustin')
-Lz = Gz * Kz
-Tz = ctrl.feedback(Lz, 1)
-
-print("连续闭环:")
-print(T_cont)
-print(f"\\n离散闭环 (Tustin, Ts={Ts}):")
-print(Tz)
-
-# 阶跃响应对比
-t = np.linspace(0, 3, 3000)
-t_c, y_c = ctrl.step_response(T_cont, T=t)
-t_d, y_d = ctrl.step_response(Tz, T=t)
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-# 左: 阶跃响应
-ax = axes[0]
-ax.plot(t_c, y_c, 'b-', linewidth=2, label='连续')
-ax.plot(t_d, y_d, 'r--', linewidth=2, label=f'离散 (Ts={Ts}s)')
-ax.axhline(y=1, color='gray', linestyle=':', alpha=0.5)
-ax.set_xlabel('时间 (s)')
-ax.set_ylabel('输出')
-ax.set_title('闭环阶跃响应对比')
-ax.legend()
-ax.grid(True, alpha=0.3)
-
-# 右: 误差
-ax = axes[1]
-f_c = interp1d(t_c, y_c, kind='cubic')
-y_c_interp = f_c(t_d)
-error = y_d - y_c_interp
-ax.plot(t_d, error, 'g-', linewidth=1.5)
-ax.axhline(y=0, color='gray', linestyle='-', alpha=0.5)
-ax.set_xlabel('时间 (s)')
-ax.set_ylabel('离散 - 连续')
-ax.set_title('离散化引入的跟踪误差')
-ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-# 性能指标对比
-os_c = np.max(y_c) - 1
-os_d = np.max(y_d) - 1
-idx_90_c = np.where(y_c >= 0.9)[0]
-ts_c = t_c[idx_90_c[-1]] if len(idx_90_c) > 0 else np.nan
-idx_90_d = np.where(y_d >= 0.9)[0]
-ts_d = t_d[idx_90_d[-1]] if len(idx_90_d) > 0 else np.nan
-
-print(f"\\n=== 性能对比 ===")
-print(f"{'指标':<15} {'连续':<15} {'离散':<15} {'差异':<15}")
-print(f"{'超调':<15} {100*os_c:.2f}%{'':<10} {100*os_d:.2f}%{'':<10} {100*(os_d-os_c):.2f}%")
-print(f"{'上升时间(90%)':<10} {ts_c:.4f}s{'':<9} {ts_d:.4f}s{'':<9} {(ts_d-ts_c)*1000:.2f}ms")`
-    },
-    {
-      code: `# ===== 采样周期对性能的影响 =====
-Ts_values = [0.001, 0.005, 0.01, 0.02, 0.05, 0.1]
-
-fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-colors = plt.cm.viridis(np.linspace(0, 1, len(Ts_values)))
-t_step = np.linspace(0, 3, 3000)
-
-# 连续基准
-L_cont = G * K_cont
-T_cont = ctrl.feedback(L_cont, 1)
-t_c, y_c = ctrl.step_response(T_cont, T=t_step)
-
-omega_w = np.logspace(-1, 3, 1000)
-
-for i, Ts_i in enumerate(Ts_values):
-    Gz_i = ctrl.c2d(G, Ts_i, method='zoh')
-    Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')
-    Tz_i = ctrl.feedback(Gz_i * Kz_i, 1)
-    t_i, y_i = ctrl.step_response(Tz_i, T=t_step)
-    
-    axes[0].plot(t_i, y_i, color=colors[i], linewidth=1.5, 
-                 label=f'Ts = {Ts_i*1000:.0f} ms')
-    
-    Lz_i = Gz_i * Kz_i
-    mag_i, phase_i, w_i = ctrl.frequency_response(Lz_i, omega_w)
-    mag_i = np.abs(mag_i.flatten())
-    phase_i = np.degrees(phase_i.flatten())
-    
-    axes[1].semilogx(w_i, 20*np.log10(mag_i), color=colors[i], alpha=0.7, linewidth=1,
-                     label=f'Ts = {Ts_i*1000:.0f} ms')
-    axes[2].semilogx(w_i, phase_i, color=colors[i], alpha=0.7, linewidth=1,
-                     label=f'Ts = {Ts_i*1000:.0f} ms')
-
-# 连续基准（加粗）
-axes[0].plot(t_c, y_c, 'k-', linewidth=2.5, label='连续', alpha=0.5)
-axes[1].semilogx(omega_w, 20*np.log10(np.abs(K_cont(1j*omega_w) * G(1j*omega_w))), 
-                 'k-', linewidth=2.5, alpha=0.5, label='连续')
-axes[2].semilogx(omega_w, np.degrees(np.angle(K_cont(1j*omega_w) * G(1j*omega_w))), 
-                 'k-', linewidth=2.5, alpha=0.5, label='连续')
-
-axes[0].set_xlabel('时间 (s)'); axes[0].set_ylabel('输出'); axes[0].set_title('阶跃响应')
-axes[0].legend(fontsize=8); axes[0].grid(True, alpha=0.3)
-
-axes[1].set_xlabel('ω (rad/s)'); axes[1].set_ylabel('增益 (dB)'); axes[1].set_title('开环 Bode 幅频')
-axes[1].legend(fontsize=8); axes[1].grid(True, which='both', alpha=0.3)
-
-axes[2].set_xlabel('ω (rad/s)'); axes[2].set_ylabel('相位 (°)'); axes[2].set_title('开环 Bode 相频')
-axes[2].axhline(y=-180, color='red', linestyle=':', alpha=0.3)
-axes[2].legend(fontsize=8); axes[2].grid(True, which='both', alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-# 总结表格
-print("=== 采样周期对性能的影响 ===")
-print(f"{'Ts (ms)':<10} {'ωs/ωc':<10} {'超调 (%)':<12} {'PM (°)':<10} {'ωgc (rad/s)':<15}")
-for Ts_i in Ts_values:
-    Gz_i = ctrl.c2d(G, Ts_i, method='zoh')
-    Kz_i = ctrl.c2d(K_cont, Ts_i, method='tustin')
-    Lz_i = Gz_i * Kz_i
-    Tz_i = ctrl.feedback(Lz_i, 1)
-    t_i, y_i = ctrl.step_response(Tz_i, T=t_step)
-    os_i = (np.max(y_i) - 1) * 100
-    
-    mag_i = np.abs(Lz_i(1j * omega_w))
-    phase_i = np.degrees(np.angle(Lz_i(1j * omega_w)))
-    idx_gc = np.where(np.array(mag_i).flatten() <= 1)[0]
-    if len(idx_gc) > 0:
-        wgc = omega_w[idx_gc[0]]
-        pm_i = 180 + np.array(phase_i).flatten()[idx_gc[0]]
-    else:
-        wgc = np.nan
-        pm_i = np.nan
-    
-    ratio = 2 * np.pi / (Ts_i * 5)
-    print(f"{Ts_i*1000:<10.0f} {ratio:<10.1f} {os_i:<12.2f} {pm_i:<10.1f} {wgc:<15.2f}")`
-    }
+    {code: `T=.01;G,C,Gd,Cd,Td=motor(T);Tc=ctrl.feedback(G*C,1)
+t=np.arange(301)*T;y_cont=ctrl.step_response(Tc,T=t).outputs;y_disc=ctrl.step_response(Td,T=t).outputs
+assert np.max(abs(y_cont-(1-np.exp(-5*t))))<1e-10
+first90_cont=float(np.log(10)/5);first90_disc=float(t[np.flatnonzero(y_disc>=.9)[0]])
+pm,wc=crossover(Gd,Cd,T);bw=bandwidth(Td,T)
+motor_metrics=[pm,wc,bw,first90_cont,first90_disc,float(np.max(abs(y_disc-y_cont)))]
+print('motor Cd numerator:',np.round(Cd.num[0][0],12).tolist())
+print('motor PM,wgc,bandwidth,t90 continuous exact,t90 sampled,max error:',np.round(motor_metrics,9).tolist())
+fig,axes=plt.subplots(1,2,figsize=(10,4));axes[0].plot(t,y_cont,label='continuous');axes[0].plot(t,y_disc,'--',label='digital')
+axes[1].plot(t,y_disc-y_cont)
+axes[0].set(xlim=(0,3),ylim=(0,1.2),xlabel='time (s)',ylabel='unit response');axes[0].legend()
+axes[1].set(xlim=(0,3),ylim=(-.03,.03),xlabel='time (s)',ylabel='digital minus continuous')
+for ax in axes:ax.grid()
+plt.tight_layout();plt.show()`},
+    {code: `periods=[.001,.005,.01,.02,.05,.1];sweep=[];responses=[];freq_curves=[]
+fig,axes=plt.subplots(1,3,figsize=(14,4))
+for T in periods:
+    G,C,Gd,Cd,Td=motor(T);t=np.arange(int(round(3/T))+1)*T;y=ctrl.step_response(Td,T=t).outputs
+    pm,wc=crossover(Gd,Cd,T);bw=bandwidth(Td,T);roots=ctrl.poles(Td)
+    sweep.append([T,float(max(abs(roots))),pm,wc,bw,float(t[np.flatnonzero(y>=.9)[0]]),float(max(0,np.max(y)-1)*100)])
+    responses.append([t.tolist(),y.tolist()]);w=np.geomspace(.1,.95*np.pi/T,500);zz=np.exp(1j*w*T);H=Gd(zz)*Cd(zz)
+    freq_curves.append([w.tolist(),H.real.tolist(),H.imag.tolist()])
+    axes[0].plot(t,y,label=f'T={T:g}');axes[1].semilogx(w,20*np.log10(abs(H)),label=f'T={T:g}');axes[2].semilogx(w,np.angle(H,deg=True),label=f'T={T:g}')
+print('motor T,radius,PM,wgc,bandwidth,first90,overshoot%:',np.round(sweep,9).tolist())
+axes[0].set(xlim=(0,3),ylim=(0,1.2),xlabel='time (s)',ylabel='unit response')
+axes[1].set(xlim=(.1,3500),ylim=(-80,40),xlabel='omega (rad/s)',ylabel='magnitude (dB)')
+axes[2].set(xlim=(.1,3500),ylim=(-180,0),xlabel='omega (rad/s)',ylabel='phase (deg)')
+for ax in axes:ax.grid();ax.legend(fontsize=7)
+plt.tight_layout();plt.show()`}
   ]}
 />
+
+Ts=.01s时，实算数字PM约88.548601°、开环穿越频率4.999687rad/s、闭环−3dB带宽5.131320rad/s。连续精确首次90%时刻0.460517s；数字采样点首次达到为0.45s，不能把“更早到0.9”直接宣称为总体性能更优。
+
+第二段保留六个采样周期，时间轴各自用kTs，频率各自限制在Nyquist以下。较大Ts改变闭环带宽、裕度与超调，不能只看一条阶跃曲线。
 
 ## 深入讨论
 
 ### 离散化方法的本质：数值积分
 
-所有离散化方法都可以理解为**数值积分方法**的选择：
+前/后向欧拉分别对应显式/隐式矩形积分，Tustin对应梯形积分。在通常光滑性条件下，其固定时间区间的全局误差阶分别为一阶、一阶、二阶。这个阶数不等于任何频率下都更小的误差，也不是闭环稳定证书。
 
-| 离散化方法 | 数值积分 | 精度 | 稳定性 |
-|-----------|---------|:---:|:---:|
-| 前向欧拉 | 显式矩形 | $O(T_s)$ | ✗ |
-| 后向欧拉 | 隐式矩形 | $O(T_s)$ | ✓ |
-| Tustin | 梯形 | $O(T_s^2)$ | ✓ |
-| 零极点匹配 | 精确指数 | $O(T_s^2)$ | ✓ |
-
-Tustin 是二阶精度（梯形积分），所以频率响应比一阶方法（欧拉）更精确。零极点匹配在本质上是精确求解线性微分方程的解，理论上最精确，但只适用于线性时不变系统。
+零极点匹配是模态映射加增益约定，不能一概标成“二阶精度”或“理论最精确”。精确ZOH对象则针对分段常值输入，在采样时刻匹配原连续对象；条件不同，结论也不同。
 
 ### 多速率系统
 
-实际系统中，不同信号可能有不同的采样率：
-- 电流环：10 kHz（快速）
-- 速度环：1 kHz（中速）
-- 位置环：100 Hz（慢速）
+例如电流环10kHz、速度环1kHz、位置环100Hz，可以各按自己的周期更新，并通过保持、缓冲与明确的时间戳交换数据。它们只是示意数值，不是所有电机的要求。
 
-**处理方法**：
-1. **提升（Lifting）**：把慢速率信号用零阶保持插值到快速率
-2. **降阶模型**：在快速率下建立模型，但控制器在慢速率下更新
-3. **多速率控制理论**：用周期时变系统理论处理
-
-> 💡 工程上最常见的做法是**所有环路都以最快速率运行**，只是外环的设定值变化慢。这样避免了多速率的复杂性。
+提升（lifting）是把多个快采样步组成一个慢周期上的向量/块模型，不只是插值。简单把所有环以最快频率运行，或把不同速率当作一个普通LTI模型，都不能自动消除时序问题；异步采样还需另行建模。
 
 ### 定点数实现
 
-在嵌入式系统（MCU、FPGA）中，浮点运算可能太慢或不可用。需要用**定点数**实现控制器：
+原PI增量式系数取缩放S=65536，四舍五入为344和311。应写成**近似**：344/65536约0.005249023，311/65536约0.004745483；它们不是原系数的精确整数等式。
 
-$$
-u[k] = u[k-1] + \underbrace{0.00525}_{=\,5.25 \times 10^{-3}} \cdot e[k] - \underbrace{0.00475}_{=\,4.75 \times 10^{-3}} \cdot e[k-1]
-$$
-
-定点数实现：
-1. 选择缩放因子 $S = 2^{16} = 65536$
-2. 系数变成整数：$0.00525 \times 65536 = 344$，$0.00475 \times 65536 = 311$
-3. 所有运算用整数完成，最后除以 $S$
-
-需要注意：
-- **溢出**：积分器可能累积到很大的值，需要用 32 位或 64 位整数
-- **量化误差**：系数的定点近似引入额外误差
-- **移位代替除法**：$S = 2^n$ 时，除以 $S$ 等价于右移 $n$ 位
+还要约定输入输出的缩放、累加器位宽、饱和或溢出处理、负数舍入方式。位移除以2的幂也受有符号整数规则影响，不能不加条件就说与实数除法完全相同。这些内容作为后续嵌入式实现的检查起点，不据两个系数宣称定点实现验收完成。
 
 ### 与后续课程的关系
 
-本课讲的方法是计算机控制的基础工具：
-- **数字 PID 实现**（第 5 课）会深入讨论 PID 的各种改进结构和调参方法
-- **采样周期选择**（第 6 课）会系统讲解如何根据性能需求和硬件约束选择 $T_s$
-- **离散系统稳定性**（第 4 课）会分析离散化对稳定性的影响
+[离散系统稳定性](/discrete-sampled/discrete-stability-criteria)已给判根与裕度工具；后续[采样周期](/discrete-sampled/sampling-period-selection)继续处理周期选择。[数字PID](/implementation/digital-pid)将承接本页工程材料，迁移完成前本页不删除来源。
 
 ## 小结
 
-1. **仿真法（Emulation）**是工业主流：先在连续域设计，再离散化
-2. **Tustin 变换**是最常用的离散化方法（保结构、二阶精度），配合预畸变可以精确匹配关键频率
-3. **直接数字设计**在采样频率低或需要特殊性能时有优势，但需要 z 域直觉
-4. **数字 PID 的三个工程要点**：
-   - 抗积分饱和（反算法）：防止执行器饱和时积分器过度累积
-   - 微分滤波：一阶低通滤波抑制高频噪声
-   - 无扰切换：手动/自动切换时输出不跳变
-5. **从公式到代码**：离散控制器的最终形式是差分方程——几行乘法和加法，每个采样周期执行一次
+1. 离散化先明确对象、输入定义和更新规则；稳定性与精度分开检查。
+2. Tustin频率映射有方向，预扭曲只精确匹配选定频率点。
+3. matched要声明增益和补零约定，积分器不能用无限DC值相除。
+4. PI差分式、饱和反算、导数滤波都必须写清本拍/下一拍状态和单位。
+5. 最后回到实际数字闭环，核采样响应、频率、约束与初值。
 
 ## 习题
 
-1. **离散化方法对比**：给定连续控制器 $K(s) = 2 + \frac{0.5}{s}$，采样周期 $T_s = 0.05$ s。分别用前向欧拉、后向欧拉、Tustin 和零极点匹配方法离散化，写出 $K(z)$ 的表达式。
-
-2. **预畸变计算**：给定控制器 $K(s) = \frac{10(s + 2)}{s}$，采样周期 $T_s = 0.1$ s。如果希望在 $\omega_0 = 2$ rad/s 处频率响应精确匹配，计算预畸变频率 $\omega_0'$，写出预畸变后的 $K'(s)$，再做 Tustin 变换得到 $K(z)$。
-
-3. **抗积分饱和分析**：在反算法中，$K_b = 0$ 时退化为普通积分。证明：当 $K_b > 0$ 时，饱和状态下的积分器等价于一个时间常数为 $1/K_b$ 的一阶系统。这说明 $K_b$ 越大，退饱和越快。
-
-4. **设计题**：给定对象 $G(s) = \frac{50}{0.2s + 1}$，采样周期 $T_s = 0.02$ s。设计 PI 控制器使闭环带宽 $\omega_c = 10$ rad/s，用 Tustin 离散化，写出差分方程。
+1. $C(s)=2+0.5/s$、Ts=.05s，分别用前向欧拉、后向欧拉、Tustin和matched求C(z)。matched按本课约定，在1rad/s处匹配幅值。
+2. $C(s)=10(s+2)/s$、Ts=.1s，希望ω0=2rad/s处复频响匹配。计算反向预扭曲频率、等效C′(s)和数字控制器，并核目标频率。
+3. 对本课显式反算更新，假设饱和段内P、D、e与实际输出近似固定，推导积分误差的每拍乘数。说明连续时间1/Kb与真实离散时间常数的关系，Kb是否可以任意增大。
+4. $G(s)=50/(.2s+1)$、Ts=.02s，先按连续带宽10rad/s设计PI并作Tustin递推，再核数字闭环带宽。若要求数字闭环带宽恰为10，保持Ti=.2s作一次标量增益修正。
 
 ## 答案
 
 ### 习题 1
 
-$K(s) = 2 + \frac{0.5}{s} = \frac{2s + 0.5}{s}$
-
-**前向欧拉**：$s = \frac{z-1}{T_s} = \frac{z-1}{0.05} = 20(z-1)$
+三个积分代换依次给出
 
 $$
-K(z) = 2 + \frac{0.5}{20(z-1)} = 2 + \frac{0.025}{z-1} = \frac{2z - 1.975}{z - 1}
+C_F(z)=\frac{2z-1.975}{z-1},\quad
+C_B(z)=\frac{2.025z-2}{z-1},\quad
+C_T(z)=\frac{2.0125z-1.9875}{z-1}.
 $$
 
-**后向欧拉**：$s = \frac{z-1}{T_s z} = \frac{z-1}{0.05z} = 20\frac{z-1}{z}$
-
-$$
-K(z) = 2 + \frac{0.5}{20\frac{z-1}{z}} = 2 + \frac{0.025z}{z-1} = \frac{2.025z - 2}{z - 1}
-$$
-
-**Tustin**：$s = \frac{2}{T_s}\frac{z-1}{z+1} = 40\frac{z-1}{z+1}$
-
-$$
-K(z) = 2 + \frac{0.5}{40\frac{z-1}{z+1}} = 2 + \frac{0.0125(z+1)}{z-1} = \frac{2.0125z - 1.9875}{z - 1}
-$$
-
-**零极点匹配**：
-- $K(s)$ 的极点 $s = 0$ → $z = e^{0} = 1$
-- $K(s)$ 的零点 $s = -0.25$ → $z = e^{-0.25 \times 0.05} = e^{-0.0125} \approx 0.9876$
-- DC 增益匹配：$K(s)|_{s \to 0} \to \infty$，改用 $\omega = 1$ rad/s 处匹配
-
-$$
-K(z) = \frac{K_0(z - 0.9876)}{z - 1}
-$$
-
-在 $\omega = 1$ rad/s 处：$|K(j1)| = \sqrt{4 + 0.25} = \sqrt{4.25} = 2.062$
-
-$|K(z)|_{z=e^{j0.05}} = \frac{K_0 |e^{j0.05} - 0.9876|}{|e^{j0.05} - 1|}$
-
-计算得 $K_0 \approx 2.013$。
-
-$$
-K(z) \approx \frac{2.013(z - 0.9876)}{z - 1} = \frac{2.013z - 1.988}{z - 1}
-$$
+matched取 $q=e^{-.0125}\approx.987577800494$，并用1rad/s的有限频率幅值求g，约2.012526039961。因此 $C_m(z)=g(z-q)/(z-1)$，分子系数约[2.012526039961,−1.987526039981]。这些约数不替代程序中的精确指数。
 
 ### 习题 2
 
-**步骤 1**：计算预畸变频率
+反向预扭曲频率 $\omega'_0=20\tan(.1)\approx2.006693441709$ rad/s；通用代换系数 $\kappa=2/\tan(.1)\approx19.933288846518$ /s。
+
+因为这是PI，可把整个s缩放简化成 $C'(s)=10(s+\omega'_0)/s$，再作普通Tustin，等价于把原C中的s整体替为κ(z−1)/(z+1)：
 
 $$
-\omega_0' = \frac{2}{T_s} \tan\left(\frac{\omega_0 T_s}{2}\right) = \frac{2}{0.1} \tan\left(\frac{2 \times 0.1}{2}\right) = 20 \tan(0.1) = 20 \times 0.1003 = 2.007 \text{ rad/s}
+C_d(z)=\frac{11.003346720855z-8.996653279145}{z-1}.
 $$
 
-误差只有 0.3%——因为 $\omega_0 T_s = 0.2$ 较小。
-
-**步骤 2**：预畸变后的控制器
-
-把零点从 $-2$ 移到 $-2.007$：
-
-$$
-K'(s) = \frac{10(s + 2.007)}{s}
-$$
-
-**步骤 3**：Tustin 变换
-
-$$
-s = 20\frac{z-1}{z+1}
-$$
-
-$$
-K(z) = \frac{10\left(20\frac{z-1}{z+1} + 2.007\right)}{20\frac{z-1}{z+1}} = \frac{10(20(z-1) + 2.007(z+1))}{20(z-1)}
-$$
-
-$$
-= \frac{10(22.007z - 17.993)}{20(z-1)} = \frac{11.0035z - 8.9965}{z - 1}
-$$
+代入 $z=e^{j.2}$ 得10−10j，与C(j2)相同。这个等价变形依赖本题形式，不能推广为任意控制器“只换一个参数”。
 
 ### 习题 3
 
-反算法积分器方程：
+在上述固定近似下，令 $I_*=(u_a-P-D)+K_ie/K_b$，并令 $\tilde I=I-I_*$。原更新可化为
 
 $$
-u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] + K_b(u_{sat}[k] - u[k])
+\tilde I[k+1]=(1-K_bT_s)\tilde I[k].
 $$
 
-饱和时，$u[k] > u_{\max}$，$u_{sat}[k] = u_{\max}$，令 $\Delta u = u[k] - u_{\max} > 0$：
+Kb=0时恢复普通积分。严格收敛需 $0\lt K_bT_s\lt 2$；若还要求单调衰减，则 $0\lt K_bT_s\lt 1$。后者的精确离散时间常数为
 
 $$
-u_{int}[k] = u_{int}[k-1] + K_i T_s \cdot e[k] - K_b \Delta u
+\tau_d=-\frac{T_s}{\ln(1-K_bT_s)}.
 $$
 
-如果饱和期间误差 $e[k]$ 近似不变（因为输出被钳位），则积分器的变化率：
-
-$$
-\frac{\Delta u_{int}}{T_s} \approx K_i e - K_b \Delta u
-$$
-
-这是一个一阶系统，稳态时 $\Delta u_{int} / T_s = 0$：
-
-$$
-K_i e = K_b \Delta u \implies \Delta u = \frac{K_i}{K_b} e
-$$
-
-积分器被限制在有限范围内，不会无限累积。退饱和的时间常数约为 $\tau = 1/K_b$。
-
-$K_b$ 越大 → $\tau$ 越小 → 退饱和越快 → 超调越小。但 $K_b$ 过大可能导致退饱和时振荡。
+只有KbTs很小时才近似1/Kb。Ts=.01、Kb=10时乘数.9、τd约.094912s，而1/Kb=.1s；Kb=100时理想固定条件下一拍到平衡，Kb=250时乘数−1.5，反而发散。完整闭环中e与饱和状态会变，这段推导也不能保证Kb越大超调越小。
 
 ### 习题 4
 
-**步骤 1**：连续 PI 设计
-
-$G(s) = \frac{50}{0.2s + 1} = \frac{250}{s + 5}$
-
-PI 控制器 $K(s) = K_p + \frac{K_i}{s}$
-
-选择 $T_i = 0.2$ s（抵消对象极点），$K(s) = K_p \frac{0.2s + 1}{0.2s}$
-
-开环：$L(s) = K_p \frac{0.2s + 1}{0.2s} \cdot \frac{250}{s + 5} = \frac{250 K_p}{s}$（极点抵消后）
-
-带宽：$|L(j\omega_c)| = \frac{250 K_p}{\omega_c} = 1$，$\omega_c = 10$ rad/s
+对象为250/(s+5)，取Ti=.2s，在名义连续模型中抵消稳定极点。令250Kp=10，得Kp=.04、Ki=.2。Tustin给
 
 $$
-K_p = \frac{10}{250} = 0.04, \quad K_i = \frac{K_p}{T_i} = \frac{0.04}{0.2} = 0.2
+C_d(z)=\frac{.042z-.038}{z-1},\qquad
+u[k]=u[k-1]+.042e[k]-.038e[k-1].
 $$
 
-**步骤 2**：Tustin 离散化（$T_s = 0.02$ s）
+这满足连续设计目标，但指定ZOH对象与Tustin控制器的数字闭环带宽约 **11.198826rad/s**，不能把连续目标当成数字实测。
 
-$$
-K(z) = 0.04 + \frac{0.2}{\frac{2}{0.02}\frac{z-1}{z+1}} = 0.04 + \frac{0.2 \times 0.02}{2} \cdot \frac{z+1}{z-1} = 0.04 + 0.002 \frac{z+1}{z-1}
-$$
+若数字目标必须为10，保持Ki=5Kp，在 $z=e^{j10T_s}$ 求 $|T(z)|=1/\sqrt2$ 的增益，得Kp约.036157417269、Ki约.180787086346。再用这组参数离散化并核所有闭环根严格在圆内，才形成本题指定模型下的修正设计；饱和和参数误差另行检查。
 
-$$
-= \frac{0.04(z-1) + 0.002(z+1)}{z-1} = \frac{0.042z - 0.038}{z - 1}
-$$
+<JupyterNotebook
+  title="实验4：公式、预扭曲与题解"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+import json
+plt.rcParams['font.sans-serif']=['DejaVu Sans']
+plt.rcParams['axes.unicode_minus']=False
 
-**步骤 3**：差分方程
+def matched_pi(kp,ki,T,wref=1.):
+    q=np.exp(-ki/kp*T);zref=np.exp(1j*wref*T)
+    gain=abs(kp+ki/(1j*wref))*abs(zref-1)/abs(zref-q)
+    return ctrl.tf([gain,-gain*q],[1.,-1.],T),float(q),float(gain)
 
-$$
-\frac{U(z)}{E(z)} = \frac{0.042 - 0.038z^{-1}}{1 - z^{-1}}
-$$
+def motor(T,kp=.005,ki=.05,gain=1000.,rate=10.):
+    G=ctrl.tf([gain],[1.,rate]);C=ctrl.tf([kp,ki],[1.,0.])
+    Gd=ctrl.c2d(G,T,method='zoh');Cd=ctrl.c2d(C,T,method='tustin')
+    return G,C,Gd,Cd,ctrl.feedback(Gd*Cd,1)
 
-$$
-u[k] - u[k-1] = 0.042\, e[k] - 0.038\, e[k-1]
-$$
+def crossover(Gd,Cd,T):
+    def H(w):return complex(Gd(np.exp(1j*w*T))*Cd(np.exp(1j*w*T)))
+    grid=np.geomspace(1e-4,np.pi/T*(1-1e-8),1000)
+    f=np.log([abs(H(w)) for w in grid]);cross=np.where(f[:-1]*f[1:]<0)[0]
+    if len(cross)!=1:raise ValueError('Expected one gain crossover')
+    i=int(cross[0]);wc=brentq(lambda w:np.log(abs(H(w))),grid[i],grid[i+1],xtol=1e-12)
+    return float(180+np.angle(H(wc),deg=True)),float(wc)
 
-$$
-\boxed{u[k] = u[k-1] + 0.042\, e[k] - 0.038\, e[k-1]}
-$$
+def bandwidth(closed,T):
+    dc=float(np.real(closed(1)))
+    return float(brentq(lambda w:abs(complex(closed(np.exp(1j*w*T))))-dc/np.sqrt(2),1e-5,np.pi/T*(1-1e-8),xtol=1e-12))
+
+def aw_run(umax,release,kb,T=.01):
+    # I[k] is known before u[k]; tracking adjusts I[k+1], no algebraic loop.
+    N=int(5/T);p=np.exp(-10*T);b=100*(1-p)
+    y=np.zeros(N+1);integ=np.zeros(N+1);raw=np.zeros(N);applied=np.zeros(N);ref=np.zeros(N)
+    for k in range(N):
+        ref[k]=100. if not release or k*T<2.5 else 0.
+        error=ref[k]-y[k];raw[k]=.005*error+integ[k]
+        applied[k]=np.clip(raw[k],-umax,umax)
+        integ[k+1]=integ[k]+T*(.05*error+kb*(applied[k]-raw[k]))
+        y[k+1]=p*y[k]+b*applied[k]
+    return y,integ,raw,applied,ref`}
+  cells={[
+    {code: `import sympy as sp
+z,s=sp.symbols('z s')
+T=.05;kp=2.;ki=.5
+Q1=[ctrl.c2d(ctrl.tf([kp,ki],[1,0]),T,method=m) for m in ['euler','backward_diff','tustin']]
+qm,qzero,qgain=matched_pi(kp,ki,T);Q1.append(qm)
+print('Q1 numerators:',[np.round(D.num[0][0],12).tolist() for D in Q1],'denominator:',[1,-1])
+T=.1;w0=2.;kappa=w0/np.tan(w0*T/2);warped=2/T*np.tan(w0*T/2)
+Q2=ctrl.c2d(ctrl.tf([10.,20.],[1,0]),T,method='tustin',prewarp_frequency=w0)
+q2error=abs(complex(Q2(np.exp(1j*w0*T)))-(10+20/(1j*w0)))
+print('Q2 warped frequency,kappa:',round(warped,12),round(kappa,12),'numerator:',np.round(Q2.num[0][0],12).tolist(),'target error:',round(q2error,12))
+print('reverse frequency ratios:',[round(np.tan(x/2)/(x/2),9) for x in [.1,.3,.5,1.,np.pi/2]])
+alpha=1/(1+20*.01);beta=.1*20/(1+20*.01)
+print('derivative alpha,beta,Nyquist gain:',round(alpha,9),round(beta,9),round(2*beta/(1+alpha),9))
+Q4=ctrl.c2d(ctrl.tf([.04,.2],[1,0]),.02,method='tustin')
+print('Q4 numerator:',np.round(Q4.num[0][0],12).tolist())
+_,_,Gq,Cq,Tq=motor(.02,.04,.2,250.,5.)
+initial_bw=bandwidth(Tq,.02)
+def target(kp):
+    _,_,_,_,Q=motor(.02,kp,5*kp,250.,5.)
+    return abs(complex(Q(np.exp(.2j))))-1/np.sqrt(2)
+refined=brentq(target,.01,.05,xtol=1e-14)
+_,_,_,Cqr,Tqr=motor(.02,refined,5*refined,250.,5.)
+print('Q4 original bandwidth,refined Kp,Ki,bandwidth,radius:',np.round([initial_bw,refined,5*refined,bandwidth(Tqr,.02),max(abs(ctrl.poles(Tqr)))],12).tolist())
+print('Q4 refined numerator:',np.round(Cqr.num[0][0],12).tolist())
+for kb in [0.,10.,100.,250.]:
+    p=1-.01*kb;print('Q3 Kb,pole:',kb,round(p,9))
+print('fixed coefficients nearest:',[int(round(x*65536)) for x in [.00525,.00475]])
+print('Q3 time constant:',round(-.01/np.log(.9),12))
+print('mode default multipliers:',np.round([.9,1/1.1,.95/1.05,np.exp(-.1)],12).tolist())`}
+  ]}
+/>
+
+接口依据：[python-control采样与预扭曲](https://python-control.readthedocs.io/en/0.10.2/generated/control.sample_system.html)、[SciPy离散化方法](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cont2discrete.html)。

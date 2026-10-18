@@ -1,0 +1,36 @@
+
+> control-universe@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./components/wiki/browser-notebook.tsx
+42:102  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/jupyter-notebook.tsx
+119:6  Warning: React Hook useEffect has a missing dependency: 'setupCode'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+336:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/phase-plane-explorer.tsx
+389:9  Warning: The 'ic' array makes the dependencies of useMemo Hook (at line 403) change on every render. To fix this, wrap the initialization of 'ic' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+432:77  Warning: React Hook useMemo has a missing dependency: 'ic'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+515:6  Warning: React Hook useMemo has an unnecessary dependency: 'showMany'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+Failed to compile.
+
+./content/catalog.ts:3041:43
+Type error: Object literal may only specify known properties, and '"id"' does not exist in type 'SubsectionMeta'.
+
+  3039 |           "modern/lqr-controller"
+  3040 |         ],
+> 3041 |         "subsections": [{"title":"只剩几次调整","id":"只剩几次调整"},{"title":"从最后一步倒推","id":"从最后一步倒推"},{"title":"向前执行","id":"向前执行"},{"title":"从有限步到长期","id":"从有限步到长期"},{"title":"输入有上限","id":"输入有上限"},{"title":"小结","id":"小结"},{"title":"习题","id":"习题"},{"title":"答案","id":"答案"}],
+       |                                           ^
+  3042 |         "level": "grad",
+  3043 |         "type": "theory",
+  3044 |         "status": "draft"
+Next.js build worker exited with code: 1 and signal: null

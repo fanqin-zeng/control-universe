@@ -1,3 +1,10 @@
+import { EventTriggeredExplorer } from "@/components/wiki/event-triggered-explorer";
+import { DiscreteOptimalExplorer } from "@/components/wiki/discrete-optimal-explorer";
+import { SampledDataExplorer } from "@/components/wiki/sampled-data-explorer";
+import { SamplingBudgetExplorer } from "@/components/wiki/sampling-budget-explorer";
+import { DiscretizationModeExplorer } from "@/components/wiki/discretization-mode-explorer";
+import { JuryStabilityExplorer } from "@/components/wiki/jury-stability-explorer";
+import { SampledModeExplorer } from "@/components/wiki/sampled-mode-explorer";
 import { CoolingNumericsExplorer } from "@/components/wiki/cooling-numerics-explorer";
 import { ChargingGameExplorer } from "@/components/wiki/charging-game-explorer";
 import { GraphConsensusExplorer } from "@/components/wiki/graph-consensus-explorer";
@@ -63,6 +70,10 @@ import { ZeroDynamicsExplorer } from "@/components/wiki/zero-dynamics-explorer";
 import { SlidingModeExplorer } from "@/components/wiki/sliding-mode-explorer";
 import { BacksteppingExplorer } from "@/components/wiki/backstepping-explorer";
 import { MracExplorer } from "@/components/wiki/mrac-explorer";
+import { PassivityExplorer } from "@/components/wiki/passivity-explorer";
+import { IssSmallGainExplorer } from "@/components/wiki/iss-small-gain-explorer";
+import { BifurcationExplorer } from "@/components/wiki/bifurcation-explorer";
+import { SwitchedHybridExplorer } from "@/components/wiki/switched-hybrid-explorer";
 import { FuzzyExplorer } from "@/components/wiki/fuzzy-explorer";
 import FuzzyTuningExplorer from "@/components/wiki/fuzzy-tuning-explorer";
 import NeuralNetworkExplorer from "@/components/wiki/neural-network-explorer";
@@ -85,6 +96,13 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EventTriggeredExplorer,
+  DiscreteOptimalExplorer,
+  SampledDataExplorer,
+  SamplingBudgetExplorer,
+  DiscretizationModeExplorer,
+  JuryStabilityExplorer,
+  SampledModeExplorer,
   CoolingNumericsExplorer,
   ChargingGameExplorer,
   GraphConsensusExplorer,
@@ -131,6 +149,10 @@ export const wikiComponents: MDXComponents = {
   SlidingModeExplorer,
   BacksteppingExplorer,
   MracExplorer,
+  PassivityExplorer,
+  IssSmallGainExplorer,
+  SwitchedHybridExplorer,
+  BifurcationExplorer,
   FuzzyExplorer,
   FuzzyTuningExplorer,
   NeuralNetworkExplorer,

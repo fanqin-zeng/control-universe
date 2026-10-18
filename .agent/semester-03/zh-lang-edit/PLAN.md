@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前46课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前59课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -54,20 +54,20 @@
 | 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-06.md) |
 | 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-07.md) |
 | 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待合入 | [润色记录](records/NONLINEAR-08.md) |
-| 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 待完成 | 待生产 | — |
-| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 待完成 | 待生产 | — |
-| 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 待完成 | 待生产 | — |
-| 50 | NONLINEAR-12 | 分岔与混沌 | content/nonlinear/bifurcation-chaos.mdx | 待完成 | 待生产 | — |
+| 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 已完成 | 待润色 | — |
+| 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 已完成 | 待润色 | — |
+| 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 已完成 | 待润色 | — |
+| 50 | NONLINEAR-12 | 分岔与混沌 | content/nonlinear/bifurcation-chaos.mdx | 已完成 | 待润色 | — |
 | 51 | DISCRETE-01 | 采样与量化 | content/discrete-sampled/discrete-time-freq.mdx | 待完成 | 待生产 | — |
-| 52 | DISCRETE-02 | 离散时间系统 | content/discrete-sampled/discrete-time-systems.mdx | 待完成 | 待生产 | — |
-| 53 | DISCRETE-03 | 差分方程 | content/discrete-sampled/difference-equation.mdx | 待完成 | 待生产 | — |
-| 54 | DISCRETE-04 | Z域系统分析 | content/discrete-sampled/z-transform-analysis.mdx | 待完成 | 待生产 | — |
-| 55 | DISCRETE-05 | 离散系统稳定性 | content/discrete-sampled/discrete-stability-criteria.mdx | 待完成 | 待生产 | — |
-| 56 | DISCRETE-06 | 离散化方法 | content/discrete-sampled/discretization-methods.mdx | 待完成 | 待生产 | — |
-| 57 | DISCRETE-07 | 采样周期 | content/discrete-sampled/sampling-period-selection.mdx | 待完成 | 待生产 | — |
-| 58 | DISCRETE-08 | 采样数据系统 | content/discrete-sampled/sampled-data-systems.mdx | 待完成 | 待生产 | — |
-| 59 | DISCRETE-09 | 离散最优控制 | content/discrete-sampled/discrete-optimal-control.mdx | 待完成 | 待生产 | — |
-| 60 | DISCRETE-10 | 事件触发控制 | content/discrete-sampled/event-triggered-control.mdx | 待完成 | 待生产 | — |
+| 52 | DISCRETE-02 | 离散时间系统 | content/discrete-sampled/discrete-time-systems.mdx | 已完成 | 待润色 | — |
+| 53 | DISCRETE-03 | 差分方程 | content/discrete-sampled/difference-equation.mdx | 已完成 | 待润色 | — |
+| 54 | DISCRETE-04 | Z域系统分析 | content/discrete-sampled/z-transform-analysis.mdx | 已完成 | 待润色 | — |
+| 55 | DISCRETE-05 | 离散系统稳定性 | content/discrete-sampled/discrete-stability-criteria.mdx | 已完成 | 待润色 | — |
+| 56 | DISCRETE-06 | 离散化方法 | content/discrete-sampled/discretization-methods.mdx | 已完成 | 待润色 | — |
+| 57 | DISCRETE-07 | 采样周期 | content/discrete-sampled/sampling-period-selection.mdx | 已完成 | 待润色 | — |
+| 58 | DISCRETE-08 | 采样数据系统 | content/discrete-sampled/sampled-data-systems.mdx | 已完成 | 待润色 | — |
+| 59 | DISCRETE-09 | 离散最优控制 | content/discrete-sampled/discrete-optimal-control.mdx | 已完成 | 待润色 | — |
+| 60 | DISCRETE-10 | 事件触发控制 | content/discrete-sampled/event-triggered-control.mdx | 已完成 | 待润色 | — |
 | 61 | IMPL-01 | 控制系统架构 | content/implementation/computer-control-architecture.mdx | 待完成 | 待生产 | — |
 | 62 | IMPL-02 | 数字PID | content/implementation/digital-pid.mdx | 待完成 | 待生产 | — |
 | 63 | IMPL-03 | PID工程整定 | content/implementation/pid-engineering-tuning.mdx | 待完成 | 待生产 | — |

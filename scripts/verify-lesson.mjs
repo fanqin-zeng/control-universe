@@ -16,6 +16,7 @@ import { resolveHistoricalLesson } from '../lib/lesson-compat.mjs';
  *   --root <dir>    换根目录（缺陷注入 fixture 用）
  *   --no-http       跳过第 6 项（不探 dev server）
  *   --quiet         只打印 WARN/FAIL 与汇总
+ *   WIKI_VERIFY_PORT=8083 可检查独立服务；默认8080，避免与其它工作区争用端口。
  *
  * 负向测试（E1 验收的第二半：「对一门故意注入错误的课能报 FAIL」）：
  *   node scripts/verify-lesson.mjs fx/bad-lesson fx/good-lesson \
@@ -65,7 +66,10 @@ const P_WIKI_COMPONENTS = join(ROOT, "lib/wiki-components.ts");
 const P_DISCUSS = join(ROOT, "docs/discuss-log");
 const P_PUBLIC = join(ROOT, "public");
 const DEV_HOST = "127.0.0.1";
-const DEV_PORT = 8080;
+const DEV_PORT = Number(process.env.WIKI_VERIFY_PORT || 8080);
+if (!Number.isInteger(DEV_PORT) || DEV_PORT < 1 || DEV_PORT > 65535) {
+  throw new Error("WIKI_VERIFY_PORT must be an integer from 1 to 65535");
+}
 
 const rel = makeRel(ROOT);
 
