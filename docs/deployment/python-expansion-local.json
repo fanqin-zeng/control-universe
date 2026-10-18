@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T19:33:33.943Z",
-  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscretization-methods",
+  "testedAt": "2026-10-18T20:05:43.627Z",
+  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fsampling-period-selection",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -6556,48 +6556,103 @@
     {
       "key": "discrete-sampled/sampling-period-selection",
       "title": "采样周期",
-      "sourceHash": "c85203345edb9a6c33d835cdc1eab89271d8630959406ceb063c15aad9d2e0e1",
+      "sourceHash": "e6731141a2314ccaf4a4e7d2d09bfa1f9cec79844ce0bb561cd373520788195d",
       "notebooks": [
         {
           "id": "discrete-sampled/sampling-period-selection#1",
-          "title": "实验 1",
+          "title": "周期与数字闭环",
           "index": 1,
-          "line": 58,
+          "line": 63,
           "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7752,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ts=   1.0ms rho=0.997991238 PM=53.372531deg sample_peak=1.15328 y(5s)=0.999989; crossings=1\nTs=   5.0ms rho=0.989986279 PM=47.398545deg sample_peak=1.21209 y(5s)=0.999989; crossings=1\nTs=  10.0ms rho=0.980047286 PM=39.710817deg sample_peak=1.31867 y(5s)=0.99999; crossings=1\nTs=  20.0ms rho=0.960390184 PM=23.293151deg sample_peak=1.54729 y(5s)=0.99999; crossings=1\nTs=  50.0ms rho=1.355744965 PM=-30.960374deg sample_peak=7.66932e+12 y(5s)=-1.90053e+13; crossings=1\nTs=  80.0ms rho=2.635029693 PM=-48.187020deg sample_peak=8.07609e+25 y(4.96s)=-2.12807e+26; crossings=1\nTs= 100.0ms rho=4.750985348 PM=-40.087527deg sample_peak=1.59278e+33 y(5s)=-7.56728e+33; crossings=1\nTs= 200.0ms rho=13.649307043 PM=no unity-gain crossing sample_peak=2.16504e+28 y(5s)=2.16504e+28; crossings=0\ncontinuous filtered PID: wc=51.304416643rad/s PM=54.845936039deg\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 114316
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "discrete-sampled/sampling-period-selection#2",
-          "title": "实验 2",
+          "title": "相位预算与习题复算",
           "index": 2,
-          "line": 224,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
+          "line": 174,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4085,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ts=3ms d=1ms upper=3.235987756ms estimated_PM=45.676055122deg\nTs=5ms d=0ms upper=5.235987756ms estimated_PM=45.676055122deg\nTs=5ms d=1ms upper=3.235987756ms estimated_PM=39.946477170deg\nTs=0.5ms d=1ms upper=3.235987756ms estimated_PM=52.838027561deg\nTs=1ms d=3ms upper=-0.764012244ms estimated_PM=39.946477170deg\nfiltered PID zero-extra-delay screening upper for 45deg: 6.698994475ms\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 62804
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 actual loop: wc=4.569968264rad/s PM=-5.044752811deg max_Re_pole=0.194497318/s\nQ1 former given-number arithmetic only: 87.654313545ms; not a design for this loop\nQ2 period upper bounds (ms): 0.628318531, 6.283185307, 62.831853072\nQ3 d=0.710000000ms upper=1.197993878ms; Ts=1ms estimated_PM=41.134421358deg\nhold phase losses for fs/f=2,10,20,30,50 (deg): [90.0, 18.0, 9.0, 6.0, 3.6]\n1ms hold phase losses at 100,1000rad/s (deg): [2.864788975654116, 28.64788975654116]\none-pole inner-loop lag at bandwidth ratio 3: 18.434948823deg; Q1 former-number frequency ratio at 50ms: 27.925268032\nillustrative application sampling/bandwidth ratios: 628.318531, 628.318531, 251.327412, 125.663706, 314.159265, 628.318531\n"
+                }
+              ]
+            }
+          ]
         },
         {
           "id": "discrete-sampled/sampling-period-selection#3",
-          "title": "实验 3",
+          "title": "三环多速率调度",
           "index": 3,
-          "line": 427,
+          "line": 326,
           "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "a5fc94c913e07887f5a22c224f9989f9e13cdbce4e3eddb26549f1298ece5d2b",
-      "formattingProvenance": [
-        {
-          "lesson": "discrete-sampled/sampling-period-selection",
-          "fromSourceHash": "a5fc94c913e07887f5a22c224f9989f9e13cdbce4e3eddb26549f1298ece5d2b",
-          "toSourceHash": "c85203345edb9a6c33d835cdc1eab89271d8630959406ceb063c15aad9d2e0e1",
-          "notebookPayloadHash": "561a89331f69f8d4f407193759e3eb3f75b72a04598db869def5d3978180fada",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1116,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "periods_ms=[1.0, 0.1, 0.01] sample_peak=1.417851068 y(.5s)=1.417851068 terminal_error=0.417851068 updates=[500, 5000, 50000]\nperiods_ms=[1.0, 1.0, 1.0] sample_peak=1.384755995 y(.5s)=1.384755995 terminal_error=0.384755995 updates=[500, 500, 500]\nperiods_ms=[10.0, 1.0, 0.1] sample_peak=1.563080991 y(.5s)=1.563080991 terminal_error=0.563080991 updates=[50, 500, 5000]\nnoninteger schedule rejected: periods must be positive integer multiples of 10us\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 196732
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -12677,14 +12732,14 @@
   "totals": {
     "lessons": 79,
     "notebooks": 382,
-    "enabled": 363,
-    "codeOnly": 19
+    "enabled": 366,
+    "codeOnly": 16
   },
   "releaseTotals": {
     "lessons": 79,
     "notebooks": 382,
-    "enabled": 362,
-    "codeOnly": 20
+    "enabled": 365,
+    "codeOnly": 17
   },
   "provenance": [
     {
@@ -13208,6 +13263,16 @@
       "testedAt": "2026-10-18T19:33:33.943Z",
       "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscretization-methods",
       "inputPath": ".agent/semester-03/discrete-06/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T19:59:44.003Z",
+      "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fsampling-period-selection",
+      "inputPath": ".agent/semester-03/discrete-07/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-18T20:05:43.627Z",
+      "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fsampling-period-selection",
+      "inputPath": ".agent/semester-03/discrete-07/pyodide.json"
     }
   ]
 }

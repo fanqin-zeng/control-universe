@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 250" role="img" aria-labelledby="title desc">
+ <title id="title">串行采样与输出时序</title><desc id="desc">采样后依次完成转换、计算、通信和输出，总耗时d，输出保持到下次更新。若这些任务不能在一个周期内完成，需要重做调度。</desc>
+ <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#334155"/></marker></defs>
+ <rect width="860" height="250" rx="12" fill="#f8fafc"/>
+ <g font-family="sans-serif" font-size="18" fill="#172033" text-anchor="middle">
+ <text x="430" y="30">一轮任务按顺序执行；下图不按时间比例绘制</text>
+ <g stroke="#94a3b8" fill="#e0f2fe"><rect x="55" y="65" width="135" height="54" rx="6"/><rect x="225" y="65" width="135" height="54" rx="6"/><rect x="395" y="65" width="135" height="54" rx="6"/><rect x="565" y="65" width="135" height="54" rx="6"/></g>
+ <text x="122" y="98">A/D转换</text><text x="292" y="98">控制计算</text><text x="462" y="98">通信传输</text><text x="632" y="98">输出生效</text>
+ <g stroke="#334155" stroke-width="2" marker-end="url(#arrow)"><path d="M190 92H220"/><path d="M360 92H390"/><path d="M530 92H560"/><path d="M700 92H790"/><path d="M55 176H800"/></g>
+ <text x="756" y="73">保持指令</text>
+ <path d="M55 151v35M700 151v35M800 151v35" stroke="#334155" stroke-width="2"/>
+ <text x="65" y="211">采样 tₖ</text><text x="700" y="211">tₖ+d</text><text x="800" y="237">下次采样</text>
+ <text x="377" y="151">测量到输出的额外延迟 d</text>
+ </g>
+</svg>

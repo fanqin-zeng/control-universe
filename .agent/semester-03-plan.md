@@ -48,6 +48,7 @@
 | DISCRETE-04 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-04”；先修差分方程与Z变换已交付，采样/保持定义本课局部补足，保留DISCRETE-01草稿 | .agent/semester-03/discrete-04/acceptance.md |
 | DISCRETE-05 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-05”；04已交付，保留01草稿，本课局部补足采样定义 | .agent/semester-03/discrete-05/acceptance.md |
 | DISCRETE-06 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-06”；04/05已交付，保留01草稿，采样保持本课局部解释 | .agent/semester-03/discrete-06/acceptance.md |
+| DISCRETE-07 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-07”；02–06已交付，保留01草稿，本课局部解释采样保持 | .agent/semester-03/discrete-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -725,3 +726,10 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### DISCRETE-06 本轮执行记录（2026-10-19）
 
 离散化方法按重构专用Phase1–4完成，原八H2/39标题主题/41课程ID、三实验组四cell及四题保留纠错，新增一实验共四Notebook五cell。修Euler因果/绝对稳定区、Tustin方向/预扭曲、matched积分器增益与默认API、反算符号/单位/真实状态/未触饱和基线、导数滤波和首达指标。数字PI由原生/浏览器及独立MP/Decimal/状态模型核，真实TS十三配置、375px及Pages本地验收通过。正式H1与首H2同名，旧离散化方法ID转H1开篇，H2canonical为离散化方法-1，旧数字控制器设计span保留；歧义明确登记，未伪称段落未变。PID工程材料本页全文保留，IMPL-02迁移未完不计交付。证据.agent/semester-03/discrete-06/acceptance.md；master真实回执见checklist。PY-010/011实测修复，待办22→20，其它元数据保留；W10仅处理本课错误Euler字符图。01草稿、用户批阅及四端口不提交；Pages不发布，本对话止于06。
+
+
+### DISCRETE-07 本轮执行记录（2026-10-19）
+
+用户指定继续“采样周期”，单独登记暂缓DISCRETE-01，草稿隔离保存。按重构SKILL推进Phase1–4，仅本课。三旧Notebook均因ipywidgets导致setup失败，S04完整性债务随本课修复；原七H2/十二H3/三实验对象与用途/四题保留，来源映射见.agent/semester-03/discrete-07/source-audit.md。新增微分滤波明确建立可实现PID新基线，所有数字独立状态复算；单位圆频响/相位支路、无交越、真实采样轴、ADC串行预算与多率固定精度/整数调度纠错，保留未胜/失稳和执行代价。
+
+本课verify唯一WARN：event-triggered-control为后续阅读占位，不作为前置；归DISCRETE-10交付后复核链接。PY-012/013/014经真实浏览器原始cell实跑后关闭，其余17项保留。S04历史快照不改，当前PASS证据在本课acceptance；W10仅本课三字符图已审/图文及SVG替代，其余候选未清零。fix-068归因既有职责执行不足，不扩编角色或改润色SKILL。最终签发、命令/退出码及master提交见checklist链接。
