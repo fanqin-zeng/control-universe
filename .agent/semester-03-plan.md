@@ -44,6 +44,7 @@
 | ID | 暂缓前课 | 用户依据 | 证据 |
 |---|---|---|---|
 | DISCRETE-02 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-02”；上一课未验收草稿保留，当前课局部补足采样编号定义 | .agent/semester-03/discrete-02/acceptance.md |
+| DISCRETE-03 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-03”；先修DISCRETE-02与Z变换已交付，保留DISCRETE-01未验收草稿 | .agent/semester-03/discrete-03/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -701,3 +702,8 @@ Lyapunov稳定性按重构技能完整Phase1–4，仅本课。保留13主题、
 ### DISCRETE-02 本轮执行记录（2026-10-19）
 
 离散时间系统由空占位按新写专用Phase1–4完成。每分钟房间温差引入递推，区分初始状态与加热输入，矩阵同步更新以错误覆盖反例解释，脉冲/卷积连接零初值传递函数。8H2、3Notebook3cell、四题四答、两SVG；独立几何和/矩阵幂/SciPy、原生与Pyodide、375px及Pages本地基路径验收通过。证据.agent/semester-03/discrete-02/acceptance.md；master真实回执见全局checklist。DISCRETE-01未完草稿保留检查点，不继承签发；本课局部解释采样编号，不依赖其未验收数值。25项Python待办、W14、用户批阅及长期润色分支保持；本地端口四文件不提交，Pages另行授权，不顺带交付下一课。
+
+
+### DISCRETE-03 本轮执行记录（2026-10-19）
+
+差分方程从空占位按新写专用Phase1–4完成，math课型由方数、岳自、小初、陆阅参与。沿用上一课温差递推引出差分与初值，一阶几何和/特解核a=1边界，二阶不同根与非零重根用代入与等差数列推导，单边Z保留初值并限定ROC。9H2、3Notebook3cell、四题四答、一SVG；独立Fraction精确算术与增广矩阵幂、原生/Pyodide/页面输出、375px及Pages本地基路径全部通过。目录Z大小写按真实渲染ID纠正；证据.agent/semester-03/discrete-03/acceptance.md，master真实回执见全局checklist。本次用户指定DISCRETE-03的顺序例外单独登记，未沿用上一课授权；DISCRETE-01未完草稿保留，不使用其未验收数值。25Python待办、W14及用户批阅不关闭，端口四处本地修改不提交，Pages另行授权，本对话不生产下一课。

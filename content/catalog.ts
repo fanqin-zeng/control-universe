@@ -2749,13 +2749,51 @@ export const catalog: Chapter[] = [
       {
         "slug": "difference-equation",
         "title": "差分方程",
+        "subsections": [
+          {
+            "slug": "从递推到差分",
+            "title": "从递推到差分"
+          },
+          {
+            "slug": "先解一阶方程",
+            "title": "先解一阶方程"
+          },
+          {
+            "slug": "输入怎样改变解",
+            "title": "输入怎样改变解"
+          },
+          {
+            "slug": "二阶方程与特征根",
+            "title": "二阶方程与特征根"
+          },
+          {
+            "slug": "重根为什么多一个k",
+            "title": "重根为什么多一个k"
+          },
+          {
+            "slug": "用z变换核对",
+            "title": "用Z变换核对"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discrete-time-systems",
           "math/z-transform"
         ],
         "level": "undergrad",
         "type": "math",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "z-transform-analysis",
