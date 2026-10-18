@@ -8,7 +8,7 @@
 
 | 序号 | ID | 课程 | 路径 | 本期生产 | 润色状态 | 记录 |
 |---|---|---|---|---|---|---|
-| 1 | MATH-01 | 微积分入门 | content/math/calculus-basics.mdx | 已完成 | 待润色 | — |
+| 1 | MATH-01 | 微积分入门 | content/math/calculus-basics.mdx | 已完成 | 待合入 | [润色记录](records/MATH-01.md) |
 | 2 | MATH-02 | 复数基础 | content/math/complex-numbers.mdx | 已完成 | 待润色 | — |
 | 3 | MATH-03 | 线性代数基础 | content/math/linear-algebra-basics.mdx | 已完成 | 待润色 | — |
 | 4 | MATH-04 | 特征值与对角化 | content/math/eigen-decomposition.mdx | 已完成 | 待润色 | — |
@@ -54,7 +54,6 @@
 | 44 | NONLINEAR-06 | 滑模控制 | content/nonlinear/sliding-mode-control.mdx | 已完成 | 待润色 | — |
 | 45 | NONLINEAR-07 | 反步设计 | content/nonlinear/backstepping.mdx | 已完成 | 待润色 | — |
 | 46 | NONLINEAR-08 | 自适应控制 | content/nonlinear/adaptive-control-basics.mdx | 已完成 | 待润色 | — |
-
 | 47 | NONLINEAR-09 | 无源控制 | content/nonlinear/passivity-control.mdx | 待完成 | 待生产 | — |
 | 48 | NONLINEAR-10 | 输入状态稳定性 | content/nonlinear/iss-small-gain.mdx | 待完成 | 待生产 | — |
 | 49 | NONLINEAR-11 | 切换与混杂系统 | content/nonlinear/switched-hybrid-systems.mdx | 待完成 | 待生产 | — |
