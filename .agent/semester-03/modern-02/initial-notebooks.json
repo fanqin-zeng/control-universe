@@ -1,0 +1,91 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8891",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S6": 1
+  },
+  "failLessons": [
+    "modern/controllability-observability"
+  ],
+  "lessons": [
+    {
+      "key": "modern/controllability-observability",
+      "file": "content/modern/controllability-observability.mdx",
+      "level": "FAIL",
+      "notebooks": 6,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 3,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 4,
+          "index": 0,
+          "status": "OK",
+          "images": 0,
+          "stderr": "",
+          "nOut": 1
+        },
+        {
+          "notebook": 5,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "AssertionError",
+          "evalue": "",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "AssertionError                            Traceback (most recent call last)",
+            "Cell In[2], line 37\n     33 a0,a1,a2,lam=sp.symbols('a0 a1 a2 lam'); companion=sp.Matrix([[0,1,0],[0,0,1],[-a0,-a1,-a2]])\n     34 w=sp.Matrix([1,lam,lam**2]);assert (companion*w-lam*w)[2]==-a0-a1*lam-a2*lam**2-lam**3\n     35 print('Q8 eigenvector identity=',list(companion*w-lam*w))\n     36 A9=sp.Matrix([[0,1,0,0],[-2,0,1,0],[0,0,0,1],[1,0,-1,0]]);B9=sp.Matrix([0,1,0,0]);C9=sp.Matrix([[1,0,0,0]])\n---> 37 R,O,G=audit('Q9',A9,B9,C9);assert R.det()==-1 and O.det()==1\n     38 _,On,_=audit('Q9 two sensors',A9,B9,sp.Matrix([[1,0,0,0],[0,0,1,0]]));assert On.rank()==4\n     39 W=sp.Matrix([[sp.Rational(1,2),sp.Rational(1,3)],[sp.Rational(1,3),sp.Rational(1,4)]])\n     40 assert sp.diag(-1,-2)*W+W*sp.diag(-1,-2)+sp.ones(2)==sp.zeros(2)\n",
+            "AssertionError: "
+          ],
+          "stderr": "",
+          "images": 0
+        }
+      ],
+      "findings": [
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 6 cell 1（:845）执行报错 AssertionError: \n          ---------------------------------------------------------------------------\n          AssertionError                            Traceback (most recent call last)\n          Cell In[2], line 37\n     33 a0,a1,a2,lam=sp.symbols('a0 a1 a2 lam'); companion=sp.Matrix([[0,1,0],[0,0,1],[-a0,-a1,-a2]])\n     34 w=sp.Matrix([1,lam,lam**2]);assert (companion*w-lam*w)[2]==-a0-a1*lam-a2*lam**2-lam**3\n     35 print('Q8 eigenvector identity=',list(companion*w-lam*w))\n     36 A9=sp.Matrix([[0,1,0,0],[-2,0,1,0],[0,0,0,1],[1,0,-1,0]]);B9=sp.Matrix([0,1,0,0]);C9=sp.Matrix([[1,0,0,0]])\n---> 37 R,O,G=audit('Q9',A9,B9,C9);assert R.det()==-1 and O.det()==1\n     38 _,On,_=audit('Q9 two sensors',A9,B9,sp.Matrix([[1,0,0,0],[0,0,1,0]]));assert On.rank()==4\n     39 W=sp.Matrix([[sp.Rational(1,2),sp.Rational(1,3)],[sp.Rational(1,3),sp.Rational(1,4)]])\n     40 assert sp.diag(-1,-2)*W+W*sp.diag(-1,-2)+sp.ones(2)==sp.zeros(2)\n\n          AssertionError: ",
+          "line": 845
+        }
+      ]
+    }
+  ]
+}

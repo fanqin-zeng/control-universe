@@ -599,3 +599,7 @@ CLASSIC-06「根轨迹」按重构专用SKILL完整Phase1–4，保留12节/七�
 ## MODERN-01交付（2026-10-18）
 
 状态空间按重构技能Phase1–4完成，保留10节/三物理例/十题及原两实验用途，五严格内核/Pyodide、65行对账、真实TS21×601点与独立物理参考、36旧ID/两别名/390px/两构建验收通过，详见semester-03/modern-01/acceptance.md。直接master提交推送后登记回执；用户另授权本课完成后发布届时master已有修改，DEP07据实际结果更新。不生产MODERN-02。
+
+## MODERN-02 执行回执（2026-10-18）
+
+仅本课modern/controllability-observability按重构SKILL完整Phase1–4，九主题/七例/十题及原三实验目的保留，扩六原始Notebook。对偶/PBH左右向量与Jordan、SISO证明及MIMO边界、反馈符号/坐标、Q1/Q6/Q9矩阵和Gramian时域/尺度/Hankel平方根纠错；两车具体入口与SVG、上下双图。六严格内核/Pyodide、44项对账、独立模态解析3×301全状态节点及Gramian，33旧标题ID保留；实际命令见semester-03/modern-02/acceptance.md。直接master验收提交并推送，真实hash随后登记全局checklist；不自动发布Pages，不交付MODERN-03。W08/W09/W10及27Python待办保持开放。

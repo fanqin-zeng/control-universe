@@ -72,7 +72,7 @@
 | 课程 | 状态 |
 |------|------|
 | [x] 状态空间 (state-space) | 学期3 MODERN-01重构：保留10节/十题与原两实验用途，扩五严格内核及Pyodide实验；纠正MIMO/隐藏模态/最小实现条件、Q6完整指数/Q9主对数/Q10电机分子与根；真TS对独立矩阵指数21×601点、旧锚点与生产页面验收见.agent/semester-03/modern-01/acceptance.md；旧学期回执保留在原日志 |
-| [x] 可控性与可观性 (controllability-observability) | v1.3（C2 第 2 课，2026-10-16）：3 notebook 保持静态（判定计算场景，P2 定位正确）；**柯验重写答案 4**——AB/CA² 两处乘法错误致结论反向（实测可控且可观，det C=−1/det O=1），并补"Jordan 重根 PBH 须用秩条件"教学点；答案 1 的 O 第三行笔误修正；S6 实跑 0 error；讨论日志 semester-02/03-modern/02 |
+| [x] 可控性与可观性 (controllability-observability) | v1.3；学期3 MODERN-02（2026-10-18）完整Phase1–4：九主题/七例/十题保留，六原始实验严格内核与Pyodide通过，44项对账、独立3×301节点与Gramian核验；对偶/PBH左右向量/反馈/证明与矩阵纠错，33旧ID保留。旧学期2“重根PBH须只看秩”的解释已更正，PBH特征向量形式同样适用重根。日志docs/discuss-log/semester-03/04-modern/02-controllability-observability.md；实际验收.agent/semester-03/modern-02/acceptance.md |
 | [x] 线性系统稳定性 (lyapunov-modern) | v1.3（C2 第7次交付，2026-10-17）：原linear-system-theory改名并前移本章第3课，旧路由308；修正隐藏模态C/y/G、Jordan/BIBO判据、LQR代价2倍因子与半正定边界；三notebook八cell，S6在线0 error；讨论日志03-modern/03-lyapunov-modern，fix-025 |
 | [x] 状态反馈 (state-feedback) | v1.3（C2 第 3 课，2026-10-16）：ipywidgets 交互 cell → StateFeedbackPoleExplorer（默认 p=−5 复现手算链 K=[23,7]/N=25）；**NB 重构为 place 拒绝重根→acker 解决→互异一致三段式教学**（原 cell 实跑必炸：place ValueError + acker 一维形状 + JS 模板 \n 陷阱）；**答案 7(b) 实质性因子错误修正**（B=[0;ωn²]，原 K 公式实测极点全偏）；答案 10 循环论证重写为块矩阵一行证明；S6 实跑 0 error；讨论日志 semester-02/03-modern/03 |
 | [x] 状态观测器 (state-observer) | v1.3（C2 第 4 课，2026-10-16）：ipywidgets 交互 cell → ObserverSpeedExplorer（滑块区间反转 bug 一并修正，默认 p=−15 复现例3 L=[27,142]）；NB 三处运行时错修复（place 重根→acker 教学、acker 一维 reshape、step_response squeeze）；**答案 2 实质性数值错误更正**（L=[994;289;24]→实测 [24;145;−140]，(s+10)³ 验证）；S6 实跑 0 error；讨论日志 semester-02/03-modern/04 |
