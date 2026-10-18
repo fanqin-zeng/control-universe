@@ -1971,36 +1971,36 @@ export const catalog: Chapter[] = [
             "title": "问题描述"
           },
           {
-            "slug": "第一步建立状态空间模型",
-            "title": "第一步：建立状态空间模型"
+            "slug": "建立模型",
+            "title": "建立模型"
           },
           {
-            "slug": "第二步分析系统性质",
-            "title": "第二步：分析系统性质"
+            "slug": "检查可控可观",
+            "title": "检查可控可观"
           },
           {
-            "slug": "第三步状态反馈设计",
-            "title": "第三步：状态反馈设计"
+            "slug": "设计状态反馈",
+            "title": "设计状态反馈"
           },
           {
-            "slug": "第四步观测器设计",
-            "title": "第四步：观测器设计"
+            "slug": "估计状态",
+            "title": "估计状态"
           },
           {
-            "slug": "第五步处理噪声卡尔曼滤波与-lqg",
-            "title": "第五步：处理噪声——卡尔曼滤波与 LQG"
+            "slug": "噪声与lqg",
+            "title": "噪声与LQG"
           },
           {
-            "slug": "第六步稳定性验证lyapunov-方程",
-            "title": "第六步：稳定性验证——Lyapunov 方程"
+            "slug": "验证稳定性",
+            "title": "验证稳定性"
           },
           {
-            "slug": "第七步mimo-扩展rga-分析",
-            "title": "第七步：MIMO 扩展——RGA 分析"
+            "slug": "双输入扩展",
+            "title": "双输入扩展"
           },
           {
-            "slug": "深入讨论",
-            "title": "深入讨论"
+            "slug": "边界检验",
+            "title": "边界检验"
           },
           {
             "slug": "小结",
@@ -2023,7 +2023,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "draft"
+        "status": "v1.3"
       }
     ]
   },

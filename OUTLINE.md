@@ -63,7 +63,7 @@
 | 4.6 | 最优控制 | optimal-control-basics | ✅ 已交付 v1.3 | grad | theory | 7 | modern/state-space<br>math/variational-dp<br>math/convex-optimization |
 | 4.7 | LQR控制 | lqr-controller | ✅ 已交付 v1.3 | grad | theory | 9 | modern/optimal-control-basics<br>modern/lyapunov-modern |
 | 4.8 | 多变量系统 | multivariable-systems | ✅ 已交付 v1.3 | grad | theory | 7 | modern/state-space<br>classic/frequency-domain-analysis<br>math/matrix-decomposition |
-| 4.9 | 现代控制案例 | modern-case-study | 🟨 有正文待审校 | grad | case | 11 | modern/state-feedback<br>modern/state-observer<br>modern/lqr-controller<br>modern/multivariable-systems |
+| 4.9 | 现代控制案例 | modern-case-study | ✅ 已交付 v1.3 | grad | case | 11 | modern/state-feedback<br>modern/state-observer<br>modern/lqr-controller<br>modern/multivariable-systems |
 
 ## 5. 非线性控制 (nonlinear)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 48（status = v1.3）
-- **有正文待审校**: 26（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 49（status = v1.3）
+- **有正文待审校**: 25（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 131（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 157（= draft 26 + empty 131 + 无 status 0）
+- **未完成 v1.3**: 156（= draft 25 + empty 131 + 无 status 0）
 - **有 MDX 正文**: 74
 - **catalog 小节总数**: 870
-- **讨论日志**: 60 篇（覆盖 48 门；有 MDX 无日志 26 门）
-- **交互组件**: 63 个文件（被正文引用 63，孤儿 0）
+- **讨论日志**: 61 篇（覆盖 49 门；有 MDX 无日志 25 门）
+- **交互组件**: 64 个文件（被正文引用 64，孤儿 0）
 - **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

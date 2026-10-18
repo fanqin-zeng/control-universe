@@ -1,0 +1,245 @@
+{
+  "testedAt": "2026-10-18T08:48:49.071Z",
+  "url": "http://localhost:8082/control-universe/python-expansion.html?lesson=modern/modern-case-study",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "modern/modern-case-study",
+      "title": "现代控制案例",
+      "sourceHash": "d286c8e726517df999b754d566f75bc8d6611268e327e5de5db66061bd499dbc",
+      "notebooks": [
+        {
+          "id": "modern/modern-case-study#1",
+          "title": "倒立摆状态空间建模与分析",
+          "index": 1,
+          "line": 120,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6548,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "A= [[ 0.           1.           0.           0.         ]\n [ 0.           0.          -0.717804878  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 0.           0.          15.791707317  0.         ]] B= [[ 0.         ]\n [ 0.975609756]\n [ 0.         ]\n [-1.463414634]] H= [[1.1         0.05       ]\n [0.05        0.033333333]] open poles= [ 0.           0.           3.973878121 -3.973878121]\nCtrb= [[  0.            0.975609756   0.            1.050446163]\n [  0.975609756   0.            1.050446163   0.         ]\n [  0.           -1.463414634   0.          -23.109815586]\n [ -1.463414634   0.          -23.109815586   0.         ]] ranks= 4 4\nsymbolic nonlinear Jacobian and characteristic polynomial passed; a43= 15.791707317073174 sqrt= 3.9738781205609683\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#2",
+          "title": "极点配置与LQR的指定设计",
+          "index": 2,
+          "line": 204,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "place K= [[ -8.358817533 -10.727149168 -64.880211689 -16.718099445]] N= -8.358817533129677 poles= [-5. -4. -3. -2.]\nLQR K= [[ -3.16227766   -6.324639356 -57.325564562 -17.629412347]] N= -3.1622776601683946 poles= [-15.884311401+0.j          -1.339175061+0.94204483j\n  -1.339175061-0.94204483j  -1.066098637+0.j        ]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 542,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{'design': 'place', 'settling_sample': 2.92, 'theta_peak': 0.013524728850878786, 'force_peak': 0.8358817533129678, 'x8': 0.09999991808473604}\n{'design': 'LQR', 'settling_sample': 4.61, 'theta_peak': 0.005121808604293076, 'force_peak': 0.3162277660168395, 'x8': 0.0999449433306313}\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 83144
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#3",
+          "title": "观测器设计与基于观测器的控制",
+          "index": 3,
+          "line": 290,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 469,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Lo= [[ 19.232807256   0.972522552]\n [ 91.711668429   8.521159659]\n [  0.972523238  18.767192744]\n [  9.238970712 103.080038889]] error poles= [ -8. -11.  -9. -10.] error8= [ 0. -0. -0. -0.] input_peak= 2.8334143063721524\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 83456
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#4",
+          "title": "卡尔曼滤波与LQG控制",
+          "index": 4,
+          "line": 371,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fixed design Pe= [[ 0.000099047  0.000045074 -0.000028364 -0.000113055]\n [ 0.000045074  0.000064133 -0.000140488 -0.000558895]\n [-0.000028364 -0.000140488  0.00079483   0.003154797]\n [-0.000113055 -0.000558895  0.003154797  0.012555621]] L= [[ 0.990469139 -0.283644418]\n [ 0.450741636 -1.404882618]\n [-0.283644418  7.948301069]\n [-1.130549658 31.547972022]]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3718,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "seed= 7 rmse= [0.004700739913078389, 0.028756657005881352] peak= 7.349621436100977\nseed= 23 rmse= [0.008664782540628607, 0.027860347394201932] peak= 6.012137776243626\nseed= 101 rmse= [0.0035279838444250847, 0.028572701332153182] peak= 5.581428357629935\nall 121 UI pairs +2 other default seeds checked; 3001-step statistics/301 plotted nodes\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 126120
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#5",
+          "title": "Lyapunov验证与MIMO RGA分析",
+          "index": 5,
+          "line": 507,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 10,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Pv eigenvalues= [ 0.029884493  0.204448328  1.158945871 24.221368288] Pc eigenvalues= [ 0.372757149  0.727218036  1.915866524 65.883298468] Lyapunov residual= 4.547473508864641e-13\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Af= [[ 0.           1.           0.           0.         ]\n [-1.951219512 -0.097560976 -0.717804878  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 2.926829268  0.146341463 15.791707317  0.         ]] Bf= [[ 0.           0.         ]\n [ 0.975609756 -1.463414634]\n [ 0.           0.         ]\n [-1.463414634 32.195121951]] G0= [[ 0.5          0.         ]\n [-0.          -2.038735984]] RGA= [[ 1. -0.]\n [-0.  1.]] open poles= [-3.961576773+0.j          -0.046111019+1.352713394j\n -0.046111019-1.352713394j  3.956237837+0.j         ]\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 15,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q3 A= [[ 0.           1.           0.           0.         ]\n [ 0.           0.          -1.731176471  0.         ]\n [ 0.           0.           0.           1.         ]\n [ 0.           0.          28.852941176  0.         ]] B= [[ 0.         ]\n [ 0.470588235]\n [ 0.         ]\n [-1.176470588]] ctrb= [[  0.            0.470588235   0.            2.036678201]\n [  0.470588235   0.            2.036678201   0.         ]\n [  0.           -1.176470588   0.          -33.944636678]\n [ -1.176470588   0.          -33.944636678   0.         ]]\nQ4 P= [[16.618832428  8.123105626]\n [ 8.123105626  4.03065891 ]] det= 1.0000000000000009 K= [[8.123105626 4.03065891 ]] poles= [-2.015329455+0.248098393j -2.015329455-0.248098393j]\nQ5 L= [[10.]\n [29.]] poles= [-5. -5.]\nQ6 Pv= [[1.124306327 0.121267813]\n [0.121267813 0.154135546]] eigen= [0.139207218 1.139234654] det= 0.15858968733650156\nQ7 RGA and Q8 symbolic separation proof passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "modern/modern-case-study#6",
+          "title": "参数、步长与非线性边界",
+          "index": 6,
+          "line": 577,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 208,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fixed design Pe= [[ 0.000099047  0.000045074 -0.000028364 -0.000113055]\n [ 0.000045074  0.000064133 -0.000140488 -0.000558895]\n [-0.000028364 -0.000140488  0.00079483   0.003154797]\n [-0.000113055 -0.000558895  0.003154797  0.012555621]] L= [[ 0.990469139 -0.283644418]\n [ 0.450741636 -1.404882618]\n [-0.283644418  7.948301069]\n [-1.130549658 31.547972022]]\nsame Brownian path seed= 7 dt .004/.002 max state difference= 0.01201951123488032\nsame Brownian path seed= 23 dt .004/.002 max state difference= 0.01697673525135268\nsame Brownian path seed= 101 dt .004/.002 max state difference= 0.010892310752698663\nfixed K mass/length/max real pole= 0.05 0.25 -0.9846499694679643\nfixed K mass/length/max real pole= 0.05 0.5 -1.131597254592901\nfixed K mass/length/max real pole= 0.05 0.75 -1.1019279067546235\nfixed K mass/length/max real pole= 0.1 0.25 -0.955854142475197\nfixed K mass/length/max real pole= 0.1 0.5 -1.06609863658648\nfixed K mass/length/max real pole= 0.1 0.75 -1.151426097708998\nfixed K mass/length/max real pole= 0.15 0.25 -0.9303597975481893\nfixed K mass/length/max real pole= 0.15 0.5 -1.0166521684433374\nfixed K mass/length/max real pole= 0.15 0.75 -1.2116444374305795\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1131,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{'initial_degrees': 5.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10017053166282189, 'theta_end': 1.6398246158753477e-05, 'sample_force_peak': 4.686371469848267, 'sample_theta_peak': 0.08726646259971647, 'linear_x8': 0.10016998247380024}\n{'initial_degrees': 30.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10142152574716301, 'theta_end': 0.00013762921108702815, 'sample_force_peak': 29.6993676491738, 'sample_theta_peak': 0.5235987755982988, 'linear_x8': 0.10129517818764588}\n{'initial_degrees': 60.0, 'terminated': False, 't_end': 8.0, 'x_end': 0.10312853474512768, 'theta_end': 0.0002795874789153239, 'sample_force_peak': 50.0, 'sample_theta_peak': 1.0471975511965976, 'linear_x8': 0.10264541304425616}\n{'initial_degrees': 85.0, 'terminated': True, 't_end': 0.13438895385905644, 'x_end': 0.41029046171652167, 'theta_end': 1.5707963267948966, 'sample_force_peak': 50.0, 'sample_theta_peak': 1.5707963267948966, 'linear_x8': 0.10377060875809173}\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 81944
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "modern/modern-case-study",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 6,
+    "enabled": 6,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 6,
+    "codeOnly": 0
+  }
+}

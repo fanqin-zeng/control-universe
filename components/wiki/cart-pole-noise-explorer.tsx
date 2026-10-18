@@ -1,0 +1,18 @@
+"use client";
+import {useMemo,useState} from "react";
+import type {EChartsOption} from "echarts";
+import {useECharts} from "@/components/wiki/use-echarts";
+import {simulateCartPoleNoise} from "@/lib/cart-pole-case-model";
+export function CartPoleNoiseExplorer(){
+ const [w,setW]=useState(.004),[v,setV]=useState(.01),data=useMemo(()=>simulateCartPoleNoise(w,v),[w,v]);
+ const position:EChartsOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis",confine:true,valueFormatter:n=>Number(n).toFixed(5)},legend:{data:["位置","估计位置"],top:0},grid:{left:48,right:18,top:40,bottom:42},xAxis:{type:"value",min:0,max:6,name:"t (s)",nameLocation:"middle",nameGap:26},yAxis:{type:"value",min:-2,max:2,name:"m"},series:[{name:"位置",type:"line",showSymbol:false,data:data.points.map(p=>[p.t,p.x]),itemStyle:{color:"#2563eb"},lineStyle:{color:"#2563eb"}},{name:"估计位置",type:"line",showSymbol:false,data:data.points.map(p=>[p.t,p.xhat]),itemStyle:{color:"#b45309"},lineStyle:{color:"#b45309",type:"dashed"}}]}),[data]);
+ const angle:EChartsOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis",confine:true,valueFormatter:n=>Number(n).toFixed(5)},legend:{data:["角度","估计角度"],top:0},grid:{left:48,right:18,top:40,bottom:42},xAxis:{type:"value",min:0,max:6,name:"t (s)",nameLocation:"middle",nameGap:26},yAxis:{type:"value",min:-1,max:1,name:"rad"},series:[{name:"角度",type:"line",showSymbol:false,data:data.points.map(p=>[p.t,p.theta]),itemStyle:{color:"#15803d"},lineStyle:{color:"#15803d"}},{name:"估计角度",type:"line",showSymbol:false,data:data.points.map(p=>[p.t,p.thetaHat]),itemStyle:{color:"#9333ea"},lineStyle:{color:"#9333ea",type:"dashed"}}]}),[data]);
+ const force:EChartsOption=useMemo(()=>({animation:false,tooltip:{trigger:"axis",confine:true,valueFormatter:n=>Number(n).toFixed(5)},legend:{data:["实际力"],top:0},grid:{left:48,right:18,top:40,bottom:42},xAxis:{type:"value",min:0,max:6,name:"t (s)",nameLocation:"middle",nameGap:26},yAxis:{type:"value",min:-51,max:51,name:"N"},series:[{name:"实际力",type:"line",showSymbol:false,data:data.points.map(p=>[p.t,p.u]),itemStyle:{color:"#b45309"},lineStyle:{color:"#b45309"},markLine:{symbol:"none",data:[{yAxis:50},{yAxis:-50}]}}]}),[data]);
+ const p=useECharts(position),a=useECharts(angle),f=useECharts(force);
+ return <section aria-label="倒立摆噪声探索" style={{border:"1px solid #cbd5e1",borderRadius:8,padding:16,margin:"20px 0",background:"#fff",color:"#0f172a",overflow:"hidden"}}>
+ <strong>固定控制器和估计器，改变实际噪声</strong><p style={{fontSize:14}}>均匀杆标称模型，r=0.1 m，初角0.05 rad，初始估计为零。种子7，Euler–Maruyama步长0.002 s，0–6 s；设计噪声幅值固定0.004/0.010，滑块不重新整定增益。</p>
+ {[{name:"实际过程噪声 σw",value:w,set:setW},{name:"实际测量噪声 σv",value:v,set:setV}].map(s=><label key={s.name} style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10,margin:"12px 0",fontSize:14}}><span style={{minWidth:150}}>{s.name}</span><input aria-label={s.name} type="range" min={0} max={.02} step={.002} value={s.value} onChange={e=>s.set(Number(e.target.value))} style={{flex:1,minWidth:80}}/><output style={{minWidth:45}}>{s.value.toFixed(3)}</output></label>)}
+ <div ref={p} style={{width:"100%",height:270,minWidth:0}}/><div ref={a} style={{width:"100%",height:270,minWidth:0}}/><div ref={f} style={{width:"100%",height:270,minWidth:0}}/>
+ <p role="status" style={{fontSize:14,lineHeight:1.9,overflowWrap:"anywhere"}}>3–6 s 样点估计RMSE：位置 {data.rmseX.toFixed(6)} m；角度 {data.rmseTheta.toFixed(6)} rad。<br/>全部3001步的实际力峰 {data.peakForce.toFixed(6)} N；图形每10步取点，共301点。力限制±50 N，估计器使用相同的实际输入。<br/>这是固定样本路径与固定增益的离散仿真，不是跨种子统计结论或非线性安全保证。</p>
+ <button type="button" onClick={()=>{setW(.004);setV(.01);}} style={{padding:"6px 12px",border:"1px solid #94a3b8",borderRadius:5,cursor:"pointer"}}>恢复标称噪声</button></section>;
+}

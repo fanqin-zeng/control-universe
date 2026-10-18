@@ -1,0 +1,38 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const dir='.agent/semester-03/modern-09/';
+const json=p=>JSON.parse(readFileSync(p,'utf8'));
+const b=json(dir+'browser.json'),old=json(dir+'baseline-source.json');
+assert.equal(b.desktop.h2.length,12);
+assert.equal(new Set(b.desktop.ids).size,b.desktop.ids.length);
+assert(old.ids.every(id=>b.desktop.ids.includes(id)));
+assert(b.links.length>=9&&b.links.every(l=>l.targetExists));
+assert.equal(b.desktop.katexErrors,0);
+assert(b.desktop.images.every(i=>i.loaded));
+assert.equal(b.narrow.width,b.narrow.scroll);
+assert(b.courseRun.includes('运行完成')&&b.narrow.courseRun.includes('运行完成'));
+assert(b.narrow.images.every(i=>i.loaded));
+assert.equal(b.console.length,0);assert.equal(b.pageRuns.length,6);assert(b.pageRuns.every(n=>n.status.includes('运行完成')));
+assert.equal(b.canvases.length,3);assert(b.canvases.every(c=>c.width>0&&c.height>0));
+assert.equal(b.controls.default,b.controls.reset);assert(b.controls.default.includes('0.004701')&&b.controls.default.includes('0.028757')&&b.controls.default.includes('7.349621'));assert.equal(b.controls.tests.length,4);assert.deepEqual(b.controls.tests.map(t=>t.value),['0','0.02','0','0.02']);assert(b.controls.tests.every(t=>t.status.includes('3001步')));
+assert.equal(b.narrow360.width,b.narrow360.scroll);
+const size=JSON.parse(execFileSync('python',['-c',`import json; from PIL import Image; print(json.dumps(Image.open('${dir}narrow.png').size))`],{encoding:'utf8'}));
+assert.equal(size[0],b.narrow.width);
+const n=json(dir+'notebooks.json'),p=json(dir+'pyodide.json'),r=json(dir+'reconciliation.json');
+assert.equal(n.executionStatus,'EXECUTED');assert.equal(n.totals.FAIL,0);assert.equal(n.totals.SKIPPED,0);
+assert.equal(n.lessons[0].cells.length,11);assert(p.complete&&r.pass);
+assert.equal(p.lessons[0].notebooks.length,6);
+assert(p.lessons[0].notebooks.every(nb=>nb.status==='passed'&&nb.cells.every(c=>c.status==='passed')));
+
+const sourceHash=createHash('sha256').update(readFileSync('content/modern/modern-case-study.mdx','utf8').replace(/\r\n/g,'\n')).digest('hex');
+assert.equal(p.lessons[0].sourceHash,sourceHash);assert.equal(r.sourceHash,sourceHash);
+assert.equal(json('lib/python-support.json').lessons['modern/modern-case-study'].sourceHash,sourceHash);
+assert.equal(r.component.cases,123);assert.equal(r.component.nodes,301);assert(r.component.maxError<1e-8&&r.maxNotebookResponseError<1e-8);
+for(const f of ['build.log','pages-build.log']){const log=readFileSync(dir+f,'utf8');assert(log.includes('prerendered'));assert(!/Failed to compile|error compiling MDX/.test(log));}
+assert(readFileSync(dir+'pages-build.log','utf8').includes('"pass":true,"lessons":205,"legacyRoutes":9'));
+const before=JSON.parse(execFileSync('git',['show',old.commit+':docs/deployment/python-expansion-pending.json'],{encoding:'utf8'}));const pending=json('docs/deployment/python-expansion-pending.json');assert.deepEqual(pending,before.filter(x=>x.lesson!=='modern/modern-case-study'));assert.equal(pending.length,25);assert(!pending.some(x=>['PY-004','PY-005'].includes(x.task)));assert.equal(r.component.integrationSteps,3001);assert.equal(r.component.uiPairs,121);
+const componentHash=createHash('sha256').update(readFileSync('components/wiki/cart-pole-noise-explorer.tsx','utf8').replace(/\r\n/g,'\n')).digest('hex');
+const result={pass:true,componentHash,notebooks:6,cells:11,oldIds:old.ids.length,links:b.links.length,mobileWidth:size[0],sourceHash};
+writeFileSync(dir+'delivery-validation.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
