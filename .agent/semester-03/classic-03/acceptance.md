@@ -42,3 +42,5 @@ lib/time-domain.ts是五组件实际调用的纯计算模块。33组首轮通过
 ## 合并
 
 Phase1–4、验收及台账同提交；真实no-ff合并完成后回填全局checklist合并列与本回执。不推送或发布gh-pages。本对话到CLASSIC-03结束。
+
+实际交付提交206dbb1，课程no-ff合并54e282c063f164ae4d6c21cfa6ab7af57be6b0c0。全局checklist六格已按真实合并回填；回执随同分支再次no-ff合master后删除工作分支。构建原始日志保留终端格式尾空格，源码diff检查无尾空格。
