@@ -15,7 +15,7 @@
 | 7 | MATH-07 | 微分方程与矩阵指数 | content/math/ode-matrix-exponential.mdx | 已完成 | 待合入 | [润色记录](records/MATH-07.md) |
 | 8 | MATH-08 | 拉普拉斯变换 | content/math/laplace-transform.mdx | 已完成 | 待合入 | [润色记录](records/MATH-08.md) |
 | 9 | MATH-09 | 傅里叶分析 | content/math/fourier-analysis.mdx | 已完成 | 待合入 | [润色记录](records/MATH-09.md) |
-| 10 | MATH-10 | Z变换 | content/math/z-transform.mdx | 已完成 | 待润色 | — |
+| 10 | MATH-10 | Z变换 | content/math/z-transform.mdx | 已完成 | 待合入 | [润色记录](records/MATH-10.md) |
 | 11 | MATH-11 | 概率基础 | content/math/probability-basics.mdx | 已完成 | 待润色 | — |
 | 12 | MATH-12 | 随机过程 | content/math/stochastic-processes.mdx | 已完成 | 待润色 | — |
 | 13 | MATH-13 | 凸优化 | content/math/convex-optimization.mdx | 已完成 | 待润色 | — |
