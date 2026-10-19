@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T21:01:10.071Z",
-  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fevent-triggered-control",
+  "testedAt": "2026-10-18T23:55:56.467Z",
+  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-time-freq",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -5964,31 +5964,31 @@
     {
       "key": "discrete-sampled/discrete-time-freq",
       "title": "采样与量化",
-      "sourceHash": "4e7170e17a6a71f6d6399a57ebb619e00e2ead8b2131d59e850734c0be737092",
+      "sourceHash": "5807620c875b15c5aa2b4f1096f2aa83aeb4c021aea18ab8b245a56d089a887e",
       "notebooks": [
         {
           "id": "discrete-sampled/discrete-time-freq#1",
-          "title": "实验 1",
+          "title": "实验1：混叠的频率与相位",
           "index": 1,
-          "line": 96,
+          "line": 73,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4079,
+              "milliseconds": 4081,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "混叠分析：\n  95 Hz 信号以 100 Hz 采样\n  混叠频率 = |95 - 100| = 5 Hz\n  控制器'看到'的是 5 Hz + 5 Hz，无法区分真实信号和混叠！\n"
+                  "text": "fs=250 Hz, Nyquist=125.0 Hz, signed alias=95.0 Hz\nfs=100 Hz, Nyquist=50.0 Hz, signed alias=-5.0 Hz\n100 Hz: net amplitude=.500000 at 5 Hz; not 10 Hz\nfs=190 Hz, Nyquist=95.0 Hz, signed alias=-95.0 Hz\nDefault 8-bit ADC: levels=256, q=0.015625, half-step=0.007812\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 233708
+                  "base64Length": 112972
                 }
               ]
             }
@@ -5996,27 +5996,27 @@
         },
         {
           "id": "discrete-sampled/discrete-time-freq#2",
-          "title": "实验 2",
+          "title": "实验2：归一化保持响应",
           "index": 2,
-          "line": 237,
+          "line": 142,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 1948,
+              "milliseconds": 1885,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "系统带宽: ωb = 7.1 rad/s\n\nZOH 在带宽处的相位损失：\n  Ts = 1 ms: Δφ = 0.2°\n  Ts = 5 ms: Δφ = 1.0°\n  Ts = 10 ms: Δφ = 2.0°\n  Ts = 50 ms: Δφ = 10.1°\n"
+                  "text": "Natural frequency=10 rad/s; -3 dB bandwidth=12.720196 rad/s\nNyquist normalized hold: magnitude=0.636620, dB=-3.922398\nTs=0.001 s, hold phase at bandwidth=0.364407 deg\nTs=0.005 s, hold phase at bandwidth=1.822034 deg\nTs=0.010 s, hold phase at bandwidth=3.644068 deg\nTs=0.050 s, hold phase at bandwidth=18.220339 deg\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 104620
+                  "base64Length": 55548
                 }
               ]
             }
@@ -6024,71 +6024,122 @@
         },
         {
           "id": "discrete-sampled/discrete-time-freq#3",
-          "title": "实验 3",
+          "title": "实验3：离线舍入与反馈量化",
           "index": 3,
-          "line": 392,
+          "line": 210,
           "cellCount": 2,
-          "status": "code",
-          "reason": "ValueError: Improper transfer function. `num` is longer than `den`.",
+          "status": "passed",
+          "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 485,
+              "milliseconds": 211,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "8-bit: q = 0.015625, 稳态波动 = 1.203125\n12-bit: q = 0.000977, 稳态波动 = 1.208008\n16-bit: q = 0.000061, 稳态波动 = 1.208069\n\n结论：ADC 位数越高，稳态波动越小\n8-bit 的波动是 16-bit 的 256 = 256 倍\n"
+                  "text": "Offline 8 bit: q=0.015625, max quantization error=0.007812, output span over last 2s=1.218750\nOffline 12 bit: q=0.000977, max quantization error=0.000488, output span over last 2s=1.208984\nOffline 16 bit: q=0.000061, max quantization error=0.000031, output span over last 2s=1.208130\nOverload x=3: output=1.992188, error=1.007812; half-step=0.007812\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 220672
+                  "base64Length": 76088
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 31,
-              "status": "error",
+              "milliseconds": 113,
+              "status": "passed",
               "outputs": [
                 {
-                  "type": "error",
-                  "ename": "ValueError",
-                  "evalue": "Improper transfer function. `num` is longer than `den`.",
-                  "traceback": [
-                    "Traceback (most recent call last):",
-                    "  File \"<exec>\", line 54, in _cu_execute",
-                    "  File \"<cell>\", line 20, in <module>",
-                    "  File \"/lib/python3.12/site-packages/control/dtime.py\", line 83, in sample_system",
-                    "    return sysc.sample(Ts,",
-                    "           ^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/control/xferfcn.py\", line 1247, in sample",
-                    "    numd, dend, _ = cont2discrete(sys, Twarp, method, alpha)",
-                    "                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/scipy/signal/_lti_conversion.py\", line 437, in cont2discrete",
-                    "    sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,",
-                    "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-                    "  File \"/lib/python3.12/site-packages/scipy/signal/_lti_conversion.py\", line 82, in tf2ss",
-                    "    raise ValueError(msg)",
-                    "ValueError: Improper transfer function. `num` is longer than `den`."
-                  ]
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Feedback None: y(20)=1.000000, max abs error over 18..20s=0.000000, span=0.000000\nFeedback 8: y(20)=1.000226, max abs error over 18..20s=0.000539, span=0.000765\nFeedback 12: y(20)=1.000014, max abs error over 18..20s=0.000034, span=0.000048\nFeedback 16: y(20)=1.000001, max abs error over 18..20s=0.000002, span=0.000003\nFinite-window values are not a proof of an asymptotic limit cycle or a universal bit-to-error ratio.\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 20100
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "5f6d3bd36ce9aa94b68e8c6638310ebb9d7b95d5477a045f0bb89036bbf3aa67",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "discrete-sampled/discrete-time-freq",
-          "fromSourceHash": "5f6d3bd36ce9aa94b68e8c6638310ebb9d7b95d5477a045f0bb89036bbf3aa67",
-          "toSourceHash": "4e7170e17a6a71f6d6399a57ebb619e00e2ead8b2131d59e850734c0be737092",
-          "notebookPayloadHash": "11cd7aeff16efa9f96a318e7fff3ae4a2b92dc707a1758b4f0d892fbf4d4fd70",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "discrete-sampled/discrete-time-freq#4",
+          "title": "实验4：可实现PID的采样比较",
+          "index": 4,
+          "line": 261,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 228,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ts=0.001 s, max pole modulus=0.997901, stable=True, final sample=0.996481\nTs=0.005 s, max pole modulus=0.989541, stable=True, final sample=0.996517\nTs=0.010 s, max pole modulus=0.979165, stable=True, final sample=0.996562\nTs=0.020 s, max pole modulus=0.958660, stable=True, final sample=0.996650\nTs=0.050 s, max pole modulus=1.177455, stable=False, final sample=-477.447723\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 63652
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#5",
+          "title": "实验5：滤波与量化预算",
+          "index": 5,
+          "line": 282,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fc=400 Hz: attenuation at20/500Hz=0.000027/5.367359 dB, phase at50rad/s=-1.612223 deg\nfc=50 Hz: attenuation at20/500Hz=0.109780/40.000434 dB, phase at50rad/s=-13.003284 deg\nHold loss=1.432394 deg, fixed-frequency margin estimate=48.567606 deg\nMinimum bits for quantization budget=.25 rad/s: 11\n12 bit: q=0.153398 rad/s, half-step=0.076699 rad/s\nN=8 levels=256 ideal full-scale SNR=49.925712 dB\nN=12 levels=4096 ideal full-scale SNR=74.008112 dB\nN=16 levels=65536 ideal full-scale SNR=98.090511 dB\nN=24 levels=16777216 ideal full-scale SNR=146.255311 dB\nHalf-amplitude SNR change=-6.020600 dB\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#6",
+          "title": "实验6：答案与近似条件核验",
+          "index": 6,
+          "line": 348,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1: fs>94; signed alias of47Hz at fs60= -13\nQ2: phase=2.864789 deg, estimate=52.135211 deg, strict period bound=0.008726646 s\nQ3: minimum bits= 10\nQ3: q=0.048828125 C, bound=0.024414062 C, range ratio=4.0\nQ4: wc=2.864064 rad/s, wb=4.477537 rad/s, hold phase=1.282720 deg\nQ4: minimum bits= 14\nOversampling4 independent white-noise variance ratio=.25, SNR gain=6.020600 dB\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -12965,15 +13016,15 @@
   "complete": true,
   "totals": {
     "lessons": 82,
-    "notebooks": 388,
-    "enabled": 372,
-    "codeOnly": 16
+    "notebooks": 391,
+    "enabled": 376,
+    "codeOnly": 15
   },
   "releaseTotals": {
     "lessons": 82,
-    "notebooks": 388,
-    "enabled": 371,
-    "codeOnly": 17
+    "notebooks": 391,
+    "enabled": 375,
+    "codeOnly": 16
   },
   "provenance": [
     {
@@ -13534,6 +13585,11 @@
       "review": ".agent/semester-03/zh-lang-edit/merges/d05e876/review.json",
       "executedAgain": false,
       "notebooks": 227
+    },
+    {
+      "testedAt": "2026-10-18T23:55:56.467Z",
+      "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-time-freq",
+      "inputPath": ".agent/semester-03/discrete-01/pyodide.json"
     }
   ]
 }

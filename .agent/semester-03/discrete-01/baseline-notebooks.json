@@ -1,0 +1,100 @@
+{
+  "root": "D:/Workspace/control-universe",
+  "kernel": "127.0.0.1:8981",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S7": 3,
+    "S6": 2
+  },
+  "failLessons": [
+    "discrete-sampled/discrete-time-freq"
+  ],
+  "lessons": [
+    {
+      "key": "discrete-sampled/discrete-time-freq",
+      "file": "content/discrete-sampled/discrete-time-freq.mdx",
+      "level": "FAIL",
+      "notebooks": 3,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 2
+        },
+        {
+          "notebook": 1,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "Font 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\nFont 'default' does not have a glyph for '\\u2212' [U+2212], substituting with a dummy symbol.\n",
+          "nOut": 6
+        },
+        {
+          "notebook": 2,
+          "index": 0,
+          "status": "OK",
+          "images": 1,
+          "stderr": "",
+          "nOut": 3
+        },
+        {
+          "notebook": 2,
+          "index": 1,
+          "status": "ERROR",
+          "ename": "ValueError",
+          "evalue": "Improper transfer function. `num` is longer than `den`.",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ValueError                                Traceback (most recent call last)",
+            "Cell In[3], line 20\n     16 ax.plot(t, y_cont, 'k-', linewidth=2, label='连续')\n     17 \n     18 for Ts in Ts_list:\n     19     Gd = ctrl.c2d(G_motor, Ts, method='zoh')\n---> 20     Kd = ctrl.c2d(K_pid, Ts, method='tustin')\n     21     CL_d = ctrl.feedback(Gd * Kd, 1)\n     22     _, y_d = ctrl.step_response(CL_d, T=t)\n     23     ax.plot(t, y_d, '--', linewidth=1.5, label=f'Ts = {Ts*1000:.0f} ms')\n",
+            "File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n"
+          ],
+          "stderr": "",
+          "images": 1
+        }
+      ],
+      "findings": [
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 1（:104） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 105
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 2（:253） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 254
+        },
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 3（:418） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 419
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 3 cell 2（:475）执行报错 ValueError: Improper transfer function. `num` is longer than `den`.\n          ---------------------------------------------------------------------------\n          ValueError                                Traceback (most recent call last)\n          Cell In[3], line 20\n     16 ax.plot(t, y_cont, 'k-', linewidth=2, label='连续')\n     17 \n     18 for Ts in Ts_list:\n     19     Gd = ctrl.c2d(G_motor, Ts, method='zoh')\n---> 20     Kd = ctrl.c2d(K_pid, Ts, method='tustin')\n     21     CL_d = ctrl.feedback(Gd * Kd, 1)\n     22     _, y_d = ctrl.step_response(CL_d, T=t)\n     23     ax.plot(t, y_d, '--', linewidth=1.5, label=f'Ts = {Ts*1000:.0f} ms')\n\n          File ~\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\control\\dtime.py:83, in sample_system(sysc, Ts, method, alpha, prewarp_frequency, name, copy_names, **kwargs)\n     80 if not isctime(sysc):\n     81     raise ValueError(\"First argument must be continuous-time system\")\n---> 83 return sysc.sample(Ts,\n     84     method=method, alpha=alpha, prewarp_frequency=prewarp_frequency,\n     85     name=name, copy_names=copy_names, **kwargs)\n",
+          "line": 475
+        },
+        {
+          "level": "WARN",
+          "code": "S6",
+          "msg": "良性 stderr 4 行：matplotlib 字体缺字形（负号 U+2212，不影响出图）（完整原文见 --out 导出的 JSON）",
+          "line": null
+        }
+      ]
+    }
+  ]
+}

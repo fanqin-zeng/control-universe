@@ -72,6 +72,7 @@ import { BacksteppingExplorer } from "@/components/wiki/backstepping-explorer";
 import { MracExplorer } from "@/components/wiki/mrac-explorer";
 import { PassivityExplorer } from "@/components/wiki/passivity-explorer";
 import { IssSmallGainExplorer } from "@/components/wiki/iss-small-gain-explorer";
+import { SamplingQuantizationExplorer } from "@/components/wiki/sampling-quantization-explorer";
 import { BifurcationExplorer } from "@/components/wiki/bifurcation-explorer";
 import { SwitchedHybridExplorer } from "@/components/wiki/switched-hybrid-explorer";
 import { FuzzyExplorer } from "@/components/wiki/fuzzy-explorer";
@@ -153,6 +154,7 @@ export const wikiComponents: MDXComponents = {
   IssSmallGainExplorer,
   SwitchedHybridExplorer,
   BifurcationExplorer,
+  SamplingQuantizationExplorer,
   FuzzyExplorer,
   FuzzyTuningExplorer,
   NeuralNetworkExplorer,

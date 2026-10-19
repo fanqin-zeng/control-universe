@@ -17,3 +17,7 @@ Python：执行载荷不变的227实验按精确payloadHash迁移正文指纹，
 最终Pages本地构建退出0，205课/9旧路由通过；普通和静态微积分首实验实际按钮运行通过，新稿六Notebook浏览器抽测通过。alias-native.json确认旧ID及新标题同时存在。所有门槛已过，准予将固定d05e876合入master，再按本轮明确授权发布。
 
 实际master merge 9cafbd4020cd72457b36bbbf1b8edb7d5c5e570e，两父为69e43d3与固定d05e876；45条PLAN/记录据真实提交更新已合入，59课生产状态保留。Pages本地构建最终退出0，发布回执在docs/deployment/discrete10-zh-release.md。
+
+37课verify汇总PASS332/WARN1/FAIL0/SKIPPED0；唯一WARN是旧链接/modern/lqr-controller#lqr-的鲁棒性不在H2集合，公网真实DOM复查legacyAnchorExists=true（public-browser.json），属于旧兼容span未计入H2的提示，不是本轮新死链。没有声称所有页面零WARN。
+
+本轮最终发布gh-pages 2dd926fe7d2a4daa810a76690d69582933b54a0b；Actions与公网235请求、29实验39cell、手机375px通过。发布证据docs/deployment/discrete10-zh-public-validation.json，ZH03/DEP11均据实际结果完成；W15明确保留。
