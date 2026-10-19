@@ -1,0 +1,184 @@
+{
+  "testedAt": "2026-10-19T00:09:03.938Z",
+  "url": "https://fanqing-zeng.github.io/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-time-freq",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "discrete-sampled/discrete-time-freq",
+      "title": "采样与量化",
+      "sourceHash": "5807620c875b15c5aa2b4f1096f2aa83aeb4c021aea18ab8b245a56d089a887e",
+      "notebooks": [
+        {
+          "id": "discrete-sampled/discrete-time-freq#1",
+          "title": "实验1：混叠的频率与相位",
+          "index": 1,
+          "line": 73,
+          "cellCount": 1,
+          "status": "code",
+          "reason": "Error: PythonError: Traceback (most recent call last):\n  File \"/lib/python312.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n  File \"/lib/python312.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.12/site-packages/matplotlib/__init__.py\", line 157, in <module>\n    from packaging.version import parse as parse_version\nModuleNotFoundError: No module named 'packaging'\nThe module 'packaging' is included in the Pyodide distribution, but it is not installed.\nYou can install it by calling:\n  await micropip.install(\"packaging\") in Python, or\n  await pyodide.loadPackage(\"packaging\") in JavaScript\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details.\n",
+          "cells": []
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#2",
+          "title": "实验2：归一化保持响应",
+          "index": 2,
+          "line": 142,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5422,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Natural frequency=10 rad/s; -3 dB bandwidth=12.720196 rad/s\nNyquist normalized hold: magnitude=0.636620, dB=-3.922398\nTs=0.001 s, hold phase at bandwidth=0.364407 deg\nTs=0.005 s, hold phase at bandwidth=1.822034 deg\nTs=0.010 s, hold phase at bandwidth=3.644068 deg\nTs=0.050 s, hold phase at bandwidth=18.220339 deg\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 55548
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#3",
+          "title": "实验3：离线舍入与反馈量化",
+          "index": 3,
+          "line": 210,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 213,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Offline 8 bit: q=0.015625, max quantization error=0.007812, output span over last 2s=1.218750\nOffline 12 bit: q=0.000977, max quantization error=0.000488, output span over last 2s=1.208984\nOffline 16 bit: q=0.000061, max quantization error=0.000031, output span over last 2s=1.208130\nOverload x=3: output=1.992188, error=1.007812; half-step=0.007812\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 76088
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 100,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Feedback None: y(20)=1.000000, max abs error over 18..20s=0.000000, span=0.000000\nFeedback 8: y(20)=1.000226, max abs error over 18..20s=0.000539, span=0.000765\nFeedback 12: y(20)=1.000014, max abs error over 18..20s=0.000034, span=0.000048\nFeedback 16: y(20)=1.000001, max abs error over 18..20s=0.000002, span=0.000003\nFinite-window values are not a proof of an asymptotic limit cycle or a universal bit-to-error ratio.\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 20100
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#4",
+          "title": "实验4：可实现PID的采样比较",
+          "index": 4,
+          "line": 261,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 231,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ts=0.001 s, max pole modulus=0.997901, stable=True, final sample=0.996481\nTs=0.005 s, max pole modulus=0.989541, stable=True, final sample=0.996517\nTs=0.010 s, max pole modulus=0.979165, stable=True, final sample=0.996562\nTs=0.020 s, max pole modulus=0.958660, stable=True, final sample=0.996650\nTs=0.050 s, max pole modulus=1.177455, stable=False, final sample=-477.447723\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 63652
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#5",
+          "title": "实验5：滤波与量化预算",
+          "index": 5,
+          "line": 282,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fc=400 Hz: attenuation at20/500Hz=0.000027/5.367359 dB, phase at50rad/s=-1.612223 deg\nfc=50 Hz: attenuation at20/500Hz=0.109780/40.000434 dB, phase at50rad/s=-13.003284 deg\nHold loss=1.432394 deg, fixed-frequency margin estimate=48.567606 deg\nMinimum bits for quantization budget=.25 rad/s: 11\n12 bit: q=0.153398 rad/s, half-step=0.076699 rad/s\nN=8 levels=256 ideal full-scale SNR=49.925712 dB\nN=12 levels=4096 ideal full-scale SNR=74.008112 dB\nN=16 levels=65536 ideal full-scale SNR=98.090511 dB\nN=24 levels=16777216 ideal full-scale SNR=146.255311 dB\nHalf-amplitude SNR change=-6.020600 dB\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "discrete-sampled/discrete-time-freq#6",
+          "title": "实验6：答案与近似条件核验",
+          "index": 6,
+          "line": 348,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1: fs>94; signed alias of47Hz at fs60= -13\nQ2: phase=2.864789 deg, estimate=52.135211 deg, strict period bound=0.008726646 s\nQ3: minimum bits= 10\nQ3: q=0.048828125 C, bound=0.024414062 C, range ratio=4.0\nQ4: wc=2.864064 rad/s, wb=4.477537 rad/s, hold phase=1.282720 deg\nQ4: minimum bits= 14\nOversampling4 independent white-noise variance ratio=.25, SNR gain=6.020600 dB\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "discrete-sampled/discrete-time-freq",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 6,
+    "enabled": 5,
+    "codeOnly": 1
+  },
+  "releaseTotals": {
+    "enabled": 5,
+    "codeOnly": 1
+  }
+}
