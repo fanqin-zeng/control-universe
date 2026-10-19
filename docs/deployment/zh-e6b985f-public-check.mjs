@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';
+const prefix='docs/deployment/zh-e6b985f-public-',read=s=>JSON.parse(fs.readFileSync(prefix+s+'.json','utf8')),sha='4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84';
+const actions=read('actions');assert.equal(actions.head_sha,sha);assert.equal(actions.conclusion,'success');assert(actions.jobs.every(j=>j.conclusion==='success'));const http=read('http');assert(http.pass);assert.equal(http.release.sourceCommit,sha);assert.equal(http.release.sourceDirty,false);
+const py=read('python'),expected=JSON.parse(fs.readFileSync('.agent/semester-03/zh-lang-edit/merges/e6b985f/pyodide-math01.json','utf8'));assert(py.complete);assert.equal(py.workerHash,expected.workerHash);assert.equal(py.lessons[0].sourceHash,expected.lessons[0].sourceHash);assert.equal(py.lessons[0].notebooks.length,6);
+const stream=o=>o.filter(x=>x.type==='stream').map(x=>x.text).join('');let cells=0;
+py.lessons[0].notebooks.forEach((b,i)=>{assert.equal(b.status,'passed');b.cells.forEach((c,j)=>{assert.equal(c.status,'passed');assert(!c.outputs.some(x=>x.type==='error'));assert.equal(stream(c.outputs),stream(expected.lessons[0].notebooks[i].cells[j].outputs));cells++;});});assert.equal(cells,6);
+const browser=read('browser'),review=JSON.parse(fs.readFileSync('.agent/semester-03/zh-lang-edit/merges/e6b985f/review.json','utf8'));assert.equal(browser.length,4);
+for(const page of browser){assert.equal(page.katexErrors,0);assert.equal(page.errors.length,0);assert.deepEqual(page.h2,review.rows.find(r=>r.key===page.key).h2.map(({text,id})=>({text,id})));assert.equal(new Set(page.ids).size,page.ids.length);}
+assert(browser[0].intro.includes('用秒表记录时刻，再量出'));assert(browser.find(p=>p.key==='nonlinear/adaptive-control-basics').titles.some(x=>x.includes('确定性等价')));
+execFileSync('git',['diff','--exit-code','bc39c2d',sha,'--','content','components','lib','public','scripts','.github'],{stdio:'pipe'});
+const result={pass:true,release:sha,sourceMaster:'bc39c2d',reviewedLessons:5,changedLessons:4,actualPublicPythonNotebooks:6,cells,sourceTreeEquivalent:true};fs.writeFileSync(prefix+'validation.json',JSON.stringify(result,null,2)+'\n');console.log(result);

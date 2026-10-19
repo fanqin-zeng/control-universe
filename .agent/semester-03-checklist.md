@@ -64,6 +64,7 @@
 | W16 | Pyodide首次冷启动依赖加载失败与恢复能力审查 | [ ] | docs/deployment/discrete01-release.md;docs/deployment/discrete01-public-python-first-attempt.json;首次缺packaging，刷新完整通过；原因未定位，未宣称运行时已修复 |
 | DEP13 | 网页Python代码统一初始化字体并发布验收 | [x] | .agent/semester-03/python-code-font/acceptance.md;docs/deployment/python-code-font-release.md;docs/deployment/python-code-font-public-validation.json;commit:35464555d8263829b5daca2d3ce65541c323fa24 |
 | ZH04 | e6b985f润色增量快速审核与合入 | [x] | .agent/semester-03/zh-lang-edit/merges/e6b985f/acceptance.md;.agent/semester-03/zh-lang-edit/merges/e6b985f/review.json;commit:66c1b1385623331982ec643842493df006b7a013 |
+| DEP14 | e6b985f润色增量授权发布与公网验收 | [x] | docs/deployment/zh-e6b985f-release.md;docs/deployment/zh-e6b985f-public-validation.json;commit:4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
