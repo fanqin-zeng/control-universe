@@ -62,6 +62,7 @@
 | DEP12 | DISCRETE-01补全后的授权发布与公网验收 | [x] | docs/deployment/discrete01-release.md;docs/deployment/discrete01-public-validation.json;commit:636d0de2ab8bcd95ea17e39c3cde518ad502ecf5 |
 | W15 | NONLINEAR-01势能示例历史数字笔误勘误 | [ ] | .agent/semester-03/zh-lang-edit/records/NONLINEAR-01.md;V(1.83)应为0.83331515925，旧文误写0.83331530925；不影响内外侧结论，独立修复并对账 |
 | W16 | Pyodide首次冷启动依赖加载失败与恢复能力审查 | [ ] | docs/deployment/discrete01-release.md;docs/deployment/discrete01-public-python-first-attempt.json;首次缺packaging，刷新完整通过；原因未定位，未宣称运行时已修复 |
+| DEP13 | 网页Python代码统一初始化字体并发布验收 | [x] | .agent/semester-03/python-code-font/acceptance.md;docs/deployment/python-code-font-release.md;docs/deployment/python-code-font-public-validation.json;commit:35464555d8263829b5daca2d3ce65541c323fa24 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
