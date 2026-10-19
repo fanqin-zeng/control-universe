@@ -141,7 +141,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| DISCRETE-01 | [x] | [x] | [x] | [x] | [x] | [ ] | .agent/semester-03/discrete-01/acceptance.md;docs/discuss-log/semester-03/06-discrete-sampled/01-discrete-time-freq.md;待真实master提交回执 |
+| DISCRETE-01 | [x] | [x] | [x] | [x] | [x] | [x] | .agent/semester-03/discrete-01/acceptance.md;docs/discuss-log/semester-03/06-discrete-sampled/01-discrete-time-freq.md;commit:0c6c0505c175e3701cdf4e0c490e16b16774f948 |
 | DISCRETE-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/02-discrete-time-systems.md;.agent/semester-03/discrete-02/acceptance.md;commit:5e5a16dd088c9c330560e379b0b3c81513b4e61a |
 | DISCRETE-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/03-difference-equation.md;.agent/semester-03/discrete-03/acceptance.md;commit:3a579d90706c37f7b12ab085fccfffdaf061b399 |
 | DISCRETE-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/06-discrete-sampled/04-z-transform-analysis.md;.agent/semester-03/discrete-04/acceptance.md;commit:149bac2092969d2d817f68f879a29376f073d7f4 |
