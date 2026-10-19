@@ -1,0 +1,672 @@
+---
+title: 采样与量化
+description: 从连续世界到数字世界的桥梁——采样定理、混叠现象、采样保持器、量化误差，以及它们对控制系统性能的影响。
+---
+
+# 采样与量化
+
+前三个部分——经典控制、现代控制、鲁棒控制——我们一直在连续时间的世界里工作：信号在每一刻都有定义，控制器可以"实时"计算输出。但现实中，几乎所有现代控制器都运行在数字计算机上：微控制器、PLC、DSP、FPGA。
+
+**数字控制器只能处理离散时间、有限精度的信号。**
+
+这意味着两个根本性的变化：
+
+1. **采样**：连续信号 $x(t)$ 变成离散序列 $x[k] = x(kT_s)$——时间被"切片"
+2. **量化**：模拟值 $x[k]$ 变成数字值 $\tilde{x}[k]$——幅值被"取整"
+
+> 📖 本章是计算机控制部分的基础，需要经典控制（传递函数、频率响应）和现代控制（状态空间）的基础。
+
+这两个变化看起来很小，但影响深远：
+
+| 效应 | 原因 | 后果 |
+|------|------|------|
+| 信息丢失 | 采样只取离散时刻的值 | 高频信号可能被"误读"为低频（混叠） |
+| 相位延迟 | 采样-保持电路引入延迟 | 相位裕度下降，可能不稳定 |
+| 量化噪声 | ADC 位数有限 | 稳态精度受限，可能产生极限环 |
+
+本节的目标：理解采样和量化的数学模型、物理影响和工程设计准则。学完后，你应该能回答：
+
+- 采样频率应该选多少？
+- ADC 需要多少位？
+- 为什么我的数字控制器性能比仿真差？
+
+## 采样过程
+
+### 理想采样
+
+**理想采样**可以建模为连续信号 $x(t)$ 乘以一个脉冲串：
+
+$$
+p(t) = \sum_{n=-\infty}^{\infty} \delta(t - nT_s)
+$$
+
+采样后的信号：
+
+$$
+x^*(t) = x(t) \cdot p(t) = \sum_{n=-\infty}^{\infty} x(nT_s) \cdot \delta(t - nT_s)
+$$
+
+这只是在每个采样时刻 $t = nT_s$ "提取"信号的值。物理上不可能实现（δ 函数需要无限大的幅值），但数学上很方便。
+
+### 频域视角：频谱搬移
+
+对 $p(t)$ 做傅里叶级数展开：
+
+$$
+p(t) = \frac{1}{T_s} \sum_{k=-\infty}^{\infty} e^{jk\omega_s t}
+$$
+
+其中 $\omega_s = 2\pi/T_s$ 是采样角频率。
+
+时域乘法对应频域卷积，因此：
+
+$$
+X^*(j\omega) = \frac{1}{T_s} \sum_{k=-\infty}^{\infty} X(j(\omega - k\omega_s))
+$$
+
+**这就是采样定理的核心**：采样后的频谱是原频谱以 $\omega_s$ 为周期的无限复制。
+
+```
+原信号频谱 X(jω):
+        ┌───┐
+        │   │
+  ──────┘   └──────
+  -ωm    0    ωm
+
+采样后频谱 X*(jω)（ωs > 2ωm）:
+    ┌───┐  ┌───┐  ┌───┐
+    │   │  │   │  │   │
+────┘   └──┘   └──┘   └────
+  -ωs  -ωm 0  ωm  ωs
+        ↑ 可分离 → 可恢复
+```
+
+如果 $\omega_s > 2\omega_m$（$2\omega_m$ 称为 **Nyquist 频率**），各复制品之间不重叠，可以用理想低通滤波器完美恢复原信号。
+
+### Nyquist-Shannon 采样定理
+
+> **定理**（Nyquist-Shannon）：如果连续信号 $x(t)$ 的最高频率分量为 $\omega_m$，则当采样频率 $\omega_s > 2\omega_m$ 时，$x(t)$ 可以从采样序列 $\{x(nT_s)\}$ 中完全恢复。
+
+**物理直觉**：每个周期至少采 2 个点，才能"抓住"一个正弦波的形状。如果每个周期只采 1 个点，你看到的是一组常数——完全不知道频率。
+
+> 💡 **注意**：定理中的 $\omega_m$ 是**信号**的最高频率，不是**系统**的带宽。对于控制系统，我们需要保留的信号频率通常到闭环带宽 $\omega_b$ 的 2-3 倍（因为阶跃响应包含丰富的频率成分）。
+
+## 混叠
+
+### 什么是混叠
+
+当 $\omega_s \leq 2\omega_m$ 时，频谱复制品发生重叠——高频成分被"折叠"到低频段，与低频成分混在一起。这就是**混叠**（aliasing）。
+
+数学上，频率为 $\omega_0$ 的正弦波，以 $\omega_s$ 采样后，与频率为 $\omega_0 + k\omega_s$（$k$ 为任意整数）的正弦波**不可区分**。
+
+**经典例子**：电影中车轮"倒转"的错觉。电影帧率 24 fps，如果车轮转速为 25 Hz，采样后看起来像 1 Hz 的慢速正转（25 - 24 = 1）。如果转速为 23 Hz，看起来像 1 Hz 的反转（23 - 24 = -1）。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# 混叠现象演示
+f1 = 5    # 5 Hz（低频，需要保留）
+f2 = 95   # 95 Hz（高频，应该被滤除）
+t = np.linspace(0, 1, 10000)
+x = np.sin(2*np.pi*f1*t) + 0.5*np.sin(2*np.pi*f2*t)
+
+fs_good = 250   # 满足 Nyquist（> 2*95 = 190 Hz）
+fs_bad = 100    # 不满足 Nyquist（< 2*95 = 190 Hz）
+
+fig, axes = plt.subplots(3, 1, figsize=(14, 10))
+
+axes[0].plot(t, x, 'b-', linewidth=0.5)
+axes[0].set_title('原始信号: 5 Hz + 95 Hz')
+axes[0].set_xlabel('时间 (s)')
+axes[0].set_ylabel('幅值')
+axes[0].grid(True, alpha=0.3)
+axes[0].set_xlim(0, 0.4)
+
+t_good = np.arange(0, 1, 1/fs_good)
+x_good = np.sin(2*np.pi*f1*t_good) + 0.5*np.sin(2*np.pi*f2*t_good)
+axes[1].plot(t, x, 'b-', linewidth=0.3, alpha=0.3, label='原始')
+axes[1].stem(t_good[:40], x_good[:40], linefmt='r-', markerfmt='ro', 
+             basefmt='k-', label=f'采样 ({fs_good} Hz)')
+axes[1].set_title(f'采样率 {fs_good} Hz > 2×95 Hz：无混叠，高频成分可分辨')
+axes[1].set_xlabel('时间 (s)')
+axes[1].set_ylabel('幅值')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+axes[1].set_xlim(0, 0.4)
+
+t_bad = np.arange(0, 1, 1/fs_bad)
+x_bad = np.sin(2*np.pi*f1*t_bad) + 0.5*np.sin(2*np.pi*f2*t_bad)
+x_alias = np.sin(2*np.pi*f1*t_bad) + 0.5*np.sin(2*np.pi*5*t_bad)
+axes[2].plot(t, x, 'b-', linewidth=0.3, alpha=0.3, label='原始')
+axes[2].stem(t_bad[:40], x_bad[:40], linefmt='r-', markerfmt='ro',
+             basefmt='k-', label=f'采样 ({fs_bad} Hz)')
+axes[2].plot(t_bad, x_alias, 'g--', linewidth=2, 
+             label='混叠后 = 5 Hz + 5 Hz = 10 Hz')
+axes[2].set_title(f'采样率 {fs_bad} Hz < 2×95 Hz：95 Hz 混叠为 5 Hz！')
+axes[2].set_xlabel('时间 (s)')
+axes[2].set_ylabel('幅值')
+axes[2].legend()
+axes[2].grid(True, alpha=0.3)
+axes[2].set_xlim(0, 0.4)
+
+plt.tight_layout()
+plt.show()
+
+print("混叠分析：")
+print(f"  95 Hz 信号以 {fs_bad} Hz 采样")
+print(f"  混叠频率 = |95 - {fs_bad}| = {abs(95-fs_bad)} Hz")
+print(f"  控制器'看到'的是 5 Hz + 5 Hz，无法区分真实信号和混叠！")`
+    }
+  ]}
+/>
+
+### 混叠的危害
+
+在控制系统中，混叠的后果很严重：
+
+1. **传感器"看到"不存在的信号**：高频噪声被采样后变成低频干扰，控制器试图"跟踪"这个假信号
+2. **控制器无法区分**：数字控制器只能看到采样后的数据，无法分辨真实信号和混叠信号
+3. **性能恶化甚至不稳定**：控制器对错误的信号做出响应
+
+### 抗混叠滤波
+
+解决方案：在采样之前，用**抗混叠滤波器**（anti-aliasing filter）把高频成分衰减掉。
+
+```
+                    抗混叠滤波器         采样器
+x(t) ──────────→ [低通滤波器] ──→ [采样/ADC] ──→ x[k]
+  连续信号         衰减 > ωs/2       离散信号
+                   的成分
+```
+
+理想情况下，抗混叠滤波器是一个截止频率为 $\omega_s/2$ 的理想低通滤波器。但理想滤波器不可实现（非因果），实际使用模拟低通滤波器（如 Butterworth、Chebyshev）。
+
+**工程设计准则**：
+
+实际滤波器有过渡带，所以需要留出余量。通常要求：
+- 滤波器截止频率 $\omega_c \leq 0.8 \times \omega_s/2$
+- 在 $\omega_s/2$ 处，信号衰减至少 40-60 dB
+
+例如，如果采样频率 $f_s = 1000$ Hz（$\omega_s/2 = 500$ Hz），抗混叠滤波器的截止频率选 $f_c = 400$ Hz，在 500 Hz 处衰减 > 40 dB。
+
+> 💡 **经验法则**：采样频率至少是信号带宽的 5-10 倍（而不是定理要求的 2 倍），这样抗混叠滤波器更容易实现，混叠误差更小。
+
+## 采样保持器
+
+### 为什么需要采样保持
+
+理想采样产生的是脉冲信号——在采样瞬间有值，其他时刻为零。但 DAC（数模转换器）需要在一个采样周期内保持输出值不变。
+
+实际系统中，ADC 采样后，数字控制器计算控制量，然后 DAC 输出。DAC 的输出在下一个采样时刻之前保持不变——这就是**零阶保持**（Zero-Order Hold, ZOH）。
+
+### ZOH 的数学模型
+
+ZOH 可以建模为：在 $[nT_s, (n+1)T_s)$ 内，输出等于 $nT_s$ 时刻的采样值。
+
+传递函数：
+
+$$
+G_{ZOH}(s) = \frac{1 - e^{-sT_s}}{s}
+$$
+
+频率响应：
+
+$$
+G_{ZOH}(j\omega) = T_s \cdot \text{sinc}\left(\frac{\omega T_s}{2}\right) \cdot e^{-j\omega T_s / 2}
+$$
+
+其中 $\text{sinc}(x) = \sin(x)/x$。
+
+两个关键特性：
+
+1. **幅值**：$|G_{ZOH}(j\omega)| = T_s \cdot |\text{sinc}(\omega T_s/2)|$。低频时约等于 $T_s$，高频时按 sinc 函数衰减。在 $\omega = \omega_s/2$ 处，幅值下降约 3.9 dB。
+
+2. **相位**：$\angle G_{ZOH}(j\omega) = -\omega T_s / 2$。这是一个**线性相位延迟**，等效于 $T_s/2$ 的纯延迟。
+
+### ZOH 对控制系统的影响
+
+ZOH 的相位延迟直接影响系统的**相位裕度**。
+
+对于带宽为 $\omega_b$ 的系统，ZOH 引入的相位损失为：
+
+$$
+\Delta \phi = \omega_b \cdot \frac{T_s}{2} \quad (\text{弧度})
+$$
+
+**设计准则**：为了保持足够的相位裕度，通常要求：
+
+$$
+\omega_b \cdot T_s < 0.1 \sim 0.2 \quad \text{rad}
+$$
+
+即 $T_s < \frac{0.1}{\omega_b}$ 到 $\frac{0.2}{\omega_b}$。
+
+**例子**：如果系统带宽 $\omega_b = 10$ rad/s（$f_b \approx 1.6$ Hz），则采样周期 $T_s < 0.01$ s，即 $f_s > 100$ Hz。
+
+> 💡 ZOH 延迟是数字控制中**不可避免的**相位损失来源。与传感器延迟、计算延迟叠加后，总的额外相位损失可能很大。这就是为什么数字控制系统的采样频率需要远高于 Nyquist 频率。
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ZOH 对频率响应的影响
+wn = 10  # 自然频率 10 rad/s
+zeta = 0.5
+G = ctrl.tf([wn**2], [1, 2*zeta*wn, wn**2])
+
+Ts_values = [0.001, 0.005, 0.01, 0.05]
+omega = np.logspace(-1, 2, 1000)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+ax = axes[0]
+mag_cont, phase_cont, w_cont = ctrl.frequency_response(G, omega)
+mag_cont = np.abs(mag_cont.flatten())
+ax.semilogx(w_cont, 20*np.log10(mag_cont), 'k-', linewidth=2, label='连续')
+
+for Ts in Ts_values:
+    G_zoh = Ts * np.sinc(omega * Ts / (2 * np.pi))
+    mag_zoh = mag_cont * G_zoh
+    ax.semilogx(omega, 20*np.log10(mag_zoh), '--', linewidth=1.5, 
+                label=f'Ts = {Ts*1000:.0f} ms')
+
+ax.set_xlabel('ω (rad/s)')
+ax.set_ylabel('|G| (dB)')
+ax.set_title('ZOH 对幅频特性的影响')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+ax.set_ylim(-40, 10)
+
+ax = axes[1]
+_, phase_cont_raw, _ = ctrl.frequency_response(G, omega)
+phase_cont_deg = np.degrees(phase_cont_raw.flatten())
+ax.semilogx(w_cont, phase_cont_deg, 'k-', linewidth=2, label='连续')
+
+for Ts in Ts_values:
+    phase_zoh = -omega * Ts / 2
+    phase_total = phase_cont_deg + np.degrees(phase_zoh)
+    ax.semilogx(omega, phase_total, '--', linewidth=1.5,
+                label=f'Ts = {Ts*1000:.0f} ms')
+
+ax.axhline(y=-180, color='gray', linestyle=':', alpha=0.5)
+ax.set_xlabel('ω (rad/s)')
+ax.set_ylabel('相位 (°)')
+ax.set_title('ZOH 对相频特性的影响（相位裕度损失）')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+ax.set_ylim(-270, 30)
+
+plt.tight_layout()
+plt.show()
+
+wb = wn * np.sqrt(1 - 2*zeta**2)
+print(f"系统带宽: ωb = {wb:.1f} rad/s")
+print(f"\\nZOH 在带宽处的相位损失：")
+for Ts in Ts_values:
+    delta_phi = wb * Ts / 2 * 180 / np.pi
+    print(f"  Ts = {Ts*1000:.0f} ms: Δφ = {delta_phi:.1f}°")`
+    }
+  ]}
+/>
+
+## 量化
+
+### ADC 量化过程
+
+ADC（模数转换器）将连续的模拟值映射到有限个离散电平。如果 ADC 有 $N$ 位，输入范围 $[-V_{ref}, V_{ref}]$，则：
+
+- 量化级数：$L = 2^N$
+- 量化步长：$q = \frac{2V_{ref}}{2^N}$
+
+量化后的值：$\tilde{x} = Q(x) = \text{round}(x/q) \cdot q$
+
+量化误差：$e_q = \tilde{x} - x$，范围 $[-q/2, q/2]$。
+
+### 量化误差模型
+
+量化误差本质上是确定性的（给定输入，输出确定），但当信号足够复杂（覆盖多个量化级）时，可以近似为**均匀分布的随机噪声**：
+
+$$
+e_q \sim \mathcal{U}(-q/2, q/2)
+$$
+
+统计特性：
+- 均值：$E[e_q] = 0$
+- 方差：$\sigma_q^2 = \frac{q^2}{12}$
+
+**信噪比**（SNR）：假设信号是幅值 $A$ 的正弦波，信号功率 $= A^2/2$，噪声功率 $= q^2/12$：
+
+$$
+\text{SNR} = 10 \log_{10}\left(\frac{A^2/2}{q^2/12}\right) = 6.02N + 1.76 \quad \text{dB}
+$$
+
+**经验法则**：每增加 1 位 ADC，SNR 提高约 6 dB。
+
+| ADC 位数 | 量化级数 | SNR (dB) | 典型应用 |
+|----------|----------|----------|----------|
+| 8 | 256 | 49.9 | 低成本传感器 |
+| 12 | 4096 | 74.0 | 通用工业控制 |
+| 16 | 65536 | 98.1 | 精密测量 |
+| 24 | 16M | 146.0 | 音频、称重 |
+
+### 量化对控制系统的影响
+
+1. **稳态精度受限**：输出不能精确收敛到参考值，而是在 $\pm q/2$ 范围内波动。对于位置控制，如果要求稳态误差 < 0.01 mm，ADC 分辨率必须足够高。
+
+2. **极限环振荡**：积分器在量化误差的作用下可能产生持续振荡（极限环）。即使参考值不变，控制器输出也可能在小范围内来回跳动。
+
+3. **"dither"效应**：有趣的是，少量的量化噪声（dither）反而可以打破极限环，改善系统的平均性能。这在音频 DAC 中广泛应用。
+
+## 设计实例
+
+### 电机速度控制系统的采样设计
+
+**系统参数**：
+- 直流电机，闭环带宽 $\omega_b = 50$ rad/s（$f_b \approx 8$ Hz）
+- 速度传感器：编码器，最大转速 3000 rpm
+- 控制周期：需要确定
+
+**步骤 1：确定采样频率**
+
+根据 $\omega_b T_s < 0.1$：
+
+$$
+T_s < \frac{0.1}{50} = 0.002 \text{ s} = 2 \text{ ms}
+$$
+
+$$
+f_s > 500 \text{ Hz}
+$$
+
+选择 $f_s = 1000$ Hz（$T_s = 1$ ms），留有 2 倍余量。
+
+**步骤 2：检查相位裕度损失**
+
+ZOH 延迟：$\Delta\phi = \omega_b \cdot T_s/2 = 50 \times 0.001/2 = 0.025$ rad $\approx 1.4°$
+
+如果原系统相位裕度 50°，ZOH 后变为 48.6°——可接受。
+
+**步骤 3：选择 ADC 位数**
+
+速度范围：0-3000 rpm = 0-314 rad/s。要求速度精度 < 0.5 rad/s。
+
+$$
+q < 0.5 \text{ rad/s} \implies \frac{2 \times 314}{2^N} < 0.5 \implies 2^N > 1256 \implies N \geq 11
+$$
+
+选择 12 位 ADC（$q = 628/4096 \approx 0.15$ rad/s），满足要求。
+
+**步骤 4：抗混叠滤波器**
+
+编码器输出是数字信号（脉冲），不需要抗混叠滤波。但如果使用模拟速度传感器（如测速发电机），需要：
+
+- 截止频率：$f_c = 0.8 \times f_s/2 = 0.8 \times 500 = 400$ Hz
+- 在 $f_s/2 = 500$ Hz 处衰减 > 40 dB
+- 选择 2 阶 Butterworth 低通滤波器
+
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# 量化效应对阶跃响应的影响
+G = ctrl.tf([1], [1, 0.5, 1])
+K = ctrl.tf([10, 5], [1, 0])
+CL = ctrl.feedback(G * K, 1)
+
+t = np.linspace(0, 20, 10000)
+_, y_cont = ctrl.step_response(CL, T=t)
+
+V_ref = 2.0
+N_bits = [8, 12, 16]
+
+fig, axes = plt.subplots(len(N_bits) + 1, 1, figsize=(14, 3*(len(N_bits)+1)), sharex=True)
+
+axes[0].plot(t, y_cont, 'b-', linewidth=2)
+axes[0].set_title('连续系统（无量化）')
+axes[0].set_ylabel('输出')
+axes[0].grid(True, alpha=0.3)
+axes[0].set_ylim(0.8, 1.2)
+
+for idx, N in enumerate(N_bits):
+    q = 2 * V_ref / (2**N)
+    
+    def quantize(x, q):
+        return np.round(x / q) * q
+    
+    y_quant = quantize(y_cont, q)
+    
+    axes[idx+1].plot(t, y_quant, 'r-', linewidth=1)
+    axes[idx+1].axhline(y=1.0, color='gray', linestyle=':', alpha=0.5)
+    axes[idx+1].set_title(f'{N}-bit ADC (q = {q:.6f})')
+    axes[idx+1].set_ylabel('输出')
+    axes[idx+1].grid(True, alpha=0.3)
+    axes[idx+1].set_ylim(0.8, 1.2)
+    
+    y_ss = y_quant[-1000:]
+    oscillation = np.max(y_ss) - np.min(y_ss)
+    print(f"{N}-bit: q = {q:.6f}, 稳态波动 = {oscillation:.6f}")
+
+axes[-1].set_xlabel('时间 (s)')
+plt.tight_layout()
+plt.show()
+
+print(f"\\n结论：ADC 位数越高，稳态波动越小")
+print(f"8-bit 的波动是 16-bit 的 {2**(16-8)} = {2**8} 倍")`
+    },
+    {
+      code: `# 综合示例 - 采样频率对控制性能的影响
+G_motor = ctrl.tf([1], [0.01, 0.1, 1])
+
+Kp, Ki, Kd = 5.0, 10.0, 0.5
+K_pid = ctrl.tf([Kd, Kp, Ki], [1, 0])
+
+CL_cont = ctrl.feedback(G_motor * K_pid, 1)
+
+Ts_list = [0.001, 0.005, 0.01, 0.02, 0.05]
+t = np.linspace(0, 2, 2000)
+
+fig, axes = plt.subplots(2, 1, figsize=(14, 8))
+
+ax = axes[0]
+_, y_cont = ctrl.step_response(CL_cont, T=t)
+ax.plot(t, y_cont, 'k-', linewidth=2, label='连续')
+
+for Ts in Ts_list:
+    Gd = ctrl.c2d(G_motor, Ts, method='zoh')
+    Kd = ctrl.c2d(K_pid, Ts, method='tustin')
+    CL_d = ctrl.feedback(Gd * Kd, 1)
+    _, y_d = ctrl.step_response(CL_d, T=t)
+    ax.plot(t, y_d, '--', linewidth=1.5, label=f'Ts = {Ts*1000:.0f} ms')
+
+ax.set_xlabel('时间 (s)')
+ax.set_ylabel('输出')
+ax.set_title('不同采样周期下的阶跃响应')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+ax = axes[1]
+Ts_sweep = np.logspace(-4, -1.3, 50)
+phase_margin_loss = []
+
+wb = 10
+for Ts in Ts_sweep:
+    phase_margin_loss.append(wb * Ts / 2 * 180 / np.pi)
+
+ax.semilogx(Ts_sweep*1000, phase_margin_loss, 'r-', linewidth=2)
+ax.axhline(y=5, color='orange', linestyle=':', label='5° 阈值')
+ax.set_xlabel('采样周期 Ts (ms)')
+ax.set_ylabel('ZOH 相位损失 (°)')
+ax.set_title('ZOH 引起的相位裕度损失 vs 采样周期')
+ax.legend()
+ax.grid(True, which='both', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("设计建议：")
+print("  采样周期 Ts < 0.1/ωb 时，ZOH 相位损失 < 3°")
+print(f"  本系统 ωb ≈ {wb} rad/s → Ts < {0.1/wb*1000:.1f} ms")`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 采样定理的"工程版本"
+
+严格的 Nyquist-Shannon 定理要求信号**严格带限**，但实际信号都不是带限的。工程中我们使用"实用版本"：
+
+> 采样频率足够高，使得 Nyquist 频率以上的信号能量（经过抗混叠滤波后）产生的混叠误差**可以接受**。
+
+"可以接受"取决于应用：
+- 音频：混叠噪声 < -90 dB（16-bit ADC）
+- 工业控制：混叠误差 < 1% 的信号幅值
+- 精密测量：混叠误差 < 量化步长
+
+### 过采样与 Σ-Δ 调制
+
+如果 ADC 位数不够，可以用**过采样**（oversampling）来提高有效分辨率。原理：以远高于 Nyquist 的频率采样，然后数字低通滤波 + 降采样，等效于增加了 ADC 位数。
+
+每过采样 4 倍，有效位数增加 1 位（+6 dB SNR）。
+
+**Σ-Δ ADC**（Sigma-Delta ADC）就是利用这个原理，用 1-bit 量化器 + 极高采样率（64x-256x 过采样）实现 16-24 位有效分辨率。广泛用于精密测量（温度、压力、称重）。
+
+### 多速率采样
+
+复杂系统中，不同信号的变化速度差异很大：
+- 电流环：带宽 1 kHz → 采样 10-20 kHz
+- 速度环：带宽 50 Hz → 采样 1 kHz
+- 位置环：带宽 5 Hz → 采样 100 Hz
+
+使用统一的最高采样频率浪费计算资源。解决方案：**多速率采样**——每个控制环用自己的采样频率，快环嵌套在慢环内部。
+
+这在工业伺服驱动器中是标准做法：电流环 16 kHz，速度环 1 kHz，位置环 100 Hz。
+
+### 与后续章节的联系
+
+- **Z 变换**（下一课）：离散时间系统的数学工具，相当于连续时间的拉普拉斯变换
+- **数字控制器设计**：将连续控制器离散化（Tustin 变换、ZOH 等效）
+- **数字 PID**：PID 在数字实现中的特殊问题（积分饱和、微分噪声）
+- **实时控制**：采样延迟、计算延迟、抖动（jitter）的工程处理
+
+## 小结
+
+1. **采样**把连续信号变成离散序列，频谱被周期性复制。采样频率必须足够高（$f_s > 2f_{max}$），否则高频信号被"折叠"为低频（混叠）。
+
+2. **抗混叠滤波器**在采样前衰减高频成分。工程上采样频率通常取信号带宽的 5-10 倍，而不是定理要求的 2 倍。
+
+3. **采样保持器（ZOH）**在一个采样周期内保持输出不变，引入 $T_s/2$ 的平均延迟，减少相位裕度。设计时要求 $\omega_b T_s < 0.1 \sim 0.2$ rad。
+
+4. **量化**把连续幅值映射到有限个离散电平。量化误差近似为均匀分布噪声，方差 $q^2/12$。ADC 每增加 1 位，SNR 提高约 6 dB。
+
+5. **工程设计流程**：确定带宽 → 选择采样频率 → 检查 ZOH 相位损失 → 选择 ADC 位数 → 设计抗混叠滤波器。
+
+## 习题
+
+**习题 1**（采样定理）：某信号包含 3 Hz、12 Hz、47 Hz 三个频率分量。
+
+(a) 理论上的最小采样频率是多少？
+
+(b) 如果使用 60 Hz 采样，哪些频率会发生混叠？混叠后的频率是多少？
+
+(c) 如果抗混叠滤波器的截止频率为 25 Hz，实际需要的最小采样频率是多少？
+
+**习题 2**（ZOH 效应）：某连续系统带宽 $\omega_b = 20$ rad/s，相位裕度 $PM = 55°$。
+
+(a) 如果采样周期 $T_s = 5$ ms，ZOH 引入的相位损失是多少？
+
+(b) 离散化后的相位裕度是多少？
+
+(c) 如果要求相位裕度损失 < 5°，最大允许的采样周期是多少？
+
+**习题 3**（量化误差）：某温度控制系统，测量范围 0-200°C，要求稳态精度 < 0.1°C。
+
+(a) 至少需要多少位的 ADC？
+
+(b) 如果实际使用 12 位 ADC，稳态时输出的最大波动范围是多少？
+
+(c) 如果信号范围改为 0-50°C（缩小测量范围但同一 ADC），精度提高多少？
+
+**习题 4**（综合分析）：某位置控制系统，被控对象 $G(s) = \frac{1}{s(s+2)}$，用 PID 控制器 $K(s) = 10 + \frac{5}{s} + 0.5s$。
+
+(a) 连续闭环系统的带宽大约是多少？（可以通过 Bode 图估计）
+
+(b) 如果采样周期 $T_s = 10$ ms，ZOH 引起的相位损失是多少？
+
+(c) 如果位置传感器量程 ±10 rad，要求稳态精度 < 0.001 rad，ADC 至少需要多少位？
+
+## 答案
+
+**习题 1 答案**：
+
+**(a)** 信号最高频率 $f_{max} = 47$ Hz。最小采样频率 $f_s > 2 \times 47 = 94$ Hz。
+
+**(b)** $f_s = 60$ Hz，Nyquist 频率 = 30 Hz。
+
+- 3 Hz < 30 Hz：不混叠 ✓
+- 12 Hz < 30 Hz：不混叠 ✓
+- 47 Hz > 30 Hz：混叠。混叠频率 = $|47 - 60| = 13$ Hz
+
+**(c)** 抗混叠滤波器截止 25 Hz，即 25 Hz 以上的成分被衰减。需要保留的信号最高频率变为 25 Hz（滤波器通带内）。最小采样频率 $f_s > 2 \times 25 = 50$ Hz。但还要考虑滤波器过渡带，实际取 $f_s \geq 60$ Hz。
+
+**习题 2 答案**：
+
+**(a)** ZOH 相位损失：$\Delta\phi = \omega_b \cdot T_s / 2 = 20 \times 0.005 / 2 = 0.05$ rad $= 2.86°$
+
+**(b)** 离散化后相位裕度：$PM_d = 55° - 2.86° = 52.14°$
+
+**(c)** 要求 $\Delta\phi < 5° = 0.0873$ rad：
+
+$$
+T_s < \frac{2 \times 0.0873}{\omega_b} = \frac{0.1745}{20} = 0.00873 \text{ s} = 8.73 \text{ ms}
+$$
+
+最大允许采样周期 $T_s \approx 8.7$ ms，对应 $f_s > 115$ Hz。
+
+**习题 3 答案**：
+
+**(a)** 要求精度 < 0.1°C，即量化步长 $q \leq 0.1$°C（实际取 $q/2 \leq 0.1$，即 $q \leq 0.2$°C）。
+
+$$
+q = \frac{200}{2^N} \leq 0.2 \implies 2^N \geq 1000 \implies N \geq 10
+$$
+
+至少需要 10 位 ADC。
+
+**(b)** 12 位 ADC：$q = 200/4096 = 0.0488$°C。稳态波动范围 = $\pm q/2 = \pm 0.0244$°C，总范围 $0.0488$°C。
+
+**(c)** 范围 0-50°C：$q' = 50/4096 = 0.0122$°C。精度提高 $0.0488/0.0122 = 4$ 倍（正好是 $200/50 = 4$ 倍）。
+
+**习题 4 答案**：
+
+**(a)** 开环传递函数 $L(s) = K(s)G(s) = \frac{(10 + 5/s + 0.5s)}{s(s+2)} = \frac{0.5s^2 + 10s + 5}{s^2(s+2)}$。
+
+通过 Bode 图估计，增益穿越频率约 $\omega_c \approx 5$ rad/s，带宽约 $\omega_b \approx 7$ rad/s。
+
+**(b)** ZOH 相位损失：$\Delta\phi = \omega_b \cdot T_s / 2 = 7 \times 0.01 / 2 = 0.035$ rad $= 2.0°$
+
+**(c)** 要求精度 < 0.001 rad，量程 ±10 rad（总范围 20 rad）：
+
+$$
+q = \frac{20}{2^N} \leq 0.002 \implies 2^N \geq 10000 \implies N \geq 14
+$$
+
+至少需要 14 位 ADC。

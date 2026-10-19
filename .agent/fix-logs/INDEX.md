@@ -71,6 +71,7 @@
 | [066](2026-10-19-066.md) | 2026-10-19 | discrete-sampled/discrete-stability-criteria | 严格稳定/采样/PID/裕度 | BOTH | 柯验+秦构（既有检查执行不足） | 保留原实验纠正单位圆条件、错误根与题解；撤回伪临界回退，核实际数字模型 |
 | [067](2026-10-19-067.md) | 2026-10-19 | discrete-sampled/discretization-methods | 积分代换/反算/滤波/电机PI | BOTH | 柯验+秦构（既有检查执行不足） | 保留原实验修因果与稳定区、频率方向、真实饱和与状态、API/首达指标，复算全部四题 |
 | [068](2026-10-19-068.md) | 2026-10-19 | discrete-sampled/sampling-period-selection | 采样预算/数字闭环/多率调度 | BOTH | 柯验+秦构（既有检查执行不足） | 修复三组实验、原题模型与裕度冲突、ADC漏项和延迟预算，保留多率未胜工况与执行代价 |
+| [069](2026-10-19-069.md) | 2026-10-19 | discrete-sampled/discrete-time-freq | 混叠、保持、量化与设计实验 | BOTH | 柯验+秦构 | 混叠相位、ZOH归一化、有限ADC及可实现PID纠错 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）
