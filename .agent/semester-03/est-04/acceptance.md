@@ -1,4 +1,4 @@
-# EST-04 扩展卡尔曼滤波：验收完成，待master回执
+# EST-04 扩展卡尔曼滤波：验收完成，已进入master
 
 2026-10-24用户指定继续EST-04，rank4。入口无MDX，catalog=empty，计划为新写。唯一课程estimation/extended-kalman-filter；已交付先修EST-03、多元微积分、Lyapunov稳定性。后续UKF不作为前提，也不在本次生产。
 
@@ -23,4 +23,6 @@
 
 普通和静态完整构建基线为6ebdfe534e647b416e230f9182803d5e895e2074叠加本课，最终提交前另按最新master重建限定快照再跑权威check/semester/python。共享工作区开工检查受其它课草稿/行格式影响而失败，保留opening日志，不冒充已通过；不改其它课程。首次积分尾部与启动时机失败留原始日志；最终审校把稳定性示例改为期望递推并补打印4/9，最终hash相关验收全部重跑，before-review只作历史记录。
 
-真实master提交与推送结果待提交后追加；不发布gh-pages。
+真实master交付提交commit:ad91f73a2499ad184c34a1d0c8cd3434fe87c46a，git push origin master退出0，详见push-main.json/log；不发布gh-pages。
+
+最终提交投影父提交efa51818be8f52c0533c3e91962e18cb6fc2f7d9；npm run check为PASS21/WARN2/FAIL0，semester PASS，Python策略108课/451可运行/8代码展示，均为最新master投影全站口径，非本课独占成果。commit-gates.json记录实际四命令与退出码。提交差异复核Python策略只改变EST-04课条目，未改其它课程兼容结论。
