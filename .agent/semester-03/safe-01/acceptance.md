@@ -25,3 +25,5 @@
 进度：最终提交只提取最新master上的本课差异，完整共享文件不直接暂存；提交前精确候选树再跑npm run check、semester03、Python支持指纹和单课verify。真实提交hash在完成后登记；不预填、不发布gh-pages。
 
 并行提交导致重复目录校验时，仅rank10隔离校验器复用按原始MDX、课程路径、原编译器源码、lib工具、lockfile与Node版本指纹保存的标题编译结果；首次和变更内容仍调用原compileMDX，只缓存成功结果。该临时加速器不进入提交，未跳过目录/图/状态/统计规则，不替代本课页面、严格内核、独立数值或构建实跑。
+
+真实master交付提交：`0ef1e1ace13e3a62f867f55542fd0759d629f4ce`。本课独立候选树npm run check为PASS21/WARN2/FAIL0、exit0；Python支持检查pass:true，semester03及单课静态检查exit0，页面/内核/构建证据见上。此回执仅登记已存在提交，不代表Pages已发布。
