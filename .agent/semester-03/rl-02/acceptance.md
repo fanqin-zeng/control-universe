@@ -41,6 +41,8 @@
 
 ## 真实提交与推送回执
 
-真实交付提交`3eec724f2115b35029d73b3d34dafe4df940fd75`，父提交`c304b38d5b7c52726558104f3ae19677632b3486`，已进入master。提交前最终隔离check-final.log为PASS21/WARN2/FAIL0，python-policy-final.log为pass=true/104课434实验可运行/12保留代码；semester-projection.json为errors=[]，170条证据记录/94个唯一提交均核真实文件及祖先。最终树保留并行MPC-02、RLEARN-02及其它此前主干交付，只加入本课50个明确文件/共享文件差异。
+真实交付提交`3eec724f2115b35029d73b3d34dafe4df940fd75`，父提交`c304b38d5b7c52726558104f3ae19677632b3486`，已进入master。提交前最终隔离check-final.log为PASS21/WARN2/FAIL0，python-policy-final.log为pass=true/104课434实验可运行/12保留代码；semester-projection.json为errors=[]，170条证据记录/94个唯一提交均核真实文件及祖先。最终树保留并行MPC-02、RLEARN-02及其它此前主干交付，只加入本课51个明确文件/共享文件差异（按source-receipt.json实际清单计数）。
 
 `git push origin master`成功推送到5f95827（包含本课及并行RLEARN-02回执），随后`git merge-base --is-ancestor 3eec724f2115b35029d73b3d34dafe4df940fd75 origin/master`退出0。远端提示仓库已迁移到fanqin-zeng/control-universe，现有remote仍能成功推送；不擅自改共享remote配置。source-receipt.json记录实际父提交、文件清单及保留的九个共享暂存项，默认索引其它内容未清空。全局checklist用实际hash勾六阶段；回执提交另行追加，不发布gh-pages。
+
+六阶段回执提交`27d38f7f637cc13a9505a0e55d8a7e050ef3f229`已推送，origin/master包含正文与回执的祖先检查均exit0。推送后validate.mjs复核exit0。最终只保留9208本地Pages预览与旧9198；8998/9298/8198的本课临时服务均已关闭。实际文件数由清单核得51，修正首次回执中的计数笔误，不改变课程内容或数值证据。
