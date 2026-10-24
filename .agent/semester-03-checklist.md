@@ -281,7 +281,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MULTI-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MULTI-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/15-multi-agent/01-multi-agent-overview.md;.agent/semester-03/multi-01/acceptance.md;rank9独立副本验收完成，待真实master回执 |
 | MULTI-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MULTI-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MULTI-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

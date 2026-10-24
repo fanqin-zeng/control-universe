@@ -1,3 +1,4 @@
+import { MultiAgentOverviewExplorer } from "@/components/wiki/multi-agent-overview-explorer";
 import { DrivingSystemExplorer } from "@/components/wiki/driving-system-explorer";
 import { ResonanceRobustnessExplorer } from '@/components/wiki/resonance-robustness-explorer';
 import { EstimationFrameworkExplorer } from "@/components/wiki/estimation-framework-explorer";
@@ -102,6 +103,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  MultiAgentOverviewExplorer,
   DrivingSystemExplorer,
   ResonanceRobustnessExplorer,
   EstimationFrameworkExplorer,

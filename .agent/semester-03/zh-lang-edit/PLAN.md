@@ -147,7 +147,7 @@
 | 136 | RL-10 | 基于模型的强化学习 | content/rl-control/model-based-rl.mdx | 待完成 | 待生产 | — |
 | 137 | RL-11 | 强化学习评估 | content/rl-control/rl-evaluation.mdx | 待完成 | 待生产 | — |
 | 138 | RL-12 | 强化学习控制案例 | content/rl-control/rl-control-case.mdx | 待完成 | 待生产 | — |
-| 139 | MULTI-01 | 多智能体系统 | content/multi-agent/multi-agent-overview.mdx | 待完成 | 待生产 | — |
+| 139 | MULTI-01 | 多智能体系统 | content/multi-agent/multi-agent-overview.mdx | 已完成 | 待润色 | .agent/semester-03/multi-01/acceptance.md |
 | 140 | MULTI-02 | 一致性控制 | content/multi-agent/consensus-control.mdx | 待完成 | 待生产 | — |
 | 141 | MULTI-03 | 分布式估计 | content/multi-agent/distributed-estimation.mdx | 待完成 | 待生产 | — |
 | 142 | MULTI-04 | 分布式优化 | content/multi-agent/distributed-optimization.mdx | 待完成 | 待生产 | — |

@@ -219,7 +219,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 15.1 | 多智能体系统 | multi-agent-overview | ⬜ 骨架（占位页） | grad | theory | 7 | math/graph-theory<br>modern/state-space |
+| 15.1 | 多智能体系统 | multi-agent-overview | ✅ 已交付 v1.3 | grad | theory | 7 | math/graph-theory<br>modern/state-space |
 | 15.2 | 一致性控制 | consensus-control | ⬜ 骨架（占位页） | grad | theory | 9 | multi-agent/multi-agent-overview<br>modern/lyapunov-modern |
 | 15.3 | 分布式估计 | distributed-estimation | ⬜ 骨架（占位页） | grad | theory | 14 | multi-agent/consensus-control<br>estimation/kalman-filter |
 | 15.4 | 分布式优化 | distributed-optimization | ⬜ 骨架（占位页） | grad | theory | 10 | multi-agent/consensus-control<br>math/convex-optimization |
@@ -261,11 +261,11 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 18.1 | 机器人数据 | robot-data | ⬜ 骨架（占位页） | grad | learning | 12 | robotics/trajectory-tracking<br>machine-learning/learning-evaluation |
-| 18.2 | 模仿学习 | imitation-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/robot-data<br>machine-learning/autodiff-optimization |
-| 18.3 | 离线到在线学习 | offline-online-learning | ⬜ 骨架（占位页） | grad | learning | 14 | robot-learning/imitation-learning<br>rl-control/offline-rl |
-| 18.4 | 残差学习控制 | residual-learning | ⬜ 骨架（占位页） | grad | learning | 15 | robot-learning/offline-online-learning<br>nonlinear/lyapunov-stability |
-| 18.5 | 仿真到现实 | sim-to-real | ⬜ 骨架（占位页） | grad | learning | 15 | robot-learning/offline-online-learning<br>robust/uncertainty-modeling |
+| 18.1 | 机器人数据 | robot-data | ✅ 已交付 v1.3 | grad | learning | 3 | machine-learning/learning-problem<br>math/probability-basics |
+| 18.2 | 模仿学习 | imitation-learning | ⬜ 骨架（占位页） | grad | learning | 8 | robot-learning/robot-data<br>machine-learning/autodiff-optimization |
+| 18.3 | 离线到在线学习 | offline-online-learning | ⬜ 骨架（占位页） | grad | learning | 12 | robot-learning/imitation-learning<br>rl-control/offline-rl |
+| 18.4 | 残差学习控制 | residual-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>nonlinear/lyapunov-stability |
+| 18.5 | 仿真到现实 | sim-to-real | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>robust/uncertainty-modeling |
 | 18.6 | 运动技能学习 | locomotion-learning | ⬜ 骨架（占位页） | grad | learning | 21 | robot-learning/sim-to-real<br>robotics/legged-control<br>rl-control/ppo |
 | 18.7 | 操作技能学习 | manipulation-learning | ⬜ 骨架（占位页） | grad | learning | 16 | robot-learning/imitation-learning<br>robotics/contact-control |
 | 18.8 | 人机协同学习 | human-in-the-loop | ⬜ 骨架（占位页） | grad | learning | 19 | robot-learning/offline-online-learning<br>safety-ftc/safe-rl |
@@ -276,13 +276,13 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 19.1 | 具身智能系统 | embodied-systems | ⬜ 骨架（占位页） | grad | frontier | 13 | robot-learning/robot-data<br>machine-learning/attention-transformers |
-| 19.2 | 多模态感知 | multimodal-observation | ⬜ 骨架（占位页） | grad | learning | 14 | embodied/embodied-systems<br>machine-learning/representation-learning |
-| 19.3 | 动作表示 | action-representations | ⬜ 骨架（占位页） | grad | learning | 14 | embodied/embodied-systems<br>robotics/trajectory-tracking |
-| 19.4 | 通用机器人策略 | generalist-policies | ⬜ 骨架（占位页） | grad | frontier | 15 | embodied/multimodal-observation<br>embodied/action-representations<br>robot-learning/imitation-learning |
-| 19.5 | 扩散与流策略 | diffusion-flow-policies | ⬜ 骨架（占位页） | grad | learning | 15 | embodied/action-representations<br>machine-learning/generative-models |
-| 19.6 | 视觉语言动作模型 | vla | ⬜ 骨架（占位页） | advanced | frontier | 16 | embodied/generalist-policies<br>machine-learning/attention-transformers |
-| 19.7 | 世界模型 | world-models | ⬜ 骨架（占位页） | grad | learning | 15 | embodied/multimodal-observation<br>machine-learning/sequence-models<br>machine-learning/generative-models |
+| 19.1 | 具身智能系统 | embodied-systems | ⬜ 骨架（占位页） | grad | frontier | 10 | robot-learning/robot-data<br>machine-learning/attention-transformers |
+| 19.2 | 多模态感知 | multimodal-observation | ⬜ 骨架（占位页） | grad | learning | 11 | embodied/embodied-systems<br>machine-learning/representation-learning |
+| 19.3 | 动作表示 | action-representations | ⬜ 骨架（占位页） | grad | learning | 12 | embodied/embodied-systems<br>robotics/trajectory-tracking |
+| 19.4 | 通用机器人策略 | generalist-policies | ⬜ 骨架（占位页） | grad | frontier | 13 | embodied/multimodal-observation<br>embodied/action-representations<br>robot-learning/imitation-learning |
+| 19.5 | 扩散与流策略 | diffusion-flow-policies | ⬜ 骨架（占位页） | grad | learning | 13 | embodied/action-representations<br>machine-learning/generative-models |
+| 19.6 | 视觉语言动作模型 | vla | ⬜ 骨架（占位页） | advanced | frontier | 14 | embodied/generalist-policies<br>machine-learning/attention-transformers |
+| 19.7 | 世界模型 | world-models | ⬜ 骨架（占位页） | grad | learning | 12 | embodied/multimodal-observation<br>machine-learning/sequence-models<br>machine-learning/generative-models |
 | 19.8 | 世界模型控制 | world-model-control | ⬜ 骨架（占位页） | advanced | frontier | 18 | embodied/world-models<br>rl-control/model-based-rl<br>mpc/receding-horizon |
 | 19.9 | 分层决策 | hierarchical-reasoning | ⬜ 骨架（占位页） | advanced | frontier | 19 | embodied/vla<br>embodied/world-model-control |
 | 19.10 | 具身智能评估 | embodied-evaluation | ⬜ 骨架（占位页） | grad | learning | 21 | embodied/diffusion-flow-policies<br>embodied/hierarchical-reasoning<br>robot-learning/robot-learning-evaluation |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 70（status = v1.3）
+- **已交付 v1.3**: 72（status = v1.3）
 - **有正文待审校**: 18（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 117（status = empty，渲染占位页）
+- **骨架占位**: 115（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 135（= draft 18 + empty 117 + 无 status 0）
-- **有 MDX 正文**: 88
-- **catalog 小节总数**: 1000
-- **讨论日志**: 91 篇（覆盖 70 门；有 MDX 无日志 18 门）
-- **交互组件**: 81 个文件（被正文引用 81，孤儿 0）
+- **未完成 v1.3**: 133（= draft 18 + empty 115 + 无 status 0）
+- **有 MDX 正文**: 90
+- **catalog 小节总数**: 1018
+- **讨论日志**: 93 篇（覆盖 72 门；有 MDX 无日志 18 门）
+- **交互组件**: 82 个文件（被正文引用 82，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

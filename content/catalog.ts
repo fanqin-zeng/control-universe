@@ -5197,13 +5197,47 @@ export const catalog: Chapter[] = [
       {
         "slug": "multi-agent-overview",
         "title": "多智能体系统",
+        "subsections": [
+          {
+            "title": "从三辆小车出发",
+            "slug": "从三辆小车出发"
+          },
+          {
+            "title": "对象和信息分开建模",
+            "slug": "对象和信息分开建模"
+          },
+          {
+            "title": "局部反馈怎样连成整体",
+            "slug": "局部反馈怎样连成整体"
+          },
+          {
+            "title": "一致不等于完成任务",
+            "slug": "一致不等于完成任务"
+          },
+          {
+            "title": "通信结构改变结果",
+            "slug": "通信结构改变结果"
+          },
+          {
+            "title": "从理想协议走向实现",
+            "slug": "从理想协议走向实现"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ],
         "prereq": [
           "math/graph-theory",
           "modern/state-space"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "consensus-control",

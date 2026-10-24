@@ -1,0 +1,32 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+const projection=process.argv[2];if(!projection)throw Error('Projection directory required');
+const git=(args,env={})=>execFileSync('git',args,{encoding:'utf8',env:{...process.env,...env}}).trim();
+const base=fs.readFileSync(path.join(projection,'base-head.txt'),'utf8').trim().replace(/^\uFEFF/,'');
+assert.equal(git(['rev-parse','HEAD']),base,'HEAD advanced: refresh projection before staging');
+assert(fs.readFileSync(path.join(projection,'.agent/semester-03/multi-01/projection-check.log'),'utf8').includes('EXIT_CODE=0'));
+const shared=['content/catalog.ts','lib/wiki-components.ts','.agent/delivery-tracker.md','OUTLINE.md','.agent/semester-03-checklist.md','.agent/semester-03-plan.md','.agent/semester-03/zh-lang-edit/PLAN.md','lib/python-support.json','docs/deployment/python-expansion-local.json'];
+const own=['content/multi-agent/multi-agent-overview.mdx','components/wiki/multi-agent-overview-explorer.tsx','lib/multi-agent-overview.ts','public/diagrams/multi-agent/physical-information.svg','docs/discuss-log/semester-03/15-multi-agent/01-multi-agent-overview.md'];
+const evidence=fs.readdirSync('.agent/semester-03/multi-01').filter(p=>p!=='commit.log').map(p=>'.agent/semester-03/multi-01/'+p).filter(p=>fs.statSync(p).isFile());
+const index=path.join(projection,'scoped-index'),env={GIT_INDEX_FILE:index};
+if(fs.existsSync(index))fs.unlinkSync(index);
+git(['read-tree',base],env);
+const paths=[...shared,...own,...evidence];
+const files=paths.map(p=>(shared.includes(p)?path.join(projection,p):path.resolve(p)).replaceAll('\\','/'));
+const hashes=execFileSync('git',['hash-object','-w','--stdin-paths'],{encoding:'utf8',input:files.map(p=>JSON.stringify(p)).join('\n')+'\n'}).trim().split('\n');
+assert.equal(hashes.length,paths.length);
+execFileSync('git',['update-index','--index-info'],{encoding:'utf8',env:{...process.env,...env},input:paths.map((p,i)=>'100644 '+hashes[i]+'\t'+p).join('\n')+'\n'});
+const names=git(['diff','--cached','--name-only',base],env).split('\n');
+assert(names.every(p=>[...shared,...own,...evidence].includes(p)));
+const patch=execFileSync('git',['diff','--cached','--binary',base],{env:{...process.env,...env}});
+const patchPath=path.join(projection,'scoped.patch');fs.writeFileSync(patchPath,patch);
+assert.equal(git(['rev-parse','HEAD']),base,'HEAD advanced during staging preparation');
+// Other ranks may own the main index. Leave its bytes untouched, and advance
+// master with a compare-and-swap; a concurrent commit makes this fail safely.
+console.log(git(['diff','--cached','--stat',base],env));
+const tree=git(['write-tree'],env);
+const commit=git(['commit-tree',tree,'-p',base,'-m','feat: deliver MULTI-01 multi-agent systems with verified local coordination']);
+git(['update-ref','-m','MULTI-01 scoped delivery','refs/heads/master',commit,base]);
+console.log('Committed '+commit+'; shared index preserved');
