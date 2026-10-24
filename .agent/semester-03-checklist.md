@@ -266,7 +266,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | RL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/14-rl-control/01-rl-basics.md;.agent/semester-03/rl-01/acceptance.md;commit:c6494958021fb272e878347752e70c84bfbc94ce |
-| RL-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/14-rl-control/02-dynamic-programming.md;.agent/semester-03/rl-02/acceptance.md;rank8独立副本验收完成待真实提交 |
+| RL-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/14-rl-control/02-dynamic-programming.md;.agent/semester-03/rl-02/acceptance.md;commit:3eec724f2115b35029d73b3d34dafe4df940fd75 |
 | RL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

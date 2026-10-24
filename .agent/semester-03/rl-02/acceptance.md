@@ -38,3 +38,9 @@
 共享目录check-shared-final.log：PASS19/WARN2/FAIL6，exit1；保留其它会话的组件/catalog/生成统计等在途修改，不为取得全工作区绿色而改它们。本课最终隔离检查与共享检查分别登记，不能混淆。真实内容提交与回执均使用独立索引，默认索引只同步未被并行独立暂存过的本课项，保留其余暂存内容。
 
 原版validateSemester03（evidence=true，逐条调用git）完整通过的原始结果另存semester-full.json。后续最新HEAD投影由semester-projection.mjs调用同一验证器检查结构，再对所有生效证据路径/课程ID逐一检查，使用git cat-file --batch-check与git rev-list master批量验证唯一提交的存在及祖先关系，避免同一hash被重复启动数百次Git进程。等价证据检查的首次结果为errors=[]/160条记录/91个唯一提交（semester-batched.json）；未跳过文件或合入证据，不修改全局检查脚本。
+
+## 真实提交与推送回执
+
+真实交付提交`3eec724f2115b35029d73b3d34dafe4df940fd75`，父提交`c304b38d5b7c52726558104f3ae19677632b3486`，已进入master。提交前最终隔离check-final.log为PASS21/WARN2/FAIL0，python-policy-final.log为pass=true/104课434实验可运行/12保留代码；semester-projection.json为errors=[]，170条证据记录/94个唯一提交均核真实文件及祖先。最终树保留并行MPC-02、RLEARN-02及其它此前主干交付，只加入本课50个明确文件/共享文件差异。
+
+`git push origin master`成功推送到5f95827（包含本课及并行RLEARN-02回执），随后`git merge-base --is-ancestor 3eec724f2115b35029d73b3d34dafe4df940fd75 origin/master`退出0。远端提示仓库已迁移到fanqin-zeng/control-universe，现有remote仍能成功推送；不擅自改共享remote配置。source-receipt.json记录实际父提交、文件清单及保留的九个共享暂存项，默认索引其它内容未清空。全局checklist用实际hash勾六阶段；回执提交另行追加，不发布gh-pages。
