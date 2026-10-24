@@ -331,3 +331,5 @@
 | 旧Notebook及C/ASCII图 | source-before-check.log：S2FAIL/S7WARN；剩余工作被释放覆盖 | 算例纠错重写，正确主题与数值用途保留；原C危险窄化示例改可执行Python约定 | 四Notebook/Explorer/SVG；原代码仍可由起点快照追溯 | 原始cell真内核+Pyodide+实际TS；图/锚点DOM |
 
 D矩阵关闭：23个旧H3逐ID保留、五题全部子问/答案复核、旧Notebook/C/字符图主题已对应可运行实验/真实图。无未迁残片、无跨课迁移或旧日志覆写。实际结果见validation.json与本日志A/B/C，不以主题保留代替数值通过。
+
+真实master交付提交：`94519d3d43a31c4020873ee5f96399b1924e0f2d`，父提交`5fbfbe7ecdcd06d7637ceb28000ad36356c7ca0c`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。

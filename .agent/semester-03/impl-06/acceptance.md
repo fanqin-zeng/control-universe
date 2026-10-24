@@ -1,6 +1,6 @@
 # IMPL-06 实时控制验收
 
-已有正文重构，rank1；Phase1–4完成签发，真实master提交回执待登记。旧稿快照source-before.mdx，起点/哈希/标题清单audit.json；保留九H2、旧H3入口与五题全部子问。修复归因见fix.json。
+已有正文重构，rank1；Phase1–4完成签发，真实master提交回执见下。旧稿快照source-before.mdx，起点/哈希/标题清单audit.json；保留九H2、旧H3入口与五题全部子问。修复归因见fix.json。
 
 采用独立目录D:/Workspace/control-universe-rank1-impl06-validation、独立.next/out与Git索引。端口8191/8991/9195先查空闲再使用，保留9190–9194既有静态预览。只交付本课，不发布gh-pages。
 
@@ -13,3 +13,5 @@
 共享基线存在并行草稿FAIL，最终从最新已提交HEAD加本课改动运行原始目录/学期/Python策略；不将他课草稿提交或替他课签发。构建来源见build-origin.json，最终交付父版本见snapshot.json，不混称对后来其它课程重新构建。旧S04债务的严格内核失败已由本课关闭，历史债务清单保留。
 
 本地预览http://127.0.0.1:9195/control-universe/implementation/realtime-control/；保留9195静态页，释放8191/8991和本课私有目录进程；不发布gh-pages。未运行RTOS/目标编译器、板上时序或HIL，数字只证明声明的教学模型。
+
+真实master交付提交：`94519d3d43a31c4020873ee5f96399b1924e0f2d`，父提交`5fbfbe7ecdcd06d7637ceb28000ad36356c7ca0c`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。
