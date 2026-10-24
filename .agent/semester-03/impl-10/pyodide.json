@@ -1,0 +1,132 @@
+{
+  "testedAt": "2026-10-24T09:52:44.325Z",
+  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/implementation-case-study",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "implementation/implementation-case-study",
+      "title": "控制实现案例",
+      "sourceHash": "3362c1fcc1f3daa4f4620575db3d711454ce4c5caf90d5c2af640a51119533ea",
+      "notebooks": [
+        {
+          "id": "implementation/implementation-case-study#1",
+          "title": "默认实现与首拍码值",
+          "index": 1,
+          "line": 90,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4246,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"default\": {\"bits\": 8, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9962606031582022, \"iae\": 1.1736976769046528, \"lastError\": 0.0043024789350007975, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, \"first\": [{\"k\": 0, \"y\": 0.0, \"measured\": 0.0, \"integral\": 0.0, \"u\": 1.0, \"valid\": true, \"stale\": 0, \"degraded\": false, \"saturated\": false}, {\"k\": 1, \"y\": 0.1, \"measured\": 0.09411764705882353, \"integral\": 0.045294117647058825, \"u\": 0.9529411764705882, \"valid\": true, \"stale\": 0, \"degraded\": false, \"saturated\": false}], \"quantization\": {\"measurementStep\": 0.01568627450980392, \"outputStep\": 0.00392156862745098, \"measurementHalf\": 0.00784313725490196}}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 174,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 28472
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/implementation-case-study#2",
+          "title": "五场景与两条实现路径",
+          "index": 2,
+          "line": 147,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 30,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"bits\": 8, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9962606031582022, \"iae\": 1.1736976769046528, \"lastError\": 0.0043024789350007975, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 8, \"mode\": \"nominal\", \"path\": \"naive\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9962606031582022, \"iae\": 1.1736976769046528, \"lastError\": 0.0043024789350007975, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 8, \"mode\": \"load\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9967749565231582, \"iae\": 1.4472754032424227, \"lastError\": 0.0044022819342225405, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 8, \"mode\": \"load\", \"path\": \"naive\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9967749565231582, \"iae\": 1.4472754032424227, \"lastError\": 0.0044022819342225405, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 8, \"mode\": \"drop\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9963420783016866, \"iae\": 1.946120498864315, \"lastError\": 0.004313496095145308, \"overshoot\": 0.05257063090855363, \"invalid\": 15, \"degraded\": 13, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": false, \"accepted\": false}, {\"bits\": 8, \"mode\": \"drop\", \"path\": \"naive\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9961282189894162, \"iae\": 1.1820603595474717, \"lastError\": 0.004302480713086698, \"overshoot\": 0, \"invalid\": 15, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": false, \"accepted\": false}, {\"bits\": 8, \"mode\": \"late\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.0, \"iae\": 30.0, \"lastError\": 1.0, \"overshoot\": 0, \"invalid\": 300, \"degraded\": 298, \"saturated\": 0, \"tracking\": false, \"peakOk\": true, \"freshness\": false, \"accepted\": false}, {\"bits\": 8, \"mode\": \"late\", \"path\": \"naive\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 1.9999995849393308, \"iae\": 27.298600997197106, \"lastError\": 0.9999995849393308, \"overshoot\": 0.9999995849393308, \"invalid\": 300, \"degraded\": 0, \"saturated\": 0, \"tracking\": false, \"peakOk\": false, \"freshness\": false, \"accepted\": false}, {\"bits\": 8, \"mode\": \"capacity\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 3, \"levels\": 255, \"final\": 1.9999995849393308, \"iae\": 33.999999169878656, \"lastError\": 1.0000051245404218, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 300, \"tracking\": false, \"peakOk\": true, \"freshness\": true, \"accepted\": false}, {\"bits\": 8, \"mode\": \"capacity\", \"path\": \"naive\", \"costMs\": 4, \"target\": 3, \"levels\": 255, \"final\": 1.9999995849393308, \"iae\": 33.999999169878656, \"lastError\": 1.0000051245404218, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 300, \"tracking\": false, \"peakOk\": true, \"freshness\": true, \"accepted\": false}]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 108,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 34664
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/implementation-case-study#3",
+          "title": "量化与期限边界复核",
+          "index": 3,
+          "line": 198,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"bounds\": [{\"bits\": 4, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 15, \"final\": 0.9286848987967703, \"iae\": 2.710703130926886, \"lastError\": 0.07331094359846702, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": false, \"peakOk\": true, \"freshness\": true, \"accepted\": false}, {\"bits\": 8, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 255, \"final\": 0.9962606031582022, \"iae\": 1.1736976769046528, \"lastError\": 0.0043024789350007975, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 12, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 4, \"target\": 1, \"levels\": 4095, \"final\": 0.999828951870356, \"iae\": 1.1031011271839677, \"lastError\": 0.0002685379931963716, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}], \"boundary\": [{\"bits\": 8, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 100, \"target\": 1, \"levels\": 255, \"final\": 0.9962606031582022, \"iae\": 1.1736976769046528, \"lastError\": 0.0043024789350007975, \"overshoot\": 0, \"invalid\": 0, \"degraded\": 0, \"saturated\": 0, \"tracking\": true, \"peakOk\": true, \"freshness\": true, \"accepted\": true}, {\"bits\": 8, \"mode\": \"nominal\", \"path\": \"guarded\", \"costMs\": 101, \"target\": 1, \"levels\": 255, \"final\": 0.0, \"iae\": 30.0, \"lastError\": 1.0, \"overshoot\": 0, \"invalid\": 300, \"degraded\": 298, \"saturated\": 0, \"tracking\": false, \"peakOk\": true, \"freshness\": false, \"accepted\": false}], \"events\": {\"firstZero\": 102, \"lastZero\": 114, \"recovered\": 115}}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 77,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 24620
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "implementation/implementation-case-study",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 3,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 3,
+    "codeOnly": 0
+  }
+}

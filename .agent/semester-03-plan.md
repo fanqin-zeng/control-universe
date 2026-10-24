@@ -996,3 +996,7 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 
 状态估计案例从空占位按Phase1—4新写：10H2/四题全子问、3Notebook6cell、EstimationCaseExplorer/PCG64输入/SVG；二维小车共同预测/双路更新/缺测/创新门限/统计与部署边界。默认融合落败、三工况持平/改善与极端噪声误拒边界保留；378配置4536拍对独立信息形式、360多种子统计、54UI配置×12时刻全实页读数。严格内核/Pyodide/普通与官方Pages构建及实页/375px通过。rank4独立资源与私有索引保留并行修改，证据.agent/semester-03/est-08/acceptance.md；真实master回执见checklist。不发布Pages，不生产其它课。
 <!-- EST-08-RECEIPT-END -->
+
+### IMPL-10 控制实现案例本轮交付
+
+新写单课；水箱PI全链路回归、量化码值、故障记录与验收边界。讨论和真实验收见 `.agent/semester-03/impl-10/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

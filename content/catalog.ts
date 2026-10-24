@@ -3580,6 +3580,48 @@ export const catalog: Chapter[] = [
       {
         "slug": "implementation-case-study",
         "title": "控制实现案例",
+        "subsections": [
+          {
+            "slug": "从能运行到可验收",
+            "title": "从能运行到可验收"
+          },
+          {
+            "slug": "一页实现合同",
+            "title": "一页实现合同"
+          },
+          {
+            "slug": "逐拍执行顺序",
+            "title": "逐拍执行顺序"
+          },
+          {
+            "slug": "量化后的pi",
+            "title": "量化后的PI"
+          },
+          {
+            "slug": "默认结果先对账",
+            "title": "默认结果先对账"
+          },
+          {
+            "slug": "注入失效再验收",
+            "title": "注入失效再验收"
+          },
+          {
+            "slug": "追踪一条故障记录",
+            "title": "追踪一条故障记录"
+          },
+          {
+            "slug": "交付与实机入口",
+            "title": "交付与实机入口"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/pid-engineering-tuning",
           "implementation/industrial-bus-protocols",
@@ -3587,7 +3629,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "case",
-        "status": "empty"
+        "status": "v1.3"
       }
     ]
   },
