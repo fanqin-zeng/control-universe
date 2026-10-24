@@ -1,6 +1,6 @@
 # GitHub Pages 发布约定
 
-2026-10-17。公网地址：https://fanqing-zeng.github.io/control-universe/ 。首次发布记录见 [first-release.md](first-release.md)。
+2026-10-17。公网地址：https://fanqin-zeng.github.io/control-universe/ 。首次发布记录见 [first-release.md](first-release.md)。
 
 ## 分支与同意
 
@@ -62,3 +62,5 @@ MODERN-01授权发布（2026-10-18）：用户要求本课完成后发布当前�
 2026-10-19授权发布：17课现代/非线性润色技术审核合入master，并同步远端追加的润色重做计划；NONLINEAR-09–12及全部现有课程更新发布至gh-pages de07d3e。Actions构建部署成功，205课程/9旧入口/235请求及14组15cell新课实验公网通过，手机375px正常。详见[本次发布记录](nonlinear12-zh-release.md)。独立语言重做状态仍保留，后续发布继续逐次授权。
 
 2026-10-19本轮用户授权：45课润色重做记录/37课正文经快速审核、修正指代与旧锚点后合入master9cafbd4，连同DISCRETE-02–10全部已交付内容由master58d828d发布到gh-pages2dd926f。Actions构建/部署成功，205课/9旧入口/235请求、9课29实验39cell公网实跑及375px手机验收通过，详见[本次发布记录](discrete10-zh-release.md)。17代码展示待办与W15历史数字勘误保留；下次仍需用户明确授权发布。
+
+2026-10-24控制实现章授权发布：批准master f5ad14c，合入gh-pages为4acd64a。Actions构建/部署成功，205课、9旧入口、235请求通过，IMPL-09/10共6实验12cell公网实跑及IMPL-10页内6cell与控件检查通过；仓库迁移后正式地址为fanqin-zeng.github.io。详见[发布记录](impl10-release.md)。后续仍逐次授权。
