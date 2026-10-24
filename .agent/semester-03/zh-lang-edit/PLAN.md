@@ -118,7 +118,7 @@
 | 107 | ROBUST-11 | 鲁棒控制案例 | content/robust/robust-case-study.mdx | 待完成 | 待生产 | — |
 | 108 | MPC-01 | 预测控制原理 | content/mpc/mpc-principle.mdx | 待完成 | 待生产 | — |
 | 109 | MPC-02 | 预测模型 | content/mpc/prediction-model.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-02/acceptance.md |
-| 110 | MPC-03 | 滚动优化 | content/mpc/receding-horizon.mdx | 待完成 | 待生产 | — |
+| 110 | MPC-03 | 滚动优化 | content/mpc/receding-horizon.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-03/acceptance.md |
 | 111 | MPC-04 | 约束处理 | content/mpc/constraint-handling.mdx | 待完成 | 待生产 | — |
 | 112 | MPC-05 | 递归可行性与稳定性 | content/mpc/mpc-stability.mdx | 待完成 | 待生产 | — |
 | 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 待完成 | 待生产 | — |

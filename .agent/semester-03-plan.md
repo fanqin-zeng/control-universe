@@ -80,6 +80,7 @@
 | INTEL-02 | IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11 | 2026-10-24用户明确指定继续INTEL-02，rank7；保留并行课程，仅依赖已交付INTEL-01及PID/非线性基础 | .agent/semester-03/intel-02/acceptance.md |
 | ID-04 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-04，rank3；保留并行课程，仅依赖已交付ID-03和矩阵分解 | .agent/semester-03/id-04/acceptance.md |
 | EST-03 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-03”，rank4；EST-01/02已交付，仅重构本课 | .agent/semester-03/est-03/acceptance.md |
+| MPC-03 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-03，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-03/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -864,3 +865,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### IMPL-04 样式复验补正
 
 隔离快照补齐实际postcss.config.mjs，两种生产构建及正确CSS下Pages/窄屏/浏览器Python已复验。数值源码不变；历史预览配置完整性仅登记QA02待核，见`.agent/semester-03/impl-04/css-isolation-audit.md`。
+
+### MPC-03 学期3交付（2026-10-24）
+
+滚动优化按重构Phase1–4完成，保留11H2、全部旧标题ID、原20步实验主题及五题全部子问。统一输入增量与累计输入、当前/未来费用，纠正有限时域末输入/临界极点、终端可行性、尾部反馈、QP/热启动/显式实时承诺及自行车模型。新增Explorer/SVG，三Notebook六cell；160组实际TS对独立Fraction，20QP对独立BVLS及五题解析核。严格内核、Pyodide、普通/Pages本地页面与375px验收证据.agent/semester-03/mpc-03/acceptance.md；真实master回执见全局checklist。rank6改用空闲18696/9016/18796/18896，隔离缓存与索引，保留并行/用户修改；本课顺序例外单独登记，不发布Pages、不生产MPC-04。
