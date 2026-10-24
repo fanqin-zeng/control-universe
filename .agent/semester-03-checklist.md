@@ -68,6 +68,7 @@
 | QA01 | 顺序校验负向测试消除历史进度假设 | [ ] | .agent/semester-03/ml-01/test-debt.md;仅记录既有测试对DISCRETE-01未交付的假设，不借本课改其它课程或放宽校验 |
 | RB01 | ROBUST-01范数/裕度/题解与Notebook债务返修 | [x] | .agent/semester-03/robust-01/acceptance.md;docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;已实测关闭PY-018及S04本课Notebook债务，其它债务保留 |
 | RB02 | ROBUST-02不确定性模型边界、MIMO API与题解返修 | [x] | .agent/semester-03/robust-02/acceptance.md;PY-019与S04本课运行债务已实测关闭，余课保留 |
+| QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪

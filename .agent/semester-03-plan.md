@@ -860,3 +860,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### IMPL-04 控制器部署本轮交付
 
 新写单课；离散系数与状态、有限字长、真实时序与部署验收。讨论和真实验收见 `.agent/semester-03/impl-04/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### IMPL-04 样式复验补正
+
+隔离快照补齐实际postcss.config.mjs，两种生产构建及正确CSS下Pages/窄屏/浏览器Python已复验。数值源码不变；历史预览配置完整性仅登记QA02待核，见`.agent/semester-03/impl-04/css-isolation-audit.md`。

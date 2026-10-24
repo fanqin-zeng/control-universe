@@ -6,6 +6,7 @@ assert(num.pass);assert.equal(num.sourceHash,hash);assert.equal(py.lessons[0].so
 const builds=read('build-results.json');assert.equal(builds.length,2);assert(builds.every(b=>b.exit===0));assert.equal(read('build-origin.json').sourceHash,hash);
 const layout=read('narrow-layout.json');assert.equal(layout.width,layout.scroll);assert(layout.canvas>200);assert(layout.table>layout.region);
 const pagesLayout=read('pages-narrow-layout.json');assert.equal(pagesLayout.width,pagesLayout.scroll);assert(pagesLayout.canvas>200);assert(pagesLayout.table>pagesLayout.region);
+const css=read('css-verification.json');assert(css.pass&&css.configMatchesWorkspace&&css.css.every(c=>c.typographyCompiled));assert(css.articleWidth<css.viewport-100);
 for(const name of ['native-dom.json','pages-dom.json']){const dom=read(name);assert.equal(dom.h1.length,1);assert.equal(dom.h2.length,9);assert.equal(dom.katex,0);assert.equal(dom.canvas,1);assert.deepEqual(dom.missing,[]);assert.deepEqual(dom.duplicates,[]);assert(dom.images.every(i=>i.loaded));assert.equal(dom.width,dom.scroll);}
 assert.deepEqual(read('pages-errors.json'),[]);
 let compared=0;function near(a,b,tol=5.1e-7){assert(Math.abs(a-b)<=tol,`${a} != ${b}`);compared++;}

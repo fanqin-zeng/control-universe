@@ -42,7 +42,7 @@
 ### 验证组
 柯验：实际TS36配置共14976个数值对精确Fraction/整数与SciPy独立核验，最大误差2.220446049250313e-15；三个原始Notebook六cell真内核非SKIPPED，再在原生UI、Pyodide及Pages UI运行。108项内核量、207项表格/界面读数对账通过。秦构：首次注册路径错误已在Phase2修正；实际浏览器和两个构建均验证正确导出，H1=1/H2=9、数学错误0、死锚点0、重复ID0，生产新页console error0，SVG路径带basePath。
 ### 体验与脉络组
-郑核代陆阅：开篇从电机“仿真稳、上板振”的可想象现象进入，明确要解释实际程序是否实现设计；先补偿器、再字长、再独立闭环，避免把两个实验混成一个。公式给符号/初值/时刻，SVG与曲线对应问题。原生及静态375px夹具均clientWidth=scrollWidth=360，canvas331；指标表内部滚动。四份档案同日志齐备。
+郑核代陆阅：开篇从电机“仿真稳、上板振”的可想象现象进入，明确要解释实际程序是否实现设计；先补偿器、再字长、再独立闭环，避免把两个实验混成一个。公式给符号/初值/时刻，SVG与曲线对应问题。最终正确PostCSS的Pages 375px夹具clientWidth=scrollWidth=360，canvas299；表容器328内部滚动。四份档案同日志齐备。
 ### 教学支持组
 孙助：四题覆盖系数符号/首拍、非零历史、定点舍入与范围、时序及交接；数值答案分别由NB1/NB2/NB3和独立解析核验。参考向量只定位给定输入下的错误，不冒称完整输入空间验证。
 ### 学生组
@@ -567,7 +567,7 @@
 | 8 | ✅ 固定轴/animation:false/Option对象/默认复现 | x=[0,80Ts]、y=[−2.5,2.5]显式边界；useMemo<EChartsOption>传useECharts；真实TS36配置、默认及UI边界/恢复通过 |
 | 9 | ✅ notebook无ipywidgets等不支持组件 | nb-cells S2无FAIL；Pyodide3/3实验放行、6/6cell通过，页面实际运行三幅图 |
 
-额外：npm run build:pages退出0，205课/9旧路由、basePath=/control-universe；glossary:check PASS3/WARN3/FAIL0，既有残渣不命中提示未通过改术语表隐藏。原生及Pages 375px夹具均文档360/360、图331、表内滚动。Pages新页console error0；源码与Notebook证明同LF哈希。构建既有lint/KaTeX WARN按原stdout保留。本课没有修改全局渲染/路由/数学/内核基础设施。最终catalog与学期门槛将以最新HEAD加本课再次执行，不能继承共享草稿基线的失败或当作全站无债务。
+额外：npm run build:pages退出0，205课/9旧路由、basePath=/control-universe；glossary:check PASS3/WARN3/FAIL0，既有残渣不命中提示未通过改术语表隐藏。最终正确PostCSS的Pages 375px夹具文档360/360、图299、表容器328内滚动；旧原生布局只保留历史草稿证据。Pages新页console error0；源码与Notebook证明同LF哈希。构建既有lint/KaTeX WARN按原stdout保留。本课没有修改全局渲染/路由/数学/内核基础设施。最终catalog与学期门槛将以最新HEAD加本课再次执行，不能继承共享草稿基线的失败或当作全站无债务。
 
 ## 附录 C 红队放行
 | 对比结论 | 基线独立整定? | ≥3 工况? | 落败/持平工况? | 边界写回正文? | 放行? |
@@ -580,3 +580,5 @@
 何疑：未选择最优调参基线，不把误差曲线归因为平台普遍优劣；固定增益12只检查时序反例。极点判断与仿真末点分开，未用单条稳定曲线冒充鲁棒或安全保证。
 
 真实master交付提交：`a142af0658eb2a6508548446988fa896b6b46956`，父提交`5aaa266e8595079b670437ef26df87298e83ca12`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。
+
+最终样式复验补正：隔离快照原先遗漏实际postcss.config.mjs，已修正本课snapshot.py，并在补齐配置后重跑原生/Pages生产构建（均0）。最终Pages正文宽656.67px，视口1265px；375px夹具文档360/360、图299、表容器328px。三Notebook重新执行，原始UI输出与数值参考仍全通过、console error0。当前CSS配置及产物哈希见css-verification.json，最终图片pages.png；旧无配置布局只作历史证据，不用于最终CSS签发。前三课配置完整性仅登记QA02待核，本课未替它们重新签发。

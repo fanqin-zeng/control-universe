@@ -4,7 +4,7 @@ import subprocess,zipfile,io,shutil,json,re,os
 root=Path(__file__).resolve().parents[3];e=root/'.agent/semester-03/impl-04';target=root.parent/'control-universe-rank1-impl04-validation'
 target.mkdir(exist_ok=True)
 base=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
-paths=['app','components','content','lib','public','scripts','docs','package.json','package-lock.json','tsconfig.json','next.config.mjs','postcss.config.js','mdx-components.tsx','.eslintrc.json','.agent/delivery-tracker.md','.agent/semester-03-plan.md','.agent/semester-03-checklist.md','.agent/semester-03-baseline.json','.agent/fix-logs','.agent/skills/wiki-discussion/personas.md','OUTLINE.md']
+paths=['app','components','content','lib','public','scripts','docs','package.json','package-lock.json','tsconfig.json','next.config.mjs','postcss.config.mjs','mdx-components.tsx','.eslintrc.json','.agent/delivery-tracker.md','.agent/semester-03-plan.md','.agent/semester-03-checklist.md','.agent/semester-03-baseline.json','.agent/fix-logs','.agent/skills/wiki-discussion/personas.md','OUTLINE.md']
 known=set(subprocess.check_output(['git','ls-tree','-r','--name-only',base],cwd=root,text=True,encoding='utf-8').splitlines())
 paths=[p for p in paths if p in known or any(k.startswith(p+'/') for k in known)]
 raw=subprocess.check_output(['git','archive','--format=zip',base,*paths],cwd=root)
