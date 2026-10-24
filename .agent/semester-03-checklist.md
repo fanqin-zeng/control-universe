@@ -193,7 +193,7 @@
 | ML-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/06-attention-transformers.md;.agent/semester-03/ml-06/acceptance.md;rank2独立预览8216与严格内核8992;commit:9ce2d2ca1782968be6aaac6aa32a390e0b0b9792 |
 | ML-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/07-representation-learning.md;.agent/semester-03/ml-07/acceptance.md;rank2独立预览8232与严格内核8992;commit:ca233d4adad1ba7956039bec8e1227aab699722c |
 | ML-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/08-generative-models.md;.agent/semester-03/ml-08/acceptance.md;rank2独立预览8234与严格内核8992;commit:4943d266da3b389588d2c9218e3adb7f41786fd6 |
-| ML-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ML-09 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/08-machine-learning/09-learning-evaluation.md;.agent/semester-03/ml-09/acceptance.md |
 
 ### 系统辨识
 

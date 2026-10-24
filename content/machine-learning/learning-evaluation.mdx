@@ -1,0 +1,298 @@
+---
+title: 学习实验评估
+description: 从缺陷检测计算混淆矩阵、验证阈值、测试代价和批次配对不确定性，形成可复现的实验协议。
+---
+
+# 学习实验评估
+
+## 引言
+
+车间用一个检测器挑出疑似缺陷产品，再交给人工复检。漏掉缺陷会造成返工，正常产品被误报则会占用复检时间。你看到一份报告：“准确率很高，可以上线。”可如果缺陷原本就很少，**把所有产品都判为正常，也可能有很高的准确率**。这份报告究竟证明了什么？
+
+[监督学习](/machine-learning/supervised-learning)已讲过如何训练分类模型。本课把视角移到实验负责人：先约定检测任务与误判代价，隔离训练、验证和测试信息，再回答“模型在哪些数据上、按什么指标、以多大不确定性取得了什么结果”。先修为监督学习与[概率基础](/math/probability-basics)，不要求先学推断统计。所有记录均为自行构造的教学数据，没有工厂实测或安全认证。
+
+学完应能冻结一份评估协议，识别按行随机切分的泄漏风险，用验证集选阈值，核算测试指标，并解释配对重采样区间为何不能代替更多独立实验。
+
+<svg viewBox="0 0 340 360" role="img" aria-label="训练数据拟合评分器，验证数据选择阈值，冻结后测试；测试结果不能反向修改本次协议" style={{width:'100%',height:'auto',maxWidth:400,display:'block',margin:'0 auto'}}>
+ <defs><marker id="ml09-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#2563eb"/></marker></defs>
+ <rect x="20" y="10" width="300" height="65" rx="8" fill="#eff6ff" stroke="#2563eb"/><text x="170" y="36" textAnchor="middle" fontSize="17">训练：拟合评分器</text><text x="170" y="60" textAnchor="middle" fontSize="14">只读训练特征与标签</text>
+ <path d="M170 80 V110" stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml09-arrow)"/>
+ <rect x="20" y="120" width="300" height="65" rx="8" fill="#fff7ed" stroke="#d97706"/><text x="170" y="146" textAnchor="middle" fontSize="17">验证：选择阈值</text><text x="170" y="170" textAnchor="middle" fontSize="14">候选与代价先约定</text>
+ <path d="M170 190 V220" stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml09-arrow)"/>
+ <rect x="20" y="230" width="300" height="65" rx="8" fill="#f0fdf4" stroke="#15803d"/><text x="170" y="256" textAnchor="middle" fontSize="17">冻结后：测试</text><text x="170" y="280" textAnchor="middle" fontSize="14">报告指标和不确定性</text>
+ <text x="170" y="322" textAnchor="middle" fontSize="12">切分单位：批次；未来任务须遵守时间顺序</text>
+ <text x="170" y="346" textAnchor="middle" fontSize="12">看测试后修改协议 → 需要新的独立评估</text>
+</svg>
+
+## 先冻结实验协议
+
+先写清六件事：
+
+1. **任务与信息时点**：输入是检测当时可读的特征，标签是之后复检确认的缺陷；$y=1$ 为缺陷，报警为预测正类。复检结论不能混进输入。
+2. **目标人群与切分单位**：评价新批次产品，不能只验证同一产品的另一张图片；若要预测未来，训练时间必须早于相应评估时间，标签窗口也不能跨界。
+3. **训练与选择接口**：训练集拟合评分器和预处理；验证集选择候选阈值；测试只评价已经冻结的完整流程。标准化、特征筛选和缺失值处理也属于需隔离的训练步骤。
+4. **指标与决策代价**：先确定漏检和误报各花多少代价，再选主要指标；准确率、召回率等作为辅助指标一起报告。
+5. **比较与预算**：基线是什么，候选数量、训练预算和选参次数是否一致；时间、内存和环境步数分别计量，不能只挑其中一项宣布更快。
+6. **复现材料**：原始数据来源与版本、切分ID、代码、依赖、参数、随机种子、全部运行结果以及失败原因。
+
+本课只拟合一个极小评分器，搜索预先声明的三个阈值；基线是**永不报警**，没有超参数。它是“全部放行、不占复检资源”的业务参照，不是合理上线策略。若增加另一个复杂模型，应给予其独立、明确的验证整定预算，不能拿未经整定的弱模型衬托自己。
+
+随机初始化、数据抽样和随机优化会带来波动，真实学习实验应预先声明多种子或重复切分方案，报告全部运行的分布。不能不断试种子后只报告最好的一个。本课数据和训练均确定，bootstrap全枚举也没有随机抽样，因此没有种子可挑，更没有训练网络的墙钟性能结论。
+
+## 切分数据与泄漏
+
+### 本课数据合同
+
+训练记录的特征为 $0,0.2,0.8,1$，前两个标签为0，后两个为1。模型只用训练数据计算两类均值，得到 $\mu_0=0.1,\mu_1=0.9$，定义评分
+
+$$
+r(x)=\operatorname{clip}\left(\frac{x-\mu_0}{\mu_1-\mu_0},0,1\right).
+$$
+
+clip表示把超出范围的值截到端点。本例两类中心不同，分母可除；通用实现还须检查缺类或中心重合。**这个评分没有经过概率校准，不能当作缺陷概率。** 得到0.7的产品，不表示同类产品中一定有70%缺陷。分类阈值仍然可以在评分上选择。
+
+训练、验证、测试分别有4、8、20条记录；组ID前缀分别为train、validation、test，且三份集合的组与记录ID互不重叠。时间编号依次为0–3、4–11、12–31，仅表示可见顺序，不是物理秒。测试按顺序分成四批、每批五条。下表给出构造特征时采用的目标评分 $r$，原始特征按 $x=0.1+0.8r$ 构造；训练后的公式复算这些评分。
+
+| 数据 | 缺陷产品评分 | 正常产品评分 |
+|---|---|---|
+| 验证 | 0.6，0.4 | 0.8，0.5，0.3，0.2，0.1，0 |
+| 正常测试 | 0.9，0.4 | 0.8，0.7，0.6，0.3，0.25，0.2，0.18，0.16，0.14，0.12，0.1，0.08，0.06，0.04，0.03，0.02，0.01，0 |
+
+这是一份刻意设计的有限数据表，不能把构造它时已知标签理解为部署时能拿到标签。测试另设两个压力场景，均在开发前固定，不用于选择阈值。
+
+### 按行切分为什么可能泄漏
+
+另外做一个独立的记忆器例子：A、B、C、D四台设备各有两行重复观测，设备标签依次为0、1、0、1，特征只含设备ID。若每台设备的一行进入训练，另一行进入测试，记忆器能查表得到全部测试标签，准确率为1。若仅用A、B训练，C、D整组留出，并对未知设备预设预测0，准确率为0.5。
+
+这里比较的是**两种信息可见性和泛化问题**，不是证明同一个模型的算法性能下降了多少。随机切行让四个设备组全部跨越训练和测试，测试不再代表新设备。真实任务可按设备、病人、轨迹或批次切分；有时间关系时用向前验证，并按标签跨度设置间隔。不存在一个对所有任务都正确的随机切分比例。
+
+交叉验证可以在开发数据内多次轮换训练与验证，减少对某次切分的依赖，但每一折都必须重新拟合预处理。若反复比较超参数后需要评价整个选择流程，可用外层留出或嵌套交叉验证；不能直接把用于挑选的最高验证分数当成最终独立性能。
+
+## 验证集选择阈值
+
+预测规则为评分达到阈值就报警。记阈值为 $\tau$，本课规定相等时报警；实现只加 $10^{-12}$ 的浮点边界保护，不把它当作调参项。漏检代价 $c$ 默认为5，误报代价固定为1：
+
+$$
+\widehat y_i=\mathbf 1[r(x_i)\geq\tau],\qquad
+\ell_i=c\,\mathbf 1[y_i=1,\widehat y_i=0]
++\mathbf 1[y_i=0,\widehat y_i=1].
+$$
+
+候选阈值按 $0.7,0.5,0.3$ 的固定顺序遍历。验证集总代价分别是11、7、3，平均损失分别是1.375、0.875、0.375，故选 $\tau=0.3$。训练类中心与阈值随后冻结，测试标签只用于计算报告，不再反馈到选择函数。
+
+若把漏检代价预先改为1，三个阈值的验证总代价都是3；按事先约定的“同分取较高阈值”规则选0.7。不能看过测试后才改同分规则。此时永不报警基线的验证总代价为2，甚至低于三个候选；如果要在模型与基线之间也选上线方案，这个选择同样应在验证阶段做，而不是看测试决定。
+
+<JupyterNotebook title="协议、阈值与测试指标" setupCode={`import math,json,itertools
+THRESHOLDS=[0.7,0.5,0.3]
+
+def fit():
+    rows=[dict(id='T'+str(i),group='train-'+str(i//2),time=i,x=x,y=int(i>=2)) for i,x in enumerate([0.0,0.2,0.8,1.0])]
+    means=[sum(r['x'] for r in rows if r['y']==y)/sum(r['y']==y for r in rows) for y in [0,1]]
+    return dict(negative=means[0],positive=means[1],rows=rows)
+
+def records(split='validation',scenario='nominal'):
+    if split=='validation':scores=[0.6,0.4,0.8,0.5,0.3,0.2,0.1,0.0];offset=4;size=4
+    else:
+        scores=[0.9,0.4,0.8,0.7,0.6,0.3,0.25,0.2,0.18,0.16,0.14,0.12,0.1,0.08,0.06,0.04,0.03,0.02,0.01,0.0];offset=12;size=5
+        if scenario in ['drift','tie']:scores[:2]=[0.2,0.1]
+        if scenario=='tie':scores=[min(v,0.29) for v in scores]
+    return [dict(id=split+'-'+str(i),group=split+'-'+str(i//size),time=offset+i,x=0.1+0.8*v,y=int(i<2)) for i,v in enumerate(scores)]
+
+def score(x,model):return min(1.0,max(0.0,(x-model['negative'])/(model['positive']-model['negative'])))
+
+def metrics(rows,model,threshold,cfn=5):
+    pred=[0 if threshold is None else int(score(r['x'],model)>=threshold-1e-12) for r in rows]
+    tp=sum(p==1 and r['y']==1 for p,r in zip(pred,rows));fp=sum(p==1 and r['y']==0 for p,r in zip(pred,rows))
+    fn=sum(p==0 and r['y']==1 for p,r in zip(pred,rows));tn=len(rows)-tp-fp-fn
+    ratio=lambda a,b:a/b if b else None
+    recall=ratio(tp,tp+fn);specificity=ratio(tn,tn+fp)
+    losses=[cfn if r['y']==1 and p==0 else int(r['y']==0 and p==1) for p,r in zip(pred,rows)]
+    return dict(n=len(rows),tp=tp,fp=fp,fn=fn,tn=tn,accuracy=(tp+tn)/len(rows),precision=ratio(tp,tp+fp),recall=recall,specificity=specificity,f1=ratio(2*tp,2*tp+fp+fn),balancedAccuracy=None if recall is None or specificity is None else (recall+specificity)/2,cost=sum(losses),risk=sum(losses)/len(rows),predictions=pred,losses=losses)
+
+def bootstrap(differences):
+    if len(differences)!=4 or not all(math.isfinite(v) for v in differences):raise ValueError("Four finite batch differences required")
+    values=sorted(sum(v)/len(differences) for v in itertools.product(differences,repeat=len(differences)))
+    return dict(count=len(values),mean=sum(differences)/len(differences),lower=values[math.ceil(0.025*len(values))-1],upper=values[math.ceil(0.975*len(values))-1],distribution=values)
+
+def study(cfn=5,scenario='nominal',policy='validation'):
+    model=fit();val=records();candidates=[dict(threshold=t,metrics=metrics(val,model,t,cfn)) for t in THRESHOLDS]
+    selected=min(candidates,key=lambda c:c['metrics']['cost']);threshold=selected['threshold'] if policy=='validation' else float(policy)
+    test=records('test',scenario);result=metrics(test,model,threshold,cfn);base=metrics(test,model,None,cfn)
+    batches=[sum(result['losses'][i]-base['losses'][i] for i in range(k,k+5))/5 for k in range(0,20,5)]
+    return dict(model=model,candidates=candidates,selectedThreshold=selected['threshold'],usedThreshold=threshold,validationBaseline=metrics(val,model,None,cfn),test=result,baseline=base,batches=batches,bootstrap=bootstrap(batches))
+
+def report(s):
+    compact=lambda r:{k:v for k,v in r.items() if k not in ['predictions','losses']}
+    return dict(model={k:v for k,v in s['model'].items() if k!='rows'},candidates=[dict(threshold=c['threshold'],cost=c['metrics']['cost'],risk=c['metrics']['risk']) for c in s['candidates']],selectedThreshold=s['selectedThreshold'],usedThreshold=s['usedThreshold'],test=compact(s['test']),baseline=compact(s['baseline']),batches=s['batches'],bootstrap={k:v for k,v in s['bootstrap'].items() if k!='distribution'})
+
+def leakage_demo():
+    data=[dict(id=g+'-'+str(j),group=g,y=i%2) for i,g in enumerate(['A','B','C','D']) for j in range(2)]
+    def evaluate(train,test):
+        memory={r['group']:r['y'] for r in train}
+        return sum(memory.get(r['group'],0)==r['y'] for r in test)/len(test)
+    row_train=data[::2];row_test=data[1::2]
+    group_train=[r for r in data if r['group'] in ['A','B']]
+    group_test=[r for r in data if r['group'] in ['C','D']]
+    overlap={r['group'] for r in row_train}&{r['group'] for r in row_test}
+    return dict(rowSplitAccuracy=evaluate(row_train,row_test),groupSplitAccuracy=evaluate(group_train,group_test),overlapGroups=len(overlap),heldoutGroups=len({r['group'] for r in group_test}))`} cells={[
+{title:'训练评分器与验证阈值',code:`s=study()
+print(json.dumps({'model':s['model'],'validation':records(),'candidates':[{'threshold':r['threshold'],'cost':r['metrics']['cost'],'risk':r['metrics']['risk']} for r in s['candidates']],'selectedThreshold':s['selectedThreshold'],'costOne':report(study(cfn=1))},ensure_ascii=False))`},
+{title:'冻结后的测试与分组泄漏',code:`print(json.dumps({'testRows':records('test'),'default':report(study()),'leakage':leakage_demo()},ensure_ascii=False))`}
+]} />
+
+## 测试指标与代价
+
+TP是真缺陷被报警，FP是正常品被误报，FN是缺陷被漏检，TN是正常品被放行。**正类含义先固定，矩阵方向也先声明**：下面行是真值，列是预测。
+
+| 默认测试 | 报警 | 不报警 |
+|---|---|---|
+| 真缺陷 | TP=2 | FN=0 |
+| 真正常 | FP=4 | TN=14 |
+
+记 $n$ 为评估记录数。常见指标分别回答不同问题：
+
+$$
+\mathrm{Accuracy}=\frac{\mathrm{TP}+\mathrm{TN}}n,\qquad
+\mathrm{Precision}=\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},\qquad
+\mathrm{Recall}=\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}.
+$$
+
+准确率看全部记录；精确率问“报警里有多少是真的”；召回率问“真缺陷找到了多少”。特异度是正常品被正确放行的比例，F1综合精确率与召回率，平衡准确率让两类各占一半权重：
+
+$$
+\mathrm{Specificity}=\frac{\mathrm{TN}}{\mathrm{TN}+\mathrm{FP}},\qquad
+F_1=\frac{2\mathrm{TP}}{2\mathrm{TP}+\mathrm{FP}+\mathrm{FN}},\qquad
+\mathrm{BalancedAccuracy}=\frac{\mathrm{Recall}+\mathrm{Specificity}}2.
+$$
+
+默认候选的准确率0.8、精确率 $1/3$、召回率1、特异度 $7/9$、F1为0.5、平衡准确率 $8/9$。永不报警基线的准确率却为0.9，因为20条中只有2条缺陷。基线召回率为0、F1为0，精确率因没有任何报警而未定义。把这个未定义值强写成1，会制造“报警很准”的假象。
+
+若评估集没有正类，召回率也未定义；没有负类则特异度未定义。F1的分母若为零，本课也输出null；平衡准确率只有两类分母都非零才报告。实际库可选不同零除约定，报告必须写清，不能把缺测或未定义值当成真实0分。
+
+按预先选定的代价，默认候选总代价为4，基线为10；平均损失是各除以20，即0.2与0.5。它们是**同一批记录上的经验平均损失**，不是总体风险的精确值。准确率较高和业务代价较小不是同一个结论；F1也不会自动表达漏检代价。
+
+<LearningEvaluationExplorer />
+
+图的候选线只来自验证集。控件默认走验证选择；手动阈值只是回顾性敏感性诊断。真实研究看测试后改阈值，应重新进入开发并另取独立评估数据，不能仍拿原测试报告保证泛化。
+
+## 配对比较与不确定性
+
+候选与基线必须评价同一批产品。每条产品有两个损失，先相减；同一批次的产品可能相关，因此先算各批的平均差。约定差值为“候选减基线”，负值表示候选在该指标上代价较小。
+
+默认四批的平均差为 $[-1.4,0.2,0,0]$，总体样本平均差为 $-0.3$。批次在开发前已按表中原顺序固定，没有在看到结果后重新分组。第一批集中包含两个缺陷，所以批次贡献很不均匀；不能只报告总分而隐藏这一点。
+
+<strong>bootstrap（自助重采样）</strong>用经验分布近似原始抽样过程：假设批次彼此独立、同一批内保留原结构，成对抽取整批的差值。本课从四批中有放回抽四次，对每次组合求平均。全枚举 $4^4=256$ 个有序组合，不需要随机种子。
+
+把256个平均值排序为 $d_{(1)}\leq\cdots\leq d_{(256)}$，采用明确的nearest-rank分位定义：
+
+$$
+Q_p=d_{(\lceil pB\rceil)},\qquad B=256.
+$$
+
+取 $p=0.025$ 与 $p=0.975$，对应排序第7和第250个值，得到名义95%的百分位经验区间 $[-1.05,0.15]$。它包含零：这些数据不足以支持“候选在总体上稳定优于基线”的结论。**包含零不是证明两者等价；不包含零也不能修复有偏切分、泄漏或不恰当的重采样单位。**
+
+本课只有四个构造批次，独立同分布是假设，不能保证区间具有真实总体95%覆盖率。256是经验重采样组合数，独立信息仍只有四批；把组合数增加得再大，也不会补出新的设备或批次。此区间还条件于已经冻结的模型和阈值，没有包含训练数据与选参过程的波动。
+
+## 失败场景与复现
+
+所有压力场景仍用默认漏检代价与验证选出的0.3阈值，评分器和验证集不改。漂移场景仅把两个缺陷的评分改为0.2、0.1；持平场景再把所有评分限制在不高于0.29。它们是预设的教学压力条件，不是把测试观测拿回去调模型。
+
+| 预设测试工况 | 候选平均损失 | 基线平均损失 | 配对平均差 |
+|---|---|---|---|
+| 正常评分 | 0.2 | 0.5 | −0.3 |
+| 缺陷评分下降 | 0.7 | 0.5 | 0.2 |
+| 全部评分偏低 | 0.5 | 0.5 | 0 |
+
+正常工况的样本代价较小，漂移时却更大，持平时没有收益。改变漏检代价为1也会让验证选择转为0.7；对应正常测试的候选平均损失0.15，基线0.1。结论依赖于预先约定的任务、数据分布、代价和选择规则。
+
+<JupyterNotebook title="配对区间与失败场景" setupCode={`import math,json,itertools
+THRESHOLDS=[0.7,0.5,0.3]
+
+def fit():
+    rows=[dict(id='T'+str(i),group='train-'+str(i//2),time=i,x=x,y=int(i>=2)) for i,x in enumerate([0.0,0.2,0.8,1.0])]
+    means=[sum(r['x'] for r in rows if r['y']==y)/sum(r['y']==y for r in rows) for y in [0,1]]
+    return dict(negative=means[0],positive=means[1],rows=rows)
+
+def records(split='validation',scenario='nominal'):
+    if split=='validation':scores=[0.6,0.4,0.8,0.5,0.3,0.2,0.1,0.0];offset=4;size=4
+    else:
+        scores=[0.9,0.4,0.8,0.7,0.6,0.3,0.25,0.2,0.18,0.16,0.14,0.12,0.1,0.08,0.06,0.04,0.03,0.02,0.01,0.0];offset=12;size=5
+        if scenario in ['drift','tie']:scores[:2]=[0.2,0.1]
+        if scenario=='tie':scores=[min(v,0.29) for v in scores]
+    return [dict(id=split+'-'+str(i),group=split+'-'+str(i//size),time=offset+i,x=0.1+0.8*v,y=int(i<2)) for i,v in enumerate(scores)]
+
+def score(x,model):return min(1.0,max(0.0,(x-model['negative'])/(model['positive']-model['negative'])))
+
+def metrics(rows,model,threshold,cfn=5):
+    pred=[0 if threshold is None else int(score(r['x'],model)>=threshold-1e-12) for r in rows]
+    tp=sum(p==1 and r['y']==1 for p,r in zip(pred,rows));fp=sum(p==1 and r['y']==0 for p,r in zip(pred,rows))
+    fn=sum(p==0 and r['y']==1 for p,r in zip(pred,rows));tn=len(rows)-tp-fp-fn
+    ratio=lambda a,b:a/b if b else None
+    recall=ratio(tp,tp+fn);specificity=ratio(tn,tn+fp)
+    losses=[cfn if r['y']==1 and p==0 else int(r['y']==0 and p==1) for p,r in zip(pred,rows)]
+    return dict(n=len(rows),tp=tp,fp=fp,fn=fn,tn=tn,accuracy=(tp+tn)/len(rows),precision=ratio(tp,tp+fp),recall=recall,specificity=specificity,f1=ratio(2*tp,2*tp+fp+fn),balancedAccuracy=None if recall is None or specificity is None else (recall+specificity)/2,cost=sum(losses),risk=sum(losses)/len(rows),predictions=pred,losses=losses)
+
+def bootstrap(differences):
+    if len(differences)!=4 or not all(math.isfinite(v) for v in differences):raise ValueError("Four finite batch differences required")
+    values=sorted(sum(v)/len(differences) for v in itertools.product(differences,repeat=len(differences)))
+    return dict(count=len(values),mean=sum(differences)/len(differences),lower=values[math.ceil(0.025*len(values))-1],upper=values[math.ceil(0.975*len(values))-1],distribution=values)
+
+def study(cfn=5,scenario='nominal',policy='validation'):
+    model=fit();val=records();candidates=[dict(threshold=t,metrics=metrics(val,model,t,cfn)) for t in THRESHOLDS]
+    selected=min(candidates,key=lambda c:c['metrics']['cost']);threshold=selected['threshold'] if policy=='validation' else float(policy)
+    test=records('test',scenario);result=metrics(test,model,threshold,cfn);base=metrics(test,model,None,cfn)
+    batches=[sum(result['losses'][i]-base['losses'][i] for i in range(k,k+5))/5 for k in range(0,20,5)]
+    return dict(model=model,candidates=candidates,selectedThreshold=selected['threshold'],usedThreshold=threshold,validationBaseline=metrics(val,model,None,cfn),test=result,baseline=base,batches=batches,bootstrap=bootstrap(batches))
+
+def report(s):
+    compact=lambda r:{k:v for k,v in r.items() if k not in ['predictions','losses']}
+    return dict(model={k:v for k,v in s['model'].items() if k!='rows'},candidates=[dict(threshold=c['threshold'],cost=c['metrics']['cost'],risk=c['metrics']['risk']) for c in s['candidates']],selectedThreshold=s['selectedThreshold'],usedThreshold=s['usedThreshold'],test=compact(s['test']),baseline=compact(s['baseline']),batches=s['batches'],bootstrap={k:v for k,v in s['bootstrap'].items() if k!='distribution'})
+
+def leakage_demo():
+    data=[dict(id=g+'-'+str(j),group=g,y=i%2) for i,g in enumerate(['A','B','C','D']) for j in range(2)]
+    def evaluate(train,test):
+        memory={r['group']:r['y'] for r in train}
+        return sum(memory.get(r['group'],0)==r['y'] for r in test)/len(test)
+    row_train=data[::2];row_test=data[1::2]
+    group_train=[r for r in data if r['group'] in ['A','B']]
+    group_test=[r for r in data if r['group'] in ['C','D']]
+    overlap={r['group'] for r in row_train}&{r['group'] for r in row_test}
+    return dict(rowSplitAccuracy=evaluate(row_train,row_test),groupSplitAccuracy=evaluate(group_train,group_test),overlapGroups=len(overlap),heldoutGroups=len({r['group'] for r in group_test}))`} cells={[
+{title:'三工况与批次重采样',code:`print(json.dumps({k:report(study(scenario=k)) for k in ['nominal','drift','tie']},ensure_ascii=False))`},
+{title:'零除指标、量化索引与切分审计',code:`model=fit()
+parts=[model['rows'],records(),records('test')]
+ids=[{r['id'] for r in rows} for rows in parts]
+groups=[{r['group'] for r in rows} for rows in parts]
+assert all(not (ids[i]&ids[j]) and not (groups[i]&groups[j]) for i in range(3) for j in range(i))
+assert max(r['time'] for r in parts[0])<min(r['time'] for r in parts[1])
+assert max(r['time'] for r in parts[1])<min(r['time'] for r in parts[2])
+positive=[dict(id='edge',group='edge',time=0,x=0.0,y=1)]
+negative=[dict(id='edge',group='edge',time=0,x=0.0,y=0)]
+print(json.dumps({'splitSizes':[len(p) for p in parts],'groups':[len(g) for g in groups],'quantileRanks':[math.ceil(p*4**4) for p in [0.025,0.975]],'positiveOnly':metrics(positive,model,None),'negativeOnly':metrics(negative,model,None)},ensure_ascii=False))`}
+]} />
+
+复现顺序是：核数据与切分清单 → 只拟合训练类中心 → 在验证候选中选择 → 冻结 → 同批测试 → 按批次成对重采样并报告全部预设场景。原始setup与cell使用Python标准库，有限组合全枚举，计算预算很小；没有下载数据、权重或借用预计算图片。
+
+离线指标只证明相应数据合同下的观察。放到控制系统，还需检查输入可用性、推理延迟、失效回退、约束违反和闭环行为；不能从一个分类报告推导稳定性或安全保证。改变成本、反复查看测试或扩大候选集合，都应形成新的协议版本和独立验收。
+
+## 习题
+
+1. 用默认混淆矩阵计算准确率、精确率、召回率、F1和平均损失。为什么准确率比基线低，却有更小的样本代价？
+2. 复算默认三个阈值的验证代价，再把漏检代价改为1。按约定应选择哪个阈值？这能否证明它胜过永不报警基线？
+3. 解释设备记忆器两种切分的结果；若把每台设备的重复观测当独立样本，会评价成什么泛化问题？
+4. 复算四批配对平均差与256组合分位索引。经验区间包含零可以得出什么、不能得出什么？增加重采样次数能否代替增加独立批次？
+
+## 答案
+
+1. $n=20$，准确率 $(2+14)/20=0.8$，精确率 $2/(2+4)=1/3$，召回率 $2/(2+0)=1$，$F_1=4/(4+4+0)=0.5$。代价 $(5\times0+4)/20=0.2$；基线漏掉两个缺陷，平均损失 $5\times2/20=0.5$，虽有0.9准确率却未找到任何缺陷。
+2. 阈值0.7漏两个、误报一个，代价11；0.5漏一个、误报两个，代价7；0.3不漏检、误报三个，代价3，选0.3。漏检代价为1时三者都是3，同分选较高阈值0.7；基线验证代价为2，不能声称该候选在验证代价上胜过基线。正常测试也为0.15对0.1，候选落败。
+3. 按行拆分时测试设备ID均在训练中，记忆器准确率1，只能说明对已见设备重复记录的查表能力。按设备整组留出C、D，未知设备固定预测0，只判对C，准确率0.5。两者信息条件不同；这里没有同一独立测试上的方法优劣结论。
+4. 四批每批等大，$(-1.4+0.2+0+0)/4=-0.3$。组合数 $4^4=256$，下、上排序索引为 $\lceil0.025\times256\rceil=7$ 和 $\lceil0.975\times256\rceil=250$，区间 $[-1.05,0.15]$ 包含零。不能由此证明两模型等价，也不能保证真实覆盖率。重采样只重复利用已有四批，不能增加独立信息。
+
+## 继续学习
+
+- [scikit-learn：分类决策阈值](https://scikit-learn.org/stable/modules/classification_threshold.html)，区分评分学习与决策选择，并在独立于拟合的数据上整定阈值。
+- [scikit-learn：交叉验证](https://scikit-learn.org/stable/modules/cross_validation.html)，参照按组、按时间和嵌套评估的使用条件。
+- [scikit-learn：常见陷阱](https://scikit-learn.org/stable/common_pitfalls.html)，核查预处理和特征选择是否越过数据边界。
+
+以上官方文档于2026-10-24核读，页面标示版本1.9.1；本课不用该包，Python与TypeScript为自行实现，不复制外部代码。百分位区间的精确离散定义已在本课完整给出。若研究者希望比较已训练的时序模型、注意力模型或生成模型，应沿用本章的信息隔离原则，再为各任务预先约定相应指标和独立测试；不要把本课分类指标直接套用到所有任务。[系统辨识框架](/identification/identification-framework)可作为后续工程连接阅读。
