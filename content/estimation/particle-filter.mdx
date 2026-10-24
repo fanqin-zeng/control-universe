@@ -1,0 +1,362 @@
+---
+title: 粒子滤波
+description: 用带权粒子表示多峰后验，推导重要性权重与bootstrap递推；以四点手算、多种子和逐拍实验检验ESS、重采样与支持覆盖的边界。
+---
+
+# 粒子滤波
+
+小车可能在原点左边，也可能在右边。传感器只报告到原点距离的平方，读数接近4m²时，车可能在约−2m或+2m附近。[上一课的UKF](/estimation/unscented-kalman-filter)仍用一个高斯分布压缩结果：即使均值为0，也不能说明车就在原点。能否同时保留两个位置假设，并随着新读数调整它们的可信程度？
+
+粒子滤波（particle filter，PF）保留一组带权状态样本，允许它们分布在不同位置。它能表达多峰，却不保证有限样本一定覆盖每个峰。本课依赖[状态估计框架](/estimation/estimation-problem)、[随机过程](/math/stochastic-processes)与[数值方法](/math/numerical-methods)，先复述Bayes更新，再把它做成可运行的逐拍算法。
+
+## 从单高斯到带权粒子
+
+用第$i$个状态样本$x_k^{(i)}$和非负权重$w_k^{(i)}$近似本拍后验，要求权重之和为1。分布表示为离散点质量：
+
+$$
+\hat p(dx_k\mid z_{1:k})=\sum_{i=1}^N w_k^{(i)}\delta_{x_k^{(i)}}(dx_k),\qquad
+w_k^{(i)}\ge0,\quad\sum_i w_k^{(i)}=1.
+$$
+
+$\delta_x$表示集中在$x$的单位点质量，不是连续概率密度的有限高度尖峰。估计函数的期望时做加权求和：
+
+$$
+\widehat{\mathbb E}[g(X_k)]=\sum_iw_k^{(i)}g(x_k^{(i)}),\qquad
+\hat\mu_k=\sum_iw_k^{(i)}x_k^{(i)},\quad
+\hat P_k=\sum_iw_k^{(i)}(x_k^{(i)}-\hat\mu_k)(x_k^{(i)}-\hat\mu_k)^\top.
+$$
+
+这里$\hat P_k$是加权分布的二阶中心矩，不是要套贝塞尔校正的独立样本方差，也不自动等于真实估计误差协方差。粒子数$N$与状态维数不同；粒子可以重复，并非每个粒子都是一份独立证据。与UT的确定性sigma点不同，PF通常通过随机提议分布产生样本，用重要性权重校正采样方式。
+
+## Bayes递推与重要性权重
+
+记状态转移密度为$p(x_k\mid x_{k-1})$，观测似然为$p(z_k\mid x_k)$。在Markov状态与条件独立观测假设下：
+
+$$
+p(x_k\mid z_{1:k-1})=\int p(x_k\mid x_{k-1})p(x_{k-1}\mid z_{1:k-1})\,dx_{k-1},
+$$
+
+$$
+p(x_k\mid z_{1:k})\propto p(z_k\mid x_k)\,p(x_k\mid z_{1:k-1}).
+$$
+
+预测积分通常不易直接计算。序贯重要性采样（sequential importance sampling，SIS）对每个上一拍粒子，从提议分布$q(x_k\mid x_{k-1}^{(i)},z_k)$采样，然后递推路径权重；最后一拍的状态分量给出滤波近似：
+
+$$
+x_k^{(i)}\sim q(\cdot\mid x_{k-1}^{(i)},z_k),\qquad
+\tilde w_k^{(i)}=w_{k-1}^{(i)}
+\frac{p(z_k\mid x_k^{(i)})p(x_k^{(i)}\mid x_{k-1}^{(i)})}
+{q(x_k^{(i)}\mid x_{k-1}^{(i)},z_k)},\qquad
+w_k^{(i)}=\frac{\tilde w_k^{(i)}}{\sum_j\tilde w_k^{(j)}}.
+$$
+
+分母不能省略：它纠正“在哪些地方更容易抽到样本”。要求目标有质量的区域被提议覆盖，且相关权重可定义；不能让$q=0$而目标密度非零，再期待权重找回漏掉的位置。初始化若$x_0^{(i)}\sim p(x_0)$，取等权；若从其它$q_0$采样，还需用$p(x_0)/q_0(x_0)$校正。以上是课程使用的Markov提议版本，更一般的提议可以依赖整条路径，见[Doucet与Johansen教程](https://www.stats.ox.ac.uk/~doucet/doucet_johansen_tutorialPF.pdf)。
+
+## bootstrap粒子滤波的逐拍步骤
+
+bootstrap滤波取$q=p(x_k\mid x_{k-1})$，转移密度与提议相消。因此预测后只需乘观测似然：
+
+$$
+\tilde w_k^{(i)}=w_{k-1}^{(i)}p(z_k\mid x_k^{(i)}).
+$$
+
+输入为上一拍粒子及权重、状态转移模型、观测模型和本拍读数；输出为更新后的粒子分布、所需统计量与重采样记录。每拍执行：
+
+1. **预测。** 对每个粒子独立采样过程扰动，并通过状态模型传播。
+2. **加权。** 用本拍读数计算似然，乘上上一拍权重，再归一化。
+3. **估计与诊断。** 先记录加权均值、方差、分支概率与ESS。
+4. **按需重采样。** 当约定阈值触发时复制祖先，权重重置为$1/N$；未触发时必须保留当前非均匀权重，交给下一拍。
+
+本课逐拍模型为：
+
+$$
+x_k=x_{k-1}+\epsilon_{k-1},\quad \epsilon_{k-1}\sim\mathcal N(0,Q),\qquad
+z_k=x_k^2+v_k,\quad v_k\sim\mathcal N(0,R).
+$$
+
+过程噪声、测量噪声与初始状态独立，各拍噪声也独立。状态单位m，$Q$为每拍增量的方差、单位m²，观测单位m²，$R$单位m⁴；这些是噪声协方差，与LQR代价权重区分。这里的粒子权重$w_k^{(i)}$也不表示过程噪声。该bootstrap实现属于标准SIS/重采样框架的一种，原始算法脉络见[Arulampalam等，2002](https://ahstat.github.io/images/2014-7-11-Introduction-particle-filters/arulampalam2002tutorial_particle_filters.pdf)。
+
+![先传播粒子，再按观测调整权重；阈值触发后复制祖先并重置权重](/diagrams/estimation/particle-resampling.svg)
+
+## 四个粒子的手算更新
+
+为便于算清，先规定一个**真正的四点离散先验**：$x\in\{-2,-1,1,2\}$，各点概率$1/4$。它不是高斯先验的四粒子随机近似。这一拍没有过程传播，直接收到$z=4,R=1$的平方观测。
+
+在固定$R$下，所有粒子的高斯似然共有常数可约去。令$a=\exp(-9/2)\approx0.011109$，外侧两点残差为0，内侧两点残差为3；相对似然为$[1,a,a,1]$，因此：
+
+$$
+w=\frac{[1,a,a,1]}{2(1+a)}
+\approx[0.494506529,0.005493471,0.005493471,0.494506529].
+$$
+
+由对称性均值为0，负位置概率为$1/2$。二阶中心矩为：
+
+$$
+\hat P=\frac{4+a}{1+a}\approx3.967039172.
+$$
+
+这里加权结果恰好就是该四点模型的精确Bayes后验，因为全部先验支持都已列举。它与连续高斯先验的后验是两个不同概率模型，不能混作同一个真值。
+
+<JupyterNotebook
+  title="四粒子更新与重采样"
+  setupCode={`import numpy as np
+import math, json
+from scipy.special import logsumexp
+from scipy.integrate import quad
+from scipy.signal import fftconvolve
+
+def normalized(logs):
+    logs=np.asarray(logs,dtype=float)
+    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():
+        raise ValueError("No valid particle likelihood")
+    return np.exp(logs-logsumexp(logs))
+
+def stats(x,w):
+    m=float(w@x)
+    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))
+
+def systematic(w,u0):
+    n=len(w)
+    assert 0<=u0<1/n
+    c=np.cumsum(w);c[-1]=1.
+    return np.searchsorted(c,u0+np.arange(n)/n,side="right")
+
+def reference(mu,r,z):
+    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)
+    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)
+    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]
+    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))
+    mass=I(0);m=I(1)/mass
+    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass
+    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)
+`}
+  cells={[
+    { code: `x=np.array([-2.,-1.,1.,2.]);w=normalized(-(4-x*x)**2/2)
+print("four_particles_weights",x.tolist(),w.tolist())
+print("four_particle_mean_variance_ESS",stats(x,w))
+print("likelihood_ratio_inner_to_outer",np.exp(-4.5))
+print("four_particle_CDF_at_minus2_minus1_plus1_plus2",np.cumsum(w).tolist())
+assert abs(stats(x,w)["variance"]-3.9670391721082203)<1e-12
+assert abs(stats(x,w)["ess"]-2.0444305029932996)<1e-12
+` },
+    { code: `a=systematic(w,.125);y=x[a];uniform=np.full(4,.25)
+print("systematic_offset_targets_ancestors",.125,(.125+np.arange(4)/4).tolist(),a.tolist())
+print("resampled_positions_stats_unique",y.tolist(),stats(y,uniform),len(np.unique(a)))
+print("adaptive_condition_ESS_less_N_over_2",stats(x,w)["ess"]<len(x)/2)
+print("log_underflow_example",np.exp([-1000.,-1001.]).tolist(),normalized([-1000.,-1001.]).tolist())
+bad=np.full(4,2.);bad_w=normalized(-(4-bad*bad)**2/2)
+print("missing_negative_branch_ESS_mass",stats(bad,bad_w))
+try:normalized([-np.inf,-np.inf])
+except ValueError:print("invalid_likelihood_rejected")
+else:raise AssertionError("must not fall back to uniform weights")
+assert a.tolist()==[0,0,3,3]
+assert stats(y,uniform)["variance"]==4 and len(np.unique(a))==2
+print("hand_resampling_checks_passed")
+` }
+  ]}
+/>
+
+## ESS与系统重采样
+
+常用的有效样本量估计是：
+
+$$
+\widehat N_{\mathrm{eff}}=\frac1{\sum_i(w_k^{(i)})^2},\qquad 1\le\widehat N_{\mathrm{eff}}\le N.
+$$
+
+它度量权重是否集中：等权时取$N$，单点权重为1时取1。它不是独立祖先数、正确覆盖的峰数或真实误差的保证。本课按$\widehat N_{\mathrm{eff}}\lt N/2$触发自适应重采样；这个阈值是明确选定的实现规则，并非普适最优值。
+
+系统重采样（systematic resampling）先形成累计权重$c_j=\sum_{i\le j}w^{(i)}$，只抽一个偏移$u_0\sim\mathcal U[0,1/N)$，再用$u_0+j/N$查累计区间，$j=0,\ldots,N-1$，复制相应祖先，所有新权重设为$1/N$。各祖先选择相关，不能说成独立抽样。本课实现采用半开累计区间，边界相等时取右侧区间，并跳过零权重区间。
+
+手算例的ESS约2.044431，实际上略大于阈值2，**不会触发上述自适应条件**。为单独观察重采样效果，接下来人为执行一次，固定$u_0=0.125$；四个查询点为$[0.125,0.375,0.625,0.875]$，选中零起始编号祖先$[0,0,3,3]$。新位置为$[-2,-2,2,2]$，均值0、方差4、ESS4，但不同祖先仅2个。重采样改变了本次有限样本统计量，也删掉了内侧位置；它没有读取新传感器数据。
+
+若偏移按规定均匀随机抽取，在给定旧粒子和权重时，每个祖先的期望复制数为$Nw_i$；不代表某一次重采样精确保持均值或提高精度。系统重采样的方差比较有适用条件与反例，不能宣称它总优于其它重采样方法，见[Douc、Cappé与Moulines，2005](https://arxiv.org/abs/cs/0507025)。
+
+## 交互观察分布函数
+
+图中纵轴是累计分布函数$F(b)=\Pr(X\le b)$，由当前位置阈值$b$左边的权重相加；它不是概率密度。手算例中，$F(-2)\approx0.494506529$、$F(-1)=0.5$、$F(1)\approx0.505493471$、$F(2)=1$；读数表示“位置不超过这个阈值”的总概率。重采样前后的阶梯线可直接与参考CDF比较，无需给离散粒子人为画密度尖峰。
+
+<ParticleFilterExplorer />
+
+默认就是四点手算例，参考线与加权线重合。所有模式都**额外演示一次**系统重采样，即使ESS未低于阈值；“应否触发”单独显示。高斯采样模式改用$\mathcal N(\mu,1)$先验，参考曲线来自该模型的一维积分，不沿用四点先验的真值。TS采样使用固定的xorshift32/Box–Muller序列，固定种子便于复验；它不承诺与NumPy的PCG64生成相同样本。
+
+同一高斯模型$\mu=0,R=0.25,z=4$的参考均值0、方差约3.841876、负位置概率$1/2$；有限粒子可能使两侧权重不平衡。参考在$[-12,12]$做4800段Simpson积分，显示区间固定$[-6,6]$，CDF参考取241个位置；课程另用无穷区间自适应积分核对矩与CDF。这些积分是教学验算预算，不属于粒子滤波内部操作。
+
+## 多种子与逐拍实验
+
+先在三个固定工况上做同模型重要性采样：$(\mu,R,z)$分别为$(0,0.25,4)$、$(2,1,4)$、$(0,4,1)$。每组粒子数取64、256、1024，NumPy PCG64种子固定为0到9，共90次。只比较同一工况中的预算变化，不将不同噪声和先验的难度混成排名；报告均值绝对误差和负分支概率误差的分布。
+
+第一工况的均值绝对误差如下，单位m；数字来自下方原始运行，属于这十个种子的限定观察：
+
+| 粒子数 | 最小值 | 中位数 | 最大值 |
+|---|---|---|---|
+| 64 | 0.021826 | 0.713366 | 1.895246 |
+| 256 | 0.166392 | 0.391190 | 0.876593 |
+| 1024 | 0.028196 | 0.179973 | 0.535519 |
+
+中位数随预算增加而下降，但最小值并不单调；不能因此声称每个种子都会改善，或把这张表当成任意系统的收敛速率。三工况的全部种子和输出均保留。
+
+<JupyterNotebook
+  title="同模型多种子重要性采样"
+  setupCode={`import numpy as np
+import math, json
+from scipy.special import logsumexp
+from scipy.integrate import quad
+from scipy.signal import fftconvolve
+
+def normalized(logs):
+    logs=np.asarray(logs,dtype=float)
+    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():
+        raise ValueError("No valid particle likelihood")
+    return np.exp(logs-logsumexp(logs))
+
+def stats(x,w):
+    m=float(w@x)
+    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))
+
+def systematic(w,u0):
+    n=len(w)
+    assert 0<=u0<1/n
+    c=np.cumsum(w);c[-1]=1.
+    return np.searchsorted(c,u0+np.arange(n)/n,side="right")
+
+def reference(mu,r,z):
+    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)
+    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)
+    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]
+    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))
+    mass=I(0);m=I(1)/mass
+    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass
+    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)
+`}
+  cells={[
+    { code: `cases=[(0.,.25,4.),(2.,1.,4.),(0.,4.,1.)]
+truths={case:reference(*case) for case in cases}
+for case,truth in truths.items():print("Gaussian_reference",case,truth)
+mc_rows=[]
+for case in cases:
+    mu,r,z=case;truth=truths[case]
+    for n in [64,256,1024]:
+        for seed in range(10):
+            rng=np.random.default_rng(seed);x=rng.normal(mu,1,n);w=normalized(-(z-x*x)**2/(2*r))
+            before=stats(x,w);a=systematic(w,rng.random()/n);after=stats(x[a],np.full(n,1/n))
+            mc_rows.append(dict(case=list(case),n=n,seed=seed,meanError=abs(before["mean"]-truth["mean"]),negativeError=abs(before["negative"]-truth["negative"]),afterMeanError=abs(after["mean"]-truth["mean"]),ess=before["ess"],unique=len(np.unique(a))))
+assert len(mc_rows)==90
+print("multi_seed_count",len(mc_rows),"PCG64_seeds",list(range(10)))
+` },
+    { code: `for case in cases:
+    for n in [64,256,1024]:
+        rows=[q for q in mc_rows if q["case"]==list(case) and q["n"]==n]
+        print("MC_summary_case_N_mean_abs_error_min_median_max",case,n,np.quantile([q["meanError"] for q in rows],[0,.5,1]).tolist(),"negative_mass_error",np.quantile([q["negativeError"] for q in rows],[0,.5,1]).tolist())
+print("MC_all_trials_preserved_in_mc_rows",len(mc_rows))
+assert all(np.isfinite(q["meanError"]) and 1-1e-10<=q["ess"]<=q["n"]+1e-10 for q in mc_rows)
+print("multi_seed_checks_passed")
+` }
+  ]}
+/>
+
+再运行完整bootstrap递推。给定每拍1s的随机游走，$Q=0.04$、$R=0.25$、先验$\mathcal N(0,1)$；观测序列$[4,4.41,3.61,4,4.84]$重复四次，共20拍。这是输入给定的教学读数，没有借一条隐藏真轨迹计算跟踪RMSE。每拍统计量在**加权后、重采样前**记录；未触发时保留非均匀权重。
+
+参考用$[-8,8]$的1001点与2001点网格做过程密度卷积和Bayes更新。两种网格的均值、方差、负分支概率最大差小于$10^{-6}$；这只是本例的网格细化检查，不是所有截断误差的严格上界。模型和先验对称，因此真实滤波后验始终对称。细网格末拍均值约0、方差约4.629100、负分支概率约0.5。
+
+相同十个种子下，64粒子的末拍负分支概率范围为0到1，中位数约0.700495；其中4次运行曾出现全体粒子同号。这里按每拍传播及可选重采样后的粒子位置判断同号，不把它当成所有权重退化现象的完整判据。256和1024粒子的这十次运行未出现全体同号，但其末拍分支概率仍有波动。完整30次、各20拍记录均保存在代码变量`seq_rows`中，页面显示汇总，验收文件保留全量数据；未删除失败种子。过程噪声可能产生新位置；**单独重采样只复制已有祖先，不能凭空恢复已缺失的峰。**
+
+<JupyterNotebook
+  title="随机游走的逐拍bootstrap滤波"
+  setupCode={`import numpy as np
+import math, json
+from scipy.special import logsumexp
+from scipy.integrate import quad
+from scipy.signal import fftconvolve
+
+def normalized(logs):
+    logs=np.asarray(logs,dtype=float)
+    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():
+        raise ValueError("No valid particle likelihood")
+    return np.exp(logs-logsumexp(logs))
+
+def stats(x,w):
+    m=float(w@x)
+    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))
+
+def systematic(w,u0):
+    n=len(w)
+    assert 0<=u0<1/n
+    c=np.cumsum(w);c[-1]=1.
+    return np.searchsorted(c,u0+np.arange(n)/n,side="right")
+
+def reference(mu,r,z):
+    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)
+    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)
+    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]
+    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))
+    mass=I(0);m=I(1)/mass
+    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass
+    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)
+`}
+  cells={[
+    { code: `observations=np.array([4.,4.41,3.61,4.,4.84]*4)
+def grid_filter(size):
+    x=np.linspace(-8,8,size);dx=x[1]-x[0]
+    p=np.exp(-x*x/2)/np.sqrt(2*np.pi);p/=p.sum()*dx
+    kernel=np.exp(-x*x/(2*.04))/np.sqrt(2*np.pi*.04)
+    records=[]
+    for z in observations:
+        p=np.maximum(fftconvolve(p,kernel,mode="same")*dx,0)
+        logs=-(z-x*x)**2/(2*.25);p*=np.exp(logs-logs.max());p/=p.sum()*dx
+        mean=float((p*x).sum()*dx);variance=float((p*(x-mean)**2).sum()*dx)
+        # Half of the x=0 bin belongs to each half-line under symmetric quadrature.
+        negative=float(p[x<0].sum()*dx+.5*p[len(x)//2]*dx)
+        records.append([mean,variance,negative])
+    return np.array(records)
+coarse=grid_filter(1001);fine=grid_filter(2001)
+grid_difference=float(np.max(abs(coarse-fine)))
+print("sequential_grid_steps_max_difference_last",len(observations),grid_difference,fine[-1].tolist())
+assert grid_difference<1e-6
+assert np.max(abs(fine[:,0]))<1e-10 and np.max(abs(fine[:,2]-.5))<1e-10
+` },
+    { code: `seq_rows=[]
+for n in [64,256,1024]:
+    for seed in range(10):
+        rng=np.random.default_rng(seed);x=rng.normal(0,1,n);w=np.full(n,1/n);history=[];resamples=0;lost=False
+        for k,z in enumerate(observations,1):
+            x=x+rng.normal(0,.2,n)
+            logs=np.full(n,-np.inf);positive=w>0;logs[positive]=np.log(w[positive]);w=normalized(logs-(z-x*x)**2/(2*.25))
+            current=stats(x,w);history.append([k,current["mean"],current["variance"],current["negative"],current["ess"]])
+            if current["ess"]<n/2:
+                a=systematic(w,rng.random()/n);x=x[a];w=np.full(n,1/n);resamples+=1
+            lost=lost or bool(np.all(x>=0) or np.all(x<0))
+        last=history[-1];seq_rows.append(dict(n=n,seed=seed,mean=last[1],variance=last[2],negative=last[3],ess=last[4],resamples=resamples,lost=lost,history=history))
+for n in [64,256,1024]:
+    rows=[q for q in seq_rows if q["n"]==n]
+    print("sequential_N_negative_mass_min_median_max_lost",n,np.quantile([q["negative"] for q in rows],[0,.5,1]).tolist(),sum(q["lost"] for q in rows))
+print("sequential_all_histories_preserved_in_seq_rows",len(seq_rows),len(seq_rows[0]["history"]))
+assert len(seq_rows)==30 and all(len(q["history"])==20 for q in seq_rows)
+print("sequential_filter_checks_passed")
+` }
+  ]}
+/>
+
+## 实现边界与小结
+
+**先保证权重有效。** 用对数权重累加，再减最大值或用log-sum-exp归一化。直接计算$\exp(-1000)$、$\exp(-1001)$在本机都下溢为0；对数归一化仍得到约$[0.731059,0.268941]$。若所有对数权重都无效，要检查提议覆盖、单位、噪声模型和浮点范围，报告失败；直接回退等权会把“没有有效证据”伪装成正常后验。
+
+**区分权重退化与样本贫化。** 前者是权重集中，后者是不同状态或祖先越来越少。重采样可使权重均匀，却会增加复制相关性、删除位置与长路径祖先。一个极端反例是四个粒子全在+2：对$z=4$都等权，ESS4，负位置概率却为0，而对称连续模型的参考值是0.5；高ESS不保证正确。提议有充分支持也不保证有限次采样碰到每个峰。
+
+**模型和预算都要核。** 加测量噪声与采样过程噪声分别作用于似然和转移，不把同一噪声重复注入。重采样后再人为“抖动”粒子会改变分布，不能不说明核的目标；高维或强信息观测下可能需要更好的提议、分块或合法的重生步骤。一次标准bootstrap更新在模型求值外需约$O(N)$加权与系统重采样，存当前状态需$O(Nd)$空间；保存整段路径还要额外预算。样本数更大不等于无条件可靠，PF也不自动给控制安全保证。
+
+带权粒子提供了表达多峰的能力；真正可用的估计还取决于支持覆盖、合理提议、有效权重和足够预算。先检查同模型参考与随机分布，再解释ESS和图形，不用一次漂亮的样本替代验证。
+
+## 习题
+
+1. **四点Bayes。** 先验$[-2,-1,1,2]$等权，$z=4,R=1$：求相对似然、归一化权重、均值、方差与负分支概率。为何它是四点模型的精确后验，却不是连续高斯模型的精确后验？
+2. **重采样。** 求题1的ESS，判断$N/2$阈值是否触发。人为取$u_0=0.125$，列查询点、零起始编号祖先、新权重、方差和不同祖先数。ESS增加能否证明精度提高？期望复制数为$Nw_i$需要怎样的随机偏移？
+3. **提议与数值。** 从一般重要性权重推导bootstrap简化式；若未重采样，下一拍能否把上一拍权重直接改为等权？解释提议$q=0$而目标非零的问题。归一化对数权重$[-1000,-1001]$，全为负无穷时应怎样处理？
+4. **诊断。** 四粒子全在+2时求ESS与负分支概率。结合90次单拍与30次逐拍实验，说明评估两个模式应记录哪些指标、为什么不能只用一次均值或ESS；过程传播与重采样对缺失模式的作用有何区别？
+
+## 答案
+
+1. 令$a=e^{-9/2}$，相对似然$[1,a,a,1]$，归一化除以$2(1+a)$，数值为正文四个权重。均值0、负分支概率$1/2$；方差为$2(4+a)/[2(1+a)]=(4+a)/(1+a)\approx3.967039172$。四点已穷举先验全部支持，Bayes加权没有抽样遗漏；连续先验还在其它位置有质量，不能由这四个点精确表示。
+2. $\sum_iw_i^2=(1+a^2)/[2(1+a)^2]$，所以ESS为$2(1+a)^2/(1+a^2)\approx2.044430503$，大于2，不触发严格小于阈值的条件。人为重采样查询$[0.125,0.375,0.625,0.875]$，祖先$[0,0,3,3]$，位置$[-2,-2,2,2]$，新权重各$1/4$、均值0、方差4、ESS4、不同祖先2。本次重采样偏离原来的精确四点后验，不能证明精度提高。期望复制数结论需$u_0$在$[0,1/N)$均匀随机；固定偏移只定义一次确定性演示。
+3. 取$q=p(x_k\mid x_{k-1})$使转移与提议约去，保留$w_{k-1}^{(i)}p(z_k\mid x_k^{(i)})$。未重采样时非均匀权重仍是后验的一部分，改成等权会丢信息；重采样后才按规则重置。目标非零但提议为零违反支持覆盖，样本和权重无法补回该区域。对$[-1000,-1001]$先减最大值，归一化$[1,e^{-1}]$得约$[0.731059,0.268941]$；全无有限权重时抛出错误并检查模型，不静默设等权。
+4. 四个相同粒子等权，所以ESS4、负分支概率0，均值2、方差0；这与对称连续参考的负分支概率0.5不符。记录模型/预算/种子、两侧概率、分布函数或其它形状指标、加权矩、ESS、祖先数及逐拍失峰情况，并报告多种子分布。对称双峰均值为0也不意味着位置接近0；ESS只看权重。过程转移若有支持可产生新位置，但有限样本不保证恢复；重采样本身只复制，无法产生缺失的状态支持。

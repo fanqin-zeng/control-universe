@@ -1,0 +1,90 @@
+{
+  "source": "content/estimation/particle-filter.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 100,
+      "title": "四粒子更新与重采样",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math, json\r\nfrom scipy.special import logsumexp\r\nfrom scipy.integrate import quad\r\nfrom scipy.signal import fftconvolve\r\n\r\ndef normalized(logs):\r\n    logs=np.asarray(logs,dtype=float)\r\n    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\r\n        raise ValueError(\"No valid particle likelihood\")\r\n    return np.exp(logs-logsumexp(logs))\r\n\r\ndef stats(x,w):\r\n    m=float(w@x)\r\n    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\r\n\r\ndef systematic(w,u0):\r\n    n=len(w)\r\n    assert 0<=u0<1/n\r\n    c=np.cumsum(w);c[-1]=1.\r\n    return np.searchsorted(c,u0+np.arange(n)/n,side=\"right\")\r\n\r\ndef reference(mu,r,z):\r\n    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\r\n    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\r\n    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\r\n    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n    mass=I(0);m=I(1)/mass\r\n    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\r\n    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 134,
+          "delim": "`",
+          "code": "x=np.array([-2.,-1.,1.,2.]);w=normalized(-(4-x*x)**2/2)\r\nprint(\"four_particles_weights\",x.tolist(),w.tolist())\r\nprint(\"four_particle_mean_variance_ESS\",stats(x,w))\r\nprint(\"likelihood_ratio_inner_to_outer\",np.exp(-4.5))\r\nprint(\"four_particle_CDF_at_minus2_minus1_plus1_plus2\",np.cumsum(w).tolist())\r\nassert abs(stats(x,w)[\"variance\"]-3.9670391721082203)<1e-12\r\nassert abs(stats(x,w)[\"ess\"]-2.0444305029932996)<1e-12\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 142,
+          "delim": "`",
+          "code": "a=systematic(w,.125);y=x[a];uniform=np.full(4,.25)\r\nprint(\"systematic_offset_targets_ancestors\",.125,(.125+np.arange(4)/4).tolist(),a.tolist())\r\nprint(\"resampled_positions_stats_unique\",y.tolist(),stats(y,uniform),len(np.unique(a)))\r\nprint(\"adaptive_condition_ESS_less_N_over_2\",stats(x,w)[\"ess\"]<len(x)/2)\r\nprint(\"log_underflow_example\",np.exp([-1000.,-1001.]).tolist(),normalized([-1000.,-1001.]).tolist())\r\nbad=np.full(4,2.);bad_w=normalized(-(4-bad*bad)**2/2)\r\nprint(\"missing_negative_branch_ESS_mass\",stats(bad,bad_w))\r\ntry:normalized([-np.inf,-np.inf])\r\nexcept ValueError:print(\"invalid_likelihood_rejected\")\r\nelse:raise AssertionError(\"must not fall back to uniform weights\")\r\nassert a.tolist()==[0,0,3,3]\r\nassert stats(y,uniform)[\"variance\"]==4 and len(np.unique(a))==2\r\nprint(\"hand_resampling_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 199,
+      "title": "同模型多种子重要性采样",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math, json\r\nfrom scipy.special import logsumexp\r\nfrom scipy.integrate import quad\r\nfrom scipy.signal import fftconvolve\r\n\r\ndef normalized(logs):\r\n    logs=np.asarray(logs,dtype=float)\r\n    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\r\n        raise ValueError(\"No valid particle likelihood\")\r\n    return np.exp(logs-logsumexp(logs))\r\n\r\ndef stats(x,w):\r\n    m=float(w@x)\r\n    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\r\n\r\ndef systematic(w,u0):\r\n    n=len(w)\r\n    assert 0<=u0<1/n\r\n    c=np.cumsum(w);c[-1]=1.\r\n    return np.searchsorted(c,u0+np.arange(n)/n,side=\"right\")\r\n\r\ndef reference(mu,r,z):\r\n    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\r\n    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\r\n    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\r\n    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n    mass=I(0);m=I(1)/mass\r\n    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\r\n    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 233,
+          "delim": "`",
+          "code": "cases=[(0.,.25,4.),(2.,1.,4.),(0.,4.,1.)]\r\ntruths={case:reference(*case) for case in cases}\r\nfor case,truth in truths.items():print(\"Gaussian_reference\",case,truth)\r\nmc_rows=[]\r\nfor case in cases:\r\n    mu,r,z=case;truth=truths[case]\r\n    for n in [64,256,1024]:\r\n        for seed in range(10):\r\n            rng=np.random.default_rng(seed);x=rng.normal(mu,1,n);w=normalized(-(z-x*x)**2/(2*r))\r\n            before=stats(x,w);a=systematic(w,rng.random()/n);after=stats(x[a],np.full(n,1/n))\r\n            mc_rows.append(dict(case=list(case),n=n,seed=seed,meanError=abs(before[\"mean\"]-truth[\"mean\"]),negativeError=abs(before[\"negative\"]-truth[\"negative\"]),afterMeanError=abs(after[\"mean\"]-truth[\"mean\"]),ess=before[\"ess\"],unique=len(np.unique(a))))\r\nassert len(mc_rows)==90\r\nprint(\"multi_seed_count\",len(mc_rows),\"PCG64_seeds\",list(range(10)))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 247,
+          "delim": "`",
+          "code": "for case in cases:\r\n    for n in [64,256,1024]:\r\n        rows=[q for q in mc_rows if q[\"case\"]==list(case) and q[\"n\"]==n]\r\n        print(\"MC_summary_case_N_mean_abs_error_min_median_max\",case,n,np.quantile([q[\"meanError\"] for q in rows],[0,.5,1]).tolist(),\"negative_mass_error\",np.quantile([q[\"negativeError\"] for q in rows],[0,.5,1]).tolist())\r\nprint(\"MC_all_trials_preserved_in_mc_rows\",len(mc_rows))\r\nassert all(np.isfinite(q[\"meanError\"]) and 1-1e-10<=q[\"ess\"]<=q[\"n\"]+1e-10 for q in mc_rows)\r\nprint(\"multi_seed_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 264,
+      "title": "随机游走的逐拍bootstrap滤波",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math, json\r\nfrom scipy.special import logsumexp\r\nfrom scipy.integrate import quad\r\nfrom scipy.signal import fftconvolve\r\n\r\ndef normalized(logs):\r\n    logs=np.asarray(logs,dtype=float)\r\n    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\r\n        raise ValueError(\"No valid particle likelihood\")\r\n    return np.exp(logs-logsumexp(logs))\r\n\r\ndef stats(x,w):\r\n    m=float(w@x)\r\n    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\r\n\r\ndef systematic(w,u0):\r\n    n=len(w)\r\n    assert 0<=u0<1/n\r\n    c=np.cumsum(w);c[-1]=1.\r\n    return np.searchsorted(c,u0+np.arange(n)/n,side=\"right\")\r\n\r\ndef reference(mu,r,z):\r\n    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\r\n    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\r\n    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\r\n    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n    mass=I(0);m=I(1)/mass\r\n    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\r\n    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 298,
+          "delim": "`",
+          "code": "observations=np.array([4.,4.41,3.61,4.,4.84]*4)\r\ndef grid_filter(size):\r\n    x=np.linspace(-8,8,size);dx=x[1]-x[0]\r\n    p=np.exp(-x*x/2)/np.sqrt(2*np.pi);p/=p.sum()*dx\r\n    kernel=np.exp(-x*x/(2*.04))/np.sqrt(2*np.pi*.04)\r\n    records=[]\r\n    for z in observations:\r\n        p=np.maximum(fftconvolve(p,kernel,mode=\"same\")*dx,0)\r\n        logs=-(z-x*x)**2/(2*.25);p*=np.exp(logs-logs.max());p/=p.sum()*dx\r\n        mean=float((p*x).sum()*dx);variance=float((p*(x-mean)**2).sum()*dx)\r\n        # Half of the x=0 bin belongs to each half-line under symmetric quadrature.\r\n        negative=float(p[x<0].sum()*dx+.5*p[len(x)//2]*dx)\r\n        records.append([mean,variance,negative])\r\n    return np.array(records)\r\ncoarse=grid_filter(1001);fine=grid_filter(2001)\r\ngrid_difference=float(np.max(abs(coarse-fine)))\r\nprint(\"sequential_grid_steps_max_difference_last\",len(observations),grid_difference,fine[-1].tolist())\r\nassert grid_difference<1e-6\r\nassert np.max(abs(fine[:,0]))<1e-10 and np.max(abs(fine[:,2]-.5))<1e-10\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 318,
+          "delim": "`",
+          "code": "seq_rows=[]\r\nfor n in [64,256,1024]:\r\n    for seed in range(10):\r\n        rng=np.random.default_rng(seed);x=rng.normal(0,1,n);w=np.full(n,1/n);history=[];resamples=0;lost=False\r\n        for k,z in enumerate(observations,1):\r\n            x=x+rng.normal(0,.2,n)\r\n            logs=np.full(n,-np.inf);positive=w>0;logs[positive]=np.log(w[positive]);w=normalized(logs-(z-x*x)**2/(2*.25))\r\n            current=stats(x,w);history.append([k,current[\"mean\"],current[\"variance\"],current[\"negative\"],current[\"ess\"]])\r\n            if current[\"ess\"]<n/2:\r\n                a=systematic(w,rng.random()/n);x=x[a];w=np.full(n,1/n);resamples+=1\r\n            lost=lost or bool(np.all(x>=0) or np.all(x<0))\r\n        last=history[-1];seq_rows.append(dict(n=n,seed=seed,mean=last[1],variance=last[2],negative=last[3],ess=last[4],resamples=resamples,lost=lost,history=history))\r\nfor n in [64,256,1024]:\r\n    rows=[q for q in seq_rows if q[\"n\"]==n]\r\n    print(\"sequential_N_negative_mass_min_median_max_lost\",n,np.quantile([q[\"negative\"] for q in rows],[0,.5,1]).tolist(),sum(q[\"lost\"] for q in rows))\r\nprint(\"sequential_all_histories_preserved_in_seq_rows\",len(seq_rows),len(seq_rows[0][\"history\"]))\r\nassert len(seq_rows)==30 and all(len(q[\"history\"])==20 for q in seq_rows)\r\nprint(\"sequential_filter_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

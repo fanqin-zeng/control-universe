@@ -4494,6 +4494,48 @@ export const catalog: Chapter[] = [
       {
         "slug": "particle-filter",
         "title": "粒子滤波",
+        "subsections": [
+  {
+    "slug": "从单高斯到带权粒子",
+    "title": "从单高斯到带权粒子"
+  },
+  {
+    "slug": "bayes递推与重要性权重",
+    "title": "Bayes递推与重要性权重"
+  },
+  {
+    "slug": "bootstrap粒子滤波的逐拍步骤",
+    "title": "bootstrap粒子滤波的逐拍步骤"
+  },
+  {
+    "slug": "四个粒子的手算更新",
+    "title": "四个粒子的手算更新"
+  },
+  {
+    "slug": "ess与系统重采样",
+    "title": "ESS与系统重采样"
+  },
+  {
+    "slug": "交互观察分布函数",
+    "title": "交互观察分布函数"
+  },
+  {
+    "slug": "多种子与逐拍实验",
+    "title": "多种子与逐拍实验"
+  },
+  {
+    "slug": "实现边界与小结",
+    "title": "实现边界与小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
         "prereq": [
           "estimation/estimation-problem",
           "math/stochastic-processes",
@@ -4501,7 +4543,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "sensor-fusion",

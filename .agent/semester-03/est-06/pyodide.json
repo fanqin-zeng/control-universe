@@ -1,0 +1,132 @@
+{
+  "testedAt": "2026-10-24T08:52:11.905Z",
+  "url": "http://127.0.0.1:19946/python-expansion.html?lesson=estimation/particle-filter",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "estimation/particle-filter",
+      "title": "粒子滤波",
+      "sourceHash": "b6581a1f13a73ec2ea60a5c27aacd5e783984c40d6f5df65c3ce6444e91e404e",
+      "notebooks": [
+        {
+          "id": "estimation/particle-filter#1",
+          "title": "四粒子更新与重采样",
+          "index": 1,
+          "line": 100,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 9420,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "four_particles_weights [-2.0, -1.0, 1.0, 2.0] [0.4945065286847034, 0.005493471315296589, 0.005493471315296589, 0.4945065286847034]\nfour_particle_mean_variance_ESS {'mean': 0.0, 'variance': 3.9670391721082203, 'negative': 0.5, 'ess': 2.0444305029932996}\nlikelihood_ratio_inner_to_outer 0.011108996538242306\nfour_particle_CDF_at_minus2_minus1_plus1_plus2 [0.4945065286847034, 0.5, 0.5054934713152965, 1.0]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 10,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "systematic_offset_targets_ancestors 0.125 [0.125, 0.375, 0.625, 0.875] [0, 0, 3, 3]\nresampled_positions_stats_unique [-2.0, -2.0, 2.0, 2.0] {'mean': 0.0, 'variance': 4.0, 'negative': 0.5, 'ess': 4.0} 2\nadaptive_condition_ESS_less_N_over_2 False\nlog_underflow_example [0.0, 0.0] [0.7310585786300168, 0.2689414213699995]\nmissing_negative_branch_ESS_mass {'mean': 2.0, 'variance': 0.0, 'negative': 0.0, 'ess': 4.0}\ninvalid_likelihood_rejected\nhand_resampling_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/particle-filter#2",
+          "title": "同模型多种子重要性采样",
+          "index": 2,
+          "line": 199,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 56,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Gaussian_reference (0.0, 0.25, 4.0) {'mean': 0.0, 'variance': 3.841876221594493, 'negative': 0.5000000000000002}\nGaussian_reference (2.0, 1.0, 4.0) {'mean': 1.9506761722005728, 'variance': 0.07647918123987685, 'negative': 0.0007998073074036442}\nGaussian_reference (0.0, 4.0, 1.0) {'mean': 0.0, 'variance': 0.7319146424616877, 'negative': 0.5}\nmulti_seed_count 90 PCG64_seeds [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "MC_summary_case_N_mean_abs_error_min_median_max (0.0, 0.25, 4.0) 64 [0.021825816120484478, 0.7133655895473325, 1.895245921042041] negative_mass_error [0.032795374219353524, 0.173507293443559, 0.4866935981614667]\nMC_summary_case_N_mean_abs_error_min_median_max (0.0, 0.25, 4.0) 256 [0.16639193981901554, 0.3911896959045737, 0.8765934690462086] negative_mass_error [0.03387988948187015, 0.09964950405323741, 0.22124418596911077]\nMC_summary_case_N_mean_abs_error_min_median_max (0.0, 0.25, 4.0) 1024 [0.028196106739543373, 0.17997269298740706, 0.5355188105320012] negative_mass_error [0.003444131383421034, 0.04229861854135972, 0.13536283065337074]\nMC_summary_case_N_mean_abs_error_min_median_max (2.0, 1.0, 4.0) 64 [0.002766945288968259, 0.023485612355580554, 0.047691100065521796] negative_mass_error [0.00042951584325401555, 0.0007569843719390819, 0.0007998073074036442]\nMC_summary_case_N_mean_abs_error_min_median_max (2.0, 1.0, 4.0) 256 [0.00014125853240742892, 0.01194772639320818, 0.04777737458426423] negative_mass_error [9.213002296757527e-05, 0.0006118848882473084, 0.0007706425688753456]\nMC_summary_case_N_mean_abs_error_min_median_max (2.0, 1.0, 4.0) 1024 [0.00038457885939169323, 0.006413025831540242, 0.03468498808866061] negative_mass_error [0.0002400083089370104, 0.00046266183886994677, 0.005563062325522641]\nMC_summary_case_N_mean_abs_error_min_median_max (0.0, 4.0, 1.0) 64 [0.021816819803418118, 0.07019813484207053, 0.19306820684968445] negative_mass_error [0.001240169284981274, 0.05326129978967925, 0.099298526368305]\nMC_summary_case_N_mean_abs_error_min_median_max (0.0, 4.0, 1.0) 256 [0.0029713945550607582, 0.041086097220971764, 0.11947880319902993] negative_mass_error [0.00229998625946759, 0.022180596255392954, 0.07600344528029446]\nMC_summary_case_N_mean_abs_error_min_median_max (0.0, 4.0, 1.0) 1024 [0.005206098225258016, 0.029315468325132175, 0.06314903527437493] negative_mass_error [0.010798315978584272, 0.014072250989173196, 0.04918098455635356]\nMC_all_trials_preserved_in_mc_rows 90\nmulti_seed_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/particle-filter#3",
+          "title": "随机游走的逐拍bootstrap滤波",
+          "index": 3,
+          "line": 264,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 27,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sequential_grid_steps_max_difference_last 20 7.275957614183432e-15 [6.139089236967271e-15, 4.629100471168366, 0.49999999999999845]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 117,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sequential_N_negative_mass_min_median_max_lost 64 [0.0, 0.7004945776451519, 1.0] 4\nsequential_N_negative_mass_min_median_max_lost 256 [0.2588582158759335, 0.5600514125666292, 0.8453609524270024] 0\nsequential_N_negative_mass_min_median_max_lost 1024 [0.3810491671474527, 0.47489758747889177, 0.622424116915266] 0\nsequential_all_histories_preserved_in_seq_rows 30 20\nsequential_filter_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "estimation/particle-filter",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 3,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 3,
+    "codeOnly": 0
+  }
+}

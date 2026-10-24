@@ -215,7 +215,7 @@
 | EST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/03-kalman-filter.md;.agent/semester-03/est-03/acceptance.md;commit:5aaa266e8595079b670437ef26df87298e83ca12 |
 | EST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/04-extended-kalman-filter.md;.agent/semester-03/est-04/acceptance.md;commit:ad91f73a2499ad184c34a1d0c8cd3434fe87c46a |
 | EST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/05-unscented-kalman-filter.md;.agent/semester-03/est-05/acceptance.md;commit:61aaf292057ac2fa04414c9730d1ce9676b7f465 |
-| EST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| EST-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/10-estimation/06-particle-filter.md;.agent/semester-03/est-06/acceptance.md |
 | EST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 

@@ -1,3 +1,4 @@
+import { ParticleFilterExplorer } from "@/components/wiki/particle-filter-explorer";
 import { GpcExplorer } from "@/components/wiki/gpc-explorer";
 import { SubspaceIdentificationExplorer } from "@/components/wiki/subspace-identification-explorer";
 import { RepresentationBasicsExplorer } from '@/components/wiki/representation-basics-explorer';
@@ -142,6 +143,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  ParticleFilterExplorer,
   GpcExplorer,
   SubspaceIdentificationExplorer,
   RepresentationBasicsExplorer,
