@@ -5064,7 +5064,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "送餐前要不要充电",
+            "title": "送餐前要不要充电"
+          },
+          {
+            "slug": "一次交互的先后顺序",
+            "title": "一次交互的先后顺序"
+          },
+          {
+            "slug": "把任务写成mdp",
+            "title": "把任务写成MDP"
+          },
+          {
+            "slug": "奖励与整段回报",
+            "title": "奖励与整段回报"
+          },
+          {
+            "slug": "策略改变未来数据",
+            "title": "策略改变未来数据"
+          },
+          {
+            "slug": "最小实验与评估",
+            "title": "最小实验与评估"
+          },
+          {
+            "slug": "边界与常见误解",
+            "title": "边界与常见误解"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "dynamic-programming",

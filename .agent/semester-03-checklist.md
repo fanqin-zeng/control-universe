@@ -264,7 +264,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| RL-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| RL-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/14-rl-control/01-rl-basics.md;.agent/semester-03/rl-01/acceptance.md;rank8独立验收完成，待真实master回执 |
 | RL-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

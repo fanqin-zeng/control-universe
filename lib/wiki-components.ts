@@ -1,3 +1,4 @@
+import { RlProblemExplorer } from "@/components/wiki/rl-problem-explorer";
 import { SupervisedLearningExplorer } from "@/components/wiki/supervised-learning-explorer";
 import { MultiAgentOverviewExplorer } from "@/components/wiki/multi-agent-overview-explorer";
 import { DrivingSystemExplorer } from "@/components/wiki/driving-system-explorer";
@@ -104,6 +105,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  RlProblemExplorer,
   SupervisedLearningExplorer,
   MultiAgentOverviewExplorer,
   DrivingSystemExplorer,
