@@ -5941,13 +5941,59 @@ export const catalog: Chapter[] = [
       {
         "slug": "imitation-learning",
         "title": "模仿学习",
+        "subsections": [
+          {
+            "slug": "从搬杯子到学动作",
+            "title": "从搬杯子到学动作"
+          },
+          {
+            "slug": "行为克隆的输入输出",
+            "title": "行为克隆的输入输出"
+          },
+          {
+            "slug": "从示范拟合一个策略",
+            "title": "从示范拟合一个策略"
+          },
+          {
+            "slug": "离线误差与闭环偏移",
+            "title": "离线误差与闭环偏移"
+          },
+          {
+            "slug": "在访问过的状态上问专家",
+            "title": "在访问过的状态上问专家"
+          },
+          {
+            "slug": "新增数据也有表达能力边界",
+            "title": "新增数据也有表达能力边界"
+          },
+          {
+            "slug": "同一画面可以有多种动作",
+            "title": "同一画面可以有多种动作"
+          },
+          {
+            "slug": "训练与部署的验收合同",
+            "title": "训练与部署的验收合同"
+          },
+          {
+            "slug": "方法边界与资料",
+            "title": "方法边界与资料"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "robot-learning/robot-data",
-          "machine-learning/autodiff-optimization"
+          "machine-learning/supervised-learning"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "offline-online-learning",

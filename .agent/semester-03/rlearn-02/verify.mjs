@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {performance} from 'node:perf_hooks';
+import ts from 'typescript';
+import {extractNotebooks} from '../../../scripts/lib-mdx.mjs';
+const dir='.agent/semester-03/rlearn-02/',key='robot-learning/imitation-learning';
+const source=fs.readFileSync('content/'+key+'.mdx','utf8').replace(/\r\n/g,'\n');
+const sourceHash=createHash('sha256').update(source).digest('hex');
+const module={exports:{}};new Function('exports','module',ts.transpileModule(fs.readFileSync('lib/imitation-learning.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText)(module.exports,module);
+const {imitationRollout,imitationDefaults}=module.exports;
+const grid=JSON.parse(execFileSync('python',[dir+'reference.py','--grid'],{encoding:'utf8',maxBuffer:16*1024*1024}));
+let maxError=0,nodes=0;const close=(a,b)=>{maxError=Math.max(maxError,Math.abs(a-b));assert(Math.abs(a-b)<1e-10*(1+Math.abs(b)),a+' != '+b);};
+const actual=grid.map(row=>{const r=imitationRollout(row),p=row.result;assert.equal(r.points.length,p.points.length);assert.equal(r.exited,p.exited);assert.equal(r.lastStep,p.lastStep);for(let i=0;i<r.points.length;i++){assert.equal(r.points[i][0],p.points[i][0]);close(r.points[i][1],p.points[i][1]);assert(Math.abs(r.points[i][1])<=1.25);nodes++;}close(r.finalX,p.finalX);close(r.expertFinal,p.expertFinal);close(r.trainMSE,p.trainMSE);for(const[n,x]of r.expert){assert(n>=0&&n<=20);assert(Math.abs(x)<=1.25);}return{...row,result:r};});
+const defaultResult=imitationRollout(imitationDefaults);close(defaultResult.finalX,0.3);close(defaultResult.trainMSE,1/6000);
+const notebooks=extractNotebooks(source),timings=[];
+const outputs=notebooks.map(nb=>{const t=performance.now();const out=execFileSync('python',['-c',[nb.setup?.value||'',...nb.cells.map(c=>c.value)].join('\n')],{encoding:'utf8'}).replace(/\r\n/g,'\n').trim();timings.push(performance.now()-t);return out;});
+for(const[i,token]of [[0,'constant_train_mse: 0.000066667'],[0,'validation_mse_constant: 0.000225000'],[1,'default last_step 20 x 0.300000000'],[1,'wrong_direction last_step 11 x 1.064512556'],[1,'first_outside_training_step: 3'],[2,'collected_steps/new_queries/total_labels: 20 1 4'],[2,'after_constant_x20: [-0.35, -0.25, -0.15]'],[3,'mean_loss/left_mode_loss: 0.04 0.08']])assert(outputs[i].includes(token),token);
+let pyodideIdentical=false;
+if(fs.existsSync(dir+'pyodide.json')){const proof=JSON.parse(fs.readFileSync(dir+'pyodide.json','utf8'));const l=proof.lessons.find(l=>l.key===key);assert(proof.complete);assert.equal(l.sourceHash,sourceHash);for(let i=0;i<outputs.length;i++)assert.equal(l.notebooks[i].cells.flatMap(c=>c.outputs).map(o=>o.text||'').join('').trim(),outputs[i]);pyodideIdentical=true;}
+fs.writeFileSync(dir+'actual-ts.json',JSON.stringify(actual));
+fs.writeFileSync(dir+'reconciliation.json',JSON.stringify({pass:true,sourceHash,cases:grid.length,nodes,maxError,defaultResult,outputs,nativeProcessMilliseconds:timings,pyodideIdentical},null,2)+'\n');
+console.log(JSON.stringify({pass:true,cases:grid.length,nodes,maxError,notebooks:notebooks.length,pyodideIdentical,sourceHash}));

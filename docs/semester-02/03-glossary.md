@@ -632,6 +632,9 @@
 | 遗忘因子 | forgetting factor | — | ID-03 | 本课旧样本和初始化先验均按lambda指数衰减 |
 | 变量含误差 | errors-in-variables | — | ID-03 | 测量误差进入回归量，须另核与方程误差的相关性 |
 | 协方差膨胀 | covariance windup | — | ID-03 | RLS信息不足时的逆信息量增长；不同于积分饱和，不将裸windup作为本项英文键 |
+| 模仿学习 | Imitation Learning | — | 1 门 / 1 次 | RLEARN-02：借助专家示范或反馈学习策略；不等同强化学习。 |
+| 行为克隆 | Behavior Cloning、BC | — | 1 门 / 1 次 | RLEARN-02：监督拟合专家动作；动作损失不等于闭环任务代价。 |
+| 数据集聚合 | Dataset Aggregation、DAgger | — | 1 门 / 1 次 | RLEARN-02：在学习者访问的观测上查询专家并聚合训练；性能界有条件。 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

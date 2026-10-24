@@ -262,7 +262,7 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 18.1 | 机器人数据 | robot-data | ✅ 已交付 v1.3 | grad | learning | 3 | machine-learning/learning-problem<br>math/probability-basics |
-| 18.2 | 模仿学习 | imitation-learning | ⬜ 骨架（占位页） | grad | learning | 8 | robot-learning/robot-data<br>machine-learning/autodiff-optimization |
+| 18.2 | 模仿学习 | imitation-learning | ✅ 已交付 v1.3 | grad | learning | 6 | robot-learning/robot-data<br>machine-learning/supervised-learning |
 | 18.3 | 离线到在线学习 | offline-online-learning | ⬜ 骨架（占位页） | grad | learning | 12 | robot-learning/imitation-learning<br>rl-control/offline-rl |
 | 18.4 | 残差学习控制 | residual-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>nonlinear/lyapunov-stability |
 | 18.5 | 仿真到现实 | sim-to-real | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>robust/uncertainty-modeling |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 88（status = v1.3）
+- **已交付 v1.3**: 89（status = v1.3）
 - **有正文待审校**: 14（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 103（status = empty，渲染占位页）
+- **骨架占位**: 102（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 117（= draft 14 + empty 103 + 无 status 0）
-- **有 MDX 正文**: 102
-- **catalog 小节总数**: 1131
-- **讨论日志**: 110 篇（覆盖 88 门；有 MDX 无日志 14 门）
-- **交互组件**: 98 个文件（被正文引用 98，孤儿 0）
+- **未完成 v1.3**: 116（= draft 14 + empty 102 + 无 status 0）
+- **有 MDX 正文**: 103
+- **catalog 小节总数**: 1142
+- **讨论日志**: 111 篇（覆盖 89 门；有 MDX 无日志 14 门）
+- **交互组件**: 99 个文件（被正文引用 99，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

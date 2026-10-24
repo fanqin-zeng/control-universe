@@ -325,7 +325,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | RLEARN-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/18-robot-learning/01-robot-data.md;.agent/semester-03/rlearn-01/acceptance.md;commit:4909e2e73d53c87a1925ec8baff647c1e0b79e93 |
-| RLEARN-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| RLEARN-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/18-robot-learning/02-imitation-learning.md;.agent/semester-03/rlearn-02/acceptance.md;rank12，独立8203/9002验收 |
 | RLEARN-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
