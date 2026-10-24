@@ -25,3 +25,5 @@
 资源回收：自有端口内12个kernel已DELETE，health剩余0；核PID/命令行后关闭自有kernel与fixture服务，原生/Pages/浏览器由finally关闭；详kernels-closed.json和resources-closed.json。他人进程未操作。
 
 真实交付提交：`29081cbade38b9939831f0afcc9af6107b466e65`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。
+
+用户后续明确授权Pages发布：gh-pages `b6a37b164c06da306c40b34a165dfded768dd4fd`，Actions与公网复核通过，见docs/deployment/id09-release.md及pages-release/public-validation.json；未自动发布其它后续课程。

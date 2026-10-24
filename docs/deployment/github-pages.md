@@ -68,3 +68,7 @@ MODERN-01授权发布（2026-10-18）：用户要求本课完成后发布当前�
 
 2026-10-24用户要求将已完成内容推送Pages：固定master `bd2b41c31a38cbddfde3e2b1355a7eb6da413708`，正常no-ff合入gh-pages `de6069b43eb22902f4099c88e2aae48ba587ca9c`，内容树完全一致。GitHub Actions成功，规范公网域名已为https://fanqin-zeng.github.io/control-universe/ 。全站205课/9旧入口与资源、未知页404、EST-01—08共20本40cell页内实跑/精确锚点/375px通过；EST-08离群门限控件与恢复通过。只发布获准快照，后续并行master更新未自动发布。证据[本次发布记录](est08-release/README.md)。
 <!-- EST08-PAGES-RECEIPT-END -->
+
+<!-- ID09-PAGES-RECEIPT-BEGIN -->
+2026-10-24用户授权发布ID-09：固定master dcaa4c8，正常合入gh-pages b6a37b1。Actions构建/部署与公网235请求通过；ID-09三个Notebook/3cell页内运行、1023输出对账、375px与控件通过。详见[发布记录](id09-release.md)。未发布之后的并行master更新。
+<!-- ID09-PAGES-RECEIPT-END -->

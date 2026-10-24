@@ -1,0 +1,10 @@
+from pathlib import Path
+root=Path('D:/Workspace/control-universe');e=root/'.agent/semester-03/id-09/pages-release';w=Path('D:/Workspace/control-universe-rank3-pages-id09')
+s=(w/'scripts/verify-public-pages.mjs').read_text(encoding='utf8').replace('https://fanqing-zeng.github.io','https://fanqin-zeng.github.io').replace("'./lib-catalog.mjs'",repr((w/'scripts/lib-catalog.mjs').as_uri())).replace("'../lib/lesson-compat.mjs'",repr((w/'lib/lesson-compat.mjs').as_uri()))
+(e/'public-http.mjs').write_text(s,encoding='utf8')
+s=(root/'.agent/semester-03/id-09/page-audit.cjs').read_text(encoding='utf8')
+insert='''const streams=await page.locator('section[data-python-mode="browser"] [aria-label="输出 1"]').allTextContents();assert.equal(streams.length,3);const values=streams.map(t=>JSON.parse(t.split('\\n')[0])),expected=JSON.parse(fs.readFileSync(f+'notebook-expected.json','utf8'));let compared=0,maxError=0;
+function same(a,b){if(b===null||typeof b==='boolean'||typeof b==='string'){assert.deepEqual(a,b);}else if(Array.isArray(b)){assert.equal(a.length,b.length);b.forEach((v,i)=>same(a[i],v));}else if(typeof b==='object'){assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort());for(const k of Object.keys(b))same(a[k],b[k]);}else{compared++;const error=Math.abs(a-b);maxError=Math.max(error,maxError);assert(error<1e-8);}}same(values,expected);assert.equal(compared,1023);const crypto=require('node:crypto'),worker=await(await page.request.get('https://fanqin-zeng.github.io/control-universe/python-worker.js')).text(),workerHash=crypto.createHash('sha256').update(worker.replace(/\\r\\n/g,'\\n')).digest('hex');assert.equal(workerHash,JSON.parse(fs.readFileSync(f+'pyodide.json','utf8')).workerHash);fs.writeFileSync(f+'pages-release/public-python.json',JSON.stringify({pass:true,values,compared,maxError,workerHash,streams},null,2));
+'''
+needle="const actual=JSON.parse(fs.readFileSync(f+'actual-ts.json','utf8'))";assert needle in s;s=s.replace(needle,insert+needle);(e/'public-ui.cjs').write_text(s,encoding='utf8')
+print('Prepared exact-source public HTTP and actual page/1023-value audits')
