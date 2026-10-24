@@ -1,6 +1,6 @@
 # ML-03 神经网络基础验收
 
-2026-10-24；rank2；本课从空占位新写。已按新写Phase1–4完成，最终横轴排版复验通过，待写入master真实提交回执。
+2026-10-24；rank2；本课从空占位新写。已按新写Phase1–4完成，最终横轴排版复验通过，真实交付已提交并推送master。
 
 范围：content/machine-learning/neural-networks.mdx；lib/neural-network-basics.ts；components/wiki/neural-network-basics-explorer.tsx；单一注册器与本课目录元数据；讨论日志、进度与Python政策本课条目。所有数据为自造无量纲教具，无训练或现实水泵试验。
 
@@ -29,6 +29,10 @@
 
 最终投影元数据基线：bae122d38cad76d02da19513aa3aace7a9908710；与最终构建基线d76422d之间仅其它课验收/回执文档变化，无课程或运行时代码差异。最终学期守卫exit0、Python政策exit0（99课/418可运行/14保留代码）、验证脚本exit0，见final-semester.log/final-python-policy.log/final-validation.log。术语与公式最终复验退出0。shared-final-check.log保留6个共享在制不一致（他课tracker和共享统计）；本课以隔离完整投影check为准，未改他课字段来消除共享失败。
 
-最终隔离npm run check：exit0，PASS21/WARN2/FAIL0，见final-check.log。所有必需门槛完成后签发；真实hash在提交后补记。
+最终隔离npm run check：exit0，PASS21/WARN2/FAIL0，见final-check.log。所有必需门槛完成后签发；真实hash见下方回执。
 
 并行DRIVING-02在暂存前进入master；首次提交保护发现HEAD已前进，未修改任何分支。已基于7d1b49bb501e57e13babeb39cbb2b130f23206c4重投影并重跑check/学期守卫，均exit0（PASS21/WARN2/FAIL0）。本课已构建源码保持不变，新增他课由其自身证据交付；本轮没有把早先整站构建冒称覆盖这次新主干源码。
+
+真实交付回执：commit:4ed302698915b30c3228a60753bb450d13cf56ed，parent:7d1b49bb501e57e13babeb39cbb2b130f23206c4；2026-10-24正常push origin master成功。独立Git索引只含ML-03字段，分支使用预期旧HEAD的原子比较更新，HEAD推进时先中止再刷新。origin返回仓库迁移提示但推送成功，未擅改远端地址。共享正常暂存区存在其它进程的index.lock，尝试仅同步本课新增文件被Git拒绝，未执行reset、未删除锁。提交始终使用独立索引，真实工作文件存在；正常索引的旧快照可能把本课显示为虚假删除/未跟踪，未擅自清理其它会话的索引状态。未发布gh-pages，不继续ML-04。
+
+回执前复验：以真实交付4ed3026为基线，仅补ML-03真实hash/已进入master列，隔离npm run check和check-semester03均退出0（PASS21/WARN2/FAIL0），见receipt-check.log、receipt-semester.log。
