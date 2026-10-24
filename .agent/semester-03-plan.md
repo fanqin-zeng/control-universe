@@ -103,6 +103,7 @@
 | ML-08 | IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-08，rank2；保留并行实现课，仅依赖已交付ML-04/随机过程/ODE | .agent/semester-03/ml-08/acceptance.md |
 | EST-08 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09 | 2026-10-24用户明确指定继续EST-08，rank4；保留并行课程，只依赖已交付EST-06/07与KF基础 | .agent/semester-03/est-08/acceptance.md |
 | ROBUST-06 | IMPL-10;ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
+| ID-09 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-09，rank3；保留并行课程，闭环/频域已交付；评估课未交付，局部定义分区与冻结，ID08提供已交付支撑 | .agent/semester-03/id-09/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：

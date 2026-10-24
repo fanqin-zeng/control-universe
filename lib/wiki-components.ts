@@ -1,3 +1,4 @@
+import { IdentificationCaseExplorer } from "@/components/wiki/identification-case-explorer";
 import { ImplementationCaseExplorer } from "@/components/wiki/implementation-case-explorer";
 import { EstimationCaseExplorer } from "@/components/wiki/estimation-case-study-explorer";
 import { MixedSensitivityExplorer } from '@/components/wiki/mixed-sensitivity-explorer';
@@ -153,6 +154,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  IdentificationCaseExplorer,
   ImplementationCaseExplorer,
   EstimationCaseExplorer,
   HilRehearsalExplorer,
