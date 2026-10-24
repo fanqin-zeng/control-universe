@@ -24,7 +24,7 @@ for key,value in run['values'][0]['coefficients'].items():
 for key in ['aq','bq','scale','first','fixedFirst','finalFloat','finalFixed','maxError','clipped','deadbandBound']:
     val=ref['example'][key]
     nb=f'NB2/c1默认={val:.16g}' if key not in ['bq','scale'] else f'NB1/2整数B=24与S=2^8换算={val:.16g}'
-    comp=f'默认实际TS={actual[3*3+3][key]:.16g}' if False else f'默认实际TS={next(r for r in actual if r["Ts"]==.02 and r["F"]==8 and r["signal"]=="step")[key]:.16g}'
+    comp=f'默认实际TS={next(r for r in actual if r["Ts"]==.02 and r["F"]==8 and r["signal"]=="step")[key]:.16g}'
     add(f'默认 {key}={val:.12g}',nb,comp,'Ts=.02,F8,step；k0..79；末拍不是稳态；表显六位5.1e-7')
 for row in ref['cases']:
     if row['Ts']!=.02:continue
