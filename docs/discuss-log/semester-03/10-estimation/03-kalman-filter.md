@@ -78,7 +78,7 @@
 
 [郑核-签发] 数学条件、十题所有子问与原12H2去向已核；柯验独立对账全部通过，何疑两类比较均有匹配持平工况，秦构九项及四条补充门槛均有实际证据。正文、Notebook、组件与最终sourceHash绑定，未继承旧v1.3作为本轮完成。仅本课签发，中文独立润色待后续模型，下一课EST-04不自动生产。
 
-交付清单：12H2正文、3Notebook/6cell、KalmanNoiseExplorer、SVG、单一注册表、catalog/tracker/自动OUTLINE、来源/纠错矩阵、数值/原始内核/Pyodide/真实页面/构建证据、fix-079与本期checklist。真实提交后补master回执；不发布gh-pages。
+交付清单：12H2正文、3Notebook/6cell、KalmanNoiseExplorer、SVG、单一注册表、catalog/tracker/自动OUTLINE、来源/纠错矩阵、数值/原始内核/Pyodide/真实页面/构建证据、fix-079与本期checklist。实际master交付commit:5aaa266e8595079b670437ef26df87298e83ca12，首次push退出0，回执见acceptance.md；不发布gh-pages。
 
 ## 附录 A：数值证据（全部实测数据的唯一留存副本）
 

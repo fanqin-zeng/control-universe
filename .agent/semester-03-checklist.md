@@ -209,7 +209,7 @@
 |---|---|---|---|---|---|---|---|
 | EST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/01-estimation-problem.md;.agent/semester-03/est-01/acceptance.md;commit:bd52f391638024b7b339dc293a8aae5cf9e50a1a |
 | EST-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/02-least-squares-ml.md;.agent/semester-03/est-02/acceptance.md;commit:a684aa870802871eb82282f1756da9b5173e5037 |
-| EST-03 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/10-estimation/03-kalman-filter.md;.agent/semester-03/est-03/acceptance.md |
+| EST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/03-kalman-filter.md;.agent/semester-03/est-03/acceptance.md;commit:5aaa266e8595079b670437ef26df87298e83ca12 |
 | EST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

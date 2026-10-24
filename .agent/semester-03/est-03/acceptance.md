@@ -1,4 +1,4 @@
-# EST-03 卡尔曼滤波：验收完成，待master回执
+# EST-03 卡尔曼滤波：验收完成，已进入master
 
 2026-10-24用户明确指定继续EST-03，rank4。仅重构estimation/kalman-filter；EST-01与EST-02已交付。保留其它会话草稿、暂存区、端口与服务。使用独立运行副本D:/Workspace/control-universe-rank4-est03；Next18544、内核19214、实验夹具18314、Pages18644，启动前检查占用。
 
@@ -21,6 +21,8 @@
 
 最终普通与静态构建为bae122d38cad76d02da19513aa3aace7a9908710叠加本课，仅私有副本运行。最新master提交前另以CAS父提交重建元数据投影、跑catalog/semester/python门槛，记录commit-gates.json。共享check开工FAIL属于并行草稿，不作已通过证据。端口18214冲突保留原进程改18544，脚本初始化等待与第一次ODE失败均留日志。fix079归因既有规则执行不足；2/10原极点舍入复算可接受，未虚报错误。
 
-真实master提交与推送结果待提交后追加；不发布gh-pages。
+真实master交付提交commit:5aaa266e8595079b670437ef26df87298e83ca12，git push origin master退出0，详见push-main.json/log；不发布gh-pages。
 
 签发前独立投影catalog PASS21/WARN2/FAIL0、semester PASS、Python策略PASS，scope-commands.json记录实际退出码。最终Pages完整命令生成205课/9兼容入口，artifact约298MB；仅本地预览。首次遗漏Pages后处理与CRLF/LF验证脚本问题保留失败证据，已复验关闭。
+
+最终提交投影父提交a4d3d13ad871f6cbb63a8d4411c4e45345e2977c；npm run check为PASS21/WARN2/FAIL0，semester PASS，Python策略105课/439可运行/10代码展示。其它会话的已提交成果随父提交保留；这些全站数字不是本课独占关闭的债务。commit-gates.json记录四命令、退出码与私有索引边界。
