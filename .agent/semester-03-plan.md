@@ -81,6 +81,7 @@
 | ID-04 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-04，rank3；保留并行课程，仅依赖已交付ID-03和矩阵分解 | .agent/semester-03/id-04/acceptance.md |
 | EST-03 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-03”，rank4；EST-01/02已交付，仅重构本课 | .agent/semester-03/est-03/acceptance.md |
 | MPC-03 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-03，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-03/acceptance.md |
+| ML-04 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-04，rank2；保留并行实现课检查点，仅依赖已交付ML-03与数值方法 | .agent/semester-03/ml-04/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -865,6 +866,11 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### IMPL-04 样式复验补正
 
 隔离快照补齐实际postcss.config.mjs，两种生产构建及正确CSS下Pages/窄屏/浏览器Python已复验。数值源码不变；历史预览配置完整性仅登记QA02待核，见`.agent/semester-03/impl-04/css-isolation-audit.md`。
+
+
+### ML-04 本轮执行记录（2026-10-24）
+
+自动微分与训练从空占位按新写Phase1–4完成：温升预测误差引出计算图/共享边累加、最小反向AD、真实tanh网络全批更新、验证检查点与三种停止原因，再讲小批量计数和推理接口。十H2、两Notebook四cell、四题四答、一Explorer/SVG。真实TS120配置/40梯度点/5028实际更新对独立复步，保留两自主不稳定漂移；原始native/Pyodide/最终静态页面396量、两种构建与375px通过。手机长行内参数已修为逐项换行，证据.agent/semester-03/ml-04/acceptance.md，实际master回执提交后见checklist。rank2独立8212/8992与Git索引，保留并行会话与正常索引；本课独立顺序例外不沿用ML-03授权，W09/W16/QA01保留，不发布Pages、不生产ML-05。
 
 ### MPC-03 学期3交付（2026-10-24）
 

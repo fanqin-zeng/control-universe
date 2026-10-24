@@ -15237,21 +15237,98 @@
           ]
         }
       ]
+    },
+    {
+      "key": "machine-learning/autodiff-optimization",
+      "title": "自动微分与训练",
+      "sourceHash": "33745108f178a480b6c10770c34a49ae11a1fd90140210a0ff20bfe6ab1638fc",
+      "notebooks": [
+        {
+          "id": "machine-learning/autodiff-optimization#1",
+          "title": "共享节点与反向梯度",
+          "index": 1,
+          "line": 67,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3820,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"z\": 1.5, \"residual\": 0.5, \"new_prediction\": 1.25, \"loss\": 0.125, \"grad\": [1.0, 0.5], \"again\": [1.0, 0.5], \"after\": [0.4, 0.45], \"next_loss\": 0.03125}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"shared_r_gradient\": 0.5, \"reused_parameter_gradient\": 12.0, \"batches\": 3, \"updates\": 6, \"updates_drop\": 4, \"weights\": [0.4, 0.4, 0.2]}\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "machine-learning/autodiff-optimization#2",
+          "title": "真实训练与检查点",
+          "index": 2,
+          "line": 136,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 24,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"initial\": {\"step\": 0, \"p\": [0.5, 0, 0.5, 0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"first\": {\"step\": 1, \"p\": [0.5350735968940131, 0.006, 0.5396202878145763, 0.012], \"train\": 0.3664535804308655, \"validation\": 0.3210828838019295, \"norm\": 0.2737557842186987}, \"updates\": 200, \"status\": \"budget\", \"best\": {\"step\": 54, \"p\": [1.1747109672355356, 0.11135917275239028, 1.2600095204920143, -0.01952836299697747], \"train\": 0.01565980628878588, \"validation\": 0.013087390588376714, \"norm\": 0.01457330918039489}, \"last\": {\"step\": 200, \"p\": [1.3999261765451942, 0.22394523328995136, 1.1711782610514534, -0.08154118530844026], \"train\": 0.010002613409859508, \"validation\": 0.014925424452454945, \"norm\": 0.007655386663971701}, \"rejected\": null, \"test\": 0.012577304055587624, \"last_test\": 0.01111225479938964}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 77,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"initial\": {\"step\": 0, \"p\": [0.5, 0, 0.5, 0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"first\": {\"step\": 1, \"p\": [0.5, 0.0, 0.5, 0.0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"updates\": 200, \"status\": \"budget\", \"best\": {\"step\": 0, \"p\": [0.5, 0, 0.5, 0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"last\": {\"step\": 200, \"p\": [0.5, 0.0, 0.5, 0.0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"rejected\": null, \"test\": 0.43055220999425836, \"last_test\": 0.43055220999425836}, {\"initial\": {\"step\": 0, \"p\": [0, 0, 0, 0], \"train\": 0.6217499334131238, \"validation\": 0.516422814055212, \"norm\": 0.06}, \"first\": {\"step\": 1, \"p\": [0.0, 0.0, 0.0, 0.012], \"train\": 0.6204539334131238, \"validation\": 0.516566814055212, \"norm\": 0.04799999999999999}, \"updates\": 70, \"status\": \"gradient\", \"best\": {\"step\": 0, \"p\": [0, 0, 0, 0], \"train\": 0.6217499334131238, \"validation\": 0.516422814055212, \"norm\": 0.06}, \"last\": {\"step\": 70, \"p\": [0.0, 0.0, 0.0, 0.059999990126972644], \"train\": 0.6181499334131239, \"validation\": 0.5200228128704487, \"norm\": 9.873027340123741e-09}, \"rejected\": null, \"test\": 0.668693229114802, \"last_test\": 0.6722932279300388}, {\"initial\": {\"step\": 0, \"p\": [0.5, 0, 0.5, 0], \"train\": 0.3962947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.2729434193012164}, \"first\": {\"step\": 1, \"p\": [1.2014719378802619, 0.12, 1.2924057562915254, 0.24], \"train\": 0.09084216900146802, \"validation\": 0.1266982261472674, \"norm\": 0.3407531102479159}, \"updates\": 5, \"status\": \"guard\", \"best\": {\"step\": 1, \"p\": [1.2014719378802619, 0.12, 1.2924057562915254, 0.24], \"train\": 0.09084216900146802, \"validation\": 0.1266982261472674, \"norm\": 0.3407531102479159}, \"last\": {\"step\": 5, \"p\": [-0.1895799215442017, 6.015952459672893, 83.71635005076922, 86.34886807554969], \"train\": 28902.04165282859, \"validation\": 28922.348567204208, \"norm\": 240.4210081857157}, \"rejected\": {\"step\": 6, \"train\": 1415809.466650062, \"validation\": 1415689.5938643748, \"norm\": 1721.910838550541}, \"test\": 0.1175596421192512, \"last_test\": 28922.496707663333}, {\"initial\": {\"step\": 0, \"p\": [0.5, 0, 0.5, 0], \"train\": 0.3782947525174729, \"validation\": 0.34349216131882043, \"norm\": 0.26457155958235506}, \"first\": {\"step\": 1, \"p\": [0.5350735968940131, 0.0, 0.5396202878145763, 0.0], \"train\": 0.3500554012147029, \"validation\": 0.3208532038765061, \"norm\": 0.2686918004388119}, \"updates\": 200, \"status\": \"budget\", \"best\": {\"step\": 200, \"p\": [1.33245412879397, -6.451002926288745e-19, 1.1752535802441244, 2.818925648462309e-19], \"train\": 0.0037305769798404755, \"validation\": 0.003623422219119204, \"norm\": 0.005783930238903098}, \"last\": {\"step\": 200, \"p\": [1.33245412879397, -6.451002926288745e-19, 1.1752535802441244, 2.818925648462309e-19], \"train\": 0.0037305769798404755, \"validation\": 0.003623422219119204, \"norm\": 0.005783930238903098}, \"rejected\": null, \"test\": 0.004666398096047791, \"last_test\": 0.004666398096047791}]\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 106,
-    "notebooks": 454,
-    "enabled": 445,
+    "lessons": 107,
+    "notebooks": 456,
+    "enabled": 447,
     "codeOnly": 9
   },
   "releaseTotals": {
-    "lessons": 106,
-    "notebooks": 454,
-    "enabled": 445,
+    "lessons": 107,
+    "notebooks": 456,
+    "enabled": 447,
     "codeOnly": 9
   },
   "provenance": [
@@ -15985,6 +16062,11 @@
       "testedAt": "2026-10-24T07:12:18.253Z",
       "url": "http://127.0.0.1:18796/python-expansion.html?lesson=mpc/receding-horizon",
       "inputPath": ".agent/semester-03/mpc-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T07:06:44.438Z",
+      "url": "http://127.0.0.1:8212/control-universe/python-expansion.html?lesson=machine-learning%2Fautodiff-optimization",
+      "inputPath": ".agent/semester-03/ml-04/pyodide.json"
     }
   ]
 }

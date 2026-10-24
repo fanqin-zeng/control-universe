@@ -3512,13 +3512,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "autodiff-optimization",
         "title": "自动微分与训练",
+        "subsections": [
+          {
+            "slug": "温升预测开始学参数",
+            "title": "温升预测开始学参数"
+          },
+          {
+            "slug": "计算图保存局部关系",
+            "title": "计算图保存局部关系"
+          },
+          {
+            "slug": "反向传播累加贡献",
+            "title": "反向传播累加贡献"
+          },
+          {
+            "slug": "实现最小自动微分",
+            "title": "实现最小自动微分"
+          },
+          {
+            "slug": "训练循环与数据隔离",
+            "title": "训练循环与数据隔离"
+          },
+          {
+            "slug": "学习率与停止原因",
+            "title": "学习率与停止原因"
+          },
+          {
+            "slug": "小批量与工程接口",
+            "title": "小批量与工程接口"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/neural-networks",
           "math/numerical-methods"
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "sequence-models",
