@@ -79,6 +79,7 @@
 | RL-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08 | 2026-10-24用户明确指定继续RL-02，rank8；保留并行前课，先修RL-01与变分法/动态规划已交付 | .agent/semester-03/rl-02/acceptance.md |
 | INTEL-02 | IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11 | 2026-10-24用户明确指定继续INTEL-02，rank7；保留并行课程，仅依赖已交付INTEL-01及PID/非线性基础 | .agent/semester-03/intel-02/acceptance.md |
 | ID-04 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-04，rank3；保留并行课程，仅依赖已交付ID-03和矩阵分解 | .agent/semester-03/id-04/acceptance.md |
+| EST-03 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-03”，rank4；EST-01/02已交付，仅重构本课 | .agent/semester-03/est-03/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -849,3 +850,9 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### RL-02执行回执（2026-10-24）
 
 价值函数与贝尔曼方程从空占位按新写Phase1–4完成；沿用一次送餐解释V/Q，另设循环模型，十H2、双图Explorer与SVG、两Notebook四cell、四题四答。线性系统/矩阵幂/有限时域LP独立核真实TS，严格内核与最终Pyodide及Pages/375px验收见.agent/semester-03/rl-02/acceptance.md。残差按返回向量重算，收缩条件与gamma=1边界清楚；已知模型规划不冒充训练，不比较不同任务回报大小。rank8隔离副本/独立暂存保留并行修改；顺序例外单独登记，仅本课，不发布Pages、不生产RL-03，真实hash见全局checklist。
+
+<!-- EST-03-RECEIPT-BEGIN -->
+### EST-03 学期3交付（2026-10-24）
+
+卡尔曼滤波按重构Phase1—4完成，保留原12H2、十题全部子问及三条Notebook教学目的。纠正噪声采样/单位、Q-R对偶与稳态条件、LQG裕度、退化ARE与工程题欠定；独立复算确认题2/10原极点舍入可接受，未虚报错误。3Notebook6cell、解析噪声失配Explorer与SVG，真实TS15配置1515点对ARE/Lyapunov/ODE及消元/迭代独立核，严格内核和Pyodide、普通与完整build:pages本地页面通过。rank4使用独立副本/索引，18214冲突保留原进程改18544，不碰共享服务与暂存；证据.agent/semester-03/est-03/acceptance.md，真实master回执见全局checklist，不发布Pages、不生产EST-04。
+<!-- EST-03-RECEIPT-END -->

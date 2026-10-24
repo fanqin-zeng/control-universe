@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-24T06:26:25.200Z",
-  "url": "http://127.0.0.1:18396/python-expansion.html?lesson=mpc/prediction-model",
+  "testedAt": "2026-10-24T06:48:06.849Z",
+  "url": "http://127.0.0.1:18314/python-expansion.html?lesson=estimation/kalman-filter",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
@@ -6847,26 +6847,38 @@
     {
       "key": "estimation/kalman-filter",
       "title": "卡尔曼滤波",
-      "sourceHash": "0f5b3c6addda9bf32ca878c20d5026e8a315099f933565df93984d6679609e78",
+      "sourceHash": "6205a0fad4c8ce16ac09bf11522d73b6ff47730969d7f3be9271d21aacd5131e",
       "notebooks": [
         {
           "id": "estimation/kalman-filter#1",
-          "title": " 动手实验：卡尔曼滤波求解与验证",
+          "title": "连续Riccati与习题复算",
           "index": 1,
-          "line": 256,
-          "cellCount": 1,
+          "line": 124,
+          "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 4168,
+              "milliseconds": 8392,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "P = \n[[1.73205081 1.        ]\n [1.         1.73205081]]\n\nKf = [1.73205081 1.        ]\n解析值: [1.7321, 1.0000]\n\n误差极点: [-0.8660254+0.5j -0.8660254-0.5j]\n阻尼比 ζ = 0.8660\n自然频率 ωn = 1.0000\n"
+                  "text": "double_P_Kf_poles [[1.732050808 1.         ]\n [1.          1.732050808]] [1.732050808 1.         ] [-0.866025404+0.5j -0.866025404-0.5j]\nARE_residual 1.368774871883577e-15\nscalar_a_q_r_p_k_pole -1 1 1 0.41421356237309515 0.41421356237309515 -1.4142135623730951\nscalar_a_q_r_p_k_pole -2 3 1 0.6457513110645907 0.6457513110645907 -2.6457513110645907\nscalar_a_q_r_p_k_pole -1 1 1 0.41421356237309515 0.41421356237309515 -1.4142135623730951\nscalar_a_q_r_p_k_pole -2 2 1 0.4494897427831779 0.4494897427831779 -2.449489742783178\nunit_LQG_K_poles [[1.          1.732050808]] [-0.866025404+0.5j -0.866025404-0.5j -0.866025404+0.5j -0.866025404-0.5j]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 18,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise2_P_K [[ 0.67196334  -0.274232635]\n [-0.274232635  0.3369545  ]] [ 0.67196334  -0.274232635]\nexercise2_poles_trace Kalman [-1.83598167+0.608957054j -1.83598167-0.608957054j] 1.00891784050037 [[ 0.67196334  -0.274232635]\n [-0.274232635  0.3369545  ]]\nexercise2_poles_trace placed [-6. -5.] 5.469696969696969 [[4.157575758 0.760606061]\n [0.760606061 1.312121212]]\nexercise2_three_cases low 0.14060217250863982 5.237878787878788\nexercise2_three_cases nominal 1.0089178405003696 5.469696969696969\nexercise2_three_cases tie 18.000000000000014 18.000000000000004\nexercise4_P_poles [[1. 0.]\n [0. 0.]] [-1.  0.]\nexercise10_S_K_control_poles_all [[8.558361596 3.16227766 ]\n [3.16227766  2.706391568]] [[3.16227766  2.706391568]] [-1.353195784+1.153749899j -1.353195784-1.153749899j] [-1.353195784+1.153749899j -1.353195784-1.153749899j\n -0.866025404+0.5j         -0.866025404-0.5j        ]\n"
                 }
               ]
             }
@@ -6874,32 +6886,39 @@
         },
         {
           "id": "estimation/kalman-filter#2",
-          "title": " 动手实验：卡尔曼滤波仿真",
+          "title": "连续噪声增量仿真",
           "index": 2,
-          "line": 311,
-          "cellCount": 1,
+          "line": 198,
+          "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 340,
+              "milliseconds": 267,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "x₁ 估计 RMSE: 0.3826\n"
+                  "text": "simulation_grid 2001 0.0 10.0 0.005\nsimulation_RMSE_seeds_0_to_4 [1.5207962001167965, 1.716222220592805, 1.2496064309121024, 1.0339288606393213, 1.2916132916855427]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 659,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "simulation_seed0_final_state_estimate [14.213243286  3.187940111] [15.261747954  2.474383604]\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 193444
-                },
-                {
-                  "type": "stream",
-                  "name": "stderr",
-                  "text": "<cell>:41: UserWarning: Glyph 8321 (\\N{SUBSCRIPT ONE}) missing from current font.\n<cell>:41: UserWarning: Glyph 8322 (\\N{SUBSCRIPT TWO}) missing from current font.\n<exec>:36: UserWarning: Glyph 8321 (\\N{SUBSCRIPT ONE}) missing from current font.\n<exec>:36: UserWarning: Glyph 8322 (\\N{SUBSCRIPT TWO}) missing from current font.\n"
+                  "base64Length": 155456
                 }
               ]
             }
@@ -6907,24 +6926,38 @@
         },
         {
           "id": "estimation/kalman-filter#3",
-          "title": " 动手实验：Q/R 对卡尔曼滤波性能的影响",
+          "title": "离散融合与协方差校准",
           "index": 3,
-          "line": 458,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "4155c41e74399051a8720a93ccf13a723cdc35a1ab957a67510b31bbf3ed9f3e",
-      "formattingProvenance": [
-        {
-          "lesson": "estimation/kalman-filter",
-          "fromSourceHash": "4155c41e74399051a8720a93ccf13a723cdc35a1ab957a67510b31bbf3ed9f3e",
-          "toSourceHash": "0f5b3c6addda9bf32ca878c20d5026e8a315099f933565df93984d6679609e78",
-          "notebookPayloadHash": "0624faaeb2deaa0bfd0a2efffc1c77280ec9e9c10413a851c603fc535a9d6427",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "line": 283,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "one_update_K_mean_variance 0.8 22.4 0.8\nmismatch_qa_K_nominal_actual 0.01 0.00498756211208895 0.00498756211208895 0.4975309712660337\nmismatch_qa_K_nominal_actual 1.0 0.41421356237309515 0.41421356237309515 0.41421356237309503\nmismatch_qa_K_nominal_actual 100.0 9.04987562112089 9.04987562112089 4.1244415295814445\nscalar_limit_stable_unstable 0 2\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise7_Qd_Rd [[0.0625 0.125 ]\n [0.125  0.25  ]] [[0.001111111]]\nexercise7_prior_posterior_K_poles [[0.096931852 0.156559065]\n [0.156559065 0.279784797]] [[0.001098519 0.001774268]\n [0.001774268 0.029784797]] [0.9886671   1.596841421] [-0.02004167  -0.565466851]\nall_numeric_checks_passed\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -15006,14 +15039,14 @@
   "totals": {
     "lessons": 105,
     "notebooks": 449,
-    "enabled": 438,
-    "codeOnly": 11
+    "enabled": 439,
+    "codeOnly": 10
   },
   "releaseTotals": {
     "lessons": 105,
     "notebooks": 449,
-    "enabled": 438,
-    "codeOnly": 11
+    "enabled": 439,
+    "codeOnly": 10
   },
   "provenance": [
     {
@@ -15731,6 +15764,11 @@
       "testedAt": "2026-10-24T06:47:20.562Z",
       "url": "http://127.0.0.1:18396/python-expansion.html?lesson=identification/persistent-excitation",
       "inputPath": ".agent/semester-03/id-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T06:48:06.849Z",
+      "url": "http://127.0.0.1:18314/python-expansion.html?lesson=estimation/kalman-filter",
+      "inputPath": ".agent/semester-03/est-03/pyodide.json"
     }
   ]
 }
