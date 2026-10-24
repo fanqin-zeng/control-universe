@@ -5384,7 +5384,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "从温度测量到最坏误差",
+            "title": "从温度测量到最坏误差"
+          },
+          {
+            "slug": "误差模型与能量合同",
+            "title": "误差模型与能量合同"
+          },
+          {
+            "slug": "固定增益的精确h指标",
+            "title": "固定增益的精确H∞指标"
+          },
+          {
+            "slug": "用耗散不等式验证上界",
+            "title": "用耗散不等式验证上界"
+          },
+          {
+            "slug": "选择滤波增益",
+            "title": "选择滤波增益"
+          },
+          {
+            "slug": "与卡尔曼滤波比较什么",
+            "title": "与卡尔曼滤波比较什么"
+          },
+          {
+            "slug": "有限实验与数字实现",
+            "title": "有限实验与数字实现"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "delay-robust-control",

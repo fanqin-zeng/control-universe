@@ -1,0 +1,82 @@
+{
+  "source": "content/robust/h-infinity-filter.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 74,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import quad\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,q,r,L=-1.,1.,.25,4.\r\nrate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 83,
+          "delim": "`",
+          "code": "# Two disturbance channels in the actual estimation-error system\r\na,q,r,L=-1.,1.,.25,4.\r\nrate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)])\r\nGerr=ctrl.ss([[-rate]],[B],[[1.]],np.zeros((1,2)))\r\nomega=np.r_[0.,np.logspace(-4,3,1001)]\r\nsigma=np.array([np.linalg.svd(np.asarray(Gerr(1j*w)).reshape(1,2),compute_uv=False)[0] for w in omega])\r\npeak=np.linalg.norm(B)/rate;variance=(B@B)/(2*rate)\r\nprint('default a,q,r,L=',a,q,r,L,'error pole=',-rate,'B=',B)\r\nprint('exact full-frequency peak=',peak,'variance under separate white-noise contract=',variance)\r\nprint('Hinf gain=',-q/(r*a),'Kalman gain=',a+np.sqrt(a*a+q/r))\r\nassert abs(sigma.max()-np.sqrt(.2))<1e-12\r\nfig,ax=plt.subplots(figsize=(8,3.5));ax.semilogx(omega[1:],sigma[1:]);ax.set(xlabel='rad/s',ylabel='row singular value');ax.grid();plt.tight_layout();plt.show()\r\nprint('error_model_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 96,
+          "delim": "`",
+          "code": "# Strict storage certificate, including the initial-error term\r\ngamma,p=.5,.25\r\nQ=np.block([[np.array([[2*(a-L)*p+1]]),p*B.reshape(1,2)],[p*B.reshape(2,1),-gamma**2*np.eye(2)]])\r\neigen=np.linalg.eigvalsh(Q)\r\nprint('BRL eigenvalues=',eigen,'Schur residual=',2*(a-L)*p+1+p*p*(B@B)/gamma**2)\r\nassert eigen.max()<0\r\ninitial_energy=1/(2*rate)\r\nprint('e0=1/no input: exact output energy=',initial_energy,'storage budget=',p)\r\nprint('gamma at exact norm has only a semidefinite certificate, not this strict inequality')\r\nprint('storage_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 205,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import quad\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,q,r,L=-1.,1.,.25,4.\r\nrate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 214,
+          "delim": "`",
+          "code": "# Finite-energy pulses: integrate the complete tail, not a final sample\r\ndirection=B/np.linalg.norm(B);pulse_reports=[]\r\nfor duration in [.2,2.,20.]:\r\n    def error_before(t):return np.linalg.norm(B)/rate*(-np.expm1(-rate*t))\r\n    e_end=error_before(duration)\r\n    energy=quad(lambda t:error_before(t)**2,0,duration,epsabs=1e-12)[0]+e_end**2/(2*rate)\r\n    ratio=np.sqrt(energy/duration)\r\n    pulse_reports.append({'duration':duration,'ratio':float(ratio),'inputEnergy':duration,'outputEnergy':float(energy)})\r\n    print('pulse',duration,'energy ratio=',ratio,'< exact gain',peak)\r\n    assert ratio<peak\r\nprint('default input direction w,v=',direction)\r\nt=np.linspace(0,4,1001);duration=2.;e=np.where(t<=duration,np.linalg.norm(B)/rate*(-np.expm1(-rate*t)),np.linalg.norm(B)/rate*(-np.expm1(-rate*duration))*np.exp(-rate*(t-duration)))\r\nfig,ax=plt.subplots(figsize=(8,3.5));ax.plot(t,e,label='error');ax.axvline(duration,color='gray',ls='--');ax.set(xlabel='time (s)',ylabel='normalized error');ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('finite_energy_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 228,
+          "delim": "`",
+          "code": "# Same observer family, two independently optimized objectives, three scales\r\ncomparison=[]\r\nfor q_i,r_i in [(1.,.25),(1.,1.),(.25,1.)]:\r\n    L_h=-q_i/(r_i*a);L_k=a+np.sqrt(a*a+q_i/r_i)\r\n    row={'q':q_i,'r':r_i}\r\n    for name,gain in [('Hinf',L_h),('Kalman',L_k),('noCorrection',0.)]:\r\n        noise=q_i+r_i*gain*gain;lam=gain-a\r\n        row[name]={'gain':gain,'peak':float(np.sqrt(noise)/lam),'variance':noise/(2*lam)}\r\n    comparison.append(row);print(row)\r\nprint('a=0 q=1 r=.25: infimum=.5, no finite minimizer')\r\nfor gain in [1.,4.,100.]:print('integrator gain=',gain,'exact peak=',np.sqrt(1+.25*gain**2)/gain)\r\nprint('a=1 L=.5: error pole=+.5, no stable Hinf norm or stationary variance')\r\nfor dt in [.02,.4,.5]:\r\n    factor=1-dt*5;print('Euler dt=',dt,'factor=',factor,'strict stable=',abs(factor)<1,'exact ZOH factor=',np.exp(-5*dt))\r\ngains=np.linspace(0,8,401);fig,ax=plt.subplots(1,2,figsize=(10,3.5))\r\nax[0].plot(gains,np.sqrt(1+.25*gains*gains)/(gains+1));ax[0].set(xlabel='L',ylabel='worst energy gain')\r\nax[1].plot(gains,(1+.25*gains*gains)/(2*(gains+1)));ax[1].set(xlabel='L',ylabel='stationary white-noise variance');plt.tight_layout();plt.show()\r\nprint('comparison_and_digital_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 305,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import quad\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,q,r,L=-1.,1.,.25,4.\r\nrate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 314,
+          "delim": "`",
+          "code": "# Four exercises, including boundary and initial-error cases\r\neigen=np.linalg.eigvalsh(np.array([[-1.5,.25,-.5],[.25,-.25,0],[-.5,0,-.25]]))\r\ndef metrics(gain):return {'gain':gain,'peak':float(np.sqrt(q+r*gain*gain)/(gain-a)),'variance':(q+r*gain*gain)/(2*(gain-a))}\r\nprint('Q1 Aerr=-5, B=[1,-2], peak=sqrt(5)/5=',np.sqrt(5)/5)\r\nprint('Q1 process-only gain=.2, measurement-only gain=.4; joint=sqrt(.2**2+.4**2)=',np.hypot(.2,.4))\r\nprint('Q2 gamma=.5 p=.25 max BRL eigenvalue=',eigen.max(),'initial-only energy=.1 <= p=.25')\r\nprint('Q2 persistent v=1 is not L2; stable DC error=-L*sqrt(r)/rate=',-L*np.sqrt(r)/rate)\r\nprint('Q3 default Hinf:',metrics(4.),'Kalman:',metrics(a+np.sqrt(a*a+q/r)))\r\nprint('Q4 a0 infimum=.5; L4 peak=',np.sqrt(5)/4,'strict Euler dt bound=.4; dt.4 is marginal; dt.5 diverges')\r\nprint('Q4 parameter mismatch: error gains valid only for the declared exact a and input scales')\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

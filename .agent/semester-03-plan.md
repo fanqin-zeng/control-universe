@@ -1037,3 +1037,8 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### MPC-11 学期3交付（2026-10-24）
 
 预测控制案例按重构Phase1–4保留12主题、五题15子问与41旧ID，9位置别名。修正不平衡点、单位/精确ZOH/持续输入预测/温度截断与20%鲁棒性断言，明确2×3扩展；新CSTR原QP与未截断非线性闭环。实际TS648QP/8闭环320输入对独立expm、复步Jacobian、SLSQP原残差KKT及DOP853；严格内核/生产Pyodide/普通与Pages本地/375px见.agent/semester-03/mpc-11/acceptance.md。S04原Notebook债务本课实跑清除，历史清单保留；fix090。rank6隔离21896/9136/21996/22096与临时独立索引，保留并行内容，本会话未发布Pages，不自动生产后续课程。真实hash见checklist。
+
+
+### ROBUST-09 本期交付记录（2026-10-24）
+
+H∞滤波从空占位新写Phase1–4交付：九H2、四题全子问、三Notebook五cell、四滑块双图与信号SVG。标量误差两通道/零初值L2与初始储能、BRL/族内解析最优/白噪声Kalman目标/完整脉冲尾部/Euler与ZOH边界可复算；a0无有限最优、误差失稳与H∞方差落败完整保留。实际TS481配置、241独立优化/CARE/Lyapunov/SVD/quad/SymPy、严格内核/Pyodide、双生产构建/375px与历史URL证据见.agent/semester-03/robust-09/acceptance.md。既有Pages重定向后处理在私有导出目录执行，官方verify-pages205课/9旧路由通过，不改发布基础设施。rank5资源隔离，不发布Pages、不生产ROBUST-10，实际master回执见checklist。
