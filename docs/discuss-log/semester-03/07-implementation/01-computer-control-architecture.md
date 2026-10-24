@@ -213,3 +213,7 @@ Pages补充门槛：快照 npm run build:pages → exit0，205课、9历史路�
 | URL/H2与旧材料 | 本路径不迁移，9个H2保持 | 保留 | 原URL与全部H2锚点；原文完整归档 | renderedHeadings及真实DOM |
 
 未迁材料：无。协议细节、嵌入式与调度深讲仍归后续课程，本课保留独立可读的边界说明，不删原主题。
+
+## 真实交付回执
+
+master交付提交：58811f8fe3defeff14261bb1ccc5f8ab1dcfa685。本课Phase1–4与验收已完成，进入master列据真实提交登记。与并行ID-01/ML-01共享文件按课程条目核对，仅暂存本课改动；不发布gh-pages。

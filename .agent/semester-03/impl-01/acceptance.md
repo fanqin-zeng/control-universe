@@ -1,6 +1,6 @@
 # IMPL-01 控制系统架构验收
 
-本课按wiki-lesson-refactor完成起点审计、保留矩阵、Phase1–4、真实数值与页面验收，郑核据证据签发。待真实master提交后补交付hash，不预填。
+本课按wiki-lesson-refactor完成起点审计、保留矩阵、Phase1–4、真实数值与页面验收，郑核据证据签发。真实master交付提交为 `58811f8fe3defeff14261bb1ccc5f8ab1dcfa685`，已据实登记进入master列。
 
 本课文件范围：正文、独立预算计算/Explorer/唯一注册、两SVG、讨论日志、本目录证据、catalog本课状态、tracker本课行、checklist本课行、自动OUTLINE与Python运行记录本课条目、fix-071。保留现有用户运行端口脚本、Notebook组件和批阅修改；不带入并行ML/ID课程内容。
 
@@ -49,3 +49,14 @@ Windows拒绝绑定8291（EACCES）；未终止任何其它会话服务，静态
 并行ID-01已先行提交，当前提交范围以3880b2a62c3e428aa4185db8b8d1cb3161643cf6为父基线重新生成元数据，保留其完整交付，不回退其记录。本课源码构建/浏览器验收起点仍记af7c206，具体范围见staging-base.json。更新后的scoped-semester-check.json errors=[]、merged61（本课回执尚未计入）；scoped-check.log独立重验退出0。
 
 ML-01亦已完成独立提交与回执。最终暂存基线刷新为28e24b075cdf4ed81458fca671fe2e923ef311fb；重新生成本课元数据并执行scoped-check（PASS21/WARN2/FAIL0）、scoped-python-policy（85课/381可运行/16代码保留）及scoped-semester-check（errors=[]、merged62，尚未含本课回执），保留两条并行交付历史。
+
+真实master交付提交：58811f8fe3defeff14261bb1ccc5f8ab1dcfa685。提交逐路径审查只含IMPL-01；共享Python策略/执行记录逐课程语义比对确认其它课程无变化。原始工具stdout的行末空白保留，代码与文档的git diff --check通过。
+
+## 回执后的最终校验
+
+- `node scripts/check-semester03.mjs`：退出0，merged63，见semester-check-final.log。
+- 同一校验函数按真实HEAD与本课回执行构造提交范围、保留文件/提交可读检查：errors=[]，见scoped-semester-check-final.json。
+- `npm run check`（本课独立快照，当前HEAD加本课已提交元数据）：退出0，PASS21/WARN2/FAIL0，见check-final-scoped.log。
+- 最后一次共享工作区`npm run check`退出1：并行新增的第79个Explorer使全局统计行暂时仍报78，另有ID-02新稿尚未登记等WARN；见check-final.log。不修改或提交这些在写课程，先前全工作区PASS不冒充这个新时点的结果。
+
+仅保留9191本地静态预览；本课8991内核已停止，8191生产服务已停止，主工作区.next/out未清理。静态预览是验收快照，不是公网发布。
