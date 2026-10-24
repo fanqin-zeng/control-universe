@@ -219,7 +219,7 @@
 | EST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/05-unscented-kalman-filter.md;.agent/semester-03/est-05/acceptance.md;commit:61aaf292057ac2fa04414c9730d1ce9676b7f465 |
 | EST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/06-particle-filter.md;.agent/semester-03/est-06/acceptance.md;commit:7a7377f21f6b1538b3fb0e3cd19dd82260472484 |
 | EST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/07-sensor-fusion.md;.agent/semester-03/est-07/acceptance.md;commit:87ebadfedee9e830591ce382e0f20a3ead99ec7b |
-| EST-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/10-estimation/08-estimation-case-study.md;.agent/semester-03/est-08/acceptance.md |
+| EST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/08-estimation-case-study.md;.agent/semester-03/est-08/acceptance.md;commit:08893d73e521795745934a21c43da9a6108ea4af |
 
 ### 鲁棒控制
 

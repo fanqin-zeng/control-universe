@@ -1,4 +1,4 @@
-# EST-08 状态估计案例：验收完成，待master回执
+# EST-08 状态估计案例：验收完成，已进入master
 
 rank4，仅本课，空占位按Phase1—4新写并签发。10H2/四题全部子问/3Notebook6cell/Explorer/PCG64输入/SVG。LF sourceHash=6dd4da18c6ad4be3632c2a12050ee87f476f18ebcaf303acb84b14c85bfd511c，五份资产与四份共享依赖的实际构建指纹归档。
 
@@ -19,4 +19,4 @@ rank4，仅本课，空占位按Phase1—4新写并签发。10H2/四题全部子
 
 默认融合RMSE .476373大于单路.374476；门限效果限给定三工况，极端正常噪声误拒反例与20种子观察分开。报告带/选择后的协方差不冒充安全或校准保证。
 
-真实master提交与推送结果待提交后追加。独立中文润色仍待其它模型；Pages仅本地验收，未发布。
+真实master交付提交commit:08893d73e521795745934a21c43da9a6108ea4af，git push origin master退出0，详见push-main.json/log。独立中文润色仍待其它模型；Pages仅本地验收，未发布。
