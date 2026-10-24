@@ -28,3 +28,5 @@
 术语检查C1/C2均通过。C1b的mathcal P/U未命中是机器抽取提示，本课显式定义mathcal P；C2b旧NOISE未命中、C4全站旧max/min4处仅WARN，原处置保留，本课新函数写法规范。目录WARN的跨章同slug及其它旧课无日志已登记，不计本课新债务。
 
 独立提交只从已提交master叠加本课完整文件与自己的共享元数据行，OUTLINE和tracker统计由官方脚本重生成。默认Git索引不用于构造提交，避免并行暂存污染。无Pages发布。
+
+真实master交付提交：76ae270c06fb2363cdd98a4d998fb7b83e25f08c。该提交投影check/semester/math/glossary/python/fix六项退出0。semester-fast.mjs调用原学期校验器，所有文件证据检查照常执行；Git对象类型与master祖先关系由真实cat-file批处理与rev-list完成，未跳过合入证据。最后回执另以原始CLI复验进度。

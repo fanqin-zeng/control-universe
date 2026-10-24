@@ -114,6 +114,8 @@
 
 交付清单：原10H2、原始四cell用途加题解共4Notebook5cell、1个Explorer、1张SVG、四题12子问；唯一注册lib/wiki-components.ts；catalog/旧tracker和学期3本课行同步更新。变更传播：GM域→正文/题2/NB4/TS；系数顺序→四角表/NB1/题1；公共P→证明/NB2/TS/题3；分布与样本预算→MC/NB3/4/N滑块/题4；流程→SVG。D无未迁材料，全部历史编译标题ID真实DOM保留。
 
+master交付回执：`76ae270c06fb2363cdd98a4d998fb7b83e25f08c`；提交投影六项检查均退出0，完整证据见acceptance.md。
+
 ## 附录 A：数值证据（全部实测数据的唯一留存副本）
 
 ### A.1 三方对账表（柯验）

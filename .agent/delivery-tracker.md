@@ -175,7 +175,7 @@
 |------|------|
 | [x] 鲁棒性 (robustness-concept) | 学期3ROBUST-01；证据.agent/semester-03/robust-01/acceptance.md |
 | [x] 不确定性建模 (uncertainty-modeling) | 学期3ROBUST-02；证据.agent/semester-03/robust-02/acceptance.md |
-| [x] 鲁棒稳定性 (robust-stability) | 学期3ROBUST-03；证据.agent/semester-03/robust-03/acceptance.md |
+| [x] 鲁棒稳定性 (robust-stability) | 学期3ROBUST-03；证据.agent/semester-03/robust-03/acceptance.md  master 76ae270 |
 | [ ] 鲁棒性能 (robust-performance) | |
 | [ ] H∞控制 (h-infinity-basics) | |
 | [ ] 混合灵敏度 (mixed-sensitivity) | |
