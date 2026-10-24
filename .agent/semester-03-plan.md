@@ -57,6 +57,7 @@
 | ID-02 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-02，rank3；暂缓其他会话与未交付前课，仅依赖已交付ID-01和差分方程 | .agent/semester-03/id-02/acceptance.md |
 | EST-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-01，rank4；保留其它会话检查点，只依赖已交付观测器、随机过程与离散系统 | .agent/semester-03/est-01/acceptance.md |
 | ROBUST-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-01，rank5；避开并行课程，仅使用已交付先修 | .agent/semester-03/robust-01/acceptance.md |
+| DRIVING-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-01;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-01;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10;EMBODIED-01;EMBODIED-02;EMBODIED-03;EMBODIED-04;EMBODIED-05;EMBODIED-06;EMBODIED-07;EMBODIED-08;EMBODIED-09;EMBODIED-10 | 2026-10-24用户指定继续DRIVING-01，rank14；保留并行课程检查点；只依赖已交付状态空间，安全与回退定义本课局部补足 | .agent/semester-03/driving-01/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -774,3 +775,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### SAFE-01 控制安全交付
 
 2026-10-24按用户rank10指定完成新写Phase1–4。仓库小车停车引出稳定与安全、约束/可行行动、延迟/误差/制动预算、监测回退及安全论证边界；9H2、四题四答、1Explorer/1SVG、2Notebook3cell。192真实TS配置对独立ODE、矩阵指数/Fraction、严格内核/Pyodide、实际Pages运行和375px验收通过。证据.agent/semester-03/safe-01/acceptance.md；仅本课，不依赖并行草稿、不发布Pages；真实master提交见checklist。W09原生IAB连接边界及其它会话检查点保留，中文仅生产交接。
+
+### DRIVING-01 本轮执行记录（2026-10-24）
+
+自动驾驶系统从空占位按新写Phase1–4完成。直路障碍停车问题引出运行范围、功能闭环、消息合同、延迟预算、监控与回退及闭环证据；十H2、四题四答、两Notebook四cell、一Explorer/SVG。实际TS六配置对精确Fraction速度积分，7098固定轴组合；原生内核、生产Pyodide、普通/Pages本地页面与375px验收通过，证据.agent/semester-03/driving-01/acceptance.md；真实master提交后登记回执。用户指定本课及rank14，独立登记顺序例外；移除对并行未签发安全课的硬依赖，局部定义补足。无整车试验或认证声明，不发布Pages、不生产下一课；其它会话及用户修改保留。

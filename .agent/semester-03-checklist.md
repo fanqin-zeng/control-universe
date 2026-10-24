@@ -353,7 +353,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| DRIVING-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| DRIVING-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/20-autonomous-driving/01-driving-system.md;.agent/semester-03/driving-01/acceptance.md;验收完成，待真实master提交回执 |
 | DRIVING-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

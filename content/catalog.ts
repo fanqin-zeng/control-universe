@@ -5820,12 +5820,53 @@ export const catalog: Chapter[] = [
         "slug": "driving-system",
         "title": "自动驾驶系统",
         "prereq": [
-          "modern/state-space",
-          "safety-ftc/safety-overview"
+          "modern/state-space"
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "先约定运行范围",
+            "title": "先约定运行范围"
+          },
+          {
+            "slug": "把车辆放回闭环",
+            "title": "把车辆放回闭环"
+          },
+          {
+            "slug": "消息必须带什么",
+            "title": "消息必须带什么"
+          },
+          {
+            "slug": "从延迟算停车预算",
+            "title": "从延迟算停车预算"
+          },
+          {
+            "slug": "监控与回退也在系统里",
+            "title": "监控与回退也在系统里"
+          },
+          {
+            "slug": "闭环测试要看什么",
+            "title": "闭环测试要看什么"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "vehicle-dynamics",

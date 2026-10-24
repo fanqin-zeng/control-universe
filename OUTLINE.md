@@ -291,8 +291,8 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 20.1 | 自动驾驶系统 | driving-system | ⬜ 骨架（占位页） | undergrad | theory | 14 | modern/state-space<br>safety-ftc/safety-overview |
-| 20.2 | 车辆动力学 | vehicle-dynamics | ⬜ 骨架（占位页） | grad | theory | 15 | autonomous-driving/driving-system<br>math/ode-matrix-exponential |
+| 20.1 | 自动驾驶系统 | driving-system | ✅ 已交付 v1.3 | undergrad | theory | 7 | modern/state-space |
+| 20.2 | 车辆动力学 | vehicle-dynamics | ⬜ 骨架（占位页） | grad | theory | 8 | autonomous-driving/driving-system<br>math/ode-matrix-exponential |
 | 20.3 | 定位与运动预测 | localization-prediction | ⬜ 骨架（占位页） | grad | theory | 16 | autonomous-driving/vehicle-dynamics<br>estimation/sensor-fusion<br>machine-learning/sequence-models |
 | 20.4 | 自动驾驶规划 | motion-planning | ⬜ 骨架（占位页） | grad | theory | 17 | autonomous-driving/localization-prediction<br>math/convex-optimization |
 | 20.5 | 车辆跟踪控制 | vehicle-control | ⬜ 骨架（占位页） | grad | theory | 20 | autonomous-driving/motion-planning<br>mpc/nonlinear-mpc<br>nonlinear/feedback-linearization<br>classic/pid-controller |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 69（status = v1.3）
+- **已交付 v1.3**: 70（status = v1.3）
 - **有正文待审校**: 18（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 118（status = empty，渲染占位页）
+- **骨架占位**: 117（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 136（= draft 18 + empty 118 + 无 status 0）
-- **有 MDX 正文**: 87
-- **catalog 小节总数**: 990
-- **讨论日志**: 90 篇（覆盖 69 门；有 MDX 无日志 18 门）
-- **交互组件**: 80 个文件（被正文引用 80，孤儿 0）
-- **prereq 边**: 476 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **未完成 v1.3**: 135（= draft 18 + empty 117 + 无 status 0）
+- **有 MDX 正文**: 88
+- **catalog 小节总数**: 1000
+- **讨论日志**: 91 篇（覆盖 70 门；有 MDX 无日志 18 门）
+- **交互组件**: 81 个文件（被正文引用 81，孤儿 0）
+- **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

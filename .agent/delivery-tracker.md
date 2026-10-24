@@ -307,7 +307,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 自动驾驶系统 (driving-system) | 本期新增骨架；尚未编写 |
+| [x] 自动驾驶系统 (driving-system) | 学期3 DRIVING-01；接口、延迟与回退；证据 .agent/semester-03/driving-01/acceptance.md |
 | [ ] 车辆动力学 (vehicle-dynamics) | 本期新增骨架；尚未编写 |
 | [ ] 定位与运动预测 (localization-prediction) | 本期新增骨架；尚未编写 |
 | [ ] 自动驾驶规划 (motion-planning) | 本期新增骨架；尚未编写 |
@@ -330,7 +330,7 @@
 | [ ] 生物医学控制 (biomedical-control) | |
 | [ ] 半导体装备控制 (semiconductor-equipment) | |
 
-**统计**：69 / 205 课程已完成（21 章；80 个交互组件文件，其中 80 个被课程正文引用）
+**统计**：70 / 205 课程已完成（21 章；81 个交互组件文件，其中 81 个被课程正文引用）
 
 > **E4（2026-09-26）：郑核的「术语一致性 / 符号约定一致」自此是查表 + 一条命令，不再靠人通读 56546 行。** 新建两份**机器读的**权威表 `docs/semester-02/03-glossary.md`（**966 行**：305 条术语、348 条中文侧、**52 条别名冲突全部裁决**、登记表 314 行 + 残渣签字 39 行）与 `docs/semester-02/04-notation.md`（**656 行**：**107 个符号基**、73 行有冲突全部给建议、A 级 3 组 5 行 / B 级 68 行 / 判「无」34 行）；新建 `scripts/glossary.mjs`（**1203 行**，`scan`/`check`/`symbols`/`terms`/`conflicts`/`abbrs`/`rows` 七个子命令）+ `package.json` 两条 script：`npm run glossary`、`npm run glossary:check`。给 `scripts/lib-mdx.mjs` 加了 `scanMdx().skips` 附加返回值（**483 → 502 行**），不另写第二份「什么不是正文」的识别逻辑。负向夹具 `.agent/e4-fixture/`（**8 个文件**，含 86 条纯函数断言的 `unit-probe.mjs`）保留为仓库产物，README 把每条命令的预期判定与退出码写死。**零新增 npm 依赖**，不用 `execSync`。**一条 MDX 都没改**（Prompt 硬约束）。
 > **对本文件日常操作的直接影响**：① **签发前置多一条命令**——`npm run glossary:check` 与九项前端硬门槛同级：**C1（04 登记表缺符号基）/ C2（03 有未裁决别名冲突）FAIL 即不得签发、本文件不得打勾**；C1b/C2b/C4/C5 是 WARN；**C3 只是 INFO，不影响退出码，不得当判据用**。现网基线 `PASS 3 · WARN 1 · FAIL 0`（那条 WARN 是 C4 的 7 处漏反斜杠函数名：`max` 5 / `min` 2，内容缺陷归 C1/A6）。② **判据编号 C1–C5 是第四套**，与九项前端硬门槛、`nb-cells` 的 S0–S8、`verify-lesson` 的九项**都不通用**；写报告时「第 N 项」必须说明是哪一套（同 E2 note ③ / E3 note ② 那个坑）。③ **引入新符号或新术语前必须先查表并回写**：新符号基用 `node scripts/glossary.mjs rows notation` 生成 5 列行贴进 04 的 REGISTER，新术语按 03 §6 登记——**否则 C1 / C2 会 FAIL，这是设计（登记表少一行就红）**。裁决过程写进讨论日志 **Phase 3「教学支持（教学质量）」分组下郑核那条发言**，**不新增小节**（《讨论日志固定结构》§4 第 6 条把 Phase 3 的 `###` 分组数锁死为 6）。硬规则已写进 `wiki-discussion/SKILL.md`《输出格式规范》末尾《E4 术语与符号规则》六条 + Phase 3 郑核/李稳条目 + 《注意事项》，以及 `personas.md` 郑核的「风格一致性」清单行。④ **改这两张表就是改门槛**：03 的 REGISTER 三列会按 `[、,;；/]` 拆成键（实测 737 个），NOISE 第一列**不拆**（含逗号的英文串只能签在那里）；04 的 ABBREV 块**改变符号抽取本身**（登记进去的全大写连写自成符号基，现只 `PM`/`GM`）；**哨兵必须独占一行**（loader 走 `sentinelSlice()`）；**登记表单元格内不得出现裸 `|` 或 `\|`**，范数一律 `\lvert…\rvert` / `\lVert…\rVert`。⑤ **`v1.3-refactor/SKILL.md` 一个字没动**：E4 的改动全在孪生块之外，改完重跑 §6 仍 `TWIN-IDENTICAL ✓ 9 项`、与 plan 之间仍只有第 6 项那一处已登记偏离，整段 §1–§6 切片两份各 **104 行**、md5 同为 `7e2ba04e3b6f720a843b5d1f0f85781c`。

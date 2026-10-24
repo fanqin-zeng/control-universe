@@ -1,0 +1,63 @@
+{
+  "source": "content/autonomous-driving/driving-system.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 95,
+      "title": "复算延迟路径与停车预算",
+      "unknownAttrs": [],
+      "setupCode": "import math\ndef budget(v, delay, b, d, margin=2.0):\n    reaction = v * delay\n    braking = v ** 2 / (2 * b)\n    return reaction, braking, reaction + braking + margin, d - reaction - braking - margin",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 103,
+          "delim": "`",
+          "code": "stages_ms = [80, 40, 60, 20, 100]\ndelay = sum(stages_ms) / 1000\nprint(\"delay_s\", delay)\nprint(\"main_reaction_braking_required_reserve\", budget(20, delay, 5, 50))\nassert math.isclose(delay, 0.3)\nassert budget(20, delay, 5, 50) == (6.0, 40.0, 48.0, 2.0)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 109,
+          "delim": "`",
+          "code": "for v, tau in [(20, 0.6), (10, 0.6), (0, 1.0), (20, 0.4)]:\n    print(\"case\", v, tau, budget(v, tau, 5, 50))\nmax_delay = (50 - 2 - 20**2 / (2*5)) / 20\nprint(\"max_delay_s\", max_delay)\nassert math.isclose(max_delay, 0.4)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 127,
+      "title": "核查消息门禁与习题数值",
+      "unknownAttrs": [],
+      "setupCode": "import math\ndef gate(now, observed, valid, max_age=0.25):\n    age = now - observed\n    return \"accept\" if valid and 0 <= age <= max_age else \"request_fallback\"",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 134,
+          "delim": "`",
+          "code": "cases = [(10, 9.8, True), (10, 9.75, True), (10, 9.6, True), (10, 10.1, True), (10, 9.8, False)]\ndecisions = [gate(*item) for item in cases]\nprint(\"gate_decisions\", decisions)\nassert decisions == [\"accept\", \"accept\", \"request_fallback\", \"request_fallback\", \"request_fallback\"]",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 138,
+          "delim": "`",
+          "code": "v, b, d, margin = 20, 5, 50, 2\ntau_limit = (d - margin - v*v/(2*b)) / v\nages = [10-9.8, 10-9.6, 10-10.1]\nprint(\"exercise_delay_limit_s\", round(tau_limit, 6))\nprint(\"exercise_ages_s\", [round(a, 6) for a in ages])\nprint(\"stationary_required_m\", margin)\nassert math.isclose(tau_limit, 0.4)\nassert all(math.isclose(a, expected) for a, expected in zip(ages, [0.2, 0.4, -0.1]))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
