@@ -9,3 +9,9 @@
 最终候选从最新已提交master刷新，只叠加本课重跑权威plain check、semester/Python支持/fix索引；实际结果见check-final/semester-final/python-policy-final/fix-final.log，签发在门槛通过之后。Windows参考审计默认编码与键名错误修后重跑；向量按符号表加粗后重新绑定最终sourceHash/生产Pyodide；分区图使用真实多边形。没有硬件计时/实际内存或MATLAB运行宣称，408字节只是指定系数载荷。
 
 隔离目录D:/Workspace/control-universe-rank6-mpc07，20296/9096/20396/20496；隔离缓存/单核构建不改生产配置，临时独立Git索引保留原暂存区和现有锁。并发提交推进时刷新已提交文件再重验；共享文件只合并本课条目。仅本课，不发布Pages、不生产MPC08。实际master提交与推送回执随后补录。
+
+## master实际回执
+
+交付提交`38866315543e03124bb4bf43ff882720781984af`已进入master并推送origin master，原始远端确认见push.log。最终候选check结果见check-final.log（FAIL0/exit0）；semester/Python支持/fix门槛退出0，两个构建、严格内核、生产Pyodide、普通与Pages本地页面实际运行均有版本化证据。最终回执只更新本课勾选及hash，不制造分支/合并节点、不包含并行未提交工作。
+
+原共享Git索引字节未修改，既有索引锁未删除；本课提交完全使用临时独立索引和原子引用更新。因此不把共享工作区既有暂存状态当作本课“干净工作区”声明。共享文件只更新本课条目，派生摘要若与并行未提交内容冲突则保留原工作区版本，提交树已通过隔离集成门槛。四个本课测试服务通过各自执行会话停止，未终止占用原端口组的服务；未发布Pages、不生产MPC-08。
