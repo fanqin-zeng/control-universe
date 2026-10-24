@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 110 课 / 466 个实验 / 712 个单元格全部纳入盘点。104 课全部可运行，2 课混合，4 课全部保留代码；启用 459 个实验，保留 7 个。实际执行 701 个单元格（含异常单元格），生成 217 张 PNG。原始记录中 459 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 113 课 / 474 个实验 / 724 个单元格全部纳入盘点。107 课全部可运行，2 课混合，4 课全部保留代码；启用 467 个实验，保留 7 个。实际执行 713 个单元格（含异常单元格），生成 218 张 PNG。原始记录中 467 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -47,7 +47,7 @@
 | implementation/realtime-control（实时控制） | 0/1 | 0 | 1 |
 | estimation/kalman-filter（卡尔曼滤波） | 3/3 | 6 | 无 |
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
-| robust/robust-performance（鲁棒性能） | 2/2 | 4 | 无 |
+| robust/robust-performance（鲁棒性能） | 3/3 | 5 | 无 |
 | robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
 | robust/mixed-sensitivity（混合灵敏度） | 2/2 | 4 | 无 |
 | robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
@@ -122,6 +122,9 @@
 | estimation/extended-kalman-filter（扩展卡尔曼滤波） | 2/2 | 4 | 无 |
 | implementation/embedded-implementation（嵌入式控制） | 3/3 | 6 | 无 |
 | machine-learning/sequence-models（时序模型） | 2/2 | 4 | 无 |
+| identification/instrumental-variable（闭环辨识） | 3/3 | 3 | 无 |
+| machine-learning/attention-transformers（注意力机制） | 2/2 | 4 | 无 |
+| estimation/unscented-kalman-filter（无迹卡尔曼滤波） | 2/2 | 4 | 无 |
 
 ## 待处理实验
 

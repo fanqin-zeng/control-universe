@@ -1,3 +1,4 @@
+import { RobustPerformanceExplorer } from '@/components/wiki/robust-performance-explorer';
 import { UnscentedKalmanExplorer } from "@/components/wiki/unscented-kalman-explorer";
 import { AttentionBasicsExplorer } from '@/components/wiki/attention-basics-explorer';
 import { ClosedLoopIdentificationExplorer } from "@/components/wiki/closed-loop-identification-explorer";
@@ -142,6 +143,7 @@ export const wikiComponents: MDXComponents = {
   EmbeddedControlExplorer,
   ExtendedKalmanExplorer,
   RobustStabilityExplorer,
+  RobustPerformanceExplorer,
   AutodiffTrainingExplorer,
   RecedingHorizonExplorer,
   ControllerDeploymentExplorer,

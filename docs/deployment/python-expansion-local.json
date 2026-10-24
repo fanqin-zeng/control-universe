@@ -7078,26 +7078,31 @@
     {
       "key": "robust/robust-performance",
       "title": "鲁棒性能",
-      "sourceHash": "65b6cd9828a4260e534797da816512d098fb6b38fd35d188493eca2c96957956",
+      "sourceHash": "2990d88ec31f093489e34e24caa8a0534718a75877b671ae57d62c7962fe1b5d",
       "notebooks": [
         {
           "id": "robust/robust-performance#1",
-          "title": "实验 1",
+          "title": "完整LFT：不要把对角代理叫作μ上界",
           "index": 1,
-          "line": 135,
+          "line": 152,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5078,
+              "milliseconds": 7269,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== μ 鲁棒性能上界（简化近似）===\nsup_ω μ ≈ 4.1200\n峰值频率: ω = 2.47 rad/s\n  ≥ 1 → 鲁棒性能可能不满足 ✗\n\n注意：这是忽略交叉项的简化上界，实际 μ 分析需要完整的 LFT 模型。\n"
+                  "text": "D_upper_grid_peak 6.583349035 at 2.465811076 rad/s; feasible scaling, not exact real mu or all-frequency certificate\ndiagonal_proxy_grid_peak 4.208387974; NOT a valid upper bound\nLFT_9_parameter_closures_max_error 1.0101437646916463e-14\nzero_diagonal_counterexample proxy= 0.0 actual_mu=1, det= 0.0\nlft_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 38948
                 }
               ]
             }
@@ -7105,10 +7110,62 @@
         },
         {
           "id": "robust/robust-performance#2",
-          "title": "实验 2",
+          "title": "固定滤波PID：标称、500个样本与参数网格",
           "index": 2,
-          "line": 391,
+          "line": 363,
           "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 12,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "nominal_WpS_grid_peak 4.210743711 at 2.473964101 rad/s\nnominal_stack_grid_peak 4.372624202; high_frequency_stack_limit 0.683333333\nm k WpS_grid_peak frequency spectral_abscissa\n1.000000000 1.000000000 4.210743711 2.473964101 -0.184980719\n0.700000000 0.700000000 2.874117151 2.907123377 -0.330521346\n0.700000000 1.300000000 2.607709457 3.079558713 -0.325541403\n1.300000000 0.700000000 7.577004955 2.105345243 -0.094232805\n1.300000000 1.300000000 6.059545153 2.204668735 -0.111057234\nfiltered_K_infinity 15.0 S_DC=0; ideal_PID_weighted_KS_Hinf=infinity\nnominal_complete\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 82,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "500_sample_peak_min_mean_max_p95 2.673505945124164 4.37185907229531 7.334454629730881 6.441233938859542\n500_sample_failures 500 max_pole_real -0.09716113039183641\nlargest_in_this_sample dm dk 0.9591413611731854 -0.9619317043650268\nsampling_complete\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 421,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "20x20_grid_min_max 2.6077094569546984 7.577004954644041 failures 400\nplots_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 66064
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/robust-performance#3",
+          "title": "反例、权重与四道原题复算",
+          "index": 3,
+          "line": 586,
+          "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
@@ -7120,46 +7177,11 @@
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 标称性能分析 ===\n|Wp·S| 峰值 = 4.1557\n  ≥ 1 ✗\n|S(0)| = 0.000000 (要求 < 0.02)\n  < A ✓\n"
-                }
-              ]
-            },
-            {
-              "index": 2,
-              "milliseconds": 242,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "=== Monte Carlo 鲁棒性能验证 ===\n采样数: 500\n|Wp·S| 峰值统计:\n  最小值: 2.5482\n  均值:   4.3543\n  最大值: 7.2458\n  95%分位: 6.5402\n  最坏情况: dm = 0.925, dk = -0.960\n  鲁棒性能: 不满足 ✗\n"
-                }
-              ]
-            },
-            {
-              "index": 3,
-              "milliseconds": 835,
-              "status": "passed",
-              "outputs": [
-                {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 136972
+                  "text": "counterexample nominal_DC 0.09090909090909091 perturbed_DC 0.33333333333333337 RS_norm 0.9090909090909091 perturbed_poles [-7.60555128+0.j -0.39444872+0.j]\ncounterexample_full_weighted_NP_norm 0.45454545454545453 allowed_perturbed_weighted_DC 1.6666666666666667 performance_weight=5/(s+1)\nexercise2 k nominal_DC worst_DC 9.0 0.1 0.18181818181818182\nexercise2 k nominal_DC worst_DC 10.0 0.09090909090909091 0.16666666666666666\nexercise2 k nominal_DC worst_DC 18.0 0.05263157894736842 0.1\nexercise2 k nominal_DC worst_DC 19.0 0.05 0.09523809523809523\nexercise2 strict ranges: nominal stability k>-1; RS k>-2/3; NP k>9; robust DC k>18\nweight A M wb DC inf pole zero abs_at_wb unity_frequency [0.01, 1.5, 5.0, 100.0, 0.6666666666666666, 0.05, 7.5, 1.201790337139969, np.float64(6.70786851391707)]\nweight A M wb DC inf pole zero abs_at_wb unity_frequency [0.01, 2.0, 2.0, 100.0, 0.5, 0.02, 4.0, 1.1179780912427355, np.float64(2.3092856038177696)]\nweight A M wb DC inf pole zero abs_at_wb unity_frequency [0.02, 1.5, 0.8, 50.0, 0.6666666666666666, 0.016, 1.2000000000000002, 1.201610127156629, np.float64(1.0730979452035123)]\nexercise4 r 1.1547005383792517 scaled_matrix [[0.5        0.34641016]\n [0.34641016 0.6       ]] singular_values [0.9 0.2] det_at_10over9 2.4671622769447928e-17\nexercise4 RS=.5 NP=.6 augmented_mu=.9 at the stated frequency only; physical_delta worst gain at unit radius=.84\nexercise1 RP implies RS by definition and NP by Delta=0; converse fails in first-order example\nreal_mu_of_i=0 complex_mu_of_i=1: no universal multiplicative ratio\nall_answers_complete\n"
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "98a97725d7da449e087dde45197def1fbe13c5b144cb6c46b45bd597c0848e00",
-      "formattingProvenance": [
-        {
-          "lesson": "robust/robust-performance",
-          "fromSourceHash": "98a97725d7da449e087dde45197def1fbe13c5b144cb6c46b45bd597c0848e00",
-          "toSourceHash": "65b6cd9828a4260e534797da816512d098fb6b38fd35d188493eca2c96957956",
-          "notebookPayloadHash": "8d3a5d5683f741aba796950fbb03e68840999097e7809c3344138426169f5729",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
         }
       ]
     },
@@ -15936,14 +15958,14 @@
   "complete": true,
   "totals": {
     "lessons": 113,
-    "notebooks": 473,
-    "enabled": 466,
+    "notebooks": 474,
+    "enabled": 467,
     "codeOnly": 7
   },
   "releaseTotals": {
     "lessons": 113,
-    "notebooks": 473,
-    "enabled": 466,
+    "notebooks": 474,
+    "enabled": 467,
     "codeOnly": 7
   },
   "provenance": [
@@ -16726,6 +16748,11 @@
       "testedAt": "2026-10-24T08:00:11.239Z",
       "url": "http://127.0.0.1:18384/python-expansion.html?lesson=estimation/unscented-kalman-filter",
       "inputPath": ".agent/semester-03/est-05/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T07:58:15.172Z",
+      "url": "http://127.0.0.1:19395/python-expansion.html?lesson=robust/robust-performance",
+      "inputPath": ".agent/semester-03/robust-04/pyodide.json"
     }
   ]
 }
