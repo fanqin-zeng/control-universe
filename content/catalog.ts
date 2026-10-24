@@ -5431,15 +5431,51 @@ export const catalog: Chapter[] = [
       {
         "slug": "safety-overview",
         "title": "控制安全",
+        "subsections": [
+          {
+            "slug": "小车停得住吗",
+            "title": "小车停得住吗"
+          },
+          {
+            "slug": "稳定与安全",
+            "title": "稳定与安全"
+          },
+          {
+            "slug": "把危险写成约束",
+            "title": "把危险写成约束"
+          },
+          {
+            "slug": "停车距离预算",
+            "title": "停车距离预算"
+          },
+          {
+            "slug": "从约束到可行行动",
+            "title": "从约束到可行行动"
+          },
+          {
+            "slug": "监测与回退",
+            "title": "监测与回退"
+          },
+          {
+            "slug": "安全论证与后续路线",
+            "title": "安全论证与后续路线"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
-          "nonlinear/lyapunov-stability",
-          "estimation/estimation-problem",
           "classic/stability-analysis",
-          "implementation/computer-control-architecture"
+          "nonlinear/lyapunov-stability"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "control-barrier-functions",

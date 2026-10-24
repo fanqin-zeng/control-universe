@@ -156,7 +156,7 @@
 | 145 | MULTI-07 | 分布式预测控制 | content/multi-agent/distributed-mpc.mdx | 待完成 | 待生产 | — |
 | 146 | MULTI-08 | 多智能体强化学习 | content/multi-agent/multi-agent-rl.mdx | 待完成 | 待生产 | — |
 | 147 | MULTI-09 | 多智能体协同案例 | content/multi-agent/multi-agent-cooperation.mdx | 待完成 | 待生产 | — |
-| 148 | SAFE-01 | 控制安全 | content/safety-ftc/safety-overview.mdx | 待完成 | 待生产 | — |
+| 148 | SAFE-01 | 控制安全 | content/safety-ftc/safety-overview.mdx | 待完成 | 待润色 | .agent/semester-03/safe-01/acceptance.md |
 | 149 | SAFE-02 | 控制屏障函数 | content/safety-ftc/control-barrier-functions.mdx | 待完成 | 待生产 | — |
 | 150 | SAFE-03 | 可达性分析 | content/safety-ftc/reachability-analysis.mdx | 待完成 | 待生产 | — |
 | 151 | SAFE-04 | 故障诊断 | content/safety-ftc/fault-detection-isolation.mdx | 待完成 | 待生产 | — |

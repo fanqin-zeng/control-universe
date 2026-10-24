@@ -233,9 +233,9 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 16.1 | 控制安全 | safety-overview | ⬜ 骨架（占位页） | grad | theory | 13 | nonlinear/lyapunov-stability<br>estimation/estimation-problem<br>classic/stability-analysis<br>implementation/computer-control-architecture |
-| 16.2 | 控制屏障函数 | control-barrier-functions | ⬜ 骨架（占位页） | grad | theory | 14 | safety-ftc/safety-overview<br>math/convex-optimization |
-| 16.3 | 可达性分析 | reachability-analysis | ⬜ 骨架（占位页） | advanced | theory | 14 | safety-ftc/safety-overview<br>math/variational-dp |
+| 16.1 | 控制安全 | safety-overview | ✅ 已交付 v1.3 | grad | theory | 10 | classic/stability-analysis<br>nonlinear/lyapunov-stability |
+| 16.2 | 控制屏障函数 | control-barrier-functions | ⬜ 骨架（占位页） | grad | theory | 11 | safety-ftc/safety-overview<br>math/convex-optimization |
+| 16.3 | 可达性分析 | reachability-analysis | ⬜ 骨架（占位页） | advanced | theory | 11 | safety-ftc/safety-overview<br>math/variational-dp |
 | 16.4 | 故障诊断 | fault-detection-isolation | ⬜ 骨架（占位页） | grad | theory | 14 | safety-ftc/safety-overview<br>estimation/kalman-filter<br>identification/least-squares-rls |
 | 16.5 | 容错控制 | fault-tolerant-control | ⬜ 骨架（占位页） | grad | theory | 15 | safety-ftc/fault-detection-isolation<br>robust/robust-stability |
 | 16.6 | 安全强化学习 | safe-rl | ⬜ 骨架（占位页） | grad | learning | 17 | safety-ftc/control-barrier-functions<br>rl-control/rl-evaluation<br>mpc/constraint-handling |
@@ -253,7 +253,7 @@
 | 17.5 | 机器人运动规划 | motion-planning | ⬜ 骨架（占位页） | grad | theory | 10 | robotics/kinematics<br>math/convex-optimization |
 | 17.6 | 轨迹跟踪 | trajectory-tracking | ⬜ 骨架（占位页） | grad | theory | 11 | robotics/dynamics<br>robotics/motion-planning<br>nonlinear/feedback-linearization |
 | 17.7 | 阻抗控制 | impedance-control | ⬜ 骨架（占位页） | grad | theory | 11 | robotics/dynamics<br>nonlinear/passivity-control |
-| 17.8 | 接触控制 | contact-control | ⬜ 骨架（占位页） | grad | theory | 15 | robotics/impedance-control<br>safety-ftc/control-barrier-functions |
+| 17.8 | 接触控制 | contact-control | ⬜ 骨架（占位页） | grad | theory | 12 | robotics/impedance-control<br>safety-ftc/control-barrier-functions |
 | 17.9 | 足式机器人控制 | legged-control | ⬜ 骨架（占位页） | advanced | theory | 19 | robotics/contact-control<br>mpc/nonlinear-mpc |
 | 17.10 | 机器人控制案例 | robotics-case-study | ⬜ 骨架（占位页） | grad | case | 16 | robotics/trajectory-tracking<br>robotics/contact-control<br>estimation/sensor-fusion |
 
@@ -267,7 +267,7 @@
 | 18.4 | 残差学习控制 | residual-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>nonlinear/lyapunov-stability |
 | 18.5 | 仿真到现实 | sim-to-real | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>robust/uncertainty-modeling |
 | 18.6 | 运动技能学习 | locomotion-learning | ⬜ 骨架（占位页） | grad | learning | 20 | robot-learning/sim-to-real<br>robotics/legged-control<br>rl-control/ppo |
-| 18.7 | 操作技能学习 | manipulation-learning | ⬜ 骨架（占位页） | grad | learning | 16 | robot-learning/imitation-learning<br>robotics/contact-control |
+| 18.7 | 操作技能学习 | manipulation-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/imitation-learning<br>robotics/contact-control |
 | 18.8 | 人机协同学习 | human-in-the-loop | ⬜ 骨架（占位页） | grad | learning | 18 | robot-learning/offline-online-learning<br>safety-ftc/safe-rl |
 | 18.9 | 学习与预测控制 | learning-with-mpc | ⬜ 骨架（占位页） | advanced | learning | 19 | robot-learning/residual-learning<br>rl-control/model-based-rl<br>mpc/nonlinear-mpc |
 | 18.10 | 机器人学习评估 | robot-learning-evaluation | ⬜ 骨架（占位页） | grad | learning | 19 | robot-learning/sim-to-real<br>robot-learning/human-in-the-loop<br>rl-control/rl-evaluation |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 77（status = v1.3）
+- **已交付 v1.3**: 78（status = v1.3）
 - **有正文待审校**: 17（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 111（status = empty，渲染占位页）
+- **骨架占位**: 110（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 128（= draft 17 + empty 111 + 无 status 0）
-- **有 MDX 正文**: 94
-- **catalog 小节总数**: 1056
-- **讨论日志**: 99 篇（覆盖 77 门；有 MDX 无日志 17 门）
-- **交互组件**: 87 个文件（被正文引用 87，孤儿 0）
-- **prereq 边**: 474 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **未完成 v1.3**: 127（= draft 17 + empty 110 + 无 status 0）
+- **有 MDX 正文**: 95
+- **catalog 小节总数**: 1065
+- **讨论日志**: 100 篇（覆盖 78 门；有 MDX 无日志 17 门）
+- **交互组件**: 88 个文件（被正文引用 88，孤儿 0）
+- **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

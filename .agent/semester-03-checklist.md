@@ -295,7 +295,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| SAFE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| SAFE-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/16-safety-ftc/01-safety-overview.md;.agent/semester-03/safe-01/acceptance.md;rank10；已签发待master实际提交回执 |
 | SAFE-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | SAFE-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | SAFE-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
