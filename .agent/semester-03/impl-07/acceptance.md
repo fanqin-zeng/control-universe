@@ -16,4 +16,6 @@ npm run build与build:pages均exit0，无MDX编译失败；build-origin.json保�
 
 rank1使用独立目录/索引及8191/8991/9196端口，仅提交本课，保留并行修改，未发布gh-pages。下一课IMPL-08工业通信，本对话不继续生产。
 
-真实master提交回执待登记。
+真实master提交回执见下。
+
+真实master交付提交：`ef0206fd77ea7957760a98af9029d5e0f993dd4e`，父提交`13e128c903580cd997e460240ff7a05726cdf305`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。

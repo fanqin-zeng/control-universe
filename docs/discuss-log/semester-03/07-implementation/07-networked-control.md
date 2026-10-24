@@ -103,7 +103,7 @@
 
 [待定] 无影响本课正确性的未决项。真实网络最坏时延、同步误差、执行器网络及安全认证不在本课交付范围。原工作区check退出1与学期RL-02行格式失败保留原始证据；交付候选仅HEAD加本课，原校验通过，不覆盖他人改动。下一课IMPL-08，本对话不生产。
 
-[郑核-签发] A数值、B九项与补充项、C限定对比均有实际证据；结构失败已修复并重跑受影响源码绑定验证。同意本课交付，真实master提交回执待登记。
+[郑核-签发] A数值、B九项与补充项、C限定对比均有实际证据；结构失败已修复并重跑受影响源码绑定验证。同意本课交付，真实master提交回执见下。
 
 交付清单：MDX、network-feedback.ts、NetworkFeedbackExplorer及唯一注册、SVG、数值验证脚本、三Notebook六cell、五题答案、本日志及A/B/C、catalog/tracker/checklist/plan、自动OUTLINE与Python策略；仅本课使用独立索引提交，未发布gh-pages。
 
@@ -182,3 +182,5 @@
 | 1 | 可能直觉以为有延迟总衰减慢，尚未写入正文 | K4延迟rho0.632456小于0.7，首步却升1.1 | 最小实验后据实写；K12为失败反例 |
 | 2 | 合并“练习与答案”H2 | 初始verify第9项FAIL | 拆为独立习题与答案，重跑受影响源哈希/Notebook/UI |
 | 3 | formatter --root误指单文件 | ENOTDIR，非课程语法错误 | 改implementation目录，exit0，未改谓词 |
+
+真实master交付提交：`ef0206fd77ea7957760a98af9029d5e0f993dd4e`，父提交`13e128c903580cd997e460240ff7a05726cdf305`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。
