@@ -196,3 +196,5 @@ Windows/Node24.14.1；rank1隔离目录D:/Workspace/control-universe-rank1-impl0
 | 1 | 可能混称整帧大端或把额外处理当规范响应 | CRC低byte先发；预留合同非实机时延 | 学生反馈后逐字段与时间定义澄清 |
 | 2 | 图表Hooks依赖提示 | 首轮build提示names与period/table缺依赖 | 固定names模块级，table memo化，Option依赖显式补全，重跑双构建和最终Pages全部控件 |
 | 3 | 临时作者脚本转义导致语法错误，未写成课程 | author.py未执行，snapshot找不到尚未生成MDX | 修临时生成器后正常生成；MDX真实渲染KaTeX0，临时作者脚本已删除 |
+
+真实master交付提交：`3e95f6e9c5ecb8948349e8e6cd05ca0e157ae78c`，父提交`e06d60feb8263fca0b75219c276c36851ff7f5b3`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。
