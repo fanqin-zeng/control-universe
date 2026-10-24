@@ -1,3 +1,4 @@
+import { ControlArchitectureExplorer } from "@/components/wiki/control-architecture-explorer";
 import { LearningGeneralizationExplorer } from "@/components/wiki/learning-generalization-explorer";
 import { EventTriggeredExplorer } from "@/components/wiki/event-triggered-explorer";
 import { DiscreteOptimalExplorer } from "@/components/wiki/discrete-optimal-explorer";
@@ -98,6 +99,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  ControlArchitectureExplorer,
   LearningGeneralizationExplorer,
   EventTriggeredExplorer,
   DiscreteOptimalExplorer,

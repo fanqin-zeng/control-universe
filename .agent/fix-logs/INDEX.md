@@ -73,6 +73,7 @@
 | [068](2026-10-19-068.md) | 2026-10-19 | discrete-sampled/sampling-period-selection | 采样预算/数字闭环/多率调度 | BOTH | 柯验+秦构（既有检查执行不足） | 修复三组实验、原题模型与裕度冲突、ADC漏项和延迟预算，保留多率未胜工况与执行代价 |
 | [069](2026-10-19-069.md) | 2026-10-19 | discrete-sampled/discrete-time-freq | 混叠、保持、量化与设计实验 | BOTH | 柯验+秦构 | 混叠相位、ZOH归一化、有限ADC及可实现PID纠错 |
 | [070](2026-10-19-070.md) | 2026-10-19 | components/wiki/browser-notebook.tsx | 在线Python代码字体 | BUG | 秦构 | 编辑框和输出统一为初始化代码字体 |
+| [071](2026-10-24-071.md) | 2026-10-24 | implementation/computer-control-architecture.mdx | 时序、可靠度与寿命 | BOTH | 周联+柯验（既有检查执行不足） | 区分扫描/采样/刷新与充分界，纠正不可维修MTTF和热备MTBF混用；补预算与独立对账 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）

@@ -101,7 +101,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 7.1 | 控制系统架构 | computer-control-architecture | 🟨 有正文待审校 | undergrad | impl | 12 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>discrete-sampled/discretization-methods |
+| 7.1 | 控制系统架构 | computer-control-architecture | ✅ 已交付 v1.3 | undergrad | impl | 12 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>discrete-sampled/discretization-methods |
 | 7.2 | 数字PID | digital-pid | 🟨 有正文待审校 | undergrad | impl | 13 | classic/pid-controller<br>discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>discrete-sampled/discrete-stability-criteria |
 | 7.3 | PID工程整定 | pid-engineering-tuning | ⬜ 骨架（占位页） | undergrad | impl | 14 | implementation/digital-pid<br>classic/time-domain-analysis |
 | 7.4 | 控制器部署 | controller-discretization-practice | ⬜ 骨架（占位页） | undergrad | impl | 14 | discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>math/numerical-methods<br>implementation/digital-pid |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 65（status = v1.3）
-- **有正文待审校**: 20（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 66（status = v1.3）
+- **有正文待审校**: 19（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 120（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 140（= draft 20 + empty 120 + 无 status 0）
+- **未完成 v1.3**: 139（= draft 19 + empty 120 + 无 status 0）
 - **有 MDX 正文**: 85
 - **catalog 小节总数**: 971
 - **讨论日志**: 87 篇（覆盖 66 门；有 MDX 无日志 19 门）
-- **交互组件**: 77 个文件（被正文引用 77，孤儿 0）
+- **交互组件**: 78 个文件（被正文引用 78，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

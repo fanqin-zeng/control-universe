@@ -3176,7 +3176,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "digital-pid",

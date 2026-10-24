@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-18T23:55:56.467Z",
-  "url": "http://localhost:8182/control-universe/python-expansion.html?lesson=discrete-sampled%2Fdiscrete-time-freq",
+  "testedAt": "2026-10-24T04:24:28.035Z",
+  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/computer-control-architecture",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
@@ -13149,22 +13149,99 @@
           ]
         }
       ]
+    },
+    {
+      "key": "implementation/computer-control-architecture",
+      "title": "控制系统架构",
+      "sourceHash": "2fe65b070be5588f49e7ca9fd72dcc43e0e05a9a206a62478534d4826127a64c",
+      "notebooks": [
+        {
+          "id": "implementation/computer-control-architecture#1",
+          "title": "时间预算、调度条件与相位复算",
+          "index": 1,
+          "line": 157,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 15335,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "communication=0.2 total=2.40 slack=2.60 ms\ncommunication=0.8 total=3.00 slack=2.00 ms\ncommunication=3.0 total=5.20 slack=-0.20 ms\nRM bound=0.828427125 U=0.850000000 response(ms)= [2.8, 4.8, 6.8, 6.8]\nThe bound is sufficient, not necessary.\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "network_loss_deg = 5.729577951\nnetwork_pm_deg = 39.270422049\nzoh_loss_deg = 2.864788976\nzoh_pm_deg = 47.135211024\nmax_period_ms = 17.453292520\nwith_path_loss_deg = 9.167324722\nclock_1ms_at100_deg = 5.729577951\nConditional phase estimates only; no sampled-data stability certificate.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/computer-control-architecture#2",
+          "title": "可靠度、寿命积分与选型题核对",
+          "index": 2,
+          "line": 236,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1209,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "R=0.9 TMR=0.972000 difference=0.072000\nR=0.4 TMR=0.352000 difference=-0.048000\nR=0.5 TMR=0.500000 difference=0.000000\nsingle MTTF(year)= 10.0\nparallel MTTF(year)=15.000000000 TMR MTTF(year)=8.333333333\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Selection requirements only: {'servo_period_ms': 0.1, 'line_period_ms': 10, 'process_period_ms': 100, 'line_io': 550, 'process_io': 5000, 'uav_period_ms': 1, 'water_period_ms': 1000, 'water_io': 600, 'assembly_di_do': 100, 'assembly_servos': 20}\nextra waiting: total=3.70 slack=1.30 ms\nExact deadline communication budget(ms)= 2.8\nNo measured hardware capability or procurement recommendation is implied.\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 84,
-    "notebooks": 395,
-    "enabled": 380,
+    "lessons": 85,
+    "notebooks": 397,
+    "enabled": 382,
     "codeOnly": 15
   },
   "releaseTotals": {
-    "lessons": 84,
-    "notebooks": 395,
-    "enabled": 380,
-    "codeOnly": 15
+    "lessons": 85,
+    "notebooks": 397,
+    "enabled": 381,
+    "codeOnly": 16
   },
   "provenance": [
     {
@@ -13752,6 +13829,11 @@
       "testedAt": "2026-10-24T04:30:35.417Z",
       "url": "http://127.0.0.1:8192/python-expansion.html?lesson=machine-learning%2Flearning-problem",
       "inputPath": ".agent/semester-03/ml-01/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T04:24:28.035Z",
+      "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/computer-control-architecture",
+      "inputPath": ".agent/semester-03/impl-01/pyodide.json"
     }
   ]
 }
