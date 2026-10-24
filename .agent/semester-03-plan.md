@@ -94,6 +94,7 @@
 | ID-06 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-06，rank3；保留并行课程，先修模型结构/频域分析/随机过程/频域校正已交付 | .agent/semester-03/id-06/acceptance.md |
 | ML-07 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-07，rank2；保留并行实现课，只依赖已交付ML-04/06 | .agent/semester-03/ml-07/acceptance.md |
 | ID-07 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-07，rank3；保留并行课程，先修最小二乘/可控可观/矩阵分解已交付 | .agent/semester-03/id-07/acceptance.md |
+| MPC-06 | IMPL-08;IMPL-09;IMPL-10;ML-08;ML-09;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-06，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-06/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -939,3 +940,7 @@ rank2按用户指定新写表征学习；PCA受限重构、冻结探针/七方�
 ### IMPL-07 网络控制本轮交付
 
 新写单课；时延、丢包、乱序与信息年龄。讨论和真实验收见 `.agent/semester-03/impl-07/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### MPC-06 学期3交付（2026-10-24）
+
+广义预测控制按重构Phase1–4完成，保留16H2/64旧H2-H3/73旧ID、五题全部子问与原E/F/80拍/60拍五权重主题。统一有限递推/总离散延迟/阶跃系数与历史自由响应，纠正C噪声方向、MV方差、题3矩阵与GMV/LQ/PI/稳定边界，替换错误旧图为真SVG。1444组实际TS对独立状态空间延迟链/QR、32恒等式对Fraction长除法、380QP独立复算；严格内核3Notebook6cell与生产Pyodide、普通/Pages本地及375px见.agent/semester-03/mpc-06/acceptance.md，S04本课债务已实测清除。rank6隔离19896/9076/19996/20096与私有索引，保留并行修改；仅本课，不发布Pages、不生产MPC-07。真实hash见全局checklist。

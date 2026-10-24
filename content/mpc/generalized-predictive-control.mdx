@@ -1,1368 +1,721 @@
 ---
 title: "广义预测控制(GPC)"
-description: "GPC 的完整框架——从 CARIMA 模型到 Diophantine 方程、预测矩阵、代价函数、解析解。掌握 GPC 调参方法，理解与 LQR/GMV 的关系，分析稳定性和约束扩展。"
+description: "统一延迟时标与输入输出历史，用有限多项式恒等式构造GPC预测，核对解析解、约束、调参与稳定性边界。"
 ---
 
 # 广义预测控制(GPC)
 
-前五课建立了 MPC 的通用框架：预测模型告诉我们"未来会怎样"，滚动优化让我们"每步重新规划"，约束处理让我们"在限制内找最优"。这些内容用的是**状态空间语言**——矩阵 $A, B, C$，预测矩阵 $F, \Phi$。
+把热水箱的加热功率调高后，温度读数往往不会立刻变化。如果把这几拍的等待当成“加热不够”，连续追加指令，等热量抵达传感器时又可能过头。前几课用状态空间模型预测这段过程；若手里已有一阶加延迟的输入输出模型，怎样保留管道里尚未显效的指令，再安排下一段动作？
 
-但 1987 年 Clarke 提出 GPC 时，用的是另一种语言：**传递函数**。
+广义预测控制（GPC）用CARIMA输入输出模型回答这个问题。它与前几课共享预测、滚动优化和约束思想，区别在于怎样组织动态和创新历史。本文将依次推导有限多项式分解、自由/强迫响应、费用和解，再核对调参、经典对应、约束与稳定边界。
 
-为什么？因为过程控制工程师更习惯传递函数——"这个系统是一阶加延迟的"比"这个系统的 $A$ 矩阵特征值是 0.95"更直觉。GPC 用 **CARIMA 模型**（传递函数的差分方程形式）做预测控制，调参参数 $N_1, N_2, N_u, \lambda$ 每个都有明确的物理意义。
+先修：[预测模型](/mpc/prediction-model)、[滚动优化](/mpc/receding-horizon)、[约束处理](/mpc/constraint-handling)及[递归可行性与稳定性](/mpc/mpc-stability)。
 
-> 📖 本课需要 [模型预测控制原理](/mpc/mpc-principle)（QP 公式化）、[预测模型建立](/mpc/prediction-model)（CARIMA 模型和 Diophantine 方程基础）、[滚动优化策略](/mpc/receding-horizon)（滚动优化思想）、[约束处理](/mpc/constraint-handling)（约束 QP）的前置知识。
-
-本节完整展开 GPC 的框架：
-
-1. **CARIMA 模型**：回顾 + 深入理解噪声模型的作用
-2. **Diophantine 方程**：完整递推算法 + 数值例子
-3. **预测公式**：自由响应 + 强迫响应
-4. **GPC 代价函数**：$N_1, N_2, N_u, \lambda$ 的物理意义
-5. **解析解**：无约束 GPC 的闭式解
-6. **调参方法**：系统化调参指南
-7. **与经典控制的关系**：GPC → GMV → LQR → PID
-8. **约束扩展**：从解析解到 QP
-9. **稳定性**：充分条件
-
-![GPC 框架图](/images/gpc-framework.png)
-
-
+![测量与真实历史进入自由响应，优化后只批准首输入](/diagrams/mpc/gpc-history.svg)
 ## CARIMA 模型回顾
+
+先固定输入时标，再讨论噪声模型。本课用输出与输入的偏差量建模；物理幅值和速率限制仍须另行给定。
 
 ### 模型形式
 
-[预测模型建立](/mpc/prediction-model) 中已经介绍了 CARIMA 模型。这里快速回顾，然后深入理解每个部分的含义。
+令 $q=z^{-1}$ 为一拍延迟算子，$\Delta=1-q$。采用严格因果模型
 
 $$
-\boxed{A(z^{-1}) y(k) = B(z^{-1}) u(k) + \frac{C(z^{-1})}{\Delta} \xi(k)}
+A(q)y(k)=B(q)u(k)+\frac{C(q)}{\Delta}\xi(k),\qquad B(q)=q^d B_0(q),\quad d\ge1.
 $$
 
-其中：
-- $A(z^{-1}) = 1 + a_1 z^{-1} + \cdots + a_{n_a} z^{-n_a}$（输出动态）
-- $B(z^{-1}) = b_0 + b_1 z^{-1} + \cdots + b_{n_b} z^{-n_b}$（输入动态）
-- $C(z^{-1}) = 1 + c_1 z^{-1} + \cdots + c_{n_c} z^{-n_c}$（噪声频谱，常简化为 $C = 1$）
-- $\Delta = 1 - z^{-1}$（差分算子，即积分器 $\frac{1}{\Delta}$）
-- $\xi(k)$ 是零均值白噪声
+$A$、$C$ 为首项1的多项式，$B_0$ 的首项非零。$d$ 定义为：从 $u(k)$ 变化到它首次影响 $y(k+d)$ 的**总离散延迟**；不再额外暗加一拍。$\xi$ 是零均值白创新，预测时需要它相对于已知信息的条件均值为零。
+
+后面的详细预测和实现限定 $C=1$。非单位 $C$ 仍可用创新模型处理，但不能把这里的简化自由响应直接套过去。
 
 ### 为什么需要 $\frac{1}{\Delta}$？
 
-这个积分器不是随便加的——它有两个关键作用：
+积分噪声模型允许输出方程中的附加扰动按随机游走演化；$C=1$ 时，扰动的每拍增量就是白创新。对常值偏差，创新更新能修正自由响应，这与[预测模型](/mpc/prediction-model)中的扰动增广思路相连。
 
-**作用一：消除稳态误差**
-
-和状态空间 MPC 的"增广模型"思路完全一样。$\frac{1}{\Delta}$ 在模型中嵌入了一个积分器，根据**内模原理**，控制器对常值参考信号实现零稳态误差。
-
-**作用二：建模"随机游走"型干扰**
-
-$\frac{1}{\Delta}\xi(k)$ 表示干扰是一个**随机游走**（random walk）——每一步叠加一个随机增量。这种干扰的特点是低频为主、持续漂移。工业中的温度漂移、催化剂老化、换热器结垢，都是这种类型。
-
-> 💡 如果干扰是白噪声型的（高频、不持续），去掉 $\frac{1}{\Delta}$ 就行。但工业中大多数干扰是低频漂移型的，所以 $\frac{1}{\Delta}$ 几乎是标配。
+这提供消除静差所需的模型结构，**不单独保证零静差**。还需闭环稳定、偏差可被估计、目标可达，且输入约束没有阻止所需稳态动作。不能把工业中的所有漂移都认定为同一随机游走。
 
 ### $C(z^{-1})$ 的作用：噪声频谱整形
 
-$C(z^{-1})$ 描述了噪声的频谱特征。定义**谱密度**：
+$C$ 先整形创新，再经过积分器；“创新是白噪声”不等于输出扰动是白噪声。对平稳的差分扰动 $\Delta v=C(q)\xi$，谱密度为
 
 $$
-S(\omega) = \left|\frac{C(e^{-j\omega})}{\Delta(e^{-j\omega})}\right|^2 \sigma_\xi^2
+S_{\Delta v}(\omega)=|C(e^{-\mathrm i\omega})|^2\sigma_\xi^2.
 $$
 
-- $C = 1$：白噪声（所有频率等功率）
-- $C = 1 - 0.9z^{-1}$：高频噪声被抑制（低通型干扰）
-- $C = 1 + 0.9z^{-1}$：低频噪声被抑制（高通型干扰）
-
-> 💡 实际应用中 $C$ 通常不直接辨识，而是作为**调参工具**——调整 $C$ 相当于调整控制器对不同频率干扰的敏感度。但为了简化，大多数实现取 $C = 1$。
+$C=1-0.9q$ 在频率0与 $\pi$ 的功率因子分别为0.01与3.61，偏重高频；$C=1+0.9q$ 则分别为3.61与0.01，偏重低频，方向不能倒置。再除以 $\Delta$ 的扰动水平通常非平稳，不能直接宣称存在通常意义的平稳谱密度。$C$ 的选择也会改变创新估计器，不能只把它当成无代价的滤波旋钮。
 
 ### 从 CARIMA 到增量模型
 
-令 $\tilde{A}(z^{-1}) = A(z^{-1})\Delta(z^{-1})$，CARIMA 模型变为：
+乘以差分算子，得到
 
 $$
-\tilde{A}(z^{-1}) y(k) = B(z^{-1}) \Delta u(k) + C(z^{-1}) \xi(k)
+\widetilde A(q)y(k)=B(q)\Delta u(k)+C(q)\xi(k),\qquad \widetilde A=A(1-q).
 $$
 
-注意：这里输入变成了 $\Delta u(k)$（增量），而不是 $u(k)$（绝对值）。这就是 GPC 天然使用**增量形式**的原因——它直接从模型结构中涌现出来。
-
-展开 $\tilde{A}$：
-
-$$
-\tilde{A}(z^{-1}) = (1 + a_1 z^{-1} + \cdots)(1 - z^{-1}) = 1 + \tilde{a}_1 z^{-1} + \tilde{a}_2 z^{-2} + \cdots
-$$
-
-其中 $\tilde{a}_1 = a_1 - 1$，$\tilde{a}_i = a_i - a_{i-1}$（$i \leq n_a$），$\tilde{a}_{n_a+1} = -a_{n_a}$。
-
+若 $A=1+a_1q+\cdots+a_{n_a}q^{n_a}$，则 $\tilde a_1=a_1-1$，中间系数 $\tilde a_i=a_i-a_{i-1}$，末项 $\tilde a_{n_a+1}=-a_{n_a}$。增量指令 $\Delta u(k)=u(k)-u(k-1)$，所以停止新增量意味着**保持绝对输入**。注意 $\widetilde A$ 含积分根，不能把“$\widetilde A$ 所有极点严格稳定”作为一般CARIMA前提。
 
 ## Diophantine 方程
 
+下面先处理一个纯代数问题，再将结果放回预测器。
+
 ### 为什么需要 Diophantine 方程？
 
-GPC 需要计算 $j$ 步 ahead 最优预测 $\hat{y}(k+j|k)$——"站在时刻 $k$，预测 $k+j$ 时刻的输出"。
-
-从 CARIMA 模型出发：
-
-$$
-y(k+j) = \frac{B}{\tilde{A}} \Delta u(k+j) + \frac{C}{\tilde{A}} \xi(k+j)
-$$
-
-问题在于 $\frac{1}{\tilde{A}}$ 是无穷级数——我们需要把它拆成**已知部分**（依赖 $k$ 及以前的数据）和**未知部分**（依赖未来的噪声）。这就是 Diophantine 方程的工作。
+需要把逆多项式的前几项与余项分开。前者产生有限个未来创新项，后者只作用于已知输出历史。多项式恒等式能让这一步接受逐系数验证，不必凭图猜测预测是否正确。
 
 ### Diophantine 方程的定义
 
-对每个预测步 $j$，求解：
+在 $C=1$ 的本课合同下，对每个正整数 $j$ 求
 
 $$
-\boxed{1 = E_j(z^{-1}) \tilde{A}(z^{-1}) + z^{-j} F_j(z^{-1})}
+1=E_j(q)\widetilde A(q)+q^j F_j(q).
 $$
 
-其中：
-- $E_j(z^{-1}) = 1 + e_1 z^{-1} + \cdots + e_{j-1} z^{-(j-1)}$（$j-1$ 阶多项式）
-- $F_j(z^{-1}) = f_{j,0} + f_{j,1} z^{-1} + \cdots$（无穷阶，但实际截断到 $n_a + 1$ 阶）
-
-> 💡 **本质**：这就是多项式长除法。把 $\frac{1}{\tilde{A}}$ 展开为 $z^{-1}$ 的幂级数，前 $j$ 项构成 $E_j$，余项构成 $z^{-j} F_j$。
+$E_j$ 至多 $j-1$ 次；若 $\widetilde A$ 为 $m$ 次，$F_j$ 至多 $m-1$ 次，**不是无穷多项式**。令 $E_0=0,F_0=1$。一般 $C$ 的对应分解应从 $C=E_j\widetilde A+q^jF_j$ 出发，并结合创新滤波状态推导，不能只在最后替换一个系数。
 
 ### 递推算法
 
-**方法一：直接长除法**
-
-把 $\frac{1}{\tilde{A}}$ 做长除法展开：
+方法一是对 $1/\widetilde A$ 做形式幂级数长除法，取前 $j$ 项作 $E_j$，再从余项提取 $q^jF_j$。方法二从相邻两条恒等式相减：
 
 $$
-\frac{1}{\tilde{A}} = 1 + \alpha_1 z^{-1} + \alpha_2 z^{-2} + \cdots
+e_j=F_{j-1}(0),\quad E_j=E_{j-1}+e_jq^{j-1},\quad
+F_j=q^{-1}(F_{j-1}-e_j\widetilde A).
 $$
 
-则 $E_j = 1 + \alpha_1 z^{-1} + \cdots + \alpha_{j-1} z^{-(j-1)}$（取前 $j$ 项），$F_j$ 由余项确定。
-
-**方法二：递推公式**（更高效）
-
-初始化：$E_0 = 0$, $F_0 = 1$
-
-对 $j = 1, 2, \ldots, N_p$：
+括号的常数项恰为零，故除以 $q$ 得到普通多项式；用 $z$ 写就是乘以 $z$，**不是乘以 $z^{-1}$**。若缺失系数按零补齐，系数形式为
 
 $$
-e_j = \text{coeff of } z^{-(j-1)} \text{ in } F_{j-1}
+f_{j,i}=f_{j-1,i+1}-e_j\tilde a_{i+1},\qquad i=0,\ldots,m-1.
 $$
 
-$$
-E_j = E_{j-1} + e_j z^{-(j-1)}
-$$
-
-$$
-F_j = z^{-1}(F_{j-1} - e_j \tilde{A})
-$$
-
-> 💡 每步递推只做一次多项式乘法和减法，计算量 $O(n_a)$。$N_p$ 步总计算量 $O(n_a N_p)$——非常高效。
+每一步更新有限个系数；固定多项式阶数时，总工作量随预测步数线性增长。实现仍需核系数尺度与数值误差。
 
 ### 数值例子
 
-设 $\tilde{A}(z^{-1}) = 1 - 1.2z^{-1} + 0.4z^{-2}$，求 $E_1, E_2, E_3$ 和 $F_1, F_2, F_3$。
-
-**$j = 1$**：
-
-$e_1 = $ $F_0$ 的 $z^0$ 系数 $= 1$
-
-$E_1 = 0 + 1 \cdot z^0 = 1$
-
-$F_1 = z^{-1}(1 - 1 \cdot (1 - 1.2z^{-1} + 0.4z^{-2})) = z^{-1}(1.2z^{-1} - 0.4z^{-2}) = 1.2z^{-2} - 0.4z^{-3}$
-
-**验证**：$E_1 \tilde{A} + z^{-1} F_1 = 1 \cdot (1 - 1.2z^{-1} + 0.4z^{-2}) + z^{-1}(1.2z^{-2} - 0.4z^{-3})$
-$= 1 - 1.2z^{-1} + 0.4z^{-2} + 1.2z^{-3} - 0.4z^{-4}$
-
-等等，这不对——应该等于 1。让我重新检查。
-
-实际上 $F_1 = z^{-1}(F_0 - e_1 \tilde{A})$ 需要更仔细地计算：
-
-$F_0 - e_1 \tilde{A} = 1 - 1 \cdot (1 - 1.2z^{-1} + 0.4z^{-2}) = 1.2z^{-1} - 0.4z^{-2}$
-
-$F_1 = z^{-1}(1.2z^{-1} - 0.4z^{-2}) = 1.2z^{-2} - 0.4z^{-3}$
-
-**验证**：$E_1 \tilde{A} + z^{-1} F_1 = (1 - 1.2z^{-1} + 0.4z^{-2}) + z^{-1}(1.2z^{-2} - 0.4z^{-3})$
-$= 1 - 1.2z^{-1} + 0.4z^{-2} + 1.2z^{-3} - 0.4z^{-4}$
-
-这不等于 1！问题出在 $F_j$ 的定义上。
-
-让我重新用**长除法**来理解。$\frac{1}{\tilde{A}}$ 的长除法：
-
-$$
-\frac{1}{1 - 1.2z^{-1} + 0.4z^{-2}} = 1 + 1.2z^{-1} + 1.04z^{-2} + 0.768z^{-3} + \cdots
-$$
-
-**$j=1$**：$E_1 = 1$
-
-$z^{-1}F_1 = 1 - E_1 \tilde{A} = 1 - (1 - 1.2z^{-1} + 0.4z^{-2}) = 1.2z^{-1} - 0.4z^{-2}$
-
-$F_1 = 1.2 - 0.4z^{-1}$
-
-**验证**：$E_1 \tilde{A} + z^{-1}F_1 = (1 - 1.2z^{-1} + 0.4z^{-2}) + z^{-1}(1.2 - 0.4z^{-1}) = 1 - 1.2z^{-1} + 0.4z^{-2} + 1.2z^{-1} - 0.4z^{-2} = 1$ ✓
-
-**$j=2$**：$e_2 = F_1$ 的 $z^0$ 系数 $= 1.2$
-
-$E_2 = E_1 + 1.2z^{-1} = 1 + 1.2z^{-1}$
-
-$F_2 = z^{-1}(F_1 - e_2 \tilde{A}) = z^{-1}((1.2 - 0.4z^{-1}) - 1.2(1 - 1.2z^{-1} + 0.4z^{-2}))$
-$= z^{-1}(1.2 - 0.4z^{-1} - 1.2 + 1.44z^{-1} - 0.48z^{-2})$
-$= z^{-1}(1.04z^{-1} - 0.48z^{-2})$
-$= 1.04z^{-2} - 0.48z^{-3}$
-
-所以 $F_2 = 1.04 - 0.48z^{-1}$（提取 $z^{-2}$ 后）
-
-不对——$F_2$ 应该写成标准形式。让我重新整理：
-
-$F_2 = z^{-1}(F_1 - 1.2\tilde{A})$
-
-$F_1 - 1.2\tilde{A} = (1.2 - 0.4z^{-1}) - 1.2(1 - 1.2z^{-1} + 0.4z^{-2}) = 1.2 - 0.4z^{-1} - 1.2 + 1.44z^{-1} - 0.48z^{-2} = 1.04z^{-1} - 0.48z^{-2}$
-
-$F_2 = z^{-1}(1.04z^{-1} - 0.48z^{-2}) = 1.04z^{-2} - 0.48z^{-3}$
-
-这里 $F_2$ 的最低次项是 $z^{-2}$，这说明递推中 $F_j$ 的最低次项是 $z^{-j}$。
-
-> 💡 实际上 $F_j$ 应该写成 $F_j = f_{j,0} + f_{j,1}z^{-1} + \cdots$ 的形式。从递推公式看，$F_1 = 1.2 - 0.4z^{-1}$，$F_2$ 的计算中 $z^{-1}(\cdots)$ 使得 $F_2$ 包含 $z^{-1}$ 因子。
-
-让我用更清晰的方式重新定义。实际上标准写法是：
-
-$$
-F_j(z^{-1}) = f_{j,0} + f_{j,1}z^{-1} + \cdots + f_{j,n_a}z^{-n_a}
-$$
-
-从递推中直接提取系数。
-
-**$j=1$**：$F_1 = 1.2 - 0.4z^{-1}$，所以 $f_{1,0} = 1.2, f_{1,1} = -0.4$
-
-**$j=2$**：$e_2 = f_{1,0} = 1.2$
-
-$E_2 = 1 + 1.2z^{-1}$
-
-$F_2 = z^{-1}(F_1 - e_2 \tilde{A}) = z^{-1}((1.2 - 0.4z^{-1}) - 1.2(1 - 1.2z^{-1} + 0.4z^{-2}))$
-$= z^{-1}(1.04z^{-1} - 0.48z^{-2}) = 1.04z^{-2} - 0.48z^{-3}$
-
-嗯，$F_2$ 没有常数项和 $z^{-1}$ 项？这意味着 $f_{2,0} = 0, f_{2,1} = 0, f_{2,2} = 1.04, f_{2,3} = -0.48$？
-
-不对，让我重新审视递推公式。问题可能在于 $F_j$ 的定义——它应该包含从 $z^0$ 开始的项。
-
-让我直接用长除法验证：
-
-$\frac{1}{\tilde{A}} = 1 + 1.2z^{-1} + 1.04z^{-2} + 0.768z^{-3} + \cdots$
-
-**$j=2$**：$E_2 = 1 + 1.2z^{-1}$（取前 2 项）
-
-$z^{-2}F_2 = 1 - E_2 \tilde{A} = 1 - (1 + 1.2z^{-1})(1 - 1.2z^{-1} + 0.4z^{-2})$
-$= 1 - (1 - 1.2z^{-1} + 0.4z^{-2} + 1.2z^{-1} - 1.44z^{-2} + 0.48z^{-3})$
-$= 1 - (1 + 0z^{-1} - 1.04z^{-2} + 0.48z^{-3})$
-$= 1.04z^{-2} - 0.48z^{-3}$
-
-$F_2 = 1.04 - 0.48z^{-1}$
-
-**验证**：$E_2 \tilde{A} + z^{-2}F_2 = (1 - 1.04z^{-2} + 0.48z^{-3}) + z^{-2}(1.04 - 0.48z^{-1})$
-$= 1 - 1.04z^{-2} + 0.48z^{-3} + 1.04z^{-2} - 0.48z^{-3} = 1$ ✓
-
-好的！所以递推公式中的 $F_j$ 实际上需要重新理解。让我用正确的递推：
-
-正确的递推应该是：
-
-$$
-F_j = z^{-j}(1 - E_j \tilde{A}) \cdot z^j
-$$
-
-即 $F_j$ 是 $z^{-j}F_j = 1 - E_j\tilde{A}$ 中提取出来的。
-
-更实用的递推（Clarke 原始论文）：
-
-$$
-F_j = z(F_{j-1} - e_j \tilde{A}) \cdot z^{-1}
-$$
-
-不，让我回到最基本的递推关系。
-
-从 $1 = E_j \tilde{A} + z^{-j} F_j$ 和 $1 = E_{j-1} \tilde{A} + z^{-(j-1)} F_{j-1}$：
-
-$$
-z^{-j} F_j = 1 - E_j \tilde{A} = 1 - (E_{j-1} + e_j z^{-(j-1)})\tilde{A}
-$$
-$$
-= (1 - E_{j-1}\tilde{A}) - e_j z^{-(j-1)} \tilde{A} = z^{-(j-1)}F_{j-1} - e_j z^{-(j-1)}\tilde{A}
-$$
-$$
-= z^{-(j-1)}(F_{j-1} - e_j \tilde{A})
-$$
-
-所以：$F_j = z(F_{j-1} - e_j \tilde{A})$... 不对，应该是：
-
-$z^{-j}F_j = z^{-(j-1)}(F_{j-1} - e_j\tilde{A})$
-
-两边乘以 $z^j$：$F_j = z(F_{j-1} - e_j\tilde{A})$
-
-但 $F_{j-1} - e_j\tilde{A}$ 的常数项为 $f_{j-1,0} - e_j \cdot 1 = e_j - e_j = 0$（因为 $e_j = f_{j-1,0}$）。
-
-所以 $F_{j-1} - e_j\tilde{A}$ 没有常数项，可以写成 $z^{-1}(\cdots)$。
-
-$F_j = z \cdot z^{-1}(\cdots) = (\cdots)$
-
-具体来说：
-
-$F_{j-1} - e_j\tilde{A} = (f_{j-1,0} - e_j) + (f_{j-1,1} - e_j\tilde{a}_1)z^{-1} + \cdots$
-
-因为 $e_j = f_{j-1,0}$，常数项为零：
-
-$F_{j-1} - e_j\tilde{A} = (f_{j-1,1} - e_j\tilde{a}_1)z^{-1} + (f_{j-1,2} - e_j\tilde{a}_2)z^{-2} + \cdots$
-
-$F_j = z \cdot [(f_{j-1,1} - e_j\tilde{a}_1)z^{-1} + (f_{j-1,2} - e_j\tilde{a}_2)z^{-2} + \cdots]$
-$= (f_{j-1,1} - e_j\tilde{a}_1) + (f_{j-1,2} - e_j\tilde{a}_2)z^{-1} + \cdots$
-
-所以递推的**系数形式**是：
-
-$$
-f_{j,i} = f_{j-1,i+1} - e_j \tilde{a}_{i+1}, \quad i = 0, 1, \ldots, n_a
-$$
-
-其中 $e_j = f_{j-1,0}$。
-
-这就是最清晰的递推公式！
-
-让我用这个公式重新计算数值例子。
-
-$\tilde{A} = 1 - 1.2z^{-1} + 0.4z^{-2}$，即 $\tilde{a}_1 = -1.2, \tilde{a}_2 = 0.4$
-
-**$j=1$**：$F_0 = 1$，即 $f_{0,0} = 1, f_{0,1} = 0, f_{0,2} = 0$
-
-$e_1 = f_{0,0} = 1$
-
-$f_{1,0} = f_{0,1} - e_1 \tilde{a}_1 = 0 - 1 \cdot (-1.2) = 1.2$
-$f_{1,1} = f_{0,2} - e_1 \tilde{a}_2 = 0 - 1 \cdot 0.4 = -0.4$
-
-$F_1 = 1.2 - 0.4z^{-1}$ ✓
-
-**$j=2$**：$e_2 = f_{1,0} = 1.2$
-
-$f_{2,0} = f_{1,1} - e_2 \tilde{a}_1 = -0.4 - 1.2 \cdot (-1.2) = -0.4 + 1.44 = 1.04$
-$f_{2,1} = f_{1,2} - e_2 \tilde{a}_2 = 0 - 1.2 \cdot 0.4 = -0.48$
-
-$F_2 = 1.04 - 0.48z^{-1}$ ✓
-
-**$j=3$**：$e_3 = f_{2,0} = 1.04$
-
-$f_{3,0} = f_{2,1} - e_3 \tilde{a}_1 = -0.48 - 1.04 \cdot (-1.2) = -0.48 + 1.248 = 0.768$
-$f_{3,1} = f_{2,2} - e_3 \tilde{a}_2 = 0 - 1.04 \cdot 0.4 = -0.416$
-
-$F_3 = 0.768 - 0.416z^{-1}$
-
-**验证**：$E_3 = 1 + 1.2z^{-1} + 1.04z^{-2}$
-
-$E_3\tilde{A} = (1 + 1.2z^{-1} + 1.04z^{-2})(1 - 1.2z^{-1} + 0.4z^{-2})$
-$= 1 + (1.2 - 1.2)z^{-1} + (0.4 - 1.44 + 1.04)z^{-2} + (0.48 - 1.248)z^{-3} + 0.416z^{-4}$
-$= 1 + 0z^{-1} + 0z^{-2} - 0.768z^{-3} + 0.416z^{-4}$
-
-$z^{-3}F_3 = z^{-3}(0.768 - 0.416z^{-1}) = 0.768z^{-3} - 0.416z^{-4}$
-
-$E_3\tilde{A} + z^{-3}F_3 = 1$ ✓
-
-完美！
-
+保留原代数例 $\widetilde A=1-1.2q+0.4q^2$。它在 $q=1$ 不为零，因此这里只是首项1的多项式例，不是已经因式分解为 $A(1-q)$ 的CARIMA。
+
+| j | E_j | F_j |
+|---|---|---|
+| 1 | $1$ | $1.2-0.4q$ |
+| 2 | $1+1.2q$ | $1.04-0.48q$ |
+| 3 | $1+1.2q+1.04q^2$ | $0.768-0.416q$ |
+
+例如第三行相乘后，$E_3\widetilde A=1-0.768q^3+0.416q^4$，恰被 $q^3F_3$ 的非恒定项抵消。无需反复改写定义；Notebook逐行验证同一恒等式。
 
 ## j 步 ahead 预测
 
+对未来增量的效应和对已知历史的效应必须分别保留。
+
 ### 预测公式的推导
 
-从增量形式的 CARIMA 模型：
+令 $R_j(q)=E_j(q)B(q)$，其系数记为 $r_{j,r}$。将增量模型乘以 $E_j$，再把时间移到 $k+j$：
 
 $$
-\tilde{A}(z^{-1}) y(k) = B(z^{-1}) \Delta u(k) + C(z^{-1}) \xi(k)
+y(k+j)=F_j(q)y(k)+R_j(q)\Delta u(k+j)+E_j(q)\xi(k+j).
 $$
 
-两边乘以 $E_j$：
+最后一项只含 $k+1$ 到 $k+j$ 的未来创新，在信息充分、创新假设成立时条件均值为零。将 $R_j$ 的项按输入是否已知拆开：
 
 $$
-E_j \tilde{A} y(k) = E_j B \Delta u(k) + E_j C \xi(k)
+\hat y(k+j|k)=\underbrace{F_j(q)y(k)+\sum_{r>j}r_{j,r}\Delta u(k+j-r)}_{f(j)}
++\sum_{r=0}^{j}r_{j,r}\Delta u(k+j-r).
 $$
 
-用 Diophantine 方程 $E_j \tilde{A} = 1 - z^{-j} F_j$：
-
-$$
-(1 - z^{-j} F_j) y(k) = E_j B \Delta u(k) + E_j C \xi(k)
-$$
-
-$$
-y(k) - z^{-j} F_j y(k) = E_j B \Delta u(k) + E_j C \xi(k)
-$$
-
-移项并取条件期望 $E[\cdot | \text{data up to } k]$（未来噪声期望为零）：
-
-$$
-\boxed{\hat{y}(k+j|k) = F_j(z^{-1}) y(k) + G_j(z^{-1}) \Delta u(k+j) + H_j(z^{-1}) \Delta u(k-1)}
-$$
-
-其中：
-- $G_j = E_j B$（强迫响应的脉冲响应系数）
-- $H_j$ 是考虑"过去输入变化对未来输出的影响"的修正项
-
-> 💡 预测被分成了两部分：
-> - **自由响应** $f(j) = F_j y(k) + H_j \Delta u(k-1)$：只依赖已知数据，不受未来控制影响
-> - **强迫响应** $G_j \Delta u(k+j)$：依赖未来控制增量
+所有求和均只覆盖有限多项式的非零系数。$F_j(q)y(k)$ 本身也包含过去的输出。自由响应 $f(j)$ 不只依赖当前输出，延迟管道内已经下发的输入变化不能丢掉。未来增量仅在 $k$ 到 $k+N_u-1$ 可优化，之后设为零。
 
 ### 矩阵形式
 
-把所有预测步 $j = N_1, N_1+1, \ldots, N_2$ 写成矩阵：
+按费用窗口 $j=N_1,\ldots,N_2$ 堆叠，得
 
 $$
-\hat{Y} = G \Delta U + f
+\hat Y=G\Delta U+f,\qquad G_{j,m}=r_{j,j-m},\quad m=0,\ldots,N_u-1.
 $$
 
-其中：
+对本课一阶对象 $A=1-aq,B=bq^d$，定义每个输入增量的输出系数
 
 $$
-\hat{Y} = \begin{bmatrix} \hat{y}(k+N_1|k) \\ \hat{y}(k+N_1+1|k) \\ \vdots \\ \hat{y}(k+N_2|k) \end{bmatrix}, \quad \Delta U = \begin{bmatrix} \Delta u(k) \\ \Delta u(k+1) \\ \vdots \\ \Delta u(k+N_u-1) \end{bmatrix}
+s_j=\begin{cases}0,&j<d,\\b\sum_{r=0}^{j-d}a^r,&j\ge d.\end{cases}
+\qquad G_{j,m}=s_{j-m}.
 $$
 
-$G$ 矩阵由 $G_j = E_j B$ 的脉冲响应系数构成，是**下三角 Toeplitz** 矩阵：
-
-$$
-G = \begin{bmatrix} g_{N_1-1} & g_{N_1-2} & \cdots & g_{N_1-N_u} \\ g_{N_1} & g_{N_1-1} & \cdots & g_{N_1-N_u+1} \\ \vdots & \vdots & \ddots & \vdots \\ g_{N_2-1} & g_{N_2-2} & \cdots & g_{N_2-N_u} \end{bmatrix}
-$$
-
-其中 $g_i$ 是 $G_j(z^{-1}) = E_j(z^{-1}) B(z^{-1})$ 的系数。
-
-> 💡 当 $N_1 = 1, N_2 = N_p, N_u = N_p$ 时，$G$ 就是标准的全下三角 Toeplitz 矩阵——和状态空间 MPC 的 $\Phi_e$ 完全一样。
-
-**自由响应** $f$ 只依赖已知数据（过去的输入输出），在每个采样时刻可以计算：
-
-$$
-f = \begin{bmatrix} f(N_1) \\ f(N_1+1) \\ \vdots \\ f(N_2) \end{bmatrix}
-$$
-
-其中 $f(j) = F_j y(k) + H_j \Delta u(k-1)$。
-
+这些是**绝对输入单位阶跃响应系数**，也是“增量输入到输出”的脉冲响应系数；不能与绝对输入的脉冲系数 $ba^r$ 混用。$E_jB$ 可给出同一行，但不能跨不同 $j$ 再把系数累加一遍。$N_1=1$ 时是常见的下三角结构；截取后面的行，未必仍是通常画法的下三角。
 
 ## GPC 代价函数
 
+费用窗口与预测演化范围是两回事：前几拍不计跟踪误差，不意味着前几拍不存在。
+
 ### 代价函数的定义
 
-GPC 的代价函数：
+未来参考记为 $W=[w(k+N_1),\ldots,w(k+N_2)]^T$，费用为
 
 $$
-\boxed{J = \sum_{j=N_1}^{N_2} [\hat{y}(k+j|k) - w(k+j)]^2 + \sum_{j=1}^{N_u} \lambda(j) [\Delta u(k+j-1)]^2}
+J=(G\Delta U+f-W)^T(G\Delta U+f-W)+\Delta U^T\Lambda\Delta U.
 $$
 
-参数含义：
-
-| 参数 | 名称 | 作用 |
-|------|------|------|
-| $N_1$ | 最小预测时域（minimum costing horizon） | 预测误差开始被惩罚的起始步 |
-| $N_2$ | 最大预测时域（prediction horizon） | 预测误差被惩罚的终止步 |
-| $N_u$ | 控制时域（control horizon） | 未来控制增量中需要优化的步数 |
-| $\lambda(j)$ | 控制加权（control weighting） | 惩罚控制增量的大小 |
-
-矩阵形式：
-
-$$
-J = (\hat{Y} - W)^T(\hat{Y} - W) + \Delta U^T \Lambda \Delta U
-$$
-
-其中 $W = [w(k+N_1), \ldots, w(k+N_2)]^T$，$\Lambda = \text{diag}(\lambda(1), \ldots, \lambda(N_u))$。
-
-通常简化为 $\Lambda = \lambda I$（所有步的控制权重相同）。
+$N_1$ 为费用起点，$N_2$ 为预测终点，$N_u$ 为独立增量数；$\Lambda$ 为非负增量权重矩阵，演示取 $\lambda I$。若未来参考不可知，应说明采用保持当前参考等预测方式；不能在仿真里暗用真实未来。
 
 ### $N_1$ 的物理意义：跳过死区时间
 
-$N_1$ 是 GPC 独有的参数（DMC 和状态空间 MPC 没有）。它的作用是**跳过系统没有响应的时段**。
+按本课总延迟定义，当前输入第一次影响 $y(k+d)$，故可选 $N_1=d$ 跳过对当前计划完全不敏感的输出行。该起点是费用设计选择，不是GPC专属，其他MPC也可设时变输出权重。
 
-考虑一个有 $d$ 步纯延迟的系统：$g_0 = g_1 = \cdots = g_{d-1} = 0$，$g_d \neq 0$。
-
-如果 $N_1 = 1$，$G$ 矩阵的前 $d$ 行前 $d$ 列全为零——这些行对优化没有贡献，反而让 $G^TG$ 的条件数变差。
-
-设 $N_1 = d$，跳过延迟段，$G$ 矩阵从 $g_d$ 开始——条件数改善，优化更稳定。
-
-> 💡 **经验法则**：$N_1 = d$（纯延迟步数）。如果系统没有纯延迟，$N_1 = 1$。
+若整行 $G$ 为零，删去这一行**不会改变** $G^TG$ 或 $G^T(W-f)$，只少了费用中的常数项；不能声称因此改善Gram矩阵的条件数。起点设得过晚还可能丢失有用瞬态信息。硬输出约束仍须在全部必要时刻检查。
 
 ### $N_2$ 的物理意义：覆盖主要动态
 
-$N_2$ 决定了"控制器看多远"。
-
-- $N_2$ 太小：控制器"近视"，只看眼前，可能做出短视的决策
-- $N_2$ 太大：计算量增加，且远端预测不准（模型误差累积），反而降低性能
-
-> 💡 **经验法则**：$N_2 \approx t_{\text{settling}} / T_s$（覆盖系统的调节时间）。对于一阶系统 $t_{\text{settling}} \approx 4T_{\text{const}}$，$N_2 \approx 4T_{\text{const}}/T_s$。
+预测窗口通常应覆盖总延迟及主要响应过程；一阶稳定模型的“四个时间常数”可作初选估计，不能忽略纯延迟。增大时域增加计算量，也可能更依赖远端模型；它既不必然改善闭环，也不必然恶化闭环。应同时核稳定性、约束和模型失配。
 
 ### $N_u$ 的物理意义：控制自由度
 
-$N_u$ 决定了"未来多少步的控制可以调整"。$j > N_u$ 时，$\Delta u(k+j) = 0$（控制量保持不变）。
-
-- $N_u = 1$：只有当前一步可以调整，后面保持不变（类似单步预测控制）
-- $N_u$ 大：更多自由度，性能更好，但计算量增加
-- $N_u \geq N_2$：完全自由（没有"保持不变"的约束）
-
-> 💡 **经验法则**：$N_u = 2 \sim 10$。通常 $N_u \ll N_2$——控制量不需要每一步都变。
+优化变量为 $\Delta u(k),\ldots,\Delta u(k+N_u-1)$；从 $k+N_u$ 起新增量为零。$N_u=1$ 仍可看很多拍，不能称为只预测一步。更多自由度让同一嵌套优化问题的最优费用不增，但不保证闭环超调或鲁棒性更好。超出能影响费用窗口的变量只会由正权重压为零，零权重时可能形成非唯一解。
 
 ### $\lambda$ 的物理意义：控制力度
 
-$\lambda$ 惩罚控制增量的大小：
+正的 $\lambda$ 惩罚增量并正则化：对任意非零 $v$，$v^T(G^TG+\lambda I)v=\|Gv\|^2+\lambda\|v\|^2>0$。$\lambda=0$ 则须核列秩；奇异不代表“约束不可行”，而可能是最优输入不唯一。
 
-- $\lambda = 0$：不惩罚控制力度 → 激进控制 → 可能超调、振荡
-- $\lambda$ 大：强烈惩罚控制变化 → 保守控制 → 响应慢但平稳
-- $\lambda \to \infty$：$\Delta u \to 0$ → 控制器不动作
-
-> 💡 **经验法则**：$\lambda$ 从 $0.01 \times g_0^2$ 开始调（$g_0$ 是系统稳态增益的绝对值），然后逐步增大直到响应满意。
-
-$\lambda$ 还有一个重要作用：**正则化**。当 $G^TG$ 接近奇异时（例如 $G$ 的条件数大），$\lambda I$ 保证 $(G^TG + \lambda I)$ 可逆。这和 Ridge 回归中的正则化完全一样。
-
+当模型和目标固定、$\lambda$ 趋于无穷时，最优增量趋零。对有限权重，较小增量并不等于设备耗能更小，较保守也不等于鲁棒稳定裕度必然增大。权重有量纲或归一化依赖，应先标定输出和输入尺度，不照搬固定数量级配方。
 
 ## GPC 解析解
 
+这里先解不带硬约束的凸二次问题，之后再加入约束。
+
 ### 无约束 GPC
 
-代入 $\hat{Y} = G\Delta U + f$：
+驻点方程为
 
 $$
-J = (G\Delta U + f - W)^T(G\Delta U + f - W) + \Delta U^T \Lambda \Delta U
+(G^TG+\Lambda)\Delta U^*=G^T(W-f).
 $$
 
-对 $\Delta U$ 求导：
-
-$$
-\frac{\partial J}{\partial \Delta U} = 2G^T(G\Delta U + f - W) + 2\Lambda \Delta U = 0
-$$
-
-$$
-(G^T G + \Lambda) \Delta U = G^T(W - f)
-$$
-
-$$
-\boxed{\Delta U^* = (G^T G + \Lambda)^{-1} G^T (W - f)}
-$$
-
-**这就是 GPC 的核心公式**——一个矩阵求逆就搞定了。
-
-当 $\Lambda = \lambda I$ 时：
-
-$$
-\Delta U^* = (G^T G + \lambda I)^{-1} G^T (W - f)
-$$
-
-实际只取第一个分量：
-
-$$
-\Delta u(k) = [1, 0, \ldots, 0] \Delta U^*
-$$
-
-然后 $u(k) = u(k-1) + \Delta u(k)$。
-
-> 💡 **计算量**：$(G^TG + \lambda I)$ 是 $N_u \times N_u$ 矩阵，求逆 $O(N_u^3)$。通常 $N_u \leq 10$，所以求逆几乎是瞬时的。这就是 GPC 的优势——不需要 QP 求解器。
+当左侧正定时解唯一。逆矩阵形式只是数学表达，实际使用Cholesky、QR或其他稳定线性方程算法，不显式求逆。不变模型/窗口/权重下可复用分解；自由响应、参考以及依赖状态的约束右端每拍更新。小矩阵也须纳入完整执行预算，不能据维数宣称瞬时完成。
 
 ### 算法步骤
 
-每步采样时刻 $k$：
+每次采样依次：测量输出并读取**实际执行**输入历史；更新创新/扰动状态，计算 $f$；读取已知或预测的未来参考；求解并检查状态、残差、约束和期限；仅批准首增量；将实际输入记入历史，再等下一拍。
 
-1. **测量** $y(k)$
-2. **计算自由响应** $f$：用 Diophantine 递推得到 $F_j$，计算 $f(j) = F_j y(k) + H_j \Delta u(k-1)$
-3. **构造** $G$ 矩阵：$G_j = E_j B$，排列成 Toeplitz 形式
-4. **求解** $\Delta U^* = (G^TG + \lambda I)^{-1} G^T (W - f)$
-5. **执行** $\Delta u(k) = [1, 0, \ldots, 0] \Delta U^*$，$u(k) = u(k-1) + \Delta u(k)$
-6. **等待**下一步，回到步骤 1
-
-> 💡 注意：$G$ 矩阵只依赖模型参数，**不需要每步重新计算**。只有自由响应 $f$ 需要每步更新（因为 $y(k)$ 变了）。
-
+固定模型时无需每拍重建 $G$；模型自适应、窗口或权重变化时则需要更新相关矩阵/分解。若执行器裁剪了命令，不能继续把未执行计划当作真实历史。
 
 ## 数值例子
 
+保留原一阶加延迟对象和参数，先明确ZOH与采样时标，再给可复算的计划。
+
 ### 系统描述
 
-设被控对象为：
+原连续对象为 $G_p(s)=e^{-2s}/(10s+1)$，$T_s=1$秒。采样时刻测量，随后保持 $u(k)$ 直到下一时刻，零阶保持离散模型为
 
 $$
-G_p(s) = \frac{1}{10s + 1} e^{-2s}
+y(k)=a y(k-1)+b u(k-3),\quad a=e^{-0.1},\quad b=1-e^{-0.1}.
 $$
 
-采样周期 $T_s = 1$ s。零阶保持器离散化后：
-
-$$
-G_p(z) = \frac{0.0952 z^{-3}}{1 - 0.9048 z^{-1}}
-$$
-
-（$z^{-3}$ 表示 2 步延迟加上 1 步计算延迟）
-
-对应的 CARIMA 模型（$C = 1$）：
-
-$$
-A(z^{-1}) = 1 - 0.9048z^{-1}, \quad B(z^{-1}) = 0.0952z^{-3}
-$$
-
-$$
-\tilde{A}(z^{-1}) = A(z^{-1})\Delta(z^{-1}) = (1 - 0.9048z^{-1})(1 - z^{-1}) = 1 - 1.9048z^{-1} + 0.9048z^{-2}
-$$
+精确系数约为0.9048374180和0.0951625820。为与原手算一致，下面全部采用声明的舍入模型 $a=0.9048,b=0.0952$。总离散延迟为3；它来自2秒纯延迟加上保持输入到下一输出样本的因果一步，**没有另加计算延迟**。若实际计算确实推迟施加输入，必须另外建模。
 
 ### Diophantine 递推
 
-$\tilde{a}_1 = -1.9048, \tilde{a}_2 = 0.9048$
+舍入模型的 $\widetilde A=1-1.9048q+0.9048q^2$。递推得到：
 
-**$j=1$**：$e_1 = f_{0,0} = 1$
+| j | E_j | F_j |
+|---|---|---|
+| 1 | $1$ | $1.9048-0.9048q$ |
+| 2 | $1+1.9048q$ | $2.72346304-1.72346304q$ |
+| 3 | $1+1.9048q+2.72346304q^2$ | $3.464189358592-2.464189358592q$ |
 
-$f_{1,0} = 0 - 1 \cdot (-1.9048) = 1.9048$
-$f_{1,1} = 0 - 1 \cdot 0.9048 = -0.9048$
-
-$E_1 = 1, \quad F_1 = 1.9048 - 0.9048z^{-1}$
-
-**$j=2$**：$e_2 = 1.9048$
-
-$f_{2,0} = -0.9048 - 1.9048 \cdot (-1.9048) = -0.9048 + 3.6283 = 2.7235$
-$f_{2,1} = 0 - 1.9048 \cdot 0.9048 = -1.7235$
-
-$E_2 = 1 + 1.9048z^{-1}, \quad F_2 = 2.7235 - 1.7235z^{-1}$
-
-**$j=3$**：$e_3 = 2.7235$
-
-$f_{3,0} = -1.7235 - 2.7235 \cdot (-1.9048) = -1.7235 + 5.1882 = 3.4647$
-$f_{3,1} = 0 - 2.7235 \cdot 0.9048 = -2.4643$
-
-$E_3 = 1 + 1.9048z^{-1} + 2.7235z^{-2}$
+本段舍入和所有预测矩阵共用同一组 $a,b$；不在中间步骤提前舍入后再宣称高精度一致。
 
 ### 计算 $G_j = E_j B$
 
-$B = 0.0952z^{-3}$
-
-$G_1 = E_1 B = 0.0952z^{-3}$ → 脉冲响应：$g_{1,3} = 0.0952$
-$G_2 = E_2 B = 0.0952(1 + 1.9048z^{-1})z^{-3} = 0.0952z^{-3} + 0.1813z^{-4}$
-$G_3 = E_3 B = 0.0952(1 + 1.9048z^{-1} + 2.7235z^{-2})z^{-3}$
-
-$G$ 矩阵的元素 $g_i$ 就是 $G_j$ 的系数。由于 $B$ 有 $z^{-3}$，前 2 步的 $g$ 值为零。
+本例 $B=0.0952q^3$，$R_j=E_jB$。$s_1=s_2=0$，$s_3=0.0952$、$s_4=0.18133696$、$s_5=0.259273681408$。例如 $y(k+3)$ 对当前增量的系数是0.0952，而不是把 $R_1,R_2,R_3$ 重复求和。已下发的历史输入仍通过自由响应影响前两拍。
 
 ### GPC 参数选择
 
-设 $N_1 = 3$（跳过 3 步延迟），$N_2 = 10, N_u = 3, \lambda = 0.1$。
+选原参数 $N_1=3,N_2=10,N_u=3,\lambda=0.1$。零输出/输入历史，未来参考均为1，故 $f=0$，$G$ 为 $8\times3$：第一行 $[0.0952,0,0]$，末行约为 $[0.55081966,0.50355843,0.45132452]$。
 
-$G$ 矩阵是 $(10-3+1) \times 3 = 8 \times 3$ 矩阵。
+解得 $\Delta U^*\approx[2.128773,0.507223,-0.446006]^T$，完整费用 $J\approx1.75403104$。首输入为2.128773；预测前三个计费输出约为0.202659、0.434313、0.601453。这里只算无约束计划；若加热功率上限不允许这个动作，应按约束QP重新求解。
 
-$$
-\Delta U^* = (G^TG + 0.1 I_3)^{-1} G^T (W - f)
-$$
+<JupyterNotebook title="多项式恒等式与历史响应" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from fractions import Fraction
 
-$3 \times 3$ 矩阵求逆——瞬时完成。
+def dio(coeff, horizon):
+    degree=len(coeff)-1
+    f=np.zeros(degree); f[0]=1
+    e=[]; result=[]
+    for j in range(1,horizon+1):
+        lead=f[0]; e.append(lead)
+        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])
+        result.append((np.array(e),f.copy()))
+    return result
 
+def predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):
+    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).
+    offset=y-a*previous_y-b*past[delay-1]
+    levels={-i-1:float(v) for i,v in enumerate(past)}
+    current=past[0]
+    for i in range(horizon):
+        current+=du[i] if i<len(du) else 0.
+        levels[i]=current
+    z=float(y); out=[]
+    for j in range(1,horizon+1):
+        z=a*z+b*levels[j-delay]+offset;out.append(z)
+    return np.array(out)
+
+def matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):
+    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]
+
+def plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):
+    if past is None:past=np.zeros(delay)
+    G=matrices(N1,N2,Nu,a,b,delay)
+    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]
+    if W is None:W=np.ones(N2-N1+1)
+    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])
+    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]
+    gradient=2*(G.T@(G@du+f-W)+lam*du)
+    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')
+    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))
+
+def simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):
+    # Future schedule is explicitly assumed known. No finite reference array is indexed.
+    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)
+    output=[0.]; inputs=[]; plans=[]
+    for k in range(steps):
+        y=output[-1];previous_y=output[-2] if k else 0.
+        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])
+        W=np.array([reference(k+j) for j in range(N1,N2+1)])
+        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)
+        action=past[0]+r['du'][0]
+        inputs.append(float(action))
+        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).
+        applied=inputs[k-2] if k>=2 else 0.
+        output.append(.9048*y+.0952*applied)
+        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))
+    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)
+`} cells={[{code: `for coeff in [[1,-1.2,.4],[1,-1.9048,.9048],[1,-.8],[1,-1.8,.8]]:
+    for j,(E,F) in enumerate(dio(coeff,3),1):
+        identity=np.convolve(E,coeff)
+        identity=np.pad(identity,(0,max(0,j+len(F)-len(identity))))
+        identity[j:j+len(F)]+=F
+        assert np.max(abs(identity-np.r_[1.,np.zeros(len(identity)-1)]))<1e-12
+        print('dio',coeff,'j',j,'E',E,'F',F)
+fig,ax=plt.subplots(1,2,figsize=(10,4))
+for j,(E,F) in enumerate(dio([1,-1.9048,.9048],8)[:6],1):
+    ax[0].plot(np.arange(len(E)),E,'o-',label='E'+str(j));ax[1].plot(np.arange(len(F)),F,'o-',label='F'+str(j))
+for x in ax:x.set_xlabel('q power');x.grid(True);x.legend();x.set_xlim(0,7);x.set_ylim(-7,7)
+plt.tight_layout();plt.show()
+print('diophantine_identity_checked')`, title: "1"},
+{code: `# C acts on innovations; the integrated level is not a stationary process.
+for sign in [-1,1]:
+    powers=[abs(1+sign*.9)**2,abs(1-sign*.9)**2]
+    print('C_sign',sign,'power_omega_0_pi',powers)
+# Nonzero history: independent check of F*y plus known past increments.
+y,yp,past=.4,.35,np.array([.2,.15,.1])
+direct=predict(y,yp,past,np.zeros(3),10)
+poly=[]
+for j,(E,F) in enumerate(dio([1,-1.9048,.9048],10),1):
+    R=np.r_[np.zeros(3),.0952*E]
+    value=F@np.array([y,yp])
+    for r in range(j+1,len(R)):
+        lag=r-j;value+=R[r]*(past[lag-1]-past[lag])
+    poly.append(value)
+assert np.allclose(direct,poly,atol=1e-12)
+print('history_free_first_last',direct[0],direct[-1])
+print('history_prediction_checked')`, title: "2"}]} />
 
 ## GPC 与经典控制的关系
 
-GPC 是一个**统一框架**——多个经典控制方法是它的特殊情况。
+原来的箭头标题保留作对应关系入口；等价必须连同模型、噪声、费用和时域条件一起核对。
 
 ### GPC → 广义最小方差控制 (GMV)
 
-令 $N_u \to \infty$（或 $N_u = N_2 - N_1 + 1$），$\lambda = 0$：
-
-$$
-\Delta U^* = (G^TG)^{-1} G^T (W - f)
-$$
-
-这就是**广义最小方差控制（Generalized Minimum Variance, GMV）**——最小化预测误差的方差。当 $G$ 是方阵时，$\Delta U^* = G^{-1}(W - f)$。
+GMV是对广义输出预测误差与输入代价作设计的一类方法；在特定单预测时域和多项式权重下，可与GPC建立对应。不能把“$N_u$ 无穷大、$\lambda=0$”或任意最小二乘解直接叫GMV。若 $G$ 列满秩，零权重只是当前有限窗口的最小二乘问题；列不满秩则可能有多解。
 
 ### GPC → 最小方差控制 (MV)
 
-进一步令 $N_1 = d$（延迟步数），$N_2 = d$（单步预测），$N_u = 1$，$\lambda = 0$：
-
-$$
-\Delta u(k) = \frac{w(k+d) - f(d)}{g_0}
-$$
-
-这就是**最小方差控制**——$d$ 步 ahead 预测误差为零。
+设只有一个可控的预测均值 $\hat y=g\Delta u+f$，且 $g\ne0$、无约束、$\lambda=0$，则 $\Delta u=(w-f)/g$ 使预测均值等于目标。若未来创新方差非零，实际误差仍含不可预测噪声，**并非误差方差为零**。标准最小方差解释还需要正确的创新模型；有延迟时应选首个可控预测点，不能无条件用第一拍。
 
 ### GPC → LQR
 
-令 $N_1 = 1, N_2 \to \infty, N_u = N_2$，且 $\lambda$ 适当选择：GPC 的解趋近于离散 LQR 的解。区别在于 LQR 用状态空间模型，GPC 用输入输出模型——但最优控制律等价。
+输入输出模型可实现为包含输入历史、延迟链和必要扰动状态的状态空间模型。只有相同实现、费用、终端/无限时域条件及可稳定/可检测条件匹配时，才能与相应LQ问题建立等价。惩罚的是 $\Delta u$，通常需要增广状态，不能直接与惩罚绝对 $u$ 的普通LQR混同。
 
 ### GPC → PID
 
-当 $N_1 = 1, N_2 = 1, N_u = 1$ 时，GPC 退化为：
+一般单步GPC不会自动产生PID。举一个可明确计算的特例：一阶 $A=1-aq,B=bq$、$C=1$，恒定参考 $r$。自由响应为 $(1+a)y(k)-ay(k-1)$，于是
 
 $$
-\Delta u(k) = \frac{g_0}{g_0^2 + \lambda} [w(k+1) - f(1)]
+\Delta u=K_c[(1+a)e(k)-ae(k-1)],\qquad K_c=\frac{b}{b^2+\lambda}.
 $$
 
-$f(1) = F_1 y(k) + H_1 \Delta u(k-1)$ 包含当前输出和过去输入变化——这就是一个**比例 + 积分 + 微分**的结构！
-
-具体来说，$F_1 y(k)$ 对应 P 作用，$H_1 \Delta u(k-1)$ 对应 D 作用，增量形式 $\Delta u$ 本身包含 I 作用。
-
-> 💡 **核心观点**：GPC 不是 PID 的替代品，而是 PID 的**推广**。通过调整 $N_1, N_2, N_u, \lambda$，GPC 可以产生从"保守的 PID-like"到"激进的 LQR-like"之间的任何控制行为。
-
+这对应一种增量PI：$K_p=aK_c$、$K_iT_s=K_c$，没有独立微分项。取 $a=0.8,b=0.2,\lambda=0.1$，两者约为1.142857与1.428571。变参考、不同阶数或延迟时要重新推导，不能把“过去输入变化”直接叫D作用。
 
 ## GPC 调参方法
 
+调参先固定模型和约束合同，再讨论权重；不从“越大越好”的口号开始。
+
 ### 系统化调参流程
 
-GPC 有 4 个主要参数需要调整。以下是一个系统化的调参流程：
+先从输入首次可见的样本确定总延迟和候选 $N_1$；再让 $N_2$ 覆盖需要控制的响应部分；随后选能影响窗口的 $N_u$，并核列秩和尾部保持；最后在明示尺度下扫描 $\lambda$。每次扫描都核输出、输入、增量、约束、名义闭环及失配/噪声情形。
 
-**第一步：确定 $N_1$**
-
-$N_1 = d$（纯延迟步数）。如果系统没有纯延迟，$N_1 = 1$。
-
-如何确定延迟步数？看阶跃响应——输出开始变化之前的采样数就是 $d$。
-
-**第二步：确定 $N_2$**
-
-$N_2 \approx t_{\text{settling}} / T_s$。
-
-- 一阶系统：$t_{\text{settling}} \approx 4\tau$（$\tau$ 是时间常数），$N_2 \approx 4\tau / T_s$
-- 二阶系统：$t_{\text{settling}} \approx 4 / (\zeta \omega_n)$
-- 不确定时：取 $N_2 = 20 \sim 50$，然后减小
-
-**第三步：确定 $N_u$**
-
-$N_u = 2 \sim 10$。从 $N_u = 2$ 开始，逐步增大直到性能不再改善。
-
-经验：$N_u$ 对性能的影响不如 $N_2$ 和 $\lambda$ 大。
-
-**第四步：确定 $\lambda$**
-
-从 $\lambda = 0$ 开始（最激进），逐步增大直到响应满意。
-
-初始值建议：$\lambda_0 = 0.01 \times |g_{\text{ss}}|^2$，其中 $g_{\text{ss}}$ 是稳态增益。
-
-如果响应超调太大 → 增大 $\lambda$
-如果响应太慢 → 减小 $\lambda$
+参考预览有无、求解期限和失败处理也属于实验合同。不要把矩阵费用变小当作不同权重控制器表现更好，更不要用默认仿真替代真实过程验收。
 
 ### 调参的物理直觉
 
-| 想要的行为 | 调整方向 |
-|------------|----------|
-| 更快响应 | 减小 $\lambda$，增大 $N_2$ |
-| 更平稳（少超调） | 增大 $\lambda$ |
-| 更少控制动作（节能） | 增大 $\lambda$，减小 $N_u$ |
-| 更好的干扰抑制 | 增大 $N_2$，减小 $\lambda$ |
-| 更鲁棒（容忍模型误差） | 增大 $\lambda$ |
+| 调整 | 可以先观察什么 | 必须补核什么 |
+|---|---|---|
+| 增大λ | 当前问题通常压低增量范数 | 瞬态、偏差、失配下稳定性，不保证更鲁棒 |
+| 增大N₂ | 增加远端预测信息 | 模型误差、执行预算及新问题稳定性 |
+| 增大Nᵤ | 增加计划自由度 | 有效列秩、执行约束与闭环而非仅计划费用 |
+| 改N₁ | 改变计费窗口 | 前段硬约束仍保留，不能忽视延迟管道 |
 
+输入增量小并不直接等于耗能低；节能需要包含合适的物理能耗指标。
 
 ## 约束 GPC
 
+在同一预测合同上加入物理约束，保留求解与执行闸门。
+
 ### 从无约束到有约束
 
-前面推导的解析解 $\Delta U^* = (G^TG + \lambda I)^{-1}G^T(W-f)$ 假设**没有约束**。但实际系统中总有约束：
-
-- 输入约束：$u_{\min} \leq u(k) \leq u_{\max}$（阀门开度）
-- 增量约束：$\Delta u_{\min} \leq \Delta u(k) \leq \Delta u_{\max}$（阀门变化速率）
-- 输出约束：$y_{\min} \leq y(k) \leq y_{\max}$（温度上限）
-
-加入约束后，解析解不再适用，需要求解 QP：
+令 $L$ 为累加下三角矩阵，则未来绝对输入 $U=\mathbf1u(k-1)+L\Delta U$。输入界、增量界和输出界可堆叠为 $M\Delta U\le\gamma$。标准QP系数为
 
 $$
-\min_{\Delta U} \frac{1}{2} \Delta U^T (2G^TG + 2\Lambda) \Delta U - 2G^T(W-f)^T \Delta U
+H=2(G^TG+\Lambda),\qquad q_{\rm QP}=2G^T(f-W),\quad
+\min_{\Delta U}\frac12\Delta U^TH\Delta U+q_{\rm QP}^T\Delta U.
 $$
 
-$$
-\text{s.t.} \quad M \Delta U \leq \gamma
-$$
-
-这和 [约束处理](/mpc/constraint-handling) 课中的 QP 完全一样——只是预测矩阵从 $\Phi_e$ 换成了 $G$，自由响应从 $F x(k)$ 换成了 $f$。
-
-> 💡 **核心观点**：约束 GPC 和约束状态空间 MPC 的差别只是模型表达方式不同。QP 结构完全一样。
+这里 $q_{\rm QP}$ 是线性项向量，区别于延迟算子 $q$。费用没有计入的早期输出仍可能需要硬约束，约束预测矩阵不能随费用行一起删掉。详见[约束处理](/mpc/constraint-handling)。
 
 ### 约束对解析解的影响
 
-无约束时，GPC 的闭环传递函数可以解析推导。加入约束后：
-- 闭环行为变成**非线性**的（约束激活/退出是离散事件）
-- 稳定性分析更复杂（需要 Lyapunov 方法）
-- 可能需要**软约束**来保证可行性（见 [约束处理](/mpc/constraint-handling) 中的松弛变量方法）
-
+约束激活使闭环通常成为分段定义的非线性反馈；可行域和数值求解状态都必须核验。只裁剪解析首动作会改变计划，不等于求出了约束QP。选择性软化授权的性能界有时可恢复可行，但未被软化的硬矛盾、松弛上限仍可能使问题无解；不能用软化承诺总可行。
 
 ## 稳定性分析
 
+可解性、开环稳定与滚动闭环稳定是不同性质。
+
 ### 开环稳定系统
 
-**定理**（Clarke & Mohtadi, 1989）：对于开环稳定的系统（$\tilde{A}$ 的根在单位圆内），若：
-
-1. $N_2 \geq n + d + 1$（$n$ 为 $\tilde{A}$ 的阶数，$d$ 为延迟步数）
-2. $N_u \geq n$
-3. $\lambda > 0$
-
-则 GPC 闭环稳定。
-
-> 💡 直觉：$N_2$ 足够大让控制器"看到"系统的全部动态，$N_u$ 足够大让控制器有足够的自由度来稳定系统。
+$A$ 对应的过程稳定，不代表任意GPC参数都给稳定闭环；$\widetilde A=A\Delta$ 还含积分根。原稿给出的简短时域阈值未带完整定理条件，本课不沿用。对固定无约束线性设计，应构造含输出/输入历史与延迟链的实际闭环实现，检查全部内部模态；只看输出曲线也可能漏掉隐藏状态。
 
 ### 开环不稳定系统
 
-对于开环不稳定系统（例如倒立摆），有限时域 GPC **不一定稳定**。解决方案：
+有限时域也可能稳定不稳定对象，不能反向断言“一定不稳”。对真正的过程 $y(k+1)=2y(k)+u(k)$、增量输入、一步未来误差加 $\lambda\Delta u^2$，零扰动估计子空间中的状态 $[y(k),u(k-1)]^T$ 满足
 
-1. **增大 $N_2$**：$N_2 \to \infty$ 时，GPC 等价于 LQR，闭环稳定
-2. **Terminal cost**：在代价函数中加一项 $y(k+N_2)^T P y(k+N_2)$，其中 $P$ 是 Riccati 方程的解
-3. **Terminal constraint**：强制 $y(k+N_2) = 0$（或进入终端不变集）
+$$
+M_{\rm cl}=\frac1{1+\lambda}\begin{bmatrix}2\lambda&\lambda\\-2&\lambda\end{bmatrix}.
+$$
 
-这些方法和状态空间 MPC 的稳定性理论完全一致——见 [模型预测控制原理](/mpc/mpc-principle) 中的终端约束/终端代价讨论。
+$\lambda=0.01$ 时谱半径约0.140720，有限一步设计稳定；$\lambda=1$ 时约1，处在临界边界；$\lambda=10$ 时约1.566915，失稳。原来的 $\widetilde A=1-2q$ 若直接看作增量对象，也可有稳定反馈，但它不含CARIMA必有的 $1-q$ 因子，不能不加说明就代替这个物理输入模型。
+
+加入恰当终端状态费用/集合，可按[递归可行性与稳定性](/mpc/mpc-stability)建立名义证书。终端状态要含延迟链和必要增广量，只令一个末端输出为零通常不够。
 
 ### 鲁棒稳定性
 
-模型失配时 GPC 的稳定性：
-
-- $\lambda$ 越大，鲁棒性越好（控制更保守，对模型误差更不敏感）
-- $N_2$ 越大，对模型精度的要求越高（远端预测不准）
-- 实际中，$\lambda$ 的选取需要在**性能**和**鲁棒性**之间折中
-
+更大的λ并非鲁棒稳定性的单调保证，上面同一不稳定对象已经给出反例。失配分析还要明确参数范围、延迟不确定性、噪声及约束；可以检查闭环极点、频域裕度或鲁棒不变集等相应证据。终端名义证明也不能自动覆盖真实扰动。
 
 ## 交互式可视化
 
-<JupyterNotebook
-  language="python"
-  setupCode={`import numpy as np
+<GpcExplorer />
+
+零权重与欠定方向：把λ设为0并将 $N_u$ 增大到10，默认费用窗口不能辨识全部列，本实现停止提供唯一动作。正λ下即便 $d>N_2$，也可能得到唯一的零增量：那是当前窗口内输入尚不可见，不是已经实现了跟踪。
+
+<JupyterNotebook title="默认计划与习题核对" setupCode={`import numpy as np
 import matplotlib.pyplot as plt
-from ipywidgets import interact, IntSlider, FloatSlider, Dropdown
-plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
+from fractions import Fraction
 
-def diophantine_recursive(a_tilde, Np):
-    """Diophantine 方程递推求解
-    
-    a_tilde: A~(z^-1) 的系数 [1, a1, a2, ...]
-    Np: 预测时域
-    返回: E_j, F_j 的系数列表
-    """
-    na = len(a_tilde) - 1
-    E_list = []
-    F_list = []
-    
-    F_prev = np.zeros(na + 1)
-    F_prev[0] = 1.0  # F_0 = 1
-    
-    for j in range(1, Np + 1):
-        ej = F_prev[0]  # e_j = F_{j-1} 的常数项
-        
-        # E_j = E_{j-1} + e_j * z^{-(j-1)}
-        E_j = np.zeros(j)
-        if j == 1:
-            E_j[0] = ej
-        else:
-            E_j[:j-1] = E_list[-1]
-            E_j[j-1] = ej
-        
-        # F_j: f_{j,i} = f_{j-1,i+1} - e_j * a_tilde[i+1]
-        F_j = np.zeros(na + 1)
-        for i in range(na):
-            f_prev_next = F_prev[i+1] if (i+1) <= na else 0
-            a_next = a_tilde[i+1] if (i+1) < len(a_tilde) else 0
-            F_j[i] = f_prev_next - ej * a_next
-        
-        E_list.append(E_j)
-        F_list.append(F_j)
-        F_prev = F_j.copy()
-    
-    return E_list, F_list
+def dio(coeff, horizon):
+    degree=len(coeff)-1
+    f=np.zeros(degree); f[0]=1
+    e=[]; result=[]
+    for j in range(1,horizon+1):
+        lead=f[0]; e.append(lead)
+        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])
+        result.append((np.array(e),f.copy()))
+    return result
 
-def gpc_simulation(N1, N2, Nu, lam):
-    """GPC 闭环仿真
-    
-    系统: Gp(s) = 1/(10s+1) * e^{-2s}
-    离散化: Gp(z) = 0.0952 z^{-3} / (1 - 0.9048 z^{-1})
-    """
-    Ts = 1.0
-    N_sim = 80
-    
-    # 系统参数
-    a1 = -0.9048
-    b0 = 0.0952
-    delay = 3  # 3步延迟
-    
-    # CARIMA 模型
-    a_tilde = np.array([1.0, -(1 + a1), a1])  # A~ = (1-0.9048z^-1)(1-z^-1)
-    
-    # 参考信号
-    w = np.zeros(N_sim)
-    w[10:50] = 1.0
-    w[50:] = 0.5
-    
-    # Diophantine 递推
-    E_list, F_list = diophantine_recursive(a_tilde, N2)
-    
-    # 计算 G 矩阵元素 (脉冲响应系数)
-    # G_j = E_j * B, B = b0 * z^{-delay}
-    g_coeffs = np.zeros(N2 + 1)
-    for j in range(1, N2 + 1):
-        Ej = E_list[j-1]
-        # G_j(z^-1) = E_j(z^-1) * b0 * z^{-delay}
-        for k, ek in enumerate(Ej):
-            idx = k + delay
-            if idx <= N2:
-                g_coeffs[idx] += ek * b0
-    
-    # 构造 G 矩阵
-    n_pred = N2 - N1 + 1
-    G_mat = np.zeros((n_pred, Nu))
-    for i in range(n_pred):
-        for j in range(Nu):
-            g_idx = N1 + i - j
-            if 0 <= g_idx < len(g_coeffs):
-                G_mat[i, j] = g_coeffs[g_idx]
-    
-    # 闭环仿真
-    y = np.zeros(N_sim + N2)
-    u = np.zeros(N_sim + Nu)
-    du_prev = 0.0
-    
-    for k in range(N_sim):
-        # 计算自由响应 f
-        f = np.zeros(n_pred)
-        for i in range(n_pred):
-            j = N1 + i
-            if j-1 < len(F_list):
-                Fj = F_list[j-1]
-                # f(j) = F_j * y(k) (简化: 只考虑 F_j y(k) 项)
-                fj_val = Fj[0] * y[k]
-                if len(Fj) > 1:
-                    fj_val += Fj[1] * y[k-1] if k >= 1 else 0
-                # 加上过去输入变化的影响
-                if delay > 0 and k >= 1:
-                    # H_j * du(k-1) 的简化处理
-                    pass
-                f[i] = fj_val
-        
-        # 参考向量
-        W_vec = np.array([w[k + N1 + i] for i in range(n_pred)])
-        
-        # GPC 解析解
-        H = G_mat.T @ G_mat + lam * np.eye(Nu)
-        g_vec = G_mat.T @ (W_vec - f)
-        dU = np.linalg.solve(H, g_vec)
-        
-        # 只取第一个
-        du_k = dU[0]
-        u[k] = u[k-1] + du_k if k > 0 else du_k
-        
-        # 仿真系统 (带延迟)
-        if k >= delay:
-            y[k+1] = -a1 * y[k] + b0 * u[k - delay]
-        else:
-            y[k+1] = -a1 * y[k]
-    
-    # 绘图
-    fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
-    
-    t = np.arange(N_sim + 1)
-    axes[0].plot(t, y[:N_sim+1], 'b-', linewidth=2, label='输出 y(k)')
-    axes[0].plot(t[:N_sim], w, 'r--', linewidth=2, label='参考 w(k)')
-    axes[0].set_ylabel('输出', fontsize=12)
-    axes[0].set_title(f'GPC 闭环仿真 (N₁={N1}, N₂={N2}, Nᵤ={Nu}, λ={lam})', fontsize=14)
-    axes[0].legend(fontsize=11)
-    axes[0].grid(True, alpha=0.3)
-    axes[0].set_ylim(-0.2, 1.5)
-    
-    axes[1].plot(t[:N_sim], u[:N_sim], 'g-', linewidth=2, label='控制输入 u(k)')
-    axes[1].set_xlabel('时间步 k', fontsize=12)
-    axes[1].set_ylabel('控制输入', fontsize=12)
-    axes[1].legend(fontsize=11)
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
+def predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):
+    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).
+    offset=y-a*previous_y-b*past[delay-1]
+    levels={-i-1:float(v) for i,v in enumerate(past)}
+    current=past[0]
+    for i in range(horizon):
+        current+=du[i] if i<len(du) else 0.
+        levels[i]=current
+    z=float(y); out=[]
+    for j in range(1,horizon+1):
+        z=a*z+b*levels[j-delay]+offset;out.append(z)
+    return np.array(out)
 
-def plot_diophantine_convergence(Np):
-    """可视化 Diophantine 递推过程"""
-    a_tilde = np.array([1.0, -1.9048, 0.9048])
-    E_list, F_list = diophantine_recursive(a_tilde, Np)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    
-    # E_j 多项式系数
-    for j in range(min(Np, 6)):
-        Ej = E_list[j]
-        axes[0].stem(range(len(Ej)), Ej, linefmt=f'C{j}-', markerfmt=f'C{j}o',
-                     basefmt='k-', label=f'$E_{j+1}$')
-    axes[0].set_xlabel('z^{-1} 的幂次', fontsize=12)
-    axes[0].set_ylabel('系数值', fontsize=12)
-    axes[0].set_title('E_j 多项式系数', fontsize=14)
-    axes[0].legend(fontsize=9)
-    axes[0].grid(True, alpha=0.3)
-    
-    # F_j 多项式系数
-    for j in range(min(Np, 6)):
-        Fj = F_list[j]
-        axes[1].stem(range(len(Fj)), Fj, linefmt=f'C{j}-', markerfmt=f'C{j}o',
-                     basefmt='k-', label=f'$F_{j+1}$')
-    axes[1].set_xlabel('z^{-1} 的幂次', fontsize=12)
-    axes[1].set_ylabel('系数值', fontsize=12)
-    axes[1].set_title('F_j 多项式系数', fontsize=14)
-    axes[1].legend(fontsize=9)
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
+def matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):
+    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]
 
-def plot_lambda_effect():
-    """展示 lambda 对闭环响应的影响"""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    
-    lambdas = [0.001, 0.01, 0.1, 1.0, 10.0]
-    colors = ['red', 'orange', 'blue', 'green', 'purple']
-    
-    for lam, color in zip(lambdas, colors):
-        # 简化仿真
-        N_sim = 60
-        a1 = -0.9048
-        b0 = 0.0952
-        delay = 3
-        N1, N2, Nu = 3, 15, 5
-        
-        a_tilde = np.array([1.0, -(1 + a1), a1])
-        E_list, F_list = diophantine_recursive(a_tilde, N2)
-        
-        g_coeffs = np.zeros(N2 + 1)
-        for j in range(1, N2 + 1):
-            Ej = E_list[j-1]
-            for k_idx, ek in enumerate(Ej):
-                idx = k_idx + delay
-                if idx <= N2:
-                    g_coeffs[idx] += ek * b0
-        
-        n_pred = N2 - N1 + 1
-        G_mat = np.zeros((n_pred, Nu))
-        for i in range(n_pred):
-            for j in range(Nu):
-                g_idx = N1 + i - j
-                if 0 <= g_idx < len(g_coeffs):
-                    G_mat[i, j] = g_coeffs[g_idx]
-        
-        w = np.zeros(N_sim)
-        w[5:] = 1.0
-        
-        y = np.zeros(N_sim + N2)
-        u = np.zeros(N_sim + Nu)
-        
-        for k in range(N_sim):
-            f = np.zeros(n_pred)
-            for i in range(n_pred):
-                j = N1 + i
-                if j-1 < len(F_list):
-                    Fj = F_list[j-1]
-                    fj_val = Fj[0] * y[k]
-                    if len(Fj) > 1 and k >= 1:
-                        fj_val += Fj[1] * y[k-1]
-                    f[i] = fj_val
-            
-            W_vec = np.array([w[k + N1 + i] for i in range(n_pred)])
-            H = G_mat.T @ G_mat + lam * np.eye(Nu)
-            g_vec = G_mat.T @ (W_vec - f)
-            dU = np.linalg.solve(H, g_vec)
-            du_k = dU[0]
-            u[k] = u[k-1] + du_k if k > 0 else du_k
-            
-            if k >= delay:
-                y[k+1] = -a1 * y[k] + b0 * u[k - delay]
-            else:
-                y[k+1] = -a1 * y[k]
-        
-        axes[0].plot(y[:N_sim], color=color, linewidth=2, label=f'λ={lam}')
-        axes[1].plot(u[:N_sim], color=color, linewidth=2, label=f'λ={lam}')
-    
-    axes[0].plot(w, 'k--', linewidth=1, alpha=0.5, label='参考')
-    axes[0].set_xlabel('时间步 k', fontsize=12)
-    axes[0].set_ylabel('输出 y(k)', fontsize=12)
-    axes[0].set_title('λ 对输出响应的影响', fontsize=14)
-    axes[0].legend(fontsize=9)
-    axes[0].grid(True, alpha=0.3)
-    
-    axes[1].set_xlabel('时间步 k', fontsize=12)
-    axes[1].set_ylabel('控制输入 u(k)', fontsize=12)
-    axes[1].set_title('λ 对控制输入的影响', fontsize=14)
-    axes[1].legend(fontsize=9)
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
-`}
-  cells={[
-    {
-      code: `# === Diophantine 方程递推可视化 ===
-print("Diophantine 方程递推过程")
-print("系统: A~(z⁻¹) = 1 - 1.9048z⁻¹ + 0.9048z⁻²")
-print("观察 E_j 和 F_j 随 j 的变化")
-plot_diophantine_convergence(8)`
-    },
-    {
-      code: `# === GPC 闭环仿真（交互式调参）===
-print("调整 N₁, N₂, Nᵤ, λ 观察闭环响应变化")
-print("N₁=3 跳过延迟, λ 控制激进/保守程度")
-interact(
-    gpc_simulation,
-    N1=IntSlider(min=1, max=5, value=3, step=1, description='N₁'),
-    N2=IntSlider(min=5, max=30, value=15, step=1, description='N₂'),
-    Nu=IntSlider(min=1, max=10, value=3, step=1, description='Nᵤ'),
-    lam=FloatSlider(min=0.001, max=5.0, value=0.1, step=0.01, description='λ',
-                    readout_format='.3f')
-)`
-    },
-    {
-      code: `# === λ 对闭环响应的影响 ===
-print("不同 λ 值的闭环响应对比")
-print("λ 小 → 激进（快速但有超调）")
-print("λ 大 → 保守（平稳但响应慢）")
-plot_lambda_effect()`
-    }
-  ]}
-/>
+def plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):
+    if past is None:past=np.zeros(delay)
+    G=matrices(N1,N2,Nu,a,b,delay)
+    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]
+    if W is None:W=np.ones(N2-N1+1)
+    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])
+    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]
+    gradient=2*(G.T@(G@du+f-W)+lam*du)
+    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')
+    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))
 
+def simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):
+    # Future schedule is explicitly assumed known. No finite reference array is indexed.
+    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)
+    output=[0.]; inputs=[]; plans=[]
+    for k in range(steps):
+        y=output[-1];previous_y=output[-2] if k else 0.
+        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])
+        W=np.array([reference(k+j) for j in range(N1,N2+1)])
+        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)
+        action=past[0]+r['du'][0]
+        inputs.append(float(action))
+        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).
+        applied=inputs[k-2] if k>=2 else 0.
+        output.append(.9048*y+.0952*applied)
+        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))
+    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)
+`} cells={[{code: `default=plan()
+print('default_G',default['G'])
+print('default_du',default['du'],'default_cost',default['cost'])
+print('default_prediction',default['G']@default['du'])
+G=matrices(2,5,2,a=.8,b=.2,delay=2)
+print('exercise3_G',G)
+assert np.allclose(G,[[.2,0],[.36,.2],[.488,.36],[.5904,.488]],atol=1e-12)
+print('exercise2_gram_rhs',1.89,1.56,'solution',1.56/2.39)
+g0=.2;free=.4;target=1.
+move=(target-free)/g0
+print('single_step_mv_move',move,'conditional_mean',g0*move+free,'innovation_variance_if_sigma1',1.)
+gain=.2/(.2**2+.1)
+print('constant_reference_PI_Kp_KiTs',.8*gain,gain)
+print('default_and_exercises_checked')`, title: "1"},
+{code: `print('exact_zoh_a_b',np.exp(-.1),1-np.exp(-.1),'first_response_sample',3)
+print('rounded_a_b',.9048,.0952)
+for lam in [.01,1.,10.]:
+    M=np.array([[2*lam,lam],[-2.,lam]])/(1+lam)
+    poles=np.linalg.eigvals(M)
+    print('unstable_plant_lambda',lam,'poles',poles,'spectral_radius',max(abs(poles)))
+# Zero rows have no effect on G.T@G or G.T@(W-f).
+G=matrices(1,10,3);trim=G[2:]
+assert np.allclose(G.T@G,trim.T@trim)
+print('zero_row_gram_difference',np.max(abs(G.T@G-trim.T@trim)))
+print('zero_matrix_rank',np.linalg.matrix_rank(matrices(1,5,3,delay=6)))
+print('stability_and_delay_checked')`, title: "2"}]} />
+
+保留原80拍输出0→1→0.5的主题，$T_s=1$秒，参考在编号10和50改变；另保留60拍、五个λ、$N_1=3,N_2=15,N_u=5$ 的比较。两者都明确假设未来参考日程已知，因此可能提前动作；末段由参考函数延展，不访问越界数组。两实验均无噪声、无约束，图线不代表物理设备放行。
+
+<JupyterNotebook title="原闭环主题的完整复算" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from fractions import Fraction
+
+def dio(coeff, horizon):
+    degree=len(coeff)-1
+    f=np.zeros(degree); f[0]=1
+    e=[]; result=[]
+    for j in range(1,horizon+1):
+        lead=f[0]; e.append(lead)
+        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])
+        result.append((np.array(e),f.copy()))
+    return result
+
+def predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):
+    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).
+    offset=y-a*previous_y-b*past[delay-1]
+    levels={-i-1:float(v) for i,v in enumerate(past)}
+    current=past[0]
+    for i in range(horizon):
+        current+=du[i] if i<len(du) else 0.
+        levels[i]=current
+    z=float(y); out=[]
+    for j in range(1,horizon+1):
+        z=a*z+b*levels[j-delay]+offset;out.append(z)
+    return np.array(out)
+
+def matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):
+    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]
+
+def plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):
+    if past is None:past=np.zeros(delay)
+    G=matrices(N1,N2,Nu,a,b,delay)
+    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]
+    if W is None:W=np.ones(N2-N1+1)
+    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])
+    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]
+    gradient=2*(G.T@(G@du+f-W)+lam*du)
+    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')
+    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))
+
+def simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):
+    # Future schedule is explicitly assumed known. No finite reference array is indexed.
+    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)
+    output=[0.]; inputs=[]; plans=[]
+    for k in range(steps):
+        y=output[-1];previous_y=output[-2] if k else 0.
+        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])
+        W=np.array([reference(k+j) for j in range(N1,N2+1)])
+        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)
+        action=past[0]+r['du'][0]
+        inputs.append(float(action))
+        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).
+        applied=inputs[k-2] if k>=2 else 0.
+        output.append(.9048*y+.0952*applied)
+        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))
+    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)
+`} cells={[{code: `run80=simulate()
+print('legacy80_last_sample',run80['y'][-1],'max_abs_u',max(abs(run80['u'])))
+fig,ax=plt.subplots(2,1,figsize=(10,6),sharex=True)
+t=np.arange(81)
+ax[0].plot(t,run80['y'],label='output');ax[0].step(t,run80['reference'],where='post',label='known schedule');ax[0].set_ylim(-.2,1.5);ax[0].legend()
+ax[1].step(np.arange(80),run80['u'],where='post',label='u');ax[1].legend();ax[1].set_ylabel('normalized input');ax[1].set_xlabel('time / s, Ts=1')
+for x in ax:x.set_xlim(0,80);x.grid(True)
+plt.tight_layout();plt.show()
+print('legacy80_completed_without_reference_overrun')`, title: "1"},
+{code: `runs60={lam:simulate(Nu=5,lam=lam,steps=60,schedule='one') for lam in [.001,.01,.1,1.,10.]}
+fig,ax=plt.subplots(2,1,figsize=(10,6),sharex=True)
+for lam,r in runs60.items():
+    ax[0].plot(np.arange(61),r['y'],label='lambda='+str(lam))
+    ax[1].step(np.arange(60),r['u'],where='post',label='lambda='+str(lam))
+    print('legacy60_lambda',lam,'last_sample',r['y'][-1],'max_abs_input',max(abs(r['u'])))
+ax[0].step(np.arange(61),runs60[.1]['reference'],where='post',ls='--',label='known schedule')
+ax[0].set_ylim(-.2,1.5);ax[0].legend();ax[1].legend();ax[1].set_xlabel('time / s, Ts=1')
+for x in ax:x.set_xlim(0,60);x.grid(True)
+plt.tight_layout();plt.show()
+print('legacy60_five_weights_completed')`, title: "2"}]} />
 
 ## 工业应用
 
+下面只说明建模与交接事项，不以教学曲线宣称工业部署完成。
+
 ### GPC 在过程控制中的应用
 
-GPC 在工业中的应用场景：
+| 应用主题 | 可借用的建模思路 | 需要另外验证的边界 |
+|---|---|---|
+| 温度 | 一阶惯性和延迟、输入变化代价 | 功率与温度硬界、延迟变化、保护系统 |
+| pH | 工作点附近辨识局部动态 | 强非线性与工作点跨度，增量形式不自动消除非线性 |
+| 液位 | 积分过程与偏差估计 | 过程积分与扰动积分是不同来源，别盲目重复增广 |
+| 蒸馏塔 | 多变量输入输出历史与耦合预测 | 耦合辨识、约束优先级和在线资源 |
 
-| 应用 | 系统特点 | GPC 优势 |
-|------|----------|----------|
-| 温度控制 | 一阶+延迟、大惯性 | $N_1$ 跳过延迟，$\lambda$ 防超调 |
-| pH 控制 | 非线性、强耦合 | 增量形式适应工作点变化 |
-| 液位控制 | 积分特性 | CARIMA 的 $\frac{1}{\Delta}$ 天然匹配 |
-| 蒸馏塔 | 多变量、大延迟 | 多变量 GPC（需要多项式矩阵） |
+这些是应用方向，不是未经来源验证的产品性能或普及度排名。
 
 ### MATLAB 中的 GPC
 
-MATLAB 提供了 GPC 设计函数：
+`mpc` 创建的是MPC Toolbox控制器，不是一个直接复现本文所有GPC细节的专用函数。下面保留原示例的状态空间基线用途，修正标准费用权重的平方语义；代码**未在本机MATLAB运行**：
 
-\`\`\`matlab
-% 定义系统
+```matlab
 sys = tf(1, [10 1], 'InputDelay', 2);
 sysd = c2d(sys, 1, 'zoh');
-
-% GPC 参数
-N1 = 3; N2 = 15; Nu = 5; lambda = 0.1;
-
-% 使用 MPC Toolbox (GPC 是 MPC 的特殊情况)
-mpcobj = mpc(sysd, 1);
+N2 = 15; Nu = 5; lambda = 0.1;
+mpcobj = mpc(sysd, 1, N2, Nu);
 mpcobj.Weights.OutputVariables = 1;
-mpcobj.Weights.ManipulatedVariablesRate = lambda;
-mpcobj.PredictionHorizon = N2;
-mpcobj.ControlHorizon = Nu;
-
-% 仿真
+mpcobj.Weights.ManipulatedVariables = 0;
+mpcobj.Weights.ManipulatedVariablesRate = sqrt(lambda);
 sim(mpcobj, 100);
-\`\`\`
+```
 
-> 💡 现代 MATLAB MPC Toolbox 用状态空间 MPC 统一了所有预测控制方法（DMC、GPC、MPC）。但理解 GPC 的传递函数语言对调试和理解控制器行为很有帮助。
+这还没有匹配本文的 $N_1$ 行选择、创新估计器、信号尺度和未来参考预览，不能声称两段程序控制律等价。官方[标准费用](https://www.mathworks.com/help/mpc/ug/optimization-problem.html)把权重放在平方内，单位尺度下才用 $\sqrt{\lambda}$ 对应本文λ；[mpc接口](https://www.mathworks.com/help/mpc/ref/mpc.html)说明对象与控制时域语义。
 
 ### GPC 的实际部署注意事项
 
-1. **模型辨识**：用阶跃响应实验辨识 $A, B$ 多项式。先确定阶数 $n_a, n_b$（用 AIC/BIC 准则），再用最小二乘拟合系数。
-
-2. **$C$ 多项式的选取**：通常取 $C = 1$。如果已知干扰频谱，可以调整 $C$ 做频谱整形。
-
-3. **抗积分饱和**：当执行器饱和时，$\Delta u$ 无法执行。需要 anti-windup：把实际执行的 $u$ 反馈回去，而不是计算的 $u$。
-
-4. **无扰动切换**：从手动切到自动时，需要**无扰动切换**（bumpless transfer）——确保切换瞬间 $u$ 不跳变。方法：在切换前让 $u(k-1)$ 等于手动值，$f$ 的计算中包含当前 $u$ 的信息。
-
+辨识先确认采样时刻和输入延迟，再选择阶数及误差模型，交叉验证后才更新预测器。$C$ 的改变必须同步创新状态。执行器饱和时记录真实输入，重新检查计划与约束。手动切自动时对齐输入历史和估计状态，并检验首动作限制；只把 $u(k-1)$ 设成手动值并不能保证任意控制律无跳变。自适应更新也须有参数有效域与失败处理。
 
 ## 深入讨论
 
+比较关注表达方式和实现合同，而不是方法名称的优劣。
+
 ### GPC 与 DMC 的对比
 
-| 特性 | GPC | DMC |
-|------|-----|-----|
-| 模型形式 | CARIMA（传递函数） | 阶跃响应系数 |
-| 控制形式 | 增量 $\Delta u$ | 增量 $\Delta u$ |
-| 预测矩阵 | $G$（Toeplitz，元素 $g_i$） | $D$（Toeplitz，元素 $d_i$） |
-| 积分作用 | $\frac{1}{\Delta}$ 在模型中 | 增量形式天然包含 |
-| 独有参数 | $N_1$（最小预测时域） | 无 |
-| MIMO 扩展 | 需要多项式矩阵（笨拙） | 多变量阶跃响应（直接） |
-| 工业流行度 | 中等 | 高（过程控制主流） |
+| 特性 | GPC常见表达 | DMC常见表达 |
+|---|---|---|
+| 模型 | 有限阶输入输出/创新模型 | 有限长度阶跃响应模型 |
+| 输入变量 | 常用增量 | 常用增量 |
+| 预测核 | 推导到增量的响应系数 | 直接使用阶跃响应系数 |
+| 费用起点 | 可选择 | 同样可通过行选择/权重表达 |
+| 偏差处理 | 创新或扰动模型 | 需明确偏差修正机制 |
+| 多变量 | 可用相应实现与矩阵模型 | 可用多通道响应矩阵 |
 
-> 💡 **核心区别**：GPC 的 $N_1$ 参数可以跳过延迟段，对大延迟系统特别有用。DMC 没有这个参数——它的预测从第 1 步开始。
+若两种表示给出同一有限窗口的预测与同一费用/约束，所解QP可一致。积分作用、鲁棒性和静差不能仅从“用了增量”推断；不保留无证的工业流行度排名。
 
 ### 自适应 GPC
 
-GPC 的一个独特优势是**自适应扩展**。CARIMA 模型的参数 $(a_i, b_i)$ 可以用递推最小二乘（RLS）在线辨识：
+可用递推最小二乘更新输入输出模型参数，例如
 
 $$
-\hat{\theta}(k) = \hat{\theta}(k-1) + K(k)[y(k) - \phi(k)^T \hat{\theta}(k-1)]
+\hat\theta(k)=\hat\theta(k-1)+K(k)[y(k)-\phi(k)^T\hat\theta(k-1)].
 $$
 
-每步更新模型参数 → 重新计算 $G$ 矩阵 → 重新求解 GPC。这就是**自适应 GPC**——适合参数时变系统（如催化剂老化的反应器）。
+更新模型后需同步预测核、自由响应和估计器，且重新核参数域、可辨识性、数据激励与闭环约束；在线辨识本身不自动保证自适应闭环稳定。这里只给接口，不声称完成自适应实验。
 
 ### 非线性 GPC
 
-对于非线性系统，CARIMA 模型不再适用。解决方案：
-1. **增益调度 GPC**：在不同工作点辨识不同的 CARIMA 模型，运行时根据工况切换
-2. **非线性 GPC**：用非线性预测模型（神经网络、Hammerstein 模型等），但需要数值优化（不能用解析解）
-
+可在不同工作点建立局部模型并设计调度/切换条件，也可用非线性预测器。前者需检验模型间过渡；后者的优化一般不再是这里的固定凸QP，可能只有局部解。不能只更换预测函数却沿用线性解析解与稳定保证。
 
 ## 小结
 
-1. **GPC 的模型**：CARIMA 模型 $A(z^{-1})y(k) = B(z^{-1})u(k) + \frac{C(z^{-1})}{\Delta}\xi(k)$，用传递函数语言描述系统。$\frac{1}{\Delta}$ 提供积分作用，$C(z^{-1})$ 做噪声频谱整形。
+GPC把输入输出模型、创新历史和有限时域优化连起来。先统一延迟时标，再用有限多项式恒等式分离历史与未来，得到 $\hat Y=G\Delta U+f$。正权重带来唯一线性方程解，物理约束则需要真正的QP。参数关系、静差、GMV/LQ/PI对应与稳定性都须连同条件说明；原样增大时域或λ不是稳定证书。
 
-2. **Diophantine 方程**：$1 = E_j\tilde{A} + z^{-j}F_j$，通过递推求解。本质是多项式长除法——把 $\frac{1}{\tilde{A}}$ 展开为幂级数。计算量 $O(n_a N_p)$。
-
-3. **预测公式**：$\hat{Y} = G\Delta U + f$。$G$ 是 Toeplitz 矩阵（元素为脉冲响应系数），$f$ 是自由响应（依赖已知数据）。
-
-4. **GPC 代价函数**：$J = \sum_{N_1}^{N_2} (\hat{y} - w)^2 + \sum_1^{N_u} \lambda (\Delta u)^2$。四个参数 $N_1, N_2, N_u, \lambda$ 各有明确物理意义。
-
-5. **解析解**：$\Delta U^* = (G^TG + \lambda I)^{-1}G^T(W-f)$。不需要 QP 求解器——一个矩阵求逆即可。
-
-6. **统一框架**：GPC 包含 GMV、最小方差控制、LQR、PID 作为特殊情况。
-
-7. **稳定性**：开环稳定系统，$N_2 \geq n + d + 1, N_u \geq n, \lambda > 0$ 保证闭环稳定。
-
-8. **约束扩展**：加入约束后变为 QP，和状态空间 MPC 的约束处理完全一样。
-
+原始方法见 Clarke、Mohtadi、Tuffs（1987）[Part I 元数据与摘要](https://www.sciencedirect.com/science/article/pii/0005109887900872)，2026-10-24核对；本课推导和数值独立复算，未声称取得并核读其付费全文。下一节为[非线性MPC](/mpc/nonlinear-mpc)。
 
 ## 习题
 
+以下五题保留原学习目标与全部子问；涉及零噪声、满秩或可控预测点的条件必须写出。
+
 ### 习题 1
 
-给定 $\tilde{A}(z^{-1}) = 1 - 0.8z^{-1}$，求 $E_1, E_2, E_3$ 和 $F_1, F_2, F_3$。验证 $E_j\tilde{A} + z^{-j}F_j = 1$。
+给定 $\widetilde A=1-0.8q$，求 $E_1,E_2,E_3$ 和 $F_1,F_2,F_3$，验证 $E_j\widetilde A+q^jF_j=1$。说明这里是一般多项式例。
 
 ### 习题 2
 
-给定 $G = \begin{bmatrix} 0.5 \\ 0.8 \\ 1.0 \end{bmatrix}$，$f = \begin{bmatrix} 0.2 \\ 0.3 \\ 0.4 \end{bmatrix}$，$W = \begin{bmatrix} 1 \\ 1 \\ 1 \end{bmatrix}$，$\lambda = 0.5$。
-
-求 GPC 解析解 $\Delta U^*$（此时 $N_u = 1$）。
+给定 $G=[0.5,0.8,1.0]^T$、$f=[0.2,0.3,0.4]^T$、$W=[1,1,1]^T$、$\lambda=0.5$，求 $N_u=1$ 的解析最优增量。
 
 ### 习题 3
 
-设系统 $G_p(z) = \frac{0.2z^{-2}}{1 - 0.8z^{-1}}$，GPC 参数 $N_1 = 2, N_2 = 5, N_u = 2, \lambda = 0.1$。
+系统 $G_p(z)=0.2z^{-2}/(1-0.8z^{-1})$，$N_1=2,N_2=5,N_u=2,\lambda=0.1$。
 
-(a) 写出 $\tilde{A}(z^{-1})$。
-
-(b) 求 $E_1, E_2$ 和 $F_1, F_2$。
-
-(c) 计算 $G$ 矩阵。
+(a) 写 $\widetilde A$；(b) 求 $E_1,E_2,F_1,F_2$；(c) 计算对应四行两列预测矩阵 $G$，说明当前增量何时首次可见。
 
 ### 习题 4
 
-证明：当 $N_1 = 1, N_2 = 1, N_u = 1, \lambda = 0$ 时，GPC 退化为最小方差控制。
-
-提示：此时 $\Delta u(k) = \frac{w(k+1) - f(1)}{g_0}$，证明 $\hat{y}(k+1|k) = w(k+1)$。
+在 $N_1=N_2=N_u=1,\lambda=0$ 的单步情形，证明预测均值等于参考的结论。列出直接系数非零、正确创新模型、无约束等必要前提，并解释这与最小方差解释的关系，不能把随机误差方差说成零。
 
 ### 习题 5
 
-讨论：对于一个开环不稳定系统（$\tilde{A}$ 有单位圆外的根），有限时域 GPC 是否一定不稳定？给出你的分析和反例（或证明）。
-
+有限时域GPC对开环不稳定对象是否一定失稳？给出分析与反例，区分 $A$ 的过程极点、$\widetilde A$ 的积分根和闭环内部模态，并讨论增大λ能否保证稳定。
 
 ## 答案
 
+每个数值答案均可由上面的原始Notebook重新计算；符号题给关键步骤而非只列结论。
+
 ### 答案 1
 
-$\tilde{A} = 1 - 0.8z^{-1}$，$\tilde{a}_1 = -0.8$
-
-**$j=1$**：$e_1 = f_{0,0} = 1$
-
-$E_1 = 1$
-
-$f_{1,0} = f_{0,1} - e_1 \tilde{a}_1 = 0 - 1 \cdot (-0.8) = 0.8$
-
-$F_1 = 0.8$
-
-**验证**：$E_1\tilde{A} + z^{-1}F_1 = (1 - 0.8z^{-1}) + 0.8z^{-1} = 1$ ✓
-
-**$j=2$**：$e_2 = f_{1,0} = 0.8$
-
-$E_2 = 1 + 0.8z^{-1}$
-
-$f_{2,0} = f_{1,1} - e_2 \tilde{a}_1 = 0 - 0.8 \cdot (-0.8) = 0.64$
-
-$F_2 = 0.64$
-
-**验证**：$E_2\tilde{A} + z^{-2}F_2 = (1 + 0.8z^{-1})(1 - 0.8z^{-1}) + 0.64z^{-2} = 1 - 0.64z^{-2} + 0.64z^{-2} = 1$ ✓
-
-**$j=3$**：$e_3 = f_{2,0} = 0.64$
-
-$E_3 = 1 + 0.8z^{-1} + 0.64z^{-2}$
-
-$f_{3,0} = f_{2,1} - e_3 \tilde{a}_1 = 0 - 0.64 \cdot (-0.8) = 0.512$
-
-$F_3 = 0.512$
-
-**验证**：$E_3\tilde{A} + z^{-3}F_3 = (1 + 0.8z^{-1} + 0.64z^{-2})(1 - 0.8z^{-1}) + 0.512z^{-3}$
-$= 1 - 0.512z^{-3} + 0.512z^{-3} = 1$ ✓
-
-> 💡 规律：$F_j = 0.8^j$。这是因为 $\frac{1}{1 - 0.8z^{-1}} = 1 + 0.8z^{-1} + 0.64z^{-2} + 0.512z^{-3} + \cdots$
+依次取余项常数项并移去零常数项，得 $E_1=1,F_1=0.8$；$E_2=1+0.8q,F_2=0.64$；$E_3=1+0.8q+0.64q^2,F_3=0.512$。一般 $F_j=0.8^j$，有限几何级数相乘得到 $E_j(1-0.8q)=1-0.8^jq^j$，加 $q^jF_j$ 即为1。该多项式不含 $1-q$，不能直接称作完整CARIMA的 $A\Delta$。
 
 ### 答案 2
 
-$N_u = 1$，$\Delta U^*$ 是标量。
+$G^TG=0.25+0.64+1=1.89$，$G^T(W-f)=0.4+0.56+0.6=1.56$，故
 
 $$
-G^TG = [0.5, 0.8, 1.0] \begin{bmatrix} 0.5 \\ 0.8 \\ 1.0 \end{bmatrix} = 0.25 + 0.64 + 1.0 = 1.89
-$$
-
-$$
-G^T(W - f) = [0.5, 0.8, 1.0] \begin{bmatrix} 0.8 \\ 0.7 \\ 0.6 \end{bmatrix} = 0.4 + 0.56 + 0.6 = 1.56
-$$
-
-$$
-\Delta U^* = \frac{1.56}{1.89 + 0.5} = \frac{1.56}{2.39} \approx 0.6527
+\Delta U^*=\frac{1.56}{1.89+0.5}=\frac{1.56}{2.39}\approx0.652720.
 $$
 
 ### 答案 3
 
-**(a)** $A = 1 - 0.8z^{-1}$，$B = 0.2z^{-2}$
+(a) $\widetilde A=(1-0.8q)(1-q)=1-1.8q+0.8q^2$。
 
-$\tilde{A} = A\Delta = (1 - 0.8z^{-1})(1 - z^{-1}) = 1 - 1.8z^{-1} + 0.8z^{-2}$
+(b) $E_1=1,F_1=1.8-0.8q$；$E_2=1+1.8q,F_2=2.44-1.44q$。
 
-**(b)** $\tilde{a}_1 = -1.8, \tilde{a}_2 = 0.8$
+(c) 总离散延迟2，$s_1=0,s_2=0.2,s_3=0.36,s_4=0.488,s_5=0.5904$，所以
 
-**$j=1$**：$e_1 = 1$
+$$
+G=\begin{bmatrix}0.2&0\\0.36&0.2\\0.488&0.36\\0.5904&0.488\end{bmatrix}.
+$$
 
-$E_1 = 1$
-
-$f_{1,0} = 0 - 1 \cdot (-1.8) = 1.8$
-$f_{1,1} = 0 - 1 \cdot 0.8 = -0.8$
-
-$F_1 = 1.8 - 0.8z^{-1}$
-
-**$j=2$**：$e_2 = 1.8$
-
-$E_2 = 1 + 1.8z^{-1}$
-
-$f_{2,0} = -0.8 - 1.8 \cdot (-1.8) = -0.8 + 3.24 = 2.44$
-$f_{2,1} = 0 - 1.8 \cdot 0.8 = -1.44$
-
-$F_2 = 2.44 - 1.44z^{-1}$
-
-**(c)** $G_j = E_j B$：
-
-$G_1 = 1 \cdot 0.2z^{-2} = 0.2z^{-2}$ → 系数：$g_0 = 0, g_1 = 0, g_2 = 0.2$
-
-$G_2 = (1 + 1.8z^{-1}) \cdot 0.2z^{-2} = 0.2z^{-2} + 0.36z^{-3}$ → $g_2 = 0.2, g_3 = 0.36$
-
-$G$ 矩阵（$N_1 = 2, N_2 = 5, N_u = 2$）：$n_{\text{pred}} = 5 - 2 + 1 = 4$ 行，$N_u = 2$ 列
-
-$G = \begin{bmatrix} g_0 & 0 \\ g_1 & g_0 \\ g_2 & g_1 \\ g_3 & g_2 \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ 0 & 0 \\ 0.2 & 0 \\ 0.36 & 0.2 \end{bmatrix}$
-
-> 💡 注意 $G$ 的前两行全为零——因为 $N_1 = 2 = d$（延迟步数），但 $g_0 = g_1 = 0$，$g_2 = 0.2$。实际上 $N_1$ 应该设为延迟步数 $d = 2$，这样前两行的预测误差不被惩罚——但这里 $g_0 = g_1 = 0$ 意味着前两步控制增量对预测没有影响，所以 $G$ 的前两行确实为零。
+计费从第二拍开始，第一行已含当前增量的非零效应。不能再次插入两行零；那等于把延迟重复计算。
 
 ### 答案 4
 
-当 $N_1 = 1, N_2 = 1, N_u = 1, \lambda = 0$ 时：
-
-$J = [\hat{y}(k+1|k) - w(k+1)]^2$
-
-$\hat{y}(k+1|k) = g_0 \Delta u(k) + f(1)$
-
-最小化 $J$：令 $\hat{y}(k+1|k) = w(k+1)$
-
-$$
-g_0 \Delta u(k) + f(1) = w(k+1)
-$$
-
-$$
-\Delta u(k) = \frac{w(k+1) - f(1)}{g_0}
-$$
-
-代入预测公式：
-
-$$
-\hat{y}(k+1|k) = g_0 \cdot \frac{w(k+1) - f(1)}{g_0} + f(1) = w(k+1) - f(1) + f(1) = w(k+1)
-$$
-
-即 1 步 ahead 预测误差为零。这正是**最小方差控制**的定义——最小化输出预测误差的方差（此处方差为零）。
+写成 $\hat y(k+1|k)=g\Delta u+f$。若 $g\ne0$，无约束驻点给 $\Delta u=(w-f)/g$，代回得 $\hat y=w$。例如 $g=0.2,f=0.4,w=1$ 时增量为3。若实际输出另含方差1的独立未来创新，条件均值误差为零而实际误差方差仍为1。若 $g=0$，动作对第一拍不可见，不能除以零；若有约束，也可能无法达到目标。
 
 ### 答案 5
 
-有限时域 GPC 对开环不稳定系统**不一定不稳定**，但**不保证稳定**。
+不一定失稳。以过程 $y(k+1)=2y(k)+u(k)$ 为例，$A=1-2q$，CARIMA增量多项式为 $(1-2q)(1-q)=1-3q+2q^2$。在零偏差估计子空间，一步反馈
 
-**分析**：
+$$
+\Delta u=-\frac{2y(k)+u(k-1)}{1+\lambda}
+$$
 
-考虑开环不稳定系统 $\tilde{A} = 1 - 1.2z^{-1}$（极点 $z = 1.2 > 1$）。
-
-当 $N_2$ 足够大时，$G$ 矩阵包含足够多的未来信息，GPC 的解可以"看到"不稳定模态并补偿它。具体来说：
-
-- $N_2 \to \infty, N_u = N_2$：GPC 等价于 LQR（对增广系统），LQR 对可稳定系统保证闭环稳定
-- 有限 $N_2$：如果 $N_2$ 不够大，控制器"看不到"不稳定模态的完整发展，可能无法稳定
-
-**反例**：设 $\tilde{A} = 1 - 2z^{-1}$（极点在 $z = 2$），$B = z^{-1}$，$N_1 = 1, N_2 = 1, N_u = 1, \lambda = 0.01$。
-
-此时 $G = [g_0] = [1]$（一步预测），$f(1) = 2y(k)$。
-
-$\Delta u(k) = \frac{w(k+1) - 2y(k)}{1 + 0.01} \approx w(k+1) - 2y(k)$
-
-闭环：$y(k+1) = 2y(k) + \Delta u(k) \approx 2y(k) + w(k+1) - 2y(k) = w(k+1)$
-
-这个特殊情况恰好稳定！但如果 $\lambda$ 更大或 $N_2$ 更小，可能不稳定。
-
-**结论**：对开环不稳定系统，有限时域 GPC 的稳定性取决于 $N_2, N_u, \lambda$ 的选取。充分条件是 $N_2 \to \infty$ 或使用 terminal cost。有限 $N_2$ 时需要逐案分析（Lyapunov 方法）。
+给出正文的二维闭环矩阵。$\lambda=0.01$ 的谱半径约0.140720，已经构成有限时域稳定反例；$\lambda=1$ 临界、10失稳，否定“λ越大必越稳定/鲁棒”。这只核了明示的名义模型及子空间，真实噪声、延迟或约束还需各自分析。若要给约束闭环的递归可行与稳定证书，终端状态应含全部需要接续的量。

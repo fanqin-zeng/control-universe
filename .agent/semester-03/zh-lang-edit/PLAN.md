@@ -121,7 +121,7 @@
 | 110 | MPC-03 | 滚动优化 | content/mpc/receding-horizon.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-03/acceptance.md |
 | 111 | MPC-04 | 约束处理 | content/mpc/constraint-handling.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-04/acceptance.md |
 | 112 | MPC-05 | 递归可行性与稳定性 | content/mpc/mpc-stability.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-05/acceptance.md |
-| 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 待完成 | 待生产 | — |
+| 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-06/acceptance.md |
 | 114 | MPC-07 | 显式预测控制 | content/mpc/explicit-mpc.mdx | 待完成 | 待生产 | — |
 | 115 | MPC-08 | 非线性预测控制 | content/mpc/nonlinear-mpc.mdx | 待完成 | 待生产 | — |
 | 116 | MPC-09 | 经济预测控制 | content/mpc/economic-mpc.mdx | 待完成 | 待生产 | — |
