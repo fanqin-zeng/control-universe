@@ -1,0 +1,59 @@
+
+> control-universe@0.1.0 check
+> node scripts/check-catalog.mjs
+
+check-catalog.mjs · 根目录：D:/Workspace/control-universe
+
+[1] catalog.ts 规模与分布
+  章数 21 · 课程数 205 · 小节数 999
+  各章课程数：introduction 3 / math 18 / classic 11 / modern 9 / nonlinear 12 / discrete-sampled 10 / implementation 10 / machine-learning 9 / identification 9 / estimation 8 / robust 11 / mpc 11 / intelligent 8 / rl-control 12 / multi-agent 9 / safety-ftc 8 / robotics 10 / robot-learning 10 / embodied 10 / autonomous-driving 11 / applications 6
+  status：empty=117  v1.3=68  draft=20
+  level ：undergrad=67  grad=124  advanced=14
+  type  ：history=4  math=20  theory=100  case=19  impl=11  learning=44  frontier=7
+  PASS  21 章 order 字段与数组下标一致（0..20）
+
+[2] catalog ↔ MDX 文件系统交叉核对
+  PASS  无「catalog 有条目但 MDX 缺失且 status≠empty」
+  PASS  无孤儿 MDX（89 个 MDX 全部有 catalog 条目）
+  WARN  rl-control/rl-basics：status=empty 但 MDX 存在（应改为 draft/v1.3，否则渲染占位页而非正文）
+  WARN  slug 跨章重复：motion-planning → robotics, autonomous-driving（路由按 (chapter,lesson) 组合键取文件，不冲突；A6 迁移期属预期）
+        MDX 文件 89 个 · catalog 骨架课(status=empty) 117 门 · 有正文 88 门
+
+[3] delivery-tracker.md ↔ catalog 交叉核对
+  PASS  tracker 21 章顺序 == catalog 数组顺序
+  PASS  tracker 205 行与 catalog 逐课 slug+标题一致
+  PASS  tracker 打勾行（68）与 catalog status="v1.3" 完全对应
+        识别到统计行：**统计**：66 / 205 课程已完成（21 章；78 个交互组件文件，其中 78 个被课程正文引用）
+
+[4] 讨论日志覆盖（0.2 节负债的自动化检测）
+  讨论日志 96 篇，可映射到课程 75 门
+  WARN  已有 MDX 但无讨论日志：**17 门**（占有正文课程的 19%）
+        implementation/digital-pid, implementation/realtime-control, estimation/kalman-filter, robust/uncertainty-modeling, robust/robust-stability, robust/robust-performance, robust/h-infinity-basics, robust/mixed-sensitivity, robust/mu-synthesis, robust/robust-case-study, mpc/prediction-model, mpc/receding-horizon, mpc/constraint-handling, mpc/generalized-predictive-control, mpc/nonlinear-mpc, mpc/mpc-case-study, multi-agent/distributed-mpc
+
+[5] components/wiki 组件 ↔ MDX 引用 ↔ 单一来源注册表（E2 起，fix-015 已根治）
+  组件文件 93 个（其中 *-explorer.tsx 84 个）· MDX 引用的组件名 85 个
+  PASS  MDX 引用的组件全部有实现
+  WARN  已实现但无任何 MDX 引用（孤儿组件，Q3 类）：MultiAgentOverviewExplorer → components/wiki/multi-agent-overview-explorer.tsx（且未登记进 lib/wiki-components.ts，一旦被引用会先撞 fix-015 的 500）
+  FAIL  fix-015：MDX 引用了 RlProblemExplorer，但它没登记进 lib/wiki-components.ts → 课程页 500
+
+[6] catalog subsections ↔ MDX 的 H2 序列
+LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "，" used in math mode [unicodeTextInMathMode]
+LaTeX-incompatible input and strict mode is set to 'warn': Unrecognized Unicode character "μ" (956) [unknownSymbol]
+No character metrics for 'μ' in style 'Main-Regular' and mode 'text'
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[Error: [next-mdx-remote] error compiling MDX:
+Could not parse expression with acorn: Expecting Unicode escape sequence \uXXXX
+
+  74 | | 约束 | 形式 | 工程含义 |
+  75 | |---|---|---|
+> 76 | | 输入 | $u_{\min}\leq u_{i|k}\leq u_{\max}$ | 阀门开度、电流限制 |
+     |             ^
+  77 | | 变化率 | $\Delta u_{\min}\leq u_{i|k}-u_{i-1|k}\leq\Delta u_{\max}$ | 执行器动作速度；首步用已执行输入 |
+  78 | | 状态 | $x_{\min}\leq x_{i|k}\leq x_{\max}$ | 模型预测的水位或温度范围 |
+
+More information: https://mdxjs.com/docs/troubleshooting-mdx]
+
+Node.js v24.14.1

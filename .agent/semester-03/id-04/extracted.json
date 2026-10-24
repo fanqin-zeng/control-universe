@@ -1,0 +1,66 @@
+{
+  "source": "content/identification/persistent-excitation.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 86,
+      "title": "四种输入：方向、秩与窗口",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\ndef pe_input(k, mode='periodic', amplitude=1.):\n    if mode=='constant': return amplitude\n    if mode=='alternating': return amplitude if k%2==0 else -amplitude\n    if mode=='burst' and not 0<=k<8: return 0.\n    return amplitude*[1.,0.,-1.,0.][k%4]\ndef pe_design(mode='periodic', amplitude=1., count=64):\n    return np.array([[pe_input(k,mode,amplitude), pe_input(k-1,mode,amplitude)] for k in range(count)])\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 94,
+          "delim": "`",
+          "code": "for mode in ['periodic','constant','alternating','burst']:\n    X=pe_design(mode)\n    mins=[np.linalg.eigvalsh(X[k:k+8].T@X[k:k+8])[0] for k in range(57)]\n    print(mode, 'first_Gram', (X[:8].T@X[:8]).tolist(), 'rank64', np.linalg.matrix_rank(X), 'min_window', min(mins))\n    assert np.linalg.matrix_rank(X)==(2 if mode in ['periodic','burst'] else 1)\n    assert abs(min(mins)-(4. if mode=='periodic' else 0.))<1e-12\nprint('all_window_checks_passed')\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 128,
+      "title": "同先验RLS：每个前缀与批量解核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\ntheta_true=np.array([.6,.2])\ndef design(mode):\n    def u(k):\n        if mode=='constant': return 1.\n        if mode=='alternating': return 1. if k%2==0 else -1.\n        return [1.,0.,-1.,0.][k%4] if mode!='burst' or 0<=k<8 else 0.\n    return np.array([[u(k),u(k-1)] for k in range(64)])\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 136,
+          "delim": "`",
+          "code": "for mode in ['periodic','constant','alternating','burst']:\n    X=design(mode); Y=X@theta_true\n    for lam in [1.,.9]:\n        P=np.eye(2); estimate=np.zeros(2)\n        for n,phi in enumerate(X,1):\n            gain=P@phi/(lam+phi@P@phi)\n            estimate=estimate+gain*(Y[n-1]-phi@estimate)\n            P=(P-np.outer(gain,phi)@P)/lam\n            weights=lam**np.arange(n-1,-1,-1)\n            augmented=np.vstack((lam**(n/2)*np.eye(2), X[:n]*np.sqrt(weights)[:,None]))\n            targets=np.r_[np.zeros(2),Y[:n]*np.sqrt(weights)]\n            independent=np.linalg.lstsq(augmented,targets,rcond=None)[0]\n            assert np.allclose(estimate,independent,atol=1e-10,rtol=0)\n        print(mode, 'lambda',lam,'theta64',np.round(estimate,9).tolist())\nprint('all_prefixes_same_prior_match True')\nprint('periodic_exact', [.6*32/33,.2*32/33], 'burst_exact',[.6*4/5,.2*4/5])\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 177,
+      "title": "幅值、扰动与预测正确的边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nbase=np.array([1.,0.,-1.,0.]*16)\nprevious=np.roll(base,1)\ntheta_true=np.array([.6,.2])\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 181,
+          "delim": "`",
+          "code": "for amplitude in [1.,.1]:\n    X=amplitude*np.column_stack((base,previous))\n    disturbance=.01*base\n    estimate=np.linalg.lstsq(X,X@theta_true+disturbance,rcond=None)[0]\n    gram=X[:8].T@X[:8]\n    print('amplitude',amplitude,'min_Gram8',np.linalg.eigvalsh(gram)[0],'condition',np.linalg.cond(X),'theta',np.round(estimate,9).tolist())\n    assert np.allclose(estimate,[.6+.01/amplitude,.2],atol=1e-12)\nconstant=np.ones((8,2)); alternative=np.array([.4,.4])\nassert np.allclose(constant@alternative,constant@theta_true)\nprint('same_constant_prediction True', 'different_parameters', alternative.tolist())\nprint('weak_amplitude_checks_passed')\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

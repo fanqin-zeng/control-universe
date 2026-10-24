@@ -1,0 +1,279 @@
+---
+title: 扩展卡尔曼滤波
+description: 用非线性函数传播状态，用雅可比传播误差；通过平方测量、双峰后验与角度残差，理解EKF的计算流程和近似边界。
+---
+
+# 扩展卡尔曼滤波
+
+小车沿一条直线移动，定位模块输出的却是到原点距离的平方。位置从2m变到3m，理想读数从4m²变到9m²；在原点左右两侧，位置不同也可能产生相同读数。上一课的[卡尔曼滤波](/estimation/kalman-filter)使用线性测量矩阵，这次该怎样把读数变成位置修正？
+
+扩展卡尔曼滤波（extended Kalman filter，EKF）沿用预测与校正，但每拍在当前估计附近计算雅可比。**状态和预测读数仍经过原来的非线性函数；被线性化的是估计误差怎样传播。** 本课需要[多元微积分](/math/multivariable-calculus)中的泰勒展开与雅可比；[Lyapunov稳定性](/nonlinear/lyapunov-stability)用于理解最后的条件边界。
+
+## 从读数到非线性模型
+
+离散加性噪声模型写成：
+
+$$
+x_k=f(x_{k-1},u_{k-1})+w_{k-1},\qquad z_k=h(x_k)+v_k.
+$$
+
+$x_k$是状态，$u_{k-1}$为已知输入，$z_k$为本拍观测。噪声零均值，各拍之间、过程与测量之间以及初始误差之间互不相关，协方差分别为$Q_{k-1}\succeq0,R_k\succ0$。本课用高斯先验与高斯噪声解释后验近似；**非线性变换后，分布通常不再高斯，即使所有输入噪声都是高斯。**
+
+贯穿算例只让观测非线性：$h(x)=x^2$，位置单位m，读数单位m²，因此$P$单位m²、测量噪声方差$R$单位m⁴。这里的$Q,R$是离散噪声协方差，不是控制代价权重，也不是连续白噪声强度。平方测量是便于算清楚的教学模型，不声称普通测距设备都直接输出平方值。
+
+EKF每拍输入上一拍后验估计、协方差、已知输入、本拍测量及模型，输出新的状态估计与近似协方差。初始化必须给出$\hat x_0^+,P_0^+$；若这些信息有偏，滤波不会自动消除所有错误。
+
+## 误差为何要线性化
+
+在预测点$\mu$附近，一阶泰勒展开是：
+
+$$
+h(x)\approx h(\mu)+H(x-\mu),\qquad H=\left.\frac{\partial h}{\partial x}\right|_\mu.
+$$
+
+平方测量在$\mu=2$m处给$h(\mu)=4$m²、$H=4$m。保留常数项后，局部测量关系为$h(x)\approx4+4(x-2)=4x-4$；**不能直接用$H\mu=8$取代真实预测读数4。** 雅可比表示局部斜率，常数项负责把切线放到正确的位置。
+
+若误差不够小，高阶项会变得重要。在$\mu=0$处，平方测量的一阶导数为零，但二阶项$x^2$并未消失。因此一阶滤波器可能看不见观测包含的信息。
+
+![非线性函数传播均值，雅可比传播误差；两者在校正时重新汇合](/diagrams/estimation/ekf-linearization.svg)
+
+## 预测与校正的完整递推
+
+上标$-$表示本拍测量到来前，上标$+$表示已经使用本拍测量。先在**上一拍后验点**计算过程雅可比：
+
+$$
+F_{k-1}=\left.\frac{\partial f}{\partial x}\right|_{\hat x^+_{k-1},u_{k-1}},\qquad
+\hat x^-_k=f(\hat x^+_{k-1},u_{k-1}),\qquad P^-_k=F_{k-1}P^+_{k-1}F_{k-1}^T+Q_{k-1}.
+$$
+
+再在**本拍先验点**计算观测雅可比和创新：
+
+$$
+H_k=\left.\frac{\partial h}{\partial x}\right|_{\hat x^-_k},\qquad \nu_k=z_k-h(\hat x^-_k),\qquad S_k=H_kP^-_kH_k^T+R_k.
+$$
+
+随后进行校正：
+
+$$
+K_k=P^-_kH_k^TS_k^{-1},\qquad \hat x^+_k=\hat x^-_k+K_k\nu_k,
+$$
+
+$$
+P^+_k=(I-K_kH_k)P^-_k(I-K_kH_k)^T+K_kR_kK_k^T.
+$$
+
+最后一式是Joseph形式，保留线性化误差模型中的半正定结构。它改善数值计算的表达，**不保证$P^+_k$就是非线性系统的真实误差协方差**。实际实现解线性方程求增益，避免显式求逆；本拍结束后保存后验，下一拍重新计算$F,H$。
+
+这个递推只有一次预测、一次校正，没有训练过程或每拍求非线性最优解的迭代停止条件。若采用迭代EKF，还需另行规定重线性化、先验计数和停止规则，不能把同一测量反复当独立数据融合。
+
+## 一拍算例
+
+设先验$\hat x^-=2$m、$P^-=0.25$m²，测量$z=5$m²、$R=1$m⁴。先验可以来自已完成的预测；本次单拍校正不再重复加过程噪声。
+
+$$
+\hat z=h(2)=4,\quad H=4,\quad \nu=5-4=1,\quad S=4^2\times0.25+1=5,
+$$
+
+$$
+K=\frac{0.25\times4}{5}=0.2\ \mathrm{m}^{-1},\qquad \hat x^+=2+0.2\times1=2.2\ \mathrm m,
+$$
+
+$$
+P^+=(1-0.2\times4)^2\times0.25+0.2^2\times1=0.05\ \mathrm{m}^2.
+$$
+
+这里$K$不是两个同单位读数之间的无量纲“信任比例”，因为状态和观测的单位不同。下面同时检查一次非线性**预测**：取$f(x)=x+0.1x^2$，其中系数0.1的单位为m⁻¹；输入状态均值2m、方差0.25m²，$Q=0.04$m²。EKF得到$F=1.4$、预测均值2.4m、方差0.53m²。
+
+对高斯输入$X\sim N(\mu,P)$，利用二阶、四阶矩可直接计算：
+
+$$
+E[f(X)]=\mu+0.1(\mu^2+P),\qquad \operatorname{Var}(f(X)+w)=(1+0.2\mu)^2P+2(0.1)^2P^2+Q.
+$$
+
+同组参数的真实均值为2.425m、方差为0.53125m²。这个差异来自忽略曲率项，不能仅凭噪声高斯就宣布EKF的矩传播精确。
+
+<JupyterNotebook
+  title="一拍校正与非线性预测"
+  setupCode={`import numpy as np
+import math
+import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+np.set_printoptions(precision=9, suppress=True)`}
+  cells={[
+    { code: `# 直接使用非线性预测读数，Joseph协方差
+print('square_readings_at_2_3', 2**2, 3**2)
+def update(mu,p,r,z,kind='square'):
+    predicted=mu*mu if kind=='square' else mu
+    H=2*mu if kind=='square' else 1.
+    innovation=z-predicted; S=H*H*p+r
+    K=p*H/S
+    mean=mu+K*innovation
+    variance=(1-K*H)**2*p+K*K*r
+    return predicted,H,innovation,S,K,mean,variance
+for r in [1.,4.]:
+    values=update(2.,.25,r,5.)
+    print('default_update_R',r,'predicted_H_innovation_S_K_mean_variance',values)
+assert np.allclose(update(2,.25,1,5),[4,4,1,5,.2,2.2,.05])
+assert np.allclose(update(2,.25,4,5),[4,4,1,8,.125,2.125,.125])
+print('wrong_H_mu_vs_correct_h_mu',4*2,2**2)` },
+    { code: `# 一次非线性预测：一阶矩近似对高斯加权积分
+mu=2.; p=.25; q=.04; alpha=.1
+F=1+2*alpha*mu
+ekf_mean=mu+alpha*mu*mu; ekf_variance=F*F*p+q
+true_mean=mu+alpha*(mu*mu+p)
+true_variance=F*F*p+2*alpha*alpha*p*p+q
+nodes,weights=np.polynomial.hermite.hermgauss(24)
+x=mu+np.sqrt(2*p)*nodes; values=x+alpha*x*x
+gh_mean=np.dot(weights,values)/np.sqrt(np.pi)
+gh_variance=np.dot(weights,(values-gh_mean)**2)/np.sqrt(np.pi)+q
+print('prediction_F_EKF_mean_variance',F,ekf_mean,ekf_variance)
+print('prediction_exact_mean_variance',true_mean,true_variance)
+print('prediction_Gauss_Hermite',gh_mean,gh_variance)
+print('discarded_mean_variance',alpha*p,2*alpha*alpha*p*p)
+assert np.allclose([ekf_mean,ekf_variance,true_mean,true_variance],[2.4,.53,2.425,.53125])
+assert np.allclose([gh_mean,gh_variance],[true_mean,true_variance],atol=1e-12)` }
+  ]}
+/>
+
+## 近似的后验与失败例
+
+要判断近似误差，可以在这一维例子里直接用Bayes公式：
+
+$$
+p(x\mid z)\propto\exp\left(-\frac{(x-\mu)^2}{2P}-\frac{(z-h(x))^2}{2R}\right).
+$$
+
+下图对**相同先验、观测模型和单次读数**画EKF高斯近似与归一化的数值参考后验。参考使用一维数值积分，未经参数整定；它只是教学参照，不是适合高维在线系统的替代方案。将观测切到线性$h(x)=x$时，两条分布重合，用于校准上一课的线性高斯结论；切换模型后$R$的单位也变，不能跨模型按同一个方差数字比较传感器性能。
+
+<ExtendedKalmanExplorer />
+
+默认平方测量下，参考后验均值约2.169615m、方差约0.045869m²；EKF给2.2m和0.05m²。它们接近但不相同，当前例也不能推出EKF总是低估方差。把先验均值换成−2m，主要后验分支和校正方向随之变成负侧。
+
+再取$\mu=0,P=1,R=0.25,z=4$。EKF的$H=0,K=0$，均值和方差仍为0与1；数值参考后验均值也为0，但方差约3.841876，而且是正负对称的双峰。**均值相同不等于分布相同，更不等于测量没有信息。** 平方测量约束了位置的绝对值，却不能单凭这一拍决定正负方向；若任务需要选择分支，应增加有方向的信息或保留多假设。
+
+图中所有积分参数与72种配置均经过独立自适应积分复核。参考积分区间为−12至12m、4800段；显示区间固定−6至6m、纵轴固定0至8m⁻¹。曲线是概率密度，峰值可以大于1；整条曲线的积分才是概率。图外尾部由参考积分处理，不把图示范围当状态约束。
+
+<JupyterNotebook
+  title="参考后验与角度几何"
+  setupCode={`import numpy as np
+import math
+import matplotlib
+matplotlib.use('module://matplotlib_inline.backend_inline')
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+np.set_printoptions(precision=9, suppress=True)`}
+  cells={[
+    { code: `# 一维连续Bayes参考：独立于组件的Simpson积分
+def reference(mu,p,r,z,kind):
+    h=lambda x:x*x if kind=='square' else x
+    log=lambda x:-(x-mu)**2/(2*p)-(z-h(x))**2/(2*r)
+    roots=np.roots([2*p,0,r-2*p*z,-r*mu]) if kind=='square' else [(r*mu+p*z)/(r+p)]
+    points=sorted(set(float(complex(t).real) for t in roots if abs(complex(t).imag)<1e-9))
+    shift=max(log(t) for t in points)
+    cuts=[-np.inf]+points+[np.inf]
+    def moment(n):return sum(quad(lambda x:(x**n)*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12,limit=200)[0] for a,b in zip(cuts,cuts[1:]))
+    mass=moment(0); mean=moment(1)/mass; variance=moment(2)/mass-mean*mean
+    return mean,variance,lambda x:math.exp(log(x)-shift)/mass
+cases=[('linear',2,.25,1,5),('square',2,.25,1,5),('square',-2,.25,1,5),('square',0,1,.25,4)]
+for kind,mu,p,r,z in cases:
+    m,v,density=reference(mu,p,r,z,kind)
+    H=1 if kind=='linear' else 2*mu
+    K=p*H/(H*H*p+r); em=mu+K*(z-(mu if kind=='linear' else mu*mu)); ev=(1-K*H)**2*p+K*K*r
+    print('posterior_case_kind_mu_EKFmean_var_reference_mean_var',kind,mu,em,ev,m,v)
+    assert v>0
+    if kind=='linear': assert np.allclose([em,ev],[m,v],atol=1e-12)
+fig,axes=plt.subplots(1,2,figsize=(8,3))
+for ax,(mu,p,r,z) in zip(axes,[(2,.25,1,5),(0,1,.25,4)]):
+    m,v,density=reference(mu,p,r,z,'square'); xs=np.linspace(-6,6,241)
+    ax.plot(xs,[density(float(x)) for x in xs]);ax.set_xlim(-6,6);ax.set_ylim(0,8);ax.grid(alpha=.3)
+    ax.set_title('mu='+str(mu));ax.set_xlabel('position (m)')
+axes[0].set_ylabel('posterior density (1/m)');plt.tight_layout();plt.show()
+print('posterior_reference_checked')` },
+    { code: `# 距离/方位Jacobian与角度创新；原点显式拒绝
+def radar(x,y):
+    squared=x*x+y*y
+    if squared==0: return None
+    radius=np.sqrt(squared)
+    return np.array([radius,np.arctan2(y,x)]),np.array([[x/radius,y/radius],[-y/squared,x/squared]])
+measurement,H=radar(3.,4.)
+eps=1e-6
+finite=np.column_stack([(radar(3+eps,4)[0]-radar(3-eps,4)[0])/(2*eps),(radar(3,4+eps)[0]-radar(3,4-eps)[0])/(2*eps)])
+print('radar_measurement_Jacobian',measurement,H)
+print('radar_finite_difference_max',np.max(abs(finite-H)))
+assert np.max(abs(finite-H))<1e-9 and radar(0,0) is None
+raw=np.deg2rad(-179-179)
+wrapped=np.arctan2(np.sin(raw),np.cos(raw))
+print('angle_raw_wrapped_rad_deg',raw,wrapped,np.rad2deg(raw),np.rad2deg(wrapped))
+assert abs(wrapped-np.pi/90)<1e-12
+print('all_EKF_checks_passed')` }
+  ]}
+/>
+
+## 多维测量与工程实现
+
+设位置状态为$(p_x,p_y)$，传感器输出距离与方位角：
+
+$$
+h(p_x,p_y)=\begin{bmatrix}\sqrt{p_x^2+p_y^2}\\\operatorname{atan2}(p_y,p_x)\end{bmatrix},\qquad
+H=\begin{bmatrix}p_x/r&p_y/r\\-p_y/r^2&p_x/r^2\end{bmatrix},\quad r=\sqrt{p_x^2+p_y^2}>0.
+$$
+
+在$(3,4)$m处，距离5m、方位角约0.927295rad，$H=[[0.6,0.8],[-0.16,0.12]]$，第二行单位m⁻¹。在原点，距离/方位角雅可比不适用，不能简单把除零结果填0继续更新。
+
+角度创新须按圆周差计算，而不是直接相减。例如预测179°、读数−179°，直接相减为−358°，主值残差应为2°：
+
+$$
+\nu_\theta=\operatorname{atan2}(\sin(z_\theta-\hat z_\theta),\cos(z_\theta-\hat z_\theta)).
+$$
+
+算法中的角度统一用rad，恰好$\pm\pi$的两个主值代表同一方向。位置与角度噪声的单位不同，$R$必须与观测顺序对应。采用`atan2`保留象限，不能用单独的$\arctan(p_y/p_x)$代替。
+
+工程实现还要核对时间戳、坐标系、雅可比求值点和采样周期；用有限差分核查解析导数，记录步长敏感性；检查$S$的正定性、$P$的对称性与数值条件。缺测时只预测，离群值处理须有明确观测模型或门限依据，不把大创新一概解释成噪声。
+
+若噪声非加性，例如$x_k=f(x_{k-1},u,w)$、$z_k=h(x_k,v)$，还需计算噪声雅可比$G=\partial f/\partial w,M=\partial h/\partial v$，分别使用$GQG^T$、$MRM^T$；存在相关噪声时，独立噪声公式不再完整。上述模型与Jacobian区分可对照[MathWorks官方说明](https://www.mathworks.com/help/fusion/ug/extended-kalman-filters.html)，本课实验使用独立Python/TypeScript实现。
+
+## 稳定性和适用边界
+
+EKF每拍都有一个增益，不意味着能沿用线性卡尔曼滤波的全部最优性、收敛性或稳态Riccati保证。需要分别检查：初始估计是否位于有效邻域、模型和导数是否足够光滑、沿轨迹是否持续提供可辨识信息、噪声和线性化余项是否受控。单看某一拍的雅可比秩或误差矩阵特征值不够。高斯噪声也不保证每条样本始终留在局部邻域内。
+
+若另有证明给出非负误差能量$V_k$的期望递推界：
+
+$$
+E[V_{k+1}]\leq\rho E[V_k]+c,\qquad 0<\rho<1,\quad c\geq0,
+$$
+
+才能递推得到：
+
+$$
+E[V_k]\leq\rho^k E[V_0]+\frac{c(1-\rho^k)}{1-\rho}.
+$$
+
+这是一个需要建立的**充分条件示例**，不是本课已对所有EKF证明的定理。持续噪声下通常讨论有界误差而非逐样本误差趋零；正半定的报告协方差也不能单独证明校准、稳定或安全。
+
+离线检验可同时看创新偏置/相关性、实际误差和报告协方差的吻合，以及错误初值、缺测、离群值、退化几何等工况。迭代EKF、UKF或粒子滤波各有计算与近似代价，本课不作通用优劣排名。
+
+## 小结
+
+均值走非线性$f,h$，误差协方差走当前点的$F,H$；常数项和求值时刻不能省略。Joseph形式保证的是线性化模型中的代数结构。平方测量说明一阶导数为零仍可能有高阶信息，双峰后验也可能与单高斯具有相同均值。角度残差、单位与退化几何是算法的一部分；可信的误差界必须带条件和验证证据。
+
+## 习题
+
+**1.** 使用本课平方观测算例。(a) 逐项求$\hat z,H,\nu,S,K,\hat x^+,P^+$。(b) 若将$R$改为4，重新计算并说明单位；为什么不能把$H\hat x^-$当预测读数？
+
+**2.** $X\sim N(2,0.25)$，$f(x)=x+0.1x^2$，独立过程噪声方差$Q=0.04$。(a) 求EKF预测的均值、方差及雅可比。(b) 用高斯中心矩$E[\epsilon^3]=0,E[\epsilon^4]=3P^2$推导真实均值与方差，指出被丢弃的项。
+
+**3.** 平方测量$z=4$，先验$N(0,1)$，$R=0.25$。(a) 求EKF更新。(b) 用对称性解释参考后验均值为何为0；为什么这不意味着方差仍为1？(c) 如何获得位置的正负方向信息？给出一个可检验的改进，而非仅改小$R$。
+
+**4.** 位置$(3,4)$m的距离/方位测量。(a) 求观测与雅可比，说明原点处的问题。(b) 预测179°、读数−179°，求原始与归一化创新，换成rad；说明为什么`atan2`和一致的角度单位重要。
+
+## 答案
+
+**1.** (a) $\hat z=4,H=4,\nu=1,S=5,K=0.2$，后验2.2m、0.05m²，Joseph两项之和如正文。(b) $S=8,K=0.125$，后验2.125m、0.125m²；$R$为m⁴，增益为m⁻¹。这里使用$h(2)=4$，而$H\hat x^-=8$遗漏切线常数项，导致创新算错。
+
+**2.** (a) $F=1.4$，EKF均值2.4、方差$1.4^2\times0.25+0.04=0.53$。(b) 写$X=\mu+\epsilon$，则$f(X)=\mu+0.1\mu^2+(1+0.2\mu)\epsilon+0.1\epsilon^2$；取期望多出$0.1P=0.025$。奇数中心矩为0，二次项方差为$(0.1)^2(3P^2-P^2)=2(0.1)^2P^2=0.00125$。加独立$Q$后，真实均值2.425、方差0.53125。EKF漏掉这些曲率贡献，不能用重新解释$Q$来掩盖均值误差。
+
+**3.** (a) $h(0)=0,H=0,S=0.25,K=0$，后验均值0、报告方差1。(b) 先验及似然都是偶函数，因此后验也是偶函数，均值为0；但权重被测量重新分配，积分给方差约3.841876，双峰形状与$N(0,1)$不同。(c) 增加一个有符号的位置读数或已知方向的运动/观测，并在模型中联合使用；可检验正负候选的观测似然是否仍相同。仅减小平方测量噪声不能打破$x$与$-x$的对称性；没有新信息时应保留歧义。
+
+**4.** (a) 观测$[5,0.927295218\ldots]^T$，$H=[[0.6,0.8],[-0.16,0.12]]$；$r=0$时方位未定义且雅可比公式含除零，应改变模型或显式拒绝该更新。(b) 原始创新−358°，约−6.248279rad；归一化后2°，即$\pi/90\approx0.034907$rad。`atan2`保留象限；状态、噪声与创新中的rad/deg必须对应，否则不仅残差会错，协方差的量纲也会错。

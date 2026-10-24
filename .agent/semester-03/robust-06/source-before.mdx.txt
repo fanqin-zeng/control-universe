@@ -1,0 +1,841 @@
+---
+title: "混合灵敏度设计"
+description: "深入理解混合灵敏度 H∞ 设计框架：权重函数选择方法论、H∞ 综合求解、与回路整形的对比。"
+---
+
+# 混合灵敏度设计
+
+上节课我们用**回路整形法**手工设计了一个增益+陷波滤波器控制器：在 Bode 图上分析开环特性，凭经验选择增益和陷波参数，然后验证闭环性能。这种方法直观有效，但有两个根本局限：
+
+1. **不可扩展**：多变量（MIMO）系统无法在 Bode 图上手工操作
+2. **不保证最优**：控制器参数依赖工程师经验，无法保证在所有频率上达到最佳权衡
+
+**混合灵敏度设计**（Mixed Sensitivity Design）将这些问题转化为系统化的优化框架：
+
+- 工程师的职责从"设计控制器"变为"选择权重函数"——即描述设计需求
+- H∞ 综合算法自动求解满足需求的最优控制器
+
+> 📖 本节课需要上一节的全部基础：[H∞控制基础](/robust/h-infinity-basics)。
+
+## 混合灵敏度问题深入
+
+### S、T、KS 的物理意义
+
+回顾上节课，混合灵敏度优化问题：
+
+$$
+\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+$$
+
+其中三个闭环传递函数各有明确的物理含义：
+
+| 传递函数 | 表达式 | 物理意义 | 设计目标 |
+|----------|--------|----------|----------|
+| $S = \frac{1}{1+GK}$ | 输出灵敏度 | 扰动到输出的传递 | 低频 $|S|$ 小 → 好的跟踪和抗扰 |
+| $T = \frac{GK}{1+GK}$ | 补灵敏度 | 参考到输出 / 噪声到输出 | 高频 $|T|$ 小 → 对未建模动态不敏感 |
+| $KS = \frac{K}{1+GK}$ | 控制灵敏度 | 参考到控制量的传递 | $|KS|$ 有界 → 执行器不饱和 |
+
+### S + T = 1 与压床效应
+
+对 SISO 系统，$S + T = 1$ 意味着在任何频率上，$S$ 和 $T$ 不能同时小：
+
+$$
+|S(j\omega)| + |T(j\omega)| \geq |S(j\omega) + T(j\omega)| = 1
+$$
+
+如果你在某个频段把 $|S|$ 压得很低（好的跟踪），$|T|$ 就必然升高（对噪声更敏感）。这就像压水床——你踩下去的地方，旁边必然鼓起来。
+
+**Bode 积分定理**给出了更精确的量化。对开环稳定的 SISO 系统：
+
+$$
+\int_0^\infty \ln|S(j\omega)| \, d\omega = 0
+$$
+
+这意味着 $\ln|S|$ 在整个频率轴上的"面积"为零：低频段 $\ln|S| < 0$（$|S| < 1$，压下去的部分）的面积，必须等于高频段 $\ln|S| > 0$（$|S| > 1$，鼓起来的部分）的面积。
+
+> 💡 **压床效应的工程含义**：控制系统的性能存在**物理定律决定的根本限制**。不是算法不够好，而是 $S + T = 1$ 这个简单的代数约束决定了你不可能在所有频段都做到最好。设计的本质是**权衡**。
+
+### 三个通道的内在矛盾
+
+混合灵敏度设计需要同时平衡三个目标：
+
+1. **$S$ 小**（好的跟踪和抗扰）→ 需要 $|GK|$ 大（高增益）
+2. **$T$ 小**（好的噪声抑制和鲁棒性）→ 需要 $|GK|$ 小（低增益）
+3. **$KS$ 小**（控制量不过大）→ 需要 $|K|$ 小
+
+目标 1 和 2 直接矛盾（$S + T = 1$），目标 3 进一步限制了"用多大控制量来追求性能"的自由度。
+
+## 广义被控对象构造
+
+上节课给出了混合灵敏度问题的广义被控对象，这里详细推导构造过程。
+
+### 从优化目标到 P(s)
+
+混合灵敏度问题要求最小化：
+
+$$
+\left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+$$
+
+定义被控输出向量 $z = \begin{bmatrix} z_1 \\ z_2 \\ z_3 \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} w$，其中 $w$ 是外部输入（参考或扰动），$y$ 是测量输出，$u$ 是控制输入。
+
+从信号关系出发：
+- $e = w - Gy$（误差信号）
+- $u = Ky$（控制律）
+- $y = e$（输出反馈，负反馈约定）
+
+三个被控输出：
+- $z_1 = W_1 e = W_1(w - Gu) = W_1 w - W_1 G u$
+- $z_2 = W_2 GK(y) = W_2 G u$（因为 $T = GK/(1+GK)$，从 $w$ 到 $T$ 需要经过 $u$）
+- $z_3 = W_3 u$
+
+写成广义被控对象形式：
+
+$$
+\begin{bmatrix} z \\ y \end{bmatrix} = P(s) \begin{bmatrix} w \\ u \end{bmatrix}
+$$
+
+$$
+P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ 0 & W_3 \\ I & -G \end{bmatrix}
+$$
+
+### 验证
+
+控制器 $K$ 通过 $u = Ky$ 连接。从 $w$ 到 $z$ 的闭环传递函数：
+
+$$
+T_{zw} = \begin{bmatrix} W_1 \\ 0 \\ 0 \end{bmatrix} + \begin{bmatrix} -W_1 G \\ W_2 G \\ W_3 \end{bmatrix} K(I + GK)^{-1}
+$$
+
+逐项化简：
+
+$$
+T_{zw} = \begin{bmatrix} W_1 - W_1 GK(I+GK)^{-1} \\ W_2 GK(I+GK)^{-1} \\ W_3 K(I+GK)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 \cdot \frac{1}{1+GK} \\ W_2 \cdot \frac{GK}{1+GK} \\ W_3 \cdot \frac{K}{1+GK} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \quad \checkmark
+$$
+
+### 状态空间实现
+
+设被控对象的状态空间实现为 $G(s) = C_g(sI - A_g)^{-1}B_g + D_g$，权重函数的实现为 $W_i(s) = C_{wi}(sI - A_{wi})^{-1}B_{wi} + D_{wi}$。
+
+广义被控对象的状态空间可以通过矩阵运算构造。具体地，若 $G$ 的阶数为 $n$，$W_1$ 的阶数为 $n_1$，$W_2$ 的阶数为 $n_2$，$W_3$ 的阶数为 $n_3$，则广义被控对象的阶数为 $n + n_1 + n_2 + n_3$。
+
+> 💡 实际使用中，`mixsyn` 函数会自动完成这个构造。理解构造过程有助于诊断问题（如"为什么无解"），但日常使用中不需要手工计算。
+
+## 权重函数选择方法论
+
+混合灵敏度设计的**核心难点不在求解，而在权重选择**。权重函数是工程师与优化算法之间的"合同"——你告诉算法哪些性能重要、哪些可以放松，算法据此寻找最优控制器。
+
+### 指标→权重对照表
+
+| 性能指标 | 对应权重 | 参数确定方法 |
+|----------|----------|--------------|
+| 稳态误差 < $\varepsilon$ | $W_1$ 低频增益 | $|W_1(0)| \geq 1/\varepsilon$ |
+| 带宽 > $\omega_c$ | $W_1$ 截止频率 | $W_1$ 的穿越频率 ≈ $\omega_c$ |
+| 灵敏度峰值 < $M_S$ | $W_1$ 高频渐近线 | $1/|W_1(\infty)| \geq 1/M_S$ |
+| 未建模动态频率 > $\omega_u$ | $W_2$ 截止频率 | $|W_2|$ 在 $\omega_u$ 后增大 |
+| 控制量 < $u_{\max}$ | $W_3$ 增益 | $W_3$ 越大，$|KS|$ 越小 |
+
+### W₁（性能权重）设计
+
+$W_1$ 的作用是告诉优化器"在哪些频率上 $|S|$ 必须小"。$W_1$ 在某频率的增益越大，优化器就越努力压低该频率的 $|S|$。
+
+**一阶形式**（最常用）：
+
+$$
+W_1(s) = \frac{b(s + a)}{s + c}
+$$
+
+参数由三个指标确定：
+
+| 参数 | 由什么决定 | 公式 |
+|------|-----------|------|
+| 低频增益 $W_1(0)$ | 稳态误差要求 $\varepsilon$ | $ba/c \geq 1/\varepsilon$ |
+| 零点 $a$ | 带宽要求 $\omega_c$ | $a \approx \omega_c$ |
+| 极点 $c$ | 高频放松程度 | $c \gg a$，通常 $c = 50 \sim 100 \times a$ |
+| 增益 $b$ | 自由度 | 调节整体权重强度 |
+
+**关键约束**：$|W_1(\infty)| = b$ 必须 $< 1$（否则优化问题要求 $|S(\infty)| < 1/b < 1$，但 $S$ 在高频趋向 1，无法满足）。
+
+优化后 $|S|$ 的上界包络为：
+
+$$
+|S(j\omega)| < \frac{\gamma}{|W_1(j\omega)|}
+$$
+
+其中 $\gamma$ 是最优 $\mathcal{H}_\infty$ 范数值。$\gamma$ 越接近 1，权重越"紧"；$\gamma < 1$ 说明设计需求有裕量。
+
+### W₂（鲁棒性权重）设计
+
+$W_2$ 限制 $|T|$ 的高频增益，保证对未建模动态的鲁棒性。
+
+**常数形式**（简单场景）：$W_2 = \alpha$，要求 $|T(j\omega)| < 1/\alpha$ 对所有频率成立。
+
+**动态形式**（已知不确定性频率特性）：
+
+$$
+W_2(s) = \left(\frac{s}{\omega_u} + 1\right) \cdot \alpha
+$$
+
+其中 $\omega_u$ 是未建模动态的起始频率，$\alpha$ 是低频允许的 $|T|$ 上限的倒数。
+
+### W₃（控制量权重）设计
+
+$W_3$ 限制控制信号大小，防止执行器饱和。
+
+**常数形式**：$W_3 = \rho$。$\rho$ 越大，$|KS|$ 被压得越低，控制量越小。但增大 $W_3$ 会"挤占"优化资源，可能降低 $S$ 和 $T$ 的性能。
+
+**调参方法**：从 $\rho = 0.01$ 开始，逐步增大直到控制量满足约束。
+
+### 权重选择的迭代本质
+
+权重选择**不是一次到位的**，而是迭代过程：
+
+1. 根据指标选择初始权重
+2. 运行 H∞ 综合，分析结果
+3. 如果某项指标不满足，调整对应权重
+4. 重复直到所有指标满足
+
+> 💡 经验法则：先只用 $W_1$（性能），验证基本可行性；再加 $W_2$（鲁棒性）；最后加 $W_3$（控制量）。逐步增加复杂度，避免一开始就面对三个权重的耦合调整。
+
+## H∞ 综合求解方法
+
+有了权重函数和广义被控对象，下一步是求解 H∞ 优化问题。
+
+### Riccati 方程法（DGKF 方法）
+
+1988 年 Doyle-Glover-Khargonekar-Francis 给出的状态空间解法，是 H∞ 控制的里程碑。
+
+**核心思想**：将 H∞ 问题转化为两个代数 Riccati 方程（ARE）：
+
+$$
+A^T X + XA - X(B_2 B_2^T - \gamma^{-2} B_1 B_1^T)X + C_1^T C_1 = 0
+$$
+
+$$
+AY + YA^T - Y(C_2^T C_2 - \gamma^{-2} C_1^T C_1)Y + B_1 B_1^T = 0
+$$
+
+其中 $A, B_1, B_2, C_1, C_2$ 是广义被控对象的状态空间矩阵。
+
+**求解流程**：
+1. 给定 $\gamma$（从大到小尝试）
+2. 求解两个 ARE，检查是否存在稳定半正定解 $X \geq 0, Y \geq 0$
+3. 检查谱半径条件 $\rho(XY) < \gamma^2$
+4. 如果满足，用 $X, Y$ 构造控制器
+5. 用二分法缩小 $\gamma$，找到最小可行值 $\gamma_{\min}$
+
+**与 LQR 的联系**：LQR 的 Riccati 方程是 H∞ 方程在 $\gamma \to \infty$ 时的特例。H∞ 可以看作"最坏情况下的 LQR"——LQR 假设扰动是白噪声（$\mathcal{H}_2$ 优化），H∞ 假设扰动是有界能量信号（$\mathcal{H}_\infty$ 优化）。
+
+### LMI 方法
+
+线性矩阵不等式（LMI）方法将 H∞ 问题转化为**凸优化问题**：
+
+$$
+\text{minimize } \gamma \quad \text{s.t. } \begin{bmatrix} A^T P + PA & PB_1 & C_1^T \\ B_1^T P & -\gamma I & D_{11}^T \\ C_1 & D_{11} & -\gamma I \end{bmatrix} < 0, \quad P > 0
+$$
+
+**优势**：
+- 凸优化保证全局最优（无局部极小值）
+- 可以附加额外约束（控制器阶数限制、结构约束、区域极点配置）
+- 可以处理多目标优化（同时优化 H∞ 和 H₂ 性能）
+
+**劣势**：计算量比 Riccati 方法大，对大规模系统可能较慢。
+
+### γ 迭代
+
+实际算法不直接求 $\gamma_{\min}$，而是用**二分法**迭代：
+
+1. 设 $\gamma_{\text{low}} = 0$，$\gamma_{\text{high}}$ = 某个大值
+2. 取 $\gamma = (\gamma_{\text{low}} + \gamma_{\text{high}}) / 2$
+3. 检查是否存在满足条件的控制器
+4. 如果存在，$\gamma_{\text{high}} = \gamma$（可以尝试更小）
+5. 如果不存在，$\gamma_{\text{low}} = \gamma$（需要更大）
+6. 重复直到 $\gamma_{\text{high}} - \gamma_{\text{low}}$ 足够小
+
+> 💡 **γ 最优 vs γ 次优**：实际中常使用 $\gamma$ 略大于最优值（如 $1.05 \gamma_{\min}$）。次优解的控制器参数更温和，数值条件更好，对模型误差更不敏感。追求 $\gamma_{\min}$ 往往导致控制器增益极高、对参数变化极其敏感。
+
+## 设计实例
+
+### 问题描述
+
+沿用上一节课的二阶共振系统：
+
+$$
+G(s) = \frac{100}{s^2 + s + 100}
+$$
+
+自然频率 $\omega_n = 10$ rad/s，阻尼比 $\zeta = 0.05$（极轻阻尼）。
+
+设计需求：
+1. **稳态误差** < 5%
+2. **灵敏度峰值** $\|S\|_\infty < 1.5$
+3. **共振抑制**：$\omega = 10$ rad/s 处的共振不能放大到闭环输出
+4. **控制量合理**：阶跃响应控制量不能过大
+
+### 权重选择
+
+**W₁（性能权重）**：
+
+需求翻译：
+- 稳态误差 < 5% → $|S(0)| < 0.05$ → $|W_1(0)| > 20$
+- 带宽 ≈ 5 rad/s → $W_1$ 的零点在 $\omega \approx 5$
+- 高频放松 → $|W_1(\infty)| < 1$
+
+使用标准形式：
+
+$$
+W_1(s) = \frac{s/M + \omega_b}{s + \omega_b \cdot A}
+$$
+
+参数选择：
+- $A = 0.01$：低频允许最大 $|S|$（对应稳态误差 < 1%）
+- $M = 2$：高频允许最大 $|S|$（允许 $|S|$ 在高频接近 1）
+- $\omega_b = 5$：带宽频率
+
+代入得：
+
+$$
+W_1(s) = \frac{s/2 + 5}{s + 0.05} = \frac{0.5(s + 10)}{s + 0.05}
+$$
+
+验证：
+- $|W_1(0)| = 5/0.05 = 100$ → $|S(0)| < 1/100 = 0.01$（稳态误差 < 1%，远优于 5% 要求）
+- $|W_1(\infty)| = 0.5$ → $|S(\infty)| < 1/0.5 = 2$（合理，高频 $|S| \to 1 < 2$）
+- 转折频率：零点 $\omega = 10$（高频放松起点），极点 $\omega = 0.05$（低频高增益截止）
+
+**W₂（鲁棒性权重）**：$W_2 = 0.1$（常数），要求 $|T| < 10$——几乎不约束，因为 $|T|$ 在高频自然趋向 0。
+
+**W₃（控制量权重）**：$W_3 = 0.01$（常数），轻度限制控制量。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+G = ctrl.tf([100], [1, 1, 100])
+W1 = ctrl.tf([0.5, 5], [1, 0.05])
+W2 = 0.1
+W3 = 0.01`}
+  cells={[{
+    code: `# 被控对象与权重函数分析
+print("=== 被控对象 G(s) ===")
+print(G)
+
+omega = np.logspace(-2, 2.5, 1000)
+W1_jw = W1(1j * omega)
+W1_mag = np.abs(W1_jw)
+W1_mag_db = 20 * np.log10(W1_mag)
+
+bound_S = 1.0 / W1_mag
+bound_S_db = 20 * np.log10(bound_S)
+
+print(f"\\n=== 权重函数 W1 ===")
+print(f"|W1(0)| = {np.abs(W1(0.001j)):.1f} → |S(0)| 上界 = {1/np.abs(W1(0.001j)):.4f}")
+print(f"|W1(∞)| = {np.abs(W1(1000j)):.3f} → |S(∞)| 上界 = {1/np.abs(W1(1000j)):.3f}")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+axes[0].semilogx(omega, W1_mag_db, 'b-', linewidth=2, label='|W₁(jω)|')
+axes[0].set_xlabel('频率 (rad/s)')
+axes[0].set_ylabel('幅值 (dB)')
+axes[0].set_title('性能权重 W₁')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+axes[1].semilogx(omega, bound_S_db, 'r-', linewidth=2, label='1/|W₁| (|S| 上界)')
+axes[1].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[1].set_xlabel('频率 (rad/s)')
+axes[1].set_ylabel('幅值 (dB)')
+axes[1].set_title('|S| 的上界包络')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()`
+  }]}
+/>
+
+### MATLAB 代码
+
+```matlab
+% 被控对象
+G = tf(100, [1 1 100]);
+
+% 权重函数
+W1 = tf([0.5 5], [1 0.05]);   % 性能权重
+W2 = 0.1;                      % 鲁棒性权重
+W3 = 0.01;                     % 控制量权重
+
+% 混合灵敏度综合
+[K, CL, gamma, info] = mixsyn(G, W1, W2, W3);
+
+fprintf('最优 gamma = %.4f\n', gamma);
+fprintf('控制器阶数 = %d\n', length(K.den{1}{1}) - 1);
+
+% 分析结果
+S = feedback(1, G*K);
+T = feedback(G*K, 1);
+KS = feedback(K, G);
+
+% 画加权灵敏度 Bode 图
+figure;
+bode(W1*S, W2*T, W3*KS);
+legend('|W_1 S|', '|W_2 T|', '|W_3 KS|');
+title('混合灵敏度约束验证');
+
+% 阶跃响应
+figure;
+step(CL);
+title('闭环阶跃响应');
+```
+
+`mixsyn` 内部流程：
+1. 构造广义被控对象 $P(s)$（包含 $G$、$W_1$、$W_2$、$W_3$）
+2. 将 $P(s)$ 转为状态空间
+3. 用 γ 迭代 + Riccati 方程求解 H∞ 最优控制器
+4. 返回控制器 $K$、闭环系统 $CL$、最优 γ 值
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+G = ctrl.tf([100], [1, 1, 100])
+W1 = ctrl.tf([0.5, 5], [1, 0.05])
+W2 = 0.1
+W3 = 0.01
+K_ms = ctrl.tf([50, 50], [1, 20, 199])
+K_ls = 20 * ctrl.tf([1, 10, 100], [1, 0.4, 100])`}
+  cells={[
+    {
+      code: `# 混合灵敏度控制器闭环分析
+L_ms = G * K_ms
+omega = np.logspace(-2, 2.5, 2000)
+L_jw = L_ms(1j * omega)
+S_jw = 1.0 / (1.0 + L_jw)
+T_jw = L_jw / (1.0 + L_jw)
+KS_jw = K_ms(1j * omega) / (1.0 + L_jw)
+W1_jw = W1(1j * omega)
+
+mag_L = np.abs(L_jw)
+idx_cross = np.where(np.diff(np.sign(mag_L - 1)))[0]
+wc = omega[idx_cross[0]] if len(idx_cross) > 0 else float('nan')
+phase_wc = np.angle(L_jw[idx_cross[0]], deg=True) if len(idx_cross) > 0 else float('nan')
+PM = 180 + phase_wc
+S_inf = np.max(np.abs(S_jw))
+T_inf = np.max(np.abs(T_jw))
+L_dc = np.abs(L_ms(0.001j))
+ss_error = 1.0 / (1.0 + L_dc)
+
+print("=== 混合灵敏度控制器 K_ms(s) ===")
+print(K_ms)
+print(f"\\n=== 闭环性能 ===")
+print(f"穿越频率: {wc:.1f} rad/s")
+print(f"相位裕度: {PM:.1f}°")
+print(f"||S||_∞ = {S_inf:.3f} ({20*np.log10(S_inf):.2f} dB)")
+print(f"||T||_∞ = {T_inf:.3f} ({20*np.log10(T_inf):.2f} dB)")
+print(f"稳态误差: {ss_error*100:.2f}%")
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+axes[0, 0].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S|')
+axes[0, 0].semilogx(omega, 20*np.log10(1.0/np.abs(W1_jw)), 'r--', linewidth=1.5, label='1/|W₁| (上界)')
+axes[0, 0].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[0, 0].set_xlabel('频率 (rad/s)')
+axes[0, 0].set_ylabel('幅值 (dB)')
+axes[0, 0].set_title('|S| 与权重边界')
+axes[0, 0].legend()
+axes[0, 0].grid(True, alpha=0.3)
+
+axes[0, 1].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T|')
+axes[0, 1].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[0, 1].set_xlabel('频率 (rad/s)')
+axes[0, 1].set_ylabel('幅值 (dB)')
+axes[0, 1].set_title('补灵敏度 |T|')
+axes[0, 1].legend()
+axes[0, 1].grid(True, alpha=0.3)
+
+T_cl = ctrl.feedback(L_ms)
+t = np.linspace(0, 8, 1000)
+_, y = ctrl.step_response(T_cl, t)
+axes[1, 0].plot(t, y, 'b-', linewidth=2)
+axes[1, 0].axhline(1, color='k', linestyle='--', alpha=0.5)
+axes[1, 0].axhline(1 - ss_error, color='g', linestyle=':', alpha=0.5, label=f'稳态值 = {1-ss_error:.4f}')
+axes[1, 0].set_xlabel('时间 (s)')
+axes[1, 0].set_ylabel('输出 y')
+axes[1, 0].set_title('闭环阶跃响应')
+axes[1, 0].legend()
+axes[1, 0].grid(True, alpha=0.3)
+
+CS_cl = ctrl.feedback(K_ms, G)
+_, u = ctrl.step_response(CS_cl, t)
+axes[1, 1].plot(t, u, 'r-', linewidth=1.5)
+axes[1, 1].set_xlabel('时间 (s)')
+axes[1, 1].set_ylabel('控制信号 u')
+axes[1, 1].set_title('控制信号（阶跃响应）')
+axes[1, 1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"\\n=== 指标检查 ===")
+print(f"||S||_∞ = {S_inf:.3f} {'✓' if S_inf < 1.5 else '✗'} (< 1.5)")
+print(f"稳态误差 = {ss_error*100:.2f}% {'✓' if ss_error < 0.05 else '✗'} (< 5%)")`
+    },
+    {
+      code: `# 与回路整形法对比
+L_ls = G * K_ls
+L_ms_full = G * K_ms
+T_cl_ls = ctrl.feedback(L_ls)
+T_cl_ms = ctrl.feedback(L_ms_full)
+CS_cl_ls = ctrl.feedback(K_ls, G)
+CS_cl_ms = ctrl.feedback(K_ms, G)
+
+t = np.linspace(0, 8, 1000)
+omega = np.logspace(-2, 2.5, 2000)
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+_, y_ls = ctrl.step_response(T_cl_ls, t)
+_, y_ms = ctrl.step_response(T_cl_ms, t)
+axes[0, 0].plot(t, y_ls, 'r-', linewidth=1.5, label='回路整形 (K=20 + 陷波)')
+axes[0, 0].plot(t, y_ms, 'b-', linewidth=2, label='混合灵敏度 (H∞)')
+axes[0, 0].axhline(1, color='k', linestyle='--', alpha=0.5)
+axes[0, 0].set_xlabel('时间 (s)')
+axes[0, 0].set_ylabel('输出 y')
+axes[0, 0].set_title('阶跃响应对比')
+axes[0, 0].legend()
+axes[0, 0].grid(True, alpha=0.3)
+
+_, u_ls = ctrl.step_response(CS_cl_ls, t)
+_, u_ms = ctrl.step_response(CS_cl_ms, t)
+axes[0, 1].plot(t, u_ls, 'r-', linewidth=1.5, label='回路整形')
+axes[0, 1].plot(t, u_ms, 'b-', linewidth=2, label='混合灵敏度')
+axes[0, 1].set_xlabel('时间 (s)')
+axes[0, 1].set_ylabel('控制信号 u')
+axes[0, 1].set_title('控制信号对比')
+axes[0, 1].legend()
+axes[0, 1].grid(True, alpha=0.3)
+
+S_ls = 1.0 / (1.0 + L_ls(1j * omega))
+S_ms = 1.0 / (1.0 + L_ms_full(1j * omega))
+axes[1, 0].semilogx(omega, 20*np.log10(np.abs(S_ls)), 'r-', linewidth=1.5, label='回路整形')
+axes[1, 0].semilogx(omega, 20*np.log10(np.abs(S_ms)), 'b-', linewidth=2, label='混合灵敏度')
+axes[1, 0].axhline(20*np.log10(1.5), color='k', linestyle=':', alpha=0.5, label='||S||_∞ = 1.5')
+axes[1, 0].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[1, 0].set_xlabel('频率 (rad/s)')
+axes[1, 0].set_ylabel('|S| (dB)')
+axes[1, 0].set_title('灵敏度函数对比')
+axes[1, 0].legend()
+axes[1, 0].grid(True, alpha=0.3)
+
+T_ls = L_ls(1j * omega) / (1.0 + L_ls(1j * omega))
+T_ms = L_ms_full(1j * omega) / (1.0 + L_ms_full(1j * omega))
+axes[1, 1].semilogx(omega, 20*np.log10(np.abs(T_ls)), 'r-', linewidth=1.5, label='回路整形')
+axes[1, 1].semilogx(omega, 20*np.log10(np.abs(T_ms)), 'b-', linewidth=2, label='混合灵敏度')
+axes[1, 1].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[1, 1].set_xlabel('频率 (rad/s)')
+axes[1, 1].set_ylabel('|T| (dB)')
+axes[1, 1].set_title('补灵敏度对比')
+axes[1, 1].legend()
+axes[1, 1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+ss_ls = 1.0 / (1.0 + np.abs(L_ls(0.001j)))
+ss_ms = 1.0 / (1.0 + np.abs(L_ms_full(0.001j)))
+print("=" * 70)
+print(f"{'指标':<20} {'回路整形':<20} {'混合灵敏度':<20}")
+print("-" * 70)
+print(f"{'稳态误差':<20} {ss_ls*100:<20.2f}% {ss_ms*100:<20.2f}%")
+print(f"{'||S||_∞':<20} {np.max(np.abs(S_ls)):<20.3f} {np.max(np.abs(S_ms)):<20.3f}")
+print(f"{'控制器阶数':<20} {'4':<20} {'2':<20}")
+print("=" * 70)`
+    },
+    {
+      code: `# 混合灵敏度约束验证
+L_jw = (G * K_ms)(1j * omega)
+S_jw = 1.0 / (1.0 + L_jw)
+T_jw = L_jw / (1.0 + L_jw)
+KS_jw = K_ms(1j * omega) / (1.0 + L_jw)
+W1_jw = W1(1j * omega)
+
+W1S = W1_jw * S_jw
+W2T = W2 * T_jw
+W3KS = W3 * KS_jw
+
+gamma_W1S = np.max(np.abs(W1S))
+gamma_W2T = np.max(np.abs(W2T))
+gamma_W3KS = np.max(np.abs(W3KS))
+gamma_total = np.max(np.sqrt(np.abs(W1S)**2 + np.abs(W2T)**2 + np.abs(W3KS)**2))
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+axes[0].semilogx(omega, 20*np.log10(np.abs(W1S)), 'b-', linewidth=2, label='|W₁S|')
+axes[0].semilogx(omega, 20*np.log10(np.abs(W2T)), 'r-', linewidth=2, label='|W₂T|')
+axes[0].semilogx(omega, 20*np.log10(np.abs(W3KS)), 'g-', linewidth=2, label='|W₃KS|')
+axes[0].axhline(0, color='k', linestyle='--', alpha=0.5, label='γ = 1 (0 dB)')
+axes[0].set_xlabel('频率 (rad/s)')
+axes[0].set_ylabel('幅值 (dB)')
+axes[0].set_title('混合灵敏度约束验证')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+axes[1].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S|')
+axes[1].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T|')
+axes[1].semilogx(omega, 20*np.log10(np.abs(KS_jw)), 'g-', linewidth=2, label='|KS|')
+axes[1].axhline(0, color='k', linestyle='--', alpha=0.3)
+axes[1].set_xlabel('频率 (rad/s)')
+axes[1].set_ylabel('幅值 (dB)')
+axes[1].set_title('S、T、KS 频率响应')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("=== 混合灵敏度约束验证 ===")
+print(f"||W₁S||_∞ = {gamma_W1S:.4f} ({20*np.log10(gamma_W1S):.2f} dB)")
+print(f"||W₂T||_∞ = {gamma_W2T:.4f} ({20*np.log10(gamma_W2T):.2f} dB)")
+print(f"||W₃KS||_∞ = {gamma_W3KS:.4f} ({20*np.log10(gamma_W3KS):.2f} dB)")
+print(f"综合 γ = {gamma_total:.4f} ({20*np.log10(gamma_total):.2f} dB)")
+print(f"\\n所有加权传递函数远小于 1，设计有充分裕量")`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 与 LQR 的关系
+
+混合灵敏度设计与 LQR 有深刻的数学联系。回顾 LQR 的代价函数：
+
+$$
+J = \int_0^\infty (x^T Q x + u^T R u) \, dt
+$$
+
+这等价于在 $\mathcal{H}_2$ 范数意义下最小化"状态偏差 + 控制能量"。如果将 LQR 的 Riccati 方程中加入 $\gamma^{-2}$ 项：
+
+$$
+A^T X + XA - X(BR^{-1}B^T - \gamma^{-2} B_1 B_1^T)X + Q = 0
+$$
+
+当 $\gamma \to \infty$ 时，上式退化为 LQR 的 Riccati 方程。因此：
+
+| 方法 | 优化目标 | 扰动假设 | 特点 |
+|------|----------|----------|------|
+| LQR | $\min \|z\|_2$（能量） | 白噪声（随机） | 隐含鲁棒性（GM $\geq 1/2$，PM $\geq 60°$） |
+| $\mathcal{H}_\infty$ | $\min \|z\|_\infty$（峰值） | 有界能量（最坏情况） | 显式鲁棒性保证 |
+
+> 💡 $\mathcal{H}_\infty$ 可以看作"最坏情况下的 LQR"——不假设扰动是白噪声，而是假设扰动是"最恶劣的"有界信号。
+
+### 压床效应的工程启示
+
+压床效应（Bode 积分定理）告诉我们几件重要的事：
+
+1. **没有免费的午餐**：低频跟踪越好，高频的灵敏度峰值越大。设计者必须做出权衡。
+
+2. **右半平面极点使问题更难**：如果 $G(s)$ 有 RHP 极点 $p_i$，则：
+
+$$
+\int_0^\infty \ln|S(j\omega)| \, d\omega = \pi \sum \text{Re}(p_i) > 0
+$$
+
+这意味着 $\ln|S|$ 的"正面积"必须大于"负面积"——你不仅要压低 $|S|$，还要"偿还"不稳定极点带来的"灵敏度债务"。
+
+3. **RHP 零点同样限制性能**：如果 $G(s)$ 有 RHP 零点 $z_i$，则 $T$ 有类似的积分约束。
+
+### MIMO 扩展
+
+对多变量系统，混合灵敏度问题的形式相同：
+
+$$
+\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+$$
+
+但 $S, T, KS$ 变成矩阵，$\mathcal{H}_\infty$ 范数使用**最大奇异值** $\bar{\sigma}$。压床效应仍然存在，但形式更复杂——不同通道之间存在耦合，一个方向的灵敏度压低可能影响另一个方向。
+
+> 💡 MIMO 混合灵敏度是工程中最常用的 H∞ 设计方法。飞行控制、汽车主动悬架、硬盘磁头定位等领域广泛使用。
+
+### 混合灵敏度的局限性
+
+混合灵敏度设计优化的是**标称性能**（在标称模型 $G$ 下的性能）。权重 $W_2$ 间接保证鲁棒稳定性，但不是最优的。如果系统的结构不确定性需要更精确的处理（如保证在**所有**允许的不确定性下都满足性能指标），需要使用 **μ 综合**方法——下一节课的主题。
+
+## 小结
+
+1. **混合灵敏度问题**同时优化 $W_1 S$（性能）、$W_2 T$（鲁棒性）、$W_3 KS$（控制量），是工程中最常用的 H∞ 设计框架。
+
+2. **压床效应**（$S + T = 1$）决定了性能的根本限制：低频 $|S|$ 压低必然导致高频 $|S|$ 升高。
+
+3. **权重函数选择**是设计的核心——将工程指标（稳态误差、带宽、灵敏度峰值）翻译为权重参数。权重选择是迭代的，需要反复调整。
+
+4. **H∞ 综合**通过 Riccati 方程或 LMI 方法自动求解最优控制器。MATLAB 的 `mixsyn` 函数封装了完整流程。
+
+5. **与回路整形对比**：回路整形是"手工"设计（工程师直接设计控制器），混合灵敏度是"自动"设计（工程师描述需求，算法求解控制器）。两者可以互补——先用回路整形建立直觉，再用混合灵敏度优化。
+
+6. **与 LQR 的关系**：H∞ 是"最坏情况下的 LQR"，LQR 是 H∞ 在 $\gamma \to \infty$ 时的特例。
+
+## 习题
+
+**1. 压床效应**
+
+(a) 解释为什么对开环稳定的 SISO 系统，不可能在所有频率上都让 $|S(j\omega)| < 0.01$。
+
+(b) 如果在 $\omega \in [0, 10]$ rad/s 范围内 $|S(j\omega)| = 0.1$（即 -20 dB），估算在 $\omega > 10$ 的范围内 $\ln|S|$ 至少需要多大的"正面积"来补偿。
+
+**2. 广义被控对象**
+
+给定 $G(s) = \frac{10}{s+1}$，$W_1(s) = \frac{100(s+1)}{s+100}$，$W_2 = 0.1$，$W_3 = 0.01$。
+
+(a) 写出混合灵敏度问题的广义被控对象 $P(s)$ 的四个分块 $P_{11}, P_{12}, P_{21}, P_{22}$。
+
+(b) 计算 $P_{11}(0)$ 和 $P_{12}(0)$ 的值。
+
+**3. 权重函数设计**
+
+被控对象 $G(s) = \frac{1}{s^2 + 0.2s + 1}$（$\omega_n = 1$，$\zeta = 0.1$）。
+
+设计需求：
+- 稳态误差 < 2%
+- 带宽 > 0.5 rad/s
+- 灵敏度峰值 < 2
+
+选择合适的 $W_1(s)$（一阶形式）、$W_2$、$W_3$，并说明每个参数的选择依据。
+
+**4. 控制量权重的影响**
+
+在混合灵敏度设计中，如果增大 $W_3$ 的增益（例如从 0.01 增大到 0.1），闭环系统的以下性能会如何变化？
+
+(a) $|KS|$ 的最大值
+(b) 闭环带宽
+(c) 稳态误差
+(d) 鲁棒稳定性
+
+## 答案
+
+**1. 压床效应**
+
+(a) 对开环稳定的 SISO 系统，Bode 积分定理给出：
+
+$$
+\int_0^\infty \ln|S(j\omega)| \, d\omega = 0
+$$
+
+如果对所有 $\omega$ 都有 $|S(j\omega)| < 0.01$，则 $\ln|S(j\omega)| < \ln(0.01) = -4.6 < 0$ 对所有 $\omega$ 成立。这意味着积分 $\int_0^\infty \ln|S| \, d\omega < 0$，与积分等于零矛盾。
+
+因此，必然存在某些频率使得 $|S(j\omega)| > 1$（即 $\ln|S| > 0$），来"补偿"低频段的负面积。
+
+(b) 在 $[0, 10]$ 范围内，$\ln|S| = \ln(0.1) = -2.3$。负面积为：
+
+$$
+\int_0^{10} \ln|S| \, d\omega = -2.3 \times 10 = -23
+$$
+
+由 Bode 积分定理，正面积必须恰好等于 23：
+
+$$
+\int_{10}^\infty \ln|S(j\omega)| \, d\omega = 23
+$$
+
+这意味着在 $\omega > 10$ 的范围内，$\ln|S|$ 的积分必须为 +23，即 $|S|$ 在某些频率上必须大于 1（灵敏度放大）。
+
+**2. 广义被控对象**
+
+(a) 混合灵敏度问题的广义被控对象：
+
+$$
+P(s) = \begin{bmatrix} P_{11} & P_{12} \\ P_{21} & P_{22} \end{bmatrix} = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ 0 & W_3 \\ I & -G \end{bmatrix}
+$$
+
+代入具体传递函数：
+
+$$
+P_{11}(s) = W_1(s) = \frac{100(s+1)}{s+100}
+$$
+
+$$
+P_{12}(s) = -W_1(s) G(s) = -\frac{100(s+1)}{s+100} \cdot \frac{10}{s+1} = -\frac{1000}{s+100}
+$$
+
+$$
+P_{21}(s) = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, \quad P_{22}(s) = \begin{bmatrix} W_2 G \\ W_3 \\ -G \end{bmatrix} = \begin{bmatrix} \frac{1}{s+1} \\ 0.01 \\ -\frac{1}{s^2+0.2s+1} \end{bmatrix}
+$$
+
+注意 $P_{12}$ 中 $(s+1)$ 项对消了！这是因为 $W_1$ 的零点恰好与 $G$ 的极点对消。
+
+(b) $P_{11}(0) = \frac{100 \times 1}{100} = 1$
+
+$P_{12}(0) = -\frac{1000}{100} = -10$
+
+**3. 权重函数设计**
+
+被控对象 $G(s) = \frac{1}{s^2 + 0.2s + 1}$，$\omega_n = 1$，$\zeta = 0.1$。
+
+**W₁ 选择**：
+
+需求翻译：
+- 稳态误差 < 2% → $|S(0)| < 0.02$ → $|W_1(0)| > 50$
+- 带宽 > 0.5 rad/s → $W_1$ 的零点在 $\omega \approx 0.5$
+- 灵敏度峰值 < 2 → $|W_1(\infty)| < 1$（保证 $|S(\infty)| < 1/|W_1(\infty)|$ 不额外约束）
+
+选择一阶形式 $W_1(s) = \frac{b(s+a)}{s+c}$，参数：
+- $a = 0.5$（零点在带宽频率）
+- $c = 50$（极点远高于零点，高频放松）
+- $b = 50 \times c / a = 50 \times 50 / 0.5 = 5000$... 增益太大
+
+改用更合理的形式：$W_1(s) = \frac{s + 50}{s + 0.02} \cdot 0.02$... 不对。
+
+**重新设计**：用标准形式
+
+$$
+W_1(s) = \frac{s/M + \omega_b}{s + \omega_b A}
+$$
+
+参数：$A = 0.02$（低频允许最大 $|S|$），$M = 2$（高频允许最大 $|S|$），$\omega_b = 0.5$（带宽）。
+
+$$
+W_1(s) = \frac{s/2 + 0.5}{s + 0.01} = \frac{0.5(s + 1)}{s + 0.01}
+$$
+
+验证：
+- $|W_1(0)| = 0.5/0.01 = 50$ → $|S(0)| < 1/50 = 0.02$ ✓
+- $|W_1(\infty)| = 0.5$ → $|S(\infty)| < 2$（合理，$|S| \to 1 < 2$）✓
+- 转折频率：零点 $\omega = 1$，极点 $\omega = 0.01$
+
+**W₂ 选择**：$W_2 = 0.1$（常数），轻度约束 $|T|$。
+
+**W₃ 选择**：$W_3 = 0.01$（常数），轻度限制控制量。
+
+**参数选择依据总结**：
+
+| 参数 | 值 | 依据 |
+|------|-----|------|
+| $W_1$ 低频增益 | 50 | 稳态误差 < 2% |
+| $W_1$ 零点 | 1 rad/s | 略高于带宽要求 0.5 rad/s |
+| $W_1$ 极点 | 0.01 rad/s | 使低频增益足够大 |
+| $W_1$ 高频增益 | 0.5 | 允许高频 $|S|$ 接近 1 |
+| $W_2$ | 0.1 | 轻度约束 $|T|$ |
+| $W_3$ | 0.01 | 轻度限制控制量 |
+
+**4. 控制量权重的影响**
+
+增大 $W_3$（例如从 0.01 到 0.1）意味着优化目标中 $|W_3 KS|$ 的权重增大。
+
+(a) **$|KS|$ 的最大值减小**。$W_3$ 增大后，优化器更重视压低 $|KS|$，因此 $|KS|$ 的最大值会减小。控制信号更温和。
+
+(b) **闭环带宽降低**。更大的 $W_3$ 限制了控制器的增益（因为 $|KS| = |K| \cdot |S|$，限制 $|KS|$ 等价于限制 $|K|$）。控制器增益降低 → 开环增益降低 → 穿越频率降低 → 带宽降低。
+
+(c) **稳态误差增大**。带宽降低意味着低频开环增益降低，$|S(0)|$ 增大，稳态误差增大。
+
+(d) **鲁棒稳定性可能改善**。控制量受限意味着控制器不会在高频产生过大增益，对未建模动态的敏感性降低。但这不是绝对的——如果 $W_3$ 过大，可能导致 $|S|$ 在共振频率处出现高峰，反而降低鲁棒性。
+
+> 💡 $W_3$ 的调节本质上是**性能与控制代价之间的权衡**。工程中通常从小值开始，逐步增大直到控制量满足执行器约束。

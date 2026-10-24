@@ -117,68 +117,68 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 控制系统架构 (computer-control-architecture) | MDX 自 computer-control/computer-control-architecture 迁移（A3）；未过 v1.3 审校 |
-| [ ] 数字PID (digital-pid) | MDX 自 computer-control/digital-pid 迁移（A3）；**待合并**：接收 discretization-methods 的数字PID工程实现节（阶段 C）；未过 v1.3 审校 |
-| [ ] PID工程整定 (pid-engineering-tuning) | |
-| [ ] 控制器部署 (controller-discretization-practice) | |
-| [ ] 嵌入式控制 (embedded-implementation) | **待接收**：discrete-time-freq 的量化部分（阶段 C） |
-| [ ] 实时控制 (realtime-control) | MDX 自 computer-control/realtime-control 迁移（A3）；未过 v1.3 审校 |
-| [ ] 网络控制 (networked-control) | |
-| [ ] 工业通信 (industrial-bus-protocols) | |
-| [ ] 半实物仿真 (hil-rapid-prototyping) | |
+| [x] 控制系统架构 (computer-control-architecture) | IMPL-01学期3重构；docs/discuss-log/semester-03/07-implementation/01-computer-control-architecture.md；.agent/semester-03/impl-01/acceptance.md |
+| [x] 数字PID (digital-pid) | IMPL-02学期3重构；八主题/四题、四Notebook八cell、单拍Explorer、级联SVG；独立对账与验收见.agent/semester-03/impl-02/acceptance.md；离散化工程材料已承接，来源保留 |
+| [x] PID工程整定 (pid-engineering-tuning) | IMPL-03学期3新写；两Notebook四cell、PI参数Explorer、受控试验与多工况验收；见.agent/semester-03/impl-03/acceptance.md |
+| [x] 控制器部署 (controller-discretization-practice) | IMPL-04学期3新写；三Notebook六cell、有限字长Explorer、逐拍重放与延迟反例；见.agent/semester-03/impl-04/acceptance.md |
+| [x] 嵌入式控制 (embedded-implementation) | IMPL-05学期3新写；三Notebook六cell、ADC/PWM接口Explorer、时戳与快照边界；见.agent/semester-03/impl-05/acceptance.md |
+| [x] 实时控制 (realtime-control) | IMPL-06学期3重构；四Notebook八cell、RMS/EDF作业调度与响应时间核验；见.agent/semester-03/impl-06/acceptance.md |
+| [x] 网络控制 (networked-control) | IMPL-07学期3新写；三Notebook六cell、网络反馈Explorer、时延稳定性与旧包拒收；见.agent/semester-03/impl-07/acceptance.md |
+| [x] 工业通信 (industrial-bus-protocols) | IMPL-08学期3新写；三Notebook六cell、工业串行Explorer、RTU轮询预算与错误拒收；见.agent/semester-03/impl-08/acceptance.md |
+| [x] 半实物仿真 (hil-rapid-prototyping) | IMPL-09学期3新写；三Notebook六cell、虚拟台架Explorer、超期处理与数值步长；见.agent/semester-03/impl-09/acceptance.md |
 | [ ] 控制实现案例 (implementation-case-study) | |
 
 ### 机器学习 (machine-learning)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 学习问题与泛化 (learning-problem) | 本期新增骨架；尚未编写 |
-| [ ] 监督学习 (supervised-learning) | 本期新增骨架；尚未编写 |
-| [ ] 神经网络基础 (neural-networks) | 本期新增骨架；尚未编写 |
-| [ ] 自动微分与训练 (autodiff-optimization) | 本期新增骨架；尚未编写 |
-| [ ] 时序模型 (sequence-models) | 本期新增骨架；尚未编写 |
-| [ ] 注意力机制 (attention-transformers) | 本期新增骨架；尚未编写 |
-| [ ] 表征学习 (representation-learning) | 本期新增骨架；尚未编写 |
-| [ ] 扩散与流匹配 (generative-models) | 本期新增骨架；尚未编写 |
+| [x] 学习问题与泛化 (learning-problem) | 学期3 ML-01；Phase1–4、三方对账、严格内核/Pyodide与页面验收见 .agent/semester-03/ml-01/acceptance.md |
+| [x] 监督学习 (supervised-learning) | 学期3 ML-02；Phase1–4、独立数值、严格原生/Pyodide与真实页面证据见 .agent/semester-03/ml-02/acceptance.md |
+| [x] 神经网络基础 (neural-networks) | 学期3 ML-03；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-03/acceptance.md |
+| [x] 自动微分与训练 (autodiff-optimization) | 学期3 ML-04；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-04/acceptance.md |
+| [x] 时序模型 (sequence-models) | 学期3 ML-05；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-05/acceptance.md |
+| [x] 注意力机制 (attention-transformers) | 学期3 ML-06；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-06/acceptance.md |
+| [x] 表征学习 (representation-learning) | 学期3 ML-07；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-07/acceptance.md |
+| [x] 扩散与流匹配 (generative-models) | 学期3 ML-08；Phase1–4与数值/真实页面证据见 .agent/semester-03/ml-08/acceptance.md |
 | [ ] 学习实验评估 (learning-evaluation) | 本期新增骨架；尚未编写 |
 
 ### 系统辨识 (identification)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 系统辨识框架 (identification-framework) | |
-| [ ] 辨识模型 (model-structures) | |
-| [ ] 最小二乘辨识 (least-squares-rls) | 自 `nonlinear/adaptive-control-basics` 的 RLS 一节抽出并深化（含协方差 windup、遗忘因子与除零保护），两处须互引不重复推导 |
-| [ ] 持久激励 (persistent-excitation) | |
-| [ ] 闭环辨识 (instrumental-variable) | |
-| [ ] 频域辨识 (frequency-domain-id) | |
-| [ ] 子空间辨识 (subspace-id) | |
-| [ ] 非线性辨识 (nonlinear-data-driven-id) | |
+| [x] 系统辨识框架 (identification-framework) | ID-01：2026-10-24，学期3新写；详见 docs/discuss-log/semester-03/09-identification/01-identification-framework.md |
+| [x] 辨识模型 (model-structures) | ID-02学期3新写；docs/discuss-log/semester-03/09-identification/02-model-structures.md；.agent/semester-03/id-02/acceptance.md |
+| [x] 最小二乘辨识 (least-squares-rls) | 学期3 ID-03：批量/同先验RLS、遗忘与信息不足；3 Notebook/4 cell、Explorer、双向互链；证据 .agent/semester-03/id-03/acceptance.md |
+| [x] 持久激励 (persistent-excitation) | 学期3ID-04：方向/统一窗口、充分非必要、幅值代价；3Notebook/Explorer；.agent/semester-03/id-04/acceptance.md |
+| [x] 闭环辨识 (instrumental-variable) | 学期3ID-05：闭环相关/工具条件/正确噪声模型/重复实验；3Notebook/Explorer；.agent/semester-03/id-05/acceptance.md |
+| [x] 频域辨识 (frequency-domain-id) | 学期3ID-06：互谱/H1/相干度/泄漏与噪声位置；3Notebook/Explorer；.agent/semester-03/id-06/acceptance.md |
+| [x] 子空间辨识 (subspace-id) | 学期3ID-07：Hankel/ERA/输入投影/状态实现与噪声验证；3Notebook/Explorer；.agent/semester-03/id-07/acceptance.md |
+| [x] 非线性辨识 (nonlinear-data-driven-id) | 学期3ID-08：非线性特征/一步与滚动/激励/分区和外推；3Notebook/Explorer；.agent/semester-03/id-08/acceptance.md |
 | [ ] 系统辨识案例 (identification-case-study) | |
 
 ### 状态估计 (estimation)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 状态估计框架 (estimation-problem) | |
-| [ ] 统计估计 (least-squares-ml) | |
-| [ ] 卡尔曼滤波 (kalman-filter) | **A6 待迁出**：`content/modern/kalman-filter.mdx` 将 `git mv` 到 `content/estimation/kalman-filter.mdx`，本行随之删除（modern 10 → 9 课，LQG 一节保留在本章） |
-| [ ] 扩展卡尔曼滤波 (extended-kalman-filter) | |
-| [ ] 无迹卡尔曼滤波 (unscented-kalman-filter) | |
-| [ ] 粒子滤波 (particle-filter) | |
-| [ ] 多传感器融合 (sensor-fusion) | 本期新增骨架；尚未编写 |
-| [ ] 状态估计案例 (estimation-case-study) | |
+| [x] 状态估计框架 (estimation-problem) | EST-01：2026-10-24，学期3新写；详见 docs/discuss-log/semester-03/10-estimation/01-estimation-problem.md |
+| [x] 统计估计 (least-squares-ml) | EST-02学期3新写；docs/discuss-log/semester-03/10-estimation/02-least-squares-ml.md；.agent/semester-03/est-02/acceptance.md |
+| [x] 卡尔曼滤波 (kalman-filter) | EST-03学期3重构；12H2/3Notebook6cell/1Explorer；详见docs/discuss-log/semester-03/10-estimation/03-kalman-filter.md |
+| [x] 扩展卡尔曼滤波 (extended-kalman-filter) | EST-04学期3新写；10H2/2Notebook4cell/72配置；docs/discuss-log/semester-03/10-estimation/04-extended-kalman-filter.md |
+| [x] 无迹卡尔曼滤波 (unscented-kalman-filter) | EST-05学期3新写；10H2/2Notebook4cell/72配置；docs/discuss-log/semester-03/10-estimation/05-unscented-kalman-filter.md |
+| [x] 粒子滤波 (particle-filter) | EST-06学期3新写；10H2/3Notebook6cell/114配置/120随机运行；docs/discuss-log/semester-03/10-estimation/06-particle-filter.md |
+| [x] 多传感器融合 (sensor-fusion) | EST-07学期3新写；10H2/3Notebook6cell/64配置/CI105边界；docs/discuss-log/semester-03/10-estimation/07-sensor-fusion.md |
+| [x] 状态估计案例 (estimation-case-study) | EST-08学期3新写；10H2/3Notebook6cell/378配置4536拍/360统计；docs/discuss-log/semester-03/10-estimation/08-estimation-case-study.md |
 
 ### 鲁棒控制 (robust)
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 鲁棒性 (robustness-concept) | |
-| [ ] 不确定性建模 (uncertainty-modeling) | |
-| [ ] 鲁棒稳定性 (robust-stability) | |
-| [ ] 鲁棒性能 (robust-performance) | |
-| [ ] H∞控制 (h-infinity-basics) | |
-| [ ] 混合灵敏度 (mixed-sensitivity) | |
+| [x] 鲁棒性 (robustness-concept) | 学期3ROBUST-01；证据.agent/semester-03/robust-01/acceptance.md |
+| [x] 不确定性建模 (uncertainty-modeling) | 学期3ROBUST-02；证据.agent/semester-03/robust-02/acceptance.md |
+| [x] 鲁棒稳定性 (robust-stability) | 学期3ROBUST-03；证据.agent/semester-03/robust-03/acceptance.md  master 76ae270 |
+| [x] 鲁棒性能 (robust-performance) | .agent/semester-03/robust-04/acceptance.md |
+| [x] H∞控制 (h-infinity-basics) | .agent/semester-03/robust-05/acceptance.md |
+| [x] 混合灵敏度 (mixed-sensitivity) | .agent/semester-03/robust-06/acceptance.md |
 | [ ] 结构奇异值 (mu-analysis) | 本期新增骨架；尚未编写 |
 | [ ] μ综合 (mu-synthesis) | |
 | [ ] H∞滤波 (h-infinity-filter) | |
@@ -189,13 +189,13 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 预测控制原理 (mpc-principle) | |
-| [ ] 预测模型 (prediction-model) | |
-| [ ] 滚动优化 (receding-horizon) | |
-| [ ] 约束处理 (constraint-handling) | |
-| [ ] 递归可行性与稳定性 (mpc-stability) | 本期新增骨架；尚未编写 |
-| [ ] 广义预测控制 (generalized-predictive-control) | |
-| [ ] 显式预测控制 (explicit-mpc) | 本期新增骨架；尚未编写 |
+| [x] 预测控制原理 (mpc-principle) | 学期3：统一QP下标、两步约束实验与终端条件；docs/discuss-log/semester-03/12-mpc/01-mpc-principle.md |
+| [x] 预测模型 (prediction-model) | 学期3MPC-02；严格内核/440组独立参考/浏览器与Pages本地验收；.agent/semester-03/mpc-02/acceptance.md |
+| [x] 滚动优化 (receding-horizon) | 学期3MPC-03；严格内核/160组TS与20QP独立参考/浏览器及Pages本地验收；.agent/semester-03/mpc-03/acceptance.md |
+| [x] 约束处理 (constraint-handling) | 学期3MPC-04；严格内核/952组TS与40QP独立证书/浏览器及Pages本地验收；.agent/semester-03/mpc-04/acceptance.md |
+| [x] 递归可行性与稳定性 (mpc-stability) | MPC-05学期3新写；3536组TS/独立证书、20QP、原始严格内核和双页面；.agent/semester-03/mpc-05/acceptance.md |
+| [x] 广义预测控制 (generalized-predictive-control) | MPC-06学期3重构；16H2/73旧ID、五题、1444配置与380QP独立验证；证据.agent/semester-03/mpc-06/acceptance.md |
+| [x] 显式预测控制 (explicit-mpc) | MPC-07学期3新写；5098组TS/独立QP与有理区域证书、原始严格内核和双页面；.agent/semester-03/mpc-07/acceptance.md |
 | [ ] 非线性预测控制 (nonlinear-mpc) | |
 | [ ] 经济预测控制 (economic-mpc) | 本期新增骨架；尚未编写 |
 | [ ] 移动水平估计 (mhe-fusion) | |
@@ -205,8 +205,8 @@
 
 | 课程 | 状态 |
 |------|------|
-| [x] 模糊控制 (fuzzy-control-basics) | v1.3: 1个交互组件（FuzzyExplorer，三面板固定坐标轴：隶属度与Σμ / 控制面与理想增益线 / 聚合与三种解模糊化），9个静态JupyterNotebook（单位划分闭式 / 算子2×2闭环 / 三解模糊化与离散化 / FAMM量化与等效增益 / 静差与积分 / 零阶Sugeno等价2×2与TS严格稳定 / 洗衣机决策面 / ABS三路面与路面切换 / 在线成本），1张matplotlib计算概念图（四联管线）；讨论日志 docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md（含ABS基线整定与8条"叙述服从测量"修正） |
-| [x] 模糊控制器 (fuzzy-controller-design) | v1.3: 1个交互组件（FuzzyTuningExplorer，四滑块实时闭环仿真：n/Ge/Gce/Gu，双ECharts固定坐标轴θ∈[-30,30]°与u∈[-16,16] N·m），6个静态JupyterNotebook（规则表构造 / 比例因子敏感性扫描 / 闭环仿真与PID对比 / 模糊PID与积分消除 / 规则库PD/P/PD-like模式对比 / 解模糊化COG vs BIS vs MOM），14个小节（引言→被控对象→规则库→比例因子→模糊PD→模糊PID→PID对比→规则库结构→解模糊化→稳定性→工程要点→小结→习题→答案）；讨论日志 docs/discuss-log/semester-01/08-intelligent/02-fuzzy-controller-design.md（含附录A完整实验数据，核心发现：Mamdani模糊PD无法稳定倒立摆，rms≈21° vs PID的2.67°） |
+| [x] 模糊控制 (fuzzy-control-basics) | v1.3: 1个交互组件（FuzzyExplorer，三面板固定坐标轴：隶属度与Σμ / 控制面与理想增益线 / 聚合与三种解模糊化），9个静态JupyterNotebook（单位划分闭式 / 算子2×2闭环 / 三解模糊化与离散化 / FAMM量化与等效增益 / 静差与积分 / 零阶Sugeno等价2×2与TS严格稳定 / 洗衣机决策面 / ABS三路面与路面切换 / 在线成本），1张matplotlib计算概念图（四联管线）；讨论日志 docs/discuss-log/semester-01/08-intelligent/01-fuzzy-control-basics.md（含ABS基线整定与8条"叙述服从测量"修正） ；学期3 INTEL-01：12H2/6题/10实验33cell、生产共用TS与868配置、条件反例/行列/比较纠错；本期证据.agent/semester-03/intel-01/acceptance.md，保留历史日志 |
+| [x] 模糊控制器 (fuzzy-controller-design) | 学期3 INTEL-02：保留14H2、旧URL及42旧ID，6Notebook14cell、6题；FuzzyTuningExplorer三实现/四滑块/恢复默认。修复覆盖、跨语言取整与死区，撤回Mamdani硬上限，默认rms3.669619°；各9候选锁定5测试，396真实TS输入对独立积分、3保持输入DOP853轨迹、原生/Pyodide504数值一致。讨论日志 docs/discuss-log/semester-03/13-intelligent/02-fuzzy-controller-design.md；证据 .agent/semester-03/intel-02/acceptance.md；生产与Pages构建、本课HTTP/内核/移动DOM验收已通过，master commit:d40d87a260edeae20e9617d0efe458ea3374b3e7 |
 | [ ] 专家控制 (expert-system) | |
 | [ ] 遗传算法 (genetic-algorithm) | |
 | [x] 神经网络控制 (neural-network-control) | v1.3: 1个交互组件（NeuralNetworkExplorer，控制器类型切换PID/NN-Sup/NN-ES + 初始角度滑块5°–45°，双ECharts固定坐标轴θ∈[-50,50]°与u∈[-16,16] N·m），5个静态JupyterNotebook（NN前向传播与控制曲面 / 监督学习训练 / 进化策略优化 / 四种控制器全面对比 / 鲁棒性测试），12个小节（引言→模糊失败回顾→NN结构→监督学习→直接优化→定量对比→鲁棒性→稳定性→工程要点→小结→习题→答案）；讨论日志 docs/discuss-log/semester-01/08-intelligent/03-neural-network-control.md（核心发现：NN-Supervised≈PID，NN-ES在J上超越PID 5.3%，NN远优于模糊控制2.7° vs 21°） |
@@ -218,8 +218,8 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 强化学习问题 (rl-basics) | |
-| [ ] 价值函数与贝尔曼方程 (dynamic-programming) | 本期新增骨架；尚未编写 |
+| [x] 强化学习问题 (rl-basics) | semester-03 RL-01：九H2、两Notebook三cell、回报Explorer、四题四答；证据 .agent/semester-03/rl-01/acceptance.md |
+| [x] 价值函数与贝尔曼方程 (dynamic-programming) | semester-03 RL-02；证据 .agent/semester-03/rl-02/acceptance.md |
 | [ ] Q学习 (q-learning) | |
 | [ ] 深度Q网络 (dqn) | |
 | [ ] 策略梯度 (policy-gradient) | |
@@ -235,7 +235,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 多智能体系统 (multi-agent-overview) | |
+| [x] 多智能体系统 (multi-agent-overview) | |
 | [ ] 一致性控制 (consensus-control) | |
 | [ ] 分布式估计 (distributed-estimation) | |
 | [ ] 分布式优化 (distributed-optimization) | |
@@ -249,7 +249,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 控制安全 (safety-overview) | |
+| [x] 控制安全 (safety-overview) | SAFE-01；docs/discuss-log/semester-03/16-safety-ftc/01-safety-overview.md；验收见.agent/semester-03/safe-01/acceptance.md |
 | [ ] 控制屏障函数 (control-barrier-functions) | |
 | [ ] 可达性分析 (reachability-analysis) | |
 | [ ] 故障诊断 (fault-detection-isolation) | |
@@ -262,7 +262,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 机器人系统 (robot-models) | 本期新增骨架；尚未编写 |
+| [x] 机器人系统 (robot-models) | ROBOT-01：10H2、2Notebook3cell、滑台Explorer与SVG；证据 .agent/semester-03/robot-01/acceptance.md |
 | [ ] 刚体运动 (rigid-body-motion) | 本期新增骨架；尚未编写 |
 | [ ] 机器人运动学 (kinematics) | 本期新增骨架；尚未编写 |
 | [ ] 机器人动力学 (dynamics) | 本期新增骨架；尚未编写 |
@@ -277,8 +277,8 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 机器人数据 (robot-data) | 本期新增骨架；尚未编写 |
-| [ ] 模仿学习 (imitation-learning) | 本期新增骨架；尚未编写 |
+| [x] 机器人数据 (robot-data) | RLEARN-01学期3新写；10H2、五题五答、三原始Notebook；严格内核/Pyodide与数据审计见 .agent/semester-03/rlearn-01/acceptance.md |
+| [x] 模仿学习 (imitation-learning) | RLEARN-02学期3；11H2/4Notebook/1Explorer/五题五答；证据.agent/semester-03/rlearn-02/acceptance.md |
 | [ ] 离线到在线学习 (offline-online-learning) | 本期新增骨架；尚未编写 |
 | [ ] 残差学习控制 (residual-learning) | 本期新增骨架；尚未编写 |
 | [ ] 仿真到现实 (sim-to-real) | 本期新增骨架；尚未编写 |
@@ -292,8 +292,8 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 具身智能系统 (embodied-systems) | 本期新增骨架；尚未编写 |
-| [ ] 多模态感知 (multimodal-observation) | 本期新增骨架；尚未编写 |
+| [x] 具身智能系统 (embodied-systems) | EMBODIED-01；docs/discuss-log/semester-03/19-embodied/01-embodied-systems.md;.agent/semester-03/embodied-01/acceptance.md |
+| [x] 多模态感知 (multimodal-observation) | EMBODIED-02；docs/discuss-log/semester-03/19-embodied/02-multimodal-observation.md;.agent/semester-03/embodied-02/acceptance.md |
 | [ ] 动作表示 (action-representations) | 本期新增骨架；尚未编写 |
 | [ ] 通用机器人策略 (generalist-policies) | 本期新增骨架；尚未编写 |
 | [ ] 扩散与流策略 (diffusion-flow-policies) | 本期新增骨架；尚未编写 |
@@ -307,8 +307,8 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 自动驾驶系统 (driving-system) | 本期新增骨架；尚未编写 |
-| [ ] 车辆动力学 (vehicle-dynamics) | 本期新增骨架；尚未编写 |
+| [x] 自动驾驶系统 (driving-system) | 学期3 DRIVING-01；接口、延迟与回退；证据 .agent/semester-03/driving-01/acceptance.md |
+| [x] 车辆动力学 (vehicle-dynamics) | 学期3 DRIVING-02；单轨模型、侧偏力与附着边界；证据 .agent/semester-03/driving-02/acceptance.md |
 | [ ] 定位与运动预测 (localization-prediction) | 本期新增骨架；尚未编写 |
 | [ ] 自动驾驶规划 (motion-planning) | 本期新增骨架；尚未编写 |
 | [ ] 车辆跟踪控制 (vehicle-control) | |
@@ -323,14 +323,14 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 电力电子控制 (power-electronics) | |
+| [x] 电力电子控制 (power-electronics) | APP-01；本期Phase1–4与真实数值/页面证据见.agent/semester-03/app-01/acceptance.md |
 | [ ] 过程控制 (process-control) | |
 | [ ] 飞行器姿态控制 (aerospace-attitude) | |
 | [ ] 微电网控制 (energy-storage-microgrid) | |
 | [ ] 生物医学控制 (biomedical-control) | |
 | [ ] 半导体装备控制 (semiconductor-equipment) | |
 
-**统计**：63 / 205 课程已完成（21 章；76 个交互组件文件，其中 76 个被课程正文引用）
+**统计**：121 / 205 课程已完成（21 章；131 个交互组件文件，其中 131 个被课程正文引用）
 
 > **E4（2026-09-26）：郑核的「术语一致性 / 符号约定一致」自此是查表 + 一条命令，不再靠人通读 56546 行。** 新建两份**机器读的**权威表 `docs/semester-02/03-glossary.md`（**966 行**：305 条术语、348 条中文侧、**52 条别名冲突全部裁决**、登记表 314 行 + 残渣签字 39 行）与 `docs/semester-02/04-notation.md`（**656 行**：**107 个符号基**、73 行有冲突全部给建议、A 级 3 组 5 行 / B 级 68 行 / 判「无」34 行）；新建 `scripts/glossary.mjs`（**1203 行**，`scan`/`check`/`symbols`/`terms`/`conflicts`/`abbrs`/`rows` 七个子命令）+ `package.json` 两条 script：`npm run glossary`、`npm run glossary:check`。给 `scripts/lib-mdx.mjs` 加了 `scanMdx().skips` 附加返回值（**483 → 502 行**），不另写第二份「什么不是正文」的识别逻辑。负向夹具 `.agent/e4-fixture/`（**8 个文件**，含 86 条纯函数断言的 `unit-probe.mjs`）保留为仓库产物，README 把每条命令的预期判定与退出码写死。**零新增 npm 依赖**，不用 `execSync`。**一条 MDX 都没改**（Prompt 硬约束）。
 > **对本文件日常操作的直接影响**：① **签发前置多一条命令**——`npm run glossary:check` 与九项前端硬门槛同级：**C1（04 登记表缺符号基）/ C2（03 有未裁决别名冲突）FAIL 即不得签发、本文件不得打勾**；C1b/C2b/C4/C5 是 WARN；**C3 只是 INFO，不影响退出码，不得当判据用**。现网基线 `PASS 3 · WARN 1 · FAIL 0`（那条 WARN 是 C4 的 7 处漏反斜杠函数名：`max` 5 / `min` 2，内容缺陷归 C1/A6）。② **判据编号 C1–C5 是第四套**，与九项前端硬门槛、`nb-cells` 的 S0–S8、`verify-lesson` 的九项**都不通用**；写报告时「第 N 项」必须说明是哪一套（同 E2 note ③ / E3 note ② 那个坑）。③ **引入新符号或新术语前必须先查表并回写**：新符号基用 `node scripts/glossary.mjs rows notation` 生成 5 列行贴进 04 的 REGISTER，新术语按 03 §6 登记——**否则 C1 / C2 会 FAIL，这是设计（登记表少一行就红）**。裁决过程写进讨论日志 **Phase 3「教学支持（教学质量）」分组下郑核那条发言**，**不新增小节**（《讨论日志固定结构》§4 第 6 条把 Phase 3 的 `###` 分组数锁死为 6）。硬规则已写进 `wiki-discussion/SKILL.md`《输出格式规范》末尾《E4 术语与符号规则》六条 + Phase 3 郑核/李稳条目 + 《注意事项》，以及 `personas.md` 郑核的「风格一致性」清单行。④ **改这两张表就是改门槛**：03 的 REGISTER 三列会按 `[、,;；/]` 拆成键（实测 737 个），NOISE 第一列**不拆**（含逗号的英文串只能签在那里）；04 的 ABBREV 块**改变符号抽取本身**（登记进去的全大写连写自成符号基，现只 `PM`/`GM`）；**哨兵必须独占一行**（loader 走 `sentinelSlice()`）；**登记表单元格内不得出现裸 `|` 或 `\|`**，范数一律 `\lvert…\rvert` / `\lVert…\rVert`。⑤ **`v1.3-refactor/SKILL.md` 一个字没动**：E4 的改动全在孪生块之外，改完重跑 §6 仍 `TWIN-IDENTICAL ✓ 9 项`、与 plan 之间仍只有第 6 项那一处已登记偏离，整段 §1–§6 切片两份各 **104 行**、md5 同为 `7e2ba04e3b6f720a843b5d1f0f85781c`。

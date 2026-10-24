@@ -1,0 +1,74 @@
+{
+  "source": "content/identification/least-squares-rls.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 64,
+      "title": "批量ARX辨识：先检查数据和秩",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nu = np.array([1, 0, 1, 1, 0, 0, 1, 0], dtype=float)\r\ny = np.zeros(len(u) + 1)\r\nfor k in range(len(u)):\r\n    y[k + 1] = 0.8 * y[k] + 0.2 * u[k]\r\nPhi = np.column_stack((y[:-1], u))\r\ntarget = y[1:]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 75,
+          "delim": "`",
+          "code": "theta_ls, residuals, rank, singular = np.linalg.lstsq(Phi, target, rcond=None)\r\nassert rank == 2\r\nassert np.allclose(theta_ls, [0.8, 0.2], atol=1e-12, rtol=0)\r\nprint('batch_theta', np.round(theta_ls, 6).tolist(), 'rank', rank)\r\nprint('pairs', len(target), 'max_residual', format(np.max(np.abs(target - Phi @ theta_ls)), '.3e'))\r\nflat = np.ones((8, 2))\r\nambiguous, _, flat_rank, _ = np.linalg.lstsq(flat, np.ones(8), rcond=None)\r\nassert flat_rank == 1 and np.allclose(ambiguous, [0.5, 0.5], atol=1e-12, rtol=0)\r\nprint('repeated_steady_rank', flat_rank, 'minimum_norm', np.round(ambiguous, 6).tolist())\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 126,
+      "title": "同先验RLS与加权批量目标逐步核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nu = np.array([1, 0, 1, 1, 0, 0, 1, 0], dtype=float)\r\ny = np.zeros(len(u) + 1)\r\nfor k in range(len(u)):\r\n    y[k + 1] = 0.8 * y[k] + 0.2 * u[k]\r\nPhi = np.column_stack((y[:-1], u))\r\ntarget = y[1:]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 137,
+          "delim": "`",
+          "code": "paths = {}\r\nfor lam in [1.0, 0.9]:\r\n    theta = np.zeros(2)\r\n    P = np.eye(2)\r\n    path = []\r\n    for n, (phi, value) in enumerate(zip(Phi, target), start=1):\r\n        denominator = lam + phi @ P @ phi\r\n        assert np.isfinite(denominator) and denominator > 0\r\n        K = P @ phi / denominator\r\n        theta = theta + K * (value - phi @ theta)\r\n        P = (P - np.outer(K, phi) @ P) / lam\r\n        weights = lam ** np.arange(n - 1, -1, -1)\r\n        augmented = np.vstack((np.sqrt(lam ** n) * np.eye(2), np.sqrt(weights)[:, None] * Phi[:n]))\r\n        rhs = np.concatenate((np.zeros(2), np.sqrt(weights) * target[:n]))\r\n        batch, _, batch_rank, _ = np.linalg.lstsq(augmented, rhs, rcond=None)\r\n        assert batch_rank == 2\r\n        assert np.allclose(theta, batch, atol=1e-12, rtol=0)\r\n        assert np.linalg.eigvalsh((P + P.T) / 2).min() > 0\r\n        path.append((theta.copy(), P.copy(), batch.copy()))\r\n    paths[lam] = path\r\n    print('same_prior_lambda', lam, 'theta', np.round(theta, 6).tolist())\r\nassert np.allclose(paths[1.0][-1][0], [0.3422717040492354, 0.23176593788289176], atol=1e-12, rtol=0)\r\nprint('all_prefixes_same_prior_match', True)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 212,
+      "title": "无激励、测量误差与两个分母",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 217,
+          "delim": "`",
+          "code": "scalar_P = 1.0\r\nscalar_b = 0.0\r\nscalar_path = []\r\nfor n in range(32):\r\n    phi = [1, 0, 1, 1][n % 4]\r\n    value = 0.2 * phi\r\n    gain = scalar_P * phi / (1 + phi * scalar_P * phi)\r\n    scalar_b += gain * (value - phi * scalar_b)\r\n    scalar_P = scalar_P - gain * phi * scalar_P\r\n    scalar_path.append((scalar_b, scalar_P))\r\nassert abs(scalar_b - 0.192) < 1e-12 and abs(scalar_P - 0.04) < 1e-12\r\nprint('explorer_default_b_P', round(scalar_b, 6), round(scalar_P, 6))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 230,
+          "delim": "`",
+          "code": "P = 1.0\r\nestimate = 0.0\r\nfor n in range(32):\r\n    phi = 0.0\r\n    denominator = 0.9 + phi * P * phi\r\n    K = P * phi / denominator\r\n    estimate += K * (0.0 - phi * estimate)\r\n    P = (P - K * phi * P) / 0.9\r\nassert estimate == 0 and abs(P - 0.9 ** (-32)) < 1e-10\r\npairs = [(v, w) for v in [-0.1, 0.1] for w in [-0.1, 0.1]]\r\ncovariance = np.mean([v * (w - 0.8 * v) for v, w in pairs])\r\nassert abs(covariance + 0.008) < 1e-12\r\nassert denominator > 0 and estimate == 0\r\nprint('no_input_estimate', estimate, 'P_growth', round(P, 6))\r\nprint('measurement_error_covariance', round(float(covariance), 6))\r\nprint('RLS_denominator_positive', True, 'control_inverse_defined', False)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

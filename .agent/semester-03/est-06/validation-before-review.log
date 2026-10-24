@@ -1,0 +1,139 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'import numpy as np\r\n' +
++   'import math, json\r\n' +
++   'from scipy.special import logsumexp\r\n' +
++   'from scipy.integrate import quad\r\n' +
++   'from scipy.signal import fftconvolve\r\n' +
++   '\r\n' +
++   'def normalized(logs):\r\n' +
++   '    logs=np.asarray(logs,dtype=float)\r\n' +
++   '    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\r\n' +
++   '        raise ValueError("No valid particle likelihood")\r\n' +
++   '    return np.exp(logs-logsumexp(logs))\r\n' +
++   '\r\n' +
++   'def stats(x,w):\r\n' +
++   '    m=float(w@x)\r\n' +
++   '    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\r\n' +
++   '\r\n' +
++   'def systematic(w,u0):\r\n' +
++   '    n=len(w)\r\n' +
++   '    assert 0<=u0<1/n\r\n' +
++   '    c=np.cumsum(w);c[-1]=1.\r\n' +
++   '    return np.searchsorted(c,u0+np.arange(n)/n,side="right")\r\n' +
++   '\r\n' +
++   'def reference(mu,r,z):\r\n' +
++   '    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\r\n' +
++   '    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\r\n' +
++   '    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\r\n' +
++   '    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n' +
++   '    mass=I(0);m=I(1)/mass\r\n' +
++   '    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\r\n' +
++   '    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\r\n'
+- 'import numpy as np\n' +
+-   'import math, json\n' +
+-   'from scipy.special import logsumexp\n' +
+-   'from scipy.integrate import quad\n' +
+-   'from scipy.signal import fftconvolve\n' +
+-   '\n' +
+-   'def normalized(logs):\n' +
+-   '    logs=np.asarray(logs,dtype=float)\n' +
+-   '    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\n' +
+-   '        raise ValueError("No valid particle likelihood")\n' +
+-   '    return np.exp(logs-logsumexp(logs))\n' +
+-   '\n' +
+-   'def stats(x,w):\n' +
+-   '    m=float(w@x)\n' +
+-   '    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\n' +
+-   '\n' +
+-   'def systematic(w,u0):\n' +
+-   '    n=len(w)\n' +
+-   '    assert 0<=u0<1/n\n' +
+-   '    c=np.cumsum(w);c[-1]=1.\n' +
+-   '    return np.searchsorted(c,u0+np.arange(n)/n,side="right")\n' +
+-   '\n' +
+-   'def reference(mu,r,z):\n' +
+-   '    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\n' +
+-   '    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\n' +
+-   '    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\n' +
+-   '    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\n' +
+-   '    mass=I(0);m=I(1)/mass\n' +
+-   '    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\n' +
+-   '    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\n'
+
+    at file:///D:/Workspace/control-universe/.agent/semester-03/est-06/validate-final.mjs:9:94
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:661:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'import numpy as np\r\n' +
+    'import math, json\r\n' +
+    'from scipy.special import logsumexp\r\n' +
+    'from scipy.integrate import quad\r\n' +
+    'from scipy.signal import fftconvolve\r\n' +
+    '\r\n' +
+    'def normalized(logs):\r\n' +
+    '    logs=np.asarray(logs,dtype=float)\r\n' +
+    '    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\r\n' +
+    '        raise ValueError("No valid particle likelihood")\r\n' +
+    '    return np.exp(logs-logsumexp(logs))\r\n' +
+    '\r\n' +
+    'def stats(x,w):\r\n' +
+    '    m=float(w@x)\r\n' +
+    '    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\r\n' +
+    '\r\n' +
+    'def systematic(w,u0):\r\n' +
+    '    n=len(w)\r\n' +
+    '    assert 0<=u0<1/n\r\n' +
+    '    c=np.cumsum(w);c[-1]=1.\r\n' +
+    '    return np.searchsorted(c,u0+np.arange(n)/n,side="right")\r\n' +
+    '\r\n' +
+    'def reference(mu,r,z):\r\n' +
+    '    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\r\n' +
+    '    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\r\n' +
+    '    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\r\n' +
+    '    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n' +
+    '    mass=I(0);m=I(1)/mass\r\n' +
+    '    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\r\n' +
+    '    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\r\n',
+  expected: 'import numpy as np\n' +
+    'import math, json\n' +
+    'from scipy.special import logsumexp\n' +
+    'from scipy.integrate import quad\n' +
+    'from scipy.signal import fftconvolve\n' +
+    '\n' +
+    'def normalized(logs):\n' +
+    '    logs=np.asarray(logs,dtype=float)\n' +
+    '    if not np.isfinite(logs).any() or np.isnan(logs).any() or np.isposinf(logs).any():\n' +
+    '        raise ValueError("No valid particle likelihood")\n' +
+    '    return np.exp(logs-logsumexp(logs))\n' +
+    '\n' +
+    'def stats(x,w):\n' +
+    '    m=float(w@x)\n' +
+    '    return dict(mean=m,variance=float(w@((x-m)**2)),negative=float(w[x<0].sum()),ess=float(1/(w@w)))\n' +
+    '\n' +
+    'def systematic(w,u0):\n' +
+    '    n=len(w)\n' +
+    '    assert 0<=u0<1/n\n' +
+    '    c=np.cumsum(w);c[-1]=1.\n' +
+    '    return np.searchsorted(c,u0+np.arange(n)/n,side="right")\n' +
+    '\n' +
+    'def reference(mu,r,z):\n' +
+    '    log=lambda x:-(x-mu)**2/2-(z-x*x)**2/(2*r)\n' +
+    '    stationary=sorted(float(t.real) for t in np.roots([2,0,r-2*z,-r*mu]) if abs(t.imag)<1e-9)\n' +
+    '    shift=max(log(t) for t in stationary);cuts=[-np.inf]+sorted(set(stationary))+[np.inf]\n' +
+    '    def I(n):return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\n' +
+    '    mass=I(0);m=I(1)/mass\n' +
+    '    neg=quad(lambda x:math.exp(log(x)-shift),-np.inf,0,epsabs=1e-12,epsrel=1e-12)[0]/mass\n' +
+    '    return dict(mean=m,variance=I(2)/mass-m*m,negative=neg)\n',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.14.1

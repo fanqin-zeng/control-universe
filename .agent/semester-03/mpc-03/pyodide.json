@@ -1,0 +1,137 @@
+{
+  "testedAt": "2026-10-24T07:12:18.253Z",
+  "url": "http://127.0.0.1:18796/python-expansion.html?lesson=mpc/receding-horizon",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "mpc/receding-horizon",
+      "title": "滚动优化",
+      "sourceHash": "66681463b8a67786c37f2be921f82cee60c863d39db1f83cd0bd8fd600cdf1db",
+      "notebooks": [
+        {
+          "id": "mpc/receding-horizon#1",
+          "title": "增量预测与滚动重算",
+          "index": 1,
+          "line": 85,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6802,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_H_f 1.7126323199999993 -3.276799999999999\ndefault_first (np.float64(1.0), np.float64(1.0), array([0.2   , 0.36  , 0.488 , 0.5904]), 1.5795161600000007, np.float64(0.0))\ndefault_measured_replan 0.6 (np.float64(0.4120365263222407), np.float64(1.4120365263222407), array([0.76240731, 0.89233315, 0.99627382, 1.07942637]), 0.09134228105656685, np.float64(0.0))\nreplan_case 0.0 u 1.8240730526444815 residual 0.0\nreplan_case 0.4 u 1.4120365263222407 residual 0.0\nreplan_case -0.4 u 2.0 residual 0.0\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 334,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "original_contract_corrected 10 5 variables 5 input_and_rate_inequalities 20\nrollout_last_sample 0.9998885936391426 max_abs_u 2.8542664101519994\nrollout_max_residual 1.165031777577985e-06\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 30084
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/receding-horizon#2",
+          "title": "费用下标、有限时域和终端合同",
+          "index": 2,
+          "line": 208,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "finite_horizon 2.0 1 first_gain 0.0 pole 2.0 planned_last_gain 0.0\nfinite_horizon 2.0 2 first_gain 1.0 pole 1.0 planned_last_gain 0.0\nfinite_horizon 2.0 3 first_gain 1.5 pole 0.5 planned_last_gain 0.0\nfinite_horizon 1.5 1 first_gain 0.0 pole 1.5 planned_last_gain 0.0\nfinite_horizon 1.5 2 first_gain 0.75 pole 0.75 planned_last_gain 0.0\nfinite_horizon 1.5 3 first_gain 1.02 pole 0.48 planned_last_gain 0.0\nDARE_P_gain_pole 4.23606797749979 1.618033988749895 0.3819660112501051\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "local_terminal_P 1.71875\nheld_tail_counterexample old [-1. -1.] shifted [-1.  0.] fresh [-0.5 -0.5]\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/receding-horizon#3",
+          "title": "五题矩阵与参数复算",
+          "index": 3,
+          "line": 394,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise1_H_f [[0.363968 0.10496  0.0512  ]\n [0.10496  0.3312   0.064   ]\n [0.0512   0.064    0.28    ]] [0.655872 0.41984  0.2048  ]\nexercise1_future_U [-1.55451576 -0.72040258 -0.28251081]\nexercise1_current_U [-1.47292419 -0.57761733  0.        ]\nexercise3_shift_tails [-0.3  0.2 -0.1  0.   0. ] -0.24 -0.33999999999999997\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 49,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise4_variables 20 80\nexercise5_Ad_Bd [[1. 1.]\n [0. 1.]] [[0.2]\n [0.4]]\nexercise5_Q_R [[  4.   0.]\n [  0. 100.]] 131.31225400046978\nexercise5_candidate_window_distance 0.75 15.0\nexercise5_unconstrained_terminal_P_K [[ 31.4838122   58.16189775]\n [ 58.16189775 478.70861766]] [[0.13531103 1.06502678]]\nexercise5_scope unconstrained local design only; constrained region unverified\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "mpc/receding-horizon",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 3,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 3,
+    "codeOnly": 0
+  }
+}

@@ -1,0 +1,339 @@
+---
+title: 多传感器融合
+description: 从同一状态的联合观测推导独立与相关噪声融合，识别共享先验和重复信息，并用可运行实验核对协方差、时间坐标与线性化边界。
+---
+
+# 多传感器融合
+
+小车同时接到两个位置读数。把它们平均，结果就更可靠吗？如果两个模块用了同一份定位结果，或者两个读数来自不同时间，数值接近也未必意味着多了一份证据。
+
+本课接续[卡尔曼滤波](/estimation/kalman-filter)与[扩展卡尔曼滤波](/estimation/extended-kalman-filter)：先把信息来源对齐，再决定如何更新。目标是得到融合估计及其误差协方差，并能解释这份协方差成立的条件。
+
+## 两次读数是否两份信息
+
+传感器融合（sensor fusion）把多路观测或局部估计组合成一个状态估计。输入可能是原始观测，也可能是已经用过先验的局部后验；两者不能套同一份“独立相加”合同。观测噪声独立，指给定状态后剩余的随机扰动独立；两个模块共享同一个先验，则输出误差仍可能相关。
+
+本课主例只看同一拍的标量位置$x$，单位m。先验均值为0，方差$P_0=4\,\mathrm{m}^2$；两路读数为$z_1=2\,\mathrm m,z_2=3\,\mathrm m$，噪声方差分别为$r_1=1\,\mathrm{m}^2,r_2=4\,\mathrm{m}^2$。先验独立于整个测量噪声向量。初始化就用这份先验；本拍没有额外的预测步骤或过程噪声。动态系统应先把共同先验预测到所需时间，再处理该时刻的观测。
+
+![原始观测与局部后验的信息来源检查](/diagrams/estimation/sensor-information.svg)
+
+融合前先问：是否同一物理量、同一时间、同一坐标系？噪声是否相关？局部模块是否共享先验或历史观测？无法回答时，协方差变小只是公式的输出，不能直接当作可信程度提高。
+
+## 同一状态的联合观测
+
+把两路观测堆叠起来。在主例中：
+
+$$
+x\sim\mathcal N(\mu_0,P_0),\qquad z=Hx+v,\quad
+H=\begin{bmatrix}1\\1\end{bmatrix},\quad
+R=\begin{bmatrix}r_1&c\\c&r_2\end{bmatrix},\quad
+c=\rho\sqrt{r_1r_2}.
+$$
+
+$\rho$是测量噪声的相关系数，不是两个读数的相似程度。本课用$|\rho|\lt1$保证$R$正定，且假设联合高斯、无偏、模型正确。跨传感器的协方差$c$与方差同为m²。噪声独立时$c=0$；在联合高斯假设下，不相关也意味着独立。
+
+卡尔曼联合更新直接保留完整$R$：
+
+$$
+S=HP_0H^\top+R,\qquad K=P_0H^\top S^{-1},\qquad
+\mu^+=\mu_0+K(z-H\mu_0),
+$$
+
+$$
+P^+=(I-KH)P_0(I-KH)^\top+KRK^\top.
+$$
+
+最后一式是Joseph形式。实现时解线性方程得到增益，避免显式求逆；还应检查协方差的对称性与正定性。高斯假设下这是精确后验；非线性观测需要额外的近似，不能把这里的精确性直接带过去。线性高斯推导可对照[Särkkä《Bayesian Filtering and Smoothing》§4.3](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)。
+
+## 独立噪声的信息相加
+
+先验精度是$Y_0=P_0^{-1}$，信息向量是$y_0=Y_0\mu_0$。对于给定$x$条件下相互独立的线性观测$z_i=H_ix+v_i$，高斯密度相乘、整理二次项得到：
+
+$$
+Y^+=Y_0+\sum_iH_i^\top R_i^{-1}H_i,\qquad
+y^+=y_0+\sum_iH_i^\top R_i^{-1}z_i,\qquad
+P^+=(Y^+)^{-1},\quad\mu^+=P^+y^+.
+$$
+
+注意先验只加一次。主例在$\rho=0$时：
+
+$$
+P^+=\left(\frac14+1+\frac14\right)^{-1}=\frac23,\qquad
+\mu^+=\frac23\left(2+\frac34\right)=\frac{11}{6}.
+$$
+
+仅用传感器1，结果为$1.6\,\mathrm m,0.8\,\mathrm{m}^2$；仅用传感器2，结果为$1.5\,\mathrm m,2\,\mathrm{m}^2$。独立融合的后验方差小于这两个单传感器结果，但不保证每一个具体读数下的估计都更接近真实位置。此处并未提供真实位置，不能根据估计均值大小排名准确性。
+
+若$R$存在非零非对角块，应使用$H^\top R^{-1}H$整体更新，不能继续逐块独立相加。
+
+## 相关噪声与白化更新
+
+原始两路噪声相关时，直接把第二路当作独立观测会重复计算一部分信息。可以先处理第一路，再使用条件白化后的第二路：
+
+$$
+\tilde z_2=z_2-\frac{c}{r_1}z_1,\quad
+\tilde H_2=1-\frac{c}{r_1},\quad
+\tilde r_2=r_2-\frac{c^2}{r_1}.
+$$
+
+因为$\operatorname{Cov}(v_1,v_2-cv_1/r_1)=0$，高斯模型下这两份噪声独立。必须同时变换读数、观测矩阵和协方差；只把$R$改成对角矩阵会改错模型。多维情形可用$R=LL^\top$，解出$L^{-1}z,L^{-1}H$后顺序更新。
+
+主例设$\rho=0.5$，则$c=1$，第二路变成$\tilde H_2=0,\tilde z_2=1,\tilde r_2=3$。它只提供噪声信息，没有新增状态信息，因此联合结果仍是$1.6,0.8$。错误独立模型却仍报告$11/6,2/3$。
+
+在同一个固定线性模型下，联合更新、白化顺序更新及其逆序得到相同结果。Notebook遍历64组参数，最大差约$2.887\times10^{-15}$。$|\rho|=1$时本课正定算法拒绝输入；奇异噪声可用秩约简或支持约束处理，拒绝不等于数学上无法融合，也不能偷偷加抖动后继续宣称原模型精确。
+
+<JupyterNotebook title="同一先验的独立与相关观测" setupCode={`import numpy as np
+import math
+
+def condition(mu,p,H,predicted,z,R):
+    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)
+    z=np.asarray(z);predicted=np.asarray(predicted)
+    K=np.linalg.solve(p*(H@H.T)+R,p*H).T
+    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()
+    variance=A*A*p+(K@R@K.T).item()
+    return mean,variance,K.ravel()
+
+def pair(p,r2,rho,z1,z2):
+    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])
+    return condition(0,p,[1,1],[0,0],[z1,z2],R),R
+
+def sequential_cholesky(p,R,z,reverse=False):
+    H=np.ones(2);z=np.array(z,dtype=float)
+    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]
+    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError("positive definite R required")
+    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.
+    for hi,yi in zip(h,y):
+        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)
+        p=(1-gain*hi)**2*p+gain*gain
+    return mean,p
+
+def ci(m1,p1,m2,p2,omega):
+    variance=1/(omega/p1+(1-omega)/p2)
+    a=variance*omega/p1;b=variance*(1-omega)/p2
+    return a*m1+b*m2,variance,a,b
+`} cells={[
+{ code: `for rho in [0,.5,-.5,.9]:
+    (m,p,k),R=pair(4,4,rho,2,3)
+    naive=condition(0,4,[1,1],[0,0],[2,3],np.diag([1.,4.]))
+    kn=naive[2];actual_naive=(1-kn.sum())**2*4+kn@R@kn
+    print("same_model_rho_joint_mean_P_K_actualMSE_naive",rho,m,p,k.tolist(),p,naive[0],naive[1],actual_naive)
+    if rho==0:assert np.allclose([m,p],[11/6,2/3],atol=1e-12)
+    if rho==.5:assert np.allclose([m,p,actual_naive],[1.6,.8,8/9],atol=1e-12)
+print("single_sensor1_mean_P",1.6,.8,"sensor2",1.5,2.)
+` },
+{ code: `maximum=0.;count=0
+for p0 in [1.,4.]:
+    for r2 in [1.,4.]:
+        for rho in [-.5,0,.5,.9]:
+            for z1 in [0.,2.]:
+                for z2 in [2.,3.]:
+                    (m,p,k),R=pair(p0,r2,rho,z1,z2)
+                    for reverse in [False,True]:
+                        sm,sp=sequential_cholesky(p0,R,[z1,z2],reverse)
+                        maximum=max(maximum,abs(sm-m),abs(sp-p))
+                    count+=1
+print("joint_whitened_64_cases_max_difference",count,maximum)
+print("rho_half_conditional_H_reading_noise",1-1,3-2,4-1)
+assert count==64 and maximum<1e-12
+try:sequential_cholesky(4,np.array([[1.,2.],[2.,4.]]),[2,3])
+except np.linalg.LinAlgError:print("singular_R_rejected")
+else:raise AssertionError("singular joint covariance must not be silently treated as invertible")
+print("joint_whitening_checks_passed")
+` }
+]} />
+
+## 交互实验与一致性
+
+下面三条曲线分别是完整相关模型的后验、错误独立模型自报的高斯分布、仅传感器1的后验。错误模型曲线不是实际后验。先保持默认值核对手算，再将相关系数调到0.5，观察“报告方差”与“实际MSE”的差别。
+
+<SensorFusionExplorer />
+
+这里的实际均方误差（MSE）是对随机先验状态与真实联合噪声取期望，不是用当前两个读数算出的残差，也不是给定这组读数后的条件风险。对固定线性估计器$\hat x=w_0\mu_0+w_1z_1+w_2z_2$，权重之和为1：
+
+$$
+\mathbb E[(\hat x-X)^2]=w_0^2P_0+w_1^2r_1+w_2^2r_2+2w_1w_2c.
+$$
+
+模型正确时，这个量等于后验方差。默认两者都是$2/3$；$\rho=0.5$时正确融合为$0.8$，错误独立模型实际MSE为$8/9$，超过其自报的$2/3$。$\rho=-0.5$时错误模型实际MSE为$4/9$，反而小于其自报方差；两种失配都说明报告不等于真实误差。
+
+已知相关性并不意味着“相关越大，融合越差”：当$\rho=0.9$时，完整模型方差约0.477987，第二路权重约−0.503145。不同噪声尺度下，相减能抵消部分共同噪声，负权重有其模型依据。不能据此推广到未知偏置、未知相关性或病态协方差。图只画固定位置区间，尾部未显示的概率质量不会重新归一化。
+
+## 共享先验与未知相关性
+
+原始测量噪声独立，也不代表两个局部后验的误差独立。两个模块分别使用同一先验$\mu_0,P_0$处理一条独立观测，输出本例的$\mu_1=1.6,P_1=0.8$与$\mu_2=1.5,P_2=2$。它们共享先验误差，交叉协方差为0.4。
+
+若直接令$P^{-1}=P_1^{-1}+P_2^{-1}$，会得到均值$11/7$、自报方差$4/7$，实际MSE却是$36/49$。只有确知“同一份先验、两份条件独立似然、没有其它共享信息”时，才能扣掉重复先验：
+
+$$
+Y^+=P_1^{-1}+P_2^{-1}-P_0^{-1},\qquad
+y^+=P_1^{-1}\mu_1+P_2^{-1}\mu_2-P_0^{-1}\mu_0.
+$$
+
+本例恢复$11/6,2/3$。一般的历史信息重叠或相关原始似然不能只减去一个先验就解决。更直接的反例是把同一份$1.6,0.8$复制两次：错误公式报告方差0.4，实际误差方差仍是0.8。
+
+当局部估计的误差交叉协方差未知，但各自无偏，且$P_1,P_2$确实是有效的误差协方差上界时，可使用协方差交集（covariance intersection，CI）：
+
+$$
+P_{\rm CI}^{-1}=\omega P_1^{-1}+(1-\omega)P_2^{-1},\qquad
+\mu_{\rm CI}=P_{\rm CI}\bigl(\omega P_1^{-1}\mu_1+(1-\omega)P_2^{-1}\mu_2\bigr),\quad0\le\omega\le1.
+$$
+
+CI报告一个有条件成立的保守协方差上界，不是精确Bayes后验方差。未知偏置如果未计入输入界限，CI不会自动修复它。来源与一般矩阵情形见[Julier与Uhlmann的原作者章节§12.3及附录12.A](https://dsp-book.narod.ru/HMDF/2379ch12.pdf)。
+
+标量情况下令$a=P_{\rm CI}\omega/P_1,b=P_{\rm CI}(1-\omega)/P_2$，有$a+b=1$。对未知交叉协方差使用Cauchy界：
+
+$$
+\operatorname{Var}(a e_1+b e_2)\le(a\sqrt{P_1}+b\sqrt{P_2})^2
+\le P_{\rm CI}^2\left(\frac{\omega}{P_1}+\frac{1-\omega}{P_2}\right)=P_{\rm CI}.
+$$
+
+本例$\omega=0.5$给出均值$11/7$、上界$8/7$；比已知信息来源时的$2/3$保守。若只最小化本例标量上界，最优选择$\omega=1$，退回较好的单路$1.6,0.8$。CI不保证比单路协方差更小。重复同一估计时，任意权重都保持原来的均值和方差。Notebook以5个CI权重、21个合法误差相关系数检验105组上界，并保留端点。
+
+<JupyterNotebook title="共享先验、重复数据与协方差交集" setupCode={`import numpy as np
+import math
+
+def condition(mu,p,H,predicted,z,R):
+    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)
+    z=np.asarray(z);predicted=np.asarray(predicted)
+    K=np.linalg.solve(p*(H@H.T)+R,p*H).T
+    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()
+    variance=A*A*p+(K@R@K.T).item()
+    return mean,variance,K.ravel()
+
+def pair(p,r2,rho,z1,z2):
+    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])
+    return condition(0,p,[1,1],[0,0],[z1,z2],R),R
+
+def sequential_cholesky(p,R,z,reverse=False):
+    H=np.ones(2);z=np.array(z,dtype=float)
+    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]
+    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError("positive definite R required")
+    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.
+    for hi,yi in zip(h,y):
+        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)
+        p=(1-gain*hi)**2*p+gain*gain
+    return mean,p
+
+def ci(m1,p1,m2,p2,omega):
+    variance=1/(omega/p1+(1-omega)/p2)
+    a=variance*omega/p1;b=variance*(1-omega)/p2
+    return a*m1+b*m2,variance,a,b
+`} cells={[
+{ code: `m0,p0=0.,4.;m1,p1=1.6,.8;m2,p2=1.5,2.
+naive_p=1/(1/p1+1/p2);naive_m=naive_p*(m1/p1+m2/p2)
+correct_p=1/(1/p1+1/p2-1/p0);correct_m=correct_p*(m1/p1+m2/p2-m0/p0)
+cross=(p1/p0)*(p2/p0)*p0
+a=naive_p/p1;b=naive_p/p2
+actual=a*a*p1+b*b*p2+2*a*b*cross
+print("shared_prior_local_cross",cross)
+print("track_naive_mean_P_actualMSE",naive_m,naive_p,actual)
+print("subtract_known_prior_mean_P",correct_m,correct_p)
+assert np.allclose([naive_m,naive_p,actual,correct_m,correct_p],[11/7,4/7,36/49,11/6,2/3],atol=1e-12)
+print("duplicate_same_estimate_mean_claimed_actual",1.6,.4,.8)
+` },
+{ code: `worst_slack=0.;tested=0
+for omega in [0,.25,.5,.75,1]:
+    m,p,a,b=ci(1.6,.8,1.5,2.,omega)
+    worst=(a*np.sqrt(.8)+b*np.sqrt(2.))**2
+    print("CI_omega_mean_P_worstMSE",omega,m,p,worst)
+    for rho in np.linspace(-1,1,21):
+        actual=a*a*.8+b*b*2+2*a*b*rho*np.sqrt(.8*2)
+        worst_slack=max(worst_slack,actual-p);tested+=1
+        assert actual<=p+1e-12
+    dup=ci(1.6,.8,1.6,.8,omega)
+    assert np.allclose(dup[:2],[1.6,.8],atol=1e-12)
+print("CI_bound_cases_max_violation",tested,worst_slack)
+best=min((ci(1.6,.8,1.5,2.,w)[1],w) for w in np.linspace(0,1,101))
+print("scalar_variance_objective_best_P_omega",best)
+assert np.allclose(best,[.8,1.])
+print("shared_information_checks_passed")
+` }
+]} />
+
+## 时间坐标与非线性对齐
+
+假设局部坐标比世界坐标少10m，局部读数−8m就应转换成世界坐标2m。用同一先验$0,4$和两路方差均为1的观测，若把世界读数2与局部读数−8直接融合，均值为$-8/3$；转换后用2与2，均值为$16/9$。两者都报告方差$4/9$，可见很小的方差不能暴露坐标错误。确定的平移不改变噪声方差；若标定本身不确定，应传播其不确定性与相关项。
+
+同理，旧读数1m来自0.5s前，若速度确定为2m/s，补偿后为当前2m。直接与当前读数2融合给出$4/3$，对齐后为$16/9$，两者仍报告$4/9$。这些是给定读数的公式演示，没有隐藏的真值或准确率试验。速度不确定时不能照搬确定补偿的协方差；应建增广模型或保留必要的交叉协方差。乱序观测通常需要更新缓存的过去状态，再重放后续预测与观测。
+
+非线性还有线性化点问题。另取先验$\mu_0=2,P_0=0.25$，$h_1(x)=x,h_2(x)=x^2$，读数$z=(3,5)$，$R=\operatorname{diag}(1,1)$。第一路读数单位m、方差m²，第二路读数单位m²、方差m⁴；两个数值1不代表物理精度相同。
+
+在共同点2冻结预测$(2,4)$与Jacobian$(1,4)^\top$，联合EKF得到$47/21,1/21$。若先用线性观测更新到2.2，再为平方观测重新线性化，结果约$2.228900,0.041051$。两者不同，因为后者改变了近似模型；只有同一个冻结的仿射模型（包括常数偏移）才有联合与顺序更新等价性。这里没有用精确非线性后验作为基准，不能排名两者准确性。
+
+<JupyterNotebook title="时间坐标与非线性更新的对齐" setupCode={`import numpy as np
+import math
+
+def condition(mu,p,H,predicted,z,R):
+    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)
+    z=np.asarray(z);predicted=np.asarray(predicted)
+    K=np.linalg.solve(p*(H@H.T)+R,p*H).T
+    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()
+    variance=A*A*p+(K@R@K.T).item()
+    return mean,variance,K.ravel()
+
+def pair(p,r2,rho,z1,z2):
+    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])
+    return condition(0,p,[1,1],[0,0],[z1,z2],R),R
+
+def sequential_cholesky(p,R,z,reverse=False):
+    H=np.ones(2);z=np.array(z,dtype=float)
+    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]
+    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError("positive definite R required")
+    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.
+    for hi,yi in zip(h,y):
+        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)
+        p=(1-gain*hi)**2*p+gain*gain
+    return mean,p
+
+def ci(m1,p1,m2,p2,omega):
+    variance=1/(omega/p1+(1-omega)/p2)
+    a=variance*omega/p1;b=variance*(1-omega)/p2
+    return a*m1+b*m2,variance,a,b
+`} cells={[
+{ code: `def independent_readings(a,b):return condition(0,4,[1,1],[0,0],[a,b],np.eye(2))[:2]
+bias=10.;local=-8.;world=local+bias
+print("coordinate_offset_local_world",bias,local,world)
+print("frame_wrong_correct_mean_P",independent_readings(2,local),independent_readings(2,world))
+delay=.5;velocity=2.;old=1.;aligned=old+velocity*delay
+print("time_delay_velocity_old_aligned",delay,velocity,old,aligned)
+print("time_wrong_correct_mean_P",independent_readings(2,old),independent_readings(2,aligned))
+assert np.allclose(independent_readings(2,world),[16/9,4/9])
+assert np.allclose(independent_readings(2,local),[-8/3,4/9])
+assert np.allclose(independent_readings(2,old),[4/3,4/9])
+` },
+{ code: `mu,p=2.,.25
+frozen=condition(mu,p,[1,4],[2,4],[3,5],np.eye(2))
+m1,p1,_=condition(mu,p,[1],[2],[3],[[1.]])
+relinearized=condition(m1,p1,[2*m1],[m1*m1],[5],[[1.]])
+print("nonlinear_same_point_batch_mean_P",frozen[:2])
+print("nonlinear_relinearized_after_first_mean_P",relinearized[:2])
+print("first_linear_update_mean_P",m1,p1)
+assert np.allclose(frozen[:2],[47/21,1/21],atol=1e-12)
+assert not np.allclose(frozen[:2],relinearized[:2],atol=1e-6)
+print("alignment_nonlinear_checks_passed")
+` }
+]} />
+
+## 实现流程与边界
+
+1. 登记每条数据的时间戳、坐标系、单位、测量模型和来源标识；区分原始观测与已含历史信息的局部后验。
+2. 预测共同先验并完成时间、坐标对齐；变换读数时同步变换观测模型与不确定性。
+3. 原始联合观测使用完整$R$；确认条件独立才分路更新。局部后验先查共享信息，未知交叉相关时再评估CI及其输入界限。
+4. 用线性方程求解增益，使用Joseph形式；监测创新、协方差病态和重复消息，记录被拒数据及原因。
+5. 验证报告协方差：使用已知真值的独立试验或充分的统计诊断，而非单次创新变小。模型、偏置和相关性改变后重新验证。
+
+本课不处理多目标数据关联、完整导航工程、离群点鲁棒估计或安全认证。错误关联和系统性偏置不是增加一个传感器就能消除的问题。下节[状态估计综合案例](/estimation/estimation-case-study)将把预测、观测与诊断串起来。
+
+## 习题
+
+1. 对主例的独立噪声，推导信息相加公式并计算联合与两种单路结果。为什么不能由本组读数判断实际误差谁最小？
+2. 令主例$\rho=0.5$，推导白化的第二观测及联合结果。错误独立模型的报告方差与实际MSE各是多少？解释为什么高正相关不一定导致更大的正确后验方差。
+3. 两个局部后验共享主例先验。计算错误相加、精确扣重及$\omega=0.5$的CI结果；说明扣重与CI各需什么条件。同一估计复制两份会怎样？
+4. 复算坐标与时间对齐前后的均值、方差；说明确定补偿与不确定补偿的区别。复算非线性例冻结线性化与先更新再线性化的结果，解释它们为何不必一致。
+
+## 答案
+
+1. 高斯先验与独立似然相乘，指数的二次系数相加得到$Y^+$，一次系数相加得到$y^+$；先验只出现一次。联合均值$11/6$、方差$2/3$。单路1为$1.6,0.8$，单路2为$1.5,2$。后验方差描述模型下的不确定性；没有真值，不能比较这一次的平方误差。
+2. $c=1$，白化得到$\tilde z_2=1,\tilde H_2=0,\tilde r_2=3$，所以联合$1.6,0.8$。错误模型权重$w_0=1/6,w_1=2/3,w_2=1/6$，报告$2/3$，实际MSE为$4/36+4/9+4/36+2/9=8/9$。当$\rho=0.9$时，正确模型允许第二路负权重约−0.503145，用差分抵消共同噪声，方差约0.477987；这是已知相关与噪声尺度下的结论。
+3. 局部误差交叉协方差0.4。错误相加为$11/7,4/7$，实际MSE$36/49$；仅当共享项恰为已知先验、似然条件独立且无其它重叠时，扣重恢复$11/6,2/3$。CI半权重为$11/7,8/7$；各路无偏且输入为有效协方差上界时成立，未知偏置不能凭空消除。重复$1.6,0.8$两份，错误公式报0.4但实际0.8；CI保持$1.6,0.8$。最小化本例标量CI上界选$\omega=1$，并未获得比最佳单路更小的上界。
+4. 坐标例直接融合为$-8/3,4/9$，平移后为$16/9,4/9$。时间例直接融合为$4/3,4/9$，确定速度补偿后为$16/9,4/9$；不确定标定或运动需要传播误差及交叉项。非线性例共同点的预测$(2,4)$、Jacobian$(1,4)^\top$，联合结果$47/21,1/21$；先线性更新到2.2、方差0.2，再用平方模型$h=4.84,H=4.4$，得到约$2.228900,0.041051$。重新线性化改变模型，结果变化不等于谁更准确。

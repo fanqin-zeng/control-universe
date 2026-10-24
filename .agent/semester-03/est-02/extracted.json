@@ -1,0 +1,63 @@
+{
+  "source": "content/estimation/least-squares-ml.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 149,
+      "title": "两支温度计与线性最小二乘",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 154,
+          "delim": "`",
+          "code": "y = np.array([22.0,24.0])\nR = np.array([4.0,1.0])\nm, P = 20.0, 4.0\nordinary = float(np.mean(y))\nprecision = float(np.sum(1/R))\nweighted = float(np.sum(y/R)/precision)\nweighted_variance = 1/precision\nposterior_variance = 1/(1/P+precision)\nposterior_mean = posterior_variance*(m/P+float(np.sum(y/R)))\ndata_min = float(np.sum((y-weighted)**2/R)/2)\nposterior_min = float(np.sum((y-posterior_mean)**2/R)/2+(posterior_mean-m)**2/(2*P))\nprint('LS_WLS_MAP', ordinary, weighted, posterior_mean)\nprint('LS_WLS_posterior_variances', float(np.sum(R)/4), weighted_variance, posterior_variance)\nprint('measurement_weights_posterior_precision', (1/R/precision).tolist(), 1/P+precision)\nprint('relative_curve_offsets', data_min, posterior_min)\nassert np.allclose([ordinary,weighted,posterior_mean,weighted_variance,posterior_variance,data_min,posterior_min], [23,23.6,23,0.8,2/3,0.4,1.75],rtol=0,atol=1e-12)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 170,
+          "delim": "`",
+          "code": "H = np.array([[1.0,0.0],[1.0,1.0],[1.0,2.0]])\nobserved = np.array([1.0,2.0,2.0])\nfit, _, rank, _ = np.linalg.lstsq(H, observed, rcond=None)\nresidual = observed-H@fit\nprint('vector_LS_rank_coefficients_SSE', rank, fit.tolist(), float(residual@residual))\nassert rank == 2\nassert np.allclose(fit,[7/6,1/2],rtol=0,atol=1e-12)\nassert abs(float(residual@residual)-1/6)<1e-12\nH_bad = np.ones((3,2))\ncandidate_a, candidate_b = np.array([5/3,0.0]),np.array([0.0,5/3])\nprint('rank_deficient_same_fit', int(np.linalg.matrix_rank(H_bad)), (H_bad@candidate_a).tolist(), (H_bad@candidate_b).tolist())\nassert np.allclose(H_bad@candidate_a,H_bad@candidate_b,rtol=0,atol=1e-12)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 205,
+      "title": "偏差方差与噪声模型边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nfrom itertools import product\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 211,
+          "delim": "`",
+          "code": "risk_rows = []\nfor truth in [20.0,22.0,26.0]:\n    errors = []\n    for e1,e2 in product([-2.0,2.0],[-1.0,1.0]):\n        z1,z2 = truth+e1, truth+e2\n        errors.append([(z1+z2)/2-truth, (z1+4*z2)/5-truth, (20+z1+4*z2)/6-truth])\n    risk_row = np.mean(np.square(errors),axis=0).tolist()\n    risk_rows.append([truth]+risk_row)\n    print('truth_OLS_WLS_MAP_MSE', [truth]+risk_row)\n    print('truth_MAP_bias_variance', truth, float(np.mean(np.array(errors)[:,2])), float(np.var(np.array(errors)[:,2])))\nassert np.allclose(risk_rows,[[20,5/4,4/5,5/9],[22,5/4,4/5,2/3],[26,5/4,4/5,14/9]],rtol=0,atol=1e-12)\nbayes_errors = []\nfor prior_error,e1,e2 in product([-2.0,2.0],[-2.0,2.0],[-1.0,1.0]):\n    truth = 20+prior_error\n    bayes_errors.append((20+(truth+e1)+4*(truth+e2))/6-truth)\nbayes_risk = float(np.mean(np.square(bayes_errors)))\nprint('integrated_linear_rule_risk',bayes_risk)\nassert abs(bayes_risk-2/3)<1e-12",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 229,
+          "delim": "`",
+          "code": "sample = np.array([18.0,20.0,22.0])\nsample_mean = float(np.mean(sample))\nsse = float(np.sum((sample-sample_mean)**2))\nprint('unknown_variance_mean_SSE_ML_unbiased',sample_mean,sse,sse/3,sse/2)\nassert np.allclose([sample_mean,sse,sse/3,sse/2],[20,8,8/3,4],rtol=0,atol=1e-12)\noutlier_sample = np.array([20.0,20.0,20.0,20.0,30.0])\nmean,median = float(np.mean(outlier_sample)),float(np.median(outlier_sample))\nlosses = [float(np.sum((outlier_sample-mean)**2)),float(np.sum((outlier_sample-median)**2)),float(np.sum(abs(outlier_sample-mean))),float(np.sum(abs(outlier_sample-median)))]\nprint('different_model_mean_median',mean,median)\nprint('SSE_at_mean_median_L1_at_mean_median',losses)\nassert [mean,median] == [22.0,20.0]\nassert losses == [80.0,100.0,16.0,10.0]",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

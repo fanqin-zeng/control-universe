@@ -1,0 +1,63 @@
+{
+  "source": "content/robust/mixed-sensitivity.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 310,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nimport warnings\r\nwarnings.filterwarnings('ignore')\r\nplt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nG = ctrl.tf([100], [1, 1, 100])\r\nW1 = ctrl.tf([0.5, 5], [1, 0.05])\r\nW2 = 0.1\r\nW3 = 0.01",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 324,
+          "delim": "`",
+          "code": "# 被控对象与权重函数分析\r\nprint(\"=== 被控对象 G(s) ===\")\r\nprint(G)\r\n\r\nomega = np.logspace(-2, 2.5, 1000)\r\nW1_jw = W1(1j * omega)\r\nW1_mag = np.abs(W1_jw)\r\nW1_mag_db = 20 * np.log10(W1_mag)\r\n\r\nbound_S = 1.0 / W1_mag\r\nbound_S_db = 20 * np.log10(bound_S)\r\n\r\nprint(f\"\\n=== 权重函数 W1 ===\")\r\nprint(f\"|W1(0)| = {np.abs(W1(0.001j)):.1f} → |S(0)| 上界 = {1/np.abs(W1(0.001j)):.4f}\")\r\nprint(f\"|W1(∞)| = {np.abs(W1(1000j)):.3f} → |S(∞)| 上界 = {1/np.abs(W1(1000j)):.3f}\")\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\r\n\r\naxes[0].semilogx(omega, W1_mag_db, 'b-', linewidth=2, label='|W₁(jω)|')\r\naxes[0].set_xlabel('频率 (rad/s)')\r\naxes[0].set_ylabel('幅值 (dB)')\r\naxes[0].set_title('性能权重 W₁')\r\naxes[0].legend()\r\naxes[0].grid(True, alpha=0.3)\r\n\r\naxes[1].semilogx(omega, bound_S_db, 'r-', linewidth=2, label='1/|W₁| (|S| 上界)')\r\naxes[1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1].set_xlabel('频率 (rad/s)')\r\naxes[1].set_ylabel('幅值 (dB)')\r\naxes[1].set_title('|S| 的上界包络')\r\naxes[1].legend()\r\naxes[1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": true,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 402,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nimport warnings\r\nwarnings.filterwarnings('ignore')\r\nplt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nG = ctrl.tf([100], [1, 1, 100])\r\nW1 = ctrl.tf([0.5, 5], [1, 0.05])\r\nW2 = 0.1\r\nW3 = 0.01\r\nK_ms = ctrl.tf([50, 50], [1, 20, 199])\r\nK_ls = 20 * ctrl.tf([1, 10, 100], [1, 0.4, 100])",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 419,
+          "delim": "`",
+          "code": "# 混合灵敏度控制器闭环分析\r\nL_ms = G * K_ms\r\nomega = np.logspace(-2, 2.5, 2000)\r\nL_jw = L_ms(1j * omega)\r\nS_jw = 1.0 / (1.0 + L_jw)\r\nT_jw = L_jw / (1.0 + L_jw)\r\nKS_jw = K_ms(1j * omega) / (1.0 + L_jw)\r\nW1_jw = W1(1j * omega)\r\n\r\nmag_L = np.abs(L_jw)\r\nidx_cross = np.where(np.diff(np.sign(mag_L - 1)))[0]\r\nwc = omega[idx_cross[0]] if len(idx_cross) > 0 else float('nan')\r\nphase_wc = np.angle(L_jw[idx_cross[0]], deg=True) if len(idx_cross) > 0 else float('nan')\r\nPM = 180 + phase_wc\r\nS_inf = np.max(np.abs(S_jw))\r\nT_inf = np.max(np.abs(T_jw))\r\nL_dc = np.abs(L_ms(0.001j))\r\nss_error = 1.0 / (1.0 + L_dc)\r\n\r\nprint(\"=== 混合灵敏度控制器 K_ms(s) ===\")\r\nprint(K_ms)\r\nprint(f\"\\n=== 闭环性能 ===\")\r\nprint(f\"穿越频率: {wc:.1f} rad/s\")\r\nprint(f\"相位裕度: {PM:.1f}°\")\r\nprint(f\"||S||_∞ = {S_inf:.3f} ({20*np.log10(S_inf):.2f} dB)\")\r\nprint(f\"||T||_∞ = {T_inf:.3f} ({20*np.log10(T_inf):.2f} dB)\")\r\nprint(f\"稳态误差: {ss_error*100:.2f}%\")\r\n\r\nfig, axes = plt.subplots(2, 2, figsize=(14, 10))\r\n\r\naxes[0, 0].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S|')\r\naxes[0, 0].semilogx(omega, 20*np.log10(1.0/np.abs(W1_jw)), 'r--', linewidth=1.5, label='1/|W₁| (上界)')\r\naxes[0, 0].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[0, 0].set_xlabel('频率 (rad/s)')\r\naxes[0, 0].set_ylabel('幅值 (dB)')\r\naxes[0, 0].set_title('|S| 与权重边界')\r\naxes[0, 0].legend()\r\naxes[0, 0].grid(True, alpha=0.3)\r\n\r\naxes[0, 1].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T|')\r\naxes[0, 1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[0, 1].set_xlabel('频率 (rad/s)')\r\naxes[0, 1].set_ylabel('幅值 (dB)')\r\naxes[0, 1].set_title('补灵敏度 |T|')\r\naxes[0, 1].legend()\r\naxes[0, 1].grid(True, alpha=0.3)\r\n\r\nT_cl = ctrl.feedback(L_ms)\r\nt = np.linspace(0, 8, 1000)\r\n_, y = ctrl.step_response(T_cl, t)\r\naxes[1, 0].plot(t, y, 'b-', linewidth=2)\r\naxes[1, 0].axhline(1, color='k', linestyle='--', alpha=0.5)\r\naxes[1, 0].axhline(1 - ss_error, color='g', linestyle=':', alpha=0.5, label=f'稳态值 = {1-ss_error:.4f}')\r\naxes[1, 0].set_xlabel('时间 (s)')\r\naxes[1, 0].set_ylabel('输出 y')\r\naxes[1, 0].set_title('闭环阶跃响应')\r\naxes[1, 0].legend()\r\naxes[1, 0].grid(True, alpha=0.3)\r\n\r\nCS_cl = ctrl.feedback(K_ms, G)\r\n_, u = ctrl.step_response(CS_cl, t)\r\naxes[1, 1].plot(t, u, 'r-', linewidth=1.5)\r\naxes[1, 1].set_xlabel('时间 (s)')\r\naxes[1, 1].set_ylabel('控制信号 u')\r\naxes[1, 1].set_title('控制信号（阶跃响应）')\r\naxes[1, 1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()\r\n\r\nprint(f\"\\n=== 指标检查 ===\")\r\nprint(f\"||S||_∞ = {S_inf:.3f} {'✓' if S_inf < 1.5 else '✗'} (< 1.5)\")\r\nprint(f\"稳态误差 = {ss_error*100:.2f}% {'✓' if ss_error < 0.05 else '✗'} (< 5%)\")",
+          "rawDiffers": true,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 494,
+          "delim": "`",
+          "code": "# 与回路整形法对比\r\nL_ls = G * K_ls\r\nL_ms_full = G * K_ms\r\nT_cl_ls = ctrl.feedback(L_ls)\r\nT_cl_ms = ctrl.feedback(L_ms_full)\r\nCS_cl_ls = ctrl.feedback(K_ls, G)\r\nCS_cl_ms = ctrl.feedback(K_ms, G)\r\n\r\nt = np.linspace(0, 8, 1000)\r\nomega = np.logspace(-2, 2.5, 2000)\r\n\r\nfig, axes = plt.subplots(2, 2, figsize=(14, 10))\r\n\r\n_, y_ls = ctrl.step_response(T_cl_ls, t)\r\n_, y_ms = ctrl.step_response(T_cl_ms, t)\r\naxes[0, 0].plot(t, y_ls, 'r-', linewidth=1.5, label='回路整形 (K=20 + 陷波)')\r\naxes[0, 0].plot(t, y_ms, 'b-', linewidth=2, label='混合灵敏度 (H∞)')\r\naxes[0, 0].axhline(1, color='k', linestyle='--', alpha=0.5)\r\naxes[0, 0].set_xlabel('时间 (s)')\r\naxes[0, 0].set_ylabel('输出 y')\r\naxes[0, 0].set_title('阶跃响应对比')\r\naxes[0, 0].legend()\r\naxes[0, 0].grid(True, alpha=0.3)\r\n\r\n_, u_ls = ctrl.step_response(CS_cl_ls, t)\r\n_, u_ms = ctrl.step_response(CS_cl_ms, t)\r\naxes[0, 1].plot(t, u_ls, 'r-', linewidth=1.5, label='回路整形')\r\naxes[0, 1].plot(t, u_ms, 'b-', linewidth=2, label='混合灵敏度')\r\naxes[0, 1].set_xlabel('时间 (s)')\r\naxes[0, 1].set_ylabel('控制信号 u')\r\naxes[0, 1].set_title('控制信号对比')\r\naxes[0, 1].legend()\r\naxes[0, 1].grid(True, alpha=0.3)\r\n\r\nS_ls = 1.0 / (1.0 + L_ls(1j * omega))\r\nS_ms = 1.0 / (1.0 + L_ms_full(1j * omega))\r\naxes[1, 0].semilogx(omega, 20*np.log10(np.abs(S_ls)), 'r-', linewidth=1.5, label='回路整形')\r\naxes[1, 0].semilogx(omega, 20*np.log10(np.abs(S_ms)), 'b-', linewidth=2, label='混合灵敏度')\r\naxes[1, 0].axhline(20*np.log10(1.5), color='k', linestyle=':', alpha=0.5, label='||S||_∞ = 1.5')\r\naxes[1, 0].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1, 0].set_xlabel('频率 (rad/s)')\r\naxes[1, 0].set_ylabel('|S| (dB)')\r\naxes[1, 0].set_title('灵敏度函数对比')\r\naxes[1, 0].legend()\r\naxes[1, 0].grid(True, alpha=0.3)\r\n\r\nT_ls = L_ls(1j * omega) / (1.0 + L_ls(1j * omega))\r\nT_ms = L_ms_full(1j * omega) / (1.0 + L_ms_full(1j * omega))\r\naxes[1, 1].semilogx(omega, 20*np.log10(np.abs(T_ls)), 'r-', linewidth=1.5, label='回路整形')\r\naxes[1, 1].semilogx(omega, 20*np.log10(np.abs(T_ms)), 'b-', linewidth=2, label='混合灵敏度')\r\naxes[1, 1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1, 1].set_xlabel('频率 (rad/s)')\r\naxes[1, 1].set_ylabel('|T| (dB)')\r\naxes[1, 1].set_title('补灵敏度对比')\r\naxes[1, 1].legend()\r\naxes[1, 1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()\r\n\r\nss_ls = 1.0 / (1.0 + np.abs(L_ls(0.001j)))\r\nss_ms = 1.0 / (1.0 + np.abs(L_ms_full(0.001j)))\r\nprint(\"=\" * 70)\r\nprint(f\"{'指标':<20} {'回路整形':<20} {'混合灵敏度':<20}\")\r\nprint(\"-\" * 70)\r\nprint(f\"{'稳态误差':<20} {ss_ls*100:<20.2f}% {ss_ms*100:<20.2f}%\")\r\nprint(f\"{'||S||_∞':<20} {np.max(np.abs(S_ls)):<20.3f} {np.max(np.abs(S_ms)):<20.3f}\")\r\nprint(f\"{'控制器阶数':<20} {'4':<20} {'2':<20}\")\r\nprint(\"=\" * 70)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 565,
+          "delim": "`",
+          "code": "# 混合灵敏度约束验证\r\nL_jw = (G * K_ms)(1j * omega)\r\nS_jw = 1.0 / (1.0 + L_jw)\r\nT_jw = L_jw / (1.0 + L_jw)\r\nKS_jw = K_ms(1j * omega) / (1.0 + L_jw)\r\nW1_jw = W1(1j * omega)\r\n\r\nW1S = W1_jw * S_jw\r\nW2T = W2 * T_jw\r\nW3KS = W3 * KS_jw\r\n\r\ngamma_W1S = np.max(np.abs(W1S))\r\ngamma_W2T = np.max(np.abs(W2T))\r\ngamma_W3KS = np.max(np.abs(W3KS))\r\ngamma_total = np.max(np.sqrt(np.abs(W1S)**2 + np.abs(W2T)**2 + np.abs(W3KS)**2))\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\r\n\r\naxes[0].semilogx(omega, 20*np.log10(np.abs(W1S)), 'b-', linewidth=2, label='|W₁S|')\r\naxes[0].semilogx(omega, 20*np.log10(np.abs(W2T)), 'r-', linewidth=2, label='|W₂T|')\r\naxes[0].semilogx(omega, 20*np.log10(np.abs(W3KS)), 'g-', linewidth=2, label='|W₃KS|')\r\naxes[0].axhline(0, color='k', linestyle='--', alpha=0.5, label='γ = 1 (0 dB)')\r\naxes[0].set_xlabel('频率 (rad/s)')\r\naxes[0].set_ylabel('幅值 (dB)')\r\naxes[0].set_title('混合灵敏度约束验证')\r\naxes[0].legend()\r\naxes[0].grid(True, alpha=0.3)\r\n\r\naxes[1].semilogx(omega, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S|')\r\naxes[1].semilogx(omega, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T|')\r\naxes[1].semilogx(omega, 20*np.log10(np.abs(KS_jw)), 'g-', linewidth=2, label='|KS|')\r\naxes[1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1].set_xlabel('频率 (rad/s)')\r\naxes[1].set_ylabel('幅值 (dB)')\r\naxes[1].set_title('S、T、KS 频率响应')\r\naxes[1].legend()\r\naxes[1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()\r\n\r\nprint(\"=== 混合灵敏度约束验证 ===\")\r\nprint(f\"||W₁S||_∞ = {gamma_W1S:.4f} ({20*np.log10(gamma_W1S):.2f} dB)\")\r\nprint(f\"||W₂T||_∞ = {gamma_W2T:.4f} ({20*np.log10(gamma_W2T):.2f} dB)\")\r\nprint(f\"||W₃KS||_∞ = {gamma_W3KS:.4f} ({20*np.log10(gamma_W3KS):.2f} dB)\")\r\nprint(f\"综合 γ = {gamma_total:.4f} ({20*np.log10(gamma_total):.2f} dB)\")\r\nprint(f\"\\n所有加权传递函数远小于 1，设计有充分裕量\")",
+          "rawDiffers": true,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

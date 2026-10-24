@@ -1,3 +1,58 @@
+import { EstimationCaseExplorer } from "@/components/wiki/estimation-case-study-explorer";
+import { MixedSensitivityExplorer } from '@/components/wiki/mixed-sensitivity-explorer';
+import { HilRehearsalExplorer } from "@/components/wiki/hil-rehearsal-explorer";
+import { GenerativeBasicsExplorer } from '@/components/wiki/generative-basics-explorer';
+import { ExplicitMpcExplorer } from "@/components/wiki/explicit-mpc-explorer";
+import { SensorFusionExplorer } from "@/components/wiki/sensor-fusion-explorer";
+import { NonlinearIdentificationExplorer } from "@/components/wiki/nonlinear-identification-explorer";
+import { IndustrialSerialExplorer } from "@/components/wiki/industrial-serial-explorer";
+import { HInfinityExplorer } from '@/components/wiki/h-infinity-explorer';
+import { ParticleFilterExplorer } from "@/components/wiki/particle-filter-explorer";
+import { GpcExplorer } from "@/components/wiki/gpc-explorer";
+import { SubspaceIdentificationExplorer } from "@/components/wiki/subspace-identification-explorer";
+import { RepresentationBasicsExplorer } from '@/components/wiki/representation-basics-explorer';
+import { NetworkFeedbackExplorer } from "@/components/wiki/network-feedback-explorer";
+import { FrequencyIdentificationExplorer } from "@/components/wiki/frequency-identification-explorer";
+import { RealtimeSchedulingExplorer } from "@/components/wiki/realtime-scheduling-explorer";
+import { MpcStabilityExplorer } from "@/components/wiki/mpc-stability-explorer";
+import { RobustPerformanceExplorer } from '@/components/wiki/robust-performance-explorer';
+import { UnscentedKalmanExplorer } from "@/components/wiki/unscented-kalman-explorer";
+import { AttentionBasicsExplorer } from '@/components/wiki/attention-basics-explorer';
+import { ClosedLoopIdentificationExplorer } from "@/components/wiki/closed-loop-identification-explorer";
+import { ConstraintHandlingExplorer } from "@/components/wiki/constraint-handling-explorer";
+import { SequenceModelsExplorer } from '@/components/wiki/sequence-models-explorer';
+import { EmbeddedControlExplorer } from "@/components/wiki/embedded-control-explorer";
+import { ExtendedKalmanExplorer } from "@/components/wiki/extended-kalman-explorer";
+import { RobustStabilityExplorer } from '@/components/wiki/robust-stability-explorer';
+import { AutodiffTrainingExplorer } from '@/components/wiki/autodiff-training-explorer';
+import { RecedingHorizonExplorer } from "@/components/wiki/receding-horizon-explorer";
+import { ControllerDeploymentExplorer } from "@/components/wiki/controller-deployment-explorer";
+import { KalmanNoiseExplorer } from "@/components/wiki/kalman-noise-explorer";
+import { PersistentExcitationExplorer } from "@/components/wiki/persistent-excitation-explorer";
+import { BellmanValuesExplorer } from "@/components/wiki/bellman-values-explorer";
+import { ImitationLearningExplorer } from '@/components/wiki/imitation-learning-explorer';
+import { PredictionModelExplorer } from "@/components/wiki/prediction-model-explorer";
+import { MultimodalObservationExplorer } from "@/components/wiki/multimodal-observation-explorer";
+import { UncertaintyModelExplorer } from '@/components/wiki/uncertainty-model-explorer';
+import { PidTuningExplorer } from "@/components/wiki/pid-tuning-explorer";
+import { NeuralNetworkBasicsExplorer } from '@/components/wiki/neural-network-basics-explorer';
+import { VehicleDynamicsExplorer } from "@/components/wiki/vehicle-dynamics-explorer";
+import { RlsIdentificationExplorer } from "@/components/wiki/rls-identification-explorer";
+import { StatisticalEstimationExplorer } from "@/components/wiki/statistical-estimation-explorer";
+import BuckConverterExplorer from "@/components/wiki/buck-converter-explorer";
+import { DigitalPidExplorer } from "@/components/wiki/digital-pid-explorer";
+import { SafetyStoppingExplorer } from "@/components/wiki/safety-stopping-explorer";
+import { EmbodiedLoopExplorer } from "@/components/wiki/embodied-loop-explorer";
+import { MpcPrincipleExplorer } from "@/components/wiki/mpc-principle-explorer";
+import { RobotSystemExplorer } from "@/components/wiki/robot-system-explorer";
+import { RlProblemExplorer } from "@/components/wiki/rl-problem-explorer";
+import { SupervisedLearningExplorer } from "@/components/wiki/supervised-learning-explorer";
+import { MultiAgentOverviewExplorer } from "@/components/wiki/multi-agent-overview-explorer";
+import { DrivingSystemExplorer } from "@/components/wiki/driving-system-explorer";
+import { ResonanceRobustnessExplorer } from '@/components/wiki/resonance-robustness-explorer';
+import { EstimationFrameworkExplorer } from "@/components/wiki/estimation-framework-explorer";
+import { ControlArchitectureExplorer } from "@/components/wiki/control-architecture-explorer";
+import { LearningGeneralizationExplorer } from "@/components/wiki/learning-generalization-explorer";
 import { EventTriggeredExplorer } from "@/components/wiki/event-triggered-explorer";
 import { DiscreteOptimalExplorer } from "@/components/wiki/discrete-optimal-explorer";
 import { SampledDataExplorer } from "@/components/wiki/sampled-data-explorer";
@@ -97,6 +152,61 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EstimationCaseExplorer,
+  HilRehearsalExplorer,
+  GenerativeBasicsExplorer,
+  ExplicitMpcExplorer,
+  SensorFusionExplorer,
+  NonlinearIdentificationExplorer,
+  IndustrialSerialExplorer,
+  ParticleFilterExplorer,
+  GpcExplorer,
+  SubspaceIdentificationExplorer,
+  RepresentationBasicsExplorer,
+  NetworkFeedbackExplorer,
+  FrequencyIdentificationExplorer,
+  RealtimeSchedulingExplorer,
+  MpcStabilityExplorer,
+  UnscentedKalmanExplorer,
+  AttentionBasicsExplorer,
+  ClosedLoopIdentificationExplorer,
+  ConstraintHandlingExplorer,
+  SequenceModelsExplorer,
+  EmbeddedControlExplorer,
+  ExtendedKalmanExplorer,
+  RobustStabilityExplorer,
+  MixedSensitivityExplorer,
+  HInfinityExplorer,
+  RobustPerformanceExplorer,
+  AutodiffTrainingExplorer,
+  RecedingHorizonExplorer,
+  ControllerDeploymentExplorer,
+  KalmanNoiseExplorer,
+  PersistentExcitationExplorer,
+  BellmanValuesExplorer,
+  ImitationLearningExplorer,
+  PredictionModelExplorer,
+  MultimodalObservationExplorer,
+  UncertaintyModelExplorer,
+  PidTuningExplorer,
+  NeuralNetworkBasicsExplorer,
+  VehicleDynamicsExplorer,
+  RlsIdentificationExplorer,
+  StatisticalEstimationExplorer,
+  BuckConverterExplorer,
+  SafetyStoppingExplorer,
+  EmbodiedLoopExplorer,
+  MpcPrincipleExplorer,
+  RobotSystemExplorer,
+  RlProblemExplorer,
+  SupervisedLearningExplorer,
+  MultiAgentOverviewExplorer,
+  DrivingSystemExplorer,
+  ResonanceRobustnessExplorer,
+  EstimationFrameworkExplorer,
+  ControlArchitectureExplorer,
+  DigitalPidExplorer,
+  LearningGeneralizationExplorer,
   EventTriggeredExplorer,
   DiscreteOptimalExplorer,
   SampledDataExplorer,

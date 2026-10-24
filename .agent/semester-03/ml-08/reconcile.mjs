@@ -1,0 +1,10 @@
+import fs from 'node:fs';import ts from 'typescript';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {extractNotebooks} from '../../../scripts/lib-mdx.mjs';
+const dir='.agent/semester-03/ml-08/',m={};new Function('exports',ts.transpileModule(fs.readFileSync('lib/generative-basics.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(m);
+const cases=[];for(const mean of [0,2])for(const s of [.5,1,2])for(const a of [.1,.5,.9])for(const t of [0,.25,.5,.75,1])for(const n of [1,4,8,16,64])for(const sign of [1,-1])cases.push({m:mean,s,a,t,n,sign});
+fs.writeFileSync(dir+'cases.json',JSON.stringify(cases));execFileSync('python',[dir+'reference.py',dir+'cases.json',dir+'reference.json']);
+const reference=JSON.parse(fs.readFileSync(dir+'reference.json','utf8'));let quantities=0,maxError=0,plotted=0;
+function compare(a,b,path='') {if(typeof b==='number'){assert.equal(typeof a,'number',path);const e=Math.abs(a-b);assert(e<=1e-10,path+': '+a+' != '+b);quantities++;maxError=Math.max(e,maxError);}else if(Array.isArray(b)){assert.equal(a.length,b.length);b.forEach((v,i)=>compare(a[i],v,path+'.'+i));}else for(const k in b)compare(a[k],b[k],path+'.'+k);}
+const results=cases.map((c,i)=>{const result=m.generativeSnapshot(c);compare(result,reference[i],String(i));for(const h of result.flow.history){assert(h.std>=0&&h.std<=4);assert(h.exactStd>=0&&h.exactStd<=4);plotted+=2;}return result;});
+const notebooks=extractNotebooks(fs.readFileSync('content/machine-learning/generative-models.mdx','utf8')).map(n=>({id:n.id,title:n.title,setup:n.setup.value,cells:n.cells.map(c=>c.value)}));fs.writeFileSync(dir+'raw-notebooks.json',JSON.stringify(notebooks,null,2));
+fs.writeFileSync(dir+'ts-default.json',JSON.stringify(m.generativeSnapshot(),null,2));
+fs.writeFileSync(dir+'numeric.json',JSON.stringify({pass:true,cases:cases.length,quantities,maxError,tolerance:1e-10,plottedCoordinates:plotted,allFixedAxes:true,reference:'60-digit Decimal covariance products and homogeneous affine-map composition'},null,2)+'\n');console.log(fs.readFileSync(dir+'numeric.json','utf8'));

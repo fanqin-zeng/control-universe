@@ -1,0 +1,261 @@
+---
+title: "工业通信"
+description: "从PLC读变频器的场景出发，拆解协议层级、Modbus RTU报文、寄存器语义与完整轮询预算，再看CAN和工业以太网的边界。"
+---
+
+# 工业通信
+
+PLC已经接上变频器，状态灯也在闪，屏幕上的转速却不对。换一种字节解释后读数正常了，控制器又开始漏更新：读一次还没结束，下一次采样期限已经到了。
+
+这两个故障都可能发生在“通信成功”之后。[控制系统架构](/implementation/computer-control-architecture)把测量、计算和执行串成闭环，[实时控制](/implementation/realtime-control)要求任务按期完成。现在我们把中间的通信接口拆开：**线路怎么传、报文怎么认、数字怎么解释、多久才能轮到下一次读取？** 本课围绕一次Modbus RTU读取完成这四项检查，不要求先学过串行协议。
+
+## 接通线路之后
+
+工业通信不只是把两个插头接起来。控制程序最终需要的是带有来源、有效性和时间信息的工程量；线路上往来的却是按约定排列的字节。接线正确只解决了其中一部分。
+
+![PLC通过串行链路向设备发送读取请求，设备响应经报文检查与寄存器映射后才更新控制任务的数据；协议和语义分别核查](/diagrams/implementation/industrial-serial-workflow.svg)
+
+本课实验只操作内存中的字节数组和时间预算，不打开串口、不向真实设备写值，也不声称完成设备互操作认证。先把规则算明白，再把同样的字段和时间点带到实机日志中核查。
+
+## 先分清三个层次
+
+| 层次 | 负责回答 | 本课例子 | 单靠这一层仍不知道什么 |
+|---|---|---|---|
+| 电气与物理连接 | 信号怎样沿线传，电平、方向与接线是否匹配 | RS-485收发器、双绞线、终端和参考电位 | 读哪个寄存器、数字是什么单位 |
+| 报文与访问规则 | 谁发起、帧怎样分界、怎样检错 | Modbus RTU请求/响应与CRC | 寄存器里的值是否就是温度 |
+| 应用数据合同 | 地址、类型、比例、单位、有效性如何解释 | 设备手册的寄存器表 | 总线能否满足本控制周期 |
+
+RS-485是电气接口，不等于Modbus；同样，使用以太网接口也不自动获得某种实时协议。串行设备的波特率、数据位、校验和停止位必须一致；A/B命名、参考地、终端及偏置应按双方设备手册逐项核对，不能凭线色或插头外形判断兼容。
+
+下面固定采用8E1：一个起始位、八个数据位、一个偶校验位、一个停止位，共11个位时间组成一个线路字符。二进制有效载荷虽是一字节，发送它却不只占八个位时间。该格式及RTU帧间静默规则见官方[串行指南V1.02 §2.5.1](https://www.modbus.org/file/secure/modbusoverserial.pdf)。
+
+## 一帧请求与响应
+
+**寄存器**是协议提供的固定长度数据单元。FC03表示读取保持寄存器；请求的起始地址是报文里的零基偏移，不能把手册的显示编号直接抄进去。地址如何对应设备功能仍以该型号寄存器表为准。字段与字节顺序依据官方[应用协议V1.1b3 §4.2、§6.3](https://www.modbus.org/file/secure/modbusprotocolspecification.pdf)。
+
+教学设备地址为1，从偏移0开始读两个寄存器，完整RTU请求为：
+
+```text
+01 03 00 00 00 02 C4 0B
+```
+
+| 字段 | 字节 | 含义 |
+|---|---|---|
+| 从站地址 | `01` | 目标设备 |
+| 功能码 | `03` | 读取保持寄存器 |
+| 起始偏移 | `00 00` | 从偏移0开始 |
+| 数量 | `00 02` | 读两个连续寄存器 |
+| CRC | `C4 0B` | 低字节先发的校验字段 |
+
+请求共8字节。为隔离传输与数据解释，我们给这个教学设备规定如下响应，不能把它当成所有设备的固定返回值：
+
+```text
+01 03 04 12 34 FF 9C FF 1C
+```
+
+地址与功能码后面的`04`表示数据部分占4字节，后接两个寄存器，再加CRC，共9字节。寄存器内高字节在前，**CRC字段则低字节在前**；不要用“整帧都是大端”概括不同字段。CRC用于检错，不能证明发送者身份或数据新鲜度。
+
+## 寄存器不等于工程量
+
+假设本课设备手册明确规定：偏移0是无符号状态计数，偏移1是有符号温度，单位为0.1°C。于是`12 34`解出4660；`FF 9C`作为无符号数是65436，按16位补码则是−100，最后按设备比例得到−10°C。
+
+$$
+v_{\mathrm{signed}}=\begin{cases}v_{\mathrm{raw}},&v_{\mathrm{raw}}<32768,\\v_{\mathrm{raw}}-65536,&v_{\mathrm{raw}}\ge32768,\end{cases}
+\qquad \theta=0.1v_{\mathrm{signed}}.
+$$
+
+这些“温度、有符号、比例”的含义来自**本课假定的设备数据表**，不是FC03赋予的。真实设备可能用不同寄存器、比例或状态位。跨寄存器组成更宽数值时，还须查设备规定的字序及类型，不能仅凭一个寄存器的大端顺序推断。解析失败的包不得更新工程量，也不能自动把测量改成零。
+
+<JupyterNotebook
+  title="CRC与工程量解码"
+  setupCode={`import json, struct
+import numpy as np
+import matplotlib.pyplot as plt
+# Table-based reflected CRC; independent oracle uses normal polynomial long division.
+crc_table=[]
+for i in range(256):
+    c=i
+    for _ in range(8):
+        c=(c>>1)^0xA001 if c&1 else c>>1
+    crc_table.append(c)
+def crc(data):
+    c=0xffff
+    for b in data:
+        c=(c>>8)^crc_table[(c^b)&255]
+    return c
+def frame(data):
+    return list(data)+list(crc(data).to_bytes(2,"little"))
+def response(n=2):
+    words=[0x1234,0xff9c]+list(range(2,n))
+    payload=b"".join(struct.pack(">H",w) for w in words[:n])
+    return frame([1,3,2*n]+list(payload))
+def decode(data,n=2):
+    def fail(reason):
+        return dict(accepted=False,reason=reason,registers=[],temperature=None)
+    if any(not isinstance(b,int) or not 0<=b<=255 for b in data):return fail("byte")
+    if len(data)<5:return fail("length")
+    if crc(data)!=0:return fail("crc")
+    if data[0]!=1:return fail("unit")
+    if data[1]==0x83:return fail("exception-"+str(data[2]) if len(data)==5 else "length")
+    if data[1]!=3:return fail("function")
+    if data[2]!=2*n or len(data)!=5+2*n:return fail("length")
+    values=list(struct.unpack(">"+"H"*n,bytes(data[3:-2])))
+    temp=None if n<2 else struct.unpack(">h",bytes(data[5:7]))[0]/10
+    return dict(accepted=True,reason="accepted",registers=values,temperature=temp)
+`}
+  cells={[
+    { code: `request=frame([1,3,0,0,0,2]);valid=response()
+values=decode(valid)
+protocol=dict(exampleCrc=crc([2,7]),request=request,response=valid,requestCrc=crc(request[:-2]),responseCrc=crc(valid[:-2]),requestLength=len(request),responseLength=len(valid),rawSigned=struct.unpack(">h",bytes(valid[5:7]))[0])
+print(json.dumps(dict(protocol=protocol,decoded=values)))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+ax.bar(range(len(valid)),valid)
+ax.set(xticks=range(len(valid)),xticklabels=[f"{b:02X}" for b in valid],ylim=(0,270),xlabel="Response bytes in wire order",ylabel="Byte value")
+ax.grid(axis="y");plt.show()` }
+  ]}
+/>
+
+## 把轮询放进时间预算
+
+设波特率为 $B$ bit/s，每字符用11个位时间，读 $r$ 个寄存器。FC03请求长度固定为8字节，正常响应长度为 $5+2r$ 字节。字符时间以毫秒计：
+
+$$
+t_c=\frac{11000}{B},\qquad t_q=8t_c,\qquad t_r=(5+2r)t_c.
+$$
+
+RTU要靠静默区分帧。本实验在 $B\le19200$ 时取 $g=3.5t_c$，更高速率时采用串行指南建议的固定 $g=1.75\,\mathrm{ms}$；这是一条明确的实现策略，不能在提高波特率时偷偷改成任意短静默。帧内间隔异常也需接收状态机检查，本课预算器没有实现逐字符接收状态机。
+
+我们为每个事务顺序预留：请求发送→静默 $g$ →**额外设备处理预留** $p$ →响应发送→静默 $g$。默认 $p=1\,\mathrm{ms}$。这里刻意把额外处理与静默串联，作为声明的时间分配；真实设备的处理与静默可能重叠，必须测量其响应定义与上界后才能替换预算，不能把这个公式误写成协议强制的实测响应时间。
+
+$$
+S=t_q+g+p+t_r+g,\qquad C=mS,\qquad M=P-C.
+$$
+
+$m$ 是逐个轮询的相同从站数量，$P$ 是整轮周期，$C$ 为整轮预算，$M$ 为剩余时间。总线在本轮起点已空闲；末尾静默归本事务，下一轮不再重复加一份。单主半双工，默认无错误、重试、排队、软件唤醒或方向切换开销，后几项必须在实际系统中另行留预算。
+
+默认 $B=19200,r=2,m=1,P=20\,\mathrm{ms}$ 时，字符为0.572917 ms，静默为2.005208 ms；请求4.583333 ms、响应5.156250 ms，有效报文占线合计9.739583 ms。把两个静默及额外处理都计入，事务和整轮预算均为14.750000 ms，余量5.250000 ms，占周期比例0.737500。这个比例含静默和预留，**不是纯粹的线路发送利用率**。
+
+<JupyterNotebook
+  title="完整轮询预算"
+  setupCode={`import json, struct
+import numpy as np
+import matplotlib.pyplot as plt
+def budget(baud=19200,registers=2,stations=1,period=20):
+    char=11000/baud
+    gap=3.5*char if baud<=19200 else 1.75
+    segments=[8*char,gap,1.,(5+2*registers)*char,gap]
+    slot=sum(segments); cycle=stations*slot
+    return dict(baud=baud,registers=registers,stations=stations,period=period,charMs=char,gapMs=gap,requestBytes=8,responseBytes=5+2*registers,segments=segments,slotMs=slot,cycleMs=cycle,marginMs=period-cycle,ratio=cycle/period,fits=cycle<=period)
+`}
+  cells={[
+    { code: `default=budget()
+all_cases=[budget(b,n,m,p) for b in [9600,19200,38400,115200] for n in [1,2,8,16] for m in [1,3,4] for p in [20,50,100]]+[budget(b) for b in [19199,19201]]
+table=[budget(),budget(9600),budget(19200,2,3),budget(115200,2,3),budget(115200,2,4),budget(9600,2,1,50),budget(19200,2,1,50),budget(115200,16,4)]
+basic=dict(charBits=1+8+1+1,wireMs=default["segments"][0]+default["segments"][3],responsePayload=2*2)
+print(json.dumps(dict(default=default,table=table,basic=basic)))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+for m in [1,3,4]:
+    ax.plot([9600,19200,38400,115200],[budget(b,2,m)["cycleMs"] for b in [9600,19200,38400,115200]],marker="o",label=f"stations={m}")
+ax.axhline(20,color="red",linestyle="--",label="period=20 ms")
+ax.set(xlabel="bit/s",ylabel="Round budget (ms)");ax.grid();ax.legend();plt.show()` }
+  ]}
+/>
+
+## 交互实验与失败边界
+
+先恢复默认，再尝试只改变一个条件：降波特率、增加从站数、扩大每次读取量，或者放宽周期。报文计算只负责本教学子集；CRC翻转模拟损坏，不会操作设备。
+
+<IndustrialSerialExplorer />
+
+在默认两寄存器、单站、20 ms周期下，9600 bit/s需要28.500000 ms，预算已经超期。115200 bit/s虽然单事务缩到6.123264 ms，四站仍需24.493056 ms，同样放不进该周期；三站则为18.369792 ms。这里“可容纳”只表示所列预算的算术结果，实际还须验证没有漏项及预留足够。
+
+若周期改为50 ms，9600与19200的单站预算都能容纳，这时两种速率在“是否装得进周期”这个判据上持平。**以上不是Modbus、CAN、EtherCAT之间的性能排名**，更没有证明提高波特率对任意布线都可靠；它只是同一串行模型下的资源预算。错误重试、超时等待与串口驱动抖动没有包含在这张图里。
+
+下面构造完整CRC正确但语义不匹配的包，以及被破坏的包。接收器先查完整性与CRC，再查设备、功能、长度和异常响应；一项失败就拒绝更新。RTU本身没有本课额外实现的事务序号，真实驱动还必须按当前未完成请求配对，处理迟到旧响应，不能仅靠这些字段判断新鲜度。
+
+<JupyterNotebook
+  title="拒收错误响应"
+  setupCode={`import json, struct
+import numpy as np
+import matplotlib.pyplot as plt
+# Table-based reflected CRC; independent oracle uses normal polynomial long division.
+crc_table=[]
+for i in range(256):
+    c=i
+    for _ in range(8):
+        c=(c>>1)^0xA001 if c&1 else c>>1
+    crc_table.append(c)
+def crc(data):
+    c=0xffff
+    for b in data:
+        c=(c>>8)^crc_table[(c^b)&255]
+    return c
+def frame(data):
+    return list(data)+list(crc(data).to_bytes(2,"little"))
+def response(n=2):
+    words=[0x1234,0xff9c]+list(range(2,n))
+    payload=b"".join(struct.pack(">H",w) for w in words[:n])
+    return frame([1,3,2*n]+list(payload))
+def decode(data,n=2):
+    def fail(reason):
+        return dict(accepted=False,reason=reason,registers=[],temperature=None)
+    if any(not isinstance(b,int) or not 0<=b<=255 for b in data):return fail("byte")
+    if len(data)<5:return fail("length")
+    if crc(data)!=0:return fail("crc")
+    if data[0]!=1:return fail("unit")
+    if data[1]==0x83:return fail("exception-"+str(data[2]) if len(data)==5 else "length")
+    if data[1]!=3:return fail("function")
+    if data[2]!=2*n or len(data)!=5+2*n:return fail("length")
+    values=list(struct.unpack(">"+"H"*n,bytes(data[3:-2])))
+    temp=None if n<2 else struct.unpack(">h",bytes(data[5:7]))[0]/10
+    return dict(accepted=True,reason="accepted",registers=values,temperature=temp)
+`}
+  cells={[
+    { code: `valid=response();bad=valid.copy();bad[3]^=1
+fault_inputs=[("valid",valid),("crc",bad),("short",valid[:4]),("unit",frame([2,3,4,18,52,255,156])),("function",frame([1,4,4,18,52,255,156])),("count",frame([1,3,2,18,52])),("exception",frame([1,0x83,2]))]
+fault_results=[dict(name=name,bytes=data,**decode(data)) for name,data in fault_inputs]
+print(json.dumps(fault_results))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+ax.bar([r["name"] for r in fault_results],[int(r["accepted"]) for r in fault_results])
+ax.set(ylim=(0,1.2),ylabel="Accepted (1) / rejected (0)")
+plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+## CAN与工业以太网
+
+| 机制 | 通信如何组织 | 工程上还要证明什么 |
+|---|---|---|
+| 本课Modbus RTU轮询 | 一个发起端按请求/响应访问设备 | 全轮时序、超时重试、设备响应上界和寄存器合同 |
+| 经典CAN | 多节点竞争，逐位仲裁分配总线访问权 | 标识符优先级、各报文到达率、不可抢占阻塞及错误重传预算 |
+| EtherCAT等确定的工业以太网方案 | 需要具体协议、设备和时间配置；不能只写“以太网” | 周期调度、同步误差、拓扑、设备处理及故障恢复 |
+
+[CiA的经典CAN说明](https://can-cia.org/can-knowledge/can-cc)解释了显性位覆盖隐性位的逐位仲裁。同一帧格式的数据帧在同一仲裁机会竞争时，较小标识符取得更高优先级；这不意味着它能中断已经发送中的帧，也不意味着低优先级报文天然具有有限最坏等待时间。标识符用于消息内容和优先级，不能简单当成Modbus式设备地址；应用语义还需上层约定。
+
+以EtherCAT为具体例子，[Beckhoff ESC技术资料V2.5](https://download.beckhoff.com/download/Document/io/ethercat-development-products/ethercat_esc_datasheet_sec1_technology_v2.5.pdf)描述了帧经过从站时的处理与分布式时钟。同步机制可用于协调采样和动作，但同步精度与端到端控制时延是不同指标。设备、主站调度和拓扑未选定前，本课不为它填一个“保证周期”。普通TCP请求按顺序到达也不能单独构成实时截止期保证。
+
+## 联调记录与故障路径
+
+先把“帧合法”与“数据可用于本次控制”分别记录：地址/功能、预期数量、原始字节、CRC结果、设备状态、采样或接收时间、有效期限和实际解码值。接收时间并不自动等于设备采样时间；没有设备时戳时，应如实记录时间语义。
+
+设备寄存器表还应固定型号/固件、偏移基准、读写权限、类型、比例、单位、跨寄存器字序、无效值及更新一致性。测量可能跨多个寄存器，需确认设备是否提供一致快照；写命令的幂等性与超时后的实际状态也需要单独约定。本课只读，不以重试写命令演示代替这些判断。
+
+联调从已知固定值开始，逐层定位：无响应查供电、接线与串行参数；CRC异常查帧边界和链路；合法异常响应查功能/地址；值错查数据表；值对但超期查完整时序。终端、偏置、参考地与隔离应按设备安装资料处理。坏包保留最后有效值时还要增加“数据陈旧”标志；清零、继续保持、降级或停机由对象及安全要求决定。
+
+本课依据的资料版本是Modbus串行V1.02、应用V1.1b3及上述CiA/Beckhoff原始资料，检索日期2026-10-24。代码是教学实现，不是完整协议栈、设备驱动或认证工具。下一课的半实物仿真再把待测实现接入仿真对象，不在这里提前宣称硬件验证完成。
+
+## 习题
+
+1. 为什么8E1的一个字符按11个位时间计？本例请求与响应各多少字节？
+2. 默认轮询能否放进20 ms？改为9600 bit/s怎样？高速四站是否必然能放进？
+3. 设备表声明第二寄存器是有符号温度、比例0.1°C，`FF 9C`应如何解释？
+4. CRC正确就能立即更新控制数据吗？CRC错误是否应把温度置零？
+5. 用“以太网速率高”或“CAN标识符优先级高”能否直接给出最坏控制时延？列出缺少的合同。
+
+## 答案
+
+1. 起始、数据、校验、停止位相加为11；本例请求8字节、响应9字节，其中数据4字节。用预算Notebook的`basic`与解码Notebook的`protocol`输出核对。
+2. 默认14.750000 ms，余量5.250000 ms；9600时28.500000 ms，已超期。115200四站24.493056 ms仍超期。预算Notebook与交互表均可复核，不能拿此数代替硬件保证。
+3. 无符号65436，经16位补码为−100，再乘0.1得到−10°C。字节序和比例必须分别依据协议与设备表；解码Notebook给出原始寄存器与转换结果。
+4. 还需查设备/功能、长度、异常状态、当前请求配对、设备数据有效性及新鲜度。CRC错误应拒收并保留错误状态，不凭空制造零温度；保留旧值也必须标记陈旧。
+5. 不能。前者缺具体实时协议、拓扑、主站和设备调度/同步/恢复上界；后者还缺各报文负载、已开始帧的阻塞、错误重传和总线故障模型。把接口兼容、报文正确、数据语义和时序预算分开验收。

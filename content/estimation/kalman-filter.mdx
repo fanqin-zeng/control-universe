@@ -1,577 +1,320 @@
 ---
 title: 卡尔曼滤波
-description: 推导卡尔曼滤波器，掌握滤波 Riccati 方程的求解，理解卡尔曼滤波与 LQR 的对偶性，以及 LQG 控制的设计方法。
+description: 从逐次测量融合推导卡尔曼滤波，区分离散与连续噪声，核对稳态Riccati、LQR对偶与LQG的适用条件。
 ---
 
 # 卡尔曼滤波
 
-上一章，我们设计了 Luenberger 观测器来估计系统状态。但 Luenberger 观测器有一个根本假设：**没有噪声**。实际中：
+温度计每秒跳动一次：上一拍估计为22.4°C，新读数却是23°C。直接抄新读数会跟着噪声跳，始终保留旧值又可能错过真正升温。[统计估计](/estimation/least-squares-ml)解决了同一时刻怎样融合读数，本课继续问：**下一拍到来之前，不确定性怎样增长；读数到来之后，又该修正多少？**
 
-- 传感器测量有噪声（温度传感器有热噪声，GPS 有多径误差）
-- 系统模型不精确（参数偏差、未建模动态）
-- 外部环境有扰动（风、路面不平）
-
-Luenberger 观测器的增益 $L$ 靠经验选取——极点放得越快，估计收敛越快，但也越容易放大测量噪声。有没有一种方法，能**自动**在"快速收敛"和"抑制噪声"之间找到最优平衡？
-
-答案是**卡尔曼滤波**（Kalman Filter）——它在噪声环境下给出**最小方差**意义下的最优状态估计。
-
-> 📖 本章需要前置知识：[状态观测器设计](/modern/state-observer)（Luenberger 观测器、分离性原理）和 [LQR 控制器](/modern/lqr-controller)（Riccati 方程）。
+本课先把离散预测与校正连起来，再推导原稿中的连续Kalman–Bucy滤波。阅读需要[可控性与可观性](/modern/controllability-observability)与[随机过程](/math/stochastic-processes)；后半部分局部回顾[LQR](/modern/lqr-controller)与[状态观测器](/modern/state-observer)。
 
 ## 为什么需要卡尔曼滤波
 
-### Luenberger 观测器的局限
+Luenberger观测器在含噪声系统里也能运行；问题是极点配置本身没有指定均方误差目标。其误差会同时受到过程噪声和测量噪声驱动，稳定并不意味着误差逐条路径趋于零。卡尔曼滤波增加的是**基于噪声统计的增益选择规则**，仍需模型、初始不确定性与噪声参数，不能免去辨识和校准。
 
-回顾 Luenberger 全阶观测器：
+![一次预测与一次校正，后验作为下一拍的起点](/diagrams/estimation/kalman-cycle.svg)
 
-$$
-\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + L(\boldsymbol{y} - C\hat{\boldsymbol{x}})
-$$
-
-估计误差 $\tilde{\boldsymbol{x}} = \boldsymbol{x} - \hat{\boldsymbol{x}}$ 满足：
-
-$$
-\dot{\tilde{\boldsymbol{x}}} = (A - LC)\tilde{\boldsymbol{x}}
-$$
-
-这个设计假设：
-1. 系统模型 $A, B, C$ **完全已知**
-2. **没有**过程噪声和测量噪声
-3. 增益 $L$ 的选择是**任意的**（只要 $A - LC$ 稳定）
-
-在实际系统中，这些假设都不成立。如果存在噪声，估计误差不会收敛到零，而是在某个范围内波动。$L$ 的选择变成了权衡：
-
-- $L$ 大 → 估计收敛快，但测量噪声被放大
-- $L$ 小 → 估计平滑，但对状态变化的响应慢
-
-**卡尔曼滤波**解决了这三个问题：它考虑噪声，自动给出最优增益，不需要手动调参。
-
-### 卡尔曼滤波的核心思想
-
-卡尔曼滤波的核心思想是**预测-校正**：
-
-1. **预测**：用系统模型预测下一步的状态（"根据物理定律，应该怎样"）
-2. **校正**：用测量值修正预测（"但传感器说不是这样，调整一下"）
-
-关键问题：**校正多少？** 这取决于我们对模型和测量的**信任程度**：
-
-- 模型精确、测量噪声大 → 多信模型，少信测量 → 小幅校正
-- 模型不精确、测量精确 → 少信模型，多信测量 → 大幅校正
-
-卡尔曼滤波用数学精确地量化了这个"信任程度"。
+上一课的标量融合可以直接复用。若本拍预测温度20°C、预测误差方差4°C²，读数23°C、测量噪声方差1°C²，则创新为3°C，增益4/5，更新到22.4°C，后验方差0.8°C²。**创新是读数减预测读数；增益把这份差异分配给状态修正。** 下一拍必须先用模型传播这个0.8，而不是每次重新填4。
 
 ## 随机系统模型
 
-### 带噪声的状态空间模型
+先写计算机使用的离散模型：
 
 $$
-\dot{\boldsymbol{x}} = A\boldsymbol{x} + B\boldsymbol{u} + \boldsymbol{w}
-$$
-$$
-\boldsymbol{y} = C\boldsymbol{x} + \boldsymbol{v}
+x_{k+1}=A_d x_k+B_du_k+w_k,\qquad y_k=Cx_k+v_k.
 $$
 
-其中：
-- $\boldsymbol{w}(t)$：**过程噪声**（process noise），建模误差和外部扰动的综合效果
-- $\boldsymbol{v}(t)$：**测量噪声**（measurement noise），传感器误差
+假设初始误差、各拍过程噪声与测量噪声彼此不相关，噪声零均值，$E[w_kw_k^T]=Q_d\succeq0$、$E[v_kv_k^T]=R_d\succ0$；已知输入$u_k$进入预测。若初始状态和噪声联合高斯，滤波给出条件均值，即所有基于已有测量的估计中均方最优；只保留这些二阶条件时，结论限于**线性最小均方估计**，不能泛称所有非线性估计中最优。
 
-### 噪声的统计假设
-
-卡尔曼滤波假设噪声是**高斯白噪声**：
+连续时间模型用随机微分与观测增量更准确：
 
 $$
-E[\boldsymbol{w}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] = Q\,\delta(t-\tau)
+dx=(Ax+Bu)dt+GQ_c^{1/2}dW,\qquad dY=Cx\,dt+R_c^{1/2}dV.
 $$
 
-$$
-E[\boldsymbol{v}(t)] = \boldsymbol{0}, \quad E[\boldsymbol{v}(t)\boldsymbol{v}(\tau)^T] = R\,\delta(t-\tau)
-$$
+$W,V$为独立标准Wiener过程，定义$Q_{proc}=GQ_cG^T$、$R_{meas}=R_c$；后文连续方程简记为$Q,R$。它们是**过程与测量噪声强度**，不同于LQR代价权重$Q_{lqr},R_{lqr}$。工程上常写$\dot x=Ax+Bu+w,y=Cx+v$，其中$E[w(t)w(\tau)^T]=Q\delta(t-\tau)$；白噪声没有有限逐点方差，不能写成$E[w(t)^2]=q$来解释强度。
 
-$$
-E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] = \boldsymbol{0} \quad \text{（过程噪声和测量噪声不相关）}
-$$
-
-其中：
-- $Q \geq 0$：过程噪声协方差（"模型有多不精确"）
-- $R > 0$：测量噪声协方差（"传感器有多不精确"）
-
-> [!info] 符号说明
-> 这里的 $Q$ 和 $R$ 是**噪声协方差矩阵**，不是 LQR 中的**权重矩阵**。虽然符号相同，但含义不同：
-> - LQR 中：$Q$ 惩罚状态偏差，$R$ 惩罚控制能量——是**设计参数**
-> - 卡尔曼中：$Q$ 描述过程噪声强度，$R$ 描述测量噪声强度——是**系统属性**
->
-> 有趣的是，两者的数学结构完全对偶。
-
-### $Q$ 和 $R$ 的物理意义
-
-**$Q$ 大**：模型不精确（参数偏差大、外部扰动强）→ 不能太信模型
-
-**$R$ 大**：传感器不精确（噪声大）→ 不能太信测量
-
-**$Q/R$ 的比值**决定了卡尔曼滤波的"性格"：
-- $Q/R$ 大 → 更信测量 → 增益大 → 响应快但噪声敏感
-- $Q/R$ 小 → 更信模型 → 增益小 → 平滑但响应慢
+离散$Q_d$单位为状态平方，连续$Q$为状态平方/时间；离散位置测量$R_d$单位为位置平方，连续观测增量的$R$为位置平方×时间。给出采样率和传感器带宽之前，不能把规格书上的逐次读数方差直接当连续$R$。
 
 ## 卡尔曼滤波的结构
 
-### 估计器形式
+先验$\hat x^-_k=E[x_k\mid y_0,\ldots,y_{k-1}]$在本拍读数之前，后验$\hat x^+_k$包含$y_k$。误差协方差分别记为$P^-_k,P^+_k$；在无偏条件下$P=E[(x-\hat x)(x-\hat x)^T]$，对角元是方差，非对角元是协方差而非相关系数。迹是各状态方差之和，状态单位不同时还需谨慎解释。
 
-卡尔曼滤波的形式与 Luenberger 观测器**完全相同**：
-
-$$
-\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})
-$$
-
-区别在于：$K_f$（卡尔曼增益）不是任意选的，而是**最优**的——最小化估计误差的方差。
-
-### 估计误差 dynamics
-
-估计误差 $\tilde{\boldsymbol{x}} = \boldsymbol{x} - \hat{\boldsymbol{x}}$：
+**预测**由上一拍后验开始：
 
 $$
-\dot{\tilde{\boldsymbol{x}}} = (A - K_f C)\tilde{\boldsymbol{x}} + \boldsymbol{w} - K_f \boldsymbol{v}
+\hat x^-_k=A_d\hat x^+_{k-1}+B_du_{k-1},\qquad P^-_k=A_dP^+_{k-1}A_d^T+Q_d.
 $$
 
-与 Luenberger 观测器相比，多了噪声项 $\boldsymbol{w} - K_f \boldsymbol{v}$。估计误差不会收敛到零，而是随机波动。
-
-### 估计误差协方差
-
-定义**估计误差协方差矩阵**：
+**校正**只使用此时已经到达的测量：
 
 $$
-P(t) = E[\tilde{\boldsymbol{x}}(t)\tilde{\boldsymbol{x}}(t)^T]
+\nu_k=y_k-C\hat x^-_k,\quad S_k=CP^-_kC^T+R_d,\quad K_k=P^-_kC^TS_k^{-1},\quad\hat x^+_k=\hat x^-_k+K_k\nu_k.
 $$
 
-$P$ 的物理意义：
-- $P_{ii}$：第 $i$ 个状态估计误差的方差（"对 $x_i$ 的估计有多不确定"）
-- $P_{ij}$：第 $i$ 和第 $j$ 个状态估计误差的相关性
-- $\text{tr}(P) = \sum P_{ii}$：总估计误差方差
+推荐Joseph形式更新协方差：
 
-**卡尔曼滤波的目标**：选择 $K_f$ 使 $\text{tr}(P)$ 最小。
+$$
+P^+_k=(I-K_kC)P^-_k(I-K_kC)^T+K_kR_dK_k^T.
+$$
+
+精确算术下它等于$(I-K_kC)P^-_k$；Joseph形式更清楚地保留半正定结构，浮点实现仍应核对对称性与舍入误差。求解$S_k$的线性方程代替显式求逆，不能遗漏$R_d$。
 
 ## 卡尔曼增益的推导
 
-### 协方差的微分方程
-
-对 $P = E[\tilde{\boldsymbol{x}}\tilde{\boldsymbol{x}}^T]$ 求时间导数，代入误差 dynamics：
+离散校正后误差为$e^+=(I-KC)e^--Kv$。由于$e^-,v$不相关，展开得到上面的Joseph式；配方可写成：
 
 $$
-\dot{P} = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T
+P^+(K)=P^+(K_*)+(K-K_*)S(K-K_*)^T,\qquad K_*=P^-C^TS^{-1}.
 $$
 
-展开：
+$S\succ0$使末项半正定，因此这是矩阵意义下的最小误差协方差，也最小化迹。标量算例令$P^-=4,R_d=1,C=1$即可得到$K=0.8,P^+=0.8$。
+
+连续滤波形式为：
 
 $$
-\dot{P} = AP + PA^T - K_f CP - PC^T K_f^T + Q + K_f R K_f^T
+d\hat x=(A\hat x+Bu)dt+K_f(dY-C\hat x\,dt).
 $$
 
-### 最优增益
-
-最小化 $\text{tr}(P)$，对 $K_f$ 求导并令为零：
+其误差增量是$de=(A-K_fC)e\,dt+GQ_c^{1/2}dW-K_fR^{1/2}dV$。对二阶矩使用Itô乘积规则得到：
 
 $$
-\frac{\partial\,\text{tr}(\dot{P})}{\partial K_f} = -2PC^T + 2K_f R = 0
+\dot P=(A-K_fC)P+P(A-K_fC)^T+Q+K_fRK_f^T.
 $$
 
-$$
-\boxed{K_f = PC^T R^{-1}}
-$$
-
-这就是**最优卡尔曼增益**。
-
-### 滤波 Riccati 方程
-
-将 $K_f = PC^T R^{-1}$ 代入 $\dot{P}$ 的方程：
+固定当前$P$并配方，关于增益的部分为$(K_f-PC^TR^{-1})R(K_f-PC^TR^{-1})^T-PC^TR^{-1}CP$，因此：
 
 $$
-\dot{P} = AP + PA^T - PC^T R^{-1} CP + Q
+K_f=PC^TR^{-1},\qquad\dot P=AP+PA^T-PC^TR^{-1}CP+Q.
 $$
 
-这就是**微分 Riccati 方程**（滤波形式）。
-
-> [!tip] 对比 LQR 的 Riccati 方程
-> | | LQR（控制） | 卡尔曼滤波（估计） |
-> |---|---|---|
-> | DRE | $-\dot{P} = A^T P + PA - PBR^{-1}B^T P + Q$ | $\dot{P} = AP + PA^T - PC^T R^{-1} CP + Q$ |
-> | 增益 | $K = R^{-1}B^T P$ | $K_f = PC^T R^{-1}$ |
-> | 替换规则 | — | $A \to A^T$, $B \to C^T$, $Q_{\text{lqr}} \to R_{\text{kf}}$, $R_{\text{lqr}} \to Q_{\text{kf}}$ |
->
-> 这种对偶关系不是巧合——它反映了**控制与估计的深层对称性**。
+这是连续滤波Riccati微分方程。这里没有离散公式中的$CP^-C^T+R_d$分母；两者对应不同测量模型，不能直接互换。局部配方解释增益选择，完整最优性还依赖前述线性/高斯与正交投影条件。
 
 ## 稳态卡尔曼滤波
 
-### 代数 Riccati 方程
-
-当 $t \to \infty$，$P(t)$ 趋向稳态值 $P$（假设 $(A, C)$ 可观，$(A, Q^{1/2})$ 可检测）。令 $\dot{P} = 0$：
+连续时不变情形，一个常用充分条件是$(A,C)$可检测、$(A,Q^{1/2})$可稳定、$R\succ0$。在这些条件下得到唯一半正定稳定化解，且对$P(0)\succeq0$的Riccati流趋向该解：
 
 $$
-\boxed{AP + PA^T - PC^T R^{-1} CP + Q = 0}
+AP+PA^T-PC^TR^{-1}CP+Q=0,\qquad A-K_fC\text{ 为Hurwitz矩阵}.
 $$
 
-这就是**滤波代数 Riccati 方程**（ARE）。
-
-稳态卡尔曼增益：
-
-$$
-\boxed{K_f = PC^T R^{-1}}
-$$
-
-闭环（误差 dynamics）矩阵：$A - K_f C$，其特征值全部在左半平面。
+条件不满足不等于任何有限时刻都不能滤波；要区分有限时域递推、代数解存在、稳定化解以及稳态极限。只找到半正定ARE解不够，还须查误差极点。
 
 ### 例1：标量卡尔曼滤波
 
-系统 $\dot{x} = ax + bu + w$，$y = cx + v$，$E[w^2] = q$，$E[v^2] = r$。
-
-ARE（$p$ 是标量）：
+对$c\ne0,q>0,r>0$，连续ARE为$2ap-c^2p^2/r+q=0$，稳定化解与增益为：
 
 $$
-2ap - \frac{c^2}{r}p^2 + q = 0
+p=\frac{r}{c^2}\left(a+\sqrt{a^2+c^2q/r}\right),\qquad k_f=\frac{pc}{r},\qquad a-k_fc=-\sqrt{a^2+c^2q/r}.
 $$
 
-$$
-\frac{c^2}{r}p^2 - 2ap - q = 0
-$$
-
-$$
-p = \frac{r}{c^2}\left(a + \sqrt{a^2 + \frac{c^2 q}{r}}\right)
-$$
-
-取正根（保证 $p > 0$）。
-
-最优增益：$k_f = \frac{pc}{r} = \frac{1}{c}\left(a + \sqrt{a^2 + \frac{c^2 q}{r}}\right)$
-
-误差 dynamics 极点：$a - k_f c = -\sqrt{a^2 + c^2 q/r} < 0$
-
-**估计误差总是收敛的！**
-
-> [!info] 观察
-> - $q/r$ 越大（模型不精确 vs 测量精确）→ $k_f$ 越大 → 更信测量 → 估计收敛更快
-> - $q/r \to 0$（模型很精确）→ $k_f \to 2a/c$（最小增益）
-> - $q/r \to \infty$（测量很精确）→ $k_f \to \infty$（完全信任测量）
+固定$a,c,r$时增大$q$会增大$|k_f|$；这个标量结论不能当作任意矩阵增益逐元素的单调规律。$q\to0$时，$k_f\to(a+|a|)/c$：$a<0$时趋零，$a>0$时趋$2a/c$。若$q=0,a=0$，极点可到零，不能继续声称严格收敛。
 
 ### 例2：双积分器卡尔曼滤波
 
-系统 $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$（只测量位置）。
-
-$Q = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$，$R = 1$。
-
-ARE：$AP + PA^T - PC^T CP + Q = 0$
-
-设 $P = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}$，展开：
-
-$AP = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}\begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix} = \begin{bmatrix} p_{12} & p_{22} \\ 0 & 0 \end{bmatrix}$
-
-$PA^T = \begin{bmatrix} p_{12} & 0 \\ p_{22} & 0 \end{bmatrix}$
-
-$PC^T CP = \begin{bmatrix} p_{11} \\ p_{12} \end{bmatrix}\begin{bmatrix} p_{11} & p_{12} \end{bmatrix} = \begin{bmatrix} p_{11}^2 & p_{11}p_{12} \\ p_{11}p_{12} & p_{12}^2 \end{bmatrix}$
-
-ARE 各元素：
-
-$(1,1)$：$2p_{12} - p_{11}^2 + 1 = 0$
-
-$(1,2)$：$p_{22} - p_{11}p_{12} = 0 \implies p_{22} = p_{11}p_{12}$
-
-$(2,2)$：$-p_{12}^2 + 1 = 0 \implies p_{12} = 1$（取正）
-
-代入 $(1,1)$：$2 - p_{11}^2 + 1 = 0 \implies p_{11} = \sqrt{3}$
-
-$p_{22} = \sqrt{3} \times 1 = \sqrt{3}$
+沿用位置/速度模型，连续过程噪声分别进入两状态，取$Q=I,R=1$：
 
 $$
-P = \begin{bmatrix} \sqrt{3} & 1 \\ 1 & \sqrt{3} \end{bmatrix}
+A=\begin{bmatrix}0&1\\0&0\end{bmatrix},\quad C=\begin{bmatrix}1&0\end{bmatrix},\quad P=\begin{bmatrix}\sqrt3&1\\1&\sqrt3\end{bmatrix},\quad K_f=\begin{bmatrix}\sqrt3\\1\end{bmatrix}.
 $$
 
-$$
-K_f = PC^T R^{-1} = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}
-$$
-
-误差 dynamics 极点：$A - K_f C = \begin{bmatrix} -\sqrt{3} & 1 \\ -1 & 0 \end{bmatrix}$
-
-特征多项式：$s^2 + \sqrt{3}s + 1 = 0$，$s = \frac{-\sqrt{3} \pm j}{2}$
-
-$\zeta = \sqrt{3}/2 \approx 0.866$，$\omega_n = 1$。
-
-> [!info] 与 LQR 的惊人对称
-> 回忆 LQR 例2（双积分器，$Q = I, R = 1$）：
-> - LQR 增益 $K = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$，闭环极点 $\frac{-\sqrt{3} \pm j}{2}$
-> - 卡尔曼增益 $K_f = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}$，误差极点 $\frac{-\sqrt{3} \pm j}{2}$
->
-> **极点完全相同！** 这不是巧合——因为双积分器的 $(A, B)$ 和 $(A, C)$ 在 $Q = I, R = 1$ 时互为对偶。
+把$P$代入ARE，各独立元素依次给出$2p_{12}-p_{11}^2+1=0$、$p_{22}-p_{11}p_{12}=0$、$1-p_{12}^2=0$。取稳定化分支得到上式。误差特征多项式$s^2+\sqrt3s+1$，极点$(-\sqrt3\pm j)/2$，阻尼比$\sqrt3/2$、自然频率1rad/s。
 
 <JupyterNotebook
-  title=" 动手实验：卡尔曼滤波求解与验证"
-  setupCode={`import matplotlib
+  title="连续Riccati与习题复算"
+  setupCode={`import numpy as np
+import matplotlib
 matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
-from scipy.linalg import solve_continuous_are
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov
+np.set_printoptions(precision=9, suppress=True)`}
   cells={[
-    { code: `# ===== 卡尔曼滤波求解与验证（双积分器）=====
-A = np.array([[0, 1], [0, 0]])
-C = np.array([[1, 0]])
-Q = np.eye(2)
-R = np.array([[1]])
-
-# 利用对偶：滤波 ARE → 对偶为 LQR ARE
-P = solve_continuous_are(A.T, C.T, Q, R)
-print(f"P = \\n{P}")
-
-Kf = P @ C.T @ np.linalg.inv(R)
-print(f"\\nKf = {Kf.flatten()}")
-print(f"解析值: [{np.sqrt(3):.4f}, 1.0000]")
-
-A_cl = A - Kf @ C
-eigvals = np.linalg.eigvals(A_cl)
-print(f"\\n误差极点: {eigvals}")
-print(f"阻尼比 ζ = {-eigvals[0].real / abs(eigvals[0]):.4f}")
-print(f"自然频率 ωn = {abs(eigvals[0]):.4f}")` },
+    { code: `# 双积分器、标量、LQG主例与习题1/6
+A = np.array([[0.,1.],[0.,0.]])
+B = np.array([[0.],[1.]])
+C = np.array([[1.,0.]])
+Q = np.eye(2); R = np.eye(1)
+P = solve_continuous_are(A.T,C.T,Q,R)
+Kf = np.linalg.solve(R,C@P).T
+residual = A@P+P@A.T-P@C.T@np.linalg.solve(R,C@P)+Q
+print('double_P_Kf_poles', P, Kf.ravel(), np.linalg.eigvals(A-Kf@C))
+print('ARE_residual', np.linalg.norm(residual))
+assert np.allclose(P, [[np.sqrt(3),1],[1,np.sqrt(3)]])
+assert np.linalg.norm(residual)<1e-10
+for a,q,r in [(-1,1,1),(-2,3,1),(-1,1,1),(-2,2,1)]:
+    p = r*(a+np.sqrt(a*a+q/r))
+    print('scalar_a_q_r_p_k_pole', a,q,r,p,p/r,a-p/r)
+K = np.linalg.solve(R,B.T@solve_continuous_are(A,B,Q,R))
+M = np.block([[A-B@K,B@K],[np.zeros((2,2)),A-Kf@C]])
+print('unit_LQG_K_poles',K,np.linalg.eigvals(M))` },
+    { code: `# 习题2同噪声下的极点配置与Kalman；题4/10边界核对
+A2=np.array([[0.,1.],[-2.,-3.]])
+P2=solve_continuous_are(A2.T,C.T,np.eye(2),R)
+Lk=P2@C.T; Lp=np.array([[8.],[4.]])
+print('exercise2_P_K',P2,Lk.ravel())
+for label,L in [('Kalman',Lk),('placed',Lp)]:
+    F=A2-L@C
+    Sigma=solve_continuous_lyapunov(F,-(np.eye(2)+L@L.T))
+    print('exercise2_poles_trace',label,np.linalg.eigvals(F),np.trace(Sigma),Sigma)
+    assert np.linalg.norm(F@Sigma+Sigma@F.T+np.eye(2)+L@L.T)<1e-10
+# 三工况：固定极点基线唯一，不额外调参；第三组透明构造为持平
+for label,Qcase in [('low',.1*np.eye(2)),('nominal',np.eye(2)),('tie',np.array([[56.,50.],[50.,92.]]))]:
+    Pc=solve_continuous_are(A2.T,C.T,Qcase,R)
+    Lc=Pc@C.T; Fp=A2-Lp@C
+    Sc=solve_continuous_lyapunov(Fp,-(Qcase+Lp@Lp.T))
+    print('exercise2_three_cases',label,np.trace(Pc),np.trace(Sc))
+    assert np.trace(Pc)<=np.trace(Sc)+1e-10
+    if label=='tie': assert np.allclose(Lc,Lp)
+Pdeg=np.diag([1.,0.]); Fdeg=A-Pdeg@C.T@C
+print('exercise4_P_poles',Pdeg,np.linalg.eigvals(Fdeg))
+assert np.linalg.norm(A@Pdeg+Pdeg@A.T-Pdeg@C.T@C@Pdeg+np.diag([1.,0.]))<1e-10
+S=solve_continuous_are(A,B,np.diag([10.,1.]),R)
+K10=B.T@S
+M10=np.block([[A-B@K10,B@K10],[np.zeros((2,2)),A-Kf@C]])
+print('exercise10_S_K_control_poles_all',S,K10,np.linalg.eigvals(A-B@K10),np.linalg.eigvals(M10))
+assert np.allclose(np.poly(M10),np.polymul(np.poly(A-B@K10),np.poly(A-Kf@C)),atol=1e-10)` }
   ]}
 />
 
 ## 对偶性：卡尔曼滤波 vs LQR
 
-卡尔曼滤波和 LQR 之间存在精确的数学对偶：
+对偶是把控制ARE的系统矩阵改成$A^T$、输入矩阵改成$C^T$，**状态权重仍对应过程噪声强度，输入权重仍对应测量噪声强度**：
 
-| | LQR（最优控制） | 卡尔曼滤波（最优估计） |
-|---|---|---|
-| 目标 | 最小化代价 $J$ | 最小化误差方差 $\text{tr}(P)$ |
-| Riccati 方程 | $A^T P + PA - PBR^{-1}B^T P + Q = 0$ | $AP + PA^T - PC^T R^{-1} CP + Q = 0$ |
-| 最优增益 | $K = R^{-1}B^T P$ | $K_f = PC^T R^{-1}$ |
-| 闭环矩阵 | $A - BK$ | $A - K_f C$ |
-| 存在条件 | $(A,B)$ 可控，$(A,Q^{1/2})$ 可检测 | $(A,C)$ 可观，$(A,Q^{1/2})$ 可检测 |
-| 鲁棒性 | 增益裕度 $[1/2, \infty)$，相位裕度 $\geq 60°$ | 类似的鲁棒性保证 |
+| LQR对偶问题 | 滤波问题 |
+|---|---|
+| 系统$(A^T,C^T)$ | 原系统$(A,C)$ |
+| $Q_{lqr}=Q_{proc}$，$R_{lqr}=R_{meas}$ | $Q_{proc}$，$R_{meas}$ |
+| $(A^T,C^T)$可稳定 | $(A,C)$可检测 |
+| $(Q^{1/2},A^T)$可检测 | $(A,Q^{1/2})$可稳定 |
+| 对偶反馈增益$R^{-1}CP$ | 滤波增益$PC^TR^{-1}$为其转置 |
 
-**对偶替换规则**：将 LQR 的所有公式做以下替换，就得到卡尔曼滤波的公式：
+例如状态维$n$、测量维$m$时，$Q_{proc}$是$n\times n$而$R_{meas}$是$m\times m$；交换二者通常连维数都不成立。SciPy调用`solve_continuous_are(A.T,C.T,Q,R)`正好体现正确映射，求解器说明见[官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_continuous_are.html)。
 
-$$
-A \to A^T, \quad B \to C^T, \quad Q_{\text{lqr}} \to R_{\text{kf}}, \quad R_{\text{lqr}} \to Q_{\text{kf}}
-$$
+双积分器$B=[0,1]^T$的LQR在单位权重下给出$K=[1,\sqrt3]$，恰与本例误差极点相同。这一特殊对称例不能推出任意原系统的LQR极点和滤波极点都相同；严格对偶指转置系统。
 
-> [!tip] 统一视角
-> LQR 和卡尔曼滤波本质上是**同一个问题的两面**：
-> - LQR：在"控制能量"约束下，最优地驱动状态到零
-> - 卡尔曼：在"测量噪声"约束下，最优地从噪声中提取状态
->
-> 两者都归结为 Riccati 方程——这是现代控制理论最核心的数学结构。
+下面保留原稿有噪声轨迹演示，改为与连续模型一致的增量仿真。步长0.005s，区间0至10s共2001采样点；过程增量和观测噪声增量均按$\sqrt{dt}$缩放。初值真实$[1,0]^T$、估计$[0.5,0]^T$，使用稳态$K_f$但不声称初始误差已服从稳态分布。五个固定种子报告全区间RMSE；有限路径、非稳态起点和Euler误差都使样本RMSE不同于$\sqrt{P_{11}}$。
 
 <JupyterNotebook
-  title=" 动手实验：卡尔曼滤波仿真"
-  setupCode={`import matplotlib
+  title="连续噪声增量仿真"
+  setupCode={`import numpy as np
+import matplotlib
 matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import solve_continuous_are
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-
-A = np.array([[0, 1], [0, 0]])
-C = np.array([[1, 0]])
-Q = np.eye(2)
-R_mat = np.array([[1]])
-P = solve_continuous_are(A.T, C.T, Q, R_mat)
-Kf = P @ C.T @ np.linalg.inv(R_mat)`}
+from scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov
+np.set_printoptions(precision=9, suppress=True)`}
   cells={[
-    { code: `# ===== 卡尔曼滤波仿真（有噪声）=====
-np.random.seed(42)
-dt = 0.01
-T = 10
-N = int(T / dt)
-t = np.linspace(0, T, N)
-sigma_w = 0.05
-sigma_v = 0.3
-
-x_true = np.zeros((2, N))
-x_est = np.zeros((2, N))
-x_true[:, 0] = [1, 0]
-x_est[:, 0] = [0.5, 0]
-y_meas = np.zeros(N)
-
-for k in range(N - 1):
-    w = sigma_w * np.random.randn(2, 1)
-    v = sigma_v * np.random.randn(1, 1)
-    x_true[:, k+1:k+2] = x_true[:, k:k+1] + dt * (A @ x_true[:, k:k+1]) + w
-    y = C @ x_true[:, k+1:k+2] + v
-    y_meas[k+1] = y.item()
-    innov = y - C @ x_est[:, k:k+1]
-    x_est[:, k+1:k+2] = x_est[:, k:k+1] + dt * (A @ x_est[:, k:k+1] + Kf @ innov)
-
-fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-axes[0].plot(t, x_true[0], 'b-', alpha=0.5, linewidth=0.8, label='真实 x₁')
-axes[0].plot(t, y_meas, 'gray', alpha=0.3, linewidth=0.5, label='测量值')
-axes[0].plot(t, x_est[0], 'r--', linewidth=2, label='卡尔曼估计')
-axes[0].set_ylabel('x₁'); axes[0].legend(loc='upper right'); axes[0].grid(True, alpha=0.3)
-
-axes[1].plot(t, x_true[1], 'b-', alpha=0.5, linewidth=0.8, label='真实 x₂')
-axes[1].plot(t, x_est[1], 'r--', linewidth=2, label='卡尔曼估计')
-axes[1].set_ylabel('x₂'); axes[1].legend(loc='upper right'); axes[1].grid(True, alpha=0.3)
-
-error = x_true[0] - x_est[0]
-axes[2].plot(t, error, 'g-', linewidth=1)
-axes[2].set_ylabel('估计误差'); axes[2].set_xlabel('Time (s)')
-axes[2].grid(True, alpha=0.3)
-
-plt.suptitle('卡尔曼滤波：噪声环境下的状态估计', fontsize=14)
-plt.tight_layout()
-plt.show()
-
-rmse = np.sqrt(np.mean(error**2))
-print(f"x₁ 估计 RMSE: {rmse:.4f}")` },
+    { code: `# 连续状态/观测增量一致的Euler-Maruyama仿真
+A=np.array([[0.,1.],[0.,0.]])
+C=np.array([[1.,0.]])
+P=solve_continuous_are(A.T,C.T,np.eye(2),np.eye(1))
+K=P@C.T
+dt=.005; steps=2000; t=np.arange(steps+1)*dt
+def simulate(seed):
+    rng=np.random.default_rng(seed)
+    x=np.zeros((steps+1,2)); xhat=x.copy()
+    x[0]=[1.,0.]; xhat[0]=[.5,0.]
+    dy=np.zeros(steps)
+    for k in range(steps):
+        dw=rng.standard_normal(2)*np.sqrt(dt)
+        dv=rng.standard_normal()*np.sqrt(dt)
+        dy[k]=(C@x[k]).item()*dt+dv
+        x[k+1]=x[k]+A@x[k]*dt+dw
+        xhat[k+1]=xhat[k]+A@xhat[k]*dt+K.ravel()*(dy[k]-(C@xhat[k]).item()*dt)
+    return x,xhat,dy
+rmses=[]
+for seed in range(5):
+    x,xhat,dy=simulate(seed)
+    rmses.append(float(np.sqrt(np.mean((x[:,0]-xhat[:,0])**2))))
+print('simulation_grid',len(t),t[0],t[-1],dt)
+print('simulation_RMSE_seeds_0_to_4',rmses)
+assert len(t)==2001 and t[-1]==10 and np.isfinite(rmses).all()` },
+    { code: `# 展示seed0；观测除以dt只是有噪声的区间平均读数
+x,xhat,dy=simulate(0)
+fig,axes=plt.subplots(3,1,figsize=(8,7),sharex=True)
+axes[0].plot(t,x[:,0],label='true position')
+axes[0].plot(t,xhat[:,0],label='estimated position')
+axes[0].plot(t[:-1],dy/dt,alpha=.15,label='interval observation')
+axes[1].plot(t,x[:,1],label='true velocity')
+axes[1].plot(t,xhat[:,1],label='estimated velocity')
+axes[2].plot(t,x[:,0]-xhat[:,0],label='position error')
+for ax in axes: ax.legend(); ax.grid(alpha=.3)
+axes[2].set_xlabel('time (s)'); plt.tight_layout(); plt.show()
+print('simulation_seed0_final_state_estimate',x[-1],xhat[-1])` }
   ]}
 />
 
 ## LQG 控制
 
-### 从 LQR 到 LQG
-
-LQR 假设全部状态可测。实际中只有输出 $\boldsymbol{y}$ 可测。怎么办？
-
-**LQG 控制**（Linear Quadratic Gaussian）= LQR + 卡尔曼滤波：
-
-1. **卡尔曼滤波**从噪声测量 $\boldsymbol{y}$ 估计状态 $\hat{\boldsymbol{x}}$
-2. **LQR** 用估计状态计算控制 $\boldsymbol{u} = -K\hat{\boldsymbol{x}}$
+LQG把LQR与Kalman滤波组合：
 
 $$
-\boldsymbol{u} = -K\hat{\boldsymbol{x}}
-$$
-$$
-\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(\boldsymbol{y} - C\hat{\boldsymbol{x}})
+u=-K\hat x,\qquad d\hat x=(A\hat x+Bu)dt+K_f(dY-C\hat x\,dt).
 $$
 
-### 分离性原理
+对线性系统、已知高斯噪声与相应二次期望代价，在可稳定/可检测等条件下，确定性等价原理允许分开设计。随机扰动持续存在时，无限时域不折扣总积分往往发散；稳态LQG应按长期平均代价解释，或使用有限时域期望积分与时变增益。仅“极点稳定”不能独自证明随机控制最优性。
 
-上一章（状态观测器设计）介绍了分离性原理：用观测器估计状态 + 状态反馈控制，闭环极点 = 控制极点 $\cup$ 观测器极点。
-
-对于 LQG，分离性原理同样成立：
-
-> **LQG 分离性原理**：LQR 控制器和卡尔曼滤波器可以**独立设计**。闭环系统的特征值 = LQR 的闭环极点 $\cup$ 卡尔曼的误差极点。
+忽略噪声看标称齐次部分，在$(x,e=x-\hat x)$坐标下：
 
 $$
-\det(sI - A_{\text{cl}}) = \det(sI - A + BK) \cdot \det(sI - A + K_f C)
+\begin{bmatrix}\dot x\\\dot e\end{bmatrix}=\begin{bmatrix}A-BK&BK\\0&A-K_fC\end{bmatrix}\begin{bmatrix}x\\e\end{bmatrix}.
 $$
 
-这是现代控制理论最美的结论之一：**最优控制和最优估计可以独立设计，组合起来仍然是最优的**。
+块三角矩阵的极点是两块极点的并集，这就是分离性原理的稳定性部分。单位权重双积分器得到$u=-\hat x_1-\sqrt3\hat x_2$；四个极点是$(-\sqrt3\pm j)/2$各重复一次。重复极点并不保证矩阵可对角化。
 
-### 例3：LQG 设计
-
-沿用双积分器系统：$A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
-
-LQR 权重 $Q_{\text{lqr}} = I$，$R_{\text{lqr}} = 1$。噪声 $Q_{\text{kf}} = I$，$R_{\text{kf}} = 1$。
-
-**步骤1**：LQR 设计（见 LQR 例2）
-
-$K = \begin{bmatrix} 1 & \sqrt{3} \end{bmatrix}$，控制极点 $\frac{-\sqrt{3} \pm j}{2}$
-
-**步骤2**：卡尔曼设计（见例2）
-
-$K_f = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix}$，误差极点 $\frac{-\sqrt{3} \pm j}{2}$
-
-**步骤3**：LQG 控制器
-
-$$
-\boldsymbol{u} = -K\hat{\boldsymbol{x}} = -\hat{x}_1 - \sqrt{3}\hat{x}_2
-$$
-$$
-\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(y - C\hat{\boldsymbol{x}})
-$$
-
-闭环极点 = 控制极点 $\cup$ 误差极点 = $\left\{\frac{-\sqrt{3} \pm j}{2}, \frac{-\sqrt{3} \pm j}{2}\right\}$
-
-4 个极点，阻尼比均为 0.866。
-
-> [!info] LQG 的工程意义
-> 1. 设计简单：分别设计 LQR 和卡尔曼，组合即可
-> 2. 性能最优：在高斯噪声下，LQG 是最优的线性控制器
-> 3. 鲁棒性好：继承了 LQR 的鲁棒性（增益裕度 $[1/2, \infty)$）
-> 4. 应用广泛：航天器姿态控制、船舶自动驾驶、精密加工
+**LQG不自动继承全状态LQR的统一增益/相位裕度。** 观测反馈增加动态回路，必须针对具体系统检验模型误差、延迟与裕度。[Doyle原论文（1978）](https://authors.library.caltech.edu/records/e39yd-evs06)给出了反例，不能从分离性原理推出鲁棒保证。工程应用包括姿态估计反馈、精密定位与过程控制，但应用名称不替代性能验证。
 
 ## Q 和 R 的选择
 
-### 物理意义
+先用传感器记录、过程扰动模型及单位确定统计量，再用独立数据检验创新是否零均值、是否仍有时间相关性、尺度是否与$S_k$相容。偏置、离群值、延迟、相关噪声或模型错误并不总能靠增大$Q$解决。测量缺失时只预测，数据晚到时须保留时间戳并另行处理。
 
-卡尔曼滤波的 $Q$ 和 $R$ 不是设计参数，而是**系统属性**——它们描述实际的噪声强度。
+下面固定真实连续标量模型$a=-1,c=1,q_{true}=r_{true}=1$，只改变滤波器假设$q_a,r_a$。对稳定常增益$k$，真实稳态误差方差由Lyapunov方程得到：
 
-但在工程中，噪声统计往往不完全已知。这时 $Q$ 和 $R$ 也充当**调参角色**：
+$$
+p_{true}(k)=\frac{1+k^2}{2(1+k)},\qquad p_{nom}=r_a\left(-1+\sqrt{1+q_a/r_a}\right),\quad k=p_{nom}/r_a.
+$$
 
-- **增大 $Q$**（相对于 $R$）→ 更信测量 → 估计响应快，但噪声大
-- **增大 $R$**（相对于 $Q$）→ 更信模型 → 估计平滑，但响应慢
+默认$q_a=r_a=1$给出$k=p_{nom}=p_{true}=\sqrt2-1\approx0.414214$。当假设失配时，界面上的标称方差可以很小，真实误差却不会相应变小。解析最优基线仍为$k_*=\sqrt2-1$，所有稳定常增益中风险最小；这由求导或配方确定，不依赖扫参数挑优胜者。假设$q_a=0.01,1,100$、$r_a=1$覆盖失配、匹配持平与反向失配，精确数字由下方实验打印。
 
-### 调参方法
+<KalmanNoiseExplorer />
 
-1. **从噪声统计出发**：如果有传感器规格书，用实际噪声方差作为 $R$；如果有模型误差分析，用误差方差作为 $Q$
-2. **仿真调参**：如果噪声统计未知，从 $Q = I, R = I$ 开始，根据仿真结果调整
-3. **经验法则**：
-   - 估计振荡大 → 增大 $R$ 或减小 $Q$
-   - 估计响应慢 → 增大 $Q$ 或减小 $R$
-   - 某个状态估计不准 → 增大对应的 $q_{ii}$
-
-> [!info] 与 LQR 调参的对比
-> | | LQR | 卡尔曼滤波 |
-> |---|---|---|
-> | $Q$ 增大 | 更重视状态偏差 → 增益大 → 响应快 | 更信模型不准 → 增益大 → 更信测量 |
-> | $R$ 增大 | 更重视控制能量 → 增益小 → 响应慢 | 更信测量不准 → 增益小 → 更信模型 |
-> | 调参目标 | 性能 vs 能耗 | 模型信任 vs 测量信任 |
+曲线画的是$E[e(0)^2]=1$时的**真实均方误差**解析瞬态：$p(t)=p_{true}+(1-p_{true})e^{-2(1+k)t}$，不是单条误差轨迹。改变假设会改变估计增益，却不改变真实噪声。多状态时应按噪声进入通道构建$GQ_cG^T$，不能把“10%模型误差”直接等同于$Q=0.25I$。
 
 <JupyterNotebook
-  title=" 动手实验：Q/R 对卡尔曼滤波性能的影响"
-  setupCode={`import matplotlib
+  title="离散融合与协方差校准"
+  setupCode={`import numpy as np
+import matplotlib
 matplotlib.use('module://matplotlib_inline.backend_inline')
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import solve_continuous_are
-from ipywidgets import interact, FloatLogSlider
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-
-A = np.array([[0, 1], [0, 0]])
-C = np.array([[1, 0]])
-dt = 0.01
-T = 10
-N = int(T / dt)
-t = np.linspace(0, T, N)
-sigma_w = 0.05
-sigma_v = 0.3`}
+from scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov
+np.set_printoptions(precision=9, suppress=True)`}
   cells={[
-    { code: `# ===== Q/R 比值对估计性能的影响 =====
-def plot_kf_qr(ratio=1.0):
-    Q = ratio * np.eye(2)
-    R_mat = np.array([[1.0]])
-    P = solve_continuous_are(A.T, C.T, Q, R_mat)
-    Kf = P @ C.T @ np.linalg.inv(R_mat)
-
-    np.random.seed(42)
-    x_t = np.zeros((2, N))
-    x_e = np.zeros((2, N))
-    x_t[:, 0] = [1, 0]
-    x_e[:, 0] = [0.5, 0]
-
-    for k in range(N - 1):
-        w = sigma_w * np.random.randn(2, 1)
-        v = sigma_v * np.random.randn(1, 1)
-        x_t[:, k+1:k+2] = x_t[:, k:k+1] + dt * (A @ x_t[:, k:k+1]) + w
-        y = C @ x_t[:, k+1:k+2] + v
-        x_e[:, k+1:k+2] = x_e[:, k:k+1] + dt * (A @ x_e[:, k:k+1] + Kf @ (y - C @ x_e[:, k:k+1]))
-
-    err = x_t[0] - x_e[0]
-    rmse = np.sqrt(np.mean(err**2))
-
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    axes[0].plot(t, err, 'b-', linewidth=0.5, alpha=0.7)
-    axes[0].set_title(f'Q/R={ratio:.2f}  估计误差 x₁  RMSE={rmse:.4f}', fontsize=12)
-    axes[0].set_xlabel('Time (s)'); axes[0].set_ylabel('误差')
-    axes[0].grid(True, alpha=0.3)
-
-    axes[1].bar(['RMSE'], [rmse], color='steelblue')
-    axes[1].set_ylabel('RMSE')
-    axes[1].set_ylim(0, max(rmse * 1.5, 0.1))
-    axes[1].grid(True, alpha=0.3, axis='y')
-
-    plt.tight_layout()
-    plt.show()
-    print(f"Kf = {Kf.flatten()}")
-
-interact(plot_kf_qr,
-         ratio=FloatLogSlider(value=1.0, base=10, min=-1, max=1.5, step=0.1,
-                              description='Q/R', continuous_update=False))` },
+    { code: `# 一次离散融合与假设失配的解析真实风险
+prior=20.; pminus=4.; y=23.; r=1.
+k=pminus/(pminus+r); post=prior+k*(y-prior)
+pplus=(1-k)**2*pminus+k*k*r
+print('one_update_K_mean_variance',k,post,pplus)
+assert np.allclose([k,post,pplus],[.8,22.4,.8])
+for qa in [.01,1.,100.]:
+    k=-1+np.sqrt(1+qa)
+    actual=(1+k*k)/(2*(1+k))
+    print('mismatch_qa_K_nominal_actual',qa,k,k,actual)
+print('scalar_limit_stable_unstable',-1+abs(-1),1+abs(1))` },
+    { code: `# 习题7：每拍独立恒定随机加速度，不冒充连续白噪声
+Ad=np.array([[1.,1.],[0.,1.]])
+C=np.array([[1.,0.]])
+Gd=np.array([[.5],[1.]])
+Qd=.25*Gd@Gd.T; Rd=np.array([[1/900.]])
+Pi=solve_discrete_are(Ad.T,C.T,Qd,Rd)
+innovation=C@Pi@C.T+Rd
+K=np.linalg.solve(innovation,C@Pi).T
+I=np.eye(2); post=(I-K@C)@Pi@(I-K@C).T+K@Rd@K.T
+F=(I-K@C)@Ad
+print('exercise7_Qd_Rd',Qd,Rd)
+print('exercise7_prior_posterior_K_poles',Pi,post,K.ravel(),np.linalg.eigvals(F))
+assert np.linalg.norm(Pi-(Ad@post@Ad.T+Qd))<1e-10
+assert np.min(np.linalg.eigvalsh(post))>=0 and np.max(np.abs(np.linalg.eigvals(F)))<1
+print('all_numeric_checks_passed')` }
   ]}
 />
 
@@ -579,62 +322,41 @@ interact(plot_kf_qr,
 
 ### 扩展卡尔曼滤波（EKF）
 
-卡尔曼滤波只适用于**线性**系统。对于非线性系统：
-
-$$
-\dot{\boldsymbol{x}} = f(\boldsymbol{x}, \boldsymbol{u}) + \boldsymbol{w}, \quad \boldsymbol{y} = h(\boldsymbol{x}) + \boldsymbol{v}
-$$
-
-**扩展卡尔曼滤波**（EKF）在工作点线性化：
-
-$$
-A_k = \left.\frac{\partial f}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}, \quad C_k = \left.\frac{\partial h}{\partial \boldsymbol{x}}\right|_{\hat{\boldsymbol{x}}}
-$$
-
-然后用线性卡尔曼滤波的方法估计。EKF 在机器人定位、GPS 导航中广泛使用。
-
-> [!warning] EKF 的局限
-> EKF 的线性化可能引入误差，特别是强非线性系统。替代方案：
-> - **无迹卡尔曼滤波**（UKF）：用 sigma 点近似非线性变换，不需要雅可比矩阵
-> - **粒子滤波**：用蒙特卡洛方法，适用于任意非线性/非高斯系统
+非线性模型$dx=f(x,u)dt+\cdots$、观测$h(x)$可在当前估计附近用$A_k=\partial f/\partial x,C_k=\partial h/\partial x$局部线性化，形成EKF。线性化误差可能使协方差过度自信，不能保留线性高斯的全局最优保证。UKF用sigma点传播均值/协方差而无需显式雅可比，粒子滤波用样本近似分布；有限粒子数、高维退化与计算预算限制其效果，不能说适用于任意情形且都可靠。后续课程继续展开。
 
 ### 离散时间卡尔曼滤波
 
-工程中通常用计算机实现卡尔曼滤波，需要离散时间版本。
-
-离散系统：$\boldsymbol{x}[k+1] = A_d \boldsymbol{x}[k] + B_d \boldsymbol{u}[k] + \boldsymbol{w}[k]$
-
-离散 ARE（差分 Riccati 方程的稳态）：
+在本课“先预测再校正”的约定下，稳态**先验**协方差$\Pi$满足：
 
 $$
-P = A_d P A_d^T - A_d P C^T(R + C P C^T)^{-1} C P A_d^T + Q_d
+\Pi=A_d\Pi A_d^T-A_d\Pi C^T(C\Pi C^T+R_d)^{-1}C\Pi A_d^T+Q_d.
 $$
 
-Python 中用 `scipy.linalg.solve_discrete_are`。离散时间实现更适合数字控制器。
+`solve_discrete_are(A_d.T,C.T,Q_d,R_d)`返回该$\Pi$；本拍校正增益为$K=\Pi C^T(C\Pi C^T+R_d)^{-1}$，不能把$\Pi$误记成后验协方差。连续噪声离散化应使用：
+
+$$
+Q_d=\int_0^{\Delta t}e^{A\tau}Q_{proc}e^{A^T\tau}d\tau.
+$$
+
+只有特定近似条件下才可取$Q_d\approx Q_{proc}\Delta t$。每拍恒定的随机加速度$a_k$则给$G_d=[\Delta t^2/2,\Delta t]^T,Q_d=\sigma_a^2G_dG_d^T$；它与连续白加速度模型是不同随机过程。
 
 ### 卡尔曼滤波的应用
 
-| 应用领域 | 典型场景 | 估计目标 |
-|----------|----------|----------|
-| 航空航天 | 惯性导航 + GPS 融合 | 位置、速度、姿态 |
-| 机器人 | SLAM（定位与建图） | 机器人位姿 + 地图特征 |
-| 自动驾驶 | 多传感器融合 | 车辆状态、周围目标轨迹 |
-| 过程控制 | 化工反应器 | 不可测浓度、温度分布 |
-| 金融 | 股票价格预测 | 隐藏市场状态 |
+| 场景 | 状态与实际边界 |
+|---|---|
+| 惯性导航/GPS | 位置速度姿态；需时间同步与偏置模型 |
+| 机器人/SLAM | 位姿及地图；常涉及非线性与相关性 |
+| 自动驾驶 | 自车及目标状态；需关联、离群值检测 |
+| 化工过程 | 不可测浓度等；模型与噪声需校准 |
+| 金融状态空间模型 | 隐状态估计；估计最优不保证价格可预测或收益 |
 
 ## 小结
 
-- **卡尔曼滤波**：噪声环境下的最优状态估计，最小化估计误差方差
-- **滤波 Riccati 方程**：$AP + PA^T - PC^T R^{-1} CP + Q = 0$
-- **最优增益**：$K_f = PC^T R^{-1}$
-- **对偶性**：卡尔曼滤波与 LQR 互为对偶（$A \to A^T$, $B \to C^T$, $Q \leftrightarrow R$）
-- **LQG 控制** = LQR + 卡尔曼滤波，由分离性原理可独立设计
-- $Q$ 和 $R$ 描述噪声强度，也充当调参角色（模型信任 vs 测量信任）
-- 非线性系统用扩展卡尔曼滤波（EKF）或无迹卡尔曼滤波（UKF）
+预测传播后验与过程噪声，校正用创新和测量噪声；先验与后验不能混写。线性二阶假设保证线性最优，联合高斯才使条件均值成为全体估计中的均方最优。连续与离散的噪声参数、增益和Riccati方程各有口径。正确对偶转置系统而不交换Q/R；LQG可以分别设计并验证标称极点，仍需单独检验鲁棒性。EKF/UKF用于非线性扩展，其近似条件不能省略。
 
 ## 习题
 
-**1.** 标量系统 $\dot{x} = -2x + w$，$y = x + v$，$E[w^2] = 3$，$E[v^2] = 1$。
+**1.** 标量系统 $\dot{x} = -2x + w$，$y = x + v$，连续过程与观测噪声强度$q=3,r=1$。
 - (a) 写出 ARE 并求解 $P$
 - (b) 求卡尔曼增益 $k_f$ 和误差 dynamics 极点
 - (c) 讨论：当 $q \to \infty$ 时，$k_f$ 和极点如何变化？
@@ -644,7 +366,7 @@ Python 中用 `scipy.linalg.solve_discrete_are`。离散时间实现更适合数
 - (b) 求误差 dynamics 极点
 - (c) 与 Luenberger 观测器（极点 $-5, -6$）对比
 
-**3.** 证明：卡尔曼滤波的 ARE $AP + PA^T - PC^T R^{-1} CP + Q = 0$ 可以通过对偶替换 $A \to A^T$, $B \to C^T$, $Q_{\text{lqr}} \to R$, $R_{\text{lqr}} \to Q$ 从 LQR 的 ARE 得到。
+**3.** 证明：卡尔曼滤波的 ARE $AP + PA^T - PC^T R^{-1} CP + Q = 0$ 可以通过对偶替换 $A \to A^T$, $B \to C^T$, $Q_{\text{lqr}} \to Q$, $R_{\text{lqr}} \to R$ 从 LQR 的 ARE 得到。
 
 **4.** 系统 $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$，$Q = \begin{bmatrix} q & 0 \\ 0 & 0 \end{bmatrix}$，$R = r$。
 - (a) 求 ARE 的解 $P$（用 $q, r$ 表示）
@@ -665,9 +387,9 @@ $$
 - (c) 讨论：为什么这个 MIMO 问题可以分解为两个独立的 SISO 问题？
 
 **7.** 用"工程直觉"选择 $Q$ 和 $R$。系统 $A = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。传感器精度 $\pm 0.1$（3σ），模型误差约 10%。
-- (a) 估计 $R$（测量噪声方差）
-- (b) 估计 $Q$（过程噪声方差，假设模型误差导致加速度偏差约 $0.5$）
-- (c) 求 $K_f$ 和误差极点
+- (a) 在零均值高斯、3σ随机精度假设下估计逐次测量方差$R_d$；说明系统偏置与连续噪声强度为何不能据此确定。
+- (b) 说明仅有“10%”和“加速度偏差0.5”还缺哪些统计信息；补充采样周期1s、每拍独立且该拍恒定的零均值加速度标准差0.5，构建$Q_d$。
+- (c) 以上述补充离散模型求稳态先验、后验、校正增益与一步误差转移极点。
 
 **8.** 证明：稳态卡尔曼滤波的估计误差协方差等于 ARE 的解 $P$。
 
@@ -683,227 +405,40 @@ $$
 
 ## 答案
 
-**1.** (a) ARE：$2ap - c^2 p^2/r + q = 0$。这里 $a = -2, c = 1, q = 3, r = 1$。
+**1.** (a) $p^2+4p-3=0$，稳定化解$p=-2+\sqrt7\approx0.645751$。(b) $k_f=p$，误差极点$-\sqrt7\approx-2.645751$。(c) $k_f=-2+\sqrt{4+q}$随$q$增大，齐次误差衰减率增大；持续噪声下误差不会瞬时变零，稳态方差$p$反而随之增大。无限带宽极限不是实际传感器可实现的设计。
 
-$-4p - p^2 + 3 = 0 \implies p^2 + 4p - 3 = 0$
+**2.** (a) ARE元素为$2p_{12}-p_{11}^2+1=0$、$p_{22}-2p_{11}-3p_{12}-p_{11}p_{12}=0$、$-4p_{12}-6p_{22}-p_{12}^2+1=0$。注意第二式解$p_{22}$不需要除以$1+p_{11}$。数值为：
 
-$p = \frac{-4 + \sqrt{16 + 12}}{2} = \frac{-4 + \sqrt{28}}{2} = -2 + \sqrt{7}$
+$$
+P\approx\begin{bmatrix}0.671963&-0.274233\\-0.274233&0.336955\end{bmatrix},\qquad K_f=P C^T.
+$$
 
-（取正根，$p \approx 0.646$）
+(b) 极点约为$-1.835982\pm0.608957j$，与Notebook1一致。(c) 极点$-5,-6$对应$L=[8,4]^T$。对任一固定增益$L$，令$F=A-LC$，解$F\Sigma+\Sigma F^T+Q+LRL^T=0$比较相同噪声下的稳态迹；这里基线由指定极点唯一确定，没有额外整定预算。默认$Q=I$时两者的迹约为1.008918与5.469697。Notebook1另检验$Q=0.1I$及$Q=[[56,50],[50,92]]$，每组双方使用同一噪声，Kalman按该组统计重新求解，固定极点基线保持原设计。第三组透明构造为持平：ARE解$P=[[8,4],[4,10]]$给出$K_f=L$，两者的迹均为18。比较只针对本模型与均方指标；已知噪声的Kalman解析最优性不替代未知噪声时的辨识成本。极点更快不等于误差更小，也不能凭阻尼比保证含噪声输出无超调。
 
-(b) $k_f = pc/r = -2 + \sqrt{7}$
+**3.** 将LQR ARE中的系统替换成$(A^T,C^T)$，并取$Q_{lqr}=Q,R_{lqr}=R$：
 
-误差极点：$a - k_f c = -2 - (-2 + \sqrt{7}) = -\sqrt{7} \approx -2.646$
+$$
+(A^T)^TP+P A^T-PC^TR^{-1}CP+Q=AP+PA^T-PC^TR^{-1}CP+Q=0.
+$$
 
-(c) 当 $q \to \infty$：$p^2 + 4p - q = 0 \implies p \approx \sqrt{q} \to \infty$
+取的是转置系统的对偶，未交换噪声矩阵。$Q$为状态维，$R$为测量维。
 
-$k_f \to \infty$，极点 $\to -\infty$
+**4.** 假设$q,r>0$。(a) 由$(2,2)$元得$p_{12}=0$，再由$(1,2)$得$p_{22}=0$、$(1,1)$得$p_{11}=\sqrt{qr}$，故$P=\operatorname{diag}(\sqrt{qr},0)$。(b) $K_f=[\sqrt{q/r},0]^T$。(c) 极点$-\sqrt{q/r},0$，这是半正定**非稳定化**代数解；过程噪声仅进入位置，$(A,Q^{1/2})$不可稳定，第二状态没有过程激励，不能说“不惩罚速度所以不关心速度”。原$(A,C)$仍可观；有初始速度不确定性时有限时域滤波仍能利用位置历史估速度，增益可随时间趋零，收敛可非指数。不能把这个常增益代数解当所有初始条件下的渐近稳定滤波器。
 
-物理意义：过程噪声极大 → 完全不信模型 → 完全依赖测量 → 增益极大 → 估计瞬时收敛（但也把测量噪声全部传入）。
+**5.** 固定对称$P$及$R\succ0$，迹中含增益的项是$-2\operatorname{tr}(K_fCP)+\operatorname{tr}(K_fRK_f^T)$。梯度$-2PC^T+2K_fR=0$，故$K_f=PC^TR^{-1}$；配方项非负证明它是全局最小而不只是驻点。完整最优滤波结论仍需本课的统计条件。
 
-**2.** (a) ARE：$AP + PA^T - PC^T CP + Q = 0$
+**6.** (a) $P=K_f=\operatorname{diag}(\sqrt2-1,\sqrt6-2)$；一般矩阵增益应写$PC^TR^{-1}$而非任意换序。(b) 极点$-\sqrt2,-\sqrt6$。(c) $A,C,Q,R$对角，稳态方程解耦；若初始协方差有交叉项，不能声称整个有限时域从第一拍就完全独立，交叉信息仍须传播。
 
-设 $P = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}$，展开各矩阵：
+**7.** (a) $\sigma_v=0.1/3$，$R_d=1/900\approx0.00111111$。这是补充高斯随机误差解释下的逐次方差；系统偏置不由3σ规格确定。(b) 10%缺参考尺度，加速度偏差缺零均值、相关时间、采样周期；这些条件无法唯一给出连续$Q,R$。按补充每拍恒定独立加速度模型，$A_d=[[1,1],[0,1]],G_d=[1/2,1]^T$：
 
-$AP + PA^T = \begin{bmatrix} 2p_{12} & p_{22}-2p_{11}-3p_{12} \\ p_{22}-2p_{11}-3p_{12} & -4p_{12}-6p_{22} \end{bmatrix}$
+$$
+Q_d=\tfrac14G_dG_d^T=\begin{bmatrix}1/16&1/8\\1/8&1/4\end{bmatrix},\qquad R_d=1/900.
+$$
 
-$PC^T CP = \begin{bmatrix} p_{11}^2 & p_{11}p_{12} \\ p_{11}p_{12} & p_{12}^2 \end{bmatrix}$
+(c) Notebook3打印DARE先验$\Pi$，$S=C\Pi C^T+R_d$、$K=\Pi C^T/S$、Joseph后验$P^+$，一步后验误差转移为$(I-KC)A_d$。极点在单位圆内才是离散稳定，不能查左半平面；表中保留完整可复算值而不把离散增益与连续增益混为一谈。
 
-ARE 各元素：
+**8.** 若ARE解$P$给出Hurwitz的$F=A-K_fC$，代入可验证$FP+PF^T+Q+K_fRK_f^T=0$。实际误差二阶矩$\Sigma(t)$满足同一Lyapunov微分方程，差$\Delta=\Sigma-P$满足$\Delta(t)=e^{Ft}\Delta(0)e^{F^Tt}\to0$。由稳定Lyapunov方程解唯一，真实稳态协方差才等于$P$。仅代回ARE而不查稳定性不足以证明结论，题4就是边界例。
 
-$(1,1)$：$2p_{12} - p_{11}^2 + 1 = 0$
+**9.** 不可观模式若严格稳定，$(A,C)$仍可检测，滤波可以在相应噪声模型下有有限稳态误差；有噪声驱动时不能说该模式误差自然变零。不可观不稳定/临界模式无法由测量校正，不具有一般稳定误差保证。对偶地LQR的不可控模式必须稳定，即$(A,B)$可稳定；有限时域仍可计算，不保证无限时域稳定性能。
 
-$(1,2)$：$p_{22} - 2p_{11} - 3p_{12} - p_{11}p_{12} = 0$
-
-$(2,2)$：$-4p_{12} - 6p_{22} - p_{12}^2 + 1 = 0$
-
-由 $(1,2)$：$p_{22}(1+p_{11}) = 2p_{11} + 3p_{12} + p_{11}p_{12}$，即 $p_{22} = \frac{2p_{11} + p_{12}(3+p_{11})}{1+p_{11}}$
-
-数值求解得 $p_{11} \approx 0.672$，$p_{12} \approx -0.274$，$p_{22} \approx 0.337$。
-
-$P \approx \begin{bmatrix} 0.672 & -0.274 \\ -0.274 & 0.337 \end{bmatrix}$
-
-$K_f = PC^T R^{-1} \approx \begin{bmatrix} 0.672 \\ -0.274 \end{bmatrix}$
-
-(b) 误差极点：$A - K_f C$ 的特征值
-
-$A - K_f C = \begin{bmatrix} -0.672 & 1 \\ -1.726 & -3 \end{bmatrix}$
-
-特征多项式：$s^2 + 3.672s + 3.742 = 0$
-
-$s \approx -1.836 \pm 0.609j$
-
-$\zeta \approx 0.949$，$\omega_n \approx 1.934$
-
-(c) Luenberger 观测器极点 $-5, -6$（更快但增益更大）。卡尔曼滤波的增益由噪声统计自动确定，在"收敛速度"和"噪声抑制"之间取得最优平衡。此处卡尔曼的 $\zeta \approx 0.949$，接近临界阻尼，响应平滑无超调——因为 $Q = R = I$ 表示模型和测量同等可信，滤波器选择了保守策略。
-
-**3.** LQR 的 ARE：$A^T P + PA - PBR^{-1}B^T P + Q_{\text{lqr}} = 0$
-
-对偶系统为 $(A^T, C^T)$，权重 $(R_{\text{kf}}, Q_{\text{kf}})$。将对偶替换 $A \to A^T$, $B \to C^T$, $Q_{\text{lqr}} \to R$, $R_{\text{lqr}} \to Q$ 代入 LQR ARE：
-
-$(A^T)^T P + P(A^T) - P(C^T)(R)^{-1}(C^T)^T P + Q = 0$
-
-化简：
-
-$AP + PA^T - PC^T R^{-1} CP + Q = 0$
-
-这正是卡尔曼滤波的 ARE。证毕。
-
-**4.** (a) $Q = \begin{bmatrix} q & 0 \\ 0 & 0 \end{bmatrix}$，$R = r$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$。
-
-设 $P = \begin{bmatrix} p_1 & p_2 \\ p_2 & p_3 \end{bmatrix}$。
-
-$AP + PA^T = \begin{bmatrix} 2p_2 & p_3 \\ p_3 & 0 \end{bmatrix}$
-
-$PC^T R^{-1} CP = \frac{1}{r}\begin{bmatrix} p_1^2 & p_1 p_2 \\ p_1 p_2 & p_2^2 \end{bmatrix}$
-
-ARE 各元素：
-
-$(1,1)$：$2p_2 - p_1^2/r + q = 0$
-
-$(1,2)$：$p_3 - p_1 p_2/r = 0 \implies p_3 = p_1 p_2/r$
-
-$(2,2)$：$-p_2^2/r = 0 \implies p_2 = 0$
-
-代入：$p_3 = 0$，$-p_1^2/r + q = 0 \implies p_1 = \sqrt{qr}$
-
-$P = \begin{bmatrix} \sqrt{qr} & 0 \\ 0 & 0 \end{bmatrix}$
-
-(b) $K_f = PC^T R^{-1} = \begin{bmatrix} \sqrt{qr}/r \\ 0 \end{bmatrix} = \begin{bmatrix} \sqrt{q/r} \\ 0 \end{bmatrix}$
-
-(c) $A - K_f C = \begin{bmatrix} -\sqrt{q/r} & 1 \\ 0 & 0 \end{bmatrix}$
-
-极点：$s = -\sqrt{q/r}$ 和 $s = 0$。
-
-$s = 0$ 的原因：$Q = \text{diag}(q, 0)$ 不惩罚 $x_2$ 的估计误差。$(A, Q^{1/2})$ 的不可观模式是 $x_2$，而 $x_2$ 在开环中是积分器（极点 $s = 0$），不是严格稳定的。因此 $(A, Q^{1/2})$ 不可检测，ARE 解不保证所有误差模式稳定。
-
-物理意义：滤波器不关心 $x_2$ 的估计精度 → 不用测量信息修正 $x_2$ → $x_2$ 的估计误差按开环 dynamics 演化（不收敛）。
-
-**5.** $\text{tr}(\dot{P}) = \text{tr}((A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T)$
-
-$= 2\text{tr}(AP) - 2\text{tr}(K_f CP) + \text{tr}(Q) + \text{tr}(K_f R K_f^T)$
-
-对 $K_f$ 求导：
-
-$\frac{\partial}{\partial K_f}[-2\text{tr}(K_f CP)] = -2(CP)^T = -2P^T C^T = -2PC^T$
-
-（$P$ 对称）
-
-$\frac{\partial}{\partial K_f}[\text{tr}(K_f R K_f^T)] = 2K_f R$
-
-（$R$ 对称）
-
-令导数为零：$-2PC^T + 2K_f R = 0 \implies K_f = PC^T R^{-1}$。证毕。
-
-**6.** (a) $A, C = I, Q, R$ 都是对角矩阵，系统分解为两个独立的 SISO 问题。
-
-子系统 1：$a_1 = -1, c_1 = 1, q_1 = 1, r_1 = 1$。ARE：$-2p_1 - p_1^2 + 1 = 0 \implies p_1^2 + 2p_1 - 1 = 0 \implies p_1 = -1 + \sqrt{2}$
-
-子系统 2：$a_2 = -2, c_2 = 1, q_2 = 2, r_2 = 1$。ARE：$-4p_2 - p_2^2 + 2 = 0 \implies p_2^2 + 4p_2 - 2 = 0 \implies p_2 = -2 + \sqrt{6}$
-
-$P = \begin{bmatrix} \sqrt{2}-1 & 0 \\ 0 & \sqrt{6}-2 \end{bmatrix}$
-
-$K_f = PR^{-1}C^T = P = \begin{bmatrix} \sqrt{2}-1 & 0 \\ 0 & \sqrt{6}-2 \end{bmatrix}$
-
-(b) $A - K_f C = \begin{bmatrix} -1-(\sqrt{2}-1) & 0 \\ 0 & -2-(\sqrt{6}-2) \end{bmatrix} = \begin{bmatrix} -\sqrt{2} & 0 \\ 0 & -\sqrt{6} \end{bmatrix}$
-
-极点：$-\sqrt{2} \approx -1.414, -\sqrt{6} \approx -2.449$。**稳定** ✓
-
-(c) 因为 $A, C, Q, R$ 都是对角矩阵，两个状态之间没有耦合，测量也是各自独立的。MIMO 问题退化为两个独立的 SISO 卡尔曼滤波问题。
-
-**7.** (a) 传感器精度 $\pm 0.1$（3σ）→ $\sigma_v = 0.1/3 \approx 0.033$ → $R = \sigma_v^2 \approx 0.001$
-
-(b) 模型误差导致加速度偏差约 $0.5$ → 过程噪声主要影响 $x_2$（加速度通道）。过程噪声通过 $B = [0; 1]$ 进入系统，$q_w = 0.5^2 = 0.25$。简化取 $Q = 0.25 I$，$R = 0.001$。
-
-(c) ARE：$AP + PA^T - PC^T R^{-1} CP + Q = 0$，$R^{-1} = 1000$。
-
-$(2,2)$：$-1000p_{12}^2 + 0.25 = 0 \implies p_{12} = \sqrt{0.25/1000} \approx 0.0158$
-
-$(1,1)$：$2p_{12} - 1000p_{11}^2 + 0.25 = 0 \implies p_{11} = \sqrt{(2 \times 0.0158 + 0.25)/1000} \approx 0.0168$
-
-$(1,2)$：$p_{22} = 1000p_{11}p_{12} \approx 0.265$
-
-$P \approx \begin{bmatrix} 0.0168 & 0.0158 \\ 0.0158 & 0.265 \end{bmatrix}$
-
-$K_f = PC^T R^{-1} = 1000\begin{bmatrix} 0.0168 \\ 0.0158 \end{bmatrix} \approx \begin{bmatrix} 16.8 \\ 15.8 \end{bmatrix}$
-
-误差极点：$A - K_f C = \begin{bmatrix} -16.8 & 1 \\ -15.8 & 0 \end{bmatrix}$
-
-$s^2 + 16.8s + 15.8 = 0 \implies s \approx -0.99, -15.8$
-
-$Q/R = 250$，滤波器高度信任测量，增益大。两个实极点——过阻尼响应。估计快速收敛（快极点 $\approx -15.8$），同时保持平滑（慢极点 $\approx -0.99$）。
-
-**8.** 稳态下 $\dot{P} = 0$：
-
-$0 = (A - K_f C)P + P(A - K_f C)^T + Q + K_f R K_f^T$
-
-代入 $K_f = PC^T R^{-1}$：
-
-$(A - PC^T R^{-1} C)P + P(A - PC^T R^{-1} C)^T + Q + PC^T R^{-1} R R^{-1} CP$
-
-$= AP - PC^T R^{-1} CP + PA^T - PC^T R^{-1} CP + Q + PC^T R^{-1} CP$
-
-$= AP + PA^T - PC^T R^{-1} CP + Q$
-
-这正是滤波 ARE。因此，当 $P$ 满足 ARE 且 $K_f = PC^T R^{-1}$ 时，$\dot{P} = 0$——协方差矩阵不再变化，估计误差的统计特性达到稳态。证毕。
-
-**9.** 如果 $(A, C)$ 不可观：
-
-设不可观子空间的模式为 $\lambda_i$。卡尔曼增益 $K_f$ 只影响可观子空间——不可观模式的估计误差 dynamics 不受 $K_f$ 影响。
-
-- 如果不可观模式**稳定**（$\text{Re}(\lambda_i) < 0$）：估计误差在不可观子空间自然衰减，闭环仍然稳定。这就是**可检测性**条件。
-- 如果不可观模式**不稳定**：估计误差在不可观子空间发散，卡尔曼滤波失败。
-
-与 LQR 对比：
-- LQR 中 $(A, B)$ 不可控 → 不可控模式不受 $K$ 影响 → 需要可稳定条件
-- 卡尔曼中 $(A, C)$ 不可观 → 不可观模式不受 $K_f$ 影响 → 需要可检测条件
-
-两者完全对偶：**控制的可稳定性 ↔ 估计的可检测性**。
-
-**10.** (a) LQR：$Q_{\text{lqr}} = \begin{bmatrix} 10 & 0 \\ 0 & 1 \end{bmatrix}$，$R_{\text{lqr}} = 1$。
-
-ARE：$A^T P + PA - PBB^T P + Q_{\text{lqr}} = 0$
-
-设 $P = \begin{bmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{bmatrix}$。
-
-$(1,1)$：$-p_{12}^2 + 10 = 0 \implies p_{12} = \sqrt{10}$
-
-$(1,2)$：$p_{11} - p_{12}p_{22} = 0 \implies p_{11} = \sqrt{10}\,p_{22}$
-
-$(2,2)$：$2p_{12} - p_{22}^2 + 1 = 0 \implies 2\sqrt{10} - p_{22}^2 + 1 = 0 \implies p_{22} = \sqrt{2\sqrt{10} + 1}$
-
-$p_{22} = \sqrt{2\sqrt{10} + 1} \approx \sqrt{7.325} \approx 2.706$
-
-$p_{11} = \sqrt{10} \times 2.706 \approx 8.558$
-
-$P \approx \begin{bmatrix} 8.558 & 3.162 \\ 3.162 & 2.706 \end{bmatrix}$
-
-$K = B^T P = \begin{bmatrix} 3.162 & 2.706 \end{bmatrix}$
-
-控制极点：$A - BK = \begin{bmatrix} 0 & 1 \\ -3.162 & -2.706 \end{bmatrix}$
-
-$s^2 + 2.706s + 3.162 = 0 \implies s \approx -1.353 \pm 1.154j$
-
-$\zeta \approx 0.761$，$\omega_n \approx 1.778$
-
-(b) 卡尔曼：$Q_{\text{kf}} = I$，$R_{\text{kf}} = 1$。
-
-由例2：$K_f = \begin{bmatrix} \sqrt{3} \\ 1 \end{bmatrix} \approx \begin{bmatrix} 1.732 \\ 1 \end{bmatrix}$
-
-误差极点：$s \approx -0.866 \pm 0.5j$
-
-(c) LQG 控制器：
-
-$\boldsymbol{u} = -K\hat{\boldsymbol{x}} = -3.162\hat{x}_1 - 2.706\hat{x}_2$
-
-$\dot{\hat{\boldsymbol{x}}} = A\hat{\boldsymbol{x}} + B\boldsymbol{u} + K_f(y - C\hat{\boldsymbol{x}})$
-
-$= \begin{bmatrix} 0 & 1 \\ -3.162 & -2.706 \end{bmatrix}\hat{\boldsymbol{x}} + \begin{bmatrix} 1.732 \\ 1 \end{bmatrix}(y - \hat{x}_1)$
-
-(d) 闭环极点 = 控制极点 $\cup$ 误差极点：
-
-$\{-1.353 + 1.154j, -1.353 - 1.154j, -0.866 + 0.5j, -0.866 - 0.5j\}$
-
-4 个极点全部在左半平面，**稳定** ✓
-
-分离性原理验证：闭环特征多项式 = $(s^2 + 2.706s + 3.162)(s^2 + 1.732s + 1)$，恰好等于控制部分和估计部分的特征多项式之积。✓
+**10.** (a) 对LQR令$S$避免与滤波$P$混淆，$s_{12}=\sqrt{10}$、$s_{22}=\sqrt{1+2\sqrt{10}}$、$s_{11}=s_{12}s_{22}$，$K=[\sqrt{10},\sqrt{1+2\sqrt{10}}]\approx[3.162278,2.706392]$。(b) $K_f=[\sqrt3,1]^T$。(c) $u=-K\hat x$，$d\hat x=((A-BK)\hat x)dt+K_f(dY-C\hat x\,dt)$。(d) 控制极点是$s^2+\sqrt{1+2\sqrt{10}}s+\sqrt{10}=0$的根；四个极点、块三角全矩阵与根的并集在Notebook1打印核对。控制极点约$-1.353196\pm1.153750j$，滤波极点约$-0.866025\pm0.5j$。分离验证保证本模型齐次部分稳定，不附带统一鲁棒裕度。

@@ -1,0 +1,4 @@
+from pathlib import Path
+p=Path('content/catalog.ts');s=p.read_text(encoding='utf8');i=s.index('"slug": "least-squares-rls"');j=s.index('\n      },',i);b=s[i:j].replace('"status": "draft"','"status": "v1.3"');s=s[:i]+b+s[j:];p.write_text(s,encoding='utf8')
+p=Path('.agent/delivery-tracker.md');s=p.read_text(encoding='utf8');s='\n'.join('| [x] 最小二乘辨识 (least-squares-rls) | 学期3 ID-03：批量/同先验RLS、遗忘与信息不足；3 Notebook/4 cell、Explorer、双向互链；证据 .agent/semester-03/id-03/acceptance.md |' if '(least-squares-rls)' in l else l for l in s.split('\n'));p.write_text(s,encoding='utf8')
+p=Path('.agent/semester-03-checklist.md');s=p.read_text(encoding='utf8');s='\n'.join('| ID-03 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/03-least-squares-rls.md;.agent/semester-03/id-03/acceptance.md;rank3独立数值与两种实际页通过，互链原课10Notebook/39cell回归通过，提交前最终闸门见acceptance |' if l.startswith('| ID-03 |') else l for l in s.split('\n'));p.write_text(s,encoding='utf8')

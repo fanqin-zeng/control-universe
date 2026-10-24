@@ -1,0 +1,93 @@
+{
+  "source": "content/robust/robust-stability.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 4,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 133,
+      "title": "区间多项式：先分清系数顺序",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.stats import beta, binom\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 140,
+          "delim": "`",
+          "code": "# Ascending coefficients c0,c1,c2,c3; roots() receives descending coefficients.\r\npatterns = [[0,0,1,1], [1,0,0,1], [1,1,0,0], [0,1,1,0]]\r\ndef corners(intervals):\r\n    return [np.array([intervals[i][v] for i,v in enumerate(pattern)],float) for pattern in patterns]\r\ndef first_column(c):\r\n    c0,c1,c2,c3=c\r\n    return np.array([c3,c2,(c2*c1-c3*c0)/c2,c0])\r\nprimary_intervals = [(1,5),(3,7),(2,4),(1,1)]\r\nold_reversed_intervals = [(1,1),(2,4),(3,7),(1,5)]\r\nprimary_corners=corners(primary_intervals)\r\nreversed_corners=corners(old_reversed_intervals)\r\nfor name,intervals,polys in [('monic_original_model',primary_intervals,primary_corners),('old_reversed_family',old_reversed_intervals,reversed_corners)]:\r\n    print(name)\r\n    for i,c in enumerate(polys):\r\n        roots=np.roots(c[::-1]);column=first_column(c)\r\n        assert np.all(column>0) and np.all(roots.real<0)\r\n        print('corner',i+1,'ascending',c,'routh_column',column,'roots',roots)\r\n    rng=np.random.RandomState(42)\r\n    draws=np.column_stack([rng.uniform(lo,hi,1000) for lo,hi in intervals])\r\n    count=sum(np.max(np.roots(c[::-1]).real)<0 for c in draws)\r\n    print('sample_stable',count,1000)\r\n    assert count==1000\r\nprint('primary_full_box_routh_gap_lower',2*3-5)\r\nprint('theta_routh_gap_coefficients', [2,10,14])\r\nprint('kharitonov_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 254,
+      "title": "公共二次证书与原始反例复核",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.stats import beta, binom\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 261,
+          "delim": "`",
+          "code": "# Exact feasibility reduction for A(k,b)=[[0,1],[-k,-b]], k in [.5,1.5].\r\nklo,khi=.5,1.5\r\nbcrit=np.sqrt(khi)-np.sqrt(klo)\r\ndef certificate(b):\r\n    P=np.array([[np.sqrt(klo*khi)+b*b/2,b/2],[b/2,1.]])\r\n    Qs=[]\r\n    for k in [klo,khi]:\r\n        A=np.array([[0.,1.],[-k,-b]])\r\n        Qs.append(A.T@P+P@A)\r\n    return P,np.array(Qs)\r\ncertificate_records=[]\r\nfor b in [.5,bcrit,.6,1.]:\r\n    P,Qs=certificate(b)\r\n    pe=np.linalg.eigvalsh(P);qe=np.linalg.eigvalsh(Qs)\r\n    frozen=np.array([np.linalg.eigvals([[0.,1.],[-k,-b]]) for k in [klo,khi]])\r\n    certificate_records.append((b,pe,qe))\r\n    print('b',b,'P',P,'P_eigenvalues',pe,'Q_eigenvalues',qe,'frozen_poles',frozen)\r\n    print('strict_common_quadratic_iff',bool(b>bcrit+1e-10))\r\n    assert pe.min()>0\r\n    if b>bcrit+1e-10: assert qe.max() < -1e-10\r\nprint('critical_damping',bcrit)\r\n# Necessary overlap condition: max over 0<r<b of r(b-r) is b^2/4.\r\nprint('original_b_squared_minus_critical_squared',.5**2-bcrit**2)\r\nassert .5<bcrit and .6>bcrit\r\n# The old triangular supposed counterexample actually has this common P.\r\ntriangular_P=np.diag([1.,100.]);triangular_Q=[]\r\nfor a in [5.,10.,15.]:\r\n    A=np.array([[-1.,a],[0.,-1.]])\r\n    Q=A.T@triangular_P+triangular_P@A\r\n    triangular_Q.append(Q)\r\n    assert np.linalg.eigvalsh(Q).max()<0\r\nprint('triangular_common_P',triangular_P,'worst_endpoint_determinant',400-15**2)\r\nprint('quadratic_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 434,
+      "title": "采样证据、全集证书与系数耦合",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.stats import beta, binom\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 441,
+          "delim": "`",
+          "code": "# Pre-specified uniform sampling law; synthetic uncertainty, not measured probabilities.\r\nrng=np.random.RandomState(42)\r\nN=5000\r\nm_samples=rng.uniform(.7,1.3,N)\r\nb_samples=rng.uniform(.15,.25,N)\r\nk_samples=rng.uniform(.7,1.3,N)\r\nKp,Ki,Kd=2.,.5,1.\r\nmax_real_parts=np.array([np.max(np.roots([m,b+Kd,k+Kp,Ki]).real) for m,b,k in zip(m_samples,b_samples,k_samples)])\r\nn_stable=int(np.sum(max_real_parts < -1e-10))\r\nfull_box_gap=(.15+Kd)*(.7+Kp)-1.3*Ki\r\nzero_upper=-np.expm1(np.log(.001)/N)\r\nprint('PID_MC_stable',n_stable,N,'spectral_abscissa_min_max',max_real_parts.min(),max_real_parts.max())\r\nprint('PID_full_box_routh_gap',full_box_gap,'zero_failure_99p9_upper',zero_upper)\r\nassert n_stable==N and full_box_gap>0\r\nfig,axes=plt.subplots(1,3,figsize=(14,4))\r\nfig.subplots_adjust(wspace=.45,right=.86,bottom=.18)\r\nfor ax,x,y,xlabel,ylabel in [(axes[0],m_samples,b_samples,'m (kg)','b (N s/m)'),(axes[1],m_samples,k_samples,'m (kg)','k (N/m)'),(axes[2],b_samples,k_samples,'b (N s/m)','k (N/m)')]:\r\n    sc=ax.scatter(x,y,c=max_real_parts,cmap='viridis',s=4,vmin=-.25,vmax=0)\r\n    ax.set_xlabel(xlabel);ax.set_ylabel(ylabel);ax.set_title('Sample spectral abscissa')\r\nfig.colorbar(sc,cax=fig.add_axes([.9,.2,.015,.65]),label='max Re(pole) (1/s)')\r\nplt.show()\r\nprint('pid_sampling_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 463,
+          "delim": "`",
+          "code": "# Both original physical parameter boxes are independent BEFORE dividing by m.\r\nrng=np.random.RandomState(42);n_test=10000\r\nm=rng.uniform(.5,2.,n_test);b=rng.uniform(.1,.5,n_test);k=rng.uniform(.5,2.,n_test)\r\nsecond_real=np.array([max(np.roots([mi,bi+1.,ki+2.,.5]).real) for mi,bi,ki in zip(m,b,k)])\r\nsecond_gap=(.1+1.)*(.5+2.)-2.*.5\r\nprint('second_original_PID_box_stable',int(np.sum(second_real < -1e-10)),n_test,'routh_gap_lower',second_gap)\r\nassert np.all(second_real<0) and second_gap>0\r\n# Real coupling: q determines three coefficients simultaneously.\r\nrng=np.random.RandomState(42);q=rng.uniform(1.,3.,n_test)\r\ncoupled_real=np.array([max(np.roots([1.,v,v,.5*v*v]).real) for v in q])\r\nprint('genuine_coupled_family_stable',int(np.sum(coupled_real<0)),n_test,'analytic_gap_min',.5)\r\nouter_witness=np.array([1.,1.,1.,4.5])\r\nouter_roots=np.roots(outer_witness)\r\nprint('independent_outer_box_unstable_witness_descending',outer_witness,'poles',outer_roots)\r\nassert np.all(coupled_real<0) and np.max(outer_roots.real)>0\r\nprint('coupling_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 715,
+      "title": "复核裕度与全部习题",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.stats import beta, binom\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 722,
+          "delim": "`",
+          "code": "# Frequency margins are interpreted AFTER nominal internal stability is checked.\r\ngain_records=[]\r\nfor K in [2.,4.,10.]:\r\n    roots=np.roots([1.,3.,2.,K]);alpha=max(roots.real)\r\n    gm=6./K;gm_db=20*np.log10(gm)\r\n    print('loop_gain',K,'GM',gm,'GM_dB',gm_db,'poles',roots,'delta_interval',(-1.,6./K-1.))\r\n    gain_records.append((K,gm,gm_db,alpha))\r\n    if K<6:\r\n        # Stationarity polynomial of |S(j sqrt(u))|^2; one positive root.\r\n        ur=np.roots([12.,30.-3.*K,-10.*K,-4.*K])\r\n        u=float([z.real for z in ur if abs(z.imag)<1e-9 and z.real>0][0])\r\n        s=1j*np.sqrt(u);S=1/(1+K/(s*(s+1)*(s+2)))\r\n        print('stable_Ms_frequency_distance',K,abs(S),np.sqrt(u),1/abs(S))\r\n    else: print('Ms_Hinf_not_applicable_closed_loop_unstable',K)\r\n# Preserve all original exercise-1 coefficients.\r\nexercise_intervals=[(1,3),(2,6),(4,8),(1,2)]\r\npatterns=[[0,0,1,1],[1,0,0,1],[1,1,0,0],[0,1,1,0]]\r\nanswer1_columns=[]\r\nfor pattern in patterns:\r\n    c=np.array([exercise_intervals[i][v] for i,v in enumerate(pattern)],float)\r\n    column=np.array([c[3],c[2],(c[2]*c[1]-c[3]*c[0])/c[2],c[0]])\r\n    answer1_columns.append(column)\r\n    print('answer1_corner_ascending',c,'routh',column)\r\n    assert np.all(column>0)\r\n# Actual common certificate for original exercise 3.\r\nanswer3_P=np.array([[1.5,.25],[.25,1.]])\r\nprint('answer3_P_eigenvalues',np.linalg.eigvalsh(answer3_P))\r\nanswer3_Qs=[]\r\nfor t in [-1.,1.]:\r\n    A=np.array([[0.,1.],[-(2+t),-(1+.5*t)]])\r\n    Q=A.T@answer3_P+answer3_P@A;answer3_Qs.append(Q)\r\n    print('answer3_theta_poles_Q_eigenvalues',t,np.linalg.eigvals(A),Q,np.linalg.eigvalsh(Q))\r\n    assert np.linalg.eigvalsh(Q).max()<0\r\nsample_table=[]\r\nfor eps,bt in [(.01,.01),(.01,.001),(.001,.001),(.0001,.0001),(.005,.001)]:\r\n    n=int(np.ceil(np.log(bt)/np.log1p(-eps)));sample_table.append((eps,bt,n))\r\n    assert (1-eps)**n <= bt and (1-eps)**(n-1)>bt\r\n    print('exact_zero_failure_min_N',eps,bt,n)\r\nprint('old_conservative_formula_ceiling',int(np.ceil(2/.005*(np.log(1000)+1))))\r\ncp_records=[]\r\nfor n,f in [(5000,0),(10000,0),(10000,3)]:\r\n    upper=float(beta.ppf(.999,f+1,n-f));cp_records.append((n,f,upper))\r\n    assert abs(binom.cdf(f,n,upper)-.001)<1e-10\r\n    print('one_sided_CP_99p9_upper',n,f,upper)\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

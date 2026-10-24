@@ -1,0 +1,63 @@
+{
+  "source": "content/identification/model-structures.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 111,
+      "title": "相同输入通道，不同噪声通道",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.signal import lfilter\nn = 12\nk = np.arange(n)\nimpulse = np.zeros(n)\nimpulse[0] = 1.0\nA = [1.0, -0.8]\nB = [0.0, 0.2]\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 124,
+          "delim": "`",
+          "code": "g = lfilter(B, A, impulse)\nh_arx = lfilter([1.0], A, impulse)\nh_oe = impulse.copy()\nassert np.allclose(g[:4], [0, 0.2, 0.16, 0.128], atol=1e-12, rtol=0)\nassert np.allclose(h_arx[:4], [1, 0.8, 0.64, 0.512], atol=1e-12, rtol=0)\nassert np.array_equal(h_oe[:4], [1, 0, 0, 0])\nprint('input_only_first4_cm', np.round(g[:4], 6).tolist())\nprint('noise_ARX_first4_cm', np.round(h_arx[:4], 6).tolist())\nprint('noise_OE_first4_cm', h_oe[:4].tolist())\nfig, axes = plt.subplots(1, 2, figsize=(9, 3))\naxes[0].plot(k, g, 'o-', label='ARX input response')\naxes[0].plot(k, g, 'x--', label='OE input response')\naxes[1].plot(k, h_arx, 'o-', label='ARX noise response')\naxes[1].plot(k, h_oe, 'x--', label='OE noise response')\nfor ax in axes:\n    ax.set(xlim=(0, 11), ylim=(-0.05, 1.1), xlabel='sample k', ylabel='output (cm)')\n    ax.grid(True)\n    ax.legend(fontsize=8)\nplt.tight_layout()\nplt.show()\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 145,
+          "delim": "`",
+          "code": "u = np.array([1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float)\ne = impulse.copy()\ndriven = lfilter(B, A, u)\ny_arx = driven + lfilter([1], A, e)\ny_oe = driven + e\ninnovation_arx = lfilter(A, [1], y_arx) - lfilter(B, [1], u)\ninnovation_oe = y_oe - driven\nassert np.allclose(innovation_arx, e, atol=1e-12, rtol=0)\nassert np.allclose(innovation_oe, e, atol=1e-12, rtol=0)\ndef direct_arx(pole, inputs, driver):\n    output = np.zeros(len(inputs))\n    for j in range(len(inputs)):\n        previous_y = output[j - 1] if j else 0.0\n        previous_u = inputs[j - 1] if j else 0.0\n        output[j] = pole * previous_y + 0.2 * previous_u + driver[j]\n    return output\nboundary_cases = []\nfor pole in [0.0, 0.5, 0.8]:\n    driven_check = lfilter([0, 0.2], [1, -pole], u)\n    arx_without_noise = direct_arx(pole, u, np.zeros(n))\n    arx_with_noise = direct_arx(pole, u, e)\n    oe_with_noise = driven_check + e\n    assert np.allclose(arx_without_noise, driven_check, atol=1e-12, rtol=0)\n    if pole == 0:\n        assert np.allclose(arx_with_noise, oe_with_noise, atol=1e-12, rtol=0)\n    else:\n        assert not np.allclose(arx_with_noise, oe_with_noise, atol=1e-12, rtol=0)\n    boundary_cases.append((pole, arx_with_noise.tolist(), oe_with_noise.tolist()))\nprint('reconstructed_driver_first4_cm', np.round(innovation_arx[:4], 6).tolist())\nprint('zero_noise_same_output', True)\nprint('pole_zero_same_noise_channel', True)\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 210,
+      "title": "截断的尾部与状态坐标",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nfrom scipy.signal import lfilter\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 216,
+          "delim": "`",
+          "code": "impulse = np.zeros(12)\nimpulse[0] = 1\ng_exact = lfilter([0, 0.2], [1, -0.8], impulse)\nfir_coeff = [0, 0.2, 0.16, 0.128, 0.1024]\ng_fir = lfilter(fir_coeff, [1], impulse)\nassert np.allclose(g_exact[:5], g_fir[:5], atol=1e-12, rtol=0)\nassert abs(g_exact[5] - 0.08192) < 1e-12 and g_fir[5] == 0\ngain_exact = 0.2 / (1 - 0.8)\ngain_fir = sum(fir_coeff)\nassert abs(gain_fir - 0.5904) < 1e-12\nassert abs(gain_exact - gain_fir - 0.4096) < 1e-12\nprint('first_omitted_sample_cm', round(g_exact[5], 6))\nprint('steady_gains_cm', round(gain_exact, 6), round(gain_fir, 6))\nprint('steady_tail_loss_cm', round(gain_exact - gain_fir, 6))\nprint('ARX_real_coefficients', 1 + 1, 'FIR_real_coefficients', len(fir_coeff) - 1)\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 232,
+          "delim": "`",
+          "code": "u = np.array([1, 0, 1, 1, 0, 0], dtype=float)\nx = np.zeros(len(u) + 1)\nz = np.zeros(len(u) + 1)\nfor j in range(len(u)):\n    x[j + 1] = 0.8 * x[j] + 0.2 * u[j]\n    z[j + 1] = 0.8 * z[j] + 0.4 * u[j]\nassert np.allclose(x, 0.5 * z, atol=1e-12, rtol=0)\ne = np.zeros(4)\ne[0] = 1\nh_armax = lfilter([1, 0.3], [1, -0.8], e)\nh_bj = lfilter([1], [1, -0.4], e)\nassert np.allclose(h_armax, [1, 1.1, 0.88, 0.704], atol=1e-12, rtol=0)\nassert np.allclose(h_bj, [1, 0.4, 0.16, 0.064], atol=1e-12, rtol=0)\nprint('state_coordinate_outputs_match', True)\nprint('ARMAX_noise_first4_cm', np.round(h_armax, 6).tolist())\nprint('BJ_noise_first4_cm', np.round(h_bj, 6).tolist())\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

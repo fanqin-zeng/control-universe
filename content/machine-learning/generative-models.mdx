@@ -1,0 +1,282 @@
+---
+title: 扩散与流匹配
+description: 从一维高斯分布算清加噪、噪声预测、条件流匹配和采样误差。
+---
+
+# 扩散与流匹配
+
+## 引言
+
+一台包装机生产的每袋重量有波动。前面学过的监督学习可以预测“下一袋大约多重”，但若要模拟一整批产品，全部输出平均重量就丢掉了波动。**生成模型要得到一个分布，而不只是一个均值。** 本课用标准化后的重量作可手算模型：数据服从 $X\sim\mathcal N(m,s^2)$，默认 $m=2,s=0.5$。这不是工厂实测，也不设重量合格限值。
+
+如何从一批标准正态噪声，得到具有目标均值与宽度的一批数？我们先看“把数据弄脏，再学着预测噪声”，再看“给噪声指派一条走向数据的速度场”。两条思路都把难以直接学习的分布问题变成监督回归，但**训练标签、生成方向和数值求解器各有自己的职责**。
+
+读者应已学过[自动微分与训练](/machine-learning/autodiff-optimization)、[随机过程](/math/stochastic-processes)与[常微分方程](/math/ode-matrix-exponential)。本课补足条件均值和score的局部定义，不要求读过尚未交付的评估课。学完应能写加噪与回归损失、解释去噪均值为何不足以生成、推导一个高斯流场，并定位Euler采样误差。
+
+<svg viewBox="0 0 680 164" role="img" aria-label="扩散从数据加噪，训练预测噪声，生成反向采样；流匹配从噪声向数据积分" style={{width:'100%',height:'auto'}}>
+ <defs><marker id="ml08-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#2563eb"/></marker></defs>
+ <rect x="8" y="12" width="140" height="48" rx="7" fill="#eff6ff" stroke="#2563eb"/><text x="78" y="40" textAnchor="middle" fontSize="16">干净数据 X</text>
+ <path d="M154 36 H264" stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml08-arrow)"/><text x="207" y="24" textAnchor="middle" fontSize="14">固定加噪</text>
+ <rect x="276" y="12" width="150" height="48" rx="7" fill="#eff6ff" stroke="#2563eb"/><text x="351" y="40" textAnchor="middle" fontSize="16">带噪状态 Y</text>
+ <path d="M434 36 H530" stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml08-arrow)"/><text x="482" y="24" textAnchor="middle" fontSize="14">训练回归</text>
+ <text x="596" y="40" textAnchor="middle" fontSize="16">预测噪声</text>
+ <text x="8" y="88" fontSize="14">扩散生成：从噪声端反向逐步采样；不能只把所有状态换成均值。</text>
+ <rect x="8" y="108" width="140" height="44" rx="7" fill="#fff7ed" stroke="#d97706"/><text x="78" y="135" textAnchor="middle" fontSize="16">噪声 z，t=0</text>
+ <path d="M154 130 H494" stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml08-arrow)"/><text x="322" y="120" textAnchor="middle" fontSize="14">流匹配生成：沿学到的速度场积分</text>
+ <rect x="506" y="108" width="165" height="44" rx="7" fill="#fff7ed" stroke="#d97706"/><text x="588" y="135" textAnchor="middle" fontSize="16">数据分布，t=1</text>
+</svg>
+
+## 加噪与噪声预测
+
+### 固定的前向过程
+
+扩散的离散时间用 $k=1,\ldots,K$，数据记 $x_0$。给定噪声日程 $0<\beta_k<1$，定义 $\alpha_k=1-\beta_k$ 与 $\bar\alpha_k=\prod_{j=1}^k\alpha_j$。每一步把已有状态缩小再加独立高斯噪声；迭代后可直接抽取任一时刻：
+
+$$
+x_k=\sqrt{\bar\alpha_k}\,x_0+\sqrt{1-\bar\alpha_k}\,\epsilon,
+\qquad \epsilon\sim\mathcal N(0,1),\quad \epsilon\perp x_0.
+$$
+
+这里“直接抽取”给出正确的单时刻条件分布，不是在同一条轨迹的所有时刻共用同一个噪声。本课把选定时刻的 $\bar\alpha_k$ 简写成 $a$；它是累计信号保留率，不能与单步 $\alpha_k$ 混淆。若末端 $a$ 仍非零，末端一般只近似标准正态；从标准正态启动会另有先验失配。
+
+给定 $X\sim\mathcal N(m,s^2)$，带噪 $Y$ 的总体均值与方差是
+
+$$
+\mu_a=\sqrt a\,m,\qquad V_a=a s^2+1-a.
+$$
+
+默认 $a=0.5$ 时，$\mu_a\approx1.414214$，$V_a=0.625$。方差中必须保留数据本身的波动；$1-a$ 只表示给定干净样本时的条件噪声方差。
+
+### 用已知噪声构造监督
+
+训练步骤：从训练集抽 $x_0$，抽时间 $k$ 与新噪声 $\epsilon$，构造 $x_k$，网络输入 $(x_k,k)$，回归已知噪声标签。简单噪声预测损失为
+
+$$
+L_\epsilon(\theta)=\mathbb E_{x_0,k,\epsilon}
+\left[\left(\epsilon_\theta(x_k,k)-\epsilon\right)^2\right].
+$$
+
+这是一种常用简化目标，不等于未经加权的完整变分界。训练时知道干净样本，是为了造监督；推理时不能把目标干净样本作为额外输入。时间嵌入让同一个网络区别不同噪声水平，参数更新方法沿用自动微分与训练课。
+
+平方损失的总体最优函数是条件均值 $\epsilon^*(y,a)=\mathbb E[\epsilon\mid Y=y]$。这指“所有能得到同一观测的情况的平均”，不保证找回这一次真正加入的噪声。高斯条件公式给出
+
+$$
+\epsilon^*(y,a)=\frac{\sqrt{1-a}}{V_a}(y-\mu_a),\qquad
+\nabla_y\log p_a(y)=-\frac{y-\mu_a}{V_a}
+=-\frac{\epsilon^*(y,a)}{\sqrt{1-a}}.
+$$
+
+$\nabla\log p$ 称为 **score（对数密度梯度）**：局部指向密度增大的方向，不是分类分数。端点 $a=1$ 的上式除法不适用，本课控件只取严格内部噪声水平。
+
+## 反向采样的含义
+
+把噪声预测代回加噪公式，会得到干净样本的条件均值：
+
+$$
+\widehat x_0(y)=\frac{y-\sqrt{1-a}\,\epsilon^*(y,a)}{\sqrt a}
+=\mathbb E[X\mid Y=y].
+$$
+
+默认观测 $y=1$ 时，最优噪声预测约为 $-0.468629$，score约为 $0.662742$，条件均值约为 $1.882843$。负噪声标签合理：观测低于带噪总体均值。该观测的后验方差仍为 $0.2$，不是一个确定答案。
+
+更强的检验是把整批 $Y$ 都换成 $\widehat x_0(Y)$。总体方差分解给出
+
+$$
+\operatorname{Var}(X)=\operatorname{Var}(\mathbb E[X\mid Y])+
+\mathbb E[\operatorname{Var}(X\mid Y)].
+$$
+
+本例右侧是 $0.05+0.2=0.25$。所以只输出条件均值会让分布过窄。**随机反向链要保留条件不确定性。** 在这个已知高斯的单次观测例里，按 $\mathcal N(\widehat x_0(y),0.2)$ 抽样才是完整后验；它要求输入 $Y$ 来自上述正确边缘，不能拿任意标准正态直接代入后声称完成生成。
+
+DDPM常用的反向均值参数化为
+
+$$
+\mu_\theta(x_k,k)=\frac{1}{\sqrt{\alpha_k}}
+\left(x_k-\frac{\beta_k}{\sqrt{1-\bar\alpha_k}}\epsilon_\theta(x_k,k)\right).
+$$
+
+生成接口可写为：输入冻结噪声网络、单步日程与初始状态；每轮计算上式均值，再以独立标准正态乘所选反向标准差得到下一状态，直到数据端停止。采样再按所选反向方差加噪，按 $k$ 递减执行；最后一步是否加噪由解码器定义。这里不实现完整DDPM采样链，也不把去噪公式当作其替身。扩散还可以构造确定性采样器；确定性本身不会禁止生成多样性，关键在于整批初始噪声经什么映射变成目标分布。
+
+<JupyterNotebook title="加噪与条件不确定性" setupCode={`import math, json
+
+def diffusion(m=2.0,s=0.5,a=0.5,y=1.0):
+    v=a*s*s+1-a
+    mean=math.sqrt(a)*m
+    noise=math.sqrt(1-a)*(y-mean)/v
+    score=-(y-mean)/v
+    estimate=(y-math.sqrt(1-a)*noise)/math.sqrt(a)
+    return dict(mean=mean,variance=v,noise=noise,score=score,estimate=estimate,
+                posteriorVariance=s*s*(1-a)/v,estimateVariance=a*s**4/v,noiseRisk=a*s*s/v)
+
+def velocity(t,x,m=2.0,s=0.5):
+    v=(1-t)**2+(t*s)**2
+    b=(t*s*s-(1-t))/v
+    return m+b*(x-t*m)
+
+def flow(m=2.0,s=0.5,n=8,sign=1):
+    particles=[-1.0,0.0,1.0]
+    history=[dict(t=0.0,mean=0.0,std=1.0,exactMean=0.0,exactStd=1.0)]
+    for k in range(n):
+        t=k/n
+        particles=[x+sign*velocity(t,x,m,s)/n for x in particles]
+        q=(k+1)/n
+        history.append(dict(t=q,mean=particles[1],std=abs(particles[2]-particles[0])/2,
+                            exactMean=q*m,exactStd=math.sqrt((1-q)**2+(q*s)**2)))
+    end=history[-1]
+    return dict(mean=end['mean'],std=end['std'],w2=math.hypot(end['mean']-m,end['std']-s),history=history)
+
+def snapshot(m=2.0,s=0.5,a=0.5,t=0.5,n=8,sign=1):
+    v=(1-t)**2+(t*s)**2
+    b=(t*s*s-(1-t))/v
+    return dict(diffusion=diffusion(m,s,a),field=dict(t=t,variance=v,slope=b,velocity=velocity(t,1,m,s),risk=s*s/v),flow=flow(m,s,n,sign))`} cells={[
+{title:'高斯噪声回归与后验',code:`print(json.dumps(diffusion(),ensure_ascii=False))`},
+{title:'方差分解与噪声边界',code:`print(json.dumps({'decomposition':[diffusion()['estimateVariance'],diffusion()['posteriorVariance'],0.5**2],'conditionalNoiseVariance':1-0.5,'extraDataVariance':0.5*0.5**2,'levels':{str(a):diffusion(a=a) for a in [0.1,0.5,0.9]}},ensure_ascii=False))`}
+]} />
+
+## 条件流匹配
+
+### 用路径导数作标签
+
+现在换用连续生成时间 $t\in[0,1]$：**0是噪声端，1是数据端**，与前节扩散加噪方向相反。抽独立端点 $Z\sim\mathcal N(0,1)$ 与 $X\sim q$，构造直线插值及标签
+
+$$
+X_t=(1-t)Z+tX,\qquad U=X-Z.
+$$
+
+训练时只需抽一对端点和一个时间，输入 $(X_t,t)$，标签 $U$，最小化
+
+$$
+L_{\rm CFM}(\theta)=\mathbb E_{t,X,Z}
+\left[\left(v_\theta(X_t,t)-(X-Z)\right)^2\right].
+$$
+
+这里CFM指条件流匹配。训练构造监督点时无需先沿ODE积分；**生成时仍要求解ODE**。算法输入是训练样本、时间与噪声抽样器，输出是参数 $\theta$；训练预算、验证选择与停止规则须另行规定。生成接口只有初始噪声、冻结后的速度网络和求解器，不能用未知终点 $X$ 计算 $X-Z$。
+
+条件标签来自每一对端点；总体最优速度则是
+
+$$
+u_t(x)=\mathbb E[X-Z\mid X_t=x],\qquad
+\frac{dx}{dt}=u_t(x),\quad x(0)=z.
+$$
+
+式中的速度符号是 $u_t$，不是控制输入。若目标场足够正则、密度路径满足连续性方程且ODE解存在唯一，沿该场输运初始分布可得到所设计的边缘分布。这个结论不等于每条生成轨迹会找到训练时配对的端点；大量不同配对可能经过同一位置，网络平均的是那里需要的速度。
+
+本课采用**独立配对**，没有求解总体最优传输耦合。单对端点之间是直线，不意味着平均后的生成轨迹也是直线，也不意味着本方法在任意任务上比扩散更快或更好。
+
+## 高斯流与数值采样
+
+令数据仍为 $X\sim\mathcal N(m,s^2)$ 且 $s>0$。独立性给出插值边缘
+
+$$
+M_t=tm,\qquad V_t=(1-t)^2+t^2s^2,\qquad
+C_t=\operatorname{Cov}(X-Z,X_t)=ts^2-(1-t).
+$$
+
+联合高斯的条件均值公式给出实际可调用的速度场：
+
+$$
+u_t(x)=m+\frac{C_t}{V_t}(x-tm).
+$$
+
+默认 $t=0.5$ 时，$V_t=0.3125$，斜率 $C_t/V_t=-1.2$，在 $x=1$ 处速度为 $2$。条件标签本身仍有剩余MSE $s^2/V_t=0.8$；损失不为零不表示最优边缘速度错了。
+
+这个场恰好有解析流映射
+
+$$
+x(t;z)=tm+\sqrt{V_t}\,z.
+$$
+
+验证方法：$V_t'=2C_t$，对上式求导即得 $u_t(x(t;z))$。$x(0;z)=z$，$x(1;z)=m+sz$，所以终点分布正确。中间的 $\sqrt{V_t}$ 一般不是线性函数，这也解释了边缘轨迹为何不是训练端点的直线。
+
+数值生成使用前向Euler，$h=1/N$，严格从 $t=0$ 到 $t=1$：
+
+$$
+x_{j+1}=x_j+h\,u_{jh}(x_j),\qquad j=0,\ldots,N-1.
+$$
+
+我们用 $z=-1,0,1$ 三个确定性探针恢复仿射映射的截距与斜率，进而精确计算该数值映射对标准正态的总体均值与标准差。**这不是三点经验样本统计。** 两个一维高斯的二阶Wasserstein距离记为
+
+$$
+W_2=\sqrt{(\mu_N-m)^2+(\sigma_N-s)^2}.
+$$
+
+默认 $N=8$，终点均值为 $2$，标准差约为 $0.414785$，$W_2\approx0.085215$。只检查均值会漏掉采样误差。
+
+<GenerativeBasicsExplorer />
+
+## 实验与边界
+
+下表固定同一个解析速度场，只改变Euler步数；每步调用一次场函数。这里的预算是场调用次数，不是网络训练步数或墙钟速度比较。
+
+| 步数N | 终点标准差 | W₂距离 |
+|---|---|---|
+| 1 | 0 | 0.5 |
+| 4 | 0.340541 | 0.159459 |
+| 8 | 0.414785 | 0.085215 |
+| 16 | 0.455683 | 0.044317 |
+| 64 | 0.488555 | 0.011445 |
+
+一步Euler使用 $u_0(x)=m-x$，直接把全部点送到 $m$，多样性完全丢失。即使 $m=0,s=1$、噪声与目标分布相同，独立端点的中间分布也会先收缩再展开，一步Euler仍会坍成0，$W_2=1$；不能以“端点相同”断言中间场恒为零。
+
+若在时间仍增加的同时把速度符号取反，默认8步的终点均值约为 $-3.143328$、标准差约为 $2.133178$，$W_2\approx5.396396$。真正的逆流必须从终点状态沿反向时间求解，不能只随意改符号。
+
+<JupyterNotebook title="高斯流采样与失败例" setupCode={`import math, json
+
+def diffusion(m=2.0,s=0.5,a=0.5,y=1.0):
+    v=a*s*s+1-a
+    mean=math.sqrt(a)*m
+    noise=math.sqrt(1-a)*(y-mean)/v
+    score=-(y-mean)/v
+    estimate=(y-math.sqrt(1-a)*noise)/math.sqrt(a)
+    return dict(mean=mean,variance=v,noise=noise,score=score,estimate=estimate,
+                posteriorVariance=s*s*(1-a)/v,estimateVariance=a*s**4/v,noiseRisk=a*s*s/v)
+
+def velocity(t,x,m=2.0,s=0.5):
+    v=(1-t)**2+(t*s)**2
+    b=(t*s*s-(1-t))/v
+    return m+b*(x-t*m)
+
+def flow(m=2.0,s=0.5,n=8,sign=1):
+    particles=[-1.0,0.0,1.0]
+    history=[dict(t=0.0,mean=0.0,std=1.0,exactMean=0.0,exactStd=1.0)]
+    for k in range(n):
+        t=k/n
+        particles=[x+sign*velocity(t,x,m,s)/n for x in particles]
+        q=(k+1)/n
+        history.append(dict(t=q,mean=particles[1],std=abs(particles[2]-particles[0])/2,
+                            exactMean=q*m,exactStd=math.sqrt((1-q)**2+(q*s)**2)))
+    end=history[-1]
+    return dict(mean=end['mean'],std=end['std'],w2=math.hypot(end['mean']-m,end['std']-s),history=history)
+
+def snapshot(m=2.0,s=0.5,a=0.5,t=0.5,n=8,sign=1):
+    v=(1-t)**2+(t*s)**2
+    b=(t*s*s-(1-t))/v
+    return dict(diffusion=diffusion(m,s,a),field=dict(t=t,variance=v,slope=b,velocity=velocity(t,1,m,s),risk=s*s/v),flow=flow(m,s,n,sign))`} cells={[
+{title:'默认流场与步长细化',code:`print(json.dumps({'field':snapshot()['field'],'runs':{str(n):flow(n=n) for n in [1,4,8,16,64]}},ensure_ascii=False))`},
+{title:'同分布端点与错误方向',code:`print(json.dumps({'sameEndpoints':flow(m=0,s=1,n=1),'wrongSign':flow(sign=-1),'exercise':{'dataVariance':0.5**2,'flowMidVariance':snapshot()['field']['variance'],'residualRisk':snapshot()['field']['risk']}},ensure_ascii=False))`}
+]} />
+
+本实验是已知分布的解析审计，使用Python标准库，计算量随步数线性增加；不读取外部数据、不拟合网络、没有训练/验证/测试选参或随机种子筛选。因此数值精度不能作为有限训练集上的泛化证据。实际任务须划分数据并冻结预处理，训练期间以验证集选择模型；最终测试分布质量、多样性、约束违反和计算预算，不能只报去噪MSE或看几张好看的图片。
+
+高斯总体参数已知，让我们能分开**模型估计误差、先验端点失配与求解器误差**。多峰数据的条件速度通常不再是本课的仿射式；$s=0$ 会让数据端方差退化，本课不把它放入正则高斯合同。扩散与FM可选相互关联的概率路径，但它们不等于同一训练标签或同一采样算法。本课没有复现论文的图像质量结果，也没有提供闭环安全证书。
+
+## 习题
+
+1. 默认数据与 $a=0.5$，推导带噪均值、总体方差和给定干净数据时的条件方差。为什么后两者不同？
+2. 在观测 $y=1$ 处求最优噪声预测、干净条件均值与后验方差。若对整批正确的带噪样本仅取条件均值，丢失了多少方差？
+3. 推导 $C_t$ 和高斯流速度；在默认中间时刻、$x=1$ 处算速度及条件标签剩余MSE。为何无需知道这一条轨迹的目标端点？
+4. 从 $u_0$ 推导一步Euler的整批终点；对默认数据及 $m=0,s=1$ 分别给出W₂距离。增加步数得到更小误差，能否证明流匹配优于DDPM？
+
+## 答案
+
+1. 用期望线性与独立方差相加：均值 $\sqrt{0.5}\,2\approx1.414214$，总体方差 $0.5\times0.25+0.5=0.625$。给定 $X$ 后没有数据波动，条件方差是 $1-a=0.5$，相差的数据项为 $0.125$。
+2. 代入条件高斯式得噪声约 $-0.468629$，条件均值约 $1.882843$。后验方差 $s^2(1-a)/V_a=0.2$；条件均值输出的方差 $as^4/V_a=0.05$，比原方差 $0.25$ 少 $0.2$。仅用后验均值不能恢复这部分波动。
+3. 展开独立协方差：$\operatorname{Cov}(X-Z,(1-t)Z+tX)=ts^2-(1-t)$。除以 $V_t$ 得条件回归斜率；默认中间时刻斜率为 $-1.2$，$x=tm=1$，速度为 $m=2$。条件标签方差 $s^2/V_t=0.8$。网络拟合的是位置处的平均速度，不是偷看未知端点。
+4. 在 $t=0$，$V_0=1,C_0=-1$，所以 $z+u_0(z)=m$。默认终点标准差0，$W_2=0.5$；同分布端点终点仍坍成0，$W_2=1$。表中只核同一已知流场的离散误差，未训练任何模型，也没实现完整DDPM或匹配两者预算，不能作方法优劣结论。
+
+## 继续学习
+
+- Ho、Jain、Abbeel，[Denoising Diffusion Probabilistic Models，v2](https://arxiv.org/html/2006.11239v2)，2020。参照其前向边缘、噪声参数化与简化损失；课程不引用其图像指标来证明本实验性能。
+- Lipman等，[Flow Matching for Generative Modeling，v2](https://arxiv.org/html/2210.02747v2)，2023。参照条件路径与边缘速度框架；本课另取独立配对、精确高斯数据端点作教学推导，不声称求解最优配对。
+
+以上原始论文于2026-10-24核读；均为arXiv永久非独占分发许可，链接阅读，未复制图片或代码。课程Python/TS是自行实现的小模型，无需下载权重。大图像模型的网络结构、条件引导与完整训练评估留待专门实验。[表征学习](/machine-learning/representation-learning)可以帮助理解潜变量，但本课直接在一维数据空间计算。

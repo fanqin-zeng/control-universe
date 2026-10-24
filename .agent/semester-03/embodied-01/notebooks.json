@@ -1,0 +1,47 @@
+{
+  "source": "content/embodied/embodied-systems.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 69,
+      "title": "实验1：单位与观测年龄",
+      "unknownAttrs": [],
+      "setupCode": "from fractions import Fraction as F",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 72,
+          "delim": "`",
+          "code": "speed, period = F(1,5), F(1,10)\ndistance = speed * period\nage = F(40+30+10,1000)\ntravel = speed * age\nprint('速度接口位移 / m =', float(distance))\nprint('若解释为位移 / m =', float(speed))\nprint('串行预算 / s =', float(age))\nprint('预算期间移动 / m =', float(travel))\nprint('题2：0.4 m/s × 0.05 s / m =', float(F(2,5)*F(1,20)))\nprint('题2：25+45+10 ms / s =', float(F(25+45+10,1000)))\nprint('题2：0.4 m/s × 0.08 s / m =', float(F(2,5)*F(2,25)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 122,
+      "title": "实验2：从原始递推核对闭环",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nimport matplotlib.pyplot as plt",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 126,
+          "delim": "`",
+          "code": "def run(d=0, H=1, K=2.0, b=1.0):\n    x, y, u = [0.0], [], []\n    command = 0.0\n    for k in range(60):\n        y.append(x[max(0,k-d)])\n        if k % H == 0:\n            command = float(np.clip(K*(1-y[k]),-1,1))\n        u.append(command)\n        x.append(x[-1]+0.1*b*command+(-0.2 if k==20 else 0))\n    return np.array(x), np.array(y), np.array(u)\ncases = [('default',0,1,1),('H=5',0,5,1),('d=4',4,1,1),('b=0.5',0,1,0.5)]\nfig, ax = plt.subplots(figsize=(7,3))\nfor label, d, H, b in cases:\n    x,y,u = run(d,H,2,b)\n    print(label, 'x(6)=%.9f peak=%.9f updates=%d' % (x[-1],max(x),len(range(0,60,H))))\n    ax.plot(np.arange(61)*0.1,x,label=label)\nax.set(xlabel='time / s',ylabel='position / m',xlim=(0,6),ylim=(-2,4))\nax.legend(); ax.grid(); plt.show()\nx,_,_ = run()\nclosed = 1-0.5*0.8**55-0.2*0.8**39\nprint('default x1,x2,x20,x21 =', x[[1,2,20,21]])\nprint('default final,error =',x[-1],abs(1-x[-1]))\nprint('closed-form final =',closed)\nassert abs(x[-1]-closed)<1e-12\nprint('题3无扰动：首步速度1，x1=0.1；H=5误差块系数 =',1-5*0.1*1*2)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

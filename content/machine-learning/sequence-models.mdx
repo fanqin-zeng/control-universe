@@ -1,0 +1,201 @@
+---
+title: 时序模型
+description: 从停热后的余温理解因果窗口、循环记忆、时间反向传播与预测协议。
+---
+
+# 时序模型
+
+## 停热以后仍有余温
+
+关闭电暖器后，房间不会立刻回到室外温度。同样是“当前功率为零”，刚停热和停热很久的房间，下一分钟的温度不同。上一课的网络把一组输入映射到输出；现在输入还需要告诉它：**此前发生了什么？**
+
+可以把最近的功率、温度排成一个窗口，也可以维护一个随观测更新的内部记忆。后者就是本课要拆开的循环模型。隐藏状态是模型保存的信息，不保证等于真实室温，也不保证具有物理意义。
+
+读完你应能独立完成四件事：规定窗口在预测时刻可使用的数据；把循环展开成共享参数的计算图；手算完整与截断的时间反向传播；区分一步预测、自由滚动和独立序列的状态重置。先修是[自动微分与训练](/machine-learning/autodiff-optimization)与[随机过程](/math/stochastic-processes)。
+
+实验使用自造、无量纲序列，解释记忆机制，不拟合真实房间，不训练完整门控网络，也不提供控制器稳定性保证。
+
+## 先规定预测时刻
+
+设每个采样时刻读到温度 $y_t$，随后发布下一时刻预测 $\hat y_{t+1}$。在这个接口下，$y_t$ 已知、$y_{t+1}$ 尚未知；预测未来输入还必须说明它是否为已知控制计划。
+
+长度为 $q$ 的因果窗口可以写成
+
+$$
+\hat y_{t+1}=f_\theta(y_{t-q+1:t},u_{t-q+1:t}).
+$$
+
+冒号表示按时间排列的连续样本，不是集合。把居中平滑得到的 $y_t$、未来温度、或用整条记录拟合的标准化参数放进输入，都可能提前透露答案。仅仅按时间排序并不能消除这些泄漏。
+
+训练、验证和测试应先按时间段或独立实验记录分开，再在各自允许范围内构造窗口；标准化只拟合训练数据。验证用来选择窗口长度、隐藏维数、截断长度和检查点，测试用于最终评估。相邻窗口可共享历史观测，但要说明协议与重叠导致的相关性；随机打散高度重叠窗口容易低估泛化误差。
+
+本课不执行数据驱动的模型选择，后面的三个冷却系数是事先指定的协议演示，不根据测试结果挑“最佳模型”。若目标是预测新房间，应按房间或独立记录划分，不能仅把同一房间的相邻样本换个名字。
+
+## 窗口与循环状态
+
+窗口模型显式保存有限长度的历史。循环神经网络（RNN）把历史压缩为固定维数的隐藏状态；最基本的形式是
+
+$$
+h_t=\tanh(W_hh_{t-1}+W_xx_t+b_h),\qquad \hat y_{t+1}=W_yh_t+b_y.
+$$
+
+这里 $x_t$ 是时刻 $t$ 已有的输入特征，$h_t$ 是处理它之后的记忆；所有时刻使用同一组参数。序列长度可以变化，参数数量不随长度增加，但训练时保存的计算图会变长。固定维数的记忆也可能丢信息，不能保证无限历史都可恢复。
+
+先拿掉激活、偏置与输出层，考察可手算的标量教学模型：
+
+$$
+h_t=ah_{t-1}+x_t,\quad t=1,\ldots,T;\qquad L=\frac12h_T^2.
+$$
+
+它是线性循环递推，是上述网络的简化分析工具。$h_0$ 是输入序列开始前的状态；本节 $h_t$ 本身是输出，末端目标为零。默认 $a=0.5$、$h_0=0$、$T=4$，输入是首步脉冲 $[1,0,0,0]$。前向输出依次为 $1,0.5,0.25,0.125$，末端损失 $0.0078125$。输入停止后状态仍保留过去的影响。
+
+<svg viewBox="0 0 660 145" role="img" aria-label="循环展开图，同一个参数a连接初态和后续状态，每一步接收各自输入" style={{width:'100%',height:'auto',maxWidth:660}}>
+  <defs><marker id="ml05-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb" /></marker></defs>
+  <rect x="15" y="65" width="90" height="45" fill="#dbeafe" /><rect x="220" y="65" width="90" height="45" fill="#dbeafe" /><rect x="440" y="65" width="90" height="45" fill="#dbeafe" />
+  <g fill="#172033" textAnchor="middle" fontSize="17"><text x="60" y="94">h₀</text><text x="265" y="94">h₁</text><text x="485" y="94">h₂</text><text x="160" y="70">同一个 a</text><text x="375" y="70">同一个 a</text><text x="265" y="25">x₁</text><text x="485" y="25">x₂</text><text x="605" y="94">后续时刻</text></g>
+  <g stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml05-arrow)"><path d="M105 88 H215"/><path d="M310 88 H435"/><path d="M530 88 H560"/><path d="M265 30 V60"/><path d="M485 30 V60"/></g>
+</svg>
+
+## 沿时间反向传播
+
+上一课的反向传播仍然适用，只需先把递推按时间展开。时间反向传播（BPTT）不是新增一种微分规则，而是对展开后的共享计算图应用链式法则。
+
+令 $\lambda_t=\partial L/\partial h_t$。本例只有末端损失，所以
+
+$$
+\lambda_T=h_T,\qquad \lambda_{t-1}=a\lambda_t,\qquad
+\frac{\partial L}{\partial a}=\sum_{t=1}^{T}\lambda_t h_{t-1}.
+$$
+
+每个时刻都用到参数 $a$，因此参数梯度必须把所有使用位置的贡献相加。默认的四项贡献是 $0,0.03125,0.03125,0.03125$，总梯度为 $0.09375$；只算最后一次乘法会漏掉早先的路径。
+
+初态敏感度也可直接展开：
+
+$$
+\frac{\partial h_T}{\partial h_0}=a^T.
+$$
+
+默认值为 $0.0625$。当 $|a|<1$，这条路径随长度衰减；$|a|>1$ 则可能增长。它是状态敏感度，不等于参数梯度：后者还包含残差、输入历史和各时刻贡献。非线性RNN沿途还会乘上激活函数导数和矩阵；仅看某一个权重不能概括整条训练轨迹。
+
+<JupyterNotebook title="循环状态与时间梯度" setupCode={`import json
+
+def seq(a=.5, n=4, kind='impulse', initial=0, k=2):
+    x=[(1 if i==0 else 0) if kind=='impulse' else 1 if kind=='constant' else (-1)**i for i in range(n)]
+    h=[initial]; sensitivity=[1]
+    for v in x:
+        h.append(a*h[-1]+v); sensitivity.append(a*sensitivity[-1])
+    adj=h[-1]; full=0; truncated=0; contributions=[0]*n
+    for t in range(n,0,-1):
+        contributions[t-1]=adj*h[t-1]; full+=contributions[t-1]
+        if t>n-k: truncated+=contributions[t-1]
+        adj*=a
+    return dict(x=x,h=h,sensitivity=sensitivity,loss=h[-1]**2/2,full=full,truncated=truncated,contributions=contributions)
+
+def cooling(a):
+    truth=[1]; one=[]; rollout=[]
+    for t in range(4):
+        truth.append(.8*truth[-1]); one.append(a*truth[t]); rollout.append(a*(rollout[-1] if rollout else 1))
+    mse=lambda ys:sum((ys[i]-truth[i+1])**2 for i in range(4))/4
+    return dict(a=a,truth=truth[1:],oneStep=one,rollout=rollout,oneMSE=mse(one),rolloutMSE=mse(rollout))
+`} cells={[
+  {title:'默认前向与完整反向',code:`print(json.dumps(seq()))`},
+  {title:'四种记忆系数的边界',code:`print(json.dumps([seq(a=a) for a in [0,.5,1,1.5]]))`}
+]} />
+
+## 截断梯度保留状态
+
+长序列的完整BPTT需要保留大量中间值。截断BPTT将训练分块：把上一块末态的**数值**传到下一块，但在边界停止梯度回传。常见框架把后一步叫 detach。它与清零参数的梯度缓存、以及把状态重置为零，各自解决不同问题。
+
+对本例，只反传最后 $K=2$ 步，相当于把边界 $h_2=0.5$ 当常数。前向仍得到 $h_4=0.125$，损失仍为 $0.0078125$，截断参数梯度变为 $0.0625$。若把 $h_2$ 重置为零，后面又没有输入，则末态变为零；这是换了前向问题，不能把损失下降当作训练改善。
+
+本页实验只对**单个末端损失**截断最后 $K$ 步。实际分块训练通常在每块计算损失并更新参数，其多次更新轨迹不能用本页一次梯度代替。截断减少反向依赖与内存，但引入梯度偏差；不能声称结果等于完整BPTT。
+
+<SequenceModelsExplorer />
+
+在固定脉冲、零初态和四步合同下，$a=0$ 时末态和梯度均为零；$a=1$ 时末态为 $1$、完整梯度为 $3$；$a=1.5$ 时末态为 $3.375$、完整梯度为 $22.78125$。这些是指定递推的观察，不是训练后模型优劣比较。长记忆也可能带来增长，$a=1$ 时初态影响不消失；零输入下的衰减不能直接证明一个学习控制闭环稳定。
+
+## 一步预测与自由滚动
+
+再看停热后的冷却记录。真实递推为 $y_{t+1}=0.8y_t$，$y_0=1$；固定预测器为 $\hat y_{t+1}=a y_t$。同一个 $a$ 可以按两种协议使用：
+
+| 协议 | 每步使用的信息 | 它回答的问题 |
+|---|---|---|
+| 在线一步 | 发布预测前读到当前真实温度 | 有新观测纠正时，下一步能否预测？ |
+| 从起点自由滚动 | 只在起点读取真实温度，之后反馈自己的预测 | 没有中途观测，整段未来能否预测？ |
+
+前一种在自回归训练中常对应使用真实前一步输出作为输入（teacher forcing）；有中途观测的在线部署可以合法使用它。若部署要求一次预测整段未来，却在评估中每步读真实温度，就换了信息条件。外生控制计划若事先已知，自由滚动仍可使用它，并不意味着所有输入都要自己预测。
+
+当 $a=0.5$，真实四步为 $0.8,0.64,0.512,0.4096$；一步输出为 $0.5,0.4,0.32,0.256$；自由滚动为 $0.5,0.25,0.125,0.0625$。四步平均平方误差分别为 $0.05201424$ 与 $0.1280868525$。两数评估的协议不同，不能据此宣布一种架构更优。
+
+| 固定预测系数 | 一步MSE | 自由滚动MSE |
+|---|---:|---:|
+| 0.5 | 0.05201424 | 0.1280868525 |
+| 0.8 | 0 | 0 |
+| 1.1 | 0.05201424 | 0.5494078125 |
+
+这里保留了模型正确时两协议持平的工况，也保留了失配增长。自由滚动误差不总比一步大；输入、失配方向和时间窗都会改变结果。上述数字只适用于这条无噪声冷却记录，不能推导真实房间、门控模型或控制性能的排名。
+
+<JupyterNotebook title="预测协议与状态边界" setupCode={`import json
+
+def seq(a=.5, n=4, kind='impulse', initial=0, k=2):
+    x=[(1 if i==0 else 0) if kind=='impulse' else 1 if kind=='constant' else (-1)**i for i in range(n)]
+    h=[initial]; sensitivity=[1]
+    for v in x:
+        h.append(a*h[-1]+v); sensitivity.append(a*sensitivity[-1])
+    adj=h[-1]; full=0; truncated=0; contributions=[0]*n
+    for t in range(n,0,-1):
+        contributions[t-1]=adj*h[t-1]; full+=contributions[t-1]
+        if t>n-k: truncated+=contributions[t-1]
+        adj*=a
+    return dict(x=x,h=h,sensitivity=sensitivity,loss=h[-1]**2/2,full=full,truncated=truncated,contributions=contributions)
+
+def cooling(a):
+    truth=[1]; one=[]; rollout=[]
+    for t in range(4):
+        truth.append(.8*truth[-1]); one.append(a*truth[t]); rollout.append(a*(rollout[-1] if rollout else 1))
+    mse=lambda ys:sum((ys[i]-truth[i+1])**2 for i in range(4))/4
+    return dict(a=a,truth=truth[1:],oneStep=one,rollout=rollout,oneMSE=mse(one),rolloutMSE=mse(rollout))
+`} cells={[
+  {title:'相同记录的三组协议结果',code:`print(json.dumps([cooling(a) for a in [.5,.8,1.1]]))`},
+  {title:'重置与截断及一次更新',code:`r=seq()
+tail=seq(n=4)['h'][2]
+carry=.5*(.5*tail)
+reset=.5*(.5*0)
+print(json.dumps(dict(resetTail=reset,carryTail=carry,fullGradient=r['full'],cutGradient=r['truncated'],updatedA=.5-.1*r['full'])))`}
+]} />
+
+## 门控模型与工程接口
+
+普通RNN的记忆沿反复变换的路径传播。长短期记忆网络（LSTM）维护额外的记忆单元，通过门控制写入、保留与读出；门控循环单元（GRU）用更新门和重置门调节旧状态与候选状态。门是由输入和状态计算的、通常位于零到一之间的系数。它们使记忆更新更灵活，仍有参数、计算与调参成本，也不保证任何任务都学到长期依赖。
+
+本课仅介绍机制，未实现或训练完整LSTM/GRU；线性教具的数据不能替代它们的实测。可参阅[Hochreiter与Schmidhuber的LSTM原论文](https://www.bioinf.jku.at/publications/older/2604.pdf)和[Cho等人的门控编码器论文](https://arxiv.org/abs/1406.1078)（2026-10-24查阅）。本课代码独立编写，未复制论文代码或模型权重；论文实现许可不作为本仓库代码许可。
+
+实现前先写清下列接口合同：
+
+| 环节 | 输入与输出 | 必须明确的边界 |
+|---|---|---|
+| 推理一步 | 当前可用特征、上次状态 → 预测、新状态 | 何时读观测；不保留训练计算图 |
+| 训练一块 | 按序特征、标签、边界状态 → 损失与梯度 | 先清参数梯度，反向，再更新；是否detach |
+| 新独立记录 | 初始观测或规定初态 → 新状态 | 不沿用上一房间/样本的隐藏状态 |
+| 连续记录跨块 | 前块末态 → 后块初态 | 传数值与传梯度分开；批次位置不能串错 |
+| 填充序列 | 数据、有效长度或掩码 → 有效输出 | 填充不能进损失，也不能污染最终状态 |
+
+模型选择完成后固定归一化、采样周期、状态初始化与评估协议，再执行一次独立测试。线上采样周期改变、缺测或传感器延迟，都会改变输入含义；即使前向能运行，也需要重新核验。控制系统还要单独处理约束与闭环安全。
+
+## 习题
+
+1. 默认递推在第三、四步的状态是多少？若仅把当前输入 $x_4$ 给一个无历史模型，它能否区分“先前有脉冲”和“始终无输入”？
+2. 写出默认末端损失对共享参数 $a$ 的四项贡献。学习率 $0.1$ 的一次完整梯度更新后，参数是多少？这是否证明训练已经收敛？
+3. 只反传最后两步，边界状态应取什么值？截断梯度与错误重置后末态分别是多少？为何清零参数梯度不能替代detach？
+4. 冷却例中 $a=0.5$ 时，第四步的一步预测与自由滚动预测分别是多少？若要模拟“起点预测整个未来”，每步读取真实温度是否符合合同？如何划分来自不同房间的测试记录？
+
+## 答案
+
+1. $h_3=0.25$、$h_4=0.125$。两条序列的当前输入都为零，但始终无输入且零初态的状态为零；仅有当前输入的确定性模型无法区分这两段历史。可加入过去观测、窗口或循环状态；这只证明缺少信息，不证明某个未训练架构效果更好。
+2. 各项是 $0,0.03125,0.03125,0.03125$，求和为 $0.09375$。故 $a_{\rm new}=0.5-0.1\times0.09375=0.490625$。这是一次给定损失的更新，没有达到停止条件或泛化结论。
+3. 保留 $h_2=0.5$ 的数值但停止对其求导，得到截断梯度 $0.0625$；错误重置后末态为零。清零参数梯度只删除之前累积的导数值，并未切断当前计算图跨边界的连接。
+4. 一步预测为 $0.256$，自由滚动为 $0.0625$。起点预测合同不允许中途读取真实温度。若测试目标是新房间，应把完整房间/独立记录留作测试，模型选择只用训练与验证；测试起始状态按预先声明的初始化规则给定。
+
+## 继续学习
+
+本课把单次前馈计算图延长为按时间共享参数的计算图，也说明了“把历史传下去”和“让梯度穿过去”的区别。下一课[注意力与Transformer](/machine-learning/attention-transformers)研究另一种读取历史信息的方式；它同样需要因果掩码、时间划分和与部署一致的评估合同。

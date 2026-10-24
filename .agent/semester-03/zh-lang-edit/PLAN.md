@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前60课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前74课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -97,14 +97,14 @@
 | 86 | ID-07 | 子空间辨识 | content/identification/subspace-id.mdx | 待完成 | 待生产 | — |
 | 87 | ID-08 | 非线性辨识 | content/identification/nonlinear-data-driven-id.mdx | 待完成 | 待生产 | — |
 | 88 | ID-09 | 系统辨识案例 | content/identification/identification-case-study.mdx | 待完成 | 待生产 | — |
-| 89 | EST-01 | 状态估计框架 | content/estimation/estimation-problem.mdx | 待完成 | 待生产 | — |
-| 90 | EST-02 | 统计估计 | content/estimation/least-squares-ml.mdx | 待完成 | 待生产 | — |
-| 91 | EST-03 | 卡尔曼滤波 | content/estimation/kalman-filter.mdx | 待完成 | 待生产 | — |
-| 92 | EST-04 | 扩展卡尔曼滤波 | content/estimation/extended-kalman-filter.mdx | 待完成 | 待生产 | — |
-| 93 | EST-05 | 无迹卡尔曼滤波 | content/estimation/unscented-kalman-filter.mdx | 待完成 | 待生产 | — |
-| 94 | EST-06 | 粒子滤波 | content/estimation/particle-filter.mdx | 待完成 | 待生产 | — |
-| 95 | EST-07 | 多传感器融合 | content/estimation/sensor-fusion.mdx | 待完成 | 待生产 | — |
-| 96 | EST-08 | 状态估计案例 | content/estimation/estimation-case-study.mdx | 待完成 | 待生产 | — |
+| 89 | EST-01 | 状态估计框架 | content/estimation/estimation-problem.mdx | 已完成 | 待润色 | .agent/semester-03/est-01/acceptance.md |
+| 90 | EST-02 | 统计估计 | content/estimation/least-squares-ml.mdx | 已完成 | 待润色 | .agent/semester-03/est-02/acceptance.md |
+| 91 | EST-03 | 卡尔曼滤波 | content/estimation/kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-03/acceptance.md |
+| 92 | EST-04 | 扩展卡尔曼滤波 | content/estimation/extended-kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-04/acceptance.md |
+| 93 | EST-05 | 无迹卡尔曼滤波 | content/estimation/unscented-kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-05/acceptance.md |
+| 94 | EST-06 | 粒子滤波 | content/estimation/particle-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-06/acceptance.md |
+| 95 | EST-07 | 多传感器融合 | content/estimation/sensor-fusion.mdx | 已完成 | 待润色 | .agent/semester-03/est-07/acceptance.md |
+| 96 | EST-08 | 状态估计案例 | content/estimation/estimation-case-study.mdx | 已完成 | 待润色 | .agent/semester-03/est-08/acceptance.md |
 | 97 | ROBUST-01 | 鲁棒性 | content/robust/robustness-concept.mdx | 待完成 | 待生产 | — |
 | 98 | ROBUST-02 | 不确定性建模 | content/robust/uncertainty-modeling.mdx | 待完成 | 待生产 | — |
 | 99 | ROBUST-03 | 鲁棒稳定性 | content/robust/robust-stability.mdx | 待完成 | 待生产 | — |
@@ -117,12 +117,12 @@
 | 106 | ROBUST-10 | 时滞系统控制 | content/robust/delay-robust-control.mdx | 待完成 | 待生产 | — |
 | 107 | ROBUST-11 | 鲁棒控制案例 | content/robust/robust-case-study.mdx | 待完成 | 待生产 | — |
 | 108 | MPC-01 | 预测控制原理 | content/mpc/mpc-principle.mdx | 待完成 | 待生产 | — |
-| 109 | MPC-02 | 预测模型 | content/mpc/prediction-model.mdx | 待完成 | 待生产 | — |
-| 110 | MPC-03 | 滚动优化 | content/mpc/receding-horizon.mdx | 待完成 | 待生产 | — |
-| 111 | MPC-04 | 约束处理 | content/mpc/constraint-handling.mdx | 待完成 | 待生产 | — |
-| 112 | MPC-05 | 递归可行性与稳定性 | content/mpc/mpc-stability.mdx | 待完成 | 待生产 | — |
-| 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 待完成 | 待生产 | — |
-| 114 | MPC-07 | 显式预测控制 | content/mpc/explicit-mpc.mdx | 待完成 | 待生产 | — |
+| 109 | MPC-02 | 预测模型 | content/mpc/prediction-model.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-02/acceptance.md |
+| 110 | MPC-03 | 滚动优化 | content/mpc/receding-horizon.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-03/acceptance.md |
+| 111 | MPC-04 | 约束处理 | content/mpc/constraint-handling.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-04/acceptance.md |
+| 112 | MPC-05 | 递归可行性与稳定性 | content/mpc/mpc-stability.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-05/acceptance.md |
+| 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-06/acceptance.md |
+| 114 | MPC-07 | 显式预测控制 | content/mpc/explicit-mpc.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-07/acceptance.md |
 | 115 | MPC-08 | 非线性预测控制 | content/mpc/nonlinear-mpc.mdx | 待完成 | 待生产 | — |
 | 116 | MPC-09 | 经济预测控制 | content/mpc/economic-mpc.mdx | 待完成 | 待生产 | — |
 | 117 | MPC-10 | 移动水平估计 | content/mpc/mhe-fusion.mdx | 待完成 | 待生产 | — |
@@ -135,8 +135,8 @@
 | 124 | INTEL-06 | 模糊神经网络 | content/intelligent/fuzzy-neural-network.mdx | 待完成 | 待生产 | — |
 | 125 | INTEL-07 | 迭代学习控制 | content/intelligent/iterative-learning-control.mdx | 待完成 | 待生产 | — |
 | 126 | INTEL-08 | 智能控制案例 | content/intelligent/intelligent-case-study.mdx | 待完成 | 待生产 | — |
-| 127 | RL-01 | 强化学习问题 | content/rl-control/rl-basics.mdx | 待完成 | 待生产 | — |
-| 128 | RL-02 | 价值函数与贝尔曼方程 | content/rl-control/dynamic-programming.mdx | 待完成 | 待生产 | — |
+| 127 | RL-01 | 强化学习问题 | content/rl-control/rl-basics.mdx | 已完成 | 待润色 | .agent/semester-03/rl-01/acceptance.md |
+| 128 | RL-02 | 价值函数与贝尔曼方程 | content/rl-control/dynamic-programming.mdx | 已完成 | 待润色 | .agent/semester-03/rl-02/acceptance.md |
 | 129 | RL-03 | Q学习 | content/rl-control/q-learning.mdx | 待完成 | 待生产 | — |
 | 130 | RL-04 | 深度Q网络 | content/rl-control/dqn.mdx | 待完成 | 待生产 | — |
 | 131 | RL-05 | 策略梯度 | content/rl-control/policy-gradient.mdx | 待完成 | 待生产 | — |
@@ -147,7 +147,7 @@
 | 136 | RL-10 | 基于模型的强化学习 | content/rl-control/model-based-rl.mdx | 待完成 | 待生产 | — |
 | 137 | RL-11 | 强化学习评估 | content/rl-control/rl-evaluation.mdx | 待完成 | 待生产 | — |
 | 138 | RL-12 | 强化学习控制案例 | content/rl-control/rl-control-case.mdx | 待完成 | 待生产 | — |
-| 139 | MULTI-01 | 多智能体系统 | content/multi-agent/multi-agent-overview.mdx | 待完成 | 待生产 | — |
+| 139 | MULTI-01 | 多智能体系统 | content/multi-agent/multi-agent-overview.mdx | 已完成 | 待润色 | .agent/semester-03/multi-01/acceptance.md |
 | 140 | MULTI-02 | 一致性控制 | content/multi-agent/consensus-control.mdx | 待完成 | 待生产 | — |
 | 141 | MULTI-03 | 分布式估计 | content/multi-agent/distributed-estimation.mdx | 待完成 | 待生产 | — |
 | 142 | MULTI-04 | 分布式优化 | content/multi-agent/distributed-optimization.mdx | 待完成 | 待生产 | — |
@@ -156,7 +156,7 @@
 | 145 | MULTI-07 | 分布式预测控制 | content/multi-agent/distributed-mpc.mdx | 待完成 | 待生产 | — |
 | 146 | MULTI-08 | 多智能体强化学习 | content/multi-agent/multi-agent-rl.mdx | 待完成 | 待生产 | — |
 | 147 | MULTI-09 | 多智能体协同案例 | content/multi-agent/multi-agent-cooperation.mdx | 待完成 | 待生产 | — |
-| 148 | SAFE-01 | 控制安全 | content/safety-ftc/safety-overview.mdx | 待完成 | 待生产 | — |
+| 148 | SAFE-01 | 控制安全 | content/safety-ftc/safety-overview.mdx | 待完成 | 待润色 | .agent/semester-03/safe-01/acceptance.md |
 | 149 | SAFE-02 | 控制屏障函数 | content/safety-ftc/control-barrier-functions.mdx | 待完成 | 待生产 | — |
 | 150 | SAFE-03 | 可达性分析 | content/safety-ftc/reachability-analysis.mdx | 待完成 | 待生产 | — |
 | 151 | SAFE-04 | 故障诊断 | content/safety-ftc/fault-detection-isolation.mdx | 待完成 | 待生产 | — |
@@ -194,8 +194,8 @@
 | 183 | EMBODIED-08 | 世界模型控制 | content/embodied/world-model-control.mdx | 待完成 | 待生产 | — |
 | 184 | EMBODIED-09 | 分层决策 | content/embodied/hierarchical-reasoning.mdx | 待完成 | 待生产 | — |
 | 185 | EMBODIED-10 | 具身智能评估 | content/embodied/embodied-evaluation.mdx | 待完成 | 待生产 | — |
-| 186 | DRIVING-01 | 自动驾驶系统 | content/autonomous-driving/driving-system.mdx | 待完成 | 待生产 | — |
-| 187 | DRIVING-02 | 车辆动力学 | content/autonomous-driving/vehicle-dynamics.mdx | 待完成 | 待生产 | — |
+| 186 | DRIVING-01 | 自动驾驶系统 | content/autonomous-driving/driving-system.mdx | 已完成 | 待润色 | — |
+| 187 | DRIVING-02 | 车辆动力学 | content/autonomous-driving/vehicle-dynamics.mdx | 已完成 | 待润色 | — |
 | 188 | DRIVING-03 | 定位与运动预测 | content/autonomous-driving/localization-prediction.mdx | 待完成 | 待生产 | — |
 | 189 | DRIVING-04 | 自动驾驶规划 | content/autonomous-driving/motion-planning.mdx | 待完成 | 待生产 | — |
 | 190 | DRIVING-05 | 车辆跟踪控制 | content/autonomous-driving/vehicle-control.mdx | 待完成 | 待生产 | — |
@@ -205,7 +205,7 @@
 | 194 | DRIVING-09 | 驾驶视觉语言动作模型 | content/autonomous-driving/driving-vla.mdx | 待完成 | 待生产 | — |
 | 195 | DRIVING-10 | 闭环驾驶评估 | content/autonomous-driving/closed-loop-evaluation.mdx | 待完成 | 待生产 | — |
 | 196 | DRIVING-11 | 驾驶安全与回退 | content/autonomous-driving/driving-safety.mdx | 待完成 | 待生产 | — |
-| 197 | APP-01 | 电力电子控制 | content/applications/power-electronics.mdx | 待完成 | 待生产 | — |
+| 197 | APP-01 | 电力电子控制 | content/applications/power-electronics.mdx | 已完成 | 待润色 | .agent/semester-03/app-01/acceptance.md |
 | 198 | APP-02 | 过程控制 | content/applications/process-control.mdx | 待完成 | 待生产 | — |
 | 199 | APP-03 | 飞行器姿态控制 | content/applications/aerospace-attitude.mdx | 待完成 | 待生产 | — |
 | 200 | APP-04 | 微电网控制 | content/applications/energy-storage-microgrid.mdx | 待完成 | 待生产 | — |

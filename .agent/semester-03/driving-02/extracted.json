@@ -1,0 +1,63 @@
+{
+  "source": "content/autonomous-driving/vehicle-dynamics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 82,
+      "title": "复算后轴圆弧与几何边界",
+      "unknownAttrs": [],
+      "setupCode": "import math\ndef arc(v, delta, t, L=2.8):\n    kappa = math.tan(delta) / L\n    psi = v * kappa * t\n    if abs(kappa) < 1e-12:\n        return (v*t, 0.0, psi)\n    return (math.sin(psi)/kappa, (1-math.cos(psi))/kappa, psi)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 92,
+          "delim": "`",
+          "code": "v, delta, t, L = 10.0, 0.04, 2.0, 2.8\nprint(\"steer_deg\", math.degrees(delta))\nprint(\"radius_m\", L/math.tan(delta))\nprint(\"yaw_rate_rad_s\", v*math.tan(delta)/L)\nprint(\"rear_X_Y_psi\", arc(v, delta, t))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 97,
+          "delim": "`",
+          "code": "left, right = arc(10, 0.04, 2), arc(10, -0.04, 2)\nprint(\"straight\", arc(10, 0, 2))\nprint(\"stationary\", arc(0, 0.04, 2))\nprint(\"right_turn\", right)\nassert arc(10, 0, 2) == (20, 0.0, 0.0)\nassert arc(0, 0.04, 2) == (0.0, 0.0, 0.0)\nassert math.isclose(left[0], right[0]) and math.isclose(left[1], -right[1])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 207,
+      "title": "复算横向模型、响应与附着边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nfrom scipy.linalg import expm\ndef matrices(u):\n    if u <= 0:\n        raise ValueError(\"positive longitudinal speed required\")\n    m, Iz, a, b, Cf, Cr = 1600.0, 2500.0, 1.4, 1.4, 80000.0, 80000.0\n    A = np.array([[-(Cf+Cr)/(m*u), -u-(a*Cf-b*Cr)/(m*u)],\n                  [-(a*Cf-b*Cr)/(Iz*u), -(a*a*Cf+b*b*Cr)/(Iz*u)]])\n    B = np.array([Cf/m, a*Cf/Iz])\n    return A, B",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 220,
+          "delim": "`",
+          "code": "A, B = matrices(10)\ndelta = 0.04\nsteady = np.linalg.solve(A, -B*delta)\nM = np.zeros((3,3)); M[:2,:2] = A; M[:2,2] = B*delta\nlast = (expm(M*2) @ np.array([0.,0.,1.]))[:2]\nprint(\"A\", A.tolist(), \"B\", B.tolist())\nprint(\"eigenvalues\", np.linalg.eigvals(A).tolist())\nprint(\"initial_derivative\", (B*delta).tolist())\nprint(\"steady_vy_r\", steady.tolist(), \"sample_2s\", last.tolist())\nalpha = [delta-(steady[0]+1.4*steady[1])/10, -(steady[0]-1.4*steady[1])/10]\nprint(\"steady_front_rear_slip\", alpha)\nprint(\"steady_ay\", 10*steady[1])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 232,
+          "delim": "`",
+          "code": "for u, delta, mu in [(20,0.04,0.3),(5,-0.08,0.8),(10,0.,0.8),(25,0.08,0.8)]:\n    A, B = matrices(u)\n    steady = np.linalg.solve(A, -B*delta)\n    ay = u*steady[1]\n    print(\"boundary_u_delta_mu\", u, delta, mu, \"steady\", steady.tolist(), \"ay_limit_usage\", float(ay), mu*9.81, abs(ay)/(mu*9.81))\ntry:\n    matrices(0)\nexcept ValueError:\n    print(\"zero_speed_rejected\", True)\nelse:\n    raise AssertionError(\"zero speed must not be hidden\")\nassert np.allclose(matrices(10)[1]*0.04, [2.,1.792])\nassert np.allclose(np.linalg.solve(matrices(10)[0],-matrices(10)[1]*0.04), [2/35,1/7])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

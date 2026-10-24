@@ -1,0 +1,261 @@
+---
+title: 嵌入式控制
+description: 从恒温箱的ADC读数到PWM输出，明确工程量、整数接口、逐拍状态与样本交接的约定。
+---
+
+# 嵌入式控制
+
+恒温箱显示20°C，程序读到的却是整数51；你要求加热器输出37%，寄存器里也不会直接出现“37%”。如果把51当成温度，或把上一次转换的读数当成当前读数，即使控制公式完全正确，加热器仍会收到错误指令。
+
+上一课已经把控制器变成逐拍递推。本课继续问：**每一拍从哪里拿数据，怎样把数值交给硬件，拿到旧数据时怎么办？** 学完后，你应能手算一拍ADC→工程量→控制输出→PWM，并用样本序号和时间戳检查数据交接。这里采用可在主机运行的教学接口模型；板卡驱动和执行时间仍需另测。
+
+## 从温控箱读数到接口合同
+
+给一个只有加热、没有主动制冷的恒温箱建模：环境温度20°C，满功率时模型的平衡温度100°C。占空比$d[k]$表示第$k$拍期间加热器通电的时间比例，范围0–1。用同一组简单参数贯穿全课：
+
+$$
+\frac{dy}{dt}=\frac{20+80d-y}{2},\qquad T_s=0.1\ \mathrm{s},\qquad y[0]=20\ ^\circ\mathrm{C}.
+$$
+
+温度$y$的单位为°C，时间单位为s；分母2是热过程时间常数。控制器只用比例项，$K_p=0.03/{}^\circ\mathrm C$，默认目标$r=60$°C。选这个简单控制器，是为了看清接口引入的变化；它本身不能消除静差。
+
+![恒温箱每拍经ADC一致快照、控制计算与PWM锁存，低优先级日志只读取已提交记录](/diagrams/implementation/embedded-interface-workflow.svg)
+
+接口合同要比“用了多少位”更完整：
+
+| 接口 | 本课约定 | 上板时必须再确认 |
+|---|---|---|
+| ADC（模数转换） | 0–100°C线性端点标定，码值0..$2^N-1$ | 传感器/电压转换、标定、偏置、噪声、输入范围 |
+| PWM（脉宽调制） | 一个周期分$M$个时隙，抽象命令0..$M$ | 计数模式、周期寄存器、比较值、极性、强制0/100%模式 |
+| 数据交接 | 一致快照包含码值、序号、转换时间戳 | 中断/任务间所有权、原子性与内存可见性 |
+| 输出提交 | 每拍只提交一次已检查的命令 | 锁存生效时刻、启动和异常时的实物输出 |
+
+这里把理想端点0与满量程对应到最小/最大数字码，方便做工程量标定。它与[采样与量化](/discrete-sampled/discrete-time-freq)中的均匀中点量化器是**两种明确不同的教学约定**，步长不能混用；实际ADC转换阈值仍以器件资料和标定为准。
+
+## ADC码值与工程量
+
+记$L_{\rm adc}=2^N-1$，先把输入温度裁剪到0–100°C，再最近舍入；非负半格向上。编码和重建为：
+
+$$
+c[k]=\left\lfloor\frac{L_{\rm adc}}{100}\operatorname{clip}(y[k],0,100)+\frac12\right\rfloor,
+\qquad \hat y[k]=\frac{100c[k]}{L_{\rm adc}}.
+$$
+
+符号$\hat y$是控制器使用的重建温度，$y$是对象真实温度；`clip(x,lo,hi)`表示限制在闭区间。码值本身没有°C单位，经过标定才有。默认$N=8$，最大码255，温度20°C对应$c=51$，恰好重建20°C；50°C对应码128，重建约50.196078°C。
+
+在不过载且没有其它误差时，端点标定模型的相邻重建值间隔与误差界为：
+
+$$
+q_{\rm adc}=\frac{100}{2^N-1},\qquad |\hat y-y|\leq\frac{q_{\rm adc}}2.
+$$
+
+8位时步长约0.392157°C，半步约0.196078°C；12位分别约0.024420°C和0.012210°C。这只是一笔量化预算，不能代表传感器总误差或闭环波动。105°C被编码成255、重建100°C，误差达到−5°C，显然不能继续套用不过载半步界。越界信号还应单独带有效性或故障标志；一个饱和码无法告诉程序究竟是100°C还是更高。
+
+<JupyterNotebook title="实验1：端点编码、过载与PWM取整" setupCode={`import json
+import numpy as np
+import matplotlib.pyplot as plt
+def adc(temp,bits):
+    return int(np.floor(np.clip(temp,0,100)*(2**bits-1)/100+.5))
+def pwm(raw,slots):
+    return int(np.floor(np.clip(raw,0,1)*slots+.5))
+def experiment(bits=8,slots=100,target=60):
+    a=np.exp(-.1/2); y=20.; ideal=20.; rows=[]; gap=0.; saturated=0
+    for k in range(100):
+        code=adc(y,bits); read=100*code/(2**bits-1); raw=.03*(target-read)
+        word=pwm(raw,slots); duty=word/slots
+        rows.append([k/10,y,ideal,read,code,word,duty]); saturated+=int(raw<0 or raw>1)
+        y=a*y+(1-a)*(20+80*duty)
+        ideal=a*ideal+(1-a)*(20+80*np.clip(.03*(target-ideal),0,1))
+        gap=max(gap,abs(y-ideal))
+    rows.append([10,y,ideal,None,None,None,None])
+    return dict(bits=bits,slots=slots,target=target,firstCode=rows[0][4],firstRead=rows[0][3],firstPWM=rows[0][5],firstY=rows[1][1],finalY=y,finalIdeal=ideal,maxGap=gap,saturated=saturated,points=rows)
+`} cells={[{code:`conversion_results=[dict(input=x,bits=n,code=adc(x,n),read=100*adc(x,n)/(2**n-1)) for n in [4,8,12] for x in [-5,0,20,50,100,105]]
+budget=dict(step8=100/255,bound8=50/255,step12=100/4095,bound12=50/4095,pwmHalf100=1/200,code20=adc(20,8),code50=adc(50,8),pwm37=pwm(.37,100),pwmHalf=pwm(.375,100),pwmFull=pwm(1,100))
+print(json.dumps(dict(budget=budget,conversions=conversion_results)))`},{code:`x=np.linspace(-5,105,441); quant=[100*adc(v,4)/15 for v in x]
+plt.figure(figsize=(7,3));plt.plot(x,quant,label="4-bit endpoints");plt.plot(x,x,"--",label="input")
+plt.xlim(-5,105);plt.ylim(-5,105);plt.xlabel("Input temperature (deg C)");plt.ylabel("Reconstructed (deg C)");plt.legend();plt.grid();plt.show()`}]} />
+
+## 逐拍计算与PWM输出
+
+先用$\hat y[k]$计算误差和未限幅命令$v[k]$，再转换为抽象PWM时隙数$p[k]$：
+
+$$
+e[k]=r-\hat y[k],\quad v[k]=K_p e[k],\quad
+p[k]=\left\lfloor M\operatorname{clip}(v[k],0,1)+\frac12\right\rfloor,\quad d[k]=\frac{p[k]}M.
+$$
+
+“占空比命令”是通电时间比例，**不是PWM载波频率**。$M=100$时可表达0%、1%直到100%；最近舍入引入的占空比误差不超过0.005，但只针对已限幅的命令。例如0.37变成命令37，0.375按半格向上变成38。负命令变成0，超过1变成100；这与数值溢出后自动回绕完全不同。
+
+默认首拍：$e[0]=60-20=40$°C，$v[0]=1.2$，限幅后$p[0]=100$、$d[0]=1$。在整个采样间隔内保持这个输入，精确模型更新是：
+
+$$
+a=e^{-T_s/2},\qquad y[k+1]=a y[k]+(1-a)(20+80d[k]).
+$$
+
+所以$y[1]\approx23.901646$°C。图上从$y[0]$画起，100次更新后的末点是$y[100]$，对应10s；别把第100个“计算前读数”$y[99]$误当成这个末点。
+
+以下C片段表达**已标定、已验证输入**的一拍计算。它不包含ADC中断、定时器寄存器或并发快照。浮点舍入边界与目标编译器精度也要用测试向量核对。
+
+```c
+#include <stdint.h>
+#include <math.h>
+/* adc8 must be 0..255; target must be finite. */
+uint32_t control_tick(uint16_t adc8, double target) {
+    double measured = 100.0 * adc8 / 255.0;
+    double command = 0.03 * (target - measured);
+    if (command < 0.0) command = 0.0;
+    if (command > 1.0) command = 1.0;
+    return (uint32_t)floor(100.0 * command + 0.5);
+    /* driver converts abstract 0..100 to real PWM hardware */
+}
+```
+
+不少定时器的周期寄存器写$M-1$，比较寄存器能否直接写$M$、能否稳定产生100%，还取决于模式。先把控制输出转换为有明确含义的抽象命令，再由驱动处理这些差异，不能把上面的100照抄进任意寄存器。定点乘加与饱和顺序见[控制器部署](/implementation/controller-discretization-practice)。
+
+## 量化进入反馈以后
+
+现在每拍都把ADC重建值送回控制器，PWM取整也真正改变下一拍温度；这与事后给一条温度曲线取整不同。对照曲线使用相同初值、比例增益、采样周期和0–1限幅，仅去掉ADC/PWM量化。两条曲线都使用同一个精确保持模型；没有引入噪声、执行延迟或硬件误差。
+
+<EmbeddedControlExplorer />
+
+默认8位、100时隙时，10s末温约48.039793°C；理想接口约48.235294°C，整个窗口最大绝对轨迹差约0.197476°C。不要用“离60°C还差很多”直接判断ADC不够精细。理想接口在未饱和的平衡点满足：
+
+$$
+y_\star=20+80K_p(r-y_\star),
+$$
+
+更直接地整理第一项关系得到：
+
+$$
+y_\star=\frac{20+80K_pr}{1+80K_p}.
+$$
+
+默认平衡温度约48.235294°C，对应静差约11.764706°C。这来自P控制和需要非零加热功率的对象，并非ADC量化产生的全部误差。积分控制如何消除可达目标下的静差见[数字PID](/implementation/digital-pid)；加入积分后仍需处理限幅与接口。
+
+下面固定$M=100$，保留三种目标与三种位数的完整有限窗口观察。20°C时不需要加热，两条轨迹持平；110°C超过模型满功率平衡温度100°C，即使理想接口也达不到。位数增加不会扩展加热能力。各行只是本组参数的观察，不能推广为“位数增加必然改善每种闭环指标”。
+
+<div style={{overflowX:'auto'}}>
+
+| 目标°C | ADC位数 | 10s末温°C | 理想接口末温°C | 窗口最大轨迹差°C | 命令越限拍数 |
+|---|---|---|---|---|---|
+| 20 | 4 | 20.00000000 | 20.00000000 | 0.00000000 | 0 |
+| 20 | 8 | 20.00000000 | 20.00000000 | 0.00000000 | 0 |
+| 20 | 12 | 20.00000000 | 20.00000000 | 0.00000000 | 0 |
+| 60 | 4 | 49.83878733 | 48.23529372 | 1.87865934 | 1 |
+| 60 | 8 | 48.03979326 | 48.23529372 | 0.19747574 | 2 |
+| 60 | 12 | 48.16039375 | 48.23529372 | 0.07489997 | 2 |
+| 110 | 4 | 83.00203754 | 83.52940375 | 0.74009208 | 25 |
+| 110 | 8 | 83.38300386 | 83.52940375 | 0.20200871 | 25 |
+| 110 | 12 | 83.52621848 | 83.52940375 | 0.04940751 | 25 |
+
+
+</div>
+
+<JupyterNotebook title="实验2：接口量化进入真实反馈" setupCode={`import json
+import numpy as np
+import matplotlib.pyplot as plt
+def adc(temp,bits):
+    return int(np.floor(np.clip(temp,0,100)*(2**bits-1)/100+.5))
+def pwm(raw,slots):
+    return int(np.floor(np.clip(raw,0,1)*slots+.5))
+def experiment(bits=8,slots=100,target=60):
+    a=np.exp(-.1/2); y=20.; ideal=20.; rows=[]; gap=0.; saturated=0
+    for k in range(100):
+        code=adc(y,bits); read=100*code/(2**bits-1); raw=.03*(target-read)
+        word=pwm(raw,slots); duty=word/slots
+        rows.append([k/10,y,ideal,read,code,word,duty]); saturated+=int(raw<0 or raw>1)
+        y=a*y+(1-a)*(20+80*duty)
+        ideal=a*ideal+(1-a)*(20+80*np.clip(.03*(target-ideal),0,1))
+        gap=max(gap,abs(y-ideal))
+    rows.append([10,y,ideal,None,None,None,None])
+    return dict(bits=bits,slots=slots,target=target,firstCode=rows[0][4],firstRead=rows[0][3],firstPWM=rows[0][5],firstY=rows[1][1],finalY=y,finalIdeal=ideal,maxGap=gap,saturated=saturated,points=rows)
+`} cells={[{code:`table=[]
+for target in [20,60,110]:
+    for bits in [4,8,12]:
+        v=experiment(bits,100,target)
+        table.append({k:v[k] for k in ["target","bits","slots","finalY","finalIdeal","maxGap","saturated"]})
+default={k:v for k,v in experiment().items() if k!="points"}
+equilibrium=(20+80*.03*60)/(1+80*.03)
+print(json.dumps(dict(default=default,table=table,equilibrium=equilibrium,offset=60-equilibrium,maximumEquilibrium=100)))`},{code:`v=experiment(); p=v["points"]
+plt.figure(figsize=(7,3));plt.plot([r[0] for r in p],[r[1] for r in p],label="ADC/PWM");plt.plot([r[0] for r in p],[r[2] for r in p],"--",label="ideal interfaces")
+plt.axhline(60,color="gray",linestyle=":",label="target");plt.xlim(0,10);plt.ylim(15,120);plt.xlabel("Time (s)");plt.ylabel("Temperature (deg C)");plt.legend();plt.grid();plt.show()`}]} />
+
+这里没有独立整定某个“更优控制器”，也没有作平台性能比较；固定增益是为了隔离接口机制。模型的采样输出、有限窗口差值和物理稳态是不同的量。实物要另测传感器偏差、PWM纹波、噪声和计算延迟。
+
+## 样本交接与时间戳
+
+设ADC完成后提交一个快照`{seq, stamp_us, code}`：序号标记一次转换，时间戳标记转换发生时刻，码值属于同一次转换。控制任务只读**完整、不可撕裂的快照**。若任务读完码值后被中断打断，再读到下一次转换的时间戳，就拼出了从未存在过的样本；加一个`volatile`不能保证整个结构的一致性。
+
+可选方案包括短临界区内复制、多缓冲与所有权交接、或平台支持的原子同步。多核、DMA和缓存还需要对应的可见性与缓存维护规则。本课事件函数从“已经拿到一致快照”开始，故不会验证这些同步原语；移植时需要平台专用并发测试。
+
+演示策略：序号必须向前，样本年龄不大于500μs，否则本次输出关闭加热、保留最后接受的序号并记录拒绝原因。500μs是人为给定的**转换完成到任务消费**预算，不是0.1s控制周期，也不是实物安全认证。实际系统的失效输出可能不同，须根据设备危害分析和硬件保护确定。
+
+32位无符号微秒计数器允许回绕；用模$2^{32}$差计算年龄：
+
+$$
+\operatorname{age}=(\operatorname{now}-\operatorname{stamp})\bmod 2^{32}.
+$$
+
+必须另有约束，确保真实间隔小于半个计数范围，避免将多次回绕或未来时间戳当成新数据。序号也用无符号差判前进：差为0或不小于$2^{31}$视为重复/旧序号。初始化时要显式建立“尚未接受任何样本”状态，或约定首序号与初始已读序号；演示从已读序号9开始。
+
+| 事件 | 快照序号 | 时间戳μs | 当前时刻μs | 年龄μs | 处理 / PWM命令 |
+|---|---|---|---|---|---|
+| 新样本 | 10 | 1000 | 1100 | 100 | 接受 / 100 |
+| 重复读取 | 10 | 1000 | 1200 | 200 | 拒绝 / 0 |
+| 数据过期 | 11 | 2000 | 2600 | 600 | 拒绝 / 0 |
+| 计数回绕 | 12 | $2^{32}-50$ | 50 | 100 | 接受 / 100 |
+
+拒绝样本时别把其序号登记成已成功控制；同时别反复重算已经消费过的一拍。这里选择“每次拒绝即关闭输出”，不是沿用上一次加热命令；两种策略的风险需要结合设备分析。日志由低优先级任务读取已提交记录，不能让格式化打印挤占控制路径。详细调度与最坏执行时间留给后续“实时控制”课。
+
+<JupyterNotebook title="实验3：样本接受、拒绝与回绕" setupCode={`import json
+import numpy as np
+import matplotlib.pyplot as plt
+def gate(last,seq,stamp,now,code=51):
+    age=(now-stamp)%(2**32); advance=(seq-last)%(2**32)
+    reason="duplicate-or-old" if advance==0 or advance>=2**31 else "stale" if age>500 else "accepted"
+    word=int(np.floor(np.clip(.03*(60-100*code/255),0,1)*100+.5)) if reason=="accepted" else 0
+    return dict(age=age,reason=reason,accepted=reason=="accepted",lastSeq=seq if reason=="accepted" else last,pwm=word)
+`} cells={[{code:`events=[(10,1000,1100),(10,1000,1200),(11,2000,2600),(12,2**32-50,50)]
+last=9; event_results=[]
+for seq,stamp,now in events:
+    v=gate(last,seq,stamp,now);event_results.append(v);last=v["lastSeq"]
+print(json.dumps(event_results))`},{code:`boundary_results=[gate(12,13,1000,1500),gate(12,13,1000,1501),gate(12,11,1000,1100),gate(2**32-1,0,1000,1100)]
+print(json.dumps(boundary_results))
+plt.figure(figsize=(7,2.8));plt.step(range(1,5),[v["pwm"] for v in event_results],where="mid");plt.xticks(range(1,5),["fresh","duplicate","stale","wrap"]);plt.xlim(.5,4.5);plt.ylim(-5,105);plt.ylabel("PWM command");plt.grid();plt.show()`}]} />
+
+## 从主机验证到板上验收
+
+主机实验能查单位、索引、舍入和事件策略，不能证明板上满足时限。按接口层次验收，失败时保留原始码值、样本时间戳、接受序号、输出命令和版本，才能复现出错的一拍。
+
+| 层次 | 应留下的证据 | 本课状态 |
+|---|---|---|
+| 纯计算 | 端点/半格/越界向量，默认首拍，窗口轨迹 | Notebook与Explorer可复算 |
+| 目标程序 | 与主机向量逐项对账，浮点或定点约定一致 | 提供计算片段；目标编译器待验证 |
+| 硬件接口 | 标定点、0/100%输出、锁存时刻、一致快照、回绕 | 板上待验 |
+| 实际闭环 | 转换到输出延迟、噪声、饱和、掉样、保护与回退 | 板上或HIL待验 |
+
+首次上电先确认输出关闭、量程有效、初始状态和首样本策略，再逐步增加功率。不要用网页曲线替代保护措施，也不要把一次正常波形当作所有负载和故障条件都已覆盖。读者可用本课测试向量检查自己的转换函数，但必须另补芯片接口与对象约束。
+
+## 小结
+
+嵌入式控制的一拍是一份完整的数据合同：ADC码值经过标定成为工程量，控制器据此计算并限幅，驱动把抽象PWM命令转换成硬件动作，下一拍再消费新的完整样本。分辨率预算、P控制静差、饱和能力和数据新鲜度分别检查，才能解释哪里出了问题。
+
+## 习题
+
+**习题1（编码）**：按本课端点模型，8位ADC对20°C、50°C、105°C分别输出什么码和重建温度？12位在不过载时的半步误差界是多少？为什么105°C不能用它判断？
+
+**习题2（逐拍）**：默认首拍为何输出命令100？下个采样点温度是多少？$M=100$时0.375和1分别转成什么命令？能否不查驱动就把这些数写进某个PWM比较寄存器？
+
+**习题3（反馈边界）**：理想接口、默认60°C目标的未饱和平衡温度与静差是多少？目标改为110°C，增加ADC位数能否让模型达到目标？说明20°C目标为何是本课比较的持平例。
+
+**习题4（数据交接）**：年龄恰好500μs与501μs分别怎样处理？最后接受序号12又读到11如何处理？最后序号为$2^{32}-1$、新序号为0且年龄100μs，是否接受？为什么这些判定不能替代一致快照？
+
+## 答案
+
+**习题1**：用$c=\lfloor255y/100+0.5\rfloor$并先裁剪。20°C→51→20°C；50°C→128→约50.196078°C；105°C先裁剪到100°C→255→100°C。12位半步为$50/4095\approx0.012210$°C。105°C已过载，重建误差−5°C来自裁剪，不能用不过载量化界约束。实验1列出了这些输入与边界。
+
+**习题2**：$v[0]=0.03(60-20)=1.2$，限幅为1，再乘100并取整得到100；代入保持更新得$y[1]\approx23.901646$°C。0.375乘100得37.5，半格向上得38；1得到100。它们是抽象时隙命令，实际比较值与周期、极性及端点模式有关，必须经驱动转换。实验1核取整，实验2核首拍。
+
+**习题3**：平衡关系$y_\star=20+80\times0.03(60-y_\star)$，故$3.4y_\star=164$，得约48.235294°C、静差约11.764706°C。110°C超过占空比1对应的100°C平衡上限，增加位数不能补足功率。20°C时初温等于环境与目标，命令始终为0，理想与量化轨迹都保持20°C。实验2同时列出这些工况；10s末温与解析平衡点分别报告。
+
+**习题4**：预算用不大于，因此500μs接受、501μs拒绝并输出0。12之后读到11的无符号差落在旧序号半区，拒绝并保留12；最大序号后读到0的差为1，在给定年龄100μs时接受。这要求真实时间/序号跨度满足半范围假设。实验3同时测这些边界；若快照被撕裂，码值、序号与时间戳可能不属于同一次转换，再正确的差值也救不了这份错误输入。

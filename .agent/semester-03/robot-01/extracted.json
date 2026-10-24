@@ -1,0 +1,55 @@
+{
+  "source": "content/robotics/robot-models.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 47,
+      "title": "两杆投影、底座移动与自由度",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\ndef endpoint(q1, q2):\n    return np.array([np.cos(q1) + 0.5*np.cos(q1+q2), np.sin(q1) + 0.5*np.sin(q1+q2)])\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 54,
+          "delim": "`",
+          "code": "p = endpoint(0, np.pi/2)\nprint('endpoint_m', np.round(p, 8))\nprint('table_endpoint_m', np.round(p + [0.3, 0], 8))\nprint('exercise1_m', np.round(endpoint(np.pi/2, -np.pi/2), 8))\nprint('free_coordinates_arm_slide_planar_base', 2, 1, 3)\nassert np.allclose(p, [1, 0.5])\nassert np.allclose(endpoint(np.pi/2, -np.pi/2), [0.5, 1])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 119,
+      "title": "滑台：实际力、状态、读数与接触边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nm = 2.0\nuc = 3.0\numax = 2.0\nq0, v0, bias = 0.0, 0.2, 0.01\nt = np.linspace(0, 1, 101)\nu = np.clip(uc, -umax, umax)\na = u / m\nq = q0 + v0*t + 0.5*a*t*t\nv = v0 + a*t\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 133,
+          "delim": "`",
+          "code": "print('force_acceleration', u, a)\nprint('end_q_v_y', round(q[-1], 8), round(v[-1], 8), round(q[-1]+bias, 8))\nprint('same_position_different_velocity', 0.2*1, -0.2*1)\nprint('exercise3_q_v', 0.5*1*1, 1*1)\nassert np.allclose([q[-1], v[-1], q[-1]+bias], [0.7, 1.2, 0.71])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 138,
+          "delim": "`",
+          "code": "stop = 0.5\nhit = (-v0 + np.sqrt(v0*v0 + 2*a*stop))/a\nprint('first_stop_time_s', round(hit, 8))\nprint('free_model_at_1s_m', round(q[-1], 8), 'stop_m', stop)\nprint('zero_force_position_at_1s_m', v0)\nassert abs(hit - 0.819803902718557) < 1e-12",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

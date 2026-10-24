@@ -1,0 +1,260 @@
+---
+title: 无迹卡尔曼滤波
+description: 从确定性sigma点到加性UKF递推；用平方观测算清均值、交叉协方差和校正，同时检验负权与多峰后验的边界。
+---
+
+# 无迹卡尔曼滤波
+
+延续上一课的小车定位问题：车在直线上，教学传感器输出到原点距离的平方。我们估计车在2m附近，但位置还有不确定性；把“估计位置的平方”当作“预期读数”，会漏掉这段不确定性经过弯曲函数后产生的影响。若不方便求导，能否选几个有代表性的位置，让它们各自经过传感器模型，再合成读数预测？
+
+无迹卡尔曼滤波（unscented Kalman filter，UKF）用确定性的 **sigma点** 做这件事。它继续使用[卡尔曼滤波](/estimation/kalman-filter)的预测与校正，但用无迹变换近似非线性变换后的矩。先修是[概率基础](/math/probability-basics)中的期望、协方差与高斯分布；[EKF](/estimation/extended-kalman-filter)提供对照。本课算例是教学模型，不声称普通测距设备直接输出平方值。
+
+## 问题与模型
+
+考虑离散、加性噪声模型：
+
+$$
+x_k=f(x_{k-1},u_{k-1})+w_{k-1},\qquad z_k=h(x_k)+v_k.
+$$
+
+状态$x_k\in\mathbb R^n$，已知输入$u_{k-1}$，观测$z_k\in\mathbb R^m$。初始状态、各拍过程噪声与测量噪声相互独立；噪声零均值高斯，协方差为$Q_{k-1}\succeq0,R_k\succ0$。每拍将状态分布近似为高斯，用均值$\mu$和协方差$P$表示；非线性变换后的真实分布通常不再高斯。
+
+贯穿观测为$h(x)=x^2$：位置$x$单位m，$P$单位m²，读数$z$单位m²，$R$单位m⁴。这里$Q,R$是离散噪声协方差，沿用上一课约定，与LQR代价权重、连续白噪声强度分别理解。
+
+如果$X\sim\mathcal N(\mu,P)$，则$\mathbb E[X^2]=\mu^2+P$，不是仅有$\mu^2$。例如$\mu=2,P=0.25$时，预期平方读数是4.25，而对均值直接求平方是4。UKF试图近似这种“整团不确定性经过函数”的效果；它不要求把真实分布全部存下来。
+
+## sigma点与两套权重
+
+选缩放参数$\alpha>0,\beta,\kappa$，要求$n+\kappa>0$。令：
+
+$$
+\lambda=\alpha^2(n+\kappa)-n,\qquad c=n+\lambda=\alpha^2(n+\kappa)>0.
+$$
+
+取矩阵平方根$L$满足$LL^\top=P$，记$L_{:i}$为**第$i$列**。若用下三角Cholesky分解，必须按列取方向；若库返回满足$U^\top U=P$的上三角因子，应先转置后套本式，不能只看函数名称：
+
+$$
+\chi_0=\mu,\quad \chi_i=\mu+\sqrt c\,L_{:i},\quad
+\chi_{i+n}=\mu-\sqrt c\,L_{:i},\qquad i=1,\ldots,n.
+$$
+
+共有$2n+1$个点。均值权重$W^{(m)}$和协方差权重$W^{(c)}$分别为：
+
+$$
+W_0^{(m)}=\frac\lambda c,\quad W_0^{(c)}=\frac\lambda c+1-\alpha^2+\beta,\qquad
+W_i^{(m)}=W_i^{(c)}=\frac1{2c}\quad(i\ne0).
+$$
+
+均值权重之和为1；协方差权重不必和为1。由于成对偏移抵消，且中心点对输入协方差的偏移为零，直接可验：
+
+$$
+\sum_iW_i^{(m)}\chi_i=\mu,\qquad
+\sum_iW_i^{(c)}(\chi_i-\mu)(\chi_i-\mu)^\top=P.
+$$
+
+这些点是**带权求积节点，不是随机抽样，也不是可能性相同的粒子**；允许负权，但不能把负权解释为概率。$\alpha$改变点的展开范围，$\kappa$与维数共同影响缩放，$\beta$修正中心协方差权重。高斯问题常用$\beta=2$；本课固定$\alpha=1,\kappa=0$便于手算，不作为所有工程问题的最佳调参建议。参数说明可对照[MathWorks官方算法说明](https://www.mathworks.com/help/control/ug/extended-and-unscented-kalman-filter-algorithms-for-online-state-estimation.html)。
+
+## 无迹变换怎样传播矩
+
+对函数$y=g(x)$，让每个点直接经过原函数，计算输出矩及输入输出交叉协方差：
+
+$$
+\eta_i=g(\chi_i),\quad \bar y=\sum_iW_i^{(m)}\eta_i,\qquad
+P_{yy}=\sum_iW_i^{(c)}(\eta_i-\bar y)(\eta_i-\bar y)^\top,
+$$
+
+$$
+P_{xy}=\sum_iW_i^{(c)}(\chi_i-\mu)(\eta_i-\bar y)^\top.
+$$
+
+这就是本课使用的缩放无迹变换（unscented transform，UT）。它不计算雅可比，但仍近似期望和协方差。仿射函数的矩能正确恢复；对高斯输入，成对点的对称性还使三次及以下多项式的**均值**正确，不能因此声称任意非线性函数的协方差或后验也精确。协方差会涉及函数乘积，更高阶矩未必被节点捕捉。精度范围见[Särkkä与Svensson，§8.7–8.8](https://users.aalto.fi/~ssarkka/pub/bfs_book_2023_online.pdf)。
+
+![确定性sigma点经过非线性函数，再用两套权重计算输出矩；不是车辆轨迹](/diagrams/estimation/ukf-sigma-points.svg)
+
+一维主例有三个点$[2,2.5,1.5]$，均值权重$[0,0.5,0.5]$，协方差权重$[2,0.5,0.5]$。平方后得到$[4,6.25,2.25]$。因此：
+
+$$
+\bar z=4.25,\qquad P_{hh}=4.125,\qquad P_{xh}=1.
+$$
+
+为什么零均值权重的中心点仍要计算？它的协方差权重为2，输出4与均值4.25不同，仍贡献输出方差。不能把两套权重混用。本例可用高斯矩独立验证$P_{hh}=4\mu^2P+2P^2$、$P_{xh}=2\mu P$，与sigma点结果一致。
+
+## 预测与校正的完整递推
+
+初始化$\hat x_0^+,P_0^+$；$-$为本拍测量前，$+$为使用测量后。预测先根据上一拍后验生成点$\chi_i$，传播：
+
+$$
+\xi_i=f(\chi_i,u_{k-1}),\quad \hat x_k^-=\sum_iW_i^{(m)}\xi_i,\qquad
+P_k^-=\sum_iW_i^{(c)}(\xi_i-\hat x_k^-)(\xi_i-\hat x_k^-)^\top+Q_{k-1}.
+$$
+
+**根据$(\hat x_k^-,P_k^-)$重新生成测量用的点$\tilde\chi_i$**，再令$\zeta_i=h(\tilde\chi_i)$。这样观测传播才能包含新加入的过程噪声；不能机械地沿用加$Q$之前的$\xi_i$。本课采用的就是这一加性噪声版本，见[Särkkä讲义，Algorithm 3.12](https://users.aalto.fi/~ssarkka/course_k2009/full_course_booklet.pdf)。
+
+$$
+\hat z_k=\sum_iW_i^{(m)}\zeta_i,\qquad
+S_k=\sum_iW_i^{(c)}(\zeta_i-\hat z_k)(\zeta_i-\hat z_k)^\top+R_k,
+$$
+
+$$
+C_k=\sum_iW_i^{(c)}(\tilde\chi_i-\hat x_k^-)(\zeta_i-\hat z_k)^\top,\qquad K_k=C_kS_k^{-1},
+$$
+
+$$
+\nu_k=z_k-\hat z_k,\qquad \hat x_k^+=\hat x_k^-+K_k\nu_k,\qquad
+P_k^+=P_k^--K_kS_kK_k^\top.
+$$
+
+交叉协方差$C_k$衡量“状态偏移与读数偏移是否同向变化”，决定残差沿哪个状态方向起作用。它不是EKF的雅可比；$C_k=0$也不证明状态和观测独立，平方观测零点就是反例。
+
+实际计算增益时解线性方程$S_kK_k^\top=C_k^\top$，避免显式求逆。以上校正是对近似联合高斯做条件化，不是直接求真实非线性Bayes后验。$P_k^+$也是近似报告的不确定性，不能自动当成真实误差协方差。
+
+例如$f(x)=x+0.1x^2$、$\mu=2,P=0.25,Q=0.04$，UT预测给均值2.425、方差0.53125，此处与真实高斯输入矩一致。若只用线性过程$f(x)=x$，则预测方差为$0.25+0.04=0.29$；接着用$h(x)=x,R=1$，增益应为$29/129$。若测量点漏掉$Q$，就会错误地得到0.2。注意非线性过程后重新取高斯点仍有分布压缩误差，即使预测的两个矩恰好正确。
+
+## 一拍校正的手算与复算
+
+主例直接给定本拍预测分布$\mathcal N(2,0.25)$，不额外执行过程预测，因此不再加$Q$。读数$z=5,R=1$，平方测量下：
+
+$$
+S=4.125+1=5.125,\quad C=1,\quad K=\frac8{41},\quad \nu=5-4.25=0.75,
+$$
+
+$$
+\hat x^+=2+\frac8{41}\cdot0.75=\frac{88}{41}\approx2.146341,
+\qquad P^+=\frac14-\frac8{41}=\frac9{164}\approx0.054878.
+$$
+
+这里$S$单位m⁴、$C$单位m³、$K$单位m⁻¹，$K\nu$回到m。若只把$R$改为4，则$S=8.125,K=8/65$，后验均值约2.092308、方差约0.126923。测量噪声增大后，这组算例的修正减小，报告方差增大。
+
+<JupyterNotebook
+  title="sigma点、矩与过程噪声"
+  setupCode={`import numpy as np
+from scipy.integrate import quad
+import math
+
+def ut(mu, p, fn, alpha=1.0, beta=2.0, kappa=0.0):
+    c=alpha**2*(1+kappa)
+    x=np.array([mu,mu+np.sqrt(c*p),mu-np.sqrt(c*p)])
+    wm=np.array([1-1/c,.5/c,.5/c]);wc=wm.copy();wc[0]+=1-alpha**2+beta
+    y=fn(x);mean=float(wm@y)
+    return x,wm,wc,y,mean,float(wc@((y-mean)**2)),float(wc@((x-mu)*(y-mean)))
+`}
+  cells={[
+    { code: `x,wm,wc,y,m,v,C=ut(2,.25,lambda x:x*x)
+print("sigma_points_weights",x.tolist(),wm.tolist(),wc.tolist())
+print("input_mean_variance",wm@x,wc@((x-2)**2))
+print("square_values_mean_variance_cross",y.tolist(),m,v,C)
+print("central_variance_contribution",wc[0]*(y[0]-m)**2)
+assert np.allclose([m,v,C],[4.25,4.125,1])
+a=ut(0,1,lambda x:x**3,alpha=.001)
+print("small_alpha_weights",a[1].tolist(),a[2].tolist())
+cube=ut(0,1,lambda x:x**3)
+print("cube_UT_EKF_true_variance",cube[5],0,15)
+assert cube[5]==1
+` },
+    { code: `pred=ut(2,.25,lambda x:x+.1*x*x)
+t,w=np.polynomial.hermite.hermgauss(24);w=w/np.sqrt(np.pi);x=2+np.sqrt(.5)*t;y=x+.1*x*x
+mean=float(w@y);var=float(w@((y-mean)**2))+.04
+print("prediction_UT_GH",pred[4],pred[5]+.04,mean,var)
+assert np.allclose([pred[4],pred[5]+.04],[mean,var],atol=1e-12)
+Pm=.25+.04;S=Pm+1;K=Pm/S
+print("Q_included_predicted_S_C_K_P",Pm,S,Pm,K,Pm-Pm*Pm/S,"wrong_gain",.25/1.25)
+assert abs(K-29/129)<1e-12
+P=np.array([[1,.6],[.6,1]]);L=np.linalg.cholesky(P)
+print("lower_L",L.tolist(),"correct_columns",(L@L.T).tolist(),"wrong_rows",(L.T@L).tolist())
+assert np.allclose(L@L.T,P)
+print("prediction_checks_passed")
+` }
+  ]}
+/>
+
+## 交互探索与公平比较
+
+下图的UKF与EKF使用相同先验、读数、噪声。参考后验来自同一概率模型的一维数值积分，仅作为教学检查；它不属于UKF内部步骤。固定坐标展示241个密度采样点，参考积分区间为$[-12,12]$，其矩与密度另对无穷区间自适应积分复核。切换线性模式时，读数单位改为m，$R$改为m²；数值相同不表示两种传感器物理等价。
+
+<UnscentedKalmanExplorer />
+
+默认UKF给$2.146341/0.054878$，EKF给$2.2/0.05$，数值参考后验均值/方差约为$2.169615/0.045869$。这组参数下，UKF的均值绝对误差较小，**方差绝对误差却较大**；不能把其中一个指标的改善说成整体胜出。负先验均值的对应工况给出镜像结果。线性观测下两种滤波器和真实后验均为均值2.6、方差0.2，完全持平。这里没有数据驱动整定，也没有挑选获胜参数；控件所有组合均保留并验证。
+
+再取平方观测$\mu=0,P=1,R=0.25,z=4$。UT虽给预测读数1与$S=2.25$，但交叉协方差$C=0$，所以$K=0$，UKF和EKF都仍报告均值0、方差1。真实后验对称双峰，均值确实为0，但方差约3.841876。**正确传播了平方读数的矩，仍不能用一次线性残差修正恢复正负位置的双峰信息。** 需要保留多假设或更丰富的分布表示，不能仅靠调小$R$解除符号歧义。
+
+<JupyterNotebook
+  title="UKF校正与近似边界"
+  setupCode={`import numpy as np
+from scipy.integrate import quad
+import math
+
+def ut(mu, p, fn, alpha=1.0, beta=2.0, kappa=0.0):
+    c=alpha**2*(1+kappa)
+    x=np.array([mu,mu+np.sqrt(c*p),mu-np.sqrt(c*p)])
+    wm=np.array([1-1/c,.5/c,.5/c]);wc=wm.copy();wc[0]+=1-alpha**2+beta
+    y=fn(x);mean=float(wm@y)
+    return x,wm,wc,y,mean,float(wc@((y-mean)**2)),float(wc@((x-mu)*(y-mean)))
+
+def reference(mu,p,r,z,kind):
+    h=lambda x:x*x if kind=="square" else x
+    log=lambda x:-(x-mu)**2/(2*p)-(z-h(x))**2/(2*r)
+    roots=np.roots([2*p,0,r-2*p*z,-r*mu]) if kind=="square" else np.array([(r*mu+p*z)/(r+p)])
+    modes=sorted(float(t.real) for t in roots if abs(t.imag)<1e-9);shift=max(log(t) for t in modes)
+    cuts=[-np.inf]+sorted(set(modes))+[np.inf]
+    def I(n):
+        return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))
+    mass=I(0);m=I(1)/mass
+    return m,I(2)/mass-m*m
+`}
+  cells={[
+    { code: `for mu,p,r,z,kind in [(2,.25,1,5,"square"),(2,.25,4,5,"square"),(-2,.25,1,5,"square"),(0,1,.25,4,"square"),(2,.25,1,5,"linear")]:
+    h=lambda x:x*x if kind=="square" else x
+    point=ut(mu,p,h);zh,v,C=point[4:];S=v+r;K=C/S;mean=mu+K*(z-zh);var=p-C*C/S
+    H=2*mu if kind=="square" else 1;hm=h(mu);Ke=p*H/(H*H*p+r);me=mu+Ke*(z-hm);ve=p-p*p*H*H/(H*H*p+r)
+    ref,refv=reference(mu,p,r,z,kind)
+    print("case_update",mu,p,r,z,kind,"zh_S_C_K_innovation",zh,S,C,K,z-zh,"UKF",mean,var,"EKF",me,ve,"reference",ref,refv)
+    print("absolute_errors_UKF_EKF_mean_variance",abs(mean-ref),abs(me-ref),abs(var-refv),abs(ve-refv))
+    if kind=="linear":assert np.allclose([mean,var,me,ve,ref,refv],[2.6,.2,2.6,.2,2.6,.2],atol=1e-12)
+    if mu==0:assert K==0 and var==1 and abs(refv-3.841876221594494)<1e-9
+print("posterior_reference_checked")
+` },
+    { code: `# Closed Gaussian moments are independent of sigma-point summation.
+for mu,p in [(2,.25),(-2,.25),(0,1)]:
+    point=ut(mu,p,lambda x:x*x)
+    exact=[mu*mu+p,4*mu*mu*p+2*p*p,2*mu*p]
+    print("analytic_square_moments",mu,p,exact)
+    assert np.allclose(point[4:],exact,atol=1e-12)
+t,w=np.polynomial.hermite.hermgauss(24);w=w/np.sqrt(np.pi);x=np.sqrt(2)*t
+print("GH_cube_mean_variance",w@(x**3),w@(x**6))
+assert abs(w@(x**6)-15)<1e-12
+points=np.array([[0,0],[np.sqrt(2),0],[0,np.sqrt(2)],[-np.sqrt(2),0],[0,-np.sqrt(2)]])
+values=points[:,0]*points[:,1]
+print("2D_product_sigma_outputs_UT_true_variance",values.tolist(),0,1)
+assert np.all(values==0)
+print("all_UKF_checks_passed")
+` }
+  ]}
+/>
+
+## 数值与实现边界
+
+**有限节点不保证高阶矩。** 无量纲$X\sim\mathcal N(0,1)$，用本课三个节点传播$g(x)=x^3$：UT均值0、方差1，而真实方差$\mathbb E[X^6]=15$；EKF在零点给方差0。UT有所改善也仍大幅遗漏不确定性。二维时，坐标轴方向的点对$g(x)=x_1x_2$可全部输出0，但独立标准高斯输入的真实输出方差为1；一维平方精确不应外推成所有二次函数的协方差精确。
+
+**负权与消去误差。** 若一维取$\alpha=0.001,\kappa=0,\beta=2$，$W_0^{(m)}=-999999$，两侧均值权重各500000；协方差中心权重为$-999996.000001$。大数相减可能损失有效位。负权本身不等于算法错误，但不能忽略协方差的数值检查。本课组件只展示固定权重的有限范围标量算例，不提供任意参数的生产级滤波器。
+
+**矩阵与几何约束。** 检查$P,S$的对称性、正定性、Cholesky分解及条件数；若输入协方差仅半正定，要使用适当的秩分解，不能假定普通Cholesky总能成功。对称化只能减少舍入不对称，不能修复模型错误；平方根UKF可改善数值表现，仍需正确的更新/降阶与异常处理。角度需圆周均值与包裹残差，姿态需相应流形运算，不能直接套欧氏加减。sigma点也可能落到物理约束外，模型若在这些点无定义，不能默默截断后仍宣称保持原来的矩。
+
+**噪声与计算预算。** 非加性噪声如$x_k=f(x_{k-1},w_{k-1})$通常需扩维，将噪声一起生成sigma点；若已通过扩维传播噪声，不应再次简单加同一$Q/R$。噪声相关时还需保留交叉块。每次UT需要$2n+1$次函数求值，另有矩阵分解与线性求解；免雅可比不等于总是更省时，也不提供收敛、可观测性或稳定性的普适保证。UT动机与分布近似的区别见[Julier与Uhlmann原论文](https://www3.nd.edu/~lemmon/courses/ee67033/pubs/unscented-filter-julier-proceedings-2004.pdf)。
+
+## 小结
+
+sigma点先匹配输入矩，经非线性函数后再合成输出矩。两套权重、预测后重新取点、状态与测量的交叉协方差，是加性UKF递推中容易漏掉的环节。实现前先用线性退化例核对KF，再用非线性矩与失败例检查。UKF维持的是单一高斯近似；更准的预测矩不等于更准的每个后验指标，也不等于能表达多峰。
+
+## 习题
+
+1. **节点与权重。** 一维$\mu=2,P=0.25,\alpha=1,\beta=2,\kappa=0$：求节点及两套权重，验证输入矩；传播$h(x)=x^2$，求$\bar z,P_{hh},C$，说明中心点为何不能删。
+2. **一拍更新。** 接题1，$z=5,R=1$求$S,K,\hat x^+,P^+$及其单位；仅将$R$改为4复算。比较默认UKF/EKF对参考后验的均值、方差绝对误差，能否宣布UKF全面胜出？
+3. **实现审查。** $f(x)=x,P=0.25,Q=0.04,h(x)=x,R=1$，指出测量点是否必须包含$Q$并求正确增益与后验方差。二维$P=\begin{bmatrix}1&0.6\\0.6&1\end{bmatrix}$，求下三角$L$；若把其行当取点方向，实际恢复哪个协方差？
+4. **边界。** 对无量纲$X\sim\mathcal N(0,1)$的三次变换，比较UT/EKF/真实方差；解释二维乘积反例。再解释平方观测零点工况的$C=0$为何不等于观测无信息，能否仅调小$R$消除正负歧义？
+
+## 答案
+
+1. 节点$[2,2.5,1.5]$；$W^{(m)}=[0,0.5,0.5]$，$W^{(c)}=[2,0.5,0.5]$。输入均值$(2.5+1.5)/2=2$，方差$(0.5^2+(-0.5)^2)/2=0.25$。平方输出$[4,6.25,2.25]$，均值4.25；输出偏移$[-0.25,2,-2]$，故方差$2(0.25)^2+(2^2+(-2)^2)/2=4.125$。输入输出偏移乘积给$C=(0.5\cdot2+(-0.5)(-2))/2=1$。中心点仍贡献0.125输出方差，删掉会改变协方差。
+2. $S=41/8,K=8/41,\hat x^+=88/41,P^+=9/164$；单位依次为m⁴、m⁻¹、m、m²。改$R=4$后$S=65/8,K=8/65,\hat x^+=136/65\approx2.092308,P^+=33/260\approx0.126923$。默认均值绝对误差：UKF约0.023274、EKF约0.030385；方差绝对误差：UKF约0.009009、EKF约0.004131。前者UKF较小，后者EKF较小，因此不能宣布全面胜出。参考来自同一模型，不是换一组真值评分。
+3. $P^-=0.29$必须进入测量sigma点；$S=1.29,C=0.29$，因此$K=29/129\approx0.224806$，$P^+=P^--(P^-)^2/S=29/129$。漏掉$Q$的旧点会给0.2。二维下三角$L=\begin{bmatrix}1&0\\0.6&0.8\end{bmatrix}$满足$LL^\top=P$；误用行方向则恢复$L^\top L=\begin{bmatrix}1.36&0.48\\0.48&0.64\end{bmatrix}$，并非给定的$P$。
+4. 三次变换的节点仍为$[0,1,-1]$，输出相同，UT方差1；零点雅可比为0，EKF方差0；真实高斯六阶矩为15。二维独立输入乘积的真实方差$\mathbb E[X_1^2]\mathbb E[X_2^2]=1$，轴向点却全给乘积0。平方观测零点时，奇偶对称使$\operatorname{Cov}(X,X^2)=0$，线性残差增益为0；读数仍约束距离大小，真实后验方差约3.841876且有两个峰。单高斯无法表达这两个位置，减小$R$仍保留正负对称性，须增加方向信息或采用多假设表示。

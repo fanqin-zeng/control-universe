@@ -1,0 +1,272 @@
+---
+title: 统计估计
+description: 从两支精度不同的温度计出发，建立最小二乘、最大似然与最大后验的联系，并检查偏差、方差和模型失配。
+---
+
+# 统计估计
+
+## 引言
+
+把两支温度计放进同一杯已经搅拌均匀的水，等读数稳定后，一支显示 22°C，另一支显示 24°C。该报出哪个温度？直接取平均很自然；但如果事先的标定告诉我们第二支的随机误差更小，两支温度计还应该占同样的分量吗？如果测量前还有一条可靠的温度预测，又该怎样使用？
+
+[状态估计框架](/estimation/estimation-problem)已经说明，估计值和不确定性都依赖信息与模型。本课暂时固定时间：假设两次读数对应**同一个不变的温度**，研究如何从一组观测选择参数估计。概率记号可回看[概率基础](/math/probability-basics)，目标函数与最优条件可回看[凸优化](/math/convex-optimization)。
+
+![两支温度计观测同一恒定温度，读数分别为22和24摄氏度，已知测量误差方差分别为4和1摄氏度平方；数据和声明的模型共同决定估计目标](/diagrams/estimation/statistical-estimation.svg)
+
+后面的数是合成教学数据，不是真实标定结果。我们将依次回答：平方残差为什么给出平均值？精度不同时怎样加权？最大似然何时等于最小二乘？加入先验后改变了什么？本课不做动态系统辨识，也不提前推导完整卡尔曼滤波。
+
+## 估计量与误差
+
+先区分三个对象。未知温度记为 $\theta$；实际观察到的读数记为 $y_i$；取得数据前，对读数使用的计算规则 $\hat\theta=T(Y_1,\ldots,Y_n)$ 称为**估计量**。取得具体数据后，把它们代入规则得到的数称为**估计值**。同一规则在重复测量时会得到不同结果，所以估计量本身是随机变量。
+
+在频率学派的这一表述里，$\theta$ 是固定未知量，随机性来自观测。模型先写成：
+
+$$
+Y_i=\theta+V_i,\qquad \mathbb E[V_i]=0.
+$$
+
+若期望存在，偏差、方差与均方误差分别是：
+
+$$
+\operatorname{Bias}_{\theta}(\hat\theta)=\mathbb E_{\theta}[\hat\theta]-\theta,
+\qquad \operatorname{Var}_{\theta}(\hat\theta)=\mathbb E_{\theta}[(\hat\theta-\mathbb E_{\theta}\hat\theta)^2],
+$$
+
+$$
+\operatorname{MSE}_{\theta}(\hat\theta)
+=\mathbb E_{\theta}[(\hat\theta-\theta)^2]
+=\operatorname{Var}_{\theta}(\hat\theta)+\operatorname{Bias}_{\theta}(\hat\theta)^2.
+$$
+
+分解来自把误差写成“偏离自身均值的部分＋均值与真值的差”；交叉项的期望为零。温度偏差的单位是 °C，方差和均方误差的单位是 °C²。若对模型允许的每个 $\theta$ 都有零偏差，就称估计量**无偏**。
+
+这是一族重复试验的性质，不能看见本次读数 22 和 24 就宣布“这次无偏”，更不能据此知道本次真实误差。无偏也没有排除很大的方差。
+
+## 最小二乘
+
+先不使用方差信息，选择让读数与同一候选温度最接近的数。普通最小二乘（LS）最小化：
+
+$$
+J_{\mathrm{LS}}(\theta)=\sum_{i=1}^n(y_i-\theta)^2.
+$$
+
+求导得到 $J'_{\mathrm{LS}}(\theta)=2\sum_i(\theta-y_i)$，二阶导为 $2n>0$。因此唯一最优解是样本平均：
+
+$$
+\hat\theta_{\mathrm{LS}}=\bar y=\frac{1}{n}\sum_{i=1}^n y_i.
+$$
+
+主例得到 $(22+24)/2=23$°C。这先是一个确定性的优化结论，不需要先假设高斯分布。要进一步谈偏差和方差，才需要读数怎样产生的概率模型。
+
+**多个未知参数时，先检查能否区分。** 对一般线性观测模型 $y=H\theta+v$，此处 $\theta$ 是参数向量，LS目标为 $\|y-H\theta\|^2$。驻点满足正规方程：
+
+$$
+H^TH\hat\theta=H^Ty.
+$$
+
+$H$ 满列秩时解唯一，可写成 $(H^TH)^{-1}H^Ty$。但显式求逆与先形成 $H^TH$ 都不是默认的数值实现建议：后者会平方二范数条件数。实际可用 QR、SVD 或 `np.linalg.lstsq`；几乎相关的列仍会使参数敏感。秩亏时，最优拟合读数可以确定，参数本身却未必唯一，返回一个最小范数解不能补回缺失信息。
+
+下面另用三个已知标定输入 $s=0,1,2$、归一化读数 $1,2,2$，拟合直线 $y\approx\alpha+\beta s$，说明满秩和秩亏的区别。它不是把两支温度计例子悄悄改成动态系统。
+
+## 噪声不同怎样加权
+
+假设温度计误差独立、零均值，并且方差 $R_i>0$ 已由额外标定或可信模型给定。把残差除以它的标准差，再平方求和，得到加权最小二乘（WLS）：
+
+$$
+J_{\mathrm{WLS}}(\theta)=\sum_i\frac{(y_i-\theta)^2}{R_i},
+\qquad
+\hat\theta_{\mathrm{WLS}}=\frac{\sum_i y_i/R_i}{\sum_i1/R_i}.
+$$
+
+权重与**方差的倒数**成正比，不是与标准差的倒数成正比。只凭本次两条读数，通常估不出每支温度计各自的噪声方差；不能把想相信的读数先赋予小方差，再把结果当成精度证据。
+
+主例取 $R_1=4$°C²、$R_2=1$°C²，则两条读数的归一化权重为 $1/5,4/5$：
+
+$$
+\hat\theta_{\mathrm{WLS}}=\frac{22/4+24/1}{1/4+1/1}=23.6\ \mathrm{^{\circ}C}.
+$$
+
+在上述独立零均值模型中，它无偏，方差为 $1/(1/R_1+1/R_2)=0.8$°C²。等权平均也无偏，但在这一组方差下方差为 $(R_1+R_2)/4=1.25$°C²。这是指定模型下的重复采样结论，不是从两条观测推断谁这一次更接近真值。
+
+若误差相关，标量独立权重不再适用。对已知正定协方差矩阵 $\Sigma$，对应目标为 $(y-H\theta)^T\Sigma^{-1}(y-H\theta)$，也称广义最小二乘。满列秩时解为：
+
+$$
+\hat\theta=(H^T\Sigma^{-1}H)^{-1}H^T\Sigma^{-1}y.
+$$
+
+白化可将它变为普通LS：若 $\Sigma=LL^T$，用三角方程得到 $L^{-1}y$、$L^{-1}H$ 再求解，不必真的把逆矩阵算出来。协方差奇异时，上面“正定且可逆”的公式不能直接使用。
+
+## 从似然得到估计
+
+**似然**把已观察的数据固定，把不同候选参数代入数据分布进行比较：$L(\theta;y)=p(y\mid\theta)$。对连续观测，右侧是概率密度；它不是“数据恰好等于这一组数的概率”，也不是参数的后验概率。最大似然估计（ML）选择使这组数据密度最大的参数。
+
+若误差独立、$V_i\sim\mathcal N(0,R_i)$，且已知的 $R_i$ 不随 $\theta$ 改变，则负对数似然是：
+
+$$
+-\log L(\theta;y)=\frac12\sum_i\frac{(y_i-\theta)^2}{R_i}
++\frac12\sum_i\log(2\pi R_i).
+$$
+
+第二项与候选温度无关，所以此时 **ML 等于 WLS**；所有 $R_i$ 相同时，又等于普通LS。等价依赖于噪声模型，不能将“最大似然”作为任何平方误差程序的通用别名。协方差若依赖待估参数，高斯似然中的 $\log\det\Sigma(\theta)$ 也要保留。
+
+例如独立拉普拉斯误差、已知尺度 $b>0$ 时，密度为 $p(v)=\exp(-|v|/b)/(2b)$。负对数似然中依赖位置参数的部分变成 $\sum_i|y_i-\theta|/b$，最优位置是样本中位数；偶数个样本时还可能是一段最优区间。它选择的是绝对残差目标，不是普通平方残差目标。
+
+如果同时估计未知高斯方差，不能再把它当常数扔掉。后面的习题会看到：在同方差独立高斯模型中，均值的ML为样本平均，而方差的ML使用分母 $n$，并非无偏样本方差的分母 $n-1$。最大似然并不自动保证有限样本无偏。
+
+## 先验与后验
+
+若在读数到来前已有温度的概率描述，贝叶斯建模把 $\theta$ 也看作随机量。例如高斯先验 $\theta\sim\mathcal N(m,P)$，其中 $m=20$°C、$P=4$°C²。它不是第三支独立温度计的读数，而是本次数据之前的信息。
+
+贝叶斯公式给出 $p(\theta\mid y)\propto p(y\mid\theta)p(\theta)$。最大后验估计（MAP）选择后验密度的众数，在本例等价于最小化：
+
+$$
+J_{\mathrm{MAP}}(\theta)=\frac12\sum_i\frac{(y_i-\theta)^2}{R_i}+\frac{(\theta-m)^2}{2P}.
+$$
+
+把二次项配方，得到高斯后验，其均值和方差为：
+
+$$
+P_{\mathrm{post}}=\left(\frac1P+\sum_i\frac1{R_i}\right)^{-1},
+\qquad
+m_{\mathrm{post}}=P_{\mathrm{post}}\left(\frac mP+\sum_i\frac{y_i}{R_i}\right).
+$$
+
+主例中：
+
+$$
+m_{\mathrm{post}}=\frac{20/4+22/4+24}{1/4+1/4+1}=23\ \mathrm{^{\circ}C},
+\qquad P_{\mathrm{post}}=\frac23\ \mathrm{^{\circ}C^2}.
+$$
+
+高斯分布的均值和众数相同，所以这里MAP也等于平方损失下的后验均值。一般后验不必如此；平方损失对应条件均值，绝对损失对应后验中位数，不能把MAP自动解释成任意损失下最优的点估计。
+
+当 $P$ 趋于无穷，先验的精度 $1/P$ 趋于零，上式趋向WLS解；这说的是本模型中一族有限方差先验的极限，不是把无限方差代入一个正规的高斯密度。反过来，过于确信一个错误的先验，也可能使结果持续偏离真值。
+
+<StatisticalEstimationExplorer />
+
+先把两个测量方差调成相同，看ML是否回到等权平均；再保持读数不变，改变先验方差。每条曲线单独归零，只用来寻找最小点；图中的曲线高度不是总体均方误差。下面两个cell复算主例和向量LS。
+
+<JupyterNotebook
+  title="两支温度计与线性最小二乘"
+  setupCode={`import numpy as np
+`}
+  cells={[
+    { title: "等权、加权、似然与高斯后验", code: `y = np.array([22.0,24.0])
+R = np.array([4.0,1.0])
+m, P = 20.0, 4.0
+ordinary = float(np.mean(y))
+precision = float(np.sum(1/R))
+weighted = float(np.sum(y/R)/precision)
+weighted_variance = 1/precision
+posterior_variance = 1/(1/P+precision)
+posterior_mean = posterior_variance*(m/P+float(np.sum(y/R)))
+data_min = float(np.sum((y-weighted)**2/R)/2)
+posterior_min = float(np.sum((y-posterior_mean)**2/R)/2+(posterior_mean-m)**2/(2*P))
+print('LS_WLS_MAP', ordinary, weighted, posterior_mean)
+print('LS_WLS_posterior_variances', float(np.sum(R)/4), weighted_variance, posterior_variance)
+print('measurement_weights_posterior_precision', (1/R/precision).tolist(), 1/P+precision)
+print('relative_curve_offsets', data_min, posterior_min)
+assert np.allclose([ordinary,weighted,posterior_mean,weighted_variance,posterior_variance,data_min,posterior_min], [23,23.6,23,0.8,2/3,0.4,1.75],rtol=0,atol=1e-12)` },
+    { title: "满列秩与缺少参数信息", code: `H = np.array([[1.0,0.0],[1.0,1.0],[1.0,2.0]])
+observed = np.array([1.0,2.0,2.0])
+fit, _, rank, _ = np.linalg.lstsq(H, observed, rcond=None)
+residual = observed-H@fit
+print('vector_LS_rank_coefficients_SSE', rank, fit.tolist(), float(residual@residual))
+assert rank == 2
+assert np.allclose(fit,[7/6,1/2],rtol=0,atol=1e-12)
+assert abs(float(residual@residual)-1/6)<1e-12
+H_bad = np.ones((3,2))
+candidate_a, candidate_b = np.array([5/3,0.0]),np.array([0.0,5/3])
+print('rank_deficient_same_fit', int(np.linalg.matrix_rank(H_bad)), (H_bad@candidate_a).tolist(), (H_bad@candidate_b).tolist())
+assert np.allclose(H_bad@candidate_a,H_bad@candidate_b,rtol=0,atol=1e-12)` }
+  ]}
+/>
+
+## 检验估计的条件
+
+**先验有用，但代价不能省略。** 固定主例的测量误差方差4和1，把真实温度暂记为固定的 $\theta$，再重复采样。WLS无偏，风险恒为 $4/5$°C²。沿用均值20、方差4的高斯先验计算规则，有：
+
+$$
+\hat\theta_{\mathrm{MAP}}=\frac{20+Y_1+4Y_2}{6},
+\quad \operatorname{Bias}_{\theta}=\frac{20-\theta}{6},
+\quad \operatorname{Var}_{\theta}=\frac59,
+$$
+
+$$
+\operatorname{MSE}_{\theta}(\hat\theta_{\mathrm{MAP}})=\frac59+\frac{(20-\theta)^2}{36}.
+$$
+
+当真值为20、22、26°C时，MAP规则的风险分别为 $5/9,2/3,14/9$°C²；在最后一个工况，它大于WLS的 $4/5$°C²。等权LS在这三组相同噪声条件下均为 $5/4$°C²。这里各规则已由声明的模型确定，没有根据某个真值事后调先验；也不把三个工况概括成通用算法排名。
+
+另一方面，如果连真值也按声明的高斯先验 $\mathcal N(20,4)$ 平均，MAP在本例就是后验均值，其贝叶斯均方风险为 $2/3$°C²。这与给定真值26°C时的频率风险 $14/9$°C²不矛盾：**平均所依据的分布不同。** 后验方差也不是每个固定真值下的频率均方误差。
+
+下面用独立误差 $\pm2,\pm1$ 的四个等概率组合精确核验二阶矩风险，再用先验误差 $\pm2$ 核验综合风险。它们匹配上述均值和方差，所以足以验证这个线性规则的二次风险；并不是在离散分布上重新求高斯MAP，也不是用少数点逼近整个高斯密度。
+
+<JupyterNotebook
+  title="偏差方差与噪声模型边界"
+  setupCode={`import numpy as np
+from itertools import product
+`}
+  cells={[
+    { title: "三组真值与先验失配", code: `risk_rows = []
+for truth in [20.0,22.0,26.0]:
+    errors = []
+    for e1,e2 in product([-2.0,2.0],[-1.0,1.0]):
+        z1,z2 = truth+e1, truth+e2
+        errors.append([(z1+z2)/2-truth, (z1+4*z2)/5-truth, (20+z1+4*z2)/6-truth])
+    risk_row = np.mean(np.square(errors),axis=0).tolist()
+    risk_rows.append([truth]+risk_row)
+    print('truth_OLS_WLS_MAP_MSE', [truth]+risk_row)
+    print('truth_MAP_bias_variance', truth, float(np.mean(np.array(errors)[:,2])), float(np.var(np.array(errors)[:,2])))
+assert np.allclose(risk_rows,[[20,5/4,4/5,5/9],[22,5/4,4/5,2/3],[26,5/4,4/5,14/9]],rtol=0,atol=1e-12)
+bayes_errors = []
+for prior_error,e1,e2 in product([-2.0,2.0],[-2.0,2.0],[-1.0,1.0]):
+    truth = 20+prior_error
+    bayes_errors.append((20+(truth+e1)+4*(truth+e2))/6-truth)
+bayes_risk = float(np.mean(np.square(bayes_errors)))
+print('integrated_linear_rule_risk',bayes_risk)
+assert abs(bayes_risk-2/3)<1e-12` },
+    { title: "未知方差与不同损失的练习", code: `sample = np.array([18.0,20.0,22.0])
+sample_mean = float(np.mean(sample))
+sse = float(np.sum((sample-sample_mean)**2))
+print('unknown_variance_mean_SSE_ML_unbiased',sample_mean,sse,sse/3,sse/2)
+assert np.allclose([sample_mean,sse,sse/3,sse/2],[20,8,8/3,4],rtol=0,atol=1e-12)
+outlier_sample = np.array([20.0,20.0,20.0,20.0,30.0])
+mean,median = float(np.mean(outlier_sample)),float(np.median(outlier_sample))
+losses = [float(np.sum((outlier_sample-mean)**2)),float(np.sum((outlier_sample-median)**2)),float(np.sum(abs(outlier_sample-mean))),float(np.sum(abs(outlier_sample-median)))]
+print('different_model_mean_median',mean,median)
+print('SSE_at_mean_median_L1_at_mean_median',losses)
+assert [mean,median] == [22.0,20.0]
+assert losses == [80.0,100.0,16.0,10.0]` }
+  ]}
+/>
+
+**样本多了是否会接近真值，也需要条件。** 若误差独立同分布、零均值、有限方差 $\sigma^2$，样本平均的方差为 $\sigma^2/n$。由切比雪夫不等式，对任意 $\varepsilon>0$：
+
+$$
+\Pr_{\theta}(|\bar Y-\theta|\ge\varepsilon)\le\frac{\sigma^2}{n\varepsilon^2}\longrightarrow0.
+$$
+
+这说明它在这些条件下依概率收敛到真值，称为一致性；不是保证每次新增样本都更接近真值。若传感器有固定偏置，平均只会围绕偏置后的值更集中；若误差相关，平均方差中还含协方差项，不能直接用 $\sigma^2/n$。
+
+工程使用前还应核查：观测是否对应同一待估量，方差和先验来自何处，是否重复使用同一数据，模型假设与残差是否矛盾。不能先用本批数据形成先验，再把同一批数据当独立新证据乘进似然。
+
+## 小结
+
+最小二乘先指定残差代价，最大似然先指定观测分布，贝叶斯估计还需声明先验和决策损失。已知高斯误差给出LS/WLS与ML的联系；线性高斯先验下MAP又等于后验均值，但这些等价都有条件。
+
+报告估计值时，也应报告不确定性所依据的模型，并区分一次误差、固定真值下的采样风险和对先验平均的风险。下一课再把这些统计规则放回动态预测与逐次修正中。
+
+## 习题
+
+1. 对主例22、24°C，写出等权LS和已知方差4、1°C²的WLS结果及方差。权重为什么不是标准差的倒数？仅凭本次两条读数能否证明哪个结果更接近真值？
+2. 加入主例高斯先验 $\mathcal N(20,4)$，求后验均值、方差和MAP。若固定真值为26°C，求该MAP规则的均方风险，并解释它为何不等于后验方差。
+3. 假设三次读数18、20、22°C独立服从同一未知均值、未知正方差的高斯分布。先写负对数似然中依赖均值和方差的项，再求两者的ML；与无偏样本方差比较分母。
+4. 对读数20、20、20、20、30°C，分别求普通平方残差与绝对残差目标的最优位置，并比较各自目标值。能否据此宣布某个位置在真实装置上一定更准确？为什么？
+
+## 答案
+
+1. 等权LS为23°C，方差 $(4+1)/4=5/4$°C²；WLS的权重为 $1/5,4/5$，估计23.6°C，方差 $1/(1/4+1)=4/5$°C²。目标中的标准化残差要平方，所以权重是方差倒数。两条观测没有提供真值；方差结论依赖独立、零均值、已知误差方差的模型。
+2. 后验精度为 $1/4+1/4+1=3/2$，方差 $2/3$°C²；均值 $(20/4+22/4+24)/(3/2)=23$°C，也等于高斯后验的众数MAP。固定真值26时，偏差 $(20-26)/6=-1$°C，方差 $5/9$°C²，均方风险 $1+5/9=14/9$°C²。后验方差以观察到的数据为条件，频率风险以固定真值为条件，二者不是同一种平均。
+3. 记未知均值为 $\mu$、方差为 $\sigma^2>0$，负对数似然除去无关常数后是 $\frac32\log(\sigma^2)+\sum_i(y_i-\mu)^2/(2\sigma^2)$。先对 $\mu$ 求导得 $\hat\mu=20$°C，残差平方和为8°C²；再对 $\sigma^2$ 求导得 $\hat\sigma^2_{\mathrm{ML}}=8/3$°C²。无偏样本方差是 $8/(3-1)=4$°C²，使用 $n-1$ 而不是 $n$。它们优化或校正的目标不同。
+4. 平方目标的最优位置是均值22°C，平方残差和80°C²；在20°C处平方和为100°C²。绝对目标的最优位置是中位数20°C，绝对残差和10°C；在22°C处绝对和为16°C。各自只在所选目标下最优，目标不同、真值未知，不能把这张表当成装置精度的通用排名；需要说明噪声、异常值与用途。

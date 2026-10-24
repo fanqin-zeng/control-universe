@@ -1,0 +1,132 @@
+{
+  "testedAt": "2026-10-24T09:45:19.137Z",
+  "url": "http://127.0.0.1:19984/python-expansion.html?lesson=estimation/estimation-case-study",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "estimation/estimation-case-study",
+      "title": "状态估计案例",
+      "sourceHash": "6dd4da18c6ad4be3632c2a12050ee87f476f18ebcaf303acb84b14c85bfd511c",
+      "notebooks": [
+        {
+          "id": "estimation/estimation-case-study#1",
+          "title": "共同预测与双路更新",
+          "index": 1,
+          "line": 87,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4314,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_first_readings [np.float64(0.3819700665724566), np.float64(0.3632203349862857)]\npredicted_first_mean_P [1.0, 1.0] [[2.01, 1.02], [1.02, 1.04]]\ndefault_first_mean_covariance [0.5552393031007108, 0.7743005418720024] [np.float64(0.5722419928825623), np.float64(0.2903914590747331), np.float64(0.6697508896797153)]\ndefault_metrics 0.47637297293164954 12 0 0 2.486810299853489\ndefault_final_mean_covariance [8.452622667225372, 0.3984418539956216] [np.float64(0.38903241074560546), np.float64(0.12837401799272247), np.float64(0.10143366982753052)]\ndefault_single_RMSE 0.37447643814036735\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 19,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "dropout_prediction_only_steps [6, 7, 8]\ndropout_position_variance_steps5to9 [np.float64(0.7876968119998886), np.float64(1.487056678172412), np.float64(2.571952781635322), np.float64(4.122385122388618), np.float64(0.7088105234763848)]\nungated_reverse_max_difference 3.552713678800501e-15\ncase_recursion_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/estimation-case-study#2",
+          "title": "完整工况与多种子分布",
+          "index": 2,
+          "line": 189,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 330,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "multi_seed_runs 360 steps_each 12 seeds [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]\nseed7_scenario_gate_RMSE_coverage_rejected clean False 0.47637297293164954 12 0\nseed7_scenario_gate_RMSE_coverage_rejected clean True 0.47637297293164954 12 0\nseed7_scenario_gate_RMSE_coverage_rejected dropout False 0.4415078762113283 12 0\nseed7_scenario_gate_RMSE_coverage_rejected dropout True 0.4415078762113283 12 0\nseed7_scenario_gate_RMSE_coverage_rejected spike False 0.8710620976642758 10 0\nseed7_scenario_gate_RMSE_coverage_rejected spike True 0.31862936724803964 12 1\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "summary_scenario_ungated_RMSE_min_median_max clean 0.33477165460679287 0.6291058535740839 1.070856935759714\nsummary_scenario_gated_RMSE_min_median_max clean 0.33477165460679287 0.6291058535740839 1.070856935759714\ngate_worse_and_fusion_worse_counts clean 0 5\nsummary_scenario_ungated_RMSE_min_median_max dropout 0.4415078762113283 0.7102957009256783 2.2530773518611187\nsummary_scenario_gated_RMSE_min_median_max dropout 0.4415078762113283 0.7102957009256783 2.2530773518611187\ngate_worse_and_fusion_worse_counts dropout 0 8\nsummary_scenario_ungated_RMSE_min_median_max spike 0.8710620976642758 1.3004964005491697 2.036375202371113\nsummary_scenario_gated_RMSE_min_median_max spike 0.31862936724803964 0.6573781650294185 1.069586211954567\ngate_worse_and_fusion_worse_counts spike 0 0\nmulti_seed_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/estimation-case-study#3",
+          "title": "创新诊断与独立信息核验",
+          "index": 3,
+          "line": 258,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "spike_step6_gate_events [(1, np.float64(19.265926120489826), False), (2, np.float64(1.48389344785388), True)]\nobservability_matrix_rank [[1.0, 0.0], [1.0, 1.0]] 2\nQ_discrete_acceleration [[0.01, 0.02], [0.02, 0.04]] rank 1\nwhite_acceleration_spectral_Q_if_density_point04 [[0.013333333333333332, 0.02], [0.02, 0.04]]\nnormal_three_sigma_single_test_probability 0.9973002039367398\ncontrolled_clean_extreme_reading_NIS_rejected 7.0 11.960132890365449 True\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 492,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "independent_information_runs_max_difference 360 3.197442310920451e-14\ncase_diagnostics_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "estimation/estimation-case-study",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 3,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 3,
+    "codeOnly": 0
+  }
+}

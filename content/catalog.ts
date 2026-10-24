@@ -3176,7 +3176,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "digital-pid",
@@ -3223,22 +3223,94 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "pid-engineering-tuning",
         "title": "PID工程整定",
+        "subsections": [
+          {
+            "slug": "先把要求写成验收合同",
+            "title": "先把要求写成验收合同"
+          },
+          {
+            "slug": "从阶跃试验得到模型",
+            "title": "从阶跃试验得到模型"
+          },
+          {
+            "slug": "从模型得到pi候选",
+            "title": "从模型得到PI候选"
+          },
+          {
+            "slug": "在约束下检验候选",
+            "title": "在约束下检验候选"
+          },
+          {
+            "slug": "整定到现场的交接",
+            "title": "整定到现场的交接"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/digital-pid",
           "classic/time-domain-analysis"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "controller-discretization-practice",
         "title": "控制器部署",
+        "subsections": [
+          {
+            "slug": "部署前冻结接口",
+            "title": "部署前冻结接口"
+          },
+          {
+            "slug": "从连续补偿器到差分系数",
+            "title": "从连续补偿器到差分系数"
+          },
+          {
+            "slug": "系数和状态如何进入程序",
+            "title": "系数和状态如何进入程序"
+          },
+          {
+            "slug": "有限字长的验证",
+            "title": "有限字长的验证"
+          },
+          {
+            "slug": "把真实时序放回闭环",
+            "title": "把真实时序放回闭环"
+          },
+          {
+            "slug": "部署验收与回退",
+            "title": "部署验收与回退"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discretization-methods",
           "implementation/computer-control-architecture",
@@ -3247,17 +3319,55 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "embedded-implementation",
         "title": "嵌入式控制",
+        "subsections": [
+          {
+            "slug": "从温控箱读数到接口合同",
+            "title": "从温控箱读数到接口合同"
+          },
+          {
+            "slug": "adc码值与工程量",
+            "title": "ADC码值与工程量"
+          },
+          {
+            "slug": "逐拍计算与pwm输出",
+            "title": "逐拍计算与PWM输出"
+          },
+          {
+            "slug": "量化进入反馈以后",
+            "title": "量化进入反馈以后"
+          },
+          {
+            "slug": "样本交接与时间戳",
+            "title": "样本交接与时间戳"
+          },
+          {
+            "slug": "从主机验证到板上验收",
+            "title": "从主机验证到板上验收"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/controller-discretization-practice"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "realtime-control",
@@ -3306,40 +3416,166 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "networked-control",
         "title": "网络控制",
+        "subsections": [
+          {
+            "slug": "远程读数为什么会变旧",
+            "title": "远程读数为什么会变旧"
+          },
+          {
+            "slug": "模型和事件顺序",
+            "title": "模型和事件顺序"
+          },
+          {
+            "slug": "信息年龄与接收策略",
+            "title": "信息年龄与接收策略"
+          },
+          {
+            "slug": "一拍时延改变了什么",
+            "title": "一拍时延改变了什么"
+          },
+          {
+            "slug": "丢包与乱序实验",
+            "title": "丢包与乱序实验"
+          },
+          {
+            "slug": "从时间戳到故障处理",
+            "title": "从时间戳到故障处理"
+          },
+          {
+            "slug": "python复算与轨迹",
+            "title": "Python复算与轨迹"
+          },
+          {
+            "slug": "常见误区",
+            "title": "常见误区"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/realtime-control",
           "discrete-sampled/sampled-data-systems"
         ],
         "level": "grad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "industrial-bus-protocols",
         "title": "工业通信",
+        "subsections": [
+          {
+            "slug": "接通线路之后",
+            "title": "接通线路之后"
+          },
+          {
+            "slug": "先分清三个层次",
+            "title": "先分清三个层次"
+          },
+          {
+            "slug": "一帧请求与响应",
+            "title": "一帧请求与响应"
+          },
+          {
+            "slug": "寄存器不等于工程量",
+            "title": "寄存器不等于工程量"
+          },
+          {
+            "slug": "把轮询放进时间预算",
+            "title": "把轮询放进时间预算"
+          },
+          {
+            "slug": "交互实验与失败边界",
+            "title": "交互实验与失败边界"
+          },
+          {
+            "slug": "can与工业以太网",
+            "title": "CAN与工业以太网"
+          },
+          {
+            "slug": "联调记录与故障路径",
+            "title": "联调记录与故障路径"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/computer-control-architecture",
           "implementation/realtime-control"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "hil-rapid-prototyping",
         "title": "半实物仿真",
+        "subsections": [
+          {
+            "slug": "先替换哪一半",
+            "title": "先替换哪一半"
+          },
+          {
+            "slug": "从模型到实物的验证层次",
+            "title": "从模型到实物的验证层次"
+          },
+          {
+            "slug": "接口与时间合同",
+            "title": "接口与时间合同"
+          },
+          {
+            "slug": "步长不是运行速度",
+            "title": "步长不是运行速度"
+          },
+          {
+            "slug": "可运行的虚拟台架",
+            "title": "可运行的虚拟台架"
+          },
+          {
+            "slug": "超期和故障注入",
+            "title": "超期和故障注入"
+          },
+          {
+            "slug": "怎样准备真正的hil",
+            "title": "怎样准备真正的HIL"
+          },
+          {
+            "slug": "验收证据与停止条件",
+            "title": "验收证据与停止条件"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/controller-discretization-practice",
           "implementation/realtime-control"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "implementation-case-study",
@@ -3369,7 +3605,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [{"slug": "从房间温升提出问题", "title": "从房间温升提出问题"}, {"slug": "把经验写成学习问题", "title": "把经验写成学习问题"}, {"slug": "训练误差与总体风险", "title": "训练误差与总体风险"}, {"slug": "三份数据各做什么", "title": "三份数据各做什么"}, {"slug": "复杂度与过拟合", "title": "复杂度与过拟合"}, {"slug": "工况变化与控制边界", "title": "工况变化与控制边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}]
       },
       {
         "slug": "supervised-learning",
@@ -3380,61 +3617,240 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [{"slug": "两种标签对应两种任务", "title": "两种标签对应两种任务"}, {"slug": "线性回归从损失出发", "title": "线性回归从损失出发"}, {"slug": "用正则化约束斜率", "title": "用正则化约束斜率"}, {"slug": "从分数到分类概率", "title": "从分数到分类概率"}, {"slug": "交叉熵如何训练", "title": "交叉熵如何训练"}, {"slug": "训练与预测的接口", "title": "训练与预测的接口"}, {"slug": "实验结果与使用边界", "title": "实验结果与使用边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}]
       },
       {
         "slug": "neural-networks",
         "title": "神经网络基础",
+        "subsections": [
+          {
+            "slug": "两台水泵的指示灯",
+            "title": "两台水泵的指示灯"
+          },
+          {
+            "slug": "从一个神经元到一层",
+            "title": "从一个神经元到一层"
+          },
+          {
+            "slug": "非线性不能省略",
+            "title": "非线性不能省略"
+          },
+          {
+            "slug": "手算一次前向传播",
+            "title": "手算一次前向传播"
+          },
+          {
+            "slug": "移动折点观察函数",
+            "title": "移动折点观察函数"
+          },
+          {
+            "slug": "xor的表示与边界",
+            "title": "XOR的表示与边界"
+          },
+          {
+            "slug": "参数如何学习",
+            "title": "参数如何学习"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/supervised-learning",
           "math/multivariable-calculus"
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "autodiff-optimization",
         "title": "自动微分与训练",
+        "subsections": [
+          {
+            "slug": "温升预测开始学参数",
+            "title": "温升预测开始学参数"
+          },
+          {
+            "slug": "计算图保存局部关系",
+            "title": "计算图保存局部关系"
+          },
+          {
+            "slug": "反向传播累加贡献",
+            "title": "反向传播累加贡献"
+          },
+          {
+            "slug": "实现最小自动微分",
+            "title": "实现最小自动微分"
+          },
+          {
+            "slug": "训练循环与数据隔离",
+            "title": "训练循环与数据隔离"
+          },
+          {
+            "slug": "学习率与停止原因",
+            "title": "学习率与停止原因"
+          },
+          {
+            "slug": "小批量与工程接口",
+            "title": "小批量与工程接口"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/neural-networks",
           "math/numerical-methods"
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "sequence-models",
         "title": "时序模型",
+        "subsections": [{"slug": "停热以后仍有余温", "title": "停热以后仍有余温"},
+{"slug": "先规定预测时刻", "title": "先规定预测时刻"},
+{"slug": "窗口与循环状态", "title": "窗口与循环状态"},
+{"slug": "沿时间反向传播", "title": "沿时间反向传播"},
+{"slug": "截断梯度保留状态", "title": "截断梯度保留状态"},
+{"slug": "一步预测与自由滚动", "title": "一步预测与自由滚动"},
+{"slug": "门控模型与工程接口", "title": "门控模型与工程接口"},
+{"slug": "习题", "title": "习题"},
+{"slug": "答案", "title": "答案"},
+{"slug": "继续学习", "title": "继续学习"}],
         "prereq": [
           "machine-learning/autodiff-optimization",
           "math/stochastic-processes"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "attention-transformers",
         "title": "注意力机制",
+        "subsections": [
+          {
+            "slug": "从记忆状态到查阅记录",
+            "title": "从记忆状态到查阅记录"
+          },
+          {
+            "slug": "查询键与值",
+            "title": "查询键与值"
+          },
+          {
+            "slug": "缩放点积与稳定计算",
+            "title": "缩放点积与稳定计算"
+          },
+          {
+            "slug": "因果掩码挡住未来",
+            "title": "因果掩码挡住未来"
+          },
+          {
+            "slug": "位置与排列",
+            "title": "位置与排列"
+          },
+          {
+            "slug": "多头和transformer",
+            "title": "多头和Transformer"
+          },
+          {
+            "slug": "预测合同与计算代价",
+            "title": "预测合同与计算代价"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/sequence-models"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "representation-learning",
         "title": "表征学习",
+        "subsections": [
+          {
+            "slug": "亮度变化遮住横向偏差",
+            "title": "亮度变化遮住横向偏差"
+          },
+          {
+            "slug": "编码器与任务接口",
+            "title": "编码器与任务接口"
+          },
+          {
+            "slug": "从重构学习一个方向",
+            "title": "从重构学习一个方向"
+          },
+          {
+            "slug": "冻结表征再训练探针",
+            "title": "冻结表征再训练探针"
+          },
+          {
+            "slug": "任务方向与验证选择",
+            "title": "任务方向与验证选择"
+          },
+          {
+            "slug": "对比学习与增强边界",
+            "title": "对比学习与增强边界"
+          },
+          {
+            "slug": "迁移与部署的边界",
+            "title": "迁移与部署的边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/autodiff-optimization",
           "machine-learning/attention-transformers"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "generative-models",
@@ -3446,7 +3862,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "加噪与噪声预测",
+            "title": "加噪与噪声预测"
+          },
+          {
+            "slug": "反向采样的含义",
+            "title": "反向采样的含义"
+          },
+          {
+            "slug": "条件流匹配",
+            "title": "条件流匹配"
+          },
+          {
+            "slug": "高斯流与数值采样",
+            "title": "高斯流与数值采样"
+          },
+          {
+            "slug": "实验与边界",
+            "title": "实验与边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ]
       },
       {
         "slug": "learning-evaluation",
@@ -3475,7 +3929,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "辨识任务",
+            "title": "辨识任务"
+          },
+          {
+            "slug": "数据与实验",
+            "title": "数据与实验"
+          },
+          {
+            "slug": "模型与准则",
+            "title": "模型与准则"
+          },
+          {
+            "slug": "贯穿算例",
+            "title": "贯穿算例"
+          },
+          {
+            "slug": "验证与边界",
+            "title": "验证与边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "model-structures",
@@ -3486,7 +3978,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "从递推到延迟算子",
+            "title": "从递推到延迟算子"
+          },
+          {
+            "slug": "输入与噪声两条通道",
+            "title": "输入与噪声两条通道"
+          },
+          {
+            "slug": "多项式模型",
+            "title": "多项式模型"
+          },
+          {
+            "slug": "同一水箱的两种噪声假设",
+            "title": "同一水箱的两种噪声假设"
+          },
+          {
+            "slug": "阶次延迟与状态表示",
+            "title": "阶次延迟与状态表示"
+          },
+          {
+            "slug": "怎样选择候选",
+            "title": "怎样选择候选"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "least-squares-rls",
@@ -3498,7 +4032,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "把动态数据排成回归",
+            "title": "把动态数据排成回归"
+          },
+          {
+            "slug": "批量最小二乘",
+            "title": "批量最小二乘"
+          },
+          {
+            "slug": "带先验的递推",
+            "title": "带先验的递推"
+          },
+          {
+            "slug": "遗忘因子与交互探索",
+            "title": "遗忘因子与交互探索"
+          },
+          {
+            "slug": "信息不足与数值保护",
+            "title": "信息不足与数值保护"
+          },
+          {
+            "slug": "噪声假设与闭环边界",
+            "title": "噪声假设与闭环边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "persistent-excitation",
@@ -3508,7 +4084,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "信息藏在哪个方向",
+            "title": "信息藏在哪个方向"
+          },
+          {
+            "slug": "从满秩到持久激励",
+            "title": "从满秩到持久激励"
+          },
+          {
+            "slug": "四种输入与回归量",
+            "title": "四种输入与回归量"
+          },
+          {
+            "slug": "参数为什么逐渐可辨",
+            "title": "参数为什么逐渐可辨"
+          },
+          {
+            "slug": "交互观察信息窗口",
+            "title": "交互观察信息窗口"
+          },
+          {
+            "slug": "幅值与噪声的代价",
+            "title": "幅值与噪声的代价"
+          },
+          {
+            "slug": "实际试验怎样检查",
+            "title": "实际试验怎样检查"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "instrumental-variable",
@@ -3521,7 +4143,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "反馈怎样带来相关",
+            "title": "反馈怎样带来相关"
+          },
+          {
+            "slug": "一个有时序的闭环例",
+            "title": "一个有时序的闭环例"
+          },
+          {
+            "slug": "最小二乘趋向哪里",
+            "title": "最小二乘趋向哪里"
+          },
+          {
+            "slug": "工具变量的两个条件",
+            "title": "工具变量的两个条件"
+          },
+          {
+            "slug": "交互检查总体矩",
+            "title": "交互检查总体矩"
+          },
+          {
+            "slug": "同一批记录的有限样本实验",
+            "title": "同一批记录的有限样本实验"
+          },
+          {
+            "slug": "还有哪些闭环路线",
+            "title": "还有哪些闭环路线"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "frequency-domain-id",
@@ -3534,7 +4202,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "先把频率和记录说清",
+            "title": "先把频率和记录说清"
+          },
+          {
+            "slug": "从dft比值到互谱估计",
+            "title": "从DFT比值到互谱估计"
+          },
+          {
+            "slug": "相干度能说明什么",
+            "title": "相干度能说明什么"
+          },
+          {
+            "slug": "贯穿算例与交互实验",
+            "title": "贯穿算例与交互实验"
+          },
+          {
+            "slug": "记录长度与窗的代价",
+            "title": "记录长度与窗的代价"
+          },
+          {
+            "slug": "噪声位置决定偏差",
+            "title": "噪声位置决定偏差"
+          },
+          {
+            "slug": "一次可复核的实验流程",
+            "title": "一次可复核的实验流程"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "subspace-id",
@@ -3546,7 +4260,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "从状态到一串脉冲响应",
+            "title": "从状态到一串脉冲响应"
+          },
+          {
+            "slug": "hankel矩阵为何低秩",
+            "title": "Hankel矩阵为何低秩"
+          },
+          {
+            "slug": "用svd得到一个实现",
+            "title": "用SVD得到一个实现"
+          },
+          {
+            "slug": "交互检查阶次与弱模态",
+            "title": "交互检查阶次与弱模态"
+          },
+          {
+            "slug": "一般输入为何要先消去",
+            "title": "一般输入为何要先消去"
+          },
+          {
+            "slug": "从子空间恢复输入输出模型",
+            "title": "从子空间恢复输入输出模型"
+          },
+          {
+            "slug": "带噪声时怎样验证",
+            "title": "带噪声时怎样验证"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "nonlinear-data-driven-id",
@@ -3559,7 +4319,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "非线性放在哪里",
+            "title": "非线性放在哪里"
+          },
+          {
+            "slug": "把动态预测写成回归",
+            "title": "把动态预测写成回归"
+          },
+          {
+            "slug": "一步预测与自由滚动",
+            "title": "一步预测与自由滚动"
+          },
+          {
+            "slug": "先规定数据与选择规则",
+            "title": "先规定数据与选择规则"
+          },
+          {
+            "slug": "交互检查拟合与外推",
+            "title": "交互检查拟合与外推"
+          },
+          {
+            "slug": "非线性特征也要有激励",
+            "title": "非线性特征也要有激励"
+          },
+          {
+            "slug": "三工况重复实验",
+            "title": "三工况重复实验"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "identification-case-study",
@@ -3590,7 +4396,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "估计任务与信息边界",
+            "title": "估计任务与信息边界"
+          },
+          {
+            "slug": "状态和噪声模型",
+            "title": "状态和噪声模型"
+          },
+          {
+            "slug": "用不确定性描述估计",
+            "title": "用不确定性描述估计"
+          },
+          {
+            "slug": "预测与测量修正",
+            "title": "预测与测量修正"
+          },
+          {
+            "slug": "条件与失效边界",
+            "title": "条件与失效边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "least-squares-ml",
@@ -3602,7 +4446,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "估计量与误差",
+            "title": "估计量与误差"
+          },
+          {
+            "slug": "最小二乘",
+            "title": "最小二乘"
+          },
+          {
+            "slug": "噪声不同怎样加权",
+            "title": "噪声不同怎样加权"
+          },
+          {
+            "slug": "从似然得到估计",
+            "title": "从似然得到估计"
+          },
+          {
+            "slug": "先验与后验",
+            "title": "先验与后验"
+          },
+          {
+            "slug": "检验估计的条件",
+            "title": "检验估计的条件"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "kalman-filter",
@@ -3664,11 +4550,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "extended-kalman-filter",
         "title": "扩展卡尔曼滤波",
+        "subsections": [
+          {
+            "slug": "从读数到非线性模型",
+            "title": "从读数到非线性模型"
+          },
+          {
+            "slug": "误差为何要线性化",
+            "title": "误差为何要线性化"
+          },
+          {
+            "slug": "预测与校正的完整递推",
+            "title": "预测与校正的完整递推"
+          },
+          {
+            "slug": "一拍算例",
+            "title": "一拍算例"
+          },
+          {
+            "slug": "近似的后验与失败例",
+            "title": "近似的后验与失败例"
+          },
+          {
+            "slug": "多维测量与工程实现",
+            "title": "多维测量与工程实现"
+          },
+          {
+            "slug": "稳定性和适用边界",
+            "title": "稳定性和适用边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "estimation/kalman-filter",
           "math/multivariable-calculus",
@@ -3676,22 +4604,106 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "unscented-kalman-filter",
         "title": "无迹卡尔曼滤波",
+        "subsections": [
+  {
+    "slug": "问题与模型",
+    "title": "问题与模型"
+  },
+  {
+    "slug": "sigma点与两套权重",
+    "title": "sigma点与两套权重"
+  },
+  {
+    "slug": "无迹变换怎样传播矩",
+    "title": "无迹变换怎样传播矩"
+  },
+  {
+    "slug": "预测与校正的完整递推",
+    "title": "预测与校正的完整递推"
+  },
+  {
+    "slug": "一拍校正的手算与复算",
+    "title": "一拍校正的手算与复算"
+  },
+  {
+    "slug": "交互探索与公平比较",
+    "title": "交互探索与公平比较"
+  },
+  {
+    "slug": "数值与实现边界",
+    "title": "数值与实现边界"
+  },
+  {
+    "slug": "小结",
+    "title": "小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
         "prereq": [
           "estimation/kalman-filter",
           "math/probability-basics"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "particle-filter",
         "title": "粒子滤波",
+        "subsections": [
+  {
+    "slug": "从单高斯到带权粒子",
+    "title": "从单高斯到带权粒子"
+  },
+  {
+    "slug": "bayes递推与重要性权重",
+    "title": "Bayes递推与重要性权重"
+  },
+  {
+    "slug": "bootstrap粒子滤波的逐拍步骤",
+    "title": "bootstrap粒子滤波的逐拍步骤"
+  },
+  {
+    "slug": "四个粒子的手算更新",
+    "title": "四个粒子的手算更新"
+  },
+  {
+    "slug": "ess与系统重采样",
+    "title": "ESS与系统重采样"
+  },
+  {
+    "slug": "交互观察分布函数",
+    "title": "交互观察分布函数"
+  },
+  {
+    "slug": "多种子与逐拍实验",
+    "title": "多种子与逐拍实验"
+  },
+  {
+    "slug": "实现边界与小结",
+    "title": "实现边界与小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
         "prereq": [
           "estimation/estimation-problem",
           "math/stochastic-processes",
@@ -3699,7 +4711,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "sensor-fusion",
@@ -3710,7 +4722,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [
+  {
+    "slug": "两次读数是否两份信息",
+    "title": "两次读数是否两份信息"
+  },
+  {
+    "slug": "同一状态的联合观测",
+    "title": "同一状态的联合观测"
+  },
+  {
+    "slug": "独立噪声的信息相加",
+    "title": "独立噪声的信息相加"
+  },
+  {
+    "slug": "相关噪声与白化更新",
+    "title": "相关噪声与白化更新"
+  },
+  {
+    "slug": "交互实验与一致性",
+    "title": "交互实验与一致性"
+  },
+  {
+    "slug": "共享先验与未知相关性",
+    "title": "共享先验与未知相关性"
+  },
+  {
+    "slug": "时间坐标与非线性对齐",
+    "title": "时间坐标与非线性对齐"
+  },
+  {
+    "slug": "实现流程与边界",
+    "title": "实现流程与边界"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
+        "status": "v1.3"
       },
       {
         "slug": "estimation-case-study",
@@ -3721,7 +4775,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "empty"
+        "subsections": [
+  {
+    "slug": "从小车需求到验收合同",
+    "title": "从小车需求到验收合同"
+  },
+  {
+    "slug": "模型单位与时间轴",
+    "title": "模型、单位与时间轴"
+  },
+  {
+    "slug": "先算清第一拍",
+    "title": "先算清第一拍"
+  },
+  {
+    "slug": "把单拍接成逐拍融合",
+    "title": "把单拍接成逐拍融合"
+  },
+  {
+    "slug": "创新门限能做什么",
+    "title": "创新门限能做什么"
+  },
+  {
+    "slug": "交互检查误差与报告协方差",
+    "title": "交互检查误差与报告协方差"
+  },
+  {
+    "slug": "多种子核查与失败记录",
+    "title": "多种子核查与失败记录"
+  },
+  {
+    "slug": "从教学仿真到运行系统",
+    "title": "从教学仿真到运行系统"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
+        "status": "v1.3"
       }
     ]
   },
@@ -3777,11 +4873,12 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "classic/frequency-response-design",
-          "modern/multivariable-systems"
+          "modern/state-space",
+          "modern/lqr-controller"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "uncertainty-modeling",
@@ -3834,7 +4931,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "robust-stability",
@@ -3887,7 +4984,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "robust-performance",
@@ -3940,7 +5037,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "h-infinity-basics",
@@ -3990,7 +5087,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "mixed-sensitivity",
@@ -4039,7 +5136,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "mu-analysis",
@@ -4235,12 +5332,11 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "discrete-sampled/discrete-optimal-control",
-          "math/convex-optimization",
-          "estimation/kalman-filter"
+          "math/convex-optimization"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "prediction-model",
@@ -4293,7 +5389,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "receding-horizon",
@@ -4350,7 +5446,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "constraint-handling",
@@ -4410,7 +5506,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "mpc-stability",
@@ -4421,7 +5517,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从本拍有解到下一拍", "title": "从本拍有解到下一拍"}, {"slug": "问题与可行集", "title": "问题与可行集"}, {"slug": "终端三条件", "title": "终端三条件"}, {"slug": "移位证明", "title": "移位证明"}, {"slug": "值函数下降", "title": "值函数下降"}, {"slug": "标量算例", "title": "标量算例"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "实现与失效边界", "title": "实现与失效边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "generalized-predictive-control",
@@ -4498,7 +5595,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "explicit-mpc",
@@ -4509,7 +5606,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从每拍求解到离线分区", "title": "从每拍求解到离线分区"}, {"slug": "参数化的约束qp", "title": "参数化的约束QP"}, {"slug": "活跃集怎样生成区域", "title": "活跃集怎样生成区域"}, {"slug": "五区域手算例", "title": "五区域手算例"}, {"slug": "边界与退化", "title": "边界与退化"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "在线查找与部署", "title": "在线查找与部署"}, {"slug": "等价与稳定的边界", "title": "等价与稳定的边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "nonlinear-mpc",
@@ -4943,7 +6041,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "送餐前要不要充电",
+            "title": "送餐前要不要充电"
+          },
+          {
+            "slug": "一次交互的先后顺序",
+            "title": "一次交互的先后顺序"
+          },
+          {
+            "slug": "把任务写成mdp",
+            "title": "把任务写成MDP"
+          },
+          {
+            "slug": "奖励与整段回报",
+            "title": "奖励与整段回报"
+          },
+          {
+            "slug": "策略改变未来数据",
+            "title": "策略改变未来数据"
+          },
+          {
+            "slug": "最小实验与评估",
+            "title": "最小实验与评估"
+          },
+          {
+            "slug": "边界与常见误解",
+            "title": "边界与常见误解"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "dynamic-programming",
@@ -4954,7 +6090,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "从送餐回报到状态价值",
+            "title": "从送餐回报到状态价值"
+          },
+          {
+            "slug": "给定策略的两种价值",
+            "title": "给定策略的两种价值"
+          },
+          {
+            "slug": "回报的一步分解",
+            "title": "回报的一步分解"
+          },
+          {
+            "slug": "反复送餐的循环模型",
+            "title": "反复送餐的循环模型"
+          },
+          {
+            "slug": "解出给定策略的价值",
+            "title": "解出给定策略的价值"
+          },
+          {
+            "slug": "最优方程与策略改进",
+            "title": "最优方程与策略改进"
+          },
+          {
+            "slug": "值迭代与停止证书",
+            "title": "值迭代与停止证书"
+          },
+          {
+            "slug": "实验与适用边界",
+            "title": "实验与适用边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "q-learning",
@@ -5077,13 +6255,47 @@ export const catalog: Chapter[] = [
       {
         "slug": "multi-agent-overview",
         "title": "多智能体系统",
+        "subsections": [
+          {
+            "title": "从三辆小车出发",
+            "slug": "从三辆小车出发"
+          },
+          {
+            "title": "对象和信息分开建模",
+            "slug": "对象和信息分开建模"
+          },
+          {
+            "title": "局部反馈怎样连成整体",
+            "slug": "局部反馈怎样连成整体"
+          },
+          {
+            "title": "一致不等于完成任务",
+            "slug": "一致不等于完成任务"
+          },
+          {
+            "title": "通信结构改变结果",
+            "slug": "通信结构改变结果"
+          },
+          {
+            "title": "从理想协议走向实现",
+            "slug": "从理想协议走向实现"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ],
         "prereq": [
           "math/graph-theory",
           "modern/state-space"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "consensus-control",
@@ -5239,15 +6451,51 @@ export const catalog: Chapter[] = [
       {
         "slug": "safety-overview",
         "title": "控制安全",
+        "subsections": [
+          {
+            "slug": "小车停得住吗",
+            "title": "小车停得住吗"
+          },
+          {
+            "slug": "稳定与安全",
+            "title": "稳定与安全"
+          },
+          {
+            "slug": "把危险写成约束",
+            "title": "把危险写成约束"
+          },
+          {
+            "slug": "停车距离预算",
+            "title": "停车距离预算"
+          },
+          {
+            "slug": "从约束到可行行动",
+            "title": "从约束到可行行动"
+          },
+          {
+            "slug": "监测与回退",
+            "title": "监测与回退"
+          },
+          {
+            "slug": "安全论证与后续路线",
+            "title": "安全论证与后续路线"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
-          "nonlinear/lyapunov-stability",
-          "estimation/estimation-problem",
           "classic/stability-analysis",
-          "implementation/computer-control-architecture"
+          "nonlinear/lyapunov-stability"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "control-barrier-functions",
@@ -5344,7 +6592,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+  {
+    "slug": "引言",
+    "title": "引言"
+  },
+  {
+    "slug": "机构与自由度",
+    "title": "机构与自由度"
+  },
+  {
+    "slug": "构型与任务",
+    "title": "构型与任务"
+  },
+  {
+    "slug": "状态与测量",
+    "title": "状态与测量"
+  },
+  {
+    "slug": "输入与动力学",
+    "title": "输入与动力学"
+  },
+  {
+    "slug": "滑台算例",
+    "title": "滑台算例"
+  },
+  {
+    "slug": "模型边界",
+    "title": "模型边界"
+  },
+  {
+    "slug": "小结",
+    "title": "小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+]
       },
       {
         "slug": "rigid-body-motion",
@@ -5458,24 +6748,112 @@ export const catalog: Chapter[] = [
       {
         "slug": "robot-data",
         "title": "机器人数据",
+        "subsections": [
+          {
+            "slug": "搬杯子之前先读懂记录",
+            "title": "搬杯子之前先读懂记录"
+          },
+          {
+            "slug": "一次尝试怎样成为轨迹",
+            "title": "一次尝试怎样成为轨迹"
+          },
+          {
+            "slug": "按可用时间配对观测与动作",
+            "title": "按可用时间配对观测与动作"
+          },
+          {
+            "slug": "动作数字必须带着执行语义",
+            "title": "动作数字必须带着执行语义"
+          },
+          {
+            "slug": "先划分轨迹再生成窗口",
+            "title": "先划分轨迹再生成窗口"
+          },
+          {
+            "slug": "只用训练数据确定变换",
+            "title": "只用训练数据确定变换"
+          },
+          {
+            "slug": "数据覆盖和公开资料的边界",
+            "title": "数据覆盖和公开资料的边界"
+          },
+          {
+            "slug": "从原日志到可交付数据",
+            "title": "从原日志到可交付数据"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
-          "robotics/trajectory-tracking",
-          "machine-learning/learning-evaluation"
+          "machine-learning/learning-problem",
+          "math/probability-basics"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "imitation-learning",
         "title": "模仿学习",
+        "subsections": [
+          {
+            "slug": "从搬杯子到学动作",
+            "title": "从搬杯子到学动作"
+          },
+          {
+            "slug": "行为克隆的输入输出",
+            "title": "行为克隆的输入输出"
+          },
+          {
+            "slug": "从示范拟合一个策略",
+            "title": "从示范拟合一个策略"
+          },
+          {
+            "slug": "离线误差与闭环偏移",
+            "title": "离线误差与闭环偏移"
+          },
+          {
+            "slug": "在访问过的状态上问专家",
+            "title": "在访问过的状态上问专家"
+          },
+          {
+            "slug": "新增数据也有表达能力边界",
+            "title": "新增数据也有表达能力边界"
+          },
+          {
+            "slug": "同一画面可以有多种动作",
+            "title": "同一画面可以有多种动作"
+          },
+          {
+            "slug": "训练与部署的验收合同",
+            "title": "训练与部署的验收合同"
+          },
+          {
+            "slug": "方法边界与资料",
+            "title": "方法边界与资料"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "robot-learning/robot-data",
-          "machine-learning/autodiff-optimization"
+          "machine-learning/supervised-learning"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "offline-online-learning",
@@ -5584,7 +6962,50 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "frontier",
-        "status": "empty"
+        "status": "v1.3"
+,
+        "subsections": [
+          {
+            "title": "杯子为什么没有到位",
+            "slug": "杯子为什么没有到位"
+          },
+          {
+            "title": "系统由什么组成",
+            "slug": "系统由什么组成"
+          },
+          {
+            "title": "观测与动作的接口",
+            "slug": "观测与动作的接口"
+          },
+          {
+            "title": "不同速度的闭环",
+            "slug": "不同速度的闭环"
+          },
+          {
+            "title": "一个可运行的最小系统",
+            "slug": "一个可运行的最小系统"
+          },
+          {
+            "title": "学习方法放在哪一层",
+            "slug": "学习方法放在哪一层"
+          },
+          {
+            "title": "怎样读前沿证据",
+            "slug": "怎样读前沿证据"
+          },
+          {
+            "title": "小结",
+            "slug": "小结"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ]
       },
       {
         "slug": "multimodal-observation",
@@ -5595,7 +7016,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "title": "夹爪挡住杯子之后",
+            "slug": "夹爪挡住杯子之后"
+          },
+          {
+            "title": "三种模态各知道什么",
+            "slug": "三种模态各知道什么"
+          },
+          {
+            "title": "先把观测对齐",
+            "slug": "先把观测对齐"
+          },
+          {
+            "title": "怎样合成位置读数",
+            "slug": "怎样合成位置读数"
+          },
+          {
+            "title": "迟到和相关误差",
+            "slug": "迟到和相关误差"
+          },
+          {
+            "title": "从传感器到学习表征",
+            "slug": "从传感器到学习表征"
+          },
+          {
+            "title": "怎样验证多模态有用",
+            "slug": "怎样验证多模态有用"
+          },
+          {
+            "title": "小结",
+            "slug": "小结"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ]
       },
       {
         "slug": "action-representations",
@@ -5700,23 +7163,107 @@ export const catalog: Chapter[] = [
         "slug": "driving-system",
         "title": "自动驾驶系统",
         "prereq": [
-          "modern/state-space",
-          "safety-ftc/safety-overview"
+          "modern/state-space"
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "先约定运行范围",
+            "title": "先约定运行范围"
+          },
+          {
+            "slug": "把车辆放回闭环",
+            "title": "把车辆放回闭环"
+          },
+          {
+            "slug": "消息必须带什么",
+            "title": "消息必须带什么"
+          },
+          {
+            "slug": "从延迟算停车预算",
+            "title": "从延迟算停车预算"
+          },
+          {
+            "slug": "监控与回退也在系统里",
+            "title": "监控与回退也在系统里"
+          },
+          {
+            "slug": "闭环测试要看什么",
+            "title": "闭环测试要看什么"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "vehicle-dynamics",
         "title": "车辆动力学",
         "prereq": [
           "autonomous-driving/driving-system",
-          "math/ode-matrix-exponential"
+          "math/ode-matrix-exponential",
+          "modern/state-space"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "坐标与状态",
+            "title": "坐标与状态"
+          },
+          {
+            "slug": "无侧滑的转弯几何",
+            "title": "无侧滑的转弯几何"
+          },
+          {
+            "slug": "纵向力与附着预算",
+            "title": "纵向力与附着预算"
+          },
+          {
+            "slug": "轮胎怎样产生侧向力",
+            "title": "轮胎怎样产生侧向力"
+          },
+          {
+            "slug": "从力与力矩得到横向模型",
+            "title": "从力与力矩得到横向模型"
+          },
+          {
+            "slug": "算例与模型边界",
+            "title": "算例与模型边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "localization-prediction",
@@ -5836,14 +7383,48 @@ export const catalog: Chapter[] = [
         "slug": "power-electronics",
         "title": "电力电子控制",
         "prereq": [
-          "implementation/digital-pid",
+          "classic/pid-controller",
           "modern/state-feedback",
           "classic/frequency-response-design",
           "discrete-sampled/sampling-period-selection"
         ],
         "level": "grad",
         "type": "case",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+                    "title": "供电问题与能量通路",
+                    "slug": "供电问题与能量通路"
+          },
+          {
+                    "title": "从开关状态到平均模型",
+                    "slug": "从开关状态到平均模型"
+          },
+          {
+                    "title": "稳态与纹波预算",
+                    "slug": "稳态与纹波预算"
+          },
+          {
+                    "title": "平均模型怎样核验",
+                    "slug": "平均模型怎样核验"
+          },
+          {
+                    "title": "电压反馈怎样闭环",
+                    "slug": "电压反馈怎样闭环"
+          },
+          {
+                    "title": "采样限幅与保护",
+                    "slug": "采样限幅与保护"
+          },
+          {
+                    "title": "习题",
+                    "slug": "习题"
+          },
+          {
+                    "title": "答案",
+                    "slug": "答案"
+          }
+]
       },
       {
         "slug": "process-control",

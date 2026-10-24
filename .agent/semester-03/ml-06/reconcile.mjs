@@ -1,0 +1,21 @@
+import fs from 'node:fs';import ts from 'typescript';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {request} from 'node:http';import {randomUUID,createHash} from 'node:crypto';import {extractNotebooks} from '../../../scripts/lib-mdx.mjs';
+const dir='.agent/semester-03/ml-06/',m={};new Function('exports',ts.transpileModule(fs.readFileSync('lib/attention-basics.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(m);
+const data={runs:[],notebooks:[]};let plotted=0;
+for(const temperature of m.temperatures)for(const delta of m.deltas)for(const causal of [true,false]){
+ const config={temperature,delta,causal},result=m.attentionExperiment(temperature,delta,causal);data.runs.push({config,result});
+ for(const [i,row]of result.weights.entries()){assert(Math.abs(row.reduce((s,w)=>s+w,0)-1)<1e-14);for(const[j,w]of row.entries()){assert(w>=0&&w<=1);if(causal&&j>i)assert.equal(w,0);plotted++;}assert(result.output[i][0]>=1&&result.output[i][0]<=3+delta);}
+ if(causal){const base=m.attentionExperiment(temperature,0,true);assert.deepEqual(result.output.slice(0,2),base.output.slice(0,2));assert.deepEqual(result.output[2],m.attentionExperiment(temperature,delta,false).output[2]);}
+}
+const keys=[[1,0],[0,1],[1,1]],values=[[1],[2],[3]],p=[2,0,1],pk=p.map(j=>keys[j]),pv=p.map(j=>values[j]);
+const run=(k,v)=>m.attend([[1,0]],k,v,[[true,true,true]]).output[0][0],pos=k=>k.map((r,j)=>[r[0]+j*.5,r[1]]);
+data.permutation={original:run(keys,values),permuted:run(pk,pv),positionOriginal:run(pos(keys),values),positionPermuted:run(pos(pk),pv)};
+data.stable=m.maskedSoftmax([1000,1001],[true,true]);assert.deepEqual(data.stable,m.maskedSoftmax([0,1],[true,true]));
+assert.throws(()=>m.maskedSoftmax([0,1],[false,false]),RangeError);assert.throws(()=>m.attend([[1,0]],[[1]],[[1]],[[true]]),RangeError);assert.throws(()=>m.attend([[1,0]],[[1,0]],[[1]],[[true]],0),RangeError);assert.throws(()=>m.maskedSoftmax([Infinity],[true]),RangeError);
+assert.deepEqual(m.maskedSoftmax([.7,0,.7],[true,false,false]),[1,0,0]);
+const source=fs.readFileSync('content/machine-learning/attention-transformers.mdx','utf8').replace(/\r\n/g,'\n'),notebooks=extractNotebooks(source);assert.equal(notebooks.length,2);
+for(const n of notebooks){const output=execFileSync('python',['-c',n.setup.value+'\n'+n.cells.map(c=>c.value).join('\n')],{encoding:'utf8'});data.notebooks.push(output.trim().split(/\r?\n/).map(s=>JSON.parse(s)));}
+fs.writeFileSync(dir+'ts-cases.json',JSON.stringify(data));const ref=JSON.parse(execFileSync('python',[dir+'reference.py',dir+'ts-cases.json'],{encoding:'utf8'}));fs.writeFileSync(dir+'reference.json',JSON.stringify({...ref,runs:data.runs.length,plotted},null,2));fs.writeFileSync(dir+'raw-python.json',JSON.stringify(data.notebooks,null,2));
+function http(path,method,body){return new Promise((resolve,reject)=>{const raw=body?JSON.stringify(body):null;const req=request({hostname:'127.0.0.1',port:8992,path,method,headers:raw?{'Content-Type':'application/json','Content-Length':Buffer.byteLength(raw)}:{}},res=>{let s='';res.on('data',v=>s+=v);res.on('end',()=>{try{assert.equal(res.statusCode,200,s);resolve(JSON.parse(s));}catch(e){reject(e);}})});req.on('error',reject);req.setTimeout(60000,()=>req.destroy(Error('timeout')));if(raw)req.write(raw);req.end();});}
+const native=[];
+for(const[i,n]of notebooks.entries()){const id='ml06-'+randomUUID();try{await http('/api/notebook','POST',{notebook_id:id,setup_code:''});const outputs=[];let combined='';for(const code of [n.setup.value,...n.cells.map(c=>c.value)]){const r=await http('/api/notebook/'+id+'/execute','POST',{code});assert(!r.outputs.some(o=>o.type==='error'));outputs.push(r);combined+=r.outputs.filter(o=>o.type==='stream').map(o=>o.text).join('');}const values=combined.trim().split(/\r?\n/).map(s=>JSON.parse(s));assert.deepEqual(values,data.notebooks[i]);native.push({title:n.title,outputs,values});}finally{await http('/api/notebook/'+id,'DELETE');}}
+fs.writeFileSync(dir+'native.json',JSON.stringify({pass:true,sourceHash:createHash('sha256').update(source).digest('hex'),notebooks:native},null,2));console.log(JSON.stringify({pass:true,runs:data.runs.length,quantities:ref.quantities,maxError:ref.max_error,plotted}));

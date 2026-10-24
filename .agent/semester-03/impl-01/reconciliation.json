@@ -1,0 +1,329 @@
+{
+  "pass": true,
+  "sourceHash": "2fe65b070be5588f49e7ca9fd72dcc43e0e05a9a206a62478534d4826127a64c",
+  "reference": {
+    "pass": true,
+    "configs": 1701,
+    "maxTsError": 1.7763568394002505e-15,
+    "budgets": [
+      2.4,
+      3,
+      5.2
+    ],
+    "bound": 0.8284271247461901,
+    "u": 0.85,
+    "response": [
+      2.8,
+      4.8,
+      6.8,
+      6.8
+    ],
+    "scheduledResponse": 6.8,
+    "phase": {
+      "network_loss_deg": 5.729577951308233,
+      "network_pm_deg": 39.27042204869177,
+      "zoh_loss_deg": 2.8647889756541165,
+      "zoh_pm_deg": 47.135211024345885,
+      "max_period_ms": 17.453292519943297,
+      "with_path_loss_deg": 9.167324722093172,
+      "clock_1ms_at100_deg": 5.729577951308233
+    },
+    "mttf_parallel": 15,
+    "mttf_tmr": 8.333333333333334,
+    "reliability": {
+      "0.9": 0.972,
+      "0.4": 0.3520000000000001,
+      "0.5": 0.5
+    },
+    "extra_total": 3.7
+  },
+  "defaults": {
+    "stages": [
+      0.4,
+      0.8,
+      0.5,
+      1,
+      0.3
+    ],
+    "total": 3,
+    "slack": 2,
+    "deadline": 5,
+    "period": 10,
+    "meetsDeadline": true
+  },
+  "notebooks": [
+    {
+      "title": "时间预算、调度条件与相位复算",
+      "outputs": [
+        [],
+        [
+          {
+            "type": "stream",
+            "name": "stdout",
+            "text": "communication=0.2 total=2.40 slack=2.60 ms\ncommunication=0.8 total=3.00 slack=2.00 ms\ncommunication=3.0 total=5.20 slack=-0.20 ms\nRM bound=0.828427125 U=0.850000000 response(ms)= [2.8, 4.8, 6.8, 6.8]\nThe bound is sufficient, not necessary.\n"
+          }
+        ],
+        [
+          {
+            "type": "stream",
+            "name": "stdout",
+            "text": "network_loss_deg = 5.729577951\nnetwork_pm_deg = 39.270422049\nzoh_loss_deg = 2.864788976\nzoh_pm_deg = 47.135211024\nmax_period_ms = 17.453292520\nwith_path_loss_deg = 9.167324722\nclock_1ms_at100_deg = 5.729577951\nConditional phase estimates only; no sampled-data stability certificate.\n"
+          }
+        ]
+      ],
+      "values": {
+        "budgets": [
+          2.4,
+          3,
+          5.2
+        ],
+        "bound": 0.8284271247461903,
+        "u": 0.85,
+        "response": [
+          2.8,
+          4.8,
+          6.8,
+          6.8
+        ],
+        "phase": {
+          "network_loss_deg": 5.729577951308233,
+          "network_pm_deg": 39.27042204869177,
+          "zoh_loss_deg": 2.8647889756541165,
+          "zoh_pm_deg": 47.135211024345885,
+          "max_period_ms": 17.453292519943297,
+          "with_path_loss_deg": 9.167324722093172,
+          "clock_1ms_at100_deg": 5.729577951308233
+        }
+      }
+    },
+    {
+      "title": "可靠度、寿命积分与选型题核对",
+      "outputs": [
+        [],
+        [
+          {
+            "type": "stream",
+            "name": "stdout",
+            "text": "R=0.9 TMR=0.972000 difference=0.072000\nR=0.4 TMR=0.352000 difference=-0.048000\nR=0.5 TMR=0.500000 difference=0.000000\nsingle MTTF(year)= 10.0\nparallel MTTF(year)=15.000000000 TMR MTTF(year)=8.333333333\n"
+          }
+        ],
+        [
+          {
+            "type": "stream",
+            "name": "stdout",
+            "text": "Selection requirements only: {'servo_period_ms': 0.1, 'line_period_ms': 10, 'process_period_ms': 100, 'line_io': 550, 'process_io': 5000, 'uav_period_ms': 1, 'water_period_ms': 1000, 'water_io': 600, 'assembly_di_do': 100, 'assembly_servos': 20}\nextra waiting: total=3.70 slack=1.30 ms\nExact deadline communication budget(ms)= 2.8\nNo measured hardware capability or procurement recommendation is implied.\n"
+          }
+        ]
+      ],
+      "values": {
+        "mttf_parallel": 15,
+        "mttf_tmr": 8.333333333333334,
+        "reliability": {
+          "0.9": 0.972,
+          "0.4": 0.3520000000000001,
+          "0.5": 0.5
+        },
+        "extra_total": 3.7
+      }
+    }
+  ],
+  "maxNotebookError": 2.220446049250313e-16,
+  "quantities": 22,
+  "rendered": {
+    "headings": [
+      {
+        "level": 1,
+        "id": "控制系统架构",
+        "text": "控制系统架构"
+      },
+      {
+        "level": 2,
+        "id": "计算机控制系统的硬件组成",
+        "text": "计算机控制系统的硬件组成"
+      },
+      {
+        "level": 3,
+        "id": "从测量到作用比较发生在哪里",
+        "text": "从测量到作用：比较发生在哪里"
+      },
+      {
+        "level": 3,
+        "id": "三类平台与四类io",
+        "text": "三类平台与四类I/O"
+      },
+      {
+        "level": 3,
+        "id": "看门狗管哪一类故障",
+        "text": "看门狗管哪一类故障"
+      },
+      {
+        "level": 2,
+        "id": "软件架构与实时性",
+        "text": "软件架构与实时性"
+      },
+      {
+        "level": 3,
+        "id": "周期截止时间执行时间分开写",
+        "text": "周期、截止时间、执行时间分开写"
+      },
+      {
+        "level": 3,
+        "id": "一个测量到输出的时间合同",
+        "text": "一个测量到输出的时间合同"
+      },
+      {
+        "level": 3,
+        "id": "rtos与利用率充分界不等于硬上限",
+        "text": "RTOS与利用率：充分界不等于硬上限"
+      },
+      {
+        "level": 2,
+        "id": "通信系统与网络",
+        "text": "通信系统与网络"
+      },
+      {
+        "level": 3,
+        "id": "先分层再比较需求",
+        "text": "先分层，再比较需求"
+      },
+      {
+        "level": 3,
+        "id": "拓扑时间戳和数据龄期",
+        "text": "拓扑、时间戳和数据龄期"
+      },
+      {
+        "level": 2,
+        "id": "系统架构类型",
+        "text": "系统架构类型"
+      },
+      {
+        "level": 3,
+        "id": "把控制职责放在合适的位置",
+        "text": "把控制职责放在合适的位置"
+      },
+      {
+        "level": 3,
+        "id": "可靠度寿命与可用性不能换名字",
+        "text": "可靠度、寿命与可用性不能换名字"
+      },
+      {
+        "level": 2,
+        "id": "工程选型方法",
+        "text": "工程选型方法"
+      },
+      {
+        "level": 3,
+        "id": "从需求表开始",
+        "text": "从需求表开始"
+      },
+      {
+        "level": 3,
+        "id": "测量证据应长什么样",
+        "text": "测量证据应长什么样"
+      },
+      {
+        "level": 2,
+        "id": "深入讨论",
+        "text": "深入讨论"
+      },
+      {
+        "level": 3,
+        "id": "云边缘与数字孪生",
+        "text": "云、边缘与数字孪生"
+      },
+      {
+        "level": 3,
+        "id": "功能安全与信息安全",
+        "text": "功能安全与信息安全"
+      },
+      {
+        "level": 2,
+        "id": "小结",
+        "text": "小结"
+      },
+      {
+        "level": 2,
+        "id": "习题",
+        "text": "习题"
+      },
+      {
+        "level": 2,
+        "id": "答案",
+        "text": "答案"
+      }
+    ],
+    "h2": [
+      {
+        "level": 2,
+        "id": "计算机控制系统的硬件组成",
+        "text": "计算机控制系统的硬件组成"
+      },
+      {
+        "level": 2,
+        "id": "软件架构与实时性",
+        "text": "软件架构与实时性"
+      },
+      {
+        "level": 2,
+        "id": "通信系统与网络",
+        "text": "通信系统与网络"
+      },
+      {
+        "level": 2,
+        "id": "系统架构类型",
+        "text": "系统架构类型"
+      },
+      {
+        "level": 2,
+        "id": "工程选型方法",
+        "text": "工程选型方法"
+      },
+      {
+        "level": 2,
+        "id": "深入讨论",
+        "text": "深入讨论"
+      },
+      {
+        "level": 2,
+        "id": "小结",
+        "text": "小结"
+      },
+      {
+        "level": 2,
+        "id": "习题",
+        "text": "习题"
+      },
+      {
+        "level": 2,
+        "id": "答案",
+        "text": "答案"
+      }
+    ],
+    "ids": [
+      "控制系统架构",
+      "计算机控制系统的硬件组成",
+      "从测量到作用比较发生在哪里",
+      "三类平台与四类io",
+      "看门狗管哪一类故障",
+      "软件架构与实时性",
+      "周期截止时间执行时间分开写",
+      "一个测量到输出的时间合同",
+      "rtos与利用率充分界不等于硬上限",
+      "通信系统与网络",
+      "先分层再比较需求",
+      "拓扑时间戳和数据龄期",
+      "系统架构类型",
+      "把控制职责放在合适的位置",
+      "可靠度寿命与可用性不能换名字",
+      "工程选型方法",
+      "从需求表开始",
+      "测量证据应长什么样",
+      "深入讨论",
+      "云边缘与数字孪生",
+      "功能安全与信息安全",
+      "小结",
+      "习题",
+      "答案"
+    ]
+  }
+}

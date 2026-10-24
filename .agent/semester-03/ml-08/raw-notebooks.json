@@ -1,0 +1,18 @@
+[
+  {
+    "title": "加噪与条件不确定性",
+    "setup": "import math, json\r\n\r\ndef diffusion(m=2.0,s=0.5,a=0.5,y=1.0):\r\n    v=a*s*s+1-a\r\n    mean=math.sqrt(a)*m\r\n    noise=math.sqrt(1-a)*(y-mean)/v\r\n    score=-(y-mean)/v\r\n    estimate=(y-math.sqrt(1-a)*noise)/math.sqrt(a)\r\n    return dict(mean=mean,variance=v,noise=noise,score=score,estimate=estimate,\r\n                posteriorVariance=s*s*(1-a)/v,estimateVariance=a*s**4/v,noiseRisk=a*s*s/v)\r\n\r\ndef velocity(t,x,m=2.0,s=0.5):\r\n    v=(1-t)**2+(t*s)**2\r\n    b=(t*s*s-(1-t))/v\r\n    return m+b*(x-t*m)\r\n\r\ndef flow(m=2.0,s=0.5,n=8,sign=1):\r\n    particles=[-1.0,0.0,1.0]\r\n    history=[dict(t=0.0,mean=0.0,std=1.0,exactMean=0.0,exactStd=1.0)]\r\n    for k in range(n):\r\n        t=k/n\r\n        particles=[x+sign*velocity(t,x,m,s)/n for x in particles]\r\n        q=(k+1)/n\r\n        history.append(dict(t=q,mean=particles[1],std=abs(particles[2]-particles[0])/2,\r\n                            exactMean=q*m,exactStd=math.sqrt((1-q)**2+(q*s)**2)))\r\n    end=history[-1]\r\n    return dict(mean=end['mean'],std=end['std'],w2=math.hypot(end['mean']-m,end['std']-s),history=history)\r\n\r\ndef snapshot(m=2.0,s=0.5,a=0.5,t=0.5,n=8,sign=1):\r\n    v=(1-t)**2+(t*s)**2\r\n    b=(t*s*s-(1-t))/v\r\n    return dict(diffusion=diffusion(m,s,a),field=dict(t=t,variance=v,slope=b,velocity=velocity(t,1,m,s),risk=s*s/v),flow=flow(m,s,n,sign))",
+    "cells": [
+      "print(json.dumps(diffusion(),ensure_ascii=False))",
+      "print(json.dumps({'decomposition':[diffusion()['estimateVariance'],diffusion()['posteriorVariance'],0.5**2],'conditionalNoiseVariance':1-0.5,'extraDataVariance':0.5*0.5**2,'levels':{str(a):diffusion(a=a) for a in [0.1,0.5,0.9]}},ensure_ascii=False))"
+    ]
+  },
+  {
+    "title": "高斯流采样与失败例",
+    "setup": "import math, json\r\n\r\ndef diffusion(m=2.0,s=0.5,a=0.5,y=1.0):\r\n    v=a*s*s+1-a\r\n    mean=math.sqrt(a)*m\r\n    noise=math.sqrt(1-a)*(y-mean)/v\r\n    score=-(y-mean)/v\r\n    estimate=(y-math.sqrt(1-a)*noise)/math.sqrt(a)\r\n    return dict(mean=mean,variance=v,noise=noise,score=score,estimate=estimate,\r\n                posteriorVariance=s*s*(1-a)/v,estimateVariance=a*s**4/v,noiseRisk=a*s*s/v)\r\n\r\ndef velocity(t,x,m=2.0,s=0.5):\r\n    v=(1-t)**2+(t*s)**2\r\n    b=(t*s*s-(1-t))/v\r\n    return m+b*(x-t*m)\r\n\r\ndef flow(m=2.0,s=0.5,n=8,sign=1):\r\n    particles=[-1.0,0.0,1.0]\r\n    history=[dict(t=0.0,mean=0.0,std=1.0,exactMean=0.0,exactStd=1.0)]\r\n    for k in range(n):\r\n        t=k/n\r\n        particles=[x+sign*velocity(t,x,m,s)/n for x in particles]\r\n        q=(k+1)/n\r\n        history.append(dict(t=q,mean=particles[1],std=abs(particles[2]-particles[0])/2,\r\n                            exactMean=q*m,exactStd=math.sqrt((1-q)**2+(q*s)**2)))\r\n    end=history[-1]\r\n    return dict(mean=end['mean'],std=end['std'],w2=math.hypot(end['mean']-m,end['std']-s),history=history)\r\n\r\ndef snapshot(m=2.0,s=0.5,a=0.5,t=0.5,n=8,sign=1):\r\n    v=(1-t)**2+(t*s)**2\r\n    b=(t*s*s-(1-t))/v\r\n    return dict(diffusion=diffusion(m,s,a),field=dict(t=t,variance=v,slope=b,velocity=velocity(t,1,m,s),risk=s*s/v),flow=flow(m,s,n,sign))",
+    "cells": [
+      "print(json.dumps({'field':snapshot()['field'],'runs':{str(n):flow(n=n) for n in [1,4,8,16,64]}},ensure_ascii=False))",
+      "print(json.dumps({'sameEndpoints':flow(m=0,s=1,n=1),'wrongSign':flow(sign=-1),'exercise':{'dataVariance':0.5**2,'flowMidVariance':snapshot()['field']['variance'],'residualRisk':snapshot()['field']['risk']}},ensure_ascii=False))"
+    ]
+  }
+]

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="340" viewBox="0 0 960 340" role="img" aria-labelledby="title desc">
+<title id="title">多模态观测从采集到策略</title><desc id="desc">三条模态各自带时间戳，因果选择与坐标单位掩码处理后，分别进入物理量融合或编码器和特征融合，输出到策略。</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0L9 3.5L0 7" fill="#334155"/></marker></defs>
+<rect width="960" height="340" rx="12" fill="#f8fafc"/>
+<g font-family="Microsoft YaHei, sans-serif" font-size="17" text-anchor="middle" fill="#0f172a">
+<g fill="#dbeafe" stroke="#2563eb"><rect x="15" y="35" width="160" height="55" rx="8"/><rect x="15" y="140" width="160" height="55" rx="8"/><rect x="15" y="245" width="160" height="55" rx="8"/></g>
+<text x="95" y="69">视觉 / 图像</text><text x="95" y="174">关节 / 本体</text><text x="95" y="279">触觉 / 接触</text>
+<rect x="245" y="80" width="230" height="185" rx="9" fill="#e0f2fe" stroke="#0284c7"/>
+<text x="360" y="112">先建立数据合同</text><text x="360" y="150">采集时间 + 到达时间</text><text x="360" y="181">只选已到达的过去帧</text><text x="360" y="212">坐标 / 单位 / 有效掩码</text><text x="360" y="244">接触关系与质量信息</text>
+<rect x="535" y="55" width="230" height="65" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="650" y="82">已定义同一物理量？</text><text x="650" y="106">按误差模型融合</text>
+<rect x="535" y="210" width="230" height="80" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="650" y="239">各模态编码器</text><text x="650" y="271">特征 + 掩码 + 年龄融合</text>
+<rect x="835" y="132" width="105" height="75" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="888" y="163">策略</text><text x="888" y="191">决策输入</text>
+<text x="650" y="168" font-size="15">两种建模路线，按任务选择</text>
+</g>
+<g fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"><path d="M175 62H210V120H245"/><path d="M175 168H245"/><path d="M175 272H210V225H245"/><path d="M475 135H505V87H535"/><path d="M475 210H505V250H535"/><path d="M765 87H800V155H835"/><path d="M765 250H800V184H835"/></g>
+<text x="480" y="326" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#475569">任务指令另作条件；网络特征没有天然毫米单位，不能直接套传感器方差权重。</text>
+</svg>

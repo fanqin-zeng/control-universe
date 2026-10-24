@@ -1,0 +1,676 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+... Skipped lines
+
+  '"use client";\n' +
+    '\n' +
+    'import { useState, useCallback, useRef, useEffect } from "react";\n' +
+    "import {BrowserNotebook} from './browser-notebook';\n" +
+    '\n' +
+...
+    '\n' +
++   'const API = "http://127.0.0.1:8981";\n' +
+-   'const API = "http://127.0.0.1:8891";\n' +
+    '\n' +
+    '// Module-level so notebooks mounting in the same millisecond never share a kernel id.\n' +
+    'let nbSeq = 0;\n' +
+    'function newNotebookId() {\n' +
+    '  return `nb-${Date.now()}-${nbSeq++}`;\n' +
+
+    at file:///D:/Workspace/control-universe/.agent/semester-03/est-07/validate-final.mjs:21:243
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:661:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '"use client";\n' +
+    '\n' +
+    'import { useState, useCallback, useRef, useEffect } from "react";\n' +
+    "import {BrowserNotebook} from './browser-notebook';\n" +
+    '\n' +
+    'interface NotebookOutput {\n' +
+    '  type: "text" | "image" | "error" | "stream" | "html";\n' +
+    '  text?: string;\n' +
+    '  data?: string;\n' +
+    '  mime?: string;\n' +
+    '  name?: string;\n' +
+    '  ename?: string;\n' +
+    '  evalue?: string;\n' +
+    '  traceback?: string[];\n' +
+    '}\n' +
+    '\n' +
+    'interface CellState {\n' +
+    '  id: string;\n' +
+    '  code: string;\n' +
+    '  outputs: NotebookOutput[];\n' +
+    '  running: boolean;\n' +
+    '}\n' +
+    '\n' +
+    'const API = "http://127.0.0.1:8981";\n' +
+    '\n' +
+    '// Module-level so notebooks mounting in the same millisecond never share a kernel id.\n' +
+    'let nbSeq = 0;\n' +
+    'function newNotebookId() {\n' +
+    '  return `nb-${Date.now()}-${nbSeq++}`;\n' +
+    '}\n' +
+    '\n' +
+    'async function createNotebook(id: string, setup: string) {\n' +
+    '  const res = await fetch(`${API}/api/notebook`, {\n' +
+    '    method: "POST",\n' +
+    '    headers: { "Content-Type": "application/json" },\n' +
+    '    body: JSON.stringify({ notebook_id: id, setup_code: setup }),\n' +
+    '  });\n' +
+    '  if (!res.ok) {\n' +
+    '    const err = await res.json().catch(() => ({ error: res.statusText }));\n' +
+    '    throw new Error(err.error || "Failed to create notebook");\n' +
+    '  }\n' +
+    '  return res.json();\n' +
+    '}\n' +
+    '\n' +
+    '// The server recycles kernels that have been idle too long, so a 404 means\n' +
+    '// "your namespace is gone" rather than "execution failed" — the caller can recover.\n' +
+    'class KernelGoneError extends Error {}\n' +
+    '\n' +
+    'async function execCode(notebookId: string, code: string) {\n' +
+    '  const res = await fetch(`${API}/api/notebook/${notebookId}/execute`, {\n' +
+    '    method: "POST",\n' +
+    '    headers: { "Content-Type": "application/json" },\n' +
+    '    body: JSON.stringify({ code }),\n' +
+    '  });\n' +
+    '  if (res.status === 404) throw new KernelGoneError("kernel recycled");\n' +
+    '  if (!res.ok) throw new Error("Execution failed");\n' +
+    '  return res.json() as Promise<{ outputs: NotebookOutput[] }>;\n' +
+    '}\n' +
+    '\n' +
+    'async function deleteNotebook(notebookId: string) {\n' +
+    '  await fetch(`${API}/api/notebook/${notebookId}`, { method: "DELETE" }).catch(\n' +
+    '    () => {}\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'interface JupyterNotebookProps {\n' +
+    '  browserMode?: string;\n' +
+    '  browserReason?: string;\n' +
+    '  browserWorkerVersion?: string;\n' +
+    '  cells: { code: string }[];\n' +
+    '  setupCode?: string;\n' +
+    '  title?: string;\n' +
+    '}\n' +
+    '\n' +
+    'export function JupyterNotebook({\n' +
+    '  cells: initCells,\n' +
+    '  setupCode = "",\n' +
+    '  title,\n' +
+    '  browserMode,\n' +
+    '  browserReason,\n' +
+    '  browserWorkerVersion,\n' +
+    '}: JupyterNotebookProps) {\n' +
+    '  const [cells, setCells] = useState<CellState[]>(() =>\n' +
+    '    initCells.map((c, i) => ({\n' +
+    '      id: `cell-${i}`,\n' +
+    '      code: c.code,\n' +
+    '      outputs: [],\n' +
+    '      running: false,\n' +
+    '    }))\n' +
+    '  );\n' +
+    '  const [notebookId, setNotebookId] = useState<string | null>(null);\n' +
+    '  const [ready, setReady] = useState(false);\n' +
+    '  const [error, setError] = useState<string | null>(null);\n' +
+    '  // Source of truth for requests: kernel recovery swaps the id while a run is\n' +
+    '  // in flight, and a state value captured by that run would be stale.\n' +
+    '  const idRef = useRef<string | null>(null);\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") return;\n' +
+    '    let cancelled = false;\n' +
+    '    const id = newNotebookId();\n' +
+    '\n' +
+    '    createNotebook(id, setupCode)\n' +
+    '      .then(() => {\n' +
+    '        if (!cancelled) {\n' +
+    '          idRef.current = id;\n' +
+    '          setNotebookId(id);\n' +
+    '          setReady(true);\n' +
+    '        }\n' +
+    '      })\n' +
+    '      .catch((e: Error) => {\n' +
+    '        if (!cancelled) setError(e.message);\n' +
+    '      });\n' +
+    '\n' +
+    '    return () => {\n' +
+    '      cancelled = true;\n' +
+    '      deleteNotebook(id);\n' +
+    '    };\n' +
+    '  }, []);\n' +
+    '\n' +
+    '  const updateCell = useCallback(\n' +
+    '    (cellId: string, patch: Partial<CellState>) =>\n' +
+    '      setCells((prev) =>\n' +
+    '        prev.map((c) => (c.id === cellId ? { ...c, ...patch } : c))\n' +
+    '      ),\n' +
+    '    []\n' +
+    '  );\n' +
+    '\n' +
+    '  const reviveKernel = useCallback(async () => {\n' +
+    '    const stale = idRef.current;\n' +
+    '    idRef.current = null;\n' +
+    '    if (stale) await deleteNotebook(stale);\n' +
+    '    const id = newNotebookId();\n' +
+    '    await createNotebook(id, setupCode);\n' +
+    '    idRef.current = id;\n' +
+    '    setNotebookId(id);\n' +
+    '    setReady(true);\n' +
+    '    return id;\n' +
+    '  }, [setupCode]);\n' +
+    '\n' +
+    '  const execCell = useCallback(\n' +
+    '    async (id: string, cell: CellState) => {\n' +
+    '      updateCell(cell.id, { running: true, outputs: [] });\n' +
+    '      try {\n' +
+    '        const { outputs } = await execCode(id, cell.code);\n' +
+    '        updateCell(cell.id, { outputs, running: false });\n' +
+    '      } catch (e: unknown) {\n' +
+    '        if (e instanceof KernelGoneError) {\n' +
+    '          updateCell(cell.id, { running: false });\n' +
+    '          throw e;\n' +
+    '        }\n' +
+    '        updateCell(cell.id, {\n' +
+    '          outputs: [\n' +
+    '            {\n' +
+    '              type: "error",\n' +
+    '              ename: "Error",\n' +
+    '              evalue: e instanceof Error ? e.message : String(e),\n' +
+    '              traceback: [],\n' +
+    '            },\n' +
+    '          ],\n' +
+    '          running: false,\n' +
+    '        });\n' +
+    '      }\n' +
+    '    },\n' +
+    '    [updateCell]\n' +
+    '  );\n' +
+    '\n' +
+    '  const runCell = useCallback(\n' +
+    '    async (cellId: string) => {\n' +
+    '      const id = idRef.current;\n' +
+    '      if (!id || !ready) return;\n' +
+    '      const idx = cells.findIndex((c) => c.id === cellId);\n' +
+    '      if (idx < 0 || !cells[idx].code.trim()) return;\n' +
+    '\n' +
+    '      try {\n' +
+    '        await execCell(id, cells[idx]);\n' +
+    '      } catch {\n' +
+    '        // The server recycled this kernel while the page sat idle. A fresh\n' +
+    "        // namespace has none of the earlier cells' variables, so replay them.\n" +
+    '        let fresh: string;\n' +
+    '        try {\n' +
+    '          fresh = await reviveKernel();\n' +
+    '        } catch {\n' +
+    '          setError("Jupyter 内核已被回收且重建失败，请点击 ↺ 重置");\n' +
+    '          return;\n' +
+    '        }\n' +
+    '        for (let i = 0; i <= idx; i++) {\n' +
+    '          if (cells[i].code.trim()) await execCell(fresh, cells[i]);\n' +
+    '        }\n' +
+    '      }\n' +
+    '    },\n' +
+    '    [cells, ready, execCell, reviveKernel]\n' +
+    '  );\n' +
+    '\n' +
+    '  const runAll = useCallback(async () => {\n' +
+    '    for (const cell of cells) {\n' +
+    '      if (cell.code.trim()) await runCell(cell.id);\n' +
+    '    }\n' +
+    '  }, [cells, runCell]);\n' +
+    '\n' +
+    '  const addCell = useCallback(() => {\n' +
+    '    setCells((prev) => [\n' +
+    '      ...prev,\n' +
+    '      { id: `cell-${Date.now()}`, code: "", outputs: [], running: false },\n' +
+    '    ]);\n' +
+    '  }, []);\n' +
+    '\n' +
+    '  const reset = useCallback(async () => {\n' +
+    '    const stale = idRef.current;\n' +
+    '    idRef.current = null;\n' +
+    '    setReady(false);\n' +
+    '    if (stale) await deleteNotebook(stale);\n' +
+    '    const id = newNotebookId();\n' +
+    '    setCells((prev) => prev.map((c) => ({ ...c, outputs: [] })));\n' +
+    '    try {\n' +
+    '      await createNotebook(id, setupCode);\n' +
+    '      idRef.current = id;\n' +
+    '      setNotebookId(id);\n' +
+    '      setReady(true);\n' +
+    '      setError(null);\n' +
+    '    } catch (e: unknown) {\n' +
+    '      setError(e instanceof Error ? e.message : String(e));\n' +
+    '    }\n' +
+    '  }, [setupCode]);\n' +
+    '\n' +
+    '  if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {\n' +
+    "    if (browserMode === 'enabled') return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} workerVersion={browserWorkerVersion} />;\n" +
+    '    return <section data-python-mode="code" className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "#111827", background: "#fff" }}>\n' +
+    '      <strong style={{ color: "#111827", background: "#fff" }}>{title || "Python 代码"}</strong>\n' +
+    '      <p style={{color:"#334155"}}>在线版展示实验代码；请在具备相应依赖的原生 Python/Jupyter 环境中复核代码后运行。图中的交互实验仍可直接操作。</p>\n' +
+    `      <p role="status" style={{color:"#334155"}}>浏览器暂不运行此实验：{browserReason || '尚未完成 Pyodide 兼容验收，请在原生 Python/Jupyter 中执行。'}</p>\n` +
+    '      {setupCode && <details><summary style={{color:"#334155"}}>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{setupCode}</pre></details>}\n' +
+    '      {initCells.map((cell, i) => <div key={i}><p style={{color:"#334155"}}>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{cell.code}</pre></div>)}\n' +
+    '    </section>;\n' +
+    '  }\n' +
+    '  if (error) {\n' +
+    '    return (\n' +
+    '      <div style={s.errorBox}>\n' +
+    '        <div style={s.errorTitle}>Jupyter 连接失败</div>\n' +
+    '        <div style={s.errorText}>{error}</div>\n' +
+    '        <div style={s.errorHint}>\n' +
+    '          请确保已安装依赖并启动 Jupyter 服务：\n' +
+    '        </div>\n' +
+    '        <pre style={s.errorCmd}>\n' +
+    '{`pip install -r requirements.txt\n' +
+    'python scripts/jupyter_server.py`}\n' +
+    '        </pre>\n' +
+    '      </div>\n' +
+    '    );\n' +
+    '  }\n' +
+    '\n' +
+    '  return (\n' +
+    '    <div style={s.wrapper} className="not-prose">\n' +
+    '      <div style={s.toolbar}>\n' +
+    '        <span style={s.toolbarTitle}>\n' +
+    '          {title || "Python Notebook"}\n' +
+    '          {notebookId && (\n' +
+    '            <span style={s.readyDot} title="Kernel ready" />\n' +
+    '          )}\n' +
+    '        </span>\n' +
+    '        <div style={s.toolbarBtns}>\n' +
+    '          <button onClick={runAll} disabled={!ready} style={s.btnPrimary}>\n' +
+    '            {ready ? "▶ 全部运行" : "初始化中..."}\n' +
+    '          </button>\n' +
+    '          <button onClick={addCell} disabled={!ready} style={s.btn}>\n' +
+    '            + 添加\n' +
+    '          </button>\n' +
+    '          <button onClick={reset} disabled={!ready} style={s.btn}>\n' +
+    '            ↺ 重置\n' +
+    '          </button>\n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '\n' +
+    '      {cells.map((cell, idx) => (\n' +
+    '        <div key={cell.id} style={s.cell}>\n' +
+    '          <div style={s.cellHeader}>\n' +
+    '            <span style={s.cellNum}>In [{cell.running ? "*" : cell.outputs.length ? "✓" : ""}]:</span>\n' +
+    '            <span style={s.cellLabel}>Cell {idx + 1}</span>\n' +
+    '            <button\n' +
+    '              onClick={() => runCell(cell.id)}\n' +
+    '              disabled={!ready || cell.running || !cell.code.trim()}\n' +
+    '              style={{\n' +
+    '                ...s.runBtn,\n' +
+    '                opacity: !ready || cell.running || !cell.code.trim() ? 0.4 : 1,\n' +
+    '              }}\n' +
+    '            >\n' +
+    '              {cell.running ? "⏳ 运行中..." : "▶ 运行"}\n' +
+    '            </button>\n' +
+    '          </div>\n' +
+    '\n' +
+    '          <textarea\n' +
+    '            value={cell.code}\n' +
+    '            onChange={(e) => updateCell(cell.id, { code: e.target.value })}\n' +
+    '            style={s.editor}\n' +
+    '            spellCheck={false}\n' +
+    '            placeholder="# 输入 Python 代码..."\n' +
+    '          />\n' +
+    '\n' +
+    '          {cell.outputs.length > 0 && (\n' +
+    '            <div style={s.outputArea}>\n' +
+    '              {cell.outputs.map((out, i) => (\n' +
+    '                <OutputView key={i} output={out} />\n' +
+    '              ))}\n' +
+    '            </div>\n' +
+    '          )}\n' +
+    '        </div>\n' +
+    '      ))}\n' +
+    '    </div>\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'function OutputView({ output }: { output: NotebookOutput }) {\n' +
+    '  switch (output.type) {\n' +
+    '    case "text":\n' +
+    '      return <pre style={s.outText}>{output.text}</pre>;\n' +
+    '    case "stream":\n' +
+    '      return (\n' +
+    '        <pre\n' +
+    '          style={{\n' +
+    '            ...s.outText,\n' +
+    '            color: output.name === "stderr" ? "#'... 4187 more characters,
+  expected: '"use client";\n' +
+    '\n' +
+    'import { useState, useCallback, useRef, useEffect } from "react";\n' +
+    "import {BrowserNotebook} from './browser-notebook';\n" +
+    '\n' +
+    'interface NotebookOutput {\n' +
+    '  type: "text" | "image" | "error" | "stream" | "html";\n' +
+    '  text?: string;\n' +
+    '  data?: string;\n' +
+    '  mime?: string;\n' +
+    '  name?: string;\n' +
+    '  ename?: string;\n' +
+    '  evalue?: string;\n' +
+    '  traceback?: string[];\n' +
+    '}\n' +
+    '\n' +
+    'interface CellState {\n' +
+    '  id: string;\n' +
+    '  code: string;\n' +
+    '  outputs: NotebookOutput[];\n' +
+    '  running: boolean;\n' +
+    '}\n' +
+    '\n' +
+    'const API = "http://127.0.0.1:8891";\n' +
+    '\n' +
+    '// Module-level so notebooks mounting in the same millisecond never share a kernel id.\n' +
+    'let nbSeq = 0;\n' +
+    'function newNotebookId() {\n' +
+    '  return `nb-${Date.now()}-${nbSeq++}`;\n' +
+    '}\n' +
+    '\n' +
+    'async function createNotebook(id: string, setup: string) {\n' +
+    '  const res = await fetch(`${API}/api/notebook`, {\n' +
+    '    method: "POST",\n' +
+    '    headers: { "Content-Type": "application/json" },\n' +
+    '    body: JSON.stringify({ notebook_id: id, setup_code: setup }),\n' +
+    '  });\n' +
+    '  if (!res.ok) {\n' +
+    '    const err = await res.json().catch(() => ({ error: res.statusText }));\n' +
+    '    throw new Error(err.error || "Failed to create notebook");\n' +
+    '  }\n' +
+    '  return res.json();\n' +
+    '}\n' +
+    '\n' +
+    '// The server recycles kernels that have been idle too long, so a 404 means\n' +
+    '// "your namespace is gone" rather than "execution failed" — the caller can recover.\n' +
+    'class KernelGoneError extends Error {}\n' +
+    '\n' +
+    'async function execCode(notebookId: string, code: string) {\n' +
+    '  const res = await fetch(`${API}/api/notebook/${notebookId}/execute`, {\n' +
+    '    method: "POST",\n' +
+    '    headers: { "Content-Type": "application/json" },\n' +
+    '    body: JSON.stringify({ code }),\n' +
+    '  });\n' +
+    '  if (res.status === 404) throw new KernelGoneError("kernel recycled");\n' +
+    '  if (!res.ok) throw new Error("Execution failed");\n' +
+    '  return res.json() as Promise<{ outputs: NotebookOutput[] }>;\n' +
+    '}\n' +
+    '\n' +
+    'async function deleteNotebook(notebookId: string) {\n' +
+    '  await fetch(`${API}/api/notebook/${notebookId}`, { method: "DELETE" }).catch(\n' +
+    '    () => {}\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'interface JupyterNotebookProps {\n' +
+    '  browserMode?: string;\n' +
+    '  browserReason?: string;\n' +
+    '  browserWorkerVersion?: string;\n' +
+    '  cells: { code: string }[];\n' +
+    '  setupCode?: string;\n' +
+    '  title?: string;\n' +
+    '}\n' +
+    '\n' +
+    'export function JupyterNotebook({\n' +
+    '  cells: initCells,\n' +
+    '  setupCode = "",\n' +
+    '  title,\n' +
+    '  browserMode,\n' +
+    '  browserReason,\n' +
+    '  browserWorkerVersion,\n' +
+    '}: JupyterNotebookProps) {\n' +
+    '  const [cells, setCells] = useState<CellState[]>(() =>\n' +
+    '    initCells.map((c, i) => ({\n' +
+    '      id: `cell-${i}`,\n' +
+    '      code: c.code,\n' +
+    '      outputs: [],\n' +
+    '      running: false,\n' +
+    '    }))\n' +
+    '  );\n' +
+    '  const [notebookId, setNotebookId] = useState<string | null>(null);\n' +
+    '  const [ready, setReady] = useState(false);\n' +
+    '  const [error, setError] = useState<string | null>(null);\n' +
+    '  // Source of truth for requests: kernel recovery swaps the id while a run is\n' +
+    '  // in flight, and a state value captured by that run would be stale.\n' +
+    '  const idRef = useRef<string | null>(null);\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") return;\n' +
+    '    let cancelled = false;\n' +
+    '    const id = newNotebookId();\n' +
+    '\n' +
+    '    createNotebook(id, setupCode)\n' +
+    '      .then(() => {\n' +
+    '        if (!cancelled) {\n' +
+    '          idRef.current = id;\n' +
+    '          setNotebookId(id);\n' +
+    '          setReady(true);\n' +
+    '        }\n' +
+    '      })\n' +
+    '      .catch((e: Error) => {\n' +
+    '        if (!cancelled) setError(e.message);\n' +
+    '      });\n' +
+    '\n' +
+    '    return () => {\n' +
+    '      cancelled = true;\n' +
+    '      deleteNotebook(id);\n' +
+    '    };\n' +
+    '  }, []);\n' +
+    '\n' +
+    '  const updateCell = useCallback(\n' +
+    '    (cellId: string, patch: Partial<CellState>) =>\n' +
+    '      setCells((prev) =>\n' +
+    '        prev.map((c) => (c.id === cellId ? { ...c, ...patch } : c))\n' +
+    '      ),\n' +
+    '    []\n' +
+    '  );\n' +
+    '\n' +
+    '  const reviveKernel = useCallback(async () => {\n' +
+    '    const stale = idRef.current;\n' +
+    '    idRef.current = null;\n' +
+    '    if (stale) await deleteNotebook(stale);\n' +
+    '    const id = newNotebookId();\n' +
+    '    await createNotebook(id, setupCode);\n' +
+    '    idRef.current = id;\n' +
+    '    setNotebookId(id);\n' +
+    '    setReady(true);\n' +
+    '    return id;\n' +
+    '  }, [setupCode]);\n' +
+    '\n' +
+    '  const execCell = useCallback(\n' +
+    '    async (id: string, cell: CellState) => {\n' +
+    '      updateCell(cell.id, { running: true, outputs: [] });\n' +
+    '      try {\n' +
+    '        const { outputs } = await execCode(id, cell.code);\n' +
+    '        updateCell(cell.id, { outputs, running: false });\n' +
+    '      } catch (e: unknown) {\n' +
+    '        if (e instanceof KernelGoneError) {\n' +
+    '          updateCell(cell.id, { running: false });\n' +
+    '          throw e;\n' +
+    '        }\n' +
+    '        updateCell(cell.id, {\n' +
+    '          outputs: [\n' +
+    '            {\n' +
+    '              type: "error",\n' +
+    '              ename: "Error",\n' +
+    '              evalue: e instanceof Error ? e.message : String(e),\n' +
+    '              traceback: [],\n' +
+    '            },\n' +
+    '          ],\n' +
+    '          running: false,\n' +
+    '        });\n' +
+    '      }\n' +
+    '    },\n' +
+    '    [updateCell]\n' +
+    '  );\n' +
+    '\n' +
+    '  const runCell = useCallback(\n' +
+    '    async (cellId: string) => {\n' +
+    '      const id = idRef.current;\n' +
+    '      if (!id || !ready) return;\n' +
+    '      const idx = cells.findIndex((c) => c.id === cellId);\n' +
+    '      if (idx < 0 || !cells[idx].code.trim()) return;\n' +
+    '\n' +
+    '      try {\n' +
+    '        await execCell(id, cells[idx]);\n' +
+    '      } catch {\n' +
+    '        // The server recycled this kernel while the page sat idle. A fresh\n' +
+    "        // namespace has none of the earlier cells' variables, so replay them.\n" +
+    '        let fresh: string;\n' +
+    '        try {\n' +
+    '          fresh = await reviveKernel();\n' +
+    '        } catch {\n' +
+    '          setError("Jupyter 内核已被回收且重建失败，请点击 ↺ 重置");\n' +
+    '          return;\n' +
+    '        }\n' +
+    '        for (let i = 0; i <= idx; i++) {\n' +
+    '          if (cells[i].code.trim()) await execCell(fresh, cells[i]);\n' +
+    '        }\n' +
+    '      }\n' +
+    '    },\n' +
+    '    [cells, ready, execCell, reviveKernel]\n' +
+    '  );\n' +
+    '\n' +
+    '  const runAll = useCallback(async () => {\n' +
+    '    for (const cell of cells) {\n' +
+    '      if (cell.code.trim()) await runCell(cell.id);\n' +
+    '    }\n' +
+    '  }, [cells, runCell]);\n' +
+    '\n' +
+    '  const addCell = useCallback(() => {\n' +
+    '    setCells((prev) => [\n' +
+    '      ...prev,\n' +
+    '      { id: `cell-${Date.now()}`, code: "", outputs: [], running: false },\n' +
+    '    ]);\n' +
+    '  }, []);\n' +
+    '\n' +
+    '  const reset = useCallback(async () => {\n' +
+    '    const stale = idRef.current;\n' +
+    '    idRef.current = null;\n' +
+    '    setReady(false);\n' +
+    '    if (stale) await deleteNotebook(stale);\n' +
+    '    const id = newNotebookId();\n' +
+    '    setCells((prev) => prev.map((c) => ({ ...c, outputs: [] })));\n' +
+    '    try {\n' +
+    '      await createNotebook(id, setupCode);\n' +
+    '      idRef.current = id;\n' +
+    '      setNotebookId(id);\n' +
+    '      setReady(true);\n' +
+    '      setError(null);\n' +
+    '    } catch (e: unknown) {\n' +
+    '      setError(e instanceof Error ? e.message : String(e));\n' +
+    '    }\n' +
+    '  }, [setupCode]);\n' +
+    '\n' +
+    '  if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "true") {\n' +
+    "    if (browserMode === 'enabled') return <BrowserNotebook title={title} setupCode={setupCode} cells={initCells} workerVersion={browserWorkerVersion} />;\n" +
+    '    return <section data-python-mode="code" className="not-prose" aria-label={title || "Python 代码"} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 14, margin: "16px 0", color: "#111827", background: "#fff" }}>\n' +
+    '      <strong style={{ color: "#111827", background: "#fff" }}>{title || "Python 代码"}</strong>\n' +
+    '      <p style={{color:"#334155"}}>在线版展示实验代码；请在具备相应依赖的原生 Python/Jupyter 环境中复核代码后运行。图中的交互实验仍可直接操作。</p>\n' +
+    `      <p role="status" style={{color:"#334155"}}>浏览器暂不运行此实验：{browserReason || '尚未完成 Pyodide 兼容验收，请在原生 Python/Jupyter 中执行。'}</p>\n` +
+    '      {setupCode && <details><summary style={{color:"#334155"}}>初始化代码</summary><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{setupCode}</pre></details>}\n' +
+    '      {initCells.map((cell, i) => <div key={i}><p style={{color:"#334155"}}>代码 {i + 1}</p><pre style={{ overflowX: "auto", whiteSpace: "pre", padding: 10, color: "#111827" }}>{cell.code}</pre></div>)}\n' +
+    '    </section>;\n' +
+    '  }\n' +
+    '  if (error) {\n' +
+    '    return (\n' +
+    '      <div style={s.errorBox}>\n' +
+    '        <div style={s.errorTitle}>Jupyter 连接失败</div>\n' +
+    '        <div style={s.errorText}>{error}</div>\n' +
+    '        <div style={s.errorHint}>\n' +
+    '          请确保已安装依赖并启动 Jupyter 服务：\n' +
+    '        </div>\n' +
+    '        <pre style={s.errorCmd}>\n' +
+    '{`pip install -r requirements.txt\n' +
+    'python scripts/jupyter_server.py`}\n' +
+    '        </pre>\n' +
+    '      </div>\n' +
+    '    );\n' +
+    '  }\n' +
+    '\n' +
+    '  return (\n' +
+    '    <div style={s.wrapper} className="not-prose">\n' +
+    '      <div style={s.toolbar}>\n' +
+    '        <span style={s.toolbarTitle}>\n' +
+    '          {title || "Python Notebook"}\n' +
+    '          {notebookId && (\n' +
+    '            <span style={s.readyDot} title="Kernel ready" />\n' +
+    '          )}\n' +
+    '        </span>\n' +
+    '        <div style={s.toolbarBtns}>\n' +
+    '          <button onClick={runAll} disabled={!ready} style={s.btnPrimary}>\n' +
+    '            {ready ? "▶ 全部运行" : "初始化中..."}\n' +
+    '          </button>\n' +
+    '          <button onClick={addCell} disabled={!ready} style={s.btn}>\n' +
+    '            + 添加\n' +
+    '          </button>\n' +
+    '          <button onClick={reset} disabled={!ready} style={s.btn}>\n' +
+    '            ↺ 重置\n' +
+    '          </button>\n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '\n' +
+    '      {cells.map((cell, idx) => (\n' +
+    '        <div key={cell.id} style={s.cell}>\n' +
+    '          <div style={s.cellHeader}>\n' +
+    '            <span style={s.cellNum}>In [{cell.running ? "*" : cell.outputs.length ? "✓" : ""}]:</span>\n' +
+    '            <span style={s.cellLabel}>Cell {idx + 1}</span>\n' +
+    '            <button\n' +
+    '              onClick={() => runCell(cell.id)}\n' +
+    '              disabled={!ready || cell.running || !cell.code.trim()}\n' +
+    '              style={{\n' +
+    '                ...s.runBtn,\n' +
+    '                opacity: !ready || cell.running || !cell.code.trim() ? 0.4 : 1,\n' +
+    '              }}\n' +
+    '            >\n' +
+    '              {cell.running ? "⏳ 运行中..." : "▶ 运行"}\n' +
+    '            </button>\n' +
+    '          </div>\n' +
+    '\n' +
+    '          <textarea\n' +
+    '            value={cell.code}\n' +
+    '            onChange={(e) => updateCell(cell.id, { code: e.target.value })}\n' +
+    '            style={s.editor}\n' +
+    '            spellCheck={false}\n' +
+    '            placeholder="# 输入 Python 代码..."\n' +
+    '          />\n' +
+    '\n' +
+    '          {cell.outputs.length > 0 && (\n' +
+    '            <div style={s.outputArea}>\n' +
+    '              {cell.outputs.map((out, i) => (\n' +
+    '                <OutputView key={i} output={out} />\n' +
+    '              ))}\n' +
+    '            </div>\n' +
+    '          )}\n' +
+    '        </div>\n' +
+    '      ))}\n' +
+    '    </div>\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'function OutputView({ output }: { output: NotebookOutput }) {\n' +
+    '  switch (output.type) {\n' +
+    '    case "text":\n' +
+    '      return <pre style={s.outText}>{output.text}</pre>;\n' +
+    '    case "stream":\n' +
+    '      return (\n' +
+    '        <pre\n' +
+    '          style={{\n' +
+    '            ...s.outText,\n' +
+    '            color: output.name === "stderr" ? "#'... 4187 more characters,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.14.1

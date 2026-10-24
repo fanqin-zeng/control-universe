@@ -1,0 +1,213 @@
+---
+title: 注意力机制
+description: 用三条历史记录理解Q/K/V、缩放点积、稳定softmax与因果读取，并认识Transformer的结构和边界。
+---
+
+# 注意力机制
+
+## 从记忆状态到查阅记录
+
+楼宇运维员要预测下一分钟的室温，会查看此前的温度和加热记录。刚启动加热时，最近的功率变化可能很有用；接近停热时，累积的温度变化也值得回看。问题是：**面对当前的预测问题，怎样从已有记录中提取信息？**
+
+[时序模型](/machine-learning/sequence-models)把历史压进循环状态。注意力机制提供另一种接口：保留一组记录，用当前查询给它们分配权重，再读取其内容。它可以与循环模型组合，也可以作为Transformer的组成部分。多读到信息并不自动意味着预测更准，记录是否在预测时刻可用仍是第一道门槛。
+
+本课四个目标是：辨认查询、键、值与矩阵形状；手算缩放点积和稳定softmax；正确处理因果/填充掩码并检验未来泄漏；解释位置、多头和Transformer中其它模块的分工。实验只运行一个小注意力算子，不训练完整Transformer，不比较其与RNN的预测性能。
+
+## 查询键与值
+
+把每条记录编码成一个特征向量。查询（Query，$q$）表达“当前想找什么”；键（Key，$k$）用于与查询匹配；值（Value，$v$）是匹配后要读取的内容。三者不是三个数据集，也不必是同一种维数。
+
+若输入记录矩阵为 $X$，常用可训练线性投影得到
+
+$$
+Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V.
+$$
+
+自注意力中三者来自同一条序列；交叉注意力的查询可来自一条序列，键和值来自另一条序列。无论来源如何，键和值必须逐条对应。若有 $n_q$ 个查询、$n_k$ 对键值，则
+
+$$
+Q\in\mathbb R^{n_q\times d_k},\quad K\in\mathbb R^{n_k\times d_k},\quad
+V\in\mathbb R^{n_k\times d_v}.
+$$
+
+查询与键的特征维数相同，才能做点积；输出为 $n_q\times d_v$。记录索引是时间位置，特征轴是每条记录的描述，不能把两个轴交换后仍称同一计算。
+
+本页给定三条无量纲特征，$Q=K=X$，各行依次为 $[1,0]$、$[0,1]$、$[1,1]$；给定 $W_V=[1,2]^{\mathsf T}$，得到标量值 $V=[1,2,3]^{\mathsf T}$。这是刻意简化的教学投影，不是训练出的传感器特征。稍后只扰动第三条值 $v_3=3+\delta$，保持Q/K不变，用来检查读取路径。
+
+<svg viewBox="0 0 710 170" role="img" aria-label="注意力读取流程，查询和键点积缩放后按可见集合归一化，权重乘对应值并求和得到输出" style={{width:'100%',height:'auto',maxWidth:710}}>
+ <defs><marker id="ml06-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb"/></marker></defs>
+ <g fill="#dbeafe" stroke="#94a3b8"><rect x="10" y="65" width="100" height="50"/><rect x="160" y="65" width="110" height="50"/><rect x="325" y="65" width="135" height="50"/><rect x="510" y="65" width="105" height="50"/></g>
+ <g fill="#172033" textAnchor="middle" fontSize="17"><text x="60" y="96">查询 q</text><text x="215" y="96">点积/缩放</text><text x="392" y="88">可见掩码</text><text x="392" y="108">softmax</text><text x="563" y="96">加权求和</text><text x="215" y="27">键 kⱼ</text><text x="563" y="27">值 vⱼ</text><text x="675" y="96">输出</text></g>
+ <g stroke="#2563eb" strokeWidth="2" markerEnd="url(#ml06-arrow)"><path d="M110 90 H155"/><path d="M270 90 H320"/><path d="M460 90 H505"/><path d="M615 90 H645"/><path d="M215 33 V60"/><path d="M563 33 V60"/></g>
+</svg>
+
+## 缩放点积与稳定计算
+
+查询 $q_i$ 与键 $k_j$ 的匹配分数为
+
+$$
+s_{ij}=\frac{q_i^{\mathsf T}k_j}{\sqrt{d_k}},\qquad
+\alpha_{ij}=\frac{\exp(s_{ij})}{\sum_\ell\exp(s_{i\ell})},\qquad
+z_i=\sum_j\alpha_{ij}v_j.
+$$
+
+softmax沿**同一个查询对应的键轴**归一化，每行权重之和为一。输出是值的加权和；标量值时必在可见值的最小值与最大值之间。权重不是预测正确的概率，也不是“这条记录造成了结果”的因果证据。
+
+为什么除以 $\sqrt{d_k}$？在分量独立、均值为零、方差为一等理想假设下，点积方差随维数增长，缩放可控制分数尺度；真实学习到的Q/K未必满足这些假设，因此不能据此保证权重分布或梯度质量。
+
+实现时先减去可见分数的最大值 $m_i$：
+
+$$
+\alpha_{ij}=\frac{\exp(s_{ij}-m_i)}{\sum_\ell\exp(s_{i\ell}-m_i)}.
+$$
+
+同一行减去同一常数不改变结果，却避免对大正分数直接取指数。分数 $[1000,1001]$ 的稳定权重为 $[0.26894142,0.73105858]$。这不是把分数裁剪到某个阈值；非有限输入与全部不可见行仍需单独检查。
+
+实验还提供正温度系数 $\tau$，把分数改为 $s_{ij}/\tau$；$\tau=1$ 为上述标准缩放。较小温度使同一非相等分数的权重更集中，但不是学习率，也不保证预测更准。它是本页额外的观察旋钮，不是原始Transformer公式中必需的新参数。
+
+## 因果掩码挡住未来
+
+沿用上一课合同：读到时刻 $i$ 的特征后预测下一时刻。因此允许读取 $j\le i$，包含当前记录。可见集合为 $\mathcal V_i$ 时，只在这个集合内计算最大值与归一化；集合外的权重精确为零。
+
+$$
+\alpha_{ij}=\begin{cases}
+\dfrac{\exp(s_{ij}-m_i)}{\sum_{\ell\in\mathcal V_i}\exp(s_{i\ell}-m_i)},&j\in\mathcal V_i,\\
+0,&j\notin\mathcal V_i.
+\end{cases}
+$$
+
+这等价于在softmax**之前**把屏蔽位置分数设为负无穷，但必须处理全部屏蔽的特殊行。先softmax再把未来权重乘零却不重新归一化，会改变有效权重总和，不是这里定义的算子。
+
+默认查询第二条记录，$d_k=2$、$\tau=1$、$\delta=0$。前两条可见分数为 $0$ 与 $1/\sqrt2$；权重依次为 $0.33023845$、$0.66976155$、$0$，输出为 $1.66976155$。当前记录可读；若输入里已包含你要预测的**同一时刻目标**，就必须移位或收紧可见集合，不能照搬“对角线允许”。
+
+<JupyterNotebook title="注意力权重与稳定数值" setupCode={`import math,json
+
+def softmax(scores,visible):
+    if not scores or len(scores)!=len(visible) or not any(visible) or not all(math.isfinite(x) for x in scores):
+        raise ValueError('invalid or fully masked row')
+    high=max(x for x,ok in zip(scores,visible) if ok)
+    e=[math.exp(x-high) if ok else 0 for x,ok in zip(scores,visible)]
+    total=sum(e)
+    return [x/total for x in e]
+
+def attend(q,k,v,visible,temperature=1):
+    scores=[[sum(x*y for x,y in zip(row,key))/math.sqrt(len(row))/temperature for key in k] for row in q]
+    weights=[softmax(row,visible[i]) for i,row in enumerate(scores)]
+    output=[[sum(w*v[j][c] for j,w in enumerate(row)) for c in range(len(v[0]))] for row in weights]
+    return dict(scores=scores,weights=weights,output=output)
+
+def experiment(temperature=1,delta=0,causal=True):
+    x=[[1,0],[0,1],[1,1]]
+    return attend(x,x,[[1],[2],[3+delta]],[[not causal or j<=i for j in range(3)] for i in range(3)],temperature)
+
+def permutation_demo():
+    keys=[[1,0],[0,1],[1,1]]; values=[[1],[2],[3]]; p=[2,0,1]
+    def run(ks,vs,position=False):
+        if position: ks=[[row[0]+j*.5,row[1]] for j,row in enumerate(ks)]
+        return attend([[1,0]],ks,vs,[[True]*3])['output'][0][0]
+    return dict(original=run(keys,values),permuted=run([keys[j] for j in p],[values[j] for j in p]),positionOriginal=run(keys,values,True),positionPermuted=run([keys[j] for j in p],[values[j] for j in p],True))
+`} cells={[
+ {title:'三条查询的因果读取',code:`print(json.dumps(experiment()))`},
+ {title:'稳定softmax与全部屏蔽',code:`rejected=False
+try:
+    softmax([0,1],[False,False])
+except ValueError:
+    rejected=True
+print(json.dumps(dict(stable=softmax([1000,1001],[True,True]),padding=softmax([.7,0,.7],[True,False,False]),allMaskedRejected=rejected)))`}
+]} />
+
+<AttentionBasicsExplorer />
+
+只给第三条未来值加增量，保持Q/K固定。默认第二条查询的探针结果如下；它测量的是读取依赖，不是拟合误差。
+
+| 第三条值增量 | 因果输出 | 全可见输出 |
+|---|---:|---:|
+| 0 | 1.66976155 | 2.20333628 |
+| 5 | 1.66976155 | 4.20889674 |
+| 10 | 1.66976155 | 6.21445720 |
+
+第三条查询时，所有记录都已经可用，两种掩码输出持平；不要把第三条自身的变化误叫“未来泄漏”。全可见模式对离线整段编码可以合法，对这里的前两条在线预测则使用了未来。模型也可能学到让某个泄漏通道权重很小，单次输出变化小不能证明整条数据流水线没有泄漏。
+
+## 位置与排列
+
+只有内容匹配时，交换一对键和它对应的值，不会改变固定查询的加权和。对整个无位置、全可见的自注意力，联合排列输入会相应排列输出行，这叫排列等变，不是“所有输出完全不变”。因果掩码自身含有先后可见关系，但不能替代采样间隔、绝对时刻或更细的位置信息。
+
+取固定查询 $[1,0]$，读取上述全部键值，不加位置时原顺序与排列 $[3,1,2]$ 的输出都为 $2$。为了示意“内容属于哪个位置”，给第 $j$ 个键的第一维加偏移 $(j-1)/2$；重新排列内容但保留位置格子后，两个输出分别为 $2.27561162$ 和 $1.87613777$。这只是位置绑定的简化教具，不是原论文的正弦位置编码，也不是一种经过训练验证的时间特征方案。
+
+实际Transformer常把位置表示加到输入嵌入，或在匹配分数中编码相对位置。时间序列还可能需要时间戳、缺测标记和不规则采样间隔。无论用哪种位置方法，仍不能让未来观测通过预处理混入过去特征。
+
+<JupyterNotebook title="未来探针与位置绑定" setupCode={`import math,json
+
+def softmax(scores,visible):
+    if not scores or len(scores)!=len(visible) or not any(visible) or not all(math.isfinite(x) for x in scores):
+        raise ValueError('invalid or fully masked row')
+    high=max(x for x,ok in zip(scores,visible) if ok)
+    e=[math.exp(x-high) if ok else 0 for x,ok in zip(scores,visible)]
+    total=sum(e)
+    return [x/total for x in e]
+
+def attend(q,k,v,visible,temperature=1):
+    scores=[[sum(x*y for x,y in zip(row,key))/math.sqrt(len(row))/temperature for key in k] for row in q]
+    weights=[softmax(row,visible[i]) for i,row in enumerate(scores)]
+    output=[[sum(w*v[j][c] for j,w in enumerate(row)) for c in range(len(v[0]))] for row in weights]
+    return dict(scores=scores,weights=weights,output=output)
+
+def experiment(temperature=1,delta=0,causal=True):
+    x=[[1,0],[0,1],[1,1]]
+    return attend(x,x,[[1],[2],[3+delta]],[[not causal or j<=i for j in range(3)] for i in range(3)],temperature)
+
+def permutation_demo():
+    keys=[[1,0],[0,1],[1,1]]; values=[[1],[2],[3]]; p=[2,0,1]
+    def run(ks,vs,position=False):
+        if position: ks=[[row[0]+j*.5,row[1]] for j,row in enumerate(ks)]
+        return attend([[1,0]],ks,vs,[[True]*3])['output'][0][0]
+    return dict(original=run(keys,values),permuted=run([keys[j] for j in p],[values[j] for j in p]),positionOriginal=run(keys,values,True),positionPermuted=run([keys[j] for j in p],[values[j] for j in p],True))
+`} cells={[
+ {title:'三个增量与两种可见合同',code:`print(json.dumps([dict(delta=d,causalSecond=experiment(delta=d)['output'][1][0],fullSecond=experiment(delta=d,causal=False)['output'][1][0],causalThird=experiment(delta=d)['output'][2][0],fullThird=experiment(delta=d,causal=False)['output'][2][0]) for d in [0,5,10]]))`},
+ {title:'排列示例与分数矩阵计数',code:`print(json.dumps(dict(permutation=permutation_demo(),scoreCounts=[3*3,6*6])))`}
+]} />
+
+## 多头和Transformer
+
+单个头用一组Q/K/V投影进行读取。多头注意力让不同投影分别产生输出，再沿特征轴拼接并做输出投影；不是把多次注意力权重简单取平均。不同头有机会学习不同匹配方式，不能先验保证它们各自负责“短期”“长期”等可解释任务。
+
+Transformer还包含逐位置前馈网络、残差连接和归一化。前馈网络在每条记录内部加工特征；注意力负责跨记录读取。残差把模块输入加回输出，要求两者维数一致；层归一化通常在单条记录的特征轴上计算，以调节数值尺度。网络可以堆叠这些模块，但归一化和残差的前后排列存在不同设计，不能把某种排列当所有实现的唯一定义。
+
+原始Transformer包含编码器与自回归解码器：编码器读取已给定输入，解码器对待生成序列使用移位输入与因果掩码，还可交叉读取编码器输出。时间序列下一步预测也可只用因果堆叠；不能因为输入是实数传感器向量，就省略特征投影、位置或目标对齐。
+
+以上架构说明参考[Vaswani等人的原论文《Attention Is All You Need》](https://arxiv.org/html/1706.03762v7)（v7，2026-10-24查阅）。论文的翻译任务结果不作为本课实测；本课代码独立编写，未复制论文图表、代码或模型权重，也未开展完整Transformer训练。仓库的算子实验与原论文模型的规模、数据和训练预算不同。
+
+## 预测合同与计算代价
+
+| 检查点 | 实现前要回答的问题 |
+|---|---|
+| 输入和标签 | 查询位置预测当前还是下一时刻？未来控制计划是否已知？ |
+| 因果路径 | 每层的掩码、特征预处理、时间聚合是否都只用允许信息？ |
+| 填充 | 不存在的键要屏蔽；无效查询的输出与损失也要屏蔽 |
+| 全部屏蔽 | 本课显式抛错；生产系统应在调用前跳过无效查询，不能把NaN当正常结果 |
+| 数据划分 | 按时间/记录划分后构造样本；标准化仅拟合训练集 |
+| 模型选择 | 头数、层数、窗口和温度等只用训练/验证选择，最终测试保持独立 |
+
+本例屏蔽后只剩第一条键时，权重为 $[1,0,0]$。这只演示键掩码；没有把整批填充序列的无效query与损失处理冒称已经实现。教具也不含dropout、反向训练、KV缓存或流式部署。
+
+显式保存稠密自注意力分数矩阵需要 $n^2$ 个元素。三条记录为 $9$ 个，六条为 $36$ 个；长度翻倍时元素数变为四倍。稠密点积和加权和的计算还随特征维数增加。矩阵计算可并行不等于自回归生成一次就能完成整段，也不等于任意设备上比循环模型更快；分块、稀疏或融合实现可改变实际内存开销，应另行测量。
+
+训练时完整输入与因果掩码可让许多位置的计算并行；生成时下一位置可能依赖刚生成的输出。部署还需采样周期、延迟预算和独立闭环验证。本课只报告确定性算子输出，不把注意力权重或预测误差当作安全证明。
+
+## 习题
+
+1. 默认查询第二条记录，写出可见分数、三条权重和输出。若 $Q$ 有三行、$K$ 有三行、值维数为一，分数矩阵和输出的形状分别是什么？
+2. 为什么分数减去同一个最大值不会改变softmax？分数 $[1000,1001]$ 的权重约为多少？若整行都不可见，可否直接用全负无穷分数算softmax？
+3. 只把第三条值增加 $10$，第二条的因果输出与全可见输出分别是什么？第三条查询的两种掩码是否应有差别？这项探针能否证明整个预测流水线无泄漏？
+4. 联合排列键和值，为何固定查询的全可见输出不变？位置绑定例的两项结果是多少？把稠密分数矩阵的序列长度由三变六，元素数怎样变化，这是否直接证明运行时间也变成四倍？
+
+## 答案
+
+1. 分数为 $0$ 和 $1/\sqrt2$；三权重分别约为 $0.33023845$、$0.66976155$、$0$。输出是前两个值的加权和，约 $1.66976155$。分数矩阵为三乘三，输出为三乘一；行对应查询，列分别对应键或输出特征。
+2. 分子分母同时乘上同一个正因子，不改变比值；权重约为 $0.26894142$、$0.73105858$。全负无穷行会出现未定义的差或零分母，应显式拒绝或按预先声明的无效查询策略处理。
+3. 因果输出保持 $1.66976155$，全可见输出为 $6.21445720$。第三条查询时两种掩码都能读全部记录，应持平；此时输出都约为 $7.29013320$。探针只验证指定算子的读取依赖，不能排除特征工程或标签对齐中的其它泄漏。
+4. 键和值的对应关系保持，求和只是换了次序。不加位置时两个输出均为 $2$；本页位置绑定后为 $2.27561162$ 与 $1.87613777$。元素数从 $9$ 到 $36$，四倍只是显式分数矩阵的存储计数，不是墙钟时间测量。
+
+## 继续学习
+
+注意力把“保存哪些记忆”拆成了“如何匹配记录”和“读取什么内容”，同时把可见信息合同变成了必须实现的掩码。下一课[表征学习](/machine-learning/representation-learning)进一步讨论特征从哪里来；不能把本课人为给定的Q/K/V直接当成已经学到的有效表示。

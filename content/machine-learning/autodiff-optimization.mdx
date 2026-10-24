@@ -1,0 +1,244 @@
+---
+title: 自动微分与训练
+description: 从预测温升的误差出发，实现标量反向模式自动微分、参数更新与验证检查点，观察训练停滞和数值保护。
+---
+
+# 自动微分与训练
+
+## 温升预测开始学参数
+
+给房间加热时，相同的功率偏差未必带来相同的温升：接近设备工作范围边缘时，变化可能逐渐变缓。上一课的[神经网络基础](/machine-learning/neural-networks)讲了参数给定后怎样算预测。现在假设我们有功率与温升的记录，模型却预测偏小：应该改变哪一个权重，改变多少？
+
+本课用一个隐藏单元的网络回答这个问题：$\widehat y=v\tanh(wx+b)+a$，参数顺序固定为 $\boldsymbol\theta_{NN}=(w,b,v,a)^\mathsf T$。输入 $x$ 是中心化、归一化的功率偏差，输出 $y$ 是同样处理过的温升，负值表示低于参考值。这些无量纲数据全由教学函数生成，不是房间实测，也不据此设计加热控制器。
+
+你将实现一份可运行的反向模式自动微分器，解释梯度为何要累加，完成“前向—反向—更新”的循环，并区分预算、梯度停止、数值保护与模型选择。先修是上一课与[数值方法](/math/numerical-methods)。本课用CPU运行小型标量教具，不需要PyTorch、GPU或额外下载数据。
+
+## 计算图保存局部关系
+
+先暂时回到一个更简单的仿射模型 $\widehat y=wx+b$，损失取单样本半平方误差。把程序拆成计算节点：
+
+$$
+u=wx,\qquad z=u+b,\qquad r=z-y,\qquad L=\frac12 r^2.
+$$
+
+计算图是由这些变量及其依赖组成的有向无环图。前向过程保存中间值，后向过程使用每个算子的局部导数。例如加法对两个输入的局部导数都是一；乘法对某一输入求导，得到另一个输入的值。整个模型很复杂时，不需要为每一种网络另外写一份完整的损失梯度公式。
+
+<svg viewBox="0 0 720 190" role="img" aria-label="前向计算w与x相乘得到u，加b得到z，减y得到r，再平方并除以二得到L；蓝色箭头从L反向回传梯度到参数" style={{width:'100%',height:'auto',maxWidth:720}}>
+  <rect x="5" y="25" width="110" height="60" rx="8" fill="#e0f2fe" stroke="#0369a1"/><text x="60" y="60" textAnchor="middle" fill="#172033">w、x</text>
+  <rect x="155" y="25" width="100" height="60" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="205" y="60" textAnchor="middle" fill="#172033">u = wx</text>
+  <rect x="295" y="25" width="100" height="60" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="345" y="60" textAnchor="middle" fill="#172033">z = u + b</text>
+  <rect x="435" y="25" width="100" height="60" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="485" y="60" textAnchor="middle" fill="#172033">r = z − y</text>
+  <rect x="575" y="25" width="140" height="60" rx="8" fill="#dcfce7" stroke="#15803d"/><text x="645" y="60" textAnchor="middle" fill="#172033">L = r × r / 2</text>
+  <path d="M115 55H155l-9 -5m9 5l-9 5M255 55H295l-9 -5m9 5l-9 5M395 55H435l-9 -5m9 5l-9 5M535 55H575l-9 -5m9 5l-9 5" stroke="#334155" fill="none"/>
+  <path d="M645 90V125H60v-35l-5 9m5 -9l5 9" stroke="#0369a1" strokeWidth="2" fill="none"/><text x="360" y="154" textAnchor="middle" fill="#0369a1">沿实际依赖反向回传；共享节点接收所有路径的贡献</text><text x="360" y="180" textAnchor="middle" fill="#172033">x、y是本次固定数据；需要优化的参数是w、b</text>
+</svg>
+
+**自动微分**在程序执行时组合这些局部导数。它不同于把表达式整体展开的符号求导，也不同于改变参数再多次求值的有限差分；在支持的光滑算子上，它没有差分步长带来的截断误差，但仍受浮点运算精度影响。遇到条件分支时，所求导数对应实际执行的分支；遇到不可导算子时，需要另外约定规则，不能指望求导器自动补足数学条件。
+
+## 反向传播累加贡献
+
+从标量损失出发，令 $\partial L/\partial L=1$，按依赖的反方向应用链式法则：
+
+$$
+\frac{\partial L}{\partial r}=r,\qquad
+\frac{\partial L}{\partial z}=r,\qquad
+\frac{\partial L}{\partial w}=rx,\qquad
+\frac{\partial L}{\partial b}=r.
+$$
+
+取 $x=2,w=0.5,b=0.5,y=1$，前向得到 $z=1.5,r=0.5,L=0.125$，所以参数梯度为 $(1,0.5)$。用学习率 $\eta=0.1$ 同时更新参数：
+
+$$
+w_{\rm new}=0.4,\qquad b_{\rm new}=0.45.
+$$
+
+新的预测为 $1.25$，损失为 $0.03125$。这里的损失下降是这一组参数下的复算结果，不能推广成任意学习率或任意网络每步都下降。
+
+为什么实现时用 `+=` 而不是 `=`？程序里的 `r*r` 有两条来自同一节点 $r$ 的输入边。每条边贡献 $r/2$，相加才得到 $r$。节点在遍历时只处理一次，但同一节点出现在两个操作数位置时，两条边都要贡献导数。多个样本共用同一权重，也必须累加所有样本的贡献，再按平均损失的定义缩放。
+
+**反向模式**从一个标量输出向多个输入回传，适合“很多参数、一个训练目标”。与之相对，前向模式沿输入扰动方向传播导数；哪一种更合适取决于输入、输出维数与实际算子。反向传播是把反向模式应用于网络计算图；它计算梯度，优化器才负责利用梯度更新参数。
+
+## 实现最小自动微分
+
+下面的初始化代码定义 `Value`：保存标量值、梯度、父节点和局部回传函数，支持加法、乘法、tanh。点击“初始化代码”可以展开实现。它不支持张量广播、高阶求导、不可导算子或任意Python程序，不应当成完整深度学习框架。
+
+`backward()` 先拓扑遍历并按节点去重，再把图中梯度清零，以输出梯度一为起点逆序回传。局部回传仍按每条边累加。本教具选择每次 `backward()` 自动清零；真实框架的API可能采用累积语义，不能把这里的默认约定直接移植过去。参数在反向结束前保持不变，因为乘法的回传会用到前向时的值。
+
+<JupyterNotebook title="共享节点与反向梯度" setupCode={`import math
+import json
+class Value:
+    def __init__(self,data,parents=(),pull=None):
+        self.data=float(data);self.grad=0.;self.parents=parents;self.pull=pull or (lambda:None)
+    def __add__(self,other):
+        other=other if isinstance(other,Value) else Value(other)
+        out=Value(self.data+other.data,(self,other))
+        def pull():
+            self.grad+=out.grad;other.grad+=out.grad
+        out.pull=pull;return out
+    __radd__=__add__
+    def __mul__(self,other):
+        other=other if isinstance(other,Value) else Value(other)
+        out=Value(self.data*other.data,(self,other))
+        def pull():
+            self.grad+=other.data*out.grad;other.grad+=self.data*out.grad
+        out.pull=pull;return out
+    __rmul__=__mul__
+    def tanh(self):
+        out=Value(math.tanh(self.data),(self,))
+        def pull():self.grad+=(1-out.data*out.data)*out.grad
+        out.pull=pull;return out
+    def backward(self):
+        order=[];seen=set()
+        def visit(node):
+            if node in seen:return
+            seen.add(node)
+            for parent in node.parents:visit(parent)
+            order.append(node)
+        visit(self)
+        for node in order:node.grad=0.
+        self.grad=1.
+        for node in reversed(order):node.pull()
+`} cells={[
+{id:'ml04-chain',title:'手算与清梯度',code:`w,b=Value(.5),Value(.5)
+r=w*2+b+(-1);loss=.5*r*r
+loss.backward();g=[w.grad,b.grad];shared_r_grad=r.grad
+loss.backward();again=[w.grad,b.grad]
+w.data-=.1*g[0];b.data-=.1*g[1]
+print(json.dumps(dict(z=r.data+1,residual=r.data,new_prediction=w.data*2+b.data,loss=loss.data,grad=g,again=again,after=[w.data,b.data],next_loss=.5*(w.data*2+b.data-1)**2)))`},
+{id:'ml04-sharing',title:'重复边与小批量计数',code:`q=Value(3);s=q+q;loss=.5*s*s;loss.backward()
+sizes=[len(list(range(5))[i:i+2]) for i in range(0,5,2)]
+print(json.dumps(dict(shared_r_gradient=shared_r_grad,reused_parameter_gradient=q.grad,batches=len(sizes),updates=2*len(sizes),updates_drop=2*sum(n==2 for n in sizes),weights=[n/5 for n in sizes])))`}
+]} />
+
+第一段实际输出应与手算一致，第二次反向仍得到同样的梯度。第二段再让一个参数在不同路径中重复使用，检查贡献能否正确相加。有限差分可以辅助检查实现，但只在光滑且数值尺度合适的位置使用；误差容差不能不分尺度地机械设成零。
+
+## 训练循环与数据隔离
+
+现在训练开篇的小网络。教学目标函数为 $y_*(x)=\tanh(2x)$；训练输入是 $[-1,-0.5,0,0.5,1]$，仅中心点标签额外加固定扰动 $\delta=0.3$。验证输入为 $[-0.75,-0.25,0.25,0.75]$，测试输入为 $[-0.9,-0.4,0.4,0.9]$，都使用无扰动标签。三个索引集合互不重叠，但这仍是同一已知函数生成的小教具，不是对真实房间泛化误差的统计估计。
+
+训练目标为五个样本的半MSE，图中与读数报告MSE：
+
+$$
+L(\boldsymbol\theta_{NN})=\frac{1}{2n}\sum_{i=1}^{n}(\widehat y_i-y_i)^2,\qquad
+\boldsymbol\theta_{NN}^{(k+1)}=\boldsymbol\theta_{NN}^{(k)}-\eta\nabla L(\boldsymbol\theta_{NN}^{(k)}).
+$$
+
+循环每次先按当前参数构建新图、求梯度，再同步更新全部参数；不能刚改完一个权重，就用新旧混杂的参数求另一个梯度。检查点保存数值副本，不能保存指向同一可变参数列表的引用。每个接受的状态都计算验证MSE，严格小于之前最低值才更新“验证最优”检查点；相等时保留较早状态。测试数据不进入 `fit`，在模型选择结束后由单独的 `mse` 计算。
+
+默认初值为 $[w,b,v,a]=[0.5,0,0.5,0]$，学习率为 $0.2$。初始训练MSE为 $0.39629475$；第一次更新后，$w\approx0.53507360$、$b\approx0.00600000$、$v\approx0.53962029$、$a\approx0.01200000$，训练MSE降到 $0.36645358$。这些梯度由实际自动微分计算，不是只显示预计算的优化动画。
+
+运行预算是最多200次更新，初始状态记为第0步。默认跑满预算但未达梯度容差，末步梯度范数约为 $0.00765539$。验证最优发生在第54步，其训练MSE为 $0.01565981$、验证MSE为 $0.01308739$；末步训练MSE降至 $0.01000261$，验证MSE却回升到 $0.01492542$。因此“实际执行到哪一步”和“最后选用哪一步”是不同的字段。本例没有提前中断训练，而是在预算完成后恢复验证最优快照；这与按耐心值提前停止的策略也要区分。
+
+<AutodiffTrainingExplorer />
+
+默认选中检查点的测试MSE为 $0.01257730$，末步测试MSE反而更低，为 $0.01111225$。验证集只是有限数据，验证最优不会保证在每一组测试样本上最优。这里同时展示测试值是为了剖析这个边界；实际实验不能看完测试再决定恢复哪一份参数，否则测试已经参与方案选择。
+
+<JupyterNotebook title="真实训练与检查点" setupCode={`import math
+import json
+class Value:
+    def __init__(self,data,parents=(),pull=None):
+        self.data=float(data);self.grad=0.;self.parents=parents;self.pull=pull or (lambda:None)
+    def __add__(self,other):
+        other=other if isinstance(other,Value) else Value(other)
+        out=Value(self.data+other.data,(self,other))
+        def pull():
+            self.grad+=out.grad;other.grad+=out.grad
+        out.pull=pull;return out
+    __radd__=__add__
+    def __mul__(self,other):
+        other=other if isinstance(other,Value) else Value(other)
+        out=Value(self.data*other.data,(self,other))
+        def pull():
+            self.grad+=other.data*out.grad;other.grad+=self.data*out.grad
+        out.pull=pull;return out
+    __rmul__=__mul__
+    def tanh(self):
+        out=Value(math.tanh(self.data),(self,))
+        def pull():self.grad+=(1-out.data*out.data)*out.grad
+        out.pull=pull;return out
+    def backward(self):
+        order=[];seen=set()
+        def visit(node):
+            if node in seen:return
+            seen.add(node)
+            for parent in node.parents:visit(parent)
+            order.append(node)
+        visit(self)
+        for node in order:node.grad=0.
+        self.grad=1.
+        for node in reversed(order):node.pull()
+
+def prediction(p,x):
+    w,b,v,a=p;return v*math.tanh(w*x+b)+a
+def mse(p,data):return sum((prediction(p,x)-y)**2 for x,y in data)/len(data)
+def data_train(delta=.3):return [(x,math.tanh(2*x)+(delta if x==0 else 0)) for x in [-1.,-.5,0.,.5,1.]]
+validation=[(x,math.tanh(2*x)) for x in [-.75,-.25,.25,.75]]
+test=[(x,math.tanh(2*x)) for x in [-.9,-.4,.4,.9]]
+def derivatives(p,data):
+    w,b,v,a=[Value(v) for v in p];loss=Value(0)
+    for x,y in data:
+        r=v*(w*x+b).tanh()+a+(-y)
+        loss=loss+r*r*(.5/len(data))
+    loss.backward()
+    return loss.data,[q.grad for q in [w,b,v,a]]
+def fit(data,valid,eta=.2,budget=200,initial=(.5,0,.5,0)):
+    p=list(initial);history=[];best_step=0;status='budget';rejected=None
+    for k in range(budget+1):
+        loss,grad=derivatives(p,data);norm=math.hypot(*grad);tr=2*loss;va=mse(p,valid)
+        if not all(map(math.isfinite,[*p,tr,va,norm])) or max(tr,va,norm)>1e6:
+            status='guard';rejected=dict(step=k,train=tr if math.isfinite(tr) else None,validation=va if math.isfinite(va) else None,norm=norm if math.isfinite(norm) else None);break
+        row=dict(step=k,p=p.copy(),train=tr,validation=va,norm=norm);history.append(row)
+        if va<history[best_step]['validation']:best_step=k
+        if norm<=1e-8:status='gradient';break
+        if k==budget:break
+        p=[q-eta*g for q,g in zip(p,grad)]
+    return dict(history=history,last=history[-1],best=history[best_step],updates=history[-1]['step'],status=status,rejected=rejected)
+def summary(run):
+    return dict(initial=run['history'][0],first=run['history'][min(1,len(run['history'])-1)],updates=run['updates'],status=run['status'],best=run['best'],last=run['last'],rejected=run['rejected'],test=mse(run['best']['p'],test),last_test=mse(run['last']['p'],test))
+`} cells={[
+{id:'ml04-fit',title:'默认训练的开始与终点',code:`default_run=fit(data_train(),validation)
+print(json.dumps(summary(default_run)))`},
+{id:'ml04-failures',title:'零步长、全零、大步长和干净标签',code:`case_runs=[fit(data_train(d),validation,e,200,p) for d,e,p in [(.3,0,(.5,0,.5,0)),(.3,.2,(0,0,0,0)),(.3,4,(.5,0,.5,0)),(0,.2,(.5,0,.5,0))]]
+print(json.dumps([summary(r) for r in case_runs]))`}
+]} />
+
+## 学习率与停止原因
+
+梯度给局部变化方向，不会自动选择合适的步长。请比较以下几种固定工况，保留失败轨迹，而不是只看最小误差：
+
+- 点“不更新”，学习率为零，循环仍接受200次零位移更新，参数和初始损失完全不变；这属于预算耗尽，不是收敛。
+- 点“全零初始化”，隐藏权重与输出权重相互阻断学习信号，仅输出偏置逐渐改变。第70步达到梯度容差，末步训练MSE仍约 $0.61814993$，不能称为全局最优。验证最优是第0步，说明恢复最优与梯度停止各有自己的判据。
+- 点“大步长”，学习率为4，接受5次更新后，第6步候选的训练MSE约为 $1415809.47$，触发数值保护而被拒绝。图中保留此前接受轨迹，并另报拒绝候选；没有裁剪损失或用保护阈值冒充收敛。该配置仍可保存先前验证较好的检查点，但训练过程已经失败，不能只报保存模型的低误差而隐去失败。
+- 把标签扰动设为零，在本例默认学习率与200次预算内，验证最优就是末步，恢复与不恢复持平。这说明第54步不是任何数据下的固定“最佳训练次数”。
+
+无扰动标签配合大步长时，还可能放大本应接近零的对称项中的浮点舍入差异，使不同实现的后续轨迹和保护触发步不同。本课保留这一工况；验算逐步检查实际状态上的局部梯度与更新，并另记独立演化的漂移，不宣称所有平台都得到同一条不稳定长轨迹。
+
+这里的停止合同为：梯度二范数不超过 $10^{-8}$；或达到更新预算；或候选参数/指标非有限、候选训练MSE/验证MSE/梯度范数之一超过 $10^6$ 时数值保护。保护是程序的适用范围，不是稳定性定理。非凸网络的驻点、初始化、尺度与算子饱和都会影响结果，不能从单条曲线给梯度下降或其它优化器排普适名次。
+
+## 小批量与工程接口
+
+本课实际程序每次用全部训练样本求梯度，称为**全批梯度下降**。小批量方法把训练集分成若干批，每批求一个平均梯度并更新；每个样本单独一批是随机梯度方法的一种特例。**epoch** 指遍历一遍训练集，不等于一次参数更新，也不是物理时间。打乱顺序、随机初始化时应保存种子并报告多次运行；本课是确定性实验，没有可以挑选的随机种子，也没有实现Adam或动量的性能对比。
+
+若只是把一个全批梯度拆成几批累积而不在中途更新，每批均值应按该批样本数占总数的比例加权。不同大小批次的均值直接等权相加会改变目标；在每批之后更新参数则是另一种优化轨迹，不能再声称与全批更新数值相同。
+
+实现时可按以下接口检查责任边界：`fit(训练样本, 验证样本, 初始化, 学习率, 预算)` 返回检查点、接受的更新数、停止原因与拒绝候选；`predict(已保存参数, 新输入)` 只算前向，不读标签也不建立梯度图。训练时图的中间量有存储成本，长时间保留每轮的完整图会增加内存占用。本教具只把数值历史留给图表，每次梯度计算结束后不再持有旧图；没有BatchNorm或Dropout，因而这里不需要额外训练/评估模式切换。使用含这些算子的实际框架时，评估模式与关闭梯度记录是两个不同操作。
+
+## 习题
+
+1. 手算仿射例的 $z,r,L,\partial L/\partial w,\partial L/\partial b$，并求学习率0.1更新后的损失。若 `r*r` 回传时把第二条边的贡献覆盖第一条，会漏掉什么？
+2. 令 $s=q+q$、$L=s^2/2$，取 $q=3$。求 $\partial L/\partial q$；解释为何拓扑遍历按节点去重，同时还要保留重复输入边。若不清旧梯度，下一轮结果还代表当前损失的梯度吗？
+3. 默认训练为何选第54步而非末步？全零初始化达到梯度容差，为何仍不能认定学到了目标函数？学习率4触发保护时，能否删去失败记录，只报告保存的检查点？
+4. 五条记录按批大小2训练两个epoch，不丢最后一个小批，一共有多少次更新？若改成丢弃末批呢？若只累积梯度后做一次全批更新，各批均值应怎样加权？为什么不能看测试误差决定这些设置？
+
+## 答案
+
+1. $z=1.5,r=0.5,L=0.125$，参数梯度为 $(1,0.5)$；新参数 $(0.4,0.45)$ 给出预测1.25，损失0.03125。`r*r` 的两条边各贡献 $r/2$，必须相加才能得到 $\partial L/\partial r=r$；覆盖会在这个局部步骤漏掉一半贡献。
+2. $s=6$，$\partial L/\partial s=6$，而 $\partial s/\partial q=2$，所以答案是12。拓扑去重避免同一节点重复执行整个回传，重复边则表达同一个值在运算的多个位置被使用，两者不能混同。旧梯度若继续累积，通常变成多轮损失贡献的和，除非有意设计梯度累积，否则不代表当前一轮梯度。
+3. 在声明的验证规则下，第54步验证MSE最低；末步较低的训练MSE不足以改变该规则。全零配置只有输出偏置在学习，低梯度可能只是驻点，训练误差仍高。触发保护说明这个训练配置越出数值合同，必须连同拒绝步与停止原因报告，不能靠较早检查点掩盖失败。
+4. 每个epoch有大小为2、2、1的三批，所以共6次更新；丢弃末批则每轮两批，共4次且部分数据未参与。只在末尾更新时，各批平均梯度的权重为 $2/5,2/5,1/5$。根据测试误差选择批大小、学习率、初始化或检查点会使测试参与选择，最终需要新的保留评估数据，而不是继续称原测试独立。
+
+## 继续学习
+
+下一课[时序模型](/machine-learning/sequence-models)会让输入带上时间结构。这里的更新次数不代表时间，网络拟合误差也不等于闭环性能。
+
+若接着使用PyTorch，可对照[官方自动微分教程](https://docs.pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html)检查图的重建、梯度累积以及关闭梯度记录的语义（检索于2026-10-24）。本课的 `Value.backward()` 自动清零约定是教学实现的选择；实验只运行上面的自含Python代码，没有执行PyTorch训练或宣称框架间性能可比。

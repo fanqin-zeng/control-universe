@@ -1,0 +1,283 @@
+---
+title: 辨识模型
+description: 从水箱的输入与扰动两条通道出发，理解ARX、ARMAX、OE、BJ与FIR的假设、阶次和选择边界。
+---
+
+# 辨识模型
+
+## 引言
+
+在[系统辨识框架](/identification/identification-framework)中，我们用阀门开度和水位记录恢复了水箱的递推参数。现在遇到另一种现象：阀门没有动，水位读数却突然跳了一下。是水箱受到了持续影响，还是传感器只在这次读错了？
+
+这两种解释可能给出相同的“阀门到水位”响应，却对下一次读数作出不同预测。因此，选择辨识模型不只是选一个几阶方程，还要决定**哪些量保留记忆，扰动经过什么动态，哪些参数由数据确定**。
+
+本课不做模型性能排名。我们先把候选结构的含义说清，再用合成序列逐项核对。需要的工具是上一课的输入/输出/残差概念与[差分方程](/discrete-sampled/difference-equation)。
+
+## 从递推到延迟算子
+
+仍取采样周期 $T_s=1$ s，$u_k$ 是无量纲阀门指令，$y_k$ 是水位偏差，单位 cm。将上一课的无扰动递推向后移一个编号：
+
+$$
+y_k=0.8y_{k-1}+0.2u_{k-1}.
+$$
+
+定义**单位延迟算子**：$q^{-1}y_k=y_{k-1}$，连续作用两次便是 $q^{-2}y_k=y_{k-2}$。它表示把序列往过去取一个样本，不是把水位数值取倒数。于是上式写成：
+
+$$
+(1-0.8q^{-1})y_k=0.2q^{-1}u_k.
+$$
+
+$A(q)=1-0.8q^{-1}$ 和 $B(q)=0.2q^{-1}$ 是延迟算子的多项式，不是常数矩阵。本文用 $A(q)$ 等带自变量的形式表示多项式，后面状态空间矩阵另加下标。除输入多项式外，分母及噪声分子多项式的常数项约定为 $1$，称为首一归一化；这里“首一”按 $q^{-1}$ 的常数项约定。
+
+在**零前史**下，也就是开始之前的输入和内部状态都取零，可以写出输入到输出的离散传递关系：
+
+$$
+G(q)=\frac{0.2q^{-1}}{1-0.8q^{-1}},\qquad y=G(q)u.
+$$
+
+这个分式是递推滤波的简写。对非零初始状态，还要加上初始状态产生的自由响应，不能只用 $G(q)u$ 覆盖全部输出。
+
+另一个容易混淆的符号是系数正负号。若写 $A(q)=1+a_1q^{-1}$，本例 $a_1=-0.8$；移项后递推中的水位系数才是 $+0.8$。两种写法都可以，不能把同一个数不经移项直接照搬。
+
+## 输入与噪声两条通道
+
+把模型拆成两部分，有助于看清假设：
+
+$$
+y=G(q)u+H(q)e,\qquad v=H(q)e.
+$$
+
+$G$ 描述输入怎样形成输出；$e_k$ 是噪声模型的驱动序列，$H$ 描述它怎样变成输出扰动 $v_k$。本课令 $e,v,y$ 都以 cm 为单位，$H$ 无量纲；$G$ 把归一化输入变成 cm。
+
+![输入u经G、噪声驱动e经H，两条带方向箭头的通道在正号求和点叠加为输出y](/diagrams/identification/model-channels.svg)
+
+上一课的 $e$ 只是“方程未解释的部分”。**建立随机噪声模型时，本课另外假设驱动序列零均值、方差有限且不同时刻不相关，即白噪声。** 输出扰动 $v$ 经过 $H$ 后未必还是白噪声。如果还要把 $e_k$ 解释成一步预测无法预知的“创新”，需要更强的条件：相对于预测时可用的过去数据，$e_k$ 的条件均值为零。仅有时间不相关还不够。本课不从一段短序列检验这些统计条件。
+
+下面的实验则更简单：人为给噪声通道一个单位脉冲，观察它的动态。这是**确定性滤波探针，不是一段白噪声实现**。这样能把“噪声经过了什么滤波”与“随机估计是否可靠”分开。
+
+也不要仅凭 $H$ 就断言扰动物理上发生在哪里。输入端扰动经过对象后可能产生某种 $H$，传感器的有色误差也可能产生同样的 $H$；物理解释仍需要额外传感器和机理证据。
+
+## 多项式模型
+
+为免把输入延迟计算两次，本课统一写：
+
+$$
+B(q)=q^{-n_k}\bar B(q),\qquad
+\bar B(q)=b_0+b_1q^{-1}+\cdots+b_{n_b-1}q^{-(n_b-1)}.
+$$
+
+$n_k$ 是首个输入影响所经过的采样间隔数，$n_b$ 是待估输入系数个数；约定 $b_0\ne0$。本课主例 $n_k=1,n_b=1,\bar B=0.2$。有些软件将延迟包含在 $B$ 的前导零中，有些单独传入 $n_k$，使用前必须核对接口。
+
+常见线性单输入单输出结构如下，均指零初始条件。表中的 $A,C,D,F$ 都是上述首一多项式，$G$ 包含显式延迟。
+
+<div style={{ overflowX: "auto", maxWidth: "100%" }}>
+
+| 结构 | 方程 | 输入通道 $G$ | 噪声通道 $H$ | 结构约束 |
+|---|---|---|---|---|
+| ARX，自回归外部输入模型 | $Ay=Bu+e$ | $B/A$ | $1/A$ | 输入与噪声共用分母 |
+| ARMAX，自回归滑动平均外部输入模型 | $Ay=Bu+Ce$ | $B/A$ | $C/A$ | 可调噪声分子，仍共用分母 |
+| OE，输出误差模型 | $y=(B/F)u+e$ | $B/F$ | $1$ | 不单独估计有色噪声动态 |
+| BJ，Box–Jenkins模型 | $y=(B/F)u+(C/D)e$ | $B/F$ | $C/D$ | 输入与噪声动态分别参数化 |
+| FIR，有限脉冲响应模型（此处配白输出噪声） | $y=Bu+e$ | $B$ | $1$ | 输入通道只保留有限项，无递推分母 |
+
+</div>
+
+“ARX简单”指特定结构较紧凑，不保证在任何数据上都最准确；“BJ自由度多”也不保证数据足以支持它。ARX的额外噪声动态来自除以 $A$，**不是在方程右侧写了 $+e$ 就代表测量输出直接加白噪声**。
+
+例如 $A=1-0.8q^{-1}$、$B=0.2q^{-1}$、$C=1+0.3q^{-1}$ 的 ARMAX 方程展开为：
+
+$$
+y_k=0.8y_{k-1}+0.2u_{k-1}+e_k+0.3e_{k-1}.
+$$
+
+过去的 $e_{k-1}$ 通常不是传感器直接给出的列，需要按模型估计或递推重建。这也解释了为什么不能把ARMAX当作“在普通回归矩阵后随手加一列已知噪声”。
+
+## 同一水箱的两种噪声假设
+
+考虑两个都采用 $G(q)=0.2q^{-1}/(1-0.8q^{-1})$ 的模型。
+
+ARX写成 $y_k=0.8y_{k-1}+0.2u_{k-1}+e_k$。在零输入下，一次驱动脉冲会进入后续递推，留下尾迹，故 $H_{\mathrm{ARX}}=1/(1-0.8q^{-1})$。
+
+OE则另设一个无扰动内部水位 $x_k$：
+
+$$
+x_k=0.8x_{k-1}+0.2u_{k-1},\qquad y_k=x_k+e_k.
+$$
+
+此时驱动只叠在观测输出上，不写回内部水位，故 $H_{\mathrm{OE}}=1$。OE中的 $x$ 不是当前带噪实测 $y$；若把代码写成使用 $y_{k-1}$ 递推，就悄悄换成了ARX噪声假设。
+
+第一组Notebook使用 $k=0,\ldots,11$ 共 $12$ 个采样点，零前史；输入脉冲幅度为 $1$，噪声通道脉冲幅度为 $1$ cm。只给输入时，两个模型的前四个输出都是 $[0,0.2,0.16,0.128]$ cm；只给噪声驱动时，ARX为 $[1,0.8,0.64,0.512]$ cm，OE为 $[1,0,0,0]$ cm。这些是已知方程的响应，不是估计准确率。
+
+<JupyterNotebook
+  title="相同输入通道，不同噪声通道"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import lfilter
+n = 12
+k = np.arange(n)
+impulse = np.zeros(n)
+impulse[0] = 1.0
+A = [1.0, -0.8]
+B = [0.0, 0.2]
+`}
+  cells={[
+    {code: `g = lfilter(B, A, impulse)
+h_arx = lfilter([1.0], A, impulse)
+h_oe = impulse.copy()
+assert np.allclose(g[:4], [0, 0.2, 0.16, 0.128], atol=1e-12, rtol=0)
+assert np.allclose(h_arx[:4], [1, 0.8, 0.64, 0.512], atol=1e-12, rtol=0)
+assert np.array_equal(h_oe[:4], [1, 0, 0, 0])
+print('input_only_first4_cm', np.round(g[:4], 6).tolist())
+print('noise_ARX_first4_cm', np.round(h_arx[:4], 6).tolist())
+print('noise_OE_first4_cm', h_oe[:4].tolist())
+fig, axes = plt.subplots(1, 2, figsize=(9, 3))
+axes[0].plot(k, g, 'o-', label='ARX input response')
+axes[0].plot(k, g, 'x--', label='OE input response')
+axes[1].plot(k, h_arx, 'o-', label='ARX noise response')
+axes[1].plot(k, h_oe, 'x--', label='OE noise response')
+for ax in axes:
+    ax.set(xlim=(0, 11), ylim=(-0.05, 1.1), xlabel='sample k', ylabel='output (cm)')
+    ax.grid(True)
+    ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()
+`},
+    {code: `u = np.array([1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float)
+e = impulse.copy()
+driven = lfilter(B, A, u)
+y_arx = driven + lfilter([1], A, e)
+y_oe = driven + e
+innovation_arx = lfilter(A, [1], y_arx) - lfilter(B, [1], u)
+innovation_oe = y_oe - driven
+assert np.allclose(innovation_arx, e, atol=1e-12, rtol=0)
+assert np.allclose(innovation_oe, e, atol=1e-12, rtol=0)
+def direct_arx(pole, inputs, driver):
+    output = np.zeros(len(inputs))
+    for j in range(len(inputs)):
+        previous_y = output[j - 1] if j else 0.0
+        previous_u = inputs[j - 1] if j else 0.0
+        output[j] = pole * previous_y + 0.2 * previous_u + driver[j]
+    return output
+boundary_cases = []
+for pole in [0.0, 0.5, 0.8]:
+    driven_check = lfilter([0, 0.2], [1, -pole], u)
+    arx_without_noise = direct_arx(pole, u, np.zeros(n))
+    arx_with_noise = direct_arx(pole, u, e)
+    oe_with_noise = driven_check + e
+    assert np.allclose(arx_without_noise, driven_check, atol=1e-12, rtol=0)
+    if pole == 0:
+        assert np.allclose(arx_with_noise, oe_with_noise, atol=1e-12, rtol=0)
+    else:
+        assert not np.allclose(arx_with_noise, oe_with_noise, atol=1e-12, rtol=0)
+    boundary_cases.append((pole, arx_with_noise.tolist(), oe_with_noise.tolist()))
+print('reconstructed_driver_first4_cm', np.round(innovation_arx[:4], 6).tolist())
+print('zero_noise_same_output', True)
+print('pole_zero_same_noise_channel', True)
+`}
+  ]}
+/>
+
+噪声模型也会改变一步预测。对这里的ARX，预测器为 $\hat y_{k\mid k-1}=0.8y_{k-1}+0.2u_{k-1}$；对零初始且参数已知的OE，预测器递推内部 $x_k$，不让过去观测误差进入内部水位。要把这些称为条件均值预测，还需要上面关于创新和输入信息的假设；任意外生脉冲实验本身不证明它们是最优预测器。
+
+进一步看，输出仿真误差 $y-G u$ 是 $H e$，未必等于驱动 $e$。当 $H$ 首一、因果且有稳定因果逆，并正确处理初始条件时，可由 $H^{-1}(y-G u)$ 重建驱动。ARX的这个操作是 $Ay-Bu$，OE则是 $y-Gu$。第一组的第二个cell正是在已知模型上验证这两个代数式。未满足可逆条件时不能直接照用。
+
+## 阶次延迟与状态表示
+
+**阶次与延迟是不同选择。** 写 $A(q)=1+a_1q^{-1}+\cdots+a_{n_a}q^{-n_a}$ 时，$n_a$ 是分母的多项式阶数。对无额外约束的ARX，固定延迟后有 $n_a+n_b$ 个实系数；主例 $n_a=n_b=1,n_k=1$，所以有 $2$ 个实系数。$n_k$ 是另外要选择的整数，不能藏进“系数个数”里。多项式约消、前导系数为零或非最小表示时，多项式阶数未必等于最小状态维数。
+
+**有限记忆也可能截掉真实的慢尾巴。** 将主例的输入脉冲响应只保留前四个非零项，得到：
+
+$$
+G_{\mathrm{FIR}}(q)=0.2q^{-1}+0.16q^{-2}+0.128q^{-3}+0.1024q^{-4}.
+$$
+
+这里 $n_k=1,n_b=4$。它与原模型在 $k=0,\ldots,4$ 的脉冲输出重合，到了 $k=5$，原模型仍有 $0.08192$ cm，而截断模型已为零。二者在单位常值输入下的稳态增益分别是 $1$ cm 和 $0.5904$ cm；差 $0.4096$ cm 来自整个被截掉的尾部，不是单个 $k=5$ 的值。这是特定截断的代价，不是所有FIR模型都无法达到所需精度。
+
+**状态空间是另一种表示，不是更高一档的模型质量。** 若还不熟悉[状态空间](/modern/state-space)，这里只需把内部变量理解成模型保存的记忆。以主例为例：
+
+$$
+x_{k+1}=0.8x_k+0.2u_k,\qquad y_k=x_k.
+$$
+
+令新坐标 $z_k=2x_k$，同一输入输出关系也可写为：
+
+$$
+z_{k+1}=0.8z_k+0.4u_k,\qquad y_k=0.5z_k.
+$$
+
+初值也须满足 $z_0=2x_0$。因此仅有相同输入输出数据，不能要求识别出的内部坐标恰好等于物理水位。一般多维模型可写 $\boldsymbol x_{k+1}=A_s\boldsymbol x_k+B_su_k+\boldsymbol w_k$、$y_k=C_s\boldsymbol x_k+D_su_k+v_k$；其中状态噪声 $\boldsymbol w$ 和测量噪声 $v$ 的协方差等也要建模，不能只估计确定性矩阵就宣称已确定全部随机性质。本课不展开其估计算法。
+
+<JupyterNotebook
+  title="截断的尾部与状态坐标"
+  setupCode={`import numpy as np
+from scipy.signal import lfilter
+`}
+  cells={[
+    {code: `impulse = np.zeros(12)
+impulse[0] = 1
+g_exact = lfilter([0, 0.2], [1, -0.8], impulse)
+fir_coeff = [0, 0.2, 0.16, 0.128, 0.1024]
+g_fir = lfilter(fir_coeff, [1], impulse)
+assert np.allclose(g_exact[:5], g_fir[:5], atol=1e-12, rtol=0)
+assert abs(g_exact[5] - 0.08192) < 1e-12 and g_fir[5] == 0
+gain_exact = 0.2 / (1 - 0.8)
+gain_fir = sum(fir_coeff)
+assert abs(gain_fir - 0.5904) < 1e-12
+assert abs(gain_exact - gain_fir - 0.4096) < 1e-12
+print('first_omitted_sample_cm', round(g_exact[5], 6))
+print('steady_gains_cm', round(gain_exact, 6), round(gain_fir, 6))
+print('steady_tail_loss_cm', round(gain_exact - gain_fir, 6))
+print('ARX_real_coefficients', 1 + 1, 'FIR_real_coefficients', len(fir_coeff) - 1)
+`},
+    {code: `u = np.array([1, 0, 1, 1, 0, 0], dtype=float)
+x = np.zeros(len(u) + 1)
+z = np.zeros(len(u) + 1)
+for j in range(len(u)):
+    x[j + 1] = 0.8 * x[j] + 0.2 * u[j]
+    z[j + 1] = 0.8 * z[j] + 0.4 * u[j]
+assert np.allclose(x, 0.5 * z, atol=1e-12, rtol=0)
+e = np.zeros(4)
+e[0] = 1
+h_armax = lfilter([1, 0.3], [1, -0.8], e)
+h_bj = lfilter([1], [1, -0.4], e)
+assert np.allclose(h_armax, [1, 1.1, 0.88, 0.704], atol=1e-12, rtol=0)
+assert np.allclose(h_bj, [1, 0.4, 0.16, 0.064], atol=1e-12, rtol=0)
+print('state_coordinate_outputs_match', True)
+print('ARMAX_noise_first4_cm', np.round(h_armax, 6).tolist())
+print('BJ_noise_first4_cm', np.round(h_bj, 6).tolist())
+`}
+  ]}
+/>
+
+## 怎样选择候选
+
+可以按下面的顺序收窄候选，而不是从模型名称直接猜答案。
+
+1. **先定用途和时序。** 看重自由仿真、一步预测还是控制相关频段？明确采样间隔、单位、输入延迟和初始条件。若 $n_k=0$，还要说明当前输入何时可获得及是否有代数环。
+2. **再定哪些动态需要分别描述。** 若要允许输入与噪声拥有不同极点，BJ提供这种参数化；若明确只拟合输入动态，OE提供 $H=1$ 的简单假设。选择ARX则接受其共用分母的约束。选择表达能力不等于验证该假设真实成立。
+3. **给定有限候选阶次与延迟。** 数据量、激励频段和先验约束决定能支持多少自由度。更高阶能降低某些样本内误差，却会增加估计不确定性和计算、验证成本。首一归一化去除了整体缩放歧义，不能替代数据的信息条件，也不能消除所有公共因子歧义。
+4. **用独立实验检查。** 保留上一课区分的预测误差、自由仿真误差和残差诊断。需要根据验证结果选结构时，验证集已参与选择，最后应再留出未用于选择的测试实验；仅看估计段拟合不构成放行依据。闭环输入与噪声相关时，估计方法和一致性条件还需另外处理。
+
+线性模型能否描述当前范围也要单独检查。例如阀门有死区或水位大幅变化时，增加线性阶数未必解决结构错误；可以缩小工作范围、引入物理灰箱或考虑非线性模型，但都需要新证据。
+
+本课的结构定义与延迟约定可核对 MathWorks 官方[多项式模型说明](https://www.mathworks.com/help/ident/ug/what-are-polynomial-models.html)；预测与仿真的区分参见[仿真与预测说明](https://www.mathworks.com/help/ident/ug/definition-simulation-and-prediction.html)，状态坐标变换参见[ss2ss说明](https://www.mathworks.com/help/control/ref/statespacemodel.ss2ss.html)。检索日期2026-10-24。本文实验为独立构造，不使用MATLAB工具箱，不声称复现其辨识算法。
+
+## 小结
+
+模型结构规定允许哪些输入动态、噪声动态、延迟和参数。ARX、ARMAX、OE、BJ的核心区别可以从 $G,H$ 两列读出；FIR用有限记忆描述输入响应，状态空间用内部变量组织记忆。噪声驱动、输出扰动与预测残差不能随意互换。
+
+同一个 $G$ 不足以确定 $H$，同一个输入输出关系也不足以唯一确定内部坐标。结构选择应回到用途、信息条件和独立验证；下一课[最小二乘辨识](/identification/least-squares-rls)再讨论怎样从数据求系数。
+
+## 习题
+
+1. 给定 $A(q)=1-0.8q^{-1}$、$B(q)=0.2q^{-1}$、$C(q)=1+0.3q^{-1}$，展开ARMAX差分式，写出 $G,H$。零前史、零输入，驱动满足 $e_0=1$ cm、之后为零，前两个输出是什么？
+2. 取与题1相同的 $A,B$，先使用ARX（其噪声分子为 $1$），再换成OE的 $H=1$。两者均取零输入、零前史及同一个驱动脉冲，前两个输出各是多少？若噪声驱动全为零，还能从输入响应区分这两个固定模型吗？
+3. 本课四系数FIR的 $n_b,n_k$ 各为多少？与主例ARX的实系数个数是否相同？为什么只观察脉冲后最初几个采样点，会漏掉长期输入响应的差别？给出首个遗漏点与稳态增益差。
+4. 已知 $z=2x$，请从原水箱状态方程推出新方程和输出式。若原初值 $x_0$ 非零，新初值应如何选？这是否说明模型的输入输出预测一定不可靠？
+
+## 答案
+
+1. 展开为 $y_k=0.8y_{k-1}+0.2u_{k-1}+e_k+0.3e_{k-1}$；$G=B/A$、$H=C/A$。零前史给 $y_0=1$ cm，随后 $y_1=0.8\times1+0.3\times1=1.1$ cm。噪声分子不能被误读成独立的输出脉冲。
+2. ARX在题设脉冲下 $y_0=1$ cm、$y_1=0.8$ cm；OE为 $1$ cm、$0$ cm。若 $e$ 全为零且初始条件相同，两固定模型都只剩 $G u$，输出相同，单凭这种数据不能区别给定的两种噪声通道。这不是证明任意数据上都无法估计噪声模型。
+3. $n_b=4,n_k=1$，有 $4$ 个实系数；ARX有 $2$ 个实系数，延迟另选。两脉冲响应在 $k=0,\ldots,4$ 一致，首个遗漏为 $k=5$ 的 $0.08192$ cm。原稳定递推的常值增益为 $0.2/(1-0.8)=1$ cm，FIR为系数和 $0.5904$ cm，差 $0.4096$ cm。有限窗口没有看见尾迹，不代表尾迹不存在。
+4. 两边乘 $2$ 得 $z_{k+1}=0.8z_k+0.4u_k$，由 $x=z/2$ 得 $y_k=0.5z_k$；须取 $z_0=2x_0$。这只是内部坐标改变，输入输出预测保持一致。没有物理坐标先验时不应强求内部状态等于某个具体传感器量，不能由坐标非唯一推出预测必然不可靠。

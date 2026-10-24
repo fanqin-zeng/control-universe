@@ -1,0 +1,48 @@
+
+> control-universe@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Experiments (use with caution):
+    · cpus
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./components/wiki/browser-notebook.tsx
+43:102  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/jupyter-notebook.tsx
+119:6  Warning: React Hook useEffect has a missing dependency: 'setupCode'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+336:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/wiki/phase-plane-explorer.tsx
+389:9  Warning: The 'ic' array makes the dependencies of useMemo Hook (at line 403) change on every render. To fix this, wrap the initialization of 'ic' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+432:77  Warning: React Hook useMemo has a missing dependency: 'ic'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+515:6  Warning: React Hook useMemo has an unnecessary dependency: 'showMany'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+Failed to compile.
+
+./components/wiki/statistical-estimation-explorer.tsx:33:28
+Type error: Argument of type '{ animation: boolean; tooltip: { trigger: "axis"; }; legend: { data: string[]; top: number; textStyle: { fontSize: number; }; }; grid: { left: number; right: number; top: number; bottom: number; }; xAxis: { type: "value"; ... 4 more ...; nameGap: number; }; yAxis: { ...; }; series: { ...; }[]; }' is not assignable to parameter of type 'EChartsOption'.
+  Types of property 'series' are incompatible.
+    Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }[]' is not assignable to type 'SeriesOption$1 | SeriesOption$1[] | undefined'.
+      Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }[]' is not assignable to type 'MapSeriesOption$1 | LineSeriesOption$1 | BarSeriesOption$1 | ScatterSeriesOption$1 | ... 19 more ... | SeriesOption$1[]'.
+        Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }[]' is not assignable to type 'SeriesOption$1[]'.
+          Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }' is not assignable to type 'SeriesOption$1'.
+            Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }' is not assignable to type 'LineSeriesOption$1'.
+              Type '{ type: "line"; name: string; showSymbol: boolean; data: number[][]; markPoint: { symbolSize: number; data: { coord: [number, number]; }[]; }; }' is not assignable to type 'SeriesInjectedOption'.
+                The types of 'markPoint.data' are incompatible between these types.
+                  Type '{ coord: [number, number]; }[]' is not assignable to type 'MarkPointDataItemOption[]'.
+                    Property 'name' is missing in type '{ coord: [number, number]; }' but required in type 'MarkPointDataItemOption'.
+
+  31 |     };
+  32 |   }, [r1, r2, p, result.weighted, result.posterior]);
+> 33 |   const chart = useECharts(option);
+     |                            ^
+  34 |   return <section aria-label="统计估计目标探索" style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, margin: "20px 0", minWidth: 0 }}>
+  35 |     <p style={{ marginTop: 0 }}>两次合成读数固定为 22°C 和 24°C，先验均值固定为 20°C。改变方差，看最小点的位置怎样变化。</p>
+  36 |     <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+Next.js build worker exited with code: 1 and signal: null

@@ -1,0 +1,63 @@
+{
+  "source": "content/mpc/mpc-stability.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 106,
+      "title": "终端接续与反例核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import minimize, LinearConstraint, linprog, nnls\r\nP = 17/8\r\ndef plan(x, radius=1):\r\n    A = np.array([[1,0],[-1,0],[0,1],[0,-1],[1,0],[-1,0],[1.2,1],[-1.2,-1]], dtype=float)\r\n    b = np.array([1,1,1,1,3-1.2*x,3+1.2*x,radius-1.44*x,radius+1.44*x])\r\n    lp = linprog([0,0], A_ub=A, b_ub=b, bounds=[(None,None)]*2, method='highs')\r\n    if lp.status == 2: return None\r\n    if not lp.success: raise RuntimeError(lp.message)\r\n    def states(u): return np.array([x, 1.2*x+u[0], 1.44*x+1.2*u[0]+u[1]])\r\n    def cost(u):\r\n        z = states(u)\r\n        return z[0]**2+u[0]**2+z[1]**2+u[1]**2+P*z[2]**2\r\n    def grad(u):\r\n        z = states(u)\r\n        return 2*np.array([u[0]+z[1]+P*1.2*z[2],u[1]+P*z[2]])\r\n    res = minimize(cost, lp.x, jac=grad, method='SLSQP', constraints=[LinearConstraint(A,-np.inf,b)], options={'ftol':1e-12,'maxiter':200})\r\n    if not res.success: raise RuntimeError(res.message)\r\n    slack = b-A@res.x\r\n    active = np.flatnonzero(slack<1e-7)\r\n    lam = np.zeros(8)\r\n    if len(active): lam[active] = nnls(A[active].T, -grad(res.x))[0]\r\n    residual = max(0, float(-min(slack)), float(np.max(np.abs(grad(res.x)+A.T@lam))), float(np.max(np.abs(lam*slack))))\r\n    if residual > 1e-5: raise RuntimeError('KKT residual exceeds teaching tolerance')\r\n    return dict(u=res.x, states=states(res.x), cost=cost(res.x), residual=residual)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 132,
+          "delim": "`",
+          "code": "r = plan(2)\r\nassert r is not None\r\nshift = np.array([r['u'][1], -.6*r['states'][2]])\r\nshift_states = np.array([r['states'][1], r['states'][2], .6*r['states'][2]])\r\ncandidate_cost = shift_states[0]**2+shift[0]**2+shift_states[1]**2+shift[1]**2+P*shift_states[2]**2\r\nnext_plan = plan(r['states'][1])\r\nprint('default_U',r['u'],'default_states',r['states'],'default_value',r['cost'])\r\nprint('shift_U',shift,'shift_states',shift_states,'candidate_cost',candidate_cost)\r\nprint('next_U',next_plan['u'],'next_value',next_plan['cost'],'value_difference',next_plan['cost']-r['cost'])\r\nassert np.allclose(r['u'],[-1,-1],atol=1e-9)\r\nassert abs(candidate_cost-(r['cost']-5))<1e-10\r\nassert next_plan['cost']<=candidate_cost+1e-10\r\ngrid=np.linspace(-1.5,1.5,121)\r\nassert np.all(np.abs(-.6*grid)<=1+1e-12)\r\nassert np.max(np.abs(P*((.6*grid)**2-grid**2)+(grid**2+(-.6*grid)**2)))<1e-12\r\nprint('terminal_P',P,'local_decay_coefficient',P*(.36-1),'terminal_max_radius',5/3)\r\nprint('predecessor_bounds',1,5/3,20/9)\r\nprint('r_half_bound',(.5+2.2)/1.44,'r_onehalf_bound',(1.5+2.2)/1.44)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 151,
+          "delim": "`",
+          "code": "# A different model for the one-step trap: x+=2x+u, |x|<=2, |u|<=1.\r\nfor x in [0.,1.,1.4]:\r\n    lower=max(-1.,-2.-2*x); upper=min(1.,2.-2*x)\r\n    u=float(np.clip(0.,lower,upper)); next_x=2*x+u\r\n    possible_next=(max(-1.,-2.-2*next_x)<=min(1.,2.-2*next_x))\r\n    print('trap_case',x,'u',u,'next',next_x,'next_feasible',possible_next)\r\nassert abs((2*1.4-.8)-2)<1e-12\r\nfor x,w in [(2.,.75),(2.2,.75),(0.,0.)]:\r\n    old=plan(x); measured=old['states'][1]+w\r\n    shifted=np.array([old['u'][1],-.6*old['states'][2]])\r\n    end=1.44*measured+1.2*shifted[0]+shifted[1]\r\n    fresh=plan(measured)\r\n    print('mismatch_case',x,w,'measured',measured,'shift_end',end,'fresh_feasible',fresh is not None)\r\nprint('failure_cases_checked')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 175,
+      "title": "名义闭环与值函数",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import minimize, LinearConstraint, linprog, nnls\r\nP = 17/8\r\ndef plan(x, radius=1):\r\n    A = np.array([[1,0],[-1,0],[0,1],[0,-1],[1,0],[-1,0],[1.2,1],[-1.2,-1]], dtype=float)\r\n    b = np.array([1,1,1,1,3-1.2*x,3+1.2*x,radius-1.44*x,radius+1.44*x])\r\n    lp = linprog([0,0], A_ub=A, b_ub=b, bounds=[(None,None)]*2, method='highs')\r\n    if lp.status == 2: return None\r\n    if not lp.success: raise RuntimeError(lp.message)\r\n    def states(u): return np.array([x, 1.2*x+u[0], 1.44*x+1.2*u[0]+u[1]])\r\n    def cost(u):\r\n        z = states(u)\r\n        return z[0]**2+u[0]**2+z[1]**2+u[1]**2+P*z[2]**2\r\n    def grad(u):\r\n        z = states(u)\r\n        return 2*np.array([u[0]+z[1]+P*1.2*z[2],u[1]+P*z[2]])\r\n    res = minimize(cost, lp.x, jac=grad, method='SLSQP', constraints=[LinearConstraint(A,-np.inf,b)], options={'ftol':1e-12,'maxiter':200})\r\n    if not res.success: raise RuntimeError(res.message)\r\n    slack = b-A@res.x\r\n    active = np.flatnonzero(slack<1e-7)\r\n    lam = np.zeros(8)\r\n    if len(active): lam[active] = nnls(A[active].T, -grad(res.x))[0]\r\n    residual = max(0, float(-min(slack)), float(np.max(np.abs(grad(res.x)+A.T@lam))), float(np.max(np.abs(lam*slack))))\r\n    if residual > 1e-5: raise RuntimeError('KKT residual exceeds teaching tolerance')\r\n    return dict(u=res.x, states=states(res.x), cost=cost(res.x), residual=residual)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 201,
+          "delim": "`",
+          "code": "state=2.; trajectory=[state]; inputs=[]; values=[]; residuals=[]\r\nplans=[]\r\nfor k in range(20):\r\n    r=plan(state)\r\n    if r is None: raise RuntimeError('Nominal loop unexpectedly infeasible')\r\n    plans.append(dict(x=state,u=r['u'].tolist()))\r\n    values.append(r['cost']);residuals.append(r['residual'])\r\n    inputs.append(float(r['u'][0]));state=1.2*state+r['u'][0];trajectory.append(float(state))\r\nlast=plan(state);values.append(last['cost'])\r\nstages=np.array(trajectory[:-1])**2+np.array(inputs)**2\r\ndescent=np.diff(values)+stages\r\nassert max(descent)<1e-8\r\nprint('closed_loop_steps',len(inputs),'last_sample',trajectory[-1])\r\nprint('max_KKT',max(residuals),'max_descent_residual',max(descent))\r\nprint('max_state',max(abs(np.array(trajectory))),'max_input',max(abs(np.array(inputs))))\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 217,
+          "delim": "`",
+          "code": "t=np.arange(21)\r\nfig,axes=plt.subplots(2,1,figsize=(9,6))\r\naxes[0].plot(t,trajectory,'o-',label='nominal sampled x')\r\naxes[0].axhline(1,color='gray',ls='--');axes[0].axhline(-1,color='gray',ls='--')\r\naxes[0].set(xlim=(0,20),ylim=(-3,3),ylabel='state');axes[0].legend();axes[0].grid(True)\r\naxes[1].plot(t,values,'o-',label='optimal V2')\r\naxes[1].set(xlim=(0,20),ylim=(0,10),xlabel='sample k',ylabel='value');axes[1].legend();axes[1].grid(True)\r\nplt.tight_layout();plt.show()\r\nprint('sample_axes_0_to_20','terminal_radius',1,'not_a_steady_state_proof')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "testedAt": "2026-10-24T09:21:40.924Z",
+  "url": "http://127.0.0.1:19974/python-expansion.html?lesson=estimation/sensor-fusion",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "estimation/sensor-fusion",
+      "title": "多传感器融合",
+      "sourceHash": "9004892513409b52bc046d8c1f2a513830e405860c86c34608facc36a67b0a97",
+      "notebooks": [
+        {
+          "id": "estimation/sensor-fusion#1",
+          "title": "同一先验的独立与相关观测",
+          "index": 1,
+          "line": 85,
+          "cellCount": 2,
+          "status": "code",
+          "reason": "AssertionError: singular joint covariance must not be silently treated as invertible",
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4341,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "same_model_rho_joint_mean_P_K_actualMSE_naive 0 1.8333333333333335 0.6666666666666666 [0.6666666666666667, 0.16666666666666663] 0.6666666666666666 1.8333333333333335 0.6666666666666666 0.6666666666666666\nsame_model_rho_joint_mean_P_K_actualMSE_naive 0.5 1.6 0.8 [0.8, 0.0] 0.8 1.8333333333333335 0.6666666666666666 0.888888888888889\nsame_model_rho_joint_mean_P_K_actualMSE_naive -0.5 2.064516129032258 0.38709677419354843 [0.6451612903225806, 0.25806451612903225] 0.38709677419354843 1.8333333333333335 0.6666666666666666 0.4444444444444444\nsame_model_rho_joint_mean_P_K_actualMSE_naive 0.9 1.257861635220126 0.4779874213836478 [1.3836477987421376, -0.5031446540880498] 0.4779874213836478 1.8333333333333335 0.6666666666666666 1.0666666666666667\nsingle_sensor1_mean_P 1.6 0.8 sensor2 1.5 2.0\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 11,
+              "status": "error",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "joint_whitened_64_cases_max_difference 64 2.886579864025407e-15\nrho_half_conditional_H_reading_noise 0 1 3\n"
+                },
+                {
+                  "type": "error",
+                  "ename": "AssertionError",
+                  "evalue": "singular joint covariance must not be silently treated as invertible",
+                  "traceback": [
+                    "Traceback (most recent call last):",
+                    "  File \"<exec>\", line 54, in _cu_execute",
+                    "  File \"<cell>\", line 17, in <module>",
+                    "AssertionError: singular joint covariance must not be silently treated as invertible"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/sensor-fusion#2",
+          "title": "共享先验、重复数据与协方差交集",
+          "index": 2,
+          "line": 191,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "shared_prior_local_cross 0.4\ntrack_naive_mean_P_actualMSE 1.5714285714285714 0.5714285714285714 0.7346938775510203\nsubtract_known_prior_mean_P 1.8333333333333333 0.6666666666666666\nduplicate_same_estimate_mean_claimed_actual 1.6 0.4 0.8\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "CI_omega_mean_P_worstMSE 0 1.5 2.0 2.0000000000000004\nCI_omega_mean_P_worstMSE 0.25 1.5454545454545454 1.4545454545454546 1.3875592053226538\nCI_omega_mean_P_worstMSE 0.5 1.5714285714285714 1.1428571428571428 1.0877188016601438\nCI_omega_mean_P_worstMSE 0.75 1.588235294117647 0.9411764705882353 0.9131303247198651\nCI_omega_mean_P_worstMSE 1 1.6 0.8 0.7999999999999999\nCI_bound_cases_max_violation 105 0.0\nscalar_variance_objective_best_P_omega (np.float64(0.8), np.float64(1.0))\nshared_information_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/sensor-fusion#3",
+          "title": "时间坐标与非线性更新的对齐",
+          "index": 3,
+          "line": 261,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "coordinate_offset_local_world 10.0 -8.0 2.0\nframe_wrong_correct_mean_P (-2.666666666666666, 0.4444444444444445) (1.7777777777777777, 0.4444444444444445)\ntime_delay_velocity_old_aligned 0.5 2.0 1.0 2.0\ntime_wrong_correct_mean_P (1.3333333333333333, 0.4444444444444445) (1.7777777777777777, 0.4444444444444445)\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "nonlinear_same_point_batch_mean_P (2.238095238095238, 0.04761904761904761)\nnonlinear_relinearized_after_first_mean_P (2.2288998357963874, 0.04105090311986864)\nfirst_linear_update_mean_P 2.2 0.20000000000000004\nalignment_nonlinear_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "estimation/sensor-fusion",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 3,
+    "enabled": 2,
+    "codeOnly": 1
+  },
+  "releaseTotals": {
+    "enabled": 2,
+    "codeOnly": 1
+  }
+}

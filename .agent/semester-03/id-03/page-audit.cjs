@@ -1,0 +1,20 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');let browser;
+(async()=>{
+ browser=await chromium.launch({channel:'msedge',headless:true});const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ const name=process.env.ID03_AUDIT_NAME||'native',url=process.env.ID03_PAGE_URL||'http://127.0.0.1:18193/identification/least-squares-rls';const response=await page.goto(url);assert.equal(response.status(),200);
+ const all=page.getByRole('button',{name:/全部运行/});await all.nth(2).waitFor({timeout:180000});assert.equal(await all.count(),3);
+ for(const [i,marker] of ['repeated_steady_rank','all_prefixes_same_prior_match True','control_inverse_defined False'].entries()){await all.nth(i).click();await page.waitForFunction(m=>document.body.innerText.includes(m),marker,{timeout:180000});}
+ const actual=JSON.parse(fs.readFileSync('.agent/semester-03/id-03/actual-ts.json','utf8'));const controls=[];
+ for(const [button,lambda,disturbance,scenario]of [['恢复默认',1,0,'steady'],['参数跳变',.9,0,'jump'],['定常扰动',.9,.12,'steady'],['无输入',.9,0,'quiet']]){
+  await page.getByRole('button',{name:button,exact:true}).click();const c=actual.cases.find(c=>c.lambda===lambda&&c.disturbance===disturbance&&c.scenario===scenario),last=c.rows.at(-1);
+  await page.waitForFunction(expected=>{const t=document.querySelector('[data-rls-readout]')?.textContent||'';return t.includes('b='+expected[0])&&t.includes('P='+expected[1]);},[last[1].toFixed(6),last[2].toFixed(6)],{timeout:10000});controls.push({button,readout:await page.locator('[data-rls-readout]').textContent()});
+ }
+ await page.getByLabel('遗忘因子',{exact:true}).focus();await page.getByLabel('遗忘因子',{exact:true}).press('End');await page.waitForFunction(()=>document.querySelector('[data-rls-readout]').textContent.includes('P=1.000000'),null,{timeout:10000});
+ await page.getByRole('button',{name:'恢复默认',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-rls-readout]').textContent.includes('b=0.192000'),null,{timeout:10000});
+ const dom=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,h2:[...document.querySelectorAll('h2')].map(h=>({id:h.id,text:h.textContent})),ids:[...document.querySelectorAll('[id]')].map(e=>e.id),links:[...document.querySelectorAll('a[href^="#"]')].map(a=>a.getAttribute('href')),katexErrors:document.querySelectorAll('.katex-error').length,canvases:[...document.querySelectorAll('canvas')].map(c=>({width:c.width,height:c.height})),images:[...document.images].map(i=>({src:i.getAttribute('src'),loaded:i.complete&&i.naturalWidth>0})),text:document.body.innerText}));
+ assert.equal(dom.h1,1);assert.equal(dom.h2.length,10);assert.equal(dom.katexErrors,0);assert.equal(new Set(dom.ids).size,dom.ids.length);for(const href of dom.links)assert(dom.ids.includes(decodeURIComponent(href.slice(1))));assert(dom.canvases.length>=2&&dom.canvases.every(c=>c.width>0&&c.height>0));assert(dom.images.some(i=>i.loaded&&i.src.endsWith('least-squares-data.svg')));assert.equal(errors.length,0);
+ await page.screenshot({path:`.agent/semester-03/id-03/desktop-${name}.png`,fullPage:true});await page.setViewportSize({width:375,height:812});await page.waitForTimeout(500);const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert(mobile.scroll<=mobile.width);
+ await page.locator('section[aria-label="递推最小二乘探索"]').scrollIntoViewIfNeeded();await page.screenshot({path:`.agent/semester-03/id-03/mobile-controls-${name}.png`});await page.screenshot({path:`.agent/semester-03/id-03/mobile-${name}.png`,fullPage:true});
+ fs.writeFileSync(`.agent/semester-03/id-03/browser-${name}.json`,JSON.stringify({pass:true,url,controls,dom,mobile,errors},null,2));await browser.close();console.log('PASS 10 H2, 3 notebooks / 4 cells, four presets, lambda boundary, reset, two charts, real IDs and 375px');
+})().catch(async e=>{console.error(e);await browser?.close();process.exitCode=1});

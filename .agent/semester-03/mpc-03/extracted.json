@@ -1,0 +1,90 @@
+{
+  "source": "content/mpc/receding-horizon.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 85,
+      "title": "增量预测与滚动重算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import minimize, LinearConstraint",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 88,
+          "delim": "`",
+          "code": "# 一变量凸QP，约束同时包含输入幅值和变化率\r\ndef hold_plan(x,previous,npred=4,bound=1.):\r\n    powers = .8**np.arange(1,npred+1)\r\n    g = 1-powers\r\n    free = powers*x+g*previous\r\n    den = .1+g@g\r\n    zfree = g@(1-free)/den\r\n    low,high = max(-bound,-2-previous),min(bound,2-previous)\r\n    z = np.clip(zfree,low,high)\r\n    prediction = free+g*z\r\n    residual = abs(z-np.clip(z-2*(den*z-g@(1-free)),low,high))\r\n    return z,previous+z,prediction,float(np.sum((prediction-1)**2)+.1*z*z),residual\r\nfirst = hold_plan(0.,0.)\r\nmeasured = first[2][0]+.4\r\nsecond = hold_plan(measured,first[1])\r\nprint('default_H_f',2*(.1+np.sum((1-.8**np.arange(1,5))**2)),-2*np.sum(1-.8**np.arange(1,5)))\r\nprint('default_first',first)\r\nprint('default_measured_replan',measured,second)\r\nassert first[4]<1e-12 and second[4]<1e-12\r\nfor shock in [0.,.4,-.4]:\r\n    result = hold_plan(first[2][0]+shock,first[1])\r\n    print('replan_case',shock,'u',result[1],'residual',result[4])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 110,
+          "delim": "`",
+          "code": "# 保留原.9/.1、Ts=.5、20步实验；改用正确的阶跃增量矩阵\r\na,b,Ts,Np,Nu,R = .9,.1,.5,10,5,.1\r\nS = np.tril(np.ones((Nu,Nu)))\r\nG = np.array([[b*sum(a**r for r in range(j-l)) if j>l else 0. for l in range(Nu)] for j in range(1,Np+1)])\r\nH = 2*(G.T@G+R*np.eye(Nu))\r\nstates,inputs,plans = [0.],[],[]\r\nprevious,guess = 0.,np.zeros(Nu)\r\nfor k in range(20):\r\n    free = a**np.arange(1,Np+1)*states[-1]+(1-a**np.arange(1,Np+1))*previous\r\n    linear = 2*G.T@(free-1)\r\n    objective = lambda z: .5*z@H@z+linear@z\r\n    jacobian = lambda z: H@z+linear\r\n    result = minimize(objective,guess,jac=jacobian,bounds=[(-2.,2.)]*Nu,constraints=[LinearConstraint(S,-5-previous,5-previous)],method='SLSQP',options={'ftol':1e-12,'maxiter':200})\r\n    assert result.success,result.message\r\n    z = result.x\r\n    violation = max(np.max(np.abs(z))-2,np.max(np.abs(previous+S@z))-5,0.)\r\n    assert violation<1e-8\r\n    # 本次运行绝对输入边界未活跃，因此可用增量盒投影核驻点\r\n    assert np.max(np.abs(previous+S@z))<5-1e-6\r\n    residual = np.max(np.abs(z-np.clip(z-jacobian(z),-2,2)))\r\n    assert residual<1e-5\r\n    plans.append({'x':states[-1],'previous':previous,'du':z.tolist(),'residual':residual})\r\n    previous += z[0]\r\n    inputs.append(previous)\r\n    states.append(a*states[-1]+b*previous)\r\n    guess = np.r_[z[1:],0.]\r\nfig,axes = plt.subplots(2,1,figsize=(9,5))\r\naxes[0].plot(np.arange(21)*Ts,states,'o-')\r\naxes[0].axhline(1,color='gray',linestyle='--')\r\naxes[0].set(xlim=(0,10),ylim=(-.5,2.5),ylabel='State')\r\naxes[1].step(np.arange(21)*Ts,inputs+[inputs[-1]],where='post')\r\naxes[1].set(xlim=(0,10),ylim=(-5.5,5.5),xlabel='Time (s)',ylabel='Input')\r\nplt.tight_layout()\r\nplt.show()\r\nprint('original_contract_corrected',Np,Nu,'variables',Nu,'input_and_rate_inequalities',4*Nu)\r\nprint('rollout_last_sample',states[-1],'max_abs_u',max(np.abs(inputs)))\r\nprint('rollout_max_residual',max(p['residual'] for p in plans))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 208,
+      "title": "费用下标、有限时域和终端合同",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 209,
+          "delim": "`",
+          "code": "# 当前状态费用，P_N=0；必须区分计划尾项与下一次重新规划\r\ndef gains(a,N,Pterminal=0.):\r\n    P = Pterminal\r\n    ks = []\r\n    for i in range(N):\r\n        ks.append(a*P/(1+P))\r\n        P = 1+a*a*P/(1+P)\r\n    return ks[::-1],P\r\nfor aa in [2.,1.5]:\r\n    for N in [1,2,3]:\r\n        ks,P = gains(aa,N)\r\n        print('finite_horizon',aa,N,'first_gain',ks[0],'pole',aa-ks[0],'planned_last_gain',ks[-1])\r\nPinf = 2+np.sqrt(5.)\r\nks,_ = gains(2.,1,Pinf)\r\nprint('DARE_P_gain_pole',Pinf,ks[0],2-ks[0])\r\nassert abs(Pinf-(1+4*Pinf/(1+Pinf)))<1e-12",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 225,
+          "delim": "`",
+          "code": "# 终端局部合同；Nu=1尾部保持不总对移位操作封闭\r\nPterminal = 1.1/(1-.6**2)\r\ngrid = np.linspace(-1,1,101)\r\nassert np.max(np.abs(.6*grid))<=1\r\nassert np.allclose(Pterminal*((.6*grid)**2-grid**2),-1.1*grid**2)\r\nprint('local_terminal_P',Pterminal)\r\nold = np.array([-1.,-1.])\r\nshifted = np.array([old[1],0.])\r\nfresh = np.array([-.5,-.5])\r\nassert 2+old.sum()==0 and 1+fresh.sum()==0\r\nassert shifted[0]!=shifted[1]\r\nprint('held_tail_counterexample','old',old,'shifted',shifted,'fresh',fresh)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 388,
+      "title": "五题矩阵与参数复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import expm, solve_discrete_are",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 390,
+          "delim": "`",
+          "code": "# 答案1：未来费用和当前费用分别求解，禁止混用\r\nF = np.array([.8,.64,.512])\r\nPhi = np.array([[.2,0.,0.],[.16,.2,0.],[.128,.16,.2]])\r\nH = 2*(Phi.T@Phi+.1*np.eye(3))\r\nlinear = 2*Phi.T@F\r\nUf = np.linalg.solve(H,-linear)\r\nW = np.diag([1.,1.,0.])\r\nHcurrent = 2*(Phi.T@W@Phi+.1*np.eye(3))\r\nUcurrent = np.linalg.solve(Hcurrent,-2*Phi.T@W@F)\r\nassert abs(Ucurrent[-1])<1e-12\r\nprint('exercise1_H_f',H,linear)\r\nprint('exercise1_future_U',Uf)\r\nprint('exercise1_current_U',Ucurrent)\r\nshift = np.array([-.3,.2,-.1,0.,0.])\r\nincrement_tail = -.8*.3\r\nabsolute_tail_as_increment = -.8*.3-.1\r\nprint('exercise3_shift_tails',shift,increment_tail,absolute_tail_as_increment)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 407,
+          "delim": "`",
+          "code": "# 答案4/5：变量口径、准确ZOH与单位归一化\r\nprint('exercise4_variables',2*10,3*20+2*10)\r\nv,L,Ts = 20.,2.5,.05\r\nAc = np.array([[0.,v],[0.,0.]])\r\nBc = np.array([[0.],[v/L]])\r\nMd = expm(Ts*np.block([[Ac,Bc],[np.zeros((1,3))]]))\r\nAd,Bd = Md[:2,:2],Md[:2,2:]\r\nassert np.allclose(Ad,[[1.,1.],[0.,1.]])\r\nassert np.allclose(Bd,[[.2],[.4]])\r\nQ = np.diag([1/.5**2,1/.1**2])\r\nR = 1/np.deg2rad(5.)**2\r\nPf = solve_discrete_are(Ad,Bd,Q,np.array([[R]]))\r\nK = np.linalg.solve(np.array([[R]])+Bd.T@Pf@Bd,Bd.T@Pf@Ad)\r\nprint('exercise5_Ad_Bd',Ad,Bd)\r\nprint('exercise5_Q_R',Q,R)\r\nprint('exercise5_candidate_window_distance',15*Ts,v*15*Ts)\r\nprint('exercise5_unconstrained_terminal_P_K',Pf,K)\r\nassert np.max(np.abs(np.linalg.eigvals(Ad-Bd@K)))<1\r\nprint('exercise5_scope','unconstrained local design only; constrained region unverified')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

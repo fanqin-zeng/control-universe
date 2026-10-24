@@ -1,0 +1,90 @@
+{
+  "source": "content/estimation/sensor-fusion.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 85,
+      "title": "同一先验的独立与相关观测",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math\r\n\r\ndef condition(mu,p,H,predicted,z,R):\r\n    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)\r\n    z=np.asarray(z);predicted=np.asarray(predicted)\r\n    K=np.linalg.solve(p*(H@H.T)+R,p*H).T\r\n    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()\r\n    variance=A*A*p+(K@R@K.T).item()\r\n    return mean,variance,K.ravel()\r\n\r\ndef pair(p,r2,rho,z1,z2):\r\n    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])\r\n    return condition(0,p,[1,1],[0,0],[z1,z2],R),R\r\n\r\ndef sequential_cholesky(p,R,z,reverse=False):\r\n    H=np.ones(2);z=np.array(z,dtype=float)\r\n    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]\r\n    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError(\"positive definite R required\")\r\n    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.\r\n    for hi,yi in zip(h,y):\r\n        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)\r\n        p=(1-gain*hi)**2*p+gain*gain\r\n    return mean,p\r\n\r\ndef ci(m1,p1,m2,p2,omega):\r\n    variance=1/(omega/p1+(1-omega)/p2)\r\n    a=variance*omega/p1;b=variance*(1-omega)/p2\r\n    return a*m1+b*m2,variance,a,b\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 115,
+          "delim": "`",
+          "code": "for rho in [0,.5,-.5,.9]:\r\n    (m,p,k),R=pair(4,4,rho,2,3)\r\n    naive=condition(0,4,[1,1],[0,0],[2,3],np.diag([1.,4.]))\r\n    kn=naive[2];actual_naive=(1-kn.sum())**2*4+kn@R@kn\r\n    print(\"same_model_rho_joint_mean_P_K_actualMSE_naive\",rho,m,p,k.tolist(),p,naive[0],naive[1],actual_naive)\r\n    if rho==0:assert np.allclose([m,p],[11/6,2/3],atol=1e-12)\r\n    if rho==.5:assert np.allclose([m,p,actual_naive],[1.6,.8,8/9],atol=1e-12)\r\nprint(\"single_sensor1_mean_P\",1.6,.8,\"sensor2\",1.5,2.)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 124,
+          "delim": "`",
+          "code": "maximum=0.;count=0\r\nfor p0 in [1.,4.]:\r\n    for r2 in [1.,4.]:\r\n        for rho in [-.5,0,.5,.9]:\r\n            for z1 in [0.,2.]:\r\n                for z2 in [2.,3.]:\r\n                    (m,p,k),R=pair(p0,r2,rho,z1,z2)\r\n                    for reverse in [False,True]:\r\n                        sm,sp=sequential_cholesky(p0,R,[z1,z2],reverse)\r\n                        maximum=max(maximum,abs(sm-m),abs(sp-p))\r\n                    count+=1\r\nprint(\"joint_whitened_64_cases_max_difference\",count,maximum)\r\nprint(\"rho_half_conditional_H_reading_noise\",1-1,3-2,4-1)\r\nassert count==64 and maximum<1e-12\r\ntry:sequential_cholesky(4,np.array([[1.,2.],[2.,4.]]),[2,3])\r\nexcept np.linalg.LinAlgError:print(\"singular_R_rejected\")\r\nelse:raise AssertionError(\"singular joint covariance must not be silently treated as invertible\")\r\nprint(\"joint_whitening_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 192,
+      "title": "共享先验、重复数据与协方差交集",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math\r\n\r\ndef condition(mu,p,H,predicted,z,R):\r\n    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)\r\n    z=np.asarray(z);predicted=np.asarray(predicted)\r\n    K=np.linalg.solve(p*(H@H.T)+R,p*H).T\r\n    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()\r\n    variance=A*A*p+(K@R@K.T).item()\r\n    return mean,variance,K.ravel()\r\n\r\ndef pair(p,r2,rho,z1,z2):\r\n    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])\r\n    return condition(0,p,[1,1],[0,0],[z1,z2],R),R\r\n\r\ndef sequential_cholesky(p,R,z,reverse=False):\r\n    H=np.ones(2);z=np.array(z,dtype=float)\r\n    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]\r\n    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError(\"positive definite R required\")\r\n    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.\r\n    for hi,yi in zip(h,y):\r\n        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)\r\n        p=(1-gain*hi)**2*p+gain*gain\r\n    return mean,p\r\n\r\ndef ci(m1,p1,m2,p2,omega):\r\n    variance=1/(omega/p1+(1-omega)/p2)\r\n    a=variance*omega/p1;b=variance*(1-omega)/p2\r\n    return a*m1+b*m2,variance,a,b\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 222,
+          "delim": "`",
+          "code": "m0,p0=0.,4.;m1,p1=1.6,.8;m2,p2=1.5,2.\r\nnaive_p=1/(1/p1+1/p2);naive_m=naive_p*(m1/p1+m2/p2)\r\ncorrect_p=1/(1/p1+1/p2-1/p0);correct_m=correct_p*(m1/p1+m2/p2-m0/p0)\r\ncross=(p1/p0)*(p2/p0)*p0\r\na=naive_p/p1;b=naive_p/p2\r\nactual=a*a*p1+b*b*p2+2*a*b*cross\r\nprint(\"shared_prior_local_cross\",cross)\r\nprint(\"track_naive_mean_P_actualMSE\",naive_m,naive_p,actual)\r\nprint(\"subtract_known_prior_mean_P\",correct_m,correct_p)\r\nassert np.allclose([naive_m,naive_p,actual,correct_m,correct_p],[11/7,4/7,36/49,11/6,2/3],atol=1e-12)\r\nprint(\"duplicate_same_estimate_mean_claimed_actual\",1.6,.4,.8)\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 234,
+          "delim": "`",
+          "code": "worst_slack=0.;tested=0\r\nfor omega in [0,.25,.5,.75,1]:\r\n    m,p,a,b=ci(1.6,.8,1.5,2.,omega)\r\n    worst=(a*np.sqrt(.8)+b*np.sqrt(2.))**2\r\n    print(\"CI_omega_mean_P_worstMSE\",omega,m,p,worst)\r\n    for rho in np.linspace(-1,1,21):\r\n        actual=a*a*.8+b*b*2+2*a*b*rho*np.sqrt(.8*2)\r\n        worst_slack=max(worst_slack,actual-p);tested+=1\r\n        assert actual<=p+1e-12\r\n    dup=ci(1.6,.8,1.6,.8,omega)\r\n    assert np.allclose(dup[:2],[1.6,.8],atol=1e-12)\r\nprint(\"CI_bound_cases_max_violation\",tested,worst_slack)\r\nbest=min((ci(1.6,.8,1.5,2.,w)[1],w) for w in np.linspace(0,1,101))\r\nprint(\"scalar_variance_objective_best_P_omega\",best)\r\nassert np.allclose(best,[.8,1.])\r\nprint(\"shared_information_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 263,
+      "title": "时间坐标与非线性更新的对齐",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math\r\n\r\ndef condition(mu,p,H,predicted,z,R):\r\n    H=np.asarray(H,dtype=float).reshape(-1,1);R=np.asarray(R,dtype=float)\r\n    z=np.asarray(z);predicted=np.asarray(predicted)\r\n    K=np.linalg.solve(p*(H@H.T)+R,p*H).T\r\n    mean=mu+(K@(z-predicted)).item();A=1-(K@H).item()\r\n    variance=A*A*p+(K@R@K.T).item()\r\n    return mean,variance,K.ravel()\r\n\r\ndef pair(p,r2,rho,z1,z2):\r\n    c=rho*np.sqrt(r2);R=np.array([[1,c],[c,r2]])\r\n    return condition(0,p,[1,1],[0,0],[z1,z2],R),R\r\n\r\ndef sequential_cholesky(p,R,z,reverse=False):\r\n    H=np.ones(2);z=np.array(z,dtype=float)\r\n    if reverse:R=R[::-1,::-1];z=z[::-1];H=H[::-1]\r\n    if R[0,0]*R[1,1]-R[0,1]**2<=0:raise np.linalg.LinAlgError(\"positive definite R required\")\r\n    L=np.linalg.cholesky(R);h=np.linalg.solve(L,H);y=np.linalg.solve(L,z);mean=0.\r\n    for hi,yi in zip(h,y):\r\n        gain=p*hi/(1+hi*hi*p);mean+=gain*(yi-hi*mean)\r\n        p=(1-gain*hi)**2*p+gain*gain\r\n    return mean,p\r\n\r\ndef ci(m1,p1,m2,p2,omega):\r\n    variance=1/(omega/p1+(1-omega)/p2)\r\n    a=variance*omega/p1;b=variance*(1-omega)/p2\r\n    return a*m1+b*m2,variance,a,b\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 293,
+          "delim": "`",
+          "code": "def independent_readings(a,b):return condition(0,4,[1,1],[0,0],[a,b],np.eye(2))[:2]\r\nbias=10.;local=-8.;world=local+bias\r\nprint(\"coordinate_offset_local_world\",bias,local,world)\r\nprint(\"frame_wrong_correct_mean_P\",independent_readings(2,local),independent_readings(2,world))\r\ndelay=.5;velocity=2.;old=1.;aligned=old+velocity*delay\r\nprint(\"time_delay_velocity_old_aligned\",delay,velocity,old,aligned)\r\nprint(\"time_wrong_correct_mean_P\",independent_readings(2,old),independent_readings(2,aligned))\r\nassert np.allclose(independent_readings(2,world),[16/9,4/9])\r\nassert np.allclose(independent_readings(2,local),[-8/3,4/9])\r\nassert np.allclose(independent_readings(2,old),[4/3,4/9])\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 304,
+          "delim": "`",
+          "code": "mu,p=2.,.25\r\nfrozen=condition(mu,p,[1,4],[2,4],[3,5],np.eye(2))\r\nm1,p1,_=condition(mu,p,[1],[2],[3],[[1.]])\r\nrelinearized=condition(m1,p1,[2*m1],[m1*m1],[5],[[1.]])\r\nprint(\"nonlinear_same_point_batch_mean_P\",frozen[:2])\r\nprint(\"nonlinear_relinearized_after_first_mean_P\",relinearized[:2])\r\nprint(\"first_linear_update_mean_P\",m1,p1)\r\nassert np.allclose(frozen[:2],[47/21,1/21],atol=1e-12)\r\nassert not np.allclose(frozen[:2],relinearized[:2],atol=1e-6)\r\nprint(\"alignment_nonlinear_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

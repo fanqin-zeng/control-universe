@@ -617,6 +617,38 @@
 | 集总热容 | lumped capacitance | — | CLASSIC-01 | 温度近似均匀的热储存模型 |
 | 基本传播数 | basic reproduction number | — | CLASSIC-01 | SIS例中beta N除以gamma，固定人口与恢复回流假设 |
 | 易感感染易感模型 | susceptible-infected-susceptible、SIS | — | CLASSIC-01 | 恢复后回到易感状态，不含永久免疫 |
+| 自回归外部输入模型 | ARX、autoregressive with exogenous input | — | ID-02 | Ay=Bu+e；噪声通道为1/A，不能误作白输出误差 |
+| 自回归滑动平均外部输入模型 | ARMAX、autoregressive moving average with exogenous input | — | ID-02 | Ay=Bu+Ce；与输入通道共用A |
+| 输出误差模型 | OE、output-error model | — | ID-02 | 此处H=1；不单独拟合有色噪声动态 |
+| Box–Jenkins模型 | BJ、Box-Jenkins model | — | ID-02 | 输入和噪声动态分别参数化，不表示质量排名 |
+| 有限脉冲响应模型 | FIR、finite impulse response model | — | ID-02 | 本课限定输入通道有限项并配白输出噪声 |
+| 单位延迟算子 | unit delay operator | — | ID-02 | q^-1取过去一个样本，不是幅值取倒数 |
+| 创新 | innovation | — | ID-02 | 相对过去可用信息条件均值为零；不等同任意白噪声序列 |
+| 连续导通模式 | continuous conduction mode | CCM | APP-01 | 非同步Buck电感电流全周期为正 |
+| 断续导通模式 | discontinuous conduction mode | DCM | APP-01 | 包含电感电流触零后的第三状态 |
+| 脉宽调制 | pulse width modulation | PWM | APP-01 | 固定周期内用导通时间占比调节 |
+| 降压变换器 | buck converter | Buck | APP-01 | 本课限定理想非同步拓扑 |
+| 逆信息矩阵 | inverse information matrix | — | ID-03 | RLS中的P先定义为R的逆，不自动等于参数协方差 |
+| 遗忘因子 | forgetting factor | — | ID-03 | 本课旧样本和初始化先验均按lambda指数衰减 |
+| 变量含误差 | errors-in-variables | — | ID-03 | 测量误差进入回归量，须另核与方程误差的相关性 |
+| 协方差膨胀 | covariance windup | — | ID-03 | RLS信息不足时的逆信息量增长；不同于积分饱和，不将裸windup作为本项英文键 |
+| 模仿学习 | Imitation Learning | — | 1 门 / 1 次 | RLEARN-02：借助专家示范或反馈学习策略；不等同强化学习。 |
+| 行为克隆 | Behavior Cloning、BC | — | 1 门 / 1 次 | RLEARN-02：监督拟合专家动作；动作损失不等于闭环任务代价。 |
+| 数据集聚合 | Dataset Aggregation、DAgger | — | 1 门 / 1 次 | RLEARN-02：在学习者访问的观测上查询专家并聚合训练；性能界有条件。 |
+| 持续激励 | persistent excitation, PE | 持久激励 | ID-04 | 目录保留持久激励，正文标准译名持续激励；固定窗口统一方向下界 |
+| 数据信息矩阵 | data information matrix | — | ID-04 | 回归外积和，不含先验 |
+| 工具变量 | instrumental variable, IV | — | ID-05 | 与误差正交且与回归量有可解相关矩 |
+| 弱工具变量 | weak instrument | — | ID-05 | 总体相关矩较弱时有限样本可能不稳定 |
+| 估计一致性 | statistical consistency | — | ID-05 | 依概率收敛到真参数，区别多智能体Consensus |
+| 经验传递函数估计 | empirical transfer function estimate, ETFE | — | ID-06 | 已激励频点的DFT输出输入比值 |
+| 平方相干度 | magnitude-squared coherence | — | ID-06 | 互谱模平方除以两路自谱乘积，不是模型正确概率 |
+| 谱泄漏 | spectral leakage | — | ID-06 | 有限记录与窗使频率成分扩展到邻近频点 |
+| Markov参数 | Markov parameter | — | ID-07 | 零初值离散脉冲响应系数，直通项另记 |
+| 子空间辨识 | subspace identification | — | ID-07 | 从结构化数据矩阵提取状态子空间并恢复实现 |
+| 特征系统实现算法 | eigensystem realization algorithm, ERA | — | ID-07 | 由脉冲响应错位Hankel与SVD求状态空间实现 |
+| 非线性自回归外生输入模型 | nonlinear autoregressive with exogenous input, NARX | 非线性ARX | ID-08 | 由输入输出滞后预测下一输出 |
+| 自由滚动 | free-run simulation | 自由仿真 | ID-08 | 只给初值并用自身预测历史递推 |
+| 一步预测 | one-step-ahead prediction | — | ID-08 | 每拍使用已观测真实历史输出 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

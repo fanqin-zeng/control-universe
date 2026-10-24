@@ -52,6 +52,57 @@
 | DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
 | DISCRETE-09 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-09”；02–08已交付，保留01草稿，本课不依赖其未验收内容 | .agent/semester-03/discrete-09/acceptance.md |
 | DISCRETE-10 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-10”；02–09已交付，保留01草稿，本课只依赖已交付先修 | .agent/semester-03/discrete-10/acceptance.md |
+| ID-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-01，rank3；暂缓并行会话与此前未交付课程，本课只依赖已交付离散系统及概率基础 | .agent/semester-03/id-01/acceptance.md |
+| ML-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-01，rank2；其它会话并行设计实现课，保留其检查点；本课只依赖已交付数学基础 | .agent/semester-03/ml-01/acceptance.md |
+| ID-02 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-02，rank3；暂缓其他会话与未交付前课，仅依赖已交付ID-01和差分方程 | .agent/semester-03/id-02/acceptance.md |
+| EST-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-01，rank4；保留其它会话检查点，只依赖已交付观测器、随机过程与离散系统 | .agent/semester-03/est-01/acceptance.md |
+| ROBUST-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-01，rank5；避开并行课程，仅使用已交付先修 | .agent/semester-03/robust-01/acceptance.md |
+| DRIVING-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-01;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-01;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10;EMBODIED-01;EMBODIED-02;EMBODIED-03;EMBODIED-04;EMBODIED-05;EMBODIED-06;EMBODIED-07;EMBODIED-08;EMBODIED-09;EMBODIED-10 | 2026-10-24用户指定继续DRIVING-01，rank14；保留并行课程检查点；只依赖已交付状态空间，安全与回退定义本课局部补足 | .agent/semester-03/driving-01/acceptance.md |
+| RLEARN-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-01;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10 | 2026-10-24用户指定继续RLEARN-01，rank12；保留并行课程，只依赖已交付学习问题和概率基础，局部解释数据接口 | .agent/semester-03/rlearn-01/acceptance.md |
+| MULTI-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12 | 2026-10-24用户明确指定继续MULTI-01，rank9；保留其它会话检查点，仅依赖已交付图论与状态空间 | .agent/semester-03/multi-01/acceptance.md |
+| ML-02 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-02，rank2；保留并行实现课检查点，只依赖已交付ML-01和凸优化 | .agent/semester-03/ml-02/acceptance.md |
+| RL-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08 | 2026-10-24用户指定继续RL-01，rank8；其它会话并行，暂缓未完成前课；仅依赖三门已交付先修 | .agent/semester-03/rl-01/acceptance.md |
+| ROBOT-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08 | 2026-10-24用户指定继续ROBOT-01，rank11；保留并行检查点，仅依赖已交付状态空间，局部解释几何投影和牛顿定律 | .agent/semester-03/robot-01/acceptance.md |
+| MPC-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户指定继续MPC-01，rank6；其它会话并行，保留其检查点；状态可测，不依赖未签发估计课 | .agent/semester-03/mpc-01/acceptance.md |
+| INTEL-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11 | 2026-10-24用户明确指定继续INTEL-01，rank7；保留并行会话检查点，本课仅调用已交付PID/非线性/LQR/Lyapunov概念 | .agent/semester-03/intel-01/acceptance.md |
+| EMBODIED-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-01;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-01;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10 | 2026-10-24用户明确指定继续EMBODIED-01，rank13；避开并行课程与资源，原先修未签发所需定义在本课局部补足 | .agent/semester-03/embodied-01/acceptance.md |
+| SAFE-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09 | 2026-10-24用户指定继续SAFE-01，rank10；保留其它会话检查点，只依赖已交付稳定性与Lyapunov | .agent/semester-03/safe-01/acceptance.md |
+| APP-01 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-01;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-01;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-01;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-01;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-01;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-01;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-01;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10;EMBODIED-01;EMBODIED-02;EMBODIED-03;EMBODIED-04;EMBODIED-05;EMBODIED-06;EMBODIED-07;EMBODIED-08;EMBODIED-09;EMBODIED-10;DRIVING-01;DRIVING-02;DRIVING-03;DRIVING-04;DRIVING-05;DRIVING-06;DRIVING-07;DRIVING-08;DRIVING-09;DRIVING-10;DRIVING-11 | 2026-10-24用户指定继续APP-01，rank15；保留并行检查点，连续PI局部定义，不依赖未交付数字实现 | .agent/semester-03/app-01/acceptance.md |
+| EST-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-02，rank4；保留并行检查点，仅依赖已交付EST-01、概率基础与凸优化 | .agent/semester-03/est-02/acceptance.md |
+| ID-03 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-03，rank3；保留并行会话，仅依赖已交付ID-02、矩阵分解及概率基础 | .agent/semester-03/id-03/acceptance.md |
+| DRIVING-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10;EMBODIED-01;EMBODIED-02;EMBODIED-03;EMBODIED-04;EMBODIED-05;EMBODIED-06;EMBODIED-07;EMBODIED-08;EMBODIED-09;EMBODIED-10;MPC-01 | 2026-10-24用户指定继续DRIVING-02，rank14；保留并行检查点，只依赖已交付驾驶系统、微分方程与状态空间 | .agent/semester-03/driving-02/acceptance.md |
+| ML-03 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-03，rank2；保留并行实现课检查点，仅依赖已交付ML-02与多元微积分 | .agent/semester-03/ml-03/acceptance.md |
+| ROBUST-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户明确指定继续ROBUST-02，rank5；保留并行课程，仅依赖已交付ROBUST-01与矩阵基础 | .agent/semester-03/robust-02/acceptance.md |
+| EMBODIED-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10 | 2026-10-24用户明确指定继续EMBODIED-02，rank13；先修表征学习未交付，编码器/表征在本课局部定义，不补写别课 | .agent/semester-03/embodied-02/acceptance.md |
+| MPC-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-02，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-02/acceptance.md |
+| RLEARN-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10 | 2026-10-24用户明确指定继续RLEARN-02，rank12；保留并行课程，只依赖已交付机器人数据与监督学习，以闭式拟合替代未交付自动微分 | .agent/semester-03/rlearn-02/acceptance.md |
+| RL-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08 | 2026-10-24用户明确指定继续RL-02，rank8；保留并行前课，先修RL-01与变分法/动态规划已交付 | .agent/semester-03/rl-02/acceptance.md |
+| INTEL-02 | IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11 | 2026-10-24用户明确指定继续INTEL-02，rank7；保留并行课程，仅依赖已交付INTEL-01及PID/非线性基础 | .agent/semester-03/intel-02/acceptance.md |
+| ID-04 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-04，rank3；保留并行课程，仅依赖已交付ID-03和矩阵分解 | .agent/semester-03/id-04/acceptance.md |
+| EST-03 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-03”，rank4；EST-01/02已交付，仅重构本课 | .agent/semester-03/est-03/acceptance.md |
+| MPC-03 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-03，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-03/acceptance.md |
+| ML-04 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-04，rank2；保留并行实现课检查点，仅依赖已交付ML-03与数值方法 | .agent/semester-03/ml-04/acceptance.md |
+| ROBUST-03 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户明确指定继续ROBUST-03，rank5；保留并行课程，只用已交付ROBUST-01/02、Lyapunov与Routh基础 | .agent/semester-03/robust-03/acceptance.md |
+| EST-04 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-04”，rank4；先修EST-03已交付，仅新写本课 | .agent/semester-03/est-04/acceptance.md |
+| ML-05 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-05，rank2；保留并行课程，只依赖已交付ML-04与随机过程 | .agent/semester-03/ml-05/acceptance.md |
+| MPC-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-05;EST-06;EST-07;EST-08;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-04，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-04/acceptance.md |
+| ID-05 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-05，rank3；保留并行课程，仅依赖已交付ID-04、传递函数、随机过程和PID | .agent/semester-03/id-05/acceptance.md |
+| ML-06 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-06，rank2；ML-05已交付，保留并行实现课，仅依赖已交付时序模型 | .agent/semester-03/ml-06/acceptance.md |
+| EST-05 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确要求继续EST-05，rank4；其它会话并行，保留检查点；仅依赖已交付KF/概率基础 | .agent/semester-03/est-05/acceptance.md |
+| ROBUST-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-04，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-04/acceptance.md |
+| MPC-05 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-05，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-05/acceptance.md |
+| ID-06 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-06，rank3；保留并行课程，先修模型结构/频域分析/随机过程/频域校正已交付 | .agent/semester-03/id-06/acceptance.md |
+| ML-07 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-07，rank2；保留并行实现课，只依赖已交付ML-04/06 | .agent/semester-03/ml-07/acceptance.md |
+| ID-07 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-07，rank3；保留并行课程，先修最小二乘/可控可观/矩阵分解已交付 | .agent/semester-03/id-07/acceptance.md |
+| MPC-06 | IMPL-08;IMPL-09;IMPL-10;ML-08;ML-09;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-06，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-06/acceptance.md |
+| EST-06 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-06，rank4；其它会话并行，保留其检查点，仅依赖已交付先修 | .agent/semester-03/est-06/acceptance.md |
+| ROBUST-05 | IMPL-09;IMPL-10;ML-08;ML-09;ID-08;ID-09;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-05，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-05/acceptance.md |
+| ID-08 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-08，rank3；保留并行课程，先修持续激励/自动微分/时序模型/非线性系统已交付 | .agent/semester-03/id-08/acceptance.md |
+| EST-07 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-07，rank4；其它会话并行，保留检查点，仅依赖已交付KF/EKF | .agent/semester-03/est-07/acceptance.md |
+| MPC-07 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09;EST-08;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-07，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-07/acceptance.md |
+| ML-08 | IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-08，rank2；保留并行实现课，仅依赖已交付ML-04/随机过程/ODE | .agent/semester-03/ml-08/acceptance.md |
+| ROBUST-06 | IMPL-10;ML-09;ID-09;EST-08 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
+| EST-08 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09 | 2026-10-24用户明确指定继续EST-08，rank4；保留并行课程，只依赖已交付EST-06/07与KF基础 | .agent/semester-03/est-08/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -756,3 +807,192 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### DISCRETE-01 恢复交付（2026-10-19）
 
 采样与量化旧稿按重构专用Phase1–4恢复完成。原九H2、十九H3、三实验主题、四题全部子问有保留映射；纠正混叠相位、ZOH归一化、带宽、有限ADC、离线/反馈量化、滤波衰减与不可实现PID。新增一Explorer、两SVG，六Notebook七cell。独立高精度解析参考、真实TS210配置、严格内核与Pyodide、普通/Pages/375px验收证据见.agent/semester-03/discrete-01/acceptance.md；真实提交回执与发布结果见全局checklist。历史02–10顺序例外保留为事实，不再有01生产缺口。仅本课；W14/W15及用户批阅、本地端口不随课修改。
+
+### ROBUST-01 鲁棒性（2026-10-24）
+
+按用户指定rank5隔离完成重构Phase1–4：保留10H2、四题全部子问与三组实验用途，四Notebook四cell原生/Pyodide实跑，共振交互真实TS对独立Python九配置，旧锚点、375px与本地Pages基路径通过。纠范数/网格、裕度单位、最近距离圆、小增益前提、LQR条件及题解，PY-018关闭。证据.agent/semester-03/robust-01/acceptance.md，master真实回执见全局checklist；不发布Pages，不续写下一课。
+
+
+### MULTI-01执行回执（2026-10-24）
+
+多智能体系统由空占位按新写Phase1–4完成：三辆独立车道小车的速度协调串联局部对象、接收信息图、局部反馈与团队目标，区分一致/跟踪/编队，保留断图、单向根节点、临界与超界采样反例。八H2、四题四答、一个Explorer与SVG、两Notebook四cell；135组真TS对独立谱解/Jordan闭式/矩阵幂，严格内核与Pyodide、普通与Pages原始输出、两种页面375px及固定轴全部通过。rank9独立副本/8199/8999/8499；完整证据.agent/semester-03/multi-01/acceptance.md。仅本课，保留其它会话与用户批阅；不发布Pages、不续写MULTI-02。真实master回执 commit:9d920bbaed693d869f943701acc8658c4d9914b6；最终冻结投影完整check及学期校验退出0，证据见验收记录。
+
+### SAFE-01 控制安全交付
+
+2026-10-24按用户rank10指定完成新写Phase1–4。仓库小车停车引出稳定与安全、约束/可行行动、延迟/误差/制动预算、监测回退及安全论证边界；9H2、四题四答、1Explorer/1SVG、2Notebook3cell。192真实TS配置对独立ODE、矩阵指数/Fraction、严格内核/Pyodide、实际Pages运行和375px验收通过。证据.agent/semester-03/safe-01/acceptance.md；仅本课，不依赖并行草稿、不发布Pages；真实master提交见checklist。W09原生IAB连接边界及其它会话检查点保留，中文仅生产交接。
+
+### DRIVING-01 本轮执行记录（2026-10-24）
+
+自动驾驶系统从空占位按新写Phase1–4完成。直路障碍停车问题引出运行范围、功能闭环、消息合同、延迟预算、监控与回退及闭环证据；十H2、四题四答、两Notebook四cell、一Explorer/SVG。实际TS六配置对精确Fraction速度积分，7098固定轴组合；原生内核、生产Pyodide、普通/Pages本地页面与375px验收通过，证据.agent/semester-03/driving-01/acceptance.md；真实master提交后登记回执。用户指定本课及rank14，独立登记顺序例外；移除对并行未签发安全课的硬依赖，局部定义补足。无整车试验或认证声明，不发布Pages、不生产下一课；其它会话及用户修改保留。
+
+### RL-01执行回执（2026-10-24）
+
+强化学习问题从空占位按新写Phase1–4完成，送餐机器人贯穿状态/动作/联合核/回报/策略与评估，九H2、两Notebook三cell、双图Explorer/SVG、四题四答。真实TS61206配置对独立Fraction概率树，严格原生内核与最终Pyodide、Pages基路径页面实跑和375px验收见.agent/semester-03/rl-01/acceptance.md。以rank8隔离副本避开共享.next及他课端口，提交只含本课。已知模型精确计算不冒充训练；错误奖励循环另设模型，含充电落败及持平工况。顺序例外单独登记，仅本课；W09原生UI连接债务、用户批阅与其它课程保持；不发布Pages、不生产RL-02。真实master hash在全局checklist登记。
+
+
+### ROBOT-01 执行回执（2026-10-24）
+
+机器人系统从空占位按新写Phase 1–4完成：固定底座两杆投影与水平滑台贯穿构型/任务量/状态/测量/输入，止挡给出模型失效边界。十H2、两Notebook三cell、一Explorer、一SVG、四题四答；实际TS1309组132209点对独立Fraction与状态转移，严格内核、Pyodide、原生/Pages基路径及375px通过。证据.agent/semester-03/robot-01/acceptance.md；真实master提交见全局checklist。用户指定顺序例外只放行本课，保留其它会话和用户批阅，不发布Pages、不生产下一课。
+
+
+### INTEL-01 执行回执（2026-10-24）
+
+模糊控制按重构Phase1–4保留12H2、6题及9原实验，新增默认值/条件反例实验。纠正归一化、FAMM行列、MOM、积分与比较边界；868真实TS配置及非对称两输入点独立核。严格原生33cell与Pyodide10实验、生产/375px/Pages本地验收见.agent/semester-03/intel-01/acceptance.md。真实master提交回执仅见全局checklist；用户批阅、其它并行课程、共享端口与Pages发布排除本课。
+
+
+### EMBODIED-01 本轮执行记录（2026-10-24）
+
+用户指定rank13，具身智能系统从空占位按新写Phase1–4完成。杯子任务引出身体/环境/观测/策略/动作接口与多率闭环；10H2、2Notebook2cell、1Explorer与SVG、四题四答。实际TS750配置与Fraction独立实现135750量核对，保留H5恰好到位反例；原生内核、固定Pyodide、真实锚点与窄屏、生产构建验收见.agent/semester-03/embodied-01/acceptance.md。作者原始资料与本课简化模型分开，未训练或部署完整模型。共享端口脚本、用户批阅与其它课程修改保留；只提交本课，未发布Pages，不生产下一课。
+
+### IMPL-02 数字PID本轮交付
+
+按重构SKILL Phase1–4完成，仅本课。八主题/四题用途、36旧ID保留；修正位置/增量状态、BE/Tustin导数、c=0、反算时序/单位、分离与无扰历史、ZN规则、不可达和级联题解。承接离散化方法工程材料但不删已交付来源。真实TS750配置对Decimal、原始四Notebook八cell对独立卷积/解析、111行对账；严格内核/Pyodide/两实际页面248量及375px、静态Pages构建通过，详见.agent/semester-03/impl-02/acceptance.md。fix-074；并行会话元数据与独占资源保留，实际master回执见全局checklist。本次不发布Pages，不开始IMPL-03。
+
+
+### ML-03 本轮执行记录（2026-10-24）
+
+神经网络基础从空占位按新写Phase1–4交付：两台水泵XOR指示需求贯穿表达问题，以1→2→1的可手算ReLU构造讲层/偏置/激活/前向，再给XOR不等式证明、域外负输出及失活梯度边界。十H2、两Notebook四cell、四题四答、一Explorer/SVG；真实TS4080前向/240损失/25二维对独立解析与高精度参考，原始严格内核、Pyodide、最终课程页及375px通过。证据.agent/semester-03/ml-03/acceptance.md，真实master提交后见全局checklist。rank2独立8196/8992与Git索引，保留其它会话与共享暂存；用户指定的本课顺序例外独立登记，不继承ML-02授权。W09/W16/QA01保留，不发布Pages、不生产ML-04。
+
+### DRIVING-02 本轮执行记录（2026-10-24）
+
+车辆动力学从空占位按新写Phase1–4完成。后轴无侧滑几何→CG侧偏力/力矩→横向状态空间→总附着与低速边界；十H2、四题四答、两Notebook四cell、一Explorer/SVG。真实TS六工况2412轨迹量对独立轴力/力矩矩阵指数，3213控件状态；严格内核、生产Pyodide、普通/Pages本地及375px全部通过。证据.agent/semester-03/driving-02/acceptance.md，真实master回执另补。只依赖已交付驾驶系统、微分方程和状态空间，用户指定rank14换课的未完成前课单独登记；不代签并行课程。无实车或算法精度比较，不发布Pages、不生产DRIVING-03。
+
+### IMPL-03 PID工程整定本轮交付
+
+新写单课；阶跃模型、SIMC PI与约束下四工况、现场交接。讨论和真实验收见 `.agent/semester-03/impl-03/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### EMBODIED-02 本轮执行记录（2026-10-24）
+
+用户指定rank13；多模态感知按新写Phase1–4完成。夹爪遮挡杯子引出视觉/本体/触觉互补、时间/坐标/掩码合同、标量融合与学习表征；10H2、2Notebook2cell、1Explorer和SVG、4题4答。实际TS600配置与独立Fraction协方差计算3450量一致，保留迟到/相关/缺失反例；干净内核、固定Pyodide、真实DOM/窄屏及生产构建证据见.agent/semester-03/embodied-02/acceptance.md。先修表征学习未交付，所需概念本课局部定义，不生产别课；未训练真实模型或发布Pages。
+
+### MPC-02 学期3交付（2026-10-24）
+
+预测模型按重构Phase1–4完成，保留十H2、全部旧标题ID、三类模型/辨识/失配与五题目标。纠正阶跃和脉冲系数混用、增广可观测条件、CARIMA延迟/递推、FOPTD判定、ZOH及无条件鲁棒结论。新增Explorer，两Notebook六cell，440组实际TS对独立Fraction及连续状态矩阵指数；严格内核、Pyodide、普通与Pages本地页面实跑及375px通过。证据.agent/semester-03/mpc-02/acceptance.md；真实master回执见全局checklist。rank6隔离端口/缓存/索引，保留其它会话及用户修改；本课顺序例外独立登记，不发布Pages、不生产MPC-03。
+
+### RL-02执行回执（2026-10-24）
+
+价值函数与贝尔曼方程从空占位按新写Phase1–4完成；沿用一次送餐解释V/Q，另设循环模型，十H2、双图Explorer与SVG、两Notebook四cell、四题四答。线性系统/矩阵幂/有限时域LP独立核真实TS，严格内核与最终Pyodide及Pages/375px验收见.agent/semester-03/rl-02/acceptance.md。残差按返回向量重算，收缩条件与gamma=1边界清楚；已知模型规划不冒充训练，不比较不同任务回报大小。rank8隔离副本/独立暂存保留并行修改；顺序例外单独登记，仅本课，不发布Pages、不生产RL-03，真实hash见全局checklist。
+
+<!-- EST-03-RECEIPT-BEGIN -->
+### EST-03 学期3交付（2026-10-24）
+
+卡尔曼滤波按重构Phase1—4完成，保留原12H2、十题全部子问及三条Notebook教学目的。纠正噪声采样/单位、Q-R对偶与稳态条件、LQG裕度、退化ARE与工程题欠定；独立复算确认题2/10原极点舍入可接受，未虚报错误。3Notebook6cell、解析噪声失配Explorer与SVG，真实TS15配置1515点对ARE/Lyapunov/ODE及消元/迭代独立核，严格内核和Pyodide、普通与完整build:pages本地页面通过。rank4使用独立副本/索引，18214冲突保留原进程改18544，不碰共享服务与暂存；证据.agent/semester-03/est-03/acceptance.md，真实master回执见全局checklist，不发布Pages、不生产EST-04。
+<!-- EST-03-RECEIPT-END -->
+
+### IMPL-04 控制器部署本轮交付
+
+新写单课；离散系数与状态、有限字长、真实时序与部署验收。讨论和真实验收见 `.agent/semester-03/impl-04/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### IMPL-04 样式复验补正
+
+隔离快照补齐实际postcss.config.mjs，两种生产构建及正确CSS下Pages/窄屏/浏览器Python已复验。数值源码不变；历史预览配置完整性仅登记QA02待核，见`.agent/semester-03/impl-04/css-isolation-audit.md`。
+
+
+### ML-04 本轮执行记录（2026-10-24）
+
+自动微分与训练从空占位按新写Phase1–4完成：温升预测误差引出计算图/共享边累加、最小反向AD、真实tanh网络全批更新、验证检查点与三种停止原因，再讲小批量计数和推理接口。十H2、两Notebook四cell、四题四答、一Explorer/SVG。真实TS120配置/40梯度点/5028实际更新对独立复步，保留两自主不稳定漂移；原始native/Pyodide/最终静态页面396量、两种构建与375px通过。手机长行内参数已修为逐项换行，证据.agent/semester-03/ml-04/acceptance.md，实际master回执提交后见checklist。rank2独立8212/8992与Git索引，保留并行会话与正常索引；本课独立顺序例外不沿用ML-03授权，W09/W16/QA01保留，不发布Pages、不生产ML-05。
+
+### MPC-03 学期3交付（2026-10-24）
+
+滚动优化按重构Phase1–4完成，保留11H2、全部旧标题ID、原20步实验主题及五题全部子问。统一输入增量与累计输入、当前/未来费用，纠正有限时域末输入/临界极点、终端可行性、尾部反馈、QP/热启动/显式实时承诺及自行车模型。新增Explorer/SVG，三Notebook六cell；160组实际TS对独立Fraction，20QP对独立BVLS及五题解析核。严格内核、Pyodide、普通/Pages本地页面与375px验收证据.agent/semester-03/mpc-03/acceptance.md；真实master回执见全局checklist。rank6改用空闲18696/9016/18796/18896，隔离缓存与索引，保留并行/用户修改；本课顺序例外单独登记，不发布Pages、不生产MPC-04。
+
+<!-- EST-04-RECEIPT-BEGIN -->
+### EST-04 学期3交付（2026-10-24）
+
+扩展卡尔曼滤波从空占位按新写Phase1—4完成，十H2、四题所有子问、2Notebook4cell、后验Explorer及SVG。非线性函数与误差Jacobian分工、Joseph近似含义、平方测量零点/正负歧义、雷达角度与稳定性条件清楚；72组真实TS/17352曲线点对无穷自适应积分，含线性持平与双峰失败例。严格内核、Pyodide、普通与完整build:pages实页/375px均通过，最终源码指纹绑定。rank4独立副本/端口/私有索引保留其它课程与暂存，证据.agent/semester-03/est-04/acceptance.md；真实master回执见全局checklist，不发布Pages、不生产EST-05。
+<!-- EST-04-RECEIPT-END -->
+
+
+### ML-05 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写时序模型；单课讨论、288配置独立闭式对账、严格内核及实际静态浏览器已执行。独立端口8214，完整archive隔离，保留其它在制课程。完整命令与交付回执见 .agent/semester-03/ml-05/acceptance.md；未发布Pages。
+
+### IMPL-05 嵌入式控制本轮交付
+
+新写单课；ADC端点标定、PWM时隙、闭环量化与样本交接。讨论和真实验收见 `.agent/semester-03/impl-05/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ML-06 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独立Decimal对账、原始严格kernel/Pyodide、真实静态页面与375px、两种构建已执行。仅给定QKV算子，不声称完整Transformer训练或性能排名；独立预览8216，不发布Pages。证据.agent/semester-03/ml-06/acceptance.md，真实master回执提交后登记。
+
+### MPC-04 学期3交付（2026-10-24）
+
+约束处理按重构Phase1–4完成，保留12H2、全部旧标题ID、四类约束/软硬/KKT/可行性/优先级/原40步主题及五题全部目标。纠正物理界软化、有限二次罚精确性、下界法向与活跃零乘子、14行计数、公共松弛5、层级恢复和原实验维度/输出约束。新增Explorer/SVG，三Notebook六cell；952组实际TS对独立LP、目标导数及强对偶证书，40QP对独立矩阵幂/对偶证书。严格内核、Pyodide、普通/Pages本地页面及375px验收见.agent/semester-03/mpc-04/acceptance.md；真实master回执见全局checklist。rank6隔离19096/9036/19196/19296/缓存/索引，保留并行与用户修改；本轮顺序例外独立登记，不发布Pages、不生产MPC-05。
+
+<!-- EST-05-RECEIPT-BEGIN -->
+### EST-05 学期3交付（2026-10-24）
+
+无迹卡尔曼滤波从空占位按新写Phase1—4完成：10H2/四题全部子问、2Notebook4cell、UnscentedKalmanExplorer、sigma点SVG。两套权重、Cholesky列方向、预测后重取点含Q、交叉协方差与Gaussian近似边界清楚；保留默认方差落败、线性持平、零点双峰失败、三次/二维乘积反例。72组真实TS/17352点对独立解析矩与无穷quad最大差1.563194e-13；严格内核、Pyodide、普通/完整build:pages两实页及375px通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-05/acceptance.md；真实master回执见checklist。不发布Pages、不生产EST-06。
+<!-- EST-05-RECEIPT-END -->
+
+
+### ROBUST-04 本期交付记录（2026-10-24）
+
+鲁棒性能按重构Phase1–4执行，保留10H2、全部历史标题ID、原四题及子问、原两个Notebook四cell用途；完整精确LFT/可行D界替代对角伪μ上界，修正NP/RP、性能块维数、权重/接口、理想PID和无来源综合数据。三Notebook五cell、双图Explorer与SVG，实际TS/独立模型及符号复核、严格原生内核和Pyodide、两构建与375px验收见.agent/semester-03/robust-04/acceptance.md。明确固定滤波PID在当前权重下失败，上界/网格/实际反例分开。rank5使用独立端口/缓存/索引，只提交本课，不发布Pages、不生产ROBUST-05；真实master hash在全局checklist登记。
+
+### MPC-05 学期3交付（2026-10-24）
+
+递归可行性与稳定性从空占位按新写Phase1–4完成：有解陷阱→终端三条件→移位可行→值函数下降与上下界，十H2、四题四答、两Notebook四cell、Explorer/SVG。实际TS3536配置对独立LP/直接目标及对偶证书，20名义QP另用复步梯度核；严格内核/生产Pyodide/普通与Pages本地/375px验收见.agent/semester-03/mpc-05/acceptance.md。名义证明与失配、可行次优/超时边界分开，不把样本当稳态或真实安全认证。rank6隔离19496/9056/19596/19696与独立Git索引，保留其它会话；只交付本课，不发布Pages、不生产MPC-06，真实hash见全局checklist。
+
+### IMPL-06 实时控制本轮交付
+
+重构单课；保留九H2/五题，修正调度判据、时序与实现边界。讨论和真实验收见 `.agent/semester-03/impl-06/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ML-07 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写表征学习；PCA受限重构、冻结探针/七方向验证选择、增强/坍塌目标与标定失败边界，未训练完整SimCLR。18配置/7795量独立NumPy/Decimal对账，严格kernel/Pyodide、最终实页/375px、两种构建已执行；独立预览8232，保留并行课程，不发布Pages。完整证据.agent/semester-03/ml-07/acceptance.md，真实master回执另登记。
+
+### IMPL-07 网络控制本轮交付
+
+新写单课；时延、丢包、乱序与信息年龄。讨论和真实验收见 `.agent/semester-03/impl-07/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### MPC-06 学期3交付（2026-10-24）
+
+广义预测控制按重构Phase1–4完成，保留16H2/64旧H2-H3/73旧ID、五题全部子问与原E/F/80拍/60拍五权重主题。统一有限递推/总离散延迟/阶跃系数与历史自由响应，纠正C噪声方向、MV方差、题3矩阵与GMV/LQ/PI/稳定边界，替换错误旧图为真SVG。1444组实际TS对独立状态空间延迟链/QR、32恒等式对Fraction长除法、380QP独立复算；严格内核3Notebook6cell与生产Pyodide、普通/Pages本地及375px见.agent/semester-03/mpc-06/acceptance.md，S04本课债务已实测清除。rank6隔离19896/9076/19996/20096与私有索引，保留并行修改；仅本课，不发布Pages、不生产MPC-07。真实hash见全局checklist。
+
+<!-- EST-06-RECEIPT-BEGIN -->
+### EST-06 学期3交付（2026-10-24）
+
+粒子滤波从空占位按新写Phase1—4完成：10H2/四题全部子问、3Notebook6cell、ParticleFilterExplorer与纵向SVG。一般重要性权重、bootstrap逐拍更新、按需系统重采样、ESS与祖先丢失、log权重和支持覆盖完整；四点离散先验与Gaussian采样严格分开。114真实TS组合对独立SciPy/quad/CDF，90单拍与30×20拍多种子保留失败，FFT参考另对直接转移矩阵核；严格内核、Pyodide、两构建/实页/375px通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-06/acceptance.md；真实master回执见checklist。不发布Pages，不生产EST-07。
+<!-- EST-06-RECEIPT-END -->
+
+
+### ROBUST-05 本期交付记录（2026-10-24）
+
+H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题子问与原三Notebook四cell用途。纠正内部稳定/堆叠目标、权重、DGKF/LMI条件、反陷波失稳、恒100权重与理想PD边界；新增可实现低通候选，保留低带宽代价及9/11rad/s失配超标。四Notebook五cell、五参数双图Explorer/SVG；实际TS270配置/1620频点、独立控制模型及完整驻点/符号复核，严格内核/Pyodide、双构建与375px证据见.agent/semester-03/robust-05/acceptance.md。未运行通用H∞综合，不冒称最优或全集鲁棒。rank5独立端口/缓存/索引，保留并行工作；仅本课，不发布Pages、不生产ROBUST-06。真实master hash见全局checklist。
+
+### IMPL-08 工业通信本轮交付
+
+新写单课；协议分层、CRC解码与轮询预算。讨论和真实验收见 `.agent/semester-03/impl-08/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+<!-- EST-07-RECEIPT-BEGIN -->
+### EST-07 学期3交付（2026-10-24）
+
+多传感器融合从空占位按Phase1—4新写完成：10H2、四题及全部子问、3Notebook6cell、SensorFusionExplorer与纵向SVG。独立信息相加、相关噪声白化、共享先验/重复数据、未知相关CI与时间/坐标/非线性线性化边界；64配置对独立矩阵/Joseph与密度，CI105边界保留失败与持平。严格内核、Pyodide、两构建/实页/375px均通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-07/acceptance.md；实际master回执见checklist。未发布Pages，不生产EST-08。
+<!-- EST-07-RECEIPT-END -->
+
+### ML-08 本轮执行记录（2026-10-24）
+
+扩散与流匹配从空占位按新写Phase1–4完成。包装机整批重量问题贯穿加噪/噪声预测、条件均值与后验、独立端点CFM、解析高斯速度/输运及Euler失败；九H2、双Notebook四cell、四题四答、一Explorer/SVG。实际TS900配置102600量对独立60位协方差与仿射矩阵，原生/最终Pyodide/Pages页面2444量和15状态195读数、双构建及375px通过，证据.agent/semester-03/ml-08/acceptance.md。明确已知分布oracle未训练图像网络，不作DDPM/FM性能比较。rank2隔离8234/8992与私有索引，保留并行/用户修改；本课顺序例外独立登记，不发布Pages、不生产ML-09，真实master回执提交后登记。
+
+### MPC-07 学期3交付（2026-10-24）
+
+显式预测控制从空占位按新写Phase1–4完成：参数QP/KKT→五临界区域→分段仿射律→边界/退化/部署与稳定条件；十H2、四题四答、两Notebook四cell、Explorer/SVG。实际TS5098参数对独立原QP数值求解及完整有理区域证书，共享边界/域外/错误容差/模型失配均核。严格内核、生产Pyodide、普通与Pages本地/375px验收见.agent/semester-03/mpc-07/acceptance.md。rank6隔离20296/9096/20396/20496与独立Git索引，保留其它会话；只交付本课，不发布Pages、不生产MPC-08，真实hash见全局checklist。
+
+### IMPL-09 半实物仿真本轮交付
+
+新写单课；验证层次、虚拟时序与HIL证据边界。讨论和真实验收见 `.agent/semester-03/impl-09/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ROBUST-06 本期交付记录（2026-10-24）
+
+混合灵敏度按Phase1–4重构，九H2/全部标题/四题全部子问/原二Notebook四cell用途保留。修正Bode条件、P维度、权重接口/包络、DGKF/LMI前提；诊断原两控制器失稳，补proper名义族候选和同预算三权重网格、9/10/11失配含9失稳。三Notebook五cell、四参数双图Explorer/SVG，严格内核与Pyodide、实际TS/独立复算、双构建/375px/锚点证据见.agent/semester-03/robust-06/acceptance.md。未运行Slycot/MATLAB通用综合、不冒称最优。rank5独立资源，仅本课，不发布Pages，不生产ROBUST-07；真实master hash见checklist。
+
+<!-- EST-08-RECEIPT-BEGIN -->
+### EST-08 学期3交付（2026-10-24）
+
+状态估计案例从空占位按Phase1—4新写：10H2/四题全子问、3Notebook6cell、EstimationCaseExplorer/PCG64输入/SVG；二维小车共同预测/双路更新/缺测/创新门限/统计与部署边界。默认融合落败、三工况持平/改善与极端噪声误拒边界保留；378配置4536拍对独立信息形式、360多种子统计、54UI配置×12时刻全实页读数。严格内核/Pyodide/普通与官方Pages构建及实页/375px通过。rank4独立资源与私有索引保留并行修改，证据.agent/semester-03/est-08/acceptance.md；真实master回执见checklist。不发布Pages，不生产其它课。
+<!-- EST-08-RECEIPT-END -->

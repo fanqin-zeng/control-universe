@@ -1,0 +1,82 @@
+{
+  "source": "content/robust/robust-performance.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 152,
+      "title": "完整LFT：不要把对角代理叫作μ上界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nfrom scipy.optimize import minimize\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nKp,Ki,Kd,wf=5.,2.,.5,20.\r\ndef kernel(s):\r\n    return Kp+Ki/s+Kd*s/(1+s/wf)\r\ndef weight(s,A=.02,M=1.5,wb=.8):\r\n    return (s/M+wb)/(s+A*wb)\r\ndef responses(w,m=1.,k=1.):\r\n    s=1j*np.asarray(w);D=m*s*s+.2*s+k;K=kernel(s)\r\n    S=D/(D+K);T=K/(D+K)\r\n    return S,T,K*S\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 170,
+          "delim": "`",
+          "code": "# Complete exact normalized LFT: v=diag(dm,dk) z_delta\r\nw_mu=np.logspace(-3,2,200);matrices=[];d_logs=[];upper=[];diagonal_proxy=[]\r\nfor w in w_mu:\r\n    s=1j*w;K=kernel(s);h=1/(s*s+.2*s+1+K);W=weight(s)\r\n    M=np.array([[-.3*s*s*h,-.3*s*s*h,s*s*h*K],[-.3*h,-.3*h,h*K],[.3*W*h,.3*W*h,W*(1-h*K)]])\r\n    def bound(x):\r\n        d=np.exp(np.r_[x,0.]);return np.linalg.svd(d[:,None]*M/d[None,:],compute_uv=False)[0]\r\n    fit=minimize(bound,[0.,0.],method='Nelder-Mead',options={'maxiter':160,'xatol':1e-7,'fatol':1e-9})\r\n    x=fit.x if bound(fit.x)<bound([0.,0.]) else np.zeros(2)\r\n    matrices.append(M);d_logs.append(x);upper.append(bound(x));diagonal_proxy.append(max(abs(np.diag(M))))\r\nmatrices=np.array(matrices);upper=np.array(upper);diagonal_proxy=np.array(diagonal_proxy)\r\nlft_error=0.\r\nfor dm in [-1.,0.,1.]:\r\n    for dk in [-1.,0.,1.]:\r\n        Delta=np.diag([dm,dk])\r\n        actual=weight(1j*w_mu)*responses(w_mu,1+.3*dm,1+.3*dk)[0]\r\n        closed=np.array([M[2,2]+M[2,:2]@Delta@np.linalg.solve(np.eye(2)-M[:2,:2]@Delta,M[:2,2]) for M in matrices])\r\n        lft_error=max(lft_error,float(np.max(abs(closed-actual))))\r\nassert lft_error<1e-10\r\nj=int(np.argmax(upper))\r\nprint('D_upper_grid_peak %.9f at %.9f rad/s; feasible scaling, not exact real mu or all-frequency certificate'%(upper[j],w_mu[j]))\r\nprint('diagonal_proxy_grid_peak %.9f; NOT a valid upper bound'%max(diagonal_proxy))\r\nprint('LFT_9_parameter_closures_max_error',lft_error)\r\n# Coupling alone can invalidate max(diag): det(I-M Delta)=0 at Delta=I\r\nbad=np.array([[0.,1.],[1.,0.]])\r\nprint('zero_diagonal_counterexample proxy=',max(abs(np.diag(bad))),'actual_mu=1, det=',np.linalg.det(np.eye(2)-bad))\r\nplt.figure(figsize=(7,3));plt.semilogx(w_mu,upper,label='Complete feasible-D upper bound');plt.semilogx(w_mu,diagonal_proxy,'--',label='Invalid diagonal proxy');plt.axhline(1,color='black',ls=':');plt.xlabel('Frequency (rad/s)');plt.ylabel('Dimensionless');plt.grid(True);plt.legend();plt.tight_layout();plt.show()\r\nprint('lft_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 363,
+      "title": "固定滤波PID：标称、500个样本与参数网格",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nfrom scipy.optimize import minimize\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nKp,Ki,Kd,wf=5.,2.,.5,20.\r\ndef kernel(s):\r\n    return Kp+Ki/s+Kd*s/(1+s/wf)\r\ndef weight(s,A=.02,M=1.5,wb=.8):\r\n    return (s/M+wb)/(s+A*wb)\r\ndef responses(w,m=1.,k=1.):\r\n    s=1j*np.asarray(w);D=m*s*s+.2*s+k;K=kernel(s)\r\n    S=D/(D+K);T=K/(D+K)\r\n    return S,T,K*S\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 381,
+          "delim": "`",
+          "code": "# Nominal plant and realizable filtered PID, not an executed synthesis result\r\nw=np.logspace(-3,2,1000);W=weight(1j*w)\r\nK_tf=ctrl.tf([Kd*wf+Kp,Kp*wf+Ki,Ki*wf],[1,wf,0])\r\nG0=ctrl.tf([1],[1,.2,1]);S0,T0,U0=responses(w)\r\nnominal=float(max(abs(W*S0)));nominal_j=int(np.argmax(abs(W*S0)))\r\nstack=np.sqrt(abs(W*S0)**2+abs(.01*U0)**2+abs(.2*T0)**2)\r\n# Characteristic quartic: m s^4+(.2+20m)s^3+(k+4+15)s^2+(20k+102)s+40\r\ndef characteristic(m,k):return [m,.2+20*m,k+19.,20*k+102.,40.]\r\ncorners=[]\r\nfor m,k in [(1.,1.),(.7,.7),(.7,1.3),(1.3,.7),(1.3,1.3)]:\r\n    S,T,U=responses(w,m,k);j=int(np.argmax(abs(W*S)));alpha=float(max(np.roots(characteristic(m,k)).real))\r\n    corners.append([m,k,float(abs(W*S)[j]),float(w[j]),alpha])\r\nprint('nominal_WpS_grid_peak %.9f at %.9f rad/s'%(nominal,w[nominal_j]))\r\nprint('nominal_stack_grid_peak %.9f; high_frequency_stack_limit %.9f'%(max(stack),np.sqrt((1/1.5)**2+(.01*15)**2)))\r\nprint('m k WpS_grid_peak frequency spectral_abscissa')\r\nfor row in corners:print(' '.join('%.9f'%v for v in row))\r\nprint('filtered_K_infinity',Kp+Kd*wf,'S_DC=0; ideal_PID_weighted_KS_Hinf=infinity')\r\nprint('nominal_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 400,
+          "delim": "`",
+          "code": "# Fixed iid uniform distribution, seed 42, no controller tuning on these points\r\nrng=np.random.default_rng(42);dm_samples=rng.uniform(-1,1,500);dk_samples=rng.uniform(-1,1,500)\r\nsample_peaks=[];sample_alpha=[]\r\nfor dm,dk in zip(dm_samples,dk_samples):\r\n    m,k=1+.3*dm,1+.3*dk;sample_peaks.append(float(max(abs(W*responses(w,m,k)[0]))));sample_alpha.append(float(max(np.roots(characteristic(m,k)).real)))\r\nsample_peaks=np.array(sample_peaks);worst_index=int(np.argmax(sample_peaks))\r\nprint('500_sample_peak_min_mean_max_p95',np.min(sample_peaks),np.mean(sample_peaks),np.max(sample_peaks),np.percentile(sample_peaks,95))\r\nprint('500_sample_failures',int(sum(sample_peaks>=1)),'max_pole_real',max(sample_alpha))\r\nprint('largest_in_this_sample dm dk',dm_samples[worst_index],dk_samples[worst_index])\r\nprint('sampling_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 411,
+          "delim": "`",
+          "code": "# Preserve three views: nominal/sample, histogram, 20x20 parameter surface\r\naxis=np.linspace(-1,1,20);surface=np.empty((20,20))\r\nfor a,dm in enumerate(axis):\r\n    for b,dk in enumerate(axis):surface[a,b]=max(abs(W*responses(w,1+.3*dm,1+.3*dk)[0]))\r\nprint('20x20_grid_min_max',surface.min(),surface.max(),'failures',int(sum((surface>=1).ravel())))\r\nfig,axs=plt.subplots(1,3,figsize=(12,3.4))\r\nworst_curve=abs(W*responses(w,1+.3*dm_samples[worst_index],1+.3*dk_samples[worst_index])[0])\r\naxs[0].semilogx(w,abs(W*S0),label='Nominal');axs[0].semilogx(w,worst_curve,label='Largest in 500 samples');axs[0].axhline(1,color='black',ls=':');axs[0].set_xlabel('Frequency (rad/s)');axs[0].set_ylabel('|Wp S|');axs[0].legend(fontsize=7);axs[0].grid(True)\r\naxs[1].hist(sample_peaks,bins=25);axs[1].axvline(1,color='red',ls=':');axs[1].set_xlabel('Grid peak |Wp S|');axs[1].set_ylabel('Count')\r\nim=axs[2].contourf(axis,axis,surface,levels=16);fig.colorbar(im,ax=axs[2]);axs[2].set_xlabel('dk');axs[2].set_ylabel('dm');axs[2].set_title('20 x 20 parameter grid')\r\nplt.tight_layout();plt.show();print('plots_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 586,
+      "title": "反例、权重与四道原题复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nfrom scipy.optimize import minimize\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nKp,Ki,Kd,wf=5.,2.,.5,20.\r\ndef kernel(s):\r\n    return Kp+Ki/s+Kd*s/(1+s/wf)\r\ndef weight(s,A=.02,M=1.5,wb=.8):\r\n    return (s/M+wb)/(s+A*wb)\r\ndef responses(w,m=1.,k=1.):\r\n    s=1j*np.asarray(w);D=m*s*s+.2*s+k;K=kernel(s)\r\n    S=D/(D+K);T=K/(D+K)\r\n    return S,T,K*S\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 604,
+          "delim": "`",
+          "code": "# Counterexample, weights, full original exercises and single-frequency D scaling\r\ns=ctrl.tf('s');G=1/(s+1);Wm=(.5*s+1)/(s+1);T=10/(s+11)\r\nGp=ctrl.minreal(G*(1-.8*Wm),verbose=False);Sp=ctrl.feedback(1,10*Gp)\r\nprint('counterexample nominal_DC',1/11,'perturbed_DC',ctrl.dcgain(Sp),'RS_norm',10/11,'perturbed_poles',ctrl.poles(Sp))\r\nprint('counterexample_full_weighted_NP_norm',5/11,'allowed_perturbed_weighted_DC',5/3,'performance_weight=5/(s+1)')\r\nfor k_gain in [9.,10.,18.,19.]:print('exercise2 k nominal_DC worst_DC',k_gain,1/(1+k_gain),1/(1+.5*k_gain))\r\nprint('exercise2 strict ranges: nominal stability k>-1; RS k>-2/3; NP k>9; robust DC k>18')\r\nweight_records=[]\r\nfor A,M,wb in [(.01,1.5,5.),(.01,2.,2.),(.02,1.5,.8)]:\r\n    row=[A,M,wb,1/A,1/M,A*wb,M*wb,abs(weight(1j*wb,A,M,wb)),wb*np.sqrt((1-A*A)/(1-1/M**2))];weight_records.append(row);print('weight A M wb DC inf pole zero abs_at_wb unity_frequency',row)\r\nmatrix=np.array([[.5,.3],[.4,.6]]);r=2/np.sqrt(3);D=np.diag([r,1.]);scaled=D@matrix@np.linalg.inv(D);singular=np.linalg.svd(scaled,compute_uv=False)\r\nprint('exercise4 r',r,'scaled_matrix',scaled,'singular_values',singular,'det_at_10over9',np.linalg.det(np.eye(2)-matrix*10/9))\r\nprint('exercise4 RS=.5 NP=.6 augmented_mu=.9 at the stated frequency only; physical_delta worst gain at unit radius=.84')\r\nprint('exercise1 RP implies RS by definition and NP by Delta=0; converse fails in first-order example')\r\nprint('real_mu_of_i=0 complex_mu_of_i=1: no universal multiplicative ratio')\r\nprint('all_answers_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

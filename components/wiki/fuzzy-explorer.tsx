@@ -3,17 +3,18 @@
 import { useMemo, useState } from "react";
 import { useECharts } from "./use-echarts";
 import type { EChartsOption } from "echarts";
+import { partition, trimf, buildUG, inferOne, maxSlope, rmsDev } from "@/lib/fuzzy-inference";
 
 const X_LO = -30;
 const X_HI = 30;
 const U_LO = -15;
 const U_HI = 15;
 const SCAN_N = 241;
-const GRID_N = 601;
+
 const IDEAL_GAIN = -0.5;
 
 type Defuzz = "cog" | "bis" | "mom";
-type Triple = [number, number, number];
+
 
 const DEFUZZ_LABEL: Record<Defuzz, string> = {
   cog: "重心法 COG",
@@ -38,115 +39,6 @@ const MF_COLORS = [
   "#7c3aed",
   "#475569",
 ];
-
-function partition(lo: number, hi: number, n: number, hs: number): Triple[] {
-  const ctr: number[] = [];
-  for (let i = 0; i < n; i++) ctr.push(lo + ((hi - lo) * i) / (n - 1));
-  const s = ctr[1] - ctr[0];
-  const h = hs * s;
-  const out: Triple[] = [];
-  for (let i = 0; i < n; i++) {
-    out.push([i > 0 ? ctr[i] - h : lo, ctr[i], i < n - 1 ? ctr[i] + h : hi]);
-  }
-  return out;
-}
-
-function trimf(x: number, a: number, b: number, c: number): number {
-  if (x <= a) return a === b ? 1 : 0;
-  if (x >= c) return b === c ? 1 : 0;
-  return x <= b ? (x - a) / (b - a) : (c - x) / (c - b);
-}
-
-function buildUG(): number[] {
-  const ug = new Array<number>(GRID_N);
-  for (let k = 0; k < GRID_N; k++) ug[k] = U_LO + ((U_HI - U_LO) * k) / (GRID_N - 1);
-  return ug;
-}
-
-interface Infer {
-  cog: number;
-  bis: number;
-  mom: number;
-  mu: number[];
-  parts: number[][];
-  alphas: number[];
-}
-
-function inferOne(x: number, PX: Triple[], ug: number[], PUg: number[][], ruleOf: number[]): Infer {
-  const n = PX.length;
-  const alphas: number[] = [];
-  for (let i = 0; i < n; i++) alphas.push(trimf(x, PX[i][0], PX[i][1], PX[i][2]));
-
-  const parts: number[][] = [];
-  const mu = new Array<number>(ug.length).fill(0);
-  for (let i = 0; i < n; i++) {
-    if (alphas[i] <= 0) continue;
-    const base = PUg[ruleOf[i]];
-    const clipped = new Array<number>(ug.length);
-    for (let k = 0; k < ug.length; k++) {
-      clipped[k] = Math.min(alphas[i], base[k]);
-      if (clipped[k] > mu[k]) mu[k] = clipped[k];
-    }
-    parts.push(clipped);
-  }
-
-  let num = 0;
-  let den = 0;
-  const cum = new Array<number>(ug.length).fill(0);
-  for (let k = 1; k < ug.length; k++) {
-    const du = ug[k] - ug[k - 1];
-    num += 0.5 * (ug[k] * mu[k] + ug[k - 1] * mu[k - 1]) * du;
-    den += 0.5 * (mu[k] + mu[k - 1]) * du;
-    cum[k] = den;
-  }
-  const cog = den > 1e-14 ? num / den : 0;
-
-  let bis = 0;
-  if (den > 1e-14) {
-    const half = den / 2;
-    for (let k = 1; k < ug.length; k++) {
-      if (cum[k] >= half) {
-        const f = cum[k] === cum[k - 1] ? 0 : (half - cum[k - 1]) / (cum[k] - cum[k - 1]);
-        bis = ug[k - 1] + f * (ug[k] - ug[k - 1]);
-        break;
-      }
-    }
-  }
-
-  let mmax = 0;
-  let i0 = -1;
-  let i1 = -1;
-  for (let k = 0; k < ug.length; k++) {
-    if (mu[k] > mmax) mmax = mu[k];
-  }
-  for (let k = 0; k < ug.length; k++) {
-    if (mmax > 0 && mu[k] >= mmax - 1e-12) {
-      if (i0 < 0) i0 = k;
-      i1 = k;
-    }
-  }
-  const mom = i0 >= 0 ? 0.5 * (ug[i0] + ug[i1]) : 0;
-
-  return { cog, bis, mom, mu, parts, alphas };
-}
-
-function maxSlope(y: number[], xs: number[]): number {
-  let m = 0;
-  for (let i = 1; i < y.length; i++) {
-    const d = Math.abs(y[i] - y[i - 1]) / Math.abs(xs[i] - xs[i - 1]);
-    if (d > m) m = d;
-  }
-  return m;
-}
-
-function rmsDev(y: number[], xs: number[]): number {
-  let s = 0;
-  for (let i = 0; i < y.length; i++) {
-    const d = y[i] - IDEAL_GAIN * xs[i];
-    s += d * d;
-  }
-  return Math.sqrt(s / y.length);
-}
 
 function fmt(v: number, d = 4): string {
   return Number.isFinite(v) ? v.toFixed(d) : "—";
@@ -387,7 +279,7 @@ export function FuzzyExplorer() {
       style={{ border: "1px solid #d1d5db", borderRadius: 8, margin: "24px 0", padding: 16, background: "#fff" }}
     >
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-        隶属度划分与解模糊化实验台：单输入单输出 Mamdani，规则 IF x is A_i THEN u is B_(n-i)
+        隶属度划分与解模糊化实验台：单输入单输出 Mamdani，规则 IF x is A_i THEN u is B_(n-1-i)（下标从0起）
       </div>
       <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
         输入论域 [-30, 30]，输出论域 [-15, 15]，结论部固定用 h/s = 1 的均匀三角划分。
@@ -395,6 +287,7 @@ export function FuzzyExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 10, alignItems: "center" }}>
+        <button style={btn(false)} onClick={() => { setN(5); setHs(1); setX(5); setShow({cog:true,bis:true,mom:true}); }}>恢复默认</button>
         <span style={{ fontSize: 13, color: "#374151" }}>语言值数量 n：</span>
         {[3, 5, 7, 9].map((v) => (
           <button key={v} style={btn(n === v)} onClick={() => setN(v)}>
@@ -410,7 +303,7 @@ export function FuzzyExplorer() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 12 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, maxWidth: "100%" }}>
           重叠度 h/s = {hs.toFixed(2)}
           <input
             type="range"
@@ -419,10 +312,10 @@ export function FuzzyExplorer() {
             step={0.05}
             value={hs}
             onChange={(e) => setHs(Number(e.target.value))}
-            style={{ width: 180 }}
+            style={{ width: 180, maxWidth: "100%" }}
           />
         </label>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, maxWidth: "100%" }}>
           输入 x = {x.toFixed(1)} deg
           <input
             type="range"
@@ -431,7 +324,7 @@ export function FuzzyExplorer() {
             step={0.5}
             value={x}
             onChange={(e) => setX(Number(e.target.value))}
-            style={{ width: 200 }}
+            style={{ width: 180, maxWidth: "100%" }}
           />
         </label>
       </div>
@@ -447,12 +340,16 @@ export function FuzzyExplorer() {
         {stat("rms 偏差 COG", fmt(rmsDev(scan.cog, scan.xs), 3))}
         {stat("rms 偏差 MOM", fmt(rmsDev(scan.mom, scan.xs), 3), "#dc2626")}
         {stat("COG − MOM", fmt(here.cog - here.mom, 3))}
+        {stat("当前 COG", fmt(here.cog, 6))}
+        {stat("当前 Bisector", fmt(here.bis, 6))}
+        {stat("当前 MOM", fmt(here.mom, 6))}
+        {stat("覆盖状态", sumAlpha > 1e-14 ? "有效" : "无覆盖：回退0", sumAlpha > 1e-14 ? "#16a34a" : "#dc2626")}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <div ref={mfRef} style={{ width: "32%", minWidth: 280, height: 300 }} />
-        <div ref={mapRef} style={{ width: "32%", minWidth: 280, height: 300 }} />
-        <div ref={aggRef} style={{ width: "32%", minWidth: 280, height: 300 }} />
+        <div ref={mfRef} style={{ flex: "1 1 280px", minWidth: 0, width: "100%", height: 300 }} />
+        <div ref={mapRef} style={{ flex: "1 1 280px", minWidth: 0, width: "100%", height: 300 }} />
+        <div ref={aggRef} style={{ flex: "1 1 280px", minWidth: 0, width: "100%", height: 300 }} />
       </div>
 
       <div style={{ fontSize: 13, color: "#475569", marginTop: 10, lineHeight: 1.7 }}>
@@ -460,30 +357,30 @@ export function FuzzyExplorer() {
         {isUnity
           ? " 相邻三角形恰好在 μ = 0.5 处相交，Σμ(x) ≡ 1——左图的黑色虚线是一条水平直线，偏差 " +
             unity.dev.toExponential(1) +
-            " 只是浮点舍入。这是均匀三角划分的特有性质，也是零阶 Sugeno 的加权和能写成凸组合的原因。"
+            " 只是浮点舍入。这是均匀三角划分的特有性质，归一化Sugeno只要非负权重和为正就仍是凸组合。"
           : hs < 1
-          ? " h < s，三角形之间出现空洞：Σμ 在中点处掉到 " +
+          ? " h < s，总隶属度在中点处降低到 " +
             fmt(unity.mn, 3) +
             "，交叉隶属度只有 " +
             fmt(muCross, 3) +
-            "。落在空洞里的 x 整体激活强度偏低，归一化时这个小于 1 的分母会把输出拉向论域中心。"
+            "。h/s > 0.5时仍有覆盖；h/s = 0.5的相邻中点权重全零，本演示回退到0，该值不代表有效推理。归一化分母小不决定输出方向。"
           : " h > s，三角形重叠过头：Σμ 在中点处是 " +
             fmt(unity.mn, 3) +
             "、在中心处是 " +
             fmt(unity.mx, 3) +
-            "。分母不再恒等于 1，等效增益会随 x 起伏——把 x 拖过几个中心就能在第二张图里看到波纹。"}
+            "。宽重叠可能激活两个以上语言值；输出取决于整个推理管线，不能只看Σμ判断增益。"}
         {fired <= 2
-          ? " 当前只有 " + fired + " 条规则被激活：三角形支撑有限，单输入时任何 x 最多激活 2 条（两输入最多 4 条），与 n 无关。这就是规则总数按 n 增长、在线计算量却几乎不变的原因。"
+          ? " 当前只有 " + fired + " 条规则被激活：三角形支撑有限，当前激活数按实际位置显示。只有h≤s的相邻支撑才有每输入最多2条的界，宽重叠不适用；搜索与积分仍有成本。"
           : ""}
         {show.mom
           ? " MOM 的最大斜率 " +
             fmt(maxSlope(scan.mom, scan.xs), 3) +
             " /deg，COG 是 " +
             fmt(maxSlope(scan.cog, scan.xs), 3) +
-            " /deg：MOM 的输出是分段常值，规则切换处直接跳变，放到闭环里就是抖振。"
+            " /deg：本切片可见平台与跳变，是否造成闭环抖振还取决于对象、采样和噪声。"
           : ""}
         {show.bis
-          ? " 平分法与重心法只在聚合形状左右不对称时才分开——第三张图里能看到绿线为什么落在蓝线左侧。"
+          ? " 平分法与重心法只在聚合形状左右不对称时才分开——相对左右位置需看当前参数，不能预设绿线总在蓝线左侧。"
           : ""}
       </div>
     </div>

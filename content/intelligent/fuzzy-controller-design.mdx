@@ -1,1122 +1,1081 @@
 ---
-title: "模糊控制器设计"
-description: "从规则库构造到比例因子整定，用倒立摆闭环实验测清 Mamdani 模糊 PD 的真实能力边界：等效增益的隐式约束、与常规 PID 的定量差距、以及为什么模糊控制不是万能药"
+title: "模糊控制器"
+description: "从覆盖、规则符号与比例因子出发设计 Mamdani 闭环，用可复现实验辨清实现缺陷、整定结果和稳定性保证。"
 ---
 
-# 模糊控制器设计
+<span id="模糊控制器设计" />
+
+# 模糊控制器
 
 ## 引言
 
-[上一课](/intelligent/fuzzy-control-basics)把模糊控制器拆开看了：隶属度函数怎么画、min/max 怎么聚合、重心法和最大隶属度法怎么解模糊化。所有实验都是开环的——给一个输入，读一个输出，不涉及反馈。
+把一根铰接在底座上的杆竖起来，杆稍向右倒，电机就要及时施加向左的力矩；若杆已经快速向左回摆，还照样用力推，就可能越过竖直位置。我们要同时看“偏了多少”和“正在往哪边运动”。[上一课](/intelligent/fuzzy-control-basics)已经展示了这种闭环；本课继续追问：怎样把语言规则做成可检查、可调参、可复算的控制器？
 
-本课把模糊控制器放进闭环，控制同一台倒立摆。问题立刻变得具体：规则表怎么写才能保证负反馈？三个比例因子 $G_e$、$G_{ce}$、$G_u$ 怎么调？调完之后到底能不能控住？控不住的话，问题出在哪？
+<img src="/diagrams/intelligent/fuzzy-feedback.svg" alt="目标角度减测量角度得到误差，和负角速度一起缩放；Mamdani规则与重心输出经Gu、限幅及采样保持驱动单摆，角度反馈到比较点负端" />
 
-答案可能让期待"智能控制"的读者失望：**$n=5$ 的 Mamdani 模糊 PD 控不住这台摆**。$\text{rms}\,\theta = 21^\circ$，6 秒末角度仍为 $22^\circ$，而常规 PID 用 $K_p=40$、$K_i=10$、$K_d=6$ 就能达到 $\text{rms}\,\theta = 2.67^\circ$、稳态 $-0.19^\circ$。这不是参数没调好——比例因子的扫描显示，在合理的参数范围内，模糊 PD 的性能有一个硬上限，而这个上限远在稳定指标之下。
+旧版有一条很强的结论：“五个模糊集的 Mamdani 控制器控不住倒立摆”。重新检查程序，会发现两个更具体的问题：相邻三角形之间存在全零空隙，平均索引规则又在原点附近留下输出死区。把实现缺陷归结为整个方法的能力上限，会把后面的整定带向错误方向。
 
-本课用数值实验把这个上限测清楚，然后分析它的根源：Mamdani 控制器的等效增益是隐式的、分段常数的、受限于隶属度函数的重叠度。这不是说模糊控制没有用——它在模型未知、非线性严重的场合有真实优势——但对于倒立摆这种快速不稳定系统，Mamdani 型的增益约束是致命的。
-
-> 📐 本课的被控对象、符号约定、隶属度函数定义与 [模糊控制基础](/intelligent/fuzzy-control-basics) 完全相同，便于横向比较。
+本课保留原来的设计路径：对象、规则、比例因子、PD、积分、PID比较，再看规则结构、解模糊化和稳定性。你将先复现故障，再逐项修复；**一次仿真收敛是实验结果，稳定性保证还需要另外的条件和证明。**
 
 ## 被控对象与设计问题
 
-沿用前几课的旋转倒立摆：
+这里是**直接施加关节力矩的单摆**，角度从竖直向上量起；它不是带水平转臂的完整旋转倒立摆模型。忽略摩擦，角速度可以直接测量，目标角为零：
 
 $$
-m l^2 \ddot\theta = m g l \sin\theta + u
+m l^2\ddot\theta=mgl\sin\theta+u+d,\qquad e=-\theta,\quad \dot e=-\dot\theta.
 $$
 
-取 $m = 1\ \mathrm{kg}$、$l = 0.5\ \mathrm{m}$、$g = 9.8\ \mathrm{m/s^2}$，即
+取 $m=1\,\mathrm{kg}$、$l=0.5\,\mathrm m$、$g=9.8\,\mathrm{m/s^2}$，因而 $J=ml^2=0.25\,\mathrm{kg\,m^2}$，标称方程是
 
 $$
-\ddot\theta = 19.6\sin\theta + 4u
+\ddot\theta=19.6\sin\theta+4(u+d).
 $$
 
-执行器限幅 $\lvert u\rvert \le 15\ \mathrm{N\cdot m}$。初始条件 $\theta(0) = 20^\circ$、$\dot\theta(0) = 0$，仿真时长 $T = 6$ s，步长 $\mathrm{d}t = 10^{-4}$ s。
+$u$、外扰 $d$ 均以 $\mathrm{N\,m}$ 计，执行器要求 $|u|\le15\,\mathrm{N\,m}$。默认初角 $20^\circ$、初角速度为零，观察 $6\,\mathrm s$。控制器每 $T_s=0.002\,\mathrm s$ 更新一次，力矩在一拍内保持；对象用一步 RK4 积分。减半采样周期同时改变离散控制器，不能只叫“求解器精度提高”。
 
 ### 误差约定与负反馈
 
-定义误差 $e = -\theta$。这样：
-- $\theta > 0$（摆向右倒）→ $e < 0$（误差为负）
-- 要 stabilizing，需要 $u < 0$（向左推）
-
-所以**负反馈**意味着：$e$ 为负时 $u$ 为负，$e$ 为正时 $u$ 为正。规则表必须保证这个符号关系，否则控制器会把摆推得更远（正反馈）。
+静止而向右偏时，$e<0$，恢复力矩应为负。角速度通道还需要制动：杆向左运动时，$\dot e>0$，可以要求正力矩。因此“$u$ 永远与 $e$ 同号”不是 PD 控制的要求。应分别检查比例恢复方向、速度阻尼方向和合成后的轨迹。
 
 ### 设计指标
 
-| 指标 | 要求 |
-|------|------|
-| 稳定性 | $\lvert \theta(\infty)\rvert < 1^\circ$ |
-| 动态性能 | $\text{rms}\,\theta < 5^\circ$ |
-| 控制 effort | $\text{TV}(u) < 100$（避免抖振） |
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+
+| 量 | 本课有限窗口要求/定义 |
+|---|---|
+| 全窗角度均方根 | 对包含初值的全部采样角度求均方根，目标小于 $5^\circ$ |
+| 末窗最大绝对角 | 最后 $1\,\mathrm s$ 的采样点，目标小于 $1^\circ$；不等于渐近稳定证书 |
+| 总变差 $\mathrm{TV}(u)$ | 相邻实际指令差的绝对值之和，目标小于 $100\,\mathrm{N\,m}$；不人为加一个初始零指令 |
+| 辅助量 | 末样角、最大力矩、饱和拍占比、无规则激活拍数 |
+
+</div>
+
+这些是教学测试阈值，不是实机安全规范。默认实验无噪声、无延迟；不能据此承诺硬件性能。
 
 ## 规则库设计
 
 ### 稳定化规则表的构造
 
-对于 $n$ 个语言值 $\{L_0, L_1, \ldots, L_{n-1}\}$（从 NB 到 PB，索引递增），稳定化规则表为：
+先固定数组含义：**行对应 $e$，列对应 $\dot e$**。语言值索引从负到正递增，奇数个模糊集的零索引为 $c=(n-1)/2$。推荐从加和规则开始：
 
 $$
-R[i][j] = \text{round}\!\left(\frac{i + j}{2}\right)
+R_{\rm sum}[i,j]=\operatorname{clip}(i+j-c,0,n-1).
 $$
 
-其中 $i$ 是 $e$ 的语言值索引，$j$ 是 $\dot{e}$ 的语言值索引，$R[i][j]$ 是 $u$ 的语言值索引。
+同方向的偏差和变化率加强动作，反方向时相互抵消；这是一条设计启发，不是稳定性定理。原版使用的平均索引规则仍保留为对照：
 
-这个公式的物理意义：
-- **对角线**（$i + j = \text{const}$）：误差和误差变化率指向同一方向时，控制量取两者的"平均"方向
-- **反对角线**（$i$ 大 $j$ 小，或反之）：误差和误差变化率指向相反方向时，控制量取中间值（减速但不反转）
+$$
+R_{\rm avg}[i,j]=\operatorname{roundEven}\!\left(\frac{i+j}{2}\right).
+$$
+
+这里明确采用**半整数取最近偶数**，使 Python 和 React 一致。例如 $n=5$ 时 $R_{\rm avg}[3,2]=2$，而 $R_{\rm sum}[3,2]=3$；旧程序的 JavaScript `Math.round(2.5)` 与 Python `round(2.5)` 不相同。固定 $i+j$ 的是反对角线，不能把它称作主对角线。
+
+覆盖也要单独检查。中心为 $c_i=-1+2i/(n-1)$、间距为 $s=2/(n-1)$；默认三角形半宽取 $s$，端点用肩形延伸。旧版半宽只有 $s/2$，相邻中心的中点恰好使全部隶属度为零。例如五集时，输入 $e_n=0.25$ 就失去覆盖。零分母返回零是故障兜底，不能悄悄解释成“控制器认为不需要力矩”。
 
 <JupyterNotebook
-  title="Notebook 1：规则库构造与输入-输出映射曲面"
-  setupCode={`import numpy as np
+  title="Notebook 1：规则库、覆盖与输入输出曲面"
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def trimf(x, a, b, c):
-    if x <= a:
-        return 1.0 if a == b else 0.0
-    if x >= c:
-        return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
 
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b)
-        out[m] = (x[m] - a) / (b - a)
-    else:
-        out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c)
-        out[m] = (c - x[m]) / (c - b)
-    else:
-        out[x >= c] = 1.0
-    return out
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
 
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
 
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
 
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12:
-        return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)`}
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
+    for _ in range(N):
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 构造稳定化规则表（n=5）
-n = 5
-rules = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-labels = ['NB', 'NS', 'ZO', 'PS', 'PB']
-print("规则表（n=5）：")
-print("      ", "  ".join(f"{l:>4}" for l in labels))
-for i, l in enumerate(labels):
-    print(f"{l:>4}  [{', '.join(f'{rules[i][j]:2d}' for j in range(n))}]")
-
-print("\\n物理意义：")
-print("  e=NB, de=NB → u=NB（误差为负且继续变负，用力反推）")
-print("  e=NB, de=PB → u=NS（误差为负但在恢复，减小控制量）")
-print("  e=PB, de=PB → u=PB（误差为正且继续变正，用力反推）")` },
-    { code: `# 输入-输出映射曲面
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-
-e_range = np.linspace(-1.0, 1.0, 41)
-de_range = np.linspace(-1.0, 1.0, 41)
-U = np.zeros((41, 41))
-for i, e in enumerate(e_range):
-    for j, de in enumerate(de_range):
-        U[i, j] = mamdani_infer(e, de, e_params, de_params, u_params, rules)
-
-fig, ax = plt.subplots(figsize=(8, 6))
-im = ax.imshow(U, extent=[-1, 1, -1, 1], origin='lower', cmap='RdBu_r', vmin=-1, vmax=1, aspect='auto')
-ax.set_xlabel('de (归一化)', fontsize=12)
-ax.set_ylabel('e (归一化)', fontsize=12)
-ax.set_title('Mamdani 模糊 PD 输入-输出映射曲面（n=5）', fontsize=14)
-fig.colorbar(im, ax=ax, label='u (归一化)')
-ax.axhline(0, color='k', linewidth=0.5, linestyle='--')
-ax.axvline(0, color='k', linewidth=0.5, linestyle='--')
-plt.tight_layout()
-plt.show()
-
-print(f"\\n曲面范围：[{U.min():.4f}, {U.max():.4f}]")
-print(f"U[0,0] (e=-1, de=-1): {U[0,0]:.4f}")
-print(f"U[20,20] (e=0, de=0): {U[20,20]:.4f}")
-print(f"U[40,40] (e=1, de=1): {U[40,40]:.4f}")` }
+    { code: `for n in [5,7]:
+    R=rules(n,'coverage')
+    print('n=',n,'average rules=',R.tolist(),'symmetry error=',np.max(abs(R+R[::-1,::-1]-(n-1))))
+print('sum rules n=5=',rules().tolist())
+print('average[3,2]=',rules(design='coverage')[3,2], 'sum[3,2]=',rules()[3,2])
+print('half-even round(2.5)=',round(2.5),'half-up=',math.floor(2.5+.5))
+print('n7 half-up example=',math.floor(.5+.5)+math.floor(5.5+.5))
+for old in [True,False]:
+    print('old=',old,'coverage sum at .25=',sum(mf(.25,i,5,old) for i in range(5)))
+print('Ge20=',.8/(20*DEG),'Ge30=',1/(30*DEG),'J=',1*.5**2,'gravity=',9.8/.5,'torque coefficient=',1/(1*.5**2))
+print('proportional threshold=',19.6/4)
+print('Phi(.1,0)=',infer(.1,0),'secant=',infer(.1,0)/.1,'axis h=.0001=',infer(.0001,0)/.0001)
+print('physical axis difference quotient=',12*2*infer(.0001,0)/.0001)
+assert sum(mf(.25,i,5,True) for i in range(5))==0` },
+    { code: `grid=np.linspace(-1,1,41)
+fig,axes=plt.subplots(1,2,figsize=(9,4))
+for ax,design in zip(axes,['legacy','repaired']):
+    U=np.array([[infer(e,de,design=design) for de in grid] for e in grid])
+    ax.imshow(U,origin='lower',extent=(-1,1,-1,1),vmin=-1,vmax=1,cmap='RdBu_r',aspect='auto')
+    ax.set(xlabel='normalized de',ylabel='normalized e',title=design)
+    print(design,'surface min/max=',U.min(),U.max(),'oddness=',np.max(abs(U+U[::-1,::-1])))
+plt.tight_layout(); plt.show()` }
   ]}
 />
-
-注意曲面的反对称性：$U(-e, -\dot{e}) = -U(e, \dot{e})$。这是负反馈的数学表达。
 
 ### 三种规则库模式
 
-除了标准的 PD-like 规则表，还可以构造两种退化模式：
+PD-like 用上面的加和规则；P-like 取 $R[i,j]=i$；D-like 取 $R[i,j]=j$。P/D 两种退化规则仍通过两输入 min/max 推理，另一输入可能通过截断高度影响输出，**并不严格等于单输入线性 P/D**。固定另一输入再看曲面，才知道实际依赖关系。
 
-| 模式 | 规则表 | 物理意义 |
-|------|--------|----------|
-| **PD-like** | $R[i][j] = \text{round}((i+j)/2)$ | 同时依赖误差和误差变化率 |
-| **P-like** | $R[i][j] = i$ | 只依赖误差（纯比例） |
-| **D-like** | $R[i][j] = j$ | 只依赖误差变化率（纯微分） |
-
-第 7 节会测到，这三种模式的闭环性能差异巨大。
+反对称 $\Phi(-e_n,-\dot e_n)=-\Phi(e_n,\dot e_n)$ 是本设计的对称性检查；反着写的一整张正反馈规则表也可能反对称，所以它不充分保证负反馈。
 
 ## 比例因子整定
 
-模糊控制器有三个比例因子：
-- $G_e$：误差缩放，将 $\theta$ 的物理范围映射到归一化域 $[-1, 1]$
-- $G_{ce}$：误差变化率缩放，将 $\dot\theta$ 映射到归一化域
-- $G_u$：输出缩放，将归一化控制量映射到物理单位
+归一化输入和实际输出的单位是：
+
+$$
+e_n=G_e e,\qquad \dot e_n=G_{ce}\dot e,\qquad
+u=\operatorname{sat}_{15}\!\bigl(G_u\Phi(e_n,\dot e_n)\bigr).
+$$
+
+$G_e$ 的单位为 $\mathrm{rad}^{-1}$，$G_{ce}$ 为 $\mathrm{s/rad}$，$G_u$ 为 $\mathrm{N\,m}$。三者均不是直接的 PID 增益。输入超出归一化域时使用两端肩形，输出再受执行器限幅约束。
 
 ### 比例因子的物理意义
 
-对于 $\theta \in [-30^\circ, 30^\circ] = [-0.524, 0.524]\ \mathrm{rad}$，要让 $30^\circ$ 映射到 $1.0$，需要 $G_e = 1/0.524 \approx 1.91$。实际整定时，$G_e$ 通常略大于这个值，让较大的偏差落在隶属度函数的尾部（增强控制作用）。
+若希望 $30^\circ$ 映到归一化幅值一，$G_e=6/\pi\approx1.909859\,\mathrm{rad}^{-1}$。若希望 $20^\circ$ 的负误差映到 $-0.8$，则 $G_e=7.2/\pi\approx2.291831\,\mathrm{rad}^{-1}$。这只规定输入尺度，不保证性能最优；旧版“统一乘1.5”的经验式没有本课证据，取消。
 
 ### 敏感性实验
 
+固定默认 $n=5,G_e=2,G_{ce}=0.5,G_u=12$，每次只改一个因子，使用修复后的覆盖与加和规则。
+
 <JupyterNotebook
   title="Notebook 2：比例因子敏感性扫描"
-  setupCode={`import numpy as np
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def trimf(x, a, b, c):
-    if x <= a:
-        return 1.0 if a == b else 0.0
-    if x >= c:
-        return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
 
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b)
-        out[m] = (x[m] - a) / (b - a)
-    else:
-        out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c)
-        out[m] = (c - x[m]) / (c - b)
-    else:
-        out[x >= c] = 1.0
-    return out
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
 
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
 
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
 
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12:
-        return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
-
-def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
-    N = int(T / dt)
-    theta, thetad = theta0, 0.0
-    ths, us = [theta], [0.0]
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
     for _ in range(N):
-        e_s = -theta * Ge
-        de_s = -thetad * Gce
-        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
-        u = np.clip(u_raw * Gu, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)`}
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 比例因子敏感性扫描
-n = 5
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-rules = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-
-print("=== Ge 扫描（Gce=0.5, Gu=12）===")
-print(f"{'Ge':>5} | {'rms':>8} {'TV(u)':>8}")
-print("-" * 30)
-for Ge in [1.0, 1.5, 2.0, 2.5, 3.0]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    print(f"{Ge:5.1f} | {rms:8.2f} {tv:8.1f}")` },
-    { code: `print("=== Gce 扫描（Ge=2.0, Gu=12）===")
-print(f"{'Gce':>5} | {'rms':>8} {'TV(u)':>8}")
-print("-" * 30)
-for Gce in [0.2, 0.3, 0.4, 0.5, 0.6, 0.8]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, Gce, 12.0)
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    print(f"{Gce:5.1f} | {rms:8.2f} {tv:8.1f}")` },
-    { code: `print("=== Gu 扫描（Ge=2.0, Gce=0.5）===")
-print(f"{'Gu':>5} | {'rms':>8} {'TV(u)':>8} {'max|u|':>8}")
-print("-" * 40)
-for Gu in [8, 10, 12, 15, 20]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, 0.5, float(Gu))
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    maxu = np.max(np.abs(u))
-    print(f"{Gu:5d} | {rms:8.2f} {tv:8.1f} {maxu:8.2f}")` },
-    { code: `# 可视化：Ge 对闭环响应的影响
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-for Ge in [1.0, 2.0, 3.0]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
-    t = np.linspace(0, T, len(th))
-    axes[0].plot(t, th / DEG, label=f'Ge={Ge}')
-
-axes[0].set_xlabel('时间 (s)', fontsize=12)
-axes[0].set_ylabel('theta (deg)', fontsize=12)
-axes[0].set_title('Ge 对闭环响应的影响', fontsize=14)
-axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[0].legend(fontsize=10)
-axes[0].set_ylim([-30, 30])
-axes[0].grid(True, alpha=0.3)
-
-# 控制量对比
-for Ge in [1.0, 2.0, 3.0]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, 0.5, 12.0)
-    t = np.linspace(0, T, len(u))
-    axes[1].plot(t, u, label=f'Ge={Ge}')
-
-axes[1].set_xlabel('时间 (s)', fontsize=12)
-axes[1].set_ylabel('u (N*m)', fontsize=12)
-axes[1].set_title('Ge 对控制量的影响', fontsize=14)
-axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[1].legend(fontsize=10)
-axes[1].set_ylim([-16, 16])
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print("\\n结论：增大 Ge 可以改善性能，但即使 Ge=3.0，rms 仍有 13.71 deg，远未稳定。")` }
+    { code: `for Ge in [1.,2.,3.]: report('Ge='+str(Ge),simulate(Ge=Ge))` },
+    { code: `for Gce in [.2,.5,.8]: report('Gce='+str(Gce),simulate(Gce=Gce))` },
+    { code: `for Gu in [8.,12.,20.]: report('Gu='+str(Gu),simulate(Gu=Gu))` },
+    { code: `plot_runs([(f'Ge={g}',simulate(Ge=g)) for g in [1.,2.,3.]])` }
   ]}
 />
 
-实验结果（NB2）清楚地显示：
-- **$G_e$ 是主导因素**：从 1.0 增加到 3.0，$\text{rms}\,\theta$ 从 $41.67^\circ$ 降到 $13.71^\circ$
-- **$G_{ce}$ 几乎无效**：所有值都在 $21^\circ$ 附近
-- **$G_u$ 几乎无效**：所有值都在 $21^\circ$ 附近
-
-这说明问题的根源在比例通道，不在微分或输出增益。
+本组扫描中，$G_e$ 从一到三，全窗均方根由 $6.003034^\circ$ 变为 $2.926155^\circ$；$G_{ce}$ 从 $0.2$ 到 $0.8$ 时，由 $3.018930^\circ$ 变为 $4.400988^\circ$。增大速度通道并非总让全窗指标变好。$G_u$ 从八到二十也会改变力矩和轨迹。“微分与输出缩放几乎无效”只反映了旧实现的问题，不能沿用。这些是扫描点的观察，不是在连续参数域找到全局最优。
 
 ### 交互探索：亲自调参
 
-下面的交互组件让你实时调整模糊 PD 控制器的参数，观察闭环响应。拖动滑块改变模糊集数量 $n$、比例因子 $G_e$、$G_{ce}$、$G_u$，观察 $\theta(t)$ 和 $u(t)$ 的变化。
+先看默认值，再依次切到“旧覆盖＋平均规则”和“完整覆盖＋平均规则”。最后恢复默认，尝试降低 $G_e$。组件的两幅图使用固定坐标轴；越界时会显示提示，不能把被裁去的轨迹当成消失了。所有指标都在完整采样序列上计算。
 
 <FuzzyTuningExplorer />
-
-无论怎么调参，你会发现 $\theta$ 始终无法收敛到零——这与 Notebook 2 的定量结论一致：Mamdani 模糊 PD 的隐式等效增益不足以克服倒立摆的不稳定性。
 
 ## 模糊PD控制器
 
 ### 完整设计流程
 
-把前面的内容串起来，模糊 PD 控制器的完整设计流程是：
-
-1. **选择语言值数量** $n$（通常 5 或 7）
-2. **构造稳定化规则表** $R[i][j] = \text{round}((i+j)/2)$
-3. **选择隶属度函数**（三角形，均匀划分 $[-1, 1]$）
-4. **整定比例因子** $G_e$、$G_{ce}$、$G_u$
-5. **闭环仿真验证**
+1. 明确误差符号、物理单位与执行器限制。
+2. 检查整个输入域的覆盖，显式处理无规则激活。
+3. 写出规则表及取整约定，单独检查比例和阻尼方向。
+4. 固定实现后扫描尺度；不要一边换规则，一边把结果归因于一个增益。
+5. 锁定参数，测未参与整定的工况，并区分采样影响与积分误差。
 
 ### 闭环仿真结果
 
-用 $n=5$、$G_e=2.0$、$G_{ce}=0.5$、$G_u=12$ 做闭环仿真：
-
 <JupyterNotebook
-  title="Notebook 3：模糊 PD 闭环仿真"
-  setupCode={`import numpy as np
+  title="Notebook 3：模糊PD闭环与采样复核"
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def trimf(x, a, b, c):
-    if x <= a:
-        return 1.0 if a == b else 0.0
-    if x >= c:
-        return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
 
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b)
-        out[m] = (x[m] - a) / (b - a)
-    else:
-        out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c)
-        out[m] = (c - x[m]) / (c - b)
-    else:
-        out[x >= c] = 1.0
-    return out
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
 
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
 
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
 
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12:
-        return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
-
-def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
-    N = int(T / dt)
-    theta, thetad = theta0, 0.0
-    ths, us = [theta], [0.0]
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
     for _ in range(N):
-        e_s = -theta * Ge
-        de_s = -thetad * Gce
-        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
-        u = np.clip(u_raw * Gu, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)`}
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 模糊 PD 闭环仿真
-n = 5
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-rules = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-Ge, Gce, Gu = 2.0, 0.5, 12.0
-
-th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu)
-t = np.linspace(0, T, len(th))
-
-rms = np.sqrt(np.mean(th**2)) / DEG
-tv = np.sum(np.abs(np.diff(u)))
-final = th[-1] / DEG
-maxu = np.max(np.abs(u))
-
-print(f"模糊 PD 控制器（Ge={Ge}, Gce={Gce}, Gu={Gu}）：")
-print(f"  rms = {rms:.2f} deg")
-print(f"  TV(u) = {tv:.1f}")
-print(f"  稳态角度 = {final:.2f} deg")
-print(f"  max|u| = {maxu:.2f} N*m")
-print(f"\\n结论：控制器没有稳定摆。rms = 21 deg，稳态 = 22 deg。")` },
-    { code: `# 可视化闭环响应
-fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-
-axes[0].plot(t, th / DEG, 'b-', linewidth=1.5)
-axes[0].set_xlabel('时间 (s)', fontsize=12)
-axes[0].set_ylabel('theta (deg)', fontsize=12)
-axes[0].set_title('模糊 PD 闭环响应（n=5, Ge=2.0, Gce=0.5, Gu=12）', fontsize=14)
-axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[0].set_ylim([-30, 30])
-axes[0].grid(True, alpha=0.3)
-
-axes[1].plot(t, u, 'r-', linewidth=1.5)
-axes[1].set_xlabel('时间 (s)', fontsize=12)
-axes[1].set_ylabel('u (N*m)', fontsize=12)
-axes[1].set_title('控制量', fontsize=14)
-axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[1].set_ylim([-16, 16])
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()` }
+    { code: `items=[]
+for design in ['legacy','coverage','repaired']:
+    r=simulate(design=design); report(design,r); items.append((design,r))
+plot_runs(items)` },
+    { code: `for dt in [.004,.002,.001]: report('sample period='+str(dt),simulate(dt=dt))
+print('These runs change the held-input sampling period; they are not a continuous-time certificate.')` }
   ]}
 />
 
-结果令人失望：$\text{rms}\,\theta = 21.10^\circ$，6 秒末角度 $21.69^\circ$，控制量 $\text{TV}(u) = 915$。摆几乎没有被拉回来。
+保持原三个比例因子不变，在本课统一的采样/RK4/精确重心口径下：旧覆盖与平均规则的全窗均方根为 $21.056544^\circ$；只修覆盖为 $17.115352^\circ$；再改加和规则为 $3.669619^\circ$。默认修复控制器的 $\mathrm{TV}(u)=6.455382\,\mathrm{N\,m}$，最大力矩 $6.443686\,\mathrm{N\,m}$。
+
+这三个数分别对应明确的实现；不是对旧版 $10^{-4}\,\mathrm s$ 半隐式 Euler 数值的逐位复刻。旧曲线失败不能推出 Mamdani 必然失败，修复曲线收敛也不能推出所有初值都收敛。
 
 ## 模糊PID控制器
 
 ### 加积分项
 
-模糊 PD 没有积分作用，所以存在静差（与常规 PD 一样）。要消除静差，可以加一个常规积分项：
+无外扰、正确恢复力与阻尼下，PD 可以使零误差平衡成立；“没积分所以一定有静差”不成立。恒定负载可能需要非零偏角才能平衡，这时积分值得测试：
 
 $$
-u = u_{\text{fuzzy PD}} + K_i \int_0^t e(\tau)\,\mathrm{d}\tau
+u=\operatorname{sat}_{15}\!\left(G_u\Phi(G_e e,G_{ce}\dot e)+K_i z\right),\qquad \dot z=e.
 $$
 
-其中 $u_{\text{fuzzy PD}}$ 是模糊 PD 的输出，$K_i$ 是积分增益。
+离散实现先计算候选 $z^*=z+T_s e$；若候选命令饱和且积分会继续推向同方向饱和，则保持旧 $z$，否则接受 $z^*$。最后用接受的积分状态计算并限幅。这是条件积分，不保证所有非线性工况都稳定。
 
 ### 模糊 PID 仿真
 
 <JupyterNotebook
-  title="Notebook 4：模糊 PID 闭环仿真"
-  setupCode={`import numpy as np
+  title="Notebook 4：模糊PD加积分与限幅"
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def trimf(x, a, b, c):
-    if x <= a:
-        return 1.0 if a == b else 0.0
-    if x >= c:
-        return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
 
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b)
-        out[m] = (x[m] - a) / (b - a)
-    else:
-        out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c)
-        out[m] = (c - x[m]) / (c - b)
-    else:
-        out[x >= c] = 1.0
-    return out
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
 
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
 
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
 
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12:
-        return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
-
-def simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki):
-    N = int(T / dt)
-    theta, thetad, integral = theta0, 0.0, 0.0
-    ths, us = [theta], [0.0]
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
     for _ in range(N):
-        e = -theta
-        e_s = e * Ge
-        de_s = -thetad * Gce
-        u_fuzzy = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
-        integral += e * dt
-        u = np.clip(u_fuzzy * Gu + Ki * integral, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)`}
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 模糊 PID 闭环仿真
-n = 5
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-rules = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-Ge, Gce, Gu = 2.0, 0.5, 12.0
-
-print("=== 模糊 PD + 积分 ===")
-print(f"{'Ki':>5} | {'rms':>8} {'final':>8} {'TV(u)':>10}")
-print("-" * 40)
-for Ki in [0, 2, 4, 6, 8]:
-    th, u = simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki)
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    final = th[-1] / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    print(f"{Ki:5d} | {rms:8.2f} {final:8.2f} {tv:10.1f}")
-
-print("\\n结论：积分项可以改善 rms，但稳态仍振荡（final 在 +21 和 -21 之间摆动）。")` }
+    { code: `items=[]
+for Ki in [0.,2.,8.]:
+    r=simulate(Ki=Ki,disturbance=1.);report('load=1 Ki='+str(Ki),r);items.append((f'Ki={Ki}',r))
+plot_runs(items)
+report('saturation stress, Ki=8',simulate(Ki=8,Gu=30,angle=60,disturbance=1))
+print('Conditional integration blocks only accumulation further into saturation; no claim of global stability.')` }
   ]}
 />
 
-实验结果（NB3）显示：加积分项后 $\text{rms}\,\theta$ 从 $21.10^\circ$ 降到 $18.22^\circ$（$K_i=8$），但稳态角度在 $+21^\circ$ 和 $-21^\circ$ 之间振荡——系统进入极限环，并没有真正稳定。
+默认参数加恒定外扰 $d=1\,\mathrm{N\,m}$ 时，$K_i=0,2,8$ 的六秒末样角分别为 $2.275858^\circ,0.958418^\circ,-0.048926^\circ$。末一秒最大绝对角分别为 $2.275945^\circ,1.039582^\circ,0.065002^\circ$。后两种积分设置的末样值与末窗指标说明了为什么“最后一个点进线”不等于“已经收敛”。有限时域的振荡也不能直接命名为极限环。
 
 ## 与常规PID的定量对比
 
-为了公平对比，用相同的被控对象、相同的初始条件、相同的仿真时长，测试常规 PID：
+常规 PID 使用同样的测量、采样、条件积分、对象与限幅：
 
 $$
-u = K_p e + K_i \int_0^t e(\tau)\,\mathrm{d}\tau + K_d \dot{e}
+u=\operatorname{sat}_{15}(K_p e+K_i z+K_d\dot e).
 $$
+
+两类控制器分别在初角二十度、标称无扰动工况上整定，各试九组。模糊候选 $G_e\in\{1,2,3\}$、$G_{ce}\in\{0.25,0.5,1\}$，固定 $G_u=12$；PID候选 $K_p\in\{20,40,60\}$、$K_d\in\{3,6,9\}$，固定 $K_i=10$。共同评分为“全窗角度均方根＋末窗最大绝对角＋$0.02\mathrm{TV}(u)$”，其中系数带相应单位，使评分以度计。
+
+这只是公开的有限候选搜索；两个参数族不同、参数域也不同，不能冒称完全等价或全球最优。锁定胜出候选后才进行以下测试，不再按测试结果调参。
 
 <JupyterNotebook
-  title="Notebook 5：模糊 PID vs 常规 PID"
-  setupCode={`import numpy as np
+  title="Notebook 5：有限候选整定及锁定测试"
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def simulate_pid(theta0, T, dt, Kp, Ki, Kd):
-    N = int(T / dt)
-    theta, thetad, integral = theta0, 0.0, 0.0
-    ths, us = [theta], [0.0]
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
+
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
+
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
+
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
+
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
     for _ in range(N):
-        e = -theta
-        integral += e * dt
-        de = -thetad
-        u = np.clip(Kp * e + Ki * integral + Kd * de, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)`}
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 常规 PID 闭环仿真
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-
-print("=== 常规 PID ===")
-print(f"{'Kp':>5} {'Ki':>5} {'Kd':>5} | {'rms':>8} {'final':>8} {'TV(u)':>8}")
-print("-" * 50)
-for Kp, Ki, Kd in [(20, 5, 3), (30, 8, 5), (40, 10, 6)]:
-    th, u = simulate_pid(theta0, T, dt, Kp, Ki, Kd)
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    final = th[-1] / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    print(f"{Kp:5d} {Ki:5d} {Kd:5d} | {rms:8.2f} {final:8.2f} {tv:8.1f}")
-
-print("\\n结论：常规 PID 用 Kp=40, Ki=10, Kd=6 达到 rms=2.67 deg，稳态=-0.19 deg。")` },
-    { code: `# 可视化对比
-fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-
-# 模糊 PID
-from numpy import pi
-DEG = pi / 180.0
-
-def trimf(x, a, b, c):
-    if x <= a: return 1.0 if a == b else 0.0
-    if x >= c: return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
-
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b); out[m] = (x[m] - a) / (b - a)
-    else: out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c); out[m] = (c - x[m]) / (c - b)
-    else: out[x >= c] = 1.0
-    return out
-
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
-
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
-
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12: return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
-
-def simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu, Ki):
-    N = int(T / dt)
-    theta, thetad, integral = theta0, 0.0, 0.0
-    ths, us = [theta], [0.0]
-    for _ in range(N):
-        e = -theta
-        e_s = e * Ge
-        de_s = -thetad * Gce
-        u_fuzzy = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
-        integral += e * dt
-        u = np.clip(u_fuzzy * Gu + Ki * integral, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)
-
-n = 5
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-rules = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-t = np.linspace(0, T, int(T/dt)+1)
-
-# 模糊 PID (Ki=8)
-th_fuzzy, u_fuzzy = simulate_fuzzy_pid(theta0, T, dt, e_params, de_params, u_params, rules, 2.0, 0.5, 12.0, 8.0)
-axes[0].plot(t, th_fuzzy / DEG, 'b-', linewidth=1.5, label='模糊 PID (Ki=8)')
-
-# 常规 PID (Kp=40, Ki=10, Kd=6)
-th_pid, u_pid = simulate_pid(theta0, T, dt, 40, 10, 6)
-axes[0].plot(t, th_pid / DEG, 'r-', linewidth=1.5, label='常规 PID (Kp=40, Ki=10, Kd=6)')
-
-axes[0].set_xlabel('时间 (s)', fontsize=12)
-axes[0].set_ylabel('theta (deg)', fontsize=12)
-axes[0].set_title('模糊 PID vs 常规 PID', fontsize=14)
-axes[0].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[0].legend(fontsize=11)
-axes[0].set_ylim([-30, 30])
-axes[0].grid(True, alpha=0.3)
-
-# 控制量对比
-axes[1].plot(t, u_fuzzy, 'b-', linewidth=1.5, label='模糊 PID')
-axes[1].plot(t, u_pid, 'r-', linewidth=1.5, label='常规 PID')
-axes[1].set_xlabel('时间 (s)', fontsize=12)
-axes[1].set_ylabel('u (N*m)', fontsize=12)
-axes[1].set_title('控制量对比', fontsize=14)
-axes[1].axhline(0, color='k', linewidth=0.5, linestyle='--')
-axes[1].legend(fontsize=11)
-axes[1].set_ylim([-16, 16])
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print("\\n定量对比：")
-print(f"  模糊 PID: rms={np.sqrt(np.mean(th_fuzzy**2))/DEG:.2f} deg, final={th_fuzzy[-1]/DEG:.2f} deg")
-print(f"  常规 PID: rms={np.sqrt(np.mean(th_pid**2))/DEG:.2f} deg, final={th_pid[-1]/DEG:.2f} deg")
-print(f"\\n常规 PID 完胜。")` }
+    { code: `import itertools
+score=lambda r:r['rms']+r['tail']+.02*r['tv']
+fuzzy_candidates=[(g,c,12.) for g,c in itertools.product([1.,2.,3.],[.25,.5,1.])]
+pid_candidates=[(p,10.,d) for p,d in itertools.product([20.,40.,60.],[3.,6.,9.])]
+fuzzy_scores=[]; pid_scores=[]
+for g,c,u in fuzzy_candidates:
+    r=simulate(Ge=g,Gce=c,Gu=u);fuzzy_scores.append((score(r),(g,c,u)));print('TRAIN fuzzy',g,c,u,'score=',score(r))
+for p in pid_candidates:
+    r=simulate(pid=p);pid_scores.append((score(r),p));print('TRAIN PID',p,'score=',score(r))
+frozen_fuzzy=min(fuzzy_scores)[1]; frozen_pid=min(pid_scores)[1]
+print('FROZEN fuzzy=',frozen_fuzzy,'PID=',frozen_pid)` },
+    { code: `tests=[('zero',dict(angle=0.)),('small',dict(angle=10.)),('large',dict(angle=35.)),
+       ('gravity',dict(gravity=23.52)),('load',dict(disturbance=1.))]
+for name,s in tests:
+    a=simulate(Ge=frozen_fuzzy[0],Gce=frozen_fuzzy[1],Gu=frozen_fuzzy[2],**s)
+    b=simulate(pid=frozen_pid,**s)
+    report('TEST '+name+' fuzzy',a);report('TEST '+name+' PID',b)
+    if name=='load': plot_runs([('fuzzy PD',a),('PID',b)])
+print('Finite candidate sets, fixed window, ideal measurements; no universal method ranking.')` }
   ]}
 />
 
-定量对比（NB3）：
+选中的模糊参数为 $(G_e,G_{ce},G_u)=(3,0.25,12)$，PID为 $(K_p,K_i,K_d)=(60,10,6)$。下表报告“角度均方根 / 末窗最大绝对角 / 指令总变差”，角度单位为度，总变差单位为 $\mathrm{N\,m}$。
 
-| 控制器 | $\text{rms}\,\theta$ (°) | 稳态 $\theta$ (°) | $\text{TV}(u)$ |
-|--------|------------------------|------------------|---------------|
-| 模糊 PD | 21.10 | 21.69 | 915 |
-| 模糊 PD + I ($K_i=8$) | 18.22 | -21.09 | 73359 |
-| 常规 PID ($K_p=20,K_i=5,K_d=3$) | 3.10 | -0.19 | 15.5 |
-| 常规 PID ($K_p=40,K_i=10,K_d=6$) | 2.67 | -0.19 | 29.9 |
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
 
-常规 PID 的 $\text{rms}\,\theta$ 是模糊 PID 的 **1/7**，稳态误差是 **1/100**，控制 effort 是 **1/2500**。这不是参数没调好的问题——模糊 PD 的性能有一个结构性的上限。
+| 锁定后的测试 | 模糊PD | PID |
+|---|---|---|
+| 零初值、无扰动 | 0 / 0 / 0 | 0 / 0 / 0 |
+| 初角十度 | 1.257126 / $<10^{-6}$ / 10.486374 | 1.124298 / 0.082440 / 13.555419 |
+| 初角三十五度 | 5.452849 / $<10^{-6}$ / 22.183416 | 4.379882 / 0.196105 / 25.238649 |
+| 重力系数改为23.52，初角二十度 | 2.695884 / $<10^{-6}$ / 17.782831 | 2.304943 / 0.146076 / 20.734403 |
+| 恒扰动力矩一，初角二十度 | 3.097970 / 1.407186 / 15.410230 | 2.378026 / 0.289003 / 19.722573 |
+
+</div>
+
+在这些锁定参数和窗口下，PID的非零工况均方根较小，模糊PD的指令总变差较小；零工况持平。模糊控制器在三十五度初值时不满足全窗五度目标，在恒扰动时不满足末窗一度目标。PID在部分工况触及十五牛米限幅，比例和计算量也有代价；完整饱和比例在实验输出中。
+
+本表中的模糊PD没有积分，负载测试不能用于证明“模糊积分方法天生有静差”。若改变积分、候选域、噪声或延迟，需要重新做双方整定和测试。这里既没有全局性能上限，也没有通用方法排名。
 
 ## 规则库结构的影响
 
-第 2 节提到了三种规则库模式：PD-like、P-like、D-like。它们的闭环性能差异巨大：
-
 <JupyterNotebook
-  title="Notebook 6：规则库结构对比"
-  setupCode={`import numpy as np
+  title="Notebook 6：规则结构、解模糊与稳定性反例"
+  setupCode={`import math
+import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
-DEG = np.pi / 180.0
+DEG = math.pi / 180
+plt.rcParams['font.family'] = 'DejaVu Sans'
 
-def trimf(x, a, b, c):
-    if x <= a:
-        return 1.0 if a == b else 0.0
-    if x >= c:
-        return 1.0 if b == c else 0.0
-    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+def rules(n=5, design='repaired', mode='PD'):
+    if mode == 'P': return np.repeat(np.arange(n)[:, None], n, axis=1)
+    if mode == 'D': return np.repeat(np.arange(n)[None, :], n, axis=0)
+    return np.array([[max(0, min(n-1, i+j-(n-1)//2)) if design == 'repaired'
+                      else round((i+j)/2) for j in range(n)] for i in range(n)])
 
-def trimf_vec(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    out = np.zeros_like(x)
-    if b > a:
-        m = (x > a) & (x <= b)
-        out[m] = (x[m] - a) / (b - a)
-    else:
-        out[x <= b] = 1.0
-    if c > b:
-        m = (x > b) & (x < c)
-        out[m] = (c - x[m]) / (c - b)
-    else:
-        out[x >= c] = 1.0
-    return out
+def mf(x, i, n, old=False):
+    if (i == 0 and x <= -1) or (i == n-1 and x >= 1): return 1.
+    return max(0., 1-abs(x-(-1+2*i/(n-1)))/((1 if old else 2)/(n-1)))
 
-def make_tri_mfs(n, lo, hi):
-    centers = np.linspace(lo, hi, n)
-    params = []
-    for i, c in enumerate(centers):
-        a = lo if i == 0 else (centers[i-1] + c) / 2
-        c_right = hi if i == n - 1 else (c + centers[i+1]) / 2
-        params.append((a, c, c_right))
-    return params
+def envelope(e, de, n=5, design='repaired', mode='PD'):
+    old = design == 'legacy'
+    R = rules(n, design, mode)
+    left = [(i, mf(e,i,n,old)) for i in range(n) if mf(e,i,n,old)>0]
+    right = [(j, mf(de,j,n,old)) for j in range(n) if mf(de,j,n,old)>0]
+    heights = {}
+    for i, a in left:
+        for j, b in right:
+            k = int(R[i,j]); heights[k] = max(heights.get(k,0), min(a,b))
+    return heights
 
-def fuzzify(x, params):
-    return [trimf(x, a, b, c) for a, b, c in params]
+def infer(e, de, n=5, design='repaired', mode='PD', method='COG'):
+    old = design == 'legacy'
+    hs = envelope(e,de,n,design,mode)
+    if not hs: return 0.
+    width = (1 if old else 2)/(n-1)
+    def f(x,k): return min(hs[k],mf(x,k,n,old))
+    knots = {-1.,1.}
+    for k,h in hs.items():
+        c=-1+2*k/(n-1)
+        knots.update(x for x in [c-width,c-width*(1-h),c,c+width*(1-h),c+width] if -1<x<1)
+    base=sorted(knots)
+    for a,b in zip(base[:-1],base[1:]):
+        for i in hs:
+            for j in hs:
+                if j<=i: continue
+                da,db=f(a,i)-f(a,j),f(b,i)-f(b,j)
+                if da*db < -1e-24: knots.add(a+(b-a)*da/(da-db))
+    xs=sorted(knots); ys=[max(f(x,k) for k in hs) for x in xs]
+    segments=list(zip(xs[:-1],xs[1:],ys[:-1],ys[1:]))
+    area=sum((b-a)*(p+q)/2 for a,b,p,q in segments)
+    if area<=1e-14: return 0.
+    if method=='COG':
+        return sum((b-a)*((2*a+b)*p+(a+2*b)*q)/6 for a,b,p,q in segments)/area
+    if method=='MOM':
+        peak=max(ys)
+        intervals=[(a,b) for a,b,p,q in segments if abs(p-peak)<1e-12 and abs(q-peak)<1e-12]
+        length=sum(b-a for a,b in intervals)
+        return (sum((b*b-a*a)/2 for a,b in intervals)/length if length>1e-12
+                else float(np.mean([x for x,y in zip(xs,ys) if abs(y-peak)<1e-12])))
+    # BIS: solve the half-area condition by monotone bisection.
+    target=area/2
+    for a,b,p,q in segments:
+        piece=(b-a)*(p+q)/2
+        if target>piece+1e-14: target-=piece; continue
+        lo,hi=0.,b-a
+        for _ in range(45):
+            z=(lo+hi)/2; v=p*z+(q-p)*z*z/(2*(b-a))
+            if v<target: lo=z
+            else: hi=z
+        return a+(lo+hi)/2
+    return xs[-1]
 
-def mamdani_infer(e, de, e_params, de_params, u_params, rules):
-    e_mu = fuzzify(e, e_params)
-    de_mu = fuzzify(de, de_params)
-    u_grid = np.linspace(u_params[0][0], u_params[-1][2], 501)
-    agg = np.zeros(501)
-    for i in range(len(e_params)):
-        for j in range(len(de_params)):
-            w = min(e_mu[i], de_mu[j])
-            if w > 0:
-                k = rules[i][j]
-                a, b, c = u_params[k]
-                clipped = np.minimum(w, trimf_vec(u_grid, a, b, c))
-                agg = np.maximum(agg, clipped)
-    if agg.sum() < 1e-12:
-        return 0.0
-    return np.trapezoid(u_grid * agg, u_grid) / np.trapezoid(agg, u_grid)
-
-def simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu):
-    N = int(T / dt)
-    theta, thetad = theta0, 0.0
-    ths, us = [theta], [0.0]
+def simulate(Ge=2., Gce=.5, Gu=12., n=5, design='repaired', mode='PD', Ki=0.,
+             angle=20., omega=0., gravity=19.6, disturbance=0., T=6., dt=.002,
+             pid=None, method='COG'):
+    N=round(T/dt); th=angle*DEG; om=omega; integral=0.; sat=0; gaps=0
+    theta=[th]; us=[]
     for _ in range(N):
-        e_s = -theta * Ge
-        de_s = -thetad * Gce
-        u_raw = mamdani_infer(e_s, de_s, e_params, de_params, u_params, rules)
-        u = np.clip(u_raw * Gu, -15.0, 15.0)
-        theta_ddot = 19.6 * np.sin(theta) + 4.0 * u
-        thetad += theta_ddot * dt
-        theta += thetad * dt
-        ths.append(theta)
-        us.append(u)
-    return np.array(ths), np.array(us)`}
+        e,de=-th,-om
+        ki=pid[1] if pid is not None else Ki
+        if pid is None:
+            if not envelope(e*Ge,de*Gce,n,design,mode): gaps+=1
+            base=Gu*infer(e*Ge,de*Gce,n,design,mode,method)
+        else: base=pid[0]*e+pid[2]*de
+        candidate=integral+e*dt; raw=base+ki*candidate
+        if abs(raw)<=15 or raw*ki*e<=0: integral=candidate
+        command=base+ki*integral; torque=max(-15.,min(15.,command)); sat+=abs(command)>=15
+        def acc(x): return gravity*math.sin(x)+4*(torque+disturbance)
+        a1,b1=om,acc(th); a2,b2=om+dt*b1/2,acc(th+dt*a1/2)
+        a3,b3=om+dt*b2/2,acc(th+dt*a2/2); a4,b4=om+dt*b3,acc(th+dt*a3)
+        th+=dt*(a1+2*a2+2*a3+a4)/6; om+=dt*(b1+2*b2+2*b3+b4)/6
+        theta.append(th); us.append(torque)
+    theta=np.array(theta)/DEG; us=np.array(us)
+    return dict(time=np.arange(N+1)*dt,theta=theta,u=us,rms=float(np.sqrt(np.mean(theta**2))),
+                final=float(theta[-1]),tail=float(np.max(np.abs(theta[round(max(0,T-1)/dt):]))),
+                tv=float(np.sum(np.abs(np.diff(us)))),maxU=float(np.max(np.abs(us))),
+                gaps=gaps,saturation=sat/N)
+
+def report(label,r):
+    print(label, ' '.join(f'{k}={r[k]:.6f}' for k in ['rms','final','tail','tv','maxU','saturation']), 'gaps=',r['gaps'])
+
+def plot_runs(items):
+    fig,ax=plt.subplots(2,1,figsize=(8,6))
+    for label,r in items:
+        ax[0].plot(r['time'],r['theta'],label=label)
+        ax[1].plot(r['time'][:-1],r['u'],label=label)
+    ax[0].set(xlabel='Time (s)',ylabel='Angle (deg)')
+    ax[1].set(xlabel='Time (s)',ylabel='Torque (N m)',ylim=(-16,16))
+    for a in ax: a.grid(alpha=.3); a.legend(loc='upper right')
+    plt.tight_layout(); plt.show()
+`}
   cells={[
-    { code: `# 三种规则库模式对比
-n = 5
-e_params = make_tri_mfs(n, -1.0, 1.0)
-de_params = make_tri_mfs(n, -1.0, 1.0)
-u_params = make_tri_mfs(n, -1.0, 1.0)
-
-T, dt = 6.0, 1e-4
-theta0 = 20.0 * DEG
-Ge, Gce, Gu = 2.0, 0.5, 12.0
-
-# PD-like
-rules_pd = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules_pd[i][j] = max(0, min(n-1, round((i + j) / 2)))
-
-# P-like
-rules_p = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules_p[i][j] = i
-
-# D-like
-rules_d = np.zeros((n, n), dtype=int)
-for i in range(n):
-    for j in range(n):
-        rules_d[i][j] = j
-
-print("=== 规则库结构对比 ===")
-print(f"{'模式':>10} | {'rms':>8} {'TV(u)':>10} {'final':>8}")
-print("-" * 45)
-
-for name, rules in [('PD-like', rules_pd), ('P-like', rules_p), ('D-like', rules_d)]:
-    th, u = simulate(theta0, T, dt, e_params, de_params, u_params, rules, Ge, Gce, Gu)
-    rms = np.sqrt(np.mean(th**2)) / DEG
-    tv = np.sum(np.abs(np.diff(u)))
-    final = th[-1] / DEG
-    print(f"{name:>10} | {rms:8.2f} {tv:10.1f} {final:8.2f}")` }
+    { code: `items=[]
+for mode in ['PD','P','D']:
+    r=simulate(mode=mode);report(mode,r);items.append((mode,r))
+plot_runs(items)` },
+    { code: `items=[]
+for method in ['COG','BIS','MOM']:
+    r=simulate(method=method);report(method,r);items.append((method,r))
+    print('static asymmetric input (.37,-.12)',method,infer(.37,-.12,method=method))
+plot_runs(items)` },
+    { code: `A1=np.array([[-1.,10.],[0.,-1.]])
+A2=np.array([[-1.,0.],[10.,-1.]])
+for label,A in [('A1',A1),('A2',A2),('average',(A1+A2)/2)]:print(label,'eigenvalues=',np.linalg.eigvals(A))
+print('PD poles=',np.roots([1,24,140.4]))
+print('TS identical consequents at e=-.2 de=.1 =',40*(-.2)+6*.1)
+print('Positive gain on e=-theta gives restoring torque; local stable rules alone do not certify a blend.')` }
   ]}
 />
 
-实验结果（NB1）：
+默认比例因子下，PD-like、P-like、D-like 的全窗均方根分别为 $3.669619^\circ,16.587020^\circ,122.072250^\circ$。最后一秒最大绝对角分别小于 $10^{-6}$ 度、为 $25.917651^\circ$ 和 $173.134836^\circ$。这三张固定规则表中，默认PD-like满足测试阈值，另两张不满足；没有给P/D各自整定，不能拿它们作为“所有P/D都差”的证据。
 
-| 规则类型 | $\text{rms}\,\theta$ (°) | $\text{TV}(u)$ | 稳态 $\theta$ (°) |
-|---------|------------------------|---------------|------------------|
-| PD-like | 21.10 | 915 | 21.69 |
-| P-like | 14.53 | 186 | -19.59 |
-| D-like | 115.97 | 196692 | 186.43 |
-
-**PD-like 是三者中最好的**，但仍然没有稳定。P-like 的 $\text{rms}$ 更小，但稳态在 $-19.59^\circ$（振荡）；D-like 完全不稳定（$\text{rms}=116^\circ$，摆转了好几圈）。
-
-这说明：对于倒立摆稳定，**必须同时使用误差和误差变化率**（PD-like），纯比例或纯微分都不行。
+更基础的解释来自无摩擦模型：若控制律真是只依赖角度的静态恢复力，系统没有速度耗散，一般不会渐近收敛。若只有速度反馈，则在零速度时无法区分向左还是向右的偏角。上述两输入退化规则并不严格等于这两种理想控制律，实验与解析讨论要分开。
 
 ## 解模糊化方法对闭环的影响
 
-[上一课](/intelligent/fuzzy-control-basics)测过，开环下重心法（COG）和最大隶属度法（MOM）的输出差异很大。闭环下这个差异被放大：
+Notebook 6还在同一聚合包络上复算三种定义：COG是面积重心，BIS是左右面积各半的位置，MOM是所有最高平台上的均值。存在多个最高平台时，按各平台长度加权；只有孤立峰点时，对这些点求均值。MOM不是“总取最高语言集中心”，更不是只取最左、最右峰的中点。
 
-- **COG**：输出是加权平均，平滑连续，$\text{TV}(u) = 915$
-- **MOM**：输出是最大隶属度对应的语言值中心，分段常数，不连续
+本课的COG把分段线性包络的断点与交点全部纳入，对面积和一阶矩分别精确积分。对一段端点 $(a,p),(b,q)$，一阶矩为
 
-用 MOM 替换 COG，闭环性能急剧恶化：$\text{rms}\,\theta = 6.09^\circ$（看似改善），但 $\text{TV}(u) = 9540$（**10 倍**），稳态 $6.49^\circ$（没有进过 $\pm 1^\circ$）。系统进入极限环，全程抖振。
+$$
+\int_a^b y\mu(y)\,\mathrm dy
+=\frac{b-a}{6}\bigl[(2a+b)p+(a+2b)q\bigr].
+$$
 
-这个结果与上一课的结论一致：**MOM 会导致严重的控制量抖振，闭环下尤其危险**。
+这避免把梯形面积的精确性误传给二次的一阶矩被积函数。BIS用包络逐段累计面积后二分；MOM按完整最高点集合计算。
+
+默认固定参数下，COG/BIS/MOM的全窗均方根分别为 $3.669619^\circ,3.770013^\circ,6.217119^\circ$，总变差分别为 $6.455382,6.390132,675.008904\,\mathrm{N\,m}$。MOM的末窗最大绝对角为 $7.479000^\circ$。这说明**本组规则和采样下**换解模糊方法会显著改变响应；三者没有分别整定，不能外推“MOM必然抖振”。
 
 ## 稳定性分析
 
 ### Mamdani 型的困难
 
-Mamdani 控制器 $u = \Phi(e, \dot{e})$ 是一个分段连续但不可微的非线性映射。闭环系统的 Lyapunov 分析要求 $\dot{V} < 0$，但 $\Phi$ 的不可微性让 $\dot{V}$ 的符号判断极其复杂。
+min/max切换和分式重心会让映射的解析检查复杂，但不可微不意味着不能证明稳定：对光滑候选函数，沿连续闭环轨迹计算 $\dot V$ 时不必先对控制器求导。关键是覆盖、连续性、扇区界、正定性和实际闭环条件是否成立。
 
-具体来说，对于倒立摆：
-$$
-V = \frac{1}{2} m l^2 \dot\theta^2 + m g l (1 - \cos\theta)
-$$
+旧版的正定函数 $V=J\dot\theta^2/2+mgl(1-\cos\theta)$ 对本课向上为零的动力学有
 
 $$
-\dot{V} = m l^2 \dot\theta \ddot\theta + m g l \dot\theta \sin\theta = \dot\theta (m g l \sin\theta + u) + m g l \dot\theta \sin\theta
+\dot V=\dot\theta\bigl(2mgl\sin\theta+u\bigr)\quad(d=0),
 $$
 
-要证明 $\dot{V} < 0$，需要 $u$ 满足某个与 $\theta$、$\dot\theta$ 相关的条件。但 Mamdani 的 $\Phi$ 是 min/max 聚合 + 重心法解模糊化的组合，这个条件无法解析地验证。
+它并不自动为负，不能把写出了 $V$ 当成证明。作为一个有条件的解析参照，若无外扰、无饱和且直接使用
+
+$$
+u=-mgl\sin\theta-k\theta-d_v\dot\theta,\qquad k>0,\ d_v>0,
+$$
+
+则候选 $W=J\dot\theta^2/2+k\theta^2/2$ 满足 $\dot W=-d_v\dot\theta^2$。在所考察不变域内，零导数集合中可一直停留的只有原点，才能继续用不变性原理得到渐近结论。饱和和离散采样必须另查。**这个补偿控制律不是本课Mamdani程序的稳定性证书。**
 
 ### Takagi-Sugeno 型的优势
 
-TS 型的结论部是线性函数（而非模糊集合），例如：
+TS控制器对后件线性控制律作归一化加权，前提是权重非负且总和严格为正：
 
 $$
-R^i: \text{IF } x \text{ is } A^i \text{ THEN } u = K_i x
+u=\sum_i h_i(x)K_i x,\qquad h_i=\frac{w_i}{\sum_j w_j}.
 $$
 
-输出是各规则的加权平均：
-
-$$
-u = \frac{\sum_i w_i K_i x}{\sum_i w_i}
-$$
-
-这仍然是一个非线性映射，但因为结论部是线性的，可以用分段 Lyapunov 方法分析每个规则的稳定性，然后用凸组合的性质证明全局稳定性。
-
-> 📐 TS 型的稳定性分析详见 [李雅普诺夫稳定性](/nonlinear/lyapunov-stability)。
-
-本课不深入 TS 型的稳定性证明，但要让读者知道：**如果需要稳定性保证，TS 型比 Mamdani 型更容易分析**。
+“每条局部规则都稳定”仍不充分。Notebook 6的反例给出两个特征值均为负一的矩阵，但均值矩阵特征值为四和负六，已经不稳定。需要适用的公共Lyapunov条件或同时处理权重、局部模型和交叉项的其它证书；不能只凭凸组合推导全局稳定。基础工具见[李雅普诺夫稳定性](/nonlinear/lyapunov-stability)。
 
 ## 工程实践要点
 
-基于本课的数值实验，总结 Mamdani 模糊控制器设计的工程经验：
+<span id="1-规则库必须保证负反馈" />
 
-### 1. 规则库必须保证负反馈
+### 1. 规则方向与闭环条件
 
-检查规则表的反对称性：$R[i][j] + R[n-1-i][n-1-j] = n-1$。如果不满足，控制器可能是正反馈。
+检查对称性之后，还要检查符号、覆盖、局部恢复与阻尼。反对称性不替代负反馈方向，负反馈方向不替代稳定性证明。显示无覆盖计数；生产环境应有明确故障策略。
 
-### 2. 比例因子 $G_e$ 是主导因素
+<span id="2-比例因子-geg_ege-是主导因素" />
 
-$G_e$ 决定了等效比例增益的上限。如果 $G_e$ 太小，归一化输入落在隶属度函数的尾部，控制量太弱；如果 $G_e$ 太大，归一化输入超出 $[-1, 1]$，隶属度函数饱和。
+### 2. 从量程确定初始尺度
 
-**经验公式**：$G_e \approx 1.5 / \theta_{\max}$，其中 $\theta_{\max}$ 是期望的最大偏差（弧度）。对于 $\theta_{\max} = 10^\circ = 0.175\ \mathrm{rad}$，$G_e \approx 8.6$。
+本轮实验不能普遍断言 $G_e$ 主导性能。按预期量程确定初始尺度，再联合检查另外两个因子，保留扫描范围和损失函数。调大输入尺度也可能提前进入肩形饱和。
 
-### 3. $G_{ce}$ 和 $G_u$ 的调节空间有限
+<span id="3-gceg_cegce-和-gug_ugu-的调节空间有限" />
 
-实验显示，这两个参数对闭环性能的影响很小。如果 $G_e$ 调好了但性能仍不满足，问题不在 $G_{ce}$ 或 $G_u$。
+### 3. 联合检查速度和输出尺度
 
-### 4. Mamdani 型的增益有硬上限
+三个因子的可用范围受设备与采样条件限制。速度增益、力矩幅值、噪声放大与饱和会共同改变轨迹。真实差分角速度要考虑滤波和时延；本课用理想角速度测量，没有完成这部分验收。
 
-对于 $n=5$ 的三角形隶属度函数，等效比例增益的最大值受限于隶属度函数的重叠度。如果需要更高的增益，可以：
-- 增加 $n$（但计算量增加）
-- 用 TS 型代替 Mamdani 型
-- 用非线性隶属度函数（高斯型，但支撑无限）
+<span id="4-mamdani-型的增益有硬上限" />
 
-### 5. 模糊 PD 不适合快速不稳定系统
+### 4. 区分输出界与性能上限
 
-对于倒立摆这种开环不稳定的系统，Mamdani 模糊 PD 的增益约束是致命的。常规 PID 在这个问题上完胜。模糊控制的优势在于模型未知、非线性严重的场合（如上一课提到的蒸汽机），而不是快速不稳定系统。
+对**固定实现与给定尺度**可以求输出界；不能由一个失败默认值断言整个Mamdani类有致命增益上限。先查空隙与死区，再讨论有限输出、局部斜率和执行器限制。旧链接通过别名兼容，旧结论已经撤回。
 
-### 6. 加积分项可以消除静差，但可能引入极限环
+<span id="5-模糊-pd-不适合快速不稳定系统" />
 
-模糊 PD + I 可以消除静差，但积分作用与模糊非线性的交互可能导致极限环。需要仔细调节 $K_i$，并用相平面分析验证稳定性。
+### 5. 按模型与证据选择方法
+
+不能根据旧实现的失败，排除Mamdani用于快速不稳定系统。修复后的默认值已在本课直接力矩单摆上满足有限窗口指标，仍没有覆盖完整旋转倒立摆、摩擦、采样抖动或实机失效。方法选择要按模型、证书、资源与实测证据判断。
+
+<span id="6-加积分项可以消除静差但可能引入极限环" />
+
+### 6. 验证积分补偿和振荡边界
+
+积分可在闭环稳定且有足够执行能力等条件下补偿恒扰动；饱和时要检查积分累积。若声称存在极限环，需要周期轨道或其它充分证据，不能仅凭几秒曲线。做更长时间实验也仍须区分数值现象与数学证明。
 
 ## 小结
 
-本课把 Mamdani 模糊控制器放进倒立摆闭环，测清了它的真实能力边界：
+一个可检查的模糊控制器，需要同时交代输入覆盖、规则语义、物理缩放、解模糊定义、采样更新和限幅。故障示例应帮助定位程序，而不是替整个方法下判决。
 
-1. **规则库设计**：稳定化规则表 $R[i][j] = \text{round}((i+j)/2)$ 保证负反馈
-2. **比例因子整定**：$G_e$ 是主导因素，$G_{ce}$ 和 $G_u$ 影响有限
-3. **性能上限**：$n=5$ 的 Mamdani 模糊 PD 的 $\text{rms}\,\theta \approx 21^\circ$，远未稳定
-4. **与 PID 对比**：常规 PID 的 $\text{rms}\,\theta = 2.67^\circ$，是模糊 PD 的 1/7
-5. **规则库结构**：PD-like 优于 P-like 和 D-like
-6. **解模糊化方法**：MOM 导致严重抖振，COG 更平滑
-7. **稳定性分析**：Mamdani 型困难，TS 型更容易
-
-模糊控制不是万能药。它的优势在于模型未知、规则可以从经验提取的场合；劣势在于增益受限、稳定性分析困难。对于倒立摆这种快速不稳定系统，常规 PID 是更好的选择。
+本课修复覆盖与规则后，在原比例因子下达到有限窗口指标；积分、PID对照和失败测试又揭示了负载与代价。保留候选域、窗口和完整指标，才能让读者复算并判断结果能推广多远。
 
 ## 习题
 
-1. **规则表验证**：给定 $n=7$ 的规则表 $R[i][j] = \text{round}((i+j)/2)$，验证它是否满足负反馈条件 $R[i][j] + R[6-i][6-j] = 6$。
-
-2. **比例因子计算**：对于 $\theta \in [-30^\circ, 30^\circ]$，要让 $20^\circ$ 映射到归一化域的 $-0.8$，计算 $G_e$。
-
-3. **P-like 规则表分析**：解释为什么 P-like 规则表 $R[i][j] = i$ 不能稳定倒立摆。提示：考虑 $\dot{e}$ 的作用。
-
-4. **等效增益估计**：对于 $n=5$ 的 Mamdani 控制器，在原点附近（$e \approx 0$、$\dot{e} \approx 0$），估计等效比例增益 $K_p = \partial u / \partial e$。提示：计算 $U(0.1, 0) - U(0, 0)$ 除以 $0.1$。
-
-5. **TS 型设计**：设计一个两规则的 TS 型控制器，使其在原点附近等效于 $u = -40e - 6\dot{e}$。提示：结论部用线性函数 $u = K_i [e, \dot{e}]^T$。
+1. **取整与对称性**：七集平均规则采用半整数取偶时，证明 $R[i,j]+R[6-i,6-j]=6$。若改用JavaScript的向上取半整数，对 $i=0,j=1$ 检查会怎样？反对称能证明负反馈吗？
+2. **单位与缩放**：将负二十度映到 $-0.8$，求 $G_e$；再求三十度映到一时的尺度，并写单位。
+3. **P-like边界**：区分两输入退化规则和真正的单输入比例反馈。无摩擦模型用 $u=-K_p\theta$ 时，线性化在什么条件下有恢复力？为什么恢复力不等于渐近稳定？
+4. **等效增益**：默认修复映射计算 $\Phi(0.1,0)$ 和原点轴向差商；它们能否直接当成物理 $K_p$ 或完整二维Jacobian？旧半宽覆盖在 $e_n=0.25$ 处怎样？
+5. **TS符号**：仍用 $e=-\theta$，设计两条相同后件实现 $u=40e+6\dot e$，写权重条件和标称线性化极点。若改为负四十、负六，反馈方向怎样？
+6. **证明与比较**：写出稳定矩阵平均后不稳定的反例，并解释为何本课表格不能证明PID普遍优于模糊控制。
 
 ## 答案
 
 ### 习题 1
 
-验证 $R[i][j] + R[6-i][6-j] = 6$：
-
-$$
-R[i][j] = \text{round}\!\left(\frac{i+j}{2}\right)
-$$
-
-$$
-R[6-i][6-j] = \text{round}\!\left(\frac{(6-i)+(6-j)}{2}\right) = \text{round}\!\left(\frac{12-(i+j)}{2}\right) = 6 - \text{round}\!\left(\frac{i+j}{2}\right)
-$$
-
-所以 $R[i][j] + R[6-i][6-j] = \text{round}((i+j)/2) + 6 - \text{round}((i+j)/2) = 6$。✓
+由于六是偶数，最近偶数取整满足 $\operatorname{roundEven}(6-x)=6-\operatorname{roundEven}(x)$，代入 $x=(i+j)/2$ 即得。改为向上取半整数时，$R[0,1]=1$、$R[6,5]=6$，和为七而不是六。即使有反对称性，$u=-40e$ 也是反对称的，却会把本课正角度继续向正方向推。Notebook 1逐项检查两种奇数集数量的规则表。
 
 ### 习题 2
 
-$e = -\theta = -20^\circ = -0.349\ \mathrm{rad}$。要让 $e \cdot G_e = -0.8$：
+先把角度换为弧度，再按目标归一化幅值相除：
 
 $$
-G_e = \frac{0.8}{0.349} = 2.29
+G_e=\frac{0.8}{20\pi/180}=\frac{7.2}{\pi}\approx2.291831\,\mathrm{rad}^{-1},\qquad
+\widetilde G_e=\frac{1}{30\pi/180}=\frac6\pi\approx1.909859\,\mathrm{rad}^{-1}.
 $$
+
+这两个尺度都不自动等于最优尺度；Notebook 1复算。
 
 ### 习题 3
 
-P-like 规则表 $R[i][j] = i$ 只依赖误差 $e$，不依赖误差变化率 $\dot{e}$。这意味着控制器是纯比例的，没有阻尼。
-
-对于倒立摆，开环不稳定（$\ddot\theta = 19.6\sin\theta + 4u$）。纯比例控制 $u = -K_p \theta$ 可以提供恢复力，但没有阻尼项 $-K_d \dot\theta$，系统会振荡而不收敛。
-
-实验显示 P-like 的 $\text{rms}\,\theta = 14.53^\circ$、稳态 $-19.59^\circ$，确实在振荡。
+P-like的后件只按行选，但另一输入仍可能改变聚合形状；应查看真实曲面。真正的比例反馈线性化为 $\ddot\theta=(19.6-4K_p)\theta$，恢复力要求 $K_p>4.9\,\mathrm{N\,m/rad}$。无阻尼时特征根在虚轴上，不能推出渐近稳定；若恢复力不够，原点仍不稳定。
 
 ### 习题 4
 
-在原点附近，取 $e = 0.1$、$\dot{e} = 0$，计算 $U(0.1, 0) - U(0, 0)$。
-
-对于 $n=5$，语言值中心为 $\{-1, -0.5, 0, 0.5, 1\}$。$e = 0.1$ 落在 ZO（中心 0）和 PS（中心 0.5）之间，隶属度为 $\mu_{\text{ZO}} = 0.8$、$\mu_{\text{PS}} = 0.2$。
-
-$\dot{e} = 0$ 时，只有 ZO 和 PS 被激活。规则表给出 $R[\text{ZO}][\text{ZO}] = 2$（ZO）、$R[\text{PS}][\text{ZO}] = 3$（PS）。
-
-聚合后，输出是 ZO 和 PS 的加权平均，重心法给出 $U(0.1, 0) \approx 0.1$。
-
-所以等效比例增益 $K_p \approx (0.1 - 0) / 0.1 = 1.0$。
-
-这个增益太小了——常规 PID 需要 $K_p = 40$ 才能稳定。这就是 Mamdani 型的增益限制。
+Notebook 1给出 $\Phi(0.1,0)=0.1206896552$，割线斜率约 $1.206896552$；步长 $10^{-4}$ 的轴向差商约 $1.499600140$。它们不同，不能把有限差商说成全域常增益。物理轴向斜率还需乘 $G_uG_e$；二维切换面处可能不存在单一Jacobian，单轴差商不足以断言可微。旧半宽在 $0.25$ 处全零，默认完整覆盖在该点隶属度和为一。
 
 ### 习题 5
 
-两规则 TS 型控制器：
+取 $K_1=K_2=[40,6]$，非负权重总和为正时，加权输出就是 $40e+6\dot e$。标称线性化特征方程为
 
 $$
-R^1: \text{IF } e \text{ is NB THEN } u = K_1 [e, \dot{e}]^T
+\lambda^2+24\lambda+140.4=0,
 $$
 
-$$
-R^2: \text{IF } e \text{ is PB THEN } u = K_2 [e, \dot{e}]^T
-$$
+根为 $-10.102633$、$-13.897367$，均为负。这里不含积分，也没给饱和和采样后的全局保证。改用负后件则角度恢复项变成正反馈。Notebook 6给极点数值。
 
-要让原点附近等效于 $u = -40e - 6\dot{e}$，取 $K_1 = K_2 = [-40, -6]$。
+### 习题 6
 
-输出：
+例如
 
 $$
-u = \frac{w_1 K_1 x + w_2 K_2 x}{w_1 + w_2} = \frac{(w_1 + w_2) [-40, -6] x}{w_1 + w_2} = [-40, -6] x
+A_1=\begin{bmatrix}-1&10\\0&-1\end{bmatrix},\quad
+A_2=\begin{bmatrix}-1&0\\10&-1\end{bmatrix},\quad
+\frac{A_1+A_2}{2}=\begin{bmatrix}-1&5\\5&-1\end{bmatrix}.
 $$
 
-这样无论权重如何，输出都是 $u = -40e - 6\dot{e}$，等效于常规 PD。
-
-这个例子的意义：TS 型可以精确地实现线性控制律，而 Mamdani 型只能近似。
+前两者特征值均为负一，后者为四和负六。局部稳定不推出凸组合稳定。比较表也只覆盖两组锁定候选、指定对象、窗口与工况；指标存在取舍，零工况持平，未检验的噪声/延迟以及更广候选域都不能从表中推断。

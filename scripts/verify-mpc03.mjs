@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+import {execFileSync} from 'node:child_process';
+import {renderedHeadings} from './rendered-headings.mjs';
+const dir='.agent/semester-03/mpc-03/',key='mpc/receding-horizon';
+const extracted=JSON.parse(fs.readFileSync(dir+'extracted.json','utf8')).notebooks;
+assert.equal(extracted.length,3);assert(extracted.every(nb=>nb.cells.length===2));
+const source=fs.readFileSync('content/'+key+'.mdx','utf8');
+const heads=await renderedHeadings(source,key),old=JSON.parse(fs.readFileSync(dir+'headings-before.json','utf8'));
+const aliases=[...source.matchAll(/<span id="([^"]+)" \/>/g)].map(m=>m[1]);
+assert.equal(new Set([...heads.ids,...aliases]).size,heads.ids.length+aliases.length);
+for(const id of old.ids)assert([...heads.ids,...aliases].includes(id),id);
+assert.deepEqual(heads.h2,old.h2);
+const exports={};new Function('exports',ts.transpileModule(fs.readFileSync('lib/receding-horizon.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(exports);
+const cases=[];
+for(let np=1;np<=8;np++)for(const bound of [.25,.5,.75,1])for(const shock of [-.4,-.2,0,.2,.4])cases.push({np,bound,shock,result:exports.recedingExample(np,bound,shock)});
+for(const x of [-2,0,2])for(const prev of [-2,2]){const result=exports.holdPlan(x,prev,8,1);assert(Math.abs(result.u)<=2);assert(result.residual<1e-10);}
+for(const args of [[0,0,0,1],[NaN,0,4,1],[0,3,4,1],[0,0,4,2]])assert.throws(()=>exports.holdPlan(...args),RangeError);
+assert.throws(()=>exports.recedingExample(4,1,NaN),RangeError);
+fs.writeFileSync(dir+'actual-ts.json',JSON.stringify(cases));
+const out=execFileSync('python',[dir+'reference.py'],{encoding:'utf8',env:{...process.env,MPLBACKEND:'Agg',PYTHONIOENCODING:'utf-8'}});
+fs.writeFileSync(dir+'reconciliation.log',out);console.log(out);

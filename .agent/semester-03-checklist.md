@@ -64,6 +64,15 @@
 | W16 | Pyodide首次冷启动依赖加载失败与恢复能力审查 | [ ] | docs/deployment/discrete01-release.md;docs/deployment/discrete01-public-python-first-attempt.json;首次缺packaging，刷新完整通过；原因未定位，未宣称运行时已修复 |
 | DEP13 | 网页Python代码统一初始化字体并发布验收 | [x] | .agent/semester-03/python-code-font/acceptance.md;docs/deployment/python-code-font-release.md;docs/deployment/python-code-font-public-validation.json;commit:35464555d8263829b5daca2d3ce65541c323fa24 |
 | ZH04 | e6b985f润色增量快速审核与合入 | [x] | .agent/semester-03/zh-lang-edit/merges/e6b985f/acceptance.md;.agent/semester-03/zh-lang-edit/merges/e6b985f/review.json;commit:66c1b1385623331982ec643842493df006b7a013 |
+| DEP14 | e6b985f润色增量授权发布与公网验收 | [x] | docs/deployment/zh-e6b985f-release.md;docs/deployment/zh-e6b985f-public-validation.json;commit:4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84 |
+| QA01 | 顺序校验负向测试消除历史进度假设 | [ ] | .agent/semester-03/ml-01/test-debt.md;仅记录既有测试对DISCRETE-01未交付的假设，不借本课改其它课程或放宽校验 |
+| RB01 | ROBUST-01范数/裕度/题解与Notebook债务返修 | [x] | .agent/semester-03/robust-01/acceptance.md;docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;已实测关闭PY-018及S04本课Notebook债务，其它债务保留 |
+| RB02 | ROBUST-02不确定性模型边界、MIMO API与题解返修 | [x] | .agent/semester-03/robust-02/acceptance.md;PY-019与S04本课运行债务已实测关闭，余课保留 |
+| RB04 | ROBUST-04鲁棒性能完整LFT与权重/接口返修 | [x] | .agent/semester-03/robust-04/acceptance.md;本课S04与Notebook已实测，其他课程及PY待办保留 |
+| RB05 | ROBUST-05内部稳定、反陷波与权重/求解条件返修 | [x] | .agent/semester-03/robust-05/acceptance.md;本课Notebook及S04实测，其他课程PY待办保留；083导航已由并行master修复，本课无该项改动 |
+| RB06 | ROBUST-06接口、分块、失稳与权重返修 | [x] | .agent/semester-03/robust-06/acceptance.md;本课Notebook与Python/双页面全验，其他课程待办保留 |
+| RB03 | ROBUST-03鲁棒稳定性数学证书与采样结论返修 | [x] | .agent/semester-03/robust-03/acceptance.md;PY-004与S04本课运行债务已实测关闭，余课保留 |
+| QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -160,68 +169,68 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| IMPL-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| IMPL-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| IMPL-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| IMPL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/01-computer-control-architecture.md;.agent/semester-03/impl-01/acceptance.md;.agent/semester-03/impl-01/validation.json;commit:58811f8fe3defeff14261bb1ccc5f8ab1dcfa685 |
+| IMPL-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/02-digital-pid.md;.agent/semester-03/impl-02/acceptance.md;.agent/semester-03/impl-02/validation.json;commit:d6600ebe3d487e6fce87624afc0fa7acf2146e99 |
+| IMPL-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/03-pid-engineering-tuning.md;.agent/semester-03/impl-03/acceptance.md;.agent/semester-03/impl-03/validation.json;commit:2d89b900d843b9c0683df229efebb0cddce84476 |
+| IMPL-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/04-controller-discretization-practice.md;.agent/semester-03/impl-04/acceptance.md;.agent/semester-03/impl-04/validation.json;commit:a142af0658eb2a6508548446988fa896b6b46956 |
+| IMPL-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/05-embedded-implementation.md;.agent/semester-03/impl-05/acceptance.md;.agent/semester-03/impl-05/validation.json;commit:ae222132ba6b5a6deca0b91d7467a4cfd1c2d2c9 |
+| IMPL-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/06-realtime-control.md;.agent/semester-03/impl-06/acceptance.md;.agent/semester-03/impl-06/validation.json;commit:94519d3d43a31c4020873ee5f96399b1924e0f2d |
+| IMPL-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/07-networked-control.md;.agent/semester-03/impl-07/acceptance.md;.agent/semester-03/impl-07/validation.json;commit:ef0206fd77ea7957760a98af9029d5e0f993dd4e |
+| IMPL-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/08-industrial-bus-protocols.md;.agent/semester-03/impl-08/acceptance.md;.agent/semester-03/impl-08/validation.json;commit:3e95f6e9c5ecb8948349e8e6cd05ca0e157ae78c |
+| IMPL-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/09-hil-rapid-prototyping.md;.agent/semester-03/impl-09/acceptance.md;.agent/semester-03/impl-09/validation.json;commit:a021dd9b0d8047097e2a1dee5169c834d1dc6582 |
 | IMPL-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 机器学习
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ML-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ML-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ML-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/01-learning-problem.md;.agent/semester-03/ml-01/acceptance.md;commit:2b3e83ab230b88328fefb740c0507d9c62562216 |
+| ML-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/02-supervised-learning.md;.agent/semester-03/ml-02/acceptance.md;rank2，独立构建与内核8992;commit:739e31043ce4f29ef132cafa86d9536cfd8334d9 |
+| ML-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/03-neural-networks.md;.agent/semester-03/ml-03/acceptance.md;rank2独立构建8196与严格内核8992;commit:4ed302698915b30c3228a60753bb450d13cf56ed |
+| ML-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/04-autodiff-optimization.md;.agent/semester-03/ml-04/acceptance.md;rank2独立构建8212与严格内核8992;commit:97febf466c7d09f9e40b9a3273ef16aaa8fb8513 |
+| ML-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/05-sequence-models.md;.agent/semester-03/ml-05/acceptance.md;rank2独立预览8214与严格内核8992;commit:d40982a07caeba9037cc1d452abcb3c62b592d41 |
+| ML-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/06-attention-transformers.md;.agent/semester-03/ml-06/acceptance.md;rank2独立预览8216与严格内核8992;commit:9ce2d2ca1782968be6aaac6aa32a390e0b0b9792 |
+| ML-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/07-representation-learning.md;.agent/semester-03/ml-07/acceptance.md;rank2独立预览8232与严格内核8992;commit:ca233d4adad1ba7956039bec8e1227aab699722c |
+| ML-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/08-generative-models.md;.agent/semester-03/ml-08/acceptance.md;rank2独立预览8234与严格内核8992;commit:4943d266da3b389588d2c9218e3adb7f41786fd6 |
 | ML-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 系统辨识
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ID-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ID-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ID-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/01-identification-framework.md;.agent/semester-03/id-01/acceptance.md;commit:bc65732deee20fbbfd8206fdd49a078fced14af8 |
+| ID-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/02-model-structures.md;.agent/semester-03/id-02/acceptance.md;commit:d3d77103a808782445257feee3eca2339a3399a4 |
+| ID-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/03-least-squares-rls.md;.agent/semester-03/id-03/acceptance.md;commit:d76422def1c014f4aee6706439082c9c729759f1 |
+| ID-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/04-persistent-excitation.md;.agent/semester-03/id-04/acceptance.md;commit:56344abe4733ae622a29ab94728ab9895159176b |
+| ID-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/05-instrumental-variable.md;.agent/semester-03/id-05/acceptance.md;commit:40456c44cd909000c42aec614f95992323799d4d |
+| ID-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/06-frequency-domain-id.md;.agent/semester-03/id-06/acceptance.md;commit:19ce1c403883ab1a1573259e806118477448f146 |
+| ID-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/07-subspace-id.md;.agent/semester-03/id-07/acceptance.md;commit:d931844104fe97b7b06598ecacef73b961f4d930 |
+| ID-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/08-nonlinear-data-driven-id.md;.agent/semester-03/id-08/acceptance.md;commit:c76c82bb6ea2b2e32bed6ad95fa2315c80d50e0a |
 | ID-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 状态估计
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| EST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s02-structure-migration.md;S02实跑发现存量setup缺plt及ipywidgets，Phase1审计;.agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| EST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| EST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/01-estimation-problem.md;.agent/semester-03/est-01/acceptance.md;commit:bd52f391638024b7b339dc293a8aae5cf9e50a1a |
+| EST-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/02-least-squares-ml.md;.agent/semester-03/est-02/acceptance.md;commit:a684aa870802871eb82282f1756da9b5173e5037 |
+| EST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/03-kalman-filter.md;.agent/semester-03/est-03/acceptance.md;commit:5aaa266e8595079b670437ef26df87298e83ca12 |
+| EST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/04-extended-kalman-filter.md;.agent/semester-03/est-04/acceptance.md;commit:ad91f73a2499ad184c34a1d0c8cd3434fe87c46a |
+| EST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/05-unscented-kalman-filter.md;.agent/semester-03/est-05/acceptance.md;commit:61aaf292057ac2fa04414c9730d1ce9676b7f465 |
+| EST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/06-particle-filter.md;.agent/semester-03/est-06/acceptance.md;commit:7a7377f21f6b1538b3fb0e3cd19dd82260472484 |
+| EST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/07-sensor-fusion.md;.agent/semester-03/est-07/acceptance.md;commit:87ebadfedee9e830591ce382e0f20a3ead99ec7b |
+| EST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/08-estimation-case-study.md;.agent/semester-03/est-08/acceptance.md;commit:08893d73e521795745934a21c43da9a6108ea4af |
 
 ### 鲁棒控制
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBUST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| ROBUST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| ROBUST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;commit:3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46;rank5原生/Pyodide/页面/构建与隔离提交树检查通过 |
+| ROBUST-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/02-uncertainty-modeling.md;.agent/semester-03/robust-02/acceptance.md;commit:e3df95c421bc76239fd795e4022e2356e873f62a;rank5四Notebook五cell与双构建实测通过 |
+| ROBUST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/03-robust-stability.md;.agent/semester-03/robust-03/acceptance.md;commit:76ae270c06fb2363cdd98a4d998fb7b83e25f08c;rank5四Notebook五cell、证书/采样独立复算、双构建与375px通过 |
+| ROBUST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/04-robust-performance.md;.agent/semester-03/robust-04/acceptance.md;commit:b749fcc2576f8f96ae3afd64a0e3b07fc4123efd;rank5三Notebook五cell、完整LFT/独立数值、双构建与375px通过 |
+| ROBUST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/05-h-infinity-basics.md;.agent/semester-03/robust-05/acceptance.md;commit:e06d60feb8263fca0b75219c276c36851ff7f5b3;rank5四Notebook五cell、实际TS/独立复算、双构建/375px通过 |
+| ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;rank5三Notebook五cell/独立数值/双构建/375px通过，待真实master回执 |
 | ROBUST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -232,13 +241,13 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MPC-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-01 | [x] | [x] | [x] | [x] | [x] | [x] | .agent/semester-03/mpc-01/acceptance.md;commit:2950ac78055c68d93f699427dd65c3adad01e79d ;docs/discuss-log/semester-03/12-mpc/01-mpc-principle.md |
+| MPC-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/02-prediction-model.md;.agent/semester-03/mpc-02/acceptance.md;commit:3b54cd51cf71de061cebc1995d066d865a0ebbec |
+| MPC-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/03-receding-horizon.md;.agent/semester-03/mpc-03/acceptance.md;commit:6a4c72492c0efab975de1eb701d527ed0c274571 |
+| MPC-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/04-constraint-handling.md;.agent/semester-03/mpc-04/acceptance.md;commit:d43b7ea47f8ba641758086fba04bc76bb5ed490a |
+| MPC-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/05-mpc-stability.md;.agent/semester-03/mpc-05/acceptance.md;commit:02e79e304684b094640581644d55ea14dffc0807 |
+| MPC-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/06-generalized-predictive-control.md;.agent/semester-03/mpc-06/acceptance.md;.agent/semester-03/s04-course-debts.json;commit:b0ca3700b0078eaf2effdd9308dca5fa2500d05c |
+| MPC-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/07-explicit-mpc.md;.agent/semester-03/mpc-07/acceptance.md;commit:38866315543e03124bb4bf43ff882720781984af |
 | MPC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MPC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -248,8 +257,8 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| INTEL-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| INTEL-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| INTEL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/13-intelligent/01-fuzzy-control-basics.md;.agent/semester-03/intel-01/acceptance.md;.agent/semester-03/intel-01/validation.json;commit:3d2360804c416a0081ef295196ecf7ef8f5799ce;rank7本课真实master交付，Pages未发布 |
+| INTEL-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/13-intelligent/02-fuzzy-controller-design.md;.agent/semester-03/intel-02/acceptance.md;commit:d40d87a260edeae20e9617d0efe458ea3374b3e7;rank7独立范围验收，14H2/6Notebook14cell/6题，原生与浏览器通过，Pages未发布 |
 | INTEL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | INTEL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | INTEL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -261,8 +270,8 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| RL-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| RL-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| RL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/14-rl-control/01-rl-basics.md;.agent/semester-03/rl-01/acceptance.md;commit:c6494958021fb272e878347752e70c84bfbc94ce |
+| RL-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/14-rl-control/02-dynamic-programming.md;.agent/semester-03/rl-02/acceptance.md;commit:3eec724f2115b35029d73b3d34dafe4df940fd75 |
 | RL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -278,7 +287,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| MULTI-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MULTI-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/15-multi-agent/01-multi-agent-overview.md;.agent/semester-03/multi-01/acceptance.md;commit:9d920bbaed693d869f943701acc8658c4d9914b6 |
 | MULTI-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MULTI-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MULTI-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -292,7 +301,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| SAFE-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| SAFE-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/16-safety-ftc/01-safety-overview.md;.agent/semester-03/safe-01/acceptance.md;commit:0ef1e1ace13e3a62f867f55542fd0759d629f4ce |
 | SAFE-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | SAFE-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | SAFE-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -305,7 +314,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBOT-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBOT-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/17-robotics/01-robot-models.md;.agent/semester-03/robot-01/acceptance.md;commit:3e87c235f04cb3c07395594bd8b66efc4effb164 |
 | ROBOT-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBOT-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBOT-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -320,8 +329,8 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| RLEARN-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| RLEARN-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| RLEARN-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/18-robot-learning/01-robot-data.md;.agent/semester-03/rlearn-01/acceptance.md;commit:4909e2e73d53c87a1925ec8baff647c1e0b79e93 |
+| RLEARN-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/18-robot-learning/02-imitation-learning.md;.agent/semester-03/rlearn-02/acceptance.md;commit:c304b38d5b7c52726558104f3ae19677632b3486 |
 | RLEARN-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -335,8 +344,8 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| EMBODIED-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| EMBODIED-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| EMBODIED-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/19-embodied/01-embodied-systems.md;.agent/semester-03/embodied-01/acceptance.md;commit:3be96390783b2e6777c0ffe5eea431b999a34f19 |
+| EMBODIED-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/19-embodied/02-multimodal-observation.md;.agent/semester-03/embodied-02/acceptance.md;commit:039549a20a27c138cbe7e07ac3b9f9191495c9af |
 | EMBODIED-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -350,8 +359,8 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| DRIVING-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| DRIVING-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| DRIVING-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/20-autonomous-driving/01-driving-system.md;.agent/semester-03/driving-01/acceptance.md;commit:4784a21caea543bf17fbf2b12ac8b5808202875c |
+| DRIVING-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/20-autonomous-driving/02-vehicle-dynamics.md;.agent/semester-03/driving-02/acceptance.md;commit:3577691b3fdb27cbc6cb06b07a5fd687a9f6a3ed |
 | DRIVING-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -366,7 +375,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| APP-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| APP-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/21-applications/01-power-electronics.md;.agent/semester-03/app-01/acceptance.md;commit:7ede89f287a870376f0f3d11fd4141dc9e0e979a |
 | APP-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | APP-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | APP-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

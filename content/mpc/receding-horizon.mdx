@@ -1,663 +1,432 @@
 ---
 title: "滚动优化策略"
-description: "MPC的核心机制——滚动优化。理解开环最优与滚动优化的区别，掌握预测时域与控制时域的选择，分析有限时域稳定性问题，了解QP求解与实时性保障。"
+description: "从水箱第一步后的新测量重算计划，区分预测时域与控制时域、终端稳定条件、热启动及实时执行闸门。"
 ---
 
 # 滚动优化策略
 
-前两课建立了 MPC 的基本框架：预测模型告诉我们"未来会怎样"，代价函数告诉我们"什么是好的"。但还有一个关键问题没回答：**MPC 为什么不像传统最优控制那样"算一次执行到底"，而是每步都重新优化？**
+上一课把水箱的输入历史和未来计划写成了预测。现在，控制器按计划打开阀门，只执行第一步；下一次测量时，水位却比预测高了一些——可能有人额外倒入了水，也可能是传感器有偏差。原计划还要不要继续执行？如果重新计算，新动作依据的又是什么？
 
-答案是：**不确定性**。模型不完美、干扰不可预测、约束可能变化。如果"算一次执行到底"（开环最优），一旦实际偏离预测，后续的控制量就全错了。
+这就是滚动优化要处理的问题：**用最新的测量或状态估计，重做一段有限长度的计划，只执行其中第一步。** 重算提供了反馈的机会，但不会自动识别错误传感器、保证约束可行，或保证闭环稳定。本课把这几件事分开讲清楚。
 
-滚动优化的核心思想：**每步都用最新的测量值重新规划，只执行第一步，下一步重新来。** 这不是浪费计算——这是用"不断重新规划"来应对不确定性。
-
-> 📖 本课需要 [模型预测控制原理](/mpc/mpc-principle)（MPC 三大思想和 QP 公式化）和 [预测模型建立](/mpc/prediction-model)（预测矩阵 $F_e, \Phi_e$）的前置知识。
+先修为[预测模型](/mpc/prediction-model)和[凸优化](/math/convex-optimization)。学习目标是看懂执行时序、正确区分 $N_p/N_u$ 与输入保持、核对有限时域稳定性条件，并能审查求解器输出是否可以执行。
 
 ## 开环最优 vs 滚动优化
 
 ### 开环最优控制
 
-给定初始状态 $x(0)$，求解 $N$ 步最优控制序列：
+从初始状态求一串最优输入，再按原计划执行到底：
 
 $$
-\min_{u(0), \ldots, u(N-1)} \sum_{k=0}^{N-1} L(x(k), u(k)), \quad \text{s.t.} \quad x(k+1) = f(x(k), u(k))
+U^*(0)=\arg\min_{u_0,\ldots,u_{N-1}}\sum_{i=0}^{N-1}\ell(x_i,u_i)+V_f(x_N),\quad x_{i+1}=f(x_i,u_i).
 $$
 
-得到最优序列 $U^* = [u^*(0), u^*(1), \ldots, u^*(N-1)]$，然后**全部执行**。
-
-**问题**：
-- 模型不准 → 预测偏离实际 → 后续控制量不对
-- 有干扰 → 实际轨迹偏离最优轨迹 → 后续控制量不对
-- 无法应对变化 → 约束可能随工况变化，开环解可能变得不可行
-
-> 💡 类比：开车从 A 到 B。开环最优 = 出发前规划好每一秒的方向盘角度，然后**闭眼执行**。遇到修路、前车刹车，就撞了。
+若模型准确、没有扰动，原计划仍可正确描述实际轨迹，并不是后续输入“一定全错”。但它没有利用途中测量来修正偏离；参考或约束变化，也可能使原计划不合适。开环是执行方式，不意味着求解阶段不使用状态信息。
 
 ### 滚动优化（MPC）
 
-每步 $k$：
-1. **测量**当前状态 $x(k)$（或估计值 $\hat{x}(k)$）
-2. **求解**从 $k$ 开始的 $N_p$ 步优化问题
-3. **执行**第一个控制量 $u^*(k)$
-4. **下一步** $k \to k+1$，回到步骤 1
+每个采样时刻按顺序做四件事：测量/估计当前状态，计算未来计划，核验后执行第一步，等待新测量。预测窗口每次向前移一拍。
 
-```
-时刻 k:    测量 x(k) → 优化 [u*(k), u*(k+1), ..., u*(k+Np-1)] → 执行 u(k) = u*(k)
-时刻 k+1:  测量 x(k+1) → 优化 [u*(k+1), ..., u*(k+Np)] → 执行 u(k+1) = u*(k+1)
-时刻 k+2:  测量 x(k+2) → 优化 [u*(k+2), ..., u*(k+Np+1)] → 执行 u(k+2) = u*(k+2)
-```
+<img src="/diagrams/mpc/receding-acceptance.svg" alt="测量状态后求解未来计划，经状态、残差、约束和截止时间核验，只执行第一步；未通过时进入已验证回退；下次测量重新规划" />
 
-**关键区别**：MPC 每步都重新优化，优化窗口像一扇窗户，每步向前滑动一格——所以叫**滚动优化（Receding Horizon）**。
-
-> 💡 类比：开车从 A 到 B。滚动优化 = 每秒看一次路况，重新规划接下来的路线。遇到修路，立刻绕道。
+图中执行前的核验不可省略。求解超时、不可行或残差过大时，不能把一个尚未合格的向量直接送给执行器。回退必须按对象预先设计；“沿用上次输入”并不是通用安全策略。
 
 ### 滚动优化是一种反馈
 
-开环最优控制是"前馈"——只依赖初始状态 $x(0)$，不看中间过程。
-
-滚动优化是**反馈**——每步都用最新的测量值 $x(k)$ 修正控制决策。虽然优化问题本身是"开环"的（预测模型不考虑未来的测量和修正），但**滚动机制**把开环优化变成了闭环控制。
-
-这是 MPC 最精妙的设计：**用开环优化的框架，实现闭环控制的效果。**
+普通确定性MPC在一次求解中，通常把未来输入视为待定序列，并不枚举未来所有测量及其反馈分支；但下一拍会从新信息重算，因此实际执行形成反馈律。模型预测与实际反馈是不同层次。测量受污染时，频繁重算也可能放大错误决策，仍需要合适的估计与故障处理。
 
 ## 滚动优化的数学机制
 
 ### 每步求解的优化问题
 
-每个采样时刻 $k$，求解以下优化问题（用第二课的增量增广模型）：
+沿用增广状态 $\xi=[\Delta x^T,y^T]^T$。记 $\hat y_i=\hat y(k+i\mid k)$、$\hat\xi_0=\xi(k)$。采用“当前状态起算、终端单独计权”的一般合同：
 
 $$
-\boxed{\begin{aligned}
-\min_{\Delta U} \quad & J(k) = \sum_{i=0}^{N_p-1} \left[ \hat{y}(k+i|k) - r(k+i) \right]^T Q_i \left[ \hat{y}(k+i|k) - r(k+i) \right] \\
-& + \sum_{i=0}^{N_u-1} \Delta u(k+i)^T R_i \Delta u(k+i) + V_f(\hat{\xi}(k+N_p|k)) \\
-\text{s.t.} \quad & \hat{Y} = F_e \xi(k) + \Phi_e \Delta U \quad \text{（预测模型）}\\
-& u_{\min} \leq u(k+i) \leq u_{\max} \quad \text{（输入约束）}\\
-& \Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max} \quad \text{（变化率约束）}\\
-& y_{\min} \leq \hat{y}(k+i|k) \leq y_{\max} \quad \text{（输出约束）}\\
-& \hat{\xi}(k+N_p|k) \in \mathcal{X}_f \quad \text{（终端约束，可选）}
-\end{aligned}}
+\begin{aligned}
+\min_{\Delta U}\quad &\sum_{i=0}^{N_p-1}\|\hat y_i-r_{k+i}\|_{Q_i}^2+
+\sum_{i=0}^{N_u-1}\|\Delta u_i\|_{R_i}^2+V_f(\hat\xi_{N_p})\\
+\text{s.t.}\quad &\hat\xi_{i+1}=A_e\hat\xi_i+B_e\Delta u_i,\quad \hat y_i=C_e\hat\xi_i,\\
+&u_i=u_{k-1}+\sum_{j=0}^{\min(i,N_u-1)}\Delta u_j,\\
+&u_{\min}\leq u_i\leq u_{\max},\quad \Delta u_{\min}\leq\Delta u_i\leq\Delta u_{\max},\\
+&y_{\min}\leq\hat y_i\leq y_{\max},\quad \hat\xi_{N_p}\in\mathcal X_f\ \text{（若采用）}.
+\end{aligned}
 $$
 
-其中：
-- $\Delta U = [\Delta u(k), \ldots, \Delta u(k+N_u-1)]^T$ 是优化变量
-- $N_p$ 是预测时域，$N_u \leq N_p$ 是控制时域
-- $V_f$ 是终端代价（可选）
-- $\mathcal{X}_f$ 是终端约束集（可选）
+其中 $\|v\|_Q^2=v^TQv$，$Q_i\succeq0,R_i\succ0$，$\Delta U$ 含 $N_u$ 个增量。状态递推及输入界覆盖 $i=0,\ldots,N_p-1$，增量界覆盖 $i=0,\ldots,N_u-1$，输出界覆盖 $i=1,\ldots,N_p$。对 $i\geq N_u$，规定 $\Delta u_i=0$。当前已测输出若违规应另行处理，不能靠未来决策改写历史。
+
+上一课 $Y=F_e\xi+\Phi_e\Delta U$ 堆叠的是 $\hat y_1,\ldots,\hat y_{N_p}$。上式当前项 $\hat y_0$ 是常数，不能把同一个 $I$ 权重直接放在这整个未来向量上，悄悄改成另一目标。若终端代价还含 $\Delta x$，须单独堆叠终端增广状态；不能只用 $y_{N_p}$ 代替。
+
+下面小实验**另行明示**使用未来输出费用，便于观察第一步：$x^+=0.8x+0.2u$，目标1，$N_u=1$，只优化本次增量 $z$，以后保持 $u=u_{k-1}+z$：
+
+$$
+\hat x_j=0.8^jx+(1-0.8^j)(u_{k-1}+z)=f_j+g_jz,\qquad
+J_{\mathrm{demo}}=\sum_{j=1}^{N_p}(f_j+g_jz-1)^2+0.1z^2.
+$$
+
+无约束解和可行区间为：
+
+$$
+z_{\mathrm{free}}=\frac{\sum_jg_j(1-f_j)}{0.1+\sum_jg_j^2},\quad
+z\in[\max(-d,-2-u_{k-1}),\min(d,2-u_{k-1})].
+$$
+
+一变量严格凸二次型的解，是将 $z_{\mathrm{free}}$ 投影到这个区间；这里同时考虑 $|u|\leq2$ 和 $|\Delta u|\leq d$，不是求解后任意裁剪多变量控制序列。实验没有终端稳定保证。
 
 ### 执行流程
 
-求解后，取第一个增量 $\Delta u^*(k)$，计算控制量：
+默认 $x=0,u_{k-1}=0,N_p=4,d=1$。可得 $H=1.71263232,f=-3.2768$，无约束增量约1.913312，受限后 $z=1,u=1$。原计划预测为 $[0.2,0.36,0.488,0.5904]$，此时目标费用为1.57951616。
 
-$$
-u(k) = u(k-1) + \Delta u^*(k)
-$$
+只执行 $u=1$ 一拍，原预测下一水位0.2；若真实状态额外增加0.4，下一次测得0.6。以 $x=0.6,u_{k-1}=1$ 重算，得新增量0.412037、新输入1.412037。没有重算时保持的输入仍是1。新预测约为 $[0.762407,0.892333,0.996274,1.079426]$，其起点是新测量，不能与上一计划在不同起点的费用直接排名。
 
-执行 $u(k)$，然后 $k \to k+1$，测量新的 $y(k+1)$，估计新的 $\xi(k+1)$，重新求解。
+<RecedingHorizonExplorer />
 
-> 💡 **关键观察**：优化问题的**结构**（Hessian $H$、约束矩阵 $A_{\text{ineq}}$）不变，只有**线性项** $f$ 随 $\xi(k)$ 变化。这意味着可以离线分析 QP 结构，在线只更新 $f$。
+先把偏移调为0：即使没有扰动，窗口向前移动、保持输入的限制也会使新计划改变。再试负偏移，观察首步动作。超时按钮只是演示执行闸门，没有测量真实求解时间；拒绝候选和保持输入也不等同于证明设备安全。
+
+<JupyterNotebook title="增量预测与滚动重算" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize, LinearConstraint`} cells={[
+{code: `# 一变量凸QP，约束同时包含输入幅值和变化率
+def hold_plan(x,previous,npred=4,bound=1.):
+    powers = .8**np.arange(1,npred+1)
+    g = 1-powers
+    free = powers*x+g*previous
+    den = .1+g@g
+    zfree = g@(1-free)/den
+    low,high = max(-bound,-2-previous),min(bound,2-previous)
+    z = np.clip(zfree,low,high)
+    prediction = free+g*z
+    residual = abs(z-np.clip(z-2*(den*z-g@(1-free)),low,high))
+    return z,previous+z,prediction,float(np.sum((prediction-1)**2)+.1*z*z),residual
+first = hold_plan(0.,0.)
+measured = first[2][0]+.4
+second = hold_plan(measured,first[1])
+print('default_H_f',2*(.1+np.sum((1-.8**np.arange(1,5))**2)),-2*np.sum(1-.8**np.arange(1,5)))
+print('default_first',first)
+print('default_measured_replan',measured,second)
+assert first[4]<1e-12 and second[4]<1e-12
+for shock in [0.,.4,-.4]:
+    result = hold_plan(first[2][0]+shock,first[1])
+    print('replan_case',shock,'u',result[1],'residual',result[4])`},
+{code: `# 保留原.9/.1、Ts=.5、20步实验；改用正确的阶跃增量矩阵
+a,b,Ts,Np,Nu,R = .9,.1,.5,10,5,.1
+S = np.tril(np.ones((Nu,Nu)))
+G = np.array([[b*sum(a**r for r in range(j-l)) if j>l else 0. for l in range(Nu)] for j in range(1,Np+1)])
+H = 2*(G.T@G+R*np.eye(Nu))
+states,inputs,plans = [0.],[],[]
+previous,guess = 0.,np.zeros(Nu)
+for k in range(20):
+    free = a**np.arange(1,Np+1)*states[-1]+(1-a**np.arange(1,Np+1))*previous
+    linear = 2*G.T@(free-1)
+    objective = lambda z: .5*z@H@z+linear@z
+    jacobian = lambda z: H@z+linear
+    result = minimize(objective,guess,jac=jacobian,bounds=[(-2.,2.)]*Nu,constraints=[LinearConstraint(S,-5-previous,5-previous)],method='SLSQP',options={'ftol':1e-12,'maxiter':200})
+    assert result.success,result.message
+    z = result.x
+    violation = max(np.max(np.abs(z))-2,np.max(np.abs(previous+S@z))-5,0.)
+    assert violation<1e-8
+    # 本次运行绝对输入边界未活跃，因此可用增量盒投影核驻点
+    assert np.max(np.abs(previous+S@z))<5-1e-6
+    residual = np.max(np.abs(z-np.clip(z-jacobian(z),-2,2)))
+    assert residual<1e-5
+    plans.append({'x':states[-1],'previous':previous,'du':z.tolist(),'residual':residual})
+    previous += z[0]
+    inputs.append(previous)
+    states.append(a*states[-1]+b*previous)
+    guess = np.r_[z[1:],0.]
+fig,axes = plt.subplots(2,1,figsize=(9,5))
+axes[0].plot(np.arange(21)*Ts,states,'o-')
+axes[0].axhline(1,color='gray',linestyle='--')
+axes[0].set(xlim=(0,10),ylim=(-.5,2.5),ylabel='State')
+axes[1].step(np.arange(21)*Ts,inputs+[inputs[-1]],where='post')
+axes[1].set(xlim=(0,10),ylim=(-5.5,5.5),xlabel='Time (s)',ylabel='Input')
+plt.tight_layout()
+plt.show()
+print('original_contract_corrected',Np,Nu,'variables',Nu,'input_and_rate_inequalities',4*Nu)
+print('rollout_last_sample',states[-1],'max_abs_u',max(np.abs(inputs)))
+print('rollout_max_residual',max(p['residual'] for p in plans))`}
+]} />
 
 ## 预测时域与控制时域
 
 ### $N_p$ 和 $N_u$ 的含义
 
-**预测时域 $N_p$**：预测窗口长度——"看多远"。预测 $N_p$ 步后的输出轨迹。
-
-**控制时域 $N_u$**：控制窗口长度——"优化多少步"。优化 $N_u$ 个未来控制增量。
-
-当 $N_u < N_p$ 时，假设 $\Delta u(k+i) = 0$ 对 $i \geq N_u$——即 $N_u$ 步之后控制量保持不变（$u(k+N_u) = u(k+N_u+1) = \cdots$）。
+$N_p$ 决定预测多少步，$N_u$ 决定优化多少个输入增量。当 $N_u\lt N_p$，输入增量在控制窗口之后为0，实际输入保持最后开度。以 $N_p=4,N_u=2$ 为例，未来输入是 $[u_{k-1}+z_0,u_{k-1}+z_0+z_1,u_{k-1}+z_0+z_1,u_{k-1}+z_0+z_1]$。
 
 ### 为什么 $N_u < N_p$？
 
-优化变量数 = $n_u \times N_u$（$n_u$ 是输入维度）。QP 求解时间 $\propto N_u^3$（内点法）或 $N_u^2$（主动集法）。
-
-$N_u < N_p$ 的好处：
-- **减少计算量**：优化变量少了
-- **物理合理**：远处的控制量对当前决策影响小（"现在"的决策主要受"近期"影响）
-- **增加鲁棒性**：远处的预测不准，优化太多不准的东西反而不好
+若有 $m$ 个输入，凝聚后的决策变量数为 $mN_u$。缩短控制时域会限制允许的输入序列，因此最优目标值在相同问题中不会优于更自由的参数化；但可能降低计算与存储需求。它不自动提高鲁棒性，也可能排除可行解。稀疏非凝聚形式还显式保留预测状态，变量数不能只数 $mN_u$。
 
 ### 选择原则
 
-| 参数 | 太小 | 太大 | 选择原则 |
-|------|------|------|----------|
-| $N_p$ | 看不到远处约束 → "短视"，可能撞上约束 | 计算量大；远处预测不准 → 优化不可靠 | $N_p T_s \geq t_{\text{settling}}$（开环 settling time），通常 10-50 |
-| $N_u$ | 控制自由度不够 → 性能差 | 计算量大；远处控制量不准 | 通常 2-10，从 5 开始调 |
-
-**经验法则**：
-1. 从开环阶跃响应看 settling time $t_s$，取 $N_p = 1.5 \times t_s / T_s$
-2. $N_u$ 从 5 开始，逐步增加，直到性能指标（如 IAE）不再明显改善
-3. 最终闭环仿真验证
-
-<JupyterNotebook
-  language="python"
-  setupCode={`import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {
-      code: `# ===== 滚动优化过程可视化 =====
-from ipywidgets import interact, IntSlider, FloatSlider
-
-def visualize_receding_horizon(Np, Nu, x0_val):
-    """可视化滚动优化过程"""
-    # 简单一阶系统：x(k+1) = 0.9*x(k) + 0.1*u(k)
-    Ts = 0.5
-    A = 0.9
-    B = 0.1
-    
-    # 参考轨迹
-    r = 1.0
-    
-    # 权重
-    Q = 1.0
-    R = 0.1
-    
-    N_steps = 20
-    x_traj = [x0_val]
-    u_traj = []
-    
-    x = x0_val
-    u_prev = 0.0
-    
-    for k in range(N_steps):
-        # 构建 QP（简化版：用梯度下降近似）
-        # 预测矩阵
-        F = np.array([A**(i+1) for i in range(Np)])
-        Phi = np.zeros((Np, Nu))
-        for i in range(Np):
-            for j in range(min(i+1, Nu)):
-                Phi[i, j] = A**(i-j) * B
-        
-        # 代价函数
-        H = 2 * (Phi.T @ Phi * Q + np.eye(Nu) * R)
-        f_vec = 2 * Phi.T @ (F * x - r) * Q
-        
-        # 梯度下降求解（带约束）
-        dU = np.zeros(Nu)
-        for _ in range(100):
-            grad = H @ dU + f_vec
-            dU = dU - 0.01 * grad
-            dU = np.clip(dU, -2, 2)
-        
-        # 执行第一步
-        du = dU[0]
-        u = u_prev + du
-        u = np.clip(u, -5, 5)
-        
-        # 仿真
-        x = A * x + B * u
-        x_traj.append(x)
-        u_traj.append(u)
-        u_prev = u
-        
-        # 预测轨迹（用于可视化）
-        if k == 0 or k == 5 or k == 10:
-            pred_x = [x]
-            for i in range(Np):
-                if i < Nu:
-                    u_future = u_prev + dU[i] if i > 0 else u
-                else:
-                    u_future = u
-                pred_x.append(0.9 * pred_x[-1] + 0.1 * u_future)
-    
-    # 绘图
-    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    
-    t = np.arange(N_steps + 1) * Ts
-    axes[0].plot(t, x_traj, 'b-o', linewidth=2, markersize=4, label='实际轨迹')
-    axes[0].axhline(y=r, color='r', linestyle='--', linewidth=2, label=f'参考 r={r}')
-    axes[0].set_xlabel('时间 (s)', fontsize=12)
-    axes[0].set_ylabel('状态 x', fontsize=12)
-    axes[0].set_title(f'滚动优化过程 (Np={Np}, Nu={Nu})', fontsize=13)
-    axes[0].legend(fontsize=11)
-    axes[0].grid(True, alpha=0.3)
-    
-    t_u = np.arange(N_steps) * Ts + Ts/2
-    axes[1].step(t_u, u_traj, 'g-', linewidth=2, where='mid', label='控制量 u')
-    axes[1].axhline(y=5, color='k', linestyle=':', alpha=0.5, label='约束 ±5')
-    axes[1].axhline(y=-5, color='k', linestyle=':', alpha=0.5)
-    axes[1].set_xlabel('时间 (s)', fontsize=12)
-    axes[1].set_ylabel('控制量 u', fontsize=12)
-    axes[1].legend(fontsize=11)
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
-    
-    print(f'预测时域 Np={Np}，控制时域 Nu={Nu}')
-    print(f'优化变量数 = {Nu}，约束数 ≈ {2*Np + 2*Nu}')
-
-interact(
-    visualize_receding_horizon,
-    Np=IntSlider(value=10, min=3, max=30, step=1, description='Np'),
-    Nu=IntSlider(value=5, min=1, max=15, step=1, description='Nu'),
-    x0_val=FloatSlider(value=0, min=-5, max=5, step=0.5, description='初始状态 x₀'),
-)
-print('调整 Np 和 Nu，观察滚动优化过程和控制性能')`
-    }
-  ]}
-/>
+先选满足感知、执行与计算预算的采样周期，再按延迟、约束出现时间和目标动态检查预测窗口；对候选 $N_p,N_u$ 逐一检查可行域、闭环行为、残差、计算和存储开销。开环稳定对象的响应时间可作初始线索，积分或不稳定对象没有有限的开环调节时间，不能套通用倍数。这里不提供“通常取几步”就能放行的阈值。
 
 ## 滚动优化与稳定性
 
 ### 有限时域的问题
 
-无限时域 LQR 自动保证稳定性（Riccati 方程的解 $P > 0$ 保证 Lyapunov 函数 $V = x^T P x$ 递减）。
-
-有限时域 MPC **不一定稳定**——即使无约束、线性系统。
-
-**反例**：不稳定系统 $x(k+1) = 2x(k) + u(k)$，代价 $J = \sum_{i=0}^{N_p-1} [x(k+i)^2 + u(k+i)^2]$。
-
-**$N_p = 1$ 的情况**：
+稳定性取决于模型、目标下标、约束及终端设计，不能归因于“每步重算”本身。对 $x^+=ax+u$，采用当前状态费用、无终端项：
 
 $$
-J = x(k)^2 + u(k)^2
+J_N=\sum_{i=0}^{N-1}(x_i^2+u_i^2),\qquad P_N=0.
 $$
 
-$x(k)$ 是当前状态（给定），优化只影响 $u(k)$。$\partial J / \partial u(k) = 2u(k) = 0 \implies u^*(k) = 0$。
-
-闭环：$x(k+1) = 2x(k) + 0 = 2x(k)$——**不稳定**！
-
-**原因**：$N_p = 1$ 时，代价只包含 $x(k)^2$（当前状态，不受 $u(k)$ 影响）和 $u(k)^2$。优化不考虑未来状态——"短视"到极点。
-
-**$N_p = 2$ 的情况**：
+倒推得到：
 
 $$
-J = x(k)^2 + u(k)^2 + x(k+1)^2 + u(k+1)^2
+K_i=\frac{aP_{i+1}}{1+P_{i+1}},\qquad P_i=1+\frac{a^2P_{i+1}}{1+P_{i+1}},\qquad u_i=-K_ix_i.
 $$
 
-$x(k+1) = 2x(k) + u(k)$，$x(k+2) = 2x(k+1) + u(k+1)$。优化 $u(k), u(k+1)$ 可以同时影响 $x(k+1)$ 和 $x(k+2)$。最优解会把状态推向零——可能稳定（需要具体计算）。
+$N=1$ 时 $K_0=0$，闭环极点为 $a$。$N=2$ 时 $K_0=a/2$，闭环极点 $a/2$，而**计划中最后一个输入为0**，因为 $x_2$ 没有被计费。下一拍重新优化后的首个输入可以非零，不能把二者混淆。
 
-> 💡 **核心观点**：$N_p$ 太小，MPC 可能不稳定。需要足够大的 $N_p$，或者加终端约束/终端代价来"补偿"有限时域的截断。
+旧例 $a=2$：$N=1,2,3$ 的滚动闭环极点分别为2、1、0.5；其中1是临界，不能称为渐近稳定。题2的 $a=1.5$ 则在 $N=2$ 给0.75。增加时域可能修复某个例子，不是所有约束问题的无条件保证。无限时域LQR也要求可稳定化、可检测性以及合适权重，不是任意系统均自动稳定。
 
 ### 保证稳定性的方法
 
 #### 方法一：终端等式约束
 
-$$
-\hat{x}(k+N_p|k) = 0
-$$
-
-强制预测终点到零。等价于"在 $N_p$ 步内必须把状态驱动到零"。
-
-**优点**：理论上保证稳定性（如果可行）。
-**缺点**：增加约束，可能不可行（尤其 $N_p$ 小时）。
+令 $x_N=0$。在原点是可容许平衡点、初始优化可行、模型准确、优化与执行一致、阶段费用正定等条件下，可将原解左移并在末尾接0，建立递归可行和费用下降。这通常缩小可行域；若有扰动、新约束或求解失败，旧证明不能直接沿用。
 
 #### 方法二：终端区域约束
 
+选终端集合 $\mathcal X_f$ 和局部控制律 $\kappa_f$，要求在该集合内满足约束，下一状态仍在集合内，并有终端下降条件：
+
 $$
-\hat{x}(k+N_p|k) \in \mathcal{X}_f
+f(x,\kappa_f(x))\in\mathcal X_f,\qquad
+V_f(f(x,\kappa_f(x)))-V_f(x)\leq-\ell(x,\kappa_f(x)).
 $$
 
-其中 $\mathcal{X}_f$ 是**LQR 终端集**——在这个集合内，用 LQR 反馈 $u = -K_{\text{LQR}} x$ 可以保证稳定。
+此时可用移位解加终端控制构造下一拍的可行候选。椭球 $x^TPx\leq\alpha$ 还需检验正不变性和约束，不能仅找一个满足静态约束的“大椭球”。实际滚动控制不一定真的切换到LQR；局部律也可以仅用于证明和构造候选。
 
-**设计**：
-1. 计算 LQR 增益 $K_{\text{LQR}}$ 和 Lyapunov 矩阵 $P$
-2. 找最大的 $\alpha$ 使得 $\mathcal{X}_f = \{x : x^T P x \leq \alpha\}$ 内满足约束
-3. 终端约束 $\hat{x}(k+N_p|k) \in \mathcal{X}_f$
-
-**物理直觉**：MPC 在 $N_p$ 步内把状态"送到" $\mathcal{X}_f$ 边界，然后切换到 LQR 保证稳定收敛。
+例如 $x^+=0.8x+0.2u$，取 $\kappa_f=-x,\mathcal X_f=[-1,1]$，并约束 $|u|\leq1$。下一状态为0.6倍，集合不变；阶段费 $x^2+0.1u^2$ 对应 $V_f=1.71875x^2$，恰满足下降等式。这个例子只核局部终端合同，不放行任意初始状态。
 
 #### 方法三：终端代价
 
-$$
-V_f = \hat{x}(k+N_p|k)^T P_f \hat{x}(k+N_p|k)
-$$
+无约束LTI调节问题，在DARE稳定化解存在等条件下，用其 $P$ 作为终端代价，有限时域首步反馈可与无限时域LQR一致。但**有输入/状态约束时，单独加一个LQR终端代价不自动保证稳定**；还需能容许终端控制的区域、充分长时域或其它明确理论条件。[Rawlings、Mayne与Diehl教材](https://sites.engineering.ucsb.edu/~jbraw/mpc/)系统讨论了这些条件。
 
-其中 $P_f$ 是**无限时域 LQR 的 Riccati 解**（对应系统 $(A, B)$ 和权重 $(Q, R)$）。
+还须检查参数化：标准“移位并接终端控制”的证明通常允许整段输入自由变化。如果 $N_u\lt N_p$ 强制尾部保持，移位候选可能不在这个受限序列集合内。下面的例子表明需要另作分析，而不是说明此类控制器必然不稳定。
 
-**物理直觉**：终端代价 = "在 $N_p$ 之后切换到 LQR 的剩余代价"。等价于告诉优化器："即使你不再优化，LQR 也能把状态从 $\hat{x}(k+N_p)$ 驱动到零，代价是 $V_f$。"
-
-**优点**：不增加约束，不影响可行性。
-**缺点**：需要 $P_f$ 存在（系统可稳定化）。
-
-> 💡 **三种方法的关系**：终端等式约束最保守（强约束），终端区域约束中等，终端代价最不保守（只加代价项）。实际中最常用终端代价——简单、有效、不影响可行性。
+<JupyterNotebook title="费用下标、有限时域和终端合同" setupCode={`import numpy as np`} cells={[
+{code: `# 当前状态费用，P_N=0；必须区分计划尾项与下一次重新规划
+def gains(a,N,Pterminal=0.):
+    P = Pterminal
+    ks = []
+    for i in range(N):
+        ks.append(a*P/(1+P))
+        P = 1+a*a*P/(1+P)
+    return ks[::-1],P
+for aa in [2.,1.5]:
+    for N in [1,2,3]:
+        ks,P = gains(aa,N)
+        print('finite_horizon',aa,N,'first_gain',ks[0],'pole',aa-ks[0],'planned_last_gain',ks[-1])
+Pinf = 2+np.sqrt(5.)
+ks,_ = gains(2.,1,Pinf)
+print('DARE_P_gain_pole',Pinf,ks[0],2-ks[0])
+assert abs(Pinf-(1+4*Pinf/(1+Pinf)))<1e-12`},
+{code: `# 终端局部合同；Nu=1尾部保持不总对移位操作封闭
+Pterminal = 1.1/(1-.6**2)
+grid = np.linspace(-1,1,101)
+assert np.max(np.abs(.6*grid))<=1
+assert np.allclose(Pterminal*((.6*grid)**2-grid**2),-1.1*grid**2)
+print('local_terminal_P',Pterminal)
+old = np.array([-1.,-1.])
+shifted = np.array([old[1],0.])
+fresh = np.array([-.5,-.5])
+assert 2+old.sum()==0 and 1+fresh.sum()==0
+assert shifted[0]!=shifted[1]
+print('held_tail_counterexample','old',old,'shifted',shifted,'fresh',fresh)`}
+]} />
 
 ## QP求解与实时性
 
 ### MPC的QP标准形式
 
-把滚动优化的优化问题转化为标准 QP：
+将预测和约束堆叠为 $\min_z\tfrac12z^THz+f^Tz$、$A_{\rm ineq}z\leq b$。仅在选定的未来输出费用、无额外终端状态项时，有：
 
 $$
-\min_z \frac{1}{2} z^T H z + f^T z, \quad \text{s.t.} \quad A z \leq b
+H=2(\Phi_e^T\bar Q\Phi_e+\bar R),\qquad f=2\Phi_e^T\bar Q(F_e\xi-R_{\rm ref}).
 $$
 
-其中 $z = \Delta U$（优化变量），$H = 2(\Phi_e^T \bar{Q} \Phi_e + \bar{R})$ 正定（保证凸性和唯一解），$f = 2 \Phi_e^T \bar{Q} F_e \xi(k)$ 随状态变化。
+若使用前述当前费用合同，就相应去掉固定当前项，并把未来/终端权重映射正确；终端增广状态代价另加其二次项与线性项。$\bar Q\succeq0,\bar R\succ0$ 可保证 $H\succ0$，在非空可行集上解唯一。
+
+固定LTI模型、时域、权重与约束结构时，$H,A_{\rm ineq}$ 可缓存；但通常**线性项和约束右端都更新**。输入累计约束含 $u_{k-1}$，预测输出约束含当前状态，参考也会改变线性项。时变模型或重新线性化还可能改变矩阵，不能说在线永远只更新 $f$。
 
 ### 常用求解算法
 
-| 算法 | 原理 | 每步复杂度 | 迭代次数 | 适用场景 |
-|------|------|-----------|----------|----------|
-| **主动集法** | 识别活跃约束，解等式 QP | $O(n_v^2 n_c)$ | 不确定（通常少） | 小规模（$< 100$ 变量），warm starting 自然 |
-| **内点法** | 障碍函数 + 牛顿法 | $O(n_v^3)$ | $O(\sqrt{n_v})$ | 中大规模，精度高 |
-| **ADMM/OSQP** | 算子分裂，交替求解 | $O(n_v^2)$ | $O(1/\epsilon)$ | 嵌入式实现，代码简单 |
+| 算法 | 主要工作 | 核查重点 |
+|---|---|---|
+| 主动集 | 更新活跃约束，解相应等式子问题 | 活跃集变化、退化、可行初值与更新代价 |
+| 内点 | 障碍/原始对偶迭代，求解线性系统 | 稀疏结构、缩放、线性系统维度与收敛容差 |
+| ADMM等分裂方法 | 多次线性求解与投影 | 因子缓存条件、参数整定、残差与停止准则 |
 
-其中 $n_v = n_u \times N_u$（变量数），$n_c$（约束数），$\epsilon$（精度要求）。
+稠密矩阵分解常有立方级代价，但这不是“整个求解时间只由 $N_u^3$ 决定”。缓存分解、稀疏性、约束数量和迭代次数都会改变成本；不同算法的迭代数也不能用一组通用数字替代实测。
 
 ### 常用求解器
 
-| 求解器 | 类型 | 语言 | 特点 |
-|--------|------|------|------|
-| **OSQP** | 开源 | C/C++ | ADMM，嵌入式友好，warm starting |
-| **qpOASES** | 开源 | C++ | 主动集，在线 QP，warm starting |
-| **Gurobi** | 商业 | C/C++ | 高性能，大规模问题 |
-| **FORCES** | 开源 | C/MATLAB | 代码生成，嵌入式 MPC |
-| **GPUsolver** | 开源 | CUDA | GPU 加速，超大规模 |
+OSQP支持凸QP及热启动，可参阅[官方Python接口](https://osqp.org/docs/interfaces/python.html)和[停止/迭代设置](https://osqp.org/docs/interfaces/solver_settings.html)；qpOASES采用在线主动集思路；Gurobi提供商业优化软件；FORCESPRO是代码生成产品，其[许可文档](https://forces-5-1-0.embotech.com/Documentation/licensing/index.html)不能被误写成“开源求解器”。版本、接口、许可证及硬件支持须按具体部署核对。本课没有安装或比较这些求解器；Notebook使用SciPy SLSQP作为小型凸问题的教学实现，不冒充上述产品。
 
 ### 实时性保障
 
-**硬实时**（自动驾驶、机器人）：必须在采样周期内完成，否则失控。
-- 限制最大迭代次数（牺牲精度换速度）
-- 用代码生成（FORCES, NVIDIA MPC）
-- 用显式 MPC（离线计算，在线查表）
+必须将采集、估计、矩阵更新、求解、核验、通信和执行器更新纳入整段截止时间预算。限制迭代次数可以给计算设置上限，但不保证此时已有可执行解；应检查状态、原始/对偶残差、约束违背和期限，随后采用有证明或有验证依据的回退。软实时允许怎样的延迟也由设备需求决定，不能因为是化工过程就说“超一点没关系”。
 
-**软实时**（化工过程）：超一点也没关系（采样周期长，几秒到几分钟）。
-- 可以用商业求解器（Gurobi）
-- 不需要代码生成
+本地一次或平均运行时间不是最坏执行时间证明。代码生成、显式策略或GPU加速均需在目标平台、覆盖负载及失败场景下核验；没有测量就不声称达到毫秒级。
 
 ## Warm Starting策略
 
 ### 为什么需要 Warm Starting？
 
-滚动优化的特点：相邻两步的 QP **高度相似**——只有 $f$ 变了（因为 $\xi(k)$ 变了），$H$ 和 $A$ 不变。
-
-如果用"冷启动"（初始猜测 $z_0 = 0$），每次都要从头迭代——浪费。
-
-**Warm starting**：用上一步的最优解构造当前初始猜测 → 离最优解很近 → 迭代次数大幅减少。
+相邻问题有时相似，可复用原始/对偶变量、活跃集或矩阵分解，为迭代提供初值。但初值不是新问题的已验收解：扰动、约束改变或估计跳变，都可能使它失效。主例有解析解，本身不依赖热启动；静态20步实验的shift仅作为SLSQP初始猜测，不报告加速倍数。
 
 ### Shift策略
 
-用上一步的最优解 $\Delta U^*(k-1) = [\Delta u^*(k-1), \Delta u^*(k), \ldots, \Delta u^*(k+N_u-2)]$ 构造当前初始猜测：
+增量序列左移、末尾补零：
 
 $$
-\Delta U_0(k) = [\Delta u^*(k), \Delta u^*(k+1), \ldots, \Delta u^*(k+N_u-2), 0]
+\Delta U_0(k)=[\Delta u^*_1(k-1),\ldots,\Delta u^*_{N_u-1}(k-1),0]^T.
 $$
 
-即**左移一位**，最后补零（假设最后一步控制增量为零）。
-
-**效果**：
-- 冷启动：50-100 次迭代
-- Warm starting（shift）：5-10 次迭代
-- 计算时间减少 5-10 倍
+还要从**新的**前一输入累计，重新检查幅值、增量和输出约束。仅逐项裁剪增量，不能保证所有累计输入或输出可行；对不确定对象沿用计划也不等于安全。
 
 ### 其他 Warm Starting 策略
 
-1. **LQR 补充**：最后一步不用零，用 LQR 增益 $\Delta u(k+N_u-1) = -K_{\text{LQR}} \hat{x}(k+N_u-1)$
-2. **输入约束投影**：如果 shift 后的解违反约束，投影到可行域
-3. **自适应**：根据实际迭代次数调整策略
+若终端反馈输出的是绝对输入 $u_f=-Kx_f$，最后一个增量应为 $\Delta u_f=-Kx_f-u_{\rm before\ tail}$。只有 $K$ 本来就为增量/增广模型设计时，才能直接写 $\Delta u_f=-K\xi_f$。也可恢复可行性、重置不可靠初值或使用求解器支持的对偶热启动；是否改善迭代和延迟必须同问题、同容差比较，可能持平或更慢。
 
 ## 显式MPC
 
 ### 基本思想
 
-对线性 MPC，最优解 $z^*(x)$ 是 $x$ 的**分段仿射（Piecewise Affine, PWA）函数**：
+固定模型与权重、线性约束、严格凸且可行的多参数QP，在相应参数域内可得到分段仿射解：
 
 $$
-z^*(x) = F_i x + g_i, \quad \text{if } x \in \mathcal{R}_i
+z^*(\theta)=F_i\theta+g_i,\qquad \theta\in\mathcal R_i.
 $$
 
-其中 $\{\mathcal{R}_i\}$ 是状态空间的**多面体划分**（每个区域 $\mathcal{R}_i$ 对应一组活跃约束）。
-
-**离线计算**（Bemporad 等，2002）：
-1. 用多面体分支定界算法，枚举所有可能的活跃约束组合
-2. 对每个组合，解等式 QP，计算对应的区域 $\mathcal{R}_i$ 和仿射解 $(F_i, g_i)$
-3. 存储所有 $(F_i, g_i, \mathcal{R}_i)$
-
-**在线使用**：
-1. 测量 $x(k)$
-2. **查表**：找到 $x(k)$ 落在哪个区域 $\mathcal{R}_i$（用二叉树搜索，$O(\log M)$）
-3. 计算 $z^* = F_i x(k) + g_i$
+参数可能包含状态、前一输入、参考和可测扰动，不一定只有 $x$。离线求出有效活跃集对应的临界区域及反馈式，在线定位区域并计算动作。不是所有线性MPC或半正定退化QP都自动有唯一的同类表示。
 
 ### 优势与局限
 
-**优势**：
-- 在线计算量 $O(\log M)$（$M$ 是区域数）——**保证实时性**
-- 最坏情况计算量已知——适合硬实时系统
-
-**局限**：
-- 区域数 $M$ 随问题规模**指数增长**
-- 对 $n$ 维状态、$q$ 个约束、$N_u$ 步控制，$M \approx \binom{q N_u}{n}$（hyperplane arrangement 理论）
-- 实际中：$n = 3, N_u = 5$ → 几百个区域；$n = 10, N_u = 20$ → 上百万个区域
-- 只适合**小规模**问题（$n_x \leq 10, N_p \leq 20$）
-
-> 💡 **显式 MPC 的适用场景**：嵌入式控制（微处理器资源有限）、硬实时系统（最坏情况计算量已知）、小規模快速系统（电力电子、微机电系统）。
+它将部分在线优化转为离线分区与存储，但仍需核验区域覆盖、边界归属、查找、内存、浮点误差和域外回退。查找复杂度取决于数据结构，不能无条件写成 $O(\log M)$，更不能仅凭这个符号宣称满足硬实时。区域数量可能快速增长，却不能由状态维数、时域和约束数唯一算出；删去旧稿未经构造的区域数量与统一规模阈值。详细算法留给[显式MPC](/mpc/explicit-mpc)后续课。
 
 ## 深入讨论
 
 ### 滚动优化的收敛性
 
-滚动优化不保证"每步代价都下降"——但保证**闭环稳定**（如果设计正确）。
-
-Lyapunov 分析：定义 $V(x(k)) = J^*(x(k))$（最优代价）。如果 $V(x(k+1)) < V(x(k))$（严格递减），则闭环稳定。
-
-对无约束线性 MPC（无限时域），$V(x) = x^T P x$（Riccati 解）是 Lyapunov 函数。
-
-对有约束有限时域 MPC，需要终端约束/终端代价保证 $V$ 递减。
+对固定调节问题，若具备终端可容许性和下降条件，移位候选可导出 $V_N(x^+)\leq V_N(x)-\ell(x,u)$。这要求费用对偏离平衡的量具有适当正定性、值函数和可行域满足所用定理条件。参考、扰动或模型变化时，前后优化可能已不是同一个值函数，不能要求图上每拍费用都按同一Lyapunov论证下降。
 
 ### 经济MPC（Economic MPC）
 
-传统 MPC 的代价函数是"跟踪误差 + 控制能耗"——**偏离参考的惩罚**。
-
-经济 MPC 的代价函数直接是**经济指标**（如利润、能耗、产量）：
-
-$$
-\min \sum_{i=0}^{N_p-1} L_{\text{economic}}(x(k+i), u(k+i))
-$$
-
-其中 $L_{\text{economic}}$ 不是二次型，可能是非凸的。
-
-**挑战**：
-- 非凸优化 → 可能陷入局部最优
-- 稳定性分析更复杂（最优操作点不是"零误差"，而是某个经济最优的周期或平衡点）
-
-**应用**：化工过程优化（最大化产量）、能源管理（最小化电费）。
+经济MPC直接优化收益、能耗或生产成本，阶段费用未必是到某个平衡点的正定偏差，也未必非凸。因此稳定性不能直接照搬跟踪误差证明；需要明确最优运行目标及耗散等条件。本课不把某次经济费用下降解释为物理系统稳定。
 
 ### 分布式MPC
 
-对大规模互联系统（如电网、多机器人），集中式 MPC 计算量太大。
-
-**分布式 MPC**：把系统分解为子系统，每个子系统求解自己的 MPC 问题，通过通信协调。
-
-**方法**：
-- ADMM（交替方向乘子法）
-- 协商（Negotiation）
-- 一致性（Consensus）
-
-> 📖 分布式 MPC 将在 [分布式MPC](/multi-agent/distributed-mpc) 中详细讨论。
+互联系统可由多个局部优化器通过通信协调，常见方法包括ADMM、协商和一致性迭代。通信延迟、耦合约束和中途停止需与控制期限一起分析；局部子问题都可行并不自动意味着整体可行。后续见[分布式MPC](/multi-agent/distributed-mpc)。
 
 ## 小结
 
-1. **滚动优化 vs 开环最优**：滚动优化每步重新优化，用反馈应对不确定性。开环最优算一次执行到底，无法应对模型误差和干扰。
-
-2. **预测时域 $N_p$ 与控制时域 $N_u$**：$N_p$ 决定"看多远"，$N_u$ 决定"优化多少步"。$N_u < N_p$ 减少计算量。$N_p$ 太小可能不稳定，太大计算量大且预测不准。
-
-3. **有限时域稳定性**：需要终端约束（等式或区域）或终端代价（LQR Riccati 解）保证稳定。终端代价最常用——简单、有效、不影响可行性。
-
-4. **QP 求解与实时性**：主动集法适合小规模，内点法适合中大规模，ADMM/OSQP 适合嵌入式。Warm starting（shift 策略）减少 5-10 倍计算时间。
-
-5. **显式 MPC**：离线计算分段仿射解，在线查表。保证实时性，但区域数指数增长，只适合小规模。
+滚动优化每次依据新信息重新规划，只执行第一步；预测窗口内“保持输入”与“保持增量”含义不同。费用下标决定优化器是否看得见下一状态，终端设计决定能否建立特定稳定性证明。热启动是初值复用，显式MPC是计算方式改变，都不能替代可行性、残差和截止时间核验。
 
 ## 习题
 
 ### 习题 1
 
-给定系统 $x(k+1) = 0.8x(k) + 0.2u(k)$，代价 $J = \sum_{i=0}^{2} [x(k+i)^2 + 0.1 u(k+i)^2]$（$N_p = 3$）。
-
-(a) 写出 $N_p = 3$ 时的预测矩阵 $F$ 和 $\Phi$（绝对形式，$N_u = 3$）。
-
-(b) 求 Hessian $H = 2(\Phi^T Q \Phi + R)$，其中 $Q = I_3$，$R = 0.1 I_3$。
-
-(c) 给定 $x(k) = 1$，求最优控制序列 $U^* = [u^*(k), u^*(k+1), u^*(k+2)]^T$（无约束）。
+$x^+=0.8x+0.2u,N_p=N_u=3,x(k)=1$。(a) 写堆叠未来状态的绝对输入矩阵 $F,\Phi$；(b) 对**未来状态费用** $J_f=\sum_{j=1}^3x_{k+j}^2+0.1\sum_{i=0}^2u_{k+i}^2$ 求 $H$；(c) 求无约束输入。再解释原稿当前费用 $J_c=\sum_{i=0}^2(x_{k+i}^2+0.1u_{k+i}^2)$ 为什么会得到不同答案。
 
 ### 习题 2
 
-考虑不稳定系统 $x(k+1) = 1.5x(k) + u(k)$，代价 $J = \sum_{i=0}^{N_p-1} [x(k+i)^2 + u(k+i)^2]$。
-
-(a) $N_p = 1$ 时，求最优控制 $u^*(k)$，并判断闭环稳定性。
-
-(b) $N_p = 2$ 时，求最优控制 $u^*(k)$（用 $x(k)$ 表示），并判断闭环稳定性。
-
-(c) 解释为什么 $N_p = 1$ 不稳定但 $N_p = 2$ 可能稳定。
+$x^+=1.5x+u,J=\sum_{i=0}^{N_p-1}(x_{k+i}^2+u_{k+i}^2)$，无终端项。(a) $N_p=1$ 的最优首步与闭环稳定性；(b) $N_p=2$ 的首步与稳定性，并求同一次计划的末输入；(c) 解释两者差异，再检查 $a=2$ 的两步情形。
 
 ### 习题 3
 
-给定上一步的最优解 $\Delta U^*(k-1) = [0.5, -0.3, 0.2, -0.1, 0.0]^T$（$N_u = 5$）。
-
-(a) 用 shift 策略构造当前的初始猜测 $\Delta U_0(k)$。
-
-(b) 如果用 LQR 补充策略，最后一步用 $\Delta u(k+4) = -K \hat{x}(k+4)$，其中 $K = 0.8$，$\hat{x}(k+4) = 0.3$，求 $\Delta U_0(k)$。
-
-(c) 解释为什么 shift 策略能减少迭代次数。
+上次 $\Delta U^*=[0.5,-0.3,0.2,-0.1,0]^T$。(a) 构造左移补零初值；(b) 若末反馈明确输出增量 $\Delta u_f=-0.8\xi_f,\xi_f=0.3$，尾项是多少？若改为普通绝对反馈 $u_f=-0.8x_f,x_f=0.3$ 且尾前输入0.1，如何换成增量？(c) 解释热启动可能有用及可能失败的条件。
 
 ### 习题 4
 
-某 MPC 系统参数：状态维度 $n = 3$，输入维度 $n_u = 2$，预测时域 $N_p = 20$，控制时域 $N_u = 10$，约束数 $n_c = 60$。
-
-(a) 计算优化变量数 $n_v$。
-
-(b) 估计主动集法、内点法、ADMM 的单步计算复杂度（用 $n_v, n_c$ 表示）。
-
-(c) 如果采样周期 $T_s = 0.01$ s（10 ms），哪种算法最适合？为什么？
+状态维度3、输入维度2、$N_p=20,N_u=10$、不等式数60。(a) 凝聚决策变量数；(b) 解释三类算法主要线性代数成本，能否用变量数唯一推求解时间？(c) 截止时间10ms时如何选型和验收？
 
 ### 习题 5
 
-设计一个自动驾驶横向控制的 MPC 系统：
-- 车辆模型：二阶自行车模型（横向偏差 $e_y$ 和航向偏差 $e_\psi$）
-- 控制量：前轮转角 $\delta$，约束 $|\delta| \leq 5°$
-- 参考：直线行驶（$e_y = 0, e_\psi = 0$）
-- 车速：$v = 20$ m/s
-
-(a) 选择合适的 $N_p$ 和 $N_u$，说明理由。
-
-(b) 选择权重 $Q$ 和 $R$，说明理由（用 Bryson 规则）。
-
-(c) 是否需要终端约束/终端代价？为什么？
+以横向偏差 $e_y$、航向偏差 $e_\psi$ 为状态，前轮转角 $\delta$ 为输入，$|\delta|\leq5^\circ$，直线参考，速度20m/s。(a) 在小角度、轴距2.5m、$T_s=0.05$ 秒的**运动学**假设下建模，给一个 $N_p,N_u$ 的待验证起点；(b) 以允许偏差0.5m/0.1rad用Bryson归一化选权重；(c) 讨论终端条件。此题不构成实车参数放行。
 
 ## 答案
 
 ### 答案 1
 
-**(a)** 系统 $A = 0.8, B = 0.2$。
+$F=[0.8,0.64,0.512]^T$，且：
 
 $$
-F = \begin{bmatrix} A \\ A^2 \\ A^3 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.64 \\ 0.512 \end{bmatrix}
+\Phi=\begin{bmatrix}0.2&0&0\\0.16&0.2&0\\0.128&0.16&0.2\end{bmatrix}.
 $$
 
-$$
-\Phi = \begin{bmatrix} B & 0 & 0 \\ AB & B & 0 \\ A^2B & AB & B \end{bmatrix} = \begin{bmatrix} 0.2 & 0 & 0 \\ 0.16 & 0.2 & 0 \\ 0.128 & 0.16 & 0.2 \end{bmatrix}
-$$
-
-**(b)** $Q = I_3, R = 0.1 I_3$。
+未来费用对应 $H=2(\Phi^T\Phi+0.1I)$，$f=2\Phi^TF$：
 
 $$
-H = 2(\Phi^T \Phi + 0.1 I_3)
+H=\begin{bmatrix}0.363968&0.10496&0.0512\\0.10496&0.3312&0.064\\0.0512&0.064&0.28\end{bmatrix},\qquad f=\begin{bmatrix}0.655872\\0.41984\\0.2048\end{bmatrix}.
 $$
 
-$\Phi^T \Phi = \begin{bmatrix} 0.2 & 0.16 & 0.128 \\ 0 & 0.2 & 0.16 \\ 0 & 0 & 0.2 \end{bmatrix} \begin{bmatrix} 0.2 & 0 & 0 \\ 0.16 & 0.2 & 0 \\ 0.128 & 0.16 & 0.2 \end{bmatrix} = \begin{bmatrix} 0.0819 & 0.0524 & 0.0256 \\ 0.0524 & 0.0656 & 0.032 \\ 0.0256 & 0.032 & 0.04 \end{bmatrix}$
-
-$H = 2\left(\begin{bmatrix} 0.0819 & 0.0524 & 0.0256 \\ 0.0524 & 0.0656 & 0.032 \\ 0.0256 & 0.032 & 0.04 \end{bmatrix} + \begin{bmatrix} 0.1 & 0 & 0 \\ 0 & 0.1 & 0 \\ 0 & 0 & 0.1 \end{bmatrix}\right) = 2\begin{bmatrix} 0.1819 & 0.0524 & 0.0256 \\ 0.0524 & 0.1656 & 0.032 \\ 0.0256 & 0.032 & 0.14 \end{bmatrix} = \begin{bmatrix} 0.3638 & 0.1048 & 0.0512 \\ 0.1048 & 0.3312 & 0.064 \\ 0.0512 & 0.064 & 0.28 \end{bmatrix}$
-
-**(c)** 无约束最优：$U^* = -H^{-1} f$，其中 $f = 2 \Phi^T Q F x(k) = 2 \Phi^T F \cdot 1$。
-
-$\Phi^T F = \begin{bmatrix} 0.2 & 0.16 & 0.128 \\ 0 & 0.2 & 0.16 \\ 0 & 0 & 0.2 \end{bmatrix} \begin{bmatrix} 0.8 \\ 0.64 \\ 0.512 \end{bmatrix} = \begin{bmatrix} 0.3264 \\ 0.2099 \\ 0.1024 \end{bmatrix}$
-
-$f = 2 \begin{bmatrix} 0.3264 \\ 0.2099 \\ 0.1024 \end{bmatrix} = \begin{bmatrix} 0.6528 \\ 0.4198 \\ 0.2048 \end{bmatrix}$
-
-$U^* = -H^{-1} f$。用数值计算：
-
-$H^{-1} \approx \begin{bmatrix} 3.12 & -0.88 & -0.32 \\ -0.88 & 3.68 & -0.64 \\ -0.32 & -0.64 & 4.48 \end{bmatrix}$（近似）
-
-$U^* \approx -\begin{bmatrix} 3.12 \times 0.6528 - 0.88 \times 0.4198 - 0.32 \times 0.2048 \\ -0.88 \times 0.6528 + 3.68 \times 0.4198 - 0.64 \times 0.2048 \\ -0.32 \times 0.6528 - 0.64 \times 0.4198 + 4.48 \times 0.2048 \end{bmatrix} \approx -\begin{bmatrix} 1.47 \\ 0.79 \\ 0.42 \end{bmatrix} = \begin{bmatrix} -1.47 \\ -0.79 \\ -0.42 \end{bmatrix}$
-
-（精确值需要用矩阵求逆，这里给出近似结果。实际应用中用 QP 求解器。）
+用线性求解 $HU=-f$，得 $U_f\approx[-1.554516,-0.720403,-0.282511]^T$，不需要手填近似逆矩阵。当前费用则用 $\bar Q=\operatorname{diag}(1,1,0)$ 作用于未来状态，加固定的 $x_k^2$；得 $U_c\approx[-1.472924,-0.577617,0]^T$，最后输入只受输入费用惩罚，因此为0。两个目标不能混用矩阵和答案。
 
 ### 答案 2
 
-**(a)** $N_p = 1$：$J = x(k)^2 + u(k)^2$。
-
-$x(k)$ 是给定的，$\partial J / \partial u(k) = 2u(k) = 0 \implies u^*(k) = 0$。
-
-闭环：$x(k+1) = 1.5x(k) + 0 = 1.5x(k)$——**不稳定**（特征值 1.5 > 1）。
-
-**(b)** $N_p = 2$：$J = x(k)^2 + u(k)^2 + x(k+1)^2 + u(k+1)^2$。
-
-$x(k+1) = 1.5x(k) + u(k)$，$x(k+2) = 1.5x(k+1) + u(k+1)$。
-
-$\partial J / \partial u(k) = 2u(k) + 2x(k+1) \cdot 1 = 2u(k) + 2(1.5x(k) + u(k)) = 4u(k) + 3x(k) = 0$
-
-$\implies u^*(k) = -0.75 x(k)$
-
-$\partial J / \partial u(k+1) = 2u(k+1) + 2x(k+2) \cdot 1 = 2u(k+1) + 2(1.5x(k+1) + u(k+1)) = 4u(k+1) + 3x(k+1) = 0$
-
-$\implies u^*(k+1) = -0.75 x(k+1)$
-
-闭环：$x(k+1) = 1.5x(k) - 0.75x(k) = 0.75x(k)$——**稳定**（特征值 0.75 < 1）。
-
-**(c)** $N_p = 1$ 时，代价只包含 $x(k)^2$（不受 $u(k)$ 影响）和 $u(k)^2$。优化不考虑未来——"短视"，所以 $u^* = 0$，系统不稳定。
-
-$N_p = 2$ 时，代价包含 $x(k+1)^2$，而 $x(k+1)$ 受 $u(k)$ 影响。优化会选择一个非零的 $u(k)$ 把 $x(k+1)$ 推向零——所以闭环稳定。
-
-**核心观点**：$N_p$ 必须足够大，使优化能"看到"控制对未来的影响，才能稳定。
+$N=1$ 时当前状态固定，最优输入0，极点1.5。$N=2$ 时只对 $u_0$ 求导：$2u_0+2(1.5x+u_0)=0$，得 $u_0=-0.75x$，滚动极点0.75；同一计划末输入 $u_1=0$。不能对没有计费的 $x_2$ 求导再将其加进目标。若 $a=2$，两步极点为1，不能证明渐近稳定。
 
 ### 答案 3
 
-**(a)** Shift 策略：左移一位，最后补零。
-
-$$
-\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, 0]^T
-$$
-
-**(b)** LQR 补充：最后一步用 $\Delta u(k+4) = -K \hat{x}(k+4) = -0.8 \times 0.3 = -0.24$。
-
-$$
-\Delta U_0(k) = [-0.3, 0.2, -0.1, 0.0, -0.24]^T
-$$
-
-**(c)** Shift 策略能减少迭代次数的原因：
-1. **相邻两步的 QP 高度相似**：只有 $f$ 变了（因为 $x(k)$ 变了），$H$ 和 $A$ 不变
-2. **上一步的最优解接近当前最优解**：shift 后的 $\Delta U_0(k)$ 离真正的 $\Delta U^*(k)$ 很近
-3. **迭代算法从好的初始猜测出发，收敛更快**：通常 5-10 次迭代 vs 冷启动 50-100 次
+左移补零为 $[-0.3,0.2,-0.1,0,0]^T$。明确增量反馈时尾项 $-0.24$；普通绝对反馈给 $u_f=-0.24$，而尾前输入0.1，所以增量为 $-0.34$。相似问题的初值可能接近新解；参考跳变、估计跳变或约束激活可能使它不可行或更差，不能承诺固定迭代数或加速倍数。
 
 ### 答案 4
 
-**(a)** 优化变量数 $n_v = n_u \times N_u = 2 \times 10 = 20$。
+凝聚变量数 $2\times10=20$。若显式保留20个未来三维状态，另有60个状态变量，共80个变量，并有动态等式。稠密主动集的活跃KKT系统分解依赖活跃约束数，约束搜索还依赖60行；内点凝聚系统装配可能涉及 $n_cn_v^2$、分解涉及 $n_v^3$；固定分解的分裂法迭代可能涉及 $n_v^2+n_cn_v$。这些只说明成本构成，不给迭代次数或墙钟时间。
 
-**(b)** 计算复杂度：
-- 主动集法：$O(n_v^2 n_c) = O(20^2 \times 60) = O(24000)$ 每迭代
-- 内点法：$O(n_v^3) = O(20^3) = O(8000)$ 每迭代，$O(\sqrt{n_v}) = O(\sqrt{20}) \approx 4.5$ 次迭代
-- ADMM：$O(n_v^2) = O(20^2) = O(400)$ 每迭代，$O(1/\epsilon)$ 次迭代（$\epsilon$ 是精度）
-
-**(c)** $T_s = 10$ ms，需要求解时间 < 10 ms。
-
-**ADMM/OSQP 最适合**：
-- 每迭代 $O(400)$，计算量小
-- 嵌入式友好（C 代码简单）
-- Warm starting 自然
-- 通常 10-20 次迭代收敛，总时间 < 1 ms
-
-主动集法也可以（小规模），但 warm starting 不如 ADMM 自然。内点法每步 $O(8000)$，计算量大，不适合 10 ms 采样周期。
+10ms应分配给采集、估计、更新、求解、核验和输出整条链。对候选实现，在目标硬件、相同精度/约束合同和覆盖的正常/退化/不可行工况下测量；核尾延迟、最坏负载、残差与回退。不能据20个变量就判OSQP必小于1ms或内点法一定不适合。
 
 ### 答案 5
 
-**(a)** 参数选择：
-- 车速 $v = 20$ m/s，车辆动力学时间常数 $\tau \approx L/v \approx 2.5/20 = 0.125$ s（$L$ 是轴距，假设 2.5 m）
-- Settling time $t_s \approx 4\tau = 0.5$ s
-- $N_p = 1.5 \times t_s / T_s = 1.5 \times 0.5 / 0.05 = 15$（假设 $T_s = 0.05$ s）
-- $N_u = 5$（从 5 开始，减少计算量）
+小角度运动学为 $\dot e_y=ve_\psi,\dot e_\psi=(v/L)\delta$，没有轮胎侧偏和执行器延迟。ZOH离散得到：
 
-理由：$N_p$ 足够看到系统动态，$N_u$ 减少优化变量（$n_v = 1 \times 5 = 5$）。
+$$
+A_d=\begin{bmatrix}1&vT_s\\0&1\end{bmatrix}=\begin{bmatrix}1&1\\0&1\end{bmatrix},\qquad
+B_d=\begin{bmatrix}v^2T_s^2/(2L)\\vT_s/L\end{bmatrix}=\begin{bmatrix}0.2\\0.4\end{bmatrix}.
+$$
 
-**(b)** Bryson 规则：
-- 状态权重 $Q = \text{diag}(1/e_{y,\max}^2, 1/e_{\psi,\max}^2)$
-- 假设 $e_{y,\max} = 0.5$ m（横向偏差允许 0.5 m），$e_{\psi,\max} = 0.1$ rad（航向偏差允许 5.7°）
-- $Q = \text{diag}(1/0.25, 1/0.01) = \text{diag}(4, 100)$
-- 输入权重 $R = 1/\delta_{\max}^2 = 1/(5 \times \pi/180)^2 = 1/(0.0873)^2 \approx 131$
+开环有两个单位特征值，$L/v=0.125$ 秒不是该积分模型的“调节时间”。可将 $N_p=15,N_u=5$ 作为待验证起点，窗口0.75秒、对应前行15米；这只是几何和计算预算的起始选择，须补初始偏差、车道/转角速率、延迟及闭环验证。
 
-理由：航向偏差权重远大于横向偏差（航向控制更重要），输入权重使控制量在允许范围内。
+Bryson归一化给 $Q=\operatorname{diag}(4,100)$，$R=1/(5\pi/180)^2\approx131.312254$。两种状态单位不同，不能比较4和100就说航向“更重要”；惩罚权重也不能代替硬转角约束。LQR终端代价可作为设计起点，有约束时还需验证终端可容许区域或其它稳定性条件，不能直接断言不需要终端约束。
 
-**(c)** 需要终端代价，不需要终端约束。
-
-理由：
-- 系统线性，无约束时 LQR 自动稳定
-- 有约束时，终端代价 $V_f = x^T P_f x$（$P_f$ 是 LQR Riccati 解）可以保证稳定性
-- 终端约束可能降低可行性（尤其初始偏差大时）
-- 终端代价不影响可行性，只加一个额外的代价项
+<JupyterNotebook title="五题矩阵与参数复算" setupCode={`import numpy as np
+from scipy.linalg import expm, solve_discrete_are`} cells={[
+{code: `# 答案1：未来费用和当前费用分别求解，禁止混用
+F = np.array([.8,.64,.512])
+Phi = np.array([[.2,0.,0.],[.16,.2,0.],[.128,.16,.2]])
+H = 2*(Phi.T@Phi+.1*np.eye(3))
+linear = 2*Phi.T@F
+Uf = np.linalg.solve(H,-linear)
+W = np.diag([1.,1.,0.])
+Hcurrent = 2*(Phi.T@W@Phi+.1*np.eye(3))
+Ucurrent = np.linalg.solve(Hcurrent,-2*Phi.T@W@F)
+assert abs(Ucurrent[-1])<1e-12
+print('exercise1_H_f',H,linear)
+print('exercise1_future_U',Uf)
+print('exercise1_current_U',Ucurrent)
+shift = np.array([-.3,.2,-.1,0.,0.])
+increment_tail = -.8*.3
+absolute_tail_as_increment = -.8*.3-.1
+print('exercise3_shift_tails',shift,increment_tail,absolute_tail_as_increment)`},
+{code: `# 答案4/5：变量口径、准确ZOH与单位归一化
+print('exercise4_variables',2*10,3*20+2*10)
+v,L,Ts = 20.,2.5,.05
+Ac = np.array([[0.,v],[0.,0.]])
+Bc = np.array([[0.],[v/L]])
+Md = expm(Ts*np.block([[Ac,Bc],[np.zeros((1,3))]]))
+Ad,Bd = Md[:2,:2],Md[:2,2:]
+assert np.allclose(Ad,[[1.,1.],[0.,1.]])
+assert np.allclose(Bd,[[.2],[.4]])
+Q = np.diag([1/.5**2,1/.1**2])
+R = 1/np.deg2rad(5.)**2
+Pf = solve_discrete_are(Ad,Bd,Q,np.array([[R]]))
+K = np.linalg.solve(np.array([[R]])+Bd.T@Pf@Bd,Bd.T@Pf@Ad)
+print('exercise5_Ad_Bd',Ad,Bd)
+print('exercise5_Q_R',Q,R)
+print('exercise5_candidate_window_distance',15*Ts,v*15*Ts)
+print('exercise5_unconstrained_terminal_P_K',Pf,K)
+assert np.max(np.abs(np.linalg.eigvals(Ad-Bd@K)))<1
+print('exercise5_scope','unconstrained local design only; constrained region unverified')`}
+]} />

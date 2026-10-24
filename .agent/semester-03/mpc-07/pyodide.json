@@ -1,0 +1,107 @@
+{
+  "testedAt": "2026-10-24T09:26:43.368Z",
+  "url": "http://127.0.0.1:20396/python-expansion.html?lesson=mpc/explicit-mpc",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "mpc/explicit-mpc",
+      "title": "显式预测控制",
+      "sourceHash": "b19e5bcd22117f0b61d9a641e3367cc95ec81aa9fc849f1259fd396900a56b3f",
+      "notebooks": [
+        {
+          "id": "mpc/explicit-mpc#1",
+          "title": "离线区域与KKT证书",
+          "index": 1,
+          "line": 96,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7589,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "KKT_region R0 gain [-0.5  0.5] offset 0.0 lambda_gain [0. 0.] lambda_offset 0.0\nKKT_region R1 gain [0. 0.] offset 1.0 lambda_gain [-2.  2.] lambda_offset -4.0\nKKT_region R2 gain [-0. -0.] offset -1.0 lambda_gain [ 2. -2.] lambda_offset -4.0\nKKT_region R3 gain [-1.  0.] offset 2.0 lambda_gain [2. 2.] lambda_offset -8.0\nKKT_region R4 gain [-1. -0.] offset -2.0 lambda_gain [-2. -2.] lambda_offset -8.0\nH 4 F [ 2. -2.] original_inequality_rows 4\nareas [16.0, 8.0, 8.0, 2.0, 2.0] sum 36.0\ncoefficient_payload_scalars 51 float64_payload_bytes 408\noffline_KKT_vertices_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 211,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "case 2.0 -1.0 region R2 hits ['R2'] u -1.0 next 1.0 J 5.0\ncase 1.0 0.0 region R0 hits ['R0'] u -0.5 next 0.5 J 0.5\ncase -2.0 1.0 region R1 hits ['R1'] u 1.0 next -1.0 J 5.0\ncase 0.0 3.0 region R1 hits ['R1'] u 1.0 next 1.0 J 5.0\ncase 2.0 3.0 region R3 hits ['R3'] u 0.0 next 2.0 J 1.0\ncase -2.0 -3.0 region R4 hits ['R4'] u 0.0 next -2.0 J 1.0\ncase 1.0 3.0 region R0 hits ['R0', 'R1', 'R3'] u 1.0 next 2.0 J 2.0\ncase 2.0 0.0 region R0 hits ['R0', 'R2'] u -1.0 next 1.0 J 2.0\ncase 3.0 2.0 region R3 hits ['R3'] u -1.0 next 2.0 J 1.0\ncase 0.0 0.0 region R0 hits ['R0'] u 0.0 next 0.0 J 0.0\ndegenerate_point_u -1 multiplier_family_lower_t_upper_2_plus_t\nregions_and_shared_boundaries_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 26832
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/explicit-mpc#2",
+          "title": "名义闭环与域外边界",
+          "index": 2,
+          "line": 203,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 421,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "closed_loop_start_ref 2.0 -1.0 steps 20 last_sample -0.9999961853027344 max_QP_action_difference 3.708432588789279e-09\nclosed_loop_start_ref 2.5 0.0 steps 20 last_sample 2.86102294921875e-06 max_QP_action_difference 2.220446049250313e-16\nnominal_20_step_loops_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 51320
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "boundary_tolerance_example exact_u -1.0 loose_u -1.005 loose_violation 0.004999999999999893 exact_J 2.0200999999999993 loose_J 2.0200499999999995\noutside_domain 0.0 3.25 lookup None original_QP_feasible True\noutside_domain 3.25 0.0 lookup None original_QP_feasible False\nmodel_mismatch_u -0.7999999999999998 nominal_next 2.0 actual_a1_2_next 2.56 next_state_violation 0.56\nunreachable_reference_x2_r3 2.0 input 0.0 tracking_error -1.0\ndomain_tolerance_and_model_limits_checked\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "mpc/explicit-mpc",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 2,
+    "enabled": 2,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 2,
+    "codeOnly": 0
+  }
+}

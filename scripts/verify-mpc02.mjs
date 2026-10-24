@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+import {execFileSync} from 'node:child_process';
+import {renderedHeadings} from './rendered-headings.mjs';
+const dir='.agent/semester-03/mpc-02/';
+const source=fs.readFileSync('content/mpc/prediction-model.mdx','utf8');
+const heads=await renderedHeadings(source,'mpc/prediction-model');
+const aliases=[...source.matchAll(/<span id="([^"]+)" \/>/g)].map(m=>m[1]);
+assert.equal(new Set([...heads.ids,...aliases]).size,heads.ids.length+aliases.length);
+const before=JSON.parse(fs.readFileSync(dir+'headings-before.json','utf8'));
+for(const id of before.ids)assert([...heads.ids,...aliases].includes(id),id);
+assert.deepEqual(heads.h2,before.h2);
+const exports={};new Function('exports',ts.transpileModule(fs.readFileSync('lib/prediction-model.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(exports);
+const cases=[];
+for(let i=2;i<=9;i++)for(let j=0;j<=4;j++)for(let m=2;m<=12;m++){const a=i/10,h=j/4;cases.push({a,h,m,result:exports.predictionModel(a,h,m)});}
+assert.deepEqual(exports.predictionModel().direct,[1.125,1.3125,1.15625,1.078125]);
+for(const args of [[NaN,1,8],[.5,2,8],[.5,1,1],[.5,1,2.5]])assert.throws(()=>exports.predictionModel(...args),RangeError);
+fs.writeFileSync(dir+'actual-ts.json',JSON.stringify(cases));
+const out=execFileSync('python',[dir+'reference.py'],{encoding:'utf8',env:{...process.env,MPLBACKEND:'Agg'}});
+fs.writeFileSync(dir+'reconciliation.log',out);console.log(out);

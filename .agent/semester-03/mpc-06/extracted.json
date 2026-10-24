@@ -1,0 +1,90 @@
+{
+  "source": "content/mpc/generalized-predictive-control.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 232,
+      "title": "多项式恒等式与历史响应",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom fractions import Fraction\r\n\r\ndef dio(coeff, horizon):\r\n    degree=len(coeff)-1\r\n    f=np.zeros(degree); f[0]=1\r\n    e=[]; result=[]\r\n    for j in range(1,horizon+1):\r\n        lead=f[0]; e.append(lead)\r\n        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])\r\n        result.append((np.array(e),f.copy()))\r\n    return result\r\n\r\ndef predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):\r\n    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).\r\n    offset=y-a*previous_y-b*past[delay-1]\r\n    levels={-i-1:float(v) for i,v in enumerate(past)}\r\n    current=past[0]\r\n    for i in range(horizon):\r\n        current+=du[i] if i<len(du) else 0.\r\n        levels[i]=current\r\n    z=float(y); out=[]\r\n    for j in range(1,horizon+1):\r\n        z=a*z+b*levels[j-delay]+offset;out.append(z)\r\n    return np.array(out)\r\n\r\ndef matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):\r\n    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]\r\n\r\ndef plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):\r\n    if past is None:past=np.zeros(delay)\r\n    G=matrices(N1,N2,Nu,a,b,delay)\r\n    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]\r\n    if W is None:W=np.ones(N2-N1+1)\r\n    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])\r\n    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]\r\n    gradient=2*(G.T@(G@du+f-W)+lam*du)\r\n    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')\r\n    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))\r\n\r\ndef simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):\r\n    # Future schedule is explicitly assumed known. No finite reference array is indexed.\r\n    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)\r\n    output=[0.]; inputs=[]; plans=[]\r\n    for k in range(steps):\r\n        y=output[-1];previous_y=output[-2] if k else 0.\r\n        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])\r\n        W=np.array([reference(k+j) for j in range(N1,N2+1)])\r\n        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)\r\n        action=past[0]+r['du'][0]\r\n        inputs.append(float(action))\r\n        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).\r\n        applied=inputs[k-2] if k>=2 else 0.\r\n        output.append(.9048*y+.0952*applied)\r\n        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))\r\n    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 289,
+          "delim": "`",
+          "code": "for coeff in [[1,-1.2,.4],[1,-1.9048,.9048],[1,-.8],[1,-1.8,.8]]:\r\n    for j,(E,F) in enumerate(dio(coeff,3),1):\r\n        identity=np.convolve(E,coeff)\r\n        identity=np.pad(identity,(0,max(0,j+len(F)-len(identity))))\r\n        identity[j:j+len(F)]+=F\r\n        assert np.max(abs(identity-np.r_[1.,np.zeros(len(identity)-1)]))<1e-12\r\n        print('dio',coeff,'j',j,'E',E,'F',F)\r\nfig,ax=plt.subplots(1,2,figsize=(10,4))\r\nfor j,(E,F) in enumerate(dio([1,-1.9048,.9048],8)[:6],1):\r\n    ax[0].plot(np.arange(len(E)),E,'o-',label='E'+str(j));ax[1].plot(np.arange(len(F)),F,'o-',label='F'+str(j))\r\nfor x in ax:x.set_xlabel('q power');x.grid(True);x.legend();x.set_xlim(0,7);x.set_ylim(-7,7)\r\nplt.tight_layout();plt.show()\r\nprint('diophantine_identity_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 302,
+          "delim": "`",
+          "code": "# C acts on innovations; the integrated level is not a stationary process.\r\nfor sign in [-1,1]:\r\n    powers=[abs(1+sign*.9)**2,abs(1-sign*.9)**2]\r\n    print('C_sign',sign,'power_omega_0_pi',powers)\r\n# Nonzero history: independent check of F*y plus known past increments.\r\ny,yp,past=.4,.35,np.array([.2,.15,.1])\r\ndirect=predict(y,yp,past,np.zeros(3),10)\r\npoly=[]\r\nfor j,(E,F) in enumerate(dio([1,-1.9048,.9048],10),1):\r\n    R=np.r_[np.zeros(3),.0952*E]\r\n    value=F@np.array([y,yp])\r\n    for r in range(j+1,len(R)):\r\n        lag=r-j;value+=R[r]*(past[lag-1]-past[lag])\r\n    poly.append(value)\r\nassert np.allclose(direct,poly,atol=1e-12)\r\nprint('history_free_first_last',direct[0],direct[-1])\r\nprint('history_prediction_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 416,
+      "title": "默认计划与习题核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom fractions import Fraction\r\n\r\ndef dio(coeff, horizon):\r\n    degree=len(coeff)-1\r\n    f=np.zeros(degree); f[0]=1\r\n    e=[]; result=[]\r\n    for j in range(1,horizon+1):\r\n        lead=f[0]; e.append(lead)\r\n        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])\r\n        result.append((np.array(e),f.copy()))\r\n    return result\r\n\r\ndef predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):\r\n    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).\r\n    offset=y-a*previous_y-b*past[delay-1]\r\n    levels={-i-1:float(v) for i,v in enumerate(past)}\r\n    current=past[0]\r\n    for i in range(horizon):\r\n        current+=du[i] if i<len(du) else 0.\r\n        levels[i]=current\r\n    z=float(y); out=[]\r\n    for j in range(1,horizon+1):\r\n        z=a*z+b*levels[j-delay]+offset;out.append(z)\r\n    return np.array(out)\r\n\r\ndef matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):\r\n    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]\r\n\r\ndef plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):\r\n    if past is None:past=np.zeros(delay)\r\n    G=matrices(N1,N2,Nu,a,b,delay)\r\n    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]\r\n    if W is None:W=np.ones(N2-N1+1)\r\n    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])\r\n    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]\r\n    gradient=2*(G.T@(G@du+f-W)+lam*du)\r\n    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')\r\n    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))\r\n\r\ndef simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):\r\n    # Future schedule is explicitly assumed known. No finite reference array is indexed.\r\n    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)\r\n    output=[0.]; inputs=[]; plans=[]\r\n    for k in range(steps):\r\n        y=output[-1];previous_y=output[-2] if k else 0.\r\n        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])\r\n        W=np.array([reference(k+j) for j in range(N1,N2+1)])\r\n        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)\r\n        action=past[0]+r['du'][0]\r\n        inputs.append(float(action))\r\n        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).\r\n        applied=inputs[k-2] if k>=2 else 0.\r\n        output.append(.9048*y+.0952*applied)\r\n        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))\r\n    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 473,
+          "delim": "`",
+          "code": "default=plan()\r\nprint('default_G',default['G'])\r\nprint('default_du',default['du'],'default_cost',default['cost'])\r\nprint('default_prediction',default['G']@default['du'])\r\nG=matrices(2,5,2,a=.8,b=.2,delay=2)\r\nprint('exercise3_G',G)\r\nassert np.allclose(G,[[.2,0],[.36,.2],[.488,.36],[.5904,.488]],atol=1e-12)\r\nprint('exercise2_gram_rhs',1.89,1.56,'solution',1.56/2.39)\r\ng0=.2;free=.4;target=1.\r\nmove=(target-free)/g0\r\nprint('single_step_mv_move',move,'conditional_mean',g0*move+free,'innovation_variance_if_sigma1',1.)\r\ngain=.2/(.2**2+.1)\r\nprint('constant_reference_PI_Kp_KiTs',.8*gain,gain)\r\nprint('default_and_exercises_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 487,
+          "delim": "`",
+          "code": "print('exact_zoh_a_b',np.exp(-.1),1-np.exp(-.1),'first_response_sample',3)\r\nprint('rounded_a_b',.9048,.0952)\r\nfor lam in [.01,1.,10.]:\r\n    M=np.array([[2*lam,lam],[-2.,lam]])/(1+lam)\r\n    poles=np.linalg.eigvals(M)\r\n    print('unstable_plant_lambda',lam,'poles',poles,'spectral_radius',max(abs(poles)))\r\n# Zero rows have no effect on G.T@G or G.T@(W-f).\r\nG=matrices(1,10,3);trim=G[2:]\r\nassert np.allclose(G.T@G,trim.T@trim)\r\nprint('zero_row_gram_difference',np.max(abs(G.T@G-trim.T@trim)))\r\nprint('zero_matrix_rank',np.linalg.matrix_rank(matrices(1,5,3,delay=6)))\r\nprint('stability_and_delay_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 502,
+      "title": "原闭环主题的完整复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom fractions import Fraction\r\n\r\ndef dio(coeff, horizon):\r\n    degree=len(coeff)-1\r\n    f=np.zeros(degree); f[0]=1\r\n    e=[]; result=[]\r\n    for j in range(1,horizon+1):\r\n        lead=f[0]; e.append(lead)\r\n        f=np.r_[f[1:],0]-lead*np.asarray(coeff[1:])\r\n        result.append((np.array(e),f.copy()))\r\n    return result\r\n\r\ndef predict(y,previous_y,past,du,horizon,a=.9048,b=.0952,delay=3):\r\n    # past[0]=actual u(k-1), ..., past[d-1]=u(k-d).\r\n    offset=y-a*previous_y-b*past[delay-1]\r\n    levels={-i-1:float(v) for i,v in enumerate(past)}\r\n    current=past[0]\r\n    for i in range(horizon):\r\n        current+=du[i] if i<len(du) else 0.\r\n        levels[i]=current\r\n    z=float(y); out=[]\r\n    for j in range(1,horizon+1):\r\n        z=a*z+b*levels[j-delay]+offset;out.append(z)\r\n    return np.array(out)\r\n\r\ndef matrices(N1=3,N2=10,Nu=3,a=.9048,b=.0952,delay=3):\r\n    return np.stack([predict(0,0,np.zeros(delay),v,N2,a,b,delay) for v in np.eye(Nu)],axis=1)[N1-1:]\r\n\r\ndef plan(y=0,previous_y=0,past=None,N1=3,N2=10,Nu=3,lam=.1,delay=3,a=.9048,b=.0952,W=None):\r\n    if past is None:past=np.zeros(delay)\r\n    G=matrices(N1,N2,Nu,a,b,delay)\r\n    f=predict(y,previous_y,past,np.zeros(Nu),N2,a,b,delay)[N1-1:]\r\n    if W is None:W=np.ones(N2-N1+1)\r\n    aug=np.vstack([G,np.sqrt(lam)*np.eye(Nu)])\r\n    du=np.linalg.lstsq(aug,np.r_[W-f,np.zeros(Nu)],rcond=None)[0]\r\n    gradient=2*(G.T@(G@du+f-W)+lam*du)\r\n    if np.max(abs(gradient))>1e-8:raise RuntimeError('Normal-equation residual too large')\r\n    return dict(G=G,f=f,du=du,cost=float(np.sum((G@du+f-W)**2)+lam*du@du),gradient=float(max(abs(gradient))))\r\n\r\ndef simulate(N1=3,N2=15,Nu=3,lam=.1,steps=80,schedule='two'):\r\n    # Future schedule is explicitly assumed known. No finite reference array is indexed.\r\n    def reference(t):return (0. if t<10 else 1. if t<50 else .5) if schedule=='two' else (0. if t<5 else 1.)\r\n    output=[0.]; inputs=[]; plans=[]\r\n    for k in range(steps):\r\n        y=output[-1];previous_y=output[-2] if k else 0.\r\n        past=np.array([inputs[k-i-1] if k-i-1>=0 else 0. for i in range(3)])\r\n        W=np.array([reference(k+j) for j in range(N1,N2+1)])\r\n        r=plan(y,previous_y,past,N1,N2,Nu,lam,W=W)\r\n        action=past[0]+r['du'][0]\r\n        inputs.append(float(action))\r\n        # y(k+1)=a*y(k)+b*u(k-2); first response to u(0) is y(3).\r\n        applied=inputs[k-2] if k>=2 else 0.\r\n        output.append(.9048*y+.0952*applied)\r\n        plans.append(dict(k=k,y=y,previous_y=previous_y,past=past.tolist(),du=r['du'].tolist(),W=W.tolist()))\r\n    return dict(y=np.array(output),u=np.array(inputs),reference=np.array([reference(t) for t in range(steps+1)]),plans=plans)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 559,
+          "delim": "`",
+          "code": "run80=simulate()\r\nprint('legacy80_last_sample',run80['y'][-1],'max_abs_u',max(abs(run80['u'])))\r\nfig,ax=plt.subplots(2,1,figsize=(10,6),sharex=True)\r\nt=np.arange(81)\r\nax[0].plot(t,run80['y'],label='output');ax[0].step(t,run80['reference'],where='post',label='known schedule');ax[0].set_ylim(-.2,1.5);ax[0].legend()\r\nax[1].step(np.arange(80),run80['u'],where='post',label='u');ax[1].legend();ax[1].set_ylabel('normalized input');ax[1].set_xlabel('time / s, Ts=1')\r\nfor x in ax:x.set_xlim(0,80);x.grid(True)\r\nplt.tight_layout();plt.show()\r\nprint('legacy80_completed_without_reference_overrun')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 568,
+          "delim": "`",
+          "code": "runs60={lam:simulate(Nu=5,lam=lam,steps=60,schedule='one') for lam in [.001,.01,.1,1.,10.]}\r\nfig,ax=plt.subplots(2,1,figsize=(10,6),sharex=True)\r\nfor lam,r in runs60.items():\r\n    ax[0].plot(np.arange(61),r['y'],label='lambda='+str(lam))\r\n    ax[1].step(np.arange(60),r['u'],where='post',label='lambda='+str(lam))\r\n    print('legacy60_lambda',lam,'last_sample',r['y'][-1],'max_abs_input',max(abs(r['u'])))\r\nax[0].step(np.arange(61),runs60[.1]['reference'],where='post',ls='--',label='known schedule')\r\nax[0].set_ylim(-.2,1.5);ax[0].legend();ax[1].legend();ax[1].set_xlabel('time / s, Ts=1')\r\nfor x in ax:x.set_xlim(0,60);x.grid(True)\r\nplt.tight_layout();plt.show()\r\nprint('legacy60_five_weights_completed')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "testedAt": "2026-10-24T08:00:11.239Z",
+  "url": "http://127.0.0.1:18384/python-expansion.html?lesson=estimation/unscented-kalman-filter",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "estimation/unscented-kalman-filter",
+      "title": "无迹卡尔曼滤波",
+      "sourceHash": "735b96e48b488b0735a940e21713bb53d58ca6273fc62396236e227ba03ad45c",
+      "notebooks": [
+        {
+          "id": "estimation/unscented-kalman-filter#1",
+          "title": "sigma点、矩与过程噪声",
+          "index": 1,
+          "line": 128,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5636,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sigma_points_weights [2.0, 2.5, 1.5] [0.0, 0.5, 0.5] [2.0, 0.5, 0.5]\ninput_mean_variance 2.0 0.25\nsquare_values_mean_variance_cross [4.0, 6.25, 2.25] 4.25 4.125 1.0\ncentral_variance_contribution 0.125\nsmall_alpha_weights [-999999.0, 500000.0, 500000.0] [-999996.000001, 500000.0, 500000.0]\ncube_UT_EKF_true_variance 1.0 0 15\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "prediction_UT_GH 2.425 0.53125 2.425 0.53125\nQ_included_predicted_S_C_K_P 0.29 1.29 0.29 0.22480620155038758 0.22480620155038758 wrong_gain 0.2\nlower_L [[1.0, 0.0], [0.6, 0.8]] correct_columns [[1.0, 0.6], [0.6, 1.0]] wrong_rows [[1.3599999999999999, 0.48], [0.48, 0.6400000000000001]]\nprediction_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "estimation/unscented-kalman-filter#2",
+          "title": "UKF校正与近似边界",
+          "index": 2,
+          "line": 180,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 16,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "case_update 2 0.25 1 5 square zh_S_C_K_innovation 4.25 5.125 1.0 0.1951219512195122 0.75 UKF 2.1463414634146343 0.0548780487804878 EKF 2.2 0.04999999999999999 reference 2.169615194693212 0.045869439065316264\nabsolute_errors_UKF_EKF_mean_variance 0.02327373127857779 0.03038480530678811 0.009008609715171534 0.004130560934683725\ncase_update 2 0.25 4 5 square zh_S_C_K_innovation 4.25 8.125 1.0 0.12307692307692308 0.75 UKF 2.0923076923076924 0.12692307692307692 EKF 2.125 0.125 reference 2.078841858141531 0.1270592080334474\nabsolute_errors_UKF_EKF_mean_variance 0.013465834166161539 0.046158141858469115 0.00013613111037047432 0.0020592080334473906\ncase_update -2 0.25 1 5 square zh_S_C_K_innovation 4.25 5.125 -1.0 -0.1951219512195122 0.75 UKF -2.1463414634146343 0.0548780487804878 EKF -2.2 0.04999999999999999 reference -2.169615194693212 0.045869439065316264\nabsolute_errors_UKF_EKF_mean_variance 0.02327373127857779 0.03038480530678811 0.009008609715171534 0.004130560934683725\ncase_update 0 1 0.25 4 square zh_S_C_K_innovation 1.0 2.25 0.0 0.0 3.0 UKF 0.0 1.0 EKF 0.0 1.0 reference 0.0 3.841876221594493\nabsolute_errors_UKF_EKF_mean_variance 0.0 0.0 2.841876221594493 2.841876221594493\ncase_update 2 0.25 1 5 linear zh_S_C_K_innovation 2.0 1.25 0.25 0.2 3.0 UKF 2.6 0.2 EKF 2.6 0.2 reference 2.5999999999999996 0.20000000000000018\nabsolute_errors_UKF_EKF_mean_variance 4.440892098500626e-16 4.440892098500626e-16 1.6653345369377348e-16 1.6653345369377348e-16\nposterior_reference_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "analytic_square_moments 2 0.25 [4.25, 4.125, 1.0]\nanalytic_square_moments -2 0.25 [4.25, 4.125, -1.0]\nanalytic_square_moments 0 1 [1, 2, 0]\nGH_cube_mean_variance 1.7823971034993433e-17 15.000000000000007\n2D_product_sigma_outputs_UT_true_variance [0.0, 0.0, 0.0, -0.0, -0.0] 0 1\nall_UKF_checks_passed\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "estimation/unscented-kalman-filter",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 2,
+    "enabled": 2,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 2,
+    "codeOnly": 0
+  }
+}

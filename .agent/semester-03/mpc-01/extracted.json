@@ -1,0 +1,55 @@
+{
+  "source": "content/mpc/mpc-principle.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 138,
+      "title": "两步QP与堆叠预测复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 139,
+          "delim": "`",
+          "code": "# 直接穷举边界驻点，非离散网格近似\r\nx0, r, bound = 4., 1., 1.\r\nM = np.array([[1., 0.], [.5, 1.]])\r\nv = np.array([.5*x0, .25*x0])\r\nH = 2*(M.T@M + r*np.eye(2))\r\nf = 2*M.T@v\r\nfree = np.linalg.solve(H, -f)\r\ncandidates = [free]\r\nfor edge in [-bound, bound]:\r\n    candidates += [np.array([edge, np.clip(-(H[1,0]*edge+f[1])/H[1,1],-bound,bound)]),\r\n                   np.array([np.clip(-(H[0,1]*edge+f[0])/H[0,0],-bound,bound),edge])]\r\nfeasible = [u for u in candidates if np.max(abs(u)) <= bound+1e-12]\r\ncost = lambda u: np.sum((v+M@u)**2)+r*(u@u)\r\nU = min(feasible, key=cost)\r\nprint('QP_H', H.tolist(), 'f', f.tolist())\r\nprint('QP_plan', U.tolist(), 'states', (v+M@U).tolist())\r\nprint('QP_cost', cost(U), 'full_cost', x0*x0+cost(U))\r\nassert np.allclose(U, [-1., -.25])\r\nassert abs(cost(U)-2.125)<1e-12",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 158,
+          "delim": "`",
+          "code": "# 原习题1：双积分器，逐步递推独立核对堆叠矩阵\r\nA = np.array([[1.,1.],[0.,1.]])\r\nB = np.array([[.5],[1.]])\r\nF = np.vstack([np.linalg.matrix_power(A,i) for i in range(1,4)])\r\nPhi = np.zeros((6,3))\r\nfor i in range(3):\r\n    for j in range(i+1):\r\n        Phi[2*i:2*i+2,j:j+1] = np.linalg.matrix_power(A,i-j)@B\r\nx = np.array([2.,1.]); inputs = np.array([1.,0.,-1.])\r\nstacked = F@x+Phi@inputs\r\nrecursive = []\r\nfor u in inputs:\r\n    x = A@x+B[:,0]*u\r\n    recursive.extend(x)\r\nassert np.allclose(stacked, recursive)\r\nprint('F', F.tolist(), 'Phi', Phi.tolist())\r\nprint('exercise1_X', stacked.tolist())",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 244,
+      "title": "终端代价与答案数值核验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 245,
+          "delim": "`",
+          "code": "# 用Riccati递推复算，不依赖Scipy或额外控制库\r\nP = 1.\r\nfor _ in range(200):\r\n    P = 1.+4.*P/(1.+P)\r\nK = 2.*P/(1.+P)\r\nprint('DARE_P_K_pole', P, K, 2.-K)\r\nassert abs(P-(2.+np.sqrt(5.)))<1e-12\r\nfor horizon in [1,2,8]:\r\n    S = P\r\n    for _ in range(horizon):\r\n        gain = 2.*S/(1.+S)\r\n        S = 1.+4.*S/(1.+S)\r\n    assert abs(gain-K)<1e-12\r\n    print('finite_N_gain', horizon, gain)\r\nprint('no_terminal_pole', 2.)\r\n# 习题2是明确声明的未来状态代价，R=0特例\r\nfor initial, u0, u1 in [(4.,-2.,0.), (8.,-2.,-1.)]:\r\n    states = [.5*initial+u0, .25*initial+.5*u0+u1]\r\n    print('exercise2', initial, [u0,u1], states, sum(v*v for v in states))\r\nprint('exercise4_Q_R', 1./50**2, 1./10**2)\r\nprint('DARE_residual', P-(1.+4.*P/(1.+P)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

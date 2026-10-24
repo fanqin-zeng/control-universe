@@ -1,0 +1,81 @@
+{
+  "source": "content/robust/h-infinity-basics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 254,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nimport warnings\r\nwarnings.filterwarnings('ignore')\r\nplt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 263,
+          "delim": "`",
+          "code": "# 被控对象分析\r\nG = ctrl.tf([100], [1, 1, 100])\r\nprint(\"=== 被控对象 G(s) ===\")\r\nprint(G)\r\n\r\nomega = np.logspace(-1, 2.5, 1000)\r\nG_jw = G(1j * omega)\r\nmag_db = 20 * np.log10(np.abs(G_jw))\r\nphase_deg = np.angle(G_jw, deg=True)\r\n\r\nidx_peak = np.argmax(mag_db)\r\nprint(f\"\\n共振频率: {omega[idx_peak]:.1f} rad/s\")\r\nprint(f\"共振峰值: {mag_db[idx_peak]:.1f} dB\")\r\nprint(f\"低频增益: {20*np.log10(np.abs(G(0.01j))):.1f} dB\")\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\r\n\r\naxes[0].semilogx(omega, mag_db, 'b-', linewidth=2)\r\naxes[0].axvline(10, color='r', linestyle=':', alpha=0.7, label='共振频率 $\\omega_n$=10')\r\naxes[0].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[0].set_xlabel('频率 (rad/s)')\r\naxes[0].set_ylabel('幅值 (dB)')\r\naxes[0].set_title('被控对象 |G(j$\\omega$)|')\r\naxes[0].legend()\r\naxes[0].grid(True, alpha=0.3)\r\n\r\naxes[1].semilogx(omega, phase_deg, 'b-', linewidth=2)\r\naxes[1].axvline(10, color='r', linestyle=':', alpha=0.7)\r\naxes[1].axhline(-180, color='k', linestyle='--', alpha=0.3)\r\naxes[1].set_xlabel('频率 (rad/s)')\r\naxes[1].set_ylabel('相位 (°)')\r\naxes[1].set_title('被控对象 ∠G(j$\\omega$)')\r\naxes[1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()",
+          "rawDiffers": true,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 325,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom ipywidgets import interact, FloatSlider\r\nimport warnings\r\nwarnings.filterwarnings('ignore')\r\nplt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nG = ctrl.tf([100], [1, 1, 100])",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 337,
+          "delim": "`",
+          "code": "# 回路整形控制器设计（交互式）\r\ndef design_controller(K=20, omega_n=10.0, zeta_n=0.5, zeta_d=0.02):\r\n    C_notch = ctrl.tf([1, 2*zeta_n*omega_n, omega_n**2],\r\n                       [1, 2*zeta_d*omega_n, omega_n**2])\r\n    C = K * C_notch\r\n    L = G * C\r\n\r\n    omega = np.logspace(-1, 2.5, 2000)\r\n    L_jw = L(1j * omega)\r\n    mag_L = np.abs(L_jw)\r\n\r\n    idx_cross = np.where(np.diff(np.sign(mag_L - 1)))[0]\r\n    if len(idx_cross) > 0:\r\n        wc = omega[idx_cross[0]]\r\n        phase_wc = np.angle(L_jw[idx_cross[0]], deg=True)\r\n        PM = 180 + phase_wc\r\n    else:\r\n        wc, PM = float('nan'), float('nan')\r\n\r\n    S = 1.0 / (1.0 + L_jw)\r\n    T = L_jw / (1.0 + L_jw)\r\n    S_inf = np.max(np.abs(S))\r\n    L_dc = np.abs(L(0.001j))\r\n    ss_error = 1.0 / (1.0 + L_dc)\r\n\r\n    fig, axes = plt.subplots(2, 2, figsize=(14, 10))\r\n\r\n    axes[0, 0].semilogx(omega, 20*np.log10(mag_L), 'b-', linewidth=2)\r\n    axes[0, 0].axhline(0, color='k', linestyle='--', alpha=0.5)\r\n    if not np.isnan(wc):\r\n        axes[0, 0].axvline(wc, color='r', linestyle=':', alpha=0.5, label=f'$\\omega_c$={wc:.1f}')\r\n    axes[0, 0].set_xlabel('频率 (rad/s)')\r\n    axes[0, 0].set_ylabel('幅值 (dB)')\r\n    axes[0, 0].set_title('开环回路增益 |L(jω)|')\r\n    axes[0, 0].legend()\r\n    axes[0, 0].grid(True, alpha=0.3)\r\n\r\n    axes[0, 1].semilogx(omega, 20*np.log10(np.abs(S)), 'b-', linewidth=2, label='|S|')\r\n    axes[0, 1].semilogx(omega, 20*np.log10(np.abs(T)), 'r--', linewidth=2, label='|T|')\r\n    axes[0, 1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\n    axes[0, 1].axhline(20*np.log10(1.5), color='g', linestyle=':', alpha=0.7, label='||S||_∞ < 1.5')\r\n    axes[0, 1].set_xlabel('频率 (rad/s)')\r\n    axes[0, 1].set_ylabel('幅值 (dB)')\r\n    axes[0, 1].set_title('灵敏度函数 |S| 和 |T|')\r\n    axes[0, 1].legend()\r\n    axes[0, 1].grid(True, alpha=0.3)\r\n\r\n    T_cl = ctrl.feedback(L)\r\n    t = np.linspace(0, 10, 1000)\r\n    _, y = ctrl.step_response(T_cl, t)\r\n    axes[1, 0].plot(t, y, 'b-', linewidth=2)\r\n    axes[1, 0].axhline(1, color='k', linestyle='--', alpha=0.5)\r\n    axes[1, 0].axhline(1 - ss_error, color='g', linestyle=':', alpha=0.5,\r\n                        label=f'稳态值 = {1-ss_error:.3f}')\r\n    axes[1, 0].set_xlabel('时间 (s)')\r\n    axes[1, 0].set_ylabel('输出 y')\r\n    axes[1, 0].set_title('闭环阶跃响应')\r\n    axes[1, 0].legend()\r\n    axes[1, 0].grid(True, alpha=0.3)\r\n\r\n    CS = C / (1 + G * C)\r\n    _, u = ctrl.step_response(CS, t)\r\n    axes[1, 1].plot(t, u, 'r-', linewidth=1.5)\r\n    axes[1, 1].set_xlabel('时间 (s)')\r\n    axes[1, 1].set_ylabel('控制信号 u')\r\n    axes[1, 1].set_title('控制信号（阶跃响应）')\r\n    axes[1, 1].grid(True, alpha=0.3)\r\n\r\n    plt.tight_layout()\r\n    plt.show()\r\n\r\n    print(f\"\\n穿越频率: {wc:.1f} rad/s | 相位裕度: {PM:.1f}°\")\r\n    print(f\"||S||_∞ = {S_inf:.3f} {'✓' if S_inf < 1.5 else '✗'} (< 1.5) | 稳态误差: {ss_error*100:.1f}% {'✓' if ss_error < 0.05 else '✗'} (< 5%)\")\r\n\r\ndisplay(interact(design_controller,\r\n    K=FloatSlider(value=20, min=1, max=50, step=1, description='K', continuous_update=False),\r\n    omega_n=FloatSlider(value=10, min=5, max=20, step=0.5, description='ω_n', continuous_update=False),\r\n    zeta_n=FloatSlider(value=0.5, min=0.1, max=1.0, step=0.05, description='ζ_n', continuous_update=False),\r\n    zeta_d=FloatSlider(value=0.02, min=0.01, max=0.2, step=0.01, description='ζ_d', continuous_update=False)\r\n))",
+          "rawDiffers": true,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 424,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nimport warnings\r\nwarnings.filterwarnings('ignore')\r\nplt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']\r\nplt.rcParams['axes.unicode_minus'] = False\r\n\r\nG = ctrl.tf([100], [1, 1, 100])\r\nK, omega_n, zeta_n, zeta_d = 20, 10.0, 0.5, 0.02\r\nC_notch = ctrl.tf([1, 2*zeta_n*omega_n, omega_n**2], [1, 2*zeta_d*omega_n, omega_n**2])\r\nC = K * C_notch\r\nL = G * C\r\nomega_plot = np.logspace(-1, 2.5, 500)\r\nL_jw = L(1j * omega_plot)\r\nS_jw = 1.0 / (1.0 + L_jw)\r\nT_jw = L_jw / (1.0 + L_jw)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 444,
+          "delim": "`",
+          "code": "# H∞ 性能验证\r\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\r\n\r\naxes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S(jω)|')\r\naxes[0].axhline(20*np.log10(1.5), color='r', linestyle=':', linewidth=2,\r\n                label=f'||S||_∞ < 1.5 ({20*np.log10(1.5):.1f} dB)')\r\naxes[0].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[0].set_xlabel('频率 (rad/s)')\r\naxes[0].set_ylabel('|S| (dB)')\r\naxes[0].set_title('灵敏度函数与 H∞ 指标')\r\naxes[0].legend()\r\naxes[0].grid(True, alpha=0.3)\r\n\r\nidx_10 = np.argmin(np.abs(omega_plot - 10))\r\nT_at_10 = np.abs(T_jw[idx_10])\r\naxes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T(jω)|')\r\naxes[1].plot(10, 20*np.log10(T_at_10), 'ko', markersize=10,\r\n             label=f'|T(j10)| = {20*np.log10(T_at_10):.1f} dB')\r\naxes[1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1].set_xlabel('频率 (rad/s)')\r\naxes[1].set_ylabel('|T| (dB)')\r\naxes[1].set_title('补灵敏度与共振抑制')\r\naxes[1].legend()\r\naxes[1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()\r\n\r\nprint(\"=== H∞ 性能检查 ===\")\r\nprint(f\"1. ||S||_∞ = {np.max(np.abs(S_jw)):.4f} → {'✓' if np.max(np.abs(S_jw)) < 1.5 else '✗'} (< 1.5)\")\r\nprint(f\"2. |T(j10)| = {T_at_10:.4f} ({20*np.log10(T_at_10):.1f} dB) → 共振被抑制\")\r\nprint(f\"3. 稳态误差 = {1/(1+np.abs(L(0.001j)))*100:.1f}% → {'✓' if 1/(1+np.abs(L(0.001j))) < 0.05 else '✗'} (< 5%)\")",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 478,
+          "delim": "`",
+          "code": "# 有无陷波的对比\r\nK_A = 5\r\nL_A = K_A * G\r\nS_A = 1.0 / (1.0 + L_A(1j * omega_plot))\r\nT_A = L_A(1j * omega_plot) / (1.0 + L_A(1j * omega_plot))\r\n\r\nS_B = S_jw\r\nT_B = T_jw\r\n\r\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\r\n\r\naxes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_A)), 'r-', linewidth=1.5, alpha=0.7,\r\n                  label='A: 纯比例 K=5')\r\naxes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_B)), 'g-', linewidth=2,\r\n                  label='B: K=20 + 陷波')\r\naxes[0].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[0].axhline(20*np.log10(1.5), color='k', linestyle=':', alpha=0.5, label='||S||_∞ = 1.5')\r\naxes[0].set_xlabel('频率 (rad/s)')\r\naxes[0].set_ylabel('|S| (dB)')\r\naxes[0].set_title('灵敏度函数对比')\r\naxes[0].legend()\r\naxes[0].grid(True, alpha=0.3)\r\n\r\naxes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_A)), 'r-', linewidth=1.5, alpha=0.7,\r\n                  label='A: 纯比例 K=5')\r\naxes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_B)), 'g-', linewidth=2,\r\n                  label='B: K=20 + 陷波')\r\naxes[1].axhline(0, color='k', linestyle='--', alpha=0.3)\r\naxes[1].set_xlabel('频率 (rad/s)')\r\naxes[1].set_ylabel('|T| (dB)')\r\naxes[1].set_title('补灵敏度函数对比')\r\naxes[1].legend()\r\naxes[1].grid(True, alpha=0.3)\r\n\r\nplt.tight_layout()\r\nplt.show()\r\n\r\nprint(\"=\" * 65)\r\nprint(f\"{'方案':<25} {'||S||_∞':<12} {'共振处|T|':<15} {'稳态误差':<10}\")\r\nprint(\"-\" * 65)\r\n\r\nfor name, S_x, T_x, K_val in [('A: 纯比例 K=5', S_A, T_A, 5),\r\n                                ('B: K=20 + 陷波', S_B, T_B, 20)]:\r\n    idx_10 = np.argmin(np.abs(omega_plot - 10))\r\n    T_10 = np.abs(T_x[idx_10])\r\n    ss_err = 1.0 / (1.0 + K_val)\r\n    print(f\"{name:<25} {np.max(np.abs(S_x)):<12.2f} {20*np.log10(T_10):<12.1f} dB  {ss_err*100:<8.1f}%\")\r\n\r\nprint(\"=\" * 65)\r\nprint(\"\n结论：陷波滤波器是抑制共振的关键——没有陷波，共振导致 |S| 出现巨大峰值\")",
+          "rawDiffers": true,
+          "escapeIssues": [
+            {
+              "seq": "\\n",
+              "kind": "transformed",
+              "got": "\n",
+              "lineInCell": 50
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

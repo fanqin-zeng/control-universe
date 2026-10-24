@@ -1,0 +1,264 @@
+---
+title: "半实物仿真"
+description: "辨清软件排练与硬件在环的证据边界，写出接口时序合同，用虚拟台架检查数值步长、命令锁存、超期与降级。"
+---
+
+# 半实物仿真
+
+你写好了一段风扇控制程序：转速低就加大输出，电脑模型里的曲线也正常。可是第一次接上控制板，程序来不及在期限内算完，上一拍的旧命令又被迟到结果覆盖。问题可能不在控制公式，而在公式怎样穿过真实接口与时间边界。
+
+[控制器部署](/implementation/controller-discretization-practice)讨论了代码怎样进入数字回路，[实时控制](/implementation/realtime-control)讨论了任务和期限。现在要问：**不先冒险驱动真实电机，怎样把控制板、接口和时序逐步验清？** 本课先分清哪些部分是真实的，再用一个可运行的软件台架排练验收合同；本页没有接入控制板，不能充当硬件在环验收报告。
+
+## 先替换哪一半
+
+**硬件在环仿真**（Hardware-in-the-Loop，HIL，亦称半实物仿真）的典型做法，是保留实际被测控制器，把受控对象换成能按真实时间运行的模型。控制器经过自己的输入输出接口与模型交换信号，看到的是模拟出来的对象响应。真实接口、电平及信号调理仍是测试链路的一部分。
+
+![上方实际HIL由真实控制器经物理I/O连接实时对象仿真器，下方本页仅用虚拟时钟和软件函数排练，未接入硬件](/diagrams/implementation/hil-rehearsal-workflow.svg)
+
+这能在对象暂时不可用或某些故障不宜直接施加到真机时提供测试路径，但并不让模型自动成为真实对象。模型精度、接口映射、实时执行和测试覆盖仍需要各自的证据。没有真实被测硬件，仅仅给图表加一个“HIL”标题，不会增加这些证据。
+
+## 从模型到实物的验证层次
+
+| 层次 | 控制部分在哪里运行 | 对象与接口 | 能回答的问题与限制 |
+|---|---|---|---|
+| 模型在环 MIL | 控制器模型 | 对象模型 | 控制逻辑与预期行为；不证明目标代码一致 |
+| 软件在环 SIL | 主机上的控制软件实现 | 软件对象模型及测试接口 | 代码功能与模型对照；不要求真实时间运行 |
+| 处理器在环 PIL | 目标处理器或明确声明的处理器执行环境 | 测试连接对象模型 | 目标代码/数值表示等差异；不自动覆盖完整物理I/O与实时性 |
+| 硬件在环 HIL | 实际被测控制器及其软件 | 实时对象模型，经过规定的硬件接口 | 系统接口、时序及故障处理；结论仍受模型和覆盖范围限制 |
+| 快速控制原型 RCP | 易修改、可实时运行的控制器原型 | 真实对象 | 便于对真实对象调试控制算法；风险与HIL替换的部分不同 |
+
+这些术语的具体实现可参阅[MathWorks开发过程说明](https://www.mathworks.com/help/simulink/slref/simulink-concepts-model-development-processes.html)和[NI对离线、RCP、HIL配置的区分](https://www.ni.com/docs/en-US/bundle/labview-control-design-and-simulation-module/page/lvsimconcepts/sim_c_config.html)。它们是验证方法，不是“上一层通过便自动认证下一层”的等级证书。
+
+本课直接执行Python/TS软件函数，没有目标处理器、编译后的生产二进制、物理I/O或实时仿真硬件，定位为**具有SIL思路的软件排练**，不冒充完成某个工具规定的完整SIL流程，更不是PIL或HIL。快速控制原型通常把控制器实现换成便于试验的平台、保留真实对象；本页也没有做这个实验。
+
+## 接口与时间合同
+
+写台架之前，先把接口写成可核对的数据合同：信号名和方向、单位、量程、零点与比例、数据类型、无效标记、采样时刻、序号、命令有效期、锁存顺序以及恢复条件。这里用归一化状态与输入，不代表任意控制板的电压或PWM比例。
+
+虚拟对象与控制律为：
+
+$$
+\dot x=\frac{-x+u}{\tau},\qquad \tau=0.5\,\mathrm{s},\qquad r=1,\qquad u^{\mathrm{cmd}}_k=\operatorname{clip}_{[0,2]}\bigl(2(r-x_k)\bigr).
+$$
+
+初始状态和施加输入均为0，控制帧 $T=20\,\mathrm{ms}$。$u^{\mathrm{cmd}}$ 是刚算出的候选命令，$u$ 是对象真正接收到的保持输入，两者不能混写。每拍按下面的顺序执行：
+
+1. 在边界 $kT$ 接收**上一拍**任务结果。若它在自己的期限前完成，就锁存；超期结果丢弃，不在未来某拍补写旧命令。
+2. 依据连续失败次数执行保持或零输出降级；启动没有历史结果，不算一次失败。
+3. 采样当前状态，计算下一候选命令，记录这项任务的注入成本 $C_k$ 与期限 $(k+1)T$。
+4. 在本帧内保持当前 $u$，推进对象模型。
+
+这是一拍命令流水线。即使计算成本很小，也不会把当前候选命令提前塞进同一拍的对象。**恰好等于期限**时，本实验约定先完成、再锁存；实机要另留时钟误差和抖动余量，不能把等号当成稳健裕度。
+
+这里的 $C_k$ 是脚本注入的假定完成时长，不是调用代码的CPU实测时间。超期就丢弃，下一拍发起独立任务；没有模拟排队、抢占、取消实现和共享状态竞争。若硬件上的任务不能这样隔离，必须先改调度与并发合同，不能拿本页计数证明RTOS可调度。
+
+## 步长不是运行速度
+
+对象模型采用显式Euler法，在每个控制帧内做 $n$ 个子步，$h=T/n$：
+
+$$
+x_{j+1}=x_j+\frac{h}{\tau}(u-x_j).
+$$
+
+本帧内输入不变时，同样初值的精确保持解是：
+
+$$
+x_{k+1}^{\mathrm{exact}}=e^{-T/\tau}x_k^{\mathrm{exact}}+\bigl(1-e^{-T/\tau}\bigr)u_k.
+$$
+
+页面另跑一个**同输入精确影子**：它接受Euler闭环实际施加的同一串 $u_k$，但不把自己的状态反馈给控制器。这样帧边界上的差异主要用于检查该输入序列下的积分误差，不能冒充“精确闭环控制器优于Euler控制器”的比较。它也不包含真实对象建模误差。
+
+较小数值步长通常需要更多计算。真正实时运行时，仿真器每步求解、I/O和调度必须装进对应的真实时间槽；控制器从采样到有效输出还有自己的期限。这是两个不同预算，模型离线算得再准确，也不能据此断言它赶得上物理时钟。[NI的HIL迁移指南](https://ni.github.io/stl-model-framework-documentation/topic/hardware-in-the-loop-transition.html)也把实时目标与物理信号映射作为迁移工作的一部分。
+
+## 可运行的虚拟台架
+
+默认每帧10个子步，即 $h=2\,\mathrm{ms}$；运行100帧，到虚拟时间2秒，得到101个帧边界状态。默认成本4 ms，所有任务按时。开始时 $u_0=0$，所以 $x_1=0$；下一拍锁存首项命令 $u_1=2$，得到Euler状态 $x_2\approx0.078575253$。先对这几个点，能及早发现“命令在错误的一拍生效”的实现错误。
+
+<HilRehearsalExplorer />
+
+默认末状态 $x_{100}\approx0.666665935$；这不是跟踪误差归零。对未饱和的静态平衡，令 $u=x=2(1-x)$ 得候选平衡 $x=2/3$，说明P控制本来就会留静差；这里的代数平衡本身不是全局稳定性证明，有限末值也不等于已经到达极限。
+
+本课定义的离散IAE为 $T\sum_{k=0}^{99}|1-x_k|$，默认约0.784236805秒；它是左端采样矩形和，不是连续误差积分的精确值。Euler与精确影子在101个帧边界上的最大绝对差约0.000805985。所有读数对应当前有限窗口，不能扩展成所有时刻、任意对象或硬件模型精度保证。
+
+<JupyterNotebook
+  title="默认台架与首帧对账"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+def experiment(steps=10,mode="clean",policy="zero3",costMs=4):
+    x=0.; exact=0.; u=0.; failures=0; pending=None; points=[]; jobs=[]
+    for k in range(100):
+        if pending is not None:
+            if pending["onTime"]:
+                u=pending["command"]; failures=0
+            else:
+                failures+=1
+        zero=policy=="zero3" and failures>=3
+        if zero:u=0.
+        points.append(dict(k=k,x=x,exact=exact,u=u,failures=failures,zero=zero))
+        command=float(np.clip(2*(1-x),0,2))
+        cost=costMs if mode=="clean" else 20 if mode=="edge" else 25 if mode=="overload" or 20<=k<=29 else 4
+        pending=dict(command=command,onTime=cost<=20)
+        jobs.append(dict(k=k,command=command,costMs=cost,onTime=cost<=20,deadlineMs=(k+1)*20,completeMs=k*20+cost))
+        for j in range(steps):
+            x+=(.02/steps)*(u-x)/.5
+        exact=math.exp(-.04)*exact+(1-math.exp(-.04))*u
+    points.append(dict(k=100,x=x,exact=exact))
+    return dict(steps=steps,mode=mode,policy=policy,costMs=costMs,points=points,jobs=jobs,final=x,iae=.02*sum(abs(1-p["x"]) for p in points[:-1]),maxError=max(abs(p["x"]-p["exact"]) for p in points),misses=sum(not j["onTime"] for j in jobs),zeroFrames=sum(p["zero"] for p in points[:-1]))
+def summary(v):
+    return {k:q for k,q in v.items() if k not in ["points","jobs"]}
+`}
+  cells={[
+    { code: `default=experiment()
+first=default["points"][:3]
+equilibrium=2/(1+2)
+print(json.dumps(dict(default=summary(default),first=first,equilibrium=equilibrium)))` },
+    { code: `fig,axs=plt.subplots(2,1,figsize=(7,5),sharex=True)
+for key in ["x","exact"]:
+    axs[0].plot([p["k"]*.02 for p in default["points"]],[p[key] for p in default["points"]],label=key)
+axs[0].axhline(1,color="gray",linestyle="--",label="target")
+axs[0].set(ylabel="State");axs[0].legend();axs[0].grid()
+axs[1].step([p["k"]*.02 for p in default["points"][:-1]],[p["u"] for p in default["points"][:-1]],where="post")
+axs[1].set(xlabel="Virtual time (s)",ylabel="Applied u");axs[1].grid();plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+## 超期和故障注入
+
+保持策略 `hold` 继续用最后有效命令。教学策略 `zero3` 在连续三次结果失败后把施加输入置零，收到下一条有效命令后自动恢复。它没有锁定故障等待人工复位；是否应允许自动恢复，要由实际对象的风险和需求决定。**“置零”不是“安全”的同义词**。
+
+| 工况 | 注入的成本序列 | 重点检查 |
+|---|---|---|
+| 可调成本 | 每项相同，默认4 ms | 把成本推到期限两侧 |
+| 恰好期限 | 每项20 ms | 等号的先后顺序 |
+| 突发超期 | 第20至29号任务为25 ms，其余4 ms | 连续失败、降级和恢复 |
+| 全部超期 | 每项25 ms | 从未得到有效命令时的行为 |
+
+任务编号从0开始。所有100项提交都纳入超期统计，包括最后一项在2秒时的期限；但第99项结果的下一帧应用区间在观察窗口之外。降级计数只统计 $k=0,\ldots,99$ 实际推进对象的帧，不能把这两种窗口混在一起。
+
+突发超期中，两策略均有10项超期；`zero3` 在第23至30帧置零，共8个区间，第31帧收到有效命令后恢复。它的离散IAE约0.829388594秒，高于 `hold` 的0.779876601秒。这是此对象、此窗口和此序列的跟踪代价，不能据此宣称保持永远更安全。默认和恰好期限工况下两策略持平；全部超期时两者状态都为0，但 `zero3` 有97个降级区间，`hold` 没有进入这个动作状态。
+
+<JupyterNotebook
+  title="超期与降级策略的限定对照"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+def experiment(steps=10,mode="clean",policy="zero3",costMs=4):
+    x=0.; exact=0.; u=0.; failures=0; pending=None; points=[]; jobs=[]
+    for k in range(100):
+        if pending is not None:
+            if pending["onTime"]:
+                u=pending["command"]; failures=0
+            else:
+                failures+=1
+        zero=policy=="zero3" and failures>=3
+        if zero:u=0.
+        points.append(dict(k=k,x=x,exact=exact,u=u,failures=failures,zero=zero))
+        command=float(np.clip(2*(1-x),0,2))
+        cost=costMs if mode=="clean" else 20 if mode=="edge" else 25 if mode=="overload" or 20<=k<=29 else 4
+        pending=dict(command=command,onTime=cost<=20)
+        jobs.append(dict(k=k,command=command,costMs=cost,onTime=cost<=20,deadlineMs=(k+1)*20,completeMs=k*20+cost))
+        for j in range(steps):
+            x+=(.02/steps)*(u-x)/.5
+        exact=math.exp(-.04)*exact+(1-math.exp(-.04))*u
+    points.append(dict(k=100,x=x,exact=exact))
+    return dict(steps=steps,mode=mode,policy=policy,costMs=costMs,points=points,jobs=jobs,final=x,iae=.02*sum(abs(1-p["x"]) for p in points[:-1]),maxError=max(abs(p["x"]-p["exact"]) for p in points),misses=sum(not j["onTime"] for j in jobs),zeroFrames=sum(p["zero"] for p in points[:-1]))
+def summary(v):
+    return {k:q for k,q in v.items() if k not in ["points","jobs"]}
+`}
+  cells={[
+    { code: `all_cases=[experiment(s,m,p) for s in [1,2,5,10,20] for m in ["clean","edge","burst","overload"] for p in ["hold","zero3"]]+[experiment(10,"clean",p,c) for p in ["hold","zero3"] for c in [1,20,21,30]]
+table=[summary(experiment(10,m,p)) for m in ["clean","edge","burst","overload"] for p in ["hold","zero3"]]
+print(json.dumps(table))` },
+    { code: `fig,axs=plt.subplots(1,2,figsize=(9,3))
+for policy in ["hold","zero3"]:
+    v=experiment(10,"burst",policy)
+    axs[0].plot([p["k"]*.02 for p in v["points"]],[p["x"] for p in v["points"]],label=policy)
+    axs[1].step([p["k"]*.02 for p in v["points"][:-1]],[p["u"] for p in v["points"][:-1]],where="post",label=policy)
+for ax,ylabel in zip(axs,["State","Applied u"]):
+    ax.set(xlabel="Virtual time (s)",ylabel=ylabel);ax.grid();ax.legend()
+plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+在可调工况中把成本设为20 ms，没有超期；再改为21 ms，100项全部超期。这只是前述等号约定的离散检查，不是测得了一毫秒硬件裕度。把模型每帧子步改为1（$h=20\,\mathrm{ms}$），默认同输入最大差约0.008159308；改为20子步（$h=1\,\mathrm{ms}$）则约0.000402720。误差变小与计算是否能在真实时间内完成，仍需分别测试。
+
+<JupyterNotebook
+  title="期限边界与模型步长扫描"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+def experiment(steps=10,mode="clean",policy="zero3",costMs=4):
+    x=0.; exact=0.; u=0.; failures=0; pending=None; points=[]; jobs=[]
+    for k in range(100):
+        if pending is not None:
+            if pending["onTime"]:
+                u=pending["command"]; failures=0
+            else:
+                failures+=1
+        zero=policy=="zero3" and failures>=3
+        if zero:u=0.
+        points.append(dict(k=k,x=x,exact=exact,u=u,failures=failures,zero=zero))
+        command=float(np.clip(2*(1-x),0,2))
+        cost=costMs if mode=="clean" else 20 if mode=="edge" else 25 if mode=="overload" or 20<=k<=29 else 4
+        pending=dict(command=command,onTime=cost<=20)
+        jobs.append(dict(k=k,command=command,costMs=cost,onTime=cost<=20,deadlineMs=(k+1)*20,completeMs=k*20+cost))
+        for j in range(steps):
+            x+=(.02/steps)*(u-x)/.5
+        exact=math.exp(-.04)*exact+(1-math.exp(-.04))*u
+    points.append(dict(k=100,x=x,exact=exact))
+    return dict(steps=steps,mode=mode,policy=policy,costMs=costMs,points=points,jobs=jobs,final=x,iae=.02*sum(abs(1-p["x"]) for p in points[:-1]),maxError=max(abs(p["x"]-p["exact"]) for p in points),misses=sum(not j["onTime"] for j in jobs),zeroFrames=sum(p["zero"] for p in points[:-1]))
+def summary(v):
+    return {k:q for k,q in v.items() if k not in ["points","jobs"]}
+`}
+  cells={[
+    { code: `bounds=[summary(experiment(s)) for s in [1,2,5,10,20]]
+boundary=[summary(experiment(10,"clean","zero3",c)) for c in [20,21]]
+burst=experiment(10,"burst","zero3")
+events=dict(firstZeroFrame=next(p["k"] for p in burst["points"][:-1] if p["zero"]),lastZeroFrame=max(p["k"] for p in burst["points"][:-1] if p["zero"]),recoveredFrame=next(p["k"] for p in burst["points"][:-1] if p["k"]>max(q["k"] for q in burst["points"][:-1] if q["zero"]) and not p["zero"]),submitted=len(burst["jobs"]),states=len(burst["points"]))
+print(json.dumps(dict(bounds=bounds,boundary=boundary,events=events)))` },
+    { code: `fig,ax=plt.subplots(figsize=(6,3))
+ax.plot([20/v["steps"] for v in bounds],[v["maxError"] for v in bounds],marker="o")
+ax.set(xlabel="Euler substep h (ms)",ylabel="Max same-input frame error")
+ax.grid();plt.show()` }
+  ]}
+/>
+
+## 怎样准备真正的HIL
+
+先固定被测控制器硬件/固件和对象模型版本，再把逻辑信号映射到物理通道。模拟电平、PWM边沿、编码器方向、通信报文和故障脚不能只在变量名层面“接对”；要核单位、量程、极性、参考电位、时戳和更新顺序，并用已知刺激检查回读。
+
+同时准备两类实测时间线：仿真器每步的求解/I/O完成时间、超步及丢步记录；控制器从刺激到输出生效的时延、抖动、超期和过期命令处置。标明测点、时钟基准与测量误差，覆盖启动、最大负载、持续运行与恢复，而不只报一次最快值。平均执行时间或电脑上绘图很流畅，都不能代替最坏情况需求证据。
+
+对象模型要先用解析、离线高精度或已知试验数据验证，并检查步长、饱和、噪声和量化对测试结论的影响；“实时跑得动”不能修复错误模型。反过来，缩小步长造成超步时，也不能把落后的仿真器时钟悄悄当成真实时间。实际设备连接、负载模拟和故障注入范围应经过所用设备的额定条件及对象风险审查。
+
+## 验收证据与停止条件
+
+一份可审计的试验记录至少把需求、用例和证据连起来：被测硬件/固件版本、模型与参数哈希、求解器/步长、信号映射、时钟与期限、初值、注入序列、原始输入输出、实际时序、失败原因、恢复动作与判定。功能轨迹误差、期限违约、故障状态和安全要求应分别判定，不能只给一张“曲线正常”的截图。
+
+| 需要的证据 | 本页已执行 | 真正HIL仍须补齐 |
+|---|---|---|
+| 控制功能与接口顺序 | TS/Python原始软件台架、首帧和命令锁存回归 | 生产二进制、实际通道及数据表示的一致性 |
+| 数值模型 | Euler与同输入精确影子的帧边界误差扫描 | 设备对象辨识或经验证模型、采样间行为与适用域 |
+| 期限处理 | 虚拟成本、确定的丢弃/保持/降级计数 | 真实处理器/仿真器时序、竞争、通信与I/O误差上界 |
+| 故障与恢复 | 成本超期及零输出自动恢复的软件用例 | 实际可施加的故障、失联/复位/供电状态与风险验收 |
+
+发现映射错误、模型无效、时间基准不清、超步或结果无法复现时，先停止给出通过结论，保留原始数据并修正后重跑相关用例。需要停止物理试验的条件和操作也应事先定义，不能从本页的一阶对象自动推导真实电机的停机策略。
+
+资料检索日期2026-10-24，概念来源为上述MathWorks R2026b开发过程和NI配置/迁移文档；实验为自行构造的轻量软件例子，使用标准Python、NumPy和Matplotlib，不需要GPU或专有HIL平台。它验证的是声明的软件合同，没有执行板级PIL、RCP或HIL认证。下一课再汇总实现案例，本课不提前交付它。
+
+## 习题
+
+1. 只有控制代码与对象模型在浏览器里执行，为什么不能称作本机HIL已验收？快速控制原型保留的通常是哪一侧？
+2. 默认首个控制帧中对象实际收到什么输入？第二个状态更新的Euler值是多少？
+3. 为什么20 ms与21 ms成本的超期计数不同？末任务与末命令应用窗口有什么区别？
+4. 突发超期时置零策略的降级区间及IAE是多少？它为什么没有成为“普适更好的策略”？
+5. 减小模型步长后误差变小，距离真正HIL通过还缺哪几类证据？
+
+## 答案
+
+1. 缺实际被测控制器、规定的物理I/O和实时对象执行证据；本页只是软件排练。RCP通常保留真实对象、使用可快速修改的控制器原型，不应与HIL替换对象的一侧混淆。
+2. 初始施加输入u0=0，因此x1=0；首项有效候选在下一拍锁存u1=2，x2约0.078575253。同输入精确影子的x2约0.078421122，不能把两种计算混作一个数；第一Notebook可复核。
+3. 本课规定等号时先完成再锁存，20 ms超期0项，21 ms超期100项；末任务纳入2秒处的期限统计，但其下一帧应用区间在窗口外。真实硬件必须另考虑时钟误差与抖动。
+4. 第23至30帧共8个区间，第31帧恢复；zero3的离散IAE约0.829388594秒，hold约0.779876601秒。固定序列下零输出牺牲跟踪；是否更安全要另外验证，不由这个指标决定。
+5. 缺生产硬件/固件与真实通道、对象模型适用域、实际求解和I/O时序、控制器完成/锁存及故障恢复证据，还需测量基准和不确定性说明。帧边界误差小也不能证明采样间误差或真实WCET满足要求。

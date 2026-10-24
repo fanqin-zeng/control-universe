@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 73 课 / 357 个实验 / 535 个单元格全部纳入盘点。54 课全部可运行，10 课混合，9 课全部保留代码；启用 332 个实验，保留 25 个。实际执行 512 个单元格（含异常单元格），生成 162 张 PNG。原始记录中 333 个实验完整执行，发布门槛继续按缺字等渲染记录筛选，以启用清单为准。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 125 课 / 513 个实验 / 791 个单元格全部纳入盘点。122 课全部可运行，1 课混合，2 课全部保留代码；启用 510 个实验，保留 3 个。实际执行 785 个单元格（含异常单元格），生成 239 张 PNG。原始记录中 510 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -38,31 +38,29 @@
 | nonlinear/sliding-mode-control（滑模控制） | 6/6 | 18 | 无 |
 | nonlinear/backstepping（反步设计） | 7/7 | 27 | 无 |
 | nonlinear/adaptive-control-basics（自适应控制） | 10/10 | 39 | 无 |
-| discrete-sampled/discrete-time-freq（采样与量化） | 2/3 | 3 | 3 |
-| discrete-sampled/z-transform-analysis（Z域系统分析） | 2/3 | 3 | 1 |
-| discrete-sampled/discrete-stability-criteria（离散系统稳定性） | 1/3 | 1 | 2, 3 |
-| discrete-sampled/discretization-methods（离散化方法） | 1/3 | 1 | 1, 3 |
-| discrete-sampled/sampling-period-selection（采样周期） | 0/3 | 0 | 1, 2, 3 |
-| implementation/digital-pid（数字PID） | 3/3 | 4 | 无 |
-| implementation/realtime-control（实时控制） | 0/1 | 0 | 1 |
-| estimation/kalman-filter（卡尔曼滤波） | 1/3 | 2 | 2, 3 |
-| robust/robustness-concept（鲁棒性） | 2/3 | 2 | 2 |
-| robust/uncertainty-modeling（不确定性建模） | 2/3 | 3 | 3 |
-| robust/robust-stability（鲁棒稳定性） | 2/3 | 3 | 2 |
-| robust/robust-performance（鲁棒性能） | 2/2 | 4 | 无 |
-| robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
-| robust/mixed-sensitivity（混合灵敏度） | 2/2 | 4 | 无 |
+| discrete-sampled/discrete-time-freq（采样与量化） | 6/6 | 7 | 无 |
+| discrete-sampled/z-transform-analysis（Z域系统分析） | 5/5 | 6 | 无 |
+| discrete-sampled/discrete-stability-criteria（离散系统稳定性） | 5/5 | 6 | 无 |
+| discrete-sampled/discretization-methods（离散化方法） | 4/4 | 5 | 无 |
+| discrete-sampled/sampling-period-selection（采样周期） | 3/3 | 4 | 无 |
+| implementation/digital-pid（数字PID） | 4/4 | 8 | 无 |
+| implementation/realtime-control（实时控制） | 4/4 | 8 | 无 |
+| estimation/kalman-filter（卡尔曼滤波） | 3/3 | 6 | 无 |
+| robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
+| robust/robust-performance（鲁棒性能） | 3/3 | 5 | 无 |
+| robust/h-infinity-basics（H∞控制） | 4/4 | 5 | 无 |
+| robust/mixed-sensitivity（混合灵敏度） | 3/3 | 5 | 无 |
 | robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
 | robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
-| mpc/mpc-principle（预测控制原理） | 0/1 | 0 | 1 |
-| mpc/prediction-model（预测模型） | 0/1 | 0 | 1 |
-| mpc/receding-horizon（滚动优化） | 0/1 | 0 | 1 |
-| mpc/constraint-handling（约束处理） | 0/1 | 0 | 1 |
-| mpc/generalized-predictive-control（广义预测控制） | 0/1 | 0 | 1 |
+| mpc/mpc-principle（预测控制原理） | 2/2 | 3 | 无 |
+| mpc/prediction-model（预测模型） | 2/2 | 6 | 无 |
+| mpc/receding-horizon（滚动优化） | 3/3 | 6 | 无 |
+| mpc/constraint-handling（约束处理） | 3/3 | 6 | 无 |
+| mpc/generalized-predictive-control（广义预测控制） | 3/3 | 6 | 无 |
 | mpc/nonlinear-mpc（非线性预测控制） | 0/1 | 0 | 1 |
 | mpc/mpc-case-study（预测控制案例） | 0/1 | 0 | 1 |
-| intelligent/fuzzy-control-basics（模糊控制） | 9/9 | 32 | 无 |
-| intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 12 | 无 |
+| intelligent/fuzzy-control-basics（模糊控制） | 10/10 | 33 | 无 |
+| intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 14 | 无 |
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
 | multi-agent/distributed-mpc（分布式预测控制） | 1/1 | 2 | 无 |
 | math/linear-algebra-basics（线性代数基础） | 4/4 | 4 | 无 |
@@ -85,6 +83,60 @@
 | classic/compensator-design（校正网络） | 6/6 | 6 | 无 |
 | classic/frequency-response-design（回路整形） | 6/6 | 6 | 无 |
 | classic/design-methods-comparison（设计方法选型） | 3/3 | 3 | 无 |
+| nonlinear/passivity-control（无源控制） | 3/3 | 3 | 无 |
+| nonlinear/iss-small-gain（输入状态稳定性） | 3/3 | 3 | 无 |
+| nonlinear/switched-hybrid-systems（切换与混杂系统） | 4/4 | 4 | 无 |
+| nonlinear/bifurcation-chaos（分岔与混沌） | 4/4 | 5 | 无 |
+| discrete-sampled/discrete-time-systems（离散时间系统） | 3/3 | 3 | 无 |
+| discrete-sampled/difference-equation（差分方程） | 3/3 | 3 | 无 |
+| discrete-sampled/sampled-data-systems（采样数据系统） | 2/2 | 4 | 无 |
+| discrete-sampled/discrete-optimal-control（离散最优控制） | 2/2 | 4 | 无 |
+| discrete-sampled/event-triggered-control（事件触发控制） | 2/2 | 4 | 无 |
+| identification/identification-framework（系统辨识框架） | 2/2 | 3 | 无 |
+| machine-learning/learning-problem（学习问题与泛化） | 2/2 | 3 | 无 |
+| implementation/computer-control-architecture（控制系统架构） | 2/2 | 4 | 无 |
+| identification/model-structures（辨识模型） | 2/2 | 4 | 无 |
+| estimation/estimation-problem（状态估计框架） | 2/2 | 4 | 无 |
+| autonomous-driving/driving-system（自动驾驶系统） | 2/2 | 4 | 无 |
+| robot-learning/robot-data（机器人数据） | 3/3 | 3 | 无 |
+| multi-agent/multi-agent-overview（多智能体系统） | 2/2 | 4 | 无 |
+| machine-learning/supervised-learning（监督学习） | 2/2 | 4 | 无 |
+| rl-control/rl-basics（强化学习问题） | 2/2 | 3 | 无 |
+| robotics/robot-models（机器人系统） | 2/2 | 3 | 无 |
+| embodied/embodied-systems（具身智能系统） | 2/2 | 2 | 无 |
+| safety-ftc/safety-overview（控制安全） | 2/2 | 3 | 无 |
+| applications/power-electronics（电力电子控制） | 3/3 | 4 | 无 |
+| estimation/least-squares-ml（统计估计） | 2/2 | 4 | 无 |
+| identification/least-squares-rls（最小二乘辨识） | 3/3 | 4 | 无 |
+| machine-learning/neural-networks（神经网络基础） | 2/2 | 4 | 无 |
+| implementation/pid-engineering-tuning（PID工程整定） | 2/2 | 4 | 无 |
+| robust/uncertainty-modeling（不确定性建模） | 4/4 | 5 | 无 |
+| embodied/multimodal-observation（多模态感知） | 2/2 | 2 | 无 |
+| robot-learning/imitation-learning（模仿学习） | 4/4 | 4 | 无 |
+| rl-control/dynamic-programming（价值函数与贝尔曼方程） | 2/2 | 4 | 无 |
+| autonomous-driving/vehicle-dynamics（车辆动力学） | 2/2 | 4 | 无 |
+| identification/persistent-excitation（持久激励） | 3/3 | 3 | 无 |
+| implementation/controller-discretization-practice（控制器部署） | 3/3 | 6 | 无 |
+| machine-learning/autodiff-optimization（自动微分与训练） | 2/2 | 4 | 无 |
+| robust/robust-stability（鲁棒稳定性） | 4/4 | 5 | 无 |
+| estimation/extended-kalman-filter（扩展卡尔曼滤波） | 2/2 | 4 | 无 |
+| implementation/embedded-implementation（嵌入式控制） | 3/3 | 6 | 无 |
+| machine-learning/sequence-models（时序模型） | 2/2 | 4 | 无 |
+| identification/instrumental-variable（闭环辨识） | 3/3 | 3 | 无 |
+| machine-learning/attention-transformers（注意力机制） | 2/2 | 4 | 无 |
+| estimation/unscented-kalman-filter（无迹卡尔曼滤波） | 2/2 | 4 | 无 |
+| mpc/mpc-stability（递归可行性与稳定性） | 2/2 | 4 | 无 |
+| identification/frequency-domain-id（频域辨识） | 3/3 | 3 | 无 |
+| implementation/networked-control（网络控制） | 3/3 | 6 | 无 |
+| machine-learning/representation-learning（表征学习） | 2/2 | 4 | 无 |
+| identification/subspace-id（子空间辨识） | 3/3 | 3 | 无 |
+| estimation/particle-filter（粒子滤波） | 3/3 | 6 | 无 |
+| implementation/industrial-bus-protocols（工业通信） | 3/3 | 6 | 无 |
+| identification/nonlinear-data-driven-id（非线性辨识） | 3/3 | 3 | 无 |
+| estimation/sensor-fusion（多传感器融合） | 3/3 | 6 | 无 |
+| mpc/explicit-mpc（显式预测控制） | 2/2 | 4 | 无 |
+| machine-learning/generative-models（扩散与流匹配） | 2/2 | 4 | 无 |
+| implementation/hil-rapid-prototyping（半实物仿真） | 3/3 | 6 | 无 |
 
 ## 待处理实验
 
@@ -92,31 +144,9 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-006 | discrete-sampled/discrete-time-freq#3：实验 3（源码 L418） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-007 | discrete-sampled/z-transform-analysis#1：实验 1（源码 L206） | RUNTIME | ValueError: 'blue-' is not a valid format string (unrecognized character 'l') | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-008 | discrete-sampled/discrete-stability-criteria#2：实验 2（源码 L393） | RUNTIME | ValueError: Time steps `T` must be multiples of sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-009 | discrete-sampled/discrete-stability-criteria#3：实验 3（源码 L641） | RUNTIME | ValueError: Improper transfer function. `num` is longer than `den`. | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-010 | discrete-sampled/discretization-methods#1：实验 1（源码 L187） | RUNTIME | ValueError: Unknown transformation method 'forward_euler' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-011 | discrete-sampled/discretization-methods#3：实验 3（源码 L704） | RUNTIME | ValueError: Time steps `T` must match sampling time | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-012 | discrete-sampled/sampling-period-selection#1：实验 1（源码 L64） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-013 | discrete-sampled/sampling-period-selection#2：实验 2（源码 L240） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-014 | discrete-sampled/sampling-period-selection#3：实验 3（源码 L447） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-015 | implementation/realtime-control#1：实验 1（源码 L225） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-016 | estimation/kalman-filter#2： 动手实验：卡尔曼滤波仿真（源码 L357） | FONT | 绘图字形未通过验收：₁（U+2081)、₂（U+2082)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
-| PY-017 | estimation/kalman-filter#3： 动手实验：Q/R 对卡尔曼滤波性能的影响（源码 L514） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-018 | robust/robustness-concept#2：实验 2（源码 L166） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-019 | robust/uncertainty-modeling#3：实验 3（源码 L453） | RUNTIME | IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-020 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
-| PY-021 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-022 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-023 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-024 | mpc/mpc-principle#1：实验 1（源码 L241） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-025 | mpc/prediction-model#1：实验 1（源码 L279） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-026 | mpc/receding-horizon#1：实验 1（源码 L128） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-027 | mpc/constraint-handling#1：实验 1（源码 L433） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-028 | mpc/generalized-predictive-control#1：实验 1（源码 L794） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-029 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-030 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-001 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-002 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-003 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 
@@ -133,25 +163,3 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 ## 验收与发布
 
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
-
-NONLINEAR-02：相平面原十二实验与新增两实验，共14Notebook/27cell已按最终源码在Pyodide实跑通过；见.agent/semester-03/nonlinear-02/pyodide.json。原25项待办ID/原因/处置保持；仅本地验收，Pages未发布。
-
-CLASSIC-01语言润色试点：七份原始setup/cell及模型未改，最终正文已重新实跑Pyodide并更新指纹；证据.agent/semester-03/polish/classic-01/pyodide.json。25项待办不变。
-
-NONLINEAR-03：六Notebook十cell原始代码在本地Pyodide完整实跑；修正摆势阱与全局边界，新增默认/边界与习题核验。证据见.agent/semester-03/nonlinear-03/pyodide.json；原25项待办ID/原因/处置不变，本轮未发布Pages。
-
-NONLINEAR-04：原六实验用途保留，新增手算/习题/默认读数核验，共七Notebook二十二cell在原生内核和Pyodide完整实跑。证据见.agent/semester-03/nonlinear-04/pyodide.json；原25项待办ID/原因/处置不变，本轮未发布Pages。
-
-NONLINEAR-05：保留原四实验十二cell用途，新增带宽敏感性、惯性缩放与手算/答案核验，共六实验十五cell在原生内核和Pyodide完整执行。最终指纹见.agent/semester-03/nonlinear-05/pyodide.json；原25项待办保持，本轮未发布Pages。
-
-NONLINEAR-06：保留原五Notebook十七cell用途，新增手算/习题/组件默认核验，共六实验十八cell原生内核与Pyodide完整执行；stage控制平均、全步TV与统一事件恢复口径已核。原25项待办保持，证据.agent/semester-03/nonlinear-06/pyodide.json；本轮未发布Pages。
-
-NONLINEAR-07：保留原六实验26cell与六题，纠自适应两估计器、PE窗口、四阶负载与比较边界，新增手算/符号/静态根/默认核验，共七实验27cell。最终原始代码已按同一源指纹在原生内核和Pyodide完整执行；证据.agent/semester-03/nonlinear-07/pyodide.json。原25项待办保持，本轮未发布Pages。
-
-### NONLINEAR-08（2026-10-18）
-
-自适应控制保留原九实验38cell并纠错，追加证明边界核验，共10实验39cell全部原始代码实跑通过。证据：`.agent/semester-03/nonlinear-08/pyodide.json`。更新本课源指纹，不代表已发布Pages；25项依赖待办逐字保留。
-
-### 学期3润色合入（2026-10-18）
-
-MATH-01–18与CLASSIC-01–11共29课仅讲解/排版变更，180组Notebook181cell的求值后Python载荷逐字不变，原执行证据继续适用。已依据版本化等价核验刷新MDX源指纹，并在原始记录逐课登记执行来源与新稿审核来源；没有把未重新执行的实验写成新一次实跑。证据：`.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json`。

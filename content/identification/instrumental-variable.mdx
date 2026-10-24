@@ -1,0 +1,267 @@
+---
+title: 闭环辨识
+description: 从反馈与有色扰动的相关性出发，理解最小二乘、工具变量与正确噪声建模的适用条件。
+---
+
+# 闭环辨识
+
+## 引言
+
+生产中的水位回路通常不能随意断开。控制器一边压住水位波动，一边调整阀门；现在想用这段阀门与水位记录反推对象增益。问题是：**阀门变化中，有多少来自我们主动试探，又有多少是在追着扰动跑？**
+
+[持久激励](/identification/persistent-excitation)告诉我们，要有足够的参数方向信息。本课再加一道检查：回归量是否与所用模型的误差相关？有激励不等于正交，开着反馈也不等于最小二乘必然错误。
+
+先修为上一课、[随机过程](/math/stochastic-processes)、[传递函数](/classic/transfer-function)和[PID控制器](/classic/pid-controller)。以下用归一化的单增益、一拍延迟对象做教学简化；不声称已识别真实水箱的全部动态、传感器噪声和执行器非线性。
+
+## 反馈怎样带来相关
+
+对回归 $\mathbf Y=\Phi\boldsymbol\theta^\star+\mathbf v$，若 $\Phi$ 列满秩，无正则最小二乘满足精确恒等式：
+
+$$
+\hat{\boldsymbol\theta}_{\mathrm{LS}}-\boldsymbol\theta^\star
+=(\Phi^{\mathsf T}\Phi)^{-1}\Phi^{\mathsf T}\mathbf v.
+$$
+
+假设样本矩依大数定律收敛，且极限矩阵可逆，长记录的目标为：
+
+$$
+\operatorname{plim}\hat{\boldsymbol\theta}_{\mathrm{LS}}
+=\boldsymbol\theta^\star+
+\bigl(\mathbb E[\boldsymbol\phi_k\boldsymbol\phi_k^{\mathsf T}]\bigr)^{-1}
+\mathbb E[\boldsymbol\phi_k v_k].
+$$
+
+$\operatorname{plim}$ 表示依概率收敛的极限；估计量随记录增长依概率趋向真参数称为**估计一致性（statistical consistency）**，不同于多智能体的“一致性”。这里不是有限样本期望公式：分子分母都是随机量，不能将“期望的比值”当成“比值的期望”。
+
+反馈可能把过去扰动送回输入；若当前误差还记着过去扰动，就会出现第二项。但在正确的因果ARX回归中，若误差确为与所有过去量独立的**新创新**，这一相关项仍可为零。决定结果的是**模型、时序和噪声假设**，不只是有没有反馈线。
+
+## 一个有时序的闭环例
+
+固定采样周期 $1$ s，输入、输出及噪声均按事先给定的尺度归一化。定义：
+
+$$
+\begin{aligned}
+y_k&=b u_{k-1}+v_k,\\
+u_{k-1}&=r_{k-1}-f y_{k-1},\\
+v_k&=\rho v_{k-1}+w_k.
+\end{aligned}
+$$
+
+真增益 $b=0.8$；$f$ 是已知反馈系数。$r$ 是**加在控制输入端的外部注入**，不是输出设定值；不能把两种接法的传递函数混用。理论中，$r_k$ 独立同分布地取 $\pm A$，$w_k$ 独立同分布地取 $\pm0.5$，两序列相互独立，所以均值为零、$\operatorname{Var}(w)=0.25$。
+
+时序是先有 $y_{k-1}$、再选 $u_{k-1}$，随后新创新 $w_k$ 形成 $v_k,y_k$。对象含一拍延迟，没有瞬时代数环。下图按同一采样时刻画控制器：由 $y_k$ 选出的 $u_k$ 供下一拍对象使用；工具要相应移位为 $z_k=r_{k-1}$。
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}><div style={{minWidth:720}}>
+
+![外部输入端注入r与负反馈组成u，经一拍延迟对象和输出扰动形成y；移位后的r可作为工具](/diagrams/identification/closed-loop-instrument.svg)
+
+</div></div>
+
+代入得到 $y_k=-bf y_{k-1}+b r_{k-1}+v_k$。本课只允许 $f\in\{0,0.5,0.8\}$、$0\leq\rho\leq0.8$，所以对象反馈极点 $-bf$ 和扰动极点 $\rho$ 都在单位圆内。总体矩推导假定平稳运行；有限模拟从零初值开始并丢弃256点，不把这段预热宣称为精确平稳初始化。
+
+## 最小二乘趋向哪里
+
+若只按 $y_k=b u_{k-1}+v_k$ 做一元回归，则：
+
+$$
+\hat b_{\mathrm{LS}}=
+\frac{\sum_k u_{k-1}y_k}{\sum_k u_{k-1}^2}.
+$$
+
+令 $c=-bf$，用零均值总体矩 $V_v=\mathbb E[v_k^2]$、$S=\mathbb E[y_kv_k]$、$V_y=\mathbb E[y_k^2]$。由上述递推及独立性：
+
+$$
+V_v=\frac{0.25}{1-\rho^2},\qquad
+S=c\rho S+V_v=\frac{V_v}{1-c\rho},
+$$
+
+$$
+V_y=\frac{b^2A^2+V_v+2c\rho S}{1-c^2},\qquad
+V_u=A^2+f^2V_y,\qquad
+\mathbb E[u_{k-1}v_k]=-f\rho S.
+$$
+
+注意中间式 $S=c\rho S+V_v$ 是固定点方程，右侧分式是解。于是只要 $V_u>0$，长记录的LS目标为 $b-f\rho S/V_u$。
+
+默认 $f=0.5,\rho=0.5,A=0.5$ 时，$V_v=1/3$、$S=5/18$、$V_y=86/189$、$V_u=275/756$、$\mathbb E[uv]=-5/72$，因此：
+
+$$
+b_{\mathrm{LS},\infty}=\frac{67}{110}\approx0.609091\ne0.8.
+$$
+
+这里 $V_u>0$，仍有偏差：增加同样分布下的记录，主要使估计集中到错误目标，而不是自动消除相关项。反过来，$f=0$ 或 $\rho=0$ 时该相关项为零，LS的总体目标回到真值。
+
+<JupyterNotebook title="默认总体矩：用分数复算" setupCode={`from fractions import Fraction as F
+b=F(4,5); f=F(1,2); rho=F(1,2); amplitude=F(1,2)
+`} cells={[{code:`c=-b*f
+Vv=F(1,4)/(1-rho*rho)
+S=Vv/(1-c*rho)
+Vy=(b*b*amplitude*amplitude+Vv+2*c*rho*S)/(1-c*c)
+Vu=amplitude*amplitude+f*f*Vy
+uv=-f*rho*S
+ls=b+uv/Vu
+assert (Vv,S,Vy,Vu,uv,ls)==(F(1,3),F(5,18),F(86,189),F(275,756),F(-5,72),F(67,110))
+print('population_exact',{'Vv':str(Vv),'S':str(S),'Vy':str(Vy),'Vu':str(Vu),'uv':str(uv)})
+print('LS_target',float(ls),'IV_target',float(b),'instrument_moment',float(amplitude**2))
+print('population_fraction_checks_passed')
+`}]}/>
+
+## 工具变量的两个条件
+
+**工具变量（instrumental variable，IV）** 是另选的信号 $z_k$。对一元回归，需要同时满足：
+
+$$
+\underbrace{\mathbb E[z_kv_k]=0}_{\text{与误差正交}},\qquad
+\underbrace{\mathbb E[z_ku_{k-1}]\ne0}_{\text{与回归量有关}}.
+$$
+
+第一条让误差在矩方程中消失，第二条让未知增益能解出来。对应样本估计为：
+
+$$
+\hat b_{\mathrm{IV}}=
+\frac{\sum_k z_ky_k}{\sum_k z_ku_{k-1}}.
+$$
+
+在本例中选 $z_k=r_{k-1}$：外部注入独立于整个创新序列，且独立于 $y_{k-1}$，所以 $\mathbb E[z_kv_k]=0$、$\mathbb E[z_ku_{k-1}]=A^2$。$A>0$ 时，在所述平稳与大数定律条件下，工具比值趋向真增益 $0.8$。
+
+两个反例同样重要：
+
+- 选 $z_k=u_{k-1}$，相关矩最强，但其误差矩正是 $-f\rho S$。有色闭环默认下，它退回LS；给同一个回归量改名“工具”没有消除偏差。
+- 关闭外部注入 $A=0$，选定的 $z=r$ 恒为零，工具比值未定义。不能在分母加一个小数再称可辨识；这也不等于证明所有其他方法都不可能辨识。
+
+多参数时要用工具向量 $\boldsymbol z$，要求 $\mathbb E[\boldsymbol z\boldsymbol\phi^{\mathsf T}]$ 满秩；刚好同维时才是解对应的方阵矩方程，更多工具涉及加权等额外设计。**弱工具变量（weak instrument）** 可能使有限样本比值很不稳定，即使总体相关矩不为零。本课不提供通用弱工具检验或最优IV算法。
+
+## 交互检查总体矩
+
+默认解析读数为LS目标 $0.609091$、工具比值 $0.800000$、$\mathbb E[zv]=0$，工具相关矩为 $0.25$。交互知道教学模型真值和噪声结构，展示的是**总体矩的推导结果**，不是一次数据拟合，也不是用样本残差自动认证工具有效。
+
+<ClosedLoopIdentificationExplorer />
+
+先切开环，再切白创新，观察LS的总体目标回到真值；切“拿输入作工具”，观察工具比值与LS重合且误差矩非零；切“无外部注入”，观察有效外部工具的比值被拒绝。改变 $\rho$ 只移动竖线和当前矩，横轴完整曲线始终扫描相同范围；恢复默认可回到分数例。
+
+## 同一批记录的有限样本实验
+
+以下每次实验先生成4352点，丢弃前256点、保留4096点。零初始状态，种子1…32全部保留；两条伪随机流分别由种子 $s$ 和 $s+104729$ 生成外部注入与创新。这里复现的是确定的伪随机实验，不是对随机源独立性的实测证明。
+
+实验固定零偏置模型，不另估截距；理论均值为零不等于每条有限记录的样本均值严格为零。真实传感器偏置需要建模，或事先选定去均值策略后重新检查工具条件，不能直接照搬本例。
+
+OLS和IV在同一条记录上分别使用 $(u,y)$ 和 $(r,u,y)$。另列正确ARX的增益估计，仅用于说明“反馈不必然使LS失效”，因为由扰动模型可得：
+
+$$
+y_k=\rho y_{k-1}+b u_{k-1}-\rho b u_{k-2}+w_k.
+$$
+
+当前 $w_k$ 与这些回归量独立；在数据有足够秩、模型正确等条件下，可对三列 $[y_{k-1},u_{k-1},u_{k-2}]$ 做LS。该ARX拟合三个自由系数，真值为 $[\rho,b,-\rho b]$，不强制第三项等于前两项之积；它利用了更丰富且正确的噪声模型，不能据此作同复杂度优劣排名。
+
+<JupyterNotebook title="32次重复：同记录OLS、IV与正确ARX" setupCode={`import numpy as np
+def closed_record(feedback=.5,color=.5,amplitude=.5,seed=1,count=4096,burn=256):
+    ref=np.random.default_rng(seed).choice([-amplitude,amplitude],count+burn)
+    innovation=np.random.default_rng(seed+104729).choice([-.5,.5],count+burn)
+    yp=vp=up=0.; rows=[]
+    for rk,w in zip(ref,innovation):
+        u=rk-feedback*yp; v=color*vp+w; y=.8*u+v
+        rows.append((rk,u,y,v,yp,up)); yp,vp,up=y,v,u
+    return np.array(rows)[burn:]
+`} cells={[{code:`mc_results={}
+for label,feedback,color in [('colored',.5,.5),('open',0,.5),('white',.5,0)]:
+    estimates=[]
+    for seed in range(1,33):
+        r,u,y,v,yp,up=closed_record(feedback,color,seed=seed).T
+        denominator=r@u
+        # Numerical guard only; this is not a weak-instrument test.
+        assert abs(denominator)>1e-12*np.sqrt((r@r)*(u@u))
+        ols=(u@y)/(u@u); iv=(r@y)/denominator
+        X=np.column_stack((yp,u,up))
+        coeff,_,rank,_=np.linalg.lstsq(X,y,rcond=None)
+        assert rank==3
+        estimates.append([ols,iv,coeff[1]])
+        if label=='open': assert abs(ols-iv)<1e-12
+    values=np.array(estimates)
+    summary={'mean':values.mean(axis=0).tolist(),'std_ddof1':values.std(axis=0,ddof=1).tolist(),'rmse':np.sqrt(((values-.8)**2).mean(axis=0)).tolist(),'q05':np.quantile(values,.05,axis=0).tolist(),'q95':np.quantile(values,.95,axis=0).tolist(),'unavailable':0}
+    mc_results[label]=summary
+    print(label,summary)
+print('all_32_seeds_reported')
+`}]}/>
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}>
+
+| 工况 | OLS均值 / RMSE | IV均值 / RMSE |
+|---|---|---|
+| 有色闭环 | 0.610602 / 0.190254 | 0.803209 / 0.019041 |
+| 开环，其他条件相同 | 0.803144 / 0.019008 | 0.803144 / 0.019008 |
+| 闭环但白创新 | 0.800242 / 0.016027 | 0.801208 / 0.017372 |
+
+</div>
+
+均值接近总体目标，不等于有限样本无偏。开环时 $u=r$，两种比值逐条记录就相同；白创新工况中，本次IV的RMSE还略大。Notebook同时报告样本标准差（分母为31）和5%/95%经验分位数；这些是32次教学模拟的经验摘要，不是理论置信区间，也不是独立测试集上的预测误差。分母的数值近零检查只避免无定义除法，不能认证工具足够强。
+
+## 还有哪些闭环路线
+
+工具变量只是其中一条路。直接法可以在闭环记录上拟合对象与噪声模型；正确的创新结构、模型可辨识性与足够激励不能省略。没有正确噪声模型时，简单预测误差拟合不自动恢复对象。
+
+间接法先辨识外部注入到输出的闭环传递函数。对本课的**输入端注入**，若 $G$ 是对象、$f$ 是已知反馈：
+
+$$
+T_{yr}=\frac{G}{1+fG},\qquad
+G=\frac{T_{yr}}{1-fT_{yr}}.
+$$
+
+这要求已知且记录了控制器、闭环模型估计可靠；$1-fT_{yr}$ 过小时重建会放大误差。对输出设定值注入，公式不同。联合输入输出路线则同时利用闭环中输入和输出的结构，本课只定位，不展开算法。
+
+<JupyterNotebook title="独立协方差解与失败边界" setupCode={`import numpy as np
+from scipy.linalg import solve_discrete_lyapunov
+`} cells={[{code:`b=.8; feedback=.5; rho=.5; amplitude=.5; sigma=.5
+c=-b*feedback
+# State [y_k,v_k]; independent innovations [r_{k-1},w_k].
+M=np.array([[c,rho],[0.,rho]])
+Q=np.array([[b*b*amplitude**2+sigma**2,sigma**2],[sigma**2,sigma**2]])
+P=solve_discrete_lyapunov(M,Q)
+assert np.allclose(P,[[86/189,5/18],[5/18,1/3]],atol=1e-12)
+vu=amplitude**2+feedback**2*P[0,0]
+uv=-feedback*rho*P[0,1]
+print('independent_covariance',P.tolist(),'LS_target',b+uv/vu,'IV_target',b)
+assert abs(b+uv/vu-67/110)<1e-12
+bad_iv=b+uv/vu
+print('input_as_instrument',bad_iv,'exclusion_moment',uv)
+zero_injection=0.
+assert zero_injection**2==0
+print('zero_injection_IV_defined False')
+arx_true=np.array([rho,b,-rho*b])
+assert np.allclose(arx_true,[.5,.8,-.4])
+print('ARX_true_coefficients',arx_true.tolist())
+# Algebraic indirect reconstruction at q^{-1}=1; this is DC, not a fitted model.
+closed_dc=b/(1+feedback*b)
+assert abs(closed_dc/(1-feedback*closed_dc)-b)<1e-12
+print('closed_DC',closed_dc,'reconstructed_DC',b)
+print('covariance_and_boundary_checks_passed')
+`}]}/>
+
+实际试验还应记录控制器版本、注入位置与幅值、采样时序、饱和及限速事件，并留一段未参与结构选择的数据检查残差和任务相关预测。不要把本课已知 $b$ 的模拟诊断，误当成真实数据可以直接观察到的 $v$；工具正交性通常需要系统知识和设计依据。
+
+进一步材料见 [MathWorks工具变量说明](https://www.mathworks.com/help/ident/ug/picking-instrumental-variables-for-system-identification.html)和 [Gilson、Van den Hof的闭环IV研究](https://doi.org/10.1016/j.automatica.2004.09.016)。本课为独立教学例，不声称复现其中的最优方差或扩展IV算法。
+
+## 小结
+
+闭环辨识先问“误差是哪一个、输入何时选出”，再问用什么估计方法。PE涉及信息方向；工具变量还要求误差正交和相关矩可解。相关性强不能代替有效性，记录长也不能修复错误矩条件。
+
+外部注入提供一种工具来源，正确噪声建模提供另一条路线；两者都依赖假设。无外部工具时拒绝除零，模型错误时承认偏差，有限样本结果按重复实验和分布报告。
+
+## 习题
+
+**1. 因果。** 在本课模型中令 $\rho=0$，说明为什么即使 $f\ne0$，一元LS也不必有总体偏差。
+
+**2. 默认矩。** 已知 $V_u=275/756$、$\mathbb E[uv]=-5/72$、$\mathbb E[ru]=1/4$、$\mathbb E[rv]=0$，求LS与外部工具的长记录目标。
+
+**3. 两个条件。** 分别分析“拿u作工具”和“关掉r后仍拿r作工具”；指出不能用哪种数值技巧冒充可识别。
+
+**4. 正确模型。** 由原方程消去 $v_{k-1}$，写出默认ARX三个系数；再检查本课输入端注入在直流处的间接重建公式。
+
+## 答案
+
+**1.** 此时 $v_k=w_k$，而 $u_{k-1}$ 只依赖过去输出及独立注入，新创新尚未进入回归量。故 $\mathbb E[u_{k-1}w_k]=0$。仍需足够信息、正确模型和样本矩收敛，不能据此断言每次有限记录都精确得到真值。
+
+**2.** LS目标为 $4/5+(-5/72)/(275/756)=67/110\approx0.609091$。外部工具满足零误差矩和非零相关矩，目标为 $(0.8\times1/4+0)/(1/4)=0.8$。
+
+**3.** 默认下 $z=u$ 的相关矩为 $V_u>0$，但误差矩为 $-5/72\ne0$，比值退回LS。$A=0$ 时 $z=r=0$，相关矩为零，比值未定义；给分母加epsilon只造出一个数，不提供辨识条件或一致性证明。
+
+**4.** $v_{k-1}=y_{k-1}-b u_{k-2}$，代入得 $y_k=\rho y_{k-1}+b u_{k-1}-\rho b u_{k-2}+w_k$，默认系数为 $[0.5,0.8,-0.4]$。直流对象增益为 $0.8$，闭环增益 $T_{yr}(1)=0.8/(1+0.5\times0.8)=4/7$；重建为 $(4/7)/(1-0.5\times4/7)=0.8$。该代数核算不是对噪声数据的实际传递函数拟合。

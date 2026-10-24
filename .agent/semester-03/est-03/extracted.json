@@ -1,0 +1,90 @@
+{
+  "source": "content/estimation/kalman-filter.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 124,
+      "title": "连续Riccati与习题复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 133,
+          "delim": "`",
+          "code": "# 双积分器、标量、LQG主例与习题1/6\r\nA = np.array([[0.,1.],[0.,0.]])\r\nB = np.array([[0.],[1.]])\r\nC = np.array([[1.,0.]])\r\nQ = np.eye(2); R = np.eye(1)\r\nP = solve_continuous_are(A.T,C.T,Q,R)\r\nKf = np.linalg.solve(R,C@P).T\r\nresidual = A@P+P@A.T-P@C.T@np.linalg.solve(R,C@P)+Q\r\nprint('double_P_Kf_poles', P, Kf.ravel(), np.linalg.eigvals(A-Kf@C))\r\nprint('ARE_residual', np.linalg.norm(residual))\r\nassert np.allclose(P, [[np.sqrt(3),1],[1,np.sqrt(3)]])\r\nassert np.linalg.norm(residual)<1e-10\r\nfor a,q,r in [(-1,1,1),(-2,3,1),(-1,1,1),(-2,2,1)]:\r\n    p = r*(a+np.sqrt(a*a+q/r))\r\n    print('scalar_a_q_r_p_k_pole', a,q,r,p,p/r,a-p/r)\r\nK = np.linalg.solve(R,B.T@solve_continuous_are(A,B,Q,R))\r\nM = np.block([[A-B@K,B@K],[np.zeros((2,2)),A-Kf@C]])\r\nprint('unit_LQG_K_poles',K,np.linalg.eigvals(M))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 151,
+          "delim": "`",
+          "code": "# 习题2同噪声下的极点配置与Kalman；题4/10边界核对\r\nA2=np.array([[0.,1.],[-2.,-3.]])\r\nP2=solve_continuous_are(A2.T,C.T,np.eye(2),R)\r\nLk=P2@C.T; Lp=np.array([[8.],[4.]])\r\nprint('exercise2_P_K',P2,Lk.ravel())\r\nfor label,L in [('Kalman',Lk),('placed',Lp)]:\r\n    F=A2-L@C\r\n    Sigma=solve_continuous_lyapunov(F,-(np.eye(2)+L@L.T))\r\n    print('exercise2_poles_trace',label,np.linalg.eigvals(F),np.trace(Sigma),Sigma)\r\n    assert np.linalg.norm(F@Sigma+Sigma@F.T+np.eye(2)+L@L.T)<1e-10\r\n# 三工况：固定极点基线唯一，不额外调参；第三组透明构造为持平\r\nfor label,Qcase in [('low',.1*np.eye(2)),('nominal',np.eye(2)),('tie',np.array([[56.,50.],[50.,92.]]))]:\r\n    Pc=solve_continuous_are(A2.T,C.T,Qcase,R)\r\n    Lc=Pc@C.T; Fp=A2-Lp@C\r\n    Sc=solve_continuous_lyapunov(Fp,-(Qcase+Lp@Lp.T))\r\n    print('exercise2_three_cases',label,np.trace(Pc),np.trace(Sc))\r\n    assert np.trace(Pc)<=np.trace(Sc)+1e-10\r\n    if label=='tie': assert np.allclose(Lc,Lp)\r\nPdeg=np.diag([1.,0.]); Fdeg=A-Pdeg@C.T@C\r\nprint('exercise4_P_poles',Pdeg,np.linalg.eigvals(Fdeg))\r\nassert np.linalg.norm(A@Pdeg+Pdeg@A.T-Pdeg@C.T@C@Pdeg+np.diag([1.,0.]))<1e-10\r\nS=solve_continuous_are(A,B,np.diag([10.,1.]),R)\r\nK10=B.T@S\r\nM10=np.block([[A-B@K10,B@K10],[np.zeros((2,2)),A-Kf@C]])\r\nprint('exercise10_S_K_control_poles_all',S,K10,np.linalg.eigvals(A-B@K10),np.linalg.eigvals(M10))\r\nassert np.allclose(np.poly(M10),np.polymul(np.poly(A-B@K10),np.poly(A-Kf@C)),atol=1e-10)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 198,
+      "title": "连续噪声增量仿真",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 207,
+          "delim": "`",
+          "code": "# 连续状态/观测增量一致的Euler-Maruyama仿真\r\nA=np.array([[0.,1.],[0.,0.]])\r\nC=np.array([[1.,0.]])\r\nP=solve_continuous_are(A.T,C.T,np.eye(2),np.eye(1))\r\nK=P@C.T\r\ndt=.005; steps=2000; t=np.arange(steps+1)*dt\r\ndef simulate(seed):\r\n    rng=np.random.default_rng(seed)\r\n    x=np.zeros((steps+1,2)); xhat=x.copy()\r\n    x[0]=[1.,0.]; xhat[0]=[.5,0.]\r\n    dy=np.zeros(steps)\r\n    for k in range(steps):\r\n        dw=rng.standard_normal(2)*np.sqrt(dt)\r\n        dv=rng.standard_normal()*np.sqrt(dt)\r\n        dy[k]=(C@x[k]).item()*dt+dv\r\n        x[k+1]=x[k]+A@x[k]*dt+dw\r\n        xhat[k+1]=xhat[k]+A@xhat[k]*dt+K.ravel()*(dy[k]-(C@xhat[k]).item()*dt)\r\n    return x,xhat,dy\r\nrmses=[]\r\nfor seed in range(5):\r\n    x,xhat,dy=simulate(seed)\r\n    rmses.append(float(np.sqrt(np.mean((x[:,0]-xhat[:,0])**2))))\r\nprint('simulation_grid',len(t),t[0],t[-1],dt)\r\nprint('simulation_RMSE_seeds_0_to_4',rmses)\r\nassert len(t)==2001 and t[-1]==10 and np.isfinite(rmses).all()",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 232,
+          "delim": "`",
+          "code": "# 展示seed0；观测除以dt只是有噪声的区间平均读数\r\nx,xhat,dy=simulate(0)\r\nfig,axes=plt.subplots(3,1,figsize=(8,7),sharex=True)\r\naxes[0].plot(t,x[:,0],label='true position')\r\naxes[0].plot(t,xhat[:,0],label='estimated position')\r\naxes[0].plot(t[:-1],dy/dt,alpha=.15,label='interval observation')\r\naxes[1].plot(t,x[:,1],label='true velocity')\r\naxes[1].plot(t,xhat[:,1],label='estimated velocity')\r\naxes[2].plot(t,x[:,0]-xhat[:,0],label='position error')\r\nfor ax in axes: ax.legend(); ax.grid(alpha=.3)\r\naxes[2].set_xlabel('time (s)'); plt.tight_layout(); plt.show()\r\nprint('simulation_seed0_final_state_estimate',x[-1],xhat[-1])",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 283,
+      "title": "离散融合与协方差校准",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.linalg import solve_continuous_are, solve_discrete_are, solve_continuous_lyapunov\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 292,
+          "delim": "`",
+          "code": "# 一次离散融合与假设失配的解析真实风险\r\nprior=20.; pminus=4.; y=23.; r=1.\r\nk=pminus/(pminus+r); post=prior+k*(y-prior)\r\npplus=(1-k)**2*pminus+k*k*r\r\nprint('one_update_K_mean_variance',k,post,pplus)\r\nassert np.allclose([k,post,pplus],[.8,22.4,.8])\r\nfor qa in [.01,1.,100.]:\r\n    k=-1+np.sqrt(1+qa)\r\n    actual=(1+k*k)/(2*(1+k))\r\n    print('mismatch_qa_K_nominal_actual',qa,k,k,actual)\r\nprint('scalar_limit_stable_unstable',-1+abs(-1),1+abs(1))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 303,
+          "delim": "`",
+          "code": "# 习题7：每拍独立恒定随机加速度，不冒充连续白噪声\r\nAd=np.array([[1.,1.],[0.,1.]])\r\nC=np.array([[1.,0.]])\r\nGd=np.array([[.5],[1.]])\r\nQd=.25*Gd@Gd.T; Rd=np.array([[1/900.]])\r\nPi=solve_discrete_are(Ad.T,C.T,Qd,Rd)\r\ninnovation=C@Pi@C.T+Rd\r\nK=np.linalg.solve(innovation,C@Pi).T\r\nI=np.eye(2); post=(I-K@C)@Pi@(I-K@C).T+K@Rd@K.T\r\nF=(I-K@C)@Ad\r\nprint('exercise7_Qd_Rd',Qd,Rd)\r\nprint('exercise7_prior_posterior_K_poles',Pi,post,K.ravel(),np.linalg.eigvals(F))\r\nassert np.linalg.norm(Pi-(Ad@post@Ad.T+Qd))<1e-10\r\nassert np.min(np.linalg.eigvalsh(post))>=0 and np.max(np.abs(np.linalg.eigvals(F)))<1\r\nprint('all_numeric_checks_passed')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

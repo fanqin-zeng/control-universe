@@ -1,0 +1,47 @@
+{
+  "source": "content/embodied/multimodal-observation.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 58,
+      "title": "实验1：坐标、时间与缺失掩码",
+      "unknownAttrs": [],
+      "setupCode": "import math",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 61,
+          "delim": "`",
+          "code": "camera_mm = 94\nbase_mm = camera_mm + 10\ndecision_s, captured_s, arrived_s = 1.0, 0.8, 0.95\nage_s = decision_s - captured_s\nfuture_arrival_s = 1.02\nspeed_mm_s = 20\nprint(f\"基座坐标={base_mm:.1f} mm；可用={arrived_s <= decision_s}\")\nprint(f\"年龄={age_s:.2f} s；旧帧位移偏差={-speed_mm_s*age_s:.1f} mm\")\nprint(f\"未来到达帧可用={future_arrival_s <= decision_s}\")\n# 演示把缺失填充值误作有效测量，权重来自下节算例。\nprint(f\"误用零填充值={0.2*0+0.8*98:.1f} mm；掩码回退={98:.1f} mm\")",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 140,
+      "title": "实验2：权重、失败工况与答案复算",
+      "unknownAttrs": [],
+      "setupCode": "from fractions import Fraction as F",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 143,
+          "delim": "`",
+          "code": "sv2, sp2 = F(16), F(4)\nw = sp2 / (sv2 + sp2)\nvar = w*w*sv2 + (1-w)**2*sp2\nframe = w*104 + (1-w)*98\nprint(f\"视觉权重={float(w):.2f}；本体权重={float(1-w):.2f}\")\nprint(f\"融合={float(frame):.2f} mm；单帧误差={float(frame-100):.2f} mm；平方={float((frame-100)**2):.2f} mm^2\")\nfor age in [F(0),F(1,5),F(1,4),F(2,5)]:\n    bias = -20*age\n    mse = var + (w*bias)**2\n    print(f\"年龄={float(age):.2f} s；视觉偏差={float(bias):.2f} mm；MSE={float(mse):.2f} mm^2；本体=4.00 mm^2\")\ncorrelated = var + 2*w*(1-w)*4*2\nprint(f\"相关系数1、当前帧MSE={float(correlated):.2f} mm^2\")\n# 闭式阈值：3.2+(0.2*20*age)^2=4\nthreshold = float((sp2-var)/(w*20)**2)**0.5\nprint(f\"独立误差持平阈值={threshold:.6f} s\")\nprint(f\"丢视觉：估计=98.00 mm；MSE=4.00 mm^2\")\nprint(f\"仅当前视觉：估计=104.00 mm；MSE=16.00 mm^2\")\nprint(\"两路缺失：无有效估计；不报告MSE或当前位置\")",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

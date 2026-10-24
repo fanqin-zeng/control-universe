@@ -1,0 +1,85 @@
+{
+  "source": "content/robust/robustness-concept.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 4,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 54,
+      "title": "复算四种惯量的响应与裕度",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef peak(num, den):\r\n    # |H(jw)|^2 is a real rational function of x=w^2.\r\n    def mag2(poly):\r\n        a=np.asarray(poly)[::-1]*(1j**np.arange(len(poly)))\r\n        return np.polynomial.polynomial.polymul(a, np.conj(a)).real[::2]\r\n    n,d=mag2(num),mag2(den)\r\n    P=np.polynomial.polynomial\r\n    derivative=P.polysub(P.polymul(P.polyder(n),d),P.polymul(n,P.polyder(d)))\r\n    roots=P.polyroots(P.polytrim(derivative,tol=1e-15))\r\n    xs=[0.0]+[float(r.real) for r in roots if abs(r.imag)<1e-7*max(1,abs(r.real)) and r.real>0]\r\n    candidates=[(float(np.sqrt(max(0,P.polyval(x,n)/P.polyval(x,d)))),float(np.sqrt(x))) for x in xs]\r\n    limit=abs(num[0]/den[0]) if len(num)==len(den) else 0.0\r\n    return max(candidates+[(limit,float('inf'))],key=lambda a:a[0])\r\n\r\nb=.1\r\nKp,Ki,Kd=50.,10.,.5\r\ns=ctrl.tf('s')\r\nC=Kp+Ki/s+Kd*s\r\nG0=1/(.01*s*s+b*s)\r\nL0=C*G0\r\nD0=[.01,.6,50,10]\r\nN0=[.5,50,10]\r\nw=np.logspace(-2,4,1601)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 84,
+          "delim": "`",
+          "code": "t=np.linspace(0,2,20001)\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\nload_results=[]\r\nfor J in [.005,.01,.05,.1]:\r\n    G=1/(J*s*s+b*s)\r\n    L=C*G\r\n    T=ctrl.feedback(L)\r\n    tt,y=ctrl.step_response(T,T=t)\r\n    gm,pm,_,wc=ctrl.margin(L)\r\n    overshoot=100*(np.max(y)-1)\r\n    load_results.append([J,float(pm),float(overshoot),float(wc)])\r\n    print(f\"J={J:.3f} PM={pm:.6f} deg OS_0_2s={overshoot:.6f}% wc={wc:.6f} rad/s GM_factor={gm} GM_dB={20*np.log10(gm)}\")\r\n    axes[0].plot(tt,y,label=f'J={J}')\r\n    axes[1].semilogx(w,20*np.log10(abs(L(1j*w))),label=f'J={J}')\r\nfor ax in axes:\r\n    ax.grid(True);ax.legend()\r\naxes[0].set(xlim=(0,2),ylim=(0,2.5),xlabel='Time (s)',ylabel='Angle (rad)')\r\naxes[1].set(xlim=(.01,1e4),ylim=(-100,150),xlabel='Frequency (rad/s)',ylabel='Loop magnitude (dB)')\r\naxes[1].axhline(0,color='black',linestyle='--')\r\nplt.tight_layout();plt.show()\r\nprint('Routh_J_upper_strict', (b+Kd)*Kp/Ki)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 167,
+      "title": "复算三个未建模共振工况",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef peak(num, den):\r\n    # |H(jw)|^2 is a real rational function of x=w^2.\r\n    def mag2(poly):\r\n        a=np.asarray(poly)[::-1]*(1j**np.arange(len(poly)))\r\n        return np.polynomial.polynomial.polymul(a, np.conj(a)).real[::2]\r\n    n,d=mag2(num),mag2(den)\r\n    P=np.polynomial.polynomial\r\n    derivative=P.polysub(P.polymul(P.polyder(n),d),P.polymul(n,P.polyder(d)))\r\n    roots=P.polyroots(P.polytrim(derivative,tol=1e-15))\r\n    xs=[0.0]+[float(r.real) for r in roots if abs(r.imag)<1e-7*max(1,abs(r.real)) and r.real>0]\r\n    candidates=[(float(np.sqrt(max(0,P.polyval(x,n)/P.polyval(x,d)))),float(np.sqrt(x))) for x in xs]\r\n    limit=abs(num[0]/den[0]) if len(num)==len(den) else 0.0\r\n    return max(candidates+[(limit,float('inf'))],key=lambda a:a[0])\r\n\r\nb=.1\r\nKp,Ki,Kd=50.,10.,.5\r\ns=ctrl.tf('s')\r\nC=Kp+Ki/s+Kd*s\r\nG0=1/(.01*s*s+b*s)\r\nL0=C*G0\r\nD0=[.01,.6,50,10]\r\nN0=[.5,50,10]\r\nw=np.logspace(-2,4,1601)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 197,
+          "delim": "`",
+          "code": "t=np.linspace(0,1,10001)\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\nresonance_results=[]\r\nmt,wt=peak(N0,D0)\r\nfor wn in [50.,300.,800.]:\r\n    z=.1\r\n    H=wn**2/(s*s+2*z*wn*s+wn**2)\r\n    delta=H-1\r\n    Tact=ctrl.feedback(C*G0*H)\r\n    rightmost=float(max(ctrl.poles(Tact).real))\r\n    gamma,wg=peak([-1.,-2*z*wn,0],[1.,2*z*wn,wn**2])\r\n    weighted,wp=peak(np.polymul(N0,[-1.,-2*z*wn,0]),np.polymul(D0,[1.,2*z*wn,wn**2]))\r\n    row=[wn,z,rightmost,gamma,mt,mt*gamma,weighted]\r\n    resonance_results.append(row)\r\n    print('resonance', ' '.join(f'{v:.9f}' for v in row))\r\n    axes[0].semilogx(w,abs(delta(1j*w)),label=f'wn={wn:g}')\r\n    tt,y=ctrl.step_response(Tact,T=t)\r\n    axes[1].plot(tt,y,label=f'wn={wn:g}, '+('stable' if rightmost<0 else 'unstable'))\r\naxes[0].set(xlim=(.01,1e4),ylim=(0,6),xlabel='Frequency (rad/s)',ylabel='Multiplicative error magnitude')\r\naxes[1].set(xlim=(0,1),ylim=(-1,3),xlabel='Time (s)',ylabel='Angle (rad), clipped if unstable')\r\nfor ax in axes:\r\n    ax.legend();ax.grid(True)\r\nplt.tight_layout();plt.show()\r\nprint('resonance_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 344,
+      "title": "复算S与T及最近距离圆",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef peak(num, den):\r\n    # |H(jw)|^2 is a real rational function of x=w^2.\r\n    def mag2(poly):\r\n        a=np.asarray(poly)[::-1]*(1j**np.arange(len(poly)))\r\n        return np.polynomial.polynomial.polymul(a, np.conj(a)).real[::2]\r\n    n,d=mag2(num),mag2(den)\r\n    P=np.polynomial.polynomial\r\n    derivative=P.polysub(P.polymul(P.polyder(n),d),P.polymul(n,P.polyder(d)))\r\n    roots=P.polyroots(P.polytrim(derivative,tol=1e-15))\r\n    xs=[0.0]+[float(r.real) for r in roots if abs(r.imag)<1e-7*max(1,abs(r.real)) and r.real>0]\r\n    candidates=[(float(np.sqrt(max(0,P.polyval(x,n)/P.polyval(x,d)))),float(np.sqrt(x))) for x in xs]\r\n    limit=abs(num[0]/den[0]) if len(num)==len(den) else 0.0\r\n    return max(candidates+[(limit,float('inf'))],key=lambda a:a[0])\r\n\r\nb=.1\r\nKp,Ki,Kd=50.,10.,.5\r\ns=ctrl.tf('s')\r\nC=Kp+Ki/s+Kd*s\r\nG0=1/(.01*s*s+b*s)\r\nL0=C*G0\r\nD0=[.01,.6,50,10]\r\nN0=[.5,50,10]\r\nw=np.logspace(-2,4,1601)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 374,
+          "delim": "`",
+          "code": "Snum=[.01,.1,0,0]\r\nms,wms=peak(Snum,D0)\r\nmt,wmt=peak(N0,D0)\r\nLj=L0(1j*w)\r\nSj=1/(1+Lj);Tj=Lj/(1+Lj)\r\nresidual=float(max(abs(Sj+Tj-1)))\r\nprint(f'Ms={ms:.9f} wMs={wms:.9f} Mt={mt:.9f} wMt={wmt:.9f} residual={residual:.3e} radius={1/ms:.9f}')\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\naxes[0].semilogx(w,20*np.log10(abs(Sj)),label='S')\r\naxes[0].semilogx(w,20*np.log10(abs(Tj)),label='T')\r\naxes[0].set(xlim=(.01,1e4),ylim=(-110,15),xlabel='Frequency (rad/s)',ylabel='Magnitude (dB)')\r\naxes[1].plot(Lj.real,Lj.imag,label='positive frequency branch')\r\naxes[1].plot(Lj.real,-Lj.imag,color='gray',linestyle=':',label='conjugate branch')\r\nth=np.linspace(0,2*np.pi,401)\r\naxes[1].plot(-1+np.cos(th)/ms,np.sin(th)/ms,'g--',label='distance circle centered at -1')\r\naxes[1].plot(-1,0,'rx')\r\naxes[1].set(xlim=(-3,1),ylim=(-2,2),xlabel='Real',ylabel='Imaginary')\r\naxes[1].set_aspect('equal')\r\nfor ax in axes:\r\n    ax.grid(True);ax.legend()\r\nplt.tight_layout();plt.show()\r\nprint('MS_margin_bounds')\r\nfor m in [1.2,1.4,2.]:\r\n    print(m,2*np.degrees(np.arcsin(1/(2*m))),20*np.log10(m/(m-1)))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 611,
+      "title": "复核全部习题与LQR边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy import signal\r\n\r\ndef peak(num, den):\r\n    # |H(jw)|^2 is a real rational function of x=w^2.\r\n    def mag2(poly):\r\n        a=np.asarray(poly)[::-1]*(1j**np.arange(len(poly)))\r\n        return np.polynomial.polynomial.polymul(a, np.conj(a)).real[::2]\r\n    n,d=mag2(num),mag2(den)\r\n    P=np.polynomial.polynomial\r\n    derivative=P.polysub(P.polymul(P.polyder(n),d),P.polymul(n,P.polyder(d)))\r\n    roots=P.polyroots(P.polytrim(derivative,tol=1e-15))\r\n    xs=[0.0]+[float(r.real) for r in roots if abs(r.imag)<1e-7*max(1,abs(r.real)) and r.real>0]\r\n    candidates=[(float(np.sqrt(max(0,P.polyval(x,n)/P.polyval(x,d)))),float(np.sqrt(x))) for x in xs]\r\n    limit=abs(num[0]/den[0]) if len(num)==len(den) else 0.0\r\n    return max(candidates+[(limit,float('inf'))],key=lambda a:a[0])\r\n\r\nb=.1\r\nKp,Ki,Kd=50.,10.,.5\r\ns=ctrl.tf('s')\r\nC=Kp+Ki/s+Kd*s\r\nG0=1/(.01*s*s+b*s)\r\nL0=C*G0\r\nD0=[.01,.6,50,10]\r\nN0=[.5,50,10]\r\nw=np.logspace(-2,4,1601)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 641,
+          "delim": "`",
+          "code": "# Answers and theorem boundary checks; zero initial conditions.\r\nx=5+3*np.sqrt(5)\r\nf=lambda x:(x*x+4*x)/(x*x-16*x+100)\r\nms1=np.sqrt(f(x));S1=(-5+20j)/85;T1=1-S1\r\nprint(f'answer1 Ms={ms1:.9f} w={np.sqrt(x):.9f} Sabs={abs(S1):.9f} Tabs={abs(T1):.9f} sum={S1+T1}')\r\nu=(1+np.sqrt(3))/2\r\nms3=np.sqrt(1+2/np.sqrt(3))\r\nprint(f'answer3 u={u:.9f} Ms={ms3:.9f} dB={20*np.log10(ms3):.9f}')\r\nmt2,wt2=peak([5],[1,1,5])\r\nprint(f'answer2 Mt={mt2:.9f} w={wt2:.9f} gamma=1')\r\nfor K in [.5,1,2]:\r\n    print('answer2_K_poles',K,np.roots([1,1,5*K]))\r\nprint('finite_bandwidth_Ms1',peak([1,0],[1,1]))\r\n# Integrator LQR: A=0,B=1,Q=R=1 => P=K=1; gain g pole=-g.\r\nfor g in [.5,1,2]: print('scalar_lqr_gain_pole',g,-g)\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+---
+title: 持久激励
+description: 用回归向量的方向和滑动窗口理解持久激励，区分满秩数据、参数收敛与闭环跟踪，并检查幅值和噪声的代价。
+---
+
+# 持久激励
+
+## 引言
+
+在[最小二乘辨识](/identification/least-squares-rls)中，水箱一直保持同一水位时，重复记录并没有增加独立约束。现在把阀门开得更快、正负来回切换，是否一定能把两个系数分开？如果只在开机时试探几次，之后长期维持生产，还能说数据始终“有信息”吗？
+
+本课把这些问题分成两层：**一批数据能否分清参数，以及运行过程中是否不断补充各个方向的信息。** 后一层对应持久激励，正文沿用术语表的标准译名**持续激励（persistent excitation，PE）**；课程标题保留目录名称。
+
+先修为上一课的回归、信息矩阵与带先验RLS。[矩阵分解](/math/matrix-decomposition)中的秩和特征值是工具。本课用一个两抽头输入模型隔离“方向”问题；它不是上一课已知水箱系数后只估一个参数的交互，也不直接替一般闭环ARX提供输入设计保证。
+
+## 信息藏在哪个方向
+
+设固定参数回归为：
+
+$$
+y_k=\boldsymbol\phi_k^{\mathsf T}\boldsymbol\theta^\star+e_k,
+\qquad \boldsymbol\phi_k\in\mathbb R^p.
+$$
+
+先考虑无噪声。两组参数相差 $\boldsymbol d$ 时，预测差就是 $\boldsymbol\phi_k^{\mathsf T}\boldsymbol d$。在 $N$ 个样本中定义不含先验的**数据信息矩阵**：
+
+$$
+H_N=\sum_{k=0}^{N-1}\boldsymbol\phi_k\boldsymbol\phi_k^{\mathsf T}=\Phi_N^{\mathsf T}\Phi_N.
+$$
+
+对于任意单位方向 $\boldsymbol d$：
+
+$$
+\boldsymbol d^{\mathsf T}H_N\boldsymbol d
+=\sum_{k=0}^{N-1}(\boldsymbol\phi_k^{\mathsf T}\boldsymbol d)^2.
+$$
+
+右边是该参数方向被数据“照亮”的总量。若它为零，沿这个方向改变参数，所有预测都不变。$H_N$ 的最小特征值等于单位方向上这个量的最小值；它为正才表示这批数据没有遗漏方向。它不是输入幅值或输入总能量的另一个名字。
+
+![恒定和交替输入分别只沿一条直线提供信息，四拍输入轮流覆盖两个独立方向](/diagrams/identification/excitation-directions.svg)
+
+## 从满秩到持久激励
+
+有限数据满秩只对已经收集的记录负责。对持续运行的离散回归量，定义长度固定的窗口信息矩阵：
+
+$$
+G_{k,L}=\sum_{i=k}^{k+L-1}\boldsymbol\phi_i\boldsymbol\phi_i^{\mathsf T}.
+$$
+
+若存在一个正整数 $L$ 和与起点 $k$ 无关的常数 $0<\alpha\leq\beta<\infty$，使**所有 $k\geq0$** 都满足：
+
+$$
+\alpha I\preceq G_{k,L}\preceq\beta I,
+$$
+
+则称回归向量序列持续激励。这里 $A\preceq B$ 表示每个方向上 $B-A$ 的二次型均非负。统一下界保证每个窗口都照亮所有方向；上界限制窗口信息量。若回归量有界，上界可由幅值界得到。
+
+窗口必须先选定，不能遇到一段平静数据就任意延长，凑到下一次试探再宣布通过。$L<p$ 时至多有 $L$ 个秩一项，无法在 $p$ 维达到正定。有限记录上观察到所有窗口正定，只是这段记录的诊断；无限序列的量词需要结构证明或额外运行假设。
+
+输入信号的“$p$ 阶PE”常指其 $p$ 个移位组成的向量满足这一条件。**阶数要随模型声明**：一个常值非零标量本身有信息，两个完全相同的移位却不能分开两个系数。一般动态模型还会改变回归量，不能只看外加参考信号的曲线就跳到参数收敛。
+
+## 四种输入与回归量
+
+采用便于手算的两抽头有限脉冲响应模型（FIR）：
+
+$$
+y_k=0.6u_k+0.2u_{k-1},\qquad
+\boldsymbol\phi_k=\begin{bmatrix}u_k\\u_{k-1}\end{bmatrix}.
+$$
+
+输入输出已按固定尺度归一化，采样周期为 $1$ s。下面仅改变输入，真参数保持 $[0.6,0.2]^{\mathsf T}$；没有过程噪声、测量噪声或执行器动态。$u_{-1}$ 是已知的上一拍输入，不是额外待估参数。
+
+<div style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 输入规则 | 已知 $u_{-1}$ | 每个8点窗口的信息 | 能分清什么 |
+|---|---|---|---|
+| 恒定 $u_k=A$ | $A$ | $8A^2\begin{bmatrix}1&1\\1&1\end{bmatrix}$ | 只能分清两个系数之和 |
+| 交替 $u_k=A(-1)^k$ | $-A$ | $8A^2\begin{bmatrix}1&-1\\-1&1\end{bmatrix}$ | 只能分清两个系数之差 |
+| 周期四拍 $[A,0,-A,0]$ | $0$ | $4A^2I$ | $A>0$ 时两方向均有信息 |
+| 前8拍用上述四拍序列，之后全零 | $0$ | 首窗 $4A^2I$；起点 $k\geq8$ 的窗口为零 | 整批可满秩，但不持续补充信息 |
+
+</div>
+
+周期四拍的回归向量依次为 $[A,0]$、$[0,A]$、$[-A,0]$、$[0,-A]$，每四行的信息和为 $2A^2I$。任意起点的8行恰含两个完整周期，所以统一取 $\alpha=\beta=4A^2$。这是对无限周期序列的证明，不能照搬到截断序列。
+
+<JupyterNotebook title="四种输入：方向、秩与窗口" setupCode={`import numpy as np
+def pe_input(k, mode='periodic', amplitude=1.):
+    if mode=='constant': return amplitude
+    if mode=='alternating': return amplitude if k%2==0 else -amplitude
+    if mode=='burst' and not 0<=k<8: return 0.
+    return amplitude*[1.,0.,-1.,0.][k%4]
+def pe_design(mode='periodic', amplitude=1., count=64):
+    return np.array([[pe_input(k,mode,amplitude), pe_input(k-1,mode,amplitude)] for k in range(count)])
+`} cells={[{code:`for mode in ['periodic','constant','alternating','burst']:
+    X=pe_design(mode)
+    mins=[np.linalg.eigvalsh(X[k:k+8].T@X[k:k+8])[0] for k in range(57)]
+    print(mode, 'first_Gram', (X[:8].T@X[:8]).tolist(), 'rank64', np.linalg.matrix_rank(X), 'min_window', min(mins))
+    assert np.linalg.matrix_rank(X)==(2 if mode in ['periodic','burst'] else 1)
+    assert abs(min(mins)-(4. if mode=='periodic' else 0.))<1e-12
+print('all_window_checks_passed')
+`}]}/>
+
+## 参数为什么逐渐可辨
+
+回到上一课的同先验目标，取 $P_0=I$、$\hat{\boldsymbol\theta}_0=0$、遗忘因子 $\lambda=1$。无噪声且真参数不变时：
+
+$$
+R_N=I+H_N,\qquad
+\hat{\boldsymbol\theta}_N-\boldsymbol\theta^\star
+=R_N^{-1}(\hat{\boldsymbol\theta}_0-\boldsymbol\theta^\star).
+$$
+
+这是正规方程的结果，不必再推一遍RLS增益。将样本分成不重叠的 $L$ 点块，PE给出：
+
+$$
+H_N\succeq \lfloor N/L\rfloor\alpha I,\qquad
+\lVert\hat{\boldsymbol\theta}_N-\boldsymbol\theta^\star\rVert_2
+\leq\frac{\lVert\hat{\boldsymbol\theta}_0-\boldsymbol\theta^\star\rVert_2}
+{1+\lfloor N/L\rfloor\alpha}.
+$$
+
+因此在这些限定下，先验偏差逐渐消失。**这不是“RLS在PE下总是指数收敛”的定理**，更没有包含噪声、漂移或闭环稳定性。其他适应律的结论需要对应的误差方程和假设。
+
+PE也不是这里参数收敛的必要条件。例如标量回归量 $\phi_k=1/\sqrt{k+1}$，固定长度窗口的信息趋于零，不满足统一正下界；但历史信息和为发散的调和级数，保留全部历史的无噪声估计仍能消除有限先验偏差。
+
+有限激励的情况也要细分：前8拍已满秩，无正则批量最小二乘在本例就能精确恢复真值；但带有限先验的RLS保留偏差，后续零输入不会再修正它。遗忘只衰减旧信息和先验，不会补出一个新方向。
+
+<JupyterNotebook title="同先验RLS：每个前缀与批量解核对" setupCode={`import numpy as np
+theta_true=np.array([.6,.2])
+def design(mode):
+    def u(k):
+        if mode=='constant': return 1.
+        if mode=='alternating': return 1. if k%2==0 else -1.
+        return [1.,0.,-1.,0.][k%4] if mode!='burst' or 0<=k<8 else 0.
+    return np.array([[u(k),u(k-1)] for k in range(64)])
+`} cells={[{code:`for mode in ['periodic','constant','alternating','burst']:
+    X=design(mode); Y=X@theta_true
+    for lam in [1.,.9]:
+        P=np.eye(2); estimate=np.zeros(2)
+        for n,phi in enumerate(X,1):
+            gain=P@phi/(lam+phi@P@phi)
+            estimate=estimate+gain*(Y[n-1]-phi@estimate)
+            P=(P-np.outer(gain,phi)@P)/lam
+            weights=lam**np.arange(n-1,-1,-1)
+            augmented=np.vstack((lam**(n/2)*np.eye(2), X[:n]*np.sqrt(weights)[:,None]))
+            targets=np.r_[np.zeros(2),Y[:n]*np.sqrt(weights)]
+            independent=np.linalg.lstsq(augmented,targets,rcond=None)[0]
+            assert np.allclose(estimate,independent,atol=1e-10,rtol=0)
+        print(mode, 'lambda',lam,'theta64',np.round(estimate,9).tolist())
+print('all_prefixes_same_prior_match True')
+print('periodic_exact', [.6*32/33,.2*32/33], 'burst_exact',[.6*4/5,.2*4/5])
+`}]}/>
+
+## 交互观察信息窗口
+
+默认条件为持续四拍、$A=1$、$L=8$、$\lambda=1$，64次更新后 $\hat\theta_1=0.581818$、$\hat\theta_2=0.193939$，观测到的完整窗口最小特征值均为 $4$。真参数不变而估计尚有小偏差，来自有限样本下保留的先验。
+
+<PersistentExcitationExplorer />
+
+先切到正负交替：输入每拍都变，窗口最小特征值仍为零。再切到前八拍后停止：参数仍有一个固定估计，但后续窗口变为零。最后将幅值降为零、恢复默认，检查“估计器仍返回一个数”和“数据提供信息”并不是同一件事。图中窗口量不加遗忘权重，改变 $\lambda$ 时它应保持不变。
+
+## 幅值与噪声的代价
+
+窗口正定只回答有没有遗漏方向，还需问最弱方向有多强。周期四拍中将幅值从 $1$ 降为 $0.1$，8点窗口的最小特征值从 $4$ 降到 $0.04$；两个方向等比例缩小，条件数仍为 $1$，所以**只报条件数也不足够**。
+
+对列满秩的无正则最小二乘，固定设计矩阵时，输出扰动 $\boldsymbol e$ 导致：
+
+$$
+\hat{\boldsymbol\theta}-\boldsymbol\theta^\star
+=\Phi^\dagger\boldsymbol e,\qquad
+\lVert\hat{\boldsymbol\theta}-\boldsymbol\theta^\star\rVert_2
+\leq\frac{\lVert\boldsymbol e\rVert_2}{\sigma_{\min}(\Phi)}.
+$$
+
+下面人为叠加固定扰动 $e_k=0.01[1,0,-1,0]$。它与第一列完全对齐，是敏感性反例，**不是零均值独立噪声下的统计估计**。64点批量估计在 $A=1$ 时为 $[0.61,0.2]$，在 $A=0.1$ 时为 $[0.7,0.2]$。相同输出扰动在弱激励下造成更大的参数偏差。
+
+<JupyterNotebook title="幅值、扰动与预测正确的边界" setupCode={`import numpy as np
+base=np.array([1.,0.,-1.,0.]*16)
+previous=np.roll(base,1)
+theta_true=np.array([.6,.2])
+`} cells={[{code:`for amplitude in [1.,.1]:
+    X=amplitude*np.column_stack((base,previous))
+    disturbance=.01*base
+    estimate=np.linalg.lstsq(X,X@theta_true+disturbance,rcond=None)[0]
+    gram=X[:8].T@X[:8]
+    print('amplitude',amplitude,'min_Gram8',np.linalg.eigvalsh(gram)[0],'condition',np.linalg.cond(X),'theta',np.round(estimate,9).tolist())
+    assert np.allclose(estimate,[.6+.01/amplitude,.2],atol=1e-12)
+constant=np.ones((8,2)); alternative=np.array([.4,.4])
+assert np.allclose(constant@alternative,constant@theta_true)
+print('same_constant_prediction True', 'different_parameters', alternative.tolist())
+print('weak_amplitude_checks_passed')
+`}]}/>
+
+增大幅值也有代价：输入能量、执行器速率、输出允许偏差和非线性工作区都可能受限；上述FIR例没有模拟这些约束。实际试验应在预先给定的安全范围内设计，并记录归一化尺度，不能为增大特征值任意改变单位。
+
+## 实际试验怎样检查
+
+1. **先固定结构和尺度。** 参数数量、延迟、回归量及归一化变换必须写明；先验项和数据项分开报告。
+2. **再检查方向与窗口。** 对真实回归矩阵用SVD/QR判断数值秩，同时报告窗口长度、最小奇异值或特征值、最大值及阈值依据。不要把浮点计算的极小正数自动当成可靠激励。
+3. **保留不同工况。** 稳态段、启停段、受限段分别报告；有限记录的最坏窗口只是诊断，后续运行仍需监测。随机激励的一次实现也不是“每个固定窗口都统一正定”的确定性保证。
+4. **检查噪声与闭环相关。** PE解决方向信息，不自动解决回归量含测量误差或与噪声相关的问题；有足够激励仍可能估错。[闭环辨识](/identification/instrumental-variable)可继续阅读；本课不以其方法为已知前提。
+
+跟踪误差很小也不能直接证明参数正确：控制器可能只需要某个参数组合，实际轨迹也可能没走到其他方向。本课Notebook的恒定输入反例中，$[0.4,0.4]$ 与 $[0.6,0.2]$ 给出相同预测；这只是预测不可区分的代数例，不是一次闭环跟踪实验。
+
+概念出处与边界可对照 [Harvard《Optimal Control and Estimation》第8章](https://hankyang.seas.harvard.edu/OptimalControlEstimation/adaptivecontrol.html)及 [Jenkins等的作者论文](https://arxiv.org/abs/1511.03222)。前者区分误差趋零与参数条件，后者强调回归量PE不能直接被参考输入PE替代。本课离散FIR、信息和界及数值均独立推导，不宣称复现其连续时间闭环定理。
+
+## 小结
+
+满秩看已经收集的一批数据；PE要求同一有限窗口长度下，对所有起点持续提供统一的方向信息。两者都依赖具体回归量和尺度，不能用“输入在变化”代替。
+
+对本课无噪声、固定参数、不遗忘的带先验估计，PE足以让先验偏差消失；它不是所有算法和问题的必要条件。噪声相关、有限样本、参数漂移、输入约束和闭环稳定性仍需分别处理。
+
+## 习题
+
+**1. 方向。** 两抽头模型使用恒定输入 $A=1$。给出一个看不到的非零参数方向，并解释为何 $[0.4,0.4]$ 可以预测正确却参数不对。
+
+**2. 窗口。** 四拍周期输入的幅值为 $A=0.1$、窗口 $L=8$。求统一下界，说明为什么只验证首窗不够。
+
+**3. 有限激励。** 只用前8拍四拍输入，之后全零，$A=1$、$P_0=I$、$\hat{\boldsymbol\theta}_0=0$、$\lambda=1$。求64次更新后估计，并比较无正则批量解。
+
+**4. 幅值。** 固定扰动为正文的 $0.01$ 四拍序列，输入幅值由 $1$ 降至 $0.1$。第一参数误差怎样变，能否据此断言一般随机噪声下所有误差都增大相同倍数？
+
+## 答案
+
+**1.** $\boldsymbol d=[1,-1]^{\mathsf T}$ 与每行 $[1,1]$ 正交，方向信息为零。两组参数的和均为 $0.8$，但分量不同；重复同样的输入不能区分它们。
+
+**2.** 任意起点的8行覆盖两个完整周期，$G_{k,8}=4A^2I=0.04I$，可取 $\alpha=\beta=0.04$。首窗通过但后续停激励的序列也是可能的；这里成立靠周期结构的证明。
+
+**3.** $H_{64}=4I$，带先验解为 $(I+4I)^{-1}4\boldsymbol\theta^\star=[0.48,0.16]^{\mathsf T}$；后续零行不再修正。无正则批量因该批数据列满秩且无噪声，解为真参数 $[0.6,0.2]^{\mathsf T}$。有限满秩不是PE，也不是毫无用处。
+
+**4.** 扰动等于设计矩阵第一列的 $0.01/A$ 倍，所以无正则批量的第一参数误差由 $0.01$ 变为 $0.1$，第二参数不变。这是一个对齐方向的确定性反例；不能据单序列推出随机误差的普遍分布或无偏性。

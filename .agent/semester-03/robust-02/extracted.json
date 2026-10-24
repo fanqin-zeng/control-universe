@@ -1,0 +1,93 @@
+{
+  "source": "content/robust/uncertainty-modeling.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 4,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 133,
+      "title": "从复频响样本到权重边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import curve_fit",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 139,
+          "delim": "`",
+          "code": "rng=np.random.RandomState(42)\r\nK_samples=rng.uniform(.8,1.2,20)\r\nT_samples=rng.uniform(.8,1.3,20)\r\nw=np.logspace(-2,2,500)\r\ns=1j*w\r\nG_samples=K_samples[:,None]/(1+T_samples[:,None]*s)\r\nG_nom=1/(1+s)\r\nerrors=(G_samples-G_nom)/G_nom\r\nW_data=np.max(abs(errors),axis=0)\r\ndef weight_model(w,a,b,c):\r\n    return np.hypot(a*w,b)/np.hypot(w,c)\r\nparams,_=curve_fit(weight_model,w,W_data,p0=[.5,.2,1],bounds=([1e-5,1e-5,1e-5],[2,2,20]),maxfev=10000)\r\na,b,c=params\r\nraw=weight_model(w,a,b,c)\r\nscale=max(1.,float(max(W_data/raw)))*1.05\r\na,b=a*scale,b*scale\r\nfitted=weight_model(w,a,b,c)\r\nanalytic=abs((.5*s+.2)/(.8*s+1))\r\nfit_cover=bool(np.all(fitted>=W_data-1e-12))\r\nanalytic_cover=bool(np.all(analytic>=W_data-1e-12))\r\nprint('fit_positive',a>0 and b>0 and c>0,'fit_grid_coverage',fit_cover,'analytic_sample_coverage',analytic_cover)\r\nprint('fit_parameters',a,b,c,'minimum_grid_ratio',min(fitted/W_data))\r\nprint('analytic_DC_HF',.2,.5/.8)\r\nselected_K,selected_T,selected_w=.8,1.3,1.\r\nsel_G=selected_K/(1+1j*selected_w*selected_T)\r\nsel_G0=1/(1+1j*selected_w)\r\nprint('default_first_order',abs(sel_G-sel_G0),abs((sel_G-sel_G0)/sel_G0),abs((.5j+.2)/(.8j+1)))\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\nfor response in G_samples:axes[0].semilogx(w,20*np.log10(abs(response)),color='gray',alpha=.3)\r\naxes[0].semilogx(w,20*np.log10(abs(G_nom)),label='nominal')\r\naxes[0].set(xlim=(.01,100),ylim=(-50,10),xlabel='Frequency (rad/s)',ylabel='Magnitude (dB)')\r\naxes[1].semilogx(w,W_data,label='20-sample envelope')\r\naxes[1].semilogx(w,fitted,label='positive stable fit, grid only')\r\naxes[1].semilogx(w,analytic,label='analytic interval bound')\r\naxes[1].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Relative error magnitude')\r\nfor ax in axes:ax.grid(True);ax.legend()\r\nplt.tight_layout();plt.show()\r\nprint('fit_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 177,
+          "delim": "`",
+          "code": "W_add=np.max(abs(G_samples-G_nom),axis=0)\r\nconversion_residual=float(max(abs(W_add-abs(G_nom)*W_data)))\r\nprint('conversion_residual',conversion_residual)\r\nfor i in [0,-1]:print('additive_multiplicative',w[i],abs(G_nom[i]),W_add[i],W_data[i])\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\naxes[0].semilogx(w,W_add,label='additive envelope')\r\naxes[0].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Absolute error')\r\naxes[1].semilogx(w,W_data,label='multiplicative envelope')\r\naxes[1].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Relative error')\r\nfor ax in axes:ax.grid(True);ax.legend()\r\nplt.tight_layout();plt.show()\r\nprint('conversion_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 378,
+      "title": "精确LFT与质量刚度不确定性",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import curve_fit",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 384,
+          "delim": "`",
+          "code": "m0,b0,k0=1.,.2,1.\r\nwm,wk=.3,.3\r\nrng=np.random.RandomState(42)\r\nm=1+wm*rng.uniform(-1,1,2000)\r\nk=1+wk*rng.uniform(-1,1,2000)\r\nw=np.logspace(-1,2,200);s=1j*w\r\nD0=s*s+.2*s+1\r\nG0=1/D0\r\nG_mc=1/(m[:,None]*s*s+b0*s+k[:,None])\r\nerror=abs((G_mc-G0)/G0)\r\nenvelope=error.max(axis=0)\r\nrho=(wm*w*w+wk)/abs(D0)\r\nvalid=rho<1\r\nupper=np.full_like(w,np.nan)\r\nupper[valid]=rho[valid]/(1-rho[valid])\r\nvalid_cover=bool(np.all(envelope[valid]<=upper[valid]+1e-10))\r\nold_cover=bool(np.all(envelope<=rho+1e-10))\r\nprint('msd_old_first_order_is_bound',old_cover,'valid_reverse_triangle_covers',valid_cover)\r\n# Build P from physical state-space ports [v_m,v_k,u] -> [acceleration,q,y].\r\nA0=np.array([[0.,1.],[-1.,-.2]])\r\nBv=np.array([[0.,0.],[-wm,-wk]])\r\nBu=np.array([[0.],[1.]])\r\nCz=np.array([[-1.,-.2],[1.,0.]])\r\nDzv=np.array([[-wm,-wk],[0.,0.]])\r\nDzu=np.array([[1.],[0.]])\r\nCy=np.array([[1.,0.]])\r\nmax_lft_residual=0.\r\nfor dm in [-1.,0.,1.]:\r\n    for dk in [-1.,0.,1.]:\r\n        Delta=np.diag([dm,dk])\r\n        for si in s:\r\n            R=np.linalg.solve(si*np.eye(2)-A0,np.eye(2))\r\n            P11=Cz@R@Bv+Dzv;P12=Cz@R@Bu+Dzu\r\n            P21=Cy@R@Bv;P22=Cy@R@Bu\r\n            Fu=(P22+P21@Delta@np.linalg.solve(np.eye(2)-P11@Delta,P12))[0,0]\r\n            exact=1/((1+wm*dm)*si*si+b0*si+(1+wk*dk))\r\n            max_lft_residual=max(max_lft_residual,abs(Fu-exact))\r\nprint('exact_lft_residual_9_corners',max_lft_residual)\r\n# At w=1, dm=dk=1/3 gives m=k=1.1: nominal denominator=.2j, error=0.\r\n# At w=1, dm=1,dk=-1 gives eta=3j: rho=3 and the reverse-triangle bound is inapplicable.\r\nprint('rho_at_one',(.3+.3)/.2)\r\nsi=.5j\r\neta=(-.3*.25-.3)/(.75+.1j)\r\nactual=abs(-eta/(1+eta))\r\nprint('old_bound_counterexample_at_half',abs(eta),actual)\r\nfig,axes=plt.subplots(1,2,figsize=(12,4))\r\nfor response in G_mc[:50]:axes[0].semilogx(w,abs(response),color='gray',alpha=.2)\r\naxes[0].semilogx(w,abs(G0),label='nominal')\r\naxes[0].set(xlim=(.1,100),ylim=(0,10),xlabel='Frequency (rad/s)',ylabel='Displacement / force')\r\naxes[1].semilogx(w,envelope,label='2000-sample envelope')\r\naxes[1].semilogx(w,rho,label='first-order magnitude, not a bound')\r\naxes[1].semilogx(w,upper,label='rho/(1-rho), only rho<1')\r\naxes[1].set(xlim=(.1,100),ylim=(0,15),xlabel='Frequency (rad/s)',ylabel='Relative error (clipped)')\r\nfor ax in axes:ax.grid(True);ax.legend()\r\nplt.tight_layout();plt.show()\r\nprint('msd_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 480,
+      "title": "MIMO输入与输出端口",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import curve_fit",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 486,
+          "delim": "`",
+          "code": "A=np.diag([-1.,-2.]);B=np.array([[1.,2.],[0.,1.]])\r\nCp=np.eye(2);D=np.zeros((2,2))\r\nplant=ctrl.ss(A,B,Cp,D)\r\nw=np.logspace(-2,2,500)\r\nfr=ctrl.frequency_response(plant,w,squeeze=False).frdata\r\nassert fr.shape==(2,2,500)\r\nI=np.eye(2)\r\nrows=[]\r\nfor gain in [.5,1.,2.,4.]:\r\n    Kc=np.diag([gain,1.])\r\n    H=Cp@np.linalg.solve(1j*I-A,B)\r\n    Lo=H@Kc;Li=Kc@H\r\n    To=np.linalg.solve((I+Lo).T,Lo.T).T\r\n    Ti=np.linalg.solve((I+Li).T,Li.T).T\r\n    row=[gain,float(np.linalg.svd(To,compute_uv=False)[0]),float(np.linalg.svd(Ti,compute_uv=False)[0]),float(np.linalg.norm(To-Ti))]\r\n    rows.append(row);print('mimo_at_one',row)\r\n    assert max(np.linalg.eigvals(A-B@Kc@Cp).real)<0\r\nsv_o=[];sv_i=[]\r\nKc=np.diag([2.,1.])\r\nfor j in range(len(w)):\r\n    H=fr[:,:,j];Lo=H@Kc;Li=Kc@H\r\n    To=np.linalg.solve((I+Lo).T,Lo.T).T;Ti=np.linalg.solve((I+Li).T,Li.T).T\r\n    sv_o.append(np.linalg.svd(To,compute_uv=False)[0]);sv_i.append(np.linalg.svd(Ti,compute_uv=False)[0])\r\nfig,ax=plt.subplots(figsize=(9,4))\r\nax.semilogx(w,sv_o,label='output-loop T_O')\r\nax.semilogx(w,sv_i,label='input-loop T_I')\r\nax.set(xlim=(.01,100),ylim=(0,2.5),xlabel='Frequency (rad/s)',ylabel='Largest singular value')\r\nax.legend();ax.grid(True);plt.tight_layout();plt.show()\r\nprint('mimo_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 723,
+      "title": "复核全部习题和度量边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import curve_fit",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 729,
+          "delim": "`",
+          "code": "# Retain all four exercises; clarify the missing phase information in exercise 2.\r\ns=10j\r\nG0=2/(s+1);Gp=2.4/(s+1)+.1/(s*s+.2*s+100)\r\nprint('answer1_resonance',abs(Gp-G0),abs((Gp-G0)/G0))\r\nmag=np.array([.95,1.05,.98,1.02,1.10])\r\nfor nominal in [1.,.9]:\r\n    lower=abs(mag/nominal-1);upper=mag/nominal+1\r\n    print('answer2_magnitude_only_bounds',nominal,lower,upper)\r\nprint('same_magnitude_opposite_phase_relative_error',abs((-1-1)/1))\r\nfor delta in [-1.,0.,1.]:\r\n    for si in [0j,1j,10j]:\r\n        P=np.array([[-.5/(si+1),si/(si+1)],[.5/(si+1),1/(si+1)]])\r\n        Fu=P[1,1]+P[1,0]*delta/(1-P[0,0]*delta)*P[0,1]\r\n        target=(1+.5*delta)/(si+1+.5*delta)\r\n        assert abs(Fu-target)<1e-12\r\nprint('answer3_lft_complete')\r\nprint('answer4_sample_utilization',1/np.array([1.5,1.1,3.2]))\r\n# SISO coprime factor example; simultaneous scaling cancels and is not multiplicative plant uncertainty.\r\nsi=1j;N=1/(si+2);M=(si+1)/(si+2);delta=.2\r\nprint('coprime_nominal_wrong_correct',N/M,N*(1+delta)/(M*(1+delta)),N*(1+delta)/M)\r\n# G1=0 and G2=eps/(s-1): small frequency magnitude does not remove an unstable mode.\r\neps=.1\r\nprint('chordal_supremum_only',eps/np.sqrt(1+eps*eps))\r\n# normalized N2=eps/(s+a), M2=(s-1)/(s+a), a=sqrt(1+eps^2).\r\n# Gamma2^* Gamma1 = (s+1)/(s-a): no RHP zero, one RHP pole -> nonzero winding.\r\nprint('normalized_graph_cross_RHP_pole',np.sqrt(1+eps*eps),'zeros_minus_poles',-1)\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

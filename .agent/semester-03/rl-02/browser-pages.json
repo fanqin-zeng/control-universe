@@ -1,0 +1,102 @@
+{
+  "charts": [
+    {
+      "height": 300,
+      "width": 623.3333740234375
+    },
+    {
+      "height": 300,
+      "width": 623.3333740234375
+    }
+  ],
+  "h1": 1,
+  "h2": [
+    {
+      "id": "从送餐回报到状态价值",
+      "text": "从送餐回报到状态价值"
+    },
+    {
+      "id": "给定策略的两种价值",
+      "text": "给定策略的两种价值"
+    },
+    {
+      "id": "回报的一步分解",
+      "text": "回报的一步分解"
+    },
+    {
+      "id": "反复送餐的循环模型",
+      "text": "反复送餐的循环模型"
+    },
+    {
+      "id": "解出给定策略的价值",
+      "text": "解出给定策略的价值"
+    },
+    {
+      "id": "最优方程与策略改进",
+      "text": "最优方程与策略改进"
+    },
+    {
+      "id": "值迭代与停止证书",
+      "text": "值迭代与停止证书"
+    },
+    {
+      "id": "实验与适用边界",
+      "text": "实验与适用边界"
+    },
+    {
+      "id": "习题",
+      "text": "习题"
+    },
+    {
+      "id": "答案",
+      "text": "答案"
+    }
+  ],
+  "hrefs": [
+    "/control-universe/rl-control/dynamic-programming/#从送餐回报到状态价值",
+    "/control-universe/rl-control/dynamic-programming/#给定策略的两种价值",
+    "/control-universe/rl-control/dynamic-programming/#回报的一步分解",
+    "/control-universe/rl-control/dynamic-programming/#反复送餐的循环模型",
+    "/control-universe/rl-control/dynamic-programming/#解出给定策略的价值",
+    "/control-universe/rl-control/dynamic-programming/#最优方程与策略改进",
+    "/control-universe/rl-control/dynamic-programming/#值迭代与停止证书",
+    "/control-universe/rl-control/dynamic-programming/#实验与适用边界",
+    "/control-universe/rl-control/dynamic-programming/#习题",
+    "/control-universe/rl-control/dynamic-programming/#答案",
+    "#从送餐回报到状态价值",
+    "#给定策略的两种价值",
+    "#回报的一步分解",
+    "#反复送餐的循环模型",
+    "#解出给定策略的价值",
+    "#最优方程与策略改进",
+    "#值迭代与停止证书",
+    "#实验与适用边界",
+    "#习题",
+    "#答案"
+  ],
+  "ids": [
+    "base-ui-:R3sqfkq:",
+    "价值函数与贝尔曼方程",
+    "从送餐回报到状态价值",
+    "给定策略的两种价值",
+    "回报的一步分解",
+    "反复送餐的循环模型",
+    "解出给定策略的价值",
+    "最优方程与策略改进",
+    "值迭代与停止证书",
+    "实验与适用边界",
+    "习题",
+    "答案",
+    "codex-browser-sidebar-comments-root"
+  ],
+  "katex": 0,
+  "notebookText": "实验一：策略价值与策略改进运行完成全部运行 重置实验 停止本页 Python初始化代码import time\nimport numpy as np\ndef evaluate(p=.6,g=.9,a=.25):\n    P=np.array([[1-a,a],[1.,0.]])\n    r=np.array([(1-a)*(10*p-4)-a,6.])\n    return np.linalg.solve(np.eye(2)-g*P,r)\ndef action_values(v,p=.6,g=.9):\n    return np.array([10*p-4+g*v[0],-1+g*v[1]])\n代码 1print('episodic V_H Q_deliver Q_charge V_L',6.,2.,-1+.9*6,.75*2+.25*(-1+.9*6))\nprint('terminal future values',0.,0.)\np=.6;g=.9;a=.25\nP=np.array([[1-a,a],[1.,0.]])\nr=np.array([(1-a)*(10*p-4)-a,6.])\nv=evaluate(p,g,a)\nprint('P',P,'r',r,'V',v,'Q_L',action_values(v))\nprint('weighted Q',(1-a)*action_values(v)[0]+a*action_values(v)[1])\nprint('cyclic threshold',(3+10*g)/(10*(1+g)),'episodic threshold',(3+6*g)/10)\nfor p,g,a in [(.6,.9,0),(.6,.9,1),(.8,.9,0),(.6,.5,0),(.6,.5,1),(12/19,.9,0),(12/19,.9,1),(0.,0.,.25)]:\n    print('p gamma alpha',p,g,a,'V',evaluate(p,g,a))\n运行代码 1episodic V_H Q_deliver Q_charge V_L 6.0 2.0 4.4 2.6\nterminal future values 0.0 0.0\nP [[0.75 0.25]\n [1.   0.  ]] r [1.25 6.  ] V [21.2244898  25.10204082] Q_L [21.10204082 21.59183673]\nweighted Q 21.224489795918366\ncyclic threshold 0.631578947368421 episodic threshold 0.8400000000000001\np gamma alpha 0.6 0.9 0 V [20. 24.]\np gamma alpha 0.6 0.9 1 V [23.15789474 26.84210526]\np gamma alpha 0.8 0.9 0 V [40. 42.]\np gamma alpha 0.6 0.5 0 V [4. 8.]\np gamma alpha 0.6 0.5 1 V [2.66666667 7.33333333]\np gamma alpha 0.631578947368421 0.9 0 V [23.15789474 26.84210526]\np gamma alpha 0.631578947368421 0.9 1 V [23.15789474 26.84210526]\np gamma alpha 0.0 0.0 0.25 V [-3.25  6.  ]\n代码 2start=time.perf_counter()\na=0.\nfor solve in range(1,5):\n    v=evaluate(a=a);q=action_values(v)\n    old=int(a);choice=old if abs(q[0]-q[1])<1e-12 else int(np.argmax(q))\n    print('policy solve',solve,'alpha',a,'V',v,'Q',q,'next alpha',choice)\n    if choice==old: break\n    a=float(choice)\nprint('wall seconds',time.perf_counter()-start)\nP1=np.array([[.75,.25],[1.,0.]])\nA1=np.eye(2)-P1\nprint('gamma=1 cyclic rank',np.linalg.matrix_rank(A1),'det',np.linalg.det(A1))\nassert np.linalg.matrix_rank(A1)==1\nprint('gamma=1 cyclic linear system is singular; discounted theorem does not apply')\nprint('zero reward identity kernel: every constant V solves V=V at gamma=1')\n运行代码 2policy solve 1 alpha 0.0 V [20. 24.] Q [20.  20.6] next alpha 1\npolicy solve 2 alpha 1.0 V [23.15789474 26.84210526] Q [22.84210526 23.15789474] next alpha 1\nwall seconds 0.0007999999999999119\ngamma=1 cyclic rank 1 det 0.0\ngamma=1 cyclic linear system is singular; discounted theorem does not apply\nzero reward identity kernel: every constant V solves V=V at gamma=1\n\n实验二：同步值迭代与误差证书运行完成全部运行 重置实验 停止本页 Python初始化代码import time\nimport numpy as np\np=.6;g=.9;a=.25\nP=np.array([[1-a,a],[1.,0.]])\nr=np.array([(1-a)*(10*p-4)-a,6.])\ndef backup(v,optimal=True):\n    return np.array([max(10*p-4+g*v[0],-1+g*v[1]),6+g*v[0]]) if optimal else r+g*P@v\nexact_policy=np.linalg.solve(np.eye(2)-g*P,r)\nexact_opt=np.array([(-1+6*g)/(1-g*g),6+g*(-1+6*g)/(1-g*g)])\n代码 1for optimal in [False,True]:\n    v=np.zeros(2);target=exact_opt if optimal else exact_policy\n    for k in range(81):\n        if k in [0,1,2,3,20,80]:\n            delta=np.max(np.abs(backup(v,optimal)-v))\n            print('optimal',optimal,'k',k,'V',v,'residual',delta,'bound',delta/(1-g),'error',np.max(np.abs(v-target)))\n        v=backup(v,optimal)\nprint('exercise bound',.01/(1-.9))\n运行代码 1optimal False k 0 V [0. 0.] residual 6.0 bound 60.000000000000014 error 25.102040816326532\noptimal False k 1 V [1.25 6.  ] residual 2.19375 bound 21.937500000000007 error 19.97448979591837\noptimal False k 2 V [3.44375 7.125  ] residual 1.9743750000000002 bound 19.743750000000006 error 17.977040816326532\noptimal False k 3 V [5.17765625 9.099375  ] residual 1.6146210937500003 bound 16.14621093750001 error 16.046833545918368\noptimal False k 20 V [18.54980339 22.42735442] residual 0.2674686400996755 bound 2.6746864009967557 error 2.6746864009928615\noptimal False k 80 V [21.21968336 25.09723438] residual 0.0004806439011630914 bound 0.004806439011630915 error 0.004806439011616703\noptimal True k 0 V [0. 0.] residual 6.0 bound 60.000000000000014 error 26.842105263157904\noptimal True k 1 V [2. 6.] residual 2.4000000000000004 bound 24.00000000000001 error 21.157894736842113\noptimal True k 2 V [4.4 7.8] residual 2.160000000000001 bound 21.600000000000016 error 19.042105263157904\noptimal True k 3 V [6.02 9.96] residual 1.9440000000000008 bound 19.440000000000012 error 17.137894736842114\noptimal True k 20 V [20.34243537 23.98398742] residual 0.32420441224151375 bound 3.2420441224151384 error 2.8581178447607556\noptimal True k 80 V [23.15283533 26.8369692 ] residual 0.0005825986680747519 bound 0.00582598668074752 error 0.005136067205409489\nexercise bound 0.10000000000000002\n代码 2start=time.perf_counter();v=np.zeros(2);n=0;tol=1e-8;cap=1000\nwhile np.max(np.abs(backup(v)-v))/(1-g)>tol and n<cap:\n    v=backup(v);n+=1\ndelta=np.max(np.abs(backup(v)-v));bound=delta/(1-g)\nprint('backups',n,'V',v,'residual',delta,'bound',bound,'tolerance met',bound<=tol)\nprint('wall seconds',time.perf_counter()-start)\nassert bound<=tol\nassert np.max(np.abs(v-exact_opt))<=bound+1e-12\nassert np.max(np.abs(exact_policy-np.array([1040/49,1230/49])))<1e-10\nprint('finite horizon gamma=1 episodic charge return',-1+6)\n运行代码 2backups 206 V [23.15789473 26.84210525] residual 9.998259997701098e-10 bound 9.9982599977011e-09 tolerance met True\nwall seconds 0.0036000000000058208\nfinite horizon gamma=1 episodic charge return 5\n",
+  "outputs": [
+    "episodic V_H Q_deliver Q_charge V_L 6.0 2.0 4.4 2.6\nterminal future values 0.0 0.0\nP [[0.75 0.25]\n [1.   0.  ]] r [1.25 6.  ] V [21.2244898  25.10204082] Q_L [21.10204082 21.59183673]\nweighted Q 21.224489795918366\ncyclic threshold 0.631578947368421 episodic threshold 0.8400000000000001\np gamma alpha 0.6 0.9 0 V [20. 24.]\np gamma alpha 0.6 0.9 1 V [23.15789474 26.84210526]\np gamma alpha 0.8 0.9 0 V [40. 42.]\np gamma alpha 0.6 0.5 0 V [4. 8.]\np gamma alpha 0.6 0.5 1 V [2.66666667 7.33333333]\np gamma alpha 0.631578947368421 0.9 0 V [23.15789474 26.84210526]\np gamma alpha 0.631578947368421 0.9 1 V [23.15789474 26.84210526]\np gamma alpha 0.0 0.0 0.25 V [-3.25  6.  ]\n",
+    "policy solve 1 alpha 0.0 V [20. 24.] Q [20.  20.6] next alpha 1\npolicy solve 2 alpha 1.0 V [23.15789474 26.84210526] Q [22.84210526 23.15789474] next alpha 1\nwall seconds 0.0007999999999999119\ngamma=1 cyclic rank 1 det 0.0\ngamma=1 cyclic linear system is singular; discounted theorem does not apply\nzero reward identity kernel: every constant V solves V=V at gamma=1\n",
+    "optimal False k 0 V [0. 0.] residual 6.0 bound 60.000000000000014 error 25.102040816326532\noptimal False k 1 V [1.25 6.  ] residual 2.19375 bound 21.937500000000007 error 19.97448979591837\noptimal False k 2 V [3.44375 7.125  ] residual 1.9743750000000002 bound 19.743750000000006 error 17.977040816326532\noptimal False k 3 V [5.17765625 9.099375  ] residual 1.6146210937500003 bound 16.14621093750001 error 16.046833545918368\noptimal False k 20 V [18.54980339 22.42735442] residual 0.2674686400996755 bound 2.6746864009967557 error 2.6746864009928615\noptimal False k 80 V [21.21968336 25.09723438] residual 0.0004806439011630914 bound 0.004806439011630915 error 0.004806439011616703\noptimal True k 0 V [0. 0.] residual 6.0 bound 60.000000000000014 error 26.842105263157904\noptimal True k 1 V [2. 6.] residual 2.4000000000000004 bound 24.00000000000001 error 21.157894736842113\noptimal True k 2 V [4.4 7.8] residual 2.160000000000001 bound 21.600000000000016 error 19.042105263157904\noptimal True k 3 V [6.02 9.96] residual 1.9440000000000008 bound 19.440000000000012 error 17.137894736842114\noptimal True k 20 V [20.34243537 23.98398742] residual 0.32420441224151375 bound 3.2420441224151384 error 2.8581178447607556\noptimal True k 80 V [23.15283533 26.8369692 ] residual 0.0005825986680747519 bound 0.00582598668074752 error 0.005136067205409489\nexercise bound 0.10000000000000002\n",
+    "backups 206 V [23.15789473 26.84210525] residual 9.998259997701098e-10 bound 9.9982599977011e-09 tolerance met True\nwall seconds 0.0036000000000058208\nfinite horizon gamma=1 episodic charge return 5\n"
+  ],
+  "scrollWidth": 1265,
+  "width": 1265
+}

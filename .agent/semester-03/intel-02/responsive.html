@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>INTEL-02 responsive acceptance</title>
+<style>body{font:14px sans-serif}iframe{width:375px;height:720px;border:1px solid #94a3b8}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:800px}</style>
+<p>375px same-origin lesson viewport</p><button id="capture">读取实际DOM</button><button id="save">下载DOM记录</button><pre id="result">等待课程加载</pre>
+<iframe id="lesson" title="375px course"></iframe>
+<script>
+const f=document.querySelector('iframe');f.src=new URL('./intelligent/fuzzy-controller-design',location.href).href;
+let last;
+document.querySelector('#capture').onclick=()=>{
+const d=f.contentDocument,w=f.contentWindow,els=[...d.querySelectorAll('[id]')],ids=els.map(e=>e.id);
+last={url:f.src,viewport:w.innerWidth,documentWidth:d.documentElement.scrollWidth,bodyWidth:d.body.scrollWidth,
+h1:[...d.querySelectorAll('h1')].map(e=>e.textContent),h2:[...d.querySelectorAll('h2')].map(e=>({id:e.id,text:e.textContent})),
+ids,duplicates:ids.filter((v,i)=>ids.indexOf(v)!==i),canvases:d.querySelectorAll('canvas').length,katexErrors:d.querySelectorAll('.katex-error').length,
+images:[...d.images].map(e=>({src:e.getAttribute('src'),complete:e.complete,width:e.naturalWidth})),
+status:d.querySelector('[data-testid="intel02-explorer"] [role="status"]').textContent,
+sidebarTargets:[...d.querySelectorAll('a[href*="#"]')].map(e=>({href:e.getAttribute('href'),exists:!!d.getElementById(decodeURIComponent(e.getAttribute('href').split('#')[1]))}))};
+document.querySelector('#result').textContent=JSON.stringify(last,null,2);
+};
+document.querySelector('#save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(last,null,2)],{type:'application/json'}));a.download='intel02-browser-dom.json';a.click();};
+</script>
