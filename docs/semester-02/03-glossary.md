@@ -637,6 +637,9 @@
 | 数据集聚合 | Dataset Aggregation、DAgger | — | 1 门 / 1 次 | RLEARN-02：在学习者访问的观测上查询专家并聚合训练；性能界有条件。 |
 | 持续激励 | persistent excitation, PE | 持久激励 | ID-04 | 目录保留持久激励，正文标准译名持续激励；固定窗口统一方向下界 |
 | 数据信息矩阵 | data information matrix | — | ID-04 | 回归外积和，不含先验 |
+| 工具变量 | instrumental variable, IV | — | ID-05 | 与误差正交且与回归量有可解相关矩 |
+| 弱工具变量 | weak instrument | — | ID-05 | 总体相关矩较弱时有限样本可能不稳定 |
+| 估计一致性 | statistical consistency | — | ID-05 | 依概率收敛到真参数，区别多智能体Consensus |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

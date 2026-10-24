@@ -3895,7 +3895,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "反馈怎样带来相关",
+            "title": "反馈怎样带来相关"
+          },
+          {
+            "slug": "一个有时序的闭环例",
+            "title": "一个有时序的闭环例"
+          },
+          {
+            "slug": "最小二乘趋向哪里",
+            "title": "最小二乘趋向哪里"
+          },
+          {
+            "slug": "工具变量的两个条件",
+            "title": "工具变量的两个条件"
+          },
+          {
+            "slug": "交互检查总体矩",
+            "title": "交互检查总体矩"
+          },
+          {
+            "slug": "同一批记录的有限样本实验",
+            "title": "同一批记录的有限样本实验"
+          },
+          {
+            "slug": "还有哪些闭环路线",
+            "title": "还有哪些闭环路线"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "frequency-domain-id",

@@ -1,0 +1,66 @@
+{
+  "source": "content/identification/instrumental-variable.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 94,
+      "title": "默认总体矩：用分数复算",
+      "unknownAttrs": [],
+      "setupCode": "from fractions import Fraction as F\r\nb=F(4,5); f=F(1,2); rho=F(1,2); amplitude=F(1,2)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 96,
+          "delim": "`",
+          "code": "c=-b*f\r\nVv=F(1,4)/(1-rho*rho)\r\nS=Vv/(1-c*rho)\r\nVy=(b*b*amplitude*amplitude+Vv+2*c*rho*S)/(1-c*c)\r\nVu=amplitude*amplitude+f*f*Vy\r\nuv=-f*rho*S\r\nls=b+uv/Vu\r\nassert (Vv,S,Vy,Vu,uv,ls)==(F(1,3),F(5,18),F(86,189),F(275,756),F(-5,72),F(67,110))\r\nprint('population_exact',{'Vv':str(Vv),'S':str(S),'Vy':str(Vy),'Vu':str(Vu),'uv':str(uv)})\r\nprint('LS_target',float(ls),'IV_target',float(b),'instrument_moment',float(amplitude**2))\r\nprint('population_fraction_checks_passed')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 156,
+      "title": "32次重复：同记录OLS、IV与正确ARX",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\ndef closed_record(feedback=.5,color=.5,amplitude=.5,seed=1,count=4096,burn=256):\r\n    ref=np.random.default_rng(seed).choice([-amplitude,amplitude],count+burn)\r\n    innovation=np.random.default_rng(seed+104729).choice([-.5,.5],count+burn)\r\n    yp=vp=up=0.; rows=[]\r\n    for rk,w in zip(ref,innovation):\r\n        u=rk-feedback*yp; v=color*vp+w; y=.8*u+v\r\n        rows.append((rk,u,y,v,yp,up)); yp,vp,up=y,v,u\r\n    return np.array(rows)[burn:]\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 165,
+          "delim": "`",
+          "code": "mc_results={}\r\nfor label,feedback,color in [('colored',.5,.5),('open',0,.5),('white',.5,0)]:\r\n    estimates=[]\r\n    for seed in range(1,33):\r\n        r,u,y,v,yp,up=closed_record(feedback,color,seed=seed).T\r\n        denominator=r@u\r\n        # Numerical guard only; this is not a weak-instrument test.\r\n        assert abs(denominator)>1e-12*np.sqrt((r@r)*(u@u))\r\n        ols=(u@y)/(u@u); iv=(r@y)/denominator\r\n        X=np.column_stack((yp,u,up))\r\n        coeff,_,rank,_=np.linalg.lstsq(X,y,rcond=None)\r\n        assert rank==3\r\n        estimates.append([ols,iv,coeff[1]])\r\n        if label=='open': assert abs(ols-iv)<1e-12\r\n    values=np.array(estimates)\r\n    summary={'mean':values.mean(axis=0).tolist(),'std_ddof1':values.std(axis=0,ddof=1).tolist(),'rmse':np.sqrt(((values-.8)**2).mean(axis=0)).tolist(),'q05':np.quantile(values,.05,axis=0).tolist(),'q95':np.quantile(values,.95,axis=0).tolist(),'unavailable':0}\r\n    mc_results[label]=summary\r\n    print(label,summary)\r\nprint('all_32_seeds_reported')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 211,
+      "title": "独立协方差解与失败边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.linalg import solve_discrete_lyapunov\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 213,
+          "delim": "`",
+          "code": "b=.8; feedback=.5; rho=.5; amplitude=.5; sigma=.5\r\nc=-b*feedback\r\n# State [y_k,v_k]; independent innovations [r_{k-1},w_k].\r\nM=np.array([[c,rho],[0.,rho]])\r\nQ=np.array([[b*b*amplitude**2+sigma**2,sigma**2],[sigma**2,sigma**2]])\r\nP=solve_discrete_lyapunov(M,Q)\r\nassert np.allclose(P,[[86/189,5/18],[5/18,1/3]],atol=1e-12)\r\nvu=amplitude**2+feedback**2*P[0,0]\r\nuv=-feedback*rho*P[0,1]\r\nprint('independent_covariance',P.tolist(),'LS_target',b+uv/vu,'IV_target',b)\r\nassert abs(b+uv/vu-67/110)<1e-12\r\nbad_iv=b+uv/vu\r\nprint('input_as_instrument',bad_iv,'exclusion_moment',uv)\r\nzero_injection=0.\r\nassert zero_injection**2==0\r\nprint('zero_injection_IV_defined False')\r\narx_true=np.array([rho,b,-rho*b])\r\nassert np.allclose(arx_true,[.5,.8,-.4])\r\nprint('ARX_true_coefficients',arx_true.tolist())\r\n# Algebraic indirect reconstruction at q^{-1}=1; this is DC, not a fitted model.\r\nclosed_dc=b/(1+feedback*b)\r\nassert abs(closed_dc/(1-feedback*closed_dc)-b)<1e-12\r\nprint('closed_DC',closed_dc,'reconstructed_DC',b)\r\nprint('covariance_and_boundary_checks_passed')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
