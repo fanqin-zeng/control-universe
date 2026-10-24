@@ -277,7 +277,7 @@
 
 | 课程 | 状态 |
 |------|------|
-| [ ] 机器人数据 (robot-data) | 本期新增骨架；尚未编写 |
+| [x] 机器人数据 (robot-data) | RLEARN-01学期3新写；10H2、五题五答、三原始Notebook；严格内核/Pyodide与数据审计见 .agent/semester-03/rlearn-01/acceptance.md |
 | [ ] 模仿学习 (imitation-learning) | 本期新增骨架；尚未编写 |
 | [ ] 离线到在线学习 (offline-online-learning) | 本期新增骨架；尚未编写 |
 | [ ] 残差学习控制 (residual-learning) | 本期新增骨架；尚未编写 |

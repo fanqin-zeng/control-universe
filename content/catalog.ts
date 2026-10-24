@@ -5578,13 +5578,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "robot-data",
         "title": "机器人数据",
+        "subsections": [
+          {
+            "slug": "搬杯子之前先读懂记录",
+            "title": "搬杯子之前先读懂记录"
+          },
+          {
+            "slug": "一次尝试怎样成为轨迹",
+            "title": "一次尝试怎样成为轨迹"
+          },
+          {
+            "slug": "按可用时间配对观测与动作",
+            "title": "按可用时间配对观测与动作"
+          },
+          {
+            "slug": "动作数字必须带着执行语义",
+            "title": "动作数字必须带着执行语义"
+          },
+          {
+            "slug": "先划分轨迹再生成窗口",
+            "title": "先划分轨迹再生成窗口"
+          },
+          {
+            "slug": "只用训练数据确定变换",
+            "title": "只用训练数据确定变换"
+          },
+          {
+            "slug": "数据覆盖和公开资料的边界",
+            "title": "数据覆盖和公开资料的边界"
+          },
+          {
+            "slug": "从原日志到可交付数据",
+            "title": "从原日志到可交付数据"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
-          "robotics/trajectory-tracking",
-          "machine-learning/learning-evaluation"
+          "machine-learning/learning-problem",
+          "math/probability-basics"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "imitation-learning",
