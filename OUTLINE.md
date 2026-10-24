@@ -2,7 +2,7 @@
 
 > **本文件由 `npm run check -- --fix-outline` 自动生成，请勿手工编辑。**
 > 唯一权威数据源：`content/catalog.ts`；核对脚本：`scripts/check-catalog.mjs`。
-> 生成日期：2026-10-19
+> 生成日期：2026-10-24
 
 ## 1. 控制导论 (introduction)
 
@@ -130,7 +130,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 9.1 | 系统辨识框架 | identification-framework | ⬜ 骨架（占位页） | undergrad | theory | 9 | discrete-sampled/discrete-time-systems<br>math/probability-basics |
+| 9.1 | 系统辨识框架 | identification-framework | ✅ 已交付 v1.3 | undergrad | theory | 9 | discrete-sampled/discrete-time-systems<br>math/probability-basics |
 | 9.2 | 辨识模型 | model-structures | ⬜ 骨架（占位页） | undergrad | theory | 10 | identification/identification-framework<br>discrete-sampled/difference-equation |
 | 9.3 | 最小二乘辨识 | least-squares-rls | ⬜ 骨架（占位页） | undergrad | theory | 11 | identification/model-structures<br>math/matrix-decomposition<br>math/probability-basics |
 | 9.4 | 持久激励 | persistent-excitation | ⬜ 骨架（占位页） | grad | theory | 12 | identification/least-squares-rls |
@@ -320,14 +320,14 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 63（status = v1.3）
+- **已交付 v1.3**: 64（status = v1.3）
 - **有正文待审校**: 20（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 122（status = empty，渲染占位页）
+- **骨架占位**: 121（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 142（= draft 20 + empty 122 + 无 status 0）
-- **有 MDX 正文**: 83
-- **catalog 小节总数**: 954
-- **讨论日志**: 84 篇（覆盖 63 门；有 MDX 无日志 20 门）
+- **未完成 v1.3**: 141（= draft 20 + empty 121 + 无 status 0）
+- **有 MDX 正文**: 84
+- **catalog 小节总数**: 963
+- **讨论日志**: 85 篇（覆盖 64 门；有 MDX 无日志 20 门）
 - **交互组件**: 76 个文件（被正文引用 76，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个

@@ -3475,7 +3475,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "辨识任务",
+            "title": "辨识任务"
+          },
+          {
+            "slug": "数据与实验",
+            "title": "数据与实验"
+          },
+          {
+            "slug": "模型与准则",
+            "title": "模型与准则"
+          },
+          {
+            "slug": "贯穿算例",
+            "title": "贯穿算例"
+          },
+          {
+            "slug": "验证与边界",
+            "title": "验证与边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "model-structures",

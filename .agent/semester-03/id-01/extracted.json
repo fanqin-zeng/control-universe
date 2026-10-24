@@ -1,0 +1,55 @@
+{
+  "source": "content/identification/identification-framework.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 91,
+      "title": "水箱：估计后在另一段实验上验证",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\ndef tank(u, a=0.8, b=0.2, initial=0.0):\n    y = np.empty(len(u) + 1)\n    y[0] = initial\n    for k in range(len(u)):\n        y[k + 1] = a * y[k] + b * u[k]\n    return y\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 102,
+          "delim": "`",
+          "code": "u_est = np.array([1, 0, 1, 1, 0, 0, 1, 0], dtype=float)\ny_est = tank(u_est)\nPhi = np.column_stack((y_est[:-1], u_est))\ntheta, _, rank, singular = np.linalg.lstsq(Phi, y_est[1:], rcond=None)\nassert rank == 2\nassert np.allclose(theta, [0.8, 0.2], atol=1e-12, rtol=0)\nassert np.allclose(y_est[1:4], [0.2, 0.16, 0.328], atol=1e-12, rtol=0)\nprint('first_levels_cm', np.round(y_est[1:4], 6).tolist())\nprint('rank', rank, 'a_b', np.round(theta, 6).tolist())\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 112,
+          "delim": "`",
+          "code": "u_val = np.array([0, 1, 0, 1, 0, 1], dtype=float)\ny_val = tank(u_val, initial=0.3)\na_hat, b_hat = theta\none_step = a_hat * y_val[:-1] + b_hat * u_val\nfree_run = tank(u_val, a_hat, b_hat, initial=y_val[0])\nresidual = y_val[1:] - one_step\nrmse_prediction = float(np.sqrt(np.mean(residual ** 2)))\nrmse_simulation = float(np.sqrt(np.mean((y_val[1:] - free_run[1:]) ** 2)))\nassert max(rmse_prediction, rmse_simulation) < 1e-12\nprint('validation_initial_cm', y_val[0], 'pairs', len(u_val))\nprint('prediction_RMSE_cm', format(rmse_prediction, '.3e'))\nprint('simulation_RMSE_cm', format(rmse_simulation, '.3e'))\nprint('validation_levels_cm', np.round(y_val, 6).tolist())\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 157,
+      "title": "边界实验：完美拟合不能补足信息",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 162,
+          "delim": "`",
+          "code": "Phi_flat = np.ones((8, 2))\ntarget = np.ones(8)\nminimum_norm, _, rank_flat, _ = np.linalg.lstsq(Phi_flat, target, rcond=None)\nfor candidate in ([0.8, 0.2], [0.5, 0.5]):\n    assert np.allclose(Phi_flat @ candidate, target, atol=1e-12, rtol=0)\nassert rank_flat == 1\nassert np.allclose(minimum_norm, [0.5, 0.5], atol=1e-12, rtol=0)\nprint('steady_rank', rank_flat, 'minimum_norm', np.round(minimum_norm, 6).tolist())\nprint('both_candidates_fit', True)\nprint('from_y0_0_u0_1_next_cm', [0.2, 0.5])\nassert abs((0.8 * 0 + 0.2 * 1) - 0.2) < 1e-12\nassert abs((0.5 * 0 + 0.5 * 1) - 0.5) < 1e-12\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

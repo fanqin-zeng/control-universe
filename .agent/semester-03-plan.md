@@ -52,6 +52,7 @@
 | DISCRETE-08 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-08”；02–07已交付，保留01草稿，采样保持在本课定义 | .agent/semester-03/discrete-08/acceptance.md |
 | DISCRETE-09 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-09”；02–08已交付，保留01草稿，本课不依赖其未验收内容 | .agent/semester-03/discrete-09/acceptance.md |
 | DISCRETE-10 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-10”；02–09已交付，保留01草稿，本课只依赖已交付先修 | .agent/semester-03/discrete-10/acceptance.md |
+| ID-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-01，rank3；暂缓并行会话与此前未交付课程，本课只依赖已交付离散系统及概率基础 | .agent/semester-03/id-01/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
