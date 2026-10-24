@@ -133,7 +133,7 @@
 | 9.1 | 系统辨识框架 | identification-framework | ✅ 已交付 v1.3 | undergrad | theory | 9 | discrete-sampled/discrete-time-systems<br>math/probability-basics |
 | 9.2 | 辨识模型 | model-structures | ✅ 已交付 v1.3 | undergrad | theory | 10 | identification/identification-framework<br>discrete-sampled/difference-equation |
 | 9.3 | 最小二乘辨识 | least-squares-rls | ✅ 已交付 v1.3 | undergrad | theory | 11 | identification/model-structures<br>math/matrix-decomposition<br>math/probability-basics |
-| 9.4 | 持久激励 | persistent-excitation | ⬜ 骨架（占位页） | grad | theory | 12 | identification/least-squares-rls |
+| 9.4 | 持久激励 | persistent-excitation | ✅ 已交付 v1.3 | grad | theory | 12 | identification/least-squares-rls |
 | 9.5 | 闭环辨识 | instrumental-variable | ⬜ 骨架（占位页） | grad | theory | 13 | identification/persistent-excitation<br>classic/transfer-function<br>math/stochastic-processes<br>classic/pid-controller |
 | 9.6 | 频域辨识 | frequency-domain-id | ⬜ 骨架（占位页） | grad | theory | 11 | identification/model-structures<br>classic/frequency-domain-analysis<br>math/stochastic-processes<br>classic/frequency-response-design |
 | 9.7 | 子空间辨识 | subspace-id | ⬜ 骨架（占位页） | grad | theory | 12 | identification/least-squares-rls<br>modern/controllability-observability<br>math/matrix-decomposition |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 90（status = v1.3）
+- **已交付 v1.3**: 91（status = v1.3）
 - **有正文待审校**: 14（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 101（status = empty，渲染占位页）
+- **骨架占位**: 100（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 115（= draft 14 + empty 101 + 无 status 0）
-- **有 MDX 正文**: 104
-- **catalog 小节总数**: 1152
-- **讨论日志**: 113 篇（覆盖 90 门；有 MDX 无日志 14 门）
-- **交互组件**: 100 个文件（被正文引用 100，孤儿 0）
+- **未完成 v1.3**: 114（= draft 14 + empty 100 + 无 status 0）
+- **有 MDX 正文**: 105
+- **catalog 小节总数**: 1163
+- **讨论日志**: 114 篇（覆盖 91 门；有 MDX 无日志 14 门）
+- **交互组件**: 101 个文件（被正文引用 101，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

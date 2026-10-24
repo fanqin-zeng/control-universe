@@ -635,6 +635,8 @@
 | 模仿学习 | Imitation Learning | — | 1 门 / 1 次 | RLEARN-02：借助专家示范或反馈学习策略；不等同强化学习。 |
 | 行为克隆 | Behavior Cloning、BC | — | 1 门 / 1 次 | RLEARN-02：监督拟合专家动作；动作损失不等于闭环任务代价。 |
 | 数据集聚合 | Dataset Aggregation、DAgger | — | 1 门 / 1 次 | RLEARN-02：在学习者访问的观测上查询专家并聚合训练；性能界有条件。 |
+| 持续激励 | persistent excitation, PE | 持久激励 | ID-04 | 目录保留持久激励，正文标准译名持续激励；固定窗口统一方向下界 |
+| 数据信息矩阵 | data information matrix | — | ID-04 | 回归外积和，不含先验 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

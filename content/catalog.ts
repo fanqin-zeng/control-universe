@@ -3708,7 +3708,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "信息藏在哪个方向",
+            "title": "信息藏在哪个方向"
+          },
+          {
+            "slug": "从满秩到持久激励",
+            "title": "从满秩到持久激励"
+          },
+          {
+            "slug": "四种输入与回归量",
+            "title": "四种输入与回归量"
+          },
+          {
+            "slug": "参数为什么逐渐可辨",
+            "title": "参数为什么逐渐可辨"
+          },
+          {
+            "slug": "交互观察信息窗口",
+            "title": "交互观察信息窗口"
+          },
+          {
+            "slug": "幅值与噪声的代价",
+            "title": "幅值与噪声的代价"
+          },
+          {
+            "slug": "实际试验怎样检查",
+            "title": "实际试验怎样检查"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "instrumental-variable",

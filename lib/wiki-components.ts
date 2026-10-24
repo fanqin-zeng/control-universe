@@ -1,3 +1,4 @@
+import { PersistentExcitationExplorer } from "@/components/wiki/persistent-excitation-explorer";
 import { BellmanValuesExplorer } from "@/components/wiki/bellman-values-explorer";
 import { ImitationLearningExplorer } from '@/components/wiki/imitation-learning-explorer';
 import { PredictionModelExplorer } from "@/components/wiki/prediction-model-explorer";
@@ -121,6 +122,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  PersistentExcitationExplorer,
   BellmanValuesExplorer,
   ImitationLearningExplorer,
   PredictionModelExplorer,
