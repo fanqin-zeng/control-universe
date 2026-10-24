@@ -28,3 +28,8 @@ Phase1–4签发，新写九H2、四题全部子问/关键推导、三Notebook�
 并行：rank5独立20195/20295/20395/8995、私有dist与Git索引；不清共享.next、不重置默认索引。开工共享check有6项FAIL、学期表RL-02在途列数错误，保留他课检查点；提交用最新已提交master叠加仅本课检查，不把整个脏工作树说成通过。仅本课，不发布Pages，不生产ROBUST-08；实际master提交后补回执。
 
 提交元数据收尾：并行master已交付全部前课，辅助脚本动态重算暂缓列表生成空项，首轮已签发投影的学期检查退出1；现保留开工时ML-09/ID-09的有效历史顺序例外，不更改校验器/课程内容，重新执行六门槛。
+
+
+真实master交付提交：709e34a88ec19c7f254f4dd4527b76de52aebc6c。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
+
+收尾实测：rank5内核6→0，20195/20295/20395/8995四端口全部释放，见kernel-cleanup.json与ports-cleanup.json；其他会话进程/共享缓存保留。六项提交门槛最终退出0，保留历史顺序例外的元数据纠正已复核。
