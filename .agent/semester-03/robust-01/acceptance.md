@@ -33,3 +33,7 @@ PY-018已按实跑关闭，其它任务ID/原因/处置保留；S04本课Noteboo
 master真实提交回执待生成后补录；未预填hash。
 
 提交隔离：以52cfac9b01bcd5b89f01d9bdd77b96ea54982ffa为基线只叠加本课改动。staged-check/semester/math/glossary/python均退出0。全局fix编号072已被并行MPC-01未提交详情占用，因此隔离提交将072登记为预留待核，保留本课073；共享工作区已有实际072详情和索引，不改写它，待MPC归档时替换预留。该处修正后staged-fix复验结果见对应日志。刷新大纲/统计首跑退出1仅表示修复前统计差异，后续check退出0。
+
+真实master交付提交：3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46。最终提交隔离的check/semester/math/glossary/python/fix六项均退出0，原始staged-validation.json与staged-*.log对应本课提交树基线。默认Git索引旧空锁经独占打开确认无进程持有且已持续超过4分钟，移至.git下隔离保存后重试；只同步本课未被其它会话另行暂存的条目，其它会话暂存保持。此后补录本回执，不发布gh-pages。
+
+真实master交付提交：3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46。最终提交隔离的check/semester/math/glossary/python/fix六项均退出0，原始staged-validation.json与staged-*.log对应本课提交树基线。默认Git索引旧空锁经独占打开确认无进程持有且已持续超过4分钟，移至.git下隔离保存后重试；只同步本课未被其它会话另行暂存的条目，其它会话暂存保持。此后补录本回执，不发布gh-pages。

@@ -219,7 +219,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;rank5原生/Pyodide/页面/构建通过，待真实master回执 |
+| ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;commit:3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46;rank5原生/Pyodide/页面/构建与隔离提交树检查通过 |
 | ROBUST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
