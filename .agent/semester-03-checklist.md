@@ -77,6 +77,7 @@
 | DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
 | DEP15 | EST-01—08与bd2b41c快照授权发布及公网验收 | [x] | docs/deployment/est08-release/README.md;docs/deployment/est08-release/public-http.json;docs/deployment/est08-release/public-courses.json;发布commit:de6069b43eb22902f4099c88e2aae48ba587ca9c |
 | DEP17 | ML-01—09已交付快照授权发布与公网验收 | [x] | docs/deployment/ml09-release/README.md;docs/deployment/ml09-release/validation.json;批准9160c9b;发布99945e1;九课18本35cell实跑 |
+| DEP18 | MPC-01—11已交付8ab3a80快照授权发布及公网验收 | [x] | docs/deployment/mpc11-release/README.md;docs/deployment/mpc11-release/public-http.json;docs/deployment/mpc11-release/public-courses.json;发布commit:beb3108506c42bcc5b50cea36be14da8dcbfac45 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
