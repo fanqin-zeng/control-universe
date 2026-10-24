@@ -30,5 +30,5 @@ for(const name of ['native-notebook-ui.json','pages-notebook-ui.json']){
  const time=JSON.parse(report.outputs[2].split('\n')[0]);for(let i=0;i<3;i++)for(const key of ['pole','rho'])near(time[i][key],ref.timing[i][key],1e-12);
  outputs.push(name);
 }
-const summary={pass:true,sourceHash:hash,configs:num.configs,tsQuantities:num.tsQuantities,tsError:num.tsError,maxNotebookError:num.maxError,notebooks:3,cells:6,compared,h2:9,nativeAndPagesNotebookUi:true,narrowLayout:layout,builds};
+const summary={pass:true,sourceHash:hash,configs:num.configs,tsQuantities:num.tsQuantities,tsError:num.tsError,maxNotebookError:num.maxError,notebooks:3,cells:6,compared,h2:9,nativeAndPagesNotebookUi:true,narrowLayout:pagesLayout,nativeDraftLayout:layout,postcssHash:css.postcssHash,builds};
 fs.writeFileSync(e+'validation.json',JSON.stringify(summary,null,2)+'\n');console.log(JSON.stringify(summary));
