@@ -1,3 +1,4 @@
+import { StatisticalEstimationExplorer } from "@/components/wiki/statistical-estimation-explorer";
 import BuckConverterExplorer from "@/components/wiki/buck-converter-explorer";
 import { DigitalPidExplorer } from "@/components/wiki/digital-pid-explorer";
 import { SafetyStoppingExplorer } from "@/components/wiki/safety-stopping-explorer";
@@ -111,6 +112,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  StatisticalEstimationExplorer,
   BuckConverterExplorer,
   SafetyStoppingExplorer,
   EmbodiedLoopExplorer,

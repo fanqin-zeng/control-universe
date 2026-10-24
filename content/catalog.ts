@@ -3722,7 +3722,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "估计量与误差",
+            "title": "估计量与误差"
+          },
+          {
+            "slug": "最小二乘",
+            "title": "最小二乘"
+          },
+          {
+            "slug": "噪声不同怎样加权",
+            "title": "噪声不同怎样加权"
+          },
+          {
+            "slug": "从似然得到估计",
+            "title": "从似然得到估计"
+          },
+          {
+            "slug": "先验与后验",
+            "title": "先验与后验"
+          },
+          {
+            "slug": "检验估计的条件",
+            "title": "检验估计的条件"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "kalman-filter",

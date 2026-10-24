@@ -145,7 +145,7 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 10.1 | 状态估计框架 | estimation-problem | ✅ 已交付 v1.3 | undergrad | theory | 11 | modern/state-observer<br>math/stochastic-processes<br>discrete-sampled/discrete-time-systems |
-| 10.2 | 统计估计 | least-squares-ml | ⬜ 骨架（占位页） | grad | theory | 12 | estimation/estimation-problem<br>math/convex-optimization<br>math/probability-basics |
+| 10.2 | 统计估计 | least-squares-ml | ✅ 已交付 v1.3 | grad | theory | 12 | estimation/estimation-problem<br>math/convex-optimization<br>math/probability-basics |
 | 10.3 | 卡尔曼滤波 | kalman-filter | 🟨 有正文待审校 | grad | theory | 13 | estimation/least-squares-ml<br>modern/controllability-observability<br>math/stochastic-processes |
 | 10.4 | 扩展卡尔曼滤波 | extended-kalman-filter | ⬜ 骨架（占位页） | grad | theory | 14 | estimation/kalman-filter<br>math/multivariable-calculus<br>nonlinear/lyapunov-stability |
 | 10.5 | 无迹卡尔曼滤波 | unscented-kalman-filter | ⬜ 骨架（占位页） | grad | theory | 14 | estimation/kalman-filter<br>math/probability-basics |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 80（status = v1.3）
+- **已交付 v1.3**: 81（status = v1.3）
 - **有正文待审校**: 16（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 109（status = empty，渲染占位页）
+- **骨架占位**: 108（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 125（= draft 16 + empty 109 + 无 status 0）
-- **有 MDX 正文**: 96
-- **catalog 小节总数**: 1073
-- **讨论日志**: 102 篇（覆盖 80 门；有 MDX 无日志 16 门）
-- **交互组件**: 90 个文件（被正文引用 90，孤儿 0）
+- **未完成 v1.3**: 124（= draft 16 + empty 108 + 无 status 0）
+- **有 MDX 正文**: 97
+- **catalog 小节总数**: 1083
+- **讨论日志**: 103 篇（覆盖 81 门；有 MDX 无日志 16 门）
+- **交互组件**: 91 个文件（被正文引用 91，孤儿 0）
 - **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
