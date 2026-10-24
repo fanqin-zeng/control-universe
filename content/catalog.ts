@@ -3369,7 +3369,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [{"slug": "从房间温升提出问题", "title": "从房间温升提出问题"}, {"slug": "把经验写成学习问题", "title": "把经验写成学习问题"}, {"slug": "训练误差与总体风险", "title": "训练误差与总体风险"}, {"slug": "三份数据各做什么", "title": "三份数据各做什么"}, {"slug": "复杂度与过拟合", "title": "复杂度与过拟合"}, {"slug": "工况变化与控制边界", "title": "工况变化与控制边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}]
       },
       {
         "slug": "supervised-learning",

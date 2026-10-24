@@ -1,0 +1,174 @@
+---
+title: "学习问题与泛化"
+description: "从房间温升预测理解样本、损失、训练与泛化，学会隔离训练、验证和测试信息。"
+---
+
+# 学习问题与泛化
+
+## 从房间温升提出问题
+
+冬天给一间房间加热：功率越大，下一分钟通常升温越多。假设初始室温、室外温度和门窗状态都固定，我们记录几档功率与对应温升，希望预测一个**没试过的功率**会带来多少温升。已有测量会受传感器误差影响；把每个旧读数都记住，是否就能预测新读数？
+
+<svg viewBox="0 0 660 125" role="img" aria-label="加热功率输入房间，测量下一分钟温升，再用功率温升样本拟合预测模型" style={{width:'100%',height:'auto',maxWidth:660}}>
+  <rect x="5" y="25" width="140" height="65" rx="8" fill="#e0f2fe" stroke="#0369a1"/><text x="75" y="63" textAnchor="middle" fill="#172033">加热功率</text>
+  <path d="M145 56H224l-10 -6m10 6l-10 6" stroke="#334155" fill="none"/>
+  <rect x="225" y="25" width="175" height="65" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="312" y="52" textAnchor="middle" fill="#172033">初温、门窗固定</text><text x="312" y="76" textAnchor="middle" fill="#172033">房间接受加热</text>
+  <path d="M400 56H479l-10 -6m10 6l-10 6" stroke="#334155" fill="none"/>
+  <rect x="480" y="25" width="175" height="65" rx="8" fill="#dcfce7" stroke="#15803d"/><text x="568" y="63" textAnchor="middle" fill="#172033">下一分钟温升</text>
+  <text x="330" y="115" textAnchor="middle" fill="#334155">记录功率与温升的配对，预测下一次实验</text>
+</svg>
+
+本课学完，你应能把这个任务写成“输入、输出、模型、损失和数据来源”，区分训练误差与总体风险，说明三份数据的用途，并判断一个低误差模型能否直接用于控制。先修是[概率基础](/math/probability-basics)与[线性代数基础](/math/linear-algebra-basics)；本课局部解释拟合，具体训练算法留给下一课。
+
+## 把经验写成学习问题
+
+一条样本是配对 $(x_i,y_i)$：$x_i$ 是预测时已知的输入，$y_i$ 是之后测得的目标。温升预测属于**监督学习**，即训练时有输入及其目标标签。回归预测连续数值；分类预测离散类别；本课只做回归。无监督学习从无标签输入中找结构，强化学习则通过动作、环境反馈与累计回报学习，二者不等同于这份回归数据。
+
+为便于手算，将功率和温升归一化。$x$ 是围绕参考功率的偏差，负数表示低于参考功率，**不是负的加热功率**；$y$ 是用固定温升尺度表示的读数。本文的误差单位都是归一化温升的平方，不把它冒充真实房间实验。
+
+模型 $f_\theta(x)$ 把输入映射成预测，$\theta$ 是由训练数据确定的参数。先考虑直线：
+
+$$
+f_\theta(x)=b+wx,\qquad \theta=(b,w).
+$$
+
+给定 $x$ 计算预测是**推理**；调整 $b,w$ 使旧样本的误差变小是**训练**。平方损失把一次预测与标签的差变成非负代价：
+
+$$
+\ell(f_\theta(x),y)=(f_\theta(x)-y)^2.
+$$
+
+损失的选择反映任务要求：平方损失对大偏差更敏感，但不直接表达“绝不能超过某温度”的硬约束。真实部署还要明确特征在预测时是否能获得、测量单位是否一致、标签对应哪个时刻。
+
+## 训练误差与总体风险
+
+训练集 $D_{\mathrm{tr}}$ 含 $n$ 条记录。**经验风险**是已有样本上的平均损失：
+
+$$
+\widehat R_{\mathrm{tr}}(\theta)=\frac1n\sum_{i=1}^{n}\ell(f_\theta(x_i),y_i).
+$$
+
+本课训练选择在指定模型族中让这个量最小的参数，称为经验风险最小化。常数模型只有 $b$；直线有 $b,w$；四次多项式有五个系数。模型族是“允许画哪些曲线”，参数是“选其中哪一条”。
+
+我们真正关心未来输入和标签。若其联合分布为 $P$，**总体风险**为
+
+$$
+R_P(\theta)=\mathbb E_{(x,y)\sim P}\big[\ell(f_\theta(x),y)\big].
+$$
+
+期望是对可能未来样本的加权平均，通常无法直接算出。训练均值是已知数据上的数，$R_P$ 取决于未知分布；两者不能画等号。泛化讨论模型离开训练样本后的表现。常见统计分析假设样本独立且同分布，并要求损失可积；这不代表任意模型、任意有限测试集都能给可靠保证。
+
+固定模型后，若测试样本独立于训练和选模过程、且来自目标分布，则测试均值的期望等于该模型的总体风险；单次均值仍有抽样误差。重复用同一测试集调参会破坏这种独立性。本课下面采用固定网格和固定扰动，**用于可复算的反例，不是独立同分布抽样，也不据此估计置信区间**。有关风险与三份数据的定义可参阅作者教材 [Dive into Deep Learning §3.6](https://en.d2l.ai/chapter_linear-regression/generalization.html)。
+
+## 三份数据各做什么
+
+| 数据 | 允许用途 | 房间例子中的含义 |
+|---|---|---|
+| 训练集 | 拟合参数；拟合均值、尺度等预处理量 | 用已采集的功率与温升确定曲线 |
+| 验证集 | 在候选模型、超参数中选择 | 决定采用常数、直线还是四次模型 |
+| 测试集 | 方案锁定后报告最终误差 | 检验未参与选模的一组功率点 |
+
+模型次数是**超参数**：它由设计或验证选择，不由当前模型的参数拟合自动决定。固定流程是先划分数据，再分别用训练集拟合候选模型，用验证误差选一次，最后在封存的测试集上报告结果。选过的验证分数也会偏乐观；测试后决定重做方案时，旧测试集已成为研发信息，应为下一次最终评估保留新的独立数据。
+
+**数据泄漏**是训练或选模接触了本应不可见的信息。例如：把测试标签加入特征；用全体数据算归一化均值；把同一次运行的相邻、重叠时间窗随机拆开，导致训练与测试共享近乎相同的记录。缺失值填补、特征筛选也要在训练折内拟合。官方 [scikit-learn 数据泄漏说明](https://scikit-learn.org/stable/common_pitfalls.html#data-leakage) 给出了对应的预处理隔离原则。
+
+按什么划分取决于要回答的问题。预测未来时段就按时间封存，必要时隔开覆盖窗口的间隙；泛化到新房间就按房间分组。随机打乱不能自动清除相关性。也不存在所有任务都必须遵守的固定划分比例：数据量、时间跨度、类别覆盖和评估目标共同决定预算。
+
+## 复杂度与过拟合
+
+现在跑一个刻意缩小的实验。原工况真实规律设为 $y=1+2x$。五个训练输入为 $-1,-0.5,0,0.5,1$，标签分别叠加 $a,-a,a,-a,a$；默认 $a=0.2$。验证输入为 $-0.8,-0.2,0.2,0.8$；测试输入为 $-0.9,-0.6,-0.3,0.3,0.6,0.9$，两者的原工况标签均由真实规律计算。验证和测试标签无测量扰动，目的是暴露拟合曲线在点间的偏离，**不代表真实噪声测试分布**。
+
+每个模型各自用相同训练集做最小二乘。常数的最优值是标签平均；直线来自两条正规方程；四次模型通过五个不同输入插值。本课小维度浏览器实现用带主元消元求解正规方程，Notebook用数值更稳健的最小二乘分解交叉核查。真实高维问题不应照搬正规方程，因为它会放大条件数。
+
+默认直线为 $1.04+2x$。它在原工况验证点上的残差均为 $0.04$。三条路线结果如下，均方误差记为MSE：
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}>
+
+| 模型 | 参数数 | 训练MSE | 验证MSE | 锁定方案后查看的测试MSE |
+|---|---|---|---|---|
+| 常数 | 1 | 2.0384 | 1.3616 | 1.6816 |
+| 直线 | 2 | 0.0384 | 0.0016 | 0.0016 |
+| 四次 | 5 | 数值约0 | 0.0494633984 | 0.0340296704 |
+
+</div>
+
+只看训练误差会选四次曲线；按本例验证误差会选直线。常数无法随功率变化，表现为**欠拟合**；四次曲线追随固定扰动，在未见功率处偏离，表现为**过拟合**。二者是相对于任务和数据而言的描述，不是模型次数的永久标签。将 $a$ 调成零，直线与四次曲线均复现真实直线，出现持平；不能据这个小实验断言复杂模型总是更差。
+
+<LearningGeneralizationExplorer />
+
+<JupyterNotebook title="实验一：锁定划分再选模型" setupCode={`import numpy as np
+import time
+import matplotlib.pyplot as plt
+train_x=np.array([-1.,-.5,0.,.5,1.])
+val_x=np.array([-.8,-.2,.2,.8])
+test_x=np.array([-.9,-.6,-.3,.3,.6,.9])
+def truth(x,d=0.):
+    return 1+2*x+d*x*x
+def run(degree,a=.2,d=0.):
+    train_y=truth(train_x)+a*np.array([1,-1,1,-1,1])
+    design=np.vander(train_x,degree+1,increasing=True)
+    coeff=np.linalg.lstsq(design,train_y,rcond=None)[0]
+    def pred(x):
+        return np.polynomial.polynomial.polyval(x,coeff)
+    return dict(coeff=coeff,train=float(np.mean((pred(train_x)-train_y)**2)),validation=float(np.mean((pred(val_x)-truth(val_x))**2)),test=float(np.mean((pred(test_x)-truth(test_x,d))**2)))
+`} cells={[{code:`start=time.perf_counter()
+rows=[run(k) for k in [0,1,4]]
+selected=[0,1,4][int(np.argmin([r['validation'] for r in rows]))]
+for k,r in zip([0,1,4],rows):
+    print('degree',k,'coeff',r['coeff'],'MSE',r['train'],r['validation'],r['test'])
+print('validation selected',selected,'then open test',run(selected)['test'])
+print('three candidate solves, wall seconds',time.perf_counter()-start)
+xs=np.linspace(-1,1,101)
+fig,ax=plt.subplots(figsize=(6,3))
+ax.scatter(train_x,truth(train_x)+.2*np.array([1,-1,1,-1,1]),label='train')
+for k,r in zip([0,1,4],rows):
+    ax.plot(xs,np.polynomial.polynomial.polyval(xs,r['coeff']),label='degree '+str(k))
+ax.set(xlabel='normalized power',ylabel='normalized rise',xlim=(-1,1),ylim=(-2,5));ax.legend();ax.grid();plt.show()
+`},{code:`for a in [0.,.2,.4]:
+    print('a=',a,[(k,run(k,a)['train'],run(k,a)['validation'],run(k,a)['test']) for k in [0,1,4]])
+for d in [0.,.5,1.]:
+    print('changed condition d=',d,'locked line test MSE=',run(1,.2,d)['test'])
+assert abs(run(1)['train']-.0384)<1e-10
+assert abs(run(4)['validation']-.0494633984)<1e-10
+assert abs(run(1,.2,1.)['test']-.2326)<1e-10
+`}]} />
+
+实验是固定数据的三次候选求解，无随机种子、无环境交互步数；运行时会打印本机墙钟时间。扫动 $a$ 是敏感性演示，不是反复选择测试成绩最好的训练数据。更多样本、合理约束或正则化可能改变排序，后课再讨论具体方法。
+
+## 工况变化与控制边界
+
+假设测试时房间散热机制改变，用教学关系 $y=1+2x+dx^2$ 表示；$d$ 只是变化强度，不是学习得到的参数。训练和验证仍保持原工况，模型参数也锁定。默认直线在 $d=0,0.5,1$ 下的六点测试MSE分别为 $0.0016,0.05095,0.2326$。训练和验证误差不会跟着变化，因此不能用它们发现所有部署风险。
+
+这属于输入到输出关系改变的例子。另一种变化是关系不变、输入出现频率或范围改变；即使关系没变，模型在缺乏覆盖的输入区域也可能失准。没有联系新旧工况的假设，旧数据分数不能决定新风险。可参阅作者教材的[分布变化章节](https://en.d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html)。
+
+用于控制还有一层差别：温升预测器给出“若输入此功率，可能怎样”；控制器要回答“现在该用多大功率”。反馈动作会改变之后采到哪些状态，误差会经过系统动力学累积。单步预测MSE小，不能推出闭环稳定、约束满足或安全。用于在线系统前，应检查输入覆盖、时序因果、最坏误差、执行延迟、约束与回退机制；这不等于本课已经完成闭环验证。
+
+<JupyterNotebook title="实验二：信息隔离与答案复算" setupCode={`import numpy as np
+`} cells={[{code:`# All preprocessing statistics below must come from training only.
+train=np.array([0.,2.]);held_out=np.array([100.])
+train_mean=float(train.mean());leaked_mean=float(np.r_[train,held_out].mean())
+print('training mean=',train_mean,'leaked all-data mean=',leaked_mean)
+print('Q1 squared error=',(2.-1.5)**2)
+tx=np.array([-1.,-.5,0.,.5,1.]);ty=1+2*tx+.2*np.array([1,-1,1,-1,1])
+w=float(np.sum((tx-tx.mean())*(ty-ty.mean()))/np.sum((tx-tx.mean())**2))
+b=float(ty.mean()-w*tx.mean())
+print('independent line b,w=',b,w,'training MSE=',np.mean((b+w*tx-ty)**2))
+print('validation point residual=',b-1,'squared=',(b-1)**2)
+print('Q3 exact noiseless line/quartic coefficients=',[1,2],[1,2,0,0,0])
+`}]} />
+
+实验二中训练均值为 $1$，混入封存输入后变为 $34$。即便没使用测试标签，也已经把封存信息带进预处理；这说明流程受污染，并不意味着每次泄漏必然降低误差。
+
+## 习题
+
+1. 某次温升标签为 $1.5$，预测为 $2$，平方损失是多少？仅凭这条样本能否知道总体风险？
+2. 为预测明天温升，小组先用全部记录算归一化尺度，再随机划分含重叠时间窗的记录；每试一个模型就查看测试误差。指出三个问题，给出修正顺序。
+3. 解释默认算例为什么选择直线。把扰动设为零后，四次模型还一定过拟合吗？说明训练误差为零能和不能证明什么。
+4. 模型在原工况验证集误差很小，工程师准备直接据预测值控制加热。工况关系改变时，哪个数据集分数仍可能保持原值？还缺哪些控制证据？
+
+## 答案
+
+1. 平方损失为 $(2-1.5)^2=0.25$。这是单样本损失；总体风险需要明确未来联合分布及对它的期望，单条记录不够。
+2. 预处理看到封存数据、重叠窗口跨集合、反复据测试选模。先按未来预测目标确定时间切分与隔离间隙，再只在训练集拟合预处理及模型，用验证选超参数，最后锁定流程后测试。已经看过的测试记录不能重新命名为“未见数据”。
+3. 验证MSE直线为 $0.0016$，小于本例四次的 $0.0494633984$。无扰动时，直线系数为 $(1,2)$，四次系数为 $(1,2,0,0,0)$，在精确算术下持平。零训练误差说明匹配了这些标签，不能证明未来误差为零、规律唯一或不存在测量噪声。
+4. 训练和旧验证分数可能不变；它们未覆盖改变后的关系。还应核对新工况代表性、误差如何进入闭环、输入/状态限制、延迟及失效回退，并做相应稳定性与约束验证。低预测误差本身不提供这些结论。

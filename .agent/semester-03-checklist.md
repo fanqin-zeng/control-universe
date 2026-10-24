@@ -65,6 +65,7 @@
 | DEP13 | 网页Python代码统一初始化字体并发布验收 | [x] | .agent/semester-03/python-code-font/acceptance.md;docs/deployment/python-code-font-release.md;docs/deployment/python-code-font-public-validation.json;commit:35464555d8263829b5daca2d3ce65541c323fa24 |
 | ZH04 | e6b985f润色增量快速审核与合入 | [x] | .agent/semester-03/zh-lang-edit/merges/e6b985f/acceptance.md;.agent/semester-03/zh-lang-edit/merges/e6b985f/review.json;commit:66c1b1385623331982ec643842493df006b7a013 |
 | DEP14 | e6b985f润色增量授权发布与公网验收 | [x] | docs/deployment/zh-e6b985f-release.md;docs/deployment/zh-e6b985f-public-validation.json;commit:4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84 |
+| QA01 | 顺序校验负向测试消除历史进度假设 | [ ] | .agent/semester-03/ml-01/test-debt.md;仅记录既有测试对DISCRETE-01未交付的假设，不借本课改其它课程或放宽校验 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -176,7 +177,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ML-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ML-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/08-machine-learning/01-learning-problem.md;.agent/semester-03/ml-01/acceptance.md |
 | ML-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
