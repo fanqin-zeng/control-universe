@@ -33,3 +33,6 @@
 
 
 真实交付已进入master并推送origin：`d40982a07caeba9037cc1d452abcb3c62b592d41`。提交使用独立索引和HEAD比较交换，仅本课路径/元数据；未改正常共享索引，不宣称工作区干净。回执追加提交只记录本课hash与完成勾选。用户随后指定ML-06，完成本回执后转入新目标。
+
+
+回执补核：98d2aac追加真实交付回执；首次回执守卫与MPC-04并行提交交错，副本只有其新checklist行而缺正文/例外，原失败输出receipt-semester-before.log保留。完整投影至aac1f8439df6ad10d75175b8e69d633059a1d308后重跑，receipt-semester.log exit0/PASS，未修改MPC-04内容或元数据。
