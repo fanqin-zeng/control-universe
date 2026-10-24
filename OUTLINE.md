@@ -173,17 +173,17 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 12.1 | 预测控制原理 | mpc-principle | 🟨 有正文待审校 | grad | theory | 14 | discrete-sampled/discrete-optimal-control<br>math/convex-optimization<br>estimation/kalman-filter |
-| 12.2 | 预测模型 | prediction-model | 🟨 有正文待审校 | grad | theory | 15 | mpc/mpc-principle<br>identification/model-structures |
-| 12.3 | 滚动优化 | receding-horizon | 🟨 有正文待审校 | grad | theory | 16 | mpc/prediction-model<br>math/convex-optimization |
-| 12.4 | 约束处理 | constraint-handling | 🟨 有正文待审校 | grad | theory | 17 | mpc/receding-horizon |
-| 12.5 | 递归可行性与稳定性 | mpc-stability | ⬜ 骨架（占位页） | grad | theory | 18 | mpc/constraint-handling<br>nonlinear/lyapunov-stability |
-| 12.6 | 广义预测控制 | generalized-predictive-control | 🟨 有正文待审校 | grad | theory | 17 | mpc/receding-horizon<br>identification/least-squares-rls |
-| 12.7 | 显式预测控制 | explicit-mpc | ⬜ 骨架（占位页） | advanced | theory | 18 | mpc/constraint-handling<br>math/convex-optimization |
-| 12.8 | 非线性预测控制 | nonlinear-mpc | 🟨 有正文待审校 | advanced | theory | 19 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
-| 12.9 | 经济预测控制 | economic-mpc | ⬜ 骨架（占位页） | advanced | theory | 20 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
-| 12.10 | 移动水平估计 | mhe-fusion | ⬜ 骨架（占位页） | grad | theory | 17 | mpc/receding-horizon<br>estimation/sensor-fusion |
-| 12.11 | 预测控制案例 | mpc-case-study | 🟨 有正文待审校 | grad | case | 18 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
+| 12.1 | 预测控制原理 | mpc-principle | ✅ 已交付 v1.3 | grad | theory | 13 | discrete-sampled/discrete-optimal-control<br>math/convex-optimization |
+| 12.2 | 预测模型 | prediction-model | 🟨 有正文待审校 | grad | theory | 14 | mpc/mpc-principle<br>identification/model-structures |
+| 12.3 | 滚动优化 | receding-horizon | 🟨 有正文待审校 | grad | theory | 15 | mpc/prediction-model<br>math/convex-optimization |
+| 12.4 | 约束处理 | constraint-handling | 🟨 有正文待审校 | grad | theory | 16 | mpc/receding-horizon |
+| 12.5 | 递归可行性与稳定性 | mpc-stability | ⬜ 骨架（占位页） | grad | theory | 17 | mpc/constraint-handling<br>nonlinear/lyapunov-stability |
+| 12.6 | 广义预测控制 | generalized-predictive-control | 🟨 有正文待审校 | grad | theory | 16 | mpc/receding-horizon<br>identification/least-squares-rls |
+| 12.7 | 显式预测控制 | explicit-mpc | ⬜ 骨架（占位页） | advanced | theory | 17 | mpc/constraint-handling<br>math/convex-optimization |
+| 12.8 | 非线性预测控制 | nonlinear-mpc | 🟨 有正文待审校 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
+| 12.9 | 经济预测控制 | economic-mpc | ⬜ 骨架（占位页） | advanced | theory | 19 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
+| 12.10 | 移动水平估计 | mhe-fusion | ⬜ 骨架（占位页） | grad | theory | 16 | mpc/receding-horizon<br>estimation/sensor-fusion |
+| 12.11 | 预测控制案例 | mpc-case-study | 🟨 有正文待审校 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
 
 ## 13. 智能控制 (intelligent)
 
@@ -211,9 +211,9 @@
 | 14.7 | PPO算法 | ppo | ⬜ 骨架（占位页） | grad | learning | 10 | rl-control/actor-critic |
 | 14.8 | SAC与TD3 | sac-td3 | ⬜ 骨架（占位页） | grad | learning | 10 | rl-control/actor-critic<br>modern/optimal-control-basics |
 | 14.9 | 离线强化学习 | offline-rl | ⬜ 骨架（占位页） | grad | learning | 11 | rl-control/sac-td3<br>machine-learning/learning-evaluation |
-| 14.10 | 基于模型的强化学习 | model-based-rl | ⬜ 骨架（占位页） | grad | learning | 17 | rl-control/actor-critic<br>identification/nonlinear-data-driven-id<br>mpc/receding-horizon |
+| 14.10 | 基于模型的强化学习 | model-based-rl | ⬜ 骨架（占位页） | grad | learning | 16 | rl-control/actor-critic<br>identification/nonlinear-data-driven-id<br>mpc/receding-horizon |
 | 14.11 | 强化学习评估 | rl-evaluation | ⬜ 骨架（占位页） | grad | learning | 11 | rl-control/ppo<br>rl-control/sac-td3<br>machine-learning/learning-evaluation |
-| 14.12 | 强化学习控制案例 | rl-control-case | ⬜ 骨架（占位页） | grad | case | 18 | rl-control/rl-evaluation<br>discrete-sampled/discrete-optimal-control<br>mpc/constraint-handling |
+| 14.12 | 强化学习控制案例 | rl-control-case | ⬜ 骨架（占位页） | grad | case | 17 | rl-control/rl-evaluation<br>discrete-sampled/discrete-optimal-control<br>mpc/constraint-handling |
 
 ## 15. 多智能体控制 (multi-agent)
 
@@ -225,9 +225,9 @@
 | 15.4 | 分布式优化 | distributed-optimization | ⬜ 骨架（占位页） | grad | theory | 10 | multi-agent/consensus-control<br>math/convex-optimization |
 | 15.5 | 控制中的博弈 | game-theory-basics | ⬜ 骨架（占位页） | grad | theory | 8 | multi-agent/multi-agent-overview<br>math/game-theory-math |
 | 15.6 | 编队控制 | formation-control | ⬜ 骨架（占位页） | grad | theory | 10 | multi-agent/consensus-control<br>nonlinear/lyapunov-stability |
-| 15.7 | 分布式预测控制 | distributed-mpc | 🟨 有正文待审校 | grad | theory | 19 | multi-agent/distributed-optimization<br>mpc/mpc-stability |
+| 15.7 | 分布式预测控制 | distributed-mpc | 🟨 有正文待审校 | grad | theory | 18 | multi-agent/distributed-optimization<br>mpc/mpc-stability |
 | 15.8 | 多智能体强化学习 | multi-agent-rl | ⬜ 骨架（占位页） | grad | learning | 12 | multi-agent/game-theory-basics<br>rl-control/actor-critic<br>rl-control/rl-evaluation |
-| 15.9 | 多智能体协同案例 | multi-agent-cooperation | ⬜ 骨架（占位页） | grad | case | 20 | multi-agent/formation-control<br>multi-agent/distributed-mpc<br>multi-agent/multi-agent-rl |
+| 15.9 | 多智能体协同案例 | multi-agent-cooperation | ⬜ 骨架（占位页） | grad | case | 19 | multi-agent/formation-control<br>multi-agent/distributed-mpc<br>multi-agent/multi-agent-rl |
 
 ## 16. 安全控制 (safety-ftc)
 
@@ -238,7 +238,7 @@
 | 16.3 | 可达性分析 | reachability-analysis | ⬜ 骨架（占位页） | advanced | theory | 14 | safety-ftc/safety-overview<br>math/variational-dp |
 | 16.4 | 故障诊断 | fault-detection-isolation | ⬜ 骨架（占位页） | grad | theory | 14 | safety-ftc/safety-overview<br>estimation/kalman-filter<br>identification/least-squares-rls |
 | 16.5 | 容错控制 | fault-tolerant-control | ⬜ 骨架（占位页） | grad | theory | 15 | safety-ftc/fault-detection-isolation<br>robust/robust-stability |
-| 16.6 | 安全强化学习 | safe-rl | ⬜ 骨架（占位页） | grad | learning | 18 | safety-ftc/control-barrier-functions<br>rl-control/rl-evaluation<br>mpc/constraint-handling |
+| 16.6 | 安全强化学习 | safe-rl | ⬜ 骨架（占位页） | grad | learning | 17 | safety-ftc/control-barrier-functions<br>rl-control/rl-evaluation<br>mpc/constraint-handling |
 | 16.7 | 功能安全 | functional-safety-standards | ⬜ 骨架（占位页） | grad | history | 16 | safety-ftc/safety-overview<br>implementation/embedded-implementation |
 | 16.8 | 安全控制案例 | safety-case-study | ⬜ 骨架（占位页） | grad | case | 17 | safety-ftc/control-barrier-functions<br>safety-ftc/fault-tolerant-control<br>safety-ftc/functional-safety-standards |
 
@@ -254,7 +254,7 @@
 | 17.6 | 轨迹跟踪 | trajectory-tracking | ⬜ 骨架（占位页） | grad | theory | 11 | robotics/dynamics<br>robotics/motion-planning<br>nonlinear/feedback-linearization |
 | 17.7 | 阻抗控制 | impedance-control | ⬜ 骨架（占位页） | grad | theory | 11 | robotics/dynamics<br>nonlinear/passivity-control |
 | 17.8 | 接触控制 | contact-control | ⬜ 骨架（占位页） | grad | theory | 15 | robotics/impedance-control<br>safety-ftc/control-barrier-functions |
-| 17.9 | 足式机器人控制 | legged-control | ⬜ 骨架（占位页） | advanced | theory | 20 | robotics/contact-control<br>mpc/nonlinear-mpc |
+| 17.9 | 足式机器人控制 | legged-control | ⬜ 骨架（占位页） | advanced | theory | 19 | robotics/contact-control<br>mpc/nonlinear-mpc |
 | 17.10 | 机器人控制案例 | robotics-case-study | ⬜ 骨架（占位页） | grad | case | 16 | robotics/trajectory-tracking<br>robotics/contact-control<br>estimation/sensor-fusion |
 
 ## 18. 机器人学习 (robot-learning)
@@ -266,11 +266,11 @@
 | 18.3 | 离线到在线学习 | offline-online-learning | ⬜ 骨架（占位页） | grad | learning | 12 | robot-learning/imitation-learning<br>rl-control/offline-rl |
 | 18.4 | 残差学习控制 | residual-learning | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>nonlinear/lyapunov-stability |
 | 18.5 | 仿真到现实 | sim-to-real | ⬜ 骨架（占位页） | grad | learning | 13 | robot-learning/offline-online-learning<br>robust/uncertainty-modeling |
-| 18.6 | 运动技能学习 | locomotion-learning | ⬜ 骨架（占位页） | grad | learning | 21 | robot-learning/sim-to-real<br>robotics/legged-control<br>rl-control/ppo |
+| 18.6 | 运动技能学习 | locomotion-learning | ⬜ 骨架（占位页） | grad | learning | 20 | robot-learning/sim-to-real<br>robotics/legged-control<br>rl-control/ppo |
 | 18.7 | 操作技能学习 | manipulation-learning | ⬜ 骨架（占位页） | grad | learning | 16 | robot-learning/imitation-learning<br>robotics/contact-control |
-| 18.8 | 人机协同学习 | human-in-the-loop | ⬜ 骨架（占位页） | grad | learning | 19 | robot-learning/offline-online-learning<br>safety-ftc/safe-rl |
-| 18.9 | 学习与预测控制 | learning-with-mpc | ⬜ 骨架（占位页） | advanced | learning | 20 | robot-learning/residual-learning<br>rl-control/model-based-rl<br>mpc/nonlinear-mpc |
-| 18.10 | 机器人学习评估 | robot-learning-evaluation | ⬜ 骨架（占位页） | grad | learning | 20 | robot-learning/sim-to-real<br>robot-learning/human-in-the-loop<br>rl-control/rl-evaluation |
+| 18.8 | 人机协同学习 | human-in-the-loop | ⬜ 骨架（占位页） | grad | learning | 18 | robot-learning/offline-online-learning<br>safety-ftc/safe-rl |
+| 18.9 | 学习与预测控制 | learning-with-mpc | ⬜ 骨架（占位页） | advanced | learning | 19 | robot-learning/residual-learning<br>rl-control/model-based-rl<br>mpc/nonlinear-mpc |
+| 18.10 | 机器人学习评估 | robot-learning-evaluation | ⬜ 骨架（占位页） | grad | learning | 19 | robot-learning/sim-to-real<br>robot-learning/human-in-the-loop<br>rl-control/rl-evaluation |
 
 ## 19. 具身智能 (embodied)
 
@@ -283,9 +283,9 @@
 | 19.5 | 扩散与流策略 | diffusion-flow-policies | ⬜ 骨架（占位页） | grad | learning | 13 | embodied/action-representations<br>machine-learning/generative-models |
 | 19.6 | 视觉语言动作模型 | vla | ⬜ 骨架（占位页） | advanced | frontier | 14 | embodied/generalist-policies<br>machine-learning/attention-transformers |
 | 19.7 | 世界模型 | world-models | ⬜ 骨架（占位页） | grad | learning | 12 | embodied/multimodal-observation<br>machine-learning/sequence-models<br>machine-learning/generative-models |
-| 19.8 | 世界模型控制 | world-model-control | ⬜ 骨架（占位页） | advanced | frontier | 18 | embodied/world-models<br>rl-control/model-based-rl<br>mpc/receding-horizon |
-| 19.9 | 分层决策 | hierarchical-reasoning | ⬜ 骨架（占位页） | advanced | frontier | 19 | embodied/vla<br>embodied/world-model-control |
-| 19.10 | 具身智能评估 | embodied-evaluation | ⬜ 骨架（占位页） | grad | learning | 21 | embodied/diffusion-flow-policies<br>embodied/hierarchical-reasoning<br>robot-learning/robot-learning-evaluation |
+| 19.8 | 世界模型控制 | world-model-control | ⬜ 骨架（占位页） | advanced | frontier | 17 | embodied/world-models<br>rl-control/model-based-rl<br>mpc/receding-horizon |
+| 19.9 | 分层决策 | hierarchical-reasoning | ⬜ 骨架（占位页） | advanced | frontier | 18 | embodied/vla<br>embodied/world-model-control |
+| 19.10 | 具身智能评估 | embodied-evaluation | ⬜ 骨架（占位页） | grad | learning | 20 | embodied/diffusion-flow-policies<br>embodied/hierarchical-reasoning<br>robot-learning/robot-learning-evaluation |
 
 ## 20. 自动驾驶 (autonomous-driving)
 
@@ -295,22 +295,22 @@
 | 20.2 | 车辆动力学 | vehicle-dynamics | ⬜ 骨架（占位页） | grad | theory | 8 | autonomous-driving/driving-system<br>math/ode-matrix-exponential |
 | 20.3 | 定位与运动预测 | localization-prediction | ⬜ 骨架（占位页） | grad | theory | 16 | autonomous-driving/vehicle-dynamics<br>estimation/sensor-fusion<br>machine-learning/sequence-models |
 | 20.4 | 自动驾驶规划 | motion-planning | ⬜ 骨架（占位页） | grad | theory | 17 | autonomous-driving/localization-prediction<br>math/convex-optimization |
-| 20.5 | 车辆跟踪控制 | vehicle-control | ⬜ 骨架（占位页） | grad | theory | 20 | autonomous-driving/motion-planning<br>mpc/nonlinear-mpc<br>nonlinear/feedback-linearization<br>classic/pid-controller |
+| 20.5 | 车辆跟踪控制 | vehicle-control | ⬜ 骨架（占位页） | grad | theory | 19 | autonomous-driving/motion-planning<br>mpc/nonlinear-mpc<br>nonlinear/feedback-linearization<br>classic/pid-controller |
 | 20.6 | 学习型驾驶策略 | learning-planning | ⬜ 骨架（占位页） | grad | learning | 18 | autonomous-driving/motion-planning<br>robot-learning/imitation-learning<br>machine-learning/attention-transformers |
 | 20.7 | 驾驶决策强化学习 | rl-decision | ⬜ 骨架（占位页） | grad | learning | 19 | autonomous-driving/learning-planning<br>rl-control/sac-td3 |
 | 20.8 | 驾驶世界模型 | driving-world-models | ⬜ 骨架（占位页） | advanced | frontier | 17 | autonomous-driving/localization-prediction<br>embodied/world-models |
 | 20.9 | 驾驶视觉语言动作模型 | driving-vla | ⬜ 骨架（占位页） | advanced | frontier | 19 | autonomous-driving/learning-planning<br>embodied/vla |
-| 20.10 | 闭环驾驶评估 | closed-loop-evaluation | ⬜ 骨架（占位页） | grad | learning | 21 | autonomous-driving/vehicle-control<br>autonomous-driving/rl-decision<br>autonomous-driving/driving-world-models<br>autonomous-driving/driving-vla<br>machine-learning/learning-evaluation |
-| 20.11 | 驾驶安全与回退 | driving-safety | ⬜ 骨架（占位页） | grad | case | 22 | autonomous-driving/closed-loop-evaluation<br>safety-ftc/reachability-analysis<br>safety-ftc/functional-safety-standards |
+| 20.10 | 闭环驾驶评估 | closed-loop-evaluation | ⬜ 骨架（占位页） | grad | learning | 20 | autonomous-driving/vehicle-control<br>autonomous-driving/rl-decision<br>autonomous-driving/driving-world-models<br>autonomous-driving/driving-vla<br>machine-learning/learning-evaluation |
+| 20.11 | 驾驶安全与回退 | driving-safety | ⬜ 骨架（占位页） | grad | case | 21 | autonomous-driving/closed-loop-evaluation<br>safety-ftc/reachability-analysis<br>safety-ftc/functional-safety-standards |
 
 ## 21. 工程应用 (applications)
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 21.1 | 电力电子控制 | power-electronics | ⬜ 骨架（占位页） | grad | case | 14 | implementation/digital-pid<br>modern/state-feedback<br>classic/frequency-response-design<br>discrete-sampled/sampling-period-selection |
-| 21.2 | 过程控制 | process-control | ⬜ 骨架（占位页） | grad | case | 19 | identification/identification-case-study<br>mpc/mpc-case-study<br>implementation/pid-engineering-tuning |
+| 21.2 | 过程控制 | process-control | ⬜ 骨架（占位页） | grad | case | 18 | identification/identification-case-study<br>mpc/mpc-case-study<br>implementation/pid-engineering-tuning |
 | 21.3 | 飞行器姿态控制 | aerospace-attitude | ⬜ 骨架（占位页） | grad | case | 16 | modern/lqr-controller<br>nonlinear/feedback-linearization<br>estimation/sensor-fusion<br>nonlinear/sliding-mode-control |
-| 21.4 | 微电网控制 | energy-storage-microgrid | ⬜ 骨架（占位页） | grad | case | 21 | mpc/economic-mpc<br>multi-agent/distributed-mpc<br>applications/power-electronics |
+| 21.4 | 微电网控制 | energy-storage-microgrid | ⬜ 骨架（占位页） | grad | case | 20 | mpc/economic-mpc<br>multi-agent/distributed-mpc<br>applications/power-electronics |
 | 21.5 | 生物医学控制 | biomedical-control | ⬜ 骨架（占位页） | grad | case | 16 | identification/identification-case-study<br>estimation/sensor-fusion<br>safety-ftc/safety-overview |
 | 21.6 | 半导体装备控制 | semiconductor-equipment | ⬜ 骨架（占位页） | grad | case | 17 | classic/frequency-response-design<br>implementation/realtime-control<br>robust/mixed-sensitivity |
 
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 75（status = v1.3）
-- **有正文待审校**: 18（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 76（status = v1.3）
+- **有正文待审校**: 17（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 112（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 130（= draft 18 + empty 112 + 无 status 0）
+- **未完成 v1.3**: 129（= draft 17 + empty 112 + 无 status 0）
 - **有 MDX 正文**: 93
 - **catalog 小节总数**: 1046
-- **讨论日志**: 96 篇（覆盖 75 门；有 MDX 无日志 18 门）
-- **交互组件**: 85 个文件（被正文引用 85，孤儿 0）
-- **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **讨论日志**: 97 篇（覆盖 76 门；有 MDX 无日志 17 门）
+- **交互组件**: 86 个文件（被正文引用 86，孤儿 0）
+- **prereq 边**: 474 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
-- **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
+- **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

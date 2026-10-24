@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-24T04:48:17.076Z",
-  "url": "http://127.0.0.1:18394/python-expansion.html?lesson=estimation/estimation-problem",
+  "testedAt": "2026-10-24T05:39:37.390Z",
+  "url": "http://127.0.0.1:18396/python-expansion.html?lesson=mpc/mpc-principle",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
@@ -7738,28 +7738,65 @@
     {
       "key": "mpc/mpc-principle",
       "title": "预测控制原理",
-      "sourceHash": "773b4780f5d033422e291f5cc41cdd75a634f90a3fa7710f2df6cce061b5a2a6",
+      "sourceHash": "63825a798635ade7cd368a9334fdcb0d06e4b0918d0bf9332001208da744d682",
       "notebooks": [
         {
           "id": "mpc/mpc-principle#1",
-          "title": "实验 1",
+          "title": "两步QP与堆叠预测复算",
           "index": 1,
-          "line": 209,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "312f15c34d471f559a811f3ef5628ec7c98445898825a6167f4acf13fccaad8f",
-      "formattingProvenance": [
+          "line": 138,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 7050,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "QP_H [[4.5, 1.0], [1.0, 4.0]] f [5.0, 2.0]\nQP_plan [-1.0, -0.25] states [1.0, 0.25]\nQP_cost 2.125 full_cost 18.125\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "F [[1.0, 1.0], [0.0, 1.0], [1.0, 2.0], [0.0, 1.0], [1.0, 3.0], [0.0, 1.0]] Phi [[0.5, 0.0, 0.0], [1.0, 0.0, 0.0], [1.5, 0.5, 0.0], [1.0, 1.0, 0.0], [2.5, 1.5, 0.5], [1.0, 1.0, 1.0]]\nexercise1_X [3.5, 2.0, 5.5, 2.0, 7.0, 1.0]\n"
+                }
+              ]
+            }
+          ]
+        },
         {
-          "lesson": "mpc/mpc-principle",
-          "fromSourceHash": "312f15c34d471f559a811f3ef5628ec7c98445898825a6167f4acf13fccaad8f",
-          "toSourceHash": "773b4780f5d033422e291f5cc41cdd75a634f90a3fa7710f2df6cce061b5a2a6",
-          "notebookPayloadHash": "d8c0ca06821ed7c86e219b3a8d4c123197189252cf2621f02eb48324273b1ba2",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "mpc/mpc-principle#2",
+          "title": "终端代价与答案数值核验",
+          "index": 2,
+          "line": 244,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "DARE_P_K_pole 4.23606797749979 1.618033988749895 0.3819660112501051\nfinite_N_gain 1 1.618033988749895\nfinite_N_gain 2 1.618033988749895\nfinite_N_gain 8 1.618033988749895\nno_terminal_pole 2.0\nexercise2 4.0 [-2.0, 0.0] [0.0, 0.0] 0.0\nexercise2 8.0 [-2.0, -1.0] [2.0, 0.0] 4.0\nexercise4_Q_R 0.0004 0.01\nDARE_residual 0.0\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -13869,14 +13906,14 @@
   "complete": true,
   "totals": {
     "lessons": 93,
-    "notebooks": 415,
-    "enabled": 401,
-    "codeOnly": 14
+    "notebooks": 416,
+    "enabled": 403,
+    "codeOnly": 13
   },
   "releaseTotals": {
     "lessons": 93,
-    "notebooks": 415,
-    "enabled": 401,
+    "notebooks": 416,
+    "enabled": 402,
     "codeOnly": 14
   },
   "provenance": [
@@ -14510,6 +14547,11 @@
     {
       "inputPath": ".agent/semester-03/robot-01/pyodide.json",
       "scope": "robotics/robot-models"
+    },
+    {
+      "testedAt": "2026-10-24T05:39:37.390Z",
+      "url": "http://127.0.0.1:18396/python-expansion.html?lesson=mpc/mpc-principle",
+      "inputPath": ".agent/semester-03/mpc-01/pyodide.json"
     }
   ]
 }

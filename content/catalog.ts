@@ -4356,12 +4356,11 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "discrete-sampled/discrete-optimal-control",
-          "math/convex-optimization",
-          "estimation/kalman-filter"
+          "math/convex-optimization"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "prediction-model",

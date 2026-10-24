@@ -75,6 +75,7 @@
 | [070](2026-10-19-070.md) | 2026-10-19 | components/wiki/browser-notebook.tsx | 在线Python代码字体 | BUG | 秦构 | 编辑框和输出统一为初始化代码字体 |
 | [071](2026-10-24-071.md) | 2026-10-24 | implementation/computer-control-architecture.mdx | 时序、可靠度与寿命 | BOTH | 周联+柯验（既有检查执行不足） | 区分扫描/采样/刷新与充分界，纠正不可维修MTTF和热备MTBF混用；补预算与独立对账 |
 | [073](2026-10-24-073.md) | 2026-10-24 | robust/robustness-concept.mdx | 范数与定理条件 | BOTH | 卫韧+柯验+秦构（既有检查执行不足） | 纠正裕度单位、连续峰/网格、小增益充分性、LQR条件与题解；四Notebook及真实TS独立复核 |
+| [072](2026-10-24-072.md) | 2026-10-24 | mpc/mpc-principle | QP代价下标与终端条件 | BOTH | 林矩+柯验+秦构（既有检查执行不足） | 修正双积分器维度与末状态、DARE与终端重复计权；移除错误性能排名，原始cell及独立QP对账 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）
