@@ -320,3 +320,5 @@ implementation/implementation-case-study  (status=draft, level=undergrad, type=c
 补充实际npm命令：`npm run check -- --root D:/Workspace/control-universe-rank1-impl10-validation`，退出0，PASS21/WARN2/FAIL0；原始输出check-npm-final.log。
 
 真实master交付提交：`a5d5e96545223d77058649f9848334c1ce0229a1`，父提交`c7ddba805f998225bcd461a5f4e08c247aed7f35`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。Python清单生成后已保留其它课待办的task/category/next元数据，未改其它课程运行状态。
+
+并行索引审计说明：index-before/index-after的SHA256不同，unchanged=false。本课所有暂存/建树均用外置GIT_INDEX_FILE，未使用默认索引暂存、read-tree或reset；期间差异可能涉及并行暂存或Git状态缓存更新，未推断归属，也未复原。delivery.json的sharedIndexModified=false描述本课提交方式，不能解释为默认索引前后哈希一致。
