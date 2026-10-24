@@ -331,3 +331,5 @@
 SIMC PI采用Skogestad 2003原始论文与作者说明，检索2026-10-24：https://skoge.folk.ntnu.no/publications/2003/tuningPID/README.html 。本课仅转述一阶对象的PI规则，不采用串联PID的D参数，不将其鲁棒性研究结论移植成此离散限幅回路的保证。
 
 何疑：不需要统计显著性推断；这里不抽样、不比较学习算法。若未来宣称某整定法最优，应另立相同预算与独立整定基线，不能引用本表当结论。
+
+真实master交付提交：`2d89b900d843b9c0683df229efebb0cddce84476`，父提交`aea96af77b1c7db2c71fb63b5a0b95adc73e7dbd`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。
