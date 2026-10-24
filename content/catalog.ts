@@ -3820,7 +3820,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "加噪与噪声预测",
+            "title": "加噪与噪声预测"
+          },
+          {
+            "slug": "反向采样的含义",
+            "title": "反向采样的含义"
+          },
+          {
+            "slug": "条件流匹配",
+            "title": "条件流匹配"
+          },
+          {
+            "slug": "高斯流与数值采样",
+            "title": "高斯流与数值采样"
+          },
+          {
+            "slug": "实验与边界",
+            "title": "实验与边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ]
       },
       {
         "slug": "learning-evaluation",
