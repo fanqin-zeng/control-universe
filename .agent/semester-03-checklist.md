@@ -253,7 +253,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | INTEL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/13-intelligent/01-fuzzy-control-basics.md;.agent/semester-03/intel-01/acceptance.md;.agent/semester-03/intel-01/validation.json;commit:3d2360804c416a0081ef295196ecf7ef8f5799ce;rank7本课真实master交付，Pages未发布 |
-| INTEL-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| INTEL-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/13-intelligent/02-fuzzy-controller-design.md;.agent/semester-03/intel-02/acceptance.md;rank7真实验收与签发完成，待master提交回执 |
 | INTEL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | INTEL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | INTEL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

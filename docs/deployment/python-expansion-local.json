@@ -8558,43 +8558,43 @@
     {
       "key": "intelligent/fuzzy-controller-design",
       "title": "模糊控制器",
-      "sourceHash": "47016cbd06531f6b07db9a5c08f36d3237ed6f41e597217cfabd6f8e5ab4940b",
+      "sourceHash": "6c3d0400e0598237324dd3f8e3ed9e8a3ddb3651e7f22d8e9913c2e17b8db69f",
       "notebooks": [
         {
           "id": "intelligent/fuzzy-controller-design#1",
-          "title": "Notebook 1：规则库构造与输入-输出映射曲面",
+          "title": "Notebook 1：规则库、覆盖与输入输出曲面",
           "index": 1,
-          "line": 68,
+          "line": 75,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3720,
+              "milliseconds": 6704,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "规则表（n=5）：\n         NB    NS    ZO    PS    PB\n  NB  [ 0,  0,  1,  2,  2]\n  NS  [ 0,  1,  2,  2,  2]\n  ZO  [ 1,  2,  2,  2,  3]\n  PS  [ 2,  2,  2,  3,  4]\n  PB  [ 2,  2,  3,  4,  4]\n\n物理意义：\n  e=NB, de=NB → u=NB（误差为负且继续变负，用力反推）\n  e=NB, de=PB → u=NS（误差为负但在恢复，减小控制量）\n  e=PB, de=PB → u=PB（误差为正且继续变正，用力反推）\n"
+                  "text": "n= 5 average rules= [[0, 0, 1, 2, 2], [0, 1, 2, 2, 2], [1, 2, 2, 2, 3], [2, 2, 2, 3, 4], [2, 2, 3, 4, 4]] symmetry error= 0\nn= 7 average rules= [[0, 0, 1, 2, 2, 2, 3], [0, 1, 2, 2, 2, 3, 4], [1, 2, 2, 2, 3, 4, 4], [2, 2, 2, 3, 4, 4, 4], [2, 2, 3, 4, 4, 4, 5], [2, 3, 4, 4, 4, 5, 6], [3, 4, 4, 4, 5, 6, 6]] symmetry error= 0\nsum rules n=5= [[0, 0, 0, 1, 2], [0, 0, 1, 2, 3], [0, 1, 2, 3, 4], [1, 2, 3, 4, 4], [2, 3, 4, 4, 4]]\naverage[3,2]= 2 sum[3,2]= 3\nhalf-even round(2.5)= 2 half-up= 3\nn7 half-up example= 7\nold= True coverage sum at .25= 0.0\nold= False coverage sum at .25= 1.0\nGe20= 2.291831180523293 Ge30= 1.9098593171027443 J= 0.25 gravity= 19.6 torque coefficient= 4.0\nproportional threshold= 4.9\nPhi(.1,0)= 0.12068965517241377 secant= 1.2068965517241377 axis h=.0001= 1.4996001399559307\nphysical axis difference quotient= 35.99040335894234\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 319,
+              "milliseconds": 878,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "\n曲面范围：[-0.9167, 0.9167]\nU[0,0] (e=-1, de=-1): -0.9167\nU[20,20] (e=0, de=0): 0.0000\nU[40,40] (e=1, de=1): 0.9167\n"
+                  "text": "legacy surface min/max= -0.9166666666666666 0.9166666666666666 oddness= 2.220446049250313e-16\nrepaired surface min/max= -0.8333333333333334 0.8333333333333334 oddness= 7.771561172376096e-16\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 48012
+                  "base64Length": 35616
                 }
               ]
             }
@@ -8604,61 +8604,56 @@
           "id": "intelligent/fuzzy-controller-design#2",
           "title": "Notebook 2：比例因子敏感性扫描",
           "index": 2,
-          "line": 202,
+          "line": 237,
           "cellCount": 4,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 16883,
+              "milliseconds": 2116,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== Ge 扫描（Gce=0.5, Gu=12）===\n   Ge |      rms    TV(u)\n------------------------------\n  1.0 |    41.67  38652.0\n  1.5 |    28.24  11331.0\n  2.0 |    21.10    915.0\n  2.5 |    16.66   2901.0\n  3.0 |    13.71   5496.0\n"
+                  "text": "Ge=1.0 rms=6.003034 final=0.004847 tail=0.022160 tv=3.981501 maxU=3.981868 saturation=0.000000 gaps= 0\nGe=2.0 rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nGe=3.0 rms=2.926155 final=-0.000000 tail=0.000000 tv=11.644844 maxU=10.000000 saturation=0.000000 gaps= 0\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 20210,
+              "milliseconds": 2131,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== Gce 扫描（Ge=2.0, Gu=12）===\n  Gce |      rms    TV(u)\n------------------------------\n  0.2 |    20.93    294.0\n  0.3 |    20.93    294.0\n  0.4 |    20.93    294.0\n  0.5 |    21.10    915.0\n  0.6 |    21.21   1560.0\n  0.8 |    21.33   2721.0\n"
+                  "text": "Gce=0.2 rms=3.018930 final=-0.000000 tail=0.000000 tv=11.726192 maxU=6.443686 saturation=0.000000 gaps= 0\nGce=0.5 rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nGce=0.8 rms=4.400988 final=0.000042 tail=0.000401 tv=6.811040 maxU=6.443686 saturation=0.000000 gaps= 0\n"
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 17128,
+              "milliseconds": 2132,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== Gu 扫描（Ge=2.0, Gce=0.5）===\n   Gu |      rms    TV(u)   max|u|\n----------------------------------------\n    8 |    21.35    754.0     7.00\n   10 |    21.18    835.0     8.75\n   12 |    21.10    915.0    10.50\n   15 |    21.02   1035.0     7.50\n   20 |    20.96   1270.0    15.00\n"
+                  "text": "Gu=8.0 rms=4.109428 final=0.000000 tail=0.000000 tv=4.302656 maxU=4.295790 saturation=0.000000 gaps= 0\nGu=12.0 rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nGu=20.0 rms=3.322348 final=0.000000 tail=0.000000 tv=11.142576 maxU=10.739476 saturation=0.000000 gaps= 0\n"
                 }
               ]
             },
             {
               "index": 4,
-              "milliseconds": 20611,
+              "milliseconds": 2340,
               "status": "passed",
               "outputs": [
                 {
-                  "type": "stream",
-                  "name": "stdout",
-                  "text": "\n结论：增大 Ge 可以改善性能，但即使 Ge=3.0，rms 仍有 13.71 deg，远未稳定。\n"
-                },
-                {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 105948
+                  "base64Length": 59800
                 }
               ]
             }
@@ -8666,34 +8661,39 @@
         },
         {
           "id": "intelligent/fuzzy-controller-design#3",
-          "title": "Notebook 3：模糊 PD 闭环仿真",
+          "title": "Notebook 3：模糊PD闭环与采样复核",
           "index": 3,
-          "line": 384,
+          "line": 376,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 3384,
+              "milliseconds": 1798,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "模糊 PD 控制器（Ge=2.0, Gce=0.5, Gu=12.0）：\n  rms = 21.10 deg\n  TV(u) = 915.0\n  稳态角度 = 21.69 deg\n  max|u| = 10.50 N*m\n\n结论：控制器没有稳定摆。rms = 21 deg，稳态 = 22 deg。\n"
+                  "text": "legacy rms=21.056544 final=20.281672 tail=21.921256 tv=579.108873 maxU=10.505797 saturation=0.000000 gaps= 0\ncoverage rms=17.115352 final=17.394058 tail=17.502079 tv=10.171108 maxU=2.497740 saturation=0.000000 gaps= 0\nrepaired rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 96100
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 182,
+              "milliseconds": 2348,
               "status": "passed",
               "outputs": [
                 {
-                  "type": "image",
-                  "mime": "image/png",
-                  "base64Length": 73064
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sample period=0.004 rms=3.668074 final=0.000000 tail=0.000000 tv=6.455952 maxU=6.443686 saturation=0.000000 gaps= 0\nsample period=0.002 rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nsample period=0.001 rms=3.670368 final=0.000000 tail=0.000000 tv=6.455078 maxU=6.443686 saturation=0.000000 gaps= 0\nThese runs change the held-input sampling period; they are not a continuous-time certificate.\n"
                 }
               ]
             }
@@ -8701,22 +8701,27 @@
         },
         {
           "id": "intelligent/fuzzy-controller-design#4",
-          "title": "Notebook 4：模糊 PID 闭环仿真",
+          "title": "Notebook 4：模糊PD加积分与限幅",
           "index": 4,
-          "line": 528,
+          "line": 515,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 16847,
+              "milliseconds": 3160,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 模糊 PD + 积分 ===\n   Ki |      rms    final      TV(u)\n----------------------------------------\n    0 |    21.10    21.69      915.0\n    2 |    19.88   -21.80    24786.9\n    4 |    19.10    21.21    49534.0\n    6 |    19.15    18.89    48832.6\n    8 |    18.22   -21.09    73359.4\n\n结论：积分项可以改善 rms，但稳态仍振荡（final 在 +21 和 -21 之间摆动）。\n"
+                  "text": "load=1 Ki=0.0 rms=4.853490 final=2.275858 tail=2.275945 tv=5.741659 maxU=6.443686 saturation=0.000000 gaps= 0\nload=1 Ki=2.0 rms=4.390071 final=0.958418 tail=1.039582 tv=5.769325 maxU=6.445082 saturation=0.000000 gaps= 0\nload=1 Ki=8.0 rms=3.960911 final=-0.048926 tail=0.065002 tv=5.682547 maxU=6.449271 saturation=0.000000 gaps= 0\nsaturation stress, Ki=8 rms=11.726070 final=-0.771225 tail=0.864160 tv=17.116663 maxU=15.000000 saturation=0.004333 gaps= 0\nConditional integration blocks only accumulation further into saturation; no claim of global stability.\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 54264
                 }
               ]
             }
@@ -8724,39 +8729,39 @@
         },
         {
           "id": "intelligent/fuzzy-controller-design#5",
-          "title": "Notebook 5：模糊 PID vs 常规 PID",
+          "title": "Notebook 5：有限候选整定及锁定测试",
           "index": 5,
-          "line": 644,
+          "line": 650,
           "cellCount": 2,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 788,
+              "milliseconds": 6288,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 常规 PID ===\n   Kp    Ki    Kd |      rms    final    TV(u)\n--------------------------------------------------\n   20     5     3 |     3.10    -0.19     15.5\n   30     8     5 |     2.90    -0.20     22.2\n   40    10     6 |     2.67    -0.19     29.9\n\n结论：常规 PID 用 Kp=40, Ki=10, Kd=6 达到 rms=2.67 deg，稳态=-0.19 deg。\n"
+                  "text": "TRAIN fuzzy 1.0 0.25 12.0 score= 4.581371261440707\nTRAIN fuzzy 1.0 0.5 12.0 score= 6.1048241050915335\nTRAIN fuzzy 1.0 1.0 12.0 score= 9.45358488674063\nTRAIN fuzzy 2.0 0.25 12.0 score= 3.2654405933288833\nTRAIN fuzzy 2.0 0.5 12.0 score= 3.7987263750913427\nTRAIN fuzzy 2.0 1.0 12.0 score= 4.950448899817358\nTRAIN fuzzy 3.0 0.25 12.0 score= 3.0281398133985156\nTRAIN fuzzy 3.0 0.5 12.0 score= 3.1590514775167233\nTRAIN fuzzy 3.0 1.0 12.0 score= 3.9729188857676\nTRAIN PID (20.0, 10.0, 3.0) score= 3.406819481537238\nTRAIN PID (20.0, 10.0, 6.0) score= 4.163533099153926\nTRAIN PID (20.0, 10.0, 9.0) score= 4.986345667176103\nTRAIN PID (40.0, 10.0, 3.0) score= 2.985488470852246\nTRAIN PID (40.0, 10.0, 6.0) score= 3.245700507778686\nTRAIN PID (40.0, 10.0, 9.0) score= 3.762761268176313\nTRAIN PID (60.0, 10.0, 3.0) score= 2.971280049549772\nTRAIN PID (60.0, 10.0, 6.0) score= 2.8542480740645106\nTRAIN PID (60.0, 10.0, 9.0) score= 3.1395928788251117\nFROZEN fuzzy= (3.0, 0.25, 12.0) PID= (60.0, 10.0, 6.0)\n"
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 3953,
+              "milliseconds": 2999,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "\n定量对比：\n  模糊 PID: rms=18.22 deg, final=-21.09 deg\n  常规 PID: rms=2.67 deg, final=-0.19 deg\n\n常规 PID 完胜。\n"
+                  "text": "TEST zero fuzzy rms=0.000000 final=0.000000 tail=0.000000 tv=0.000000 maxU=0.000000 saturation=0.000000 gaps= 0\nTEST zero PID rms=0.000000 final=0.000000 tail=0.000000 tv=0.000000 maxU=0.000000 saturation=0.000000 gaps= 0\nTEST small fuzzy rms=1.257126 final=0.000000 tail=0.000000 tv=10.486374 maxU=6.006585 saturation=0.000000 gaps= 0\nTEST small PID rms=1.124298 final=-0.068506 tail=0.082440 tv=13.555419 maxU=10.475466 saturation=0.000000 gaps= 0\nTEST large fuzzy rms=5.452849 final=0.000000 tail=0.000000 tv=22.183416 maxU=10.000000 saturation=0.000000 gaps= 0\nTEST large PID rms=4.379882 final=-0.162959 tail=0.196105 tv=25.238649 maxU=15.000000 saturation=0.009667 gaps= 0\nTEST gravity fuzzy rms=2.695884 final=0.000000 tail=0.000000 tv=17.782831 maxU=10.000000 saturation=0.000000 gaps= 0\nTEST gravity PID rms=2.304943 final=-0.120962 tail=0.146076 tv=20.734403 maxU=15.000000 saturation=0.003000 gaps= 0\nTEST load fuzzy rms=3.097970 final=1.407186 tail=1.407186 tv=15.410230 maxU=10.000000 saturation=0.000000 gaps= 0\nTEST load PID rms=2.378026 final=0.240154 tail=0.289003 tv=19.722573 maxU=15.000000 saturation=0.003333 gaps= 0\nFinite candidate sets, fixed window, ideal measurements; no universal method ranking.\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 105728
+                  "base64Length": 47396
                 }
               ]
             }
@@ -8764,22 +8769,56 @@
         },
         {
           "id": "intelligent/fuzzy-controller-design#6",
-          "title": "Notebook 6：规则库结构对比",
+          "title": "Notebook 6：规则结构、解模糊与稳定性反例",
           "index": 6,
-          "line": 818,
-          "cellCount": 1,
+          "line": 804,
+          "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 10069,
+              "milliseconds": 1521,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 规则库结构对比 ===\n        模式 |      rms      TV(u)    final\n---------------------------------------------\n   PD-like |    21.10      915.0    21.69\n    P-like |    14.53      186.0   -19.59\n    D-like |   115.97   196692.0   186.43\n"
+                  "text": "PD rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nP rms=16.587020 final=2.641583 tail=25.917651 tv=214.196581 maxU=8.134172 saturation=0.000000 gaps= 0\nD rms=122.072250 final=173.134836 tail=173.134836 tv=9.239778 maxU=4.897511 saturation=0.000000 gaps= 0\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 87824
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2217,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "COG rms=3.669619 final=0.000000 tail=0.000000 tv=6.455382 maxU=6.443686 saturation=0.000000 gaps= 0\nstatic asymmetric input (.37,-.12) COG 0.17627757609606257\nBIS rms=3.770013 final=0.000000 tail=0.000002 tv=6.390132 maxU=6.390132 saturation=0.000000 gaps= 0\nstatic asymmetric input (.37,-.12) BIS 0.3287856444554734\nMOM rms=6.217119 final=4.340201 tail=7.479000 tv=675.008904 maxU=10.504452 saturation=0.000000 gaps= 0\nstatic asymmetric input (.37,-.12) MOM 0.5\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 69712
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 9,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "A1 eigenvalues= [-1. -1.]\nA2 eigenvalues= [-1. -1.]\naverage eigenvalues= [ 4. -6.]\nPD poles= [-13.8973666 -10.1026334]\nTS identical consequents at e=-.2 de=.1 = -7.4\nPositive gain on e=-theta gives restoring torque; local stable rules alone do not certify a blend.\n"
                 }
               ]
             }
@@ -14891,12 +14930,10 @@
   "totals": {
     "lessons": 104,
     "notebooks": 446,
-    "enabled": 435,
-    "codeOnly": 11
+    "enabled": 434,
+    "codeOnly": 12
   },
   "releaseTotals": {
-    "lessons": 104,
-    "notebooks": 446,
     "enabled": 434,
     "codeOnly": 12
   },
@@ -15605,6 +15642,12 @@
       "testedAt": "2026-10-24T06:27:44.559Z",
       "url": "http://127.0.0.1:9298/python-expansion.html?lesson=rl-control%2Fdynamic-programming",
       "inputPath": ".agent/semester-03/rl-02/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T06:22:17.400Z",
+      "url": "http://127.0.0.1:18407/python-expansion.html?lesson=intelligent/fuzzy-controller-design",
+      "inputPath": ".agent/semester-03/intel-02/pyodide.json",
+      "codeExactlyEqual": true
     }
   ]
 }
