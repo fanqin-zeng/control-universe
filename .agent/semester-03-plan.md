@@ -101,6 +101,7 @@
 | EST-07 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-07，rank4；其它会话并行，保留检查点，仅依赖已交付KF/EKF | .agent/semester-03/est-07/acceptance.md |
 | MPC-07 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09;EST-08;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-07，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-07/acceptance.md |
 | ML-08 | IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-08，rank2；保留并行实现课，仅依赖已交付ML-04/随机过程/ODE | .agent/semester-03/ml-08/acceptance.md |
+| ROBUST-06 | IMPL-10;ML-09;ID-09;EST-08 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -983,3 +984,8 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### IMPL-09 半实物仿真本轮交付
 
 新写单课；验证层次、虚拟时序与HIL证据边界。讨论和真实验收见 `.agent/semester-03/impl-09/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ROBUST-06 本期交付记录（2026-10-24）
+
+混合灵敏度按Phase1–4重构，九H2/全部标题/四题全部子问/原二Notebook四cell用途保留。修正Bode条件、P维度、权重接口/包络、DGKF/LMI前提；诊断原两控制器失稳，补proper名义族候选和同预算三权重网格、9/10/11失配含9失稳。三Notebook五cell、四参数双图Explorer/SVG，严格内核与Pyodide、实际TS/独立复算、双构建/375px/锚点证据见.agent/semester-03/robust-06/acceptance.md。未运行Slycot/MATLAB通用综合、不冒称最优。rank5独立资源，仅本课，不发布Pages，不生产ROBUST-07；真实master hash见checklist。

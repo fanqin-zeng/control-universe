@@ -1,3 +1,4 @@
+import { MixedSensitivityExplorer } from '@/components/wiki/mixed-sensitivity-explorer';
 import { HilRehearsalExplorer } from "@/components/wiki/hil-rehearsal-explorer";
 import { GenerativeBasicsExplorer } from '@/components/wiki/generative-basics-explorer';
 import { ExplicitMpcExplorer } from "@/components/wiki/explicit-mpc-explorer";
@@ -172,6 +173,7 @@ export const wikiComponents: MDXComponents = {
   EmbeddedControlExplorer,
   ExtendedKalmanExplorer,
   RobustStabilityExplorer,
+  MixedSensitivityExplorer,
   HInfinityExplorer,
   RobustPerformanceExplorer,
   AutodiffTrainingExplorer,

@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 123 课 / 507 个实验 / 780 个单元格全部纳入盘点。120 课全部可运行，1 课混合，2 课全部保留代码；启用 504 个实验，保留 3 个。实际执行 774 个单元格（含异常单元格），生成 236 张 PNG。原始记录中 504 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 125 课 / 513 个实验 / 791 个单元格全部纳入盘点。122 课全部可运行，1 课混合，2 课全部保留代码；启用 510 个实验，保留 3 个。实际执行 785 个单元格（含异常单元格），生成 239 张 PNG。原始记录中 510 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -49,7 +49,7 @@
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
 | robust/robust-performance（鲁棒性能） | 3/3 | 5 | 无 |
 | robust/h-infinity-basics（H∞控制） | 4/4 | 5 | 无 |
-| robust/mixed-sensitivity（混合灵敏度） | 2/2 | 4 | 无 |
+| robust/mixed-sensitivity（混合灵敏度） | 3/3 | 5 | 无 |
 | robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
 | robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
 | mpc/mpc-principle（预测控制原理） | 2/2 | 3 | 无 |
@@ -135,6 +135,8 @@
 | identification/nonlinear-data-driven-id（非线性辨识） | 3/3 | 3 | 无 |
 | estimation/sensor-fusion（多传感器融合） | 3/3 | 6 | 无 |
 | mpc/explicit-mpc（显式预测控制） | 2/2 | 4 | 无 |
+| machine-learning/generative-models（扩散与流匹配） | 2/2 | 4 | 无 |
+| implementation/hil-rapid-prototyping（半实物仿真） | 3/3 | 6 | 无 |
 
 ## 待处理实验
 

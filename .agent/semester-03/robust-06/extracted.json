@@ -1,0 +1,82 @@
+{
+  "source": "content/robust/mixed-sensitivity.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 177,
+      "title": "对象与权重：精确端点",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-4,4,4001);t=np.linspace(0,8,1601)\r\nG=ctrl.tf([100],[1,1,100]);W1=ctrl.tf([.5,5],[1,.05]);W2=.1;W3=.01\r\nK_ms=ctrl.tf([50,50],[1,20,199])\r\nK_ls=20*ctrl.tf([1,10,100],[1,.4,100])\r\ndef candidate(a=20.,k=200.):return ctrl.tf(np.array([1.,1.,100.])*k/100,[1.,a,0.])\r\ndef response(a=20.,k=200.,rho=.01,wb=5.,freq=w):\r\n    s=1j*np.asarray(freq);D=s*s+a*s+k\r\n    S=s*(s+a)/D;T=k/D;U=k/100*(s*s+s+100)/D;W=(.5*s+wb)/(s+.01*wb)\r\n    return S,T,U,np.sqrt(abs(W*S)**2+.01*abs(T)**2+rho*rho*abs(U)**2)\r\ndef rational_peak(N,D):\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-10))\r\n    xs=[0.]+[float(x.real) for x in roots if x.real>0 and abs(x.imag)<1e-7*max(1.,abs(x.real))]\r\n    values=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    values.append((np.sqrt(N[-1]/D[-1]) if len(N)==len(D) else 0.,float('inf')))\r\n    return max(values,key=lambda x:x[0])\r\ndef full_peaks(a=20.,k=200.,rho=.01,wb=5.):\r\n    D=np.array([k*k,a*a-2*k,1.]);F=np.array([(.01*wb)**2,1.])\r\n    NS=np.array([0.,a*a,1.]);NU=np.array([10000.,-199.,1.])*(k/100)**2\r\n    N=poly.polyadd(poly.polymul([wb*wb,.25],NS),poly.polymul(F,poly.polyadd([.01*k*k],rho*rho*NU)))\r\n    return {'Ms':rational_peak(NS,D),'gamma':rational_peak(N,poly.polymul(D,F))}\r\ndef audit(C,wn=10.):\r\n    P=ctrl.tf([wn*wn],[1,.1*wn,wn*wn]);L=P*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);U=ctrl.feedback(C,P)\r\n    alpha=float(max(ctrl.poles(T).real));stable=alpha<0\r\n    return {'alpha':alpha,'stable':stable,'S_DC_algebra':float(ctrl.dcgain(S)),'S_scan':float(max(abs(S(1j*w)))),'T10':float(abs(T(10j))),'S':S,'T':T,'U':U}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 210,
+          "delim": "`",
+          "code": "# Original purpose: inspect the plant and weighting functions, using exact endpoints\r\nprint('W1_DC',ctrl.dcgain(W1),'W1_infinity',.5,'inverse_DC',.01,'inverse_infinity',2.)\r\nprint('original_G_wn_zeta',10.,.05,'weight_zero_pole',10.,.05)\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.2));ax[0].semilogx(w,20*np.log10(abs(W1(1j*w))));ax[1].semilogx(w,20*np.log10(1/abs(W1(1j*w))))\r\nfor a in ax:a.set_xlabel('Frequency (rad/s)');a.set_ylabel('Magnitude (dB)');a.grid(True)\r\nax[0].set_title('W1');ax[1].set_title('1/W1: conditional bound at gamma < 1')\r\nplt.tight_layout();plt.show();print('weights_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 257,
+      "title": "稳定性、对照和加权验证",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-4,4,4001);t=np.linspace(0,8,1601)\r\nG=ctrl.tf([100],[1,1,100]);W1=ctrl.tf([.5,5],[1,.05]);W2=.1;W3=.01\r\nK_ms=ctrl.tf([50,50],[1,20,199])\r\nK_ls=20*ctrl.tf([1,10,100],[1,.4,100])\r\ndef candidate(a=20.,k=200.):return ctrl.tf(np.array([1.,1.,100.])*k/100,[1.,a,0.])\r\ndef response(a=20.,k=200.,rho=.01,wb=5.,freq=w):\r\n    s=1j*np.asarray(freq);D=s*s+a*s+k\r\n    S=s*(s+a)/D;T=k/D;U=k/100*(s*s+s+100)/D;W=(.5*s+wb)/(s+.01*wb)\r\n    return S,T,U,np.sqrt(abs(W*S)**2+.01*abs(T)**2+rho*rho*abs(U)**2)\r\ndef rational_peak(N,D):\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-10))\r\n    xs=[0.]+[float(x.real) for x in roots if x.real>0 and abs(x.imag)<1e-7*max(1.,abs(x.real))]\r\n    values=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    values.append((np.sqrt(N[-1]/D[-1]) if len(N)==len(D) else 0.,float('inf')))\r\n    return max(values,key=lambda x:x[0])\r\ndef full_peaks(a=20.,k=200.,rho=.01,wb=5.):\r\n    D=np.array([k*k,a*a-2*k,1.]);F=np.array([(.01*wb)**2,1.])\r\n    NS=np.array([0.,a*a,1.]);NU=np.array([10000.,-199.,1.])*(k/100)**2\r\n    N=poly.polyadd(poly.polymul([wb*wb,.25],NS),poly.polymul(F,poly.polyadd([.01*k*k],rho*rho*NU)))\r\n    return {'Ms':rational_peak(NS,D),'gamma':rational_peak(N,poly.polymul(D,F))}\r\ndef audit(C,wn=10.):\r\n    P=ctrl.tf([wn*wn],[1,.1*wn,wn*wn]);L=P*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);U=ctrl.feedback(C,P)\r\n    alpha=float(max(ctrl.poles(T).real));stable=alpha<0\r\n    return {'alpha':alpha,'stable':stable,'S_DC_algebra':float(ctrl.dcgain(S)),'S_scan':float(max(abs(S(1j*w)))),'T10':float(abs(T(10j))),'S':S,'T':T,'U':U}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 290,
+          "delim": "`",
+          "code": "# Original purpose: closed-loop metrics, S/envelope, T, output and control step response\r\nreports={}\r\nfor name,C in [('old_ms',K_ms),('old_ls',K_ls),('candidate',candidate())]:\r\n    v=audit(C);reports[name]={key:value for key,value in v.items() if key not in ['S','T','U']};print(name,reports[name])\r\nv=audit(candidate());peaks=full_peaks();S,T,U,stack=response()\r\nprint('default_full_peaks',peaks,'sample_peak',max(abs(S)),'sample_gamma',max(stack),'u_initial',2.,'error_final',0.)\r\nfig,ax=plt.subplots(2,2,figsize=(10,6));ax[0,0].semilogx(w,abs(S),label='S');ax[0,0].semilogx(w,1/abs(W1(1j*w)),ls='--',label='1/W1');ax[0,1].semilogx(w,abs(T),label='T')\r\n_,y=ctrl.step_response(v['T'],t);_,u=ctrl.step_response(v['U'],t);ax[1,0].plot(t,y,label='output');ax[1,1].plot(t,u,label='control')\r\nfor a in ax.flat:a.grid(True);a.legend()\r\nax[0,0].set_xlabel('rad/s');ax[0,1].set_xlabel('rad/s');ax[1,0].set_xlabel('seconds');ax[1,1].set_xlabel('seconds')\r\nprint('step_sample_ymax_umax',max(y),max(abs(u)),'T10',abs(v['T'](10j)))\r\nplt.tight_layout();plt.show();print('design_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 302,
+          "delim": "`",
+          "code": "# Original comparison purpose retained as failure audit, not a claim of algorithm superiority\r\nfig,ax=plt.subplots(2,2,figsize=(10,6))\r\nfor name,C in [('old_ms_unstable',K_ms),('old_ls_unstable',K_ls),('fixed_family',candidate())]:\r\n    v=audit(C);short=np.linspace(0,1,501);_,yy=ctrl.step_response(v['T'],short);_,uu=ctrl.step_response(v['U'],short)\r\n    ax[0,0].plot(short,yy,label=name);ax[0,1].plot(short,uu,label=name)\r\n    ax[1,0].semilogx(w,abs(v['S'](1j*w)),label=name);ax[1,1].semilogx(w,abs(v['T'](1j*w)),label=name)\r\nfor a in ax.flat:a.grid(True);a.legend(fontsize=7)\r\nax[0,0].set_title('Finite-time output: unstable traces have no final-value claim');ax[0,1].set_title('Finite-time control')\r\nplt.tight_layout();plt.show()\r\nmisalignment=[]\r\nfor wn in [9.,10.,11.]:\r\n    v=audit(candidate(),wn);row={key:value for key,value in v.items() if key not in ['S','T','U']};misalignment.append((wn,row));print('fixed_K_plant_wn',wn,row)\r\nprint('comparison_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 315,
+          "delim": "`",
+          "code": "# Original purpose: verify each weighted channel and their same-frequency stack\r\nS,T,U,stack=response();print('individual_scans',max(abs(W1(1j*w)*S)),max(.1*abs(T)),max(.01*abs(U)))\r\nprint('default_stack_full',full_peaks()['gamma'],'sample_gamma',max(stack))\r\nfor a,k in [(20.,100.),(20.,200.),(30.,450.)]:print('fixed_candidates',a,k,full_peaks(a,k))\r\nsearch=[]\r\nfor rho in [.01,.1,.2]:\r\n    best=(float('inf'),0.,0.)\r\n    for a in np.arange(5.,61.,5.):\r\n        for k in np.arange(20.,901.,20.):\r\n            values=response(a,k,rho)[3];score=max(float(max(values)),.1,np.hypot(.5,rho*k/100))\r\n            best=min(best,(score,a,k))\r\n    score,a,k=best;entry={'rho':rho,'a':a,'k':k,'sample_gamma':score,'full':full_peaks(a,k,rho)};search.append(entry);print('family_grid_candidate',entry)\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.2))\r\nfor values,label in [(abs(W1(1j*w)*S),'W1 S'),(.1*abs(T),'W2 T'),(.01*abs(U),'W3 KS'),(stack,'stack')]:ax[0].semilogx(w,values,label=label)\r\nfor values,label in [(abs(S),'S'),(abs(T),'T'),(abs(U),'KS')]:ax[1].semilogx(w,values,label=label)\r\nfor a in ax:a.grid(True);a.legend();a.set_xlabel('rad/s');a.axhline(1,color='black',ls='--')\r\nplt.tight_layout();plt.show();print('verification_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 446,
+      "title": "四题逐项复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-4,4,4001);t=np.linspace(0,8,1601)\r\nG=ctrl.tf([100],[1,1,100]);W1=ctrl.tf([.5,5],[1,.05]);W2=.1;W3=.01\r\nK_ms=ctrl.tf([50,50],[1,20,199])\r\nK_ls=20*ctrl.tf([1,10,100],[1,.4,100])\r\ndef candidate(a=20.,k=200.):return ctrl.tf(np.array([1.,1.,100.])*k/100,[1.,a,0.])\r\ndef response(a=20.,k=200.,rho=.01,wb=5.,freq=w):\r\n    s=1j*np.asarray(freq);D=s*s+a*s+k\r\n    S=s*(s+a)/D;T=k/D;U=k/100*(s*s+s+100)/D;W=(.5*s+wb)/(s+.01*wb)\r\n    return S,T,U,np.sqrt(abs(W*S)**2+.01*abs(T)**2+rho*rho*abs(U)**2)\r\ndef rational_peak(N,D):\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-10))\r\n    xs=[0.]+[float(x.real) for x in roots if x.real>0 and abs(x.imag)<1e-7*max(1.,abs(x.real))]\r\n    values=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    values.append((np.sqrt(N[-1]/D[-1]) if len(N)==len(D) else 0.,float('inf')))\r\n    return max(values,key=lambda x:x[0])\r\ndef full_peaks(a=20.,k=200.,rho=.01,wb=5.):\r\n    D=np.array([k*k,a*a-2*k,1.]);F=np.array([(.01*wb)**2,1.])\r\n    NS=np.array([0.,a*a,1.]);NU=np.array([10000.,-199.,1.])*(k/100)**2\r\n    N=poly.polyadd(poly.polymul([wb*wb,.25],NS),poly.polymul(F,poly.polyadd([.01*k*k],rho*rho*NU)))\r\n    return {'Ms':rational_peak(NS,D),'gamma':rational_peak(N,poly.polymul(D,F))}\r\ndef audit(C,wn=10.):\r\n    P=ctrl.tf([wn*wn],[1,.1*wn,wn*wn]);L=P*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);U=ctrl.feedback(C,P)\r\n    alpha=float(max(ctrl.poles(T).real));stable=alpha<0\r\n    return {'alpha':alpha,'stable':stable,'S_DC_algebra':float(ctrl.dcgain(S)),'S_scan':float(max(abs(S(1j*w)))),'T10':float(abs(T(10j))),'S':S,'T':T,'U':U}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 479,
+          "delim": "`",
+          "code": "# Every exercise retains its original numeric data; verify all numeric answers\r\narea=-10*np.log(.1);print('Q1_area',area,'relative_degree_one_integral_k2',-np.pi)\r\ng0=10.;w10=1.;p11=np.array([[w10],[0.],[0.]]);p12=np.array([[-w10*g0],[.1*g0],[.01]])\r\nprint('Q2_P11_P12_P21_P22',p11,p12,np.array([[1.]]),np.array([[-g0]]),'shapes',p11.shape,p12.shape,(1,1),(1,1))\r\nexerciseW=ctrl.tf([.5,.5],[1,.01]);print('Q3_W_DC_infty_zero_pole',ctrl.dcgain(exerciseW),.5,1.,.01,'inverse_at_0p5',1/abs(exerciseW(.5j)))\r\nfor rho in [.01,.1,.2]:print('Q4_fixed_K_new_objective_not_resynthesis',rho,full_peaks(rho=rho))\r\nprint('DC_stack_lower_bound_gamma1_controls_old_g0',100/np.sqrt(10000+.01),'Q2_weight_not_high_low',1.,100.)\r\nprint('all_answers_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

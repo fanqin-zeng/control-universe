@@ -162,7 +162,7 @@
 | 11.3 | 鲁棒稳定性 | robust-stability | ✅ 已交付 v1.3 | grad | theory | 13 | robust/uncertainty-modeling<br>nonlinear/iss-small-gain |
 | 11.4 | 鲁棒性能 | robust-performance | ✅ 已交付 v1.3 | grad | theory | 14 | robust/robust-stability<br>classic/frequency-domain-analysis |
 | 11.5 | H∞控制 | h-infinity-basics | ✅ 已交付 v1.3 | grad | theory | 15 | robust/robust-performance<br>modern/lqr-controller<br>math/convex-optimization |
-| 11.6 | 混合灵敏度 | mixed-sensitivity | 🟨 有正文待审校 | grad | theory | 16 | robust/h-infinity-basics<br>classic/frequency-response-design |
+| 11.6 | 混合灵敏度 | mixed-sensitivity | ✅ 已交付 v1.3 | grad | theory | 16 | robust/h-infinity-basics<br>classic/frequency-response-design |
 | 11.7 | 结构奇异值 | mu-analysis | ⬜ 骨架（占位页） | advanced | theory | 15 | robust/uncertainty-modeling<br>robust/robust-performance<br>math/matrix-decomposition |
 | 11.8 | μ综合 | mu-synthesis | 🟨 有正文待审校 | advanced | theory | 16 | robust/mu-analysis<br>robust/h-infinity-basics |
 | 11.9 | H∞滤波 | h-infinity-filter | ⬜ 骨架（占位页） | grad | theory | 16 | robust/h-infinity-basics<br>estimation/kalman-filter |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 119（status = v1.3）
-- **有正文待审校**: 6（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 120（status = v1.3）
+- **有正文待审校**: 5（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 80（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 86（= draft 6 + empty 80 + 无 status 0）
+- **未完成 v1.3**: 85（= draft 5 + empty 80 + 无 status 0）
 - **有 MDX 正文**: 125
 - **catalog 小节总数**: 1364
-- **讨论日志**: 142 篇（覆盖 119 门；有 MDX 无日志 6 门）
-- **交互组件**: 129 个文件（被正文引用 129，孤儿 0）
+- **讨论日志**: 143 篇（覆盖 120 门；有 MDX 无日志 5 门）
+- **交互组件**: 130 个文件（被正文引用 130，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
