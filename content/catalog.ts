@@ -3624,12 +3624,54 @@ export const catalog: Chapter[] = [
       {
         "slug": "attention-transformers",
         "title": "注意力机制",
+        "subsections": [
+          {
+            "slug": "从记忆状态到查阅记录",
+            "title": "从记忆状态到查阅记录"
+          },
+          {
+            "slug": "查询键与值",
+            "title": "查询键与值"
+          },
+          {
+            "slug": "缩放点积与稳定计算",
+            "title": "缩放点积与稳定计算"
+          },
+          {
+            "slug": "因果掩码挡住未来",
+            "title": "因果掩码挡住未来"
+          },
+          {
+            "slug": "位置与排列",
+            "title": "位置与排列"
+          },
+          {
+            "slug": "多头和transformer",
+            "title": "多头和Transformer"
+          },
+          {
+            "slug": "预测合同与计算代价",
+            "title": "预测合同与计算代价"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/sequence-models"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "representation-learning",

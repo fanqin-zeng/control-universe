@@ -87,6 +87,7 @@
 | ML-05 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-05，rank2；保留并行课程，只依赖已交付ML-04与随机过程 | .agent/semester-03/ml-05/acceptance.md |
 | MPC-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-05;EST-06;EST-07;EST-08;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-04，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-04/acceptance.md |
 | ID-05 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-05，rank3；保留并行课程，仅依赖已交付ID-04、传递函数、随机过程和PID | .agent/semester-03/id-05/acceptance.md |
+| ML-06 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-06，rank2；ML-05已交付，保留并行实现课，仅依赖已交付时序模型 | .agent/semester-03/ml-06/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -895,6 +896,11 @@ rank2按用户指定新写时序模型；单课讨论、288配置独立闭式对
 ### IMPL-05 嵌入式控制本轮交付
 
 新写单课；ADC端点标定、PWM时隙、闭环量化与样本交接。讨论和真实验收见 `.agent/semester-03/impl-05/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ML-06 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独立Decimal对账、原始严格kernel/Pyodide、真实静态页面与375px、两种构建已执行。仅给定QKV算子，不声称完整Transformer训练或性能排名；独立预览8216，不发布Pages。证据.agent/semester-03/ml-06/acceptance.md，真实master回执提交后登记。
 
 ### MPC-04 学期3交付（2026-10-24）
 
