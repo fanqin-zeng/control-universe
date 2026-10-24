@@ -180,3 +180,6 @@ verify PASS9/WARN0/FAIL0/SKIPPED0；数学files0/tokens0；术语PASS4/WARN2/FAI
 
 
 收尾实测：rank5内核3→0，21095/21195/21295/8995四端口全部释放，见kernel-cleanup.json与ports-cleanup.json。共享工作树末次check退出1（6项在途FAIL），原始semester因RL-02列数退出1，见end-root-exits.json；仅本课最新master投影六项退出0，不带入其它会话在途修改。
+
+
+真实master交付提交：fb4bcf9c14114ce697252be4093c88b64e0776de。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
