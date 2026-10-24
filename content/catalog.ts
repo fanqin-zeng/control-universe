@@ -6110,7 +6110,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "title": "夹爪挡住杯子之后",
+            "slug": "夹爪挡住杯子之后"
+          },
+          {
+            "title": "三种模态各知道什么",
+            "slug": "三种模态各知道什么"
+          },
+          {
+            "title": "先把观测对齐",
+            "slug": "先把观测对齐"
+          },
+          {
+            "title": "怎样合成位置读数",
+            "slug": "怎样合成位置读数"
+          },
+          {
+            "title": "迟到和相关误差",
+            "slug": "迟到和相关误差"
+          },
+          {
+            "title": "从传感器到学习表征",
+            "slug": "从传感器到学习表征"
+          },
+          {
+            "title": "怎样验证多模态有用",
+            "slug": "怎样验证多模态有用"
+          },
+          {
+            "title": "小结",
+            "slug": "小结"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ]
       },
       {
         "slug": "action-representations",

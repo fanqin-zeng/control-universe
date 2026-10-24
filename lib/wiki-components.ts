@@ -1,3 +1,4 @@
+import { MultimodalObservationExplorer } from "@/components/wiki/multimodal-observation-explorer";
 import { UncertaintyModelExplorer } from '@/components/wiki/uncertainty-model-explorer';
 import { PidTuningExplorer } from "@/components/wiki/pid-tuning-explorer";
 import { NeuralNetworkBasicsExplorer } from '@/components/wiki/neural-network-basics-explorer';
@@ -117,6 +118,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  MultimodalObservationExplorer,
   UncertaintyModelExplorer,
   PidTuningExplorer,
   NeuralNetworkBasicsExplorer,

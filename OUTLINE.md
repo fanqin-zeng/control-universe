@@ -277,7 +277,7 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 19.1 | 具身智能系统 | embodied-systems | ✅ 已交付 v1.3 | grad | frontier | 10 | robot-learning/robot-data<br>machine-learning/attention-transformers |
-| 19.2 | 多模态感知 | multimodal-observation | ⬜ 骨架（占位页） | grad | learning | 11 | embodied/embodied-systems<br>machine-learning/representation-learning |
+| 19.2 | 多模态感知 | multimodal-observation | ✅ 已交付 v1.3 | grad | learning | 11 | embodied/embodied-systems<br>machine-learning/representation-learning |
 | 19.3 | 动作表示 | action-representations | ⬜ 骨架（占位页） | grad | learning | 12 | embodied/embodied-systems<br>robotics/trajectory-tracking |
 | 19.4 | 通用机器人策略 | generalist-policies | ⬜ 骨架（占位页） | grad | frontier | 13 | embodied/multimodal-observation<br>embodied/action-representations<br>robot-learning/imitation-learning |
 | 19.5 | 扩散与流策略 | diffusion-flow-policies | ⬜ 骨架（占位页） | grad | learning | 13 | embodied/action-representations<br>machine-learning/generative-models |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 86（status = v1.3）
+- **已交付 v1.3**: 87（status = v1.3）
 - **有正文待审校**: 15（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 104（status = empty，渲染占位页）
+- **骨架占位**: 103（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 119（= draft 15 + empty 104 + 无 status 0）
-- **有 MDX 正文**: 101
-- **catalog 小节总数**: 1121
-- **讨论日志**: 108 篇（覆盖 86 门；有 MDX 无日志 15 门）
-- **交互组件**: 96 个文件（被正文引用 96，孤儿 0）
+- **未完成 v1.3**: 118（= draft 15 + empty 103 + 无 status 0）
+- **有 MDX 正文**: 102
+- **catalog 小节总数**: 1131
+- **讨论日志**: 109 篇（覆盖 87 门；有 MDX 无日志 15 门）
+- **交互组件**: 97 个文件（被正文引用 97，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
