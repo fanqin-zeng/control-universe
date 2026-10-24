@@ -1,3 +1,4 @@
+import { HInfinityExplorer } from '@/components/wiki/h-infinity-explorer';
 import { ParticleFilterExplorer } from "@/components/wiki/particle-filter-explorer";
 import { GpcExplorer } from "@/components/wiki/gpc-explorer";
 import { SubspaceIdentificationExplorer } from "@/components/wiki/subspace-identification-explorer";
@@ -159,6 +160,7 @@ export const wikiComponents: MDXComponents = {
   EmbeddedControlExplorer,
   ExtendedKalmanExplorer,
   RobustStabilityExplorer,
+  HInfinityExplorer,
   RobustPerformanceExplorer,
   AutodiffTrainingExplorer,
   RecedingHorizonExplorer,

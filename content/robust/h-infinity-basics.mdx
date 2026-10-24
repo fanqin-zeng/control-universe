@@ -1,718 +1,589 @@
 ---
 title: H∞控制基础
-description: 掌握 H∞ 优化问题的标准形式，理解加权灵敏度方法，学会用回路整形设计 H∞ 控制器。
+description: 从内部稳定和需求权重出发搭建H∞问题，用柔性对象的失败设计、可实现候选与失配实验建立综合直觉。
 ---
 
 # H∞控制基础
 
-上节课我们建立了鲁棒性的分析框架：灵敏度函数 $S$ 和补灵敏度函数 $T$ 满足 $S + T = 1$，$\mathcal{H}_\infty$ 范数衡量最坏情况增益，小增益定理给出鲁棒稳定的充分条件。
+[上一课](/robust/robust-performance)检查了一个固定控制器，发现“稳定”还不足以保证误差达标。这次把问题向前推进：柔性定位台移动工件时会激起振动，工程师能否主动选择控制器，既跟得准，又不过分放大共振、噪声和控制命令？
 
-但这些都是**分析工具**——告诉你"给定控制器，系统鲁棒吗？"。工程师真正需要的是**综合工具**——"怎么设计一个控制器，使系统既鲁棒又满足性能指标？"
+分析是检查给定控制器，**综合是寻找控制器**。$\mathcal H_\infty$ 控制把声明的输入输出增益作为目标，在保持内部稳定的控制器中寻找满足要求的方案。本课先搭标准问题，再用手工回路整形验证这个思路；不把一次手调当成已经运行了通用最优综合。
 
-这就是 **$\mathcal{H}_\infty$ 控制**要解决的问题。
-
-> 📖 本节课需要上一节的全部基础：[鲁棒性概念](/robust/robustness-concept)。状态空间解法涉及 Riccati 方程，与 LQR 有深刻联系：[LQR 控制器](/modern/lqr-controller)。
+前置是[鲁棒性能](/robust/robust-performance)、[灵敏度与小增益](/robust/robustness-concept)、[频域分析](/classic/frequency-domain-analysis)；[LQR](/modern/lqr-controller)有助于理解后面的Riccati概述。全文以连续时间、有限维线性时不变模型为范围，$S=(1+GK)^{-1}$、$T=GK(1+GK)^{-1}$，单位负反馈满足 $S+T=1$。
 
 ## 从分析到综合
 
 ### 设计需求的数学翻译
 
-工程师拿到的设计需求通常是这样的：
+先说明参考、扰动或噪声从哪里进入，再选相应通道。对于稳定适当的传递矩阵 $H$，有：
 
-| 需求 | 时域描述 | 频域翻译 |
-|------|----------|----------|
-| 跟踪精度 | 阶跃响应稳态误差 < 1% | $|S(j\omega)| < 0.01$，$\omega < 1$ rad/s |
-| 扰动抑制 | 10 Hz 以下的振动衰减 40 dB | $|S(j\omega)| < 0.01$，$\omega < 63$ rad/s |
-| 噪声抑制 | 1 kHz 以上的传感器噪声衰减 20 dB | $|T(j\omega)| < 0.1$，$\omega > 6283$ rad/s |
-| 稳定裕度 | 相位裕度 > 45° | $\|S\|_\infty < 1.4$ |
-| 控制能量 | 控制信号不能太大 | $\|CS\|_\infty$ 有界 |
+$$
+\|H\|_\infty=\sup_{\omega\in\mathbb R}\bar\sigma(H(j\omega)).
+$$
 
-所有这些需求都可以写成**某个闭环传递函数的 $\mathcal{H}_\infty$ 范数小于某个值**的形式。
+它等于有限能量输入到输出的最坏 $L_2$ 增益。单位阶跃不是有限能量输入；其稳态误差要另用内部稳定与终值定理检查，不能把两个问题混为一谈。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+
+| 需求 | 可用的模型描述 | 适用条件与补充检查 |
+|---|---|---|
+| 阶跃稳态误差小于1% | 单位反馈时 $\vert S(0)\vert <0.01$ | 内部稳定、终值定理；不能直接推出整个低频带都小于0.01 |
+| 10Hz以下输出扰动衰减40dB | 在该频带要求 $\vert S\vert <0.01$ | 这里扰动加在输出；输入扰动通道是GS，频率换成 $\omega<2\pi\times10$ rad/s |
+| 1kHz以上测量噪声衰减20dB | 输出噪声通道含T，要求 $\vert T\vert <0.1$ | 先声明噪声位置，另查控制命令噪声通道 |
+| 相位裕度超过45° | 直接计算各相关交越与裕度 | 不等价于某个固定的灵敏度峰值门槛 |
+| 执行器命令有限 | 对归一化KS选适当权重 | 能量增益界不自动保证任意输入的瞬时幅值不饱和 |
+
+</div>
+
+例如在常见的SISO负反馈交越解释下，$|L(j\omega_c)|=1$ 时：
+
+$$
+|S(j\omega_c)|=\frac1{2|\sin(PM/2)|}.
+$$
+
+$M_s=\|S\|_\infty<1.4$ 对相应通常相位裕度的推论约为 $PM>41.849665^\circ$，并不等价于45°；复杂交越和内部稳定还须单独检查。
 
 ### 核心矛盾
 
-上节课已经看到，$S + T = 1$ 意味着不可能同时让 $S$ 和 $T$ 在所有频率上都小。$\mathcal{H}_\infty$ 控制的核心任务是：**在这个根本约束下，找到最优的权衡方案**。
-
-具体来说，$\mathcal{H}_\infty$ 控制要解决以下优化问题：
+$S+T=1$ 不允许两个量在同一频率都任意小。增益、带宽、共振、噪声和执行器开销之间必须权衡。用权重把关注的量堆成一个性能输出，例如：
 
 $$
-\min_{C \text{ 稳定}} \|W_1 S\|_\infty^2 + \|W_2 T\|_\infty^2 + \|W_3 CS\|_\infty^2
+J(K)=\left\|\begin{bmatrix}W_1S\\W_2T\\W_3KS\end{bmatrix}\right\|_\infty.
 $$
 
-或者更一般地：
+这里共用同一归一化输入，标量通道在每个频率的堆叠奇异值是模平方和的平方根。它**不等价于**三个单独范数平方之和，也不等价于只取三个通道的最大值。例 $H_1=1/(s+1),H_2=s/(s+1)$，两个单独范数均为1，但堆叠范数为1；单独范数平方和为2，堆叠范数平方为1。
 
-$$
-\min_{C \text{ 稳定}} \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 CS \end{bmatrix} \right\|_\infty
-$$
-
-其中 $W_1(s)$、$W_2(s)$、$W_3(s)$ 是**加权函数**（weighting functions），用来把不同频率的设计需求统一到一个优化框架中。
+要优化的集合是**使整个互连良定且内部稳定的适当控制器**，不是只要求K自身稳定。反例 $G=1/(s+2),K=3/(s-1)$：K自身有不稳定极点，但反馈特征式 $s^2+s+1$ 稳定，S、GS、KS、T都适当稳定。反过来，稳定的K也未必稳定被控对象。限制K自身稳定是额外的强稳定化约束，不是一般H∞问题的默认要求。
 
 ## 加权函数
 
-加权函数是 $\mathcal{H}_\infty$ 控制的"语言"——它把工程需求翻译成数学优化问题。
-
 ### 性能加权 $W_1(s)$
 
-性能加权反映对灵敏度 $S$ 的频率要求。
+本课沿用旧符号：$W_1$ 加在S上、$W_2$ 加在T上、$W_3$ 加在KS上。与标准软件常用 $W_S,W_U,W_T$ 的映射是 $W_S=W_1,W_U=W_3,W_T=W_2$，不要凭编号交换含义。
 
-**例子**：要求低频（$\omega < 10$ rad/s）扰动衰减 60 dB，高频（$\omega > 1000$ rad/s）$|S|$ 可以接近 1。
-
-一个合适的加权函数：
+一阶候选权重为：
 
 $$
-W_1(s) = \frac{s/M^{1/p} + \omega_b}{s + \omega_b A^{1/p}}
+W_1(s)=\frac{s/M+\omega_b}{s+A\omega_b},\qquad 0 < A < 1 < M.
 $$
 
-其中：
-- $A$：低频允许的最大 $|S|$（如 $A = 0.001$，即 -60 dB）
-- $M$：高频允许的最大 $|S|$（如 $M = 1.5$）
-- $\omega_b$：带宽频率（如 $\omega_b = 10$ rad/s）
-- $p$：通常取 1
+它在直流的模为 $1/A$，高频极限为 $1/M$。若使用阶数p的扩展，应把整个一阶比例取p次方，并用 $A^{1/p},M^{1/p}$ 设置端点；只改根号、不取外层幂会改变原定直流/高频指标。本课只用p=1。
 
-这个加权函数的 Bode 图：低频增益 $1/A = 1000$（强制 $|S|$ 很小），高频增益 $1/M \approx 0.67$（放松要求）。
-
-> 💡 **直觉**：$W_1$ 在某个频率的增益越大，优化就越"用力"把那个频率的 $|S|$ 压下去。加权函数告诉优化器"哪里更重要"。
+$A=0.001,M=1.5,\omega_b=10$ 给出 $W_1=(s/1.5+10)/(s+0.01)$。其直流模1000，但在1rad/s处约10.021697、在10rad/s处约1.201850。它**没有**要求整个10rad/s以下都达到60dB抑制；只有实际证明加权界后，逆模才是逐频误差包络。$\omega_b$ 是权重参数，不能当作实际闭环带宽，详见[鲁棒性能的权重解释](/robust/robust-performance)。
 
 ### 鲁棒性加权 $W_2(s)$
 
-鲁棒性加权反映对补灵敏度 $T$ 的限制。
-
-如果乘性不确定性的上界为 $|\Delta_m(j\omega)| \leq \gamma_m(\omega)$，小增益定理要求：
+若模型为 $G_p=G(1+W_m\Delta)$、$\Delta$ 是稳定适当满块且 $\|\Delta\|_\infty\le1$，标称内部稳定前提下，小增益充分条件是：
 
 $$
-\|T\|_\infty < \frac{1}{\gamma_m}
+\|W_mT\|_\infty<1.
 $$
 
-用加权函数表达：$W_2(s) = \gamma_m(s)$，要求 $\|W_2 T\|_\infty < 1$。
-
-**例子**：高频未建模动态的不确定性上界为 $\gamma_m(\omega) = 0.01 \cdot (\omega/100)^2$（$\omega > 100$ 时快速增长），则：
+可据声明的不确定性包络选择 $W_2=W_m$。频率相关包络不能直接当作一个常数放到 $\|T\|_\infty<1/\gamma_m$ 右边。权重还应稳定、适当，并实际覆盖建模误差。旧例 $0.01(1+s/100)^2$ 不适当，可改用有高频封顶的候选形式：
 
 $$
-W_2(s) = \left(\frac{s}{100} + 1\right)^2 \cdot 0.01
+W_m=0.01\frac{(1+s/100)^2}{(1+s/10000)^2}.
 $$
+
+其低频增益0.01、高频极限100，两个转折频段之间近似上升；它只是一个可实现形状，能否覆盖真实对象仍须数据或物理依据。名义混合灵敏度通过也不自动保证物理不确定性下的完整鲁棒性能。
 
 ### 控制能量加权 $W_3(s)$
 
-控制能量加权限制控制信号的大小，防止执行器饱和。
-
-**例子**：要求 $|C(j\omega)S(j\omega)| < 100$（控制信号放大不超过 100 倍），则 $W_3(s) = 0.01$（常数）。
-
-更常见的是高频限制：$W_3(s) = \frac{0.01 s}{s/1000 + 1}$，限制高频控制能量。
+$W_3KS$ 约束归一化参考到控制量的能量放大。常数 $W_3=0.01$ 对应增益门槛100；$W_3=0.01s/(s/1000+1)$ 的高频极限为10，强调高频控制活动。物理单位必须通过参考/控制命令尺度归一化，不能从 $L_2$ 界直接推出任意阶跃的执行器峰值界。饱和、速率限制和噪声引起的控制量须另验。
 
 ### 加权函数的选择原则
 
-| 原则 | 说明 |
-|------|------|
-| 物理意义 | 每个加权函数对应一个明确的设计需求 |
-| 阶数尽量低 | 一阶或二阶通常够用，高阶增加控制器复杂度 |
-| 不要过度设计 | 加权函数是"需求"不是"魔法"，过于苛刻的需求会导致无解 |
-| 迭代调整 | 第一版加权函数几乎不可能完美，需要反复调整 |
+从具体频段、输入输出尺度和性能需求开始，选择稳定、适当且尽量低阶的权重。先检查高频端点和 $S+T=1$ 是否已使目标不可行，再做数值综合。迭代时保持评估口径：换权重改变了目标，不能把新目标更小的γ当作对旧需求更好的证明。
 
 ## 标准 $\mathcal{H}_\infty$ 问题
 
 ### 广义被控对象
 
-所有 $\mathcal{H}_\infty$ 设计问题都可以统一成**标准形式**（standard form）。
-
-定义**广义被控对象**（generalized plant）$P(s)$：
+把真实对象、权重和信号连接收进广义对象P：
 
 $$
-P(s) = \begin{bmatrix} P_{11}(s) & P_{12}(s) \\ P_{21}(s) & P_{22}(s) \end{bmatrix}
+\begin{bmatrix}z\\y\end{bmatrix}
+=\begin{bmatrix}P_{11}&P_{12}\\P_{21}&P_{22}\end{bmatrix}
+\begin{bmatrix}w\\u\end{bmatrix},\qquad u=Ky.
 $$
 
-外部信号：
-- $w$：外部输入（参考信号、扰动、噪声）
-- $z$：被控输出（误差、控制能量等需要最小化的量）
-- $y$：测量输出（传感器信号）
-- $u$：控制输入
+w是归一化外部输入，z是需压小的性能输出，y是提供给控制器的测量，u是控制输入。这里的 $u=Ky$ 是LFT正反馈约定，负号已经装进P的相应通道；不意味着把实际负反馈接反。
 
-闭环连接：$u = K(s) y$
-
-从 $w$ 到 $z$ 的闭环传递函数：
+消去u、y，得到**下线性分式变换**：
 
 $$
-T_{zw} = P_{11} + P_{12} K (I - P_{22} K)^{-1} P_{21} = \mathcal{F}_\ell(P, K)
+T_{zw}=\mathcal F_\ell(P,K)
+=P_{11}+P_{12}K(I-P_{22}K)^{-1}P_{21}.
 $$
 
-$\mathcal{F}_\ell$ 称为**下线形分式变换**（lower linear fractional transformation, LFT）。
+要求互连良定并内部稳定。最优值通常写为下确界：
 
-> **标准 $\mathcal{H}_\infty$ 问题**：找到稳定控制器 $K$，使得 $\|T_{zw}\|_\infty = \|\mathcal{F}_\ell(P, K)\|_\infty < \gamma$，且 $\gamma$ 尽可能小。
+$$
+\gamma^*=\inf_{K\in\mathcal K_{\rm stab}}\|\mathcal F_\ell(P,K)\|_\infty.
+$$
+
+$\mathcal K_{\rm stab}$ 是满足上述条件的适当控制器集合；下确界不一定由某个有限控制器取得。实际常先固定 $\gamma>0$，求一个使范数严格小于γ的次优控制器，再搜索可达到的水平。[hinfsyn官方说明](https://www.mathworks.com/help/robust/ref/dynamicsystem.hinfsyn.html)采用这样的分块与稳定化问题。
+
+![广义对象把负反馈符号与性能权重收进P；控制器由测量y生成u，外部输入w到性能输出z](/hinfinity-generalized-plant.svg)
 
 ### 灵敏度问题作为标准形式
 
-上节课的灵敏度优化可以直接写成标准形式。
-
-设被控对象 $G(s)$，要求最小化 $\|W_1 S\|_\infty$。
-
-构造广义被控对象：
+单位负反馈只压加权S时，取：
 
 $$
-P(s) = \begin{bmatrix} W_1 & -W_1 G \\ I & -G \end{bmatrix}
+P=\begin{bmatrix}W_1&-W_1G\\I&-G\end{bmatrix}.
 $$
 
-验证：$w \to z$ 的传递函数为
+于是：
 
 $$
-T_{zw} = W_1 + (-W_1 G) K (I + GK)^{-1} = W_1 (I - GK(I+GK)^{-1}) = W_1 \cdot \frac{1}{1+GK} = W_1 S
+\mathcal F_\ell(P,K)=W_1-W_1GK(I+GK)^{-1}
+=W_1(I+GK)^{-1}=W_1S.
 $$
 
-所以 $\|T_{zw}\|_\infty = \|W_1 S\|_\infty$，正是我们要最小化的目标。
+矩阵形式用 $I-GK(I+GK)^{-1}=(I+GK)^{-1}$，不要对矩阵写普通分式除法或随意交换乘法顺序；标量时才可简写为 $W_1/(1+GK)$。
 
 ### 混合灵敏度问题
 
-更一般的优化问题：
+沿本课的权重编号，广义对象为：
 
 $$
-\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+P=\begin{bmatrix}
+W_1&-W_1G\\0&W_2G\\0&W_3\\I&-G
+\end{bmatrix},\qquad
+\mathcal F_\ell(P,K)=\begin{bmatrix}W_1S\\W_2T\\W_3KS\end{bmatrix}.
 $$
 
-对应的广义被控对象：
-
-$$
-P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ 0 & W_3 \\ I & -G \end{bmatrix}
-$$
-
-验证：
-
-$$
-T_{zw} = \begin{bmatrix} W_1 S \\ W_2 G K (I+GK)^{-1} \\ W_3 K (I+GK)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix}
-$$
-
-> 💡 混合灵敏度是工程中最常用的 $\mathcal{H}_\infty$ 设计框架。下一节课会详细展开。
+同一参考输入产生三个输出，形成堆叠能量指标。常见软件的行顺序为S、KS、T，行置换本身不改变奇异值；按本课编号调用应是 `mixsyn(G,W1,W3,W2)`。[下一课](/robust/mixed-sensitivity)再展开设计。这里对标称P的性能界，仍需回到声明的不确定性模型验证鲁棒性能。
 
 ## 求解方法概述
 
-标准 $\mathcal{H}_\infty$ 问题有几种求解方法，按历史发展排列：
-
 ### 1. 回路整形法（Loop Shaping）
 
-**思路**：在 Bode 图上直接设计控制器，使开环传递函数 $L = GC$ 满足频率域指标。
-
-**步骤**：
-1. 根据性能需求确定 $|S|$ 和 $|T|$ 的目标形状
-2. 在 Bode 图上画出 $|L|$ 的目标曲线
-3. 通过增减零极点调整 $C(s)$，使 $|GC|$ 逼近目标
-4. 验证 $\|W_1 S\|_\infty$ 和 $\|W_2 T\|_\infty$ 是否满足
-
-**优点**：直观，物理意义清晰，工程师容易掌握。
-**缺点**：不能保证全局最优，多变量系统难以手工操作。
+从需求提出L的目标形状，调整控制器的增益、零极点和滚降，再检查内部稳定、S/T、裕度、时域和控制量。这种手工设计有物理直觉，但**没有自动求解给定H∞目标的全局最优值**。它也不等同于特定的H∞回路整形综合算法，后者还包含明确的广义对象与鲁棒稳定化目标。
 
 ### 2. Riccati 方程法（DGKF 方法）
 
-1988 年，Doyle、Glover、Khargonekar、Francis 给出了 $\mathcal{H}_\infty$ 问题的状态空间解法。
+Doyle、Glover、Khargonekar、Francis的标准状态空间结果发表于1989年；1988年是论文收稿时间，不能混写成年份结论。[作者原论文](https://www.doyle.caltech.edu/images/doyle/2/20/TAC1989.pdf)讨论规定假设下的稳定化解与性能水平。
 
-**核心思想**：将 $\mathcal{H}_\infty$ 问题转化为两个代数 Riccati 方程（ARE）的求解。
-
-$$
-A^T X + XA - X(B_2 B_2^T - \gamma^{-2} B_1 B_1^T)X + C_1^T C_1 = 0
-$$
+为保留旧稿的两个ARE并让它们可正确理解，明确只展示一种归一化连续时间情形：$D_{11}=D_{22}=0$，$D_{12}^TD_{12}=I$、$D_{21}D_{21}^T=I$，$D_{12}^TC_1=0$、$B_1D_{21}^T=0$。还需 $(A,B_2)$ 可稳定、$(C_2,A)$ 可检测；对每个实频率，下面两个矩阵分别列满秩、行满秩，不能直接套任意P：
 
 $$
-AY + YA^T - Y(C_2^T C_2 - \gamma^{-2} C_1^T C_1)Y + B_1 B_1^T = 0
+\begin{bmatrix}A-j\omega I&B_2\\C_1&D_{12}\end{bmatrix},\qquad
+\begin{bmatrix}A-j\omega I&B_1\\C_2&D_{21}\end{bmatrix}.
 $$
 
-当 $\gamma$ 足够大时，两个 ARE 有稳定半正定解，可以构造出最优控制器。
+$$
+A^TX+XA+C_1^TC_1+X(\gamma^{-2}B_1B_1^T-B_2B_2^T)X=0,
+$$
 
-**与 LQR 的联系**：LQR 的 Riccati 方程是 $\mathcal{H}_\infty$ 方程在 $\gamma \to \infty$ 时的特例。$\mathcal{H}_\infty$ 可以看作"最坏情况下的 LQR"。
+$$
+AY+YA^T+B_1B_1^T+Y(\gamma^{-2}C_1^TC_1-C_2^TC_2)Y=0.
+$$
+
+需相应稳定化半正定解，并检查耦合条件 $\rho(XY)<\gamma^2$，仅“解出两个方程”或“γ很大”不够。稳定化支路、秩条件和数值条件数都有作用；没有通过时不能构造并宣称最优控制器。一般实现还需正规化与坐标变换。
+
+在这些假设下令 $\gamma\to\infty$，第一式退化为相应状态反馈LQR的ARE形式；这解释了联系，但不把一般输出反馈H∞问题无条件等同于“最坏情况下的LQR”。本课不运行DGKF综合求解器。
 
 ### 3. LMI 方法
 
-线性矩阵不等式（LMI）方法将 $\mathcal{H}_\infty$ 问题转化为凸优化问题，可以处理更复杂的约束（如控制器阶数限制、结构约束）。
+对已固定闭环实现 $(A_c,B_c,C_c,D_c)$，严格有界实引理给出性能检查形式：寻找对称 $X_B\succ0$，使：
 
-> 💡 这节课重点讲**回路整形法**——它最直观，也最能建立物理感觉。Riccati 方法和 LMI 方法在后续课程中会涉及。
+$$
+\begin{bmatrix}
+A_c^TX_B+X_BA_c&X_BB_c&C_c^T\\
+B_c^TX_B&-\gamma^2I&D_c^T\\
+C_c&D_c&-I
+\end{bmatrix}\prec0.
+$$
+
+这是固定闭环、固定γ时对 $X_B$ 的线性矩阵不等式（LMI），同时保证内部状态稳定和增益小于γ。若控制器也未知，矩阵项会与Lyapunov变量相乘；特定状态反馈/全阶输出反馈问题可经变量变换凸化，**固定阶或结构约束一般不自动是凸LMI**。
+
+可直接回代一个小证书：$H=1/(s+2)$、$\gamma=1$、$X_B=1$，上述矩阵为：
+
+$$
+\begin{bmatrix}-4&1&1\\1&-1&0\\1&0&-1\end{bmatrix}.
+$$
+
+特征值为 $-1,(-5\pm\sqrt{17})/2$，最大约−0.438447；$\|H\|_\infty=0.5<1$。后面的Notebook实际回代矩阵，不冒充运行通用SDP。求解器不可用与数学不可行是不同情况；[Python control的hinfsyn](https://python-control.readthedocs.io/en/latest/generated/control.hinfsyn.html)依赖Slycot，本页不以替代算法冒充它已运行。
 
 ## 回路整形设计实例
 
 ### 设计问题
 
-考虑一个带高频共振模态的系统（如柔性结构、带谐振的机电系统），标称模型为：
+沿用旧柔性对象，输入/输出分别是归一化执行器命令与归一化位移，时间单位s、角频率rad/s：
 
 $$
-G(s) = \frac{100}{s^2 + s + 100}
+G(s)=\frac{100}{s^2+s+100},\qquad \omega_n=10,\quad\zeta=0.05.
 $$
 
-这是一个二阶系统，自然频率 $\omega_n = 10$ rad/s，阻尼比 $\zeta = 0.05$（非常轻的阻尼）。
-
-设计需求：
-1. **跟踪精度**：阶跃响应稳态误差 < 5%
-2. **稳定裕度**：相位裕度 $PM > 25°$
-3. **共振抑制**：$\omega = 10$ rad/s 处的共振峰不能放大到闭环输出
-4. **灵敏度峰值**：$\|S\|_\infty < 1.5$
+保留四项名义需求：单位阶跃稳态误差小于5%；相位裕度超过25°；$|T(j10)|\le1$，即规定频率不放大；$M_s<1.5$。另将原文希望的约5rad/s穿越作为单列带宽目标，达不到必须说明，不能把它悄悄算作已满足。未对整个不确定性集合给出证书。
 
 ### 设计步骤
 
-**第一步**：分析开环特性。
-
-$G(s)$ 在 $\omega_n = 10$ rad/s 处有一个尖锐的共振峰。共振峰值为：
+**第一步：分析对象。** $G(0)=1$，$|G(j10)|=10$，即20dB。但10是自然频率，不是精确共振峰频率：
 
 $$
-|G(j\omega_n)| = \frac{1}{2\zeta} = \frac{1}{2 \times 0.05} = 10 \quad (+20 \text{ dB})
+\omega_r=10\sqrt{1-2(0.05)^2}=\sqrt{99.5}\approx9.974969,
+\qquad M_r=\frac1{2\zeta\sqrt{1-\zeta^2}}\approx10.012523.
 $$
-
-低频增益 $|G(0)| = 1$（0 dB），共振峰比低频增益高 +20 dB。如果控制器不处理这个共振，闭环系统在 $\omega \approx 10$ rad/s 附近会剧烈振荡。
 
 <JupyterNotebook
+  title="对象频响：自然频率不等于精确共振频率"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[{
-    code: `# 被控对象分析
-G = ctrl.tf([100], [1, 1, 100])
-print("=== 被控对象 G(s) ===")
-print(G)
-
-omega = np.logspace(-1, 2.5, 1000)
-G_jw = G(1j * omega)
-mag_db = 20 * np.log10(np.abs(G_jw))
-phase_deg = np.angle(G_jw, deg=True)
-
-idx_peak = np.argmax(mag_db)
-print(f"\\n共振频率: {omega[idx_peak]:.1f} rad/s")
-print(f"共振峰值: {mag_db[idx_peak]:.1f} dB")
-print(f"低频增益: {20*np.log10(np.abs(G(0.01j))):.1f} dB")
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-axes[0].semilogx(omega, mag_db, 'b-', linewidth=2)
-axes[0].axvline(10, color='r', linestyle=':', alpha=0.7, label='共振频率 $\\omega_n$=10')
-axes[0].axhline(0, color='k', linestyle='--', alpha=0.3)
-axes[0].set_xlabel('频率 (rad/s)')
-axes[0].set_ylabel('幅值 (dB)')
-axes[0].set_title('被控对象 |G(j$\\omega$)|')
-axes[0].legend()
-axes[0].grid(True, alpha=0.3)
-
-axes[1].semilogx(omega, phase_deg, 'b-', linewidth=2)
-axes[1].axvline(10, color='r', linestyle=':', alpha=0.7)
-axes[1].axhline(-180, color='k', linestyle='--', alpha=0.3)
-axes[1].set_xlabel('频率 (rad/s)')
-axes[1].set_ylabel('相位 (°)')
-axes[1].set_title('被控对象 ∠G(j$\\omega$)')
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()`
-  }]}
-/>
-
-**第二步**：确定目标回路增益 $|L(j\omega)|$。
-
-| 频率范围 | $|L|$ 目标 | 目的 |
-|----------|-----------|------|
-| $\omega < 1$ | $> 20$（26 dB） | 保证跟踪精度 |
-| $\omega \approx 5$ | $\approx 1$（0 dB） | 穿越频率，带宽 ≈ 5 rad/s |
-| $\omega \approx 10$ | $< 1$（< 0 dB） | 抑制共振模态 |
-| $\omega > 10$ | 尽可能小 | 抑制高频噪声 |
-
-**第三步**：设计控制器。
-
-使用增益 + 陷波滤波器：
-
-$$
-C(s) = \underbrace{K}_{\text{增益}} \cdot \underbrace{\frac{s^2 + 2\zeta_n \omega_n s + \omega_n^2}{s^2 + 2\zeta_d \omega_n s + \omega_n^2}}_{\text{陷波}}
-$$
-
-参数选择：
-- $K = 20$：提供低频增益，使穿越频率在 ≈ 5 rad/s
-- $\omega_n = 10$：陷波频率对准共振频率
-- $\zeta_n = 0.5$：零点阻尼（较宽的凹陷）
-- $\zeta_d = 0.02$：极点阻尼（在共振频率处提供深衰减）
-
-<JupyterNotebook
-  setupCode={`import numpy as np
-import control as ctrl
-import matplotlib.pyplot as plt
-from ipywidgets import interact, FloatSlider
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-
-G = ctrl.tf([100], [1, 1, 100])`}
-  cells={[{
-    code: `# 回路整形控制器设计（交互式）
-def design_controller(K=20, omega_n=10.0, zeta_n=0.5, zeta_d=0.02):
-    C_notch = ctrl.tf([1, 2*zeta_n*omega_n, omega_n**2],
-                       [1, 2*zeta_d*omega_n, omega_n**2])
-    C = K * C_notch
-    L = G * C
-
-    omega = np.logspace(-1, 2.5, 2000)
-    L_jw = L(1j * omega)
-    mag_L = np.abs(L_jw)
-
-    idx_cross = np.where(np.diff(np.sign(mag_L - 1)))[0]
-    if len(idx_cross) > 0:
-        wc = omega[idx_cross[0]]
-        phase_wc = np.angle(L_jw[idx_cross[0]], deg=True)
-        PM = 180 + phase_wc
-    else:
-        wc, PM = float('nan'), float('nan')
-
-    S = 1.0 / (1.0 + L_jw)
-    T = L_jw / (1.0 + L_jw)
-    S_inf = np.max(np.abs(S))
-    L_dc = np.abs(L(0.001j))
-    ss_error = 1.0 / (1.0 + L_dc)
-
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-
-    axes[0, 0].semilogx(omega, 20*np.log10(mag_L), 'b-', linewidth=2)
-    axes[0, 0].axhline(0, color='k', linestyle='--', alpha=0.5)
-    if not np.isnan(wc):
-        axes[0, 0].axvline(wc, color='r', linestyle=':', alpha=0.5, label=f'$\\omega_c$={wc:.1f}')
-    axes[0, 0].set_xlabel('频率 (rad/s)')
-    axes[0, 0].set_ylabel('幅值 (dB)')
-    axes[0, 0].set_title('开环回路增益 |L(jω)|')
-    axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.3)
-
-    axes[0, 1].semilogx(omega, 20*np.log10(np.abs(S)), 'b-', linewidth=2, label='|S|')
-    axes[0, 1].semilogx(omega, 20*np.log10(np.abs(T)), 'r--', linewidth=2, label='|T|')
-    axes[0, 1].axhline(0, color='k', linestyle='--', alpha=0.3)
-    axes[0, 1].axhline(20*np.log10(1.5), color='g', linestyle=':', alpha=0.7, label='||S||_∞ < 1.5')
-    axes[0, 1].set_xlabel('频率 (rad/s)')
-    axes[0, 1].set_ylabel('幅值 (dB)')
-    axes[0, 1].set_title('灵敏度函数 |S| 和 |T|')
-    axes[0, 1].legend()
-    axes[0, 1].grid(True, alpha=0.3)
-
-    T_cl = ctrl.feedback(L)
-    t = np.linspace(0, 10, 1000)
-    _, y = ctrl.step_response(T_cl, t)
-    axes[1, 0].plot(t, y, 'b-', linewidth=2)
-    axes[1, 0].axhline(1, color='k', linestyle='--', alpha=0.5)
-    axes[1, 0].axhline(1 - ss_error, color='g', linestyle=':', alpha=0.5,
-                        label=f'稳态值 = {1-ss_error:.3f}')
-    axes[1, 0].set_xlabel('时间 (s)')
-    axes[1, 0].set_ylabel('输出 y')
-    axes[1, 0].set_title('闭环阶跃响应')
-    axes[1, 0].legend()
-    axes[1, 0].grid(True, alpha=0.3)
-
-    CS = C / (1 + G * C)
-    _, u = ctrl.step_response(CS, t)
-    axes[1, 1].plot(t, u, 'r-', linewidth=1.5)
-    axes[1, 1].set_xlabel('时间 (s)')
-    axes[1, 1].set_ylabel('控制信号 u')
-    axes[1, 1].set_title('控制信号（阶跃响应）')
-    axes[1, 1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-    print(f"\\n穿越频率: {wc:.1f} rad/s | 相位裕度: {PM:.1f}°")
-    print(f"||S||_∞ = {S_inf:.3f} {'✓' if S_inf < 1.5 else '✗'} (< 1.5) | 稳态误差: {ss_error*100:.1f}% {'✓' if ss_error < 0.05 else '✗'} (< 5%)")
-
-display(interact(design_controller,
-    K=FloatSlider(value=20, min=1, max=50, step=1, description='K', continuous_update=False),
-    omega_n=FloatSlider(value=10, min=5, max=20, step=0.5, description='ω_n', continuous_update=False),
-    zeta_n=FloatSlider(value=0.5, min=0.1, max=1.0, step=0.05, description='ζ_n', continuous_update=False),
-    zeta_d=FloatSlider(value=0.02, min=0.01, max=0.2, step=0.01, description='ζ_d', continuous_update=False)
-))`
-  }]}
-/>
-
-**第四步**：验证。
-
-计算 $S$ 和 $T$，检查 $\|S\|_\infty$、相位裕度、共振抑制效果。
-
-<JupyterNotebook
-  setupCode={`import numpy as np
-import control as ctrl
-import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings('ignore')
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-
-G = ctrl.tf([100], [1, 1, 100])
-K, omega_n, zeta_n, zeta_d = 20, 10.0, 0.5, 0.02
-C_notch = ctrl.tf([1, 2*zeta_n*omega_n, omega_n**2], [1, 2*zeta_d*omega_n, omega_n**2])
-C = K * C_notch
-L = G * C
-omega_plot = np.logspace(-1, 2.5, 500)
-L_jw = L(1j * omega_plot)
-S_jw = 1.0 / (1.0 + L_jw)
-T_jw = L_jw / (1.0 + L_jw)`}
+from numpy.polynomial import polynomial as poly
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.logspace(-1,2.5,2001)
+def controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):
+    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])
+    return C*ctrl.tf([a],[1,a]) if a>0 else C
+def plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])
+def squared_poly(coeff):
+    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))
+    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])
+    return poly.polyadd(a,b)
+def full_frequency_peak(H):
+    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])
+    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))
+    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]
+    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]
+    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))
+    return max(candidates,key=lambda pair:pair[0])
+def report(C,wn=10.):
+    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))
+    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)
+    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}
+`}
   cells={[
-    {
-      code: `# H∞ 性能验证
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-axes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_jw)), 'b-', linewidth=2, label='|S(jω)|')
-axes[0].axhline(20*np.log10(1.5), color='r', linestyle=':', linewidth=2,
-                label=f'||S||_∞ < 1.5 ({20*np.log10(1.5):.1f} dB)')
-axes[0].axhline(0, color='k', linestyle='--', alpha=0.3)
-axes[0].set_xlabel('频率 (rad/s)')
-axes[0].set_ylabel('|S| (dB)')
-axes[0].set_title('灵敏度函数与 H∞ 指标')
-axes[0].legend()
-axes[0].grid(True, alpha=0.3)
-
-idx_10 = np.argmin(np.abs(omega_plot - 10))
-T_at_10 = np.abs(T_jw[idx_10])
-axes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_jw)), 'r-', linewidth=2, label='|T(jω)|')
-axes[1].plot(10, 20*np.log10(T_at_10), 'ko', markersize=10,
-             label=f'|T(j10)| = {20*np.log10(T_at_10):.1f} dB')
-axes[1].axhline(0, color='k', linestyle='--', alpha=0.3)
-axes[1].set_xlabel('频率 (rad/s)')
-axes[1].set_ylabel('|T| (dB)')
-axes[1].set_title('补灵敏度与共振抑制')
-axes[1].legend()
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print("=== H∞ 性能检查 ===")
-print(f"1. ||S||_∞ = {np.max(np.abs(S_jw)):.4f} → {'✓' if np.max(np.abs(S_jw)) < 1.5 else '✗'} (< 1.5)")
-print(f"2. |T(j10)| = {T_at_10:.4f} ({20*np.log10(T_at_10):.1f} dB) → 共振被抑制")
-print(f"3. 稳态误差 = {1/(1+np.abs(L(0.001j)))*100:.1f}% → {'✓' if 1/(1+np.abs(L(0.001j))) < 0.05 else '✗'} (< 5%)")`
-    },
-    {
-      code: `# 有无陷波的对比
-K_A = 5
-L_A = K_A * G
-S_A = 1.0 / (1.0 + L_A(1j * omega_plot))
-T_A = L_A(1j * omega_plot) / (1.0 + L_A(1j * omega_plot))
-
-S_B = S_jw
-T_B = T_jw
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-axes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_A)), 'r-', linewidth=1.5, alpha=0.7,
-                  label='A: 纯比例 K=5')
-axes[0].semilogx(omega_plot, 20*np.log10(np.abs(S_B)), 'g-', linewidth=2,
-                  label='B: K=20 + 陷波')
-axes[0].axhline(0, color='k', linestyle='--', alpha=0.3)
-axes[0].axhline(20*np.log10(1.5), color='k', linestyle=':', alpha=0.5, label='||S||_∞ = 1.5')
-axes[0].set_xlabel('频率 (rad/s)')
-axes[0].set_ylabel('|S| (dB)')
-axes[0].set_title('灵敏度函数对比')
-axes[0].legend()
-axes[0].grid(True, alpha=0.3)
-
-axes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_A)), 'r-', linewidth=1.5, alpha=0.7,
-                  label='A: 纯比例 K=5')
-axes[1].semilogx(omega_plot, 20*np.log10(np.abs(T_B)), 'g-', linewidth=2,
-                  label='B: K=20 + 陷波')
-axes[1].axhline(0, color='k', linestyle='--', alpha=0.3)
-axes[1].set_xlabel('频率 (rad/s)')
-axes[1].set_ylabel('|T| (dB)')
-axes[1].set_title('补灵敏度函数对比')
-axes[1].legend()
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print("=" * 65)
-print(f"{'方案':<25} {'||S||_∞':<12} {'共振处|T|':<15} {'稳态误差':<10}")
-print("-" * 65)
-
-for name, S_x, T_x, K_val in [('A: 纯比例 K=5', S_A, T_A, 5),
-                                ('B: K=20 + 陷波', S_B, T_B, 20)]:
-    idx_10 = np.argmin(np.abs(omega_plot - 10))
-    T_10 = np.abs(T_x[idx_10])
-    ss_err = 1.0 / (1.0 + K_val)
-    print(f"{name:<25} {np.max(np.abs(S_x)):<12.2f} {20*np.log10(T_10):<12.1f} dB  {ss_err*100:<8.1f}%")
-
-print("=" * 65)
-print("\n结论：陷波滤波器是抑制共振的关键——没有陷波，共振导致 |S| 出现巨大峰值")`
-    }
+    { code: `# Retain open-loop amplitude/phase inspection; exact natural and peak frequencies differ
+G=plant();natural=10.;resonance=np.sqrt(99.5);resonance_peak=1/(.1*np.sqrt(1-.05**2))
+print('G_DC',ctrl.dcgain(G),'G_at_natural_frequency',abs(G(10j)),'true_resonance_frequency',resonance,'true_resonance_peak',resonance_peak)
+fig,axs=plt.subplots(1,2,figsize=(10,3.2));axs[0].semilogx(w,20*np.log10(abs(G(1j*w))));axs[0].axvline(10,color='red',ls=':');axs[0].set_ylabel('Magnitude (dB)');axs[1].semilogx(w,np.angle(G(1j*w),deg=True));axs[1].set_ylabel('Phase (degrees)')
+for ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.grid(True)
+plt.tight_layout();plt.show();print('plant_complete')
+` }
   ]}
 />
+
+
+**第二步：检查目标回路是否自洽。** 原稿希望低频回路增益大于20、穿越约5、10rad/s处回路小于1。有限的直流增益K=20只给稳态误差 $1/21\approx4.761905\%$；它并不单独决定穿越频率或整个低频带。还要安排滚降和模态处理。
+
+**第三步：先诊断原控制器。** 保留原结构：
+
+$$
+K(s)=K_0\frac{s^2+2\zeta_n\omega_fs+\omega_f^2}{s^2+2\zeta_d\omega_fs+\omega_f^2}.
+$$
+
+滤波器在中心的模比是 $\zeta_n/\zeta_d$。原 $K_0=20,\omega_f=10,\zeta_n=0.5,\zeta_d=0.02$ 给模比25，是**共振增益峰**，不是衰减陷波。完整闭环最右极点实部约 **+4.094021**，不稳定；此时 $S(0)=1/21$ 只是代数值，不能解释为阶跃稳态误差，更不能把有限频响峰当作H∞范数。
+
+仅交换到 $\zeta_n=0.02,\zeta_d=0.5$ 虽稳定，连续频率灵敏度峰约 **4.261917**、PM约 **13.878246°**，仍不达标。原穿越也不是5rad/s，交换阻尼后约45.251193rad/s。
+
+一个可实现的名义候选是保留增益20，选 $\zeta_n=0.05,\zeta_d=0.5,\omega_f=10$，再接低通：
+
+$$
+K_c(s)=20\frac{s^2+s+100}{s^2+10s+100}\frac{0.1}{s+0.1}.
+$$
+
+它是适当且高频滚降的控制器。对**精确名义模型**，稳定的模态因子可以约去以简化外部计算：
+
+$$
+L_c=\frac{200}{(s^2+10s+100)(s+0.1)},\quad
+p_c=s^3+10.1s^2+101s+210.
+$$
+
+三次Routh乘积差 $10.1\times101-210=810.1>0$，被约去的模态 $s^2+s+100$ 也稳定，原完整实现内部稳定。这个对消依赖名义模型；不能据此证明模态频率变化后仍达标。没有对消不稳定极点，也没有隐藏一个不稳定内部状态。
+
+<HInfinityExplorer />
+
+默认交互参数恰为这个候选。2001点扫描峰约 **1.331158**，精确 $|T(j10)|\approx0.249980$，代数DC约0.047619，滤波器中心模比0.1。图用281点抽稀，读数用完整2001点；连续频率峰另由Notebook求全部实驻点，不把图上最高点冒充精确范数。原稿、交换阻尼和低通加快预设保留失败/不达标状态。
+
+<JupyterNotebook
+  title="固定候选：稳定性、回路、输出与控制信号"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from numpy.polynomial import polynomial as poly
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.logspace(-1,2.5,2001)
+def controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):
+    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])
+    return C*ctrl.tf([a],[1,a]) if a>0 else C
+def plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])
+def squared_poly(coeff):
+    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))
+    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])
+    return poly.polyadd(a,b)
+def full_frequency_peak(H):
+    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])
+    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))
+    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]
+    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]
+    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))
+    return max(candidates,key=lambda pair:pair[0])
+def report(C,wn=10.):
+    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))
+    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)
+    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}
+`}
+  cells={[
+    { code: `# Original design is preserved as a failed case; the default below is a new proper candidate
+cases={'original':controller(20,10,.5,.02,0),'damping_swap':controller(20,10,.02,.5,0),'candidate':controller(),'faster_lowpass':controller(a=.2),'proportional_5':ctrl.tf([5],[1]),'proportional_20':ctrl.tf([20],[1])}
+reports={name:report(C) for name,C in cases.items()}
+for name,row in reports.items():print(name,row)
+C=cases['candidate'];G=plant();L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);U=ctrl.feedback(C,G);t=np.linspace(0,10,1001)
+_,y=ctrl.step_response(T,t);_,u=ctrl.step_response(U,t)
+print('candidate_DC_output',ctrl.dcgain(T),'sample_output_peak',max(y),'sample_control_peak',max(abs(u)),'step_last_sample',y[-1])
+fig,axs=plt.subplots(2,2,figsize=(10,6));axs[0,0].semilogx(w,20*np.log10(abs(L(1j*w))));axs[0,0].axhline(0,color='black',ls=':');axs[0,0].set_title('Open loop')
+axs[0,1].semilogx(w,20*np.log10(abs(S(1j*w))),label='S');axs[0,1].semilogx(w,20*np.log10(abs(T(1j*w))),label='T');axs[0,1].axhline(20*np.log10(1.5),color='black',ls=':');axs[0,1].legend();axs[0,1].set_title('Closed-loop frequency response')
+axs[1,0].plot(t,y);axs[1,0].axhline(ctrl.dcgain(T),color='green',ls=':');axs[1,0].set_title('Step output, DC limit marked');axs[1,1].plot(t,u);axs[1,1].set_title('Step control')
+for ax in axs.ravel():ax.grid(True)
+for ax in axs[0,:]:ax.set_xlabel('Frequency (rad/s)');ax.set_ylabel('Magnitude (dB)')
+for ax in axs[1,:]:ax.set_xlabel('Time (s)')
+plt.tight_layout();plt.show();print('design_complete')
+` }
+  ]}
+/>
+
+
+**第四步：先查内部稳定，再查性能。** 对稳定的候选，连续频率峰值通过幅值平方关于 $x=\omega^2$ 的有理函数求全部非负实驻点，并比较直流和无穷端点；同时保留统一扫描作为可视化。三方核验使用同一个对象与参数。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+
+| 方案 | 内部稳定 | 连续频率 $M_s$ | PM（度） | 穿越rad/s | 代数DC误差 |
+|---|---|---|---|---|---|
+| 原比例K=5 | 是 | 20.445202 | 2.806628 | 24.482652 | 1/6 |
+| 同增益比例K=20 | 是 | 43.658174 | 1.312762 | 45.820029 | 1/21 |
+| 原稿滤波K=20 | 否 | 不定义为稳定H∞范数 | −10.931168 | 46.367185 | 1/21，但无稳态解释 |
+| 只交换阻尼 | 是 | 4.261917 | 13.878246 | 45.251193 | 1/21 |
+| 候选，低通0.1 | 是 | 1.331158 | 80.800365 | 2.038612 | 1/21 |
+| 低通加快到0.2 | 是 | 1.875288 | 64.490570 | 4.341589 | 1/21 |
+
+</div>
+
+候选 $|T(j10)|\approx0.249980$、稳定且误差约4.761905%，满足四项**名义**要求，但穿越只有2.038612rad/s，未达到另列的约5rad/s目标。低通加快到0.2把穿越提高到4.341589，却使 $M_s$ 超过1.5。这是性能代价，不能只报有利读数。
+
+这些是具体固定控制器的诊断，并非“陷波方法一定更优”的算法比较。原K5基线保留供审计；它与K20误差要求不同，不能单靠二者的图证明优越性。补充的同K20比例基线也没有改变候选额外低通、较低带宽和精确模态匹配的成本；没有声称完成所有控制器族的独立最优整定。
+
+<JupyterNotebook
+  title="性能验证与原比例基线、参数失配"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from numpy.polynomial import polynomial as poly
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.logspace(-1,2.5,2001)
+def controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):
+    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])
+    return C*ctrl.tf([a],[1,a]) if a>0 else C
+def plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])
+def squared_poly(coeff):
+    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))
+    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])
+    return poly.polyadd(a,b)
+def full_frequency_peak(H):
+    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])
+    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))
+    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]
+    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]
+    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))
+    return max(candidates,key=lambda pair:pair[0])
+def report(C,wn=10.):
+    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))
+    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)
+    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}
+`}
+  cells={[
+    { code: `# Exact j10, internal stability first; a finite unstable frequency scan is not an H-infinity norm
+row=report(controller());print('candidate_verification',row)
+original=reports['original'] if 'reports' in globals() else report(controller(20,10,.5,.02,0))
+print('original_frequency_scan_is_not_Hinf: unstable=',not original['stable'],'spectral_abscissa=',original['alpha'])
+fig,axs=plt.subplots(1,2,figsize=(10,3.2));G=plant();C=controller();L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1)
+axs[0].semilogx(w,abs(S(1j*w)));axs[0].axhline(1.5,color='red',ls=':');axs[0].set_ylabel('|S|');axs[1].semilogx(w,abs(T(1j*w)));axs[1].scatter([10],[abs(T(10j))]);axs[1].set_ylabel('|T|')
+for ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.grid(True)
+plt.tight_layout();plt.show();print('verification_complete')
+` },
+    { code: `# Same nominal object and declared metrics; no assertion of algorithm-wide superiority
+comparisons={name:report(C) for name,C in [('P5',ctrl.tf([5],[1])),('P20',ctrl.tf([20],[1])),('original',controller(20,10,.5,.02,0)),('swap',controller(20,10,.02,.5,0)),('candidate',controller()),('faster',controller(a=.2))]}
+for name,row in comparisons.items():print('nominal_comparison',name,row)
+misalignment=[]
+for plant_wn in [9.,10.,11.]:
+    row=report(controller(),plant_wn);misalignment.append([plant_wn,row]);print('fixed_controller_plant_wn',plant_wn,row)
+fig,axs=plt.subplots(1,2,figsize=(10,3.4))
+for name,C in [('P5',ctrl.tf([5],[1])),('P20',ctrl.tf([20],[1])),('candidate',controller())]:
+    loop=plant()*C;axs[0].semilogx(w,abs(ctrl.feedback(1,loop)(1j*w)),label=name);axs[1].semilogx(w,abs(ctrl.feedback(loop,1)(1j*w)),label=name)
+axs[0].axhline(1.5,color='black',ls=':');axs[0].set_ylabel('|S|');axs[1].set_ylabel('|T|')
+for ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.legend();ax.grid(True)
+plt.tight_layout();plt.show();print('comparison_complete')
+` }
+  ]}
+/>
+
+
+再把**对象**改为 $G_a=\omega_a^2/(s^2+0.1\omega_as+\omega_a^2)$，控制器固定为候选，不再重调。$\omega_a=9,10,11$rad/s时，连续灵敏度峰分别约 **2.120873、1.331158、1.521456**。三个点都稳定，但9与11两个工况均违反 $M_s<1.5$。所以这里只得到名义设计，不是鲁棒性能证书；精确对消对失配敏感，后续应将频率范围建模并重新设计。
 
 ## 深入讨论
 
 ### $\mathcal{H}_\infty$ 与 LQR/LQG 的关系
 
-| 方法 | 优化目标 | 假设 | 鲁棒性保证 |
-|------|----------|------|------------|
-| LQR | $\min \int (x^T Q x + u^T R u) dt$ | 全状态可测，模型精确 | $\|S\|_\infty \leq 1$，GM $\in [1/2, \infty)$，PM $\geq 60°$ |
-| LQG | $\min E[x^T Q x + u^T R u]$ | 高斯噪声，模型精确 | **无鲁棒性保证**（LQG 陷阱） |
-| $\mathcal{H}_\infty$ | $\min \|T_{zw}\|_\infty$ | 模型有界不确定性 | **显式鲁棒性保证** |
+LQR优化规定状态与控制的二次积分；LQG在规定噪声统计模型下结合估计与反馈；H∞优化规定归一化通道的最坏能量放大。三者不是脱离对象和通道的优劣排名。
 
-LQG 的"鲁棒性陷阱"：LQG 控制器最小化 $\mathcal{H}_2$ 范数（能量），但可能在某个频率有极大的增益，导致对未建模动态极其敏感。$\mathcal{H}_\infty$ 控制直接限制最坏情况增益，从根本上避免了这个问题。
+标准单输入连续时间LQR，在全状态反馈、无状态—控制交叉代价、正定控制代价及相应可稳定/可检测条件下，控制输入断开处的返回差性质给出典型增益倍数区间 $(1/2,\infty)$ 和至少60°的相位裕度；相应输入回路灵敏度模不超过1。[MIT讲义](https://ocw.mit.edu/courses/16-30-feedback-control-systems-fall-2010/55d0aa6e1e4631a0c3366fb68028ae50_MIT16_30F10_lec18.pdf)说明了这些回路条件。它们不能直接推广为任意输出灵敏度都不超过1，或给任意MIMO通道套标量PM。
+
+估计器接入后，LQG没有同样的**统一通用裕度保证**，并非每个LQG设计都很差。H∞同样只保证选定模型、权重和通道；权重没覆盖的模态、时变性、饱和与安全不自动受到保证。
 
 ### 加权函数选择的艺术
 
-加权函数的选择是 $\mathcal{H}_\infty$ 设计中**最需要工程判断**的环节。几个经验法则：
-
-1. **从需求出发**：先明确"低频 $|S|$ 要多小""高频 $|T|$ 要多小"，再选加权函数
-2. **不要过度约束**：如果同时要求 $\|S\|_\infty < 0.001$ 和 $\|T\|_\infty < 0.001$，问题可能无解（$S + T = 1$ 的限制）
-3. **逐步增加复杂度**：先只用 $W_1$（性能），再加 $W_2$（鲁棒性），最后加 $W_3$（控制能量）
-4. **检查可行性**：如果优化问题无解，说明需求太苛刻，需要放松某些指标
+如果同一频率要求S和T都小于0.001，则由 $|S|+|T|\ge1$ 已知不可行，不必归因于求解器。另一方面，求解器失败也可能来自依赖缺失、非适当权重、秩条件或数值病态，不能直接断言“需求太苛刻”。改变某一频率权重会重分配全频权衡，不能保证优化后该频率的S严格或逐点单调下降。
 
 ### 从回路整形到 $\mathcal{H}_\infty$ 优化
 
-回路整形是"手工"的 $\mathcal{H}_\infty$ 设计——工程师在 Bode 图上调整控制器参数。真正的 $\mathcal{H}_\infty$ 优化是"自动"的——给定加权函数，算法直接求解最优控制器。
+手工整形提供可解释的候选；真正的综合在给定P、控制器类别、稳定性条件和目标下求解。全阶最优解可以与手工设计差别很大，并非必然“自动微调”。同一目标和可行集合下，理想全局最优值不会比其中一个可行手工候选更差，也可能相等；不同目标下的数字不可直接比较。
 
-两者的关系：
-- 回路整形提供**初始设计**和**物理直觉**
-- $\mathcal{H}_\infty$ 优化在回路整形的基础上**自动微调**，达到更好的性能
-- 工程中通常先用回路整形得到"差不多"的设计，再用 $\mathcal{H}_\infty$ 优化精调
-
-> 💡 下一节课（混合灵敏度设计）会详细讲如何用 MATLAB/Python 的 $\mathcal{H}_\infty$ 求解器自动优化。
+本课已运行的是手工候选、精确通道验证和失配实验；没有运行Slycot或MATLAB综合，更没有报告虚构的最优γ。下一课再讲[混合灵敏度设计](/robust/mixed-sensitivity)，并区分求解结果、可实现控制器和鲁棒性能复验。
 
 ## 小结
 
-1. **$\mathcal{H}_\infty$ 控制**把控制设计需求翻译成"最小化某个闭环传递函数的 $\mathcal{H}_\infty$ 范数"的优化问题。
-
-2. **加权函数** $W_1, W_2, W_3$ 是连接工程需求和数学优化的桥梁：$W_1$ 对应性能（$S$），$W_2$ 对应鲁棒性（$T$），$W_3$ 对应控制能量（$KS$）。
-
-3. **标准 $\mathcal{H}_\infty$ 问题**通过广义被控对象 $P(s)$ 和下线形分式变换 $\mathcal{F}_\ell(P, K)$ 统一表述。
-
-4. **求解方法**：回路整形（手工，直观）、Riccati 方程（DGKF，状态空间）、LMI（凸优化，灵活）。
-
-5. **回路整形设计步骤**：分析开环特性 → 确定目标 $|L|$ → 设计控制器零极点 → 验证 $S, T$ 性能。
-
-6. **$\mathcal{H}_\infty$ vs LQR/LQG**：LQR 有隐含鲁棒性但不处理不确定性，LQG 无鲁棒性保证，$\mathcal{H}_\infty$ 显式处理最坏情况。
+H∞问题在使互连内部稳定的适当控制器集合里最小化声明通道增益。权重规定误差包络与信号尺度，堆叠范数不等于各范数平方和。广义对象将权重和负反馈符号收进下LFT；Riccati与LMI都有适用条件。旧稿的“陷波”实际放大且失稳，修正候选只能签名义指标，较低带宽和失配超标必须一起报告。有限频率图、求解器不可用、优化不可行与全不确定集性能是不同结论。
 
 ## 习题
 
 **1. 加权函数的物理意义**
 
-设性能加权函数 $W_1(s) = \frac{100s + 1}{s + 0.01}$。
+设性能加权函数 $W_1(s)=(100s+1)/(s+0.01)$。
 
-(a) 求 $|W_1(j\omega)|$ 在 $\omega = 0$ 和 $\omega = 1$ rad/s 处的值。
+(a) 求 $\omega=0$ 和 $\omega=1$rad/s处的模。
 
-(b) 如果 $\|W_1 S\|_\infty < 1$，求 $|S(j\omega)|$ 在 $\omega = 0$ 和 $\omega = 1$ rad/s 处的上界。
+(b) 若 $\|W_1S\|_\infty<1$，求两个频率处的S上界。
 
-(c) 解释 $W_1(s)$ 的物理意义：它要求 $|S|$ 在什么频率范围内保持多小？
+(c) 解释它在什么频率范围内要求S保持多小，并检查这种全频目标对严格真有理对象与适当控制器是否可能。
 
 **2. 标准形式验证**
 
-设广义被控对象 $P(s) = \begin{bmatrix} W_1 & -W_1 G \\ I & -G \end{bmatrix}$，控制器 $K = C$，反馈连接为 $u = Cy$（正反馈约定，即 LFT 标准形式）。
+设 $P=\begin{bmatrix}W_1&-W_1G\\I&-G\end{bmatrix}$，$K=C$，LFT反馈约定为 $u=Cy$。
 
-下线形分式变换：$T_{zw} = P_{11} + P_{12} C (I - P_{22} C)^{-1} P_{21}$
+(a) 代入 $\mathcal F_\ell(P,C)=P_{11}+P_{12}C(I-P_{22}C)^{-1}P_{21}$，证明 $T_{zw}=W_1S$。
 
-(a) 代入 $P$ 的各分块，化简 $T_{zw}$，证明 $T_{zw} = W_1 S$，其中 $S = \frac{1}{1+GC}$。
-
-(b) 如果改为最小化混合灵敏度 $\left\|\begin{bmatrix} W_1 S \\ W_2 T \end{bmatrix}\right\|_\infty$，广义被控对象 $P(s)$ 应该是什么？（提示：$z$ 变成向量，$P$ 的行数增加。）
+(b) 若改为最小化 $\|[W_1S;W_2T]\|_\infty$，广义对象应如何构造？这里W2沿用题设，仍加在T上。
 
 **3. 回路整形设计**
 
-设被控对象 $G(s) = \frac{1}{s(s+2)}$。用 PD 控制器 $C(s) = K(1 + T_d s)$。
+设 $G=1/[s(s+2)]$，PD控制器 $C=K(1+T_ds)$。
 
-(a) 取 $K = 5$，$T_d = 0.5$。求开环传递函数 $L(s) = G(s)C(s)$，并计算穿越频率 $\omega_c$（$|L(j\omega_c)| = 1$）。
+(a) 取K=5、$T_d=0.5$，求L及穿越频率。
 
-(b) 求相位裕度 $PM$。
+(b) 求PM。
 
-(c) 求 $\|S\|_\infty$（可数值计算或解析求解）。
+(c) 求 $\|S\|_\infty$。说明是否达到正文希望的5rad/s，以及理想PD的实现边界。
 
 **4. 概念辨析**
 
-判断以下说法是否正确，并说明理由：
+(a) H∞优化问题的解一定比回路整形控制器性能更好。
 
-(a) $\mathcal{H}_\infty$ 优化问题的解一定比回路整形得到的控制器性能更好。
+(b) W1在某频率的增益越大，优化后该频率的S就越小。
 
-(b) 加权函数 $W_1(s)$ 在某个频率的增益越大，优化后该频率的 $|S(j\omega)|$ 越小。
+(c) 若 $\|W_1S\|_\infty<1$，则所有频率都有 $|S(j\omega)|<1/|W_1(j\omega)|$。
 
-(c) 如果 $\|W_1 S\|_\infty < 1$，则对所有频率都有 $|S(j\omega)| < 1/|W_1(j\omega)|$。
+逐条判断并说明成立条件或反例。
 
 ## 答案
 
 **1. 加权函数的物理意义**
 
-(a) $\omega = 0$：
+(a) 原题数字保持不变，先做精确因式分解：
 
 $$
-|W_1(0)| = \frac{1}{0.01} = 100
+W_1(s)=100\frac{s+0.01}{s+0.01}=100.
 $$
 
-$\omega = 1$：
+因此 $|W_1(0)|=|W_1(j)|=100$，并非只近似100。原零点与极点都在−0.01且完全相消；不存在旧答案声称的100rad/s高频放松。
 
-$$
-|W_1(j)| = \frac{|100j + 1|}{|j + 0.01|} = \frac{\sqrt{10000 + 1}}{\sqrt{1 + 0.0001}} = \frac{\sqrt{10001}}{\sqrt{1.0001}} \approx \frac{100.005}{1.00005} \approx 100
-$$
+(b) 两点均要求 $|S|<0.01$。
 
-(b) $\|W_1 S\|_\infty < 1$ 意味着对所有 $\omega$，$|W_1(j\omega)| \cdot |S(j\omega)| < 1$，即 $|S(j\omega)| < \frac{1}{|W_1(j\omega)|}$。
-
-$\omega = 0$：$|S(0)| < \frac{1}{100} = 0.01$
-
-$\omega = 1$：$|S(j)| < \frac{1}{100} = 0.01$
-
-(c) $W_1(s) = \frac{100s+1}{s+0.01}$ 的 Bode 图：低频增益 100（40 dB），转折频率在 $\omega = 0.01$ rad/s（零点）和 $\omega = 100$ rad/s（极点）。在 $\omega < 100$ 的范围内，$|W_1| \approx 100$，因此要求 $|S| < 0.01$（即 -40 dB）。在 $\omega > 100$ 时，$|W_1|$ 以 -20 dB/dec 下降，要求逐渐放松。
-
-物理意义：**在 $\omega < 100$ rad/s 的范围内，要求扰动抑制比达到 100:1（-40 dB）。**这是一个典型的"低频高精度跟踪"需求。
+(c) 实际上**所有频率**的包络都是0.01。若G严格真有理而C适当，则 $GC(\infty)=0$、$S(\infty)=1$，所以 $\|W_1S\|_\infty\ge100$，目标不可能。可以另选高频模足够小的权重，但不能悄悄改掉本题系数后再给答案。
 
 **2. 标准形式验证**
 
-(a) 代入 $P_{11} = W_1$，$P_{12} = -W_1 G$，$P_{21} = I$，$P_{22} = -G$：
+(a) 逐块代入得：
 
 $$
-T_{zw} = W_1 + (-W_1 G) C (I - (-G) C)^{-1} \cdot I
+T_{zw}=W_1-W_1GC(I+GC)^{-1}=W_1(I+GC)^{-1}=W_1S.
 $$
 
-$$
-= W_1 - W_1 G C (I + GC)^{-1}
-$$
+(b) 两个性能输出、一个测量输出，取：
 
 $$
-= W_1 \left[1 - GC(I+GC)^{-1}\right]
+P=\begin{bmatrix}W_1&-W_1G\\0&W_2G\\I&-G\end{bmatrix}.
 $$
 
-$$
-= W_1 \left[\frac{I + GC - GC}{I + GC}\right]
-$$
-
-$$
-= W_1 \cdot \frac{1}{1 + GC} = W_1 S \quad \checkmark
-$$
-
-(b) 混合灵敏度 $\left\|\begin{bmatrix} W_1 S \\ W_2 T \end{bmatrix}\right\|_\infty$，$z$ 是二维向量。广义被控对象：
-
-$$
-P(s) = \begin{bmatrix} W_1 & -W_1 G \\ 0 & W_2 G \\ I & -G \end{bmatrix}
-$$
-
-验证：$T_{zw} = \begin{bmatrix} W_1 \\ 0 \end{bmatrix} + \begin{bmatrix} -W_1 G \\ W_2 G \end{bmatrix} C(I+GC)^{-1} \cdot I = \begin{bmatrix} W_1 - W_1 GC(I+GC)^{-1} \\ W_2 GC(I+GC)^{-1} \end{bmatrix} = \begin{bmatrix} W_1 S \\ W_2 T \end{bmatrix} \quad \checkmark$
+代入下LFT，第一行与(a)相同；第二行是 $W_2GC(I+GC)^{-1}=W_2T$。负号由 $P_{22}=-G$ 表示，不额外再反一次控制器符号。矩阵情形保持乘法次序。
 
 **3. 回路整形设计**
 
-(a) $C(s) = 5(1 + 0.5s) = 5 + 2.5s = 2.5(s+2)$
+(a) $C=5+2.5s=2.5(s+2)$，稳定极点−2被名义零点相消，$L=2.5/s$，故 $\omega_c=2.5$rad/s。
 
-$$
-L(s) = G(s)C(s) = \frac{2.5(s+2)}{s(s+2)} = \frac{2.5}{s}
-$$
+(b) 相位−90°，PM=90°。
 
-零极点对消！$|L(j\omega)| = \frac{2.5}{\omega}$。
-
-穿越频率：$\frac{2.5}{\omega_c} = 1 \Rightarrow \omega_c = 2.5$ rad/s。
-
-(b) $\angle L(j\omega) = \angle \frac{2.5}{j\omega} = -90°$（对所有 $\omega$）。
-
-$$
-PM = 180° + (-90°) = 90°
-$$
-
-(c) $S(s) = \frac{1}{1+L} = \frac{1}{1+2.5/s} = \frac{s}{s+2.5}$
-
-$$
-|S(j\omega)| = \frac{\omega}{\sqrt{\omega^2 + 6.25}}
-$$
-
-$|S(j\omega)|$ 随 $\omega$ 单调递增，$\lim_{\omega \to \infty} |S(j\omega)| = 1$。
-
-$$
-\|S\|_\infty = 1 < 1.5 \quad \checkmark
-$$
-
-所有指标满足：$\omega_c = 2.5$ rad/s（略低于目标 5 rad/s，但 $PM = 90°$ 非常好，$\|S\|_\infty = 1$）。
-
-> 💡 这个例子展示了零极点对消的特殊情况。实际工程中不建议精确对消不稳定或阻尼很小的极点，但对消稳定的极点（如此处的 $s = -2$）可以简化设计。
+(c) $S=s/(s+2.5)$，其模为 $\omega/\sqrt{\omega^2+6.25}$，从0单调增加到1，故上确界 $\|S\|_\infty=1<1.5$；有限频率不会取到1。穿越仍是2.5，**没有达到5rad/s**。PD不适当，KS高频随s增长，常数正控制权重下的控制通道H∞范数无限；加入微分滤波后须重新验证，不能继续套原精确对消结果。相消的稳定内部极点−2不会造成不稳定隐藏状态，但模型失配和高频实现仍需处理。
 
 **4. 概念辨析**
 
-(a) **错误**。$\mathcal{H}_\infty$ 优化在**给定加权函数**下是最优的，但加权函数的选择本身需要工程判断。如果加权函数选得不合适，$\mathcal{H}_\infty$ 优化的结果可能不如经验丰富的工程师用回路整形手工设计的方案。$\mathcal{H}_\infty$ 优化是"在给定框架内的最优"，不是"绝对最优"。
+(a) “一定更好”错误。同一性能函数与控制器集合下，理想全局最优值至多等于一个可行手工候选的值，可能持平；若比较不同权重、不同约束或局部数值解，就没有这条排序。问题不仅是“权重选得好不好”。
 
-(b) **正确**（在合理范围内）。$W_1$ 在某频率增益越大，$\|W_1 S\|_\infty$ 中该频率的"权重"越大，优化器就越努力压低该频率的 $|S|$。但受 $S + T = 1$ 约束和其他加权函数的限制，$|S|$ 不能无限小。
+(b) 作为严格逐频结论错误。增大权重改变折中，新的解可能不变、不可行，或者把误差移到别处；并不保证所指频率的S下降。仅增大一个非决定最坏值的频率权重，在仍有松弛时，原最优控制器完全可能保持不变。
 
-(c) **正确**。$\|W_1 S\|_\infty < 1$ 的定义是 $\sup_\omega |W_1(j\omega) S(j\omega)| < 1$，即对所有 $\omega$ 都有 $|W_1(j\omega)| \cdot |S(j\omega)| < 1$，等价于 $|S(j\omega)| < 1/|W_1(j\omega)|$。这正是加权函数的物理意义：$1/|W_1(j\omega)|$ 是 $|S|$ 在频率 $\omega$ 处的上界包络。
+(c) 在稳定的加权通道、有限且非零 $W_1(j\omega)$ 处正确：$|W_1S|\le\|W_1S\|_\infty<1$，除以模即可。若权重在某频率为零，该点没有有限逆模上界；MIMO一般也不能按标量逐元素除权重。
+
+<JupyterNotebook
+  title="原四道习题与H∞条件复算"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from numpy.polynomial import polynomial as poly
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.logspace(-1,2.5,2001)
+def controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):
+    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])
+    return C*ctrl.tf([a],[1,a]) if a>0 else C
+def plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])
+def squared_poly(coeff):
+    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))
+    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])
+    return poly.polyadd(a,b)
+def full_frequency_peak(H):
+    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])
+    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))
+    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]
+    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]
+    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))
+    return max(candidates,key=lambda pair:pair[0])
+def report(C,wn=10.):
+    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))
+    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)
+    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}
+`}
+  cells={[
+    { code: `# Retained four exercises and theoretical assertions, independently auditable outputs
+s=ctrl.tf('s');W1=(100*s+1)/(s+.01)
+print('answer1 exact_weight=100 all frequencies; at_0',ctrl.dcgain(W1),'at_1',abs(W1(1j)),'bound=.01, no relaxing frequency band')
+Kunstable=3/(s-1);Gstable=1/(s+2);print('unstable_controller_but_internal_feedback_stable_poles',ctrl.poles(ctrl.feedback(Gstable*Kunstable,1)))
+H1=1/(s+1);H2=s/(s+1);print('stack_norm=1; sum_of_squared_individual_norms=2; squared_stack_norm=1')
+Pbr=np.array([[-4.,1.,1.],[1.,-1.,0.],[1.,0.,-1.]]);print('bounded_real_certificate_eigenvalues',np.linalg.eigvalsh(Pbr),'Hinf=.5 < gamma=1')
+Wp=(s/1.5+10)/(s+.01);Wm=.01*(1+s/100)**2/(1+s/10000)**2;Wu=.01*s/(s/1000+1)
+print('weights DC_1000',ctrl.dcgain(Wp),'Wp_at_1',abs(Wp(1j)),'Wp_at_10',abs(Wp(10j)),'proper_Wm_high_limit=100','Wu_high_limit=10')
+print('PM_bound_from_Ms1point4_degrees',2*np.degrees(np.arcsin(1/2.8)),'Hz10_rad',20*np.pi,'Hz1000_rad',2000*np.pi)
+print('candidate_reduced_cubic_routh_gap',10.1*101-210,'original_notch_center_ratio',.5/.02,'corrected_notch_ratio',.05/.5)
+print('LQR single-input return-difference geometry: gain decrease boundary .5; phase margin bound degrees',180-np.degrees(np.arccos(-.5)))
+G=1/(s*(s+2));C=5*(1+.5*s);L=ctrl.minreal(G*C,verbose=False);S=ctrl.minreal(ctrl.feedback(1,L),verbose=False)
+print('answer2 LFT SISO algebra checked below with three frequency samples')
+for ww in [.1,1.,10.]:
+    gg=G(1j*ww);cc=C(1j*ww);weight=1/(1j*ww+1);lft=weight-weight*gg*cc/(1+gg*cc);assert abs(lft-weight*S(1j*ww))<1e-12
+print('answer3 L=2.5/s wc=2.5 PM=90 Ms=1; controller improper, KS unbounded; target_wc5 unmet')
+print('answer4 a: same objective/global optimum can tie, different objectives incomparable; b: no pointwise monotonic guarantee; c: yes for stable channel and nonzero weight')
+print('sampled_stack_identity_max_error',max(abs(abs(H1(1j*w))**2+abs(H2(1j*w))**2-1)))
+print('all_answers_complete')
+` }
+  ]}
+/>
+

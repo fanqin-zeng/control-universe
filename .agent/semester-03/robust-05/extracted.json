@@ -1,0 +1,93 @@
+{
+  "source": "content/robust/h-infinity-basics.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 4,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 231,
+      "title": "对象频响：自然频率不等于精确共振频率",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-1,2.5,2001)\r\ndef controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):\r\n    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])\r\n    return C*ctrl.tf([a],[1,a]) if a>0 else C\r\ndef plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])\r\ndef squared_poly(coeff):\r\n    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))\r\n    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])\r\n    return poly.polyadd(a,b)\r\ndef full_frequency_peak(H):\r\n    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]\r\n    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))\r\n    return max(candidates,key=lambda pair:pair[0])\r\ndef report(C,wn=10.):\r\n    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))\r\n    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)\r\n    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 260,
+          "delim": "`",
+          "code": "# Retain open-loop amplitude/phase inspection; exact natural and peak frequencies differ\r\nG=plant();natural=10.;resonance=np.sqrt(99.5);resonance_peak=1/(.1*np.sqrt(1-.05**2))\r\nprint('G_DC',ctrl.dcgain(G),'G_at_natural_frequency',abs(G(10j)),'true_resonance_frequency',resonance,'true_resonance_peak',resonance_peak)\r\nfig,axs=plt.subplots(1,2,figsize=(10,3.2));axs[0].semilogx(w,20*np.log10(abs(G(1j*w))));axs[0].axvline(10,color='red',ls=':');axs[0].set_ylabel('Magnitude (dB)');axs[1].semilogx(w,np.angle(G(1j*w),deg=True));axs[1].set_ylabel('Phase (degrees)')\r\nfor ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.grid(True)\r\nplt.tight_layout();plt.show();print('plant_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 302,
+      "title": "固定候选：稳定性、回路、输出与控制信号",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-1,2.5,2001)\r\ndef controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):\r\n    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])\r\n    return C*ctrl.tf([a],[1,a]) if a>0 else C\r\ndef plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])\r\ndef squared_poly(coeff):\r\n    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))\r\n    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])\r\n    return poly.polyadd(a,b)\r\ndef full_frequency_peak(H):\r\n    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]\r\n    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))\r\n    return max(candidates,key=lambda pair:pair[0])\r\ndef report(C,wn=10.):\r\n    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))\r\n    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)\r\n    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 331,
+          "delim": "`",
+          "code": "# Original design is preserved as a failed case; the default below is a new proper candidate\r\ncases={'original':controller(20,10,.5,.02,0),'damping_swap':controller(20,10,.02,.5,0),'candidate':controller(),'faster_lowpass':controller(a=.2),'proportional_5':ctrl.tf([5],[1]),'proportional_20':ctrl.tf([20],[1])}\r\nreports={name:report(C) for name,C in cases.items()}\r\nfor name,row in reports.items():print(name,row)\r\nC=cases['candidate'];G=plant();L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);U=ctrl.feedback(C,G);t=np.linspace(0,10,1001)\r\n_,y=ctrl.step_response(T,t);_,u=ctrl.step_response(U,t)\r\nprint('candidate_DC_output',ctrl.dcgain(T),'sample_output_peak',max(y),'sample_control_peak',max(abs(u)),'step_last_sample',y[-1])\r\nfig,axs=plt.subplots(2,2,figsize=(10,6));axs[0,0].semilogx(w,20*np.log10(abs(L(1j*w))));axs[0,0].axhline(0,color='black',ls=':');axs[0,0].set_title('Open loop')\r\naxs[0,1].semilogx(w,20*np.log10(abs(S(1j*w))),label='S');axs[0,1].semilogx(w,20*np.log10(abs(T(1j*w))),label='T');axs[0,1].axhline(20*np.log10(1.5),color='black',ls=':');axs[0,1].legend();axs[0,1].set_title('Closed-loop frequency response')\r\naxs[1,0].plot(t,y);axs[1,0].axhline(ctrl.dcgain(T),color='green',ls=':');axs[1,0].set_title('Step output, DC limit marked');axs[1,1].plot(t,u);axs[1,1].set_title('Step control')\r\nfor ax in axs.ravel():ax.grid(True)\r\nfor ax in axs[0,:]:ax.set_xlabel('Frequency (rad/s)');ax.set_ylabel('Magnitude (dB)')\r\nfor ax in axs[1,:]:ax.set_xlabel('Time (s)')\r\nplt.tight_layout();plt.show();print('design_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 369,
+      "title": "性能验证与原比例基线、参数失配",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-1,2.5,2001)\r\ndef controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):\r\n    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])\r\n    return C*ctrl.tf([a],[1,a]) if a>0 else C\r\ndef plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])\r\ndef squared_poly(coeff):\r\n    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))\r\n    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])\r\n    return poly.polyadd(a,b)\r\ndef full_frequency_peak(H):\r\n    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]\r\n    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))\r\n    return max(candidates,key=lambda pair:pair[0])\r\ndef report(C,wn=10.):\r\n    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))\r\n    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)\r\n    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 398,
+          "delim": "`",
+          "code": "# Exact j10, internal stability first; a finite unstable frequency scan is not an H-infinity norm\r\nrow=report(controller());print('candidate_verification',row)\r\noriginal=reports['original'] if 'reports' in globals() else report(controller(20,10,.5,.02,0))\r\nprint('original_frequency_scan_is_not_Hinf: unstable=',not original['stable'],'spectral_abscissa=',original['alpha'])\r\nfig,axs=plt.subplots(1,2,figsize=(10,3.2));G=plant();C=controller();L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1)\r\naxs[0].semilogx(w,abs(S(1j*w)));axs[0].axhline(1.5,color='red',ls=':');axs[0].set_ylabel('|S|');axs[1].semilogx(w,abs(T(1j*w)));axs[1].scatter([10],[abs(T(10j))]);axs[1].set_ylabel('|T|')\r\nfor ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.grid(True)\r\nplt.tight_layout();plt.show();print('verification_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 407,
+          "delim": "`",
+          "code": "# Same nominal object and declared metrics; no assertion of algorithm-wide superiority\r\ncomparisons={name:report(C) for name,C in [('P5',ctrl.tf([5],[1])),('P20',ctrl.tf([20],[1])),('original',controller(20,10,.5,.02,0)),('swap',controller(20,10,.02,.5,0)),('candidate',controller()),('faster',controller(a=.2))]}\r\nfor name,row in comparisons.items():print('nominal_comparison',name,row)\r\nmisalignment=[]\r\nfor plant_wn in [9.,10.,11.]:\r\n    row=report(controller(),plant_wn);misalignment.append([plant_wn,row]);print('fixed_controller_plant_wn',plant_wn,row)\r\nfig,axs=plt.subplots(1,2,figsize=(10,3.4))\r\nfor name,C in [('P5',ctrl.tf([5],[1])),('P20',ctrl.tf([20],[1])),('candidate',controller())]:\r\n    loop=plant()*C;axs[0].semilogx(w,abs(ctrl.feedback(1,loop)(1j*w)),label=name);axs[1].semilogx(w,abs(ctrl.feedback(loop,1)(1j*w)),label=name)\r\naxs[0].axhline(1.5,color='black',ls=':');axs[0].set_ylabel('|S|');axs[1].set_ylabel('|T|')\r\nfor ax in axs:ax.set_xlabel('Frequency (rad/s)');ax.legend();ax.grid(True)\r\nplt.tight_layout();plt.show();print('comparison_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "line": 538,
+      "title": "原四道习题与H∞条件复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom numpy.polynomial import polynomial as poly\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.logspace(-1,2.5,2001)\r\ndef controller(K=20.,wn=10.,zn=.05,zd=.5,a=.1):\r\n    C=K*ctrl.tf([1,2*zn*wn,wn*wn],[1,2*zd*wn,wn*wn])\r\n    return C*ctrl.tf([a],[1,a]) if a>0 else C\r\ndef plant(wn=10.):return ctrl.tf([wn*wn],[1,.1*wn,wn*wn])\r\ndef squared_poly(coeff):\r\n    q=np.array(coeff)[::-1];even=q[::2]*(-1.)**np.arange(len(q[::2]));odd=q[1::2]*(-1.)**np.arange(len(q[1::2]))\r\n    a=poly.polymul(even,even);b=np.r_[0.,poly.polymul(odd,odd)] if len(odd) else np.array([0.])\r\n    return poly.polyadd(a,b)\r\ndef full_frequency_peak(H):\r\n    H=ctrl.minreal(H,verbose=False);N=squared_poly(H.num[0][0]);D=squared_poly(H.den[0][0])\r\n    stationary=poly.polysub(poly.polymul(poly.polyder(N),D),poly.polymul(N,poly.polyder(D)))\r\n    roots=poly.polyroots(poly.polytrim(stationary,tol=1e-7));xs=[0.]+[float(x.real) for x in roots if abs(x.imag)<1e-5*max(1.,abs(x.real)) and x.real>0]\r\n    candidates=[(np.sqrt(max(0.,poly.polyval(x,N)/poly.polyval(x,D))),np.sqrt(x)) for x in xs]\r\n    limit=0. if len(N)<len(D) else np.sqrt(N[-1]/D[-1]);candidates.append((limit,float('inf')))\r\n    return max(candidates,key=lambda pair:pair[0])\r\ndef report(C,wn=10.):\r\n    G=plant(wn);L=G*C;S=ctrl.feedback(1,L);T=ctrl.feedback(L,1);alpha=float(max(ctrl.poles(T).real))\r\n    gm,pm,wg,wc=ctrl.margin(L);peak,fpeak=full_frequency_peak(S)\r\n    return {'alpha':alpha,'stable':alpha<0,'frequency_max':float(peak),'peak_frequency':float(fpeak),'Ms':float(peak) if alpha<0 else None,'scan_peak':float(max(abs(S(1j*w)))),'PM':float(pm),'wc':float(wc),'T10':float(abs(T(10j))),'DC_error':float(ctrl.dcgain(S))}\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 567,
+          "delim": "`",
+          "code": "# Retained four exercises and theoretical assertions, independently auditable outputs\r\ns=ctrl.tf('s');W1=(100*s+1)/(s+.01)\r\nprint('answer1 exact_weight=100 all frequencies; at_0',ctrl.dcgain(W1),'at_1',abs(W1(1j)),'bound=.01, no relaxing frequency band')\r\nKunstable=3/(s-1);Gstable=1/(s+2);print('unstable_controller_but_internal_feedback_stable_poles',ctrl.poles(ctrl.feedback(Gstable*Kunstable,1)))\r\nH1=1/(s+1);H2=s/(s+1);print('stack_norm=1; sum_of_squared_individual_norms=2; squared_stack_norm=1')\r\nPbr=np.array([[-4.,1.,1.],[1.,-1.,0.],[1.,0.,-1.]]);print('bounded_real_certificate_eigenvalues',np.linalg.eigvalsh(Pbr),'Hinf=.5 < gamma=1')\r\nWp=(s/1.5+10)/(s+.01);Wm=.01*(1+s/100)**2/(1+s/10000)**2;Wu=.01*s/(s/1000+1)\r\nprint('weights DC_1000',ctrl.dcgain(Wp),'Wp_at_1',abs(Wp(1j)),'Wp_at_10',abs(Wp(10j)),'proper_Wm_high_limit=100','Wu_high_limit=10')\r\nprint('PM_bound_from_Ms1point4_degrees',2*np.degrees(np.arcsin(1/2.8)),'Hz10_rad',20*np.pi,'Hz1000_rad',2000*np.pi)\r\nprint('candidate_reduced_cubic_routh_gap',10.1*101-210,'original_notch_center_ratio',.5/.02,'corrected_notch_ratio',.05/.5)\r\nprint('LQR single-input return-difference geometry: gain decrease boundary .5; phase margin bound degrees',180-np.degrees(np.arccos(-.5)))\r\nG=1/(s*(s+2));C=5*(1+.5*s);L=ctrl.minreal(G*C,verbose=False);S=ctrl.minreal(ctrl.feedback(1,L),verbose=False)\r\nprint('answer2 LFT SISO algebra checked below with three frequency samples')\r\nfor ww in [.1,1.,10.]:\r\n    gg=G(1j*ww);cc=C(1j*ww);weight=1/(1j*ww+1);lft=weight-weight*gg*cc/(1+gg*cc);assert abs(lft-weight*S(1j*ww))<1e-12\r\nprint('answer3 L=2.5/s wc=2.5 PM=90 Ms=1; controller improper, KS unbounded; target_wc5 unmet')\r\nprint('answer4 a: same objective/global optimum can tie, different objectives incomparable; b: no pointwise monotonic guarantee; c: yes for stable channel and nonzero weight')\r\nprint('sampled_stack_identity_max_error',max(abs(abs(H1(1j*w))**2+abs(H2(1j*w))**2-1)))\r\nprint('all_answers_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

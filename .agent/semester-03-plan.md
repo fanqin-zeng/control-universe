@@ -96,6 +96,7 @@
 | ID-07 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-07，rank3；保留并行课程，先修最小二乘/可控可观/矩阵分解已交付 | .agent/semester-03/id-07/acceptance.md |
 | MPC-06 | IMPL-08;IMPL-09;IMPL-10;ML-08;ML-09;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-06，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-06/acceptance.md |
 | EST-06 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-06，rank4；其它会话并行，保留其检查点，仅依赖已交付先修 | .agent/semester-03/est-06/acceptance.md |
+| ROBUST-05 | IMPL-08;IMPL-09;IMPL-10;ML-08;ML-09;ID-08;ID-09;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-05，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-05/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -951,3 +952,8 @@ rank2按用户指定新写表征学习；PCA受限重构、冻结探针/七方�
 
 粒子滤波从空占位按新写Phase1—4完成：10H2/四题全部子问、3Notebook6cell、ParticleFilterExplorer与纵向SVG。一般重要性权重、bootstrap逐拍更新、按需系统重采样、ESS与祖先丢失、log权重和支持覆盖完整；四点离散先验与Gaussian采样严格分开。114真实TS组合对独立SciPy/quad/CDF，90单拍与30×20拍多种子保留失败，FFT参考另对直接转移矩阵核；严格内核、Pyodide、两构建/实页/375px通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-06/acceptance.md；真实master回执见checklist。不发布Pages，不生产EST-07。
 <!-- EST-06-RECEIPT-END -->
+
+
+### ROBUST-05 本期交付记录（2026-10-24）
+
+H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题子问与原三Notebook四cell用途。纠正内部稳定/堆叠目标、权重、DGKF/LMI条件、反陷波失稳、恒100权重与理想PD边界；新增可实现低通候选，保留低带宽代价及9/11rad/s失配超标。四Notebook五cell、五参数双图Explorer/SVG；实际TS270配置/1620频点、独立控制模型及完整驻点/符号复核，严格内核/Pyodide、双构建与375px证据见.agent/semester-03/robust-05/acceptance.md。未运行通用H∞综合，不冒称最优或全集鲁棒。rank5独立端口/缓存/索引，保留并行工作；仅本课，不发布Pages、不生产ROBUST-06。真实master hash见全局checklist。

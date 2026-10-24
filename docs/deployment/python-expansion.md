@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 118 课 / 492 个实验 / 754 个单元格全部纳入盘点。114 课全部可运行，2 课混合，2 课全部保留代码；启用 487 个实验，保留 5 个。实际执行 747 个单元格（含异常单元格），生成 229 张 PNG。原始记录中 487 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 119 课 / 496 个实验 / 761 个单元格全部纳入盘点。116 课全部可运行，1 课混合，2 课全部保留代码；启用 493 个实验，保留 3 个。实际执行 755 个单元格（含异常单元格），生成 231 张 PNG。原始记录中 493 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -48,7 +48,7 @@
 | estimation/kalman-filter（卡尔曼滤波） | 3/3 | 6 | 无 |
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
 | robust/robust-performance（鲁棒性能） | 3/3 | 5 | 无 |
-| robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
+| robust/h-infinity-basics（H∞控制） | 4/4 | 5 | 无 |
 | robust/mixed-sensitivity（混合灵敏度） | 2/2 | 4 | 无 |
 | robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
 | robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
@@ -130,6 +130,7 @@
 | implementation/networked-control（网络控制） | 3/3 | 6 | 无 |
 | machine-learning/representation-learning（表征学习） | 2/2 | 4 | 无 |
 | identification/subspace-id（子空间辨识） | 3/3 | 3 | 无 |
+| estimation/particle-filter（粒子滤波） | 3/3 | 6 | 无 |
 
 ## 待处理实验
 
@@ -137,11 +138,9 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-001 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-002 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-003 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-004 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-005 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-001 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-002 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-003 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 
