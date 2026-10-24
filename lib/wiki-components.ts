@@ -1,3 +1,4 @@
+import { NeuralNetworkBasicsExplorer } from '@/components/wiki/neural-network-basics-explorer';
 import { VehicleDynamicsExplorer } from "@/components/wiki/vehicle-dynamics-explorer";
 import { RlsIdentificationExplorer } from "@/components/wiki/rls-identification-explorer";
 import { StatisticalEstimationExplorer } from "@/components/wiki/statistical-estimation-explorer";
@@ -114,6 +115,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  NeuralNetworkBasicsExplorer,
   VehicleDynamicsExplorer,
   RlsIdentificationExplorer,
   StatisticalEstimationExplorer,

@@ -3387,13 +3387,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "neural-networks",
         "title": "神经网络基础",
+        "subsections": [
+          {
+            "slug": "两台水泵的指示灯",
+            "title": "两台水泵的指示灯"
+          },
+          {
+            "slug": "从一个神经元到一层",
+            "title": "从一个神经元到一层"
+          },
+          {
+            "slug": "非线性不能省略",
+            "title": "非线性不能省略"
+          },
+          {
+            "slug": "手算一次前向传播",
+            "title": "手算一次前向传播"
+          },
+          {
+            "slug": "移动折点观察函数",
+            "title": "移动折点观察函数"
+          },
+          {
+            "slug": "xor的表示与边界",
+            "title": "XOR的表示与边界"
+          },
+          {
+            "slug": "参数如何学习",
+            "title": "参数如何学习"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/supervised-learning",
           "math/multivariable-calculus"
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "autodiff-optimization",

@@ -1,0 +1,167 @@
+---
+title: 神经网络基础
+description: 从两台水泵的运行指示和可手算的ReLU网络，理解层、激活、参数、前向传播与表达能力的边界。
+---
+
+# 神经网络基础
+
+## 两台水泵的指示灯
+
+一套教学水箱有两台水泵，控制面板分别显示它们是否运行。我们想增加一盏指示灯：恰好一台运行时亮，两台都停或都开时灭。输入各取“停=0、开=1”，输出取“灭=0、亮=1”。这叫**异或（XOR）**。它是自造的逻辑教具，不承担水箱的安全联锁。
+
+上一课的[监督学习](/machine-learning/supervised-learning)用标签训练模型。现在先问一个更早的问题：选定的模型结构，能不能表达所需关系？若模型只能在输入平面上画一条分类直线，这盏灯的四种状态就无法全部分对。换成多层结构之后，究竟增加了什么？
+
+<svg viewBox="0 0 660 170" role="img" aria-label="水泵A和水泵B的运行状态输入隐藏特征层，再由输出层产生恰好一台运行的指示灯信号" style={{width:'100%',height:'auto',maxWidth:660}}>
+  <rect x="5" y="10" width="155" height="55" rx="8" fill="#e0f2fe" stroke="#0369a1"/><text x="82" y="43" textAnchor="middle" fill="#172033">水泵A：停或开</text>
+  <rect x="5" y="100" width="155" height="55" rx="8" fill="#e0f2fe" stroke="#0369a1"/><text x="82" y="133" textAnchor="middle" fill="#172033">水泵B：停或开</text>
+  <path d="M160 38L265 70l-12 -2m12 2l-8 -10M160 128L265 98l-12 -2m12 2l-8 10M420 84H495l-10 -6m10 6l-10 6" stroke="#334155" fill="none"/>
+  <rect x="270" y="40" width="150" height="88" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="345" y="76" textAnchor="middle" fill="#172033">隐藏特征</text><text x="345" y="104" textAnchor="middle" fill="#172033">加权 → 激活</text>
+  <rect x="500" y="40" width="155" height="88" rx="8" fill="#dcfce7" stroke="#15803d"/><text x="577" y="76" textAnchor="middle" fill="#172033">输出层 → 指示灯</text><text x="577" y="104" textAnchor="middle" fill="#172033">恰好一台运行</text>
+</svg>
+
+本课先用一维输入把每一步算清楚，再回到二维XOR。你将学会写出层的维度与参数数目、手算前向传播、解释非线性的作用，并区分“存在合适参数”“能否训练得到”和“新数据是否可靠”。需要上一课的损失与训练/验证/测试概念，以及[多元微积分](/math/multivariable-calculus)的偏导与链式法则；自动微分和完整训练程序留到下一课。
+
+## 从一个神经元到一层
+
+一个人工神经元先把输入加权求和，再加偏置，最后经过激活函数。对单样本列向量 $\mathbf x\in\mathbb R^p$：
+
+$$
+z_j=\sum_{k=1}^{p}W_{jk}x_k+b_j,\qquad h_j=\sigma(z_j).
+$$
+
+$W_{jk}$ 是输入 $k$ 到单元 $j$ 的权重，$b_j$ 是偏置；偏置让函数变化的位置不必经过原点。$z_j$ 是激活前的数，$h_j$ 是激活后的特征。“神经元”是计算单元的名称，不说明这个模型具有生物神经系统的机制。
+
+把同层单元排成向量，得到全连接层。每个输出单元都接收全部输入：
+
+$$
+\mathbf z^{(\ell)}=W^{(\ell)}\mathbf h^{(\ell-1)}+\mathbf b^{(\ell)},\qquad
+\mathbf h^{(\ell)}=\sigma(\mathbf z^{(\ell)}),\qquad \mathbf h^{(0)}=\mathbf x.
+$$
+
+激活逐元素作用。若上一层宽度为 $p$、本层宽度为 $q$，则 $W$ 为 $q\times p$，偏置为 $q$ 维，共 $qp+q$ 个一般独立参数。输入本身不产生可训练参数。若把批量样本放成矩阵的行，程序会写成 $XW^\mathsf T+\mathbf b^\mathsf T$，这只是存储方向改变，不能把转置漏掉。
+
+**隐藏层**位于输入与输出之间，其中的“隐藏”指数据通常没有直接提供这层的目标标签。**宽度**是单元数；本课计**深度**时只数带参数的层，不数输入层。结构 $1\to2\to1$ 因而有一层隐藏层、两层带参数的层，共 $2\times1+2+1\times2+1=7$ 个一般参数。若演示时固定或绑定部分权重，可调自由度会减少，不能仍称这些旋钮都是七个独立参数。
+
+## 非线性不能省略
+
+若每层都只做仿射运算，连续两层可以合成一层：
+
+$$
+W^{(2)}(W^{(1)}\mathbf x+\mathbf b^{(1)})+\mathbf b^{(2)}
+=(W^{(2)}W^{(1)})\mathbf x+W^{(2)}\mathbf b^{(1)}+\mathbf b^{(2)}.
+$$
+
+所以只堆叠线性激活，即使加了偏置，整体仍是仿射函数；更深的参数分解可能改变优化过程，但不能凭空画出折点。本课把“线性层”的常见工程叫法和数学上的仿射变换区别开：非零偏置存在时并非严格线性映射。
+
+常见激活包括：ReLU $\sigma(z)=\max(0,z)$，在正半轴原样通过、负半轴截成零；双曲正切 $\tanh z$，把实数压进 $(-1,1)$；上一课的sigmoid则把实数压进 $(0,1)$。ReLU在零点不可导，程序需约定所用的次梯度取值；本课只在严格负区间讨论失活导数。
+
+输出层的选择由任务决定。回归通常保留无激活的实数输出；二分类可把最后一个实数当 **logit**，再用sigmoid得到模型概率并配合相应损失。隐藏特征不自动是概率，多层网络的输出也不自动满足物理约束。
+
+## 手算一次前向传播
+
+先构造一个输出输入绝对值的网络。此处输入与输出都无量纲，参数是手工指定的，没有训练。令
+
+$$
+W^{(1)}=\begin{bmatrix}1\\-1\end{bmatrix},\quad
+\mathbf b^{(1)}=\begin{bmatrix}-c+d\\c+d\end{bmatrix},\quad
+W^{(2)}=\begin{bmatrix}g&g\end{bmatrix},\quad b^{(2)}=0.
+$$
+
+默认 $c=0,d=0,g=1$，隐藏层用ReLU，输出层直接相加。输入 $x=0.5$ 时：
+
+$$
+\mathbf z=\begin{bmatrix}0.5\\-0.5\end{bmatrix},\qquad
+\mathbf h=\begin{bmatrix}0.5\\0\end{bmatrix},\qquad \widehat y=0.5.
+$$
+
+第一支取正侧，第二支取负侧的大小。对任意实数都有 $\max(0,x)+\max(0,-x)=|x|$。更一般地，当 $d=0$ 时，输出为 $g|x-c|$；$c$ 移动折点，$g$ 改变输出尺度。这叫**前向传播**：输入和参数已知，逐层求值，得到预测。它本身不更新参数。
+
+<JupyterNotebook title="逐层前向与损失" setupCode={`import numpy as np
+import json
+np.set_printoptions(precision=8, suppress=True)
+def forward_matrix(x, c=0., g=1., d=0., kind='relu'):
+    z = np.array([[1.],[-1.]]) @ np.array([x]) + np.array([-c+d,c+d])
+    h = np.maximum(0.,z) if kind=='relu' else np.tanh(z) if kind=='tanh' else z
+    return z,h,float(np.dot([g,g],h))
+def mse(xs,c=0.,g=1.,d=0.,kind='relu'):
+    return float(np.mean([(forward_matrix(x,c,g,d,kind)[2]-abs(x))**2 for x in xs]))`} cells={[
+{id:'ml03-forward',title:'默认前向与数据分组',code:`z,h,y=forward_matrix(.5)
+print(json.dumps(dict(z=z.tolist(),h=h.tolist(),output=y,parameters=2*1+2+1*2+1,training=mse([-1,0,1]),validation=mse([-.5,.5]),test=mse([-.75,.75]))))`},
+{id:'ml03-boundaries',title:'移动折点、对称相消和失活',code:`for name,c,g,d,kind in [('shift',.5,2,0,'relu'),('linear',0,1,0,'linear'),('tanh',0,1,0,'tanh'),('dead',0,1,-3,'relu'),('zero',0,0,0,'relu')]:
+    z,h,y=forward_matrix(-.5,c,g,d,kind)
+    print(name,json.dumps(dict(z=z.tolist(),h=h.tolist(),output=y,training=mse([-1,0,1],c,g,d,kind),validation=mse([-.5,.5],c,g,d,kind),test=mse([-.75,.75],c,g,d,kind))))
+xs=np.array([-1.,0.,1.]);zs=np.stack([forward_matrix(x,d=-3)[0] for x in xs]);hs=np.maximum(0,zs)
+res=hs@np.ones(2)-np.abs(xs);back=res[:,None]*np.ones((1,2))*(zs>0)
+print('gradient_dead',json.dumps(dict(dL_dW1=np.mean(back*xs[:,None],axis=0).tolist(),dL_db1=np.mean(back,axis=0).tolist(),dL_dW2=np.mean(res[:,None]*hs,axis=0).tolist(),dL_db2=float(res.mean()))))`}
+]} />
+
+## 移动折点观察函数
+
+先保留默认值，看隐藏特征各自负责哪一侧；再移动 $c$，最后改变激活。图中目标始终为 $|x|$，不会跟随旋钮改答案。训练点为 $-1,0,1$，验证点为 $-0.5,0.5$，测试点为 $-0.75,0.75$，标签都由绝对值生成。这些有限点只帮助核对损失，不构成真实数据评估。MSE仍是各组残差平方的平均值，不是半MSE。
+
+<NeuralNetworkBasicsExplorer />
+
+在本组默认参数下，ReLU网络三组MSE都为零；把激活改成linear或tanh，正负两支因对称相消，输出恒为零，训练MSE为 $2/3$，验证MSE为 $1/4$，测试MSE为 $9/16$。这不说明tanh网络不能表示非线性，而说明**有非线性激活还不够，参数组合也重要**。在 $x=0$ 处，这三种默认构造的输出同为零。
+
+点“失活单元”后 $d=-3,c=0$，在整个绘图区 $[-2,2]$ 内两个ReLU的激活前输入都严格为负，所以隐藏输出全为零。这里不是数值程序坏了，而是参数把单元移出了工作范围。点“恢复默认”应恢复全部参数与输入探针。
+
+所有旋钮只改变前向函数，没有训练预算或优化停止条件。这里同时展示测试误差只是教学剖析；实际选择结构、初始化和参数时，只使用训练/验证数据，锁定方案后才报告测试误差，不能一边反复查看测试一边选旋钮。
+
+## XOR的表示与边界
+
+回到两台水泵。设仿射打分为 $a x_1+b x_2+e$，打分严格大于零时亮，否则灭。要四种状态都对，必须有
+
+$$
+e\leq0,\quad a+e>0,\quad b+e>0,\quad a+b+e\leq0.
+$$
+
+中间两式相加得到 $a+b+2e>0$；最后一式再加 $e\leq0$ 却得到 $a+b+2e\leq0$，矛盾。这个证明对所有仿射参数成立，无需挑一个训练失败的初始化来代替结构性论证。
+
+给隐藏层加两个ReLU单元：$h_1=\max(0,x_1+x_2)$、$h_2=\max(0,x_1+x_2-1)$，输出 $\widehat y=h_1-2h_2$。四种二元输入上的输出依次是 $0,1,1,0$，可直接作逻辑读数，也可在大于 $0.5$ 时判亮。这是 $2\to2\to1$ 的构造，一般全连接结构有 $2\times2+2+1\times2+1=9$ 个参数；固定这些权重后并没有优化九个变量。
+
+输入若离开四个二元顶点，输出未必是有效逻辑值。例如 $(2,2)$ 输出 $-2$；它不是概率，也不证明连续传感器、噪声或故障下可靠。这里证明的是“存在一组表示XOR的参数”，没有证明梯度下降能找到它，更没有给真实水泵安全保证。
+
+<JupyterNotebook title="XOR与练习复算" setupCode={`import numpy as np
+import json`} cells={[
+{id:'ml03-xor',title:'原始矩阵前向与域外输入',code:`W1=np.array([[1.,1.],[1.,1.]])
+b1=np.array([0.,-1.]);W2=np.array([1.,-2.])
+for x in [[0,0],[0,1],[1,0],[1,1],[2,2]]:
+    h=np.maximum(0,W1@np.array(x)+b1)
+    print(json.dumps(dict(x=x,h=h.tolist(),output=float(W2@h),parameters=2*2+2+1*2+1)))`},
+{id:'ml03-exercises',title:'参数、偏移算例与失活误差',code:`from fractions import Fraction as F
+x=F(-1,2);c=F(1,2);g=2
+z=[x-c,-x+c];h=[max(0,v) for v in z]
+print(json.dumps(dict(z=list(map(float,z)),h=list(map(float,h)),output=float(g*sum(h)),parameters=7,dead_training=float(F(2,3)),dead_validation=.25,dead_test=.5625,dead_bias_gradient=float(-F(2,3)))))`}
+]} />
+
+## 参数如何学习
+
+前面都是手工构造。若给定监督样本，神经网络同样需要训练目标，例如半MSE及可选的参数惩罚。把全部待学权重与偏置收进 $\boldsymbol\theta_{NN}$，以链式法则求梯度，再更新：
+
+$$
+\boldsymbol\theta_{NN}^{(k+1)}=\boldsymbol\theta_{NN}^{(k)}-\eta\nabla_{\boldsymbol\theta_{NN}}L.
+$$
+
+$\eta$ 是学习率，$k$ 是更新次数。**反向传播**按链式法则从输出端向输入端组织梯度计算；它与前向求预测不同，下一课会实现自动微分与训练。本课不声称已训练神经网络。与上一课凸的直线回归不同，多层网络目标一般非凸，梯度停止可能是局部驻点，也可能只是到预算，不能宣称得到全局最优。
+
+失活例可以看见链式法则的限制。对上述三个训练点取目标 $|x|$、$L=\frac1{2n}\sum_i(\widehat y_i-y_i)^2$，当 $d=-3$ 时，隐藏ReLU都在严格负区间，导数为零。于是两层权重和隐藏偏置的梯度都为零；若输出偏置允许学习，它的梯度却为 $-2/3$。所以不能说“所有参数都没有梯度”；单独调输出偏置可以降低常量误差，却不能立刻唤醒隐藏单元或恢复折线。
+
+实际接口要分开：`fit(训练数据, 验证规则, 初始化, 学习率, 更新预算)` 产生并保存参数、预处理统计量及停止原因；`predict(新输入, 已保存参数)` 只执行前向，不读新标签、不重新拟合尺度。本课Explorer只有后一个接口。增加宽度或深度扩大可选函数族通常也增加存储、计算和调参成本；“能表示”不保证“能学到”，更不保证“能泛化”。控制中的闭环稳定性和约束满足还需要另外的分析与证据。
+
+## 习题
+
+1. 对 $1\to2\to1$ 网络，分别写出两层权重、偏置的形状和一般参数总数。若演示绑定输出权重都等于同一个 $g$，为什么不能把两个权重当作两个独立旋钮？
+2. 主算例用ReLU，取 $x=-0.5,c=0.5,g=2,d=0$。逐层计算 $\mathbf z,\mathbf h,\widehat y$。将激活改成linear而保持这组参数，会得到什么？
+3. 把两层无激活的仿射变换合并。结合XOR的四个不等式，解释仅增加无激活层为何不能解决开篇问题。上述XOR网络对 $(2,2)$ 的输出能否当作概率？
+4. 对失活配置解释哪些梯度为零、哪个偏置梯度仍非零。若不断看测试MSE后改初始化，再把最终测试MSE称为独立泛化评估，有什么问题？
+
+## 答案
+
+1. $W^{(1)}$ 为 $2\times1$、$\mathbf b^{(1)}$ 为二维，$W^{(2)}$ 为 $1\times2$、$b^{(2)}$ 为标量，总数 $2+2+2+1=7$。绑定后两权重只能一起变化，是一个自由度；其它演示固定项也不会因网络的一般参数数目而变成可训练变量。
+2. $\mathbf z=(-1,1)^\mathsf T$，$\mathbf h=(0,1)^\mathsf T$，输出 $2$。linear时 $\mathbf h=(-1,1)^\mathsf T$，相加后乘 $2$ 得到零；这里不是在比较训练算法。
+3. 合并权重为 $W^{(2)}W^{(1)}$，合并偏置为 $W^{(2)}\mathbf b^{(1)}+\mathbf b^{(2)}$。仍是仿射打分，XOR不等式的矛盾仍成立。构造网络对 $(2,2)$ 有 $\mathbf h=(4,3)^\mathsf T$，输出 $-2$，不在概率范围内；四个顶点的正确性不能扩展成域外保证。
+4. 在严格负区间 $\sigma'(z)=0$，所以隐藏权重/偏置梯度为零；由于隐藏输出也为零，输出权重梯度同样为零。输出偏置梯度是平均残差 $-2/3$，并非零。反复据测试改初始化使测试参与了方案选择，需新的保留数据或明确报告这种自适应选择，不能沿用独立测试的说法。
+
+## 继续学习
+
+请先不运行代码，口算输入改变时哪一个隐藏单元会工作，再用探针对照。下一课[自动微分与训练](/machine-learning/autodiff-optimization)将把保存参数、求梯度与停止规则实现成完整训练过程。本课的手工构造与失活例可作为检查该过程的参照。

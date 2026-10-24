@@ -118,7 +118,7 @@
 |------|------|------|------|------|------|---------|---------|
 | 8.1 | 学习问题与泛化 | learning-problem | ✅ 已交付 v1.3 | undergrad | learning | 2 | math/probability-basics<br>math/linear-algebra-basics |
 | 8.2 | 监督学习 | supervised-learning | ✅ 已交付 v1.3 | undergrad | learning | 5 | machine-learning/learning-problem<br>math/convex-optimization |
-| 8.3 | 神经网络基础 | neural-networks | ⬜ 骨架（占位页） | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/multivariable-calculus |
+| 8.3 | 神经网络基础 | neural-networks | ✅ 已交付 v1.3 | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/multivariable-calculus |
 | 8.4 | 自动微分与训练 | autodiff-optimization | ⬜ 骨架（占位页） | undergrad | learning | 7 | machine-learning/neural-networks<br>math/numerical-methods |
 | 8.5 | 时序模型 | sequence-models | ⬜ 骨架（占位页） | grad | learning | 8 | machine-learning/autodiff-optimization<br>math/stochastic-processes |
 | 8.6 | 注意力机制 | attention-transformers | ⬜ 骨架（占位页） | grad | learning | 9 | machine-learning/sequence-models |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 83（status = v1.3）
+- **已交付 v1.3**: 84（status = v1.3）
 - **有正文待审校**: 16（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 106（status = empty，渲染占位页）
+- **骨架占位**: 105（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 122（= draft 16 + empty 106 + 无 status 0）
-- **有 MDX 正文**: 99
-- **catalog 小节总数**: 1103
-- **讨论日志**: 105 篇（覆盖 83 门；有 MDX 无日志 16 门）
-- **交互组件**: 93 个文件（被正文引用 93，孤儿 0）
+- **未完成 v1.3**: 121（= draft 16 + empty 105 + 无 status 0）
+- **有 MDX 正文**: 100
+- **catalog 小节总数**: 1113
+- **讨论日志**: 106 篇（覆盖 84 门；有 MDX 无日志 16 门）
+- **交互组件**: 94 个文件（被正文引用 94，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

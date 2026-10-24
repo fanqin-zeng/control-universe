@@ -71,6 +71,7 @@
 | EST-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-02，rank4；保留并行检查点，仅依赖已交付EST-01、概率基础与凸优化 | .agent/semester-03/est-02/acceptance.md |
 | ID-03 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-03，rank3；保留并行会话，仅依赖已交付ID-02、矩阵分解及概率基础 | .agent/semester-03/id-03/acceptance.md |
 | DRIVING-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-02;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-01;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10;EMBODIED-01;EMBODIED-02;EMBODIED-03;EMBODIED-04;EMBODIED-05;EMBODIED-06;EMBODIED-07;EMBODIED-08;EMBODIED-09;EMBODIED-10;MPC-01 | 2026-10-24用户指定继续DRIVING-02，rank14；保留并行检查点，只依赖已交付驾驶系统、微分方程与状态空间 | .agent/semester-03/driving-02/acceptance.md |
+| ML-03 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-03，rank2；保留并行实现课检查点，仅依赖已交付ML-02与多元微积分 | .agent/semester-03/ml-03/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -815,6 +816,11 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### IMPL-02 数字PID本轮交付
 
 按重构SKILL Phase1–4完成，仅本课。八主题/四题用途、36旧ID保留；修正位置/增量状态、BE/Tustin导数、c=0、反算时序/单位、分离与无扰历史、ZN规则、不可达和级联题解。承接离散化方法工程材料但不删已交付来源。真实TS750配置对Decimal、原始四Notebook八cell对独立卷积/解析、111行对账；严格内核/Pyodide/两实际页面248量及375px、静态Pages构建通过，详见.agent/semester-03/impl-02/acceptance.md。fix-074；并行会话元数据与独占资源保留，实际master回执见全局checklist。本次不发布Pages，不开始IMPL-03。
+
+
+### ML-03 本轮执行记录（2026-10-24）
+
+神经网络基础从空占位按新写Phase1–4交付：两台水泵XOR指示需求贯穿表达问题，以1→2→1的可手算ReLU构造讲层/偏置/激活/前向，再给XOR不等式证明、域外负输出及失活梯度边界。十H2、两Notebook四cell、四题四答、一Explorer/SVG；真实TS4080前向/240损失/25二维对独立解析与高精度参考，原始严格内核、Pyodide、最终课程页及375px通过。证据.agent/semester-03/ml-03/acceptance.md，真实master提交后见全局checklist。rank2独立8196/8992与Git索引，保留其它会话与共享暂存；用户指定的本课顺序例外独立登记，不继承ML-02授权。W09/W16/QA01保留，不发布Pages、不生产ML-04。
 
 ### DRIVING-02 本轮执行记录（2026-10-24）
 
