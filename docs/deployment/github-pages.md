@@ -76,3 +76,8 @@ MODERN-01授权发布（2026-10-18）：用户要求本课完成后发布当前�
 <!-- MPC11-PAGES-RECEIPT-BEGIN -->
 2026-10-24用户授权发布MPC-01—11：固定master `8ab3a802cb8ca133568ebab63ba6bd366f67ddcc`，正常合入gh-pages `beb3108506c42bcc5b50cea36be14da8dcbfac45`，内容树完全一致。Actions构建/部署成功，公网205课/9旧入口/235成功请求与未知页404通过；MPC11课25Notebook/51cell逐页实跑、关键控件/旧ID/375px均过，无本机内核请求。线上release.json sourceDirty=false。详见[本次发布记录](mpc11-release/README.md)。未自动发布之后的并行master内容。
 <!-- MPC11-PAGES-RECEIPT-END -->
+
+
+<!-- ROBUST11-PAGES-RECEIPT-BEGIN -->
+2026-10-24用户授权发布鲁棒控制章：固定master `73960c973297019225f0a5b9525ce78465aa2f3d`，正常no-ff合入gh-pages `abf9217b21179ed366191d1a06443f4054a36cd6`，内容树完全一致。Actions构建/部署成功，公网205课/9旧入口/235请求及未知页404通过；ROBUST11课37Notebook/56cell逐页实跑、ROBUST09—11控件、35旧ID、H∞滤波旧地址query/hash和375px均通过，无本机内核请求。线上release.json sourceDirty=false。详见[本次发布记录](robust11-release/README.md)。未自动发布之后的并行更新。
+<!-- ROBUST11-PAGES-RECEIPT-END -->

@@ -1,0 +1,1487 @@
+{
+  "pass": true,
+  "historicalFilterUrl": "https://fanqin-zeng.github.io/control-universe/robust/h-infinity-filter/?releaseProbe=robust11#%E7%AD%94%E6%A1%88",
+  "completed": 11,
+  "notebooks": 37,
+  "cells": 56,
+  "rows": [
+    {
+      "key": "robust/robustness-concept",
+      "notebooks": 4,
+      "cells": 4,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "什么是鲁棒性",
+            "text": "什么是鲁棒性"
+          },
+          {
+            "id": "不确定性的分类",
+            "text": "不确定性的分类"
+          },
+          {
+            "id": "灵敏度函数",
+            "text": "灵敏度函数"
+          },
+          {
+            "id": "hmathcalh_inftyh-范数",
+            "text": "H∞\\mathcal{H}_\\inftyH∞​ 范数"
+          },
+          {
+            "id": "小增益定理",
+            "text": "小增益定理"
+          },
+          {
+            "id": "回顾lqr-的鲁棒性",
+            "text": "回顾：LQR 的鲁棒性"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "鲁棒性",
+          "鲁棒性概念",
+          "什么是鲁棒性",
+          "定义",
+          "一个直觉例子",
+          "不确定性的分类",
+          "参数不确定性parametric-uncertainty",
+          "未建模动态unmodeled-dynamics",
+          "外部扰动",
+          "不确定性的频率特征",
+          "灵敏度函数",
+          "定义-1",
+          "基本关系",
+          "sss-和-ttt-的物理意义",
+          "频率整形loop-shaping的直觉",
+          "ss_inftys-与稳定裕度的关系",
+          "hmathcalh_inftyh-范数",
+          "mathcalh_infty-范数",
+          "h-范数",
+          "定义-2",
+          "与-bode-图的关系",
+          "为什么需要-hmathcalh_inftyh-范数",
+          "小增益定理",
+          "定理陈述",
+          "应用到鲁棒稳定性",
+          "保守性问题",
+          "回顾lqr-的鲁棒性",
+          "回顾lqr的鲁棒性",
+          "深入讨论",
+          "小增益定理的保守性",
+          "从鲁棒性到控制器设计",
+          "鲁棒性与自适应控制的对比",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#什么是鲁棒性",
+          "#定义",
+          "#一个直觉例子",
+          "#不确定性的分类",
+          "#参数不确定性parametric-uncertainty",
+          "#未建模动态unmodeled-dynamics",
+          "#外部扰动",
+          "#不确定性的频率特征",
+          "#灵敏度函数",
+          "#定义-1",
+          "#基本关系",
+          "#sss-和-ttt-的物理意义",
+          "#频率整形loop-shaping的直觉",
+          "#ss_inftys-与稳定裕度的关系",
+          "#hmathcalh_inftyh-范数",
+          "#定义-2",
+          "#与-bode-图的关系",
+          "#为什么需要-hmathcalh_inftyh-范数",
+          "#小增益定理",
+          "#定理陈述",
+          "#应用到鲁棒稳定性",
+          "#保守性问题",
+          "#回顾lqr-的鲁棒性",
+          "#深入讨论",
+          "#小增益定理的保守性",
+          "#从鲁棒性到控制器设计",
+          "#鲁棒性与自适应控制的对比",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/diagrams/robust/robustness-signals.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/uncertainty-modeling",
+      "notebooks": 4,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "加性与乘性不确定性",
+            "text": "加性与乘性不确定性"
+          },
+          {
+            "id": "互质分解不确定性",
+            "text": "互质分解不确定性"
+          },
+          {
+            "id": "lft-系统构造",
+            "text": "LFT 系统构造"
+          },
+          {
+            "id": "mimo-不确定性结构",
+            "text": "MIMO 不确定性结构"
+          },
+          {
+            "id": "实参数不确定性的处理",
+            "text": "实参数不确定性的处理"
+          },
+          {
+            "id": "不确定性验证",
+            "text": "不确定性验证"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "不确定性建模",
+          "加性与乘性不确定性",
+          "加性不确定性",
+          "乘性不确定性",
+          "两者的关系",
+          "从频率响应数据辨识边界",
+          "互质分解不确定性",
+          "互质分解回顾",
+          "互质分解框架下的不确定性",
+          "lft-系统构造",
+          "lft-回顾",
+          "构造方法一直接观察法",
+          "构造方法二状态空间法",
+          "mimo-不确定性结构",
+          "输入与输出不确定性",
+          "结构化不确定性",
+          "不确定性的物理来源与建模选择",
+          "实参数不确定性的处理",
+          "问题",
+          "方法一复数化",
+          "方法二混合-μ-分析",
+          "工程实践",
+          "不确定性验证",
+          "验证方法",
+          "常见错误",
+          "深入讨论",
+          "不确定性建模的哲学",
+          "从时域数据辨识不确定性",
+          "鲁棒控制中的vinnicombe-度量",
+          "小结",
+          "习题",
+          "答案",
+          "习题-1-答案",
+          "习题-2-答案",
+          "习题-3-答案",
+          "习题-4-答案"
+        ],
+        "links": [
+          "#加性与乘性不确定性",
+          "#加性不确定性",
+          "#乘性不确定性",
+          "#两者的关系",
+          "#从频率响应数据辨识边界",
+          "#互质分解不确定性",
+          "#互质分解回顾",
+          "#互质分解框架下的不确定性",
+          "#lft-系统构造",
+          "#lft-回顾",
+          "#构造方法一直接观察法",
+          "#构造方法二状态空间法",
+          "#mimo-不确定性结构",
+          "#输入与输出不确定性",
+          "#结构化不确定性",
+          "#不确定性的物理来源与建模选择",
+          "#实参数不确定性的处理",
+          "#问题",
+          "#方法一复数化",
+          "#方法二混合-μ-分析",
+          "#工程实践",
+          "#不确定性验证",
+          "#验证方法",
+          "#常见错误",
+          "#深入讨论",
+          "#不确定性建模的哲学",
+          "#从时域数据辨识不确定性",
+          "#鲁棒控制中的vinnicombe-度量",
+          "#小结",
+          "#习题",
+          "#答案",
+          "#习题-1-答案",
+          "#习题-2-答案",
+          "#习题-3-答案",
+          "#习题-4-答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/diagrams/robust/lft-ports.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAGQCAYAAAC+tZleAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAGQCAYAAAD2lq6fAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/robust-stability",
+      "notebooks": 4,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从稳定裕度到鲁棒稳定性",
+            "text": "从稳定裕度到鲁棒稳定性"
+          },
+          {
+            "id": "参数空间方法",
+            "text": "参数空间方法"
+          },
+          {
+            "id": "lyapunov-方法二次稳定性",
+            "text": "Lyapunov 方法：二次稳定性"
+          },
+          {
+            "id": "频域鲁棒分析",
+            "text": "频域鲁棒分析"
+          },
+          {
+            "id": "实用方法monte-carlo-仿真",
+            "text": "实用方法：Monte Carlo 仿真"
+          },
+          {
+            "id": "方法对比与决策流程",
+            "text": "方法对比与决策流程"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "鲁棒稳定性分析",
+          "从稳定裕度到鲁棒稳定性",
+          "稳定裕度的鲁棒解释",
+          "鲁棒稳定性分析的完整图景",
+          "参数空间方法",
+          "routh-判据回顾",
+          "kharitonov-定理",
+          "kharitonov-定理的应用实例",
+          "kharitonov-定理的局限性",
+          "lyapunov-方法二次稳定性",
+          "从参数空间到状态空间",
+          "二次稳定性的定义",
+          "顶点条件与-lmi",
+          "二次稳定性的保守性",
+          "频域鲁棒分析",
+          "稳定裕度的定量关系",
+          "同时考虑增益和相位裕度",
+          "从频域到鲁棒性的桥梁",
+          "实用方法monte-carlo-仿真",
+          "原理",
+          "采样次数的理论保证",
+          "monte-carlo-的局限性",
+          "方法对比与决策流程",
+          "决策流程",
+          "各方法的关系",
+          "深入讨论",
+          "kharitonov-定理的证明思路",
+          "二次稳定性的-lmi-求解",
+          "从鲁棒稳定性到鲁棒性能",
+          "计算复杂度的本质",
+          "小结",
+          "习题",
+          "答案",
+          "习题-1-答案",
+          "习题-2-答案",
+          "习题-3-答案",
+          "习题-4-答案"
+        ],
+        "links": [
+          "#从稳定裕度到鲁棒稳定性",
+          "#稳定裕度的鲁棒解释",
+          "#鲁棒稳定性分析的完整图景",
+          "#参数空间方法",
+          "#routh-判据回顾",
+          "#kharitonov-定理",
+          "#kharitonov-定理的应用实例",
+          "#kharitonov-定理的局限性",
+          "#lyapunov-方法二次稳定性",
+          "#从参数空间到状态空间",
+          "#二次稳定性的定义",
+          "#顶点条件与-lmi",
+          "#二次稳定性的保守性",
+          "#频域鲁棒分析",
+          "#稳定裕度的定量关系",
+          "#同时考虑增益和相位裕度",
+          "#从频域到鲁棒性的桥梁",
+          "#实用方法monte-carlo-仿真",
+          "#原理",
+          "#采样次数的理论保证",
+          "#monte-carlo-的局限性",
+          "#方法对比与决策流程",
+          "#决策流程",
+          "#各方法的关系",
+          "#深入讨论",
+          "#kharitonov-定理的证明思路",
+          "#二次稳定性的-lmi-求解",
+          "#从鲁棒稳定性到鲁棒性能",
+          "#计算复杂度的本质",
+          "#小结",
+          "#习题",
+          "#答案",
+          "#习题-1-答案",
+          "#习题-2-答案",
+          "#习题-3-答案",
+          "#习题-4-答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABXgAAAGQCAYAAAAUUwjLAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/diagrams/robust/stability-methods.svg",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/robust-performance",
+      "notebooks": 3,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从鲁棒稳定性到鲁棒性能",
+            "text": "从鲁棒稳定性到鲁棒性能"
+          },
+          {
+            "id": "μ-鲁棒性能定理",
+            "text": "μ 鲁棒性能定理"
+          },
+          {
+            "id": "三个条件的定量关系",
+            "text": "三个条件的定量关系"
+          },
+          {
+            "id": "混合灵敏度与鲁棒性能的关系",
+            "text": "混合灵敏度与鲁棒性能的关系"
+          },
+          {
+            "id": "性能权重的工程选择",
+            "text": "性能权重的工程选择"
+          },
+          {
+            "id": "设计实例",
+            "text": "设计实例"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "鲁棒性能指标",
+          "从鲁棒稳定性到鲁棒性能",
+          "三个层次的递进关系",
+          "反例稳定标称性能--鲁棒性能",
+          "为什么需要专门的鲁棒性能分析",
+          "μ-鲁棒性能定理",
+          "问题设定",
+          "增广不确定性结构",
+          "定理",
+          "上界计算",
+          "三个条件的定量关系",
+          "层次结构",
+          "如何从不达标到达标",
+          "混合灵敏度与鲁棒性能的关系",
+          "等价性",
+          "设计流程",
+          "从混合灵敏度到-μ-综合",
+          "性能权重的工程选择",
+          "时域指标到频域权重的翻译",
+          "标准性能权重形式",
+          "选择策略",
+          "设计实例",
+          "问题描述",
+          "第一步标称设计混合灵敏度",
+          "第二步μ-鲁棒性能验证",
+          "第三步μ-综合改进",
+          "matlab-代码",
+          "深入讨论",
+          "实参数不确定性的保守性",
+          "μ-鲁棒性能的局限性",
+          "与后续章节的联系",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从鲁棒稳定性到鲁棒性能",
+          "#三个层次的递进关系",
+          "#反例稳定标称性能--鲁棒性能",
+          "#为什么需要专门的鲁棒性能分析",
+          "#μ-鲁棒性能定理",
+          "#问题设定",
+          "#增广不确定性结构",
+          "#定理",
+          "#上界计算",
+          "#三个条件的定量关系",
+          "#层次结构",
+          "#如何从不达标到达标",
+          "#混合灵敏度与鲁棒性能的关系",
+          "#等价性",
+          "#设计流程",
+          "#从混合灵敏度到-μ-综合",
+          "#性能权重的工程选择",
+          "#时域指标到频域权重的翻译",
+          "#标准性能权重形式",
+          "#选择策略",
+          "#设计实例",
+          "#问题描述",
+          "#第一步标称设计混合灵敏度",
+          "#第二步μ-鲁棒性能验证",
+          "#第三步μ-综合改进",
+          "#matlab-代码",
+          "#深入讨论",
+          "#实参数不确定性的保守性",
+          "#μ-鲁棒性能的局限性",
+          "#与后续章节的联系",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/robust-performance-lft.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAArwAAAEsCAYAAAAhNGCdAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAFUCAYAAAA0zMX8AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/h-infinity-basics",
+      "notebooks": 4,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从分析到综合",
+            "text": "从分析到综合"
+          },
+          {
+            "id": "加权函数",
+            "text": "加权函数"
+          },
+          {
+            "id": "标准-hmathcalh_inftyh-问题",
+            "text": "标准 H∞\\mathcal{H}_\\inftyH∞​ 问题"
+          },
+          {
+            "id": "求解方法概述",
+            "text": "求解方法概述"
+          },
+          {
+            "id": "回路整形设计实例",
+            "text": "回路整形设计实例"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "h控制基础",
+          "从分析到综合",
+          "设计需求的数学翻译",
+          "核心矛盾",
+          "加权函数",
+          "性能加权-w1sw_1sw1s",
+          "鲁棒性加权-w2sw_2sw2s",
+          "控制能量加权-w3sw_3sw3s",
+          "加权函数的选择原则",
+          "标准-hmathcalh_inftyh-问题",
+          "标准-mathcalh_infty-问题",
+          "标准h-问题",
+          "广义被控对象",
+          "灵敏度问题作为标准形式",
+          "混合灵敏度问题",
+          "求解方法概述",
+          "1-回路整形法loop-shaping",
+          "2-riccati-方程法dgkf-方法",
+          "3-lmi-方法",
+          "回路整形设计实例",
+          "设计问题",
+          "设计步骤",
+          "深入讨论",
+          "hmathcalh_inftyh-与-lqrlqg-的关系",
+          "加权函数选择的艺术",
+          "从回路整形到-hmathcalh_inftyh-优化",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从分析到综合",
+          "#设计需求的数学翻译",
+          "#核心矛盾",
+          "#加权函数",
+          "#性能加权-w1sw_1sw1s",
+          "#鲁棒性加权-w2sw_2sw2s",
+          "#控制能量加权-w3sw_3sw3s",
+          "#加权函数的选择原则",
+          "#标准-hmathcalh_inftyh-问题",
+          "#广义被控对象",
+          "#灵敏度问题作为标准形式",
+          "#混合灵敏度问题",
+          "#求解方法概述",
+          "#1-回路整形法loop-shaping",
+          "#2-riccati-方程法dgkf-方法",
+          "#3-lmi-方法",
+          "#回路整形设计实例",
+          "#设计问题",
+          "#设计步骤",
+          "#深入讨论",
+          "#hmathcalh_inftyh-与-lqrlqg-的关系",
+          "#加权函数选择的艺术",
+          "#从回路整形到-hmathcalh_inftyh-优化",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/hinfinity-generalized-plant.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAJYCAYAAADxHswlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFUCAYAAAC3NBbDAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/mixed-sensitivity",
+      "notebooks": 3,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "混合灵敏度问题深入",
+            "text": "混合灵敏度问题深入"
+          },
+          {
+            "id": "广义被控对象构造",
+            "text": "广义被控对象构造"
+          },
+          {
+            "id": "权重函数选择方法论",
+            "text": "权重函数选择方法论"
+          },
+          {
+            "id": "h-综合求解方法",
+            "text": "H∞ 综合求解方法"
+          },
+          {
+            "id": "设计实例",
+            "text": "设计实例"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "混合灵敏度设计",
+          "混合灵敏度问题深入",
+          "stks-的物理意义",
+          "s--t--1-与压床效应",
+          "三个通道的内在矛盾",
+          "广义被控对象构造",
+          "从优化目标到-ps",
+          "验证",
+          "状态空间实现",
+          "权重函数选择方法论",
+          "指标权重对照表",
+          "w性能权重设计",
+          "w鲁棒性权重设计",
+          "w控制量权重设计",
+          "权重选择的迭代本质",
+          "h-综合求解方法",
+          "riccati-方程法dgkf-方法",
+          "lmi-方法",
+          "γ-迭代",
+          "设计实例",
+          "问题描述",
+          "权重选择",
+          "matlab-代码",
+          "深入讨论",
+          "与-lqr-的关系",
+          "压床效应的工程启示",
+          "mimo-扩展",
+          "混合灵敏度的局限性",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#混合灵敏度问题深入",
+          "#stks-的物理意义",
+          "#s--t--1-与压床效应",
+          "#三个通道的内在矛盾",
+          "#广义被控对象构造",
+          "#从优化目标到-ps",
+          "#验证",
+          "#状态空间实现",
+          "#权重函数选择方法论",
+          "#指标权重对照表",
+          "#w性能权重设计",
+          "#w鲁棒性权重设计",
+          "#w控制量权重设计",
+          "#权重选择的迭代本质",
+          "#h-综合求解方法",
+          "#riccati-方程法dgkf-方法",
+          "#lmi-方法",
+          "#γ-迭代",
+          "#设计实例",
+          "#问题描述",
+          "#权重选择",
+          "#matlab-代码",
+          "#深入讨论",
+          "#与-lqr-的关系",
+          "#压床效应的工程启示",
+          "#mimo-扩展",
+          "#混合灵敏度的局限性",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/mixed-sensitivity-signals.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAJYCAYAAADxHswlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAJYCAYAAADxHswlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/mu-analysis",
+      "notebooks": 3,
+      "cells": 5,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从定位台误差到结构问题",
+            "text": "从定位台误差到结构问题"
+          },
+          {
+            "id": "结构集合与归一化",
+            "text": "结构集合与归一化"
+          },
+          {
+            "id": "结构奇异值的定义",
+            "text": "结构奇异值的定义"
+          },
+          {
+            "id": "三个可手算的结构",
+            "text": "三个可手算的结构"
+          },
+          {
+            "id": "缩放上界与扰动下界",
+            "text": "缩放上界与扰动下界"
+          },
+          {
+            "id": "从单频到鲁棒稳定性",
+            "text": "从单频到鲁棒稳定性"
+          },
+          {
+            "id": "鲁棒性能与计算边界",
+            "text": "鲁棒性能与计算边界"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "结构奇异值",
+          "从定位台误差到结构问题",
+          "结构集合与归一化",
+          "结构奇异值的定义",
+          "三个可手算的结构",
+          "缩放上界与扰动下界",
+          "从单频到鲁棒稳定性",
+          "鲁棒性能与计算边界",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从定位台误差到结构问题",
+          "#结构集合与归一化",
+          "#结构奇异值的定义",
+          "#三个可手算的结构",
+          "#缩放上界与扰动下界",
+          "#从单频到鲁棒稳定性",
+          "#鲁棒性能与计算边界",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/mu-analysis-feedback.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFACAYAAAAvc1ZOAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFeCAYAAAB9x3vwAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/mu-synthesis",
+      "notebooks": 3,
+      "cells": 6,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "为什么-h-不够",
+            "text": "为什么 H∞ 不够"
+          },
+          {
+            "id": "结构化不确定性",
+            "text": "结构化不确定性"
+          },
+          {
+            "id": "结构化奇异值-μ",
+            "text": "结构化奇异值 μ"
+          },
+          {
+            "id": "μ-鲁棒稳定性与鲁棒性能",
+            "text": "μ 鲁棒稳定性与鲁棒性能"
+          },
+          {
+            "id": "d-k-迭代",
+            "text": "D-K 迭代"
+          },
+          {
+            "id": "不确定性建模",
+            "text": "不确定性建模"
+          },
+          {
+            "id": "设计实例",
+            "text": "设计实例"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "μ综合方法",
+          "为什么-h-不够",
+          "为什么h-不够",
+          "小增益定理的保守性",
+          "保守性的代价",
+          "结构化不确定性",
+          "从非结构化到结构化",
+          "不确定性的类型",
+          "lft-建模示例",
+          "结构化奇异值-μ",
+          "结构化奇异值",
+          "定义",
+          "上下界",
+          "计算-μ-的上界",
+          "μ-鲁棒稳定性与鲁棒性能",
+          "鲁棒稳定性与鲁棒性能",
+          "鲁棒稳定性",
+          "鲁棒性能",
+          "d-k-迭代",
+          "算法思路",
+          "收敛性",
+          "局限性",
+          "不确定性建模",
+          "建模步骤",
+          "常见错误",
+          "实参数的处理",
+          "设计实例",
+          "问题描述",
+          "matlab-代码",
+          "深入讨论",
+          "μ-综合在工程中的定位",
+          "与-lpv-控制的联系",
+          "计算复杂度",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#为什么-h-不够",
+          "#小增益定理的保守性",
+          "#保守性的代价",
+          "#结构化不确定性",
+          "#从非结构化到结构化",
+          "#不确定性的类型",
+          "#lft-建模示例",
+          "#结构化奇异值-μ",
+          "#定义",
+          "#上下界",
+          "#计算-μ-的上界",
+          "#μ-鲁棒稳定性与鲁棒性能",
+          "#鲁棒稳定性",
+          "#鲁棒性能",
+          "#d-k-迭代",
+          "#算法思路",
+          "#收敛性",
+          "#局限性",
+          "#不确定性建模",
+          "#建模步骤",
+          "#常见错误",
+          "#实参数的处理",
+          "#设计实例",
+          "#问题描述",
+          "#matlab-代码",
+          "#深入讨论",
+          "#μ-综合在工程中的定位",
+          "#与-lpv-控制的联系",
+          "#计算复杂度",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/mu-synthesis-iteration.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFyCAYAAABmwfDoAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFyCAYAAABmwfDoAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFyCAYAAABmwfDoAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFyCAYAAAANqb69AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFyCAYAAAANqb69AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/h-infinity-filter",
+      "notebooks": 3,
+      "cells": 5,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从温度测量到最坏误差",
+            "text": "从温度测量到最坏误差"
+          },
+          {
+            "id": "误差模型与能量合同",
+            "text": "误差模型与能量合同"
+          },
+          {
+            "id": "固定增益的精确h指标",
+            "text": "固定增益的精确H∞指标"
+          },
+          {
+            "id": "用耗散不等式验证上界",
+            "text": "用耗散不等式验证上界"
+          },
+          {
+            "id": "选择滤波增益",
+            "text": "选择滤波增益"
+          },
+          {
+            "id": "与卡尔曼滤波比较什么",
+            "text": "与卡尔曼滤波比较什么"
+          },
+          {
+            "id": "有限实验与数字实现",
+            "text": "有限实验与数字实现"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "h滤波",
+          "从温度测量到最坏误差",
+          "误差模型与能量合同",
+          "固定增益的精确h指标",
+          "用耗散不等式验证上界",
+          "选择滤波增益",
+          "与卡尔曼滤波比较什么",
+          "有限实验与数字实现",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从温度测量到最坏误差",
+          "#误差模型与能量合同",
+          "#固定增益的精确h指标",
+          "#用耗散不等式验证上界",
+          "#选择滤波增益",
+          "#与卡尔曼滤波比较什么",
+          "#有限实验与数字实现",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/h-infinity-filter-signals.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFeCAYAAAB9x3vwAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFeCAYAAAB9x3vwAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFeCAYAAAAWrzWlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/delay-robust-control",
+      "notebooks": 3,
+      "cells": 5,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "纯时滞改变了什么",
+            "text": "纯时滞改变了什么"
+          },
+          {
+            "id": "状态不仅是一个初值",
+            "text": "状态不仅是一个初值"
+          },
+          {
+            "id": "常时滞的精确稳定界",
+            "text": "常时滞的精确稳定界"
+          },
+          {
+            "id": "未知常时滞的小增益证书",
+            "text": "未知常时滞的小增益证书"
+          },
+          {
+            "id": "padé近似为何会误判",
+            "text": "Padé近似为何会误判"
+          },
+          {
+            "id": "时变时滞与历史上界",
+            "text": "时变时滞与历史上界"
+          },
+          {
+            "id": "仿真窗口与实现边界",
+            "text": "仿真窗口与实现边界"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "时滞系统控制",
+          "纯时滞改变了什么",
+          "状态不仅是一个初值",
+          "常时滞的精确稳定界",
+          "未知常时滞的小增益证书",
+          "padé近似为何会误判",
+          "时变时滞与历史上界",
+          "仿真窗口与实现边界",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#纯时滞改变了什么",
+          "#状态不仅是一个初值",
+          "#常时滞的精确稳定界",
+          "#未知常时滞的小增益证书",
+          "#padé近似为何会误判",
+          "#时变时滞与历史上界",
+          "#仿真窗口与实现边界",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/delay-robust-control-feedback.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFyCAYAAAANqb69AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFyCAYAAAANqb69AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABRQAAAFoCAYAAAAmSXdBAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAFyCAYAAAANqb69AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "robust/robust-case-study",
+      "notebooks": 3,
+      "cells": 6,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "问题描述",
+            "text": "问题描述"
+          },
+          {
+            "id": "不确定性分析",
+            "text": "不确定性分析"
+          },
+          {
+            "id": "设计需求",
+            "text": "设计需求"
+          },
+          {
+            "id": "h-混合灵敏度设计",
+            "text": "H∞ 混合灵敏度设计"
+          },
+          {
+            "id": "μ-分析验证",
+            "text": "μ 分析验证"
+          },
+          {
+            "id": "μ-综合改进",
+            "text": "μ 综合改进"
+          },
+          {
+            "id": "monte-carlo-验证",
+            "text": "Monte Carlo 验证"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "鲁棒控制综合案例",
+          "问题描述",
+          "为什么选柔性结构",
+          "物理系统",
+          "运动方程",
+          "频率响应特征",
+          "不确定性分析",
+          "不确定性来源",
+          "不确定性建模决策",
+          "lft-模型构造",
+          "设计需求",
+          "性能指标",
+          "权重函数选择",
+          "h-混合灵敏度设计",
+          "设计过程",
+          "控制器结构分析",
+          "标称性能",
+          "μ-分析验证",
+          "鲁棒稳定性检验",
+          "鲁棒性能检验",
+          "诊断",
+          "μ-综合改进",
+          "d-k-迭代",
+          "控制器对比",
+          "monte-carlo-验证",
+          "验证方案",
+          "验证结果",
+          "深入讨论",
+          "从本案例到一般工程流程",
+          "控制器降阶",
+          "增益调度扩展",
+          "与其他章节的联系",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#问题描述",
+          "#为什么选柔性结构",
+          "#物理系统",
+          "#运动方程",
+          "#频率响应特征",
+          "#不确定性分析",
+          "#不确定性来源",
+          "#不确定性建模决策",
+          "#lft-模型构造",
+          "#设计需求",
+          "#性能指标",
+          "#权重函数选择",
+          "#h-混合灵敏度设计",
+          "#设计过程",
+          "#控制器结构分析",
+          "#标称性能",
+          "#μ-分析验证",
+          "#鲁棒稳定性检验",
+          "#鲁棒性能检验",
+          "#诊断",
+          "#μ-综合改进",
+          "#d-k-迭代",
+          "#控制器对比",
+          "#monte-carlo-验证",
+          "#验证方案",
+          "#验证结果",
+          "#深入讨论",
+          "#从本案例到一般工程流程",
+          "#控制器降阶",
+          "#增益调度扩展",
+          "#与其他章节的联系",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/robust-case-study-system.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAFeCAYAAAAWrzWlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAK8CAYAAAB8y5WxAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/robust-case-study-system.svg",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    }
+  ],
+  "localRequests": []
+}
