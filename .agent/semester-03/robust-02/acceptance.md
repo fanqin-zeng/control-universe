@@ -30,3 +30,5 @@
 验收WARN处置：verify第7项链接/robust/mu-analysis为尚未写正文的后续课；开篇明确标“后续阅读，不当作已知知识”，不是先修或必读跳转，本课局部定义足够。保留该导航与WARN，不改他课状态。
 
 术语WARN逐项处置：C1b为全站登记的\mathcal{U}本轮无匹配，本课用显式参数区间；C2b旧NOISE条目17项未命中，不以其作内容判据；C4全站旧max/min共4处未反斜杠，本课新式已规范。C1/C2失败项为0。两项catalog WARN为跨章同slug与其它存量无日志，均已登记，与本课无新增债务。
+
+真实master交付提交：e3df95c421bc76239fd795e4022e2356e873f62a。该提交的独立投影check/semester/math/glossary/python/fix六项退出0；semester-fast.mjs调用原校验器，Git对象类型与master祖先关系由真实cat-file批处理/rev-list完成，并未跳过文件证据检查。原全量check-semester03也已两次实际通过。仅课程增量进入提交，实际源码/Notebook与两种最终构建相同；未发布Pages。
