@@ -11,3 +11,9 @@ math:check exit0/files0/tokens0；glossary PASS4/WARN2/FAIL0/exit0，既有全�
 隔离目录D:/Workspace/control-universe-rank6-mpc06；原生19896/内核9076/夹具19996/Pages20096。独立缓存/单核构建/ignored Pyodide副本不进入生产端口或Next配置；正式提交使用私有索引，保留共享暂存、锁及其他课程修改，语义合并仅本课条目。MATLAB示例仅官方API语义核读，未声称本机执行；无真实设备或鲁棒性实测声明。未发布Pages、不生产MPC-07。实际提交与推送回执随后补录。
 
 集成门槛附记：最新已提交master包含2026-10-24-083.md（IMPL-06），但INDEX仍把083当预留，导致全局fix门槛失败。本课仅根据已提交详情机械补齐日期/类型/原归因/链接并撤掉过期预留，不改IMPL-06正文或详情、不重签该课程。来源parent与范围保存在index-083-reconciliation.json；重新跑全局门槛。
+
+## master实际回执
+
+交付提交`b0ca3700b0078eaf2effdd9308dca5fa2500d05c`已进入master并推送origin master，原始远端确认见push.log。最终候选check PASS21/WARN2/FAIL0/exit0；semester/Python支持/fix门槛退出0，两个构建、严格内核、生产Pyodide、普通与Pages本地页面实际运行均有版本化证据。最终回执只更新本课勾选及hash，不制造分支/合并节点、不包含并行未提交工作。
+
+正式提交使用私有Git索引，保留共享暂存与既有索引锁；本课提交完全使用临时独立索引和原子引用更新。因此不把共享工作区既有暂存状态当作本课“干净工作区”声明。共享文件语义合并保留并行条目；另按已提交详情补齐083号索引，派生摘要若与并行未提交内容冲突则保留原工作区版本，提交树已通过隔离集成门槛。四个本课测试服务通过各自执行会话停止，未终止占用原端口组的服务；未发布Pages、不生产MPC-07。
