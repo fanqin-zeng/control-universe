@@ -46,3 +46,9 @@ WARN明确保留：motion-planning跨章slug；六门存量正文无日志；glo
 提交门槛最终基线：38866315543e03124bb4bf43ff882720781984af加本课；final五份日志全部退出0，保留已提交并行课程；本课三个源文件与双构建时逐字一致。
 
 提交前仅文档回执前进至04df0dd788a6427563e89beb3a99b847ad4ec611，机器确认课程来源未变并重跑semester通过；metadata-fast-forward.json保留差异。
+
+## 实际master回执
+
+交付提交：4943d266da3b389588d2c9218e3adb7f41786fd6，已进入master并成功push origin master；源码与验收证据同提交。最后一列在真实hash存在后勾选，receipt-semester.log须通过后提交本回执。未发布gh-pages。静态8234保留，临时8236/native8992已关闭，只清理本课临时索引与归档。
+
+实际回执守卫：node scripts/check-semester03.mjs退出0（receipt-semester.log，117门已进入master），验收通过后才创建回执提交。
