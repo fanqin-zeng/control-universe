@@ -338,7 +338,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| EMBODIED-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| EMBODIED-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/19-embodied/01-embodied-systems.md;.agent/semester-03/embodied-01/acceptance.md;rank13独立验证 |
 | EMBODIED-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

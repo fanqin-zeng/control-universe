@@ -1,3 +1,4 @@
+import { EmbodiedLoopExplorer } from "@/components/wiki/embodied-loop-explorer";
 import { MpcPrincipleExplorer } from "@/components/wiki/mpc-principle-explorer";
 import { RobotSystemExplorer } from "@/components/wiki/robot-system-explorer";
 import { RlProblemExplorer } from "@/components/wiki/rl-problem-explorer";
@@ -107,6 +108,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EmbodiedLoopExplorer,
   MpcPrincipleExplorer,
   RobotSystemExplorer,
   RlProblemExplorer,

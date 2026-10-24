@@ -5860,7 +5860,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "frontier",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "title": "杯子为什么没有到位",
+            "slug": "杯子为什么没有到位"
+          },
+          {
+            "title": "系统由什么组成",
+            "slug": "系统由什么组成"
+          },
+          {
+            "title": "观测与动作的接口",
+            "slug": "观测与动作的接口"
+          },
+          {
+            "title": "不同速度的闭环",
+            "slug": "不同速度的闭环"
+          },
+          {
+            "title": "一个可运行的最小系统",
+            "slug": "一个可运行的最小系统"
+          },
+          {
+            "title": "学习方法放在哪一层",
+            "slug": "学习方法放在哪一层"
+          },
+          {
+            "title": "怎样读前沿证据",
+            "slug": "怎样读前沿证据"
+          },
+          {
+            "title": "小结",
+            "slug": "小结"
+          },
+          {
+            "title": "习题",
+            "slug": "习题"
+          },
+          {
+            "title": "答案",
+            "slug": "答案"
+          }
+        ]
       },
       {
         "slug": "multimodal-observation",
