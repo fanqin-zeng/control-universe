@@ -1,0 +1,212 @@
+---
+title: "网络控制"
+description: "从远程温度读数出发，逐拍追踪时延、丢包与乱序，检查信息年龄、固定延迟稳定性及接收规则的边界。"
+---
+
+# 网络控制
+
+你在电脑上看远端烘箱的温度。屏幕数字还在变化，却可能是网络里排队的旧读数：刚显示的新消息，测量时间反而更早。如果控制器用它继续加热，“程序按时运行”也不能保证它根据的是当前温度。
+
+[实时控制](/implementation/realtime-control)解决计算能否按时完成；[采样数据系统](/discrete-sampled/sampled-data-systems)说明采样与保持。本课继续问：**测量必须经过网络时，控制器每拍究竟用到了哪个时刻的状态？** 学完后，你应能画出包的事件顺序、算信息年龄、检查一拍延迟的极点，并写出可测试的接收与故障处理合同。
+
+## 远程读数为什么会变旧
+
+**网络控制系统**把通信链路放进反馈回路。这里先只给“传感器→控制器”加网络；执行器仍理想接收每拍命令。图中的“保持”指接收器保存最后接受的测量，不是说对象停止运动。
+
+![传感器采样带序号和时戳，经网络到接收器后保持测量，控制器计算命令推进对象](/diagrams/implementation/network-feedback-workflow.svg)
+
+三种现象要分开：**时延**是包到达得晚；**丢包**是在声明的交付规则下这个包不会被使用；**乱序**是发送较早的包反而较晚到达。它们都可能让控制器使用旧测量，但不是同一件事。本文丢包直接删除该包；真实接收端通常只能先观察“尚未到达”，超过应用期限后才把迟到包视为不可用。
+
+## 模型和事件顺序
+
+用一个归一化标量对象隔离网络机制，状态和输入均无量纲，采样周期 $T=0.1\,\mathrm{s}$：
+
+$$
+x_{k+1}=1.1x_k+0.1u_k,\qquad u_k=-K\hat x_k,\qquad x_0=1.
+$$
+
+$\hat x_k$ 是接收器当前保存的测量；它未必等于 $x_k$。这不是烘箱的辨识模型，只是便于看清反馈时序的教学对象：开环系数大于单位圆边界，不能把断网后清零当成安全结论。
+
+每拍按以下顺序执行：
+
+1. 采样并生成包，字段为序号 $k$、采样时刻 $kT$ 和当时的 $x_k$。
+2. 若包未丢失，将它排到第 $k+d_k$ 拍到达；当前拍生成的零时延包也能立即参与接收。
+3. 处理本拍到达的全部包，同拍到达按发送序号从小到大处理。
+4. 更新保持值，算 $u_k$，再推进到 $x_{k+1}$。
+
+启动前没有历史包，暂用 $\hat x=0$，收到首包前的年龄记为空。仿真运行40次更新，得到 $x_0$ 至 $x_{40}$ 共41个状态采样点，末时刻为4秒。无噪声、量化、输入限幅、丢失命令、执行延迟和任务抖动；这些假设限制结论的适用范围。
+
+## 信息年龄与接收策略
+
+若当前保存的样本采于第 $s_k$ 拍，则在第 $k$ 拍计算控制时的**信息年龄**为：
+
+$$
+\Delta_k=(k-s_k)T.
+$$
+
+它包含本次通信时延，也会随未收到更新的拍数增长。包的“传输时延”和当前持有测量的“年龄”不能互换。尚无样本时，不能给它填一个看似很新的零年龄。
+
+比较两条规则：`arrival` 每个到达包都覆盖保持值；`fresh` 只接受比当前序号更大的包。后一规则可阻止旧测量覆盖新测量，但不能制造丢失的包，也没有替你设计预测器。假设序号在本窗口严格递增、不回绕、单一发送源；真实设备须另外定义重启、回绕和会话标识。时间戳只有在时钟基准及误差范围明确时才可跨设备相减；本实验共用理想时钟。
+
+## 一拍时延改变了什么
+
+即时反馈时 $\hat x_k=x_k$，闭环极点为 $1.1-0.1K$。默认 $K=4$ 得极点0.7、首步 $x_1=0.7$。
+
+恒一拍测量延迟时，在首包之后有 $\hat x_k=x_{k-1}$，于是：
+
+$$
+x_{k+1}=1.1x_k-0.1Kx_{k-1},\qquad p(\lambda)=\lambda^2-1.1\lambda+0.1K.
+$$
+
+可以把两个相邻状态合成一个二维状态，用其两个特征根判断稳定性；也可以直接把试探解 $x_k=\lambda^k$ 代入递推得到这个多项式。**所有根的模严格小于1**才是渐近稳定。启动时没有 $x_{-1}$ 的历史测量，控制输入为0，所以首步 $x_1=1.1$；首步变大与渐近稳定并不矛盾。
+
+默认两根为 $0.55\pm0.312250\mathrm{i}$，谱半径（最大根模）约0.632456。它小于即时极点模0.7，因此不能把这组例子讲成“有延迟必然衰减更慢”。本例在 $K=12$ 时才清楚展示危险：即时极点为−0.1，恒一拍延迟的谱半径约1.095445，落到单位圆外。
+
+对于这个特定多项式，实系数二阶单位圆判据给出三个严格不等式：
+
+$$
+0.1K\lt1,\qquad 1-1.1+0.1K>0,\qquad 1+1.1+0.1K>0.
+$$
+
+因此一拍时延稳定范围是 $1\lt K\lt10$；即时反馈的稳定范围为 $1\lt K\lt21$。边界 $K=10$ 的延迟谱半径为1，不能写成渐近稳定。上述范围只针对固定一拍、固定控制律和本对象；不能拿它证明变时延或任意丢包序列稳定。
+
+<JupyterNotebook
+  title="固定时延的极点与首步"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+`}
+  cells={[
+    { code: `root_results=[]
+for K in [4,10,12]:
+    roots=np.roots([1.,-1.1,.1*K])
+    root_results.append(dict(K=K,clean=1.1-.1*K,rho=float(max(abs(roots))),real=float(roots[0].real),imag=float(abs(roots[0].imag))))
+first_steps=dict(clean=1.1+.1*(-4),delay=1.1+.1*0,uclean=-4,udelay=0)
+print(json.dumps(dict(roots=root_results,first_steps=first_steps)))` },
+    { code: `fig,ax=plt.subplots(figsize=(6,3))
+angles=np.linspace(0,2*np.pi,200)
+ax.plot(np.cos(angles),np.sin(angles),color="gray",label="unit circle")
+for K in [4,10,12]:
+    z=np.roots([1,-1.1,.1*K]);ax.scatter(z.real,z.imag,label=f"K={K}")
+ax.set(xlim=(-1.2,1.2),ylim=(-1.2,1.2),xlabel="Real",ylabel="Imaginary")
+ax.set_aspect("equal");ax.legend();ax.grid();plt.show()` }
+  ]}
+/>
+
+## 丢包与乱序实验
+
+先固定 $K=4$，再改变网络轨迹。即时轨迹无时延；恒时延轨迹每包延一拍；乱序轨迹中偶数序号包延两拍、奇数序号包即时到达；丢包轨迹每10拍丢弃余数为3、4、5的包，其余即时到达。每条轨迹下两种接收规则使用相同延迟与删除规则；包载荷来自各自实际闭环状态，所以策略改变后，后续测量值也会改变。
+
+<NetworkFeedbackExplorer />
+
+默认即时反馈的 $x_{40}$ 约为 $6.366806\times10^{-7}$，41个采样点的最大绝对值为1，最大年龄为0。$x_{40}$ 是有限末值，不是稳态误差；采样峰值不保证覆盖两次采样之间的连续峰值。这里没有相应连续对象模型，不能补造采样间结论。
+
+在默认增益下，恒一拍延迟的采样峰值为1.1、最大年龄为0.1秒；乱序轨迹中 `fresh` 拒收19个旧包，最大年龄为0.1秒，`arrival` 则达到0.2秒。连续丢三包时两种规则完全相同，最大年龄为0.3秒，因为最近样本要跨过三次缺失继续保持。
+
+即时、恒一拍、突发丢包三种无乱序工况中，两规则轨迹持平；乱序时拒收旧包改变了反馈数据。这是固定增益下的机制观察，**没有比较各自独立整定后的最优控制性能，也不证明序号策略对任意对象都降低峰值或代价**。把增益拖到12并选恒一拍时延，检查上节预测的失败；图的纵轴会随窗口幅值改变，判断应同时读数，不能凭图占屏高度比较。
+
+## 从时间戳到故障处理
+
+接收接口至少检查来源及会话、序号关系、字段完整性、采样时间和应用期限。把“接受新测量”与“控制任务按时运行”分别记录，才能区分计算超期和数据陈旧。包即使可靠重传成功，也可能已经错过这次控制的期限；补齐历史记录和更新实时控制可以采用不同策略。
+
+要把实验变成工程验收，应事先声明：最大允许信息年龄、连续缺失预算、时钟误差预算、命令有效期、恢复条件及记录字段。超过期限只是**检测条件**，之后保持、预测、降级或停机要依据对象与危害分析决定。本例没有证明任何一种超时动作安全，更没有验证真实网络的最坏时延。
+
+固定丢包率不能描述丢包聚集方式；短窗口也不能估计最坏连续缺失。部署测试须覆盖启动无包、长时间失联、迟到、重复、乱序、发送端重启、时钟跳变、执行器命令过期与恢复，并核查实际设备时间戳。事件触发发送、预测补偿和含随机网络的稳定性是后续方法，本课不以名称代替实现。
+
+## Python复算与轨迹
+
+下面直接按事件顺序重算，两格依次执行。第一格输出全部四轨迹、两规则及两个增益的表；第二格画状态。只用NumPy、Matplotlib和Python标准库，在页面原生内核或浏览器Python都可执行，40次更新不需要GPU或网络仿真器。
+
+<JupyterNotebook
+  title="同一网络规则下的闭环轨迹"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+def experiment(K=4,mode="clean",policy="fresh"):
+    # Send packets from actual closed-loop states; no precomputed future values.
+    pending={}; x=1.; value=0.; last=None; rejected=0; points=[]
+    for k in range(40):
+        d=1 if mode=="delay" else (2 if k%2==0 else 0) if mode=="reorder" else 0
+        if not (mode=="burst" and 3<=k%10<=5):
+            pending.setdefault(k+d,[]).append((k,x))
+        for stamp,v in sorted(pending.pop(k,[])):
+            if policy=="arrival" or last is None or stamp>last:
+                last,value=stamp,v
+            else:
+                rejected+=1
+        u=-K*value
+        points.append(dict(k=k,x=x,held=value,u=u,seq=last,age=None if last is None else .1*(k-last)))
+        x=1.1*x+.1*u
+    points.append(dict(k=40,x=x))
+    return dict(K=K,mode=mode,policy=policy,points=points,final=x,peak=max(abs(p["x"]) for p in points),energy=sum(p["x"]**2 for p in points[:-1]),maxAge=max(p["age"] for p in points[:-1] if p["age"] is not None),rejected=rejected)
+`}
+  cells={[
+    { code: `default=experiment()
+results=[experiment(K,m,p) for K in [4,12] for m in ["clean","delay","reorder","burst"] for p in ["fresh","arrival"]]
+print(json.dumps(dict(default={k:v for k,v in default.items() if k!="points"},table=[{k:v for k,v in q.items() if k!="points"} for q in results])))` },
+    { code: `fig,axs=plt.subplots(1,2,figsize=(9,3))
+for mode in ["clean","delay","reorder","burst"]:
+    for K,ax in zip([4,12],axs):
+        q=experiment(K,mode,"fresh");ax.plot([p["k"]*.1 for p in q["points"]],[p["x"] for p in q["points"]],label=mode)
+        ax.set(title=f"K={K}",xlabel="Time (s)",ylabel="State x");ax.grid();ax.legend()
+plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+再把载荷固定，单独看接收器。下例包的三列依次是发送序号、到达拍、固定值，故意让序号0晚于1到达；这些载荷只是重放输入，不是另一条闭环轨迹。第2拍，`fresh` 仍保存序号1、值0.7、年龄0.1秒；`arrival` 被序号0覆盖为值1、年龄0.2秒。第0拍两者都尚无样本，年龄为空。
+
+<JupyterNotebook
+  title="固定包表的接收重放"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+`}
+  cells={[
+    { code: `# Fixed received values isolate ordering from the feedback-dependent packet payload.
+packets=[(0,2,1.),(1,1,.7),(2,4,.49),(3,3,.343)]
+def replay(policy):
+    last=None;value=0.;rows=[]
+    for k in range(6):
+        for seq,arrival,v in sorted(packets):
+            if arrival==k and (policy=="arrival" or last is None or seq>last):
+                last,value=seq,v
+        rows.append(dict(k=k,seq=last,value=value,age=None if last is None else .1*(k-last)))
+    return rows
+replay_results={p:replay(p) for p in ["fresh","arrival"]}
+print(json.dumps(replay_results))` },
+    { code: `fig,ax=plt.subplots(figsize=(6,3))
+for policy,rows in replay_results.items():
+    ax.step([p["k"]*.1 for p in rows],[np.nan if p["age"] is None else p["age"] for p in rows],where="post",label=policy)
+ax.set(xlim=(0,.5),ylim=(0,.41),xlabel="Time (s)",ylabel="Age (s)");ax.legend();ax.grid();plt.show()` }
+  ]}
+/>
+
+## 常见误区
+
+**“包到了就该覆盖。”** 到达时间与采样时间顺序不同，先声明接收规则。
+
+**“少量丢包就没有影响。”** 同样的数量可以分散或聚集；反馈使用了多旧的数据，取决于具体序列和保持策略。
+
+**“实时操作系统调度通过了，闭环就安全。”** 调度只覆盖其任务模型，网络年龄及对象稳定性仍要分别验收。
+
+**“极点在圆内，所以突发丢包也稳定。”** 本课极点只描述恒定延迟模型，网络模式切换不能套用单个固定矩阵的结论。
+
+**“有限末值很小就是已经证明稳定。”** 仿真提供反例和有限窗口观测；固定模型的解析条件才支撑这里的渐近稳定结论。
+
+概念延伸可读 Hespanha、Naghshtabrizi、Xu 的综述 [A Survey of Recent Results in Networked Control Systems](https://www.ccdc.ucsb.edu/publications/11932)（2007；检索2026-10-24），其中分别讨论通信约束。本课标量对象及确定性轨迹是自行构造的教学实验，不是对论文实验或真实烘箱的复现。
+
+## 习题
+
+1. 默认即时反馈首步是什么？
+2. 为什么默认恒一拍首步上升仍可稳定？
+3. 固定包重放第2拍分别保存哪个包？
+4. 连续丢三包时，序号检查能否补回新测量？
+5. “断网后置零即可安全”缺少什么？
+
+## 答案
+
+1. $u_0=-4$，$x_1=0.7$，即时极点0.7。用第一Notebook和轨迹Notebook核对。
+2. 首拍还没有包，$u_0=0$、$x_1=1.1$；随后两根模约0.632456。把K改为12后，延迟谱半径约1.095445，不能沿用稳定结论。
+3. `fresh` 保留序号1、值0.7、年龄0.1秒；`arrival` 保存序号0、值1、年龄0.2秒。第三Notebook核对。
+4. 不能。默认轨迹最大年龄0.3秒；两种规则持平。保持旧测量也不等于保持零输入，因为 $u=-K\hat x$。
+5. 缺对象在该动作下的动力学、危害分析、检测误差和恢复条件。本课对象开环不稳定，未验证安全停机。提交一份包含年龄阈值、时钟预算、命令期限、超时动作、恢复与日志字段的合同，不能只交平均丢包率。

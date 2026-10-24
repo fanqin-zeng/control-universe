@@ -928,3 +928,7 @@ rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独�
 ### IMPL-06 实时控制本轮交付
 
 重构单课；保留九H2/五题，修正调度判据、时序与实现边界。讨论和真实验收见 `.agent/semester-03/impl-06/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### IMPL-07 网络控制本轮交付
+
+新写单课；时延、丢包、乱序与信息年龄。讨论和真实验收见 `.agent/semester-03/impl-07/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

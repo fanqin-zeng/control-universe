@@ -1,3 +1,4 @@
+import { NetworkFeedbackExplorer } from "@/components/wiki/network-feedback-explorer";
 import { FrequencyIdentificationExplorer } from "@/components/wiki/frequency-identification-explorer";
 import { RealtimeSchedulingExplorer } from "@/components/wiki/realtime-scheduling-explorer";
 import { MpcStabilityExplorer } from "@/components/wiki/mpc-stability-explorer";
@@ -138,6 +139,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  NetworkFeedbackExplorer,
   FrequencyIdentificationExplorer,
   RealtimeSchedulingExplorer,
   MpcStabilityExplorer,

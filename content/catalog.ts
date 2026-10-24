@@ -3421,13 +3421,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "networked-control",
         "title": "网络控制",
+        "subsections": [
+          {
+            "slug": "远程读数为什么会变旧",
+            "title": "远程读数为什么会变旧"
+          },
+          {
+            "slug": "模型和事件顺序",
+            "title": "模型和事件顺序"
+          },
+          {
+            "slug": "信息年龄与接收策略",
+            "title": "信息年龄与接收策略"
+          },
+          {
+            "slug": "一拍时延改变了什么",
+            "title": "一拍时延改变了什么"
+          },
+          {
+            "slug": "丢包与乱序实验",
+            "title": "丢包与乱序实验"
+          },
+          {
+            "slug": "从时间戳到故障处理",
+            "title": "从时间戳到故障处理"
+          },
+          {
+            "slug": "python复算与轨迹",
+            "title": "Python复算与轨迹"
+          },
+          {
+            "slug": "常见误区",
+            "title": "常见误区"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/realtime-control",
           "discrete-sampled/sampled-data-systems"
         ],
         "level": "grad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "industrial-bus-protocols",
