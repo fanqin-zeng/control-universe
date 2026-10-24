@@ -254,7 +254,7 @@
 | MPC-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/07-explicit-mpc.md;.agent/semester-03/mpc-07/acceptance.md;commit:38866315543e03124bb4bf43ff882720781984af |
 | MPC-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/08-nonlinear-mpc.md;.agent/semester-03/mpc-08/acceptance.md;commit:9d062e48eca6d2975da2e35e5ef8af308233e59c |
 | MPC-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/09-economic-mpc.md;.agent/semester-03/mpc-09/acceptance.md;commit:c211f29eedef28888b048ccb1a89734edd1d2c46 |
-| MPC-10 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/12-mpc/10-mhe-fusion.md;.agent/semester-03/mpc-10/acceptance.md |
+| MPC-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/10-mhe-fusion.md;.agent/semester-03/mpc-10/acceptance.md;commit:ebd2c5a1889b15d96a0a732971790e3b9e6f69fa |
 | MPC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 
 ### 智能控制
