@@ -23,3 +23,5 @@
 首轮Notebook属性、Worker输出截断、表格窄屏和符号嵌套错误均已修复并重跑适用门槛，归因见讨论日志D；不把首次失败写作通过。资源、提交与正常push实际完成后追加回执，不发布Pages。
 
 资源回收：自有端口内12个kernel已DELETE，health剩余0；核PID/命令行后关闭自有kernel与fixture服务，原生/Pages/浏览器由finally关闭；详kernels-closed.json和resources-closed.json。他人进程未操作。
+
+真实交付提交：`29081cbade38b9939831f0afcc9af6107b466e65`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。
