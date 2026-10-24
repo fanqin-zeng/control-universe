@@ -104,6 +104,7 @@
 | EST-08 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09 | 2026-10-24用户明确指定继续EST-08，rank4；保留并行课程，只依赖已交付EST-06/07与KF基础 | .agent/semester-03/est-08/acceptance.md |
 | ROBUST-06 | IMPL-10;ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 | ID-09 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-09，rank3；保留并行课程，闭环/频域已交付；评估课未交付，局部定义分区与冻结，ID08提供已交付支撑 | .agent/semester-03/id-09/acceptance.md |
+| ML-09 | IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-09，rank2；保留并行实现课，仅依赖已交付监督学习与概率基础 | .agent/semester-03/ml-09/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -997,6 +998,10 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 
 状态估计案例从空占位按Phase1—4新写：10H2/四题全子问、3Notebook6cell、EstimationCaseExplorer/PCG64输入/SVG；二维小车共同预测/双路更新/缺测/创新门限/统计与部署边界。默认融合落败、三工况持平/改善与极端噪声误拒边界保留；378配置4536拍对独立信息形式、360多种子统计、54UI配置×12时刻全实页读数。严格内核/Pyodide/普通与官方Pages构建及实页/375px通过。rank4独立资源与私有索引保留并行修改，证据.agent/semester-03/est-08/acceptance.md；真实master回执见checklist。不发布Pages，不生产其它课。
 <!-- EST-08-RECEIPT-END -->
+
+### ML-09 本轮执行记录（2026-10-24）
+
+学习实验评估从空占位按新写Phase1–4完成：缺陷检测贯穿协议/组和时间隔离、训练类中心/验证阈值、指标与代价、配对批次bootstrap及胜负持平。10H2、两Notebook四cell、四题四答、一Explorer/纵排SVG；实际TS36配置18096主量+23边界对独立Fraction/多项式权重，原始执行1488量加56补充审计量、11状态253UI读数、双构建/Pages页面/375px通过。证据.agent/semester-03/ml-09/acceptance.md；真实master回执另记。四构造批次不保证总体覆盖，评分非概率；rank2隔离8238/8992与私有索引，保留并行工作，不发布Pages、不顺带生产其它课。
 
 ### IMPL-10 控制实现案例本轮交付
 

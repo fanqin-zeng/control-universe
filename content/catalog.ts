@@ -3953,7 +3953,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "先冻结实验协议",
+            "title": "先冻结实验协议"
+          },
+          {
+            "slug": "切分数据与泄漏",
+            "title": "切分数据与泄漏"
+          },
+          {
+            "slug": "验证集选择阈值",
+            "title": "验证集选择阈值"
+          },
+          {
+            "slug": "测试指标与代价",
+            "title": "测试指标与代价"
+          },
+          {
+            "slug": "配对比较与不确定性",
+            "title": "配对比较与不确定性"
+          },
+          {
+            "slug": "失败场景与复现",
+            "title": "失败场景与复现"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ]
       }
     ]
   },

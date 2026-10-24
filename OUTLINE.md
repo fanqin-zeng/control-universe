@@ -124,7 +124,7 @@
 | 8.6 | 注意力机制 | attention-transformers | ✅ 已交付 v1.3 | grad | learning | 9 | machine-learning/sequence-models |
 | 8.7 | 表征学习 | representation-learning | ✅ 已交付 v1.3 | grad | learning | 10 | machine-learning/autodiff-optimization<br>machine-learning/attention-transformers |
 | 8.8 | 扩散与流匹配 | generative-models | ✅ 已交付 v1.3 | grad | learning | 8 | machine-learning/autodiff-optimization<br>math/stochastic-processes<br>math/ode-matrix-exponential |
-| 8.9 | 学习实验评估 | learning-evaluation | ⬜ 骨架（占位页） | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/probability-basics |
+| 8.9 | 学习实验评估 | learning-evaluation | ✅ 已交付 v1.3 | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/probability-basics |
 
 ## 9. 系统辨识 (identification)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 123（status = v1.3）
+- **已交付 v1.3**: 124（status = v1.3）
 - **有正文待审校**: 5（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 77（status = empty，渲染占位页）
+- **骨架占位**: 76（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 82（= draft 5 + empty 77 + 无 status 0）
-- **有 MDX 正文**: 128
-- **catalog 小节总数**: 1395
-- **讨论日志**: 146 篇（覆盖 123 门；有 MDX 无日志 5 门）
-- **交互组件**: 133 个文件（被正文引用 133，孤儿 0）
+- **未完成 v1.3**: 81（= draft 5 + empty 76 + 无 status 0）
+- **有 MDX 正文**: 129
+- **catalog 小节总数**: 1405
+- **讨论日志**: 147 篇（覆盖 124 门；有 MDX 无日志 5 门）
+- **交互组件**: 134 个文件（被正文引用 134，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

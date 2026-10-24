@@ -73,6 +73,7 @@
 | RB06 | ROBUST-06接口、分块、失稳与权重返修 | [x] | .agent/semester-03/robust-06/acceptance.md;本课Notebook与Python/双页面全验，其他课程待办保留 |
 | RB03 | ROBUST-03鲁棒稳定性数学证书与采样结论返修 | [x] | .agent/semester-03/robust-03/acceptance.md;PY-004与S04本课运行债务已实测关闭，余课保留 |
 | QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
+| DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -192,7 +193,7 @@
 | ML-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/06-attention-transformers.md;.agent/semester-03/ml-06/acceptance.md;rank2独立预览8216与严格内核8992;commit:9ce2d2ca1782968be6aaac6aa32a390e0b0b9792 |
 | ML-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/07-representation-learning.md;.agent/semester-03/ml-07/acceptance.md;rank2独立预览8232与严格内核8992;commit:ca233d4adad1ba7956039bec8e1227aab699722c |
 | ML-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/08-generative-models.md;.agent/semester-03/ml-08/acceptance.md;rank2独立预览8234与严格内核8992;commit:4943d266da3b389588d2c9218e3adb7f41786fd6 |
-| ML-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ML-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/09-learning-evaluation.md;.agent/semester-03/ml-09/acceptance.md;rank2独立预览8238与严格内核8992;commit:9c75ff1aae5f0a85a87ab479e68bbd375a5a3615 |
 
 ### 系统辨识
 
