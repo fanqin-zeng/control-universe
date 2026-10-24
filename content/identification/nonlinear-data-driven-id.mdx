@@ -1,0 +1,302 @@
+---
+title: 非线性辨识
+description: 用固定特征NARX区分一步预测、自由滚动与外推，检查非线性激励、数据分区和模型选择的边界。
+---
+
+# 非线性辨识
+
+## 引言
+
+给风机增加一点指令，低速时转速提升明显，接近上限后却只增加一点。若只在低速附近采集记录，一个线性模型可能看起来很好；把它拿去预测大指令下的转速，就可能偏得很远。换成更灵活的非线性模型，是否一定能解决这个问题？
+
+[非线性系统](/nonlinear/nonlinear-characteristics)解释了饱和、间隙和记忆，[持续激励](/identification/persistent-excitation)提醒我们检查数据中的独立方向。本课接着问：**怎样从输入输出记录学习一个动态模型，又怎样判断它到底学会了什么？** 先修还包括[自动微分与训练](/machine-learning/autodiff-optimization)和[时序模型](/machine-learning/sequence-models)中的损失、因果顺序及滚动预测。
+
+本课用归一化合成风机数据演示结构、目标、激励和验证。它不是实际设备标定，不会因为模型可运行就给出闭环稳定证明。实际复现的是两个小型特征回归模型；神经网络作为模型结构讨论，不声称这里训练了大网络。
+
+## 非线性放在哪里
+
+“非线性辨识”不等于“必须训练神经网络”。先选结构，再问参数怎样估计：
+
+| 结构 | 非线性所在位置 | 要额外检查什么 |
+|---|---|---|
+| Hammerstein | 输入先过静态映射，再进线性动态 | 执行器饱和/死区、输入幅值覆盖及块间尺度歧义 |
+| Wiener | 线性动态后接输出静态映射 | 传感器非线性与内部状态能否区分 |
+| 非线性ARX（NARX） | 用过去输入输出的非线性函数预测下一输出 | 滞后、特征激励、测量噪声和滚动误差 |
+| 神经状态模型 | 状态更新或输出映射由网络参数化 | 隐状态、训练目标、梯度、物理约束及独立验证 |
+
+NARX中的“外生输入”指所给输入通道，并不自动保证统计独立；闭环下仍要检查相关性。含隐状态的神经模型也不等于把输出滞后直接当状态的NARX。
+
+例如Hammerstein模型中，若输入静态映射 $g$ 和增益 $B$ 都未知，对任意非零尺度 $\rho$，$Bg(u)$ 与 $(B/\rho)[\rho g(u)]$ 给出相同作用，不能仅凭输入输出把两个尺度分开。这里 $\rho$ 只表示块间缩放，不是后文待估的三次系数。需有校准或明确的归一化条件，而不是把某套参数数值当作唯一物理真值。
+
+## 把动态预测写成回归
+
+贯穿的教学对象是：
+
+$$
+y_{k+1}=0.7y_k+0.3\tanh(u_k)+e_{k+1},\qquad y_0=0.
+$$
+
+采样周期 $T_s=1$ s，输入与输出事先按固定物理尺度归一化。$e_{k+1}$ 是作用在此递推上的新创新，独立序列模拟、零均值；它不是另加在传感器上的测量误差。默认无噪声，噪声工况用有界均匀创新，标准差为0.03。
+
+线性对照取 $F_{\theta}(y,u)=ay+bu$。三次特征模型取：
+
+$$
+F_{\theta}(y,u)=ay+bu+cu^3,
+\qquad \phi_k=[y_k,u_k,u_k^3]^{\mathsf T},
+\qquad \hat y_{k+1}=\phi_k^{\mathsf T}\theta.
+$$
+
+对输入 $u$ 非线性，对待估参数 $\theta=[a,b,c]^{\mathsf T}$ 却是线性的。因此固定特征后，最小化训练一步平方误差可以直接用QR或SVD求最小二乘，不需要反向传播。例子没有截距、输入滞后固定一拍、输出滞后固定一拍；这是一项明确的结构假设，不是所有对象的通用选择。
+
+若改成 $F_{\psi}(y,u)=ay+bu+W_2\tanh(W_1[y,u]^{\mathsf T}+b_1)$，特征本身依赖未知参数，通常要迭代优化。网络更灵活，却不会自动解决结构不可辨识、激励不足或训练目标错误；也不能从拟合曲线漂亮推出物理规律正确。
+
+## 一步预测与自由滚动
+
+一步预测在每次预测时使用已经测得的上一输出：
+
+$$
+\hat y_{k+1|k}=F_{\theta}(y_k,u_k),\qquad
+J_{\mathrm{one}}=\frac1N\sum_k(y_{k+1}-\hat y_{k+1|k})^2.
+$$
+
+自由滚动只在起点给初值，此后把自己的预测送回去：
+
+$$
+\tilde y_0=y_0,\quad \tilde y_{k+1}=F_{\theta}(\tilde y_k,u_k),\qquad
+J_{\mathrm{roll}}=\frac1N\sum_k(y_{k+1}-\tilde y_{k+1})^2.
+$$
+
+两者输入的信息不同。训练一步误差很小，可能只说明真实历史每拍都在纠正模型；自由滚动不能再借用后续真实输出。用滚动损失训练网络，还会把梯度沿递推展开传播，计算与优化条件都不同，不能只换评估函数的名字。
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}><div style={{minWidth:700}}>
+
+![同一已拟合模型的两种使用方式：一步预测每拍接收真实上一输出，自由滚动只用初值并反馈自身预测；验证与测试记录均不回流训练。](/diagrams/identification/nonlinear-prediction.svg)
+
+</div></div>
+
+对本页三次特征模型，关于上一输出的导数为 $a$。默认拟合 $a=0.7$，初值误差对相同输入会收缩，但输入函数在未覆盖幅值上仍可能很错。**工作区外预测失败不等于状态递推发散**；一般网络若状态方向导数过大，则还可能叠加误差放大问题。
+
+## 先规定数据与选择规则
+
+先固定实验合同，再读结果。三份独立生成的记录各128步、各自从零初值开始。训练种子20261024；验证和测试分别加1000、2000。输入和创新的伪随机生成器、抽样顺序均在Notebook中，不把固定种子当作对真实噪声的验证。
+
+默认训练幅值 $A=1$，输入从 $\{-A,-A/2,0,A/2,A\}$ 五级中抽取。验证始终用幅值1的五级输入；测试默认用幅值2，用于事先规定的工作区外压力测试。全流程沿用事先规定的归一化尺度，不从测试记录估计均值或尺度。
+
+两个候选均只拟合训练一步损失，无正则、无超参数搜索、无迭代早停；每个候选做一次小矩阵分解。按**验证自由滚动RMSE**选模型；差异不超过 $10^{-12}$ 时保留较简单线性模型，这只是数值平局规则，不是统计显著性检验。测试幅值和测试误差从不参与选模型，也不据它回头调特征。若反复查看测试后改方案，那份记录已经变成开发资料，必须另留未看过的测试数据。
+
+默认线性系数约为 $[0.702388,0.240064]$，三次系数约为 $[0.700000,0.293534,-0.065056]$。三次模型在验证上的一步与滚动RMSE均低于 $10^{-12}$，所以被选中；这不是发现了全局的 $\tanh$。五级输入只有两个非零绝对幅值，一次项与三次项恰好能在这些有限位置插值该奇函数。
+
+<JupyterNotebook
+  title="默认拟合与分区误差"
+  setupCode={`import numpy as np
+def record(amplitude,binary,noise,plant,seed):
+    state = int(seed); u,y,innovations = [],[0.],[]
+    def next_value():
+        nonlocal state
+        state = (1664525*state+1013904223) % 2**32
+        return state/2**32
+    for _ in range(128):
+        r = next_value()
+        level = (-1. if r<.5 else 1.) if binary else [-1.,-.5,0.,.5,1.][int(5*r)]
+        v = amplitude*level; e = noise*np.sqrt(12)*(next_value()-.5)
+        u.append(v); innovations.append(e)
+        y.append(.7*y[-1]+.3*(np.tanh(v) if plant=='tanh' else v)+e)
+    return dict(u=np.array(u),y=np.array(y),innovation=np.array(innovations))
+def fit(r,cubic):
+    X = np.column_stack([r['y'][:-1],r['u'],r['u']**3]) if cubic else np.column_stack([r['y'][:-1],r['u']])
+    rank = int(np.linalg.matrix_rank(X,tol=1e-10*np.linalg.norm(X,axis=0).max()))
+    return dict(rank=rank,coefficients=np.linalg.lstsq(X,r['y'][1:],rcond=None)[0] if rank==X.shape[1] else None)
+def assess(r,coef):
+    if coef is None: return None
+    a,b = coef[:2]; c = coef[2] if len(coef)==3 else 0.
+    one = a*r['y'][:-1]+b*r['u']+c*r['u']**3
+    prev = r['y'][0]; roll = []
+    for v in r['u']:
+        prev = a*prev+b*v+c*v**3; roll.append(prev)
+    roll = np.array(roll)
+    return dict(one=one,roll=roll,oneRMSE=float(np.sqrt(np.mean((one-r['y'][1:])**2))),rollRMSE=float(np.sqrt(np.mean((roll-r['y'][1:])**2))))
+def experiment(amplitude=1.,binary=False,noise=0.,plant='tanh',test_amplitude=2.,seed=20261024):
+    train = record(amplitude,binary,noise,plant,seed)
+    validation = record(1.,False,noise,plant,seed+1000)
+    test = record(test_amplitude,False,noise,plant,seed+2000)
+    models = {}
+    for name,cubic in [('linear',False),('cubic',True)]:
+        m = fit(train,cubic); coef = m['coefficients']
+        m.update(train=assess(train,coef),validation=assess(validation,coef),test=assess(test,coef)); models[name] = m
+    l,c = models['linear']['validation'],models['cubic']['validation']
+    selected = 'cubic' if c is not None and (l is None or c['rollRMSE']<l['rollRMSE']-1e-12) else 'linear' if l is not None else 'unidentified'
+    return dict(models=models,selected=selected,train=train,validation=validation,test=test)
+`}
+  cells={[{id:"nonlinear-id-1",title:"计算并核对",code:`r = experiment()
+summary = dict(selected=r['selected'])
+for name,m in r['models'].items():
+    summary[name] = dict(rank=m['rank'],coefficients=m['coefficients'].tolist(),train_one=m['train']['oneRMSE'],validation_one=m['validation']['oneRMSE'],validation_roll=m['validation']['rollRMSE'],test_one=m['test']['oneRMSE'],test_roll=m['test']['rollRMSE'])
+print(summary)
+print('nonlinear_default_checks_passed')`}]}
+/>
+
+## 交互检查拟合与外推
+
+在默认幅值2测试中，线性模型的一步/滚动RMSE为0.127610/0.184838，三次模型为0.148537/0.211509。更灵活的模型虽然验证更好，在这次外推中反而更差；这个结论只针对所声明对象、输入范围与记录，不是“线性永远更可靠”。
+
+<NonlinearIdentificationExplorer />
+
+“同幅值测试”恢复到已覆盖的五级输入；“小幅值训练”缩小训练工作区；“二值激励”暴露三次特征的秩失败。测试幅值旋钮只改变评估记录，参数与验证选择保持不变。图中RMSE取128步，缺失模型显示“不可估计”，不把缺失误差填成零。
+
+看一个具体输入：$u=2$ 时，默认三次模型的输入作用 $bu+cu^3=0.066620$，真对象为 $0.3\tanh(2)=0.289208$。即使 $a$ 学得很准，错误的输入映射仍会逐步传入状态。这正是“训练分布内插值”和“模型在所有输入上正确”之间的差距。
+
+## 非线性特征也要有激励
+
+持续激励必须相对于所选特征讨论。如果只给 $u_k\in\{-A,A\}$，则：
+
+$$
+u_k^3=A^2u_k,\qquad bu_k+cu_k^3=(b+cA^2)u_k.
+$$
+
+两列严格共线，只能分辨组合 $b+cA^2$，不能分别估计 $b,c$。输入有变化、线性回归量满秩，不代表扩展后的非线性特征也满秩。默认幅值1的二值例中，线性设计秩2、三次设计秩仍为2；三次完整模型拒绝估计。零输入且无噪声时，两模型都不可辨识。
+
+如果噪声很小或训练幅值很窄，数值病态也可能先于严格秩亏出现。加岭惩罚可以选出一个系数向量，却没有创造新信息，不能将“得到唯一正则解”写成“真实物理参数唯一可辨识”。实施中可先扩展安全允许的输入幅值级数，再决定是否需要增加模型复杂度。
+
+<JupyterNotebook
+  title="特征秩与预测接口边界"
+  setupCode={`import numpy as np
+def record(amplitude,binary,noise,plant,seed):
+    state = int(seed); u,y,innovations = [],[0.],[]
+    def next_value():
+        nonlocal state
+        state = (1664525*state+1013904223) % 2**32
+        return state/2**32
+    for _ in range(128):
+        r = next_value()
+        level = (-1. if r<.5 else 1.) if binary else [-1.,-.5,0.,.5,1.][int(5*r)]
+        v = amplitude*level; e = noise*np.sqrt(12)*(next_value()-.5)
+        u.append(v); innovations.append(e)
+        y.append(.7*y[-1]+.3*(np.tanh(v) if plant=='tanh' else v)+e)
+    return dict(u=np.array(u),y=np.array(y),innovation=np.array(innovations))
+def fit(r,cubic):
+    X = np.column_stack([r['y'][:-1],r['u'],r['u']**3]) if cubic else np.column_stack([r['y'][:-1],r['u']])
+    rank = int(np.linalg.matrix_rank(X,tol=1e-10*np.linalg.norm(X,axis=0).max()))
+    return dict(rank=rank,coefficients=np.linalg.lstsq(X,r['y'][1:],rcond=None)[0] if rank==X.shape[1] else None)
+def assess(r,coef):
+    if coef is None: return None
+    a,b = coef[:2]; c = coef[2] if len(coef)==3 else 0.
+    one = a*r['y'][:-1]+b*r['u']+c*r['u']**3
+    prev = r['y'][0]; roll = []
+    for v in r['u']:
+        prev = a*prev+b*v+c*v**3; roll.append(prev)
+    roll = np.array(roll)
+    return dict(one=one,roll=roll,oneRMSE=float(np.sqrt(np.mean((one-r['y'][1:])**2))),rollRMSE=float(np.sqrt(np.mean((roll-r['y'][1:])**2))))
+def experiment(amplitude=1.,binary=False,noise=0.,plant='tanh',test_amplitude=2.,seed=20261024):
+    train = record(amplitude,binary,noise,plant,seed)
+    validation = record(1.,False,noise,plant,seed+1000)
+    test = record(test_amplitude,False,noise,plant,seed+2000)
+    models = {}
+    for name,cubic in [('linear',False),('cubic',True)]:
+        m = fit(train,cubic); coef = m['coefficients']
+        m.update(train=assess(train,coef),validation=assess(validation,coef),test=assess(test,coef)); models[name] = m
+    l,c = models['linear']['validation'],models['cubic']['validation']
+    selected = 'cubic' if c is not None and (l is None or c['rollRMSE']<l['rollRMSE']-1e-12) else 'linear' if l is not None else 'unidentified'
+    return dict(models=models,selected=selected,train=train,validation=validation,test=test)
+`}
+  cells={[{id:"nonlinear-id-3",title:"计算并核对",code:`r = experiment(binary=True)
+zero = experiment(amplitude=0.)
+c = experiment()['models']['cubic']['coefficients']
+row = dict(binary_linear_rank=r['models']['linear']['rank'],binary_cubic_rank=r['models']['cubic']['rank'],binary_cubic_refused=r['models']['cubic']['coefficients'] is None,zero_selected=zero['selected'],u3_equals_A2u=True,coefficient_at_2=float(2*c[1]+8*c[2]),true_forcing_at_2=float(.3*np.tanh(2)),local_derivative=.7,steps=128,seed=20261024,example_one=float(.5*c[0]+c[1]+c[2]),example_roll=float(.4*c[0]+c[1]+c[2]),example_gap=float(.1*c[0]))
+assert np.array_equal(r['train']['u']**3,r['train']['u'])
+print(row)
+print('nonlinear_boundary_checks_passed')`}]}
+/>
+
+## 三工况重复实验
+
+以下对三工况分别报告32个连续种子：线性对象、五级幅值1、无噪声；tanh对象、五级幅值1、无噪声；tanh对象、训练幅值0.5、创新标准差0.03。其余窗口、记录分区与模型选择规则完全相同，测试幅值固定2。每条记录保留两个模型的验证/测试一步与滚动误差，以及仅由验证得到的选择。
+
+线性无噪声工况中，两候选都包含真实结构，误差在舍入附近，按预定规则选简单模型。饱和与小幅值带噪声工况保留工作区外失败，不只挑三次模型赢的样本。完整输出包含每个种子的读数、中位数和经验10%/90%分位；分位描述这批记录，不是参数置信区间。
+
+<JupyterNotebook
+  title="32种子三工况：保留外推失败"
+  setupCode={`import numpy as np
+def record(amplitude,binary,noise,plant,seed):
+    state = int(seed); u,y,innovations = [],[0.],[]
+    def next_value():
+        nonlocal state
+        state = (1664525*state+1013904223) % 2**32
+        return state/2**32
+    for _ in range(128):
+        r = next_value()
+        level = (-1. if r<.5 else 1.) if binary else [-1.,-.5,0.,.5,1.][int(5*r)]
+        v = amplitude*level; e = noise*np.sqrt(12)*(next_value()-.5)
+        u.append(v); innovations.append(e)
+        y.append(.7*y[-1]+.3*(np.tanh(v) if plant=='tanh' else v)+e)
+    return dict(u=np.array(u),y=np.array(y),innovation=np.array(innovations))
+def fit(r,cubic):
+    X = np.column_stack([r['y'][:-1],r['u'],r['u']**3]) if cubic else np.column_stack([r['y'][:-1],r['u']])
+    rank = int(np.linalg.matrix_rank(X,tol=1e-10*np.linalg.norm(X,axis=0).max()))
+    return dict(rank=rank,coefficients=np.linalg.lstsq(X,r['y'][1:],rcond=None)[0] if rank==X.shape[1] else None)
+def assess(r,coef):
+    if coef is None: return None
+    a,b = coef[:2]; c = coef[2] if len(coef)==3 else 0.
+    one = a*r['y'][:-1]+b*r['u']+c*r['u']**3
+    prev = r['y'][0]; roll = []
+    for v in r['u']:
+        prev = a*prev+b*v+c*v**3; roll.append(prev)
+    roll = np.array(roll)
+    return dict(one=one,roll=roll,oneRMSE=float(np.sqrt(np.mean((one-r['y'][1:])**2))),rollRMSE=float(np.sqrt(np.mean((roll-r['y'][1:])**2))))
+def experiment(amplitude=1.,binary=False,noise=0.,plant='tanh',test_amplitude=2.,seed=20261024):
+    train = record(amplitude,binary,noise,plant,seed)
+    validation = record(1.,False,noise,plant,seed+1000)
+    test = record(test_amplitude,False,noise,plant,seed+2000)
+    models = {}
+    for name,cubic in [('linear',False),('cubic',True)]:
+        m = fit(train,cubic); coef = m['coefficients']
+        m.update(train=assess(train,coef),validation=assess(validation,coef),test=assess(test,coef)); models[name] = m
+    l,c = models['linear']['validation'],models['cubic']['validation']
+    selected = 'cubic' if c is not None and (l is None or c['rollRMSE']<l['rollRMSE']-1e-12) else 'linear' if l is not None else 'unidentified'
+    return dict(models=models,selected=selected,train=train,validation=validation,test=test)
+`}
+  cells={[{id:"nonlinear-id-2",title:"计算并核对",code:`summaries = []
+for label,plant,amplitude,noise in [('linear','linear',1.,0.),('saturating','tanh',1.,0.),('small_noisy','tanh',.5,.03)]:
+    stats = {name:{metric:[] for metric in ['validation_one','validation_roll','test_one','test_roll']} for name in ['linear','cubic']}
+    choices = []
+    for seed in range(20261024,20261056):
+        r = experiment(amplitude=amplitude,noise=noise,plant=plant,seed=seed)
+        choices.append(r['selected'])
+        for name,m in r['models'].items():
+            for partition in ['validation','test']:
+                for mode in ['one','roll']:
+                    stats[name][partition+'_'+mode].append(m[partition][mode+'RMSE'])
+    report = {name:{metric:dict(values=vals,median=float(np.median(vals)),q10=float(np.quantile(vals,.1)),q90=float(np.quantile(vals,.9))) for metric,vals in metrics.items()} for name,metrics in stats.items()}
+    summaries.append(dict(label=label,stats=report,choices=choices))
+print(summaries)
+print('nonlinear_all_seeds_reported')`}]}
+/>
+
+模型自由参数数目不同，这是结构与数据覆盖的实验，不是等复杂度算法排行榜。训练目标为一步最小二乘，选择标准为验证滚动，两者有意分开且提前公开；若改成直接最小化滚动损失，必须另列优化预算、初始化、终止条件并重新验证，不能沿用这里的对比结论。
+
+实际设备还需检查传感器误差、时钟同步、饱和和延迟；本例独立新创新的假设不能搬给含输出测量噪声的回归。闭环输入相关可回看[闭环辨识](/identification/instrumental-variable)。可用物理模型加学习残差限制函数类，但“带物理先验”也不自动给出精度、可辨识性或安全保证。
+
+模型结构与一步/仿真目标的术语核对自[MathWorks非线性模型说明](https://www.mathworks.com/help/ident/ug/available-nonlinear-models.html)及[非线性ARX辨识说明](https://www.mathworks.com/help/ident/ug/identifying-nonlinear-arx-models.html)，检索日期2026-10-24。本页用NumPy和实际TS独立复现固定特征最小二乘，未调用其软件或沿用官方示例数据。
+
+## 小结
+
+非线性辨识要同时约束结构、数据、训练目标和验证用途。参数线性的非线性特征可以用最小二乘，但仍须检查特征激励；网络增加灵活性也增加额外假设。一步预测、自由滚动和工作区外测试回答不同问题，任何一张漂亮拟合图都不能替代后两项。
+
+## 习题
+
+**1. 两种预测接口。** 用默认三次模型，若当前真实输出为0.5、模型滚动输出为0.4、输入为1，分别求下一步的一步预测与自由滚动预测。差异从何而来？
+
+**2. 参数与函数。** 为什么 $ay+bu+cu^3$ 可直接最小二乘？换成可训练的tanh网络后，还能只做一次相同的线性回归吗？说明未知量在哪里。
+
+**3. 激励。** 证明二值输入时只能估计 $b+cA^2$。设计矩阵加一列 $u^3$ 后“数据量更多”是否就能消除共线？给出本课的失败读数。
+
+**4. 选择与外推。** 默认验证会选哪个模型？测试幅值2时，两个滚动RMSE分别是多少？这是否说明可以读完测试后改选线性模型，并继续把这份记录称为最终测试？
+
+## 答案
+
+**1.** 一步预测为 $0.7\times0.5+0.2935343102-0.0650560634=0.578478$，自由滚动为 $0.7\times0.4+0.2935343102-0.0650560634=0.508478$，差0.07。前者用真实历史，后者用模型自己的历史；不是重新拟合参数。Notebook边界单元格同时输出三项。
+
+**2.** 给定测量回归量后，$\phi=[y,u,u^3]^{\mathsf T}$ 是已知列，未知参数只线性出现在 $\phi^{\mathsf T}\theta$。网络中 $W_1,b_1$ 改变特征本身，通常变成非线性参数优化；若只固定整个隐层、仅训练线性输出层，才又可化为适当的线性回归。不同训练问题不能混称。
+
+**3.** 因 $u^2=A^2$，两列的比例恒为 $A^2$；增加同类样本不改变这个等式。本课二值幅值1时，线性秩2而三次秩2，小于其三列，拒绝完整三次模型。可在安全范围内增加幅值级数；正则化只选解，不创造可辨识性。
+
+**4.** 验证选三次模型，其验证滚动误差低于 $10^{-12}$；测试滚动误差线性0.184838、三次0.211509，保留此次外推失败。不能用这个结果回选模型后还声称测试独立：一旦依据测试开发，需另留新的未用测试记录，或者如实将此次结果标为探索。预测准与闭环可控/安全也不是同一问题。

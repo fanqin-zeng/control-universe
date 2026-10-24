@@ -204,7 +204,7 @@
 | ID-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/05-instrumental-variable.md;.agent/semester-03/id-05/acceptance.md;commit:40456c44cd909000c42aec614f95992323799d4d |
 | ID-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/06-frequency-domain-id.md;.agent/semester-03/id-06/acceptance.md;commit:19ce1c403883ab1a1573259e806118477448f146 |
 | ID-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/07-subspace-id.md;.agent/semester-03/id-07/acceptance.md;commit:d931844104fe97b7b06598ecacef73b961f4d930 |
-| ID-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ID-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/08-nonlinear-data-driven-id.md;.agent/semester-03/id-08/acceptance.md;rank3 验收通过，待提交回执 |
 | ID-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 状态估计

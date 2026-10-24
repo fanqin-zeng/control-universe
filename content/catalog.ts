@@ -4239,7 +4239,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "非线性放在哪里",
+            "title": "非线性放在哪里"
+          },
+          {
+            "slug": "把动态预测写成回归",
+            "title": "把动态预测写成回归"
+          },
+          {
+            "slug": "一步预测与自由滚动",
+            "title": "一步预测与自由滚动"
+          },
+          {
+            "slug": "先规定数据与选择规则",
+            "title": "先规定数据与选择规则"
+          },
+          {
+            "slug": "交互检查拟合与外推",
+            "title": "交互检查拟合与外推"
+          },
+          {
+            "slug": "非线性特征也要有激励",
+            "title": "非线性特征也要有激励"
+          },
+          {
+            "slug": "三工况重复实验",
+            "title": "三工况重复实验"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "identification-case-study",

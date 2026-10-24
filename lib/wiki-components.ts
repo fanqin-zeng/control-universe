@@ -1,3 +1,4 @@
+import { NonlinearIdentificationExplorer } from "@/components/wiki/nonlinear-identification-explorer";
 import { IndustrialSerialExplorer } from "@/components/wiki/industrial-serial-explorer";
 import { HInfinityExplorer } from '@/components/wiki/h-infinity-explorer';
 import { ParticleFilterExplorer } from "@/components/wiki/particle-filter-explorer";
@@ -145,6 +146,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  NonlinearIdentificationExplorer,
   IndustrialSerialExplorer,
   ParticleFilterExplorer,
   GpcExplorer,
