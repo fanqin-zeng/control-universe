@@ -5433,7 +5433,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "纯时滞改变了什么",
+            "title": "纯时滞改变了什么"
+          },
+          {
+            "slug": "状态不仅是一个初值",
+            "title": "状态不仅是一个初值"
+          },
+          {
+            "slug": "常时滞的精确稳定界",
+            "title": "常时滞的精确稳定界"
+          },
+          {
+            "slug": "未知常时滞的小增益证书",
+            "title": "未知常时滞的小增益证书"
+          },
+          {
+            "slug": "padé近似为何会误判",
+            "title": "Padé近似为何会误判"
+          },
+          {
+            "slug": "时变时滞与历史上界",
+            "title": "时变时滞与历史上界"
+          },
+          {
+            "slug": "仿真窗口与实现边界",
+            "title": "仿真窗口与实现边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "robust-case-study",

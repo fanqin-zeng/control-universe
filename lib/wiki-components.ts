@@ -1,3 +1,4 @@
+import { DelayRobustControlExplorer } from '@/components/wiki/delay-robust-control-explorer';
 import { HInfinityFilterExplorer } from '@/components/wiki/h-infinity-filter-explorer';
 import { CstrMpcExplorer } from "@/components/wiki/cstr-mpc-explorer";
 import { MuSynthesisExplorer } from '@/components/wiki/mu-synthesis-explorer';
@@ -195,6 +196,7 @@ export const wikiComponents: MDXComponents = {
   MuAnalysisExplorer,
   MuSynthesisExplorer,
   HInfinityFilterExplorer,
+  DelayRobustControlExplorer,
   MixedSensitivityExplorer,
   HInfinityExplorer,
   RobustPerformanceExplorer,

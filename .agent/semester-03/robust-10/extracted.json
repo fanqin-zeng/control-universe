@@ -1,0 +1,82 @@
+{
+  "source": "content/robust/delay-robust-control.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 84,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.special import lambertw\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\nfrom scipy.optimize import brentq\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,k=1.,2.\r\nwc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc\r\ntsg=2/np.sqrt(4*k*k-(a+k)**2)\r\ndef dde(a,k,tau,times,rtol=1e-10):\r\n    times=np.asarray(times);end=float(times[-1])\r\n    if tau==0:return np.exp(-(a+k)*times)\r\n    solutions=[];ends=[];state=1.\r\n    def history(t):\r\n        if t<=1e-12:return 1.\r\n        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)\r\n        return float(solutions[j](t)[0])\r\n    for n in range(int(np.ceil(end/tau))):\r\n        left=n*tau;right=min(end,(n+1)*tau)\r\n        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))\r\n        assert sol.success\r\n        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])\r\n    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])\r\ndef pade_trace(a,k,tau,times):\r\n    if tau==0:return np.exp(-(a+k)*np.asarray(times))\r\n    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])\r\n    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 114,
+          "delim": "`",
+          "code": "# Exact constant-delay boundary; finite Lambert branches are witnesses, not a proof\r\nprint('a=1 k=2: omega_c=',wc,'exact tau_c=',tc,'Padé boundary=',2/(k-a))\r\nrows=[];fig,ax=plt.subplots(figsize=(8,3.7))\r\nfor tau in [0.,.5,1.,tc,1.5,2.]:\r\n    roots=np.array([-a-k],complex) if tau==0 else -a+lambertw(-k*tau*np.exp(a*tau),np.arange(-20,21))/tau\r\n    residual=0. if tau==0 else max(abs(roots+a+k*np.exp(-roots*tau))/(1+abs(roots)))\r\n    alpha=float(max(roots.real));rows.append({'tau':float(tau),'scannedRootMaxReal':alpha,'relativeCharacteristicResidual':float(residual)})\r\n    print(rows[-1]);assert residual<1e-10\r\n    if tau in [.5,1.5]:ax.scatter(roots.real,roots.imag,s=15,label='tau='+str(tau))\r\nax.axvline(0,color='black',ls='--');ax.set(xlabel='Re(s)',ylabel='Im(s)',xlim=(-5,1),ylim=(-10,10));ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('tau1.5 has an actual RHP characteristic root, despite stable first-order Padé poles')\r\nprint('exact_margin_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 126,
+          "delim": "`",
+          "code": "# Uniform sufficient certificate for all CONSTANT delays in [0,bar_tau]\r\nprint('small-gain strict delay threshold=',tsg)\r\nfig,ax=plt.subplots(figsize=(8,3.7))\r\nfor bar_tau in [.5,1.,1.5]:\r\n    omega=np.r_[0,np.logspace(-3,3,1001),2/bar_tau]\r\n    T=k/np.sqrt(omega**2+(a+k)**2)\r\n    bound=T*np.minimum(omega*bar_tau,2)\r\n    actual=T*2*abs(np.sin(omega*bar_tau/2))\r\n    B=2*k*bar_tau/np.hypot(2,(a+k)*bar_tau)\r\n    print('bar_tau=',bar_tau,'analytic sup envelope=',B,'certificate=',B<1,'sample max=',max(bound))\r\n    assert max(abs(actual)-bound)<1e-12 and abs(max(bound)-B)<1e-12\r\n    if bar_tau==.5:ax.plot(omega[:1002],actual[:1002],label='actual error product');ax.plot(omega[:1002],bound[:1002],label='envelope product')\r\nprint('k=a=1 bar_tau=2: bound=',4/np.sqrt(20),'strict for every finite bar_tau')\r\nax.set(xlabel='rad/s',ylabel='nominal T times delay error',xlim=(0,8),ylim=(0,2));ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('small_gain_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 228,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.special import lambertw\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\nfrom scipy.optimize import brentq\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,k=1.,2.\r\nwc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc\r\ntsg=2/np.sqrt(4*k*k-(a+k)**2)\r\ndef dde(a,k,tau,times,rtol=1e-10):\r\n    times=np.asarray(times);end=float(times[-1])\r\n    if tau==0:return np.exp(-(a+k)*times)\r\n    solutions=[];ends=[];state=1.\r\n    def history(t):\r\n        if t<=1e-12:return 1.\r\n        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)\r\n        return float(solutions[j](t)[0])\r\n    for n in range(int(np.ceil(end/tau))):\r\n        left=n*tau;right=min(end,(n+1)*tau)\r\n        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))\r\n        assert sol.success\r\n        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])\r\n    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])\r\ndef pade_trace(a,k,tau,times):\r\n    if tau==0:return np.exp(-(a+k)*np.asarray(times))\r\n    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])\r\n    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 258,
+          "delim": "`",
+          "code": "# Independent method of steps with dense DOP853 history, not a Padé replacement\r\ntimes=np.linspace(0,12,601);responses=[]\r\nfig,axes=plt.subplots(1,3,figsize=(13,3.6))\r\nfor ax,tau in zip(axes,[.5,1.,1.5]):\r\n    x=dde(a,k,tau,times);xp=pade_trace(a,k,tau,times)\r\n    pp=np.roots([tau/2,1+(a-k)*tau/2,a+k])\r\n    responses.append({'tau':tau,'x12':float(x[-1]),'pade12':float(xp[-1]),'padeMaxReal':float(max(pp.real))})\r\n    print(responses[-1]);ax.plot(times,x,label='DDE');ax.plot(times,xp,'--',label='Pade');ax.set(title='tau='+str(tau),xlabel='time (s)',ylabel='state');ax.legend();ax.grid()\r\nplt.tight_layout();plt.show()\r\nprint('phi(t)=1 on [-tau,0]; no disturbance; Pade memory state initially 1')\r\nprint('history_response_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 269,
+          "delim": "`",
+          "code": "# Delay-independent sufficient Halanay estimate, including bounded time-varying delay\r\na_h,k_h,tau_h=1.,.5,1.\r\neta=brentq(lambda z:a_h-k_h*np.exp(z*tau_h)-z,0,a_h-k_h)\r\ntimes=np.linspace(0,12,601);x=dde(a_h,k_h,tau_h,times);envelope=np.exp(-eta*times)\r\nprint('a=1 k=.5 bar_tau=1: eta=',eta,'max sampled envelope violation=',max(abs(x)-envelope))\r\nassert max(abs(x)-envelope)<1e-8\r\nprint('default a1 k2 does not satisfy a>k; theorem silent, not a proof of instability')\r\nprint('zero delay default x(t)=exp(-3t); same x0 with different histories need not have same first derivative')\r\nprint('phi=1: derivative at 0 = -3; phi(t)=1+sin(pi*t/tau): derivative also -3 but later history differs')\r\nfig,ax=plt.subplots(figsize=(8,3.7));ax.plot(times,abs(x),label='constant-delay DDE |x|');ax.plot(times,envelope,'--',label='Halanay bound for all admissible bounded delays');ax.set(xlabel='time (s)',ylabel='magnitude');ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('halanay_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 343,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.special import lambertw\r\nfrom scipy.integrate import solve_ivp\r\nfrom scipy.linalg import expm\r\nfrom scipy.optimize import brentq\r\nplt.rcParams['axes.unicode_minus'] = False\r\na,k=1.,2.\r\nwc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc\r\ntsg=2/np.sqrt(4*k*k-(a+k)**2)\r\ndef dde(a,k,tau,times,rtol=1e-10):\r\n    times=np.asarray(times);end=float(times[-1])\r\n    if tau==0:return np.exp(-(a+k)*times)\r\n    solutions=[];ends=[];state=1.\r\n    def history(t):\r\n        if t<=1e-12:return 1.\r\n        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)\r\n        return float(solutions[j](t)[0])\r\n    for n in range(int(np.ceil(end/tau))):\r\n        left=n*tau;right=min(end,(n+1)*tau)\r\n        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))\r\n        assert sol.success\r\n        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])\r\n    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])\r\ndef pade_trace(a,k,tau,times):\r\n    if tau==0:return np.exp(-(a+k)*np.asarray(times))\r\n    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])\r\n    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 373,
+          "delim": "`",
+          "code": "# Four exercises, all numerical subparts independently reproducible\r\nprint('Q1 characteristic s+1+2 exp(-s tau)=0; tau_c=',tc,'omega_c=',wc)\r\nprint('Q1 phi=1 and tau>0: derivative0=-3; tau0: x12=',np.exp(-36))\r\nprint('Q2 strict SG threshold=',tsg,'tau1 bound=',4/np.sqrt(13),'actual tau1 is below exact tau_c')\r\nprint('Q3 tau1.5 Pade roots=',np.roots([.75,.25,3]))\r\nroot=-1+lambertw(-3*np.exp(1.5))/1.5\r\nprint('Q3 one exact DDE RHP root=',root,'residual=',abs(root+1+2*np.exp(-root*1.5)))\r\neta=brentq(lambda z:1-.5*np.exp(z)-z,0,.5)\r\nprint('Q4 Halanay eta=',eta,'bound at t2=',np.exp(-2*eta))\r\nprint('Q4 a=k finite constant delays stable; no positive eta from this Halanay condition')\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

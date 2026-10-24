@@ -18249,21 +18249,141 @@
           ]
         }
       ]
+    },
+    {
+      "key": "robust/delay-robust-control",
+      "title": "时滞系统控制",
+      "sourceHash": "e962e0b703e5aecef71b8257e4ee268add7f9eb54a804e6fa120382264daec16",
+      "notebooks": [
+        {
+          "id": "robust/delay-robust-control#1",
+          "title": "实验 1",
+          "index": 1,
+          "line": 84,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5036,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "a=1 k=2: omega_c= 1.7320508075688772 exact tau_c= 1.2091995761561454 Padé boundary= 2.0\n{'tau': 0.0, 'scannedRootMaxReal': -3.0, 'relativeCharacteristicResidual': 0.0}\n{'tau': 0.5, 'scannedRootMaxReal': -0.9310186622288391, 'relativeCharacteristicResidual': 6.479948195499111e-15}\n{'tau': 1.0, 'scannedRootMaxReal': -0.09248432229146641, 'relativeCharacteristicResidual': 5.404691600440671e-15}\n{'tau': 1.2091995761561454, 'scannedRootMaxReal': 0.0, 'relativeCharacteristicResidual': 1.34552135431311e-14}\n{'tau': 1.5, 'scannedRootMaxReal': 0.0656177110507119, 'relativeCharacteristicResidual': 1.5066702423638535e-14}\n{'tau': 2.0, 'scannedRootMaxReal': 0.10883499779585626, 'relativeCharacteristicResidual': 6.7880160026659145e-15}\ntau1.5 has an actual RHP characteristic root, despite stable first-order Padé poles\nexact_margin_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 23752
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 107,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "small-gain strict delay threshold= 0.7559289460184544\nbar_tau= 0.5 analytic sup envelope= 0.8 certificate= True sample max= 0.8\nbar_tau= 1.0 analytic sup envelope= 1.1094003924504583 certificate= False sample max= 1.1094003924504583\nbar_tau= 1.5 analytic sup envelope= 1.218415398160343 certificate= False sample max= 1.2184153981603427\nk=a=1 bar_tau=2: bound= 0.8944271909999159 strict for every finite bar_tau\nsmall_gain_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 42664
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/delay-robust-control#2",
+          "title": "实验 2",
+          "index": 2,
+          "line": 228,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 905,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{'tau': 0.5, 'x12': 9.216619973719086e-06, 'pade12': 1.649365345736718e-08, 'padeMaxReal': -1.5}\n{'tau': 1.0, 'x12': 0.32261708947833156, 'pade12': -0.0009340759510130005, 'padeMaxReal': -0.49999999999999994}\n{'tau': 1.5, 'x12': 2.486278452071356, 'pade12': 0.22741353664668007, 'padeMaxReal': -0.16666666666666674}\nphi(t)=1 on [-tau,0]; no disturbance; Pade memory state initially 1\nhistory_response_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 106196
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 222,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "a=1 k=.5 bar_tau=1: eta= 0.3149230578454061 max sampled envelope violation= 0.0\ndefault a1 k2 does not satisfy a>k; theorem silent, not a proof of instability\nzero delay default x(t)=exp(-3t); same x0 with different histories need not have same first derivative\nphi=1: derivative at 0 = -3; phi(t)=1+sin(pi*t/tau): derivative also -3 but later history differs\nhalanay_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 46032
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/delay-robust-control#3",
+          "title": "实验 3",
+          "index": 3,
+          "line": 343,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 characteristic s+1+2 exp(-s tau)=0; tau_c= 1.2091995761561454 omega_c= 1.7320508075688772\nQ1 phi=1 and tau>0: derivative0=-3; tau0: x12= 2.3195228302435696e-16\nQ2 strict SG threshold= 0.7559289460184544 tau1 bound= 1.1094003924504583 actual tau1 is below exact tau_c\nQ3 tau1.5 Pade roots= [-0.16666667+1.99304346j -0.16666667-1.99304346j]\nQ3 one exact DDE RHP root= (0.0656177110507119+1.4661868521073977j) residual= 4.440892098500626e-16\nQ4 Halanay eta= 0.3149230578454061 bound at t2= 0.532673764834586\nQ4 a=k finite constant delays stable; no positive eta from this Halanay condition\nall_answers_complete\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 133,
-    "notebooks": 537,
-    "enabled": 536,
+    "lessons": 134,
+    "notebooks": 540,
+    "enabled": 539,
     "codeOnly": 1
   },
   "releaseTotals": {
-    "lessons": 133,
-    "notebooks": 537,
-    "enabled": 536,
+    "lessons": 134,
+    "notebooks": 540,
+    "enabled": 539,
     "codeOnly": 1
   },
   "provenance": [
@@ -19186,6 +19306,11 @@
       "testedAt": "2026-10-24T11:28:58.017Z",
       "url": "http://127.0.0.1:20895/python-expansion.html?lesson=robust/h-infinity-filter",
       "inputPath": ".agent/semester-03/robust-09/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T12:02:11.211Z",
+      "url": "http://127.0.0.1:21195/python-expansion.html?lesson=robust/delay-robust-control",
+      "inputPath": ".agent/semester-03/robust-10/pyodide.json"
     }
   ]
 }

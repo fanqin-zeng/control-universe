@@ -1042,3 +1042,8 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### ROBUST-09 本期交付记录（2026-10-24）
 
 H∞滤波从空占位新写Phase1–4交付：九H2、四题全子问、三Notebook五cell、四滑块双图与信号SVG。标量误差两通道/零初值L2与初始储能、BRL/族内解析最优/白噪声Kalman目标/完整脉冲尾部/Euler与ZOH边界可复算；a0无有限最优、误差失稳与H∞方差落败完整保留。实际TS481配置、241独立优化/CARE/Lyapunov/SVD/quad/SymPy、严格内核/Pyodide、双生产构建/375px与历史URL证据见.agent/semester-03/robust-09/acceptance.md。既有Pages重定向后处理在私有导出目录执行，官方verify-pages205课/9旧路由通过，不改发布基础设施。rank5资源隔离，不发布Pages、不生产ROBUST-10，实际master回执见checklist。
+
+
+### ROBUST-10 本期交付记录（2026-10-24）
+
+时滞系统控制从空占位新写Phase1–4交付：九H2、四题全部子问、三Notebook五cell、三滑块双图/边界按钮与SVG。整段历史/标量常时滞精确界/小增益包络全频证书/Padé假稳定/Halanay时变充分条件分开；tau.5/1/1.5含证书保守和真实失稳，临界/k=a/零时滞边界保留。真实TS90配置/540频点/12历史轨迹两步长对独立DOP853稠密历史/expm/非线性根/复频响/SymPy、严格内核/Pyodide、双构建/375px与官方Pages205课/9旧路由验收见.agent/semester-03/robust-10/acceptance.md。有限谱扫描/时间窗/Padé不冒充证明；rank5独立资源，保留其他会话，不发布Pages、不生产ROBUST-11。真实master回执见checklist。
