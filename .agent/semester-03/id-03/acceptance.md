@@ -17,7 +17,7 @@
 | 原生/Pages真实页面 | 两页全部运行、4预设、λ上界/恢复、DOM/TOC/ID、图片、375px手机均pass，无pageerror | browser-native.json、browser-pages.json及截图 |
 | 生产/Pages构建 | 两次exit0、无MDX编译失败；按df72d0a隔离基线另复验 | build.log、pages-build.log、final-build.log、final-pages-build.log |
 | 最终目录门槛 | exit0；PASS21/WARN2/FAIL0，已登记全站告警 | final-check.log |
-| 学期3、Python策略 | exit0，96课策略hash一致，411enabled/14codeOnly | final-semester.log、python-support.log |
+| 学期3、Python策略 | exit0，98课策略hash一致，416enabled/14codeOnly | final-semester.log、python-support.log |
 | 术语/公式 | exit0；术语PASS3/WARN3/FAIL0；公式files0/tokens0 | final-glossary.log、final-math.log |
 | 证据交叉检查 | pass=true，两课源hash/代码保留/实际页/数值均核 | validation.log、validate.mjs |
 
@@ -26,3 +26,5 @@
 全课旧Notebook首次600秒预算超时（pyodide.log），失败如实保留；改逐Notebook清洁Worker后全部通过。脚本初次发现Windows默认GBK解码与CRLF比较问题，固定UTF-8、仅换行归一化后重验通过，未改实验代码。手机图例重叠与注册对象漏项已修复并重测。最终全站术语WARN为既有覆盖线索和max/min漏斜杠提示；不将其冒充本课数值错误。
 
 最终基线若因其他会话推进则重新叠加本课元数据并执行check/学期/Python策略门槛；无关课程使用各自交付验收，不重写其源码或撤销其提交。签发与数值详见讨论日志，真实提交后在下方登记hash。
+
+真实交付提交：`d76422def1c014f4aee6706439082c9c729759f1`，已进入master。共享Git索引未改；通过专用索引和master旧值比较后原子更新。最终门槛针对0deee62加本课，check PASS21/WARN2/FAIL0、Python98课/416enabled/14codeOnly；构建df72d0a加本课的源与交互不变，后续APP-01/EST-02保留各自已验证提交。
