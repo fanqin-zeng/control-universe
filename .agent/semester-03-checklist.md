@@ -323,7 +323,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| RLEARN-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/18-robot-learning/01-robot-data.md;.agent/semester-03/rlearn-01/acceptance.md;rank12，严格内核/生产页/Pyodide/构建通过，待master回执 |
+| RLEARN-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/18-robot-learning/01-robot-data.md;.agent/semester-03/rlearn-01/acceptance.md;commit:4909e2e73d53c87a1925ec8baff647c1e0b79e93 |
 | RLEARN-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | RLEARN-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

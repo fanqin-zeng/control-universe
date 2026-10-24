@@ -13,6 +13,7 @@ for(const p of ['.agent/semester-03-plan.md','.agent/semester-03-checklist.md'])
 const stripTracker=s=>s.split('\n').filter(l=>!l.includes('机器人数据 (robot-data)')&&!l.includes('**统计**')).join('\n');assert.equal(stripTracker(read('.agent/delivery-tracker.md')),stripTracker(base('.agent/delivery-tracker.md')));
 const before=JSON.parse(base('lib/python-support.json')),after=JSON.parse(read('lib/python-support.json'));delete before.lessons[key];delete after.lessons[key];assert.deepEqual(after,before);
 const rb=JSON.parse(base('docs/deployment/python-expansion-local.json')),ra=JSON.parse(read('docs/deployment/python-expansion-local.json'));
-assert.deepEqual(ra.lessons.filter(l=>l.key!==key),rb.lessons.filter(l=>l.key!==key));assert.deepEqual(ra.provenance.slice(0,-1),rb.provenance);
+assert.deepEqual(ra.lessons.filter(l=>l.key!==key),rb.lessons.filter(l=>l.key!==key));
+assert.deepEqual(rb.provenance.some(p=>p.inputPath===dir+'pyodide.json')?ra.provenance:ra.provenance.slice(0,-1),rb.provenance);
 assert.equal(ra.lessons.find(l=>l.key===key).sourceHash,'38c11fff4929e9564448a77280cb2aa280967f2f6b20b344a404a0c875f8280d');
 console.log('PASS scoped projection on '+info.base+': every other catalog lesson, plan/checklist row, tracker row, policy entry and browser proof preserved.');

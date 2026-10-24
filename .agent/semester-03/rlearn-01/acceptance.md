@@ -31,3 +31,5 @@ Phase 1–4、签发和本课验收已完成，正文10H2、五题五答、三�
 master提交、推送及真实hash在完成后追加。未发布Pages。
 
 并行提交合流复核：ID-02在本课期间进入master，最终提交投影基线更新到 `52cfac9b01bcd5b89f01d9bdd77b96ea54982ffa`。project.mjs仅提取RLEARN-01的共享行/对象，保留已提交ID-02正文、元数据与浏览器证明；audit-projection.mjs逐项证明其它课程及其记录不变（scoped-audit.log）。在该组合版本重新执行check：PASS21/WARN2/FAIL0；生产build退出0；semester退出0；glossary PASS3/WARN2/FAIL0；Python政策87课/386实验enabled/16保留代码。共享最终check另为PASS19/WARN2/FAIL5，见shared-check-final.log，未将其写成通过。
+
+真实master交付：commit:4909e2e73d53c87a1925ec8baff647c1e0b79e93，父提交c5d7cb70b08e95f96e38d3cf5f86ef086875ca34。三个原始Notebook及正文源hash不变；首次交付使用独立index，六个已被其它会话暂存的共享条目原样保留。最终的组合/构建基线及其范围分别见commit-projection.json、concurrent-rebase.json与build.log；完整构建基于52cfac9，随后主干新增的无关课程通过逐对象保留、Python政策和批量历史证据核验合流，未冒称对每次后续提交都重新全站构建。

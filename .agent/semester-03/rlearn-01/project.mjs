@@ -30,7 +30,9 @@ if(!plan.includes(exception))plan=plan.replace('<!-- S3-ORDER-EXCEPTIONS-END -->
 const proof=JSON.parse(read(source,dir+'pyodide.json')),lesson=proof.lessons.find(l=>l.key===key);
 const policy=JSON.parse(git('show',head+':lib/python-support.json'));policy.lessons[key]=JSON.parse(read(source,'lib/python-support.json')).lessons[key];put('lib/python-support.json',JSON.stringify(policy,null,2)+'\n');
 const report=JSON.parse(git('show',head+':docs/deployment/python-expansion-local.json'));
-report.lessons=report.lessons.filter(l=>l.key!==key).concat(lesson);report.provenance=[...(report.provenance||[]),{testedAt:proof.testedAt,url:proof.url,inputPath:dir+'pyodide.json'}];
+const ownIndex=report.lessons.findIndex(l=>l.key===key);
+if(ownIndex<0)report.lessons.push(lesson);else report.lessons[ownIndex]=lesson;
+if(!(report.provenance||[]).some(p=>p.inputPath===dir+'pyodide.json'&&p.testedAt===proof.testedAt))report.provenance=[...(report.provenance||[]),{testedAt:proof.testedAt,url:proof.url,inputPath:dir+'pyodide.json'}];
 report.totals={lessons:report.lessons.length,notebooks:report.lessons.reduce((s,l)=>s+l.notebooks.length,0),enabled:report.lessons.reduce((s,l)=>s+l.notebooks.filter(n=>n.status==='passed').length,0),codeOnly:report.lessons.reduce((s,l)=>s+l.notebooks.filter(n=>n.status==='code').length,0)};
 report.releaseTotals={lessons:Object.keys(policy.lessons).length,notebooks:Object.values(policy.lessons).reduce((s,l)=>s+l.notebooks.length,0),enabled:Object.values(policy.lessons).reduce((s,l)=>s+l.notebooks.filter(n=>n.status==='enabled').length,0),codeOnly:Object.values(policy.lessons).reduce((s,l)=>s+l.notebooks.filter(n=>n.status==='code').length,0)};
 put('docs/deployment/python-expansion-local.json',JSON.stringify(report,null,2)+'\n');
