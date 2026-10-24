@@ -38,3 +38,5 @@ check两项WARN为跨章motion-planning同名及16门旧正文缺日志；glossa
 最终master组合、提交回执与push状态在实际操作完成后追加；完整构建的基线与后来仅合入的并行回执/元数据检查分别记录，不声称对未构建组合重新构建。
 
 最终组合检查基线：3b54cd51cf71de061cebc1995d066d865a0ebbec；check-final.log、semester-final.log、audit-final.log、python-policy-final.log均exit0。完整构建仍以build-origin.json列出的4ed3026组合为准；后续并行课内容未冒称重构建，本课正文/共享运行时未变。
+
+实际交付提交：c304b38d5b7c52726558104f3ae19677632b3486，parent 3b54cd51cf71de061cebc1995d066d865a0ebbec，已进入master。delivery-commit.json列明全部纳入文件与保留的并行索引条目。最终组合目录、学期、隔离、Python政策检查均退出0；不发布gh-pages。
