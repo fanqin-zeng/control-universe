@@ -2,6 +2,7 @@
 
 > **这张表是机器读的**。`node scripts/glossary.mjs check` 的 **C1 / C1b / C5** 直接解析本文件
 > `<!-- REGISTER-START -->` … `| $\Psi$ | 指数极坐标映射（math/diff-geometry） | 1 门 / 1 次（MATH-15引入时） | 无冲突 | 仅本课局部反例：Jacobian可逆但角度周期，非全局坐标；不覆盖预测矩阵。 |
+| $\chi$ | 无迹卡尔曼滤波的状态sigma点，带下标区分节点 | EST-05实测：1门 / 13次 | 本课局部定义，与随机粒子或真实状态轨迹不同 | 保留 $\chi_i$；测量用重生成点写 $\tilde\chi_i$，首现说明两套权重与矩阵平方根方向 |
 <!-- REGISTER-END -->` 之间的登记表，与
 > `<!-- ABBREV-START -->` … `<!-- ABBREV-END -->` 之间的缩写判定表。
 > **哨兵必须独占一行**：loader 走 `sentinelSlice()`，判据是「整行 trim 后等于哨兵」，
@@ -177,6 +178,7 @@ $N$ 的"Nyquist 圈数"义 → $\nu$……）。落到正文是 §3.4 那张 21 
 | $\Pi$ | 投影算子 $\Pi_\Omega(\cdot)$（把自适应律限制在 $\Omega$ 内） | 1 门 / 1 次 | 无冲突 | 保留。**必须**写 $\Pi_\Omega$ 带集合下标 |
 
 | $\Psi$ | 指数极坐标映射（math/diff-geometry） | 1 门 / 1 次（MATH-15引入时） | 无冲突 | 仅本课局部反例：Jacobian可逆但角度周期，非全局坐标；不覆盖预测矩阵。 |
+| $\chi$ | 无迹卡尔曼滤波的状态sigma点，带下标区分节点 | EST-05实测：1门 / 13次 | 本课局部定义，与随机粒子或真实状态轨迹不同 | 保留 $\chi_i$；测量用重生成点写 $\tilde\chi_i$，首现说明两套权重与矩阵平方根方向 |
 <!-- REGISTER-END -->
 
 ---

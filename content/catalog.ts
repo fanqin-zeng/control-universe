@@ -4265,13 +4265,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "unscented-kalman-filter",
         "title": "无迹卡尔曼滤波",
+        "subsections": [
+  {
+    "slug": "问题与模型",
+    "title": "问题与模型"
+  },
+  {
+    "slug": "sigma点与两套权重",
+    "title": "sigma点与两套权重"
+  },
+  {
+    "slug": "无迹变换怎样传播矩",
+    "title": "无迹变换怎样传播矩"
+  },
+  {
+    "slug": "预测与校正的完整递推",
+    "title": "预测与校正的完整递推"
+  },
+  {
+    "slug": "一拍校正的手算与复算",
+    "title": "一拍校正的手算与复算"
+  },
+  {
+    "slug": "交互探索与公平比较",
+    "title": "交互探索与公平比较"
+  },
+  {
+    "slug": "数值与实现边界",
+    "title": "数值与实现边界"
+  },
+  {
+    "slug": "小结",
+    "title": "小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
         "prereq": [
           "estimation/kalman-filter",
           "math/probability-basics"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "particle-filter",

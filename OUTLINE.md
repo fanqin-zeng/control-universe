@@ -148,7 +148,7 @@
 | 10.2 | 统计估计 | least-squares-ml | ✅ 已交付 v1.3 | grad | theory | 12 | estimation/estimation-problem<br>math/convex-optimization<br>math/probability-basics |
 | 10.3 | 卡尔曼滤波 | kalman-filter | ✅ 已交付 v1.3 | grad | theory | 13 | estimation/least-squares-ml<br>modern/controllability-observability<br>math/stochastic-processes |
 | 10.4 | 扩展卡尔曼滤波 | extended-kalman-filter | ✅ 已交付 v1.3 | grad | theory | 14 | estimation/kalman-filter<br>math/multivariable-calculus<br>nonlinear/lyapunov-stability |
-| 10.5 | 无迹卡尔曼滤波 | unscented-kalman-filter | ⬜ 骨架（占位页） | grad | theory | 14 | estimation/kalman-filter<br>math/probability-basics |
+| 10.5 | 无迹卡尔曼滤波 | unscented-kalman-filter | ✅ 已交付 v1.3 | grad | theory | 14 | estimation/kalman-filter<br>math/probability-basics |
 | 10.6 | 粒子滤波 | particle-filter | ⬜ 骨架（占位页） | grad | theory | 12 | estimation/estimation-problem<br>math/stochastic-processes<br>math/numerical-methods |
 | 10.7 | 多传感器融合 | sensor-fusion | ⬜ 骨架（占位页） | grad | theory | 15 | estimation/kalman-filter<br>estimation/extended-kalman-filter |
 | 10.8 | 状态估计案例 | estimation-case-study | ⬜ 骨架（占位页） | grad | case | 16 | estimation/sensor-fusion<br>estimation/particle-filter |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 102（status = v1.3）
+- **已交付 v1.3**: 103（status = v1.3）
 - **有正文待审校**: 10（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 93（status = empty，渲染占位页）
+- **骨架占位**: 92（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 103（= draft 10 + empty 93 + 无 status 0）
-- **有 MDX 正文**: 112
-- **catalog 小节总数**: 1232
-- **讨论日志**: 125 篇（覆盖 102 门；有 MDX 无日志 10 门）
-- **交互组件**: 112 个文件（被正文引用 112，孤儿 0）
+- **未完成 v1.3**: 102（= draft 10 + empty 92 + 无 status 0）
+- **有 MDX 正文**: 113
+- **catalog 小节总数**: 1242
+- **讨论日志**: 126 篇（覆盖 103 门；有 MDX 无日志 10 门）
+- **交互组件**: 113 个文件（被正文引用 113，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

@@ -1,0 +1,63 @@
+{
+  "source": "content/estimation/unscented-kalman-filter.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 128,
+      "title": "sigma点、矩与过程噪声",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.integrate import quad\r\nimport math\r\n\r\ndef ut(mu, p, fn, alpha=1.0, beta=2.0, kappa=0.0):\r\n    c=alpha**2*(1+kappa)\r\n    x=np.array([mu,mu+np.sqrt(c*p),mu-np.sqrt(c*p)])\r\n    wm=np.array([1-1/c,.5/c,.5/c]);wc=wm.copy();wc[0]+=1-alpha**2+beta\r\n    y=fn(x);mean=float(wm@y)\r\n    return x,wm,wc,y,mean,float(wc@((y-mean)**2)),float(wc@((x-mu)*(y-mean)))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 142,
+          "delim": "`",
+          "code": "x,wm,wc,y,m,v,C=ut(2,.25,lambda x:x*x)\r\nprint(\"sigma_points_weights\",x.tolist(),wm.tolist(),wc.tolist())\r\nprint(\"input_mean_variance\",wm@x,wc@((x-2)**2))\r\nprint(\"square_values_mean_variance_cross\",y.tolist(),m,v,C)\r\nprint(\"central_variance_contribution\",wc[0]*(y[0]-m)**2)\r\nassert np.allclose([m,v,C],[4.25,4.125,1])\r\na=ut(0,1,lambda x:x**3,alpha=.001)\r\nprint(\"small_alpha_weights\",a[1].tolist(),a[2].tolist())\r\ncube=ut(0,1,lambda x:x**3)\r\nprint(\"cube_UT_EKF_true_variance\",cube[5],0,15)\r\nassert cube[5]==1\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 154,
+          "delim": "`",
+          "code": "pred=ut(2,.25,lambda x:x+.1*x*x)\r\nt,w=np.polynomial.hermite.hermgauss(24);w=w/np.sqrt(np.pi);x=2+np.sqrt(.5)*t;y=x+.1*x*x\r\nmean=float(w@y);var=float(w@((y-mean)**2))+.04\r\nprint(\"prediction_UT_GH\",pred[4],pred[5]+.04,mean,var)\r\nassert np.allclose([pred[4],pred[5]+.04],[mean,var],atol=1e-12)\r\nPm=.25+.04;S=Pm+1;K=Pm/S\r\nprint(\"Q_included_predicted_S_C_K_P\",Pm,S,Pm,K,Pm-Pm*Pm/S,\"wrong_gain\",.25/1.25)\r\nassert abs(K-29/129)<1e-12\r\nP=np.array([[1,.6],[.6,1]]);L=np.linalg.cholesky(P)\r\nprint(\"lower_L\",L.tolist(),\"correct_columns\",(L@L.T).tolist(),\"wrong_rows\",(L.T@L).tolist())\r\nassert np.allclose(L@L.T,P)\r\nprint(\"prediction_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 180,
+      "title": "UKF校正与近似边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom scipy.integrate import quad\r\nimport math\r\n\r\ndef ut(mu, p, fn, alpha=1.0, beta=2.0, kappa=0.0):\r\n    c=alpha**2*(1+kappa)\r\n    x=np.array([mu,mu+np.sqrt(c*p),mu-np.sqrt(c*p)])\r\n    wm=np.array([1-1/c,.5/c,.5/c]);wc=wm.copy();wc[0]+=1-alpha**2+beta\r\n    y=fn(x);mean=float(wm@y)\r\n    return x,wm,wc,y,mean,float(wc@((y-mean)**2)),float(wc@((x-mu)*(y-mean)))\r\n\r\ndef reference(mu,p,r,z,kind):\r\n    h=lambda x:x*x if kind==\"square\" else x\r\n    log=lambda x:-(x-mu)**2/(2*p)-(z-h(x))**2/(2*r)\r\n    roots=np.roots([2*p,0,r-2*p*z,-r*mu]) if kind==\"square\" else np.array([(r*mu+p*z)/(r+p)])\r\n    modes=sorted(float(t.real) for t in roots if abs(t.imag)<1e-9);shift=max(log(t) for t in modes)\r\n    cuts=[-np.inf]+sorted(set(modes))+[np.inf]\r\n    def I(n):\r\n        return sum(quad(lambda x:x**n*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12)[0] for a,b in zip(cuts,cuts[1:]))\r\n    mass=I(0);m=I(1)/mass\r\n    return m,I(2)/mass-m*m\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 205,
+          "delim": "`",
+          "code": "for mu,p,r,z,kind in [(2,.25,1,5,\"square\"),(2,.25,4,5,\"square\"),(-2,.25,1,5,\"square\"),(0,1,.25,4,\"square\"),(2,.25,1,5,\"linear\")]:\r\n    h=lambda x:x*x if kind==\"square\" else x\r\n    point=ut(mu,p,h);zh,v,C=point[4:];S=v+r;K=C/S;mean=mu+K*(z-zh);var=p-C*C/S\r\n    H=2*mu if kind==\"square\" else 1;hm=h(mu);Ke=p*H/(H*H*p+r);me=mu+Ke*(z-hm);ve=p-p*p*H*H/(H*H*p+r)\r\n    ref,refv=reference(mu,p,r,z,kind)\r\n    print(\"case_update\",mu,p,r,z,kind,\"zh_S_C_K_innovation\",zh,S,C,K,z-zh,\"UKF\",mean,var,\"EKF\",me,ve,\"reference\",ref,refv)\r\n    print(\"absolute_errors_UKF_EKF_mean_variance\",abs(mean-ref),abs(me-ref),abs(var-refv),abs(ve-refv))\r\n    if kind==\"linear\":assert np.allclose([mean,var,me,ve,ref,refv],[2.6,.2,2.6,.2,2.6,.2],atol=1e-12)\r\n    if mu==0:assert K==0 and var==1 and abs(refv-3.841876221594494)<1e-9\r\nprint(\"posterior_reference_checked\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 216,
+          "delim": "`",
+          "code": "# Closed Gaussian moments are independent of sigma-point summation.\r\nfor mu,p in [(2,.25),(-2,.25),(0,1)]:\r\n    point=ut(mu,p,lambda x:x*x)\r\n    exact=[mu*mu+p,4*mu*mu*p+2*p*p,2*mu*p]\r\n    print(\"analytic_square_moments\",mu,p,exact)\r\n    assert np.allclose(point[4:],exact,atol=1e-12)\r\nt,w=np.polynomial.hermite.hermgauss(24);w=w/np.sqrt(np.pi);x=np.sqrt(2)*t\r\nprint(\"GH_cube_mean_variance\",w@(x**3),w@(x**6))\r\nassert abs(w@(x**6)-15)<1e-12\r\npoints=np.array([[0,0],[np.sqrt(2),0],[0,np.sqrt(2)],[-np.sqrt(2),0],[0,-np.sqrt(2)]])\r\nvalues=points[:,0]*points[:,1]\r\nprint(\"2D_product_sigma_outputs_UT_true_variance\",values.tolist(),0,1)\r\nassert np.all(values==0)\r\nprint(\"all_UKF_checks_passed\")\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

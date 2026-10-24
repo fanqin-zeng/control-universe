@@ -88,6 +88,7 @@
 | MPC-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-05;EST-06;EST-07;EST-08;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-04，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-04/acceptance.md |
 | ID-05 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-05，rank3；保留并行课程，仅依赖已交付ID-04、传递函数、随机过程和PID | .agent/semester-03/id-05/acceptance.md |
 | ML-06 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-06，rank2；ML-05已交付，保留并行实现课，仅依赖已交付时序模型 | .agent/semester-03/ml-06/acceptance.md |
+| EST-05 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确要求继续EST-05，rank4；其它会话并行，保留检查点；仅依赖已交付KF/概率基础 | .agent/semester-03/est-05/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -905,3 +906,9 @@ rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独�
 ### MPC-04 学期3交付（2026-10-24）
 
 约束处理按重构Phase1–4完成，保留12H2、全部旧标题ID、四类约束/软硬/KKT/可行性/优先级/原40步主题及五题全部目标。纠正物理界软化、有限二次罚精确性、下界法向与活跃零乘子、14行计数、公共松弛5、层级恢复和原实验维度/输出约束。新增Explorer/SVG，三Notebook六cell；952组实际TS对独立LP、目标导数及强对偶证书，40QP对独立矩阵幂/对偶证书。严格内核、Pyodide、普通/Pages本地页面及375px验收见.agent/semester-03/mpc-04/acceptance.md；真实master回执见全局checklist。rank6隔离19096/9036/19196/19296/缓存/索引，保留并行与用户修改；本轮顺序例外独立登记，不发布Pages、不生产MPC-05。
+
+<!-- EST-05-RECEIPT-BEGIN -->
+### EST-05 学期3交付（2026-10-24）
+
+无迹卡尔曼滤波从空占位按新写Phase1—4完成：10H2/四题全部子问、2Notebook4cell、UnscentedKalmanExplorer、sigma点SVG。两套权重、Cholesky列方向、预测后重取点含Q、交叉协方差与Gaussian近似边界清楚；保留默认方差落败、线性持平、零点双峰失败、三次/二维乘积反例。72组真实TS/17352点对独立解析矩与无穷quad最大差1.563194e-13；严格内核、Pyodide、普通/完整build:pages两实页及375px通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-05/acceptance.md；真实master回执见checklist。不发布Pages、不生产EST-06。
+<!-- EST-05-RECEIPT-END -->

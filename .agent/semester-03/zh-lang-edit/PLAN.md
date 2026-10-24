@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前70课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前71课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -101,7 +101,7 @@
 | 90 | EST-02 | 统计估计 | content/estimation/least-squares-ml.mdx | 已完成 | 待润色 | .agent/semester-03/est-02/acceptance.md |
 | 91 | EST-03 | 卡尔曼滤波 | content/estimation/kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-03/acceptance.md |
 | 92 | EST-04 | 扩展卡尔曼滤波 | content/estimation/extended-kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-04/acceptance.md |
-| 93 | EST-05 | 无迹卡尔曼滤波 | content/estimation/unscented-kalman-filter.mdx | 待完成 | 待生产 | — |
+| 93 | EST-05 | 无迹卡尔曼滤波 | content/estimation/unscented-kalman-filter.mdx | 已完成 | 待润色 | .agent/semester-03/est-05/acceptance.md |
 | 94 | EST-06 | 粒子滤波 | content/estimation/particle-filter.mdx | 待完成 | 待生产 | — |
 | 95 | EST-07 | 多传感器融合 | content/estimation/sensor-fusion.mdx | 待完成 | 待生产 | — |
 | 96 | EST-08 | 状态估计案例 | content/estimation/estimation-case-study.mdx | 待完成 | 待生产 | — |
