@@ -188,3 +188,6 @@
 
 
 收尾实测：rank5内核3→0，20495/20595/20695/8995四端口全部释放，见kernel-cleanup.json与ports-cleanup.json；共享缓存、其他会话进程及暂存均保留。共享工作树末次check仍因并行在途元数据退出1（6项FAIL），semester因RL-02列数退出1；仅本课提交投影六项均退出0。
+
+
+真实master交付提交：34eaae4a5e61c587b76a22efec5d3791ed9148d8。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
