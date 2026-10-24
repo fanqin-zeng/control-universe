@@ -1,0 +1,66 @@
+{
+  "source": "content/identification/frequency-domain-id.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 87,
+      "title": "默认频响与谱读数",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nL, fs = 64, 20.0\r\nlines = np.array([1,4,8,12,20,28])\r\ndef experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):\r\n    bins = lines[lines != 8] if missing else lines\r\n    n = np.arange(L)\r\n    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)\r\n    w = 2*np.pi*np.arange(L)/L\r\n    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))\r\n    y = np.fft.ifft(np.fft.fft(u)*G).real\r\n    state = int(seed)\r\n    def noise(size):\r\n        nonlocal state\r\n        vals = []\r\n        for _ in range(size):\r\n            state = (1664525*state+1013904223) % 2**32\r\n            vals.append(np.sqrt(12)*(state/2**32-.5))\r\n        return np.array(vals)\r\n    inputs, outputs = [], []\r\n    for _ in range(periods):\r\n        inputs.append(u+input_noise*noise(L))\r\n        outputs.append(y+output_noise*noise(L))\r\n    inputs, outputs = np.array(inputs), np.array(outputs)\r\n    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)\r\n    suu = np.mean(abs(U)**2,axis=0)/L\r\n    syy = np.mean(abs(Y)**2,axis=0)/L\r\n    suy = np.mean(U.conj()*Y,axis=0)/L\r\n    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)\r\n    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)\r\n    H[valid] = suy[valid]/suu[valid]\r\n    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))\r\n    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 122,
+          "delim": "`",
+          "code": "r = experiment()\r\nk = 8\r\nrow = dict(hz=k*fs/L, omega=2*np.pi*k/L, true_gain=float(abs(r['G'][k])), true_phase=float(np.angle(r['G'][k],deg=True)), gain=float(abs(r['H'][k])), phase=float(np.angle(r['H'][k],deg=True)), coherence=float(r['C'][k]), power=float(r['suu'][k]), samples=8*L, duration=8*L/fs, grid=fs/L, delay_phase=-360*k/L, omitted_delay_phase=float(np.angle(r['G'][k],deg=True)+360*k/L))\r\nprint(row)\r\nprint('default_frequency_checks_passed')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 137,
+      "title": "窗与单段相干度边界",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nL, fs = 64, 20.0\r\nlines = np.array([1,4,8,12,20,28])\r\ndef experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):\r\n    bins = lines[lines != 8] if missing else lines\r\n    n = np.arange(L)\r\n    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)\r\n    w = 2*np.pi*np.arange(L)/L\r\n    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))\r\n    y = np.fft.ifft(np.fft.fft(u)*G).real\r\n    state = int(seed)\r\n    def noise(size):\r\n        nonlocal state\r\n        vals = []\r\n        for _ in range(size):\r\n            state = (1664525*state+1013904223) % 2**32\r\n            vals.append(np.sqrt(12)*(state/2**32-.5))\r\n        return np.array(vals)\r\n    inputs, outputs = [], []\r\n    for _ in range(periods):\r\n        inputs.append(u+input_noise*noise(L))\r\n        outputs.append(y+output_noise*noise(L))\r\n    inputs, outputs = np.array(inputs), np.array(outputs)\r\n    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)\r\n    suu = np.mean(abs(U)**2,axis=0)/L\r\n    syy = np.mean(abs(Y)**2,axis=0)/L\r\n    suy = np.mean(U.conj()*Y,axis=0)/L\r\n    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)\r\n    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)\r\n    H[valid] = suy[valid]/suu[valid]\r\n    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))\r\n    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 172,
+          "delim": "`",
+          "code": "n = np.arange(L)\r\ndef leakage(cycles,window):\r\n    v = np.exp(2j*np.pi*cycles*n/L)*window\r\n    power = abs(np.fft.fft(v))**2\r\n    return float(1-power[8]/power.sum())\r\nhann = .5-.5*np.cos(2*np.pi*n/L)\r\nrow = dict(rect_integer=leakage(8,np.ones(L)),rect_offgrid=leakage(8.5,np.ones(L)),hann_integer=leakage(8,hann),hann_offgrid=leakage(8.5,hann),grid=fs/L,zero_padded_grid=fs/(4*L))\r\nr = experiment(output_noise=.8,periods=1)\r\nrow['single_segment_coherence'] = float(r['C'][8])\r\nrow['missing_refused'] = bool(np.isnan(experiment(missing=True)['H'][8]))\r\nrow['input_noise_target_factor'] = 16/(16+.8**2)\r\nrow['input_noise_target_gain'] = float(abs(r['G'][8])*row['input_noise_target_factor'])\r\nassert np.allclose(r['C'][lines],1)\r\nprint(row)\r\nprint('leakage_and_boundary_checks_passed')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 203,
+      "title": "32种子三工况：保留全部记录",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nL, fs = 64, 20.0\r\nlines = np.array([1,4,8,12,20,28])\r\ndef experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):\r\n    bins = lines[lines != 8] if missing else lines\r\n    n = np.arange(L)\r\n    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)\r\n    w = 2*np.pi*np.arange(L)/L\r\n    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))\r\n    y = np.fft.ifft(np.fft.fft(u)*G).real\r\n    state = int(seed)\r\n    def noise(size):\r\n        nonlocal state\r\n        vals = []\r\n        for _ in range(size):\r\n            state = (1664525*state+1013904223) % 2**32\r\n            vals.append(np.sqrt(12)*(state/2**32-.5))\r\n        return np.array(vals)\r\n    inputs, outputs = [], []\r\n    for _ in range(periods):\r\n        inputs.append(u+input_noise*noise(L))\r\n        outputs.append(y+output_noise*noise(L))\r\n    inputs, outputs = np.array(inputs), np.array(outputs)\r\n    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)\r\n    suu = np.mean(abs(U)**2,axis=0)/L\r\n    syy = np.mean(abs(Y)**2,axis=0)/L\r\n    suy = np.mean(U.conj()*Y,axis=0)/L\r\n    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)\r\n    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)\r\n    H[valid] = suy[valid]/suu[valid]\r\n    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))\r\n    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 238,
+          "delim": "`",
+          "code": "summaries = []\r\nfor label, sy, su in [('noiseless',0.,0.),('output',.8,0.),('input',0.,.8)]:\r\n    errors = {}\r\n    for periods in [1,4,16]:\r\n        vals = []\r\n        for seed in range(20261024,20261056):\r\n            r = experiment(output_noise=sy,input_noise=su,periods=periods,seed=seed)\r\n            vals.append(float(np.sqrt(np.mean(abs(r['H'][lines]-r['G'][lines])**2))))\r\n        errors[periods] = dict(median=float(np.median(vals)), q10=float(np.quantile(vals,.1)), q90=float(np.quantile(vals,.9)), values=vals)\r\n    improved = sum(x<y for x,y in zip(errors[16]['values'],errors[1]['values']))\r\n    summaries.append(dict(label=label,errors=errors,improved=improved))\r\nprint(summaries)\r\nprint('all_32_frequency_seeds_reported')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

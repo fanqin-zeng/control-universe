@@ -135,7 +135,7 @@
 | 9.3 | 最小二乘辨识 | least-squares-rls | ✅ 已交付 v1.3 | undergrad | theory | 11 | identification/model-structures<br>math/matrix-decomposition<br>math/probability-basics |
 | 9.4 | 持久激励 | persistent-excitation | ✅ 已交付 v1.3 | grad | theory | 12 | identification/least-squares-rls |
 | 9.5 | 闭环辨识 | instrumental-variable | ✅ 已交付 v1.3 | grad | theory | 13 | identification/persistent-excitation<br>classic/transfer-function<br>math/stochastic-processes<br>classic/pid-controller |
-| 9.6 | 频域辨识 | frequency-domain-id | ⬜ 骨架（占位页） | grad | theory | 11 | identification/model-structures<br>classic/frequency-domain-analysis<br>math/stochastic-processes<br>classic/frequency-response-design |
+| 9.6 | 频域辨识 | frequency-domain-id | ✅ 已交付 v1.3 | grad | theory | 11 | identification/model-structures<br>classic/frequency-domain-analysis<br>math/stochastic-processes<br>classic/frequency-response-design |
 | 9.7 | 子空间辨识 | subspace-id | ⬜ 骨架（占位页） | grad | theory | 12 | identification/least-squares-rls<br>modern/controllability-observability<br>math/matrix-decomposition |
 | 9.8 | 非线性辨识 | nonlinear-data-driven-id | ⬜ 骨架（占位页） | grad | learning | 13 | identification/persistent-excitation<br>machine-learning/autodiff-optimization<br>machine-learning/sequence-models<br>nonlinear/nonlinear-characteristics |
 | 9.9 | 系统辨识案例 | identification-case-study | ⬜ 骨架（占位页） | grad | case | 14 | identification/instrumental-variable<br>identification/frequency-domain-id<br>machine-learning/learning-evaluation |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 106（status = v1.3）
+- **已交付 v1.3**: 107（status = v1.3）
 - **有正文待审校**: 8（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 91（status = empty，渲染占位页）
+- **骨架占位**: 90（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 99（= draft 8 + empty 91 + 无 status 0）
-- **有 MDX 正文**: 114
-- **catalog 小节总数**: 1252
-- **讨论日志**: 129 篇（覆盖 106 门；有 MDX 无日志 8 门）
-- **交互组件**: 116 个文件（被正文引用 116，孤儿 0）
+- **未完成 v1.3**: 98（= draft 8 + empty 90 + 无 status 0）
+- **有 MDX 正文**: 115
+- **catalog 小节总数**: 1263
+- **讨论日志**: 130 篇（覆盖 107 门；有 MDX 无日志 8 门）
+- **交互组件**: 117 个文件（被正文引用 117，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

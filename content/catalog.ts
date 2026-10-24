@@ -3996,7 +3996,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "先把频率和记录说清",
+            "title": "先把频率和记录说清"
+          },
+          {
+            "slug": "从dft比值到互谱估计",
+            "title": "从DFT比值到互谱估计"
+          },
+          {
+            "slug": "相干度能说明什么",
+            "title": "相干度能说明什么"
+          },
+          {
+            "slug": "贯穿算例与交互实验",
+            "title": "贯穿算例与交互实验"
+          },
+          {
+            "slug": "记录长度与窗的代价",
+            "title": "记录长度与窗的代价"
+          },
+          {
+            "slug": "噪声位置决定偏差",
+            "title": "噪声位置决定偏差"
+          },
+          {
+            "slug": "一次可复核的实验流程",
+            "title": "一次可复核的实验流程"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "subspace-id",

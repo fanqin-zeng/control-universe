@@ -1,0 +1,285 @@
+---
+title: 频域辨识
+description: 从输入输出记录估计频率响应，理解互谱平均、平方相干度、泄漏与噪声位置的边界。
+---
+
+# 频域辨识
+
+## 引言
+
+给小风机的电压缓慢起伏，转速通常跟得上；起伏太快，转速变化就变小，还会落后。若手里只有电压和转速的采样记录，怎样画出这种“跟随能力”随频率变化的曲线？又怎样识别一条看起来平滑、实际没有输入信息支撑的曲线？
+
+[频域分析](/classic/frequency-domain-analysis)从已知模型算频率响应，本课反过来从数据估计它。[模型结构](/identification/model-structures)提供对象与噪声的区分，[随机过程](/math/stochastic-processes)提供相关与谱的背景，[频域校正设计](/classic/frequency-response-design)解释为什么关心幅值和相位。以下局部定义DFT与互谱约定，所需计算都在本页。读完应能说明比值的条件、复算H1估计、识别相干度陷阱，并制定一次有边界的频域实验。
+
+采用归一化、开环、线性时不变的单输入单输出教学对象。风机只是动机，下面的参数与数据是可复算的合成例，不是某台设备的实测标定。
+
+## 先把频率和记录说清
+
+采样间隔为 $T_s$，采样率 $f_s=1/T_s$。一段 $L$ 点记录的离散傅里叶变换（DFT）定义为：
+
+$$
+U[k]=\sum_{n=0}^{L-1}u[n]e^{-j2\pi kn/L},\qquad
+f_k=\frac{kf_s}{L},\quad \omega_k=\frac{2\pi k}{L}.
+$$
+
+$f_k$ 的单位是Hz；$\omega_k$ 是每采样弧度，不能直接当每秒弧度。FFT只是计算DFT的快速算法。本页取 $L=64$、$f_s=20$ Hz，所以 $k=8$ 对应 $2.5$ Hz、$\omega=\pi/4$，频率网格间隔 $0.3125$ Hz。真实信号只展示正频率；本课既不估计直流，也不使用奈奎斯特点。
+
+对周期稳态输入，若对象稳定、记录恰好覆盖完整周期、无额外扰动，则各激励频点满足 $Y[k]=G(e^{j\omega_k})U[k]$。于是可取经验传递函数估计（ETFE）$Y[k]/U[k]$。这不是任意有限记录的恒等式：启动初值、截断边界、未整周期和噪声都会破坏它；$U[k]$ 为零或太小还会让比值无定义或不稳定。先检查信息，再做除法。
+
+## 从DFT比值到互谱估计
+
+把第 $m$ 个周期或等长分段的DFT记作 $U_m,Y_m$。本页先用矩形窗、每周期一段、不重叠、不去均值；只分析已知零均值多正弦的非零频点。定义双边谱估计：
+
+$$
+\hat S_{uu}=\frac{1}{MLf_s}\sum_{m=1}^M|U_m|^2,\quad
+\hat S_{yy}=\frac{1}{MLf_s}\sum_{m=1}^M|Y_m|^2,\quad
+\hat S_{uy}=\frac{1}{MLf_s}\sum_{m=1}^M\overline{U_m}Y_m.
+$$
+
+上横线表示复共轭；此处 $S_{uy}$ 的顺序是“共轭输入乘输出”。若换成共轭输出乘输入，相位符号会反过来。以下比值中的公共比例相消；代码存储 $f_s\hat S$，因此代码的power是归一化bin功率，不是每Hz的谱密度，不能拿它直接积分解释方差。
+
+当输入测量准确、输出为 $y=Gu+v$，且输入与输出扰动在谱上正交，即 $S_{uv}=0$ 时：
+
+$$
+S_{uy}=G S_{uu}+S_{uv}=G S_{uu},\qquad
+\hat G_{H1}=\frac{\hat S_{uy}}{\hat S_{uu}}.
+$$
+
+先对复数互谱和实数功率谱分别求平均，再相除；不要先平均幅值或相位。对一般分段数据，平均各段 $Y_m/U_m$ 与H1不同；在本例同一多正弦周期输入完全重复、无输入测量噪声时，分母恰好相同，两种做法才会相等。
+
+一般随机平稳记录需适当窗、分段及平滑策略；单纯延长一个未经平滑的随机记录，并不自动让逐点谱估计一致。推导里的总体谱恒等式，也不是有限样本比值无偏的承诺。
+
+## 相干度能说明什么
+
+平方相干度（magnitude-squared coherence）定义为：
+
+$$
+\hat\gamma^2_{uy}=\frac{|\hat S_{uy}|^2}{\hat S_{uu}\hat S_{yy}},\qquad 0\leq\hat\gamma^2_{uy}\leq1.
+$$
+
+不等式来自Cauchy–Schwarz；分母必须严格为正。在准确输入、开环、加性且正交的输出噪声模型下，总体相干度为 $|G|^2S_{uu}/(|G|^2S_{uu}+S_{vv})$。它衡量该频点可由输入线性解释的输出功率比例；不是“模型正确概率”，也不是参数置信区间。
+
+特别危险的是只取一段：$|\overline UY|^2=|U|^2|Y|^2$，只要分母非零，估计相干度就恒为1，哪怕输出噪声很大。即使平均后很高，也不能排除输入测量误差、共同干扰或闭环相关；低相干则提示检查噪声、非线性、时变、未激励频带和记录处理，不能只凭一个阈值判“对象非线性”。
+
+## 贯穿算例与交互实验
+
+对象及频率响应为：
+
+$$
+y[n]=0.7y[n-1]+0.3u[n-1],\qquad
+G(e^{j\omega})=\frac{0.3e^{-j\omega}}{1-0.7e^{-j\omega}}.
+$$
+
+延迟明确为一拍。输入是六个单位幅值正弦的和，周期64点，激励bin为 $1,4,8,12,20,28$。每个周期的真实输入重复；初值精确选为周期稳态，不包含启动过程。默认记录8周期，共512点、25.6s。输出叠加独立序列模拟的零均值均匀测量噪声，标准差0.2，固定种子20261024；生成器和抽样顺序写在Notebook。种子控制复现，不代表对真实噪声分布的验证。
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}><div style={{minWidth:680}}>
+
+![周期激励经过对象，输入和输出各自可能含测量噪声；配对分段后分别DFT，再平均互谱与功率谱。](/diagrams/identification/frequency-measurement.svg)
+
+</div></div>
+
+在2.5Hz，真幅值0.424243、真相位−89.424168°。默认有限记录得到H1幅值0.416676、相位−91.806364°、平方相干度0.985294。代码归一化输入bin功率为16。这些是同一记录的读数，不能把0.985294解释为“误差不到百分之几”。
+
+<FrequencyIdentificationExplorer />
+
+固定坐标轴便于比较；非激励线不画估计点。“缺少该频点”删除bin8：即使输入传感器噪声在这里有功率，也拒绝将它当作对象响应。实际未知输入谱要同时依据激励设计、噪声底和输入功率门槛判断，不能直接照搬本例的已知bin掩码。灰线使用已知教学模型绘制，圆点之间没有额外的实验信息；用平滑线连起来也不能补出未测频带。
+
+<JupyterNotebook
+  title="默认频响与谱读数"
+  setupCode={`import numpy as np
+L, fs = 64, 20.0
+lines = np.array([1,4,8,12,20,28])
+def experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):
+    bins = lines[lines != 8] if missing else lines
+    n = np.arange(L)
+    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)
+    w = 2*np.pi*np.arange(L)/L
+    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))
+    y = np.fft.ifft(np.fft.fft(u)*G).real
+    state = int(seed)
+    def noise(size):
+        nonlocal state
+        vals = []
+        for _ in range(size):
+            state = (1664525*state+1013904223) % 2**32
+            vals.append(np.sqrt(12)*(state/2**32-.5))
+        return np.array(vals)
+    inputs, outputs = [], []
+    for _ in range(periods):
+        inputs.append(u+input_noise*noise(L))
+        outputs.append(y+output_noise*noise(L))
+    inputs, outputs = np.array(inputs), np.array(outputs)
+    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)
+    suu = np.mean(abs(U)**2,axis=0)/L
+    syy = np.mean(abs(Y)**2,axis=0)/L
+    suy = np.mean(U.conj()*Y,axis=0)/L
+    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)
+    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)
+    H[valid] = suy[valid]/suu[valid]
+    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))
+    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)
+`}
+  cells={[{id:"frequency-id-1",title:"计算并核对",code:`r = experiment()
+k = 8
+row = dict(hz=k*fs/L, omega=2*np.pi*k/L, true_gain=float(abs(r['G'][k])), true_phase=float(np.angle(r['G'][k],deg=True)), gain=float(abs(r['H'][k])), phase=float(np.angle(r['H'][k],deg=True)), coherence=float(r['C'][k]), power=float(r['suu'][k]), samples=8*L, duration=8*L/fs, grid=fs/L, delay_phase=-360*k/L, omitted_delay_phase=float(np.angle(r['G'][k],deg=True)+360*k/L))
+print(row)
+print('default_frequency_checks_passed')`}]}
+/>
+
+## 记录长度与窗的代价
+
+固定采样率下，段越长，频率网格越密；固定总点数时，段越短，能平均的段越多，往往降低波动，却更容易混合邻近频率。增加周期数在本交互里同时增加了总点数，所以不是固定预算的公平最优分段实验。将DFT补零只会把频谱插值到更密网格，不会增加独立观测或改善分辨两个接近频率的能力。
+
+窗是在每段上逐点乘 $w[n]$；频域对应与窗频谱卷积。Hann窗降低远旁瓣，同时使主瓣变宽，因此不能写成“加窗就提高精度”。若用了窗，谱密度的公共归一化改用 $f_s\sum_nw[n]^2$；H1和相干度中的公共因子仍相消，但有限窗会引入邻频混合，不会因此恢复精确的 $Y=GU$。
+
+下面用复指数而非实正弦，单独展示一个正频率峰，避免正负频率镜像干扰解释。定义“主bin之外能量比例”为 $1-|X[8]|^2/\sum_k|X[k]|^2$，它不等于旁瓣能量比例。整周期8次振荡时，矩形窗此量为0，Hann为0.333333；8.5次时分别为0.594634、0.519662。Hann整周期仍有主瓣邻bin能量，正好反驳“所有非主bin能量都是坏泄漏”。64点补零到256点，显示网格从0.3125Hz变成0.078125Hz，实际记录时长没变。
+
+<JupyterNotebook
+  title="窗与单段相干度边界"
+  setupCode={`import numpy as np
+L, fs = 64, 20.0
+lines = np.array([1,4,8,12,20,28])
+def experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):
+    bins = lines[lines != 8] if missing else lines
+    n = np.arange(L)
+    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)
+    w = 2*np.pi*np.arange(L)/L
+    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))
+    y = np.fft.ifft(np.fft.fft(u)*G).real
+    state = int(seed)
+    def noise(size):
+        nonlocal state
+        vals = []
+        for _ in range(size):
+            state = (1664525*state+1013904223) % 2**32
+            vals.append(np.sqrt(12)*(state/2**32-.5))
+        return np.array(vals)
+    inputs, outputs = [], []
+    for _ in range(periods):
+        inputs.append(u+input_noise*noise(L))
+        outputs.append(y+output_noise*noise(L))
+    inputs, outputs = np.array(inputs), np.array(outputs)
+    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)
+    suu = np.mean(abs(U)**2,axis=0)/L
+    syy = np.mean(abs(Y)**2,axis=0)/L
+    suy = np.mean(U.conj()*Y,axis=0)/L
+    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)
+    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)
+    H[valid] = suy[valid]/suu[valid]
+    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))
+    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)
+`}
+  cells={[{id:"frequency-id-3",title:"计算并核对",code:`n = np.arange(L)
+def leakage(cycles,window):
+    v = np.exp(2j*np.pi*cycles*n/L)*window
+    power = abs(np.fft.fft(v))**2
+    return float(1-power[8]/power.sum())
+hann = .5-.5*np.cos(2*np.pi*n/L)
+row = dict(rect_integer=leakage(8,np.ones(L)),rect_offgrid=leakage(8.5,np.ones(L)),hann_integer=leakage(8,hann),hann_offgrid=leakage(8.5,hann),grid=fs/L,zero_padded_grid=fs/(4*L))
+r = experiment(output_noise=.8,periods=1)
+row['single_segment_coherence'] = float(r['C'][8])
+row['missing_refused'] = bool(np.isnan(experiment(missing=True)['H'][8]))
+row['input_noise_target_factor'] = 16/(16+.8**2)
+row['input_noise_target_gain'] = float(abs(r['G'][8])*row['input_noise_target_factor'])
+assert np.allclose(r['C'][lines],1)
+print(row)
+print('leakage_and_boundary_checks_passed')`}]}
+/>
+
+## 噪声位置决定偏差
+
+若测得的是 $u_m=u+\eta$、$y_m=Gu+v$，其中 $u,\eta,v$ 两两谱正交，则：
+
+$$
+\frac{S_{u_my_m}}{S_{u_mu_m}}=G\frac{S_{uu}}{S_{uu}+S_{\eta\eta}}.
+$$
+
+输入测量噪声增加分母，形成误差变量偏差；增加平均次数不会消除这个总体衰减。对本周期线谱实验，代码归一化信号功率为16，白输入噪声标准差0.8时，谱矩目标的衰减因子为 $16/(16+0.64)=0.961538$，2.5Hz目标幅值0.407926。这里指无限独立重复周期的谱矩比值；有限样本比值的期望未必等于它，也不是一般连续谱激励下固定通用的系数。
+
+闭环中 $S_{uv}$ 可能非零，此时 $S_{uy}/S_{uu}=G+S_{uv}/S_{uu}$，不能仅靠平均修复。可回顾[闭环辨识](/identification/instrumental-variable)的工具条件；本课不实施闭环谱算法。输出噪声正交也必须来自实验与模型假设，不能由高相干“证明”。
+
+下列重复实验报告32个连续种子、三种噪声位置、每种1/4/16周期的全部结果；指标为六条激励线的复频响均方根误差，保留相位误差。相同种子沿用相同噪声前缀，不换掉不利样本；无噪声仅有舍入误差。输出噪声条件下可以观察分布变化，但不将其升级为“每个种子必然改善”或最佳方法排名。输入噪声工况提醒：波动变小和偏差消失是不同问题。
+
+<JupyterNotebook
+  title="32种子三工况：保留全部记录"
+  setupCode={`import numpy as np
+L, fs = 64, 20.0
+lines = np.array([1,4,8,12,20,28])
+def experiment(a=.7, output_noise=.2, input_noise=0., periods=8, missing=False, seed=20261024):
+    bins = lines[lines != 8] if missing else lines
+    n = np.arange(L)
+    u = np.sin(2*np.pi*bins[:,None]*n/L).sum(axis=0)
+    w = 2*np.pi*np.arange(L)/L
+    G = (1-a)*np.exp(-1j*w)/(1-a*np.exp(-1j*w))
+    y = np.fft.ifft(np.fft.fft(u)*G).real
+    state = int(seed)
+    def noise(size):
+        nonlocal state
+        vals = []
+        for _ in range(size):
+            state = (1664525*state+1013904223) % 2**32
+            vals.append(np.sqrt(12)*(state/2**32-.5))
+        return np.array(vals)
+    inputs, outputs = [], []
+    for _ in range(periods):
+        inputs.append(u+input_noise*noise(L))
+        outputs.append(y+output_noise*noise(L))
+    inputs, outputs = np.array(inputs), np.array(outputs)
+    U, Y = np.fft.fft(inputs,axis=1), np.fft.fft(outputs,axis=1)
+    suu = np.mean(abs(U)**2,axis=0)/L
+    syy = np.mean(abs(Y)**2,axis=0)/L
+    suy = np.mean(U.conj()*Y,axis=0)/L
+    valid = np.isin(np.arange(L),bins) & (suu>1e-10) & (syy>1e-10)
+    H = np.full(L,np.nan+1j*np.nan); C = np.full(L,np.nan)
+    H[valid] = suy[valid]/suu[valid]
+    C[valid] = np.minimum(1,abs(suy[valid])**2/(suu[valid]*syy[valid]))
+    return dict(G=G,H=H,C=C,suu=suu,inputs=inputs,outputs=outputs)
+`}
+  cells={[{id:"frequency-id-2",title:"计算并核对",code:`summaries = []
+for label, sy, su in [('noiseless',0.,0.),('output',.8,0.),('input',0.,.8)]:
+    errors = {}
+    for periods in [1,4,16]:
+        vals = []
+        for seed in range(20261024,20261056):
+            r = experiment(output_noise=sy,input_noise=su,periods=periods,seed=seed)
+            vals.append(float(np.sqrt(np.mean(abs(r['H'][lines]-r['G'][lines])**2))))
+        errors[periods] = dict(median=float(np.median(vals)), q10=float(np.quantile(vals,.1)), q90=float(np.quantile(vals,.9)), values=vals)
+    improved = sum(x<y for x,y in zip(errors[16]['values'],errors[1]['values']))
+    summaries.append(dict(label=label,errors=errors,improved=improved))
+print(summaries)
+print('all_32_frequency_seeds_reported')`}]}
+/>
+
+## 一次可复核的实验流程
+
+先规定关心的频带和允许输入幅度，检查执行器饱和、采样前抗混叠、输入输出时钟同步与已知延迟；偏移一个采样点会直接改变相位。按同一时间戳保存原始记录，区分施加输入与传感器读数。
+
+再决定开环是否安全、噪声从哪里进入，选择扫频或多正弦等激励。本例只覆盖选定线，频点间不插入“实测真值”。未知现场初值须等待暂态衰减或显式建模；不能把教学中的周期精确初值当作测量技巧。
+
+最后完整记录采样率、总长度、段长、段数、重叠、窗、去趋势、频率掩码和谱缩放；用重复记录、残差及独立验证记录检查结论。若做参数拟合，须另给模型阶次、频率权重、噪声假设和验证集；一条非参数频响曲线不会自动给出可外推的状态空间模型。
+
+互谱顺序与平方相干度公式核对自[SciPy csd官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.csd.html)及[coherence官方文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.coherence.html)，检索日期2026-10-24。本页NumPy实现固定矩形窗与无重叠；没有声称调用默认Welch配置，默认去趋势和窗处理不可混用。
+
+## 小结
+
+频域辨识先确认频点有输入信息，再按约定平均互谱和功率谱。H1的正确性依赖输入测量与噪声正交条件；相干度解释线性关联，不能替代模型审查。记录长度、窗口和平均各有代价，补零、平滑曲线与高相干都不能凭空增加信息。
+
+## 习题
+
+**1. 频率与相位。** 沿用主例，bin8对应多少Hz、每采样弧度？真频响的幅值与相位是多少？为什么漏掉分子的一拍延迟会画错相位？
+
+**2. 互谱方向。** 无噪声时 $Y=GU$。若误用 $\overline YU$ 再除以 $|U|^2$，结果是什么？给出修正办法，不能只回答“调负号”。
+
+**3. 相干度陷阱。** 在“单周期”预设中输出噪声标准差0.8，为什么相干度仍为1？“缺少该频点”时应报告0还是不估计？说明判据。
+
+**4. 测量与预算。** 推导输入测量噪声标准差0.8、无输出噪声时主例bin8的谱矩目标幅值。如果总采样预算固定，把段长缩短能否同时保证更低方差与更好分辨率？给出实验记录中必须说明的取舍。
+
+## 答案
+
+**1.** $f_8=8\times20/64=2.5$ Hz，$\omega_8=2\pi\times8/64=\pi/4$。代入 $G$，幅值为0.424243，相位−89.424168°。分子 $e^{-j\omega}$ 贡献−45°；漏掉它得到−44.424168°，是不同的时序模型。Notebook默认输出给出复算依据。
+
+**2.** $\overline YU=\overline G|U|^2$，得到 $\overline G$；幅值不变，相位方向反转。应按本页定义改为 $\overline UY$，或明确另一互谱约定后相应取共轭；不能交换输入输出却继续套原公式。
+
+**3.** 单段分子分母代数相同，不是噪声不存在。先增加独立重复或适当分段，再结合假设解释相干度。没有已知激励时报告“不估计”，不是把相干度置0；零分母时量无定义，输入传感器噪声功率也不能充当主动激励。Notebook边界检查同时覆盖这两项。
+
+**4.** 两两正交使互谱仍为 $GS_{uu}$，输入自谱增为 $S_{uu}+S_{\eta\eta}$。本例代码缩放下为 $G\times16/(16+0.8^2)$，系数0.961538，目标幅值0.407926。有限样本不必正好达到该目标。固定总预算下，缩段增多平均次数，却使频率间隔变大、窗主瓣变宽；必须同时报告段长与总长度，不能只报告曲线更平滑。复指数泄漏指标也不能被偷换为完整频响误差。

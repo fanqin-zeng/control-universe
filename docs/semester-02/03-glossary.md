@@ -640,6 +640,9 @@
 | 工具变量 | instrumental variable, IV | — | ID-05 | 与误差正交且与回归量有可解相关矩 |
 | 弱工具变量 | weak instrument | — | ID-05 | 总体相关矩较弱时有限样本可能不稳定 |
 | 估计一致性 | statistical consistency | — | ID-05 | 依概率收敛到真参数，区别多智能体Consensus |
+| 经验传递函数估计 | empirical transfer function estimate, ETFE | — | ID-06 | 已激励频点的DFT输出输入比值 |
+| 平方相干度 | magnitude-squared coherence | — | ID-06 | 互谱模平方除以两路自谱乘积，不是模型正确概率 |
+| 谱泄漏 | spectral leakage | — | ID-06 | 有限记录与窗使频率成分扩展到邻近频点 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，
