@@ -5,13 +5,11 @@ description: "掌握从物理系统到数学模型的不确定性建模方法：
 
 # 不确定性建模
 
-前几节课建立了鲁棒控制的分析和设计工具：小增益定理判断鲁棒稳定性，H∞ 优化和混合灵敏度提供设计框架，μ 综合利用结构信息减少保守性。但所有这些方法都有一个前提——**不确定性模型已经给好了**。
+同一台电机接上不同工件，转动惯量会变化；联轴器稍有松动，还可能出现原模型没有的弹性振动。上一课已说明：同一个控制器在标称对象上稳定，不代表它对整组实际对象都稳定。但“负载大概会变”还不是一个能用于分析的模型——到底允许变多少、在哪些频率变、多个偏差能否独立变化？
 
-实际工程中，最难的不是 H∞ 优化本身，而是**如何从物理系统得到一个合理的不确定性模型**。模型太粗，设计出的控制器不够鲁棒；模型太细，设计过于保守甚至无法求解。
+这节课把这些信息写成**模型集合与误差边界**。我们从绝对/相对频响偏差出发，介绍一种统一表示：线性分式变换（LFT），用它保留质量、刚度和输入/输出端口的结构。读完后应能判断一张样本包络图究竟证明了什么，以及还缺哪些证据。
 
-这节课系统讲解不确定性建模的方法论：从物理直觉到数学描述，从实验数据到权重函数，从 SISO 到 MIMO。
-
-> 📖 本节课需要传递函数、频率响应和灵敏度函数的基础：[频域分析](/classic/frequency-domain-analysis)、[鲁棒性概念](/robust/robustness-concept)。LFT 和 μ 分析的初步概念见 [μ综合方法](/robust/mu-synthesis)。
+> 前置：[鲁棒性](/robust/robustness-concept)、[矩阵分解](/math/matrix-decomposition)。LFT在本课定义；[结构奇异值](/robust/mu-analysis)与[μ综合](/robust/mu-synthesis)是后续阅读，不当作已知知识。本页数据全为明确模型生成的合成数据，不代表真实电机测量。
 
 ## 加性与乘性不确定性
 
@@ -29,7 +27,7 @@ $W_a(\omega)$ 是频率相关的加性不确定性上界。
 
 **适用场景**：
 - 高频未建模动态（偏差幅值大致固定，与标称增益无关）
-- 加性扰动
+- 对象传递函数的绝对偏差；外部加性扰动是另外的输入信号，不能与模型误差混为一谈
 - 标称模型在关心的频率范围内增益较小
 
 ### 乘性不确定性
@@ -45,13 +43,13 @@ $W_m(\omega)$ 是乘性不确定性上界。
 **物理含义**：在每个频率处，相对偏差 $\frac{G_p(j\omega) - G(j\omega)}{G(j\omega)}$ 的幅值不超过 $W_m(\omega)$。
 
 **适用场景**：
-- 参数变化（如质量 ±20%，偏差与标称增益成比例）
-- 低频不确定性（参数偏差主要影响低频增益）
-- 工程中最常用的形式
+- 相对模型偏差可定义，且需要表达相对误差的频率分布
+- 增益、时间常数等参数变化均可尝试，但质量变化不等于传递函数增益按同样百分比变化
+- 标称频响为零或接近零时，须另查奇异点、稳定性和proper条件，不能直接除法套用
 
 ### 两者的关系
 
-加性和乘性不确定性可以互相转换：
+在 $G(j\omega)\ne0$ 的频点，针对同一组偏差及其逐点包络，可以转换：
 
 $$
 \Delta_a(s) = G(s) \cdot \Delta_m(s) \quad \Longleftrightarrow \quad W_a(\omega) = |G(j\omega)| \cdot W_m(\omega)
@@ -61,11 +59,11 @@ $$
 \Delta_m(s) = \frac{\Delta_a(s)}{G(s)} \quad \Longleftrightarrow \quad W_m(\omega) = \frac{W_a(\omega)}{|G(j\omega)|}
 $$
 
-**选择原则**：
+**选择原则**（常见起点，不是按频段强制分类）：
 
 | 场景 | 推荐形式 | 原因 |
 |------|----------|------|
-| 参数变化（±百分比） | 乘性 | 偏差与标称增益成比例 |
+| 参数变化（±百分比） | 先保留实参数结构，再检查乘性是否合适 | 参数相对变化不必等于传递函数相对变化 |
 | 高频未建模动态 | 加性 | 偏差幅值大致固定 |
 | $|G(j\omega)|$ 小的频率 | 加性 | 乘性会除以小数，边界爆炸 |
 | $|G(j\omega)|$ 大的频率 | 乘性 | 加性边界会很大 |
@@ -84,7 +82,7 @@ $$
 G_{nom}(j\omega) = \frac{1}{N}\sum_{i=1}^N G_i(j\omega)
 $$
 
-或选择中间值、拟合传递函数。
+逐频点复数平均只是一组频响参考值，未必对应稳定、因果的低阶有理模型；用于设计时还需拟合并验证。下面实验采用明确的稳定标称模型，不把逐点平均直接当可实现对象。
 
 **步骤 3**：计算偏差。
 
@@ -98,7 +96,7 @@ $$
 W_a(\omega) = \max_i |\Delta_{a,i}(j\omega)|, \quad W_m(\omega) = \max_i |\Delta_{m,i}(j\omega)|
 $$
 
-**步骤 5**：拟合权重函数。用低阶稳定传递函数拟合 $W(\omega)$，保证因果性（高频衰减）和可实现性。
+**步骤 5**：拟合权重函数。用低阶、稳定、proper（分子次数不超过分母次数）的传递函数拟合 $W(\omega)$。因果性不要求高频必衰减，双真有理权重可以有非零高频极限；还应检查归一化误差能否属于声明的稳定有界不确定性集合。
 
 常用拟合形式：一阶或二阶传递函数。例如：
 
@@ -106,107 +104,88 @@ $$
 W_m(s) = \frac{as + b}{s + c}
 $$
 
-拟合目标：$|W_m(j\omega)| \geq \max_i |\Delta_{m,i}(j\omega)|$ 对所有 $\omega$ 成立（保守但安全）。
+拟合时先核实 $|W_m(j\omega_j)|\ge\max_i|\Delta_{m,i}(j\omega_j)|$ 在给定样本与频点成立。这是样本内的网格覆盖，不自动覆盖未测对象或频点。若要全频/全参数保证，还需解析界、经证明的插值界或相应鲁棒分析。
 
-> 💡 拟合时宁可**偏大**（保守但安全）也不要**偏小**（遗漏不确定性，设计出的控制器可能在实际中不稳定）。
+> 权重太小会遗漏已知偏差；权重太大可能使设计保守甚至不可行。单凭“边界偏大”不能推断实际系统安全或模型已包含全部不确定性。
+
+本例明确 $G_0=1/(s+1)$，$K\in[0.8,1.2]$、$T\in[0.8,1.3]$ s，$G_p=K/(Ts+1)$。相对误差为：
+
+$$
+\Delta_m(s)=\frac{(K-1)+(K-T)s}{1+Ts}.
+$$
+
+利用 $|K-1|\le0.2$、$|K-T|\le0.5$、$T\ge0.8$，对全部实频率有：
+
+$$
+|\Delta_m(j\omega)|^2\le\frac{0.04+0.25\omega^2}{1+0.64\omega^2}
+=\left|\frac{0.5j\omega+0.2}{0.8j\omega+1}\right|^2.
+$$
+
+这里的参数固定但未知，不包含任意时变质量或时间常数。
+
+因此 $W_{\rm cert}(s)=(0.5s+0.2)/(0.8s+1)$ 是这个参数矩形上的解析覆盖，直流值0.2、高频极限0.625，稳定且proper。它并非最紧权重；拟合样本可能得到更小的数，但不能凭样本外推全集合保证。
+
+下面交互默认 $K=0.8,T=1.3$ s、$\omega=1$ rad/s，绝对误差0.232171，相对误差0.328339，解析边界0.420511。两种误差的量纲不同，不根据数值大小给描述方法排名。另一个面板在后文解释MIMO端口；默认 $g=2$。
+
+<UncertaintyModelExplorer />
+
 
 <JupyterNotebook
-  language="python"
+  title="从复频响样本到权重边界"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-np.random.seed(42)
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {
-      code: `# 从频率响应数据辨识乘性不确定性边界
-# 被控对象: G(s) = K / (Ts + 1),  K ∈ [0.8, 1.2], T ∈ [0.8, 1.3]
-
-K_nom, T_nom = 1.0, 1.0
-N_samples = 20
-K_samples = np.random.uniform(0.8, 1.2, N_samples)
-T_samples = np.random.uniform(0.8, 1.3, N_samples)
-
-omega = np.logspace(-2, 2, 500)
-
-G_samples = []
-for K_i, T_i in zip(K_samples, T_samples):
-    G_i = ctrl.tf([K_i], [T_i, 1])
-    G_samples.append(G_i(1j * omega))
-G_samples = np.array(G_samples)
-
-G_nom = ctrl.tf([K_nom], [T_nom, 1])
-G_nom_jw = G_nom(1j * omega)
-
-Delta_m = np.abs((G_samples - G_nom_jw) / G_nom_jw)
-W_m_data = np.max(Delta_m, axis=0)
-
-def weight_model(w, a, b, c):
-    return np.sqrt((a*w)**2 + b**2) / np.sqrt(w**2 + c**2)
-
-params, _ = curve_fit(weight_model, omega, W_m_data, p0=[0.1, 0.3, 5.0], maxfev=10000)
-a_fit, b_fit, c_fit = params
-
-W_m_fit = weight_model(omega, a_fit, b_fit, c_fit)
-safety_factor = np.max(W_m_data / W_m_fit)
-if safety_factor > 1.0:
-    b_fit *= safety_factor * 1.05
-
-W_m_final = weight_model(omega, a_fit, b_fit, c_fit)
-
-print("=== 乘性不确定性边界拟合 ===")
-print(f"拟合参数: a={a_fit:.4f}, b={b_fit:.4f}, c={c_fit:.4f}")
-print(f"权重函数: W_m(s) = ({a_fit:.4f}s + {b_fit:.4f}) / (s + {c_fit:.4f})")
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-for i in range(N_samples):
-    axes[0].semilogx(omega, 20*np.log10(np.abs(G_samples[i])), 'b-', alpha=0.2, linewidth=0.5)
-axes[0].semilogx(omega, 20*np.log10(np.abs(G_nom_jw)), 'r-', linewidth=2, label='标称模型')
-axes[0].set_xlabel('频率 (rad/s)'); axes[0].set_ylabel('幅值 (dB)')
-axes[0].set_title('频率响应样本族'); axes[0].legend(); axes[0].grid(True, alpha=0.3)
-
-axes[1].semilogx(omega, 20*np.log10(W_m_data), 'b-', linewidth=1, label='数据包络')
-axes[1].semilogx(omega, 20*np.log10(W_m_final), 'r--', linewidth=2, label='拟合权重 W_m')
-for i in range(min(5, N_samples)):
-    axes[1].semilogx(omega, 20*np.log10(Delta_m[i]), 'g-', alpha=0.3, linewidth=0.5)
-axes[1].set_xlabel('频率 (rad/s)'); axes[1].set_ylabel('幅值 (dB)')
-axes[1].set_title('乘性不确定性边界'); axes[1].legend(); axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()`
-    },
-    {
-      code: `# 加性 vs 乘性不确定性对比
-
-Delta_a = np.abs(G_samples - G_nom_jw)
-W_a_data = np.max(Delta_a, axis=0)
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-axes[0].semilogx(omega, 20*np.log10(W_a_data), 'b-', linewidth=2, label='加性边界 W_a')
-axes[0].semilogx(omega, 20*np.log10(np.abs(G_nom_jw)), 'r--', alpha=0.5, label='|G_nom|')
-axes[0].set_xlabel('频率 (rad/s)'); axes[0].set_ylabel('幅值 (dB)')
-axes[0].set_title('加性不确定性边界'); axes[0].legend(); axes[0].grid(True, alpha=0.3)
-
-axes[1].semilogx(omega, 20*np.log10(W_m_data), 'b-', linewidth=2, label='乘性边界 W_m')
-axes[1].axhline(0, color='r', linestyle='--', alpha=0.5, label='0 dB')
-axes[1].set_xlabel('频率 (rad/s)'); axes[1].set_ylabel('幅值 (dB)')
-axes[1].set_title('乘性不确定性边界'); axes[1].legend(); axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-print("=== 加性 vs 乘性分析 ===")
-print(f"低频 (0.01 rad/s): |G|={np.abs(G_nom(0.01j)):.2f}, W_a={W_a_data[0]:.4f}, W_m={W_m_data[0]:.4f}")
-print(f"高频 (100 rad/s):  |G|={np.abs(G_nom(100j)):.4f}, W_a={W_a_data[-1]:.4f}, W_m={W_m_data[-1]:.4f}")
-print(f"\\n💡 低频处 |G| 大 → 乘性边界合理")
-print(f"   高频处 |G| 小 → 加性边界更紧凑")
-print(f"   W_a ≈ |G| × W_m 验证了转换关系")`
-    }
-  ]}
+from scipy.optimize import curve_fit`}
+  cells={[{code: `rng=np.random.RandomState(42)
+K_samples=rng.uniform(.8,1.2,20)
+T_samples=rng.uniform(.8,1.3,20)
+w=np.logspace(-2,2,500)
+s=1j*w
+G_samples=K_samples[:,None]/(1+T_samples[:,None]*s)
+G_nom=1/(1+s)
+errors=(G_samples-G_nom)/G_nom
+W_data=np.max(abs(errors),axis=0)
+def weight_model(w,a,b,c):
+    return np.hypot(a*w,b)/np.hypot(w,c)
+params,_=curve_fit(weight_model,w,W_data,p0=[.5,.2,1],bounds=([1e-5,1e-5,1e-5],[2,2,20]),maxfev=10000)
+a,b,c=params
+raw=weight_model(w,a,b,c)
+scale=max(1.,float(max(W_data/raw)))*1.05
+a,b=a*scale,b*scale
+fitted=weight_model(w,a,b,c)
+analytic=abs((.5*s+.2)/(.8*s+1))
+fit_cover=bool(np.all(fitted>=W_data-1e-12))
+analytic_cover=bool(np.all(analytic>=W_data-1e-12))
+print('fit_positive',a>0 and b>0 and c>0,'fit_grid_coverage',fit_cover,'analytic_sample_coverage',analytic_cover)
+print('fit_parameters',a,b,c,'minimum_grid_ratio',min(fitted/W_data))
+print('analytic_DC_HF',.2,.5/.8)
+selected_K,selected_T,selected_w=.8,1.3,1.
+sel_G=selected_K/(1+1j*selected_w*selected_T)
+sel_G0=1/(1+1j*selected_w)
+print('default_first_order',abs(sel_G-sel_G0),abs((sel_G-sel_G0)/sel_G0),abs((.5j+.2)/(.8j+1)))
+fig,axes=plt.subplots(1,2,figsize=(12,4))
+for response in G_samples:axes[0].semilogx(w,20*np.log10(abs(response)),color='gray',alpha=.3)
+axes[0].semilogx(w,20*np.log10(abs(G_nom)),label='nominal')
+axes[0].set(xlim=(.01,100),ylim=(-50,10),xlabel='Frequency (rad/s)',ylabel='Magnitude (dB)')
+axes[1].semilogx(w,W_data,label='20-sample envelope')
+axes[1].semilogx(w,fitted,label='positive stable fit, grid only')
+axes[1].semilogx(w,analytic,label='analytic interval bound')
+axes[1].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Relative error magnitude')
+for ax in axes:ax.grid(True);ax.legend()
+plt.tight_layout();plt.show()
+print('fit_complete')`},
+{code: `W_add=np.max(abs(G_samples-G_nom),axis=0)
+conversion_residual=float(max(abs(W_add-abs(G_nom)*W_data)))
+print('conversion_residual',conversion_residual)
+for i in [0,-1]:print('additive_multiplicative',w[i],abs(G_nom[i]),W_add[i],W_data[i])
+fig,axes=plt.subplots(1,2,figsize=(12,4))
+axes[0].semilogx(w,W_add,label='additive envelope')
+axes[0].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Absolute error')
+axes[1].semilogx(w,W_data,label='multiplicative envelope')
+axes[1].set(xlim=(.01,100),ylim=(0,1),xlabel='Frequency (rad/s)',ylabel='Relative error')
+for ax in axes:ax.grid(True);ax.legend()
+plt.tight_layout();plt.show()
+print('conversion_complete')`}]}
 />
 
 ## 互质分解不确定性
@@ -243,6 +222,8 @@ $$
 \left\|\begin{bmatrix} \Delta_M \\ \Delta_N \end{bmatrix}\right\|_\infty < \epsilon
 $$
 
+还需核查 $M+\Delta_M$ 在相应定义下可逆、扰动后的因子与实现满足所需条件；因子稳定不意味着对象本身稳定。
+
 **优点**：
 1. **统一框架**：加性和乘性不确定性都是互质分解不确定性的特例
 2. **处理不稳定标称模型**：即使 $G(s)$ 有不稳定极点，$N$ 和 $M$ 仍然是稳定的
@@ -253,8 +234,12 @@ $$
 | 不确定性类型 | $\Delta_M$ | $\Delta_N$ |
 |-------------|-----------|-----------|
 | 加性 $G_p = G + \Delta_a$ | $0$ | $M\Delta_a$ |
-| 乘性 $G_p = G(1+\Delta_m)$ | $M\Delta_m$ | $N\Delta_m$ |
+| SISO乘性 $G_p = G(1+\Delta_m)$ | $0$ | $N\Delta_m$ |
 | 一般互质分解 | $\Delta_M$ | $\Delta_N$ |
+
+同时令 $\Delta_M=M\Delta_m$、$\Delta_N=N\Delta_m$ 会在可逆处约掉同一个因子，得到原来的 $G$，不是乘性对象变化。上述表在SISO情形成立；MIMO必须保留左/右因子顺序。这里的因子还没有要求归一化，因此扰动半径会随因子缩放改变；比较鲁棒裕度时必须固定归一化约定。
+
+例如 $G=1/(s+1)$ 可取 $N=1/(s+2)$、$M=(s+1)/(s+2)$，二者均稳定proper，$X=1,Y=1$ 给出 $XM+YN=1$。这是可直接验证的互质例，不能只凭“没有公零点”的口头描述完成矩阵互质性检查。
 
 > 💡 互质分解不确定性比加性/乘性更通用——它允许分子和分母**独立**变化。这在物理上对应"系统的零点和极点同时有不确定性"。
 
@@ -268,7 +253,10 @@ $$
 G_{actual} = \mathcal{F}_u(P, \Delta) = P_{22} + P_{21}\Delta(I - P_{11}\Delta)^{-1}P_{12}
 $$
 
-$P$ 是增广系统（包含标称模型和权重），$\Delta$ 是不确定性矩阵。
+约定 $[z;y]=P[v;u]$，$v=\Delta z$；第一组列对应不确定性输入 $v$，第二组列对应外部输入 $u$，第一组行输出 $z$，第二组行输出 $y$。$P$ 含标称模型与权重，$\Delta$ 保留不确定性结构。连接需适定，尤其有直通项时须检查 $I-D_{zv}\Delta$ 可逆；不能只在少数频点上求得逆就宣称内部稳定。
+
+![上LFT的不确定性端口与外部端口](/diagrams/robust/lft-ports.svg)
+
 
 ### 构造方法一：直接观察法
 
@@ -286,7 +274,7 @@ $$
 
 验证：$\mathcal{F}_u(P, \delta) = P_{22} + P_{21}\delta(I - P_{11}\delta)^{-1}P_{12} = \frac{1}{s+1} + \frac{1}{s+1} \cdot \delta \cdot 1 \cdot 0.2 = \frac{1+0.2\delta}{s+1}$ ✓
 
-> 💡 当 $P_{11} = 0$ 时，LFT 退化为简单的前馈形式 $G = P_{22} + P_{21}\Delta P_{12}$。这发生在不确定性只出现在**分子**（增益）中时。
+> 💡 当 $P_{11} = 0$ 时，LFT 退化为简单的前馈形式 $G = P_{22} + P_{21}\Delta P_{12}$。本例的不确定性只影响增益，采用这一实现便可做到。LFT表示并不唯一，不能把分子/分母出现的位置当作任意实现中 $P_{11}$ 的唯一判据。
 
 **例子 2**：极点不确定性 $G(s,\delta) = \frac{1}{s + 1 + 0.3\delta}$，$\delta \in [-1, 1]$。
 
@@ -314,27 +302,32 @@ $= \frac{1}{s+1} + \frac{-0.3\delta}{s+1} \cdot \frac{s+1}{s+1+0.3\delta} \cdot 
 
 $= \frac{s+1+0.3\delta - 0.3\delta}{(s+1)(s+1+0.3\delta)} = \frac{s+1}{(s+1)(s+1+0.3\delta)} = \frac{1}{s+1+0.3\delta}$ ✓
 
-> 💡 **关键区别**：当不确定性出现在**分子**（增益）中时，$P_{11} = 0$，LFT 退化为前馈。当不确定性出现在**分母**（特征方程）中时，$P_{11} \neq 0$，$\delta$ 形成内部反馈回路。注意 $P$ 的排列：第一列对应不确定性输入 $v$，第二列对应外部输入 $u$。
+> 以上两个具体构造分别用了前馈和内部反馈；一般表示可做等价变换，不能仅看最终分式中参数的位置判断唯一的P结构。端口排列和回代等式比记“分子/分母口诀”更可靠。
 
 ### 构造方法二：状态空间法
 
 对于复杂系统，用状态空间方法系统化构造 LFT。
 
-**步骤**：
-1. 写出标称系统的状态空间模型 $\dot{x} = Ax + Bu$，$y = Cx + Du$
-2. 把不确定参数写成 $p = \bar{p}(1 + w_p \delta_p)$ 的形式
-3. 将参数偏差分离为辅助信号：$\dot{x} = Ax + Bu + B_\delta v$，$z = C_\delta x + D_\delta u$，$v = \Delta z$
-4. 构造增广系统 $P$：
+**步骤**：先写清带辅助端口的状态空间：
 
 $$
-P(s) = \begin{bmatrix} C_\delta(sI-A)^{-1}B_\delta + D_\delta & C_\delta(sI-A)^{-1}B + D_\delta u \\ C(sI-A)^{-1}B_\delta + D_{y\delta} & C(sI-A)^{-1}B + D \end{bmatrix}
+\begin{aligned}
+\dot x&=Ax+B_vv+B_uu,\\
+z&=C_zx+D_{zv}v+D_{zu}u,\\
+y&=C_yx+D_{yv}v+D_{yu}u,\qquad v=\Delta z.
+\end{aligned}
 $$
 
-更紧凑地：
+再令 $R(s)=(sI-A)^{-1}$，读取各块：
 
 $$
-P = \left[\begin{array}{c|cc} A & B_\delta & B \\ \hline C_\delta & D_{\delta\delta} & D_{\delta u} \\ C & D_{y\delta} & D_{yu} \end{array}\right]
+P(s)=\begin{bmatrix}
+C_zRB_v+D_{zv}&C_zRB_u+D_{zu}\\
+C_yRB_v+D_{yv}&C_yRB_u+D_{yu}
+\end{bmatrix}.
 $$
+
+每个 $D$ 都是对应端口的直通矩阵，不能把 $D_{zu}$ 与信号 $u$ 混写为矩阵项。若参数以倒数等有理形式进入，应构造相应内部反馈，而不是默认只保留Taylor一阶项。
 
 **例子**：质量-弹簧-阻尼器 $G(s) = \frac{1}{ms^2 + bs + k}$，$m = \bar{m}(1 + w_m\delta_m)$，$k = \bar{k}(1 + w_k\delta_k)$。
 
@@ -344,88 +337,106 @@ $\dot{x}_1 = x_2$
 $\dot{x}_2 = \frac{1}{m}(-kx_1 - bx_2 + u)$
 $y = x_1$
 
-代入 $m = \bar{m}(1+w_m\delta_m)$，$k = \bar{k}(1+w_k\delta_k)$：
+取 $m_0=k_0=1$、$b_0=0.2$，$m=m_0(1+w_m\delta_m)$、$k=k_0(1+w_k\delta_k)$，本例 $w_m=w_k=0.3$。用力平衡保留精确质量：
 
-$\frac{1}{m} = \frac{1}{\bar{m}(1+w_m\delta_m)} \approx \frac{1}{\bar{m}}(1 - w_m\delta_m)$（一阶近似，$|w_m\delta_m| \ll 1$）
+$$
+(m_0s^2+b_0s+k_0)q=u-w_mm_0v_m-w_kk_0v_k,\quad
+z_m=s^2q,\ z_k=q,\quad
+\begin{bmatrix}v_m\\v_k\end{bmatrix}
+=\operatorname{diag}(\delta_m,\delta_k)
+\begin{bmatrix}z_m\\z_k\end{bmatrix}.
+$$
 
-$\dot{x}_2 \approx \frac{1}{\bar{m}}(-\bar{k}(1+w_k\delta_k)x_1 - bx_2 + u)(1 - w_m\delta_m)$
+这里 $z_m$ 是加速度、$z_k$ 是位移；权重系数分别把它们转换为力，端口可以有不同物理单位。令 $h=1/(m_0s^2+b_0s+k_0)$，输出取 $y=q$：
 
-保留一阶项：
+$$
+P=\begin{bmatrix}
+-w_mm_0s^2h&-w_kk_0s^2h&s^2h\\
+-w_mm_0h&-w_kk_0h&h\\
+-w_mm_0h&-w_kk_0h&h
+\end{bmatrix}.
+$$
 
-$\dot{x}_2 \approx \frac{1}{\bar{m}}(-\bar{k}x_1 - bx_2 + u) + \frac{1}{\bar{m}}(-\bar{k}w_k\delta_k x_1 + \bar{k}w_m\delta_m x_1 + bw_m\delta_m x_2 - w_m\delta_m u)$
+左上两行两列是 $P_{11}$。回代得到精确的 $1/(ms^2+b_0s+k)$，没有丢掉交叉项或近似质量倒数。加速度端口含直通项，适定性要求 $1+w_m\delta_m\ne0$，本参数集合满足，因为 $m\ge0.7$。
 
-整理为 $\dot{x} = A_0 x + B_0 u + B_\delta v$，$z = C_\delta x + D_\delta u$，$v = \Delta z$（$\Delta = \text{diag}(\delta_m, \delta_k)$）。
+再令 $D_0=m_0s^2+b_0s+k_0$、$\eta=(w_mm_0\delta_ms^2+w_kk_0\delta_k)/D_0$。实际乘性误差为
 
-这个过程虽然系统化，但手工计算繁琐。实际中用 MATLAB 的 `lft` 函数或 Python 的自定义函数自动完成。
+$$
+\Delta_m=-\frac{\eta}{1+\eta},\qquad
+|\eta(j\omega)|\le\rho(\omega)
+=\frac{w_mm_0\omega^2+w_kk_0}{|D_0(j\omega)|}.
+$$
+
+因此只有在 $\rho<1$ 的频点，反三角不等式才给出
+
+$$
+|\Delta_m(j\omega)|\le\frac{\rho(\omega)}{1-\rho(\omega)}.
+$$
+
+原来的 $|T_m|+|T_k|=\rho$ 只约束 $\eta$，不是实际 $\Delta_m$ 的严格上界。在 $\omega=1$ rad/s，$\rho=3$，上述充分界不适用；这不表示真实模型集合无界或不稳定。本例全部质量、刚度、阻尼均正，二阶对象本身稳定，但闭环仍需另验。Notebook保留2000个样本，只在适用频点检查上界，并独立回代九组参数端点/中点的精确LFT。
 
 <JupyterNotebook
-  language="python"
+  title="精确LFT与质量刚度不确定性"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-np.random.seed(42)
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {
-      code: `# LFT 不确定性建模验证
-# 质量-弹簧-阻尼器: G(s) = 1/(ms² + bs + k)
-# 参数不确定性: m = 1 + 0.3δm, k = 1 + 0.3δk, b = 0.2 (固定)
-
-m0, b0, k0 = 1.0, 0.2, 1.0
-wm, wk = 0.3, 0.3
-
-G_nom_msd = ctrl.tf([1], [m0, b0, k0])
-
-N_mc = 2000
-omega_mc = np.logspace(-1, 2, 200)
-
-m_mc = m0 * (1 + wm * np.random.uniform(-1, 1, N_mc))
-k_mc = k0 * (1 + wk * np.random.uniform(-1, 1, N_mc))
-
-G_mc = np.zeros((N_mc, len(omega_mc)), dtype=complex)
-for i in range(N_mc):
-    G_i = ctrl.tf([1], [m_mc[i], b0, k_mc[i]])
-    G_mc[i] = G_i(1j * omega_mc)
-
-G_nom_msd_jw = G_nom_msd(1j * omega_mc)
-Delta_m_msd = np.abs((G_mc - G_nom_msd_jw) / G_nom_msd_jw)
-W_m_msd = np.max(Delta_m_msd, axis=0)
-
-# 理论上界 (三角不等式)
-s = 1j * omega_mc
-T_m = wm * m0 * s**2 / (m0*s**2 + b0*s + k0)
-T_k = wk * k0 / (m0*s**2 + b0*s + k0)
-W_m_theory = np.abs(T_m) + np.abs(T_k)
-
-print("=== LFT 不确定性建模验证 ===")
-print(f"标称系统: G(s) = 1/({m0}s² + {b0}s + {k0})")
-print(f"参数不确定性: m = {m0}±{wm*100:.0f}%, k = {k0}±{wk*100:.0f}%")
-print(f"\\nMonte Carlo 采样: {N_mc} 个样本")
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-for i in range(min(50, N_mc)):
-    axes[0].semilogx(omega_mc, 20*np.log10(np.abs(G_mc[i])), 'b-', alpha=0.1, linewidth=0.5)
-axes[0].semilogx(omega_mc, 20*np.log10(np.abs(G_nom_msd_jw)), 'r-', linewidth=2, label='标称')
-axes[0].set_xlabel('频率 (rad/s)'); axes[0].set_ylabel('幅值 (dB)')
-axes[0].set_title('MSD 频率响应族'); axes[0].legend(); axes[0].grid(True, alpha=0.3)
-
-axes[1].semilogx(omega_mc, 20*np.log10(W_m_msd), 'b-', linewidth=2, label='Monte Carlo 包络')
-axes[1].semilogx(omega_mc, 20*np.log10(W_m_theory), 'r--', linewidth=2, label='理论上界 (三角不等式)')
-axes[1].semilogx(omega_mc, 20*np.log10(np.abs(T_m)), 'g:', alpha=0.7, label='|T_m| (质量贡献)')
-axes[1].semilogx(omega_mc, 20*np.log10(np.abs(T_k)), 'm:', alpha=0.7, label='|T_k| (刚度贡献)')
-axes[1].set_xlabel('频率 (rad/s)'); axes[1].set_ylabel('幅值 (dB)')
-axes[1].set_title('乘性不确定性边界'); axes[1].legend(); axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-coverage = np.all(W_m_theory >= W_m_msd - 1e-10)
-print(f"\\n理论上界覆盖所有 Monte Carlo 样本: {'✓' if coverage else '✗'}")
-print(f"最大间隙: {np.max(20*np.log10(W_m_theory/W_m_msd)):.2f} dB")`
-    }
-  ]}
+from scipy.optimize import curve_fit`}
+  cells={[{code: `m0,b0,k0=1.,.2,1.
+wm,wk=.3,.3
+rng=np.random.RandomState(42)
+m=1+wm*rng.uniform(-1,1,2000)
+k=1+wk*rng.uniform(-1,1,2000)
+w=np.logspace(-1,2,200);s=1j*w
+D0=s*s+.2*s+1
+G0=1/D0
+G_mc=1/(m[:,None]*s*s+b0*s+k[:,None])
+error=abs((G_mc-G0)/G0)
+envelope=error.max(axis=0)
+rho=(wm*w*w+wk)/abs(D0)
+valid=rho<1
+upper=np.full_like(w,np.nan)
+upper[valid]=rho[valid]/(1-rho[valid])
+valid_cover=bool(np.all(envelope[valid]<=upper[valid]+1e-10))
+old_cover=bool(np.all(envelope<=rho+1e-10))
+print('msd_old_first_order_is_bound',old_cover,'valid_reverse_triangle_covers',valid_cover)
+# Build P from physical state-space ports [v_m,v_k,u] -> [acceleration,q,y].
+A0=np.array([[0.,1.],[-1.,-.2]])
+Bv=np.array([[0.,0.],[-wm,-wk]])
+Bu=np.array([[0.],[1.]])
+Cz=np.array([[-1.,-.2],[1.,0.]])
+Dzv=np.array([[-wm,-wk],[0.,0.]])
+Dzu=np.array([[1.],[0.]])
+Cy=np.array([[1.,0.]])
+max_lft_residual=0.
+for dm in [-1.,0.,1.]:
+    for dk in [-1.,0.,1.]:
+        Delta=np.diag([dm,dk])
+        for si in s:
+            R=np.linalg.solve(si*np.eye(2)-A0,np.eye(2))
+            P11=Cz@R@Bv+Dzv;P12=Cz@R@Bu+Dzu
+            P21=Cy@R@Bv;P22=Cy@R@Bu
+            Fu=(P22+P21@Delta@np.linalg.solve(np.eye(2)-P11@Delta,P12))[0,0]
+            exact=1/((1+wm*dm)*si*si+b0*si+(1+wk*dk))
+            max_lft_residual=max(max_lft_residual,abs(Fu-exact))
+print('exact_lft_residual_9_corners',max_lft_residual)
+# At w=1, dm=dk=1/3 gives m=k=1.1: nominal denominator=.2j, error=0.
+# At w=1, dm=1,dk=-1 gives eta=3j: rho=3 and the reverse-triangle bound is inapplicable.
+print('rho_at_one',(.3+.3)/.2)
+si=.5j
+eta=(-.3*.25-.3)/(.75+.1j)
+actual=abs(-eta/(1+eta))
+print('old_bound_counterexample_at_half',abs(eta),actual)
+fig,axes=plt.subplots(1,2,figsize=(12,4))
+for response in G_mc[:50]:axes[0].semilogx(w,abs(response),color='gray',alpha=.2)
+axes[0].semilogx(w,abs(G0),label='nominal')
+axes[0].set(xlim=(.1,100),ylim=(0,10),xlabel='Frequency (rad/s)',ylabel='Displacement / force')
+axes[1].semilogx(w,envelope,label='2000-sample envelope')
+axes[1].semilogx(w,rho,label='first-order magnitude, not a bound')
+axes[1].semilogx(w,upper,label='rho/(1-rho), only rho<1')
+axes[1].set(xlim=(.1,100),ylim=(0,15),xlabel='Frequency (rad/s)',ylabel='Relative error (clipped)')
+for ax in axes:ax.grid(True);ax.legend()
+plt.tight_layout();plt.show()
+print('msd_complete')`}]}
 />
 
 ## MIMO 不确定性结构
@@ -436,78 +447,71 @@ MIMO 系统中，不确定性作用的位置不同，效果也不同。
 
 **输出不确定性**：$G_p = (I + \Delta_O)G$
 
-$\Delta_O$ 作用在输出端，影响的是输出的测量/执行。例如传感器校准误差、输出端执行器偏差。
+$\Delta_O$ 作用于定义的对象输出坐标，例如将传感器增益纳入输出模型；若物理输出与测量输出不同，应另列端口，不混成同一个信号。
 
 **输入不确定性**：$G_p = G(I + \Delta_I)$
 
-$\Delta_I$ 作用在输入端，影响的是控制输入。例如执行器增益误差、输入端扰动。
+$\Delta_I$ 作用在输入端，影响的是控制输入。例如执行器增益误差；输入端的外部扰动是另外的信号，不是这种模型块。
 
 **关键区别**：在闭环中，两种不确定性通过不同的传递函数影响稳定性。
 
-输出不确定性的鲁棒稳定性条件：$\|T_O \Delta_O\|_\infty < 1$，其中 $T_O = G_p C(I + G_p C)^{-1}$ 是**输入互补灵敏度**。
+在标称互连已内部稳定、所有通道proper且误差块稳定有界、连接适定的前提下，应用上一课的小增益方法。令 $K_c$ 为控制器，采用标称 $G_0$，而不是未知的实际 $G_p$：
 
-输入不确定性的鲁棒稳定性条件：$\|T_I \Delta_I\|_\infty < 1$，其中 $T_I = C G_p(I + C G_p)^{-1}$ 是**输出互补灵敏度**。
+$$
+T_O=G_0K_c(I+G_0K_c)^{-1},\qquad
+T_I=K_cG_0(I+K_cG_0)^{-1}.
+$$
 
-> 💡 SISO 系统中 $T_O = T_I = T$（互补灵敏度相同），所以输入/输出不确定性没有区别。MIMO 系统中 $T_O \neq T_I$，**输入端的不确定性和输出端的不确定性对稳定性的影响不同**——这是 MIMO 鲁棒控制的核心难点之一。
+$T_O$ 是输出回路的互补灵敏度（尺寸为输出数），$T_I$ 是输入回路的互补灵敏度（尺寸为输入数）。输出、输入无权误差的充分条件分别可写成 $\|T_O\Delta_O\|_\infty<1$、$\|T_I\Delta_I\|_\infty<1$；若使用权重，应按具体连接顺序保留权重与矩阵的乘法位置。
+
+> SISO标量可交换时两式相同。MIMO中它们**可以不同**，并非必然不同：当 $K_c=I$ 且维数匹配时，$G_0(I+G_0)^{-1}=(I+G_0)^{-1}G_0$，不能用单位控制器实验宣称两者不等。输入扰动是信号；输入增益偏差才属于此处的模型误差。
+
+两通道先按各自标称量归一化，再计算奇异值；不同坐标缩放会改变奇异值，不能跨单位直接排名。为实际看到端口差别，本次取
+
+$$
+G_0(s)=\begin{bmatrix}1/(s+1)&2/(s+1)\\0&1/(s+2)\end{bmatrix},
+\qquad K_c=\operatorname{diag}(g,1).
+$$
+
+它由 $A=\operatorname{diag}(-1,-2)$、$B=\begin{bmatrix}1&2\\0&1\end{bmatrix}$、$C_{\rm plant}=I$ 实现。闭环状态矩阵 $A-BK_cC_{\rm plant}$ 为上三角，极点为 $-1-g,-3$，本页 $g\in[0.5,4]$ 时均稳定。在交互默认 $g=2,\omega=1$ rad/s，$\bar\sigma(T_O)=0.798266$、$\bar\sigma(T_I)=1.126262$；$g=1$ 时两矩阵完全相同。Notebook列出 $g=0.5,1,2,4$ 的全部结果，说明输入回路也不总是较大。
+
+频响数组显式使用 `frequency_response(..., squeeze=False).frdata`，保留“输出×输入×频率”三个维度；逐频点取 `fr[:,:,j]`，不能先丢掉输入维度再按三维索引。
 
 <JupyterNotebook
-  language="python"
+  title="MIMO输入与输出端口"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-np.random.seed(42)
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {
-      code: `# MIMO 输入/输出不确定性对比
-# 2×2 系统: 展示输入和输出不确定性的不同影响
-
-A = np.diag([-1, -2, -3, -4])
-B = np.array([[1, 0], [0, 1], [1, 0], [0, 1]])
-C = np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
-D = np.zeros((2, 2))
-G_ss = ctrl.ss(A, B, C, D)
-
-omega_mimo = np.logspace(-2, 2, 500)
-G_jw = G_ss.freqresp(omega_mimo)
-G_mat = G_jw.fresp[:, 0, :]
-
-sv_T_I = np.zeros(len(omega_mimo))
-sv_T_O = np.zeros(len(omega_mimo))
-
-for i, w in enumerate(omega_mimo):
-    G_w = G_mat[:, :, i]
-    T_O = G_w @ np.linalg.inv(np.eye(2) + G_w)
-    T_I = np.linalg.inv(np.eye(2) + G_w) @ G_w
-    sv_T_O[i] = np.max(np.linalg.svd(T_O, compute_uv=False))
-    sv_T_I[i] = np.max(np.linalg.svd(T_I, compute_uv=False))
-
-print("=== MIMO 输入/输出不确定性对比 ===")
-print(f"系统: 2×2 MIMO, 单位反馈")
-print(f"\\n关键发现: T_I 和 T_O 的最大奇异值不同!")
-print(f"这意味着输入端和输出端的不确定性对稳定性的影响不同。")
-
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.semilogx(omega_mimo, 20*np.log10(sv_T_O), 'b-', linewidth=2, label='σ̄(T_O) — 输出不确定性')
-ax.semilogx(omega_mimo, 20*np.log10(sv_T_I), 'r--', linewidth=2, label='σ̄(T_I) — 输入不确定性')
-ax.axhline(0, color='k', linestyle=':', alpha=0.3)
-ax.set_xlabel('频率 (rad/s)')
-ax.set_ylabel('最大奇异值 (dB)')
-ax.set_title('MIMO 互补灵敏度: 输入 vs 输出不确定性')
-ax.legend()
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-diff_db = 20*np.log10(sv_T_O) - 20*np.log10(sv_T_I)
-max_diff_idx = np.argmax(np.abs(diff_db))
-print(f"\\n最大差异频率: ω = {omega_mimo[max_diff_idx]:.2f} rad/s")
-print(f"差异: {diff_db[max_diff_idx]:.2f} dB")
-print(f"\\n💡 如果只考虑输出不确定性而忽略输入不确定性，")
-print(f"   可能在某些频率遗漏了更严格的约束。")`
-    }
-  ]}
+from scipy.optimize import curve_fit`}
+  cells={[{code: `A=np.diag([-1.,-2.]);B=np.array([[1.,2.],[0.,1.]])
+Cp=np.eye(2);D=np.zeros((2,2))
+plant=ctrl.ss(A,B,Cp,D)
+w=np.logspace(-2,2,500)
+fr=ctrl.frequency_response(plant,w,squeeze=False).frdata
+assert fr.shape==(2,2,500)
+I=np.eye(2)
+rows=[]
+for gain in [.5,1.,2.,4.]:
+    Kc=np.diag([gain,1.])
+    H=Cp@np.linalg.solve(1j*I-A,B)
+    Lo=H@Kc;Li=Kc@H
+    To=np.linalg.solve((I+Lo).T,Lo.T).T
+    Ti=np.linalg.solve((I+Li).T,Li.T).T
+    row=[gain,float(np.linalg.svd(To,compute_uv=False)[0]),float(np.linalg.svd(Ti,compute_uv=False)[0]),float(np.linalg.norm(To-Ti))]
+    rows.append(row);print('mimo_at_one',row)
+    assert max(np.linalg.eigvals(A-B@Kc@Cp).real)<0
+sv_o=[];sv_i=[]
+Kc=np.diag([2.,1.])
+for j in range(len(w)):
+    H=fr[:,:,j];Lo=H@Kc;Li=Kc@H
+    To=np.linalg.solve((I+Lo).T,Lo.T).T;Ti=np.linalg.solve((I+Li).T,Li.T).T
+    sv_o.append(np.linalg.svd(To,compute_uv=False)[0]);sv_i.append(np.linalg.svd(Ti,compute_uv=False)[0])
+fig,ax=plt.subplots(figsize=(9,4))
+ax.semilogx(w,sv_o,label='output-loop T_O')
+ax.semilogx(w,sv_i,label='input-loop T_I')
+ax.set(xlim=(.01,100),ylim=(0,2.5),xlabel='Frequency (rad/s)',ylabel='Largest singular value')
+ax.legend();ax.grid(True);plt.tight_layout();plt.show()
+print('mimo_complete')`}]}
 />
 
 ### 结构化不确定性
@@ -523,7 +527,7 @@ $$
 \Delta = \text{diag}(\delta_1 I_{r_1}, \delta_2 I_{r_2}, \ldots, \delta_q I_{r_q})
 $$
 
-每个 $\delta_i$ 是一个独立的不确定性，$r_i$ 是其重数（标量不确定性 $r_i = 1$，满块不确定性 $r_i > 1$）。
+每个 $\delta_i$ 是一个实或复标量，$r_i$ 表示同一个标量重复出现的次数；$\delta_i I_{r_i}$ 仍是重复标量块，**不是任意满块**。满块须另外写成矩阵 $\Delta_f$ 并注明维数、实/复类型与范数界。多个物理参数是否独立变化也必须由假设或数据支持。
 
 这种结构正是 μ 分析的基础（见 [μ综合方法](/robust/mu-synthesis)）。
 
@@ -548,25 +552,26 @@ $$
 
 将实参数 $\delta \in [-1, 1]$ 替换为复数 $\delta \in \lbrace z \in ℂ : |z| \leq 1\rbrace$。
 
-**优点**：μ 的上界计算变得简单（标准的 D-K 迭代）。
+**作用**：扩大成复不确定性集合，可使用相应的复μ上界分析；D-K迭代是控制器综合的一条路线，不等于直接计算μ的定义。
 
 **缺点**：引入了额外保守性——允许了物理上不可能的复数扰动。例如，质量不可能变成复数，但复数化后 μ 分析会考虑这种情况。
 
 ### 方法二：混合 μ 分析
 
-保留实参数结构，使用更复杂的 Lyapunov 函数（参数依赖的 Lyapunov 函数）。
+保留实参数和复动态块的结构，计算混合μ的上下界，常涉及适合该结构的缩放。参数依赖Lyapunov函数是另一类分析工具，不能与混合μ直接画等号。
 
-**优点**：保守性更小。
+**作用**：避免单纯复数化引入的那部分集合扩大，但数值上下界可能仍有间隙，不能保证每次都得到精确或更小的计算结果。
 
-**缺点**：计算量大，软件支持有限。
+**限制**：计算和数值处理更复杂，具体支持依工具与块结构而定；本课不实现μ求解器。
 
 ### 工程实践
 
-通常用**方法一（复数化）+ Monte Carlo 验证**：
-1. 用复数化进行 μ 分析和控制器设计
-2. 用 Monte Carlo 仿真（只取实参数）验证设计
-3. 如果 Monte Carlo 通过 → 复数化的保守性可接受
-4. 如果 Monte Carlo 不通过 → 需要更精细的分析或调整设计
+可先用较易处理的集合作保守分析，再用真实参数的样本寻找遗漏与反例：
+
+1. 明确哪些参数是实数、哪些动态块允许复变化；必要时使用有依据的复数外包集合。
+2. 若对外包集合取得有效证书，证书才能传递给被包含的物理集合。
+3. Monte Carlo通过只表示被抽到的工况在声明指标与时窗内通过，不能证明外包集合的保守性“可接受”，更不能证明全集合安全。
+4. 若仿真出现失败，先核模型、控制器、指标、采样和数值误差；随机搜索未发现反例不意味着反例不存在。
 
 ## 不确定性验证
 
@@ -577,18 +582,19 @@ $$
 **1. 覆盖性检查**：所有测量数据是否都在不确定性边界内？
 
 $$
-|G_i(j\omega)| \leq W(\omega) \quad \forall i, \omega
+|G_i(j\omega_j)-G_0(j\omega_j)|\le W_a(\omega_j),\qquad
+\left|\frac{G_i(j\omega_j)-G_0(j\omega_j)}{G_0(j\omega_j)}\right|\le W_m(\omega_j)
 $$
 
 如果有数据超出边界 → 增大 $W(\omega)$ 或检查数据质量。
 
 **2. tightness 检查**：边界是否过松？过松的边界导致过于保守的设计。
 
-指标：边界利用率 = $\frac{\max_i |\Delta_i(j\omega)|}{W(\omega)}$。如果在大部分频率上利用率远低于 1 → 边界过松，可以收紧。
+指标：边界利用率 = $\frac{\max_i |\Delta_i(j\omega)|}{W(\omega)}$。较低利用率提示可以进一步研究，但不能只按已有样本收紧全集合证书；必须保留原覆盖依据并重新核查。
 
-**3. Monte Carlo 验证**：在不确定性范围内随机采样，检查闭环性能。如果性能满足率 > 99% → 不确定性模型合理。
+**3. Monte Carlo检查**：在声明的分布、参数范围和评价时窗内报告样本数量、失败数量与指标。即使样本通过率高，也不能以“超过99%”证明模型合理或最坏情况稳定；抽样分布、漏掉的结构、未测频点与统计不确定性都要另外讨论。
 
-**4. 闭环实验验证**：在实际系统上测试控制器。如果实际性能与预测一致 → 不确定性模型准确。
+**4. 闭环实验核验**：在允许的保护和工况下比较实测与预测，并记录噪声、工作点、激励和测试范围。一致性是该范围的支持证据，不证明所有未测工况都准确；本页没有进行真实硬件实验。
 
 ### 常见错误
 
@@ -631,31 +637,45 @@ $$
 
 Vinnicombe 度量（$\nu$-gap metric）提供了一种衡量两个传递函数"有多接近"的方法，特别适合判断标称模型和实际模型的差距是否在控制器可容忍的范围内。
 
+对尺寸匹配、满足定义条件的SISO有理对象，可先计算逐点弦距：
+
 $$
-d_\nu(G_1, G_2) = \left\|\frac{(G_1 - G_2)}{\sqrt{1+|G_1|^2}\sqrt{1+|G_2|^2}}\right\|_\infty
+\kappa(G_1,G_2;j\omega)=
+\frac{|G_1(j\omega)-G_2(j\omega)|}
+{\sqrt{1+|G_1(j\omega)|^2}\sqrt{1+|G_2(j\omega)|^2}}.
 $$
 
-$d_\nu \in [0, 1]$。$d_\nu = 0$ 表示两个系统完全相同，$d_\nu = 1$ 表示完全不同。
+只有满足相应的非奇异性及绕数/拓扑条件时，$d_\nu$ 才等于这个量的全频上确界；条件失败时按定义取1。MIMO还须使用矩阵归一化图与最大奇异值，不能逐元素套SISO公式。$d_\nu=1$ 表示该度量下达到最大距离，并不意味着对象“完全不同”或不存在共同稳定控制器。
 
-**关键定理**：如果控制器 $C$ 稳定标称系统 $G_0$，且 $b_{G_0,C} > d_\nu(G_0, G_p)$（$b$ 是鲁棒稳定裕度），则 $C$ 也稳定实际系统 $G_p$。
+一个不能漏掉拓扑条件的例子是 $G_1=0$、$G_2=0.1/(s-1)$。逐点弦距上确界只有 $0.1/\sqrt{1.01}=0.099504$，但第二个对象有不稳定极点，不能因频响幅值小就忽略它。
 
-> 💡 $\nu$-gap 度量的优势在于它同时考虑了幅值和相位偏差，而且直接给出"控制器能否容忍这个偏差"的判据——不需要单独分析每种不确定性类型。
+令 $a=\sqrt{1.01}$，第二个对象的稳定归一化互质因子可取 $N_2=0.1/(s+a)$、$M_2=(s-1)/(s+a)$；第一个取 $N_1=0,M_1=1$。归一化图的交叉乘积为
+
+$$
+\Gamma_2^*\Gamma_1=M_2^*(s)=\frac{s+1}{s-a}.
+$$
+
+它有一个右半平面极点、没有右半平面零点，绕数不为零，故 $d_\nu=1$。Notebook复算这个特殊例的弦距与零极点计数，不冒称实现了通用ν-gap求解器。零控制器稳定 $G_1$，却不能稳定 $G_2$，这也说明仅看小的弦距会遗漏关键条件。
+
+**稳定性传递定理的使用边界**：对满足定理假设的对象和内部稳定控制器，如果归一化的鲁棒稳定裕度 $b_{G_0,K_c}>d_\nu(G_0,G_p)$，可保证该控制器也稳定实际对象。这里的 $b$ 是相应归一化图定义下的裕度，不能拿相位裕度或普通 $M_S$ 数字替代。
+
+一手参考（2026-10-24核对）：[频响族与权重建模](https://www.mathworks.com/help/robust/ug/modeling-a-family-of-responses-as-an-uncertain-system.html)、[ν-gap及绕数条件](https://www.mathworks.com/help/robust/ref/dynamicsystem.gapmetric.html)、[结构块与μ上下界](https://www.mathworks.com/help/robust/ref/mussv.html)、[python-control频响数组](https://python-control.readthedocs.io/en/latest/generated/control.FrequencyResponseData.html)。
 
 ## 小结
 
 1. **不确定性建模**是鲁棒控制设计中最需要工程判断的环节——模型太粗不鲁棒，太紧太保守。
 
-2. **加性不确定性** $G_p = G + \Delta_a$ 适合高频未建模动态；**乘性不确定性** $G_p = G(1+\Delta_m)$ 适合参数变化。两者关系 $W_a = |G| \cdot W_m$。
+2. **加性误差**描述对象的绝对偏差，**乘性误差**描述相对偏差。对于同一组模型且 $G\ne0$ 的频点，逐点包络满足 $W_a=|G|W_m$；稳定性、零点和矩阵顺序还需另外检查。
 
-3. **从实验数据辨识边界**：测量频率响应 → 计算偏差 → 取包络 → 拟合低阶权重函数。宁可偏大（保守但安全）。
+3. **从实验数据辨识边界**：测量频率响应 → 计算偏差 → 取包络 → 拟合低阶权重函数。样本覆盖和全集合证书要分别陈述，偏大不自动表示安全。
 
 4. **互质分解**统一了加性和乘性不确定性，可以处理不稳定标称模型。
 
-5. **LFT 构造**：不确定性在分子中 → $P_{11} = 0$（前馈形式）；不确定性在分母中 → $P_{11} \neq 0$（内部反馈回路）。状态空间方法系统化但计算繁琐，通常用软件工具。
+5. **LFT构造**：先定端口 $[z;y]=P[v;u],v=\Delta z$，再按状态空间读取各块并回代。实现不唯一；质量倒数等有理参数可用内部反馈精确保留，不能以Taylor近似冒充精确集合。
 
 6. **MIMO 系统**中，输入和输出不确定性通过不同的互补灵敏度影响稳定性——这是 SISO 中没有的新问题。
 
-7. **实参数不确定性**通常用复数化处理 + Monte Carlo 验证。
+7. **实参数、重复标量块与满块**应明确区分；复数化扩大集合，Monte Carlo只核查抽样工况，不能替代证书。
 
 8. **验证**不可或缺：覆盖性检查、tightness 检查、Monte Carlo 验证、闭环实验验证。
 
@@ -700,6 +720,42 @@ $d_\nu \in [0, 1]$。$d_\nu = 0$ 表示两个系统完全相同，$d_\nu = 1$ �
 
 ## 答案
 
+<JupyterNotebook
+  title="复核全部习题和度量边界"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit`}
+  cells={[{code: `# Retain all four exercises; clarify the missing phase information in exercise 2.
+s=10j
+G0=2/(s+1);Gp=2.4/(s+1)+.1/(s*s+.2*s+100)
+print('answer1_resonance',abs(Gp-G0),abs((Gp-G0)/G0))
+mag=np.array([.95,1.05,.98,1.02,1.10])
+for nominal in [1.,.9]:
+    lower=abs(mag/nominal-1);upper=mag/nominal+1
+    print('answer2_magnitude_only_bounds',nominal,lower,upper)
+print('same_magnitude_opposite_phase_relative_error',abs((-1-1)/1))
+for delta in [-1.,0.,1.]:
+    for si in [0j,1j,10j]:
+        P=np.array([[-.5/(si+1),si/(si+1)],[.5/(si+1),1/(si+1)]])
+        Fu=P[1,1]+P[1,0]*delta/(1-P[0,0]*delta)*P[0,1]
+        target=(1+.5*delta)/(si+1+.5*delta)
+        assert abs(Fu-target)<1e-12
+print('answer3_lft_complete')
+print('answer4_sample_utilization',1/np.array([1.5,1.1,3.2]))
+# SISO coprime factor example; simultaneous scaling cancels and is not multiplicative plant uncertainty.
+si=1j;N=1/(si+2);M=(si+1)/(si+2);delta=.2
+print('coprime_nominal_wrong_correct',N/M,N*(1+delta)/(M*(1+delta)),N*(1+delta)/M)
+# G1=0 and G2=eps/(s-1): small frequency magnitude does not remove an unstable mode.
+eps=.1
+print('chordal_supremum_only',eps/np.sqrt(1+eps*eps))
+# normalized N2=eps/(s+a), M2=(s-1)/(s+a), a=sqrt(1+eps^2).
+# Gamma2^* Gamma1 = (s+1)/(s-a): no RHP zero, one RHP pole -> nonzero winding.
+print('normalized_graph_cross_RHP_pole',np.sqrt(1+eps*eps),'zeros_minus_poles',-1)
+print('all_answers_complete')`}]}
+/>
+
+
 ### 习题 1 答案
 
 **(a)** 加性偏差：$\Delta_a(s) = G_p - G = \frac{2.4}{s+1} - \frac{2}{s+1} = \frac{0.4}{s+1}$
@@ -718,44 +774,39 @@ $|\Delta_a(j\omega)| = \frac{0.4}{\sqrt{\omega^2+1}}$
 
 **(c)** 加性偏差：$\Delta_a = \frac{0.4}{s+1} + \frac{0.1}{s^2+0.2s+100}$
 
-在低频处（$\omega \ll 10$），第一项主导，$\Delta_a \approx \frac{0.4}{j\omega+1}$。
-在高频处（$\omega \approx 10$），第二项（共振）主导，$|\Delta_a| \approx \frac{0.1}{0.2} = 0.5$。
+在低频处，两个误差项都要保留后再判断谁主导。在 $\omega=10$ rad/s，共振分母是 $j2$，因此共振附加项为 $-0.05j$，不是旧文的0.5。完整加性偏差为
 
-乘性偏差：$\Delta_m = \frac{\Delta_a}{G} = 0.2 + \frac{0.1(s+1)}{2(s^2+0.2s+100)}$
+$$
+\Delta_a(j10)=\frac{0.4}{1+j10}-0.05j
+\approx0.003960-0.089604j,
+\qquad |\Delta_a(j10)|\approx0.089691.
+$$
 
-在共振频率处，$|\Delta_m| \approx \frac{0.1 \times 10}{2 \times 0.2} = 2.5$——乘性偏差在高频处爆炸（因为 $|G|$ 在高频衰减到很小）。
+乘性偏差仍为 $\Delta_m=0.2+0.1(s+1)/[2(s^2+0.2s+100)]$，故
 
-**结论**：此场景下**加性描述更合适**——高频共振的偏差幅值固定（约 0.5），用加性边界描述简洁。乘性偏差在高频处变得很大（因为除以小的 $|G|$），不够紧凑。
+$$
+\Delta_m(j10)=0.45-0.025j,\qquad |\Delta_m(j10)|\approx0.450694.
+$$
+
+当频率趋于无穷大，附加共振项对乘性误差的贡献趋于0，$\Delta_m\to0.2$，并不“在高频爆炸”。两种描述都可用；加性便于保留这个额外动态项，乘性便于按标称对象比较相对偏差，选择还需频段、零点、权重阶次和稳定误差集合的依据，不能由上述数字大小单独排名。
 
 ### 习题 2 答案
 
-**(a)** 乘性偏差 $|\Delta_{m,i}| = \frac{||G_i| - |G_{nom}||}{|G_{nom}|}$：
+**(a)** 题干只给幅值，没有相位，不能唯一确定复相对误差。由三角不等式，在 $G_0\ne0$ 时只能推出
 
-| 实验 | $|\Delta_{m,i}|$ |
-|------|:---:|
-| 1 | 0.05 |
-| 2 | 0.05 |
-| 3 | 0.02 |
-| 4 | 0.02 |
-| 5 | 0.10 |
+$$
+\left|\frac{|G_i|}{|G_0|}-1\right|
+\le\left|\frac{G_i-G_0}{G_0}\right|
+\le\frac{|G_i|}{|G_0|}+1.
+$$
 
-**(b)** $W_m(1) = \max_i |\Delta_{m,i}| = 0.10$（由实验 5 决定）
+当标称幅值为1时，各实验相对误差的下界依次为0.05、0.05、0.02、0.02、0.10，上界依次为1.95、2.05、1.98、2.02、2.10。若**额外假定每个实验与标称同相**，误差才等于这些下界。反例：$G_i=-1,G_0=1$，幅值完全一样而相对误差为2。
 
-**(c)** 新标称 $|G_{nom}| = 0.9$：
+**(b)** 无相位数据时，样本误差包络至少0.10，保守的逐点上界为2.10，不能宣称精确包络就是0.10。只有在上述同相假设下，$W_m(1)=0.10$，由实验5决定。
 
-$|\Delta_{m,i}| = \frac{||G_i| - 0.9|}{0.9}$
+**(c)** 标称幅值改为0.9时，下界依次为 $1/18,1/6,4/45,2/15,2/9$，即约0.055556、0.166667、0.088889、0.133333、0.222222；上界依次为2.055556、2.166667、2.088889、2.133333、2.222222。同相假设下的包络为 $2/9$，但仅凭幅值仍不能唯一确定实际复误差包络。
 
-| 实验 | $|\Delta_{m,i}|$ |
-|------|:---:|
-| 1 | 0.056 |
-| 2 | 0.167 |
-| 3 | 0.089 |
-| 4 | 0.133 |
-| 5 | 0.222 |
-
-$W_m(1) = 0.222$——比之前大了一倍多！
-
-**说明**：标称模型偏离数据中心越远，不确定性边界越大。选择标称模型时应尽量靠近数据"中心"，以最小化不确定性边界。这也说明了标称模型的选择和不确定性建模是耦合的。
+这说明标称模型选择与误差边界有关，比较“中心”时应先声明使用复数绝对误差、相对误差还是其它准则；不能仅由一组幅值数据的某次改动推导任意对象上的最优标称选法。
 
 ### 习题 3 答案
 
@@ -801,7 +852,7 @@ $= \frac{(s+1) + 0.5\delta(s+1)}{(s+1)(s+1+0.5\delta)} = \frac{(s+1)(1+0.5\delta
 
 ### 习题 4 答案
 
-**(a)** 10-100 rad/s 范围最保守（比值 3.2，边界比实际需要大 3.2 倍）。
+**(a)** 10-100 rad/s 范围最保守（比值 3.2，边界是给定Monte Carlo网格包络的3.2倍；真实全集合最坏值未知）。
 
 **(b)** 0.1-10 rad/s 范围最紧（比值 1.1，边界几乎刚好覆盖数据）。
 
@@ -809,5 +860,5 @@ $= \frac{(s+1) + 0.5\delta(s+1)}{(s+1)(s+1+0.5\delta)} = \frac{(s+1)(1+0.5\delta
 1. 在 10-100 rad/s 范围降低权重函数的高频增益（当前过松 3.2 倍）
 2. 在 0.01-0.1 rad/s 范围略微降低低频增益（当前过松 1.5 倍）
 3. 保持 0.1-10 rad/s 范围不变（已经足够紧）
-4. 具体做法：用更低阶的权重函数，或分段拟合（不同频率范围用不同的权重）
-5. 改进后重新验证覆盖性：确保新边界仍然覆盖所有 Monte Carlo 数据
+4. 可尝试重新拟合低阶稳定proper权重，但降阶不保证更紧；若分段拟合，还需保证最终实现及全频覆盖，不能把互不相接的频点函数直接当传递函数
+5. 改进后重新验证覆盖性：先核所有原样本和频点，再核原解析或其它保证所覆盖的模型集合；只覆盖Monte Carlo数据不足以声称保持全集合保证

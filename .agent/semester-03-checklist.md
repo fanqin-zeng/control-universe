@@ -67,6 +67,7 @@
 | DEP14 | e6b985f润色增量授权发布与公网验收 | [x] | docs/deployment/zh-e6b985f-release.md;docs/deployment/zh-e6b985f-public-validation.json;commit:4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84 |
 | QA01 | 顺序校验负向测试消除历史进度假设 | [ ] | .agent/semester-03/ml-01/test-debt.md;仅记录既有测试对DISCRETE-01未交付的假设，不借本课改其它课程或放宽校验 |
 | RB01 | ROBUST-01范数/裕度/题解与Notebook债务返修 | [x] | .agent/semester-03/robust-01/acceptance.md;docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;已实测关闭PY-018及S04本课Notebook债务，其它债务保留 |
+| RB02 | ROBUST-02不确定性模型边界、MIMO API与题解返修 | [x] | .agent/semester-03/robust-02/acceptance.md;PY-019与S04本课运行债务已实测关闭，余课保留 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -220,7 +221,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;commit:3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46;rank5原生/Pyodide/页面/构建与隔离提交树检查通过 |
-| ROBUST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/02-uncertainty-modeling.md;.agent/semester-03/robust-02/acceptance.md;rank5四Notebook五cell与双构建实测通过 |
 | ROBUST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |

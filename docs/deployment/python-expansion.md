@@ -47,7 +47,7 @@
 | implementation/realtime-control（实时控制） | 0/1 | 0 | 1 |
 | estimation/kalman-filter（卡尔曼滤波） | 1/3 | 2 | 2, 3 |
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
-| robust/uncertainty-modeling（不确定性建模） | 2/3 | 3 | 3 |
+| robust/uncertainty-modeling（不确定性建模） | 4/4 | 5 | 无 |
 | robust/robust-stability（鲁棒稳定性） | 2/3 | 3 | 2 |
 | robust/robust-performance（鲁棒性能） | 2/2 | 4 | 无 |
 | robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
@@ -142,3 +142,5 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 ## 验收与发布
 
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
+
+ROBUST-02：2026-10-24，4/4 Notebook、5/5 单元完整浏览器实跑，原PY-019二维/三维索引问题已随课程重构修复。独立证据`.agent/semester-03/robust-02/pyodide.json`；本条只更新本课，不代表全站重新验收或发布。

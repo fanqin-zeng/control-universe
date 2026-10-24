@@ -78,6 +78,7 @@
 | [073](2026-10-24-073.md) | 2026-10-24 | robust/robustness-concept.mdx | 范数与定理条件 | BOTH | 卫韧+柯验+秦构（既有检查执行不足） | 纠正裕度单位、连续峰/网格、小增益充分性、LQR条件与题解；四Notebook及真实TS独立复核 |
 | [074](2026-10-24-074.md) | 2026-10-24 | implementation/digital-pid.mdx | 离散状态、滤波与可达性 | BOTH | 周联+柯验（既有检查执行不足） | 修正α/N/c、反算时序与单位、ZN与不可达/级联题解；保留主题、四题与旧ID |
 | [075](2026-10-24-075.md) | 2026-10-24 | intelligent/fuzzy-control-basics.mdx | 模糊控制 | BOTH | 林矩+柯验（清单缺项） | 归一化条件、FAMM行列、MOM与积分反例；有限测量不推出方法排名或通用稳定性 |
+| [076](2026-10-24-076.md) | 2026-10-24 | robust/uncertainty-modeling.mdx | 互质/LFT/MIMO/习题 | BOTH | 林矩+柯验+秦构+何疑（既有清单未执行） | 精确回代、相位缺失与三维API返修；独立180组对账，见ROBUST-02证据 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）
