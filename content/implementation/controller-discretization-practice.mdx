@@ -1,0 +1,292 @@
+---
+title: "控制器部署"
+description: "把连续补偿器变成带明确系数、状态、有限字长与采样时序的程序，用逐拍向量和闭环延迟反例建立部署验收。"
+---
+
+# 控制器部署
+
+一台小电机在电脑仿真里能平稳跟随指令，换到控制板后却有轻微抖动，甚至开始振荡。参数表看起来没变，真正变化的可能是：反馈系数抄反了，旧输入被提前覆盖了，小数位不够，或计算结果晚了一拍才送到执行器。部署要回答的不是“程序能不能编译”，而是**实际程序是否实现了经过检验的控制规律**。
+
+[离散化方法](/discrete-sampled/discretization-methods)已解释连续模型怎样变成离散模型；[数字PID](/implementation/digital-pid)已讨论逐拍状态和限幅。本课把这些知识接成一个部署过程：从[控制系统架构](/implementation/computer-control-architecture)的输入输出时序，到[数值方法](/math/numerical-methods)中的有限精度误差，最后形成可重放、可追溯、可回退的交付物。这里不编写具体开发板的驱动，也不把PC上的教学计算称为板上验收。
+
+## 部署前冻结接口
+
+用电机回路中的一个一阶补偿器贯穿讲解：
+
+$$
+C(s)=\frac{2}{0.2s+1}.
+$$
+
+**它是从输入e到输出u的补偿器，不是被控电机模型。** 本例信号都已归一化，增益K=2，时间常数τ=0.2 s；默认采样周期Ts=0.02 s。选它是为了把状态、字长与时序看清，不意味着它适合任意电机。仅证明补偿器内部递推稳定，不能证明整个控制回路稳定。
+
+| 接口项 | 本课约定 | 部署时必须记录 |
+|---|---|---|
+| 输入与输出 | 当前e[k]进入本拍计算，随后输出u[k] | 传感器方向/标度、执行器单位/限幅和真正送达时刻 |
+| 周期 | 默认0.02 s，系数按此生成 | 设计周期、实际间隔、抖动与丢样处理 |
+| 状态 | 上一次输出u[k−1]、上一次输入e[k−1] | 状态顺序、初始化值、切换时如何映射 |
+| 数值格式 | 浮点参照与教学16位定点实现 | 数据类型、系数缩放、宽乘加、舍入与饱和位置 |
+| 版本与回退 | 系数、代码、配置与参考向量一起保存 | 软件版本、标定版本、判停条件、旧参数与状态恢复步骤 |
+
+![部署时序：采样并锁定当前输入，读取两份旧状态，计算与输出，最后提交两份新状态；实际输出延迟要进入闭环模型](/diagrams/implementation/controller-deployment-workflow.svg)
+
+## 从连续补偿器到差分系数
+
+本例采用双线性变换（Tustin），不加预扭曲：
+
+$$
+s=\frac{2}{T_s}\frac{1-z^{-1}}{1+z^{-1}},\qquad
+C(z)=\frac{b(1+z^{-1})}{1-a z^{-1}},
+$$
+
+$$
+a=\frac{2\tau-T_s}{2\tau+T_s},\qquad
+b=\frac{K T_s}{2\tau+T_s}.
+$$
+
+由分母移项可得：
+
+$$
+u[k]=a u[k-1]+b e[k]+b e[k-1].
+$$
+
+默认参数给出a=19/21≈0.90476190，b=2/21≈0.09523810。若库接口把分母写成1+a₁z⁻¹，**a₁=−19/21**，程序却仍需做“减a₁乘旧输出”。如果接口直接使用正反馈系数a，则传入+19/21。先读库的差分方程，再转换符号；不能仅凭变量也叫a₁就照抄。
+
+[SciPy bilinear官方文档](https://docs.scipy.org/doc/scipy-1.11.4/reference/generated/scipy.signal.bilinear.html)说明它使用双线性变换且不自动预扭曲；[Arm CMSIS-DSP的DF1文档](https://arm-software.github.io/CMSIS-DSP/v1.15.0/group__BiquadCascadeDF1.html)也专门提醒反馈系数的符号约定。这里用SciPy核对系数，并未在某款Arm硬件上执行内核。需要预扭曲的设计必须明确目标频率和变换，再重新生成并检验系数。
+
+## 系数和状态如何进入程序
+
+本例每拍只需要两份历史，但**读旧状态与写新状态的顺序属于算法**：
+
+```python
+def tick(e, old_u, old_e, a, b):
+    u = a * old_u + b * (e + old_e)
+    return u, (u, e)  # caller commits both new histories after calculation
+```
+
+错误写法是先令old_e=e，再计算；这样e[k−1]被当前输入替代，阶跃第一拍就会发生不同。默认双历史为零，e[0]=1时正确首拍u[0]=2/21≈0.09523810，而不是把两个输入项都按1计算。
+
+这里的非零首拍来自双线性变换后的直接输入项b·e[k]。它不等于原连续严格真有理补偿器在t=0的阶跃值；双线性变换不是连续阶跃在采样时刻的精确重放。验收逐拍向量时应保持同一个离散模型与输出时刻约定，不能把两种模型的首拍差异误判成程序错误。
+
+如果切换前的历史为u[−1]=0.25、e[−1]=0.5，当前e[0]=1，首拍应为31/84≈0.36904762；随意清零会失去这个初始条件。一般控制器的状态实现可能与本例不同，不能把“复制两个数”当作所有状态空间模型的通用切换方法；切换仍需跟踪实际指令并检验连续性。
+
+**逐拍参考向量**是固定输入序列、初始状态和期望输出。这里用[1,1,0.5,0,−0.5,−1,0,1]，先与库结果逐点对齐，再让实际程序重放相同序列。它能定位符号或状态顺序错误，但这一小段向量不覆盖所有输入、异常或闭环行为。
+
+<JupyterNotebook
+  title="实验1：系数与逐拍重放"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import json
+plt.rcParams["axes.unicode_minus"] = False`}
+  cells={[
+    { code: `from scipy import signal
+Ts=.02;a=(.4-Ts)/(.4+Ts);b=2*Ts/(.4+Ts)
+numerator,denominator=signal.bilinear([2.],[.2,1.],fs=1/Ts)
+inputs=np.array([1.,1.,.5,0.,-.5,-1.,0.,1.])
+outputs=signal.lfilter(numerator,denominator,inputs)
+coefficients={"a":a,"b":b,"library_a1":float(denominator[1]),
+              "first":float(outputs[0]),"stateFirst":a*.25+b*(1.+.5),
+              "A_F8":int(np.floor(a*256+.5)),"B_F8":int(np.floor(b*256+.5)),
+              "positiveHalf":int(np.floor(.5+.5)),"negativeHalf":-int(np.floor(.5+.5)),
+              "maxStoredF12":32767/4096,"minStoredF12":-32768/4096}
+print(json.dumps(coefficients));print("golden="+json.dumps(outputs.tolist()))
+assert np.allclose(numerator,[2/21,2/21]);assert np.allclose(denominator,[1,-19/21])` },
+    { code: `# Streaming replay: both past values are read before either is overwritten.
+def tick(e,old_u,old_e):
+    u=a*old_u+b*(e+old_e)
+    return u,(u,e)
+state=(0.,0.);replayed=[]
+for e in inputs:
+    value,state=tick(e,*state);replayed.append(value)
+assert np.allclose(replayed,outputs,atol=1e-12)
+bad=[];state=(0.,0.)
+for e in inputs:
+    # Deliberate defect: overwrite the old input before computing.
+    u=a*state[0]+b*(e+e);bad.append(u);state=(u,e)
+print("correct="+json.dumps(replayed));print("wrong="+json.dumps(bad))
+fig,ax=plt.subplots(figsize=(7,3))
+ax.step(np.arange(len(inputs)),replayed,where="post",label="correct histories")
+ax.step(np.arange(len(inputs)),bad,where="post",label="overwritten input history")
+ax.set(xlabel="sample index k",ylabel="compensator output",xlim=(0,7),ylim=(-.5,1.))
+ax.grid();ax.legend();plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+
+## 有限字长的验证
+
+浮点模型能通过，不表示缩成整数后还能得到同样结果。定义本课的定点表示：有符号16位整数X表示实数X/2^F，F是小数位数；F改变时，可表示范围也改变。最近舍入，恰好半格时远离零；所以+0.5格舍成+1格，−0.5格舍成−1格。这个规则与某些语言默认的“半值取偶”不同。
+
+默认F=8，比例S=256；系数量化为A=round(aS)=232、B=round(bS)=24。因此aq=A/S=0.90625、bq=B/S=0.09375。整数递推使用：
+
+$$
+W=A U_{k-1}+B E_k+B E_{k-1},\qquad
+U_k=\operatorname{sat}_{16}\!\left(\operatorname{round}_{\rm away}(W/S)\right).
+$$
+
+输入、输出、系数整数均按S缩放；乘积按S²缩放，所以乘加后只除一次S并舍入，最后饱和到有符号16位。不能把每个乘积分别舍入后相加，再说实现等价。宽累加器必须覆盖中间值，不能等溢出后才补一个输出限幅。这里的JavaScript整数乘加落在精确整数范围内；这是教学模型，不是对芯片的累加器位数或执行速度作测量。
+
+本课80拍，k=0..79；每拍先输出再提交历史，图中时刻为kTs。阶跃输入始终为1；正负脉冲前20拍为1、随后20拍为−1、最后40拍为0；两者双历史为零。零输入衰减则保持输入为0，取u[−1]=0.25、e[−1]=0。切换工况会从相应初值重新运行，不会沿用上一幅图的末状态。
+
+<ControllerDeploymentExplorer />
+
+默认阶跃首拍浮点为0.095238、定点为0.093750；第79拍浮点为1.999298、定点为1.980469，80拍最大绝对差0.018830，存储饱和0拍。这是两份递推在该窗口内的差异；不能把末拍值直接叫作稳态增益。
+
+换到零输入衰减，F=8时第79拍浮点约0.00008331，而定点仍为0.01953125。此时aq虽然小于1，舍入却能让非零整数状态保持不变：例如U=5，round(0.90625×5)=5。稳定的线性极点并没有消除状态量化的非线性效应。
+
+在零输入、没有存储饱和且|aq|小于1时，可写u[k]=aq·u[k−1]+η[k]，每次状态舍入误差η的绝对值不超过半格。反复代入后，初态项逐渐衰减，误差项按几何级数求和；因此渐近幅值上界为：
+
+$$
+\limsup_{k\to\infty}|u[k]|\le\frac{2^{-F}}{2(1-|a_q|)}.
+$$
+
+F=8的该上界是0.02083333，覆盖上述残留。它不是阶跃跟踪误差的通用上界，也不包含溢出或其它环节误差。F增大通常缩小单次舍入格，却同时缩小定点量程；必须两头检查。比如F=12的存储范围是[−8,7.99975586]。
+
+下面完整保留三种输入与三档字长；不只展示“位数增加后更接近”的曲线，也保留零输入残留。比较只针对同一递推约定的实现精度，不作浮点/定点平台或离散化方法排名。
+
+<div role="region" aria-label="定点验证指标表" style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 输入 | F | 第79拍浮点 | 第79拍定点 | 最大绝对差 | 存储饱和拍数 |
+|---|---|---|---|---|---|
+| 阶跃 | 4 | 1.99929846 | 1.81250000 | 0.25782434 | 0 |
+| 正负脉冲 | 4 | -0.02874755 | -0.25000000 | 0.38132275 | 0 |
+| 零输入衰减 | 4 | 0.00008331 | 0.25000000 | 0.24991669 | 0 |
+| 阶跃 | 8 | 1.99929846 | 1.98046875 | 0.01882971 | 0 |
+| 正负脉冲 | 8 | -0.02874755 | -0.03125000 | 0.02244402 | 0 |
+| 零输入衰减 | 8 | 0.00008331 | 0.01953125 | 0.01944794 | 0 |
+| 阶跃 | 12 | 1.99929846 | 1.99877930 | 0.00051917 | 0 |
+| 正负脉冲 | 12 | -0.02874755 | -0.02880859 | 0.00063118 | 0 |
+| 零输入衰减 | 12 | 0.00008331 | 0.00122070 | 0.00113740 | 0 |
+
+
+</div>
+
+<JupyterNotebook
+  title="实验2：有限字长与零输入残留"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import json
+plt.rcParams["axes.unicode_minus"] = False`}
+  cells={[
+    { code: `# Teaching signed-16 storage; wide exact integer accumulator, one final rounding.
+def away(x):
+    return int(np.sign(x)*np.floor(abs(x)+.5))
+def fixed_experiment(Ts=.02,F=8,kind="step"):
+    a=(.4-Ts)/(.4+Ts);b=2*Ts/(.4+Ts);S=2**F
+    A=away(a*S);B=away(b*S)
+    yp=.25 if kind=="decay" else 0.;word=away(yp*S);ep=0.
+    rows=[];maxerr=0.;clips=0
+    for k in range(80):
+        e=0. if kind=="decay" else 1. if kind=="step" or k<20 else -1. if k<40 else 0.
+        floating=a*yp+b*(e+ep)
+        acc=A*word+B*away(e*S)+B*away(ep*S)
+        rounded=away(acc/S);nextword=max(-32768,min(32767,rounded))
+        clips+=int(nextword!=rounded)
+        fixed=nextword/S;maxerr=max(maxerr,abs(fixed-floating))
+        rows.append([k*Ts,e,floating,fixed,nextword])
+        yp=floating;word=nextword;ep=e
+    return {"a":a,"b":b,"A":A,"B":B,"aq":A/S,"first":rows[0][2],
+            "fixedFirst":rows[0][3],"finalFloat":yp,"finalFixed":word/S,
+            "maxError":maxerr,"clipped":clips,"deadbandBound":1/(2*(S-abs(A))),"points":rows}
+
+fixed_results=[]
+for F in [4,8,12]:
+    for kind in ["step","pulse","decay"]:
+        v=fixed_experiment(.02,F,kind)
+        fixed_results.append({"F":F,"signal":kind,**{k:v[k] for k in ["finalFloat","finalFixed","maxError","clipped"]}})
+print(json.dumps(fixed_results));print("default="+json.dumps({k:v for k,v in fixed_experiment().items() if k!="points"}))
+print("decay="+json.dumps({k:v for k,v in fixed_experiment(kind="decay").items() if k!="points"}))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+for F in [4,8,12]:
+    rows=np.array(fixed_experiment(.02,F,"decay")["points"])
+    ax.step(rows[:,0],rows[:,3],where="post",label="F="+str(F))
+ax.plot(rows[:,0],rows[:,2],label="floating")
+ax.set(xlabel="time (s)",ylabel="zero-input output",xlim=(0,1.6),ylim=(0,.26))
+ax.grid();ax.legend();plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+
+## 把真实时序放回闭环
+
+再看一个**独立的闭环时序反例**，它不使用前面的一阶补偿器。对象是G(s)=1/(s+1)，比例控制u=12(r−x)，r=0。连续模型稳定；采样并保持输出后，对象精确满足：
+
+$$
+x[k+1]=A_p x[k]+B_p u[k],\qquad
+A_p=e^{-T_s},\quad B_p=1-e^{-T_s}.
+$$
+
+若本拍读取x[k]并在本保持区间施加u[k]=−12x[k]，闭环极点为p=A_p−12B_p。若结果实际晚一拍才送到输出，作用的便是−12x[k−1]，闭环要改为：
+
+$$
+\begin{bmatrix}x[k+1]\\x[k]\end{bmatrix}
+=\begin{bmatrix}A_p&-12B_p\\1&0\end{bmatrix}
+\begin{bmatrix}x[k]\\x[k-1]\end{bmatrix}.
+$$
+
+不能拿无延迟时的p替这个二阶闭环作证明。检查矩阵的谱半径ρ，也就是特征值模的最大值；严格小于1才对应这个线性离散模型的渐近稳定。取x[0]=0.1、延迟历史x[−1]=0，60次状态更新，不设执行器限幅。
+
+| Ts(s) | 无额外延迟极点p | 额外一拍的谱半径ρ | 无延迟 / 一拍延迟 |
+|---|---|---|---|
+| 0.02 | 0.74258275 | 0.54090720 | 稳定 / 稳定 |
+| 0.1 | -0.23711357 | 1.06862107 | 稳定 / 不稳定 |
+| 0.2 | -1.35650021 | 1.47486642 | 不稳定 / 不稳定 |
+
+
+Ts=0.1 s时，无额外延迟的p≈−0.237114，增加一拍后的ρ≈1.068621，模型已不稳定。Ts=0.02 s时两种时序都稳定；Ts=0.2 s时两种都不稳定。所有工况都保留，说明**程序增加的延迟必须回到实际闭环里重新检验**，不是说“只要足够快就可以忽略任何延迟”。有限仿真曲线只辅助观察，稳定性判断在这里来自极点，而不是末点恰巧很小。
+
+实际丢样、抖动、执行器保持方式和非整数延迟还需要对应模型。本例没有复现这些机制，更没有验证某个实时操作系统的最坏响应时间。
+
+<JupyterNotebook
+  title="实验3：把额外延迟放回闭环"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import json
+plt.rcParams["axes.unicode_minus"] = False`}
+  cells={[
+    { code: `timing_results=[];timing_traces={}
+for h in [.02,.1,.2]:
+    A=np.exp(-h);B=-np.expm1(-h);p=A-12*B
+    M=np.array([[A,-12*B],[1.,0.]])
+    eig=np.linalg.eigvals(M);rho=float(np.max(abs(eig)))
+    x=.1;z=np.array([.1,0.]);straight=[x];delayed=[z[0]]
+    for k in range(60):
+        x=p*x;z=M@z;straight.append(x);delayed.append(z[0])
+    timing_traces[h]=(straight,delayed)
+    timing_results.append({"Ts":h,"A":float(A),"B":float(B),"pole":float(p),"rho":rho,
+                           "noDelayEnd":float(x),"delayedEnd":float(z[0])})
+print(json.dumps(timing_results))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+t=np.arange(61)*.1
+ax.plot(t,timing_traces[.1][0],label="no extra output delay")
+ax.plot(t,timing_traces[.1][1],label="one extra sample")
+ax.set(xlabel="time (s)",ylabel="plant state x",xlim=(0,6),ylim=(-8,8))
+ax.grid();ax.legend();plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+
+## 部署验收与回退
+
+从桌面到目标程序，逐层保留证据：先核对系数与符号，再用相同初始状态重放参考向量；随后把目标数据类型、舍入、限幅和异常分支纳入测试；最后在批准的范围内运行，记录真实采样/输出时间戳、实际指令和对象响应。每层都写清输入范围、误差容差与判停条件，不能等看到结果再挑一个能通过的容差。
+
+本课只跑了教学参考实现。尚未执行板上重放、处理器在环或硬件在环试验；PC上通过的向量不能替这些层级签字。要交接的材料包括：连续模型与离散方法、设计周期和实测周期、系数及格式、状态布局与初始化、测试输入/期望输出/实际输出、构建与配置标识、现场允许范围和恢复记录。
+
+回退应回到一份彼此匹配的代码、系数、配置和状态策略。把旧参数写回新状态里，可能再次造成指令跳变。若发现超时、传感器失效或长时间饱和，按预先批准的停止/接管方式处理；不要把它们都解释成“参数再调一下”。控制器部署也不能取代独立保护功能。
+
+## 小结
+
+可部署的控制器不只有一张系数表，还包含输入输出时序、状态更新、数值格式与验收边界。逐拍参考向量能暴露符号和历史覆盖错误，有限字长测试能暴露残留与饱和，闭环时序模型能发现新增延迟的代价。每个结论都要对应实际执行过的层级。
+
+## 习题
+
+1. 对本课默认补偿器，求a、b及库分母中的a₁。若u[−1]=e[−1]=0、e[0]=1，首拍是多少？
+2. 改为u[−1]=0.25、e[−1]=0.5、e[0]=1，求首拍。为什么不能在计算前覆盖old_e？
+3. F=8时求A、B及零输入渐近幅值上界，并检查整数状态U=5能否保持不变。再给出F=12的可存储实数范围。
+4. 在独立比例闭环中，Ts=0.1 s增加一拍延迟后还能沿用无延迟极点吗？写出验收时需要补记的时序证据，以及回退时应匹配的材料。
+
+## 答案
+
+1. a=19/21，b=2/21，a₁=−19/21，首拍2/21≈0.09523810；Notebook1核对库系数和向量。
+2. 首拍31/84≈0.36904762，Notebook1复算。覆盖后相当于把上一拍输入误写成当前输入，改变了递推；它不是同一初值下的等价实现。
+3. A=232、B=24，上界1/48≈0.02083333；round(232×5/256)=5，残留状态可保持。F=12的范围[−8,32767/4096]≈[−8,7.99975586]。Notebook1/2复算；这不是完整闭环稳定证明。
+4. 不能。无延迟p≈−0.237114，一拍延迟ρ≈1.068621，Notebook3对应矩阵已不稳定。补记采样、计算完成、输出送达时刻及超时/保持约定；回退需匹配代码、系数、配置、状态映射/初始化和已批准的接管步骤。

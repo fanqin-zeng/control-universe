@@ -104,7 +104,7 @@
 | 7.1 | 控制系统架构 | computer-control-architecture | ✅ 已交付 v1.3 | undergrad | impl | 12 | discrete-sampled/discrete-time-freq<br>modern/state-space<br>discrete-sampled/discretization-methods |
 | 7.2 | 数字PID | digital-pid | ✅ 已交付 v1.3 | undergrad | impl | 13 | classic/pid-controller<br>discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>discrete-sampled/discrete-stability-criteria |
 | 7.3 | PID工程整定 | pid-engineering-tuning | ✅ 已交付 v1.3 | undergrad | impl | 14 | implementation/digital-pid<br>classic/time-domain-analysis |
-| 7.4 | 控制器部署 | controller-discretization-practice | ⬜ 骨架（占位页） | undergrad | impl | 14 | discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>math/numerical-methods<br>implementation/digital-pid |
+| 7.4 | 控制器部署 | controller-discretization-practice | ✅ 已交付 v1.3 | undergrad | impl | 14 | discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>math/numerical-methods<br>implementation/digital-pid |
 | 7.5 | 嵌入式控制 | embedded-implementation | ⬜ 骨架（占位页） | undergrad | impl | 15 | implementation/controller-discretization-practice |
 | 7.6 | 实时控制 | realtime-control | 🟨 有正文待审校 | undergrad | impl | 16 | implementation/embedded-implementation<br>discrete-sampled/sampling-period-selection |
 | 7.7 | 网络控制 | networked-control | ⬜ 骨架（占位页） | grad | impl | 17 | implementation/realtime-control<br>discrete-sampled/sampled-data-systems |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 92（status = v1.3）
+- **已交付 v1.3**: 93（status = v1.3）
 - **有正文待审校**: 13（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 100（status = empty，渲染占位页）
+- **骨架占位**: 99（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 113（= draft 13 + empty 100 + 无 status 0）
-- **有 MDX 正文**: 105
-- **catalog 小节总数**: 1163
-- **讨论日志**: 115 篇（覆盖 92 门；有 MDX 无日志 13 门）
-- **交互组件**: 102 个文件（被正文引用 102，孤儿 0）
+- **未完成 v1.3**: 112（= draft 13 + empty 99 + 无 status 0）
+- **有 MDX 正文**: 106
+- **catalog 小节总数**: 1172
+- **讨论日志**: 116 篇（覆盖 93 门；有 MDX 无日志 13 门）
+- **交互组件**: 103 个文件（被正文引用 103，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

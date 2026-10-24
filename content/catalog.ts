@@ -3273,6 +3273,44 @@ export const catalog: Chapter[] = [
       {
         "slug": "controller-discretization-practice",
         "title": "控制器部署",
+        "subsections": [
+          {
+            "slug": "部署前冻结接口",
+            "title": "部署前冻结接口"
+          },
+          {
+            "slug": "从连续补偿器到差分系数",
+            "title": "从连续补偿器到差分系数"
+          },
+          {
+            "slug": "系数和状态如何进入程序",
+            "title": "系数和状态如何进入程序"
+          },
+          {
+            "slug": "有限字长的验证",
+            "title": "有限字长的验证"
+          },
+          {
+            "slug": "把真实时序放回闭环",
+            "title": "把真实时序放回闭环"
+          },
+          {
+            "slug": "部署验收与回退",
+            "title": "部署验收与回退"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "discrete-sampled/discretization-methods",
           "implementation/computer-control-architecture",
@@ -3281,7 +3319,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "embedded-implementation",

@@ -856,3 +856,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 
 卡尔曼滤波按重构Phase1—4完成，保留原12H2、十题全部子问及三条Notebook教学目的。纠正噪声采样/单位、Q-R对偶与稳态条件、LQG裕度、退化ARE与工程题欠定；独立复算确认题2/10原极点舍入可接受，未虚报错误。3Notebook6cell、解析噪声失配Explorer与SVG，真实TS15配置1515点对ARE/Lyapunov/ODE及消元/迭代独立核，严格内核和Pyodide、普通与完整build:pages本地页面通过。rank4使用独立副本/索引，18214冲突保留原进程改18544，不碰共享服务与暂存；证据.agent/semester-03/est-03/acceptance.md，真实master回执见全局checklist，不发布Pages、不生产EST-04。
 <!-- EST-03-RECEIPT-END -->
+
+### IMPL-04 控制器部署本轮交付
+
+新写单课；离散系数与状态、有限字长、真实时序与部署验收。讨论和真实验收见 `.agent/semester-03/impl-04/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-24T06:48:06.849Z",
-  "url": "http://127.0.0.1:18314/python-expansion.html?lesson=estimation/kalman-filter",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "testedAt": "2026-10-24T07:01:37.557Z",
+  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/controller-discretization-practice",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
       "key": "math/calculus-basics",
@@ -15031,21 +15031,138 @@
           ]
         }
       ]
+    },
+    {
+      "key": "implementation/controller-discretization-practice",
+      "title": "控制器部署",
+      "sourceHash": "4623dc2c4146ff57fe41ef88dbf9d752c1f9bbf8d6487447a75c0c1ba211a486",
+      "notebooks": [
+        {
+          "id": "implementation/controller-discretization-practice#1",
+          "title": "实验1：系数与逐拍重放",
+          "index": 1,
+          "line": 74,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5635,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"a\": 0.9047619047619047, \"b\": 0.09523809523809523, \"library_a1\": -0.9047619047619048, \"first\": 0.09523809523809523, \"stateFirst\": 0.369047619047619, \"A_F8\": 232, \"B_F8\": 24, \"positiveHalf\": 1, \"negativeHalf\": -1, \"maxStoredF12\": 7.999755859375, \"minStoredF12\": -8.0}\ngolden=[0.09523809523809523, 0.2766439909297052, 0.39315408703163807, 0.40332988826672017, 0.31729847033655634, 0.14422242554259862, 0.03524886120520829, 0.12712992204280749]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 156,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "correct=[0.09523809523809523, 0.2766439909297052, 0.393154087031638, 0.40332988826672006, 0.3172984703365562, 0.14422242554259845, 0.03524886120520812, 0.12712992204280735]\nwrong=[0.19047619047619047, 0.36281179138321995, 0.4234963826800561, 0.38316339385338405, 0.2514335468197284, 0.03701130426546853, 0.03348641814494772, 0.22077342594066696]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 28524
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/controller-discretization-practice#2",
+          "title": "实验2：有限字长与零输入残留",
+          "index": 2,
+          "line": 163,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 10,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"F\": 4, \"signal\": \"step\", \"finalFloat\": 1.999298462504655, \"finalFixed\": 1.8125, \"maxError\": 0.2578243399378648, \"clipped\": 0}, {\"F\": 4, \"signal\": \"pulse\", \"finalFloat\": -0.02874754871186016, \"finalFixed\": -0.25, \"maxError\": 0.3813227533989534, \"clipped\": 0}, {\"F\": 4, \"signal\": \"decay\", \"finalFloat\": 8.330757757194527e-05, \"finalFixed\": 0.25, \"maxError\": 0.24991669242242806, \"clipped\": 0}, {\"F\": 8, \"signal\": \"step\", \"finalFloat\": 1.999298462504655, \"finalFixed\": 1.98046875, \"maxError\": 0.01882971250465504, \"clipped\": 0}, {\"F\": 8, \"signal\": \"pulse\", \"finalFloat\": -0.02874754871186016, \"finalFixed\": -0.03125, \"maxError\": 0.022444018701001767, \"clipped\": 0}, {\"F\": 8, \"signal\": \"decay\", \"finalFloat\": 8.330757757194527e-05, \"finalFixed\": 0.01953125, \"maxError\": 0.019447942422428054, \"clipped\": 0}, {\"F\": 12, \"signal\": \"step\", \"finalFloat\": 1.999298462504655, \"finalFixed\": 1.998779296875, \"maxError\": 0.0005191656296550384, \"clipped\": 0}, {\"F\": 12, \"signal\": \"pulse\", \"finalFloat\": -0.02874754871186016, \"finalFixed\": -0.02880859375, \"maxError\": 0.0006311812117700821, \"clipped\": 0}, {\"F\": 12, \"signal\": \"decay\", \"finalFloat\": 8.330757757194527e-05, \"finalFixed\": 0.001220703125, \"maxError\": 0.0011373955474280547, \"clipped\": 0}]\ndefault={\"a\": 0.9047619047619047, \"b\": 0.09523809523809523, \"A\": 232, \"B\": 24, \"aq\": 0.90625, \"first\": 0.09523809523809523, \"fixedFirst\": 0.09375, \"finalFloat\": 1.999298462504655, \"finalFixed\": 1.98046875, \"maxError\": 0.01882971250465504, \"clipped\": 0, \"deadbandBound\": 0.020833333333333332}\ndecay={\"a\": 0.9047619047619047, \"b\": 0.09523809523809523, \"A\": 232, \"B\": 24, \"aq\": 0.90625, \"first\": 0.22619047619047616, \"fixedFirst\": 0.2265625, \"finalFloat\": 8.330757757194527e-05, \"finalFixed\": 0.01953125, \"maxError\": 0.019447942422428054, \"clipped\": 0, \"deadbandBound\": 0.020833333333333332}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 105,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32960
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/controller-discretization-practice#3",
+          "title": "实验3：把额外延迟放回闭环",
+          "index": 3,
+          "line": 239,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"Ts\": 0.02, \"A\": 0.9801986733067553, \"B\": 0.0198013266932447, \"pole\": 0.7425827529878188, \"rho\": 0.5409072048348353, \"noDelayEnd\": 1.7566752906201357e-09, \"delayedEnd\": 5.1704273241886114e-17}, {\"Ts\": 0.1, \"A\": 0.9048374180359595, \"B\": 0.09516258196404043, \"pole\": -0.2371135655325256, \"rho\": 1.0686210664068367, \"noDelayEnd\": 3.143287241450547e-39, \"delayedEnd\": 0.21824068021895116}, {\"Ts\": 0.2, \"A\": 0.8187307530779818, \"B\": 0.18126924692201815, \"pole\": -1.356500209986236, \"rho\": 1.4748664221088696, \"noDelayEnd\": 8814383.043906646, \"delayedEnd\": -169318328.48107862}]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 89,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 39072
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 105,
-    "notebooks": 449,
-    "enabled": 439,
+    "lessons": 106,
+    "notebooks": 452,
+    "enabled": 442,
     "codeOnly": 10
   },
   "releaseTotals": {
-    "lessons": 105,
-    "notebooks": 449,
-    "enabled": 439,
+    "lessons": 106,
+    "notebooks": 452,
+    "enabled": 442,
     "codeOnly": 10
   },
   "provenance": [
@@ -15769,6 +15886,11 @@
       "testedAt": "2026-10-24T06:48:06.849Z",
       "url": "http://127.0.0.1:18314/python-expansion.html?lesson=estimation/kalman-filter",
       "inputPath": ".agent/semester-03/est-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T07:01:37.557Z",
+      "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/controller-discretization-practice",
+      "inputPath": "D:\\Workspace\\control-universe\\.agent\\semester-03\\impl-04\\pyodide.json"
     }
   ]
 }
