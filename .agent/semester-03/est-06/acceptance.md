@@ -1,4 +1,4 @@
-# EST-06 粒子滤波：验收完成，待master回执
+# EST-06 粒子滤波：验收完成，已进入master
 
 2026-10-24用户指定继续EST-06，rank4。catalog空占位且无正文，新写；先修估计问题/随机过程/数值计算已交付，UKF只作动机延续。
 
@@ -24,4 +24,6 @@
 
 完整构建基线为已提交02e79e304684b094640581644d55ea14dffc0807叠加本课，最终提交前另按最新master重新生成限定快照，再跑权威npm run check/semester/Python/术语/数学门槛。共享开工检查失败留opening日志，不修改其它课程草稿或共享索引，不把全站WARN说成本课独占成果。首次小于N的数学写法被目录扫描误识别，已改LaTeX反斜杠lt并让最终hash相关验收重跑；before-review仅留历史失败，不作最终通过。
 
-真实master提交与推送结果待提交后追加；不发布gh-pages。
+真实master交付提交commit:7a7377f21f6b1538b3fb0e3cd19dd82260472484，git push origin master退出0，详见push-main.json/log；不发布gh-pages。
+
+提交投影父提交3f014392284f52fd77bfdb5305e39fe656f89884；最终npm run check为PASS21/WARN2/FAIL0，semester/Python/术语/数学门槛全部exit0。提交语义差异已核：catalog其它课程、注册表其它条目、checklist其它行保持不变，Python策略与合并报告均只变更EST-06课条目。共享运行依赖与已构建基线相比无变化。commit-scope-audit.json记录实际审计。

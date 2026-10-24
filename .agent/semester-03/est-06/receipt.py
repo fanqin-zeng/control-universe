@@ -17,7 +17,7 @@ row=f'| EST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-0
 p=root/'.agent/semester-03-checklist.md';p.write_text(re.sub(r'^\| EST-06 \|.*$',lambda m:row,p.read_text(encoding='utf8'),flags=re.M),encoding='utf8')
 p=folder/'acceptance.md';s=p.read_text(encoding='utf8').replace('验收完成，待master回执','验收完成，已进入master').replace('真实master提交与推送结果待提交后追加','真实master交付提交commit:'+main+'，git push origin master退出0，详见push-main.json/log');p.write_text(s,encoding='utf8')
 logpath=root/'docs/discuss-log/semester-03/10-estimation/06-particle-filter.md';s=logpath.read_text(encoding='utf8').replace('真实提交后补master回执；','实际master交付commit:'+main+'，首次push退出0，回执见acceptance.md；');logpath.write_text(s,encoding='utf8')
-own=['.agent/semester-03/est-06/receipt.py','.agent/semester-03/est-06/acceptance.md','.agent/semester-03/est-06/push-main.log','.agent/semester-03/est-06/push-main.json',str(logpath.relative_to(root)).replace('\\','/')]
+own=['.agent/semester-03/est-06/commit-scope-audit.json','.agent/semester-03/est-06/receipt.py','.agent/semester-03/est-06/acceptance.md','.agent/semester-03/est-06/push-main.log','.agent/semester-03/est-06/push-main.json',str(logpath.relative_to(root)).replace('\\','/')]
 paths=own+['.agent/semester-03-checklist.md','.agent/semester-03/est-06/receipt-semester.log','.agent/semester-03/est-06/receipt-gates.json']
 for attempt in range(1,9):
  parent=run(['git','rev-parse','HEAD']);archive=root/'logs/est06-receipt-snapshot.zip'
