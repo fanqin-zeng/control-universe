@@ -73,7 +73,7 @@
 | RB06 | ROBUST-06接口、分块、失稳与权重返修 | [x] | .agent/semester-03/robust-06/acceptance.md;本课Notebook与Python/双页面全验，其他课程待办保留 |
 | RB03 | ROBUST-03鲁棒稳定性数学证书与采样结论返修 | [x] | .agent/semester-03/robust-03/acceptance.md;PY-004与S04本课运行债务已实测关闭，余课保留 |
 | QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
-| DEP15 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
+| DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
