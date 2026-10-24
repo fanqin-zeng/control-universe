@@ -29,3 +29,5 @@ verify的唯一WARN是三处明确后续阅读指向尚未编写的辨识课程�
 正文LF规范化SHA-256：8fcdc8d7e4e058d575eaa84f504903c56016331ef27da7ccb21a8e6feb36b1fb。真实交付提交后再登记hash；只推master，不发布gh-pages。
 
 提交隔离复核：在HEAD上仅叠加ID-01的完整源文件与共享文件局部差异，重新生成OUTLINE及tracker统计；staged-check.log为PASS21/WARN2/FAIL0，staged-python-policy.log为pass=true（83课/377可运行/16代码展示，是隔离提交口径）。staged-semester.log退出0；隔离目录无.git，验证历史master祖先时显式GIT_DIR指向原仓库，仅作只读验证。共享工作区已出现其它课程的未提交元数据与证明，未将其纳入本课提交。全仓工作区统计与本课提交隔离口径可因并行工作不同，不混写。
+
+真实master交付提交：bc65732deee20fbbfd8206fdd49a078fced14af8。本期完成列据此勾选。共享工作区最终校验semester-working-final.log仍有并行任务编号QA-ML01不合法的错误；未修改该任务，也未将其包含在本课提交；本课隔离版本及提交回执检查另有通过证据。

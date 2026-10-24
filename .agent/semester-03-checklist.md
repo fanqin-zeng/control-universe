@@ -190,7 +190,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ID-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/01-identification-framework.md;.agent/semester-03/id-01/acceptance.md;rank3独立构建与端口验收完成，待真实master提交回执 |
+| ID-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/01-identification-framework.md;.agent/semester-03/id-01/acceptance.md;commit:bc65732deee20fbbfd8206fdd49a078fced14af8 |
 | ID-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
