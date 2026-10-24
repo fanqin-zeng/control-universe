@@ -3527,13 +3527,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "hil-rapid-prototyping",
         "title": "半实物仿真",
+        "subsections": [
+          {
+            "slug": "先替换哪一半",
+            "title": "先替换哪一半"
+          },
+          {
+            "slug": "从模型到实物的验证层次",
+            "title": "从模型到实物的验证层次"
+          },
+          {
+            "slug": "接口与时间合同",
+            "title": "接口与时间合同"
+          },
+          {
+            "slug": "步长不是运行速度",
+            "title": "步长不是运行速度"
+          },
+          {
+            "slug": "可运行的虚拟台架",
+            "title": "可运行的虚拟台架"
+          },
+          {
+            "slug": "超期和故障注入",
+            "title": "超期和故障注入"
+          },
+          {
+            "slug": "怎样准备真正的hil",
+            "title": "怎样准备真正的HIL"
+          },
+          {
+            "slug": "验收证据与停止条件",
+            "title": "验收证据与停止条件"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/controller-discretization-practice",
           "implementation/realtime-control"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "implementation-case-study",

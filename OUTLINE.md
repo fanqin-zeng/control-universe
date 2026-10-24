@@ -109,7 +109,7 @@
 | 7.6 | 实时控制 | realtime-control | ✅ 已交付 v1.3 | undergrad | impl | 16 | implementation/embedded-implementation<br>discrete-sampled/sampling-period-selection |
 | 7.7 | 网络控制 | networked-control | ✅ 已交付 v1.3 | grad | impl | 17 | implementation/realtime-control<br>discrete-sampled/sampled-data-systems |
 | 7.8 | 工业通信 | industrial-bus-protocols | ✅ 已交付 v1.3 | undergrad | impl | 17 | implementation/computer-control-architecture<br>implementation/realtime-control |
-| 7.9 | 半实物仿真 | hil-rapid-prototyping | ⬜ 骨架（占位页） | undergrad | impl | 17 | implementation/controller-discretization-practice<br>implementation/realtime-control |
+| 7.9 | 半实物仿真 | hil-rapid-prototyping | ✅ 已交付 v1.3 | undergrad | impl | 17 | implementation/controller-discretization-practice<br>implementation/realtime-control |
 | 7.10 | 控制实现案例 | implementation-case-study | ⬜ 骨架（占位页） | undergrad | case | 18 | implementation/pid-engineering-tuning<br>implementation/industrial-bus-protocols<br>implementation/hil-rapid-prototyping |
 
 ## 8. 机器学习 (machine-learning)
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 118（status = v1.3）
+- **已交付 v1.3**: 119（status = v1.3）
 - **有正文待审校**: 6（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 81（status = empty，渲染占位页）
+- **骨架占位**: 80（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 87（= draft 6 + empty 81 + 无 status 0）
-- **有 MDX 正文**: 124
-- **catalog 小节总数**: 1354
-- **讨论日志**: 141 篇（覆盖 118 门；有 MDX 无日志 6 门）
-- **交互组件**: 128 个文件（被正文引用 128，孤儿 0）
+- **未完成 v1.3**: 86（= draft 6 + empty 80 + 无 status 0）
+- **有 MDX 正文**: 125
+- **catalog 小节总数**: 1364
+- **讨论日志**: 142 篇（覆盖 119 门；有 MDX 无日志 6 门）
+- **交互组件**: 129 个文件（被正文引用 129，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

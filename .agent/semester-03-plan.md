@@ -979,3 +979,7 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### MPC-07 学期3交付（2026-10-24）
 
 显式预测控制从空占位按新写Phase1–4完成：参数QP/KKT→五临界区域→分段仿射律→边界/退化/部署与稳定条件；十H2、四题四答、两Notebook四cell、Explorer/SVG。实际TS5098参数对独立原QP数值求解及完整有理区域证书，共享边界/域外/错误容差/模型失配均核。严格内核、生产Pyodide、普通与Pages本地/375px验收见.agent/semester-03/mpc-07/acceptance.md。rank6隔离20296/9096/20396/20496与独立Git索引，保留其它会话；只交付本课，不发布Pages、不生产MPC-08，真实hash见全局checklist。
+
+### IMPL-09 半实物仿真本轮交付
+
+新写单课；验证层次、虚拟时序与HIL证据边界。讨论和真实验收见 `.agent/semester-03/impl-09/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

@@ -1,3 +1,4 @@
+import { HilRehearsalExplorer } from "@/components/wiki/hil-rehearsal-explorer";
 import { GenerativeBasicsExplorer } from '@/components/wiki/generative-basics-explorer';
 import { ExplicitMpcExplorer } from "@/components/wiki/explicit-mpc-explorer";
 import { SensorFusionExplorer } from "@/components/wiki/sensor-fusion-explorer";
@@ -149,6 +150,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  HilRehearsalExplorer,
   GenerativeBasicsExplorer,
   ExplicitMpcExplorer,
   SensorFusionExplorer,
