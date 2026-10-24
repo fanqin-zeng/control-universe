@@ -1,4 +1,4 @@
-# EST-07 多传感器融合：验收完成，待master回执
+# EST-07 多传感器融合：验收完成，已进入master
 
 用户指定EST-07，rank4；空占位新写，Phase1—4已签发，仅本课。正文339行/10H2/4题及全部子问/3Notebook6cell/Explorer/SVG。LF sourceHash=8cb705d3638269dd8e8ff6465dede0dbf9840881e2b64882c3985dfd60cce902，四资产和共享依赖指纹见source-fingerprints.json/dependency-fingerprints.json。
 
@@ -19,4 +19,4 @@
 
 首次Pyodide奇异R检查的后端舍入差异已显式正定guard修复；首次catalog小节类型错误已修复。失败报告分别pyodide-before-pd-guard.json/build-before-catalog-fix.log，最终源码全部相关验收重跑通过。已登记存量WARN见projection-check.log/glossary日志；其它课程债务不计为本课故障。
 
-真实master提交与推送结果待提交后追加。独立中文润色待其它模型；Pages仅本地验收，未发布。
+真实master交付提交commit:87ebadfedee9e830591ce382e0f20a3ead99ec7b，git push origin master退出0，详见push-main.json/log。独立中文润色待其它模型；Pages仅本地验收，未发布。

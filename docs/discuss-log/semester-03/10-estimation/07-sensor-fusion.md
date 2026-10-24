@@ -111,7 +111,7 @@
 
 [郑核] 汇总6项修改：李稳1项(P1，开头区分原始噪声与局部后验误差独立)、钱锐1项(P0，错误模型曲线/MSE与单次残差分开)、林矩1项(P0，冻结仿射模型与重新线性化边界)、苏绘1项(P1，固定同轴与纵向SVG)、秦构2项(P0，WASM奇异矩阵显式正定检查、catalog小节对象)。全部落地并按最终源码重测，无P0阻断项。
 [待定] 无。本课声明之外的多目标关联、一般矩阵CI优化和工程安全保证不纳入完成范围。
-[郑核-签发] 新写Phase1—4、十H2、四题全部子问、3Notebook6cell、SensorFusionExplorer及纵向SVG完成。三道门A.1/B/C均通过，四份档案齐备；只有本课签发，不生产EST-08。rank4独立副本/端口，私有Git索引与CAS保留并行工作。真实提交后补master回执；独立中文润色仍待其它模型。
+[郑核-签发] 新写Phase1—4、十H2、四题全部子问、3Notebook6cell、SensorFusionExplorer及纵向SVG完成。三道门A.1/B/C均通过，四份档案齐备；只有本课签发，不生产EST-08。rank4独立副本/端口，私有Git索引与CAS保留并行工作。实际master交付commit:87ebadfedee9e830591ce382e0f20a3ead99ec7b，首次push退出0，回执见acceptance.md；独立中文润色仍待其它模型。
 
 交付清单：正文/数值核/Explorer/SVG/单一注册；讨论日志A—D；catalog/台账/计划/checklist/中文润色生产状态；原始内核、Pyodide、独立矩阵对账、普通与Pages本地构建及实页、证据归档。
 
@@ -198,4 +198,4 @@ catalog空占位且无MDX，采用新写。来源见sources.md，基线与开工
 
 [秦构-验证脚本修正] 两构建及两实页已过后，最终汇总脚本首次把use-echarts.tsx路径误写为.ts；修正后又发现共享工作区Jupyter存在其它会话未提交修改。汇总改为只记录实际构建副本的共享依赖指纹，并在交付脚本对最新已提交HEAD复核；未纳入他人草稿、未修改其文件。保留validation-before-path-fix.log与validation-before-shared-snapshot-fix.log；仅汇总验证/术语/数学重跑，课程源码及两构建输出未变。
 
-存量WARN处置：catalog跨章motion-planning同slug按组合路由不冲突；既有7课有正文无日志不属本课。glossary两条WARN是既有登记含义/释义候选，当前退出0，未为本课改写全局表。最终逐条输出见projection-check.log与projection-glossary.log。
+存量WARN处置：catalog跨章motion-planning同slug按组合路由不冲突；既有7课有正文无日志不属本课。glossary两条WARN分别是C1b四个登记符号本轮零命中、C2b二十六条NOISE本轮零命中，属既有登记残留；C3释义候选为INFO而非WARN。当前退出0，未为本课改写全局表。最终逐条输出见projection-check.log与projection-glossary.log。
