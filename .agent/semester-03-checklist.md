@@ -226,7 +226,7 @@
 | ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;commit:3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46;rank5原生/Pyodide/页面/构建与隔离提交树检查通过 |
 | ROBUST-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/02-uncertainty-modeling.md;.agent/semester-03/robust-02/acceptance.md;commit:e3df95c421bc76239fd795e4022e2356e873f62a;rank5四Notebook五cell与双构建实测通过 |
 | ROBUST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/03-robust-stability.md;.agent/semester-03/robust-03/acceptance.md;commit:76ae270c06fb2363cdd98a4d998fb7b83e25f08c;rank5四Notebook五cell、证书/采样独立复算、双构建与375px通过 |
-| ROBUST-04 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/04-robust-performance.md;.agent/semester-03/robust-04/acceptance.md;rank5三Notebook五cell、完整LFT/独立数值、原生与Pages/375px通过，等待真实提交回执 |
+| ROBUST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/04-robust-performance.md;.agent/semester-03/robust-04/acceptance.md;commit:b749fcc2576f8f96ae3afd64a0e3b07fc4123efd;rank5三Notebook五cell、完整LFT/独立数值、双构建与375px通过 |
 | ROBUST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | ROBUST-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
