@@ -1,0 +1,247 @@
+---
+title: 表征学习
+description: 从亮度与横向偏差理解编码器、重构目标、冻结探针、对比学习与数据增强的任务边界。
+---
+
+# 表征学习
+
+## 亮度变化遮住横向偏差
+
+小车用相机判断自己偏在线路左侧还是右侧。灯光变化可能让画面亮度大幅波动，但控制所需的横向偏差只占很小变化。若学习过程一心恢复画面中变化最大的部分，它可能很好地保留亮度，却把决定左右的细节丢掉。
+
+上一课的[注意力机制](/machine-learning/attention-transformers)人为给定Q/K/V特征，本课追问这些特征从哪里来。表征学习是从数据与学习目标中得到编码规则，让后续任务更容易使用其中的信息。它不等于“维数越低越好”，也不保证学到的每个坐标都有明确物理意义。
+
+四个目标是：区分编码器、任务头与冻结/微调；推导一个可复算的重构方向；用冻结探针检查任务信息并按验证合同选方向；解释对比损失、增强与表征坍塌。先修还包括[自动微分与训练](/machine-learning/autodiff-optimization)。本课实际拟合小型线性编码器与探针，不训练完整视觉网络或SimCLR。
+
+## 编码器与任务接口
+
+输入 $x$ 经编码器 $f_\theta$ 得到表征 $z$，任务头 $h_\psi$ 用它预测标签：
+
+$$
+z=f_\theta(x),\qquad \hat y=h_\psi(z).
+$$
+
+编码器可以是线性投影、神经网络、循环模型或注意力网络。表征可以降维，也可以保持甚至增加维数；关键是目标保留了什么信息，以及后续任务能否读取它。
+
+监督学习可用任务标签联合训练编码器和头。重构学习则用解码器从表征恢复输入，不要求人工类别标签。自监督学习从数据自身构造预测目标或视图关系；它减少某类人工标注需求，但仍依赖数据、增强和目标设计的假设。
+
+<svg viewBox="0 0 700 200" role="img" aria-label="输入经过编码器得到表征，表征分别接任务头与解码器；冻结评价时只拟合任务头" style={{width:'100%',height:'auto',maxWidth:700}}>
+ <defs><marker id="ml07-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb"/></marker></defs>
+ <g fill="#dbeafe" stroke="#94a3b8"><rect x="10" y="80" width="85" height="45"/><rect x="145" y="80" width="120" height="45"/><rect x="315" y="80" width="90" height="45"/><rect x="475" y="20" width="110" height="45"/><rect x="475" y="140" width="110" height="45"/></g>
+ <g fill="#172033" textAnchor="middle" fontSize="17"><text x="52" y="108">输入 x</text><text x="205" y="108">编码器 f</text><text x="360" y="108">表征 z</text><text x="530" y="48">任务头 h</text><text x="530" y="168">解码器 d</text><text x="655" y="48">预测标签</text><text x="655" y="168">重构输入</text></g>
+ <g stroke="#2563eb" strokeWidth="2" fill="none" markerEnd="url(#ml07-arrow)"><path d="M95 102 H140"/><path d="M265 102 H310"/><path d="M405 102 H440 V43 H470"/><path d="M405 102 H440 V163 H470"/><path d="M585 43 H605"/><path d="M585 163 H605"/></g>
+</svg>
+
+本例输入是已人工缩放的两个无量纲传感特征：$x_1$ 为亮度偏差，$x_2$ 为横向偏差。标签 $y\in\{-1,+1\}$ 分别表示左右侧，由 $x_2$ 的符号确定。这里不是把真实图像直接压成两个数字的视觉实验，而是把目标冲突缩小到可以手算的教具。
+
+## 从重构学习一个方向
+
+训练记录为四个角点 $(\pm A,\pm B)$，各符号组合都出现，默认 $A=2$、$B=0.5$。先只用训练数据求均值并中心化；本例均值为零。选择单位向量 $w$ 编码，再用同一方向解码：
+
+$$
+z=w^{\mathsf T}x,\qquad \tilde x=wz=ww^{\mathsf T}x,\qquad w^{\mathsf T}w=1.
+$$
+
+单位长度约束使这成为正交投影，避免编码与解码任意缩放。它是绑权线性自编码器的受限例子，不是任意深度自编码器的全局解。
+
+定义训练协方差与每个特征的平均重构平方误差：
+
+$$
+C=\frac1N\sum_{i=1}^N x_i x_i^{\mathsf T},\qquad
+L_{\rm rec}=\frac{1}{2N}\sum_{i=1}^N\lVert x_i-ww^{\mathsf T}x_i\rVert^2
+=\frac12\left(\operatorname{tr}C-w^{\mathsf T}Cw\right).
+$$
+
+分母中的二来自两项输入特征；这里称每特征MSE，不与上一课的末端半平方损失混用。协方差使用总体分母 $N$，不是无偏估计的 $N-1$。最小化重构误差等价于让方向上的方差最大；取 $C$ 最大特征值的单位特征向量，就是本例的主成分分析（PCA）解。这里实际从训练数据拟合协方差并求闭式方向，没有运行梯度下降循环；解析拟合也是从数据学习参数，不应包装成完整神经网络训练。
+
+默认协方差为对角矩阵，对角项为 $4$ 与 $0.25$。最大特征值为 $4$，方向为 $w=[1,0]^{\mathsf T}$，编码只保留亮度。丢弃横向特征得到 $L_{\rm rec}=0.125$。若改用横向方向 $w=[0,1]^{\mathsf T}$，重构MSE为 $2$。前一种更符合当前重构目标，但这还没有回答左右任务。
+
+## 冻结表征再训练探针
+
+冻结表示保持编码器与预处理不变，只用训练标签拟合一个简单任务头。线性探针限制了读出能力，可以检验某类信息是否容易线性读取；探针失败不等于表征对任何任务、任何非线性头都无用。
+
+本例拟合带截距的最小二乘头，标签仍是 $-1$ 或 $+1$：
+
+$$
+\hat y=cz+d,\qquad
+(c,d)=\arg\min_{c,d}\frac1N\sum_i(cz_i+d-y_i)^2.
+$$
+
+该头输出实数分数，并非概率。按分数正负分类；绝对值不超过 $10^{-12}$ 的分数按零处理，零分数归为 $+1$。声明平局规则是为了防止浮点微小残差改变对称点的分类。
+
+默认PCA的编码把横向偏差相反的两条记录映到同一个值。最小二乘头得到 $c=d=0$，在平衡验证集上准确率为 $50\%$、标签MSE为 $1$。这里丢失的是同一亮度下的左右区别，给该标量编码接更复杂的确定性头也无法区分这对重合记录。
+
+预处理只拟合训练数据，验证和测试直接使用同一份均值与尺度，不能各自重拟合。验证记录为 $(\pm1.5A,\pm0.75B)$，测试记录为 $(\pm0.75A,\pm1.5B)$，各有四条，与训练记录不重叠。这些是预先构造的确定性记录，不是随机抽样的真实泛化评测。真实图像通常应按车辆、场景或采集记录分组划分，不能让近乎重复帧跨集合。
+
+<JupyterNotebook title="重构方向与冻结探针" setupCode={`import math,json
+ANGLES=[0,15,30,45,60,75,90]
+def records(a,b,split):
+    f={'train':(1,1),'validation':(1.5,.75),'test':(.75,1.5)}[split]
+    return [dict(id=split+'-'+str(i)+str(j),x=[u*a*f[0],v*b*f[1]],y=v) for i,u in enumerate([-1,1]) for j,v in enumerate([-1,1])]
+def fit_preprocess(rows,standardized):
+    mean=[sum(r['x'][j] for r in rows)/len(rows) for j in range(2)]
+    sd=[math.sqrt(sum((r['x'][j]-mean[j])**2 for r in rows)/len(rows)) for j in range(2)]
+    return dict(mean=mean,scale=[v if standardized and v>0 else 1 for v in sd],constant=[v==0 for v in sd])
+def transform(rows,prep):
+    return [dict(r,x=[(v-prep['mean'][j])/prep['scale'][j] for j,v in enumerate(r['x'])]) for r in rows]
+def pca(points):
+    mean=[sum(r[j] for r in points)/len(points) for j in range(2)]
+    c=[[sum((r[i]-mean[i])*(r[j]-mean[j]) for r in points)/len(points) for j in range(2)] for i in range(2)]
+    gap=math.hypot(c[0][0]-c[1][1],2*c[0][1]);tie=gap<=1e-12
+    theta=0 if tie else .5*math.atan2(2*c[0][1],c[0][0]-c[1][1])
+    w=[0 if abs(v)<1e-15 else v for v in [math.cos(theta),math.sin(theta)]]
+    return dict(center=mean,covariance=c,eigenvalues=[(c[0][0]+c[1][1]+gap)/2,(c[0][0]+c[1][1]-gap)/2],degenerate=tie,w=w,angle=theta*180/math.pi)
+def unit(deg):return [0 if deg==90 else math.cos(deg*math.pi/180),0 if deg==0 else math.sin(deg*math.pi/180)]
+def dot(a,b):return sum(x*y for x,y in zip(a,b))
+def metrics(rows,w,head):
+    scores=[head['slope']*dot(w,r['x'])+head['intercept'] for r in rows];pred=[1 if abs(v)<=1e-12 or v>0 else -1 for v in scores]
+    return dict(mse=sum((v-r['y'])**2 for v,r in zip(scores,rows))/len(rows),accuracy=sum(v==r['y'] for v,r in zip(pred,rows))/len(rows),scores=scores,pred=pred)
+def evaluate(train,validation,w,angle):
+    z=[dot(w,r['x']) for r in train];mz=sum(z)/len(z);my=sum(r['y'] for r in train)/len(train)
+    den=sum((v-mz)**2 for v in z);slope=sum((v-mz)*(r['y']-my) for v,r in zip(z,train))/den if den else 0
+    head=dict(slope=slope,intercept=my-slope*mz);projected=[[v*x for x in w] for v in z]
+    return dict(angle=angle,w=w,head=head,z=z,projected=projected,reconstruction=sum(sum((v-p[j])**2 for j,v in enumerate(r['x'])) for r,p in zip(train,projected))/(2*len(train)),train=metrics(train,w,head),validation=metrics(validation,w,head))
+def study(a=2,b=.5,standardized=False):
+    raw=records(a,b,'train');prep=fit_preprocess(raw,standardized);train=transform(raw,prep);validation=transform(records(a,b,'validation'),prep);model=pca([r['x'] for r in train])
+    candidates=[evaluate(train,validation,unit(deg),deg) for deg in ANGLES];selected=min(candidates,key=lambda row:row['validation']['mse'])
+    return dict(a=a,b=b,standardized=standardized,preprocess=prep,points=train,pcaModel=model,pca=evaluate(train,validation,model['w'],model['angle']),candidates=candidates,selected=selected)
+def summary(s):
+    shrink=lambda r:dict(angle=r['angle'],reconstruction=r['reconstruction'],head=r['head'],trainMSE=r['train']['mse'],validationMSE=r['validation']['mse'],validationAccuracy=r['validation']['accuracy'])
+    return dict(preprocess=s['preprocess'],pcaModel=s['pcaModel'],pca=shrink(s['pca']),selected=shrink(s['selected']))
+def audit(a=2,b=.5,standardized=False):
+    s=study(a,b,standardized);raw=records(a,b,'test');test=transform(raw,s['preprocess']);flipped=transform([dict(r,x=[r['x'][0],-r['x'][1]]) for r in raw],s['preprocess'])
+    return dict(pcaTest=metrics(test,s['pca']['w'],s['pca']['head']),selectedTest=metrics(test,s['selected']['w'],s['selected']['head']),polarityPcaTest=metrics(flipped,s['pca']['w'],s['pca']['head']),polaritySelectedTest=metrics(flipped,s['selected']['w'],s['selected']['head']))
+def contrastive(a=2,b=.5,temperature=.5):
+    c=(b*b-a*a)/(a*a+b*b)
+    def loss(pos,neg):
+        x=(neg-pos)/temperature
+        return max(x,0)+math.log1p(math.exp(-abs(x)))
+    return dict(cosPositive=c,cosWrong=-c,informative=loss(1,-1),collapsed=loss(1,1),wrongPositive=loss(-1,-1),falseNegative=loss(1,1))
+`} cells={[
+ {title:'从训练数据拟合主方向与探针',code:`print(json.dumps(summary(study())))`},
+ {title:'固定候选选择后再审计测试',code:`s=study()
+print(json.dumps(dict(candidates=[dict(angle=r['angle'],trainMSE=r['train']['mse'],validationMSE=r['validation']['mse'],validationAccuracy=r['validation']['accuracy'],reconstruction=r['reconstruction']) for r in s['candidates']],test=audit())))`}
+]} />
+
+## 任务方向与验证选择
+
+现在事先固定七个编码角度：$0^\circ$、$15^\circ$、$30^\circ$、$45^\circ$、$60^\circ$、$75^\circ$、$90^\circ$。每个方向只在训练数据上拟合探针，再按验证标签MSE选择方向；这是一种小型有标签表征选择，不是靠手工指定测试最优方向，也不声称找到了所有编码器中的最优解。
+
+默认选择 $90^\circ$，只保留横向偏差，探针为 $c=2$、$d=0$。验证准确率为 $100\%$，验证标签MSE为 $0.0625$；训练重构MSE为 $2$。它在左右任务上合适，在恢复亮度的目标下却不如PCA。两个结果分别反映各自目标，不能据此宣称一种表征学习方法普遍优越。
+
+<RepresentationBasicsExplorer />
+
+选择结束后固定预处理、编码器和探针，才计算测试结果：默认PCA的测试准确率为 $50\%$、标签MSE为 $1$；被选方向的测试准确率为 $100\%$、标签MSE为 $0.25$。后者分类全对，但实数分数的幅度误差仍在，因此准确率不能代替数值预测精度，更不能作为车辆安全证据。
+
+再做一个选择完成后的接口失败审计：只把测试传感特征的横向符号翻转，真实左右标签不变，编码器、预处理和探针都不更新。被选方向的准确率降为 $0\%$、标签MSE变为 $6.25$；PCA常量分类仍为 $50\%$、标签MSE为 $1$。这里是标定坐标被错误更换，不是同一物理量的无害增强，说明任务表征依赖输入接口合同。该审计也不参与方向选择。
+
+课程为审计公开测试输出，实践中不能看完测试再反复修改候选方向、增强或特征尺度。本页交互只显示训练/验证指标；测试没有参与任何方向选择。
+
+尺度也改变了重构目标。若用训练总体标准差缩放，默认训练特征变为四个 $(\pm1,\pm1)$，协方差是单位矩阵，两个特征值都为 $1$。此时任何单位方向的重构MSE均为 $0.5$，主方向不唯一；本实现为可重复性约定选择第一轴。标准化没有凭空告诉模型哪个特征对左右重要。
+
+不标准化但取 $A=B=1$ 时也出现相同重根。第一轴与横向轴的重构误差持平，而任务信息仍不同。重构数值是在当前变换坐标中计算的，不能把标准化前后的MSE直接比较大小。
+
+## 对比学习与增强边界
+
+另一类目标让同一对象的合理视图相近，与某些其它视图区分。编码器产生表征 $z$，还可接投影头 $g_\phi$ 得到用于对比损失的向量；下游任务未必使用这个投影头输出。正样本来自怎样的关系、负样本代表什么，都必须明说。
+
+对非零向量用余弦相似度：
+
+$$
+s(r_a,r_b)=\frac{r_a^{\mathsf T}r_b}{\lVert r_a\rVert\lVert r_b\rVert}.
+$$
+
+只考虑一个正项 $s_+$、一个负项 $s_-$ 与正温度 $\tau$，可写出一个小型对比损失：
+
+$$
+\ell=-\log\frac{\exp(s_+/\tau)}{\exp(s_+/\tau)+\exp(s_-/\tau)}
+=\log\left(1+\exp\frac{s_--s_+}{\tau}\right).
+$$
+
+实现采用稳定的softplus计算，避免直接指数溢出。本例温度 $\tau=0.5$，若正项为 $1$、负项为 $-1$，损失约为 $0.01814993$。若编码器把所有输入都映成同一个非零常量，正负相似度都为 $1$，损失为 $\log2\approx0.69314718$；这叫一种表征坍塌。只奖励正样本接近会允许这种平凡解，这个正负目标能在给定三元组上区分两种输出，但不是“加入负样本就保证永不坍塌”的训练定理。
+
+增强是任务假设。对锚点 $(A,B)$，改变亮度得到 $(-A,B)$ 保留左右标签，默认原始余弦约为 $-0.88235294$；只保留横向偏差的表征则让两者相似度为 $1$。反过来，把横向偏差翻成 $(A,-B)$ 会改变标签，默认原始余弦却约为 $0.88235294$。原始数据看起来相近，不代表可以作为这个控制任务的正样本。
+
+若错误增强让正样本的横向表征符号相反，正项与一个异类负项都为 $-1$，该损失仍是 $\log2$。若把同侧、应当接近的另一对象当负样本，也可能形成假负样本：正负相似度都为 $1$，同样得到 $\log2$。这些数值检查的是目标合同，不是完整对比网络的训练结果；零向量的余弦本来就未定义，不能把零除错误当坍塌实验通过。
+
+<JupyterNotebook title="增强合同与退化边界" setupCode={`import math,json
+ANGLES=[0,15,30,45,60,75,90]
+def records(a,b,split):
+    f={'train':(1,1),'validation':(1.5,.75),'test':(.75,1.5)}[split]
+    return [dict(id=split+'-'+str(i)+str(j),x=[u*a*f[0],v*b*f[1]],y=v) for i,u in enumerate([-1,1]) for j,v in enumerate([-1,1])]
+def fit_preprocess(rows,standardized):
+    mean=[sum(r['x'][j] for r in rows)/len(rows) for j in range(2)]
+    sd=[math.sqrt(sum((r['x'][j]-mean[j])**2 for r in rows)/len(rows)) for j in range(2)]
+    return dict(mean=mean,scale=[v if standardized and v>0 else 1 for v in sd],constant=[v==0 for v in sd])
+def transform(rows,prep):
+    return [dict(r,x=[(v-prep['mean'][j])/prep['scale'][j] for j,v in enumerate(r['x'])]) for r in rows]
+def pca(points):
+    mean=[sum(r[j] for r in points)/len(points) for j in range(2)]
+    c=[[sum((r[i]-mean[i])*(r[j]-mean[j]) for r in points)/len(points) for j in range(2)] for i in range(2)]
+    gap=math.hypot(c[0][0]-c[1][1],2*c[0][1]);tie=gap<=1e-12
+    theta=0 if tie else .5*math.atan2(2*c[0][1],c[0][0]-c[1][1])
+    w=[0 if abs(v)<1e-15 else v for v in [math.cos(theta),math.sin(theta)]]
+    return dict(center=mean,covariance=c,eigenvalues=[(c[0][0]+c[1][1]+gap)/2,(c[0][0]+c[1][1]-gap)/2],degenerate=tie,w=w,angle=theta*180/math.pi)
+def unit(deg):return [0 if deg==90 else math.cos(deg*math.pi/180),0 if deg==0 else math.sin(deg*math.pi/180)]
+def dot(a,b):return sum(x*y for x,y in zip(a,b))
+def metrics(rows,w,head):
+    scores=[head['slope']*dot(w,r['x'])+head['intercept'] for r in rows];pred=[1 if abs(v)<=1e-12 or v>0 else -1 for v in scores]
+    return dict(mse=sum((v-r['y'])**2 for v,r in zip(scores,rows))/len(rows),accuracy=sum(v==r['y'] for v,r in zip(pred,rows))/len(rows),scores=scores,pred=pred)
+def evaluate(train,validation,w,angle):
+    z=[dot(w,r['x']) for r in train];mz=sum(z)/len(z);my=sum(r['y'] for r in train)/len(train)
+    den=sum((v-mz)**2 for v in z);slope=sum((v-mz)*(r['y']-my) for v,r in zip(z,train))/den if den else 0
+    head=dict(slope=slope,intercept=my-slope*mz);projected=[[v*x for x in w] for v in z]
+    return dict(angle=angle,w=w,head=head,z=z,projected=projected,reconstruction=sum(sum((v-p[j])**2 for j,v in enumerate(r['x'])) for r,p in zip(train,projected))/(2*len(train)),train=metrics(train,w,head),validation=metrics(validation,w,head))
+def study(a=2,b=.5,standardized=False):
+    raw=records(a,b,'train');prep=fit_preprocess(raw,standardized);train=transform(raw,prep);validation=transform(records(a,b,'validation'),prep);model=pca([r['x'] for r in train])
+    candidates=[evaluate(train,validation,unit(deg),deg) for deg in ANGLES];selected=min(candidates,key=lambda row:row['validation']['mse'])
+    return dict(a=a,b=b,standardized=standardized,preprocess=prep,points=train,pcaModel=model,pca=evaluate(train,validation,model['w'],model['angle']),candidates=candidates,selected=selected)
+def summary(s):
+    shrink=lambda r:dict(angle=r['angle'],reconstruction=r['reconstruction'],head=r['head'],trainMSE=r['train']['mse'],validationMSE=r['validation']['mse'],validationAccuracy=r['validation']['accuracy'])
+    return dict(preprocess=s['preprocess'],pcaModel=s['pcaModel'],pca=shrink(s['pca']),selected=shrink(s['selected']))
+def audit(a=2,b=.5,standardized=False):
+    s=study(a,b,standardized);raw=records(a,b,'test');test=transform(raw,s['preprocess']);flipped=transform([dict(r,x=[r['x'][0],-r['x'][1]]) for r in raw],s['preprocess'])
+    return dict(pcaTest=metrics(test,s['pca']['w'],s['pca']['head']),selectedTest=metrics(test,s['selected']['w'],s['selected']['head']),polarityPcaTest=metrics(flipped,s['pca']['w'],s['pca']['head']),polaritySelectedTest=metrics(flipped,s['selected']['w'],s['selected']['head']))
+def contrastive(a=2,b=.5,temperature=.5):
+    c=(b*b-a*a)/(a*a+b*b)
+    def loss(pos,neg):
+        x=(neg-pos)/temperature
+        return max(x,0)+math.log1p(math.exp(-abs(x)))
+    return dict(cosPositive=c,cosWrong=-c,informative=loss(1,-1),collapsed=loss(1,1),wrongPositive=loss(-1,-1),falseNegative=loss(1,1))
+`} cells={[
+ {title:'对比损失和不合理增强',code:`print(json.dumps([contrastive(2,.5,t) for t in [.1,.5,1]]))`},
+ {title:'等方差与训练标准化',code:`print(json.dumps([summary(study(1,1,False)),summary(study(2,.5,True))]))`}
+]} />
+
+可参阅[Chen等人的SimCLR原论文](https://proceedings.mlr.press/v119/chen20j.html)（ICML 2020，2026-10-24查阅），了解数据增强、投影头与表征评价的完整实验背景。本课只独立实现上述线性管线及单正单负损失，不复制论文代码、图表或权重，不声称复现其批量目标、视觉训练或性能。
+
+## 迁移与部署的边界
+
+| 方式 | 更新什么 | 评价时必须固定什么 |
+|---|---|---|
+| 冻结线性探针 | 只拟合线性头 | 编码器、训练拟合的预处理、划分和训练预算 |
+| 微调 | 更新头和部分或全部编码器 | 可用标签、更新层、学习率、停止与验证规则 |
+| 从头训练 | 重新学习参数 | 同一目标与资源预算，不能拿未整定模型当弱基线 |
+| 迁移部署 | 在新场景使用已学表征 | 传感器/尺度/延迟/场景改变后的重新验证 |
+
+冻结并不意味着“完全不使用标签”，探针本身就需要训练标签；自监督预训练也不等于测试数据可以任意进入预训练。若声称新场景泛化，应先规定目标场景的可用数据与留出边界。在线更新还可能破坏原有接口，不能只因离线分类准确率高就直接接入控制回路。
+
+本例只有两维输入、一个标量表征、固定七方向和小型确定性数据，没有证明表示包含真实状态，也没有处理遮挡、标定漂移或分布外场景。选择增强前应问：它改变的是无关外观，还是任务需要保留的状态？保存模型时还应保存预处理、采样定义、输出坐标和下游头，避免只保存编码器权重却换了输入含义。
+
+## 习题
+
+1. 默认训练协方差与PCA方向是什么？保留亮度和保留横向方向时，每特征重构MSE各是多少？为什么重构目标会作出这种选择？
+2. 默认冻结PCA后，线性探针的斜率和截距是什么，验证准确率和标签MSE各是多少？按七个方向验证选择后的结果又是多少？测试能否用于反复调整候选族？
+3. 温度 $0.5$、正负相似度为 $1,-1$ 时的对比损失是多少？常量非零表征、错误正样本和假负样本为何都可能得到 $\log2$？翻转横向偏差能否当作本任务的保标签增强？
+4. 默认训练标准化之后，两个特征值和最优重构MSE是多少？重根时第一轴是否唯一最优？被选方向在四条测试记录上分类全对但标签MSE为多少？若只翻转测试特征的横向符号而不换真实标签，准确率与标签MSE怎样变化？
+
+## 答案
+
+1. 均值为零，协方差对角项为 $4$、$0.25$，非对角项为零。PCA取亮度方向 $[1,0]^{\mathsf T}$；重构MSE分别为 $0.125$ 与 $2$，因为前者丢弃的总方差较小。该推导只针对单位编码器与绑权正交解码器。
+2. PCA探针 $c=d=0$，分数平局按 $+1$，验证准确率 $50\%$、标签MSE为 $1$。验证选 $90^\circ$ 后，$c=2,d=0$，验证准确率 $100\%$、标签MSE为 $0.0625$。选择规则只看训练/验证，测试保持到选择结束后。
+3. 损失为 $\log(1+e^{-4})\approx0.01814993$。三个反例中正负相似度分别相等，分子占分母的一半，故损失约为 $0.69314718$；它们的语义错误原因不同。横向翻转改变左右类别，不能当作本任务的保标签增强。
+4. 两个特征值均为 $1$，最优每特征重构MSE为 $0.5$，所有单位方向都最优，第一轴只是本实现的重根约定。被选方向测试标签MSE为 $0.25$，说明分类符号正确不等于实数预测误差为零。标定符号错误后准确率为 $0\%$、标签MSE为 $6.25$；编码器保留了某项信息仍不代表输入接口改变后能用。四条合成记录不能支撑总体或安全保证。
+
+## 继续学习
+
+本课把“怎样得到特征”落实成了可检验的目标、训练接口与任务评价。下一课[扩散与流匹配](/machine-learning/generative-models)转向生成数据的目标；[学习实验评估](/machine-learning/learning-evaluation)将更系统地讨论公平预算与证据边界，不能把它们当成本课已经完成的额外实验。

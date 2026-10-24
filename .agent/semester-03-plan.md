@@ -92,6 +92,7 @@
 | ROBUST-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-04，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-04/acceptance.md |
 | MPC-05 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-05，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-05/acceptance.md |
 | ID-06 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-06，rank3；保留并行课程，先修模型结构/频域分析/随机过程/频域校正已交付 | .agent/semester-03/id-06/acceptance.md |
+| ML-07 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-07，rank2；保留并行实现课，只依赖已交付ML-04/06 | .agent/semester-03/ml-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -928,6 +929,11 @@ rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独�
 ### IMPL-06 实时控制本轮交付
 
 重构单课；保留九H2/五题，修正调度判据、时序与实现边界。讨论和真实验收见 `.agent/semester-03/impl-06/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+
+### ML-07 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写表征学习；PCA受限重构、冻结探针/七方向验证选择、增强/坍塌目标与标定失败边界，未训练完整SimCLR。18配置/7795量独立NumPy/Decimal对账，严格kernel/Pyodide、最终实页/375px、两种构建已执行；独立预览8232，保留并行课程，不发布Pages。完整证据.agent/semester-03/ml-07/acceptance.md，真实master回执另登记。
 
 ### IMPL-07 网络控制本轮交付
 

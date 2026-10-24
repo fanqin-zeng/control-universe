@@ -3718,13 +3718,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "representation-learning",
         "title": "表征学习",
+        "subsections": [
+          {
+            "slug": "亮度变化遮住横向偏差",
+            "title": "亮度变化遮住横向偏差"
+          },
+          {
+            "slug": "编码器与任务接口",
+            "title": "编码器与任务接口"
+          },
+          {
+            "slug": "从重构学习一个方向",
+            "title": "从重构学习一个方向"
+          },
+          {
+            "slug": "冻结表征再训练探针",
+            "title": "冻结表征再训练探针"
+          },
+          {
+            "slug": "任务方向与验证选择",
+            "title": "任务方向与验证选择"
+          },
+          {
+            "slug": "对比学习与增强边界",
+            "title": "对比学习与增强边界"
+          },
+          {
+            "slug": "迁移与部署的边界",
+            "title": "迁移与部署的边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          },
+          {
+            "slug": "继续学习",
+            "title": "继续学习"
+          }
+        ],
         "prereq": [
           "machine-learning/autodiff-optimization",
           "machine-learning/attention-transformers"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "generative-models",

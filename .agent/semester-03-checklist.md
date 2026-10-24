@@ -188,7 +188,7 @@
 | ML-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/04-autodiff-optimization.md;.agent/semester-03/ml-04/acceptance.md;rank2独立构建8212与严格内核8992;commit:97febf466c7d09f9e40b9a3273ef16aaa8fb8513 |
 | ML-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/05-sequence-models.md;.agent/semester-03/ml-05/acceptance.md;rank2独立预览8214与严格内核8992;commit:d40982a07caeba9037cc1d452abcb3c62b592d41 |
 | ML-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/06-attention-transformers.md;.agent/semester-03/ml-06/acceptance.md;rank2独立预览8216与严格内核8992;commit:9ce2d2ca1782968be6aaac6aa32a390e0b0b9792 |
-| ML-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ML-07 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/08-machine-learning/07-representation-learning.md;.agent/semester-03/ml-07/acceptance.md;rank2独立预览8232与严格内核8992，已验收待真实提交 |
 | ML-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 

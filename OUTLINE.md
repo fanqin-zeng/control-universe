@@ -122,7 +122,7 @@
 | 8.4 | 自动微分与训练 | autodiff-optimization | ✅ 已交付 v1.3 | undergrad | learning | 7 | machine-learning/neural-networks<br>math/numerical-methods |
 | 8.5 | 时序模型 | sequence-models | ✅ 已交付 v1.3 | grad | learning | 8 | machine-learning/autodiff-optimization<br>math/stochastic-processes |
 | 8.6 | 注意力机制 | attention-transformers | ✅ 已交付 v1.3 | grad | learning | 9 | machine-learning/sequence-models |
-| 8.7 | 表征学习 | representation-learning | ⬜ 骨架（占位页） | grad | learning | 10 | machine-learning/autodiff-optimization<br>machine-learning/attention-transformers |
+| 8.7 | 表征学习 | representation-learning | ✅ 已交付 v1.3 | grad | learning | 10 | machine-learning/autodiff-optimization<br>machine-learning/attention-transformers |
 | 8.8 | 扩散与流匹配 | generative-models | ⬜ 骨架（占位页） | grad | learning | 8 | machine-learning/autodiff-optimization<br>math/stochastic-processes<br>math/ode-matrix-exponential |
 | 8.9 | 学习实验评估 | learning-evaluation | ⬜ 骨架（占位页） | undergrad | learning | 6 | machine-learning/supervised-learning<br>math/probability-basics |
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 108（status = v1.3）
+- **已交付 v1.3**: 109（status = v1.3）
 - **有正文待审校**: 8（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 89（status = empty，渲染占位页）
+- **骨架占位**: 88（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 97（= draft 8 + empty 89 + 无 status 0）
-- **有 MDX 正文**: 116
-- **catalog 小节总数**: 1273
-- **讨论日志**: 131 篇（覆盖 108 门；有 MDX 无日志 8 门）
-- **交互组件**: 118 个文件（被正文引用 118，孤儿 0）
+- **未完成 v1.3**: 96（= draft 8 + empty 88 + 无 status 0）
+- **有 MDX 正文**: 117
+- **catalog 小节总数**: 1283
+- **讨论日志**: 132 篇（覆盖 109 门；有 MDX 无日志 8 门）
+- **交互组件**: 119 个文件（被正文引用 119，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
