@@ -1,3 +1,4 @@
+import { ExtendedKalmanExplorer } from "@/components/wiki/extended-kalman-explorer";
 import { RobustStabilityExplorer } from '@/components/wiki/robust-stability-explorer';
 import { AutodiffTrainingExplorer } from '@/components/wiki/autodiff-training-explorer';
 import { RecedingHorizonExplorer } from "@/components/wiki/receding-horizon-explorer";
@@ -127,6 +128,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  ExtendedKalmanExplorer,
   RobustStabilityExplorer,
   AutodiffTrainingExplorer,
   RecedingHorizonExplorer,

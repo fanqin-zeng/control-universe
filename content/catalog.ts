@@ -4075,6 +4075,48 @@ export const catalog: Chapter[] = [
       {
         "slug": "extended-kalman-filter",
         "title": "扩展卡尔曼滤波",
+        "subsections": [
+          {
+            "slug": "从读数到非线性模型",
+            "title": "从读数到非线性模型"
+          },
+          {
+            "slug": "误差为何要线性化",
+            "title": "误差为何要线性化"
+          },
+          {
+            "slug": "预测与校正的完整递推",
+            "title": "预测与校正的完整递推"
+          },
+          {
+            "slug": "一拍算例",
+            "title": "一拍算例"
+          },
+          {
+            "slug": "近似的后验与失败例",
+            "title": "近似的后验与失败例"
+          },
+          {
+            "slug": "多维测量与工程实现",
+            "title": "多维测量与工程实现"
+          },
+          {
+            "slug": "稳定性和适用边界",
+            "title": "稳定性和适用边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "estimation/kalman-filter",
           "math/multivariable-calculus",
@@ -4082,7 +4124,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "unscented-kalman-filter",

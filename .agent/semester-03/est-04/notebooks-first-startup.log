@@ -1,0 +1,22 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe
+目标 1 门 · 内核 127.0.0.1:19364 不可达
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+S6 内核实跑 SKIPPED —— 启动方法：npm run dev（会同时拉起 next dev 与 scripts/jupyter_server.py）
+                     或单独：python scripts/jupyter_server.py
+FAIL 严格模式要求S6实际执行，内核不可达不得交付
+
+──────────────────────────────────────────────────────────────────────────────
+estimation/extended-kalman-filter  [FAIL]  2 个 notebook · 4 个 cell
+      FAIL S6  严格模式：内核不可达，S6不得SKIPPED
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 2 个 notebook · 4 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 0 个 cell，其中 error 0 个（S6 SKIPPED）
+      按判据：S6×1
+      FAIL 课程：estimation/extended-kalman-filter
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/est-04/notebooks.json

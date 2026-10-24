@@ -1,0 +1,63 @@
+{
+  "source": "content/estimation/extended-kalman-filter.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 95,
+      "title": "一拍校正与非线性预测",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math\r\nimport matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import quad\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 105,
+          "delim": "`",
+          "code": "# 直接使用非线性预测读数，Joseph协方差\r\nprint('square_readings_at_2_3', 2**2, 3**2)\r\ndef update(mu,p,r,z,kind='square'):\r\n    predicted=mu*mu if kind=='square' else mu\r\n    H=2*mu if kind=='square' else 1.\r\n    innovation=z-predicted; S=H*H*p+r\r\n    K=p*H/S\r\n    mean=mu+K*innovation\r\n    variance=(1-K*H)**2*p+K*K*r\r\n    return predicted,H,innovation,S,K,mean,variance\r\nfor r in [1.,4.]:\r\n    values=update(2.,.25,r,5.)\r\n    print('default_update_R',r,'predicted_H_innovation_S_K_mean_variance',values)\r\nassert np.allclose(update(2,.25,1,5),[4,4,1,5,.2,2.2,.05])\r\nassert np.allclose(update(2,.25,4,5),[4,4,1,8,.125,2.125,.125])\r\nprint('wrong_H_mu_vs_correct_h_mu',4*2,2**2)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 121,
+          "delim": "`",
+          "code": "# 一次非线性预测：一阶矩近似对高斯加权积分\r\nmu=2.; p=.25; q=.04; alpha=.1\r\nF=1+2*alpha*mu\r\nekf_mean=mu+alpha*mu*mu; ekf_variance=F*F*p+q\r\ntrue_mean=mu+alpha*(mu*mu+p)\r\ntrue_variance=F*F*p+2*alpha*alpha*p*p+q\r\nnodes,weights=np.polynomial.hermite.hermgauss(24)\r\nx=mu+np.sqrt(2*p)*nodes; values=x+alpha*x*x\r\ngh_mean=np.dot(weights,values)/np.sqrt(np.pi)\r\ngh_variance=np.dot(weights,(values-gh_mean)**2)/np.sqrt(np.pi)+q\r\nprint('prediction_F_EKF_mean_variance',F,ekf_mean,ekf_variance)\r\nprint('prediction_exact_mean_variance',true_mean,true_variance)\r\nprint('prediction_Gauss_Hermite',gh_mean,gh_variance)\r\nprint('discarded_mean_variance',alpha*p,2*alpha*alpha*p*p)\r\nassert np.allclose([ekf_mean,ekf_variance,true_mean,true_variance],[2.4,.53,2.425,.53125])\r\nassert np.allclose([gh_mean,gh_variance],[true_mean,true_variance],atol=1e-12)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 158,
+      "title": "参考后验与角度几何",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport math\r\nimport matplotlib\r\nmatplotlib.use('module://matplotlib_inline.backend_inline')\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.integrate import quad\r\nnp.set_printoptions(precision=9, suppress=True)",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 168,
+          "delim": "`",
+          "code": "# 一维连续Bayes参考：独立于组件的Simpson积分\r\ndef reference(mu,p,r,z,kind):\r\n    h=lambda x:x*x if kind=='square' else x\r\n    log=lambda x:-(x-mu)**2/(2*p)-(z-h(x))**2/(2*r)\r\n    roots=np.roots([2*p,0,r-2*p*z,-r*mu]) if kind=='square' else [(r*mu+p*z)/(r+p)]\r\n    points=sorted(set(float(complex(t).real) for t in roots if abs(complex(t).imag)<1e-9))\r\n    shift=max(log(t) for t in points)\r\n    cuts=[-np.inf]+points+[np.inf]\r\n    def moment(n):return sum(quad(lambda x:(x**n)*math.exp(log(x)-shift),a,b,epsabs=1e-12,epsrel=1e-12,limit=200)[0] for a,b in zip(cuts,cuts[1:]))\r\n    mass=moment(0); mean=moment(1)/mass; variance=moment(2)/mass-mean*mean\r\n    return mean,variance,lambda x:math.exp(log(x)-shift)/mass\r\ncases=[('linear',2,.25,1,5),('square',2,.25,1,5),('square',-2,.25,1,5),('square',0,1,.25,4)]\r\nfor kind,mu,p,r,z in cases:\r\n    m,v,density=reference(mu,p,r,z,kind)\r\n    H=1 if kind=='linear' else 2*mu\r\n    K=p*H/(H*H*p+r); em=mu+K*(z-(mu if kind=='linear' else mu*mu)); ev=(1-K*H)**2*p+K*K*r\r\n    print('posterior_case_kind_mu_EKFmean_var_reference_mean_var',kind,mu,em,ev,m,v)\r\n    assert v>0\r\n    if kind=='linear': assert np.allclose([em,ev],[m,v],atol=1e-12)\r\nfig,axes=plt.subplots(1,2,figsize=(8,3))\r\nfor ax,(mu,p,r,z) in zip(axes,[(2,.25,1,5),(0,1,.25,4)]):\r\n    m,v,density=reference(mu,p,r,z,'square'); xs=np.linspace(-6,6,241)\r\n    ax.plot(xs,[density(float(x)) for x in xs]);ax.set_xlim(-6,6);ax.set_ylim(0,8);ax.grid(alpha=.3)\r\n    ax.set_title('mu='+str(mu));ax.set_xlabel('position (m)')\r\naxes[0].set_ylabel('posterior density (1/m)');plt.tight_layout();plt.show()\r\nprint('posterior_reference_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 194,
+          "delim": "`",
+          "code": "# 距离/方位Jacobian与角度创新；原点显式拒绝\r\ndef radar(x,y):\r\n    squared=x*x+y*y\r\n    if squared==0: return None\r\n    radius=np.sqrt(squared)\r\n    return np.array([radius,np.arctan2(y,x)]),np.array([[x/radius,y/radius],[-y/squared,x/squared]])\r\nmeasurement,H=radar(3.,4.)\r\neps=1e-6\r\nfinite=np.column_stack([(radar(3+eps,4)[0]-radar(3-eps,4)[0])/(2*eps),(radar(3,4+eps)[0]-radar(3,4-eps)[0])/(2*eps)])\r\nprint('radar_measurement_Jacobian',measurement,H)\r\nprint('radar_finite_difference_max',np.max(abs(finite-H)))\r\nassert np.max(abs(finite-H))<1e-9 and radar(0,0) is None\r\nraw=np.deg2rad(-179-179)\r\nwrapped=np.arctan2(np.sin(raw),np.cos(raw))\r\nprint('angle_raw_wrapped_rad_deg',raw,wrapped,np.rad2deg(raw),np.rad2deg(wrapped))\r\nassert abs(wrapped-np.pi/90)<1e-12\r\nprint('all_EKF_checks_passed')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

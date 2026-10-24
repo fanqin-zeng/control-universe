@@ -1,0 +1,674 @@
+{
+  "url": "http://127.0.0.1:18664/control-universe/estimation/extended-kalman-filter/",
+  "pass": true,
+  "gatewayRouting": "8891/8981 -> isolated19364",
+  "nativeKernelIds": [],
+  "canvasChanged": true,
+  "dom": {
+    "h1": 1,
+    "h2": [
+      {
+        "id": "从读数到非线性模型",
+        "text": "从读数到非线性模型"
+      },
+      {
+        "id": "误差为何要线性化",
+        "text": "误差为何要线性化"
+      },
+      {
+        "id": "预测与校正的完整递推",
+        "text": "预测与校正的完整递推"
+      },
+      {
+        "id": "一拍算例",
+        "text": "一拍算例"
+      },
+      {
+        "id": "近似的后验与失败例",
+        "text": "近似的后验与失败例"
+      },
+      {
+        "id": "多维测量与工程实现",
+        "text": "多维测量与工程实现"
+      },
+      {
+        "id": "稳定性和适用边界",
+        "text": "稳定性和适用边界"
+      },
+      {
+        "id": "小结",
+        "text": "小结"
+      },
+      {
+        "id": "习题",
+        "text": "习题"
+      },
+      {
+        "id": "答案",
+        "text": "答案"
+      }
+    ],
+    "ids": [
+      "base-ui-:R3sqfkq:",
+      "扩展卡尔曼滤波",
+      "从读数到非线性模型",
+      "误差为何要线性化",
+      "预测与校正的完整递推",
+      "一拍算例",
+      "近似的后验与失败例",
+      "多维测量与工程实现",
+      "稳定性和适用边界",
+      "小结",
+      "习题",
+      "答案"
+    ],
+    "links": [
+      "#从读数到非线性模型",
+      "#误差为何要线性化",
+      "#预测与校正的完整递推",
+      "#一拍算例",
+      "#近似的后验与失败例",
+      "#多维测量与工程实现",
+      "#稳定性和适用边界",
+      "#小结",
+      "#习题",
+      "#答案"
+    ],
+    "katexErrors": 0,
+    "images": [
+      {
+        "src": "/control-universe/diagrams/estimation/ekf-linearization.svg",
+        "loaded": true
+      },
+      {
+        "src": "data:image/png;base64,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",
+        "loaded": true
+      }
+    ],
+    "text": "控制宇宙\n控制导论\n数学基础\n经典控制\n现代控制\n非线性控制\n离散控制\n控制实现\n机器学习\n系统辨识\n状态估计\n状态估计框架\n统计估计\n卡尔曼滤波\n扩展卡尔曼滤波\n从读数到非线性模型\n误差为何要线性化\n预测与校正的完整递推\n一拍算例\n近似的后验与失败例\n多维测量与工程实现\n稳定性和适用边界\n小结\n习题\n答案\n无迹卡尔曼滤波\n粒子滤波\n多传感器融合\n状态估计案例\n鲁棒控制\n预测控制\n智能控制\n强化学习控制基础\n多智能体控制\n安全控制\n机器人控制\n机器人学习\n具身智能\n自动驾驶\n工程应用\n扩展卡尔曼滤波\n\n前置课程\n\n卡尔曼滤波\n数学基础 · 多元微积分\n非线性控制 · Lyapunov稳定性\n\n小车沿一条直线移动，定位模块输出的却是到原点距离的平方。位置从2m变到3m，理想读数从4m²变到9m²；在原点左右两侧，位置不同也可能产生相同读数。上一课的卡尔曼滤波使用线性测量矩阵，这次该怎样把读数变成位置修正？\n\n扩展卡尔曼滤波（extended Kalman filter，EKF）沿用预测与校正，但每拍在当前估计附近计算雅可比。状态和预测读数仍经过原来的非线性函数；被线性化的是估计误差怎样传播。 本课需要多元微积分中的泰勒展开与雅可比；Lyapunov稳定性用于理解最后的条件边界。\n\n从读数到非线性模型\n\n离散加性噪声模型写成：\n\n𝑥\n𝑘\n=\n𝑓\n(\n𝑥\n𝑘\n−\n1\n,\n𝑢\n𝑘\n−\n1\n)\n+\n𝑤\n𝑘\n−\n1\n,\n𝑧\n𝑘\n=\nℎ\n(\n𝑥\n𝑘\n)\n+\n𝑣\n𝑘\n.\nx\nk\n\t​\n\n=f(x\nk−1\n\t​\n\n,u\nk−1\n\t​\n\n)+w\nk−1\n\t​\n\n,z\nk\n\t​\n\n=h(x\nk\n\t​\n\n)+v\nk\n\t​\n\n.\n\n𝑥\n𝑘\nx\nk\n\t​\n\n是状态，\n𝑢\n𝑘\n−\n1\nu\nk−1\n\t​\n\n为已知输入，\n𝑧\n𝑘\nz\nk\n\t​\n\n为本拍观测。噪声零均值，各拍之间、过程与测量之间以及初始误差之间互不相关，协方差分别为\n𝑄\n𝑘\n−\n1\n⪰\n0\n,\n𝑅\n𝑘\n≻\n0\nQ\nk−1\n\t​\n\n⪰0,R\nk\n\t​\n\n≻0。本课用高斯先验与高斯噪声解释后验近似；非线性变换后，分布通常不再高斯，即使所有输入噪声都是高斯。\n\n贯穿算例只让观测非线性：\nℎ\n(\n𝑥\n)\n=\n𝑥\n2\nh(x)=x\n2\n，位置单位m，读数单位m²，因此\n𝑃\nP单位m²、测量噪声方差\n𝑅\nR单位m⁴。这里的\n𝑄\n,\n𝑅\nQ,R是离散噪声协方差，不是控制代价权重，也不是连续白噪声强度。平方测量是便于算清楚的教学模型，不声称普通测距设备都直接输出平方值。\n\nEKF每拍输入上一拍后验估计、协方差、已知输入、本拍测量及模型，输出新的状态估计与近似协方差。初始化必须给出\n𝑥\n^\n0\n+\n,\n𝑃\n0\n+\nx\n^\n0\n+\n\t​\n\n,P\n0\n+\n\t​\n\n；若这些信息有偏，滤波不会自动消除所有错误。\n\n误差为何要线性化\n\n在预测点\n𝜇\nμ附近，一阶泰勒展开是：\n\nℎ\n(\n𝑥\n)\n≈\nℎ\n(\n𝜇\n)\n+\n𝐻\n(\n𝑥\n−\n𝜇\n)\n,\n𝐻\n=\n∂\nℎ\n∂\n𝑥\n∣\n𝜇\n.\nh(x)≈h(μ)+H(x−μ),H=\n∂x\n∂h\n\t​\n\n\t​\n\nμ\n\t​\n\n.\n\n平方测量在\n𝜇\n=\n2\nμ=2m处给\nℎ\n(\n𝜇\n)\n=\n4\nh(μ)=4m²、\n𝐻\n=\n4\nH=4m。保留常数项后，局部测量关系为\nℎ\n(\n𝑥\n)\n≈\n4\n+\n4\n(\n𝑥\n−\n2\n)\n=\n4\n𝑥\n−\n4\nh(x)≈4+4(x−2)=4x−4；不能直接用\n𝐻\n𝜇\n=\n8\nHμ=8取代真实预测读数4。 雅可比表示局部斜率，常数项负责把切线放到正确的位置。\n\n若误差不够小，高阶项会变得重要。在\n𝜇\n=\n0\nμ=0处，平方测量的一阶导数为零，但二阶项\n𝑥\n2\nx\n2\n并未消失。因此一阶滤波器可能看不见观测包含的信息。\n\n预测与校正的完整递推\n\n上标\n−\n−表示本拍测量到来前，上标\n+\n+表示已经使用本拍测量。先在上一拍后验点计算过程雅可比：\n\n𝐹\n𝑘\n−\n1\n=\n∂\n𝑓\n∂\n𝑥\n∣\n𝑥\n^\n𝑘\n−\n1\n+\n,\n𝑢\n𝑘\n−\n1\n,\n𝑥\n^\n𝑘\n−\n=\n𝑓\n(\n𝑥\n^\n𝑘\n−\n1\n+\n,\n𝑢\n𝑘\n−\n1\n)\n,\n𝑃\n𝑘\n−\n=\n𝐹\n𝑘\n−\n1\n𝑃\n𝑘\n−\n1\n+\n𝐹\n𝑘\n−\n1\n𝑇\n+\n𝑄\n𝑘\n−\n1\n.\nF\nk−1\n\t​\n\n=\n∂x\n∂f\n\t​\n\n\t​\n\nx\n^\nk−1\n+\n\t​\n\n,u\nk−1\n\t​\n\n\t​\n\n,\nx\n^\nk\n−\n\t​\n\n=f(\nx\n^\nk−1\n+\n\t​\n\n,u\nk−1\n\t​\n\n),P\nk\n−\n\t​\n\n=F\nk−1\n\t​\n\nP\nk−1\n+\n\t​\n\nF\nk−1\nT\n\t​\n\n+Q\nk−1\n\t​\n\n.\n\n再在本拍先验点计算观测雅可比和创新：\n\n𝐻\n𝑘\n=\n∂\nℎ\n∂\n𝑥\n∣\n𝑥\n^\n𝑘\n−\n,\n𝜈\n𝑘\n=\n𝑧\n𝑘\n−\nℎ\n(\n𝑥\n^\n𝑘\n−\n)\n,\n𝑆\n𝑘\n=\n𝐻\n𝑘\n𝑃\n𝑘\n−\n𝐻\n𝑘\n𝑇\n+\n𝑅\n𝑘\n.\nH\nk\n\t​\n\n=\n∂x\n∂h\n\t​\n\n\t​\n\nx\n^\nk\n−\n\t​\n\n\t​\n\n,ν\nk\n\t​\n\n=z\nk\n\t​\n\n−h(\nx\n^\nk\n−\n\t​\n\n),S\nk\n\t​\n\n=H\nk\n\t​\n\nP\nk\n−\n\t​\n\nH\nk\nT\n\t​\n\n+R\nk\n\t​\n\n.\n\n随后进行校正：\n\n𝐾\n𝑘\n=\n𝑃\n𝑘\n−\n𝐻\n𝑘\n𝑇\n𝑆\n𝑘\n−\n1\n,\n𝑥\n^\n𝑘\n+\n=\n𝑥\n^\n𝑘\n−\n+\n𝐾\n𝑘\n𝜈\n𝑘\n,\nK\nk\n\t​\n\n=P\nk\n−\n\t​\n\nH\nk\nT\n\t​\n\nS\nk\n−1\n\t​\n\n,\nx\n^\nk\n+\n\t​\n\n=\nx\n^\nk\n−\n\t​\n\n+K\nk\n\t​\n\nν\nk\n\t​\n\n,\n𝑃\n𝑘\n+\n=\n(\n𝐼\n−\n𝐾\n𝑘\n𝐻\n𝑘\n)\n𝑃\n𝑘\n−\n(\n𝐼\n−\n𝐾\n𝑘\n𝐻\n𝑘\n)\n𝑇\n+\n𝐾\n𝑘\n𝑅\n𝑘\n𝐾\n𝑘\n𝑇\n.\nP\nk\n+\n\t​\n\n=(I−K\nk\n\t​\n\nH\nk\n\t​\n\n)P\nk\n−\n\t​\n\n(I−K\nk\n\t​\n\nH\nk\n\t​\n\n)\nT\n+K\nk\n\t​\n\nR\nk\n\t​\n\nK\nk\nT\n\t​\n\n.\n\n最后一式是Joseph形式，保留线性化误差模型中的半正定结构。它改善数值计算的表达，不保证\n𝑃\n𝑘\n+\nP\nk\n+\n\t​\n\n就是非线性系统的真实误差协方差。实际实现解线性方程求增益，避免显式求逆；本拍结束后保存后验，下一拍重新计算\n𝐹\n,\n𝐻\nF,H。\n\n这个递推只有一次预测、一次校正，没有训练过程或每拍求非线性最优解的迭代停止条件。若采用迭代EKF，还需另行规定重线性化、先验计数和停止规则，不能把同一测量反复当独立数据融合。\n\n一拍算例\n\n设先验\n𝑥\n^\n−\n=\n2\nx\n^\n−\n=2m、\n𝑃\n−\n=\n0.25\nP\n−\n=0.25m²，测量\n𝑧\n=\n5\nz=5m²、\n𝑅\n=\n1\nR=1m⁴。先验可以来自已完成的预测；本次单拍校正不再重复加过程噪声。\n\n𝑧\n^\n=\nℎ\n(\n2\n)\n=\n4\n,\n𝐻\n=\n4\n,\n𝜈\n=\n5\n−\n4\n=\n1\n,\n𝑆\n=\n4\n2\n×\n0.25\n+\n1\n=\n5\n,\nz\n^\n=h(2)=4,H=4,ν=5−4=1,S=4\n2\n×0.25+1=5,\n𝐾\n=\n0.25\n×\n4\n5\n=\n0.2\n \nm\n−\n1\n,\n𝑥\n^\n+\n=\n2\n+\n0.2\n×\n1\n=\n2.2\n \nm\n,\nK=\n5\n0.25×4\n\t​\n\n=0.2 m\n−1\n,\nx\n^\n+\n=2+0.2×1=2.2 m,\n𝑃\n+\n=\n(\n1\n−\n0.2\n×\n4\n)\n2\n×\n0.25\n+\n0.2\n2\n×\n1\n=\n0.05\n \nm\n2\n.\nP\n+\n=(1−0.2×4)\n2\n×0.25+0.2\n2\n×1=0.05 m\n2\n.\n\n这里\n𝐾\nK不是两个同单位读数之间的无量纲“信任比例”，因为状态和观测的单位不同。下面同时检查一次非线性预测：取\n𝑓\n(\n𝑥\n)\n=\n𝑥\n+\n0.1\n𝑥\n2\nf(x)=x+0.1x\n2\n，其中系数0.1的单位为m⁻¹；输入状态均值2m、方差0.25m²，\n𝑄\n=\n0.04\nQ=0.04m²。EKF得到\n𝐹\n=\n1.4\nF=1.4、预测均值2.4m、方差0.53m²。\n\n对高斯输入\n𝑋\n∼\n𝑁\n(\n𝜇\n,\n𝑃\n)\nX∼N(μ,P)，利用二阶、四阶矩可直接计算：\n\n𝐸\n[\n𝑓\n(\n𝑋\n)\n]\n=\n𝜇\n+\n0.1\n(\n𝜇\n2\n+\n𝑃\n)\n,\nVar\n⁡\n(\n𝑓\n(\n𝑋\n)\n+\n𝑤\n)\n=\n(\n1\n+\n0.2\n𝜇\n)\n2\n𝑃\n+\n2\n(\n0.1\n)\n2\n𝑃\n2\n+\n𝑄\n.\nE[f(X)]=μ+0.1(μ\n2\n+P),Var(f(X)+w)=(1+0.2μ)\n2\nP+2(0.1)\n2\nP\n2\n+Q.\n\n同组参数的真实均值为2.425m、方差为0.53125m²。这个差异来自忽略曲率项，不能仅凭噪声高斯就宣布EKF的矩传播精确。\n\n一拍校正与非线性预测\n\n运行完成\n\n全部运行 重置实验 停止本页 Python\n初始化代码\n代码 1\n运行代码 1\nsquare_readings_at_2_3 4 9\ndefault_update_R 1.0 predicted_H_innovation_S_K_mean_variance (4.0, 4.0, 1.0, 5.0, 0.2, 2.2, 0.05)\ndefault_update_R 4.0 predicted_H_innovation_S_K_mean_variance (4.0, 4.0, 1.0, 8.0, 0.125, 2.125, 0.125)\nwrong_H_mu_vs_correct_h_mu 8 4\n\n代码 2\n运行代码 2\nprediction_F_EKF_mean_variance 1.4 2.4 0.5299999999999999\nprediction_exact_mean_variance 2.425 0.5312499999999999\nprediction_Gauss_Hermite 2.4250000000000003 0.5312500000000001\ndiscarded_mean_variance 0.025 0.0012500000000000002\n\n近似的后验与失败例\n\n要判断近似误差，可以在这一维例子里直接用Bayes公式：\n\n𝑝\n(\n𝑥\n∣\n𝑧\n)\n∝\nexp\n⁡\n(\n−\n(\n𝑥\n−\n𝜇\n)\n2\n2\n𝑃\n−\n(\n𝑧\n−\nℎ\n(\n𝑥\n)\n)\n2\n2\n𝑅\n)\n.\np(x∣z)∝exp(−\n2P\n(x−μ)\n2\n\t​\n\n−\n2R\n(z−h(x))\n2\n\t​\n\n).\n\n下图对相同先验、观测模型和单次读数画EKF高斯近似与归一化的数值参考后验。参考使用一维数值积分，未经参数整定；它只是教学参照，不是适合高维在线系统的替代方案。将观测切到线性\nℎ\n(\n𝑥\n)\n=\n𝑥\nh(x)=x时，两条分布重合，用于校准上一课的线性高斯结论；切换模型后\n𝑅\nR的单位也变，不能跨模型按同一个方差数字比较传感器性能。\n\n同一先验和同一拍测量：比较局部高斯近似与一维积分参考。均值为0也可能对应两个不同位置。\n\n观测模型 \n平方 x²\n线性 x\n先验均值 \n-2\n0\n2\n先验方差 \n0.25\n1\n测量噪声方差 \n0.25\n1\n4\n本拍读数 \n4\n5\n恢复默认\n\nH 4.000000；K 0.200000；EKF 均值 2.200000、方差 0.050000；参考均值 2.169615、方差 0.045869。\n\n位置/状态方差单位为m/m²；平方观测单位m²、R单位m⁴。参考曲线用一维积分，不表示EKF额外执行了积分。坐标始终固定，曲线为概率密度。\n\n默认平方测量下，参考后验均值约2.169615m、方差约0.045869m²；EKF给2.2m和0.05m²。它们接近但不相同，当前例也不能推出EKF总是低估方差。把先验均值换成−2m，主要后验分支和校正方向随之变成负侧。\n\n再取\n𝜇\n=\n0\n,\n𝑃\n=\n1\n,\n𝑅\n=\n0.25\n,\n𝑧\n=\n4\nμ=0,P=1,R=0.25,z=4。EKF的\n𝐻\n=\n0\n,\n𝐾\n=\n0\nH=0,K=0，均值和方差仍为0与1；数值参考后验均值也为0，但方差约3.841876，而且是正负对称的双峰。均值相同不等于分布相同，更不等于测量没有信息。 平方测量约束了位置的绝对值，却不能单凭这一拍决定正负方向；若任务需要选择分支，应增加有方向的信息或保留多假设。\n\n图中所有积分参数与72种配置均经过独立自适应积分复核。参考积分区间为−12至12m、4800段；显示区间固定−6至6m、纵轴固定0至8m⁻¹。曲线是概率密度，峰值可以大于1；整条曲线的积分才是概率。图外尾部由参考积分处理，不把图示范围当状态约束。\n\n参考后验与角度几何\n\n运行完成\n\n全部运行 重置实验 停止本页 Python\n初始化代码\n代码 1\n运行代码 1\nposterior_case_kind_mu_EKFmean_var_reference_mean_var linear 2 2.6 0.20000000000000004 2.5999999999999996 0.20000000000000018\nposterior_case_kind_mu_EKFmean_var_reference_mean_var square 2 2.2 0.05 2.169615194693212 0.045869439065316264\nposterior_case_kind_mu_EKFmean_var_reference_mean_var square -2 -2.2 0.05 -2.169615194693212 0.045869439065316264\nposterior_case_kind_mu_EKFmean_var_reference_mean_var square 0 0.0 1.0 0.0 3.841876221594493\nposterior_reference_checked\n\n代码 2\n运行代码 2\nradar_measurement_Jacobian [5.          0.927295218] [[ 0.6   0.8 ]\n [-0.16  0.12]]\nradar_finite_difference_max 9.376888154832841e-11\nangle_raw_wrapped_rad_deg -6.2482787221397 0.034906585039886445 -358.0 1.9999999999999918\nall_EKF_checks_passed\n\n多维测量与工程实现\n\n设位置状态为\n(\n𝑝\n𝑥\n,\n𝑝\n𝑦\n)\n(p\nx\n\t​\n\n,p\ny\n\t​\n\n)，传感器输出距离与方位角：\n\nℎ\n(\n𝑝\n𝑥\n,\n𝑝\n𝑦\n)\n=\n[\n𝑝\n𝑥\n2\n+\n𝑝\n𝑦\n2\n\n\natan2\n⁡\n(\n𝑝\n𝑦\n,\n𝑝\n𝑥\n)\n]\n,\n𝐻\n=\n[\n𝑝\n𝑥\n/\n𝑟\n\t\n𝑝\n𝑦\n/\n𝑟\n\n\n−\n𝑝\n𝑦\n/\n𝑟\n2\n\t\n𝑝\n𝑥\n/\n𝑟\n2\n]\n,\n𝑟\n=\n𝑝\n𝑥\n2\n+\n𝑝\n𝑦\n2\n>\n0.\nh(p\nx\n\t​\n\n,p\ny\n\t​\n\n)=[\np\nx\n2\n\t​\n\n+p\ny\n2\n\t​\n\n\t​\n\natan2(p\ny\n\t​\n\n,p\nx\n\t​\n\n)\n\t​\n\n],H=[\np\nx\n\t​\n\n/r\n−p\ny\n\t​\n\n/r\n2\n\t​\n\np\ny\n\t​\n\n/r\np\nx\n\t​\n\n/r\n2\n\t​\n\n],r=\np\nx\n2\n\t​\n\n+p\ny\n2\n\t​\n\n\t​\n\n>0.\n\n在\n(\n3\n,\n4\n)\n(3,4)m处，距离5m、方位角约0.927295rad，\n𝐻\n=\n[\n[\n0.6\n,\n0.8\n]\n,\n[\n−\n0.16\n,\n0.12\n]\n]\nH=[[0.6,0.8],[−0.16,0.12]]，第二行单位m⁻¹。在原点，距离/方位角雅可比不适用，不能简单把除零结果填0继续更新。\n\n角度创新须按圆周差计算，而不是直接相减。例如预测179°、读数−179°，直接相减为−358°，主值残差应为2°：\n\n𝜈\n𝜃\n=\natan2\n⁡\n(\nsin\n⁡\n(\n𝑧\n𝜃\n−\n𝑧\n^\n𝜃\n)\n,\ncos\n⁡\n(\n𝑧\n𝜃\n−\n𝑧\n^\n𝜃\n)\n)\n.\nν\nθ\n\t​\n\n=atan2(sin(z\nθ\n\t​\n\n−\nz\n^\nθ\n\t​\n\n),cos(z\nθ\n\t​\n\n−\nz\n^\nθ\n\t​\n\n)).\n\n算法中的角度统一用rad，恰好\n±\n𝜋\n±π的两个主值代表同一方向。位置与角度噪声的单位不同，\n𝑅\nR必须与观测顺序对应。采用atan2保留象限，不能用单独的\narctan\n⁡\n(\n𝑝\n𝑦\n/\n𝑝\n𝑥\n)\narctan(p\ny\n\t​\n\n/p\nx\n\t​\n\n)代替。\n\n工程实现还要核对时间戳、坐标系、雅可比求值点和采样周期；用有限差分核查解析导数，记录步长敏感性；检查\n𝑆\nS的正定性、\n𝑃\nP的对称性与数值条件。缺测时只预测，离群值处理须有明确观测模型或门限依据，不把大创新一概解释成噪声。\n\n若噪声非加性，例如\n𝑥\n𝑘\n=\n𝑓\n(\n𝑥\n𝑘\n−\n1\n,\n𝑢\n,\n𝑤\n)\nx\nk\n\t​\n\n=f(x\nk−1\n\t​\n\n,u,w)、\n𝑧\n𝑘\n=\nℎ\n(\n𝑥\n𝑘\n,\n𝑣\n)\nz\nk\n\t​\n\n=h(x\nk\n\t​\n\n,v)，还需计算噪声雅可比\n𝐺\n=\n∂\n𝑓\n/\n∂\n𝑤\n,\n𝑀\n=\n∂\nℎ\n/\n∂\n𝑣\nG=∂f/∂w,M=∂h/∂v，分别使用\n𝐺\n𝑄\n𝐺\n𝑇\nGQG\nT\n、\n𝑀\n𝑅\n𝑀\n𝑇\nMRM\nT\n；存在相关噪声时，独立噪声公式不再完整。上述模型与Jacobian区分可对照MathWorks官方说明，本课实验使用独立Python/TypeScript实现。\n\n稳定性和适用边界\n\nEKF每拍都有一个增益，不意味着能沿用线性卡尔曼滤波的全部最优性、收敛性或稳态Riccati保证。需要分别检查：初始估计是否位于有效邻域、模型和导数是否足够光滑、沿轨迹是否持续提供可辨识信息、噪声和线性化余项是否受控。单看某一拍的雅可比秩或误差矩阵特征值不够。高斯噪声也不保证每条样本始终留在局部邻域内。\n\n若另有证明给出非负误差能量\n𝑉\n𝑘\nV\nk\n\t​\n\n的期望递推界：\n\n𝐸\n[\n𝑉\n𝑘\n+\n1\n]\n≤\n𝜌\n𝐸\n[\n𝑉\n𝑘\n]\n+\n𝑐\n,\n0\n<\n𝜌\n<\n1\n,\n𝑐\n≥\n0\n,\nE[V\nk+1\n\t​\n\n]≤ρE[V\nk\n\t​\n\n]+c,0<ρ<1,c≥0,\n\n才能递推得到：\n\n𝐸\n[\n𝑉\n𝑘\n]\n≤\n𝜌\n𝑘\n𝐸\n[\n𝑉\n0\n]\n+\n𝑐\n(\n1\n−\n𝜌\n𝑘\n)\n1\n−\n𝜌\n.\nE[V\nk\n\t​\n\n]≤ρ\nk\nE[V\n0\n\t​\n\n]+\n1−ρ\nc(1−ρ\nk\n)\n\t​\n\n.\n\n这是一个需要建立的充分条件示例，不是本课已对所有EKF证明的定理。持续噪声下通常讨论有界误差而非逐样本误差趋零；正半定的报告协方差也不能单独证明校准、稳定或安全。\n\n离线检验可同时看创新偏置/相关性、实际误差和报告协方差的吻合，以及错误初值、缺测、离群值、退化几何等工况。迭代EKF、UKF或粒子滤波各有计算与近似代价，本课不作通用优劣排名。\n\n小结\n\n均值走非线性\n𝑓\n,\nℎ\nf,h，误差协方差走当前点的\n𝐹\n,\n𝐻\nF,H；常数项和求值时刻不能省略。Joseph形式保证的是线性化模型中的代数结构。平方测量说明一阶导数为零仍可能有高阶信息，双峰后验也可能与单高斯具有相同均值。角度残差、单位与退化几何是算法的一部分；可信的误差界必须带条件和验证证据。\n\n习题\n\n1. 使用本课平方观测算例。(a) 逐项求\n𝑧\n^\n,\n𝐻\n,\n𝜈\n,\n𝑆\n,\n𝐾\n,\n𝑥\n^\n+\n,\n𝑃\n+\nz\n^\n,H,ν,S,K,\nx\n^\n+\n,P\n+\n。(b) 若将\n𝑅\nR改为4，重新计算并说明单位；为什么不能把\n𝐻\n𝑥\n^\n−\nH\nx\n^\n−\n当预测读数？\n\n2. \n𝑋\n∼\n𝑁\n(\n2\n,\n0.25\n)\nX∼N(2,0.25)，\n𝑓\n(\n𝑥\n)\n=\n𝑥\n+\n0.1\n𝑥\n2\nf(x)=x+0.1x\n2\n，独立过程噪声方差\n𝑄\n=\n0.04\nQ=0.04。(a) 求EKF预测的均值、方差及雅可比。(b) 用高斯中心矩\n𝐸\n[\n𝜖\n3\n]\n=\n0\n,\n𝐸\n[\n𝜖\n4\n]\n=\n3\n𝑃\n2\nE[ϵ\n3\n]=0,E[ϵ\n4\n]=3P\n2\n推导真实均值与方差，指出被丢弃的项。\n\n3. 平方测量\n𝑧\n=\n4\nz=4，先验\n𝑁\n(\n0\n,\n1\n)\nN(0,1)，\n𝑅\n=\n0.25\nR=0.25。(a) 求EKF更新。(b) 用对称性解释参考后验均值为何为0；为什么这不意味着方差仍为1？(c) 如何获得位置的正负方向信息？给出一个可检验的改进，而非仅改小\n𝑅\nR。\n\n4. 位置\n(\n3\n,\n4\n)\n(3,4)m的距离/方位测量。(a) 求观测与雅可比，说明原点处的问题。(b) 预测179°、读数−179°，求原始与归一化创新，换成rad；说明为什么atan2和一致的角度单位重要。\n\n答案\n\n1. (a) \n𝑧\n^\n=\n4\n,\n𝐻\n=\n4\n,\n𝜈\n=\n1\n,\n𝑆\n=\n5\n,\n𝐾\n=\n0.2\nz\n^\n=4,H=4,ν=1,S=5,K=0.2，后验2.2m、0.05m²，Joseph两项之和如正文。(b) \n𝑆\n=\n8\n,\n𝐾\n=\n0.125\nS=8,K=0.125，后验2.125m、0.125m²；\n𝑅\nR为m⁴，增益为m⁻¹。这里使用\nℎ\n(\n2\n)\n=\n4\nh(2)=4，而\n𝐻\n𝑥\n^\n−\n=\n8\nH\nx\n^\n−\n=8遗漏切线常数项，导致创新算错。\n\n2. (a) \n𝐹\n=\n1.4\nF=1.4，EKF均值2.4、方差\n1.4\n2\n×\n0.25\n+\n0.04\n=\n0.53\n1.4\n2\n×0.25+0.04=0.53。(b) 写\n𝑋\n=\n𝜇\n+\n𝜖\nX=μ+ϵ，则\n𝑓\n(\n𝑋\n)\n=\n𝜇\n+\n0.1\n𝜇\n2\n+\n(\n1\n+\n0.2\n𝜇\n)\n𝜖\n+\n0.1\n𝜖\n2\nf(X)=μ+0.1μ\n2\n+(1+0.2μ)ϵ+0.1ϵ\n2\n；取期望多出\n0.1\n𝑃\n=\n0.025\n0.1P=0.025。奇数中心矩为0，二次项方差为\n(\n0.1\n)\n2\n(\n3\n𝑃\n2\n−\n𝑃\n2\n)\n=\n2\n(\n0.1\n)\n2\n𝑃\n2\n=\n0.00125\n(0.1)\n2\n(3P\n2\n−P\n2\n)=2(0.1)\n2\nP\n2\n=0.00125。加独立\n𝑄\nQ后，真实均值2.425、方差0.53125。EKF漏掉这些曲率贡献，不能用重新解释\n𝑄\nQ来掩盖均值误差。\n\n3. (a) \nℎ\n(\n0\n)\n=\n0\n,\n𝐻\n=\n0\n,\n𝑆\n=\n0.25\n,\n𝐾\n=\n0\nh(0)=0,H=0,S=0.25,K=0，后验均值0、报告方差1。(b) 先验及似然都是偶函数，因此后验也是偶函数，均值为0；但权重被测量重新分配，积分给方差约3.841876，双峰形状与\n𝑁\n(\n0\n,\n1\n)\nN(0,1)不同。(c) 增加一个有符号的位置读数或已知方向的运动/观测，并在模型中联合使用；可检验正负候选的观测似然是否仍相同。仅减小平方测量噪声不能打破\n𝑥\nx与\n−\n𝑥\n−x的对称性；没有新信息时应保留歧义。\n\n4. (a) 观测\n[\n5\n,\n0.927295218\n…\n]\n𝑇\n[5,0.927295218…]\nT\n，\n𝐻\n=\n[\n[\n0.6\n,\n0.8\n]\n,\n[\n−\n0.16\n,\n0.12\n]\n]\nH=[[0.6,0.8],[−0.16,0.12]]；\n𝑟\n=\n0\nr=0时方位未定义且雅可比公式含除零，应改变模型或显式拒绝该更新。(b) 原始创新−358°，约−6.248279rad；归一化后2°，即\n𝜋\n/\n90\n≈\n0.034907\nπ/90≈0.034907rad。atan2保留象限；状态、噪声与创新中的rad/deg必须对应，否则不仅残差会错，协方差的量纲也会错。\n\n接下来学\n\n第 5 课\n无迹卡尔曼滤波\n尚未编写\n\n第 7 课\n多传感器融合\n尚未编写\n\n第 8 课\n状态估计案例\n尚未编写\n\n目录\n\n从读数到非线性模型\n误差为何要线性化\n预测与校正的完整递推\n一拍算例\n近似的后验与失败例\n多维测量与工程实现\n稳定性和适用边界\n小结\n习题\n答案"
+  },
+  "cases": [
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 1.000000、方差 0.125000；参考均值 1.000000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 1.500000、方差 0.125000；参考均值 1.500000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 -0.800000、方差 0.200000；参考均值 -0.800000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 -0.600000、方差 0.200000；参考均值 -0.600000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.058824；EKF 均值 -1.647059、方差 0.235294；参考均值 -1.647059、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.058824；EKF 均值 -1.588235、方差 0.235294；参考均值 -1.588235、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.800000；EKF 均值 2.800000、方差 0.200000；参考均值 2.800000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.800000；EKF 均值 3.600000、方差 0.200000；参考均值 3.600000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 1.000000、方差 0.500000；参考均值 1.000000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 1.500000、方差 0.500000；参考均值 1.500000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 -0.800000、方差 0.800000；参考均值 -0.800000、方差 0.800000。"
+    },
+    {
+      "kind": "linear",
+      "mu": -2,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 -0.600000、方差 0.800000；参考均值 -0.600000、方差 0.800000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 2.000000、方差 0.125000；参考均值 2.000000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 2.500000、方差 0.125000；参考均值 2.500000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 0.800000、方差 0.200000；参考均值 0.800000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 1.000000、方差 0.200000；参考均值 1.000000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.058824；EKF 均值 0.235294、方差 0.235294；参考均值 0.235294、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.058824；EKF 均值 0.294118、方差 0.235294；参考均值 0.294118、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.800000；EKF 均值 3.200000、方差 0.200000；参考均值 3.200000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.800000；EKF 均值 4.000000、方差 0.200000；参考均值 4.000000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 2.000000、方差 0.500000；参考均值 2.000000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 2.500000、方差 0.500000；参考均值 2.500000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 0.800000、方差 0.800000；参考均值 0.800000、方差 0.800000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 0,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 1.000000、方差 0.800000；参考均值 1.000000、方差 0.800000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 3.000000、方差 0.125000；参考均值 3.000000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 3.500000、方差 0.125000；参考均值 3.500000、方差 0.125000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 2.400000、方差 0.200000；参考均值 2.400000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 2.600000、方差 0.200000；参考均值 2.600000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.058824；EKF 均值 2.117647、方差 0.235294；参考均值 2.117647、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.058824；EKF 均值 2.176471、方差 0.235294；参考均值 2.176471、方差 0.235294。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 1.000000；K 0.800000；EKF 均值 3.600000、方差 0.200000；参考均值 3.600000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 1.000000；K 0.800000；EKF 均值 4.400000、方差 0.200000；参考均值 4.400000、方差 0.200000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H 1.000000；K 0.500000；EKF 均值 3.000000、方差 0.500000；参考均值 3.000000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H 1.000000；K 0.500000；EKF 均值 3.500000、方差 0.500000；参考均值 3.500000、方差 0.500000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H 1.000000；K 0.200000；EKF 均值 2.400000、方差 0.800000；参考均值 2.400000、方差 0.800000。"
+    },
+    {
+      "kind": "linear",
+      "mu": 2,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H 1.000000；K 0.200000；EKF 均值 2.600000、方差 0.800000；参考均值 2.600000、方差 0.800000。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H -4.000000；K -0.235294；EKF 均值 -2.000000、方差 0.014706；参考均值 -1.989370、方差 0.015083。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H -4.000000；K -0.235294；EKF 均值 -2.235294、方差 0.014706；参考均值 -2.216827、方差 0.012288。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H -4.000000；K -0.200000；EKF 均值 -2.000000、方差 0.050000；参考均值 -1.968312、方差 0.053276。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H -4.000000；K -0.200000；EKF 均值 -2.200000、方差 0.050000；参考均值 -2.169615、方差 0.045869。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H -4.000000；K -0.125000；EKF 均值 -2.000000、方差 0.125000；参考均值 -1.951997、方差 0.131050。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H -4.000000；K -0.125000；EKF 均值 -2.125000、方差 0.125000；参考均值 -2.078842、方差 0.127059。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H -4.000000；K -0.246154；EKF 均值 -2.000000、方差 0.015385；参考均值 -1.986748、方差 0.021968。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H -4.000000；K -0.246154；EKF 均值 -2.246154、方差 0.015385；参考均值 -2.224100、方差 0.015556。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H -4.000000；K -0.235294；EKF 均值 -2.000000、方差 0.058824；参考均值 -1.950676、方差 0.076479。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H -4.000000；K -0.235294；EKF 均值 -2.235294、方差 0.058824；参考均值 -2.190209、方差 0.056485。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H -4.000000；K -0.200000；EKF 均值 -2.000000、方差 0.200000；参考均值 -1.834588、方差 0.306091。"
+    },
+    {
+      "kind": "square",
+      "mu": -2,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H -4.000000；K -0.200000；EKF 均值 -2.200000、方差 0.200000；参考均值 -2.063224、方差 0.250231。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 3.463089。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 4.471680。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 1.704272。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 2.784700。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 0.394835。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 0.250000；参考均值 0.000000、方差 0.472184。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 3.841876。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 4.848936。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 3.327998。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 4.378069。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 1.786930。"
+    },
+    {
+      "kind": "square",
+      "mu": 0,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H 0.000000；K 0.000000；EKF 均值 0.000000、方差 1.000000；参考均值 0.000000、方差 2.492196。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 4.000000；K 0.235294；EKF 均值 2.000000、方差 0.014706；参考均值 1.989370、方差 0.015083。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 4.000000；K 0.235294；EKF 均值 2.235294、方差 0.014706；参考均值 2.216827、方差 0.012288。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 1,
+      "z": 4,
+      "text": "H 4.000000；K 0.200000；EKF 均值 2.000000、方差 0.050000；参考均值 1.968312、方差 0.053276。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 1,
+      "z": 5,
+      "text": "H 4.000000；K 0.200000；EKF 均值 2.200000、方差 0.050000；参考均值 2.169615、方差 0.045869。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 4,
+      "z": 4,
+      "text": "H 4.000000；K 0.125000；EKF 均值 2.000000、方差 0.125000；参考均值 1.951997、方差 0.131050。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 0.25,
+      "r": 4,
+      "z": 5,
+      "text": "H 4.000000；K 0.125000；EKF 均值 2.125000、方差 0.125000；参考均值 2.078842、方差 0.127059。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 0.25,
+      "z": 4,
+      "text": "H 4.000000；K 0.246154；EKF 均值 2.000000、方差 0.015385；参考均值 1.986748、方差 0.021968。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 0.25,
+      "z": 5,
+      "text": "H 4.000000；K 0.246154；EKF 均值 2.246154、方差 0.015385；参考均值 2.224100、方差 0.015556。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 1,
+      "z": 4,
+      "text": "H 4.000000；K 0.235294；EKF 均值 2.000000、方差 0.058824；参考均值 1.950676、方差 0.076479。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 1,
+      "z": 5,
+      "text": "H 4.000000；K 0.235294；EKF 均值 2.235294、方差 0.058824；参考均值 2.190209、方差 0.056485。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 4,
+      "z": 4,
+      "text": "H 4.000000；K 0.200000；EKF 均值 2.000000、方差 0.200000；参考均值 1.834588、方差 0.306091。"
+    },
+    {
+      "kind": "square",
+      "mu": 2,
+      "p": 1,
+      "r": 4,
+      "z": 5,
+      "text": "H 4.000000；K 0.200000；EKF 均值 2.200000、方差 0.200000；参考均值 2.063224、方差 0.250231。"
+    }
+  ],
+  "mobile": {
+    "width": 375,
+    "scroll": 375
+  },
+  "errors": [],
+  "consoleErrors": []
+}
