@@ -240,7 +240,7 @@
 | ROBUST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/08-mu-synthesis.md;.agent/semester-03/robust-08/acceptance.md;commit:34eaae4a5e61c587b76a22efec5d3791ed9148d8;rank5三Notebook六cell/2020配置/双构建/375px验收 |
 | ROBUST-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/09-h-infinity-filter.md;.agent/semester-03/robust-09/acceptance.md;commit:ab43f3bdb26ab3019b4c727af2776ced0ab5225e;rank5三Notebook五cell/481配置/双构建/375px验收 |
 | ROBUST-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/10-delay-robust-control.md;.agent/semester-03/robust-10/acceptance.md;commit:fb4bcf9c14114ce697252be4093c88b64e0776de;rank5三Notebook五cell/90配置/双构建/375px验收 |
-| ROBUST-11 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/11-robust-case-study.md;.agent/semester-03/robust-11/acceptance.md;rank5三Notebook六cell/150配置/1000样本/双构建/375px，待实际master提交 |
+| ROBUST-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/11-robust-case-study.md;.agent/semester-03/robust-11/acceptance.md;commit:6a3ba40e8fe7c17ae2d67d805e1526b8b6769fd0;rank5三Notebook六cell/150配置/1000样本/双构建/375px验收 |
 
 ### 预测控制
 

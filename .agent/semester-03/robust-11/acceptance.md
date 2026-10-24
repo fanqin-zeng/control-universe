@@ -24,3 +24,6 @@
 
 
 收尾实测：rank5内核6→0，21395/21495/21595/8995四端口全部释放，见kernel-cleanup.json与ports-cleanup.json。共享末次check/semester均退出1，原始日志保留；本课投影六项和原始semester CLI均退出0。SVG标签/流程箭头作最后视觉调整后，私有public与静态导出同字节，官方Pages与SVG截图复验通过，见scope-audit.json。
+
+
+真实master交付提交：6a3ba40e8fe7c17ae2d67d805e1526b8b6769fd0。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
