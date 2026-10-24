@@ -31,3 +31,5 @@ ID-05 sourceHash `94c732f0d0d10ef419aaa5e43243926b81563ddf677253a7c1627d102df225
 初期目录名/import残留及静态.mjs MIME问题修复后重新执行；框图分支重叠已改并重建。混用Pages缓存的原生复验失败不算通过，最后两模式按顺序独立重建与全量实测成功。失败日志保留，讨论日志D记录处置。
 
 资源回收见kernels-closed.json/resources-closed.json：6个本任务遗留内核DELETE后余0，自己的内核与夹具PID关闭；原生和Pages预览由Popen finally关闭。未停他人进程，未改共享端口脚本或.next。共享Git索引保留，提交使用本任务专用索引。
+
+真实交付提交：`40456c44cd909000c42aec614f95992323799d4d`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。
