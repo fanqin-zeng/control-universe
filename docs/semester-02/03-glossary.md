@@ -617,6 +617,13 @@
 | 集总热容 | lumped capacitance | — | CLASSIC-01 | 温度近似均匀的热储存模型 |
 | 基本传播数 | basic reproduction number | — | CLASSIC-01 | SIS例中beta N除以gamma，固定人口与恢复回流假设 |
 | 易感感染易感模型 | susceptible-infected-susceptible、SIS | — | CLASSIC-01 | 恢复后回到易感状态，不含永久免疫 |
+| 自回归外部输入模型 | ARX、autoregressive with exogenous input | — | ID-02 | Ay=Bu+e；噪声通道为1/A，不能误作白输出误差 |
+| 自回归滑动平均外部输入模型 | ARMAX、autoregressive moving average with exogenous input | — | ID-02 | Ay=Bu+Ce；与输入通道共用A |
+| 输出误差模型 | OE、output-error model | — | ID-02 | 此处H=1；不单独拟合有色噪声动态 |
+| Box–Jenkins模型 | BJ、Box-Jenkins model | — | ID-02 | 输入和噪声动态分别参数化，不表示质量排名 |
+| 有限脉冲响应模型 | FIR、finite impulse response model | — | ID-02 | 本课限定输入通道有限项并配白输出噪声 |
+| 单位延迟算子 | unit delay operator | — | ID-02 | q^-1取过去一个样本，不是幅值取倒数 |
+| 创新 | innovation | — | ID-02 | 相对过去可用信息条件均值为零；不等同任意白噪声序列 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

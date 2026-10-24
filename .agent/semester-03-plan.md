@@ -54,6 +54,7 @@
 | DISCRETE-10 | DISCRETE-01 | 2026-10-19用户明确要求“继续DISCRETE-10”；02–09已交付，保留01草稿，本课只依赖已交付先修 | .agent/semester-03/discrete-10/acceptance.md |
 | ID-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-01，rank3；暂缓并行会话与此前未交付课程，本课只依赖已交付离散系统及概率基础 | .agent/semester-03/id-01/acceptance.md |
 | ML-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-01，rank2；其它会话并行设计实现课，保留其检查点；本课只依赖已交付数学基础 | .agent/semester-03/ml-01/acceptance.md |
+| ID-02 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-02，rank3；暂缓其他会话与未交付前课，仅依赖已交付ID-01和差分方程 | .agent/semester-03/id-02/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：

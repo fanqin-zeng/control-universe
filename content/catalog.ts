@@ -3525,7 +3525,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "从递推到延迟算子",
+            "title": "从递推到延迟算子"
+          },
+          {
+            "slug": "输入与噪声两条通道",
+            "title": "输入与噪声两条通道"
+          },
+          {
+            "slug": "多项式模型",
+            "title": "多项式模型"
+          },
+          {
+            "slug": "同一水箱的两种噪声假设",
+            "title": "同一水箱的两种噪声假设"
+          },
+          {
+            "slug": "阶次延迟与状态表示",
+            "title": "阶次延迟与状态表示"
+          },
+          {
+            "slug": "怎样选择候选",
+            "title": "怎样选择候选"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "least-squares-rls",

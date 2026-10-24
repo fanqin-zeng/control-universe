@@ -1,0 +1,24 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');
+let browser;
+(async()=>{
+browser=await chromium.launch({headless:true,channel:'msedge'});
+const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+const name=process.env.ID02_AUDIT_NAME||'native';
+const url=process.env.ID02_PAGE_URL||'http://127.0.0.1:18193/identification/model-structures';
+const response=await page.goto(url);assert.equal(response.status(),200);
+const all=page.getByRole('button',{name:/全部运行/});await all.nth(1).waitFor({timeout:120000});assert.equal(await all.count(),2);
+await page.waitForTimeout(1000);await all.first().click();
+await page.waitForFunction(()=>document.body.innerText.includes('pole_zero_same_noise_channel True'),null,{timeout:180000});
+await all.nth(1).click();await page.waitForFunction(()=>document.body.innerText.includes('state_coordinate_outputs_match True')&&document.body.innerText.includes('BJ_noise_first4_cm'),null,{timeout:180000});
+const dom=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,h2:[...document.querySelectorAll('h2')].map(x=>({id:x.id,text:x.textContent})),ids:[...document.querySelectorAll('[id]')].map(x=>x.id),links:[...document.querySelectorAll('a[href^="#"]')].map(x=>x.getAttribute('href')),katexErrors:document.querySelectorAll('.katex-error').length,images:[...document.images].map(x=>({src:x.getAttribute('src').startsWith('data:')?'inline-python-plot':x.getAttribute('src'),loaded:x.complete&&x.naturalWidth>0})),text:document.body.innerText}));
+const expected=['引言','从递推到延迟算子','输入与噪声两条通道','多项式模型','同一水箱的两种噪声假设','阶次延迟与状态表示','怎样选择候选','小结','习题','答案'];
+assert.equal(dom.h1,1);assert.deepEqual(dom.h2.map(x=>x.text),expected);assert.equal(dom.katexErrors,0);assert.equal(dom.ids.length,new Set(dom.ids).size);for(const href of dom.links)assert(dom.ids.includes(decodeURIComponent(href.slice(1))));assert(dom.images.some(x=>x.loaded&&x.src.endsWith('model-channels.svg')));assert(dom.images.some(x=>x.loaded&&x.src==='inline-python-plot'));assert.equal(errors.length,0);
+await page.screenshot({path:`.agent/semester-03/id-02/desktop-${name}.png`,fullPage:true});
+await page.setViewportSize({width:375,height:812});await page.waitForTimeout(300);
+const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert(mobile.scroll<=mobile.width);
+await page.screenshot({path:`.agent/semester-03/id-02/mobile-${name}.png`,fullPage:true});
+await page.screenshot({path:`.agent/semester-03/id-02/mobile-top-${name}.png`});
+fs.writeFileSync(`.agent/semester-03/id-02/browser-${name}.json`,JSON.stringify({pass:true,url,dom,mobile,errors},null,2));
+await browser.close();console.log('PASS 10 H2, real anchors, two notebooks / four cells, SVG + Python plot, 375px, pageerror=0');
+})().catch(async e=>{console.error(e);await browser?.close();process.exitCode=1;});
