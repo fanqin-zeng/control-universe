@@ -3381,7 +3381,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [{"slug": "两种标签对应两种任务", "title": "两种标签对应两种任务"}, {"slug": "线性回归从损失出发", "title": "线性回归从损失出发"}, {"slug": "用正则化约束斜率", "title": "用正则化约束斜率"}, {"slug": "从分数到分类概率", "title": "从分数到分类概率"}, {"slug": "交叉熵如何训练", "title": "交叉熵如何训练"}, {"slug": "训练与预测的接口", "title": "训练与预测的接口"}, {"slug": "实验结果与使用边界", "title": "实验结果与使用边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}]
       },
       {
         "slug": "neural-networks",

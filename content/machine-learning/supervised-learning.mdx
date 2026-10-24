@@ -1,0 +1,244 @@
+---
+title: 监督学习
+description: 从温升回归与设备检修分类，理解损失、参数训练、正则化、分类概率和预测接口。
+---
+
+# 监督学习
+
+## 两种标签对应两种任务
+
+上一课用房间加热说明了[学习问题与泛化](/machine-learning/learning-problem)：给定功率，预测下一分钟升温多少。现在真正来训练模型。与此同时，维修人员也在记录设备振动和下次巡检的检修结论，希望根据当前振动判断“需检修”还是“不需检修”。两份记录都有输入与标签，但标签的含义不同，模型输出与损失也应随之改变。
+
+<svg viewBox="0 0 660 180" role="img" aria-label="功率偏差与温升数值组成回归样本；振动特征与需检修类别组成分类样本；模型分别预测数值和概率" style={{width:'100%',height:'auto',maxWidth:660}}>
+  <rect x="5" y="10" width="220" height="65" rx="8" fill="#e0f2fe" stroke="#0369a1"/><text x="115" y="37" textAnchor="middle" fill="#172033">加热功率偏差</text><text x="115" y="61" textAnchor="middle" fill="#172033">标签：下一分钟温升</text>
+  <path d="M225 42H315l-10 -6m10 6l-10 6" stroke="#334155" fill="none"/>
+  <rect x="320" y="10" width="330" height="65" rx="8" fill="#dcfce7" stroke="#15803d"/><text x="485" y="48" textAnchor="middle" fill="#172033">回归：预测连续数值</text>
+  <rect x="5" y="100" width="220" height="65" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="115" y="127" textAnchor="middle" fill="#172033">当前振动特征</text><text x="115" y="151" textAnchor="middle" fill="#172033">标签：下次巡检是否需检修</text>
+  <path d="M225 132H315l-10 -6m10 6l-10 6" stroke="#334155" fill="none"/>
+  <rect x="320" y="100" width="330" height="65" rx="8" fill="#f3e8ff" stroke="#7e22ce"/><text x="485" y="138" textAnchor="middle" fill="#172033">分类：预测类别概率，再按阈值判别</text>
+</svg>
+
+**监督学习**从配对样本 $(x_i,y_i)$ 学习输入到目标的映射。回归标签是连续数值；本课的二分类标签用 $y_i=1$ 表示需检修、$y_i=0$ 表示不需检修。标成数字并不会让类别变成温升。多特征、多类别和其它模型也属于监督学习；本课选两个可手算的基线，把共同流程讲清楚。
+
+你将学会推导直线回归的训练目标，解释正则化怎样约束斜率，写出二分类交叉熵与梯度，并区分训练停止、预测接口和分类阈值。先修为上一课与[凸优化](/math/convex-optimization)。所有数据都是自造的小型教学数据，不是房间或设备的真实测量。
+
+## 线性回归从损失出发
+
+沿用上一课的归一化约定：$x$ 是相对参考功率的偏差，负值不代表负的加热功率；$y$ 是固定尺度下的温升。用直线 $\widehat y=b+wx$ 预测。给定 $n$ 条训练记录，先最小化半均方误差：
+
+$$
+L(b,w)=\frac{1}{2n}\sum_{i=1}^n(b+wx_i-y_i)^2.
+$$
+
+这里的 $L$ 等于上一课训练MSE的一半。乘常数不改变无惩罚最优点，但会改变梯度大小；加入惩罚后，其相对系数也必须按同一约定解释。不能把不同教材或库的超参数数值直接搬过来。
+
+令残差 $r_i=b+wx_i-y_i$。对参数分别求导：
+
+$$
+\frac{\partial L}{\partial b}=\frac1n\sum_i r_i,\qquad
+\frac{\partial L}{\partial w}=\frac1n\sum_i r_ix_i.
+$$
+
+在驻点处两式为零，第一式给出 $b=\overline y-w\overline x$，横线表示训练均值。若训练输入均值为零，就有
+
+$$
+b=\overline y,\qquad
+w=\frac{\sum_i x_i y_i}{\sum_i x_i^2}.
+$$
+
+分母必须非零；若所有输入都相同，数据不能分别确定截距和斜率。多特征时，设计矩阵的列若线性相关，也会出现参数不唯一或近相关带来的敏感性。实际求解优先用稳定的矩阵分解，不把显式求逆当通用训练方法。
+
+本课默认训练点为 $(-1,0),(0,1),(1,2)$。均值 $\overline x=0,\overline y=1$，而 $\sum x_i y_i=2,\sum x_i^2=2$，得到 $b=1,w=1$，训练MSE为零。这是刻意给定的直线数据，不能据此保证新房间也精确符合这条直线。
+
+## 用正则化约束斜率
+
+测量少或含扰动时，单纯追随标签可能得到过大的斜率。加入L2惩罚，定义
+
+$$
+J_\lambda(b,w)=L(b,w)+\frac{\lambda}{2}w^2,\qquad \lambda\geq0.
+$$
+
+$\lambda$ 是通过验证选择的超参数，训练只在给定 $\lambda$ 下拟合 $b,w$。本课**不惩罚截距**，因为希望允许温升基准整体平移；若改成惩罚截距，就换了模型约定。平方惩罚约束参数大小，既不是温度硬约束，也不是对输出误差的安全保证。
+
+对目标求导时，截距梯度不变，斜率梯度多出 $\lambda w$。在零均值输入下：
+
+$$
+w_\lambda=\frac{\frac1n\sum_i x_iy_i}{\frac1n\sum_i x_i^2+\lambda},\qquad b_\lambda=\overline y.
+$$
+
+默认三点的 $\frac1n\sum x_i^2=2/3$，所以 $w_\lambda=2/(2+3\lambda)$。当 $\lambda=1$ 时，$b=1,w=0.4$；训练MSE为 $0.24$，数据损失 $L=0.12$，惩罚为 $0.08$，总目标为 $0.2$。训练拟合比无惩罚更差，正是本课必须保留的代价。
+
+正则化能否改善未见样本，需要另行检验。实验将最后一个训练标签改为 $2+a$，其中 $a$ 是固定扰动；验证和测试仍来自教学规律 $1+x$。此时 $b=1+a/3$，$w=(2+a)/(2+3\lambda)$。收缩斜率有时能抵消扰动，但不能自动纠正被污染的截距，也不能保证泛化。
+
+## 从分数到分类概率
+
+设备例子换了标签。令 $x$ 为中心化、归一化后的当前振动特征，$y$ 为下次巡检的二分类结论。先算线性分数 $z=b+wx$，再经过sigmoid函数：
+
+$$
+p_{\boldsymbol{\theta}}(x)=\sigma(z)=\frac{1}{1+e^{-z}},\qquad \boldsymbol{\theta}=(b,w).
+$$
+
+模型将 $p_{\boldsymbol{\theta}}(x)$ 解释为输入给定时 $y=1$ 的条件概率估计。$z=0$ 对应 $p=0.5$；$z=\log 3$ 对应 $p=0.75$。模型给出的概率不是天然正确的置信度；是否校准，需要另有代表性数据验证。
+
+预测类别还需要阈值 $\tau$：当 $p_{\boldsymbol{\theta}}(x)\geq\tau$ 时判为 $1$，否则判为 $0$。本课把相等时判为 $1$ 的规则写死，避免边界含混。改变阈值只改变决策，**不改变参数和概率曲线**。漏检与误报代价不同，阈值通常也应不同；它同样要在验证阶段确定，不能看测试标签再挑。
+
+这称为**逻辑回归**，名字虽带“回归”，此处却用于二分类。它仍是参数化的监督学习模型，而不是为每一台设备记住一条类别。概率曲线在训练范围之外延伸，也不构成对新设备的可靠性保证。
+
+## 交叉熵如何训练
+
+给定输入，若标签服从参数为 $p_i=p_{\boldsymbol{\theta}}(x_i)$ 的Bernoulli模型，则一次标签的概率为 $p_i^{y_i}(1-p_i)^{1-y_i}$。在条件独立的似然模型下，将训练样本概率相乘，再取负对数并求平均，得到二分类交叉熵：
+
+$$
+L_{\mathrm{ce}}(b,w)=-\frac1n\sum_i\big[y_i\log p_i+(1-y_i)\log(1-p_i)\big].
+$$
+
+猜错且很自信时会受到较大的损失；准确率只数是否越过阈值，看不到这层区别。若也加入 $\lambda w^2/2$，梯度为
+
+$$
+g_b=\frac1n\sum_i(p_i-y_i),\qquad
+g_w=\frac1n\sum_i(p_i-y_i)x_i+\lambda w.
+$$
+
+这是sigmoid导数与交叉熵求导抵消后的结果。全批梯度下降每次使用全部训练点，同时从旧参数更新两项：
+
+$$
+b_{k+1}=b_k-\eta g_b(b_k,w_k),\qquad
+w_{k+1}=w_k-\eta g_w(b_k,w_k).
+$$
+
+$\eta$ 是步长，$k$ 是更新编号。对线性分数模型，这个目标是凸的；凸性不意味着任意步长都收敛，也不意味着有限步输出就是精确最优解。
+
+本课四个训练输入为 $-2,-1,1,2$，标签为 $0,0,1,1$。从 $b=w=0$ 开始，所有概率均为 $0.5$，有 $g_b=0,g_w=-0.75$；步长 $\eta=0.5$ 更新一次后为 $b=0,w=0.375$。交互默认分类设置采用 $\lambda=1$、最多 $40$ 次更新，梯度范数不超过 $10^{-10}$ 才提前停止。实际在第 $16$ 次更新后达容差，$w\approx0.47210815$，$x=1$ 时的模型概率约为 $0.61588261$。这些有限精度数由下方实验复算，不把预算值当实际更新次数。
+
+这里步长固定用于已归一化的小数据与 $0\leq\lambda\leq2$。其Hessian最大特征值可界为 $0.625+\lambda$，因此 $\eta=0.5$ 落在下降的允许范围内。一般任务仍应依据尺度和目标选择步长、检查有限数值和停止原因。
+
+## 训练与预测的接口
+
+训练函数接收**训练输入、训练标签和已选定的超参数**，返回参数及诊断：目标值、实际更新次数、梯度范数和停止原因。预测函数只接收已冻结参数与新输入；回归输出数值，分类先输出概率，再由另一个阈值规则给类别。下面的短伪代码展示顺序，不依赖某个训练框架：
+
+```python
+preprocessor.fit(train_x)                # 统计量只来自训练集
+model.fit(preprocessor.transform(train_x), train_y, config)
+validation_score = evaluate(model, preprocessor.transform(val_x), val_y)
+# 用验证集选config；锁定预处理、参数和阈值之后：
+test_score = evaluate(model, preprocessor.transform(test_x), test_y)
+prediction = model.predict(preprocessor.transform(new_x))
+```
+
+`fit`不应读取测试标签；预处理也不能为了方便先在全体数据上拟合。训练梯度很小仅表示当前训练目标的驻点条件，不能代替验证分数。达到更新预算而梯度仍大，应报告未达容差；数据可分且无惩罚时，还可能根本不存在有限参数的最小解。
+
+数值实现也属于接口合同。交叉熵可写成 $\max(z,0)+\log(1+e^{-|z|})-yz$ 再求平均，避免直接算 $\log(0)$；sigmoid对正负分数分别计算，避免指数溢出。此处不靠裁剪概率掩盖无限目标，也不把异常替换为零。正规化损失尺度与库参数的差异可参阅官方[线性模型说明](https://scikit-learn.org/stable/modules/linear_model.html#ridge-regression-and-classification)及[逻辑回归说明](https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression)；本课自行实现小实验，不调用库的默认惩罚约定。
+
+## 实验结果与使用边界
+
+先在交互里观察回归斜率收缩，再切换到分类查看概率、阈值和停止状态。两种任务的纵轴不同，但同一任务内坐标固定。界面上的测试读数用于剖析教学反例；真实研发仍要先验证选模、再封存测试评估。
+
+<SupervisedLearningExplorer />
+
+<JupyterNotebook title="实验一：回归目标与验证选模" setupCode={`import numpy as np
+import time
+import matplotlib.pyplot as plt
+train_x=np.array([-1.,0.,1.])
+val_x=np.array([-.5,.5])
+test_x=np.array([-.75,.75])
+lambdas=[0.,.5,1.,2.]
+def regression(lam=1.,a=0.):
+    y=np.array([0.,1.,2.+a])
+    X=np.column_stack([np.ones(3),train_x])
+    augmented=np.vstack([X,[0.,np.sqrt(3*lam)]])
+    b,w=np.linalg.lstsq(augmented,np.r_[y,0.],rcond=None)[0]
+    mse=float(np.mean((b+w*train_x-y)**2))
+    val=float(np.mean((b+w*val_x-(1+val_x))**2))
+    test=float(np.mean((b+w*test_x-(1+test_x))**2))
+    return dict(b=float(b),w=float(w),mse=mse,dataLoss=mse/2,penalty=float(lam*w*w/2),objective=float(mse/2+lam*w*w/2),validation=val,test=test)
+`} cells={[{code:`start=time.perf_counter()
+default_reg=regression()
+print('default',default_reg)
+print('unpenalized',regression(0.))
+initial_residual=-np.array([0.,1.,2.])
+first_step=-.5*np.array([initial_residual.mean(),np.mean(initial_residual*train_x)])
+print('regression first gradient step b,w=',first_step)
+fig,ax=plt.subplots(figsize=(6,3))
+xx=np.linspace(-2,2,101)
+for lam in lambdas:
+    r=regression(lam)
+    ax.plot(xx,r['b']+r['w']*xx,label='lambda='+str(lam))
+ax.scatter(train_x,[0,1,2],label='train')
+ax.set(xlim=(-2,2),ylim=(-3,6),xlabel='normalized power offset',ylabel='normalized temperature rise');ax.legend();ax.grid();plt.show()
+print('four solves; wall seconds=',time.perf_counter()-start)
+`},{code:`selection_rows=[]
+for a in [0.,1.,2.]:
+    candidates=[regression(lam,a) for lam in lambdas]
+    selected=int(np.argmin([r['validation'] for r in candidates]))
+    selection_rows.append(dict(a=a,selected=lambdas[selected],validation=candidates[selected]['validation'],test=candidates[selected]['test']))
+    print('a=',a,'validation selected=',lambdas[selected],'then test=',candidates[selected]['test'])
+    print('all candidates',[(lam,r['mse'],r['validation'],r['test']) for lam,r in zip(lambdas,candidates)])
+assert abs(default_reg['mse']-.24)<1e-10
+assert abs(default_reg['objective']-.2)<1e-10
+assert abs(default_reg['test']-.2025)<1e-10
+`}]} />
+
+固定候选 $\lambda\in\{0,0.5,1,2\}$，在 $a=0,1,2$ 三工况分别用验证MSE选择，结果为 $0,0.5,0.5$。干净数据上，默认 $\lambda=1$ 的测试MSE为 $0.2025$，而 $\lambda=0$ 为零；单点扰动 $a=1$ 时，验证选中的 $\lambda=0.5$ 测试MSE约为 $0.12259070$，无惩罚则约为 $0.25173611$。这是固定样本的机制演示，未声称随机总体上的平均提升。不同 $\lambda$ 的总目标含不同惩罚，**不能拿总目标的大小排序泛化表现**。
+
+<JupyterNotebook title="实验二：分类梯度与可分反例" setupCode={`import numpy as np
+from scipy.special import expit
+from scipy.optimize import brentq
+import time
+cx=np.array([-2.,-1.,1.,2.])
+cy=np.array([0.,0.,1.,1.])
+def classify(lam=1.,budget=40):
+    b=w=0.
+    updates=0
+    def gradient(b,w):
+        r=expit(b+w*cx)-cy
+        return np.array([r.mean(),(r*cx).mean()+lam*w])
+    g=gradient(b,w)
+    while updates<budget and np.linalg.norm(g)>1e-10:
+        b,w=np.array([b,w])-.5*g
+        updates+=1
+        g=gradient(b,w)
+    z=b+w*cx
+    ce=float(np.mean(np.logaddexp(0.,z)-cy*z))
+    return dict(b=float(b),w=float(w),updates=updates,gradientNorm=float(np.linalg.norm(g)),converged=bool(np.linalg.norm(g)<=1e-10),ce=ce,penalty=float(lam*w*w/2),objective=float(ce+lam*w*w/2),probabilities=expit(z).tolist())
+`} cells={[{code:`start=time.perf_counter()
+default_class=classify()
+print('default',default_class)
+print('first step',classify(1.,1))
+root=brentq(lambda w:float(np.mean((expit(w*cx)-cy)*cx)+w),0.,2.)
+print('independent stationary root=',root,'difference=',abs(root-default_class['w']))
+for lam in [0.,.5,1.,2.]:
+    for budget in [1,40,200]:
+        r=classify(lam,budget)
+        accuracy=float(np.mean((np.array(r['probabilities'])>=.5)==cy))
+        print('lambda,budget,w,ce,gradient,updates,accuracy=',lam,budget,r['w'],r['ce'],r['gradientNorm'],r['updates'],accuracy)
+print('wall seconds=',time.perf_counter()-start)
+`},{code:`p=np.array(default_class['probabilities'])
+print('same parameters; threshold .5 accuracy=',np.mean((p>=.5)==cy))
+print('same parameters; threshold .9 accuracy=',np.mean((p>=.9)==cy))
+print('z=0 probability=',expit(0.),'z=log3 probability=',expit(np.log(3.)))
+print('Q3 threshold .8 prediction=',int(expit(np.log(3.))>=.8))
+print('large logits stable CE=',np.logaddexp(0.,1000.)-1000.,np.logaddexp(0.,-1000.))
+assert abs(default_class['w']-.47210815268383144)<1e-9
+assert default_class['updates']==16
+assert not classify(0.,200)['converged']
+`}]} />
+
+四个分类训练点在阈值 $0.5$ 下，第一次更新后准确率就达到 $1$；这并未使梯度为零。无惩罚时，将正斜率不断放大，四点的正确类别概率趋近 $1$，交叉熵趋近零，但任意有限斜率仍有正损失。因此本例 $\lambda=0$ **没有有限参数的最小解**；预算 $200$ 后仍须报告未达梯度容差。加惩罚改变了目标，不能因为其交叉熵更大就说训练器出错。
+
+默认分类参数保持不变，将阈值从 $0.5$ 调到 $0.9$，训练准确率从 $1$ 变成 $0.5$。这只反映四个固定训练点的决策变化，不表示阈值较低在真实检修任务中更安全。数据量、标签偏差、类别比例、误报/漏检代价和部署分布，都需要独立评估。
+
+两组实验无随机种子、无环境交互步数；直接求解与全批梯度的预算和实际更新次数已打印。训练不是控制闭环：回归误差或分类准确率再好，也不直接给出稳定性、执行约束或故障保护证据。真实系统上线仍需要分布检查、时序因果、延迟和失效回退，不能让这份教学分类器直接承担检修安全决策。
+
+## 习题
+
+1. 对默认三点推导 $\lambda=1$ 时的 $b,w$。分别计算训练MSE、半均方误差、惩罚与总目标，并解释为什么总目标不是MSE。
+2. 从零参数出发、步长为 $0.5$，分别给出默认回归目标和分类目标的第一次更新。惩罚为什么在这一步没有贡献？
+3. 某分类分数为 $\log3$，其概率是多少？阈值为 $0.8$ 时输出哪类？只改变阈值会改变交叉熵吗？
+4. 同学发现无惩罚分类的训练准确率已经满分，就宣布“模型已收敛”，随后用测试标签调整阈值。分别指出优化结论和评估流程的问题，说明应该报告哪些诊断。
+
+## 答案
+
+1. 输入均值零，$b=\overline y=1$。由驻点方程 $w=(2/3)/(2/3+1)=0.4$。三个残差为 $0.6,0,-0.6$，MSE为 $0.24$；$L=0.12$，$\lambda w^2/2=0.08$，故 $J=0.2$。总目标包含惩罚，且数据项采用半均方误差；两种差异都要说明。
+2. 回归初始梯度为 $g_b=-1,g_w=-2/3$，故更新为 $b=0.5,w=1/3$。分类初始梯度为 $0,-0.75$，故更新为 $0,0.375$。初始 $w=0$，惩罚梯度 $\lambda w$ 为零；之后通常不再为零。
+3. $\sigma(\log3)=3/4=0.75$，未达到 $0.8$，输出类 $0$。交叉熵由原概率与标签计算，不含判别阈值；参数不变时交叉熵不变，准确率却可能变化。
+4. 准确率只看阈值判别，本例可分且无惩罚时不存在有限最小解，满分不表示梯度收敛。应报告目标约定、梯度范数、实际更新次数、停止原因及数据划分；阈值只在训练/验证阶段确定，锁定后测试。已经用过的测试集不能再次冒充独立最终评估。
