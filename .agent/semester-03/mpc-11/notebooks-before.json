@@ -1,0 +1,92 @@
+{
+  "root": "D:/Workspace/control-universe-rank6-mpc11",
+  "kernel": "127.0.0.1:9136",
+  "kernelRequired": true,
+  "executionStatus": "EXECUTED",
+  "totals": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 1,
+    "SKIPPED": 0
+  },
+  "codeCount": {
+    "S7": 1,
+    "S2": 2,
+    "S6": 2
+  },
+  "failLessons": [
+    "mpc/mpc-case-study"
+  ],
+  "lessons": [
+    {
+      "key": "mpc/mpc-case-study",
+      "file": "content/mpc/mpc-case-study.mdx",
+      "level": "FAIL",
+      "notebooks": 1,
+      "cells": [
+        {
+          "notebook": 0,
+          "index": 0,
+          "status": "ERROR",
+          "ename": "ModuleNotFoundError",
+          "evalue": "No module named 'ipywidgets'",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "ModuleNotFoundError                       Traceback (most recent call last)",
+            "Cell In[2], line 2\n      1 # ===== CSTR MPC 完整闭环仿真 =====\n----> 2 from ipywidgets import interact, FloatSlider, IntSlider, Checkbox\n      3 \n      4 # ---- CSTR 非线性模型 ----\n      5 V = 100.0       # L\n",
+            "ModuleNotFoundError: No module named 'ipywidgets'"
+          ],
+          "stderr": "",
+          "images": 0
+        },
+        {
+          "notebook": 0,
+          "index": 1,
+          "status": "ERROR",
+          "ename": "NameError",
+          "evalue": "name 'interact' is not defined",
+          "traceback": [
+            "---------------------------------------------------------------------------",
+            "NameError                                 Traceback (most recent call last)",
+            "Cell In[3], line 30\n     26 \n     27     plt.tight_layout()\n     28     plt.show()\n     29 \n---> 30 interact(\n     31     interactive_tuning,\n     32     Q_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='Q 缩放'),\n     33     R_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='R 缩放'),\n",
+            "NameError: name 'interact' is not defined"
+          ],
+          "stderr": "",
+          "images": 0
+        }
+      ],
+      "findings": [
+        {
+          "level": "WARN",
+          "code": "S7",
+          "msg": "Notebook 1（:297） 传了组件没有的属性 language=\"python\" → 被静默忽略",
+          "line": 298
+        },
+        {
+          "level": "FAIL",
+          "code": "S2",
+          "msg": "Notebook 1（:297） cell 1（:305） 出现 ipywidgets 家族 3 处（ipywidgets, FloatSlider, IntSlider）→ 轻量内核不支持 widget，应改 React 交互组件",
+          "line": 305
+        },
+        {
+          "level": "FAIL",
+          "code": "S2",
+          "msg": "Notebook 1（:297） cell 2（:609） 出现 ipywidgets 家族 5 处（interact(, FloatSlider, IntSlider）→ 轻量内核不支持 widget，应改 React 交互组件",
+          "line": 609
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 1 cell 1（:305）执行报错 ModuleNotFoundError: No module named 'ipywidgets'\n          ---------------------------------------------------------------------------\n          ModuleNotFoundError                       Traceback (most recent call last)\n          Cell In[2], line 2\n      1 # ===== CSTR MPC 完整闭环仿真 =====\n----> 2 from ipywidgets import interact, FloatSlider, IntSlider, Checkbox\n      3 \n      4 # ---- CSTR 非线性模型 ----\n      5 V = 100.0       # L\n\n          ModuleNotFoundError: No module named 'ipywidgets'",
+          "line": 305
+        },
+        {
+          "level": "FAIL",
+          "code": "S6",
+          "msg": "Notebook 1 cell 2（:609）执行报错 NameError: name 'interact' is not defined\n          ---------------------------------------------------------------------------\n          NameError                                 Traceback (most recent call last)\n          Cell In[3], line 30\n     26 \n     27     plt.tight_layout()\n     28     plt.show()\n     29 \n---> 30 interact(\n     31     interactive_tuning,\n     32     Q_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='Q 缩放'),\n     33     R_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='R 缩放'),\n\n          NameError: name 'interact' is not defined",
+          "line": 609
+        }
+      ]
+    }
+  ]
+}

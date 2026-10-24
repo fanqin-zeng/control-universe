@@ -5817,56 +5817,7 @@ export const catalog: Chapter[] = [
       {
         "slug": "mpc-case-study",
         "title": "预测控制案例",
-        "subsections": [
-          {
-            "slug": "问题描述",
-            "title": "问题描述"
-          },
-          {
-            "slug": "建立被控对象模型",
-            "title": "建立被控对象模型"
-          },
-          {
-            "slug": "离散化与预测模型",
-            "title": "离散化与预测模型"
-          },
-          {
-            "slug": "mpc-控制器设计",
-            "title": "MPC控制器设计"
-          },
-          {
-            "slug": "约束设置",
-            "title": "约束设置"
-          },
-          {
-            "slug": "闭环仿真",
-            "title": "闭环仿真"
-          },
-          {
-            "slug": "调参与分析",
-            "title": "调参与分析"
-          },
-          {
-            "slug": "工程实现细节",
-            "title": "工程实现细节"
-          },
-          {
-            "slug": "深入讨论",
-            "title": "深入讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+        "subsections": [{"slug": "问题描述", "title": "问题描述"}, {"slug": "建立被控对象模型", "title": "建立被控对象模型"}, {"slug": "离散化与预测模型", "title": "离散化与预测模型"}, {"slug": "mpc-控制器设计", "title": "MPC 控制器设计"}, {"slug": "约束设置", "title": "约束设置"}, {"slug": "闭环仿真", "title": "闭环仿真"}, {"slug": "调参与分析", "title": "调参与分析"}, {"slug": "工程实现细节", "title": "工程实现细节"}, {"slug": "深入讨论", "title": "深入讨论"}, {"slug": "小结", "title": "小结"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
         "prereq": [
           "mpc/constraint-handling",
           "mpc/generalized-predictive-control",
@@ -5874,7 +5825,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "draft"
+        "status": "v1.3"
       }
     ]
   },

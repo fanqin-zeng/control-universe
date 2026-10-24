@@ -1,3 +1,4 @@
+import { CstrMpcExplorer } from "@/components/wiki/cstr-mpc-explorer";
 import { MuSynthesisExplorer } from '@/components/wiki/mu-synthesis-explorer';
 import { MheExplorer } from "@/components/wiki/mhe-explorer";
 import { EconomicMpcExplorer } from "@/components/wiki/economic-mpc-explorer";
@@ -160,6 +161,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  CstrMpcExplorer,
   MheExplorer,
   EconomicMpcExplorer,
   NonlinearMpcExplorer,

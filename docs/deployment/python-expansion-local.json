@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-24T11:01:02.888Z",
-  "url": "http://127.0.0.1:21596/python-expansion.html?lesson=mpc/mhe-fusion",
+  "testedAt": "2026-10-24T11:29:14.108Z",
+  "url": "http://127.0.0.1:21996/python-expansion.html?lesson=mpc/mpc-case-study",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
@@ -8406,28 +8406,87 @@
     {
       "key": "mpc/mpc-case-study",
       "title": "预测控制案例",
-      "sourceHash": "f1418cc52c1ca26e6a5cbd7044141d78af9a29cfeb673deb63bdacdd38f587bb",
+      "sourceHash": "7cc2d2dfd0f1e1f019e0cf6f92ead65d69e2709d14631f46c255eedaed9ef837",
       "notebooks": [
         {
           "id": "mpc/mpc-case-study#1",
-          "title": "实验 1",
+          "title": "平衡、Jacobian、ZOH与历史题核验",
           "index": 1,
-          "line": 249,
+          "line": 105,
           "cellCount": 2,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "2ab538bc3d6b2fdcebe87ec99f8f6bd9929ed7cccf7b3cb4a5ae9cf835cee9d7",
-      "formattingProvenance": [
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4823,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "balance [0. 0.]\nAc [[-2.00000000e+00 -3.57142857e-02]\n [ 2.09205021e+02  4.37955768e+00]]\nBc [[0.005      0.        ]\n [0.         2.09205021]]\nAd [[ 7.80702402e-01 -4.04080788e-03]\n [ 2.36700043e+01  1.50250228e+00]]\nBd [[ 0.00044687 -0.0004055 ]\n [ 0.00567705  0.25940826]]\ndiscrete_eigenvalues [0.95558399 1.32762068]\nold_claimed_steady_residual -0.4499659791387048 -70.78988063231213 old_B21 -0.5\nbalance_jacobian_zoh_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 160,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fixed_input_equilibria [(324.47670022, 0.877234370769941), (350.0, 0.5), (369.70758523, 0.20872189032133776)]\nhistorical_exercise1 0.9999319582774095 16.082146340662796 exponent_difference 2.777777777777778 derivative_abs 0.031247873696169045 0.3970900331027851\nexercise2_Q [100, 0.25] R [0.1111111111111111, 0.01] temperature_priority_Q [100, 0.5]\nexercise4_temperature_derivative_gap 0.4184100418410042 -0.4184100418410042\nequilibria_and_exercises_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 29500
+                }
+              ]
+            }
+          ]
+        },
         {
-          "lesson": "mpc/mpc-case-study",
-          "fromSourceHash": "2ab538bc3d6b2fdcebe87ec99f8f6bd9929ed7cccf7b3cb4a5ae9cf835cee9d7",
-          "toSourceHash": "f1418cc52c1ca26e6a5cbd7044141d78af9a29cfeb673deb63bdacdd38f587bb",
-          "notebookPayloadHash": "b0311b96636b97b5a221b0edb0541e52d7bb655d3edb6a36f25aef9312c230bd",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "mpc/mpc-case-study#2",
+          "title": "原受限QP与未截断非线性闭环",
+          "index": 2,
+          "line": 238,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 738,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_first_input [101.01926225 300.05584836] increment [1.01926225 0.05584836] cost 0.9747078301961559 predicted_first [  0.50043283 350.02027393]\ndefault last [  0.4640057 347.2513501] sample_peak 350.6063907718942 temperature_SSE 32.743744324132585 rate_active_F_Tc [0 0]\ntracking last [  0.49994867 351.39617784] sample_peak 351.39617784115364 temperature_SSE 8.02294170012105 rate_active_F_Tc [0 0]\nzero last [  0.5 350. ] sample_peak 350.0 temperature_SSE 0.0 rate_active_F_Tc [0 0]\nR10 last [  0.47680934 346.96337793] sample_peak 350.6419527310751 temperature_SSE 36.513464387902474 rate_active_F_Tc [0 0]\nstep4 last [  0.46142674 347.44198657] sample_peak 351.3157442428388 temperature_SSE 77.11422687780006 rate_active_F_Tc [6 0]\nhot_initial_qp_infeasible True\noriginal_qp_and_closed_loops_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 35672
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 122,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_max_one_step_errors [0.0100177  0.21469166] sample_limit_excess 0\nindependent_integrator_repeat_gap 8.036522558541037e-10\ngeneral_Np20_Nu5_dimensions 40 2 40 10 uncondensed_constraint_rows 60\nactual_Np10_Nu1_decisions 2 intersected_box_plus_temperature_rows 14\nthird_input_B_column_symbolic [0, -k_omega*(T0-Tc0)/(rho*Cp*V)] => 2 outputs x 3 inputs\nprediction_errors_and_interfaces_checked\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -18082,15 +18141,15 @@
   "complete": true,
   "totals": {
     "lessons": 132,
-    "notebooks": 533,
-    "enabled": 531,
-    "codeOnly": 2
+    "notebooks": 534,
+    "enabled": 533,
+    "codeOnly": 1
   },
   "releaseTotals": {
     "lessons": 132,
-    "notebooks": 533,
-    "enabled": 531,
-    "codeOnly": 2
+    "notebooks": 534,
+    "enabled": 533,
+    "codeOnly": 1
   },
   "provenance": [
     {
@@ -19002,6 +19061,11 @@
       "testedAt": "2026-10-24T11:02:02.178Z",
       "url": "http://127.0.0.1:20595/python-expansion.html?lesson=robust/mu-synthesis",
       "inputPath": ".agent/semester-03/robust-08/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T11:29:14.108Z",
+      "url": "http://127.0.0.1:21996/python-expansion.html?lesson=mpc/mpc-case-study",
+      "inputPath": ".agent/semester-03/mpc-11/pyodide.json"
     }
   ]
 }

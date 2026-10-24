@@ -183,7 +183,7 @@
 | 12.8 | 非线性预测控制 | nonlinear-mpc | ✅ 已交付 v1.3 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
 | 12.9 | 经济预测控制 | economic-mpc | ✅ 已交付 v1.3 | advanced | theory | 19 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
 | 12.10 | 移动水平估计 | mhe-fusion | ✅ 已交付 v1.3 | grad | theory | 16 | mpc/receding-horizon<br>estimation/sensor-fusion |
-| 12.11 | 预测控制案例 | mpc-case-study | 🟨 有正文待审校 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
+| 12.11 | 预测控制案例 | mpc-case-study | ✅ 已交付 v1.3 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
 
 ## 13. 智能控制 (intelligent)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 129（status = v1.3）
-- **有正文待审校**: 3（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 130（status = v1.3）
+- **有正文待审校**: 2（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 73（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 76（= draft 3 + empty 73 + 无 status 0）
+- **未完成 v1.3**: 75（= draft 2 + empty 73 + 无 status 0）
 - **有 MDX 正文**: 132
 - **catalog 小节总数**: 1436
-- **讨论日志**: 152 篇（覆盖 129 门；有 MDX 无日志 3 门）
-- **交互组件**: 139 个文件（被正文引用 139，孤儿 0）
+- **讨论日志**: 153 篇（覆盖 130 门；有 MDX 无日志 2 门）
+- **交互组件**: 140 个文件（被正文引用 140，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

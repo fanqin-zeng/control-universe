@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 132 课 / 533 个实验 / 827 个单元格全部纳入盘点。130 课全部可运行，1 课混合，1 课全部保留代码；启用 531 个实验，保留 2 个。实际执行 823 个单元格（含异常单元格），生成 252 张 PNG。原始记录中 531 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 132 课 / 534 个实验 / 829 个单元格全部纳入盘点。131 课全部可运行，1 课混合，0 课全部保留代码；启用 533 个实验，保留 1 个。实际执行 827 个单元格（含异常单元格），生成 254 张 PNG。原始记录中 533 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -58,7 +58,7 @@
 | mpc/constraint-handling（约束处理） | 3/3 | 6 | 无 |
 | mpc/generalized-predictive-control（广义预测控制） | 3/3 | 6 | 无 |
 | mpc/nonlinear-mpc（非线性预测控制） | 2/2 | 4 | 无 |
-| mpc/mpc-case-study（预测控制案例） | 0/1 | 0 | 1 |
+| mpc/mpc-case-study（预测控制案例） | 2/2 | 4 | 无 |
 | intelligent/fuzzy-control-basics（模糊控制） | 10/10 | 33 | 无 |
 | intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 14 | 无 |
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
@@ -152,7 +152,6 @@
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
 | PY-001 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-002 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 
