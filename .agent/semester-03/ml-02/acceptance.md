@@ -4,7 +4,7 @@
 
 保留所有开工时用户及其它会话修改。构建采用已提交master加本课的独立副本D:/Workspace/control-universe-rank2-ml02；页面8194（8192仍为上一轮ML-01预览，未终止）；本课内核8992。不得删除共享.next或终止其它会话进程；Git只暂存本课及共享文件的本课差异，提交前核对master与暂存范围。Pages未获发布授权，仅本地验收。
 
-Phase1–4与本课真实验收完成，郑核已据日志签发；真实master提交回执待提交后登记。不发布Pages。
+Phase1–4与本课真实验收完成，郑核已据日志签发；真实交付提交已进入master并推送origin/master：`739e31043ce4f29ef132cafa86d9536cfd8334d9`。不发布Pages。
 
 交付：244行正文、9H2、两Notebook四cell、一个回归/分类Explorer及一幅SVG、四题四答。先修ML-01与凸优化；回归半MSE/正则化、逻辑回归概率/交叉熵、训练与预测接口、停止条件、阈值和可分数据有限最优解边界。
 
@@ -34,3 +34,5 @@ Phase1–4与本课真实验收完成，郑核已据日志签发；真实master�
 运行资源：独立8194静态预览与8992严格内核；上一轮8192及其它会话端口不动。Git archive未包含ignored Pyodide资产，首次浏览器运行404，复制既有本地public/pyodide后重启本会话Next刷新文件索引，HTTP200后重新执行四原始cell全部通过。未改公共worker或全站运行时；W09/W16历史债务保留。
 
 最终已验证投影基线：9d920bbaed693d869f943701acc8658c4d9914b6；提交父版本：9d920bbaed693d869f943701acc8658c4d9914b6。仅接纳不改变源码的回执快进。最终check PASS21/WARN2/FAIL0，术语与学期检查退出0；Python政策报告：{"pass": true, "lessons": 91, "enabled": 396, "codeOnly": 15}。独立Git索引提交，保留其它会话共享暂存状态。
+
+真实交付回执：commit:739e31043ce4f29ef132cafa86d9536cfd8334d9，2026-10-24正常推送origin master成功，源父版本9d920bb。提交使用独立Git索引，未带入其它会话暂存内容；未发布gh-pages，未继续ML-03。远端返回迁移提示但push成功，本轮未擅改origin URL。
