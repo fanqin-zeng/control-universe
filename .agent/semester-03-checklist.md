@@ -71,9 +71,12 @@
 | RB04 | ROBUST-04鲁棒性能完整LFT与权重/接口返修 | [x] | .agent/semester-03/robust-04/acceptance.md;本课S04与Notebook已实测，其他课程及PY待办保留 |
 | RB05 | ROBUST-05内部稳定、反陷波与权重/求解条件返修 | [x] | .agent/semester-03/robust-05/acceptance.md;本课Notebook及S04实测，其他课程PY待办保留；083导航已由并行master修复，本课无该项改动 |
 | RB06 | ROBUST-06接口、分块、失稳与权重返修 | [x] | .agent/semester-03/robust-06/acceptance.md;本课Notebook与Python/双页面全验，其他课程待办保留 |
+| RB08 | ROBUST-08相邻旧文结构假设、实μ下界与D交换块返修 | [x] | .agent/semester-03/robust-08/acceptance.md;本课重构逐项修复，保留ROBUST-07历史 |
 | RB03 | ROBUST-03鲁棒稳定性数学证书与采样结论返修 | [x] | .agent/semester-03/robust-03/acceptance.md;PY-004与S04本课运行债务已实测关闭，余课保留 |
 | QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
 | DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
+| DEP15 | EST-01—08与bd2b41c快照授权发布及公网验收 | [x] | docs/deployment/est08-release/README.md;docs/deployment/est08-release/public-http.json;docs/deployment/est08-release/public-courses.json;发布commit:de6069b43eb22902f4099c88e2aae48ba587ca9c |
+| DEP17 | ML-01—09已交付快照授权发布与公网验收 | [x] | docs/deployment/ml09-release/README.md;docs/deployment/ml09-release/validation.json;批准9160c9b;发布99945e1;九课18本35cell实跑 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -232,8 +235,8 @@
 | ROBUST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/04-robust-performance.md;.agent/semester-03/robust-04/acceptance.md;commit:b749fcc2576f8f96ae3afd64a0e3b07fc4123efd;rank5三Notebook五cell、完整LFT/独立数值、双构建与375px通过 |
 | ROBUST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/05-h-infinity-basics.md;.agent/semester-03/robust-05/acceptance.md;commit:e06d60feb8263fca0b75219c276c36851ff7f5b3;rank5四Notebook五cell、实际TS/独立复算、双构建/375px通过 |
 | ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;commit:80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9;rank5三Notebook五cell/独立数值/双构建/375px验收 |
-| ROBUST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/07-mu-analysis.md;.agent/semester-03/robust-07/acceptance.md;commit:709e34a88ec19c7f254f4dd4527b76de52aebc6c;rank5三Notebook五cell/960配置/双构建/375px验收 |
+| ROBUST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/08-mu-synthesis.md;.agent/semester-03/robust-08/acceptance.md;commit:34eaae4a5e61c587b76a22efec5d3791ed9148d8;rank5三Notebook六cell/2020配置/双构建/375px验收 |
 | ROBUST-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
@@ -249,10 +252,10 @@
 | MPC-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/05-mpc-stability.md;.agent/semester-03/mpc-05/acceptance.md;commit:02e79e304684b094640581644d55ea14dffc0807 |
 | MPC-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/06-generalized-predictive-control.md;.agent/semester-03/mpc-06/acceptance.md;.agent/semester-03/s04-course-debts.json;commit:b0ca3700b0078eaf2effdd9308dca5fa2500d05c |
 | MPC-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/07-explicit-mpc.md;.agent/semester-03/mpc-07/acceptance.md;commit:38866315543e03124bb4bf43ff882720781984af |
-| MPC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
-| MPC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| MPC-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| MPC-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/08-nonlinear-mpc.md;.agent/semester-03/mpc-08/acceptance.md;commit:9d062e48eca6d2975da2e35e5ef8af308233e59c |
+| MPC-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/09-economic-mpc.md;.agent/semester-03/mpc-09/acceptance.md;commit:c211f29eedef28888b048ccb1a89734edd1d2c46 |
+| MPC-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/10-mhe-fusion.md;.agent/semester-03/mpc-10/acceptance.md;commit:ebd2c5a1889b15d96a0a732971790e3b9e6f69fa |
+| MPC-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/11-mpc-case-study.md;.agent/semester-03/mpc-11/acceptance.md;commit:f1f3d5ad66968fe0c025a4525bdcd431f6bd9738 |
 
 ### 智能控制
 

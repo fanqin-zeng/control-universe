@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 126 课 / 516 个实验 / 797 个单元格全部纳入盘点。123 课全部可运行，1 课混合，2 课全部保留代码；启用 513 个实验，保留 3 个。实际执行 791 个单元格（含异常单元格），生成 239 张 PNG。原始记录中 513 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 132 课 / 534 个实验 / 829 个单元格全部纳入盘点。131 课全部可运行，1 课混合，0 课全部保留代码；启用 533 个实验，保留 1 个。实际执行 827 个单元格（含异常单元格），生成 254 张 PNG。原始记录中 533 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -50,15 +50,15 @@
 | robust/robust-performance（鲁棒性能） | 3/3 | 5 | 无 |
 | robust/h-infinity-basics（H∞控制） | 4/4 | 5 | 无 |
 | robust/mixed-sensitivity（混合灵敏度） | 3/3 | 5 | 无 |
-| robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
+| robust/mu-synthesis（μ综合） | 3/3 | 6 | 无 |
 | robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
 | mpc/mpc-principle（预测控制原理） | 2/2 | 3 | 无 |
 | mpc/prediction-model（预测模型） | 2/2 | 6 | 无 |
 | mpc/receding-horizon（滚动优化） | 3/3 | 6 | 无 |
 | mpc/constraint-handling（约束处理） | 3/3 | 6 | 无 |
 | mpc/generalized-predictive-control（广义预测控制） | 3/3 | 6 | 无 |
-| mpc/nonlinear-mpc（非线性预测控制） | 0/1 | 0 | 1 |
-| mpc/mpc-case-study（预测控制案例） | 0/1 | 0 | 1 |
+| mpc/nonlinear-mpc（非线性预测控制） | 2/2 | 4 | 无 |
+| mpc/mpc-case-study（预测控制案例） | 2/2 | 4 | 无 |
 | intelligent/fuzzy-control-basics（模糊控制） | 10/10 | 33 | 无 |
 | intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 14 | 无 |
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
@@ -138,6 +138,12 @@
 | machine-learning/generative-models（扩散与流匹配） | 2/2 | 4 | 无 |
 | implementation/hil-rapid-prototyping（半实物仿真） | 3/3 | 6 | 无 |
 | estimation/estimation-case-study（状态估计案例） | 3/3 | 6 | 无 |
+| implementation/implementation-case-study（控制实现案例） | 3/3 | 6 | 无 |
+| identification/identification-case-study（系统辨识案例） | 3/3 | 3 | 无 |
+| machine-learning/learning-evaluation（学习实验评估） | 2/2 | 4 | 无 |
+| robust/mu-analysis（结构奇异值） | 3/3 | 5 | 无 |
+| mpc/economic-mpc（经济预测控制） | 2/2 | 4 | 无 |
+| mpc/mhe-fusion（移动水平估计） | 2/2 | 4 | 无 |
 
 ## 待处理实验
 
@@ -146,8 +152,6 @@
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
 | PY-001 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-002 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-003 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 

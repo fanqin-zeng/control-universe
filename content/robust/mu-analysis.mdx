@@ -1,0 +1,347 @@
+---
+title: 结构奇异值
+description: 从允许的扰动结构出发，手算结构奇异值，核对上下界、全频鲁棒稳定性与鲁棒性能。
+---
+
+# 结构奇异值
+
+上一课的柔性定位台在标称模型下通过了几项指标，改变共振频率后却可能失稳。现在把问题再推进一步：双轴定位台的两个驱动通道各有增益误差，误差是在各自通道内作用，还是也允许任意串到另一轴？如果不说明这一点，“最多承受多少误差”就没有唯一答案。
+
+本课只分析固定互连，不设计新控制器。先修为[不确定性建模](/robust/uncertainty-modeling)、[鲁棒性能](/robust/robust-performance)和[矩阵分解](/math/matrix-decomposition)。沿用归一化扰动、LFT和最大奇异值；下面重新定义结构集合与 μ，不依赖尚待本期重构的 μ 综合课。
+
+## 从定位台误差到结构问题
+
+把标称控制器和已知对象都放进一个稳定的返回通道 $M$，留下不确定性反馈口：$z=Mw$、$w=\Delta z$。这是分析用的**正反馈约定**，原控制器中的负号已吸收进 $M$。因此关键矩阵是 $I-M\Delta$，不能一会儿用加号、一会儿用减号。
+
+![结构化扰动回路与分析用性能虚块的方向](/mu-analysis-feedback.svg)
+
+两个独立增益误差对应 $\Delta=\operatorname{diag}(\delta_1,\delta_2)$；一个任意满块还允许非对角串扰。这两种集合不同。这里“独立”是**各参数可以自由组合**，包含 $\delta_1=\delta_2=1$；它不是概率独立，更不表示两个误差不会同时取最坏值。
+
+为把结构差别算清楚，用一个低阶、无量纲的教学返回模型：
+
+$$
+M(s)=\frac{1}{s+1}\begin{bmatrix}0&b\\c&0\end{bmatrix},\qquad b=2,\quad c=\frac18.
+$$
+
+时间以秒计，一阶时间常数为1秒，频率用rad/s。它表示两通道之间的双向耦合，并非对某台实机的辨识结果。对角元素虽然为零，反馈可以沿两条非对角路径绕一圈；**只检查对角元素会完全漏掉这个环路**。
+
+## 结构集合与归一化
+
+先区分不带幅值限制的结构族 $\boldsymbol\Delta$ 与其单位闭球 $\mathbb B_{\boldsymbol\Delta}=\{\Delta\in\boldsymbol\Delta:\bar\sigma(\Delta)\leq1\}$。计算 μ 时要在整个结构族中寻找最小致奇异扰动，它可能比一更大，不能先把搜索域截成单位球。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+
+| 结构 | 数学含义 | 不能混淆的地方 |
+|---|---|---|
+| 实重复标量块 $\delta I_r$ | 同一个实参数在 $r$ 个位置重复出现 | 不是 $r$ 个可独立变化的实参数 |
+| 复重复标量块 $\delta I_r$ | 同一复标量重复 | 比实标量多了相位自由度 |
+| 独立标量块 $\operatorname{diag}(\delta_1,\delta_2)$ | 两个参数各自选择，可同时取端点 | 不等于要求两者相等 |
+| 复满块 $\Delta_f\in\mathbb C^{r\times r}$ | 允许任意方向的耦合，大小用最大奇异值计 | 非对角元素也是允许扰动 |
+
+</div>
+
+物理参数的百分比范围先吸收到已知权重中，使每个归一化参数满足模不超过一。改变权重或单位会改变 $M$，所以不能拿不同归一化下的 μ 直接排名。在动态复块解释下，各块还须稳定、proper且有相应H∞范数界；实物质量和刚度则通常是整个频带共享的实常数。
+
+## 结构奇异值的定义
+
+给定一个**固定频率处的方阵** $N=M(j\omega)$，定义
+
+$$
+\mu_{\boldsymbol\Delta}(N)=
+\left[\inf\left\{\bar\sigma(\Delta):\Delta\in\boldsymbol\Delta,\ \det(I-N\Delta)=0\right\}\right]^{-1}.
+$$
+
+若没有有限的致奇异扰动，定义 μ 为零，其半径为无穷。$μ$ 越大，令互连失去可逆性的扰动越小。单频行列式为零只是**该频率处的奇异性条件**；要把它解释为动态闭环的稳定边界，还须检查标称内部稳定、良定、频率范围和无穷端，不能对任意给定矩阵直接说“系统已经失稳”。
+
+定义本身给出两条简单规则：允许集合越大，μ不会更小；对任意结构都有 $\mu\leq\bar\sigma(N)$，因为后者对应任意复满块。反过来，$\rho(N)\leq\mu$ **需要结构族包含全部复标量矩阵 $\delta I$**，不是实/混合结构的无条件下界。
+
+例如单个数 $N=j$：复扰动可取 $\delta=-j$ 使 $1-j\delta=0$，因此复 μ 为1；实扰动下 $|1-j\delta|=\sqrt{1+\delta^2}$ 永不为零，实 μ 为0，但谱半径仍为1。矩阵相同而结构不同，μ可以不同。
+
+## 三个可手算的结构
+
+**一个任意复满块。** 对 $N=U\Sigma V^*$，取最大奇异值对应的单位向量 $u_1,v_1$。当 $\sigma_1>0$ 时，$\Delta_*=v_1u_1^*/\sigma_1$ 使 $N\Delta_*$ 有特征值一，且扰动范数为 $1/\sigma_1$；由小增益界可知它已最小，所以满块 μ 等于最大奇异值。
+
+**一个复重复标量块。** 令 $\Delta=\delta I$，奇异条件是 $1/\delta$ 为 $N$ 的非零特征值。因此此结构 μ 等于谱半径；若矩阵只有零特征值，就没有有限的致奇异标量。这里说的是复标量，不能直接换成实参数。
+
+**本课两个独立复标量块。** 在DC，令 $A=\begin{bmatrix}0&b\\c&0\end{bmatrix}$，则
+
+$$
+\det\!\left(I-A\operatorname{diag}(\delta_1,\delta_2)\right)=1-bc\delta_1\delta_2.
+$$
+
+若 $bc\ne0$，奇异时两扰动模的乘积必须为 $1/|bc|$，故它们的最大模至少为 $1/\sqrt{|bc|}$；选等模并配好相位即可达到。若 $bc=0$，行列式恒为一。因此
+
+$$
+\mu_{\rm diag}(A)=\sqrt{|bc|},\qquad
+\mu_{\rm full}(A)=\max(|b|,|c|).
+$$
+
+默认 $b=2,c=1/8$，独立块 μ 为0.5，满块 μ 为2，对应DC临界半径分别为2和0.5。独立块见证为 $\Delta_*=2I$；满块见证为 $\Delta_*=\begin{bmatrix}0&0\\0.5&0\end{bmatrix}$。后者的非对角元素不属于物理上假设的独立块集合，这才是两者不同的原因。独立块仍然允许两个误差同时取一。
+
+<JupyterNotebook
+ title="同一矩阵，不同允许结构"
+ setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.r_[0.,np.logspace(-3,3,1201)]
+def matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)
+def top(M):return float(np.linalg.svd(M,compute_uv=False)[0])
+def diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)
+def diag_witness(b,c,omega=0.):
+    if b*c==0:return None
+    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])
+def full_witness(M):
+    U,s,Vh=np.linalg.svd(M)
+    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]
+def physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))
+`}
+ cells={[{code:`# Minimum example: same M, different uncertainty sets, explicit singularizing witnesses
+A=matrix();D=np.diag([.25,1.]);Dd=diag_witness(2.,.125);Df=full_witness(A)
+print('default_mu_sigma_Dupper',diag_mu(2.,.125),top(A),top(D@A@np.linalg.inv(D)))
+print('diagonal_witness',Dd,'norm',top(Dd),'residual',np.linalg.svd(np.eye(2)-A@Dd,compute_uv=False)[-1])
+print('full_witness',Df,'norm',top(Df),'residual',np.linalg.svd(np.eye(2)-A@Df,compute_uv=False)[-1])
+print('unit_diagonal_simultaneous_extremes_poles',physical_poles(2.,.125,np.eye(2)))
+print('allowed_full_norm_0p6_poles',physical_poles(2.,.125,np.array([[0.,0.],[.6,0.]])))
+print('point_at_omega1_mu_sigma',diag_mu(2.,.125,1.),top(matrix(omega=1.)))
+fig,ax=plt.subplots(1,2,figsize=(10,3.2));ax[0].bar(['diagonal mu','full mu','D upper'],[.5,2.,top(D@A@np.linalg.inv(D))]);ax[1].imshow(abs(A),vmin=0,vmax=2,cmap='Blues');ax[1].set_title('Same M, not its diagonal entries')
+for i in range(2):
+    for j in range(2):ax[1].text(j,i,str(float(abs(A[i,j]))),ha='center',va='center')
+plt.tight_layout();plt.show();print('structure_complete')
+`}]}
+/>
+
+
+## 缩放上界与扰动下界
+
+对与所有允许 $\Delta$ 交换的可逆正定缩放 $D$，有
+
+$$
+\mu_{\boldsymbol\Delta}(N)\leq\bar\sigma(DND^{-1}).
+$$
+
+理由是 $D$ 与扰动交换后不改变奇异性问题，可以对变换后的已知块用小增益界。取不同合法 $D$ 的下确界可改善上界，但**任意一次可行缩放都只是上界**，一般不保证等于真实 μ。对于含实参数的计算，还可能使用更强的D/G乘子；本页不实现通用求解器。
+
+交换结构尤其容易写反：重复标量块 $\delta I_r$ 允许该子空间内一般正定矩阵缩放；任意复满块只允许该块上的标量倍 $dI_r$。不能为任意满块擅自取每个坐标不同的缩放。本课满块模式只用 $D=I$。
+
+对两个独立标量块，可取 $D=\operatorname{diag}(d,1),d>0$，于是
+
+$$
+U_D=\bar\sigma(DAD^{-1})=\max(|db|,|c/d|).
+$$
+
+默认取 $d=0.25$，两个非对角模恰好都是0.5，上界为0.5，配合 $\Delta_*=2I$ 给出的下界0.5，才锁定精确值。若 $c=0,b=2$，真实 μ 为零，但任意有限正 $d$ 的这个上界为 $2d>0$；下确界零并不意味着某个有限最优缩放达到零。
+
+下界来自一个**属于声明结构**的致奇异扰动：若找到 $\Delta_*$，则 $1/\bar\sigma(\Delta_*)\leq\mu$。数值上应核对块结构、范数以及 $I-N\Delta_*$ 的最小奇异值残差，不能只相信一个优化器的成功状态。
+
+读证书时：上界严格小于一可以放行相应单频检验；上界大于一只是没证明通过。下界达到一或更大提供临界扰动的证据，动态含义仍要核假设；上下界跨过一时应报告“未判定”，而不是挑一条好看的线。默认例子两端相等是这个特殊矩阵可解析，不能推广为一般D缩放总是精确。
+
+<MuAnalysisExplorer />
+
+## 从单频到鲁棒稳定性
+
+对本课稳定proper的 $M(s)$ 和单位H∞闭球内、块结构匹配的稳定复动态扰动，在良定等标准假设下，全频 μ 峰严格小于一给出鲁棒内部稳定判据。一般分析必须包括DC、无穷端和可能的尖峰；频率网格点上都通过不是全频证明。这里可以直接解析：
+
+$$
+\mu_{\rm diag}(M(j\omega))=\frac{\sqrt{|bc|}}{\sqrt{1+\omega^2}},\qquad
+\sup_{\omega\geq0}\mu_{\rm diag}(M(j\omega))=\sqrt{|bc|}.
+$$
+
+所以全频峰在DC，最大值不是靠图线扫描猜出来的。默认全频半径为2；在 $\omega=1$ 的单频 μ 为 $0.5/\sqrt2\approx0.353553$，但系统全频半径仍为2，并没有因观察频率改变而变好。满块的全频峰为2、半径为0.5。
+
+取一个实现 $\dot x=-x+w,z=Ax$，则常数扰动闭环状态矩阵为 $-I+\Delta A$。默认独立块同时取 $\Delta=I$ 时，极点为−0.5、−1.5，仍稳定；满块允许 $\Delta=\begin{bmatrix}0&0\\0.6&0\end{bmatrix}$，其范数0.6小于一，却产生+0.2的右半平面极点。单位球安全与否必须依允许结构回答。
+
+固定 $b=2$，令 $c=0.125,0.5,0.8$，独立块全频峰依次为0.5、1、约1.264911。第二种在 $\Delta=I$ 时出现零极点，不能为单位**闭球**签严格稳定；第三种在同一扰动下出现约+0.264911的极点，确实失败。这些不是“上界没过”而是有明确扰动的边界/失稳例。
+
+实参数还须特别小心。对正乘积的本例，若只有一个**实重复**标量 $\delta I$，DC的实 μ 为0.5，而任意非零有限频率处的实 μ 为零，因为此时 $M(j\omega)$ 没有非零实特征值。仅扫描从正频率开始的网格会漏掉DC边界。实 μ 可能不连续；将实块放松为复块可给保守分析，不能把二者的数值当作完全相同的问题。关于实/混合 μ 的性质，见[Young、Newlin与Doyle原论文](https://doyle.caltech.edu/images/doyle/6/64/CDC1991u.pdf)。
+
+<JupyterNotebook
+ title="全频边界与实复结构反例"
+ setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.r_[0.,np.logspace(-3,3,1201)]
+def matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)
+def top(M):return float(np.linalg.svd(M,compute_uv=False)[0])
+def diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)
+def diag_witness(b,c,omega=0.):
+    if b*c==0:return None
+    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])
+def full_witness(M):
+    U,s,Vh=np.linalg.svd(M)
+    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]
+def physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))
+`}
+ cells={[{code:`# Entire-frequency formulas; DC and infinity are evaluated separately from the log grid
+freq_reports=[]
+for c in [.125,.5,.8,0.]:
+    peak=np.sqrt(abs(2*c));radius=1/peak if peak else float('inf');Delta=np.diag([1.,np.sign(c) if c else 1.]);poles=physical_poles(2.,c,Delta)
+    row={'c':c,'exact_peak':peak,'radius':radius,'worst_constant_alpha':float(max(poles.real)),'scan_peak_with_DC':float(max(diag_mu(2.,c,w)))};freq_reports.append(row);print('frequency_case',row)
+fig,ax=plt.subplots(1,2,figsize=(10,3.2))
+for c in [.125,.5,.8]:ax[0].semilogx(w[1:],diag_mu(2.,c,w[1:]),label='c='+str(c))
+ds=np.logspace(-2,1,401);ax[1].semilogx(ds,np.maximum(2*ds,.125/ds),label='feasible D upper');ax[1].axhline(.5,color='red',ls='--',label='exact mu')
+ax[0].axhline(1,color='red',ls='--')
+for a in ax:a.grid(True);a.legend()
+ax[0].set_xlabel('Frequency rad/s (DC separately)');ax[1].set_xlabel('d');plt.tight_layout();plt.show()
+print('triangular_c0_mu_sigma_D0p1',diag_mu(2.,0.),top(matrix(c=0.)),top(np.diag([.1,1.])@matrix(c=0.)@np.diag([10.,1.])))
+print('frequency_complete')
+`},{code:`# Real vs complex structure: exact algebraic counterexamples, not an approximate real-mu solver
+print('scalar_i_complex_mu_real_mu_rho_sigma',1.,0.,1.,1.)
+for delta in [-10.,-1.,0.,1.,10.]:print('real_scalar_residual',delta,abs(1-1j*delta))
+print('negative_product_repeated_real_mu_complex_mu',0.,diag_mu(2.,-.125))
+for omega in [0.,.001,1.]:
+    eigenvalues=np.linalg.eigvals(matrix(omega=omega));print('repeated_real_eigenvalues',omega,eigenvalues,'exact_real_mu',.5 if omega==0 else 0.)
+print('D_commutation_full_counterexample',np.linalg.norm(np.diag([.25,1.])@np.array([[0.,1.],[1.,0.]])-np.array([[0.,1.],[1.,0.]])@np.diag([.25,1.])))
+print('real_structure_complete')
+`}]}
+/>
+
+
+## 鲁棒性能与计算边界
+
+鲁棒稳定回答“会不会失稳”，鲁棒性能还要求所有允许对象的扰动到误差增益都合格。不能只分析不确定性返回子块 $M_{11}$，就声称整个加权性能也通过。按照[鲁棒性能课](/robust/robust-performance)的方法，引入一个把性能输出 $e$ 送回外部输入 $d$ 的虚构满块 $\Delta_p$，分析完整增广互连；它是分析工具，实际系统中不装这个反馈。
+
+用一个局部定义的标量闭环把增广方向算清楚：
+
+$$
+\dot x=-x+a w_\delta+d,\quad z_\delta=x,\quad e=qx,\quad w_\delta=\delta z_\delta,\qquad a=0.4,\quad\delta\in[-1,1].
+$$
+
+此时 $H_\delta(s)=e/d=q/(s+1-a\delta)$。所有允许实参数都稳定，因为最慢极点也为−0.6；物理不确定性的稳定半径为2.5。但对 $q=0.8$，最坏性能增益为 $0.8/0.6=4/3>1$，稳定并不等于性能通过。
+
+令 $[z_\delta,e]^T=M_{\rm aug}[w_\delta,d]^T$，得到
+
+$$
+M_{\rm aug}(s)=\frac1{s+1}\begin{bmatrix}a&1\\qa&q\end{bmatrix},\qquad
+\Delta_{\rm aug}=\operatorname{diag}(\delta,\Delta_p),\quad d=\Delta_p e.
+$$
+
+两个非对角块都不可删。对正的 $a,q$，在DC取 $D=\operatorname{diag}(\sqrt{qa},1)$，变换后是对称半正定的秩一矩阵，最大奇异值为 $a+q$；同时 $\Delta_*=(a+q)^{-1}I$ 是符合“第一块实、第二块复”结构的致奇异见证。因此DC混合 μ **在这个特例中**精确等于 $a+q$，全频峰也由可行D上界和DC下界锁定。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+
+| $q$ | 物理稳定半径 | 最坏性能 $q/0.6$ | 增广 μ 全频峰 | 单位闭球严格性能 |
+|---|---|---|---|---|
+| 0.4 | 2.5 | 2/3 | 0.8 | 通过 |
+| 0.6 | 2.5 | 1 | 1 | 等号边界，不签严格小于一 |
+| 0.8 | 2.5 | 4/3 | 1.2 | 失败 |
+
+</div>
+
+第三行还可以取物理 $\delta=1$、虚块 $\Delta_p=0.75$ 直接使增广行列式为零。这里虚块大小、物理块大小与共同缩放半径是不同读数，不要将 $\delta=1$ 的性能值4/3误叫“物理稳定 μ”。
+
+<JupyterNotebook
+ title="完整性能增广与四题复算"
+ setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import control as ctrl
+plt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})
+w=np.r_[0.,np.logspace(-3,3,1201)]
+def matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)
+def top(M):return float(np.linalg.svd(M,compute_uv=False)[0])
+def diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)
+def diag_witness(b,c,omega=0.):
+    if b*c==0:return None
+    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])
+def full_witness(M):
+    U,s,Vh=np.linalg.svd(M)
+    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]
+def physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))
+`}
+ cells={[{code:`# Robust performance uses the entire augmented matrix, including both off-diagonal couplings
+performance=[];fig,ax=plt.subplots(figsize=(8,3.5))
+for q in [.4,.6,.8]:
+    a=.4;M=np.array([[a,1.],[q*a,q]]);d=np.sqrt(q*a);D=np.diag([d,1.]);peak=a+q;Delta=np.eye(2)/peak
+    gains=[q/(1-a*delta) for delta in [-1.,0.,1.]];maxgain=q/(1-a)
+    row={'q':q,'physical_radius':1/a,'worst_performance':maxgain,'augmented_mu_DC':peak,'D_upper':top(D@M@np.linalg.inv(D)),'witness_norm':top(Delta),'witness_residual':float(np.linalg.svd(np.eye(2)-M@Delta,compute_uv=False)[-1])};performance.append(row);print('performance_case',row)
+    H=ctrl.tf([q],[1,1-a]);print('worst_parameter_Hnorm_exact',q/(1-a),'pole',ctrl.poles(H),'delta_corner_gains',gains)
+    ax.semilogx(w[1:],abs(H(1j*w[1:])),label='q='+str(q))
+ax.axhline(1,color='black',ls='--');ax.set_xlabel('rad/s');ax.set_ylabel('Worst real-parameter performance');ax.grid(True);ax.legend();plt.tight_layout();plt.show()
+print('performance_complete')
+`},{code:`# Four exercises: all original numeric assertions and witnesses are executable
+print('Q1_mu_diag_full_d_radii',.5,2.,.25,2.,.5)
+print('Q1_diagonal_witness',diag_witness(2.,.125),'full_witness',full_witness(matrix()))
+print('Q2_nilpotent_mu_sigma_Ud',0.,2.,.2,'scalar_i_real_complex_mu',0.,1.)
+for c in [.125,.5,.8]:print('Q3_peak_radius_alpha',c,np.sqrt(2*c),1/np.sqrt(2*c),-1+np.sqrt(2*c))
+for q in [.4,.6,.8]:print('Q4_RS_radius_RP_gain_aug_mu_radius',q,2.5,q/.6,.4+q,1/(.4+q))
+print('Q4_q0p8_specific_witness_det',np.linalg.det(np.eye(2)-np.array([[.4,1.],[.32,.8]])@np.diag([1.,.75])))
+print('all_answers_complete')
+`}]}
+/>
+
+
+一般工程矩阵通常只能算上下界。[MATLAB `mussv`](https://www.mathworks.com/help/robust/ref/mussv.html)返回的第一列是上界、第二列是下界，`mussvextract` 可以提取见证与乘子。例子中的结构编码是：
+
+```matlab
+A = [0 2; 0.125 0];
+bDiag = mussv(A,[1 0; 1 0]); % independent complex scalars
+bRepeat = mussv(A,[2 0]);     % one repeated complex scalar
+bReal = mussv(A,[-2 0]);      % one repeated real scalar
+bFull = mussv(A,[2 2]);       % one complex full block
+% bounds(1) is upper, bounds(2) is lower; inspect the gap and witnesses.
+```
+
+这些是外部软件用法说明，本页未运行MATLAB `mussv`，也没有用通用 μ 求解器伪造结果。Notebook运行的是已推导的特殊模型、独立SVD/特征值和见证校验。更一般的实/混合块、重复结构、频率自适应与数值病态都需专门处理；分析可靠之后，下一课才讨论怎样改变控制器进行综合。相邻旧稿中“独立参数不会同时最坏”、无条件谱半径下界等表述已登记待返修，不能拿它们代替本课结构假设。
+
+## 习题
+
+**1. 同一矩阵，不同结构**
+
+给定 $A=\begin{bmatrix}0&2\\1/8&0\end{bmatrix}$。
+
+(a) 求独立复标量块与一个复满块的 μ 及临界半径。
+
+(b) 给出各自的致奇异扰动，核对其范数和结构。
+
+(c) 取 $D=\operatorname{diag}(0.25,1)$ 求缩放上界。解释为什么不能把它用于任意满块，以及为什么结构独立不排除两个参数同时取一。
+
+**2. 零 μ 与实复差别**
+
+(a) 将上题的 $c$ 改为零，求独立块 μ 和满块 μ；取 $d=0.1$ 求一个可行D上界。为什么上界大于零不构成真实 μ 大于零的证明？
+
+(b) 对单个复数 $N=j$，分别求实标量与复标量结构的 μ。能否对任意结构写 $\rho(N)\leq\mu(N)$？
+
+**3. 单频与全频稳定边界**
+
+对 $M(s)=\begin{bmatrix}0&2\\c&0\end{bmatrix}/(s+1)$ 和两个独立复标量扰动块：
+
+(a) 求 $c=0.125$ 时 $\omega=1$ 的 μ，以及全频稳定半径。
+
+(b) 对 $c=0.125,0.5,0.8$ 分别判断单位闭球下的严格鲁棒稳定性，并用同一个允许的常数扰动核对边界或右半平面极点。
+
+(c) 若只知道频率网格上的D上界小于一，能否直接签全频证书？说明实重复标量反例中的DC遗漏风险。
+
+**4. 稳定并不等于性能合格**
+
+对正文标量模型，$a=0.4$，$q$ 分别为0.4、0.6、0.8。
+
+(a) 求物理不确定性的稳定半径和最坏扰动到误差H∞增益。
+
+(b) 写出完整增广矩阵和虚块的方向，求其DC μ，并说明全频峰为何在DC即可锁定。
+
+(c) 对 $q=0.8$，核对 $\operatorname{diag}(1,0.75)$ 的致奇异性。只保留增广矩阵对角元素会漏掉什么？
+
+## 答案
+
+**1.** (a) 奇异条件为 $1-(1/4)\delta_1\delta_2=0$，因此独立块 μ 为0.5、半径2；满块最大奇异值2、半径0.5。
+
+(b) 独立块取 $2I$，满块取 $\begin{bmatrix}0&0\\0.5&0\end{bmatrix}$，范数分别为2、0.5，各使 $I-A\Delta$ 奇异。后者不在独立块集合中，所以不能把它用于否定独立块的鲁棒性。
+
+(c) 缩放矩阵的非对角元素都为0.5，奇异值都是0.5。$D$ 不与所有满块交换；满块只能取标量倍单位阵，不允许这个不等比例缩放。独立集合包含 $(1,1)$，其常数闭环极点−0.5、−1.5已经在正文核对。
+
+**2.** (a) $bc=0$ 时独立块行列式恒一，μ为0、半径无穷；满块 μ 仍为2。$d=0.1$ 的可行上界为0.2，随 $d\to0$ 可趋近零，但有限上界为正不等于真实值为正。
+
+(b) 复标量取 $\delta=-j$ 可致奇异，μ为1；对实数 $\delta$，$|1-j\delta|^2=1+\delta^2$，所以实 μ 为0。谱半径为1，已反驳无条件下界；需要结构包含所有复 $\delta I$ 才能使用该谱半径下界。
+
+**3.** (a) 单频 μ 为 $0.5/\sqrt2\approx0.353553$；全频峰仍为0.5，半径为2。单频临界半径约2.828427不是系统全频半径。
+
+(b) 三个峰为0.5、1、$\sqrt{1.6}\approx1.264911$。取三个系统都允许的 $\Delta=I$，最大极点实部 $-1+\sqrt{2c}$ 依次为−0.5、0、约+0.264911：分别通过、接触边界、失败。第三种临界共同半径为 $1/\sqrt{1.6}\approx0.790569$。第二种若只讨论开单位球会是另一命题，本题明确闭球与严格稳定。
+
+(c) 不能。须覆盖全部频率与无穷端，另核模型/良定/标称内部稳定；实重复块可能在DC有非零 μ、所有非零有限频率处却为零。有限网格或局部求解器未发现失败，不是全频证明。本课采用解析全频式才绕开这项缺口。
+
+**4.** (a) 物理极点为 $-(1-0.4\delta)$，最坏稳定边界在 $\delta=2.5$，单位区间内都稳定。对正 $q$，最坏H∞增益在 $\delta=1,\omega=0$，为 $q/0.6$，三值依次2/3、1、4/3。
+
+(b) $M_{\rm aug}=(s+1)^{-1}\begin{bmatrix}0.4&1\\0.4q&q\end{bmatrix}$，虚块将 $e$ 送回 $d$。合法D缩放给全频上界 $(0.4+q)/\sqrt{1+\omega^2}$，DC见证 $\Delta_*=(0.4+q)^{-1}I$ 达到同值，故全频峰依次0.8、1、1.2，共同缩放半径依次1.25、1、约0.833333。它们不是不变的物理稳定半径2.5。
+
+(c) 因增广矩阵秩一，行列式化为 $1-0.4\delta-q\Delta_p$；代入 $q=0.8,\delta=1,\Delta_p=0.75$ 得零。若删除两个非对角块，就丢了扰动进入性能输出并经虚块返回的路径，所得对角代理不能称完整 μ 上界。

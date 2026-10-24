@@ -1,0 +1,90 @@
+{
+  "source": "content/robust/mu-synthesis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 259,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 265,
+          "delim": "`",
+          "code": "# Physical parameter square, exact upper LFT and open-loop responses\r\ndef gu(s):\r\n    h = 1/(s*s + .2*s + 1)\r\n    return h*np.array([[-.3*s*s,-.3*s*s,s*s],[-.3,-.3,1],[-.3,-.3,1]],complex)\r\ndef close_lft(s,dm,dk):\r\n    M=gu(s);D=np.diag([dm,dk])\r\n    return M[2,2]+M[2,:2]@D@np.linalg.solve(np.eye(2)-M[:2,:2]@D,M[:2,2])\r\ngrid=np.linspace(-1,1,11);dm_grid,dk_grid=np.meshgrid(grid,grid)\r\nmax_residual=0.\r\nfor dm in grid:\r\n    for dk in grid:\r\n        for w in [0,.2,1,3,10]:\r\n            z=1j*w;direct=1/((1+.3*dm)*z*z+.2*z+1+.3*dk)\r\n            max_residual=max(max_residual,abs(close_lft(z,dm,dk)-direct))\r\nprint('grid=121; mass/stiffness ranges=[0.7,1.3]; includes all four corners')\r\nprint('nominal wn=1 rad/s; zeta=0.1; LFT max absolute residual=',max_residual)\r\nassert max_residual<1e-10\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.7))\r\nax[0].scatter(dm_grid.ravel(),dk_grid.ravel(),s=12);ax[0].set(xlabel='delta_m',ylabel='delta_k',xlim=(-1.1,1.1),ylim=(-1.1,1.1))\r\nt=np.linspace(0,20,1000)\r\nfor name,m,k in [('nominal',1,1),('mass +30%',1.3,1),('stiffness -30%',1,.7),('allowed corner',1.3,.7)]:\r\n    _,y=ctrl.step_response(ctrl.tf([1],[m,.2,k]),t);ax[1].plot(t,y,label=name)\r\nax[1].set(xlabel='time (s)',ylabel='open-loop position');ax[1].legend(fontsize=8);ax[1].grid();plt.tight_layout();plt.show()\r\nprint('physical_model_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 340,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 346,
+          "delim": "`",
+          "code": "# Audit the original hand-tuned PI; it was not synthesized by hinfsyn\r\nKp,Ki=5.,2.;C_pi=ctrl.tf([Kp,Ki],[1,0]);G_nom=ctrl.tf([1],[1,.2,1])\r\nL=G_nom*C_pi;CL=ctrl.feedback(L);poles=ctrl.poles(CL)\r\nalpha=float(max(poles.real));stable=alpha<0\r\nprint('original PI poles=',poles,'max real=',alpha,'stable=',stable)\r\nprint('Routh: 0.2*(1+5)=1.2 < 1*2=2, so nominal PI is unstable')\r\nassert not stable\r\nomega=np.logspace(-2,2,1000);Lj=L(1j*omega);S=1/(1+Lj);T=Lj/(1+Lj)\r\nprint('finite frequency sample max |S|=',max(abs(S)),'; not a stable H-infinity norm')\r\nprint('overshoot, settling time, stable final value: undefined for this unstable loop')\r\nt_sim=np.linspace(0,30,2000);_,y=ctrl.step_response(CL,t_sim)\r\n_,u=ctrl.step_response(ctrl.feedback(C_pi,G_nom),t_sim)\r\nprint('finite-window max |u|=',max(abs(u)),'actuator target<=10:',max(abs(u))<=10)\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.7));ax[0].semilogx(omega,abs(S),label='formal |S|');ax[0].semilogx(omega,abs(T),label='formal |T|');ax[0].legend();ax[0].set(xlabel='rad/s',ylabel='magnitude')\r\nax[1].plot(t_sim,y,label='unstable output');ax[1].plot(t_sim,u,label='unsaturated control');ax[1].legend();ax[1].set(xlabel='time (s)',ylabel='finite-window response');plt.tight_layout();plt.show()\r\nprint('pi_audit_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 362,
+          "delim": "`",
+          "code": "# Preserve the original 500-sample purpose, classify stability before metrics\r\nN_mc=500;rng=np.random.default_rng(42)\r\ndelta_m_samples=rng.uniform(-1,1,N_mc);delta_k_samples=rng.uniform(-1,1,N_mc)\r\nalphas=[];sample_peaks=[]\r\nfor dm,dk in zip(delta_m_samples,delta_k_samples):\r\n    m=1+.3*dm;k=1+.3*dk\r\n    alphas.append(float(max(np.roots([m,.2,k+Kp,Ki]).real)))\r\n    z=1j*omega;Li=(Kp*z+Ki)/(z*(m*z*z+.2*z+k))\r\n    sample_peaks.append(float(max(abs(1/(1+Li)))))\r\nalphas=np.array(alphas);sample_peaks=np.array(sample_peaks)\r\nprint('seed=42; samples=500; unstable=',sum(alphas>=0),'alpha range=',min(alphas),max(alphas))\r\nprint('whole square: .2*(k+5)<=1.26 < m*2>=1.4, hence every allowed PI loop unstable')\r\nprint('No overshoot/settling histograms: these metrics require a stable final value')\r\nassert np.all(alphas>0)\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.7));ax[0].hist(alphas,bins=25);ax[0].set(xlabel='rightmost pole real part (1/s)',ylabel='count')\r\nsc=ax[1].scatter(delta_m_samples,delta_k_samples,c=alphas,s=10);fig.colorbar(sc,ax=ax[1]);ax[1].set(xlabel='delta_m',ylabel='delta_k');plt.tight_layout();plt.show()\r\nprint('sampling_audit_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 379,
+          "delim": "`",
+          "code": "# A permitted corner versus the sample maximum is not full-block conservatism\r\nomega_plot=np.logspace(-2,2,500)\r\nidx=int(np.argmax(sample_peaks));dm_sample=float(delta_m_samples[idx]);dk_sample=float(delta_k_samples[idx])\r\nprint('sample maximizer of formal finite-grid |S|:',dm_sample,dk_sample)\r\nfig,ax=plt.subplots(figsize=(8,3.7))\r\nfor name,dm,dk in [('nominal',0,0),('allowed corner',1,-1),('sample maximizer',dm_sample,dk_sample)]:\r\n    z=1j*omega_plot;Li=(Kp*z+Ki)/(z*((1+.3*dm)*z*z+.2*z+1+.3*dk));Si=1/(1+Li)\r\n    print(name,'formal frequency-grid maximum=',max(abs(Si)))\r\n    ax.semilogx(omega_plot,abs(Si),label=name)\r\nax.set(xlabel='rad/s',ylabel='formal |S| (unstable loop)');ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('No H-infinity-versus-mu ranking, no conservatism percentage, no robust-performance certificate')\r\nprint('comparison_audit_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 410,
+      "title": null,
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nplt.rcParams['axes.unicode_minus'] = False",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 416,
+          "delim": "`",
+          "code": "# Exact restricted alternating optimization, independent NumPy SVD and exercise values\r\ndef matrix(k):return np.array([[0,2-1.5*k],[.125+.675*k,0.]])\r\ndef values(k,d):\r\n    A=matrix(k);D=np.diag([d,1.]);return float(np.linalg.svd(D@A@np.linalg.inv(D),compute_uv=False)[0]),float(max(abs(np.linalg.eigvals(A))))\r\ntraces=[]\r\nfor initial_d in [1.,.25,2.]:\r\n    k=.5;d=initial_d;rows=[('initial',k,d,*values(k,d))]\r\n    for i in range(4):\r\n        k=float(np.clip((2*d*d-.125)/(1.5*d*d+.675),0,1));rows.append(('K',k,d,*values(k,d)))\r\n        A=matrix(k);d=float(np.sqrt(A[1,0]/A[0,1]));rows.append(('D',k,d,*values(k,d)))\r\n    traces.append(rows);print('initial d=',initial_d,'final=',rows[-1])\r\nprint('default k=.5 d=1:',values(.5,1),'dopt=',np.sqrt(.4625/1.25))\r\nfor k in [0,.5,1]:print('k=',k,'mu=',values(k,1)[1])\r\nfig,ax=plt.subplots(figsize=(8,3.7))\r\nfor rows in traces:ax.plot(range(len(rows)),[r[3] for r in rows],marker='o',label='initial d='+str(rows[0][2]))\r\nax.set(xlabel='substep',ylabel='scaled H-infinity norm');ax.legend();ax.grid();plt.tight_layout();plt.show()\r\nprint('dk_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 433,
+          "delim": "`",
+          "code": "# Original four exercises, every numerical subpart\r\nM=np.array([[2.,1.],[0.,3.]])\r\nprint('Q1 rho=',max(abs(np.linalg.eigvals(M))),'sigma=',np.linalg.svd(M,compute_uv=False)[0],'MTM eigenvalues=',np.linalg.eigvalsh(M.T@M))\r\nfor r in [1,.1,.01]:\r\n    D=np.diag([r,1.]);print('Q1 r=',r,'upper=',np.linalg.svd(D@M@np.linalg.inv(D),compute_uv=False)[0])\r\nprint('Q1 inf=3 as r tends to 0; r=0 is inadmissible; mu=3 via determinant witness delta2=1/3')\r\nTT=ctrl.tf([2],[1,3]);print('Q2 T(0)=',ctrl.dcgain(TT),'normalized small-gain peak=',.5*ctrl.dcgain(TT))\r\nfor delta in [-.5,0,.5]:print('Q2 delta=',delta,'closed pole=',ctrl.poles(ctrl.feedback(ctrl.tf([2*(1+delta)],[1,1]))))\r\nprint('Q2 real mu(T(jw))=0 for w>0; complex mu=abs(T(jw)); both global tests pass')\r\nprint('Q3 different coordinate fixed points:',traces[0][-1],traces[1][-1])\r\nprint('Q4 mass=[.8,1.2], damping=[.15,.25], stiffness=[.7,1.3]; diag three independent real scalars')\r\nprint('Q4 full 2x2 complex block enlarges the set; delta_mb I restricts independent parameters')\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

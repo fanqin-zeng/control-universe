@@ -1,0 +1,228 @@
+---
+title: "移动水平估计"
+description: "从带噪液位记录重建状态轨迹，辨清有限窗口、到达成本、约束与卡尔曼等价条件，以及估计接入MPC的边界。"
+---
+
+# 移动水平估计
+
+水箱每秒记录一次液位。刚泵入一些水，传感器就跳到容量上方，下一秒又回落：这是液位真的变了，还是读数有噪声？只看最后一个读数很难判断；把最近几秒的读数、已知泵水量和水箱范围放在一起，才能检查哪条液位轨迹更符合这些信息。
+
+本课接续[滚动优化](/mpc/receding-horizon)和[多传感器融合](/estimation/sensor-fusion)。MPC向未来选择输入，本课的移动水平估计（moving horizon estimation，MHE，也称移动时域估计）向过去拟合状态；两者都滚动求解，但决策变量、已知数据和输出不同。读者将学会写出估计窗口、解释到达成本、求一个带约束QP，并说明为何把估计值送进MPC还不能自动获得全状态控制的保证。
+
+## 从带噪液位到历史轨迹
+
+观测$y_i$是收到的读数；状态$x_i$是希望知道却不能直接确定的真实液位。已知输入$u_i$影响状态演化，过程扰动$w_i$与测量噪声$v_i$分别解释模型和传感器的不一致：
+
+$$
+x_{i+1}=f(x_i,u_i)+w_i,\qquad y_i=g(x_i)+v_i.
+$$
+
+MHE在时刻$k$使用截至$k$已经收到的数据，估计一段历史轨迹。记$\hat x_{i|k}$为“使用截至$k$的信息，对时刻$i$状态的估计”。末结点$\hat x_{k|k}$是当前**滤波估计**；窗口内$i < k$的值是利用后来观测修正过的**平滑估计**。它们不能被冒充成时刻$i$当时就已得到的在线估计。
+
+多传感器数据可以在每个时刻组成联合观测，但必须先处理时间戳、坐标与相关噪声，不能把共享信息当独立证据。本课数值例只有一个液位传感器，重点是时间上的信息融合。
+
+## 有限窗口的估计问题
+
+设$a=k-N$，窗口包含$N+1$个状态与观测、$N$次转移。对窗口内候选状态$\xi_i$，消去扰动后可写成
+
+$$
+\min_{\xi_a,\ldots,\xi_k}\;\Gamma_a(\xi_a)
++\frac12\sum_{i=a}^{k-1}\|\xi_{i+1}-f(\xi_i,u_i)\|_{\mathbf Q^{-1}}^2
++\frac12\sum_{i=a}^{k}\|y_i-g(\xi_i)\|_{\mathbf R^{-1}}^2.
+$$
+
+其中$\|z\|_{\mathbf M}^2=z^{\mathsf T}\mathbf Mz$，$\mathbf Q,\mathbf R$是正定的过程和测量协方差或选定权重矩阵，$\Gamma_a$是窗口起点的到达成本。还可加入$\xi_i\in X$及扰动界。本课$w_i$不受硬界约束，因此状态界与有穷测量不会单独造成无解；若同时硬限过程和测量残差，冲突数据就可能使可行集为空。
+
+在独立高斯噪声、相应先验和已知参数下，这类二次项来自轨迹后验的负对数；对非高斯噪声，二次项是建模选择，不自动等于正确的最大后验估计。硬状态约束可表示先验支持集。轨迹MAP、边缘状态MAP和后验均值一般也不相同。
+
+线性$f,g$、凸状态界和正定权重得到凸QP；非线性MHE通常是NLP，局部求解未必找到全局最优。窗口加长会增加变量和数据，并不在任意失配或计算预算下保证估计更准确。
+
+## 到达成本如何保存过去
+
+窗口左边的数据不能每次全部丢掉，也不能每次全部重新优化。**到达成本**把窗外历史对左端状态的代价压缩为函数$\Gamma_a(z)$：在固定$x_a=z$时，最小化初始先验及窗外的过程、测量代价。到达状态$i=a$之前的测量$y_0,\ldots,y_{a-1}$归入其中；$y_a$在当前窗口计算一次。
+
+若使用精确到达成本，有限窗口优化与原全信息轨迹优化的相应后段等价，这是按左端状态分解最小化的结果。但计算精确函数本身可能与原问题一样困难。一般约束或非线性情形下，常用二次近似
+
+$$
+\Gamma_a(z)=\frac12(z-\bar x_a)^{\mathsf T}\mathbf P_a^{-1}(z-\bar x_a)+c_a.
+$$
+
+$c_a$不影响最优解；$\bar x_a,\mathbf P_a$的含义取决于近似方法。在线性无约束高斯模型中，它们可取利用$y_0,\ldots,y_{a-1}$得到的**预测先验**。有历史活动约束时，到达成本可能是分段二次函数，不能凭一次高斯拟合就宣称完全保留了历史约束信息。这里的全信息最小代价也不是一般非高斯模型中的边缘积分。
+
+<img src="/diagrams/mpc/mhe-window.svg" alt="窗外观测压缩到到达成本，窗口内观测仅计一次，取末结点估计后送入MPC并处理估计误差" style={{width:"100%",maxWidth:440,height:"auto",display:"block",margin:"16px auto"}} />
+
+## 一个三结点QP
+
+归一化水箱按1秒采样，已知净泵入量$d=[0.5,0]$，动力学为$x_{i+1}=x_i+d_i+w_i$，观测为$y_i=x_i+v_i$。初始先验均值$\mu=0.5$、方差$P=1$，过程方差$Q=0.25$、测量方差$R=0.25$，读数$y=[0.2,1.4,1.1]$。估计状态界为$0\le \xi_i\le C$，默认$C=1$。
+
+三状态目标为
+
+$$
+J=\frac{(\xi_0-\mu)^2}{2P}+\frac{(\xi_1-\xi_0-0.5)^2+(\xi_2-\xi_1)^2}{2Q}
++\frac{(0.2-\xi_0)^2+(1.4-\xi_1)^2+(1.1-\xi_2)^2}{2R}.
+$$
+
+所有状态都有观测且$P,Q,R>0$，Hessian正定，盒约束QP有唯一全局解。默认解为$[11/30,1,1]$，即约$[0.366667,1,1]$，$J=0.44$。过程残差为$[2/15,0]$，测量残差为$[-1/6,0.4,0.1]$。读数1.4可以超过容量：被约束的是状态，不是要求带噪传感器永不越界。
+
+去掉状态界，解为$[161,427,417]/370$，当前估计约1.127027，$J=123/370\approx0.332432$。约束缩小可行集，所以最小拟合代价只能不减；这与估计是否接近真实液位是两个问题。把容量放宽到2，两解相同；容量设为0时全轨迹为0，代价7.045，仍可行，因为过程和测量残差没有硬上限。
+
+Notebook直接构造原加权残差矩阵，用SciPy有界线性最小二乘求解；Explorer则枚举27种盒活动集并解自由变量线性方程，两条路线独立实现。该枚举仅适合本课三变量演示，变量增加时活动集数指数增长，不能当作大型MHE的部署算法。
+
+<JupyterNotebook title="原残差QP与约束失配" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import lsq_linear
+
+default=dict(mean=.5,P=1.,Q=.25,R=.25,capacity=1.,spike=0.)
+def original(c,bounded=True):
+    y=np.array([.2,1.4+c['spike'],1.1]);d=np.array([.5,0.])
+    A=np.zeros((6,3));b=np.zeros(6);A[0,0]=1/np.sqrt(c['P']);b[0]=c['mean']/np.sqrt(c['P'])
+    for i in range(2):A[i+1,i]=-1/np.sqrt(c['Q']);A[i+1,i+1]=1/np.sqrt(c['Q']);b[i+1]=d[i]/np.sqrt(c['Q'])
+    for i in range(3):A[i+3,i]=1/np.sqrt(c['R']);b[i+3]=y[i]/np.sqrt(c['R'])
+    if not bounded:x=np.linalg.lstsq(A,b,rcond=None)[0]
+    elif c['capacity']==0:x=np.zeros(3)
+    else:
+        opt=lsq_linear(A,b,bounds=(0,c['capacity']),tol=1e-13,max_iter=1000,lsmr_tol=1e-14);assert opt.success;x=opt.x
+    return dict(x=x,cost=.5*np.sum((A@x-b)**2),measurement=y-x,process=np.diff(x)-d,A=A,b=b)
+
+def kf(measurements,mean=.5,P=1.,Q=.25,R=.25,inputs=None):
+    inputs=[.5]+[0.]*(len(measurements)-2) if inputs is None else inputs
+    filtered=[];priors=[]
+    for i,y in enumerate(measurements):
+        priors.append((mean,P));K=P/(P+R);mean=mean+K*(y-mean);P=(1-K)*P;filtered.append((mean,P))
+        if i<len(measurements)-1:mean+=inputs[i];P+=Q
+    return filtered,priors
+`} cells={[{title:"1",code:`e=original(default);b=original(default,False)
+assert np.allclose(e['x'],[11/30,1,1]) and np.isclose(e['cost'],.44)
+assert np.allclose(b['x'],np.array([161,427,417])/370) and np.isclose(b['cost'],123/370)
+for label,patch in [('default',{}),('loose',{'capacity':2}),('zero',{'capacity':0}),('spike',{'spike':1}),('weak_prior',{'P':4})]:
+    c={**default,**patch};a=original(c);z=original(c,False);print(label,'bounded',np.round(a['x'],9),'J',a['cost'],'unconstrained',np.round(z['x'],9),'J',z['cost'])
+print('default_process',e['process'],'measurement',e['measurement'])
+fig,ax=plt.subplots(1,2,figsize=(8,3));ax[0].plot(range(3),e['x'],'o-',label='bounded');ax[0].plot(range(3),b['x'],'o--',label='unconstrained');ax[0].scatter(range(3),[.2,1.4,1.1],label='measurement');ax[0].set(xlim=(0,2),ylim=(-1,3),xlabel='time',ylabel='level');ax[0].legend()
+ax[1].plot(range(3),e['measurement'],'o-',label='measurement residual');ax[1].plot(range(2),e['process'],'o-',label='process residual');ax[1].set(xlim=(0,2),ylim=(-2,2),xlabel='time',ylabel='residual');ax[1].legend();plt.tight_layout();plt.show()
+print('original_mhe_qp_checked')`},{title:"2",code:`true=np.array([.5,1,1]);e=original(default);b=original(default,False)
+print('default_terminal_absolute_errors',abs(e['x'][-1]-true[-1]),abs(b['x'][-1]-true[-1]))
+assert np.isclose(abs(b['x'][-1]-true[-1]),47/370)
+# Separate counterexample: actual capacity2, correct prior1, exact readings1,1.5,1.5.
+y=np.array([1.,1.5,1.5]);A=e['A'];rhs=e['b'].copy();rhs[0]=1.;rhs[3:]=y/np.sqrt(default['R'])
+unconstrained=np.linalg.lstsq(A,rhs,rcond=None)[0]
+wrong=lsq_linear(A,rhs,bounds=(0,1),tol=1e-13).x
+assert np.allclose(unconstrained,y) and np.isclose(wrong[-1],1)
+print('wrong_capacity_terminal',wrong[-1],'true',1.5,'errors',abs(wrong[-1]-1.5),abs(unconstrained[-1]-1.5))
+same=(original({**default,'capacity':2})['x']-b['x']);assert np.max(np.abs(same))<1e-9
+print('inactive_constraint_max_gap',np.max(np.abs(same)))
+print('constraint_help_tie_harm_checked')`}]} />
+
+## 交互式可视化
+
+默认曲线中，两个上界被激活；先把容量调到2观察两解重合，再改变中央读数偏移。减小$R$表示更相信测量，减小$Q$表示更不愿偏离动力学；减小$P$则加强对窗口左端先验的信任。方差是残差的尺度，不能当普通线性权重正向理解。
+
+<MheExplorer />
+
+图上过程残差位于转移起点0和1，时刻2没有额外转移，所以末列留空。面板只求固定三结点窗口，尚未滚动更新到达成本；下一节给出更新规则和独立实验。
+
+## 滑动更新与信息重复
+
+新观测到来后，把窗口左端从$a$移到$a+1$。理论上可用一次动态规划更新：固定新左端$z$，把旧到达成本、旧左端测量$y_a$以及$a\to a+1$转移代价一起最小化，形成$\Gamma_{a+1}(z)$；剩下的测量从$y_{a+1}$开始。每份信息只进入一次。
+
+算法应按“对齐时间戳和已知输入→取得窗外到达先验→构造窗口→求解并检查状态/残差/收敛→取末状态→更新历史摘要”的顺序执行。热启动上次轨迹是计算技巧，不等于已经更新了到达成本。首次数据不足时可用短窗口加初始先验，不虚构缺失测量。
+
+不要把已用了当前窗口观测的平滑后验当独立先验再加同一组读数。最简单的重复计数反例：先验均值0、方差1，读数1、噪声方差1。正确更新得到均值$1/2$、方差$1/2$；若把这个后验当先验再用同一个读数，则得到$2/3$和$1/3$。数值更靠近读数、报告的方差更小，却没有新增证据。
+
+若有多传感器，同样必须用正确联合协方差处理相关残差。异常值、丢包和延迟观测也需要明确策略，不能通过重复窗口信息“补强置信度”。
+
+## 与卡尔曼滤波的关系
+
+在线性高斯、无活动约束、相同初始先验和$Q,R$、准确到达成本及精确求解下，MHE末结点与卡尔曼滤波当前估计一致；过去结点对应平滑结果，因此通常不同于当时的滤波值。这是相同信息与目标的不同计算组织，不能据此宣称MHE比KF精度高。
+
+默认无约束三结点例，KF与批量QP当前值均约1.127027；时刻0的滤波值为0.26，而利用后两条读数平滑后的状态约0.435135。它们条件信息不同，不是算法自相矛盾。
+
+下一个Notebook用五条读数，先做全批量估计，再在时刻2切窗：到达先验只使用时刻0和1的数据。三结点后段与全批量后段逐值一致。这个等价实验无约束；若历史或当前约束活动，不能继续把普通KF协方差当作精确约束后验。
+
+<JupyterNotebook title="到达成本、KF与控制接口" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import lsq_linear
+
+default=dict(mean=.5,P=1.,Q=.25,R=.25,capacity=1.,spike=0.)
+def original(c,bounded=True):
+    y=np.array([.2,1.4+c['spike'],1.1]);d=np.array([.5,0.])
+    A=np.zeros((6,3));b=np.zeros(6);A[0,0]=1/np.sqrt(c['P']);b[0]=c['mean']/np.sqrt(c['P'])
+    for i in range(2):A[i+1,i]=-1/np.sqrt(c['Q']);A[i+1,i+1]=1/np.sqrt(c['Q']);b[i+1]=d[i]/np.sqrt(c['Q'])
+    for i in range(3):A[i+3,i]=1/np.sqrt(c['R']);b[i+3]=y[i]/np.sqrt(c['R'])
+    if not bounded:x=np.linalg.lstsq(A,b,rcond=None)[0]
+    elif c['capacity']==0:x=np.zeros(3)
+    else:
+        opt=lsq_linear(A,b,bounds=(0,c['capacity']),tol=1e-13,max_iter=1000,lsmr_tol=1e-14);assert opt.success;x=opt.x
+    return dict(x=x,cost=.5*np.sum((A@x-b)**2),measurement=y-x,process=np.diff(x)-d,A=A,b=b)
+
+def kf(measurements,mean=.5,P=1.,Q=.25,R=.25,inputs=None):
+    inputs=[.5]+[0.]*(len(measurements)-2) if inputs is None else inputs
+    filtered=[];priors=[]
+    for i,y in enumerate(measurements):
+        priors.append((mean,P));K=P/(P+R);mean=mean+K*(y-mean);P=(1-K)*P;filtered.append((mean,P))
+        if i<len(measurements)-1:mean+=inputs[i];P+=Q
+    return filtered,priors
+
+def batch(y,inputs,mean,P,Q=.25,R=.25):
+    n=len(y);A=np.zeros((2*n,n));b=np.zeros(2*n)
+    A[0,0]=1/np.sqrt(P);b[0]=mean/np.sqrt(P)
+    for i in range(n-1):A[1+i,i]=-1/np.sqrt(Q);A[1+i,i+1]=1/np.sqrt(Q);b[1+i]=inputs[i]/np.sqrt(Q)
+    for i in range(n):A[n+i,i]=1/np.sqrt(R);b[n+i]=y[i]/np.sqrt(R)
+    x=np.linalg.lstsq(A,b,rcond=None)[0]
+    return x,A,b
+`} cells={[{title:"1",code:`y=[.2,1.4,1.1,.9,1.2];inputs=[.5,0,0,0]
+filtered,priors=kf(y,inputs=inputs)
+full,A,b=batch(y,inputs,.5,1.)
+cut,Ac,bc=batch(y[2:],inputs[2:],*priors[2])
+assert np.allclose(cut,full[2:],atol=1e-12)
+assert np.isclose(full[-1],filtered[-1][0],atol=1e-12)
+default_batch=original(default,False)['x'];default_filtered,_=kf(y[:3])
+assert np.isclose(default_batch[-1],default_filtered[-1][0],atol=1e-12)
+print('default_batch_current',default_batch[-1],'kf_current',default_filtered[-1][0],'past_smoothed',default_batch[0],'past_filtered',default_filtered[0][0])
+print('arrival_at_time2',priors[2],'full_current',full[-1],'cut_current',cut[-1],'max_difference',max(abs(cut-full[2:])))
+# Identical scalar observation counted once versus twice.
+once_mean=.5;once_P=.5;K=once_P/(once_P+1);twice_mean=once_mean+K*(1-once_mean);twice_P=(1-K)*once_P
+assert np.isclose(twice_mean,2/3) and np.isclose(twice_P,1/3)
+print('one_measurement_once',once_mean,once_P,'twice',twice_mean,twice_P)
+fig,ax=plt.subplots(figsize=(8,3));ax.plot(range(5),y,'x',label='measurements');ax.plot(range(5),full,'o-',label='full batch smoothed');ax.plot(range(5),[z[0] for z in filtered],'o--',label='causal KF');ax.set(xlim=(0,4),ylim=(-1,3),xlabel='time',ylabel='level');ax.legend();ax.grid(True);plt.tight_layout();plt.show()
+print('arrival_and_kf_checked')`},{title:"2",code:`from fractions import Fraction as F
+x=[F(11,30),F(1),F(1)];H=[[F(9),F(-4),F(0)],[F(-4),F(12),F(-4)],[F(0),F(-4),F(8)]];rhs=[F(-7,10),F(38,5),F(22,5)]
+gradient=[sum(H[i][j]*x[j] for j in range(3))-rhs[i] for i in range(3)]
+assert gradient==[F(0),F(-16,15),F(-2,5)]
+print('exact_kkt_gradient',[str(v) for v in gradient])
+truth=F(3,2);estimate=F(1);reference=F(1);input_from_estimate=(reference-estimate)/F(11,10);input_from_truth=(reference-truth)/F(11,10)
+print('estimate_based_input',float(input_from_estimate),'predicted_next',float(estimate+input_from_estimate),'actual_next',float(truth+input_from_estimate))
+print('perfect_state_input',float(input_from_truth),'actual_next',float(truth+input_from_truth))
+assert input_from_truth==F(-5,11) and truth+input_from_truth==F(23,22)
+print('kkt_and_control_interface_checked')`}]} />
+
+## 估计接入MPC
+
+MHE输出$\hat x_{k|k}$，MPC可用它作为预测初值，再执行首个输入并在下一拍重新估计。这种直接代入通常叫确定性等价或名义输出反馈实现；一般约束非线性系统没有自动成立的分离原理。
+
+即使估计轨迹满足状态界，实际对象也可能在界外。设真实液位1.5，错误容量使估计为1，目标液位为1。对$x^+=x+u$的一步控制，最小化$(\hat x+u-1)^2+0.1u^2$，且$|u|\le1$。代入估计1得到$u=0$、预测下一液位1，但实际仍为1.5；若控制器要求下一液位不超过1.2，它的预测看似可行，真实对象却违反该界。
+
+若有准确状态1.5，同一个目标的最优输入为$-5/11$，下一液位$23/22\approx1.045455$。这只是标量接口反例，不是MHE控制闭环的统计性能试验。实际需要结合估计误差界、鲁棒约束收紧、状态集合估计或相应输出反馈设计，并检查延迟与求解失败回退。
+
+## 约束与模型失配的边界
+
+在默认固定数据上，若指定真轨迹为$[0.5,1,1]$，约束估计的当前绝对误差为0，无约束误差为$47/370\approx0.127027$；容量2时约束不活动、两估计持平。这只是同一条确定性数据的观察，不是平均误差或优越性证明。
+
+反例改为真实容量2、真轨迹和准确读数均为$[1,1.5,1.5]$、先验均值1，保持$P,Q,R$与输入不变。无约束解恰为真轨迹；若错误地强加容量1，末估计为1，当前绝对误差0.5。错误物理界、忽略泄漏、错误噪声权重和传感器偏置都可能造成系统性偏差，不能用“优化已收敛”解释成“模型已正确”。
+
+稳定性还依赖系统的可检测性、代价上下界、到达成本及窗口长度等条件；非线性情形还要考虑局部最优和模型误差。本课没有给出一般MHE稳定性证书。有关到达成本与条件化稳定结论可参考[Rawlings、Mayne和Diehl教材第4.3节](https://sites.engineering.ucsb.edu/~jbraw/mpc/MPC-book-2nd-edition-4th-printing.pdf)。水箱数据是本课自构的可复算例，不是该书工业案例的复现。
+
+实现合同中，$P,Q,R$必须有限且严格为正，容量有限且非负；容量0仍是合法退化盒，不是求解失败。生产计算器只处理本课标量三结点QP，不提供协方差输出、异常检测、窗口长度优化或硬件实时保证。一般问题还应记录时间戳、已执行输入、残差标准化、求解状态及超时策略。
+
+## 习题
+
+1. 写出三结点窗口的状态、过程残差、测量残差及目标。用默认参数验证$[11/30,1,1]$满足盒约束KKT条件，并算目标值。为什么读数1.4不使问题无解？容量0时目标是多少？
+2. 到达成本应包含哪些测量，窗口左端测量在哪里出现？计算同一个读数用一次与重复使用时的均值和方差，并列出MHE与KF当前估计相同的条件。默认时刻0的两个估计为何不同？
+3. 用本课指定真轨迹，计算默认、有足够容量和错误容量三种工况的当前误差。为什么约束解的拟合目标可能更高、真值误差却更小？能否据此断言MHE普遍优于KF？
+4. 推导一步控制目标的无约束最优输入并检查输入界。分别以估计1和真实1.5初始化，算输入及真实下一状态；说明预测约束不超过1.2为何可能被真实对象违反，还缺少哪类保证。
+
+## 答案
+
+1. 状态为$\boldsymbol\xi=(\xi_0,\xi_1,\xi_2)^{\mathsf T}$，两过程残差为$\xi_1-\xi_0-0.5,\xi_2-\xi_1$，三测量残差为$0.2-\xi_0,1.4-\xi_1,1.1-\xi_2$，代入本课$J$即可。默认Hessian为$\begin{bmatrix}9&-4&0\\-4&12&-4\\0&-4&8\end{bmatrix}$，线性右端为$(-0.7,7.6,4.4)^{\mathsf T}$，候选梯度为$(0,-16/15,-2/5)^{\mathsf T}$。自由首状态梯度0，上界处梯度非正，满足KKT；严格凸性给唯一最优，代价0.44。观测残差没有硬限，读数可以越界；容量0时状态全0，$J=7.045$。
+2. $\Gamma_a$包含$y_0$至$y_{a-1}$及到达$x_a$前的转移，$y_a$仅在当前窗口计算。单个读数正确更新为均值$1/2$、方差$1/2$；重复使用变为$2/3$、$1/3$，后者假装多了一份独立证据。等价需线性高斯、同先验与噪声模型、准确到达成本、无活动约束、精确求解和同时间信息。默认时刻0的0.26用的是当时一条读数，0.435135使用了后续读数，是平滑值，不能回填为当时在线输出。
+3. 真轨迹$[0.5,1,1]$下，默认容量1的末误差0，无约束为$47/370$；容量2时约束与无约束解相同，误差都为$47/370$。另一工况的真轨迹$[1,1.5,1.5]$、先验1和准确读数下，无约束误差0，错误容量1导致末估计1，误差0.5。拟合目标衡量与含噪数据/先验的匹配，真值误差使用另一个评价对象。一个固定样本的改善或落败不能推出平均性能，更不能把本课约束消融改称所有MHE与KF的排名。
+4. 一阶条件给$u^*=(1-\hat x)/1.1$，再投影到$[-1,1]$。估计1给输入0，真实下一状态仍1.5；准确状态1.5给$u=-5/11$，在输入界内，真实下一状态$23/22$。前一方案预测为1、满足1.2上界，实际1.5超界0.3；单纯代入估计初值没有覆盖估计误差。还需相应误差集合、鲁棒约束/输出反馈及可行性、延迟和失败处理条件，不能只凭估计QP的KKT证书保证实际状态约束。

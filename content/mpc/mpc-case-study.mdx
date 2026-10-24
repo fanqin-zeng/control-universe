@@ -1,948 +1,413 @@
 ---
-title: "MPC实现案例"
-description: "以CSTR（连续搅拌釜反应器）为主线，完整走一遍MPC工程设计流程：建模→线性化→离散化→QP构造→约束设置→仿真→调参→分析。"
+title: "预测控制案例"
+description: "以可核对平衡点的CSTR贯穿建模、ZOH、受限QP和未截断非线性闭环，保留调参与部署边界及完整习题。"
 ---
 
-# MPC 实现案例
 
-前四课分别讲了 MPC 的三大核心思想、预测模型、滚动优化和约束处理。每一课聚焦一个要素，但工程问题不会告诉你"请构造预测矩阵"或"请设置松弛变量"——你需要把这些要素**整合**成一个完整的控制器。
+<span id="mpc-实现案例"></span>
 
-> 📖 本课是 MPC 部分的综合应用，需要前面四课的基础：[模型预测控制原理](/mpc/mpc-principle)（QP 公式化）、[预测模型建立](/mpc/prediction-model)（增广模型）、[滚动优化策略](/mpc/receding-horizon)（QP 求解）、[约束处理](/mpc/constraint-handling)（约束矩阵构造）。
+# 预测控制案例
 
-本节以**CSTR（连续搅拌釜反应器）**为主线，完整走一遍 MPC 的工程设计流程：
+一锅持续进料的反应液会放热，外面的冷却夹套把热量带走。进料浓度下降后，反应放热和产品浓度都会改变；只调冷却温度不一定能同时恢复两者。现在把进料流量与冷却温度一起交给MPC：它预测了什么、约束了什么，实际反应器又怎样响应？
 
-1. **问题描述**：物理系统、控制目标、工程约束
-2. **建立模型**：非线性方程 → 工作点线性化 → 状态空间模型
-3. **离散化**：连续 → 离散，构造预测矩阵
-4. **MPC 设计**：选择 $N_p, N_u, Q, R$，构造 QP
-5. **约束设置**：输入、输出、变化率约束
-6. **闭环仿真**：设定值跟踪 + 干扰抑制
-7. **调参分析**：权重效果、约束活性
-8. **工程实现**：部署细节
+本课整合[约束处理](/mpc/constraint-handling)、[广义预测控制](/mpc/generalized-predictive-control)和[辨识案例](/identification/identification-case-study)的模型与验证意识；建模、预测、滚动QP的推导可回看[预测模型建立](/mpc/prediction-model)和[滚动优化](/mpc/receding-horizon)。这里是自构的教学控制实验，使用公开CSTR模型背景，没有真实装置、工厂数据或安全认证。
 
-这个流程适用于绝大多数工业 MPC 应用。学完本节，你应该能把前四课的每个工具"对号入座"。
+
+<span id="控制目标"></span>
+<span id="操纵变量与被控变量"></span>
 
 ## 问题描述
 
 ### CSTR 物理系统
 
-CSTR（Continuous Stirred Tank Reactor，连续搅拌釜反应器）是化工中最常见的反应器类型。原理很简单：一个大锅，原料从上面连续倒进去，产品从下面连续流出来，里面有搅拌器保持均匀，外面有冷却水套控制温度。
+CSTR是连续搅拌釜反应器。假设釜内充分混合、体积恒定、进出流量相等，反应物A按一级放热反应消耗；搅拌不足、夹套动态和运输延迟都未建模。
 
 ![CSTR 示意图](/images/cstr-schematic.png)
 
-**里面在发生什么？** 一个放热反应 A → B。反应会释放热量，如果不冷却，温度会越来越高 → 反应越来越快 → 放热更多 → 温度更高……这就是"热失控"——化工事故的头号原因。
+操纵变量为进料流量$F$（L/min）和夹套温度$T_c$（K）；被控量为**反应物**浓度$C_A$（mol/L）与釜温$T$（K）。$C_A$不是产物B的浓度。两个输入与两个输出构成2×2系统；耦合强弱不能直接比较单位不同的矩阵元素。
 
-MPC 在这里的核心任务：**在温度接近安全极限时，提前减少进料或加大冷却**——而不是等到超温才动作。
+### 控制目标与实验边界
 
-### 控制目标
-
-| 目标 | 含义 | 优先级 |
-|------|------|--------|
-| 温度跟踪 | 反应温度维持在设定值（保证反应效率） | 高 |
-| 浓度保证 | 产品浓度满足规格（保证质量） | 高 |
-| 不超温 | 温度不超过安全极限（防止热失控） | 最高（安全） |
-| 节能 | 冷却水用量最小（经济性） | 低 |
-
-### 操纵变量与被控变量
-
-| 变量 | 符号 | 角色 | 物理含义 |
-|------|------|------|----------|
-| 进料流量 | $F$ | 操纵变量（MV） | 控制反应物进入速率 |
-| 冷却水温度 | $T_c$ | 操纵变量（MV） | 控制冷却速率 |
-| 反应温度 | $T$ | 被控变量（CV） | 反应效率和安全 |
-| 产物浓度 | $C_A$ | 被控变量（CV） | 产品质量 |
-
-这是一个 **2×2 MIMO 系统**——两个输入、两个输出，且强耦合（进料流量同时影响温度和浓度，冷却水温度也同时影响两者）。
+保持浓度接近0.5，温度参考从350升至352K；限制输入幅值、每拍变化和**名义预测温度**。2分钟后进料浓度从1持续降至0.9mol/L，检查模型失配与剩余偏差。全部状态假设可测。预测温度界355K只是一条教学运行约束，不能充当装置保护。
 
 ## 建立被控对象模型
 
 ### 非线性 CSTR 方程
 
-CSTR 的动态由质量和能量守恒决定：
-
-**质量守恒**（反应物 A 的摩尔平衡）：
+质量与能量守恒给出
 
 $$
-V \frac{dC_A}{dt} = F(C_{Af} - C_A) - V k_0 e^{-E/(RT)} C_A
+V\dot C_A=F(C_{Af}-C_A)-Vk(T)C_A,
 $$
 
-**能量守恒**（反应器内的热量平衡）：
-
 $$
-\rho C_p V \frac{dT}{dt} = F \rho C_p (T_f - T) + (-\Delta H) V k_0 e^{-E/(RT)} C_A - UA(T - T_c)
+\rho C_pV\dot T=F\rho C_p(T_f-T)+(-\Delta H)Vk(T)C_A-UA(T-T_c),\qquad
+k(T)=k_0e^{-E/(RT)}.
 $$
 
-各项的物理含义：
-
-| 项 | 含义 |
-|----|------|
-| $F(C_{Af} - C_A)$ | 进料带入 - 出料带走的 A |
-| $V k_0 e^{-E/(RT)} C_A$ | 反应消耗的 A（Arrhenius 动力学） |
-| $F \rho C_p (T_f - T)$ | 进料带入的热量 - 出料带走的热量 |
-| $(-\Delta H) V k_0 e^{-E/(RT)} C_A$ | 反应释放的热量 |
-| $UA(T - T_c)$ | 冷却水带走的热量 |
-
-> 💡 **Arrhenius 方程** $k = k_0 e^{-E/(RT)}$ 是化学反应速率的核心——温度越高，反应越快。指数关系意味着温度小幅变化就能导致反应速率大幅变化。这就是"热失控"的根源。
+流入减流出、反应消耗与反应放热分别出现在两式中。升温加快反应可能形成正反馈，但热失控是否发生取决于全模型、输入及保护措施，不能由一个指数项单独断言。
 
 ### 参数与稳态工作点
 
-**系统参数**：
+统一采用L、min、g、J、mol、K。取$V=100$L、$\rho=1000$g/L、$C_p=0.239$J/(g·K)、$-\Delta H=50000$J/mol、$UA=50000$J/(min·K)、$C_{Af}=1$mol/L、$T_f=350$K。动力学取$E/R=8750$K、$k_0=e^{25}$min$^{-1}$，使$k(350)=1$min$^{-1}$。
 
-| 参数 | 符号 | 值 | 单位 |
-|------|------|-----|------|
-| 反应器体积 | $V$ | 100 | L |
-| 液体密度 | $\rho$ | 1000 | kg/m³ |
-| 比热容 | $C_p$ | 4.18 | kJ/(kg·K) |
-| 反应热 | $-\Delta H$ | $5 \times 10^4$ | J/mol |
-| 传热系数×面积 | $UA$ | 5000 | W/K |
-| 频率因子 | $k_0$ | $7.2 \times 10^{10}$ | 1/min |
-| 活化能/气体常数 | $E/R$ | $10^4$ | K |
-| 进料浓度 | $C_{Af}$ | 1.0 | mol/L |
-| 进料温度 | $T_f$ | 350 | K |
+参数量级与守恒形式参考[J. C. Kantor公开CSTR教学模型](https://jckantor.github.io/cbe30338-book/notebooks/02.07-Exothermic-CSTR.html)。本课把频率因子微调为$e^{25}$以得到精确平衡，增加流量操纵与自构MPC，不能称为该资料控制结果的复现。
 
-**稳态工作点**（高转化率稳态）：
+新名义点为$(C_{A0},T_0,F_0,T_{c0})=(0.5,350,100,300)$。质量项$1\times(1-0.5)-1\times0.5=0$；能量中反应放热与夹套散热相等，$\dot T=0$。必须先验这个平衡，才能省略增量模型的常数漂移项。
 
-| 变量 | 稳态值 | 含义 |
-|------|--------|------|
-| $C_{A0}$ | 0.5 mol/L | 反应物浓度（进料 1.0，反应消耗一半） |
-| $T_0$ | 400 K（127°C） | 反应温度 |
-| $F_0$ | 10 L/min | 进料流量 |
-| $T_{c0}$ | 300 K | 冷却水温度 |
+旧稿的$(0.5,400,10,300)$不满足原参数的平衡；按一致的J/min单位复算，$\dot C_A\approx-0.449966$mol/(L·min)、$\dot T\approx-70.789881$K/min。旧$UA=5000$W/K必须乘60转为J/(min·K)，不能直接与分钟动力学相加。本期撤回该工作点及其派生矩阵、时常和仿真表；原稿与缺陷记录保存在本课验收档案。
 
 ### 线性化
 
-定义增量变量：$\delta x = x - x_0$，$\delta u = u - u_0$，$\delta y = y - y_0$。
-
-在工作点 $(x_0, u_0)$ 处做 Taylor 展开，保留一阶项：
+令$\delta x=(C_A-0.5,T-350)^{\mathsf T}$，$\delta u=(F-100,T_c-300)^{\mathsf T}$。在新平衡点求Jacobian：
 
 $$
-\delta \dot{x} = A_c \delta x + B_c \delta u
-$$
-$$
-\delta y = C_c \delta x
+\mathbf A_c=\begin{bmatrix}-2&-1/28\\50000/239&-1+(50000/239)/28-50000/23900\end{bmatrix},\quad
+\mathbf B_c=\begin{bmatrix}0.005&0\\0&50000/23900\end{bmatrix}.
 $$
 
-其中 $A_c = \frac{\partial f}{\partial x}\big|_{x_0, u_0}$，$B_c = \frac{\partial f}{\partial u}\big|_{x_0, u_0}$。
-
-**计算 $A_c$**：
-
-令 $r_0 = k_0 e^{-E/(RT_0)} C_{A0}$ 为稳态反应速率，$\alpha = \frac{E}{RT_0^2}$ 为温度灵敏度系数。
-
-$$
-A_c = \begin{bmatrix} -\frac{F_0}{V} - r_0/C_{A0} & -V \cdot k_0 e^{-E/(RT_0)} \cdot C_{A0} \cdot \alpha / V \\ \frac{(-\Delta H)}{\rho C_p} \cdot \frac{r_0}{C_{A0}} & -\frac{F_0}{V} + \frac{(-\Delta H)}{\rho C_p} \cdot k_0 e^{-E/(RT_0)} \cdot C_{A0} \cdot \alpha - \frac{UA}{\rho C_p V} \end{bmatrix}
-$$
-
-代入数值（$r_0 = k_0 e^{-E/(RT_0)} C_{A0}$，$\alpha = E/(RT_0^2) = 10^4/400^2 = 0.0625$ K$^{-1}$）：
-
-先算 $k_0 e^{-E/(RT_0)} = 7.2 \times 10^{10} \times e^{-10^4/400} = 7.2 \times 10^{10} \times e^{-25}$。
-
-$e^{-25} \approx 1.39 \times 10^{-11}$，所以 $k_0 e^{-E/(RT_0)} \approx 7.2 \times 10^{10} \times 1.39 \times 10^{-11} \approx 1.0$ 1/min。
-
-$r_0 = 1.0 \times 0.5 = 0.5$ mol/(L·min)。
-
-$$
-A_c \approx \begin{bmatrix} -0.1 - 1.0 & -0.0625 \times 1.0 \times 0.5 \\ \frac{5\times 10^4}{4180} \times 1.0 & -0.1 + \frac{5\times 10^4}{4180} \times 1.0 \times 0.5 \times 0.0625 - \frac{5000}{418000} \end{bmatrix}
-$$
-
-> 💡 注意单位统一：$\rho C_p V = 1000 \times 4.18 \times 100 = 4.18 \times 10^5$ J/K，$UA = 5000$ W/K = $5000 \times 60 = 3 \times 10^5$ J/(min·K)。
-
-简化后（具体数值在仿真代码中精确计算）：
-
-$$
-A_c \approx \begin{bmatrix} -1.1 & -0.031 \\ 11.96 & -0.12 \end{bmatrix}
-$$
-
-**计算 $B_c$**：
-
-$$
-B_c = \begin{bmatrix} \frac{C_{Af} - C_{A0}}{V} & 0 \\ \frac{\rho C_p(T_f - T_0)}{\rho C_p V} & \frac{UA}{\rho C_p V} \end{bmatrix} = \begin{bmatrix} \frac{C_{Af} - C_{A0}}{V} & 0 \\ \frac{T_f - T_0}{V} & \frac{UA}{\rho C_p V} \end{bmatrix}
-$$
-
-代入数值：
-
-$$
-B_c \approx \begin{bmatrix} 0.005 & 0 \\ -0.005 & 0.012 \end{bmatrix}
-$$
-
-$$
-C_c = I_2 = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
-$$
-
-> 💡 **观察 $A_c$ 的结构**：
-> - $A_c(2,1) = 11.96 \gg A_c(1,2) = -0.031$：浓度对温度的影响远大于温度对浓度的影响（在**这个**工作点）。但温度对浓度的影响通过 Arrhenius 项间接存在。
-> - $A_c(2,2) = -0.12$：温度的自反馈较弱（接近不稳定），这是放热反应的特征。
+温度对反应的导数含$k(T)C_A(E/R)/T^2$；流量对温度的直接导数为$(T_f-T_0)/V$，此点恰为0，但仍可经浓度间接影响温度。$\mathbf A_c(2,2)\approx4.379558$，不能沿用旧稿的$-0.12$。
 
 ## 离散化与预测模型
 
 ### 连续→离散
 
-采样周期 $T_s = 0.1$ min（6 秒）。用零阶保持器离散化：
+$T_s=0.1$min，即6秒。对线性模型使用零阶保持的矩阵指数，合并计算
 
 $$
-A_d = e^{A_c T_s} \approx I + A_c T_s = \begin{bmatrix} 1 - 0.11 & -0.0031 \\ 1.196 & 1 - 0.012 \end{bmatrix} = \begin{bmatrix} 0.89 & -0.003 \\ 1.196 & 0.988 \end{bmatrix}
+\exp\left(T_s\begin{bmatrix}\mathbf A_c&\mathbf B_c\\\mathbf0&\mathbf0\end{bmatrix}\right)
+=\begin{bmatrix}\mathbf A_d&\mathbf B_d\\\mathbf0&\mathbf I\end{bmatrix}.
 $$
 
+得到近似显示值
+
 $$
-B_d = \left(\int_0^{T_s} e^{A_c \tau} d\tau\right) B_c \approx B_c T_s = \begin{bmatrix} 0.0005 & 0 \\ -0.0005 & 0.0012 \end{bmatrix}
+\mathbf A_d\approx\begin{bmatrix}0.780702402&-0.004040808\\23.670004331&1.502502277\end{bmatrix},\quad
+\mathbf B_d\approx\begin{bmatrix}0.000446868&-0.000405504\\0.005677055&0.259408262\end{bmatrix}.
 $$
 
-验证：$A_d$ 的特征值应在单位圆内（开环稳定）。$|\lambda| = |0.89 \times 0.988 + 0.003 \times 1.196| \approx 0.88 < 1$ ✓
+离散特征值约0.955584和1.327621，**开环不稳定**。行列式是特征值乘积，不是最大特征值模；$\mathbf I+T_s\mathbf A_c$是前向Euler近似，也不是精确ZOH。
 
 ### 增广预测模型
 
-采用增量形式（[预测模型建立](/mpc/prediction-model)中推导），定义 $\Delta x(k) = x(k) - x(k-1)$，$\Delta u(k) = u(k) - u(k-1)$：
+若以未来输入变化$\Delta u$为决策，需保留当前已执行输入。可用$z_k=(\delta x_k,\delta u_{k-1})$增广，再递推$z_{k+1}=\mathbf A_az_k+\mathbf B_a\Delta u_k$。堆叠后为$Y=\mathbf F_az_k+\mathbf\Phi_a\Delta U$，不是把$\delta x$误当作$\Delta x$。
+
+一般状态直接预测时，$N_p=20,N_u=5$、两输出两输入给$\mathbf F_x$维数40×2、输入预测矩阵40×10；若用上述四维增广态，自由项矩阵应为40×4。增量决策的响应系数须累加过去输入的持续作用，不能照搬绝对输入脉冲响应。
+
+本课可运行版本取$N_u=1$：本拍新输入在整个预测窗内保持不变，仍优化两个自由变量$v=\Delta u_k$。令$\mathbf S_j=\sum_{l=0}^{j-1}\mathbf A_d^l\mathbf B_d$，则
 
 $$
-\Delta x(k+1) = A_d \Delta x(k) + B_d \Delta u(k)
+\delta x_{k+j|k}=\mathbf A_d^j\delta x_k+\mathbf S_j\delta u_{k-1}+\mathbf S_jv.
 $$
 
-预测矩阵（$N_p = 20, N_u = 5$）：
+这是明确的控制分块，降低了自由度，不声称等于原$N_u=5$控制器。
 
-$$
-F_e = \begin{bmatrix} A_d \\ A_d^2 \\ \vdots \\ A_d^{N_p} \end{bmatrix}, \quad \Phi_e = \begin{bmatrix} B_d & 0 & \cdots & 0 \\ A_d B_d & B_d & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots \\ \sum_{i=1}^{N_p} A_d^{i-1} B_d & \sum_{i=1}^{N_p-1} A_d^{i-1} B_d & \cdots & B_d \end{bmatrix}
-$$
+<JupyterNotebook title="平衡、Jacobian、ZOH与历史题核验" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from scipy.optimize import minimize,LinearConstraint,linprog,nnls
+from scipy.integrate import solve_ivp
 
-维度：$F_e$ 是 $(2N_p) \times 2 = 40 \times 2$，$\Phi_e$ 是 $(2N_p) \times (2N_u) = 40 \times 10$。
+beta=50000/239;gamma=50000/23900
+Ac=np.array([[-2.,-1/28],[beta,-1+beta/28-gamma]])
+Bc=np.array([[.005,0],[0,gamma]])
+block=np.zeros((4,4));block[:2,:2]=Ac;block[:2,2:]=Bc
+disc=expm(.1*block);Ad=disc[:2,:2];Bd=disc[:2,2:]
+defaults=dict(N=10,q=1.,r=1.,step=2.,rate=2.,feed=.9)
+def derivative(x,u,feed=1.):
+    ca,T=x;F,Tc=u;k=np.exp(25-8750/T)
+    return np.array([F/100*(feed-ca)-k*ca,F/100*(350-T)+beta*k*ca-gamma*(T-Tc)])
+
+def problem(x,previous,c):
+    A=np.eye(2);S=np.zeros((2,2));base=[];gain=[];du=previous-np.array([100,300])
+    for j in range(c['N']):A=Ad@A;S=Ad@S+Bd;base.append(A@(x-np.array([.5,350]))+S@du);gain.append(S.copy())
+    base=np.array(base);gain=np.array(gain);target=np.array([0,c['step']]);Q=np.diag([400*c['q'],.04*c['q']]);R=np.diag([.01*c['r'],.04*c['r']])
+    lower=np.maximum(np.array([80,280])-previous,-c['rate']);upper=np.minimum(np.array([120,320])-previous,c['rate'])
+    G=np.vstack([np.eye(2),-np.eye(2),gain[:,1,:]]);h=np.r_[upper,-lower,5-base[:,1]]
+    def objective(v):
+        errors=base+gain@v-target
+        return np.einsum('ni,ij,nj->',errors,Q,errors)+v@R@v
+    def jac(v):return 2*np.einsum('nki,kl,nl->i',gain,Q,base+gain@v-target)+2*R@v
+    return dict(base=base,gain=gain,G=G,h=h,objective=objective,jac=jac)
+
+def original_plan(x,previous,c):
+    p=problem(x,previous,c);feas=linprog(np.zeros(2),A_ub=p['G'],b_ub=p['h'],bounds=[(None,None)]*2,method='highs')
+    if not feas.success:return None
+    ans=minimize(p['objective'],feas.x,jac=p['jac'],constraints=[LinearConstraint(p['G'],-np.inf,p['h'])],method='SLSQP',options=dict(ftol=1e-10,maxiter=500))
+    # Polish the active set found by SLSQP using the original residual-gradient KKT system.
+    f=p['jac'](np.zeros(2));H=np.column_stack([p['jac'](e)-f for e in np.eye(2)])
+    active=np.flatnonzero(p['h']-p['G']@ans.x<1e-5);Ga=p['G'][active]
+    K=np.block([[H,Ga.T],[Ga,np.zeros((len(active),len(active)))]])
+    solution=np.linalg.lstsq(K,np.r_[-f,p['h'][active]],rcond=None)[0];v=solution[:2]
+    assert max(p['G']@v-p['h'])<1e-7,(ans.message,x,c)
+    _,res=nnls(Ga.T,-p['jac'](v)) if len(active) else ([],np.linalg.norm(p['jac'](v)))
+    assert res<1e-6,(ans.message,res,x,c)
+    return dict(v=v,u=previous+v,cost=p['objective'](v),pred=p['base']+p['gain']@v+np.array([.5,350]),problem=p)
+
+def simulate(c=defaults):
+    x=np.array([.5,350.]);previous=np.array([100.,300.]);states=[x.copy()];controls=[];plans=[]
+    for k in range(40):
+        p=original_plan(x,previous,c)
+        if p is None:return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=k)
+        feed=c['feed'] if k>=20 else 1.
+        sol=solve_ivp(lambda t,z:derivative(z,p['u'],feed),(0,.1),x,method='DOP853',rtol=1e-11,atol=1e-12)
+        assert sol.success;x=sol.y[:,-1];previous=p['u'];states.append(x.copy());controls.append(previous.copy());plans.append(p)
+    return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=None)
+`} cells={[{title:"1",code:`from scipy.optimize._numdiff import approx_derivative
+balance=derivative(np.array([.5,350]),np.array([100,300]))
+jx=approx_derivative(lambda x:derivative(x,np.array([100,300])),np.array([.5,350.]),method='cs')
+ju=approx_derivative(lambda u:derivative(np.array([.5,350]),u),np.array([100.,300.]),method='cs')
+assert np.allclose(balance,0,atol=1e-12) and np.allclose(jx,Ac,atol=1e-10) and np.allclose(ju,Bc,atol=1e-10)
+print('balance',balance);print('Ac',Ac);print('Bc',Bc);print('Ad',Ad);print('Bd',Bd);print('discrete_eigenvalues',np.linalg.eigvals(Ad))
+oldk=7.2e10*np.exp(-25);old_ca=.1*.5-oldk*.5
+old_heat=-5+50000/4180*oldk*.5-300000/418000*100
+print('old_claimed_steady_residual',old_ca,old_heat,'old_B21',-50/100)
+assert abs(old_ca)>.4 and abs(old_heat)>70
+print('balance_jacobian_zoh_checked')`},{title:"2",code:`def scalar_balance(T):
+    k=np.exp(25-8750/T);ca=1/(1+k)
+    return 350-T+beta*k*ca-gamma*(T-300)
+from scipy.optimize import brentq
+grid=np.linspace(280,450,1701);roots=[]
+for a,b in zip(grid[:-1],grid[1:]):
+    if scalar_balance(a)==0:roots.append(a)
+    elif scalar_balance(a)*scalar_balance(b)<0:roots.append(brentq(scalar_balance,a,b))
+roots=np.array(sorted(set(round(v,8) for v in roots)))
+print('fixed_input_equilibria',[ (float(T),float(1/(1+np.exp(25-8750/T)))) for T in roots])
+assert any(abs(roots-350)<1e-6)
+rate400=7.2e10*np.exp(-10000/400);rate450=7.2e10*np.exp(-10000/450)
+print('historical_exercise1',rate400,rate450,'exponent_difference',10000*(1/400-1/450),'derivative_abs',.5*rate400*10000/400**2,.5*rate450*10000/450**2)
+print('exercise2_Q',[100,.25],'R',[1/9,.01],'temperature_priority_Q',[100,.5])
+print('exercise4_temperature_derivative_gap',.2*Ac[1,0]*.01,-.2*Ac[1,0]*.01)
+fig,ax=plt.subplots(figsize=(8,3));ax.plot(grid,[scalar_balance(T) for T in grid]);ax.axhline(0,color='black');ax.scatter(roots,[0]*len(roots));ax.set(xlim=(280,450),ylim=(-100,100),xlabel='T(K)',ylabel='steady energy residual K/min');ax.grid(True);plt.tight_layout();plt.show()
+print('equilibria_and_exercises_checked')`}]} />
 
 ## MPC 控制器设计
 
 ### 权重选择（Bryson 规则）
 
-**目标**：温度偏差 $\leq 5$ K，浓度偏差 $\leq 0.05$ mol/L，控制量变化 $\Delta F \leq 2$ L/min，$\Delta T_c \leq 5$ K。
+按允许偏差作尺度归一，$Q_{ii}=1/e_{i,\max}^2$、$R_{jj}=1/\Delta u_{j,\max}^2$可作为起点，不是性能或安全定理。默认$\mathbf Q=\operatorname{diag}(400,0.04)$，对应浓度尺度0.05、温度尺度5；$\mathbf R=\operatorname{diag}(0.01,0.04)$，对应输入变化尺度10和5。尺度不等于硬约束，本实验硬变化限另设每通道2。
 
-Bryson 规则：$Q_{ii} = 1/x_{i,\max}^2$，$R_{jj} = 1/u_{j,\max}^2$。
-
-$$
-Q = \begin{bmatrix} 1/0.05^2 & 0 \\ 0 & 1/5^2 \end{bmatrix} = \begin{bmatrix} 400 & 0 \\ 0 & 0.04 \end{bmatrix}
-$$
-
-$$
-R = \begin{bmatrix} 1/2^2 & 0 \\ 0 & 1/5^2 \end{bmatrix} = \begin{bmatrix} 0.25 & 0 \\ 0 & 0.04 \end{bmatrix}
-$$
-
-> 💡 **物理含义**：$Q_{11} = 400 \gg Q_{22} = 0.04$——浓度的权重远大于温度？这看起来反直觉。原因是 Bryson 规则基于"最大允许偏差"：浓度只允许偏差 0.05（很严格），温度允许偏差 5 K（相对宽松）。如果想让温度控制更重要，可以增大 $Q_{22}$。
-
-**调参策略**：Bryson 规则给出起点，然后根据仿真结果调整。通常：
-1. 先让 $Q$ 和 $R$ 都较小，看系统响应
-2. 如果响应太慢，增大 $Q$（更积极地消除偏差）
-3. 如果控制量太大，增大 $R$（更温和地控制）
-4. 如果某个输出更重要，增大对应的 $Q_{ii}$
+原始权重400与0.04不能按数值大小直接解释为浓度比温度“重要一万倍”：变量单位不同。先固定归一尺度，再谈相对优先级。
 
 ### QP 构造
 
-代价函数：
+用固定参考$r=(0,\Delta T_{sp})$，目标为
 
 $$
-J = \sum_{i=1}^{N_p} \delta y(k+i)^T Q \delta y(k+i) + \sum_{i=0}^{N_u-1} \Delta u(k+i)^T R \Delta u(k+i)
+J(v)=\sum_{j=1}^{N_p}\|\delta x_{k+j|k}-r\|_{\mathbf Q}^2+v^{\mathsf T}\mathbf Rv
+=\tfrac12v^{\mathsf T}\mathbf Hv+f^{\mathsf T}v+c.
 $$
 
-$$
-= \Delta U^T (\Phi_e^T \bar{Q} \Phi_e + \bar{R}) \Delta U + 2 (F_e \Delta x(k))^T \bar{Q} \Phi_e \Delta U
-$$
+$\mathbf H=2(\mathbf G^{\mathsf T}\bar{\mathbf Q}\mathbf G+\mathbf R)$正定，$\mathbf G$由$\mathbf S_j$堆叠。线性项必须含自由预测、已执行输入与参考，不能把设定值只从当前状态中减掉后再乘所有$\mathbf A_d^j$。
 
-其中 $\bar{Q} = \text{blkdiag}(Q, Q, \ldots, Q)$（$N_p$ 块），$\bar{R} = \text{blkdiag}(R, R, \ldots, R)$（$N_u$ 块）。
+参考不是自动可达稳态；这里未加积分扰动模型、稳态目标优化或终端稳定证书。有限时域与模型失配下可以留有偏差。
 
-$$
-H = 2(\Phi_e^T \bar{Q} \Phi_e + \bar{R}), \quad f = 2 \Phi_e^T \bar{Q} F_e \Delta x(k)
-$$
+
+<span id="输入约束"></span>
+<span id="输入变化率约束"></span>
+<span id="输出约束温度安全极限"></span>
 
 ## 约束设置
 
-### 输入约束
+### 输入约束与输入变化率约束
 
-进料流量：$5 \leq F \leq 20$ L/min → 增量约束 $-5 \leq \Delta F + F_0 \leq 15$ → 在工作点附近：
+硬幅值为$80\le F\le120$L/min、$280\le T_c\le320$K；默认每拍$|v_1|,|v_2|\le2$，两通道分别用L/min和K计。把$u_{k-1}+v$代入幅值界，与变化率区间取交；输入偏差$\delta u$和输入变化$v$不能混用。
 
-$$
-\Delta F_{\min} = 5 - 10 = -5 \text{ L/min}, \quad \Delta F_{\max} = 20 - 10 = 10 \text{ L/min}
-$$
+### 输出约束（温度运行上限）
 
-冷却水温度：$280 \leq T_c \leq 350$ K → $\Delta T_{c,\min} = -20$ K，$\Delta T_{c,\max} = 50$ K。
-
-### 输入变化率约束
-
-$$
-|\Delta F| \leq 2 \text{ L/min/step}, \quad |\Delta T_c| \leq 5 \text{ K/step}
-$$
-
-### 输出约束（温度安全极限）
-
-$$
-T \leq 450 \text{ K} \implies \delta T \leq 450 - 400 = 50 \text{ K}
-$$
-
-通过预测矩阵传递到输入空间（[约束处理](/mpc/constraint-handling)中的方法）：
-
-$$
-C_x \Phi_e \Delta U \leq \delta T_{\max} \mathbf{1} - C_x F_e \Delta x(k)
-$$
+每个名义预测点满足$T_{k+j|k}\le355$，即对$v$的线性半空间。它确实进入QP，而不是求解后仅检查或把真实温度截断。若QP不可行，页面停止批准新动作并保留此前轨迹；这不是装置的安全回退实现。
 
 ### 合并约束矩阵
 
-$$
-A_{\text{ineq}} = \begin{bmatrix} A_{\text{input}} \\ A_{\text{rate}} \\ A_{\text{output}} \end{bmatrix}, \quad b_{\text{ineq}} = \begin{bmatrix} b_{\text{input}} \\ b_{\text{rate}} \\ b_{\text{output}} \end{bmatrix}
-$$
-
-总约束行数：$2 \times 2N_u$（输入幅值）$+ 2 \times 2N_u$（变化率）$+ N_p$（温度上限）$= 4 \times 10 + 20 = 60$ 行。
+一般两输入、$N_u=5,N_p=20$，若分别保留幅值/变化率两侧界和每拍温度上界，共$4N_u+4N_u+N_p=60$行。当前分块两变量先把幅值与变化率取交，保留4条盒面，再加$N_p$条温度面；默认10步共14行。数值容差单独检查，不能把小残差当成精确定理。
 
 ## 闭环仿真
 
 ### 仿真场景
 
-**场景 1：设定值跟踪** — 温度设定值从 400 K 阶跃到 410 K（+10 K）
-
-**场景 2：干扰抑制** — 进料浓度 $C_{Af}$ 从 1.0 下降到 0.9（-10%），观察 MPC 如何补偿
+默认从严格平衡点出发，0拍温度参考跳到352K并持续；第20拍，即2分钟起，进料浓度降至0.9并持续。名义预测仍使用1，反映未建模的进料扰动。无扰动跟踪和零阶跃/无扰动作为另外两工况。每拍求原QP、只执行首输入，非线性对象在该输入下积分0.1min。
 
 ### 仿真结果
 
-<JupyterNotebook
-  language="python"
-  setupCode={`import numpy as np
+React对象用RK4内部步长0.0025min，Notebook对象用DOP853；独立核验还用相同已执行输入复算对象，不改温度、不重设参考、不把扰动只施加一拍。40拍即4分钟，报告的是采样值而非稳态或连续峰值。
+
+默认首输入约$F=101.019262$、$T_c=300.055848$，4分钟末温度约347.251350K，采样温度峰值350.606391K，温度平方误差的右端采样积分近似32.743744K²·min。无扰动跟踪末温度351.396178K，零阶跃/无扰动保持350K。默认持续扰动留下明显偏差，不能宣称实现无差抑制。
+
+<CstrMpcExplorer />
+
+<JupyterNotebook title="原受限QP与未截断非线性闭环" setupCode={`import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
-  cells={[
-    {
-      code: `# ===== CSTR MPC 完整闭环仿真 =====
-from ipywidgets import interact, FloatSlider, IntSlider, Checkbox
+from scipy.linalg import expm
+from scipy.optimize import minimize,LinearConstraint,linprog,nnls
+from scipy.integrate import solve_ivp
 
-# ---- CSTR 非线性模型 ----
-V = 100.0       # L
-rho = 1000.0    # kg/m3
-Cp = 4.18       # kJ/(kg·K) = 4180 J/(kg·K)
-dH = 50000.0    # J/mol
-UA = 5000.0     # W/K = 5 J/(s·K) = 300 J/(min·K)
-k0 = 7.2e10     # 1/min
-ER = 1e4        # K (E/R)
-Caf = 1.0       # mol/L
-Tf = 350.0      # K
+beta=50000/239;gamma=50000/23900
+Ac=np.array([[-2.,-1/28],[beta,-1+beta/28-gamma]])
+Bc=np.array([[.005,0],[0,gamma]])
+block=np.zeros((4,4));block[:2,:2]=Ac;block[:2,2:]=Bc
+disc=expm(.1*block);Ad=disc[:2,:2];Bd=disc[:2,2:]
+defaults=dict(N=10,q=1.,r=1.,step=2.,rate=2.,feed=.9)
+def derivative(x,u,feed=1.):
+    ca,T=x;F,Tc=u;k=np.exp(25-8750/T)
+    return np.array([F/100*(feed-ca)-k*ca,F/100*(350-T)+beta*k*ca-gamma*(T-Tc)])
 
-def cstr_derivative(CA, T, F, Tc):
-    """CSTR 非线性动态方程"""
-    k = k0 * np.exp(-ER / T)
-    dCA = (F / V) * (Caf - CA) - k * CA
-    dT = (F / V) * (Tf - T) + (dH / (rho * Cp)) * k * CA - (UA / (rho * Cp * V)) * (T - Tc)
-    return dCA, dT
+def problem(x,previous,c):
+    A=np.eye(2);S=np.zeros((2,2));base=[];gain=[];du=previous-np.array([100,300])
+    for j in range(c['N']):A=Ad@A;S=Ad@S+Bd;base.append(A@(x-np.array([.5,350]))+S@du);gain.append(S.copy())
+    base=np.array(base);gain=np.array(gain);target=np.array([0,c['step']]);Q=np.diag([400*c['q'],.04*c['q']]);R=np.diag([.01*c['r'],.04*c['r']])
+    lower=np.maximum(np.array([80,280])-previous,-c['rate']);upper=np.minimum(np.array([120,320])-previous,c['rate'])
+    G=np.vstack([np.eye(2),-np.eye(2),gain[:,1,:]]);h=np.r_[upper,-lower,5-base[:,1]]
+    def objective(v):
+        errors=base+gain@v-target
+        return np.einsum('ni,ij,nj->',errors,Q,errors)+v@R@v
+    def jac(v):return 2*np.einsum('nki,kl,nl->i',gain,Q,base+gain@v-target)+2*R@v
+    return dict(base=base,gain=gain,G=G,h=h,objective=objective,jac=jac)
 
-# ---- 线性化 ----
-CA0 = 0.5
-T0 = 400.0
-F0 = 10.0
-Tc0 = 300.0
+def original_plan(x,previous,c):
+    p=problem(x,previous,c);feas=linprog(np.zeros(2),A_ub=p['G'],b_ub=p['h'],bounds=[(None,None)]*2,method='highs')
+    if not feas.success:return None
+    ans=minimize(p['objective'],feas.x,jac=p['jac'],constraints=[LinearConstraint(p['G'],-np.inf,p['h'])],method='SLSQP',options=dict(ftol=1e-10,maxiter=500))
+    # Polish the active set found by SLSQP using the original residual-gradient KKT system.
+    f=p['jac'](np.zeros(2));H=np.column_stack([p['jac'](e)-f for e in np.eye(2)])
+    active=np.flatnonzero(p['h']-p['G']@ans.x<1e-5);Ga=p['G'][active]
+    K=np.block([[H,Ga.T],[Ga,np.zeros((len(active),len(active)))]])
+    solution=np.linalg.lstsq(K,np.r_[-f,p['h'][active]],rcond=None)[0];v=solution[:2]
+    assert max(p['G']@v-p['h'])<1e-7,(ans.message,x,c)
+    _,res=nnls(Ga.T,-p['jac'](v)) if len(active) else ([],np.linalg.norm(p['jac'](v)))
+    assert res<1e-6,(ans.message,res,x,c)
+    return dict(v=v,u=previous+v,cost=p['objective'](v),pred=p['base']+p['gain']@v+np.array([.5,350]),problem=p)
 
-k_val = k0 * np.exp(-ER / T0)
-alpha = ER / T0**2
+def simulate(c=defaults):
+    x=np.array([.5,350.]);previous=np.array([100.,300.]);states=[x.copy()];controls=[];plans=[]
+    for k in range(40):
+        p=original_plan(x,previous,c)
+        if p is None:return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=k)
+        feed=c['feed'] if k>=20 else 1.
+        sol=solve_ivp(lambda t,z:derivative(z,p['u'],feed),(0,.1),x,method='DOP853',rtol=1e-11,atol=1e-12)
+        assert sol.success;x=sol.y[:,-1];previous=p['u'];states.append(x.copy());controls.append(previous.copy());plans.append(p)
+    return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=None)
+`} cells={[{title:"1",code:`first=original_plan(np.array([.5,350]),np.array([100.,300.]),defaults)
+assert first is not None
+print('default_first_input',first['u'],'increment',first['v'],'cost',first['cost'],'predicted_first',first['pred'][0])
+summary=[]
+for label,patch in [('default',{}),('tracking',{'feed':1}),('zero',{'step':0,'feed':1}),('R10',{'r':10}),('step4',{'step':4})]:
+    c={**defaults,**patch};s=simulate(c);assert s['stopped'] is None
+    assert np.max(np.abs(np.diff(np.vstack([[100,300],s['u']]),axis=0)))<=c['rate']+1e-6
+    peak=s['x'][:,1].max();sse=.1*np.sum((s['x'][1:,1]-350-c['step'])**2)
+    active=np.sum(np.isclose(np.abs(np.diff(np.vstack([[100,300],s['u']]),axis=0)),c['rate'],atol=1e-6),axis=0)
+    print(label,'last',s['x'][-1],'sample_peak',peak,'temperature_SSE',sse,'rate_active_F_Tc',active)
+    summary.append((label,s))
+assert original_plan(np.array([.5,360.]),np.array([100.,300.]),defaults) is None
+print('hot_initial_qp_infeasible',True)
+fig,ax=plt.subplots(1,2,figsize=(8,3))
+for label,s in summary[:3]:
+    ax[0].plot(np.arange(len(s['x']))*.1,s['x'][:,1],label=label)
+ax[0].set(xlim=(0,4),ylim=(335,365),xlabel='min',ylabel='T(K)');ax[0].legend();ax[0].grid(True)
+s=summary[0][1];ax[1].step(np.arange(40)*.1,(s['u'][:,0]-100)/20,where='post',label='(F-100)/20');ax[1].step(np.arange(40)*.1,(s['u'][:,1]-300)/20,where='post',label='(Tc-300)/20');ax[1].set(xlim=(0,4),ylim=(-1.1,1.1),xlabel='min',ylabel='normalized input');ax[1].legend();plt.tight_layout();plt.show()
+print('original_qp_and_closed_loops_checked')`},{title:"2",code:`s=simulate();errors=np.array([s['x'][k+1]-p['pred'][0] for k,p in enumerate(s['plans'])])
+print('default_max_one_step_errors',np.max(np.abs(errors),axis=0),'sample_limit_excess',max(0,float(s['x'][:,1].max()-355)))
+assert np.all(np.isfinite(s['x']))
+# Reintegrate identical controls, not a retuned second controller.
+x=np.array([.5,350.]);half=[]
+for k,u in enumerate(s['u']):
+    sol=solve_ivp(lambda t,z:derivative(z,u,.9 if k>=20 else 1.),(0,.1),x,method='DOP853',rtol=1e-12,atol=1e-13);x=sol.y[:,-1];half.append(x.copy())
+print('independent_integrator_repeat_gap',np.max(np.abs(np.array(half)-s['x'][1:])))
+print('general_Np20_Nu5_dimensions',40,2,40,10,'uncondensed_constraint_rows',60)
+print('actual_Np10_Nu1_decisions',2,'intersected_box_plus_temperature_rows',14)
+print('third_input_B_column_symbolic','[0, -k_omega*(T0-Tc0)/(rho*Cp*V)] => 2 outputs x 3 inputs')
+print('prediction_errors_and_interfaces_checked')`}]} />
 
-# A_c 矩阵
-Ac = np.array([
-    [-F0/V - k_val, -k_val * CA0 * alpha],
-    [(dH/(rho*Cp)) * k_val, -F0/V + (dH/(rho*Cp)) * k_val * CA0 * alpha - UA/(rho*Cp*V)]
-])
 
-# B_c 矩阵
-Bc = np.array([
-    [(Caf - CA0)/V, 0],
-    [(Tf - T0)/V, UA/(rho*Cp*V)]
-])
-
-Cc = np.eye(2)
-
-# ---- 离散化 ----
-Ts = 0.1  # min
-Ad = np.eye(2) + Ac * Ts
-Bd = Bc * Ts
-
-print("离散化系统矩阵:")
-print(f"A_d = \\n{Ad}")
-print(f"B_d = \\n{Bd}")
-print(f"A_d 特征值: {np.linalg.eigvals(Ad)}")
-
-# ---- MPC 参数 ----
-Np = 20
-Nu = 5
-
-# 构建预测矩阵 (增量形式)
-F_list = []
-for i in range(1, Np + 1):
-    F_list.append(np.linalg.matrix_power(Ad, i))
-Fe = np.vstack(F_list)  # (2*Np) x 2
-
-Phi_blocks = []
-for i in range(1, Np + 1):
-    row = []
-    for j in range(Nu):
-        if j < i:
-            row.append(np.linalg.matrix_power(Ad, i - 1 - j) @ Bd)
-        else:
-            row.append(np.zeros((2, 2)))
-    Phi_blocks.append(np.hstack(row))
-Phie = np.vstack(Phi_blocks)  # (2*Np) x (2*Nu)
-
-# 权重
-Q = np.diag([400.0, 0.04])
-R_mat = np.diag([0.25, 0.04])
-
-Q_bar = np.kron(np.eye(Np), Q)
-R_bar = np.kron(np.eye(Nu), R_mat)
-
-H = 2 * (Phie.T @ Q_bar @ Phie + R_bar)
-H_inv = np.linalg.inv(H)
-
-def mpc_step(dx, du_prev, Np, Nu, Q, R_mat, Fe, Phie, H_inv,
-             du_min, du_max, ddu_min, ddu_max, dy_max, setpoint_change):
-    """单步 MPC 求解（梯度投影法）"""
-    Q_bar = np.kron(np.eye(Np), Q)
-    R_bar = np.kron(np.eye(Nu), R_mat)
-
-    # 加入设定值变化（偏差形式）
-    dx_aug = dx - setpoint_change
-
-    f_vec = 2 * Phie.T @ Q_bar @ Fe @ dx_aug
-
-    H = 2 * (Phie.T @ Q_bar @ Phie + R_bar)
-
-    # 梯度投影法求解
-    dU = np.zeros(2 * Nu)
-    lr = 0.0005
-    for _ in range(1000):
-        grad = H @ dU + f_vec
-        dU = dU - lr * grad
-        # 投影到约束集
-        for _p in range(50):
-            for j in range(Nu):
-                for ch in range(2):
-                    idx = j * 2 + ch
-                    dU[idx] = np.clip(dU[idx], du_min[ch], du_max[ch])
-            # 变化率约束
-            for j in range(Nu):
-                for ch in range(2):
-                    idx = j * 2 + ch
-                    prev_val = du_prev[ch] if j == 0 else dU[(j-1)*2 + ch]
-                    dd = dU[idx] - prev_val
-                    dd = np.clip(dd, ddu_min[ch], ddu_max[ch])
-                    dU[idx] = prev_val + dd
-
-    # 输出约束（温度上限）
-    # 简化处理：直接在仿真中检查
-
-    return dU[:2]  # 返回第一个增量
-
-def simulate_mpc(Ts, N_steps, setpoint_schedule, disturbance_schedule,
-                 Q_weight_scale, R_weight_scale, use_constraints, Np_val, Nu_val):
-    """MPC 闭环仿真（使用非线性模型）"""
-    # 重新构建预测矩阵
-    Q_s = Q * Q_weight_scale
-    R_s = R_mat * R_weight_scale
-
-    F_list = []
-    for i in range(1, Np_val + 1):
-        F_list.append(np.linalg.matrix_power(Ad, i))
-    Fe_s = np.vstack(F_list)
-
-    Phi_blocks = []
-    for i in range(1, Np_val + 1):
-        row = []
-        for j in range(Nu_val):
-            if j < i:
-                row.append(np.linalg.matrix_power(Ad, i - 1 - j) @ Bd)
-            else:
-                row.append(np.zeros((2, 2)))
-        Phi_blocks.append(np.hstack(row))
-    Phie_s = np.vstack(Phi_blocks)
-
-    Q_bar = np.kron(np.eye(Np_val), Q_s)
-    R_bar = np.kron(np.eye(Nu_val), R_s)
-    H_s = 2 * (Phie_s.T @ Q_bar @ Phie_s + R_bar)
-    H_inv_s = np.linalg.inv(H_s)
-
-    du_min = np.array([-5.0, -20.0])
-    du_max = np.array([10.0, 50.0])
-    ddu_min = np.array([-2.0, -5.0])
-    ddu_max = np.array([2.0, 5.0])
-
-    CA, T = CA0, T0
-    F, Tc = F0, Tc0
-    dF_prev, dTc_prev = 0.0, 0.0
-
-    CA_traj = [CA]
-    T_traj = [T]
-    F_traj = [F]
-    Tc_traj = [Tc]
-    sp_T_traj = []
-
-    for k in range(N_steps):
-        # 设定值和干扰
-        sp_CA = 0.5  # 浓度设定值不变
-        sp_T = 400.0
-        if k in setpoint_schedule:
-            sp_T = setpoint_schedule[k]
-        sp_T_traj.append(sp_T)
-
-        Caf_k = 1.0
-        if k in disturbance_schedule:
-            Caf_k = disturbance_schedule[k]
-
-        # 当前偏差（增量形式）
-        dx = np.array([CA - CA0, T - T0])
-        du_prev = np.array([dF_prev, dTc_prev])
-        setpoint_change = np.array([sp_CA - CA0, sp_T - T0])
-
-        # MPC 求解
-        f_vec = 2 * Phie_s.T @ Q_bar @ Fe_s @ (dx - setpoint_change)
-        dU = np.zeros(2 * Nu_val)
-        lr = 0.0005
-        for _ in range(800):
-            grad = H_s @ dU + f_vec
-            dU = dU - lr * grad
-            if use_constraints:
-                for _p in range(30):
-                    for j in range(Nu_val):
-                        for ch in range(2):
-                            idx = j * 2 + ch
-                            dU[idx] = np.clip(dU[idx], du_min[ch], du_max[ch])
-                    for j in range(Nu_val):
-                        for ch in range(2):
-                            idx = j * 2 + ch
-                            prev_val = du_prev[ch] if j == 0 else dU[(j-1)*2 + ch]
-                            dd = dU[idx] - prev_val
-                            dd = np.clip(dd, ddu_min[ch], ddu_max[ch])
-                            dU[idx] = prev_val + dd
-
-        dF = dU[0]
-        dTc = dU[1]
-
-        if not use_constraints:
-            dF = np.clip(dF, -100, 100)
-            dTc = np.clip(dTc, -100, 100)
-
-        F = F0 + dF if k == 0 else F + dF
-        Tc = Tc0 + dTc if k == 0 else Tc + dTc
-
-        # 非线性仿真
-        dCA, dT_val = cstr_derivative(CA, T, F, Tc)
-        CA = CA + dCA * Ts
-        T = T + dT_val * Ts
-
-        # 安全约束（硬约束）
-        T = min(T, 450.0)
-
-        dF_prev = dF
-        dTc_prev = dTc
-
-        CA_traj.append(CA)
-        T_traj.append(T)
-        F_traj.append(F)
-        Tc_traj.append(Tc)
-
-    t = np.arange(N_steps + 1) * Ts
-    sp_T_traj.append(sp_T_traj[-1])
-
-    return t, np.array(CA_traj), np.array(T_traj), np.array(F_traj), np.array(Tc_traj), np.array(sp_T_traj)
-
-def plot_results(t, CA, T, F, Tc, sp_T, title_prefix):
-    fig, axes = plt.subplots(4, 1, figsize=(13, 11), sharex=True)
-
-    # 浓度
-    axes[0].plot(t, CA, 'b-', linewidth=2, label='C_A')
-    axes[0].axhline(y=0.5, color='gray', linestyle=':', alpha=0.5, label='设定值')
-    axes[0].set_ylabel('浓度 C_A (mol/L)', fontsize=11)
-    axes[0].legend(fontsize=10)
-    axes[0].grid(True, alpha=0.3)
-    axes[0].set_title(f'{title_prefix}', fontsize=13)
-
-    # 温度
-    axes[1].plot(t, T, 'r-', linewidth=2, label='T')
-    axes[1].plot(t, sp_T, 'k--', linewidth=1.5, alpha=0.7, label='设定值')
-    axes[1].axhline(y=450, color='darkred', linestyle='-', linewidth=2, alpha=0.5, label='安全极限 450K')
-    axes[1].set_ylabel('温度 T (K)', fontsize=11)
-    axes[1].legend(fontsize=10)
-    axes[1].grid(True, alpha=0.3)
-
-    # 进料流量
-    axes[2].plot(t, F, 'g-', linewidth=2, label='F')
-    axes[2].axhline(y=10, color='gray', linestyle=':', alpha=0.5, label='稳态值')
-    if '有约束' in title_prefix:
-        axes[2].axhline(y=20, color='orange', linestyle='--', alpha=0.5, label='上限 20')
-        axes[2].axhline(y=5, color='orange', linestyle='--', alpha=0.5, label='下限 5')
-    axes[2].set_ylabel('进料流量 F (L/min)', fontsize=11)
-    axes[2].legend(fontsize=10)
-    axes[2].grid(True, alpha=0.3)
-
-    # 冷却水温度
-    axes[3].plot(t, Tc, 'c-', linewidth=2, label='T_c')
-    axes[3].axhline(y=300, color='gray', linestyle=':', alpha=0.5, label='稳态值')
-    if '有约束' in title_prefix:
-        axes[3].axhline(y=350, color='orange', linestyle='--', alpha=0.5, label='上限 350K')
-        axes[3].axhline(y=280, color='orange', linestyle='--', alpha=0.5, label='下限 280K')
-    axes[3].set_ylabel('冷却水温度 T_c (K)', fontsize=11)
-    axes[3].set_xlabel('时间 (min)', fontsize=11)
-    axes[3].legend(fontsize=10)
-    axes[3].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-# ---- 场景 1：设定值跟踪 ----
-N_steps = 100
-sp_schedule = {0: 410.0}  # 温度从 400 → 410K
-dist_schedule = {}
-
-print("场景 1：设定值跟踪（温度 400K → 410K）")
-print("=" * 50)
-
-t1, CA1, T1, F1, Tc1, sp1 = simulate_mpc(Ts, N_steps, sp_schedule, dist_schedule, 1.0, 1.0, True, 20, 5)
-plot_results(t1, CA1, T1, F1, Tc1, sp1, 'MPC 有约束 — 设定值跟踪')
-
-t2, CA2, T2, F2, Tc2, sp2 = simulate_mpc(Ts, N_steps, sp_schedule, dist_schedule, 1.0, 1.0, False, 20, 5)
-plot_results(t2, CA2, T2, F2, Tc2, sp2, 'MPC 无约束 — 设定值跟踪')
-
-# ---- 场景 2：干扰抑制 ----
-sp_schedule2 = {}
-dist_schedule2 = {30: 0.9}  # 进料浓度下降 10%
-
-print("\\n场景 2：干扰抑制（进料浓度下降 10%）")
-print("=" * 50)
-
-t3, CA3, T3, F3, Tc3, sp3 = simulate_mpc(Ts, N_steps, sp_schedule2, dist_schedule2, 1.0, 1.0, True, 20, 5)
-plot_results(t3, CA3, T3, F3, Tc3, sp3, 'MPC 有约束 — 干扰抑制')`
-    },
-    {
-      code: `# ---- 交互式调参 ----
-def interactive_tuning(Q_scale, R_scale, Np_val, Nu_val, use_constraints):
-    N_steps = 100
-    sp_schedule = {0: 410.0}
-    dist_schedule = {}
-
-    t, CA, T, F, Tc, sp = simulate_mpc(Ts, N_steps, sp_schedule, dist_schedule,
-                                        Q_scale, R_scale, use_constraints, Np_val, Nu_val)
-
-    fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True)
-
-    axes[0].plot(t, T, 'r-', linewidth=2, label='温度 T')
-    axes[0].plot(t, sp, 'k--', linewidth=1.5, label='设定值')
-    axes[0].axhline(y=450, color='darkred', linestyle='-', alpha=0.3, label='安全极限')
-    axes[0].set_ylabel('温度 T (K)', fontsize=12)
-    axes[0].legend(fontsize=10)
-    axes[0].grid(True, alpha=0.3)
-    axes[0].set_title(f'Q×{Q_scale}, R×{R_scale}, Np={Np_val}, Nu={Nu_val}', fontsize=13)
-
-    axes[1].plot(t[:-1], np.diff(F), 'g-', linewidth=1.5, label='ΔF', alpha=0.7)
-    axes[1].plot(t[:-1], np.diff(Tc), 'c-', linewidth=1.5, label='ΔTc', alpha=0.7)
-    axes[1].set_ylabel('控制量变化', fontsize=12)
-    axes[1].set_xlabel('时间 (min)', fontsize=12)
-    axes[1].legend(fontsize=10)
-    axes[1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-interact(
-    interactive_tuning,
-    Q_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='Q 缩放'),
-    R_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='R 缩放'),
-    Np_val=IntSlider(value=20, min=5, max=50, step=5, description='Np'),
-    Nu_val=IntSlider(value=5, min=1, max=10, step=1, description='Nu'),
-    use_constraints=Checkbox(value=True, description='启用约束'),
-)
-print('调整 Q/R 缩放因子和时域参数，观察控制效果变化')`
-    }
-  ]}
-/>
+<span id="预测时域-npn_pnp-的选择"></span>
+<span id="控制时域-nun_unu-的选择"></span>
 
 ## 调参与分析
 
 ### 权重 Q, R 的效果
 
-| 调整 | 效果 | 副作用 |
-|------|------|--------|
-| 增大 $Q$ | 更快消除偏差，更积极的控制 | 控制量变化大，可能触达约束 |
-| 增大 $R$ | 控制量变化平缓，更温和 | 响应变慢，偏差消除慢 |
-| 增大 $Q_{22}$（温度权重） | 温度跟踪更快 | 冷却水动作更大 |
-| 增大 $Q_{11}$（浓度权重） | 浓度控制更精确 | 进料流量变化更大 |
+增大误差权重通常提高纠偏动机，增大变化惩罚通常更保守，但约束激活、耦合和模型误差可能改变闭环趋势，不能无条件保证更快、更小超调或更少活性。默认数据把$R$放大10倍后，末温度约346.963378K，采样峰值350.641953K，误差积分约36.513464；这是该确定性工况的观察，目标已变，不能拿两个不同$J$比较算法优劣。
 
-### 预测时域 $N_p$ 的选择
+### 预测时域 Np 的选择
 
-**经验法则**：$N_p T_s \geq$ 系统 settling time。
+本点开环不稳定，旧文用“慢极点−0.12”推33分钟调节时间的论证不成立。应扫预测长度、可行域、误差、动作和计算预算；滚动重算本身不保证短窗足够。页面只开放4至16步；未报告硬件墙钟期限，也不把$N_p/4$至$N_p/2$的经验比例当定理。
 
-CSTR 的开环时间常数：$A_c$ 的特征值 $\lambda_1 \approx -1.1$，$\lambda_2 \approx -0.12$ min$^{-1}$。
+### 控制时域 Nu 的选择
 
-慢时间常数 $\tau_{\text{slow}} = 1/0.12 \approx 8.3$ min。Settling time $\approx 4\tau = 33$ min。
-
-$N_p \geq 33 / 0.1 = 330$？这太大了！
-
-实际上，MPC 不需要 $N_p$ 覆盖整个 settling time——因为 MPC 是滚动的，每步都在重新优化。经验上 $N_p = 20-50$（对应 2-5 min）就足够了。
-
-> 💡 理论上的 settling time 和无约束最优控制有关，但 MPC 的滚动优化本质上是"短视"的——它只看 $N_p$ 步，但每步都重新规划。只要 $N_p$ 足够看到"主要动态"，性能就不会差太多。
-
-### 控制时域 $N_u$ 的选择
-
-$N_u$ 影响优化变量个数（$2 N_u$ 个）和计算量。$N_u$ 太小，控制器自由度不够；$N_u$ 太大，计算量大但性能改善有限。
-
-经验法则：$N_u = N_p / 4 \sim N_p / 2$。本例 $N_p = 20$，$N_u = 5$ 是合理选择。
+$N_u=1$分块减少自由变量，但可能牺牲性能和可行性。增加独立动作时必须重新构造持续输入响应与幅值/变化率约束。若要大窗多变量实现，应换适合的QP求解器，而不是把本课二维边界枚举直接放大。
 
 ### 约束活性分析
 
-仿真中观察到的约束活性：
-
-| 约束 | 设定值跟踪时 | 干扰抑制时 |
-|------|-------------|-----------|
-| 进料流量上限 | 短暂触达（前 2-3 步） | 未触达 |
-| 进料流量下限 | 未触达 | 短暂触达 |
-| 冷却水温度上限 | 短暂触达 | 未触达 |
-| 温度安全极限 | 未触达（有余量） | 未触达 |
-| 进料变化率 | 触达（前 5 步） | 触达（干扰后 3 步） |
-
-> 💡 **观察**：变化率约束是最常被触达的约束——它限制了控制器的"反应速度"。如果去掉变化率约束，响应会更快，但实际执行器跟不上。
+Notebook逐通道统计实际变化率活性，并检查每拍名义预测界；旧“前5拍必触达”“变化率最常触达”的表没有有效原实验支持，现予撤回。QP可行、KKT小、采样未越界分别说明不同事实，都不能推出连续对象永不越界。高温初态$[0.5,360]$配名义历史输入时，默认QP无解，必须报告而非裁剪硬界。
 
 ## 工程实现细节
 
 ### 状态估计
 
-本例假设全状态反馈（$C_A$ 和 $T$ 都可测）。实际中：
-- 温度 $T$：热电偶直接测量，采样快
-- 浓度 $C_A$：在线分析仪（如色谱仪），采样慢（几分钟一次）
-
-浓度测量慢 → 需要**状态估计**（卡尔曼滤波或观测器）。这正是 [卡尔曼滤波](/estimation/kalman-filter) 的应用场景。
+本实验假设浓度和温度同拍可测。实际浓度分析可能延迟；应记录观测时间戳、已执行输入并使用适当估计器，参见[移动水平估计](/mpc/mhe-fusion)。估计轨迹在约束内，不等于真实对象也在约束内。
 
 ### 模型更新
 
-线性模型只在工作点附近有效。如果工况变化大（如温度设定值从 127°C 变到 200°C），线性模型可能不准确。
-
-**解决方案**：
-1. **增益调度**：在多个工作点分别线性化，维护多个线性模型，根据当前工况切换
-2. **在线辨识**：用运行数据实时更新模型参数（递归最小二乘法）
-3. **非线性 MPC（NMPC）**：直接用非线性模型做预测——计算量大但精度高
+残差应按相同输入和相同时间窗比较。可用独立验证数据检查模型，必要时考虑增益调度、在线辨识或[NMPC](/mpc/nonlinear-mpc)，但这些方案各有可行性、局部最优和计算条件；不能仅凭换成非线性模型就声称精度或安全保证。
 
 ### 工业部署架构
 
-```
-┌─────────────────────────────────────────────┐
-│              DCS（分布式控制系统）              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │ PID 回路  │  │ 数据采集  │  │ 安全联锁  │  │
-│  └──────────┘  └──────────┘  └──────────┘  │
-└──────────────────┬──────────────────────────┘
-                   │ OPC 通信
-┌──────────────────┴──────────────────────────┐
-│            MPC 控制器（上位机）                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │ 线性模型  │  │ QP 求解器 │  │ 约束管理  │  │
-│  └──────────┘  └──────────┘  └──────────┘  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │ 状态估计  │  │ 优化监控  │  │ 日志记录  │  │
-│  └──────────┘  └──────────┘  └──────────┘  │
-└─────────────────────────────────────────────┘
-```
+<img src="/diagrams/mpc/cstr-deployment.svg" alt="测量和已执行输入进入模型QP，经残差与期限检查后交底层执行，独立保护与联锁单独设计" style={{width:"100%",maxWidth:440,height:"auto",display:"block",margin:"16px auto"}} />
 
-MPC 控制器运行在 DCS 上位的专用计算机中，每 $T_s$ 秒：
-1. 从 DCS 读取测量值
-2. 状态估计
-3. 求解 QP
-4. 把最优控制量发给 DCS 执行
-5. DCS 中的 PID 回路负责底层执行
+测量、估计、求解、批准、底层执行与执行反馈应有清楚接口。MPC可位于DCS之上，但架构取决于装置；本图是教学接口，不是工厂部署记录。
 
 ### 故障处理
 
-| 故障类型 | 处理方式 |
-|----------|----------|
-| QP 不可行 | 放松软约束 → 约束裁剪 → 切换到 PID 后备 |
-| 通信中断 | 保持最后控制量 → 切换到 PID |
-| 模型失配 | 报警 + 切换到保守参数 |
-| 传感器故障 | 用观测器估计值替代 → 切换到 PID |
+QP无解或超时、通信中断、传感器失效、模型持续失配都需预先验证的降级策略。可调整已设计为软约束的运行目标，不能随意放松物理硬界；保持最后输入或切换PID也必须先验证适用域与无扰切换，不能列作通用安全动作。独立装置保护不由优化器或绘图截断代替，本课不确定SIL等级。
+
+
+<span id="为什么-mpc-在化工中如此成功"></span>
 
 ## 深入讨论
 
-### 为什么 MPC 在化工中如此成功？
+### 为什么 MPC 适合这类过程
 
-CSTR 案例展示了 MPC 在化工中的三大优势：
-
-1. **多变量处理**：2×2 MIMO 系统，输入输出强耦合。PID 需要解耦器，MPC 天然处理。
-2. **约束处理**：温度安全极限、阀门范围、变化率限制——MPC 从设计阶段就纳入。
-3. **最优性能**：在约束允许范围内，MPC 找到最优的控制策略。
-
-化工过程几乎都有这三个特征——多变量、有约束、需要最优。这就是为什么 MPC 从 1980 年代起就成为化工过程控制的标准方法。
+已知模型中同时处理多输入、耦合输出与预测约束，是采用MPC的理由。有限窗QP只优化所写目标与模型，不能写成“实际全局最优控制”；本课未比较PID，因此不声称优于PID。能耗目标也未实现，不能把温度/动作二次费直接说成实际节能量。
 
 ### CSTR 的非线性与多稳态
 
-CSTR 的非线性方程可能有**多个稳态**。对于我们的参数，在 $T \approx 350-450$ K 范围内，可能存在两个稳态：
-- **低转化率稳态**：温度低（~350 K），浓度高（~0.8 mol/L）——反应慢，产品不合格
-- **高转化率稳态**：温度高（~400 K），浓度低（~0.5 mol/L）——反应快，产品合格
-
-工业上通常在高转化率稳态运行。但两个稳态之间的"跳跃"现象（ignition/extinction）是非线性动力学的经典话题。
-
-线性 MPC 只在一个工作点附近有效。如果需要在两个稳态之间切换，需要增益调度或非线性 MPC。
+固定$F=100,T_c=300$，质量平衡可消去$C_A=1/[1+k(T)]$，再解一维能量平衡。Notebook在280至450K扫描根并精确求交，展示该参数下的平衡点；不是凭印象给“350/400K两个稳态”。这类反应器可能存在多稳态，具体数目、稳定性和产品规格必须针对给定参数核验。
 
 ### 从线性 MPC 到非线性 MPC
 
-本课的 MPC 基于线性模型。但 CSTR 的真实动态是非线性的——Arrhenius 方程是指数关系。当偏差较大时（如设定值阶跃 20 K），线性模型的预测会偏离实际。
-
-**解决方案**：
-1. **线性 MPC + 小偏差**：限制设定值变化幅度，保证线性模型足够准确
-2. **增益调度 MPC**：在不同工作点维护多个线性模型
-3. **非线性 MPC（NMPC）**：直接用非线性模型预测，用非线性优化求解器（如 IPOPT）
+温度变化大、约束紧或工况切换时，应检查线性预测误差与实际可行性；增益调度与NMPC是候选路径，均需重新验证。对$\mathbf A_c(2,1)$的20%失配，温度误差方向随浓度偏差符号改变，没有“一般可容忍20%”结论。
 
 ## 小结
 
-1. **MPC 工程设计流程**：建模 → 线性化 → 离散化 → QP 构造 → 约束设置 → 仿真 → 调参 → 部署
-2. **CSTR 是 MPC 的经典应用**：2×2 MIMO、强耦合、多约束、非线性——完美展示 MPC 的优势
-3. **Bryson 规则**给出权重起点：$Q_{ii} = 1/x_{i,\max}^2$，$R_{jj} = 1/u_{j,\max}^2$，然后仿真调参
-4. **约束活性分析**帮助识别性能瓶颈——哪个约束最常被触达，就是"瓶颈"
-5. **工程实现**需要考虑状态估计、模型更新、故障处理、与 DCS 的通信
-6. **线性 MPC 的局限**：工作点变化大时需要增益调度或非线性 MPC
+本例把单位和平衡检查、Jacobian、精确ZOH、含历史输入的预测、硬约束QP与未截断非线性对象连成一条可复算链。输出的末样、采样峰值、拟合预测与KKT证书各有边界；默认扰动工况留有明显偏差。
 
-从整个 MPC 章节看：[原理](/mpc/mpc-principle)→[预测模型](/mpc/prediction-model)→[滚动优化](/mpc/receding-horizon)→[约束处理](/mpc/constraint-handling)→**综合案例**，五课构成了完整的 MPC 知识体系。后续课程将拓展到更高级的主题：[广义预测控制（GPC）](/mpc/generalized-predictive-control)、[非线性 MPC](/mpc/nonlinear-mpc)、[分布式 MPC](/multi-agent/distributed-mpc)。
+预测控制章节的原理、预测、滚动、约束、可行稳定性、GPC、显式MPC、NMPC、经济MPC与MHE均已有独立课程，本课只整合接口；[分布式MPC](/multi-agent/distributed-mpc)属于进一步阅读，不在本会话生产。
 
 ## 习题
 
-**习题 1**（线性化推导）
+**习题1（线性化推导）** (a)推导$\partial\dot C_A/\partial T$。(b)解释$(E/R)/T_0^2$的含义。(c)保留原题400→450K的敏感性比较，取历史核验分支$E/R=10000,k_0=7.2\times10^{10},C_A=0.5$，计算两温度处导数绝对值；这两个状态不称本课新稳态。
 
-对于 CSTR 模型，在工作点 $(C_{A0}, T_0, F_0, T_{c0})$ 处：
+**习题2（权重设计）** 允许偏差为温度2K、浓度0.1mol/L，输入变化尺度为冷却10K/拍、进料3L/min/拍。(a)按Bryson规则求$Q,R$。(b)在已归一尺度下将温度优先级加倍如何改$Q$？(c)$R$乘10后能保证超调减小吗？结合本课工况说明。
 
-(a) 推导 $\frac{\partial \dot{C}_A}{\partial T}$ 的表达式（Arrhenius 项对温度的偏导数）。
+**习题3（约束分析）** 以本课350→352K、持续进料扰动实验替代旧未验证“前5拍触达”前提。(a)为什么阶跃初期可能触达变化限，而稳态不一定触达？(b)去掉变化限会怎样，有什么风险？(c)增大$R$能保证不触达吗？应记录什么来核对？
 
-(b) 解释为什么这个偏导数中包含 $\frac{E}{RT_0^2}$ 因子，它的物理含义是什么。
+**习题4（模型失配）** 预测模型$A_c(2,1)$比真实系数小20%。(a)分别对$\delta C_A>0$和$\delta C_A<0$判断直接温度导数误差方向，并以$\delta C_A=\pm0.01$算差额。(b)能否保证稳定性不受影响？(c)如何仿真检测，为什么目标突然增大不能单独诊断模型失配？
 
-(c) 如果工作点温度从 400 K 升高到 450 K，这个偏导数会变大还是变小？为什么？
-
-**习题 2**（权重设计）
-
-CSTR 的控制目标改为：温度偏差 $\leq 2$ K，浓度偏差 $\leq 0.1$ mol/L，冷却水温度变化 $\leq 10$ K/step，进料流量变化 $\leq 3$ L/min/step。
-
-(a) 用 Bryson 规则计算 $Q$ 和 $R$。
-
-(b) 如果温度控制比浓度控制更重要（优先级 2:1），如何调整 $Q$？
-
-(c) 如果增大 $R$ 的权重 10 倍，预期控制效果会怎么变化？
-
-**习题 3**（约束分析）
-
-在设定值跟踪仿真中（温度 400 → 410 K），观察到进料变化率约束在前 5 步被触达。
-
-(a) 解释为什么变化率约束在初始阶段被触达，而在稳态时不被触达。
-
-(b) 如果去掉变化率约束，预期响应会怎么变化？有什么风险？
-
-(c) 如果增大 $R$（增大对控制量变化的惩罚），变化率约束还会被触达吗？
-
-**习题 4**（模型失配分析）
-
-假设 MPC 使用的线性模型中，$A_c(2,1)$（浓度对温度的影响系数）比真实值小了 20%。
-
-(a) 这会导致 MPC 的预测偏大还是偏小？
-
-(b) 闭环系统的稳定性会受影响吗？
-
-(c) 如何通过仿真检测模型失配？
-
-**习题 5**（工程设计）
-
-把 CSTR 从 2×2 扩展为 3×3：增加一个操纵变量——搅拌速度 $\omega$（影响传热系数 $UA = UA_0 + k_\omega \omega$）。
-
-(a) 写出新的 $B_c$ 矩阵（增加一列）。
-
-(b) 搅拌速度有什么物理约束？（提示：电机功率、机械强度）
-
-(c) 增加一个操纵变量对 MPC 的性能有什么帮助？
+**习题5（工程设计）** 增加搅拌速度$\omega$，令$UA(\omega)=UA_0+k_\omega\omega$；原两个输出保持不变。(a)写完整新增一列的$B_c$，并判断是3×3还是2×3。(b)列速度和变化率约束的物理依据。(c)增加操纵变量有什么潜在帮助，是否自动改善性能？
 
 ## 答案
 
-**答案 1**
+**答案1** (a)$\partial\dot C_A/\partial T=-k_0e^{-E/(RT)}C_A(E/R)/T^2$。(b)因子来自Arrhenius指数对温度求导，单位K$^{-1}$，需与$k(T)$一起判断总敏感性；新350K点的导数为$-1/28$。(c)历史分支中$k(400)\approx0.999932$、$k(450)\approx16.082146$，指数差$10000(1/400-1/450)=2.777778$，不是旧答的0.278。两导数绝对值约0.031248与0.397090mol/(L·min·K)，明显增加；虽然$1/T^2$变小，指数项增长更快。
 
-(a) $\dot{C}_A$ 中含 $T$ 的项是 $-k_0 e^{-E/(RT)} C_A$。对 $T$ 求偏导：
+**答案2** (a)按状态顺序浓度/温度、输入顺序流量/夹套温度，$Q=\operatorname{diag}(100,0.25)$，$R=\operatorname{diag}(1/9,0.01)$。(b)温度归一优先级加倍可取$Q'=\operatorname{diag}(100,0.5)$，不改变单位尺度。(c)较强变化惩罚通常减缓动作，但不能保证每个闭环指标单调改善。本课$R$乘10后的采样峰值350.641953高于默认350.606391，温度误差积分36.513464也高于32.743744，说明增大R没有改善这组数据的所有指标；两峰值均未超过参考，不以它们作正超调大小比较。
 
-$$
-\frac{\partial}{\partial T}\left(-k_0 e^{-E/(RT)} C_A\right) = -k_0 C_A \cdot e^{-E/(RT)} \cdot \frac{E}{RT^2}
-$$
+**答案3** (a)阶跃产生纠偏需求，可能使最优动作碰到变化限；若稳态能在可行恒定输入维持，则变化为0，但失配、不可达参考或持续扰动下不保证达到该稳态。(b)可行输入集合扩大，名义QP最优目标不增；实际对象可能更快也可能振荡、越界或超过执行器能力，不能承诺更快更好。(c)增大$R$可能使变化量更小，其他活跃约束或状态要求仍可迫使其触边；应记录逐通道幅值、每拍差分、残差、预测界及实际响应，引用Notebook实测活性而非固定“前5拍”。
 
-在工作点处：
+**答案4** (a)真实减预测的直接温度导数项为$0.2A_c(2,1)\delta C_A$。正浓度偏差时预测偏低，负偏差时预测偏高；$\pm0.01$给$\pm0.418410$K/min。后续轨迹还受耦合与闭环输入影响。(b)不能从20%这一比例推断稳定性，需要具体不确定集合、可行域和闭环分析；本课没有该证书。(c)先用相同已执行输入比较独立真对象与一步/多步预测，再扫初态/扰动/工作点，记录创新、偏差与约束、求解状态，并用独立数据验证。目标变化也可能来自参考、权重、噪声或约束，不是失配的唯一特征。
 
-$$
-\frac{\partial \dot{C}_A}{\partial T}\bigg|_0 = -k_0 C_{A0} e^{-E/(RT_0)} \cdot \frac{E}{RT_0^2}
-$$
-
-(b) $\frac{E}{RT_0^2}$ 是 Arrhenius 指数 $e^{-E/(RT)}$ 对温度的灵敏度。$E/R$ 是活化能的温度当量（K），$T_0^2$ 是当前温度的平方。这个因子越大，温度变化对反应速率的影响越大——系统对温度越"敏感"。
-
-(c) $\frac{E}{RT_0^2} = \frac{10^4}{T_0^2}$。当 $T_0 = 400$ K 时，$\frac{E}{RT_0^2} = 0.0625$。当 $T_0 = 450$ K 时，$\frac{E}{RT_0^2} = 0.0494$。
-
-偏导数的**绝对值**变小了（$1/T_0^2$ 减小）。但同时 $e^{-E/(RT_0)}$ 增大（温度越高反应越快）。总效果取决于两者的乘积：
+**答案5** (a)在所选平衡点有
 
 $$
-k_0 e^{-E/(RT_0)} \cdot \frac{E}{RT_0^2}
+B_c'=\begin{bmatrix}(C_{Af}-C_{A0})/V&0&0\\(T_f-T_0)/V&UA_0^{\mathrm{eff}}/(\rho C_pV)&-k_\omega(T_0-T_{c0})/(\rho C_pV)\end{bmatrix},
 $$
 
-在 400 K：$1.0 \times 0.0625 = 0.0625$
-在 450 K：$e^{-10^4/450}/e^{-10^4/400} = e^{10^4(1/400 - 1/450)} = e^{0.278} \approx 1.32$，所以 $k_0 e^{-E/(RT_0)} \approx 1.32$。
-
-$1.32 \times 0.0494 = 0.0652$。
-
-总效果：**略微变大**。温度升高时，虽然 $1/T_0^2$ 减小，但反应速率的增加更快（指数效应），所以温度灵敏度总体增大。
-
-**答案 2**
-
-(a) Bryson 规则：
-
-$$
-Q = \begin{bmatrix} 1/0.1^2 & 0 \\ 0 & 1/2^2 \end{bmatrix} = \begin{bmatrix} 100 & 0 \\ 0 & 0.25 \end{bmatrix}
-$$
-
-$$
-R = \begin{bmatrix} 1/3^2 & 0 \\ 0 & 1/10^2 \end{bmatrix} = \begin{bmatrix} 0.111 & 0 \\ 0 & 0.01 \end{bmatrix}
-$$
-
-(b) 温度优先级是浓度的 2 倍 → 增大 $Q_{22}$：
-
-$$
-Q' = \begin{bmatrix} 100 & 0 \\ 0 & 0.5 \end{bmatrix}
-$$
-
-$Q_{22}$ 从 0.25 增大到 0.5（2 倍）。
-
-(c) 增大 $R$ 10 倍 → 控制量变化的代价增大 → 控制器更"温和"：
-- 响应变慢（偏差消除慢）
-- 控制量变化更小（不容易触达约束）
-- 超调减小
-
-**答案 3**
-
-(a) 初始阶段：设定值阶跃 10 K，偏差大 → MPC 想要大幅改变进料流量来快速消除偏差。但变化率约束 $|\Delta F| \leq 2$ 限制了每步的变化量。稳态时：偏差为零，MPC 不需要改变控制量 → 变化率约束自然不触达。
-
-(b) 去掉变化率约束：第一步就能施加最大的控制量变化 → 响应更快，但：
-- 实际控制器（阀门）跟不上 → 模型预测和实际行为偏离
-- 阀门可能损坏（快速开关缩短寿命）
-- 可能引起振荡
-
-(c) 增大 $R$ → 代价函数中控制量变化的权重增大 → MPC 自动减少每步的控制量变化 → 变化率约束可能不再触达（因为 MPC 自己就选择了"温和"的控制策略）。但代价是响应变慢。
-
-**答案 4**
-
-(a) $A_c(2,1)$ 是浓度对温度动态的影响系数（$\frac{\partial \dot{T}}{\partial C_A}$）。如果 MPC 模型中这个值比真实值小 20%，MPC 会**低估**浓度变化对温度的影响。当浓度偏离工作点时，MPC 预测的温度变化比实际小 → 预测偏保守（温度预测偏低）。
-
-(b) 稳定性：小幅模型失配通常不影响稳定性（MPC 有鲁棒性裕度）。但如果失配太大，MPC 的预测和实际偏差过大，可能导致闭环不稳定。20% 的失配在大多数情况下是可以容忍的。
-
-(c) 检测方法：
-1. 比较 MPC 预测的温度轨迹和实际温度轨迹——如果系统性偏离（预测总是偏低或偏高），说明模型有失配
-2. 监控 QP 的目标函数值——如果突然增大，可能是模型失配导致控制效果变差
-3. 用闭环辨识方法（如递归最小二乘）在线估计模型参数，和 MPC 用的参数对比
-
-**答案 5**
-
-(a) 搅拌速度 $\omega$ 影响传热系数：$UA(\omega) = UA_0 + k_\omega \omega$。
-
-能量方程中 $\frac{\partial \dot{T}}{\partial \omega} = -\frac{k_\omega}{\rho C_p V}(T - T_c)$。
-
-新的 $B_c$ 矩阵增加第三列：
-
-$$
-B_c' = \begin{bmatrix} B_c & \begin{matrix} 0 \end{matrix} \\ \begin{matrix} \vdots \end{matrix} & \begin{matrix} -\frac{k_\omega(T_0 - T_{c0})}{\rho C_p V} \end{matrix} \end{bmatrix}
-$$
-
-第一行为 0（搅拌速度不直接影响浓度），第二行为负值（搅拌加快 → 冷却增强 → 温度下降）。
-
-(b) 搅拌速度的约束：
-- 下限：$\omega \geq \omega_{\min}$（保证混合均匀，通常 $\omega_{\min} > 0$）
-- 上限：$\omega \leq \omega_{\max}$（电机功率限制、机械强度、避免涡流吸气）
-- 变化率：$|\Delta \omega| \leq \Delta \omega_{\max}$（电机加速能力限制）
-
-(c) 增加操纵变量的帮助：
-- **更多自由度**：原来 2 个 MV 控制 2 个 CV，现在 3 个 MV 控制 2 个 CV——多余的自由度可以用来优化第三个目标（如最小化搅拌功率）
-- **更好的解耦**：进料流量主要影响浓度，冷却水温度主要影响温度，搅拌速度也主要影响温度但通过不同通道——MPC 可以利用这种差异获得更好的控制
-- **约束灵活性**：如果一个操纵变量触达约束，还有其他操纵变量可用
+其中$UA_0^{\mathrm{eff}}=UA(\omega_0)$。这是两输出/两状态、三个输入的2×3系统；若要3×3还需定义第三输出及其模型。第三列首项0、在$k_\omega>0,T_0>T_{c0}$时第二项负；若改了名义搅拌速度，还须重验平衡及全部Jacobian。(b)最小混合要求、最大电机功率/机械强度/吸气风险给上下界，驱动加速和机械限制给变化率界，具体数值须来自设备。(c)新增自由度可能用于分配冷却或优化其他目标，原优化问题在新输入可固定为旧值且不改变模型/约束时可行集不缩小；实际收益取决于独立作用、饱和、代价、时滞和新模型，不能自动保证改善。

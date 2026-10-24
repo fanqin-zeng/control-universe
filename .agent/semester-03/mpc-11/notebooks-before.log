@@ -1,0 +1,46 @@
+nb-cells.mjs verify · 根目录：D:/Workspace/control-universe-rank6-mpc11
+目标 1 门 · 内核 127.0.0.1:9136 在线
+口径：静态检查 S1–S7 判的是**求值后**的 cell 代码（浏览器按 JS 模板字面量求值后才 POST 给内核），不是 MDX 字面。
+
+──────────────────────────────────────────────────────────────────────────────
+mpc/mpc-case-study  [FAIL]  1 个 notebook · 2 个 cell
+      WARN S7  Notebook 1（:297） 传了组件没有的属性 language="python" → 被静默忽略
+      FAIL S2  Notebook 1（:297） cell 1（:305） 出现 ipywidgets 家族 3 处（ipywidgets, FloatSlider, IntSlider）→ 轻量内核不支持 widget，应改 React 交互组件
+      FAIL S2  Notebook 1（:297） cell 2（:609） 出现 ipywidgets 家族 5 处（interact(, FloatSlider, IntSlider）→ 轻量内核不支持 widget，应改 React 交互组件
+      FAIL S6  Notebook 1 cell 1（:305）执行报错 ModuleNotFoundError: No module named 'ipywidgets'
+          ---------------------------------------------------------------------------
+          ModuleNotFoundError                       Traceback (most recent call last)
+          Cell In[2], line 2
+      1 # ===== CSTR MPC 完整闭环仿真 =====
+----> 2 from ipywidgets import interact, FloatSlider, IntSlider, Checkbox
+      3 
+      4 # ---- CSTR 非线性模型 ----
+      5 V = 100.0       # L
+
+          ModuleNotFoundError: No module named 'ipywidgets'
+      FAIL S6  Notebook 1 cell 2（:609）执行报错 NameError: name 'interact' is not defined
+          ---------------------------------------------------------------------------
+          NameError                                 Traceback (most recent call last)
+          Cell In[3], line 30
+     26 
+     27     plt.tight_layout()
+     28     plt.show()
+     29 
+---> 30 interact(
+     31     interactive_tuning,
+     32     Q_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='Q 缩放'),
+     33     R_scale=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='R 缩放'),
+
+          NameError: name 'interact' is not defined
+
+══════════════════════════════════════════════════════════════════════════════
+汇总：1 门 · 1 个 notebook · 2 个 cell
+      课程级 PASS 0 · WARN 0 · FAIL 1
+      内核实跑 2 个 cell，其中 error 2 个
+      按判据：S2×2  S6×2  S7×1
+      FAIL 课程：mpc/mpc-case-study
+
+附 · fix-011 结构前提：模块级 nbSeq 计数器 ✓ newNotebookId() ✓ 无 useRef 计数器 ✓ 服务端重复 id 兜底 ✓
+    kernel id 生成方式（现读组件源码）：function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }
+
+已写出 .agent/semester-03/mpc-11/notebooks-before.json

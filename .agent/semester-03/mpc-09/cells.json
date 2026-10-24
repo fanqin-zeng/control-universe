@@ -1,0 +1,63 @@
+{
+  "source": "content/mpc/economic-mpc.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 79,
+      "title": "原QP、周期调度与预测失配",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import minimize_scalar\r\n\r\ndef cost(c,u):\r\n    x=c['x0'];v=2-u;y=x+u-1\r\n    return c['p0']*u+c['p1']*v+.5*(u*u+v*v)+.5*c['h']*(x*x+y*y)\r\n\r\ndef original(c,tracking=False):\r\n    x=c['x0'];C=c['capacity'];U=c['limit']\r\n    if x<0 or x>C:return None\r\n    # Construct the feasible interval from the six ORIGINAL input/state inequalities.\r\n    inequalities=[(-1,0),(1,U),(1,2),(-1,U-2),(-1,x-1),(1,C+1-x)]\r\n    lower=max(b/a for a,b in inequalities if a<0);upper=min(b/a for a,b in inequalities if a>0)\r\n    if lower>upper:return None\r\n    objective=(lambda u:.5*c['h']*(x*x+(x+u-1)**2)+.5*((u-1)**2+(1-u)**2)) if tracking else lambda u:cost(c,u)\r\n    if lower==upper:u=lower\r\n    else:\r\n        ans=minimize_scalar(objective,bounds=(lower,upper),method='bounded',options={'xatol':1e-12})\r\n        assert ans.success;u=min([lower,upper,ans.x],key=objective)\r\n    return dict(u=np.array([u,2-u]),x=np.array([x,x+u-1,x]),cost=cost(c,u),objective=objective(u))\r\n\r\ndefault=dict(x0=0.,capacity=2.,limit=2.,p0=1.,p1=4.,h=.2)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 102,
+          "delim": "`",
+          "code": "e=original(default);t=original(default,True)\r\nassert np.allclose(e['u'],[2,0]) and np.isclose(e['cost'],4.1)\r\nassert np.allclose(t['u'],[1,1]) and np.isclose(t['cost'],6)\r\nfor name,patch in [('default',{}),('holding4',{'h':4}),('equal',{'p1':1}),('capacity0',{'capacity':0}),('pump1',{'limit':1}),('reversed',{'p0':4,'p1':1}),('stock_reversed',{'x0':1,'p0':4,'p1':1})]:\r\n    c={**default,**patch};a=original(c);b=original(c,True)\r\n    print(name,'u=',np.round(a['u'],8),'x=',np.round(a['x'],8),'economic=',round(a['cost'],8),'tracking_economic=',round(b['cost'],8))\r\nassert original({**default,'limit':.75}) is None\r\nassert original({**default,'x0':1,'capacity':.5}) is None\r\nfig,ax=plt.subplots(1,2,figsize=(8,3))\r\nfor label,r in [('economic',e),('tracking',t)]:\r\n    ax[0].plot(range(3),r['x'],'o-',label=label);ax[1].plot(range(2),r['u'],'o-',label=label)\r\nfor a in ax:a.set_ylim(0,2.5);a.legend();a.grid(True)\r\nax[0].set(xlim=(0,2),xlabel='k',ylabel='inventory');ax[1].set(xlim=(0,1),xlabel='slot',ylabel='pumping')\r\nplt.tight_layout();plt.show()\r\nprint('original_qp_cases_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 116,
+          "delim": "`",
+          "code": "e=original(default);t=original(default,True)\r\nxe=[0.];xt=[0.];ue=[];ut=[];je=jt=0.\r\nfor cycle in range(6):\r\n    # Fixed cycle end; the remaining one-step action equals the second nominal action.\r\n    a=original({**default,'x0':xe[-1]});b=original({**default,'x0':xt[-1]},True)\r\n    xe.extend(a['x'][1:]);xt.extend(b['x'][1:]);ue.extend(a['u']);ut.extend(b['u']);je+=a['cost'];jt+=b['cost']\r\nassert np.isclose(je,24.6) and np.isclose(jt,36)\r\nactual={**default,'p0':4,'p1':1}\r\nwrong=cost(actual,e['u'][0]);blind=cost(actual,t['u'][0])\r\nassert np.isclose(wrong,10.1) and np.isclose(blind,6)\r\nprint('six_cycles',je,jt,'per_slot',je/12,jt/12)\r\nprint('wrong_price',wrong,blind,'gap',wrong-blind)\r\nprint('demand_1.25_old_terminal',1-1.25,'remaining_repair',1.25-1)\r\nprint('demand_4_required_input',4-1,'exceeds_limit',default['limit'])\r\nfig,ax=plt.subplots(figsize=(8,3));ax.plot(range(13),xe,'o-',label='economic');ax.plot(range(13),xt,'o--',label='tracking');ax.set(xlim=(0,12),ylim=(0,2.5),xlabel='hour',ylabel='inventory');ax.legend();ax.grid(True);plt.tight_layout();plt.show()\r\nprint('cycles_and_mismatch_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 191,
+      "title": "耗散恒等式与终端修正",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nfrom fractions import Fraction as F\r\ndef ell(x,u,p=2.,h=.2):return p*u+.5*u*u+.5*h*x*x\r\ndef storage(x,p=2.):return (p+1)*x\r\ndef rotated(x,u,h=.2):return .5*(u-1)**2+.5*h*x*x\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 196,
+          "delim": "`",
+          "code": "for x in np.linspace(0,2,9):\r\n    for u in np.linspace(0,2,9):\r\n        f=x+u-1\r\n        assert np.isclose(ell(x,u)-2.5+storage(x)-storage(f),rotated(x,u))\r\n        assert rotated(x,u)>=.1*x*x-1e-12\r\nx=F(1);u=F(0);h=F(1,5);price=F(2)\r\nl=price*u+u*u/2+h*x*x/2;s=(price+1)*(u-1);L=(u-1)**2/2+h*x*x/2\r\nassert l-F(5,2)==L+s\r\nprint('ell',float(l),'steady_cost',2.5,'rotated',float(L),'storage_change',float(s),'difference',float(l-F(5,2)))\r\nprint('h0_any_stock_u1', [rotated(x,1,0) for x in [0,1,2]])\r\nprint('storage_identity_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 206,
+          "delim": "`",
+          "code": "u=np.linspace(0,2,2001)\r\noriginal=2*u+.5*u*u+.1\r\nwrong=.5*(u-1)**2+.1\r\ncorrect=wrong+3*u\r\nassert np.max(np.abs(correct-original-.5))<1e-12\r\nprint('terminal_minimizers',u[np.argmin(original)],u[np.argmin(wrong)],u[np.argmin(correct)])\r\nassert [u[np.argmin(a)] for a in [original,wrong,correct]]==[0.,1.,0.]\r\nassert np.isclose(original.min(),.1) and np.isclose(wrong.min(),.1) and np.isclose(correct.min(),.6)\r\nprint('terminal_values',original.min(),wrong.min(),correct.min(),'constant_shift',.5)\r\nprint('terminal_correction_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

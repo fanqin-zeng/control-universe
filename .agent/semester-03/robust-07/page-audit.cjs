@@ -1,0 +1,27 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],kernelCalls=[];page.setDefaultTimeout(240000);page.on('pageerror',e=>errors.push(String(e)));page.on('request',r=>{if(/127\.0\.0\.1:89\d\d/.test(r.url()))kernelCalls.push(r.url());});
+ const name=process.env.ROBUST07_AUDIT_NAME||'native',url=process.env.ROBUST07_PAGE_URL||'http://127.0.0.1:20195/robust/mu-analysis';assert.equal((await page.goto(url)).status(),200);
+ await page.waitForFunction(()=>[...document.querySelectorAll('button')].filter(b=>b.textContent.includes('全部运行')).length===3,null,{timeout:240000});
+ const buttons=page.getByRole('button',{name:/全部运行/});for(let i=0;i<3;i++){await buttons.nth(i).click();await page.waitForFunction(t=>document.body.innerText.includes(t),['structure_complete','real_structure_complete','all_answers_complete'][i],{timeout:240000});}
+ const defaults=await page.getByTestId('mu-readings').innerText();assert(defaults.includes('单频μ=0.500000'));assert(defaults.includes('满块σ=2.000000'));assert(defaults.includes('可行D上界=0.500000'));assert(defaults.includes('全频鲁棒稳定半径=2.000000'));
+ for(const [label,value]of [['耦合 b','4'],['耦合 c','-1'],['缩放 d','0.05'],['观察频率','1']]){const s=page.getByRole('slider',{name:label,exact:true});await s.fill(value);await s.dispatchEvent('input');assert.notEqual(await page.getByTestId('mu-readings').innerText(),defaults);if(label==='观察频率'){const t=await page.getByTestId('mu-readings').innerText();assert(t.includes('单频μ=0.353553'));assert(t.includes('全频鲁棒稳定半径=2.000000'));}await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await page.getByTestId('mu-readings').innerText(),defaults);}
+ await page.getByRole('combobox',{name:'扰动结构'}).selectOption('full');assert(await page.getByRole('slider',{name:'缩放 d',exact:true}).isDisabled());const full=await page.getByTestId('mu-readings').innerText();assert(full.includes('单频μ=2.000000'));assert(full.includes('可行D上界=2.000000'));assert(full.includes('全频鲁棒稳定半径=0.500000'));assert((await page.getByTestId('mu-status').innerText()).includes('大于1'));
+ await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert(await page.getByRole('slider',{name:'缩放 d',exact:true}).isEnabled());
+ await page.getByRole('button',{name:'边界工况',exact:true}).click();assert((await page.getByTestId('mu-status').innerText()).includes('等于1'));
+ await page.getByRole('button',{name:'结构也失败',exact:true}).click();assert((await page.getByTestId('mu-status').innerText()).includes('大于1'));
+ await page.getByRole('button',{name:'单向耦合',exact:true}).click();assert((await page.getByTestId('mu-readings').innerText()).includes('半径=∞'));
+ await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await page.getByTestId('mu-readings').innerText(),defaults);
+ const dom=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,h2:[...document.querySelectorAll('h2')].map(h=>({id:h.id,text:h.textContent})),ids:[...document.querySelectorAll('[id]')].map(x=>x.id),links:[...document.querySelectorAll('a[href^="#"]')].map(a=>a.getAttribute('href')),katexErrors:document.querySelectorAll('.katex-error').length,images:[...document.images].map(x=>({src:x.getAttribute('src'),loaded:x.complete&&x.naturalWidth>0})),text:document.body.innerText}));
+ assert.equal(dom.h1,1);assert.equal(dom.h2.length,9);assert.equal(dom.katexErrors,0);assert.equal(new Set(dom.ids).size,dom.ids.length);for(const href of dom.links)assert(dom.ids.includes(decodeURIComponent(href.slice(1))),href);
+ const compiled=JSON.parse(fs.readFileSync('.agent/semester-03/robust-07/headings-after.json','utf8'));for(const id of compiled.ids)assert(dom.ids.includes(id),'missing ID '+id);
+ assert(dom.images.some(x=>x.loaded&&x.src.endsWith('mu-analysis-feedback.svg')));assert(dom.images.filter(x=>x.loaded&&x.src.startsWith('data:image/png')).length>=3);assert.equal(errors.length,0);
+ if(name==='native'){assert(kernelCalls.length>0);assert(kernelCalls.every(u=>u.startsWith('http://127.0.0.1:8995/')));}
+ await page.screenshot({path:'.agent/semester-03/robust-07/desktop-'+name+'.png',fullPage:true});await page.locator('section[aria-label="结构奇异值实验"]').screenshot({path:'.agent/semester-03/robust-07/explorer-'+name+'.png'});
+ await page.setViewportSize({width:375,height:812});await page.waitForTimeout(300);const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
+ fs.writeFileSync('.agent/semester-03/robust-07/browser-'+name+'.json',JSON.stringify({url,pass:mobile.scroll<=mobile.width,dom,mobile,defaults,errors,kernelCalls},null,2));assert(mobile.scroll<=mobile.width,JSON.stringify(mobile));
+ await page.screenshot({path:'.agent/semester-03/robust-07/mobile-'+name+'.png',fullPage:true});await page.locator('section[aria-label="结构奇异值实验"]').screenshot({path:'.agent/semester-03/robust-07/explorer-mobile-'+name+'.png'});
+ console.log('PASS DOM/compiled IDs/9 H2/3 notebooks 5 cells/4 sliders/structure switch/legal D disable/presets/reset/SVG/375px/no pageerror');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

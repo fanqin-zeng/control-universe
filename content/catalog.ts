@@ -5271,6 +5271,44 @@ export const catalog: Chapter[] = [
       {
         "slug": "mu-analysis",
         "title": "结构奇异值",
+        "subsections": [
+          {
+            "slug": "从定位台误差到结构问题",
+            "title": "从定位台误差到结构问题"
+          },
+          {
+            "slug": "结构集合与归一化",
+            "title": "结构集合与归一化"
+          },
+          {
+            "slug": "结构奇异值的定义",
+            "title": "结构奇异值的定义"
+          },
+          {
+            "slug": "三个可手算的结构",
+            "title": "三个可手算的结构"
+          },
+          {
+            "slug": "缩放上界与扰动下界",
+            "title": "缩放上界与扰动下界"
+          },
+          {
+            "slug": "从单频到鲁棒稳定性",
+            "title": "从单频到鲁棒稳定性"
+          },
+          {
+            "slug": "鲁棒性能与计算边界",
+            "title": "鲁棒性能与计算边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "robust/uncertainty-modeling",
           "robust/robust-performance",
@@ -5278,7 +5316,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "mu-synthesis",
@@ -5335,7 +5373,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "h-infinity-filter",
@@ -5742,72 +5780,7 @@ export const catalog: Chapter[] = [
       {
         "slug": "nonlinear-mpc",
         "title": "非线性预测控制",
-        "subsections": [
-          {
-            "slug": "为什么需要-nmpc",
-            "title": "为什么需要NMPC"
-          },
-          {
-            "slug": "非线性预测模型",
-            "title": "非线性预测模型"
-          },
-          {
-            "slug": "nmpc-优化问题",
-            "title": "NMPC优化问题"
-          },
-          {
-            "slug": "sqp-求解",
-            "title": "SQP求解"
-          },
-          {
-            "slug": "实时迭代方案",
-            "title": "实时迭代方案"
-          },
-          {
-            "slug": "lyapunov-based-nmpc",
-            "title": "Lyapunov-based NMPC"
-          },
-          {
-            "slug": "稳定性分析",
-            "title": "稳定性分析"
-          },
-          {
-            "slug": "数值例子非线性摆",
-            "title": "数值例子"
-          },
-          {
-            "slug": "多稳态系统的-nmpc",
-            "title": "多稳态系统的NMPC"
-          },
-          {
-            "slug": "交互式可视化",
-            "title": "交互式可视化"
-          },
-          {
-            "slug": "软件工具",
-            "title": "软件工具"
-          },
-          {
-            "slug": "工业应用",
-            "title": "工业应用"
-          },
-          {
-            "slug": "深入讨论",
-            "title": "深入讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+        "subsections": [{"slug": "为什么需要-nmpc", "title": "为什么需要 NMPC"}, {"slug": "非线性预测模型", "title": "非线性预测模型"}, {"slug": "nmpc-优化问题", "title": "NMPC 优化问题"}, {"slug": "sqp-求解", "title": "SQP 求解"}, {"slug": "实时迭代方案", "title": "实时迭代方案"}, {"slug": "lyapunov-based-nmpc", "title": "Lyapunov-based NMPC"}, {"slug": "稳定性分析", "title": "稳定性分析"}, {"slug": "数值例子非线性摆", "title": "数值例子：非线性摆"}, {"slug": "多稳态系统的-nmpc", "title": "多稳态系统的 NMPC"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "软件工具", "title": "软件工具"}, {"slug": "工业应用", "title": "工业应用"}, {"slug": "深入讨论", "title": "深入讨论"}, {"slug": "小结", "title": "小结"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
         "prereq": [
           "mpc/mpc-stability",
           "nonlinear/nonlinear-characteristics",
@@ -5815,7 +5788,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "economic-mpc",
@@ -5826,7 +5799,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从库存跟踪到经济目标", "title": "从库存跟踪到经济目标"}, {"slug": "经济阶段成本与最优稳态", "title": "经济阶段成本与最优稳态"}, {"slug": "两时段储水问题", "title": "两时段储水问题"}, {"slug": "一个可复算的经济计划", "title": "一个可复算的经济计划"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "耗散性与旋转成本", "title": "耗散性与旋转成本"}, {"slug": "终端项不能随意删除", "title": "终端项不能随意删除"}, {"slug": "周期运行与稳定边界", "title": "周期运行与稳定边界"}, {"slug": "实现合同与预测误差", "title": "实现合同与预测误差"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "mhe-fusion",
@@ -5837,61 +5811,13 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从带噪液位到历史轨迹", "title": "从带噪液位到历史轨迹"}, {"slug": "有限窗口的估计问题", "title": "有限窗口的估计问题"}, {"slug": "到达成本如何保存过去", "title": "到达成本如何保存过去"}, {"slug": "一个三结点qp", "title": "一个三结点QP"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "滑动更新与信息重复", "title": "滑动更新与信息重复"}, {"slug": "与卡尔曼滤波的关系", "title": "与卡尔曼滤波的关系"}, {"slug": "估计接入mpc", "title": "估计接入MPC"}, {"slug": "约束与模型失配的边界", "title": "约束与模型失配的边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "mpc-case-study",
         "title": "预测控制案例",
-        "subsections": [
-          {
-            "slug": "问题描述",
-            "title": "问题描述"
-          },
-          {
-            "slug": "建立被控对象模型",
-            "title": "建立被控对象模型"
-          },
-          {
-            "slug": "离散化与预测模型",
-            "title": "离散化与预测模型"
-          },
-          {
-            "slug": "mpc-控制器设计",
-            "title": "MPC控制器设计"
-          },
-          {
-            "slug": "约束设置",
-            "title": "约束设置"
-          },
-          {
-            "slug": "闭环仿真",
-            "title": "闭环仿真"
-          },
-          {
-            "slug": "调参与分析",
-            "title": "调参与分析"
-          },
-          {
-            "slug": "工程实现细节",
-            "title": "工程实现细节"
-          },
-          {
-            "slug": "深入讨论",
-            "title": "深入讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+        "subsections": [{"slug": "问题描述", "title": "问题描述"}, {"slug": "建立被控对象模型", "title": "建立被控对象模型"}, {"slug": "离散化与预测模型", "title": "离散化与预测模型"}, {"slug": "mpc-控制器设计", "title": "MPC 控制器设计"}, {"slug": "约束设置", "title": "约束设置"}, {"slug": "闭环仿真", "title": "闭环仿真"}, {"slug": "调参与分析", "title": "调参与分析"}, {"slug": "工程实现细节", "title": "工程实现细节"}, {"slug": "深入讨论", "title": "深入讨论"}, {"slug": "小结", "title": "小结"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
         "prereq": [
           "mpc/constraint-handling",
           "mpc/generalized-predictive-control",
@@ -5899,7 +5825,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "draft"
+        "status": "v1.3"
       }
     ]
   },

@@ -163,8 +163,8 @@
 | 11.4 | 鲁棒性能 | robust-performance | ✅ 已交付 v1.3 | grad | theory | 14 | robust/robust-stability<br>classic/frequency-domain-analysis |
 | 11.5 | H∞控制 | h-infinity-basics | ✅ 已交付 v1.3 | grad | theory | 15 | robust/robust-performance<br>modern/lqr-controller<br>math/convex-optimization |
 | 11.6 | 混合灵敏度 | mixed-sensitivity | ✅ 已交付 v1.3 | grad | theory | 16 | robust/h-infinity-basics<br>classic/frequency-response-design |
-| 11.7 | 结构奇异值 | mu-analysis | ⬜ 骨架（占位页） | advanced | theory | 15 | robust/uncertainty-modeling<br>robust/robust-performance<br>math/matrix-decomposition |
-| 11.8 | μ综合 | mu-synthesis | 🟨 有正文待审校 | advanced | theory | 16 | robust/mu-analysis<br>robust/h-infinity-basics |
+| 11.7 | 结构奇异值 | mu-analysis | ✅ 已交付 v1.3 | advanced | theory | 15 | robust/uncertainty-modeling<br>robust/robust-performance<br>math/matrix-decomposition |
+| 11.8 | μ综合 | mu-synthesis | ✅ 已交付 v1.3 | advanced | theory | 16 | robust/mu-analysis<br>robust/h-infinity-basics |
 | 11.9 | H∞滤波 | h-infinity-filter | ⬜ 骨架（占位页） | grad | theory | 16 | robust/h-infinity-basics<br>estimation/kalman-filter |
 | 11.10 | 时滞系统控制 | delay-robust-control | ⬜ 骨架（占位页） | advanced | theory | 14 | robust/robust-stability<br>nonlinear/lyapunov-stability |
 | 11.11 | 鲁棒控制案例 | robust-case-study | 🟨 有正文待审校 | grad | case | 17 | robust/mixed-sensitivity<br>robust/mu-synthesis |
@@ -180,10 +180,10 @@
 | 12.5 | 递归可行性与稳定性 | mpc-stability | ✅ 已交付 v1.3 | grad | theory | 17 | mpc/constraint-handling<br>nonlinear/lyapunov-stability |
 | 12.6 | 广义预测控制 | generalized-predictive-control | ✅ 已交付 v1.3 | grad | theory | 16 | mpc/receding-horizon<br>identification/least-squares-rls |
 | 12.7 | 显式预测控制 | explicit-mpc | ✅ 已交付 v1.3 | advanced | theory | 17 | mpc/constraint-handling<br>math/convex-optimization |
-| 12.8 | 非线性预测控制 | nonlinear-mpc | 🟨 有正文待审校 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
-| 12.9 | 经济预测控制 | economic-mpc | ⬜ 骨架（占位页） | advanced | theory | 19 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
-| 12.10 | 移动水平估计 | mhe-fusion | ⬜ 骨架（占位页） | grad | theory | 16 | mpc/receding-horizon<br>estimation/sensor-fusion |
-| 12.11 | 预测控制案例 | mpc-case-study | 🟨 有正文待审校 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
+| 12.8 | 非线性预测控制 | nonlinear-mpc | ✅ 已交付 v1.3 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
+| 12.9 | 经济预测控制 | economic-mpc | ✅ 已交付 v1.3 | advanced | theory | 19 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
+| 12.10 | 移动水平估计 | mhe-fusion | ✅ 已交付 v1.3 | grad | theory | 16 | mpc/receding-horizon<br>estimation/sensor-fusion |
+| 12.11 | 预测控制案例 | mpc-case-study | ✅ 已交付 v1.3 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
 
 ## 13. 智能控制 (intelligent)
 
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 124（status = v1.3）
-- **有正文待审校**: 5（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 76（status = empty，渲染占位页）
+- **已交付 v1.3**: 130（status = v1.3）
+- **有正文待审校**: 2（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **骨架占位**: 73（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 81（= draft 5 + empty 76 + 无 status 0）
-- **有 MDX 正文**: 129
-- **catalog 小节总数**: 1405
-- **讨论日志**: 147 篇（覆盖 124 门；有 MDX 无日志 5 门）
-- **交互组件**: 134 个文件（被正文引用 134，孤儿 0）
+- **未完成 v1.3**: 75（= draft 2 + empty 73 + 无 status 0）
+- **有 MDX 正文**: 132
+- **catalog 小节总数**: 1436
+- **讨论日志**: 153 篇（覆盖 130 门；有 MDX 无日志 2 门）
+- **交互组件**: 140 个文件（被正文引用 140，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-24T09:52:44.325Z",
-  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/implementation-case-study",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "testedAt": "2026-10-24T11:29:14.108Z",
+  "url": "http://127.0.0.1:21996/python-expansion.html?lesson=mpc/mpc-case-study",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
       "key": "math/calculus-basics",
@@ -7563,31 +7563,31 @@
     {
       "key": "robust/mu-synthesis",
       "title": "μ综合",
-      "sourceHash": "f0aead984faf849a47f23c559b24959ac10eabce8c07a6fbf0582ae973880047",
+      "sourceHash": "a4a7386359086415f5403c67d403a0c7fc81b5f2ea5c844e0a5f06c6fed18d66",
       "notebooks": [
         {
           "id": "robust/mu-synthesis#1",
           "title": "实验 1",
           "index": 1,
-          "line": 279,
+          "line": 259,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5594,
+              "milliseconds": 5997,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 标称被控对象 ===\nG(s) = 1 / (1.0s² + 0.2s + 1.0)\nω_n = 1.00 rad/s, ζ = 0.100\n\n参数网格: 11×11 = 121 个组合\n质量范围: [0.70, 1.30]\n刚度范围: [0.70, 1.30]\n"
+                  "text": "grid=121; mass/stiffness ranges=[0.7,1.3]; includes all four corners\nnominal wn=1 rad/s; zeta=0.1; LFT max absolute residual= 3.0201331455116262e-15\nphysical_model_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 184788
+                  "base64Length": 96484
                 }
               ]
             }
@@ -7597,74 +7597,103 @@
           "id": "robust/mu-synthesis#2",
           "title": "实验 2",
           "index": 2,
-          "line": 395,
+          "line": 340,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 290,
+              "milliseconds": 397,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== H∞ 混合灵敏度设计 ===\n控制器: C(s) = (5.0s + 2.0)/s\n穿越频率: 2.46 rad/s, 相位裕度: 356.3°\n||S||_∞ = 15.585 (23.85 dB)\n||T||_∞ = 15.602 (23.86 dB)\n"
+                  "text": "original PI poles= [ 0.06547156+2.4574475j  0.06547156-2.4574475j -0.33094311+0.j       ] max real= 0.06547155604689542 stable= False\nRouth: 0.2*(1+5)=1.2 < 1*2=2, so nominal PI is unstable\nfinite frequency sample max |S|= 15.584879652449212 ; not a stable H-infinity norm\novershoot, settling time, stable final value: undefined for this unstable loop\nfinite-window max |u|= 28.135920086060885 actuator target<=10: False\npi_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 106152
+                  "base64Length": 83952
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 5440,
+              "milliseconds": 275,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "============================================================\nMonte Carlo 鲁棒性验证（500 次随机采样）\n============================================================\n超调量:  min=138.8%, max=1271.0%, mean=577.0%\n调节时间: min=30.0s, max=30.0s, mean=30.0s\n||S||_∞:  min=9.703, max=56.874\n\n需求检查:\n  超调 < 30%: ✗ (max=1271.0%)\n  调节时间 < 8s: ✗ (max=30.0s)\n  ||S||_∞ < 2: ✗ (max=56.874)\n"
+                  "text": "seed=42; samples=500; unstable= 500 alpha range= 0.019381935425233365 0.09488495768435568\nwhole square: .2*(k+5)<=1.26 < m*2>=1.4, hence every allowed PI loop unstable\nNo overshoot/settling histograms: these metrics require a stable final value\nsampling_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 305760
+                  "base64Length": 124424
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 186,
+              "milliseconds": 183,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== H∞ 保守性分析 ===\n\n非结构化最坏: m=1.30, k=0.70 → ||S||_∞ = 9.584\n结构化实际最坏: m=0.71 (δm=-0.975), k=1.15 (δk=0.507)\n  → ||S||_∞ = 53.921\n\n保守性比率: 0.178（非结构化多保守 -82.2%）\n\n💡 μ 综合利用参数独立性，可以设计出性能更好的鲁棒控制器。\n"
+                  "text": "sample maximizer of formal finite-grid |S|: -0.9753946282227943 0.5070091260005158\nnominal formal frequency-grid maximum= 15.310556257203693\nallowed corner formal frequency-grid maximum= 9.58409472586436\nsample maximizer formal frequency-grid maximum= 53.920948714587496\nNo H-infinity-versus-mu ranking, no conservatism percentage, no robust-performance certificate\ncomparison_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 81600
+                  "base64Length": 34284
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "fb6c4fbb24f03d9b1f0957fb7ba3ba101c13d1c12073c57974528b7b0eaf1fab",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "robust/mu-synthesis",
-          "fromSourceHash": "fb6c4fbb24f03d9b1f0957fb7ba3ba101c13d1c12073c57974528b7b0eaf1fab",
-          "toSourceHash": "f0aead984faf849a47f23c559b24959ac10eabce8c07a6fbf0582ae973880047",
-          "notebookPayloadHash": "d15bee1fe811fcbc3f10592ffdbaa9134bca9b301ef9f0282bbfa6bd4b9bf267",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "robust/mu-synthesis#3",
+          "title": "实验 3",
+          "index": 3,
+          "line": 410,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 105,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "initial d= 1.0 final= ('D', 0.8620689655172414, 1.0, 0.706896551724138, 0.706896551724138)\ninitial d= 0.25 final= ('D', 0.0, 0.25, 0.5, 0.5000000000000001)\ninitial d= 2.0 final= ('D', 1.0, 1.2649110640673518, 0.6324555320336759, 0.6324555320336759)\ndefault k=.5 d=1: (1.2499999999999998, 0.7603453162872775) dopt= 0.6082762530298219\nk= 0 mu= 0.5000000000000001\nk= 0.5 mu= 0.7603453162872775\nk= 1 mu= 0.6324555320336759\ndk_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 44456
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 rho= 3.0 sigma= 3.2566165379829393 MTM eigenvalues= [ 3.39444872 10.60555128]\nQ1 r= 1 upper= 3.2566165379829393\nQ1 r= 0.1 upper= 3.0029937310660415\nQ1 r= 0.01 upper= 3.000029999370031\nQ1 inf=3 as r tends to 0; r=0 is inadmissible; mu=3 via determinant witness delta2=1/3\nQ2 T(0)= 0.6666666666666666 normalized small-gain peak= 0.3333333333333333\nQ2 delta= -0.5 closed pole= [-2.+0.j]\nQ2 delta= 0 closed pole= [-3.+0.j]\nQ2 delta= 0.5 closed pole= [-4.+0.j]\nQ2 real mu(T(jw))=0 for w>0; complex mu=abs(T(jw)); both global tests pass\nQ3 different coordinate fixed points: ('D', 0.8620689655172414, 1.0, 0.706896551724138, 0.706896551724138) ('D', 0.0, 0.25, 0.5, 0.5000000000000001)\nQ4 mass=[.8,1.2], damping=[.15,.25], stiffness=[.7,1.3]; diag three independent real scalars\nQ4 full 2x2 complex block enlarges the set; delta_mb I restricts independent parameters\nall_answers_complete\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -8290,56 +8319,174 @@
     {
       "key": "mpc/nonlinear-mpc",
       "title": "非线性预测控制",
-      "sourceHash": "9c74d97e11a78317055f150728e155becfe20020432f615dd29521bdced516be",
+      "sourceHash": "66c530e9fe32bd089f57afbf55051f0b67d3b8a9712eef5385d14a1c935468b2",
       "notebooks": [
         {
           "id": "mpc/nonlinear-mpc#1",
-          "title": "实验 1",
+          "title": "局部极值与终端条件核验",
           "index": 1,
-          "line": 419,
+          "line": 94,
           "cellCount": 2,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "a334586e565f7bf7530e2889ef060f76403e7b68fb2b21a1b5c135cdf1898b6e",
-      "formattingProvenance": [
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5071,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "nonconvex_stationary -1.0122731310326816 J -0.10061737663815833 curvature 8.296362701728501\nnonconvex_stationary 0.025015654370327652 J 1.0012503911141988 curvature -3.9924906044370916\nnonconvex_stationary 0.9872574766623539 J 0.09936698552395944 curvature 7.69612790270862\narrhenius_ratio_350_450 572.0385299744203\nsin_150 0.49999999999999994 angle_150_rad 2.6179938779914944\nlocal_extrema_and_model_bias_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise3 V 0.22 u -0.4 next [0.32       0.13044798] Vnext 0.22181667531228874 delta 0.0018166753122887402\nset_escape x [0.70710678 0.        ] V 0.9999999999999998 nextV 1.0184075352248285\nexercise1_A_B [[ 1.   0.1]\n [-0.1  1. ]] [0.  0.1]\nterminal_point_is_not_set_certificate_checked\n"
+                }
+              ]
+            }
+          ]
+        },
         {
-          "lesson": "mpc/nonlinear-mpc",
-          "fromSourceHash": "a334586e565f7bf7530e2889ef060f76403e7b68fb2b21a1b5c135cdf1898b6e",
-          "toSourceHash": "9c74d97e11a78317055f150728e155becfe20020432f615dd29521bdced516be",
-          "notebookPayloadHash": "260f08ecfe969052adc039dd437ff519efb835224a410a19e8ae722974c45803",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "mpc/nonlinear-mpc#2",
+          "title": "摆的原NLP、SQP与名义闭环",
+          "index": 2,
+          "line": 223,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 276,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_budget 1 u 0.8618032206116281 J 73.28603685146834 pg 0.01583504627846455 updates 1\ndefault_budget 60 u 0.8656719635057898 J 73.28600622034108 pg 2.224433170994189e-08 updates 4\nindependent_original_NLP {'u': np.float64(0.8656719936713847), 'cost': np.float64(73.28600622034106)}\ndefault_shooting_and_single_update_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 43392
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 593,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "closed_loop 10 linear_prediction False samples 40 final_angle 0.007718804747932696 cost 1.669787427754753 max_u 0.5239462866341601 max_pg 8.005902609742321e-07\nclosed_loop 10 linear_prediction True samples 40 final_angle 0.007697934425707722 cost 1.6708268276136118 max_u 0.5238565529815218 max_pg 2.5605514930582274e-09\nclosed_loop 60 linear_prediction False samples 40 final_angle 0.026603685481543612 cost 58.93570362660456 max_u 3.0062742191608063 max_pg 8.202523229527969e-07\nclosed_loop 60 linear_prediction True samples 40 final_angle 0.020621750936320463 cost 60.30134556013842 max_u 2.9719261702191004 max_pg 1.5363311733906926e-08\nclosed_loop 150 linear_prediction False samples 40 final_angle -0.1446688127440979 cost 396.43944340852175 max_u 5.0 max_pg 9.937958180827877e-07\nclosed_loop 150 linear_prediction True samples 40 final_angle -0.15701638134056262 cost 725.0490886859984 max_u 5.0 max_pg 3.84082787796558e-08\nthree_angles_same_integrator_closed_loops_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 113888
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "key": "mpc/mpc-case-study",
       "title": "预测控制案例",
-      "sourceHash": "f1418cc52c1ca26e6a5cbd7044141d78af9a29cfeb673deb63bdacdd38f587bb",
+      "sourceHash": "7cc2d2dfd0f1e1f019e0cf6f92ead65d69e2709d14631f46c255eedaed9ef837",
       "notebooks": [
         {
           "id": "mpc/mpc-case-study#1",
-          "title": "实验 1",
+          "title": "平衡、Jacobian、ZOH与历史题核验",
           "index": 1,
-          "line": 249,
+          "line": 105,
           "cellCount": 2,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "2ab538bc3d6b2fdcebe87ec99f8f6bd9929ed7cccf7b3cb4a5ae9cf835cee9d7",
-      "formattingProvenance": [
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4823,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "balance [0. 0.]\nAc [[-2.00000000e+00 -3.57142857e-02]\n [ 2.09205021e+02  4.37955768e+00]]\nBc [[0.005      0.        ]\n [0.         2.09205021]]\nAd [[ 7.80702402e-01 -4.04080788e-03]\n [ 2.36700043e+01  1.50250228e+00]]\nBd [[ 0.00044687 -0.0004055 ]\n [ 0.00567705  0.25940826]]\ndiscrete_eigenvalues [0.95558399 1.32762068]\nold_claimed_steady_residual -0.4499659791387048 -70.78988063231213 old_B21 -0.5\nbalance_jacobian_zoh_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 160,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "fixed_input_equilibria [(324.47670022, 0.877234370769941), (350.0, 0.5), (369.70758523, 0.20872189032133776)]\nhistorical_exercise1 0.9999319582774095 16.082146340662796 exponent_difference 2.777777777777778 derivative_abs 0.031247873696169045 0.3970900331027851\nexercise2_Q [100, 0.25] R [0.1111111111111111, 0.01] temperature_priority_Q [100, 0.5]\nexercise4_temperature_derivative_gap 0.4184100418410042 -0.4184100418410042\nequilibria_and_exercises_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 29500
+                }
+              ]
+            }
+          ]
+        },
         {
-          "lesson": "mpc/mpc-case-study",
-          "fromSourceHash": "2ab538bc3d6b2fdcebe87ec99f8f6bd9929ed7cccf7b3cb4a5ae9cf835cee9d7",
-          "toSourceHash": "f1418cc52c1ca26e6a5cbd7044141d78af9a29cfeb673deb63bdacdd38f587bb",
-          "notebookPayloadHash": "b0311b96636b97b5a221b0edb0541e52d7bb655d3edb6a36f25aef9312c230bd",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "mpc/mpc-case-study#2",
+          "title": "原受限QP与未截断非线性闭环",
+          "index": 2,
+          "line": 238,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 738,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_first_input [101.01926225 300.05584836] increment [1.01926225 0.05584836] cost 0.9747078301961559 predicted_first [  0.50043283 350.02027393]\ndefault last [  0.4640057 347.2513501] sample_peak 350.6063907718942 temperature_SSE 32.743744324132585 rate_active_F_Tc [0 0]\ntracking last [  0.49994867 351.39617784] sample_peak 351.39617784115364 temperature_SSE 8.02294170012105 rate_active_F_Tc [0 0]\nzero last [  0.5 350. ] sample_peak 350.0 temperature_SSE 0.0 rate_active_F_Tc [0 0]\nR10 last [  0.47680934 346.96337793] sample_peak 350.6419527310751 temperature_SSE 36.513464387902474 rate_active_F_Tc [0 0]\nstep4 last [  0.46142674 347.44198657] sample_peak 351.3157442428388 temperature_SSE 77.11422687780006 rate_active_F_Tc [6 0]\nhot_initial_qp_infeasible True\noriginal_qp_and_closed_loops_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 35672
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 122,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_max_one_step_errors [0.0100177  0.21469166] sample_limit_excess 0\nindependent_integrator_repeat_gap 8.036522558541037e-10\ngeneral_Np20_Nu5_dimensions 40 2 40 10 uncondensed_constraint_rows 60\nactual_Np10_Nu1_decisions 2 intersected_box_plus_temperature_rows 14\nthird_input_B_column_symbolic [0, -k_omega*(T0-Tc0)/(rho*Cp*V)] => 2 outputs x 3 inputs\nprediction_errors_and_interfaces_checked\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -17698,22 +17845,311 @@
           ]
         }
       ]
+    },
+    {
+      "key": "robust/mu-analysis",
+      "title": "结构奇异值",
+      "sourceHash": "0fa5b3bd11d1dca017c9989cbee3c35d96e5ad66ecf5a3e0498a936bab3e07a8",
+      "notebooks": [
+        {
+          "id": "robust/mu-analysis#1",
+          "title": "同一矩阵，不同允许结构",
+          "index": 1,
+          "line": 81,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5922,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_mu_sigma_Dupper 0.5 2.0 0.5\ndiagonal_witness [[2.+0.j 0.+0.j]\n [0.+0.j 2.+0.j]] norm 2.0 residual 0.0\nfull_witness [[0. +0.j 0. +0.j]\n [0.5+0.j 0. +0.j]] norm 0.5 residual 0.0\nunit_diagonal_simultaneous_extremes_poles [-0.5 -1.5]\nallowed_full_norm_0p6_poles [-1.   0.2]\npoint_at_omega1_mu_sigma 0.35355339059327373 1.414213562373095\nstructure_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 29992
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/mu-analysis#2",
+          "title": "全频边界与实复结构反例",
+          "index": 2,
+          "line": 158,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 436,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "frequency_case {'c': 0.125, 'exact_peak': np.float64(0.5), 'radius': np.float64(2.0), 'worst_constant_alpha': -0.4999999999999999, 'scan_peak_with_DC': 0.5}\nfrequency_case {'c': 0.5, 'exact_peak': np.float64(1.0), 'radius': np.float64(1.0), 'worst_constant_alpha': 0.0, 'scan_peak_with_DC': 1.0}\nfrequency_case {'c': 0.8, 'exact_peak': np.float64(1.2649110640673518), 'radius': np.float64(0.7905694150420948), 'worst_constant_alpha': 0.26491106406735176, 'scan_peak_with_DC': 1.2649110640673518}\nfrequency_case {'c': 0.0, 'exact_peak': np.float64(0.0), 'radius': inf, 'worst_constant_alpha': -1.0, 'scan_peak_with_DC': 0.0}\ntriangular_c0_mu_sigma_D0p1 0.0 2.0 0.2\nfrequency_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 62160
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 6,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "scalar_i_complex_mu_real_mu_rho_sigma 1.0 0.0 1.0 1.0\nreal_scalar_residual -10.0 10.04987562112089\nreal_scalar_residual -1.0 1.4142135623730951\nreal_scalar_residual 0.0 1.0\nreal_scalar_residual 1.0 1.4142135623730951\nreal_scalar_residual 10.0 10.04987562112089\nnegative_product_repeated_real_mu_complex_mu 0.0 0.5\nrepeated_real_eigenvalues 0.0 [ 0.5+0.j -0.5+0.j] exact_real_mu 0.5\nrepeated_real_eigenvalues 0.001 [ 0.4999995-0.0005j -0.4999995+0.0005j] exact_real_mu 0.0\nrepeated_real_eigenvalues 1.0 [ 0.25-0.25j -0.25+0.25j] exact_real_mu 0.0\nD_commutation_full_counterexample 1.0606601717798212\nreal_structure_complete\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/mu-analysis#3",
+          "title": "完整性能增广与四题复算",
+          "index": 3,
+          "line": 234,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 213,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "performance_case {'q': 0.4, 'physical_radius': 2.5, 'worst_performance': 0.6666666666666667, 'augmented_mu_DC': 0.8, 'D_upper': 0.7999999999999999, 'witness_norm': 1.25, 'witness_residual': 0.0}\nworst_parameter_Hnorm_exact 0.6666666666666667 pole [-0.6+0.j] delta_corner_gains [0.28571428571428575, 0.4, 0.6666666666666667]\nperformance_case {'q': 0.6, 'physical_radius': 2.5, 'worst_performance': 1.0, 'augmented_mu_DC': 1.0, 'D_upper': 1.0000000000000002, 'witness_norm': 1.0, 'witness_residual': 2.8560251687377673e-17}\nworst_parameter_Hnorm_exact 1.0 pole [-0.6+0.j] delta_corner_gains [0.4285714285714286, 0.6, 1.0]\nperformance_case {'q': 0.8, 'physical_radius': 2.5, 'worst_performance': 1.3333333333333335, 'augmented_mu_DC': 1.2000000000000002, 'D_upper': 1.2000000000000002, 'witness_norm': 0.8333333333333333, 'witness_residual': 3.467754125821145e-17}\nworst_parameter_Hnorm_exact 1.3333333333333335 pole [-0.6+0.j] delta_corner_gains [0.5714285714285715, 0.8, 1.3333333333333335]\nperformance_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 49340
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1_mu_diag_full_d_radii 0.5 2.0 0.25 2.0 0.5\nQ1_diagonal_witness [[2.+0.j 0.+0.j]\n [0.+0.j 2.+0.j]] full_witness [[0. +0.j 0. +0.j]\n [0.5+0.j 0. +0.j]]\nQ2_nilpotent_mu_sigma_Ud 0.0 2.0 0.2 scalar_i_real_complex_mu 0.0 1.0\nQ3_peak_radius_alpha 0.125 0.5 2.0 -0.5\nQ3_peak_radius_alpha 0.5 1.0 1.0 0.0\nQ3_peak_radius_alpha 0.8 1.2649110640673518 0.7905694150420948 0.26491106406735176\nQ4_RS_radius_RP_gain_aug_mu_radius 0.4 2.5 0.6666666666666667 0.8 1.25\nQ4_RS_radius_RP_gain_aug_mu_radius 0.6 2.5 1.0 1.0 1.0\nQ4_RS_radius_RP_gain_aug_mu_radius 0.8 2.5 1.3333333333333335 1.2000000000000002 0.8333333333333333\nQ4_q0p8_specific_witness_det -6.661338147750956e-17\nall_answers_complete\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "mpc/economic-mpc",
+      "title": "经济预测控制",
+      "sourceHash": "4308de26fcef8e720f3e0920c6ad802f7203e9093cbdd0d951415d0425b4f1ca",
+      "notebooks": [
+        {
+          "id": "mpc/economic-mpc#1",
+          "title": "原QP、周期调度与预测失配",
+          "index": 1,
+          "line": 79,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5058,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default u= [2. 0.] x= [0. 1. 0.] economic= 4.1 tracking_economic= 6.0\nholding4 u= [1.5 0.5] x= [0.  0.5 0. ] economic= 5.25 tracking_economic= 6.0\nequal u= [1. 1.] x= [0. 0. 0.] economic= 3.0 tracking_economic= 3.0\ncapacity0 u= [1. 1.] x= [0. 0. 0.] economic= 6.0 tracking_economic= 6.0\npump1 u= [1. 1.] x= [0. 0. 0.] economic= 6.0 tracking_economic= 6.0\nreversed u= [1. 1.] x= [0. 0. 0.] economic= 6.0 tracking_economic= 6.0\nstock_reversed u= [-0.  2.] x= [1. 0. 1.] economic= 4.1 tracking_economic= 5.91818182\noriginal_qp_cases_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 37852
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 86,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "six_cycles 24.6 36.0 per_slot 2.0500000000000003 3.0\nwrong_price 10.1 6.0 gap 4.1\ndemand_1.25_old_terminal -0.25 remaining_repair 0.25\ndemand_4_required_input 3 exceeds_limit 2.0\ncycles_and_mismatch_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 42616
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/economic-mpc#2",
+          "title": "耗散恒等式与终端修正",
+          "index": 2,
+          "line": 191,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 13,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "ell 0.1 steady_cost 2.5 rotated 0.6 storage_change -3.0 difference -2.4\nh0_any_stock_u1 [0.0, 0.0, 0.0]\nstorage_identity_checked\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "terminal_minimizers 0.0 1.0 0.0\nterminal_values 0.1 0.1 0.6 constant_shift 0.5\nterminal_correction_checked\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "mpc/mhe-fusion",
+      "title": "移动水平估计",
+      "sourceHash": "5a33dbcd271d0a1bbab673ff94fd9193b3a2f81511ce80b6f4347c959f2d0b1d",
+      "notebooks": [
+        {
+          "id": "mpc/mhe-fusion#1",
+          "title": "原残差QP与约束失配",
+          "index": 1,
+          "line": 71,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5141,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default bounded [0.36666667 1.         1.        ] J 0.44000000000000017 unconstrained [0.43513514 1.15405405 1.12702703] J 0.33243243243243237\nloose bounded [0.43513514 1.15405405 1.12702703] J 0.33243243243243237 unconstrained [0.43513514 1.15405405 1.12702703] J 0.33243243243243237\nzero bounded [0. 0. 0.] J 7.045 unconstrained [0.43513514 1.15405405 1.12702703] J 0.33243243243243237\nspike bounded [0.36666667 1.         1.        ] J 4.040000000000003 unconstrained [0.65135135 1.64054054 1.37027027] J 2.3432432432432426\nweak_prior bounded [0.35454546 1.         1.        ] J 0.432727272727273 unconstrained [0.42781955 1.15112782 1.12556391] J 0.3306766917293232\ndefault_process [1.33333333e-01 1.11022302e-16] measurement [-0.16666667  0.4         0.1       ]\noriginal_mhe_qp_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 32996
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_terminal_absolute_errors 1.1102230246251565e-16 0.1270270270270275\nwrong_capacity_terminal 0.9999999999999999 true 1.5 errors 0.5000000000000001 1.1102230246251565e-15\ninactive_constraint_max_gap 0.0\nconstraint_help_tie_harm_checked\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/mhe-fusion#2",
+          "title": "到达成本、KF与控制接口",
+          "index": 2,
+          "line": 141,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 96,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_batch_current 1.1270270270270275 kf_current 1.127027027027027 past_smoothed 0.4351351351351359 past_filtered 0.26\narrival_at_time2 (1.1714285714285713, 0.4107142857142857) full_current 1.118503937007874 cut_current 1.1185039370078738 max_difference 1.1102230246251565e-15\none_measurement_once 0.5 0.5 twice 0.6666666666666666 0.33333333333333337\narrival_and_kf_checked\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 29920
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 11,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exact_kkt_gradient ['0', '-16/15', '-2/5']\nestimate_based_input 0.0 predicted_next 1.0 actual_next 1.5\nperfect_state_input -0.45454545454545453 actual_next 1.0454545454545454\nkkt_and_control_interface_checked\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 129,
-    "notebooks": 524,
-    "enabled": 521,
-    "codeOnly": 3
+    "lessons": 132,
+    "notebooks": 534,
+    "enabled": 533,
+    "codeOnly": 1
   },
   "releaseTotals": {
-    "lessons": 129,
-    "notebooks": 524,
-    "enabled": 521,
-    "codeOnly": 3
+    "lessons": 132,
+    "notebooks": 534,
+    "enabled": 533,
+    "codeOnly": 1
   },
   "provenance": [
     {
@@ -18600,6 +19036,36 @@
       "testedAt": "2026-10-24T10:06:56.695Z",
       "url": "http://127.0.0.1:8239/python-expansion.html?lesson=machine-learning%2Flearning-evaluation",
       "inputPath": ".agent/semester-03/ml-09/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T10:07:13.221Z",
+      "url": "http://127.0.0.1:20796/python-expansion.html?lesson=mpc/nonlinear-mpc",
+      "inputPath": ".agent/semester-03/mpc-08/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T10:17:08.530Z",
+      "url": "http://127.0.0.1:20295/python-expansion.html?lesson=robust/mu-analysis",
+      "inputPath": ".agent/semester-03/robust-07/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T10:42:29.672Z",
+      "url": "http://127.0.0.1:21196/python-expansion.html?lesson=mpc/economic-mpc",
+      "inputPath": ".agent/semester-03/mpc-09/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T11:01:02.888Z",
+      "url": "http://127.0.0.1:21596/python-expansion.html?lesson=mpc/mhe-fusion",
+      "inputPath": ".agent/semester-03/mpc-10/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T11:02:02.178Z",
+      "url": "http://127.0.0.1:20595/python-expansion.html?lesson=robust/mu-synthesis",
+      "inputPath": ".agent/semester-03/robust-08/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T11:29:14.108Z",
+      "url": "http://127.0.0.1:21996/python-expansion.html?lesson=mpc/mpc-case-study",
+      "inputPath": ".agent/semester-03/mpc-11/pyodide.json"
     }
   ]
 }

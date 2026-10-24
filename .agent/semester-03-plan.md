@@ -105,6 +105,11 @@
 | ROBUST-06 | IMPL-10;ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 | ID-09 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-09，rank3；保留并行课程，闭环/频域已交付；评估课未交付，局部定义分区与冻结，ID08提供已交付支撑 | .agent/semester-03/id-09/acceptance.md |
 | ML-09 | IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-09，rank2；保留并行实现课，仅依赖已交付监督学习与概率基础 | .agent/semester-03/ml-09/acceptance.md |
+| MPC-08 | ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-08，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-08/acceptance.md |
+| ROBUST-07 | ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-07，rank5；保留并行检查点，仅依赖已交付先修 | .agent/semester-03/robust-07/acceptance.md |
+| MPC-09 | ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-09，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-09/acceptance.md |
+| MPC-10 | ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-10，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-10/acceptance.md |
+| MPC-11 | ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-11，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-11/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -1006,3 +1011,29 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### IMPL-10 控制实现案例本轮交付
 
 新写单课；水箱PI全链路回归、量化码值、故障记录与验收边界。讨论和真实验收见 `.agent/semester-03/impl-10/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### MPC-08 学期3交付（2026-10-24）
+
+非线性预测控制按重构Phase1–4完成，保留16主题/五题全部子问与69旧ID，37标题别名。纠正非线性/约束激活、SQP/RTI/CLF与终端全域条件，重建同RK4同参数摆比较，撤回旧未实测硬件/性能表。实际TS432组与独立复步原目标核、240闭环输入独立核；两Notebook四cell严格内核/生产Pyodide、普通/Pages本地/375px见.agent/semester-03/mpc-08/acceptance.md。S04本课债务实跑清除。rank6隔离20696/9106/20796/20896与私有索引，保留并行工作；仅本课、不发布Pages、不生产MPC-09。真实hash见全局checklist。
+
+
+### ROBUST-07 本期交付记录（2026-10-24）
+
+结构奇异值按新写Phase1–4交付：九H2、四题全子问、三Notebook五cell、四滑块/双结构双图/SVG。可解析A/(s+1)证明结构集合、精确μ、合法D上界/见证下界、DC/全频与实μ不连续；完整标量性能增广含通过/等号/失败。真实TS960配置对独立SVD/反馈极点/行列式/SymPy、严格内核/Pyodide、双生产构建和375px证据见.agent/semester-03/robust-07/acceptance.md。未运行通用mussv，不冒称D普遍精确。相邻ROBUST-08错误只登记RB08待返修，不改其正文；rank5独立端口/缓存/索引，不发布Pages、不生产ROBUST-08。真实master回执见checklist。
+
+### MPC-09 学期3交付（2026-10-24）
+
+经济预测控制从空占位按新写Phase1–4完成：分时储水→同尺度目标→精确QP→常价耗散与旋转→终端反例→周期与预测边界。十一H2、四题四答、两Notebook四cell、Explorer/SVG。5120配置实际TS对原QP、144个有理恒等式；严格内核、生产Pyodide、普通与Pages本地页面及375px实测见.agent/semester-03/mpc-09/acceptance.md。rank6隔离21096/9116/21196/21296，临时独立索引与原子引用更新；保留并行内容。本会话不发布Pages，不生产MPC-10，真实hash见checklist。
+
+### MPC-10 学期3交付（2026-10-24）
+
+移动水平估计从空占位按新写Phase1–4完成：液位观测→窗口与到达成本→约束QP→滑动更新与信息重复→KF等价条件→输出反馈接口/错误容量反例。十一H2、四题完整答案、两Notebook四cell、Explorer/SVG。1620配置实际TS对原LS与有理KKT；严格内核、生产Pyodide、普通与Pages本地页面及375px实测见.agent/semester-03/mpc-10/acceptance.md。rank6隔离21496/9126/21596/21696，临时独立索引与原子引用更新，保留并行内容。本会话不发布Pages，不生产MPC-11，真实hash见checklist。
+
+
+### ROBUST-08 本期交付记录（2026-10-24）
+
+μ综合按重构Phase1–4交付：33旧编译标题/11H2、四题全部子问、原二Notebook四cell用途保留，最终三Notebook六cell、限定族三滑块双图/K-D单步与真实SVG。修正独立性/实复μ/D交换子/完整LFT/交替与拟合边界，原PI全方形失稳保留为诊断，不伪称H∞综合。实际TS2020配置与101独立LP、符号/500LFT回代、严格内核/Pyodide、双生产构建/375px证据见.agent/semester-03/robust-08/acceptance.md。RB08实际关闭；未执行外部MATLAB通用求解器，不承诺全局或联合局部最优。不发布Pages、不生产ROBUST-09；master实际回执见checklist。rank5端口/缓存/索引隔离，保留其它会话修改。
+
+### MPC-11 学期3交付（2026-10-24）
+
+预测控制案例按重构Phase1–4保留12主题、五题15子问与41旧ID，9位置别名。修正不平衡点、单位/精确ZOH/持续输入预测/温度截断与20%鲁棒性断言，明确2×3扩展；新CSTR原QP与未截断非线性闭环。实际TS648QP/8闭环320输入对独立expm、复步Jacobian、SLSQP原残差KKT及DOP853；严格内核/生产Pyodide/普通与Pages本地/375px见.agent/semester-03/mpc-11/acceptance.md。S04原Notebook债务本课实跑清除，历史清单保留；fix090。rank6隔离21896/9136/21996/22096与临时独立索引，保留并行内容，本会话未发布Pages，不自动生产后续课程。真实hash见checklist。

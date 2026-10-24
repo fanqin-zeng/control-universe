@@ -1,0 +1,63 @@
+{
+  "source": "content/mpc/mpc-case-study.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 105,
+      "title": "平衡、Jacobian、ZOH与历史题核验",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.linalg import expm\r\nfrom scipy.optimize import minimize,LinearConstraint,linprog,nnls\r\nfrom scipy.integrate import solve_ivp\r\n\r\nbeta=50000/239;gamma=50000/23900\r\nAc=np.array([[-2.,-1/28],[beta,-1+beta/28-gamma]])\r\nBc=np.array([[.005,0],[0,gamma]])\r\nblock=np.zeros((4,4));block[:2,:2]=Ac;block[:2,2:]=Bc\r\ndisc=expm(.1*block);Ad=disc[:2,:2];Bd=disc[:2,2:]\r\ndefaults=dict(N=10,q=1.,r=1.,step=2.,rate=2.,feed=.9)\r\ndef derivative(x,u,feed=1.):\r\n    ca,T=x;F,Tc=u;k=np.exp(25-8750/T)\r\n    return np.array([F/100*(feed-ca)-k*ca,F/100*(350-T)+beta*k*ca-gamma*(T-Tc)])\r\n\r\ndef problem(x,previous,c):\r\n    A=np.eye(2);S=np.zeros((2,2));base=[];gain=[];du=previous-np.array([100,300])\r\n    for j in range(c['N']):A=Ad@A;S=Ad@S+Bd;base.append(A@(x-np.array([.5,350]))+S@du);gain.append(S.copy())\r\n    base=np.array(base);gain=np.array(gain);target=np.array([0,c['step']]);Q=np.diag([400*c['q'],.04*c['q']]);R=np.diag([.01*c['r'],.04*c['r']])\r\n    lower=np.maximum(np.array([80,280])-previous,-c['rate']);upper=np.minimum(np.array([120,320])-previous,c['rate'])\r\n    G=np.vstack([np.eye(2),-np.eye(2),gain[:,1,:]]);h=np.r_[upper,-lower,5-base[:,1]]\r\n    def objective(v):\r\n        errors=base+gain@v-target\r\n        return np.einsum('ni,ij,nj->',errors,Q,errors)+v@R@v\r\n    def jac(v):return 2*np.einsum('nki,kl,nl->i',gain,Q,base+gain@v-target)+2*R@v\r\n    return dict(base=base,gain=gain,G=G,h=h,objective=objective,jac=jac)\r\n\r\ndef original_plan(x,previous,c):\r\n    p=problem(x,previous,c);feas=linprog(np.zeros(2),A_ub=p['G'],b_ub=p['h'],bounds=[(None,None)]*2,method='highs')\r\n    if not feas.success:return None\r\n    ans=minimize(p['objective'],feas.x,jac=p['jac'],constraints=[LinearConstraint(p['G'],-np.inf,p['h'])],method='SLSQP',options=dict(ftol=1e-10,maxiter=500))\r\n    # Polish the active set found by SLSQP using the original residual-gradient KKT system.\r\n    f=p['jac'](np.zeros(2));H=np.column_stack([p['jac'](e)-f for e in np.eye(2)])\r\n    active=np.flatnonzero(p['h']-p['G']@ans.x<1e-5);Ga=p['G'][active]\r\n    K=np.block([[H,Ga.T],[Ga,np.zeros((len(active),len(active)))]])\r\n    solution=np.linalg.lstsq(K,np.r_[-f,p['h'][active]],rcond=None)[0];v=solution[:2]\r\n    assert max(p['G']@v-p['h'])<1e-7,(ans.message,x,c)\r\n    _,res=nnls(Ga.T,-p['jac'](v)) if len(active) else ([],np.linalg.norm(p['jac'](v)))\r\n    assert res<1e-6,(ans.message,res,x,c)\r\n    return dict(v=v,u=previous+v,cost=p['objective'](v),pred=p['base']+p['gain']@v+np.array([.5,350]),problem=p)\r\n\r\ndef simulate(c=defaults):\r\n    x=np.array([.5,350.]);previous=np.array([100.,300.]);states=[x.copy()];controls=[];plans=[]\r\n    for k in range(40):\r\n        p=original_plan(x,previous,c)\r\n        if p is None:return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=k)\r\n        feed=c['feed'] if k>=20 else 1.\r\n        sol=solve_ivp(lambda t,z:derivative(z,p['u'],feed),(0,.1),x,method='DOP853',rtol=1e-11,atol=1e-12)\r\n        assert sol.success;x=sol.y[:,-1];previous=p['u'];states.append(x.copy());controls.append(previous.copy());plans.append(p)\r\n    return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=None)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 156,
+          "delim": "`",
+          "code": "from scipy.optimize._numdiff import approx_derivative\r\nbalance=derivative(np.array([.5,350]),np.array([100,300]))\r\njx=approx_derivative(lambda x:derivative(x,np.array([100,300])),np.array([.5,350.]),method='cs')\r\nju=approx_derivative(lambda u:derivative(np.array([.5,350]),u),np.array([100.,300.]),method='cs')\r\nassert np.allclose(balance,0,atol=1e-12) and np.allclose(jx,Ac,atol=1e-10) and np.allclose(ju,Bc,atol=1e-10)\r\nprint('balance',balance);print('Ac',Ac);print('Bc',Bc);print('Ad',Ad);print('Bd',Bd);print('discrete_eigenvalues',np.linalg.eigvals(Ad))\r\noldk=7.2e10*np.exp(-25);old_ca=.1*.5-oldk*.5\r\nold_heat=-5+50000/4180*oldk*.5-300000/418000*100\r\nprint('old_claimed_steady_residual',old_ca,old_heat,'old_B21',-50/100)\r\nassert abs(old_ca)>.4 and abs(old_heat)>70\r\nprint('balance_jacobian_zoh_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 166,
+          "delim": "`",
+          "code": "def scalar_balance(T):\r\n    k=np.exp(25-8750/T);ca=1/(1+k)\r\n    return 350-T+beta*k*ca-gamma*(T-300)\r\nfrom scipy.optimize import brentq\r\ngrid=np.linspace(280,450,1701);roots=[]\r\nfor a,b in zip(grid[:-1],grid[1:]):\r\n    if scalar_balance(a)==0:roots.append(a)\r\n    elif scalar_balance(a)*scalar_balance(b)<0:roots.append(brentq(scalar_balance,a,b))\r\nroots=np.array(sorted(set(round(v,8) for v in roots)))\r\nprint('fixed_input_equilibria',[ (float(T),float(1/(1+np.exp(25-8750/T)))) for T in roots])\r\nassert any(abs(roots-350)<1e-6)\r\nrate400=7.2e10*np.exp(-10000/400);rate450=7.2e10*np.exp(-10000/450)\r\nprint('historical_exercise1',rate400,rate450,'exponent_difference',10000*(1/400-1/450),'derivative_abs',.5*rate400*10000/400**2,.5*rate450*10000/450**2)\r\nprint('exercise2_Q',[100,.25],'R',[1/9,.01],'temperature_priority_Q',[100,.5])\r\nprint('exercise4_temperature_derivative_gap',.2*Ac[1,0]*.01,-.2*Ac[1,0]*.01)\r\nfig,ax=plt.subplots(figsize=(8,3));ax.plot(grid,[scalar_balance(T) for T in grid]);ax.axhline(0,color='black');ax.scatter(roots,[0]*len(roots));ax.set(xlim=(280,450),ylim=(-100,100),xlabel='T(K)',ylabel='steady energy residual K/min');ax.grid(True);plt.tight_layout();plt.show()\r\nprint('equilibria_and_exercises_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 238,
+      "title": "原受限QP与未截断非线性闭环",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.linalg import expm\r\nfrom scipy.optimize import minimize,LinearConstraint,linprog,nnls\r\nfrom scipy.integrate import solve_ivp\r\n\r\nbeta=50000/239;gamma=50000/23900\r\nAc=np.array([[-2.,-1/28],[beta,-1+beta/28-gamma]])\r\nBc=np.array([[.005,0],[0,gamma]])\r\nblock=np.zeros((4,4));block[:2,:2]=Ac;block[:2,2:]=Bc\r\ndisc=expm(.1*block);Ad=disc[:2,:2];Bd=disc[:2,2:]\r\ndefaults=dict(N=10,q=1.,r=1.,step=2.,rate=2.,feed=.9)\r\ndef derivative(x,u,feed=1.):\r\n    ca,T=x;F,Tc=u;k=np.exp(25-8750/T)\r\n    return np.array([F/100*(feed-ca)-k*ca,F/100*(350-T)+beta*k*ca-gamma*(T-Tc)])\r\n\r\ndef problem(x,previous,c):\r\n    A=np.eye(2);S=np.zeros((2,2));base=[];gain=[];du=previous-np.array([100,300])\r\n    for j in range(c['N']):A=Ad@A;S=Ad@S+Bd;base.append(A@(x-np.array([.5,350]))+S@du);gain.append(S.copy())\r\n    base=np.array(base);gain=np.array(gain);target=np.array([0,c['step']]);Q=np.diag([400*c['q'],.04*c['q']]);R=np.diag([.01*c['r'],.04*c['r']])\r\n    lower=np.maximum(np.array([80,280])-previous,-c['rate']);upper=np.minimum(np.array([120,320])-previous,c['rate'])\r\n    G=np.vstack([np.eye(2),-np.eye(2),gain[:,1,:]]);h=np.r_[upper,-lower,5-base[:,1]]\r\n    def objective(v):\r\n        errors=base+gain@v-target\r\n        return np.einsum('ni,ij,nj->',errors,Q,errors)+v@R@v\r\n    def jac(v):return 2*np.einsum('nki,kl,nl->i',gain,Q,base+gain@v-target)+2*R@v\r\n    return dict(base=base,gain=gain,G=G,h=h,objective=objective,jac=jac)\r\n\r\ndef original_plan(x,previous,c):\r\n    p=problem(x,previous,c);feas=linprog(np.zeros(2),A_ub=p['G'],b_ub=p['h'],bounds=[(None,None)]*2,method='highs')\r\n    if not feas.success:return None\r\n    ans=minimize(p['objective'],feas.x,jac=p['jac'],constraints=[LinearConstraint(p['G'],-np.inf,p['h'])],method='SLSQP',options=dict(ftol=1e-10,maxiter=500))\r\n    # Polish the active set found by SLSQP using the original residual-gradient KKT system.\r\n    f=p['jac'](np.zeros(2));H=np.column_stack([p['jac'](e)-f for e in np.eye(2)])\r\n    active=np.flatnonzero(p['h']-p['G']@ans.x<1e-5);Ga=p['G'][active]\r\n    K=np.block([[H,Ga.T],[Ga,np.zeros((len(active),len(active)))]])\r\n    solution=np.linalg.lstsq(K,np.r_[-f,p['h'][active]],rcond=None)[0];v=solution[:2]\r\n    assert max(p['G']@v-p['h'])<1e-7,(ans.message,x,c)\r\n    _,res=nnls(Ga.T,-p['jac'](v)) if len(active) else ([],np.linalg.norm(p['jac'](v)))\r\n    assert res<1e-6,(ans.message,res,x,c)\r\n    return dict(v=v,u=previous+v,cost=p['objective'](v),pred=p['base']+p['gain']@v+np.array([.5,350]),problem=p)\r\n\r\ndef simulate(c=defaults):\r\n    x=np.array([.5,350.]);previous=np.array([100.,300.]);states=[x.copy()];controls=[];plans=[]\r\n    for k in range(40):\r\n        p=original_plan(x,previous,c)\r\n        if p is None:return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=k)\r\n        feed=c['feed'] if k>=20 else 1.\r\n        sol=solve_ivp(lambda t,z:derivative(z,p['u'],feed),(0,.1),x,method='DOP853',rtol=1e-11,atol=1e-12)\r\n        assert sol.success;x=sol.y[:,-1];previous=p['u'];states.append(x.copy());controls.append(previous.copy());plans.append(p)\r\n    return dict(x=np.array(states),u=np.array(controls),plans=plans,stopped=None)\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 289,
+          "delim": "`",
+          "code": "first=original_plan(np.array([.5,350]),np.array([100.,300.]),defaults)\r\nassert first is not None\r\nprint('default_first_input',first['u'],'increment',first['v'],'cost',first['cost'],'predicted_first',first['pred'][0])\r\nsummary=[]\r\nfor label,patch in [('default',{}),('tracking',{'feed':1}),('zero',{'step':0,'feed':1}),('R10',{'r':10}),('step4',{'step':4})]:\r\n    c={**defaults,**patch};s=simulate(c);assert s['stopped'] is None\r\n    assert np.max(np.abs(np.diff(np.vstack([[100,300],s['u']]),axis=0)))<=c['rate']+1e-6\r\n    peak=s['x'][:,1].max();sse=.1*np.sum((s['x'][1:,1]-350-c['step'])**2)\r\n    active=np.sum(np.isclose(np.abs(np.diff(np.vstack([[100,300],s['u']]),axis=0)),c['rate'],atol=1e-6),axis=0)\r\n    print(label,'last',s['x'][-1],'sample_peak',peak,'temperature_SSE',sse,'rate_active_F_Tc',active)\r\n    summary.append((label,s))\r\nassert original_plan(np.array([.5,360.]),np.array([100.,300.]),defaults) is None\r\nprint('hot_initial_qp_infeasible',True)\r\nfig,ax=plt.subplots(1,2,figsize=(8,3))\r\nfor label,s in summary[:3]:\r\n    ax[0].plot(np.arange(len(s['x']))*.1,s['x'][:,1],label=label)\r\nax[0].set(xlim=(0,4),ylim=(335,365),xlabel='min',ylabel='T(K)');ax[0].legend();ax[0].grid(True)\r\ns=summary[0][1];ax[1].step(np.arange(40)*.1,(s['u'][:,0]-100)/20,where='post',label='(F-100)/20');ax[1].step(np.arange(40)*.1,(s['u'][:,1]-300)/20,where='post',label='(Tc-300)/20');ax[1].set(xlim=(0,4),ylim=(-1.1,1.1),xlabel='min',ylabel='normalized input');ax[1].legend();plt.tight_layout();plt.show()\r\nprint('original_qp_and_closed_loops_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 307,
+          "delim": "`",
+          "code": "s=simulate();errors=np.array([s['x'][k+1]-p['pred'][0] for k,p in enumerate(s['plans'])])\r\nprint('default_max_one_step_errors',np.max(np.abs(errors),axis=0),'sample_limit_excess',max(0,float(s['x'][:,1].max()-355)))\r\nassert np.all(np.isfinite(s['x']))\r\n# Reintegrate identical controls, not a retuned second controller.\r\nx=np.array([.5,350.]);half=[]\r\nfor k,u in enumerate(s['u']):\r\n    sol=solve_ivp(lambda t,z:derivative(z,u,.9 if k>=20 else 1.),(0,.1),x,method='DOP853',rtol=1e-12,atol=1e-13);x=sol.y[:,-1];half.append(x.copy())\r\nprint('independent_integrator_repeat_gap',np.max(np.abs(np.array(half)-s['x'][1:])))\r\nprint('general_Np20_Nu5_dimensions',40,2,40,10,'uncondensed_constraint_rows',60)\r\nprint('actual_Np10_Nu1_decisions',2,'intersected_box_plus_temperature_rows',14)\r\nprint('third_input_B_column_symbolic','[0, -k_omega*(T0-Tc0)/(rho*Cp*V)] => 2 outputs x 3 inputs')\r\nprint('prediction_errors_and_interfaces_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

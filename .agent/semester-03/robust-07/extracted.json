@@ -1,0 +1,82 @@
+{
+  "source": "content/robust/mu-analysis.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 81,
+      "title": "同一矩阵，不同允许结构",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.r_[0.,np.logspace(-3,3,1201)]\r\ndef matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)\r\ndef top(M):return float(np.linalg.svd(M,compute_uv=False)[0])\r\ndef diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)\r\ndef diag_witness(b,c,omega=0.):\r\n    if b*c==0:return None\r\n    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])\r\ndef full_witness(M):\r\n    U,s,Vh=np.linalg.svd(M)\r\n    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]\r\ndef physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 99,
+          "delim": "`",
+          "code": "# Minimum example: same M, different uncertainty sets, explicit singularizing witnesses\r\nA=matrix();D=np.diag([.25,1.]);Dd=diag_witness(2.,.125);Df=full_witness(A)\r\nprint('default_mu_sigma_Dupper',diag_mu(2.,.125),top(A),top(D@A@np.linalg.inv(D)))\r\nprint('diagonal_witness',Dd,'norm',top(Dd),'residual',np.linalg.svd(np.eye(2)-A@Dd,compute_uv=False)[-1])\r\nprint('full_witness',Df,'norm',top(Df),'residual',np.linalg.svd(np.eye(2)-A@Df,compute_uv=False)[-1])\r\nprint('unit_diagonal_simultaneous_extremes_poles',physical_poles(2.,.125,np.eye(2)))\r\nprint('allowed_full_norm_0p6_poles',physical_poles(2.,.125,np.array([[0.,0.],[.6,0.]])))\r\nprint('point_at_omega1_mu_sigma',diag_mu(2.,.125,1.),top(matrix(omega=1.)))\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.2));ax[0].bar(['diagonal mu','full mu','D upper'],[.5,2.,top(D@A@np.linalg.inv(D))]);ax[1].imshow(abs(A),vmin=0,vmax=2,cmap='Blues');ax[1].set_title('Same M, not its diagonal entries')\r\nfor i in range(2):\r\n    for j in range(2):ax[1].text(j,i,str(float(abs(A[i,j]))),ha='center',va='center')\r\nplt.tight_layout();plt.show();print('structure_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 158,
+      "title": "全频边界与实复结构反例",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.r_[0.,np.logspace(-3,3,1201)]\r\ndef matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)\r\ndef top(M):return float(np.linalg.svd(M,compute_uv=False)[0])\r\ndef diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)\r\ndef diag_witness(b,c,omega=0.):\r\n    if b*c==0:return None\r\n    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])\r\ndef full_witness(M):\r\n    U,s,Vh=np.linalg.svd(M)\r\n    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]\r\ndef physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 176,
+          "delim": "`",
+          "code": "# Entire-frequency formulas; DC and infinity are evaluated separately from the log grid\r\nfreq_reports=[]\r\nfor c in [.125,.5,.8,0.]:\r\n    peak=np.sqrt(abs(2*c));radius=1/peak if peak else float('inf');Delta=np.diag([1.,np.sign(c) if c else 1.]);poles=physical_poles(2.,c,Delta)\r\n    row={'c':c,'exact_peak':peak,'radius':radius,'worst_constant_alpha':float(max(poles.real)),'scan_peak_with_DC':float(max(diag_mu(2.,c,w)))};freq_reports.append(row);print('frequency_case',row)\r\nfig,ax=plt.subplots(1,2,figsize=(10,3.2))\r\nfor c in [.125,.5,.8]:ax[0].semilogx(w[1:],diag_mu(2.,c,w[1:]),label='c='+str(c))\r\nds=np.logspace(-2,1,401);ax[1].semilogx(ds,np.maximum(2*ds,.125/ds),label='feasible D upper');ax[1].axhline(.5,color='red',ls='--',label='exact mu')\r\nax[0].axhline(1,color='red',ls='--')\r\nfor a in ax:a.grid(True);a.legend()\r\nax[0].set_xlabel('Frequency rad/s (DC separately)');ax[1].set_xlabel('d');plt.tight_layout();plt.show()\r\nprint('triangular_c0_mu_sigma_D0p1',diag_mu(2.,0.),top(matrix(c=0.)),top(np.diag([.1,1.])@matrix(c=0.)@np.diag([10.,1.])))\r\nprint('frequency_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 189,
+          "delim": "`",
+          "code": "# Real vs complex structure: exact algebraic counterexamples, not an approximate real-mu solver\r\nprint('scalar_i_complex_mu_real_mu_rho_sigma',1.,0.,1.,1.)\r\nfor delta in [-10.,-1.,0.,1.,10.]:print('real_scalar_residual',delta,abs(1-1j*delta))\r\nprint('negative_product_repeated_real_mu_complex_mu',0.,diag_mu(2.,-.125))\r\nfor omega in [0.,.001,1.]:\r\n    eigenvalues=np.linalg.eigvals(matrix(omega=omega));print('repeated_real_eigenvalues',omega,eigenvalues,'exact_real_mu',.5 if omega==0 else 0.)\r\nprint('D_commutation_full_counterexample',np.linalg.norm(np.diag([.25,1.])@np.array([[0.,1.],[1.,0.]])-np.array([[0.,1.],[1.,0.]])@np.diag([.25,1.])))\r\nprint('real_structure_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 234,
+      "title": "完整性能增广与四题复算",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nimport control as ctrl\r\nplt.rcParams.update({'font.family':'DejaVu Sans','axes.unicode_minus':False})\r\nw=np.r_[0.,np.logspace(-3,3,1201)]\r\ndef matrix(b=2.,c=.125,omega=0.):return np.array([[0.,b],[c,0.]],dtype=complex)/(1+1j*omega)\r\ndef top(M):return float(np.linalg.svd(M,compute_uv=False)[0])\r\ndef diag_mu(b,c,omega=0.):return np.sqrt(abs(b*c))/np.hypot(1.,omega)\r\ndef diag_witness(b,c,omega=0.):\r\n    if b*c==0:return None\r\n    q=(1+1j*omega)/np.sqrt(abs(b*c));return np.diag([q,np.sign(b*c)*q])\r\ndef full_witness(M):\r\n    U,s,Vh=np.linalg.svd(M)\r\n    return None if s[0]==0 else np.outer(Vh.conj().T[:,0],U[:,0].conj())/s[0]\r\ndef physical_poles(b,c,Delta):return np.linalg.eigvals(-np.eye(2)+Delta@np.array([[0.,b],[c,0.]]))\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 252,
+          "delim": "`",
+          "code": "# Robust performance uses the entire augmented matrix, including both off-diagonal couplings\r\nperformance=[];fig,ax=plt.subplots(figsize=(8,3.5))\r\nfor q in [.4,.6,.8]:\r\n    a=.4;M=np.array([[a,1.],[q*a,q]]);d=np.sqrt(q*a);D=np.diag([d,1.]);peak=a+q;Delta=np.eye(2)/peak\r\n    gains=[q/(1-a*delta) for delta in [-1.,0.,1.]];maxgain=q/(1-a)\r\n    row={'q':q,'physical_radius':1/a,'worst_performance':maxgain,'augmented_mu_DC':peak,'D_upper':top(D@M@np.linalg.inv(D)),'witness_norm':top(Delta),'witness_residual':float(np.linalg.svd(np.eye(2)-M@Delta,compute_uv=False)[-1])};performance.append(row);print('performance_case',row)\r\n    H=ctrl.tf([q],[1,1-a]);print('worst_parameter_Hnorm_exact',q/(1-a),'pole',ctrl.poles(H),'delta_corner_gains',gains)\r\n    ax.semilogx(w[1:],abs(H(1j*w[1:])),label='q='+str(q))\r\nax.axhline(1,color='black',ls='--');ax.set_xlabel('rad/s');ax.set_ylabel('Worst real-parameter performance');ax.grid(True);ax.legend();plt.tight_layout();plt.show()\r\nprint('performance_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 262,
+          "delim": "`",
+          "code": "# Four exercises: all original numeric assertions and witnesses are executable\r\nprint('Q1_mu_diag_full_d_radii',.5,2.,.25,2.,.5)\r\nprint('Q1_diagonal_witness',diag_witness(2.,.125),'full_witness',full_witness(matrix()))\r\nprint('Q2_nilpotent_mu_sigma_Ud',0.,2.,.2,'scalar_i_real_complex_mu',0.,1.)\r\nfor c in [.125,.5,.8]:print('Q3_peak_radius_alpha',c,np.sqrt(2*c),1/np.sqrt(2*c),-1+np.sqrt(2*c))\r\nfor q in [.4,.6,.8]:print('Q4_RS_radius_RP_gain_aug_mu_radius',q,2.5,q/.6,.4+q,1/(.4+q))\r\nprint('Q4_q0p8_specific_witness_det',np.linalg.det(np.eye(2)-np.array([[.4,1.],[.32,.8]])@np.diag([1.,.75])))\r\nprint('all_answers_complete')\r\n",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
