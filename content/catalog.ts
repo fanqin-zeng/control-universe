@@ -5528,7 +5528,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "case",
-        "status": "draft"
+        "status": "v1.3"
       }
     ]
   },

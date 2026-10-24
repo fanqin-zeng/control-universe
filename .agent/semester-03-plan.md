@@ -1047,3 +1047,8 @@ H∞滤波从空占位新写Phase1–4交付：九H2、四题全子问、三Note
 ### ROBUST-10 本期交付记录（2026-10-24）
 
 时滞系统控制从空占位新写Phase1–4交付：九H2、四题全部子问、三Notebook五cell、三滑块双图/边界按钮与SVG。整段历史/标量常时滞精确界/小增益包络全频证书/Padé假稳定/Halanay时变充分条件分开；tau.5/1/1.5含证书保守和真实失稳，临界/k=a/零时滞边界保留。真实TS90配置/540频点/12历史轨迹两步长对独立DOP853稠密历史/expm/非线性根/复频响/SymPy、严格内核/Pyodide、双构建/375px与官方Pages205课/9旧路由验收见.agent/semester-03/robust-10/acceptance.md。有限谱扫描/时间窗/Padé不冒充证明；rank5独立资源，保留其他会话，不发布Pages、不生产ROBUST-11。真实master回执见checklist。
+
+
+### ROBUST-11 本期交付记录（2026-10-24）
+
+鲁棒控制案例按Phase1–4重构：保留35旧标题ID/11H2/四题全部子问和原五cell用途，补答案cell、真实SVG/三滑块双图/四按钮。修正双质量分母、重复缩放、完整LFT/权重DC冲突；旧PID名义失稳保留为诊断，无依据H∞/μ/D-K表撤销实测身份，外部模板明确未执行。显式q1比例基线在固定阻尼m/k矩形上有解析Routh证书，但1000样本77–81%超调/最慢65.6s说明性能失败；不宣称工程设计成功。真实TS150配置/1050频点/6轨迹两步长、500LFT/SymPy/独立物理特征向量1000样本、严格原cell/Pyodide、双构建/375px/官方Pages检查见.agent/semester-03/robust-11/acceptance.md。rank5独立资源，保留其它会话，不发布Pages；真实master回执见checklist。
