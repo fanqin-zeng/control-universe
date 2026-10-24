@@ -237,7 +237,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | MPC-01 | [x] | [x] | [x] | [x] | [x] | [x] | .agent/semester-03/mpc-01/acceptance.md;commit:2950ac78055c68d93f699427dd65c3adad01e79d ;docs/discuss-log/semester-03/12-mpc/01-mpc-principle.md |
-| MPC-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| MPC-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/12-mpc/02-prediction-model.md;.agent/semester-03/mpc-02/acceptance.md |
 | MPC-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

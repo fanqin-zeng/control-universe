@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-24T06:27:09.061Z",
-  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/pid-engineering-tuning",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "testedAt": "2026-10-24T06:26:25.200Z",
+  "url": "http://127.0.0.1:18396/python-expansion.html?lesson=mpc/prediction-model",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
       "key": "math/calculus-basics",
@@ -7704,28 +7704,106 @@
     {
       "key": "mpc/prediction-model",
       "title": "预测模型",
-      "sourceHash": "9bf989cb4044bde82e749608b3344e5c1684551431c7d8395be82b39c6444cef",
+      "sourceHash": "1bc72b806517c8f3bf9031ed70a9abe198ae28b6923a349a8095b99f38c0c529",
       "notebooks": [
         {
           "id": "mpc/prediction-model#1",
-          "title": "实验 1",
+          "title": "三种预测与增广条件核验",
           "index": 1,
-          "line": 229,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        }
-      ],
-      "executedSourceHash": "0a218cc42e3afc3354854e46e3d4378b34a4641864d1653a0460a5737fc62e96",
-      "formattingProvenance": [
+          "line": 162,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5349,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Fe [[0.5    1.    ]\n [0.75   1.    ]\n [0.875  1.    ]\n [0.9375 1.    ]]\nPhi [[0.5    0.     0.    ]\n [0.75   0.5    0.    ]\n [0.875  0.75   0.5   ]\n [0.9375 0.875  0.75  ]]\nfree [0.625    0.5625   0.53125  0.515625]\nthree_predictions [1.125    1.3125   1.15625  1.078125]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 45,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "EF 1 [1.] [ 1.5 -0.5]\nEF 2 [1.  1.5] [ 1.75 -0.75]\nEF 3 [1.   1.5  1.75] [ 1.875 -0.875]\nobservable_counterexample_rank 1\ntruncation_case 0.5 1.0 8 max_error 0.0\ntruncation_case 0.5 0.0 8 max_error 0.0\ntruncation_case 0.9 1.0 2 max_error 0.04414499999999988\n"
+                }
+              ]
+            }
+          ]
+        },
         {
-          "lesson": "mpc/prediction-model",
-          "fromSourceHash": "0a218cc42e3afc3354854e46e3d4378b34a4641864d1653a0460a5737fc62e96",
-          "toSourceHash": "9bf989cb4044bde82e749608b3344e5c1684551431c7d8395be82b39c6444cef",
-          "notebookPayloadHash": "7019fd87256e8fb3b365479445621b569e626cf27a01ed0edcbfff1ecdc31cbc",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "mpc/prediction-model#2",
+          "title": "辨识边界与五题答案复算",
+          "index": 2,
+          "line": 249,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3004,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "FOPTD_recovered 2.0 3.0 0.5\nfive_percent_time_and_sample 0.6538798831626518 0.7000000000000001\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 57872
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise1_a_b_Ae 0.8464817248906141 0.30703655021877174 [[0.84648172 0.        ]\n [0.84648172 1.        ]]\nexercise2_impulses [0.2  0.15 0.12 0.09 0.07 0.05 0.04 0.03]\nexercise2_G [[0.2  0.   0.   0.  ]\n [0.35 0.2  0.   0.  ]\n [0.47 0.35 0.2  0.  ]\n [0.56 0.47 0.35 0.2 ]]\nexercise2_conditional_t63 3.045449101349092\nexercise3_prediction 1.3599999999999999\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 8,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise4_gain_pole 0.1 0.7272727272727273 -0.2909090909090908\nexercise4_gain_pole 1.0 0.4 0.19999999999999996\nexercise4_unstable_counterexample 1.0 0.6\nexercise4_unstable_counterexample 100.0 1.188118811881188\n"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 37,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "exercise5_num_den [0.         0.01941268 0.0189012 ] [ 1.         -1.88480247  0.92311635]\nexercise5_Ae_Be [[ 1.88480247 -0.92311635  0.        ]\n [ 1.          0.          0.        ]\n [ 0.05549025 -0.01792016  1.        ]] [[1.        ]\n [0.        ]\n [0.01941268]]\nexercise5_observability_rank 3\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -14636,15 +14714,15 @@
   "complete": true,
   "totals": {
     "lessons": 102,
-    "notebooks": 439,
-    "enabled": 427,
-    "codeOnly": 12
+    "notebooks": 440,
+    "enabled": 429,
+    "codeOnly": 11
   },
   "releaseTotals": {
     "lessons": 102,
-    "notebooks": 439,
-    "enabled": 426,
-    "codeOnly": 13
+    "notebooks": 440,
+    "enabled": 428,
+    "codeOnly": 12
   },
   "provenance": [
     {
@@ -15336,6 +15414,11 @@
       "testedAt": "2026-10-24T06:27:59.692Z",
       "url": "http://127.0.0.1:18233/control-universe/python-expansion.html?lesson=embodied%2Fmultimodal-observation",
       "inputPath": ".agent/semester-03/embodied-02/browser-python.json"
+    },
+    {
+      "testedAt": "2026-10-24T06:26:25.200Z",
+      "url": "http://127.0.0.1:18396/python-expansion.html?lesson=mpc/prediction-model",
+      "inputPath": ".agent/semester-03/mpc-02/pyodide.json"
     }
   ]
 }

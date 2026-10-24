@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 93 课 / 416 个实验 / 619 个单元格全部纳入盘点。81 课全部可运行，5 课混合，7 课全部保留代码；启用 402 个实验，保留 14 个。实际执行 603 个单元格（含异常单元格），生成 198 张 PNG。原始记录中 403 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 102 课 / 440 个实验 / 661 个单元格全部纳入盘点。92 课全部可运行，4 课混合，6 课全部保留代码；启用 428 个实验，保留 12 个。实际执行 646 个单元格（含异常单元格），生成 205 张 PNG。原始记录中 429 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -43,11 +43,10 @@
 | discrete-sampled/discrete-stability-criteria（离散系统稳定性） | 5/5 | 6 | 无 |
 | discrete-sampled/discretization-methods（离散化方法） | 4/4 | 5 | 无 |
 | discrete-sampled/sampling-period-selection（采样周期） | 3/3 | 4 | 无 |
-| implementation/digital-pid（数字PID） | 3/3 | 4 | 无 |
+| implementation/digital-pid（数字PID） | 4/4 | 8 | 无 |
 | implementation/realtime-control（实时控制） | 0/1 | 0 | 1 |
 | estimation/kalman-filter（卡尔曼滤波） | 1/3 | 2 | 2, 3 |
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
-| robust/uncertainty-modeling（不确定性建模） | 4/4 | 5 | 无 |
 | robust/robust-stability（鲁棒稳定性） | 2/3 | 3 | 2 |
 | robust/robust-performance（鲁棒性能） | 2/2 | 4 | 无 |
 | robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
@@ -55,13 +54,13 @@
 | robust/mu-synthesis（μ综合） | 2/2 | 4 | 无 |
 | robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
 | mpc/mpc-principle（预测控制原理） | 2/2 | 3 | 无 |
-| mpc/prediction-model（预测模型） | 0/1 | 0 | 1 |
+| mpc/prediction-model（预测模型） | 2/2 | 6 | 无 |
 | mpc/receding-horizon（滚动优化） | 0/1 | 0 | 1 |
 | mpc/constraint-handling（约束处理） | 0/1 | 0 | 1 |
 | mpc/generalized-predictive-control（广义预测控制） | 0/1 | 0 | 1 |
 | mpc/nonlinear-mpc（非线性预测控制） | 0/1 | 0 | 1 |
 | mpc/mpc-case-study（预测控制案例） | 0/1 | 0 | 1 |
-| intelligent/fuzzy-control-basics（模糊控制） | 9/9 | 32 | 无 |
+| intelligent/fuzzy-control-basics（模糊控制） | 10/10 | 33 | 无 |
 | intelligent/fuzzy-controller-design（模糊控制器） | 6/6 | 12 | 无 |
 | intelligent/neural-network-control（神经网络控制） | 5/5 | 8 | 无 |
 | multi-agent/distributed-mpc（分布式预测控制） | 1/1 | 2 | 无 |
@@ -105,6 +104,16 @@
 | machine-learning/supervised-learning（监督学习） | 2/2 | 4 | 无 |
 | rl-control/rl-basics（强化学习问题） | 2/2 | 3 | 无 |
 | robotics/robot-models（机器人系统） | 2/2 | 3 | 无 |
+| embodied/embodied-systems（具身智能系统） | 2/2 | 2 | 无 |
+| safety-ftc/safety-overview（控制安全） | 2/2 | 3 | 无 |
+| applications/power-electronics（电力电子控制） | 3/3 | 4 | 无 |
+| estimation/least-squares-ml（统计估计） | 2/2 | 4 | 无 |
+| identification/least-squares-rls（最小二乘辨识） | 3/3 | 4 | 无 |
+| autonomous-driving/vehicle-dynamics（车辆动力学） | 2/2 | 4 | 无 |
+| machine-learning/neural-networks（神经网络基础） | 2/2 | 4 | 无 |
+| implementation/pid-engineering-tuning（PID工程整定） | 2/2 | 4 | 无 |
+| robust/uncertainty-modeling（不确定性建模） | 4/4 | 5 | 无 |
+| embodied/multimodal-observation（多模态感知） | 2/2 | 2 | 无 |
 
 ## 待处理实验
 
@@ -115,17 +124,15 @@
 | PY-001 | implementation/realtime-control#1：实验 1（源码 L225） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-002 | estimation/kalman-filter#2： 动手实验：卡尔曼滤波仿真（源码 L357） | FONT | 绘图字形未通过验收：₁（U+2081)、₂（U+2082)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
 | PY-003 | estimation/kalman-filter#3： 动手实验：Q/R 对卡尔曼滤波性能的影响（源码 L514） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-004 | robust/uncertainty-modeling#3：实验 3（源码 L453） | RUNTIME | IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-005 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
-| PY-006 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-007 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-008 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
-| PY-009 | mpc/prediction-model#1：实验 1（源码 L279） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-010 | mpc/receding-horizon#1：实验 1（源码 L128） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-011 | mpc/constraint-handling#1：实验 1（源码 L433） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-012 | mpc/generalized-predictive-control#1：实验 1（源码 L794） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-013 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-014 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-004 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
+| PY-005 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-006 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-007 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
+| PY-008 | mpc/receding-horizon#1：实验 1（源码 L128） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-009 | mpc/constraint-handling#1：实验 1（源码 L433） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-010 | mpc/generalized-predictive-control#1：实验 1（源码 L794） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-011 | mpc/nonlinear-mpc#1：实验 1（源码 L477） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
+| PY-012 | mpc/mpc-case-study#1：实验 1（源码 L297） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 
@@ -142,5 +149,3 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 ## 验收与发布
 
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
-
-ROBUST-02：2026-10-24，4/4 Notebook、5/5 单元完整浏览器实跑，原PY-019二维/三维索引问题已随课程重构修复。独立证据`.agent/semester-03/robust-02/pyodide.json`；本条只更新本课，不代表全站重新验收或发布。

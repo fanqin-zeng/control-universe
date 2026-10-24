@@ -74,6 +74,7 @@
 | ML-03 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-03，rank2；保留并行实现课检查点，仅依赖已交付ML-02与多元微积分 | .agent/semester-03/ml-03/acceptance.md |
 | ROBUST-02 | IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户明确指定继续ROBUST-02，rank5；保留并行课程，仅依赖已交付ROBUST-01与矩阵基础 | .agent/semester-03/robust-02/acceptance.md |
 | EMBODIED-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11;MPC-02;MPC-03;MPC-04;MPC-05;MPC-06;MPC-07;MPC-08;MPC-09;MPC-10;MPC-11;INTEL-02;INTEL-03;INTEL-04;INTEL-05;INTEL-06;INTEL-07;INTEL-08;RL-02;RL-03;RL-04;RL-05;RL-06;RL-07;RL-08;RL-09;RL-10;RL-11;RL-12;MULTI-02;MULTI-03;MULTI-04;MULTI-05;MULTI-06;MULTI-07;MULTI-08;MULTI-09;SAFE-02;SAFE-03;SAFE-04;SAFE-05;SAFE-06;SAFE-07;SAFE-08;ROBOT-02;ROBOT-03;ROBOT-04;ROBOT-05;ROBOT-06;ROBOT-07;ROBOT-08;ROBOT-09;ROBOT-10;RLEARN-02;RLEARN-03;RLEARN-04;RLEARN-05;RLEARN-06;RLEARN-07;RLEARN-08;RLEARN-09;RLEARN-10 | 2026-10-24用户明确指定继续EMBODIED-02，rank13；先修表征学习未交付，编码器/表征在本课局部定义，不补写别课 | .agent/semester-03/embodied-02/acceptance.md |
+| MPC-02 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08;ROBUST-03;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-02，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-02/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -836,3 +837,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### EMBODIED-02 本轮执行记录（2026-10-24）
 
 用户指定rank13；多模态感知按新写Phase1–4完成。夹爪遮挡杯子引出视觉/本体/触觉互补、时间/坐标/掩码合同、标量融合与学习表征；10H2、2Notebook2cell、1Explorer和SVG、4题4答。实际TS600配置与独立Fraction协方差计算3450量一致，保留迟到/相关/缺失反例；干净内核、固定Pyodide、真实DOM/窄屏及生产构建证据见.agent/semester-03/embodied-02/acceptance.md。先修表征学习未交付，所需概念本课局部定义，不生产别课；未训练真实模型或发布Pages。
+
+### MPC-02 学期3交付（2026-10-24）
+
+预测模型按重构Phase1–4完成，保留十H2、全部旧标题ID、三类模型/辨识/失配与五题目标。纠正阶跃和脉冲系数混用、增广可观测条件、CARIMA延迟/递推、FOPTD判定、ZOH及无条件鲁棒结论。新增Explorer，两Notebook六cell，440组实际TS对独立Fraction及连续状态矩阵指数；严格内核、Pyodide、普通与Pages本地页面实跑及375px通过。证据.agent/semester-03/mpc-02/acceptance.md；真实master回执见全局checklist。rank6隔离端口/缓存/索引，保留其它会话及用户修改；本课顺序例外独立登记，不发布Pages、不生产MPC-03。
