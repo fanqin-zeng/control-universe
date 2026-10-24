@@ -47,7 +47,7 @@
 | implementation/realtime-control（实时控制） | 0/1 | 0 | 1 |
 | estimation/kalman-filter（卡尔曼滤波） | 3/3 | 6 | 无 |
 | robust/robustness-concept（鲁棒性） | 4/4 | 4 | 无 |
-| robust/robust-stability（鲁棒稳定性） | 2/3 | 3 | 2 |
+| robust/robust-stability（鲁棒稳定性） | 4/4 | 5 | 无 |
 | robust/robust-performance（鲁棒性能） | 2/2 | 4 | 无 |
 | robust/h-infinity-basics（H∞控制） | 1/3 | 2 | 2, 3 |
 | robust/mixed-sensitivity（混合灵敏度） | 2/2 | 4 | 无 |
@@ -128,7 +128,6 @@
 | PY-001 | implementation/realtime-control#1：实验 1（源码 L225） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-002 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
 | PY-003 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-004 | robust/h-infinity-basics#3：实验 3（源码 L424） | RUNTIME | SyntaxError: unterminated string literal (detected at line 50) (<unknown>, line 50) | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 | PY-005 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 | PY-006 | mpc/constraint-handling#1：实验 1（源码 L433） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-007 | mpc/generalized-predictive-control#1：实验 1（源码 L794） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
@@ -150,3 +149,5 @@ lib/python-support.json 是由浏览器记录生成的执行白名单；MDX 编�
 ## 验收与发布
 
 逐课浏览器执行完成；页面验收、构建和远端发布结果在交付记录 python-expansion-delivery.md 登记。只有实际通过的实验启用运行。
+
+ROBUST-03：2026-10-24，4/4 Notebook、5/5单元已完整浏览器实跑；原PY-004本课求解器依赖通过2×2解析可行性与矩阵回代替代，未声称通用cvxpy/SDP浏览器适配。证据`.agent/semester-03/robust-03/pyodide.json`；只签本课，不代表发布。
