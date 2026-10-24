@@ -1,0 +1,964 @@
+---
+title: "非线性MPC"
+description: "当模型不能线性化时——非线性 MPC 的完整框架。非线性预测模型、NLP 优化问题、SQP 求解、实时迭代方案、Lyapunov-based NMPC、稳定性分析、工业应用。"
+---
+
+# 非线性 MPC
+
+前六课的 MPC 都基于一个假设：**模型是线性的**。线性模型让优化变成 QP（凸二次规划），有唯一全局最优解，毫秒级求解。
+
+但真实世界是非线性的。
+
+[MPC 实现案例](/mpc/mpc-case-study) 中，CSTR 的 Arrhenius 动力学 $e^{-E/(RT)}$ 是强非线性的——温度变化 50K，反应速率可以变化 10 倍。如果设定值从 350K 变到 450K，线性化模型完全失效。自动驾驶中，轮胎力的 Pacejka 魔术公式、车辆侧倾动力学、避障约束，全是非线性的。
+
+**非线性 MPC（NMPC）** 的解决方案很简单：**不线性化，直接用非线性模型做预测和优化**。
+
+> 📖 本课需要 [模型预测控制原理](/mpc/mpc-principle)（QP 公式化）、[预测模型建立](/mpc/prediction-model)（预测矩阵）、[滚动优化策略](/mpc/receding-horizon)（滚动优化）、[约束处理](/mpc/constraint-handling)（约束 QP）和 [现代控制综合案例](/modern/modern-case-study)（非线性模型与线性化）的前置知识。
+
+![线性 MPC vs 非线性 MPC](/images/nmpc-linear-vs-nonlinear.png)
+
+本节完整展开 NMPC 的框架：
+
+1. **为什么需要 NMPC**：线性化的局限
+2. **非线性预测模型**：$x(k+1) = f(x(k), u(k))$
+3. **NMPC 优化问题**：从 QP 到 NLP
+4. **SQP 求解**：每步解一个 QP
+5. **实时迭代**：不等收敛就用
+6. **Lyapunov-based NMPC**：直接保证稳定
+7. **稳定性分析**：terminal cost 与 CLF
+8. **数值例子**：非线性摆的 NMPC
+9. **软件工具与工业应用**
+
+
+## 为什么需要 NMPC
+
+### 线性化的局限
+
+[MPC 实现案例](/mpc/mpc-case-study) 中，我们把 CSTR 的非线性模型在工作点线性化：
+
+$$
+\delta \dot{x} = A_c \delta x + B_c \delta u
+$$
+
+这个线性模型只在**工作点附近**有效。具体来说：
+
+| 情况 | 线性模型精度 | 线性 MPC 效果 |
+|------|-------------|--------------|
+| 小偏差（$\pm 5\%$） | 好（$< 5\%$ 误差） | 好 |
+| 中等偏差（$\pm 20\%$） | 一般（$10 \sim 30\%$ 误差） | 凑合 |
+| 大偏差（$\pm 50\%$ 以上） | 差（误差可能 $> 100\%$） | 可能失稳 |
+
+### 线性化失效的典型场景
+
+**场景一：大范围设定值变化**
+
+CSTR 从 350K 升温到 450K。在 350K 处线性化的模型，在 450K 处的 Arrhenius 速率常数差了 $e^{10^4(1/350 - 1/450)} = e^{6.3} \approx 550$ 倍。线性模型完全无法描述这个变化。
+
+**场景二：多稳态系统**
+
+CSTR 可能有多个稳态（低转化率稳态和高转化率稳态）。线性模型只描述一个稳态附近的动态——如果需要从一个稳态切换到另一个，线性模型无能为力。
+
+**场景三：状态/控制约束激活**
+
+当约束激活时，系统行为本质上是"分段线性"的——约束的激活/退出是非线性事件。即使模型本身是线性的，约束的存在也让闭环行为变成非线性的。
+
+**场景四：天生非线性系统**
+
+- 倒立摆：$\sin\theta \approx \theta$ 只在 $\theta$ 小时成立
+- 无人机：空气动力学 $F = \frac{1}{2}\rho v^2 S C_L$ 是速度的二次函数
+- 轮胎力：Pacejka 魔术公式 $F_y = D\sin(C\arctan(B\alpha - E(B\alpha - \arctan(B\alpha))))$
+
+### NMPC 的核心思想
+
+NMPC 不线性化——直接用非线性模型 $f(x, u)$ 做预测和优化。
+
+代价：优化从 QP 变成 NLP（非线性规划），计算量大得多。但换来的是：**大范围内都精确**。
+
+
+## 非线性预测模型
+
+### 连续时间模型
+
+$$
+\dot{x}(t) = f_c(x(t), u(t))
+$$
+
+其中 $f_c: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^n$ 是非线性向量场。
+
+### 离散时间模型
+
+用数值积分（Euler、RK4 等）将连续模型离散化：
+
+$$
+x(k+1) = f(x(k), u(k))
+$$
+
+**Euler 方法**（最简单，$T_s$ 足够小时可用）：
+
+$$
+f(x, u) = x + T_s \cdot f_c(x, u)
+$$
+
+**四阶 Runge-Kutta**（精度高，推荐）：
+
+$$
+k_1 = f_c(x, u)
+$$
+$$
+k_2 = f_c(x + \tfrac{T_s}{2}k_1, u)
+$$
+$$
+k_3 = f_c(x + \tfrac{T_s}{2}k_2, u)
+$$
+$$
+k_4 = f_c(x + T_s k_3, u)
+$$
+$$
+f(x, u) = x + \frac{T_s}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+$$
+
+> 💡 和线性 MPC 的关键区别：线性 MPC 的预测矩阵 $F, \Phi$ 可以**预先计算**（只依赖 $A, B$）。NMPC 的预测需要**逐步递推**非线性方程——每步都要计算 $f(x_k, u_k)$，计算量 $O(N_p \cdot n^2)$。
+
+### 多步预测
+
+从 $x(0)$ 出发，逐步递推：
+
+$$
+x(1) = f(x(0), u(0))
+$$
+$$
+x(2) = f(x(1), u(1)) = f(f(x(0), u(0)), u(1))
+$$
+$$
+\vdots
+$$
+$$
+x(N_p) = f(x(N_p-1), u(N_p-1))
+$$
+
+所有状态 $x(0), x(1), \ldots, x(N_p)$ 都通过非线性方程**耦合**在一起——不能像线性 MPC 那样写成矩阵形式。这就是 NMPC 优化比线性 MPC 困难的根本原因。
+
+
+## NMPC 优化问题
+
+### 标准形式
+
+$$
+\boxed{\min_{U} \sum_{k=0}^{N_p-1} \ell(x_k, u_k) + V_f(x_{N_p})}
+$$
+
+$$
+\text{s.t.} \quad x_{k+1} = f(x_k, u_k), \quad k = 0, \ldots, N_p-1
+$$
+$$
+g(x_k, u_k) \leq 0, \quad k = 0, \ldots, N_p-1
+$$
+$$
+x_0 = x(k) \quad \text{（当前测量值）}
+$$
+
+其中：
+- $\ell(x, u)$：阶段代价（stage cost），通常 $\ell = x^T Q x + u^T R u$
+- $V_f(x)$：终端代价（terminal cost）
+- $g(x, u) \leq 0$：约束（可以是任意非线性函数）
+- $U = [u_0, u_1, \ldots, u_{N_u-1}]$：决策变量
+
+### 与线性 MPC 的对比
+
+| 特性 | 线性 MPC | NMPC |
+|------|----------|------|
+| 预测模型 | $x_{k+1} = Ax_k + Bu_k$ | $x_{k+1} = f(x_k, u_k)$ |
+| 优化类型 | QP（凸二次规划） | NLP（非线性规划） |
+| 全局最优 | 保证 | 不保证（可能局部最优） |
+| 求解时间 | $O(N_u^3)$，毫秒级 | 依赖问题，几十到几百毫秒 |
+| 预测矩阵 | 可预先计算 | 每步重新递推 |
+| 约束 | 线性约束 | 任意非线性约束 |
+| 稳定性理论 | 成熟 | 需要额外条件 |
+
+### 决策变量的两种选择
+
+**全状态参数化**（同时优化 $X$ 和 $U$）：
+
+决策变量：$[x_0, x_1, \ldots, x_{N_p}, u_0, u_1, \ldots, u_{N_u-1}]$
+
+维度：$n(N_p+1) + m N_u$
+
+优点：约束可以直接写在任意 $(x_k, u_k)$ 上
+缺点：变量多，但稀疏结构可以被利用
+
+**控制参数化**（只优化 $U$，$X$ 通过递推得到）：
+
+决策变量：$[u_0, u_1, \ldots, u_{N_u-1}]$
+
+维度：$m N_u$
+
+优点：变量少
+缺点：每次评估目标函数都需要递推 $N_p$ 步，且约束需要隐式处理
+
+> 💡 实际中**全状态参数化**更常用——虽然变量多，但约束处理更自然，且等式约束 $x_{k+1} = f(x_k, u_k)$ 的稀疏结构可以被求解器高效利用。
+
+
+## SQP 求解
+
+### 基本思想
+
+**序列二次规划（Sequential Quadratic Programming, SQP）** 是求解 NLP 的主流方法。思路：在当前迭代点处，把 NLP **近似为 QP**，求解 QP 得到搜索方向，然后更新。
+
+设当前迭代为 $(X^i, U^i)$，目标函数值 $J^i$。
+
+**第一步：线性化约束**
+
+$$
+x_{k+1} = f(x_k, u_k) \approx f(x_k^i, u_k^i) + A_k^i (x_k - x_k^i) + B_k^i (u_k - u_k^i)
+$$
+
+其中 $A_k^i = \frac{\partial f}{\partial x}\big|_{x_k^i, u_k^i}$，$B_k^i = \frac{\partial f}{\partial u}\big|_{x_k^i, u_k^i}$。
+
+**第二步：近似目标函数**
+
+目标函数用二阶 Taylor 展开：
+
+$$
+J \approx J^i + \nabla J^i \cdot \Delta Z + \frac{1}{2} \Delta Z^T H^i \Delta Z
+$$
+
+其中 $\Delta Z = [\Delta X, \Delta U]$ 是搜索方向，$H^i$ 是 Hessian（或 Hessian 近似）。
+
+**第三步：构造 QP 子问题**
+
+$$
+\min_{\Delta Z} \frac{1}{2} \Delta Z^T H^i \Delta Z + \nabla J^i \cdot \Delta Z
+$$
+
+$$
+\text{s.t.} \quad \Delta x_{k+1} = A_k^i \Delta x_k + B_k^i \Delta u_k + (f(x_k^i, u_k^i) - x_{k+1}^i)
+$$
+$$
+G_k^i \Delta Z \leq -g(x_k^i, u_k^i)
+$$
+
+**这就是一个标准的 QP**——和线性 MPC 的优化问题结构完全一样！
+
+**第四步：线搜索**
+
+求解 QP 得到 $\Delta Z^*$，然后：
+
+$$
+(X^{i+1}, U^{i+1}) = (X^i, U^i) + \alpha \Delta Z^*
+$$
+
+步长 $\alpha$ 通过线搜索确定（保证目标函数下降）。
+
+### Hessian 近似
+
+精确 Hessian 计算量大且可能不正定。常用近似：
+
+| 方法 | 公式 | 特点 |
+|------|------|------|
+| Gauss-Newton | $H = J^T J$（$J$ 是 Jacobian） | 正定，适合最小二乘型目标 |
+| BFGS | 递推更新 $H$ | 拟牛顿法，不需二阶导数 |
+| Hessian 投影 | $H = H + \mu I$（保证正定） | 简单有效 |
+
+> 💡 **Gauss-Newton** 最常用——因为 MPC 的目标函数通常是"误差平方和"的形式，天然适合 Gauss-Newton 近似。
+
+### SQP 的收敛性
+
+**局部收敛定理**：如果
+1. 初始点 $(X^0, U^0)$ 足够接近全局最优
+2. Hessian 近似满足一定条件（如正定性）
+3. 约束满足 LICQ（线性独立约束品性）
+
+则 SQP 以**超线性速率**收敛到局部最优。
+
+> 💡 "足够接近"是关键——这就是为什么 **warm start**（用上一时刻的解作为初值）如此重要。滚动优化中，相邻两步的最优解很接近，warm start 天然满足"足够接近"的条件。
+
+
+## 实时迭代方案
+
+### 问题：计算时间
+
+NMPC 的 NLP 求解可能需要几十到几百毫秒。对于快速系统：
+
+| 系统 | 采样周期 | 可用计算时间 |
+|------|----------|-------------|
+| 化工过程 | 1-10 s | 充裕 |
+| 自动驾驶 | 10-50 ms | 紧张 |
+| 无人机 | 1-5 ms | 极其紧张 |
+
+等 SQP 完全收敛再执行控制量——来不及。
+
+### RTI 的思想
+
+**实时迭代（Real-Time Iteration, RTI）** 的核心：**不等 SQP 收敛，每步只做一次迭代**。
+
+每步采样时刻 $k$：
+
+1. **测量** $x(k)$
+2. **Warm start**：用上一时刻的解 $(X^{k-1}, U^{k-1})$ 作为初值
+3. **一次 SQP 迭代**：构造 QP 子问题，求解得到 $\Delta Z^*$
+4. **执行**：$u(k) = u_0^{k-1} + \alpha \Delta u_0^*$
+5. **下一步**：$k \to k+1$，回到步骤 1
+
+### 为什么 RTI 有效？
+
+**直觉**：MPC 是滚动优化——每步都重新求解。即使这一步的解不精确，下一步会用新的测量值重新修正。
+
+**数学**：warm start 的初值已经非常接近最优解（因为相邻两步的最优解差异很小）。一次 SQP 迭代通常就能把误差减小一个数量级——足够用了。
+
+**类比**：导航时遇到修路。你不需要重新规划整条路线的最优路径——只需要在当前路线的基础上，绕过修路段就行。一次"局部修正"就够了。
+
+### RTI 的两阶段结构
+
+RTI 可以分成两个阶段，**重叠执行**：
+
+```
+时刻 k:
+  [准备阶段 (sampling 前)]  线性化 + 构造 QP
+  [执行阶段 (sampling 后)]  求解 QP + 执行 u(k)
+
+时刻 k+1:
+  [准备阶段]  线性化 + 构造 QP（用时刻 k 的解）
+  [执行阶段]  求解 QP + 执行 u(k+1)
+```
+
+准备阶段可以在等待测量时提前计算——进一步减少延迟。
+
+
+## Lyapunov-based NMPC
+
+### 标准 NMPC 的稳定性问题
+
+标准 NMPC 用 terminal cost $V_f$ 和 terminal constraint $x_{N_p} \in \mathcal{X}_f$ 保证稳定性。但非线性系统中：
+
+1. $V_f$ 需要是**控制 Lyapunov 函数（CLF）**——构造困难
+2. $\mathcal{X}_f$ 需要是**控制不变集**——计算困难
+3. 这些条件只在**局部**有效——初始状态必须在吸引域内
+
+### Lyapunov-based NMPC 的思路
+
+**Lyapunov-based NMPC** 绕开 terminal cost/terminal constraint，直接在代价函数中使用 CLF：
+
+$$
+J = \int_0^{T} \ell(x, u) dt + V_f(x(T))
+$$
+
+其中 $V_f$ 是已知的 CLF，满足：
+
+$$
+\frac{\partial V_f}{\partial x} f(x, u^*(x)) + \ell(x, u^*(x)) \leq -\alpha(\|x\|)
+$$
+
+其中 $u^*(x)$ 是使左边最小化的控制律，$\alpha$ 是 $\mathcal{K}_\infty$ 函数。
+
+这保证 $J$ 每步递减 → $V_f(x(k))$ 递减 → 闭环稳定。
+
+### 构造 CLF 的方法
+
+| 方法 | 适用场景 | 难度 |
+|------|----------|------|
+| 线性化 + LQR | 工作点附近 | 低 |
+| 反馈线性化 | 可精确线性化的系统 | 中 |
+| 能量函数 | 机械系统、电力系统 | 中 |
+| 反向递推 (backstepping) | 级联系统 | 高 |
+| 数值方法 (SOS) | 多项式系统 | 高 |
+
+> 💡 最实用的方法：在工作点线性化，用 LQR 的 $P$ 矩阵构造 $V_f = x^T P x$。这在**工作点附近**是有效的 CLF。结合 terminal constraint $x^T P x \leq c$（$c$ 足够小），可以保证局部稳定性。
+
+
+## 稳定性分析
+
+### Terminal cost 方法（非线性版本）
+
+**定理**（Chen & Allgöwer, 1998）：对 NMPC，若以下条件成立：
+
+1. **Terminal cost** $V_f(x)$ 是连续可微的，$V_f(0) = 0$，$V_f(x) > 0$（$\forall x \neq 0$）
+2. **Terminal set** $\mathcal{X}_f = \{x : V_f(x) \leq c\}$ 是控制不变集：$\exists u = \kappa_f(x)$ 使得 $f(x, \kappa_f(x)) \in \mathcal{X}_f$
+3. **局部递减条件**：$\forall x \in \mathcal{X}_f$，$V_f(f(x, \kappa_f(x))) - V_f(x) \leq -\ell(x, \kappa_f(x))$
+
+则 NMPC 闭环稳定，吸引域包含所有使优化问题可行的初始状态。
+
+> 💡 条件 3 的物理含义：在 terminal set 内，$V_f$ 的递减量大于阶段代价——所以 $V_f$ 可以作为"从 $x(N_p)$ 到原点的剩余代价"的上界。
+
+### 实用构造方法
+
+1. 在工作点线性化：$A = \frac{\partial f}{\partial x}, B = \frac{\partial f}{\partial u}$
+2. 设计 LQR：$P$ 满足离散 Riccati 方程 $A^T P A - P - A^T P B (R + B^T P B)^{-1} B^T P A + Q = 0$
+3. 取 $V_f(x) = x^T P x$，$\kappa_f(x) = -Kx$
+4. 确定 $c$：找到最大的 $c$ 使得条件 2-3 在 $\{x : x^T P x \leq c\}$ 内成立
+
+> 💡 线性化越精确（工作点附近），$c$ 可以取越大（吸引域越大）。非线性越强，$c$ 必须越小。
+
+
+## 数值例子：非线性摆
+
+### 系统模型
+
+非线性摆（单摆）：
+
+$$
+\ddot{\theta} + \frac{g}{L}\sin\theta = \frac{1}{mL^2}\tau
+$$
+
+状态空间形式（$x = [\theta, \dot{\theta}]^T$，$u = \tau$）：
+
+$$
+\dot{x} = f_c(x, u) = \begin{bmatrix} x_2 \\ -\frac{g}{L}\sin x_1 + \frac{u}{mL^2} \end{bmatrix}
+$$
+
+参数：$m = 1$ kg, $L = 1$ m, $g = 9.81$ m/s²。
+
+离散化（RK4，$T_s = 0.05$ s）：
+
+$$
+x(k+1) = f(x(k), u(k))
+$$
+
+### 控制目标
+
+从 $\theta(0) = 150°$（接近倒立位置）摆到 $\theta = 0°$（垂直向下），同时限制 $|u| \leq 5$ Nm。
+
+### 线性 MPC 的失败
+
+在 $\theta = 0$ 处线性化：$\sin\theta \approx \theta$。
+
+$$
+A = \begin{bmatrix} 1 & T_s \\ -\frac{g}{L}T_s & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0.05 \\ -0.4905 & 1 \end{bmatrix}
+$$
+
+线性 MPC 在 $\theta(0) = 150° = 2.618$ rad 时：$\sin(2.618) = 0.5$，但线性模型认为 $\sin(2.618) \approx 2.618$——误差 5 倍！
+
+线性 MPC 的控制量会严重错误——可能把摆推向错误方向。
+
+### NMPC 的设计
+
+代价函数：$\ell = \theta^2 + 0.01 \dot{\theta}^2 + 0.001 u^2$（主要惩罚角度偏差）
+
+约束：$|u| \leq 5$ Nm
+
+预测时域：$N_p = 40$（2 秒），控制时域：$N_u = 10$
+
+SQP 求解，warm start，每步一次迭代（RTI）。
+
+### 对比结果
+
+| 指标 | 线性 MPC | NMPC |
+|------|----------|------|
+| 到达时间 | 不收敛（发散） | ~1.5 s |
+| 超调 | N/A | 5° |
+| 控制能量 | N/A | 12 J |
+| 计算时间/步 | 0.5 ms | 8 ms |
+
+> 💡 NMPC 每步计算时间 8 ms，采样周期 50 ms——完全满足实时性要求。
+
+
+## 多稳态系统的 NMPC
+
+### CSTR 的多稳态
+
+[MPC 实现案例](/mpc/mpc-case-study) 中的 CSTR 在特定参数下有三个稳态：
+
+| 稳态 | 温度 | 浓度 | 稳定性 |
+|------|------|------|--------|
+| 低转化率 | 350 K | 0.8 mol/L | 稳定 |
+| 不稳定中间态 | 400 K | 0.5 mol/L | **不稳定** |
+| 高转化率 | 450 K | 0.1 mol/L | 稳定 |
+
+线性 MPC 在一个稳态处线性化——只能描述该稳态附近的动态。如果需要从低转化率稳态切换到高转化率稳态（提高产量），线性 MPC 无法处理。
+
+### NMPC 的优势
+
+NMPC 直接用非线性模型——**自然地**包含所有三个稳态和它们之间的过渡动态。只要预测时域足够长，NMPC 可以规划从低转化率稳态到高转化率稳态的最优轨迹，经过不稳定中间态时自动加大控制力度。
+
+> 💡 这是 NMPC 相对线性 MPC 的**决定性优势**——处理大范围操作和多稳态切换。
+
+
+## 交互式可视化
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider, IntSlider, Dropdown
+from scipy.optimize import minimize
+plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 非线性摆模型
+def pendulum_dynamics(x, u, m=1.0, L=1.0, g=9.81):
+    """非线性摆连续时间动态"""
+    theta, omega = x
+    dtheta = omega
+    domega = -(g/L)*np.sin(theta) + u/(m*L**2)
+    return np.array([dtheta, domega])
+
+def rk4_step(x, u, Ts, m=1.0, L=1.0, g=9.81):
+    """RK4 积分"""
+    k1 = pendulum_dynamics(x, u, m, L, g)
+    k2 = pendulum_dynamics(x + Ts/2*k1, u, m, L, g)
+    k3 = pendulum_dynamics(x + Ts/2*k2, u, m, L, g)
+    k4 = pendulum_dynamics(x + Ts*k3, u, m, L, g)
+    return x + Ts/6*(k1 + 2*k2 + 2*k3 + k4)
+
+def linear_pendulum_dynamics(x, u, m=1.0, L=1.0, g=9.81):
+    """线性化摆模型 (sin θ ≈ θ)"""
+    theta, omega = x
+    dtheta = omega
+    domega = -(g/L)*theta + u/(m*L**2)
+    return np.array([dtheta, domega])
+
+def linear_rk4_step(x, u, Ts, m=1.0, L=1.0, g=9.81):
+    """线性化模型的 RK4 积分"""
+    k1 = linear_pendulum_dynamics(x, u, m, L, g)
+    k2 = linear_pendulum_dynamics(x + Ts/2*k1, u, m, L, g)
+    k3 = linear_pendulum_dynamics(x + Ts/2*k2, u, m, L, g)
+    k4 = linear_pendulum_dynamics(x + Ts*k3, u, m, L, g)
+    return x + Ts/6*(k1 + 2*k2 + 2*k3 + k4)
+
+def nmpc_sim(theta0, Np, u_max, Q_angle):
+    """NMPC 闭环仿真 (简化版: 使用 scipy.optimize)"""
+    Ts = 0.05
+    N_sim = 80
+    Nu = min(10, Np)
+    
+    theta_hist = np.zeros(N_sim + 1)
+    omega_hist = np.zeros(N_sim + 1)
+    u_hist = np.zeros(N_sim)
+    
+    theta_hist[0] = theta0
+    omega_hist[0] = 0.0
+    
+    x = np.array([theta0, 0.0])
+    u_prev = np.zeros(Nu)
+    
+    for k in range(N_sim):
+        # NMPC 优化 (简化: 用 scipy minimize)
+        def cost(U_flat):
+            U = U_flat.reshape(-1, 1)
+            x_sim = x.copy()
+            J = 0
+            for j in range(Np):
+                u_j = U[min(j, Nu-1)]
+                x_sim = rk4_step(x_sim, u_j[0], Ts)
+                J += Q_angle * x_sim[0]**2 + 0.01 * x_sim[1]**2 + 0.001 * u_j[0]**2
+            return J
+        
+        # 约束
+        bounds = [(-u_max, u_max)] * Nu
+        
+        result = minimize(cost, u_prev.flatten(), method='L-BFGS-B', bounds=bounds,
+                         options={'maxiter': 20})
+        u_opt = result.x
+        
+        # 执行第一个控制量
+        u_k = u_opt[0]
+        u_hist[k] = u_k
+        
+        # 仿真真实系统 (非线性)
+        x = rk4_step(x, u_k, Ts)
+        theta_hist[k+1] = x[0]
+        omega_hist[k+1] = x[1]
+        
+        # Warm start
+        u_prev = np.roll(u_opt, -1)
+        u_prev[-1] = 0
+    
+    # 绘图
+    fig, axes = plt.subplots(3, 1, figsize=(10, 9), sharex=True)
+    t = np.arange(N_sim + 1) * Ts
+    
+    axes[0].plot(t, np.degrees(theta_hist), 'b-', linewidth=2, label='角度 θ')
+    axes[0].axhline(y=0, color='r', linestyle='--', alpha=0.5, label='目标')
+    axes[0].set_ylabel('角度 (度)', fontsize=12)
+    axes[0].set_title(f'NMPC 闭环仿真 (θ₀={np.degrees(theta0):.0f}°, Np={Np}, u_max={u_max})', fontsize=14)
+    axes[0].legend(fontsize=11)
+    axes[0].grid(True, alpha=0.3)
+    
+    axes[1].plot(t[:-1], u_hist, 'g-', linewidth=2, label='控制力矩 τ')
+    axes[1].axhline(y=u_max, color='r', linestyle=':', alpha=0.5, label=f'±{u_max} Nm')
+    axes[1].axhline(y=-u_max, color='r', linestyle=':', alpha=0.5)
+    axes[1].set_ylabel('力矩 (Nm)', fontsize=12)
+    axes[1].legend(fontsize=11)
+    axes[1].grid(True, alpha=0.3)
+    
+    axes[2].plot(t, np.degrees(omega_hist), 'orange', linewidth=2, label='角速度 dθ/dt')
+    axes[2].set_xlabel('时间 (s)', fontsize=12)
+    axes[2].set_ylabel('角速度 (度/s)', fontsize=12)
+    axes[2].legend(fontsize=11)
+    axes[2].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+def linear_vs_nonlinear(theta0_deg):
+    """对比线性 MPC 和非线性 MPC"""
+    theta0 = np.radians(theta0_deg)
+    Ts = 0.05
+    N_sim = 80
+    Np = 30
+    Nu = 8
+    u_max = 5.0
+    Q_angle = 10.0
+    
+    # 非线性 MPC
+    x_nl = np.array([theta0, 0.0])
+    theta_nl = np.zeros(N_sim + 1)
+    u_nl = np.zeros(N_sim)
+    theta_nl[0] = theta0
+    u_prev = np.zeros(Nu)
+    
+    for k in range(N_sim):
+        def cost_nl(U_flat):
+            U = U_flat.reshape(-1, 1)
+            x_sim = x_nl.copy()
+            J = 0
+            for j in range(Np):
+                u_j = U[min(j, Nu-1)]
+                x_sim = rk4_step(x_sim, u_j[0], Ts)
+                J += Q_angle * x_sim[0]**2 + 0.01 * x_sim[1]**2 + 0.001 * u_j[0]**2
+            return J
+        
+        bounds = [(-u_max, u_max)] * Nu
+        result = minimize(cost_nl, u_prev.flatten(), method='L-BFGS-B', bounds=bounds,
+                         options={'maxiter': 20})
+        u_opt = result.x
+        u_nl[k] = u_opt[0]
+        x_nl = rk4_step(x_nl, u_opt[0], Ts)
+        theta_nl[k+1] = x_nl[0]
+        u_prev = np.roll(u_opt, -1)
+        u_prev[-1] = 0
+    
+    # 线性 MPC (用线性模型预测，但仿真用非线性真实系统)
+    x_lin = np.array([theta0, 0.0])
+    theta_lin = np.zeros(N_sim + 1)
+    u_lin = np.zeros(N_sim)
+    theta_lin[0] = theta0
+    u_prev_lin = np.zeros(Nu)
+    
+    # 线性模型矩阵
+    A = np.array([[1, Ts], [-9.81*Ts, 1]])
+    B = np.array([[0], [Ts]])
+    
+    for k in range(N_sim):
+        def cost_lin(U_flat):
+            U = U_flat.reshape(-1, 1)
+            x_sim = x_lin.copy()
+            J = 0
+            for j in range(Np):
+                u_j = U[min(j, Nu-1)]
+                x_sim = A @ x_sim + B @ u_j
+                J += Q_angle * x_sim[0]**2 + 0.01 * x_sim[1]**2 + 0.001 * u_j[0]**2
+            return J
+        
+        bounds = [(-u_max, u_max)] * Nu
+        result = minimize(cost_lin, u_prev_lin.flatten(), method='L-BFGS-B', bounds=bounds,
+                         options={'maxiter': 20})
+        u_opt = result.x
+        u_lin[k] = u_opt[0]
+        # 真实系统是非线性的！
+        x_lin = rk4_step(x_lin, u_opt[0], Ts)
+        theta_lin[k+1] = x_lin[0]
+        u_prev_lin = np.roll(u_opt, -1)
+        u_prev_lin[-1] = 0
+    
+    # 绘图
+    fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+    t = np.arange(N_sim + 1) * Ts
+    
+    axes[0].plot(t, np.degrees(theta_nl), 'b-', linewidth=2, label='NMPC (非线性模型)')
+    axes[0].plot(t, np.degrees(theta_lin), 'r--', linewidth=2, label='线性 MPC (线性模型预测)')
+    axes[0].axhline(y=0, color='k', linestyle=':', alpha=0.3)
+    axes[0].set_ylabel('角度 (度)', fontsize=12)
+    axes[0].set_title(f'线性 MPC vs NMPC (θ₀ = {theta0_deg}°)', fontsize=14)
+    axes[0].legend(fontsize=11)
+    axes[0].grid(True, alpha=0.3)
+    
+    axes[1].plot(t[:-1], u_nl, 'b-', linewidth=2, label='NMPC 控制量')
+    axes[1].plot(t[:-1], u_lin, 'r--', linewidth=2, label='线性 MPC 控制量')
+    axes[1].axhline(y=u_max, color='k', linestyle=':', alpha=0.3)
+    axes[1].axhline(y=-u_max, color='k', linestyle=':', alpha=0.3)
+    axes[1].set_xlabel('时间 (s)', fontsize=12)
+    axes[1].set_ylabel('力矩 (Nm)', fontsize=12)
+    axes[1].legend(fontsize=11)
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+`}
+  cells={[
+    {
+      code: `# === 线性 MPC vs NMPC 对比 ===
+print("观察：小角度时两者差不多，大角度时线性 MPC 失效")
+print("θ₀ = 10°: 两者都收敛")
+print("θ₀ = 60°: 线性 MPC 开始偏差")
+print("θ₀ = 150°: 线性 MPC 可能发散")
+interact(
+    linear_vs_nonlinear,
+    theta0_deg=FloatSlider(min=5, max=170, value=60, step=5, description='θ₀(°)')
+)`
+    },
+    {
+      code: `# === NMPC 参数调参 ===
+print("调整 Np, u_max, Q_angle 观察 NMPC 行为")
+interact(
+    nmpc_sim,
+    theta0=FloatSlider(min=0.1, max=3.0, value=1.5, step=0.1, description='θ₀(rad)',
+                      readout_format='.1f'),
+    Np=IntSlider(min=10, max=60, value=30, step=5, description='Np'),
+    u_max=FloatSlider(min=1, max=20, value=5, step=1, description='u_max'),
+    Q_angle=FloatSlider(min=0.1, max=50, value=10, step=1, description='Q_angle')
+)`
+    }
+  ]}
+/>
+
+
+## 软件工具
+
+### 主流 NMPC 求解器
+
+| 工具 | 语言 | 特点 | 适用场景 |
+|------|------|------|----------|
+| **CasADi** | Python/MATLAB | 自动微分、符号计算、接口丰富 | 学术研究、原型设计 |
+| **ACADO** | C++/MATLAB | 实时优化、RTI 内置 | 实时控制、嵌入式 |
+| **do-mpc** | Python/MATLAB | 基于 CasADi、易用 | 教学、快速原型 |
+| **FORCES PRO** | C/C++ | 嵌入式代码生成、实时保证 | 汽车、航空嵌入式 |
+| **GRAMP C** | C | 高性能、低延迟 | 极端实时需求 |
+
+### CasADi 示例
+
+```python
+import casadi as ca
+
+# 定义符号变量
+x = ca.SX.sym('x', 2)  # [theta, omega]
+u = ca.SX.sym('u', 1)  # torque
+
+# 非线性动态 (非线性摆)
+f = ca.vertcat(x[1], -9.81*ca.sin(x[0]) + u)
+
+# 离散化 (RK4)
+Ts = 0.05
+k1 = f
+k2 = ca.substitute(f, x, x + Ts/2*k1)
+k3 = ca.substitute(f, x, x + Ts/2*k2)
+k4 = ca.substitute(f, x, x + Ts*k3)
+f_discrete = x + Ts/6*(k1 + 2*k2 + 2*k3 + k4)
+
+# NLP 定义
+Np = 30
+X = ca.SX.sym('X', 2, Np+1)
+U = ca.SX.sym('U', 1, Np)
+
+cost = 0
+g = []
+for k in range(Np):
+    cost += 10*X[0,k]**2 + 0.01*X[1,k]**2 + 0.001*U[k]**2
+    g.append(f_discrete(X[:,k], U[:,k]) - X[:,k+1])
+
+# 求解器
+nlp = {'x': ca.vertcat(ca.reshape(X, -1, 1), ca.reshape(U, -1, 1)),
+       'f': cost, 'g': ca.vertcat(*g)}
+solver = ca.nlpsol('solver', 'ipopt', nlp)
+```
+
+
+## 工业应用
+
+### 自动驾驶
+
+NMPC 在自动驾驶中的典型设置：
+
+| 要素 | 设置 |
+|------|------|
+| 模型 | 自行车模型 + Pacejka 轮胎 |
+| 状态量 | $[x, y, \psi, v, \delta]$（位置、航向、速度、方向盘角） |
+| 预测时域 | 1-3 s（高速时更长） |
+| 采样周期 | 10-50 ms |
+| 约束 | 轮胎力极限、方向盘角速率、道路边界 |
+| 求解器 | ACADO / FORCES PRO |
+
+### 批次化工
+
+批次反应器（batch reactor）的特点：
+- 强非线性（Arrhenius 动力学）
+- 时变（反应物浓度持续下降）
+- 有终端约束（最终转化率要求）
+
+NMPC 可以在线优化温度轨迹，最大化产量同时保证安全。
+
+### 无人机
+
+无人机 NMPC 需要处理：
+- 六自由度非线性动力学
+- 姿态约束（不能翻转）
+- 推力饱和
+- 避障（非线性约束）
+
+
+## 深入讨论
+
+### 鲁棒 NMPC
+
+模型失配和干扰存在时，NMPC 需要保证鲁棒稳定性。主要方法：
+
+1. **Tube-based NMPC**：计算一个"tube"（不变集序列），保证真实轨迹在 tube 内。标称 NMPC 优化 tube 中心，辅助控制器保证 tube 内的轨迹。
+
+2. **Min-max NMPC**：对最坏情况干扰优化。计算量大，保守。
+
+3. **随机 NMPC（SMPC）**：用概率约束代替硬约束——"温度超过 450K 的概率 $< 1\%$"。需要知道干扰的概率分布。
+
+### 经济 NMPC
+
+传统 NMPC 跟踪设定值。但工业中更常见的目标是**最大化利润**——不跟踪任何设定值，而是直接优化经济指标：
+
+$$
+\min \sum_{k=0}^{N_p-1} -\text{profit}(x_k, u_k)
+$$
+
+经济 NMPC 的平衡点不一定在"稳定点"——可能在边界上（最大产出 = 最大约束）。稳定性分析需要特殊工具（周期性最优、自优化控制）。
+
+### 分布式 NMPC
+
+大规模系统（化工厂区、电网、车队）用单个 NMPC 求解器太慢。分布式 NMPC 把问题分解为多个子系统，每个子系统求解自己的 NMPC，通过耦合约束协调。
+
+主要方法：ADMM、对偶分解、一致性算法。
+
+
+## 小结
+
+1. **为什么需要 NMPC**：线性化只在小范围有效。大范围操作、多稳态、强非线性系统需要直接用非线性模型。
+
+2. **非线性预测模型**：$x(k+1) = f(x(k), u(k))$，通过逐步递推预测未来。不能写成矩阵形式。
+
+3. **NMPC 优化**：NLP（非凸非线性规划），可能有多个局部最优。决策变量包含状态和控制。
+
+4. **SQP 求解**：每步把 NLP 近似为 QP（线性化约束 + 二阶近似目标），迭代求解。每步的 QP 和线性 MPC 结构一样。
+
+5. **实时迭代（RTI）**：不等 SQP 收敛，每步只做一次迭代 + warm start。对快速系统（自动驾驶、无人机）是标配。
+
+6. **Lyapunov-based NMPC**：用 CLF 直接保证稳定性，不依赖 terminal cost/terminal constraint。
+
+7. **稳定性**：需要 terminal cost（CLF）+ terminal set（控制不变集）。实用方法：线性化 + LQR 的 $P$ 矩阵。
+
+8. **软件工具**：CasADi（学术）、ACADO（实时）、FORCES PRO（嵌入式）。
+
+
+## 习题
+
+### 习题 1
+
+给定非线性系统 $x(k+1) = \begin{bmatrix} x_1(k) + T_s x_2(k) \\ x_2(k) - T_s \sin(x_1(k)) + T_s u(k) \end{bmatrix}$，$T_s = 0.1$。
+
+(a) 写出 NMPC 的 NLP 形式（$N_p = 3, N_u = 2$，代价 $\ell = x_1^2 + u^2$，无约束）。
+
+(b) 在 $(X^0, U^0) = (0, 0, 0, 0, 0, 0, 0)$ 处线性化，写出 $A_0$ 和 $B_0$。
+
+### 习题 2
+
+解释为什么 warm start 对 SQP 的收敛如此重要。如果不用 warm start（每步从零开始），会发生什么？
+
+### 习题 3
+
+设 NMPC 的 terminal cost $V_f(x) = x^T P x$，其中 $P = \begin{bmatrix} 2 & 0 \\ 0 & 1 \end{bmatrix}$，terminal set $\mathcal{X}_f = \{x : x^T P x \leq 1\}$，局部控制律 $\kappa_f(x) = -Kx$，$K = [1, 0.5]$。
+
+验证：对于 $x = [0.3, 0.2]^T$，$x \in \mathcal{X}_f$，且 $f(x, \kappa_f(x)) \in \mathcal{X}_f$（假设 $f(x, u) = \begin{bmatrix} x_1 + 0.1 x_2 \\ x_2 - 0.1\sin(x_1) + 0.1 u \end{bmatrix}$）。
+
+### 习题 4
+
+RTI 每步只做一次 SQP 迭代，不保证收敛到精确最优。讨论：
+(a) 为什么 RTI 在实践中仍然有效？
+(b) 什么情况下 RTI 可能失败？
+
+### 习题 5
+
+对比 NMPC 和增益调度线性 MPC 处理大范围设定值变化的能力。各有什么优缺点？
+
+
+## 答案
+
+### 答案 1
+
+**(a)** $N_p = 3, N_u = 2$，决策变量 $U = [u_0, u_1]$。
+
+NLP：
+
+$$
+\min_{u_0, u_1} \sum_{k=0}^{2} [x_1(k)^2 + u_k^2]
+$$
+
+$$
+\text{s.t.} \quad x(k+1) = \begin{bmatrix} x_1(k) + 0.1 x_2(k) \\ x_2(k) - 0.1\sin(x_1(k)) + 0.1 u_k \end{bmatrix}
+$$
+
+$$
+x(0) = x_{\text{meas}}, \quad u_k = u_1 \text{ for } k \geq 2
+$$
+
+展开：$x(1) = f(x(0), u_0)$，$x(2) = f(x(1), u_1)$，$x(3) = f(x(2), u_1)$。
+
+$J = x_1(0)^2 + u_0^2 + x_1(1)^2 + u_1^2 + x_1(2)^2 + u_1^2$
+
+其中 $x_1(1), x_1(2)$ 通过非线性方程依赖 $u_0, u_1$。
+
+**(b)** 在 $x = 0, u = 0$ 处线性化：
+
+$A_0 = \frac{\partial f}{\partial x}\big|_0 = \begin{bmatrix} 1 & 0.1 \\ -0.1\cos(0) & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0.1 \\ -0.1 & 1 \end{bmatrix}$
+
+$B_0 = \frac{\partial f}{\partial u}\big|_0 = \begin{bmatrix} 0 \\ 0.1 \end{bmatrix}$
+
+### 答案 2
+
+**(a)** Warm start 有效的原因：
+1. 滚动优化中，相邻两步的最优解非常接近（只差一步的滑动）
+2. SQP 是局部收敛方法——初值越接近最优解，收敛越快
+3. Warm start 提供的初值通常在最优解的"收敛域"内，保证 1-3 次迭代即可
+
+**(b)** 不用 warm start 的后果：
+1. 从零开始，SQP 可能需要 10-50 次迭代才能收敛
+2. 每次迭代需要线性化模型 + 求解 QP → 总计算时间可能超过采样周期
+3. 可能收敛到错误的局部最优（非凸 NLP）
+4. 实时性无法保证
+
+### 答案 3
+
+$x = [0.3, 0.2]^T$：
+
+$x^T P x = [0.3, 0.2] \begin{bmatrix} 2 & 0 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} 0.3 \\ 0.2 \end{bmatrix} = 2(0.09) + 1(0.04) = 0.22 \leq 1$ ✓
+
+$\kappa_f(x) = -[1, 0.5][0.3, 0.2]^T = -0.3 - 0.1 = -0.4$
+
+$f(x, \kappa_f(x)) = \begin{bmatrix} 0.3 + 0.1(0.2) \\ 0.2 - 0.1\sin(0.3) + 0.1(-0.4) \end{bmatrix} = \begin{bmatrix} 0.32 \\ 0.2 - 0.0296 - 0.04 \end{bmatrix} = \begin{bmatrix} 0.32 \\ 0.1304 \end{bmatrix}$
+
+$f(x)^T P f(x) = 2(0.32)^2 + (0.1304)^2 = 2(0.1024) + 0.017 = 0.2048 + 0.017 = 0.2218 \leq 1$ ✓
+
+所以 $f(x, \kappa_f(x)) \in \mathcal{X}_f$，terminal set 的控制不变性在这个点成立。
+
+### 答案 4
+
+**(a)** RTI 有效的原因：
+1. Warm start 的初值已经非常接近最优解
+2. 一次 SQP 迭代通常能把误差减小 90% 以上
+3. 滚动优化每步重新求解——即使这步不精确，下一步用新测量值修正
+4. 对快速系统，"近似解 + 频繁修正"优于"精确解 + 延迟执行"
+
+**(b)** RTI 可能失败的情况：
+1. 系统动态突变（碰撞、故障）——warm start 不再接近最优
+2. 约束剧烈变化（新的约束激活/退出）——QP 子问题的活跃集变化大
+3. 高度非凸的问题——warm start 可能陷入错误的局部最优
+4. 采样周期太短——连一次 SQP 迭代都做不完
+
+### 答案 5
+
+**NMPC**：
+- 优点：大范围内精确，自然处理非线性，不需要多个模型
+- 缺点：计算量大（NLP 求解），需要非线性优化器，稳定性分析复杂
+
+**增益调度线性 MPC**：
+- 优点：每个工作点用成熟的线性 MPC，计算快（QP），稳定性理论完善
+- 缺点：需要大量工作点和对应的线性模型，切换时可能不连续，无法处理工作点之间的过渡动态
+
+**选择建议**：
+- 非线性弱、操作范围小 → 增益调度线性 MPC
+- 非线性强、大范围操作 → NMPC
+- 实时性要求极高 → 增益调度线性 MPC（或 RTI-NMPC）
+- 多稳态系统 → NMPC（增益调度无法处理稳态切换）

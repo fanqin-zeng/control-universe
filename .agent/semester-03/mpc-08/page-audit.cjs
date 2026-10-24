@@ -1,0 +1,33 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');let browser,page;
+(async()=>{
+const dir='.agent/semester-03/mpc-08/',name=process.env.MPC08_AUDIT_NAME||'native',url=process.env.MPC08_PAGE_URL||'http://127.0.0.1:20696/mpc/nonlinear-mpc';
+browser=await chromium.launch({headless:true,channel:'msedge'});page=await browser.newPage({viewport:{width:1280,height:900}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+for(const port of [8891,8981])await page.route('http://127.0.0.1:'+port+'/**',route=>route.continue({url:route.request().url().replace(':'+port,':9106')}));
+assert.equal((await page.goto(url)).status(),200);const read=page.getByTestId('nmpc-plan');await read.waitFor();
+const initial=await read.innerText();assert(initial.includes('u=0.865672')&&initial.includes('J=73.28600622')&&initial.includes('达到局部一阶阈值'));
+await page.getByRole('slider',{name:'SQP迭代预算',exact:true}).fill('1');assert((await read.innerText()).includes('u=0.861803'));assert((await read.innerText()).includes('未达到'));
+await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await read.innerText(),initial);
+await page.getByRole('slider',{name:'初始角度 θ',exact:true}).fill('0');assert((await read.innerText()).includes('J=0.00000000'));
+for(const [name,value] of [['初始角度 θ','2.8'],['力矩上限','1'],['预测步数 N','16'],['角度权重 Q','20']])await page.getByRole('slider',{name,exact:true}).fill(value);
+const bounded=await read.innerText();assert(Math.abs(Number(bounded.match(/u=([-0-9.]+)/)[1]))<=1);
+await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await read.innerText(),initial);
+await page.waitForFunction(()=>[...document.querySelectorAll('button')].filter(b=>b.textContent.includes('全部运行')).length===2,null,{timeout:180000});
+const run=page.getByRole('button',{name:/全部运行/});await run.nth(0).click();
+await page.waitForFunction(()=>[...document.querySelectorAll('pre')].some(e=>e.innerText.includes('terminal_point_is_not_set_certificate_checked')),null,{timeout:240000});
+await run.nth(1).click();await page.waitForFunction(()=>[...document.querySelectorAll('pre')].some(e=>e.innerText.includes('three_angles_same_integrator_closed_loops_checked')),null,{timeout:240000});
+const dom=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,h2:[...document.querySelectorAll('h2')].map(x=>({text:x.textContent,id:x.id})),ids:[...document.querySelectorAll('[id]')].map(x=>x.id),links:[...document.querySelectorAll('a[href^="#"]')].map(x=>x.getAttribute('href')),katex:document.querySelectorAll('.katex-error').length,images:[...document.images].map(x=>({src:x.getAttribute('src')?.slice(0,100),loaded:x.complete&&x.naturalWidth>0})),canvases:document.querySelectorAll('canvas').length}));
+const expected=JSON.parse(fs.readFileSync(dir+'headings.json','utf8'));assert.equal(dom.h1,1);assert.equal(dom.h2.length,16);assert.equal(dom.katex,0);assert.deepEqual(dom.h2.map(h=>h.id),expected.h2.map(h=>h.id));assert.equal(new Set(dom.ids).size,dom.ids.length);
+for(const id of JSON.parse(fs.readFileSync(dir+'anchor-map.json','utf8')).oldIds)assert(dom.ids.includes(id),'lost old anchor '+id);for(const id of expected.ids)assert(dom.ids.includes(id),id);for(const href of dom.links)assert(dom.ids.includes(decodeURIComponent(href.slice(1))),href);
+assert(dom.images.some(i=>i.loaded&&i.src.endsWith('nmpc-rti-cycle.svg')));assert(dom.images.filter(i=>i.loaded).length>=3);assert(dom.canvases>=2);
+await page.locator('section[aria-label="非线性MPC实验"]').screenshot({path:dir+'explorer-'+name+'.png'});
+await page.locator('img[src$="nmpc-rti-cycle.svg"]').screenshot({path:dir+'diagram-'+name+'.png'});
+for(let i=0;i<2;i++)await page.locator('img[src^="data:image/"]').nth(i).screenshot({path:dir+'notebook-'+i+'-'+name+'.png'});
+await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:dir+'desktop-'+name+'.png'});
+await page.setViewportSize({width:375,height:812});await page.waitForTimeout(600);
+const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert(mobile.scroll<=mobile.width);
+await page.screenshot({path:dir+'mobile-'+name+'.png'});assert.deepEqual(errors,[]);
+await page.locator('section[aria-label="非线性MPC实验"]').screenshot({path:dir+'explorer-mobile-'+name+'.png'});
+fs.writeFileSync(dir+'browser-'+name+'.json',JSON.stringify({pass:true,url,initial,dom,mobile,errors},null,2));console.log('PASS actual browser 16 H2/all anchors, default/one-update/budget/bounds/horizon/weight/reset/equilibrium, 2 notebooks/4 cells, figure/SVG/375px');await browser.close();
+})().catch(async e=>{console.error(e);if(page)fs.writeFileSync('.agent/semester-03/mpc-08/browser-failure.txt',await page.locator('body').innerText());if(browser)await browser.close();process.exitCode=1;});
+

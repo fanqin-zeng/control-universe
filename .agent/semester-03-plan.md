@@ -105,6 +105,7 @@
 | ROBUST-06 | IMPL-10;ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 | ID-09 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-09，rank3；保留并行课程，闭环/频域已交付；评估课未交付，局部定义分区与冻结，ID08提供已交付支撑 | .agent/semester-03/id-09/acceptance.md |
 | ML-09 | IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-09，rank2；保留并行实现课，仅依赖已交付监督学习与概率基础 | .agent/semester-03/ml-09/acceptance.md |
+| MPC-08 | ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-08，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-08/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -1006,3 +1007,7 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### IMPL-10 控制实现案例本轮交付
 
 新写单课；水箱PI全链路回归、量化码值、故障记录与验收边界。讨论和真实验收见 `.agent/semester-03/impl-10/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### MPC-08 学期3交付（2026-10-24）
+
+非线性预测控制按重构Phase1–4完成，保留16主题/五题全部子问与69旧ID，37标题别名。纠正非线性/约束激活、SQP/RTI/CLF与终端全域条件，重建同RK4同参数摆比较，撤回旧未实测硬件/性能表。实际TS432组与独立复步原目标核、240闭环输入独立核；两Notebook四cell严格内核/生产Pyodide、普通/Pages本地/375px见.agent/semester-03/mpc-08/acceptance.md。S04本课债务实跑清除。rank6隔离20696/9106/20796/20896与私有索引，保留并行工作；仅本课、不发布Pages、不生产MPC-09。真实hash见全局checklist。

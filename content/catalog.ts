@@ -5742,72 +5742,7 @@ export const catalog: Chapter[] = [
       {
         "slug": "nonlinear-mpc",
         "title": "非线性预测控制",
-        "subsections": [
-          {
-            "slug": "为什么需要-nmpc",
-            "title": "为什么需要NMPC"
-          },
-          {
-            "slug": "非线性预测模型",
-            "title": "非线性预测模型"
-          },
-          {
-            "slug": "nmpc-优化问题",
-            "title": "NMPC优化问题"
-          },
-          {
-            "slug": "sqp-求解",
-            "title": "SQP求解"
-          },
-          {
-            "slug": "实时迭代方案",
-            "title": "实时迭代方案"
-          },
-          {
-            "slug": "lyapunov-based-nmpc",
-            "title": "Lyapunov-based NMPC"
-          },
-          {
-            "slug": "稳定性分析",
-            "title": "稳定性分析"
-          },
-          {
-            "slug": "数值例子非线性摆",
-            "title": "数值例子"
-          },
-          {
-            "slug": "多稳态系统的-nmpc",
-            "title": "多稳态系统的NMPC"
-          },
-          {
-            "slug": "交互式可视化",
-            "title": "交互式可视化"
-          },
-          {
-            "slug": "软件工具",
-            "title": "软件工具"
-          },
-          {
-            "slug": "工业应用",
-            "title": "工业应用"
-          },
-          {
-            "slug": "深入讨论",
-            "title": "深入讨论"
-          },
-          {
-            "slug": "小结",
-            "title": "小结"
-          },
-          {
-            "slug": "习题",
-            "title": "习题"
-          },
-          {
-            "slug": "答案",
-            "title": "答案"
-          }
-        ],
+        "subsections": [{"slug": "为什么需要-nmpc", "title": "为什么需要 NMPC"}, {"slug": "非线性预测模型", "title": "非线性预测模型"}, {"slug": "nmpc-优化问题", "title": "NMPC 优化问题"}, {"slug": "sqp-求解", "title": "SQP 求解"}, {"slug": "实时迭代方案", "title": "实时迭代方案"}, {"slug": "lyapunov-based-nmpc", "title": "Lyapunov-based NMPC"}, {"slug": "稳定性分析", "title": "稳定性分析"}, {"slug": "数值例子非线性摆", "title": "数值例子：非线性摆"}, {"slug": "多稳态系统的-nmpc", "title": "多稳态系统的 NMPC"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "软件工具", "title": "软件工具"}, {"slug": "工业应用", "title": "工业应用"}, {"slug": "深入讨论", "title": "深入讨论"}, {"slug": "小结", "title": "小结"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
         "prereq": [
           "mpc/mpc-stability",
           "nonlinear/nonlinear-characteristics",
@@ -5815,7 +5750,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "economic-mpc",

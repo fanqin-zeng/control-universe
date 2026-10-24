@@ -180,7 +180,7 @@
 | 12.5 | 递归可行性与稳定性 | mpc-stability | ✅ 已交付 v1.3 | grad | theory | 17 | mpc/constraint-handling<br>nonlinear/lyapunov-stability |
 | 12.6 | 广义预测控制 | generalized-predictive-control | ✅ 已交付 v1.3 | grad | theory | 16 | mpc/receding-horizon<br>identification/least-squares-rls |
 | 12.7 | 显式预测控制 | explicit-mpc | ✅ 已交付 v1.3 | advanced | theory | 17 | mpc/constraint-handling<br>math/convex-optimization |
-| 12.8 | 非线性预测控制 | nonlinear-mpc | 🟨 有正文待审校 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
+| 12.8 | 非线性预测控制 | nonlinear-mpc | ✅ 已交付 v1.3 | advanced | theory | 18 | mpc/mpc-stability<br>nonlinear/nonlinear-characteristics<br>math/numerical-methods |
 | 12.9 | 经济预测控制 | economic-mpc | ⬜ 骨架（占位页） | advanced | theory | 19 | mpc/nonlinear-mpc<br>nonlinear/passivity-control |
 | 12.10 | 移动水平估计 | mhe-fusion | ⬜ 骨架（占位页） | grad | theory | 16 | mpc/receding-horizon<br>estimation/sensor-fusion |
 | 12.11 | 预测控制案例 | mpc-case-study | 🟨 有正文待审校 | grad | case | 17 | mpc/constraint-handling<br>mpc/generalized-predictive-control<br>identification/identification-case-study |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 124（status = v1.3）
-- **有正文待审校**: 5（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 125（status = v1.3）
+- **有正文待审校**: 4（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 76（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 81（= draft 5 + empty 76 + 无 status 0）
+- **未完成 v1.3**: 80（= draft 4 + empty 76 + 无 status 0）
 - **有 MDX 正文**: 129
 - **catalog 小节总数**: 1405
-- **讨论日志**: 147 篇（覆盖 124 门；有 MDX 无日志 5 门）
-- **交互组件**: 134 个文件（被正文引用 134，孤儿 0）
+- **讨论日志**: 148 篇（覆盖 125 门；有 MDX 无日志 4 门）
+- **交互组件**: 135 个文件（被正文引用 135，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
