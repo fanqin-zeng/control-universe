@@ -172,7 +172,7 @@
 | IMPL-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/03-pid-engineering-tuning.md;.agent/semester-03/impl-03/acceptance.md;.agent/semester-03/impl-03/validation.json;commit:2d89b900d843b9c0683df229efebb0cddce84476 |
 | IMPL-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/04-controller-discretization-practice.md;.agent/semester-03/impl-04/acceptance.md;.agent/semester-03/impl-04/validation.json;commit:a142af0658eb2a6508548446988fa896b6b46956 |
 | IMPL-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/05-embedded-implementation.md;.agent/semester-03/impl-05/acceptance.md;.agent/semester-03/impl-05/validation.json;commit:ae222132ba6b5a6deca0b91d7467a4cfd1c2d2c9 |
-| IMPL-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| IMPL-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/07-implementation/06-realtime-control.md;.agent/semester-03/impl-06/acceptance.md |
 | IMPL-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

@@ -1,3 +1,4 @@
+import { RealtimeSchedulingExplorer } from "@/components/wiki/realtime-scheduling-explorer";
 import { MpcStabilityExplorer } from "@/components/wiki/mpc-stability-explorer";
 import { RobustPerformanceExplorer } from '@/components/wiki/robust-performance-explorer';
 import { UnscentedKalmanExplorer } from "@/components/wiki/unscented-kalman-explorer";
@@ -136,6 +137,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  RealtimeSchedulingExplorer,
   MpcStabilityExplorer,
   UnscentedKalmanExplorer,
   AttentionBasicsExplorer,
