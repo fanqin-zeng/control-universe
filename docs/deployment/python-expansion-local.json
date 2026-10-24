@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-24T05:54:39.124Z",
-  "url": "http://127.0.0.1:18304/python-expansion.html?lesson=estimation/least-squares-ml",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "testedAt": "2026-10-24T06:27:09.061Z",
+  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/pid-engineering-tuning",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
       "key": "math/calculus-basics",
@@ -14493,21 +14493,98 @@
           ]
         }
       ]
+    },
+    {
+      "key": "implementation/pid-engineering-tuning",
+      "title": "PID工程整定",
+      "sourceHash": "0b650aeff5579c750c67225835cff37a7eaf7b0c73e5205e276f1795f65921dc",
+      "notebooks": [
+        {
+          "id": "implementation/pid-engineering-tuning#1",
+          "title": "实验1：阶跃模型与参数换算",
+          "index": 1,
+          "line": 51,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 6722,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"K\": 2.0, \"T\": 4.0, \"L\": 0.5, \"q1\": 0.28346868942621073, \"q2\": 0.6321205588285577, \"t1\": 1.8333333333333333, \"t2\": 4.5, \"y1\": 0.2267749515409686, \"y2\": 0.5056964470628461, \"Kp\": 1.3333333333333333, \"Ti\": 4.0, \"Ki\": 0.3333333333333333, \"exerciseKp\": 0.8, \"exerciseKi\": 0.2, \"capacity\": 2.0, \"unreachableGap\": 1.0}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 296,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 35688
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/pid-engineering-tuning#2",
+          "title": "实验2：固定参数的完整检验",
+          "index": 2,
+          "line": 144,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 83,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"lambda\": 0.5, \"scenario\": \"nominal\", \"iae\": 2.385731133863277, \"overshoot\": 0.0, \"tv\": 1.557713163677708, \"saturated\": 34, \"finalError\": 0.00017761212157729744}, {\"lambda\": 0.5, \"scenario\": \"delay\", \"iae\": 6.089119714633142, \"overshoot\": 19.615202973903912, \"tv\": 8.659424330633751, \"saturated\": 58, \"finalError\": -0.15161612700193872}, {\"lambda\": 0.5, \"scenario\": \"unreachable\", \"iae\": 39.04505895118903, \"overshoot\": 0.0, \"tv\": 1.0, \"saturated\": 600, \"finalError\": 1.0012534533968969}, {\"lambda\": 0.5, \"scenario\": \"noise\", \"iae\": 2.752660425524372, \"overshoot\": 0.0, \"tv\": 6.459069365379548, \"saturated\": 33, \"finalError\": 0.004996248430295114}, {\"lambda\": 1.0, \"scenario\": \"nominal\", \"iae\": 2.483469749593246, \"overshoot\": 0.0, \"tv\": 1.4999992718815458, \"saturated\": 21, \"finalError\": 0.00017356792478961935}, {\"lambda\": 1.0, \"scenario\": \"delay\", \"iae\": 3.5599110935321767, \"overshoot\": 1.6055842181085023, \"tv\": 2.482762820027601, \"saturated\": 41, \"finalError\": 0.001626126280807938}, {\"lambda\": 1.0, \"scenario\": \"unreachable\", \"iae\": 39.04505895118903, \"overshoot\": 0.0, \"tv\": 1.0, \"saturated\": 600, \"finalError\": 1.0012534533968969}, {\"lambda\": 1.0, \"scenario\": \"noise\", \"iae\": 3.0273496793045034, \"overshoot\": 0.0, \"tv\": 4.881804363037467, \"saturated\": 20, \"finalError\": 0.006223867028642083}, {\"lambda\": 2.0, \"scenario\": \"nominal\", \"iae\": 2.501108985944443, \"overshoot\": 0.007315815872144249, \"tv\": 1.2999999559277498, \"saturated\": 0, \"finalError\": -8.685046237966176e-06}, {\"lambda\": 2.0, \"scenario\": \"delay\", \"iae\": 3.142114254479433, \"overshoot\": 3.0084041555762386, \"tv\": 1.6320483795982246, \"saturated\": 11, \"finalError\": 0.0001703070106904292}, {\"lambda\": 2.0, \"scenario\": \"unreachable\", \"iae\": 39.04601404489462, \"overshoot\": 0.0, \"tv\": 1.0193588991255496, \"saturated\": 582, \"finalError\": 1.0012566462129}, {\"lambda\": 2.0, \"scenario\": \"noise\", \"iae\": 3.4585705107847704, \"overshoot\": 0.06997388832099549, \"tv\": 3.343703606389751, \"saturated\": 0, \"finalError\": 0.012012731610923755}]\ndefault={\"iae\": 2.483469749593246, \"overshoot\": 0.0, \"tv\": 1.4999992718815458, \"saturated\": 21, \"finalError\": 0.00017356792478961935}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 300,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 96296
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 100,
-    "notebooks": 434,
-    "enabled": 421,
+    "lessons": 101,
+    "notebooks": 436,
+    "enabled": 423,
     "codeOnly": 13
   },
   "releaseTotals": {
-    "lessons": 100,
-    "notebooks": 434,
-    "enabled": 420,
+    "lessons": 101,
+    "notebooks": 436,
+    "enabled": 422,
     "codeOnly": 14
   },
   "provenance": [
@@ -15186,6 +15263,11 @@
       "testedAt": "2026-10-24T06:11:14.416Z",
       "url": "http://127.0.0.1:8196/python-expansion.html?lesson=machine-learning%2Fneural-networks",
       "inputPath": ".agent/semester-03/ml-03/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T06:27:09.061Z",
+      "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/pid-engineering-tuning",
+      "inputPath": "D:\\Workspace\\control-universe\\.agent\\semester-03\\impl-03\\pyodide.json"
     }
   ]
 }

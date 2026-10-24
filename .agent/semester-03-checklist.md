@@ -165,7 +165,7 @@
 |---|---|---|---|---|---|---|---|
 | IMPL-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/01-computer-control-architecture.md;.agent/semester-03/impl-01/acceptance.md;.agent/semester-03/impl-01/validation.json;commit:58811f8fe3defeff14261bb1ccc5f8ab1dcfa685 |
 | IMPL-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/02-digital-pid.md;.agent/semester-03/impl-02/acceptance.md;.agent/semester-03/impl-02/validation.json;commit:d6600ebe3d487e6fce87624afc0fa7acf2146e99 |
-| IMPL-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| IMPL-03 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/07-implementation/03-pid-engineering-tuning.md;.agent/semester-03/impl-03/acceptance.md |
 | IMPL-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | IMPL-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |

@@ -1,0 +1,14 @@
+"""Run builds only in the rank1 snapshot; capture actual exit codes."""
+from pathlib import Path
+import subprocess,json,os,sys
+root=Path(__file__).resolve().parents[3];e=root/'.agent/semester-03/impl-03';snap=root.parent/'control-universe-rank1-impl03-validation'
+results=[]
+for script in ['build','build:pages']:
+    env=os.environ.copy()
+    if script=='build:pages':env.update(GIT_DIR=str(root/'.git'),GIT_WORK_TREE=str(root),GIT_OPTIONAL_LOCKS='0')
+    log=e/(script.replace(':','-')+'.log')
+    with log.open('w',encoding='utf-8') as out:r=subprocess.run(['npm.cmd','run',script],cwd=snap,env=env,stdout=out,stderr=subprocess.STDOUT)
+    results.append({'command':'npm run '+script,'exit':r.returncode,'log':log.name})
+    (e/'build-results.json').write_text(json.dumps(results,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps(results[-1]),flush=True)
+    if r.returncode:sys.exit(r.returncode)

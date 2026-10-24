@@ -1,0 +1,222 @@
+---
+title: "PID工程整定"
+description: "从受控阶跃到一阶加纯延迟模型、SIMC PI候选、约束下的多工况检验，以及现场试运行与回退记录。"
+---
+
+# PID工程整定
+
+恒温水箱刚换了一只加热器。同样的目标温度，旧参数现在升温很慢；把比例增益调大后，温度又可能超过目标。更麻烦的是，加热器已经全开，温度仍然上不去。这三种现象分别提示响应速度、延迟与执行器容量问题，不能都靠继续拧大增益解决。
+
+[数字PID](/implementation/digital-pid)说明了程序逐拍怎样保存和更新状态。本课接着回答：**参数从哪里来，又凭什么接受这组参数？** 用比例积分微分控制器（PID）中的PI作为可复算主例；本例没有识别出需要微分补偿的第二个主导惯性环节，因此令D为零。PI不是“少调一个参数就少做一道检查”。[时域分析](/classic/time-domain-analysis)中的超调与误差概念会在验收中继续使用。
+
+## 先把要求写成验收合同
+
+整定是“给候选参数—检验—决定是否采用”的过程。开始之前先记录以下内容；缺少某一项，得到一条漂亮曲线也难以复现。
+
+| 项目 | 本课教学试验 | 现场需要补齐的信息 |
+|---|---|---|
+| 对象与工作点 | 稳定水箱的局部温差模型；使用偏差量 | 负载、流量、环境温度与基准加热量 |
+| 输入输出 | u为归一化加热指令，y为温差℃ | 传感器量程、校准、输出方向及单位 |
+| 试验范围 | 仿真限幅0–1，零初态 | 允许温度/温升速率、允许指令及持续时间 |
+| 验收窗口 | 0–30 s；采样间隔0.05 s | 过程实际时间尺度，控制与记录周期 |
+| 指标 | 误差积分、超调、指令总变化、饱和拍数、末样误差 | 各项允许上限；设定值跟踪与负载抑制分别验收 |
+| 判停与恢复 | 不可达目标明确判失败 | 触及保护线、传感器失效、连续饱和等的处理人、停止动作与旧参数恢复点 |
+
+本课所有温度、时间和参数都是**教学模型的数值**，不是这类水箱的通用设置，也不是实机安全阈值。现场先由设备负责人确认上述范围；若开环有风险，使用已批准的闭环试验或已有可靠数据，不为凑齐步骤强行断开反馈。
+
+![工程整定流程：要求与试验边界、受控小阶跃、局部模型、PI候选、多工况检验及受监控试运行；失败回到模型或要求](/diagrams/implementation/pid-tuning-workflow.svg)
+
+## 从阶跃试验得到模型
+
+保持其它条件近似不变，给输入一个允许的小变化量Δu，记录施加时刻、实际输出和温度。等过程在新工作点附近稳定后，取输出变化量Δy∞。对自衡、单调且主要呈现一个惯性环节的响应，尝试**一阶加纯延迟模型**：
+
+$$
+G(s)=\frac{K e^{-Ls}}{Ts+1},\qquad
+\Delta y(t)=K\Delta u\left(1-e^{-(t-L)/T}\right),\quad t\ge L.
+$$
+
+延迟前Δy为零。K是静态增益，单位℃/指令；T是过程时间常数，L是延迟，均为s。延迟表示“还没开始变”，T描述“开始变以后有多快”；二者不能从一张含噪曲线的起始斜率随意分摊。
+
+先求K=Δy∞/Δu。再把输出变化除以Δy∞，得到归一化响应q。这里输入阶跃前以环境温度为温差零点，模型输入从零开始；现场若使用非零加热工作点，必须把基准加热量及相应的偏差指令上下限一起换算。选两个已知比例：
+
+$$
+q_1=1-e^{-1/3},\quad q_2=1-e^{-1},\qquad
+t_1=L+T/3,\quad t_2=L+T.
+$$
+
+所以 **T=1.5(t₂−t₁)，L=t₂−T**。时刻都从输入阶跃开始计；不是从第一次看见温度变化开始计。本课用精确生成的比例点隔离代数；现场采样点通常不会恰好落在这两个时刻，要在可靠数据段拟合或插值，并用另一段记录检查残差，不能把合成数据的精确反演当作辨识精度。
+
+教学例给Δu=0.4，最终温差Δy∞=0.8℃；两个比例约为28.3469%与63.2121%，对应t₁=1.8333 s、t₂=4.5000 s。得到K=2、T=4 s、L=0.5 s。**尚未稳定的数据、负荷漂移、反向响应、振荡、积分型过程或显著非线性，都可能使这个模型失效。** 先检查模型，不在失真的K/T/L上追求更精细的整定数字。
+
+<JupyterNotebook
+  title="实验1：阶跃模型与参数换算"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import json
+plt.rcParams["axes.unicode_minus"] = False`}
+  cells={[
+    { code: `# Synthetic deviations, not field measurements.
+K_true,T_true,L_true,du=2.,4.,.5,.4
+q1,q2=1-np.exp(-1/3),1-np.exp(-1)
+t1,t2=L_true+T_true/3,L_true+T_true
+y1,y2=K_true*du*q1,K_true*du*q2
+K_est=.8/du; T_est=1.5*(t2-t1); L_est=t2-T_est
+Kp=T_est/(K_est*(1.+L_est)); Ti=min(T_est,4*(1.+L_est)); Ki=Kp/Ti
+identification={"K":K_est,"T":T_est,"L":L_est,"q1":q1,"q2":q2,
+                "t1":t1,"t2":t2,"y1":y1,"y2":y2,"Kp":Kp,"Ti":Ti,"Ki":Ki,
+                "exerciseKp":T_est/(K_est*(2.+L_est)),
+                "exerciseKi":T_est/(K_est*(2.+L_est))/T_est,
+                "capacity":K_est*1.,"unreachableGap":3.-K_est*1.}
+print(json.dumps(identification,ensure_ascii=False))
+assert np.allclose([K_est,T_est,L_est],[2,4,.5],atol=1e-12)` },
+    { code: `t=np.linspace(0,20,401)
+y=K_true*du*(1-np.exp(-np.maximum(t-L_true,0)/T_true))
+fig,ax=plt.subplots(figsize=(7,3))
+ax.plot(t,y,label="synthetic step response")
+ax.scatter([t1,t2],[y1,y2],label="two known fractions")
+ax.set(xlabel="time (s)",ylabel="temperature deviation (degC)",xlim=(0,20),ylim=(0,.9))
+ax.legend(); ax.grid(); plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+
+## 从模型得到PI候选
+
+这里用[Skogestad原始论文及作者说明中的SIMC PI规则](https://skoge.folk.ntnu.no/publications/2003/tuningPID/README.html)。对上述模型，引入闭环时间参数λ：
+
+$$
+K_p=\frac{T}{K(\lambda+L)},\qquad
+T_i=\min\{T,4(\lambda+L)\},\qquad
+K_i=K_p/T_i,\qquad K_d=0.
+$$
+
+λ增大时Kp变小，是改变候选响应快慢的一种手段。它**不是已测得的闭环时间常数**，在采样、限幅和模型误差存在时不能直接等同于实际响应时间。此处只应用PI规则，不把串联PID中的微分时间直接抄进并联控制器。
+
+代入本例并选λ=1 s，得到Kp=1.3333指令/℃、Ti=4 s、Ki=0.3333指令/(℃·s)。T来自对象，Ti属于控制器；它们在这一组参数中相等，不意味着物理含义相同。有些设备输入Kp/Ti，有些输入Kp/Ki，还可能使用比例带或“每分钟”积分增益，交接时必须确认表单约定。
+
+上一课已给出反应曲线法与临界振荡法的参数来源。本课不再次堆公式表：反应曲线法依赖模型形状，临界振荡法会主动接近振荡边界；未得到允许，不在现场靠加大增益寻找持续振荡。所谓自动整定也需要激励范围、运行条件与结果复核，不能绕过验收合同。
+
+## 在约束下检验候选
+
+先固定一份可重跑的实现。每拍先读取y，再算未限幅指令，输出后更新积分；这与上一课某些“先积分再输出”的代数示例有不同的首拍，比较时必须统一：
+
+$$
+e[k]=r[k]-y_m[k],\quad v[k]=K_pe[k]+I[k],\quad
+u[k]=\operatorname{clip}(v[k],0,1).
+$$
+
+若v已经触及上限且误差仍为正，或触及下限且误差仍为负，保持I；否则I[k+1]=I[k]+KiTs e[k]。这是**条件积分**：允许使指令离开饱和区的积分变化，不冻结所有饱和时刻；实现更完整的速率约束时还要跟踪最终实际指令。
+
+模型在每个保持区间内精确推进：a=exp(−Ts/T)，y[k+1]=a y[k]+(1−a)K(u[k−m]+d[k])，m=L/Ts；负下标输入为零。本课延迟恰为整数拍，没有将任意延迟四舍五入。扰动d在延迟后的过程输入端加入，测量噪声只进入反馈y_m，指标用无噪的真实模型输出y计算。
+
+四个检验工况固定为：标称；实际L增至1.5 s但控制器仍按L=0.5 s整定；r由1℃改为3℃的不可达目标；标称对象在15 s施加d=−0.2，同时测量叠加0.02sin(8t)℃。最后一种是确定性压力测试，不代表随机噪声的统计分布。
+
+误差积分IAE采用0–30 s左矩形和，包含600个保持区间；TV(u)含从零指令到首拍指令的变化，末端t=30 s的指令不再占用保持区间。采样超调用这些输出样点的最大值计算；饱和拍数是v触及或超出限幅的区间数。它包括“恰好触及”的拍，不等同于误差很大的拍数；本例没有设置“饱和几拍就通过”的验收阈值。**末样误差不是稳态极限，采样峰值不是连续时间精确峰值。**
+
+<PidTuningExplorer />
+
+默认λ=1 s、标称工况读数：IAE=2.4835℃·s，采样超调0.0000%，TV(u)=1.5000，饱和21拍，末样误差0.0002℃。下面完整列出同一规则的三档预置参数；这是固定参数敏感性观察，没有自动搜索最优参数，也没有对其它整定方法作优劣排名。
+
+<div role="region" aria-label="完整检验指标表" style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 工况 | λ(s) | IAE(℃·s) | 采样超调(%) | TV(u) | 饱和(拍) | 末样误差(℃) |
+|---|---|---|---|---|---|---|
+| 标称 | 0.5 | 2.3857 | 0.0000 | 1.5577 | 34 | 0.0002 |
+| 延迟增大 | 0.5 | 6.0891 | 19.6152 | 8.6594 | 58 | -0.1516 |
+| 不可达 | 0.5 | 39.0451 | 0.0000 | 1.0000 | 600 | 1.0013 |
+| 扰动与噪声 | 0.5 | 2.7527 | 0.0000 | 6.4591 | 33 | 0.0050 |
+| 标称 | 1 | 2.4835 | 0.0000 | 1.5000 | 21 | 0.0002 |
+| 延迟增大 | 1 | 3.5599 | 1.6056 | 2.4828 | 41 | 0.0016 |
+| 不可达 | 1 | 39.0451 | 0.0000 | 1.0000 | 600 | 1.0013 |
+| 扰动与噪声 | 1 | 3.0273 | 0.0000 | 4.8818 | 20 | 0.0062 |
+| 标称 | 2 | 2.5011 | 0.0073 | 1.3000 | 0 | -0.0000 |
+| 延迟增大 | 2 | 3.1421 | 3.0084 | 1.6320 | 11 | 0.0002 |
+| 不可达 | 2 | 39.0460 | 0.0000 | 1.0194 | 582 | 1.0013 |
+| 扰动与噪声 | 2 | 3.4586 | 0.0700 | 3.3437 | 0 | 0.0120 |
+
+</div>
+
+
+延迟增大时，λ=0.5 s的这组候选出现19.6152%的采样超调，λ=1 s为1.6056%；但λ=2 s又为3.0084%，**更大的λ并不保证每项指标单调改善**。标称工况下λ=0.5 s的IAE较小；扰动与噪声工况中它的TV(u)也更大。是否接受这些代价，应回到预先约定的上限，不能只看其中最有利的一列。
+
+不可达工况下模型的稳态输出上界为K·u_max=2℃，目标为3℃，因此稳态误差至少1℃；所有候选都失败。条件积分限制了积分继续累积，却不能增加加热器容量。应检查要求、负荷或执行器，不能把长期饱和解释为“Ki还不够大”。
+
+<JupyterNotebook
+  title="实验2：固定参数的完整检验"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+import json
+plt.rcParams["axes.unicode_minus"] = False`}
+  cells={[
+    { code: `# Actual page experiment; output precedes conditional integral update.
+def experiment(lam=1., scenario="nominal"):
+    dt=.05; N=600; a=np.exp(-dt/4)
+    Kp=4/(2*(lam+.5)); Ti=min(4.,4*(lam+.5)); Ki=Kp/Ti
+    delay=30 if scenario=="delay" else 10
+    r=3. if scenario=="unreachable" else 1.
+    y=0.; I=0.; previous=0.; iae=0.; tv=0.; saturated=0; peak=0.
+    history=[]; rows=[]
+    for k in range(N+1):
+        t=k*dt
+        noise=.02*np.sin(8*t) if scenario=="noise" else 0.
+        e=r-y-noise
+        raw=Kp*e+I; u=float(np.clip(raw,0.,1.))
+        rows.append([t,y,u,r]); peak=max(peak,y)
+        if k==N: break
+        history.append(u); iae+=abs(r-y)*dt
+        tv+=abs(u-previous); previous=u
+        saturated+=int(raw<=0 or raw>=1)
+        if not ((raw>=1 and e>0) or (raw<=0 and e<0)):
+            I+=Ki*dt*e
+        delayed=history[k-delay] if k>=delay else 0.
+        load=-.2 if scenario=="noise" and k>=300 else 0.
+        y=a*y+(1-a)*2*(delayed+load)
+    return {"Kp":Kp,"Ti":Ti,"Ki":Ki,"points":rows,
+            "metrics":{"iae":iae,"overshoot":100*max(0.,peak-r)/r,
+                       "tv":tv,"saturated":saturated,"finalError":r-y}}
+
+results=[]
+for lam in [.5,1.,2.]:
+    for scenario in ["nominal","delay","unreachable","noise"]:
+        result=experiment(lam,scenario)
+        results.append({"lambda":lam,"scenario":scenario,**result["metrics"]})
+print(json.dumps(results,ensure_ascii=False))
+print("default="+json.dumps(experiment()["metrics"]))` },
+    { code: `fig,axes=plt.subplots(2,1,figsize=(7,5),sharex=True)
+for lam in [.5,1.,2.]:
+    values=np.array(experiment(lam,"delay")["points"])
+    axes[0].plot(values[:,0],values[:,1],label="lambda="+str(lam))
+    axes[1].step(values[:-1,0],values[:-1,2],where="post")
+axes[0].axhline(1,color="black",ls="--");axes[0].set(ylabel="temperature deviation",ylim=(0,1.4))
+axes[0].legend(); axes[1].set(xlabel="time (s)",ylabel="heater command",xlim=(0,30),ylim=(0,1.1))
+for ax in axes: ax.grid()
+plt.tight_layout();plt.show()` }
+  ]}
+/>
+
+
+## 整定到现场的交接
+
+模型试验通过，只表示可以考虑进入已批准的小范围试运行。交接至少包括：模型的数据时间段与工作点；控制器形式、单位、采样周期与更新顺序；限幅、抗饱和与传感器滤波；每个工况的原始记录和指标；判停人、接管方式、旧参数及恢复步骤。参数改动后重新验证受影响的工况，不只留下最后一条满意曲线。
+
+试运行按批准的激励逐步扩大，每次只改一个可追踪因素。观察指令是否真的到达执行器、温度是否可信、是否频繁触顶或触及保护线。若结果与模型明显不符，先停在允许范围内检查方向、单位、延迟和负荷；不要边失控边同时调三个参数。
+
+手动转自动要用上一课的状态跟踪/无扰切换，使新控制器从当前实际指令接续；保存一组参数不等于保存了积分器和微分器状态。控制回路也不能代替独立的保护措施。本课不规定真实设备的安全阈值与认证结论。
+
+## 小结
+
+整定起点是可观察的要求与允许的试验，不是参数表。局部模型给出候选参数，数字实现、执行器约束与未建模工况决定候选能否通过检验。一次验收要同时看误差、超调和控制动作；模型不对或目标不可达时，应先修正问题来源。
+
+## 习题
+
+1. 一个教学阶跃Δu=0.4，稳态变化0.8℃，q₁、q₂对应时刻分别为11/6 s、9/2 s。求K、T、L，并解释为什么不能把第一次检测到变化的时刻直接当作L。
+2. 用本课模型把λ改为2 s，求Kp、Ti、Ki。若设备界面填的是Ti，把Ki的数值填进去错在哪里？
+3. 目标3℃且u限制0–1。求模型稳态容量与误差下界，说明条件积分能解决什么、不能解决什么。
+4. 试运行后出现长期全开、温度仍低于目标。写出先检查的两类原因、判停依据和恢复记录；能否仅凭本课默认图签字交付？
+
+## 答案
+
+1. K=2℃/指令，T=4 s，L=0.5 s，Notebook1复算。检测时刻受采样周期与噪声阈值影响；两个比例点的方法也以模型有效、稳态可靠为前提。
+2. Kp=0.8指令/℃、Ti=4 s、Ki=0.2指令/(℃·s)，Notebook1复算。Ti是时间，Ki是积分增益，量纲与作用均不同；还须核对秒/分钟与控制器形式。
+3. 稳态容量2℃，误差下界1℃，Notebook1复算。条件积分抑制继续向饱和方向积累，不能消除容量不足或保证全闭环稳定。
+4. 先查负荷/容量与指令实际到达情况，也查传感器、方向、单位和延迟；按事先批准的保护线或持续饱和等判停条件接管，保存数据、参数版本、状态与恢复结果。没有现场要求、实际数据和责任人批准，默认教学图不足以签字。

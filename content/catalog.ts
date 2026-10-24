@@ -3228,13 +3228,47 @@ export const catalog: Chapter[] = [
       {
         "slug": "pid-engineering-tuning",
         "title": "PID工程整定",
+        "subsections": [
+          {
+            "slug": "先把要求写成验收合同",
+            "title": "先把要求写成验收合同"
+          },
+          {
+            "slug": "从阶跃试验得到模型",
+            "title": "从阶跃试验得到模型"
+          },
+          {
+            "slug": "从模型得到pi候选",
+            "title": "从模型得到PI候选"
+          },
+          {
+            "slug": "在约束下检验候选",
+            "title": "在约束下检验候选"
+          },
+          {
+            "slug": "整定到现场的交接",
+            "title": "整定到现场的交接"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/digital-pid",
           "classic/time-domain-analysis"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "controller-discretization-practice",

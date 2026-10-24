@@ -826,4 +826,6 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 
 车辆动力学从空占位按新写Phase1–4完成。后轴无侧滑几何→CG侧偏力/力矩→横向状态空间→总附着与低速边界；十H2、四题四答、两Notebook四cell、一Explorer/SVG。真实TS六工况2412轨迹量对独立轴力/力矩矩阵指数，3213控件状态；严格内核、生产Pyodide、普通/Pages本地及375px全部通过。证据.agent/semester-03/driving-02/acceptance.md，真实master回执另补。只依赖已交付驾驶系统、微分方程和状态空间，用户指定rank14换课的未完成前课单独登记；不代签并行课程。无实车或算法精度比较，不发布Pages、不生产DRIVING-03。
 
-
+### IMPL-03 PID工程整定本轮交付
+
+新写单课；阶跃模型、SIMC PI与约束下四工况、现场交接。讨论和真实验收见 `.agent/semester-03/impl-03/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
