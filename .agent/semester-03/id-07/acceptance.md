@@ -27,3 +27,5 @@ M2分开两条独立路线的误差与容差，不用ERA小误差掩盖传函转
 讨论日志含A.1六列表逐断言、B原九项加四附加门槛、C六列放行及D实际修正。对数柱状图在手机复核后改散点，最终两模式重新构建并实际全量运行，不沿用旧截图。
 
 资源回收：自己的6个kernel DELETE后余0，内核/夹具核PID后关闭；原生、Pages与浏览器finally关闭，见kernels-closed.json/resources-closed.json。私有Git索引与CAS保留共享暂存，正常push master，不发布Pages。真实提交后补hash回执。
+
+真实交付提交：`d931844104fe97b7b06598ecacef73b961f4d930`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。
