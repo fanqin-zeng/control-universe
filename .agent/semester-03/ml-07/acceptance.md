@@ -33,3 +33,9 @@ W09原生浏览器跨端口连接、W16冷加载、QA01旧负向套件、QA02旧
 
 
 最终提交基线：并行IMPL-07源码与回执进入master后，HEAD保护阻止旧投影提交；完整刷新到12e6c037ae36379dd401c4b85513284409e706c7+ML-07，保留所有已提交并行成果，再跑check（PASS21/WARN2/FAIL0）、semester、glossary（PASS4/WARN2/FAIL0）、math，均exit0。concurrent-refresh.json记录变更范围与本课源码指纹；本课算法/MDX/最终图形源码不变，生产构建仍按19ce1c4精确基线记录。
+
+
+真实交付提交已进入master并推送origin：`ca233d4adad1ba7956039bec8e1227aab699722c`。使用独立索引、明确路径及HEAD比较交换，正常共享索引未重置；未宣称全工作区干净，不发布Pages。回执追加提交只登记本课实际hash、完成勾选与交付后守卫。
+
+
+交付后回执守卫：以ca233d4完整已提交树加本课真实hash勾选运行check-semester03，receipt-semester.log exit0/PASS；验证交付hash确已进入master。正文/算法/图形与先前通过的数值、构建及页面证据不变。下一课ML-08未开工。
