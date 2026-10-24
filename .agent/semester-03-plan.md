@@ -90,6 +90,7 @@
 | ML-06 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-06，rank2；ML-05已交付，保留并行实现课，仅依赖已交付时序模型 | .agent/semester-03/ml-06/acceptance.md |
 | EST-05 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确要求继续EST-05，rank4；其它会话并行，保留检查点；仅依赖已交付KF/概率基础 | .agent/semester-03/est-05/acceptance.md |
 | ROBUST-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-04，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-04/acceptance.md |
+| MPC-05 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-05，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-05/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -918,3 +919,7 @@ rank2按用户指定新写注意力机制；先修ML-05已交付，18配置独�
 ### ROBUST-04 本期交付记录（2026-10-24）
 
 鲁棒性能按重构Phase1–4执行，保留10H2、全部历史标题ID、原四题及子问、原两个Notebook四cell用途；完整精确LFT/可行D界替代对角伪μ上界，修正NP/RP、性能块维数、权重/接口、理想PID和无来源综合数据。三Notebook五cell、双图Explorer与SVG，实际TS/独立模型及符号复核、严格原生内核和Pyodide、两构建与375px验收见.agent/semester-03/robust-04/acceptance.md。明确固定滤波PID在当前权重下失败，上界/网格/实际反例分开。rank5使用独立端口/缓存/索引，只提交本课，不发布Pages、不生产ROBUST-05；真实master hash在全局checklist登记。
+
+### MPC-05 学期3交付（2026-10-24）
+
+递归可行性与稳定性从空占位按新写Phase1–4完成：有解陷阱→终端三条件→移位可行→值函数下降与上下界，十H2、四题四答、两Notebook四cell、Explorer/SVG。实际TS3536配置对独立LP/直接目标及对偶证书，20名义QP另用复步梯度核；严格内核/生产Pyodide/普通与Pages本地/375px验收见.agent/semester-03/mpc-05/acceptance.md。名义证明与失配、可行次优/超时边界分开，不把样本当稳态或真实安全认证。rank6隔离19496/9056/19596/19696与独立Git索引，保留其它会话；只交付本课，不发布Pages、不生产MPC-06，真实hash见全局checklist。

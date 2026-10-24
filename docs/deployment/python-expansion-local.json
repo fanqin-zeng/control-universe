@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-24T08:00:11.239Z",
-  "url": "http://127.0.0.1:18384/python-expansion.html?lesson=estimation/unscented-kalman-filter",
+  "testedAt": "2026-10-24T08:16:51.114Z",
+  "url": "http://127.0.0.1:19596/python-expansion.html?lesson=mpc/mpc-stability",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
   "lessons": [
     {
@@ -15951,21 +15951,103 @@
           ]
         }
       ]
+    },
+    {
+      "key": "mpc/mpc-stability",
+      "title": "递归可行性与稳定性",
+      "sourceHash": "6772dc30729673eb9916ce031e35660d1dba4ef6a3f84f559bdbfb5550cb1f28",
+      "notebooks": [
+        {
+          "id": "mpc/mpc-stability#1",
+          "title": "终端接续与反例核对",
+          "index": 1,
+          "line": 106,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 8194,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "default_U [-1. -1.] default_states [2.   1.4  0.68] default_value 8.9426\nshift_U [-1.    -0.408] shift_states [1.4   0.68  0.408] candidate_cost 3.9425999999999997\nnext_U [-1.      -0.55488] next_value 3.8751820799999996 value_difference -5.0674179200000005\nterminal_P 2.125 local_decay_coefficient -1.36 terminal_max_radius 1.6666666666666667\npredecessor_bounds 1 1.6666666666666667 2.2222222222222223\nr_half_bound 1.8750000000000002 r_onehalf_bound 2.5694444444444446\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 23,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "trap_case 0.0 u 0.0 next 0.0 next_feasible True\ntrap_case 1.0 u 0.0 next 2.0 next_feasible False\ntrap_case 1.4 u -0.7999999999999998 next 2.0 next_feasible False\nmismatch_case 2.0 0.75 measured 2.15 shift_end 1.4879999999999998 fresh_feasible True\nmismatch_case 2.2 0.75 measured 2.39 shift_end 1.6608 fresh_feasible False\nmismatch_case 0.0 0.0 measured -9.092726571680032e-14 shift_end -2.4400481635211687e-14 fresh_feasible True\nfailure_cases_checked\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mpc/mpc-stability#2",
+          "title": "名义闭环与值函数",
+          "index": 2,
+          "line": 175,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 84,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "closed_loop_steps 20 last_sample -6.216357831005834e-15\nmax_KKT 7.834755732653538e-07 max_descent_residual 4.91067168963247e-14\nmax_state 2.0 max_input 1.0\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 425,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "sample_axes_0_to_20 terminal_radius 1 not_a_steady_state_proof\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 47328
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 113,
-    "notebooks": 474,
-    "enabled": 467,
+    "lessons": 114,
+    "notebooks": 476,
+    "enabled": 469,
     "codeOnly": 7
   },
   "releaseTotals": {
-    "lessons": 113,
-    "notebooks": 474,
-    "enabled": 467,
+    "lessons": 114,
+    "notebooks": 476,
+    "enabled": 469,
     "codeOnly": 7
   },
   "provenance": [
@@ -16753,6 +16835,11 @@
       "testedAt": "2026-10-24T07:58:15.172Z",
       "url": "http://127.0.0.1:19395/python-expansion.html?lesson=robust/robust-performance",
       "inputPath": ".agent/semester-03/robust-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T08:16:51.114Z",
+      "url": "http://127.0.0.1:19596/python-expansion.html?lesson=mpc/mpc-stability",
+      "inputPath": ".agent/semester-03/mpc-05/pyodide.json"
     }
   ]
 }

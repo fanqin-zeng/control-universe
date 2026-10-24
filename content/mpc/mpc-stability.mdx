@@ -1,0 +1,265 @@
+---
+title: 递归可行性与稳定性
+description: 用终端不变集接续计划，再以最优值函数证明名义约束MPC的稳定性。
+---
+
+# 递归可行性与稳定性
+
+## 从本拍有解到下一拍
+
+上一课的阀门例告诉我们：优化器只能从约束交集里选动作。现在想象水箱的泵力有限，水位偏差已经很大。本次求出的两拍计划能把偏差压回小范围；只执行第一拍后，剩余计划该怎样接长，才能再次得到两拍的可行计划？
+
+“当前有解”只回答这一次优化。“递归可行”回答沿闭环走下去，每一次是否仍有解。“稳定”还要回答：小偏差是否一直小，并最终回到目标。三个问题不能互相代替。
+
+一个反例先把差别暴露出来。另取无量纲模型 $x^+=2x+u$，约束 $|x|\le2,|u|\le1$，一步规划最小化当前状态费加 $0.1u^2$。初态 $x=1.4$ 时，为使下一状态不超过2，必须 $u\le-0.8$，最优输入为 $-0.8$。下一状态恰为2，但再下一拍最小也只能到 $2\times2-1=3$，违反状态界。今天的最优动作把问题送进了明天的死角。
+
+本课只证明**无扰动、模型准确、状态已知、约束不变且按时取得精确最优解**下的一套充分条件。先修：[约束处理](/mpc/constraint-handling)与[Lyapunov稳定性](/nonlinear/lyapunov-stability)。
+
+## 问题与可行集
+
+目标平衡点平移为原点，离散模型为 $x^+=f(x,u)$，且 $f(0,0)=0$。$X$、$U$ 分别是允许状态与输入集合，$X_f\subseteq X$ 是终端集合。固定完整的 $N$ 个独立输入，不另加短控制时域的保持限制：
+
+$$
+V_N(x)=\min_{u_0,\ldots,u_{N-1}}\left\{\sum_{i=0}^{N-1}\ell(x_i,u_i)+V_f(x_N)\right\}.
+$$
+
+约束为 $x_0=x$、$x_{i+1}=f(x_i,u_i)$、$x_i\in X$、$u_i\in U$，以及 $x_N\in X_f$。$\mathcal U_N(x)$ 表示满足这些条件的输入序列集合；可行初态集定义为
+
+$$
+X_N=\{x\in X:\mathcal U_N(x)\ne\emptyset\}.
+$$
+
+可行是“存在一个序列”，不一定要先知道最优解。递归可行是：若 $x_k\in X_N$ 且执行规定的首输入，则 $x_{k+1}\in X_N$，因而可以归纳到以后每一拍。$X_f$ 是计划尾部可以接续的区域，$X_N$ 通常比它大；两者都不是整个物理状态空间。
+
+## 终端三条件
+
+在 $X_f$ 上找一个局部反馈 $\kappa_f(x)$ 和非负终端费用 $V_f(x)$，满足：
+
+1. 可容许：$\kappa_f(x)\in U$，且 $x\in X_f\subseteq X$。
+2. 正不变：$f(x,\kappa_f(x))\in X_f$，下一次仍能使用这个局部反馈。
+3. 费用下降：
+
+$$
+V_f(f(x,\kappa_f(x)))-V_f(x)\le-\ell(x,\kappa_f(x)),\qquad x\in X_f.
+$$
+
+前两条负责接得上，第三条负责新增尾段的费用有地方抵扣。只设一个很大的终端权重，或随意画一个终端小球，并不自动满足三条。线性系统可从稳定局部反馈与Lyapunov方程出发，再缩小集合使输入与状态约束成立；LQR也只是可选构造，不是对任意受约束区域的保证。
+
+## 移位证明
+
+设本拍最优输入为 $U^*=(u_0^*,\ldots,u_{N-1}^*)$，预测状态为 $x_0^*,\ldots,x_N^*$。执行 $u_0^*$。名义条件保证实际下一状态等于 $x_1^*$，在它处构造候选
+
+$$
+\widetilde U=(u_1^*,\ldots,u_{N-1}^*,\kappa_f(x_N^*)).
+$$
+
+![丢掉已执行首项，在原终点补上终端反馈，接成下一拍候选计划](/diagrams/mpc/terminal-shift.svg)
+
+旧序列剩余的输入和状态已经满足原约束；最后补的输入可容许，最后补的状态由不变性留在 $X_f$。所以这个候选可行，新的可行集非空，**并不要求它仍然最优**。初态可行，加上这一递推步，才得到沿名义闭环的递归可行性。
+
+这里需要新旧问题具有相同模型、约束、终端条件及兼容的输入参数化。若 $N_u\le N-1$ 且尾部被迫保持常值，移位加反馈未必还属于那种参数化；不能直接搬用此证明。变化参考、时间变化约束与移动障碍也要另核新合同。
+
+## 值函数下降
+
+新最优值不大于可行候选的费用。把候选费与原最优费逐项相减，中间项抵消，只剩删掉的首段、补上的尾段和终端费用差：
+
+$$
+\begin{aligned}
+V_N(x^+)-V_N(x)&\le-\ell(x,u_0^*)+\ell(x_N^*,\kappa_f(x_N^*))\\
+&\quad+V_f(f(x_N^*,\kappa_f(x_N^*)))-V_f(x_N^*)\\
+&\le-\ell(x,u_0^*).
+\end{aligned}
+$$
+
+这还没有把所有稳定性条件说完。取连续模型和费用、含原点的闭约束、保证最优解存在的紧可行输入集；原点在 $X_N$ 的内部。再要求 $V_N(0)=0$，且在该可行域上存在严格递增、零点为零的连续比较函数，使
+
+$$
+\alpha_1(\|x\|)\le V_N(x)\le\alpha_2(\|x\|),\qquad
+\ell(x,u)\ge\alpha_3(\|x\|)>0\quad(x\ne0).
+$$
+
+于是 $V_N$ 可作闭环Lyapunov函数，原点在这个可行域内渐近稳定。上界使足够小的初态对应足够小的能量；下界把能量小换回状态小；严格下降及求和界保证状态趋零。只写“费用单调不增”不足以保证稳定，更不保证趋零。若阶段费对状态只有半正定性，需要额外可检测性等条件，本课不将其省略为同一结论。
+
+## 标量算例
+
+把水位偏差与泵指令归一化，取一个用于观察不稳定漂移的教学模型，系数不是实际水箱辨识数据：
+
+$$
+x^+=1.2x+u,\quad |x|\le3,\quad |u|\le1,\quad N=2,\quad
+\ell=x^2+u^2.
+$$
+
+选 $\kappa_f(x)=-0.6x$，故局部闭环为 $x^+=0.6x$。令 $V_f=Px^2$，解下降等式 $P(1-0.6^2)=1+0.6^2$，得 $P=17/8=2.125$。对 $X_f=[-r,r]$，输入约束要求 $0.6r\le1$，状态约束要求 $r\le3$，局部收缩保证不变，故 $0<r\le5/3$ 均可。组件只开放其中的 $0.5\le r\le1.5$。
+
+默认 $r=1$。一步前驱半径为 $(1+1)/1.2=5/3$，两步为 $(5/3+1)/1.2=20/9$，未超过状态界3，故
+
+$$
+X_2=[-20/9,20/9].
+$$
+
+它是这个模型下两拍能够进入终端集合的初态集合，不是最大可控不变集。一般半径 $r$ 的两拍边界为 $(r+2.2)/1.44$。
+
+默认 $x=2$ 的最优计划 $U^*=[-1,-1]$，状态 $[2,1.4,0.68]$，最优值为 $8.9426$。补尾输入为 $-0.408$；新候选 $[-1,-0.408]$ 从1.4出发，状态为 $[1.4,0.68,0.408]$，候选费 $3.9426=8.9426-5$。再优化得到 $[-1,-0.55488]$，新最优值 $3.87518208$，比原值少 $5.06741792$，满足不小于本拍阶段费5的下降量。
+
+在原点，输入与费用都为零，下降式取等号。初态2.5超出默认 $X_2$，不能启用这套计划。可行域的限制也是定理结论的一部分。
+
+<JupyterNotebook title="终端接续与反例核对" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize, LinearConstraint, linprog, nnls
+P = 17/8
+def plan(x, radius=1):
+    A = np.array([[1,0],[-1,0],[0,1],[0,-1],[1,0],[-1,0],[1.2,1],[-1.2,-1]], dtype=float)
+    b = np.array([1,1,1,1,3-1.2*x,3+1.2*x,radius-1.44*x,radius+1.44*x])
+    lp = linprog([0,0], A_ub=A, b_ub=b, bounds=[(None,None)]*2, method='highs')
+    if lp.status == 2: return None
+    if not lp.success: raise RuntimeError(lp.message)
+    def states(u): return np.array([x, 1.2*x+u[0], 1.44*x+1.2*u[0]+u[1]])
+    def cost(u):
+        z = states(u)
+        return z[0]**2+u[0]**2+z[1]**2+u[1]**2+P*z[2]**2
+    def grad(u):
+        z = states(u)
+        return 2*np.array([u[0]+z[1]+P*1.2*z[2],u[1]+P*z[2]])
+    res = minimize(cost, lp.x, jac=grad, method='SLSQP', constraints=[LinearConstraint(A,-np.inf,b)], options={'ftol':1e-12,'maxiter':200})
+    if not res.success: raise RuntimeError(res.message)
+    slack = b-A@res.x
+    active = np.flatnonzero(slack<1e-7)
+    lam = np.zeros(8)
+    if len(active): lam[active] = nnls(A[active].T, -grad(res.x))[0]
+    residual = max(0, float(-min(slack)), float(np.max(np.abs(grad(res.x)+A.T@lam))), float(np.max(np.abs(lam*slack))))
+    if residual > 1e-5: raise RuntimeError('KKT residual exceeds teaching tolerance')
+    return dict(u=res.x, states=states(res.x), cost=cost(res.x), residual=residual)
+`} cells={[{code: `r = plan(2)
+assert r is not None
+shift = np.array([r['u'][1], -.6*r['states'][2]])
+shift_states = np.array([r['states'][1], r['states'][2], .6*r['states'][2]])
+candidate_cost = shift_states[0]**2+shift[0]**2+shift_states[1]**2+shift[1]**2+P*shift_states[2]**2
+next_plan = plan(r['states'][1])
+print('default_U',r['u'],'default_states',r['states'],'default_value',r['cost'])
+print('shift_U',shift,'shift_states',shift_states,'candidate_cost',candidate_cost)
+print('next_U',next_plan['u'],'next_value',next_plan['cost'],'value_difference',next_plan['cost']-r['cost'])
+assert np.allclose(r['u'],[-1,-1],atol=1e-9)
+assert abs(candidate_cost-(r['cost']-5))<1e-10
+assert next_plan['cost']<=candidate_cost+1e-10
+grid=np.linspace(-1.5,1.5,121)
+assert np.all(np.abs(-.6*grid)<=1+1e-12)
+assert np.max(np.abs(P*((.6*grid)**2-grid**2)+(grid**2+(-.6*grid)**2)))<1e-12
+print('terminal_P',P,'local_decay_coefficient',P*(.36-1),'terminal_max_radius',5/3)
+print('predecessor_bounds',1,5/3,20/9)
+print('r_half_bound',(.5+2.2)/1.44,'r_onehalf_bound',(1.5+2.2)/1.44)
+`, title: "1"},
+{code: `# A different model for the one-step trap: x+=2x+u, |x|<=2, |u|<=1.
+for x in [0.,1.,1.4]:
+    lower=max(-1.,-2.-2*x); upper=min(1.,2.-2*x)
+    u=float(np.clip(0.,lower,upper)); next_x=2*x+u
+    possible_next=(max(-1.,-2.-2*next_x)<=min(1.,2.-2*next_x))
+    print('trap_case',x,'u',u,'next',next_x,'next_feasible',possible_next)
+assert abs((2*1.4-.8)-2)<1e-12
+for x,w in [(2.,.75),(2.2,.75),(0.,0.)]:
+    old=plan(x); measured=old['states'][1]+w
+    shifted=np.array([old['u'][1],-.6*old['states'][2]])
+    end=1.44*measured+1.2*shifted[0]+shifted[1]
+    fresh=plan(measured)
+    print('mismatch_case',x,w,'measured',measured,'shift_end',end,'fresh_feasible',fresh is not None)
+print('failure_cases_checked')
+`, title: "2"}]} />
+
+## 交互式可视化
+
+先保留默认值核对上面的三段计划，再把初态改为2.5观察无解。恢复默认后将第一拍扰动设为0.75：测得状态变为2.15，原移位尾点变为1.488，超出终端界1；新优化仍可能可行。再把初态设为2.2、扰动保持0.75，新状态2.39超出 $20/9$，下一拍也不再可行。扰动只加一次，之后的轨迹仍按名义模型推算。
+
+<MpcStabilityExplorer />
+
+下面的20拍闭环只使用默认名义合同，每拍重新求解并检查成功状态、约束与KKT残差，再执行首输入。横轴是真实采样编号，折线只是连接离散样本；末样本不冒充稳态极限，曲线不代替集合证明。
+
+<JupyterNotebook title="名义闭环与值函数" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize, LinearConstraint, linprog, nnls
+P = 17/8
+def plan(x, radius=1):
+    A = np.array([[1,0],[-1,0],[0,1],[0,-1],[1,0],[-1,0],[1.2,1],[-1.2,-1]], dtype=float)
+    b = np.array([1,1,1,1,3-1.2*x,3+1.2*x,radius-1.44*x,radius+1.44*x])
+    lp = linprog([0,0], A_ub=A, b_ub=b, bounds=[(None,None)]*2, method='highs')
+    if lp.status == 2: return None
+    if not lp.success: raise RuntimeError(lp.message)
+    def states(u): return np.array([x, 1.2*x+u[0], 1.44*x+1.2*u[0]+u[1]])
+    def cost(u):
+        z = states(u)
+        return z[0]**2+u[0]**2+z[1]**2+u[1]**2+P*z[2]**2
+    def grad(u):
+        z = states(u)
+        return 2*np.array([u[0]+z[1]+P*1.2*z[2],u[1]+P*z[2]])
+    res = minimize(cost, lp.x, jac=grad, method='SLSQP', constraints=[LinearConstraint(A,-np.inf,b)], options={'ftol':1e-12,'maxiter':200})
+    if not res.success: raise RuntimeError(res.message)
+    slack = b-A@res.x
+    active = np.flatnonzero(slack<1e-7)
+    lam = np.zeros(8)
+    if len(active): lam[active] = nnls(A[active].T, -grad(res.x))[0]
+    residual = max(0, float(-min(slack)), float(np.max(np.abs(grad(res.x)+A.T@lam))), float(np.max(np.abs(lam*slack))))
+    if residual > 1e-5: raise RuntimeError('KKT residual exceeds teaching tolerance')
+    return dict(u=res.x, states=states(res.x), cost=cost(res.x), residual=residual)
+`} cells={[{code: `state=2.; trajectory=[state]; inputs=[]; values=[]; residuals=[]
+plans=[]
+for k in range(20):
+    r=plan(state)
+    if r is None: raise RuntimeError('Nominal loop unexpectedly infeasible')
+    plans.append(dict(x=state,u=r['u'].tolist()))
+    values.append(r['cost']);residuals.append(r['residual'])
+    inputs.append(float(r['u'][0]));state=1.2*state+r['u'][0];trajectory.append(float(state))
+last=plan(state);values.append(last['cost'])
+stages=np.array(trajectory[:-1])**2+np.array(inputs)**2
+descent=np.diff(values)+stages
+assert max(descent)<1e-8
+print('closed_loop_steps',len(inputs),'last_sample',trajectory[-1])
+print('max_KKT',max(residuals),'max_descent_residual',max(descent))
+print('max_state',max(abs(np.array(trajectory))),'max_input',max(abs(np.array(inputs))))
+`, title: "1"},
+{code: `t=np.arange(21)
+fig,axes=plt.subplots(2,1,figsize=(9,6))
+axes[0].plot(t,trajectory,'o-',label='nominal sampled x')
+axes[0].axhline(1,color='gray',ls='--');axes[0].axhline(-1,color='gray',ls='--')
+axes[0].set(xlim=(0,20),ylim=(-3,3),ylabel='state');axes[0].legend();axes[0].grid(True)
+axes[1].plot(t,values,'o-',label='optimal V2')
+axes[1].set(xlim=(0,20),ylim=(0,10),xlabel='sample k',ylabel='value');axes[1].legend();axes[1].grid(True)
+plt.tight_layout();plt.show()
+print('sample_axes_0_to_20','terminal_radius',1,'not_a_steady_state_proof')
+`, title: "2"}]} />
+
+## 实现与失效边界
+
+递归可行与下降证明各有需要检查的接口：
+
+| 接口 | 证明实际需要 | 破坏后如何理解 |
+|---|---|---|
+| 状态/模型 | 下一状态等于原一步预测 | 测量误差、扰动、模型偏差使旧移位轨迹不再接合；需鲁棒设计或重新认证 |
+| 约束/终端集合 | 下拍仍是同一合同，终端局部反馈可容许 | 软化终端界、改变输入界或参考后，原证书不能沿用 |
+| 优化 | 精确最优使新最优值不超过候选费 | 可行次优解只能在额外费用改进条件下继承下降；“求解器成功”不等于数学精确最优 |
+| 数值/执行 | 约束容差、期限、首输入单位与执行值一致 | 超时、残差超限、饱和或丢包时不能执行未批准候选；回退本身也须在其适用域验证 |
+
+实际程序中的容差检查是工程验收，不是有限精度下自动保留精确定理。若可行次优序列满足其费用不超过已验证移位候选费，可把“最优值”换成受维护的计划费用并另建下降论证；只返回任意可行序列不够。软化正常性能界也不等于允许物理设备越限，见上一课。
+
+本课说明的是一套充分条件，不能倒推“没有终端约束就一定不稳定”。延长时域、不同终端构造或无终端约束MPC可以在其他条件下获得稳定性，但需要各自的证明。鲁棒MPC和经济MPC也不是把这里的几个符号换名即可。
+
+小结：先证明可行候选能接续，再证明候选费能抵扣首段；最后补足值函数上下界和阶段费正定性，才从名义QP走到稳定性结论。终端集合承担的是接续合同，终端费用承担的是尾部费用合同。
+
+参考：[Rawlings、Mayne、Diehl 作者教材，第2章](https://sites.engineering.ucsb.edu/~jbraw/mpc/MPC-book-2nd-edition-6th-printing.pdf)，2026-10-24核读终端条件、可行性及Lyapunov界部分；上面的标量数字为本课实际计算。下一节：[广义预测控制](/mpc/generalized-predictive-control)。
+
+## 习题
+
+**1. 有解与递归有解。** 对开篇的一步模型，分别计算初态0、1、1.4的最优动作与下一状态；哪些状态在下一拍仍可行？解释为何原优化成功并不能证明递归可行。
+
+**2. 终端设计。** 对本课主模型，推导局部反馈的最大终端半径和 $P$；默认半径下求 $X_1,X_2$。若把半径设为2，哪一条条件会失败？若设为0.5，两拍可行域边界是多少？
+
+**3. 候选与最优。** 从默认 $x=2$ 计划构造移位候选，计算状态和费用。证明下一最优费不超过它，并核本拍阶段费。说明这一步为何还不能单独代替完整稳定性定理。
+
+**4. 证书的边界。** 初态2、第一拍扰动0.75时检查移位终点，说明“候选失效”与“新问题无解”区别；再对初态2.2计算。若求解器超时但返回一条可行序列，或把终端界软化，应补核什么才能继续声明原下降结论？
+
+## 答案
+
+**1.** 给定 $x$，可行输入区间为 $[-1,1]\cap[-2-2x,2-2x]$，最优动作是该区间内离0最近的值。初态0给 $u=0,x^+=0$，下拍可行；初态1给 $u=0,x^+=2$，下拍不可行；初态1.4给 $u=-0.8,x^+=2$，下拍不可行。优化只限制了一拍，没有保留后续可接续性。
+
+**2.** 局部闭环0.6，所以区间收缩；可容许输入要求 $r\le1/0.6=5/3$，也须 $r\le3$。下降条件给 $P\ge(1+0.36)/(1-0.36)=17/8$，本课选取等号。默认 $X_1=[-5/3,5/3]$、$X_2=[-20/9,20/9]$。$r=2$ 时端点反馈幅值1.2超过1；收缩本身不能挽救输入不可容许。$r=0.5$ 时边界 $(0.5+2.2)/1.44=1.875$。
+
+**3.** $x_2^*=0.68$，补尾 $-0.6\times0.68=-0.408$，候选状态 $[1.4,0.68,0.408]$。费用 $1.4^2+1+0.68^2+0.408^2+(17/8)0.408^2=3.9426$。候选可行，所以新最优费不超过3.9426，实际为3.87518208；原费8.9426，本拍阶段费 $2^2+(-1)^2=5$。仍须值函数零点/上下界、阶段费正定、原点邻域以及解存在等条件，将费用变化转成状态稳定与收敛。
+
+**4.** 新测量 $1.4+0.75=2.15$，候选终点 $0.408+1.2^2\times0.75=1.488$，超出1；但 $2.15<20/9$，新问题可行。初态2.2的名义首状态1.64，加扰动得2.39，超过 $20/9$，新问题不可行。任意可行序列不保证费用低于移位候选，需明确费用改进/下降条件及数值执行期限；超时不能凭“有序列”就执行。软化终端界可能让原终点不在 $X_f$，失去局部反馈可容许和不变性，必须另证新的终端合同，不能原样宣称递归可行和下降。

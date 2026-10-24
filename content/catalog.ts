@@ -5047,7 +5047,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从本拍有解到下一拍", "title": "从本拍有解到下一拍"}, {"slug": "问题与可行集", "title": "问题与可行集"}, {"slug": "终端三条件", "title": "终端三条件"}, {"slug": "移位证明", "title": "移位证明"}, {"slug": "值函数下降", "title": "值函数下降"}, {"slug": "标量算例", "title": "标量算例"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "实现与失效边界", "title": "实现与失效边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "generalized-predictive-control",
