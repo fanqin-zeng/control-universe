@@ -1,3 +1,4 @@
+import { EstimationFrameworkExplorer } from "@/components/wiki/estimation-framework-explorer";
 import { ControlArchitectureExplorer } from "@/components/wiki/control-architecture-explorer";
 import { LearningGeneralizationExplorer } from "@/components/wiki/learning-generalization-explorer";
 import { EventTriggeredExplorer } from "@/components/wiki/event-triggered-explorer";
@@ -99,6 +100,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EstimationFrameworkExplorer,
   ControlArchitectureExplorer,
   LearningGeneralizationExplorer,
   EventTriggeredExplorer,

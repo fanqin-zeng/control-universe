@@ -3671,7 +3671,45 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "估计任务与信息边界",
+            "title": "估计任务与信息边界"
+          },
+          {
+            "slug": "状态和噪声模型",
+            "title": "状态和噪声模型"
+          },
+          {
+            "slug": "用不确定性描述估计",
+            "title": "用不确定性描述估计"
+          },
+          {
+            "slug": "预测与测量修正",
+            "title": "预测与测量修正"
+          },
+          {
+            "slug": "条件与失效边界",
+            "title": "条件与失效边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "least-squares-ml",

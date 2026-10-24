@@ -1,0 +1,63 @@
+{
+  "source": "content/estimation/estimation-problem.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 135,
+      "title": "温度预测、修正与精确风险",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 140,
+          "delim": "`",
+          "code": "a, mean0, variance0, Q = 0.8, 25.0, 4.0, 1.44\nprior_mean = a * mean0\nP = a*a*variance0 + Q\ny, R = 23.0, 1.0\ninnovation = y - prior_mean\ngain = P / (P + R)\nestimate = prior_mean + gain * innovation\nrisk = (1-gain)**2 * P + gain**2 * R\nprint('prediction_mean_C', prior_mean)\nprint('prediction_variance_C2', P)\nprint('innovation_C', innovation)\nprint('gain_estimate_risk', gain, estimate, risk)\nassert np.allclose([prior_mean,P,innovation,gain,estimate,risk], [20,4,3,0.8,22.4,0.8], rtol=0, atol=1e-12)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 153,
+          "delim": "`",
+          "code": "risk_rows = []\nfor p, r in [(4.0,1.0),(1.0,4.0),(4.0,4.0)]:\n    k = p/(p+r)\n    errors = [(1-k)*s*np.sqrt(p)-k*t*np.sqrt(r) for s in [-1,1] for t in [-1,1]]\n    exact_risk = float(np.mean(np.square(errors)))\n    row = [p,r,k,exact_risk,p,r]\n    risk_rows.append(row)\n    print('P_R_K_MSE_K0_K1', row)\nassert np.allclose(risk_rows, [[4,1,0.8,0.8,4,1],[1,4,0.2,0.8,1,4],[4,4,0.5,2,4,4]], rtol=0, atol=1e-12)\nprint('R_zero_gain_risk', 4/(4+0), 0.0)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 188,
+      "title": "偏置、不可见状态与习题复核",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 193,
+          "delim": "`",
+          "code": "p, r, b, k = 4.0, 1.0, 3.0, 0.8\nerrors = [(1-k)*s*np.sqrt(p)-k*(b+t*np.sqrt(r)) for s in [-1,1] for t in [-1,1]]\nbiased_mean = float(np.mean(errors))\nbiased_mse = float(np.mean(np.square(errors)))\nprint('biased_mean_MSE_keep_prediction', biased_mean, biased_mse, p)\nassert np.allclose([biased_mean,biased_mse], [-2.4,6.56], rtol=0, atol=1e-12)\nC = np.array([[1.0,0.0]])\nstates = [np.array([20.0,5.0]),np.array([20.0,9.0])]\noutputs = [[float((C @ x)[0]) for _ in range(4)] for x in states]\nprint('indistinguishable_outputs', outputs)\nassert outputs == [[20.0]*4,[20.0]*4]",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 204,
+          "delim": "`",
+          "code": "k2 = 1.0/(1.0+4.0)\nanswer2 = [k2, 20.0+k2*(23.0-20.0), (1-k2)**2+4*k2**2]\nmean3, p3 = 0.5*10.0, 0.5**2*4.0+1.0\nk3 = p3/(p3+2.0)\nanswer3 = [mean3,p3,k3,mean3+k3*(7.0-mean3),(1-k3)**2*p3+k3**2*2.0]\nprint('exercise2_K_estimate_MSE', answer2)\nprint('exercise3_mean_P_K_estimate_MSE', answer3)\nassert np.allclose(answer2,[0.2,20.6,0.8],rtol=0,atol=1e-12)\nassert np.allclose(answer3,[5,2,0.5,6,1],rtol=0,atol=1e-12)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}
