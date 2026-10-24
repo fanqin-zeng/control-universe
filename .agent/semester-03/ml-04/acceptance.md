@@ -1,6 +1,6 @@
 # ML-04 自动微分与训练验收
 
-2026-10-24；rank2；空课新写，最终数值、原始内核、浏览器、两种构建与375px修正复验通过，学期守卫通过，Phase4已签发，待真实master回执。
+2026-10-24；rank2；空课新写，最终数值、原始内核、浏览器、两种构建与375px修正复验通过，学期守卫通过，Phase4已签发，真实交付已进入master并推送。
 
 范围：content/machine-learning/autodiff-optimization.mdx；lib/autodiff-training.ts；components/wiki/autodiff-training-explorer.tsx；唯一注册器、catalog本课对象、tracker/checklist/plan本课字段、自动OUTLINE和Python政策本课两实验。单一Agent使用仓库规定的角色审查视角。全为自造无量纲数据，实际运行自含标量AD和小网络训练；没有PyTorch/GPU/真实房间试验。
 
@@ -35,3 +35,5 @@
 最终元数据快进基线e5e7b388a01dfe6d95a90be7b4edb26a73cc4a19，commit-semester.log在独立工作目录退出0。一次误从共享cwd运行守卫读到RL-02在制表格，随后按隔离目录重跑通过，未修改该课程。课程源码与已验证6ebdfe5投影一致；完整构建范围仍如前述精确基线。
 
 暂存前MPC-03已进入master，因此以6a4c724重新投影并完整运行check/学期守卫，均exit0。随后仅接纳无课程源码变化的MPC-03回执快进至e52dac2b7651226105689a3f467a3a63ae904326，保留全部他课新记录；共享字段只追加本课。
+
+真实交付回执：commit:97febf466c7d09f9e40b9a3273ef16aaa8fb8513；parent:e52dac2b7651226105689a3f467a3a63ae904326。2026-10-24正常push origin master成功。共享正常索引已有index.lock，未触碰或删除该锁，交付一直使用独立索引。 origin迁移提示不影响推送，未擅改URL。未发布gh-pages，不继续ML-05。
