@@ -649,6 +649,8 @@
 | 非线性自回归外生输入模型 | nonlinear autoregressive with exogenous input, NARX | 非线性ARX | ID-08 | 由输入输出滞后预测下一输出 |
 | 自由滚动 | free-run simulation | 自由仿真 | ID-08 | 只给初值并用自身预测历史递推 |
 | 一步预测 | one-step-ahead prediction | — | ID-08 | 每拍使用已观测真实历史输出 |
+| 模型验证 | model validation | — | ID-09 | 在独立记录核对模型的指定用途 |
+| 输入端注入 | input injection | — | ID-09 | 叠加到执行器输入的外部辨识信号 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

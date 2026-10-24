@@ -1,0 +1,23 @@
+export type CaseConfig={amplitude:number;rho:number;sigma:number;feedback:number;changed:boolean;seed:number};
+export const caseDefaults:CaseConfig={amplitude:.5,rho:.6,sigma:.2,feedback:.4,changed:false,seed:20261024};
+const rng=(seed:number)=>{let state=seed>>>0;return()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};};
+function record(c:CaseConfig,part:'train'|'validation'|'test'){
+ const train=part==='train',offset={train:0,validation:1000,test:2000}[part],ru=rng(c.seed+offset),rw=rng(c.seed+offset+777),a=part==='test'&&c.changed?.5:.8,b=part==='test'&&c.changed?.1:.3;
+ let x=0,v=0;const data={y:[] as number[],u:[] as number[],r:[] as number[],x:[] as number[],w:[] as number[]};
+ for(let k=0;k<(train?641:832);k++){const r=train?c.amplitude*(ru()>=.5?1:-1):[2,8,20].reduce((s,j)=>s+Math.sin(2*Math.PI*j*k/64),0)/3,y=x+v,u=train?r-c.feedback*y:r,w=c.sigma*Math.sqrt(12)*(rw()-.5);data.y.push(y);data.u.push(u);data.r.push(r);data.x.push(x);data.w.push(w);x=a*x+b*u;v=c.rho*v+w;}
+ if(!train)for(const key of Object.keys(data) as (keyof typeof data)[])data[key]=data[key].slice(256);return data;
+}
+const dot=(a:number[],b:number[])=>a.reduce((s,v,i)=>s+v*b[i],0);
+function ols(x:number[],u:number[],y:number[]){const norm=Math.sqrt(dot(x,x));if(norm<1e-12)return null;const q=x.map(v=>v/norm),r=dot(q,u),v=u.map((t,i)=>t-r*q[i]),cor=dot(q,v);for(let i=0;i<v.length;i++)v[i]-=cor*q[i];const norm2=Math.sqrt(dot(v,v));if(norm2<1e-10*Math.max(norm,Math.sqrt(dot(u,u))))return null;const qb=v.map(t=>t/norm2),b=dot(qb,y)/norm2,a=(dot(q,y)-(r+cor)*b)/norm;return[a,b];}
+function iv(x:number[],u:number[],y:number[],z:number[],lag:number[]){const aa=dot(z,x),ab=dot(z,u),ba=dot(lag,x),bb=dot(lag,u),c=dot(z,y),d=dot(lag,y),det=aa*bb-ab*ba,scale=Math.max(Math.abs(aa),Math.abs(ab),Math.abs(ba),Math.abs(bb));if(scale===0||Math.abs(det)<1e-10*scale*scale)return null;return[(c*bb-ab*d)/det,(aa*d-c*ba)/det];}
+export function caseExperiment(config:Partial<CaseConfig>={}){
+ const c={...caseDefaults,...config};for(const k of ['amplitude','rho','sigma','feedback','seed'] as const)if(!Number.isFinite(c[k])||c[k]<0)throw new RangeError(k);if(![0,.1,.5,1].includes(c.amplitude)||![0,.6].includes(c.rho)||![0,.2].includes(c.sigma)||![0,.4].includes(c.feedback)||typeof c.changed!=='boolean'||!Number.isInteger(c.seed)||c.seed>4294964000)throw new RangeError('configuration');
+ const train=record(c,'train'),validation=record(c,'validation'),test=record(c,'test'),x=train.y.slice(128,640),u=train.u.slice(128,640),y=train.y.slice(129,641);
+ const coefficients={OLS:ols(x,u,y),IV:iv(x,u,y,train.r.slice(128,640),train.r.slice(127,639))};
+ function score(theta:number[],data:typeof train){const pred=[data.y[0]];for(let k=1;k<576;k++)pred.push(theta[0]*pred[k-1]+theta[1]*data.u[k-1]);const errors=data.y.slice(64).map((v,i)=>v-pred[i+64]),res=data.y.slice(64).map((v,i)=>v-theta[0]*data.y[i+63]-theta[1]*data.u[i+63]),rmse=Math.sqrt(dot(errors,errors)/512),base=Math.sqrt(dot(data.y.slice(64),data.y.slice(64))/512),power=dot(res,res);return{rmse,improvement:base>1e-14?1-rmse/base:null,pred,residualLag1:power>1e-20?dot(res.slice(1),res.slice(0,-1))/power:null};}
+ const models=Object.fromEntries(Object.entries(coefficients).map(([name,theta])=>{const valid=!!theta&&theta[0]>0&&theta[0]<=.95&&theta[1]>0&&theta[1]<=1;return[name,{coefficients:theta,valid,validation:valid?score(theta!,validation):null,test:valid?score(theta!,test):null}];})) as Record<'OLS'|'IV',{coefficients:number[]|null;valid:boolean;validation:ReturnType<typeof score>|null;test:ReturnType<typeof score>|null}>;
+ let selected:'OLS'|'IV'|null=null;for(const name of ['OLS','IV'] as const)if(models[name].valid&&(!selected||models[name].validation!.rmse<models[selected].validation!.rmse-1e-12))selected=name;
+ const inputPeak=Math.max(...train.u.map(Math.abs),...validation.u.map(Math.abs),...test.u.map(Math.abs)),s=selected?models[selected].test:null,admitted=!!s&&inputPeak<=2&&s.rmse<=.35&&s.improvement!==null&&s.improvement>=.1;
+ const spectrum=[2,8,20].map(j=>{let crossRe=0,crossIm=0,pu=0,py=0;for(let seg=0;seg<8;seg++){let ur=0,ui=0,yr=0,yi=0;for(let k=0;k<64;k++){const angle=2*Math.PI*j*k/64,co=Math.cos(angle),si=-Math.sin(angle),index=64+seg*64+k;ur+=test.u[index]*co;ui+=test.u[index]*si;yr+=test.y[index]*co;yi+=test.y[index]*si;}crossRe+=ur*yr+ui*yi;crossIm+=ur*yi-ui*yr;pu+=ur*ur+ui*ui;py+=yr*yr+yi*yi;}return{bin:j,frequency:j/64,re:crossRe/pu,im:crossIm/pu,gain:Math.hypot(crossRe,crossIm)/pu,coherence:(crossRe*crossRe+crossIm*crossIm)/(pu*py)};});
+ return{train,validation,test,models,selected,admitted,inputPeak,spectrum};
+}

@@ -1,0 +1,383 @@
+---
+title: 系统辨识案例
+description: 用合成水箱记录完成闭环估计、冻结模型选择、独立测试与频域复核，保留拒绝放行与弱工具的失败证据。
+---
+
+# 系统辨识案例
+
+## 引言
+
+水箱的进水阀开大一点，水位不会立刻跳到新高度，而会逐渐变化。工程师希望用过去的阀门与水位记录，预测以后几分钟的水位。可是采集数据时，原有控制器一直在调阀门；传感器还有缓慢变化的测量扰动。曲线贴得很近，能否说明模型可以使用？
+
+[闭环辨识](/identification/instrumental-variable)给出了外部工具的思路，[频域辨识](/identification/frequency-domain-id)给出了受激频率处的复核方法。本课把两者放进同一个交付问题：**事先规定用途和门槛，从记录估计模型，用验证记录选一次，再用未参与选择的记录决定是否放行。**
+
+目录先修“学习实验评估”尚未交付；这里就地定义数据分区和选择冻结，已有[非线性辨识](/identification/nonlinear-data-driven-id)可作分区实例。无需先会机器学习工具箱。全部记录由公开递推合成，单位和门槛是教学合同，结果不等于真实水箱校准或闭环安全认证。
+
+## 把工程问题写成验收合同
+
+输入 $u$ 是相对阀门工作点的开度偏差：1单位等于5个百分点，工作点50%。输出 $y$ 是水位偏差，单位cm。模型用途是在给定阀门序列时，预测水位的自由响应；不估计绝对水位、溢流概率或控制器稳定裕量。
+
+<div style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 项目 | 预先固定的合同 |
+|---|---|
+| 数据与单位 | 采样间隔1s；输入预算 $\lvert u\rvert\le2$，对应开度40%至60%；输出cm |
+| 对象类先验 | 一阶、无常值项、小偏差模型；候选 $0<a\le0.95,\ 0<b\le1$；越界保留原系数并拒绝 |
+| 训练记录 | 舍前128拍；512对，用于OLS/IV估计相同的两个参数 |
+| 验证记录 | 独立噪声；只据自由仿真RMSE选择候选；差不超过 $10^{-12}$ 时选OLS |
+| 最终测试 | 选择冻结后查看；RMSE不超过0.35cm，且相对零偏差预测改善至少10%；还须满足输入预算 |
+| 边界 | 测试失败不换候选；若修改模型或阈值，原测试转为开发资料，需要新测试记录 |
+
+</div>
+
+**训练**决定参数，**验证**决定采用哪个候选，**测试**只评价已经冻结的选择。这三种用途不靠文件名区分，而靠是否让记录影响决策区分。零偏差预测器每拍输出0，是误差比较基线，不是“不控制水箱”的控制器。
+
+先验限制反映本案例事先选定的过程模型类，不是辨识算法自动得出的物理定律。若真实过程含积分、反向增益或多阶动态，应重开合同；不能把估计值裁剪进允许区间后当作原算法表现。
+
+<div style={{overflowX: 'auto'}}><img src="/diagrams/identification/identification-case-pipeline.svg" alt="合成水箱的输入端注入与反馈采集，以及训练估计、验证冻结、独立测试的单向流程" style={{minWidth: 760, width: '100%', maxWidth: '100%'}} /></div>
+
+## 记录与时序先审计
+
+真实水位偏差 $x$ 与测量扰动 $v$ 分开生成；估计器只收到 $u,y,r$，不能读取仿真中的 $x$。
+
+$$
+x_{k+1}=0.8x_k+0.3u_k,\qquad v_{k+1}=\rho v_k+w_{k+1},\qquad y_k=x_k+v_k.
+$$
+
+训练时 $u_k=r_k-fy_k$，默认 $f=0.4$；$r_k$ 是叠加在执行器输入端的独立二值注入，不是水位设定值。默认注入幅度0.5、$\rho=0.6$，$w$ 是标准差0.2cm的零均值有界均匀创新。创新并非高斯分布。初始 $x_0=v_0=0$；两条LCG流分别生成注入和创新，种子为20261024及其加777。代码数组 `w[k]` 存储公式中的 $w_{k+1}$。
+
+训练生成 $k=0,\ldots,640$ 的641个样本，取 $k=128,\ldots,639$ 的回归对 $([y_k,u_k],y_{k+1})$，故是512对，不是把最后一个输出当稳态值。工具量还要用 $r_{k-1}$，日志保留其索引。
+
+验证、测试不用这个反馈器，而是在开环施加同一周期形状的多正弦：
+
+$$
+u_k=\frac{1}{3}\sum_{j\in\{2,8,20\}}\sin\left(\frac{2\pi jk}{64}\right).
+$$
+
+物理对象先热身256拍，再记录576拍。验证与测试创新流分别取默认种子加1000、加2000，再各加777作为噪声流；输入形状相同不妨碍噪声记录独立，但也意味着只验证这一输入频带与幅值。估计模型只用记录开头的测量 $y_0$ 初始化一次；再舍前64拍的模型初值过渡，在 $k=64,\ldots,575$ 的512点计分。物理热身与模型计分热身是两件事。
+
+## 闭环候选怎样估计
+
+把真实输出代入，得到实际回归误差：
+
+$$
+y_{k+1}=ay_k+bu_k+\varepsilon_{k+1},\qquad
+\varepsilon_{k+1}=v_{k+1}-av_k=(\rho-a)v_k+w_{k+1}.
+$$
+
+因此即使 $\rho=0$，也有 $\varepsilon_{k+1}=w_{k+1}-av_k$；当前回归量 $y_k$ 包含 $v_k$，不能把“白测量噪声”当成“独立回归创新”。有色扰动与反馈还会增加相关性。
+
+OLS最小化相同512对的一步平方误差；IV使用 $z_k=[r_k,r_{k-1}]^{\mathsf T}$，求
+
+$$
+\left(\sum_k z_k[y_k,u_k]\right)\widehat{\boldsymbol{\theta}}_{\rm IV}
+=\sum_k z_ky_{k+1},\qquad \boldsymbol{\theta}=[a,b]^{\mathsf T}.
+$$
+
+外部注入与测量创新独立，且测量扰动的递推不受 $r$ 驱动，这是工具与误差正交的依据；同时交叉矩阵必须有足够的独立方向。工具有物理来源不代表有限记录一定足够强。默认仅这一份记录的IV极点约0.654，离真值0.8仍远，应保留而不是挑一份更漂亮的数据。
+
+<div style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 候选 | $\widehat a$ | $\widehat b$ | 验证自由仿真RMSE / cm | 测试自由仿真RMSE / cm |
+|---|---:|---:|---:|---:|
+| OLS | 0.631462 | 0.293483 | 0.290167 | 0.269331 |
+| IV | 0.653695 | 0.293295 | 0.285597 | 0.265683 |
+
+</div>
+
+两个候选使用同一对象类、训练对、初始化与验证窗口，各有两个待估参数；没有额外调参或反复挑选种子。TS组件用正交分解求OLS、显式交叉方程求IV；Notebook用NumPy最小二乘，验收另用SciPy递推及FFT核对状态、测量扰动与频谱。
+
+## 验证选择与测试放行
+
+自由仿真从 $\widehat y_0=y_0$ 出发，以后只喂入输入和自己的过去预测：
+
+$$
+\widehat y_{k+1}=\widehat a\widehat y_k+\widehat b u_k,\quad
+E=\sqrt{\frac1{512}\sum_{k=64}^{575}(y_k-\widehat y_k)^2},\quad
+I_{\rm pred}=1-\frac{E}{\sqrt{\frac1{512}\sum_{k=64}^{575}y_k^2}}.
+$$
+
+验证集选IV；这时选择已经冻结。测试得到 $E=0.265683$ cm、 $I_{\rm pred}=29.608\%$，输入峰值0.876995单位，满足这份合同。峰值对应相对工作点的开度偏差约4.384977个百分点；是合成记录的观测峰值，不是实际设备的安全保证。计分包含测量噪声，误差不会因确定性对象正确就自动变成零。
+
+<JupyterNotebook
+ title="默认训练、冻结与测试"
+ setupCode={`import numpy as np
+
+DEFAULT=dict(amplitude=.5,rho=.6,sigma=.2,feedback=.4,changed=False,seed=20261024)
+def rng(seed):
+    state=int(seed)
+    def sample():
+        nonlocal state
+        state=(1664525*state+1013904223)%2**32
+        return state/2**32
+    return sample
+
+def record(c,part):
+    train=part=='train';offset={'train':0,'validation':1000,'test':2000}[part]
+    ru,rw=rng(c['seed']+offset),rng(c['seed']+offset+777)
+    a,b=(.5,.1) if part=='test' and c['changed'] else (.8,.3)
+    x=v=0.;ys=[];us=[];rs=[];xs=[];ws=[]
+    for k in range(641 if train else 832):
+        r=c['amplitude']*(1 if ru()>=.5 else -1) if train else sum(np.sin(2*np.pi*j*k/64) for j in [2,8,20])/3
+        y=x+v;u=r-c['feedback']*y if train else r
+        ys.append(y);us.append(u);rs.append(r);xs.append(x)
+        w=c['sigma']*np.sqrt(12)*(rw()-.5);ws.append(w)
+        x=a*x+b*u;v=c['rho']*v+w
+    sl=slice(None) if train else slice(256,None)
+    return {key:np.array(val)[sl] for key,val in dict(y=ys,u=us,r=rs,x=xs,w=ws).items()}
+
+def experiment(c=None):
+    c={**DEFAULT,**(c or {})};tr,va,te=[record(c,p) for p in ['train','validation','test']]
+    phi=np.column_stack([tr['y'][128:640],tr['u'][128:640]]);target=tr['y'][129:641]
+    z=np.column_stack([tr['r'][128:640],tr['r'][127:639]])
+    models={}
+    for name in ['OLS','IV']:
+        matrix,rhs=(phi,target) if name=='OLS' else (z.T@phi,z.T@target)
+        theta=None if np.linalg.matrix_rank(matrix)<2 else np.linalg.lstsq(matrix,rhs,rcond=None)[0]
+        valid=theta is not None and 0<theta[0]<=.95 and 0<theta[1]<=1
+        m=dict(coefficients=None if theta is None else theta.tolist(),valid=bool(valid))
+        for label,data in [('validation',va),('test',te)]:
+            if not valid:m[label]=None;continue
+            pred=np.zeros(576);pred[0]=data['y'][0]
+            for k in range(1,576):pred[k]=theta[0]*pred[k-1]+theta[1]*data['u'][k-1]
+            err=data['y'][64:]-pred[64:];res=data['y'][64:]-theta[0]*data['y'][63:575]-theta[1]*data['u'][63:575]
+            rmse=float(np.sqrt(np.mean(err**2)));base=float(np.sqrt(np.mean(data['y'][64:]**2)))
+            m[label]=dict(rmse=rmse,improvement=1-rmse/base if base>1e-14 else None,pred=pred.tolist(),residualLag1=float(np.dot(res[1:],res[:-1])/np.dot(res,res)) if np.dot(res,res)>1e-20 else None)
+        models[name]=m
+    valid=[n for n,m in models.items() if m['valid']]
+    selected=None if not valid else min(valid,key=lambda n:(round(models[n]['validation']['rmse'],12),n!='OLS'))
+    peak=max(np.max(abs(d['u'])) for d in [tr,va,te]);score=models[selected]['test'] if selected else None
+    admitted=bool(score and peak<=2 and score['rmse']<=.35 and score['improvement'] is not None and score['improvement']>=.1)
+    uf=np.fft.fft(te['u'][64:].reshape(8,64),axis=1);yf=np.fft.fft(te['y'][64:].reshape(8,64),axis=1);spectrum=[]
+    for j in [2,8,20]:
+        cross=np.mean(np.conj(uf[:,j])*yf[:,j]);pu=np.mean(abs(uf[:,j])**2);py=np.mean(abs(yf[:,j])**2);h=cross/pu
+        spectrum.append(dict(bin=j,frequency=j/64,re=float(h.real),im=float(h.imag),gain=float(abs(h)),coherence=float(abs(cross)**2/(pu*py))))
+    return dict(train={k:v.tolist() for k,v in tr.items()},validation={k:v.tolist() for k,v in va.items()},test={k:v.tolist() for k,v in te.items()},models=models,selected=selected,admitted=admitted,inputPeak=float(peak),spectrum=spectrum)
+
+def compact(r):
+    return dict(selected=r['selected'],admitted=r['admitted'],inputPeak=r['inputPeak'],models={n:dict(coefficients=m['coefficients'],valid=m['valid'],**{p:None if m[p] is None else {k:v for k,v in m[p].items() if k!='pred'} for p in ['validation','test']}) for n,m in r['models'].items()},spectrum=r['spectrum'])
+
+
+import json
+`}
+ cells={[{id:"id09-cell-1",title:"默认训练、冻结与测试",code:`print(json.dumps(compact(experiment())))
+print('id09_cell_1_passed')`}]}
+ />
+
+若测试时真实对象改为 $a=0.5,b=0.1$，训练参数、验证读数和选中模型全部不变，测试才暴露对象变化。默认变化对象的IV测试RMSE为0.297407cm，虽低于绝对误差门槛，改善率却是−13.763%，因此拒绝；组件同步给出读数；不能看完后换另一个候选，再把同一记录称为独立测试。这里的0.35cm和10%是预声明的工程教学门槛，不是通用统计置信界。
+
+## 频域证据与残差检查
+
+测试计分窗口恰好含8个64拍周期。在每段中，对**同一时标**的 $u_k,y_k$ 计算DFT，平均互谱与自谱：
+
+$$
+\widehat H_1(\omega)=\frac{\sum_m U_m^*(\omega)Y_m(\omega)}{\sum_m|U_m(\omega)|^2},\qquad
+\widehat\gamma_{\rm coh}^{2}=\frac{|\sum_m U_m^*Y_m|^2}{(\sum_m|U_m|^2)(\sum_m|Y_m|^2)}.
+$$
+
+对象模型需保留一拍延迟：
+
+$$
+G(e^{\mathrm j\omega})=\frac{b e^{-\mathrm j\omega}}{1-a e^{-\mathrm j\omega}},\qquad f=\frac{j}{64T_s}.
+$$
+
+把训练对中的 $y_{k+1}$ 拿来直接和 $u_k$ 做上述同拍谱估计，会改变相位定义。受激线只有0.03125、0.125、0.3125Hz；线外没有足够输入能量，不能拿插值曲线当非参数测量。默认0.125Hz处H1幅值0.459408cm/单位输入，相干0.888558。模型曲线与H1不完全重合的差异应保留；相干高也不证明全部频率正确或闭环安全。
+
+一步残差另定义为 $e_k=y_k-\widehat a y_{k-1}-\widehat b u_{k-1}$。默认选中IV的测试残差滞后一阶未去均值相关读数约0.028575，分母是该窗口的残差平方和。这不是自由仿真误差，也不是白噪声检验p值。即使真参数已知，$\varepsilon$ 仍有相关：默认稳态方差0.0425cm²、滞后一阶协方差−0.0065cm²，不能为了让ARX残差变白而强行修改正确的对象动态。
+
+<JupyterNotebook
+ title="频域、误差与拒绝边界"
+ setupCode={`import numpy as np
+
+DEFAULT=dict(amplitude=.5,rho=.6,sigma=.2,feedback=.4,changed=False,seed=20261024)
+def rng(seed):
+    state=int(seed)
+    def sample():
+        nonlocal state
+        state=(1664525*state+1013904223)%2**32
+        return state/2**32
+    return sample
+
+def record(c,part):
+    train=part=='train';offset={'train':0,'validation':1000,'test':2000}[part]
+    ru,rw=rng(c['seed']+offset),rng(c['seed']+offset+777)
+    a,b=(.5,.1) if part=='test' and c['changed'] else (.8,.3)
+    x=v=0.;ys=[];us=[];rs=[];xs=[];ws=[]
+    for k in range(641 if train else 832):
+        r=c['amplitude']*(1 if ru()>=.5 else -1) if train else sum(np.sin(2*np.pi*j*k/64) for j in [2,8,20])/3
+        y=x+v;u=r-c['feedback']*y if train else r
+        ys.append(y);us.append(u);rs.append(r);xs.append(x)
+        w=c['sigma']*np.sqrt(12)*(rw()-.5);ws.append(w)
+        x=a*x+b*u;v=c['rho']*v+w
+    sl=slice(None) if train else slice(256,None)
+    return {key:np.array(val)[sl] for key,val in dict(y=ys,u=us,r=rs,x=xs,w=ws).items()}
+
+def experiment(c=None):
+    c={**DEFAULT,**(c or {})};tr,va,te=[record(c,p) for p in ['train','validation','test']]
+    phi=np.column_stack([tr['y'][128:640],tr['u'][128:640]]);target=tr['y'][129:641]
+    z=np.column_stack([tr['r'][128:640],tr['r'][127:639]])
+    models={}
+    for name in ['OLS','IV']:
+        matrix,rhs=(phi,target) if name=='OLS' else (z.T@phi,z.T@target)
+        theta=None if np.linalg.matrix_rank(matrix)<2 else np.linalg.lstsq(matrix,rhs,rcond=None)[0]
+        valid=theta is not None and 0<theta[0]<=.95 and 0<theta[1]<=1
+        m=dict(coefficients=None if theta is None else theta.tolist(),valid=bool(valid))
+        for label,data in [('validation',va),('test',te)]:
+            if not valid:m[label]=None;continue
+            pred=np.zeros(576);pred[0]=data['y'][0]
+            for k in range(1,576):pred[k]=theta[0]*pred[k-1]+theta[1]*data['u'][k-1]
+            err=data['y'][64:]-pred[64:];res=data['y'][64:]-theta[0]*data['y'][63:575]-theta[1]*data['u'][63:575]
+            rmse=float(np.sqrt(np.mean(err**2)));base=float(np.sqrt(np.mean(data['y'][64:]**2)))
+            m[label]=dict(rmse=rmse,improvement=1-rmse/base if base>1e-14 else None,pred=pred.tolist(),residualLag1=float(np.dot(res[1:],res[:-1])/np.dot(res,res)) if np.dot(res,res)>1e-20 else None)
+        models[name]=m
+    valid=[n for n,m in models.items() if m['valid']]
+    selected=None if not valid else min(valid,key=lambda n:(round(models[n]['validation']['rmse'],12),n!='OLS'))
+    peak=max(np.max(abs(d['u'])) for d in [tr,va,te]);score=models[selected]['test'] if selected else None
+    admitted=bool(score and peak<=2 and score['rmse']<=.35 and score['improvement'] is not None and score['improvement']>=.1)
+    uf=np.fft.fft(te['u'][64:].reshape(8,64),axis=1);yf=np.fft.fft(te['y'][64:].reshape(8,64),axis=1);spectrum=[]
+    for j in [2,8,20]:
+        cross=np.mean(np.conj(uf[:,j])*yf[:,j]);pu=np.mean(abs(uf[:,j])**2);py=np.mean(abs(yf[:,j])**2);h=cross/pu
+        spectrum.append(dict(bin=j,frequency=j/64,re=float(h.real),im=float(h.imag),gain=float(abs(h)),coherence=float(abs(cross)**2/(pu*py))))
+    return dict(train={k:v.tolist() for k,v in tr.items()},validation={k:v.tolist() for k,v in va.items()},test={k:v.tolist() for k,v in te.items()},models=models,selected=selected,admitted=admitted,inputPeak=float(peak),spectrum=spectrum)
+
+def compact(r):
+    return dict(selected=r['selected'],admitted=r['admitted'],inputPeak=r['inputPeak'],models={n:dict(coefficients=m['coefficients'],valid=m['valid'],**{p:None if m[p] is None else {k:v for k,v in m[p].items() if k!='pred'} for p in ['validation','test']}) for n,m in r['models'].items()},spectrum=r['spectrum'])
+
+
+import json
+`}
+ cells={[{id:"id09-cell-2",title:"频域、误差与拒绝边界",code:`default=experiment()
+zero=experiment(dict(amplitude=0.))
+drift=experiment(dict(changed=True))
+white=experiment(dict(rho=0.))
+print(json.dumps(dict(default_spectrum=default['spectrum'],zero=compact(zero),drift=compact(drift),white=compact(white),valve_default_range=[50-5*default['inputPeak'],50+5*default['inputPeak']],epsilon_variance=.04+(.6-.8)**2*.04/(1-.6**2),epsilon_lag1=(.6-.8)*(.04+.6*(.6-.8)*.04/(1-.6**2)),frequencies=[2/64,8/64,20/64])))
+print('id09_cell_2_passed')`}]}
+ />
+
+上述验证、残差与频响分工参考[MathWorks模型验证说明](https://www.mathworks.com/help/ident/ug/validating-models-after-estimation.html)、[残差分析说明](https://www.mathworks.com/help/ident/ug/what-is-residual-analysis.html)与[频响验证说明](https://www.mathworks.com/help/ident/ug/frequency-response-plots.html)，检索日期2026-10-24。本页只复现明示的一阶合成过程，未调用其软件或使用官方水箱数据。
+
+## 交互复核整条链路
+
+先看默认选择和测试门槛，再依次点击“无噪声”“弱注入”“无注入”“对象变化”。改测试对象时盯住验证列，确认它不随测试变化；把测量相关系数改成0时，仍要检查回归误差的结构。
+
+<IdentificationCaseExplorer />
+
+无注入时 $u=-fy$，训练回归两列共线，工具全零；两个候选均拒绝。不能用伪逆返回的一组数，冒充两个参数分别可辨识。弱注入则可能满秩但工具方差大；秩检查通过只是最低条件。图上没有曲线表示候选没有通过本合同，不是误差变为零。
+
+## 重复记录与失败边界
+
+固定种子区间20261024至20261055，三个预声明工况各32份记录。下表给测试RMSE的10%分位数／中位数／90%分位数，单位cm。先验拒绝的候选不仿真，另列拒绝数；因此有效子集分位数不能跨候选直接当作全体性能胜负。
+
+<div style={{overflowX: 'auto', maxWidth: '100%'}}>
+
+| 工况 | OLS分位数 | IV分位数 | IV拒绝数 | 验证选IV次数 |
+|---|---|---|---:|---:|
+| 无噪声，注入0.5 | 均小于 $10^{-12}$ | 均小于 $10^{-12}$ | 0/32 | 0/32，按平局规则选OLS |
+| 默认有色噪声，注入0.5 | 0.247954 / 0.270702 / 0.284169 | 0.238356 / 0.255870 / 0.269604 | 0/32 | 32/32 |
+| 默认有色噪声，注入0.1 | 0.260776 / 0.285087 / 0.315408 | 0.241312 / 0.273067 / 0.327356 | 10/32 | 11/32 |
+
+</div>
+
+<JupyterNotebook
+ title="三工况全部重复记录"
+ setupCode={`import numpy as np
+
+DEFAULT=dict(amplitude=.5,rho=.6,sigma=.2,feedback=.4,changed=False,seed=20261024)
+def rng(seed):
+    state=int(seed)
+    def sample():
+        nonlocal state
+        state=(1664525*state+1013904223)%2**32
+        return state/2**32
+    return sample
+
+def record(c,part):
+    train=part=='train';offset={'train':0,'validation':1000,'test':2000}[part]
+    ru,rw=rng(c['seed']+offset),rng(c['seed']+offset+777)
+    a,b=(.5,.1) if part=='test' and c['changed'] else (.8,.3)
+    x=v=0.;ys=[];us=[];rs=[];xs=[];ws=[]
+    for k in range(641 if train else 832):
+        r=c['amplitude']*(1 if ru()>=.5 else -1) if train else sum(np.sin(2*np.pi*j*k/64) for j in [2,8,20])/3
+        y=x+v;u=r-c['feedback']*y if train else r
+        ys.append(y);us.append(u);rs.append(r);xs.append(x)
+        w=c['sigma']*np.sqrt(12)*(rw()-.5);ws.append(w)
+        x=a*x+b*u;v=c['rho']*v+w
+    sl=slice(None) if train else slice(256,None)
+    return {key:np.array(val)[sl] for key,val in dict(y=ys,u=us,r=rs,x=xs,w=ws).items()}
+
+def experiment(c=None):
+    c={**DEFAULT,**(c or {})};tr,va,te=[record(c,p) for p in ['train','validation','test']]
+    phi=np.column_stack([tr['y'][128:640],tr['u'][128:640]]);target=tr['y'][129:641]
+    z=np.column_stack([tr['r'][128:640],tr['r'][127:639]])
+    models={}
+    for name in ['OLS','IV']:
+        matrix,rhs=(phi,target) if name=='OLS' else (z.T@phi,z.T@target)
+        theta=None if np.linalg.matrix_rank(matrix)<2 else np.linalg.lstsq(matrix,rhs,rcond=None)[0]
+        valid=theta is not None and 0<theta[0]<=.95 and 0<theta[1]<=1
+        m=dict(coefficients=None if theta is None else theta.tolist(),valid=bool(valid))
+        for label,data in [('validation',va),('test',te)]:
+            if not valid:m[label]=None;continue
+            pred=np.zeros(576);pred[0]=data['y'][0]
+            for k in range(1,576):pred[k]=theta[0]*pred[k-1]+theta[1]*data['u'][k-1]
+            err=data['y'][64:]-pred[64:];res=data['y'][64:]-theta[0]*data['y'][63:575]-theta[1]*data['u'][63:575]
+            rmse=float(np.sqrt(np.mean(err**2)));base=float(np.sqrt(np.mean(data['y'][64:]**2)))
+            m[label]=dict(rmse=rmse,improvement=1-rmse/base if base>1e-14 else None,pred=pred.tolist(),residualLag1=float(np.dot(res[1:],res[:-1])/np.dot(res,res)) if np.dot(res,res)>1e-20 else None)
+        models[name]=m
+    valid=[n for n,m in models.items() if m['valid']]
+    selected=None if not valid else min(valid,key=lambda n:(round(models[n]['validation']['rmse'],12),n!='OLS'))
+    peak=max(np.max(abs(d['u'])) for d in [tr,va,te]);score=models[selected]['test'] if selected else None
+    admitted=bool(score and peak<=2 and score['rmse']<=.35 and score['improvement'] is not None and score['improvement']>=.1)
+    uf=np.fft.fft(te['u'][64:].reshape(8,64),axis=1);yf=np.fft.fft(te['y'][64:].reshape(8,64),axis=1);spectrum=[]
+    for j in [2,8,20]:
+        cross=np.mean(np.conj(uf[:,j])*yf[:,j]);pu=np.mean(abs(uf[:,j])**2);py=np.mean(abs(yf[:,j])**2);h=cross/pu
+        spectrum.append(dict(bin=j,frequency=j/64,re=float(h.real),im=float(h.imag),gain=float(abs(h)),coherence=float(abs(cross)**2/(pu*py))))
+    return dict(train={k:v.tolist() for k,v in tr.items()},validation={k:v.tolist() for k,v in va.items()},test={k:v.tolist() for k,v in te.items()},models=models,selected=selected,admitted=admitted,inputPeak=float(peak),spectrum=spectrum)
+
+def compact(r):
+    return dict(selected=r['selected'],admitted=r['admitted'],inputPeak=r['inputPeak'],models={n:dict(coefficients=m['coefficients'],valid=m['valid'],**{p:None if m[p] is None else {k:v for k,v in m[p].items() if k!='pred'} for p in ['validation','test']}) for n,m in r['models'].items()},spectrum=r['spectrum'])
+
+
+import json
+`}
+ cells={[{id:"id09-cell-3",title:"三工况全部重复记录",code:`reports=[]
+for label,amplitude,sigma in [('noiseless',.5,0.),('nominal',.5,.2),('weak',.1,.2)]:
+    rows=[compact(experiment(dict(amplitude=amplitude,sigma=sigma,seed=seed))) for seed in range(20261024,20261056)]
+    summary={}
+    for name in ['OLS','IV']:
+        scores=[r['models'][name]['test']['rmse'] for r in rows if r['models'][name]['valid']]
+        summary[name]=dict(invalid=32-len(scores),test_q10_median_q90=np.quantile(scores,[.1,.5,.9]).tolist() if scores else None)
+    summary['IV_selected']=sum(r['selected']=='IV' for r in rows)
+    summary['admitted']=sum(r['admitted'] for r in rows)
+    raw_rows=[[seed,r['selected'],r['admitted']]+[m['coefficients'] for m in r['models'].values()]+[[m[p]['rmse'] if m[p] is not None else None for p in ['validation','test']] for m in r['models'].values()] for seed,r in zip(range(20261024,20261056),rows)]
+    reports.append(dict(label=label,columns=['seed','selected','admitted','OLS_coefficients','IV_coefficients','OLS_validation_test_RMSE','IV_validation_test_RMSE'],rows=raw_rows,summary=summary))
+print(json.dumps(reports))
+print('id09_cell_3_passed')`}]}
+ />
+
+这组结果支持“在指定记录和噪声结构下，默认IV通常改善仿真”，也明确显示无噪声时没有优势、弱工具时会越界。第三行的10份拒绝并未删除，原始输出保留全部系数与决策。计算预算是固定的闭式估计，没有用测试搜索超参数；有限种子分布不是渐近无偏性证明，更不能外推到所有水箱。
+
+本例将开环验证可用视为实验条件；真实现场若不能安全开环，应在合适的闭环验证设计下重新规定指标与相关性分析。还需另检执行器饱和、时间戳、缺测、工作点变化和传感器故障。先保证试验授权与过程约束，再谈模型用途。
+
+## 小结
+
+案例交付包括模型，也包括它从哪份记录来、用什么规则被选中、在哪个窗口达到哪些门槛。闭环工具、频域复核与残差各回答一个问题；它们之间存在差异时，应解释噪声、时序和输入覆盖，保留拒绝结果，不能用一条好看的曲线代替证据。
+
+## 习题
+
+**1. 误差来源。** 从 $y=x+v$ 推出回归误差。若测量噪声变白，OLS的独立误差假设会自动成立吗？
+
+**2. 工具与激励。** 为什么选输入端外部注入作工具？关闭注入后，增加同类训练数据是否就能分别估出两个参数？
+
+**3. 冻结与门槛。** 默认验证选谁，测试是否放行？若对象变化后测试失败，应做什么，能否换成测试误差较小的另一候选直接签发？
+
+**4. 频率与残差。** 第8条DFT线对应多少Hz？为何频域公式必须保留一拍延迟？默认真对象的误差相关性是否意味着物理对象错误？
+
+## 答案
+
+**1.** $\varepsilon_{k+1}=v_{k+1}-av_k$。白测量噪声时仍含 $-av_k$，而 $y_k$ 含 $v_k$，独立回归创新假设不会自动成立；反馈相关也不能凭“白”字消除。
+
+**2.** 需要外部性和相关性两项：注入与测量创新独立，且能激励回归方向。无注入时工具为零，$u=-fy$ 导致两列共线，多采相同类型的数据不能恢复两个独立方向；默认两个候选均拒绝。
+
+**3.** 验证选IV；默认测试0.265683cm、改善29.608%，输入峰值0.876995，符合合同。对象变化是拒绝边界；先调查原因并重开合同、重新留出未用测试记录。若依据测试换候选，这次记录已参与开发，不能继续称为独立测试。
+
+**4.** $8/(64\times1)=0.125$Hz。模型中 $u_k$ 在下一拍作用到 $x_{k+1}$，所以同拍输入输出频响含 $e^{-\mathrm j\omega}$。默认真参数下误差方差0.0425、滞后协方差−0.0065，反映测量扰动模型；应区别对象动态正确、残差模型适合与预测用途合格。
