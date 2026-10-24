@@ -37,3 +37,9 @@
 浏览器运行后仅修改散文、标题别名、框图与布局，不改setup/cell；refresh-proof.mjs逐字符串核相等后转移whole-MDX hash，原始下载保留，未伪造再次执行。生产与Pages构建使用独立副本，避免共享.next；Next18207、kernel9007、实验18407、Pages18507初始空闲，未更改共享端口脚本。其它会话的未提交正文、暂存索引、中文润色、gh-pages均不属于本课。
 
 完整Phase1–4、86行三方对账、80行测量、九项门槛、6条红队及保留矩阵见docs/discuss-log/semester-03/13-intelligent/02-fuzzy-controller-design.md。fix-077落实既有清单执行。真实master提交与正常推送后另补回执；本次仅本地Pages验收，未发布。
+
+## master 回执
+
+真实交付提交：commit:d40d87a260edeae20e9617d0efe458ea3374b3e7；父提交04bc05846dfb102de11734b3d08f23adddb1e5f0。独立索引仅包含本课69路径，提交前后4603项其它会话暂存条目逐字相同；共享文件仅叠加本课条目，未替换其它会话记录。hash生成后登记最终完成列，后续回执提交单独追加。
+
+提交后的共享记录隔离复核（shared-isolation.json）：除本课外的Python策略与浏览器证据逐对象完全相同。并行主干在核心提交前已填入076并预留077，回执阶段移除已归档077预留及rank7误带入的过期076预留；receipt-fix.log再次通过，不追认任何其它课验收。
