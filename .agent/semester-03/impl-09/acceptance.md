@@ -15,6 +15,8 @@
 
 预览：http://127.0.0.1:9291/control-universe/implementation/hil-rapid-prototyping/
 
-真实master提交回执待登记。
+真实master提交回执见下。
 
 下一课IMPL-10 implementation/implementation-case-study，本次未生产。
+
+真实master交付提交：`a021dd9b0d8047097e2a1dee5169c834d1dc6582`，父提交`ff641708325044855775090a3f6e4a01220b6631`。采用独立索引与预期父提交原子更新master，未改写共享默认索引。最终原始catalog CLI：PASS21/WARN2/FAIL0，学期完整校验errors=[]，Python策略检查pass。两项WARN为既有跨章motion-planning重名及存量正文缺日志，未新增本课死锚点。本课进入master列在提交存在后据实回填，未发布Pages。提交复核发现Python清单生成器移除了其它课待办的task/category/next注释，回执提交按原记录恢复这些元数据，不改运行状态。

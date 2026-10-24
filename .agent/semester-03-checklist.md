@@ -176,7 +176,7 @@
 | IMPL-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/06-realtime-control.md;.agent/semester-03/impl-06/acceptance.md;.agent/semester-03/impl-06/validation.json;commit:94519d3d43a31c4020873ee5f96399b1924e0f2d |
 | IMPL-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/07-networked-control.md;.agent/semester-03/impl-07/acceptance.md;.agent/semester-03/impl-07/validation.json;commit:ef0206fd77ea7957760a98af9029d5e0f993dd4e |
 | IMPL-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/08-industrial-bus-protocols.md;.agent/semester-03/impl-08/acceptance.md;.agent/semester-03/impl-08/validation.json;commit:3e95f6e9c5ecb8948349e8e6cd05ca0e157ae78c |
-| IMPL-09 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/07-implementation/09-hil-rapid-prototyping.md;.agent/semester-03/impl-09/acceptance.md |
+| IMPL-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/07-implementation/09-hil-rapid-prototyping.md;.agent/semester-03/impl-09/acceptance.md;.agent/semester-03/impl-09/validation.json;commit:a021dd9b0d8047097e2a1dee5169c834d1dc6582 |
 | IMPL-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
 ### 机器学习
