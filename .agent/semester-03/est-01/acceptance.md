@@ -31,3 +31,5 @@ Phase 1–4完成并签发：9H2、2Notebook/4cell、1Explorer、1SVG、四题�
 提交投影最终门槛：projection-check.log为PASS21/WARN2/FAIL0，projection-python-policy.log为pass=true，projection-semester.log为PASS；均exit0。共享工作区当时shared-check.log为FAIL7（其它会话的tracker/status、BuckConverterExplorer注册和全局统计差异），shared-semester-check.log为其它生产任务跳过INTEL-01；未改这些课程或把它们纳入本课提交。
 
 提交前并行ID-02已进入master，最终投影更新到52cfac9，保留其课程与回执；最终projection门槛再次通过（87课/385可运行/16代码展示）。前文86课口径对应早期9c11c8b构建快照。未把ID-02回退或删除。
+
+真实master交付提交：commit:bd52f391638024b7b339dc293a8aae5cf9e50a1a。git push origin master退出0（52cfac9→bd52f39）。本课最终完成列据此勾选；未发布gh-pages。远端提示仓库迁移但推送成功，本课未改origin URL。

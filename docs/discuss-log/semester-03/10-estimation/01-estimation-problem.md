@@ -97,7 +97,7 @@
 
 [郑核-签发] 风格统一，假设与信息时间边界清楚；附录A.1全部一致、附录B九项及补充四项通过、附录C限定比较放行。签发。
 
-交付清单：9H2、2Notebook/4cell、1Explorer、1SVG、四题四答；组件唯一注册于lib/wiki-components.ts，catalog v1.3与旧tracker同步。真实master提交回执在提交后登记。
+交付清单：9H2、2Notebook/4cell、1Explorer、1SVG、四题四答；组件唯一注册于lib/wiki-components.ts，catalog v1.3与旧tracker同步。正文实测236行。真实master交付提交：commit:bd52f391638024b7b339dc293a8aae5cf9e50a1a，已推送origin master；Pages未发布。
 
 ## 附录 A：数值证据（全部实测数据的唯一留存副本）
 
