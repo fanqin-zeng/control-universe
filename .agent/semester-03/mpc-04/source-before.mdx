@@ -1,0 +1,833 @@
+---
+title: "约束处理"
+description: "MPC的核心优势——显式处理约束。掌握各类约束的数学表达与QP转化，理解硬约束与软约束、约束可行性与不可行性处理、约束活性与KKT条件。"
+---
+
+# 约束处理
+
+前两课解决了"如何预测未来"和"如何滚动优化"的问题。但 MPC 真正的杀手锏还没登场——**约束处理**。
+
+PID 遇到约束只能加 anti-windup（事后修补），LQR 遇到约束只能截断输入（牺牲最优性）。MPC 是唯一一种**从设计阶段就把约束纳入优化**的控制方法：约束不是优化之后才检查的"事后条件"，而是优化问题本身的组成部分。
+
+> 📖 本课需要 [模型预测控制原理](/mpc/mpc-principle)（QP 公式化）和 [预测模型建立](/mpc/prediction-model)（预测矩阵 $F_e, \Phi_e$）的前置知识。
+
+想象你开车在隧道里——隧道壁就是约束。没有隧道壁，你可以走任何路径；有了隧道壁，路径被限制在隧道内。MPC 的约束处理就像"在隧道里找最优路径"——不是碰到壁才转向，而是**提前看到壁**，在规划阶段就避开。
+
+## 约束类型与数学表达
+
+MPC 可以处理四类约束，每类对应不同的物理含义：
+
+### 输入幅值约束
+
+$$
+u_{\min} \leq u(k+i) \leq u_{\max}, \quad i = 0, 1, \ldots, N_u - 1
+$$
+
+**物理含义**：执行器的物理极限。
+
+| 执行器 | 典型约束 | 说明 |
+|--------|----------|------|
+| 控制阀 | $0 \leq u \leq 100\%$ | 阀门全关到全开 |
+| 电机 | $-I_{\max} \leq I \leq I_{\max}$ | 电流双向限制 |
+| 推力器 | $0 \leq T \leq T_{\max}$ | 推力不能为负（除非有反推） |
+| 舵面 | $-\delta_{\max} \leq \delta \leq \delta_{\max}$ | 偏转角限制 |
+
+### 输入变化率约束
+
+$$
+\Delta u_{\min} \leq \Delta u(k+i) \leq \Delta u_{\max}, \quad i = 0, 1, \ldots, N_u - 1
+$$
+
+其中 $\Delta u(k+i) = u(k+i) - u(k+i-1)$。
+
+**物理含义**：执行器的速率限制。阀门不能瞬间从全关到全开，电机转速不能突变。
+
+**典型数值**：蒸汽阀门全开/全关需 30 秒，采样周期 $T_s = 1$ 秒 → 每步最多变化 $\pm 3.3\%$。
+
+> 💡 输入变化率约束在教科书中经常被忽略，但在工业 MPC 中**极其常见**。很多执行器故障（阀门卡涩、电机过热）的根源就是 rate limit 设置不合理。
+
+### 状态约束
+
+$$
+x_{\min} \leq x(k+i) \leq x_{\max}, \quad i = 1, 2, \ldots, N_p
+$$
+
+**物理含义**：系统内部变量的安全运行范围。反应器温度不能超过材料极限，储罐液位不能溢出或干涸。
+
+### 输出约束
+
+$$
+y_{\min} \leq y(k+i) \leq y_{\max}, \quad i = 1, 2, \ldots, N_p
+$$
+
+**物理含义**：系统输出的性能/质量要求。产品纯度、排放浓度。
+
+> 💡 状态约束和输出约束的区别：状态约束限制系统**内部**变量（你可能测不到），输出约束限制系统**外部**可观测的量。当 $y = Cx$ 且 $C = I$ 时两者等价；一般情况下它们是不同的约束。
+
+## 约束到QP标准形式的转化
+
+MPC 的 QP 标准形式：
+
+$$
+\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}}
+$$
+
+核心问题：**如何把各类约束统一写成 $A_{\text{ineq}} U \leq b_{\text{ineq}}$ 的形式？**
+
+### 输入幅值约束的转化
+
+对于 $u_{\min} \leq u(k+i) \leq u_{\max}$，$i = 0, \ldots, N_u-1$，直接拆分：
+
+$$
+U \leq u_{\max} \mathbf{1}, \quad -U \leq -u_{\min} \mathbf{1}
+$$
+
+合并为：
+
+$$
+\underbrace{\begin{bmatrix} I_{N_u} \\ -I_{N_u} \end{bmatrix}}_{A_u} U \leq \underbrace{\begin{bmatrix} u_{\max} \mathbf{1}_{N_u} \\ -u_{\min} \mathbf{1}_{N_u} \end{bmatrix}}_{b_u}
+$$
+
+**特点**：$A_u$ 和 $b_u$ 都是**常数**（不依赖于 $x(k)$ 或 $u(k-1)$）。
+
+### 输入变化率约束的转化
+
+定义 $\Delta u(k+i) = u(k+i) - u(k+i-1)$，其中 $u(k-1)$ 是上一步的实际输入（已知量）。
+
+写成矩阵形式 $\Delta U = L U - M u(k-1)$，其中：
+
+$$
+L = \begin{bmatrix} 1 & 0 & 0 & \cdots & 0 \\ -1 & 1 & 0 & \cdots & 0 \\ 0 & -1 & 1 & \cdots & 0 \\ \vdots & & \ddots & \ddots & \vdots \\ 0 & \cdots & 0 & -1 & 1 \end{bmatrix}_{N_u \times N_u}, \quad M = \begin{bmatrix} 1 \\ 0 \\ 0 \\ \vdots \\ 0 \end{bmatrix}_{N_u \times 1}
+$$
+
+验证第一行：$\Delta u(k) = 1 \cdot u(k) + 0 \cdot u(k+1) + \cdots - 1 \cdot u(k-1) = u(k) - u(k-1)$ ✓
+
+约束 $\Delta u_{\min} \leq \Delta U \leq \Delta u_{\max}$ 变为：
+
+$$
+L U - M u(k-1) \leq \Delta u_{\max} \mathbf{1}
+$$
+$$
+-L U + M u(k-1) \leq -\Delta u_{\min} \mathbf{1}
+$$
+
+合并：
+
+$$
+\underbrace{\begin{bmatrix} L \\ -L \end{bmatrix}}_{A_{\Delta u}} U \leq \underbrace{\begin{bmatrix} \Delta u_{\max} \mathbf{1} + M u(k-1) \\ -\Delta u_{\min} \mathbf{1} - M u(k-1) \end{bmatrix}}_{b_{\Delta u}}
+$$
+
+> 💡 **关键区别**：$b_{\Delta u}$ 中包含 $u(k-1)$——约束右端项每步都在变！这和输入幅值约束不同。物理含义：上一步的输入越大，下一步"还能增加多少"就越少（受 rate limit 约束）。
+
+### 状态约束的转化
+
+利用预测矩阵 $X = F x(k) + \Phi U$：
+
+$$
+x_{\min} \mathbf{1} \leq F x(k) + \Phi U \leq x_{\max} \mathbf{1}
+$$
+
+$$
+\underbrace{\begin{bmatrix} \Phi \\ -\Phi \end{bmatrix}}_{A_x} U \leq \underbrace{\begin{bmatrix} x_{\max} \mathbf{1} - F x(k) \\ -x_{\min} \mathbf{1} + F x(k) \end{bmatrix}}_{b_x}
+$$
+
+$b_x$ 依赖于当前状态 $x(k)$——状态越接近约束边界，可行域越小。
+
+### 输出约束的转化
+
+输出预测：$Y = C_x (F x(k) + \Phi U)$（假设 $D = 0$），其中 $C_x = \text{blkdiag}(C, C, \ldots, C)$。
+
+$$
+y_{\min} \mathbf{1} \leq C_x F x(k) + C_x \Phi U \leq y_{\max} \mathbf{1}
+$$
+
+$$
+\underbrace{\begin{bmatrix} C_x \Phi \\ -C_x \Phi \end{bmatrix}}_{A_y} U \leq \underbrace{\begin{bmatrix} y_{\max} \mathbf{1} - C_x F x(k) \\ -y_{\min} \mathbf{1} + C_x F x(k) \end{bmatrix}}_{b_y}
+$$
+
+### 合并所有约束
+
+把所有约束堆叠：
+
+$$
+A_{\text{ineq}} = \begin{bmatrix} A_u \\ A_{\Delta u} \\ A_x \\ A_y \end{bmatrix}, \quad b_{\text{ineq}} = \begin{bmatrix} b_u \\ b_{\Delta u} \\ b_x \\ b_y \end{bmatrix}
+$$
+
+### 数值例子
+
+> 设 $N_u = 2$，$N_p = 3$，系统为双积分器（$A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}$，$B = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}$，$C = \begin{bmatrix} 1 & 0 \end{bmatrix}$）。
+>
+> 约束：$|u| \leq 2$，$|\Delta u| \leq 1$，$|y| \leq 5$。
+>
+> **输入约束**（$2 N_u = 4$ 行）：
+> $$
+> A_u = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ -1 & 0 \\ 0 & -1 \end{bmatrix}, \quad b_u = \begin{bmatrix} 2 \\ 2 \\ 2 \\ 2 \end{bmatrix}
+> $$
+>
+> **变化率约束**（$2 N_u = 4$ 行），设 $u(k-1) = 0.5$：
+> $$
+> L = \begin{bmatrix} 1 & 0 \\ -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.5 \\ 0 \end{bmatrix}
+> $$
+> $$
+> A_{\Delta u} = \begin{bmatrix} 1 & 0 \\ -1 & 1 \\ -1 & 0 \\ 1 & -1 \end{bmatrix}, \quad b_{\Delta u} = \begin{bmatrix} 1 + 0.5 \\ 1 - 0 \\ -(-1) - 0.5 \\ -(-1) - 0 \end{bmatrix} = \begin{bmatrix} 1.5 \\ 1 \\ 0.5 \\ 1 \end{bmatrix}
+> $$
+>
+> 验证第一行：$u(k) - u(k-1) \leq 1 \implies u(k) \leq 1 + 0.5 = 1.5$ ✓
+>
+> **输出约束**需要先计算 $C_x \Phi$，然后类似构造。总共 $4 + 4 + 2N_p = 12$ 行约束。
+
+> 💡 **观察**：即使只有 2 步控制时域，约束矩阵已经有 12 行。对于工业系统（$N_u = 10$, $N_p = 30$, 多个输入输出），约束矩阵可能有数百行——但 QP 求解器可以高效处理。
+
+## 硬约束与软约束
+
+### 硬约束的问题
+
+硬约束 = **必须满足**，没有商量余地。
+
+**问题**：如果约束太紧，优化问题可能**无解**（不可行）。
+
+举个例子：你月收入 1 万，房租 6000，吃饭 3000，交通 2000。总支出 11000 > 收入 10000。这就是"不可行"——硬约束（每项支出上限）互相矛盾。
+
+### 软约束：松弛变量
+
+解决方法：引入**松弛变量** $\epsilon \geq 0$，把硬约束变成软约束：
+
+$$
+A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}
+$$
+
+同时在代价函数中惩罚 $\epsilon$：
+
+$$
+\min_{U, \epsilon} \frac{1}{2} U^T H U + f^T U + V \epsilon^2
+$$
+$$
+\text{s.t.} \quad A_{\text{ineq}} U \leq b_{\text{ineq}} + \epsilon \cdot \mathbf{1}, \quad \epsilon \geq 0
+$$
+
+$V$ 是松弛变量的权重——**必须足够大**，使得 $\epsilon > 0$ 只在"万不得已"时发生。
+
+> 💡 类比：预算约束。硬约束 = "不能透支"（信用卡额度用完就停了）。软约束 = "可以透支，但要付高额利息"（$V$ 就是利息率）。利息足够高时，你只在紧急情况下才透支。
+
+### 选择性软化
+
+实际中不是所有约束都需要软化。典型策略：
+
+| 约束类型 | 处理方式 | 原因 |
+|----------|----------|------|
+| 安全约束（设备极限） | **硬约束** | 绝对不能违反 |
+| 环保约束（排放限值） | **硬约束** | 法规要求 |
+| 操作约束（阀门范围） | **软约束** | 短暂越限可接受 |
+| 性能约束（产品质量） | **软约束** | 允许短暂偏离 |
+
+不同约束可以用不同的松弛变量和权重：
+
+$$
+\min_{U, \epsilon_1, \epsilon_2} \frac{1}{2} U^T H U + f^T U + V_1 \epsilon_1^2 + V_2 \epsilon_2^2
+$$
+
+$V_1 \gg V_2$ 意味着第一组约束比第二组更"硬"。
+
+### 松弛变量权重的选择
+
+**经验法则**：$V$ 比代价函数中 $Q, R$ 的量级大 2-3 个数量级。
+
+- $V$ 太小 → 软约束经常被违反，等于没有约束
+- $V$ 太大 → 数值问题（Hessian 矩阵条件数变差，QP 求解困难）
+
+**定量方法**：设代价函数中 $Q$ 的典型值为 $q$，$R$ 的典型值为 $r$。取 $V = 10^2 \sim 10^3 \times \max(q, r)$。
+
+## 约束优化的最优性条件
+
+### KKT 条件
+
+对于 QP：
+
+$$
+\min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A U \leq b
+$$
+
+引入 Lagrange 乘子 $\lambda \geq 0$，Lagrangian 为：
+
+$$
+\mathcal{L}(U, \lambda) = \frac{1}{2} U^T H U + f^T U + \lambda^T (A U - b)
+$$
+
+**KKT 条件**（对凸 QP 是最优性的充要条件）：
+
+1. **平稳性**：$H U^* + f + A^T \lambda^* = 0$
+2. **原始可行**：$A U^* \leq b$
+3. **对偶可行**：$\lambda^* \geq 0$
+4. **互补松弛**：$\lambda_i^* (a_i^T U^* - b_i) = 0, \quad \forall i$
+
+**互补松弛**的含义：
+
+$$
+\lambda_i^* > 0 \implies a_i^T U^* = b_i \quad \text{（约束 } i \text{ 是 active 的）}
+$$
+$$
+a_i^T U^* < b_i \implies \lambda_i^* = 0 \quad \text{（约束 } i \text{ 是 inactive 的）}
+$$
+
+> 💡 **直觉**：KKT 乘子 $\lambda_i^*$ 告诉你"如果放松第 $i$ 个约束一点点，目标函数能改善多少"。$\lambda_i^* = 0$ 意味着这个约束"不影响"最优解——它离得远，最优解根本碰不到它。$\lambda_i^* > 0$ 意味着这个约束"正在限制"性能——最优解被它"顶住了"。
+
+### Active Set（主动集/活性集）
+
+**定义**：$\mathcal{A}(U^*) = \{i : a_i^T U^* = b_i\}$——所有 active 约束的索引集合。
+
+Active set 的核心作用：一旦知道哪些约束是 active 的，约束优化就退化为**等式约束优化**——只有 active 约束参与，其余约束可以忽略。
+
+对于 QP，如果 active set 已知，最优解可以解析求出：
+
+$$
+\begin{bmatrix} H & A_{\mathcal{A}}^T \\ A_{\mathcal{A}} & 0 \end{bmatrix} \begin{bmatrix} U^* \\ \lambda_{\mathcal{A}}^* \end{bmatrix} = \begin{bmatrix} -f \\ b_{\mathcal{A}} \end{bmatrix}
+$$
+
+其中 $A_{\mathcal{A}}$ 是 active 约束对应的行组成的子矩阵。
+
+> 💡 这就是 **Active Set 方法**的基础：猜测 active set → 求解等式约束问题 → 检查是否满足所有约束 → 如果不满足，更新 active set（加入违反的约束或移除 $\lambda < 0$ 的约束）→ 重复。
+
+### 数值例子
+
+> 设 $\min \frac{1}{2}(u_1^2 + u_2^2) + 3u_1 + u_2$，s.t. $u_1 \geq -2$，$u_2 \geq -2$。
+>
+> 无约束最优：$u_1^* = -3, u_2^* = -1$。但 $u_1^* = -3 < -2$，违反第一个约束。
+>
+> 猜测 active set $\mathcal{A} = \{1\}$（第一个约束 active）：
+> $u_1 = -2$，代入平稳性条件：$u_2^* = -1$，$\lambda_1 = -(H_{11} u_1 + f_1) = -(-2 + 3) = -1$。
+>
+> 但 $\lambda_1 = -1 < 0$，违反对偶可行！说明第一个约束不应该 active。
+>
+> 重新猜测 $\mathcal{A} = \emptyset$（无 active 约束）：$u_1^* = -3, u_2^* = -1$。但 $u_1 < -2$，不可行。
+>
+> 再猜测 $\mathcal{A} = \{1\}$，但这次正确处理：$u_1 = -2$，$u_2 = -1$，$\lambda_1 = -(-2 + 3) = -1$。
+>
+> 等等——让我重新算。$H = I$，$f = [3, 1]^T$。平稳性：$u_1 + 3 + \lambda_1 = 0 \implies \lambda_1 = -(u_1 + 3)$。当 $u_1 = -2$：$\lambda_1 = -(-2 + 3) = -1 < 0$。
+>
+> 这说明在 $u_1 = -2$ 处，目标函数还想要 $u_1$ 更小（更负），但约束不让。$\lambda_1 < 0$ 意味着约束方向和目标函数下降方向一致——约束确实在限制性能。
+>
+> 实际上对于 $\min \frac{1}{2}u_1^2 + 3u_1$ s.t. $u_1 \geq -2$，最优解在 $u_1 = -2$（约束边界上），$\lambda_1 = 1 > 0$。让我重新推导：
+>
+> 约束写为标准形式 $-u_1 \leq 2$（即 $a_1 = -1, b_1 = 2$）。平稳性：$u_1 + 3 + \lambda_1 \cdot (-1) = 0 \implies \lambda_1 = u_1 + 3$。当 $u_1 = -2$：$\lambda_1 = 1 > 0$ ✓。
+>
+> 最优解：$U^* = [-2, -1]^T$，active set $\mathcal{A} = \{1\}$，$\lambda^* = [1, 0]^T$。
+
+## 约束可行性与不可行性
+
+### 什么是不可行？
+
+**不可行** = 不存在满足所有约束的解。
+
+**常见原因**：
+1. **约束太紧**：状态离约束边界太近，没有足够的"操作空间"
+2. **约束矛盾**：多个约束互相冲突（如"快速响应"和"小控制量"不可兼得）
+3. **模型失配**：模型预测的可行域和实际系统不一致
+4. **干扰**：外部干扰把系统推到了可行域之外
+
+> 💡 **不可行 ≠ 不稳定**。不可行 = 没有满足约束的解（优化问题无解）。不稳定 = 系统状态发散。两者是完全不同的问题，但在实际中可能同时发生。
+
+### 不可行检测
+
+QP 求解器在求解过程中会自动检测不可行性。当检测到不可行时，求解器返回"infeasible"标志。
+
+### 不可行处理策略
+
+**策略一：约束松弛（最常用）**
+
+把部分约束改为软约束（上一节的方法）。当硬约束不可行时，软约束允许轻微违反，保证优化问题始终有解。
+
+**策略二：约束裁剪（Constraint Shedding）**
+
+按优先级从低到高依次"关闭"约束，直到问题可行：
+
+```
+1. 尝试求解所有约束 → 不可行
+2. 关闭最低优先级的约束 → 再求解
+3. 如果仍不可行，关闭下一个低优先级约束 → 再求解
+4. 重复直到可行或只剩硬约束
+5. 如果硬约束也不可行 → 紧急模式（如停机）
+```
+
+**策略三：可行性恢复（Feasibility Recovery）**
+
+暂时放弃性能优化，只追求满足约束。定义一个新的优化问题：
+
+$$
+\min_{U, \epsilon} \epsilon^2, \quad \text{s.t.} \quad A U \leq b + \epsilon \mathbf{1}, \quad \epsilon \geq 0
+$$
+
+找到最小的 $\epsilon$ 使问题可行，然后以这个 $\epsilon$ 为额外约束，再求解原始优化问题。
+
+### 工业实践中的不可行处理
+
+工业 MPC 软件（如 AspenTech DMCplus）使用三层策略：
+
+1. **正常模式**：所有约束满足，正常优化
+2. **降级模式**：部分软约束被违反，继续优化但报警
+3. **紧急模式**：硬约束不可行，执行预定义的"安全操作"（如关闭进料、打开安全阀）
+
+## 约束活性与工况变化
+
+### Active Set 随状态变化
+
+MPC 的最优解 $U^*(x(k))$ 是当前状态 $x(k)$ 的函数。由于 active set 随 $x(k)$ 变化，这个函数是**分段仿射**的：
+
+$$
+U^*(x) = \begin{cases} K_1 x + k_1 & \text{if } x \in \mathcal{R}_1 \\ K_2 x + k_2 & \text{if } x \in \mathcal{R}_2 \\ \vdots & \vdots \\ K_M x + k_M & \text{if } x \in \mathcal{R}_M \end{cases}
+$$
+
+其中 $\mathcal{R}_i$ 是状态空间的多面体划分（每个区域对应一个 active set）。
+
+> 💡 **直觉**：想象一个房间（可行域），墙上挂满了弹簧（约束）。你在房间中央时，碰不到任何弹簧（所有约束 inactive），你的"最优路径"是直线。当你靠近墙壁时，弹簧开始限制你的运动——你的最优路径被弹簧"弹"弯了。不同的墙壁对应不同的 active set。
+
+### 工程意义
+
+1. **约束活性指示器**：监控 $\lambda_i^*$ 可以知道哪些约束正在限制性能。如果某个 $\lambda_i^*$ 长期很大，说明这个约束是"瓶颈"——放松它可以显著提升性能。
+
+2. **工况切换**：不同工况下 active set 不同。例如：
+   - 正常飞行：推力约束 inactive（推力充裕）
+   - 紧急爬升：最大推力约束 active（推力不够用）
+   - 着陆：下降速率约束 active
+
+3. **在线计算优化**：如果知道当前 active set，可以直接求解等式约束问题（比求解不等式约束问题快）。这就是为什么 warm starting（上一课讨论的）对 QP 求解很重要——它不仅提供初始猜测，还能帮助快速识别 active set。
+
+## 工程中的约束处理策略
+
+### 约束优先级
+
+工业 MPC 中，约束通常按优先级分层：
+
+| 优先级 | 约束类型 | 处理方式 | 示例 |
+|--------|----------|----------|------|
+| 1（最高） | 安全约束 | 硬约束 | 设备压力上限、温度极限 |
+| 2 | 环保约束 | 硬约束 | 排放限值（法规） |
+| 3 | 设备约束 | 软约束（大 $V$） | 阀门速率限制 |
+| 4（最低） | 性能约束 | 软约束（小 $V$） | 产品纯度目标 |
+
+### 分阶段优化（Hierarchical Optimization）
+
+高优先级约束先满足，低优先级约束在剩余自由度内优化：
+
+$$
+\text{Stage 1:} \quad \min_{U} \epsilon_1^2, \quad \text{s.t.} \quad A_1 U \leq b_1 + \epsilon_1 \mathbf{1}
+$$
+
+$$
+\text{Stage 2:} \quad \min_U \frac{1}{2} U^T H U + f^T U, \quad \text{s.t.} \quad A_1 U \leq b_1, \quad A_2 U \leq b_2 + \epsilon_2 \mathbf{1}
+$$
+
+Stage 1 确保高优先级约束满足，Stage 2 在满足高优先级约束的前提下优化性能。
+
+### 工程调试建议
+
+**约束不可行时的排查步骤**：
+
+1. **检查模型**：模型失配是最常见原因。模型预测的可行域可能和实际系统不一致。
+2. **检查约束值**：约束设置是否合理？是否考虑了测量噪声和模型误差？
+3. **检查当前状态**：系统是否离约束边界太近？是否需要先调整操作点？
+4. **检查约束冲突**：多个约束是否互相矛盾？（如"快速升温"和"不超温"可能冲突）
+5. **放松软约束**：降低软约束的权重 $V$，允许更大程度的违反。
+
+## 交互式可视化
+
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle, FancyArrowPatch
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False`}
+  cells={[
+    {
+      code: `# ===== 约束处理对 MPC 行为的影响 =====
+# 双积分器系统，展示不同约束组合下的轨迹和控制输入
+from ipywidgets import interact, FloatSlider, ToggleButton, Checkbox, VBox, HBox
+
+# 系统模型（双积分器，Ts = 0.1）
+Ts = 0.1
+A = np.array([[1, Ts], [0, 1]])
+B = np.array([[0], [Ts]])
+C = np.eye(2)
+
+def solve_mpc_qp(x0, Np, Nu, Q, R, u_min, u_max, du_max, y_max, N_steps):
+    """带约束的 MPC 仿真（梯度投影法）"""
+    x_traj = [x0.copy()]
+    u_traj = []
+    x = x0.copy()
+    u_prev = 0.0
+
+    for k in range(N_steps):
+        # 构建预测矩阵
+        F_list = []
+        for i in range(1, Np + 1):
+            F_list.append(np.linalg.matrix_power(A, i) @ x)
+        F_vec = np.array(F_list).flatten()
+
+        Phi = np.zeros((Np, Nu))
+        for i in range(Np):
+            for j in range(min(i + 1, Nu)):
+                Phi[i, j] = float(np.linalg.matrix_power(A, i - j) @ B)
+
+        Q_bar = np.eye(Np) * Q
+        R_bar = np.eye(Nu) * R
+        H = 2 * (Phi.T @ Q_bar @ Phi + R_bar)
+        f_vec = 2 * Phi.T @ Q_bar @ F_vec
+
+        # 约束矩阵构造
+        A_ineq_list = []
+        b_ineq_list = []
+
+        # 1. 输入幅值约束
+        A_ineq_list.append(np.eye(Nu))
+        b_ineq_list.append(u_max * np.ones(Nu))
+        A_ineq_list.append(-np.eye(Nu))
+        b_ineq_list.append(-u_min * np.ones(Nu))
+
+        # 2. 输入变化率约束
+        if du_max < 100:
+            L = np.eye(Nu) - np.eye(Nu, k=-1)
+            M = np.zeros(Nu)
+            M[0] = 1.0
+            A_ineq_list.append(L)
+            b_ineq_list.append(du_max * np.ones(Nu) + M * u_prev)
+            A_ineq_list.append(-L)
+            b_ineq_list.append(du_max * np.ones(Nu) - M * u_prev)
+
+        # 3. 输出约束（位置约束 |x1| <= y_max）
+        if y_max < 100:
+            Cx_Phi = Phi  # C = [1, 0] 只约束位置
+            Cx_F = F_vec[::1]  # 简化
+            # 每步预测的位置
+            pos_pred = np.array([np.linalg.matrix_power(A, i+1)[0] @ x for i in range(Np)])
+            for i in range(Np):
+                row = Phi[i, :]
+                A_ineq_list.append(row.reshape(1, -1))
+                b_ineq_list.append(np.array([y_max - pos_pred[i] + np.dot(row, np.zeros(Nu))]))
+                # 更精确：y(k+i+1) = F_row @ x + Phi_row @ U <= y_max
+                F_row = np.linalg.matrix_power(A, i+1)[0, :]
+                A_ineq_list.append(Phi[i, :].reshape(1, -1))
+                b_ineq_list.append(np.array([y_max]))
+                A_ineq_list.append(-Phi[i, :].reshape(1, -1))
+                b_ineq_list.append(np.array([y_max]))
+
+        A_ineq = np.vstack(A_ineq_list)
+        b_ineq = np.concatenate(b_ineq_list)
+
+        # 梯度投影法求解
+        U = np.zeros(Nu)
+        lr = 0.005
+        for _ in range(500):
+            grad = H @ U + f_vec
+            U = U - lr * grad
+            # 投影到约束集
+            for _p in range(20):
+                U = np.clip(U, u_min, u_max)
+                if du_max < 100:
+                    for j in range(Nu):
+                        if j == 0:
+                            du = U[j] - u_prev
+                        else:
+                            du = U[j] - U[j-1]
+                        if du > du_max:
+                            if j == 0:
+                                U[j] = u_prev + du_max
+                            else:
+                                U[j] = U[j-1] + du_max
+                        elif du < -du_max:
+                            if j == 0:
+                                U[j] = u_prev - du_max
+                            else:
+                                U[j] = U[j-1] - du_max
+
+        u_opt = U[0]
+        u_traj.append(u_opt)
+        u_prev = u_opt
+        x = A @ x + B.flatten() * u_opt
+        x_traj.append(x.copy())
+
+    return np.array(x_traj), np.array(u_traj)
+
+def demo_constraints(x0_val, Np, Nu, Q, R, u_max, du_max, y_max, show_rate, show_output):
+    N_steps = 40
+    x0 = np.array([x0_val, 0])
+
+    du_limit = du_max if show_rate else 100.0
+    y_limit = y_max if show_output else 100.0
+
+    x_traj, u_traj = solve_mpc_qp(x0, Np, Nu, Q, R, -u_max, u_max, du_limit, y_limit, N_steps)
+    t = np.arange(N_steps + 1) * Ts
+    t_u = np.arange(N_steps) * Ts + Ts/2
+
+    fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
+
+    # 位置
+    axes[0].plot(t, x_traj[:, 0], 'b-', linewidth=2, label='位置 x')
+    if show_output and y_limit < 100:
+        axes[0].axhline(y=y_limit, color='r', linestyle='--', alpha=0.7, label=f'输出约束 ±{y_limit}')
+        axes[0].axhline(y=-y_limit, color='r', linestyle='--', alpha=0.7)
+    axes[0].set_ylabel('位置', fontsize=12)
+    axes[0].legend(fontsize=10, loc='upper right')
+    axes[0].grid(True, alpha=0.3)
+    axes[0].set_title(f'约束处理效果 | x₀ = {x0_val}, Np = {Np}, Nu = {Nu}', fontsize=13)
+
+    # 速度
+    axes[1].plot(t, x_traj[:, 1], 'b-', linewidth=2, label='速度 ẋ')
+    axes[1].set_ylabel('速度', fontsize=12)
+    axes[1].legend(fontsize=10)
+    axes[1].grid(True, alpha=0.3)
+
+    # 控制输入
+    axes[2].step(t_u, u_traj, 'b-', linewidth=2, where='mid', label='控制量 u')
+    axes[2].axhline(y=u_max, color='g', linestyle=':', alpha=0.7, label=f'输入约束 ±{u_max}')
+    axes[2].axhline(y=-u_max, color='g', linestyle=':', alpha=0.7)
+    if show_rate and du_limit < 100:
+        for i in range(len(u_traj)):
+            if i > 0:
+                du = u_traj[i] - u_traj[i-1]
+                if abs(du) > du_limit * 0.95:
+                    axes[2].plot(t_u[i], u_traj[i], 'ro', markersize=6, alpha=0.7)
+        axes[2].text(0.02, 0.95, f'Rate limit: ±{du_limit}/step\\n红点 = 触达 rate limit',
+                     transform=axes[2].transAxes, fontsize=9, verticalalignment='top',
+                     bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    axes[2].set_ylabel('控制量 u', fontsize=12)
+    axes[2].set_xlabel('时间 (s)', fontsize=12)
+    axes[2].legend(fontsize=10, loc='upper right')
+    axes[2].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+interact(
+    demo_constraints,
+    x0_val=FloatSlider(value=5, min=1, max=10, step=1, description='初始位置 x₀'),
+    Np=IntSlider(value=15, min=5, max=30, step=5, description='预测时域 Np'),
+    Nu=IntSlider(value=5, min=2, max=15, step=1, description='控制时域 Nu'),
+    Q=FloatSlider(value=1.0, min=0.1, max=10, step=0.1, description='状态权重 Q'),
+    R=FloatSlider(value=0.1, min=0.01, max=1, step=0.01, description='输入权重 R'),
+    u_max=FloatSlider(value=2.0, min=0.5, max=5, step=0.5, description='输入约束 u_max'),
+    du_max=FloatSlider(value=1.0, min=0.1, max=5, step=0.1, description='Rate limit Δu_max'),
+    y_max=FloatSlider(value=8.0, min=2, max=20, step=1, description='输出约束 y_max'),
+    show_rate=Checkbox(value=True, description='启用 Rate 约束'),
+    show_output=Checkbox(value=True, description='启用输出约束'),
+)
+print('调整参数观察不同约束对 MPC 行为的影响')
+print('红点 = 触达变化率约束 | 红色虚线 = 输出约束边界')`
+    }
+  ]}
+/>
+
+## 深入讨论
+
+### 非凸约束
+
+标准 QP 只能处理**线性约束**。但实际中有些约束是非凸的：
+
+**避障约束**：无人机不能飞入障碍物区域。如果障碍物是圆形（中心 $c$，半径 $r$）：
+
+$$
+\|x - c\|_2 \geq r \quad \text{（非凸！可行域在圆外）}
+$$
+
+处理方法：
+1. **序列凸化**：在当前点线性化约束 $\to$ 迭代求解一系列凸 QP
+2. **混合整数方法**：把可行域分成若干凸片（如用多个半平面逼近圆外区域），引入 0-1 变量选择凸片
+3. **非线性 MPC（NMPC）**：直接用非线性优化求解器（如 IPOPT, SNOPT）
+
+### 混合整数约束
+
+有些约束涉及离散决策：阀门要么全开要么全关（0-1 变量），齿轮只能选离散的挡位。
+
+$$
+u \in \{u_1, u_2, \ldots, u_m\} \quad \text{（离散集合）}
+$$
+
+这变成**混合整数 QP（MIQP）**——NP-hard 问题。小规模（$< 10$ 个整数变量）可以用分支定界法，大规模需要启发式方法或松弛（把整数约束松弛为连续约束 $0 \leq u \leq 1$，然后四舍五入）。
+
+### 机会约束（Chance Constraints）
+
+有随机干扰时，硬约束可能过于保守。机会约束允许以一定概率违反：
+
+$$
+P(g(x(k)) \leq 0) \geq 1 - \alpha
+$$
+
+例如："$P(\text{温度} \leq 200°C) \geq 99\%$"——允许 1% 的概率超温。
+
+转化为确定性约束的方法：
+1. **Boole 不等式**：把联合概率约束分解为单个约束
+2. **分布鲁棒方法**：假设干扰属于某个模糊集，对最坏分布保证概率约束
+3. **采样方法（Scenario Approach）**：从干扰分布中采样 $S$ 个场景，对每个场景施加约束
+
+> 💡 机会约束是前沿研究方向，在自动驾驶（碰撞概率约束）和能源管理（可再生能源不确定性）中有重要应用。
+
+## 小结
+
+1. **MPC 的核心优势是约束处理**：约束写入优化问题，而不是事后修补
+2. **四类约束**：输入幅值、输入变化率、状态约束、输出约束——都可以转化为 $A_{\text{ineq}} U \leq b_{\text{ineq}}$
+3. **输入约束**的约束矩阵是常数；**状态/输出约束**的右端项依赖 $x(k)$；**变化率约束**的右端项依赖 $u(k-1)$
+4. **软约束**通过松弛变量保证可行性——权重 $V$ 要足够大但不宜过大
+5. **KKT 条件**给出约束最优解的最优性判据——互补松弛条件区分 active/inactive 约束
+6. **不可行性**是约束 MPC 的核心挑战——约束松弛、约束裁剪、可行性恢复是三种处理策略
+7. **Active set 随状态变化**——MPC 解是状态的分段仿射函数，约束活性指示器帮助识别性能瓶颈
+
+从整个 MPC 章节看：[MPC 原理](/mpc/mpc-principle)建立了框架，[预测模型](/mpc/prediction-model)解决"如何预测"，[滚动优化](/mpc/receding-horizon)解决"如何高效求解"，本课解决"如何处理约束"。下一课 [MPC 实现案例](/mpc/mpc-case-study) 将把这些要素整合到一个完整的工程实现中。
+
+## 习题
+
+**习题 1**（约束矩阵构造）
+
+考虑系统 $x(k+1) = \begin{bmatrix} 1 & 0.5 \\ 0 & 1 \end{bmatrix} x(k) + \begin{bmatrix} 0.125 \\ 0.5 \end{bmatrix} u(k)$，$N_u = 3$。
+
+(a) 写出输入约束 $-1 \leq u \leq 1$ 对应的 $A_u$ 和 $b_u$。
+
+(b) 写出输入变化率约束 $|\Delta u| \leq 0.5$ 对应的 $A_{\Delta u}$ 和 $b_{\Delta u}$（设 $u(k-1) = 0.3$）。
+
+(c) 合并 (a) 和 (b) 的约束，$A_{\text{ineq}}$ 有多少行？多少列？
+
+**习题 2**（软约束理解）
+
+判断下列说法是否正确，并说明理由：
+
+(a) "软约束的松弛变量权重 $V$ 越大越好，因为约束违反越少。"
+
+(b) "如果所有约束都设为软约束，MPC 等价于无约束 MPC。"
+
+(c) "选择性软化时，安全约束应该用大的 $V$，性能约束应该用小的 $V$。"
+
+**习题 3**（KKT 条件应用）
+
+考虑 QP：$\min \frac{1}{2}(u_1^2 + u_2^2) + 2u_1 - u_2$，s.t. $u_1 \geq -1$，$u_2 \geq -2$。
+
+(a) 写出无约束最优解，检查是否满足约束。
+
+(b) 如果不满足，用 KKT 条件求约束最优解。
+
+(c) 求最优解处的 KKT 乘子，判断哪些约束是 active 的。
+
+**习题 4**（不可行性分析）
+
+系统 $x(k+1) = x(k) + u(k)$，当前状态 $x(k) = 10$。
+
+约束：$|u| \leq 1$，$|x(k+1)| \leq 5$，$|x(k+2)| \leq 3$。
+
+(a) 证明该优化问题不可行。
+
+(b) 如果放松输出约束为软约束（引入 $\epsilon$），求最小的 $\epsilon$ 使问题可行。
+
+(c) 解释为什么增大预测时域 $N_p$ 可能使不可行性更严重。
+
+**习题 5**（工程设计）
+
+为一个化工反应器设计 MPC 约束方案。反应器有以下限制：
+
+- 温度：正常范围 150-200°C，安全极限 250°C
+- 压力：正常范围 1-5 atm，安全阀设定 8 atm
+- 进料阀：开度 0-100%，最大变化速率 10%/s
+- 产品纯度：目标 ≥ 95%，允许短暂降至 93%
+- 冷却水流量：0-500 L/min
+
+设计约束优先级方案，说明哪些是硬约束、哪些是软约束，并给出松弛变量权重的相对大小。
+
+## 答案
+
+**答案 1**
+
+(a) $N_u = 3$，输入约束 $-1 \leq u(k+i) \leq 1$，$i = 0, 1, 2$：
+
+$$
+A_u = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \\ -1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & -1 \end{bmatrix} = \begin{bmatrix} I_3 \\ -I_3 \end{bmatrix}, \quad b_u = \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} = \mathbf{1}_6
+$$
+
+(b) 变化率约束 $|\Delta u| \leq 0.5$，$u(k-1) = 0.3$：
+
+$$
+L = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \end{bmatrix}, \quad M u(k-1) = \begin{bmatrix} 0.3 \\ 0 \\ 0 \end{bmatrix}
+$$
+
+$$
+A_{\Delta u} = \begin{bmatrix} L \\ -L \end{bmatrix} = \begin{bmatrix} 1 & 0 & 0 \\ -1 & 1 & 0 \\ 0 & -1 & 1 \\ -1 & 0 & 0 \\ 1 & -1 & 0 \\ 0 & 1 & -1 \end{bmatrix}
+$$
+
+$$
+b_{\Delta u} = \begin{bmatrix} 0.5 + 0.3 \\ 0.5 - 0 \\ 0.5 - 0 \\ 0.5 - 0.3 \\ 0.5 + 0 \\ 0.5 + 0 \end{bmatrix} = \begin{bmatrix} 0.8 \\ 0.5 \\ 0.5 \\ 0.2 \\ 0.5 \\ 0.5 \end{bmatrix}
+$$
+
+关键推导：$b_{\Delta u}$ 上三行 $= \Delta u_{\max} \mathbf{1} + M u(k-1)$，下三行 $= -\Delta u_{\min} \mathbf{1} - M u(k-1)$，其中 $\Delta u_{\min} = \Delta u_{\max} = 0.5$（对称约束）。
+
+(c) 合并后 $A_{\text{ineq}}$ 有 $6 + 6 = 12$ 行，$3$ 列（$N_u = 3$ 个优化变量）。
+
+**答案 2**
+
+(a) **错误**。$V$ 不是越大越好。$V$ 太大导致 Hessian 矩阵 $\begin{bmatrix} H & 0 \\ 0 & 2V \end{bmatrix}$ 条件数变差，QP 求解困难（数值不稳定）。$V$ 应取比 $Q, R$ 大 2-3 个数量级即可。
+
+(b) **错误**。即使所有约束都是软的，如果松弛变量权重 $V$ 有限，违反约束仍有代价。只有当 $V \to 0$ 时，软约束才完全失去作用（等价于无约束）。实际上 $V > 0$ 意味着优化器仍然会尽量避免违反约束。
+
+(c) **正确**。安全约束用大 $V$ → 几乎不违反（接近硬约束）。性能约束用小 $V$ → 允许短暂违反以换取更好的整体性能。这正是"选择性软化"的核心思想。
+
+**答案 3**
+
+(a) 无约束最优：$\frac{\partial}{\partial u_1}: u_1 + 2 = 0 \implies u_1^* = -2$。$\frac{\partial}{\partial u_2}: u_2 - 1 = 0 \implies u_2^* = 1$。
+
+检查约束：$u_1^* = -2 < -1$ ❌（违反第一个约束）。$u_2^* = 1 \geq -2$ ✓。
+
+无约束最优不可行。
+
+(b) 约束写为标准形式：$-u_1 \leq 1$，$-u_2 \leq 2$。
+
+猜测 active set $\mathcal{A} = \{1\}$（第一个约束 active）：$u_1 = -1$。
+
+代入平稳性条件：$u_1 + 2 - \lambda_1 = 0 \implies \lambda_1 = u_1 + 2 = -1 + 2 = 1 > 0$ ✓
+
+$u_2$ 不受 active 约束影响：$u_2 - 1 = 0 \implies u_2^* = 1$。
+
+检查第二个约束：$-u_2^* = -1 \leq 2$ ✓。
+
+最优解：$U^* = (-1, 1)^T$。
+
+(c) KKT 乘子：$\lambda_1^* = 1 > 0$（第一个约束 active），$\lambda_2^* = 0$（第二个约束 inactive）。
+
+验证互补松弛：$\lambda_1^* \cdot (-u_1^* - 1) = 1 \cdot (1 - 1) = 0$ ✓。$\lambda_2^* \cdot (-u_2^* - 2) = 0 \cdot (-3) = 0$ ✓。
+
+**答案 4**
+
+(a) $x(k) = 10$，$|u(k)| \leq 1$。
+
+$x(k+1) = 10 + u(k)$，$|x(k+1)| \leq 5 \implies -5 \leq 10 + u(k) \leq 5 \implies -15 \leq u(k) \leq -5$。
+
+但 $|u(k)| \leq 1 \implies -1 \leq u(k) \leq 1$。
+
+两个约束的交集：$u(k) \in [-15, -5] \cap [-1, 1] = \emptyset$。不可行。
+
+即使不考虑 $|u| \leq 1$，$x(k+1)$ 最小为 $10 + (-1) = 9 > 5$，仍违反 $|x(k+1)| \leq 5$。
+
+(b) 引入松弛变量 $\epsilon$，放松输出约束：$|x(k+1)| \leq 5 + \epsilon$。
+
+$x(k+1) = 10 + u(k) \leq 5 + \epsilon$，$u(k) \geq -1 \implies x(k+1) \geq 9$。
+
+需要 $9 \leq 5 + \epsilon \implies \epsilon \geq 4$。
+
+最小 $\epsilon = 4$（此时 $u(k) = -1$，$x(k+1) = 9$，约束 $|x(k+1)| \leq 5 + 4 = 9$ 恰好满足）。
+
+(c) 预测时域越长，需要满足的约束越多（$N_p$ 步的状态都要在约束范围内）。每多一步预测，就多一组状态约束。如果系统当前离约束边界很远，需要多步才能回到可行域内——但每步的控制量有限（$|u| \leq 1$），可能无法在 $N_p$ 步内把状态拉回可行域。因此增大 $N_p$ 通常使不可行性更严重（或至少不改善）。
+
+**答案 5**
+
+| 优先级 | 约束 | 类型 | 松弛变量 | $V$ 相对大小 |
+|--------|------|------|----------|-------------|
+| 1 | 温度 ≤ 250°C（安全极限） | **硬约束** | 无 | ∞ |
+| 1 | 压力 ≤ 8 atm（安全阀） | **硬约束** | 无 | ∞ |
+| 2 | 冷却水 0-500 L/min | **硬约束** | 无 | ∞ |
+| 3 | 进料阀 0-100% | **软约束** | $\epsilon_1$ | $10^3$ |
+| 3 | 进料阀速率 ≤ 10%/s | **软约束** | $\epsilon_2$ | $10^3$ |
+| 4 | 温度 150-200°C | **软约束** | $\epsilon_3$ | $10^2$ |
+| 4 | 压力 1-5 atm | **软约束** | $\epsilon_4$ | $10^2$ |
+| 5 | 纯度 ≥ 95% | **软约束** | $\epsilon_5$ | $10$ |
+
+设计理由：
+- 安全极限（温度 250°C、压力 8 atm）是**绝对不能违反**的硬约束——违反意味着爆炸/泄漏
+- 冷却水流量的物理限制也是硬约束（泵的最大能力）
+- 阀门范围和速率限制设为软约束——短暂越限不会造成安全事故，但可能损坏设备
+- 正常操作范围（温度 150-200°C、压力 1-5 atm）设为软约束——允许短暂偏离以应对干扰
+- 产品纯度设为软约束（最低 $V$）——允许短暂降至 93%（题目已说明），以换取更好的操作经济性
+
+$V$ 的相对大小反映了约束的优先级：安全 > 设备 > 操作 > 性能。

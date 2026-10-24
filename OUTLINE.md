@@ -176,7 +176,7 @@
 | 12.1 | 预测控制原理 | mpc-principle | ✅ 已交付 v1.3 | grad | theory | 13 | discrete-sampled/discrete-optimal-control<br>math/convex-optimization |
 | 12.2 | 预测模型 | prediction-model | ✅ 已交付 v1.3 | grad | theory | 14 | mpc/mpc-principle<br>identification/model-structures |
 | 12.3 | 滚动优化 | receding-horizon | ✅ 已交付 v1.3 | grad | theory | 15 | mpc/prediction-model<br>math/convex-optimization |
-| 12.4 | 约束处理 | constraint-handling | 🟨 有正文待审校 | grad | theory | 16 | mpc/receding-horizon |
+| 12.4 | 约束处理 | constraint-handling | ✅ 已交付 v1.3 | grad | theory | 16 | mpc/receding-horizon |
 | 12.5 | 递归可行性与稳定性 | mpc-stability | ⬜ 骨架（占位页） | grad | theory | 17 | mpc/constraint-handling<br>nonlinear/lyapunov-stability |
 | 12.6 | 广义预测控制 | generalized-predictive-control | 🟨 有正文待审校 | grad | theory | 16 | mpc/receding-horizon<br>identification/least-squares-rls |
 | 12.7 | 显式预测控制 | explicit-mpc | ⬜ 骨架（占位页） | advanced | theory | 17 | mpc/constraint-handling<br>math/convex-optimization |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 99（status = v1.3）
-- **有正文待审校**: 11（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 100（status = v1.3）
+- **有正文待审校**: 10（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 95（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 106（= draft 11 + empty 95 + 无 status 0）
+- **未完成 v1.3**: 105（= draft 10 + empty 95 + 无 status 0）
 - **有 MDX 正文**: 110
 - **catalog 小节总数**: 1211
-- **讨论日志**: 122 篇（覆盖 99 门；有 MDX 无日志 11 门）
-- **交互组件**: 109 个文件（被正文引用 109，孤儿 0）
+- **讨论日志**: 123 篇（覆盖 100 门；有 MDX 无日志 10 门）
+- **交互组件**: 110 个文件（被正文引用 110，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

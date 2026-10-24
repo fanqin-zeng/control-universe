@@ -1,0 +1,90 @@
+{
+  "source": "content/mpc/constraint-handling.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 132,
+      "title": "约束堆叠与KKT核对",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nfrom scipy.optimize import minimize, LinearConstraint",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 134,
+          "delim": "`",
+          "code": "# Np3/Nu2，最后一输入保持；直接逐拍递推构造输出映射\nAd = np.array([[1.,1.],[0.,1.]])\nBd = np.array([.5,1.])\ndef predict(x,U):\n    values = []\n    for j in range(3):\n        x = Ad@x+Bd*U[min(j,1)]\n        values.append(x[0])\n    return np.array(values)\nG = np.column_stack([predict(np.zeros(2),np.eye(2)[i]) for i in range(2)])\nfree = predict(np.array([4.,1.]),np.zeros(2))\nL = np.array([[1.,0.],[-1.,1.]])\nAineq = np.vstack([np.eye(2),-np.eye(2),L,-L,G,-G])\nrhs = np.r_[np.full(4,2.),[1.5,1.,.5,1.],5-free,5+free]\nH = 2*(G.T@G+.1*np.eye(2))\nlinear = 2*G.T@free\nsol = minimize(lambda u:.5*u@H@u+linear@u,[-.5,-1.],jac=lambda u:H@u+linear,constraints=[LinearConstraint(Aineq,-np.inf,rhs)],method='SLSQP',options={'ftol':1e-10,'maxiter':200})\nassert sol.success,sol.message\nU = sol.x\nlam = np.zeros(14)\nlam[6:8] = np.linalg.solve(Aineq[6:8].T,-(H@U+linear))\nslack = rhs-Aineq@U\nassert np.min(slack)>-1e-8 and np.min(lam)>-1e-8\nassert np.max(np.abs(H@U+linear+Aineq.T@lam))<1e-8\nassert np.max(np.abs(lam*slack))<1e-7\nprint('default_G_free',G,free)\nprint('default_H_f',H,linear)\nprint('default_U_y_cost',U,free+G@U,np.sum((free+G@U)**2)+.1*(U@U))\nprint('default_rows_lambda',Aineq.shape,lam)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 163,
+          "delim": "`",
+          "code": "# 原KKT例与题3：下界必须写成负法向\nfor f,lower in [(np.array([3.,1.]),np.array([-2.,-2.])),(np.array([2.,-1.]),np.array([-1.,-2.]))]:\n    u = np.maximum(-f,lower)\n    multipliers = u+f\n    assert np.all(multipliers>=0)\n    assert np.allclose(multipliers*(u-lower),0)\n    print('lower_bound_KKT',u,multipliers)\nprint('active_zero_multiplier_example','min .5*u^2 subject to u<=0: u=0, lambda=0')\nL3 = np.eye(3)-np.eye(3,k=-1)\nrate_rhs = np.r_[np.full(3,.5)+[.3,0,0],np.full(3,.5)-[.3,0,0]]\nprint('exercise1_L_rate_rhs_rows',L3,rate_rhs,(12,3))\nprint('valve_rate_example_pp_per_sample',100/30*1.)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 219,
+      "title": "有限软罚与可行性恢复",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nfrom scipy.optimize import linprog",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 221,
+          "delim": "`",
+          "code": "# 二次罚不等于硬界；线性罚的阈值只针对本例\nfor V in [1.,10.,100.]:\n    epsilon = 1/(1+V)\n    u = 1+epsilon\n    assert abs(2*(u-2)+2*V*epsilon)<1e-12\n    print('quadratic_penalty',V,'u',u,'epsilon',epsilon)\nfor rho in [1.,2.,3.]:\n    eps = max(0.,1-rho/2)\n    print('linear_penalty',rho,'u',1+eps,'epsilon',eps)\n# 所有性能行可软化，不代表硬物理界矛盾也能解决\ncontradiction = linprog([0.],A_ub=[[1.],[-1.]],b_ub=[1.,-2.],bounds=[(None,None)],method='highs')\nassert contradiction.status==2\nprint('hard_contradiction_status',contradiction.status)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 234,
+          "delim": "`",
+          "code": "# 题4公共松弛：两拍输出都必须核对\n# variables = [u0,u1,epsilon], hard inputs in [-1,1]\nA = np.array([[1.,0.,-1.],[-1.,0.,-1.],[1.,1.,-1.],[-1.,-1.,-1.]])\nb = np.array([-5.,15.,-7.,13.])\nphase1 = linprog([0.,0.,1.],A_ub=A,b_ub=b,bounds=[(-1.,1.),(-1.,1.),(0.,None)],method='highs')\nassert phase1.success\nassert abs(phase1.x[2]-5)<1e-12\nprint('exercise4_min_common_slack',phase1.x)\nprint('exercise4_outputs',10+phase1.x[0],10+phase1.x[0]+phase1.x[1])\n# 在无中间状态界、只有终端x_N=0时，|u|<=1的可达初态随N扩展\nfor N in [1,2,3]:print('terminal_reachability_interval',N,(-N,N))\nprint('reactor_rate_pp_per_sample_Ts_half',10*.5)\nprint('purity_slack_cap_pp',95-93)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 344,
+      "title": "双积分器的完整状态与输出约束",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.optimize import minimize, LinearConstraint, nnls",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 347,
+          "delim": "`",
+          "code": "# 保留原40步主题，修正2Np状态堆叠和真实输出约束\nTs,Np,Nu = .1,15,5\nAd = np.array([[1.,Ts],[0.,1.]])\nBd = np.array([0.,Ts])\ndef rollout(x,U):\n    values=[]\n    for j in range(Np):\n        x=Ad@x+Bd*U[min(j,Nu-1)]\n        values.append(x.copy())\n    return np.asarray(values).reshape(-1)\nPhi = np.column_stack([rollout(np.zeros(2),np.eye(Nu)[j]) for j in range(Nu)])\nQbar = np.diag(np.tile([1.,.2],Np))\nGpos = Phi[::2]\nL = np.eye(Nu)-np.eye(Nu,k=-1)\nAineq = np.vstack([np.eye(Nu),-np.eye(Nu),L,-L,Gpos,-Gpos])\nH = 2*(Phi.T@Qbar@Phi+.1*np.eye(Nu))\nstates,inputs,plans = [np.array([5.,0.])],[],[]\nprevious,guess = 0.,np.zeros(Nu)\nfor k in range(40):\n    free=rollout(states[-1],np.zeros(Nu))\n    f=2*Phi.T@Qbar@free\n    shift=np.r_[previous,np.zeros(Nu-1)]\n    rhs=np.r_[np.full(2*Nu,2.),np.ones(Nu)+shift,np.ones(Nu)-shift,8-free[::2],8+free[::2]]\n    result=minimize(lambda u:.5*u@H@u+f@u,guess,jac=lambda u:H@u+f,constraints=[LinearConstraint(Aineq,-np.inf,rhs)],method='SLSQP',options={'ftol':1e-11,'maxiter':300})\n    assert result.success,result.message\n    U=result.x\n    slack=rhs-Aineq@U\n    assert np.min(slack)>-1e-7\n    active=np.flatnonzero(slack<1e-5)\n    lam=np.zeros(len(rhs))\n    if len(active):lam[active]=nnls(Aineq[active].T,-(H@U+f))[0]\n    residual=max(np.max(np.abs(H@U+f+Aineq.T@lam)),np.max(np.abs(lam*slack)))\n    assert residual<1e-4\n    plans.append({'x':states[-1].tolist(),'previous':previous,'u':U.tolist(),'residual':residual})\n    previous=U[0]\n    inputs.append(previous)\n    states.append(Ad@states[-1]+Bd*previous)\n    guess=np.r_[U[1:],U[-1]]\nstates=np.array(states)\nassert np.max(np.abs(states[1:,0]))<=8+1e-7\nassert np.max(np.abs(inputs))<=2+1e-7\nassert np.max(np.abs(np.diff(np.r_[0.,inputs])))<=1+1e-7\nprint('legacy_dimensions',Phi.shape,Aineq.shape)\nprint('legacy_last_sample',states[-1])\nprint('legacy_max_KKT_residual',max(p['residual'] for p in plans))",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 392,
+          "delim": "`",
+          "code": "# 按真实时间轴画三轨迹，输入在采样后保持\nfig,axes=plt.subplots(3,1,figsize=(9,7),sharex=True)\nt=np.arange(41)*Ts\naxes[0].plot(t,states[:,0])\naxes[0].axhline(8,color='red',linestyle='--')\naxes[0].axhline(-8,color='red',linestyle='--')\naxes[0].set(ylabel='Position',ylim=(-8.5,8.5))\naxes[1].plot(t,states[:,1])\naxes[1].set(ylabel='Velocity',ylim=(-5,5))\naxes[2].step(t,inputs+[inputs[-1]],where='post')\naxes[2].set(ylabel='Input',xlabel='Time (s)',ylim=(-2.5,2.5),xlim=(0,4))\nfor ax in axes:ax.grid(True)\nplt.tight_layout()\nplt.show()\nprint('legacy_executed_steps',len(inputs),'sample_interval',Ts)",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

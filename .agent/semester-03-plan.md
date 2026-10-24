@@ -85,6 +85,7 @@
 | ROBUST-03 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户明确指定继续ROBUST-03，rank5；保留并行课程，只用已交付ROBUST-01/02、Lyapunov与Routh基础 | .agent/semester-03/robust-03/acceptance.md |
 | EST-04 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-04”，rank4；先修EST-03已交付，仅新写本课 | .agent/semester-03/est-04/acceptance.md |
 | ML-05 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-05，rank2；保留并行课程，只依赖已交付ML-04与随机过程 | .agent/semester-03/ml-05/acceptance.md |
+| MPC-04 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-05;ML-06;ML-07;ML-08;ML-09;ID-05;ID-06;ID-07;ID-08;ID-09;EST-05;EST-06;EST-07;EST-08;ROBUST-04;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-04，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-04/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -893,3 +894,7 @@ rank2按用户指定新写时序模型；单课讨论、288配置独立闭式对
 ### IMPL-05 嵌入式控制本轮交付
 
 新写单课；ADC端点标定、PWM时隙、闭环量化与样本交接。讨论和真实验收见 `.agent/semester-03/impl-05/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+### MPC-04 学期3交付（2026-10-24）
+
+约束处理按重构Phase1–4完成，保留12H2、全部旧标题ID、四类约束/软硬/KKT/可行性/优先级/原40步主题及五题全部目标。纠正物理界软化、有限二次罚精确性、下界法向与活跃零乘子、14行计数、公共松弛5、层级恢复和原实验维度/输出约束。新增Explorer/SVG，三Notebook六cell；952组实际TS对独立LP、目标导数及强对偶证书，40QP对独立矩阵幂/对偶证书。严格内核、Pyodide、普通/Pages本地页面及375px验收见.agent/semester-03/mpc-04/acceptance.md；真实master回执见全局checklist。rank6隔离19096/9036/19196/19296/缓存/索引，保留并行与用户修改；本轮顺序例外独立登记，不发布Pages、不生产MPC-05。

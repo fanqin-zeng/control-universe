@@ -1,3 +1,4 @@
+import { ConstraintHandlingExplorer } from "@/components/wiki/constraint-handling-explorer";
 import { SequenceModelsExplorer } from '@/components/wiki/sequence-models-explorer';
 import { EmbeddedControlExplorer } from "@/components/wiki/embedded-control-explorer";
 import { ExtendedKalmanExplorer } from "@/components/wiki/extended-kalman-explorer";
@@ -130,6 +131,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  ConstraintHandlingExplorer,
   SequenceModelsExplorer,
   EmbeddedControlExplorer,
   ExtendedKalmanExplorer,

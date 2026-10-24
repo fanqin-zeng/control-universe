@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+import {execFileSync} from 'node:child_process';
+import {renderedHeadings} from './rendered-headings.mjs';
+const dir='.agent/semester-03/mpc-04/',key='mpc/constraint-handling';
+const extracted=JSON.parse(fs.readFileSync(dir+'extracted.json','utf8')).notebooks;
+assert.equal(extracted.length,3);assert(extracted.every(nb=>nb.cells.length===2));
+const source=fs.readFileSync('content/'+key+'.mdx','utf8');
+const heads=await renderedHeadings(source,key),old=JSON.parse(fs.readFileSync(dir+'headings-before.json','utf8'));
+const aliases=[...source.matchAll(/<span id="([^"]+)" \/>/g)].map(m=>m[1]);
+assert.equal(new Set([...heads.ids,...aliases]).size,heads.ids.length+aliases.length);
+for(const id of old.ids)assert([...heads.ids,...aliases].includes(id),id);
+assert.deepEqual(heads.h2,old.h2);
+const exports={};new Function('exports',ts.transpileModule(fs.readFileSync('lib/constraint-handling.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(exports);
+const cases=[];
+for(let i=0;i<=16;i++)for(let j=1;j<=8;j++)for(let limit=2;limit<=8;limit++){const position=i/2,rate=j/4;cases.push({position,rate,limit,result:exports.constraintExample(position,rate,limit)});}
+assert.deepEqual(exports.constraintExample().u,[-.5,-1.5]);assert.equal(exports.constraintExample(8,1,2).feasible,false);
+for(const args of [[NaN,1,5],[4,0,5],[4,1,9]])assert.throws(()=>exports.constraintExample(...args),RangeError);
+for(const weight of [0,NaN,101])assert.throws(()=>exports.quadraticSlack(weight),RangeError);
+for(const weight of [1,10,100])assert(exports.quadraticSlack(weight).epsilon>0);
+fs.writeFileSync(dir+'actual-ts.json',JSON.stringify(cases));
+const out=execFileSync('python',[dir+'reference.py'],{encoding:'utf8',env:{...process.env,MPLBACKEND:'Agg',PYTHONIOENCODING:'utf-8'}});
+fs.writeFileSync(dir+'reconciliation.log',out);console.log(out);
