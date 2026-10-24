@@ -28,3 +28,9 @@ W09原生浏览器跨端口连接、W16冷加载、QA01旧负向套件与QA02旧
 
 
 最终签发后门槛：完整投影基线e6fc2b873fa389522af63a56309c000559e1cd1b+ML-06，npm run check exit0（PASS21/WARN2/FAIL0），node scripts/check-semester03.mjs exit0/PASS；与普通/Pages构建相同源码基线。本课字段外的并行改动不进入暂存；正常共享索引与他人锁不接管，不宣称工作区干净。真实master提交后另登记。
+
+
+真实交付已进入master并推送origin：`9ce2d2ca1782968be6aaac6aa32a390e0b0b9792`。独立索引只暂存本课路径，HEAD比较交换防止覆盖并行提交；普通共享索引未重置。提交回执随后只补本课实际hash、勾选与复核输出，不发布Pages。
+
+
+交付后回执守卫：以9ce2d2c完整已提交树加本课真实hash勾选运行check-semester03，receipt-semester.log exit0/PASS；验证交付hash确已进入master。源文件与先前数值/构建/页面证据不变。
