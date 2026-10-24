@@ -56,6 +56,7 @@
 | ML-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-01，rank2；其它会话并行设计实现课，保留其检查点；本课只依赖已交付数学基础 | .agent/semester-03/ml-01/acceptance.md |
 | ID-02 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-02，rank3；暂缓其他会话与未交付前课，仅依赖已交付ID-01和差分方程 | .agent/semester-03/id-02/acceptance.md |
 | EST-01 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-01，rank4；保留其它会话检查点，只依赖已交付观测器、随机过程与离散系统 | .agent/semester-03/est-01/acceptance.md |
+| ROBUST-01 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-01;EST-02;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-01，rank5；避开并行课程，仅使用已交付先修 | .agent/semester-03/robust-01/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -760,3 +761,16 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### DISCRETE-01 恢复交付（2026-10-19）
 
 采样与量化旧稿按重构专用Phase1–4恢复完成。原九H2、十九H3、三实验主题、四题全部子问有保留映射；纠正混叠相位、ZOH归一化、带宽、有限ADC、离线/反馈量化、滤波衰减与不可实现PID。新增一Explorer、两SVG，六Notebook七cell。独立高精度解析参考、真实TS210配置、严格内核与Pyodide、普通/Pages/375px验收证据见.agent/semester-03/discrete-01/acceptance.md；真实提交回执与发布结果见全局checklist。历史02–10顺序例外保留为事实，不再有01生产缺口。仅本课；W14/W15及用户批阅、本地端口不随课修改。
+
+### ROBUST-01 鲁棒性（2026-10-24）
+
+按用户指定rank5隔离完成重构Phase1–4：保留10H2、四题全部子问与三组实验用途，四Notebook四cell原生/Pyodide实跑，共振交互真实TS对独立Python九配置，旧锚点、375px与本地Pages基路径通过。纠范数/网格、裕度单位、最近距离圆、小增益前提、LQR条件及题解，PY-018关闭。证据.agent/semester-03/robust-01/acceptance.md，master真实回执见全局checklist；不发布Pages，不续写下一课。
+
+
+### MULTI-01执行回执（2026-10-24）
+
+多智能体系统由空占位按新写Phase1–4完成：三辆独立车道小车的速度协调串联局部对象、接收信息图、局部反馈与团队目标，区分一致/跟踪/编队，保留断图、单向根节点、临界与超界采样反例。八H2、四题四答、一个Explorer与SVG、两Notebook四cell；135组真TS对独立谱解/Jordan闭式/矩阵幂，严格内核与Pyodide、普通与Pages原始输出、两种页面375px及固定轴全部通过。rank9独立副本/8199/8999/8499；完整证据.agent/semester-03/multi-01/acceptance.md。仅本课，保留其它会话与用户批阅；不发布Pages、不续写MULTI-02。真实master回执提交后登记。
+
+### SAFE-01 控制安全交付
+
+2026-10-24按用户rank10指定完成新写Phase1–4。仓库小车停车引出稳定与安全、约束/可行行动、延迟/误差/制动预算、监测回退及安全论证边界；9H2、四题四答、1Explorer/1SVG、2Notebook3cell。192真实TS配置对独立ODE、矩阵指数/Fraction、严格内核/Pyodide、实际Pages运行和375px验收通过。证据.agent/semester-03/safe-01/acceptance.md；仅本课，不依赖并行草稿、不发布Pages；真实master提交见checklist。W09原生IAB连接边界及其它会话检查点保留，中文仅生产交接。

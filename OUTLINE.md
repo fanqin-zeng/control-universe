@@ -157,7 +157,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 11.1 | 鲁棒性 | robustness-concept | 🟨 有正文待审校 | grad | theory | 11 | classic/frequency-response-design<br>modern/multivariable-systems |
+| 11.1 | 鲁棒性 | robustness-concept | ✅ 已交付 v1.3 | grad | theory | 11 | classic/frequency-response-design<br>modern/state-space<br>modern/lqr-controller |
 | 11.2 | 不确定性建模 | uncertainty-modeling | 🟨 有正文待审校 | grad | theory | 12 | robust/robustness-concept<br>math/matrix-decomposition |
 | 11.3 | 鲁棒稳定性 | robust-stability | 🟨 有正文待审校 | grad | theory | 13 | robust/uncertainty-modeling<br>nonlinear/iss-small-gain |
 | 11.4 | 鲁棒性能 | robust-performance | 🟨 有正文待审校 | grad | theory | 14 | robust/robust-stability<br>classic/frequency-domain-analysis |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 68（status = v1.3）
-- **有正文待审校**: 19（status = draft，已完成初稿但未做 v1.3 可视化重构）
+- **已交付 v1.3**: 69（status = v1.3）
+- **有正文待审校**: 18（status = draft，已完成初稿但未做 v1.3 可视化重构）
 - **骨架占位**: 118（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 137（= draft 19 + empty 118 + 无 status 0）
+- **未完成 v1.3**: 136（= draft 18 + empty 118 + 无 status 0）
 - **有 MDX 正文**: 87
 - **catalog 小节总数**: 990
-- **讨论日志**: 89 篇（覆盖 68 门；有 MDX 无日志 19 门）
-- **交互组件**: 79 个文件（被正文引用 79，孤儿 0）
-- **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **讨论日志**: 90 篇（覆盖 69 门；有 MDX 无日志 18 门）
+- **交互组件**: 80 个文件（被正文引用 80，孤儿 0）
+- **prereq 边**: 476 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

@@ -6905,31 +6905,31 @@
     {
       "key": "robust/robustness-concept",
       "title": "鲁棒性",
-      "sourceHash": "d4fb8c64dc0366d107ab5a135833bffb794d45517663101dbd28e512f5630e73",
+      "sourceHash": "b77652040c14cf0e4152b97ab4a191f638e7bb789d5b406e12f2b5711e798634",
       "notebooks": [
         {
           "id": "robust/robustness-concept#1",
-          "title": "实验 1",
+          "title": "复算四种惯量的响应与裕度",
           "index": 1,
-          "line": 50,
+          "line": 54,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5878,
+              "milliseconds": 54786,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 不同负载下的稳定裕度 ===\nJ=0.005 (轻载): GM=inf dB, PM=60.5°\nJ=0.01 (标称): GM=inf dB, PM=45.6°\nJ=0.05 (重载): GM=inf dB, PM=21.1°\nJ=0.10 (极重载): GM=inf dB, PM=14.8°\n"
+                  "text": "J=0.005 PM=60.545828 deg OS_0_2s=19.541310% wc=125.993277 rad/s GM_factor=inf GM_dB=inf\nJ=0.010 PM=45.585558 deg OS_0_2s=30.980842% wc=79.575539 rad/s GM_factor=inf GM_dB=inf\nJ=0.050 PM=21.147112 deg OS_0_2s=57.996809% wc=32.360018 rad/s GM_factor=inf GM_dB=inf\nJ=0.100 PM=14.789224 deg OS_0_2s=68.032210% wc=22.608911 rad/s GM_factor=inf GM_dB=inf\nRouth_J_upper_strict 3.0\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 114856
+                  "base64Length": 95656
                 }
               ]
             }
@@ -6937,52 +6937,82 @@
         },
         {
           "id": "robust/robustness-concept#2",
-          "title": "实验 2",
+          "title": "复算三个未建模共振工况",
           "index": 2,
-          "line": 158,
-          "cellCount": 1,
-          "status": "code",
-          "reason": "ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。",
-          "cells": []
-        },
-        {
-          "id": "robust/robustness-concept#3",
-          "title": "实验 3",
-          "index": 3,
-          "line": 335,
+          "line": 167,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 647,
+              "milliseconds": 5422,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "S + T = 1 验证: 最大残差 = 2.33e-16\n||S||_∞ = 1.3120 (2.36 dB)\n||T||_∞ = 1.5144 (3.60 dB)\n稳定裕度: GM=inf dB, PM=45.6°, ω_c=79.6 rad/s\n"
+                  "text": "resonance 50.000000000 0.100000000 29.174640509 5.122773580 1.514520935 7.758547831 7.387877431\nresonance 300.000000000 0.100000000 -0.200480688 5.122773580 1.514520935 7.758547831 0.927946024\nresonance 800.000000000 0.100000000 -0.200480695 5.122773580 1.514520935 7.758547831 0.322773550\nresonance_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 138632
+                  "base64Length": 101896
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "14d03bb8dd5c6e3ae21f0a386d4ec4130b62f3e8249271cde200860053a64a02",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "robust/robustness-concept",
-          "fromSourceHash": "14d03bb8dd5c6e3ae21f0a386d4ec4130b62f3e8249271cde200860053a64a02",
-          "toSourceHash": "d4fb8c64dc0366d107ab5a135833bffb794d45517663101dbd28e512f5630e73",
-          "notebookPayloadHash": "1ae1657ad44dd4736a0c85210be09d5f30aced6226f791f5f0bca22e80a8a41e",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "robust/robustness-concept#3",
+          "title": "复算S与T及最近距离圆",
+          "index": 3,
+          "line": 344,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2132,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Ms=1.312022973 wMs=87.778825902 Mt=1.514520935 wMt=61.196189546 residual=2.483e-16 radius=0.762181776\nMS_margin_bounds\n1.2 49.248636704328156 15.563025007672875\n1.4 41.849664855276636 10.881360887005513\n2.0 28.95502437185985 6.020599913279624\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 74752
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robust/robustness-concept#4",
+          "title": "复核全部习题与LQR边界",
+          "index": 4,
+          "line": 611,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 15,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "answer1 Ms=1.922686484 w=3.421725286 Sabs=0.242535625 Tabs=1.084652289 sum=(1+0j)\nanswer3 u=1.366025404 Ms=1.467889825 dB=3.333869202\nanswer2 Mt=2.294157339 w=2.121320344 gamma=1\nanswer2_K_poles 0.5 [-0.5+1.5j -0.5-1.5j]\nanswer2_K_poles 1 [-0.5+2.17944947j -0.5-2.17944947j]\nanswer2_K_poles 2 [-0.5+3.122499j -0.5-3.122499j]\nfinite_bandwidth_Ms1 (1.0, inf)\nscalar_lqr_gain_pole 0.5 -0.5\nscalar_lqr_gain_pole 1 -1\nscalar_lqr_gain_pole 2 -2\nall_answers_complete\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -13392,15 +13422,15 @@
   "complete": true,
   "totals": {
     "lessons": 87,
-    "notebooks": 401,
-    "enabled": 386,
-    "codeOnly": 15
+    "notebooks": 402,
+    "enabled": 388,
+    "codeOnly": 14
   },
   "releaseTotals": {
     "lessons": 87,
-    "notebooks": 401,
-    "enabled": 385,
-    "codeOnly": 16
+    "notebooks": 402,
+    "enabled": 387,
+    "codeOnly": 15
   },
   "provenance": [
     {
@@ -14003,6 +14033,12 @@
       "testedAt": "2026-10-24T04:48:17.076Z",
       "url": "http://127.0.0.1:18394/python-expansion.html?lesson=estimation/estimation-problem",
       "inputPath": ".agent/semester-03/est-01/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T05:14:27.571Z",
+      "url": "http://127.0.0.1:18395/python-expansion.html?lesson=robust/robustness-concept",
+      "inputPath": ".agent/semester-03/robust-01/pyodide.json",
+      "scope": "robust/robustness-concept"
     }
   ]
 }

@@ -3896,11 +3896,12 @@ export const catalog: Chapter[] = [
         ],
         "prereq": [
           "classic/frequency-response-design",
-          "modern/multivariable-systems"
+          "modern/state-space",
+          "modern/lqr-controller"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "uncertainty-modeling",

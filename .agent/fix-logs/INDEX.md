@@ -74,6 +74,7 @@
 | [069](2026-10-19-069.md) | 2026-10-19 | discrete-sampled/discrete-time-freq | 混叠、保持、量化与设计实验 | BOTH | 柯验+秦构 | 混叠相位、ZOH归一化、有限ADC及可实现PID纠错 |
 | [070](2026-10-19-070.md) | 2026-10-19 | components/wiki/browser-notebook.tsx | 在线Python代码字体 | BUG | 秦构 | 编辑框和输出统一为初始化代码字体 |
 | [071](2026-10-24-071.md) | 2026-10-24 | implementation/computer-control-architecture.mdx | 时序、可靠度与寿命 | BOTH | 周联+柯验（既有检查执行不足） | 区分扫描/采样/刷新与充分界，纠正不可维修MTTF和热备MTBF混用；补预算与独立对账 |
+| [073](2026-10-24-073.md) | 2026-10-24 | robust/robustness-concept.mdx | 范数与定理条件 | BOTH | 卫韧+柯验+秦构（既有检查执行不足） | 纠正裕度单位、连续峰/网格、小增益充分性、LQR条件与题解；四Notebook及真实TS独立复核 |
 <!-- FIX-INDEX-END -->
 
 ## 预留编号（不代表已完成修复）
@@ -83,6 +84,7 @@
 |---|---|---|
 | 019 | 预留待核 | B8曾指向fuzzy-controller-design的hydration事故；E1/E2后来只证实describing-function两个组件的useMemo规范问题，不能等同于已复现的原事故；见fix-tracker §5及I02记录 |
 | 020 | 预留待核 | B8称bode-margins已注册未引用；E2证实它从未登记。未证实的事故描述不能补作完成记录；见fix-tracker §5及I02记录 |
+| 072 | 预留待核 | 2026-10-24并行MPC-01会话已在共享工作区占用此编号；其未提交详情不纳入ROBUST-01，待该课正式归档替换此预留 |
 <!-- FIX-RESERVED-END -->
 
 019/020不复用；新增编号取已归档与预留编号的最大值加1，不按详情篇数加1。预留将来补证时须有来源与执行时间，不追认未保存的历史测试。

@@ -104,7 +104,6 @@
 | PY-015 | implementation/realtime-control#1：实验 1（源码 L225） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-016 | estimation/kalman-filter#2： 动手实验：卡尔曼滤波仿真（源码 L357） | FONT | 绘图字形未通过验收：₁（U+2081)、₂（U+2082)；当前字体不能完整显示数学符号，保留代码待字体适配。 | 补齐数学字符字体回退并重新验证布局/PNG；计算虽完成，显示未放行。 |
 | PY-017 | estimation/kalman-filter#3： 动手实验：Q/R 对卡尔曼滤波性能的影响（源码 L514） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
-| PY-018 | robust/robustness-concept#2：实验 2（源码 L166） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
 | PY-019 | robust/uncertainty-modeling#3：实验 3（源码 L453） | RUNTIME | IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 | PY-020 | robust/robust-stability#2：实验 2（源码 L289） | SOLVER | cvxpy 与求解器尚未完成 Pyodide 适配，保留代码供原生 Python 执行。 | 单独验证求解器的 WASM 支持或原生 Python 后端，当前不宣称支持。 |
 | PY-021 | robust/h-infinity-basics#2：实验 2（源码 L325） | WIDGET | ipywidgets 交互需按课程计划迁移到 React Explorer，当前浏览器执行器不支持。 | 依课程重构 SKILL 将交互迁移到 React Explorer，不恢复 ipywidgets。 |
@@ -155,3 +154,7 @@ NONLINEAR-07：保留原六实验26cell与六题，纠自适应两估计器、PE
 ### 学期3润色合入（2026-10-18）
 
 MATH-01–18与CLASSIC-01–11共29课仅讲解/排版变更，180组Notebook181cell的求值后Python载荷逐字不变，原执行证据继续适用。已依据版本化等价核验刷新MDX源指纹，并在原始记录逐课登记执行来源与新稿审核来源；没有把未重新执行的实验写成新一次实跑。证据：`.agent/semester-03/zh-lang-edit/merges/261e9ed/review.json`。
+
+### ROBUST-01（2026-10-24）
+
+保留三组实验用途并增加习题复核，共四Notebook四cell原生与Pyodide完整执行。PY-018关闭，其它任务ID/原因/处置保留。证据.agent/semester-03/robust-01/pyodide.json；本轮不发布Pages。

@@ -66,6 +66,7 @@
 | ZH04 | e6b985f润色增量快速审核与合入 | [x] | .agent/semester-03/zh-lang-edit/merges/e6b985f/acceptance.md;.agent/semester-03/zh-lang-edit/merges/e6b985f/review.json;commit:66c1b1385623331982ec643842493df006b7a013 |
 | DEP14 | e6b985f润色增量授权发布与公网验收 | [x] | docs/deployment/zh-e6b985f-release.md;docs/deployment/zh-e6b985f-public-validation.json;commit:4a4dc5f333416ce79c7c3320f81a3a3eb8f91b84 |
 | QA01 | 顺序校验负向测试消除历史进度假设 | [ ] | .agent/semester-03/ml-01/test-debt.md;仅记录既有测试对DISCRETE-01未交付的假设，不借本课改其它课程或放宽校验 |
+| RB01 | ROBUST-01范数/裕度/题解与Notebook债务返修 | [x] | .agent/semester-03/robust-01/acceptance.md;docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;已实测关闭PY-018及S04本课Notebook债务，其它债务保留 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -218,7 +219,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBUST-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
+| ROBUST-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/01-robustness-concept.md;.agent/semester-03/robust-01/acceptance.md;rank5原生/Pyodide/页面/构建通过，待真实master回执 |
 | ROBUST-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
