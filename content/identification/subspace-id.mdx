@@ -1,0 +1,373 @@
+---
+title: 子空间辨识
+description: 从Hankel低秩与输入消去理解状态子空间，用ERA和确定性投影例恢复输入输出模型，并检验弱模态与噪声边界。
+---
+
+# 子空间辨识
+
+## 引言
+
+把一个温热的金属块放进稍凉的外壳，只用一个传感器记录两者加权后的温度。最初降得快，后来降得慢。一条温度曲线里，可能藏着两种内部变化速度。若不直接测量内部状态，能否从输入加热与输出温度的记录中发现这些动态，并建立下一拍的预测模型？
+
+[最小二乘辨识](/identification/least-squares-rls)从选好的回归结构估计系数。本课换一个入口：**把时间记录排成矩阵，先找数据实际占据的低维空间，再恢复一个状态空间实现。** 先修还包括[可控性与可观性](/modern/controllability-observability)和[矩阵分解](/math/matrix-decomposition)中的秩、伪逆与奇异值分解（SVD）。下面会局部重述所需公式。
+
+本页先用脉冲响应的ERA讲清代数，再演示一般输入数据中的确定性投影。数据是归一化合成例，不是真实储热设备实测；没有实现完整随机N4SID，也不承诺闭环或有色噪声下的一致性。学习目标是解释低秩、恢复输入输出等价实现、正确消去输入，以及知道怎样拒绝没有证据的阶次判断。
+
+## 从状态到一串脉冲响应
+
+采用离散线性时不变模型：
+
+$$
+x_{k+1}=Ax_k+Bu_k,\qquad y_k=Cx_k+Du_k.
+$$
+
+状态维数为 $n$，本页输入输出均为标量。零初值、单位脉冲 $u_0=1$、其余输入为零时，定义Markov参数：
+
+$$
+h_0=D,\qquad h_\ell=CA^{\ell-1}B\quad(\ell\geq1).
+$$
+
+这是每个过去输入对未来输出的系数，不是“Markov链状态转移概率”。对一般输入，零初值输出是 $y_k=Du_k+\sum_{j=0}^{k-1}CA^{k-1-j}Bu_j$；非零初值还要加 $CA^kx_0$。
+
+贯穿对象的采样周期为1s，输入输出均按固定尺度归一化：
+
+$$
+A=\begin{bmatrix}0.8&0\\0&0.3\end{bmatrix},\quad
+B=\begin{bmatrix}1\\1\end{bmatrix},\quad
+C=\begin{bmatrix}1&0.5\end{bmatrix},\quad D=0.
+$$
+
+因此 $h_\ell=0.8^{\ell-1}+0.5\,0.3^{\ell-1}$，前四个非直通项为1.5、0.95、0.685、0.5255。两个离散极点对应不同衰减速度；$h_0=0$，不能误把1.5当成直通项。真实装置获取脉冲响应还要处理输入幅值限制、初始状态、采样和测量误差。
+
+## Hankel矩阵为何低秩
+
+Hankel矩阵在每条反对角线上取相同的序列项。这里取四行四列：
+
+$$
+H_0=\begin{bmatrix}h_1&h_2&h_3&h_4\\h_2&h_3&h_4&h_5\\h_3&h_4&h_5&h_6\\h_4&h_5&h_6&h_7\end{bmatrix},\qquad
+H_1=\begin{bmatrix}h_2&h_3&h_4&h_5\\h_3&h_4&h_5&h_6\\h_4&h_5&h_6&h_7\\h_5&h_6&h_7&h_8\end{bmatrix}.
+$$
+
+定义扩展可观矩阵 $\mathcal O_i=[C^{\mathsf T},(CA)^{\mathsf T},\ldots,(CA^{i-1})^{\mathsf T}]^{\mathsf T}$，以及有限可达矩阵 $\mathcal R_j=[B,AB,\ldots,A^{j-1}B]$。逐块相乘得到：
+
+$$
+H_0=\mathcal O_i\mathcal R_j,\qquad H_1=\mathcal O_i A\mathcal R_j.
+$$
+
+于是秩最多是 $n$。只有实现最小、两侧块数足够且两因子都满秩时，秩才等于 $n$。不可控或不可观的内部状态不会因为“多排几行”就被测出来；有限窗口太短也会丢方向。本例 $i=j=4$，无噪声时秩为2。
+
+低秩不是指每列数值相近，而是所有列都可由少量基向量组合。这正是“子空间”的含义：寻找可观测动态所张成的列空间，而不是直接猜每个物理状态的名称。
+
+## 用SVD得到一个实现
+
+令 $H_0=U\Sigma V^{\mathsf T}$，保留前 $r$ 个非零奇异值，构造平衡因子 $\hat{\mathcal O}=U_r\Sigma_r^{1/2}$、$\hat{\mathcal R}=\Sigma_r^{1/2}V_r^{\mathsf T}$。特征系统实现算法（eigensystem realization algorithm, ERA）利用错位矩阵：
+
+$$
+\hat A=\Sigma_r^{-1/2}U_r^{\mathsf T}H_1V_r\Sigma_r^{-1/2},\quad
+\hat B=\hat{\mathcal R}[:,1],\quad
+\hat C=\hat{\mathcal O}[1,:],\quad \hat D=h_0.
+$$
+
+这里数学索引从1开始；取第一列和第一行。不能把 $H_0$ 代进 $H_1$ 的位置，那会失去时间推进的信息。奇异值太小则逆平方根放大误差，必须明确截断和拒绝规则。截断SVD给出的最优低秩近似只针对该矩阵的范数，不是未来输出误差最优的保证。
+
+默认奇异值前两项为2.709785、0.151373，后两项在浮点舍入附近，$\sigma_2/\sigma_1=0.055862$。取两阶得到极点0.3、0.8，前20点脉冲响应与真值的RMSE低于 $10^{-12}$；只保留一阶时，这个同一指标为0.046477。前8点参加了实现，所以这个误差不能冒充独立实验验证。
+
+识别出的矩阵元素通常不等于原矩阵。若 $z=\mathcal T x$，则 $A_z=\mathcal T A\mathcal T^{-1}$、$B_z=\mathcal T B$、$C_z=C\mathcal T^{-1}$，输入输出相同。状态可以旋转、缩放或混合；要核对极点、传递函数和预测，而不是给任意SVD基向量强行贴“内层温度”的标签。
+
+<JupyterNotebook
+  title="默认ERA与相似变换"
+  setupCode={`import numpy as np
+def era(amplitude=.5,pole=.3,noise=0.,order=2,tolerance=1e-8):
+    truth = .8**np.arange(20)+amplitude*pole**np.arange(20)
+    state = 20261024; vals = []
+    for _ in range(8):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(np.sqrt(12)*(state/2**32-.5))
+    measured = truth[:8]+noise*np.array(vals)
+    H = np.array([[measured[i+j] for j in range(4)] for i in range(4)])
+    H1 = np.array([[measured[i+j+1] for j in range(4)] for i in range(4)])
+    U,s,Vh = np.linalg.svd(H)
+    rank = int(np.sum(s>tolerance*s[0]))
+    result = dict(singular=s,rank=rank,truth=truth,measured=measured)
+    if order>rank: return result
+    root = np.sqrt(s[:order]); U,Vh = U[:,:order],Vh[:order]
+    A = (U.T@H1@Vh.T)/root[:,None]/root[None,:]
+    B,C = root*Vh[:,0],U[0]*root
+    x = B.copy(); pred = []
+    for _ in range(20):
+        pred.append(float(C@x)); x = A@x
+    result.update(A=A,B=B,C=C,prediction=np.array(pred),poles=np.linalg.eigvals(A),rmse=float(np.sqrt(np.mean((pred-truth)**2))))
+    return result
+def prng(seed,size):
+    state = int(seed); vals = []
+    for _ in range(size):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(1. if state>=2**31 else -1.)
+    return np.array(vals)
+def simulate(A,B,C,D,u):
+    x = np.zeros(len(B)); ys = []
+    for v in u:
+        ys.append(float(C@x+D*v)); x = A@x+B*v
+    return np.array(ys)
+def identify(u,y,order=2):
+    rows = 6; J = len(u)-rows+1
+    Uf = np.array([u[i:i+J] for i in range(rows)])
+    Yf = np.array([y[i:i+J] for i in range(rows)])
+    Q,_ = np.linalg.qr(Uf.T,mode='reduced')
+    residual = Yf-(Yf@Q)@Q.T
+    U,s,_ = np.linalg.svd(residual,full_matrices=False)
+    if order>np.sum(s>1e-10*s[0]): return None
+    O = U[:,:order]*np.sqrt(s[:order])
+    A = np.linalg.lstsq(O[:-1],O[1:],rcond=None)[0]; C = O[0]
+    # Fit x0, B and D jointly to all training outputs; no hidden true state used.
+    power = np.eye(order); forced = np.zeros((order,order)); F = []
+    for uk in u:
+        F.append(np.r_[C@power,C@forced,uk])
+        power = power@A; forced = A@forced+uk*np.eye(order)
+    theta,_,rank,_ = np.linalg.lstsq(np.array(F),y,rcond=None)
+    return dict(A=A,B=theta[order:2*order],C=C,D=float(theta[-1]),x0=theta[:order],fitrank=int(rank),singular=s,rawrank=int(np.linalg.matrix_rank(Yf)),projectedrank=int(np.linalg.matrix_rank(residual)))
+Atrue = np.diag([.8,.3]); Btrue = np.ones(2); Ctrue = np.array([1.,.5]); Dtrue = 0.
+`}
+  cells={[{id:"subspace-id-1",title:"运行并核对",code:`r = era()
+summary = dict(h0=0.,h=r['truth'][:8].tolist(), singular=r['singular'].tolist(), rank=r['rank'],poles=np.sort(r['poles']).tolist(),rmse=r['rmse'],ratio=float(r['singular'][1]/r['singular'][0]),order1_rmse=era(order=1)['rmse'])
+T = np.array([[1.,1.],[0.,2.]])
+At,Bt,Ct = T@Atrue@np.linalg.inv(T),T@Btrue,Ctrue@np.linalg.inv(T)
+summary['similarity_A'] = At.tolist(); summary['similarity_B'] = Bt.tolist(); summary['similarity_C'] = Ct.tolist()
+summary['similarity_error'] = float(np.max(abs(simulate(At,Bt,Ct,0,prng(71,128))-simulate(Atrue,Btrue,Ctrue,0,prng(71,128)))))
+for label,amp,pole in [('weak',.05,.3),('absent',0.,.3),('coincident',.5,.8)]:
+    e = era(amplitude=amp,pole=pole)
+    summary[label] = dict(rank=e['rank'],ratio=float(e['singular'][1]/e['singular'][0]),defined='A' in e)
+print(summary)
+print('era_default_checks_passed')`}]}
+/>
+
+## 交互检查阶次与弱模态
+
+将第二模态幅度从0.5调到0.05，精确无噪声系统仍可为二阶，但奇异值比降到0.007433；相对阈值取0.02时会漏掉它。幅度变成0，或两极点都为0.8时，此SISO输入输出通道的最小阶次降为1；两种物理状态的书面表示不等于两种可区分的动态。
+
+<SubspaceIdentificationExplorer />
+
+默认相对阈值为 $10^{-8}$，只用于此小矩阵的数值筛选，不是统计阶次检验。加测量扰动后，原本为零的奇异值可能抬起；调阈值能改“阈值阶数”，不能证明物理状态增减。组件使用已知脉冲响应，只实施ERA；下面的一般输入实验才涉及投影与另一个留出记录。
+
+## 一般输入为何要先消去
+
+实际记录常常不是脉冲。令 $U_f$ 的第 $j$ 列为 $[u_j,\ldots,u_{j+i-1}]^{\mathsf T}$，$Y_f$ 对输出同样堆叠，$X$ 的第 $j$ 列为窗口起点状态 $x_j$。下标 $f$ 表示窗口内“未来块”，不是偷用未来数据做在线预测；这里是离线辨识。由状态递推可得：
+
+$$
+Y_f=\mathcal O_iX+\mathcal T_iU_f,
+\qquad
+(\mathcal T_i)_{ab}=\begin{cases}D,&a=b,\\CA^{a-b-1}B,&a>b,\\0,&a<b,\end{cases}\quad a,b=1,\ldots,i.
+$$
+
+这里 $\mathcal T_i$ 是由Markov参数组成的下三角块Toeplitz矩阵，不是上节的坐标变换 $\mathcal T$。原始输出块还含强迫输入项，所以对 $Y_f$ 直接做SVD，秩未必是状态维数。
+
+若 $U_f$ 行满秩，投影到其行空间的正交补：
+
+$$
+\Pi_{U_f}^{\perp}=I-U_f^{\mathsf T}(U_fU_f^{\mathsf T})^{-1}U_f,\qquad
+Y_f\Pi_{U_f}^{\perp}=\mathcal O_iX\Pi_{U_f}^{\perp}.
+$$
+
+这样消掉了显式未来输入项。要恢复整个可观子空间，还需 $\operatorname{rank}(X\Pi_{U_f}^{\perp})=n$；仅有 $U_f$ 满行秩不够。在可观条件下，$[X^{\mathsf T},U_f^{\mathsf T}]^{\mathsf T}$ 满行秩是一个方便的充分条件。实际计算用QR正交基做 $Y_f-(Y_fQ)Q^{\mathsf T}$，不用显式形成大投影矩阵或法方程逆。
+
+<div style={{overflowX:'auto',maxWidth:'100%'}}><div style={{minWidth:700}}>
+
+![子空间辨识两条教学路线：脉冲响应组成错位Hankel做ERA；一般输入输出先用QR消去未来输入，再提取可观子空间和移位实现；两者都需要独立记录验证。](/diagrams/identification/subspace-pipeline.svg)
+
+</div></div>
+
+本例训练记录256点，块高6，因此 $U_f,Y_f$ 均为 $6\times251$；固定种子20261024生成归一化±1输入、零初值、无噪声。原始 $Y_f$ 秩为6，投影后秩为2，正好说明“输出矩阵秩就是阶次”缺了必要处理。这是该数据的实测，不保证任意输入都能做到。
+
+## 从子空间恢复输入输出模型
+
+取投影矩阵SVD的前 $r$ 个左向量，乘保留奇异值的平方根得到 $\hat{\mathcal O}_i$。这种缩放只是在选状态坐标。删除最后一个输出块行得到 $\hat{\mathcal O}_{\uparrow}$，删除第一个得到 $\hat{\mathcal O}_{\downarrow}$，利用移位结构：
+
+$$
+\hat A=\hat{\mathcal O}_{\uparrow}^{\dagger}\hat{\mathcal O}_{\downarrow},\qquad
+\hat C=\hat{\mathcal O}_i\text{ 的第一输出块行}.
+$$
+
+这一步要求上移后的可观因子仍满列秩，不能只检查原因子。$A,C$ 确定后，$B,D,x_0$ 在输出卷积公式里是线性的，可对全部训练输出联合做最小二乘。Notebook为每条训练输出构造：
+
+$$
+y_k=\underbrace{CA^k}_{x_0\text{ 的系数}}x_0+
+\underbrace{\sum_{j=0}^{k-1}u_jCA^{k-1-j}}_{B\text{ 的系数}}B+u_kD.
+$$
+
+它没有拿真状态作回归量，也没有直接把未知Toeplitz项当成已知。二阶SISO的最后一次回归有5列（初值2、输入系数2、直通1），实测满列秩。再用种子20262024的128点独立输入、零初值验证，极点为0.3、0.8，$D$ 与验证RMSE均在浮点舍入附近，验证RMSE低于 $10^{-12}$。
+
+<JupyterNotebook
+  title="一般输入：投影与独立验证"
+  setupCode={`import numpy as np
+def era(amplitude=.5,pole=.3,noise=0.,order=2,tolerance=1e-8):
+    truth = .8**np.arange(20)+amplitude*pole**np.arange(20)
+    state = 20261024; vals = []
+    for _ in range(8):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(np.sqrt(12)*(state/2**32-.5))
+    measured = truth[:8]+noise*np.array(vals)
+    H = np.array([[measured[i+j] for j in range(4)] for i in range(4)])
+    H1 = np.array([[measured[i+j+1] for j in range(4)] for i in range(4)])
+    U,s,Vh = np.linalg.svd(H)
+    rank = int(np.sum(s>tolerance*s[0]))
+    result = dict(singular=s,rank=rank,truth=truth,measured=measured)
+    if order>rank: return result
+    root = np.sqrt(s[:order]); U,Vh = U[:,:order],Vh[:order]
+    A = (U.T@H1@Vh.T)/root[:,None]/root[None,:]
+    B,C = root*Vh[:,0],U[0]*root
+    x = B.copy(); pred = []
+    for _ in range(20):
+        pred.append(float(C@x)); x = A@x
+    result.update(A=A,B=B,C=C,prediction=np.array(pred),poles=np.linalg.eigvals(A),rmse=float(np.sqrt(np.mean((pred-truth)**2))))
+    return result
+def prng(seed,size):
+    state = int(seed); vals = []
+    for _ in range(size):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(1. if state>=2**31 else -1.)
+    return np.array(vals)
+def simulate(A,B,C,D,u):
+    x = np.zeros(len(B)); ys = []
+    for v in u:
+        ys.append(float(C@x+D*v)); x = A@x+B*v
+    return np.array(ys)
+def identify(u,y,order=2):
+    rows = 6; J = len(u)-rows+1
+    Uf = np.array([u[i:i+J] for i in range(rows)])
+    Yf = np.array([y[i:i+J] for i in range(rows)])
+    Q,_ = np.linalg.qr(Uf.T,mode='reduced')
+    residual = Yf-(Yf@Q)@Q.T
+    U,s,_ = np.linalg.svd(residual,full_matrices=False)
+    if order>np.sum(s>1e-10*s[0]): return None
+    O = U[:,:order]*np.sqrt(s[:order])
+    A = np.linalg.lstsq(O[:-1],O[1:],rcond=None)[0]; C = O[0]
+    # Fit x0, B and D jointly to all training outputs; no hidden true state used.
+    power = np.eye(order); forced = np.zeros((order,order)); F = []
+    for uk in u:
+        F.append(np.r_[C@power,C@forced,uk])
+        power = power@A; forced = A@forced+uk*np.eye(order)
+    theta,_,rank,_ = np.linalg.lstsq(np.array(F),y,rcond=None)
+    return dict(A=A,B=theta[order:2*order],C=C,D=float(theta[-1]),x0=theta[:order],fitrank=int(rank),singular=s,rawrank=int(np.linalg.matrix_rank(Yf)),projectedrank=int(np.linalg.matrix_rank(residual)))
+Atrue = np.diag([.8,.3]); Btrue = np.ones(2); Ctrue = np.array([1.,.5]); Dtrue = 0.
+`}
+  cells={[{id:"subspace-id-2",title:"运行并核对",code:`u = prng(20261024,256); y = simulate(Atrue,Btrue,Ctrue,0.,u)
+r = identify(u,y)
+uv = prng(20262024,128); truth = simulate(Atrue,Btrue,Ctrue,0.,uv)
+pred = simulate(r['A'],r['B'],r['C'],r['D'],uv)
+summary = dict(shape=[6,251],rawrank=r['rawrank'],projectedrank=r['projectedrank'],singular=r['singular'].tolist(),poles=np.sort(np.real(np.linalg.eigvals(r['A']))).tolist(),fitrank=r['fitrank'],D=r['D'],validation_rmse=float(np.sqrt(np.mean((pred-truth)**2))))
+assert r['rawrank']==6 and r['projectedrank']==2 and r['fitrank']==5
+print(summary)
+print('input_projection_checks_passed')`}]}
+/>
+
+## 带噪声时怎样验证
+
+上述投影只能消掉 $\mathcal T_iU_f$，不会自动消掉测量噪声。含噪数据往往数值满秩；弱模态、有限样本、激励不足、单位缩放和传感器噪声都可能改变奇异值间隙。实用的MOESP、N4SID等方法还涉及过去输入输出、投影与加权、创新模型和统计假设；不能把本页的简单正交投影代码贴上完整随机算法的标签。闭环相关问题可回看[闭环辨识](/identification/instrumental-variable)。
+
+下面保留一阶、二阶、三阶三种候选，同一对象与输入预算，在无噪声、输出噪声尺度0.001、0.03三工况上各运行32个连续种子。训练均256点，验证128点；噪声为独立种子生成的±尺度伪随机序列，验证指标针对未加噪的潜在输出，仅因仿真真值可得才可计算，现场需另给测量噪声处理与残差指标。所有候选共享数据，不按结果挑种子或重调窗口。
+
+此有限实验中，一阶漏掉了已知第二动态；无噪声二阶达到舍入误差，三阶因超过有效数值秩而拒绝估计，完整报告32次拒绝，不给它填一个假误差。一般输入例用相对阈值 $10^{-10}$ 做数值保护，与ERA组件可调阈值的用途相同，也不是统计检验。带噪声时三阶的中位验证误差并未因多一个状态而更小。它们的自由参数数目不同，这是阶次选择演示，不是算法等复杂度排名，也不证明二阶普遍最优。完整输出提供每个种子的误差、不可估计数、中位数和经验10%/90%分位，不作置信区间解释。
+
+<JupyterNotebook
+  title="三阶次三噪声：全部32种子"
+  setupCode={`import numpy as np
+def era(amplitude=.5,pole=.3,noise=0.,order=2,tolerance=1e-8):
+    truth = .8**np.arange(20)+amplitude*pole**np.arange(20)
+    state = 20261024; vals = []
+    for _ in range(8):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(np.sqrt(12)*(state/2**32-.5))
+    measured = truth[:8]+noise*np.array(vals)
+    H = np.array([[measured[i+j] for j in range(4)] for i in range(4)])
+    H1 = np.array([[measured[i+j+1] for j in range(4)] for i in range(4)])
+    U,s,Vh = np.linalg.svd(H)
+    rank = int(np.sum(s>tolerance*s[0]))
+    result = dict(singular=s,rank=rank,truth=truth,measured=measured)
+    if order>rank: return result
+    root = np.sqrt(s[:order]); U,Vh = U[:,:order],Vh[:order]
+    A = (U.T@H1@Vh.T)/root[:,None]/root[None,:]
+    B,C = root*Vh[:,0],U[0]*root
+    x = B.copy(); pred = []
+    for _ in range(20):
+        pred.append(float(C@x)); x = A@x
+    result.update(A=A,B=B,C=C,prediction=np.array(pred),poles=np.linalg.eigvals(A),rmse=float(np.sqrt(np.mean((pred-truth)**2))))
+    return result
+def prng(seed,size):
+    state = int(seed); vals = []
+    for _ in range(size):
+        state = (1664525*state+1013904223) % 2**32
+        vals.append(1. if state>=2**31 else -1.)
+    return np.array(vals)
+def simulate(A,B,C,D,u):
+    x = np.zeros(len(B)); ys = []
+    for v in u:
+        ys.append(float(C@x+D*v)); x = A@x+B*v
+    return np.array(ys)
+def identify(u,y,order=2):
+    rows = 6; J = len(u)-rows+1
+    Uf = np.array([u[i:i+J] for i in range(rows)])
+    Yf = np.array([y[i:i+J] for i in range(rows)])
+    Q,_ = np.linalg.qr(Uf.T,mode='reduced')
+    residual = Yf-(Yf@Q)@Q.T
+    U,s,_ = np.linalg.svd(residual,full_matrices=False)
+    if order>np.sum(s>1e-10*s[0]): return None
+    O = U[:,:order]*np.sqrt(s[:order])
+    A = np.linalg.lstsq(O[:-1],O[1:],rcond=None)[0]; C = O[0]
+    # Fit x0, B and D jointly to all training outputs; no hidden true state used.
+    power = np.eye(order); forced = np.zeros((order,order)); F = []
+    for uk in u:
+        F.append(np.r_[C@power,C@forced,uk])
+        power = power@A; forced = A@forced+uk*np.eye(order)
+    theta,_,rank,_ = np.linalg.lstsq(np.array(F),y,rcond=None)
+    return dict(A=A,B=theta[order:2*order],C=C,D=float(theta[-1]),x0=theta[:order],fitrank=int(rank),singular=s,rawrank=int(np.linalg.matrix_rank(Yf)),projectedrank=int(np.linalg.matrix_rank(residual)))
+Atrue = np.diag([.8,.3]); Btrue = np.ones(2); Ctrue = np.array([1.,.5]); Dtrue = 0.
+`}
+  cells={[{id:"subspace-id-3",title:"运行并核对",code:`summaries = []
+for sigma in [0.,.001,.03]:
+    errors = {1:[],2:[],3:[]}
+    for seed in range(20261024,20261056):
+        u = prng(seed,256); clean = simulate(Atrue,Btrue,Ctrue,0.,u)
+        noise = prng(seed+5000,256)*sigma
+        uv = prng(seed+1000,128); target = simulate(Atrue,Btrue,Ctrue,0.,uv)
+        for order in [1,2,3]:
+            r = identify(u,clean+noise,order)
+            if r is None:
+                errors[order].append(None); continue
+            pred = simulate(r['A'],r['B'],r['C'],r['D'],uv)
+            errors[order].append(float(np.sqrt(np.mean((pred-target)**2))))
+    report = {}
+    for order,vals in errors.items():
+        valid = [v for v in vals if v is not None]
+        report[order] = dict(values=vals,unavailable=len(vals)-len(valid),median=float(np.median(valid)) if valid else None,q10=float(np.quantile(valid,.1)) if valid else None,q90=float(np.quantile(valid,.9)) if valid else None)
+    summaries.append(dict(sigma=sigma,errors=report))
+print(summaries)
+print('subspace_all_seeds_reported')`}]}
+/>
+
+工程上先划定估计与验证记录、固定归一化尺度，再选择窗口和候选阶数；若反复用同一验证集挑参数，最后还需未用过的测试记录。检查输入激励、拟合残差、不同工况和稳定性；识别出的稳定模型也不等于闭环安全证明。实现拒绝小奇异值求逆，是诚实暴露信息不足，不是用小数填满一个可运行模型。
+
+ERA名称与来源核对自[Juang和Pappa的NASA原论文记录](https://ntrs.nasa.gov/citations/19850064186)；一般子空间方法的投影、可观子空间与统计边界参见[SLICOT作者教程的系统辨识部分](https://www.slicot.org/objects/software/shared/docs/slicot_tutorial.pdf)，检索日期2026-10-24。本课矩阵和数据独立构造，仅复现所声明的教学步骤，没有运行其大型工程软件。
+
+## 小结
+
+子空间方法把“先猜状态”改成“先找记录里的低维结构”。无噪声Markov参数可因子化为可观性与可达性矩阵，再用错位关系恢复实现；一般输入数据还要处理强迫输入。状态坐标只确定到相似变换，数值秩也不等于物理阶次；独立记录与假设检查决定模型是否值得使用。
+
+## 习题
+
+**1. Hankel与时序。** 用主例计算 $h_0,h_1,h_2,h_3$，说明为什么 $H_0$ 从 $h_1$ 开始。证明 $H_1=\mathcal O_iA\mathcal R_j$，并解释把两块矩阵混用的后果。
+
+**2. 阶次。** 主例取一阶或两阶时，前20点脉冲RMSE怎样变化？第二模态幅度变0.05而阈值设0.02，会不会证明真实系统是一阶？
+
+**3. 相似变换。** 取 $\mathcal T=\begin{bmatrix}1&1\\0&2\end{bmatrix}$，求 $A_z,B_z,C_z$；为什么不能用它们与原矩阵逐元素的差来判辨识失败？
+
+**4. 输入与噪声。** 在一般输入Notebook中，原始与投影后的输出块秩为何不同？投影能否保证去掉输出测量噪声？恢复 $B,D,x_0$ 的二阶回归为何有5列？给出独立验证的最低要求。
+
+## 答案
+
+**1.** $h_0=0,h_1=1.5,h_2=0.95,h_3=0.685$。$H_0$ 表示经过对象状态通道的系数，直通项另记为 $D$。第 $a,b$ 块为 $CA^{a+b-2}B$，在中间多乘一次 $A$ 就是 $H_1$ 的 $CA^{a+b-1}B$。若用 $H_0$ 替代错位块，无噪声精确保留子空间时算出的推进矩阵会变成单位阵，丢掉0.3和0.8的衰减极点。
+
+**2.** 主例一阶RMSE为0.046477，两阶低于 $10^{-12}$。弱模态比值0.007433低于0.02，因此阈值判为一阶，反映被阈值丢掉的信息；非零幅度且不同极点的精确通道仍是二阶。需要检查噪声底、尺度与留出数据，不能由一个阈值断言物理系统少一个状态。
+
+**3.** $A_z=\begin{bmatrix}0.8&-0.25\\0&0.3\end{bmatrix}$，$B_z=[2,2]^{\mathsf T}$，$C_z=[1,-0.25]$，$D_z=0$。因为 $C_zA_z^{\ell-1}B_z=CA^{\ell-1}B$，零初值输入输出一致；非零初值需同时令 $z_0=\mathcal T x_0$。Notebook独立输入检验的最大差低于 $10^{-12}$。
+
+**4.** 原始矩阵还含 $\mathcal T_iU_f$，本例原始秩6、投影秩2。投影消掉未来输入的行空间项，噪声一般仍存在；还须投影后的状态方向保持满秩。最后回归未知量是 $x_0$ 两个、$B$ 两个和 $D$ 一个，共5列。验证记录不得参与子空间、回归或归一化拟合，输入、采样、初值、噪声与指标窗口都需说明；本页固定预算例不代替真实工况验证。

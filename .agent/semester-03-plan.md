@@ -93,6 +93,7 @@
 | MPC-05 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-07;ML-08;ML-09;ID-06;ID-07;ID-08;ID-09;EST-06;EST-07;EST-08;ROBUST-05;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-05，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-05/acceptance.md |
 | ID-06 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-06，rank3；保留并行课程，先修模型结构/频域分析/随机过程/频域校正已交付 | .agent/semester-03/id-06/acceptance.md |
 | ML-07 | IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-07，rank2；保留并行实现课，只依赖已交付ML-04/06 | .agent/semester-03/ml-07/acceptance.md |
+| ID-07 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-07，rank3；保留并行课程，先修最小二乘/可控可观/矩阵分解已交付 | .agent/semester-03/id-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：

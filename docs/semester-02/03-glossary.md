@@ -643,6 +643,9 @@
 | 经验传递函数估计 | empirical transfer function estimate, ETFE | — | ID-06 | 已激励频点的DFT输出输入比值 |
 | 平方相干度 | magnitude-squared coherence | — | ID-06 | 互谱模平方除以两路自谱乘积，不是模型正确概率 |
 | 谱泄漏 | spectral leakage | — | ID-06 | 有限记录与窗使频率成分扩展到邻近频点 |
+| Markov参数 | Markov parameter | — | ID-07 | 零初值离散脉冲响应系数，直通项另记 |
+| 子空间辨识 | subspace identification | — | ID-07 | 从结构化数据矩阵提取状态子空间并恢复实现 |
+| 特征系统实现算法 | eigensystem realization algorithm, ERA | — | ID-07 | 由脉冲响应错位Hankel与SVD求状态空间实现 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

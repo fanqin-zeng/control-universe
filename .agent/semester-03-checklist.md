@@ -202,7 +202,7 @@
 | ID-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/04-persistent-excitation.md;.agent/semester-03/id-04/acceptance.md;commit:56344abe4733ae622a29ab94728ab9895159176b |
 | ID-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/05-instrumental-variable.md;.agent/semester-03/id-05/acceptance.md;commit:40456c44cd909000c42aec614f95992323799d4d |
 | ID-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/06-frequency-domain-id.md;.agent/semester-03/id-06/acceptance.md;commit:19ce1c403883ab1a1573259e806118477448f146 |
-| ID-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ID-07 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/07-subspace-id.md;.agent/semester-03/id-07/acceptance.md;rank3 验收通过，待提交回执 |
 | ID-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 

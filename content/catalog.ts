@@ -4138,7 +4138,53 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "从状态到一串脉冲响应",
+            "title": "从状态到一串脉冲响应"
+          },
+          {
+            "slug": "hankel矩阵为何低秩",
+            "title": "Hankel矩阵为何低秩"
+          },
+          {
+            "slug": "用svd得到一个实现",
+            "title": "用SVD得到一个实现"
+          },
+          {
+            "slug": "交互检查阶次与弱模态",
+            "title": "交互检查阶次与弱模态"
+          },
+          {
+            "slug": "一般输入为何要先消去",
+            "title": "一般输入为何要先消去"
+          },
+          {
+            "slug": "从子空间恢复输入输出模型",
+            "title": "从子空间恢复输入输出模型"
+          },
+          {
+            "slug": "带噪声时怎样验证",
+            "title": "带噪声时怎样验证"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "nonlinear-data-driven-id",
