@@ -75,6 +75,7 @@
 | QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
 | DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
 | DEP15 | EST-01—08与bd2b41c快照授权发布及公网验收 | [x] | docs/deployment/est08-release/README.md;docs/deployment/est08-release/public-http.json;docs/deployment/est08-release/public-courses.json;发布commit:de6069b43eb22902f4099c88e2aae48ba587ca9c |
+| DEP17 | ML-01—09已交付快照授权发布与公网验收 | [x] | docs/deployment/ml09-release/README.md;docs/deployment/ml09-release/validation.json;批准9160c9b;发布99945e1;九课18本35cell实跑 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
