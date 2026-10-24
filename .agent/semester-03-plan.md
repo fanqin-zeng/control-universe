@@ -84,6 +84,7 @@
 | ML-04 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-04，rank2；保留并行实现课检查点，仅依赖已交付ML-03与数值方法 | .agent/semester-03/ml-04/acceptance.md |
 | ROBUST-03 | IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09;EST-03;EST-04;EST-05;EST-06;EST-07;EST-08 | 2026-10-24用户明确指定继续ROBUST-03，rank5；保留并行课程，只用已交付ROBUST-01/02、Lyapunov与Routh基础 | .agent/semester-03/robust-03/acceptance.md |
 | EST-04 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定“继续EST-04”，rank4；先修EST-03已交付，仅新写本课 | .agent/semester-03/est-04/acceptance.md |
+| ML-05 | IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户指定继续ML-05，rank2；保留并行课程，只依赖已交付ML-04与随机过程 | .agent/semester-03/ml-05/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -883,6 +884,11 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 
 扩展卡尔曼滤波从空占位按新写Phase1—4完成，十H2、四题所有子问、2Notebook4cell、后验Explorer及SVG。非线性函数与误差Jacobian分工、Joseph近似含义、平方测量零点/正负歧义、雷达角度与稳定性条件清楚；72组真实TS/17352曲线点对无穷自适应积分，含线性持平与双峰失败例。严格内核、Pyodide、普通与完整build:pages实页/375px均通过，最终源码指纹绑定。rank4独立副本/端口/私有索引保留其它课程与暂存，证据.agent/semester-03/est-04/acceptance.md；真实master回执见全局checklist，不发布Pages、不生产EST-05。
 <!-- EST-04-RECEIPT-END -->
+
+
+### ML-05 本轮执行记录（2026-10-24）
+
+rank2按用户指定新写时序模型；单课讨论、288配置独立闭式对账、严格内核及实际静态浏览器已执行。独立端口8214，完整archive隔离，保留其它在制课程。完整命令与交付回执见 .agent/semester-03/ml-05/acceptance.md；未发布Pages。
 
 ### IMPL-05 嵌入式控制本轮交付
 

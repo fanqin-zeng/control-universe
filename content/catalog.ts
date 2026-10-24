@@ -3603,13 +3603,23 @@ export const catalog: Chapter[] = [
       {
         "slug": "sequence-models",
         "title": "时序模型",
+        "subsections": [{"slug": "停热以后仍有余温", "title": "停热以后仍有余温"},
+{"slug": "先规定预测时刻", "title": "先规定预测时刻"},
+{"slug": "窗口与循环状态", "title": "窗口与循环状态"},
+{"slug": "沿时间反向传播", "title": "沿时间反向传播"},
+{"slug": "截断梯度保留状态", "title": "截断梯度保留状态"},
+{"slug": "一步预测与自由滚动", "title": "一步预测与自由滚动"},
+{"slug": "门控模型与工程接口", "title": "门控模型与工程接口"},
+{"slug": "习题", "title": "习题"},
+{"slug": "答案", "title": "答案"},
+{"slug": "继续学习", "title": "继续学习"}],
         "prereq": [
           "machine-learning/autodiff-optimization",
           "math/stochastic-processes"
         ],
         "level": "grad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "attention-transformers",
