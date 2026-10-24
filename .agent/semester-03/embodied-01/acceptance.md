@@ -27,3 +27,9 @@ Phase 1–4 已完成，实际签发见讨论日志。十个H2、两Notebook两c
 研究核阅日期2026-10-24，三项作者项目与代码实际版本见sources.json。本课没有下载/训练/部署这些模型，未把作者实测冒称课程复现。
 
 提交仅包含本课独有文件和本课共享元数据差异。独立运行设置仅用于本地副本，公共端口脚本与Jupyter组件不纳入提交。master实际hash与推送结果在产生后追加，不预填；Pages未发布。
+
+## master交付回执
+
+课程提交：commit:3be96390783b2e6777c0ffe5eea431b999a34f19，已进入master；2026-10-24执行git push origin master成功（Everything up-to-date，其他并行会话已同步包含本提交的master）。git merge-base确认课程提交同时为master与origin/master祖先。仅本课文件和局部元数据进入课程提交；共享暂存区原有其它课程内容保留。最终回执另以文档提交登记，不发布Pages。
+
+回执复验：node scripts/check-semester03.mjs，exit0，PASS semester-03 plan/checklist；原始输出见receipt-semester.log。
