@@ -37,7 +37,7 @@ for name in ['content/catalog.ts','lib/wiki-components.ts','.agent/delivery-trac
         count=sum('| 已完成 |' in line for line in base.splitlines());base=re.sub(r'当前\d+课完成学期3生产',f'当前{count}课完成学期3生产',base)
     elif name=='docs/semester-02/04-notation.md':
         row=next(l for l in current.splitlines() if l.startswith(r'| $\chi$ |'))
-        if r'| $\chi$ |' not in base:base=base.replace('<!-- REGISTER-END -->',row+'\n<!-- REGISTER-END -->')
+        if r'| $\chi$ |' not in base:base=re.sub(r'^<!-- REGISTER-END -->$',lambda m:row+'\n<!-- REGISTER-END -->',base,flags=re.M)
     (dest/name).write_text(base,encoding='utf8')
 (dest/'.agent/semester-03/est-05/projection-parent.txt').write_text(baseline+'\n',encoding='utf8')
 if (dest/'.agent/semester-03/est-05/pyodide.json').exists():subprocess.run(['node','scripts/finalize-python-support.mjs','.agent/semester-03/est-05/pyodide.json','--merge'],cwd=dest,check=True)
