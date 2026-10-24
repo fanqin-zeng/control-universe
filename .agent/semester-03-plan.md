@@ -102,6 +102,7 @@
 | MPC-07 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09;EST-08;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-07，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-07/acceptance.md |
 | ML-08 | IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-08，rank2；保留并行实现课，仅依赖已交付ML-04/随机过程/ODE | .agent/semester-03/ml-08/acceptance.md |
 | ROBUST-06 | IMPL-10;ML-09;ID-09;EST-08 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
+| EST-08 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09 | 2026-10-24用户明确指定继续EST-08，rank4；保留并行课程，只依赖已交付EST-06/07与KF基础 | .agent/semester-03/est-08/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -989,3 +990,9 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### ROBUST-06 本期交付记录（2026-10-24）
 
 混合灵敏度按Phase1–4重构，九H2/全部标题/四题全部子问/原二Notebook四cell用途保留。修正Bode条件、P维度、权重接口/包络、DGKF/LMI前提；诊断原两控制器失稳，补proper名义族候选和同预算三权重网格、9/10/11失配含9失稳。三Notebook五cell、四参数双图Explorer/SVG，严格内核与Pyodide、实际TS/独立复算、双构建/375px/锚点证据见.agent/semester-03/robust-06/acceptance.md。未运行Slycot/MATLAB通用综合、不冒称最优。rank5独立资源，仅本课，不发布Pages，不生产ROBUST-07；真实master hash见checklist。
+
+<!-- EST-08-RECEIPT-BEGIN -->
+### EST-08 学期3交付（2026-10-24）
+
+状态估计案例从空占位按Phase1—4新写：10H2/四题全子问、3Notebook6cell、EstimationCaseExplorer/PCG64输入/SVG；二维小车共同预测/双路更新/缺测/创新门限/统计与部署边界。默认融合落败、三工况持平/改善与极端噪声误拒边界保留；378配置4536拍对独立信息形式、360多种子统计、54UI配置×12时刻全实页读数。严格内核/Pyodide/普通与官方Pages构建及实页/375px通过。rank4独立资源与私有索引保留并行修改，证据.agent/semester-03/est-08/acceptance.md；真实master回执见checklist。不发布Pages，不生产其它课。
+<!-- EST-08-RECEIPT-END -->
