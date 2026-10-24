@@ -42,3 +42,10 @@
 - 共享工作区当时check退出1，唯一FAIL为其它会话driving-system的tracker/status未同步；全局semester检查随后退出0；共享Python策略检查受其它进行中源hash影响失败。未改别课完成态以求变绿。交付使用准确HEAD加APP-01的范围校验，不混入其它进行中内容。
 
 只登记中文润色的本课“已完成/待润色”生产交接，不代做润色，不操作专用分支。未发布Pages，不继续APP-02。
+
+
+## 实际master交付回执
+
+交付提交：`7ede89f287a870376f0f3d11fd4141dc9e0e979a`。只包含APP-01正文、组件、计算、图示、讨论及证据与本课共享元数据；普通提交已进入master。
+
+最终提交范围的check、Python支持及计划校验均通过，见scoped-check.log、scoped-python-policy.log、scoped-semester-check.json。原验证基线后的变化若仅为其它课程回执，保持其HEAD内容并复核元数据；无覆盖或重写已有提交。共享暂存区以逐文件的本课语义更新保留其它会话内容。
