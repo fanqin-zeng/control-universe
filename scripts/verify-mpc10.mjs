@@ -1,0 +1,6 @@
+import fs from 'node:fs';import ts from 'typescript';import {spawnSync} from 'node:child_process';const out='.agent/semester-03/mpc-10';
+const extract=spawnSync(process.execPath,['scripts/nb-cells.mjs','extract','mpc/mhe-fusion','--out',out+'/cells.json'],{stdio:'inherit'});if(extract.status!==0)process.exit(extract.status??1);
+const js=ts.transpileModule(fs.readFileSync('lib/mhe-estimator.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ES2022}}).outputText;const m=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));const cases=[];
+for(const mean of [0,.5,1,2])for(const P of [.25,1,4])for(const Q of [.05,.25,1])for(const R of [.05,.25,1])for(const capacity of [0,.5,1,1.2,2])for(const spike of [-1,0,1]){const c={mean,P,Q,R,capacity,spike};cases.push({c,result:m.estimateMhe(c)});}
+let rejected=0;for(const patch of [{P:0},{Q:0},{R:0},{capacity:-1},{mean:NaN},{spike:Infinity}]){try{m.estimateMhe({...m.mheDefaults,...patch});throw Error('Invalid accepted');}catch(e){if(!(e instanceof RangeError))throw e;rejected++;}}
+fs.writeFileSync(out+'/ts-cases.json',JSON.stringify({cases,rejected}));const r=spawnSync('python',[out+'/reference.py'],{stdio:'inherit',env:{...process.env,MPLBACKEND:'Agg'}});process.exit(r.status??1);

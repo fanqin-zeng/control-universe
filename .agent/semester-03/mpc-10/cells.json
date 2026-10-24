@@ -1,0 +1,63 @@
+{
+  "source": "content/mpc/mhe-fusion.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 2,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 71,
+      "title": "原残差QP与约束失配",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import lsq_linear\r\n\r\ndefault=dict(mean=.5,P=1.,Q=.25,R=.25,capacity=1.,spike=0.)\r\ndef original(c,bounded=True):\r\n    y=np.array([.2,1.4+c['spike'],1.1]);d=np.array([.5,0.])\r\n    A=np.zeros((6,3));b=np.zeros(6);A[0,0]=1/np.sqrt(c['P']);b[0]=c['mean']/np.sqrt(c['P'])\r\n    for i in range(2):A[i+1,i]=-1/np.sqrt(c['Q']);A[i+1,i+1]=1/np.sqrt(c['Q']);b[i+1]=d[i]/np.sqrt(c['Q'])\r\n    for i in range(3):A[i+3,i]=1/np.sqrt(c['R']);b[i+3]=y[i]/np.sqrt(c['R'])\r\n    if not bounded:x=np.linalg.lstsq(A,b,rcond=None)[0]\r\n    elif c['capacity']==0:x=np.zeros(3)\r\n    else:\r\n        opt=lsq_linear(A,b,bounds=(0,c['capacity']),tol=1e-13,max_iter=1000,lsmr_tol=1e-14);assert opt.success;x=opt.x\r\n    return dict(x=x,cost=.5*np.sum((A@x-b)**2),measurement=y-x,process=np.diff(x)-d,A=A,b=b)\r\n\r\ndef kf(measurements,mean=.5,P=1.,Q=.25,R=.25,inputs=None):\r\n    inputs=[.5]+[0.]*(len(measurements)-2) if inputs is None else inputs\r\n    filtered=[];priors=[]\r\n    for i,y in enumerate(measurements):\r\n        priors.append((mean,P));K=P/(P+R);mean=mean+K*(y-mean);P=(1-K)*P;filtered.append((mean,P))\r\n        if i<len(measurements)-1:mean+=inputs[i];P+=Q\r\n    return filtered,priors\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 94,
+          "delim": "`",
+          "code": "e=original(default);b=original(default,False)\r\nassert np.allclose(e['x'],[11/30,1,1]) and np.isclose(e['cost'],.44)\r\nassert np.allclose(b['x'],np.array([161,427,417])/370) and np.isclose(b['cost'],123/370)\r\nfor label,patch in [('default',{}),('loose',{'capacity':2}),('zero',{'capacity':0}),('spike',{'spike':1}),('weak_prior',{'P':4})]:\r\n    c={**default,**patch};a=original(c);z=original(c,False);print(label,'bounded',np.round(a['x'],9),'J',a['cost'],'unconstrained',np.round(z['x'],9),'J',z['cost'])\r\nprint('default_process',e['process'],'measurement',e['measurement'])\r\nfig,ax=plt.subplots(1,2,figsize=(8,3));ax[0].plot(range(3),e['x'],'o-',label='bounded');ax[0].plot(range(3),b['x'],'o--',label='unconstrained');ax[0].scatter(range(3),[.2,1.4,1.1],label='measurement');ax[0].set(xlim=(0,2),ylim=(-1,3),xlabel='time',ylabel='level');ax[0].legend()\r\nax[1].plot(range(3),e['measurement'],'o-',label='measurement residual');ax[1].plot(range(2),e['process'],'o-',label='process residual');ax[1].set(xlim=(0,2),ylim=(-2,2),xlabel='time',ylabel='residual');ax[1].legend();plt.tight_layout();plt.show()\r\nprint('original_mhe_qp_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 102,
+          "delim": "`",
+          "code": "true=np.array([.5,1,1]);e=original(default);b=original(default,False)\r\nprint('default_terminal_absolute_errors',abs(e['x'][-1]-true[-1]),abs(b['x'][-1]-true[-1]))\r\nassert np.isclose(abs(b['x'][-1]-true[-1]),47/370)\r\n# Separate counterexample: actual capacity2, correct prior1, exact readings1,1.5,1.5.\r\ny=np.array([1.,1.5,1.5]);A=e['A'];rhs=e['b'].copy();rhs[0]=1.;rhs[3:]=y/np.sqrt(default['R'])\r\nunconstrained=np.linalg.lstsq(A,rhs,rcond=None)[0]\r\nwrong=lsq_linear(A,rhs,bounds=(0,1),tol=1e-13).x\r\nassert np.allclose(unconstrained,y) and np.isclose(wrong[-1],1)\r\nprint('wrong_capacity_terminal',wrong[-1],'true',1.5,'errors',abs(wrong[-1]-1.5),abs(unconstrained[-1]-1.5))\r\nsame=(original({**default,'capacity':2})['x']-b['x']);assert np.max(np.abs(same))<1e-9\r\nprint('inactive_constraint_max_gap',np.max(np.abs(same)))\r\nprint('constraint_help_tie_harm_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 141,
+      "title": "到达成本、KF与控制接口",
+      "unknownAttrs": [],
+      "setupCode": "import numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.optimize import lsq_linear\r\n\r\ndefault=dict(mean=.5,P=1.,Q=.25,R=.25,capacity=1.,spike=0.)\r\ndef original(c,bounded=True):\r\n    y=np.array([.2,1.4+c['spike'],1.1]);d=np.array([.5,0.])\r\n    A=np.zeros((6,3));b=np.zeros(6);A[0,0]=1/np.sqrt(c['P']);b[0]=c['mean']/np.sqrt(c['P'])\r\n    for i in range(2):A[i+1,i]=-1/np.sqrt(c['Q']);A[i+1,i+1]=1/np.sqrt(c['Q']);b[i+1]=d[i]/np.sqrt(c['Q'])\r\n    for i in range(3):A[i+3,i]=1/np.sqrt(c['R']);b[i+3]=y[i]/np.sqrt(c['R'])\r\n    if not bounded:x=np.linalg.lstsq(A,b,rcond=None)[0]\r\n    elif c['capacity']==0:x=np.zeros(3)\r\n    else:\r\n        opt=lsq_linear(A,b,bounds=(0,c['capacity']),tol=1e-13,max_iter=1000,lsmr_tol=1e-14);assert opt.success;x=opt.x\r\n    return dict(x=x,cost=.5*np.sum((A@x-b)**2),measurement=y-x,process=np.diff(x)-d,A=A,b=b)\r\n\r\ndef kf(measurements,mean=.5,P=1.,Q=.25,R=.25,inputs=None):\r\n    inputs=[.5]+[0.]*(len(measurements)-2) if inputs is None else inputs\r\n    filtered=[];priors=[]\r\n    for i,y in enumerate(measurements):\r\n        priors.append((mean,P));K=P/(P+R);mean=mean+K*(y-mean);P=(1-K)*P;filtered.append((mean,P))\r\n        if i<len(measurements)-1:mean+=inputs[i];P+=Q\r\n    return filtered,priors\r\n\r\ndef batch(y,inputs,mean,P,Q=.25,R=.25):\r\n    n=len(y);A=np.zeros((2*n,n));b=np.zeros(2*n)\r\n    A[0,0]=1/np.sqrt(P);b[0]=mean/np.sqrt(P)\r\n    for i in range(n-1):A[1+i,i]=-1/np.sqrt(Q);A[1+i,i+1]=1/np.sqrt(Q);b[1+i]=inputs[i]/np.sqrt(Q)\r\n    for i in range(n):A[n+i,i]=1/np.sqrt(R);b[n+i]=y[i]/np.sqrt(R)\r\n    x=np.linalg.lstsq(A,b,rcond=None)[0]\r\n    return x,A,b\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 172,
+          "delim": "`",
+          "code": "y=[.2,1.4,1.1,.9,1.2];inputs=[.5,0,0,0]\r\nfiltered,priors=kf(y,inputs=inputs)\r\nfull,A,b=batch(y,inputs,.5,1.)\r\ncut,Ac,bc=batch(y[2:],inputs[2:],*priors[2])\r\nassert np.allclose(cut,full[2:],atol=1e-12)\r\nassert np.isclose(full[-1],filtered[-1][0],atol=1e-12)\r\ndefault_batch=original(default,False)['x'];default_filtered,_=kf(y[:3])\r\nassert np.isclose(default_batch[-1],default_filtered[-1][0],atol=1e-12)\r\nprint('default_batch_current',default_batch[-1],'kf_current',default_filtered[-1][0],'past_smoothed',default_batch[0],'past_filtered',default_filtered[0][0])\r\nprint('arrival_at_time2',priors[2],'full_current',full[-1],'cut_current',cut[-1],'max_difference',max(abs(cut-full[2:])))\r\n# Identical scalar observation counted once versus twice.\r\nonce_mean=.5;once_P=.5;K=once_P/(once_P+1);twice_mean=once_mean+K*(1-once_mean);twice_P=(1-K)*once_P\r\nassert np.isclose(twice_mean,2/3) and np.isclose(twice_P,1/3)\r\nprint('one_measurement_once',once_mean,once_P,'twice',twice_mean,twice_P)\r\nfig,ax=plt.subplots(figsize=(8,3));ax.plot(range(5),y,'x',label='measurements');ax.plot(range(5),full,'o-',label='full batch smoothed');ax.plot(range(5),[z[0] for z in filtered],'o--',label='causal KF');ax.set(xlim=(0,4),ylim=(-1,3),xlabel='time',ylabel='level');ax.legend();ax.grid(True);plt.tight_layout();plt.show()\r\nprint('arrival_and_kf_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 187,
+          "delim": "`",
+          "code": "from fractions import Fraction as F\r\nx=[F(11,30),F(1),F(1)];H=[[F(9),F(-4),F(0)],[F(-4),F(12),F(-4)],[F(0),F(-4),F(8)]];rhs=[F(-7,10),F(38,5),F(22,5)]\r\ngradient=[sum(H[i][j]*x[j] for j in range(3))-rhs[i] for i in range(3)]\r\nassert gradient==[F(0),F(-16,15),F(-2,5)]\r\nprint('exact_kkt_gradient',[str(v) for v in gradient])\r\ntruth=F(3,2);estimate=F(1);reference=F(1);input_from_estimate=(reference-estimate)/F(11,10);input_from_truth=(reference-truth)/F(11,10)\r\nprint('estimate_based_input',float(input_from_estimate),'predicted_next',float(estimate+input_from_estimate),'actual_next',float(truth+input_from_estimate))\r\nprint('perfect_state_input',float(input_from_truth),'actual_next',float(truth+input_from_truth))\r\nassert input_from_truth==F(-5,11) and truth+input_from_truth==F(23,22)\r\nprint('kkt_and_control_interface_checked')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

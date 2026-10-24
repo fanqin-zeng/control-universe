@@ -108,6 +108,7 @@
 | MPC-08 | ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-08，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-08/acceptance.md |
 | ROBUST-07 | ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-07，rank5；保留并行检查点，仅依赖已交付先修 | .agent/semester-03/robust-07/acceptance.md |
 | MPC-09 | ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-09，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-09/acceptance.md |
+| MPC-10 | ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-10，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-10/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -1022,3 +1023,7 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### MPC-09 学期3交付（2026-10-24）
 
 经济预测控制从空占位按新写Phase1–4完成：分时储水→同尺度目标→精确QP→常价耗散与旋转→终端反例→周期与预测边界。十一H2、四题四答、两Notebook四cell、Explorer/SVG。5120配置实际TS对原QP、144个有理恒等式；严格内核、生产Pyodide、普通与Pages本地页面及375px实测见.agent/semester-03/mpc-09/acceptance.md。rank6隔离21096/9116/21196/21296，临时独立索引与原子引用更新；保留并行内容。本会话不发布Pages，不生产MPC-10，真实hash见checklist。
+
+### MPC-10 学期3交付（2026-10-24）
+
+移动水平估计从空占位按新写Phase1–4完成：液位观测→窗口与到达成本→约束QP→滑动更新与信息重复→KF等价条件→输出反馈接口/错误容量反例。十一H2、四题完整答案、两Notebook四cell、Explorer/SVG。1620配置实际TS对原LS与有理KKT；严格内核、生产Pyodide、普通与Pages本地页面及375px实测见.agent/semester-03/mpc-10/acceptance.md。rank6隔离21496/9126/21596/21696，临时独立索引与原子引用更新，保留并行内容。本会话不发布Pages，不生产MPC-11，真实hash见checklist。

@@ -5811,7 +5811,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从带噪液位到历史轨迹", "title": "从带噪液位到历史轨迹"}, {"slug": "有限窗口的估计问题", "title": "有限窗口的估计问题"}, {"slug": "到达成本如何保存过去", "title": "到达成本如何保存过去"}, {"slug": "一个三结点qp", "title": "一个三结点QP"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "滑动更新与信息重复", "title": "滑动更新与信息重复"}, {"slug": "与卡尔曼滤波的关系", "title": "与卡尔曼滤波的关系"}, {"slug": "估计接入mpc", "title": "估计接入MPC"}, {"slug": "约束与模型失配的边界", "title": "约束与模型失配的边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "mpc-case-study",
