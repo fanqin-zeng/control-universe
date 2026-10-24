@@ -39,3 +39,6 @@ verify唯一WARN为三个已明确标注“后续阅读”的机器人空课。�
 ROBUST-01基线的增量构建遇到Webpack WasmHash缓存异常；隔离.next已可逆另存为.next-cache-diagnostic后从空缓存重建，错误原文留build-cache-failure.log，最终重建结果留build-rebased.log。不改共享缓存或依赖。
 
 DRIVING-01随后合入主干，最终目录/台账/支持清单在新基线上重验；机器人正文、TS及Notebook字节与已构建和浏览器实测版本一致，未因其它课交付重复修改本课实现。
+
+
+真实master交付提交：3e87c235f04cb3c07395594bd8b66efc4effb164，已正常推送origin master。最终全仓目录检查PASS21/WARN2/FAIL0，scope-proof.json证明其它课程记录与父提交逐量一致；大范围行差仅共享文件换行符差异。共享默认索引保持并行会话投影，本课使用独立索引提交。未发布GitHub Pages，未交付ROBOT-02。

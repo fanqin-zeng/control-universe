@@ -308,7 +308,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ROBOT-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/17-robotics/01-robot-models.md;.agent/semester-03/robot-01/acceptance.md |
+| ROBOT-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/17-robotics/01-robot-models.md;.agent/semester-03/robot-01/acceptance.md;commit:3e87c235f04cb3c07395594bd8b66efc4effb164 |
 | ROBOT-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBOT-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBOT-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
