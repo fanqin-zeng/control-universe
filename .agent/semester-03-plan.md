@@ -106,6 +106,7 @@
 | ID-09 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-09，rank3；保留并行课程，闭环/频域已交付；评估课未交付，局部定义分区与冻结，ID08提供已交付支撑 | .agent/semester-03/id-09/acceptance.md |
 | ML-09 | IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-09，rank2；保留并行实现课，仅依赖已交付监督学习与概率基础 | .agent/semester-03/ml-09/acceptance.md |
 | MPC-08 | ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-08，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-08/acceptance.md |
+| ROBUST-07 | ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-07，rank5；保留并行检查点，仅依赖已交付先修 | .agent/semester-03/robust-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -1011,3 +1012,8 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### MPC-08 学期3交付（2026-10-24）
 
 非线性预测控制按重构Phase1–4完成，保留16主题/五题全部子问与69旧ID，37标题别名。纠正非线性/约束激活、SQP/RTI/CLF与终端全域条件，重建同RK4同参数摆比较，撤回旧未实测硬件/性能表。实际TS432组与独立复步原目标核、240闭环输入独立核；两Notebook四cell严格内核/生产Pyodide、普通/Pages本地/375px见.agent/semester-03/mpc-08/acceptance.md。S04本课债务实跑清除。rank6隔离20696/9106/20796/20896与私有索引，保留并行工作；仅本课、不发布Pages、不生产MPC-09。真实hash见全局checklist。
+
+
+### ROBUST-07 本期交付记录（2026-10-24）
+
+结构奇异值按新写Phase1–4交付：九H2、四题全子问、三Notebook五cell、四滑块/双结构双图/SVG。可解析A/(s+1)证明结构集合、精确μ、合法D上界/见证下界、DC/全频与实μ不连续；完整标量性能增广含通过/等号/失败。真实TS960配置对独立SVD/反馈极点/行列式/SymPy、严格内核/Pyodide、双生产构建和375px证据见.agent/semester-03/robust-07/acceptance.md。未运行通用mussv，不冒称D普遍精确。相邻ROBUST-08错误只登记RB08待返修，不改其正文；rank5独立端口/缓存/索引，不发布Pages、不生产ROBUST-08。真实master回执见checklist。

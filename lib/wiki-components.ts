@@ -1,3 +1,4 @@
+import { MuAnalysisExplorer } from '@/components/wiki/mu-analysis-explorer';
 import { NonlinearMpcExplorer } from "@/components/wiki/nonlinear-mpc-explorer";
 import { LearningEvaluationExplorer } from '@/components/wiki/learning-evaluation-explorer';
 import { IdentificationCaseExplorer } from "@/components/wiki/identification-case-explorer";
@@ -183,6 +184,7 @@ export const wikiComponents: MDXComponents = {
   EmbeddedControlExplorer,
   ExtendedKalmanExplorer,
   RobustStabilityExplorer,
+  MuAnalysisExplorer,
   MixedSensitivityExplorer,
   HInfinityExplorer,
   RobustPerformanceExplorer,
