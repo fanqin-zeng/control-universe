@@ -957,3 +957,7 @@ rank2按用户指定新写表征学习；PCA受限重构、冻结探针/七方�
 ### ROBUST-05 本期交付记录（2026-10-24）
 
 H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题子问与原三Notebook四cell用途。纠正内部稳定/堆叠目标、权重、DGKF/LMI条件、反陷波失稳、恒100权重与理想PD边界；新增可实现低通候选，保留低带宽代价及9/11rad/s失配超标。四Notebook五cell、五参数双图Explorer/SVG；实际TS270配置/1620频点、独立控制模型及完整驻点/符号复核，严格内核/Pyodide、双构建与375px证据见.agent/semester-03/robust-05/acceptance.md。未运行通用H∞综合，不冒称最优或全集鲁棒。rank5独立端口/缓存/索引，保留并行工作；仅本课，不发布Pages、不生产ROBUST-06。真实master hash见全局checklist。
+
+### IMPL-08 工业通信本轮交付
+
+新写单课；协议分层、CRC解码与轮询预算。讨论和真实验收见 `.agent/semester-03/impl-08/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

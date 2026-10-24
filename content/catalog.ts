@@ -3474,13 +3474,55 @@ export const catalog: Chapter[] = [
       {
         "slug": "industrial-bus-protocols",
         "title": "工业通信",
+        "subsections": [
+          {
+            "slug": "接通线路之后",
+            "title": "接通线路之后"
+          },
+          {
+            "slug": "先分清三个层次",
+            "title": "先分清三个层次"
+          },
+          {
+            "slug": "一帧请求与响应",
+            "title": "一帧请求与响应"
+          },
+          {
+            "slug": "寄存器不等于工程量",
+            "title": "寄存器不等于工程量"
+          },
+          {
+            "slug": "把轮询放进时间预算",
+            "title": "把轮询放进时间预算"
+          },
+          {
+            "slug": "交互实验与失败边界",
+            "title": "交互实验与失败边界"
+          },
+          {
+            "slug": "can与工业以太网",
+            "title": "CAN与工业以太网"
+          },
+          {
+            "slug": "联调记录与故障路径",
+            "title": "联调记录与故障路径"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/computer-control-architecture",
           "implementation/realtime-control"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "hil-rapid-prototyping",
