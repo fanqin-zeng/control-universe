@@ -4642,7 +4642,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "subsections": [
+  {
+    "slug": "两次读数是否两份信息",
+    "title": "两次读数是否两份信息"
+  },
+  {
+    "slug": "同一状态的联合观测",
+    "title": "同一状态的联合观测"
+  },
+  {
+    "slug": "独立噪声的信息相加",
+    "title": "独立噪声的信息相加"
+  },
+  {
+    "slug": "相关噪声与白化更新",
+    "title": "相关噪声与白化更新"
+  },
+  {
+    "slug": "交互实验与一致性",
+    "title": "交互实验与一致性"
+  },
+  {
+    "slug": "共享先验与未知相关性",
+    "title": "共享先验与未知相关性"
+  },
+  {
+    "slug": "时间坐标与非线性对齐",
+    "title": "时间坐标与非线性对齐"
+  },
+  {
+    "slug": "实现流程与边界",
+    "title": "实现流程与边界"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+],
+        "status": "v1.3"
       },
       {
         "slug": "estimation-case-study",

@@ -98,6 +98,7 @@
 | EST-06 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-06，rank4；其它会话并行，保留其检查点，仅依赖已交付先修 | .agent/semester-03/est-06/acceptance.md |
 | ROBUST-05 | IMPL-09;IMPL-10;ML-08;ML-09;ID-08;ID-09;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-05，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-05/acceptance.md |
 | ID-08 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-08，rank3；保留并行课程，先修持续激励/自动微分/时序模型/非线性系统已交付 | .agent/semester-03/id-08/acceptance.md |
+| EST-07 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-07，rank4；其它会话并行，保留检查点，仅依赖已交付KF/EKF | .agent/semester-03/est-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -962,3 +963,9 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### IMPL-08 工业通信本轮交付
 
 新写单课；协议分层、CRC解码与轮询预算。讨论和真实验收见 `.agent/semester-03/impl-08/acceptance.md`；rank1使用独立目录与索引，未发布Pages。
+
+<!-- EST-07-RECEIPT-BEGIN -->
+### EST-07 学期3交付（2026-10-24）
+
+多传感器融合从空占位按Phase1—4新写完成：10H2、四题及全部子问、3Notebook6cell、SensorFusionExplorer与纵向SVG。独立信息相加、相关噪声白化、共享先验/重复数据、未知相关CI与时间/坐标/非线性线性化边界；64配置对独立矩阵/Joseph与密度，CI105边界保留失败与持平。严格内核、Pyodide、两构建/实页/375px均通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-07/acceptance.md；实际master回执见checklist。未发布Pages，不生产EST-08。
+<!-- EST-07-RECEIPT-END -->
