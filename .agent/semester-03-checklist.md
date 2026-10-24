@@ -237,7 +237,7 @@
 | ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;commit:80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9;rank5三Notebook五cell/独立数值/双构建/375px验收 |
 | ROBUST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/07-mu-analysis.md;.agent/semester-03/robust-07/acceptance.md;commit:709e34a88ec19c7f254f4dd4527b76de52aebc6c;rank5三Notebook五cell/960配置/双构建/375px验收 |
 | ROBUST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/08-mu-synthesis.md;.agent/semester-03/robust-08/acceptance.md;commit:34eaae4a5e61c587b76a22efec5d3791ed9148d8;rank5三Notebook六cell/2020配置/双构建/375px验收 |
-| ROBUST-09 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/09-h-infinity-filter.md;.agent/semester-03/robust-09/acceptance.md;rank5三Notebook五cell/481配置/双构建/375px，待实际master提交 |
+| ROBUST-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/09-h-infinity-filter.md;.agent/semester-03/robust-09/acceptance.md;commit:ab43f3bdb26ab3019b4c727af2776ced0ab5225e;rank5三Notebook五cell/481配置/双构建/375px验收 |
 | ROBUST-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 
