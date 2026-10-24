@@ -72,3 +72,7 @@ MODERN-01授权发布（2026-10-18）：用户要求本课完成后发布当前�
 <!-- ID09-PAGES-RECEIPT-BEGIN -->
 2026-10-24用户授权发布ID-09：固定master dcaa4c8，正常合入gh-pages b6a37b1。Actions构建/部署与公网235请求通过；ID-09三个Notebook/3cell页内运行、1023输出对账、375px与控件通过。详见[发布记录](id09-release.md)。未发布之后的并行master更新。
 <!-- ID09-PAGES-RECEIPT-END -->
+
+<!-- MPC11-PAGES-RECEIPT-BEGIN -->
+2026-10-24用户授权发布MPC-01—11：固定master `8ab3a802cb8ca133568ebab63ba6bd366f67ddcc`，正常合入gh-pages `beb3108506c42bcc5b50cea36be14da8dcbfac45`，内容树完全一致。Actions构建/部署成功，公网205课/9旧入口/235成功请求与未知页404通过；MPC11课25Notebook/51cell逐页实跑、关键控件/旧ID/375px均过，无本机内核请求。线上release.json sourceDirty=false。详见[本次发布记录](mpc11-release/README.md)。未自动发布之后的并行master内容。
+<!-- MPC11-PAGES-RECEIPT-END -->

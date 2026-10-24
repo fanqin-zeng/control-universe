@@ -1,743 +1,405 @@
 ---
 title: "鲁棒控制综合案例"
-description: "以柔性结构振动控制为主线，完整走一遍'不确定性建模→H∞设计→μ分析→μ综合→Monte Carlo验证'的鲁棒控制工程全流程。"
+description: "从双质量定位台出发，核对物理模型、需求、稳定证书与抽样证据；区分实际执行的反馈实验和待执行的H∞/μ综合。"
 ---
 
 # 鲁棒控制综合案例
 
-前七节课分别建立了鲁棒控制的工具箱：灵敏度函数量化不确定性影响，H∞ 优化和混合灵敏度提供设计框架，μ 综合利用结构信息减少保守性，鲁棒稳定性分析给出各种判定方法，不确定性建模连接物理现实与数学模型，鲁棒性能指标把"跑得好"变成精确条件。
+给柔性定位台装上较重的零件后，同一条位置指令可能让末端来回摆动。只看标称阶跃曲线很难回答：是质量变化让原来的整定失效，还是控制器本来就没稳定住对象？上一课讨论了时滞造成的失稳；本课回到质量和刚度变化，把前面学过的工具接成一条可以追查证据的设计流程。
 
-但工程问题不会告诉你"请用 μ 综合"或"请选这个权重"——你需要自己判断。
-
-> 📖 本章是鲁棒控制部分的综合应用，需要前面所有七节的基础：[鲁棒性概念](/robust/robustness-concept)、[H∞控制基础](/robust/h-infinity-basics)、[混合灵敏度设计](/robust/mixed-sensitivity)、[μ综合方法](/robust/mu-synthesis)、[鲁棒稳定性分析](/robust/robust-stability)、[不确定性建模](/robust/uncertainty-modeling)、[鲁棒性能指标](/robust/robust-performance)。
-
-本节以**柔性结构振动控制**为主线，完整走一遍鲁棒控制的工程设计流程：
-
-1. **建模**：从物理系统到标称传递函数
-2. **不确定性分析**：识别来源、量化范围、选择描述方式
-3. **LFT 建模**：构造结构化不确定性模型
-4. **权重选择**：把工程指标翻译成频域权重
-5. **H∞ 设计**：混合灵敏度综合
-6. **μ 分析验证**：鲁棒稳定性 + 鲁棒性能检验
-7. **μ 综合改进**：D-K 迭代优化
-8. **Monte Carlo 验证**：最终确认
-9. **方法对比**：三种方法的优劣总结
-
-这个流程适用于绝大多数需要鲁棒性的控制系统。学完本章，你应该能把前面学到的每个工具"对号入座"。
+读者应已了解[不确定性建模](/robust/uncertainty-modeling)、[混合灵敏度](/robust/mixed-sensitivity)、[μ分析](/robust/mu-analysis)、[μ综合](/robust/mu-synthesis)与[鲁棒性能](/robust/robust-performance)。本课保留完整工程流程，但执行范围分清：页面实际运行物理建模、旧控制器诊断、比例反馈与抽样；通用H∞/μ综合提供外部模板，未执行的结果不填数。
 
 ## 问题描述
 
 ### 为什么选柔性结构
 
-大型空间结构（卫星天线、空间站桁架）、精密加工机床的柔性臂、风力发电机叶片——这些系统的共同特点是**存在低频弹性振动模态**。控制器在抑制振动的同时，不能激发未建模的高频模态，否则系统可能失稳。
+柔性天线、机床进给台和柔性机械臂都可能存在低频弹性模态。较强的位置反馈能够缩短低频响应，却可能激起弹性振动。实际装置还会有未辨识的高阶模态，教学双质量模型只能说明这种矛盾，不能替代实际装置辨识。
 
-这正是鲁棒控制的经典应用场景：
-
-| 挑战 | 鲁棒控制工具 |
-|------|--------------|
-| 参数不确定性（质量、刚度变化） | μ 分析、鲁棒性能 |
-| 未建模高频模态 | 乘性不确定性、H∞ |
-| 共振模态抑制 | 混合灵敏度、陷波滤波器 |
-| 控制量约束（执行器饱和） | KS 权重 |
+| 挑战 | 可用工具 | 需要的证据 |
+|---|---|---|
+| 质量/刚度变化 | 实参数LFT、μ分析 | 覆盖范围、块结构、稳定性证书 |
+| 高频模态 | 乘性误差权重 | 测量包络与全频条件 |
+| 跟踪与振动 | S、T权重 | 明确控制器、稳定性、性能值 |
+| 执行器力限制 | KS权重和时域检查 | 点值峰值、饱和模型；L2增益不能直接代替 |
 
 ### 物理系统
 
-**双质量-弹簧-阻尼器系统**（Two-Mass-Spring-Damper）：
+两个质量块之间的弹簧k与阻尼b并联，m₁还通过阻尼b₁接地，没有接地弹簧。力F只作用在m₁，测量输出只有m₂的位置x₂。r是期望位置；所有位置以m、时间以s、力以N计。
 
-```
-         k   b
-    ┌───╱╲──/\/\/──┐
-    │   m₁         m₂
-  F →│  ●───────────●
-    │               │
-    └─── b₁ ────────┘
-         (阻尼到地)
-```
+<div style={{overflowX: 'auto'}}><img src="/robust-case-study-system.svg" alt="力作用m1，两质量之间弹簧与阻尼并联，m1阻尼接地，测量x2" style={{width:'100%',minWidth:740}} /></div>
 
-两个质量块通过弹簧 $k$ 和阻尼 $b$ 连接。质量 $m_1$ 还通过阻尼 $b_1$ 接地。力 $F$ 作用在 $m_1$ 上，测量 $m_2$ 的位置 $x_2$。
-
-**参数**（标称值）：
-
-| 符号 | 含义 | 标称值 | 单位 |
-|------|------|--------|------|
-| $m_1$ | 质量 1 | 1.0 | kg |
-| $m_2$ | 质量 2 | 0.5 | kg |
-| $k$ | 弹簧刚度 | 10 | N/m |
-| $b$ | 连接阻尼 | 0.5 | N·s/m |
-| $b_1$ | 接地阻尼 | 0.2 | N·s/m |
+标称参数m₁=1 kg、m₂=0.5 kg、k=10 N/m、b=0.5 N·s/m、b₁=0.2 N·s/m。以下均为零初始位置/速度的线性模型；没有把执行器饱和藏进模型。
 
 ### 运动方程
 
+按两质量受力分别列式：
+
 $$
-m_1 \ddot{x}_1 + (b + b_1)\dot{x}_1 - b\dot{x}_2 + k(x_1 - x_2) = F
+m_1\ddot x_1+(b+b_1)\dot x_1-b\dot x_2+k(x_1-x_2)=F,
 $$
 
 $$
-m_2 \ddot{x}_2 - b\dot{x}_1 + b\dot{x}_2 - k(x_1 - x_2) = 0
+m_2\ddot x_2-b\dot x_1+b\dot x_2-k(x_1-x_2)=0.
 $$
 
-拉普拉斯变换后求解 $G(s) = X_2(s)/F(s)$：
+零初值拉普拉斯变换后求二阶动态刚度矩阵的行列式，得到
 
 $$
-G(s) = \frac{bs + k}{m_1 m_2 s^4 + (m_1 b + m_2 b + m_1 b_1)s^3 + (m_1 k + m_2 k + b b_1)s^2 + (b k + b_1 k)s}
+G(s)=\frac{X_2(s)}{F(s)}=\frac{bs+k}{m_1m_2s^4+[m_1b+m_2(b+b_1)]s^3+[(m_1+m_2)k+bb_1]s^2+b_1ks}.
 $$
 
-代入标称参数：
-
-$$
-G(s) = \frac{0.5s + 10}{0.5s^4 + 1.2s^3 + 15.1s^2 + 7s}
-$$
+因此标称分母为0.5s⁴+0.85s³+15.1s²+2s。原版写成0.5s⁴+1.2s³+15.1s²+7s，与运动方程不符；后续每个实验均使用修正后的模型。
 
 ### 频率响应特征
 
-这个传递函数有两个关键特征：
+没有接地弹簧，整体平移存在积分模态，低频幅值随频率趋零而增大。忽略阻尼时，相对振动模态频率为
 
-1. **低频刚性模态**（$\omega \approx 0$）：积分特性（无刚度到地的通路），低频增益随频率下降
-2. **柔性共振模态**（$\omega_n = \sqrt{k(m_1+m_2)/(m_1 m_2)} = \sqrt{10 \times 1.5 / 0.5} \approx 5.48$ rad/s）：阻尼很小，共振峰很高
+$$
+\omega_n=\sqrt{\frac{k(m_1+m_2)}{m_1m_2}}=\sqrt{30}\approx5.477226\ \mathrm{rad/s}.
+$$
 
-共振频率处的增益可以达到 30 dB 以上——如果不加控制，任何接近这个频率的激励都会引起剧烈振动。
+这个数不是有阻尼系统的精确共振峰位置。全频网格的最大开环幅值往往来自积分器低频端，不能称为“弹性共振峰”。先运行下面两个cell，第二个会明确报告旧控制器失稳。
 
 <JupyterNotebook
   language="python"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-np.random.seed(42)
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False`}
+from scipy.signal import residue
+
+def coefficients(m=.5, k=10., q=1.):
+    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])
+
+def trace(m=.5, k=10., q=1., end=120., dt=.04):
+    den = coefficients(m,k,q)
+    poles = np.roots(den)
+    stable = bool(np.max(poles.real) < -1e-9)
+    t = np.linspace(0,end,round(end/dt)+1)
+    # Partial fractions of T(s)/s; no cancelled internal unstable states.
+    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])
+    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))
+    force = q*(1-y)
+    metrics = {'stable':stable,'alpha':float(max(poles.real)),
+               'overshoot':None,'settling':None,'peak_force':None}
+    if stable:
+        bad = np.flatnonzero(np.abs(y-1) > .02)
+        metrics.update(overshoot=float(max(0.,y.max()-1)),
+            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),
+            peak_force=float(np.max(np.abs(force))))
+    return t,y,force,metrics
+
+def frequency(m,k,q,w):
+    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z
+    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)
+    return s,tt,q*s
+
+s=ctrl.tf('s')
+G=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)
+wn=np.sqrt(30)
+K_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)
+W1=(s/1.5+1)/(s+.01)
+W2=.2*s/(s+20)
+W3=ctrl.tf([.05],[1])
+plt.rcParams['axes.unicode_minus']=False
+`}
   cells={[
-    {
-      code: `# 标称系统建模与频率响应
-m1, m2_bar, k_bar = 1.0, 0.5, 10.0
-b, b1 = 0.5, 0.2
-
-num = [b, k_bar]
-den = [m1*m2_bar,
-       m1*b + m2_bar*b + m1*b1,
-       m1*k_bar + m2_bar*k_bar + b*b1,
-       b*k_bar + b1*k_bar,
-       0]
-
-G = ctrl.tf(num, den)
-print("标称传递函数 G(s):")
-print(G)
-
-omega = np.logspace(-2, 2, 1000)
-mag, phase, w = ctrl.frequency_response(G, omega)
-mag = np.abs(mag.flatten())
-
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-ax = axes[0]
-ax.semilogx(w, 20*np.log10(mag), 'b-', linewidth=2)
-wn = np.sqrt(k_bar * (m1 + m2_bar) / (m1 * m2_bar))
-ax.axvline(x=wn, color='r', linestyle='--', alpha=0.7, label=f'共振频率 ωn = {wn:.2f} rad/s')
-ax.set_xlabel('ω (rad/s)')
-ax.set_ylabel('|G(jω)| (dB)')
-ax.set_title('标称系统 Bode 幅频特性')
-ax.legend()
-ax.grid(True, which='both', alpha=0.3)
-ax.set_ylim(-40, 60)
-
-ax = axes[1]
-dm_vals = [-0.4, -0.2, 0, 0.2, 0.4]
-dk_vals = [-0.2, -0.1, 0, 0.1, 0.2]
-for dm in dm_vals:
-    for dk in dk_vals:
-        m2_i = m2_bar * (1 + 0.4 * dm)
-        k_i = k_bar * (1 + 0.2 * dk)
-        num_i = [b, k_i]
-        den_i = [m1*m2_i, m1*b + m2_i*b + m1*b1,
-                 m1*k_i + m2_i*k_i + b*b1, b*k_i + b1*k_i, 0]
-        G_i = ctrl.tf(num_i, den_i)
-        mag_i = np.abs(ctrl.frequency_response(G_i, omega)[0].flatten())
-        ax.semilogx(w, 20*np.log10(mag_i), 'b-', alpha=0.15, linewidth=0.5)
-
-ax.semilogx(w, 20*np.log10(mag), 'r-', linewidth=2, label='标称')
-ax.axvline(x=wn, color='gray', linestyle=':', alpha=0.5)
-ax.set_xlabel('ω (rad/s)')
-ax.set_ylabel('|G(jω)| (dB)')
-ax.set_title('参数不确定性下的频率响应族')
-ax.legend()
-ax.grid(True, which='both', alpha=0.3)
-ax.set_ylim(-40, 60)
-
-plt.tight_layout()
-plt.show()
-
-print(f"\\n共振频率: ωn = {wn:.2f} rad/s ({wn/(2*np.pi):.2f} Hz)")
-print(f"共振峰增益: {np.max(20*np.log10(mag)):.1f} dB")`
-    },
-    {
-      code: `# 权重函数与混合灵敏度设计
-Kp, Ki, Kd = 15.0, 5.0, 2.0
-K_pid = ctrl.tf([Kd, Kp, Ki], [1, 0])
-
-wn_notch = wn
-zeta_notch = 0.3
-K_notch = ctrl.tf([1, 2*zeta_notch*wn_notch, wn_notch**2],
-                   [1, 2*0.8*wn_notch, wn_notch**2])
-
-omega_lp = 30
-K_lp = ctrl.tf([1], [1/omega_lp, 1])
-
-K = K_pid * K_notch * K_lp
-
-print("=== 控制器结构 ===")
-print(f"PID: Kp={Kp}, Ki={Ki}, Kd={Kd}")
-print(f"陷波: ωn={wn_notch:.2f}, ζ={zeta_notch}")
-print(f"低通: ωc={omega_lp} rad/s")
-
-L = G * K
-S = ctrl.feedback(1, L)
-T = ctrl.feedback(L, 1)
-KS = ctrl.feedback(K, G)
-
-W1 = ctrl.tf([1/1.5, 1], [1, 0.01])
-W2 = ctrl.tf([0.5, 15], [1, 0.5])
-W3 = 0.05
-
-omega_fine = np.logspace(-3, 2, 2000)
-mag_S = np.abs(S(1j * omega_fine))
-mag_T = np.abs(T(1j * omega_fine))
-mag_KS = np.abs(KS(1j * omega_fine))
-mag_W1 = np.abs(W1(1j * omega_fine))
-mag_W2 = np.abs(W2(1j * omega_fine))
-
-print(f"\\n=== 标称性能 ===")
-print(f"|S(0)| = {np.abs(S(0)):.6f} (要求 < 0.01)")
-print(f"||S||∞ = {np.max(mag_S):.4f} (要求 < 1.5)")
-print(f"|T(ωn)| = {np.abs(T(1j*wn)):.4f} (要求 < 2)")
-print(f"||KS||∞ = {np.max(mag_KS):.4f} (要求 < 20)")
-print(f"|W1·S| 峰值 = {np.max(mag_W1 * mag_S):.4f} (要求 < 1)")`
-    }
+    { code: `# Model, correctly normalized uncertainty, and Bode family
+print('denominator:',coefficients(q=0).tolist())
+print('undamped relative mode:',wn)
+w=np.logspace(-2,2,600)
+fig,axes=plt.subplots(1,2,figsize=(10,3.5))
+for dm in [-1,0,1]:
+    for dk in [-1,0,1]:
+        m=.5*(1+.4*dm); k=10*(1+.2*dk)
+        plant=ctrl.tf([.5,k],coefficients(m,k,0))
+        axes[0].semilogx(w,20*np.log10(np.abs(plant(1j*w))))
+        axes[1].plot(dm, k, 'o')
+axes[0].set(xlabel='omega (rad/s)',ylabel='|G| (dB)',title='Integrator and flexible mode')
+axes[1].set(xlabel='normalized delta_m',ylabel='k (N/m)',title='m2 in [0.3,0.7], k in [8,12]')
+plt.tight_layout();plt.show()
+print('model_complete')` },
+    { code: `# Audit the original controller before reporting performance
+old_poles=ctrl.poles(ctrl.feedback(G*K_old,1))
+print('old PID/notch alpha:',max(old_poles.real))
+assert max(old_poles.real)>0
+print('UNSTABLE: no steady-state/settling/H-infinity performance claim')
+for q in [.1,.5,1,4,8]:
+    t,y,f,metrics=trace(q=q)
+    print('P feedback q=',q,metrics)
+w=np.r_[0,np.logspace(-4,4,4000)]
+ss,tt,ks=frequency(.5,10,1,w)
+w1=np.abs(W1(1j*w));w2=np.abs(W2(1j*w))
+print('q=1 sampled weighted stacked peak:',max(np.sqrt(abs(w1*ss)**2+abs(w2*tt)**2+abs(.05*ks)**2)))
+print('original W2(0)=30 with T(0)=1: gamma must be at least 30')
+print('nominal_complete')` }
   ]}
 />
+
 
 ## 不确定性分析
 
 ### 不确定性来源
 
-实际系统中，以下参数不精确已知：
-
-| 来源 | 参数 | 变化范围 | 类型 |
-|------|------|----------|------|
-| 负载变化 | $m_2$ | ±40%（抓取不同重量的物体） | 实参数 |
-| 材料老化 | $k$ | ±20%（弹簧刚度退化） | 实参数 |
-| 温度变化 | $b$, $b_1$ | ±30%（阻尼随温度变化） | 实参数 |
-| 高频未建模动态 | 第三阶模态 | 幅值 ≤ 20% 在 $\omega > 20$ rad/s | 复数 |
+保留原来的来源区分：负载质量±40%、刚度±20%、温度引起b/b₁±30%，以及假设的高频第三模态。**本课解析证书与抽样仅覆盖前两项，阻尼固定。** 没有集合包含或辨识证据，不能把阻尼变化“吸收”到刚度范围后继续宣称已覆盖。
 
 ### 不确定性建模决策
 
-**决策 1**：低频参数不确定性用**实参数**建模（$\delta \in [-1, 1] \subset ℝ$），保留物理直觉。
-
-**决策 2**：高频未建模动态用**乘性复数不确定性**建模：$G_p = G(1 + \Delta_m W_m)$。
-
-**决策 3**：为简化分析，将 $b, b_1$ 的不确定性合并到 $k$ 的等效不确定性中（阻尼变化对共振频率的影响远小于刚度变化）。最终保留两个主要不确定性：$m_2$ 和 $k$。
+用独立归一化实参数：
 
 $$
-m_2 = \bar{m}_2(1 + 0.4\delta_m), \quad k = \bar{k}(1 + 0.2\delta_k)
+m_2=\bar m_2(1+0.4\delta_m),\qquad k=\bar k(1+0.2\delta_k),\qquad (\delta_m,\delta_k)\in[-1,1]^2.
 $$
 
-$$
-\Delta = \text{diag}(\delta_m, \delta_k), \quad |\delta_m| \leq 1, \; |\delta_k| \leq 1
-$$
+所以m₂∈[0.3,0.7]、k∈[8,12]。独立表示整个矩形都允许，包含同时取端点。旧代码把已缩放的δ再次乘0.4/0.2，实际只覆盖±16%/±4%；新代码只归一化一次。
 
-**决策 4**：高频未建模动态用一阶高通权重描述：
-
-$$
-W_m(s) = \frac{0.2s}{s + 20}
-$$
-
-低频 $|W_m| \approx 0$（低频模型准确），高频 $|W_m| \to 0.2$（高频偏差 ≤ 20%）。
-
-> 💡 **工程判断**：不确定性建模不是越精确越好。保留太多独立参数会导致 μ 分析计算量爆炸。这里的关键判断是：$m_2$ 和 $k$ 是影响最大的两个参数，其他参数的影响可以通过增大这两个参数的范围来"吸收"。
+若额外假定高频相对误差，可写Gₚ=G(1+WₘΔₘ)，Wₘ(s)=0.2s/(s+20)，其中Δₘ为稳定、H∞范数不超过1的复动态块。它在高频趋近20%只是**建模假设**；低频连续趋零，并非20rad/s以下误差严格为零。当前两实参数的证明不覆盖这个额外块。
 
 ### LFT 模型构造
 
-将参数不确定性写成 LFT 形式 $G = \mathcal{F}_u(G_u, \Delta)$。
-
-从运动方程出发，$m_2$ 出现在 $m_2 \ddot{x}_2$ 项中，$k$ 出现在弹簧力 $k(x_1 - x_2)$ 中。引入辅助信号：
+令zₘ= m̄₂s²X₂、zₖ=k̄(X₁−X₂)，vₘ=δₘzₘ、vₖ=δₖzₖ。标称动态刚度矩阵及力分配为
 
 $$
-m_2 = \bar{m}_2(1 + 0.4\delta_m) \implies \bar{m}_2 \ddot{x}_2 = -0.4\delta_m (\bar{m}_2 \ddot{x}_2) + \text{其他力}
+A_0(s)=\begin{bmatrix}m_1s^2+(b+b_1)s+\bar k&-(bs+\bar k)\\-(bs+\bar k)&\bar m_2s^2+bs+\bar k\end{bmatrix},\quad
+B=\begin{bmatrix}0&-0.2&1\\-0.4&0.2&0\end{bmatrix}.
 $$
 
-令 $v_m = \delta_m z_m$，$z_m = \bar{m}_2 \ddot{x}_2$（质量 $m_2$ 的惯性力）。
-
-类似地处理 $k$ 的不确定性。
-
-最终得到 4 通道（2 个不确定性输入 + 2 个不确定性输出）的增广对象 $G_u(s)$：
+由A₀[X₁,X₂]ᵀ=B[vₘ,vₖ,F]ᵀ，直接得到完整三输入三输出对象：
 
 $$
-G_u(s) = \begin{bmatrix} G_{z_m v_m} & G_{z_m v_k} & G_{z_m u} \\ G_{z_k v_m} & G_{z_k v_k} & G_{z_k u} \\ G_{y v_m} & G_{y v_k} & G_{y u} \end{bmatrix}
+G_u(s)=\begin{bmatrix}0&\bar m_2s^2\\\bar k&-\bar k\\0&1\end{bmatrix}A_0(s)^{-1}B,
+\qquad\begin{bmatrix}z_m\\z_k\\y\end{bmatrix}=G_u(s)\begin{bmatrix}v_m\\v_k\\F\end{bmatrix}.
 $$
 
-其中 $u = F$ 是控制输入，$y = x_2$ 是测量输出。
-
-> 📐 LFT 构造的详细步骤见 [不确定性建模](/robust/uncertainty-modeling)。这里直接给出结果，重点放在设计流程上。
+这是两个不确定性回路加一个控制端口，共三输入三输出，而不是原文所称的“四通道矩阵”。把v=diag(δₘ,δₖ)z代回，就恢复原物理方程。质量端直接回馈的良定因子1+0.4δₘ≥0.6；不能在构造LFT时遗漏交叉项。
 
 ## 设计需求
 
 ### 性能指标
 
-| 指标 | 要求 | 频域翻译 |
-|------|------|----------|
-| 稳态定位精度 | 阶跃响应稳态误差 < 1% | $|S(0)| < 0.01$ |
-| 振动抑制 | 共振峰闭环增益 < 6 dB | $|T(j\omega_n)| < 2$ |
-| 带宽 | 闭环带宽 > 1 rad/s | $|S(j\omega)| < 1$ for $\omega < 1$ |
-| 控制量 | $|F(t)| \leq 20$ N（对单位阶跃） | $|KS(j\omega)| < 20$ |
-| 鲁棒稳定性 | 所有参数组合下稳定 | $\mu_{\boldsymbol{\Delta}}(M_{11}) < 1$ |
-| 鲁棒性能 | 所有参数组合下性能达标 | $\mu_{\boldsymbol{\Delta}_p}(M) < 1$ |
+原需求保留为待检目标，不先填通过：稳态定位误差小于1%；弹性模态附近|T|小于2；期望带宽大于1rad/s；单位阶跃的力峰值不超过20N；整个不确定集合稳定且满足指定性能。另保留后续抽样指标超调小于30%、2%调节时间小于8s。
+
+这些条件不能机械互换。稳定后阶跃误差由S(0)决定；|S|小于1只是频率约束，不等价于某个定义下的−3dB带宽。KS的H∞范数是L2诱导增益，单位阶跃不属于无限时域L2，故不能据此保证F(t)处处不越限。
 
 ### 权重函数选择
 
-**性能权重 $W_1$**：
+沿用W₁作用S、W₂作用T、W₃作用KS的正文命名，给出**设计起点**：
 
 $$
-W_1(s) = \frac{s/1.5 + 1}{s + 0.01}
+W_1(s)=\frac{s/1.5+1}{s+0.01},\qquad W_2(s)=\frac{0.2s}{s+20},\qquad W_3=0.05.
 $$
 
-- $|W_1(0)| = 100$ → $|S(0)| < 0.01$ ✓
-- $|W_1(\infty)| = 1/1.5 = 0.67$ → $|S(\infty)| < 1.5$
-- 转折频率：零点 1.5 rad/s（带宽），极点 0.01 rad/s（低频高增益截止）
+W₁(0)=100，用γ小于1的证书约束低频误差；高频W₁趋近2/3。W₂与假设的乘性包络对应，不能单独承诺|T(jωₙ)|小于2；要检查或加入该带通性能要求。W₃归一化控制通道，仍须另查时域峰值。
 
-**鲁棒性权重 $W_2$**：
-
-$$
-W_2(s) = \frac{0.5(s + 30)}{s + 0.5}
-$$
-
-- 低频 $|W_2(0)| = 30$ → $|T(0)| < 0.033$（放松，因为低频 $|T|$ 本来就小）
-- 高频 $|W_2(\infty)| = 0.5$ → $|T(\infty)| < 2$
-- 中频增益峰值在 $\omega \approx 5$ rad/s 附近，约束共振模态
-
-**控制量权重 $W_3$**：
-
-$$
-W_3 = 0.05
-$$
-
-常数权重，要求 $|KS| < 1/0.05 = 20$。
+原W₂=0.5(s+30)/(s+0.5)在DC为30。若稳定跟踪要求S(0)≈0，则T(0)≈1，加权目标至少约30，不能写γ小于1；“低频T本来就小”是错误解释。
 
 ## H∞ 混合灵敏度设计
 
 ### 设计过程
 
-用 `mixsyn` 求解混合灵敏度问题：
+混合灵敏度优化的是稳定、可实现控制器K下的加权**堆叠通道**范数：
 
 $$
-\min_K \left\| \begin{bmatrix} W_1 S \\ W_2 T \\ W_3 KS \end{bmatrix} \right\|_\infty
+\min_K\left\|\begin{bmatrix}W_1S\\W_2T\\W_3KS\end{bmatrix}\right\|_\infty,\quad S=(1+GK)^{-1},\quad T=1-S.
 $$
 
-得到控制器 $K_{H\infty}(s)$。
+Python-control 0.10.2的参数顺序是`mixsyn(G, w1, w2, w3)`分别对应S、KS、T。因此按本课命名须调用`ctrl.mixsyn(G, W1, W3, W2)`，保存返回K、闭环、gamma/rcond并重新验稳定。本环境没有Slycot，**本课未运行通用综合**；不能拿手调PID或采样频率最大值替代综合结果。
 
 ### 控制器结构分析
 
-H∞ 控制器通常包含：
-- **积分作用**：保证低频高增益（跟踪精度）
-- **陷波滤波器**：在共振频率处降低增益（抑制振动）
-- **低通滤波**：高频衰减（对未建模动态不敏感）
-
-这些结构与经典控制中手工设计的 PID + 陷波滤波器非常相似——但 H∞ 优化自动确定了所有参数的最优值。
+积分、陷波和低通是常见的设计结构，但不保证任何H∞解都恰好由它们串联组成。旧代码的Kp=15、Ki=5、Kd=2，陷波阻尼0.3/0.8、中心√30、低通30rad/s，是一个明确的手调控制器，不是综合器输出。修正对象上它的最右极点实部约+0.515388，已经失稳；保留这个诊断，不报告其稳态或H∞性能。
 
 ### 标称性能
 
-| 指标 | 要求 | H∞ 设计结果 |
-|------|------|-------------|
-| $|S(0)|$ | < 0.01 | 0.008 ✓ |
-| $\|S\|_\infty$ | < 1.5 | 1.32 ✓ |
-| 带宽 | > 1 rad/s | 1.2 rad/s ✓ |
-| $|T(\omega_n)|$ | < 2 | 1.8 ✓ |
-| $\|KS\|_\infty$ | < 20 | 15.3 ✓ |
+为让页面有完整可运行的控制闭环，使用仅测x₂的比例反馈F=q(r−x₂)，默认q=1。它与H∞/μ方法没有优劣比较关系。闭环特征多项式的系数为
 
-标称性能全部满足。但这只是标称模型——不确定性下的表现需要鲁棒性分析。
+$$
+[a_4,a_3,a_2,a_1,a_0]=[m_2,\ 0.5+0.7m_2,\ (1+m_2)k+0.1,\ 0.2k+0.5q,\ kq].
+$$
+
+系数均正时，四阶Routh严格稳定还需Δ₂=a₃a₂−a₄a₁>0、Δ₃=Δ₂a₁−a₃²a₀>0。标称q=1时Δ₂=11.585、Δ₃=21.7375，S(0)=0源于对象积分模态；这不代表瞬态达标。请用q=0.1、1、8与失稳角点按钮，观察同一控制器族的取舍。
+
+<RobustCaseStudyExplorer />
 
 ## μ 分析验证
 
 ### 鲁棒稳定性检验
 
-构造从 $(v_m, v_k)$ 到 $(z_m, z_k)$ 的闭环传递矩阵 $M_{11}(s)$，计算：
+本课没有运行mussv/robstab，原“μ=0.85、裕度1.18”撤销结果身份。一般流程是先检查名义内部稳定与良定，再构造z= M₁₁v，v=Δz；用对应实/复块结构的全频μ界判定。上下界区间跨过1时不能强判；上界大于1不等于找到失稳参数。参数网格也不代替全域μ证明。
 
-$$
-\sup_\omega \mu_{\boldsymbol{\Delta}}(M_{11}(j\omega))
-$$
-
-其中 $\boldsymbol{\Delta} = \text{diag}(\delta_m, \delta_k)$。
-
-**结果**：$\sup_\omega \mu = 0.85 < 1$ → **鲁棒稳定** ✓
-
-鲁棒稳定裕度 = $1/0.85 = 1.18$，即不确定性需要再增大 18% 才会导致不稳定。裕度不大，但满足要求。
+不过，对本课q=1、固定阻尼的两参数矩形，可以直接给出解析证书。令u=m₂−0.3≥0、v=k−8≥0，把Δ₂、Δ₃展开为u、v的多项式，**所有系数为正**；常数项分别为6.825、10.2997。所以整个矩形Δ₂≥6.825、Δ₃≥10.2997。其它Routh系数严格正，因此整个矩形内部稳定。证明在答案Notebook复算，范围不含额外阻尼变化、动态误差或饱和。
 
 ### 鲁棒性能检验
 
-构造增广结构 $\boldsymbol{\Delta}_p = \text{blkdiag}(\delta_m, \delta_k, \Delta_p)$，计算：
+即使稳定性证明通过，仍要检查性能。设外扰参考w为一个输入，zₚ=[W₁S,W₂T,W₃KS]ᵀw；构造含实际参数回路的M。检验γ时使用归一化zₚ/γ，再加入从三个性能输出回到一个外输入的**1×3满复虚块**Δₚ。增广结构diag(δₘ,δₖ,Δₚ)与信号维数必须相容，不能无说明当成三个标量块。
 
-$$
-\sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))
-$$
-
-**结果**：$\sup_\omega \mu = 1.25 > 1$ → **鲁棒性能不满足** ✗
+只有适用假设下严格全频μ上界小于1，才是鲁棒性能的充分证书。本课未计算此值；原“μ=1.25、5rad/s最坏参数”没有可复现模型/控制器/日志，不能保留为实测。
 
 ### 诊断
 
-μ 值在 $\omega \approx 5$ rad/s 处达到峰值 1.25。最坏情况不确定性：$\delta_m^* = 0.7$（$m_2$ 增加 28%），$\delta_k^* = -0.5$（$k$ 降低 10%）。
-
-物理含义：当负载变重、弹簧变软时，共振频率降低，控制器的陷波滤波器不再对准共振峰，导致振动抑制效果下降。
-
-**改进方向**：
-1. 增大 $W_2$ 在共振频率附近的增益 → 更强调鲁棒性
-2. 降低 $W_1$ 的带宽要求 → 放松低频性能
-3. 用 μ 综合直接优化 → 利用结构信息减少保守性
+真实诊断按顺序：模型是否正确→名义是否内稳→指标是否可行→证书是否保守→是否找到物理反例。本课比例q=8时标称稳定，却在m₂=0.7、k=8角点失稳；这就是可回代的物理反例。q=1虽覆盖矩形稳定，超调和调节目标仍明显失败。不要把“μ上界超过1”“仿真慢”“实际失稳”混成一类。
 
 ## μ 综合改进
 
 ### D-K 迭代
 
-用 D-K 迭代直接优化鲁棒性能指标：
+D-K交替在固定K下求可行缩放/拟合，在固定缩放下重新综合K，适用时改进μ的可计算上界。它不保证全局最优，也不保证每轮真实μ单调下降；实参数问题需要兼容的分析设置。原1.25→1.08→0.97→0.93→0.92序列没有求解日志，不能作为本案例结果。
 
-$$
-\min_K \sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))
-$$
+下面是需要MATLAB Robust Control Toolbox的**未执行外部模板**。独立实参数可同时到端点，只有质量/刚度进入该对象；保存控制器与迭代/裕度日志后，才有资格填写数值结果。
 
-**迭代过程**：
-
-| 迭代 | $\inf_D \|DMD^{-1}\|_\infty$ | 变化 |
-|------|-------------------------------|------|
-| 1（= H∞） | 1.25 | — |
-| 2 | 1.08 | -13.6% |
-| 3 | 0.97 | -10.2% |
-| 4 | 0.93 | -4.1% |
-| 5 | 0.92 | -1.1% |
-
-3 次迭代后 μ 值降到 1 以下，5 次迭代基本收敛。最终 $\sup_\omega \mu = 0.92 < 1$ → **鲁棒性能满足** ✓
+```matlab
+s = tf('s');
+m = ureal('m2',0.5,'Percentage',40);
+k = ureal('k',10,'Percentage',20);
+G = (0.5*s+k)/(m*s^4+(0.5+0.7*m)*s^3+((1+m)*k+0.1)*s^2+0.2*k*s);
+G.InputName='u'; G.OutputName='y';
+W1=(s/1.5+1)/(s+0.01); W2=0.2*s/(s+20); W3=tf(0.05);
+W1.InputName='e'; W1.OutputName='z1';
+W2.InputName='y'; W2.OutputName='z2';
+W3.InputName='u'; W3.OutputName='z3';
+E=sumblk('e=r-y');
+P=connect(G,W1,W2,W3,E,{'r','u'},{'z1','z2','z3','e'});
+[Kmu,CLperf,info]=musyn(P,1,1);
+CL=lft(P,Kmu);
+[stabmarg,wcu,report]=robstab(feedback(G*Kmu,1));
+[perfmarg,wcup,reportp]=robustperf(CL);
+save('robust11-external.mat','Kmu','CLperf','info','stabmarg','wcu','report','perfmarg','wcup','reportp');
+```
 
 ### 控制器对比
 
-| 特性 | H∞ 控制器 | μ 综合控制器 |
-|------|-----------|--------------|
-| 控制器阶数 | 8 | 14 |
-| 标称 $\|W_1 S\|_\infty$ | 0.88 | 0.95 |
-| 标称带宽 | 1.2 rad/s | 1.0 rad/s |
-| $\sup \mu_{RS}$（鲁棒稳定） | 0.85 | 0.78 |
-| $\sup \mu_{RP}$（鲁棒性能） | 1.25 | 0.92 |
-| 最坏情况超调 | 35% | 22% |
+| 对象 | 本课执行状态 | 可报告的结论 |
+|---|---|---|
+| 旧PID＋陷波 | 原结构极点已核 | 名义失稳；不是充分整定的代表基线 |
+| 比例q族 | 显式K、同一模型/网格/窗口 | 条件化稳定证书与样本指标 |
+| H∞混合灵敏度 | 未执行Slycot综合 | 无K、γ、阶数可报告 |
+| μ综合 | 未执行外部模板 | 无μ结果或14阶结果可报告 |
 
-μ 综合控制器的标称性能略差（带宽从 1.2 降到 1.0 rad/s），但鲁棒性能显著改善（μ 从 1.25 降到 0.92）。控制器阶数更高（14 vs 8），工程上可能需要降阶。
-
-> 💡 **核心权衡**：H∞ 设计为"不可能的最坏情况"留余量，标称性能好但鲁棒性差。μ 综合利用结构信息，知道"质量和刚度不会同时取最坏值"，在鲁棒性和性能之间找到更好的平衡。
+μ利用指定结构，并不排除质量/刚度同时取最坏值；也不存在“越鲁棒标称性能必然越差”的普遍定理。工程比较必须有同对象、同要求、独立整定预算和失败场景，不能用这张执行状态表制造方法排名。
 
 ## Monte Carlo 验证
 
-μ 分析给出的是确定性保证（上界），Monte Carlo 给出的是统计验证。两者互补。
-
 ### 验证方案
 
-在不确定性空间中均匀采样 $N = 1000$ 个点：
-
-$$
-m_2^{(i)} = \bar{m}_2(1 + 0.4 \delta_m^{(i)}), \quad k^{(i)} = \bar{k}(1 + 0.2 \delta_k^{(i)})
-$$
-
-对每个样本计算闭环阶跃响应，统计性能指标。
+保留N=1000，使用NumPy default_rng(42)在整个归一化矩形均匀采样；所有样本采用同一个q=1。先检查四阶极点，再用传递函数部分分式生成零初始阶跃，F=q(1−x₂)。时间0–120s、间隔0.04s；峰值和调节时间均为采样读数，未在窗口内调节的记为未完成，不能填0。坐标/模型与React默认相同，React采用独立RK4积分。
 
 ### 验证结果
 
-| 指标 | 要求 | H∞ 最坏值 | μ 综合最坏值 |
-|------|------|-----------|--------------|
-| 稳定性 | 100% 稳定 | 100% ✓ | 100% ✓ |
-| 超调 | < 30% | 35% ✗ | 22% ✓ |
-| 调节时间 | < 8 s | 6.5 s ✓ | 7.2 s ✓ |
-| 控制量峰值 | < 20 N | 18 N ✓ | 16 N ✓ |
+q=1的1000个样本全部稳定；采样超调最小77.1200%、均值79.2334%、最大81.4131%、95%分位80.9550%；采样力峰值约1N；最慢已完成的2%调节读数65.60s，120s内未调节样本为0。标称超调79.2852%、调节读数57.80s。这组基线远未达到30%/8s目标，不能宣布工程设计完成。
 
-H∞ 设计在约 5% 的参数组合下超调超过 30%，μ 综合设计在所有 1000 个样本中都满足要求。Monte Carlo 结果与 μ 分析的预测一致。
+即使1000个样本都稳定且采样力峰值低于20N，也不能据此证明整个集合满足性能；本例稳定性另有Routh证书，而瞬态指标不合格。旧代码把peak_F固定填0并只运行一个手调控制器，却打印H∞/μ两个方法的百分比；这些结果已经撤销。固定种子的结果是可复现实验，不是统计置信保证，更不是“最终确认”。
 
 <JupyterNotebook
   language="python"
   setupCode={`import numpy as np
 import control as ctrl
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-import warnings
-warnings.filterwarnings('ignore')
-np.random.seed(42)
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
-m1, m2_bar, k_bar = 1.0, 0.5, 10.0
-b, b1 = 0.5, 0.2
-num = [b, k_bar]
-den = [m1*m2_bar, m1*b + m2_bar*b + m1*b1, m1*k_bar + m2_bar*k_bar + b*b1, b*k_bar + b1*k_bar, 0]
-G = ctrl.tf(num, den)
-wn = np.sqrt(k_bar * (m1 + m2_bar) / (m1 * m2_bar))
-Kp, Ki, Kd = 15.0, 5.0, 2.0
-K_pid = ctrl.tf([Kd, Kp, Ki], [1, 0])
-K_notch = ctrl.tf([1, 2*0.3*wn, wn**2], [1, 2*0.8*wn, wn**2])
-K_lp = ctrl.tf([1], [1/30, 1])
-K = K_pid * K_notch * K_lp
-L = G * K
-S = ctrl.feedback(1, L)
-T = ctrl.feedback(L, 1)
-W1 = ctrl.tf([1/1.5, 1], [1, 0.01])
-omega_fine = np.logspace(-3, 2, 2000)
-mag_S = np.abs(S(1j * omega_fine))
-mag_T = np.abs(T(1j * omega_fine))
-mag_W1 = np.abs(W1(1j * omega_fine))`}
+from scipy.signal import residue
+
+def coefficients(m=.5, k=10., q=1.):
+    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])
+
+def trace(m=.5, k=10., q=1., end=120., dt=.04):
+    den = coefficients(m,k,q)
+    poles = np.roots(den)
+    stable = bool(np.max(poles.real) < -1e-9)
+    t = np.linspace(0,end,round(end/dt)+1)
+    # Partial fractions of T(s)/s; no cancelled internal unstable states.
+    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])
+    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))
+    force = q*(1-y)
+    metrics = {'stable':stable,'alpha':float(max(poles.real)),
+               'overshoot':None,'settling':None,'peak_force':None}
+    if stable:
+        bad = np.flatnonzero(np.abs(y-1) > .02)
+        metrics.update(overshoot=float(max(0.,y.max()-1)),
+            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),
+            peak_force=float(np.max(np.abs(force))))
+    return t,y,force,metrics
+
+def frequency(m,k,q,w):
+    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z
+    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)
+    return s,tt,q*s
+
+s=ctrl.tf('s')
+G=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)
+wn=np.sqrt(30)
+K_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)
+W1=(s/1.5+1)/(s+.01)
+W2=.2*s/(s+20)
+W3=ctrl.tf([.05],[1])
+plt.rcParams['axes.unicode_minus']=False
+`}
   cells={[
-    {
-      code: `# ===== Monte Carlo 鲁棒性能验证 =====
-N_samples = 1000
-dm_vals = np.random.uniform(-1, 1, N_samples)
-dk_vals = np.random.uniform(-1, 1, N_samples)
-
-results = {'overshoot': [], 'settling_time': [], 'stable': [], 'peak_F': []}
-
-for dm, dk in zip(dm_vals, dk_vals):
-    m2_i = m2_bar * (1 + 0.4 * dm)
-    k_i = k_bar * (1 + 0.2 * dk)
-    
-    num_i = [b, k_i]
-    den_i = [m1*m2_i, m1*b + m2_i*b + m1*b1,
-             m1*k_i + m2_i*k_i + b*b1, b*k_i + b1*k_i, 0]
-    G_i = ctrl.tf(num_i, den_i)
-    
-    CL = ctrl.feedback(G_i * K, 1)
-    
-    poles = ctrl.pole(CL)
-    is_stable = np.all(np.real(poles) < 0)
-    results['stable'].append(is_stable)
-    
-    if is_stable:
-        t = np.linspace(0, 30, 3000)
-        try:
-            t_out, y_out = ctrl.step_response(CL, T=t)
-            os_val = np.max(y_out) - 1.0
-            results['overshoot'].append(os_val)
-            results['peak_F'].append(0)
-            
-            idx_settle = np.where(np.abs(y_out - 1.0) > 0.02)[0]
-            if len(idx_settle) > 0:
-                ts_val = t_out[idx_settle[-1]]
-            else:
-                ts_val = 0
-            results['settling_time'].append(ts_val)
-        except:
-            results['overshoot'].append(np.nan)
-            results['settling_time'].append(np.nan)
-    else:
-        results['overshoot'].append(np.nan)
-        results['settling_time'].append(np.nan)
-
-os_arr = np.array(results['overshoot'])
-ts_arr = np.array(results['settling_time'])
-stable_arr = np.array(results['stable'])
-
-print("=== Monte Carlo 鲁棒性能验证 ===")
-print(f"采样数: {N_samples}")
-print(f"稳定率: {np.sum(stable_arr)}/{N_samples} ({100*np.mean(stable_arr):.1f}%)")
-valid = ~np.isnan(os_arr)
-print(f"\\n超调统计 (稳定样本):")
-print(f"  最小值: {100*np.nanmin(os_arr):.1f}%")
-print(f"  均值:   {100*np.nanmean(os_arr):.1f}%")
-print(f"  最大值: {100*np.nanmax(os_arr):.1f}%")
-print(f"  95%分位: {100*np.nanpercentile(os_arr, 95):.1f}%")
-print(f"  超标率 (>30%): {100*np.mean(os_arr[valid] > 0.3):.1f}%")
-print(f"\\n调节时间统计:")
-print(f"  最大值: {np.nanmax(ts_arr):.1f} s")
-print(f"  95%分位: {np.nanpercentile(ts_arr[valid], 95):.1f} s")`
-    },
-    {
-      code: `# ===== 可视化 - 参数空间与阶跃响应对比 =====
-fig = plt.figure(figsize=(16, 10))
-gs = GridSpec(2, 3, figure=fig)
-
-ax = fig.add_subplot(gs[0, 0])
-ax.scatter(dm_vals[valid], 100*os_arr[valid], c=dk_vals[valid], cmap='coolwarm', 
-           alpha=0.5, s=10)
-ax.axhline(y=30, color='r', linestyle='--', linewidth=2, label='要求: 超调 < 30%')
-ax.set_xlabel('δm (质量不确定性)')
-ax.set_ylabel('超调 (%)')
-ax.set_title('超调 vs 质量变化')
-ax.legend()
-ax.grid(True, alpha=0.3)
-
-ax = fig.add_subplot(gs[0, 1])
-dm_grid = np.linspace(-1, 1, 25)
-dk_grid = np.linspace(-1, 1, 25)
-DM, DK = np.meshgrid(dm_grid, dk_grid)
-OS_GRID = np.zeros_like(DM)
-
-for i in range(len(dm_grid)):
-    for j in range(len(dk_grid)):
-        m2_i = m2_bar * (1 + 0.4 * DM[i,j])
-        k_i = k_bar * (1 + 0.2 * DK[i,j])
-        num_i = [b, k_i]
-        den_i = [m1*m2_i, m1*b + m2_i*b + m1*b1,
-                 m1*k_i + m2_i*k_i + b*b1, b*k_i + b1*k_i, 0]
-        G_i = ctrl.tf(num_i, den_i)
-        CL_i = ctrl.feedback(G_i * K, 1)
-        poles = ctrl.pole(CL_i)
-        if np.all(np.real(poles) < 0):
-            t_os, y_os = ctrl.step_response(CL_i, T=np.linspace(0, 20, 2000))
-            OS_GRID[i,j] = (np.max(y_os) - 1.0) * 100
-        else:
-            OS_GRID[i,j] = np.nan
-
-contour = ax.contourf(DM, DK, OS_GRID, levels=20, cmap='RdYlGn_r', vmin=0, vmax=50)
-plt.colorbar(contour, ax=ax, label='超调 (%)')
-ax.contour(DM, DK, OS_GRID, levels=[30], colors='black', linewidths=2)
-ax.set_xlabel('δm')
-ax.set_ylabel('δk')
-ax.set_title('参数空间超调分布')
-
-ax = fig.add_subplot(gs[0, 2])
-t_step = np.linspace(0, 15, 1500)
-
-CL_nom = ctrl.feedback(G * K, 1)
-t_n, y_n = ctrl.step_response(CL_nom, T=t_step)
-ax.plot(t_n, y_n, 'b-', linewidth=2, label='标称')
-
-worst_idx = np.nanargmax(os_arr)
-m2_w = m2_bar * (1 + 0.4 * dm_vals[worst_idx])
-k_w = k_bar * (1 + 0.2 * dk_vals[worst_idx])
-num_w = [b, k_w]
-den_w = [m1*m2_w, m1*b + m2_w*b + m1*b1,
-         m1*k_w + m2_w*k_w + b*b1, b*k_w + b1*k_w, 0]
-G_w = ctrl.tf(num_w, den_w)
-CL_w = ctrl.feedback(G_w * K, 1)
-t_w, y_w = ctrl.step_response(CL_w, T=t_step)
-ax.plot(t_w, y_w, 'r--', linewidth=2, 
-        label=f'最坏 (dm={dm_vals[worst_idx]:.2f}, dk={dk_vals[worst_idx]:.2f})')
-
-ax.axhline(y=1.3, color='gray', linestyle=':', alpha=0.5, label='30% 超调线')
-ax.set_xlabel('时间 (s)')
-ax.set_ylabel('输出')
-ax.set_title('阶跃响应对比')
-ax.legend()
-ax.grid(True, alpha=0.3)
-
-ax = fig.add_subplot(gs[1, :])
-ax.semilogx(omega_fine, 20*np.log10(mag_S), 'b-', linewidth=2, label='|S|')
-ax.semilogx(omega_fine, 20*np.log10(mag_T), 'g-', linewidth=2, label='|T|')
-ax.semilogx(omega_fine, -20*np.log10(mag_W1), 'b--', alpha=0.5, label='1/|W1| (性能界)')
-ax.axhline(y=20*np.log10(1.5), color='orange', linestyle=':', alpha=0.5, label='||S||∞ < 1.5')
-ax.axvline(x=wn, color='gray', linestyle=':', alpha=0.3)
-ax.set_xlabel('ω (rad/s)')
-ax.set_ylabel('增益 (dB)')
-ax.set_title('灵敏度函数与性能边界')
-ax.legend(loc='upper right')
-ax.grid(True, which='both', alpha=0.3)
-ax.set_ylim(-60, 40)
-
-plt.tight_layout()
-plt.show()`
-    },
-    {
-      code: `# ===== 三种方法对比总结 =====
-print("=" * 60)
-print("鲁棒控制设计方法对比")
-print("=" * 60)
-print()
-print("本案例中三种方法的对比：")
-print()
-print("┌─────────────────┬──────────────┬──────────────┬──────────────┐")
-print("│ 特性            │ PID+陷波     │ H∞ 混合灵敏度 │ μ 综合       │")
-print("├─────────────────┼──────────────┼──────────────┼──────────────┤")
-print("│ 设计方法        │ 手工调参     │ 自动优化      │ D-K 迭代     │")
-print("│ 利用结构信息    │ 否           │ 否            │ 是           │")
-print("│ 鲁棒稳定裕度    │ ~1.05        │ ~1.18         │ ~1.28        │")
-print("│ 鲁棒性能 μ      │ > 1.5 (不满足)│ 1.25 (不满足) │ 0.92 (满足)  │")
-print("│ Monte Carlo 稳定 │ ~95%        │ 100%          │ 100%         │")
-print("│ 超调 < 30%      │ ~80%         │ ~95%          │ 100%         │")
-print("│ 控制器阶数      │ 5            │ 8             │ 14           │")
-print("│ 工程实现难度    │ 低           │ 中            │ 高           │")
-print("└─────────────────┴──────────────┴──────────────┴──────────────┘")
-print()
-print("关键结论：")
-print("1. PID+陷波：直觉好、实现简单，但无法保证鲁棒性")
-print("2. H∞：系统化设计，但忽略不确定性结构导致保守")
-print("3. μ 综合：最优鲁棒性能，但控制器阶数高、计算量大")
-print("4. 工程建议：先用 H∞ 设计，μ 分析验证，不达标再用 μ 综合")
-print("5. 最终验证：Monte Carlo 是不可或缺的最后一步")`
-    }
+    { code: `# Same 1000 physical samples, with real control force and explicit window
+rng=np.random.default_rng(42)
+draws=rng.uniform(-1,1,(1000,2))
+metrics=[]
+for dm,dk in draws:
+    metrics.append(trace(.5*(1+.4*dm),10*(1+.2*dk),1)[3])
+stable=np.array([v['stable'] for v in metrics])
+os=np.array([v['overshoot'] for v in metrics],dtype=float)
+force=np.array([v['peak_force'] for v in metrics],dtype=float)
+settling=np.array([np.nan if v['settling'] is None else v['settling'] for v in metrics])
+print('samples/stable:',len(metrics),sum(stable))
+print('sampled overshoot min/mean/max/p95:',np.min(os),np.mean(os),np.max(os),np.percentile(os,95))
+print('sampled peak force min/max:',np.min(force),np.max(force))
+print('unsettled by 120s:',sum(np.isnan(settling)))
+print('settling max among resolved:',np.nanmax(settling))
+for m,k in [(.3,8),(.3,12),(.7,8),(.7,12)]:
+    print('corner m/k, q1 and q8:',m,k,trace(m,k,1)[3],trace(m,k,8)[3])
+print('sampling_complete')` },
+    { code: `# Sample distribution, actual nominal/worst-sample y and F, frequency limits
+fig,axes=plt.subplots(2,2,figsize=(10,7))
+axes[0,0].scatter(draws[:,0],100*os,c=draws[:,1],s=4)
+axes[0,0].set(xlabel='delta_m',ylabel='sampled overshoot (%)')
+axes[0,1].hist(100*os,bins=25);axes[0,1].set(xlabel='sampled overshoot (%)',ylabel='count')
+worst=int(np.argmax(os));dm,dk=draws[worst]
+for label,m,k in [('nominal',.5,10),('largest sampled overshoot',.5*(1+.4*dm),10*(1+.2*dk))]:
+    t,y,f,met=trace(m,k,1)
+    axes[1,0].plot(t,y,label=label);axes[1,1].plot(t,f,label=label)
+axes[1,0].set(xlabel='t (s)',ylabel='x2 (m)');axes[1,1].set(xlabel='t (s)',ylabel='F (N)')
+for ax in axes.ravel():ax.grid(True,alpha=.3)
+axes[1,0].legend();axes[1,1].legend();plt.tight_layout();plt.show()
+print('plot_complete')` },
+    { code: `# Method audit: computed evidence must not be replaced by printed rankings
+print('P q=1: explicit controller, analytic fixed-damping rectangle stability certificate; poor transient performance remains')
+print('Old PID/notch: unstable nominal; diagnosis only, not a tuned representative method baseline')
+print('H-infinity mixsyn: NOT EXECUTED, no controller/gamma/order to report')
+print('mu analysis/musyn: NOT EXECUTED, no .85/1.25/.92 or 8/14 order results to report')
+print('Damping +/-30%, additional multiplicative dynamics, saturation: NOT CERTIFIED')
+print('method_audit_complete')` }
   ]}
 />
+
 
 ## 深入讨论
 
 ### 从本案例到一般工程流程
 
-本案例展示的鲁棒控制设计流程具有通用性：
+按图中的证据链推进：物理方程与辨识范围→需求/权重可行性→真实综合产物→名义/鲁棒稳定与性能证书→样本反例搜索→实现验证。任一环节失败回到相应环节，不以一次随机通过宣布设计结束。
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    鲁棒控制工程设计流程                         │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
-│  1. 物理建模 → 标称传递函数 G(s)                               │
-│       ↓                                                        │
-│  2. 不确定性识别 → 来源、范围、结构                             │
-│       ↓                                                        │
-│  3. LFT 建模 → G_u(s), Δ                                      │
-│       ↓                                                        │
-│  4. 需求翻译 → 时域指标 → 频域权重 W₁, W₂, W₃                  │
-│       ↓                                                        │
-│  5. H∞ 设计 → mixsyn → K_H∞                                   │
-│       ↓                                                        │
-│  6. μ 分析验证 → 鲁棒稳定? 鲁棒性能?                            │
-│       ├─ 都满足 → 步骤 8                                       │
-│       └─ 不满足 → 步骤 7                                       │
-│       ↓                                                        │
-│  7. μ 综合改进 → musyn → K_μ → 回到步骤 6                     │
-│       ↓                                                        │
-│  8. Monte Carlo 验证 → 最终确认                                 │
-│       ├─ 通过 → 设计完成                                       │
-│       └─ 不通过 → 回到步骤 4（调整权重）                        │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-```
+<div style={{overflowX:'auto'}}><img src="/robust-case-study-system.svg" alt="物理建模到候选设计、严格证书、抽样的证据流程" style={{width:'100%',minWidth:740}} /></div>
+
+若位置传感器断线或读数冻结，反馈可能持续施力，使定位台撞向行程端；执行器卡死也不在参数鲁棒性模型内。实际装置需要独立的位置/力监测、限位和经过验证的停机路径。切断驱动力只能让速度在阻尼下衰减；本模型没有接地弹簧，位置不会自动回到原点，因此“断力”也不能直接称为安全状态。应结合机械制动、限位距离和负载确定降级/停机方案，并验证故障检测与停止过程；本课没有给出认证等级或实机安全保证。
 
 ### 控制器降阶
 
-μ 综合控制器的阶数通常很高（本案例 14 阶）。工程实现时需要降阶：
-
-| 方法 | 原理 | 风险 |
-|------|------|------|
-| 平衡截断 | 保留最可控/可观的状态 | 可能丢失关键频率特性 |
-| Hankel 范数近似 | 最小化 Hankel 范数误差 | 高频特性可能退化 |
-| 频率加权降阶 | 在关心的频段保留精度 | 需要选择加权频段 |
-
-降阶后必须**重新做 μ 分析和 Monte Carlo 验证**——降阶本身引入了新的不确定性。
+平衡截断保留重要可控可观状态，Hankel范数近似控制特定误差，频率加权降阶关注目标频段；都可能改变闭环性质。8阶H∞/14阶μ是原题的假设，不是本次求解结果。若必须降至10阶，先保证适用的稳定分解/降阶条件，再比较误差；重新检查内稳、RS/RP、时域峰值及实际采样实现。不能说任意截掉四个状态都可。
 
 ### 增益调度扩展
 
-本案例只处理了**固定结构**的参数不确定性。如果系统工作点变化很大（如飞行器在不同高度/速度），需要在多个工作点分别设计鲁棒控制器，然后用增益调度切换。
-
-增益调度 + 鲁棒控制的组合是航空航天的标准做法：
-1. 在飞行包线内选择若干工作点
-2. 每个工作点做鲁棒控制设计
-3. 设计调度律（按高度/速度插值控制器参数）
-4. 验证切换过程的稳定性
+工作点跨度大时可考虑局部鲁棒设计与调度，但多个冻结工作点分别稳定不保证插值/切换系统稳定。还要声明调度变量、速率、测量误差、过渡和统一证书或其它验证。这个扩展没有在当前固定参数教学实验中执行。
 
 ### 与其他章节的联系
 
-鲁棒控制综合案例串联了前面所有内容：
-- **经典控制**：PID、Bode 图、陷波滤波器、稳定裕度
-- **现代控制**：状态空间、LFT、矩阵分析
-- **鲁棒控制**：全部七节内容的综合应用
-
-下一章节进入**计算机控制**领域，讨论采样、量化和数字控制器设计——这些是将鲁棒控制器从理论变为实际的关键步骤。
+物理状态与内部稳定连接[状态空间](/modern/state-space)；频域S/T连接[混合灵敏度](/robust/mixed-sensitivity)，实参数LFT连接[μ分析](/robust/mu-analysis)。[时滞](/robust/delay-robust-control)、采样保持、量化、噪声和饱和会改变闭环，不能沿用本课连续线性证书直接代签。跨章链接只是补课入口，不表示下一章已完成。
 
 ## 小结
 
-1. **完整流程**：物理建模 → 不确定性分析 → LFT 构造 → 权重选择 → H∞ 设计 → μ 验证 → μ 综合 → Monte Carlo 确认。每一步都有明确的输入输出和判定标准。
+本例的重要成果是可审计的模型和结论边界：原模型系数、重复缩放、权重DC矛盾先被纠正；原PID失败被保留；q=1在声明矩形上稳定有解析证书，但瞬态需求仍失败。真正的H∞/μ综合必须交付控制器、求解日志及再验证。Monte Carlo用于找反例和观察样本表现，不能补上缺失的全域证明或实机证据。
 
-2. **方法层次**：PID + 陷波（手工，快但无保证）→ H∞ 混合灵敏度（系统化，充分条件）→ μ 综合（最优，利用结构信息）。工程上通常从简单方法开始，逐步升级。
-
-3. **核心权衡**：鲁棒性 vs 标称性能。越追求鲁棒性，标称性能越差。μ 综合通过利用不确定性结构信息，在两者之间找到更好的平衡。
-
-4. **验证闭环**：μ 分析给出确定性保证，Monte Carlo 给出统计验证。两者互补，缺一不可。
-
-5. **工程落地**：控制器降阶、增益调度、数字实现——这些是将理论变为产品的必要步骤。
+截至2026-10-24核对的接口来源：[python-control 0.10.2 mixsyn](https://python-control.readthedocs.io/en/0.10.2/generated/control.mixsyn.html)说明S/KS/T参数顺序；[MathWorks musyn](https://www.mathworks.com/help/robust/ref/uss.musyn.html)与[robstab](https://www.mathworks.com/help/robust/ref/dynamicsystem.robstab.html)用于外部工具链，当前环境未执行。具体实测原始输出见本课讨论日志附录A/B。
 
 ## 习题
 
@@ -769,82 +431,84 @@ print("5. 最终验证：Monte Carlo 是不可或缺的最后一步")`
 
 ## 答案
 
-**习题 1 答案**：
+**习题1答案**：若1.3只是μ上界，首先辨别是证书未闭合还是已找到真实违例。策略一调整问题频段的权重或可协商需求，代价是性能取舍；原需求不可悄悄放松。策略二用兼容结构的μ综合，使用D-K交替算法，代价是非凸、拟合、阶数和计算预算，不能保证全局最优。策略三重新辨识不确定范围/相关性，只有新证据才能缩小集合；不能为过门槛删掉实际变化。还可改善传感/执行器或增加真实可用测量，但须更新接口和模型。
 
-三种改进策略：
+**习题2答案**：(a) 若合并为一个满复动态块并证明覆盖原集合，通常可用小增益等较便宜上界，但可能保守。若把三个独立实参数设成同一个δ，则缩小集合、可能漏掉反例，不能叫保守覆盖。(b) 单次独立通道为diag(δ₁,δ₂,δ₃)，δᵢ∈[−1,1]实数；重复出现需相同δᵢI块，10%/30%/5%增益放入固定模型一次。(c) 全复满块的μ与最大奇异值相等，单实标量块一般不等；保留结构可能更精细但数值代价依算法而变。μ分析不等于D-K迭代，后者是综合流程；保留实结构也不意味着所算上界没有保守性。
 
-**策略 1：调整权重函数**
-- 增大 $W_2$（鲁棒性权重）在问题频率处的增益 → 更强调鲁棒性
-- 放松 $W_1$（性能权重）的低频增益或带宽 → 降低性能要求
-- 优点：简单，保持 H∞ 框架
-- 缺点：可能过度保守（标称性能下降过多），需要反复迭代
-
-**策略 2：μ 综合（D-K 迭代）**
-- 直接优化 $\sup_\omega \mu_{\boldsymbol{\Delta}_p}(M(j\omega))$
-- 优点：利用不确定性结构信息，减少保守性，通常能同时改善鲁棒性和保持标称性能
-- 缺点：控制器阶数更高，计算量大，不保证全局最优
-
-**策略 3：修改不确定性模型**
-- 检查不确定性范围是否估计过大（用实验数据校准）
-- 检查不确定性结构是否合理（是否有可以合并的参数）
-- 优点：从根本上减少保守性
-- 缺点：需要额外的实验工作，且不确定性范围不能随意缩小
-
-**习题 2 答案**：
-
-**(a)** 合并为一个等效不确定性：
-- 优点：μ 分析计算简单（只有一个块），$D$ 缩放只有 1 个参数
-- 缺点：引入保守性——三个参数不会同时取最坏值，但合并后假设它们会。等效范围需要覆盖"三个参数同时最坏"的情况，比实际可能的偏差大得多
-
-**(b)** 保留三个独立参数：$\boldsymbol{\Delta} = \text{diag}(\delta_1, \delta_2, \delta_3)$，三个 $1 \times 1$ 块。
-
-**(c)** 计算复杂度：合并方式更低（1 个块的 μ 等于 $\bar{\sigma}$，直接计算）。独立方式更高（3 个块的 μ 需要 D-K 迭代）。
-
-保守性：独立方式更精确（无额外保守性）。合并方式更保守（假设参数同时取最坏值）。
-
-工程建议：如果三个参数的变化范围差异很大（±5% vs ±30%），合并的保守性会非常大，应该保留独立结构。
-
-**习题 3 答案**：
-
-需求翻译：
-- 稳态误差 < 0.5% → $|S(0)| < 0.005$ → $A = 0.005$
-- 带宽 > 2 rad/s → $\omega_b = 2$
-- 共振峰 < 3 dB → $|T(\omega_n)| < 10^{3/20} \approx 1.41$ → 通过 $W_2$ 约束
-- 控制量 < 50 → $|KS| < 50$ → $W_3 = 1/50 = 0.02$
-
-$W_1(s) = \frac{s/M + \omega_b}{s + \omega_b A}$
-
-选择 $M = 1.5$（允许 $|S|$ 高频峰值 < 1.5）：
+**习题3答案**：保留ωₙ=8、误差0.5%、3dB、带宽2、力峰50的题设。可从下面权重开始，再用真实综合与时域检验调整：
 
 $$
-W_1(s) = \frac{s/1.5 + 2}{s + 0.01}
+W_s(s)=\frac{s/1.5+2}{s+0.01},\qquad W_t(s)=\frac{0.8s}{s+2},\qquad W_u=0.02.
 $$
 
-$W_2$：约束共振频率处的 $|T|$。
+Wₛ(0)=200；稳定且堆叠目标严格小于1可约束DC误差小于0.005。|Wₜ(j8)|≈0.776114，大于10^(−3/20)≈0.707946，因此同一证书给|T(j8)|小于1/0.776114≈1.288471，强于3dB的1.412538；Wₜ(0)=0避免跟踪DC矛盾。Wₛ在2rad/s的倒数约0.832061，只是S频率约束，不能直接称带宽保证。Wᵤ=1/50只归一化KS通道，50的阶跃点值限制须另检，或引入适当峰值/约束设计。原答案的0.7(s+40)/(s+1)在8rad/s实际约3.541751，DC为28，并不是0.7；无可行性说明不能当成合格设计。
 
-$$
-W_2(s) = \frac{0.7(s + 40)}{s + 1}
-$$
+**习题4答案**：(a) 8与14阶是题设，μ综合可能因为动态缩放拟合和增广综合对象而阶数增加；并非总有“对象阶＋D阶＋综合阶”的固定等式，也不保证每个案例μ控制器阶数更高。(b) 若上限10阶，考虑稳定部分的平衡截断、Hankel近似或频率加权降阶；也可做受限阶数/结构综合后重验，保留无法达标的结果。(c) 必须重查内部稳定、原结构和范围的RS/RP、跟踪/振动/控制力/噪声、采样实现及饱和。对降阶误差建立覆盖模型或直接重新构闭环证书；Monte Carlo只是补充反例搜索。
 
-- 低频 $|W_2(0)| = 28$ → $|T(0)| < 0.036$（放松）
-- 共振频率 $|W_2(j8)| \approx 0.7$ → $|T(j8)| < 1.43$（满足 < 1.41 的要求）
-- 高频 $|W_2(\infty)| = 0.7$ → $|T(\infty)| < 1.43$
+下面同时核对题解算术和整个矩形的Routh证书。把两个行列式平移展开，正系数给的是解析下界，不是625个网格点的“证明”。
 
-$W_3 = 0.02$（常数）。
+<JupyterNotebook
+  language="python"
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.signal import residue
 
-**习题 4 答案**：
+def coefficients(m=.5, k=10., q=1.):
+    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])
 
-**(a)** μ 综合控制器阶数 = 对象阶数 + $D$ 缩放拟合阶数 + H∞ 综合引入的阶数。D-K 迭代中，每次 D 步拟合的 $D(s)$ 是有理传递函数（通常 2-4 阶），这些额外的动态被"吸收"进控制器，导致最终控制器阶数高于纯 H∞ 设计。
+def trace(m=.5, k=10., q=1., end=120., dt=.04):
+    den = coefficients(m,k,q)
+    poles = np.roots(den)
+    stable = bool(np.max(poles.real) < -1e-9)
+    t = np.linspace(0,end,round(end/dt)+1)
+    # Partial fractions of T(s)/s; no cancelled internal unstable states.
+    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])
+    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))
+    force = q*(1-y)
+    metrics = {'stable':stable,'alpha':float(max(poles.real)),
+               'overshoot':None,'settling':None,'peak_force':None}
+    if stable:
+        bad = np.flatnonzero(np.abs(y-1) > .02)
+        metrics.update(overshoot=float(max(0.,y.max()-1)),
+            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),
+            peak_force=float(np.max(np.abs(force))))
+    return t,y,force,metrics
 
-**(b)** 控制器降阶方法：
-- 平衡截断：保留最可控/可观的 10 个状态，截断 4 个
-- Hankel 范数近似：最小化 Hankel 范数误差
-- 频率加权降阶：在关心的频段（0-20 rad/s）保留精度
+def frequency(m,k,q,w):
+    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z
+    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)
+    return s,tt,q*s
 
-**(c)** 降阶后需要重新验证：
-1. **标称性能**：降阶可能改变低频增益和带宽
-2. **鲁棒稳定性**：降阶引入的误差等价于新的不确定性
-3. **鲁棒性能**：综合检验
-4. **Monte Carlo**：最终确认
+s=ctrl.tf('s')
+G=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)
+wn=np.sqrt(30)
+K_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)
+W1=(s/1.5+1)/(s+.01)
+W2=.2*s/(s+20)
+W3=ctrl.tf([.05],[1])
+plt.rcParams['axes.unicode_minus']=False
+`}
+  cells={[
+    { code: `# Independent arithmetic for exercises and the full-rectangle Routh certificate
+import sympy as sp
+m,k,u,v=sp.symbols('m k u v',real=True)
+a3=sp.Rational(1,2)+sp.Rational(7,10)*m;a2=(1+m)*k+sp.Rational(1,10)
+a1=k/5+sp.Rational(1,2);a0=k
+D2=sp.expand(a3*a2-m*a1)
+D3=sp.expand(D2*a1-a3*a3*a0)
+for label,expr in [('Delta2',D2),('Delta3',D3)]:
+    shifted=sp.Poly(expr.subs({m:sp.Rational(3,10)+u,k:8+v}),u,v)
+    assert all(c>0 for c in shifted.coeffs())
+    print(label,'positive coefficients:',shifted.as_expr(),'lower bound:',shifted.eval({u:0,v:0}))
+print('Exercise3:',200,10**(3/20),1/50)
+old_w2=.7*(1j*8+40)/(1j*8+1)
+print('old exercise W2(j8):',abs(old_w2),'DC=',28)
+new_wt=.8*1j*8/(1j*8+2)
+print('proposed Wt(j8):',abs(new_wt),'required>',10**(-3/20))
+print('new Ws(0)=200, Ws(j2)=',abs((1j*2/1.5+2)/(1j*2+.01)))
+print('rational coefficient proof, not a frequency or parameter grid proof')
+print('all_answers_complete')` }
+  ]}
+/>
 
-原因：降阶本质上是"用低阶模型近似高阶控制器"，近似误差在高频段可能很大，而高频段恰恰是鲁棒性最敏感的频段。

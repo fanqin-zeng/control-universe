@@ -1,3 +1,6 @@
+import { RobustCaseStudyExplorer } from '@/components/wiki/robust-case-study-explorer';
+import { DelayRobustControlExplorer } from '@/components/wiki/delay-robust-control-explorer';
+import { HInfinityFilterExplorer } from '@/components/wiki/h-infinity-filter-explorer';
 import { CstrMpcExplorer } from "@/components/wiki/cstr-mpc-explorer";
 import { MuSynthesisExplorer } from '@/components/wiki/mu-synthesis-explorer';
 import { MheExplorer } from "@/components/wiki/mhe-explorer";
@@ -193,6 +196,9 @@ export const wikiComponents: MDXComponents = {
   RobustStabilityExplorer,
   MuAnalysisExplorer,
   MuSynthesisExplorer,
+  HInfinityFilterExplorer,
+  RobustCaseStudyExplorer,
+  DelayRobustControlExplorer,
   MixedSensitivityExplorer,
   HInfinityExplorer,
   RobustPerformanceExplorer,

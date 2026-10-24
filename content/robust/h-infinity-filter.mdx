@@ -1,0 +1,326 @@
+---
+title: "H∞滤波"
+description: "从两个噪声通道推导误差能量增益，用耗散证书选择标量滤波增益，并与卡尔曼方差目标及数字实现作可复算比较。"
+---
+
+# H∞滤波
+
+温度计的读数一会儿高、一会儿低：估计值跟得太紧，会把测量噪声也当成真实变化；跟得太慢，又会漏掉真实升温。上一节估计课用噪声统计选择卡尔曼增益。现在换一个要求：**不指定噪声分布，只给定归一化扰动的能量，能否限制估计误差的能量？**
+
+这正是本课H∞滤波的切入点。它仍需要对象模型、通道尺度和性能定义，并不意味着“什么噪声都能滤掉”。我们用一个能手算、能独立复核的连续时间标量观测器贯穿全课，只在这个明确的滤波器族内证明最优增益。
+
+先修：[H∞控制基础](/robust/h-infinity-basics)、[卡尔曼滤波](/estimation/kalman-filter)。本课局部回顾观测器误差方程与二次储能，不要求先学通用矩阵H∞滤波求解器。
+
+## 从温度测量到最坏误差
+
+设 $x$ 是相对工作点的归一化温度偏差，已知模型系数为 $a$。将时间、状态及输入按固定基准归一化，数值实验的一时间单位取一秒；$a,L$ 按每秒解释，频率用rad/s。$q,r>0$ 是下述两个通道的尺度，不能直接套用规格书上的逐次读数方差。
+
+$$
+\dot x=ax+\sqrt q\,w,\qquad y=x+\sqrt r\,v.
+$$
+
+$w$ 改变真实状态，$v$ 污染测量；二者可以是任意确定性有限能量信号。已知输入若同时进入对象和观测器，会在误差方程里抵消，这里省略。温度例子只是归一化教学模型，参数并非实机辨识数据。
+
+估计器用测量残差 $y-\hat x$ 修正模型预测：
+
+$$
+\dot{\hat x}=a\hat x+L(y-\hat x).
+$$
+
+增益 $L$ 同时改变误差衰减速度与噪声注入，不能只看极点变快。本课默认 $a=-1,q=1,r=0.25,L=4$。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<img src="/h-infinity-filter-signals.svg" alt="真实状态、带噪测量和残差校正观测器的信号方向" style={{minWidth:740,width:"100%"}} />
+</div>
+
+## 误差模型与能量合同
+
+定义估计误差 $e=x-\hat x$、性能输出 $z=e$，逐项相减得到
+
+$$
+\dot e=(a-L)e+\sqrt q\,w-L\sqrt r\,v.
+$$
+
+测量噪声前的负号来自误差定义；正负号影响最坏扰动的相对方向，不能先删掉。设 $d=[w\ v]^T$，要求先在 $e(0)=0$ 下讨论
+
+$$
+\|z\|_2^2\le\gamma^2\|d\|_2^2,\qquad
+\|d\|_2^2=\int_0^\infty (w^2+v^2)\,dt.
+$$
+
+左右是能量，所以幅值增益用 $\gamma$，能量比用 $\gamma^2$。最小可用幅值上界是稳定误差通道的L2诱导增益。非零初始误差要另加初始储能，不能让它凭空由零输入能量承担。
+
+“最坏”表示对所有允许的输入方向与波形取上确界，不要求已知分布，也不要求两扰动独立。它不是逐点误差上限，不保证每一时刻误差小于某个固定值；常值偏置、持续白噪声通常不属于整个半轴上的L2。
+
+## 固定增益的精确H∞指标
+
+令 $\lambda=L-a$、$N=q+rL^2$。误差稳定当且仅当 $\lambda>0$。零初值传递矩阵是一行两列：
+
+$$
+G_{ed}(s)=\frac{[\sqrt q\quad-L\sqrt r]}{s+\lambda},\qquad
+\bar\sigma(G_{ed}(j\omega))=\frac{\sqrt{q+rL^2}}{\sqrt{\lambda^2+\omega^2}}.
+$$
+
+当 $L>a$ 时，分母随非负频率增大，峰值精确在直流，故
+
+$$
+\Gamma(L):=\|G_{ed}\|_\infty=\frac{\sqrt{q+rL^2}}{L-a}.
+$$
+
+这是解析全频结论，图上的有限网格仅帮助观察。$L\le a$ 时误差不渐近稳定，不能把形式频响最大值当成稳定能量增益。即使对象 $a>0$，也可能通过 $L>a$ 让**误差**衰减；这并没有给对象增加控制输入，使真实状态本身稳定。
+
+默认误差极点为 $-5$，输入行 $[1,-2]$；过程单通道增益为 $0.2$，测量单通道增益为 $0.4$，联合增益是平方和开根号 $\sqrt{0.2^2+0.4^2}\approx0.447214$，不是简单取两者最大值。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+plt.rcParams['axes.unicode_minus'] = False
+a,q,r,L=-1.,1.,.25,4.
+rate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate`}
+  cells={[
+    { code: `# Two disturbance channels in the actual estimation-error system
+a,q,r,L=-1.,1.,.25,4.
+rate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)])
+Gerr=ctrl.ss([[-rate]],[B],[[1.]],np.zeros((1,2)))
+omega=np.r_[0.,np.logspace(-4,3,1001)]
+sigma=np.array([np.linalg.svd(np.asarray(Gerr(1j*w)).reshape(1,2),compute_uv=False)[0] for w in omega])
+peak=np.linalg.norm(B)/rate;variance=(B@B)/(2*rate)
+print('default a,q,r,L=',a,q,r,L,'error pole=',-rate,'B=',B)
+print('exact full-frequency peak=',peak,'variance under separate white-noise contract=',variance)
+print('Hinf gain=',-q/(r*a),'Kalman gain=',a+np.sqrt(a*a+q/r))
+assert abs(sigma.max()-np.sqrt(.2))<1e-12
+fig,ax=plt.subplots(figsize=(8,3.5));ax.semilogx(omega[1:],sigma[1:]);ax.set(xlabel='rad/s',ylabel='row singular value');ax.grid();plt.tight_layout();plt.show()
+print('error_model_complete')` },
+    { code: `# Strict storage certificate, including the initial-error term
+gamma,p=.5,.25
+Q=np.block([[np.array([[2*(a-L)*p+1]]),p*B.reshape(1,2)],[p*B.reshape(2,1),-gamma**2*np.eye(2)]])
+eigen=np.linalg.eigvalsh(Q)
+print('BRL eigenvalues=',eigen,'Schur residual=',2*(a-L)*p+1+p*p*(B@B)/gamma**2)
+assert eigen.max()<0
+initial_energy=1/(2*rate)
+print('e0=1/no input: exact output energy=',initial_energy,'storage budget=',p)
+print('gamma at exact norm has only a semidefinite certificate, not this strict inequality')
+print('storage_complete')` }
+  ]}
+/>
+
+## 用耗散不等式验证上界
+
+取储能 $V=pe^2,p>0$。要证明 $\Gamma(L)<\gamma$，可寻找使
+
+$$
+\dot V+e^2-\gamma^2(w^2+v^2)<0
+$$
+
+对非零 $[e,w,v]$ 成立的 $p$。这等价于下列对称矩阵严格负定：
+
+$$
+Q_p=\begin{bmatrix}
+2(a-L)p+1&p\sqrt q&-pL\sqrt r\\
+p\sqrt q&-\gamma^2&0\\
+-pL\sqrt r&0&-\gamma^2
+\end{bmatrix}\prec0.
+$$
+
+利用Schur补，条件化为 $-2\lambda p+1+p^2N/\gamma^2<0$。它关于 $p$ 的最小值在 $p=\lambda\gamma^2/N$，最小值 $1-\lambda^2\gamma^2/N$；所以存在严格证书恰好对应 $\gamma>\sqrt N/\lambda$。这里只是本例的标量有界实条件，不是通用矩阵综合算法。
+
+默认取 $\gamma=0.5,p=0.25$，$Q_p$ 最大特征值约 $-0.036475$，严格负定；Schur余量为 $-0.25$。对有限时域积分，并使用 $V(T)\ge0$，得到
+
+$$
+\int_0^T e^2\,dt\le\gamma^2\int_0^T(w^2+v^2)\,dt+p\,e(0)^2.
+$$
+
+默认 $e(0)=1$、零输入时，实际总误差能量为 $1/(2\lambda)=0.1$，在初始储能 $0.25$ 内。若把 $\gamma$ 恰好取成精确范数，边界证书只有半定性，不能仍声称上述严格矩阵不等式通过。
+
+该推导是[有界实与耗散方法](https://web.stanford.edu/~boyd/lmibook/index.html)在标量误差系统中的直接展开；所有矩阵、符号和数值在Notebook中复核，不依赖安装LMI工具箱。
+
+## 选择滤波增益
+
+在已声明的常数 $L$ 观测器族中，稳定可行域是 $L>a$。对平方指标求导：
+
+$$
+\frac{d\Gamma^2}{dL}=\frac{-2(raL+q)}{(L-a)^3}.
+$$
+
+当 $a<0$ 时，唯一驻点 $L_H=-q/(ra)>0$ 位于可行域内；其左侧导数为负、右侧为正，是这个族中的全局最小点：
+
+$$
+\Gamma_H=\sqrt{\frac{qr}{q+ra^2}}.
+$$
+
+默认 $L_H=4$、$\Gamma_H=\sqrt{0.2}\approx0.447214$。若 $a\ge0$，导数在稳定域内始终为负，只有 $L\to\infty$ 时的下确界 $\sqrt r$，没有有限最小点。不能把最大的滑块值当作最优控制器，也不意味着无限增益可实现。
+
+高增益会放大测量噪声、采样/延迟和未建模动态的影响。这个解析结论限于**准确模型、相同输入尺度、指定常数增益族与性能输出**；不宣称在所有动态滤波器中最优，也不自动覆盖对象参数失配。
+
+<HInfinityFilterExplorer />
+
+## 与卡尔曼滤波比较什么
+
+前面的合同是确定性L2。为了比较另一个目标，现在**另设**随机模型：
+
+$$
+dx=ax\,dt+\sqrt q\,dW,\qquad dY=x\,dt+\sqrt r\,dV,
+\qquad d\hat x=a\hat x\,dt+L(dY-\hat x\,dt).
+$$
+
+$W,V$ 为独立标准Wiener过程，$q,r$ 在此是连续噪声强度；白噪声没有有限逐点方差，不能把它直接当作前面的有限能量输入。对 $L>a$，误差稳态方差由标量Lyapunov方程得到
+
+$$
+2(a-L)P_L+q+rL^2=0,\qquad
+P_L=\frac{q+rL^2}{2(L-a)}.
+$$
+
+最小化这个方差的稳态Kalman增益为
+
+$$
+L_K=a+\sqrt{a^2+q/r},\qquad P_K=rL_K.
+$$
+
+默认 $L_K\approx1.236068$，方差 $P_K\approx0.309017$；H∞族内增益 $L_H=4$ 的方差为 $0.5$。反过来，Kalman增益在确定性能量合同中的 $\Gamma\approx0.525731$，高于该族H∞最小值。**优化目标不同，两者各有落败的指标**，不能用这两个数字宣布一种滤波普遍优于另一种。
+
+下方代码使用相同对象、观测器族和三个 $q,r$ 工况，分别解析优化两个目标，再交叉评价。没有拿手调坏增益代替Kalman基线，也没有挑随机种子制造胜负。Kalman统计前提、强度与离散方差区别参见已交付先修及[官方连续估计接口说明](https://www.mathworks.com/help/control/ref/ss.kalman.html)。
+
+## 有限实验与数字实现
+
+为接近直流最坏增益，选择 $[w,v]^T$ 沿输入行的转置方向，单位幅值持续 $T$ 秒后归零。默认方向为 $[1,-2]^T/\sqrt5$。它允许两输入相关，符合确定性能量合同；不能将这个试验当作独立白噪声样本。
+
+令 $b=\sqrt N$，脉冲期间 $e=b(1-e^{-\lambda t})/\lambda$，之后按 $e(T)e^{-\lambda(t-T)}$ 衰减。将**完整尾部**也积分，输入能量为 $T$，输出/输入幅值能量比为
+
+$$
+R_T=\frac{\sqrt N}{\lambda}\sqrt{1-\frac{1-e^{-\lambda T}}{\lambda T}}<\Gamma(L),\qquad R_T\to\Gamma(L)\quad(T\to\infty).
+$$
+
+默认 $T=0.2,2,20$ 秒得到约 $0.271249,0.424265,0.444972$。有限试验可以给下界见证，不能用其中最大值替代精确范数。持续常偏置不在半轴L2内；例如默认 $w=0,v=1$ 的稳态误差为 $-0.4$，应另算DC偏差，不能援引有限总能量合同说偏置会消失。
+
+数字实现也要另验。若直接显式Euler离散误差方程，零输入因子为 $1-\lambda\Delta t$，严格稳定要求
+
+$$
+0<\Delta t<2/\lambda.
+$$
+
+默认上界 $0.4$ 秒：步长 $0.02$ 的因子为 $0.9$；$0.4$ 时为 $-1$，仅临界、不衰减；$0.5$ 时为 $-1.5$，数值失稳。保持输入的精确离散零输入因子 $e^{-\lambda\Delta t}$ 则不同。连续证书不能直接代替采样、保持、延迟、传感器带宽和饱和实现的验收；随机实现还必须正确离散噪声强度。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+plt.rcParams['axes.unicode_minus'] = False
+a,q,r,L=-1.,1.,.25,4.
+rate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate`}
+  cells={[
+    { code: `# Finite-energy pulses: integrate the complete tail, not a final sample
+direction=B/np.linalg.norm(B);pulse_reports=[]
+for duration in [.2,2.,20.]:
+    def error_before(t):return np.linalg.norm(B)/rate*(-np.expm1(-rate*t))
+    e_end=error_before(duration)
+    energy=quad(lambda t:error_before(t)**2,0,duration,epsabs=1e-12)[0]+e_end**2/(2*rate)
+    ratio=np.sqrt(energy/duration)
+    pulse_reports.append({'duration':duration,'ratio':float(ratio),'inputEnergy':duration,'outputEnergy':float(energy)})
+    print('pulse',duration,'energy ratio=',ratio,'< exact gain',peak)
+    assert ratio<peak
+print('default input direction w,v=',direction)
+t=np.linspace(0,4,1001);duration=2.;e=np.where(t<=duration,np.linalg.norm(B)/rate*(-np.expm1(-rate*t)),np.linalg.norm(B)/rate*(-np.expm1(-rate*duration))*np.exp(-rate*(t-duration)))
+fig,ax=plt.subplots(figsize=(8,3.5));ax.plot(t,e,label='error');ax.axvline(duration,color='gray',ls='--');ax.set(xlabel='time (s)',ylabel='normalized error');ax.legend();ax.grid();plt.tight_layout();plt.show()
+print('finite_energy_complete')` },
+    { code: `# Same observer family, two independently optimized objectives, three scales
+comparison=[]
+for q_i,r_i in [(1.,.25),(1.,1.),(.25,1.)]:
+    L_h=-q_i/(r_i*a);L_k=a+np.sqrt(a*a+q_i/r_i)
+    row={'q':q_i,'r':r_i}
+    for name,gain in [('Hinf',L_h),('Kalman',L_k),('noCorrection',0.)]:
+        noise=q_i+r_i*gain*gain;lam=gain-a
+        row[name]={'gain':gain,'peak':float(np.sqrt(noise)/lam),'variance':noise/(2*lam)}
+    comparison.append(row);print(row)
+print('a=0 q=1 r=.25: infimum=.5, no finite minimizer')
+for gain in [1.,4.,100.]:print('integrator gain=',gain,'exact peak=',np.sqrt(1+.25*gain**2)/gain)
+print('a=1 L=.5: error pole=+.5, no stable Hinf norm or stationary variance')
+for dt in [.02,.4,.5]:
+    factor=1-dt*5;print('Euler dt=',dt,'factor=',factor,'strict stable=',abs(factor)<1,'exact ZOH factor=',np.exp(-5*dt))
+gains=np.linspace(0,8,401);fig,ax=plt.subplots(1,2,figsize=(10,3.5))
+ax[0].plot(gains,np.sqrt(1+.25*gains*gains)/(gains+1));ax[0].set(xlabel='L',ylabel='worst energy gain')
+ax[1].plot(gains,(1+.25*gains*gains)/(2*(gains+1)));ax[1].set(xlabel='L',ylabel='stationary white-noise variance');plt.tight_layout();plt.show()
+print('comparison_and_digital_complete')` }
+  ]}
+/>
+
+## 习题
+
+**1. 两通道误差与范数**
+
+(a) 从对象和观测器方程推导误差方程，写默认的 $A_e,B_e$。
+
+(b) 计算过程、测量各自的增益与联合增益。为什么联合值不是两者最大值？
+
+(c) 默认取 $L=0$ 时误差是否稳定，联合增益是多少？这是否意味可以不测量所有对象？
+
+**2. 储能与初始误差**
+
+(a) 默认 $\gamma=0.5,p=0.25$，核验矩阵严格负定和Schur余量。
+
+(b) $e(0)=1$、零输入时误差总能量是多少？为什么合同必须加初始项？
+
+(c) 默认 $w=0,v=1$ 一直保持，是否能用半轴L2合同断言误差趋零？计算实际DC误差。
+
+**3. 两个优化目标**
+
+(a) 推导 $a<0$ 时本观测器族的 $L_H$ 和 $\Gamma_H$。
+
+(b) 在独立白噪声增量合同下推导 $P_L$ 与 $L_K$，复算默认两种增益的两个指标。
+
+(c) 这些结果能否证明H∞滤波在任意模型失配下比Kalman好？说明缺少的条件。
+
+**4. 边界与实现**
+
+(a) 改成 $a=0$，其余 $q=1,r=0.25$，证明只有下确界，计算 $L=4$ 的增益。
+
+(b) 默认连续系统用Euler步长 $0.4,0.5$，判断严格稳定性。换成精确ZOH后，是否就证明了整个数字传感/滤波系统的连续H∞合同？
+
+## 答案
+
+**1.** (a) 相减时 $L(y-\hat x)=L(e+\sqrt r v)$，故 $A_e=a-L=-5$、$B_e=[1,-2]$。
+
+(b) 单通道峰 $1/5=0.2$、$2/5=0.4$。一行矩阵最大奇异值是行向量二范数，联合峰 $\sqrt5/5\approx0.447214$。允许输入方向可以同时激励两路，不能取最大单通道值代替。
+
+(c) $a=-1,L=0$ 时误差极点 $-1$，只剩过程通道，增益为1。这只依赖当前对象本来稳定且目标为该误差通道；$a\ge0$ 或模型/初值不同就不能照搬，更不表示测量没有价值。
+
+**2.** (a) $Q_p$ 的三个特征值约为 $-1.713525,-0.25,-0.036475$；Schur余量 $-2(5)(0.25)+1+0.25^2(5)/0.5^2=-0.25$，均符合严格条件。
+
+(b) $e=e^{-5t}$，$\int_0^\infty e^2dt=0.1\le p=0.25$。若没有初始项，右侧零输入能量为零，却要上界非零输出能量，显然矛盾。
+
+(c) 常值 $v$ 的总能量无穷，不满足半轴L2假设。解 $0=-5e-2$ 得 $e_\infty=-0.4$；有限区间不等式仍可使用，但不是偏置消除保证。
+
+**3.** (a) 对 $\Gamma^2$ 求导得正文式，$a<0$ 时在 $L_H=-q/(ra)$ 左负右正，代入得 $\Gamma_H^2=qr/(q+ra^2)$。
+
+(b) 随机误差漂移为 $a-L$，扩散强度为 $q+rL^2$，稳态解 $P_L=(q+rL^2)/(2(L-a))$。对 $L$ 求导，驻点满足 $rL^2-2raL-q=0$；稳定根为 $L_K=a+\sqrt{a^2+q/r}$。默认 $L_H=4$：$(\Gamma,P)\approx(0.447214,0.5)$；$L_K\approx1.236068$：$(\Gamma,P)\approx(0.525731,0.309017)$。
+
+(c) 不能。两者使用准确的同一 $a,q,r$，一个优化确定性L2上确界，一个优化白噪声稳态方差。参数不确定集合、有色噪声、相关性、偏置、延迟及实现尚未进入证书，不能自动外推。
+
+**4.** (a) $\Gamma^2=q/L^2+r$，稳定域 $L>0$，严格递减且对有限L总大于r，所以只有下确界 $\sqrt r=0.5$。$L=4$ 时 $\Gamma=\sqrt5/4\approx0.559017$。
+
+(b) Euler因子分别为 $-1,-1.5$，前者不严格稳定、后者失稳；精确ZOH因子虽为 $e^{-5\Delta t}$，只说明对应保持输入的误差递推性质。采样测量与连续测量合同、噪声离散化、延迟/带宽等仍须另建模型，不能据此宣称整个数字系统已满足原连续合同。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import control as ctrl
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+plt.rcParams['axes.unicode_minus'] = False
+a,q,r,L=-1.,1.,.25,4.
+rate=L-a;B=np.array([np.sqrt(q),-L*np.sqrt(r)]);peak=np.linalg.norm(B)/rate`}
+  cells={[
+    { code: `# Four exercises, including boundary and initial-error cases
+eigen=np.linalg.eigvalsh(np.array([[-1.5,.25,-.5],[.25,-.25,0],[-.5,0,-.25]]))
+def metrics(gain):return {'gain':gain,'peak':float(np.sqrt(q+r*gain*gain)/(gain-a)),'variance':(q+r*gain*gain)/(2*(gain-a))}
+print('Q1 Aerr=-5, B=[1,-2], peak=sqrt(5)/5=',np.sqrt(5)/5)
+print('Q1 process-only gain=.2, measurement-only gain=.4; joint=sqrt(.2**2+.4**2)=',np.hypot(.2,.4))
+print('Q2 gamma=.5 p=.25 max BRL eigenvalue=',eigen.max(),'initial-only energy=.1 <= p=.25')
+print('Q2 persistent v=1 is not L2; stable DC error=-L*sqrt(r)/rate=',-L*np.sqrt(r)/rate)
+print('Q3 default Hinf:',metrics(4.),'Kalman:',metrics(a+np.sqrt(a*a+q/r)))
+print('Q4 a0 infimum=.5; L4 peak=',np.sqrt(5)/4,'strict Euler dt bound=.4; dt.4 is marginal; dt.5 diverges')
+print('Q4 parameter mismatch: error gains valid only for the declared exact a and input scales')
+print('all_answers_complete')` }
+  ]}
+/>

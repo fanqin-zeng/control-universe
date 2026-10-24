@@ -77,6 +77,7 @@
 | DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
 | DEP15 | EST-01—08与bd2b41c快照授权发布及公网验收 | [x] | docs/deployment/est08-release/README.md;docs/deployment/est08-release/public-http.json;docs/deployment/est08-release/public-courses.json;发布commit:de6069b43eb22902f4099c88e2aae48ba587ca9c |
 | DEP17 | ML-01—09已交付快照授权发布与公网验收 | [x] | docs/deployment/ml09-release/README.md;docs/deployment/ml09-release/validation.json;批准9160c9b;发布99945e1;九课18本35cell实跑 |
+| DEP18 | MPC-01—11已交付8ab3a80快照授权发布及公网验收 | [x] | docs/deployment/mpc11-release/README.md;docs/deployment/mpc11-release/public-http.json;docs/deployment/mpc11-release/public-courses.json;发布commit:beb3108506c42bcc5b50cea36be14da8dcbfac45 |
 <!-- S3-TASKS-END -->
 
 ## 逐课跟踪
@@ -237,9 +238,9 @@
 | ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;commit:80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9;rank5三Notebook五cell/独立数值/双构建/375px验收 |
 | ROBUST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/07-mu-analysis.md;.agent/semester-03/robust-07/acceptance.md;commit:709e34a88ec19c7f254f4dd4527b76de52aebc6c;rank5三Notebook五cell/960配置/双构建/375px验收 |
 | ROBUST-08 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/08-mu-synthesis.md;.agent/semester-03/robust-08/acceptance.md;commit:34eaae4a5e61c587b76a22efec5d3791ed9148d8;rank5三Notebook六cell/2020配置/双构建/375px验收 |
-| ROBUST-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
-| ROBUST-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-09 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/09-h-infinity-filter.md;.agent/semester-03/robust-09/acceptance.md;commit:ab43f3bdb26ab3019b4c727af2776ced0ab5225e;rank5三Notebook五cell/481配置/双构建/375px验收 |
+| ROBUST-10 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/10-delay-robust-control.md;.agent/semester-03/robust-10/acceptance.md;commit:fb4bcf9c14114ce697252be4093c88b64e0776de;rank5三Notebook五cell/90配置/双构建/375px验收 |
+| ROBUST-11 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/11-robust-case-study.md;.agent/semester-03/robust-11/acceptance.md;commit:6a3ba40e8fe7c17ae2d67d805e1526b8b6769fd0;rank5三Notebook六cell/150配置/1000样本/双构建/375px验收 |
 
 ### 预测控制
 

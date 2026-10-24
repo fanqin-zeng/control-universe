@@ -1,0 +1,96 @@
+{
+  "source": "content/robust/robust-case-study.mdx",
+  "component": "components/wiki/jupyter-notebook.tsx",
+  "kernelIdScheme": "function newNotebookId() { return `nb-${Date.now()}-${nbSeq++}`; }",
+  "kernelApi": "http://127.0.0.1:8891",
+  "count": 3,
+  "notebooks": [
+    {
+      "index": 0,
+      "line": 63,
+      "title": null,
+      "unknownAttrs": [
+        "language"
+      ],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\n\r\ndef coefficients(m=.5, k=10., q=1.):\r\n    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])\r\n\r\ndef trace(m=.5, k=10., q=1., end=120., dt=.04):\r\n    den = coefficients(m,k,q)\r\n    poles = np.roots(den)\r\n    stable = bool(np.max(poles.real) < -1e-9)\r\n    t = np.linspace(0,end,round(end/dt)+1)\r\n    # Partial fractions of T(s)/s; no cancelled internal unstable states.\r\n    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])\r\n    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))\r\n    force = q*(1-y)\r\n    metrics = {'stable':stable,'alpha':float(max(poles.real)),\r\n               'overshoot':None,'settling':None,'peak_force':None}\r\n    if stable:\r\n        bad = np.flatnonzero(np.abs(y-1) > .02)\r\n        metrics.update(overshoot=float(max(0.,y.max()-1)),\r\n            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),\r\n            peak_force=float(np.max(np.abs(force))))\r\n    return t,y,force,metrics\r\n\r\ndef frequency(m,k,q,w):\r\n    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z\r\n    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)\r\n    return s,tt,q*s\r\n\r\ns=ctrl.tf('s')\r\nG=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)\r\nwn=np.sqrt(30)\r\nK_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)\r\nW1=(s/1.5+1)/(s+.01)\r\nW2=.2*s/(s+20)\r\nW3=ctrl.tf([.05],[1])\r\nplt.rcParams['axes.unicode_minus']=False\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 106,
+          "delim": "`",
+          "code": "# Model, correctly normalized uncertainty, and Bode family\r\nprint('denominator:',coefficients(q=0).tolist())\r\nprint('undamped relative mode:',wn)\r\nw=np.logspace(-2,2,600)\r\nfig,axes=plt.subplots(1,2,figsize=(10,3.5))\r\nfor dm in [-1,0,1]:\r\n    for dk in [-1,0,1]:\r\n        m=.5*(1+.4*dm); k=10*(1+.2*dk)\r\n        plant=ctrl.tf([.5,k],coefficients(m,k,0))\r\n        axes[0].semilogx(w,20*np.log10(np.abs(plant(1j*w))))\r\n        axes[1].plot(dm, k, 'o')\r\naxes[0].set(xlabel='omega (rad/s)',ylabel='|G| (dB)',title='Integrator and flexible mode')\r\naxes[1].set(xlabel='normalized delta_m',ylabel='k (N/m)',title='m2 in [0.3,0.7], k in [8,12]')\r\nplt.tight_layout();plt.show()\r\nprint('model_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 121,
+          "delim": "`",
+          "code": "# Audit the original controller before reporting performance\r\nold_poles=ctrl.poles(ctrl.feedback(G*K_old,1))\r\nprint('old PID/notch alpha:',max(old_poles.real))\r\nassert max(old_poles.real)>0\r\nprint('UNSTABLE: no steady-state/settling/H-infinity performance claim')\r\nfor q in [.1,.5,1,4,8]:\r\n    t,y,f,metrics=trace(q=q)\r\n    print('P feedback q=',q,metrics)\r\nw=np.r_[0,np.logspace(-4,4,4000)]\r\nss,tt,ks=frequency(.5,10,1,w)\r\nw1=np.abs(W1(1j*w));w2=np.abs(W2(1j*w))\r\nprint('q=1 sampled weighted stacked peak:',max(np.sqrt(abs(w1*ss)**2+abs(w2*tt)**2+abs(.05*ks)**2)))\r\nprint('original W2(0)=30 with T(0)=1: gamma must be at least 30')\r\nprint('nominal_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "line": 291,
+      "title": null,
+      "unknownAttrs": [
+        "language"
+      ],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\n\r\ndef coefficients(m=.5, k=10., q=1.):\r\n    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])\r\n\r\ndef trace(m=.5, k=10., q=1., end=120., dt=.04):\r\n    den = coefficients(m,k,q)\r\n    poles = np.roots(den)\r\n    stable = bool(np.max(poles.real) < -1e-9)\r\n    t = np.linspace(0,end,round(end/dt)+1)\r\n    # Partial fractions of T(s)/s; no cancelled internal unstable states.\r\n    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])\r\n    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))\r\n    force = q*(1-y)\r\n    metrics = {'stable':stable,'alpha':float(max(poles.real)),\r\n               'overshoot':None,'settling':None,'peak_force':None}\r\n    if stable:\r\n        bad = np.flatnonzero(np.abs(y-1) > .02)\r\n        metrics.update(overshoot=float(max(0.,y.max()-1)),\r\n            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),\r\n            peak_force=float(np.max(np.abs(force))))\r\n    return t,y,force,metrics\r\n\r\ndef frequency(m,k,q,w):\r\n    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z\r\n    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)\r\n    return s,tt,q*s\r\n\r\ns=ctrl.tf('s')\r\nG=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)\r\nwn=np.sqrt(30)\r\nK_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)\r\nW1=(s/1.5+1)/(s+.01)\r\nW2=.2*s/(s+20)\r\nW3=ctrl.tf([.05],[1])\r\nplt.rcParams['axes.unicode_minus']=False\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 334,
+          "delim": "`",
+          "code": "# Same 1000 physical samples, with real control force and explicit window\r\nrng=np.random.default_rng(42)\r\ndraws=rng.uniform(-1,1,(1000,2))\r\nmetrics=[]\r\nfor dm,dk in draws:\r\n    metrics.append(trace(.5*(1+.4*dm),10*(1+.2*dk),1)[3])\r\nstable=np.array([v['stable'] for v in metrics])\r\nos=np.array([v['overshoot'] for v in metrics],dtype=float)\r\nforce=np.array([v['peak_force'] for v in metrics],dtype=float)\r\nsettling=np.array([np.nan if v['settling'] is None else v['settling'] for v in metrics])\r\nprint('samples/stable:',len(metrics),sum(stable))\r\nprint('sampled overshoot min/mean/max/p95:',np.min(os),np.mean(os),np.max(os),np.percentile(os,95))\r\nprint('sampled peak force min/max:',np.min(force),np.max(force))\r\nprint('unsettled by 120s:',sum(np.isnan(settling)))\r\nprint('settling max among resolved:',np.nanmax(settling))\r\nfor m,k in [(.3,8),(.3,12),(.7,8),(.7,12)]:\r\n    print('corner m/k, q1 and q8:',m,k,trace(m,k,1)[3],trace(m,k,8)[3])\r\nprint('sampling_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 1,
+          "line": 352,
+          "delim": "`",
+          "code": "# Sample distribution, actual nominal/worst-sample y and F, frequency limits\r\nfig,axes=plt.subplots(2,2,figsize=(10,7))\r\naxes[0,0].scatter(draws[:,0],100*os,c=draws[:,1],s=4)\r\naxes[0,0].set(xlabel='delta_m',ylabel='sampled overshoot (%)')\r\naxes[0,1].hist(100*os,bins=25);axes[0,1].set(xlabel='sampled overshoot (%)',ylabel='count')\r\nworst=int(np.argmax(os));dm,dk=draws[worst]\r\nfor label,m,k in [('nominal',.5,10),('largest sampled overshoot',.5*(1+.4*dm),10*(1+.2*dk))]:\r\n    t,y,f,met=trace(m,k,1)\r\n    axes[1,0].plot(t,y,label=label);axes[1,1].plot(t,f,label=label)\r\naxes[1,0].set(xlabel='t (s)',ylabel='x2 (m)');axes[1,1].set(xlabel='t (s)',ylabel='F (N)')\r\nfor ax in axes.ravel():ax.grid(True,alpha=.3)\r\naxes[1,0].legend();axes[1,1].legend();plt.tight_layout();plt.show()\r\nprint('plot_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        },
+        {
+          "index": 2,
+          "line": 365,
+          "delim": "`",
+          "code": "# Method audit: computed evidence must not be replaced by printed rankings\r\nprint('P q=1: explicit controller, analytic fixed-damping rectangle stability certificate; poor transient performance remains')\r\nprint('Old PID/notch: unstable nominal; diagnosis only, not a tuned representative method baseline')\r\nprint('H-infinity mixsyn: NOT EXECUTED, no controller/gamma/order to report')\r\nprint('mu analysis/musyn: NOT EXECUTED, no .85/1.25/.92 or 8/14 order results to report')\r\nprint('Damping +/-30%, additional multiplicative dynamics, saturation: NOT CERTIFIED')\r\nprint('method_audit_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "line": 450,
+      "title": null,
+      "unknownAttrs": [
+        "language"
+      ],
+      "setupCode": "import numpy as np\r\nimport control as ctrl\r\nimport matplotlib.pyplot as plt\r\nfrom scipy.signal import residue\r\n\r\ndef coefficients(m=.5, k=10., q=1.):\r\n    return np.array([m, .5+.7*m, (1+m)*k+.1, .2*k+.5*q, q*k])\r\n\r\ndef trace(m=.5, k=10., q=1., end=120., dt=.04):\r\n    den = coefficients(m,k,q)\r\n    poles = np.roots(den)\r\n    stable = bool(np.max(poles.real) < -1e-9)\r\n    t = np.linspace(0,end,round(end/dt)+1)\r\n    # Partial fractions of T(s)/s; no cancelled internal unstable states.\r\n    residues, roots, direct = residue([.5*q,k*q],np.r_[den,0.])\r\n    y = np.real(np.sum(residues[:,None]*np.exp(roots[:,None]*t),axis=0))\r\n    force = q*(1-y)\r\n    metrics = {'stable':stable,'alpha':float(max(poles.real)),\r\n               'overshoot':None,'settling':None,'peak_force':None}\r\n    if stable:\r\n        bad = np.flatnonzero(np.abs(y-1) > .02)\r\n        metrics.update(overshoot=float(max(0.,y.max()-1)),\r\n            settling=None if len(bad) and bad[-1]==len(t)-1 else float(t[bad[-1]+1] if len(bad) else 0),\r\n            peak_force=float(np.max(np.abs(force))))\r\n    return t,y,force,metrics\r\n\r\ndef frequency(m,k,q,w):\r\n    z=1j*np.asarray(w); d=m*z**4+(.5+.7*m)*z**3+((1+m)*k+.1)*z**2+.2*k*z\r\n    n=.5*z+k; s=d/(d+q*n); tt=q*n/(d+q*n)\r\n    return s,tt,q*s\r\n\r\ns=ctrl.tf('s')\r\nG=(.5*s+10)/(.5*s**4+.85*s**3+15.1*s**2+2*s)\r\nwn=np.sqrt(30)\r\nK_old=(2*s**2+15*s+5)/s*(s**2+.6*wn*s+30)/(s**2+1.6*wn*s+30)*30/(s+30)\r\nW1=(s/1.5+1)/(s+.01)\r\nW2=.2*s/(s+20)\r\nW3=ctrl.tf([.05],[1])\r\nplt.rcParams['axes.unicode_minus']=False\r\n",
+      "setupRawDiffers": false,
+      "setupEscapeIssues": [],
+      "cells": [
+        {
+          "index": 0,
+          "line": 493,
+          "delim": "`",
+          "code": "# Independent arithmetic for exercises and the full-rectangle Routh certificate\r\nimport sympy as sp\r\nm,k,u,v=sp.symbols('m k u v',real=True)\r\na3=sp.Rational(1,2)+sp.Rational(7,10)*m;a2=(1+m)*k+sp.Rational(1,10)\r\na1=k/5+sp.Rational(1,2);a0=k\r\nD2=sp.expand(a3*a2-m*a1)\r\nD3=sp.expand(D2*a1-a3*a3*a0)\r\nfor label,expr in [('Delta2',D2),('Delta3',D3)]:\r\n    shifted=sp.Poly(expr.subs({m:sp.Rational(3,10)+u,k:8+v}),u,v)\r\n    assert all(c>0 for c in shifted.coeffs())\r\n    print(label,'positive coefficients:',shifted.as_expr(),'lower bound:',shifted.eval({u:0,v:0}))\r\nprint('Exercise3:',200,10**(3/20),1/50)\r\nold_w2=.7*(1j*8+40)/(1j*8+1)\r\nprint('old exercise W2(j8):',abs(old_w2),'DC=',28)\r\nnew_wt=.8*1j*8/(1j*8+2)\r\nprint('proposed Wt(j8):',abs(new_wt),'required>',10**(-3/20))\r\nprint('new Ws(0)=200, Ws(j2)=',abs((1j*2/1.5+2)/(1j*2+.01)))\r\nprint('rational coefficient proof, not a frequency or parameter grid proof')\r\nprint('all_answers_complete')",
+          "rawDiffers": false,
+          "escapeIssues": []
+        }
+      ]
+    }
+  ]
+}

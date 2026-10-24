@@ -4,7 +4,7 @@
 
 ## 结果口径
 
-含 notebook 的 132 课 / 534 个实验 / 829 个单元格全部纳入盘点。131 课全部可运行，1 课混合，0 课全部保留代码；启用 533 个实验，保留 1 个。实际执行 827 个单元格（含异常单元格），生成 254 张 PNG。原始记录中 533 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
+含 notebook 的 134 课 / 541 个实验 / 840 个单元格全部纳入盘点。134 课全部可运行，0 课混合，0 课全部保留代码；启用 541 个实验，保留 0 个。实际执行 840 个单元格（含异常单元格），生成 262 张 PNG。原始记录中 541 个实验完整执行，发布门槛另将 2 个存在数学字形缺失的实验降级。已知依赖阻塞的实验预判跳过；异常实验在首个错误停止，后续单元格不伪记通过。
 
 “可运行”表示在固定 Pyodide 0.27.7 / control 0.10.2 环境完整运行该实验默认 setup/cells，无 Python 异常且无缺字警告；不是该课程已完成学期重构，也不是对全部理论与数值断言重新签发。数学参考输出与控制库数值断言另在 python-expansion-probes.json 完成 30 项回归（含 6 项不支持验证）。
 
@@ -51,7 +51,7 @@
 | robust/h-infinity-basics（H∞控制） | 4/4 | 5 | 无 |
 | robust/mixed-sensitivity（混合灵敏度） | 3/3 | 5 | 无 |
 | robust/mu-synthesis（μ综合） | 3/3 | 6 | 无 |
-| robust/robust-case-study（鲁棒控制案例） | 1/2 | 2 | 2 |
+| robust/robust-case-study（鲁棒控制案例） | 3/3 | 6 | 无 |
 | mpc/mpc-principle（预测控制原理） | 2/2 | 3 | 无 |
 | mpc/prediction-model（预测模型） | 2/2 | 6 | 无 |
 | mpc/receding-horizon（滚动优化） | 3/3 | 6 | 无 |
@@ -144,6 +144,8 @@
 | robust/mu-analysis（结构奇异值） | 3/3 | 5 | 无 |
 | mpc/economic-mpc（经济预测控制） | 2/2 | 4 | 无 |
 | mpc/mhe-fusion（移动水平估计） | 2/2 | 4 | 无 |
+| robust/h-infinity-filter（H∞滤波） | 3/3 | 5 | 无 |
+| robust/delay-robust-control（时滞系统控制） | 3/3 | 5 | 无 |
 
 ## 待处理实验
 
@@ -151,7 +153,6 @@
 
 | ID | 课程 / 实验 | 分类 | 原因 | 后续处置 |
 |---|---|---|---|
-| PY-001 | robust/robust-case-study#2：实验 2（源码 L455） | RUNTIME | AttributeError: module 'control' has no attribute 'pole' | 随该课 Phase 1–4 分析原代码/库版本差异，当前不修改课程数学内容。 |
 
 Slycot 的合成探测仍确认 hinfsyn/h2syn/mixsyn/状态空间 minreal/MIMO tf→ss 不支持；表中只登记实际课程实验出现的阻塞，不按章节名称推断依赖，也不凭空登记未使用的 Slycot 实验。完整的负例见前次试验及本次 probes JSON。
 

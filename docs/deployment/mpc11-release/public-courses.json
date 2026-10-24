@@ -1,0 +1,1622 @@
+{
+  "pass": true,
+  "completed": 11,
+  "notebooks": 25,
+  "cells": 51,
+  "rows": [
+    {
+      "key": "mpc/mpc-principle",
+      "notebooks": 2,
+      "cells": 3,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "mpc的三大核心思想",
+            "text": "MPC的三大核心思想"
+          },
+          {
+            "id": "线性mpc的数学公式",
+            "text": "线性MPC的数学公式"
+          },
+          {
+            "id": "mpc与lqr的区别",
+            "text": "MPC与LQR的区别"
+          },
+          {
+            "id": "稳定性分析",
+            "text": "稳定性分析"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "模型预测控制原理",
+          "预测控制原理",
+          "mpc的三大核心思想",
+          "MPC的三大核心思想",
+          "思想一预测模型",
+          "思想二滚动优化",
+          "思想三约束处理",
+          "线性mpc的数学公式",
+          "线性MPC的数学公式",
+          "从一般形式到-qp",
+          "一个能手算的两步例子",
+          "增量形式-vs-绝对形式",
+          "增量形式与设计参数",
+          "设计参数选择",
+          "mpc-实现流程",
+          "数学关系",
+          "直观对比",
+          "mpc与lqr的区别",
+          "MPC与LQR的区别",
+          "mpc-退化为-lqr-的条件",
+          "稳定性分析",
+          "为什么有限时域-mpc-可能不稳定",
+          "有限窗口最优为何不够",
+          "终端约束",
+          "终端代价",
+          "终端集合终端控制器与递归可行",
+          "实际工程中的处理",
+          "深入讨论",
+          "显式-mpc",
+          "显式mpc与实时求解",
+          "非线性-mpc",
+          "非线性mpc",
+          "mpc-与卡尔曼滤波的配合",
+          "状态估计与无偏跟踪",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#mpc的三大核心思想",
+          "#思想一预测模型",
+          "#思想二滚动优化",
+          "#思想三约束处理",
+          "#线性mpc的数学公式",
+          "#从一般形式到-qp",
+          "#一个能手算的两步例子",
+          "#增量形式与设计参数",
+          "#mpc与lqr的区别",
+          "#稳定性分析",
+          "#有限窗口最优为何不够",
+          "#终端集合终端控制器与递归可行",
+          "#深入讨论",
+          "#显式mpc与实时求解",
+          "#非线性mpc",
+          "#状态估计与无偏跟踪",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/receding-loop.svg",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/prediction-model",
+      "notebooks": 2,
+      "cells": 6,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "状态空间预测模型",
+            "text": "状态空间预测模型"
+          },
+          {
+            "id": "阶跃响应模型",
+            "text": "阶跃响应模型"
+          },
+          {
+            "id": "carima模型",
+            "text": "CARIMA模型"
+          },
+          {
+            "id": "三种模型的对比",
+            "text": "三种模型的对比"
+          },
+          {
+            "id": "模型辨识基础",
+            "text": "模型辨识基础"
+          },
+          {
+            "id": "模型失配与鲁棒性",
+            "text": "模型失配与鲁棒性"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "预测模型建立",
+          "状态空间预测模型",
+          "绝对形式的回顾",
+          "增量形式的增广模型",
+          "增广矩阵的性质",
+          "增广模型的预测矩阵",
+          "阶跃响应模型",
+          "dmc-模型",
+          "阶跃响应模型-vs-状态空间模型",
+          "carima模型",
+          "CARIMA模型",
+          "gpc-的模型形式",
+          "diophantine-方程递推",
+          "j-步-ahead-预测",
+          "三种模型的对比",
+          "模型辨识基础",
+          "阶跃响应辨识法",
+          "foptd-模型拟合",
+          "prbs-辨识",
+          "模型失配与鲁棒性",
+          "模型失配的来源",
+          "增益失配的影响",
+          "应对策略",
+          "深入讨论",
+          "模型阶数选择",
+          "非线性预测模型",
+          "预测模型与卡尔曼滤波",
+          "小结",
+          "习题",
+          "习题-1",
+          "习题-2",
+          "习题-3",
+          "习题-4",
+          "习题-5",
+          "答案",
+          "答案-1",
+          "答案-2",
+          "答案-3",
+          "答案-4",
+          "答案-5"
+        ],
+        "links": [
+          "#状态空间预测模型",
+          "#绝对形式的回顾",
+          "#增量形式的增广模型",
+          "#增广矩阵的性质",
+          "#增广模型的预测矩阵",
+          "#阶跃响应模型",
+          "#dmc-模型",
+          "#阶跃响应模型-vs-状态空间模型",
+          "#carima模型",
+          "#gpc-的模型形式",
+          "#diophantine-方程递推",
+          "#j-步-ahead-预测",
+          "#三种模型的对比",
+          "#模型辨识基础",
+          "#阶跃响应辨识法",
+          "#foptd-模型拟合",
+          "#prbs-辨识",
+          "#模型失配与鲁棒性",
+          "#模型失配的来源",
+          "#增益失配的影响",
+          "#应对策略",
+          "#深入讨论",
+          "#模型阶数选择",
+          "#非线性预测模型",
+          "#预测模型与卡尔曼滤波",
+          "#小结",
+          "#习题",
+          "#习题-1",
+          "#习题-2",
+          "#习题-3",
+          "#习题-4",
+          "#习题-5",
+          "#答案",
+          "#答案-1",
+          "#答案-2",
+          "#答案-3",
+          "#答案-4",
+          "#答案-5"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAEsCAYAAABQRZlvAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/receding-horizon",
+      "notebooks": 3,
+      "cells": 6,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "开环最优-vs-滚动优化",
+            "text": "开环最优 vs 滚动优化"
+          },
+          {
+            "id": "滚动优化的数学机制",
+            "text": "滚动优化的数学机制"
+          },
+          {
+            "id": "预测时域与控制时域",
+            "text": "预测时域与控制时域"
+          },
+          {
+            "id": "滚动优化与稳定性",
+            "text": "滚动优化与稳定性"
+          },
+          {
+            "id": "qp求解与实时性",
+            "text": "QP求解与实时性"
+          },
+          {
+            "id": "warm-starting策略",
+            "text": "Warm Starting策略"
+          },
+          {
+            "id": "显式mpc",
+            "text": "显式MPC"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "滚动优化策略",
+          "开环最优-vs-滚动优化",
+          "开环最优vs滚动优化",
+          "开环最优控制",
+          "滚动优化mpc",
+          "滚动优化是一种反馈",
+          "滚动优化的数学机制",
+          "每步求解的优化问题",
+          "执行流程",
+          "预测时域与控制时域",
+          "npn_pnp-和-nun_unu-的含义",
+          "为什么-nunpn_u--n_pnunp",
+          "选择原则",
+          "滚动优化与稳定性",
+          "有限时域的问题",
+          "保证稳定性的方法",
+          "方法一终端等式约束",
+          "方法二终端区域约束",
+          "方法三终端代价",
+          "qp求解与实时性",
+          "QP求解与实时性",
+          "mpc的qp标准形式",
+          "常用求解算法",
+          "常用求解器",
+          "实时性保障",
+          "warm-starting策略",
+          "Warm-Starting策略",
+          "为什么需要-warm-starting",
+          "shift策略",
+          "其他-warm-starting-策略",
+          "显式mpc",
+          "显式MPC",
+          "基本思想",
+          "优势与局限",
+          "深入讨论",
+          "滚动优化的收敛性",
+          "经济mpceconomic-mpc",
+          "分布式mpc",
+          "小结",
+          "习题",
+          "习题-1",
+          "习题-2",
+          "习题-3",
+          "习题-4",
+          "习题-5",
+          "答案",
+          "答案-1",
+          "答案-2",
+          "答案-3",
+          "答案-4",
+          "答案-5"
+        ],
+        "links": [
+          "#开环最优-vs-滚动优化",
+          "#开环最优控制",
+          "#滚动优化mpc",
+          "#滚动优化是一种反馈",
+          "#滚动优化的数学机制",
+          "#每步求解的优化问题",
+          "#执行流程",
+          "#预测时域与控制时域",
+          "#npn_pnp-和-nun_unu-的含义",
+          "#为什么-nunpn_u--n_pnunp",
+          "#选择原则",
+          "#滚动优化与稳定性",
+          "#有限时域的问题",
+          "#保证稳定性的方法",
+          "#qp求解与实时性",
+          "#mpc的qp标准形式",
+          "#常用求解算法",
+          "#常用求解器",
+          "#实时性保障",
+          "#warm-starting策略",
+          "#为什么需要-warm-starting",
+          "#shift策略",
+          "#其他-warm-starting-策略",
+          "#显式mpc",
+          "#基本思想",
+          "#优势与局限",
+          "#深入讨论",
+          "#滚动优化的收敛性",
+          "#经济mpceconomic-mpc",
+          "#分布式mpc",
+          "#小结",
+          "#习题",
+          "#习题-1",
+          "#习题-2",
+          "#习题-3",
+          "#习题-4",
+          "#习题-5",
+          "#答案",
+          "#答案-1",
+          "#答案-2",
+          "#答案-3",
+          "#答案-4",
+          "#答案-5"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/receding-acceptance.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAH0CAYAAABl8+PTAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/constraint-handling",
+      "notebooks": 3,
+      "cells": 6,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "约束类型与数学表达",
+            "text": "约束类型与数学表达"
+          },
+          {
+            "id": "约束到qp标准形式的转化",
+            "text": "约束到QP标准形式的转化"
+          },
+          {
+            "id": "硬约束与软约束",
+            "text": "硬约束与软约束"
+          },
+          {
+            "id": "约束优化的最优性条件",
+            "text": "约束优化的最优性条件"
+          },
+          {
+            "id": "约束可行性与不可行性",
+            "text": "约束可行性与不可行性"
+          },
+          {
+            "id": "约束活性与工况变化",
+            "text": "约束活性与工况变化"
+          },
+          {
+            "id": "工程中的约束处理策略",
+            "text": "工程中的约束处理策略"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "约束处理",
+          "约束类型与数学表达",
+          "输入幅值约束",
+          "输入变化率约束",
+          "状态约束",
+          "输出约束",
+          "约束到qp标准形式的转化",
+          "约束到QP标准形式的转化",
+          "输入幅值约束的转化",
+          "输入变化率约束的转化",
+          "状态约束的转化",
+          "输出约束的转化",
+          "合并所有约束",
+          "数值例子",
+          "硬约束与软约束",
+          "硬约束的问题",
+          "软约束松弛变量",
+          "选择性软化",
+          "松弛变量权重的选择",
+          "约束优化的最优性条件",
+          "kkt-条件",
+          "active-set主动集活性集",
+          "数值例子-1",
+          "约束可行性与不可行性",
+          "什么是不可行",
+          "不可行检测",
+          "不可行处理策略",
+          "工业实践中的不可行处理",
+          "约束活性与工况变化",
+          "active-set-随状态变化",
+          "工程意义",
+          "工程中的约束处理策略",
+          "约束优先级",
+          "分阶段优化hierarchical-optimization",
+          "工程调试建议",
+          "交互式可视化",
+          "深入讨论",
+          "非凸约束",
+          "混合整数约束",
+          "机会约束chance-constraints",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#约束类型与数学表达",
+          "#输入幅值约束",
+          "#输入变化率约束",
+          "#状态约束",
+          "#输出约束",
+          "#约束到qp标准形式的转化",
+          "#输入幅值约束的转化",
+          "#输入变化率约束的转化",
+          "#状态约束的转化",
+          "#输出约束的转化",
+          "#合并所有约束",
+          "#数值例子",
+          "#硬约束与软约束",
+          "#硬约束的问题",
+          "#软约束松弛变量",
+          "#选择性软化",
+          "#松弛变量权重的选择",
+          "#约束优化的最优性条件",
+          "#kkt-条件",
+          "#active-set主动集活性集",
+          "#数值例子-1",
+          "#约束可行性与不可行性",
+          "#什么是不可行",
+          "#不可行检测",
+          "#不可行处理策略",
+          "#工业实践中的不可行处理",
+          "#约束活性与工况变化",
+          "#active-set-随状态变化",
+          "#工程意义",
+          "#工程中的约束处理策略",
+          "#约束优先级",
+          "#分阶段优化hierarchical-optimization",
+          "#工程调试建议",
+          "#交互式可视化",
+          "#深入讨论",
+          "#非凸约束",
+          "#混合整数约束",
+          "#机会约束chance-constraints",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/constraint-priority.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAK8CAYAAAC3EHFPAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/mpc-stability",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从本拍有解到下一拍",
+            "text": "从本拍有解到下一拍"
+          },
+          {
+            "id": "问题与可行集",
+            "text": "问题与可行集"
+          },
+          {
+            "id": "终端三条件",
+            "text": "终端三条件"
+          },
+          {
+            "id": "移位证明",
+            "text": "移位证明"
+          },
+          {
+            "id": "值函数下降",
+            "text": "值函数下降"
+          },
+          {
+            "id": "标量算例",
+            "text": "标量算例"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "实现与失效边界",
+            "text": "实现与失效边界"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "递归可行性与稳定性",
+          "从本拍有解到下一拍",
+          "问题与可行集",
+          "终端三条件",
+          "移位证明",
+          "值函数下降",
+          "标量算例",
+          "交互式可视化",
+          "实现与失效边界",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从本拍有解到下一拍",
+          "#问题与可行集",
+          "#终端三条件",
+          "#移位证明",
+          "#值函数下降",
+          "#标量算例",
+          "#交互式可视化",
+          "#实现与失效边界",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/terminal-shift.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAJYCAYAAAA6xSjbAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/generalized-predictive-control",
+      "notebooks": 3,
+      "cells": 6,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "carima-模型回顾",
+            "text": "CARIMA 模型回顾"
+          },
+          {
+            "id": "diophantine-方程",
+            "text": "Diophantine 方程"
+          },
+          {
+            "id": "j-步-ahead-预测",
+            "text": "j 步 ahead 预测"
+          },
+          {
+            "id": "gpc-代价函数",
+            "text": "GPC 代价函数"
+          },
+          {
+            "id": "gpc-解析解",
+            "text": "GPC 解析解"
+          },
+          {
+            "id": "数值例子-1",
+            "text": "数值例子"
+          },
+          {
+            "id": "gpc-与经典控制的关系",
+            "text": "GPC 与经典控制的关系"
+          },
+          {
+            "id": "gpc-调参方法",
+            "text": "GPC 调参方法"
+          },
+          {
+            "id": "约束-gpc",
+            "text": "约束 GPC"
+          },
+          {
+            "id": "稳定性分析",
+            "text": "稳定性分析"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "工业应用",
+            "text": "工业应用"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "广义预测控制gpc",
+          "carima-模型回顾",
+          "CARIMA模型回顾",
+          "模型形式",
+          "为什么需要-1δfrac1deltaδ1",
+          "cz1cz-1cz1-的作用噪声频谱整形",
+          "从-carima-到增量模型",
+          "diophantine-方程",
+          "Diophantine方程",
+          "为什么需要-diophantine-方程",
+          "diophantine-方程的定义",
+          "递推算法",
+          "数值例子",
+          "j-步-ahead-预测",
+          "j步ahead预测",
+          "预测公式的推导",
+          "矩阵形式",
+          "gpc-代价函数",
+          "GPC代价函数",
+          "代价函数的定义",
+          "n1n_1n1-的物理意义跳过死区时间",
+          "n2n_2n2-的物理意义覆盖主要动态",
+          "nun_unu-的物理意义控制自由度",
+          "λlambdaλ-的物理意义控制力度",
+          "gpc-解析解",
+          "GPC解析解",
+          "无约束-gpc",
+          "算法步骤",
+          "数值例子-1",
+          "系统描述",
+          "diophantine-递推",
+          "计算-gjejbg_j--e_j-bgjejb",
+          "gpc-参数选择",
+          "gpc-与经典控制的关系",
+          "GPC与经典控制的关系",
+          "gpc--广义最小方差控制-gmv",
+          "gpc--最小方差控制-mv",
+          "gpc--lqr",
+          "gpc--pid",
+          "gpc-调参方法",
+          "GPC调参方法",
+          "系统化调参流程",
+          "调参的物理直觉",
+          "约束-gpc",
+          "约束GPC",
+          "从无约束到有约束",
+          "约束对解析解的影响",
+          "稳定性分析",
+          "开环稳定系统",
+          "开环不稳定系统",
+          "鲁棒稳定性",
+          "交互式可视化",
+          "工业应用",
+          "gpc-在过程控制中的应用",
+          "matlab-中的-gpc",
+          "gpc-的实际部署注意事项",
+          "深入讨论",
+          "gpc-与-dmc-的对比",
+          "自适应-gpc",
+          "非线性-gpc",
+          "小结",
+          "习题",
+          "习题-1",
+          "习题-2",
+          "习题-3",
+          "习题-4",
+          "习题-5",
+          "答案",
+          "答案-1",
+          "答案-2",
+          "答案-3",
+          "答案-4",
+          "答案-5"
+        ],
+        "links": [
+          "#carima-模型回顾",
+          "#模型形式",
+          "#为什么需要-1δfrac1deltaδ1",
+          "#cz1cz-1cz1-的作用噪声频谱整形",
+          "#从-carima-到增量模型",
+          "#diophantine-方程",
+          "#为什么需要-diophantine-方程",
+          "#diophantine-方程的定义",
+          "#递推算法",
+          "#数值例子",
+          "#j-步-ahead-预测",
+          "#预测公式的推导",
+          "#矩阵形式",
+          "#gpc-代价函数",
+          "#代价函数的定义",
+          "#n1n_1n1-的物理意义跳过死区时间",
+          "#n2n_2n2-的物理意义覆盖主要动态",
+          "#nun_unu-的物理意义控制自由度",
+          "#λlambdaλ-的物理意义控制力度",
+          "#gpc-解析解",
+          "#无约束-gpc",
+          "#算法步骤",
+          "#数值例子-1",
+          "#系统描述",
+          "#diophantine-递推",
+          "#计算-gjejbg_j--e_j-bgjejb",
+          "#gpc-参数选择",
+          "#gpc-与经典控制的关系",
+          "#gpc--广义最小方差控制-gmv",
+          "#gpc--最小方差控制-mv",
+          "#gpc--lqr",
+          "#gpc--pid",
+          "#gpc-调参方法",
+          "#系统化调参流程",
+          "#调参的物理直觉",
+          "#约束-gpc",
+          "#从无约束到有约束",
+          "#约束对解析解的影响",
+          "#稳定性分析",
+          "#开环稳定系统",
+          "#开环不稳定系统",
+          "#鲁棒稳定性",
+          "#交互式可视化",
+          "#工业应用",
+          "#gpc-在过程控制中的应用",
+          "#matlab-中的-gpc",
+          "#gpc-的实际部署注意事项",
+          "#深入讨论",
+          "#gpc-与-dmc-的对比",
+          "#自适应-gpc",
+          "#非线性-gpc",
+          "#小结",
+          "#习题",
+          "#习题-1",
+          "#习题-2",
+          "#习题-3",
+          "#习题-4",
+          "#习题-5",
+          "#答案",
+          "#答案-1",
+          "#答案-2",
+          "#答案-3",
+          "#答案-4",
+          "#答案-5"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/gpc-history.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAGQCAYAAAA9TUphAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAJYCAYAAADxHswlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAJYCAYAAADxHswlAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/explicit-mpc",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": false,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从每拍求解到离线分区",
+            "text": "从每拍求解到离线分区"
+          },
+          {
+            "id": "参数化的约束qp",
+            "text": "参数化的约束QP"
+          },
+          {
+            "id": "活跃集怎样生成区域",
+            "text": "活跃集怎样生成区域"
+          },
+          {
+            "id": "五区域手算例",
+            "text": "五区域手算例"
+          },
+          {
+            "id": "边界与退化",
+            "text": "边界与退化"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "在线查找与部署",
+            "text": "在线查找与部署"
+          },
+          {
+            "id": "等价与稳定的边界",
+            "text": "等价与稳定的边界"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "显式预测控制",
+          "从每拍求解到离线分区",
+          "参数化的约束qp",
+          "活跃集怎样生成区域",
+          "五区域手算例",
+          "边界与退化",
+          "交互式可视化",
+          "在线查找与部署",
+          "等价与稳定的边界",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从每拍求解到离线分区",
+          "#参数化的约束qp",
+          "#活跃集怎样生成区域",
+          "#五区域手算例",
+          "#边界与退化",
+          "#交互式可视化",
+          "#在线查找与部署",
+          "#等价与稳定的边界",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/explicit-offline-online.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYCAYAAAC+ZpjcAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAJYCAYAAAA6xSjbAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/nonlinear-mpc",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "为什么需要-nmpc",
+            "text": "为什么需要 NMPC"
+          },
+          {
+            "id": "非线性预测模型",
+            "text": "非线性预测模型"
+          },
+          {
+            "id": "nmpc-优化问题",
+            "text": "NMPC 优化问题"
+          },
+          {
+            "id": "sqp-求解",
+            "text": "SQP 求解"
+          },
+          {
+            "id": "实时迭代方案",
+            "text": "实时迭代方案"
+          },
+          {
+            "id": "lyapunov-based-nmpc",
+            "text": "Lyapunov-based NMPC"
+          },
+          {
+            "id": "稳定性分析",
+            "text": "稳定性分析"
+          },
+          {
+            "id": "数值例子非线性摆",
+            "text": "数值例子：非线性摆"
+          },
+          {
+            "id": "多稳态系统的-nmpc",
+            "text": "多稳态系统的 NMPC"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "软件工具",
+            "text": "软件工具"
+          },
+          {
+            "id": "工业应用",
+            "text": "工业应用"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "非线性预测控制",
+          "非线性-mpc",
+          "为什么需要-nmpc",
+          "为什么需要NMPC",
+          "线性化的局限",
+          "线性化失效的典型场景",
+          "nmpc-的核心思想",
+          "非线性预测模型",
+          "连续时间模型",
+          "离散时间模型",
+          "多步预测",
+          "nmpc-优化问题",
+          "NMPC优化问题",
+          "标准形式",
+          "与线性-mpc-的对比",
+          "决策变量的两种选择",
+          "sqp-求解",
+          "SQP求解",
+          "基本思想",
+          "hessian-近似",
+          "sqp-的收敛性",
+          "实时迭代方案",
+          "问题计算时间",
+          "rti-的思想",
+          "为什么-rti-有效",
+          "rti-的两阶段结构",
+          "lyapunov-based-nmpc",
+          "Lyapunov-based NMPC",
+          "标准-nmpc-的稳定性问题",
+          "lyapunov-based-nmpc-的思路",
+          "构造-clf-的方法",
+          "稳定性分析",
+          "terminal-cost-方法非线性版本",
+          "实用构造方法",
+          "数值例子非线性摆",
+          "数值例子",
+          "系统模型",
+          "控制目标",
+          "线性-mpc-的失败",
+          "nmpc-的设计",
+          "对比结果",
+          "多稳态系统的-nmpc",
+          "多稳态系统的NMPC",
+          "cstr-的多稳态",
+          "nmpc-的优势",
+          "交互式可视化",
+          "软件工具",
+          "主流-nmpc-求解器",
+          "casadi-示例",
+          "工业应用",
+          "自动驾驶",
+          "批次化工",
+          "无人机",
+          "深入讨论",
+          "鲁棒-nmpc",
+          "经济-nmpc",
+          "分布式-nmpc",
+          "小结",
+          "习题",
+          "习题-1",
+          "习题-2",
+          "习题-3",
+          "习题-4",
+          "习题-5",
+          "答案",
+          "答案-1",
+          "答案-2",
+          "答案-3",
+          "答案-4",
+          "答案-5"
+        ],
+        "links": [
+          "#为什么需要-nmpc",
+          "#非线性预测模型",
+          "#nmpc-优化问题",
+          "#sqp-求解",
+          "#实时迭代方案",
+          "#lyapunov-based-nmpc",
+          "#稳定性分析",
+          "#数值例子非线性摆",
+          "#多稳态系统的-nmpc",
+          "#交互式可视化",
+          "#软件工具",
+          "#工业应用",
+          "#深入讨论",
+          "#小结",
+          "#习题",
+          "#习题-1",
+          "#习题-2",
+          "#习题-3",
+          "#习题-4",
+          "#习题-5",
+          "#答案",
+          "#答案-1",
+          "#答案-2",
+          "#答案-3",
+          "#答案-4",
+          "#答案-5"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/nmpc-rti-cycle.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAFeCAYAAADddNFbAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAJYCAYAAAA6xSjbAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/economic-mpc",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从库存跟踪到经济目标",
+            "text": "从库存跟踪到经济目标"
+          },
+          {
+            "id": "经济阶段成本与最优稳态",
+            "text": "经济阶段成本与最优稳态"
+          },
+          {
+            "id": "两时段储水问题",
+            "text": "两时段储水问题"
+          },
+          {
+            "id": "一个可复算的经济计划",
+            "text": "一个可复算的经济计划"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "耗散性与旋转成本",
+            "text": "耗散性与旋转成本"
+          },
+          {
+            "id": "终端项不能随意删除",
+            "text": "终端项不能随意删除"
+          },
+          {
+            "id": "周期运行与稳定边界",
+            "text": "周期运行与稳定边界"
+          },
+          {
+            "id": "实现合同与预测误差",
+            "text": "实现合同与预测误差"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "经济预测控制",
+          "从库存跟踪到经济目标",
+          "经济阶段成本与最优稳态",
+          "两时段储水问题",
+          "一个可复算的经济计划",
+          "交互式可视化",
+          "耗散性与旋转成本",
+          "终端项不能随意删除",
+          "周期运行与稳定边界",
+          "实现合同与预测误差",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从库存跟踪到经济目标",
+          "#经济阶段成本与最优稳态",
+          "#两时段储水问题",
+          "#一个可复算的经济计划",
+          "#交互式可视化",
+          "#耗散性与旋转成本",
+          "#终端项不能随意删除",
+          "#周期运行与稳定边界",
+          "#实现合同与预测误差",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/diagrams/mpc/economic-rotation.svg",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/mhe-fusion",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "从带噪液位到历史轨迹",
+            "text": "从带噪液位到历史轨迹"
+          },
+          {
+            "id": "有限窗口的估计问题",
+            "text": "有限窗口的估计问题"
+          },
+          {
+            "id": "到达成本如何保存过去",
+            "text": "到达成本如何保存过去"
+          },
+          {
+            "id": "一个三结点qp",
+            "text": "一个三结点QP"
+          },
+          {
+            "id": "交互式可视化",
+            "text": "交互式可视化"
+          },
+          {
+            "id": "滑动更新与信息重复",
+            "text": "滑动更新与信息重复"
+          },
+          {
+            "id": "与卡尔曼滤波的关系",
+            "text": "与卡尔曼滤波的关系"
+          },
+          {
+            "id": "估计接入mpc",
+            "text": "估计接入MPC"
+          },
+          {
+            "id": "约束与模型失配的边界",
+            "text": "约束与模型失配的边界"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "移动水平估计",
+          "从带噪液位到历史轨迹",
+          "有限窗口的估计问题",
+          "到达成本如何保存过去",
+          "一个三结点qp",
+          "交互式可视化",
+          "滑动更新与信息重复",
+          "与卡尔曼滤波的关系",
+          "估计接入mpc",
+          "约束与模型失配的边界",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#从带噪液位到历史轨迹",
+          "#有限窗口的估计问题",
+          "#到达成本如何保存过去",
+          "#一个三结点qp",
+          "#交互式可视化",
+          "#滑动更新与信息重复",
+          "#与卡尔曼滤波的关系",
+          "#估计接入mpc",
+          "#约束与模型失配的边界",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/diagrams/mpc/mhe-window.svg",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    },
+    {
+      "key": "mpc/mpc-case-study",
+      "notebooks": 2,
+      "cells": 4,
+      "controlChecked": true,
+      "dom": {
+        "h1": 1,
+        "h2": [
+          {
+            "id": "问题描述",
+            "text": "问题描述"
+          },
+          {
+            "id": "建立被控对象模型",
+            "text": "建立被控对象模型"
+          },
+          {
+            "id": "离散化与预测模型",
+            "text": "离散化与预测模型"
+          },
+          {
+            "id": "mpc-控制器设计",
+            "text": "MPC 控制器设计"
+          },
+          {
+            "id": "约束设置",
+            "text": "约束设置"
+          },
+          {
+            "id": "闭环仿真",
+            "text": "闭环仿真"
+          },
+          {
+            "id": "调参与分析",
+            "text": "调参与分析"
+          },
+          {
+            "id": "工程实现细节",
+            "text": "工程实现细节"
+          },
+          {
+            "id": "深入讨论",
+            "text": "深入讨论"
+          },
+          {
+            "id": "小结",
+            "text": "小结"
+          },
+          {
+            "id": "习题",
+            "text": "习题"
+          },
+          {
+            "id": "答案",
+            "text": "答案"
+          }
+        ],
+        "ids": [
+          "base-ui-:R3sqfkq:",
+          "mpc-实现案例",
+          "预测控制案例",
+          "控制目标",
+          "操纵变量与被控变量",
+          "问题描述",
+          "cstr-物理系统",
+          "控制目标与实验边界",
+          "建立被控对象模型",
+          "非线性-cstr-方程",
+          "参数与稳态工作点",
+          "线性化",
+          "离散化与预测模型",
+          "连续离散",
+          "增广预测模型",
+          "mpc-控制器设计",
+          "MPC控制器设计",
+          "权重选择bryson-规则",
+          "qp-构造",
+          "输入约束",
+          "输入变化率约束",
+          "输出约束温度安全极限",
+          "约束设置",
+          "输入约束与输入变化率约束",
+          "输出约束温度运行上限",
+          "合并约束矩阵",
+          "闭环仿真",
+          "仿真场景",
+          "仿真结果",
+          "预测时域-npn_pnp-的选择",
+          "控制时域-nun_unu-的选择",
+          "调参与分析",
+          "权重-q-r-的效果",
+          "预测时域-np-的选择",
+          "控制时域-nu-的选择",
+          "约束活性分析",
+          "工程实现细节",
+          "状态估计",
+          "模型更新",
+          "工业部署架构",
+          "故障处理",
+          "为什么-mpc-在化工中如此成功",
+          "深入讨论",
+          "为什么-mpc-适合这类过程",
+          "cstr-的非线性与多稳态",
+          "从线性-mpc-到非线性-mpc",
+          "小结",
+          "习题",
+          "答案"
+        ],
+        "links": [
+          "#问题描述",
+          "#cstr-物理系统",
+          "#控制目标与实验边界",
+          "#建立被控对象模型",
+          "#非线性-cstr-方程",
+          "#参数与稳态工作点",
+          "#线性化",
+          "#离散化与预测模型",
+          "#连续离散",
+          "#增广预测模型",
+          "#mpc-控制器设计",
+          "#权重选择bryson-规则",
+          "#qp-构造",
+          "#约束设置",
+          "#输入约束与输入变化率约束",
+          "#输出约束温度运行上限",
+          "#合并约束矩阵",
+          "#闭环仿真",
+          "#仿真场景",
+          "#仿真结果",
+          "#调参与分析",
+          "#权重-q-r-的效果",
+          "#预测时域-np-的选择",
+          "#控制时域-nu-的选择",
+          "#约束活性分析",
+          "#工程实现细节",
+          "#状态估计",
+          "#模型更新",
+          "#工业部署架构",
+          "#故障处理",
+          "#深入讨论",
+          "#为什么-mpc-适合这类过程",
+          "#cstr-的非线性与多稳态",
+          "#从线性-mpc-到非线性-mpc",
+          "#小结",
+          "#习题",
+          "#答案"
+        ],
+        "katex": 0,
+        "images": [
+          {
+            "src": "/control-universe/images/cstr-schematic.png",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAEsCAYAAAA7Ldc6AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9y",
+            "loaded": true
+          },
+          {
+            "src": "/control-universe/diagrams/mpc/cstr-deployment.svg",
+            "loaded": true
+          }
+        ]
+      },
+      "mobile": {
+        "width": 375,
+        "scroll": 375
+      },
+      "errors": [],
+      "consoleErrors": []
+    }
+  ],
+  "localRequests": []
+}

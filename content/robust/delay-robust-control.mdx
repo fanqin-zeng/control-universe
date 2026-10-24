@@ -1,0 +1,385 @@
+---
+title: "时滞系统控制"
+description: "从历史初值推导标量常时滞的精确稳定界，用小增益与Halanay给条件化证书，并实际复算Padé假稳定和真实DDE响应。"
+---
+
+# 时滞系统控制
+
+输送管线上的加热阀已经关小，远处温度计却还在升高；控制器若以为刚才的调整没有效果，继续加大动作，等旧动作传到传感器时，反而可能造成振荡。这里不只是“变化比较慢”，而是反馈拿到的状态已经是**一段时间以前**的状态。
+
+本课将这个问题缩成可完整推导的一阶对象：先求固定时滞的精确稳定界，再问“只知道时滞上界时能保证什么”。最后用真实历史仿真展示：低阶Padé近似可以判断稳定，而原时滞系统已经失稳。
+
+先修：[鲁棒稳定性](/robust/robust-stability)、[Lyapunov稳定性](/nonlinear/lyapunov-stability)。本课模型为归一化教学例，不是管线辨识数据；不要求先学通用矩阵时滞LMI或谱算法。
+
+## 纯时滞改变了什么
+
+用 $G(s)=1/(s+a)$、$a>0$ 表示自然衰减的一阶对象，负反馈控制为 $u(t)=-k x(t-\tau)$，$k\ge0$。同一个纯延迟可以放在测量链路，或等效放在这条标量反馈链路；必须先明确位置，不能把总回路延迟随意变成对象时间常数。
+
+$$
+\dot x(t)=-a x(t)-k x(t-\tau)+w(t),\qquad \tau\ge0.
+$$
+
+时间用秒，$a,k$ 用每秒，状态与外扰按固定基准归一化。默认 $a=1,k=2,\tau=0.5$ 秒。纯时滞的频率因子为 $e^{-j\omega\tau}$，模长等于一、相位为 $-\omega\tau$；它不会像一阶惯性环节那样同时衰减高频幅值，但会不断累积相位滞后。
+
+<div style={{overflowX:"auto",maxWidth:"100%"}}>
+<img src="/delay-robust-control-feedback.svg" alt="一阶对象、带历史缓冲的负反馈延迟及扰动注入方向" style={{minWidth:740,width:"100%"}} />
+</div>
+
+## 状态不仅是一个初值
+
+当 $\tau>0$ 时，仅给 $x(0)$ 不够；还要给一整段连续历史
+
+$$
+x(\theta)=\phi(\theta),\qquad -\tau\le\theta\le0.
+$$
+
+因为前 $\tau$ 秒的导数会直接读取这段历史。本课响应实验统一取 $\phi\equiv1$、$w=0$，所以 $\dot x(0^+)=-a-k=-3$。两条不同历史即使有相同 $x(0)$，之后也不必得到相同响应；甚至初始导数相同也不够说明历史相同。
+
+$\tau=0$ 时退化为ODE：$\dot x=-(a+k)x+w$，默认无扰响应是 $x=e^{-3t}$。正时滞系统的特征方程则是
+
+$$
+F(s,\tau)=s+a+k e^{-s\tau}=0.
+$$
+
+指数项使它通常有无限多个特征根。把它截成有限阶多项式是一种近似，不是换一种写法就保留了所有根。
+
+## 常时滞的精确稳定界
+
+以下均考察 $w=0$ 的零解稳定性。先固定 $a>0,k\ge0$，只让**常数** $\tau$ 变化。$\tau=0$ 时唯一ODE根为 $-(a+k)$，稳定。
+
+若 $k\le a$，对任意 $\operatorname{Re}s\ge0$，有 $\vert s+a\vert\ge a$、$\vert k e^{-s\tau}\vert\le k$。$k<a$ 时两项不可能互相抵消；$k=a$ 的等号只可能在 $s=0$，但 $F(0,\tau)=a+k>0$。因此**每个有限常时滞**都稳定；这不是对无界时滞集合给出统一衰减率。
+
+若 $k>a$，令临界根 $s=j\omega$，实虚部分别为
+
+$$
+a+k\cos(\omega\tau)=0,\qquad
+\omega-k\sin(\omega\tau)=0.
+$$
+
+第一正交叉频率与第一临界时滞是
+
+$$
+\omega_c=\sqrt{k^2-a^2},\qquad
+\tau_c=\frac{\arccos(-a/k)}{\sqrt{k^2-a^2}}.
+$$
+
+还要检查交叉方向。沿特征根求导，在虚轴交叉时得到
+
+$$
+\frac{ds}{d\tau}=-\frac{s(s+a)}{1+\tau(s+a)},\qquad
+\operatorname{Re}\frac{ds}{d\tau}\bigg|_{s=j\omega_c}
+=\frac{\omega_c^2}{(1+a\tau)^2+(\omega_c\tau)^2}>0.
+$$
+
+结合零时滞稳定、零根不可能出现及这个标量retarded系统的根连续性，根在首个交叉处从左往右进入；后续正频交叉方向也相同。因此严格稳定区间为 $0\le\tau<\tau_c$，等号是临界而非渐近稳定，超过后不再恢复稳定。这里给出的充要结论只针对已声明的标量系数符号与常时滞模型。
+
+默认 $\omega_c=\sqrt3\approx1.732051$ rad/s，$\tau_c=2\pi/(3\sqrt3)\approx1.209200$ 秒。Notebook用Lambert W构造根作为独立数值见证：
+
+$$
+s_m=-a+\frac{W_m(-k\tau e^{a\tau})}{\tau},\qquad \tau>0.
+$$
+
+它来自 $(s+a)\tau e^{(s+a)\tau}=-k\tau e^{a\tau}$。[SciPy的Lambert W接口](https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.lambertw.html)支持指定复分支。代码只扫描有限分支，不能凭扫描说“已证明全谱稳定”；上述解析交叉论证才承担稳定性结论。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.special import lambertw
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+from scipy.optimize import brentq
+plt.rcParams['axes.unicode_minus'] = False
+a,k=1.,2.
+wc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc
+tsg=2/np.sqrt(4*k*k-(a+k)**2)
+def dde(a,k,tau,times,rtol=1e-10):
+    times=np.asarray(times);end=float(times[-1])
+    if tau==0:return np.exp(-(a+k)*times)
+    solutions=[];ends=[];state=1.
+    def history(t):
+        if t<=1e-12:return 1.
+        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)
+        return float(solutions[j](t)[0])
+    for n in range(int(np.ceil(end/tau))):
+        left=n*tau;right=min(end,(n+1)*tau)
+        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))
+        assert sol.success
+        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])
+    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])
+def pade_trace(a,k,tau,times):
+    if tau==0:return np.exp(-(a+k)*np.asarray(times))
+    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])
+    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])`}
+  cells={[
+    { code: `# Exact constant-delay boundary; finite Lambert branches are witnesses, not a proof
+print('a=1 k=2: omega_c=',wc,'exact tau_c=',tc,'Padé boundary=',2/(k-a))
+rows=[];fig,ax=plt.subplots(figsize=(8,3.7))
+for tau in [0.,.5,1.,tc,1.5,2.]:
+    roots=np.array([-a-k],complex) if tau==0 else -a+lambertw(-k*tau*np.exp(a*tau),np.arange(-20,21))/tau
+    residual=0. if tau==0 else max(abs(roots+a+k*np.exp(-roots*tau))/(1+abs(roots)))
+    alpha=float(max(roots.real));rows.append({'tau':float(tau),'scannedRootMaxReal':alpha,'relativeCharacteristicResidual':float(residual)})
+    print(rows[-1]);assert residual<1e-10
+    if tau in [.5,1.5]:ax.scatter(roots.real,roots.imag,s=15,label='tau='+str(tau))
+ax.axvline(0,color='black',ls='--');ax.set(xlabel='Re(s)',ylabel='Im(s)',xlim=(-5,1),ylim=(-10,10));ax.legend();ax.grid();plt.tight_layout();plt.show()
+print('tau1.5 has an actual RHP characteristic root, despite stable first-order Padé poles')
+print('exact_margin_complete')` },
+    { code: `# Uniform sufficient certificate for all CONSTANT delays in [0,bar_tau]
+print('small-gain strict delay threshold=',tsg)
+fig,ax=plt.subplots(figsize=(8,3.7))
+for bar_tau in [.5,1.,1.5]:
+    omega=np.r_[0,np.logspace(-3,3,1001),2/bar_tau]
+    T=k/np.sqrt(omega**2+(a+k)**2)
+    bound=T*np.minimum(omega*bar_tau,2)
+    actual=T*2*abs(np.sin(omega*bar_tau/2))
+    B=2*k*bar_tau/np.hypot(2,(a+k)*bar_tau)
+    print('bar_tau=',bar_tau,'analytic sup envelope=',B,'certificate=',B<1,'sample max=',max(bound))
+    assert max(abs(actual)-bound)<1e-12 and abs(max(bound)-B)<1e-12
+    if bar_tau==.5:ax.plot(omega[:1002],actual[:1002],label='actual error product');ax.plot(omega[:1002],bound[:1002],label='envelope product')
+print('k=a=1 bar_tau=2: bound=',4/np.sqrt(20),'strict for every finite bar_tau')
+ax.set(xlabel='rad/s',ylabel='nominal T times delay error',xlim=(0,8),ylim=(0,2));ax.legend();ax.grid();plt.tight_layout();plt.show()
+print('small_gain_complete')` }
+  ]}
+/>
+
+## 未知常时滞的小增益证书
+
+若只知道固定未知时滞 $\tau\in[0,\bar\tau]$，将零时滞稳定闭环作为名义模型：
+
+$$
+T(s)=\frac{k}{s+a+k},\qquad
+\Delta_\tau(s)=e^{-s\tau}-1.
+$$
+
+实际特征因子可写成 $1+T\Delta_\tau$。对每个允许常时滞，
+
+$$
+\vert\Delta_\tau(j\omega)\vert
+=2\vert\sin(\omega\tau/2)\vert
+\le\min(\omega\bar\tau,2),\qquad\omega\ge0.
+$$
+
+包络并非每个频率都能取到；它是允许集合的保守上界。小增益充分证书是包络乘积的全频峰严格小于一。对于 $\bar\tau>0$，低频分支递增、高频分支递减，最大值在 $\omega=2/\bar\tau$：
+
+$$
+B(\bar\tau)=\sup_{\omega\ge0}\frac{k\min(\omega\bar\tau,2)}{\sqrt{\omega^2+(a+k)^2}}
+=\frac{2k\bar\tau}{\sqrt{4+(a+k)^2\bar\tau^2}}.
+$$
+
+$\bar\tau=0$ 时定义为零。$B<1$ 证明区间内所有**恒定**时滞稳定；$B\ge1$ 只是证书未通过，不能直接判失稳。$k>a$ 时相应严格界为
+
+$$
+\bar\tau<\tau_{SG}:=\frac{2}{\sqrt{4k^2-(a+k)^2}}.
+$$
+
+默认 $\tau_{SG}\approx0.755929$ 秒，小于精确 $\tau_c$。$\bar\tau=0.5$ 时 $B=0.8$，证书通过；$\bar\tau=1$ 时 $B\approx1.109400$，证书失败但整个常时滞区间仍处于精确稳定范围。若 $k\le a$，每个有限 $\bar\tau$ 都使此包络峰严格小于一；$k=a$ 时虽趋向一，却不在有限上界取到。
+
+这些结论来自对每个固定延迟算子的统一小增益界；不能把常系数传递函数直接拿来处理任意时变延迟。
+
+## Padé近似为何会误判
+
+一阶Padé将纯时滞替换为有限维有理函数：
+
+$$
+e^{-s\tau}\approx\frac{1-s\tau/2}{1+s\tau/2}.
+$$
+
+代回得到近似特征多项式
+
+$$
+\frac\tau2 s^2+\left(1+\frac{(a-k)\tau}{2}\right)s+(a+k)=0.
+$$
+
+对 $k>a$，这个二阶近似的稳定界是 $\tau<\tau_P=2/(k-a)$。默认 $\tau_P=2$ 秒，明显大于真实 $1.209200$ 秒。在 $\tau=1.5$ 时，Padé根实部约 $-0.166667$，看起来衰减；原DDE却有实部约 $+0.065618$ 的真实特征根，已经失稳。
+
+Padé可辅助设计与频域计算，但近似阶数、频段及闭环稳定性须对照原延迟模型复核。[官方Padé说明](https://www.mathworks.com/help/control/ref/dynamicsystem.pade.html)也提供与原时滞响应的比较接口。本课不把增大阶数当作不经复验就必然正确的证书。
+
+两种响应还必须匹配初始记忆。Padé可实现为 $\dot v=2(x-v)/\tau$、$x_{delay}\approx2v-x$。当原历史恒为一时，取 $x(0)=v(0)=1$，而不是把近似延迟内部状态随意清零。下图时间响应都采用这个约定。
+
+<DelayRobustControlExplorer />
+
+## 时变时滞与历史上界
+
+若 $\tau=\tau(t)$，特征式 $s+a+k e^{-s\tau}$ 不再描述整个系统。“每个冻结时滞都稳定”不自动证明随时间变化也稳定。这里给一个更保守、但能覆盖时变情形的充分证书。
+
+设时滞函数连续且 $0\le\tau(t)\le\bar\tau<\infty$，初始历史连续有界，以下取 $w=0$；对 $a>k\ge0$，绝对值的上右导数满足
+
+$$
+D^+\vert x(t)\vert\le-a\vert x(t)\vert+k\sup_{t-\bar\tau\le u\le t}\vert x(u)\vert.
+$$
+
+经典不等式的背景可参见[Halanay型不等式研究的引言](https://arxiv.org/html/1102.2120)。在这里，Halanay型比较给出 $\vert x(t)\vert\le\|\phi\|_\infty e^{-\eta t}$，其中正数 $\eta$ 满足
+
+$$
+\eta=a-k e^{\eta\bar\tau}>0.
+$$
+
+可从 $e^{\eta t}\vert x(t)\vert$ 的历史最大值不会上升理解此界：在它达到当前最大值时，右导数由上述关系压住。这里损失了延迟反馈的负号，换来对有界变化时滞的统一充分界；并未用冻结特征根代替证明。
+
+取 $a=1,k=0.5,\bar\tau=1$ 秒，数值解为 $\eta\approx0.314923$，$\phi\equiv1$ 时有 $\vert x(t)\vert\le e^{-0.314923t}$。默认 $a=1,k=2$ 不满足 $a>k$，此定理不能给出结论，而不是证明它必不稳定。$k=a$ 时常时滞仍可稳定，但本条严格Halanay条件不能给出正衰减率。
+
+## 仿真窗口与实现边界
+
+页面真实DDE曲线采用方法步进：每次从已经算完的历史查询 $x(t-\tau)$，用RK4推进并对历史做线性插值；正时滞交互值至少为0.02秒，步长不超过0.005秒且不超过 $\tau/4$，避免阶段值读取尚未计算的未来。零时滞直接使用ODE解。
+
+独立Notebook用分段DOP853稠密解读取历史；Padé响应则用独立矩阵指数复核。两者都取无外扰、历史恒一，窗口0到12秒。曲线只是有限窗口观察：缓慢失稳可能很久才明显，数值步长和历史插值也会产生误差，稳定性以解析证书为准。
+
+控制实现还要区分测量延迟、执行延迟、采样保持与计算抖动。常时滞证书没有自动包含丢包或任意变化时滞；Smith预测器依赖模型与延迟估计，也不能被一句“把时滞抵消”替代其内部稳定和失配分析。本课不实现通用预测器或实机认证。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.special import lambertw
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+from scipy.optimize import brentq
+plt.rcParams['axes.unicode_minus'] = False
+a,k=1.,2.
+wc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc
+tsg=2/np.sqrt(4*k*k-(a+k)**2)
+def dde(a,k,tau,times,rtol=1e-10):
+    times=np.asarray(times);end=float(times[-1])
+    if tau==0:return np.exp(-(a+k)*times)
+    solutions=[];ends=[];state=1.
+    def history(t):
+        if t<=1e-12:return 1.
+        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)
+        return float(solutions[j](t)[0])
+    for n in range(int(np.ceil(end/tau))):
+        left=n*tau;right=min(end,(n+1)*tau)
+        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))
+        assert sol.success
+        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])
+    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])
+def pade_trace(a,k,tau,times):
+    if tau==0:return np.exp(-(a+k)*np.asarray(times))
+    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])
+    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])`}
+  cells={[
+    { code: `# Independent method of steps with dense DOP853 history, not a Padé replacement
+times=np.linspace(0,12,601);responses=[]
+fig,axes=plt.subplots(1,3,figsize=(13,3.6))
+for ax,tau in zip(axes,[.5,1.,1.5]):
+    x=dde(a,k,tau,times);xp=pade_trace(a,k,tau,times)
+    pp=np.roots([tau/2,1+(a-k)*tau/2,a+k])
+    responses.append({'tau':tau,'x12':float(x[-1]),'pade12':float(xp[-1]),'padeMaxReal':float(max(pp.real))})
+    print(responses[-1]);ax.plot(times,x,label='DDE');ax.plot(times,xp,'--',label='Pade');ax.set(title='tau='+str(tau),xlabel='time (s)',ylabel='state');ax.legend();ax.grid()
+plt.tight_layout();plt.show()
+print('phi(t)=1 on [-tau,0]; no disturbance; Pade memory state initially 1')
+print('history_response_complete')` },
+    { code: `# Delay-independent sufficient Halanay estimate, including bounded time-varying delay
+a_h,k_h,tau_h=1.,.5,1.
+eta=brentq(lambda z:a_h-k_h*np.exp(z*tau_h)-z,0,a_h-k_h)
+times=np.linspace(0,12,601);x=dde(a_h,k_h,tau_h,times);envelope=np.exp(-eta*times)
+print('a=1 k=.5 bar_tau=1: eta=',eta,'max sampled envelope violation=',max(abs(x)-envelope))
+assert max(abs(x)-envelope)<1e-8
+print('default a1 k2 does not satisfy a>k; theorem silent, not a proof of instability')
+print('zero delay default x(t)=exp(-3t); same x0 with different histories need not have same first derivative')
+print('phi=1: derivative at 0 = -3; phi(t)=1+sin(pi*t/tau): derivative also -3 but later history differs')
+fig,ax=plt.subplots(figsize=(8,3.7));ax.plot(times,abs(x),label='constant-delay DDE |x|');ax.plot(times,envelope,'--',label='Halanay bound for all admissible bounded delays');ax.set(xlabel='time (s)',ylabel='magnitude');ax.legend();ax.grid();plt.tight_layout();plt.show()
+print('halanay_complete')` }
+  ]}
+/>
+
+## 习题
+
+**1. 精确常时滞界**
+
+(a) 对默认模型写完整历史初值问题、特征方程及 $\tau=0$ 的解。
+
+(b) 推导第一交叉频率和临界时滞，解释为什么还要检查交叉方向。
+
+(c) $k=a>0$ 时是否存在有限的常时滞失稳边界？能否进一步声称对任意大时滞有统一衰减率？
+
+**2. 小增益充分证书**
+
+(a) 推导 $B(\bar\tau)$ 及其最大频率位置，求默认 $\tau_{SG}$。
+
+(b) $\bar\tau=1$ 时，小增益失败是否证明存在失稳常时滞？与精确判据核对。
+
+(c) 为什么不能把同一个频率式无条件用于 $\tau(t)$？
+
+**3. 近似假稳定**
+
+(a) 写默认一阶Padé多项式和稳定界。
+
+(b) $\tau=1.5$ 时计算Padé根，并给出一个真实DDE右半平面根作为反例见证。
+
+(c) 原历史恒一时，近似延迟的辅助状态应怎样初始化？只给两种模型相同的 $x(0)$ 是否足够？
+
+**4. 时变与数值边界**
+
+(a) 对 $a=1,k=0.5,\bar\tau=1$ 求Halanay速率，并写 $t=2$ 秒的上界。
+
+(b) 默认模型不满足 $a>k$ 是否代表一定失稳？12秒仿真没有发散是否足以证明稳定？
+
+(c) 两条不同历史有相同 $x(0)$，甚至相同初始导数，能否判它们以后的响应相同？说明原因。
+
+## 答案
+
+**1.** (a) $\dot x=-x-2x(t-\tau)$，$x(\theta)=1$ 对 $\theta\in[-\tau,0]$；特征式 $s+1+2e^{-s\tau}=0$。零时滞时 $x=e^{-3t}$。
+
+(b) 实虚部分别为 $1+2\cos(\omega\tau)=0$、$\omega-2\sin(\omega\tau)=0$，给 $\omega_c=\sqrt3$、$\tau_c=2\pi/(3\sqrt3)\approx1.209200$ 秒。交叉方向的实部严格为正，结合零时滞稳定说明首次丢失稳定；不能只列一个纯虚根就宣布完整稳定区间。
+
+(c) 无有限常时滞失稳边界。右半平面幅值等式不可能在 $s=0$ 满足；但随时滞增大衰减可以越来越慢，不得把每个固定有限时滞的稳定性扩成无界集合的一致衰减率。
+
+**2.** (a) $\omega\bar\tau\le2$ 的分支随频率增大，另一分支随频率减小，故峰在 $2/\bar\tau$，$B=2k\bar\tau/\sqrt{4+(a+k)^2\bar\tau^2}$。默认严格条件化为 $\bar\tau<2/\sqrt7\approx0.755929$ 秒。
+
+(b) 默认 $B(1)=4/\sqrt{13}\approx1.109400$，充分证书失败；但 $1<\tau_c$，整个 $[0,1]$ 的常时滞仍稳定。这正是保守而非必要条件的例子。
+
+(c) 时变系统没有同一个LTI频率乘子 $e^{-s\tau}$；时间重排还会影响输入输出算子的能量性质，必须给变化条件或另用适用的时域证书。
+
+**3.** (a) 多项式为 $(\tau/2)s^2+(1-\tau/2)s+3$，严格稳定需 $\tau<2$。
+
+(b) $\tau=1.5$ 时根约为 $-0.166667\pm1.993043j$；原DDE存在根约 $0.065618+1.466187j$，代回超越方程残差接近机器精度，已构成失稳反例。有限分支找到右根足以反证，但未找到右根不能单独证明稳定。
+
+(c) 取 $v(0)=1$ 使 $x_{delay}(0)=2v(0)-x(0)=1$。相同 $x(0)$ 不能确定近似延迟内部记忆，更不能代替原DDE的一整段历史。
+
+**4.** (a) 求 $\eta=1-0.5e^\eta$ 得约 $0.314923$，故 $\vert x(2)\vert\le e^{-2\eta}$；具体数值由下方Notebook复算。
+
+(b) 不是。默认 $\tau=0.5$ 已由精确/小增益证书证明稳定，Halanay的条件不满足只说明此证书无结论。有限窗口与数值误差也不构成无限时域证明。
+
+(c) 不能。未来每一时刻都会读取不同的历史位置；例如在相同端点值下，常历史与含正弦起伏的历史会在接下来 $\tau$ 秒产生不同的反馈。只匹配一个或几个端点导数不能决定整条历史函数。
+
+<JupyterNotebook
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.special import lambertw
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
+from scipy.optimize import brentq
+plt.rcParams['axes.unicode_minus'] = False
+a,k=1.,2.
+wc=np.sqrt(k*k-a*a);tc=np.arccos(-a/k)/wc
+tsg=2/np.sqrt(4*k*k-(a+k)**2)
+def dde(a,k,tau,times,rtol=1e-10):
+    times=np.asarray(times);end=float(times[-1])
+    if tau==0:return np.exp(-(a+k)*times)
+    solutions=[];ends=[];state=1.
+    def history(t):
+        if t<=1e-12:return 1.
+        j=min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)
+        return float(solutions[j](t)[0])
+    for n in range(int(np.ceil(end/tau))):
+        left=n*tau;right=min(end,(n+1)*tau)
+        sol=solve_ivp(lambda t,x:[-a*x[0]-k*history(t-tau)],(left,right),[state],method='DOP853',dense_output=True,rtol=rtol,atol=rtol*.01,max_step=min(.05,tau))
+        assert sol.success
+        solutions.append(sol.sol);ends.append(right);state=float(sol.y[0,-1])
+    return np.array([1. if t==0 else float(solutions[min(int(np.searchsorted(ends,t,side='left')),len(solutions)-1)](t)[0]) for t in times])
+def pade_trace(a,k,tau,times):
+    if tau==0:return np.exp(-(a+k)*np.asarray(times))
+    A=np.array([[k-a,-2*k],[2/tau,-2/tau]])
+    return np.array([(expm(A*t)@np.ones(2))[0] for t in times])`}
+  cells={[
+    { code: `# Four exercises, all numerical subparts independently reproducible
+print('Q1 characteristic s+1+2 exp(-s tau)=0; tau_c=',tc,'omega_c=',wc)
+print('Q1 phi=1 and tau>0: derivative0=-3; tau0: x12=',np.exp(-36))
+print('Q2 strict SG threshold=',tsg,'tau1 bound=',4/np.sqrt(13),'actual tau1 is below exact tau_c')
+print('Q3 tau1.5 Pade roots=',np.roots([.75,.25,3]))
+root=-1+lambertw(-3*np.exp(1.5))/1.5
+print('Q3 one exact DDE RHP root=',root,'residual=',abs(root+1+2*np.exp(-root*1.5)))
+eta=brentq(lambda z:1-.5*np.exp(z)-z,0,.5)
+print('Q4 Halanay eta=',eta,'bound at t2=',np.exp(-2*eta))
+print('Q4 a=k finite constant delays stable; no positive eta from this Halanay condition')
+print('all_answers_complete')` }
+  ]}
+/>
