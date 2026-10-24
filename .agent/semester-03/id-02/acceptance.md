@@ -31,3 +31,5 @@ Phase1–4及本课验收已完成。开工npm run check退出0（PASS21/WARN2/F
 最终提交隔离门槛：以scope-base.txt中的9c11c8b为父版本，仅叠加本课文件与共享元数据的本课行，自动重生OUTLINE和tracker统计；final-check.log的`npm run check`退出0，PASS21/WARN2/FAIL0。staged-semester.log退出0；staged-python-policy.log为pass=true；staged-glossary.log为PASS3/WARN2/FAIL0；staged-math.log为files0/tokens0。隔离目录没有.git，历史master祖先校验显式GIT_DIR指向原仓库，只读验证真实提交。
 
 中间隔离检查发现旧tracker行仍未打勾，按lesson slug定位补齐后再由脚本重算统计；staged-check.log、isolated-final-check.log保留失败记录，不当作通过。final-refresh.log记录自动修正前的统计不一致，最终通过只认另跑的final-check.log。共享工作区check-working.log包含并行DrivingSystemExplorer等未完成注册造成的6项FAIL，未改动或纳入本课提交；共享Python白名单与其他课程的未完成对应亦保留。
+
+真实master交付提交：d3d77103a808782445257feee3eca2339a3399a4。本课最终完成列已据真实提交勾选；提交回执检查另留semester-receipt.log。
