@@ -1,51 +1,47 @@
 check-catalog.mjs · 根目录：D:/Workspace/control-universe-rank5-robust06-delivery
 
 [1] catalog.ts 规模与分布
-  章数 21 · 课程数 205 · 小节数 1364
+  章数 21 · 课程数 205 · 小节数 1374
   各章课程数：introduction 3 / math 18 / classic 11 / modern 9 / nonlinear 12 / discrete-sampled 10 / implementation 10 / machine-learning 9 / identification 9 / estimation 8 / robust 11 / mpc 11 / intelligent 8 / rl-control 12 / multi-agent 9 / safety-ftc 8 / robotics 10 / robot-learning 10 / embodied 10 / autonomous-driving 11 / applications 6
-  status：empty=80  v1.3=120  draft=5
+  status：empty=79  v1.3=121  draft=5
   level ：undergrad=67  grad=124  advanced=14
   type  ：history=4  math=20  theory=100  case=19  impl=11  learning=44  frontier=7
   PASS  21 章 order 字段与数组下标一致（0..20）
 
 [2] catalog ↔ MDX 文件系统交叉核对
   PASS  无「catalog 有条目但 MDX 缺失且 status≠empty」
-  PASS  无孤儿 MDX（125 个 MDX 全部有 catalog 条目）
+  PASS  无孤儿 MDX（126 个 MDX 全部有 catalog 条目）
   PASS  status=empty 的课确实都没有 MDX
   WARN  slug 跨章重复：motion-planning → robotics, autonomous-driving（路由按 (chapter,lesson) 组合键取文件，不冲突；A6 迁移期属预期）
-        MDX 文件 125 个 · catalog 骨架课(status=empty) 80 门 · 有正文 125 门
+        MDX 文件 126 个 · catalog 骨架课(status=empty) 79 门 · 有正文 126 门
 
 [3] delivery-tracker.md ↔ catalog 交叉核对
   PASS  tracker 21 章顺序 == catalog 数组顺序
   PASS  tracker 205 行与 catalog 逐课 slug+标题一致
-  PASS  tracker 打勾行（120）与 catalog status="v1.3" 完全对应
-        识别到统计行：**统计**：119 / 205 课程已完成（21 章；129 个交互组件文件，其中 129 个被课程正文引用）
+  PASS  tracker 打勾行（121）与 catalog status="v1.3" 完全对应
+        识别到统计行：**统计**：121 / 205 课程已完成（21 章；131 个交互组件文件，其中 131 个被课程正文引用）
 
 [4] 讨论日志覆盖（0.2 节负债的自动化检测）
-  讨论日志 143 篇，可映射到课程 120 门
+  讨论日志 144 篇，可映射到课程 121 门
   WARN  已有 MDX 但无讨论日志：**5 门**（占有正文课程的 4%）
         robust/mu-synthesis, robust/robust-case-study, mpc/nonlinear-mpc, mpc/mpc-case-study, multi-agent/distributed-mpc
 
 [5] components/wiki 组件 ↔ MDX 引用 ↔ 单一来源注册表（E2 起，fix-015 已根治）
-  组件文件 139 个（其中 *-explorer.tsx 130 个）· MDX 引用的组件名 132 个
+  组件文件 140 个（其中 *-explorer.tsx 131 个）· MDX 引用的组件名 133 个
   PASS  MDX 引用的组件全部有实现
   PASS  无孤儿交互组件
-  PASS  单一来源 lib/wiki-components.ts 登记 132 个组件、覆盖 MDX 引用的全部 132 个；无 "use client"；mdx-components.tsx 与 lib/content.ts 均从它导入并展开、无内联残留（fix-015 已根治）
+  PASS  单一来源 lib/wiki-components.ts 登记 133 个组件、覆盖 MDX 引用的全部 133 个；无 "use client"；mdx-components.tsx 与 lib/content.ts 均从它导入并展开、无内联残留（fix-015 已根治）
 
 [6] catalog subsections ↔ MDX 的 H2 序列
 LaTeX-incompatible input and strict mode is set to 'warn': Unicode text character "，" used in math mode [unicodeTextInMathMode]
-  PASS  125 门有 MDX 且有 subsections 的课程，H2 数与 catalog 全部相等
-        小节数不符 0 门（FAIL）· slug 不符 0 门（WARN/Q5）· 已核 125 门
+  PASS  126 门有 MDX 且有 subsections 的课程，H2 数与 catalog 全部相等
+        小节数不符 0 门（FAIL）· slug 不符 0 门（WARN/Q5）· 已核 126 门
 
 [7] OUTLINE.md ↔ 实际
-  FAIL  OUTLINE.md 已交付 v1.3 119 ≠ status=v1.3 实数 120
-  FAIL  OUTLINE.md 未完成 v1.3 86 ≠ 实数 85
   PASS  OUTLINE.md slug 集合与 catalog 一致
 
 [8] tracker 底部统计行 vs 实测（0.1 节口径告警的自动化）
-  FAIL  tracker 统计行「已完成数」声明 119，实测 120 ← 0.1 节口径矛盾
-  FAIL  tracker 统计行「交互组件文件数」声明 129，实测 130 ← 0.1 节口径矛盾
-  FAIL  tracker 统计行「被正文引用组件数」声明 129，实测 130 ← 0.1 节口径矛盾
+  PASS  tracker 统计行 5 个已声明数字全部与实测一致：已完成数=121 / 课程总数=205 / 章数=21 / 交互组件文件数=131 / 被正文引用组件数=131
 
 [9] prereq 依赖图（P3/P6 守卫）
   节点 205 · 有效边 473 · 无 prereq 的课 3 门
@@ -94,12 +90,12 @@ LaTeX-incompatible input and strict mode is set to 'warn': Unicode text characte
 ================ 唯一权威统计（由本脚本从 catalog + 文件系统实测）================
   章节数            : 21
   课程总数          : 205
-  已 v1.3 交付      : 120
-  有 MDX 正文       : 125（其中 draft 5 / v1.3 120 / 无 status 0）
-  骨架课 status=empty: 80（渲染占位页）
-  catalog 小节总数  : 1364
-  讨论日志          : 143 篇 / 覆盖 120 门；有 MDX 但无日志 5 门
-  交互组件文件      : 130 个（被正文引用 130，孤儿 0）
+  已 v1.3 交付      : 121
+  有 MDX 正文       : 126（其中 draft 5 / v1.3 121 / 无 status 0）
+  骨架课 status=empty: 79（渲染占位页）
+  catalog 小节总数  : 1374
+  讨论日志          : 144 篇 / 覆盖 121 门；有 MDX 但无日志 5 门
+  交互组件文件      : 131 个（被正文引用 131，孤儿 0）
   prereq 边         : 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 + 未登记 0 · 章内倒置 0）
   prereq 覆盖率     : 202 / 205 门登记了前置；孤儿课 0 门；零 prereq 边的章 0 个
   拓扑层级          : 0..21（加 --topo 看逐课）
@@ -109,10 +105,9 @@ LaTeX-incompatible input and strict mode is set to 'warn': Unicode text characte
   WROTE D:\Workspace\control-universe-rank5-robust06-delivery\OUTLINE.md（336 行，原 336 行）
 
 [--fix-tracker-stats] 更新 delivery-tracker.md 底部统计行
-  WROTE 第 333 行（EOL=CRLF）
-    旧: **统计**：119 / 205 课程已完成（21 章；129 个交互组件文件，其中 129 个被课程正文引用）
-    新: **统计**：120 / 205 课程已完成（21 章；130 个交互组件文件，其中 130 个被课程正文引用）
+  统计行已是最新，无需写入：
+    **统计**：121 / 205 课程已完成（21 章；131 个交互组件文件，其中 131 个被课程正文引用）
 
 ---------------- 结果 ----------------
-  PASS 20 · WARN 2 · FAIL 5
-  退出码 1（存在 FAIL 级不一致）
+  PASS 21 · WARN 2 · FAIL 0
+  退出码 0（仅 WARN，均为已登记的待裁决项）

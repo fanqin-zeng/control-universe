@@ -188,3 +188,8 @@ verify-final PASS9/WARN0/FAIL0/SKIPPED0。数学files0/tokens0。初检M标签�
 
 未迁材料：无。九组均已关闭，全部旧标题真实DOM保留，原实验用途与四题子问完整。
 
+
+
+真实master交付提交：80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
+
+收尾实测：rank5独立8995内核9→0，19895/19995/20095/8995全部释放，证据kernel-cleanup.json与ports-cleanup.json；其他会话进程和共享缓存保留。

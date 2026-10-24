@@ -230,7 +230,7 @@
 | ROBUST-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/03-robust-stability.md;.agent/semester-03/robust-03/acceptance.md;commit:76ae270c06fb2363cdd98a4d998fb7b83e25f08c;rank5四Notebook五cell、证书/采样独立复算、双构建与375px通过 |
 | ROBUST-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/04-robust-performance.md;.agent/semester-03/robust-04/acceptance.md;commit:b749fcc2576f8f96ae3afd64a0e3b07fc4123efd;rank5三Notebook五cell、完整LFT/独立数值、双构建与375px通过 |
 | ROBUST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/05-h-infinity-basics.md;.agent/semester-03/robust-05/acceptance.md;commit:e06d60feb8263fca0b75219c276c36851ff7f5b3;rank5四Notebook五cell、实际TS/独立复算、双构建/375px通过 |
-| ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;rank5三Notebook五cell/独立数值/双构建/375px通过，待真实master回执 |
+| ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;commit:80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9;rank5三Notebook五cell/独立数值/双构建/375px验收 |
 | ROBUST-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

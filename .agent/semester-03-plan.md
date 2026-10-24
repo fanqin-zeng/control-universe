@@ -101,8 +101,8 @@
 | EST-07 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-07，rank4；其它会话并行，保留检查点，仅依赖已交付KF/EKF | .agent/semester-03/est-07/acceptance.md |
 | MPC-07 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09;EST-08;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-07，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-07/acceptance.md |
 | ML-08 | IMPL-08;IMPL-09;IMPL-10 | 2026-10-24用户明确指定继续ML-08，rank2；保留并行实现课，仅依赖已交付ML-04/随机过程/ODE | .agent/semester-03/ml-08/acceptance.md |
-| ROBUST-06 | IMPL-10;ML-09;ID-09;EST-08 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 | EST-08 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09 | 2026-10-24用户明确指定继续EST-08，rank4；保留并行课程，只依赖已交付EST-06/07与KF基础 | .agent/semester-03/est-08/acceptance.md |
+| ROBUST-06 | IMPL-10;ML-09;ID-09 | 2026-10-24用户指定继续ROBUST-06，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-06/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
