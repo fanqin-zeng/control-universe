@@ -1,0 +1,251 @@
+---
+title: "价值函数与贝尔曼方程"
+description: "从送餐机器人的后续回报理解状态价值、动作价值、贝尔曼备份、策略改进和值迭代的误差证书。"
+---
+
+# 价值函数与贝尔曼方程
+
+## 从送餐回报到状态价值
+
+在[强化学习问题](/rl-control/rl-basics)中，低电量送餐机器人可以直接出发，也可以先充电。现在把问题往后推一步：机器人已经充好电时，还能得到多少回报？如果每种情况都有一张“从这里开始还能得到多少”的表，当前选择就不用每次从头枚举整段未来。
+
+这张表就是价值函数。它记的是从某个状态开始的期望回报，并不只是已经拿到的奖励。本课先用上一课的一次送餐任务解释这句话，再明确另设一个反复接单的循环模型。两个任务的终止规则不同，价值不能直接横向比较。
+
+<svg viewBox="0 0 660 160" role="img" aria-label="一步备份先领取当前转移的奖励，再把下一状态的价值折扣后加回来" style={{width:'100%',height:'auto',maxWidth:660}}>
+ <rect x="12" y="40" width="140" height="65" rx="10" fill="#dbeafe" stroke="#2563eb"/><text x="82" y="78" textAnchor="middle" fill="#172033">当前状态 s</text>
+ <path d="M152 72H235l-10 -6m10 6l-10 6" fill="none" stroke="#334155"/><text x="195" y="28" textAnchor="middle" fill="#172033">选动作 a</text>
+ <rect x="238" y="40" width="175" height="65" rx="10" fill="#fef3c7" stroke="#a16207"/><text x="325" y="66" textAnchor="middle" fill="#172033">立即奖励 r</text><text x="325" y="91" textAnchor="middle" fill="#172033">与下一状态 s′</text>
+ <path d="M413 72H490l-10 -6m10 6l-10 6" fill="none" stroke="#334155"/>
+ <rect x="493" y="40" width="155" height="65" rx="10" fill="#dcfce7" stroke="#15803d"/><text x="570" y="66" textAnchor="middle" fill="#172033">后续价值 V(s′)</text><text x="570" y="91" textAnchor="middle" fill="#172033">折扣后计入</text>
+ <text x="330" y="145" textAnchor="middle" fill="#172033">备份：对 r + γV(s′) 按模型取期望</text>
+</svg>
+
+学完本课，你应能定义状态价值和动作价值，从回报的一步分解得到贝尔曼方程，求解给定策略的价值，并为值迭代写出可检查的停止条件。先修是上一课与[变分法与动态规划](/math/variational-dp)；本课使用有限状态、有限动作和已知模型，不训练神经网络，也不提前使用Q学习更新规则。
+
+## 给定策略的两种价值
+
+固定一个平稳策略 $\pi(a\mid s)$，即选动作的概率只依赖当前状态，不额外依赖决策编号。仍用 $G_t$ 表示从时刻 $t$ 开始的折扣回报。状态价值定义为
+
+$$
+V^\pi(s)=\mathbb E_\pi[G_t\mid S_t=s].
+$$
+
+动作价值则先指定当前动作 $a$，此后再按 $\pi$ 行动：
+
+$$
+Q^\pi(s,a)=\mathbb E_\pi[G_t\mid S_t=s,A_t=a],\qquad
+V^\pi(s)=\sum_a\pi(a\mid s)Q^\pi(s,a).
+$$
+
+第一式回答“从这里按这条规则走下去怎样”，第二式回答“这一步先这样做，再按规则走下去怎样”。它们的单位都是奖励的单位；本课仍是设计者定义的分。不要把单次经历的回报等同于期望，也不要把 $Q^\pi$ 的第一步动作误认为策略已经永久改变。
+
+先沿用上一课的终止任务：低电L配送成功概率 $p=0.6$，成功得6分、失败得−4分并终止；充电得−1分到H，H配送得6分并终止。令充电概率 $\alpha=0.25$、折扣 $\gamma=0.9$，则
+
+$$
+V^\pi(H)=6,\quad Q^\pi(L,\text{配送})=2,\quad
+Q^\pi(L,\text{充电})=4.4,\quad V^\pi(L)=2.6.
+$$
+
+终止状态D、F的后续价值均为0。失败的−4分已经在进入F的转移上发放，若再令 $V(F)=-4$，就会重复计算惩罚。
+
+## 回报的一步分解
+
+只要相关期望存在，回报可以拆为
+
+$$
+G_t=R_{t+1}+\gamma G_{t+1}.
+$$
+
+给定 $S_t=s,A_t=a$，按下一状态和奖励分组取条件期望。马尔可夫假设与固定策略让后续部分只需 $V^\pi(s')$，得到贝尔曼期望方程：
+
+$$
+Q^\pi(s,a)=\sum_{s',r}p(s',r\mid s,a)\bigl[r+\gamma V^\pi(s')\bigr],
+$$
+
+$$
+V^\pi(s)=\sum_a\pi(a\mid s)\sum_{s',r}p(s',r\mid s,a)\bigl[r+\gamma V^\pi(s')\bigr].
+$$
+
+本课的奖励只取有限个值，因此写求和。对于连续奖励应换成相应积分。这里的 $p(s',r\mid s,a)$ 是联合概率，允许奖励与下一状态相关；终止后的后续价值置零。
+
+右边把“现在拿到的分”和“下一状态还能拿到的分”接起来，称为一次备份。方程并没有凭空增加信息：它要求转移、奖励和策略已给定。由样本估计这些量、或直接从样本学习价值，是后续课程的问题。定义与动态规划方法可对照 Sutton 与 Barto 的[教材第3–4章](https://www.andrew.cmu.edu/course/10-703/textbook/BartoSutton.pdf)。
+
+## 反复送餐的循环模型
+
+为了观察真正需要多轮传播的固定点，现在另设一个循环任务：每次配送结果产生后，系统立即进入下一次低电任务L；不额外插入一个有时间长度的重置步骤。H配送后也回L。失败惩罚仍只记在该次配送转移上。这是新的教学MDP，不是把上一课的终止状态偷偷改成非终止状态。
+
+| 状态 | 动作 | 下一状态、奖励 | 概率 |
+|---|---|---|---|
+| L | 配送 | L，$+6$ | $p$ |
+| L | 配送 | L，$-4$ | $1-p$ |
+| L | 充电 | H，$-1$ | $1$ |
+| H | 配送 | L，$+6$ | $1$ |
+
+定义 $d=10p-4$ 为L配送的期望立即奖励。在循环模型中固定 $0\leq\gamma<1$，奖励有界，折扣回报绝对收敛；一个决策步仍不代表等长物理时间，不能直接据此推断实际耗时或吞吐率。
+
+状态顺序取(L,H)，$\alpha=\pi(\text{充电}\mid L)$，H只允许配送。转移矩阵的行是当前状态、列是下一状态：
+
+$$
+P^\pi=\begin{bmatrix}1-\alpha&\alpha\\1&0\end{bmatrix},\qquad
+r^\pi=\begin{bmatrix}(1-\alpha)d-\alpha\\6\end{bmatrix}.
+$$
+
+每行概率和为1。矩阵里的 $r^\pi$ 已经对当前动作及随机奖励取过期望，不要再乘一次 $\pi$。默认 $p=0.6,\alpha=0.25$，第一行概率为 $(0.75,0.25)$，第一项期望立即奖励为 $1.25$。
+
+## 解出给定策略的价值
+
+将期望方程写成线性系统：
+
+$$
+V^\pi=r^\pi+\gamma P^\pi V^\pi,\qquad
+(I-\gamma P^\pi)V^\pi=r^\pi.
+$$
+
+因为 $P^\pi$ 是随机矩阵、$\gamma<1$，$I-\gamma P^\pi$ 可逆。实际计算通常直接求解线性系统，而不显式形成逆矩阵。对本课两状态模型，先从第二行得到 $V_H=6+\gamma V_L$，再代回第一行：
+
+$$
+V_L^\pi=\frac{(1-\alpha)d+\alpha(-1+6\gamma)}{(1-\gamma)(1+\alpha\gamma)},\qquad
+V_H^\pi=6+\gamma V_L^\pi.
+$$
+
+默认参数下，循环模型的 $V^\pi$ 约为 $(21.224490,25.102041)$，L的配送、充电动作价值约为 $(21.102041,21.591837)$。按 $(0.75,0.25)$ 加权回到 $V_L^\pi$。这些数包含未来反复接单，不能与上一课一次任务的2.6分直接比较后宣布“算法进步”。
+
+求解线性系统是策略评估；也可以反复做期望备份 $V_{k+1}=r^\pi+\gamma P^\pi V_k$。这里的 $k$ 是计算轮数，不是机器人实际经历了多少步。
+
+## 最优方程与策略改进
+
+给定策略是在评估一条规则；最优价值 $V^*(s)$ 则在允许的策略中最大化从状态 $s$ 开始的期望回报。在有限状态、有限动作、有界奖励与 $\gamma<1$ 下，存在对所有状态同时最优的平稳确定性策略。贝尔曼最优方程为
+
+$$
+V^*(s)=\max_a\sum_{s',r}p(s',r\mid s,a)\bigl[r+\gamma V^*(s')\bigr],\qquad
+Q^*(s,a)=\sum_{s',r}p(s',r\mid s,a)\bigl[r+\gamma V^*(s')\bigr].
+$$
+
+先计算每个动作的期望，再在合法动作中取最大值。智能体不能预先看见随机配送结果后再挑这一步的动作。
+
+本模型只有L需要选择。永远在L配送和永远在L充电的L价值分别是
+
+$$
+V_L^{\text{配送}}=\frac{d}{1-\gamma},\qquad
+V_L^{\text{充电}}=\frac{-1+6\gamma}{1-\gamma^2}.
+$$
+
+两式相等时 $p=(3+10\gamma)/(10(1+\gamma))$，默认折扣下阈值为 $12/19\approx0.631579$。低于阈值选充电，高于阈值选配送，相等时两者都最优。这里与上一课0.84的阈值不同，是因为任务的后续与重置时序不同。
+
+默认 $p=0.6,\gamma=0.9$ 时，最优价值约为 $(23.157895,26.842105)$。也可以从当前策略出发改进：用准确的 $Q^\pi$ 在每个状态贪心选动作，得到 $\pi'$。由于 $T^{\pi'}V^\pi\geq V^\pi$，备份的单调性与收敛性给出 $V^{\pi'}\geq V^\pi$，但不保证每个状态都严格增大。
+
+策略迭代交替执行“完整评估策略→按动作价值改进”，策略不再变化时停止。在精确算术、有限状态动作、相等时保留旧动作的条件下，它有限次终止；截断评估和浮点容差要另行处理。本课只展示已知模型的规划，不报告训练成功率。
+
+## 值迭代与停止证书
+
+值迭代直接反复做最优备份 $V_{k+1}=T^*V_k$，不要求每一轮都完整评估一条策略。本课默认 $V_0=(0,0)$，同步计算新向量，不能先覆盖L再用新L计算H。
+
+对任意两张价值表 $U,V$，因为转移概率非负且和为1，取期望最多保留原来的最大差；再用 $|\max_a f_a-\max_a g_a|\leq\max_a|f_a-g_a|$，得到
+
+$$
+\|T^\pi U-T^\pi V\|_\infty\leq\gamma\|U-V\|_\infty,\qquad
+\|T^*U-T^*V\|_\infty\leq\gamma\|U-V\|_\infty.
+$$
+
+因此两种算子在有限维价值空间中都是收缩映射，各有唯一固定点，从任意有限初值反复备份均收敛。$\|x\|_\infty$ 是向量各项绝对值的最大者。
+
+对准备返回的当前向量 $V$，重新计算残差 $\delta=\|TV-V\|_\infty$。把固定点 $V^\dagger=TV^\dagger$ 插入三角不等式，得 $\|V-V^\dagger\|_\infty\leq\delta+\gamma\|V-V^\dagger\|_\infty$，所以
+
+$$
+\|V-V^\dagger\|_\infty\leq\frac{\delta}{1-\gamma}.
+$$
+
+期望备份的 $V^\dagger$ 是 $V^\pi$，最优备份的是 $V^*$。这是价值表的误差上界，不直接等于贪心策略的性能损失或安全保证。若 $\gamma=0.9,\delta=0.01$，上界是0.1分；折扣越接近1，相同残差对应的上界越宽。
+
+<BellmanValuesExplorer />
+
+面板默认做策略评估20次：当前价值约为 $(18.549803,22.427354)$，固定点约为 $(21.224490,25.102041)$，残差约为0.267469，上界约为2.674686分。从同一零初值出发，默认期望备份第一轮为 $(1.25,6)$；切换最优备份后，前三轮依次为 $(2,6)$、$(4.4,7.8)$、$(6.02,9.96)$。条形图使用当前近似 $V_k$，不是已经准确求得的 $Q^\pi$ 或 $Q^*$。
+
+## 实验与适用边界
+
+实验一用原始模型求线性系统，并展示策略迭代。输入是已知 $p,\gamma,\alpha$，输出是价值表与动作价值，没有随机抽样、训练/验证/测试数据或学习率。
+
+<JupyterNotebook title="实验一：策略价值与策略改进" setupCode={`import time
+import numpy as np
+def evaluate(p=.6,g=.9,a=.25):
+    P=np.array([[1-a,a],[1.,0.]])
+    r=np.array([(1-a)*(10*p-4)-a,6.])
+    return np.linalg.solve(np.eye(2)-g*P,r)
+def action_values(v,p=.6,g=.9):
+    return np.array([10*p-4+g*v[0],-1+g*v[1]])
+`} cells={[{code:`print('episodic V_H Q_deliver Q_charge V_L',6.,2.,-1+.9*6,.75*2+.25*(-1+.9*6))
+print('terminal future values',0.,0.)
+p=.6;g=.9;a=.25
+P=np.array([[1-a,a],[1.,0.]])
+r=np.array([(1-a)*(10*p-4)-a,6.])
+v=evaluate(p,g,a)
+print('P',P,'r',r,'V',v,'Q_L',action_values(v))
+print('weighted Q',(1-a)*action_values(v)[0]+a*action_values(v)[1])
+print('cyclic threshold',(3+10*g)/(10*(1+g)),'episodic threshold',(3+6*g)/10)
+for p,g,a in [(.6,.9,0),(.6,.9,1),(.8,.9,0),(.6,.5,0),(.6,.5,1),(12/19,.9,0),(12/19,.9,1),(0.,0.,.25)]:
+    print('p gamma alpha',p,g,a,'V',evaluate(p,g,a))
+`},{code:`start=time.perf_counter()
+a=0.
+for solve in range(1,5):
+    v=evaluate(a=a);q=action_values(v)
+    old=int(a);choice=old if abs(q[0]-q[1])<1e-12 else int(np.argmax(q))
+    print('policy solve',solve,'alpha',a,'V',v,'Q',q,'next alpha',choice)
+    if choice==old: break
+    a=float(choice)
+print('wall seconds',time.perf_counter()-start)
+P1=np.array([[.75,.25],[1.,0.]])
+A1=np.eye(2)-P1
+print('gamma=1 cyclic rank',np.linalg.matrix_rank(A1),'det',np.linalg.det(A1))
+assert np.linalg.matrix_rank(A1)==1
+print('gamma=1 cyclic linear system is singular; discounted theorem does not apply')
+print('zero reward identity kernel: every constant V solves V=V at gamma=1')
+`}]} />
+
+实验二给出值迭代的完整输入、输出和停止条件：返回向量上的残差除以 $1-\gamma$ 不超过 $10^{-8}$ 时停止，否则最多1000次并报告未达标。一次备份扫描两个状态的全部可用动作；代码打印备份次数和本机墙钟时间，不将它们冒充环境交互步数。
+
+<JupyterNotebook title="实验二：同步值迭代与误差证书" setupCode={`import time
+import numpy as np
+p=.6;g=.9;a=.25
+P=np.array([[1-a,a],[1.,0.]])
+r=np.array([(1-a)*(10*p-4)-a,6.])
+def backup(v,optimal=True):
+    return np.array([max(10*p-4+g*v[0],-1+g*v[1]),6+g*v[0]]) if optimal else r+g*P@v
+exact_policy=np.linalg.solve(np.eye(2)-g*P,r)
+exact_opt=np.array([(-1+6*g)/(1-g*g),6+g*(-1+6*g)/(1-g*g)])
+`} cells={[{code:`for optimal in [False,True]:
+    v=np.zeros(2);target=exact_opt if optimal else exact_policy
+    for k in range(81):
+        if k in [0,1,2,3,20,80]:
+            delta=np.max(np.abs(backup(v,optimal)-v))
+            print('optimal',optimal,'k',k,'V',v,'residual',delta,'bound',delta/(1-g),'error',np.max(np.abs(v-target)))
+        v=backup(v,optimal)
+print('exercise bound',.01/(1-.9))
+`},{code:`start=time.perf_counter();v=np.zeros(2);n=0;tol=1e-8;cap=1000
+while np.max(np.abs(backup(v)-v))/(1-g)>tol and n<cap:
+    v=backup(v);n+=1
+delta=np.max(np.abs(backup(v)-v));bound=delta/(1-g)
+print('backups',n,'V',v,'residual',delta,'bound',bound,'tolerance met',bound<=tol)
+print('wall seconds',time.perf_counter()-start)
+assert bound<=tol
+assert np.max(np.abs(v-exact_opt))<=bound+1e-12
+assert np.max(np.abs(exact_policy-np.array([1040/49,1230/49])))<1e-10
+print('finite horizon gamma=1 episodic charge return',-1+6)
+`}]} />
+
+零初始化的最优备份 $V_N$ 也可解释为“只累计未来N步、末端价值为0”的有限时域最优回报；它仍不是无限时域的精确值。若任务本身有固定截止步数，应使用随剩余步数变化的价值表，或将剩余步数并入状态；本课循环任务没有这条截止规则。$\gamma=1$ 时，有限回合可以倒推，上一课充电回报为5；持续循环则没有上述收缩保证。即使奖励全为0、转移保持原状态，$V=V$ 也有无穷多个解，零残差不能保证相对某个指定解的误差为零。
+
+本课证明要求准确的期望备份。未知模型、有限样本、函数逼近和投影误差都需要额外分析，不能直接借用这份残差证书；高价值也不证明约束满足或闭环稳定。实验是已知小模型规划，不是实机训练或对学习算法的跨任务排名。
+
+## 习题
+
+1. 在上一课的终止任务中，$p=0.6,\gamma=0.9,\alpha=0.25$，写出H与L的状态价值和L的两个动作价值。为什么不能令失败终止状态的后续价值为−4？
+2. 对本课循环模型的默认参数，写出 $P^\pi,r^\pi$，联立两条贝尔曼期望方程求 $V_L^\pi,V_H^\pi$，再检查动作价值的加权平均。
+3. 从永远在L配送的策略开始，算一次评估与贪心改进，再求改进后的价值。推导两确定性策略持平的 $p$，说明它为什么不同于上一课的阈值。
+4. 当 $\gamma=0.9$、当前残差0.01时，价值误差上界是多少？$\gamma=1$、零奖励、自循环时，残差为0能否唯一确定价值？区分有限回合与持续循环。
+
+## 答案
+
+1. $V_H^\pi=6$，$Q^\pi(L,\text{配送})=0.6\times6+0.4\times(-4)=2$，$Q^\pi(L,\text{充电})=-1+0.9\times6=4.4$，$V_L^\pi=0.75\times2+0.25\times4.4=2.6$。进入F时已经给了−4分，F的未来回报为0；再记−4会重复惩罚。
+2. $P^\pi$ 第一行为 $(0.75,0.25)$、第二行为 $(1,0)$，$r^\pi=(1.25,6)^T$。由 $V_H=6+0.9V_L$ 代入 $V_L=1.25+0.9(0.75V_L+0.25V_H)$，得 $V_L=1040/49\approx21.224490$、$V_H=1230/49\approx25.102041$。动作价值约为 $(21.102041,21.591837)$，按 $(0.75,0.25)$ 加权复原 $V_L$；实验一复算。
+3. 原策略价值为 $(20,24)$，其L动作价值为 $(20,20.6)$，因此改为L充电。重新评估得 $(440/19,510/19)\approx(23.157895,26.842105)$，再次改进不变。令 $d/(1-\gamma)=(-1+6\gamma)/(1-\gamma^2)$，得到 $p=(3+10\gamma)/(10(1+\gamma))$，默认是 $12/19$。上一课完成任务即结束，本课完成后还要从L反复接单，所以后续价值与时序不同；这不是算法优劣对比。
+4. 上界 $0.01/(1-0.9)=0.1$ 分。$\gamma=1$、零奖励、自循环时任意常数价值都满足 $V=V$，因此无唯一性，不能用零残差认定某个指定价值。有限回合仍可凭终止边界倒推，例如上一课充电得5分；不能把这个事实扩展成任意持续任务的收缩性结论。

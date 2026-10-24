@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前67课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前68课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -136,7 +136,7 @@
 | 125 | INTEL-07 | 迭代学习控制 | content/intelligent/iterative-learning-control.mdx | 待完成 | 待生产 | — |
 | 126 | INTEL-08 | 智能控制案例 | content/intelligent/intelligent-case-study.mdx | 待完成 | 待生产 | — |
 | 127 | RL-01 | 强化学习问题 | content/rl-control/rl-basics.mdx | 已完成 | 待润色 | .agent/semester-03/rl-01/acceptance.md |
-| 128 | RL-02 | 价值函数与贝尔曼方程 | content/rl-control/dynamic-programming.mdx | 待完成 | 待生产 | — |
+| 128 | RL-02 | 价值函数与贝尔曼方程 | content/rl-control/dynamic-programming.mdx | 已完成 | 待润色 | .agent/semester-03/rl-02/acceptance.md |
 | 129 | RL-03 | Q学习 | content/rl-control/q-learning.mdx | 待完成 | 待生产 | — |
 | 130 | RL-04 | 深度Q网络 | content/rl-control/dqn.mdx | 待完成 | 待生产 | — |
 | 131 | RL-05 | 策略梯度 | content/rl-control/policy-gradient.mdx | 待完成 | 待生产 | — |

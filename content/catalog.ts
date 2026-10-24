@@ -5272,7 +5272,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "learning",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "从送餐回报到状态价值",
+            "title": "从送餐回报到状态价值"
+          },
+          {
+            "slug": "给定策略的两种价值",
+            "title": "给定策略的两种价值"
+          },
+          {
+            "slug": "回报的一步分解",
+            "title": "回报的一步分解"
+          },
+          {
+            "slug": "反复送餐的循环模型",
+            "title": "反复送餐的循环模型"
+          },
+          {
+            "slug": "解出给定策略的价值",
+            "title": "解出给定策略的价值"
+          },
+          {
+            "slug": "最优方程与策略改进",
+            "title": "最优方程与策略改进"
+          },
+          {
+            "slug": "值迭代与停止证书",
+            "title": "值迭代与停止证书"
+          },
+          {
+            "slug": "实验与适用边界",
+            "title": "实验与适用边界"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "q-learning",
