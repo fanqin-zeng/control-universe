@@ -5537,7 +5537,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+  {
+    "slug": "引言",
+    "title": "引言"
+  },
+  {
+    "slug": "机构与自由度",
+    "title": "机构与自由度"
+  },
+  {
+    "slug": "构型与任务",
+    "title": "构型与任务"
+  },
+  {
+    "slug": "状态与测量",
+    "title": "状态与测量"
+  },
+  {
+    "slug": "输入与动力学",
+    "title": "输入与动力学"
+  },
+  {
+    "slug": "滑台算例",
+    "title": "滑台算例"
+  },
+  {
+    "slug": "模型边界",
+    "title": "模型边界"
+  },
+  {
+    "slug": "小结",
+    "title": "小结"
+  },
+  {
+    "slug": "习题",
+    "title": "习题"
+  },
+  {
+    "slug": "答案",
+    "title": "答案"
+  }
+]
       },
       {
         "slug": "rigid-body-motion",

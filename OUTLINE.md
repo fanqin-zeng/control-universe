@@ -246,7 +246,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 17.1 | 机器人系统 | robot-models | ⬜ 骨架（占位页） | undergrad | theory | 7 | modern/state-space |
+| 17.1 | 机器人系统 | robot-models | ✅ 已交付 v1.3 | undergrad | theory | 7 | modern/state-space |
 | 17.2 | 刚体运动 | rigid-body-motion | ⬜ 骨架（占位页） | grad | math | 8 | robotics/robot-models<br>math/diff-geometry |
 | 17.3 | 机器人运动学 | kinematics | ⬜ 骨架（占位页） | grad | theory | 9 | robotics/rigid-body-motion<br>math/matrix-decomposition |
 | 17.4 | 机器人动力学 | dynamics | ⬜ 骨架（占位页） | grad | theory | 10 | robotics/kinematics<br>math/multivariable-calculus<br>math/ode-matrix-exponential |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 74（status = v1.3）
+- **已交付 v1.3**: 75（status = v1.3）
 - **有正文待审校**: 18（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 113（status = empty，渲染占位页）
+- **骨架占位**: 112（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 131（= draft 18 + empty 113 + 无 status 0）
-- **有 MDX 正文**: 92
-- **catalog 小节总数**: 1036
-- **讨论日志**: 95 篇（覆盖 74 门；有 MDX 无日志 18 门）
-- **交互组件**: 84 个文件（被正文引用 84，孤儿 0）
+- **未完成 v1.3**: 130（= draft 18 + empty 112 + 无 status 0）
+- **有 MDX 正文**: 93
+- **catalog 小节总数**: 1046
+- **讨论日志**: 96 篇（覆盖 75 门；有 MDX 无日志 18 门）
+- **交互组件**: 85 个文件（被正文引用 85，孤儿 0）
 - **prereq 边**: 475 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..22（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
