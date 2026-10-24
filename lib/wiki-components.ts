@@ -1,3 +1,4 @@
+import { EconomicMpcExplorer } from "@/components/wiki/economic-mpc-explorer";
 import { MuAnalysisExplorer } from '@/components/wiki/mu-analysis-explorer';
 import { NonlinearMpcExplorer } from "@/components/wiki/nonlinear-mpc-explorer";
 import { LearningEvaluationExplorer } from '@/components/wiki/learning-evaluation-explorer';
@@ -157,6 +158,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  EconomicMpcExplorer,
   NonlinearMpcExplorer,
   LearningEvaluationExplorer,
   IdentificationCaseExplorer,

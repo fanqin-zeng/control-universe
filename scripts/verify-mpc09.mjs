@@ -1,0 +1,6 @@
+import fs from 'node:fs';import ts from 'typescript';import {spawnSync} from 'node:child_process';
+const out='.agent/semester-03/mpc-09';const p=spawnSync(process.execPath,['scripts/nb-cells.mjs','extract','mpc/economic-mpc','--out',out+'/cells.json'],{stdio:'inherit'});if(p.status!==0)process.exit(p.status??1);
+const js=ts.transpileModule(fs.readFileSync('lib/economic-mpc.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ES2022}}).outputText;const m=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const cases=[];for(const x0 of [0,.5,1,1.5,2])for(const capacity of [0,.5,1,2])for(const limit of [.5,1,1.5,2])for(const p0 of [0,1,4,5])for(const p1 of [0,1,4,5])for(const h of [0,.2,1,4]){const c={x0,capacity,limit,p0,p1,h};cases.push({c,result:m.planEconomic(c)});}
+let rejected=0;for(const patch of [{h:-1},{p0:-1},{limit:-1},{capacity:-1},{x0:NaN},{p1:Infinity}]){try{m.planEconomic({...m.economicDefaults,...patch});throw Error('Invalid accepted');}catch(e){if(!(e instanceof RangeError))throw e;rejected++;}}
+fs.writeFileSync(out+'/ts-cases.json',JSON.stringify({cases,rejected}));const r=spawnSync('python',[out+'/reference.py'],{stdio:'inherit',env:{...process.env,MPLBACKEND:'Agg'}});process.exit(r.status??1);

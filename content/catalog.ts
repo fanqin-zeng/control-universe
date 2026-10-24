@@ -5799,7 +5799,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从库存跟踪到经济目标", "title": "从库存跟踪到经济目标"}, {"slug": "经济阶段成本与最优稳态", "title": "经济阶段成本与最优稳态"}, {"slug": "两时段储水问题", "title": "两时段储水问题"}, {"slug": "一个可复算的经济计划", "title": "一个可复算的经济计划"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "耗散性与旋转成本", "title": "耗散性与旋转成本"}, {"slug": "终端项不能随意删除", "title": "终端项不能随意删除"}, {"slug": "周期运行与稳定边界", "title": "周期运行与稳定边界"}, {"slug": "实现合同与预测误差", "title": "实现合同与预测误差"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "mhe-fusion",

@@ -1,0 +1,249 @@
+---
+title: "经济预测控制"
+description: "从分时储水调度理解经济目标，以精确QP、耗散性、旋转成本与终端反例辨清收益和稳定性的条件。"
+---
+
+# 经济预测控制
+
+一个水箱每小时要供出一单位水。夜间泵水便宜，白天较贵；如果始终把水位压在最低位置，白天仍要开泵。能否在便宜时多泵一些，让库存先升后降，同时满足容量和泵的上限？这时，偏离固定水位可能正是我们想要的运行方式。
+
+在[非线性预测控制](/mpc/nonlinear-mpc)中，我们已区分预测模型、优化目标与优化算法。本课改变的是目标：直接优化运行成本。读者还需用到[无源控制](/nonlinear/passivity-control)中的存储函数与供给率；下面会重新定义经济控制中的对应关系。学完应能手算两时段调度，并说明经济最优、耗散性与闭环稳定各自需要什么条件。
+
+## 从库存跟踪到经济目标
+
+跟踪MPC通常先给定参考状态与输入，再惩罚偏差。经济预测控制（economic MPC，EMPC）直接把能耗、产量或运行费用写入阶段成本。经济成本未必在某个参考点为零，也未必对状态偏差正定。
+
+两者的差别首先在“希望怎样运行”，不在使用线性还是非线性模型。线性水箱加凸二次费用仍是QP；复杂过程的经济目标也可能形成NLP。“经济”并不自动意味着求解更难、收益更高或闭环更稳定。
+
+本课用归一化水量和费用系数，所有成本是教学目标值，不代表某地实际电费。我们只比较相同预测、相同约束下两个明确写出的目标；没有实现工业泵站或验证真实设备。
+
+## 经济阶段成本与最优稳态
+
+设离散系统为$x^+=f(x,u)$，可行状态和输入组成集合$Z$。经济阶段成本记为$\ell(x,u)$。**最优稳态**是可行且保持状态不变的成本最小点：
+
+$$
+(x_s,u_s)\in\arg\min_{(x,u)\in Z} \ell(x,u),\qquad x=f(x,u).
+$$
+
+这只在稳态集合中比较；周期运行可能比所有稳态更便宜，因此还不能把最优稳态等同于所有动态运行中的最优方案。
+
+先看常价水箱。每时段长度为1小时，需求为1，输入$u$表示该时段泵入的归一化水量：
+
+$$
+x^+=x+u-1,\qquad \ell(x,u)=pu+\frac12u^2+\frac h2x^2.
+$$
+
+这里$p$是已知价格系数，$h\ge0$为库存权重，输入二次权重固定为1。库存费用按**时段开始的库存**计。稳态必须满足$u_s=1$；当$h>0$且零库存可行时，$x_s=0$，常价最优稳态成本为$\ell_s=p+1/2$。当$h=0$时，任意可行库存配$u_s=1$都是最优稳态，不能指定唯一的最优库存。
+
+## 两时段储水问题
+
+现在只规划两个时段，价格预测是$p_0,p_1$。要求每个结点满足$0\le x_k\le C$、输入满足$0\le u_k\le U$，并在周期结束时回到初库存$x_2=x_0$。前提是$x_0\in[0,C]$。经济目标为
+
+$$
+J_e=\sum_{k=0}^{1}\left(p_ku_k+\frac12u_k^2+\frac h2x_k^2\right).
+$$
+
+终端回库使$u_0+u_1=2$。令$v=u_0$，则$u_1=2-v$、$x_1=x_0+v-1$，原输入和库存约束化为
+
+$$
+a=\max(0,2-U,1-x_0),\qquad b=\min(U,2,C+1-x_0),\qquad a\le v\le b.
+$$
+
+若$a>b$，本周期合同不可行，不能把截断动作当成可行解。例如$U<1$时，两次泵水不足以补回总需求；即使初始有水，要求末库存恢复也使问题无解。若初库存已超出容量，必须先报告初态域外。
+
+为了隔离目标的影响，跟踪基线使用相同模型、约束、$h$和输入二次权重，目标为
+
+$$
+J_t=\frac h2(x_0^2+x_1^2)+\frac12\left[(u_0-1)^2+(u_1-1)^2\right].
+$$
+
+这等价于忽略分时价格、使用任一常价的经济目标，差别仅是常数。两目标都精确求解，不另加有利于某一方的权重调参。比较运行效果时，必须将两份输入都代回**同一个$J_e$**；不能拿$J_t=0$与$J_e=4.1$直接排名。这是目标消融实验，不是各种MPC算法的通用排名。
+
+## 一个可复算的经济计划
+
+对$v$求导得$J_e'(v)=p_0-p_1+2(v-1)+h(x_0+v-1)$，二阶导数$2+h>0$，所以可行时唯一全局最优输入为
+
+$$
+v_e=\operatorname{proj}_{[a,b]}\frac{p_1-p_0+2+h(1-x_0)}{2+h},\qquad
+v_t=\operatorname{proj}_{[a,b]}\frac{2+h(1-x_0)}{2+h}.
+$$
+
+默认$x_0=0,C=U=2,p_0=1,p_1=4,h=0.2$，可行区间$[1,2]$。经济目标取$v_e=2$：输入为$[2,0]$，库存为$[0,1,0]$，费用为$2+2+0.1=4.1$。跟踪基线输入$[1,1]$，库存保持0；它自己的跟踪目标为0，但同一经济费用是$1+4+1=6$。
+
+把库存权重增至$h=4$，经济计划变为$[1.5,0.5]$，库存$[0,0.5,0]$，经济费用5.25。库存也有代价，“便宜时尽量灌满”并非普遍最优。若两时段价格均为1，两目标都取$[1,1]$，经济费用均为3；容量为0或泵限为1时，默认价格下也都只能取$[1,1]$，费用均为6。
+
+若价格反序为$[4,1]$而初库存为0，第一时段仍必须至少泵1，最优输入为$[1,1]$、费用6。若同样反序但初库存为1，则可先用存水、后补库：输入$[0,2]$，库存$[1,0,1]$，费用4.1。边界和初态决定了可利用的价格差。
+
+以下Notebook直接最小化原始标量QP，并把两个端点纳入候选，不使用Explorer的闭式投影求解器。第二个cell重复六个**固定周期终点**的名义计划，并计算预测失配反例。
+
+<JupyterNotebook title="原QP、周期调度与预测失配" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
+
+def cost(c,u):
+    x=c['x0'];v=2-u;y=x+u-1
+    return c['p0']*u+c['p1']*v+.5*(u*u+v*v)+.5*c['h']*(x*x+y*y)
+
+def original(c,tracking=False):
+    x=c['x0'];C=c['capacity'];U=c['limit']
+    if x<0 or x>C:return None
+    # Construct the feasible interval from the six ORIGINAL input/state inequalities.
+    inequalities=[(-1,0),(1,U),(1,2),(-1,U-2),(-1,x-1),(1,C+1-x)]
+    lower=max(b/a for a,b in inequalities if a<0);upper=min(b/a for a,b in inequalities if a>0)
+    if lower>upper:return None
+    objective=(lambda u:.5*c['h']*(x*x+(x+u-1)**2)+.5*((u-1)**2+(1-u)**2)) if tracking else lambda u:cost(c,u)
+    if lower==upper:u=lower
+    else:
+        ans=minimize_scalar(objective,bounds=(lower,upper),method='bounded',options={'xatol':1e-12})
+        assert ans.success;u=min([lower,upper,ans.x],key=objective)
+    return dict(u=np.array([u,2-u]),x=np.array([x,x+u-1,x]),cost=cost(c,u),objective=objective(u))
+
+default=dict(x0=0.,capacity=2.,limit=2.,p0=1.,p1=4.,h=.2)
+`} cells={[{title:"1",code:`e=original(default);t=original(default,True)
+assert np.allclose(e['u'],[2,0]) and np.isclose(e['cost'],4.1)
+assert np.allclose(t['u'],[1,1]) and np.isclose(t['cost'],6)
+for name,patch in [('default',{}),('holding4',{'h':4}),('equal',{'p1':1}),('capacity0',{'capacity':0}),('pump1',{'limit':1}),('reversed',{'p0':4,'p1':1}),('stock_reversed',{'x0':1,'p0':4,'p1':1})]:
+    c={**default,**patch};a=original(c);b=original(c,True)
+    print(name,'u=',np.round(a['u'],8),'x=',np.round(a['x'],8),'economic=',round(a['cost'],8),'tracking_economic=',round(b['cost'],8))
+assert original({**default,'limit':.75}) is None
+assert original({**default,'x0':1,'capacity':.5}) is None
+fig,ax=plt.subplots(1,2,figsize=(8,3))
+for label,r in [('economic',e),('tracking',t)]:
+    ax[0].plot(range(3),r['x'],'o-',label=label);ax[1].plot(range(2),r['u'],'o-',label=label)
+for a in ax:a.set_ylim(0,2.5);a.legend();a.grid(True)
+ax[0].set(xlim=(0,2),xlabel='k',ylabel='inventory');ax[1].set(xlim=(0,1),xlabel='slot',ylabel='pumping')
+plt.tight_layout();plt.show()
+print('original_qp_cases_checked')`},{title:"2",code:`e=original(default);t=original(default,True)
+xe=[0.];xt=[0.];ue=[];ut=[];je=jt=0.
+for cycle in range(6):
+    # Fixed cycle end; the remaining one-step action equals the second nominal action.
+    a=original({**default,'x0':xe[-1]});b=original({**default,'x0':xt[-1]},True)
+    xe.extend(a['x'][1:]);xt.extend(b['x'][1:]);ue.extend(a['u']);ut.extend(b['u']);je+=a['cost'];jt+=b['cost']
+assert np.isclose(je,24.6) and np.isclose(jt,36)
+actual={**default,'p0':4,'p1':1}
+wrong=cost(actual,e['u'][0]);blind=cost(actual,t['u'][0])
+assert np.isclose(wrong,10.1) and np.isclose(blind,6)
+print('six_cycles',je,jt,'per_slot',je/12,jt/12)
+print('wrong_price',wrong,blind,'gap',wrong-blind)
+print('demand_1.25_old_terminal',1-1.25,'remaining_repair',1.25-1)
+print('demand_4_required_input',4-1,'exceeds_limit',default['limit'])
+fig,ax=plt.subplots(figsize=(8,3));ax.plot(range(13),xe,'o-',label='economic');ax.plot(range(13),xt,'o--',label='tracking');ax.set(xlim=(0,12),ylim=(0,2.5),xlabel='hour',ylabel='inventory');ax.legend();ax.grid(True);plt.tight_layout();plt.show()
+print('cycles_and_mismatch_checked')`}]} />
+
+## 交互式可视化
+
+先保持默认值，观察便宜时段泵水、贵时段用库存。再把库存权重拖到4，或把两时段价格调成相同，检验上节结论。容量归零时差别消失；泵限小于1或初库存超过容量时，面板报告不可行。
+
+<EconomicMpcExplorer />
+
+图只表示小时结点与总泵水量；若时段内先供水后泵水，结点可行未必意味着中间液位可行。真实设备需要流量、时序和最小液位等额外约束。
+
+## 耗散性与旋转成本
+
+经济阶段成本不正定，不能直接当成误差能量。对常价、固定稳态的问题，可寻找标量**存储函数**$S(x)$，使
+
+$$
+S(f(x,u))-S(x)\le \ell(x,u)-\ell_s-\alpha(|x-x_s|).
+$$
+
+$\alpha$若是对非零状态偏差严格为正、在零处为零的连续递增函数，这叫相对该最优稳态的严格耗散性。去掉$\alpha$就是相应的非严格耗散不等式。这里的存储函数是一种跨时段记账工具，未必是物理能量或闭环Lyapunov函数。
+
+定义**旋转阶段成本**
+
+$$
+L(x,u)=\ell(x,u)-\ell_s+S(x)-S(f(x,u)).
+$$
+
+本课常价例取$S(x)=(p+1)x$，直接展开得到
+
+$$
+L(x,u)=\frac12(u-1)^2+\frac h2x^2.
+$$
+
+因此$h>0$时可取$\alpha(r)=hr^2/2$。$h=0$时任意库存配$u=1$都有$L=0$，不能声称严格惩罚了相对$x_s=0$的库存误差。输入解唯一与最优稳态库存唯一也不是同一件事。
+
+沿可行轨迹求和会使中间存储项抵消：
+
+$$
+\sum_{k=0}^{T-1}(\ell(x_k,u_k)-\ell_s)
+=\sum_{k=0}^{T-1}L(x_k,u_k)+S(x_T)-S(x_0).
+$$
+
+在紧库存域内$S$有界，边界差除以$T$趋于0，于是任何无限长可行轨迹的平均成本下极限不小于$\ell_s$。这是常价例的平均性能结论；仅凭这条不等式，尚不能推出某个MPC闭环的状态收敛。
+
+单步费用低于稳态也不矛盾：$p=2,h=0.2,x=1,u=0$时，$x^+=0$、阶段费0.1，而$\ell_s=2.5$；差额$-2.4$等于$L=0.6$加存储变化$-3$，只是花掉了初始存水。
+
+## 终端项不能随意删除
+
+假设原有限时域目标为$\sum\ell+V_f(x_N)$。用$L$替换阶段成本时，应同时把终端项改为$\widetilde V_f=V_f+S$，因为
+
+$$
+\sum_{k=0}^{N-1}L(x_k,u_k)+(V_f+S)(x_N)
+=\sum_{k=0}^{N-1}\ell(x_k,u_k)+V_f(x_N)+S(x_0)-N\ell_s.
+$$
+
+右侧新增项与决策无关，优化器才保持不变。若终点固定，末存储也是常数；若末状态可变却删掉它，就是另一个优化问题。
+
+<img src="/diagrams/mpc/economic-rotation.svg" alt="经济阶段成本加当前存储减下一状态存储形成旋转成本，整个时域须加回终端存储" style={{width:"100%",maxWidth:440,height:"auto",display:"block",margin:"16px auto"}} />
+
+反例取一时段、$p=2,h=0.2,x_0=1$，输入域$[0,2]$、容量2，无原终端费用。此时$x_1=u$。原目标$2u+u^2/2+0.1$在$u=0$取最小0.1；只优化旋转阶段费$(u-1)^2/2+0.1$却会选择$u=1$。加回$S(x_1)=3u$后再次选择$u=0$，目标最小值0.6，与原目标只差常数0.5。
+
+<JupyterNotebook title="耗散恒等式与终端修正" setupCode={`import numpy as np
+from fractions import Fraction as F
+def ell(x,u,p=2.,h=.2):return p*u+.5*u*u+.5*h*x*x
+def storage(x,p=2.):return (p+1)*x
+def rotated(x,u,h=.2):return .5*(u-1)**2+.5*h*x*x
+`} cells={[{title:"1",code:`for x in np.linspace(0,2,9):
+    for u in np.linspace(0,2,9):
+        f=x+u-1
+        assert np.isclose(ell(x,u)-2.5+storage(x)-storage(f),rotated(x,u))
+        assert rotated(x,u)>=.1*x*x-1e-12
+x=F(1);u=F(0);h=F(1,5);price=F(2)
+l=price*u+u*u/2+h*x*x/2;s=(price+1)*(u-1);L=(u-1)**2/2+h*x*x/2
+assert l-F(5,2)==L+s
+print('ell',float(l),'steady_cost',2.5,'rotated',float(L),'storage_change',float(s),'difference',float(l-F(5,2)))
+print('h0_any_stock_u1', [rotated(x,1,0) for x in [0,1,2]])
+print('storage_identity_checked')`},{title:"2",code:`u=np.linspace(0,2,2001)
+original=2*u+.5*u*u+.1
+wrong=.5*(u-1)**2+.1
+correct=wrong+3*u
+assert np.max(np.abs(correct-original-.5))<1e-12
+print('terminal_minimizers',u[np.argmin(original)],u[np.argmin(wrong)],u[np.argmin(correct)])
+assert [u[np.argmin(a)] for a in [original,wrong,correct]]==[0.,1.,0.]
+assert np.isclose(original.min(),.1) and np.isclose(wrong.min(),.1) and np.isclose(correct.min(),.6)
+print('terminal_values',original.min(),wrong.min(),correct.min(),'constant_shift',.5)
+print('terminal_correction_checked')`}]} />
+
+## 周期运行与稳定边界
+
+回到分时价格。默认计划重复六周期后，库存于0和1之间往返；经济总成本24.6，跟踪基线36，十二时段平均成本分别2.05和3。库存没有收敛到一个定值，因为价格和期望运行本身是周期的。
+
+这里在每个周期起点求两步计划，第二时段只求到**原周期终点**的剩余一步；在名义模型下其动作与原计划第二步一致。它不是任意时刻重置两步终端约束的固定窗闭环。固定$x_2=x_0$也没有优化周期起始库存，不能据此声称找到所有周期轨道中的最优轨道。
+
+常价的$S(x)=(p+1)x$不能直接证明分时价格下的周期稳定性。周期价格可引入相位状态，或把完整周期提升为一步，再分析周期最优运行及相应的耗散、终端和可达条件。本文没有给出该扩展的稳定证书。
+
+对一般常价EMPC，严格耗散性也只是证明环节之一。若要借旋转问题建立收敛性，仍需递归可行性、适当的终端可行集及局部控制律、旋转终端费用下降条件、值函数上下界，以及满足证明要求的求解精度。不能把“经济目标较低”“有终端回库”或一次KKT检查直接替换成这些条件。相关推导参见[Rawlings经济MPC讲义](https://www.syscop.de/files/2022ss/phdcourse/economic-handout-economic.pdf)；关于周期最优运行的不同假设和实现策略，可读[Müller与Grüne作者稿](https://epub.uni-bayreuth.de/2139/1/periodic_eco_MPC.pdf)。这两份资料提供理论背景，本课水箱实验是独立教学简化。
+
+## 实现合同与预测误差
+
+本实验输入为初库存、容量、泵限、两时段价格预测及库存权重；输出为可行性、两步输入与库存、同尺度经济费用和QP的KKT残差。有限且非负的物理参数由实现检查，初态域外或可行区间为空时不批准动作。生产组件用闭式投影，Notebook用原目标数值最小化复核；两者都针对这个特定标量凸问题。
+
+若按预测价格$[1,4]$选$[2,0]$，实际价格却为$[4,1]$，原计划实际成本变为10.1；跟踪基线$[1,1]$的实际成本仍为6，经济计划落败4.1。准确预测下$J_e$不高于同约束基线只是优化定义的结果，不保证预测错误后的实际优势。
+
+需求误差还可能破坏约束。若第二时段实际需求从1增至1.25，照搬旧输入0会使末库存变为$-0.25$。在时段开始观测到库存1并更新剩余需求后，为恢复末库存0，需要输入0.25，泵限2允许它；若剩余需求增至4，则需要输入3，原泵限2使终端回库合同不可行。负库存是模型预测的违规信号，不能作为设备已安全执行的轨迹。
+
+真实部署还要处理价格/需求预测更新时间、计量噪声、时段内流量、泵效率、开停机、超时与不可行回退。这里没有测量硬件求解期限；页面中的精确QP或有限样本不能认证这些性质。
+
+## 习题
+
+1. 从原约束推导$v$的区间。默认参数下求两目标的输入、库存、各自目标值及同尺度经济费用。若泵限降到0.75，为什么初始有水也不能保证本周期回库可行？
+2. 保持默认初态，分别令$h=4$、价格相等为1、容量为0、价格反序为$[4,1]$，求经济计划和费用。再算按旧预测泵水但价格反序时的实际费用，解释为什么它不违反优化最优性。
+3. 常价$p=2,h=0.2$时，验证最优稳态和存储恒等式，并解释$x=1,u=0$为何能比稳态单步便宜。若$h=0$，哪些唯一性或严格性结论失效？
+4. 推导正确旋转终端项，计算一时段反例的三个最优输入与目标值。解释六周期实验为什么不是常值稳态收敛证明；第二时段需求分别为1.25和4时，恢复默认末库存需要什么输入？
+
+## 答案
+
+1. 输入非负与上限分别给$v\ge0,v\le U,v\le2,v\ge2-U$；中间库存界给$v\ge1-x_0,v\le C+1-x_0$，取交集即可。默认区间$[1,2]$，经济输入$[2,0]$、库存$[0,1,0]$、$J_e=4.1$；跟踪输入$[1,1]$、库存$[0,0,0]$、$J_t=0$，但经济评价为6。泵限0.75使总供给至多1.5，小于需补回的2，末库存约束消除了“用初始存水少补一点”的余地。
+2. $h=4$时闭式解给$v=1.5$，输入$[1.5,0.5]$、中间库存0.5，费用$1.5+2+1.25+0.5=5.25$。等价价格时输入$[1,1]$、费用3；容量0迫使$v=1$，默认价格下费用6。价格反序且初库存0时未约束最优点低于下界，投影得$[1,1]$、费用6。若仍执行旧计划$[2,0]$，实际费用为$8+2+0.1=10.1$，比基线6高4.1；最优性针对旧预测目标，实际目标已变。
+3. 稳态约束给$u_s=1$，$h>0$时$x_s=0$，$\ell_s=2.5$。代入$S(x)=3x$并展开得$L=(u-1)^2/2+0.1x^2$。$x=1,u=0$时$L=0.6$、存储变化$-3$，所以$\ell-\ell_s=0.6-3=-2.4$，$\ell=0.1$。$h=0$时仍有严格凸的两步输入目标，但常价稳态库存不唯一，$u=1$时所有库存都有$L=0$，相对零库存的严格耗散结论不成立。
+4. 望远镜求和给$\widetilde V_f=V_f+S$；否则留下依赖决策的末存储项。一时段原目标、错误旋转目标、修正旋转目标依次在$u=0,1,0$处取最小值$0.1,0.1,0.6$，修正目标与原目标恒差0.5。六周期库存重复$[0,1,0]$，平均费用$24.6/12=2.05$，基线$36/12=3$；它体现相位相关运行，不证明一般EMPC收敛。第二时段库存为1，回到0需$u=d-1$：需求1.25时需0.25，可行；需求4时需3，超过泵限2，应报告原合同不可行。

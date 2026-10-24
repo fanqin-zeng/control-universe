@@ -124,7 +124,7 @@
 | 113 | MPC-06 | 广义预测控制 | content/mpc/generalized-predictive-control.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-06/acceptance.md |
 | 114 | MPC-07 | 显式预测控制 | content/mpc/explicit-mpc.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-07/acceptance.md |
 | 115 | MPC-08 | 非线性预测控制 | content/mpc/nonlinear-mpc.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-08/acceptance.md |
-| 116 | MPC-09 | 经济预测控制 | content/mpc/economic-mpc.mdx | 待完成 | 待生产 | — |
+| 116 | MPC-09 | 经济预测控制 | content/mpc/economic-mpc.mdx | 已生产 | 待润色 | .agent/semester-03/mpc-09/acceptance.md |
 | 117 | MPC-10 | 移动水平估计 | content/mpc/mhe-fusion.mdx | 待完成 | 待生产 | — |
 | 118 | MPC-11 | 预测控制案例 | content/mpc/mpc-case-study.mdx | 待完成 | 待生产 | — |
 | 119 | INTEL-01 | 模糊控制 | content/intelligent/fuzzy-control-basics.mdx | 待完成 | 待生产 | — |
