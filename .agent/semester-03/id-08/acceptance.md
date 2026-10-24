@@ -27,3 +27,5 @@
 首次hook遗漏的生产构建exit1保留initial-build-missing-hook.log/initial-build-commands.json；修复后最终两模式重新构建并实测，不用失败当成功。符号ρ消歧后Worker按最终hash再跑，短图例修复后双模式实页再验。
 
 资源回收：两轮自己的共9个遗留kernel DELETE至0，内核/夹具核PID后关闭，原生/Pages/浏览器finally关闭；first-cycle与当前ports/kernels/resources回执都保留。私有索引/CAS保留共享暂存，正常push master，不发布Pages；真实提交后补hash回执。
+
+真实交付提交：`c76c82bb6ea2b2e32bed6ad95fa2315c80d50e0a`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。
