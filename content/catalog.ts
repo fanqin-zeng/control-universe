@@ -3580,7 +3580,49 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "把动态数据排成回归",
+            "title": "把动态数据排成回归"
+          },
+          {
+            "slug": "批量最小二乘",
+            "title": "批量最小二乘"
+          },
+          {
+            "slug": "带先验的递推",
+            "title": "带先验的递推"
+          },
+          {
+            "slug": "遗忘因子与交互探索",
+            "title": "遗忘因子与交互探索"
+          },
+          {
+            "slug": "信息不足与数值保护",
+            "title": "信息不足与数值保护"
+          },
+          {
+            "slug": "噪声假设与闭环边界",
+            "title": "噪声假设与闭环边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "persistent-excitation",

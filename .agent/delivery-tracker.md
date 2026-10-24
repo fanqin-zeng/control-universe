@@ -148,7 +148,7 @@
 |------|------|
 | [x] 系统辨识框架 (identification-framework) | ID-01：2026-10-24，学期3新写；详见 docs/discuss-log/semester-03/09-identification/01-identification-framework.md |
 | [x] 辨识模型 (model-structures) | ID-02学期3新写；docs/discuss-log/semester-03/09-identification/02-model-structures.md；.agent/semester-03/id-02/acceptance.md |
-| [ ] 最小二乘辨识 (least-squares-rls) | 自 `nonlinear/adaptive-control-basics` 的 RLS 一节抽出并深化（含协方差 windup、遗忘因子与除零保护），两处须互引不重复推导 |
+| [x] 最小二乘辨识 (least-squares-rls) | 学期3 ID-03：批量/同先验RLS、遗忘与信息不足；3 Notebook/4 cell、Explorer、双向互链；证据 .agent/semester-03/id-03/acceptance.md |
 | [ ] 持久激励 (persistent-excitation) | |
 | [ ] 闭环辨识 (instrumental-variable) | |
 | [ ] 频域辨识 (frequency-domain-id) | |

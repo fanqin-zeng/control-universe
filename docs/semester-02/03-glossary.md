@@ -628,6 +628,10 @@
 | 断续导通模式 | discontinuous conduction mode | DCM | APP-01 | 包含电感电流触零后的第三状态 |
 | 脉宽调制 | pulse width modulation | PWM | APP-01 | 固定周期内用导通时间占比调节 |
 | 降压变换器 | buck converter | Buck | APP-01 | 本课限定理想非同步拓扑 |
+| 逆信息矩阵 | inverse information matrix | — | ID-03 | RLS中的P先定义为R的逆，不自动等于参数协方差 |
+| 遗忘因子 | forgetting factor | — | ID-03 | 本课旧样本和初始化先验均按lambda指数衰减 |
+| 变量含误差 | errors-in-variables | — | ID-03 | 测量误差进入回归量，须另核与方程误差的相关性 |
+| 协方差膨胀 | covariance windup | — | ID-03 | RLS信息不足时的逆信息量增长；不同于积分饱和，不将裸windup作为本项英文键 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

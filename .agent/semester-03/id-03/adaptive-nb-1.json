@@ -1,0 +1,79 @@
+{
+  "testedAt": "2026-10-24T05:53:39.336Z",
+  "url": "http://127.0.0.1:18393/python-expansion.html?lesson=nonlinear/adaptive-control-basics",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "lessons": [
+    {
+      "key": "nonlinear/adaptive-control-basics",
+      "title": "自适应控制",
+      "sourceHash": "95b3bd2eb380c7fa0b3674889229b46ba4f0dda6b1fe9376bdcd9a9149618a59",
+      "notebooks": [
+        {
+          "id": "nonlinear/adaptive-control-basics#1",
+          "title": "Notebook 1：一阶 MRAC 的 V̇ = a_m·e² 恒等式验证与阶跃跟踪",
+          "index": 1,
+          "line": 104,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 4790,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "在 20000 个随机状态点上验证 V̇ = a_m * e^2：\n  最大绝对偏差 = 2.842e-14\n  样本中 |a_m e^2| 的最大值 = 44.9834\n  相对偏差 = 6.318e-16\n  => 交叉项 b*kt*e*phi 与 (|b|/gamma)*kt*k_dot 精确相消，推导无误\n\n对照：把 sign(b) 写反会怎样？\n  最大绝对偏差 = 2.911e+02（不再为零，多出 2*b*kt*e*phi 项）\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1780,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "阶跃输入 r=1，gamma=2，T=30 s，共 75001 个采样点\n  V(0)  = 2.833333e+00\n  V(末) = 1.370752e+00\n  max dV = +4.441e-16   （应 <= 0，为正的只能是舍入量级）\n  dV < 0 的点占比 = 56.6893%\n\n能量核算：int V̇ dt 应等于 a_m * int e^2 dt\n  a_m * int e^2 dt = -1.462581e+00\n  V(末) - V(0)     = -1.462581e+00\n  相对偏差 = 2.856e-13  （差值来自梯形积分误差）\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 2263,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "末值：e = 5.551e-14\n      k1 = -0.044053 （理想 -1.0000）\n      k2 = 0.710720 （理想 1.6667）\n      距理想点 = 1.35191\n\n闭环极点  a + b*k1          = -2.1322  （参考模型 a_m = -5.0000）\n闭环稳态增益 -b*k2/(a+b*k1) = 1.000000  （参考模型 -b_m/a_m = 1.000000）\n\n跟踪是完美的，稳态增益是对的，闭环极点是错的。下一节解释为什么。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 128088
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "nonlinear/adaptive-control-basics",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 1,
+    "enabled": 1,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 1,
+    "codeOnly": 0
+  }
+}

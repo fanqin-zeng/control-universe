@@ -194,7 +194,7 @@
 |---|---|---|---|---|---|---|---|
 | ID-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/01-identification-framework.md;.agent/semester-03/id-01/acceptance.md;commit:bc65732deee20fbbfd8206fdd49a078fced14af8 |
 | ID-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/02-model-structures.md;.agent/semester-03/id-02/acceptance.md;commit:d3d77103a808782445257feee3eca2339a3399a4 |
-| ID-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ID-03 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/03-least-squares-rls.md;.agent/semester-03/id-03/acceptance.md;rank3独立数值与两种实际页通过，互链原课10Notebook/39cell回归通过，提交前最终闸门见acceptance |
 | ID-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
