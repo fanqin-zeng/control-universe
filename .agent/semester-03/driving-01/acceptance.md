@@ -37,3 +37,5 @@ Phase1–4已完成并签发；真实master提交后再登记最终完成列。
 提交候选在最新HEAD ffc674ea33f87fd15d57a4d47587c77fc347f12d 上只叠加本课差异；latest-check.log与latest-python-policy.log均exit0。完整七项命令退出码在staged-commands.json，后续只因其它会话推进HEAD而重组共享元数据；本课正文/组件/计算/SVG与生产构建、两种实际页面验收源逐字相同。
 
 提交候选在最新HEAD 3dbce418c0e2cf0bf1e797bb625f6e3df9ddeb46 上只叠加本课差异；latest-check.log与latest-python-policy.log均exit0。完整七项命令退出码在staged-commands.json，后续只因其它会话推进HEAD而重组共享元数据；本课正文/组件/计算/SVG与生产构建、两种实际页面验收源逐字相同。
+
+真实master交付提交：4784a21caea543bf17fbf2b12ac8b5808202875c。独立Git索引及原子基线校验提交，未触碰其它会话暂存区；最终完成列据此勾选。回执候选再次运行check-catalog和check-semester03，均exit0，见receipt-commands.json。
