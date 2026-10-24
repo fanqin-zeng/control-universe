@@ -4,7 +4,7 @@
 
 并行约定：保留开工时所有其它课程、批阅、端口脚本修改；Next构建使用独立运行副本 D:/Workspace/control-universe-rank2-ml01，页面8192（8282被Windows拒绝绑定）、内核8992，不删除共享.next、不结束其它进程。共享catalog/注册表/checklist只局部修改，提交前核对差异。
 
-Phase 1–4、真实验收与签发已完成；提交回执待实际master提交后登记。未发布Pages。
+Phase 1–4、真实验收与签发已完成；真实交付提交已进入master并推送origin/master：`2b3e83ab230b88328fefb740c0507d9c62562216`。未发布Pages。
 
 交付正文174行、8H2、两Notebook三cell、一个真实TS Explorer与内嵌SVG、四题四答。正文覆盖样本/损失/经验与总体风险、训练验证测试隔离、有限样本过拟合、条件关系变化与闭环边界。
 
@@ -31,3 +31,5 @@ Phase 1–4、真实验收与签发已完成；提交回执待实际master提交
 开工时保留所有用户/并行修改。共享源码直接快照出现他课元数据/正文时刻不一致，独立构建改为已提交HEAD叠加ML-01；未通过临时构建不充当成功证据。普通IAB原生跨端口连接Failed to fetch归既有W09；严格原生内核及最终Pyodide实际页面分别验收，未冒称原生UI通过。旧Python待办与其他W任务保留。
 
 提交投影以master 3880b2a为基线，仅叠加ML-01，单独运行check：PASS21/WARN2/FAIL0；Python政策校验exit0（84课，379实验可运行/16保留代码），见projection-check.log与projection-python-policy.log。共享目录当时另有IMPL-01草稿，其文件和暂存状态不带入本课提交。
+
+真实master交付回执：commit:2b3e83ab230b88328fefb740c0507d9c62562216，2026-10-24推送origin master成功（3880b2a→2b3e83a）。仅ML-01及自身治理/证据文件；IMPL-01、用户批阅与端口修改保持未提交。远端返回仓库迁移提示，但推送成功；本轮不擅改origin URL，不发布gh-pages。

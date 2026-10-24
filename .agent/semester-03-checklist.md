@@ -177,7 +177,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| ML-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/08-machine-learning/01-learning-problem.md;.agent/semester-03/ml-01/acceptance.md |
+| ML-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/01-learning-problem.md;.agent/semester-03/ml-01/acceptance.md;commit:2b3e83ab230b88328fefb740c0507d9c62562216 |
 | ML-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
