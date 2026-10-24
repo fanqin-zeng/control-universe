@@ -26,3 +26,8 @@ Phase1–4签发，九H2/全部历史标题/四题全部子问/原二Notebook四
 初检与纠错：一次私有原生缓存构建触发Webpack WasmHash异常，保留build-cache-attempt.log，改用新的私有dist .next-r5-r6-native-final完整构建通过，未清共享缓存或改业务代码。数学小于号紧连M被静态扫描误识为组件，改空格；预设断言误把全频.770909用作采样值，改对应采样.770908。首轮提交投影在最终源哈希刷新期间读旧Python策略，策略与最终Worker证据合并后六项退出0；原始失败日志保留。截图发现图例/标题与频率刻度拥挤，调整布局和刻度后重新双构建/页面/375px验收。
 
 并行隔离：rank5使用19895/19995/20095/8995、私有dist与Git索引，不清共享.next/不重置默认索引。共享开工check有6项FAIL、学期表RL-02列数在途错误，后续共享check仍有他课未同步项；保留他课工作，不把整个工作树说成通过。交付以最新已提交master叠加仅本课的六项门槛为准；提交前检查HEAD并原子更新。仅本课，不发布Pages，不生产ROBUST-07。真实master提交生成后补回执。
+
+
+真实master交付提交：80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9。仅本课投影check/semester/fix/python/glossary/math六项退出0，原始学期CLI随回执再验；使用私有Git索引保留其他暂存，推送origin master，不发布Pages。
+
+收尾实测：rank5独立8995内核9→0，19895/19995/20095/8995全部释放，证据kernel-cleanup.json与ports-cleanup.json；其他会话进程和共享缓存保留。

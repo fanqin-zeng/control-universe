@@ -1,0 +1,272 @@
+---
+title: "控制实现案例"
+description: "把水箱PI、整数码值、通信有效性、故障降级和验收记录串成一个可重复的软件交付案例。"
+---
+
+# 控制实现案例
+
+加热水箱在电脑里能追上目标温度。接上通信测温后，温度曲线偶尔停住，程序却仍在增加加热量。等通信恢复，曲线又回到目标附近。这样的程序可以验收吗？如果只看最后一个温度值，很容易把中间使用旧读数的过程漏掉。
+
+[PID工程整定](/implementation/pid-engineering-tuning)给了参数候选与试验边界，[工业通信](/implementation/industrial-bus-protocols)说明了报文有效不等于工程量可信，[半实物仿真](/implementation/hil-rapid-prototyping)区分了软件排练和硬件证据。本课把它们串成一份小型交付：从需求开始，逐拍追踪码值、积分和动作，最后用指标与日志决定哪些检查通过。无需接串口或真实加热器。
+
+## 从能运行到可验收
+
+“控制器运行了”只说明某段程序有输出。验收还需要知道：输入是什么、何时有效、输出是否被限幅、故障时采取什么动作，以及哪个版本产生了这份记录。
+
+![控制实现案例流程：测量及有效性检查进入整数PI，限幅量化后驱动离散水箱；实际状态反馈到测量，日志旁路汇总需求指标；真实硬件证据另行补齐](/diagrams/implementation/implementation-case-workflow.svg)
+
+本课是一份**合成离散模型的软件回归**。这里的“通过”只针对下文明确写出的教学判据，不是现场验收证书。没有连接真实传感器、总线、控制板或加热器，也没有证明零输出一定安全。
+
+## 一页实现合同
+
+用环境温度附近的**温差**y作为输出，单位℃；u是0到1的归一化加热指令。模型直接规定为：
+
+$$
+y_{k+1}=0.95y_k+0.1u_k-0.05d_k,\qquad y_0=0.
+$$
+
+它是教学离散对象，不是本课从实物辨识出的模型，也不冒称某个连续模型的精确采样。正常目标r=1℃；负载d单位℃，正常为零，负载场景在第150拍起变为0.3℃。模型只适用于这个非负温差范围，不含沸腾、流量变化或传感器偏置。
+
+| 合同项 | 本例规定 | 要核查的证据 |
+|---|---|---|
+| 时间 | T=0.1秒，k=0…299共300区间，末状态y₃₀₀在30秒 | 301个状态边界与300个施加输出 |
+| 测量 | 0…4℃，默认8位，码值0…255 | 原始有效标志、码值、换算比例 |
+| 控制器 | Kp=1，Ki=0.5每秒，D=0；积分初态零 | 采样先后、限幅及积分状态 |
+| 输出 | 0…1，同位数端点量化 | 实际施加码值，不只看未限幅候选 |
+| 完成成本 | 默认假定4ms，含假定1ms计算；C≤100ms算有效 | 其余为总线预算假设，不是实测 |
+| 故障动作 | 连续第三次无效起置零，下一有效测量恢复 | 降级原因、首次触发、恢复位置 |
+| 教学验收 | 末窗误差≤0.05℃，采样超调≤0.1℃，无效帧为零 | 三个判据逐项报告，合取为总判定 |
+
+末窗明确取k=251…300，共50个状态边界，时间为25.1…30秒。IAE取前300个左端采样值：
+
+$$
+J_e=T\sum_{k=0}^{299}|r-y_k|.
+$$
+
+单位是℃·s。这是离散矩形和，不是连续误差积分的精确值。超调也只在这301个边界取最大值，不能据此保证真实连续过程没有更高峰值。故障场景可能恢复跟踪却仍因“无效帧必须为零”失败；这个刻意严格的判据用来防止只挑一项好看的结果。
+
+## 逐拍执行顺序
+
+每拍按同一合同执行，顺序改变就成为另一份实现：
+
+1. 取本拍有效标志，检查假定成本是否不超过100ms；有效才用当前模型状态更新测量码。
+2. 无效时保留旧测量供日志辨认。正常路径冻结积分，前两次保持上个输出，连续第三次起置零。
+3. 有效时以量化测量计算误差，产生积分候选；候选将输出推向越限方向时拒绝这次积分更新。
+4. 对最终命令限幅，再量化输出；施加这个输出推进一个离散对象区间。
+5. 记录状态、测量、积分、输出、有效性和降级标记，供验收复算。
+
+这里把C当作**本拍逻辑有效性筛选**，不模拟拍内传输时间导致的对象运动，不计CPU排队、抢占或真实协议重传。等于100ms时按约定有效，不代表实机没有时钟误差或需要的裕度。真正的超期预算要沿用前课方法到设备上测量。
+
+为了暴露旧读数问题，另设`naive`路径：即使数据无效，也继续用旧测量更新PI。两路径的增益、初态、位数和负载完全相同；它们只是固定合同的反例对照，没有做独立最优整定，不能据此排名通用控制器。
+
+## 量化后的PI
+
+设L=2ᵇ−1。本课采用**包含两端点的均匀编码**：
+
+$$
+m_k=\left\lfloor L\frac{\operatorname{clip}(y_k,0,4)}4+\frac12\right\rfloor,
+\qquad \hat y_k=\frac{4m_k}{L}.
+$$
+
+这是本例规定的比例表，不应直接当成所有ADC的数据手册公式。有2ᵇ个码，跨两端点形成L个间隔。默认8位的测量步距约0.015686275℃，半码误差界约0.007843137℃，只在输入处于量程内时适用；输出步距约0.003921569。真实ADC的码宽、端点、偏移及校准应另查硬件规格。
+
+浮点PI在恰好半码时可能受累计舍入影响。这里用整数积分状态S消除这个实现差异，令E=Lr−4m，I=S/(20L)。因为KiT=0.05，每拍积分候选为S′=S+E，未限幅命令的整数分子为V′=20E+S′。若V′超过20L且E为正，或V′低于零且E为负，拒绝候选；否则接收S′。随后用V=20E+S限幅并求输出码：
+
+$$
+q_k=\left\lfloor\frac{\operatorname{clip}(V,0,20L)}{20}+\frac12\right\rfloor,
+\qquad u_k=q_k/L.
+$$
+
+这种“只阻止继续向饱和方向积分”的办法叫条件积分，参见[MathWorks官方抗积分饱和说明](https://www.mathworks.com/help/simulink/slref/anti-windup-control-using-a-pid-controller.html)。本课自行规定离散更新与整数比例，不声称逐位复现某个厂商PID块。
+
+本例误差码、候选及积分状态都在可精确表示的整数范围内；移植到有限字长MCU仍须单独检查溢出、乘法提升和中间值。整数状态不消除模型误差，也不让物理温度变成精确测量。下面Notebook保留的积分列是把S换算回I后的读数。
+
+## 默认结果先对账
+
+默认8位、正常场景、有效性检查路径、成本4ms。初拍测量为零，积分候选会把输出推过上限，因此积分保持零，u₀=1；得到y₁=0.1℃。下一拍测量码为6，换算温差约0.094117647℃，积分约0.045294118，输出u₁=243/255≈0.952941176。
+
+30秒末温差约0.996260603℃，IAE约1.173697677℃·s，末窗最大误差约0.004302479℃；采样超调为零，无效、降级和越限候选计数均为零，教学三项均通过。**越限候选计数**指最终PI命令严格落在0…1之外、需要限幅的次数，恰等于边界不计；它不是“输出刚好满码”的次数，也不统计被拒绝的积分候选。
+
+<JupyterNotebook
+  title="默认实现与首拍码值"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams["axes.unicode_minus"] = False
+def experiment(bits=8,mode="nominal",path="guarded",costMs=4):
+    levels=2**bits-1; target=3 if mode=="capacity" else 1
+    y=0.; ticks=0; code=0; u=0.; stale=0; points=[]
+    for k in range(300):
+        valid=(101 if mode=="late" else costMs)<=100 and not(mode=="drop" and 100<=k<=114)
+        stale=0 if valid else stale+1
+        if valid:code=math.floor(max(0.,min(4.,y))/4*levels+.5)
+        measured=4*code/levels; degraded=path=="guarded" and stale>=3; saturated=False
+        if valid or path=="naive":
+            errorCode=target*levels-4*code; candidate=ticks+errorCode
+            rawTicks=20*errorCode+candidate
+            if not((rawTicks>20*levels and errorCode>0) or (rawTicks<0 and errorCode<0)):ticks=candidate
+            commandTicks=20*errorCode+ticks
+            saturated=commandTicks<0 or commandTicks>20*levels
+            u=math.floor(max(0,min(20*levels,commandTicks))/20+.5)/levels
+        elif degraded:u=0.
+        points.append(dict(k=k,y=y,measured=measured,integral=ticks/(20*levels),u=u,valid=valid,stale=stale,degraded=degraded,saturated=saturated))
+        y=.95*y+.1*u-(.015 if mode=="load" and k>=150 else 0.)
+    states=[p["y"] for p in points]+[y]
+    lastError=max(abs(target-x) for x in states[251:]); overshoot=max(0,max(states)-target)
+    invalid=sum(not p["valid"] for p in points); tracking=lastError<=.05; peakOk=overshoot<=.1; freshness=invalid==0
+    return dict(bits=bits,mode=mode,path=path,costMs=costMs,target=target,levels=levels,points=points,final=y,iae=.1*sum(abs(target-p["y"]) for p in points),lastError=lastError,overshoot=overshoot,invalid=invalid,degraded=sum(p["degraded"] for p in points),saturated=sum(p["saturated"] for p in points),tracking=tracking,peakOk=peakOk,freshness=freshness,accepted=tracking and peakOk and freshness)
+def summary(c):return {k:v for k,v in c.items() if k!="points"}`}
+  cells={[
+    { code: `default=experiment(); first=default["points"][:2]
+quantization=dict(measurementStep=4/255,outputStep=1/255,measurementHalf=2/255)
+print(json.dumps(dict(default=summary(default),first=first,quantization=quantization)))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+ax.plot([p["k"]*.1 for p in default["points"]]+[30],[p["y"] for p in default["points"]]+[default["final"]],label="plant")
+ax.axhline(1,ls="--",label="reference")
+ax.set(xlabel="virtual time (s)",ylabel="temperature deviation (degC)",xlim=(0,30),ylim=(0,3.5))
+ax.grid(); ax.legend(); plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+<ImplementationCaseExplorer />
+
+## 注入失效再验收
+
+| 场景 | 故障或变化 | 固定配置下观察 |
+|---|---|---|
+| nominal | 无故障 | 两路径完全相同，默认通过 |
+| load | 第150拍起d=0.3 | 两路径相同，8位末窗误差约0.004402282℃，通过 |
+| drop | 第100…114拍共15次无效 | 检查路径第102…114拍共13区间置零，第115拍恢复；两路径新鲜度均失败 |
+| late | 全部假定成本101ms | 300次无效；检查路径298降级区间，末状态零；旧测量路径仍加热至约2℃，均不通过 |
+| capacity | 目标3℃，其余正常 | 满输出的平衡容量仅2℃；300次命令越限，两路径均不通过 |
+
+drop中检查路径IAE约1.946120499℃·s，反而高于旧测量路径的1.182060360℃·s。置零破坏了跟踪，还可能在恢复时产生暂态；不能把这条路径称作“所有指标都更好”。旧测量路径这一次跟踪较好，也不能证明它在传感器失联时更安全。
+
+只有位数改变时，4位末窗最大误差约0.073310944℃，超过教学限值；12位约0.000268538℃，通过。这是此模型的结果，不是位数越多就保证总体控制质量：偏置、延迟、噪声和模拟前端可能主导实际误差。
+
+<JupyterNotebook
+  title="五场景与两条实现路径"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams["axes.unicode_minus"] = False
+def experiment(bits=8,mode="nominal",path="guarded",costMs=4):
+    levels=2**bits-1; target=3 if mode=="capacity" else 1
+    y=0.; ticks=0; code=0; u=0.; stale=0; points=[]
+    for k in range(300):
+        valid=(101 if mode=="late" else costMs)<=100 and not(mode=="drop" and 100<=k<=114)
+        stale=0 if valid else stale+1
+        if valid:code=math.floor(max(0.,min(4.,y))/4*levels+.5)
+        measured=4*code/levels; degraded=path=="guarded" and stale>=3; saturated=False
+        if valid or path=="naive":
+            errorCode=target*levels-4*code; candidate=ticks+errorCode
+            rawTicks=20*errorCode+candidate
+            if not((rawTicks>20*levels and errorCode>0) or (rawTicks<0 and errorCode<0)):ticks=candidate
+            commandTicks=20*errorCode+ticks
+            saturated=commandTicks<0 or commandTicks>20*levels
+            u=math.floor(max(0,min(20*levels,commandTicks))/20+.5)/levels
+        elif degraded:u=0.
+        points.append(dict(k=k,y=y,measured=measured,integral=ticks/(20*levels),u=u,valid=valid,stale=stale,degraded=degraded,saturated=saturated))
+        y=.95*y+.1*u-(.015 if mode=="load" and k>=150 else 0.)
+    states=[p["y"] for p in points]+[y]
+    lastError=max(abs(target-x) for x in states[251:]); overshoot=max(0,max(states)-target)
+    invalid=sum(not p["valid"] for p in points); tracking=lastError<=.05; peakOk=overshoot<=.1; freshness=invalid==0
+    return dict(bits=bits,mode=mode,path=path,costMs=costMs,target=target,levels=levels,points=points,final=y,iae=.1*sum(abs(target-p["y"]) for p in points),lastError=lastError,overshoot=overshoot,invalid=invalid,degraded=sum(p["degraded"] for p in points),saturated=sum(p["saturated"] for p in points),tracking=tracking,peakOk=peakOk,freshness=freshness,accepted=tracking and peakOk and freshness)
+def summary(c):return {k:v for k,v in c.items() if k!="points"}`}
+  cells={[
+    { code: `all_cases=[experiment(b,m,p) for b in [4,8,12] for m in ["nominal","load","drop","late","capacity"] for p in ["guarded","naive"]]+[experiment(8,"nominal",p,c) for p in ["guarded","naive"] for c in [100,101,120]]
+table=[summary(experiment(8,m,p)) for m in ["nominal","load","drop","late","capacity"] for p in ["guarded","naive"]]
+print(json.dumps(table))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+for path in ["guarded","naive"]:
+    c=experiment(8,"drop",path)
+    ax.plot([p["k"]*.1 for p in c["points"]],[p["y"] for p in c["points"]],label=path)
+ax.axvspan(10,11.5,alpha=.15,color="orange",label="invalid measurements")
+ax.set(xlabel="virtual time (s)",ylabel="temperature deviation (degC)",xlim=(0,30),ylim=(0,3.5))
+ax.grid(); ax.legend(); plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+## 追踪一条故障记录
+
+看drop检查路径的第100拍：无效计数从零变为1，保留旧测量和上次输出，积分不更新。第101拍计数2，仍保持；第102拍计数3，置零。第114拍仍无效，第115拍新测量到达，计数清零并按新误差恢复PI。因此15次无效对应13个降级区间，而不是15个。
+
+若默认正常场景的成本改成100ms，则有效性仍通过；改成101ms，300拍都无效。不要把这个一毫秒差当成实测调度裕度，它只是代码里的边界合同。
+
+这种检查**检测不到“传感器物理冻结，但报文仍合法且按时到达”**。本例drop的无效标志由试验注入，不能因为日志写着valid就认为测量物理正确。现场需要独立诊断、时间戳来源和合理性检查；具体保护与人工确认恢复还取决于对象危害分析。本例自动恢复不等于现场通用处置。
+
+<JupyterNotebook
+  title="量化与期限边界复核"
+  setupCode={`import json, math
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams["axes.unicode_minus"] = False
+def experiment(bits=8,mode="nominal",path="guarded",costMs=4):
+    levels=2**bits-1; target=3 if mode=="capacity" else 1
+    y=0.; ticks=0; code=0; u=0.; stale=0; points=[]
+    for k in range(300):
+        valid=(101 if mode=="late" else costMs)<=100 and not(mode=="drop" and 100<=k<=114)
+        stale=0 if valid else stale+1
+        if valid:code=math.floor(max(0.,min(4.,y))/4*levels+.5)
+        measured=4*code/levels; degraded=path=="guarded" and stale>=3; saturated=False
+        if valid or path=="naive":
+            errorCode=target*levels-4*code; candidate=ticks+errorCode
+            rawTicks=20*errorCode+candidate
+            if not((rawTicks>20*levels and errorCode>0) or (rawTicks<0 and errorCode<0)):ticks=candidate
+            commandTicks=20*errorCode+ticks
+            saturated=commandTicks<0 or commandTicks>20*levels
+            u=math.floor(max(0,min(20*levels,commandTicks))/20+.5)/levels
+        elif degraded:u=0.
+        points.append(dict(k=k,y=y,measured=measured,integral=ticks/(20*levels),u=u,valid=valid,stale=stale,degraded=degraded,saturated=saturated))
+        y=.95*y+.1*u-(.015 if mode=="load" and k>=150 else 0.)
+    states=[p["y"] for p in points]+[y]
+    lastError=max(abs(target-x) for x in states[251:]); overshoot=max(0,max(states)-target)
+    invalid=sum(not p["valid"] for p in points); tracking=lastError<=.05; peakOk=overshoot<=.1; freshness=invalid==0
+    return dict(bits=bits,mode=mode,path=path,costMs=costMs,target=target,levels=levels,points=points,final=y,iae=.1*sum(abs(target-p["y"]) for p in points),lastError=lastError,overshoot=overshoot,invalid=invalid,degraded=sum(p["degraded"] for p in points),saturated=sum(p["saturated"] for p in points),tracking=tracking,peakOk=peakOk,freshness=freshness,accepted=tracking and peakOk and freshness)
+def summary(c):return {k:v for k,v in c.items() if k!="points"}`}
+  cells={[
+    { code: `bounds=[summary(experiment(b)) for b in [4,8,12]]
+boundary=[summary(experiment(8,"nominal","guarded",c)) for c in [100,101]]
+drop=experiment(8,"drop"); zero=[p["k"] for p in drop["points"] if p["degraded"]]
+events=dict(firstZero=min(zero),lastZero=max(zero),recovered=next(p["k"] for p in drop["points"] if p["k"]>max(zero) and p["valid"]))
+print(json.dumps(dict(bounds=bounds,boundary=boundary,events=events)))` },
+    { code: `fig,ax=plt.subplots(figsize=(7,3))
+ax.bar([str(c["bits"]) for c in bounds],[c["lastError"] for c in bounds],label="last-window max error")
+ax.axhline(.05,ls="--",color="red",label="teaching limit")
+ax.set(xlabel="quantization bits",ylabel="sampled error (degC)",ylim=(0,.1))
+ax.grid(axis="y"); ax.legend(); plt.tight_layout(); plt.show()` }
+  ]}
+/>
+
+## 交付与实机入口
+
+交付包应让下一位工程师重现“哪份源码、什么合同、哪条记录、哪个判据”：
+
+| 材料 | 本课提供 | 实物前仍需补齐 |
+|---|---|---|
+| 需求与模型 | 方程、单位、初态、窗口、教学门槛 | 工作点、允许范围、容量和模型适用域 |
+| 实现 | 整数PI、量化、有效性状态机、限幅顺序 | 编译器/目标字长、溢出与并发、I/O映射 |
+| 通信 | 注入有效标志和成本筛选 | 实际报文、寄存器比例、CRC/身份/新鲜度、重传预算 |
+| 回归 | 默认、负载、丢数据、超期、不可达及位数边界 | 启动、持续最大负载、断电、传感器冻结与恢复 |
+| 证据 | 源码哈希、全部cell输出、逐拍参照、页面读数 | 实测时钟/误差、板级PIL/HIL、受监控试运行 |
+| 停止与回退 | 超出教学要求明确判失败 | 对象专用保护、责任人、授权及旧版本恢复点 |
+
+不要在真实热设备上仅靠这份软件例子触发试验。先用[半实物仿真](/implementation/hil-rapid-prototyping)中的分层验证方法补齐设备证据；软件零输出仍可能遇到粘连执行器、余热或失去必要冷却，不能直接命名为安全状态。
+
+本课将控制实现章的已交付概念汇总为可复算案例，不提前讲授辨识或学习控制。资料检索日期2026-10-24；实验为自行构造的离散教学模型，标准Python、NumPy、Matplotlib即可运行，36组轻量试验不需GPU、专有软件或现场数据。
+
+## 习题
+
+1. 为什么IAE用℃·s，而最终温差不能直接称为稳态？写出统计窗口。
+2. 用8位端点编码复算y₁、测量码m₁和u₁，说明首次积分为何被拒绝。
+3. 连续15次数据无效为什么只产生13个降级区间？100ms和101ms成本各有多少无效帧？
+4. 4位与12位的末窗误差分别是否满足教学要求？为什么不能据此宣称高位数必然改善实物控制？
+5. 目标3℃时，为什么不能继续增大积分增益来保证通过？列出软件回归尚不能提供的三类设备证据。
+
+## 答案
+
+1. 每个误差样值单位℃，乘T=0.1秒并对k=0…299求和，得到℃·s。末值为30秒的y₃₀₀；末窗误差取k=251…300共50个状态，有限窗口不是极限稳定性证明。
+2. e₀=1，积分候选0.05令候选命令1.05继续推向上限，因此拒绝；u₀=1给y₁=0.1。m₁=floor(255×0.1/4+0.5)=6；误差码E₁=255−24=231，S₁=231，输出码floor((20×231+231)/20+0.5)=243，因此u₁=243/255≈0.952941176。
+3. 100…114中前两次保持，102…114共13区间降级，115恢复。正常场景成本100ms时无效0帧，101ms时300帧；这由等号合同决定，并非硬件裕度测量。
+4. 4位约0.073310944℃，不满足0.05℃；12位约0.000268538℃，满足。比较只改变本例位数，实际系统还受偏置、模拟前端、时序及噪声影响。
+5. 令d=0、满输出u=1，离散平衡满足y=.95y+.1，所以容量2℃低于3℃目标。加积分不能扩大执行器容量；需重新评估目标或设备。尚缺目标板字长/并发与真实时限、实际传感器/总线接口记录、对象专用保护与恢复验证等设备证据。
