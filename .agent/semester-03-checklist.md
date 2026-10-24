@@ -355,7 +355,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | DRIVING-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/20-autonomous-driving/01-driving-system.md;.agent/semester-03/driving-01/acceptance.md;commit:4784a21caea543bf17fbf2b12ac8b5808202875c |
-| DRIVING-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/20-autonomous-driving/02-vehicle-dynamics.md;.agent/semester-03/driving-02/acceptance.md;验收签发完成，待真实master提交回执 |
+| DRIVING-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/20-autonomous-driving/02-vehicle-dynamics.md;.agent/semester-03/driving-02/acceptance.md;commit:3577691b3fdb27cbc6cb06b07a5fd687a9f6a3ed |
 | DRIVING-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | DRIVING-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

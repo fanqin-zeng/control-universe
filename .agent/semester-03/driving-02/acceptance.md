@@ -37,3 +37,5 @@ Phase1–4已完成，四题四答、10H2、两Notebook四cell、一Explorer/SVG
 最终构建使用两个完全独立的物理副本（native-final和pages），分别拥有.next，均exit0。曾在同一物理副本并行构建失败，build-refined.log/pages-build-refined.log保留为返工证据，归因与修复见讨论日志附录D。最终浏览器输出来自两个新副本，已实际查看375px组件截图，完整呈现稳态/瞬态限定。
 
 最终提交候选基线：51bb48a45042d5d3b1b94ae2b8732128a321a8de；publish-commands.json五项检查全部exit0。本课正文、组件、计算库与SVG逐字等于两种实际页面/构建的源，catalog结构比较确认其它课程完全保留。共享暂存区不作为输入，使用独立索引及原子基线校验提交。
+
+真实master交付：首版7d1b49bb501e57e13babeb39cbb2b130f23206c4；最终边界提示与复验提交 3577691b3fdb27cbc6cb06b07a5fd687a9f6a3ed。完成列按最终提交登记；回执候选check-catalog/check-semester03均exit0，见receipt-commands.json。使用独立Git索引和原子基线校验，未重置共享暂存区或删除他人锁。
