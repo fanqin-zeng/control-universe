@@ -71,7 +71,7 @@
 | RB04 | ROBUST-04鲁棒性能完整LFT与权重/接口返修 | [x] | .agent/semester-03/robust-04/acceptance.md;本课S04与Notebook已实测，其他课程及PY待办保留 |
 | RB05 | ROBUST-05内部稳定、反陷波与权重/求解条件返修 | [x] | .agent/semester-03/robust-05/acceptance.md;本课Notebook及S04实测，其他课程PY待办保留；083导航已由并行master修复，本课无该项改动 |
 | RB06 | ROBUST-06接口、分块、失稳与权重返修 | [x] | .agent/semester-03/robust-06/acceptance.md;本课Notebook与Python/双页面全验，其他课程待办保留 |
-| RB08 | ROBUST-08相邻旧文结构假设、实μ下界与D交换块返修 | [ ] | .agent/semester-03/robust-07/acceptance.md;本课仅登记，mu-synthesis正文不改、不代签 |
+| RB08 | ROBUST-08相邻旧文结构假设、实μ下界与D交换块返修 | [x] | .agent/semester-03/robust-08/acceptance.md;本课重构逐项修复，保留ROBUST-07历史 |
 | RB03 | ROBUST-03鲁棒稳定性数学证书与采样结论返修 | [x] | .agent/semester-03/robust-03/acceptance.md;PY-004与S04本课运行债务已实测关闭，余课保留 |
 | QA02 | 旧课程隔离预览构建配置完整性复核 | [ ] | .agent/semester-03/impl-04/css-isolation-audit.md;IMPL-04已补齐PostCSS并复验；IMPL-01/02/03隔离配置及样式证据待核，未改其正文或完成标记 |
 | DEP16 | 控制实现章已交付快照授权发布与公网验收 | [x] | docs/deployment/impl10-release.md;docs/deployment/impl10-release-http.json;.agent/semester-03/impl-10/pages-public-validation.json;commit:4acd64ae008bd18555caefeb8e937a379dce6fa8 |
@@ -236,7 +236,7 @@
 | ROBUST-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/05-h-infinity-basics.md;.agent/semester-03/robust-05/acceptance.md;commit:e06d60feb8263fca0b75219c276c36851ff7f5b3;rank5四Notebook五cell、实际TS/独立复算、双构建/375px通过 |
 | ROBUST-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/06-mixed-sensitivity.md;.agent/semester-03/robust-06/acceptance.md;commit:80b5b9e1353742ff07934eba8e0e4ab2c9a1ade9;rank5三Notebook五cell/独立数值/双构建/375px验收 |
 | ROBUST-07 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/11-robust/07-mu-analysis.md;.agent/semester-03/robust-07/acceptance.md;commit:709e34a88ec19c7f254f4dd4527b76de52aebc6c;rank5三Notebook五cell/960配置/双构建/375px验收 |
-| ROBUST-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| ROBUST-08 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/11-robust/08-mu-synthesis.md;.agent/semester-03/robust-08/acceptance.md;rank5三Notebook六cell/2020配置/双构建/375px，待实际master提交 |
 | ROBUST-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ROBUST-11 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

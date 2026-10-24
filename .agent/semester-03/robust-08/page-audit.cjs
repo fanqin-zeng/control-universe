@@ -1,0 +1,27 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],kernelCalls=[];page.setDefaultTimeout(240000);page.on('pageerror',e=>errors.push(String(e)));page.on('request',r=>{if(/127\.0\.0\.1:89\d\d/.test(r.url()))kernelCalls.push(r.url());});
+ const name=process.env.ROBUST08_AUDIT_NAME||'native',url=process.env.ROBUST08_PAGE_URL||'http://127.0.0.1:20495/robust/mu-synthesis';assert.equal((await page.goto(url)).status(),200);
+ await page.waitForFunction(()=>[...document.querySelectorAll('button')].filter(b=>b.textContent.includes('全部运行')).length===3,null,{timeout:240000});
+ const buttons=page.getByRole('button',{name:/全部运行/});for(let i=0;i<3;i++){await buttons.nth(i).click();await page.waitForFunction(t=>document.body.innerText.includes(t),['physical_model_complete','comparison_audit_complete','all_answers_complete'][i],{timeout:240000});}
+ const readings=page.getByTestId('dk-readings'),defaults=await readings.innerText();assert(defaults.includes('全频μ=0.760345'));assert(defaults.includes('当前D全频上界=1.250000'));
+ for(const [label,value]of [['控制器 k','1'],['缩放 d','0.25'],['观察频率','1']]){const s=page.getByRole('slider',{name:label,exact:true});await s.fill(value);await s.dispatchEvent('input');assert.notEqual(await readings.innerText(),defaults);if(label==='观察频率')assert((await readings.innerText()).includes('全频μ=0.760345'));await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await readings.innerText(),defaults);}
+ await page.getByRole('button',{name:'执行K步',exact:true}).click();assert((await readings.innerText()).includes('全频μ=0.706897'));assert((await readings.innerText()).includes('当前D全频上界=0.706897'));
+ await page.getByRole('button',{name:'恢复默认',exact:true}).click();await page.getByRole('button',{name:'执行D步',exact:true}).click();assert((await readings.innerText()).includes('当前D全频上界=0.760345'));
+ await page.getByRole('button',{name:'端点k=0',exact:true}).click();assert((await readings.innerText()).includes('全频μ=0.500000'));
+ await page.getByRole('button',{name:'端点k=1',exact:true}).click();assert((await readings.innerText()).includes('全频μ=0.632456'));
+ const table=page.locator('section[aria-label="D-K交替实验"] table');await page.getByRole('combobox',{name:'轨迹初始d'}).selectOption('0.25');assert((await table.innerText()).includes('0.500000'));await page.getByRole('combobox',{name:'轨迹初始d'}).selectOption('2');assert((await table.innerText()).includes('0.632456'));
+ await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await readings.innerText(),defaults);
+ const dom=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,h2:[...document.querySelectorAll('h2')].map(h=>({id:h.id,text:h.textContent})),ids:[...document.querySelectorAll('[id]')].map(x=>x.id),links:[...document.querySelectorAll('a[href^="#"]')].map(a=>a.getAttribute('href')),katexErrors:document.querySelectorAll('.katex-error').length,images:[...document.images].map(x=>({src:x.getAttribute('src'),loaded:x.complete&&x.naturalWidth>0})),text:document.body.innerText}));
+ assert.equal(dom.h1,1);assert.equal(dom.h2.length,11);assert.equal(dom.katexErrors,0);assert.equal(new Set(dom.ids).size,dom.ids.length);for(const href of dom.links)assert(dom.ids.includes(decodeURIComponent(href.slice(1))),href);
+ const compiled=JSON.parse(fs.readFileSync('.agent/semester-03/robust-08/headings-before.json','utf8'));for(const h of compiled.headings)assert(dom.ids.includes(h.id),'lost old ID '+h.id);
+ assert(dom.images.some(x=>x.loaded&&x.src.endsWith('mu-synthesis-iteration.svg')));assert(dom.images.filter(x=>x.loaded&&x.src.startsWith('data:image/png')).length>=5);assert.equal(errors.length,0);
+ if(name==='native'){assert(kernelCalls.length>0);assert(kernelCalls.every(u=>u.startsWith('http://127.0.0.1:8995/')));}else assert.equal(kernelCalls.length,0);
+ await page.screenshot({path:'.agent/semester-03/robust-08/desktop-'+name+'.png',fullPage:true});await page.locator('section[aria-label="D-K交替实验"]').screenshot({path:'.agent/semester-03/robust-08/explorer-'+name+'.png'});await page.locator('img[src$="mu-synthesis-iteration.svg"]').screenshot({path:'.agent/semester-03/robust-08/diagram-'+name+'.png'});
+ await page.setViewportSize({width:375,height:812});await page.waitForTimeout(300);const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
+ fs.writeFileSync('.agent/semester-03/robust-08/browser-'+name+'.json',JSON.stringify({url,pass:mobile.scroll<=mobile.width,dom,mobile,defaults,errors,kernelCalls},null,2));assert(mobile.scroll<=mobile.width,JSON.stringify(mobile));
+ await page.screenshot({path:'.agent/semester-03/robust-08/mobile-'+name+'.png',fullPage:true});await page.locator('section[aria-label="D-K交替实验"]').screenshot({path:'.agent/semester-03/robust-08/explorer-mobile-'+name+'.png'});
+ console.log('PASS DOM/33 old compiled IDs/11 H2/3 notebooks 6 cells/3 sliders/K and D steps/presets/3 initial traces/reset/SVG/375px/no pageerror');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,3 +1,4 @@
+import { MuSynthesisExplorer } from '@/components/wiki/mu-synthesis-explorer';
 import { MheExplorer } from "@/components/wiki/mhe-explorer";
 import { EconomicMpcExplorer } from "@/components/wiki/economic-mpc-explorer";
 import { MuAnalysisExplorer } from '@/components/wiki/mu-analysis-explorer';
@@ -189,6 +190,7 @@ export const wikiComponents: MDXComponents = {
   ExtendedKalmanExplorer,
   RobustStabilityExplorer,
   MuAnalysisExplorer,
+  MuSynthesisExplorer,
   MixedSensitivityExplorer,
   HInfinityExplorer,
   RobustPerformanceExplorer,

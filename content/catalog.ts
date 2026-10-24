@@ -5373,7 +5373,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "h-infinity-filter",

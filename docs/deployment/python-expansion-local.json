@@ -7563,31 +7563,31 @@
     {
       "key": "robust/mu-synthesis",
       "title": "μ综合",
-      "sourceHash": "f0aead984faf849a47f23c559b24959ac10eabce8c07a6fbf0582ae973880047",
+      "sourceHash": "a4a7386359086415f5403c67d403a0c7fc81b5f2ea5c844e0a5f06c6fed18d66",
       "notebooks": [
         {
           "id": "robust/mu-synthesis#1",
           "title": "实验 1",
           "index": 1,
-          "line": 279,
+          "line": 259,
           "cellCount": 1,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 5594,
+              "milliseconds": 5997,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== 标称被控对象 ===\nG(s) = 1 / (1.0s² + 0.2s + 1.0)\nω_n = 1.00 rad/s, ζ = 0.100\n\n参数网格: 11×11 = 121 个组合\n质量范围: [0.70, 1.30]\n刚度范围: [0.70, 1.30]\n"
+                  "text": "grid=121; mass/stiffness ranges=[0.7,1.3]; includes all four corners\nnominal wn=1 rad/s; zeta=0.1; LFT max absolute residual= 3.0201331455116262e-15\nphysical_model_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 184788
+                  "base64Length": 96484
                 }
               ]
             }
@@ -7597,74 +7597,103 @@
           "id": "robust/mu-synthesis#2",
           "title": "实验 2",
           "index": 2,
-          "line": 395,
+          "line": 340,
           "cellCount": 3,
           "status": "passed",
           "reason": null,
           "cells": [
             {
               "index": 1,
-              "milliseconds": 290,
+              "milliseconds": 397,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== H∞ 混合灵敏度设计 ===\n控制器: C(s) = (5.0s + 2.0)/s\n穿越频率: 2.46 rad/s, 相位裕度: 356.3°\n||S||_∞ = 15.585 (23.85 dB)\n||T||_∞ = 15.602 (23.86 dB)\n"
+                  "text": "original PI poles= [ 0.06547156+2.4574475j  0.06547156-2.4574475j -0.33094311+0.j       ] max real= 0.06547155604689542 stable= False\nRouth: 0.2*(1+5)=1.2 < 1*2=2, so nominal PI is unstable\nfinite frequency sample max |S|= 15.584879652449212 ; not a stable H-infinity norm\novershoot, settling time, stable final value: undefined for this unstable loop\nfinite-window max |u|= 28.135920086060885 actuator target<=10: False\npi_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 106152
+                  "base64Length": 83952
                 }
               ]
             },
             {
               "index": 2,
-              "milliseconds": 5440,
+              "milliseconds": 275,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "============================================================\nMonte Carlo 鲁棒性验证（500 次随机采样）\n============================================================\n超调量:  min=138.8%, max=1271.0%, mean=577.0%\n调节时间: min=30.0s, max=30.0s, mean=30.0s\n||S||_∞:  min=9.703, max=56.874\n\n需求检查:\n  超调 < 30%: ✗ (max=1271.0%)\n  调节时间 < 8s: ✗ (max=30.0s)\n  ||S||_∞ < 2: ✗ (max=56.874)\n"
+                  "text": "seed=42; samples=500; unstable= 500 alpha range= 0.019381935425233365 0.09488495768435568\nwhole square: .2*(k+5)<=1.26 < m*2>=1.4, hence every allowed PI loop unstable\nNo overshoot/settling histograms: these metrics require a stable final value\nsampling_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 305760
+                  "base64Length": 124424
                 }
               ]
             },
             {
               "index": 3,
-              "milliseconds": 186,
+              "milliseconds": 183,
               "status": "passed",
               "outputs": [
                 {
                   "type": "stream",
                   "name": "stdout",
-                  "text": "=== H∞ 保守性分析 ===\n\n非结构化最坏: m=1.30, k=0.70 → ||S||_∞ = 9.584\n结构化实际最坏: m=0.71 (δm=-0.975), k=1.15 (δk=0.507)\n  → ||S||_∞ = 53.921\n\n保守性比率: 0.178（非结构化多保守 -82.2%）\n\n💡 μ 综合利用参数独立性，可以设计出性能更好的鲁棒控制器。\n"
+                  "text": "sample maximizer of formal finite-grid |S|: -0.9753946282227943 0.5070091260005158\nnominal formal frequency-grid maximum= 15.310556257203693\nallowed corner formal frequency-grid maximum= 9.58409472586436\nsample maximizer formal frequency-grid maximum= 53.920948714587496\nNo H-infinity-versus-mu ranking, no conservatism percentage, no robust-performance certificate\ncomparison_audit_complete\n"
                 },
                 {
                   "type": "image",
                   "mime": "image/png",
-                  "base64Length": 81600
+                  "base64Length": 34284
                 }
               ]
             }
           ]
-        }
-      ],
-      "executedSourceHash": "fb6c4fbb24f03d9b1f0957fb7ba3ba101c13d1c12073c57974528b7b0eaf1fab",
-      "formattingProvenance": [
+        },
         {
-          "lesson": "robust/mu-synthesis",
-          "fromSourceHash": "fb6c4fbb24f03d9b1f0957fb7ba3ba101c13d1c12073c57974528b7b0eaf1fab",
-          "toSourceHash": "f0aead984faf849a47f23c559b24959ac10eabce8c07a6fbf0582ae973880047",
-          "notebookPayloadHash": "d15bee1fe811fcbc3f10592ffdbaa9134bca9b301ef9f0282bbfa6bd4b9bf267",
-          "baseCommit": "2a68419ae5be389cb50fbced68b522e938b4c9a8",
-          "method": "newline-and-quote-continuation-only; exact setup/cell equality"
+          "id": "robust/mu-synthesis#3",
+          "title": "实验 3",
+          "index": 3,
+          "line": 410,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 105,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "initial d= 1.0 final= ('D', 0.8620689655172414, 1.0, 0.706896551724138, 0.706896551724138)\ninitial d= 0.25 final= ('D', 0.0, 0.25, 0.5, 0.5000000000000001)\ninitial d= 2.0 final= ('D', 1.0, 1.2649110640673518, 0.6324555320336759, 0.6324555320336759)\ndefault k=.5 d=1: (1.2499999999999998, 0.7603453162872775) dopt= 0.6082762530298219\nk= 0 mu= 0.5000000000000001\nk= 0.5 mu= 0.7603453162872775\nk= 1 mu= 0.6324555320336759\ndk_complete\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 44456
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 7,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "Q1 rho= 3.0 sigma= 3.2566165379829393 MTM eigenvalues= [ 3.39444872 10.60555128]\nQ1 r= 1 upper= 3.2566165379829393\nQ1 r= 0.1 upper= 3.0029937310660415\nQ1 r= 0.01 upper= 3.000029999370031\nQ1 inf=3 as r tends to 0; r=0 is inadmissible; mu=3 via determinant witness delta2=1/3\nQ2 T(0)= 0.6666666666666666 normalized small-gain peak= 0.3333333333333333\nQ2 delta= -0.5 closed pole= [-2.+0.j]\nQ2 delta= 0 closed pole= [-3.+0.j]\nQ2 delta= 0.5 closed pole= [-4.+0.j]\nQ2 real mu(T(jw))=0 for w>0; complex mu=abs(T(jw)); both global tests pass\nQ3 different coordinate fixed points: ('D', 0.8620689655172414, 1.0, 0.706896551724138, 0.706896551724138) ('D', 0.0, 0.25, 0.5, 0.5000000000000001)\nQ4 mass=[.8,1.2], damping=[.15,.25], stiffness=[.7,1.3]; diag three independent real scalars\nQ4 full 2x2 complex block enlarges the set; delta_mb I restricts independent parameters\nall_answers_complete\n"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -18053,14 +18082,14 @@
   "complete": true,
   "totals": {
     "lessons": 132,
-    "notebooks": 532,
-    "enabled": 530,
+    "notebooks": 533,
+    "enabled": 531,
     "codeOnly": 2
   },
   "releaseTotals": {
     "lessons": 132,
-    "notebooks": 532,
-    "enabled": 530,
+    "notebooks": 533,
+    "enabled": 531,
     "codeOnly": 2
   },
   "provenance": [
@@ -18968,6 +18997,11 @@
       "testedAt": "2026-10-24T11:01:02.888Z",
       "url": "http://127.0.0.1:21596/python-expansion.html?lesson=mpc/mhe-fusion",
       "inputPath": ".agent/semester-03/mpc-10/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T11:02:02.178Z",
+      "url": "http://127.0.0.1:20595/python-expansion.html?lesson=robust/mu-synthesis",
+      "inputPath": ".agent/semester-03/robust-08/pyodide.json"
     }
   ]
 }

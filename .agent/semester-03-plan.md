@@ -1027,3 +1027,8 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 ### MPC-10 学期3交付（2026-10-24）
 
 移动水平估计从空占位按新写Phase1–4完成：液位观测→窗口与到达成本→约束QP→滑动更新与信息重复→KF等价条件→输出反馈接口/错误容量反例。十一H2、四题完整答案、两Notebook四cell、Explorer/SVG。1620配置实际TS对原LS与有理KKT；严格内核、生产Pyodide、普通与Pages本地页面及375px实测见.agent/semester-03/mpc-10/acceptance.md。rank6隔离21496/9126/21596/21696，临时独立索引与原子引用更新，保留并行内容。本会话不发布Pages，不生产MPC-11，真实hash见checklist。
+
+
+### ROBUST-08 本期交付记录（2026-10-24）
+
+μ综合按重构Phase1–4交付：33旧编译标题/11H2、四题全部子问、原二Notebook四cell用途保留，最终三Notebook六cell、限定族三滑块双图/K-D单步与真实SVG。修正独立性/实复μ/D交换子/完整LFT/交替与拟合边界，原PI全方形失稳保留为诊断，不伪称H∞综合。实际TS2020配置与101独立LP、符号/500LFT回代、严格内核/Pyodide、双生产构建/375px证据见.agent/semester-03/robust-08/acceptance.md。RB08实际关闭；未执行外部MATLAB通用求解器，不承诺全局或联合局部最优。不发布Pages、不生产ROBUST-09；master实际回执见checklist。rank5端口/缓存/索引隔离，保留其它会话修改。
