@@ -33,9 +33,9 @@ Phase1：学习类9人池加林矩共10视角；秦构的前端工作由苏绘�
 
 普通IAB原生Notebook显示Failed to fetch，属于既有W09连接边界；严格原生内核与最终Pages Pyodide分别实跑通过，未关闭W09。首次网关未就绪、类型错误、资源缺失、代码保真失误、答案标题及静态301均记录repair-record.md，不把失败归入通过次数。保留所有其它课程/用户批阅/本地端口改动；不发布gh-pages、不生产RL-02。
 
-## 提交前最终复核
+## 提交快照复核记录
 
-提交投影已刷新到真实master `ffc674ea33f87fd15d57a4d47587c77fc347f12d`，保留并行ID-02、EST-01交付，再只叠加RL-01。`npm run check` exit0：PASS21/WARN2/FAIL0（check-final.log）；Python政策exit0：88课387实验可运行/16保留代码，未改变其它课程条目（python-policy-final.log）；投影学期校验对真实仓库与master祖先检查exit0、errors=[]（semester-projection.json）。
+早期提交投影曾刷新到真实master `ffc674ea33f87fd15d57a4d47587c77fc347f12d`，保留并行ID-02、EST-01交付，再只叠加RL-01。`npm run check` exit0：PASS21/WARN2/FAIL0（check-final.log）；Python政策exit0：88课387实验可运行/16保留代码，未改变其它课程条目（python-policy-final.log）；投影学期校验对真实仓库与master祖先检查exit0、errors=[]（semester-projection.json）。
 
 共享目录最新check exit1：另一课autonomous-driving/driving-system的status/台账暂未同步，以及并行新增组件令统计行90/实测91；本课台账被并行写入覆盖后已恢复，第二次检查不再报本课。详见check-shared-final.log。共享学期校验exit0（semester-shared-final.log）。不把独立快照结果宣称为当时全工作区结果。
 
@@ -44,3 +44,9 @@ Phase1–4均已实际完成，郑核已基于上述证据签发。只暂存本�
 
 
 最后一次通过的提交投影父版本：`3fb6dc4b123257c4bcb95410ae0cf8582d904bfe`；check-final.log为PASS21/WARN2/FAIL0，python-policy-final.log为{"pass": true, "lessons": 92, "enabled": 398, "codeOnly": 15}。独立暂存不清理其它会话暂存内容；提交后只同步未被并行暂存改动的本课索引项。
+
+## 真实提交与推送回执
+
+RL-01真实交付提交：`c6494958021fb272e878347752e70c84bfbc94ce`，父提交`b5679ceeac633389c906e5c9b53c86ae7920d98d`；已进入master，已验证origin/master包含该提交。`git push origin master`返回Everything up-to-date（并行会话已将包含本课的主干推送）。仅本课52个文件/证据及其共享文件差异；默认暂存区的其它会话内容保持，独立索引仅同步未被并行暂存改动的本课项。最终提交树保留此前ML-02/RLEARN-01等交付，后续ROBOT-01也保留了本课。
+
+全局checklist已按真实hash勾完整六阶段；不发布Pages，不生产RL-02。预览9198是验收快照，非公网发布。

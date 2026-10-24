@@ -112,6 +112,8 @@
 [郑核-签发] A.1所有数值一致，B九项全部通过，C限定模型比较放行，四题答案与四份档案齐备，准予RL-01交付。共享他课草稿不纳入本课提交；真实master hash形成后追加回执，不预填。
 交付清单：content/rl-control/rl-basics.mdx实测159行、9H2、2Notebook/3cell、1Explorer/2图/1SVG、4题4答；唯一注册表lib/wiki-components.ts登记。catalog status与旧台账同步，本期checklist前五阶段已勾，最终合入待真实提交。
 
+真实master交付提交：`c6494958021fb272e878347752e70c84bfbc94ce`，已验证远端包含；最终完整回执见.agent/semester-03/rl-01/receipt.json。
+
 ## 附录 A：数值证据（全部实测数据的唯一留存副本）
 
 ### A.1 三方对账表（柯验）
