@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import {spawnSync} from 'node:child_process';
+const out='.agent/semester-03/mpc-07';
+const extract=spawnSync(process.execPath,['scripts/nb-cells.mjs','extract','mpc/explicit-mpc','--out',out+'/extracted.json'],{stdio:'inherit'});
+if(extract.status!==0)process.exit(extract.status??1);
+const js=ts.transpileModule(fs.readFileSync('lib/explicit-mpc.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ES2022}}).outputText;
+const m=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const cases=[];
+for(let i=-35;i<=35;i++)for(let j=-35;j<=35;j++)cases.push({x:i/10,r:j/10,lookup:m.lookupExplicit(i/10,j/10),qp:m.scalarQp(i/10,j/10)});
+for(const [x,r] of [[1,3],[-1,-3],[3,2],[-3,-2],[2,-1],[2.01,0],[0,3.25],[3.25,0],[0,0]])cases.push({x,r,lookup:m.lookupExplicit(x,r),qp:m.scalarQp(x,r)});
+for(const p of m.explicitRegions)for(const [x,r] of p.polygon)for(const d of [-1e-9,0,1e-9])cases.push({x:x+d,r,lookup:m.lookupExplicit(x+d,r),qp:m.scalarQp(x+d,r)});
+let rejected=0;for(const args of [[NaN,0],[0,Infinity],[0,0,-.01],[0,0,.051]]){try{m.lookupExplicit(...args)}catch{rejected++}}if(rejected!==4)throw Error('invalid contract accepted');
+fs.writeFileSync(out+'/ts-cases.json',JSON.stringify({regions:m.explicitRegions,cases,loose:m.lookupExplicit(2.01,0,.02),invalidRejected:rejected}));
+const p=spawnSync('python',[out+'/reference.py'],{stdio:'inherit',env:{...process.env,MPLBACKEND:'Agg'}});process.exit(p.status??1);

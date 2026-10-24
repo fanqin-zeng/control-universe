@@ -99,6 +99,7 @@
 | ROBUST-05 | IMPL-09;IMPL-10;ML-08;ML-09;ID-08;ID-09;EST-07;EST-08 | 2026-10-24用户指定继续ROBUST-05，rank5；并行课程保留检查点，仅依赖已交付先修 | .agent/semester-03/robust-05/acceptance.md |
 | ID-08 | DISCRETE-01;IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09 | 2026-10-24用户明确指定继续ID-08，rank3；保留并行课程，先修持续激励/自动微分/时序模型/非线性系统已交付 | .agent/semester-03/id-08/acceptance.md |
 | EST-07 | IMPL-01;IMPL-02;IMPL-03;IMPL-04;IMPL-05;IMPL-06;IMPL-07;IMPL-08;IMPL-09;IMPL-10;ML-01;ML-02;ML-03;ML-04;ML-05;ML-06;ML-07;ML-08;ML-09;ID-01;ID-02;ID-03;ID-04;ID-05;ID-06;ID-07;ID-08;ID-09 | 2026-10-24用户明确指定继续EST-07，rank4；其它会话并行，保留检查点，仅依赖已交付KF/EKF | .agent/semester-03/est-07/acceptance.md |
+| MPC-07 | IMPL-09;IMPL-10;ML-08;ML-09;ID-09;EST-08;ROBUST-06;ROBUST-07;ROBUST-08;ROBUST-09;ROBUST-10;ROBUST-11 | 2026-10-24用户明确指定继续MPC-07，rank6；保留并行检查点，仅用已交付先修 | .agent/semester-03/mpc-07/acceptance.md |
 <!-- S3-ORDER-EXCEPTIONS-END -->
 
 推荐新写 Prompt：
@@ -969,3 +970,7 @@ H∞控制按重构Phase1–4交付，保留九H2、全部历史标题、四题�
 
 多传感器融合从空占位按Phase1—4新写完成：10H2、四题及全部子问、3Notebook6cell、SensorFusionExplorer与纵向SVG。独立信息相加、相关噪声白化、共享先验/重复数据、未知相关CI与时间/坐标/非线性线性化边界；64配置对独立矩阵/Joseph与密度，CI105边界保留失败与持平。严格内核、Pyodide、两构建/实页/375px均通过。rank4独立副本/端口/私有索引保留并行修改，证据.agent/semester-03/est-07/acceptance.md；实际master回执见checklist。未发布Pages，不生产EST-08。
 <!-- EST-07-RECEIPT-END -->
+
+### MPC-07 学期3交付（2026-10-24）
+
+显式预测控制从空占位按新写Phase1–4完成：参数QP/KKT→五临界区域→分段仿射律→边界/退化/部署与稳定条件；十H2、四题四答、两Notebook四cell、Explorer/SVG。实际TS5098参数对独立原QP数值求解及完整有理区域证书，共享边界/域外/错误容差/模型失配均核。严格内核、生产Pyodide、普通与Pages本地/375px验收见.agent/semester-03/mpc-07/acceptance.md。rank6隔离20296/9096/20396/20496与独立Git索引，保留其它会话；只交付本课，不发布Pages、不生产MPC-08，真实hash见全局checklist。

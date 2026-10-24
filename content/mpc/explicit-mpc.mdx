@@ -1,0 +1,291 @@
+---
+title: "显式预测控制"
+description: "从参数QP与活跃集推导五个临界区域，核对分段仿射控制律、共享边界、域外和有限精度的执行条件。"
+---
+
+# 显式预测控制
+
+设想一个小水箱控制器：每次读到液位偏差，就在泵的输入限制和下一拍恢复要求下重新求最合适的动作。模型、权重和约束没变，变化的是当前偏差与目标。上一课的GPC把预测整理成矩阵；现在进一步问：能否把这一整族QP提前求好，在线只判断当前参数落在哪个区域，再代入公式？
+
+这就是显式MPC的思路。它离线保存的是**区域与适用于整个区域的控制律**，不是几条仿真轨迹，也不是把若干采样点的最优动作随意插值。在线仍要估计状态、组装参数、定位区域并检查动作。
+
+先修：[约束处理](/mpc/constraint-handling)与[凸优化](/math/convex-optimization)。本课从一个一步QP手算五个区域，再说明一般预测时域的构造和部署边界；不要求先学下一课的非线性MPC。
+
+## 从每拍求解到离线分区
+
+在线求解与显式实现可以针对**完全相同的优化问题**：前者每拍求解，后者先离线处理参数域中的整族问题。准确区域划分与精确计算下，两者应给出同一最优动作；显式化并不会额外改变预测时域或性能指标。
+
+![离线固定模型并生成区域和仿射律，在线定位后核验再批准动作](/diagrams/mpc/explicit-offline-online.svg)
+
+计算只是转移了位置：离线生成、验证和存储增加，在线求解可以变为定位加仿射运算。是否适合嵌入式平台，要看区域数、参数维数、查找结构、内存和完整执行期限，不能只凭“查表”就宣称硬实时。
+
+## 参数化的约束QP
+
+将未来输入序列或增量堆叠为决策 $z$，把变化但已知的量放进参数 $\boldsymbol{\theta}$。它可能包括估计状态、前一实际输入、参考和可测扰动，不一定只有状态。固定线性预测模型、权重与时域的一类问题可写成
+
+$$
+\begin{aligned}
+\min_z\quad &\frac12z^THz+(F\boldsymbol{\theta}+f)^Tz+c(\boldsymbol{\theta}),\qquad H\succ0,\\
+\text{s.t.}\quad &Gz\le w+S\boldsymbol{\theta},\qquad \boldsymbol{\theta}\in\Theta.
+\end{aligned}
+$$
+
+$\Theta$ 是预先声明的多面体参数域。$c(\boldsymbol{\theta})$ 不影响当前最优 $z$，但比较费用时必须加回。严格凸使每个可行参数对应唯一最优决策；不可行参数没有最优动作。对于这类固定严格凸参数QP，解可在可行参数域上用连续分段仿射映射表示。若 $H$ 仅半正定，唯一性和表示条件要另核；不能把所有MPC都直接归入同一结论。
+
+若 $z$ 含整个预测计划，在线只执行提取出的首输入。例如绝对输入变量下 $u=E_0z^*(\boldsymbol{\theta})$；增量变量还须加前一实际输入。区域反馈形式不是随意更换输入定义的理由。
+
+## 活跃集怎样生成区域
+
+选一组线性独立的活跃约束行 $\mathcal A$。把它们当作等式，KKT方程为
+
+$$
+\begin{bmatrix}H&G_{\mathcal A}^T\\G_{\mathcal A}&0\end{bmatrix}
+\begin{bmatrix}z\\\boldsymbol{\lambda}_{\mathcal A}\end{bmatrix}
+=\begin{bmatrix}-F\boldsymbol{\theta}-f\\w_{\mathcal A}+S_{\mathcal A}\boldsymbol{\theta}\end{bmatrix}.
+$$
+
+在 $H\succ0$ 且所选行独立时，这个系统可解，得到仿射候选 $z=K_{\mathcal A}\boldsymbol{\theta}+k_{\mathcal A}$ 与仿射乘子。再把它代入**全部**原约束，并要求所选乘子非负：
+
+$$
+\mathcal R_{\mathcal A}=\{\boldsymbol{\theta}\in\Theta:
+Gz(\boldsymbol{\theta})\le w+S\boldsymbol{\theta},\quad \boldsymbol{\lambda}_{\mathcal A}(\boldsymbol{\theta})\ge0\}.
+$$
+
+这些是关于参数的线性不等式，定义一个多面体临界区域。区域内，原变量可行、乘子可行、驻点和互补条件同时满足，所以候选就是全局最优解。
+
+离线算法还须删除空区域和冗余不等式、处理退化、验证覆盖及共享边界。不能枚举若干活跃集后就默认覆盖完成，也不能对相关的全部活跃行直接求逆。边界处可能新增零乘子的活跃约束；一个参数可以命中多个闭区域。
+
+## 五区域手算例
+
+取归一化教学对象
+
+$$
+x^+=x+u,\qquad |u|\le1,\qquad |x^+|\le2,
+\qquad J=(x+u-r)^2+u^2.
+$$
+
+预测时域为一步，参数 $\boldsymbol{\theta}=(x,r)$，离线范围 $\Theta=[-3,3]^2$。**状态界只约束下一拍**，表示恢复要求；当前状态在可恢复域内即可。若设备还要求当前也满足 $|x|\le2$，必须另外加这个条件，参数域也会改变。这组数不是实际水箱安全限值。
+
+展开得 $H=4$、$F=[2,-2]$、$c(\boldsymbol{\theta})=(x-r)^2$，约束可写成
+
+$$
+\begin{bmatrix}1\\-1\\1\\-1\end{bmatrix}u\le
+\begin{bmatrix}1\\1\\2-x\\2+x\end{bmatrix}.
+$$
+
+无约束动作是 $u_0=(r-x)/2$，可行动作区间为
+
+$$
+\ell(x)=\max(-1,-2-x),\qquad h(x)=\min(1,2-x).
+$$
+
+原QP当且仅当 $|x|\le3$ 可行；参考 $r$ 不影响约束可行性。最优动作是在这个区间上投影 $u_0$。按未碰界、碰上界、碰下界，并区分界来自输入还是下一状态，得到以下**五个闭区域**，全部与 $\Theta$ 取交：
+
+| 区域 | 参数条件 | 仿射律 | 区域内部的活跃界 |
+|---|---|---|---|
+| R0 | $|r-x|\le2,\ |x+r|\le4$ | $u=(r-x)/2$ | 无 |
+| R1 | $r-x\ge2,\ x\le1$ | $u=1$ | 输入上界 |
+| R2 | $x-r\ge2,\ x\ge-1$ | $u=-1$ | 输入下界 |
+| R3 | $x+r\ge4,\ x\ge1$ | $u=2-x$ | 下一状态上界 |
+| R4 | $x+r\le-4,\ x\le-1$ | $u=-2-x$ | 下一状态下界 |
+
+例如默认 $x=2,r=-1$ 在R2，故 $u=-1,x^+=1,J=5$。驻点残差 $4u+2(x-r)=2$ 被输入下界的乘子2抵消。中央点 $x=1,r=0$ 给 $u=-0.5,x^+=0.5,J=0.5$。$x=2,r=3$ 则在R3，给 $u=0,x^+=2,J=1$；目标超过下一状态界，不代表QP无解，也不代表能精确跟踪它。
+
+完整覆盖来自上面的区间投影分类；面积还可作几何复核：R0面积16、R1/R2各8、R3/R4各2，合为参数箱面积36。必须同时核无内部重叠和边界覆盖，不能用有限网格代替覆盖证明。
+
+<JupyterNotebook title="离线区域与KKT证书" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
+G=np.array([1.,-1.,1.,-1.])
+w=np.array([1.,1.,2.,2.])
+S=np.array([[0.,0.],[0.,0.],[-1.,0.],[1.,0.]])
+F=np.array([2.,-2.])
+regions=[
+ dict(id='R0',A=np.array([[-1,1],[1,-1],[1,1],[-1,-1]]),b=np.array([2,2,4,4]),K=np.array([-.5,.5]),c=0.,active=None,polygon=[[-3,-1],[-1,-3],[3,1],[1,3]]),
+ dict(id='R1',A=np.array([[1,-1],[1,0]]),b=np.array([-2,1]),K=np.zeros(2),c=1.,active=0,polygon=[[-3,-1],[1,3],[-3,3]]),
+ dict(id='R2',A=np.array([[-1,1],[-1,0]]),b=np.array([-2,1]),K=np.zeros(2),c=-1.,active=1,polygon=[[-1,-3],[3,-3],[3,1]]),
+ dict(id='R3',A=np.array([[-1,-1],[-1,0]]),b=np.array([-4,-1]),K=np.array([-1.,0.]),c=2.,active=2,polygon=[[1,3],[3,1],[3,3]]),
+ dict(id='R4',A=np.array([[1,1],[1,0]]),b=np.array([-4,-1]),K=np.array([-1.,0.]),c=-2.,active=3,polygon=[[-3,-3],[-1,-3],[-3,-1]])
+]
+def lookup(x,r,tol=0):
+    if abs(x)>3 or abs(r)>3:return None
+    theta=np.array([x,r]);hits=[p for p in regions if np.all(p['A']@theta<=p['b']+tol)]
+    if not hits:return None
+    p=hits[0];u=float(p['K']@theta+p['c'])
+    lam=np.zeros(4)
+    if p['active'] is not None:
+        i=p['active'];lam[i]=-(4*u+F@theta)/G[i]
+    slack=w+S@theta-G*u
+    residual=max(0.,float(max(-slack)),float(max(-lam)),float(abs(4*u+F@theta+G@lam)),float(max(abs(lam*slack))))
+    return dict(region=p['id'],hits=[p['id'] for p in hits],u=u,next=x+u,cost=(x+u-r)**2+u*u,slack=slack,lam=lam,residual=residual,violation=max(0.,float(max(-slack))))
+def original_qp(x,r):
+    lower=max(-1.,-2.-x);upper=min(1.,2.-x)
+    if lower>upper:return None
+    cost=lambda u:(x+u-r)**2+u*u
+    if lower==upper:u=lower
+    else:
+        opt=minimize_scalar(cost,bounds=(lower,upper),method='bounded',options={'xatol':1e-12})
+        if not opt.success:raise RuntimeError(opt.message)
+        u=min([lower,upper,opt.x],key=cost)
+    return dict(u=u,next=x+u,cost=cost(u))
+def area(vertices):
+    a=np.array(vertices);return abs(float(np.sum(a[:,0]*np.roll(a[:,1],-1)-a[:,1]*np.roll(a[:,0],-1)))/2)
+`} cells={[{code: `for p in regions:
+    i=p['active']
+    if i is None:
+        K=-F/4;c=0.;lamK=np.zeros(2);lamc=0.
+    else:
+        K=S[i]/G[i];c=w[i]/G[i]
+        lamK=-(4*K+F)/G[i];lamc=-4*c/G[i]
+    assert np.allclose(K,p['K']) and abs(c-p['c'])<1e-12
+    print('KKT_region',p['id'],'gain',K,'offset',c,'lambda_gain',lamK,'lambda_offset',lamc)
+    for point in p['polygon']:
+        z=np.array(point);u=float(K@z+c);lam=np.zeros(4)
+        if i is not None:lam[i]=lamK@z+lamc
+        assert np.all(w+S@z-G*u>=-1e-12) and min(lam)>=-1e-12
+        assert abs(4*u+F@z+G@lam)<1e-12
+print('H',4,'F',F,'original_inequality_rows',4)
+print('areas', [area(p['polygon']) for p in regions], 'sum',sum(area(p['polygon']) for p in regions))
+print('coefficient_payload_scalars',12*3+5*3,'float64_payload_bytes',(12*3+5*3)*np.dtype('float64').itemsize)
+print('offline_KKT_vertices_checked')`, title: "1"},
+{code: `cases=[(2.,-1.),(1.,0.),(-2.,1.),(0.,3.),(2.,3.),(-2.,-3.),(1.,3.),(2.,0.),(3.,2.),(0.,0.)]
+for x,r in cases:
+    p=lookup(x,r);q=original_qp(x,r)
+    assert p is not None and q is not None
+    assert abs(p['u']-q['u'])<1e-7 and p['residual']<1e-10
+    print('case',x,r,'region',p['region'],'hits',p['hits'],'u',p['u'],'next',p['next'],'J',p['cost'])
+# At x=3,r=2, both lower-input and upper-state constraints are active.
+for t in [0.,1.,2.]:
+    lam=np.array([0.,t,2+t,0.])
+    assert abs(4*(-1)+2*(3-2)+G@lam)<1e-12
+print('degenerate_point_u',-1,'multiplier_family_lower_t_upper_2_plus_t')
+fig,ax=plt.subplots(figsize=(6,6))
+for p in regions:
+    points=np.array(p['polygon']);ax.fill(points[:,0],points[:,1],alpha=.3,label=p['id'])
+ax.plot(2,-1,'ko');ax.set(xlim=(-3.5,3.5),ylim=(-3.5,3.5),xlabel='current x',ylabel='reference r');ax.legend();ax.grid(True)
+plt.show()
+print('regions_and_shared_boundaries_checked')`, title: "2"}]} />
+
+## 边界与退化
+
+在 $x=1,r=3$，R0、R1、R3同时命中，但三条公式都给 $u=1$；在 $x=2,r=0$，R0与R2都给 $u=-1$。实现可以约定固定区域优先级，前提是证明边界上的动作一致。唯一的是最优动作，不是必须有唯一的区域标签。
+
+乘子也未必唯一。例如 $x=3,r=2$ 的可行区间只有 $u=-1$，输入下界与下一状态上界同时活跃。按表中四行约束顺序，$\boldsymbol{\lambda}=(0,t,2+t,0)$ 对任意 $t\ge0$ 都满足驻点和互补条件；这不妨碍动作唯一，却说明不能把全部活跃约束构成的奇异KKT矩阵强行求逆。
+
+参数域外必须单独处理。$x=0,r=3.25$ 超过离线参考范围，原QP仍有解；查表器也应拒绝直接沿用域内证书。$x=3.25,r=0$ 则连原QP都不可行。**域外未认证与原QP不可行是两种状态**，不是同义词。
+
+## 交互式可视化
+
+左图是参数平面，右图是固定当前参考后的控制律截面。恢复默认先核R2的动作和费用，再选择中央点、下一状态界、共享边界以及域外参考。
+
+<ExplicitMpcExplorer />
+
+“载入容差反例”把参数设为 $x=2.01,r=0$。正确区域为R2，动作 $-1$；若将中央区域的比较放宽0.02而仍直接套其公式，就得到 $-1.005$，违反输入下界0.005。它的原目标约为2.02005，比可行最优的2.02010还小，但它**不可行**。组件中的宽松候选只作错误演示，不参与批准动作。
+
+## 在线查找与部署
+
+在线流程至少包括：获取完整参数、确认模型/控制器版本、检查参数域、定位区域、计算首动作、核原约束与数值误差，再按期限批准执行。原QP解析对照只是本课教学审计；查表核心本身不调用QP求解器。Notebook另行用数值优化核对同一个原问题。
+
+本例的五个区域共用12行二维半空间条件；朴素顺序查找的区域比较次数最多12次，不包含参数域检查、短路分支和动作验算。更大问题可以用树、邻接或其他定位结构；复杂度取决于具体构造，不能统一宣称 $O(\log M)$，更不能据此给出微秒或硬实时结论。
+
+若指定每个半空间存两个法向量系数和一个右端、每条控制律存两个增益和一个常数，共有 $12\times3+5\times3=51$ 个数值系数。只按每数8字节计算，载荷为408字节；这**不包括**参数箱、索引、对齐、软件对象、查找代码或图形数据，不是本组件的实际内存占用测量。
+
+部署时还须处理边界舍入、系数量化、估计误差、找不到区域和执行饱和。放宽定位比较不能代替可行性核验。域外可切换到已验证适用的在线求解或其他处理，但该处理自身的可行域、期限与安全条件也要有证据，不能随意外推区域公式。
+
+## 等价与稳定的边界
+
+同一固定QP在认证域内的精确显式解与在线最优解等价，保留的是**原控制器已有**的性质；显式化不会自行补上终端条件或鲁棒保证。更改未纳入参数化的模型、权重、时域或约束后，要重新生成或重新认证。参考等已经纳入 $\boldsymbol{\theta}$ 的量，则可在原参数域内变化。
+
+本例取 $r=0$ 时可以直接证明名义稳定：$|x|\le2$ 时 $x^+=x/2$；$2<|x|\le3$ 时 $x^+=x-\operatorname{sign}(x)$，一拍进入 $[-2,2]$，随后每拍减半。这是这一个QP的性质，不是所有一步MPC的定理。一般稳定性证明见[递归可行性与稳定性](/mpc/mpc-stability)。
+
+下面用默认 $x=2,r=-1$ 及 $x=2.5,r=0$ 分别运行20拍，同步数值核对原QP。离散末样本不当作稳态极限，图线仅连接采样值。还有一个模型误用例：在 $x=2.8,r=3$ 时，表给 $u=-0.8$、名义下一状态2；若真实对象变成 $x^+=1.2x+u$，下一状态为2.56，已经违反原下一状态界0.56。
+
+<JupyterNotebook title="名义闭环与域外边界" setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
+G=np.array([1.,-1.,1.,-1.])
+w=np.array([1.,1.,2.,2.])
+S=np.array([[0.,0.],[0.,0.],[-1.,0.],[1.,0.]])
+F=np.array([2.,-2.])
+regions=[
+ dict(id='R0',A=np.array([[-1,1],[1,-1],[1,1],[-1,-1]]),b=np.array([2,2,4,4]),K=np.array([-.5,.5]),c=0.,active=None,polygon=[[-3,-1],[-1,-3],[3,1],[1,3]]),
+ dict(id='R1',A=np.array([[1,-1],[1,0]]),b=np.array([-2,1]),K=np.zeros(2),c=1.,active=0,polygon=[[-3,-1],[1,3],[-3,3]]),
+ dict(id='R2',A=np.array([[-1,1],[-1,0]]),b=np.array([-2,1]),K=np.zeros(2),c=-1.,active=1,polygon=[[-1,-3],[3,-3],[3,1]]),
+ dict(id='R3',A=np.array([[-1,-1],[-1,0]]),b=np.array([-4,-1]),K=np.array([-1.,0.]),c=2.,active=2,polygon=[[1,3],[3,1],[3,3]]),
+ dict(id='R4',A=np.array([[1,1],[1,0]]),b=np.array([-4,-1]),K=np.array([-1.,0.]),c=-2.,active=3,polygon=[[-3,-3],[-1,-3],[-3,-1]])
+]
+def lookup(x,r,tol=0):
+    if abs(x)>3 or abs(r)>3:return None
+    theta=np.array([x,r]);hits=[p for p in regions if np.all(p['A']@theta<=p['b']+tol)]
+    if not hits:return None
+    p=hits[0];u=float(p['K']@theta+p['c'])
+    lam=np.zeros(4)
+    if p['active'] is not None:
+        i=p['active'];lam[i]=-(4*u+F@theta)/G[i]
+    slack=w+S@theta-G*u
+    residual=max(0.,float(max(-slack)),float(max(-lam)),float(abs(4*u+F@theta+G@lam)),float(max(abs(lam*slack))))
+    return dict(region=p['id'],hits=[p['id'] for p in hits],u=u,next=x+u,cost=(x+u-r)**2+u*u,slack=slack,lam=lam,residual=residual,violation=max(0.,float(max(-slack))))
+def original_qp(x,r):
+    lower=max(-1.,-2.-x);upper=min(1.,2.-x)
+    if lower>upper:return None
+    cost=lambda u:(x+u-r)**2+u*u
+    if lower==upper:u=lower
+    else:
+        opt=minimize_scalar(cost,bounds=(lower,upper),method='bounded',options={'xatol':1e-12})
+        if not opt.success:raise RuntimeError(opt.message)
+        u=min([lower,upper,opt.x],key=cost)
+    return dict(u=u,next=x+u,cost=cost(u))
+def area(vertices):
+    a=np.array(vertices);return abs(float(np.sum(a[:,0]*np.roll(a[:,1],-1)-a[:,1]*np.roll(a[:,0],-1)))/2)
+`} cells={[{code: `closed=[]
+for start,ref in [(2.,-1.),(2.5,0.)]:
+    x=start;trajectory=[x];inputs=[];max_difference=0.
+    for k in range(20):
+        p=lookup(x,ref);q=original_qp(x,ref)
+        if p is None or q is None or p['residual']>1e-9:raise RuntimeError('Unapproved nominal action')
+        max_difference=max(max_difference,abs(p['u']-q['u']))
+        inputs.append(p['u']);x=x+p['u'];trajectory.append(x)
+    closed.append(dict(start=start,ref=ref,x=trajectory,u=inputs))
+    print('closed_loop_start_ref',start,ref,'steps',len(inputs),'last_sample',trajectory[-1],'max_QP_action_difference',max_difference)
+fig,ax=plt.subplots(2,1,figsize=(9,6),sharex=True)
+for z in closed:
+    label='start='+str(z['start'])+', r='+str(z['ref'])
+    ax[0].plot(np.arange(21),z['x'],'o-',label=label)
+    ax[1].step(np.arange(20),z['u'],where='post',label=label)
+ax[0].set(ylim=(-3.5,3.5),ylabel='sampled state');ax[1].set(ylim=(-1.25,1.25),ylabel='input',xlabel='sample k')
+for axis in ax:axis.set_xlim(0,20);axis.grid(True);axis.legend()
+plt.tight_layout();plt.show()
+print('nominal_20_step_loops_checked')`, title: "1"},
+{code: `x,r=2.01,0.
+exact=lookup(x,r);loose=lookup(x,r,.02)
+print('boundary_tolerance_example','exact_u',exact['u'],'loose_u',loose['u'],'loose_violation',loose['violation'],'exact_J',exact['cost'],'loose_J',loose['cost'])
+assert abs(loose['violation']-.005)<1e-12
+for x,r in [(0.,3.25),(3.25,0.)]:
+    print('outside_domain',x,r,'lookup',lookup(x,r),'original_QP_feasible',original_qp(x,r) is not None)
+z=lookup(2.8,3.);true_next=1.2*2.8+z['u']
+print('model_mismatch_u',z['u'],'nominal_next',z['next'],'actual_a1_2_next',true_next,'next_state_violation',true_next-2)
+assert abs(true_next-2.56)<1e-12
+print('unreachable_reference_x2_r3',lookup(2,3)['next'],'input',lookup(2,3)['u'],'tracking_error',lookup(2,3)['next']-3)
+print('domain_tolerance_and_model_limits_checked')`, title: "2"}]} />
+
+可复核的方法与实现边界见[Bemporad的ECC教程](https://www.epfl.ch/labs/la/wp-content/uploads/2018/08/ecc13-explicit-tutorial.pdf)及[MathWorks显式MPC说明](https://www.mathworks.com/help/mpc/ug/explicit-mpc.html)，2026-10-24核读。本文五区域与所有数字为课程独立构造，不声称使用或运行了MATLAB显式求解器。下一节：[非线性预测控制](/mpc/nonlinear-mpc)。
+
+## 习题
+
+**1. 参数QP。** 从本例费用推导 $H,F,c(\boldsymbol{\theta})$ 和四行不等式。为什么参考范围限制不等于QP可行性限制？写出默认点的驻点方程与一个乘子证书。
+
+**2. 区域与仿射律。** 从无约束动作和可行区间推导中央区、输入上界区和下一状态上界区；说明其余两区的对称关系。分别求 $(x,r)=(1,0),(2,-1),(2,3)$ 的动作、下一状态和完整费用。
+
+**3. 共享边界与域外。** 核 $(1,3)$ 的三个区域公式；说明 $(3,2)$ 为什么动作唯一而乘子不唯一。比较 $(0,3.25)$ 与 $(3.25,0)$ 的查表和原QP状态。计算容差反例中 $x=2.01,r=0$ 的错误动作及违反量。
+
+**4. 等价与部署。** 在 $r=0$ 下证明本例名义闭环收敛，解释这为何不能推成显式MPC自动稳定。说明参数、模型或权重变化、系数量化与区域查找时间各需要什么证据；核51个系数的载荷计算包含与遗漏了什么。
+
+## 答案
+
+**1.** 展开 $J=2u^2+2(x-r)u+(x-r)^2$，按半因子QP形式得 $H=4,F=[2,-2],c=(x-r)^2$。四行分别为 $u\le1,-u\le1,u\le2-x,-u\le2+x$。可行只需区间下界不大于上界，等价于 $|x|\le3$，与参考无关。默认 $u=-1$，梯度为2，取 $\boldsymbol{\lambda}=(0,2,0,0)$，则 $2-2=0$；所有约束可行且互补。完整费为5。
+
+**2.** 中央区要求 $u_0=(r-x)/2$ 同时满足四行，得到 $|r-x|\le2,|x+r|\le4$。若上界来自输入，需 $x\le1$ 且 $u_0\ge1$，即R1；若上界来自下一状态，需 $x\ge1$ 且 $u_0\ge2-x$，即 $x+r\ge4$，得到R3。对 $(x,r,u)$ 同时变号可得R2/R4。三点依次为 $(-0.5,0.5,0.5)$、$(-1,1,5)$、$(0,2,1)$，括号按动作/下一状态/费用排列。
+
+**3.** $(1,3)$ 处中央律 $(3-1)/2=1$，R1为1，R3为 $2-1=1$。$(3,2)$ 处上下界同为 $-1$，动作唯一；乘子族 $\boldsymbol{\lambda}=(0,t,2+t,0)$ 的非负性、驻点和互补对所有 $t\ge0$ 成立。两个域外点都无认证查表动作，但前者原QP有解、后者无解。容差反例误用中央律给 $-2.01/2=-1.005$，输入下界违反0.005；正确动作仍为 $-1$。
+
+**4.** 对 $|x|\le2$，输入 $-x/2$ 不碰输入界，下一状态减半；对 $2<|x|\le3$，输入为 $-\operatorname{sign}(x)$，一拍进入 $[-2,2]$，此后几何收敛。这个结论依赖本例对象、参考和费用；若离线表求的是另一QP，不能继承此证明。域内参数变化须由原参数化覆盖；模型/权重等变化需重新构造或认证。量化须给误差和约束余量，查找须连估计/验算/执行一起核目标硬件期限。载荷 $51\times8=408$ 字节只计指定数值系数，不计其他存储和代码，不能当作实际内存或速度实测。

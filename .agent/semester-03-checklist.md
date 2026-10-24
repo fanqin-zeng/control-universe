@@ -246,7 +246,7 @@
 | MPC-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/04-constraint-handling.md;.agent/semester-03/mpc-04/acceptance.md;commit:d43b7ea47f8ba641758086fba04bc76bb5ed490a |
 | MPC-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/05-mpc-stability.md;.agent/semester-03/mpc-05/acceptance.md;commit:02e79e304684b094640581644d55ea14dffc0807 |
 | MPC-06 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/12-mpc/06-generalized-predictive-control.md;.agent/semester-03/mpc-06/acceptance.md;.agent/semester-03/s04-course-debts.json;commit:b0ca3700b0078eaf2effdd9308dca5fa2500d05c |
-| MPC-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| MPC-07 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/12-mpc/07-explicit-mpc.md;.agent/semester-03/mpc-07/acceptance.md |
 | MPC-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | MPC-09 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | MPC-10 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

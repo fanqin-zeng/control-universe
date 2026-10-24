@@ -5484,7 +5484,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "advanced",
         "type": "theory",
-        "status": "empty"
+        "subsections": [{"slug": "从每拍求解到离线分区", "title": "从每拍求解到离线分区"}, {"slug": "参数化的约束qp", "title": "参数化的约束QP"}, {"slug": "活跃集怎样生成区域", "title": "活跃集怎样生成区域"}, {"slug": "五区域手算例", "title": "五区域手算例"}, {"slug": "边界与退化", "title": "边界与退化"}, {"slug": "交互式可视化", "title": "交互式可视化"}, {"slug": "在线查找与部署", "title": "在线查找与部署"}, {"slug": "等价与稳定的边界", "title": "等价与稳定的边界"}, {"slug": "习题", "title": "习题"}, {"slug": "答案", "title": "答案"}],
+        "status": "v1.3"
       },
       {
         "slug": "nonlinear-mpc",
