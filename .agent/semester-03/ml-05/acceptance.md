@@ -30,3 +30,6 @@
 
 
 最终源码投影更新：IMPL-05入master后在ae222132ba6b5a6deca0b91d7467a4cfd1c2d2c9+ML-05重跑catalog，PASS21/WARN2/FAIL0、exit0；其回执5413ca168ac86c41b3974375ae7f355022f7841e仅变更过程文档，metadata-fast-forward.json记录全部路径，本课源码和已通过的catalog树不变，学期守卫另重跑。普通与Pages构建仍诚实标记原精确基线。
+
+
+真实交付已进入master并推送origin：`d40982a07caeba9037cc1d452abcb3c62b592d41`。提交使用独立索引和HEAD比较交换，仅本课路径/元数据；未改正常共享索引，不宣称工作区干净。回执追加提交只记录本课hash与完成勾选。用户随后指定ML-06，完成本回执后转入新目标。

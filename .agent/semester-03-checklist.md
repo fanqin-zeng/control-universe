@@ -185,7 +185,7 @@
 | ML-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/02-supervised-learning.md;.agent/semester-03/ml-02/acceptance.md;rank2，独立构建与内核8992;commit:739e31043ce4f29ef132cafa86d9536cfd8334d9 |
 | ML-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/03-neural-networks.md;.agent/semester-03/ml-03/acceptance.md;rank2独立构建8196与严格内核8992;commit:4ed302698915b30c3228a60753bb450d13cf56ed |
 | ML-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/04-autodiff-optimization.md;.agent/semester-03/ml-04/acceptance.md;rank2独立构建8212与严格内核8992;commit:97febf466c7d09f9e40b9a3273ef16aaa8fb8513 |
-| ML-05 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/08-machine-learning/05-sequence-models.md;.agent/semester-03/ml-05/acceptance.md;rank2独立预览8214与严格内核8992，已验收待真实提交 |
+| ML-05 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/08-machine-learning/05-sequence-models.md;.agent/semester-03/ml-05/acceptance.md;rank2独立预览8214与严格内核8992;commit:d40982a07caeba9037cc1d452abcb3c62b592d41 |
 | ML-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ML-08 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
