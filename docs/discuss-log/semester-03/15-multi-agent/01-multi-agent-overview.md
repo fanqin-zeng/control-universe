@@ -196,3 +196,5 @@
 见.agent/semester-03/multi-01/acceptance.md。
 
 共享目录首次最终check在其它会话切换状态窗口返回FAIL4：RL/驾驶条目status已变而tracker尚未同步，以及自动OUTLINE两处计数漂移；没有修改它们来伪造通过。本课提交投影排除其它会话未提交状态，完整npm run check退出0，详见projection-check.log。
+
+真实master交付回执：commit:9d920bbaed693d869f943701acc8658c4d9914b6。完整冻结投影check与学期校验均exit0，见committed-check.log及committed-semester.log；只完成MULTI-01，未发布Pages。

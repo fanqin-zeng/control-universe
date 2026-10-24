@@ -21,7 +21,7 @@
 
 数值口径：Notebook原始setup/cells真实执行；TS实现对独立谱分解/矩阵幂、Fraction手算互核；单步与均值容差1e-12，全轨迹1e-9，打印四位容差5e-5。正文末样值与理论极限分开。比较只作同协议信息/周期变化的限定观察，不声称算法排名。
 
-Phase 1–4与真实验收已完成，签发见本课日志。真实提交hash待提交后追加。
+Phase 1–4与真实验收已完成，签发见本课日志。真实交付提交已进入master：commit:9d920bbaed693d869f943701acc8658c4d9914b6。
 
 | 验收 | 实际结果 | 证据 |
 |---|---|---|
@@ -44,3 +44,5 @@ Phase 1–4与真实验收已完成，签发见本课日志。真实提交hash�
 初稿subsections误用id导致首次build失败，修为契约slug后重建通过；8299绑定拒绝后用8499。折叠details内innerText为空是验收脚本读取问题，改textContent后原始实验通过。未变更Notebook计算迁就输出。共享目录的并行课程/端口/用户批阅不纳入本课提交。
 
 共享目录首次最终check在其它会话切换状态窗口返回FAIL4：RL/驾驶条目status已变而tracker尚未同步，以及自动OUTLINE两处计数漂移；没有修改它们来伪造通过。本课提交投影排除其它会话未提交状态，完整npm run check退出0，详见projection-check.log。
+
+真实master回执：commit:9d920bbaed693d869f943701acc8658c4d9914b6。普通单父提交，只包含MULTI-01及其对应治理/证据记录。其它会话持续提交期间，以最新HEAD叠加本课后沿用官方函数重新生成OUTLINE与tracker；生成步骤不冒充验收。随后对冻结交付投影运行未修改的完整npm run check，exit0（PASS21/WARN2/FAIL0），学期校验exit0、Python政策exit0，见committed-check.log、committed-semester.log、committed-python-policy.log。共享Git index字节未修改，未暂存或清理其它会话文件；仅独立index写树并以旧HEAD比较后更新master，未重写历史。尚未发布Pages。

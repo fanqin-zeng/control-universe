@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+const delivery=process.argv[2];assert(/^[0-9a-f]{40}$/.test(delivery));
+const git=(args,env={})=>execFileSync('git',args,{encoding:'utf8',env:{...process.env,...env}}).trim();
+git(['merge-base','--is-ancestor',delivery,'master']);
+const dir='.agent/semester-03/multi-01/';
+assert(fs.readFileSync(dir+'committed-check.log','utf8').includes('EXIT_CODE=0'));
+assert(fs.readFileSync(dir+'committed-semester.log','utf8').includes('EXIT_CODE=0'));
+const base=git(['rev-parse','HEAD']),index=path.resolve('../control-universe-rank9-projection/receipt-index');
+if(fs.existsSync(index))fs.unlinkSync(index);const env={GIT_INDEX_FILE:index};git(['read-tree',base],env);
+const updates=new Map();
+const line='| MULTI-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/15-multi-agent/01-multi-agent-overview.md;.agent/semester-03/multi-01/acceptance.md;commit:'+delivery+' |';
+const checklist='.agent/semester-03-checklist.md',transform=s=>s.replace(/^\| MULTI-01 \|.*$/m,line);
+updates.set(checklist,transform(git(['show',base+':'+checklist]))+'\n');
+fs.writeFileSync(checklist,transform(fs.readFileSync(checklist,'utf8')));
+const plan='.agent/semester-03-plan.md';
+const updatePlan=s=>{const a=s.indexOf('### MULTI-01执行回执'),b=s.indexOf('\n### ',a+4);assert(a>=0);const own=s.slice(a,b<0?undefined:b).replace('真实master回执提交后登记。','真实master回执 commit:'+delivery+'；最终冻结投影完整check及学期校验退出0，证据见验收记录。');return s.slice(0,a)+own+(b<0?'':s.slice(b));};
+updates.set(plan,updatePlan(git(['show',base+':'+plan]))+'\n');fs.writeFileSync(plan,updatePlan(fs.readFileSync(plan,'utf8')));
+const acceptance=dir+'acceptance.md';let s=fs.readFileSync(acceptance,'utf8');s=s.replace('真实提交hash待提交后追加。','真实交付提交已进入master：commit:'+delivery+'。');s+='\n真实master回执：commit:'+delivery+'。普通单父提交，只包含MULTI-01及其对应治理/证据记录。其它会话持续提交期间，以最新HEAD叠加本课后沿用官方函数重新生成OUTLINE与tracker；生成步骤不冒充验收。随后对冻结交付投影运行未修改的完整npm run check，exit0（PASS21/WARN2/FAIL0），学期校验exit0、Python政策exit0，见committed-check.log、committed-semester.log、committed-python-policy.log。共享Git index字节未修改，未暂存或清理其它会话文件；仅独立index写树并以旧HEAD比较后更新master，未重写历史。尚未发布Pages。\n';fs.writeFileSync(acceptance,s);updates.set(acceptance,s);
+const log='docs/discuss-log/semester-03/15-multi-agent/01-multi-agent-overview.md';s=fs.readFileSync(log,'utf8')+'\n真实master交付回执：commit:'+delivery+'。完整冻结投影check与学期校验均exit0，见committed-check.log及committed-semester.log；只完成MULTI-01，未发布Pages。\n';fs.writeFileSync(log,s);updates.set(log,s);
+for(const f of ['commit.log','committed-check.log','committed-semester.log','committed-python-policy.log','rebase-generation.log','receipt.mjs'])updates.set(dir+f,fs.readFileSync(dir+f));
+for(const [p,data]of updates){const hash=execFileSync('git',['hash-object','-w','--stdin','--path='+p],{encoding:'utf8',input:data}).trim();git(['update-index','--add','--cacheinfo','100644',hash,p],env);}
+assert.equal(git(['rev-parse','HEAD']),base,'Concurrent commit: retry receipt');
+const tree=git(['write-tree'],env),commit=git(['commit-tree',tree,'-p',base,'-m','docs: record MULTI-01 master delivery and scoped acceptance']);
+git(['update-ref','-m','MULTI-01 delivery receipt','refs/heads/master',commit,base]);console.log(commit);
