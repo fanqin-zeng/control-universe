@@ -30,7 +30,7 @@ export function VehicleDynamicsExplorer() {
     </div>
     <p data-testid="lateral-values" aria-live="polite" style={{ fontVariantNumeric: "tabular-nums" }}>r(2 s) = {result.points[200][2].toFixed(6)} rad/s；解析稳态 r∞ = {result.rSteady.toFixed(6)} rad/s；vᵧ(2 s) = {result.points[200][1].toFixed(6)} m/s。</p>
     <p data-testid="lateral-budget">稳态横向加速度 = {result.ay.toFixed(6)} m/s²；总附着预算占用 = {result.usage.toFixed(6)}；前/后侧偏角 = {result.frontSlip.toFixed(6)} / {result.rearSlip.toFixed(6)} rad。</p>
-    <p>{result.usage > 1 ? "超出示例总附着预算：下图是未施加轮胎饱和的线性外推，不能当作可实现运动。" : "满足示例总附着预算；仍需检查轮胎线性范围及各轴约束。"}</p>
+    <p>{result.usage > 1 ? "稳态超出示例总附着预算：下图是未施加轮胎饱和的线性外推，不能当作可实现运动。" : "稳态满足示例总附着预算；瞬态还需用实际加速度另核，轮胎线性范围及各轴约束也不能省略。"}</p>
     <div ref={ref} style={{ width: "100%", height: 300 }} />
     <button type="button" onClick={() => { setSpeed(10); setSteer(0.04); setMu(0.8); }} style={{ border: "1px solid #94a3b8", borderRadius: 6, padding: "6px 12px" }}>恢复主例</button>
   </section>;

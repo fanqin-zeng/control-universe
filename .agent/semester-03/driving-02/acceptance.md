@@ -24,6 +24,16 @@ Phase1–4已完成，四题四答、10H2、两Notebook四cell、一Explorer/SVG
 
 共享开始检查exit1，显示DRIVING-01旧tracker行与catalog不一致、组件统计在并行写入期间不一致；未将共享中间态算作本课通过。首次隔离semester检查exit1是本课顺序例外未包含旧快照中的MPC-01待回执状态，现已据用户换课指令补齐，只改本课例外；semester-first.log保留失败，修正后exit0。
 
-正文LF SHA-256：c57e0d20843c5f95884f5b01c3b8f242b131ad7d8097e220324f53f259ab412a。资料和约定换算见sources.md；不是实车标定、论文实验复现或线上发布。
+首版（7d1b49b）正文LF SHA-256：c57e0d20843c5f95884f5b01c3b8f242b131ad7d8097e220324f53f259ab412a。资料和约定换算见sources.md；不是实车标定、论文实验复现或线上发布。
 
 最终提交候选基线：bae122d38cad76d02da19513aa3aace7a9908710；publish-commands.json五项检查全部exit0。本课正文、组件、计算库与SVG逐字等于两种实际页面/构建的源，catalog结构比较确认其它课程完全保留。共享暂存区不作为输入，使用独立索引及原子基线校验提交。
+
+## 推送前措辞追加审校
+
+明确界面和正文只核查解析稳态的总附着预算，瞬态仍需使用vy_dot+ur另核。计算库与四个原始Notebook字符串逐字未变，见refinement.json。最终两种构建均exit0（build-final.log/pages-build-final.log）；两种实际页面均exit0（browser-native-final.log/browser-pages-final.log），实际DOM确认新提示、10H2、原始四cell输出、375px/error0；verify-refined.log再次exit0。首轮记录为历史证据，末次复验为最终版本依据。
+
+最终正文LF SHA-256：c1c219894e5030122355bb6dca59f961f8ad8c0615f93818897fd1f8f7315de9。原始Pyodide输出已按该hash复验，不将首版hash当成最终来源。
+
+最终构建使用两个完全独立的物理副本（native-final和pages），分别拥有.next，均exit0。曾在同一物理副本并行构建失败，build-refined.log/pages-build-refined.log保留为返工证据，归因与修复见讨论日志附录D。最终浏览器输出来自两个新副本，已实际查看375px组件截图，完整呈现稳态/瞬态限定。
+
+最终提交候选基线：51bb48a45042d5d3b1b94ae2b8732128a321a8de；publish-commands.json五项检查全部exit0。本课正文、组件、计算库与SVG逐字等于两种实际页面/构建的源，catalog结构比较确认其它课程完全保留。共享暂存区不作为输入，使用独立索引及原子基线校验提交。

@@ -6,6 +6,7 @@ const browser=await chromium.launch({headless:true,channel:'msedge'}),page=await
 assert.equal((await page.goto(url,{timeout:120000,waitUntil:'domcontentloaded'})).status(),200);
 const values=page.getByTestId('lateral-values'),budget=page.getByTestId('lateral-budget');await values.waitFor();await page.waitForTimeout(1000);
 assert((await values.textContent()).includes('0.142857'));
+assert(await page.getByText(/稳态满足示例总附着预算；瞬态还需/).count());
 const set=async(label,value)=>{const slider=page.getByRole('slider',{name:label});await slider.fill(String(value));await slider.dispatchEvent('input');await slider.dispatchEvent('change');};
 await set('纵向速度 / m/s',20);await set('附着系数',.3);
 await page.waitForFunction(()=>document.querySelector('[data-testid="lateral-budget"]').textContent.includes('1.941653'));

@@ -157,3 +157,18 @@ theory八人：郑核、苏绘、孙助、柯验、林矩（状态空间与机�
 ## 并行快照说明
 
 首次进度检查在旧HEAD隔离快照上发现MPC-01仍待提交回执，而共享工作区已将其标为更后状态；DRIVING-02例外已补全该快照的未完成前课，未替MPC-01勾选或签发。semester-first.log保留失败，最终semester.log退出0。最新HEAD提交前仍需重新投影本课差异并检查，不覆写其他会话提交、索引或index.lock。
+
+## 附录 D：本课构建返工归因
+
+最终措辞复验曾把原生与静态构建并行放在同一物理副本中，虽指定不同distDir，两次均exit1。Next14.2.35本地node_modules/next/dist/build/index.js:383在静态导出路径把内部config.distDir设为.next，distDir在此被用作导出产物目录，故两个构建实际争用同一内部缓存。原始失败为_ssgManifest.js缺失与export/500.html重命名失败，分别保留build-refined.log/pages-build-refined.log。
+
+归因角色：秦构；类型：规范未执行（未验证底层资源隔离便并行构建），并非课程数值错误。修复采用两个全新物理副本：control-universe-rank14-driving02-native-final和control-universe-rank14-driving02-pages，各自独立.next；未删除共享或原副本缓存，不停止其他会话进程。两物理副本最终构建均exit0（build-final.log/pages-build-final.log），最终两种真实页面均exit0（browser-native-final.log/browser-pages-final.log），verify-refined.log为exit0；实际查看最终Pages手机组件截图，提示完整、控件和图表未截断。
+
+## 最终措辞追加审校（推送前）
+
+[陆阅] 首版绿灯紧接稳态指标，但仍可能被读成整段瞬态的预算通过，故将两种提示明确限定为“稳态”，并在正文就近补“瞬态须用vy_dot+ur逐时刻检查”。
+[林矩] 该限定与既有一般加速度公式一致，不改变模型或数值。
+[柯验] refinement.json证明计算库和四个原始cell逐字未变；更新正文的生产Pyodide仍4cell通过。
+[秦构] 新提示已在普通与Pages两种最终构建及真实页面中验证；10H2/ID、正负零与恢复、四cell输出、375px与错误检查均通过。B中首轮build.log等记录保留，末次以build-final.log/pages-build-final.log、browser-native-final.log/browser-pages-final.log和同名最终DOM JSON为准；verify-refined.log再次exit0。
+[何疑] 只澄清稳态与瞬态约束范围，不加入新的性能或安全结论。
+[郑核-追加签发] 上述边界和最终页面复验通过，签发最终文本；初版7d1b49b保留，真实最终提交回执另登。
