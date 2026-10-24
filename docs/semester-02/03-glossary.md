@@ -624,6 +624,10 @@
 | 有限脉冲响应模型 | FIR、finite impulse response model | — | ID-02 | 本课限定输入通道有限项并配白输出噪声 |
 | 单位延迟算子 | unit delay operator | — | ID-02 | q^-1取过去一个样本，不是幅值取倒数 |
 | 创新 | innovation | — | ID-02 | 相对过去可用信息条件均值为零；不等同任意白噪声序列 |
+| 连续导通模式 | continuous conduction mode | CCM | APP-01 | 非同步Buck电感电流全周期为正 |
+| 断续导通模式 | discontinuous conduction mode | DCM | APP-01 | 包含电感电流触零后的第三状态 |
+| 脉宽调制 | pulse width modulation | PWM | APP-01 | 固定周期内用导通时间占比调节 |
+| 降压变换器 | buck converter | Buck | APP-01 | 本课限定理想非同步拓扑 |
 <!-- REGISTER-END -->
 
 > **§2 里那行「最大隶属度平均法 \| MOM \| — \| — \| 见 §2.1」是故意的指针行**，

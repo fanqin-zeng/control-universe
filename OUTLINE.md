@@ -307,7 +307,7 @@
 
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
-| 21.1 | 电力电子控制 | power-electronics | ⬜ 骨架（占位页） | grad | case | 14 | implementation/digital-pid<br>modern/state-feedback<br>classic/frequency-response-design<br>discrete-sampled/sampling-period-selection |
+| 21.1 | 电力电子控制 | power-electronics | ✅ 已交付 v1.3 | grad | case | 13 | classic/pid-controller<br>modern/state-feedback<br>classic/frequency-response-design<br>discrete-sampled/sampling-period-selection |
 | 21.2 | 过程控制 | process-control | ⬜ 骨架（占位页） | grad | case | 18 | identification/identification-case-study<br>mpc/mpc-case-study<br>implementation/pid-engineering-tuning |
 | 21.3 | 飞行器姿态控制 | aerospace-attitude | ⬜ 骨架（占位页） | grad | case | 16 | modern/lqr-controller<br>nonlinear/feedback-linearization<br>estimation/sensor-fusion<br>nonlinear/sliding-mode-control |
 | 21.4 | 微电网控制 | energy-storage-microgrid | ⬜ 骨架（占位页） | grad | case | 20 | mpc/economic-mpc<br>multi-agent/distributed-mpc<br>applications/power-electronics |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 79（status = v1.3）
+- **已交付 v1.3**: 80（status = v1.3）
 - **有正文待审校**: 16（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 110（status = empty，渲染占位页）
+- **骨架占位**: 109（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 126（= draft 16 + empty 110 + 无 status 0）
-- **有 MDX 正文**: 95
-- **catalog 小节总数**: 1065
-- **讨论日志**: 101 篇（覆盖 79 门；有 MDX 无日志 16 门）
-- **交互组件**: 89 个文件（被正文引用 89，孤儿 0）
+- **未完成 v1.3**: 125（= draft 16 + empty 109 + 无 status 0）
+- **有 MDX 正文**: 96
+- **catalog 小节总数**: 1073
+- **讨论日志**: 102 篇（覆盖 80 门；有 MDX 无日志 16 门）
+- **交互组件**: 90 个文件（被正文引用 90，孤儿 0）
 - **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

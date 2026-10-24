@@ -6232,14 +6232,48 @@ export const catalog: Chapter[] = [
         "slug": "power-electronics",
         "title": "电力电子控制",
         "prereq": [
-          "implementation/digital-pid",
+          "classic/pid-controller",
           "modern/state-feedback",
           "classic/frequency-response-design",
           "discrete-sampled/sampling-period-selection"
         ],
         "level": "grad",
         "type": "case",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+                    "title": "供电问题与能量通路",
+                    "slug": "供电问题与能量通路"
+          },
+          {
+                    "title": "从开关状态到平均模型",
+                    "slug": "从开关状态到平均模型"
+          },
+          {
+                    "title": "稳态与纹波预算",
+                    "slug": "稳态与纹波预算"
+          },
+          {
+                    "title": "平均模型怎样核验",
+                    "slug": "平均模型怎样核验"
+          },
+          {
+                    "title": "电压反馈怎样闭环",
+                    "slug": "电压反馈怎样闭环"
+          },
+          {
+                    "title": "采样限幅与保护",
+                    "slug": "采样限幅与保护"
+          },
+          {
+                    "title": "习题",
+                    "slug": "习题"
+          },
+          {
+                    "title": "答案",
+                    "slug": "答案"
+          }
+]
       },
       {
         "slug": "process-control",

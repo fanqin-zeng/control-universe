@@ -205,7 +205,7 @@
 | 194 | DRIVING-09 | 驾驶视觉语言动作模型 | content/autonomous-driving/driving-vla.mdx | 待完成 | 待生产 | — |
 | 195 | DRIVING-10 | 闭环驾驶评估 | content/autonomous-driving/closed-loop-evaluation.mdx | 待完成 | 待生产 | — |
 | 196 | DRIVING-11 | 驾驶安全与回退 | content/autonomous-driving/driving-safety.mdx | 待完成 | 待生产 | — |
-| 197 | APP-01 | 电力电子控制 | content/applications/power-electronics.mdx | 待完成 | 待生产 | — |
+| 197 | APP-01 | 电力电子控制 | content/applications/power-electronics.mdx | 已完成 | 待润色 | .agent/semester-03/app-01/acceptance.md |
 | 198 | APP-02 | 过程控制 | content/applications/process-control.mdx | 待完成 | 待生产 | — |
 | 199 | APP-03 | 飞行器姿态控制 | content/applications/aerospace-attitude.mdx | 待完成 | 待生产 | — |
 | 200 | APP-04 | 微电网控制 | content/applications/energy-storage-microgrid.mdx | 待完成 | 待生产 | — |

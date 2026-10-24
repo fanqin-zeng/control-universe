@@ -369,7 +369,7 @@
 
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
-| APP-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
+| APP-01 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/21-applications/01-power-electronics.md;.agent/semester-03/app-01/acceptance.md;rank15独立副本 |
 | APP-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | APP-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | APP-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |

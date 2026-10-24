@@ -1,0 +1,269 @@
+---
+title: 电力电子控制
+description: 从24V变12V的供电问题出发，用Buck变换器学习开关平均建模、纹波与连续电流边界、局部电压反馈及数字实现接口。
+---
+
+# 电力电子控制
+
+一块控制板需要稳定的直流电压，接入的电源却比它要求的电压高。负载一接上，电流还会改变。怎样把多余的电压降下来，同时让输出在负载变化时仍回到目标附近？
+
+本课沿用[状态空间](/modern/state-space)和[PID控制](/classic/pid-controller)中的建模与反馈思路，研究一个具体对象：**把直流母线的 24 V 降到 12 V 的 Buck 降压变换器**。这里的数值都是教学参数，不是某块电源模块的器件规格。
+
+读完后，应能从开关通路写出方程、计算一个稳态工作点、检查连续电流假设，并说明电压反馈为什么仍需采样、限幅和保护。本课先用连续PI解释电压反馈怎样起作用；数字控制器的采样与程序实现可进一步阅读[数字PID](/implementation/digital-pid)。
+
+## 供电问题与能量通路
+
+电力电子控制把开关器件的通断变成能量调节。先只研究非同步Buck：一个受控开关、一只续流二极管、一个电感 $L$、一个电容 $C$ 和电阻负载 $R$。开关节点经电感到输出；二极管阳极接地，阴极接开关节点。
+
+![理想非同步Buck的功率级与电压反馈，关断时二极管提供地到开关节点的续流路径](/diagrams/applications/buck-feedback.svg)
+
+开关闭合时，输入经开关和电感向输出送能。开关断开后，**电感电流不能突然消失**；只要电流仍为正，它会经二极管续流。电容则吸收电感电流与负载电流的差，减小输出电压起伏。电感不是简单地“挡掉一半电压”，电容也不能无限供能。
+
+用 $q(t)$ 表示开关命令：导通为 $1$，关断为 $0$。一个开关周期记作 $T_{\rm sw}$，开关频率 $f_{\rm sw}=1/T_{\rm sw}$。占空比 $d$ 是一个周期内导通时间占比，取值在 $0$ 与 $1$ 之间；固定频率而改变这个比例，就是脉宽调制（PWM）。它是无量纲比例，不是电压。
+
+本课假设输入直流不变，开关和二极管理想，电感、电容无损，忽略寄生电阻和开关过渡。先限定**连续导通模式（CCM）**：每个周期电感电流一直为正。轻载时电流触零后会有第三个状态，称为断续导通模式（DCM）；不能用下面两个状态强行继续算。
+
+## 从开关状态到平均模型
+
+记电感电流为 $i_L$，输出也就是电容电压为 $v$。电感电压等于 $L\dot i_L$，电容电流等于 $C\dot v$。因此导通时
+
+$$
+L\dot i_L=V_{\rm in}-v,\qquad C\dot v=i_L-\frac{v}{R}.
+$$
+
+在电流为正的关断续流阶段，二极管将开关节点钳在理想地电位：
+
+$$
+L\dot i_L=-v,\qquad C\dot v=i_L-\frac{v}{R}.
+$$
+
+两式合写为 $L\dot i_L=qV_{\rm in}-v$。因为 $q$ 不断跳变，精确状态也会在周期内起伏。**平均模型**只跟踪比一个开关周期慢得多的变化；当周期内纹波足够小时，用周期平均占空比代替开关命令，得到
+
+$$
+\begin{aligned}
+L\dot{\bar i}_L&=dV_{\rm in}-\bar v,\\
+C\dot{\bar v}&=\bar i_L-\frac{\bar v}{R}.
+\end{aligned}
+$$
+
+横线表示平均量。本课后续反馈仿真中的电流、电压都指平均状态。这个线性模型适用于固定输入、固定电阻及CCM假设；如果输入本身变化，$dV_{\rm in}$ 的乘积不能随意当作两个独立线性输入。
+
+电感储能 $Li_L^2/2$、电容储能 $Cv^2/2$。将两个原始状态式分别乘以 $i_L$ 和 $v$，相加后电感与电容之间的交换项抵消，得到瞬时能量收支
+
+$$
+\frac{\mathrm d}{\mathrm dt}\left(\frac12 Li_L^2+\frac12 Cv^2\right)
+=qV_{\rm in}i_L-\frac{v^2}{R}.
+$$
+
+右边是输入功率减去负载功率，说明开关调节的是送能节奏。理想模型没有损耗，不代表真实变换器效率为百分之百。
+
+## 稳态与纹波预算
+
+在平均稳态，两种储能元件每周期没有净积累。用大写 $D,I,V$ 表示工作点，令平均导数为零，得到
+
+$$
+V=DV_{\rm in},\qquad I=\frac{V}{R}.
+$$
+
+取 $V_{\rm in}=24\,\mathrm V$、$D=0.5$、$L=1\,\mathrm{mH}$、$C=100\,\mu\mathrm F$、$R=6\,\Omega$、$f_{\rm sw}=20\,\mathrm{kHz}$。周期为 $50\,\mu\mathrm s$，稳态平均输出 $12\,\mathrm V$、电流 $2\,\mathrm A$；用平均电压电流计算的负载功率为 $24\,\mathrm W$。精确负载平均功率应使用电压平方的周期平均，存在小纹波修正。
+
+若一个周期中把 $v$ 近似看成常数，电流在导通、关断阶段分别以常斜率升降，峰峰值近似为
+
+$$
+\Delta i_{L,\rm pp}\approx\frac{(V_{\rm in}-V)D}{Lf_{\rm sw}}
+=\frac{V(1-D)}{Lf_{\rm sw}}.
+$$
+
+在负载电流近似不变、电容无等效串联电阻的小纹波条件下，对三角形电容电流积分，正的电容电流区域近似为底边半个周期、峰值为电流峰峰值一半的三角形，因此最大电荷变化为 $\Delta i_{L,\rm pp}T_{\rm sw}/8$；除以电容，得到电压峰峰值近似
+
+$$
+\Delta v_{\rm pp}\approx\frac{\Delta i_{L,\rm pp}}{8f_{\rm sw}C}.
+$$
+
+默认估计为 $0.300\,\mathrm A$ 和 $0.01875\,\mathrm V$，电流谷值约 $1.85\,\mathrm A$。它们是峰峰值，不能与幅值混用；也没有包含电容等效串联电阻引起的纹波。
+
+<JupyterNotebook
+  title="实验1：复算稳态与纹波预算"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp`}
+  cells={[{ title: "稳态和纹波", code: `D, Vin, L, C, R, fs = 0.5, 24.0, 1e-3, 100e-6, 6.0, 20000.0
+V = D*Vin
+I = V/R
+di = V*(1-D)/(L*fs)
+dv = di/(8*fs*C)
+print("V, I, P, di, dv, Imin, Rcrit:", V, I, V*I, di, dv, I-di/2, 2*L*fs/(1-D))
+assert np.allclose([V, I, V*I, di, dv, I-di/2], [12, 2, 24, .3, .01875, 1.85])` }]}
+/>
+
+
+近似连续电流条件是 $I-\Delta i_{L,\rm pp}/2>0$。代入稳态关系后，在 $D\in(0,1)$ 时化为
+
+$$
+R<\frac{2Lf_{\rm sw}}{1-D}.
+$$
+
+默认临界电阻约 $80\,\Omega$；等号对应边界。电阻变大意味着负载变轻，而不是更“重”。当电阻为 $120\,\Omega$ 时，CCM候选给出 $I=0.1\,\mathrm A$、谷值 $-0.05\,\mathrm A$。理想二极管不会让续流电流反向，故这表示**假设失效**，不是电路真的出现该负电流；实际DCM输出也不能继续认定为 $12\,\mathrm V$。
+
+<BuckConverterExplorer />
+
+先保持默认占空比，增大负载电阻，观察谷值何时接近零。再恢复默认，增大电感，观察纹波怎样变化。图是两周期三角波近似，固定坐标轴用于观察趋势；它不画平均模型中本来就不存在的开关纹波。
+
+## 平均模型怎样核验
+
+平均模型把开关细节抹去，不能要求它复现每个纹波尖峰。要核验的是：在声明的模式和时间尺度内，它给出的平均工作点是否与开关模型一致。
+
+本例两个开关状态共享矩阵
+
+$$
+A=\begin{bmatrix}0&-1/L\\1/C&-1/(RC)\end{bmatrix},\qquad
+b=\begin{bmatrix}V_{\rm in}/L\\0\end{bmatrix}.
+$$
+
+导通阶段满足 $\dot x=Ax+b$，关断阶段满足 $\dot x=Ax$，其中 $x=[i_L,v]^{\mathsf T}$。每段使用矩阵指数精确传播，再求“一个周期后回到自身”的不动点；这样不需要靠长时间仿真猜稳态。下面积分中的 $\tau$ 是时间变量：
+
+$$
+x(DT_{\rm sw})=e^{ADT_{\rm sw}}x(0)+\int_0^{DT_{\rm sw}}e^{A\tau}b\,\mathrm d\tau,
+\qquad x(T_{\rm sw})=e^{A(1-D)T_{\rm sw}}x(DT_{\rm sw}).
+$$
+
+<JupyterNotebook
+  title="实验2：核验周期解与CCM失效"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp`}
+  cells={[{ title: "精确周期解及失效标记", code: `L, C, Vin, D, fs = 1e-3, 100e-6, 24.0, .5, 20000.0
+fig, ax = plt.subplots(figsize=(7, 3))
+for R in [6.0, 30.0, 120.0]:
+    A = np.array([[0, -1/L], [1/C, -1/(R*C)]])
+    b = np.array([Vin/L, 0.0])
+    ton, toff = D/fs, (1-D)/fs
+    Eon, Eoff = expm(A*ton), expm(A*toff)
+    q = np.linalg.solve(A, (Eon-np.eye(2))@b)
+    x0 = np.linalg.solve(np.eye(2)-Eoff@Eon, Eoff@q)
+    times = np.linspace(0, 1/fs, 1001)
+    values = np.array([expm(A*t)@x0 + np.linalg.solve(A, (expm(A*t)-np.eye(2))@b) if t <= ton else expm(A*(t-ton))@(Eon@x0+q) for t in times])
+    nodes, weights = np.polynomial.legendre.leggauss(16)
+    integral = np.zeros(2)
+    for node, weight in zip(nodes, weights):
+        t = (node+1)*ton/2
+        integral += weight*ton/2*(expm(A*t)@x0 + np.linalg.solve(A, (expm(A*t)-np.eye(2))@b))
+        t = (node+1)*toff/2
+        integral += weight*toff/2*(expm(A*t)@(Eon@x0+q))
+    print("period mean i, v:", *(integral*fs))
+    minimum = values[:, 0].min()
+    print("R, Imin, di_pp, dv_pp:", R, minimum, np.ptp(values[:, 0]), np.ptp(values[:, 1]))
+    if minimum > 0:
+        ax.plot(times*1e6, values[:, 0], label=f"R={R:g} ohm")
+    else:
+        print("INVALID: CCM continuation crosses zero; not a diode Buck solution")
+ax.set(xlabel="time (us)", ylabel="inductor current (A)", xlim=(0, 50), ylim=(0, 2.3))
+ax.grid(True); ax.legend(); plt.show()` }]}
+/>
+
+
+这里波形在每周期均匀采样，因此打印的是**采样网格上的峰峰值**；电流在本例两段单调，端点又包含开关时刻，所以电流极值可由端点取得。电压极值在段内，不能把离散网格峰值宣称为解析精确极值。
+
+默认电流峰峰值约 $0.300156\,\mathrm A$，电压网格峰峰值约 $0.018761\,\mathrm V$。这与小纹波近似接近，仍不是完全相等。实验用 $6,30,120\,\Omega$ 三种负载核验：最后一组明确报失效，不输出可用波形。周期积分对有效两组的平均电压为 $12\,\mathrm V$；实验代码不实现触零事件后的DCM，失效组只作为CCM方程延拓的反例。
+
+## 电压反馈怎样闭环
+
+固定占空比能确定一个理想稳态，却不会自动补偿输入电压改变，也不能凭稳态公式预测扰动后的过渡过程。把电压测量送回控制器，用参考 $r$ 与测量的差 $e=r-v$ 来修正占空比，才形成电压负反馈。
+
+在固定输入、固定负载、CCM工作点附近，记扰动为 $\delta$，消去电流状态可得占空比到电压的传递函数
+
+$$
+G_{vd}(s)=\frac{\delta v(s)}{\delta d(s)}
+=\frac{V_{\rm in}}{LCs^2+(L/R)s+1}.
+$$
+
+这与[频域设计](/classic/frequency-response-design)中的二阶对象相连，但控制输入单位是占空比，传感器和调制器增益必须与之匹配。本课测量增益和占空比命令增益均取一。
+
+用连续PI作一个局部例子，积分状态 $\xi$ 直接具有占空比单位：
+
+$$
+\delta d=K_p(\delta r-\delta v)+\xi,\qquad
+\dot\xi=K_i(\delta r-\delta v).
+$$
+
+其中 $K_p$ 的单位为每伏，$K_i$ 为每伏每秒。本例 $K_p=0.02\,\mathrm{V}^{-1}$、$K_i=20\,\mathrm{V}^{-1}\mathrm s^{-1}$，并非通过全域优化得到。闭环特征多项式为
+
+$$
+LCs^3+\frac{L}{R}s^2+(1+V_{\rm in}K_p)s+V_{\rm in}K_i.
+$$
+
+当 $K_p\geq0,K_i>0$ 且物理参数为正时，三阶Routh条件进一步要求
+
+$$
+K_i<\frac{1+V_{\rm in}K_p}{RCV_{\rm in}}.
+$$
+
+这是**本连续理想模型的严格稳定条件**，不是含采样、延迟和饱和的实际电源保证。默认上界约 $102.777778\,\mathrm{V}^{-1}\mathrm s^{-1}$，等号不能算渐近稳定。
+
+<JupyterNotebook
+  title="实验3：局部连续PI与答案复算"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from scipy.integrate import solve_ivp`}
+  cells={[{ title: "局部连续PI", code: `L, C, R, Vin, Kp, Ki = 1e-3, 100e-6, 6.0, 24.0, .02, 20.0
+# Perturbations about i=2A, v=12V, duty=.5; reference step +.1V.
+M = np.array([[0, -(1+Vin*Kp)/L, Vin/L], [1/C, -1/(R*C), 0], [0, -Ki, 0]])
+g = np.array([Vin*Kp/L, 0, Ki])*.1
+times = np.linspace(0, .05, 1001)
+sol = solve_ivp(lambda t,z: M@z+g, [0, .05], np.zeros(3), t_eval=times, rtol=1e-10, atol=1e-12, method="DOP853")
+assert sol.success
+voltage = 12+sol.y[1]
+duty = .5+Kp*(.1-sol.y[1])+sol.y[2]
+print("Ki strict upper bound:", (1+Vin*Kp)/(R*C*Vin))
+print("poles:", np.linalg.eigvals(M))
+print("v(20ms), v(50ms):", voltage[400], voltage[-1])
+print("duty min/max:", duty.min(), duty.max())
+assert duty.min() > 0 and duty.max() < 1
+assert abs(voltage[-1]-12.1) < 1e-6
+fig, ax = plt.subplots(figsize=(7, 3))
+ax.plot(times*1000, voltage); ax.axhline(12.1, color="gray", ls="--")
+ax.set(xlabel="time (ms)", ylabel="voltage (V)", xlim=(0, 50), ylim=(11.98, 12.14))
+ax.grid(True); plt.show()` },
+{ title: "习题与边界复算", code: `# All numerical exercise answers and limiting cases.
+print("Q1 duty / current / power:", 12/24, 12/6, 12**2/6)
+print("Q2 boundary R / at R=120 candidate Imin:", 2*.001*20000/(1-.5), 12/120-.3/2)
+print("Q3 Vin=18 required duty / Vin=10 required duty:", 12/18, 12/10)
+print("Q4 Ki bound at R=6 / R=30:", (1+24*.02)/(6*.0001*24), (1+24*.02)/(30*.0001*24))
+print("switch period (us):", 1e6/20000)
+assert 12/10 > 1` }]}
+/>
+
+
+实验从 $i_L=2\,\mathrm A,v=12\,\mathrm V,\xi=0$ 开始，只让参考由 $12$ 变到 $12.1\,\mathrm V$。在 $20\,\mathrm{ms}$ 时，平均电压约 $12.099915\,\mathrm V$；$50\,\mathrm{ms}$ 末样值约 $12.1\,\mathrm V$。末样接近目标与理论稳态极限仍是两种证据。代码计算占空比并检查它是否留在有效范围，但没有用限幅掩盖模型超界。
+
+## 采样限幅与保护
+
+数字实现首先测量电压，经换算得到伏特值，再计算误差与PI，限制占空比后写入PWM寄存器。在下一个实际生效时刻，占空比才作用到功率级；采样频率与开关频率是两个概念，即使两者同步，也要交代采样点、计算耗时和生效延迟，见[采样周期](/discrete-sampled/sampling-period-selection)。
+
+需要把以下边界带回模型：
+
+- **占空比与可达性**：理想Buck不能在 $10\,\mathrm V$ 输入下稳态输出 $12\,\mathrm V$。PI继续积累只会造成积分饱和；抗饱和需要实际限幅后的执行量反馈，而不是只裁剪屏幕读数。
+- **电流与启动**：电压误差较大时，电感电流可能先超过器件能力。本课小扰动实验不涵盖上电、短路和限流；电流保护应有独立的检测与关断路径。
+- **导通模式与器件**：本课是二极管续流的非同步Buck。同步Buck可能允许负电流，需考虑驱动、死区和直通，不能把本课DCM判据原封不动套上。
+- **测量与损耗**：ADC量化、噪声、分压器、磁饱和、导通压降、电容等效串联电阻及温升都会改变结果。平均模型不提供开关应力和电磁兼容验收。
+
+作为工程公式的来源线索，可阅读 Texas Instruments 的 [Basic Calculation of a Buck Converter’s Power Stage，SLVA477C](https://www.ti.com/lit/an/slva477b/slva477b.pdf)（2026年9月修订版；2026-10-24核阅）。该资料讨论实际功率级计算；本课明确使用更窄的理想、小纹波假设，不能据本课数字完成器件选型。
+
+## 习题
+
+1. 在理想CCM下，输入 $24\,\mathrm V$、目标输出 $12\,\mathrm V$、负载 $6\,\Omega$，求占空比、平均负载电流及忽略纹波的负载功率。解释占空比为何不是伏特。
+2. 沿用本课默认电感、频率及占空比，求CCM临界负载电阻。改成 $120\,\Omega$ 后，小纹波候选的谷值是多少？为什么不能把该谷值当作实际二极管电流？
+3. 输入改成 $18\,\mathrm V$，若其余条件允许CCM，维持 $12\,\mathrm V$ 所需占空比是多少？输入再降到 $10\,\mathrm V$ 时，PI能解决稳态可达性吗？
+4. 对本课连续PI推导三阶Routh条件，并计算负载 $6\,\Omega$ 和 $30\,\Omega$ 时的积分增益严格上界。由此能否认定数字控制器稳定？
+
+## 答案
+
+1. $D=V/V_{\rm in}=0.5$，$I=V/R=2\,\mathrm A$，忽略纹波的功率 $V^2/R=24\,\mathrm W$。占空比是两个时间的比值，无量纲；它通过输入电压与功率级作用于输出。
+2. 令 $I=\Delta i_{L,\rm pp}/2$，得临界 $R=2Lf_{\rm sw}/(1-D)=80\,\Omega$。$120\,\Omega$ 时，候选 $I_{\min}=12/120-0.3/2=-0.05\,\mathrm A$。二极管使反向续流受阻，此时须重建含触零阶段的DCM模型，而非接受负电流。
+3. 所需 $D=12/18=2/3$，在理想可用区间内，仍需复核CCM及执行约束。输入为 $10\,\mathrm V$ 时需要 $D=1.2$，超出物理范围；积分增益再大也不能创造所缺的输入电压。
+4. 三阶多项式各系数为正后，还需 $(L/R)(1+V_{\rm in}K_p)>LCV_{\rm in}K_i$。除去正的 $L$ 得正文条件。两负载的上界分别约 $102.777778$ 与 $20.555556\,\mathrm{V}^{-1}\mathrm s^{-1}$；增益必须严格小于上界。数字系统还需采样、保持和延迟模型，不能直接由连续条件签发。
+
+
