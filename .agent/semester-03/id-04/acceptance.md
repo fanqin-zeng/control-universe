@@ -35,3 +35,5 @@
 生产与Pages实际构建基线为build-base.txt所记c1af10c加本课；最终目录、策略和进度门槛基线为5e67d2d加本课，后来并行回执以最新HEAD保留。仅元数据标记从draft改为v1.3不改正文/计算/页面，若HEAD推进则重新叠加本课差异，不回退其它课。
 
 资源回收见resources-closed.json：自己的3个Python服务停止；8994上12个遗留Notebook内核先DELETE回收，最终原生与Pages预览由对应Popen进程关闭。共享Git索引的他人内容保留，不批量git add/reset/clean。
+
+真实交付提交：`56344abe4733ae622a29ab94728ab9895159176b`，已进入master。共享Git索引保留，本课使用私有索引与master旧值比较后原子更新；回执补充最终检查输出。

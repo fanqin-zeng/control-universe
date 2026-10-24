@@ -196,7 +196,7 @@
 | ID-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/01-identification-framework.md;.agent/semester-03/id-01/acceptance.md;commit:bc65732deee20fbbfd8206fdd49a078fced14af8 |
 | ID-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/02-model-structures.md;.agent/semester-03/id-02/acceptance.md;commit:d3d77103a808782445257feee3eca2339a3399a4 |
 | ID-03 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/03-least-squares-rls.md;.agent/semester-03/id-03/acceptance.md;commit:d76422def1c014f4aee6706439082c9c729759f1 |
-| ID-04 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/09-identification/04-persistent-excitation.md;.agent/semester-03/id-04/acceptance.md;rank3 验收通过，待提交回执 |
+| ID-04 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/09-identification/04-persistent-excitation.md;.agent/semester-03/id-04/acceptance.md;commit:56344abe4733ae622a29ab94728ab9895159176b |
 | ID-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-06 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | ID-07 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
