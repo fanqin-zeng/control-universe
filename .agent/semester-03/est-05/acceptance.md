@@ -1,4 +1,4 @@
-# EST-05 无迹卡尔曼滤波：验收完成，待master回执
+# EST-05 无迹卡尔曼滤波：验收完成，已进入master
 
 2026-10-24用户指定继续EST-05，rank4。空占位新写，不沿用旧正文；先修KF和概率基础已交付。EKF为本课已交付对照，不增改先修图。
 
@@ -24,6 +24,8 @@
 
 完整构建使用已提交基线5413ca168ac86c41b3974375ae7f355022f7841e叠加本课，提交前另按最新master重新生成限定快照，跑权威npm run check/semester/python策略。共享开工check/semester失败保留opening日志，不改其它课草稿，不把全站旧课WARN说成本课独占成果。原始数据全部版本化，未用本机临时logs替代唯一交付证据。
 
-真实master提交与推送结果待提交后追加；不发布gh-pages。
+真实master交付提交commit:61aaf292057ac2fa04414c9730d1ce9676b7f465，git push origin master退出0，详见push-main.json/log；不发布gh-pages。
 
 提交差异复核：Python策略仅修改EST-05条目，报告只追加本课和合并元数据；发现notation头部说明中的同名标记被匹配，多插入本课符号行。追加修复收窄为独占行哨兵并删除说明处的本课重复行，保留原有其它内容，重跑术语检查；课程资产指纹不变。修复证据见notation-fix-gates.json。
+
+符号表哨兵修复已进入master：commit:3cf0621900d36e317fd4e4c94ccab0d94e9a8249；术语检查exit0，数据表仅保留一条本课chi登记，不改课程源码。
