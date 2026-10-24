@@ -1,0 +1,3334 @@
+---
+title: "模糊控制"
+description: "从单位划分与模糊推理讲起，用数值实验测清 Mamdani 与 Takagi-Sugeno 的真实差别：解模糊化方法之间的抖振代价、维数灾难到底灾在哪、以及规则域覆盖为何需要额外证据"
+---
+
+# 模糊控制
+
+<span id="模糊控制基础" />
+
+## 引言
+
+洗衣机里放了同样多的衣服，只有一点浮尘时不必洗太久，沾满泥污时则需要更长时间。如果操作员说“污渍偏重、衣服偏多，就多洗一会儿”，怎样把“偏重”“偏多”变成一段能执行的程序？这就是本课的入口：用隶属度表示语言概念，用规则合成一个明确的输出。洗涤时长是静态决策；把同样的推理装进反馈回路之后，还必须检查稳定性、饱和与控制代价。
+
+**模糊控制**（fuzzy control）把这样的经验规则写成非线性映射。它不要求控制律先由精确机理模型推导出来；但选方向、量纲、论域和安全边界仍需要对象知识，验证本课的摆杆与制动效果也依赖明确的教学模型。Mamdani 与 Sugeno 的区别首先在结论部：前者输出模糊集合，后者输出常数或函数。术语与管线参照 [MathWorks 推理说明](https://www.mathworks.com/help/fuzzy/fuzzy-inference-process.html)及[两类系统说明](https://www.mathworks.com/help/fuzzy/types-of-fuzzy-inference-systems.html)（2026-10-24核查）；下面的数值是课程模型计算。
+
+学完后应能：解释隶属度与概率的区别，手算一次完整推理，说明加权平均何时有定义，并读懂模糊控制的适用条件与代价。先修为 [PID控制器](/classic/pid-controller)、[非线性特征](/nonlinear/nonlinear-characteristics)；比较和稳定性部分分别调用已交付的 [LQR](/modern/lqr-controller)与[Lyapunov方法](/nonlinear/lyapunov-stability)。这里不预设任何尚未交付的机器学习课。
+
+<img src="/diagrams/intelligent/fuzzy-pipeline.svg" alt="污渍和衣物读数经过模糊化、规则激活、聚合及解模糊化，得到明确洗涤时长；反馈用途另需检查稳定性" />
+
+### 全课共用的被控对象
+
+沿[滑模控制](/nonlinear/sliding-mode-control)和[自适应控制基础](/nonlinear/adaptive-control-basics)的设定，用直接转矩驱动的倒立摆杆：
+
+$$
+m l^2 \ddot\theta = m g l \sin\theta + u
+$$
+
+取 $m = 1\ \mathrm{kg}$、$l = 0.5\ \mathrm{m}$、$g = 9.8\ \mathrm{m/s^2}$，即
+
+$$
+\ddot\theta = 19.6\sin\theta + 4u
+$$
+
+其中 $u$ 是直接施加在摆上的控制转矩（单位 N·m），执行器限幅 $\lvert u\rvert \le 15\ \mathrm{N\cdot m}$。以下倒立摆标称比较的初始条件是 $\theta(0) = 20^\circ$、$\dot\theta(0) = 0$，仿真时长 $T = 6$ s，步长 $\mathrm{d}t = 10^{-4}$ s。恒扰动实验另跑30/60 s，并在代码中注明步长；ABS使用独立车辆模型。rms取整段采样均方根，TV是相邻采样控制量绝对差之和，$t_s$ 是最后一次越出误差带后的采样时刻；它们都依赖采样与窗口。这里是直接转矩驱动的单杆教学模型，不是含水平转臂耦合动力学的完整旋转倒立摆。
+
+### 本课要先拆掉六个直觉
+
+模糊控制的教材叙述里有一批被反复转抄、但很少被测量的说法。下面六条是本课要用数值实验处理的对象。
+
+| 常见说法 | 实测结果 |
+| --- | --- |
+| "语言值越多，在线耗时必按规则总数增长" | 标准三角划分每输入最多2个非零隶属度，但查找、遍历、输出积分仍有代价。Notebook 8实测当前机器时间，并分别报告规则总数与实际激活数；旧机器微秒数和比值不作当前保证 |
+| "重心法最平滑，最大隶属度法最快，随便选一个" | 同一规则库只换解模糊化：重心法的 $\mathrm{rms}\,\theta = 3.5118^\circ$、$\mathrm{TV}(u) = 15.797$；最大隶属度法的 $\mathrm{rms}\,\theta = 6.0892^\circ$、6 秒末角度仍停在 $6.49^\circ$、$\mathrm{TV}(u) = 9540$（**604 倍**）。在6s窗口内出现振荡残差，本窗口末仍未保持在 $\pm 1^\circ$ |
+| "零阶 Sugeno 就是 Mamdani 把结论部换成单点" | 换成单点还必须是**求和聚合**。加权平均给 $-4.6875$；Dirac 结论部 + 求和聚合 + 重心法给 $-4.6875000$（差 $1.0\times10^{-12}$）；换成 Mamdani 惯用的 max 聚合给 $-4.2857143$，差 $8.57\%$——而且**95.3%** 的输入点上都有重复结论部，这个差躲不开 |
+| "模糊控制缺乏严格的稳定性证明" | Mamdani也可研究分段/扇区与Lyapunov条件；难度取决于对象和控制律。这里Takagi-Sugeno有易分析的例子：第 6 节给一个两规则一阶 TS 系统，用 $V = x^2/2$ 三行证完全局渐近稳定，实测原点附近 $-\dot V/V = 4.000001$ |
+| "模糊控制对模型误差更鲁棒" | 只对一部分误差鲁棒。质量加倍（$B = 1/(ml^2)$ 从 4.0 掉到 2.0）：LQR 的 rms 从 $3.70$ 恶化到 $5.49$（+48%），Mamdani 5×5 从 $3.51$ 到 $4.23$（+21%）。较高等效增益是可能解释，不能据这几个工况认定单一原因——$n$ 从 3 加到 13，等效 $\lvert K_p\rvert$ 从 $12.06$ 涨到 $27.92$ |
+| "规则里有 ZO，所以没有静差" | 有静差，和纯 PD 一样。恒定扰动转矩 $d_0 = 0.2/0.5/1.0/2.0\ \mathrm{N\cdot m}$ 下稳态角偏差 $0.310/0.813/1.762/4.151^\circ$，等效比例增益从 $36.9$ 掉到 $27.6$。补一个常规积分项（$k_i = 6$）后静差降 63～724 倍 |
+
+这六条帮助我们判断规则如何生效、哪些现象需要复测，以及整定时该改哪个量。本教学实验不提供产品或认证结论。
+
+## 模糊集合与隶属度函数
+
+### 从硬边界到隶属度
+
+**经典集合**里，元素要么属于要么不属于。定义"高温"为 $T > 80\,^\circ\mathrm{C}$，那么 $80.01$ 属于、$79.99$ 不属于。这个硬边界在处理测量噪声和概念本身时都不好用：$79.99$ 和 $80.01$ 在物理上没有区别，在集合论里却分属两类。
+
+**模糊集合**用一个**隶属度函数**（membership function, MF）$\mu_A : X \to [0, 1]$ 代替特征函数，$\mu_A(x)$ 表示 $x$ 符合概念 $A$ 的程度。
+
+> **隶属度不是概率。** 概率描述随机性："这杯水有 80% 的概率超过 80 度"——它是一个关于未知事实的赌注。隶属度描述概念的边界模糊："这杯水 80% 算得上高温"——事实完全已知，模糊的是"高温"这个词。两者的数学形式都是 $[0,1]$ 上的数，但组合规则完全不同：概率用加法与条件概率，隶属度用 $\min$/$\max$ 与模糊蕴含。
+
+### 四种常用形状
+
+**三角形**（triangular）：由三个参数 $a \le b \le c$ 决定，$b$ 是峰。
+
+$$
+\mu_{\mathrm{tri}}(x; a, b, c) =
+\begin{cases}
+0, & x \le a \\
+\dfrac{x - a}{b - a}, & a < x \le b \\
+\dfrac{c - x}{c - b}, & b < x < c \\
+0, & x \ge c
+\end{cases}
+$$
+
+工程实现里必须处理两个退化情形：$a = b$ 是**左肩**（左侧恒为 1），$b = c$ 是**右肩**（右侧恒为 1）。论域两端的语言值（"负大""正大"）就是肩形。本课后面的代码全部显式处理这两种情形——忽略它们会在论域端点产生一个值为 0 的洞，而端点恰恰是控制量最容易饱和的地方。
+
+**梯形**（trapezoidal）：四个参数 $a \le b \le c \le d$，$[b, c]$ 区间上恒为 1。$b = c$ 时退化为三角形。顶部平坦表示"完全属于这个概念的一整段范围"。
+
+**高斯**（Gaussian）：
+
+$$
+\mu_{\mathrm{gauss}}(x; c, \sigma) = \exp\!\left(-\frac{(x - c)^2}{2\sigma^2}\right)
+$$
+
+处处光滑可微，因此适合需要求梯度的场合（神经模糊网络的参数学习）。代价是**支撑无限**：任何 $x$ 都会让所有高斯规则被激活。第 9 节会测到这个代价。
+
+**S 形**（sigmoidal）：$\mu(x) = 1/(1 + e^{-k(x - c)})$，单调，适合"大""小"这类单边概念。
+
+<JupyterNotebook
+  title="Notebook 1：四种隶属度函数形状与单位划分性质"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+
+
+def trimf(x, a, b, c):
+    """三角/肩形隶属度函数（标量）。a==b 为左肩，b==c 为右肩。"""
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    """三角/肩形隶属度函数（向量化）。"""
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def trapmf_vec(x, a, b, c, d):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    m = (x > a) & (x <= b)
+    if b > a:
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    out[(x > b) & (x <= c)] = 1.0
+    m = (x > c) & (x < d)
+    if d > c:
+        out[m] = (d - x[m]) / (d - c)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def gaussmf_vec(x, c, s):
+    return np.exp(-(np.asarray(x, dtype=float) - c) ** 2 / (2.0 * s * s))
+
+
+def sigmf_vec(x, c, k):
+    return 1.0 / (1.0 + np.exp(-k * (np.asarray(x, dtype=float) - c)))
+
+
+def partition(lo, hi, n):
+    """n 个语言值的均匀三角划分（首尾为肩形）。返回 [(a, b, c), ...]。"""
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def partition_hs(lo, hi, n, hs):
+    """中心均匀分布、半宽 h = hs * s 的三角划分（首尾仍贴到论域边界）。"""
+    ctr = np.linspace(lo, hi, n)
+    s = ctr[1] - ctr[0]
+    h = hs * s
+    return [(ctr[i] - h if i > 0 else lo, ctr[i], ctr[i] + h if i < n - 1 else hi)
+            for i in range(n)]`}
+  cells={[
+    { code: `# 四种形状。注意三角形两端的肩形：a==b 时左侧恒为 1，b==c 时右侧恒为 1
+x = np.linspace(-30, 30, 1201)
+fig, axes = plt.subplots(2, 2, figsize=(11, 6.4))
+COL = ['#1d4ed8', '#0891b2', '#059669', '#ca8a04', '#ea580c']
+
+ax = axes[0, 0]
+tri = [(-30, -30, -15), (-30, -15, 0), (-15, 0, 15), (0, 15, 30), (15, 30, 30)]
+for (p, c) in zip(tri, COL):
+    ax.plot(x, trimf_vec(x, *p), color=c, lw=2)
+ax.set_title('三角形（首尾为肩形）')
+
+ax = axes[0, 1]
+trap = [(-30, -30, -20, -10), (-20, -12, -3, 5), (-5, 3, 12, 20), (10, 20, 30, 30)]
+for (p, c) in zip(trap, COL[:4]):
+    ax.plot(x, trapmf_vec(x, *p), color=c, lw=2)
+ax.set_title('梯形（顶部平坦）')
+
+ax = axes[1, 0]
+for (cc, c) in zip(np.linspace(-24, 24, 5), COL):
+    ax.plot(x, gaussmf_vec(x, cc, 6.0), color=c, lw=2)
+ax.set_title('高斯（支撑无限，处处可微）')
+
+ax = axes[1, 1]
+ax.plot(x, sigmf_vec(x, 0, 0.35), color='#dc2626', lw=2, label='大 (k=0.35)')
+ax.plot(x, 1 - sigmf_vec(x, 0, 0.35), color='#1d4ed8', lw=2, label='小')
+ax.plot(x, sigmf_vec(x, 0, 1.2), color='#dc2626', lw=1.2, ls='--', label='大 (k=1.2)')
+ax.set_title('S 形（单调，斜率由 k 控制）')
+ax.legend(fontsize=9)
+
+for ax in axes.ravel():
+    ax.set_xlabel('x (deg)')
+    ax.set_ylabel('隶属度')
+    ax.set_ylim(-0.05, 1.12)
+    ax.set_xlim(-30, 30)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print('肩形检查：trimf(-40, -30, -30, -15) =', trimf(-40, -30, -30, -15), '（左肩，应为 1）')
+print('肩形检查：trimf(+40,  15,  30,  30) =', trimf(40, 15, 30, 30), '（右肩，应为 1）')
+print('普通三角形在论域外：trimf(+40, -15, 0, 15) =', trimf(40, -15, 0, 15), '（应为 0）')` },
+    { code: `# 单位划分（partition of unity）：均匀三角划分下 Sum(mu) 恒等于 1
+print('均匀三角划分（半宽 h 恰等于中心间距 s）：')
+xs = np.linspace(XR[0], XR[1], 200001)
+for n in [3, 5, 7, 9]:
+    P = partition(*XR, n)
+    S = np.zeros_like(xs)
+    for p in P:
+        S += trimf_vec(xs, *p)
+    print('  n=%d: max|Sum(mu)-1| = %.3e   [min, max] = [%.6f, %.6f]'
+          % (n, np.abs(S - 1).max(), S.min(), S.max()))
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
+for n, c in zip([3, 5, 9], ['#1d4ed8', '#059669', '#ea580c']):
+    P = partition(*XR, n)
+    for p in P:
+        axes[0].plot(xs / DEG, trimf_vec(xs, *p), color=c, lw=1.2, alpha=0.75)
+    S = np.zeros_like(xs)
+    for p in P:
+        S += trimf_vec(xs, *p)
+    axes[0].plot(xs / DEG, S, color='#0f172a', lw=2.4, ls='--', alpha=0.5)
+axes[0].set_title('三角划分：彩色是各语言值，黑色虚线是 Sum(mu)')
+axes[0].set_xlabel('theta (deg)')
+axes[0].set_ylabel('隶属度')
+axes[0].set_xlim(-30, 30)
+axes[0].set_ylim(0, 1.35)
+axes[0].grid(alpha=0.3)
+
+for n in [5, 9]:
+    ctr = np.linspace(XR[0], XR[1], n)
+    sg = 0.5 * (ctr[1] - ctr[0])
+    S = np.zeros_like(xs)
+    for cc in ctr:
+        S += gaussmf_vec(xs, cc, sg)
+        axes[1].plot(xs / DEG, gaussmf_vec(xs, cc, sg), lw=1.2, alpha=0.75)
+    axes[1].plot(xs / DEG, S, color='#0f172a', lw=2.4, ls='--', label='Sum(mu), n=%d' % n)
+axes[1].axhline(1.0, color='#94a3b8', lw=1, ls=':')
+axes[1].set_title('高斯划分（sigma = s/2）：Sum(mu) 不等于 1')
+axes[1].set_xlabel('theta (deg)')
+axes[1].set_ylabel('隶属度')
+axes[1].set_xlim(-30, 30)
+axes[1].set_ylim(0, 1.5)
+axes[1].legend(fontsize=9)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 重叠度的定量刻画。设相邻中心间距为 s，三角形半宽为 h：
+#   交叉隶属度  mu_x = 1 - s/(2h)
+#   min Sum(mu) = max(0, 2 - s/h)          （出现在两中心的中点）
+#   max Sum(mu) = 1 (h <= s) 或 3 - 2s/h (h > s)   （h > s 时出现在中心处）
+n = 5
+print('%-8s %-8s %-12s %-12s %-12s %-12s' % ('h/s', 'mu_x', 'min Sum', 'max Sum', 'min 闭式', 'max 闭式'))
+rows = []
+for hs in [0.5, 0.6, 0.75, 5/6, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0]:
+    P = partition_hs(-1.0, 1.0, n, hs)
+    xx = np.linspace(-1, 1, 200001)
+    S = np.zeros_like(xx)
+    for p in P:
+        S += trimf_vec(xx, *p)
+    s = 2.0 / (n - 1)
+    h = hs * s
+    f_lo = max(0.0, 2 - s / h)
+    f_hi = 1.0 if h <= s else 3 - 2 * s / h
+    rows.append((hs, S))
+    print('%-8.4f %-8.4f %-12.6f %-12.6f %-12.6f %-12.6f'
+          % (hs, 1 - s / (2 * h), S.min(), S.max(), f_lo, f_hi))
+
+fig, ax = plt.subplots(figsize=(10, 3.6))
+for hs, S in rows:
+    if hs in (0.6, 1.0, 1.5):
+        ax.plot(xx, S, lw=2.2, label='h/s = %.1f' % hs)
+ax.axhline(1.0, color='#0f172a', ls='--', lw=1.4)
+ax.set_title('Sum(mu) 随重叠度的变化：只有 h/s = 1 时才恒等于 1')
+ax.set_xlabel('x')
+ax.set_ylabel('Sum(mu)')
+ax.set_xlim(-1, 1)
+ax.set_ylim(0, 1.9)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 高斯划分永远做不到单位划分。sigma 太小留洞，太大重叠过头
+print('n=5，论域 [-1, 1]，高斯 sigma = k * s：')
+ctr = np.linspace(-1, 1, 5)
+s = ctr[1] - ctr[0]
+xx = np.linspace(-1, 1, 200001)
+for k in [0.25, 0.3535, 0.5, 0.75]:
+    S = np.zeros_like(xx)
+    for cc in ctr:
+        S += gaussmf_vec(xx, cc, k * s)
+    print('  sigma = %.4f x s : Sum(mu) in [%.6f, %.6f]' % (k, S.min(), S.max()))
+print('  k = 0.25 时 min = 0.2707 —— 论域里有大片的洞，落在那里的 x 几乎没有规则被激活')
+print('  无论 k 取多少，min 与 max 都不可能同时等于 1')
+print()
+print('交叉隶属度的含义：sigma = s/2 时相邻高斯在中心连线的中点处相交，')
+print('  交点隶属度 = exp(-0.5) = %.6f，而三角形在 h = s 时交点是 0.5' % np.exp(-0.5))` }
+  ]}
+/>
+
+### 语言变量与语言值
+
+**语言变量**是一个三元组：名字、论域、以及论域上的一组模糊集合。例如
+
+- 角度误差 $\theta$：论域 $[-30^\circ, 30^\circ]$，语言值 NB、NS、ZO、PS、PB
+- 角速度 $\dot\theta$：论域 $[-120^\circ/\mathrm{s}, 120^\circ/\mathrm{s}]$，语言值同上
+- 控制转矩 $u$：论域 $[-15, 15]\ \mathrm{N\cdot m}$，语言值同上
+
+**论域的选择是一个设计决定，不是实现细节。** 论域太窄，输入一旦超出就被肩形隶属度函数钳住，控制器失去分辨能力（"反正都是 PB"）；论域太宽，同样多的语言值被摊薄，分辨率下降。第 7 节的 ABS 案例会实测这一点：把 $\dot s$ 的论域从 $\pm 50$ 放宽到 $\pm 1000$，制动距离从 $29.654$ m 变到 $29.639$ m，只差 $0.05\%$——说明在这次模型和参数范围内距离对该论域变化不敏感，不能推广到其它模型与噪声。
+
+**语言值个数 $n$** 通常取 3 到 7。上面的 Notebook 已经说明为什么不能只看"越多越精细"：$n$ 决定的是等效增益和平滑度，代价主要落在设计环节而不是计算环节（第 9 节量化）。
+
+### 单位划分为什么重要
+
+$\sum_i \mu_i(x) \equiv 1$ 这条性质看起来只是个技术细节，实际上它撑起了模糊控制里几乎所有的"好性质"：
+
+1. **归一化的加权和是凸组合。** 只要 $\alpha_i\ge0$ 且 $\sum_i\alpha_i>0$，令 $w_i=\alpha_i/\sum_j\alpha_j$，就有 $\sum_iw_i=1$。零阶Sugeno的 $u=\sum_iw_ic_i$ 必落在 $[\min c_i,\max c_i]$，不要求原始权重之和等于1。单位划分可简化分母；权重全零时必须报无覆盖或采用明确回退，不能把除零所得值当推理结果。数值实现还应检查过小分母。
+2. **单位划分不保证线性增益。** Notebook 1 的重叠度扫描显示，$h/s \ne 1$ 时 $\sum\mu$ 在 $[2 - s/h,\ 1]$ 之间波动。归一化同时改变分子与分母，最终映射还取决于规则结论、裁剪和聚合；不能只看分母就判定增益或输出方向。
+3. **它提供覆盖检查，不保证处处可微。** 单输入直接使用这组隶属度或多输入使用乘积AND时，单位划分传递到规则权重；min-AND通常不保持权重和为1。三角形、min/max都可引入折点；连续性还要求分母非零及所用解模糊映射连续。
+
+> 均匀三角划分在 $h = s$ 时给出的是**精确的**单位划分：数值扫描的偏差在浮点舍入量级（具体读数见Notebook 1），因为相邻三角形在交点处一个上升一个下降，斜率互为相反数。本课未归一化的有限高斯和在中心处大于1，不能恒等于1；归一化高斯基可以构成单位划分，但必须另核总权重非零。
+
+## 模糊推理机制
+
+### 模糊逻辑运算
+
+经典逻辑的真值只有 0 和 1，模糊逻辑允许 $[0,1]$ 上的任何值。但"用哪个算子"不是唯一的——这是模糊控制和概率论一个根本的区别：概率的公理把算子钉死了，模糊逻辑没有。
+
+| 运算 | 记号 | Zadeh 算子（最常用） | 乘积/代数和算子 |
+| --- | --- | --- | --- |
+| 非 | $\neg A$ | $1 - \mu_A(x)$ | $1 - \mu_A(x)$ |
+| 与 | $A \wedge B$ | $\min(\mu_A, \mu_B)$ | $\mu_A \cdot \mu_B$ |
+| 或 | $A \vee B$ | $\max(\mu_A, \mu_B)$ | $\mu_A + \mu_B - \mu_A\mu_B$ |
+
+设 $\mu_{\text{热}}(35^\circ\mathrm{C}) = 0.7$、$\mu_{\text{潮}}(80\%) = 0.6$：
+
+- $\min$ 与：$\min(0.7, 0.6) = 0.6$；乘积与：$0.7 \times 0.6 = 0.42$
+- $\max$ 或：$0.7$；代数和或：$0.7 + 0.6 - 0.42 = 0.88$
+
+乘积与总是小于等于 $\min$ 与，而且当两个前提都只满足一半时差别最大（$0.5 \times 0.5 = 0.25$ vs $0.5$）。直觉上乘积更"严格"：它要求两个前提**同时**成立到什么程度，而不是只看较弱的那个。
+
+### 规则库与模糊关联矩阵
+
+规则的形式是
+
+$$
+\text{IF } x_1 \text{ is } A_1 \text{ AND } x_2 \text{ is } A_2 \text{ THEN } y \text{ is } B
+$$
+
+$A_1, A_2$ 是**前提部**（antecedent），$B$ 是**结论部**（consequent）。两个输入各 $n$ 个语言值时，完整规则库有 $n^2$ 条，通常写成一张 $n \times n$ 的表，叫**模糊关联矩阵**（fuzzy associative memory, FAMM）。
+
+规则库设计的四条要求：
+
+1. **完备性**：任何输入组合都至少激活一条规则。均匀三角划分自动满足（$\sum\mu \equiv 1 > 0$）。
+2. **一致性**：不能有两条规则前提相同而结论矛盾。FAMM 表每格只填一个值，自动满足。
+3. **对称性**：如果被控对象有物理对称性，规则表应该体现它。这一点最容易写错，第 5 节专门讨论。
+4. **单调性**：对单调的对象（"误差越大，控制量越大"），表应该沿某个方向单调。第 7 节的 ABS 案例里，一个违反单调性的"对称"表直接把车轮抱死了。
+
+### 推理的五步
+
+设当前测量为 $(x_1, x_2)$。下图用本课贯穿的算例（$\theta = 5^\circ$、$\dot\theta = 10^\circ/\mathrm{s}$，5×5 规则表）把整条管线画完，后面四节逐格展开。
+
+<img
+  src="/images/fuzzy-control-concept.png"
+  alt="Mamdani 模糊推理管线：模糊化查隶属度、单位划分对比、min 裁剪与 max 聚合、三种解模糊化给出三个不同答案"
+/>
+
+**第 1 步 模糊化**：算出每个语言值的隶属度 $\mu_{A_i}(x_1)$、$\mu_{B_j}(x_2)$。
+
+**第 2 步 激活强度**：对规则 $(i, j)$，
+
+$$
+\alpha_{ij} = \mu_{A_i}(x_1) \wedge \mu_{B_j}(x_2)
+$$
+
+$\wedge$ 取 $\min$ 或乘积。**三角形隶属度函数在这里给出一个关键的结构性结论：在本课 $h=s$ 的相邻三角划分下，每个输入最多激活 2 个语言值，所以两输入系统最多激活 $2 \times 2 = 4$ 条规则，与 $n$ 无关。** 这是第 9 节"维数灾难不灾在计算上"的根本原因。
+
+**第 3 步 蕴含**：用 $\alpha_{ij}$ 修改结论部隶属度函数。两种主流做法：
+
+- **Mamdani（min 裁剪）**：$\mu_{B'_{ij}}(y) = \min(\alpha_{ij},\ \mu_{B_{ij}}(y))$。几何上是用一条水平线把结论部的三角形"削顶"。
+- **Larsen（乘积缩放）**：$\mu_{B'_{ij}}(y) = \alpha_{ij} \cdot \mu_{B_{ij}}(y)$。几何上是把整个三角形按比例压扁。
+
+<Callout variant="warning">
+很多中文教材把乘积缩放叫作"Sugeno 法"。这是错的。Sugeno（Takagi-Sugeno）型的结论部**根本不是模糊集合**，而是一个精确的函数 $z = f(x_1, x_2)$，谈不上"缩放"。乘积缩放的正确名字是 **Larsen 蕴含**。把它叫成 Sugeno 会让读者以为 Mamdani 和 TS 的区别只在蕴含算子上，而真正的区别在结论部的类型。
+</Callout>
+
+**第 4 步 聚合**：把所有被激活规则的结论部合成一个模糊集合，
+
+$$
+\mu_{B'}(y) = \max_{ij} \mu_{B'_{ij}}(y)
+$$
+
+$\max$ 聚合是 Mamdani 的标准做法，但它有一个后果：**多条规则指向同一个结论时，只有最强的那条被保留，其余的质量被丢掉**。第 6 节会看到这个丢失如何破坏"零阶 Sugeno = 单点结论部"的等价性。
+
+**第 5 步 解模糊化**：把 $\mu_{B'}$ 变成一个数。见下一节。
+
+### 一个完整的算例
+
+取 $\theta = 5^\circ$、$\dot\theta = 10^\circ/\mathrm{s}$，论域 $\theta \in [-30^\circ, 30^\circ]$、$\dot\theta \in [-120^\circ/\mathrm{s}, 120^\circ/\mathrm{s}]$，各 5 个均匀三角形语言值。中心分别在 $\{-30, -15, 0, 15, 30\}$ 和 $\{-120, -60, 0, 60, 120\}$。
+
+$\theta = 5^\circ$ 落在 ZO（中心 0）和 PS（中心 15）之间，间距 15，所以
+
+$$
+\mu_{\mathrm{ZO}}(5) = \frac{15 - 5}{15} = \frac{2}{3} \approx 0.6667, \qquad
+\mu_{\mathrm{PS}}(5) = \frac{5 - 0}{15} = \frac{1}{3} \approx 0.3333
+$$
+
+$\dot\theta = 10^\circ/\mathrm{s}$ 落在 ZO（中心 0）和 PS（中心 60）之间，
+
+$$
+\mu_{\mathrm{ZO}}(10) = \frac{60 - 10}{60} = \frac{5}{6} \approx 0.8333, \qquad
+\mu_{\mathrm{PS}}(10) = \frac{10}{60} = \frac{1}{6} \approx 0.1667
+$$
+
+两个和都精确等于 1（单位划分）。$2 \times 2 = 4$ 条规则被激活，其余 21 条的 $\alpha = 0$。
+
+<JupyterNotebook
+  title="Notebook 2：模糊化、激活强度与推理算子的选择"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+LBL = ['NB', 'NS', 'ZO', 'PS', 'PB']
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    """四舍五入（.5 远离零）后饱和到 [-lim, lim]；满足 q(-v) = -q(v)。"""
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    """中心反对称的模糊关联矩阵：out = q(-(aw*di + bw*dj)) + (n-1)/2。
+    aw 是角速度的权重，bw 是角度的权重。"""
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    """双输入单输出 Mamdani 控制器。输出隶属度函数预先算在网格上。"""
+
+    def __init__(self, xr, wr, ur, n, M, and_op='min', impl='min',
+                 defuzz='cog', ng=401, pad=0.0):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.PU = partition(*ur, n)
+        self.M, self.n = M, n
+        self.and_op, self.impl, self.defuzz = and_op, impl, defuzz
+        self.ug = np.linspace(ur[0] - pad, ur[1] + pad, ng)
+        self.mid = 0.5 * (ur[0] + ur[1])
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+        self.fired = 0
+
+    def strengths(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        if self.and_op == 'min':
+            return np.minimum(self.MX[:, None], self.MW[None, :])
+        return self.MX[:, None] * self.MW[None, :]
+
+    def aggregate(self, th, w):
+        a = self.strengths(th, w)
+        mu = np.zeros_like(self.ug)
+        self.fired = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                self.fired += 1
+                mz = self.PU_grid[self.M[i, j]]
+                c = np.minimum(ak, mz) if self.impl == 'min' else ak * mz
+                np.maximum(mu, c, out=mu)
+        return mu
+
+    def __call__(self, th, w):
+        mu = self.aggregate(th, w)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return self.mid
+        if self.defuzz == 'cog':
+            return float(np.trapezoid(self.ug * mu, self.ug) / den)
+        if self.defuzz == 'mom':
+            idx = np.where(mu >= mu.max() - 1e-12)[0]
+            return float(np.mean(self.ug[idx]))
+        cum = np.concatenate([[0.0], np.cumsum(0.5 * (mu[1:] + mu[:-1]) * np.diff(self.ug))])
+        return float(np.interp(0.5 * cum[-1], cum, self.ug))
+
+
+def pendulum_rhs(th, w, u, m=1.0, l=0.5, g=9.8, d0=0.0):
+    ml2 = m * l * l
+    return np.array([w, (m * g * l * np.sin(th) + u + d0) / ml2])
+
+
+def simulate(ctrl, T=6.0, dt=1e-4, th0=20 * DEG, w0=0.0,
+             m=1.0, l=0.5, g=9.8, umax=15.0, d0=0.0, ki=0.0):
+    """RK4。控制量在四个 stage 内保持不变（本对象无显式时间依赖）。"""
+    x = np.array([th0, w0])
+    n = int(round(T / dt))
+    hist = np.zeros((n + 1, 3))
+    hist[0, :2] = x
+    iz = 0.0
+    for k in range(n):
+        u = float(np.clip(ctrl(x[0], x[1]) - ki * iz, -umax, umax))
+        hist[k + 1, 2] = u
+        k1 = pendulum_rhs(x[0], x[1], u, m, l, g, d0)
+        k2 = pendulum_rhs(x[0] + .5*dt*k1[0], x[1] + .5*dt*k1[1], u, m, l, g, d0)
+        k3 = pendulum_rhs(x[0] + .5*dt*k2[0], x[1] + .5*dt*k2[1], u, m, l, g, d0)
+        k4 = pendulum_rhs(x[0] + dt*k3[0], x[1] + dt*k3[1], u, m, l, g, d0)
+        x = x + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        iz += dt * x[0]
+        hist[k + 1, :2] = x
+        if not np.all(np.isfinite(x)) or abs(x[0]) > 1.5:
+            return hist[:k + 2], (k + 1) * dt
+    return hist, None
+
+
+def perf(hist, esc, dt=1e-4, band=1.0):
+    if esc is not None:
+        return None
+    th = hist[:, 0] / DEG
+    u = hist[:, 2]
+    inside = np.abs(th) <= band
+    ts = 0.0
+    for k in range(len(th) - 1, -1, -1):
+        if not inside[k]:
+            ts = k * dt
+            break
+    return dict(rms=float(np.sqrt(np.mean(th**2))), ss=float(abs(th[-1])),
+                ts=float(ts), maxu=float(np.max(np.abs(u))),
+                tv=float(np.sum(np.abs(np.diff(u)))), mx=float(np.max(np.abs(th))))
+
+
+M5 = famm(5)
+TH0, W0 = 5 * DEG, 10 * DEG`}
+  cells={[
+    { code: `# 第 1 步：模糊化
+PX5, PW5, PU5 = partition(*XR, 5), partition(*WR, 5), partition(*UR, 5)
+mx = [trimf(TH0, *p) for p in PX5]
+mw = [trimf(W0, *p) for p in PW5]
+print('theta = 5 deg 的隶属度：')
+for i, v in enumerate(mx):
+    print('   %-3s %.6f' % (LBL[i], v))
+print('   Sum = %.6f' % sum(mx))
+print('omega = 10 deg/s 的隶属度：')
+for i, v in enumerate(mw):
+    print('   %-3s %.6f' % (LBL[i], v))
+print('   Sum = %.6f' % sum(mw))
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 3.4))
+for ax, P, x0, nm, unit in [(axes[0], PX5, TH0, 'theta', 'deg'), (axes[1], PW5, W0, 'omega', 'deg/s')]:
+    xx = np.linspace(P[0][0], P[-1][2], 801)
+    for i, p in enumerate(P):
+        ax.plot(xx / DEG, trimf_vec(xx, *p), lw=1.8, label=LBL[i])
+    ax.axvline(x0 / DEG, color='#f59e0b', lw=2.2)
+    for i, p in enumerate(P):
+        v = trimf(x0, *p)
+        if v > 0:
+            ax.plot([x0 / DEG], [v], 'o', color='#0f172a', ms=7)
+            ax.annotate('%s=%.4f' % (LBL[i], v), (x0 / DEG, v), textcoords='offset points',
+                        xytext=(8, 4), fontsize=9)
+    ax.set_title('%s = %.1f %s 处的模糊化' % (nm, x0 / DEG, unit))
+    ax.set_xlabel('%s (%s)' % (nm, unit))
+    ax.set_ylabel('隶属度')
+    ax.set_ylim(0, 1.18)
+    ax.legend(fontsize=8, ncol=5)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 第 2 步：模糊关联矩阵与激活强度
+print('5x5 FAMM（行 = theta，列 = omega，格内是输出语言值）：')
+print('         ' + '  '.join('%-4s' % c for c in LBL))
+for i in range(5):
+    print('   %-5s ' % LBL[i] + '  '.join('%-4s' % LBL[M5[i, j]] for j in range(5)))
+print()
+anti = all(M5[4 - i, 4 - j] == 4 - M5[i, j] for i in range(5) for j in range(5))
+diag = bool((M5 == M5.T).all())
+print('中心反对称 M[4-i,4-j] == 4-M[i,j] :', anti)
+print('对角对称   M[i,j] == M[j,i]       :', diag)
+if not diag:
+    bad = [(LBL[i], LBL[j], LBL[M5[i, j]], LBL[M5[j, i]])
+           for i in range(5) for j in range(5) if M5[i, j] != M5[j, i]]
+    print('  不对称的格（theta, omega, M[i,j], M[j,i]）共 %d 个，例如：%s' % (len(bad), bad[:3]))
+print()
+print('激活规则（min AND）：')
+tot = 0.0
+for i in range(5):
+    for j in range(5):
+        a = min(mx[i], mw[j])
+        if a > 0:
+            tot += a
+            print('   R: theta=%-3s AND omega=%-3s -> u=%-3s   alpha=%.6f'
+                  % (LBL[i], LBL[j], LBL[M5[i, j]], a))
+print('   激活 %d / 25 条，Sum(alpha) = %.6f' % (sum(1 for i in range(5) for j in range(5) if min(mx[i], mw[j]) > 0), tot))
+print()
+print('激活规则数与 n 无关（三角划分）：')
+for n in [3, 5, 7, 9]:
+    PXn, PWn = partition(*XR, n), partition(*WR, n)
+    worst = 0
+    for th in np.linspace(XR[0], XR[1], 601):
+        m1 = np.array([trimf(th, *p) for p in PXn])
+        for w in np.linspace(WR[0], WR[1], 61):
+            m2 = np.array([trimf(w, *p) for p in PWn])
+            worst = max(worst, int((np.minimum.outer(m1, m2) > 0).sum()))
+    print('   n=%d: 最多同时激活 %d 条（共 %d 条）' % (n, worst, n * n))` },
+    { code: `# 第 3、4 步：蕴含与聚合。min 裁剪 vs 乘积缩放（Larsen）
+fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
+for ax, impl in zip(axes, ['min', 'prod']):
+    c = Mamdani2(XR, WR, UR, 5, M5, impl=impl, ng=2001)
+    mu = c.aggregate(TH0, W0)
+    a = c.strengths(TH0, W0)
+    for i in range(5):
+        for j in range(5):
+            if a[i, j] > 0:
+                base = c.PU_grid[M5[i, j]]
+                piece = np.minimum(a[i, j], base) if impl == 'min' else a[i, j] * base
+                ax.plot(c.ug, piece, lw=1.1, ls='--', color='#94a3b8')
+    ax.plot(c.ug, mu, lw=2.4, color='#1d4ed8')
+    ax.fill_between(c.ug, mu, alpha=0.2, color='#1d4ed8')
+    ax.set_title('Larsen 乘积缩放' if impl == 'prod' else 'Mamdani min 裁剪')
+    ax.set_xlabel('u (N·m)')
+    ax.set_ylabel('隶属度')
+    ax.set_xlim(-15, 15)
+    ax.set_ylim(0, 1.1)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+for impl in ['min', 'prod']:
+    c = Mamdani2(XR, WR, UR, 5, M5, impl=impl, ng=200001)
+    print('   impl=%-4s: 聚合面积 = %.6f, COG = %+.6f N·m'
+          % (impl, np.trapezoid(c.aggregate(TH0, W0), c.ug), c(TH0, W0)))
+print('   乘积缩放把每个结论部整体压扁，聚合面积从 9.2708 掉到 6.8750，重心从 -2.8605 移到 -2.6515。')
+print('   方向可以解释：所有结论部三角形的全面积相同（记为 w），')
+print('     min 裁剪后的面积 = w * alpha * (2 - alpha)，对alpha是单调凹函数，压缩了大小 alpha 的比例；')
+print('     乘积缩放后的面积 = w * alpha，比例原样保留。')
+print('   于是 min 裁剪给了 alpha 较小的负向结论部（NS/NB）相对更多的面积，重心更偏负。')
+print('   验算：alpha = 0.6667 与 0.3333 之比，裁剪下是 0.8889/0.5556 = 1.60，缩放下是 2.00。')` },
+    { code: `# 算子选择的闭环代价：四种组合都跑一遍，差别出乎意料地小
+print('%-22s %10s %10s %10s %10s' % ('AND / 蕴含', 'rms deg', 'ts s', 'max|u|', 'TV(u)'))
+for ao in ['min', 'prod']:
+    for im in ['min', 'prod']:
+        c = Mamdani2(XR, WR, UR, 5, M5, and_op=ao, impl=im)
+        h, e = simulate(c)
+        p = perf(h, e)
+        print('%-22s %10.4f %10.4f %10.3f %10.3f'
+              % ('%s / %s' % (ao, im), p['rms'], p['ts'], p['maxu'], p['tv']))
+print()
+print('=> 四种组合的 rms 在 3.5118 到 3.5374 之间（最大相差 0.73%），')
+print('   TV 在 15.797 到 16.026 之间（最大相差 1.45%）。')
+print('   算子选择是一个次要的设计自由度；真正决定性能的是规则表和语言值个数。')` }
+  ]}
+/>
+
+### 算子选择到底重不重要
+
+Notebook 2 的最后一个 cell 给出了一个可能会让人失望的答案：**不太重要**。四种组合（$\min$/$\prod$ 的 AND × Mamdani/Larsen 的蕴含）在同一个倒立摆上的 rms 角度落在 $3.5118^\circ$ 到 $3.5374^\circ$ 之间，最大相差 $0.73\%$；总变差 $\mathrm{TV}(u)$ 落在 $15.797$ 到 $16.026$ 之间，相差 $1.45\%$。
+
+但有一个定性差别值得记住，因为它会影响你怎么读规则表：
+
+- **$\min$ 裁剪**把结论部面积变成 $w\alpha(2-\alpha)$，对 $\alpha\in[0,1]$ 是单调凹函数，因此**压缩**了强弱规则之间的比例。上面算例里 $\alpha = 0.6667$ 与 $\alpha = 0.3333$ 两条规则的面积比是 $1.60$，而不是 $2.00$。
+- **乘积缩放（Larsen）**把面积变成 $w\alpha$，比例**原样保留**。
+
+后果是：$\min$ 裁剪下，弱规则对输出的话语权比它的激活强度暗示的更大；乘积缩放下，强规则更强势。这解释了为什么同一个规则库换蕴含算子后重心会移动（算例里从 $-2.8605$ 移到 $-2.6515$），也解释了为什么 Mamdani 型对规则表里的"极端格"更宽容。
+
+
+## 解模糊化方法
+
+推理的输出是一个模糊集合 $\mu_{B'}$，执行器要的是一个数。**解模糊化**（defuzzification）就是这个映射。它不是"最后一步收尾"，而是一个有实质性能后果的设计决定——本课最贵的一条实测结论就出在这里。
+
+### 重心法（COG / Centroid）
+
+$$
+u^* = \frac{\displaystyle\int_U y\,\mu_{B'}(y)\,\mathrm{d}y}{\displaystyle\int_U \mu_{B'}(y)\,\mathrm{d}y}
+$$
+
+几何意义是聚合后图形的面积重心。离散近似（$N$ 个网格点 $y_k$）：
+
+$$
+u^* \approx \frac{\sum_k y_k\,\mu_{B'}(y_k)}{\sum_k \mu_{B'}(y_k)}
+$$
+
+本课实现采用梯形积分。它对分段线性的 $\mu(y)$ 在网格含全部折点时精确；分子 $y\mu(y)$ 则是分段二次，一般仍有误差。Notebook 3的对称分段恰好让一阶矩误差抵消，不能据此推广到任意聚合形状。
+
+在覆盖良好、分母非零等条件下通常连续，并使用全部聚合面积。缺点是要做数值积分，而且对论域边界敏感（下面会看到）。
+
+### 平分法（Bisector）
+
+找 $u^*$ 使左右面积相等：
+
+$$
+\int_{U_{\text{左}}} \mu_{B'}(y)\,\mathrm{d}y = \int_{U_{\text{右}}} \mu_{B'}(y)\,\mathrm{d}y
+$$
+
+对称形状的两者通常重合；不对称形状可能分开，也可能恰巧重合。实测在 $\theta$ 切片上两者的 rms 差是 $0.68185\ \mathrm{N\cdot m}$，最大台阶 $4.9669\times10^{-2}$ 对 $5.7892\times10^{-2}$——平分法略平滑一点，但闭环性能几乎一样（rms $3.6073^\circ$ 对 $3.5118^\circ$，反而略差）。
+
+### 最大隶属度平均法（MOM）
+
+$$
+u^* = \operatorname{mean}\{\, y \mid \mu_{B'}(y) = \max_z \mu_{B'}(z) \,\}
+$$
+
+MOM只取聚合集合的最高平台，忽略较低部分及其面积。等距网格实现应对所有达到最大值的点求均值；两个极端最大点的中点仅在最大点集合对称时等价。扫描和平台并列判断都有数值代价，不能不经测试就宣称最快。最高平台切换可能导致输出跳变。
+
+代价是可测的。在 $\theta$ 切片上（$\dot\theta = 0$，$\theta$ 从 $-30^\circ$ 扫到 $30^\circ$，步长 $0.05^\circ$，共 1201 个点）：
+
+| 方法 | 有非零斜率的点数 | 最大台阶 (N·m/步) | 总变差 TV(u) | 与 COG 的 rms 差 |
+| --- | --- | --- | --- | --- |
+| 重心法 COG | 1200 / 1200 | $5.7892\times10^{-2}$ | 25.0000 | — |
+| 平分法 Bisector | 1200 / 1200 | $4.9669\times10^{-2}$ | 25.6066 | 0.68185 |
+| 最大隶属度 MOM | **306 / 1200** | **3.7625** | 30.0000 | 2.65800 |
+
+MOM 在 1200 个区间里只有 306 个有非零斜率——也就是说它的输出**四分之三的时间是常数**，在规则切换处直接跳变，最大跳 $3.76\ \mathrm{N\cdot m}$。用于反馈时可能导致抖振，具体表现仍取决于对象、采样与噪声。
+
+### 加权平均法（仅 Sugeno 型）
+
+Takagi-Sugeno 型的结论部是精确值 $z_i$，不需要积分：
+
+$$
+u^* = \frac{\sum_i \alpha_i z_i}{\sum_i \alpha_i}
+$$
+
+第 6 节会精确刻画这个公式在什么条件下等价于"单点结论部 + 重心法"——答案比通常的说法要苛刻。
+
+<JupyterNotebook
+  title="Notebook 3：四种解模糊化方法的数值对比与离散化误差"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+LBL = ['NB', 'NS', 'ZO', 'PS', 'PB']
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    def __init__(self, xr, wr, ur, n, M, and_op='min', impl='min',
+                 defuzz='cog', ng=401, pad=0.0):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.PU = partition(*ur, n)
+        self.M, self.n = M, n
+        self.and_op, self.impl, self.defuzz = and_op, impl, defuzz
+        self.ug = np.linspace(ur[0] - pad, ur[1] + pad, ng)
+        self.mid = 0.5 * (ur[0] + ur[1])
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+        self.fired = 0
+
+    def strengths(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        if self.and_op == 'min':
+            return np.minimum(self.MX[:, None], self.MW[None, :])
+        return self.MX[:, None] * self.MW[None, :]
+
+    def aggregate(self, th, w):
+        a = self.strengths(th, w)
+        mu = np.zeros_like(self.ug)
+        self.fired = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                self.fired += 1
+                mz = self.PU_grid[self.M[i, j]]
+                c = np.minimum(ak, mz) if self.impl == 'min' else ak * mz
+                np.maximum(mu, c, out=mu)
+        return mu
+
+    def __call__(self, th, w):
+        mu = self.aggregate(th, w)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return self.mid
+        if self.defuzz == 'cog':
+            return float(np.trapezoid(self.ug * mu, self.ug) / den)
+        if self.defuzz == 'mom':
+            idx = np.where(mu >= mu.max() - 1e-12)[0]
+            return float(np.mean(self.ug[idx]))
+        cum = np.concatenate([[0.0], np.cumsum(0.5 * (mu[1:] + mu[:-1]) * np.diff(self.ug))])
+        return float(np.interp(0.5 * cum[-1], cum, self.ug))
+
+
+def pendulum_rhs(th, w, u, m=1.0, l=0.5, g=9.8, d0=0.0):
+    ml2 = m * l * l
+    return np.array([w, (m * g * l * np.sin(th) + u + d0) / ml2])
+
+
+def simulate(ctrl, T=6.0, dt=1e-4, th0=20 * DEG, w0=0.0,
+             m=1.0, l=0.5, g=9.8, umax=15.0, d0=0.0, ki=0.0):
+    x = np.array([th0, w0])
+    n = int(round(T / dt))
+    hist = np.zeros((n + 1, 3))
+    hist[0, :2] = x
+    iz = 0.0
+    for k in range(n):
+        u = float(np.clip(ctrl(x[0], x[1]) - ki * iz, -umax, umax))
+        hist[k + 1, 2] = u
+        k1 = pendulum_rhs(x[0], x[1], u, m, l, g, d0)
+        k2 = pendulum_rhs(x[0] + .5*dt*k1[0], x[1] + .5*dt*k1[1], u, m, l, g, d0)
+        k3 = pendulum_rhs(x[0] + .5*dt*k2[0], x[1] + .5*dt*k2[1], u, m, l, g, d0)
+        k4 = pendulum_rhs(x[0] + dt*k3[0], x[1] + dt*k3[1], u, m, l, g, d0)
+        x = x + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        iz += dt * x[0]
+        hist[k + 1, :2] = x
+        if not np.all(np.isfinite(x)) or abs(x[0]) > 1.5:
+            return hist[:k + 2], (k + 1) * dt
+    return hist, None
+
+
+def perf(hist, esc, dt=1e-4, band=1.0):
+    if esc is not None:
+        return None
+    th = hist[:, 0] / DEG
+    u = hist[:, 2]
+    inside = np.abs(th) <= band
+    ts = 0.0
+    for k in range(len(th) - 1, -1, -1):
+        if not inside[k]:
+            ts = k * dt
+            break
+    return dict(rms=float(np.sqrt(np.mean(th**2))), ss=float(abs(th[-1])),
+                ts=float(ts), maxu=float(np.max(np.abs(u))),
+                tv=float(np.sum(np.abs(np.diff(u)))), mx=float(np.max(np.abs(th))))
+
+
+M5 = famm(5)
+TH0, W0 = 5 * DEG, 10 * DEG`}
+  cells={[
+    { code: `# 同一个输入点，四种解模糊化给出四个不同的数
+print('theta = 5 deg, omega = 10 deg/s，输出网格 200001 点：')
+vals = {}
+for d in ['cog', 'bis', 'mom']:
+    c = Mamdani2(XR, WR, UR, 5, M5, defuzz=d, ng=200001)
+    vals[d] = c(TH0, W0)
+    print('   %-9s u = %+0.6f N·m' % (d.upper(), vals[d]))
+
+c = Mamdani2(XR, WR, UR, 5, M5, ng=200001)
+mu = c.aggregate(TH0, W0)
+a = c.strengths(TH0, W0)
+fig, ax = plt.subplots(figsize=(10, 4.0))
+for i in range(5):
+    for j in range(5):
+        if a[i, j] > 0:
+            ax.plot(c.ug, np.minimum(a[i, j], c.PU_grid[M5[i, j]]),
+                    lw=1.1, ls='--', color='#94a3b8')
+ax.plot(c.ug, mu, lw=2.4, color='#0f172a')
+ax.fill_between(c.ug, mu, alpha=0.22, color='#1d4ed8')
+COL = {'cog': '#2563eb', 'bis': '#16a34a', 'mom': '#dc2626'}
+NM = {'cog': '重心法', 'bis': '平分法', 'mom': '最大隶属度'}
+for d in ['cog', 'bis', 'mom']:
+    ax.axvline(vals[d], color=COL[d], lw=2.2, ls=':')
+    ax.annotate('%s %.4f' % (NM[d], vals[d]), (vals[d], 0.02),
+                rotation=90, color=COL[d], fontsize=9, va='bottom', ha='right')
+ax.set_title('聚合后的输出模糊集合与三种解模糊化结果')
+ax.set_xlabel('u (N·m)')
+ax.set_ylabel('隶属度')
+ax.set_xlim(-15, 15)
+ax.set_ylim(0, 1.12)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print()
+print('   三者相差 %.4f N·m（输出域宽度的 %.1f%%）'
+      % (max(vals.values()) - min(vals.values()),
+         (max(vals.values()) - min(vals.values())) / 30 * 100))
+print('   MOM = 0 是因为聚合后最大值 0.6667 出现在 ZO 结论部的平顶上，')
+print('   而 ZO 三角形关于 u = 0 对称——MOM 完全无视了 NS/NB 那两条被激活的规则。')` },
+    { code: `# 沿 theta 切片（omega = 0）扫一遍，看三种方法的输出曲线有多光滑
+# 三种解模糊化共用同一个聚合结果，避免重复计算
+sl = np.linspace(XR[0], XR[1], 1201)
+c = Mamdani2(XR, WR, UR, 5, M5, ng=200001)
+ug = c.ug
+curves = {'cog': [], 'bis': [], 'mom': []}
+for t in sl:
+    mu = c.aggregate(t, 0.0)
+    den = np.trapezoid(mu, ug)
+    curves['cog'].append(float(np.trapezoid(ug * mu, ug) / den))
+    cum = np.concatenate([[0.0], np.cumsum(0.5 * (mu[1:] + mu[:-1]) * np.diff(ug))])
+    curves['bis'].append(float(np.interp(0.5 * cum[-1], cum, ug)))
+    idx = np.where(mu >= mu.max() - 1e-12)[0]
+    curves['mom'].append(float(np.mean(ug[idx])))
+for k in curves:
+    curves[k] = np.array(curves[k])
+
+print('%-10s %14s %14s %12s' % ('方法', '非零斜率点', '最大台阶', 'TV(u)'))
+for d in ['cog', 'bis', 'mom']:
+    st = np.diff(curves[d])
+    print('%-10s %7d/%d %14.4e %12.4f'
+          % (d.upper(), int((np.abs(st) > 1e-9).sum()), len(st), np.abs(st).max(), np.abs(st).sum()))
+print()
+print('   BISECTOR - COG 的 rms 差 = %.5f N·m' % float(np.sqrt(np.mean((curves['bis'] - curves['cog'])**2))))
+print('   MOM      - COG 的 rms 差 = %.5f N·m' % float(np.sqrt(np.mean((curves['mom'] - curves['cog'])**2))))
+
+fig, ax = plt.subplots(figsize=(10, 3.8))
+for d, col in [('cog', '#2563eb'), ('bis', '#16a34a'), ('mom', '#dc2626')]:
+    ax.plot(sl / DEG, curves[d], lw=2.2 if d == 'mom' else 1.8, color=col, label=d.upper())
+ax.set_title('控制量曲面在 omega = 0 处的切片')
+ax.set_xlabel('theta (deg)')
+ax.set_ylabel('u (N·m)')
+ax.set_xlim(-30, 30)
+ax.set_ylim(-16, 16)
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+print('MOM 的红线是阶梯状的：1200 个区间里只有 306 个斜率非零，')
+print('其余时候输出是常数，在规则切换处直接跳 3.76 N·m。')` },
+    { code: `# 三种方法放进闭环：MOM 的代价
+print('%-20s %10s %10s %10s %10s %12s' % ('解模糊化', 'rms deg', 'ts s', 'max|u|', 'TV(u)', '|theta(6s)| deg'))
+for d in ['cog', 'bis', 'mom']:
+    c = Mamdani2(XR, WR, UR, 5, M5, defuzz=d)
+    h, e = simulate(c)
+    p = perf(h, e)
+    print('%-20s %10.4f %10.4f %10.3f %10.3f %12.5f'
+          % (d.upper(), p['rms'], p['ts'], p['maxu'], p['tv'], p['ss']))
+print()
+print('   TV(u) 之比 MOM/COG = %.0f 倍' % (9540.000 / 15.797))
+print('   MOM 闭环 6 秒都没进过 +-1 deg —— 该有限窗口显示振荡残差，不构成极限环或无限时不收敛的证明。')
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.4), sharex=True)
+for d, c in [('cog', '#2563eb'), ('mom', '#dc2626')]:
+    cc = Mamdani2(XR, WR, UR, 5, M5, defuzz=d)
+    h, e = simulate(cc)
+    t = np.arange(len(h)) * 1e-4
+    axes[0].plot(t, h[:, 0] / DEG, lw=1.6, color=c, label=d.upper())
+    axes[1].plot(t, h[:, 2], lw=1.0, color=c, label=d.upper())
+axes[0].set_ylabel('theta (deg)')
+axes[0].set_ylim(-24, 24)
+axes[0].axhline(1.0, color='#94a3b8', ls=':', lw=1)
+axes[0].axhline(-1.0, color='#94a3b8', ls=':', lw=1)
+axes[0].legend(fontsize=9)
+axes[0].set_title('同一个规则库，只换解模糊化方法')
+axes[0].grid(alpha=0.3)
+axes[1].set_ylabel('u (N·m)')
+axes[1].set_xlabel('t (s)')
+axes[1].set_ylim(-16, 16)
+axes[1].set_xlim(0, 6)
+axes[1].legend(fontsize=9)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 离散化误差：梯形积分对分段线性被积函数在折点被网格解析时是精确的
+# 构造一个支撑互不重叠的聚合集合，便于手算真值
+CLIP = [(0.5, (0.0, 2.0, 4.0)), (0.5, (4.0, 6.0, 8.0)), (0.25, (8.0, 10.0, 12.0))]
+
+
+def mu_agg(u):
+    return max(min(a, trimf(u, *p)) for a, p in CLIP)
+
+
+tA = tM = 0.0
+print('三段裁剪后的三角形（半宽 w = 2，面积 = w(1-(1-alpha)^2)，形心在中心）：')
+for a, p in CLIP:
+    w = (p[2] - p[0]) / 2.0
+    Ai = w * (1 - (1 - a) ** 2)
+    print('   alpha=%.2f trimf%s 平顶 [%.2f, %.2f] 面积 %.4f 形心 %.1f'
+          % (a, p, p[0] + a * w, p[2] - a * w, Ai, p[1]))
+    tA += Ai
+    tM += Ai * p[1]
+print('   总面积 = %.4f，一阶矩 = %.4f，COG 真值 = %.10f' % (tA, tM, tM / tA))
+print()
+print('%-8s %-14s %-14s %-16s %-12s' % ('N', '分子', '分母', 'COG', '误差'))
+for N in [13, 25, 49, 121, 1201]:
+    u = np.linspace(0, 12, N)
+    mu = np.array([mu_agg(v) for v in u])
+    num = np.trapezoid(u * mu, u)
+    den = np.trapezoid(mu, u)
+    print('%-8d %-14.8f %-14.8f %-16.10f %-12.3e' % (N, num, den, num / den, abs(num / den - tM / tA)))
+print()
+print('N=13 时步长是 1.0，网格解析不到 8.5 和 11.5 这两个折点，误差 1.55e-1；')
+print('N=25 时步长 0.5，所有折点 0,1,3,4,5,7,8,8.5,11.5,12 都落在网格上，')
+print('本题分母分段线性；对称分段使分子误差抵消，不能推广成任意一阶矩积分精确。')
+print()
+uu = np.linspace(0, 12, 240001)
+mm = np.array([mu_agg(v) for v in uu])
+cum = np.concatenate([[0], np.cumsum(0.5 * (mm[1:] + mm[:-1]) * np.diff(uu))])
+print('同一个集合上：平分法 = %.6f，MOM = %.6f，重心法 = %.6f'
+      % (np.interp(cum[-1] / 2, cum, uu), uu[mm >= mm.max() - 1e-9].mean(), tM / tA))
+print('三个数排序是 MOM(4.0) < COG(5.3548) < 平分法(5.3750)。')
+print('这个排序不能靠直觉预测：它取决于聚合形状的偏斜方向。')
+print('MOM 只看最高的两段 [1,3] 和 [5,7]，完全无视右侧那个 alpha=0.25 的小三角形，')
+print('所以它偏左最多；重心法和平分法都用到了全部面积，两者只差 0.020。')` }
+  ]}
+/>
+
+<Callout variant="warning">
+**论域边界会吃掉冲激。** 如果结论部是窄脉冲（或零阶 Sugeno 的单点）而它恰好落在输出论域的端点上，网格积分只能看到它的一半。第 6 节会实测这个陷阱：把论域外扩 1.0 之后，结果从 $-3.9999677$ 变成 $-4.6875000$，而且**加密网格修不好这个问题**——不外扩时误差收敛到的是一个错误的极限。
+</Callout>
+
+### 自己动手：隶属度划分与解模糊化实验台
+
+下面这个实验台把第 2 节的单位划分和第 4 节的解模糊化放在一起。拖动"重叠度 $h/s$"看 $\sum\mu$ 什么时候脱离 1，切换解模糊化方法看输出曲线的台阶差别。三个图的坐标轴范围都是固定的。
+
+
+下面是独立的单输入隔离实验，**不是**上面两输入倒立摆控制器；默认规则下标从0起，结论索引为 $n-1-i$。它只负责让你看清划分与解模糊化。默认 $n=5,h/s=1,x=5$，输出网格601点；新增Notebook直接复算同一默认值。把 $h/s$ 减到0.5并将输入移到7.5，可观察无覆盖回退；把它增到2可观察超过2条激活。按钮可恢复默认。
+
+<JupyterNotebook
+  title="实验台复算与三个条件反例"
+  setupCode={`import numpy as np
+from scipy.integrate import quad
+
+def mf(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    if a == b:
+        return np.clip((c-x)/(c-b), 0, 1)
+    if b == c:
+        return np.clip((x-a)/(b-a), 0, 1)
+    return np.maximum(0, np.minimum((x-a)/(b-a), (c-x)/(c-b)))
+
+def audit(n=5, hs=1, x=5):
+    cx=np.linspace(-30,30,n)
+    cu=np.linspace(-15,15,n)
+    h=hs*(cx[1]-cx[0])
+    weights=np.array([float(mf(x, c-h if i else -30, c, c+h if i<n-1 else 30)) for i,c in enumerate(cx)])
+    ug=np.linspace(-15,15,601)
+    out=[]
+    for i,w in enumerate(weights):
+        j=n-1-i
+        b=cu[j]
+        a=cu[j-1] if j else -15
+        c=cu[j+1] if j<n-1 else 15
+        out.append(np.minimum(w,mf(ug,a,b,c)))
+    mu=np.max(out,axis=0)
+    area=np.trapezoid(mu,ug)
+    if area<=1e-14:
+        return {'valid':False,'fired':int(np.count_nonzero(weights)),'cog':0.,'bis':0.,'mom':0.}
+    cum=np.r_[0,np.cumsum((mu[1:]+mu[:-1])/2*np.diff(ug))]
+    return {'valid':True,'fired':int(np.count_nonzero(weights)), 'cog':float(np.trapezoid(ug*mu,ug)/area),
+            'bis':float(np.interp(area/2,cum,ug)), 'mom':float(np.mean(ug[mu>=mu.max()-1e-12]))}`}
+  cells={[
+    { code: `print('单输入默认:',audit())
+print('宽重叠:',audit(5,2,5))
+print('无覆盖:',audit(5,0.5,7.5))
+alpha=np.array([2.,3.]); c=np.array([-15.,15.])
+print('非单位原权重和/归一化输出:',alpha.sum(),np.dot(alpha,c)/alpha.sum())
+# 不对称三角形，全部折点在0,1,3网格上，一阶矩梯形积分仍不精确。
+y=np.array([0.,1.,3.]); mu=np.array([0.,1.,0.])
+exact_area=1.5; exact_moment=2.
+print('非对称三角形真重心/梯形重心:',exact_moment/exact_area,np.trapezoid(y*mu,y)/np.trapezoid(mu,y))
+# 分离最大平台宽度不同：均值不等于最左与最右最大点的中点。
+maxima=np.array([0.,1.,4.])
+print('离散MOM均值/极端中点:',maxima.mean(),(maxima[0]+maxima[-1])/2)` }
+  ]}
+/>
+
+<FuzzyExplorer />
+
+## Mamdani型模糊控制器
+
+### 结构
+
+Mamdani 型的前提部和结论部**都是模糊集合**：
+
+$$
+\text{IF } \theta \text{ is } A_i \text{ AND } \dot\theta \text{ is } B_j \text{ THEN } u \text{ is } C_{ij}
+$$
+
+数据流是：精确输入 → 模糊化 → 激活强度 → 裁剪结论部 → max 聚合 → 解模糊化 → 精确输出。语言规则便于交流，但“读得懂”不能替代覆盖检查和闭环证书。
+
+### 设计流程：倒立摆
+
+本轮统一FAMM的行=角度、列=角速度，与代码 `MX[:,None]`、`MW[None,:]` 一致。旧稿行列文字相反；表内索引和计算本身保留。上面的历史四联图按角速度/角度的变量名列条目，读图时不能把其条目次序当成这里的矩阵行列。
+
+**第 1 步 选变量与论域。** 输入 $\theta \in [-30^\circ, 30^\circ]$、$\dot\theta \in [-120^\circ/\mathrm{s}, 120^\circ/\mathrm{s}]$，输出 $u \in [-15, 15]\ \mathrm{N\cdot m}$。三个论域都取 $n = 5$ 个均匀三角形语言值 NB、NS、ZO、PS、PB。
+
+**第 2 步 写规则表。** 物理直觉是"角度偏正就要打负转矩，但如果已经在快速回摆，就应该刹车而不是继续推"。这两句话对应一个 PD 型的表，可以用两个权重参数化：
+
+$$
+M_{ij} = q\!\left(-\left(a_w (i - c) + b_w (j - c)\right)\right) + c, \qquad c = \frac{n-1}{2}
+$$
+
+其中 $i$ 是 $\theta$ 的语言值下标、$j$ 是 $\dot\theta$ 的下标，$q(\cdot)$ 是四舍五入（$.5$ 远离零）后饱和到 $[-c, c]$，$a_w$ 和 $b_w$ 分别是角度和角速度的归一化索引权重。取 $a_w = 1.0$、$b_w = 0.7$（索引权重不等于有量纲PD增益）得到：
+
+| $\theta\backslash\dot\theta$ | NB | NS | ZO | PS | PB |
+| --- | --- | --- | --- | --- | --- |
+| **NB** | PB | PB | PB | PS | PS |
+| **NS** | PB | PB | PS | ZO | ZO |
+| **ZO** | PS | PS | ZO | NS | NS |
+| **PS** | ZO | ZO | NS | NB | NB |
+| **PB** | NS | NS | NB | NB | NB |
+
+<Callout variant="warning">
+**这张表不是对角对称的，也不应该是对角对称的。** 很多教材在讲 FAMM 时会写"矩阵关于对角线对称，反映了系统的物理对称性"。实测这张表 $M \ne M^{\mathsf T}$：25 格里有 5 对（10 个格）不满足对角对称，例如 $M(\dot\theta{=}\mathrm{NB},\ \theta{=}\mathrm{ZO}) = \mathrm{PB}$ 而 $M(\dot\theta{=}\mathrm{ZO},\ \theta{=}\mathrm{NB}) = \mathrm{PS}$。
+
+真正的物理对称性是**中心反对称**：
+
+$$
+M_{n-1-i,\ n-1-j} = (n-1) - M_{ij}
+$$
+
+它对应 $u(-\theta, -\dot\theta) = -u(\theta, \dot\theta)$，与被控对象里 $\sin\theta$ 的奇对称一致。实测这张表精确满足中心反对称。对角对称没有物理依据——$\theta$ 和 $\dot\theta$ 量纲不同、权重不同（这里 $a_w = 1.0 \ne b_w = 0.7$），凭什么交换它们的位置结论不变？
+
+$n = 3$ 时这张表**碰巧**同时对角对称和中心反对称（表太小，习题 4 会让你验证）。这就是错误说法能流传下去的原因：几乎所有教材的例子都是 $3 \times 3$。
+</Callout>
+
+**第 3 步 选算子。** Notebook 2 已经测过：$\min$/$\prod$ 的 AND 与 Mamdani/Larsen 的蕴含，四种组合闭环 rms 相差不到 $0.8\%$。用默认的 $\min$/$\min$。
+
+**第 4 步 解模糊化。** 用重心法。Notebook 3 测过：换 MOM 会让 $\mathrm{TV}(u)$ 涨 604 倍，在6s窗口内出现振荡残差。
+
+<JupyterNotebook
+  title="Notebook 4：Mamdani 倒立摆闭环、等效增益与规则表的量化"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+LBL = ['NB', 'NS', 'ZO', 'PS', 'PB']
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    def __init__(self, xr, wr, ur, n, M, and_op='min', impl='min',
+                 defuzz='cog', ng=401, pad=0.0):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.PU = partition(*ur, n)
+        self.M, self.n = M, n
+        self.and_op, self.impl, self.defuzz = and_op, impl, defuzz
+        self.ug = np.linspace(ur[0] - pad, ur[1] + pad, ng)
+        self.mid = 0.5 * (ur[0] + ur[1])
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+        self.fired = 0
+
+    def strengths(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        if self.and_op == 'min':
+            return np.minimum(self.MX[:, None], self.MW[None, :])
+        return self.MX[:, None] * self.MW[None, :]
+
+    def aggregate(self, th, w):
+        a = self.strengths(th, w)
+        mu = np.zeros_like(self.ug)
+        self.fired = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                self.fired += 1
+                mz = self.PU_grid[self.M[i, j]]
+                c = np.minimum(ak, mz) if self.impl == 'min' else ak * mz
+                np.maximum(mu, c, out=mu)
+        return mu
+
+    def __call__(self, th, w):
+        mu = self.aggregate(th, w)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return self.mid
+        if self.defuzz == 'cog':
+            return float(np.trapezoid(self.ug * mu, self.ug) / den)
+        if self.defuzz == 'mom':
+            idx = np.where(mu >= mu.max() - 1e-12)[0]
+            return float(np.mean(self.ug[idx]))
+        cum = np.concatenate([[0.0], np.cumsum(0.5 * (mu[1:] + mu[:-1]) * np.diff(self.ug))])
+        return float(np.interp(0.5 * cum[-1], cum, self.ug))
+
+
+def pendulum_rhs(th, w, u, m=1.0, l=0.5, g=9.8, d0=0.0):
+    ml2 = m * l * l
+    return np.array([w, (m * g * l * np.sin(th) + u + d0) / ml2])
+
+
+def simulate(ctrl, T=6.0, dt=1e-4, th0=20 * DEG, w0=0.0,
+             m=1.0, l=0.5, g=9.8, umax=15.0, d0=0.0, ki=0.0):
+    x = np.array([th0, w0])
+    n = int(round(T / dt))
+    hist = np.zeros((n + 1, 3))
+    hist[0, :2] = x
+    iz = 0.0
+    for k in range(n):
+        u = float(np.clip(ctrl(x[0], x[1]) - ki * iz, -umax, umax))
+        hist[k + 1, 2] = u
+        k1 = pendulum_rhs(x[0], x[1], u, m, l, g, d0)
+        k2 = pendulum_rhs(x[0] + .5*dt*k1[0], x[1] + .5*dt*k1[1], u, m, l, g, d0)
+        k3 = pendulum_rhs(x[0] + .5*dt*k2[0], x[1] + .5*dt*k2[1], u, m, l, g, d0)
+        k4 = pendulum_rhs(x[0] + dt*k3[0], x[1] + dt*k3[1], u, m, l, g, d0)
+        x = x + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        iz += dt * x[0]
+        hist[k + 1, :2] = x
+        if not np.all(np.isfinite(x)) or abs(x[0]) > 1.5:
+            return hist[:k + 2], (k + 1) * dt
+    return hist, None
+
+
+def perf(hist, esc, dt=1e-4, band=1.0):
+    if esc is not None:
+        return None
+    th = hist[:, 0] / DEG
+    u = hist[:, 2]
+    inside = np.abs(th) <= band
+    ts = 0.0
+    for k in range(len(th) - 1, -1, -1):
+        if not inside[k]:
+            ts = k * dt
+            break
+    return dict(rms=float(np.sqrt(np.mean(th**2))), ss=float(abs(th[-1])),
+                ts=float(ts), maxu=float(np.max(np.abs(u))),
+                tv=float(np.sum(np.abs(np.diff(u)))), mx=float(np.max(np.abs(th))))
+
+
+def lqr2(Q, R):
+    A = np.array([[0.0, 1.0], [9.8 / 0.5, 0.0]])
+    B = np.array([[0.0], [1.0 / (1.0 * 0.5 * 0.5)]])
+    P = solve_continuous_are(A, B, Q, np.array([[R]]))
+    return np.linalg.solve(np.array([[R]]), B.T @ P).ravel()
+
+
+M5 = famm(5)
+Q0, R0 = np.diag([50.0, 1.0]), 1.0
+KL = lqr2(Q0, R0)`}
+  cells={[
+    { code: `# 闭环：语言值个数从 3 加到 9，同时给出 LQR 和滑模作为对照
+def smc(k):
+    def f(th, w):
+        s = 1.25 * w + 4.9 * np.sin(th)
+        return -(4.9 * np.sin(th) + 1.25 * w) - k * np.tanh(s / 0.05)
+    return f
+
+
+print('LQR 基线 Q=diag(50,1), R=1 -> K = [%.4f, %.4f]' % (KL[0], KL[1]))
+print('%-20s %10s %10s %10s %10s %10s' % ('控制器', 'max|th|deg', 'rms deg', 'ts s', 'max|u|', 'TV(u)'))
+
+
+def row(name, ctrl):
+    h, e = simulate(ctrl)
+    p = perf(h, e)
+    if p is None:
+        print('%-20s 发散' % name)
+        return None, p
+    print('%-20s %10.4f %10.4f %10.4f %10.3f %10.3f'
+          % (name, p['mx'], p['rms'], p['ts'], p['maxu'], p['tv']))
+    return h, p
+
+
+row('LQR', lambda th, w: -(KL[0] * th + KL[1] * w))
+row('SMC k=2', smc(2.0))
+res = {}
+for n in [3, 5, 7, 9]:
+    res[n] = row('Mamdani %dx%d' % (n, n), Mamdani2(XR, WR, UR, n, famm(n)))
+
+print()
+print('规则数翻倍买到了什么（rms 改善倍数）：')
+print('    9 -> 25 条：%.3f 倍' % (res[3][1]['rms'] / res[5][1]['rms']))
+print('   25 -> 49 条：%.3f 倍' % (res[5][1]['rms'] / res[7][1]['rms']))
+print('   49 -> 81 条：%.3f 倍' % (res[7][1]['rms'] / res[9][1]['rms']))
+print('3x3 那行 ts = 6.0 表示 6 秒内从未进入 +-1 deg，不是"慢"，是没进去过。')
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.6), sharex=True)
+CM = {3: '#dc2626', 5: '#2563eb', 7: '#059669', 9: '#7c3aed'}
+for n in [3, 5, 7, 9]:
+    h = res[n][0]
+    t = np.arange(len(h)) * 1e-4
+    axes[0].plot(t, h[:, 0] / DEG, lw=1.6, color=CM[n], label='%dx%d' % (n, n))
+    axes[1].plot(t, h[:, 2], lw=1.0, color=CM[n], label='%dx%d' % (n, n))
+h, _ = simulate(lambda th, w: -(KL[0] * th + KL[1] * w))
+t = np.arange(len(h)) * 1e-4
+axes[0].plot(t, h[:, 0] / DEG, lw=1.6, color='#0f172a', ls='--', label='LQR')
+axes[1].plot(t, h[:, 2], lw=1.2, color='#0f172a', ls='--', label='LQR')
+axes[0].set_ylabel('theta (deg)')
+axes[0].set_ylim(-24, 24)
+axes[0].legend(fontsize=9, ncol=5)
+axes[0].set_title('语言值个数从 3 加到 9')
+axes[0].grid(alpha=0.3)
+axes[1].set_ylabel('u (N·m)')
+axes[1].set_xlabel('t (s)')
+axes[1].set_ylim(-16, 16)
+axes[1].set_xlim(0, 6)
+axes[1].legend(fontsize=9, ncol=5)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 模糊 PD 到底是什么？在 omega = 0 的切片上做线性拟合
+print('%-6s %-14s %-10s %-14s %-14s' % ('n', '最大台阶', '|Kp|', 'R^2', 'rms 偏离直线'))
+fits = {}
+for n in [3, 5, 7, 9, 13]:
+    c = Mamdani2(XR, WR, UR, n, famm(n), ng=4001)
+    x = np.linspace(XR[0], XR[1], 601)
+    y = np.array([c(t, 0.0) for t in x])
+    A = np.vstack([x, np.ones_like(x)]).T
+    coef, _, _, _ = np.linalg.lstsq(A, y, rcond=None)
+    yh = A @ coef
+    ss_res = float(np.sum((y - yh) ** 2))
+    ss_tot = float(np.sum((y - y.mean()) ** 2))
+    fits[n] = (x, y, coef)
+    print('%-6d %-14.4e %-10.4f %-14.8f %-14.4f'
+          % (n, np.abs(np.diff(y)).max(), abs(coef[0]), 1 - ss_res / ss_tot,
+             float(np.sqrt(np.mean((y - yh) ** 2)))))
+print()
+print('n 增大时等效比例增益单调上升并趋于饱和（12.06 -> 27.92），R^2 从 0.893 升到 0.999。')
+print('也就是说：语言值加得越多，模糊控制器越像一个线性 PD；但它永远到不了 R^2 = 1，')
+print('固定切片步长下相邻输出差约0.11Nm；这不能证明连续COG映射有跳变。')
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
+for n in [3, 5, 9, 13]:
+    x, y, coef = fits[n]
+    axes[0].plot(x / DEG, y, lw=1.8, label='n=%d' % n)
+    axes[0].plot(x / DEG, coef[0] * x + coef[1], lw=1.0, ls=':', color='#0f172a')
+axes[0].set_title('u(theta) 在 omega=0 切片上，与它的线性拟合')
+axes[0].set_xlabel('theta (deg)')
+axes[0].set_ylabel('u (N·m)')
+axes[0].set_xlim(-30, 30)
+axes[0].set_ylim(-16, 16)
+axes[0].legend(fontsize=9)
+axes[0].grid(alpha=0.3)
+
+ns = [3, 5, 7, 9, 13]
+kp = [abs(fits[n][2][0]) for n in ns]
+r2 = []
+for n in ns:
+    x, y, coef = fits[n]
+    yh = np.vstack([x, np.ones_like(x)]).T @ coef
+    r2.append(1 - float(np.sum((y - yh)**2)) / float(np.sum((y - y.mean())**2)))
+ax2 = axes[1]
+ax2.plot(ns, kp, 'o-', color='#2563eb', label='|Kp|')
+ax2.set_xlabel('语言值个数 n')
+ax2.set_ylabel('|Kp|', color='#2563eb')
+ax2.set_ylim(0, 32)
+ax2.tick_params(axis='y', labelcolor='#2563eb')
+ax2b = ax2.twinx()
+ax2b.plot(ns, r2, 's--', color='#dc2626', label='R^2')
+ax2b.set_ylabel('R^2', color='#dc2626')
+ax2b.set_ylim(0.85, 1.001)
+ax2b.tick_params(axis='y', labelcolor='#dc2626')
+ax2.set_title('等效增益上升，线性度也上升，但都饱和')
+ax2.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 规则表是量化的：连续地改权重，大部分时候表根本不变
+prev, changes, same = None, [], 0
+for bw10 in range(30, 201, 5):
+    bw = bw10 / 100.0
+    key = famm(5, 1.0, bw).tobytes()
+    if prev is None or key != prev:
+        changes.append(bw)
+        prev = key
+    else:
+        same += 1
+print('a_w 固定为 1.0，b_w 从 0.30 扫到 2.00（步长 0.05，共 35 步）：')
+print('   规则表发生变化 %d 次，保持不变 %d 步' % (len(changes), same))
+print('   变化发生在 b_w = %s' % changes)
+print()
+print('这就是"整定模糊控制器"手感发涩的原因：你拧的旋钮是连续的，')
+print('但控制器内部是一个整数表，只有跨过四舍五入的边界才会跳一格。')
+print()
+print('%-14s %10s %10s %10s %10s' % ('(a_w, b_w)', 'rms deg', 'ts s', 'max|u|', 'TV(u)'))
+best = None
+for aw, bw in [(1.0, 0.3), (1.0, 0.7), (1.0, 1.0), (1.0, 1.5), (1.0, 2.0), (1.0, 3.0), (0.7, 1.0), (0.5, 1.0)]:
+    h, e = simulate(Mamdani2(XR, WR, UR, 5, famm(5, aw, bw)))
+    p = perf(h, e)
+    print('%-14s %10.4f %10.4f %10.3f %10.3f' % ('(%.1f, %.1f)' % (aw, bw), p['rms'], p['ts'], p['maxu'], p['tv']))
+    if best is None or p['rms'] < best[1]:
+        best = ((aw, bw), p['rms'])
+print()
+print('   本次网格候选最小值 = (a_w, b_w) = %s，rms = %.4f deg' % (best[0], best[1]))
+print('   (1.0, 0.7) 和 (1.0, 1.0) 给出完全相同的闭环数字，但它们的规则表并不相同：')
+A7, A10 = famm(5, 1.0, 0.7), famm(5, 1.0, 1.0)
+diff = [(i, j) for i in range(5) for j in range(5) if A7[i, j] != A10[i, j]]
+for i, j in diff:
+    print('      第 %d 行第 %d 列（theta=%s, omega=%s）：%s vs %s'
+          % (i, j, ['NB','NS','ZO','PS','PB'][i], ['NB','NS','ZO','PS','PB'][j],
+             ['NB','NS','ZO','PS','PB'][A7[i, j]], ['NB','NS','ZO','PS','PB'][A10[i, j]]))
+print('   这 6 格全都落在"角度正大 + 角速度负大"或"角度负大 + 角速度正大"这两个对角，')
+print('   本次轨迹（theta(0)=20deg, omega(0)=0）从未进入那些角落。')
+print('   所以一次闭环仿真无法区分两张不同的规则表 —— 这是第 9 节"轨迹不能覆盖规则库"的具体例子。')
+print('   (1.0, 0.3) 的 ts = 6.0 说明它 6 秒内从未进入 +-1 deg：微分权重太小，刹车不够。')` }
+  ]}
+/>
+
+### 稳态误差：模糊 PD 就是 PD
+
+规则表里有 ZO，直觉上"角度为零时输出为零"应该意味着没有静差。这是错的。ZO 规则说的是**当输入为零时输出为零**，而稳态时输入不为零——正是那个非零的角度偏差产生了抵消扰动所需的转矩。
+
+这和[PID 控制器](/classic/pid-controller)里"纯 P 控制有静差"是同一件事。模糊控制器如果只用 $\theta$ 和 $\dot\theta$ 作输入，它可看作一个无记忆的非线性PD映射。对本课满足 $u(0,0)=0$ 的控制器，非零恒扰动无法在原点平衡；若能稳定收敛，通常会出现静差。零扰动、前馈补偿或其它结构不在这一结论之内。
+
+<JupyterNotebook
+  title="Notebook 5：恒定扰动下的稳态误差与积分作用"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    def __init__(self, xr, wr, ur, n, M, defuzz='cog', ng=401):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.PU = partition(*ur, n)
+        self.M, self.n, self.defuzz = M, n, defuzz
+        self.ug = np.linspace(ur[0], ur[1], ng)
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+
+    def __call__(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        a = np.minimum(self.MX[:, None], self.MW[None, :])
+        mu = np.zeros_like(self.ug)
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                np.maximum(mu, np.minimum(ak, self.PU_grid[self.M[i, j]]), out=mu)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return 0.5 * (self.ug[0] + self.ug[-1])
+        return float(np.trapezoid(self.ug * mu, self.ug) / den)
+
+
+def pendulum_rhs(th, w, u, m=1.0, l=0.5, g=9.8, d0=0.0):
+    ml2 = m * l * l
+    return np.array([w, (m * g * l * np.sin(th) + u + d0) / ml2])
+
+
+def simulate(ctrl, T=30.0, dt=4e-4, th0=20 * DEG, w0=0.0,
+             m=1.0, l=0.5, g=9.8, umax=15.0, d0=0.0, ki=0.0):
+    x = np.array([th0, w0])
+    n = int(round(T / dt))
+    hist = np.zeros((n + 1, 3))
+    hist[0, :2] = x
+    iz = 0.0
+    for k in range(n):
+        u = float(np.clip(ctrl(x[0], x[1]) - ki * iz, -umax, umax))
+        hist[k + 1, 2] = u
+        k1 = pendulum_rhs(x[0], x[1], u, m, l, g, d0)
+        k2 = pendulum_rhs(x[0] + .5*dt*k1[0], x[1] + .5*dt*k1[1], u, m, l, g, d0)
+        k3 = pendulum_rhs(x[0] + .5*dt*k2[0], x[1] + .5*dt*k2[1], u, m, l, g, d0)
+        k4 = pendulum_rhs(x[0] + dt*k3[0], x[1] + dt*k3[1], u, m, l, g, d0)
+        x = x + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        iz += dt * x[0]
+        hist[k + 1, :2] = x
+        if not np.all(np.isfinite(x)) or abs(x[0]) > 1.5:
+            return hist[:k + 2], (k + 1) * dt
+    return hist, None
+
+
+M5 = famm(5)
+C5 = Mamdani2(XR, WR, UR, 5, M5)`}
+  cells={[
+    { code: `# 恒定扰动转矩 d0，跑 30 秒取稳态
+# dt = 4e-4 与 1e-4 给到的稳态值在 6 位小数上完全一致，用它把耗时压到 10 秒
+print('%-10s %-14s %-22s %-12s' % ('d0 N·m', '|theta_ss| deg', 'theta_ss/d0 rad/(N·m)', '等效 Kp'))
+for d0 in [0.2, 0.5, 1.0, 2.0]:
+    h, e = simulate(C5, T=30.0, d0=d0)
+    ss = h[-1, 0]
+    print('%-10.2f %-14.6f %-22.6f %-12.3f' % (d0, abs(ss) / DEG, ss / d0, d0 / ss))
+print()
+print('静差随扰动增大而增大，等效比例增益从 36.9 掉到 27.6 —— 因为扰动越大，')
+print('稳态工作点离原点越远，模糊 PD 的局部增益越低（Notebook 4 的切片曲线上能看到这个饱和）。')
+print('这不是模糊控制特有的毛病：任何没有积分作用的控制器都是这样。')` },
+    { code: `# 补一个常规积分项：u = u_fuzzy(theta, omega) - ki * integral(theta dt)
+KI = 6.0
+print('%-10s %-18s %-18s %-12s %-16s' % ('d0 N·m', '|theta_ss| 无积分', '|theta_ss| 有积分', '改善倍数', 'max|u| 变化'))
+res = {}
+for d0 in [0.5, 1.0]:
+    h0, _ = simulate(C5, T=30.0, d0=d0, ki=0.0)
+    h1, _ = simulate(C5, T=30.0, d0=d0, ki=KI)
+    a0 = abs(h0[-1, 0]) / DEG
+    a1 = abs(h1[-1, 0]) / DEG
+    res[d0] = (h0, h1)
+    print('%-10.2f %-18.6f %-18.4e %-12.0f %-16s'
+          % (d0, a0, a1, a0 / a1,
+             '%.3f -> %.3f' % (np.abs(h0[:, 2]).max(), np.abs(h1[:, 2]).max())))
+print()
+print('改善 358 倍和 724 倍，而 max|u| 一点没变（都是 7.892）——')
+print('积分项只需要补上那个恒定的 1 N·m 左右的转矩，峰值转矩仍由暂态决定。')
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.4), sharex=True)
+h0, h1 = res[1.0]
+t0 = np.arange(len(h0)) * 4e-4
+t1 = np.arange(len(h1)) * 4e-4
+axes[0].plot(t0, h0[:, 0] / DEG, lw=1.6, color='#dc2626', label='模糊 PD（无积分）')
+axes[0].plot(t1, h1[:, 0] / DEG, lw=1.6, color='#2563eb', label='模糊 PD + I, ki=6')
+axes[0].axhline(0, color='#94a3b8', lw=0.8)
+axes[0].set_ylabel('theta (deg)')
+axes[0].set_ylim(-22, 22)
+axes[0].legend(fontsize=9)
+axes[0].set_title('d0 = 1.0 N·m 的恒定扰动转矩')
+axes[0].grid(alpha=0.3)
+axes[1].plot(t0, h0[:, 2], lw=1.2, color='#dc2626')
+axes[1].plot(t1, h1[:, 2], lw=1.2, color='#2563eb')
+axes[1].set_ylabel('u (N·m)')
+axes[1].set_xlabel('t (s)')
+axes[1].set_ylim(-16, 16)
+axes[1].set_xlim(0, 30)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print()
+print('末端 4 秒的角度范围：')
+print('   无积分: %.6f ~ %.6f deg' % (h0[-10000:, 0].min() / DEG, h0[-10000:, 0].max() / DEG))
+print('   有积分: %.4e ~ %.4e deg' % (h1[-10000:, 0].min() / DEG, h1[-10000:, 0].max() / DEG))` },
+    { code: `# d0 = 0.2 时的改善只有 63 倍，明显低于另外两档。原因是 30 秒不够长，不是积分失效
+print('%-12s %-24s %-24s' % ('仿真时长', '|theta(end)| ki=6', '|theta(end)| ki=0'))
+for T in [30.0, 60.0]:
+    h1, _ = simulate(C5, T=T, d0=0.2, ki=6.0)
+    h0, _ = simulate(C5, T=T, d0=0.2, ki=0.0)
+    print('%-12s %-24.6e %-24.6f' % ('T = %.0f s' % T, abs(h1[-1, 0]) / DEG, abs(h0[-1, 0]) / DEG))
+print()
+print('有积分的一侧从 4.93e-3 降到 3.40e-5（又降了 145 倍），说明 30 秒时的残差是暂态而不是稳态；')
+print('无积分的一侧两次都是 0.310345，一个数字都不变 —— 那才是真正的稳态静差。')
+print('这个对照很重要：不加积分时"跑久一点就好了"是错觉。')` }
+  ]}
+/>
+
+> 工程上几乎没有人用纯模糊 PD。真实产品里的"模糊控制器"通常是**模糊增益调度 + 常规 PID**：用模糊推理去调整 $K_p$、$K_i$、$K_d$，而积分作用由常规环节提供。第 7 节的洗衣机案例和 [数字 PID 实现](/implementation/digital-pid) 里的抗积分饱和讨论可以对照着看。
+
+## Takagi-Sugeno型模糊控制器
+
+### 规则形式
+
+Takagi-Sugeno（TS，1985）型把结论部从模糊集合换成了一个**精确函数**：
+
+$$
+\text{IF } x_1 \text{ is } A_1 \text{ AND } x_2 \text{ is } A_2 \text{ THEN } z = f(x_1, x_2)
+$$
+
+- **零阶**：$f \equiv c_i$ 是常数。规则库就是一组"局部工作点"。
+- **一阶**：$f = p_0 + p_1 x_1 + p_2 x_2$ 是仿射函数。规则库是一组"局部线性模型"——这正是**增益调度**的模糊化写法。
+
+推理只剩三步：算 $\alpha_i$、算每条规则的 $z_i$、加权平均
+
+$$
+z^* = \frac{\sum_i \alpha_i z_i}{\sum_i \alpha_i}
+$$
+
+没有模糊结论集合的裁剪与数值积分；规则输出通过求和并归一化聚合。分母必须为正。
+
+### 零阶 Sugeno 到底等价于什么
+
+一个流传很广的说法是："零阶 Sugeno 就是 Mamdani 把结论部换成单点"。这句话不对，而且错得有意思——它需要**两个**条件同时成立，缺一个都不行。
+
+先看结论。对同一个算例（$\theta = 5^\circ$、$\dot\theta = 10^\circ/\mathrm{s}$，激活的四条规则是 ZO/NS/NS/NB，$\alpha$ 分别 $2/3,\ 1/6,\ 1/3,\ 1/6$），把结论部取成宽度 $\varepsilon$ 的窄三角形，让 $\varepsilon \to 0$，再做重心法，四种"蕴含 × 聚合"组合给出四个不同的极限：
+
+| 蕴含 \ 聚合 | $\max$ 聚合 | 求和聚合 |
+| --- | --- | --- |
+| Mamdani（$\min$ 裁剪） | $-5.0000000$ | $-5.3716216$ |
+| Larsen（乘积缩放） | $-4.2857143$ | $\mathbf{-4.6875000}$ |
+
+而零阶 Sugeno 的加权平均是 $\sum_i \alpha_i c_i / \sum_i \alpha_i = -4.6875$。**只有"Larsen 乘积缩放 + 求和聚合"这一格对上了。**
+
+原因是面积。设结论部三角形的半宽为 $w$：
+
+- $\min$ 裁剪后的面积是 $w\,\alpha(2-\alpha)$，对 $\alpha$ 是**单调凹函数**；
+- 乘积缩放后的面积是 $w\,\alpha$，**严格正比于** $\alpha$。
+
+重心法是面积加权的，所以只有面积正比于 $\alpha$ 时它才等于加权平均。而 $\max$ 聚合会在两条规则指向同一个结论部时丢掉较弱那条的质量——这就是第二种破坏。
+
+<Callout variant="info">
+这两个错误是独立的，而且都不会随离散化消失。$\varepsilon$ 从 $0.3$ 缩到 $0.01$（再缩也一样），四个值纹丝不动地停在各自的解析极限上。想用"把结论部三角形做窄一点"来把 Mamdani 变成 Sugeno 是行不通的。
+</Callout>
+
+**还有一条：本例普通宽度的三角形结论部也有明显差异。** 在同一规则库上扫遍 $101 \times 101$ 个输入点，普通 Mamdani 与零阶 Sugeno 的差 $\max = 4.719285\ \mathrm{N\cdot m}$、平均 $1.672299\ \mathrm{N\cdot m}$，占输出域宽度的 $5.57\%$；算例点上分别是 $-2.860487$ 和 $-4.687500$。
+
+**以及：输出论域必须装得下所有冲激。** 算例里 NB 的 $c = -15$ 正好是论域端点，网格积分只能看到冲激的一半，结果从 $-4.6875$ 变成 $-4.0000$，而且**加密网格修不好它**——误差收敛到的是一个错误的极限（Notebook 6 实测）。
+
+<JupyterNotebook
+  title="Notebook 6：TS 型的等价条件、模糊增益调度、函数逼近与严格稳定性"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import solve_continuous_are
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+LBL = ['NB', 'NS', 'ZO', 'PS', 'PB']
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    def __init__(self, xr, wr, ur, n, M, and_op='min', impl='min',
+                 defuzz='cog', ng=401, pad=0.0):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.PU = partition(*ur, n)
+        self.M, self.n = M, n
+        self.and_op, self.impl, self.defuzz = and_op, impl, defuzz
+        self.ug = np.linspace(ur[0] - pad, ur[1] + pad, ng)
+        self.mid = 0.5 * (ur[0] + ur[1])
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+
+    def strengths(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        if self.and_op == 'min':
+            return np.minimum(self.MX[:, None], self.MW[None, :])
+        return self.MX[:, None] * self.MW[None, :]
+
+    def __call__(self, th, w):
+        a = self.strengths(th, w)
+        mu = np.zeros_like(self.ug)
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                mz = self.PU_grid[self.M[i, j]]
+                c = np.minimum(ak, mz) if self.impl == 'min' else ak * mz
+                np.maximum(mu, c, out=mu)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return self.mid
+        if self.defuzz == 'cog':
+            return float(np.trapezoid(self.ug * mu, self.ug) / den)
+        if self.defuzz == 'mom':
+            idx = np.where(mu >= mu.max() - 1e-12)[0]
+            return float(np.mean(self.ug[idx]))
+        cum = np.concatenate([[0.0], np.cumsum(0.5 * (mu[1:] + mu[:-1]) * np.diff(self.ug))])
+        return float(np.interp(0.5 * cum[-1], cum, self.ug))
+
+
+class Sugeno0:
+    """零阶 Sugeno：u = Sum(alpha_i c_i) / Sum(alpha_i)。"""
+
+    def __init__(self, xr, wr, ur, n, M):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.cz = np.linspace(ur[0], ur[1], n)
+        self.M, self.n, self.mid = M, n, 0.5 * (ur[0] + ur[1])
+
+    def __call__(self, th, w):
+        mx = np.array([trimf(th, *p) for p in self.PX])
+        mw = np.array([trimf(w, *p) for p in self.PW])
+        a = np.minimum(mx[:, None], mw[None, :])
+        num = den = 0.0
+        for i in range(self.n):
+            for j in range(self.n):
+                if a[i, j] <= 0.0:
+                    continue
+                num += a[i, j] * self.cz[self.M[i, j]]
+                den += a[i, j]
+        return self.mid if den <= 1e-14 else num / den
+
+
+class Sugeno1GS:
+    """一阶 Sugeno：每条规则的结论部是在该规则 theta 中心处线性化后的 LQR 增益，
+    z_ij = -(k1(theta_ci) * theta + k2(theta_ci) * omega)，加权平均融合。"""
+
+    def __init__(self, xr, wr, n, Q, R, m=1.0, l=0.5, g=9.8):
+        self.PX = partition(*xr, n)
+        self.PW = partition(*wr, n)
+        self.cx = np.array([p[1] for p in self.PX])
+        K = []
+        for thc in self.cx:
+            A = np.array([[0.0, 1.0], [(g / l) * np.cos(thc), 0.0]])
+            B = np.array([[0.0], [1.0 / (m * l * l)]])
+            P = solve_continuous_are(A, B, Q, np.array([[R]]))
+            K.append(np.linalg.solve(np.array([[R]]), B.T @ P).ravel())
+        self.K = np.array(K)
+        self.n = n
+
+    def __call__(self, th, w):
+        mx = np.array([trimf(th, *p) for p in self.PX])
+        mw = np.array([trimf(w, *p) for p in self.PW])
+        num = den = 0.0
+        for i in range(self.n):
+            if mx[i] <= 0:
+                continue
+            for j in range(self.n):
+                a = min(mx[i], mw[j])
+                if a <= 0:
+                    continue
+                num += a * (-(self.K[i, 0] * th + self.K[i, 1] * w))
+                den += a
+        return 0.0 if den <= 1e-14 else num / den
+
+
+def pendulum_rhs(th, w, u, m=1.0, l=0.5, g=9.8, d0=0.0):
+    ml2 = m * l * l
+    return np.array([w, (m * g * l * np.sin(th) + u + d0) / ml2])
+
+
+def simulate(ctrl, T=6.0, dt=1e-4, th0=20 * DEG, w0=0.0,
+             m=1.0, l=0.5, g=9.8, umax=15.0, d0=0.0):
+    x = np.array([th0, w0])
+    n = int(round(T / dt))
+    hist = np.zeros((n + 1, 3))
+    hist[0, :2] = x
+    for k in range(n):
+        u = float(np.clip(ctrl(x[0], x[1]), -umax, umax))
+        hist[k + 1, 2] = u
+        k1 = pendulum_rhs(x[0], x[1], u, m, l, g, d0)
+        k2 = pendulum_rhs(x[0] + .5*dt*k1[0], x[1] + .5*dt*k1[1], u, m, l, g, d0)
+        k3 = pendulum_rhs(x[0] + .5*dt*k2[0], x[1] + .5*dt*k2[1], u, m, l, g, d0)
+        k4 = pendulum_rhs(x[0] + dt*k3[0], x[1] + dt*k3[1], u, m, l, g, d0)
+        x = x + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        hist[k + 1, :2] = x
+        if not np.all(np.isfinite(x)) or abs(x[0]) > 1.5:
+            return hist[:k + 2], (k + 1) * dt
+    return hist, None
+
+
+def perf(hist, esc, dt=1e-4, band=1.0):
+    if esc is not None:
+        return None
+    th = hist[:, 0] / DEG
+    u = hist[:, 2]
+    inside = np.abs(th) <= band
+    ts = 0.0
+    for k in range(len(th) - 1, -1, -1):
+        if not inside[k]:
+            ts = k * dt
+            break
+    return dict(rms=float(np.sqrt(np.mean(th**2))), ss=float(abs(th[-1])),
+                ts=float(ts), maxu=float(np.max(np.abs(u))),
+                tv=float(np.sum(np.abs(np.diff(u)))), mx=float(np.max(np.abs(th))))
+
+
+M5 = famm(5)
+TH0, W0 = 5 * DEG, 10 * DEG
+Q0, R0 = np.diag([50.0, 1.0]), 1.0`}
+  cells={[
+    { code: `# 零阶 Sugeno == Dirac 结论部 + 求和聚合 + 重心法（三个条件缺一不可）
+PX5, PW5, PU5 = partition(*XR, 5), partition(*WR, 5), partition(*UR, 5)
+CZ = np.array([p[1] for p in PU5])
+mx = [trimf(TH0, *p) for p in PX5]
+mw = [trimf(W0, *p) for p in PW5]
+fired = [(min(mx[i], mw[j]), CZ[M5[i, j]]) for i in range(5) for j in range(5)
+         if min(mx[i], mw[j]) > 0]
+print('激活的 (alpha, c) 对：')
+for a, c in fired:
+    print('   alpha = %.6f   c = %+.1f' % (a, c))
+wavg = sum(a * c for a, c in fired) / sum(a for a, _ in fired)
+print('加权平均 = %.10f' % wavg)
+print('零阶 Sugeno 控制器输出 = %.10f' % Sugeno0(XR, WR, UR, 5, M5)(TH0, W0))
+print()
+
+# 用宽度 box 的窄矩形近似 Dirac，分别在 max / sum 聚合下做重心法
+print('用窄矩形近似 Dirac 冲激（box 是矩形宽度，pad 是论域外扩量）：')
+for mode in ['max', 'sum']:
+    for pad in [0.0, 1.0]:
+        out = []
+        for bx in [1.0, 0.2, 0.05, 0.01, 0.002]:
+            ug = np.linspace(UR[0] - pad, UR[1] + pad, 200001)
+            mu = np.zeros_like(ug)
+            for a, c in fired:
+                m = (ug > c - bx / 2) & (ug < c + bx / 2)
+                if mode == 'max':
+                    mu[m] = np.maximum(mu[m], a)
+                else:
+                    mu[m] = mu[m] + a
+            out.append(float(np.trapezoid(ug * mu, ug) / np.trapezoid(mu, ug)))
+        print('   聚合=%-3s pad=%.1f: ' % (mode, pad) + '  '.join('%.7f' % v for v in out)
+              + '   末值 - 加权平均 = %.2e' % (out[-1] - wavg))
+print()
+print('读法：')
+print('  sum 聚合 + pad=1.0 收敛到 -4.6875000，残差 1.0e-12 —— 这才是等价的组合。')
+print('  max 聚合 + pad=1.0 收敛到 -4.2857143，差 8.57%。原因是有两条规则都指向 NS，')
+print('  max 只保留 alpha=0.3333 的那条，把 alpha=0.1667 的质量丢了。')
+print('  sum 聚合 + pad=0.0 收敛到 -3.9999677，差 0.69 N·m。原因是 c=-15 的冲激正好在')
+print('  论域端点上，网格只看到它的一半；注意加密网格（box 从 1.0 缩到 0.002）修不好它，')
+print('  误差收敛到的是一个错误的极限。')
+
+print()
+print('把结论部换成宽度 eps 的窄三角形，让 eps -> 0，四种"蕴含 x 聚合"组合的极限：')
+print('%-24s %-14s %-14s %s' % ('蕴含 / 聚合', 'eps=0.3', 'eps=0.01', '解析极限'))
+for impl in ['min', 'prod']:
+    for agg in ['max', 'sum']:
+        out = []
+        for eps in [0.3, 0.01]:
+            ug = np.linspace(-20, 20, 400001)
+            mu = np.zeros_like(ug)
+            for a, c in fired:
+                tri = np.maximum(0.0, 1.0 - np.abs(ug - c) / (eps / 2))
+                piece = np.minimum(a, tri) if impl == 'min' else a * tri
+                mu = np.maximum(mu, piece) if agg == 'max' else mu + piece
+            out.append(float(np.trapezoid(ug * mu, ug) / np.trapezoid(mu, ug)))
+        d = {}
+        for a, c in fired:
+            v = a * (2 - a) if impl == 'min' else a
+            d[c] = max(d.get(c, 0.0), v) if agg == 'max' else d.get(c, 0.0) + v
+        lim = sum(c * v for c, v in d.items()) / sum(d.values())
+        nm = ('min 裁剪 / %s聚合' if impl == 'min' else '乘积缩放 / %s聚合') % ('max' if agg == 'max' else '求和')
+        print('%-24s %-14.7f %-14.7f %.7f' % (nm, out[0], out[1], lim))
+print('加权平均 = %.7f —— 只有「乘积缩放 + 求和聚合」这一格对上了。' % wavg)
+print('原因：min 裁剪后的面积是 w*alpha*(2-alpha)，对alpha单调凹；乘积缩放后是 w*alpha，正比于 alpha。')
+print('重心法是面积加权的，所以只有面积正比于 alpha 时它才等于加权平均。')
+print('而 max 聚合会在两条规则指向同一结论部时丢掉较弱那条的质量。')
+print('注意 eps 从 0.3 缩到 0.01，四个值都停在各自的解析极限上 —— 加密网格修不好这两个错误。')
+
+# 全域统计：普通 Mamdani 与零阶 Sugeno 的差，以及 sum/max 聚合的差
+ths = np.linspace(XR[0], XR[1], 101)
+ws = np.linspace(WR[0], WR[1], 101)
+cs = Mamdani2(XR, WR, UR, 5, M5, ng=401)
+c0 = Sugeno0(XR, WR, UR, 5, M5)
+d_tri, d_agg, dup = [], [], 0
+for t in ths:
+    mt = [trimf(t, *p) for p in PX5]
+    for w in ws:
+        mwv = [trimf(w, *p) for p in PW5]
+        f = [(min(mt[i], mwv[j]), CZ[M5[i, j]]) for i in range(5) for j in range(5)
+             if min(mt[i], mwv[j]) > 0]
+        s_sum, s_max = {}, {}
+        for a, c in f:
+            s_sum[c] = s_sum.get(c, 0.0) + a
+            s_max[c] = max(s_max.get(c, 0.0), a)
+        u_sum = sum(c * v for c, v in s_sum.items()) / sum(s_sum.values())
+        u_max = sum(c * v for c, v in s_max.items()) / sum(s_max.values())
+        if len(s_sum) < len(f):
+            dup += 1
+        d_agg.append(abs(u_sum - u_max))
+        d_tri.append(abs(cs(t, w) - c0(t, w)))
+print()
+print('全域 101x101 = %d 个输入点：' % len(d_tri))
+print('   普通 Mamdani（三角结论部）与零阶 Sugeno 之差：max %.4f, mean %.4f N·m（输出域的 %.2f%%）'
+      % (max(d_tri), float(np.mean(d_tri)), float(np.mean(d_tri)) / 30 * 100))
+print('   求和聚合与 max 聚合（都用 Dirac 结论部）之差：max %.4f, mean %.4f N·m'
+      % (max(d_agg), float(np.mean(d_agg))))
+print('   存在重复结论部（max 聚合会丢质量）的点占比 = %.1f%%' % (100.0 * dup / len(d_tri)))
+print('也就是说 max 聚合与加权平均的差别不是个别点的特例，而是几乎全域都存在。')` },
+    { code: `# 一阶 Sugeno 作为模糊增益调度：每条规则带一个局部 LQR 增益
+sg = Sugeno1GS(XR, WR, 5, Q0, R0)
+print('在 5 个 theta 中心处线性化 A(theta_c) = [[0,1],[(g/l)cos(theta_c),0]]，B = [[0],[4]]，')
+print('再用 Q=diag(50,1), R=1 解 Riccati：')
+for i, thc in enumerate(sg.cx):
+    print('   theta_c = %+6.1f deg -> K = [%8.4f, %7.4f]' % (thc / DEG, sg.K[i, 0], sg.K[i, 1]))
+print('cos(30deg) = 0.866，所以两端的 g/l 从 19.6 降到 16.97，增益也随之变小。')
+print()
+print('%-22s %10s %10s %10s %10s %10s' % ('控制器', 'max|th|deg', 'rms deg', 'ts s', 'max|u|', 'TV(u)'))
+
+
+def row(name, ctrl):
+    h, e = simulate(ctrl)
+    p = perf(h, e)
+    print('%-22s %10.4f %10.4f %10.4f %10.3f %10.3f'
+          % (name, p['mx'], p['rms'], p['ts'], p['maxu'], p['tv']))
+    return h, p
+
+
+A = np.array([[0.0, 1.0], [19.6, 0.0]])
+B = np.array([[0.0], [4.0]])
+P = solve_continuous_are(A, B, Q0, np.array([[R0]]))
+KL = np.linalg.solve(np.array([[R0]]), B.T @ P).ravel()
+h_lqr, p_lqr = row('LQR（单点线性化）', lambda th, w: -(KL[0] * th + KL[1] * w))
+h_m5, p_m5 = row('Mamdani 5x5', Mamdani2(XR, WR, UR, 5, M5))
+h_s0, p_s0 = row('零阶 Sugeno 5x5', Sugeno0(XR, WR, UR, 5, M5))
+h_s1, p_s1 = row('一阶 Sugeno 5x5', sg)
+print()
+print('一阶 Sugeno 的 rms（%.4f）比 Mamdani（%.4f）差 %.1f%%，' % (p_s1['rms'], p_m5['rms'], (p_s1['rms'] / p_m5['rms'] - 1) * 100))
+print('但 max|u| 只有 %.3f 对 %.3f（省 %.0f%%），TV(u) %.3f 对 %.3f（省 %.0f%%）。'
+      % (p_s1['maxu'], p_m5['maxu'], (1 - p_s1['maxu'] / p_m5['maxu']) * 100,
+         p_s1['tv'], p_m5['tv'], (1 - p_s1['tv'] / p_m5['tv']) * 100))
+print('也就是说：Mamdani 多用 %.0f%% 的峰值转矩和 %.0f%% 的控制动作量，换来 rms 低 %.1f%%（%.4f 对 %.4f）。'
+      % ((p_m5['maxu'] / p_s1['maxu'] - 1) * 100, (p_m5['tv'] / p_s1['tv'] - 1) * 100,
+         (1 - p_m5['rms'] / p_s1['rms']) * 100, p_m5['rms'], p_s1['rms']))
+print('一阶 Sugeno 几乎就是 LQR 本身（rms %.4f 对 %.4f），这在意料之中 —— 它的结论部就是 LQR 增益。'
+      % (p_s1['rms'], p_lqr['rms']))
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.6), sharex=True)
+for h, c, lb in [(h_m5, '#2563eb', 'Mamdani 5x5'), (h_s0, '#059669', '零阶 Sugeno'),
+                 (h_s1, '#7c3aed', '一阶 Sugeno'), (h_lqr, '#0f172a', 'LQR')]:
+    t = np.arange(len(h)) * 1e-4
+    axes[0].plot(t, h[:, 0] / DEG, lw=1.6, color=c, label=lb)
+    axes[1].plot(t, h[:, 2], lw=1.1, color=c, label=lb)
+axes[0].set_ylabel('theta (deg)')
+axes[0].set_ylim(-24, 24)
+axes[0].legend(fontsize=9)
+axes[0].set_title('Mamdani 与两阶 Sugeno 在同一规则表下的闭环')
+axes[0].grid(alpha=0.3)
+axes[1].set_ylabel('u (N·m)')
+axes[1].set_xlabel('t (s)')
+axes[1].set_ylim(-16, 16)
+axes[1].set_xlim(0, 6)
+axes[1].legend(fontsize=9)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 一阶 Sugeno 做函数逼近：结论部取局部切线 vs 最小二乘拟合
+XS = np.linspace(-np.pi, np.pi, 2001)
+YT = np.sin(XS)
+
+
+def ts_out(x, N, coefs):
+    P = partition(-np.pi, np.pi, N)
+    mu = np.array([trimf(x, *p) for p in P])
+    z = coefs[:, 0] * x + coefs[:, 1]
+    d = mu.sum()
+    return float((mu * z).sum() / d) if d > 0 else 0.0
+
+
+LS = {}
+for N in [3, 5, 9, 17, 33]:
+    P = partition(-np.pi, np.pi, N)
+    W = np.array([[trimf(xi, *p) for p in P] for xi in XS])
+    A = np.zeros((len(XS), 2 * N))
+    A[:, 0::2] = W * XS[:, None]
+    A[:, 1::2] = W
+    sol, _, _, _ = np.linalg.lstsq(A, YT, rcond=None)
+    LS[N] = sol.reshape(N, 2)
+
+print('%-4s %-14s %-16s %-14s %-16s %-10s' % ('N', 'MSE 切线', 'max|err| 切线', 'MSE 最小二乘', 'max|err| 最小二乘', 'MSE 比'))
+tan_curve = {}
+mx_t, mx_l, ratio = [], [], []
+for N in [3, 5, 9, 17, 33]:
+    ctr = np.array([p[1] for p in partition(-np.pi, np.pi, N)])
+    CT = np.vstack([np.cos(ctr), np.sin(ctr) - np.cos(ctr) * ctr]).T
+    e_t = np.array([ts_out(x, N, CT) for x in XS]) - YT
+    e_l = np.array([ts_out(x, N, LS[N]) for x in XS]) - YT
+    mx_t.append(np.abs(e_t).max())
+    mx_l.append(np.abs(e_l).max())
+    ratio.append(np.mean(e_t**2) / np.mean(e_l**2))
+    if N == 3:
+        tan_curve = (CT, e_t, e_l)
+    print('%-4d %-14.4e %-16.4e %-14.4e %-16.4e %-10.1f'
+          % (N, np.mean(e_t**2), np.abs(e_t).max(), np.mean(e_l**2), np.abs(e_l).max(),
+             ratio[-1]))
+print()
+NS = np.array([3, 5, 9, 17, 33], dtype=float)
+pt = np.polyfit(np.log(NS), np.log(np.array(mx_t)), 1)[0]
+pl = np.polyfit(np.log(NS), np.log(np.array(mx_l)), 1)[0]
+print('实测收敛阶（log-log 斜率）：切线 max|err| ~ N^(%.2f)，最小二乘 ~ N^(%.2f)' % (pt, pl))
+print('同样 N 下最小二乘的 MSE 比切线好 %.0f 到 %.0f 倍。' % (min(ratio), max(ratio)))
+print('原因是最小二乘不只匹配中心点的函数值和斜率，而是同时匹配整段的加权积分。')
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.6))
+CT, e_t, e_l = tan_curve
+Y3 = np.array([ts_out(x, 3, CT) for x in XS])
+axes[0].plot(XS, YT, color='#0f172a', lw=2, label='sin(x)')
+axes[0].plot(XS, Y3, color='#2563eb', lw=1.8, ls='--', label='3 条切线规则')
+ctr3 = np.array([p[1] for p in partition(-np.pi, np.pi, 3)])
+axes[0].plot(ctr3, np.sin(ctr3), 'o', color='#dc2626', ms=7, label='规则中心')
+for cc, sl, ic in zip(ctr3, CT[:, 0], CT[:, 1]):
+    xx = np.linspace(cc - np.pi / 2, cc + np.pi / 2, 50)
+    axes[0].plot(xx, sl * xx + ic, lw=0.9, color='#94a3b8')
+axes[0].set_title('N = 3 的一阶 TS 逼近 sin(x)')
+axes[0].set_xlabel('x')
+axes[0].set_ylabel('y')
+axes[0].set_xlim(-np.pi, np.pi)
+axes[0].set_ylim(-1.4, 1.4)
+axes[0].legend(fontsize=9)
+axes[0].grid(alpha=0.3)
+axes[1].loglog(NS, mx_t, 'o-', color='#2563eb', label='切线 max|err|')
+axes[1].loglog(NS, mx_l, 's--', color='#16a34a', label='最小二乘 max|err|')
+axes[1].set_xlabel('规则数 N（对数）')
+axes[1].set_ylabel('max|err|（对数）')
+axes[1].set_title('两种结论部参数化的收敛速度')
+axes[1].grid(alpha=0.3, which='both')
+axes[1].legend(fontsize=9)
+plt.tight_layout()
+plt.show()
+
+# 对照：手挑结论部（很多教材演示用的做法）
+
+
+def ts_old(x):
+    if x <= -np.pi:
+        m = (1.0, 0.0, 0.0)
+    elif x < 0:
+        m = (-x / np.pi, max(0.0, 1 + x / (np.pi / 2)), 0.0)
+    elif x <= np.pi:
+        m = (0.0, max(0.0, 1 - x / (np.pi / 2)), x / np.pi)
+    else:
+        m = (0.0, 0.0, 1.0)
+    tot = sum(m)
+    if tot <= 0:
+        return 0.0
+    w0, w1, w2 = [v / tot for v in m]
+    return w0 * (0.9 * x + 0.1) + w1 * x + w2 * (0.9 * x - 0.1)
+
+
+e_old = np.array([ts_old(x) for x in XS]) - YT
+print('对照：三条规则、结论部手挑成 z1=0.9x+0.1, z2=x, z3=0.9x-0.1')
+print('   MSE = %.6f, max|err| = %.6f，出现在 x = %.4f（论域端点）'
+      % (np.mean(e_old**2), np.abs(e_old).max(), XS[np.argmax(np.abs(e_old))]))
+print('   端点处 TS 给出 %+.6f，而 sin(+-pi) = %+.2e —— 误差是被逼近函数自身幅值的 %.2f 倍'
+      % (ts_old(np.pi), np.sin(np.pi), np.abs(e_old).max()))
+print('   同样 3 条规则，把结论部改成局部切线后 max|err| = %.6f，改善 %.2f 倍'
+      % (mx_t[0], np.abs(e_old).max() / mx_t[0]))
+print('   结论：TS 型的精度几乎完全由结论部参数怎么来决定，而不是由规则数决定。')` },
+    { code: `# TS 型是可以严格证明稳定性的。给一个两规则一阶系统：
+#   R1: IF x is N THEN dx/dt = 1 - x        （mu_N = 1/(1+e^x)）
+#   R2: IF x is P THEN dx/dt = -(2x + 1)    （mu_P = e^x/(1+e^x)）
+def gfun(x):
+    return (1.0 - x) - np.exp(x) * (2.0 * x + 1.0)
+
+
+def rhs(x):
+    return gfun(x) / (1.0 + np.exp(x))
+
+
+xs = np.linspace(-60, 60, 120001)
+print('第 1 步 单位划分：max|mu_N + mu_P - 1| = %.3e'
+      % np.abs(1 / (1 + np.exp(xs)) + np.exp(xs) / (1 + np.exp(xs)) - 1).max())
+print('第 2 步 闭式：dx/dt = g(x)/(1+e^x)，g(x) = (1-x) - e^x(2x+1)')
+h = lambda x: np.exp(x) * (2 * x + 3)
+print("第 3 步 g'(x) = -1 - e^x(2x+3)。令 h(x) = e^x(2x+3)，h'(x) = e^x(2x+5)，")
+print('        所以 h 在 x = -2.5 处取极小值 h(-2.5) = %.10f' % h(-2.5))
+print("        => g'(x) <= -1 - (%.10f) = %.6f < 0" % (h(-2.5), -1 - h(-2.5)))
+print('        g 严格单调减，而 g(0) = %.1e，所以 x = 0 是唯一平衡点。' % gfun(0.0))
+print('第 4 步 取 V = x^2/2，则 Vdot = x g(x)/(1+e^x)。')
+print('        x != 0 时 x 与 g(x) 异号（g 单调减且 g(0)=0），1+e^x > 0，故 Vdot < 0。')
+print('        V 正定且径向无界 => 全局渐近稳定。不需要 LMI，不需要公共 P 矩阵。')
+Vd = xs * rhs(xs)
+nz = xs != 0
+print('        数值验证：max(Vdot) over x != 0 = %.4e，count(Vdot > 0) = %d'
+      % (Vd[nz].max(), int((Vd[nz] > 0).sum())))
+eps = 1e-6
+print('第 5 步 原点附近：-Vdot/V = %.6f，g 在 0 处的导数 = %.6f，两者给出同一个指数速率 4'
+      % (-(eps * rhs(eps)) / (eps ** 2 / 2), (gfun(eps) - gfun(-eps)) / (2 * eps)))
+print()
+for x0 in [5.0, -5.0, 20.0]:
+    x, t, dt = x0, 0.0, 1e-4
+    hit = None
+    while t < 60 and hit is None:
+        k1 = rhs(x); k2 = rhs(x + .5*dt*k1); k3 = rhs(x + .5*dt*k2); k4 = rhs(x + dt*k3)
+        x += dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
+        t += dt
+        if abs(x) < 1e-6:
+            hit = t
+    print('   x(0) = %6.1f -> |x| < 1e-6 于 t = %s' % (x0, ('%.4f s' % hit) if hit else '60 s 内未到'))
+print()
+print('x(0) = 20 和 x(0) = 5 的到达时间只差 0.66 s —— 大初始条件并不慢多少，')
+print('远场正向 dx约-2x-1，负向dx约1-x；分子指数不能脱离分母解释收敛速度。')
+print()
+print('对照：同样的两条规则如果写成 Mamdani 型（结论部是模糊集合），')
+print('上面这套证明一个字都用不上 —— 没有闭式，没有 g(x)，没有 Lyapunov 函数可猜。')` }
+  ]}
+/>
+
+## 应用案例
+
+### 案例 1：洗衣机的洗涤时间决策
+
+这是模糊控制最常被引用的商业案例，也是最容易被讲得含糊的一个。我们把它当成一个**静态决策面设计问题**来做，并且只声称能被测量的东西。
+
+**输入**：污渍程度 $d \in [0, 1]$（由水的浊度归一化），衣物量 $m \in [0, 1]$（由电机电流归一化）。
+**输出**：洗涤时间 $T \in [15, 45]$ 分钟。
+**语言值**：各 3 个（少/中/多，短/中/长），零阶 Sugeno，结论部取单点 15 / 30 / 45 分钟。
+
+规则表（行是污渍，列是衣物量）：
+
+| | 少 | 中 | 多 |
+| --- | --- | --- | --- |
+| **少** | 短 | 短 | 中 |
+| **中** | 短 | 中 | 长 |
+| **多** | 中 | 长 | 长 |
+
+9 条规则。注意这张表沿对角线是**对称**的——因为在这里污渍和衣物量对洗涤时间的作用确实是同向、同权重的。这和第 5 节倒立摆的 FAMM 完全不同：那里 $\theta$ 和 $\dot\theta$ 量纲不同、权重不同，对角对称没有物理依据。**对称性要不要，取决于被控对象，不是取决于表格好不好看。**
+
+<JupyterNotebook
+  title="Notebook 7A：洗衣机决策面——量化、单调性与规则表的局部性"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def part(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+class Sugeno0:
+    """零阶 Sugeno：u = Sum(alpha c) / Sum(alpha)，跳过 alpha = 0 的规则。"""
+
+    def __init__(self, xr, wr, ur, n, M):
+        self.PX, self.PW = part(*xr, n), part(*wr, n)
+        self.cz = np.linspace(ur[0], ur[1], n)
+        self.M, self.n = M, n
+
+    def __call__(self, x, w):
+        mx = np.array([trimf(x, *p) for p in self.PX])
+        mw = np.array([trimf(w, *p) for p in self.PW])
+        num = den = 0.0
+        for i in range(self.n):
+            if mx[i] <= 0:
+                continue
+            for j in range(self.n):
+                a = min(mx[i], mw[j])
+                if a <= 0:
+                    continue
+                num += a * self.cz[self.M[i, j]]
+                den += a
+        return 0.0 if den <= 1e-14 else num / den
+
+
+# 污渍 d、衣物 m 都在 [0,1]；洗涤时间 10~60 分钟，3 个单点 15 / 30 / 45
+XR = (0.0, 1.0)
+WR = (0.0, 1.0)
+UR = (15.0, 45.0)
+LBL = ['少', '中', '多']
+# 行 = 污渍，列 = 衣物量；0=短(15) 1=中(30) 2=长(45)
+M_BASE = np.array([[0, 0, 1],
+                   [0, 1, 2],
+                   [1, 2, 2]], dtype=int)`}
+  cells={[
+    { code: `# 9 个规则条目 -> 一张连续的决策面
+f = Sugeno0(XR, WR, UR, 3, M_BASE)
+g = np.linspace(0, 1, 201)
+S = np.array([[f(d, m) for d in g] for m in g])
+print('决策面统计：')
+print('   范围 [%.4f, %.4f] 分钟（论域是 [15, 45]）' % (S.min(), S.max()))
+print('   恰好等于某个单点值（15/30/45）的网格点占比 = %.1f%%'
+      % (100 * np.mean(np.isin(np.round(S, 9), [15.0, 30.0, 45.0]))))
+print('   面上一共出现了 %d 个不同的数值（规则表只有 9 个条目）' % len(np.unique(np.round(S, 9))))
+print()
+# 单调性检查
+dd = np.diff(S, axis=1)
+dm = np.diff(S, axis=0)
+print('单调性：')
+print('   沿污渍方向 dT/dd 的最小值 = %.6e（应 >= 0）' % dd.min())
+print('   沿衣物方向 dT/dm 的最小值 = %.6e（应 >= 0）' % dm.min())
+print('   违反单调的网格边数 = %d / %d' % (int((dd < -1e-12).sum()) + int((dm < -1e-12).sum()),
+                                       dd.size + dm.size))
+print()
+fig = plt.figure(figsize=(11, 4.0))
+ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+D, Mg = np.meshgrid(g, g)
+ax1.plot_surface(D, Mg, S, cmap='viridis', alpha=0.9, linewidth=0)
+ax1.set_xlabel('污渍 d')
+ax1.set_ylabel('衣物量 m')
+ax1.set_zlabel('洗涤时间 (min)')
+ax1.set_title('9 条规则生成的连续决策面')
+ax2 = fig.add_subplot(1, 2, 2)
+cs = ax2.contourf(D, Mg, S, levels=16, cmap='viridis')
+fig.colorbar(cs, ax=ax2, label='洗涤时间 (min)')
+for i in range(3):
+    for j in range(3):
+        ax2.plot([j / 2], [i / 2], 'w*', ms=12)
+        ax2.annotate('%s' % LBL[M_BASE[i, j]], (j / 2, i / 2), color='w',
+                     fontsize=10, ha='center', va='center', fontweight='bold')
+ax2.set_xlabel('污渍 d')
+ax2.set_ylabel('衣物量 m')
+ax2.set_title('等值线（白星是 9 个规则中心）')
+ax2.set_xlim(0, 1)
+ax2.set_ylim(0, 1)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 规则表的局部性：改一个格子，影响多大范围？
+print('把 9 个格子逐一改动 +-1 级，测量决策面的变化：')
+print('%-16s %-14s %-14s %-18s' % ('改动的格子', 'max 变化', 'mean 变化', '受影响面积占比'))
+areas, maxchg = [], []
+for i in range(3):
+    for j in range(3):
+        for delta in [+1, -1]:
+            M2 = M_BASE.copy()
+            M2[i, j] = int(np.clip(M2[i, j] + delta, 0, 2))
+            if M2[i, j] == M_BASE[i, j]:
+                continue
+            f2 = Sugeno0(XR, WR, UR, 3, M2)
+            S2 = np.array([[f2(d, m) for d in g] for m in g])
+            diff = np.abs(S2 - S)
+            areas.append(100 * float(np.mean(diff > 1e-9)))
+            maxchg.append(float(diff.max()))
+            print('%-16s %-14.4f %-14.4f %-18.1f%%'
+                  % ('(%s,%s)%+d' % (LBL[i], LBL[j], delta), diff.max(), diff.mean(), areas[-1]))
+print()
+print('%d 种单格改动中，最大变化都是 %.4f 分钟（正好是相邻单点 15 / 30 / 45 的间距），'
+      % (len(areas), max(maxchg)))
+print('但受影响面积从 %.1f%% 到 %.1f%% 不等：改角落那一格只动了 %.1f%% 的决策面，'
+      % (min(areas), max(areas), min(areas)))
+print('改正中间那一格动了 %.1f%%。所以"局部"是定性的结论，局部的程度取决于格子的位置。'
+      % max(areas))
+print('对比一下：在线性控制器里改一个增益，影响是全局的、无界的。')
+print('这就是"规则表退化是局部的"——它是模糊控制在工程上最实在的一个优点。')` },
+    { code: `# 诚实的边界：这个案例能证明什么、不能证明什么
+print('本课能测量的：')
+print('   - 9 个规则条目通过模糊推理生成了一个连续、单调、无跳变的决策面')
+print('   - 单格改动的影响是局部的、有界的（最大 15 分钟）')
+print('   - 单次求值的计算成本（见 Notebook 8）')
+print()
+print('本课不能测量的：')
+print('   - "节水 20%""节电 15%"这类数字。它们取决于洗衣机整机（水量、加热功率、')
+print('     机械结构）、污渍的真实分布、以及和什么基线比。控制器结构本身推不出这些数字，')
+print('     任何声称从规则表推出节能百分比的说法都不可复现。')
+print('   - 这张规则表是不是"最优"的。它只是把"污渍多、衣物多就洗久一点"这句话')
+print('     形式化了；要说它好，需要与固定时间洗涤做对照实验，那是产品测试的事。')` }
+  ]}
+/>
+
+### 案例 2：汽车 ABS 防抱死制动
+
+ABS可用来学习如何把滑移率经验写成控制规则。下面采用简化四分之一车与给定路面曲线，检查三路面及切换工况。规则改动在静态映射中的影响局部，并不保证车辆闭环后果局部；本实验不包含液压执行器、路面估计和整车安全验证。
+
+**轮胎模型（Burckhardt）**：附着系数随滑移率 $s$ 变化，
+
+$$
+\mu(s) = c_1\left(1 - e^{-c_2 s}\right) - c_3 s, \qquad s = \frac{v - \omega r}{v}
+$$
+
+三种路面的参数：干沥青 $(1.28,\ 23.73,\ 0.52)$、湿卵石 $(0.857,\ 34.5,\ 0.14)$、冰面 $(0.40,\ 20.0,\ 0.10)$。
+
+**四分之一车模型**：$m = 250\ \mathrm{kg}$、$r = 0.30\ \mathrm{m}$、$J = 1.0\ \mathrm{kg\cdot m^2}$、法向载荷 $F_z = mg = 2452.5\ \mathrm{N}$，初速 $v_0 = 25\ \mathrm{m/s}$，制动转矩上限 $T_b^{\max} = 2400\ \mathrm{N\cdot m}$。
+
+$$
+\dot v = -\frac{\mu(s) F_z}{m}, \qquad
+\dot\omega = \frac{\mu(s) F_z r - T_b}{J}
+$$
+
+控制目标是把 $s$ 保持在 $\mu(s)$ 的峰值附近——抱死（$s = 1$）会损失大量附着力。
+
+<JupyterNotebook
+  title="Notebook 7B：ABS 制动距离对比与路面切换"
+  setupCode={`import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+M_Q, R_W, J_W, G = 250.0, 0.30, 1.0, 9.81
+FZ = M_Q * G
+TB_MAX = 2400.0
+ROADS = {'干沥青': (1.28, 23.73, 0.52),
+         '湿卵石': (0.857, 34.5, 0.14),
+         '冰面': (0.40, 20.0, 0.10)}
+
+
+def mu(s, road):
+    c1, c2, c3 = road
+    sc = np.clip(s, 0, 1)
+    return c1 * (1 - np.exp(-c2 * sc)) - c3 * sc
+
+
+def brake_sim(ctrl, road, v0=25.0, T=15.0, dt=1e-4, rec=False, road2=None, t_switch=None):
+    """四分之一车制动仿真。road2/t_switch 用于路面切换场景。"""
+    v, w, dist = v0, v0 / R_W, 0.0
+    n = int(T / dt)
+    s_prev, lock, smax = 0.0, None, 0.0
+    rows = []
+    for k in range(n):
+        t = k * dt
+        cur = road if (road2 is None or t_switch is None or t < t_switch) else road2
+        s = float(np.clip((v - w * R_W) / v, 0.0, 1.0)) if v > 1e-6 else 0.0
+        sd = (s - s_prev) / dt if k > 0 else 0.0
+        s_prev = s
+        Tb = float(np.clip(ctrl(s, sd, t), 0.0, TB_MAX))
+        if rec and k % 10 == 0:
+            rows.append((t, v, s, sd, Tb))
+        f = mu(s, cur) * FZ
+        v += dt * (-f / M_Q)
+        w += dt * ((f * R_W - Tb) / J_W)
+        dist += max(v, 0.0) * dt
+        smax = max(smax, s)
+        if lock is None and s > 0.999 and v > 1.0:
+            lock = t
+        if v <= 0.05:
+            return dict(dist=dist, t=t, lock=lock, s_max=smax, rows=rows, smax_run=smax)
+    return dict(dist=dist, t=T, lock=lock, s_max=smax, rows=rows, smax_run=smax)
+
+
+def ctrl_full(s, sd, t):
+    return TB_MAX
+
+
+def make_logic(st, s_hi=0.13, s_lo=0.08, dn=12000.0, up=3000.0, p0=1500.0):
+    # 三段式门限逻辑 ABS：增压 / 保压 / 减压，速率单位 N·m/s。
+    # 这 4 个参数是在三种固定路面上扫出来的（见正文），已是该结构的合理水平。
+    def f(s, sd, t):
+        if 'p' not in st:
+            st['p'], st['t'] = p0, t
+        h = max(t - st['t'], 0.0)
+        st['t'] = t
+        if s > s_hi:
+            st['p'] = max(0.0, st['p'] - dn * h)
+        elif s < s_lo:
+            st['p'] = min(TB_MAX, st['p'] + up * h)
+        return st['p']
+    return f
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def part(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def make_fuzzy_abs(n=5, sd_range=200.0, w_sd=0.7, s_hi=0.6):
+    """单调规则表：s 越大转矩越小，sd 越正（滑移在恶化）转矩越小。"""
+    PX, PW = part(0.0, s_hi, n), part(-sd_range, sd_range, n)
+    cz = np.linspace(0.0, TB_MAX, n)
+    c = (n - 1) / 2.0
+    M = np.zeros((n, n), dtype=int)
+    for i in range(n):
+        for j in range(n):
+            M[i, j] = int(np.clip(round((n - 1 - i) - w_sd * (j - c)), 0, n - 1))
+
+    def f(s, sd, t):
+        sd = float(np.clip(sd, -sd_range * 1.5, sd_range * 1.5))
+        mx = np.array([trimf(s, *p) for p in PX])
+        mw = np.array([trimf(sd, *p) for p in PW])
+        num = den = 0.0
+        for i in range(n):
+            if mx[i] <= 0:
+                continue
+            for j in range(n):
+                a = min(mx[i], mw[j])
+                if a <= 0:
+                    continue
+                num += a * cz[M[i, j]]
+                den += a
+        return 0.0 if den <= 1e-14 else num / den
+    return f, M, cz
+
+
+def best_s(road):
+    ss = np.linspace(0, 1, 100001)
+    return float(ss[np.argmax(mu(ss, road))])`}
+  cells={[
+    { code: `# 第 1 步：轮胎曲线与"抱死损失"
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.4))
+ss = np.linspace(0, 1, 2001)
+for ax, (name, road) in zip(axes, ROADS.items()):
+    y = mu(ss, road)
+    sp = best_s(road)
+    ax.plot(ss, y, lw=2.2, color='#1d4ed8')
+    ax.plot([sp], [mu(sp, road)], 'o', color='#16a34a', ms=9,
+            label='峰值 s* = %.4f' % sp)
+    ax.plot([1.0], [mu(1.0, road)], 'x', color='#dc2626', ms=11, mew=2.5,
+            label='抱死 s = 1')
+    ax.axhline(mu(1.0, road), color='#dc2626', ls=':', lw=1)
+    ax.set_title('%s：抱死损失 %.1f%%' % (name, (1 - mu(1.0, road) / mu(sp, road)) * 100))
+    ax.set_xlabel('滑移率 s')
+    ax.set_ylabel('附着系数 mu')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.3)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+print('%-8s %-12s %-12s %-12s' % ('路面', 'mu 峰值', '峰值处 s*', '抱死时 mu（损失）'))
+for name, road in ROADS.items():
+    sp = best_s(road)
+    print('%-8s %-12.4f %-12.4f %-12s'
+          % (name, mu(sp, road), sp,
+             '%.4f（%.1f%%）' % (mu(1.0, road), (1 - mu(1.0, road) / mu(sp, road)) * 100)))
+print()
+print('冰面上抱死只损失 19.6% 的附着系数，干沥青上损失 35.0% ——')
+print('所以 ABS 在好路面上的收益比在冰面上大得多，这一点后面的制动距离会印证。')` },
+    { code: `# 第 2 步：用整定好的门限逻辑 ABS 量 sd 的实际动态范围（决定论域）
+print('%-8s %-12s %-10s %-10s %s' % ('路面', '制动距离 m', 't_stop s', '抱死', '|sd| 分位数 50/90/99'))
+for name, road in ROADS.items():
+    r = brake_sim(make_logic({}), road, rec=True)
+    sds = np.array([abs(x[3]) for x in r['rows']])
+    print('%-8s %-12.3f %-10.4f %-10s %.2f / %.2f / %.2f'
+          % (name, r['dist'], r['t'], '是' if r['lock'] else '否',
+             np.percentile(sds, 50), np.percentile(sds, 90), np.percentile(sds, 99)))
+print()
+print('这个门限逻辑（s_hi = 0.13、s_lo = 0.08、减压 12000 N·m/s、增压 3000 N·m/s）的四个')
+print('参数是在三种路面上一起扫出来的，已经是它这一类结构能做到的水平——对比才算公平。')
+print('它三种路面都不抱死。|sd| 的 99% 分位只有 5.9 ~ 8.0 /s，中位数是 0.00：')
+print('绝大部分时间滑移率变化很慢，sd 只在切换增压/减压的瞬间跳一下。')
+print()
+# 探针：再给门限逻辑加一个"滑移率变化率"门限，会有额外作用吗？
+print('给门限逻辑再加一个 sd > 50 /s 的减压条件，实测触发次数：')
+for name, road in ROADS.items():
+    base = make_logic({})
+    cnt = {'n': 0, 'hit': 0, 'mx': 0.0}
+
+    def wrapped(s, sd, t, _b=base, _c=cnt):
+        _c['n'] += 1
+        if s <= 0.13:
+            _c['hit'] += sd > 50.0
+            _c['mx'] = max(_c['mx'], sd)
+        return _b(s, sd, t)
+
+    brake_sim(wrapped, road)
+    print('   %-6s 总步数 %6d，s <= s_hi 期间 sd > 50 触发 %d 次，该期间 max sd = %.2f /s'
+          % (name, cnt['n'], cnt['hit'], cnt['mx']))
+print('=> 一次都不触发。s <= s_hi 期间 sd 的峰值恰好是 18.00 /s，而且三种路面完全相同：')
+print('   它是初始施加转矩的瞬态，sd(0+) = r*Tb(0)/(J*v0) = 0.3*1500/(1.0*25) = 18.0，')
+print('   只取决于初始转矩，与附着系数无关。')
+print('   所以在门限逻辑这个结构里，sd 门限要么冗余（阈值高于 18），要么在 t = 0')
+print('   就误触发（阈值低于 18）——它没法把 sd 变成有效信息。模糊控制器不一样：')
+print('   它不做"谁先越限"的判断，而是把 s 和 sd 连续地混合成一个转矩。')
+print()
+f5, M5, cz5 = make_fuzzy_abs(5, sd_range=200.0)
+print('sd 论域敏感性（干沥青制动距离）：')
+for rng in [50.0, 200.0, 1000.0]:
+    fx, _, _ = make_fuzzy_abs(5, sd_range=rng)
+    r = brake_sim(fx, ROADS['干沥青'])
+    print('   sd 论域 +-%-7.0f -> %8.3f m' % (rng, r['dist']))
+print('三者相差不到 0.06% —— sd 本来就不需要分辨率，它的符号（恶化 / 恢复）才是信息所在。')
+print()
+L5 = ['VS', 'S', 'M', 'L', 'VL']
+print('模糊 ABS 规则表（n=5，行 = sd，列 = s；数字是输出转矩的语言值索引，0 = 零转矩，4 = 2400）：')
+print('        ' + '  '.join('%-4s' % c for c in L5) + '   <- s: 0 -> 0.6')
+for i in range(5):
+    print('   %-5s' % L5[i] + '  '.join('%-4d' % M5[i, j] for j in range(5)) + '   <- sd')
+print('这张表是刻意写成单调的：s 越大转矩越小（列方向递减），sd 越正转矩越小（行方向递减）。')
+print('如果把第 5 节那个中心反对称的 FAMM 直接搬过来，制动会失败——单调对象要用单调表。')` },
+    { code: `# 第 3 步：三种路面上的制动距离对比
+print('%-24s %-14s %-14s %-14s %-10s %s' % ('控制器', '干沥青 m', '湿卵石 m', '冰面 m', '抱死', '相对理论上界'))
+theory = {}
+for name, road in ROADS.items():
+    sp = best_s(road)
+    a = mu(sp, road) * G
+    theory[name] = 25.0 ** 2 / (2 * a)
+
+rows = []
+
+
+def add(label, ctrl_factory):
+    ds, locks = [], []
+    for name, road in ROADS.items():
+        r = brake_sim(ctrl_factory(), road)
+        ds.append(r['dist'])
+        locks.append(r['lock'] is not None)
+    gaps = [(ds[i] / theory[nm] - 1) * 100 for i, nm in enumerate(ROADS)]
+    print('%-24s %-14.3f %-14.3f %-14.3f %-10s %s'
+          % (label, ds[0], ds[1], ds[2], '是' if any(locks) else '否',
+             ' '.join('%+.1f%%' % x for x in gaps)))
+    rows.append((label, ds))
+
+
+add('无 ABS（满制动）', lambda: ctrl_full)
+add('逻辑门限 ABS', lambda: make_logic({}))
+add('模糊 5x5 零阶 Sugeno', lambda: make_fuzzy_abs(5, 200.0)[0])
+add('模糊 9x9 零阶 Sugeno', lambda: make_fuzzy_abs(9, 200.0)[0])
+print('%-24s %-14.3f %-14.3f %-14.3f' % ('理论上界（恒 s = s*）',
+                                       theory['干沥青'], theory['湿卵石'], theory['冰面']))
+print()
+print('理论上界假设全程把滑移率钉在 mu 峰值 s* 上，任何真实控制器都达不到。')
+gaps = {lbl: [(ds[i] / theory[nm] - 1) * 100 for i, nm in enumerate(ROADS)] for lbl, ds in rows}
+print('模糊 5x5 距上界 ' + ' / '.join('%+.1f%%' % x for x in gaps['模糊 5x5 零阶 Sugeno'])
+      + '，整定过的门限逻辑是 ' + ' / '.join('%+.1f%%' % x for x in gaps['逻辑门限 ABS']) + '。')
+imp = [(rows[1][1][i] - rows[2][1][i]) / rows[1][1][i] * 100 for i in range(3)]
+print('模糊比门限逻辑缩短 ' + ' / '.join('%.1f%%' % x for x in imp) + '（干沥青 / 湿卵石 / 冰面）。')
+print()
+print('差距只有百分之几，但两边付出的代价不一样：门限逻辑那四个参数是在这三种路面上')
+print('扫出来的；模糊的 25 格规则表只用了一套语言值划分，没有针对路面做任何整定。')
+print('"抱死"这一列同样要紧：无 ABS 三种路面全抱死，门限逻辑和模糊都不抱死。')
+print()
+d9 = [abs(rows[3][1][i] - rows[2][1][i]) for i in range(3)]
+print('模糊 9x9 与 5x5 的制动距离只差 ' + ' / '.join('%.3f' % x for x in d9) + ' m ——')
+print('81 条规则相对 25 条什么也没买到。这个案例里"多写规则"完全没有价值，')
+print('因为对象需要的只是一个单调映射。')
+print()
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.4))
+for ax, (name, road) in zip(axes, ROADS.items()):
+    for lbl, col, cf in [('无 ABS', '#dc2626', lambda: ctrl_full),
+                         ('逻辑门限', '#ca8a04', lambda: make_logic({})),
+                         ('模糊 5x5', '#2563eb', lambda: make_fuzzy_abs(5, 200.0)[0])]:
+        r = brake_sim(cf(), road, rec=True)
+        rr = np.array(r['rows'])
+        ax.plot(rr[:, 0], rr[:, 2], lw=1.8, color=col, label=lbl)
+    sp = best_s(road)
+    ax.axhline(sp, color='#16a34a', ls='--', lw=1.4, label='s* = %.3f' % sp)
+    ax.set_title(name)
+    ax.set_xlabel('t (s)')
+    ax.set_ylabel('滑移率 s')
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 1.05)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` },
+    { code: `# 第 4 步：路面切换（前 1.5 s 干沥青，之后湿卵石）——真正的考验
+print('%-12s %-12s %-10s %-16s %-11s %s'
+      % ('控制器', '制动距离 m', 't_stop s', 'max s (v>1)', 'TV(Tb)', '抱死'))
+res = {}
+for lbl, cf in [('无 ABS', lambda: ctrl_full), ('逻辑门限', lambda: make_logic({})),
+                ('模糊 5x5', lambda: make_fuzzy_abs(5, 200.0)[0]),
+                ('模糊 9x9', lambda: make_fuzzy_abs(9, 200.0)[0])]:
+    r = brake_sim(cf(), ROADS['干沥青'], road2=ROADS['湿卵石'], t_switch=1.5, rec=True)
+    rr = np.array(r['rows'])
+    m = rr[:, 1] > 1.0
+    smax = float(rr[m, 2].max()) if m.any() else 0.0
+    tv = float(np.abs(np.diff(rr[:, 4])).sum())
+    res[lbl] = (r['dist'], r['t'], smax, tv)
+    print('%-12s %-12.3f %-10.4f %-16.4f %-11.1f %s'
+          % (lbl, r['dist'], r['t'], smax, tv,
+             ('是 t=%.3f' % r['lock']) if r['lock'] else '否'))
+print()
+dl, tl, sl, vl = res['逻辑门限']
+df, tf, sf, vf = res['模糊 5x5']
+print('模糊比整定过的门限逻辑短 %.1f%%（%.3f 对 %.3f m），停得也快 %.1f%%（%.4f 对 %.4f s）。'
+      % ((dl - df) / dl * 100, df, dl, (tl - tf) / tl * 100, tf, tl))
+print('转矩总变差（按 1 ms 记录点计）也是模糊更小：%.1f 对 %.1f N·m，低 %.1f%%。'
+      % (vf, vl, (vl - vf) / vl * 100))
+print()
+print('但代价看得见：模糊的 max s（v > 1 m/s）是 %.4f，门限逻辑只有 %.4f，高出 %.0f%%。'
+      % (sf, sl, (sf / sl - 1) * 100))
+print('也就是说模糊控制器允许滑移率冲得更高、更靠近抱死边缘，来换取更短的制动距离。')
+print('这是一个真实的取舍，不是免费的性能提升——附着系数估计有误时会更容易出事。')
+print()
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.4), sharex=True)
+for lbl, col, cf in [('逻辑门限', '#ca8a04', lambda: make_logic({})),
+                     ('模糊 5x5', '#2563eb', lambda: make_fuzzy_abs(5, 200.0)[0])]:
+    r = brake_sim(cf(), ROADS['干沥青'], road2=ROADS['湿卵石'], t_switch=1.5, rec=True)
+    rr = np.array(r['rows'])
+    axes[0].plot(rr[:, 0], rr[:, 2], lw=1.8, color=col, label=lbl)
+    axes[1].plot(rr[:, 0], rr[:, 4], lw=1.4, color=col, label=lbl)
+axes[0].axvline(1.5, color='#0f172a', ls=':', lw=1.5)
+axes[0].annotate('切换到湿卵石', (1.5, 0.9), fontsize=9, rotation=90, va='top')
+axes[0].set_ylabel('滑移率 s')
+axes[0].set_ylim(0, 1.05)
+axes[0].legend(fontsize=9)
+axes[0].set_title('路面切换场景（v0 = 25 m/s，t = 1.5 s 时干沥青 -> 湿卵石）')
+axes[0].grid(alpha=0.3)
+axes[1].set_ylabel('制动转矩 (N·m)')
+axes[1].set_xlabel('t (s)')
+axes[1].set_ylim(-100, 2500)
+axes[1].set_xlim(0, 4)
+axes[1].legend(fontsize=9)
+axes[1].grid(alpha=0.3)
+plt.tight_layout()
+plt.show()` }
+  ]}
+/>
+
+## 与其他控制方法的对比
+
+前面几节的所有闭环实验都在同一个被控对象、同一个初始条件（$\theta(0) = 20^\circ$、$\dot\theta(0) = 0$）、同一个仿真设置（$T = 6$ s、$\mathrm{d}t = 10^{-4}$ s、$\lvert u\rvert \le 15\ \mathrm{N\cdot m}$）下跑的，所以可以直接横向比较。
+
+| 控制器 | $\max\lvert\theta\rvert$ (°) | rms $\theta$ (°) | $t_s$（进入并保持±1°）s | $\max\lvert u\rvert$ | $\mathrm{TV}(u)$ | 控制律显式使用模型吗 |
+| --- | --- | --- | --- | --- | --- | --- |
+| LQR $Q=\mathrm{diag}(50,1), R=1$ | 20.0000 | 3.7007 | 0.7406 | **4.713** | **9.533** | 要（$A$, $B$） |
+| 滑模 $k=2$ | 20.0000 | 3.7755 | 0.8653 | 3.676 | 7.352 | 要（$f$, $g$） |
+| Mamdani 3×3 | 20.0000 | 11.0722 | 未保持 | 3.333 | 11.735 | 不要 |
+| **Mamdani 5×5** | 20.0000 | **3.5118** | 0.8527 | 7.892 | 15.797 | 不要 |
+| Mamdani 7×7 | 20.0000 | 2.9339 | 0.6008 | 10.000 | 24.918 | 不要 |
+| Mamdani 9×9 | 20.0000 | 2.8640 | **0.5170** | 9.886 | 24.120 | 不要 |
+| 零阶 Sugeno 5×5 | 20.0000 | 3.3092 | 0.8397 | 10.000 | 20.008 | 不要 |
+| 一阶 Sugeno 5×5（模糊增益调度） | 20.0000 | 3.7573 | 0.7577 | 4.535 | 9.162 | 要（每个局部线性化点） |
+
+读这张表的三个要点：
+
+**一、读的是固定候选，不是方法排名。** 本课3×3候选在6s内未达到并保持在误差带；5×5到9×9的rms改善逐渐减少。只改变n而固定其它设计，并不意味着对每种结构都给了相同的最优整定预算，不能推出“小规则库都不能用”。
+
+**二、把误差与控制代价一起读。** 本表5×5 Mamdani的rms较低，同时峰值转矩和TV较大；LQR的二次最优性只针对其线性、无约束、指定Q/R模型，不涵盖这里的非线性饱和rms排序。改变R可能改变折中，未扫描相同预算就不能声称任何一类必胜。
+
+**三、一阶Sugeno本例是局部LQR增益插值。** 它与固定LQR读数接近是本配置观察；“各局部模型稳定”不能自动推出插值后的非线性闭环稳定。第6节的一维TS证明也不能搬来替这台摆杆签发。
+
+### 参数摄动下的表现
+
+控制器都按标称 $m = 1\ \mathrm{kg}$、$l = 0.5\ \mathrm{m}$ 设计，然后改变真实参数（rms $\theta$，单位度）：
+
+| 控制器 | 标称 | $m\times0.5$ | $m\times2.0$ | $l\times0.7$ | $l\times1.5$ |
+| --- | --- | --- | --- | --- | --- |
+| LQR | 3.70 | 3.14 | **5.49** | 3.26 | **4.64** |
+| Mamdani 5×5 | 3.51 | 3.14 | 4.23 | 3.24 | 3.99 |
+| Mamdani 7×7 | 2.93 | 2.62 | 3.86 | 2.67 | 3.65 |
+| 一阶 Sugeno 5×5 | 3.76 | 3.17 | 5.71 | 3.30 | 4.74 |
+| 滑模 $k=2$ | 3.78 | 3.29 | 6.37 | 3.34 | 4.89 |
+
+改变 $m$ 只改变控制系数；改变 $l$ 才会同时改变 $\ddot\theta = (g/l)\sin\theta + u/(ml^2)$ 里的两个系数：$m\times2$ 让 $B = 1/(ml^2)$ 从 $4.0$ 掉到 $2.0$（控制效能减半），$l\times1.5$ 让 $g/l$ 从 $19.6$ 掉到 $13.067$ 同时 $B$ 掉到 $1.778$。
+
+五个确定性工况保留了本组候选的不同表现；本表未加入测量噪声、延迟和不同初始状态，不能代表一般鲁棒性。较大的等效增益是一个可能解释，但质量、非线性、饱和与增益调度共同影响响应，单张比例增益切片不能建立因果等价；它也不能替代鲁棒稳定性证明。
+
+## 局限性讨论
+
+### 维数灾难灾在哪里
+
+"规则数按 $n^m$ 增长"是真的，但它灾在哪一步，需要分开测。
+
+<JupyterNotebook
+  title="Notebook 8：维数灾难的真实位置——在线计算成本"
+  setupCode={`import time
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
+DEG = np.pi / 180.0
+XR = (-30.0 * DEG, 30.0 * DEG)
+WR = (-120.0 * DEG, 120.0 * DEG)
+UR = (-15.0, 15.0)
+
+
+def trimf(x, a, b, c):
+    if x <= a:
+        return 1.0 if a == b else 0.0
+    if x >= c:
+        return 1.0 if b == c else 0.0
+    return (x - a) / (b - a) if x <= b else (c - x) / (c - b)
+
+
+def trimf_vec(x, a, b, c):
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    if b > a:
+        m = (x > a) & (x <= b)
+        out[m] = (x[m] - a) / (b - a)
+    else:
+        out[x <= b] = 1.0
+    if c > b:
+        m = (x > b) & (x < c)
+        out[m] = (c - x[m]) / (c - b)
+    else:
+        out[x >= c] = 1.0
+    return out
+
+
+def partition(lo, hi, n):
+    ctr = np.linspace(lo, hi, n)
+    return [(ctr[i - 1] if i > 0 else lo, ctr[i], ctr[i + 1] if i < n - 1 else hi)
+            for i in range(n)]
+
+
+def q_half_away(v, lim):
+    s = np.sign(v)
+    return int(s * min(lim, np.floor(abs(v) + 0.5)))
+
+
+def famm(n, aw=1.0, bw=0.7):
+    c = (n - 1) / 2.0
+    lim = int(c)
+    return np.array([[q_half_away(-(aw * (i - c) + bw * (j - c)), lim) + int(c)
+                      for j in range(n)] for i in range(n)], dtype=int)
+
+
+class Mamdani2:
+    def __init__(self, xr, wr, ur, n, M, ng=401):
+        self.PX, self.PW, self.PU = partition(*xr, n), partition(*wr, n), partition(*ur, n)
+        self.M, self.n = M, n
+        self.ug = np.linspace(ur[0], ur[1], ng)
+        self.PU_grid = [trimf_vec(self.ug, *p) for p in self.PU]
+        self.MX, self.MW = np.zeros(n), np.zeros(n)
+        self.fired = 0
+
+    def __call__(self, th, w):
+        for i, p in enumerate(self.PX):
+            self.MX[i] = trimf(th, *p)
+        for j, p in enumerate(self.PW):
+            self.MW[j] = trimf(w, *p)
+        a = np.minimum(self.MX[:, None], self.MW[None, :])
+        mu = np.zeros_like(self.ug)
+        self.fired = 0
+        for i in range(self.n):
+            for j in range(self.n):
+                ak = a[i, j]
+                if ak <= 0.0:
+                    continue
+                self.fired += 1
+                np.maximum(mu, np.minimum(ak, self.PU_grid[self.M[i, j]]), out=mu)
+        den = np.trapezoid(mu, self.ug)
+        if den <= 1e-14:
+            return 0.0
+        return float(np.trapezoid(self.ug * mu, self.ug) / den)
+
+
+class Mamdani3:
+    """三输入 Mamdani，同样跳过 alpha = 0 的规则。"""
+
+    def __init__(self, n, ng=401):
+        self.n = n
+        self.P = [partition(*r, n) for r in (XR, WR, (-5.0, 5.0))]
+        self.ug = np.linspace(-5.0, 5.0, ng)
+        self.PUg = [trimf_vec(self.ug, *p) for p in self.P[2]]
+        c = (n - 1) / 2.0
+        self.M = np.array([[[q_half_away(-(1.0 * (i - c) + 0.7 * (j - c) + 0.5 * (k - c)), int(c)) + int(c)
+                             for k in range(n)] for j in range(n)] for i in range(n)])
+        self.fired = 0
+
+    def __call__(self, x1, x2, x3):
+        m = [np.array([trimf(v, *p) for p in self.P[t]]) for t, v in enumerate((x1, x2, x3))]
+        agg = np.zeros_like(self.ug)
+        self.fired = 0
+        for i in range(self.n):
+            if m[0][i] == 0:
+                continue
+            for j in range(self.n):
+                a2 = min(m[0][i], m[1][j])
+                if a2 == 0:
+                    continue
+                for k in range(self.n):
+                    a = min(a2, m[2][k])
+                    if a > 0:
+                        self.fired += 1
+                        np.maximum(agg, np.minimum(a, self.PUg[self.M[i, j, k]]), out=agg)
+        d = np.trapezoid(agg, self.ug)
+        return 0.0 if d <= 1e-14 else float(np.trapezoid(self.ug * agg, self.ug) / d)
+
+
+def bench(f, N=2000):
+    for _ in range(200):
+        f()
+    t0 = time.perf_counter()
+    for _ in range(N):
+        f()
+    return (time.perf_counter() - t0) / N * 1e6
+
+
+TH0, W0 = 5 * DEG, 10 * DEG`}
+  cells={[
+    { code: `# 两输入：规则总数涨 9 倍，在线成本几乎不动
+print('%-6s %-10s %-12s %-16s %s' % ('n', '规则总数', '同时激活', '单次求值 us', '1 kHz 预算占比'))
+tri = []
+for n in [3, 5, 7, 9]:
+    c = Mamdani2(XR, WR, UR, n, famm(n), ng=401)
+    c(TH0, W0)
+    t = bench(lambda: c(TH0, W0))
+    tri.append((n, n * n, c.fired, t))
+    print('%-6d %-10d %-12d %-16.2f %.1f%%' % (n, n * n, c.fired, t, t / 1000 * 100))
+print()
+print('规则数 9 -> 81（9 倍），时间只从 %.2f 涨到 %.2f us（%.2f 倍）。'
+      % (tri[0][3], tri[-1][3], tri[-1][3] / tri[0][3]))
+print('原因是同时激活的规则数恒为 4，与 n 无关：三角形支撑有限，在 $h=s$ 的划分下，每个输入最多点亮 2 个语言值。')
+print()
+print('输出网格点数才是真正的成本来源：')
+for ng in [51, 101, 401, 1001, 4001]:
+    c = Mamdani2(XR, WR, UR, 5, famm(5), ng=ng)
+    print('   5x5，网格 %5d 点: %7.2f us' % (ng, bench(lambda: c(TH0, W0))))
+print('网格从51加到4001的时间比取本次读数；不能从网格点数直接推算墙钟时间。')
+print()
+print('对照：零阶 Sugeno 完全没有输出网格，只需要一次加权平均：')
+cz = np.linspace(UR[0], UR[1], 5)
+PXs, PWs = partition(*XR, 5), partition(*WR, 5)
+M5s = famm(5)
+
+
+def sug0(th, w):
+    mx = np.array([trimf(th, *pp) for pp in PXs])
+    mw = np.array([trimf(w, *pp) for pp in PWs])
+    num = den = 0.0
+    for i in range(5):
+        if mx[i] <= 0:
+            continue
+        for j in range(5):
+            a = min(mx[i], mw[j])
+            if a <= 0:
+                continue
+            num += a * cz[M5s[i, j]]
+            den += a
+    return 0.0 if den <= 1e-14 else num / den
+
+
+print('   零阶 Sugeno 5x5: %7.2f us（Mamdani 5x5 网格 401 是 %.2f us）'
+      % (bench(lambda: sug0(TH0, W0)), tri[1][3]))` },
+    { code: `# 三输入：规则数 8 -> 125（15.6 倍），成本几乎不动
+print('%-6s %-10s %-12s %-16s %s' % ('n', '规则总数', '同时激活', '单次求值 us', '1 kHz 预算占比'))
+t3 = {}
+for n in [2, 3, 5]:
+    c = Mamdani3(n)
+    c(0.1, 0.2, 0.05)
+    t = bench(lambda: c(0.1, 0.2, 0.05))
+    t3[n] = t
+    print('%-6d %-10d %-12d %-16.2f %.1f%%' % (n, n ** 3, c.fired, t, t / 1000 * 100))
+print()
+print('规则数从 8 涨到 125（15.6 倍），单次求值只从 %.2f us 涨到 %.2f us（%.2f 倍），'
+      % (t3[2], t3[5], t3[5] / t3[2]))
+print('占 1 kHz 控制周期预算的 %.1f%%。' % (t3[5] / 1000 * 100))
+print('输入维数仍影响最多2^m个激活组合；填表、搜索与验证成本也需检查。')
+print()
+print('但换成高斯隶属度函数就完全不同了：高斯支撑无限，必须遍历全部 n^2 条规则。')
+print('%-6s %-10s %-12s %s' % ('n', '规则总数', '实际访问', '单次求值 us'))
+gau = []
+for n in [3, 5, 7, 9]:
+    cx = np.linspace(XR[0], XR[1], n)
+    cw = np.linspace(WR[0], WR[1], n)
+    sx = (cx[1] - cx[0]) / 2
+    sw = (cw[1] - cw[0]) / 2
+    ug = np.linspace(UR[0], UR[1], 401)
+    PUg = [trimf_vec(ug, *p) for p in partition(*UR, n)]
+    vis = [0]
+
+    def gu(th, w, n=n, cx=cx, cw=cw, sx=sx, sw=sw, PUg=PUg, ug=ug, vis=vis):
+        gx = np.exp(-(th - cx) ** 2 / (2 * sx ** 2))
+        gw = np.exp(-(w - cw) ** 2 / (2 * sw ** 2))
+        mu = np.zeros_like(ug)
+        f = 0
+        for i in range(n):
+            for j in range(n):
+                a = gx[i] * gw[j]
+                if a < 1e-9:
+                    continue
+                f += 1
+                np.maximum(mu, a * PUg[(i + j) % n], out=mu)
+        vis[0] = f
+        d = np.trapezoid(mu, ug)
+        return 0.0 if d <= 1e-14 else float(np.trapezoid(ug * mu, ug) / d)
+
+    t = bench(lambda: gu(TH0, W0))
+    gau.append((n, n * n, vis[0], t))
+    print('%-6d %-10d %-12d %.2f' % (n, n * n, vis[0], t))
+print()
+print('三角划分 n=3->9 时间涨 %.2f 倍，高斯划分涨 %.2f 倍。'
+      % (tri[-1][3] / tri[0][3], gau[-1][3] / gau[0][3]))
+print('隶属度函数的支撑是否有限，直接决定了在线成本会不会随规则数增长。')
+
+fig, ax = plt.subplots(figsize=(8, 3.8))
+ax.plot([r[1] for r in tri], [r[3] for r in tri], 'o-', color='#2563eb', label='三角划分（激活恒为 4 条）')
+ax.plot([r[1] for r in gau], [r[3] for r in gau], 's--', color='#dc2626', label='高斯划分（必须遍历全部）')
+ax.set_xscale('log')
+ax.set_xlabel('规则总数 n^2（对数）')
+ax.set_ylabel('单次求值 (us)')
+ax.set_title('在线成本 vs 规则总数：差别来自隶属度函数的支撑')
+ax.legend(fontsize=9)
+ax.grid(alpha=0.3, which='both')
+plt.tight_layout()
+plt.show()` },
+    { code: `# 那 125 条规则的代价到底在哪？在填表、存储和验证上
+print('n 个语言值、m 个输入时的规则总数：')
+print('%-10s' % '输入数 m' + ''.join('%-10s' % ('n=%d' % n) for n in [3, 5, 7]))
+for m in [1, 2, 3, 4, 5]:
+    print('%-10d' % m + ''.join('%-10d' % (n ** m) for n in [3, 5, 7]))
+print()
+print('一个 5 输入、每输入 7 个语言值的系统需要 16807 条规则。')
+print('这些规则必须由人写出来、由人检查一致性、由人验证覆盖性 —— 这才是维数灾难。')
+print()
+print('而且第 5 节已经看到：规则表是量化的。b_w 从 0.30 连续扫到 2.00（35 步），')
+print('表只变了 9 次，26 步完全不变。这意味着：')
+print('   1. 大部分"整定"动作在控制器内部什么都没做；')
+print('   2. 两张不同的表可能给出完全相同的闭环响应（实测有 6 格不同、rms 一模一样）；')
+print('   3. 反过来，一次闭环仿真通过，不能证明规则表是对的 —— 未被轨迹访问的格子没被测到。')
+print()
+print('16807格规则增加设计与覆盖成本，但有限规则表并非数学上无法验证。')
+print('不能仅凭几条轨迹宣称验证完整；本教学实验不作认证可行性判断。')` }
+  ]}
+/>
+
+### 局限清单
+
+把前面各节的实测结果汇成一张清单：
+
+| 局限 | 实测证据 | 有没有办法绕 |
+| --- | --- | --- |
+| **无记忆PD对本课恒扰动有静差** | $d_0 = 0.2 \sim 2.0\ \mathrm{N\cdot m}$ 下静差 $0.310 \sim 4.151^\circ$ | 加常规积分项，实测降 63～724 倍 |
+| **规则表是量化的，整定手感发涩** | $b_w$ 扫 35 步，表只变 9 次 | 改用一阶 Sugeno，结论部参数连续可微 |
+| **轨迹测试不能覆盖整个规则域** | 两张表差 6 格，闭环响应完全相同 | 用覆盖分析、区间/形式验证或限制运行域补充仿真 |
+| **Mamdani需针对对象构造证书** | min/max折点与归一化增加分析工作 | 可用分段分析；TS本例有简洁证明，但结构本身不保证稳定 |
+| **解模糊化选错会抖振** | MOM 让 $\mathrm{TV}(u)$ 涨 604 倍，闭环有限窗口内振荡 | 本例优先COG；其它任务须分别评估噪声与振荡 |
+| **在线成本依赖实现与精度** | 高斯具有无限支撑，但代码的1e-9阈值会截断小激活；扫描候选与参与聚合不同 | 分开记录搜索、聚合、网格及当前机器耗时，截断需另核误差 |
+| **难以和基于梯度的方法结合** | min/max与规则量化会带来不可微点；连续参数在分段内也可能有非零梯度 | 用 TS 型，结论部参数可用最小二乘辨识（本次函数逼近数据上误差较小，不作一般算法排名） |
+
+### 什么情况下值得用
+
+上面这张表看起来全是缺点，但模糊控制在特定场景下确实是最省事的选择。判据是这三条：
+
+1. **写不出模型，但写得出规则。** ABS 是典型：轮胎附着曲线随路面、温度、磨损剧烈变化，精确模型不可得，但"滑移率太大就松刹车"这句话谁都会说。实测干沥青上模糊 ABS 相对理想附着峰值制动距离下界多 $8.8\%$，而一套已在同样三种路面上扫过参数的门限逻辑（这里属于整定场景内观察，不是独立路面测试）是 $11.8\%$。
+2. **对象本质上是一个单调的静态映射。** 洗衣机、电饭煲、空调的温度曲线，输入输出都是单调的，9 到 25 条规则就够，而且规则表的错误影响是**局部的、有界的**（案例 1 实测最大影响 15 分钟，正好是相邻单点的间距）。
+3. **语言规则便于沟通且可以检验。** 一张规则表可以给操作员看、可以让老师傅改。LQR增益同样能解释反馈方向与强度；两者表达方式不同。
+
+模型已知时，应把线性、非线性和模糊候选放在相同约束与整定预算下比较。下面的固定候选表记录：LQR 用 $4.713$ 的峰值转矩做到 rms $3.7007$，Mamdani 5×5 用 $7.892$ 做到 $3.5118$——好 $5.1\%$，代价是多花 $67\%$ 的控制量，该表不构成任一方法的全局最优性或稳定性保证。
+
+## 小结
+
+- **隶属度函数不是画图工具，单位划分才是结构性质。** 均匀三角划分在 $h = s$ 时精确满足 $\sum_i\mu_i(x) \equiv 1$（实测 $\max\lvert\sum\mu - 1\rvert$ 只有 $0 \sim 2.2\times10^{-16}$，纯浮点舍入量级）。Notebook 1在 $n=5,0.5\le h/s\le2$ 的有限肩形划分上核对 $\min\sum\mu=\max(0,2-s/h)$、$\max\sum\mu=1$（$h\le s$）或 $3-2s/h$（$h>s$）；更宽的重叠不能直接套这组式子。本课未归一化的有限高斯划分在任何正 $\sigma$ 下都不能恒等于1（$\sigma = s/2$ 时 $\sum\mu \in [1.1357,\ 1.2713]$）。
+- **非零规则数与实现成本要分开。** 标准 $h=s$ 划分每输入最多2个非零隶属度，m输入最多 $2^m$ 条；输入维数仍可指数增长。宽重叠会激活更多规则，当前实现也仍遍历候选和积分网格。Notebook 8打印本次耗时，不保证旧机器比值或1kHz预算。
+- **本次四种算子的差异较小。** $\min$/$\prod$ 的 AND 与 Mamdani/Larsen 的蕴含，四种组合闭环 rms 相差 $0.73\%$。但 $\min$ 裁剪会把面积变成 $w\alpha(2-\alpha)$，压缩强弱规则的比例（$0.6667$ 与 $0.3333$ 的面积比从 $2.00$ 压到 $1.60$）。
+- **解模糊化在本例显著影响振荡。** 同一规则库换成 MOM：$\mathrm{TV}(u)$ 从 $15.797$ 涨到 $9540$（604 倍），rms 从 $3.51^\circ$ 涨到 $6.09^\circ$，6 秒末角度还停在 $6.49^\circ$——本窗口未收敛，不能据有限仿真断言极限环。
+- **FAMM 应该中心反对称，不是对角对称。** $M_{n-1-i,\,n-1-j} = (n-1) - M_{ij}$ 对应 $u(-\theta,-\dot\theta) = -u(\theta,\dot\theta)$，与 $\sin\theta$ 的奇对称一致。实测 $5\times5$ 表有 5 对不满足对角对称；$3\times3$ 时两者碰巧同时成立，这就是错误说法能流传的原因。
+- **零阶 Sugeno 的等价条件很苛刻。** 加权平均 $\sum\alpha_i c_i/\sum\alpha_i$ 只在"Larsen 乘积缩放 + 求和聚合 + 冲激结论部 + 论域装得下"时才等于 Mamdani 管线的输出。四种蕴含×聚合组合的极限是 $-5.0000$、$-5.3716$、$-4.2857$、$-4.6875$，只有一个对。
+- **TS 型可以严格证明稳定。** 两规则一阶系统 $\dot x = g(x)/(1+e^x)$，$g(x) = (1-x) - e^x(2x+1)$：由 $g'(x) \le -0.835830 < 0$ 得唯一平衡点，由 $V = x^2/2$ 得全局渐近稳定，实测原点附近 $-\dot V/V = 4.000001$。这里未给Mamdani闭环构造稳定性证书，不意味着这类系统不能证明稳定。
+- **语言值数量的收益衰减极快。** rms 改善倍数：$9\to25$ 条是 $3.153$，$25\to49$ 条是 $1.197$，$49\to81$ 条是 $1.024$。ABS 案例里 81 条规则相对 25 条的制动距离差最大只有 $0.014$ m（三种路面依次是 $0.002/0.000/0.014$ m）——在这些指标与工况下收益很小。
+- **模糊 PD 就是 PD。** 等效 $\lvert K_p\rvert$ 随 $n$ 从 $12.06$ 升到 $27.92$，$R^2$ 从 $0.893$ 升到 $0.999$，但本次设计权重扫描的控制输出最大变化约 $0.11\ \mathrm{N\cdot m}$（这是不同规则表之间的差，不代表固定COG曲面必有跳变）。它有静差（$0.310 \sim 4.151^\circ$），补积分后降 63～724 倍。
+
+## 习题
+
+**习题 1（重叠度与单位划分）** 某温度变量的论域是 $[0, 100]\,^\circ\mathrm{C}$，用 5 个中心均匀分布的三角形隶属度函数划分，半宽 $h$ 与中心间距 $s$ 满足 $h/s = 5/6$。求：(a) 相邻隶属度函数交点处的隶属度 $\mu_x$；(b) $\sum_i \mu_i(x)$ 的最小值与最大值；(c) 若改成 $h = s$，$\sum\mu$ 等于多少？这个性质对零阶 Sugeno 的输出范围意味着什么？
+
+**习题 2（模糊化与激活强度）** 沿用本课的划分：$\theta \in [-30^\circ, 30^\circ]$、$\dot\theta \in [-120^\circ/\mathrm{s}, 120^\circ/\mathrm{s}]$，各 5 个均匀三角形语言值 NB、NS、ZO、PS、PB。取 $\theta = 5^\circ$、$\dot\theta = 10^\circ/\mathrm{s}$。(a) 求出所有非零隶属度；(b) 用 $\min$ AND 列出被激活的规则及其 $\alpha$；(c) 解释为什么恰好是 4 条，并说明这个数目与 $n$ 有什么关系。
+
+**习题 3（解模糊化三法与离散化）** 输出论域 $U = [0, 12]$，聚合后的模糊集合是三段裁剪三角形的最大值：
+
+$$
+\mu_{B'}(y) = \max\Big(\min(0.5,\ \mu_{(0,2,4)}),\ \min(0.5,\ \mu_{(4,6,8)}),\ \min(0.25,\ \mu_{(8,10,12)})\Big)
+$$
+
+其中 $\mu_{(a,b,c)}$ 是参数为 $(a,b,c)$ 的三角形隶属度函数。(a) 用几何方法算出总面积、一阶矩和精确的重心；(b) 算出平分法的结果；(c) 算出 MOM 的结果；(d) 用 $N = 13$ 个等距网格点做离散重心法，结果是多少？为什么有误差？(e) 在 $N=13,25,49,121,1201$ 这组网格中哪一个首先精确？为何本题特殊对称形状会出现精确网格，而一般形状仍需误差检查？
+
+**习题 4（FAMM 的对称性）** $n = 3$ 时（语言值 NB、ZO、PB），用 $M_{ij} = q(-(1.0(i-1) + 0.7(j-1))) + 1$ 生成 FAMM，其中 $q$ 是四舍五入（$.5$ 远离零）后饱和到 $[-1, 1]$，$i$ 是 $\theta$ 的下标、$j$ 是 $\dot\theta$ 的下标。(a) 写出这张 $3\times3$ 表；(b) 检验对角对称 $M_{ij} = M_{ji}$；(c) 检验中心反对称 $M_{2-i,\,2-j} = 2 - M_{ij}$；(d) 哪一种对应被控对象的物理对称性？为什么 $n=3$ 时两种检验都会通过、而 $n=5$ 时对角对称立刻失效？
+
+**习题 5（零阶 Sugeno 加权平均）** 用习题 2 的激活结果，输出论域 $[-15, 15]\ \mathrm{N\cdot m}$、5 个语言值中心均匀分布，规则表用第 5 节的 $5\times5$ FAMM。(a) 算出加权平均的输出；(b) 同一规则库、Mamdani（$\min$ 裁剪 + $\max$ 聚合 + 重心法）给出 $-2.860487$，解释为什么不同；(c) 如果把结论部改成宽度 $\varepsilon \to 0$ 的窄三角形、但仍用 $\min$ 裁剪和 $\max$ 聚合，极限是多少？
+
+**习题 6（TS 型的严格稳定性）** 两规则一阶 Takagi-Sugeno 系统：
+
+$$
+\text{R1: IF } x \text{ is N THEN } \dot x = 1 - x, \qquad
+\text{R2: IF } x \text{ is P THEN } \dot x = -(2x + 1)
+$$
+
+隶属度函数 $\mu_N(x) = \dfrac{1}{1 + e^x}$、$\mu_P(x) = \dfrac{e^x}{1 + e^x}$。(a) 验证 $\mu_N + \mu_P \equiv 1$，并写出 $\dot x$ 的闭式；(b) 求出所有平衡点并证明唯一；(c) 用 $V = x^2/2$ 证明全局渐近稳定；(d) 求原点附近的指数收敛速率。
+
+## 答案
+
+### 习题 1
+
+**(a)** 论域 $[0,100]$、$n = 5$，中心在 $\{0, 25, 50, 75, 100\}$，所以 $s = 25$，$h = \frac{5}{6}\times 25 = 20.8333$。相邻两个三角形在中心连线的中点处相交，交点距各自中心 $s/2 = 12.5$：
+
+$$
+\mu_x = 1 - \frac{s/2}{h} = 1 - \frac{s}{2h} = 1 - \frac{25}{2\times20.8333} = 1 - 0.6 = 0.4
+$$
+
+**(b)** $s/2<h<s$，总隶属度小于1，但相邻支撑仍覆盖全论域，不存在全零权重空洞。$\sum\mu$ 的最小值出现在两中心的中点（只有两个邻居各贡献 $\mu_x$）：
+
+$$
+\min \sum\mu = 2 - \frac{s}{h} = 2 - \frac{25}{20.8333} = 2 - 1.2 = 0.8
+$$
+
+最大值出现在某个中心处（该语言值贡献 1，邻居因为 $h < s$ 贡献 0）：
+
+$$
+\max \sum\mu = 1
+$$
+
+实测（200001 个采样点）：$\sum\mu \in [0.800000,\ 1.000000]$，$\mu_x = 0.4000$，与闭式完全一致。
+
+**(c)** $h = s$ 时 $\min\sum\mu = 2 - 1 = 1$、$\max\sum\mu = 1$，即 $\sum_i\mu_i(x) \equiv 1$（实测 $\max\lvert\sum\mu - 1\rvert = 2.22\times10^{-16}$）。
+
+对零阶 Sugeno 的意义：输出 $u = \sum_i \alpha_i c_i / \sum_i \alpha_i$ 的分母恒为 1（单输入时），所以 $u$ 是各 $c_i$ 的**凸组合**，必然落在 $[\min c_i,\ \max c_i]$ 内，也就是落在输出论域内。分母不恒为1时，只要原始权重非负且总和为正，归一化后仍是凸组合；全零权重才是无定义边界。
+
+### 习题 2
+
+**(a)** $\theta$ 的中心是 $\{-30, -15, 0, 15, 30\}$，$\theta = 5^\circ$ 落在 ZO（中心 0）与 PS（中心 15）之间，间距 15：
+
+$$
+\mu_{\mathrm{ZO}}(5^\circ) = \frac{15 - 5}{15} = \frac{2}{3} = 0.666667, \qquad
+\mu_{\mathrm{PS}}(5^\circ) = \frac{5 - 0}{15} = \frac{1}{3} = 0.333333
+$$
+
+其余三个为 0，和 $= 1.000000$。$\dot\theta$ 的中心是 $\{-120, -60, 0, 60, 120\}$，$\dot\theta = 10$ 落在 ZO 与 PS 之间，间距 60：
+
+$$
+\mu_{\mathrm{ZO}}(10) = \frac{60 - 10}{60} = \frac{5}{6} = 0.833333, \qquad
+\mu_{\mathrm{PS}}(10) = \frac{10}{60} = \frac{1}{6} = 0.166667
+$$
+
+和 $= 1.000000$。
+
+**(b)** $2 \times 2 = 4$ 条规则被激活。查第 5 节的 FAMM（行是 $\theta$、列是 $\dot\theta$；每条规则仍按变量名辨认）：
+
+| 规则 | $\alpha = \min(\mu_{\dot\theta},\ \mu_\theta)$ |
+| --- | --- |
+| $\dot\theta$ ZO AND $\theta$ ZO $\to u$ ZO | $\min(5/6,\ 2/3) = 2/3 = 0.666667$ |
+| $\dot\theta$ ZO AND $\theta$ PS $\to u$ NS | $\min(5/6,\ 1/3) = 1/3 = 0.333333$ |
+| $\dot\theta$ PS AND $\theta$ ZO $\to u$ NS | $\min(1/6,\ 2/3) = 1/6 = 0.166667$ |
+| $\dot\theta$ PS AND $\theta$ PS $\to u$ NB | $\min(1/6,\ 1/3) = 1/6 = 0.166667$ |
+
+$\sum\alpha = 4/3 = 1.333333$。注意 $\sum\alpha \ne 1$：$\min$ AND 不保持单位划分（乘积 AND 才会给出 $\sum\alpha = (\sum\mu_1)(\sum\mu_2) = 1$）。
+
+**(c)** 在本课 $h=s$ 的相邻三角划分下，每个输入最多激活 2 个语言值——因为三角形支撑有限，一个点只能落在相邻两个三角形的支撑交集里。两个输入就是 $2 \times 2 = 4$ 条，**与 $n$ 完全无关**。实测 $n = 3, 5, 7, 9$（规则总数 $9, 25, 49, 81$）最多同时激活的都是 4 条。这是稀疏激活的依据，实际耗时还取决于查找、候选遍历和输出积分，输入维数m本身仍可能造成指数成本。
+
+### 习题 3
+
+**(a)** 三段裁剪后的三角形支撑分别是 $[0, 4]$、$[4, 8]$、$[8, 12]$，裁剪后平顶区间是 $[1,3]$、$[5,7]$、$[8.5,11.5]$（非零支撑仍分别是 $(0,4)$、$(4,8)$、$(8,12)$）——**两两不重叠**，所以 $\max$ 就是求和，可以分段算。
+
+半宽都是 $w = 2$，裁剪到 $\alpha$ 后的面积是 $w[1 - (1-\alpha)^2]$（全面积减去顶部那个相似小三角形）：
+
+| 段 | $\alpha$ | 平顶区间 | 面积 | 形心 |
+| --- | --- | --- | --- | --- |
+| $(0,2,4)$ | 0.5 | $[1, 3]$ | $2(1 - 0.25) = 1.5$ | 2 |
+| $(4,6,8)$ | 0.5 | $[5, 7]$ | $2(1 - 0.25) = 1.5$ | 6 |
+| $(8,10,12)$ | 0.25 | $[8.5, 11.5]$ | $2(1 - 0.5625) = 0.875$ | 10 |
+
+总面积 $A = 1.5 + 1.5 + 0.875 = 3.875$；一阶矩 $M = 1.5\times2 + 1.5\times6 + 0.875\times10 = 3 + 9 + 8.75 = 20.75$。
+
+$$
+u^*_{\mathrm{COG}} = \frac{M}{A} = \frac{20.75}{3.875} = 5.3548387097
+$$
+
+**(b)** 半面积 $= 3.875/2 = 1.9375$。第一段到 $y = 4$ 累计 $1.5$，还差 $0.4375$。第二段在 $[4,5]$ 上是斜坡（$\mu$ 从 0 升到 0.5），面积 $0.25 < 0.4375$；进入平顶 $[5,7]$（$\mu = 0.5$）后还需 $0.4375 - 0.25 = 0.1875$，对应 $\Delta y = 0.1875/0.5 = 0.375$：
+
+$$
+u^*_{\mathrm{bis}} = 5 + 0.375 = 5.375
+$$
+
+**(c)** 最大隶属度是 $0.5$，在 $[1,3]$ 和 $[5,7]$ 上都取到。这两段的均值：
+
+$$
+u^*_{\mathrm{MOM}} = \frac{2 + 6}{2} = 4.0
+$$
+
+MOM 完全无视了第三段（$\alpha = 0.25$），这是它丢信息的典型表现。
+
+**(d)** $N = 13$ 时网格是 $y = 0, 1, 2, \ldots, 12$，步长 1.0。分子 $= 19.5$、分母 $= 3.75$：
+
+$$
+u^* \approx \frac{19.5}{3.75} = 5.2, \qquad \text{误差} = 1.548\times10^{-1}
+$$
+
+误差来源是网格解析不到 $8.5$ 和 $11.5$ 这两个折点。粗网格把 $y = 8, 9, 10, 11, 12$ 处的隶属度取成 $0,\ 0.25,\ 0.25,\ 0.25,\ 0$，梯形积分给出第三段的面积 $0.75$（真值 $0.875$）、一阶矩 $7.5$（真值 $8.75$）。前两段的折点 $1, 3, 4, 5, 7, 8$ 全落在整数网格上，面积与一阶矩都精确（$1.5$ 与 $3$、$1.5$ 与 $9$）。合起来分母 $1.5 + 1.5 + 0.75 = 3.75$、分子 $3 + 9 + 7.5 = 19.5$，重心被拉到左边的 $5.2$。
+
+**(e)** $N = 25$（步长0.5）是所测序列中首个精确网格，实测 $N = 25, 49, 121, 1201$ 的结果都是 $5.3548387097$，误差 $0$（到机器精度）。
+
+原因要分两部分：分母的隶属度是分段线性，折点被网格包含时梯形积分精确；分子的被积函数 $y\mu(y)$ 是分段二次，**一般不精确**。本题每段关于自身中心对称，等距对称采样使一阶矩误差抵消，恰好也精确。 这里的折点是 $\{0, 1, 3, 4, 5, 7, 8, 8.5, 11.5, 12\}$，步长 0.5 的网格全部包含它们，本题因此出现一组精确网格，而不是任意更大的N都精确。反过来，$N=13$ 的步长 1.0 漏掉了 8.5 和 11.5，误差就出来了。工程含义：应核对折点、对称性并用网格加密检查误差，否则加密网格前你可能一直看着一个错误的重心。
+
+### 习题 4
+
+**(a)** $c = (3-1)/2 = 1$，饱和限 $\pm1$。$M_{ij} = q(-(i-1) - 0.7(j-1)) + 1$：
+
+| $\theta\backslash\dot\theta$ | NB | ZO | PB |
+| --- | --- | --- | --- |
+| **NB** | PB | PB | ZO |
+| **ZO** | PB | ZO | NB |
+| **PB** | ZO | NB | NB |
+
+例如 $M_{00} = q(-(-1) - 0.7(-1)) + 1 = q(1.7) + 1 = 1 + 1 = 2 = \mathrm{PB}$；$M_{02} = q(1 - 0.7) + 1 = q(0.3) + 1 = 0 + 1 = 1 = \mathrm{ZO}$。
+
+**(b)** $M_{01} = 2 = M_{10} = 2$ ✓；$M_{02} = 1 = M_{20} = 1$ ✓；$M_{12} = 0 = M_{21} = 0$ ✓。**对角对称成立。**
+
+**(c)** 需要 $M_{2-i,2-j} = 2 - M_{ij}$：$M_{22} = 0 = 2 - 2$ ✓；$M_{21} = 0 = 2 - 2$ ✓；$M_{12} = 0 = 2 - 2$ ✓；$M_{11} = 1 = 2 - 1$ ✓；$M_{20} = 1 = 2 - 1$ ✓；$M_{02} = 1 = 2 - 1$ ✓。**中心反对称也成立。**
+
+**(d)** **中心反对称**才对应物理对称性。它等价于 $u(-\theta, -\dot\theta) = -u(\theta, \dot\theta)$，而被控对象 $ml^2\ddot\theta = mgl\sin\theta + u$ 在 $(\theta, \dot\theta, u) \to (-\theta, -\dot\theta, -u)$ 下不变（因为 $\sin$ 是奇函数）。对角对称 $M_{ij} = M_{ji}$ 意味着交换 $\theta$ 和 $\dot\theta$ 的角色结论不变，可这两个量量纲不同、物理权重也不同（这里 $a_w = 1.0 \ne b_w = 0.7$），没有任何理由要求它成立。
+
+$n = 3$ 时两种检验都通过，是因为表太小：$3\times3$ 只有 3 个独立的非对角格，而 $q(\cdot)$ 的饱和（限 $\pm1$）把很多不同的连续值压成了同一个整数，恰好让表落成了对称的形状。$n = 5$ 时饱和不再频繁，对角对称立刻失效——实测本课的 $5\times5$ 表有 5 对（10 个格）不满足 $M_{ij} = M_{ji}$，例如 $M(\theta{=}\mathrm{NB}, \dot\theta{=}\mathrm{ZO}) = \mathrm{PB}$ 而 $M(\theta{=}\mathrm{ZO}, \dot\theta{=}\mathrm{NB}) = \mathrm{PS}$。所以"看一个 $3\times3$ 的例子就断定 FAMM 对角对称"是一个由例子太小造成的错觉。
+
+### 习题 5
+
+**(a)** 输出中心 $c = [-15, -7.5, 0, 7.5, 15]$ 对应 NB、NS、ZO、PS、PB。用习题 2 的四条规则：
+
+$$
+\sum_i \alpha_i c_i = \tfrac{2}{3}(0) + \tfrac{1}{3}(-7.5) + \tfrac{1}{6}(-7.5) + \tfrac{1}{6}(-15) = 0 - 2.5 - 1.25 - 2.5 = -6.25
+$$
+
+$$
+\sum_i \alpha_i = \tfrac{2}{3} + \tfrac{1}{3} + \tfrac{1}{6} + \tfrac{1}{6} = \tfrac{4}{3}, \qquad
+u = \frac{-6.25}{4/3} = -4.6875\ \mathrm{N\cdot m}
+$$
+
+**(b)** Mamdani 用**正常宽度**的三角形作结论部，$\min$ 裁剪后取 $\max$ 聚合，再做重心法。差别有两层：
+
+1. 裁剪后的面积是 $w\alpha(2-\alpha)$，不是 $w\alpha$，所以各结论部的相对权重被改变了（$\alpha = 2/3$ 与 $\alpha = 1/3$ 的面积比是 $1.60$ 而不是 $2.00$）。
+2. $\max$ 聚合下两条指向 NS 的规则只保留 $\alpha = 1/3$ 那条，$\alpha = 1/6$ 那条的质量被丢掉。
+
+再加上 $\alpha$ 最大的那条规则指向 ZO（中心 0），裁剪后它贡献了一大块关于 0 对称的面积，把重心往 0 拉。实测结果 $-2.860487$，与 $-4.6875$ 差 $1.827012\ \mathrm{N\cdot m}$（输出域的 $6.09\%$）。在本课整个 $101\times101$ 输入网格上，这个差的 $\max$ 是 $4.719285\ \mathrm{N\cdot m}$、平均 $1.672299\ \mathrm{N\cdot m}$。
+
+**(c)** 极限是 $-5.0000000$，**不是** $-4.6875$。
+
+推导：$\varepsilon \to 0$ 时三条不同的结论部（ZO 的 $c=0$、NS 的 $c=-7.5$、NB 的 $c=-15$）互不重叠，$\max$ 聚合把指向 NS 的两条合并成 $\alpha = \max(1/3, 1/6) = 1/3$。$\min$ 裁剪后每段面积正比于 $\alpha(2-\alpha)$：
+
+$$
+\alpha(2-\alpha):\quad \tfrac{2}{3}\to\tfrac{8}{9},\quad \tfrac{1}{3}\to\tfrac{5}{9},\quad \tfrac{1}{6}\to\tfrac{11}{36}
+$$
+
+$$
+u = \frac{\tfrac{8}{9}(0) + \tfrac{5}{9}(-7.5) + \tfrac{11}{36}(-15)}{\tfrac{8}{9} + \tfrac{5}{9} + \tfrac{11}{36}}
+= \frac{-4.1667 - 4.5833}{0.8889 + 0.5556 + 0.3056} = \frac{-8.7500}{1.7500} = -5.0000
+$$
+
+注意 $\varepsilon$ 从 $0.3$ 缩到 $0.01$ 结果一动不动——这不是离散化误差，加密网格永远修不好它。要得到 $-4.6875$，必须同时换成 **Larsen 乘积缩放**（面积正比于 $\alpha$）**和求和聚合**（不丢重复结论部的质量）。
+
+### 习题 6
+
+**(a)** $\mu_N + \mu_P = \dfrac{1}{1+e^x} + \dfrac{e^x}{1+e^x} = \dfrac{1+e^x}{1+e^x} = 1$，恒成立（实测最大偏差 $2.22\times10^{-16}$）。加权平均：
+
+$$
+\dot x = \mu_N(1-x) + \mu_P(-(2x+1)) = \frac{(1-x) - e^x(2x+1)}{1+e^x} \equiv \frac{g(x)}{1+e^x}
+$$
+
+其中 $g(x) = (1-x) - e^x(2x+1)$。
+
+**(b)** $g(0) = 1 - 1\cdot1 = 0$，所以 $x = 0$ 是平衡点。要证唯一，看单调性：
+
+$$
+g'(x) = -1 - \left[e^x(2x+1) + e^x\cdot2\right] = -1 - e^x(2x+3)
+$$
+
+令 $h(x) = e^x(2x+3)$，则 $h'(x) = e^x(2x+3) + 2e^x = e^x(2x+5)$，在 $x = -2.5$ 处变号，$h$ 在此取极小值
+
+$$
+h(-2.5) = e^{-2.5}(2\times(-2.5)+3) = e^{-2.5}\times(-2) = -0.1641699972
+$$
+
+于是 $g'(x) = -1 - h(x) \le -1 + 0.1641699972 = -0.8358300028 < 0$ 对所有 $x$ 成立。$g$ 严格单调递减且 $g(0) = 0$，所以 $x = 0$ 是**唯一**的零点，即唯一平衡点。（分母 $1 + e^x > 0$ 恒成立，不引入额外平衡点。）
+
+**(c)** 取 $V(x) = x^2/2$，正定且径向无界。
+
+$$
+\dot V = x\dot x = \frac{x\,g(x)}{1+e^x}
+$$
+
+$x \ne 0$ 时：因为 $g$ 严格单调减且 $g(0) = 0$，有 $x > 0 \Rightarrow g(x) < 0$、$x < 0 \Rightarrow g(x) > 0$，两种情况都是 $x\,g(x) < 0$。分母 $1+e^x > 0$，所以 $\dot V < 0$ 对所有 $x \ne 0$ 成立。由 Lyapunov 直接法，加上 $V$ 径向无界，$x = 0$ **全局渐近稳定**。
+
+数值验证：在 $[-60, 60]$ 上取 120001 个点，$\max \dot V = -1.9997\times10^{-6}$（出现在最靠近 0 的采样点），$\mathrm{count}(\dot V > 0) = 0$。
+
+注意这个证明**不需要** LMI，也不需要找公共 $P$ 矩阵——因为隶属度函数满足单位划分，闭环向量场有一个闭式表达 $g(x)/(1+e^x)$，可以直接分析。一般的 $r$ 条规则 TS 系统没有这种运气，那时才需要 $\sum_i\sum_j h_i h_j$ 展开和公共 $P$（或 LMI 松弛）。
+
+**(d)** 在原点附近线性化：$g'(0) = -1 - e^0(0 + 3) = -4$，所以 $g(x) \approx -4x$；分母 $1 + e^x \to 1 + e^0 = 2$。于是
+
+$$
+\dot x \approx \frac{-4x}{2} = -2x
+$$
+
+$x$ 本身按 $e^{-2t}$ 衰减。因为 $V = x^2/2 \propto x^2$，$V$ 的衰减率是它的两倍：
+
+$$
+-\frac{\dot V}{V} = -\frac{2\dot x}{x} = -\frac{2\,g(x)}{x\,(1 + e^x)} \longrightarrow -\frac{2g'(0)}{1 + e^0} = -\frac{2\times(-4)}{2} = 4 \quad (x \to 0)
+$$
+
+实测 $-\dot V/V = 4.000001$（用 $x = 10^{-6}$ 处的中心差分算 $g'(0)$ 得 $-4.000000$），与推导一致：$V$ 按 $e^{-4t}$、$x$ 按 $e^{-2t}$ 衰减。注意这个速率不是自由的设计参数——它由两条规则结论部的系数（$-1$ 和 $-2$）与隶属度函数在原点的取值共同决定，这正是 TS 型"每条规则是一个局部线性模型"的含义。
+
+数值积分（RK4，$\mathrm{d}t = 10^{-4}$）：$x(0) = 5$ 在 $t = 7.5739$ s 达到 $\lvert x\rvert < 10^{-6}$；$x(0) = -5$ 在 $8.0940$ s；$x(0) = 20$ 在 $8.2321$ s。三个初始条件的到达时间只差 $0.66$ s，这些有限初值的读数不是全局速率界；$x\to+\infty$ 时 $\dot x\sim-2x-1$，$x\to-\infty$ 时 $\dot x\sim1-x$，分母抵消了正向的指数增长。

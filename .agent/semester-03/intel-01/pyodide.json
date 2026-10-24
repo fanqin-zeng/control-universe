@@ -1,0 +1,633 @@
+{
+  "testedAt": "2026-10-24T05:00:41.697Z",
+  "url": "http://127.0.0.1:18397/python-expansion.html?lesson=intelligent/fuzzy-control-basics",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "lessons": [
+    {
+      "key": "intelligent/fuzzy-control-basics",
+      "title": "模糊控制",
+      "sourceHash": "413d8ddecd73cce01ac92c88518ee84b4b6145e005b1b98792252df8dc532670",
+      "notebooks": [
+        {
+          "id": "intelligent/fuzzy-control-basics#1",
+          "title": "Notebook 1：四种隶属度函数形状与单位划分性质",
+          "index": 1,
+          "line": 93,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 13621,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "肩形检查：trimf(-40, -30, -30, -15) = 1.0 （左肩，应为 1）\n肩形检查：trimf(+40,  15,  30,  30) = 1.0 （右肩，应为 1）\n普通三角形在论域外：trimf(+40, -15, 0, 15) = 0.0 （应为 0）\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 185948
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 12455,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "均匀三角划分（半宽 h 恰等于中心间距 s）：\n  n=3: max|Sum(mu)-1| = 0.000e+00   [min, max] = [1.000000, 1.000000]\n  n=5: max|Sum(mu)-1| = 0.000e+00   [min, max] = [1.000000, 1.000000]\n  n=7: max|Sum(mu)-1| = 0.000e+00   [min, max] = [1.000000, 1.000000]\n  n=9: max|Sum(mu)-1| = 0.000e+00   [min, max] = [1.000000, 1.000000]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 220204
+                },
+                {
+                  "type": "stream",
+                  "name": "stderr",
+                  "text": "<cell>:44: UserWarning: Creating legend with loc=\"best\" can be slow with large amounts of data.\n<exec>:36: UserWarning: Creating legend with loc=\"best\" can be slow with large amounts of data.\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 521,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "h/s      mu_x     min Sum      max Sum      min 闭式       max 闭式      \n0.5000   0.0000   0.000000     1.000000     0.000000     1.000000    \n0.6000   0.1667   0.333333     1.000000     0.333333     1.000000    \n0.7500   0.3333   0.666667     1.000000     0.666667     1.000000    \n0.8333   0.4000   0.800000     1.000000     0.800000     1.000000    \n0.9000   0.4444   0.888889     1.000000     0.888889     1.000000    \n1.0000   0.5000   1.000000     1.000000     1.000000     1.000000    \n1.1000   0.5455   1.090909     1.181818     1.090909     1.181818    \n1.2500   0.6000   1.200000     1.400000     1.200000     1.400000    \n1.5000   0.6667   1.333333     1.666667     1.333333     1.666667    \n2.0000   0.7500   1.500000     2.000000     1.500000     2.000000    \n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 67128
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 36,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n=5，论域 [-1, 1]，高斯 sigma = k * s：\n  sigma = 0.2500 x s : Sum(mu) in [0.270671, 1.000671]\n  sigma = 0.3535 x s : Sum(mu) in [0.735660, 1.036587]\n  sigma = 0.5000 x s : Sum(mu) in [1.135671, 1.271341]\n  sigma = 0.7500 x s : Sum(mu) in [1.440014, 1.879356]\n  k = 0.25 时 min = 0.2707 —— 论域里有大片的洞，落在那里的 x 几乎没有规则被激活\n  无论 k 取多少，min 与 max 都不可能同时等于 1\n\n交叉隶属度的含义：sigma = s/2 时相邻高斯在中心连线的中点处相交，\n  交点隶属度 = exp(-0.5) = 0.606531，而三角形在 h = s 时交点是 0.5\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#2",
+          "title": "Notebook 2：模糊化、激活强度与推理算子的选择",
+          "index": 2,
+          "line": 431,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 457,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "theta = 5 deg 的隶属度：\n   NB  0.000000\n   NS  0.000000\n   ZO  0.666667\n   PS  0.333333\n   PB  0.000000\n   Sum = 1.000000\nomega = 10 deg/s 的隶属度：\n   NB  0.000000\n   NS  0.000000\n   ZO  0.833333\n   PS  0.166667\n   PB  0.000000\n   Sum = 1.000000\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 116560
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 2043,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "5x5 FAMM（行 = theta，列 = omega，格内是输出语言值）：\n         NB    NS    ZO    PS    PB  \n   NB    PB    PB    PB    PS    PS  \n   NS    PB    PB    PS    ZO    ZO  \n   ZO    PS    PS    ZO    NS    NS  \n   PS    ZO    ZO    NS    NB    NB  \n   PB    NS    NS    NB    NB    NB  \n\n中心反对称 M[4-i,4-j] == 4-M[i,j] : True\n对角对称   M[i,j] == M[j,i]       : False\n  不对称的格（theta, omega, M[i,j], M[j,i]）共 10 个，例如：[('NB', 'ZO', 'PB', 'PS'), ('NB', 'PS', 'PS', 'ZO'), ('NB', 'PB', 'PS', 'NS')]\n\n激活规则（min AND）：\n   R: theta=ZO  AND omega=ZO  -> u=ZO    alpha=0.666667\n   R: theta=ZO  AND omega=PS  -> u=NS    alpha=0.166667\n   R: theta=PS  AND omega=ZO  -> u=NS    alpha=0.333333\n   R: theta=PS  AND omega=PS  -> u=NB    alpha=0.166667\n   激活 4 / 25 条，Sum(alpha) = 1.333333\n\n激活规则数与 n 无关（三角划分）：\n   n=3: 最多同时激活 4 条（共 9 条）\n   n=5: 最多同时激活 4 条（共 25 条）\n   n=7: 最多同时激活 4 条（共 49 条）\n   n=9: 最多同时激活 4 条（共 81 条）\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 405,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "   impl=min : 聚合面积 = 9.270833, COG = -2.860487 N·m\n   impl=prod: 聚合面积 = 6.875000, COG = -2.651515 N·m\n   乘积缩放把每个结论部整体压扁，聚合面积从 9.2708 掉到 6.8750，重心从 -2.8605 移到 -2.6515。\n   方向可以解释：所有结论部三角形的全面积相同（记为 w），\n     min 裁剪后的面积 = w * alpha * (2 - alpha)，对alpha是单调凹函数，压缩了大小 alpha 的比例；\n     乘积缩放后的面积 = w * alpha，比例原样保留。\n   于是 min 裁剪给了 alpha 较小的负向结论部（NS/NB）相对更多的面积，重心更偏负。\n   验算：alpha = 0.6667 与 0.3333 之比，裁剪下是 0.8889/0.5556 = 1.60，缩放下是 2.00。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 58744
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 28663,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "AND / 蕴含                  rms deg       ts s     max|u|      TV(u)\nmin / min                  3.5118     0.8527      7.892     15.797\nmin / prod                 3.5211     0.8618      8.013     16.026\nprod / min                 3.5194     0.8426      7.892     15.806\nprod / prod                3.5374     0.8520      8.013     16.026\n\n=> 四种组合的 rms 在 3.5118 到 3.5374 之间（最大相差 0.73%），\n   TV 在 15.797 到 16.026 之间（最大相差 1.45%）。\n   算子选择是一个次要的设计自由度；真正决定性能的是规则表和语言值个数。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#3",
+          "title": "Notebook 3：四种解模糊化方法的数值对比与离散化误差",
+          "index": 3,
+          "line": 783,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 475,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "theta = 5 deg, omega = 10 deg/s，输出网格 200001 点：\n   COG       u = -2.860487 N·m\n   BIS       u = -1.953125 N·m\n   MOM       u = -0.000000 N·m\n\n   三者相差 2.8605 N·m（输出域宽度的 9.5%）\n   MOM = 0 是因为聚合后最大值 0.6667 出现在 ZO 结论部的平顶上，\n   而 ZO 三角形关于 u = 0 对称——MOM 完全无视了 NS/NB 那两条被激活的规则。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 62792
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 8612,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "方法                  非零斜率点           最大台阶        TV(u)\nCOG           1200/1200     5.7892e-02      25.0000\nBIS           1200/1200     4.9669e-02      25.6066\nMOM            306/1200     3.7625e+00      30.0000\n\n   BISECTOR - COG 的 rms 差 = 0.68185 N·m\n   MOM      - COG 的 rms 差 = 2.65800 N·m\nMOM 的红线是阶梯状的：1200 个区间里只有 306 个斜率非零，\n其余时候输出是常数，在规则切换处直接跳 3.76 N·m。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 60796
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 42572,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "解模糊化                    rms deg       ts s     max|u|      TV(u) |theta(6s)| deg\nCOG                      3.5118     0.8527      7.892     15.797      0.00000\nBIS                      3.6073     0.8878      7.813     15.625      0.00000\nMOM                      6.0892     6.0000      7.500   9540.000      6.48988\n\n   TV(u) 之比 MOM/COG = 604 倍\n   MOM 闭环 6 秒都没进过 +-1 deg —— 该有限窗口显示振荡残差，不构成极限环或无限时不收敛的证明。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 64184
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 1141,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "三段裁剪后的三角形（半宽 w = 2，面积 = w(1-(1-alpha)^2)，形心在中心）：\n   alpha=0.50 trimf(0.0, 2.0, 4.0) 平顶 [1.00, 3.00] 面积 1.5000 形心 2.0\n   alpha=0.50 trimf(4.0, 6.0, 8.0) 平顶 [5.00, 7.00] 面积 1.5000 形心 6.0\n   alpha=0.25 trimf(8.0, 10.0, 12.0) 平顶 [8.50, 11.50] 面积 0.8750 形心 10.0\n   总面积 = 3.8750，一阶矩 = 20.7500，COG 真值 = 5.3548387097\n\nN        分子             分母             COG              误差          \n13       19.50000000    3.75000000     5.2000000000     1.548e-01   \n25       20.75000000    3.87500000     5.3548387097     0.000e+00   \n49       20.75000000    3.87500000     5.3548387097     0.000e+00   \n121      20.75000000    3.87500000     5.3548387097     0.000e+00   \n1201     20.75000000    3.87500000     5.3548387097     0.000e+00   \n\nN=13 时步长是 1.0，网格解析不到 8.5 和 11.5 这两个折点，误差 1.55e-1；\nN=25 时步长 0.5，所有折点 0,1,3,4,5,7,8,8.5,11.5,12 都落在网格上，\n本题分母分段线性；对称分段使分子误差抵消，不能推广成任意一阶矩积分精确。\n\n同一个集合上：平分法 = 5.375000，MOM = 4.000000，重心法 = 5.354839\n三个数排序是 MOM(4.0) < COG(5.3548) < 平分法(5.3750)。\n这个排序不能靠直觉预测：它取决于聚合形状的偏斜方向。\nMOM 只看最高的两段 [1,3] 和 [5,7]，完全无视右侧那个 alpha=0.25 的小三角形，\n所以它偏左最多；重心法和平分法都用到了全部面积，两者只差 0.020。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#4",
+          "title": "实验台复算与三个条件反例",
+          "index": 4,
+          "line": 1106,
+          "cellCount": 1,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 2470,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "单输入默认: {'valid': True, 'fired': 2, 'cog': -2.7272727272727275, 'bis': -1.8750000000000024, 'mom': 7.035076591684161e-16}\n宽重叠: {'valid': True, 'fired': 4, 'cog': -1.326836879432624, 'bis': -1.4404320987654329, 'mom': 6.966105252550002e-16}\n无覆盖: {'valid': False, 'fired': 0, 'cog': 0.0, 'bis': 0.0, 'mom': 0.0}\n非单位原权重和/归一化输出: 5.0 3.0\n非对称三角形真重心/梯形重心: 1.3333333333333333 1.0\n离散MOM均值/极端中点: 1.6666666666666667 2.0\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#5",
+          "title": "Notebook 4：Mamdani 倒立摆闭环、等效增益与规则表的量化",
+          "index": 5,
+          "line": 1213,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 48280,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "LQR 基线 Q=diag(50,1), R=1 -> K = [13.5029, 2.7841]\n控制器                  max|th|deg    rms deg       ts s     max|u|      TV(u)\nLQR                     20.0000     3.7007     0.7406      4.713      9.533\nSMC k=2                 20.0000     3.7755     0.8653      3.676      7.352\nMamdani 3x3             20.0000    11.0722     6.0000      3.333     11.735\nMamdani 5x5             20.0000     3.5118     0.8527      7.892     15.797\nMamdani 7x7             20.0000     2.9339     0.6008     10.000     24.918\nMamdani 9x9             20.0000     2.8640     0.5170      9.886     24.120\n\n规则数翻倍买到了什么（rms 改善倍数）：\n    9 -> 25 条：3.153 倍\n   25 -> 49 条：1.197 倍\n   49 -> 81 条：1.024 倍\n3x3 那行 ts = 6.0 表示 6 秒内从未进入 +-1 deg，不是\"慢\"，是没进去过。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 71148
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1275,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n      最大台阶           |Kp|       R^2            rms 偏离直线      \n3      1.1578e-01     12.0638    0.89339245     1.2619        \n5      1.1492e-01     23.0805    0.98908333     0.7342        \n7      1.1406e-01     25.9595    0.99440039     0.5899        \n9      1.1322e-01     27.0741    0.99698921     0.4505        \n13     1.1158e-01     27.9198    0.99886774     0.2846        \n\nn 增大时等效比例增益单调上升并趋于饱和（12.06 -> 27.92），R^2 从 0.893 升到 0.999。\n也就是说：语言值加得越多，模糊控制器越像一个线性 PD；但它永远到不了 R^2 = 1，\n固定切片步长下相邻输出差约0.11Nm；这不能证明连续COG映射有跳变。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 112112
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 94529,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "a_w 固定为 1.0，b_w 从 0.30 扫到 2.00（步长 0.05，共 35 步）：\n   规则表发生变化 9 次，保持不变 26 步\n   变化发生在 b_w = [0.3, 0.5, 0.55, 0.75, 0.8, 1.25, 1.5, 1.55, 1.75]\n\n这就是\"整定模糊控制器\"手感发涩的原因：你拧的旋钮是连续的，\n但控制器内部是一个整数表，只有跨过四舍五入的边界才会跳一格。\n\n(a_w, b_w)        rms deg       ts s     max|u|      TV(u)\n(1.0, 0.3)         4.6939     6.0000      7.910    146.743\n(1.0, 0.7)         3.5118     0.8527      7.892     15.797\n(1.0, 1.0)         3.5118     0.8527      7.892     15.797\n(1.0, 1.5)         4.6859     1.2247      7.892     15.785\n(1.0, 2.0)         4.7036     1.2276      7.892     15.785\n(1.0, 3.0)         4.4882     1.0558      7.892     15.785\n(0.7, 1.0)         3.5508     0.8578      7.500     15.012\n(0.5, 1.0)         4.6973     1.1184      7.500     15.000\n\n   本次网格候选最小值 = (a_w, b_w) = (1.0, 0.7)，rms = 3.5118 deg\n   (1.0, 0.7) 和 (1.0, 1.0) 给出完全相同的闭环数字，但它们的规则表并不相同：\n      第 0 行第 4 列（theta=NB, omega=PB）：PS vs ZO\n      第 1 行第 4 列（theta=NS, omega=PB）：ZO vs NS\n      第 2 行第 0 列（theta=ZO, omega=NB）：PS vs PB\n      第 2 行第 4 列（theta=ZO, omega=PB）：NS vs NB\n      第 3 行第 0 列（theta=PS, omega=NB）：ZO vs PS\n      第 4 行第 0 列（theta=PB, omega=NB）：NS vs ZO\n   这 6 格全都落在\"角度正大 + 角速度负大\"或\"角度负大 + 角速度正大\"这两个对角，\n   本次轨迹（theta(0)=20deg, omega(0)=0）从未进入那些角落。\n   所以一次闭环仿真无法区分两张不同的规则表 —— 这是第 9 节\"轨迹不能覆盖规则库\"的具体例子。\n   (1.0, 0.3) 的 ts = 6.0 说明它 6 秒内从未进入 +-1 deg：微分权重太小，刹车不够。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#6",
+          "title": "Notebook 5：恒定扰动下的稳态误差与积分作用",
+          "index": 6,
+          "line": 1539,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 40362,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "d0 N·m     |theta_ss| deg theta_ss/d0 rad/(N·m)  等效 Kp       \n0.20       0.310345       0.027083               36.924      \n0.50       0.813109       0.028383               35.233      \n1.00       1.762455       0.030761               32.509      \n2.00       4.150872       0.036223               27.607      \n\n静差随扰动增大而增大，等效比例增益从 36.9 掉到 27.6 —— 因为扰动越大，\n稳态工作点离原点越远，模糊 PD 的局部增益越低（Notebook 4 的切片曲线上能看到这个饱和）。\n这不是模糊控制特有的毛病：任何没有积分作用的控制器都是这样。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 22518,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "d0 N·m     |theta_ss| 无积分     |theta_ss| 有积分     改善倍数         max|u| 变化       \n0.50       0.813109           2.2728e-03         358          7.892 -> 7.892  \n1.00       1.762455           2.4335e-03         724          7.892 -> 7.892  \n\n改善 358 倍和 724 倍，而 max|u| 一点没变（都是 7.892）——\n积分项只需要补上那个恒定的 1 N·m 左右的转矩，峰值转矩仍由暂态决定。\n\n末端 4 秒的角度范围：\n   无积分: 1.762455 ~ 1.762455 deg\n   有积分: 2.4335e-03 ~ 4.7274e-03 deg\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 41700
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 29166,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "仿真时长         |theta(end)| ki=6        |theta(end)| ki=0       \nT = 30 s     4.934871e-03             0.310345                \nT = 60 s     3.396698e-05             0.310345                \n\n有积分的一侧从 4.93e-3 降到 3.40e-5（又降了 145 倍），说明 30 秒时的残差是暂态而不是稳态；\n无积分的一侧两次都是 0.310345，一个数字都不变 —— 那才是真正的稳态静差。\n这个对照很重要：不加积分时\"跑久一点就好了\"是错觉。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#7",
+          "title": "Notebook 6：TS 型的等价条件、模糊增益调度、函数逼近与严格稳定性",
+          "index": 7,
+          "line": 1775,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 948,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "激活的 (alpha, c) 对：\n   alpha = 0.666667   c = +0.0\n   alpha = 0.166667   c = -7.5\n   alpha = 0.333333   c = -7.5\n   alpha = 0.166667   c = -15.0\n加权平均 = -4.6875000000\n零阶 Sugeno 控制器输出 = -4.6875000000\n\n用窄矩形近似 Dirac 冲激（box 是矩形宽度，pad 是论域外扩量）：\n   聚合=max pad=0.0: -3.4423067  -3.4576933  -3.4605779  -3.4613452  -3.4615012   末值 - 加权平均 = 1.23e+00\n   聚合=max pad=1.0: -4.2853681  -4.2838002  -4.2857143  -4.2857143  -4.2857143   末值 - 加权平均 = 4.02e-01\n   聚合=sum pad=0.0: -3.9833325  -3.9966675  -3.9991675  -3.9998325  -3.9999677   末值 - 加权平均 = 6.88e-01\n   聚合=sum pad=1.0: -4.6871650  -4.6856643  -4.6875000  -4.6875000  -4.6875000   末值 - 加权平均 = 1.00e-12\n\n读法：\n  sum 聚合 + pad=1.0 收敛到 -4.6875000，残差 1.0e-12 —— 这才是等价的组合。\n  max 聚合 + pad=1.0 收敛到 -4.2857143，差 8.57%。原因是有两条规则都指向 NS，\n  max 只保留 alpha=0.3333 的那条，把 alpha=0.1667 的质量丢了。\n  sum 聚合 + pad=0.0 收敛到 -3.9999677，差 0.69 N·m。原因是 c=-15 的冲激正好在\n  论域端点上，网格只看到它的一半；注意加密网格（box 从 1.0 缩到 0.002）修不好它，\n  误差收敛到的是一个错误的极限。\n\n把结论部换成宽度 eps 的窄三角形，让 eps -> 0，四种\"蕴含 x 聚合\"组合的极限：\n蕴含 / 聚合                  eps=0.3        eps=0.01       解析极限\nmin 裁剪 / max聚合           -5.0000000     -4.9996190     -5.0000000\nmin 裁剪 / 求和聚合            -5.3716216     -5.3712534     -5.3716216\n乘积缩放 / max聚合             -4.2857143     -4.2857143     -4.2857143\n乘积缩放 / 求和聚合              -4.6875000     -4.6875000     -4.6875000\n加权平均 = -4.6875000 —— 只有「乘积缩放 + 求和聚合」这一格对上了。\n原因：min 裁剪后的面积是 w*alpha*(2-alpha)，对alpha单调凹；乘积缩放后是 w*alpha，正比于 alpha。\n重心法是面积加权的，所以只有面积正比于 alpha 时它才等于加权平均。\n而 max 聚合会在两条规则指向同一结论部时丢掉较弱那条的质量。\n注意 eps 从 0.3 缩到 0.01，四个值都停在各自的解析极限上 —— 加密网格修不好这两个错误。\n\n全域 101x101 = 10201 个输入点：\n   普通 Mamdani（三角结论部）与零阶 Sugeno 之差：max 4.7193, mean 1.6723 N·m（输出域的 5.57%）\n   求和聚合与 max 聚合（都用 Dirac 结论部）之差：max 2.0093, mean 0.2477 N·m\n   存在重复结论部（max 聚合会丢质量）的点占比 = 95.3%\n也就是说 max 聚合与加权平均的差别不是个别点的特例，而是几乎全域都存在。\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 9574,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "在 5 个 theta 中心处线性化 A(theta_c) = [[0,1],[(g/l)cos(theta_c),0]]，B = [[0],[4]]，\n再用 Q=diag(50,1), R=1 解 Riccati：\n   theta_c =  -30.0 deg -> K = [ 12.4902,  2.6917]\n   theta_c =  -15.0 deg -> K = [ 13.2420,  2.7606]\n   theta_c =   +0.0 deg -> K = [ 13.5029,  2.7841]\n   theta_c =  +15.0 deg -> K = [ 13.2420,  2.7606]\n   theta_c =  +30.0 deg -> K = [ 12.4902,  2.6917]\ncos(30deg) = 0.866，所以两端的 g/l 从 19.6 降到 16.97，增益也随之变小。\n\n控制器                    max|th|deg    rms deg       ts s     max|u|      TV(u)\nLQR（单点线性化）                20.0000     3.7007     0.7406      4.713      9.533\nMamdani 5x5               20.0000     3.5118     0.8527      7.892     15.797\n零阶 Sugeno 5x5             20.0000     3.3092     0.8397     10.000     20.008\n一阶 Sugeno 5x5             20.0000     3.7573     0.7577      4.535      9.162\n\n一阶 Sugeno 的 rms（3.7573）比 Mamdani（3.5118）差 7.0%，\n但 max|u| 只有 4.535 对 7.892（省 43%），TV(u) 9.162 对 15.797（省 42%）。\n也就是说：Mamdani 多用 74% 的峰值转矩和 72% 的控制动作量，换来 rms 低 6.5%（3.5118 对 3.7573）。\n一阶 Sugeno 几乎就是 LQR 本身（rms 3.7573 对 3.7007），这在意料之中 —— 它的结论部就是 LQR 增益。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 60512
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 1209,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "N    MSE 切线         max|err| 切线      MSE 最小二乘       max|err| 最小二乘    MSE 比     \n3    1.9471e-01     5.7080e-01       5.8128e-04     4.5699e-02       335.0     \n5    1.8901e-02     1.8977e-01       1.0527e-04     2.3697e-02       179.5     \n9    1.4752e-03     6.8567e-02       2.5897e-06     4.5783e-03       569.6     \n17   9.7294e-05     1.8725e-02       5.1150e-08     6.5359e-04       1902.2    \n33   6.1626e-06     4.7840e-03       8.8185e-10     8.2200e-05       6988.2    \n\n实测收敛阶（log-log 斜率）：切线 max|err| ~ N^(-1.97)，最小二乘 ~ N^(-2.71)\n同样 N 下最小二乘的 MSE 比切线好 180 到 6988 倍。\n原因是最小二乘不只匹配中心点的函数值和斜率，而是同时匹配整段的加权积分。\n对照：三条规则、结论部手挑成 z1=0.9x+0.1, z2=x, z3=0.9x-0.1\n   MSE = 1.221018, max|err| = 2.727433，出现在 x = -3.1416（论域端点）\n   端点处 TS 给出 +2.727433，而 sin(+-pi) = +1.22e-16 —— 误差是被逼近函数自身幅值的 2.73 倍\n   同样 3 条规则，把结论部改成局部切线后 max|err| = 0.570796，改善 4.78 倍\n   结论：TS 型的精度几乎完全由结论部参数怎么来决定，而不是由规则数决定。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 116784
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 2069,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "第 1 步 单位划分：max|mu_N + mu_P - 1| = 2.220e-16\n第 2 步 闭式：dx/dt = g(x)/(1+e^x)，g(x) = (1-x) - e^x(2x+1)\n第 3 步 g'(x) = -1 - e^x(2x+3)。令 h(x) = e^x(2x+3)，h'(x) = e^x(2x+5)，\n        所以 h 在 x = -2.5 处取极小值 h(-2.5) = -0.1641699972\n        => g'(x) <= -1 - (-0.1641699972) = -0.835830 < 0\n        g 严格单调减，而 g(0) = 0.0e+00，所以 x = 0 是唯一平衡点。\n第 4 步 取 V = x^2/2，则 Vdot = x g(x)/(1+e^x)。\n        x != 0 时 x 与 g(x) 异号（g 单调减且 g(0)=0），1+e^x > 0，故 Vdot < 0。\n        V 正定且径向无界 => 全局渐近稳定。不需要 LMI，不需要公共 P 矩阵。\n        数值验证：max(Vdot) over x != 0 = -1.9997e-06，count(Vdot > 0) = 0\n第 5 步 原点附近：-Vdot/V = 4.000001，g 在 0 处的导数 = -4.000000，两者给出同一个指数速率 4\n\n   x(0) =    5.0 -> |x| < 1e-6 于 t = 7.5739 s\n   x(0) =   -5.0 -> |x| < 1e-6 于 t = 8.0940 s\n   x(0) =   20.0 -> |x| < 1e-6 于 t = 8.2321 s\n\nx(0) = 20 和 x(0) = 5 的到达时间只差 0.66 s —— 大初始条件并不慢多少，\n远场正向 dx约-2x-1，负向dx约1-x；分子指数不能脱离分母解释收敛速度。\n\n对照：同样的两条规则如果写成 Mamdani 型（结论部是模糊集合），\n上面这套证明一个字都用不上 —— 没有闭式，没有 g(x)，没有 Lyapunov 函数可猜。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#8",
+          "title": "Notebook 7A：洗衣机决策面——量化、单调性与规则表的局部性",
+          "index": 8,
+          "line": 2309,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 1079,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "决策面统计：\n   范围 [15.0000, 45.0000] 分钟（论域是 [15, 45]）\n   恰好等于某个单点值（15/30/45）的网格点占比 = 1.5%\n   面上一共出现了 6899 个不同的数值（规则表只有 9 个条目）\n\n单调性：\n   沿污渍方向 dT/dd 的最小值 = -1.421085e-14（应 >= 0）\n   沿衣物方向 dT/dm 的最小值 = -1.421085e-14（应 >= 0）\n   违反单调的网格边数 = 0 / 80400\n\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 187032
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 5449,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "把 9 个格子逐一改动 +-1 级，测量决策面的变化：\n改动的格子            max 变化         mean 变化        受影响面积占比           \n(少,少)+1          15.0000        0.9469         24.8              %\n(少,中)+1          15.0000        1.8750         49.3              %\n(少,多)+1          15.0000        0.9469         24.8              %\n(少,多)-1          15.0000        0.9469         24.8              %\n(中,少)+1          15.0000        1.8750         49.3              %\n(中,中)+1          15.0000        3.7128         98.0              %\n(中,中)-1          15.0000        3.7128         98.0              %\n(中,多)-1          15.0000        1.8750         49.3              %\n(多,少)+1          15.0000        0.9469         24.8              %\n(多,少)-1          15.0000        0.9469         24.8              %\n(多,中)-1          15.0000        1.8750         49.3              %\n(多,多)-1          15.0000        0.9469         24.8              %\n\n12 种单格改动中，最大变化都是 15.0000 分钟（正好是相邻单点 15 / 30 / 45 的间距），\n但受影响面积从 24.8% 到 98.0% 不等：改角落那一格只动了 24.8% 的决策面，\n改正中间那一格动了 98.0%。所以\"局部\"是定性的结论，局部的程度取决于格子的位置。\n对比一下：在线性控制器里改一个增益，影响是全局的、无界的。\n这就是\"规则表退化是局部的\"——它是模糊控制在工程上最实在的一个优点。\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 4,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "本课能测量的：\n   - 9 个规则条目通过模糊推理生成了一个连续、单调、无跳变的决策面\n   - 单格改动的影响是局部的、有界的（最大 15 分钟）\n   - 单次求值的计算成本（见 Notebook 8）\n\n本课不能测量的：\n   - \"节水 20%\"\"节电 15%\"这类数字。它们取决于洗衣机整机（水量、加热功率、\n     机械结构）、污渍的真实分布、以及和什么基线比。控制器结构本身推不出这些数字，\n     任何声称从规则表推出节能百分比的说法都不可复现。\n   - 这张规则表是不是\"最优\"的。它只是把\"污渍多、衣物多就洗久一点\"这句话\n     形式化了；要说它好，需要与固定时间洗涤做对照实验，那是产品测试的事。\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#9",
+          "title": "Notebook 7B：ABS 制动距离对比与路面切换",
+          "index": 9,
+          "line": 2472,
+          "cellCount": 4,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 403,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "路面       mu 峰值        峰值处 s*       抱死时 mu（损失）  \n干沥青      1.1690       0.1714       0.7600（35.0%）\n湿卵石      0.8312       0.1552       0.7170（13.7%）\n冰面       0.3731       0.2191       0.3000（19.6%）\n\n冰面上抱死只损失 19.6% 的附着系数，干沥青上损失 35.0% ——\n所以 ABS 在好路面上的收益比在冰面上大得多，这一点后面的制动距离会印证。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 67704
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 7194,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "路面       制动距离 m       t_stop s   抱死         |sd| 分位数 50/90/99\n干沥青      30.455       2.3582     否          0.00 / 0.35 / 7.74\n湿卵石      41.336       3.1988     否          0.00 / 0.63 / 8.03\n冰面       92.820       7.3472     否          0.00 / 0.13 / 5.87\n\n这个门限逻辑（s_hi = 0.13、s_lo = 0.08、减压 12000 N·m/s、增压 3000 N·m/s）的四个\n参数是在三种路面上一起扫出来的，已经是它这一类结构能做到的水平——对比才算公平。\n它三种路面都不抱死。|sd| 的 99% 分位只有 5.9 ~ 8.0 /s，中位数是 0.00：\n绝大部分时间滑移率变化很慢，sd 只在切换增压/减压的瞬间跳一下。\n\n给门限逻辑再加一个 sd > 50 /s 的减压条件，实测触发次数：\n   干沥青    总步数  23583，s <= s_hi 期间 sd > 50 触发 0 次，该期间 max sd = 18.00 /s\n   湿卵石    总步数  31989，s <= s_hi 期间 sd > 50 触发 0 次，该期间 max sd = 18.00 /s\n   冰面     总步数  73473，s <= s_hi 期间 sd > 50 触发 0 次，该期间 max sd = 18.00 /s\n=> 一次都不触发。s <= s_hi 期间 sd 的峰值恰好是 18.00 /s，而且三种路面完全相同：\n   它是初始施加转矩的瞬态，sd(0+) = r*Tb(0)/(J*v0) = 0.3*1500/(1.0*25) = 18.0，\n   只取决于初始转矩，与附着系数无关。\n   所以在门限逻辑这个结构里，sd 门限要么冗余（阈值高于 18），要么在 t = 0\n   就误触发（阈值低于 18）——它没法把 sd 变成有效信息。模糊控制器不一样：\n   它不做\"谁先越限\"的判断，而是把 s 和 sd 连续地混合成一个转矩。\n\nsd 论域敏感性（干沥青制动距离）：\n   sd 论域 +-50      ->   29.654 m\n   sd 论域 +-200     ->   29.637 m\n   sd 论域 +-1000    ->   29.639 m\n三者相差不到 0.06% —— sd 本来就不需要分辨率，它的符号（恶化 / 恢复）才是信息所在。\n\n模糊 ABS 规则表（n=5，行 = sd，列 = s；数字是输出转矩的语言值索引，0 = 零转矩，4 = 2400）：\n        VS    S     M     L     VL     <- s: 0 -> 0.6\n   VS   4     4     4     3     3      <- sd\n   S    4     4     3     2     2      <- sd\n   M    3     3     2     1     1      <- sd\n   L    2     2     1     0     0      <- sd\n   VL   1     1     0     0     0      <- sd\n这张表是刻意写成单调的：s 越大转矩越小（列方向递减），sd 越正转矩越小（行方向递减）。\n如果把第 5 节那个中心反对称的 FAMM 直接搬过来，制动会失败——单调对象要用单调表。\n"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 30228,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "控制器                      干沥青 m          湿卵石 m          冰面 m           抱死         相对理论上界\n无 ABS（满制动）               41.561         44.352         106.085        是          +52.5% +15.7% +24.2%\n逻辑门限 ABS                 30.455         41.336         92.820         否          +11.8% +7.9% +8.7%\n模糊 5x5 零阶 Sugeno         29.637         40.114         91.932         否          +8.8% +4.7% +7.7%\n模糊 9x9 零阶 Sugeno         29.634         40.115         91.918         否          +8.7% +4.7% +7.7%\n理论上界（恒 s = s*）           27.251         38.323         85.382        \n\n理论上界假设全程把滑移率钉在 mu 峰值 s* 上，任何真实控制器都达不到。\n模糊 5x5 距上界 +8.8% / +4.7% / +7.7%，整定过的门限逻辑是 +11.8% / +7.9% / +8.7%。\n模糊比门限逻辑缩短 2.7% / 3.0% / 1.0%（干沥青 / 湿卵石 / 冰面）。\n\n差距只有百分之几，但两边付出的代价不一样：门限逻辑那四个参数是在这三种路面上\n扫出来的；模糊的 25 格规则表只用了一套语言值划分，没有针对路面做任何整定。\n\"抱死\"这一列同样要紧：无 ABS 三种路面全抱死，门限逻辑和模糊都不抱死。\n\n模糊 9x9 与 5x5 的制动距离只差 0.002 / 0.000 / 0.014 m ——\n81 条规则相对 25 条什么也没买到。这个案例里\"多写规则\"完全没有价值，\n因为对象需要的只是一个单调映射。\n\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 50888
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "milliseconds": 4178,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "控制器          制动距离 m       t_stop s   max s (v>1)      TV(Tb)      抱死\n无 ABS        42.317       3.4421     1.0000           0.0         是 t=0.050\n逻辑门限         32.082       2.6920     0.3525           2692.5      否\n模糊 5x5       31.044       2.6738     0.4506           2465.9      否\n模糊 9x9       31.045       2.6753     0.4555           2441.2      否\n\n模糊比整定过的门限逻辑短 3.2%（31.044 对 32.082 m），停得也快 0.7%（2.6738 对 2.6920 s）。\n转矩总变差（按 1 ms 记录点计）也是模糊更小：2465.9 对 2692.5 N·m，低 8.4%。\n\n但代价看得见：模糊的 max s（v > 1 m/s）是 0.4506，门限逻辑只有 0.3525，高出 28%。\n也就是说模糊控制器允许滑移率冲得更高、更靠近抱死边缘，来换取更短的制动距离。\n这是一个真实的取舍，不是免费的性能提升——附着系数估计有误时会更容易出事。\n\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 70856
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intelligent/fuzzy-control-basics#10",
+          "title": "Notebook 8：维数灾难的真实位置——在线计算成本",
+          "index": 10,
+          "line": 2841,
+          "cellCount": 3,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 998,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n      规则总数       同时激活         单次求值 us          1 kHz 预算占比\n3      9          4            35.70            3.6%\n5      25         4            37.65            3.8%\n7      49         4            47.15            4.7%\n9      81         4            59.65            6.0%\n\n规则数 9 -> 81（9 倍），时间只从 35.70 涨到 59.65 us（1.67 倍）。\n原因是同时激活的规则数恒为 4，与 n 无关：三角形支撑有限，在 $h=s$ 的划分下，每个输入最多点亮 2 个语言值。\n\n输出网格点数才是真正的成本来源：\n   5x5，网格    51 点:   34.20 us\n   5x5，网格   101 点:   34.20 us\n   5x5，网格   401 点:   48.50 us\n   5x5，网格  1001 点:   52.35 us\n   5x5，网格  4001 点:   91.55 us\n网格从51加到4001的时间比取本次读数；不能从网格点数直接推算墙钟时间。\n\n对照：零阶 Sugeno 完全没有输出网格，只需要一次加权平均：\n   零阶 Sugeno 5x5:   10.85 us（Mamdani 5x5 网格 401 是 37.65 us）\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 1405,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n      规则总数       同时激活         单次求值 us          1 kHz 预算占比\n2      8          8            45.95            4.6%\n3      27         8            74.85            7.5%\n5      125        8            64.80            6.5%\n\n规则数从 8 涨到 125（15.6 倍），单次求值只从 45.95 us 涨到 64.80 us（1.41 倍），\n占 1 kHz 控制周期预算的 6.5%。\n输入维数仍影响最多2^m个激活组合；填表、搜索与验证成本也需检查。\n\n但换成高斯隶属度函数就完全不同了：高斯支撑无限，必须遍历全部 n^2 条规则。\nn      规则总数       实际访问         单次求值 us\n3      9          9            51.20\n5      25         25           84.35\n7      49         32           110.80\n9      81         32           115.30\n\n三角划分 n=3->9 时间涨 1.67 倍，高斯划分涨 2.25 倍。\n隶属度函数的支撑是否有限，直接决定了在线成本会不会随规则数增长。\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 59244
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "n 个语言值、m 个输入时的规则总数：\n输入数 m     n=3       n=5       n=7       \n1         3         5         7         \n2         9         25        49        \n3         27        125       343       \n4         81        625       2401      \n5         243       3125      16807     \n\n一个 5 输入、每输入 7 个语言值的系统需要 16807 条规则。\n这些规则必须由人写出来、由人检查一致性、由人验证覆盖性 —— 这才是维数灾难。\n\n而且第 5 节已经看到：规则表是量化的。b_w 从 0.30 连续扫到 2.00（35 步），\n表只变了 9 次，26 步完全不变。这意味着：\n   1. 大部分\"整定\"动作在控制器内部什么都没做；\n   2. 两张不同的表可能给出完全相同的闭环响应（实测有 6 格不同、rms 一模一样）；\n   3. 反过来，一次闭环仿真通过，不能证明规则表是对的 —— 未被轨迹访问的格子没被测到。\n\n16807格规则增加设计与覆盖成本，但有限规则表并非数学上无法验证。\n不能仅凭几条轨迹宣称验证完整；本教学实验不作认证可行性判断。\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
+  "scope": "intelligent/fuzzy-control-basics",
+  "complete": true,
+  "totals": {
+    "lessons": 1,
+    "notebooks": 10,
+    "enabled": 10,
+    "codeOnly": 0
+  },
+  "releaseTotals": {
+    "enabled": 10,
+    "codeOnly": 0
+  },
+  "sourceReconciliation": {
+    "method": "Exact setup and cell strings equal browser fixture; only prose changed after fixture creation",
+    "testedSourceHash": "77fd3a3cec75bba47b5cce9ff6166b5e1f1edee56cad4ed55e3661e192774280",
+    "currentSourceHash": "413d8ddecd73cce01ac92c88518ee84b4b6145e005b1b98792252df8dc532670"
+  }
+}

@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>INTEL-01 375px验收</title>
+<style>body{font-family:system-ui;margin:16px}iframe{display:block;border:1px solid #999;width:375px;height:812px}pre{white-space:pre-wrap;max-width:1100px}</style>
+<h1>INTEL-01 真实375px视口</h1><button id="save">下载窄屏验收</button><pre id="result">等待真实课程加载</pre><iframe id="lesson" src="/intelligent/fuzzy-control-basics"></iframe>
+<script>
+const frame=document.getElementById('lesson');let result;
+const timer=setInterval(()=>{
+ const d=frame.contentDocument,w=frame.contentWindow;if(!d||d.querySelectorAll('canvas').length!==3)return;
+ result={method:'375px same-origin iframe viewport',url:w.location.href,width:w.innerWidth,scrollWidth:d.documentElement.scrollWidth,bodyScrollWidth:d.body.scrollWidth,h1:d.querySelectorAll('h1').length,h2:[...d.querySelectorAll('h2')].map(h=>({id:h.id,text:h.textContent})),ids:[...d.querySelectorAll('h1[id],h2[id],h3[id],span[id]')].map(e=>e.id),katexErrors:d.querySelectorAll('.katex-error').length,canvases:d.querySelectorAll('canvas').length,charts:[...d.querySelectorAll('[_echarts_instance_]')].map(e=>({width:e.clientWidth,scrollWidth:e.scrollWidth})),images:[...d.images].filter(i=>!i.src.startsWith('data:')).map(i=>({src:i.getAttribute('src'),width:i.clientWidth,loaded:i.complete&&i.naturalWidth>0})),anchors:[...d.querySelectorAll('a[href^="#"]')].map(a=>a.getAttribute('href'))};
+ document.getElementById('result').textContent=JSON.stringify(result,null,2);clearInterval(timer);
+ const b=[...d.querySelectorAll('button')].find(b=>b.textContent==='恢复默认');b?.scrollIntoView({block:'start'});
+},250);
+document.getElementById('save').onclick=()=>{if(!result)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)],{type:'application/json'}));a.download='intel01-mobile.json';a.click();URL.revokeObjectURL(a.href);};
+</script>
