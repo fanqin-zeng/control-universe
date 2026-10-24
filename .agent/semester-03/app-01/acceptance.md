@@ -49,3 +49,6 @@
 交付提交：`7ede89f287a870376f0f3d11fd4141dc9e0e979a`。只包含APP-01正文、组件、计算、图示、讨论及证据与本课共享元数据；普通提交已进入master。
 
 最终提交范围的check、Python支持及计划校验均通过，见scoped-check.log、scoped-python-policy.log、scoped-semester-check.json。原验证基线后的变化若仅为其它课程回执，保持其HEAD内容并复核元数据；无覆盖或重写已有提交。共享暂存区以逐文件的本课语义更新保留其它会话内容。
+
+
+并行索引恢复：核心提交的ref更新成功后，真实暂存区规范化遇到其它Git进程的index.lock；未删除或抢占该锁。随后用一次原子update-index合并本课73个路径，保留其它暂存内容，实际一次成功；见index-normalization.log及normalize_index.py。commit-attempt-4.log保留该次失败原文。课程源码及数值结果未变。
