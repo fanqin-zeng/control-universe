@@ -132,7 +132,7 @@
 |------|------|------|------|------|------|---------|---------|
 | 9.1 | 系统辨识框架 | identification-framework | ✅ 已交付 v1.3 | undergrad | theory | 9 | discrete-sampled/discrete-time-systems<br>math/probability-basics |
 | 9.2 | 辨识模型 | model-structures | ✅ 已交付 v1.3 | undergrad | theory | 10 | identification/identification-framework<br>discrete-sampled/difference-equation |
-| 9.3 | 最小二乘辨识 | least-squares-rls | ⬜ 骨架（占位页） | undergrad | theory | 11 | identification/model-structures<br>math/matrix-decomposition<br>math/probability-basics |
+| 9.3 | 最小二乘辨识 | least-squares-rls | ✅ 已交付 v1.3 | undergrad | theory | 11 | identification/model-structures<br>math/matrix-decomposition<br>math/probability-basics |
 | 9.4 | 持久激励 | persistent-excitation | ⬜ 骨架（占位页） | grad | theory | 12 | identification/least-squares-rls |
 | 9.5 | 闭环辨识 | instrumental-variable | ⬜ 骨架（占位页） | grad | theory | 13 | identification/persistent-excitation<br>classic/transfer-function<br>math/stochastic-processes<br>classic/pid-controller |
 | 9.6 | 频域辨识 | frequency-domain-id | ⬜ 骨架（占位页） | grad | theory | 11 | identification/model-structures<br>classic/frequency-domain-analysis<br>math/stochastic-processes<br>classic/frequency-response-design |
@@ -292,7 +292,7 @@
 | 序号 | 课程 | Slug | 状态 | 难度 | 类型 | 拓扑层级 | 前置依赖 |
 |------|------|------|------|------|------|---------|---------|
 | 20.1 | 自动驾驶系统 | driving-system | ✅ 已交付 v1.3 | undergrad | theory | 7 | modern/state-space |
-| 20.2 | 车辆动力学 | vehicle-dynamics | ⬜ 骨架（占位页） | grad | theory | 8 | autonomous-driving/driving-system<br>math/ode-matrix-exponential |
+| 20.2 | 车辆动力学 | vehicle-dynamics | ✅ 已交付 v1.3 | grad | theory | 8 | autonomous-driving/driving-system<br>math/ode-matrix-exponential<br>modern/state-space |
 | 20.3 | 定位与运动预测 | localization-prediction | ⬜ 骨架（占位页） | grad | theory | 16 | autonomous-driving/vehicle-dynamics<br>estimation/sensor-fusion<br>machine-learning/sequence-models |
 | 20.4 | 自动驾驶规划 | motion-planning | ⬜ 骨架（占位页） | grad | theory | 17 | autonomous-driving/localization-prediction<br>math/convex-optimization |
 | 20.5 | 车辆跟踪控制 | vehicle-control | ⬜ 骨架（占位页） | grad | theory | 19 | autonomous-driving/motion-planning<br>mpc/nonlinear-mpc<br>nonlinear/feedback-linearization<br>classic/pid-controller |
@@ -320,16 +320,16 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 81（status = v1.3）
+- **已交付 v1.3**: 83（status = v1.3）
 - **有正文待审校**: 16（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 108（status = empty，渲染占位页）
+- **骨架占位**: 106（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 124（= draft 16 + empty 108 + 无 status 0）
-- **有 MDX 正文**: 97
-- **catalog 小节总数**: 1083
-- **讨论日志**: 103 篇（覆盖 81 门；有 MDX 无日志 16 门）
-- **交互组件**: 91 个文件（被正文引用 91，孤儿 0）
-- **prereq 边**: 472 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
+- **未完成 v1.3**: 122（= draft 16 + empty 106 + 无 status 0）
+- **有 MDX 正文**: 99
+- **catalog 小节总数**: 1103
+- **讨论日志**: 105 篇（覆盖 83 门；有 MDX 无日志 16 门）
+- **交互组件**: 93 个文件（被正文引用 93，孤儿 0）
+- **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）
 

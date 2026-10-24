@@ -1,6 +1,6 @@
 # 学期3中文润色完整计划
 
-顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前66课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
+顺序沿用 semester-03-plan.md 的原生产顺序；共205课，当前67课完成学期3生产，其余须等生产完成再润色。已有旧稿不等于已完成本期生产。逐课处理，不批量勾选。CLASSIC-01旧试稿不是验收通过。
 
 状态：待润色 / 待生产 / 修改中 / 待合入 / 已合入；合入状态只能依据用户授权和真实提交更新。
 
@@ -195,7 +195,7 @@
 | 184 | EMBODIED-09 | 分层决策 | content/embodied/hierarchical-reasoning.mdx | 待完成 | 待生产 | — |
 | 185 | EMBODIED-10 | 具身智能评估 | content/embodied/embodied-evaluation.mdx | 待完成 | 待生产 | — |
 | 186 | DRIVING-01 | 自动驾驶系统 | content/autonomous-driving/driving-system.mdx | 已完成 | 待润色 | — |
-| 187 | DRIVING-02 | 车辆动力学 | content/autonomous-driving/vehicle-dynamics.mdx | 待完成 | 待生产 | — |
+| 187 | DRIVING-02 | 车辆动力学 | content/autonomous-driving/vehicle-dynamics.mdx | 已完成 | 待润色 | — |
 | 188 | DRIVING-03 | 定位与运动预测 | content/autonomous-driving/localization-prediction.mdx | 待完成 | 待生产 | — |
 | 189 | DRIVING-04 | 自动驾驶规划 | content/autonomous-driving/motion-planning.mdx | 待完成 | 待生产 | — |
 | 190 | DRIVING-05 | 车辆跟踪控制 | content/autonomous-driving/vehicle-control.mdx | 待完成 | 待生产 | — |

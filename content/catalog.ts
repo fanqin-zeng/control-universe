@@ -6192,11 +6192,54 @@ export const catalog: Chapter[] = [
         "title": "车辆动力学",
         "prereq": [
           "autonomous-driving/driving-system",
-          "math/ode-matrix-exponential"
+          "math/ode-matrix-exponential",
+          "modern/state-space"
         ],
         "level": "grad",
         "type": "theory",
-        "status": "empty"
+        "status": "v1.3",
+        "subsections": [
+          {
+            "slug": "引言",
+            "title": "引言"
+          },
+          {
+            "slug": "坐标与状态",
+            "title": "坐标与状态"
+          },
+          {
+            "slug": "无侧滑的转弯几何",
+            "title": "无侧滑的转弯几何"
+          },
+          {
+            "slug": "纵向力与附着预算",
+            "title": "纵向力与附着预算"
+          },
+          {
+            "slug": "轮胎怎样产生侧向力",
+            "title": "轮胎怎样产生侧向力"
+          },
+          {
+            "slug": "从力与力矩得到横向模型",
+            "title": "从力与力矩得到横向模型"
+          },
+          {
+            "slug": "算例与模型边界",
+            "title": "算例与模型边界"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ]
       },
       {
         "slug": "localization-prediction",

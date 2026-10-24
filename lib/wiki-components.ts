@@ -1,3 +1,4 @@
+import { VehicleDynamicsExplorer } from "@/components/wiki/vehicle-dynamics-explorer";
 import { RlsIdentificationExplorer } from "@/components/wiki/rls-identification-explorer";
 import { StatisticalEstimationExplorer } from "@/components/wiki/statistical-estimation-explorer";
 import BuckConverterExplorer from "@/components/wiki/buck-converter-explorer";
@@ -113,6 +114,7 @@ import { CartPoleNoiseExplorer } from "@/components/wiki/cart-pole-noise-explore
 import { MimoProportionalExplorer } from "@/components/wiki/mimo-proportional-explorer";
 
 export const wikiComponents: MDXComponents = {
+  VehicleDynamicsExplorer,
   RlsIdentificationExplorer,
   StatisticalEstimationExplorer,
   BuckConverterExplorer,
