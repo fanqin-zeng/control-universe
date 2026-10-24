@@ -22,3 +22,9 @@ Phase1–4完成并签发。正文272行、10H2、2Notebook/4cell、1Explorer、
 | node scripts/check-python-support.mjs | 0；静态快照94课/402可运行/15代码展示，包含其它会话已提交修复，不归本课关闭 | final-python-policy.log |
 
 正文最终LF规范化SHA256：7b7c05b44dd7b3321157039177b16ab7deb4e42c1572b8f3430c512d1d63d0cb。四cell补打印权重、后验精度和偏差/方差后全部重跑；未使用旧hash签发。M3首次类型失败（缺markPoint.name）留build-first-typecheck.log，修正后正常与静态build通过。开工共享目录check受并行状态影响exit1，opening-check.log不算通过；本课独立投影另有成功证据。仅推master，Pages不发布。
+
+最终提交投影以7ede89f为基线；commit-gates.json记录四条命令及退出码，projection-check为PASS21/WARN2/FAIL0，Python政策为97课/413可运行/14代码展示，semester PASS。其它会话新提交与其Python修复保留，不归本课关闭。共享暂存区存在他会话内容，使用独立索引和update-ref比较旧HEAD的原子更新；未清空或重置共享元数据的暂存版本。
+
+真实master交付提交：commit:a684aa870802871eb82282f1756da9b5173e5037。git push origin master退出0，远端d76422d已包含本课提交（其间APP-01回执及ID-03进入master）。仅提交本课范围，不发布gh-pages。
+
+回执更新后，独立副本receipt-semester.log为PASS（exit0）。首次在共享cwd运行时读到他会话ML-03进行中证据路径问题，失败另存receipt-shared-semester.log，未用它冒充通过，也未改该会话材料。

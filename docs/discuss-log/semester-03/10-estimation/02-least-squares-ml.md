@@ -92,7 +92,7 @@
 
 [郑核-签发] 学术假设、信息边界与数值一致；A.1全部通过、B九项及四补充项通过、C比较放行，档案齐全。签发。
 
-交付清单：正文实测272行、10H2、2Notebook/4cell、1Explorer、1SVG、四题四答；组件唯一注册于lib/wiki-components.ts，catalog v1.3与tracker同步。真实master提交后登记hash。
+交付清单：正文实测272行、10H2、2Notebook/4cell、1Explorer、1SVG、四题四答；组件唯一注册于lib/wiki-components.ts，catalog v1.3与tracker同步。真实master交付提交：commit:a684aa870802871eb82282f1756da9b5173e5037，已推送origin master；Pages未发布。
 
 ## 附录 A：数值证据（全部实测数据的唯一留存副本）
 

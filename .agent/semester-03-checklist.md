@@ -207,7 +207,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | EST-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/01-estimation-problem.md;.agent/semester-03/est-01/acceptance.md;commit:bd52f391638024b7b339dc293a8aae5cf9e50a1a |
-| EST-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/10-estimation/02-least-squares-ml.md;.agent/semester-03/est-02/acceptance.md;rank4验收通过，待真实master回执 |
+| EST-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/10-estimation/02-least-squares-ml.md;.agent/semester-03/est-02/acceptance.md;commit:a684aa870802871eb82282f1756da9b5173e5037 |
 | EST-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | .agent/semester-03/s02-structure-migration.md;S02实跑发现存量setup缺plt及ipywidgets，Phase1审计;.agent/semester-03/s04-course-debts.json;Phase1处理已登记验收债务 |
 | EST-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EST-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
