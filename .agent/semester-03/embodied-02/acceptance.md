@@ -34,3 +34,9 @@ H2依次：夹爪挡住杯子之后；三种模态各知道什么；先把观测
 作者一手资料2026-10-24核阅，版本/代码许可证/实际复现范围在sources.json；只阅读接口，不下载模型与训练，不用作者成功率给本课背书。交付签发见讨论日志。仅本课唯一文件和局部元数据进入master，保持其它暂存/未提交工作；提交hash与推送在产生后追加。不发布Pages。
 
 并行Git资源：共享.git/index.lock存在，本课第一次正常索引合成遇EEXIST后停止，未删除或抢占该锁；其它ML-03/DRIVING-02也已登记同一限制。改用独立GIT_INDEX_FILE、commit-tree及带预期旧HEAD的update-ref原子提交，主干推进即重新整合验证。共享索引文件完全不写入；根工作目录同步本课唯一文件与本课局部元数据。正常索引可能暂把已提交的新文件显示为旧快照删除/未跟踪，属于共享索引未同步，未擅自reset或清理它。
+
+## master交付回执
+
+课程提交：commit:039549a20a27c138cbe7e07ac3b9f9191495c9af，已进入master；2026-10-24执行git push origin master成功，原始结果见push.log。git merge-base确认课程提交同时为master与origin/master祖先。最终验收与本课源码在提交中，可回放。共享正常索引与已有index.lock保留，提交使用独立索引及预期父提交的原子ref更新；未发布Pages，不继续下一课。
+
+回执复验：node scripts/check-semester03.mjs，exit0，PASS semester-03 plan/checklist；原始结果见receipt-semester.log。

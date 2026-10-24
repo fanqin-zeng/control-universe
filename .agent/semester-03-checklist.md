@@ -340,7 +340,7 @@
 | ID | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 验收 | 合并 | 证据 |
 |---|---|---|---|---|---|---|---|
 | EMBODIED-01 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/19-embodied/01-embodied-systems.md;.agent/semester-03/embodied-01/acceptance.md;commit:3be96390783b2e6777c0ffe5eea431b999a34f19 |
-| EMBODIED-02 | [x] | [x] | [x] | [x] | [x] | [ ] | docs/discuss-log/semester-03/19-embodied/02-multimodal-observation.md;.agent/semester-03/embodied-02/acceptance.md |
+| EMBODIED-02 | [x] | [x] | [x] | [x] | [x] | [x] | docs/discuss-log/semester-03/19-embodied/02-multimodal-observation.md;.agent/semester-03/embodied-02/acceptance.md;commit:039549a20a27c138cbe7e07ac3b9f9191495c9af |
 | EMBODIED-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-04 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
 | EMBODIED-05 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | — |
