@@ -3223,7 +3223,7 @@ export const catalog: Chapter[] = [
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "draft"
+        "status": "v1.3"
       },
       {
         "slug": "pid-engineering-tuning",
@@ -5896,7 +5896,8 @@ export const catalog: Chapter[] = [
         ],
         "level": "grad",
         "type": "frontier",
-        "status": "v1.3",
+        "status": "v1.3"
+,
         "subsections": [
           {
             "title": "杯子为什么没有到位",

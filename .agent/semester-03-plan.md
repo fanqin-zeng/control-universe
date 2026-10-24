@@ -807,3 +807,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 ### EMBODIED-01 本轮执行记录（2026-10-24）
 
 用户指定rank13，具身智能系统从空占位按新写Phase1–4完成。杯子任务引出身体/环境/观测/策略/动作接口与多率闭环；10H2、2Notebook2cell、1Explorer与SVG、四题四答。实际TS750配置与Fraction独立实现135750量核对，保留H5恰好到位反例；原生内核、固定Pyodide、真实锚点与窄屏、生产构建验收见.agent/semester-03/embodied-01/acceptance.md。作者原始资料与本课简化模型分开，未训练或部署完整模型。共享端口脚本、用户批阅与其它课程修改保留；只提交本课，未发布Pages，不生产下一课。
+
+### IMPL-02 数字PID本轮交付
+
+按重构SKILL Phase1–4完成，仅本课。八主题/四题用途、36旧ID保留；修正位置/增量状态、BE/Tustin导数、c=0、反算时序/单位、分离与无扰历史、ZN规则、不可达和级联题解。承接离散化方法工程材料但不删已交付来源。真实TS750配置对Decimal、原始四Notebook八cell对独立卷积/解析、111行对账；严格内核/Pyodide/两实际页面248量及375px、静态Pages构建通过，详见.agent/semester-03/impl-02/acceptance.md。fix-074；并行会话元数据与独占资源保留，实际master回执见全局checklist。本次不发布Pages，不开始IMPL-03。

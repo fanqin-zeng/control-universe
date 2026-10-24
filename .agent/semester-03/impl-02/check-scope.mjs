@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {validateSemester03} from '../../../scripts/check-semester03.mjs';
+const snapshot='D:/Workspace/control-universe-rank1-impl02-validation/';
+const receipt=process.argv.includes('--receipt');
+const git=p=>execFileSync('git',['show','HEAD:'+p],{encoding:'utf8'});
+const plan=receipt?git('.agent/semester-03-plan.md'):fs.readFileSync(snapshot+'.agent/semester-03-plan.md','utf8');
+const ownRow=fs.readFileSync('.agent/semester-03-checklist.md','utf8').split(/\r?\n/).find(l=>l.startsWith('| IMPL-02 |'));
+const checklist=receipt?git('.agent/semester-03-checklist.md').replace(/^\| IMPL-02 \|.*$/m,ownRow):fs.readFileSync(snapshot+'.agent/semester-03-checklist.md','utf8');
+const result=validateSemester03({plan,checklist,baseline:JSON.parse(fs.readFileSync('.agent/semester-03-baseline.json','utf8')),root:process.cwd(),evidence:true});
+fs.writeFileSync('.agent/semester-03/impl-02/scoped-semester.json',JSON.stringify(result,null,2)+'\n');assert.deepEqual(result.errors,[]);console.log(JSON.stringify(result));
+if(fs.existsSync('.agent/semester-03/impl-02/stop-after-validation'))process.exit(75);

@@ -1,3 +1,4 @@
+import { DigitalPidExplorer } from "@/components/wiki/digital-pid-explorer";
 import { SafetyStoppingExplorer } from "@/components/wiki/safety-stopping-explorer";
 import { EmbodiedLoopExplorer } from "@/components/wiki/embodied-loop-explorer";
 import { MpcPrincipleExplorer } from "@/components/wiki/mpc-principle-explorer";
@@ -120,6 +121,7 @@ export const wikiComponents: MDXComponents = {
   ResonanceRobustnessExplorer,
   EstimationFrameworkExplorer,
   ControlArchitectureExplorer,
+  DigitalPidExplorer,
   LearningGeneralizationExplorer,
   EventTriggeredExplorer,
   DiscreteOptimalExplorer,
