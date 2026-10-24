@@ -3324,12 +3324,50 @@ export const catalog: Chapter[] = [
       {
         "slug": "embedded-implementation",
         "title": "嵌入式控制",
+        "subsections": [
+          {
+            "slug": "从温控箱读数到接口合同",
+            "title": "从温控箱读数到接口合同"
+          },
+          {
+            "slug": "adc码值与工程量",
+            "title": "ADC码值与工程量"
+          },
+          {
+            "slug": "逐拍计算与pwm输出",
+            "title": "逐拍计算与PWM输出"
+          },
+          {
+            "slug": "量化进入反馈以后",
+            "title": "量化进入反馈以后"
+          },
+          {
+            "slug": "样本交接与时间戳",
+            "title": "样本交接与时间戳"
+          },
+          {
+            "slug": "从主机验证到板上验收",
+            "title": "从主机验证到板上验收"
+          },
+          {
+            "slug": "小结",
+            "title": "小结"
+          },
+          {
+            "slug": "习题",
+            "title": "习题"
+          },
+          {
+            "slug": "答案",
+            "title": "答案"
+          }
+        ],
         "prereq": [
           "implementation/controller-discretization-practice"
         ],
         "level": "undergrad",
         "type": "impl",
-        "status": "empty"
+        "status": "v1.3"
       },
       {
         "slug": "realtime-control",

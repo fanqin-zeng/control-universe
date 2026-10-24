@@ -883,3 +883,7 @@ Z域系统分析按重构专用Phase1–4完成，保留11H2主题、旧标题ID
 
 扩展卡尔曼滤波从空占位按新写Phase1—4完成，十H2、四题所有子问、2Notebook4cell、后验Explorer及SVG。非线性函数与误差Jacobian分工、Joseph近似含义、平方测量零点/正负歧义、雷达角度与稳定性条件清楚；72组真实TS/17352曲线点对无穷自适应积分，含线性持平与双峰失败例。严格内核、Pyodide、普通与完整build:pages实页/375px均通过，最终源码指纹绑定。rank4独立副本/端口/私有索引保留其它课程与暂存，证据.agent/semester-03/est-04/acceptance.md；真实master回执见全局checklist，不发布Pages、不生产EST-05。
 <!-- EST-04-RECEIPT-END -->
+
+### IMPL-05 嵌入式控制本轮交付
+
+新写单课；ADC端点标定、PWM时隙、闭环量化与样本交接。讨论和真实验收见 `.agent/semester-03/impl-05/acceptance.md`；rank1使用独立目录与索引，未发布Pages。

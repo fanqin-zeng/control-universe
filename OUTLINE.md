@@ -105,7 +105,7 @@
 | 7.2 | 数字PID | digital-pid | ✅ 已交付 v1.3 | undergrad | impl | 13 | classic/pid-controller<br>discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>discrete-sampled/discrete-stability-criteria |
 | 7.3 | PID工程整定 | pid-engineering-tuning | ✅ 已交付 v1.3 | undergrad | impl | 14 | implementation/digital-pid<br>classic/time-domain-analysis |
 | 7.4 | 控制器部署 | controller-discretization-practice | ✅ 已交付 v1.3 | undergrad | impl | 14 | discrete-sampled/discretization-methods<br>implementation/computer-control-architecture<br>math/numerical-methods<br>implementation/digital-pid |
-| 7.5 | 嵌入式控制 | embedded-implementation | ⬜ 骨架（占位页） | undergrad | impl | 15 | implementation/controller-discretization-practice |
+| 7.5 | 嵌入式控制 | embedded-implementation | ✅ 已交付 v1.3 | undergrad | impl | 15 | implementation/controller-discretization-practice |
 | 7.6 | 实时控制 | realtime-control | 🟨 有正文待审校 | undergrad | impl | 16 | implementation/embedded-implementation<br>discrete-sampled/sampling-period-selection |
 | 7.7 | 网络控制 | networked-control | ⬜ 骨架（占位页） | grad | impl | 17 | implementation/realtime-control<br>discrete-sampled/sampled-data-systems |
 | 7.8 | 工业通信 | industrial-bus-protocols | ⬜ 骨架（占位页） | undergrad | impl | 17 | implementation/computer-control-architecture<br>implementation/realtime-control |
@@ -320,15 +320,15 @@
 
 - **总章节数**: 21
 - **总模块数**: 205
-- **已交付 v1.3**: 97（status = v1.3）
+- **已交付 v1.3**: 98（status = v1.3）
 - **有正文待审校**: 11（status = draft，已完成初稿但未做 v1.3 可视化重构）
-- **骨架占位**: 97（status = empty，渲染占位页）
+- **骨架占位**: 96（status = empty，渲染占位页）
 - **无 status 字段**: 0
-- **未完成 v1.3**: 108（= draft 11 + empty 97 + 无 status 0）
-- **有 MDX 正文**: 108
-- **catalog 小节总数**: 1192
-- **讨论日志**: 120 篇（覆盖 97 门；有 MDX 无日志 11 门）
-- **交互组件**: 107 个文件（被正文引用 107，孤儿 0）
+- **未完成 v1.3**: 107（= draft 11 + empty 96 + 无 status 0）
+- **有 MDX 正文**: 109
+- **catalog 小节总数**: 1201
+- **讨论日志**: 121 篇（覆盖 98 门；有 MDX 无日志 11 门）
+- **交互组件**: 108 个文件（被正文引用 108，孤儿 0）
 - **prereq 边**: 473 条（环 0 · 悬空 0 · 前向 6 = 导论豁免 6 + 白名单命中 0 · 章内倒置 0 · 孤儿课 0）
 - **prereq 覆盖率**: 202 / 205 门登记了前置；零 prereq 边的章 0 个
 - **拓扑层级**: 0..21（表中「拓扑层级」= 最长前置链长度，0 表示无需前置即可开读；逐课层级也可用 `npm run check -- --topo` 打印）

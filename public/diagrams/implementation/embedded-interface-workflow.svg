@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="290" viewBox="0 0 900 290" role="img" aria-labelledby="title desc">
+<title id="title">恒温箱接口与逐拍数据交接</title><desc id="desc">温度经ADC形成一致快照，控制任务标定、计算并限幅，PWM锁存命令反馈到恒温箱；日志读取已提交记录。</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="900" height="290" rx="12" fill="#f8fafc"/>
+<g font-family="sans-serif" text-anchor="middle" fill="#172033" font-size="16">
+<g fill="#e0f2fe" stroke="#0284c7"><rect x="22" y="62" width="140" height="76" rx="8"/><rect x="202" y="62" width="170" height="76" rx="8"/><rect x="412" y="62" width="200" height="76" rx="8"/><rect x="652" y="62" width="210" height="76" rx="8"/></g>
+<text x="92" y="92">恒温箱</text><text x="92" y="118">真实温度 y[k]</text>
+<text x="287" y="88">ADC完成 → 快照</text><text x="287" y="116">码 / 序号 / 时间戳</text>
+<text x="512" y="88">控制任务（每拍一次）</text><text x="512" y="116">标定 → 误差 → 限幅</text>
+<text x="757" y="88">驱动 → PWM锁存</text><text x="757" y="116">抽象命令 p[k] → d[k]</text>
+<text x="512" y="35">目标 r ── 进入误差计算（r − ŷ）</text>
+<text x="465" y="192">采样间隔内保持加热输入</text>
+<rect x="412" y="226" width="230" height="45" rx="8" fill="#fef3c7" stroke="#a16207"/><text x="527" y="254">低优先级日志（读取记录）</text>
+</g>
+<g stroke="#334155" fill="none" stroke-width="2" marker-end="url(#arrow)"><path d="M162 100H197"/><path d="M372 100H407"/><path d="M612 100H647"/><path d="M757 138V171H92V143"/><path d="M512 138V221"/></g>
+</svg>

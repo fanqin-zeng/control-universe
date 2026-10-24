@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-10-24T07:33:58.535Z",
-  "url": "http://127.0.0.1:18364/python-expansion.html?lesson=estimation/extended-kalman-filter",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "testedAt": "2026-10-24T07:38:38.587Z",
+  "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/embedded-implementation",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
   "lessons": [
     {
       "key": "math/calculus-basics",
@@ -15416,21 +15416,138 @@
           ]
         }
       ]
+    },
+    {
+      "key": "implementation/embedded-implementation",
+      "title": "嵌入式控制",
+      "sourceHash": "d0d62e83fee35976aa0cacafb7327c13d1c546b3cbaec66bba8cf3841819e97a",
+      "notebooks": [
+        {
+          "id": "implementation/embedded-implementation#1",
+          "title": "实验1：端点编码、过载与PWM取整",
+          "index": 1,
+          "line": 54,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 5644,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"budget\": {\"step8\": 0.39215686274509803, \"bound8\": 0.19607843137254902, \"step12\": 0.02442002442002442, \"bound12\": 0.01221001221001221, \"pwmHalf100\": 0.005, \"code20\": 51, \"code50\": 128, \"pwm37\": 37, \"pwmHalf\": 38, \"pwmFull\": 100}, \"conversions\": [{\"input\": -5, \"bits\": 4, \"code\": 0, \"read\": 0.0}, {\"input\": 0, \"bits\": 4, \"code\": 0, \"read\": 0.0}, {\"input\": 20, \"bits\": 4, \"code\": 3, \"read\": 20.0}, {\"input\": 50, \"bits\": 4, \"code\": 8, \"read\": 53.333333333333336}, {\"input\": 100, \"bits\": 4, \"code\": 15, \"read\": 100.0}, {\"input\": 105, \"bits\": 4, \"code\": 15, \"read\": 100.0}, {\"input\": -5, \"bits\": 8, \"code\": 0, \"read\": 0.0}, {\"input\": 0, \"bits\": 8, \"code\": 0, \"read\": 0.0}, {\"input\": 20, \"bits\": 8, \"code\": 51, \"read\": 20.0}, {\"input\": 50, \"bits\": 8, \"code\": 128, \"read\": 50.19607843137255}, {\"input\": 100, \"bits\": 8, \"code\": 255, \"read\": 100.0}, {\"input\": 105, \"bits\": 8, \"code\": 255, \"read\": 100.0}, {\"input\": -5, \"bits\": 12, \"code\": 0, \"read\": 0.0}, {\"input\": 0, \"bits\": 12, \"code\": 0, \"read\": 0.0}, {\"input\": 20, \"bits\": 12, \"code\": 819, \"read\": 20.0}, {\"input\": 50, \"bits\": 12, \"code\": 2048, \"read\": 50.01221001221001}, {\"input\": 100, \"bits\": 12, \"code\": 4095, \"read\": 100.0}, {\"input\": 105, \"bits\": 12, \"code\": 4095, \"read\": 100.0}]}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 183,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 31376
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/embedded-implementation#2",
+          "title": "实验2：接口量化进入真实反馈",
+          "index": 2,
+          "line": 154,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 38,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "{\"default\": {\"bits\": 8, \"slots\": 100, \"target\": 60, \"firstCode\": 51, \"firstRead\": 20.0, \"firstPWM\": 100, \"firstY\": 23.90164603994288, \"finalY\": 48.03979326315087, \"finalIdeal\": 48.23529372155438, \"maxGap\": 0.19747573936825802, \"saturated\": 2}, \"table\": [{\"target\": 20, \"bits\": 4, \"slots\": 100, \"finalY\": 20.0, \"finalIdeal\": 20.0, \"maxGap\": 0.0, \"saturated\": 0}, {\"target\": 20, \"bits\": 8, \"slots\": 100, \"finalY\": 20.0, \"finalIdeal\": 20.0, \"maxGap\": 0.0, \"saturated\": 0}, {\"target\": 20, \"bits\": 12, \"slots\": 100, \"finalY\": 20.0, \"finalIdeal\": 20.0, \"maxGap\": 0.0, \"saturated\": 0}, {\"target\": 60, \"bits\": 4, \"slots\": 100, \"finalY\": 49.838787332159434, \"finalIdeal\": 48.23529372155438, \"maxGap\": 1.8786593434780912, \"saturated\": 1}, {\"target\": 60, \"bits\": 8, \"slots\": 100, \"finalY\": 48.03979326315087, \"finalIdeal\": 48.23529372155438, \"maxGap\": 0.19747573936825802, \"saturated\": 2}, {\"target\": 60, \"bits\": 12, \"slots\": 100, \"finalY\": 48.16039375291098, \"finalIdeal\": 48.23529372155438, \"maxGap\": 0.07489996864340043, \"saturated\": 2}, {\"target\": 110, \"bits\": 4, \"slots\": 100, \"finalY\": 83.00203753839054, \"finalIdeal\": 83.52940374735995, \"maxGap\": 0.7400920768675832, \"saturated\": 25}, {\"target\": 110, \"bits\": 8, \"slots\": 100, \"finalY\": 83.38300386239915, \"finalIdeal\": 83.52940374735995, \"maxGap\": 0.20200871243190477, \"saturated\": 25}, {\"target\": 110, \"bits\": 12, \"slots\": 100, \"finalY\": 83.52621847724195, \"finalIdeal\": 83.52940374735995, \"maxGap\": 0.049407514985688294, \"saturated\": 25}], \"equilibrium\": 48.23529411764706, \"offset\": 11.764705882352942, \"maximumEquilibrium\": 100}\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 110,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 29732
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation/embedded-implementation#3",
+          "title": "实验3：样本接受、拒绝与回绕",
+          "index": 3,
+          "line": 210,
+          "cellCount": 2,
+          "status": "passed",
+          "reason": null,
+          "cells": [
+            {
+              "index": 1,
+              "milliseconds": 3,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"age\": 100, \"reason\": \"accepted\", \"accepted\": true, \"lastSeq\": 10, \"pwm\": 100}, {\"age\": 200, \"reason\": \"duplicate-or-old\", \"accepted\": false, \"lastSeq\": 10, \"pwm\": 0}, {\"age\": 600, \"reason\": \"stale\", \"accepted\": false, \"lastSeq\": 10, \"pwm\": 0}, {\"age\": 100, \"reason\": \"accepted\", \"accepted\": true, \"lastSeq\": 12, \"pwm\": 100}]\n"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "milliseconds": 48,
+              "status": "passed",
+              "outputs": [
+                {
+                  "type": "stream",
+                  "name": "stdout",
+                  "text": "[{\"age\": 500, \"reason\": \"accepted\", \"accepted\": true, \"lastSeq\": 13, \"pwm\": 100}, {\"age\": 501, \"reason\": \"stale\", \"accepted\": false, \"lastSeq\": 12, \"pwm\": 0}, {\"age\": 100, \"reason\": \"duplicate-or-old\", \"accepted\": false, \"lastSeq\": 12, \"pwm\": 0}, {\"age\": 100, \"reason\": \"accepted\", \"accepted\": true, \"lastSeq\": 0, \"pwm\": 100}]\n"
+                },
+                {
+                  "type": "image",
+                  "mime": "image/png",
+                  "base64Length": 16072
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "workerHash": "c2240df9b66c9edb1c9589b37bfef9c68cd8f1e65166e4166577fd8fed6368f3",
   "scope": "merged-complete-inventory",
   "complete": true,
   "totals": {
-    "lessons": 108,
-    "notebooks": 459,
-    "enabled": 451,
+    "lessons": 109,
+    "notebooks": 462,
+    "enabled": 454,
     "codeOnly": 8
   },
   "releaseTotals": {
-    "lessons": 108,
-    "notebooks": 459,
-    "enabled": 451,
+    "lessons": 109,
+    "notebooks": 462,
+    "enabled": 454,
     "codeOnly": 8
   },
   "provenance": [
@@ -16178,6 +16295,11 @@
       "testedAt": "2026-10-24T07:33:58.535Z",
       "url": "http://127.0.0.1:18364/python-expansion.html?lesson=estimation/extended-kalman-filter",
       "inputPath": ".agent/semester-03/est-04/pyodide.json"
+    },
+    {
+      "testedAt": "2026-10-24T07:38:38.587Z",
+      "url": "http://127.0.0.1:8191/python-expansion.html?lesson=implementation/embedded-implementation",
+      "inputPath": "D:\\Workspace\\control-universe\\.agent\\semester-03\\impl-05\\pyodide.json"
     }
   ]
 }
